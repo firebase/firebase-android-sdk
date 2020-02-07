@@ -22,6 +22,7 @@ import static org.mockito.Mockito.when;
 import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
 import com.google.android.datatransport.runtime.synchronization.SynchronizationGuard.CriticalSection;
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -41,7 +42,10 @@ public class WorkInitializerTest {
     TransportContext ctx1 =
         TransportContext.builder().setBackendName("backend1").setExtras(null).build();
     TransportContext ctx2 =
-        TransportContext.builder().setBackendName("backend1").setExtras("e1".getBytes()).build();
+        TransportContext.builder()
+            .setBackendName("backend1")
+            .setExtras("e1".getBytes(Charset.defaultCharset()))
+            .build();
 
     when(mockStore.loadActiveContexts()).thenReturn(Arrays.asList(ctx1, ctx2));
 

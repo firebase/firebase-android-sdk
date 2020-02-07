@@ -17,14 +17,14 @@ package com.google.firebase.inappmessaging.display.internal.injection.modules;
 import android.app.Application;
 import com.google.firebase.inappmessaging.display.internal.PicassoErrorListener;
 import com.google.firebase.inappmessaging.display.internal.injection.scopes.FirebaseAppScope;
-import com.squareup.okhttp.Interceptor;
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.Response;
-import com.squareup.picasso.OkHttpDownloader;
+import com.squareup.picasso.OkHttp3Downloader;
 import com.squareup.picasso.Picasso;
 import dagger.Module;
 import dagger.Provides;
 import java.io.IOException;
+import okhttp3.Interceptor;
+import okhttp3.OkHttpClient;
+import okhttp3.Response;
 
 /** @hide */
 @Module
@@ -33,23 +33,20 @@ public class PicassoModule {
   @FirebaseAppScope
   Picasso providesFiamController(
       Application application, PicassoErrorListener picassoErrorListener) {
-    OkHttpClient client = new OkHttpClient();
-    // This seems necessary for some websites to treat this as an Android client
-    // Example: https://pics.clipartpng.com
-    // In the long term decide whether we are going to honor such edge cases
-    client
-        .interceptors()
-        .add(
-            new Interceptor() {
-              @Override
-              public Response intercept(Chain chain) throws IOException {
-                return chain.proceed(
-                    chain.request().newBuilder().addHeader("Accept", "image/*").build());
-              }
-            });
+    okhttp3.OkHttpClient client =
+        new OkHttpClient.Builder()
+            .addInterceptor(
+                new Interceptor() {
+                  @Override
+                  public Response intercept(Chain chain) throws IOException {
+                    return chain.proceed(
+                        chain.request().newBuilder().addHeader("Accept", "image/*").build());
+                  }
+                })
+            .build();
 
     Picasso.Builder builder = new Picasso.Builder(application);
-    builder.listener(picassoErrorListener).downloader(new OkHttpDownloader(client));
+    builder.listener(picassoErrorListener).downloader(new OkHttp3Downloader(client));
     return builder.build();
   }
 }

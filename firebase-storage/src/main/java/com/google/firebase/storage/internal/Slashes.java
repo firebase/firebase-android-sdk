@@ -19,7 +19,6 @@ import android.text.TextUtils;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.android.gms.common.internal.Preconditions;
-import java.io.UnsupportedEncodingException;
 
 /**
  * Utility methods for Firebase Storage.
@@ -34,10 +33,9 @@ public class Slashes {
    *
    * @param s The String to convert
    * @return A partially URL encoded string where slashes are preserved.
-   * @throws UnsupportedEncodingException
    */
   @NonNull
-  public static String preserveSlashEncode(@Nullable String s) throws UnsupportedEncodingException {
+  public static String preserveSlashEncode(@Nullable String s) {
     if (TextUtils.isEmpty(s)) {
       return "";
     }
@@ -54,18 +52,6 @@ public class Slashes {
   public static String slashize(@NonNull String s) {
     Preconditions.checkNotNull(s);
     return s.replace("%2F", "/");
-  }
-
-  /**
-   * URL Encodes slashes (only) within a string.
-   *
-   * @param s The String to change
-   * @return A modified string that replaces slashes with their escape codes.
-   */
-  @NonNull
-  public static String unSlashize(@NonNull String s) {
-    Preconditions.checkNotNull(s);
-    return s.replace("/", "%2F");
   }
 
   @NonNull

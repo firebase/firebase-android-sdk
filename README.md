@@ -7,17 +7,25 @@ dependencies:
   * `firebase-abt`
   * `firebase-common`
   * `firebase-common-ktx`
+  * `firebase-crashlytics`
+  * `firebase-crashlytics-ndk`
   * `firebase-database`
+  * `firebase-database-ktx`
   * `firebase-database-collection`
   * `firebase-datatransport`
   * `firebase-firestore`
   * `firebase-firestore-ktx`
   * `firebase-functions`
   * `firebase-functions-ktx`
+  * `firebase-inappmessaging`
+  * `firebase-inappmessaging-ktx`
   * `firebase-inappmessaging-display`
+  * `firebase-inappmessaging-display-ktx`
   * `firebase-remote-config`
+  * `firebase-remote-config-ktx`
   * `firebase-storage`
-  
+  * `firebase-storage-ktx`
+
 
 Firebase is an app development platform with tools to help you build, grow and
 monetize your app. More information about Firebase can be found at
@@ -222,6 +230,11 @@ projects may be published as follows.
 ./gradlew -PprojectsToPublish=":firebase-firestore,:firebase-functions" \
     publishProjectsToMavenLocal
 ```
+
+**Note:** Firebase Crashlytics NDK requires NDK version r17c to build. Please
+see the [README](firebase-crashlytics-ndk/README.md) for setup instructions.
+Alternatively, if you do not need to build this project, you can safely disable
+it by commenting out its reference in [subprojects.cfg](subprojects.cfg).
 
 ### Code Formatting
 

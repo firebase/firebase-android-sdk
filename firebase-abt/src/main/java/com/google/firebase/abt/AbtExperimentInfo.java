@@ -14,7 +14,10 @@
 
 package com.google.firebase.abt;
 
+import android.text.TextUtils;
 import androidx.annotation.VisibleForTesting;
+import com.google.firebase.abt.FirebaseABTesting.OriginService;
+import com.google.firebase.analytics.connector.AnalyticsConnector.ConditionalUserProperty;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -34,8 +37,6 @@ import java.util.Map;
  * AbtException} will be thrown. Any keys not defined in {@link #ALL_REQUIRED_KEYS} will be ignored.
  *
  * <p>Changes in the values returned by the ABT server and client SDKs must be reflected here
- *
- * @author Miraziz Yusupov
  */
 public class AbtExperimentInfo {
 
@@ -53,6 +54,7 @@ public class AbtExperimentInfo {
    * assigned by the ABT service.
    */
   @VisibleForTesting static final String VARIANT_ID_KEY = "variantId";
+
   /**
    * The trigger event key.
    *
@@ -108,20 +110,24 @@ public class AbtExperimentInfo {
 
   /** The experiment id as defined by the ABT backend. */
   private final String experimentId;
+
   /** The id of the variant of this experiment the current App instance has been assigned to. */
   private final String variantId;
+
   /** The name of the event that will trigger the activation of this experiment. */
   private final String triggerEventName;
+
   /** The start time of this experiment. */
   private final Date experimentStartTime;
+
   /** The amount of time, in milliseconds, before the trigger for this experiment expires. */
   private final long triggerTimeoutInMillis;
+
   /** The amount of time, in milliseconds, before the experiment expires for this App instance. */
   private final long timeToLiveInMillis;
 
   /** Creates an instance of {@link AbtExperimentInfo} with all the required keys. */
-  @VisibleForTesting
-  AbtExperimentInfo(
+  public AbtExperimentInfo(
       String experimentId,
       String variantId,
       String triggerEventName,
@@ -230,6 +236,10 @@ public class AbtExperimentInfo {
     }
   }
 
+  static void validateAbtExperimentInfo(AbtExperimentInfo experimentInfo) throws AbtException {
+    validateExperimentInfoMap(experimentInfo.toStringMap());
+  }
+
   /**
    * Used for testing {@code FirebaseABTesting#replaceAllExperiments(List)} without leaking the
    * implementation details of this class.
@@ -248,5 +258,53 @@ public class AbtExperimentInfo {
     experimentInfoMap.put(TIME_TO_LIVE_KEY, Long.toString(timeToLiveInMillis));
 
     return experimentInfoMap;
+  }
+
+  /**
+   * Returns the {@link ConditionalUserProperty} created from the specified {@link
+   * AbtExperimentInfo}.
+   */
+  ConditionalUserProperty toConditionalUserProperty(@OriginService String originService) {
+    ConditionalUserProperty conditionalUserProperty = new ConditionalUserProperty();
+
+    conditionalUserProperty.origin = originService;
+    conditionalUserProperty.creationTimestamp = getStartTimeInMillisSinceEpoch();
+    conditionalUserProperty.name = experimentId;
+    conditionalUserProperty.value = variantId;
+
+    // For a conditional user property to be immediately activated/triggered, its trigger
+    // event needs to be null, not just an empty string.
+    conditionalUserProperty.triggerEventName =
+        TextUtils.isEmpty(triggerEventName) ? null : triggerEventName;
+    conditionalUserProperty.triggerTimeout = triggerTimeoutInMillis;
+    conditionalUserProperty.timeToLive = timeToLiveInMillis;
+
+    return conditionalUserProperty;
+  }
+
+  /**
+   * Returns the {@link AbtExperimentInfo} created from the specified {@link
+   * ConditionalUserProperty}.
+   *
+   * @param conditionalUserProperty A {@link ConditionalUserProperty} that contains an ABT
+   *     experiment's information.
+   * @return the converted {@link AbtExperimentInfo} from {@param conditionalUserProperty}.
+   */
+  static AbtExperimentInfo fromConditionalUserProperty(
+      ConditionalUserProperty conditionalUserProperty) {
+
+    // Trigger event defaults to empty string if absent.
+    String triggerEventName = "";
+    if (conditionalUserProperty.triggerEventName != null) {
+      triggerEventName = conditionalUserProperty.triggerEventName;
+    }
+
+    return new AbtExperimentInfo(
+        conditionalUserProperty.name,
+        String.valueOf(conditionalUserProperty.value),
+        triggerEventName,
+        new Date(conditionalUserProperty.creationTimestamp),
+        conditionalUserProperty.triggerTimeout,
+        conditionalUserProperty.timeToLive);
   }
 }

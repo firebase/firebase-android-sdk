@@ -18,6 +18,7 @@ import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
+import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.Document;
@@ -25,6 +26,7 @@ import com.google.firebase.firestore.model.DocumentCollections;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.ResourcePath;
+import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.util.BackgroundQueue;
 import com.google.firebase.firestore.util.Executors;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -39,25 +41,29 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
 
   private final SQLitePersistence db;
   private final LocalSerializer serializer;
-  private final StatsCollector statsCollector;
 
-  SQLiteRemoteDocumentCache(
-      SQLitePersistence persistence, LocalSerializer serializer, StatsCollector statsCollector) {
+  SQLiteRemoteDocumentCache(SQLitePersistence persistence, LocalSerializer serializer) {
     this.db = persistence;
     this.serializer = serializer;
-    this.statsCollector = statsCollector;
   }
 
   @Override
-  public void add(MaybeDocument maybeDocument) {
+  public void add(MaybeDocument maybeDocument, SnapshotVersion readTime) {
+    hardAssert(
+        !readTime.equals(SnapshotVersion.NONE),
+        "Cannot add document to the RemoteDocumentCache with a read time of zero");
+
     String path = pathForKey(maybeDocument.getKey());
+    Timestamp timestamp = readTime.getTimestamp();
     MessageLite message = serializer.encodeMaybeDocument(maybeDocument);
 
-    statsCollector.recordRowsWritten(STATS_TAG, 1);
-
     db.execute(
-        "INSERT OR REPLACE INTO remote_documents (path, contents) VALUES (?, ?)",
+        "INSERT OR REPLACE INTO remote_documents "
+            + "(path, read_time_seconds, read_time_nanos, contents) "
+            + "VALUES (?, ?, ?, ?)",
         path,
+        timestamp.getSeconds(),
+        timestamp.getNanoseconds(),
         message.toByteArray());
 
     db.getIndexManager().addToCollectionParentIndex(maybeDocument.getKey().getPath().popLast());
@@ -67,8 +73,6 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
   public void remove(DocumentKey documentKey) {
     String path = pathForKey(documentKey);
 
-    statsCollector.recordRowsDeleted(STATS_TAG, 1);
-
     db.execute("DELETE FROM remote_documents WHERE path = ?", path);
   }
 
@@ -76,8 +80,6 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
   @Override
   public MaybeDocument get(DocumentKey documentKey) {
     String path = pathForKey(documentKey);
-
-    statsCollector.recordRowsRead(STATS_TAG, 1);
 
     return db.query("SELECT contents FROM remote_documents WHERE path = ?")
         .binding(path)
@@ -105,26 +107,22 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
             args,
             ") ORDER BY path");
 
-    int rowsProcessed = 0;
-
     while (longQuery.hasMoreSubqueries()) {
-      rowsProcessed +=
-          longQuery
-              .performNextSubquery()
-              .forEach(
-                  row -> {
-                    MaybeDocument decoded = decodeMaybeDocument(row.getBlob(0));
-                    results.put(decoded.getKey(), decoded);
-                  });
+      longQuery
+          .performNextSubquery()
+          .forEach(
+              row -> {
+                MaybeDocument decoded = decodeMaybeDocument(row.getBlob(0));
+                results.put(decoded.getKey(), decoded);
+              });
     }
-
-    statsCollector.recordRowsRead(STATS_TAG, rowsProcessed);
 
     return results;
   }
 
   @Override
-  public ImmutableSortedMap<DocumentKey, Document> getAllDocumentsMatchingQuery(Query query) {
+  public ImmutableSortedMap<DocumentKey, Document> getAllDocumentsMatchingQuery(
+      Query query, SnapshotVersion sinceReadTime) {
     hardAssert(
         !query.isCollectionGroupQuery(),
         "CollectionGroup queries should be handled in LocalDocumentsView");
@@ -135,6 +133,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
 
     String prefixPath = EncodedPath.encode(prefix);
     String prefixSuccessorPath = EncodedPath.prefixSuccessor(prefixPath);
+    Timestamp readTime = sinceReadTime.getTimestamp();
 
     BackgroundQueue backgroundQueue = new BackgroundQueue();
 
@@ -142,42 +141,57 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
         (ImmutableSortedMap<DocumentKey, Document>[])
             new ImmutableSortedMap[] {DocumentCollections.emptyDocumentMap()};
 
-    int rowsProcessed =
-        db.query("SELECT path, contents FROM remote_documents WHERE path >= ? AND path < ?")
-            .binding(prefixPath, prefixSuccessorPath)
-            .forEach(
-                row -> {
-                  // TODO: Actually implement a single-collection query
-                  //
-                  // The query is actually returning any path that starts with the query path prefix
-                  // which may include documents in subcollections. For example, a query on 'rooms'
-                  // will return rooms/abc/messages/xyx but we shouldn't match it. Fix this by
-                  // discarding rows with document keys more than one segment longer than the query
-                  // path.
-                  ResourcePath path = EncodedPath.decodeResourcePath(row.getString(0));
-                  if (path.length() != immediateChildrenPathLength) {
-                    return;
+    SQLitePersistence.Query sqlQuery;
+    if (sinceReadTime.equals(SnapshotVersion.NONE)) {
+      sqlQuery =
+          db.query("SELECT path, contents FROM remote_documents WHERE path >= ? AND path < ?")
+              .binding(prefixPath, prefixSuccessorPath);
+    } else {
+      // Execute an index-free query and filter by read time. This is safe since all document
+      // changes to queries that have a lastLimboFreeSnapshotVersion (`sinceReadTime`) have a read
+      // time set.
+      sqlQuery =
+          db.query(
+                  "SELECT path, contents FROM remote_documents WHERE path >= ? AND path < ?"
+                      + "AND (read_time_seconds > ? OR (read_time_seconds = ? AND read_time_nanos > ?))")
+              .binding(
+                  prefixPath,
+                  prefixSuccessorPath,
+                  readTime.getSeconds(),
+                  readTime.getSeconds(),
+                  readTime.getNanoseconds());
+    }
+    sqlQuery.forEach(
+        row -> {
+          // TODO: Actually implement a single-collection query
+          //
+          // The query is actually returning any path that starts with the query path prefix
+          // which may include documents in subcollections. For example, a query on 'rooms'
+          // will return rooms/abc/messages/xyx but we shouldn't match it. Fix this by
+          // discarding rows with document keys more than one segment longer than the query
+          // path.
+          ResourcePath path = EncodedPath.decodeResourcePath(row.getString(0));
+          if (path.length() != immediateChildrenPathLength) {
+            return;
+          }
+
+          byte[] rawDocument = row.getBlob(1);
+
+          // Since scheduling background tasks incurs overhead, we only dispatch to a
+          // background thread if there are still some documents remaining.
+          Executor executor = row.isLast() ? Executors.DIRECT_EXECUTOR : backgroundQueue;
+          executor.execute(
+              () -> {
+                MaybeDocument maybeDoc = decodeMaybeDocument(rawDocument);
+
+                if (maybeDoc instanceof Document && query.matches((Document) maybeDoc)) {
+                  synchronized (SQLiteRemoteDocumentCache.this) {
+                    matchingDocuments[0] =
+                        matchingDocuments[0].insert(maybeDoc.getKey(), (Document) maybeDoc);
                   }
-
-                  byte[] rawDocument = row.getBlob(1);
-
-                  // Since scheduling background tasks incurs overhead, we only dispatch to a
-                  // background thread if there are still some documents remaining.
-                  Executor executor = row.isLast() ? Executors.DIRECT_EXECUTOR : backgroundQueue;
-                  executor.execute(
-                      () -> {
-                        MaybeDocument maybeDoc = decodeMaybeDocument(rawDocument);
-
-                        if (maybeDoc instanceof Document && query.matches((Document) maybeDoc)) {
-                          synchronized (SQLiteRemoteDocumentCache.this) {
-                            matchingDocuments[0] =
-                                matchingDocuments[0].insert(maybeDoc.getKey(), (Document) maybeDoc);
-                          }
-                        }
-                      });
-                });
-
-    statsCollector.recordRowsRead(STATS_TAG, rowsProcessed);
+                }
+              });
+        });
 
     try {
       backgroundQueue.drain();

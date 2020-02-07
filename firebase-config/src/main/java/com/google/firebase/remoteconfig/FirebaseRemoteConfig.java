@@ -26,6 +26,8 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.abt.AbtException;
 import com.google.firebase.abt.FirebaseABTesting;
+import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.iid.InstanceIdResult;
 import com.google.firebase.remoteconfig.internal.ConfigCacheClient;
 import com.google.firebase.remoteconfig.internal.ConfigContainer;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler;
@@ -147,6 +149,7 @@ public class FirebaseRemoteConfig {
   private final ConfigFetchHandler fetchHandler;
   private final ConfigGetParameterHandler getHandler;
   private final ConfigMetadataClient frcMetadata;
+  private final FirebaseInstanceId firebaseInstanceId;
 
   /**
    * Firebase Remote Config constructor.
@@ -156,6 +159,7 @@ public class FirebaseRemoteConfig {
   FirebaseRemoteConfig(
       Context context,
       FirebaseApp firebaseApp,
+      FirebaseInstanceId firebaseInstanceId,
       @Nullable FirebaseABTesting firebaseAbt,
       Executor executor,
       ConfigCacheClient fetchedConfigsCache,
@@ -166,6 +170,7 @@ public class FirebaseRemoteConfig {
       ConfigMetadataClient frcMetadata) {
     this.context = context;
     this.firebaseApp = firebaseApp;
+    this.firebaseInstanceId = firebaseInstanceId;
     this.firebaseAbt = firebaseAbt;
     this.executor = executor;
     this.fetchedConfigsCache = fetchedConfigsCache;
@@ -186,9 +191,14 @@ public class FirebaseRemoteConfig {
     Task<ConfigContainer> defaultsConfigsTask = defaultConfigsCache.get();
     Task<ConfigContainer> fetchedConfigsTask = fetchedConfigsCache.get();
     Task<FirebaseRemoteConfigInfo> metadataTask = Tasks.call(executor, this::getInfo);
+    Task<InstanceIdResult> instanceIdTask = firebaseInstanceId.getInstanceId();
 
     return Tasks.whenAllComplete(
-            activatedConfigsTask, defaultsConfigsTask, fetchedConfigsTask, metadataTask)
+            activatedConfigsTask,
+            defaultsConfigsTask,
+            fetchedConfigsTask,
+            metadataTask,
+            instanceIdTask)
         .continueWith(executor, (unusedListOfCompletedTasks) -> metadataTask.getResult());
   }
 
@@ -390,6 +400,7 @@ public class FirebaseRemoteConfig {
    * @param key A Firebase Remote Config parameter key.
    * @return {@code byte[]} representing the value of the Firebase Remote Config parameter with the
    *     given key.
+   * @deprecated please use {@link #getString(String)} instead
    */
   @NonNull
   @Deprecated
@@ -544,7 +555,12 @@ public class FirebaseRemoteConfig {
     // Fetch values from the server are in the Map<String, String> format, so match that here.
     Map<String, String> defaultsStringMap = new HashMap<>();
     for (Map.Entry<String, Object> defaultsEntry : defaults.entrySet()) {
-      defaultsStringMap.put(defaultsEntry.getKey(), defaultsEntry.getValue().toString());
+      Object value = defaultsEntry.getValue();
+      if (value instanceof byte[]) {
+        defaultsStringMap.put(defaultsEntry.getKey(), new String((byte[]) value));
+      } else {
+        defaultsStringMap.put(defaultsEntry.getKey(), value.toString());
+      }
     }
 
     setDefaultsWithStringsMap(defaultsStringMap);
@@ -571,7 +587,12 @@ public class FirebaseRemoteConfig {
     // Fetch values from the server are in the Map<String, String> format, so match that here.
     Map<String, String> defaultsStringMap = new HashMap<>();
     for (Map.Entry<String, Object> defaultsEntry : defaults.entrySet()) {
-      defaultsStringMap.put(defaultsEntry.getKey(), defaultsEntry.getValue().toString());
+      Object value = defaultsEntry.getValue();
+      if (value instanceof byte[]) {
+        defaultsStringMap.put(defaultsEntry.getKey(), new String((byte[]) value));
+      } else {
+        defaultsStringMap.put(defaultsEntry.getKey(), value.toString());
+      }
     }
 
     return setDefaultsWithStringsMapAsync(defaultsStringMap);
@@ -582,7 +603,9 @@ public class FirebaseRemoteConfig {
    *
    * @param resourceId Id for the XML resource, which should be in your application's {@code
    *     res/xml} folder.
+   * @deprecated Use {@link #setDefaultsAsync} instead.
    */
+  @Deprecated
   public void setDefaults(@XmlRes int resourceId) {
     Map<String, String> xmlDefaults = DefaultsXmlParser.getDefaultsFromXml(context, resourceId);
     setDefaultsWithStringsMap(xmlDefaults);

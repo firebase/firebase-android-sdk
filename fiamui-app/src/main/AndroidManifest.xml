@@ -16,8 +16,7 @@
 
     <activity
         android:name=".MainActivity"
-        android:windowSoftInputMode="stateHidden"
-        android:exported="true">
+        android:windowSoftInputMode="stateHidden" android:exported="false">
       <intent-filter>
         <action android:name="android.intent.action.MAIN"/>
         <category android:name="android.intent.category.DEFAULT" />

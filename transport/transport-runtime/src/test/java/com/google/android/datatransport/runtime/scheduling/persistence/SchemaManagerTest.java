@@ -18,11 +18,15 @@ import static com.google.common.truth.Truth.assertThat;
 
 import android.content.ContentValues;
 import android.database.sqlite.SQLiteDatabase;
+import com.google.android.datatransport.Encoding;
 import com.google.android.datatransport.Priority;
+import com.google.android.datatransport.runtime.EncodedPayload;
 import com.google.android.datatransport.runtime.EventInternal;
 import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.time.TestClock;
 import com.google.android.datatransport.runtime.time.UptimeClock;
+import com.google.android.datatransport.runtime.util.PriorityMapping;
+import java.nio.charset.Charset;
 import java.util.Map;
 import org.junit.Assert;
 import org.junit.Test;
@@ -38,22 +42,28 @@ public class SchemaManagerTest {
   private static final TransportContext CONTEXT2 =
       TransportContext.builder()
           .setBackendName("b2")
-          .setExtras("e2".getBytes())
+          .setExtras("e2".getBytes(Charset.defaultCharset()))
           .build()
           .withPriority(Priority.VERY_LOW);
 
+  private static final Encoding PROTOBUF_ENCODING = Encoding.of("proto");
   private static final EventInternal EVENT1 =
       EventInternal.builder()
           .setTransportName("42")
           .setEventMillis(1)
           .setUptimeMillis(2)
-          .setPayload("Hello".getBytes())
+          .setEncodedPayload(
+              new EncodedPayload(PROTOBUF_ENCODING, "Hello".getBytes(Charset.defaultCharset())))
           .addMetadata("key1", "value1")
           .addMetadata("key2", "value2")
           .build();
 
   private static final EventInternal EVENT2 =
-      EVENT1.toBuilder().setPayload("World".getBytes()).build();
+      EVENT1
+          .toBuilder()
+          .setEncodedPayload(
+              new EncodedPayload(PROTOBUF_ENCODING, "World".getBytes(Charset.defaultCharset())))
+          .build();
 
   private static final long HOUR = 60 * 60 * 1000;
   private static final EventStoreConfig CONFIG =
@@ -74,9 +84,9 @@ public class SchemaManagerTest {
   }
 
   @Test
-  public void upgradingV1ToV2_emptyDatabase_allowsPersistsAfterUpgrade() {
+  public void upgradingV1ToLatest_emptyDatabase_allowsPersistsAfterUpgrade() {
     int oldVersion = 1;
-    int newVersion = 2;
+    int newVersion = SCHEMA_VERSION;
     SchemaManager schemaManager = new SchemaManager(RuntimeEnvironment.application, oldVersion);
 
     SQLiteEventStore store = new SQLiteEventStore(clock, new UptimeClock(), CONFIG, schemaManager);
@@ -88,9 +98,9 @@ public class SchemaManagerTest {
   }
 
   @Test
-  public void upgradingV1ToV2_nonEmptyDB_isLossless() {
+  public void upgradingV1ToLatest_nonEmptyDB_isLossless() {
     int oldVersion = 1;
-    int newVersion = 2;
+    int newVersion = SCHEMA_VERSION;
     SchemaManager schemaManager = new SchemaManager(RuntimeEnvironment.application, oldVersion);
     SQLiteEventStore store = new SQLiteEventStore(clock, new UptimeClock(), CONFIG, schemaManager);
     // We simulate operations as done by an older SQLLiteEventStore at V1
@@ -104,22 +114,6 @@ public class SchemaManagerTest {
   }
 
   @Test
-  public void downgradeV2ToV1_withEmptyDB_allowsPersistanceAfterMigration() {
-    int fromVersion = 2;
-    SchemaManager schemaManager = new SchemaManager(RuntimeEnvironment.application, fromVersion);
-
-    SQLiteEventStore store = new SQLiteEventStore(clock, new UptimeClock(), CONFIG, schemaManager);
-    // We simulate operations as done by an older SQLLiteEventStore at V1
-    // We cannot simulate older operations with a newer client
-    simulatedPersistOnV1Database(schemaManager, CONTEXT1, EVENT1);
-
-    schemaManager.onDowngrade(schemaManager.getWritableDatabase(), fromVersion, -1);
-    PersistedEvent event2 = store.persist(CONTEXT2, EVENT2);
-
-    assertThat(store.loadBatch(CONTEXT2)).containsExactly(event2);
-  }
-
-  @Test
   public void downgradeV2ToV1_withNonEmptyDB_isLossy() {
     int fromVersion = 2;
     int toVersion = fromVersion - 1;
@@ -129,7 +123,20 @@ public class SchemaManagerTest {
 
     schemaManager.onDowngrade(schemaManager.getWritableDatabase(), toVersion, fromVersion);
 
-    assertThat(store.loadBatch(CONTEXT1)).doesNotContain(event1);
+    long contextCount =
+        schemaManager
+            .getReadableDatabase()
+            .compileStatement("select count(*) from transport_contexts")
+            .simpleQueryForLong();
+
+    long eventCount =
+        schemaManager
+            .getReadableDatabase()
+            .compileStatement("select count(*) from events")
+            .simpleQueryForLong();
+
+    assertThat(contextCount).isEqualTo(0);
+    assertThat(eventCount).isEqualTo(0);
   }
 
   @Test
@@ -151,7 +158,7 @@ public class SchemaManagerTest {
 
     ContentValues record = new ContentValues();
     record.put("backend_name", transportContext.getBackendName());
-    record.put("priority", transportContext.getPriority().ordinal());
+    record.put("priority", PriorityMapping.toInt(transportContext.getPriority()));
     record.put("next_request_ms", 0);
     long contextId = db.insert("transport_contexts", null, record);
 

@@ -15,7 +15,7 @@
 package com.google.firebase.database;
 
 import android.content.Context;
-import androidx.test.InstrumentationRegistry;
+import androidx.test.platform.app.InstrumentationRegistry;
 
 public class IntegrationTestValues {
   private static final String TEST_ALT_NAMESPACE = "https://test.firebaseio.com";
@@ -25,7 +25,7 @@ public class IntegrationTestValues {
   private IntegrationTestValues() {}
 
   public static String getNamespace() {
-    Context c = InstrumentationRegistry.getContext();
+    Context c = InstrumentationRegistry.getInstrumentation().getContext();
     return c.getResources().getString(R.string.firebase_database_url);
   }
 
@@ -34,7 +34,7 @@ public class IntegrationTestValues {
   }
 
   public static String getProjectId() {
-    Context c = InstrumentationRegistry.getContext();
+    Context c = InstrumentationRegistry.getInstrumentation().getContext();
     return c.getResources().getString(R.string.project_id);
   }
 

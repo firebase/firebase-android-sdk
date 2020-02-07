@@ -21,7 +21,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import androidx.test.runner.AndroidJUnit4;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.firebase.database.core.DatabaseConfig;
 import com.google.firebase.database.core.Path;
 import com.google.firebase.database.core.RepoManager;
@@ -36,8 +36,8 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import junit.framework.Assert;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
@@ -2216,7 +2216,7 @@ public class QueryTest {
                       try {
                         writer.child("c").removeValue();
                       } catch (DatabaseException e) { // ignore
-                        fail("Should not throw");
+                        throw new AssertionError("Should not throw", e);
                       }
                     }
 
@@ -2955,7 +2955,7 @@ public class QueryTest {
                   try {
                     writer.child("d").setValue(4);
                   } catch (DatabaseException e) { // ignore
-                    fail("Should not fail");
+                    throw new AssertionError("Should not throw", e);
                   }
                   return false;
                 } else {

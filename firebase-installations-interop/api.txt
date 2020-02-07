@@ -1,0 +1,11 @@
+// Signature format: 2.0
+package com.google.firebase.installations {
+
+  public abstract class InstallationTokenResult {
+    ctor public InstallationTokenResult();
+    method @NonNull public abstract String getToken();
+    method @NonNull public abstract long getTokenExpirationTimestamp();
+  }
+
+}
+

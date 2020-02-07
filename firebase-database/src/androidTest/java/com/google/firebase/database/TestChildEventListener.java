@@ -14,7 +14,7 @@
 
 package com.google.firebase.database;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 
 public class TestChildEventListener implements ChildEventListener {
   @Override

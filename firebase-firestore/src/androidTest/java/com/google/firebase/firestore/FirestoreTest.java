@@ -50,12 +50,14 @@ import com.google.firebase.firestore.testutil.EventAccumulator;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import com.google.firebase.firestore.util.AsyncQueue.TimerId;
 import com.google.firebase.firestore.util.Logger.Level;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Semaphore;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -507,6 +509,50 @@ public class FirestoreTest {
     DocumentReference documentReference = waitFor(testCollection("rooms").add(data));
     DocumentSnapshot document = waitFor(documentReference.get());
     assertEquals(data, document.getData());
+  }
+
+  @Test
+  public void testSnapshotsInSyncListenerFiresAfterListenersInSync() {
+    Map<String, Object> data = map("foo", 1.0);
+    CollectionReference collection = testCollection();
+    DocumentReference documentReference = waitFor(collection.add(data));
+    List<String> events = new ArrayList<>();
+
+    Semaphore gotInitialSnapshot = new Semaphore(0);
+    Semaphore done = new Semaphore(0);
+
+    ListenerRegistration listenerRegistration = null;
+
+    documentReference.addSnapshotListener(
+        (value, error) -> {
+          events.add("doc");
+          gotInitialSnapshot.release();
+        });
+    waitFor(gotInitialSnapshot);
+    events.clear();
+
+    try {
+      listenerRegistration =
+          documentReference
+              .getFirestore()
+              .addSnapshotsInSyncListener(
+                  () -> {
+                    events.add("snapshots-in-sync");
+                    if (events.size() == 3) {
+                      // We should have an initial snapshots-in-sync event, then a snapshot event
+                      // for set(), then another event to indicate we're in sync again.
+                      assertEquals(
+                          Arrays.asList("snapshots-in-sync", "doc", "snapshots-in-sync"), events);
+                      done.release();
+                    }
+                  });
+      waitFor(documentReference.set(map("foo", 3.0)));
+      waitFor(done);
+    } finally {
+      if (listenerRegistration != null) {
+        listenerRegistration.remove();
+      }
+    }
   }
 
   @Test
@@ -971,10 +1017,11 @@ public class FirestoreTest {
   }
 
   @Test
-  public void testClientCallsAfterShutdownFails() {
+  public void testClientCallsAfterTerminateFails() {
     FirebaseFirestore firestore = testFirestore();
-    waitFor(firestore.shutdown());
-    expectError(() -> waitFor(firestore.disableNetwork()), "The client has already been shutdown");
+    waitFor(firestore.terminate());
+    expectError(
+        () -> waitFor(firestore.disableNetwork()), "The client has already been terminated");
   }
 
   @Test
@@ -983,7 +1030,7 @@ public class FirestoreTest {
         testFirestore(provider().projectId(), Level.DEBUG, newTestSettings(), "dbPersistenceKey");
     DocumentReference docRef = firestore.collection("col1").document("doc1");
     waitFor(docRef.set(map("foo", "bar")));
-    waitFor(AccessHelper.shutdown(firestore));
+    waitFor(firestore.terminate());
     IntegrationTestUtil.removeFirestore(firestore);
 
     // We restart the app with the same name and options to check that the previous instance's
@@ -1002,7 +1049,7 @@ public class FirestoreTest {
         testFirestore(provider().projectId(), Level.DEBUG, newTestSettings(), "dbPersistenceKey");
     DocumentReference docRef = firestore.collection("col1").document("doc1");
     waitFor(docRef.set(map("foo", "bar")));
-    waitFor(AccessHelper.shutdown(firestore));
+    waitFor(firestore.terminate());
     IntegrationTestUtil.removeFirestore(firestore);
     waitFor(AccessHelper.clearPersistence(firestore));
 
@@ -1033,13 +1080,15 @@ public class FirestoreTest {
   public void testRestartFirestoreLeadsToNewInstance() {
     FirebaseApp app = testFirebaseApp();
     FirebaseFirestore instance = FirebaseFirestore.getInstance(app);
+    instance.setFirestoreSettings(newTestSettings());
     FirebaseFirestore sameInstance = FirebaseFirestore.getInstance(app);
 
     assertSame(instance, sameInstance);
     waitFor(instance.document("abc/123").set(Collections.singletonMap("field", 100L)));
 
-    instance.shutdown();
+    instance.terminate();
     FirebaseFirestore newInstance = FirebaseFirestore.getInstance(app);
+    newInstance.setFirestoreSettings(newTestSettings());
 
     // Verify new instance works.
     DocumentSnapshot doc = waitFor(newInstance.document("abc/123").get());
@@ -1051,25 +1100,26 @@ public class FirestoreTest {
   }
 
   @Test
-  public void testAppDeleteLeadsToFirestoreShutdown() {
+  public void testAppDeleteLeadsToFirestoreTerminate() {
     FirebaseApp app = testFirebaseApp();
     FirebaseFirestore instance = FirebaseFirestore.getInstance(app);
+    instance.setFirestoreSettings(newTestSettings());
     waitFor(instance.document("abc/123").set(Collections.singletonMap("Field", 100)));
 
     app.delete();
 
-    assertTrue(instance.getClient().isShutdown());
+    assertTrue(instance.getClient().isTerminated());
   }
 
   @Test
-  public void testNewOperationThrowsAfterFirestoreShutdown() {
+  public void testNewOperationThrowsAfterFirestoreTerminate() {
     FirebaseFirestore instance = testFirestore();
     DocumentReference reference = instance.document("abc/123");
     waitFor(reference.set(Collections.singletonMap("Field", 100)));
 
-    instance.shutdown();
+    instance.terminate();
 
-    final String expectedMessage = "The client has already been shutdown";
+    final String expectedMessage = "The client has already been terminated";
     expectError(() -> waitFor(reference.get()), expectedMessage);
     expectError(() -> waitFor(reference.update("Field", 1)), expectedMessage);
     expectError(
@@ -1083,31 +1133,31 @@ public class FirestoreTest {
   }
 
   @Test
-  public void testShutdownCalledMultipleTimes() {
+  public void testTerminateCalledMultipleTimes() {
     FirebaseFirestore instance = testFirestore();
     DocumentReference reference = instance.document("abc/123");
     waitFor(reference.set(Collections.singletonMap("Field", 100)));
 
-    instance.shutdown();
+    instance.terminate();
 
-    final String expectedMessage = "The client has already been shutdown";
+    final String expectedMessage = "The client has already been terminated";
     expectError(() -> waitFor(reference.get()), expectedMessage);
 
     // Calling a second time should go through and change nothing.
-    instance.shutdown();
+    instance.terminate();
 
     expectError(() -> waitFor(reference.get()), expectedMessage);
   }
 
   @Test
-  public void testCanStopListeningAfterShutdown() {
+  public void testCanStopListeningAfterTerminate() {
     FirebaseFirestore instance = testFirestore();
     DocumentReference reference = instance.document("abc/123");
     EventAccumulator<DocumentSnapshot> eventAccumulator = new EventAccumulator<>();
     ListenerRegistration registration = reference.addSnapshotListener(eventAccumulator.listener());
     eventAccumulator.await();
 
-    waitFor(instance.shutdown());
+    waitFor(instance.terminate());
 
     // This should proceed without error.
     registration.remove();

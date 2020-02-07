@@ -16,13 +16,11 @@ package com.google.firebase.storage;
 
 import android.net.Uri;
 import android.text.TextUtils;
-import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.firebase.storage.internal.Slashes;
 import com.google.firebase.storage.internal.Util;
-import java.io.UnsupportedEncodingException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -256,18 +254,12 @@ public class StorageMetadata {
         if (TextUtils.isEmpty(bucket) || TextUtils.isEmpty(path)) {
           return null;
         }
-        Uri uri;
-        try {
-          uri =
-              new Uri.Builder()
-                  .scheme("gs")
-                  .authority(bucket)
-                  .encodedPath(Slashes.preserveSlashEncode(path))
-                  .build();
-        } catch (UnsupportedEncodingException e) {
-          Log.e(TAG, "Unable to create a valid default Uri. " + bucket + path, e);
-          throw new IllegalStateException(e);
-        }
+        Uri uri =
+            new Uri.Builder()
+                .scheme("gs")
+                .authority(bucket)
+                .encodedPath(Slashes.preserveSlashEncode(path))
+                .build();
 
         return new StorageReference(uri, mStorage);
       }
@@ -276,7 +268,7 @@ public class StorageMetadata {
   }
 
   @NonNull
-  JSONObject createJSONObject() throws JSONException {
+  JSONObject createJSONObject() {
     Map<String, Object> jsonData = new HashMap<>();
 
     if (mContentType.isUserProvided()) {
@@ -347,11 +339,11 @@ public class StorageMetadata {
       mMetadata.mGeneration = jsonObject.optString(GENERATION_KEY);
       mMetadata.mPath = jsonObject.optString(NAME_KEY);
       mMetadata.mBucket = jsonObject.optString(BUCKET_KEY);
-      mMetadata.mMetadataGeneration = (jsonObject.optString(META_GENERATION_KEY));
-      mMetadata.mCreationTime = (jsonObject.optString(TIME_CREATED_KEY));
-      mMetadata.mUpdatedTime = (jsonObject.optString(TIME_UPDATED_KEY));
-      mMetadata.mSize = (jsonObject.optLong(SIZE_KEY));
-      mMetadata.mMD5Hash = (jsonObject.optString(MD5_HASH_KEY));
+      mMetadata.mMetadataGeneration = jsonObject.optString(META_GENERATION_KEY);
+      mMetadata.mCreationTime = jsonObject.optString(TIME_CREATED_KEY);
+      mMetadata.mUpdatedTime = jsonObject.optString(TIME_UPDATED_KEY);
+      mMetadata.mSize = jsonObject.optLong(SIZE_KEY);
+      mMetadata.mMD5Hash = jsonObject.optString(MD5_HASH_KEY);
 
       if (jsonObject.has(CUSTOM_METADATA_KEY) && !jsonObject.isNull(CUSTOM_METADATA_KEY)) {
         JSONObject customMetadata = jsonObject.getJSONObject(CUSTOM_METADATA_KEY);
@@ -395,6 +387,12 @@ public class StorageMetadata {
       return this;
     }
 
+    /** @return the content language for the {@link StorageReference} */
+    @Nullable
+    public String getContentLanguage() {
+      return mMetadata.mContentLanguage.getValue();
+    }
+
     /**
      * Changes the content encoding for the {@link StorageReference}
      *
@@ -406,8 +404,16 @@ public class StorageMetadata {
       return this;
     }
 
+    /** @return the content encoding for the {@link StorageReference} */
+    @Nullable
+    public String getContentEncoding() {
+      return mMetadata.mContentEncoding.getValue();
+    }
+
     /**
-     * @param contentDisposition changes the content disposition for the {@link StorageReference}
+     * Changes the content disposition for the {@link StorageReference}
+     *
+     * @param contentDisposition the new content disposition to use.
      */
     @NonNull
     public Builder setContentDisposition(@Nullable String contentDisposition) {
@@ -415,8 +421,14 @@ public class StorageMetadata {
       return this;
     }
 
+    /** @return the content disposition for the {@link StorageReference} */
+    @Nullable
+    public String getContentDisposition() {
+      return mMetadata.mContentDisposition.getValue();
+    }
+
     /**
-     * sets the Cache Control for the {@link StorageReference}
+     * Sets the Cache Control header for the {@link StorageReference}
      *
      * @param cacheControl the new Cache Control setting.
      */
@@ -424,6 +436,12 @@ public class StorageMetadata {
     public Builder setCacheControl(@Nullable String cacheControl) {
       mMetadata.mCacheControl = MetadataValue.withUserValue(cacheControl);
       return this;
+    }
+
+    /** @return the Cache Control header for the {@link StorageReference} */
+    @Nullable
+    public String getCacheControl() {
+      return mMetadata.mCacheControl.getValue();
     }
 
     /**
@@ -450,6 +468,12 @@ public class StorageMetadata {
     public Builder setContentType(@Nullable String contentType) {
       mMetadata.mContentType = MetadataValue.withUserValue(contentType);
       return this;
+    }
+
+    /** @return the Content Type of this associated {@link StorageReference} */
+    @Nullable
+    public String getContentType() {
+      return mMetadata.mContentType.getValue();
     }
   }
 }

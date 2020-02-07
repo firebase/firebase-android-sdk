@@ -1,0 +1,49 @@
+{
+  "settings_version": 2,
+  "cache_duration": 3600, 
+  "features": {
+  	"prompt_enabled": false,
+    "collect_logged_exceptions": true,
+    "collect_reports": true,
+    "collect_analytics": false
+  },
+  "analytics": {
+    "url": "https://testurl"
+  },
+  "beta": {
+    "update_endpoint": "https://fake-beta-url",
+    "update_suspend_duration": 7200
+  },
+  "app": {
+    "identifier": "com.crashlytics.android",
+    "status": "activated",
+    "url": "http://localhost:3000/spi/v1/platform/android/apps",
+    "reports_url": "http://localhost:3000/spi/v1/platform/android/apps/com.crashlytics.android/reports",
+    "ndk_reports_url": "http://localhost:3000/spi/v1/platform/android/apps/com.crashlytics.android/minidumps",
+    "update_required": false,
+    "icon": {
+      "hash": "fakehash",
+      "width": 72,
+      "height": 72,
+      "prerendered": false
+    }
+  },
+  "session": {
+    "collect_reports": true,
+    "log_buffer_size": 64000,
+    "max_chained_exception_depth": 8,
+    "max_custom_exception_events": 64,
+    "max_custom_key_value_pairs": 64,
+    "identifier_mask": 255,
+    "send_session_without_crash": false
+  },
+  "prompt": {
+    "title": "Test Title" ,
+    "message": "Test Message",
+    "send_button_title": "Test Send",
+    "show_cancel_button": true,
+    "cancel_button_title": "Test Cancel",
+    "show_always_send_button": true,
+    "always_send_button_title": "Test Always Send"
+  }
+}  

@@ -249,71 +249,69 @@ public class Query {
   /**
    * Creates and returns a new {@code Query} with the additional filter that documents must contain
    * the specified field, the value must be an array, and that the array must contain at least one
-   * value from the provided array.
+   * value from the provided list.
    *
    * <p>A {@code Query} can have only one {@code whereArrayContainsAny()} filter and it cannot be
    * combined with {@code whereArrayContains()} or {@code whereIn()}.
    *
    * @param field The name of the field containing an array to search.
-   * @param value The array that contains the values to match.
+   * @param values The list that contains the values to match.
    * @return The created {@code Query}.
    */
-  // TODO(in-queries): Expose to public once backend is ready.
   @NonNull
-  Query whereArrayContainsAny(@NonNull String field, @NonNull List<Object> value) {
-    return whereHelper(FieldPath.fromDotSeparatedPath(field), Operator.ARRAY_CONTAINS_ANY, value);
+  public Query whereArrayContainsAny(
+      @NonNull String field, @NonNull List<? extends Object> values) {
+    return whereHelper(FieldPath.fromDotSeparatedPath(field), Operator.ARRAY_CONTAINS_ANY, values);
   }
 
   /**
    * Creates and returns a new {@code Query} with the additional filter that documents must contain
    * the specified field, the value must be an array, and that the array must contain at least one
-   * value from the provided array.
+   * value from the provided list.
    *
    * <p>A {@code Query} can have only one {@code whereArrayContainsAny()} filter and it cannot be
    * combined with {@code whereArrayContains()} or {@code whereIn()}.
    *
    * @param fieldPath The path of the field containing an array to search.
-   * @param value The array that contains the values to match.
+   * @param values The list that contains the values to match.
    * @return The created {@code Query}.
    */
-  // TODO(in-queries): Expose to public once backend is ready.
   @NonNull
-  Query whereArrayContainsAny(@NonNull FieldPath fieldPath, @NonNull List<Object> value) {
-    return whereHelper(fieldPath, Operator.ARRAY_CONTAINS_ANY, value);
+  public Query whereArrayContainsAny(
+      @NonNull FieldPath fieldPath, @NonNull List<? extends Object> values) {
+    return whereHelper(fieldPath, Operator.ARRAY_CONTAINS_ANY, values);
   }
 
   /**
    * Creates and returns a new {@code Query} with the additional filter that documents must contain
-   * the specified field and the value must equal one of the values from the provided array.
+   * the specified field and the value must equal one of the values from the provided list.
    *
    * <p>A {@code Query} can have only one {@code whereIn()} filter, and it cannot be combined with
    * {@code whereArrayContainsAny()}.
    *
    * @param field The name of the field to search.
-   * @param value The array that contains the values to match.
+   * @param values The list that contains the values to match.
    * @return The created {@code Query}.
    */
-  // TODO(in-queries): Expose to public once backend is ready.
   @NonNull
-  Query whereIn(@NonNull String field, @NonNull List<Object> value) {
-    return whereHelper(FieldPath.fromDotSeparatedPath(field), Operator.IN, value);
+  public Query whereIn(@NonNull String field, @NonNull List<? extends Object> values) {
+    return whereHelper(FieldPath.fromDotSeparatedPath(field), Operator.IN, values);
   }
 
   /**
    * Creates and returns a new {@code Query} with the additional filter that documents must contain
-   * the specified field and the value must equal one of the values from the provided array.
+   * the specified field and the value must equal one of the values from the provided list.
    *
    * <p>A {@code Query} can have only one {@code whereIn()} filter, and it cannot be combined with
    * {@code whereArrayContainsAny()}.
    *
    * @param fieldPath The path of the field to search.
-   * @param value The array that contains the values to match.
+   * @param values The list that contains the values to match.
    * @return The created {@code Query}.
    */
-  // TODO(in-queries): Expose to public once backend is ready.
   @NonNull
-  Query whereIn(@NonNull FieldPath fieldPath, @NonNull List<Object> value) {
-    return whereHelper(fieldPath, Operator.IN, value);
+  public Query whereIn(@NonNull FieldPath fieldPath, @NonNull List<? extends Object> values) {
+    return whereHelper(fieldPath, Operator.IN, values);
   }
 
   /**
@@ -350,7 +348,7 @@ public class Query {
       if (op == Operator.IN || op == Operator.ARRAY_CONTAINS_ANY) {
         validateDisjunctiveFilterElements(value, op);
       }
-      fieldValue = firestore.getDataConverter().parseQueryValue(value);
+      fieldValue = firestore.getUserDataReader().parseQueryValue(value, op == Operator.IN);
     }
     Filter filter = FieldFilter.create(fieldPath.getInternalPath(), op, fieldValue);
     validateNewFilter(filter);
@@ -576,8 +574,8 @@ public class Query {
   }
 
   /**
-   * Creates and returns a new {@code Query} that's additionally limited to only return up to the
-   * specified number of documents.
+   * Creates and returns a new {@code Query} that only returns the first matching documents up to
+   * the specified number.
    *
    * @param limit The maximum number of items to return.
    * @return The created {@code Query}.
@@ -588,7 +586,26 @@ public class Query {
       throw new IllegalArgumentException(
           "Invalid Query. Query limit (" + limit + ") is invalid. Limit must be positive.");
     }
-    return new Query(query.limit(limit), firestore);
+    return new Query(query.limitToFirst(limit), firestore);
+  }
+
+  /**
+   * Creates and returns a new {@code Query} that only returns the last matching documents up to the
+   * specified number.
+   *
+   * <p>You must specify at least one {@code orderBy} clause for {@code limitToLast} queries,
+   * otherwise an exception will be thrown during execution.
+   *
+   * @param limit The maximum number of items to return.
+   * @return The created {@code Query}.
+   */
+  @NonNull
+  public Query limitToLast(long limit) {
+    if (limit <= 0) {
+      throw new IllegalArgumentException(
+          "Invalid Query. Query limitToLast (" + limit + ") is invalid. Limit must be positive.");
+    }
+    return new Query(query.limitToLast(limit), firestore);
   }
 
   /**
@@ -804,7 +821,7 @@ public class Query {
         DocumentKey key = DocumentKey.fromPath(path);
         components.add(ReferenceValue.valueOf(firestore.getDatabaseId(), key));
       } else {
-        FieldValue wrapped = firestore.getDataConverter().parseQueryValue(rawValue);
+        FieldValue wrapped = firestore.getUserDataReader().parseQueryValue(rawValue);
         components.add(wrapped);
       }
     }
@@ -834,6 +851,7 @@ public class Query {
    */
   @NonNull
   public Task<QuerySnapshot> get(@NonNull Source source) {
+    validateHasExplicitOrderByForLimitToLast();
     if (source == Source.CACHE) {
       return firestore
           .getClient()
@@ -943,7 +961,7 @@ public class Query {
    * Starts listening to this query with the given options.
    *
    * @param metadataChanges Indicates whether metadata-only changes (i.e. only {@code
-   *     Query.getMetadata()} changed) should trigger snapshot events.
+   *     QuerySnapshot.getMetadata()} changed) should trigger snapshot events.
    * @param listener The event listener that will be called with the snapshots.
    * @return A registration object that can be used to remove the listener.
    */
@@ -958,7 +976,7 @@ public class Query {
    *
    * @param executor The executor to use to call the listener.
    * @param metadataChanges Indicates whether metadata-only changes (i.e. only {@code
-   *     Query.getMetadata()} changed) should trigger snapshot events.
+   *     QuerySnapshot.getMetadata()} changed) should trigger snapshot events.
    * @param listener The event listener that will be called with the snapshots.
    * @return A registration object that can be used to remove the listener.
    */
@@ -980,7 +998,7 @@ public class Query {
    *
    * @param activity The activity to scope the listener to.
    * @param metadataChanges Indicates whether metadata-only changes (i.e. only {@code
-   *     Query.getMetadata()} changed) should trigger snapshot events.
+   *     QuerySnapshot.getMetadata()} changed) should trigger snapshot events.
    * @param listener The event listener that will be called with the snapshots.
    * @return A registration object that can be used to remove the listener.
    */
@@ -1012,6 +1030,7 @@ public class Query {
       ListenOptions options,
       @Nullable Activity activity,
       EventListener<QuerySnapshot> userListener) {
+    validateHasExplicitOrderByForLimitToLast();
 
     // Convert from ViewSnapshots to QuerySnapshots.
     EventListener<ViewSnapshot> viewListener =
@@ -1035,6 +1054,13 @@ public class Query {
     return ActivityScope.bind(
         activity,
         new ListenerRegistrationImpl(firestore.getClient(), queryListener, asyncListener));
+  }
+
+  private void validateHasExplicitOrderByForLimitToLast() {
+    if (query.hasLimitToLast() && query.getExplicitOrderBy().isEmpty()) {
+      throw new IllegalStateException(
+          "limitToLast() queries require specifying at least one orderBy() clause");
+    }
   }
 
   @Override

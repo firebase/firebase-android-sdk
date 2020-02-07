@@ -28,8 +28,8 @@ import com.google.firebase.firestore.core.Filter;
 import com.google.firebase.firestore.core.OrderBy;
 import com.google.firebase.firestore.core.OrderBy.Direction;
 import com.google.firebase.firestore.core.Query;
-import com.google.firebase.firestore.local.QueryData;
 import com.google.firebase.firestore.local.QueryPurpose;
+import com.google.firebase.firestore.local.TargetData;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -51,6 +51,7 @@ import com.google.firebase.firestore.model.mutation.ServerTimestampOperation;
 import com.google.firebase.firestore.model.mutation.SetMutation;
 import com.google.firebase.firestore.model.mutation.TransformMutation;
 import com.google.firebase.firestore.model.mutation.TransformOperation;
+import com.google.firebase.firestore.model.mutation.VerifyMutation;
 import com.google.firebase.firestore.model.value.ArrayValue;
 import com.google.firebase.firestore.model.value.BlobValue;
 import com.google.firebase.firestore.model.value.BooleanValue;
@@ -443,6 +444,8 @@ public final class RemoteSerializer {
       builder.setTransform(transformBuilder);
     } else if (mutation instanceof DeleteMutation) {
       builder.setDelete(encodeKey(mutation.getKey()));
+    } else if (mutation instanceof VerifyMutation) {
+      builder.setVerify(encodeKey(mutation.getKey()));
     } else {
       throw fail("unknown mutation type %s", mutation.getClass());
     }
@@ -488,6 +491,9 @@ public final class RemoteSerializer {
             exists != null && exists, "Transforms only support precondition \"exists == true\"");
         return new TransformMutation(
             decodeKey(mutation.getTransform().getDocument()), fieldTransforms);
+
+      case VERIFY:
+        return new VerifyMutation(decodeKey(mutation.getVerify()), precondition);
 
       default:
         throw fail("Unknown mutation operation: %d", mutation.getOperationCase());
@@ -651,8 +657,8 @@ public final class RemoteSerializer {
   // Queries
 
   @Nullable
-  public Map<String, String> encodeListenRequestLabels(QueryData queryData) {
-    @Nullable String value = encodeLabel(queryData.getPurpose());
+  public Map<String, String> encodeListenRequestLabels(TargetData targetData) {
+    @Nullable String value = encodeLabel(targetData.getPurpose());
     if (value == null) {
       return null;
     }
@@ -676,52 +682,52 @@ public final class RemoteSerializer {
     }
   }
 
-  public Target encodeTarget(QueryData queryData) {
+  public Target encodeTarget(TargetData targetData) {
     Target.Builder builder = Target.newBuilder();
-    Query query = queryData.getQuery();
+    com.google.firebase.firestore.core.Target target = targetData.getTarget();
 
-    if (query.isDocumentQuery()) {
-      builder.setDocuments(encodeDocumentsTarget(query));
+    if (target.isDocumentQuery()) {
+      builder.setDocuments(encodeDocumentsTarget(target));
     } else {
-      builder.setQuery(encodeQueryTarget(query));
+      builder.setQuery(encodeQueryTarget(target));
     }
 
-    builder.setTargetId(queryData.getTargetId());
-    builder.setResumeToken(queryData.getResumeToken());
+    builder.setTargetId(targetData.getTargetId());
+    builder.setResumeToken(targetData.getResumeToken());
 
     return builder.build();
   }
 
-  public DocumentsTarget encodeDocumentsTarget(Query query) {
+  public DocumentsTarget encodeDocumentsTarget(com.google.firebase.firestore.core.Target target) {
     DocumentsTarget.Builder builder = DocumentsTarget.newBuilder();
-    builder.addDocuments(encodeQueryPath(query.getPath()));
+    builder.addDocuments(encodeQueryPath(target.getPath()));
     return builder.build();
   }
 
-  public Query decodeDocumentsTarget(DocumentsTarget target) {
+  public com.google.firebase.firestore.core.Target decodeDocumentsTarget(DocumentsTarget target) {
     int count = target.getDocumentsCount();
     hardAssert(count == 1, "DocumentsTarget contained other than 1 document %d", count);
 
     String name = target.getDocuments(0);
-    return Query.atPath(decodeQueryPath(name));
+    return Query.atPath(decodeQueryPath(name)).toTarget();
   }
 
-  public QueryTarget encodeQueryTarget(Query query) {
+  public QueryTarget encodeQueryTarget(com.google.firebase.firestore.core.Target target) {
     // Dissect the path into parent, collectionId, and optional key filter.
     QueryTarget.Builder builder = QueryTarget.newBuilder();
     StructuredQuery.Builder structuredQueryBuilder = StructuredQuery.newBuilder();
-    ResourcePath path = query.getPath();
-    if (query.getCollectionGroup() != null) {
-      Assert.hardAssert(
+    ResourcePath path = target.getPath();
+    if (target.getCollectionGroup() != null) {
+      hardAssert(
           path.length() % 2 == 0,
           "Collection Group queries should be within a document path or root.");
       builder.setParent(encodeQueryPath(path));
       CollectionSelector.Builder from = CollectionSelector.newBuilder();
-      from.setCollectionId(query.getCollectionGroup());
+      from.setCollectionId(target.getCollectionGroup());
       from.setAllDescendants(true);
       structuredQueryBuilder.addFrom(from);
     } else {
-      Assert.hardAssert(path.length() % 2 != 0, "Document queries with filters are not supported.");
+      hardAssert(path.length() % 2 != 0, "Document queries with filters are not supported.");
       builder.setParent(encodeQueryPath(path.popLast()));
       CollectionSelector.Builder from = CollectionSelector.newBuilder();
       from.setCollectionId(path.getLastSegment());
@@ -729,33 +735,33 @@ public final class RemoteSerializer {
     }
 
     // Encode the filters.
-    if (query.getFilters().size() > 0) {
-      structuredQueryBuilder.setWhere(encodeFilters(query.getFilters()));
+    if (target.getFilters().size() > 0) {
+      structuredQueryBuilder.setWhere(encodeFilters(target.getFilters()));
     }
 
     // Encode the orders.
-    for (OrderBy orderBy : query.getOrderBy()) {
+    for (OrderBy orderBy : target.getOrderBy()) {
       structuredQueryBuilder.addOrderBy(encodeOrderBy(orderBy));
     }
 
     // Encode the limit.
-    if (query.hasLimit()) {
-      structuredQueryBuilder.setLimit(Int32Value.newBuilder().setValue((int) query.getLimit()));
+    if (target.hasLimit()) {
+      structuredQueryBuilder.setLimit(Int32Value.newBuilder().setValue((int) target.getLimit()));
     }
 
-    if (query.getStartAt() != null) {
-      structuredQueryBuilder.setStartAt(encodeBound(query.getStartAt()));
+    if (target.getStartAt() != null) {
+      structuredQueryBuilder.setStartAt(encodeBound(target.getStartAt()));
     }
 
-    if (query.getEndAt() != null) {
-      structuredQueryBuilder.setEndAt(encodeBound(query.getEndAt()));
+    if (target.getEndAt() != null) {
+      structuredQueryBuilder.setEndAt(encodeBound(target.getEndAt()));
     }
 
     builder.setStructuredQuery(structuredQueryBuilder);
     return builder.build();
   }
 
-  public Query decodeQueryTarget(QueryTarget target) {
+  public com.google.firebase.firestore.core.Target decodeQueryTarget(QueryTarget target) {
     ResourcePath path = decodeQueryPath(target.getParent());
 
     StructuredQuery query = target.getStructuredQuery();
@@ -792,7 +798,7 @@ public final class RemoteSerializer {
       orderBy = Collections.emptyList();
     }
 
-    long limit = Query.NO_LIMIT;
+    long limit = com.google.firebase.firestore.core.Target.NO_LIMIT;
     if (query.hasLimit()) {
       limit = query.getLimit().getValue();
     }
@@ -807,7 +813,16 @@ public final class RemoteSerializer {
       endAt = decodeBound(query.getEndAt());
     }
 
-    return new Query(path, collectionGroup, filterBy, orderBy, limit, startAt, endAt);
+    return new Query(
+            path,
+            collectionGroup,
+            filterBy,
+            orderBy,
+            limit,
+            Query.LimitType.LIMIT_TO_FIRST,
+            startAt,
+            endAt)
+        .toTarget();
   }
 
   // Filters

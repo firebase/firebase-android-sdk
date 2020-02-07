@@ -25,6 +25,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.FirebaseOptions;
 import com.google.firebase.firestore.AccessHelper;
 import com.google.firebase.firestore.BuildConfig;
 import com.google.firebase.firestore.CollectionReference;
@@ -85,7 +86,7 @@ public class IntegrationTestUtil {
 
   // Whether the integration tests should run against a local Firestore emulator instead of the
   // Production environment. Note that the Android Emulator treats "10.0.2.2" as its host machine.
-  // TODO(mrschmidt): Support multiple envrionments (Emulator, QA, Nightly, Production)
+  // TODO(mrschmidt): Support multiple environments (Emulator, QA, Nightly, Production)
   private static final boolean CONNECT_TO_EMULATOR = BuildConfig.USE_EMULATOR_FOR_TESTS;
   private static final String EMULATOR_HOST = "10.0.2.2";
   private static final int EMULATOR_PORT = 8080;
@@ -109,6 +110,13 @@ public class IntegrationTestUtil {
 
   private static boolean strictModeEnabled = false;
   private static boolean backendPrimed = false;
+
+  // FirebaseOptions needed to create a test FirebaseApp.
+  private static final FirebaseOptions OPTIONS =
+      new FirebaseOptions.Builder()
+          .setApplicationId(":123:android:123ab")
+          .setProjectId(provider.projectId())
+          .build();
 
   public static FirestoreProvider provider() {
     return provider;
@@ -153,7 +161,11 @@ public class IntegrationTestUtil {
   }
 
   public static FirebaseApp testFirebaseApp() {
-    return FirebaseApp.initializeApp(ApplicationProvider.getApplicationContext());
+    try {
+      return FirebaseApp.getInstance(FirebaseApp.DEFAULT_APP_NAME);
+    } catch (IllegalStateException e) {
+      return FirebaseApp.initializeApp(ApplicationProvider.getApplicationContext(), OPTIONS);
+    }
   }
 
   /** Initializes a new Firestore instance that uses the default project. */
@@ -280,7 +292,7 @@ public class IntegrationTestUtil {
   public static void tearDown() {
     try {
       for (FirebaseFirestore firestore : firestoreStatus.keySet()) {
-        Task<Void> result = AccessHelper.shutdown(firestore);
+        Task<Void> result = firestore.terminate();
         waitFor(result);
       }
     } finally {

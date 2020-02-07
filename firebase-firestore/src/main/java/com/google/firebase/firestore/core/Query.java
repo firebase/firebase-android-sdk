@@ -30,9 +30,16 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-/** Represents the internal structure of a Firestore Query */
+/**
+ * Encapsulates all the query attributes we support in the SDK. It can be run against the
+ * LocalStore, as well as be converted to a {@code Target} to query the RemoteStore results.
+ */
 public final class Query {
-  public static final long NO_LIMIT = -1;
+
+  public enum LimitType {
+    LIMIT_TO_FIRST,
+    LIMIT_TO_LAST
+  }
 
   /**
    * Creates and returns a new Query.
@@ -53,6 +60,9 @@ public final class Query {
 
   private List<OrderBy> memoizedOrderBy;
 
+  // The corresponding Target of this Query instance.
+  private @Nullable Target memoizedTarget;
+
   private final List<Filter> filters;
 
   private final ResourcePath path;
@@ -60,6 +70,7 @@ public final class Query {
   private final @Nullable String collectionGroup;
 
   private final long limit;
+  private final LimitType limitType;
 
   private final @Nullable Bound startAt;
   private final @Nullable Bound endAt;
@@ -71,6 +82,7 @@ public final class Query {
       List<Filter> filters,
       List<OrderBy> explicitSortOrder,
       long limit,
+      LimitType limitType,
       @Nullable Bound startAt,
       @Nullable Bound endAt) {
     this.path = path;
@@ -78,6 +90,7 @@ public final class Query {
     this.explicitSortOrder = explicitSortOrder;
     this.filters = filters;
     this.limit = limit;
+    this.limitType = limitType;
     this.startAt = startAt;
     this.endAt = endAt;
   }
@@ -92,7 +105,8 @@ public final class Query {
         collectionGroup,
         Collections.emptyList(),
         Collections.emptyList(),
-        NO_LIMIT,
+        Target.NO_LIMIT,
+        LimitType.LIMIT_TO_FIRST,
         null,
         null);
   }
@@ -117,6 +131,18 @@ public final class Query {
     return collectionGroup != null;
   }
 
+  /**
+   * Returns true if this query does not specify any query constraints that could remove results.
+   */
+  public boolean matchesAllDocuments() {
+    return filters.isEmpty()
+        && limit == Target.NO_LIMIT
+        && startAt == null
+        && endAt == null
+        && (getExplicitOrderBy().isEmpty()
+            || (getExplicitOrderBy().size() == 1 && getFirstOrderByField().isKeyField()));
+  }
+
   /** The filters on the documents returned by the query. */
   public List<Filter> getFilters() {
     return filters;
@@ -126,13 +152,31 @@ public final class Query {
    * The maximum number of results to return. If there is no limit on the query, then this will
    * cause an assertion failure.
    */
-  public long getLimit() {
-    hardAssert(hasLimit(), "Called getLimit when no limit was set");
+  public long getLimitToFirst() {
+    hardAssert(hasLimitToFirst(), "Called getLimitToFirst when no limit was set");
     return limit;
   }
 
-  public boolean hasLimit() {
-    return limit != NO_LIMIT;
+  public boolean hasLimitToFirst() {
+    return limitType == LimitType.LIMIT_TO_FIRST && limit != Target.NO_LIMIT;
+  }
+
+  /**
+   * The maximum number of last-matching results to return. If there is no limit on the query, then
+   * this will cause an assertion failure.
+   */
+  public long getLimitToLast() {
+    hardAssert(hasLimitToLast(), "Called getLimitToLast when no limit was set");
+    return limit;
+  }
+
+  public boolean hasLimitToLast() {
+    return limitType == LimitType.LIMIT_TO_LAST && limit != Target.NO_LIMIT;
+  }
+
+  public LimitType getLimitType() {
+    hardAssert(hasLimitToLast() || hasLimitToFirst(), "Called getLimitType when no limit was set");
+    return limitType;
   }
 
   /** An optional bound to start the query at. */
@@ -213,7 +257,7 @@ public final class Query {
     List<Filter> updatedFilter = new ArrayList<>(filters);
     updatedFilter.add(filter);
     return new Query(
-        path, collectionGroup, updatedFilter, explicitSortOrder, limit, startAt, endAt);
+        path, collectionGroup, updatedFilter, explicitSortOrder, limit, limitType, startAt, endAt);
   }
 
   /**
@@ -232,7 +276,8 @@ public final class Query {
     }
     List<OrderBy> updatedSortOrder = new ArrayList<>(explicitSortOrder);
     updatedSortOrder.add(order);
-    return new Query(path, collectionGroup, filters, updatedSortOrder, limit, startAt, endAt);
+    return new Query(
+        path, collectionGroup, filters, updatedSortOrder, limit, limitType, startAt, endAt);
   }
 
   /**
@@ -241,8 +286,34 @@ public final class Query {
    * @param limit The maximum number of results to return. If {@code limit == NO_LIMIT}, then no
    *     limit is applied. Otherwise, if {@code limit <= 0}, behavior is unspecified.
    */
-  public Query limit(long limit) {
-    return new Query(path, collectionGroup, filters, explicitSortOrder, limit, startAt, endAt);
+  public Query limitToFirst(long limit) {
+    return new Query(
+        path,
+        collectionGroup,
+        filters,
+        explicitSortOrder,
+        limit,
+        LimitType.LIMIT_TO_FIRST,
+        startAt,
+        endAt);
+  }
+
+  /**
+   * Returns a new Query with the given limit on how many last-matching results can be returned.
+   *
+   * @param limit The maximum number of results to return. If {@code limit == NO_LIMIT}, then no
+   *     limit is applied. Otherwise, if {@code limit <= 0}, behavior is unspecified.
+   */
+  public Query limitToLast(long limit) {
+    return new Query(
+        path,
+        collectionGroup,
+        filters,
+        explicitSortOrder,
+        limit,
+        LimitType.LIMIT_TO_LAST,
+        startAt,
+        endAt);
   }
 
   /**
@@ -252,7 +323,8 @@ public final class Query {
    * @return the new Query.
    */
   public Query startAt(Bound bound) {
-    return new Query(path, collectionGroup, filters, explicitSortOrder, limit, bound, endAt);
+    return new Query(
+        path, collectionGroup, filters, explicitSortOrder, limit, limitType, bound, endAt);
   }
 
   /**
@@ -262,7 +334,8 @@ public final class Query {
    * @return the new Query.
    */
   public Query endAt(Bound bound) {
-    return new Query(path, collectionGroup, filters, explicitSortOrder, limit, startAt, bound);
+    return new Query(
+        path, collectionGroup, filters, explicitSortOrder, limit, limitType, startAt, bound);
   }
 
   /**
@@ -272,7 +345,14 @@ public final class Query {
    */
   public Query asCollectionQueryAtPath(ResourcePath path) {
     return new Query(
-        path, /*collectionGroup=*/ null, filters, explicitSortOrder, limit, startAt, endAt);
+        path,
+        /*collectionGroup=*/ null,
+        filters,
+        explicitSortOrder,
+        limit,
+        limitType,
+        startAt,
+        endAt);
   }
 
   /**
@@ -413,50 +493,60 @@ public final class Query {
     }
   }
 
+  /** @return A {@code Target} instance this query will be mapped to in backend and local store. */
+  public Target toTarget() {
+    if (this.memoizedTarget == null) {
+      if (this.limitType == LimitType.LIMIT_TO_FIRST) {
+        this.memoizedTarget =
+            new Target(
+                this.getPath(),
+                this.getCollectionGroup(),
+                this.getFilters(),
+                this.getOrderBy(),
+                this.limit,
+                this.getStartAt(),
+                this.getEndAt());
+      } else {
+        // Flip the orderBy directions since we want the last results
+        ArrayList<OrderBy> newOrderBy = new ArrayList<>();
+        for (OrderBy orderBy : this.getOrderBy()) {
+          Direction dir =
+              orderBy.getDirection() == Direction.DESCENDING
+                  ? Direction.ASCENDING
+                  : Direction.DESCENDING;
+          newOrderBy.add(OrderBy.getInstance(dir, orderBy.getField()));
+        }
+
+        // We need to swap the cursors to match the now-flipped query ordering.
+        Bound newStartAt =
+            this.endAt != null ? new Bound(this.endAt.getPosition(), !this.endAt.isBefore()) : null;
+        Bound newEndAt =
+            this.startAt != null
+                ? new Bound(this.startAt.getPosition(), !this.startAt.isBefore())
+                : null;
+
+        this.memoizedTarget =
+            new Target(
+                this.getPath(),
+                this.getCollectionGroup(),
+                this.getFilters(),
+                newOrderBy,
+                this.limit,
+                newStartAt,
+                newEndAt);
+      }
+    }
+
+    return this.memoizedTarget;
+  }
+
   /**
    * Returns a canonical string representing this query. This should match the iOS and Android
    * canonical ids for a query exactly.
    */
+  // TODO(wuandy): This is now only used in tests and SpecTestCase. Maybe we can delete it?
   public String getCanonicalId() {
-    // TODO: Cache the return value.
-    StringBuilder builder = new StringBuilder();
-    builder.append(getPath().canonicalString());
-
-    if (collectionGroup != null) {
-      builder.append("|cg:");
-      builder.append(collectionGroup);
-    }
-
-    // Add filters.
-    builder.append("|f:");
-    for (Filter filter : getFilters()) {
-      builder.append(filter.getCanonicalId());
-    }
-
-    // Add order by.
-    builder.append("|ob:");
-    for (OrderBy orderBy : getOrderBy()) {
-      builder.append(orderBy.getField().canonicalString());
-      builder.append(orderBy.getDirection().equals(Direction.ASCENDING) ? "asc" : "desc");
-    }
-
-    // Add limit.
-    if (hasLimit()) {
-      builder.append("|l:");
-      builder.append(getLimit());
-    }
-
-    if (startAt != null) {
-      builder.append("|lb:");
-      builder.append(startAt.canonicalString());
-    }
-
-    if (endAt != null) {
-      builder.append("|ub:");
-      builder.append(endAt.canonicalString());
-    }
-
-    return builder.toString();
+    return this.toTarget().getCanonicalId() + "|lt:" + limitType;
   }
 
   @Override
@@ -470,70 +560,25 @@ public final class Query {
 
     Query query = (Query) o;
 
-    if (collectionGroup != null
-        ? !collectionGroup.equals(query.collectionGroup)
-        : query.collectionGroup != null) {
+    if (this.limitType != query.limitType) {
       return false;
     }
-    if (limit != query.limit) {
-      return false;
-    }
-    if (!getOrderBy().equals(query.getOrderBy())) {
-      return false;
-    }
-    if (!filters.equals(query.filters)) {
-      return false;
-    }
-    if (!path.equals(query.path)) {
-      return false;
-    }
-    if (startAt != null ? !startAt.equals(query.startAt) : query.startAt != null) {
-      return false;
-    }
-    return endAt != null ? endAt.equals(query.endAt) : query.endAt == null;
+
+    return this.toTarget().equals(query.toTarget());
   }
 
   @Override
   public int hashCode() {
-    int result = getOrderBy().hashCode();
-    result = 31 * result + (collectionGroup != null ? collectionGroup.hashCode() : 0);
-    result = 31 * result + filters.hashCode();
-    result = 31 * result + path.hashCode();
-    result = 31 * result + (int) (limit ^ (limit >>> 32));
-    result = 31 * result + (startAt != null ? startAt.hashCode() : 0);
-    result = 31 * result + (endAt != null ? endAt.hashCode() : 0);
-    return result;
+    return 31 * this.toTarget().hashCode() + limitType.hashCode();
   }
 
   @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();
-    builder.append("Query(");
-    builder.append(path.canonicalString());
-    if (collectionGroup != null) {
-      builder.append(" collectionGroup=");
-      builder.append(collectionGroup);
-    }
-    if (!filters.isEmpty()) {
-      builder.append(" where ");
-      for (int i = 0; i < filters.size(); i++) {
-        if (i > 0) {
-          builder.append(" and ");
-        }
-        builder.append(filters.get(i).toString());
-      }
-    }
-
-    if (!explicitSortOrder.isEmpty()) {
-      builder.append(" order by ");
-      for (int i = 0; i < explicitSortOrder.size(); i++) {
-        if (i > 0) {
-          builder.append(", ");
-        }
-        builder.append(explicitSortOrder.get(i));
-      }
-    }
-
+    builder.append("Query(target=");
+    builder.append(this.toTarget().toString());
+    builder.append(";limitType=");
+    builder.append(this.limitType.toString());
     builder.append(")");
     return builder.toString();
   }

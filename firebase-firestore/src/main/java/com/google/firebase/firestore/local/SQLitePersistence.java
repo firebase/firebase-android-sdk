@@ -77,10 +77,9 @@ public final class SQLitePersistence extends Persistence {
     }
   }
 
-  private final OpenHelper opener;
+  private final SQLiteOpenHelper opener;
   private final LocalSerializer serializer;
-  private final StatsCollector statsCollector;
-  private final SQLiteQueryCache queryCache;
+  private final SQLiteTargetCache targetCache;
   private final SQLiteIndexManager indexManager;
   private final SQLiteRemoteDocumentCache remoteDocumentCache;
   private final SQLiteLruReferenceDelegate referenceDelegate;
@@ -109,29 +108,16 @@ public final class SQLitePersistence extends Persistence {
       DatabaseId databaseId,
       LocalSerializer serializer,
       LruGarbageCollector.Params params) {
-    this(
-        context,
-        persistenceKey,
-        databaseId,
-        serializer,
-        StatsCollector.NO_OP_STATS_COLLECTOR,
-        params);
+    this(serializer, params, new OpenHelper(context, databaseName(persistenceKey, databaseId)));
   }
 
   public SQLitePersistence(
-      Context context,
-      String persistenceKey,
-      DatabaseId databaseId,
-      LocalSerializer serializer,
-      StatsCollector statsCollector,
-      LruGarbageCollector.Params params) {
-    String databaseName = databaseName(persistenceKey, databaseId);
-    this.opener = new OpenHelper(context, databaseName);
+      LocalSerializer serializer, LruGarbageCollector.Params params, SQLiteOpenHelper openHelper) {
+    this.opener = openHelper;
     this.serializer = serializer;
-    this.statsCollector = statsCollector;
-    this.queryCache = new SQLiteQueryCache(this, this.serializer);
+    this.targetCache = new SQLiteTargetCache(this, this.serializer);
     this.indexManager = new SQLiteIndexManager(this);
-    this.remoteDocumentCache = new SQLiteRemoteDocumentCache(this, this.serializer, statsCollector);
+    this.remoteDocumentCache = new SQLiteRemoteDocumentCache(this, this.serializer);
     this.referenceDelegate = new SQLiteLruReferenceDelegate(this, params);
   }
 
@@ -153,8 +139,8 @@ public final class SQLitePersistence extends Persistence {
               + " is, call setPersistenceEnabled(true)) in one of them.",
           e);
     }
-    queryCache.start();
-    referenceDelegate.start(queryCache.getHighestListenSequenceNumber());
+    targetCache.start();
+    referenceDelegate.start(targetCache.getHighestListenSequenceNumber());
   }
 
   @Override
@@ -177,12 +163,12 @@ public final class SQLitePersistence extends Persistence {
 
   @Override
   MutationQueue getMutationQueue(User user) {
-    return new SQLiteMutationQueue(this, serializer, statsCollector, user);
+    return new SQLiteMutationQueue(this, serializer, user);
   }
 
   @Override
-  SQLiteQueryCache getQueryCache() {
-    return queryCache;
+  SQLiteTargetCache getTargetCache() {
+    return targetCache;
   }
 
   @Override

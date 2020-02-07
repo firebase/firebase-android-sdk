@@ -16,7 +16,7 @@ package com.google.firebase.database.connection;
 
 import static org.junit.Assert.assertFalse;
 
-import androidx.test.runner.AndroidJUnit4;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.firebase.database.IntegrationTestHelpers;
 import com.google.firebase.database.IntegrationTestValues;
 import com.google.firebase.database.RetryRule;

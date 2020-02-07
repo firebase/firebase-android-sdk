@@ -1,0 +1,150 @@
+// Signature format: 2.0
+package com.google.firebase.dynamiclinks {
+
+  public final class DynamicLink {
+    method @NonNull public android.net.Uri getUri();
+  }
+
+  public static final class DynamicLink.AndroidParameters {
+  }
+
+  public static final class DynamicLink.AndroidParameters.Builder {
+    ctor public DynamicLink.AndroidParameters.Builder();
+    ctor public DynamicLink.AndroidParameters.Builder(@NonNull String);
+    method @NonNull public com.google.firebase.dynamiclinks.DynamicLink.AndroidParameters build();
+    method @NonNull public android.net.Uri getFallbackUrl();
+    method public int getMinimumVersion();
+    method @NonNull public com.google.firebase.dynamiclinks.DynamicLink.AndroidParameters.Builder setFallbackUrl(@NonNull android.net.Uri);
+    method @NonNull public com.google.firebase.dynamiclinks.DynamicLink.AndroidParameters.Builder setMinimumVersion(int);
+  }
+
+  public static final class DynamicLink.Builder {
+    method @NonNull public com.google.firebase.dynamiclinks.DynamicLink buildDynamicLink();
+    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.dynamiclinks.ShortDynamicLink> buildShortDynamicLink();
+    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.dynamiclinks.ShortDynamicLink> buildShortDynamicLink(@com.google.firebase.dynamiclinks.ShortDynamicLink.Suffix int);
+    method @NonNull public String getDomainUriPrefix();
+    method @NonNull public android.net.Uri getLink();
+    method @NonNull public android.net.Uri getLongLink();
+    method @NonNull public com.google.firebase.dynamiclinks.DynamicLink.Builder setAndroidParameters(@NonNull com.google.firebase.dynamiclinks.DynamicLink.AndroidParameters);
+    method @NonNull public com.google.firebase.dynamiclinks.DynamicLink.Builder setDomainUriPrefix(@NonNull String);
+    method @Deprecated @NonNull public com.google.firebase.dynamiclinks.DynamicLink.Builder setDynamicLinkDomain(@NonNull String);
+    method @NonNull public com.google.firebase.dynamiclinks.DynamicLink.Builder setGoogleAnalyticsParameters(@NonNull com.google.firebase.dynamiclinks.DynamicLink.GoogleAnalyticsParameters);
+    method @NonNull public com.google.firebase.dynamiclinks.DynamicLink.Builder setIosParameters(@NonNull com.google.firebase.dynamiclinks.DynamicLink.IosParameters);
+    method @NonNull public com.google.firebase.dynamiclinks.DynamicLink.Builder setItunesConnectAnalyticsParameters(@NonNull com.google.firebase.dynamiclinks.DynamicLink.ItunesConnectAnalyticsParameters);
+    method @NonNull public com.google.firebase.dynamiclinks.DynamicLink.Builder setLink(@NonNull android.net.Uri);
+    method @NonNull public com.google.firebase.dynamiclinks.DynamicLink.Builder setLongLink(@NonNull android.net.Uri);
+    method @NonNull public com.google.firebase.dynamiclinks.DynamicLink.Builder setNavigationInfoParameters(@NonNull com.google.firebase.dynamiclinks.DynamicLink.NavigationInfoParameters);
+    method @NonNull public com.google.firebase.dynamiclinks.DynamicLink.Builder setSocialMetaTagParameters(@NonNull com.google.firebase.dynamiclinks.DynamicLink.SocialMetaTagParameters);
+  }
+
+  public static final class DynamicLink.GoogleAnalyticsParameters {
+  }
+
+  public static final class DynamicLink.GoogleAnalyticsParameters.Builder {
+    ctor public DynamicLink.GoogleAnalyticsParameters.Builder();
+    ctor public DynamicLink.GoogleAnalyticsParameters.Builder(@NonNull String, @NonNull String, @NonNull String);
+    method @NonNull public com.google.firebase.dynamiclinks.DynamicLink.GoogleAnalyticsParameters build();
+    method @NonNull public String getCampaign();
+    method @NonNull public String getContent();
+    method @NonNull public String getMedium();
+    method @NonNull public String getSource();
+    method @NonNull public String getTerm();
+    method @NonNull public com.google.firebase.dynamiclinks.DynamicLink.GoogleAnalyticsParameters.Builder setCampaign(@NonNull String);
+    method @NonNull public com.google.firebase.dynamiclinks.DynamicLink.GoogleAnalyticsParameters.Builder setContent(@NonNull String);
+    method @NonNull public com.google.firebase.dynamiclinks.DynamicLink.GoogleAnalyticsParameters.Builder setMedium(@NonNull String);
+    method @NonNull public com.google.firebase.dynamiclinks.DynamicLink.GoogleAnalyticsParameters.Builder setSource(@NonNull String);
+    method @NonNull public com.google.firebase.dynamiclinks.DynamicLink.GoogleAnalyticsParameters.Builder setTerm(@NonNull String);
+  }
+
+  public static final class DynamicLink.IosParameters {
+  }
+
+  public static final class DynamicLink.IosParameters.Builder {
+    ctor public DynamicLink.IosParameters.Builder(@NonNull String);
+    method @NonNull public com.google.firebase.dynamiclinks.DynamicLink.IosParameters build();
+    method @NonNull public String getAppStoreId();
+    method @NonNull public String getCustomScheme();
+    method @NonNull public String getIpadBundleId();
+    method @NonNull public android.net.Uri getIpadFallbackUrl();
+    method @NonNull public String getMinimumVersion();
+    method @NonNull public com.google.firebase.dynamiclinks.DynamicLink.IosParameters.Builder setAppStoreId(@NonNull String);
+    method @NonNull public com.google.firebase.dynamiclinks.DynamicLink.IosParameters.Builder setCustomScheme(@NonNull String);
+    method @NonNull public com.google.firebase.dynamiclinks.DynamicLink.IosParameters.Builder setFallbackUrl(@NonNull android.net.Uri);
+    method @NonNull public com.google.firebase.dynamiclinks.DynamicLink.IosParameters.Builder setIpadBundleId(@NonNull String);
+    method @NonNull public com.google.firebase.dynamiclinks.DynamicLink.IosParameters.Builder setIpadFallbackUrl(@NonNull android.net.Uri);
+    method @NonNull public com.google.firebase.dynamiclinks.DynamicLink.IosParameters.Builder setMinimumVersion(@NonNull String);
+  }
+
+  public static final class DynamicLink.ItunesConnectAnalyticsParameters {
+  }
+
+  public static final class DynamicLink.ItunesConnectAnalyticsParameters.Builder {
+    ctor public DynamicLink.ItunesConnectAnalyticsParameters.Builder();
+    method @NonNull public com.google.firebase.dynamiclinks.DynamicLink.ItunesConnectAnalyticsParameters build();
+    method @NonNull public String getAffiliateToken();
+    method @NonNull public String getCampaignToken();
+    method @NonNull public String getProviderToken();
+    method @NonNull public com.google.firebase.dynamiclinks.DynamicLink.ItunesConnectAnalyticsParameters.Builder setAffiliateToken(@NonNull String);
+    method @NonNull public com.google.firebase.dynamiclinks.DynamicLink.ItunesConnectAnalyticsParameters.Builder setCampaignToken(@NonNull String);
+    method @NonNull public com.google.firebase.dynamiclinks.DynamicLink.ItunesConnectAnalyticsParameters.Builder setProviderToken(@NonNull String);
+  }
+
+  public static final class DynamicLink.NavigationInfoParameters {
+  }
+
+  public static final class DynamicLink.NavigationInfoParameters.Builder {
+    ctor public DynamicLink.NavigationInfoParameters.Builder();
+    method @NonNull public com.google.firebase.dynamiclinks.DynamicLink.NavigationInfoParameters build();
+    method public boolean getForcedRedirectEnabled();
+    method @NonNull public com.google.firebase.dynamiclinks.DynamicLink.NavigationInfoParameters.Builder setForcedRedirectEnabled(boolean);
+  }
+
+  public static final class DynamicLink.SocialMetaTagParameters {
+  }
+
+  public static final class DynamicLink.SocialMetaTagParameters.Builder {
+    ctor public DynamicLink.SocialMetaTagParameters.Builder();
+    method @NonNull public com.google.firebase.dynamiclinks.DynamicLink.SocialMetaTagParameters build();
+    method @NonNull public String getDescription();
+    method @NonNull public android.net.Uri getImageUrl();
+    method @NonNull public String getTitle();
+    method @NonNull public com.google.firebase.dynamiclinks.DynamicLink.SocialMetaTagParameters.Builder setDescription(@NonNull String);
+    method @NonNull public com.google.firebase.dynamiclinks.DynamicLink.SocialMetaTagParameters.Builder setImageUrl(@NonNull android.net.Uri);
+    method @NonNull public com.google.firebase.dynamiclinks.DynamicLink.SocialMetaTagParameters.Builder setTitle(@NonNull String);
+  }
+
+  public abstract class FirebaseDynamicLinks {
+    ctor public FirebaseDynamicLinks();
+    method @NonNull public abstract com.google.firebase.dynamiclinks.DynamicLink.Builder createDynamicLink();
+    method @NonNull public abstract com.google.android.gms.tasks.Task<com.google.firebase.dynamiclinks.PendingDynamicLinkData> getDynamicLink(@NonNull android.content.Intent);
+    method @NonNull public abstract com.google.android.gms.tasks.Task<com.google.firebase.dynamiclinks.PendingDynamicLinkData> getDynamicLink(@NonNull android.net.Uri);
+    method @NonNull public static com.google.firebase.dynamiclinks.FirebaseDynamicLinks getInstance();
+    method @NonNull public static com.google.firebase.dynamiclinks.FirebaseDynamicLinks getInstance(@NonNull com.google.firebase.FirebaseApp);
+  }
+
+  public class PendingDynamicLinkData {
+    ctor protected PendingDynamicLinkData(@Nullable String, int, long, @Nullable android.net.Uri);
+    method public long getClickTimestamp();
+    method @Nullable public android.net.Uri getLink();
+    method public int getMinimumAppVersion();
+    method @Nullable public android.content.Intent getUpdateAppIntent(@NonNull android.content.Context);
+  }
+
+  public interface ShortDynamicLink {
+    method @Nullable public android.net.Uri getPreviewLink();
+    method @Nullable public android.net.Uri getShortLink();
+    method @NonNull public java.util.List<? extends com.google.firebase.dynamiclinks.ShortDynamicLink.Warning> getWarnings();
+  }
+
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.SOURCE) @IntDef({com.google.firebase.dynamiclinks.ShortDynamicLink.Suffix.UNGUESSABLE, com.google.firebase.dynamiclinks.ShortDynamicLink.Suffix.SHORT}) public static @interface ShortDynamicLink.Suffix {
+    field public static final int SHORT = 2; // 0x2
+    field public static final int UNGUESSABLE = 1; // 0x1
+  }
+
+  public static interface ShortDynamicLink.Warning {
+    method @Deprecated @Nullable public String getCode();
+    method @Nullable public String getMessage();
+  }
+
+}
+

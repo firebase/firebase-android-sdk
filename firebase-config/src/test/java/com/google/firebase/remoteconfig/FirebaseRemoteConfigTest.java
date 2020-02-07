@@ -45,6 +45,8 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.abt.AbtException;
 import com.google.firebase.abt.FirebaseABTesting;
+import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.iid.InstanceIdResult;
 import com.google.firebase.remoteconfig.internal.ConfigCacheClient;
 import com.google.firebase.remoteconfig.internal.ConfigContainer;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler;
@@ -94,8 +96,14 @@ public final class FirebaseRemoteConfigTest {
 
   private static final String ETAG = "ETag";
 
+  private static final String INSTANCE_ID_STRING = "fake instance id";
+  private static final String INSTANCE_ID_TOKEN_STRING = "fake instance id token";
+  private static final InstanceIdResult INSTANCE_ID_RESULT =
+      new FakeInstanceIdResult(INSTANCE_ID_STRING, INSTANCE_ID_TOKEN_STRING);
+
   // We use a HashMap so that Mocking is easier.
-  private static final HashMap<String, String> DEFAULTS_MAP = new HashMap<>();
+  private static final HashMap<String, Object> DEFAULTS_MAP = new HashMap<>();
+  private static final HashMap<String, String> DEFAULTS_STRING_MAP = new HashMap<>();
 
   @Mock private ConfigCacheClient mockFetchedCache;
   @Mock private ConfigCacheClient mockActivatedCache;
@@ -113,6 +121,7 @@ public final class FirebaseRemoteConfigTest {
   @Mock private FirebaseRemoteConfigInfo mockFrcInfo;
 
   @Mock private FirebaseABTesting mockFirebaseAbt;
+  @Mock private FirebaseInstanceId mockFirebaseInstanceId;
 
   private FirebaseRemoteConfig frc;
   private FirebaseRemoteConfig fireperfFrc;
@@ -126,6 +135,12 @@ public final class FirebaseRemoteConfigTest {
     DEFAULTS_MAP.put("first_default_key", "first_default_value");
     DEFAULTS_MAP.put("second_default_key", "second_default_value");
     DEFAULTS_MAP.put("third_default_key", "third_default_value");
+    DEFAULTS_MAP.put("byte_array_default_key", "fourth_default_value".getBytes());
+
+    DEFAULTS_STRING_MAP.put("first_default_key", "first_default_value");
+    DEFAULTS_STRING_MAP.put("second_default_key", "second_default_value");
+    DEFAULTS_STRING_MAP.put("third_default_key", "third_default_value");
+    DEFAULTS_STRING_MAP.put("byte_array_default_key", "fourth_default_value");
 
     MockitoAnnotations.initMocks(this);
 
@@ -143,6 +158,7 @@ public final class FirebaseRemoteConfigTest {
         new FirebaseRemoteConfig(
             context,
             firebaseApp,
+            mockFirebaseInstanceId,
             mockFirebaseAbt,
             directExecutor,
             mockFetchedCache,
@@ -159,6 +175,7 @@ public final class FirebaseRemoteConfigTest {
             .get(
                 firebaseApp,
                 FIREPERF_NAMESPACE,
+                mockFirebaseInstanceId,
                 /*firebaseAbt=*/ null,
                 directExecutor,
                 mockFireperfFetchedCache,
@@ -190,6 +207,7 @@ public final class FirebaseRemoteConfigTest {
     loadCacheWithConfig(mockFetchedCache, /*container=*/ null);
     loadCacheWithConfig(mockDefaultsCache, /*container=*/ null);
     loadActivatedCacheWithIncompleteTask();
+    loadInstanceIdAndToken();
 
     Task<FirebaseRemoteConfigInfo> initStatus = frc.ensureInitialized();
 
@@ -203,6 +221,7 @@ public final class FirebaseRemoteConfigTest {
     loadCacheWithConfig(mockFetchedCache, /*container=*/ null);
     loadCacheWithConfig(mockDefaultsCache, /*container=*/ null);
     loadCacheWithConfig(mockActivatedCache, /*container=*/ null);
+    loadInstanceIdAndToken();
 
     Task<FirebaseRemoteConfigInfo> initStatus = frc.ensureInitialized();
 
@@ -1063,7 +1082,7 @@ public final class FirebaseRemoteConfigTest {
   public void setDefaults_withMap_setsDefaults() throws Exception {
     frc.setDefaults(ImmutableMap.copyOf(DEFAULTS_MAP));
 
-    ConfigContainer defaultsContainer = newDefaultsContainer(DEFAULTS_MAP);
+    ConfigContainer defaultsContainer = newDefaultsContainer(DEFAULTS_STRING_MAP);
     ArgumentCaptor<ConfigContainer> captor = ArgumentCaptor.forClass(ConfigContainer.class);
 
     verify(mockDefaultsCache).putWithoutWaitingForDiskWrite(captor.capture());
@@ -1072,7 +1091,7 @@ public final class FirebaseRemoteConfigTest {
 
   @Test
   public void setDefaultsAsync_withMap_setsDefaults() throws Exception {
-    ConfigContainer defaultsContainer = newDefaultsContainer(DEFAULTS_MAP);
+    ConfigContainer defaultsContainer = newDefaultsContainer(DEFAULTS_STRING_MAP);
     ArgumentCaptor<ConfigContainer> captor = ArgumentCaptor.forClass(ConfigContainer.class);
     cachePutReturnsConfig(mockDefaultsCache, defaultsContainer);
 
@@ -1157,6 +1176,10 @@ public final class FirebaseRemoteConfigTest {
   private void load2pFetchHandlerWithResponse() {
     when(mockFireperfFetchHandler.fetch())
         .thenReturn(Tasks.forResult(firstFetchedContainerResponse));
+  }
+
+  private void loadInstanceIdAndToken() {
+    when(mockFirebaseInstanceId.getInstanceId()).thenReturn(Tasks.forResult(INSTANCE_ID_RESULT));
   }
 
   private static int getResourceId(String xmlResourceName) {

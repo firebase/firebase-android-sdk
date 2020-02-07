@@ -1,0 +1,80 @@
+// Copyright 2018 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+plugins {
+    id 'firebase-library'
+}
+
+firebaseLibrary {
+    testLab.enabled = false
+    publishSources = true
+}
+
+android {
+    adbOptions {
+        timeOutInMs 60 * 1000
+    }
+
+    compileSdkVersion project.targetSdkVersion
+    defaultConfig {
+        targetSdkVersion project.targetSdkVersion
+        minSdkVersion project.minSdkVersion
+        versionName version
+        multiDexEnabled true
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    packagingOptions {
+        exclude 'META-INF/DEPENDENCIES'
+    }
+
+    testOptions.unitTests.includeAndroidResources = true
+}
+
+dependencies {
+    implementation project(':firebase-common')
+    implementation project(':firebase-components')
+
+    implementation 'androidx.annotation:annotation:1.1.0'
+
+    implementation 'com.google.android.gms:play-services-basement:17.0.0'
+    implementation 'com.google.android.gms:play-services-tasks:17.0.0'
+    implementation 'com.google.android.gms:play-services-base:17.0.0'
+
+    implementation('com.google.firebase:firebase-auth-interop:18.0.0') {
+        exclude group: "com.google.firebase", module: "firebase-common"
+    }
+    implementation('com.google.firebase:firebase-measurement-connector:18.0.0') {
+        exclude group: 'com.google.firebase', module: 'firebase-common'
+    }
+
+    testImplementation 'junit:junit:4.12'
+    testImplementation 'androidx.test:core:1.2.0'
+    testImplementation 'com.android.support.test:runner:1.0.1'
+    testImplementation 'org.mockito:mockito-core:2.25.0'
+    testImplementation "org.robolectric:robolectric:$robolectricVersion"
+    testImplementation "com.google.truth:truth:$googleTruthVersion"
+    testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.9.8'
+    testImplementation 'com.google.guava:guava-testlib:12.0-rc2'
+    testImplementation('com.google.android.gms:play-services-appinvite:16.0.0') {
+        exclude group: 'com.google.firebase', module: 'firebase-common'
+        exclude group: 'com.google.firebase', module: 'firebase-dynamic-links'
+    }
+}
+

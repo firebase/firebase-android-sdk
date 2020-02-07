@@ -33,40 +33,32 @@ public final class MemoryPersistence extends Persistence {
   // layer behave as if it were actually persisting values.
   private final Map<User, MemoryMutationQueue> mutationQueues;
   private final MemoryIndexManager indexManager;
-  private final MemoryQueryCache queryCache;
+  private final MemoryTargetCache targetCache;
   private final MemoryRemoteDocumentCache remoteDocumentCache;
-  private final StatsCollector statsCollector;
   private ReferenceDelegate referenceDelegate;
 
   private boolean started;
 
   public static MemoryPersistence createEagerGcMemoryPersistence() {
-    return createEagerGcMemoryPersistence(StatsCollector.NO_OP_STATS_COLLECTOR);
-  }
-
-  public static MemoryPersistence createEagerGcMemoryPersistence(StatsCollector statsCollector) {
-    MemoryPersistence persistence = new MemoryPersistence(statsCollector);
+    MemoryPersistence persistence = new MemoryPersistence();
     persistence.setReferenceDelegate(new MemoryEagerReferenceDelegate(persistence));
     return persistence;
   }
 
   public static MemoryPersistence createLruGcMemoryPersistence(
-      LruGarbageCollector.Params params,
-      StatsCollector statsCollector,
-      LocalSerializer serializer) {
-    MemoryPersistence persistence = new MemoryPersistence(statsCollector);
+      LruGarbageCollector.Params params, LocalSerializer serializer) {
+    MemoryPersistence persistence = new MemoryPersistence();
     persistence.setReferenceDelegate(
         new MemoryLruReferenceDelegate(persistence, params, serializer));
     return persistence;
   }
 
   /** Use static helpers to instantiate */
-  private MemoryPersistence(StatsCollector statsCollector) {
-    this.statsCollector = statsCollector;
+  private MemoryPersistence() {
     mutationQueues = new HashMap<>();
     indexManager = new MemoryIndexManager();
-    queryCache = new MemoryQueryCache(this);
-    remoteDocumentCache = new MemoryRemoteDocumentCache(this, statsCollector);
+    targetCache = new MemoryTargetCache(this);
+    remoteDocumentCache = new MemoryRemoteDocumentCache(this);
   }
 
   @Override
@@ -101,7 +93,7 @@ public final class MemoryPersistence extends Persistence {
   MutationQueue getMutationQueue(User user) {
     MemoryMutationQueue queue = mutationQueues.get(user);
     if (queue == null) {
-      queue = new MemoryMutationQueue(this, statsCollector);
+      queue = new MemoryMutationQueue(this);
       mutationQueues.put(user, queue);
     }
     return queue;
@@ -112,8 +104,8 @@ public final class MemoryPersistence extends Persistence {
   }
 
   @Override
-  MemoryQueryCache getQueryCache() {
-    return queryCache;
+  MemoryTargetCache getTargetCache() {
+    return targetCache;
   }
 
   @Override

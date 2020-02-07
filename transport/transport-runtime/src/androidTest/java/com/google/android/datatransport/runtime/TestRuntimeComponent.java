@@ -38,8 +38,10 @@ import javax.inject.Singleton;
 @Singleton
 abstract class TestRuntimeComponent extends TransportRuntimeComponent {
 
+  @Override
   abstract TransportRuntime getTransportRuntime();
 
+  @Override
   abstract SQLiteEventStore getEventStore();
 
   @Override

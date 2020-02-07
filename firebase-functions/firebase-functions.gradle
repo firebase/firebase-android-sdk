@@ -50,10 +50,11 @@ android {
 
 dependencies {
     implementation project(':firebase-common')
+    implementation project(':firebase-components')
     implementation 'com.google.android.gms:play-services-basement:17.0.0'
     implementation 'com.google.android.gms:play-services-base:17.0.0'
     implementation 'com.google.android.gms:play-services-tasks:17.0.0'
-    implementation ('com.google.firebase:firebase-iid:19.0.0') {
+    implementation ('com.google.firebase:firebase-iid:20.0.1') {
         exclude group: 'com.google.firebase', module: 'firebase-common'
     }
     implementation ('com.google.firebase:firebase-auth-interop:18.0.0') {

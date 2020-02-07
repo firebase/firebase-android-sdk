@@ -1,0 +1,151 @@
+// Signature format: 2.0
+package com.google.firebase.inappmessaging {
+
+  public class FirebaseInAppMessaging {
+    method public void addClickListener(@NonNull com.google.firebase.inappmessaging.FirebaseInAppMessagingClickListener);
+    method public void addClickListener(@NonNull com.google.firebase.inappmessaging.FirebaseInAppMessagingClickListener, @NonNull java.util.concurrent.Executor);
+    method public void addDisplayErrorListener(@NonNull com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayErrorListener);
+    method public void addDisplayErrorListener(@NonNull com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayErrorListener, @NonNull java.util.concurrent.Executor);
+    method public void addImpressionListener(@NonNull com.google.firebase.inappmessaging.FirebaseInAppMessagingImpressionListener);
+    method public void addImpressionListener(@NonNull com.google.firebase.inappmessaging.FirebaseInAppMessagingImpressionListener, @NonNull java.util.concurrent.Executor);
+    method @Keep public boolean areMessagesSuppressed();
+    method @NonNull @Keep public static com.google.firebase.inappmessaging.FirebaseInAppMessaging getInstance();
+    method @Keep public boolean isAutomaticDataCollectionEnabled();
+    method public void removeClickListener(@NonNull com.google.firebase.inappmessaging.FirebaseInAppMessagingClickListener);
+    method public void removeDisplayErrorListener(@NonNull com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayErrorListener);
+    method public void removeImpressionListener(@NonNull com.google.firebase.inappmessaging.FirebaseInAppMessagingImpressionListener);
+    method @Keep public void setAutomaticDataCollectionEnabled(boolean);
+    method @Keep public void setMessageDisplayComponent(@NonNull com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplay);
+    method @Keep public void setMessagesSuppressed(@NonNull Boolean);
+  }
+
+  public interface FirebaseInAppMessagingClickListener {
+    method public void messageClicked(@NonNull com.google.firebase.inappmessaging.model.InAppMessage, @NonNull com.google.firebase.inappmessaging.model.Action);
+  }
+
+  public class FirebaseInAppMessagingContextualTrigger {
+    ctor public FirebaseInAppMessagingContextualTrigger(@NonNull String);
+    method @NonNull public String getTriggerName();
+  }
+
+  @Keep public interface FirebaseInAppMessagingDisplay {
+    method @Keep public void displayMessage(@NonNull com.google.firebase.inappmessaging.model.InAppMessage, @NonNull com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks);
+  }
+
+  public interface FirebaseInAppMessagingDisplayCallbacks {
+    method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> displayErrorEncountered(@NonNull com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks.InAppMessagingErrorReason);
+    method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> impressionDetected();
+    method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> messageClicked(@NonNull com.google.firebase.inappmessaging.model.Action);
+    method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> messageDismissed(@NonNull com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks.InAppMessagingDismissType);
+  }
+
+  public enum FirebaseInAppMessagingDisplayCallbacks.InAppMessagingDismissType {
+    enum_constant public static final com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks.InAppMessagingDismissType AUTO;
+    enum_constant public static final com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks.InAppMessagingDismissType CLICK;
+    enum_constant public static final com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks.InAppMessagingDismissType SWIPE;
+    enum_constant public static final com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks.InAppMessagingDismissType UNKNOWN_DISMISS_TYPE;
+  }
+
+  public enum FirebaseInAppMessagingDisplayCallbacks.InAppMessagingErrorReason {
+    enum_constant public static final com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks.InAppMessagingErrorReason IMAGE_DISPLAY_ERROR;
+    enum_constant public static final com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks.InAppMessagingErrorReason IMAGE_FETCH_ERROR;
+    enum_constant public static final com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks.InAppMessagingErrorReason IMAGE_UNSUPPORTED_FORMAT;
+    enum_constant public static final com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks.InAppMessagingErrorReason UNSPECIFIED_RENDER_ERROR;
+  }
+
+  public interface FirebaseInAppMessagingDisplayErrorListener {
+    method public void displayErrorEncountered(@NonNull com.google.firebase.inappmessaging.model.InAppMessage, @NonNull com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks.InAppMessagingErrorReason);
+  }
+
+  public interface FirebaseInAppMessagingImpressionListener {
+    method public void impressionDetected(@NonNull com.google.firebase.inappmessaging.model.InAppMessage);
+  }
+
+}
+
+package com.google.firebase.inappmessaging.model {
+
+  public class Action {
+    method @Nullable public String getActionUrl();
+    method @Nullable public com.google.firebase.inappmessaging.model.Button getButton();
+  }
+
+  public class BannerMessage extends com.google.firebase.inappmessaging.model.InAppMessage {
+    method @Nullable public com.google.firebase.inappmessaging.model.Action getAction();
+    method @NonNull public String getBackgroundHexColor();
+    method @Nullable public com.google.firebase.inappmessaging.model.Text getBody();
+    method @Nullable public com.google.firebase.inappmessaging.model.ImageData getImageData();
+    method @NonNull public com.google.firebase.inappmessaging.model.Text getTitle();
+  }
+
+  public class Button {
+    method @NonNull public String getButtonHexColor();
+    method @NonNull public com.google.firebase.inappmessaging.model.Text getText();
+  }
+
+  public class CampaignMetadata {
+    method @NonNull public String getCampaignId();
+    method @NonNull public String getCampaignName();
+    method public boolean getIsTestMessage();
+  }
+
+  public class CardMessage extends com.google.firebase.inappmessaging.model.InAppMessage {
+    method @Deprecated @Nullable public com.google.firebase.inappmessaging.model.Action getAction();
+    method @NonNull public String getBackgroundHexColor();
+    method @Nullable public com.google.firebase.inappmessaging.model.Text getBody();
+    method @Nullable public com.google.firebase.inappmessaging.model.ImageData getLandscapeImageData();
+    method @Nullable public com.google.firebase.inappmessaging.model.ImageData getPortraitImageData();
+    method @NonNull public com.google.firebase.inappmessaging.model.Action getPrimaryAction();
+    method @Nullable public com.google.firebase.inappmessaging.model.Action getSecondaryAction();
+    method @NonNull public com.google.firebase.inappmessaging.model.Text getTitle();
+  }
+
+  public class ImageData {
+    method @Nullable public android.graphics.Bitmap getBitmapData();
+    method @NonNull public String getImageUrl();
+  }
+
+  public class ImageOnlyMessage extends com.google.firebase.inappmessaging.model.InAppMessage {
+    method @Nullable public com.google.firebase.inappmessaging.model.Action getAction();
+    method @NonNull public com.google.firebase.inappmessaging.model.ImageData getImageData();
+  }
+
+  public abstract class InAppMessage {
+    method @Deprecated @Nullable public abstract com.google.firebase.inappmessaging.model.Action getAction();
+    method @Deprecated @Nullable public com.google.firebase.inappmessaging.model.Button getActionButton();
+    method @Deprecated @Nullable public String getBackgroundHexColor();
+    method @Deprecated @Nullable public com.google.firebase.inappmessaging.model.Text getBody();
+    method @Deprecated @Nullable public String getCampaignId();
+    method @Nullable public com.google.firebase.inappmessaging.model.CampaignMetadata getCampaignMetadata();
+    method @Deprecated @Nullable public String getCampaignName();
+    method @Nullable public java.util.Map<java.lang.String,java.lang.String> getData();
+    method @Deprecated @Nullable public com.google.firebase.inappmessaging.model.ImageData getImageData();
+    method @Deprecated @Nullable public String getImageUrl();
+    method @Deprecated @Nullable public Boolean getIsTestMessage();
+    method @Nullable public com.google.firebase.inappmessaging.model.MessageType getMessageType();
+    method @Deprecated @Nullable public com.google.firebase.inappmessaging.model.Text getTitle();
+  }
+
+  @Keep public enum MessageType {
+    enum_constant @Keep public static final com.google.firebase.inappmessaging.model.MessageType BANNER;
+    enum_constant @Keep public static final com.google.firebase.inappmessaging.model.MessageType CARD;
+    enum_constant @Keep public static final com.google.firebase.inappmessaging.model.MessageType IMAGE_ONLY;
+    enum_constant @Keep public static final com.google.firebase.inappmessaging.model.MessageType MODAL;
+    enum_constant @Keep public static final com.google.firebase.inappmessaging.model.MessageType UNSUPPORTED;
+  }
+
+  public class ModalMessage extends com.google.firebase.inappmessaging.model.InAppMessage {
+    method @Nullable public com.google.firebase.inappmessaging.model.Action getAction();
+    method @NonNull public String getBackgroundHexColor();
+    method @Nullable public com.google.firebase.inappmessaging.model.Text getBody();
+    method @Nullable public com.google.firebase.inappmessaging.model.ImageData getImageData();
+    method @NonNull public com.google.firebase.inappmessaging.model.Text getTitle();
+  }
+
+  public class Text {
+    method @NonNull public String getHexColor();
+    method @Nullable public String getText();
+  }
+
+}
+

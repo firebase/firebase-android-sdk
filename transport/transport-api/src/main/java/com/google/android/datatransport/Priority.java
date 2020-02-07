@@ -18,6 +18,10 @@ public enum Priority {
   /** Quality of the service is within an hour. */
   DEFAULT,
 
-  /** Events delivered at most daily, on unmetered network */
+  /** Events delivered at most daily, on unmetered network. */
   VERY_LOW,
+
+  /** Events delivered as soon as possible. */
+  HIGHEST,
+  ;
 }

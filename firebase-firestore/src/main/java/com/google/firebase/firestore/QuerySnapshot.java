@@ -106,7 +106,7 @@ public class QuerySnapshot implements Iterable<QueryDocumentSnapshot> {
    * all documents will be in the list as added changes.
    *
    * @param metadataChanges Indicates whether metadata-only changes (i.e. only {@code
-   *     Query.getMetadata()} changed) should be included.
+   *     DocumentSnapshot.getMetadata()} changed) should be included.
    * @return The list of document changes since the last snapshot.
    */
   @NonNull

@@ -42,7 +42,7 @@ class MemoryLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
     this.serializer = serializer;
     this.orphanedSequenceNumbers = new HashMap<>();
     this.listenSequence =
-        new ListenSequence(persistence.getQueryCache().getHighestListenSequenceNumber());
+        new ListenSequence(persistence.getTargetCache().getHighestListenSequenceNumber());
     this.currentSequenceNumber = ListenSequence.INVALID;
     this.garbageCollector = new LruGarbageCollector(this, params);
   }
@@ -77,13 +77,13 @@ class MemoryLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
   }
 
   @Override
-  public void forEachTarget(Consumer<QueryData> consumer) {
-    persistence.getQueryCache().forEachTarget(consumer);
+  public void forEachTarget(Consumer<TargetData> consumer) {
+    persistence.getTargetCache().forEachTarget(consumer);
   }
 
   @Override
   public long getSequenceNumberCount() {
-    long targetCount = persistence.getQueryCache().getTargetCount();
+    long targetCount = persistence.getTargetCache().getTargetCount();
     long orphanedCount[] = new long[1];
     forEachOrphanedDocumentSequenceNumber(
         sequenceNumber -> {
@@ -110,15 +110,15 @@ class MemoryLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
 
   @Override
   public int removeTargets(long upperBound, SparseArray<?> activeTargetIds) {
-    return persistence.getQueryCache().removeQueries(upperBound, activeTargetIds);
+    return persistence.getTargetCache().removeQueries(upperBound, activeTargetIds);
   }
 
   @Override
   public int removeOrphanedDocuments(long upperBound) {
     int count = 0;
     MemoryRemoteDocumentCache cache = persistence.getRemoteDocumentCache();
-    for (Map.Entry<DocumentKey, MaybeDocument> entry : cache.getDocuments()) {
-      DocumentKey key = entry.getKey();
+    for (MaybeDocument doc : cache.getDocuments()) {
+      DocumentKey key = doc.getKey();
       if (!isPinned(key, upperBound)) {
         cache.remove(key);
         orphanedSequenceNumbers.remove(key);
@@ -134,11 +134,9 @@ class MemoryLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
   }
 
   @Override
-  public void removeTarget(QueryData queryData) {
-    QueryData updated =
-        queryData.copy(
-            queryData.getSnapshotVersion(), queryData.getResumeToken(), getCurrentSequenceNumber());
-    persistence.getQueryCache().updateQueryData(updated);
+  public void removeTarget(TargetData targetData) {
+    TargetData updated = targetData.withSequenceNumber(getCurrentSequenceNumber());
+    persistence.getTargetCache().updateTargetData(updated);
   }
 
   @Override
@@ -178,7 +176,7 @@ class MemoryLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
       return true;
     }
 
-    if (persistence.getQueryCache().containsKey(key)) {
+    if (persistence.getTargetCache().containsKey(key)) {
       return true;
     }
 
@@ -192,7 +190,7 @@ class MemoryLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
     // used for testing. The algorithm here (loop through everything, serialize it
     // and count bytes) is inefficient and inexact, but won't run in production.
     long count = 0;
-    count += persistence.getQueryCache().getByteSize(serializer);
+    count += persistence.getTargetCache().getByteSize(serializer);
     count += persistence.getRemoteDocumentCache().getByteSize(serializer);
     for (MemoryMutationQueue queue : persistence.getMutationQueues()) {
       count += queue.getByteSize(serializer);

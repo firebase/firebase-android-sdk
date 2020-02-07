@@ -21,6 +21,7 @@ public class TestConstants {
 
   // Title text IDs
   @StringRes public static final int TITLE_TEXT_NONE = -1;
+  @StringRes public static final int TITLE_TEXT_SHORT = R.string.short_message_title;
   @StringRes public static final int TITLE_TEXT_NORMAL = R.string.default_message_title;
 
   // Body text IDs
@@ -29,6 +30,7 @@ public class TestConstants {
 
   // Button text IDs
   @StringRes public static final int BUTTON_TEXT_NORMAL = R.string.view_wishlist;
+  @StringRes public static final int BUTTON_TEXT_CANCEL = R.string.button_text_cancel;
   @StringRes public static final int BUTTON_TEXT_NONE = -1;
 
   // Body radio button IDs

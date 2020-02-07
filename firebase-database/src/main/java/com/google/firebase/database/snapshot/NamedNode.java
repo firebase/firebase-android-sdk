@@ -14,7 +14,7 @@
 
 package com.google.firebase.database.snapshot;
 
-public class NamedNode {
+public final class NamedNode {
   private final ChildKey name;
   private final Node node;
 
