@@ -96,7 +96,9 @@ public class UserDataWriter {
     switch (serverTimestampBehavior) {
       case PREVIOUS:
         Value previousValue = getPreviousValue(serverTimestampValue);
-        if (previousValue == null) return null;
+        if (previousValue == null) {
+          return null;
+        }
         return convertValue(previousValue);
       case ESTIMATE:
         return convertTimestamp(getLocalWriteTime(serverTimestampValue));
