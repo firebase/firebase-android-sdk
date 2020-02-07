@@ -14,13 +14,15 @@
 
 package com.google.firebase.firestore;
 
+import static com.google.firebase.firestore.model.value.ServerTimestamps.getLocalWriteTime;
+import static com.google.firebase.firestore.model.value.ServerTimestamps.getPreviousValue;
+import static com.google.firebase.firestore.model.value.ServerTimestamps.isServerTimestamp;
 import static com.google.firebase.firestore.util.Assert.fail;
 
 import androidx.annotation.RestrictTo;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.value.ServerTimestampValue;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firestore.v1.ArrayValue;
 import com.google.firestore.v1.Value;
@@ -52,8 +54,8 @@ public class UserDataWriter {
   Object convertValue(Value value) {
     switch (value.getValueTypeCase()) {
       case MAP_VALUE:
-        if (ServerTimestampValue.isServerTimestamp(value)) {
-          return convertServerTimestamp(new ServerTimestampValue(value));
+        if (isServerTimestamp(value)) {
+          return convertServerTimestamp(value);
         }
         return convertObject(value.getMapValue().getFieldsMap());
       case ARRAY_VALUE:
@@ -90,14 +92,14 @@ public class UserDataWriter {
     return result;
   }
 
-  private Object convertServerTimestamp(ServerTimestampValue value) {
+  private Object convertServerTimestamp(Value serverTimestampValue) {
     switch (serverTimestampBehavior) {
       case PREVIOUS:
-        return value.getPreviousValue() == null ? null : convertValue(value.getPreviousValue());
+        Value previousValue = getPreviousValue(serverTimestampValue);
+        if (previousValue == null) return null;
+        return convertValue(previousValue);
       case ESTIMATE:
-        return !timestampsInSnapshots
-            ? value.getLocalWriteTime().toDate()
-            : value.getLocalWriteTime();
+        return convertTimestamp(getLocalWriteTime(serverTimestampValue));
       default:
         return null;
     }

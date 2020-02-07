@@ -45,7 +45,7 @@ import com.google.firebase.firestore.model.mutation.Precondition;
 import com.google.firebase.firestore.model.mutation.TransformMutation;
 import com.google.firebase.firestore.model.value.ObjectValue;
 import com.google.firebase.firestore.model.value.ProtoValues;
-import com.google.firebase.firestore.model.value.ServerTimestampValue;
+import com.google.firebase.firestore.model.value.ServerTimestamps;
 import com.google.firestore.v1.Value;
 import java.util.Arrays;
 import java.util.Collections;
@@ -157,7 +157,7 @@ public class MutationTest {
     // Server timestamps aren't parsed, so we manually insert it.
     ObjectValue expectedData =
         wrapObject(map("foo", map("bar", "<server-timestamp>"), "baz", "baz-value"));
-    Value fieldValue = ServerTimestampValue.valueOf(timestamp, wrap("bar-value"));
+    Value fieldValue = ServerTimestamps.valueOf(timestamp, wrap("bar-value"));
     expectedData = expectedData.toBuilder().set(field("foo.bar"), fieldValue).build();
 
     Document expectedDoc =

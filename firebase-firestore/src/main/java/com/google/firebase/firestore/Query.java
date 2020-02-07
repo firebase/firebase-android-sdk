@@ -40,7 +40,7 @@ import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.value.ProtoValues;
-import com.google.firebase.firestore.model.value.ServerTimestampValue;
+import com.google.firebase.firestore.model.value.ServerTimestamps;
 import com.google.firebase.firestore.util.Executors;
 import com.google.firebase.firestore.util.Util;
 import com.google.firestore.v1.ArrayValue;
@@ -751,7 +751,7 @@ public class Query {
         components.add(ProtoValues.refValue(firestore.getDatabaseId(), document.getKey()));
       } else {
         Value value = document.getField(orderBy.getField());
-        if (ServerTimestampValue.isServerTimestamp(value)) {
+        if (ServerTimestamps.isServerTimestamp(value)) {
           throw new IllegalArgumentException(
               "Invalid query. You are trying to start or end a query using a document for which "
                   + "the field '"

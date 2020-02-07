@@ -14,6 +14,8 @@
 
 package com.google.firebase.firestore.model.value;
 
+import static com.google.firebase.firestore.model.value.ServerTimestamps.getLocalWriteTime;
+import static com.google.firebase.firestore.model.value.ServerTimestamps.isServerTimestamp;
 import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
@@ -78,7 +80,7 @@ public class ProtoValues {
       case ARRAY_VALUE:
         return TYPE_ORDER_ARRAY;
       case MAP_VALUE:
-        if (ServerTimestampValue.isServerTimestamp(value)) {
+        if (isServerTimestamp(value)) {
           return TYPE_ORDER_TIMESTAMP;
         }
         return TYPE_ORDER_MAP;
@@ -115,13 +117,12 @@ public class ProtoValues {
   }
 
   private static boolean timestampEquals(Value left, Value right) {
-    if (ServerTimestampValue.isServerTimestamp(left)
-        && ServerTimestampValue.isServerTimestamp(right)) {
-      return new ServerTimestampValue(left)
-          .getLocalWriteTime()
-          .equals(new ServerTimestampValue(right).getLocalWriteTime());
-    } else if (ServerTimestampValue.isServerTimestamp(left)
-        || ServerTimestampValue.isServerTimestamp(right)) {
+    if (isServerTimestamp(left)
+        && isServerTimestamp(right)) {
+      return getLocalWriteTime(left)
+          .equals(getLocalWriteTime(right));
+    } else if (isServerTimestamp(left)
+        || isServerTimestamp(right)) {
       return false;
     }
 
@@ -241,27 +242,30 @@ public class ProtoValues {
   }
 
   private static int compareTimestamps(Value left, Value right) {
-    if (ServerTimestampValue.isServerTimestamp(left)
-        && ServerTimestampValue.isServerTimestamp(right)) {
-      return new ServerTimestampValue(left)
-          .getLocalWriteTime()
-          .compareTo(new ServerTimestampValue(right).getLocalWriteTime());
-    } else if (ServerTimestampValue.isServerTimestamp(left)) {
-      // Server timestamps come after all concrete timestamps.
-      return 1;
-    } else if (ServerTimestampValue.isServerTimestamp(right)) {
-      // Server timestamps come after all concrete timestamps.
-      return -1;
+    if (isServerTimestamp(left)) {
+      if (isServerTimestamp(right)) {
+        return compareTimestamps(getLocalWriteTime(left), getLocalWriteTime(right));
+      } else {
+        // Server timestamps come after all concrete timestamps.
+        return 1;
+      }
+    } else {
+      if (isServerTimestamp(right)) {
+        // Server timestamps come after all concrete timestamps.
+        return -1;
+      } else {
+        return compareTimestamps(left.getTimestampValue(), right.getTimestampValue());
+      }
+    }
+  }
+
+  private static int compareTimestamps(Timestamp left, Timestamp right) {
+    int cmp = Util.compareLongs(left.getSeconds(), right.getSeconds());
+    if (cmp != 0) {
+      return cmp;
     }
 
-    int comparison =
-        Util.compareLongs(
-            left.getTimestampValue().getSeconds(), right.getTimestampValue().getSeconds());
-    if (comparison != 0) {
-      return comparison;
-    }
-    return Util.compareIntegers(
-        left.getTimestampValue().getNanos(), right.getTimestampValue().getNanos());
+    return Util.compareIntegers(left.getNanos(), right.getNanos());
   }
 
   private static int compareReferences(String leftPath, String rightPath) {
