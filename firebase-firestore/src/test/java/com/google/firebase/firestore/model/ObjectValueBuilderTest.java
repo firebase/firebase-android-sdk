@@ -16,7 +16,7 @@ package com.google.firebase.firestore.model;
 
 import static com.google.firebase.firestore.testutil.TestUtil.field;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
-import static com.google.firebase.firestore.testutil.TestUtil.valueOf;
+import static com.google.firebase.firestore.testutil.TestUtil.wrap;
 import static com.google.firebase.firestore.testutil.TestUtil.wrapObject;
 import static junit.framework.TestCase.assertEquals;
 
@@ -31,9 +31,9 @@ import org.robolectric.annotation.Config;
 @Config(manifest = Config.NONE)
 public class ObjectValueBuilderTest {
   private String fooString = "foo";
-  private Value fooValue = valueOf(fooString);
+  private Value fooValue = wrap(fooString);
   private String barString = "bar";
-  private Value barValue = valueOf(barString);
+  private Value barValue = wrap(barString);
   private Value emptyObject = ObjectValue.emptyObject().getProto();
 
   @Test

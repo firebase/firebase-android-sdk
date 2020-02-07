@@ -18,19 +18,18 @@ import static com.google.firebase.firestore.testutil.TestUtil.blob;
 import static com.google.firebase.firestore.testutil.TestUtil.field;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.testutil.TestUtil.ref;
-import static com.google.firebase.firestore.testutil.TestUtil.valueOf;
 import static com.google.firebase.firestore.testutil.TestUtil.wrap;
 import static com.google.firebase.firestore.testutil.TestUtil.wrapObject;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.value.FieldValue;
 import com.google.firebase.firestore.model.value.ObjectValue;
 import com.google.firebase.firestore.model.value.ProtoValues;
 import com.google.firestore.v1.ArrayValue;
@@ -54,15 +53,16 @@ public class UserDataWriterTest {
 
   @Test
   public void testConvertsNullValue() {
-    FieldValue value = wrap(null);
-    assertEquals(value, new FieldValue(ProtoValues.NULL_VALUE));
+    Value value = wrap(null);
+    Object convertedValue = convertValue(value);
+    assertNull(convertedValue);
   }
 
   @Test
   public void testConvertsBooleanValue() {
     List<Boolean> testCases = asList(true, false);
     for (Boolean b : testCases) {
-      FieldValue value = wrap(b);
+      Value value = wrap(b);
       assertValueType(Value.ValueTypeCase.BOOLEAN_VALUE, value);
       Object convertedValue = convertValue(value);
       assertEquals(b, convertedValue);
@@ -73,7 +73,7 @@ public class UserDataWriterTest {
   public void testConvertsIntegerValue() {
     List<Integer> testCases = asList(Integer.MIN_VALUE, -1, 0, 1, Integer.MAX_VALUE);
     for (Integer i : testCases) {
-      FieldValue value = wrap(i);
+      Value value = wrap(i);
       assertValueType(Value.ValueTypeCase.INTEGER_VALUE, value);
       Object convertedValue = convertValue(value);
       assertEquals(i.longValue(), convertedValue);
@@ -93,7 +93,7 @@ public class UserDataWriterTest {
             Long.valueOf(Integer.MAX_VALUE),
             Long.MAX_VALUE);
     for (Long l : testCases) {
-      FieldValue value = wrap(l);
+      Value value = wrap(l);
       assertValueType(Value.ValueTypeCase.INTEGER_VALUE, value);
       Object convertedValue = convertValue(value);
       assertEquals(l, convertedValue);
@@ -115,7 +115,7 @@ public class UserDataWriterTest {
             Long.MAX_VALUE * 1.0f,
             Float.MAX_VALUE);
     for (Float f : testCases) {
-      FieldValue value = wrap(f);
+      Value value = wrap(f);
       assertValueType(Value.ValueTypeCase.DOUBLE_VALUE, value);
       Object convertedValue = convertValue(value);
       assertEquals(f.doubleValue(), convertedValue);
@@ -146,7 +146,7 @@ public class UserDataWriterTest {
             Double.POSITIVE_INFINITY,
             Double.NaN);
     for (Double d : testCases) {
-      FieldValue value = wrap(d);
+      Value value = wrap(d);
       assertValueType(Value.ValueTypeCase.DOUBLE_VALUE, value);
       Object convertedValue = convertValue(value);
       assertEquals(d, convertedValue);
@@ -162,9 +162,9 @@ public class UserDataWriterTest {
             DocumentSnapshot.ServerTimestampBehavior.DEFAULT);
     List<Date> testCases = asList(new Date(0), new Date(1356048000000L));
     for (Date d : testCases) {
-      FieldValue value = wrap(d);
+      Value value = wrap(d);
       assertValueType(Value.ValueTypeCase.TIMESTAMP_VALUE, value);
-      Object convertedValue = dateWriter.convertValue(value.getProto());
+      Object convertedValue = dateWriter.convertValue(value);
       assertEquals(d, convertedValue);
     }
   }
@@ -173,7 +173,7 @@ public class UserDataWriterTest {
   public void testConvertsTimestampValue() {
     List<Timestamp> testCases = asList(new Timestamp(0, 0), new Timestamp(1356048000L, 0));
     for (Timestamp t : testCases) {
-      FieldValue value = wrap(t);
+      Value value = wrap(t);
       assertValueType(Value.ValueTypeCase.TIMESTAMP_VALUE, value);
       Object convertedValue = convertValue(value);
       assertEquals(t, convertedValue);
@@ -184,7 +184,7 @@ public class UserDataWriterTest {
   public void testConvertsStringValue() {
     List<String> testCases = asList("", "foo");
     for (String s : testCases) {
-      FieldValue value = wrap(s);
+      Value value = wrap(s);
       Object convertedValue = convertValue(value);
       assertEquals(s, convertedValue);
     }
@@ -194,7 +194,7 @@ public class UserDataWriterTest {
   public void testConvertsBlobValue() {
     List<Blob> testCases = asList(blob(1, 2, 3), blob(1, 2));
     for (Blob b : testCases) {
-      FieldValue value = wrap(b);
+      Value value = wrap(b);
       Object convertedValue = convertValue(value);
       assertEquals(b, convertedValue);
     }
@@ -205,7 +205,7 @@ public class UserDataWriterTest {
     DatabaseId id = DatabaseId.forProject("project");
     List<DocumentReference> testCases = asList(ref("foo/bar"), ref("foo/baz"));
     for (DocumentReference docRef : testCases) {
-      Value value = valueOf(docRef);
+      Value value = wrap(docRef);
       assertTrue(ProtoValues.isReferenceValue(value));
       assertEquals(
           TestAccessHelper.referenceKey(docRef), DocumentKey.fromName(value.getReferenceValue()));
@@ -217,7 +217,7 @@ public class UserDataWriterTest {
   public void testConvertsGeoPointValue() {
     List<GeoPoint> testCases = asList(new GeoPoint(1.24, 4.56), new GeoPoint(-20, 100));
     for (GeoPoint p : testCases) {
-      FieldValue value = wrap(p);
+      Value value = wrap(p);
       Object convertedValue = convertValue(value);
       assertEquals(p, convertedValue);
     }
@@ -248,7 +248,7 @@ public class UserDataWriterTest {
   private static ObjectValue fromMap(Object... entries) {
     Map<String, Value> res = new HashMap<>();
     for (int i = 0; i < entries.length; i += 2) {
-      res.put((String) entries[i], ((FieldValue) entries[i + 1]).getProto());
+      res.put((String) entries[i], (Value) entries[i + 1]);
     }
     return ObjectValue.fromMap(res);
   }
@@ -257,19 +257,17 @@ public class UserDataWriterTest {
   public void testConvertsNestedObjects() {
     ObjectValue actual = wrapObject("a", map("b", map("c", "foo"), "d", true));
     ObjectValue.Builder expected = ObjectValue.newBuilder();
-    expected.set(field("a.b.c"), valueOf("foo"));
-    expected.set(field("a.d"), valueOf(true));
+    expected.set(field("a.b.c"), wrap("foo"));
+    expected.set(field("a.d"), wrap(true));
     assertEquals(expected.build(), actual);
   }
 
   @Test
   public void testConvertsLists() {
     ArrayValue.Builder expectedArray =
-        ArrayValue.newBuilder().addValues(valueOf("value")).addValues(valueOf(true));
-    FieldValue actual = wrap(asList("value", true));
-    assertTrue(
-        ProtoValues.equals(
-            Value.newBuilder().setArrayValue(expectedArray).build(), actual.getProto()));
+        ArrayValue.newBuilder().addValues(wrap("value")).addValues(wrap(true));
+    Value actual = wrap(asList("value", true));
+    assertTrue(ProtoValues.equals(Value.newBuilder().setArrayValue(expectedArray).build(), actual));
   }
 
   @Test
@@ -283,11 +281,11 @@ public class UserDataWriterTest {
     }
   }
 
-  private Object convertValue(FieldValue value) {
-    return writer.convertValue(value.getProto());
+  private Object convertValue(Value value) {
+    return writer.convertValue(value);
   }
 
-  private void assertValueType(Value.ValueTypeCase booleanValue, FieldValue value) {
-    assertEquals(booleanValue, value.getProto().getValueTypeCase());
+  private void assertValueType(Value.ValueTypeCase booleanValue, Value value) {
+    assertEquals(booleanValue, value.getValueTypeCase());
   }
 }

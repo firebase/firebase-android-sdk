@@ -14,36 +14,21 @@
 
 package com.google.firebase.firestore.model;
 
-import static com.google.firebase.firestore.testutil.TestUtil.blob;
-import static com.google.firebase.firestore.testutil.TestUtil.dbId;
 import static com.google.firebase.firestore.testutil.TestUtil.field;
 import static com.google.firebase.firestore.testutil.TestUtil.fieldMask;
-import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
-import static com.google.firebase.firestore.testutil.TestUtil.ref;
-import static com.google.firebase.firestore.testutil.TestUtil.valueOf;
 import static com.google.firebase.firestore.testutil.TestUtil.wrap;
 import static com.google.firebase.firestore.testutil.TestUtil.wrapObject;
-import static com.google.firebase.firestore.testutil.TestUtil.wrapRef;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 
-import com.google.common.testing.EqualsTester;
-import com.google.firebase.Timestamp;
-import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.firestore.model.mutation.FieldMask;
-import com.google.firebase.firestore.model.value.FieldValue;
 import com.google.firebase.firestore.model.value.ObjectValue;
 import com.google.firebase.firestore.model.value.ProtoValues;
-import com.google.firebase.firestore.model.value.ServerTimestampValue;
-import com.google.firebase.firestore.testutil.ComparatorTester;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Date;
+import com.google.firestore.v1.Value;
 import java.util.Map;
-import java.util.TimeZone;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -51,27 +36,16 @@ import org.robolectric.annotation.Config;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
+// TODO(mrschmidt): Rename to ObjectValueTest
 public class FieldValueTest {
-  private final Date date1;
-  private final Date date2;
-
-  public FieldValueTest() {
-    // Create a couple date objects for use in tests.
-    Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-    calendar.set(2016, 5, 20, 10, 20, 0);
-    date1 = calendar.getTime();
-
-    calendar.set(2016, 10, 21, 15, 32, 0);
-    date2 = calendar.getTime();
-  }
 
   @Test
   public void testExtractsFields() {
     ObjectValue obj = wrapObject("foo", map("a", 1, "b", true, "c", "string"));
     assertTrue(ProtoValues.isMapValue(obj.get(field("foo"))));
-    assertEquals(valueOf(1), obj.get(field("foo.a")));
-    assertEquals(valueOf(true), obj.get(field("foo.b")));
-    assertEquals(valueOf("string"), obj.get(field("foo.c")));
+    assertEquals(wrap(1), obj.get(field("foo.a")));
+    assertEquals(wrap(true), obj.get(field("foo.b")));
+    assertEquals(wrap("string"), obj.get(field("foo.c")));
 
     assertNull(obj.get(field("foo.a.b")));
     assertNull(obj.get(field("bar")));
@@ -118,7 +92,7 @@ public class FieldValueTest {
   public void testAddsMultipleNewFields() {
     ObjectValue object = ObjectValue.emptyObject();
     object = setField(object, "a", wrap("a"));
-    object = object.toBuilder().set(field("b"), valueOf("b")).set(field("c"), valueOf("c")).build();
+    object = object.toBuilder().set(field("b"), wrap("b")).set(field("c"), wrap("c")).build();
 
     assertEquals(wrapObject("a", "a", "b", "b", "c", "c"), object);
   }
@@ -220,188 +194,8 @@ public class FieldValueTest {
     assertEquals(ObjectValue.emptyObject(), object);
   }
 
-  @Test
-  public void testValueEquality() {
-    GeoPoint geoPoint1 = new GeoPoint(1, 0);
-    GeoPoint geoPoint2 = new GeoPoint(0, 2);
-    Timestamp timestamp1 = new Timestamp(date1);
-    Timestamp timestamp2 = new Timestamp(date2);
-    new EqualsTester()
-        .addEqualityGroup(wrap(true), new FieldValue(valueOf(true)))
-        .addEqualityGroup(wrap(false), new FieldValue(valueOf(false)))
-        .addEqualityGroup(wrap(null), new FieldValue(ProtoValues.NULL_VALUE))
-        .addEqualityGroup(
-            wrap(0.0 / 0.0),
-            wrap(Double.longBitsToDouble(0x7ff8000000000000L)),
-            new FieldValue(ProtoValues.NAN_VALUE))
-        // -0.0 and 0.0 compareTo the same but are not equal.
-        .addEqualityGroup(wrap(-0.0))
-        .addEqualityGroup(wrap(0.0))
-        .addEqualityGroup(wrap(1), new FieldValue(valueOf(1)))
-        // Doubles and Longs aren't equal.
-        .addEqualityGroup(wrap(1.0), new FieldValue(valueOf(1.0)))
-        .addEqualityGroup(wrap(1.1), new FieldValue(valueOf(1.1)))
-        .addEqualityGroup(wrap(blob(0, 1, 2)), new FieldValue(valueOf(blob(0, 1, 2))))
-        .addEqualityGroup(wrap(blob(0, 1)))
-        .addEqualityGroup(wrap("string"), new FieldValue(valueOf("string")))
-        .addEqualityGroup(wrap("strin"))
-        // latin small letter e + combining acute accent
-        .addEqualityGroup(wrap("e\u0301b"))
-        // latin small letter e with acute accent
-        .addEqualityGroup(wrap("\u00e9a"))
-        .addEqualityGroup(wrap(date1), wrap(timestamp1))
-        .addEqualityGroup(wrap(timestamp2))
-        // NOTE: ServerTimestampValues can't be parsed via wrap().
-        .addEqualityGroup(
-            new FieldValue(ServerTimestampValue.valueOf(new Timestamp(date1), null)),
-            new FieldValue(ServerTimestampValue.valueOf(new Timestamp(date1), null)))
-        .addEqualityGroup(new FieldValue(ServerTimestampValue.valueOf(new Timestamp(date2), null)))
-        .addEqualityGroup(wrap(geoPoint1), wrap(new GeoPoint(1, 0)))
-        .addEqualityGroup(wrap(geoPoint2))
-        .addEqualityGroup(
-            wrap(ref("coll/doc1")), new FieldValue(wrapRef(dbId("project"), key("coll/doc1"))))
-        .addEqualityGroup(new FieldValue(wrapRef(dbId("project", "bar"), key("coll/doc2"))))
-        .addEqualityGroup(new FieldValue(wrapRef(dbId("project", "baz"), key("coll/doc2"))))
-        .addEqualityGroup(wrap(Arrays.asList("foo", "bar")), wrap(Arrays.asList("foo", "bar")))
-        .addEqualityGroup(wrap(Arrays.asList("foo", "bar", "baz")))
-        .addEqualityGroup(wrap(Arrays.asList("foo")))
-        .addEqualityGroup(wrap(map("bar", 1, "foo", 2)), wrap(map("foo", 2, "bar", 1)))
-        .addEqualityGroup(wrap(map("bar", 2, "foo", 1)))
-        .addEqualityGroup(wrap(map("bar", 1)))
-        .addEqualityGroup(wrap(map("foo", 1)))
-        .testEquals();
-  }
-
-  @Test
-  public void testValueOrdering() {
-    new ComparatorTester()
-        // do not test for compatibility with equals(): +0/-0 break it.
-        .permitInconsistencyWithEquals()
-
-        // null first
-        .addEqualityGroup(wrap(null))
-
-        // booleans
-        .addEqualityGroup(wrap(false))
-        .addEqualityGroup(wrap(true))
-
-        // numbers
-        .addEqualityGroup(wrap(Double.NaN))
-        .addEqualityGroup(wrap(Double.NEGATIVE_INFINITY))
-        .addEqualityGroup(wrap(-Double.MAX_VALUE))
-        .addEqualityGroup(wrap(Long.MIN_VALUE))
-        .addEqualityGroup(wrap(-1.1))
-        .addEqualityGroup(wrap(-1.0))
-        .addEqualityGroup(wrap(-Double.MIN_NORMAL))
-        .addEqualityGroup(wrap(-Double.MIN_VALUE))
-        // Zeros all compare the same.
-        .addEqualityGroup(wrap(-0.0), wrap(0.0), wrap(0L))
-        .addEqualityGroup(wrap(Double.MIN_VALUE))
-        .addEqualityGroup(wrap(Double.MIN_NORMAL))
-        .addEqualityGroup(wrap(0.1))
-        // Doubles and Longs compareTo() the same.
-        .addEqualityGroup(wrap(1.0), wrap(1L))
-        .addEqualityGroup(wrap(1.1))
-        .addEqualityGroup(wrap(Long.MAX_VALUE))
-        .addEqualityGroup(wrap(Double.MAX_VALUE))
-        .addEqualityGroup(wrap(Double.POSITIVE_INFINITY))
-
-        // dates
-        .addEqualityGroup(wrap(date1))
-        .addEqualityGroup(wrap(date2))
-
-        // server timestamps come after all concrete timestamps.
-        // NOTE: server timestamps can't be parsed with wrap().
-        .addEqualityGroup(new FieldValue(ServerTimestampValue.valueOf(new Timestamp(date1), null)))
-        .addEqualityGroup(new FieldValue(ServerTimestampValue.valueOf(new Timestamp(date2), null)))
-
-        // strings
-        .addEqualityGroup(wrap(""))
-        .addEqualityGroup(wrap("\000\ud7ff\ue000\uffff"))
-        .addEqualityGroup(wrap("(╯°□°）╯︵ ┻━┻"))
-        .addEqualityGroup(wrap("a"))
-        .addEqualityGroup(wrap("abc def"))
-        // latin small letter e + combining acute accent + latin small letter b
-        .addEqualityGroup(wrap("e\u0301b"))
-        .addEqualityGroup(wrap("æ"))
-        // latin small letter e with acute accent + latin small letter a
-        .addEqualityGroup(wrap("\u00e9a"))
-
-        // blobs
-        .addEqualityGroup(wrap(blob()))
-        .addEqualityGroup(wrap(blob(0)))
-        .addEqualityGroup(wrap(blob(0, 1, 2, 3, 4)))
-        .addEqualityGroup(wrap(blob(0, 1, 2, 4, 3)))
-        .addEqualityGroup(wrap(blob(255)))
-
-        // resource names
-        .addEqualityGroup(new FieldValue(wrapRef(dbId("p1", "d1"), key("c1/doc1"))))
-        .addEqualityGroup(new FieldValue(wrapRef(dbId("p1", "d1"), key("c1/doc2"))))
-        .addEqualityGroup(new FieldValue(wrapRef(dbId("p1", "d1"), key("c10/doc1"))))
-        .addEqualityGroup(new FieldValue(wrapRef(dbId("p1", "d1"), key("c2/doc1"))))
-        .addEqualityGroup(new FieldValue(wrapRef(dbId("p1", "d2"), key("c1/doc1"))))
-        .addEqualityGroup(new FieldValue(wrapRef(dbId("p2", "d1"), key("c1/doc1"))))
-
-        // geo points
-        .addEqualityGroup(wrap(new GeoPoint(-90, -180)))
-        .addEqualityGroup(wrap(new GeoPoint(-90, 0)))
-        .addEqualityGroup(wrap(new GeoPoint(-90, 180)))
-        .addEqualityGroup(wrap(new GeoPoint(0, -180)))
-        .addEqualityGroup(wrap(new GeoPoint(0, 0)))
-        .addEqualityGroup(wrap(new GeoPoint(0, 180)))
-        .addEqualityGroup(wrap(new GeoPoint(1, -180)))
-        .addEqualityGroup(wrap(new GeoPoint(1, 0)))
-        .addEqualityGroup(wrap(new GeoPoint(1, 180)))
-        .addEqualityGroup(wrap(new GeoPoint(90, -180)))
-        .addEqualityGroup(wrap(new GeoPoint(90, 0)))
-        .addEqualityGroup(wrap(new GeoPoint(90, 180)))
-
-        // arrays
-        .addEqualityGroup(wrap(Arrays.asList("bar")))
-        .addEqualityGroup(wrap(Arrays.asList("foo", 1)))
-        .addEqualityGroup(wrap(Arrays.asList("foo", 2)))
-        .addEqualityGroup(wrap(Arrays.asList("foo", "0")))
-
-        // objects
-        .addEqualityGroup(wrap(map("bar", 0)))
-        .addEqualityGroup(wrap(map("bar", 0, "foo", 1)))
-        .addEqualityGroup(wrap(map("foo", 1)))
-        .addEqualityGroup(wrap(map("foo", 2)))
-        .addEqualityGroup(wrap(map("foo", "0")))
-        .testCompare();
-  }
-
-  @Test
-  public void testCanonicalIds() {
-    assertCanonicalId(wrap(null), "null");
-    assertCanonicalId(wrap(true), "true");
-    assertCanonicalId(wrap(false), "false");
-    assertCanonicalId(wrap(1), "1");
-    assertCanonicalId(wrap(1.0), "1.0");
-    assertCanonicalId(wrap(new Timestamp(30, 1000)), "time(30,1000)");
-    assertCanonicalId(wrap("a"), "a");
-    assertCanonicalId(wrap(blob(1, 2, 3)), "010203");
-    assertCanonicalId(new FieldValue(wrapRef(dbId("p1", "d1"), key("c1/doc1"))), "c1/doc1");
-    assertCanonicalId(wrap(new GeoPoint(30, 60)), "geo(30.0,60.0)");
-    assertCanonicalId(wrap(Arrays.asList(1, 2, 3)), "[1,2,3]");
-    assertCanonicalId(wrap(map("a", 1, "b", 2, "c", "3")), "{a:1,b:2,c:3}");
-    assertCanonicalId(
-        wrap(map("a", Arrays.asList("b", map("c", new GeoPoint(30, 60))))),
-        "{a:[b,{c:geo(30.0,60.0)}]}");
-  }
-
-  @Test
-  public void testObjectCanonicalIdsIgnoreSortOrder() {
-    assertCanonicalId(wrap(map("a", 1, "b", 2, "c", "3")), "{a:1,b:2,c:3}");
-    assertCanonicalId(wrap(map("c", 3, "b", 2, "a", "1")), "{a:1,b:2,c:3}");
-  }
-
-  private void assertCanonicalId(FieldValue fieldValue, String expectedCanonicalId) {
-    assertEquals(expectedCanonicalId, ProtoValues.canonicalId(fieldValue.getProto()));
-  }
-
-  private ObjectValue setField(ObjectValue objectValue, String fieldPath, FieldValue value) {
-    return objectValue.toBuilder().set(field(fieldPath), value.getProto()).build();
+  private ObjectValue setField(ObjectValue objectValue, String fieldPath, Value value) {
+    return objectValue.toBuilder().set(field(fieldPath), value).build();
   }
 
   private ObjectValue setField(
