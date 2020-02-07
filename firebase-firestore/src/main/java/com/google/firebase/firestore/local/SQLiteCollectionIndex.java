@@ -19,7 +19,7 @@ import com.google.firebase.firestore.core.IndexRange;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.ResourcePath;
-import com.google.firebase.firestore.model.value.FieldValue;
+import com.google.firestore.v1.Value;
 
 /**
  * A persisted "collection index" of all documents in the local cache (with mutations overlaid on
@@ -38,12 +38,12 @@ public class SQLiteCollectionIndex {
   }
 
   /** Adds the specified entry to the index. */
-  public void addEntry(FieldPath fieldPath, FieldValue fieldValue, DocumentKey documentKey) {
+  public void addEntry(FieldPath fieldPath, Value fieldValue, DocumentKey documentKey) {
     throw new RuntimeException("Not yet implemented.");
   }
 
   /** Adds the specified entry to the index. */
-  public void removeEntry(FieldPath fieldPath, FieldValue fieldValue, DocumentKey documentKey) {
+  public void removeEntry(FieldPath fieldPath, Value fieldValue, DocumentKey documentKey) {
     throw new RuntimeException("Not yet implemented.");
   }
 

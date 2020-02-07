@@ -47,6 +47,19 @@ public final class DocumentKey implements Comparable<DocumentKey> {
     return fromSegments(Collections.emptyList());
   }
 
+  /** Returns a DocumentKey from a fully qualified resource name. */
+  public static DocumentKey fromName(String name) {
+    ResourcePath resourceName = ResourcePath.fromString(name);
+    hardAssert(
+        resourceName.length() >= 4
+            && resourceName.getSegment(0).equals("projects")
+            && resourceName.getSegment(2).equals("databases")
+            && resourceName.getSegment(4).equals("documents"),
+        "Tried to parse an invalid key: %s",
+        resourceName);
+    return DocumentKey.fromPath(resourceName.popFirst(5));
+  }
+
   /**
    * Creates and returns a new document key with the given path.
    *
