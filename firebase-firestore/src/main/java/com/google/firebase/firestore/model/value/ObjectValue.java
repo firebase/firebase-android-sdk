@@ -44,7 +44,7 @@ public class ObjectValue {
         value.getValueTypeCase() == Value.ValueTypeCase.MAP_VALUE,
         "ObjectValues should be backed by a MapValue");
     hardAssert(
-        !ServerTimestampValue.isServerTimestamp(value),
+        !ServerTimestamps.isServerTimestamp(value),
         "ServerTimestamps should not be used as an ObjectValue");
     this.internalValue = value;
   }

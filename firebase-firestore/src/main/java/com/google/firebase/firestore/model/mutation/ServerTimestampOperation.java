@@ -16,7 +16,7 @@ package com.google.firebase.firestore.model.mutation;
 
 import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
-import com.google.firebase.firestore.model.value.ServerTimestampValue;
+import com.google.firebase.firestore.model.value.ServerTimestamps;
 import com.google.firestore.v1.Value;
 
 /** Transforms a value into a server-generated timestamp. */
@@ -31,7 +31,7 @@ public class ServerTimestampOperation implements TransformOperation {
 
   @Override
   public Value applyToLocalView(@Nullable Value previousValue, Timestamp localWriteTime) {
-    return ServerTimestampValue.valueOf(localWriteTime, previousValue);
+    return ServerTimestamps.valueOf(localWriteTime, previousValue);
   }
 
   @Override
