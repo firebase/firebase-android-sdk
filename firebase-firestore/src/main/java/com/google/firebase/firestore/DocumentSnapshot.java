@@ -21,8 +21,8 @@ import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.value.FieldValue;
 import com.google.firebase.firestore.util.CustomClassMapper;
+import com.google.firestore.v1.Value;
 import java.util.Date;
 import java.util.Map;
 
@@ -149,7 +149,7 @@ public class DocumentSnapshot {
             firestore,
             firestore.getFirestoreSettings().areTimestampsInSnapshotsEnabled(),
             serverTimestampBehavior);
-    return doc == null ? null : userDataWriter.convertObject(doc.getData());
+    return doc == null ? null : userDataWriter.convertObject(doc.getData().getFieldsMap());
   }
 
   /**
@@ -529,7 +529,7 @@ public class DocumentSnapshot {
       @NonNull ServerTimestampBehavior serverTimestampBehavior,
       boolean timestampsInSnapshots) {
     if (doc != null) {
-      FieldValue val = doc.getField(fieldPath);
+      Value val = doc.getField(fieldPath);
       if (val != null) {
         UserDataWriter userDataWriter =
             new UserDataWriter(firestore, timestampsInSnapshots, serverTimestampBehavior);
