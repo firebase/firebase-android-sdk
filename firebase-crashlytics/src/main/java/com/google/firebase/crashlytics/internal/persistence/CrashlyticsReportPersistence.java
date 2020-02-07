@@ -39,7 +39,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * associated events into "finalized" report files, reading reports from disk, parsing them to
  * be returned as CrashlyticsReport objects, and deleting them.
  */
-class CrashlyticsReportPersistence {
+public class CrashlyticsReportPersistence {
 
   private static final Charset UTF_8 = Charset.forName("UTF-8");
 
