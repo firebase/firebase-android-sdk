@@ -1,7 +1,8 @@
 # Unreleased 
-- [changed] Internal changes to the in-memory representation of Firestore
-  documents. You should see an overall decrease in object allocations and 
-  a performance improvement for `DocumentSnapshot.getData()` calls.
+- [changed] Changed the in-memory representation of Firestore documents to
+  reduce memory allocations and improve performance. Calls to 
+  `DocumentSnapshot.getData()` and `DocumentSnapshot.toObject()` will see
+  the biggest improvement.
 
 # 21.4.0
 - [feature] Firestore previously required that every document read in a
