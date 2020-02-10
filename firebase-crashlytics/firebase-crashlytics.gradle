@@ -55,6 +55,9 @@ dependencies {
 
     implementation project(':firebase-common')
     implementation project(':firebase-components')
+    implementation project(':transport:transport-api')
+    implementation project(':transport:transport-runtime')
+    implementation project(':transport:transport-backend-cct')
     implementation ('com.google.firebase:firebase-iid:19.0.0') {
         exclude group: "com.google.firebase", module: "firebase-common"
     }
