@@ -14,6 +14,7 @@
 
 package com.google.firebase.crashlytics.internal.model;
 
+import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.auto.value.AutoValue;
@@ -22,6 +23,8 @@ import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.
 import com.google.firebase.encoders.annotations.Encodable;
 import com.google.firebase.encoders.annotations.Encodable.Field;
 import com.google.firebase.encoders.annotations.Encodable.Ignore;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.nio.charset.Charset;
 
 /**
@@ -35,6 +38,24 @@ import java.nio.charset.Charset;
 @Encodable
 @AutoValue
 public abstract class CrashlyticsReport {
+
+  @IntDef({
+    Architecture.ARMV6,
+    Architecture.ARMV7,
+    Architecture.ARM64,
+    Architecture.X86_32,
+    Architecture.X86_64,
+    Architecture.UNKNOWN
+  })
+  @Retention(RetentionPolicy.SOURCE)
+  public @interface Architecture {
+    int ARMV6 = 5;
+    int ARMV7 = 6;
+    int ARM64 = 9;
+    int X86_32 = 0;
+    int X86_64 = 1;
+    int UNKNOWN = 7;
+  }
 
   private static final Charset UTF_8 = Charset.forName("UTF-8");
 
@@ -363,6 +384,7 @@ public abstract class CrashlyticsReport {
         return new AutoValue_CrashlyticsReport_Session_Device.Builder();
       }
 
+      @Architecture
       @NonNull
       public abstract int getArch();
 
@@ -390,7 +412,7 @@ public abstract class CrashlyticsReport {
       public abstract static class Builder {
 
         @NonNull
-        public abstract Builder setArch(int value);
+        public abstract Builder setArch(@Architecture int value);
 
         @NonNull
         public abstract Builder setModel(@NonNull String value);
