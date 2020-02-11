@@ -16,6 +16,7 @@ package com.google.firebase.firestore.local;
 
 import static com.google.firebase.firestore.local.EncodedPath.decodeResourcePath;
 import static com.google.firebase.firestore.local.EncodedPath.encode;
+import static com.google.firebase.firestore.testutil.TestUtil.filter;
 import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.testutil.TestUtil.path;
@@ -33,6 +34,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.database.collection.ImmutableSortedMap;
+import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.ResourcePath;
@@ -68,8 +70,13 @@ public class SQLiteSchemaTest {
   private SQLiteSchema schema;
   private SQLiteOpenHelper opener;
 
+  private DatabaseId databaseId;
+  private LocalSerializer serializer;
+
   @Before
   public void setUp() {
+    databaseId = DatabaseId.forProject("foo");
+    serializer = new LocalSerializer(new RemoteSerializer(databaseId));
     opener =
         new SQLiteOpenHelper(ApplicationProvider.getApplicationContext(), "foo", null, 1) {
           @Override
@@ -79,7 +86,7 @@ public class SQLiteSchemaTest {
           public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {}
         };
     db = opener.getWritableDatabase();
-    schema = new SQLiteSchema(db);
+    schema = new SQLiteSchema(db, serializer);
   }
 
   @After
@@ -268,7 +275,7 @@ public class SQLiteSchemaTest {
           Write.newBuilder()
               .setUpdate(
                   Document.newBuilder()
-                      .setName("projects/projectId/databases/(default)/documents/" + doc)));
+                      .setName("projects/project/databases/(default)/documents/" + doc)));
     }
 
     db.execSQL(
@@ -521,14 +528,48 @@ public class SQLiteSchemaTest {
                 Target targetProto = Target.parseFrom(targetProtoBytes);
                 assertTrue(targetProto.hasLastLimboFreeSnapshotVersion());
               } catch (InvalidProtocolBufferException e) {
-                fail("Failed to decode Query data");
+                fail("Failed to decode Target data");
+              }
+            });
+  }
+
+  @Test
+  public void rewritesCanonicalIds() {
+    schema.runMigrations(0, 10);
+
+    Query filteredQuery = query("colletion").filter(filter("foo", "==", "bar"));
+    TargetData initialTargetData =
+        new TargetData(
+            filteredQuery.toTarget(),
+            /* targetId= */ 2,
+            /* sequenceNumber= */ 1,
+            QueryPurpose.LISTEN);
+
+    db.execSQL(
+        "INSERT INTO targets (target_id, canonical_id, target_proto) VALUES (?,?, ?)",
+        new Object[] {
+          2, "invalid_canonical_id", serializer.encodeTargetData(initialTargetData).toByteArray()
+        });
+
+    schema.runMigrations(10, 11);
+    new SQLitePersistence.Query(db, "SELECT canonical_id, target_proto, canonical_id FROM targets")
+        .forEach(
+            cursor -> {
+              String actualCanonicalId = cursor.getString(0);
+              byte[] targetProtoBytes = cursor.getBlob(1);
+
+              try {
+                Target targetProto = Target.parseFrom(targetProtoBytes);
+                TargetData targetData = serializer.decodeTargetData(targetProto);
+                String expectedCanonicalId = targetData.getTarget().getCanonicalId();
+                assertEquals(actualCanonicalId, expectedCanonicalId);
+              } catch (InvalidProtocolBufferException e) {
+                fail("Failed to decode Target data");
               }
             });
   }
 
   private SQLiteRemoteDocumentCache createRemoteDocumentCache() {
-    DatabaseId databaseId = DatabaseId.forProject("foo");
-    LocalSerializer serializer = new LocalSerializer(new RemoteSerializer(databaseId));
     SQLitePersistence persistence =
         new SQLitePersistence(serializer, LruGarbageCollector.Params.Default(), opener);
     persistence.start();

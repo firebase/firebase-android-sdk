@@ -36,6 +36,8 @@ import org.json.JSONObject;
 
 /**
  * Read existing iid only for default (first initialized) instance of this firebase application.*
+ *
+ * @hide
  */
 public class IidStore {
   private static final String IID_SHARED_PREFS_NAME = "com.google.android.gms.appid";
