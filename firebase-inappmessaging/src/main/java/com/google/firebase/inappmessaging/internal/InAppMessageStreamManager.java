@@ -197,7 +197,14 @@ public class InAppMessageStreamManager {
                                       Logging.logi(
                                           String.format(
                                               "Already impressed %s ? : %s",
-                                              content.getVanillaPayload().getCampaignName(),
+                                              content
+                                                      .getPayloadCase()
+                                                      .equals(
+                                                          ThickContent.PayloadCase.VANILLA_PAYLOAD)
+                                                  ? content.getVanillaPayload().getCampaignName()
+                                                  : content
+                                                      .getExperimentalPayload()
+                                                      .getCampaignName(),
                                               isImpressed)))
                               .filter(isImpressed -> !isImpressed)
                               .map(isImpressed -> content);
