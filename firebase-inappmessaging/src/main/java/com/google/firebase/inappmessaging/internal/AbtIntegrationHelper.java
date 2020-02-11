@@ -43,9 +43,10 @@ public class AbtIntegrationHelper {
   public void updateRunningExperiments(FetchEligibleCampaignsResponse response) {
     ArrayList<AbtExperimentInfo> runningExperiments = new ArrayList<>();
     for (CampaignProto.ThickContent content : response.getMessagesList()) {
-      if (content
-          .getPayloadCase()
-          .equals(CampaignProto.ThickContent.PayloadCase.EXPERIMENTAL_PAYLOAD)) {
+      if (!content.getIsTestCampaign()
+          && content
+              .getPayloadCase()
+              .equals(CampaignProto.ThickContent.PayloadCase.EXPERIMENTAL_PAYLOAD)) {
         FirebaseAbt.ExperimentPayload payload =
             content.getExperimentalPayload().getExperimentPayload();
         runningExperiments.add(
