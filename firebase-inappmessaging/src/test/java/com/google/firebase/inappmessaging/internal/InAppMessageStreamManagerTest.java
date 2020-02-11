@@ -357,8 +357,6 @@ public class InAppMessageStreamManagerTest {
     analyticsEmitter.onNext(ANALYTICS_EVENT_NAME);
 
     assertExpectedMessageTriggered(subscriber, onAnalyticsTriggered);
-    verify(abtIntegrationHelper)
-        .setExperimentActive(t.getExperimentalPayload().getExperimentPayload());
   }
 
   @Test
