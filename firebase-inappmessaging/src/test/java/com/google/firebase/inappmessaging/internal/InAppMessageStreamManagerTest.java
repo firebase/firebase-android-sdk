@@ -27,6 +27,7 @@ import static io.reactivex.BackpressureStrategy.BUFFER;
 import static io.reactivex.schedulers.Schedulers.trampoline;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -63,6 +64,7 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
@@ -355,6 +357,33 @@ public class InAppMessageStreamManagerTest {
     analyticsEmitter.onNext(ANALYTICS_EVENT_NAME);
 
     assertExpectedMessageTriggered(subscriber, onAnalyticsTriggered);
+  }
+
+  @Test
+  public void stream_ontestExperiment_doesNotSetExperimentActive() {
+    ThickContent t =
+        thickContentBuilder
+            .clearVanillaPayload()
+            .setIsTestCampaign(true)
+            .setExperimentalPayload(
+                CampaignProto.ExperimentalCampaignPayload.newBuilder()
+                    .setCampaignStartTimeMillis(PAST)
+                    .setCampaignEndTimeMillis(FUTURE)
+                    .setExperimentPayload(FirebaseAbt.ExperimentPayload.getDefaultInstance()))
+            .build();
+
+    FetchEligibleCampaignsResponse r =
+        FetchEligibleCampaignsResponse.newBuilder()
+            .setExpirationEpochTimestampMillis(FUTURE)
+            .addMessages(t)
+            .build();
+
+    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(r);
+
+    analyticsEmitter.onNext(ANALYTICS_EVENT_NAME);
+
+    assertExpectedMessageTriggered(subscriber, onAnalyticsTriggered);
+    verify(abtIntegrationHelper, never()).setExperimentActive(Mockito.any());
   }
 
   @Test

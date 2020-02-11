@@ -317,8 +317,11 @@ public class InAppMessageStreamManager {
       campaignId = content.getExperimentalPayload().getCampaignId();
       campaignName = content.getExperimentalPayload().getCampaignName();
       // At this point we set the experiment to become active in analytics.
-      abtIntegrationHelper.setExperimentActive(
-          content.getExperimentalPayload().getExperimentPayload());
+      // As long as it's not a test experiment.
+      if (!content.getIsTestCampaign()) {
+        abtIntegrationHelper.setExperimentActive(
+            content.getExperimentalPayload().getExperimentPayload());
+      }
     } else {
       return Maybe.empty();
     }
