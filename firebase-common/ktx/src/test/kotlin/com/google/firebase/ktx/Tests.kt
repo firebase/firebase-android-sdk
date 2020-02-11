@@ -100,4 +100,30 @@ class KtxTests {
             app.delete()
         }
     }
+
+    @Test
+    fun `FirebaseOptions builder works`() {
+        val key = "API_KEY"
+        val appId = "APP_ID"
+        val dbUrl = "common-ktx.database.io"
+        val senderId = "1234567"
+        val project = "123"
+        val bucket = "common-ktx.appspot.com"
+
+        val options = firebaseOptions {
+            apiKey = key
+            applicationId = appId
+            databaseUrl = dbUrl
+            gcmSenderId = senderId
+            projectId = project
+            storageBucket = bucket
+        }
+
+        assertThat(key).isEqualTo(options.apiKey)
+        assertThat(appId).isEqualTo(options.applicationId)
+        assertThat(dbUrl).isEqualTo(options.databaseUrl)
+        assertThat(senderId).isEqualTo(options.gcmSenderId)
+        assertThat(project).isEqualTo(options.projectId)
+        assertThat(bucket).isEqualTo(options.storageBucket)
+    }
 }

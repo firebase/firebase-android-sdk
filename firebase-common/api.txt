@@ -33,6 +33,12 @@ package com.google.firebase {
     ctor public FirebaseOptions.Builder();
     ctor public FirebaseOptions.Builder(@NonNull com.google.firebase.FirebaseOptions);
     method @NonNull public com.google.firebase.FirebaseOptions build();
+    method @NonNull public String getApiKey();
+    method @NonNull public String getApplicationId();
+    method @Nullable public String getDatabaseUrl();
+    method @Nullable public String getGcmSenderId();
+    method @Nullable public String getProjectId();
+    method @Nullable public String getStorageBucket();
     method @NonNull public com.google.firebase.FirebaseOptions.Builder setApiKey(@NonNull String);
     method @NonNull public com.google.firebase.FirebaseOptions.Builder setApplicationId(@NonNull String);
     method @NonNull public com.google.firebase.FirebaseOptions.Builder setDatabaseUrl(@Nullable String);

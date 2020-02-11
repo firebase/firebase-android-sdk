@@ -77,15 +77,30 @@ public final class FirebaseOptions {
     }
 
     @NonNull
+    public String getApiKey() {
+      return this.apiKey;
+    }
+
+    @NonNull
     public Builder setApiKey(@NonNull String apiKey) {
       this.apiKey = checkNotEmpty(apiKey, "ApiKey must be set.");
       return this;
     }
 
     @NonNull
+    public String getApplicationId() {
+      return this.applicationId;
+    }
+
+    @NonNull
     public Builder setApplicationId(@NonNull String applicationId) {
       this.applicationId = checkNotEmpty(applicationId, "ApplicationId must be set.");
       return this;
+    }
+
+    @Nullable
+    public String getDatabaseUrl() {
+      return this.databaseUrl;
     }
 
     @NonNull
@@ -103,16 +118,31 @@ public final class FirebaseOptions {
       return this;
     }
 
+    @Nullable
+    public String getGcmSenderId() {
+      return this.gcmSenderId;
+    }
+
     @NonNull
     public Builder setGcmSenderId(@Nullable String gcmSenderId) {
       this.gcmSenderId = gcmSenderId;
       return this;
     }
 
+    @Nullable
+    public String getStorageBucket() {
+      return this.storageBucket;
+    }
+
     @NonNull
     public Builder setStorageBucket(@Nullable String storageBucket) {
       this.storageBucket = storageBucket;
       return this;
+    }
+
+    @Nullable
+    public String getProjectId() {
+      return this.projectId;
     }
 
     @NonNull

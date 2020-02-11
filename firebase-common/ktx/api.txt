@@ -8,6 +8,7 @@ package com.google.firebase.ktx {
   public final class FirebaseKt {
     ctor public FirebaseKt();
     method @NonNull public static com.google.firebase.FirebaseApp app(@NonNull com.google.firebase.ktx.Firebase, @NonNull String name);
+    method @NonNull public static com.google.firebase.FirebaseOptions firebaseOptions(@NonNull kotlin.jvm.functions.Function1<? super com.google.firebase.FirebaseOptions.Builder,kotlin.Unit> init);
     method @NonNull public static com.google.firebase.FirebaseApp getApp(@NonNull com.google.firebase.ktx.Firebase);
     method @NonNull public static com.google.firebase.FirebaseOptions getOptions(@NonNull com.google.firebase.ktx.Firebase);
     method @Nullable public static com.google.firebase.FirebaseApp initialize(@NonNull com.google.firebase.ktx.Firebase, @NonNull android.content.Context context);

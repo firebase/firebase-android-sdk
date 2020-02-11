@@ -50,6 +50,13 @@ fun Firebase.initialize(context: Context, options: FirebaseOptions, name: String
 val Firebase.options: FirebaseOptions
     get() = Firebase.app.options
 
+/** Returns a [FirebaseOptions] instance initialized using the [init] function. */
+fun firebaseOptions(init: FirebaseOptions.Builder.() -> Unit): FirebaseOptions {
+    val builder = FirebaseOptions.Builder()
+    builder.init()
+    return builder.build()
+}
+
 internal const val LIBRARY_NAME: String = "fire-core-ktx"
 
 /** @suppress */
