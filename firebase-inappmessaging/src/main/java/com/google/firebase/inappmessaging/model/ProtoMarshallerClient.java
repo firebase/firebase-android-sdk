@@ -15,6 +15,7 @@
 package com.google.firebase.inappmessaging.model;
 
 import android.text.TextUtils;
+import androidx.annotation.NonNull;
 import com.google.common.base.Preconditions;
 import com.google.firebase.inappmessaging.MessagesProto;
 import com.google.firebase.inappmessaging.internal.Logging;
@@ -159,7 +160,7 @@ public class ProtoMarshallerClient {
   private static Action decode(MessagesProto.Action protoAction, MessagesProto.Button protoButton) {
 
     Action.Builder builder = decode(protoAction);
-    if (protoButton != MessagesProto.Button.getDefaultInstance()) {
+    if (!protoButton.equals(MessagesProto.Button.getDefaultInstance())) {
       Button.Builder buttonBuilder = Button.builder();
       if (!TextUtils.isEmpty(protoButton.getButtonHexColor())) {
         buttonBuilder.setButtonHexColor(protoButton.getButtonHexColor());
@@ -207,11 +208,14 @@ public class ProtoMarshallerClient {
   /** Tranform {@link MessagesProto.Content} proto to an {@link InAppMessage} value object */
   public static InAppMessage decode(
       @Nonnull MessagesProto.Content in,
-      String campaignId,
-      String campaignName,
+      @NonNull String campaignId,
+      @NonNull String campaignName,
       boolean isTestMessage,
       @Nullable Map<String, String> data) {
     Preconditions.checkNotNull(in, "FirebaseInAppMessaging content cannot be null.");
+    Preconditions.checkNotNull(campaignId, "FirebaseInAppMessaging campaign id cannot be null.");
+    Preconditions.checkNotNull(
+        campaignName, "FirebaseInAppMessaging campaign name cannot be null.");
     Logging.logd("Decoding message: " + in.toString());
     CampaignMetadata campaignMetadata =
         new CampaignMetadata(campaignId, campaignName, isTestMessage);
