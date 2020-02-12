@@ -6,17 +6,15 @@ codecov:
 coverage:
   status:
     project:
-      default: off
+      default:
       FirebaseCommon:
         flags: FirebaseCommon
-        informational: false
-        threshold: 5
+        informational: true
     patch:
-      default: off
+      default:
       FirebaseCommon:
         flags: FirebaseCommon
-        informational: false
-        threshold: 5
+        informational: true
 
 comment:
-  layout: "flags, files, footer"
+  layout: "flags, footer"
