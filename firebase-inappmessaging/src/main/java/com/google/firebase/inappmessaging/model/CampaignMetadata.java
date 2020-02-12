@@ -42,8 +42,7 @@ public class CampaignMetadata {
   public String getCampaignName() {
     return campaignName;
   }
-
-  @NonNull
+  
   public boolean getIsTestMessage() {
     return isTestMessage;
   }
