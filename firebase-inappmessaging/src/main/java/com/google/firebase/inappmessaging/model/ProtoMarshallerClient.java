@@ -15,9 +15,7 @@
 package com.google.firebase.inappmessaging.model;
 
 import android.text.TextUtils;
-
 import androidx.annotation.NonNull;
-
 import com.google.common.base.Preconditions;
 import com.google.firebase.inappmessaging.MessagesProto;
 import com.google.firebase.inappmessaging.internal.Logging;
@@ -216,8 +214,10 @@ public class ProtoMarshallerClient {
       @Nullable Map<String, String> data) {
     Preconditions.checkNotNull(in, "FirebaseInAppMessaging content cannot be null.");
     Preconditions.checkNotNull(campaignId, "FirebaseInAppMessaging campaign id cannot be null.");
-    Preconditions.checkNotNull(campaignName, "FirebaseInAppMessaging campaign name cannot be null.");
-    Preconditions.checkNotNull(isTestMessage, "FirebaseInAppMessaging isTestMessage cannot be null.");
+    Preconditions.checkNotNull(
+        campaignName, "FirebaseInAppMessaging campaign name cannot be null.");
+    Preconditions.checkNotNull(
+        isTestMessage, "FirebaseInAppMessaging isTestMessage cannot be null.");
     Logging.logd("Decoding message: " + in.toString());
     CampaignMetadata campaignMetadata =
         new CampaignMetadata(campaignId, campaignName, isTestMessage);

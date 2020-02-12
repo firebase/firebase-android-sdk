@@ -225,7 +225,8 @@ public class DisplayCallbacksImpl implements FirebaseInAppMessagingDisplayCallba
 
   private Completable logToImpressionStore() {
     String campaignId = inAppMessage.getCampaignMetadata().getCampaignId();
-    Logging.logd("Attempting to record message impression in impression store for id:" + campaignId);
+    Logging.logd(
+        "Attempting to record message impression in impression store for id:" + campaignId);
     Completable storeCampaignImpression =
         impressionStorageClient
             .storeImpression(
