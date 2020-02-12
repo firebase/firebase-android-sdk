@@ -43,6 +43,7 @@ public class CampaignMetadata {
     return campaignName;
   }
 
+  @NonNull
   public boolean getIsTestMessage() {
     return isTestMessage;
   }
