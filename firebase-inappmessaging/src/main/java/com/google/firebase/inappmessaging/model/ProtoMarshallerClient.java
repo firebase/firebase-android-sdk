@@ -210,7 +210,7 @@ public class ProtoMarshallerClient {
       @Nonnull MessagesProto.Content in,
       @NonNull String campaignId,
       @NonNull String campaignName,
-      @NonNull boolean isTestMessage,
+      boolean isTestMessage,
       @Nullable Map<String, String> data) {
     Preconditions.checkNotNull(in, "FirebaseInAppMessaging content cannot be null.");
     Preconditions.checkNotNull(campaignId, "FirebaseInAppMessaging campaign id cannot be null.");
