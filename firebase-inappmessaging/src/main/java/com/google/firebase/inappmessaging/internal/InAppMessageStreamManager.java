@@ -291,7 +291,7 @@ public class InAppMessageStreamManager {
     } else if (content.getPayloadCase().equals(ThickContent.PayloadCase.EXPERIMENTAL_PAYLOAD)) {
       Logging.logi(
           String.format(
-              "Already impressed campaign %s ? : %s",
+              "Already impressed experiment %s ? : %s",
               content.getExperimentalPayload().getCampaignName(), isImpressed));
     }
   }

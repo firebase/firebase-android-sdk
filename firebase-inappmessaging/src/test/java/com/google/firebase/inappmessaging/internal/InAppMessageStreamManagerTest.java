@@ -201,7 +201,8 @@ public class InAppMessageStreamManagerTest {
     when(campaignCacheClient.get()).thenReturn(Maybe.empty());
     when(campaignCacheClient.put(any(FetchEligibleCampaignsResponse.class)))
         .thenReturn(Completable.complete());
-    when(impressionStorageClient.isImpressed(any())).thenReturn(Single.just(false));
+    when(impressionStorageClient.isImpressed(any(ThickContent.class)))
+        .thenReturn(Single.just(false));
     when(impressionStorageClient.getAllImpressions()).thenReturn(Maybe.just(CAMPAIGN_IMPRESSIONS));
   }
 
@@ -559,7 +560,8 @@ public class InAppMessageStreamManagerTest {
 
   @Test
   public void stream_whenCampaignImpressed_filtersCampaign() {
-    when(impressionStorageClient.isImpressed(any())).thenReturn(Single.just(true));
+    when(impressionStorageClient.isImpressed(any(ThickContent.class)))
+        .thenReturn(Single.just(true));
     when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(campaignsResponse);
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
@@ -569,7 +571,8 @@ public class InAppMessageStreamManagerTest {
 
   @Test
   public void stream_whenCampaignImpressionStoreFails_doesNotFilterCampaign() {
-    when(impressionStorageClient.isImpressed(any())).thenReturn(Single.error(new Exception("e1")));
+    when(impressionStorageClient.isImpressed(any(ThickContent.class)))
+        .thenReturn(Single.error(new Exception("e1")));
     when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(campaignsResponse);
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
@@ -579,7 +582,8 @@ public class InAppMessageStreamManagerTest {
 
   @Test
   public void stream_whenCampaignImpressionStoreFail_doesNotFilterCampaign() {
-    when(impressionStorageClient.isImpressed(any())).thenReturn(Single.error(new Exception("e1")));
+    when(impressionStorageClient.isImpressed(any(ThickContent.class)))
+        .thenReturn(Single.error(new Exception("e1")));
     when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(campaignsResponse);
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
