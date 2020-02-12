@@ -186,19 +186,13 @@ public class InAppMessageStreamManager {
                       content.getIsTestCampaign()
                           ? Maybe.just(content)
                           : impressionStorageClient
-                              .isImpressed(content.getVanillaPayload().getCampaignId())
+                              .isImpressed(content)
                               .doOnError(
                                   e ->
                                       Logging.logw("Impression store read fail: " + e.getMessage()))
                               .onErrorResumeNext(
                                   Single.just(false)) // Absorb impression read errors
-                              .doOnSuccess(
-                                  isImpressed ->
-                                      Logging.logi(
-                                          String.format(
-                                              "Already impressed %s ? : %s",
-                                              content.getVanillaPayload().getCampaignName(),
-                                              isImpressed)))
+                              .doOnSuccess(isImpressed -> logImpressionStatus(content, isImpressed))
                               .filter(isImpressed -> !isImpressed)
                               .map(isImpressed -> content);
 
@@ -286,6 +280,20 @@ public class InAppMessageStreamManager {
           .map(isRateLimited -> content);
     }
     return Maybe.just(content);
+  }
+
+  private static void logImpressionStatus(ThickContent content, Boolean isImpressed) {
+    if (content.getPayloadCase().equals(ThickContent.PayloadCase.VANILLA_PAYLOAD)) {
+      Logging.logi(
+          String.format(
+              "Already impressed campaign %s ? : %s",
+              content.getVanillaPayload().getCampaignName(), isImpressed));
+    } else if (content.getPayloadCase().equals(ThickContent.PayloadCase.EXPERIMENTAL_PAYLOAD)) {
+      Logging.logi(
+          String.format(
+              "Already impressed experiment %s ? : %s",
+              content.getExperimentalPayload().getCampaignName(), isImpressed));
+    }
   }
 
   private Maybe<TriggeredInAppMessage> getTriggeredInAppMessageMaybe(

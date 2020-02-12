@@ -208,7 +208,7 @@ public class DisplayCallbacksImpl implements FirebaseInAppMessagingDisplayCallba
       Logging.logd(String.format("Not recording: %s. Reason: %s", action, reason));
     }
     // If a reason is not provided then check for a test message.
-    else if (inAppMessage.getIsTestMessage()) {
+    else if (inAppMessage.getCampaignMetadata().getIsTestMessage()) {
       Logging.logd(String.format("Not recording: %s. Reason: Message is test message", action));
     }
     // If no reason and not a test message check for data collection being disabled.
@@ -224,9 +224,9 @@ public class DisplayCallbacksImpl implements FirebaseInAppMessagingDisplayCallba
   }
 
   private Completable logToImpressionStore() {
-    Logging.logd("Attempting to record: message impression in impression store");
-    String campaignId = inAppMessage.getCampaignId();
-
+    String campaignId = inAppMessage.getCampaignMetadata().getCampaignId();
+    Logging.logd(
+        "Attempting to record message impression in impression store for id: " + campaignId);
     Completable storeCampaignImpression =
         impressionStorageClient
             .storeImpression(
