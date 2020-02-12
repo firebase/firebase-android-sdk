@@ -160,7 +160,7 @@ public class ProtoMarshallerClient {
   private static Action decode(MessagesProto.Action protoAction, MessagesProto.Button protoButton) {
 
     Action.Builder builder = decode(protoAction);
-    if (protoButton != MessagesProto.Button.getDefaultInstance()) {
+    if (!protoButton.equals(MessagesProto.Button.getDefaultInstance())) {
       Button.Builder buttonBuilder = Button.builder();
       if (!TextUtils.isEmpty(protoButton.getButtonHexColor())) {
         buttonBuilder.setButtonHexColor(protoButton.getButtonHexColor());
@@ -216,8 +216,6 @@ public class ProtoMarshallerClient {
     Preconditions.checkNotNull(campaignId, "FirebaseInAppMessaging campaign id cannot be null.");
     Preconditions.checkNotNull(
         campaignName, "FirebaseInAppMessaging campaign name cannot be null.");
-    Preconditions.checkNotNull(
-        isTestMessage, "FirebaseInAppMessaging isTestMessage cannot be null.");
     Logging.logd("Decoding message: " + in.toString());
     CampaignMetadata campaignMetadata =
         new CampaignMetadata(campaignId, campaignName, isTestMessage);
