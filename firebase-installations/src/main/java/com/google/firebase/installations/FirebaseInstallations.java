@@ -72,7 +72,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   private final List<StateListener> listeners = new ArrayList<>();
 
   /* used for thread-level synchronization of generating and persisting fids */
-  private final Object lockGenerateFid = new Object();
+  private static final Object lockGenerateFid = new Object();
   /* file used for process-level syncronization of generating and persisting fids */
   private static final String LOCKFILE_NAME_GENERATE_FID = "generatefid.lock";
   private static final String CHIME_FIREBASE_APP_NAME = "CHIME_ANDROID_SDK";
@@ -355,10 +355,10 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
    *     been persisted.
    */
   private PersistedInstallationEntry getPrefsWithGeneratedIdMultiProcessSafe() {
-    CrossProcessLock lock =
-        CrossProcessLock.acquire(firebaseApp.getApplicationContext(), LOCKFILE_NAME_GENERATE_FID);
-    try {
-      synchronized (lockGenerateFid) {
+    synchronized (lockGenerateFid) {
+      CrossProcessLock lock =
+          CrossProcessLock.acquire(firebaseApp.getApplicationContext(), LOCKFILE_NAME_GENERATE_FID);
+      try {
         PersistedInstallationEntry prefs =
             persistedInstallation.readPersistedInstallationEntryValue();
         // Check if a new FID needs to be created
@@ -374,10 +374,10 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
                   prefs.withUnregisteredFid(fid));
         }
         return prefs;
-      }
 
-    } finally {
-      lock.releaseAndClose();
+      } finally {
+        lock.releaseAndClose();
+      }
     }
   }
 
