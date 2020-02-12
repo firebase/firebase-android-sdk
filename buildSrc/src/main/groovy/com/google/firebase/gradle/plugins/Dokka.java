@@ -63,6 +63,7 @@ final class Dokka {
                 dokka -> {
                   dokka.setOutputDirectory(project.getBuildDir() + "/dokka/firebase");
                   dokka.setOutputFormat("dac");
+                  dokka.setModuleName("docs/reference/kotlin");
 
                   dokka.setGenerateClassIndexPage(false);
                   dokka.setGeneratePackageIndexPage(false);
@@ -139,6 +140,7 @@ final class Dokka {
                   project.file(project.getRootProject().getBuildDir() + "/firebase-kotlindoc"));
               copy.from(
                   project.getBuildDir() + "/dokka/firebase",
+                  project.getBuildDir() + "/dokka/firebase/docs/reference/kotlin",
                   cfg -> {
                     cfg.exclude("package-list");
                     cfg.filesMatching(
