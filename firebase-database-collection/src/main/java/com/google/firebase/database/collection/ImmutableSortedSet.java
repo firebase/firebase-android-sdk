@@ -96,7 +96,7 @@ public class ImmutableSortedSet<T> implements Iterable<T> {
       other = this;
     }
 
-    for(T elem : other) {
+    for (T elem : other) {
       result = result.insert(elem);
     }
 
