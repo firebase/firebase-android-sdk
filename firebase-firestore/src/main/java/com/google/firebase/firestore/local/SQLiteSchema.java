@@ -49,7 +49,7 @@ class SQLiteSchema {
    * The version of the schema. Increase this by one for each migration added to runMigrations
    * below.
    */
-  static final int VERSION = 9;
+  static final int VERSION = 11;
 
   // Remove this constant and increment VERSION to enable indexing support
   static final int INDEXING_SUPPORT_VERSION = VERSION + 1;
@@ -65,9 +65,11 @@ class SQLiteSchema {
 
   private final SQLiteDatabase db;
 
-  // PORTING NOTE: The Android client doesn't need to use a serializer to remove held write acks.
-  SQLiteSchema(SQLiteDatabase db) {
+  private final LocalSerializer serializer;
+
+  SQLiteSchema(SQLiteDatabase db, LocalSerializer serializer) {
     this.db = db;
+    this.serializer = serializer;
   }
 
   void runMigrations() {
@@ -94,7 +96,7 @@ class SQLiteSchema {
 
     if (fromVersion < 1 && toVersion >= 1) {
       createV1MutationQueue();
-      createV1QueryCache();
+      createV1TargetCache();
       createV1RemoteDocumentCache();
     }
 
@@ -105,8 +107,8 @@ class SQLiteSchema {
       // Brand new clients don't need to drop and recreate--only clients that have potentially
       // corrupt data.
       if (fromVersion != 0) {
-        dropV1QueryCache();
-        createV1QueryCache();
+        dropV1TargetCache();
+        createV1TargetCache();
       }
     }
 
@@ -142,6 +144,18 @@ class SQLiteSchema {
         // read time.
         dropLastLimboFreeSnapshotVersion();
       }
+    }
+
+    if (fromVersion == 9 && toVersion >= 10) {
+      // Firestore v21.10 contained a regression that led us to disable an assert that is required
+      // to ensure data integrity. While the schema did not change between version 9 and 10, we use
+      // the schema bump to version 10 to clear any affected data.
+      dropLastLimboFreeSnapshotVersion();
+    }
+
+    if (fromVersion < 11 && toVersion >= 11) {
+      // Schema version 11 changed the format of canonical IDs in the target cache.
+      rewriteCanonicalIds();
     }
 
     /*
@@ -258,7 +272,7 @@ class SQLiteSchema {
         new Object[] {uid, batchId});
   }
 
-  private void createV1QueryCache() {
+  private void createV1TargetCache() {
     ifTablesDontExist(
         new String[] {"targets", "target_globals", "target_documents"},
         () -> {
@@ -295,7 +309,7 @@ class SQLiteSchema {
         });
   }
 
-  private void dropV1QueryCache() {
+  private void dropV1TargetCache() {
     // This might be overkill, but if any future migration drops these, it's possible we could try
     // dropping tables that don't exist.
     if (tableExists("targets")) {
@@ -522,6 +536,26 @@ class SQLiteSchema {
     }
     return columns;
   }
+
+  private void rewriteCanonicalIds() {
+    new SQLitePersistence.Query(db, "SELECT target_id, target_proto FROM targets")
+        .forEach(
+            cursor -> {
+              int targetId = cursor.getInt(0);
+              byte[] targetProtoBytes = cursor.getBlob(1);
+
+              try {
+                Target targetProto = Target.parseFrom(targetProtoBytes);
+                TargetData targetData = serializer.decodeTargetData(targetProto);
+                String updatedCanonicalId = targetData.getTarget().getCanonicalId();
+                db.execSQL(
+                    "UPDATE targets SET canonical_id  = ? WHERE target_id = ?",
+                    new Object[] {updatedCanonicalId, targetId});
+              } catch (InvalidProtocolBufferException e) {
+                throw fail("Failed to decode Query data for target %s", targetId);
+              }
+            });
+  };
 
   private boolean tableExists(String table) {
     return !new SQLitePersistence.Query(db, "SELECT 1=1 FROM sqlite_master WHERE tbl_name = ?")

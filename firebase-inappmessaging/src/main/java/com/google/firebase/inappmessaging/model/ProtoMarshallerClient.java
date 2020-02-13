@@ -15,10 +15,13 @@
 package com.google.firebase.inappmessaging.model;
 
 import android.text.TextUtils;
+import androidx.annotation.NonNull;
 import com.google.common.base.Preconditions;
 import com.google.firebase.inappmessaging.MessagesProto;
 import com.google.firebase.inappmessaging.internal.Logging;
+import java.util.Map;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -157,7 +160,7 @@ public class ProtoMarshallerClient {
   private static Action decode(MessagesProto.Action protoAction, MessagesProto.Button protoButton) {
 
     Action.Builder builder = decode(protoAction);
-    if (protoButton != MessagesProto.Button.getDefaultInstance()) {
+    if (!protoButton.equals(MessagesProto.Button.getDefaultInstance())) {
       Button.Builder buttonBuilder = Button.builder();
       if (!TextUtils.isEmpty(protoButton.getButtonHexColor())) {
         buttonBuilder.setButtonHexColor(protoButton.getButtonHexColor());
@@ -205,29 +208,34 @@ public class ProtoMarshallerClient {
   /** Tranform {@link MessagesProto.Content} proto to an {@link InAppMessage} value object */
   public static InAppMessage decode(
       @Nonnull MessagesProto.Content in,
-      String campaignId,
-      String campaignName,
-      boolean isTestMessage) {
+      @NonNull String campaignId,
+      @NonNull String campaignName,
+      boolean isTestMessage,
+      @Nullable Map<String, String> data) {
     Preconditions.checkNotNull(in, "FirebaseInAppMessaging content cannot be null.");
+    Preconditions.checkNotNull(campaignId, "FirebaseInAppMessaging campaign id cannot be null.");
+    Preconditions.checkNotNull(
+        campaignName, "FirebaseInAppMessaging campaign name cannot be null.");
     Logging.logd("Decoding message: " + in.toString());
     CampaignMetadata campaignMetadata =
         new CampaignMetadata(campaignId, campaignName, isTestMessage);
 
     switch (in.getMessageDetailsCase()) {
       case BANNER:
-        return from(in.getBanner()).build(campaignMetadata);
+        return from(in.getBanner()).build(campaignMetadata, data);
       case IMAGE_ONLY:
-        return from(in.getImageOnly()).build(campaignMetadata);
+        return from(in.getImageOnly()).build(campaignMetadata, data);
       case MODAL:
-        return from(in.getModal()).build(campaignMetadata);
+        return from(in.getModal()).build(campaignMetadata, data);
       case CARD:
-        return from(in.getCard()).build(campaignMetadata);
+        return from(in.getCard()).build(campaignMetadata, data);
 
       default:
         // If the template is unsupported, then we return an unsupported message
         return new InAppMessage(
             new CampaignMetadata(campaignId, campaignName, isTestMessage),
-            MessageType.UNSUPPORTED) {
+            MessageType.UNSUPPORTED,
+            data) {
           @Override
           public Action getAction() {
             return null;

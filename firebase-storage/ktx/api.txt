@@ -1,0 +1,14 @@
+// Signature format: 2.0
+package com.google.firebase.storage.ktx {
+
+  public final class StorageKt {
+    ctor public StorageKt();
+    method @NonNull public static com.google.firebase.storage.FirebaseStorage getStorage(@NonNull com.google.firebase.ktx.Firebase);
+    method @NonNull public static com.google.firebase.storage.FirebaseStorage storage(@NonNull com.google.firebase.ktx.Firebase, @NonNull String url);
+    method @NonNull public static com.google.firebase.storage.FirebaseStorage storage(@NonNull com.google.firebase.ktx.Firebase, @NonNull com.google.firebase.FirebaseApp app);
+    method @NonNull public static com.google.firebase.storage.FirebaseStorage storage(@NonNull com.google.firebase.ktx.Firebase, @NonNull com.google.firebase.FirebaseApp app, @NonNull String url);
+    method @NonNull public static com.google.firebase.storage.StorageMetadata storageMetadata(@NonNull kotlin.jvm.functions.Function1<? super com.google.firebase.storage.StorageMetadata.Builder,kotlin.Unit> init);
+  }
+
+}
+

@@ -94,6 +94,9 @@ class PublishingPluginSpec extends Specification {
             repositories {
                 google()
                 jcenter()
+                maven {
+                    url 'https://storage.googleapis.com/android-ci/mvn/'
+                }
             }
         }
         plugins {

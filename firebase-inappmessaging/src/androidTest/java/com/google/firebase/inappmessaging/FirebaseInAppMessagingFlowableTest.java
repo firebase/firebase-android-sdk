@@ -53,11 +53,12 @@ import com.google.firebase.FirebaseOptions;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.events.Subscriber;
 import com.google.firebase.iid.FirebaseInstanceId;
-import com.google.firebase.inappmessaging.CommonTypesProto.ContextualTrigger;
+import com.google.firebase.inappmessaging.CommonTypesProto.Event;
 import com.google.firebase.inappmessaging.CommonTypesProto.Priority;
 import com.google.firebase.inappmessaging.CommonTypesProto.TriggeringCondition;
 import com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks.InAppMessagingDismissType;
 import com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks.InAppMessagingErrorReason;
+import com.google.firebase.inappmessaging.internal.AbtIntegrationHelper;
 import com.google.firebase.inappmessaging.internal.DisplayCallbacksFactory;
 import com.google.firebase.inappmessaging.internal.MetricsLoggerClient;
 import com.google.firebase.inappmessaging.internal.ProgramaticContextualTriggers;
@@ -127,8 +128,7 @@ public class FirebaseInAppMessagingFlowableTest {
   private static final TriggeringCondition.Builder ON_FOREGROUND_TRIGGER =
       TriggeringCondition.newBuilder().setFiamTrigger(ON_FOREGROUND);
   private static final TriggeringCondition.Builder ON_ANALYTICS_EVENT =
-      TriggeringCondition.newBuilder()
-          .setContextualTrigger(ContextualTrigger.newBuilder().setName(ANALYTICS_EVENT));
+      TriggeringCondition.newBuilder().setEvent(Event.newBuilder().setName(ANALYTICS_EVENT));
   private static final Priority priorityTwo = Priority.newBuilder().setValue(2).build();
   private static final VanillaCampaignPayload.Builder vanillaCampaign =
       VanillaCampaignPayload.newBuilder()
@@ -168,6 +168,8 @@ public class FirebaseInAppMessagingFlowableTest {
   @Mock private FirebaseInstanceId instanceId;
   @Mock private TestDeviceHelper testDeviceHelper;
   @Mock private Subscriber firebaseEventSubscriber;
+  @Mock private AbtIntegrationHelper abtIntegrationHelper;
+
   private TestSubscriber<InAppMessage> subscriber;
   private FirebaseInAppMessaging instance;
   private TestForegroundNotifier foregroundNotifier;
@@ -247,6 +249,7 @@ public class FirebaseInAppMessagingFlowableTest {
     appComponentBuilder =
         DaggerTestAppComponent.builder()
             .universalComponent(universalComponent)
+            .testAbTestingModule(new TestAbTestingModule(abtIntegrationHelper))
             .testEngagementMetricsLoggerClientModule(
                 new TestEngagementMetricsLoggerClientModule(app, engagementMetricsLoggerInterface))
             .grpcClientModule(new GrpcClientModule(app))
@@ -478,8 +481,7 @@ public class FirebaseInAppMessagingFlowableTest {
             .setCampaignStartTimeMillis(PAST)
             .setCampaignEndTimeMillis(PAST);
     TriggeringCondition.Builder analyticsEvent =
-        TriggeringCondition.newBuilder()
-            .setContextualTrigger(ContextualTrigger.newBuilder().setName("ignored"));
+        TriggeringCondition.newBuilder().setEvent(Event.newBuilder().setName("ignored"));
     ThickContent t =
         ThickContent.newBuilder(thickContent)
             .clearContent()
@@ -553,8 +555,7 @@ public class FirebaseInAppMessagingFlowableTest {
         MessagesProto.Content.newBuilder().clearMessageDetails().build();
     String eventName = "unsupported_campaign_event";
     TriggeringCondition.Builder analyticsEvent =
-        TriggeringCondition.newBuilder()
-            .setContextualTrigger(ContextualTrigger.newBuilder().setName(eventName));
+        TriggeringCondition.newBuilder().setEvent(Event.newBuilder().setName(eventName));
     ThickContent t =
         ThickContent.newBuilder(thickContent)
             .clearContent()
@@ -595,8 +596,7 @@ public class FirebaseInAppMessagingFlowableTest {
             .clearVanillaPayload()
             .clearTriggeringConditions()
             .addTriggeringConditions(
-                TriggeringCondition.newBuilder()
-                    .setContextualTrigger(ContextualTrigger.newBuilder().setName("event2")))
+                TriggeringCondition.newBuilder().setEvent(Event.newBuilder().setName("event2")))
             .setVanillaPayload(otherCampaign)
             .build();
     FetchEligibleCampaignsResponse response =
@@ -636,8 +636,7 @@ public class FirebaseInAppMessagingFlowableTest {
             .setIsTestCampaign(IS_NOT_TEST_MESSAGE)
             .clearTriggeringConditions()
             .addTriggeringConditions(
-                TriggeringCondition.newBuilder()
-                    .setContextualTrigger(ContextualTrigger.newBuilder().setName("event2")))
+                TriggeringCondition.newBuilder().setEvent(Event.newBuilder().setName("event2")))
             .setVanillaPayload(otherCampaign)
             .build();
     FetchEligibleCampaignsResponse response =
@@ -967,8 +966,7 @@ public class FirebaseInAppMessagingFlowableTest {
             .setIsTestCampaign(IS_NOT_TEST_MESSAGE)
             .clearTriggeringConditions()
             .addTriggeringConditions(
-                TriggeringCondition.newBuilder()
-                    .setContextualTrigger(ContextualTrigger.newBuilder().setName("event2")))
+                TriggeringCondition.newBuilder().setEvent(Event.newBuilder().setName("event2")))
             .clearVanillaPayload()
             .setVanillaPayload(otherCampaign)
             .setContent(BANNER_MESSAGE_PROTO)
@@ -1036,8 +1034,7 @@ public class FirebaseInAppMessagingFlowableTest {
             .clearVanillaPayload()
             .clearTriggeringConditions()
             .addTriggeringConditions(
-                TriggeringCondition.newBuilder()
-                    .setContextualTrigger(ContextualTrigger.newBuilder().setName("event2")))
+                TriggeringCondition.newBuilder().setEvent(Event.newBuilder().setName("event2")))
             .setVanillaPayload(otherCampaign)
             .build();
     FetchEligibleCampaignsResponse response =

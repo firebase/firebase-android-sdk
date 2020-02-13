@@ -22,8 +22,8 @@ import com.google.firebase.firestore.FieldPath
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreSettings
 import com.google.firebase.firestore.TestUtil
-import com.google.firebase.firestore.model.value.IntegerValue
-import com.google.firebase.firestore.model.value.ObjectValue
+import com.google.firebase.firestore.model.ObjectValue
+import com.google.firebase.firestore.testutil.TestUtil.wrap
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.app
 import com.google.firebase.ktx.initialize
@@ -82,6 +82,23 @@ class FirestoreTests : BaseTestCase() {
     fun `FirebaseApp#firestore should delegate to FirebaseFirestore#getInstance(FirebaseApp)`() {
         val app = Firebase.app(EXISTING_APP)
         assertThat(Firebase.firestore(app)).isSameInstanceAs(FirebaseFirestore.getInstance(app))
+    }
+
+    @Test
+    fun `FirebaseFirestoreSettings builder works`() {
+        val host = "http://10.0.0.2:8080"
+        val isSslEnabled = false
+        val isPersistenceEnabled = false
+
+        val settings = firestoreSettings {
+            this.host = host
+            this.isSslEnabled = isSslEnabled
+            this.isPersistenceEnabled = isPersistenceEnabled
+        }
+
+        assertThat(host).isEqualTo(settings.host)
+        assertThat(isSslEnabled).isEqualTo(settings.isSslEnabled)
+        assertThat(isPersistenceEnabled).isEqualTo(settings.isPersistenceEnabled)
     }
 }
 
@@ -154,7 +171,7 @@ class QuerySnapshotTests {
         val qs = TestUtil.querySnapshot(
                 "rooms",
                 mapOf(),
-                mapOf("id" to ObjectValue.fromMap(mapOf("a" to IntegerValue.valueOf(1), "b" to IntegerValue.valueOf(2)))),
+                mapOf("id" to ObjectValue.fromMap(mapOf("a" to wrap(1), "b" to wrap(2)))),
                 false,
                 false)
 

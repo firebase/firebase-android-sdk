@@ -26,6 +26,7 @@ import com.google.android.datatransport.Priority;
 import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
 import com.google.android.datatransport.runtime.scheduling.persistence.InMemoryEventStore;
+import com.google.android.datatransport.runtime.util.PriorityMapping;
 import java.nio.charset.Charset;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -204,7 +205,8 @@ public class JobInfoSchedulerTest {
     PersistableBundle bundle1 = jobInfo1.getExtras();
     assertThat(bundle1.get(JobInfoScheduler.BACKEND_NAME))
         .isEqualTo(TRANSPORT_CONTEXT.getBackendName());
-    assertThat(bundle1.get(JobInfoScheduler.EVENT_PRIORITY)).isEqualTo(Priority.DEFAULT.ordinal());
+    assertThat(bundle1.get(JobInfoScheduler.EVENT_PRIORITY))
+        .isEqualTo(PriorityMapping.toInt(Priority.DEFAULT));
     assertThat(bundle1.get(JobInfoScheduler.ATTEMPT_NUMBER)).isEqualTo(1);
 
     JobInfo jobInfo2 = jobScheduler.getAllPendingJobs().get(1);
@@ -214,7 +216,8 @@ public class JobInfoSchedulerTest {
     PersistableBundle bundle2 = jobInfo2.getExtras();
     assertThat(bundle2.get(JobInfoScheduler.BACKEND_NAME))
         .isEqualTo(UNMETERED_TRANSPORT_CONTEXT.getBackendName());
-    assertThat(bundle2.get(JobInfoScheduler.EVENT_PRIORITY)).isEqualTo(Priority.VERY_LOW.ordinal());
+    assertThat(bundle2.get(JobInfoScheduler.EVENT_PRIORITY))
+        .isEqualTo(PriorityMapping.toInt(Priority.VERY_LOW));
     assertThat(bundle2.get(JobInfoScheduler.ATTEMPT_NUMBER)).isEqualTo(1);
   }
 }

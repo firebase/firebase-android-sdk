@@ -17,30 +17,30 @@ package com.google.firebase.firestore.core;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import com.google.firebase.firestore.model.Document;
+import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
-import com.google.firebase.firestore.model.value.ArrayValue;
-import com.google.firebase.firestore.model.value.FieldValue;
-import com.google.firebase.firestore.model.value.ReferenceValue;
+import com.google.firebase.firestore.model.Values;
+import com.google.firestore.v1.Value;
+import java.util.ArrayList;
+import java.util.List;
 
 public class KeyFieldInFilter extends FieldFilter {
-  KeyFieldInFilter(FieldPath field, ArrayValue value) {
+  private final List<DocumentKey> keys = new ArrayList<>();
+
+  KeyFieldInFilter(FieldPath field, Value value) {
     super(field, Operator.IN, value);
-    ArrayValue arrayValue = (ArrayValue) getValue();
-    for (FieldValue refValue : arrayValue.getInternalValue()) {
+
+    hardAssert(Values.isArray(value), "KeyFieldInFilter expects an ArrayValue");
+    for (Value element : value.getArrayValue().getValuesList()) {
       hardAssert(
-          refValue instanceof ReferenceValue,
+          Values.isReferenceValue(element),
           "Comparing on key with IN, but an array value was not a ReferenceValue");
+      keys.add(DocumentKey.fromName(element.getReferenceValue()));
     }
   }
 
   @Override
   public boolean matches(Document doc) {
-    ArrayValue arrayValue = (ArrayValue) getValue();
-    for (FieldValue refValue : arrayValue.getInternalValue()) {
-      if (doc.getKey().equals(((ReferenceValue) refValue).value())) {
-        return true;
-      }
-    }
-    return false;
+    return keys.contains(doc.getKey());
   }
 }

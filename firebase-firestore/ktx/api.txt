@@ -1,0 +1,22 @@
+// Signature format: 2.0
+package com.google.firebase.firestore.ktx {
+
+  public final class FirestoreKt {
+    ctor public FirestoreKt();
+    method @NonNull public static com.google.firebase.firestore.FirebaseFirestore firestore(@NonNull com.google.firebase.ktx.Firebase, @NonNull com.google.firebase.FirebaseApp app);
+    method @NonNull public static com.google.firebase.firestore.FirebaseFirestoreSettings firestoreSettings(@NonNull kotlin.jvm.functions.Function1<? super com.google.firebase.firestore.FirebaseFirestoreSettings.Builder,kotlin.Unit> init);
+    method @Nullable public static inline <reified T> T getField(@NonNull com.google.firebase.firestore.DocumentSnapshot, @NonNull String field);
+    method @Nullable public static inline <reified T> T getField(@NonNull com.google.firebase.firestore.DocumentSnapshot, @NonNull String field, @NonNull com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior serverTimestampBehavior);
+    method @Nullable public static inline <reified T> T getField(@NonNull com.google.firebase.firestore.DocumentSnapshot, @NonNull com.google.firebase.firestore.FieldPath fieldPath);
+    method @Nullable public static inline <reified T> T getField(@NonNull com.google.firebase.firestore.DocumentSnapshot, @NonNull com.google.firebase.firestore.FieldPath fieldPath, @NonNull com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior serverTimestampBehavior);
+    method @NonNull public static com.google.firebase.firestore.FirebaseFirestore getFirestore(@NonNull com.google.firebase.ktx.Firebase);
+    method @Nullable public static inline <reified T> T toObject(@NonNull com.google.firebase.firestore.DocumentSnapshot);
+    method @Nullable public static inline <reified T> T toObject(@NonNull com.google.firebase.firestore.DocumentSnapshot, @NonNull com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior serverTimestampBehavior);
+    method @NonNull public static inline <reified T> T toObject(@NonNull com.google.firebase.firestore.QueryDocumentSnapshot);
+    method @NonNull public static inline <reified T> T toObject(@NonNull com.google.firebase.firestore.QueryDocumentSnapshot, @NonNull com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior serverTimestampBehavior);
+    method @NonNull public static inline <reified T> java.util.List<T> toObjects(@NonNull com.google.firebase.firestore.QuerySnapshot);
+    method @NonNull public static inline <reified T> java.util.List<T> toObjects(@NonNull com.google.firebase.firestore.QuerySnapshot, @NonNull com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior serverTimestampBehavior);
+  }
+
+}
+

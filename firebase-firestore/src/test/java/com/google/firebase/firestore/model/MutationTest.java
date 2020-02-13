@@ -31,6 +31,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.wrap;
 import static com.google.firebase.firestore.testutil.TestUtil.wrapObject;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.FieldValue;
@@ -42,11 +43,7 @@ import com.google.firebase.firestore.model.mutation.MutationResult;
 import com.google.firebase.firestore.model.mutation.PatchMutation;
 import com.google.firebase.firestore.model.mutation.Precondition;
 import com.google.firebase.firestore.model.mutation.TransformMutation;
-import com.google.firebase.firestore.model.value.IntegerValue;
-import com.google.firebase.firestore.model.value.ObjectValue;
-import com.google.firebase.firestore.model.value.ServerTimestampValue;
-import com.google.firebase.firestore.model.value.StringValue;
-import com.google.firebase.firestore.model.value.TimestampValue;
+import com.google.firestore.v1.Value;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -157,17 +154,15 @@ public class MutationTest {
     // Server timestamps aren't parsed, so we manually insert it.
     ObjectValue expectedData =
         wrapObject(map("foo", map("bar", "<server-timestamp>"), "baz", "baz-value"));
-    expectedData =
-        expectedData.set(
-            field("foo.bar"),
-            new ServerTimestampValue(timestamp, StringValue.valueOf("bar-value")));
+    Value fieldValue = ServerTimestamps.valueOf(timestamp, wrap("bar-value"));
+    expectedData = expectedData.toBuilder().set(field("foo.bar"), fieldValue).build();
 
     Document expectedDoc =
         new Document(
             key("collection/key"),
             version(0),
-            Document.DocumentState.LOCAL_MUTATIONS,
-            expectedData);
+            expectedData,
+            Document.DocumentState.LOCAL_MUTATIONS);
     assertEquals(expectedDoc, transformedDoc);
   }
 
@@ -303,7 +298,7 @@ public class MutationTest {
     verifyTransform(baseDoc, transform, expected);
   }
 
-  // NOTE: This is more a test of UserDataConverter code than Mutation code but we don't have unit
+  // NOTE: This is more a test of UserDataReader code than Mutation code but we don't have unit
   // tests for it currently. We could consider removing this test once we have integration tests.
   @Test
   public void testCreateArrayUnionTransform() {
@@ -311,9 +306,10 @@ public class MutationTest {
         transformMutation(
             "collection/key",
             map(
-                "a", FieldValue.arrayUnion("tag"),
+                "a",
+                FieldValue.arrayUnion("tag"),
                 "bar.baz",
-                    FieldValue.arrayUnion(true, map("nested", map("a", Arrays.asList(1, 2))))));
+                FieldValue.arrayUnion(true, map("nested", map("a", Arrays.asList(1, 2))))));
     assertEquals(2, transform.getFieldTransforms().size());
 
     FieldTransform first = transform.getFieldTransforms().get(0);
@@ -326,11 +322,11 @@ public class MutationTest {
     assertEquals(field("bar.baz"), second.getFieldPath());
     assertEquals(
         new ArrayTransformOperation.Union(
-            Arrays.asList(wrap(true), wrapObject(map("nested", map("a", Arrays.asList(1, 2)))))),
+            Arrays.asList(wrap(true), wrap(map("nested", map("a", Arrays.asList(1, 2)))))),
         second.getOperation());
   }
 
-  // NOTE: This is more a test of UserDataConverter code than Mutation code but
+  // NOTE: This is more a test of UserDataReader code than Mutation code but
   // we don't have unit tests for it currently. We could consider removing this
   // test once we have integration tests.
   @Test
@@ -489,7 +485,7 @@ public class MutationTest {
 
     Mutation transform = transformMutation("collection/key", map("sum", FieldValue.increment(2)));
     MutationResult mutationResult =
-        new MutationResult(version(1), Collections.singletonList(IntegerValue.valueOf(3L)));
+        new MutationResult(version(1), Collections.singletonList(wrap(3L)));
 
     MaybeDocument transformedDoc = transform.applyToRemoteDocument(baseDoc, mutationResult);
 
@@ -510,8 +506,7 @@ public class MutationTest {
     Timestamp serverTimestamp = new Timestamp(2, 0);
 
     MutationResult mutationResult =
-        new MutationResult(
-            version(1), Collections.singletonList(TimestampValue.valueOf(serverTimestamp)));
+        new MutationResult(version(1), Collections.singletonList(wrap(serverTimestamp)));
 
     MaybeDocument transformedDoc = transform.applyToRemoteDocument(baseDoc, mutationResult);
 
@@ -677,7 +672,7 @@ public class MutationTest {
     Mutation transformMutation = transformMutation("collection/key", allTransforms);
     ObjectValue baseValue = transformMutation.extractBaseValue(baseDoc);
 
-    com.google.firebase.firestore.model.value.FieldValue expected =
+    Value expected =
         wrap(
             map(
                 "double",
@@ -692,7 +687,7 @@ public class MutationTest {
                 0,
                 "nested",
                 map("double", 42.0, "long", 42, "string", 0, "map", 0, "missing", 0)));
-    assertEquals(expected, baseValue);
+    assertTrue(Values.equals(expected, baseValue.getProto()));
   }
 
   @Test

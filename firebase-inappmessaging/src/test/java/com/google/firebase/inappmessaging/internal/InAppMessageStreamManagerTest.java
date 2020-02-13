@@ -26,23 +26,25 @@ import static com.google.firebase.inappmessaging.testutil.TestProtos.BANNER_MESS
 import static io.reactivex.BackpressureStrategy.BUFFER;
 import static io.reactivex.schedulers.Schedulers.trampoline;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.app.Application;
-import com.google.firebase.inappmessaging.CommonTypesProto.ContextualTrigger;
+import com.google.firebase.inappmessaging.CommonTypesProto.Event;
 import com.google.firebase.inappmessaging.CommonTypesProto.Priority;
 import com.google.firebase.inappmessaging.CommonTypesProto.TriggeringCondition;
 import com.google.firebase.inappmessaging.internal.time.FakeClock;
 import com.google.firebase.inappmessaging.model.RateLimit;
 import com.google.firebase.inappmessaging.model.TriggeredInAppMessage;
+import com.google.internal.firebase.inappmessaging.v1.CampaignProto;
 import com.google.internal.firebase.inappmessaging.v1.CampaignProto.ThickContent;
 import com.google.internal.firebase.inappmessaging.v1.CampaignProto.VanillaCampaignPayload;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.CampaignImpression;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.CampaignImpressionList;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.FetchEligibleCampaignsResponse;
+import developers.mobile.abt.FirebaseAbt;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.reactivex.Completable;
@@ -61,6 +63,7 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
@@ -74,8 +77,7 @@ public class InAppMessageStreamManagerTest {
   private static final long FUTURE = NOW + 1000000;
 
   private static final TriggeringCondition.Builder ON_ANALYTICS_TRIGGER =
-      TriggeringCondition.newBuilder()
-          .setContextualTrigger(ContextualTrigger.newBuilder().setName(ANALYTICS_EVENT_NAME));
+      TriggeringCondition.newBuilder().setEvent(Event.newBuilder().setName(ANALYTICS_EVENT_NAME));
   private static final TriggeringCondition ON_FOREGROUND_TRIGGER =
       TriggeringCondition.newBuilder().setFiamTrigger(ON_FOREGROUND).build();
   private static final Priority priorityTwo = Priority.newBuilder().setValue(2).build();
@@ -85,6 +87,13 @@ public class InAppMessageStreamManagerTest {
           .setCampaignName(CAMPAIGN_NAME_STRING)
           .setCampaignStartTimeMillis(PAST)
           .setCampaignEndTimeMillis(FUTURE);
+  private static final CampaignProto.ExperimentalCampaignPayload.Builder experimentalCampaign =
+      CampaignProto.ExperimentalCampaignPayload.newBuilder()
+          .setCampaignId(CAMPAIGN_ID_STRING)
+          .setCampaignName(CAMPAIGN_NAME_STRING)
+          .setCampaignStartTimeMillis(PAST)
+          .setCampaignEndTimeMillis(FUTURE)
+          .setExperimentPayload(FirebaseAbt.ExperimentPayload.getDefaultInstance());
   private static final ThickContent.Builder thickContentBuilder =
       ThickContent.newBuilder()
           .setPriority(priorityTwo)
@@ -93,6 +102,11 @@ public class InAppMessageStreamManagerTest {
           .setVanillaPayload(vanillaCampaign)
           .setContent(BANNER_MESSAGE_PROTO);
   private static final ThickContent thickContent = thickContentBuilder.build();
+  private static final ThickContent experimentalContent =
+      thickContentBuilder
+          .clearVanillaPayload()
+          .setExperimentalPayload(experimentalCampaign)
+          .build();
 
   private static final TriggeredInAppMessage onForegroundTriggered =
       new TriggeredInAppMessage(BANNER_MESSAGE_MODEL, ON_FOREGROUND_EVENT_NAME);
@@ -124,6 +138,7 @@ public class InAppMessageStreamManagerTest {
   @Mock private CampaignCacheClient campaignCacheClient;
   @Mock private ImpressionStorageClient impressionStorageClient;
   @Mock private TestDeviceHelper testDeviceHelper;
+  @Mock private AbtIntegrationHelper abtIntegrationHelper;
   @Mock private RateLimiterClient rateLimiterClient;
   @Mock private AnalyticsEventsManager analyticsEventsManager;
   @Captor private ArgumentCaptor<CampaignImpressionList> campaignImpressionListArgumentCaptor;
@@ -178,14 +193,16 @@ public class InAppMessageStreamManagerTest {
             impressionStorageClient,
             rateLimiterClient,
             appForegroundRateLimit,
-            testDeviceHelper);
+            testDeviceHelper,
+            abtIntegrationHelper);
     subscriber = streamManager.createFirebaseInAppMessageStream().test();
     when(application.getApplicationContext()).thenReturn(application);
     when(rateLimiterClient.isRateLimited(appForegroundRateLimit)).thenReturn(Single.just(false));
     when(campaignCacheClient.get()).thenReturn(Maybe.empty());
     when(campaignCacheClient.put(any(FetchEligibleCampaignsResponse.class)))
         .thenReturn(Completable.complete());
-    when(impressionStorageClient.isImpressed(anyString())).thenReturn(Single.just(false));
+    when(impressionStorageClient.isImpressed(any(ThickContent.class)))
+        .thenReturn(Single.just(false));
     when(impressionStorageClient.getAllImpressions()).thenReturn(Maybe.just(CAMPAIGN_IMPRESSIONS));
   }
 
@@ -226,7 +243,7 @@ public class InAppMessageStreamManagerTest {
   }
 
   @Test
-  public void stream_onUnrelatedAnalyticsEvent_doesNotTrigger() {
+  public void stream_onUnrelatedForegroundEvent_doesNotTrigger() {
     String unrelatedAnalyticsEvent = "some_other_event";
     when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(campaignsResponse);
 
@@ -236,21 +253,56 @@ public class InAppMessageStreamManagerTest {
   }
 
   @Test
-  public void stream_onExpiredCampaign_doesNotTrigger() {
-    VanillaCampaignPayload.Builder expiredCampaign =
-        VanillaCampaignPayload.newBuilder()
-            .setCampaignStartTimeMillis(PAST)
-            .setCampaignEndTimeMillis(PAST);
+  public void stream_onUnrelatedAnalyticsEvent_doesNotTrigger() {
+    String unrelatedAnalyticsEvent = "some_other_event";
+    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(campaignsResponse);
+
+    analyticsEmitter.onNext(unrelatedAnalyticsEvent);
+
+    subscriber.assertNoValues();
+  }
+
+  @Test
+  public void stream_onValidCampaign_notifiesSubscriber() {
     ThickContent t =
-        ThickContent.newBuilder(thickContent)
-            .clearContent()
-            .setVanillaPayload(expiredCampaign)
+        thickContentBuilder
+            .clearVanillaPayload()
+            .setVanillaPayload(
+                VanillaCampaignPayload.newBuilder()
+                    .setCampaignStartTimeMillis(PAST)
+                    .setCampaignEndTimeMillis(FUTURE))
             .build();
+
     FetchEligibleCampaignsResponse r =
-        FetchEligibleCampaignsResponse.newBuilder(campaignsResponse)
-            .clearMessages()
+        FetchEligibleCampaignsResponse.newBuilder()
+            .setExpirationEpochTimestampMillis(FUTURE)
             .addMessages(t)
             .build();
+
+    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(r);
+
+    analyticsEmitter.onNext(ANALYTICS_EVENT_NAME);
+
+    assertExpectedMessageTriggered(subscriber, onAnalyticsTriggered);
+  }
+
+  @Test
+  public void stream_onExpiredCampaign_doesNotTrigger() {
+    ThickContent t =
+        thickContentBuilder
+            .clearVanillaPayload()
+            .setVanillaPayload(
+                VanillaCampaignPayload.newBuilder()
+                    .setCampaignStartTimeMillis(PAST)
+                    .setCampaignEndTimeMillis(NOW))
+            .build();
+
+    FetchEligibleCampaignsResponse r =
+        FetchEligibleCampaignsResponse.newBuilder()
+            .setExpirationEpochTimestampMillis(FUTURE)
+            .addMessages(t)
+            .build();
+
     when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(r);
 
     analyticsEmitter.onNext(ANALYTICS_EVENT_NAME);
@@ -259,11 +311,125 @@ public class InAppMessageStreamManagerTest {
   }
 
   @Test
-  public void stream_onNonVanillaCampaigns_doesNotTrigger() {
-    String unrelatedAnalyticsEvent = "some_other_event";
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(campaignsResponse);
+  public void stream_onFutureCampaign_doesNotTrigger() {
+    ThickContent t =
+        thickContentBuilder
+            .clearVanillaPayload()
+            .setVanillaPayload(
+                VanillaCampaignPayload.newBuilder()
+                    .setCampaignStartTimeMillis(FUTURE)
+                    .setCampaignEndTimeMillis(FUTURE))
+            .build();
 
-    analyticsEmitter.onNext(unrelatedAnalyticsEvent);
+    FetchEligibleCampaignsResponse r =
+        FetchEligibleCampaignsResponse.newBuilder()
+            .setExpirationEpochTimestampMillis(FUTURE)
+            .addMessages(t)
+            .build();
+
+    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(r);
+
+    analyticsEmitter.onNext(ANALYTICS_EVENT_NAME);
+
+    subscriber.assertNoValues();
+  }
+
+  @Test
+  public void stream_onValidExperiment_notifiesSubscriber() {
+    ThickContent t =
+        thickContentBuilder
+            .clearVanillaPayload()
+            .setExperimentalPayload(
+                CampaignProto.ExperimentalCampaignPayload.newBuilder()
+                    .setCampaignStartTimeMillis(PAST)
+                    .setCampaignEndTimeMillis(FUTURE)
+                    .setExperimentPayload(FirebaseAbt.ExperimentPayload.getDefaultInstance()))
+            .build();
+
+    FetchEligibleCampaignsResponse r =
+        FetchEligibleCampaignsResponse.newBuilder()
+            .setExpirationEpochTimestampMillis(FUTURE)
+            .addMessages(t)
+            .build();
+
+    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(r);
+
+    analyticsEmitter.onNext(ANALYTICS_EVENT_NAME);
+
+    assertExpectedMessageTriggered(subscriber, onAnalyticsTriggered);
+  }
+
+  @Test
+  public void stream_ontestExperiment_doesNotSetExperimentActive() {
+    ThickContent t =
+        thickContentBuilder
+            .clearVanillaPayload()
+            .setIsTestCampaign(true)
+            .setExperimentalPayload(
+                CampaignProto.ExperimentalCampaignPayload.newBuilder()
+                    .setCampaignStartTimeMillis(PAST)
+                    .setCampaignEndTimeMillis(FUTURE)
+                    .setExperimentPayload(FirebaseAbt.ExperimentPayload.getDefaultInstance()))
+            .build();
+
+    FetchEligibleCampaignsResponse r =
+        FetchEligibleCampaignsResponse.newBuilder()
+            .setExpirationEpochTimestampMillis(FUTURE)
+            .addMessages(t)
+            .build();
+
+    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(r);
+
+    analyticsEmitter.onNext(ANALYTICS_EVENT_NAME);
+
+    assertExpectedMessageTriggered(subscriber, onAnalyticsTriggered);
+    verify(abtIntegrationHelper, never()).setExperimentActive(Mockito.any());
+  }
+
+  @Test
+  public void stream_onExpiredExperiment_doesNotTrigger() {
+    ThickContent t =
+        thickContentBuilder
+            .clearVanillaPayload()
+            .setExperimentalPayload(
+                CampaignProto.ExperimentalCampaignPayload.newBuilder()
+                    .setCampaignStartTimeMillis(PAST)
+                    .setCampaignEndTimeMillis(NOW)
+                    .setExperimentPayload(FirebaseAbt.ExperimentPayload.getDefaultInstance()))
+            .build();
+    FetchEligibleCampaignsResponse r =
+        FetchEligibleCampaignsResponse.newBuilder()
+            .setExpirationEpochTimestampMillis(FUTURE)
+            .addMessages(t)
+            .build();
+
+    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(r);
+
+    analyticsEmitter.onNext(ANALYTICS_EVENT_NAME);
+
+    subscriber.assertNoValues();
+  }
+
+  @Test
+  public void stream_onFutureExperiment_doesNotTrigger() {
+    ThickContent t =
+        thickContentBuilder
+            .clearVanillaPayload()
+            .setExperimentalPayload(
+                CampaignProto.ExperimentalCampaignPayload.newBuilder()
+                    .setCampaignStartTimeMillis(FUTURE)
+                    .setCampaignEndTimeMillis(FUTURE)
+                    .setExperimentPayload(FirebaseAbt.ExperimentPayload.getDefaultInstance()))
+            .build();
+    FetchEligibleCampaignsResponse r =
+        FetchEligibleCampaignsResponse.newBuilder()
+            .setExpirationEpochTimestampMillis(FUTURE)
+            .addMessages(t)
+            .build();
+
+    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(r);
+
+    analyticsEmitter.onNext(ANALYTICS_EVENT_NAME);
 
     subscriber.assertNoValues();
   }
@@ -394,7 +560,8 @@ public class InAppMessageStreamManagerTest {
 
   @Test
   public void stream_whenCampaignImpressed_filtersCampaign() {
-    when(impressionStorageClient.isImpressed(anyString())).thenReturn(Single.just(true));
+    when(impressionStorageClient.isImpressed(any(ThickContent.class)))
+        .thenReturn(Single.just(true));
     when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(campaignsResponse);
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
@@ -404,7 +571,7 @@ public class InAppMessageStreamManagerTest {
 
   @Test
   public void stream_whenCampaignImpressionStoreFails_doesNotFilterCampaign() {
-    when(impressionStorageClient.isImpressed(anyString()))
+    when(impressionStorageClient.isImpressed(any(ThickContent.class)))
         .thenReturn(Single.error(new Exception("e1")));
     when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(campaignsResponse);
 
@@ -415,7 +582,7 @@ public class InAppMessageStreamManagerTest {
 
   @Test
   public void stream_whenCampaignImpressionStoreFail_doesNotFilterCampaign() {
-    when(impressionStorageClient.isImpressed(anyString()))
+    when(impressionStorageClient.isImpressed(any(ThickContent.class)))
         .thenReturn(Single.error(new Exception("e1")));
     when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(campaignsResponse);
 

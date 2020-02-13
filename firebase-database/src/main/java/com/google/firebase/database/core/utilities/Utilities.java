@@ -173,7 +173,7 @@ public class Utilities {
       if (-number < Integer.MIN_VALUE) {
         return null;
       } else {
-        return (int) (-number);
+        return (int) -number;
       }
     } else {
       if (number > Integer.MAX_VALUE) {

@@ -14,11 +14,12 @@
 
 package com.google.android.datatransport.runtime.scheduling.persistence;
 
-import static com.google.android.datatransport.runtime.scheduling.persistence.EventStoreModule.*;
 import static com.google.android.datatransport.runtime.scheduling.persistence.SchemaManager.SCHEMA_VERSION;
 import static com.google.common.truth.Truth.assertThat;
 
+import com.google.android.datatransport.Encoding;
 import com.google.android.datatransport.Priority;
+import com.google.android.datatransport.runtime.EncodedPayload;
 import com.google.android.datatransport.runtime.EventInternal;
 import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.time.Clock;
@@ -38,12 +39,14 @@ public class SQLiteEventStoreTest {
       TransportContext.builder().setBackendName("backend1").build();
   private static final TransportContext ANOTHER_TRANSPORT_CONTEXT =
       TransportContext.builder().setBackendName("backend2").build();
+  private static final Encoding JSON_ENCODING = Encoding.of("json");
   private static final EventInternal EVENT =
       EventInternal.builder()
           .setTransportName("42")
           .setEventMillis(1)
           .setUptimeMillis(2)
-          .setPayload("Hello".getBytes(Charset.defaultCharset()))
+          .setEncodedPayload(
+              new EncodedPayload(JSON_ENCODING, "Hello".getBytes(Charset.defaultCharset())))
           .addMetadata("key1", "value1")
           .addMetadata("key2", "value2")
           .build();
@@ -88,7 +91,11 @@ public class SQLiteEventStoreTest {
 
     EventInternal event1 = EVENT;
     EventInternal event2 =
-        EVENT.toBuilder().setPayload("World".getBytes(Charset.defaultCharset())).build();
+        EVENT
+            .toBuilder()
+            .setEncodedPayload(
+                new EncodedPayload(JSON_ENCODING, "World".getBytes(Charset.defaultCharset())))
+            .build();
 
     PersistedEvent newEvent1 = store.persist(ctx1, event1);
     PersistedEvent newEvent2 = store.persist(ctx2, event2);
@@ -112,7 +119,11 @@ public class SQLiteEventStoreTest {
 
     EventInternal event1 = EVENT;
     EventInternal event2 =
-        EVENT.toBuilder().setPayload("World".getBytes(Charset.defaultCharset())).build();
+        EVENT
+            .toBuilder()
+            .setEncodedPayload(
+                new EncodedPayload(JSON_ENCODING, "World".getBytes(Charset.defaultCharset())))
+            .build();
 
     PersistedEvent newEvent1 = store.persist(ctx1, event1);
     PersistedEvent newEvent2 = store.persist(ctx2, event2);
@@ -306,6 +317,8 @@ public class SQLiteEventStoreTest {
             .build();
 
     store.persist(ctx1, EVENT);
+    store.persist(ctx1, EVENT);
+    store.persist(ctx2, EVENT);
     store.persist(ctx2, EVENT);
 
     assertThat(store.loadActiveContexts()).containsExactly(ctx1, ctx2);

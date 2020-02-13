@@ -19,6 +19,7 @@ import static java.util.Collections.unmodifiableList;
 import androidx.annotation.Nullable;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
+import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.mutation.FieldMask;
 import com.google.firebase.firestore.model.mutation.FieldTransform;
 import com.google.firebase.firestore.model.mutation.Mutation;
@@ -27,7 +28,6 @@ import com.google.firebase.firestore.model.mutation.Precondition;
 import com.google.firebase.firestore.model.mutation.SetMutation;
 import com.google.firebase.firestore.model.mutation.TransformMutation;
 import com.google.firebase.firestore.model.mutation.TransformOperation;
-import com.google.firebase.firestore.model.value.ObjectValue;
 import com.google.firebase.firestore.util.Assert;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -52,7 +52,12 @@ public class UserData {
      * Indicates the source is a where clause, cursor bound, arrayUnion() element, etc. Of note,
      * ParseContext.isWrite() will return false.
      */
-    Argument
+    Argument,
+    /**
+     * Indicates that the source is an Argument that may directly contain nested arrays (e.g. the
+     * operand of a `whereIn` query).
+     */
+    ArrayArgument
   }
 
   /**
@@ -245,6 +250,7 @@ public class UserData {
         case Update:
           return true;
         case Argument:
+        case ArrayArgument:
           return false;
         default:
           throw Assert.fail(

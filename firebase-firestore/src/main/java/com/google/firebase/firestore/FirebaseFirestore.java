@@ -74,7 +74,7 @@ public class FirebaseFirestore {
   private final CredentialsProvider credentialsProvider;
   private final AsyncQueue asyncQueue;
   private final FirebaseApp firebaseApp;
-  private final UserDataConverter dataConverter;
+  private final UserDataReader userDataReader;
   // When user requests to terminate, use this to notify `FirestoreMultiDbComponent` to deregister
   // this instance.
   private final InstanceRegistry instanceRegistry;
@@ -160,7 +160,7 @@ public class FirebaseFirestore {
       @Nullable GrpcMetadataProvider metadataProvider) {
     this.context = checkNotNull(context);
     this.databaseId = checkNotNull(checkNotNull(databaseId));
-    this.dataConverter = new UserDataConverter(databaseId);
+    this.userDataReader = new UserDataReader(databaseId);
     this.persistenceKey = checkNotNull(persistenceKey);
     this.credentialsProvider = checkNotNull(credentialsProvider);
     this.asyncQueue = checkNotNull(asyncQueue);
@@ -301,7 +301,7 @@ public class FirebaseFirestore {
                     updateFunction.apply(
                         new Transaction(internalTransaction, FirebaseFirestore.this)));
 
-    return client.transaction(wrappedUpdateFunction, 5);
+    return client.transaction(wrappedUpdateFunction);
   }
 
   /**
@@ -492,7 +492,8 @@ public class FirebaseFirestore {
    *     other.
    * @return A registration object that can be used to remove the listener.
    */
-  ListenerRegistration addSnapshotsInSyncListener(@NonNull Runnable runnable) {
+  @NonNull
+  public ListenerRegistration addSnapshotsInSyncListener(@NonNull Runnable runnable) {
     return addSnapshotsInSyncListener(Executors.DEFAULT_CALLBACK_EXECUTOR, runnable);
   }
 
@@ -512,7 +513,8 @@ public class FirebaseFirestore {
    * @return A registration object that can be used to remove the listener.
    */
   @NonNull
-  ListenerRegistration addSnapshotsInSyncListener(Activity activity, @NonNull Runnable runnable) {
+  public ListenerRegistration addSnapshotsInSyncListener(
+      @NonNull Activity activity, @NonNull Runnable runnable) {
     return addSnapshotsInSyncListener(Executors.DEFAULT_CALLBACK_EXECUTOR, activity, runnable);
   }
 
@@ -532,7 +534,8 @@ public class FirebaseFirestore {
    * @return A registration object that can be used to remove the listener.
    */
   @NonNull
-  ListenerRegistration addSnapshotsInSyncListener(Executor executor, @NonNull Runnable runnable) {
+  public ListenerRegistration addSnapshotsInSyncListener(
+      @NonNull Executor executor, @NonNull Runnable runnable) {
     return addSnapshotsInSyncListener(executor, null, runnable);
   }
 
@@ -574,8 +577,8 @@ public class FirebaseFirestore {
     return databaseId;
   }
 
-  UserDataConverter getDataConverter() {
-    return dataConverter;
+  UserDataReader getUserDataReader() {
+    return userDataReader;
   }
 
   /**

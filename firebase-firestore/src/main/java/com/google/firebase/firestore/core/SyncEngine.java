@@ -27,13 +27,14 @@ import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.auth.User;
+import com.google.firebase.firestore.core.ViewSnapshot.SyncState;
 import com.google.firebase.firestore.local.LocalStore;
 import com.google.firebase.firestore.local.LocalViewChanges;
 import com.google.firebase.firestore.local.LocalWriteResult;
-import com.google.firebase.firestore.local.QueryData;
 import com.google.firebase.firestore.local.QueryPurpose;
 import com.google.firebase.firestore.local.QueryResult;
 import com.google.firebase.firestore.local.ReferenceSet;
+import com.google.firebase.firestore.local.TargetData;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.NoDocument;
@@ -112,8 +113,8 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
   /** QueryViews for all active queries, indexed by query. */
   private final Map<Query, QueryView> queryViewsByQuery;
 
-  /** QueryViews for all active queries, indexed by target ID. */
-  private final Map<Integer, QueryView> queryViewsByTarget;
+  /** Queries mapped to active targets, indexed by target id. */
+  private final Map<Integer, List<Query>> queriesByTarget;
 
   /**
    * When a document is in limbo, we create a special listen to resolve it. This maps the
@@ -148,7 +149,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     this.remoteStore = remoteStore;
 
     queryViewsByQuery = new HashMap<>();
-    queryViewsByTarget = new HashMap<>();
+    queriesByTarget = new HashMap<>();
 
     limboTargetsByKey = new HashMap<>();
     limboResolutionsByTarget = new HashMap<>();
@@ -180,29 +181,47 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     assertCallback("listen");
     hardAssert(!queryViewsByQuery.containsKey(query), "We already listen to query: %s", query);
 
-    QueryData queryData = localStore.allocateQuery(query);
-    ViewSnapshot viewSnapshot = initializeViewAndComputeSnapshot(queryData);
+    TargetData targetData = localStore.allocateTarget(query.toTarget());
+    ViewSnapshot viewSnapshot = initializeViewAndComputeSnapshot(query, targetData.getTargetId());
     syncEngineListener.onViewSnapshots(Collections.singletonList(viewSnapshot));
 
-    remoteStore.listen(queryData);
-    return queryData.getTargetId();
+    remoteStore.listen(targetData);
+    return targetData.getTargetId();
   }
 
-  private ViewSnapshot initializeViewAndComputeSnapshot(QueryData queryData) {
-    Query query = queryData.getQuery();
-
+  private ViewSnapshot initializeViewAndComputeSnapshot(Query query, int targetId) {
     QueryResult queryResult = localStore.executeQuery(query, /* usePreviousResults= */ true);
+
+    SyncState currentTargetSyncState = SyncState.NONE;
+    TargetChange synthesizedCurrentChange = null;
+
+    // If there are already queries mapped to the target id, create a synthesized target change to
+    // apply the sync state from those queries to the new query.
+    if (this.queriesByTarget.get(targetId) != null) {
+      Query mirrorQuery = this.queriesByTarget.get(targetId).get(0);
+      currentTargetSyncState = this.queryViewsByQuery.get(mirrorQuery).getView().getSyncState();
+      synthesizedCurrentChange =
+          TargetChange.createSynthesizedTargetChangeForCurrentChange(
+              currentTargetSyncState == SyncState.SYNCED);
+    }
 
     View view = new View(query, queryResult.getRemoteKeys());
     View.DocumentChanges viewDocChanges = view.computeDocChanges(queryResult.getDocuments());
-    ViewChange viewChange = view.applyChanges(viewDocChanges);
+    ViewChange viewChange = view.applyChanges(viewDocChanges, synthesizedCurrentChange);
     hardAssert(
         view.getLimboDocuments().size() == 0,
         "View returned limbo docs before target ack from the server");
 
-    QueryView queryView = new QueryView(query, queryData.getTargetId(), view);
+    QueryView queryView = new QueryView(query, targetId, view);
     queryViewsByQuery.put(query, queryView);
-    queryViewsByTarget.put(queryData.getTargetId(), queryView);
+
+    if (!queriesByTarget.containsKey(targetId)) {
+      // Most likely there will only be one query mapping to a target, so construct the
+      // query list with capacity 1.
+      queriesByTarget.put(targetId, new ArrayList<>(1));
+    }
+    queriesByTarget.get(targetId).add(query);
+
     return viewChange.getSnapshot();
   }
 
@@ -213,9 +232,17 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     QueryView queryView = queryViewsByQuery.get(query);
     hardAssert(queryView != null, "Trying to stop listening to a query not found");
 
-    localStore.releaseQuery(query);
-    remoteStore.stopListening(queryView.getTargetId());
-    removeAndCleanupQuery(queryView);
+    queryViewsByQuery.remove(query);
+
+    int targetId = queryView.getTargetId();
+    List<Query> targetQueries = queriesByTarget.get(targetId);
+    targetQueries.remove(query);
+
+    if (targetQueries.isEmpty()) {
+      localStore.releaseTarget(targetId);
+      remoteStore.stopListening(targetId);
+      removeAndCleanupTarget(targetId, Status.OK);
+    }
   }
 
   /**
@@ -327,10 +354,17 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     if (limboResolution != null && limboResolution.receivedDocument) {
       return DocumentKey.emptyKeySet().insert(limboResolution.key);
     } else {
-      QueryView queryView = queryViewsByTarget.get(targetId);
-      return queryView != null
-          ? queryView.getView().getSyncedDocuments()
-          : DocumentKey.emptyKeySet();
+      List<DocumentKey> remoteKeys = Lists.newArrayList();
+      if (queriesByTarget.containsKey(targetId)) {
+        for (Query query : queriesByTarget.get(targetId)) {
+          if (queryViewsByQuery.containsKey(query)) {
+            remoteKeys.addAll(
+                Lists.newArrayList(queryViewsByQuery.get(query).getView().getSyncedDocuments()));
+          }
+        }
+      }
+
+      return new ImmutableSortedSet(remoteKeys, DocumentKey.comparator());
     }
   }
 
@@ -366,13 +400,8 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
               limboDocuments);
       handleRemoteEvent(event);
     } else {
-      QueryView queryView = queryViewsByTarget.get(targetId);
-      hardAssert(queryView != null, "Unknown target: %s", targetId);
-      Query query = queryView.getQuery();
-      localStore.releaseQuery(query);
-      removeAndCleanupQuery(queryView);
-      logErrorIfInteresting(error, "Listen for %s failed", query);
-      syncEngineListener.onError(query, error);
+      localStore.releaseTarget(targetId);
+      removeAndCleanupTarget(targetId, error);
     }
   }
 
@@ -484,13 +513,18 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     }
   }
 
-  private void removeAndCleanupQuery(QueryView view) {
-    queryViewsByQuery.remove(view.getQuery());
-    queryViewsByTarget.remove(view.getTargetId());
+  private void removeAndCleanupTarget(int targetId, Status status) {
+    for (Query query : queriesByTarget.get(targetId)) {
+      queryViewsByQuery.remove(query);
+      if (!status.isOk()) {
+        syncEngineListener.onError(query, status);
+        logErrorIfInteresting(status, "Listen for %s failed", query);
+      }
+    }
+    queriesByTarget.remove(targetId);
 
-    ImmutableSortedSet<DocumentKey> limboKeys =
-        limboDocumentRefs.referencesForId(view.getTargetId());
-    limboDocumentRefs.removeReferencesForId(view.getTargetId());
+    ImmutableSortedSet<DocumentKey> limboKeys = limboDocumentRefs.referencesForId(targetId);
+    limboDocumentRefs.removeReferencesForId(targetId);
     for (DocumentKey key : limboKeys) {
       if (!limboDocumentRefs.containsKey(key)) {
         // We removed the last reference for this key.
@@ -576,11 +610,14 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
       Logger.debug(TAG, "New document in limbo: %s", key);
       int limboTargetId = targetIdGenerator.nextId();
       Query query = Query.atPath(key.getPath());
-      QueryData queryData =
-          new QueryData(
-              query, limboTargetId, ListenSequence.INVALID, QueryPurpose.LIMBO_RESOLUTION);
+      TargetData targetData =
+          new TargetData(
+              query.toTarget(),
+              limboTargetId,
+              ListenSequence.INVALID,
+              QueryPurpose.LIMBO_RESOLUTION);
       limboResolutionsByTarget.put(limboTargetId, new LimboResolution(key));
-      remoteStore.listen(queryData);
+      remoteStore.listen(targetData);
       limboTargetsByKey.put(key, limboTargetId);
     }
   }

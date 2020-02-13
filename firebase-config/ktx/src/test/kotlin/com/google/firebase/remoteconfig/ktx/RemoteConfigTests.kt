@@ -26,6 +26,7 @@ import com.google.firebase.remoteconfig.internal.ConfigFetchHandler
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler
 import com.google.firebase.remoteconfig.internal.ConfigMetadataClient
 import com.google.common.util.concurrent.MoreExecutors
+import com.google.firebase.iid.FirebaseInstanceId
 import com.google.firebase.ktx.app
 import com.google.firebase.ktx.initialize
 import org.junit.After
@@ -108,6 +109,18 @@ class ConfigTests : BaseTestCase() {
     }
 
     @Test
+    fun `FirebaseRemoteConfigSettings builder works`() {
+        val minFetchInterval = 3600L
+        val fetchTimeout = 60L
+        val configSettings = remoteConfigSettings {
+            minimumFetchIntervalInSeconds = minFetchInterval
+            fetchTimeoutInSeconds = fetchTimeout
+        }
+        assertThat(configSettings.minimumFetchIntervalInSeconds).isEqualTo(minFetchInterval)
+        assertThat(configSettings.fetchTimeoutInSeconds).isEqualTo(fetchTimeout)
+    }
+
+    @Test
     fun `Overloaded get() operator returns value when key exists`() {
         val mockGetHandler = mock(ConfigGetParameterHandler::class.java)
         val directExecutor = MoreExecutors.directExecutor()
@@ -115,6 +128,7 @@ class ConfigTests : BaseTestCase() {
         val remoteConfig = createRemoteConfig(
             context = null,
             firebaseApp = Firebase.app(EXISTING_APP),
+            firebaseInstanceId = mock(FirebaseInstanceId::class.java),
             firebaseAbt = null,
             executor = directExecutor,
             fetchedConfigsCache = mock(ConfigCacheClient::class.java),

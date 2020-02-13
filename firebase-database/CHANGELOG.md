@@ -28,7 +28,7 @@
 - [internal] Updated the SDK initialization process and removed usages of
   deprecated method.
 - [changed] Added missing nullability annotations for better Kotlin interop.
-- [internal] Removed ``@PublicApi` annotations as they are no longer enforced
+- [internal] Removed `@PublicApi` annotations as they are no longer enforced
   and have no semantic meaning.
 
 # 16.0.6

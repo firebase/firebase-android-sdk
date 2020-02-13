@@ -195,6 +195,11 @@ public class ConfigFetchHttpClient {
           "The client had an error while calling the backend!", e);
     } finally {
       urlConnection.disconnect();
+      // Explicitly close the input stream due to a bug in the Android okhttp implementation.
+      try {
+        urlConnection.getInputStream().close();
+      } catch (IOException e) {
+      }
     }
 
     if (!backendHasUpdates(fetchResponse)) {
@@ -305,7 +310,7 @@ public class ConfigFetchHttpClient {
     requestBodyMap.put(PACKAGE_NAME, context.getPackageName());
     requestBodyMap.put(SDK_VERSION, BuildConfig.VERSION_NAME);
 
-    requestBodyMap.put(ANALYTICS_USER_PROPERTIES, analyticsUserProperties);
+    requestBodyMap.put(ANALYTICS_USER_PROPERTIES, new JSONObject(analyticsUserProperties));
 
     return new JSONObject(requestBodyMap);
   }

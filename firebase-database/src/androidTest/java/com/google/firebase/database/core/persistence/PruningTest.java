@@ -20,8 +20,8 @@ import static com.google.firebase.database.IntegrationTestHelpers.node;
 import static com.google.firebase.database.IntegrationTestHelpers.path;
 import static org.junit.Assert.assertEquals;
 
-import androidx.test.InstrumentationRegistry;
-import androidx.test.runner.AndroidJUnit4;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.platform.app.InstrumentationRegistry;
 import com.google.firebase.database.RetryRule;
 import com.google.firebase.database.android.SqlPersistenceStorageEngine;
 import com.google.firebase.database.core.DatabaseConfig;
@@ -52,7 +52,7 @@ public class PruningTest {
   private static final PruneForestBuilder PF = new PruneForestBuilder();
   private TestEnv env;
 
-  private class TestEnv {
+  private static class TestEnv {
     public final SqlPersistenceStorageEngine engine;
 
     public TestEnv() {
@@ -95,7 +95,9 @@ public class PruningTest {
       ctx.setLogLevel(com.google.firebase.database.Logger.Level.DEBUG);
       final SqlPersistenceStorageEngine engine =
           new SqlPersistenceStorageEngine(
-              InstrumentationRegistry.getTargetContext(), ctx, "test-namespace");
+              InstrumentationRegistry.getInstrumentation().getTargetContext(),
+              ctx,
+              "test-namespace");
       runInTransaction(
           engine,
           new Runnable() {

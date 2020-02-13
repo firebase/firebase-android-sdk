@@ -14,13 +14,15 @@
 
 package com.google.firebase.database;
 
+import static org.hamcrest.Matchers.lessThan;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import androidx.test.runner.AndroidJUnit4;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.firebase.database.core.DatabaseConfig;
 import com.google.firebase.database.core.RepoManager;
 import com.google.firebase.database.future.ReadFuture;
@@ -31,8 +33,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
-import junit.framework.Assert;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
@@ -885,9 +887,8 @@ public class RealtimeTest {
     assertEquals(snap.getPriority().getClass(), Double.class);
     assertEquals(snap.getPriority(), snap.child("b").getPriority());
     assertEquals(snap.child("a").getValue(), snap.child("b").getValue());
-    assert (Math.abs(
-            System.currentTimeMillis() - Long.parseLong(snap.child("a").getValue().toString()))
-        < 2000);
+    long drift = System.currentTimeMillis() - Long.parseLong(snap.child("a").getValue().toString());
+    assertThat(Math.abs(drift), lessThan(2000l));
   }
 
   // TODO: Find better way to test shutdown behavior. This test is not worth a 13-second pause (6

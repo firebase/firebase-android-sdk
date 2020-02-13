@@ -28,7 +28,7 @@ public class TargetIdGeneratorTest {
 
   @Test
   public void testConstructor() {
-    assertEquals(2, TargetIdGenerator.forQueryCache(0).nextId());
+    assertEquals(2, TargetIdGenerator.forTargetCache(0).nextId());
     assertEquals(1, TargetIdGenerator.forSyncEngine().nextId());
   }
 

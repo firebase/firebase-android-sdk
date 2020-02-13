@@ -40,6 +40,7 @@ import com.google.android.gms.common.util.PlatformVersion;
 import com.google.android.gms.common.util.ProcessUtils;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentDiscovery;
+import com.google.firebase.components.ComponentDiscoveryService;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.ComponentRuntime;
 import com.google.firebase.components.Lazy;
@@ -399,7 +400,8 @@ public class FirebaseApp {
     this.options = Preconditions.checkNotNull(options);
 
     List<ComponentRegistrar> registrars =
-        ComponentDiscovery.forContext(applicationContext).discover();
+        ComponentDiscovery.forContext(applicationContext, ComponentDiscoveryService.class)
+            .discover();
 
     String kotlinVersion = KotlinDetector.detectVersion();
     componentRuntime =

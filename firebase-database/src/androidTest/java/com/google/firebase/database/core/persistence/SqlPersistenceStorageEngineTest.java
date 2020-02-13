@@ -27,8 +27,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import androidx.test.InstrumentationRegistry;
-import androidx.test.runner.AndroidJUnit4;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.platform.app.InstrumentationRegistry;
 import com.google.firebase.database.DatabaseException;
 import com.google.firebase.database.RetryRule;
 import com.google.firebase.database.android.SqlPersistenceStorageEngine;
@@ -69,7 +69,7 @@ public class SqlPersistenceStorageEngineTest {
     ctx.setLogLevel(com.google.firebase.database.Logger.Level.DEBUG);
     final SqlPersistenceStorageEngine engine =
         new SqlPersistenceStorageEngine(
-            InstrumentationRegistry.getTargetContext(), ctx, "test-namespace");
+            InstrumentationRegistry.getInstrumentation().getTargetContext(), ctx, "test-namespace");
     runInTransaction(
         engine,
         new Runnable() {
@@ -410,7 +410,8 @@ public class SqlPersistenceStorageEngineTest {
     cfg.setLogger(new DefaultLogger(Logger.Level.DEBUG, null));
     String id = ".?!@$%^&*()\\/-~{}π∞٩(-̮̮̃-̃)۶ ٩(●̮̮̃•̃)۶ ٩(͡๏̯͡๏)۶";
     PersistenceStorageEngine engine =
-        new SqlPersistenceStorageEngine(InstrumentationRegistry.getTargetContext(), cfg, id);
+        new SqlPersistenceStorageEngine(
+            InstrumentationRegistry.getInstrumentation().getTargetContext(), cfg, id);
   }
 
   @Test

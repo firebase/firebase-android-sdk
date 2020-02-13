@@ -199,7 +199,7 @@ public final class LocalSerializerTest {
   }
 
   @Test
-  public void testEncodesQueryData() {
+  public void testEncodesTargetData() {
     Query query = TestUtil.query("room");
     int targetId = 42;
     long sequenceNumber = 10;
@@ -207,9 +207,9 @@ public final class LocalSerializerTest {
     SnapshotVersion limboFreeVersion = TestUtil.version(1000);
     ByteString resumeToken = TestUtil.resumeToken(1039);
 
-    QueryData queryData =
-        new QueryData(
-            query,
+    TargetData targetData =
+        new TargetData(
+            query.toTarget(),
             targetId,
             sequenceNumber,
             QueryPurpose.LISTEN,
@@ -219,7 +219,7 @@ public final class LocalSerializerTest {
 
     // Let the RPC serializer test various permutations of query serialization.
     com.google.firestore.v1.Target.QueryTarget queryTarget =
-        remoteSerializer.encodeQueryTarget(query);
+        remoteSerializer.encodeQueryTarget(query.toTarget());
 
     com.google.firebase.firestore.proto.Target expected =
         com.google.firebase.firestore.proto.Target.newBuilder()
@@ -235,8 +235,8 @@ public final class LocalSerializerTest {
                 com.google.protobuf.Timestamp.newBuilder().setNanos(1000000))
             .build();
 
-    assertEquals(expected, serializer.encodeQueryData(queryData));
-    QueryData decoded = serializer.decodeQueryData(expected);
-    assertEquals(queryData, decoded);
+    assertEquals(expected, serializer.encodeTargetData(targetData));
+    TargetData decoded = serializer.decodeTargetData(expected);
+    assertEquals(targetData, decoded);
   }
 }

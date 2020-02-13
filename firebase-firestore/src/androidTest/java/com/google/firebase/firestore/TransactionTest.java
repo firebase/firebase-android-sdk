@@ -34,7 +34,6 @@ import com.google.firebase.firestore.util.AsyncQueue.TimerId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.After;
@@ -201,19 +200,6 @@ public class TransactionTest {
   @After
   public void tearDown() {
     IntegrationTestUtil.tearDown();
-  }
-
-  @Test
-  public void testGetDocuments() {
-    FirebaseFirestore firestore = testFirestore();
-    DocumentReference doc = firestore.collection("spaces").document();
-    Map<String, Object> value = map("foo", 1, "desc", "Stuff", "owner", "Jonny");
-    waitFor(doc.set(value));
-    Exception e = waitForException(firestore.runTransaction(transaction -> transaction.get(doc)));
-    // We currently require every document read to also be written.
-    // TODO: Fix this check once we drop that requirement.
-    assertEquals(Code.INVALID_ARGUMENT, ((FirebaseFirestoreException) e).getCode());
-    assertEquals("Every document read in a transaction must also be written.", e.getMessage());
   }
 
   @Test
@@ -513,38 +499,32 @@ public class TransactionTest {
   }
 
   @Test
-  public void testHandleReadingOneDocAndWritingAnother() {
+  public void testRetriesWhenDocumentThatWasReadWithoutBeingWrittenChanges() {
     FirebaseFirestore firestore = testFirestore();
     DocumentReference doc1 = firestore.collection("counters").document();
     DocumentReference doc2 = firestore.collection("counters").document();
     CountDownLatch latch = new CountDownLatch(2);
     waitFor(doc1.set(map("count", 15)));
-    Exception e =
-        waitForException(
-            firestore.runTransaction(
-                transaction -> {
-                  latch.countDown();
-                  // Get the first doc.
-                  transaction.get(doc1);
-                  // Do a write outside of the transaction. The first time the
-                  // transaction is tried, this will bump the version, which
-                  // will cause the write to doc2 to fail. The second time, it
-                  // will be a no-op and not bump the version.
-                  waitFor(doc1.set(map("count", 1234)));
-                  // Now try to update the other doc from within the transaction.
-                  // This should fail once, because we read 15 earlier.
-                  transaction.set(doc2, map("count", 16));
-                  return null;
-                }));
-    // We currently require every document read to also be written.
-    // TODO: Add this check back once we drop that.
-    // Document snapshot = waitFor(doc1.get());
-    // assertEquals(0, tries.getCount());
-    // assertEquals(1234, snapshot.getDouble("count"));
-    // snapshot = waitFor(doc2.get());
-    // assertEquals(16, snapshot.getDouble("count"));
-    assertEquals(Code.INVALID_ARGUMENT, ((FirebaseFirestoreException) e).getCode());
-    assertEquals("Every document read in a transaction must also be written.", e.getMessage());
+    waitFor(
+        firestore.runTransaction(
+            transaction -> {
+              latch.countDown();
+              // Get the first doc.
+              transaction.get(doc1);
+              // Do a write outside of the transaction. The first time the
+              // transaction is tried, this will bump the version, which
+              // will cause the write to doc2 to fail. The second time, it
+              // will be a no-op and not bump the version.
+              waitFor(doc1.set(map("count", 1234)));
+              // Now try to update the other doc from within the transaction.
+              // This should fail once, because we read 15 earlier.
+              transaction.set(doc2, map("count", 16));
+              return null;
+            }));
+    DocumentSnapshot snapshot = waitFor(doc1.get());
+    assertEquals(0, latch.getCount());
+    assertTrue(snapshot.exists());
+    assertEquals(1234L, snapshot.getData().get("count"));
   }
 
   @Test
@@ -616,17 +596,20 @@ public class TransactionTest {
   }
 
   @Test
-  public void testCannotHaveAGetWithoutMutations() {
+  public void testCanHaveGetsWithoutMutations() {
     FirebaseFirestore firestore = testFirestore();
     DocumentReference doc = firestore.collection("foo").document();
+    DocumentReference doc2 = firestore.collection("foo").document();
     waitFor(doc.set(map("foo", "bar")));
-
-    Exception e = waitForException(firestore.runTransaction(transaction -> transaction.get(doc)));
-    // We currently require every document read to also be written.
-    // TODO: Add this check back once we drop that.
-    // assertEquals("bar", snapshot.getString("foo"));
-    assertEquals(Code.INVALID_ARGUMENT, ((FirebaseFirestoreException) e).getCode());
-    assertEquals("Every document read in a transaction must also be written.", e.getMessage());
+    waitFor(
+        firestore.runTransaction(
+            transaction -> {
+              transaction.get(doc2);
+              return transaction.get(doc);
+            }));
+    DocumentSnapshot snapshot = waitFor(doc.get());
+    assertTrue(snapshot.exists());
+    assertEquals(map("foo", "bar"), snapshot.getData());
   }
 
   @Test

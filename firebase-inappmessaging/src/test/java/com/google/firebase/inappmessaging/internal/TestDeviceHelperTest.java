@@ -20,6 +20,7 @@ import static org.mockito.Mockito.when;
 
 import com.google.firebase.inappmessaging.MessagesProto;
 import com.google.internal.firebase.inappmessaging.v1.CampaignProto;
+import com.google.internal.firebase.inappmessaging.v1.CampaignProto.ThickContent;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.FetchEligibleCampaignsResponse;
 import org.junit.Before;
 import org.junit.Test;
@@ -66,8 +67,7 @@ public class TestDeviceHelperTest {
         .thenReturn(true);
     testDeviceHelper = new TestDeviceHelper(sharedPreferencesUtils);
 
-    CampaignProto.ThickContent randomContent =
-        CampaignProto.ThickContent.newBuilder(thickContent).build();
+    CampaignProto.ThickContent randomContent = ThickContent.newBuilder(thickContent).build();
     FetchEligibleCampaignsResponse response =
         FetchEligibleCampaignsResponse.newBuilder(campaignsResponse)
             .addMessages(randomContent)
@@ -92,7 +92,7 @@ public class TestDeviceHelperTest {
     testDeviceHelper = new TestDeviceHelper(sharedPreferencesUtils);
 
     CampaignProto.ThickContent testContent =
-        CampaignProto.ThickContent.newBuilder(thickContent).setIsTestCampaign(true).build();
+        ThickContent.newBuilder(thickContent).setIsTestCampaign(true).build();
     FetchEligibleCampaignsResponse response =
         FetchEligibleCampaignsResponse.newBuilder(campaignsResponse)
             .addMessages(testContent)

@@ -19,7 +19,7 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 import android.content.Context;
 import com.google.firebase.firestore.auth.EmptyCredentialsProvider;
 import com.google.firebase.firestore.core.DatabaseInfo;
-import com.google.firebase.firestore.local.QueryData;
+import com.google.firebase.firestore.local.TargetData;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
@@ -47,7 +47,7 @@ public class MockDatastore extends Datastore {
     private boolean open;
 
     /** Tracks the currently active watch targets as sent over the watch stream. */
-    private final Map<Integer, QueryData> activeTargets = new HashMap<>();
+    private final Map<Integer, TargetData> activeTargets = new HashMap<>();
 
     MockWatchStream(AsyncQueue workerQueue, WatchStream.Callback listener) {
       super(/*channel=*/ null, workerQueue, serializer, listener);
@@ -78,21 +78,21 @@ public class MockDatastore extends Datastore {
     }
 
     @Override
-    public void watchQuery(QueryData queryData) {
-      String resumeToken = Util.toDebugString(queryData.getResumeToken());
+    public void watchQuery(TargetData targetData) {
+      String resumeToken = Util.toDebugString(targetData.getResumeToken());
       SpecTestCase.log(
           "      watchQuery("
-              + queryData.getQuery()
+              + targetData.getTarget()
               + ", "
-              + queryData.getTargetId()
+              + targetData.getTargetId()
               + ", "
               + resumeToken
               + ")");
       // Snapshot version is ignored on the wire
-      QueryData sentQueryData =
-          queryData.withResumeToken(queryData.getResumeToken(), SnapshotVersion.NONE);
+      TargetData sentTargetData =
+          targetData.withResumeToken(targetData.getResumeToken(), SnapshotVersion.NONE);
       watchStreamRequestCount += 1;
-      this.activeTargets.put(queryData.getTargetId(), sentQueryData);
+      this.activeTargets.put(targetData.getTargetId(), sentTargetData);
     }
 
     @Override
@@ -276,7 +276,7 @@ public class MockDatastore extends Datastore {
   }
 
   /** Returns the map of active targets on the watch stream, keyed by target ID. */
-  public Map<Integer, QueryData> activeTargets() {
+  public Map<Integer, TargetData> activeTargets() {
     // Make a defensive copy as the watch stream continues to modify the Map of active targets.
     return new HashMap<>(watchStream.activeTargets);
   }

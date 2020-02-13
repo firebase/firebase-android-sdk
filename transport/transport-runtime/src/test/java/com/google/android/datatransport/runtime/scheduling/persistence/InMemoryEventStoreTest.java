@@ -16,6 +16,8 @@ package com.google.android.datatransport.runtime.scheduling.persistence;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import com.google.android.datatransport.Encoding;
+import com.google.android.datatransport.runtime.EncodedPayload;
 import com.google.android.datatransport.runtime.EventInternal;
 import com.google.android.datatransport.runtime.TransportContext;
 import java.nio.charset.Charset;
@@ -34,7 +36,8 @@ public class InMemoryEventStoreTest {
           .setTransportName("transport")
           .setEventMillis(1)
           .setUptimeMillis(2)
-          .setPayload("hello".getBytes(Charset.defaultCharset()))
+          .setEncodedPayload(
+              new EncodedPayload(Encoding.of("json"), "hello".getBytes(Charset.defaultCharset())))
           .build();
   private static final PersistedEvent TEST_PERSISTED_EVENT =
       PersistedEvent.create(1, TRANSPORT_CONTEXT, TEST_EVENT);

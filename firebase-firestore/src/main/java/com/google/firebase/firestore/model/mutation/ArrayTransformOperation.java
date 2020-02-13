@@ -16,9 +16,9 @@ package com.google.firebase.firestore.model.mutation;
 
 import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
-import com.google.firebase.firestore.model.value.ArrayValue;
-import com.google.firebase.firestore.model.value.FieldValue;
-import java.util.ArrayList;
+import com.google.firebase.firestore.model.Values;
+import com.google.firestore.v1.ArrayValue;
+import com.google.firestore.v1.Value;
 import java.util.Collections;
 import java.util.List;
 
@@ -28,24 +28,23 @@ import java.util.List;
  * <p>Implementations are: ArrayTransformOperation.Union and ArrayTransformOperation.Remove
  */
 public abstract class ArrayTransformOperation implements TransformOperation {
-  private final List<FieldValue> elements;
+  private final List<Value> elements;
 
-  ArrayTransformOperation(List<FieldValue> elements) {
+  ArrayTransformOperation(List<Value> elements) {
     this.elements = Collections.unmodifiableList(elements);
   }
 
-  public List<FieldValue> getElements() {
+  public List<Value> getElements() {
     return elements;
   }
 
   @Override
-  public FieldValue applyToLocalView(@Nullable FieldValue previousValue, Timestamp localWriteTime) {
+  public Value applyToLocalView(@Nullable Value previousValue, Timestamp localWriteTime) {
     return apply(previousValue);
   }
 
   @Override
-  public FieldValue applyToRemoteDocument(
-      @Nullable FieldValue previousValue, FieldValue transformResult) {
+  public Value applyToRemoteDocument(@Nullable Value previousValue, Value transformResult) {
     // The server just sends null as the transform result for array operations, so we have to
     // calculate a result the same as we do for local applications.
     return apply(previousValue);
@@ -53,7 +52,7 @@ public abstract class ArrayTransformOperation implements TransformOperation {
 
   @Override
   @Nullable
-  public FieldValue computeBaseValue(@Nullable FieldValue currentValue) {
+  public Value computeBaseValue(@Nullable Value currentValue) {
     return null; // Array transforms are idempotent and don't require a base value.
   }
 
@@ -80,52 +79,58 @@ public abstract class ArrayTransformOperation implements TransformOperation {
   }
 
   /** Applies this ArrayTransformOperation against the specified previousValue. */
-  protected abstract ArrayValue apply(@Nullable FieldValue previousValue);
+  protected abstract Value apply(@Nullable Value previousValue);
 
   /**
-   * Inspects the provided value, returning an ArrayList copy of the internal array if it's an
-   * ArrayValue and an empty ArrayList if it's null or any other type of FSTFieldValue.
+   * Inspects the provided value, returning an ArrayValue.Builder containing the existing array
+   * elements or an empty builder if `value` is not an array.
    */
-  static ArrayList<FieldValue> coercedFieldValuesArray(@Nullable FieldValue value) {
-    if (value instanceof ArrayValue) {
-      return new ArrayList<>(((ArrayValue) value).getInternalValue());
+  static ArrayValue.Builder coercedFieldValuesArray(@Nullable Value value) {
+    if (Values.isArray(value)) {
+      return value.getArrayValue().toBuilder();
     } else {
       // coerce to empty array.
-      return new ArrayList<>();
+      return ArrayValue.newBuilder();
     }
   }
 
   /** An array union transform operation. */
   public static class Union extends ArrayTransformOperation {
-    public Union(List<FieldValue> elements) {
+    public Union(List<Value> elements) {
       super(elements);
     }
 
     @Override
-    protected ArrayValue apply(@Nullable FieldValue previousValue) {
-      ArrayList<FieldValue> result = coercedFieldValuesArray(previousValue);
-      for (FieldValue element : getElements()) {
-        if (!result.contains(element)) {
-          result.add(element);
+    protected Value apply(@Nullable Value previousValue) {
+      ArrayValue.Builder result = coercedFieldValuesArray(previousValue);
+      for (Value unionElement : getElements()) {
+        if (!Values.contains(result, unionElement)) {
+          result.addValues(unionElement);
         }
       }
-      return ArrayValue.fromList(result);
+      return Value.newBuilder().setArrayValue(result).build();
     }
   }
 
   /** An array remove transform operation. */
   public static class Remove extends ArrayTransformOperation {
-    public Remove(List<FieldValue> elements) {
+    public Remove(List<Value> elements) {
       super(elements);
     }
 
     @Override
-    protected ArrayValue apply(@Nullable FieldValue previousValue) {
-      ArrayList<FieldValue> result = coercedFieldValuesArray(previousValue);
-      for (FieldValue element : getElements()) {
-        result.removeAll(Collections.singleton(element));
+    protected Value apply(@Nullable Value previousValue) {
+      ArrayValue.Builder result = coercedFieldValuesArray(previousValue);
+      for (Value removeElement : getElements()) {
+        for (int i = 0; i < result.getValuesCount(); ) {
+          if (Values.equals(result.getValues(i), removeElement)) {
+            result.removeValues(i);
+          } else {
+            ++i;
+          }
+        }
       }
-      return ArrayValue.fromList(result);
+      return Value.newBuilder().setArrayValue(result).build();
     }
   }
 }
