@@ -354,17 +354,17 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     if (limboResolution != null && limboResolution.receivedDocument) {
       return DocumentKey.emptyKeySet().insert(limboResolution.key);
     } else {
-      List<DocumentKey> remoteKeys = Lists.newArrayList();
+      ImmutableSortedSet<DocumentKey> remoteKeys = DocumentKey.emptyKeySet();
       if (queriesByTarget.containsKey(targetId)) {
         for (Query query : queriesByTarget.get(targetId)) {
           if (queryViewsByQuery.containsKey(query)) {
-            remoteKeys.addAll(
-                Lists.newArrayList(queryViewsByQuery.get(query).getView().getSyncedDocuments()));
+            remoteKeys =
+                remoteKeys.unionWith(queryViewsByQuery.get(query).getView().getSyncedDocuments());
           }
         }
       }
 
-      return new ImmutableSortedSet(remoteKeys, DocumentKey.comparator());
+      return remoteKeys;
     }
   }
 
