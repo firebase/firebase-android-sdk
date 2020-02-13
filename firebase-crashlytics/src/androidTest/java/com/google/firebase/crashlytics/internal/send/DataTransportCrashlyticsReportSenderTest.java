@@ -14,82 +14,96 @@
 
 package com.google.firebase.crashlytics.internal.send;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 
 import androidx.test.runner.AndroidJUnit4;
-import com.google.android.datatransport.Event;
 import com.google.android.datatransport.Transport;
+import com.google.android.datatransport.TransportScheduleCallback;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
-import java.util.ArrayList;
-import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.stubbing.Answer;
 
 @RunWith(AndroidJUnit4.class)
 public class DataTransportCrashlyticsReportSenderTest {
 
   @Mock private Transport<CrashlyticsReport> mockTransport;
 
-  @Mock private SendCallback<CrashlyticsReport> mockCallback;
-
   private DataTransportCrashlyticsReportSender reportSender;
 
   @Before
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
-    reportSender = new DataTransportCrashlyticsReportSender(mockTransport, mockCallback);
+    reportSender = new DataTransportCrashlyticsReportSender(mockTransport);
   }
 
   @Test
   public void testSendReportsSuccessful() {
-    doAnswer(
-            (i) -> {
-              final Event<CrashlyticsReport> event = i.getArgument(0);
-              mockCallback.onSendComplete(event.getPayload(), null);
-              return null;
-            })
-        .when(mockTransport)
-        .schedule(any(), any());
+    doAnswer(callbackAnswer(null)).when(mockTransport).schedule(any(), any());
 
     final CrashlyticsReport report1 = mock(CrashlyticsReport.class);
     final CrashlyticsReport report2 = mock(CrashlyticsReport.class);
 
-    final List<CrashlyticsReport> reports = new ArrayList<>();
-    reports.add(report1);
-    reports.add(report2);
+    final Task<CrashlyticsReport> send1 = reportSender.sendReport(report1);
+    final Task<CrashlyticsReport> send2 = reportSender.sendReport(report2);
 
-    reportSender.sendReports(reports);
-    verify(mockCallback).onSendComplete(report1, null);
-    verify(mockCallback).onSendComplete(report2, null);
+    assertTrue(send1.isSuccessful());
+    assertEquals(report1, send1.getResult());
+    assertTrue(send2.isSuccessful());
+    assertEquals(report2, send2.getResult());
   }
 
   @Test
   public void testSendReportsFailure() {
-    final IllegalStateException error = new IllegalStateException();
-    doAnswer(
-            (i) -> {
-              final Event<CrashlyticsReport> event = i.getArgument(0);
-              mockCallback.onSendComplete(event.getPayload(), error);
-              return null;
-            })
+    final Exception ex = new Exception("fail");
+    doAnswer(callbackAnswer(ex)).when(mockTransport).schedule(any(), any());
+
+    final CrashlyticsReport report1 = mock(CrashlyticsReport.class);
+    final CrashlyticsReport report2 = mock(CrashlyticsReport.class);
+
+    final Task<CrashlyticsReport> send1 = reportSender.sendReport(report1);
+    final Task<CrashlyticsReport> send2 = reportSender.sendReport(report2);
+
+    assertFalse(send1.isSuccessful());
+    assertEquals(ex, send1.getException());
+    assertFalse(send2.isSuccessful());
+    assertEquals(ex, send2.getException());
+  }
+
+  @Test
+  public void testSendReports_oneSuccessOneFail() {
+    final Exception ex = new Exception("fail");
+    doAnswer(callbackAnswer(null))
+        .doAnswer(callbackAnswer(ex))
         .when(mockTransport)
         .schedule(any(), any());
 
     final CrashlyticsReport report1 = mock(CrashlyticsReport.class);
     final CrashlyticsReport report2 = mock(CrashlyticsReport.class);
 
-    final List<CrashlyticsReport> reports = new ArrayList<>();
-    reports.add(report1);
-    reports.add(report2);
+    final Task<CrashlyticsReport> send1 = reportSender.sendReport(report1);
+    final Task<CrashlyticsReport> send2 = reportSender.sendReport(report2);
 
-    reportSender.sendReports(reports);
-    verify(mockCallback).onSendComplete(report1, error);
-    verify(mockCallback).onSendComplete(report2, error);
+    assertTrue(send1.isSuccessful());
+    assertEquals(report1, send1.getResult());
+    assertFalse(send2.isSuccessful());
+    assertEquals(ex, send2.getException());
+  }
+
+  private static Answer<Void> callbackAnswer(Exception failure) {
+    return (i) -> {
+      final TransportScheduleCallback callback = i.getArgument(1);
+      callback.onSchedule(failure);
+      return null;
+    };
   }
 }
