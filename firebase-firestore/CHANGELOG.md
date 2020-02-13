@@ -1,4 +1,6 @@
 # Unreleased 
+- [fixed] Fixed a performance regression introduced by the addition of
+  `Query.limitToLast(n: long)` in Firestore 23.3.1.
 - [changed] Changed the in-memory representation of Firestore documents to
   reduce memory allocations and improve performance. Calls to 
   `DocumentSnapshot.getData()` and `DocumentSnapshot.toObject()` will see
