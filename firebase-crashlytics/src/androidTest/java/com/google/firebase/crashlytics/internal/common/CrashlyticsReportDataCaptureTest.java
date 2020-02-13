@@ -215,7 +215,6 @@ public class CrashlyticsReportDataCaptureTest {
   private static void assertThread(Execution.Thread thread, int expectedImportance) {
     int threadImportance = thread.getImportance();
     assertEquals(expectedImportance, threadImportance);
-    assertFalse(thread.getFrames().isEmpty());
     assertFrameImportance(thread.getFrames(), threadImportance);
   }
 
