@@ -87,6 +87,22 @@ public class ImmutableSortedSet<T> implements Iterable<T> {
     return new ImmutableSortedSet<T>(map.insert(entry, null));
   }
 
+  public ImmutableSortedSet<T> unionWith(ImmutableSortedSet<T> other) {
+    ImmutableSortedSet<T> result = this;
+
+    // Make sure `result` always refers to the larger one of the two sets.
+    if (result.size() < other.size()) {
+      result = other;
+      other = this;
+    }
+
+    for (T elem : other) {
+      result = result.insert(elem);
+    }
+
+    return result;
+  }
+
   public T getMinEntry() {
     return this.map.getMinKey();
   }
