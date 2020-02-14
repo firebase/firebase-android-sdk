@@ -20,12 +20,14 @@ import com.google.firebase.crashlytics.internal.persistence.CrashlyticsReportPer
 import com.google.firebase.crashlytics.internal.send.DataTransportCrashlyticsReportSender;
 import com.google.firebase.crashlytics.internal.settings.model.AppSettingsData;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * This class handles Crashlytics lifecycle events and manages capture, persistence, and sending of
  * reports to Firebase Crashlytics.
  */
-public class FirebaseCrashlyticsReportManager {
+public class FirebaseCrashlyticsReportManager implements CrashlyticsLifecycleEvents {
 
   private static final String EVENT_TYPE_CRASH = "crash";
   private static final int EVENT_THREAD_IMPORTANCE = 4;
@@ -35,6 +37,9 @@ public class FirebaseCrashlyticsReportManager {
   private final CrashlyticsReportPersistence reportPersistence;
   private final DataTransportCrashlyticsReportSender reportsSender;
   private final CurrentTimeProvider currentTimeProvider;
+
+  // TODO: Use the shared executor from Crashlytics
+  private final ExecutorService executor = Executors.newCachedThreadPool();
 
   private String currentSessionId;
 
@@ -49,7 +54,8 @@ public class FirebaseCrashlyticsReportManager {
     this.currentTimeProvider = currentTimeProvider;
   }
 
-  public void onSessionBegin(String sessionId) {
+  @Override
+  public void onBeginSession(String sessionId) {
     final long timestamp = currentTimeProvider.getCurrentTimeMillis() / 1000;
     currentSessionId = sessionId;
 
@@ -58,6 +64,7 @@ public class FirebaseCrashlyticsReportManager {
     reportPersistence.persistReport(capturedReport);
   }
 
+  @Override
   public void onFatalEvent(Throwable event, Thread thread) {
     final long timestamp = currentTimeProvider.getCurrentTimeMillis() / 1000;
 
@@ -73,30 +80,34 @@ public class FirebaseCrashlyticsReportManager {
     reportPersistence.persistEvent(capturedEvent, currentSessionId);
   }
 
-  public void onSessionEnd() {
+  @Override
+  public void onEndSession() {
     currentSessionId = null;
   }
 
-  public void onSessionsFinalize() {
+  @Override
+  public void onFinalizeSessions() {
     reportPersistence.finalizeReports(currentSessionId);
   }
 
-  public void onReportSend(AppSettingsData appSettingsData) {
+  @Override
+  public void onSendReports(AppSettingsData appSettingsData) {
     final List<CrashlyticsReport> reportsToSend = reportPersistence.loadFinalizedReports();
     for (CrashlyticsReport report : reportsToSend) {
       reportsSender
           .sendReport(report.withOrganizationId(appSettingsData.organizationId))
-          .addOnCompleteListener(this::onReportSendComplete);
+          .continueWith(executor, this::onReportSendComplete);
     }
   }
 
-  private void onReportSendComplete(Task<CrashlyticsReport> task) {
+  private boolean onReportSendComplete(Task<CrashlyticsReport> task) {
     if (task.isSuccessful()) {
       // TODO: if the report is fatal, send an analytics event.
       final CrashlyticsReport report = task.getResult();
       reportPersistence.deleteFinalizedReport(report.getSession().getIdentifier());
+      return true;
     }
-
     // TODO: Something went wrong. Log? Throw?
+    return false;
   }
 }

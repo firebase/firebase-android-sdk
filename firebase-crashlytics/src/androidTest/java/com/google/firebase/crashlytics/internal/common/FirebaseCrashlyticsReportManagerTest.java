@@ -23,17 +23,17 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.persistence.CrashlyticsReportPersistence;
 import com.google.firebase.crashlytics.internal.send.DataTransportCrashlyticsReportSender;
 import com.google.firebase.crashlytics.internal.settings.model.AppSettingsData;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -67,7 +67,7 @@ public class FirebaseCrashlyticsReportManagerTest {
     final CrashlyticsReport mockReport = mock(CrashlyticsReport.class);
     when(dataCapture.captureReportData(anyString(), anyLong())).thenReturn(mockReport);
 
-    reportManager.onSessionBegin(sessionId);
+    reportManager.onBeginSession(sessionId);
 
     verify(dataCapture).captureReportData(sessionId, timestampSeconds);
     verify(reportPersistence).persistReport(mockReport);
@@ -88,7 +88,7 @@ public class FirebaseCrashlyticsReportManagerTest {
             any(Throwable.class), any(Thread.class), anyString(), anyLong(), anyInt(), anyInt()))
         .thenReturn(mockEvent);
 
-    reportManager.onSessionBegin(sessionId);
+    reportManager.onBeginSession(sessionId);
     reportManager.onFatalEvent(exceptionEvent, eventThread);
 
     verify(dataCapture)
@@ -99,15 +99,15 @@ public class FirebaseCrashlyticsReportManagerTest {
   @Test
   public void onSessionsFinalize_finalizesReports() {
     final String sessionId = "testSessionId";
-    reportManager.onSessionBegin(sessionId);
-    reportManager.onSessionsFinalize();
+    reportManager.onBeginSession(sessionId);
+    reportManager.onFinalizeSessions();
 
     verify(reportPersistence).finalizeReports(sessionId);
   }
 
   @Test
   @SuppressWarnings("unchecked")
-  public void onReportSend_successfulReportsAreDeleted() {
+  public void onReportSend_successfulReportsAreDeleted() throws InterruptedException {
     final String orgId = "testOrgId";
     final String sessionId1 = "sessionId1";
     final String sessionId2 = "sessionId2";
@@ -123,26 +123,23 @@ public class FirebaseCrashlyticsReportManagerTest {
 
     when(reportPersistence.loadFinalizedReports()).thenReturn(finalizedReports);
 
-    final ArgumentCaptor<OnCompleteListener> testCompletionListener1 =
-        ArgumentCaptor.forClass(OnCompleteListener.class);
-    final ArgumentCaptor<OnCompleteListener> testCompletionListener2 =
-        ArgumentCaptor.forClass(OnCompleteListener.class);
+    final Task<CrashlyticsReport> successfulTask = Tasks.forResult(mockReport1);
+    final Task<CrashlyticsReport> failedTask = Tasks.forException(new Exception("fail"));
 
-    final Task<CrashlyticsReport> mockTask1 =
-        mockSuccessfulTask(mockReport1, testCompletionListener1);
-    final Task<CrashlyticsReport> mockTask2 =
-        mockFailedTask(new Exception("fail"), testCompletionListener2);
+    when(reportSender.sendReport(mockReport1)).thenReturn(successfulTask);
+    when(reportSender.sendReport(mockReport2)).thenReturn(failedTask);
 
-    when(reportSender.sendReport(mockReport1)).thenReturn(mockTask1);
-    when(reportSender.sendReport(mockReport2)).thenReturn(mockTask2);
-
-    reportManager.onReportSend(appSettings);
+    reportManager.onSendReports(appSettings);
 
     verify(reportSender).sendReport(mockReport1);
     verify(reportSender).sendReport(mockReport2);
 
-    testCompletionListener1.getValue().onComplete(mockTask1);
-    testCompletionListener2.getValue().onComplete(mockTask2);
+    try {
+      Tasks.await(successfulTask);
+      Tasks.await(failedTask);
+    } catch (ExecutionException ex) {
+      // Allow this to fall through.
+    }
 
     verify(reportPersistence).deleteFinalizedReport(sessionId1);
     verify(reportPersistence, never()).deleteFinalizedReport(sessionId2);
@@ -155,32 +152,5 @@ public class FirebaseCrashlyticsReportManagerTest {
     when(mockReport.getSession()).thenReturn(mockSession);
     when(mockReport.withOrganizationId(orgId)).thenReturn(mockReport);
     return mockReport;
-  }
-
-  private Task<CrashlyticsReport> mockSuccessfulTask(
-      CrashlyticsReport result, ArgumentCaptor<OnCompleteListener> completionListener) {
-    return mockTask(result, null, completionListener);
-  }
-
-  private Task<CrashlyticsReport> mockFailedTask(
-      Exception exception, ArgumentCaptor<OnCompleteListener> completionListener) {
-    return mockTask(null, exception, completionListener);
-  }
-
-  @SuppressWarnings("unchecked")
-  private Task<CrashlyticsReport> mockTask(
-      CrashlyticsReport result,
-      Exception exception,
-      ArgumentCaptor<OnCompleteListener> completionListener) {
-    final boolean isSuccessful = result != null;
-    final Task<CrashlyticsReport> mockTask = (Task<CrashlyticsReport>) mock(Task.class);
-    when(mockTask.isSuccessful()).thenReturn(isSuccessful);
-    if (isSuccessful) {
-      when(mockTask.getResult()).thenReturn(result);
-    } else {
-      when(mockTask.getException()).thenReturn(exception);
-    }
-    when(mockTask.addOnCompleteListener(completionListener.capture())).thenReturn(mockTask);
-    return mockTask;
   }
 }
