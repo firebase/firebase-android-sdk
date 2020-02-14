@@ -25,7 +25,9 @@ import androidx.test.runner.AndroidJUnit4;
 import com.google.android.datatransport.Transport;
 import com.google.android.datatransport.TransportScheduleCallback;
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
+import java.util.concurrent.ExecutionException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -47,7 +49,7 @@ public class DataTransportCrashlyticsReportSenderTest {
   }
 
   @Test
-  public void testSendReportsSuccessful() {
+  public void testSendReportsSuccessful() throws Exception {
     doAnswer(callbackAnswer(null)).when(mockTransport).schedule(any(), any());
 
     final CrashlyticsReport report1 = mock(CrashlyticsReport.class);
@@ -56,6 +58,13 @@ public class DataTransportCrashlyticsReportSenderTest {
     final Task<CrashlyticsReport> send1 = reportSender.sendReport(report1);
     final Task<CrashlyticsReport> send2 = reportSender.sendReport(report2);
 
+    try {
+      Tasks.await(send1);
+      Tasks.await(send2);
+    } catch (ExecutionException e) {
+      // Allow this to fall through
+    }
+
     assertTrue(send1.isSuccessful());
     assertEquals(report1, send1.getResult());
     assertTrue(send2.isSuccessful());
@@ -63,7 +72,7 @@ public class DataTransportCrashlyticsReportSenderTest {
   }
 
   @Test
-  public void testSendReportsFailure() {
+  public void testSendReportsFailure() throws Exception {
     final Exception ex = new Exception("fail");
     doAnswer(callbackAnswer(ex)).when(mockTransport).schedule(any(), any());
 
@@ -73,6 +82,13 @@ public class DataTransportCrashlyticsReportSenderTest {
     final Task<CrashlyticsReport> send1 = reportSender.sendReport(report1);
     final Task<CrashlyticsReport> send2 = reportSender.sendReport(report2);
 
+    try {
+      Tasks.await(send1);
+      Tasks.await(send2);
+    } catch (ExecutionException e) {
+      // Allow this to fall through
+    }
+
     assertFalse(send1.isSuccessful());
     assertEquals(ex, send1.getException());
     assertFalse(send2.isSuccessful());
@@ -80,7 +96,7 @@ public class DataTransportCrashlyticsReportSenderTest {
   }
 
   @Test
-  public void testSendReports_oneSuccessOneFail() {
+  public void testSendReports_oneSuccessOneFail() throws Exception {
     final Exception ex = new Exception("fail");
     doAnswer(callbackAnswer(null))
         .doAnswer(callbackAnswer(ex))
@@ -92,6 +108,13 @@ public class DataTransportCrashlyticsReportSenderTest {
 
     final Task<CrashlyticsReport> send1 = reportSender.sendReport(report1);
     final Task<CrashlyticsReport> send2 = reportSender.sendReport(report2);
+
+    try {
+      Tasks.await(send1);
+      Tasks.await(send2);
+    } catch (ExecutionException e) {
+      // Allow this to fall through
+    }
 
     assertTrue(send1.isSuccessful());
     assertEquals(report1, send1.getResult());
