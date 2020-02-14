@@ -31,7 +31,6 @@ import com.google.firebase.crashlytics.internal.send.DataTransportCrashlyticsRep
 import com.google.firebase.crashlytics.internal.settings.model.AppSettingsData;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -133,13 +132,6 @@ public class FirebaseCrashlyticsReportManagerTest {
 
     verify(reportSender).sendReport(mockReport1);
     verify(reportSender).sendReport(mockReport2);
-
-    try {
-      Tasks.await(successfulTask);
-      Tasks.await(failedTask);
-    } catch (ExecutionException ex) {
-      // Allow this to fall through.
-    }
 
     verify(reportPersistence).deleteFinalizedReport(sessionId1);
     verify(reportPersistence, never()).deleteFinalizedReport(sessionId2);
