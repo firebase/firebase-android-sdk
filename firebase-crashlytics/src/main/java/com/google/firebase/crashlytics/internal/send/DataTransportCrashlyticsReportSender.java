@@ -21,10 +21,11 @@ import com.google.android.datatransport.Event;
 import com.google.android.datatransport.Transport;
 import com.google.android.datatransport.cct.CCTDestination;
 import com.google.android.datatransport.runtime.TransportRuntime;
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.model.serialization.CrashlyticsReportJsonTransform;
 import java.nio.charset.Charset;
-import java.util.List;
 
 /**
  * This class is responsible for sending CrashlyticsReport objects to Crashlytics through Google
@@ -41,10 +42,8 @@ public class DataTransportCrashlyticsReportSender {
   private static final String CRASHLYTICS_TRANSPORT_NAME = "FIREBASE_CRASHLYTICS_REPORT";
 
   private final Transport<CrashlyticsReport> transport;
-  private final SendCallback<CrashlyticsReport> sendCallback;
 
-  static DataTransportCrashlyticsReportSender create(
-      Context context, SendCallback<CrashlyticsReport> sendCallback) {
+  public static DataTransportCrashlyticsReportSender create(Context context) {
     TransportRuntime.initialize(context);
     final Transport<CrashlyticsReport> transport =
         TransportRuntime.getInstance()
@@ -54,21 +53,25 @@ public class DataTransportCrashlyticsReportSender {
                 CrashlyticsReport.class,
                 Encoding.of("json"),
                 r -> TRANSFORM.reportToJson(r).getBytes(Charset.forName("UTF-8")));
-    return new DataTransportCrashlyticsReportSender(transport, sendCallback);
+    return new DataTransportCrashlyticsReportSender(transport);
   }
 
-  DataTransportCrashlyticsReportSender(
-      Transport<CrashlyticsReport> transport, SendCallback<CrashlyticsReport> sendCallback) {
+  DataTransportCrashlyticsReportSender(Transport<CrashlyticsReport> transport) {
     this.transport = transport;
-    this.sendCallback = sendCallback;
   }
 
-  public void sendReports(@NonNull List<CrashlyticsReport> reports) {
-    for (CrashlyticsReport report : reports) {
-      transport.schedule(
-          Event.ofUrgent(report), // TODO: Make sure this is reasonable.
-          error -> sendCallback.onSendComplete(report, error));
-    }
+  public Task<CrashlyticsReport> sendReport(@NonNull CrashlyticsReport report) {
+    TaskCompletionSource<CrashlyticsReport> tcs = new TaskCompletionSource<>();
+    transport.schedule(
+        Event.ofUrgent(report), // TODO: Make sure this is reasonable.
+        error -> {
+          if (error != null) {
+            tcs.trySetException(error);
+            return;
+          }
+          tcs.trySetResult(report);
+        });
+    return tcs.getTask();
   }
 
   private static String mergeStrings(String part1, String part2) {
