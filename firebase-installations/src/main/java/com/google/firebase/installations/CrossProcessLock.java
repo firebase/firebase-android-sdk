@@ -15,6 +15,7 @@
 package com.google.firebase.installations;
 
 import android.content.Context;
+import android.util.Log;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -40,7 +41,8 @@ class CrossProcessLock {
       FileLock lock = channel.lock();
       return new CrossProcessLock(channel, lock);
     } catch (IOException e) {
-      throw new IllegalStateException("exception while using file locks, should never happen", e);
+      Log.e("CrossProcessLock", e.getMessage());
+      return null;
     }
   }
 
