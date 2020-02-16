@@ -26,6 +26,7 @@ import com.google.protobuf.ByteString;
 import io.grpc.Status;
 import io.grpc.StatusException;
 import io.grpc.StatusRuntimeException;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -39,7 +40,7 @@ public class Util {
   private static final String AUTO_ID_ALPHABET =
       "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
-  private static final Random rand = new Random();
+  private static final Random rand = new SecureRandom();
 
   public static String autoId() {
     StringBuilder builder = new StringBuilder();
