@@ -15,6 +15,7 @@
 package com.google.firebase.crashlytics.internal.common;
 
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.persistence.CrashlyticsReportPersistence;
 import com.google.firebase.crashlytics.internal.send.DataTransportCrashlyticsReportSender;
@@ -30,6 +31,7 @@ import java.util.concurrent.Executors;
 public class FirebaseCrashlyticsReportManager implements CrashlyticsLifecycleEvents {
 
   private static final String EVENT_TYPE_CRASH = "crash";
+  private static final String EVENT_TYPE_LOGGED = "error";
   private static final int EVENT_THREAD_IMPORTANCE = 4;
   private static final int MAX_CHAINED_EXCEPTION_DEPTH = 8;
 
@@ -66,18 +68,12 @@ public class FirebaseCrashlyticsReportManager implements CrashlyticsLifecycleEve
 
   @Override
   public void onFatalEvent(Throwable event, Thread thread) {
-    final long timestamp = currentTimeProvider.getCurrentTimeMillis() / 1000;
+    onEvent(event, thread, EVENT_TYPE_CRASH, true);
+  }
 
-    final CrashlyticsReport.Session.Event capturedEvent =
-        dataCapture.captureEventData(
-            event,
-            thread,
-            EVENT_TYPE_CRASH,
-            timestamp,
-            EVENT_THREAD_IMPORTANCE,
-            MAX_CHAINED_EXCEPTION_DEPTH);
-
-    reportPersistence.persistEvent(capturedEvent, currentSessionId);
+  @Override
+  public void onNonFatalEvent(Throwable event, Thread thread) {
+    onEvent(event, thread, EVENT_TYPE_LOGGED, false);
   }
 
   @Override
@@ -100,11 +96,30 @@ public class FirebaseCrashlyticsReportManager implements CrashlyticsLifecycleEve
     }
   }
 
+  private void onEvent(
+      Throwable event, Thread thread, String eventType, boolean includeAllThreads) {
+    final long timestamp = currentTimeProvider.getCurrentTimeMillis() / 1000;
+
+    final CrashlyticsReport.Session.Event capturedEvent =
+        dataCapture.captureEventData(
+            event,
+            thread,
+            eventType,
+            timestamp,
+            EVENT_THREAD_IMPORTANCE,
+            MAX_CHAINED_EXCEPTION_DEPTH,
+            includeAllThreads);
+
+    reportPersistence.persistEvent(capturedEvent, currentSessionId);
+  }
+
   private boolean onReportSendComplete(Task<CrashlyticsReport> task) {
     if (task.isSuccessful()) {
       // TODO: if the report is fatal, send an analytics event.
       final CrashlyticsReport report = task.getResult();
-      reportPersistence.deleteFinalizedReport(report.getSession().getIdentifier());
+      final String reportId = report.getSession().getIdentifier();
+      Logger.getLogger().i(Logger.TAG, "Crashlytics report sent successfully: " + reportId);
+      reportPersistence.deleteFinalizedReport(reportId);
       return true;
     }
     // TODO: Something went wrong. Log? Throw?

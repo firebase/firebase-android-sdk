@@ -94,17 +94,6 @@ public class CrashlyticsReportDataCapture {
       String type,
       long timestamp,
       int eventThreadImportance,
-      int maxChainedExceptions) {
-    return captureEventData(
-        event, eventThread, type, timestamp, eventThreadImportance, maxChainedExceptions, true);
-  }
-
-  public Event captureEventData(
-      Throwable event,
-      Thread eventThread,
-      String type,
-      long timestamp,
-      int eventThreadImportance,
       int maxChainedExceptions,
       boolean includeAllThreads) {
     final int orientation = context.getResources().getConfiguration().orientation;
