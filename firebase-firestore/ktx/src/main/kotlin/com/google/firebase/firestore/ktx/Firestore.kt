@@ -26,6 +26,8 @@ import com.google.firebase.firestore.QueryDocumentSnapshot
 import com.google.firebase.firestore.QuerySnapshot
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.platforminfo.LibraryVersionComponent
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.callbackFlow
 
 /** Returns the [FirebaseFirestore] instance of the default [FirebaseApp]. */
 val Firebase.firestore: FirebaseFirestore
@@ -161,4 +163,36 @@ internal const val LIBRARY_NAME: String = "fire-fst-ktx"
 class FirebaseFirestoreKtxRegistrar : ComponentRegistrar {
     override fun getComponents(): List<Component<*>> =
             listOf(LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME))
+}
+
+/**
+ * Attach a snapshotListener to a DocumentReference and use it as a coroutine flow
+ */
+fun DocumentReference.toFlow() = callbackFlow {
+    val listener = addSnapshotListener { value, error ->
+        if (value != null && value.exists()) {
+            offer(value)
+        } else if (error != null) {
+            Logger.warn("DocumentReference:flow", error.message)
+        }
+    }
+    awaitClose {
+        listener.remove()
+    }
+}
+
+/**
+ * Attach a snapshotListener to a Query and use it as a coroutine flow
+ */
+fun Query.toFlow() = callbackFlow {
+    val listener = addSnapshotListener { value, error ->
+        if (value != null) {
+            offer(value)
+        } else if (error != null) {
+            Logger.warn("Query:flow", error.message)
+        }
+    }
+    awaitClose {
+        listener.remove()
+    }
 }
