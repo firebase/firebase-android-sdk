@@ -228,7 +228,7 @@ public class LogRequestTest {
                         com.google.android.datatransport.cct.proto.ClientInfo.newBuilder()
                             .setClientType(
                                 com.google.android.datatransport.cct.proto.ClientInfo.ClientType
-                                    .ANDROID)
+                                    .ANDROID_FIREBASE)
                             .setAndroidClientInfo(
                                 com.google.android.datatransport.cct.proto.AndroidClientInfo
                                     .newBuilder()
