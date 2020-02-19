@@ -18,9 +18,10 @@ import static com.google.firebase.firestore.model.ServerTimestamps.getLocalWrite
 import static com.google.firebase.firestore.model.ServerTimestamps.isServerTimestamp;
 import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
+import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 
 import androidx.annotation.Nullable;
-import com.google.common.base.Splitter;
+import com.google.common.collect.Lists;
 import com.google.firebase.firestore.util.Util;
 import com.google.firestore.v1.ArrayValue;
 import com.google.firestore.v1.ArrayValueOrBuilder;
@@ -264,8 +265,11 @@ public class Values {
   }
 
   private static int compareReferences(String leftPath, String rightPath) {
-    List<String> leftSegments = Splitter.on('/').splitToList(leftPath);
-    List<String> rightSegments = Splitter.on('/').splitToList(rightPath);
+    checkNotNull(leftPath);
+    checkNotNull(rightPath);
+    List<String> leftSegments = Lists.newArrayList(leftPath.split("/"));
+    List<String> rightSegments = Lists.newArrayList(rightPath.split("/"));
+
     int minLength = Math.min(leftSegments.size(), rightSegments.size());
     for (int i = 0; i < minLength; i++) {
       int cmp = leftSegments.get(i).compareTo(rightSegments.get(i));

@@ -15,7 +15,6 @@
 package com.google.firebase.firestore.util;
 
 /** A port of {@link java.util.function.Supplier}, a generic supplier of values. */
-// TODO: could also use com.google.common.base.Supplier
 public interface Supplier<T> {
   /** Retrieves an instance from the supplier. */
   T get();
