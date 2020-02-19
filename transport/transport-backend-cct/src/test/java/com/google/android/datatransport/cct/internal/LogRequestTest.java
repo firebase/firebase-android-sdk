@@ -120,7 +120,7 @@ public class LogRequestTest {
   public void testBuildClientInfo_withEmptyAndroidClientInfo() {
     assertThat(
             ClientInfo.builder()
-                .setClientType(ClientInfo.ClientType.ANDROID)
+                .setClientType(ClientInfo.ClientType.ANDROID_FIREBASE)
                 .setAndroidClientInfo(AndroidClientInfo.builder().build())
                 .build())
         .isInstanceOf(ClientInfo.class);
@@ -130,7 +130,7 @@ public class LogRequestTest {
   public void testBuildClientInfo_withAndroidClientInfo() {
     assertThat(
             ClientInfo.builder()
-                .setClientType(ClientInfo.ClientType.ANDROID)
+                .setClientType(ClientInfo.ClientType.ANDROID_FIREBASE)
                 .setAndroidClientInfo(
                     AndroidClientInfo.builder()
                         .setDevice("device")
@@ -169,7 +169,7 @@ public class LogRequestTest {
                 .setRequestTimeMs(4300L)
                 .setClientInfo(
                     ClientInfo.builder()
-                        .setClientType(ClientInfo.ClientType.ANDROID)
+                        .setClientType(ClientInfo.ClientType.ANDROID_FIREBASE)
                         .setAndroidClientInfo(
                             AndroidClientInfo.builder().setDevice("device").build())
                         .build())
@@ -199,7 +199,7 @@ public class LogRequestTest {
             .setRequestTimeMs(4300L)
             .setClientInfo(
                 ClientInfo.builder()
-                    .setClientType(ClientInfo.ClientType.ANDROID)
+                    .setClientType(ClientInfo.ClientType.ANDROID_FIREBASE)
                     .setAndroidClientInfo(AndroidClientInfo.builder().setDevice("device").build())
                     .build())
             .setSource("logSource")
