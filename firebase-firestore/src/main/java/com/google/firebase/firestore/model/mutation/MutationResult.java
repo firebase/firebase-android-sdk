@@ -14,7 +14,7 @@
 
 package com.google.firebase.firestore.model.mutation;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 
 import androidx.annotation.Nullable;
 import com.google.firebase.firestore.model.SnapshotVersion;
