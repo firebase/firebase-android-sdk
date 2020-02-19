@@ -26,6 +26,7 @@ import static org.mockito.Mockito.when;
 
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.crashlytics.internal.log.LogFileManager;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.persistence.CrashlyticsReportPersistence;
 import com.google.firebase.crashlytics.internal.send.DataTransportCrashlyticsReportSender;
@@ -40,12 +41,15 @@ import org.mockito.MockitoAnnotations;
 public class FirebaseCrashlyticsReportManagerTest {
 
   @Mock private CrashlyticsReportDataCapture dataCapture;
-
   @Mock private CrashlyticsReportPersistence reportPersistence;
-
   @Mock private DataTransportCrashlyticsReportSender reportSender;
-
+  @Mock private LogFileManager logFileManager;
   @Mock private CurrentTimeProvider mockCurrentTimeProvider;
+  @Mock private CrashlyticsReport mockReport;
+  @Mock private CrashlyticsReport.Session.Event mockEvent;
+  @Mock private CrashlyticsReport.Session.Event.Builder mockEventBuilder;
+  @Mock private Exception mockException;
+  @Mock private Thread mockThread;
 
   private FirebaseCrashlyticsReportManager reportManager;
 
@@ -55,7 +59,12 @@ public class FirebaseCrashlyticsReportManagerTest {
 
     reportManager =
         new FirebaseCrashlyticsReportManager(
-            dataCapture, reportPersistence, reportSender, mockCurrentTimeProvider, Runnable::run);
+            dataCapture,
+            reportPersistence,
+            reportSender,
+            logFileManager,
+            mockCurrentTimeProvider,
+            Runnable::run);
   }
 
   @Test
@@ -64,7 +73,6 @@ public class FirebaseCrashlyticsReportManagerTest {
     final long timestamp = System.currentTimeMillis();
     when(mockCurrentTimeProvider.getCurrentTimeMillis()).thenReturn(timestamp);
     final long timestampSeconds = timestamp / 1000;
-    final CrashlyticsReport mockReport = mock(CrashlyticsReport.class);
     when(dataCapture.captureReportData(anyString(), anyLong())).thenReturn(mockReport);
 
     reportManager.onBeginSession(sessionId);
@@ -76,59 +84,102 @@ public class FirebaseCrashlyticsReportManagerTest {
   @Test
   public void testOnFatalEvent_persistsHighPriorityEventForSessionId() {
     final String eventType = "crash";
-    final Exception exceptionEvent = new Exception("fatal");
-    final Thread eventThread = Thread.currentThread();
-
     final String sessionId = "testSessionId";
     final long timestamp = System.currentTimeMillis();
-    when(mockCurrentTimeProvider.getCurrentTimeMillis()).thenReturn(timestamp);
     final long timestampSeconds = timestamp / 1000;
-    final CrashlyticsReport.Session.Event mockEvent = mock(CrashlyticsReport.Session.Event.class);
-    when(dataCapture.captureEventData(
-            any(Throwable.class),
-            any(Thread.class),
-            anyString(),
-            anyLong(),
-            anyInt(),
-            anyInt(),
-            anyBoolean()))
-        .thenReturn(mockEvent);
+
+    mockEventInteraction(timestamp);
 
     reportManager.onBeginSession(sessionId);
-    reportManager.onFatalEvent(exceptionEvent, eventThread);
+    reportManager.onFatalEvent(mockException, mockThread);
 
     verify(dataCapture)
-        .captureEventData(exceptionEvent, eventThread, eventType, timestampSeconds, 4, 8, true);
+        .captureEventData(mockException, mockThread, eventType, timestampSeconds, 4, 8, true);
     verify(reportPersistence).persistEvent(mockEvent, sessionId, true);
   }
 
   @Test
   public void testOnNonFatalEvent_persistsNormalPriorityEventForSessionId() {
     final String eventType = "error";
-    final Exception exceptionEvent = new Exception("nonfatal");
-    final Thread eventThread = Thread.currentThread();
-
     final String sessionId = "testSessionId";
     final long timestamp = System.currentTimeMillis();
-    when(mockCurrentTimeProvider.getCurrentTimeMillis()).thenReturn(timestamp);
     final long timestampSeconds = timestamp / 1000;
-    final CrashlyticsReport.Session.Event mockEvent = mock(CrashlyticsReport.Session.Event.class);
-    when(dataCapture.captureEventData(
-            any(Throwable.class),
-            any(Thread.class),
-            anyString(),
-            anyLong(),
-            anyInt(),
-            anyInt(),
-            anyBoolean()))
-        .thenReturn(mockEvent);
+
+    mockEventInteraction(timestamp);
 
     reportManager.onBeginSession(sessionId);
-    reportManager.onNonFatalEvent(exceptionEvent, eventThread);
+    reportManager.onNonFatalEvent(mockException, mockThread);
 
     verify(dataCapture)
-        .captureEventData(exceptionEvent, eventThread, eventType, timestampSeconds, 4, 8, false);
+        .captureEventData(mockException, mockThread, eventType, timestampSeconds, 4, 8, false);
     verify(reportPersistence).persistEvent(mockEvent, sessionId, false);
+  }
+
+  @Test
+  public void testOnNonFatalEvent_addsLogsToEvent() {
+    mockEventInteraction(System.currentTimeMillis());
+
+    final String testLog = "test\nlog";
+
+    when(logFileManager.getLogString()).thenReturn(testLog);
+
+    reportManager.onBeginSession("testSessionId");
+    reportManager.onNonFatalEvent(mockException, mockThread);
+
+    verify(mockEventBuilder)
+        .setLog(CrashlyticsReport.Session.Event.Log.builder().setContent(testLog).build());
+    verify(logFileManager).clearLog();
+  }
+
+  @Test
+  public void testOnNonFatalEvent_addsNoLogsToEventWhenNoneAvailable() {
+    mockEventInteraction(System.currentTimeMillis());
+    when(logFileManager.getLogString()).thenReturn(null);
+
+    reportManager.onBeginSession("testSessionId");
+    reportManager.onNonFatalEvent(mockException, mockThread);
+
+    verify(mockEventBuilder, never()).setLog(any(CrashlyticsReport.Session.Event.Log.class));
+    verify(logFileManager).clearLog();
+  }
+
+  @Test
+  public void testOnFatalEvent_addsLogsToEvent() {
+    mockEventInteraction(System.currentTimeMillis());
+
+    final String testLog = "test\nlog";
+
+    when(logFileManager.getLogString()).thenReturn(testLog);
+
+    reportManager.onBeginSession("testSessionId");
+    reportManager.onFatalEvent(mockException, mockThread);
+
+    verify(mockEventBuilder)
+        .setLog(CrashlyticsReport.Session.Event.Log.builder().setContent(testLog).build());
+    verify(logFileManager).clearLog();
+  }
+
+  @Test
+  public void testOnFatalEvent_addsNoLogsToEventWhenNoneAvailable() {
+    mockEventInteraction(System.currentTimeMillis());
+
+    when(logFileManager.getLogString()).thenReturn(null);
+
+    reportManager.onBeginSession("testSessionId");
+    reportManager.onFatalEvent(mockException, mockThread);
+
+    verify(mockEventBuilder, never()).setLog(any(CrashlyticsReport.Session.Event.Log.class));
+    verify(logFileManager).clearLog();
+  }
+
+  @Test
+  public void onLog_writesToLogFileManager() {
+    long timestamp = System.currentTimeMillis();
+    String log = "this is a log";
+
+    reportManager.onLog(timestamp, log);
+
+    verify(logFileManager).writeToLog(timestamp, log);
   }
 
   @Test
@@ -173,7 +224,22 @@ public class FirebaseCrashlyticsReportManagerTest {
     verify(reportPersistence, never()).deleteFinalizedReport(sessionId2);
   }
 
-  private CrashlyticsReport mockReport(String sessionId, String orgId) {
+  private void mockEventInteraction(long timestamp) {
+    when(mockCurrentTimeProvider.getCurrentTimeMillis()).thenReturn(timestamp);
+    when(mockEvent.toBuilder()).thenReturn(mockEventBuilder);
+    when(mockEventBuilder.build()).thenReturn(mockEvent);
+    when(dataCapture.captureEventData(
+            any(Throwable.class),
+            any(Thread.class),
+            anyString(),
+            anyLong(),
+            anyInt(),
+            anyInt(),
+            anyBoolean()))
+        .thenReturn(mockEvent);
+  }
+
+  private static CrashlyticsReport mockReport(String sessionId, String orgId) {
     final CrashlyticsReport mockReport = mock(CrashlyticsReport.class);
     final CrashlyticsReport.Session mockSession = mock(CrashlyticsReport.Session.class);
     when(mockSession.getIdentifier()).thenReturn(sessionId);

@@ -42,6 +42,14 @@ interface CrashlyticsLifecycleEvents {
    */
   void onNonFatalEvent(Throwable event, Thread thread);
 
+  /**
+   * Called when a message is logged to Crashlytics.
+   *
+   * @param timestamp the timestamp of the message (in milliseconds since app launch)
+   * @param log the log message
+   */
+  void onLog(long timestamp, String log);
+
   /** Called when the current session should be closed */
   void onEndSession();
 

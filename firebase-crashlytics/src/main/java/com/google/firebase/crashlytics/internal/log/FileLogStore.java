@@ -19,6 +19,8 @@ interface FileLogStore {
 
   byte[] getLogAsBytes();
 
+  String getLogAsString();
+
   void closeLogFile();
 
   void deleteLogFile();

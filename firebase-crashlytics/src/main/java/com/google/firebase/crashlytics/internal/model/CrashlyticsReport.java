@@ -84,6 +84,13 @@ public abstract class CrashlyticsReport {
   @NonNull
   public abstract Session getSession();
 
+  // TODO
+  // @Nullable
+  // public abstract byte[] getNdkPayload();
+
+  @NonNull
+  protected abstract Builder toBuilder();
+
   /**
    * Augment an existing {@link CrashlyticsReport} with a given list of events.
    *
@@ -104,13 +111,6 @@ public abstract class CrashlyticsReport {
   public CrashlyticsReport withOrganizationId(@NonNull String organizationId) {
     return toBuilder().setSession(getSession().withOrganizationId(organizationId)).build();
   }
-
-  // TODO
-  // @Nullable
-  // public abstract byte[] getNdkPayload();
-
-  @NonNull
-  protected abstract Builder toBuilder();
 
   @AutoValue
   public abstract static class CustomAttribute {
@@ -464,6 +464,9 @@ public abstract class CrashlyticsReport {
 
       @Nullable
       public abstract Log getLog();
+
+      @NonNull
+      public abstract Builder toBuilder();
 
       @AutoValue
       public abstract static class Application {
