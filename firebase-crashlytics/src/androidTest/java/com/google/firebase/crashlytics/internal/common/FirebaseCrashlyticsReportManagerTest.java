@@ -15,6 +15,7 @@
 package com.google.firebase.crashlytics.internal.common;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -84,14 +85,49 @@ public class FirebaseCrashlyticsReportManagerTest {
     final long timestampSeconds = timestamp / 1000;
     final CrashlyticsReport.Session.Event mockEvent = mock(CrashlyticsReport.Session.Event.class);
     when(dataCapture.captureEventData(
-            any(Throwable.class), any(Thread.class), anyString(), anyLong(), anyInt(), anyInt()))
+            any(Throwable.class),
+            any(Thread.class),
+            anyString(),
+            anyLong(),
+            anyInt(),
+            anyInt(),
+            anyBoolean()))
         .thenReturn(mockEvent);
 
     reportManager.onBeginSession(sessionId);
     reportManager.onFatalEvent(exceptionEvent, eventThread);
 
     verify(dataCapture)
-        .captureEventData(exceptionEvent, eventThread, eventType, timestampSeconds, 4, 8);
+        .captureEventData(exceptionEvent, eventThread, eventType, timestampSeconds, 4, 8, true);
+    verify(reportPersistence).persistEvent(mockEvent, sessionId);
+  }
+
+  @Test
+  public void testOnNonFatalEvent_persistsNonFatalEventForSessionId() {
+    final String eventType = "error";
+    final Exception exceptionEvent = new Exception("nonfatal");
+    final Thread eventThread = Thread.currentThread();
+
+    final String sessionId = "testSessionId";
+    final long timestamp = System.currentTimeMillis();
+    when(mockCurrentTimeProvider.getCurrentTimeMillis()).thenReturn(timestamp);
+    final long timestampSeconds = timestamp / 1000;
+    final CrashlyticsReport.Session.Event mockEvent = mock(CrashlyticsReport.Session.Event.class);
+    when(dataCapture.captureEventData(
+            any(Throwable.class),
+            any(Thread.class),
+            anyString(),
+            anyLong(),
+            anyInt(),
+            anyInt(),
+            anyBoolean()))
+        .thenReturn(mockEvent);
+
+    reportManager.onBeginSession(sessionId);
+    reportManager.onNonFatalEvent(exceptionEvent, eventThread);
+
+    verify(dataCapture)
+        .captureEventData(exceptionEvent, eventThread, eventType, timestampSeconds, 4, 8, false);
     verify(reportPersistence).persistEvent(mockEvent, sessionId);
   }
 

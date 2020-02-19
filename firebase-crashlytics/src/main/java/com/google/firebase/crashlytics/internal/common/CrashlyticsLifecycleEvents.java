@@ -34,6 +34,14 @@ interface CrashlyticsLifecycleEvents {
    */
   void onFatalEvent(Throwable event, Thread thread);
 
+  /**
+   * Called when a non-fatal event occurs.
+   *
+   * @param event the non-fatal event
+   * @param thread the thread on which the non-fatal event occurred
+   */
+  void onNonFatalEvent(Throwable event, Thread thread);
+
   /** Called when the current session should be closed */
   void onEndSession();
 

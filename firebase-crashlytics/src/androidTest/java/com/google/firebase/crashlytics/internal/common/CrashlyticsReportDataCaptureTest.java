@@ -74,7 +74,8 @@ public class CrashlyticsReportDataCaptureTest {
             eventType,
             timestamp,
             eventThreadImportance,
-            maxChainedExceptions);
+            maxChainedExceptions,
+            true);
 
     assertEquals(eventType, event.getType());
     assertEquals(timestamp, event.getTimestamp());
@@ -111,7 +112,8 @@ public class CrashlyticsReportDataCaptureTest {
             eventType,
             timestamp,
             eventThreadImportance,
-            maxChainedExceptions);
+            maxChainedExceptions,
+            true);
 
     assertEquals(eventType, event.getType());
     assertEquals(timestamp, event.getTimestamp());
