@@ -21,8 +21,7 @@ import com.google.firebase.crashlytics.internal.persistence.CrashlyticsReportPer
 import com.google.firebase.crashlytics.internal.send.DataTransportCrashlyticsReportSender;
 import com.google.firebase.crashlytics.internal.settings.model.AppSettingsData;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.Executor;
 
 /**
  * This class handles Crashlytics lifecycle events and manages capture, persistence, and sending of
@@ -39,21 +38,21 @@ public class FirebaseCrashlyticsReportManager implements CrashlyticsLifecycleEve
   private final CrashlyticsReportPersistence reportPersistence;
   private final DataTransportCrashlyticsReportSender reportsSender;
   private final CurrentTimeProvider currentTimeProvider;
-
-  // TODO: Use the shared executor from Crashlytics
-  private final ExecutorService executor = Executors.newCachedThreadPool();
+  private final Executor executor;
 
   private String currentSessionId;
 
-  public FirebaseCrashlyticsReportManager(
+  FirebaseCrashlyticsReportManager(
       CrashlyticsReportDataCapture dataCapture,
       CrashlyticsReportPersistence reportPersistence,
       DataTransportCrashlyticsReportSender reportsSender,
-      CurrentTimeProvider currentTimeProvider) {
+      CurrentTimeProvider currentTimeProvider,
+      Executor executor) {
     this.dataCapture = dataCapture;
     this.reportPersistence = reportPersistence;
     this.reportsSender = reportsSender;
     this.currentTimeProvider = currentTimeProvider;
+    this.executor = executor;
   }
 
   @Override
