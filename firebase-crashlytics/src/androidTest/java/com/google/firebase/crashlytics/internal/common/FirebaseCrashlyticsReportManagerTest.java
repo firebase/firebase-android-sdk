@@ -55,7 +55,7 @@ public class FirebaseCrashlyticsReportManagerTest {
 
     reportManager =
         new FirebaseCrashlyticsReportManager(
-            dataCapture, reportPersistence, reportSender, mockCurrentTimeProvider);
+            dataCapture, reportPersistence, reportSender, mockCurrentTimeProvider, Runnable::run);
   }
 
   @Test
