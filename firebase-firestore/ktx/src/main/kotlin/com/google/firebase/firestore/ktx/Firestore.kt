@@ -173,7 +173,7 @@ fun DocumentReference.toFlow() = callbackFlow {
         if (value != null && value.exists()) {
             offer(value)
         } else if (error != null) {
-            Logger.warn("DocumentReference:flow", error.message)
+            close(error)
         }
     }
     awaitClose {
@@ -189,7 +189,7 @@ fun Query.toFlow() = callbackFlow {
         if (value != null) {
             offer(value)
         } else if (error != null) {
-            Logger.warn("Query:flow", error.message)
+            close(error)
         }
     }
     awaitClose {
