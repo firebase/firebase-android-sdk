@@ -26,13 +26,18 @@ import static org.mockito.Mockito.when;
 
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.crashlytics.core.UserMetadata;
 import com.google.firebase.crashlytics.internal.log.LogFileManager;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
+import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.CustomAttribute;
+import com.google.firebase.crashlytics.internal.model.ImmutableList;
 import com.google.firebase.crashlytics.internal.persistence.CrashlyticsReportPersistence;
 import com.google.firebase.crashlytics.internal.send.DataTransportCrashlyticsReportSender;
 import com.google.firebase.crashlytics.internal.settings.model.AppSettingsData;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -44,10 +49,13 @@ public class FirebaseCrashlyticsReportManagerTest {
   @Mock private CrashlyticsReportPersistence reportPersistence;
   @Mock private DataTransportCrashlyticsReportSender reportSender;
   @Mock private LogFileManager logFileManager;
+  @Mock private UserMetadata reportMetadata;
   @Mock private CurrentTimeProvider mockCurrentTimeProvider;
   @Mock private CrashlyticsReport mockReport;
   @Mock private CrashlyticsReport.Session.Event mockEvent;
   @Mock private CrashlyticsReport.Session.Event.Builder mockEventBuilder;
+  @Mock private CrashlyticsReport.Session.Event.Application mockEventApp;
+  @Mock private CrashlyticsReport.Session.Event.Application.Builder mockEventAppBuilder;
   @Mock private Exception mockException;
   @Mock private Thread mockThread;
 
@@ -63,6 +71,7 @@ public class FirebaseCrashlyticsReportManagerTest {
             reportPersistence,
             reportSender,
             logFileManager,
+            reportMetadata,
             mockCurrentTimeProvider,
             Runnable::run);
   }
@@ -88,7 +97,7 @@ public class FirebaseCrashlyticsReportManagerTest {
     final long timestamp = System.currentTimeMillis();
     final long timestampSeconds = timestamp / 1000;
 
-    mockEventInteraction(timestamp);
+    mockEventInteractions(timestamp);
 
     reportManager.onBeginSession(sessionId);
     reportManager.onFatalEvent(mockException, mockThread);
@@ -105,7 +114,7 @@ public class FirebaseCrashlyticsReportManagerTest {
     final long timestamp = System.currentTimeMillis();
     final long timestampSeconds = timestamp / 1000;
 
-    mockEventInteraction(timestamp);
+    mockEventInteractions(timestamp);
 
     reportManager.onBeginSession(sessionId);
     reportManager.onNonFatalEvent(mockException, mockThread);
@@ -117,7 +126,7 @@ public class FirebaseCrashlyticsReportManagerTest {
 
   @Test
   public void testOnNonFatalEvent_addsLogsToEvent() {
-    mockEventInteraction(System.currentTimeMillis());
+    mockEventInteractions(System.currentTimeMillis());
 
     final String testLog = "test\nlog";
 
@@ -128,24 +137,26 @@ public class FirebaseCrashlyticsReportManagerTest {
 
     verify(mockEventBuilder)
         .setLog(CrashlyticsReport.Session.Event.Log.builder().setContent(testLog).build());
+    verify(mockEventBuilder).build();
     verify(logFileManager).clearLog();
   }
 
   @Test
   public void testOnNonFatalEvent_addsNoLogsToEventWhenNoneAvailable() {
-    mockEventInteraction(System.currentTimeMillis());
+    mockEventInteractions(System.currentTimeMillis());
     when(logFileManager.getLogString()).thenReturn(null);
 
     reportManager.onBeginSession("testSessionId");
     reportManager.onNonFatalEvent(mockException, mockThread);
 
     verify(mockEventBuilder, never()).setLog(any(CrashlyticsReport.Session.Event.Log.class));
+    verify(mockEventBuilder).build();
     verify(logFileManager).clearLog();
   }
 
   @Test
   public void testOnFatalEvent_addsLogsToEvent() {
-    mockEventInteraction(System.currentTimeMillis());
+    mockEventInteractions(System.currentTimeMillis());
 
     final String testLog = "test\nlog";
 
@@ -156,12 +167,13 @@ public class FirebaseCrashlyticsReportManagerTest {
 
     verify(mockEventBuilder)
         .setLog(CrashlyticsReport.Session.Event.Log.builder().setContent(testLog).build());
+    verify(mockEventBuilder).build();
     verify(logFileManager).clearLog();
   }
 
   @Test
   public void testOnFatalEvent_addsNoLogsToEventWhenNoneAvailable() {
-    mockEventInteraction(System.currentTimeMillis());
+    mockEventInteractions(System.currentTimeMillis());
 
     when(logFileManager.getLogString()).thenReturn(null);
 
@@ -169,6 +181,109 @@ public class FirebaseCrashlyticsReportManagerTest {
     reportManager.onFatalEvent(mockException, mockThread);
 
     verify(mockEventBuilder, never()).setLog(any(CrashlyticsReport.Session.Event.Log.class));
+    verify(mockEventBuilder).build();
+    verify(logFileManager).clearLog();
+  }
+
+  @Test
+  public void testOnNonFatalEvent_addsSortedKeysToEvent() {
+    mockEventInteractions(System.currentTimeMillis());
+
+    final String testKey1 = "testKey1";
+    final String testValue1 = "testValue1";
+    final String testKey2 = "testKey2";
+    final String testValue2 = "testValue2";
+
+    final Map<String, String> attributes = new HashMap<>();
+    attributes.put(testKey1, testValue1);
+    attributes.put(testKey2, testValue2);
+
+    final CustomAttribute customAttribute1 =
+        CustomAttribute.builder().setKey(testKey1).setValue(testValue1).build();
+    final CustomAttribute customAttribute2 =
+        CustomAttribute.builder().setKey(testKey2).setValue(testValue2).build();
+
+    final ImmutableList<CustomAttribute> expectedCustomAttributes =
+        ImmutableList.from(customAttribute1, customAttribute2);
+
+    when(reportMetadata.getCustomKeys()).thenReturn(attributes);
+
+    reportManager.onBeginSession("testSessionId");
+    reportManager.onNonFatalEvent(mockException, mockThread);
+
+    verify(mockEventAppBuilder).setCustomAttributes(expectedCustomAttributes);
+    verify(mockEventAppBuilder).build();
+    verify(mockEventBuilder).setApp(mockEventApp);
+    verify(mockEventBuilder).build();
+    verify(logFileManager).clearLog();
+  }
+
+  @Test
+  public void testOnNonFatalEvent_addsNoKeysToEventWhenNoneAvailable() {
+    mockEventInteractions(System.currentTimeMillis());
+
+    final Map<String, String> attributes = new HashMap<>();
+
+    when(reportMetadata.getCustomKeys()).thenReturn(attributes);
+
+    reportManager.onBeginSession("testSessionId");
+    reportManager.onNonFatalEvent(mockException, mockThread);
+
+    verify(mockEventAppBuilder, never()).setCustomAttributes(any());
+    verify(mockEventAppBuilder, never()).build();
+    verify(mockEventBuilder, never()).setApp(mockEventApp);
+    verify(mockEventBuilder).build();
+    verify(logFileManager).clearLog();
+  }
+
+  @Test
+  public void testOnFatalEvent_addsSortedKeysToEvent() {
+    mockEventInteractions(System.currentTimeMillis());
+
+    final String testKey1 = "testKey1";
+    final String testValue1 = "testValue1";
+    final String testKey2 = "testKey2";
+    final String testValue2 = "testValue2";
+
+    final Map<String, String> attributes = new HashMap<>();
+    attributes.put(testKey1, testValue1);
+    attributes.put(testKey2, testValue2);
+
+    final CustomAttribute customAttribute1 =
+        CustomAttribute.builder().setKey(testKey1).setValue(testValue1).build();
+    final CustomAttribute customAttribute2 =
+        CustomAttribute.builder().setKey(testKey2).setValue(testValue2).build();
+
+    final ImmutableList<CustomAttribute> expectedCustomAttributes =
+        ImmutableList.from(customAttribute1, customAttribute2);
+
+    when(reportMetadata.getCustomKeys()).thenReturn(attributes);
+
+    reportManager.onBeginSession("testSessionId");
+    reportManager.onFatalEvent(mockException, mockThread);
+
+    verify(mockEventAppBuilder).setCustomAttributes(expectedCustomAttributes);
+    verify(mockEventAppBuilder).build();
+    verify(mockEventBuilder).setApp(mockEventApp);
+    verify(mockEventBuilder).build();
+    verify(logFileManager).clearLog();
+  }
+
+  @Test
+  public void testOnFatalEvent_addsNoKeysToEventWhenNoneAvailable() {
+    mockEventInteractions(System.currentTimeMillis());
+
+    final Map<String, String> attributes = new HashMap<>();
+
+    when(reportMetadata.getCustomKeys()).thenReturn(attributes);
+
+    reportManager.onBeginSession("testSessionId");
+    reportManager.onFatalEvent(mockException, mockThread);
+
+    verify(mockEventAppBuilder, never()).setCustomAttributes(any());
+    verify(mockEventAppBuilder, never()).build();
+    verify(mockEventBuilder, never()).setApp(mockEventApp);
+    verify(mockEventBuilder).build();
     verify(logFileManager).clearLog();
   }
 
@@ -180,6 +295,16 @@ public class FirebaseCrashlyticsReportManagerTest {
     reportManager.onLog(timestamp, log);
 
     verify(logFileManager).writeToLog(timestamp, log);
+  }
+
+  @Test
+  public void onCustomKey_writesToReportMetadata() {
+    final String key = "key";
+    final String value = "value";
+
+    reportManager.onCustomKey(key, value);
+
+    verify(reportMetadata).setCustomKey(key, value);
   }
 
   @Test
@@ -224,10 +349,14 @@ public class FirebaseCrashlyticsReportManagerTest {
     verify(reportPersistence, never()).deleteFinalizedReport(sessionId2);
   }
 
-  private void mockEventInteraction(long timestamp) {
+  private void mockEventInteractions(long timestamp) {
     when(mockCurrentTimeProvider.getCurrentTimeMillis()).thenReturn(timestamp);
     when(mockEvent.toBuilder()).thenReturn(mockEventBuilder);
     when(mockEventBuilder.build()).thenReturn(mockEvent);
+    when(mockEvent.getApp()).thenReturn(mockEventApp);
+    when(mockEventApp.toBuilder()).thenReturn(mockEventAppBuilder);
+    when(mockEventAppBuilder.setCustomAttributes(any())).thenReturn(mockEventAppBuilder);
+    when(mockEventAppBuilder.build()).thenReturn(mockEventApp);
     when(dataCapture.captureEventData(
             any(Throwable.class),
             any(Thread.class),
