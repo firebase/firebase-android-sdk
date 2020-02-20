@@ -21,7 +21,6 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 
 import androidx.annotation.Nullable;
-import com.google.common.collect.Lists;
 import com.google.firebase.firestore.util.Util;
 import com.google.firestore.v1.ArrayValue;
 import com.google.firestore.v1.ArrayValueOrBuilder;
@@ -267,17 +266,17 @@ public class Values {
   private static int compareReferences(String leftPath, String rightPath) {
     checkNotNull(leftPath);
     checkNotNull(rightPath);
-    List<String> leftSegments = Lists.newArrayList(leftPath.split("/"));
-    List<String> rightSegments = Lists.newArrayList(rightPath.split("/"));
+    String[] leftSegments = leftPath.split("/", -1);
+    String[] rightSegments = rightPath.split("/", -1);
 
-    int minLength = Math.min(leftSegments.size(), rightSegments.size());
+    int minLength = Math.min(leftSegments.length, rightSegments.length);
     for (int i = 0; i < minLength; i++) {
-      int cmp = leftSegments.get(i).compareTo(rightSegments.get(i));
+      int cmp = leftSegments[i].compareTo(rightSegments[i]);
       if (cmp != 0) {
         return cmp;
       }
     }
-    return Util.compareIntegers(leftSegments.size(), rightSegments.size());
+    return Util.compareIntegers(leftSegments.length, rightSegments.length);
   }
 
   private static int compareGeoPoints(LatLng left, LatLng right) {

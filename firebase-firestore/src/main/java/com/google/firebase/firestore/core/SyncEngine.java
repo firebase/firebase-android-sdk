@@ -21,7 +21,6 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
-import com.google.common.collect.Lists;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.FirebaseFirestoreException;
@@ -461,11 +460,12 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
       return;
     }
 
-    if (pendingWritesCallbacks.containsKey(largestPendingBatchId)) {
-      pendingWritesCallbacks.get(largestPendingBatchId).add(userTask);
-    } else {
-      pendingWritesCallbacks.put(largestPendingBatchId, Lists.newArrayList(userTask));
+    if (!pendingWritesCallbacks.containsKey(largestPendingBatchId)) {
+      List<TaskCompletionSource<Void>> tasks = new ArrayList();
+      pendingWritesCallbacks.put(largestPendingBatchId, tasks);
     }
+
+    pendingWritesCallbacks.get(largestPendingBatchId).add(userTask);
   }
 
   /** Resolves tasks waiting for this batch id to get acknowledged by server, if there are any. */

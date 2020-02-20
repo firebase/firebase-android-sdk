@@ -14,7 +14,6 @@
 
 package com.google.firebase.firestore.util;
 
-import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import javax.annotation.Nullable;
 
 /**
