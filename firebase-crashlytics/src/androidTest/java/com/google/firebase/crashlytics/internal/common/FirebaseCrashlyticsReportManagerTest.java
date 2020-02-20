@@ -289,6 +289,21 @@ public class FirebaseCrashlyticsReportManagerTest {
   }
 
   @Test
+  public void testOnEndSession_addsUserIdToReport() {
+    final String userId = "testUser";
+    final String sessionId = "testSessionId";
+    final long timestamp = System.currentTimeMillis();
+    when(mockCurrentTimeProvider.getCurrentTimeMillis()).thenReturn(timestamp);
+    when(dataCapture.captureReportData(anyString(), anyLong())).thenReturn(mockReport);
+    when(reportMetadata.getUserId()).thenReturn(userId);
+
+    reportManager.onBeginSession(sessionId);
+    reportManager.onEndSession();
+
+    verify(reportPersistence).persistUserIdForSession(userId, sessionId);
+  }
+
+  @Test
   public void onLog_writesToLogFileManager() {
     long timestamp = System.currentTimeMillis();
     String log = "this is a log";
@@ -306,6 +321,15 @@ public class FirebaseCrashlyticsReportManagerTest {
     reportManager.onCustomKey(key, value);
 
     verify(reportMetadata).setCustomKey(key, value);
+  }
+
+  @Test
+  public void onUserId_writesUserToReportMetadata() {
+    final String userId = "testUser";
+
+    reportManager.onUserId(userId);
+
+    verify(reportMetadata).setUserId(userId);
   }
 
   @Test

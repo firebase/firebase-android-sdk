@@ -49,6 +49,7 @@ public class CrashlyticsReportPersistence {
   private static final String REPORTS_DIRECTORY = "reports";
 
   private static final String REPORT_FILE_NAME = "report";
+  private static final String USER_FILE_NAME = "user";
   private static final String EVENT_FILE_NAME_PREFIX = "event";
   private static final int EVENT_COUNTER_WIDTH = 10; // String width of maximum positive int value
   private static final String EVENT_COUNTER_FORMAT = "%0" + EVENT_COUNTER_WIDTH + "d";
@@ -124,6 +125,16 @@ public class CrashlyticsReportPersistence {
     trimEvents(sessionDirectory, defaultMaxEventsToKeep);
   }
 
+  public void persistUserIdForSession(String userId, String sessionId) {
+    final File sessionDirectory = getSessionDirectoryById(sessionId);
+    if (!sessionDirectory.isDirectory()) {
+      // No open session for this ID
+      // TODO: Just drop the event? Log? Throw?
+      return;
+    }
+    writeTextFile(new File(sessionDirectory, USER_FILE_NAME), userId);
+  }
+
   public void deleteFinalizedReport(String sessionId) {
     final List<File> reportFiles = new ArrayList<>();
     final FilenameFilter filter = (d, f) -> f.startsWith(sessionId);
@@ -156,9 +167,6 @@ public class CrashlyticsReportPersistence {
       // TODO: Fix nulls
       // Only process the session if it has associated events
       if (!eventFiles.isEmpty()) {
-        final CrashlyticsReport report =
-            TRANSFORM.reportFromJson(readTextFile(new File(sessionDirectory, REPORT_FILE_NAME)));
-        final String sessionId = report.getSession().getIdentifier();
         final List<Event> events = new ArrayList<>();
         boolean isHighPriorityReport = false;
         for (File eventFile : eventFiles) {
@@ -168,6 +176,21 @@ public class CrashlyticsReportPersistence {
           events.add(event);
         }
         // FIXME: If we fail to parse the events, we'll need to bail.
+
+        String userId = null;
+        final File userFile = new File(sessionDirectory, USER_FILE_NAME);
+        if (userFile.exists()) {
+          userId = readTextFile(userFile);
+        }
+
+        CrashlyticsReport report =
+            TRANSFORM.reportFromJson(readTextFile(new File(sessionDirectory, REPORT_FILE_NAME)));
+        final String sessionId = report.getSession().getIdentifier();
+
+        if (userId != null) {
+          report = report.withUserId(userId);
+        }
+
         final File outputDirectory =
             prepareDirectory(isHighPriorityReport ? priorityReportsDirectory : reportsDirectory);
         writeTextFile(
@@ -278,6 +301,7 @@ public class CrashlyticsReportPersistence {
       }
       return new String(bos.toByteArray(), UTF_8);
     } catch (IOException e) {
+      // TODO: Exception reading file from disk. Log? Throw?
       return null;
     }
   }

@@ -23,6 +23,7 @@ import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event.Application.Execution;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event.Application.Execution.Signal;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event.Application.Execution.Thread.Frame;
+import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.User;
 import com.google.firebase.crashlytics.internal.model.ImmutableList;
 import java.util.ArrayList;
 import java.util.List;
@@ -74,6 +75,7 @@ public class CrashlyticsReportJsonTransformTest {
         .setIdentifier("identifier")
         .setStartedAt(0)
         .setApp(makeTestApplication())
+        .setUser(User.builder().setIdentifier("user").build())
         .build();
   }
 
