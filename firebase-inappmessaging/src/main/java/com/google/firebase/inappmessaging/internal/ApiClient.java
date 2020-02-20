@@ -82,8 +82,7 @@ public class ApiClient {
     return FetchEligibleCampaignsResponse.newBuilder().setExpirationEpochTimestampMillis(1).build();
   }
 
-  FetchEligibleCampaignsResponse getFiams(CampaignImpressionList impressionList, InstanceIdResult instanceIdResult) {
-    Logging.logi("@@@GET FIAMS CALLED@@@@");
+  FetchEligibleCampaignsResponse getFiams(CampaignImpressionList impressionList) {
     if (!dataCollectionHelper.isAutomaticDataCollectionEnabled()) {
       Logging.logi(DATA_COLLECTION_DISABLED_ERROR);
       return createCacheExpiringResponse();
@@ -107,7 +106,7 @@ public class ApiClient {
                     .setProjectNumber(firebaseApp.getOptions().getGcmSenderId())
                     .addAllAlreadySeenCampaigns(impressionList.getAlreadySeenCampaignsList())
                     .setClientSignals(getClientSignals())
-                    .setRequestingClientApp(getClientAppInfo(instanceIdResult))
+                    .setRequestingClientApp(getClientAppInfo())
                     .build()));
   }
 
@@ -145,11 +144,11 @@ public class ApiClient {
         && !TextUtils.isEmpty(firebaseInstanceId.getId());
   }
 
-  private ClientAppInfo getClientAppInfo(InstanceIdResult instanceIdResult) {
+  private ClientAppInfo getClientAppInfo() {
     ClientAppInfo.Builder builder =
         ClientAppInfo.newBuilder().setGmpAppId(firebaseApp.getOptions().getApplicationId());
 
-    String instanceId = instanceIdResult.getId();
+    String instanceId = firebaseInstanceId.getId();
     if (!TextUtils.isEmpty(instanceId)) {
       builder.setAppInstanceId(instanceId);
     }

@@ -157,7 +157,7 @@ public class InAppMessageStreamManager {
     return testDeviceHelper.isDeviceInTestMode();
   }
 
-  public Flowable<TriggeredInAppMessage> createFirebaseInAppMessageStream(InstanceIdResult instanceIdResult) {
+  public Flowable<TriggeredInAppMessage> createFirebaseInAppMessageStream() {
     return Flowable.merge(
             Flowable.just(ON_FOREGROUND),
             appForegroundEventFlowable,
@@ -236,7 +236,7 @@ public class InAppMessageStreamManager {
 
               Function<CampaignImpressionList, Maybe<FetchEligibleCampaignsResponse>> serviceFetch =
                   impressions ->
-                      Maybe.fromCallable(() -> apiClient.getFiams(impressions, instanceIdResult))
+                      Maybe.fromCallable(() -> apiClient.getFiams(impressions))
                           .doOnSuccess(
                               resp ->
                                   Logging.logi(

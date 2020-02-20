@@ -172,7 +172,7 @@ public class FirebaseInAppMessaging {
               public void onSuccess(InstanceIdResult instanceIdResult) {
                 Disposable unusedSubscription =
                     inAppMessageStreamManager
-                        .createFirebaseInAppMessageStream(instanceIdResult)
+                        .createFirebaseInAppMessageStream()
                         .subscribe(
                             triggeredInAppMessage ->
                                 listener
