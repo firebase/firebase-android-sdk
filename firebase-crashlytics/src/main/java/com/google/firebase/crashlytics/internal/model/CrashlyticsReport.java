@@ -84,7 +84,7 @@ public abstract class CrashlyticsReport {
   @NonNull
   public abstract Session getSession();
 
-  // TODO
+  // TODO: Add back once NDK data is ready to be serialized
   // @Nullable
   // public abstract byte[] getNdkPayload();
 
