@@ -119,7 +119,7 @@ public class CrashlyticsReportPersistence {
       return;
     }
     final String json = TRANSFORM.eventToJson(event);
-    final String fileName = generateEventFilename(isHighPriority);
+    final String fileName = generateEventFilename(eventCounter.getAndIncrement(), isHighPriority);
     writeTextFile(new File(sessionDirectory, fileName), json);
     trimEvents(sessionDirectory, defaultMaxEventsToKeep);
   }
@@ -163,7 +163,8 @@ public class CrashlyticsReportPersistence {
         boolean isHighPriorityReport = false;
         for (File eventFile : eventFiles) {
           final Event event = TRANSFORM.eventFromJson(readTextFile(eventFile));
-          isHighPriorityReport = isHighPriorityReport || isHighPriorityEvent(eventFile.getName());
+          isHighPriorityReport =
+              isHighPriorityReport || isHighPriorityEventFile(eventFile.getName());
           events.add(event);
         }
         // FIXME: If we fail to parse the events, we'll need to bail.
@@ -190,19 +191,22 @@ public class CrashlyticsReportPersistence {
     return allReports;
   }
 
-  private static boolean isHighPriorityEvent(String eventFileName) {
-    return eventFileName.endsWith(PRIORITY_EVENT_SUFFIX);
+  private static boolean isHighPriorityEventFile(String fileName) {
+    return fileName.startsWith(EVENT_FILE_NAME_PREFIX) && fileName.endsWith(PRIORITY_EVENT_SUFFIX);
   }
 
-  private String generateEventFilename(boolean isHighPriority) {
-    final String eventNumber =
-        String.format(Locale.US, EVENT_COUNTER_FORMAT, eventCounter.getAndIncrement());
-    final String prioritySuffix = isHighPriority ? PRIORITY_EVENT_SUFFIX : NORMAL_EVENT_SUFFIX;
-    return EVENT_FILE_NAME_PREFIX + eventNumber + prioritySuffix;
+  private static boolean isNormalPriorityEventFile(File dir, String name) {
+    return name.startsWith(EVENT_FILE_NAME_PREFIX) && !name.endsWith(PRIORITY_EVENT_SUFFIX);
   }
 
   private File getSessionDirectoryById(String sessionId) {
     return new File(openSessionsDirectory, sessionId);
+  }
+
+  private static String generateEventFilename(int eventNumber, boolean isHighPriority) {
+    final String paddedEventNumber = String.format(Locale.US, EVENT_COUNTER_FORMAT, eventNumber);
+    final String prioritySuffix = isHighPriority ? PRIORITY_EVENT_SUFFIX : NORMAL_EVENT_SUFFIX;
+    return EVENT_FILE_NAME_PREFIX + paddedEventNumber + prioritySuffix;
   }
 
   private static int trimEvents(File sessionDirectory, int maximum) {
@@ -213,17 +217,13 @@ public class CrashlyticsReportPersistence {
     return capFilesCount(normalPriorityEventFiles, maximum);
   }
 
-  private static String eventNameOnly(String eventFileName) {
+  private static String getEventNameWithoutPriority(String eventFileName) {
     return eventFileName.substring(0, EVENT_NAME_LENGTH);
   }
 
-  private static boolean isNormalPriorityEventFile(File dir, String name) {
-    return name.startsWith(EVENT_FILE_NAME_PREFIX) && !isHighPriorityEvent(name);
-  }
-
   private static int oldestEventFileFirst(File f1, File f2) {
-    final String name1 = eventNameOnly(f1.getName());
-    final String name2 = eventNameOnly(f2.getName());
+    final String name1 = getEventNameWithoutPriority(f1.getName());
+    final String name2 = getEventNameWithoutPriority(f2.getName());
     return name1.compareTo(name2);
   }
 
