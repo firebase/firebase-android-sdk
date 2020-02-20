@@ -23,6 +23,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.developers.mobile.targeting.proto.ClientSignalsProto.ClientSignals;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.iid.InstanceIdResult;
 import com.google.firebase.inappmessaging.internal.injection.scopes.FirebaseAppScope;
 import com.google.firebase.inappmessaging.internal.time.Clock;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.CampaignImpressionList;
@@ -81,7 +82,8 @@ public class ApiClient {
     return FetchEligibleCampaignsResponse.newBuilder().setExpirationEpochTimestampMillis(1).build();
   }
 
-  FetchEligibleCampaignsResponse getFiams(CampaignImpressionList impressionList) {
+  FetchEligibleCampaignsResponse getFiams(CampaignImpressionList impressionList, InstanceIdResult instanceIdResult) {
+    Logging.logi("@@@GET FIAMS CALLED@@@@");
     if (!dataCollectionHelper.isAutomaticDataCollectionEnabled()) {
       Logging.logi(DATA_COLLECTION_DISABLED_ERROR);
       return createCacheExpiringResponse();
@@ -105,7 +107,7 @@ public class ApiClient {
                     .setProjectNumber(firebaseApp.getOptions().getGcmSenderId())
                     .addAllAlreadySeenCampaigns(impressionList.getAlreadySeenCampaignsList())
                     .setClientSignals(getClientSignals())
-                    .setRequestingClientApp(getClientAppInfo())
+                    .setRequestingClientApp(getClientAppInfo(instanceIdResult))
                     .build()));
   }
 
@@ -143,11 +145,11 @@ public class ApiClient {
         && !TextUtils.isEmpty(firebaseInstanceId.getId());
   }
 
-  private ClientAppInfo getClientAppInfo() {
+  private ClientAppInfo getClientAppInfo(InstanceIdResult instanceIdResult) {
     ClientAppInfo.Builder builder =
         ClientAppInfo.newBuilder().setGmpAppId(firebaseApp.getOptions().getApplicationId());
 
-    String instanceId = firebaseInstanceId.getId();
+    String instanceId = instanceIdResult.getId();
     if (!TextUtils.isEmpty(instanceId)) {
       builder.setAppInstanceId(instanceId);
     }

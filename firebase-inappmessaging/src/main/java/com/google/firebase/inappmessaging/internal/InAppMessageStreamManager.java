@@ -14,6 +14,7 @@
 
 package com.google.firebase.inappmessaging.internal;
 
+import com.google.firebase.iid.InstanceIdResult;
 import com.google.firebase.inappmessaging.CommonTypesProto.TriggeringCondition;
 import com.google.firebase.inappmessaging.internal.injection.qualifiers.AppForeground;
 import com.google.firebase.inappmessaging.internal.injection.qualifiers.ProgrammaticTrigger;
@@ -36,6 +37,7 @@ import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
 import java.util.Locale;
 import javax.inject.Inject;
+
 
 /**
  * Class to federate multiple clients and encapsulate the high level behavior of the fiam headless
@@ -155,8 +157,9 @@ public class InAppMessageStreamManager {
     return testDeviceHelper.isDeviceInTestMode();
   }
 
-  public Flowable<TriggeredInAppMessage> createFirebaseInAppMessageStream() {
+  public Flowable<TriggeredInAppMessage> createFirebaseInAppMessageStream(InstanceIdResult instanceIdResult) {
     return Flowable.merge(
+            Flowable.just(ON_FOREGROUND),
             appForegroundEventFlowable,
             analyticsEventsManager.getAnalyticsEventsFlowable(),
             programmaticTriggerEventFlowable)
@@ -233,7 +236,7 @@ public class InAppMessageStreamManager {
 
               Function<CampaignImpressionList, Maybe<FetchEligibleCampaignsResponse>> serviceFetch =
                   impressions ->
-                      Maybe.fromCallable(() -> apiClient.getFiams(impressions))
+                      Maybe.fromCallable(() -> apiClient.getFiams(impressions, instanceIdResult))
                           .doOnSuccess(
                               resp ->
                                   Logging.logi(

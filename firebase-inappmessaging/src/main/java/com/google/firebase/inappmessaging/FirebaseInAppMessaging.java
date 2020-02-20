@@ -18,8 +18,10 @@ import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import com.google.android.gms.common.annotation.KeepForSdk;
 import com.google.android.gms.common.util.VisibleForTesting;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.iid.InstanceIdResult;
 import com.google.firebase.inappmessaging.internal.DataCollectionHelper;
 import com.google.firebase.inappmessaging.internal.DeveloperListenerManager;
 import com.google.firebase.inappmessaging.internal.DisplayCallbacksFactory;
@@ -46,7 +48,7 @@ import javax.inject.Inject;
  *   <li>send usage metrics to the Firebase backend.
  * </ul>
  *
- * To delete the Instance ID and the data associated with it, see {@link
+ * <p>To delete the Instance ID and the data associated with it, see {@link
  * com.google.firebase.iid.FirebaseInstanceId#deleteInstanceId}.
  */
 @FirebaseAppScope
@@ -124,7 +126,7 @@ public class FirebaseInAppMessaging {
    * <meta-data android:name="firebase_inapp_messaging_auto_init_enabled" android:value="false" />
    * }</pre>
    *
-   * Note, this will require you to manually initialize Firebase In-App Messaging, via:
+   * <p>Note, this will require you to manually initialize Firebase In-App Messaging, via:
    *
    * <pre>{@code FirebaseInAppMessaging.getInstance().setAutomaticDataCollectionEnabled(true)}</pre>
    *
@@ -162,21 +164,29 @@ public class FirebaseInAppMessaging {
   }
 
   private void initializeFiam() {
-    Disposable unusedSubscription =
-        inAppMessageStreamManager
-            .createFirebaseInAppMessageStream()
-            .subscribe(
-                triggeredInAppMessage ->
-                    listener
-                        .doOnSuccess(
-                            listener -> {
-                              listener.displayMessage(
-                                  triggeredInAppMessage.getInAppMessage(),
-                                  displayCallbacksFactory.generateDisplayCallback(
-                                      triggeredInAppMessage.getInAppMessage(),
-                                      triggeredInAppMessage.getTriggeringEvent()));
-                            })
-                        .subscribe());
+    FirebaseInstanceId.getInstance()
+        .getInstanceId()
+        .addOnSuccessListener(
+            new OnSuccessListener<InstanceIdResult>() {
+              @Override
+              public void onSuccess(InstanceIdResult instanceIdResult) {
+                Disposable unusedSubscription =
+                    inAppMessageStreamManager
+                        .createFirebaseInAppMessageStream(instanceIdResult)
+                        .subscribe(
+                            triggeredInAppMessage ->
+                                listener
+                                    .doOnSuccess(
+                                        listener -> {
+                                          listener.displayMessage(
+                                              triggeredInAppMessage.getInAppMessage(),
+                                              displayCallbacksFactory.generateDisplayCallback(
+                                                  triggeredInAppMessage.getInAppMessage(),
+                                                  triggeredInAppMessage.getTriggeringEvent()));
+                                        })
+                                    .subscribe());
+              }
+            });
   }
 
   /*
@@ -239,6 +249,7 @@ public class FirebaseInAppMessaging {
   }
 
   // Executed with provided executor
+
   /**
    * Registers an impression listener with FIAM, which will be notified on every FIAM impression,
    * and triggered on the provided executor
@@ -278,6 +289,7 @@ public class FirebaseInAppMessaging {
   }
 
   // Removing individual listeners:
+
   /**
    * Unregisters an impression listener
    *
