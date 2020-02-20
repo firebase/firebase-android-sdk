@@ -24,7 +24,6 @@ public abstract class ClientInfo {
     UNKNOWN(0),
     ANDROID_FIREBASE(23);
 
-
     private final int value;
 
     ClientType(int value) {
