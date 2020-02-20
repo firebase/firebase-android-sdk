@@ -35,13 +35,16 @@ import org.junit.runner.RunWith;
 @RunWith(AndroidJUnit4.class)
 public class CrashlyticsReportPersistenceTest {
 
+  private static final int DEFAULT_MAX_EVENTS_TO_KEEP = 4;
+
   private CrashlyticsReportPersistence reportPersistence;
 
   @Rule public TemporaryFolder folder = new TemporaryFolder();
 
   @Before
   public void setUp() throws Exception {
-    reportPersistence = new CrashlyticsReportPersistence(folder.newFolder());
+    reportPersistence =
+        new CrashlyticsReportPersistence(folder.newFolder(), DEFAULT_MAX_EVENTS_TO_KEEP);
   }
 
   @Test
@@ -70,7 +73,7 @@ public class CrashlyticsReportPersistenceTest {
     final List<CrashlyticsReport> finalizedReports = reportPersistence.loadFinalizedReports();
     assertEquals(1, finalizedReports.size());
     final CrashlyticsReport finalizedReport = finalizedReports.get(0);
-    assertEquals(finalizedReport, testReport.withEvents(ImmutableList.from(testEvent)));
+    assertEquals(testReport.withEvents(ImmutableList.from(testEvent)), finalizedReport);
   }
 
   @Test
@@ -89,7 +92,7 @@ public class CrashlyticsReportPersistenceTest {
     final List<CrashlyticsReport> finalizedReports = reportPersistence.loadFinalizedReports();
     assertEquals(1, finalizedReports.size());
     final CrashlyticsReport finalizedReport = finalizedReports.get(0);
-    assertEquals(finalizedReport, testReport.withEvents(ImmutableList.from(testEvent, testEvent2)));
+    assertEquals(testReport.withEvents(ImmutableList.from(testEvent, testEvent2)), finalizedReport);
   }
 
   @Test
@@ -112,9 +115,9 @@ public class CrashlyticsReportPersistenceTest {
     final List<CrashlyticsReport> finalizedReports = reportPersistence.loadFinalizedReports();
     assertEquals(2, finalizedReports.size());
     final CrashlyticsReport finalizedReport1 = finalizedReports.get(0);
-    assertEquals(finalizedReport1, testReport1.withEvents(ImmutableList.from(testEvent1)));
+    assertEquals(testReport1.withEvents(ImmutableList.from(testEvent1)), finalizedReport1);
     final CrashlyticsReport finalizedReport2 = finalizedReports.get(1);
-    assertEquals(finalizedReport2, testReport2.withEvents(ImmutableList.from(testEvent2)));
+    assertEquals(testReport2.withEvents(ImmutableList.from(testEvent2)), finalizedReport2);
   }
 
   @Test
@@ -151,6 +154,33 @@ public class CrashlyticsReportPersistenceTest {
     assertEquals(1, reportPersistence.loadFinalizedReports().size());
   }
 
+  @Test
+  public void testPersistEvent_keepsAppropriateNumberOfMostRecentEvents() {
+    final String sessionId = "testSession";
+    final CrashlyticsReport testReport = makeTestReport(sessionId);
+    final CrashlyticsReport.Session.Event testEvent1 = makeTestEvent("type1", "reason1");
+    final CrashlyticsReport.Session.Event testEvent2 = makeTestEvent("type2", "reason2");
+    final CrashlyticsReport.Session.Event testEvent3 = makeTestEvent("type3", "reason3");
+    final CrashlyticsReport.Session.Event testEvent4 = makeTestEvent("type4", "reason4");
+    final CrashlyticsReport.Session.Event testEvent5 = makeTestEvent("type5", "reason5");
+
+    reportPersistence.persistReport(testReport);
+    reportPersistence.persistEvent(testEvent1, sessionId);
+    reportPersistence.persistEvent(testEvent2, sessionId);
+    reportPersistence.persistEvent(testEvent3, sessionId);
+    reportPersistence.persistEvent(testEvent4, sessionId);
+    reportPersistence.persistEvent(testEvent5, sessionId);
+    reportPersistence.finalizeReports("skippedSession");
+
+    final List<CrashlyticsReport> finalizedReports = reportPersistence.loadFinalizedReports();
+    assertEquals(1, finalizedReports.size());
+    final CrashlyticsReport finalizedReport = finalizedReports.get(0);
+    assertEquals(DEFAULT_MAX_EVENTS_TO_KEEP, finalizedReport.getSession().getEvents().size());
+    assertEquals(
+        testReport.withEvents(ImmutableList.from(testEvent2, testEvent3, testEvent4, testEvent5)),
+        finalizedReport);
+  }
+
   private static CrashlyticsReport makeTestReport(String sessionId) {
     return CrashlyticsReport.builder()
         .setSdkVersion("sdkVersion")
@@ -181,6 +211,10 @@ public class CrashlyticsReportPersistenceTest {
   }
 
   private static Event makeTestEvent() {
+    return makeTestEvent("java.lang.Exception", "reason");
+  }
+
+  private static Event makeTestEvent(String type, String reason) {
     return Event.builder()
         .setType("type")
         .setTimestamp(1000)
@@ -201,8 +235,8 @@ public class CrashlyticsReportPersistenceTest {
                             Execution.Exception.builder()
                                 .setFrames(makeTestFrames())
                                 .setOverflowCount(0)
-                                .setReason("reason")
-                                .setType("java.lang.Exception")
+                                .setReason(reason)
+                                .setType(type)
                                 .build())
                         .setSignal(Signal.builder().setCode("0").setName("0").setAddress(0).build())
                         .setThreads(

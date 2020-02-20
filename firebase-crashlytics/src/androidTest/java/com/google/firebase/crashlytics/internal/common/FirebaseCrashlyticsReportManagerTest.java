@@ -74,7 +74,7 @@ public class FirebaseCrashlyticsReportManagerTest {
   }
 
   @Test
-  public void testOnFatalEvent_persistsFatalEventForSessionId() {
+  public void testOnFatalEvent_persistsHighPriorityEventForSessionId() {
     final String eventType = "crash";
     final Exception exceptionEvent = new Exception("fatal");
     final Thread eventThread = Thread.currentThread();
@@ -99,11 +99,11 @@ public class FirebaseCrashlyticsReportManagerTest {
 
     verify(dataCapture)
         .captureEventData(exceptionEvent, eventThread, eventType, timestampSeconds, 4, 8, true);
-    verify(reportPersistence).persistEvent(mockEvent, sessionId);
+    verify(reportPersistence).persistEvent(mockEvent, sessionId, true);
   }
 
   @Test
-  public void testOnNonFatalEvent_persistsNonFatalEventForSessionId() {
+  public void testOnNonFatalEvent_persistsNormalPriorityEventForSessionId() {
     final String eventType = "error";
     final Exception exceptionEvent = new Exception("nonfatal");
     final Thread eventThread = Thread.currentThread();
@@ -128,7 +128,7 @@ public class FirebaseCrashlyticsReportManagerTest {
 
     verify(dataCapture)
         .captureEventData(exceptionEvent, eventThread, eventType, timestampSeconds, 4, 8, false);
-    verify(reportPersistence).persistEvent(mockEvent, sessionId);
+    verify(reportPersistence).persistEvent(mockEvent, sessionId, false);
   }
 
   @Test
@@ -142,7 +142,7 @@ public class FirebaseCrashlyticsReportManagerTest {
 
   @Test
   @SuppressWarnings("unchecked")
-  public void onReportSend_successfulReportsAreDeleted() throws InterruptedException {
+  public void onReportSend_successfulReportsAreDeleted() {
     final String orgId = "testOrgId";
     final String sessionId1 = "sessionId1";
     final String sessionId2 = "sessionId2";

@@ -109,7 +109,9 @@ public class FirebaseCrashlyticsReportManager implements CrashlyticsLifecycleEve
             MAX_CHAINED_EXCEPTION_DEPTH,
             includeAllThreads);
 
-    reportPersistence.persistEvent(capturedEvent, currentSessionId);
+    final boolean isHighPriority = eventType.equals(EVENT_TYPE_CRASH);
+
+    reportPersistence.persistEvent(capturedEvent, currentSessionId, isHighPriority);
   }
 
   private boolean onReportSendComplete(Task<CrashlyticsReport> task) {

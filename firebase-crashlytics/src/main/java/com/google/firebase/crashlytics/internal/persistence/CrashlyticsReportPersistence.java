@@ -43,17 +43,19 @@ public class CrashlyticsReportPersistence {
 
   private static final Charset UTF_8 = Charset.forName("UTF-8");
 
-  private static final String WORKING_DIRECTORY_NAME = "fl";
+  private static final String WORKING_DIRECTORY_NAME = "report-persistence";
   private static final String OPEN_SESSIONS_DIRECTORY_NAME = "sessions";
-  private static final String FATAL_DIRECTORY_NAME = "fatal";
-  private static final String NON_FATAL_DIRECTORY_NAME = "non-fatal";
+  private static final String PRIORITY_REPORTS_DIRECTORY = "priority-reports";
+  private static final String REPORTS_DIRECTORY = "reports";
 
-  private static final String REPORT_FILE_NAME = "report.json";
+  private static final String REPORT_FILE_NAME = "report";
   private static final String EVENT_FILE_NAME_PREFIX = "event";
-  private static final String EVENT_FILE_NAME_FORMAT = EVENT_FILE_NAME_PREFIX + "%s.json";
-  private static final String EVENT_COUNTER_FORMAT = "%010d";
-
-  private static final String EVENT_TYPE_FATAL = "crash";
+  private static final int EVENT_COUNTER_WIDTH = 10; // String width of maximum positive int value
+  private static final String EVENT_COUNTER_FORMAT = "%0" + EVENT_COUNTER_WIDTH + "d";
+  private static final int EVENT_NAME_LENGTH =
+      EVENT_FILE_NAME_PREFIX.length() + EVENT_COUNTER_WIDTH;
+  private static final String PRIORITY_EVENT_SUFFIX = "_";
+  private static final String NORMAL_EVENT_SUFFIX = "";
 
   private static final CrashlyticsReportJsonTransform TRANSFORM =
       new CrashlyticsReportJsonTransform();
@@ -61,18 +63,21 @@ public class CrashlyticsReportPersistence {
   private final AtomicInteger eventCounter = new AtomicInteger(0);
 
   // Storage for sessions that are still being written to
-  private File openSessionsDirectory;
+  private final File openSessionsDirectory;
 
   // Storage for finalized reports
-  // Keep finalized reports organized by whether or not they contain a fatal event.
-  private File fatalReportsDirectory;
-  private File nonFatalReportsDirectory;
+  private final File priorityReportsDirectory;
+  private final File reportsDirectory;
 
-  public CrashlyticsReportPersistence(File rootDirectory) {
+  // TODO: Add settings override
+  private final int defaultMaxEventsToKeep;
+
+  public CrashlyticsReportPersistence(File rootDirectory, int defaultMaxEventsToKeep) {
     final File workingDirectory = new File(rootDirectory, WORKING_DIRECTORY_NAME);
     openSessionsDirectory = new File(workingDirectory, OPEN_SESSIONS_DIRECTORY_NAME);
-    fatalReportsDirectory = new File(workingDirectory, FATAL_DIRECTORY_NAME);
-    nonFatalReportsDirectory = new File(workingDirectory, NON_FATAL_DIRECTORY_NAME);
+    priorityReportsDirectory = new File(workingDirectory, PRIORITY_REPORTS_DIRECTORY);
+    reportsDirectory = new File(workingDirectory, REPORTS_DIRECTORY);
+    this.defaultMaxEventsToKeep = defaultMaxEventsToKeep;
   }
 
   public void persistReport(CrashlyticsReport report) {
@@ -82,7 +87,31 @@ public class CrashlyticsReportPersistence {
     writeTextFile(new File(sessionDirectory, REPORT_FILE_NAME), json);
   }
 
+  /**
+   * Persist an event for a given session with normal priority.
+   *
+   * <p>Only a certain number of normal priority events are stored per-session. When this maximum is
+   * reached, the oldest events will be dropped.
+   *
+   * @param event
+   * @param sessionId
+   */
   public void persistEvent(CrashlyticsReport.Session.Event event, String sessionId) {
+    persistEvent(event, sessionId, false);
+  }
+
+  /**
+   * Persist an event for a given session, specifying whether or not it is high priority.
+   *
+   * <p>Only a certain number of normal priority events are stored per-session. When this maximum is
+   * reached, the oldest events will be dropped. High priority events are not subject to this limit.
+   *
+   * @param event
+   * @param sessionId
+   * @param isHighPriority
+   */
+  public void persistEvent(
+      CrashlyticsReport.Session.Event event, String sessionId, boolean isHighPriority) {
     final File sessionDirectory = getSessionDirectoryById(sessionId);
     if (!sessionDirectory.isDirectory()) {
       // No open session for this ID
@@ -90,18 +119,16 @@ public class CrashlyticsReportPersistence {
       return;
     }
     final String json = TRANSFORM.eventToJson(event);
-    final String eventNumber =
-        String.format(Locale.US, EVENT_COUNTER_FORMAT, eventCounter.getAndIncrement());
-    final String fileName = String.format(EVENT_FILE_NAME_FORMAT, eventNumber);
+    final String fileName = generateEventFilename(eventCounter.getAndIncrement(), isHighPriority);
     writeTextFile(new File(sessionDirectory, fileName), json);
+    trimEvents(sessionDirectory, defaultMaxEventsToKeep);
   }
 
   public void deleteFinalizedReport(String sessionId) {
     final List<File> reportFiles = new ArrayList<>();
     final FilenameFilter filter = (d, f) -> f.startsWith(sessionId);
-    // Could be in either fatal reports or non-fatal reports
-    reportFiles.addAll(getFilesInDirectory(fatalReportsDirectory, filter));
-    reportFiles.addAll(getFilesInDirectory(nonFatalReportsDirectory, filter));
+    reportFiles.addAll(getFilesInDirectory(priorityReportsDirectory, filter));
+    reportFiles.addAll(getFilesInDirectory(reportsDirectory, filter));
     for (File reportFile : reportFiles) {
       reportFile.delete();
     }
@@ -133,15 +160,16 @@ public class CrashlyticsReportPersistence {
             TRANSFORM.reportFromJson(readTextFile(new File(sessionDirectory, REPORT_FILE_NAME)));
         final String sessionId = report.getSession().getIdentifier();
         final List<Event> events = new ArrayList<>();
-        boolean hasFatal = false;
+        boolean isHighPriorityReport = false;
         for (File eventFile : eventFiles) {
           final Event event = TRANSFORM.eventFromJson(readTextFile(eventFile));
-          hasFatal = hasFatal || event.getType().equals(EVENT_TYPE_FATAL);
+          isHighPriorityReport =
+              isHighPriorityReport || isHighPriorityEventFile(eventFile.getName());
           events.add(event);
         }
         // FIXME: If we fail to parse the events, we'll need to bail.
         final File outputDirectory =
-            prepareDirectory(hasFatal ? fatalReportsDirectory : nonFatalReportsDirectory);
+            prepareDirectory(isHighPriorityReport ? priorityReportsDirectory : reportsDirectory);
         writeTextFile(
             new File(outputDirectory, sessionId),
             TRANSFORM.reportToJson(report.withEvents(ImmutableList.from(events))));
@@ -151,20 +179,52 @@ public class CrashlyticsReportPersistence {
   }
 
   public List<CrashlyticsReport> loadFinalizedReports() {
-    final List<CrashlyticsReport> reports = new ArrayList<>();
-    final List<File> fatalReports = getAllFilesInDirectory(fatalReportsDirectory);
-    for (File reportFile : fatalReports) {
-      reports.add(TRANSFORM.reportFromJson(readTextFile(reportFile)));
+    final List<CrashlyticsReport> allReports = new ArrayList<>();
+    final List<File> priorityReports = getAllFilesInDirectory(priorityReportsDirectory);
+    for (File reportFile : priorityReports) {
+      allReports.add(TRANSFORM.reportFromJson(readTextFile(reportFile)));
     }
-    final List<File> nonFatalReports = getAllFilesInDirectory(nonFatalReportsDirectory);
-    for (File reportFile : nonFatalReports) {
-      reports.add(TRANSFORM.reportFromJson(readTextFile(reportFile)));
+    final List<File> reports = getAllFilesInDirectory(reportsDirectory);
+    for (File reportFile : reports) {
+      allReports.add(TRANSFORM.reportFromJson(readTextFile(reportFile)));
     }
-    return reports;
+    return allReports;
+  }
+
+  private static boolean isHighPriorityEventFile(String fileName) {
+    return fileName.startsWith(EVENT_FILE_NAME_PREFIX) && fileName.endsWith(PRIORITY_EVENT_SUFFIX);
+  }
+
+  private static boolean isNormalPriorityEventFile(File dir, String name) {
+    return name.startsWith(EVENT_FILE_NAME_PREFIX) && !name.endsWith(PRIORITY_EVENT_SUFFIX);
   }
 
   private File getSessionDirectoryById(String sessionId) {
     return new File(openSessionsDirectory, sessionId);
+  }
+
+  private static String generateEventFilename(int eventNumber, boolean isHighPriority) {
+    final String paddedEventNumber = String.format(Locale.US, EVENT_COUNTER_FORMAT, eventNumber);
+    final String prioritySuffix = isHighPriority ? PRIORITY_EVENT_SUFFIX : NORMAL_EVENT_SUFFIX;
+    return EVENT_FILE_NAME_PREFIX + paddedEventNumber + prioritySuffix;
+  }
+
+  private static int trimEvents(File sessionDirectory, int maximum) {
+    final List<File> normalPriorityEventFiles =
+        getFilesInDirectory(
+            sessionDirectory, CrashlyticsReportPersistence::isNormalPriorityEventFile);
+    Collections.sort(normalPriorityEventFiles, CrashlyticsReportPersistence::oldestEventFileFirst);
+    return capFilesCount(normalPriorityEventFiles, maximum);
+  }
+
+  private static String getEventNameWithoutPriority(String eventFileName) {
+    return eventFileName.substring(0, EVENT_NAME_LENGTH);
+  }
+
+  private static int oldestEventFileFirst(File f1, File f2) {
+    final String name1 = getEventNameWithoutPriority(f1.getName());
+    final String name2 = getEventNameWithoutPriority(f2.getName());
+    return name1.compareTo(name2);
   }
 
   private static List<File> getAllFilesInDirectory(File directory) {
@@ -220,6 +280,25 @@ public class CrashlyticsReportPersistence {
     } catch (IOException e) {
       return null;
     }
+  }
+
+  /**
+   * Deletes files from the list until the list size is equal to the maximum. If list is already
+   * correctly sized, no files are deleted. List should be sorted in the order in which files should
+   * be deleted.
+   *
+   * @return the number of files retained on disk
+   */
+  private static int capFilesCount(List<File> files, int maximum) {
+    int numRetained = files.size();
+    for (File f : files) {
+      if (numRetained <= maximum) {
+        return numRetained;
+      }
+      recursiveDelete(f);
+      numRetained--;
+    }
+    return numRetained;
   }
 
   private static void recursiveDelete(File file) {
