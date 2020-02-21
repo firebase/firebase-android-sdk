@@ -37,7 +37,6 @@ import com.google.firebase.installations.remote.TokenResult;
 import com.google.firebase.platforminfo.UserAgentPublisher;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -105,7 +104,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
         new FirebaseInstallationServiceClient(
             firebaseApp.getApplicationContext(), publisher, heartbeatInfo),
         new PersistedInstallation(firebaseApp),
-        new Utils(Calendar.getInstance()),
+        new Utils(),
         new IidStore(firebaseApp),
         new RandomFidGenerator());
   }
