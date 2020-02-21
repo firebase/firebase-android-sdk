@@ -18,7 +18,6 @@ import static com.google.firebase.firestore.model.ServerTimestamps.getLocalWrite
 import static com.google.firebase.firestore.model.ServerTimestamps.isServerTimestamp;
 import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
-import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 
 import androidx.annotation.Nullable;
 import com.google.firebase.firestore.util.Util;
@@ -264,8 +263,6 @@ public class Values {
   }
 
   private static int compareReferences(String leftPath, String rightPath) {
-    checkNotNull(leftPath);
-    checkNotNull(rightPath);
     String[] leftSegments = leftPath.split("/", -1);
     String[] rightSegments = rightPath.split("/", -1);
 

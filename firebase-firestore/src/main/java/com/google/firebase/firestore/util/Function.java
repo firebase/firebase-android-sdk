@@ -17,7 +17,10 @@ package com.google.firebase.firestore.util;
 import javax.annotation.Nullable;
 
 /**
- * Determines an output value based on an input value; a pre-Java-8 version of {@link
+ * This is a copy of
+ * https://github.com/google/guava/blob/master/guava/src/com/google/common/base/Function.java.
+ *
+ * <p>Determines an output value based on an input value; a pre-Java-8 version of {@link
  * java.util.function.Function java.util.function.Function}.
  *
  * <p>See the Guava User Guide article on <a

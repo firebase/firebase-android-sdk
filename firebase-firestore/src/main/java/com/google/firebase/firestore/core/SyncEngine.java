@@ -461,8 +461,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     }
 
     if (!pendingWritesCallbacks.containsKey(largestPendingBatchId)) {
-      List<TaskCompletionSource<Void>> tasks = new ArrayList();
-      pendingWritesCallbacks.put(largestPendingBatchId, tasks);
+      pendingWritesCallbacks.put(largestPendingBatchId, new ArrayList());
     }
 
     pendingWritesCallbacks.get(largestPendingBatchId).add(userTask);
