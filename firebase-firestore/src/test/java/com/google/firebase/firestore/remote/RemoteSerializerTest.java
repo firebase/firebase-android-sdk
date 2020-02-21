@@ -656,7 +656,7 @@ public final class RemoteSerializerTest {
                     .build())
             .build();
 
-    assertEquals(apiFilter, expectedFilter);
+    assertEquals(expectedFilter, apiFilter);
     FieldFilter roundTripped = serializer.decodeFieldFilter(apiFilter.getFieldFilter());
     assertEquals(roundTripped, inputFilter);
     assertTrue(roundTripped instanceof InFilter);
@@ -679,7 +679,7 @@ public final class RemoteSerializerTest {
                     .build())
             .build();
 
-    assertEquals(apiFilter, expectedFilter);
+    assertEquals(expectedFilter, apiFilter);
     FieldFilter roundTripped = serializer.decodeFieldFilter(apiFilter.getFieldFilter());
     assertEquals(roundTripped, inputFilter);
     assertTrue(roundTripped instanceof ArrayContainsAnyFilter);
@@ -703,7 +703,7 @@ public final class RemoteSerializerTest {
                     .build())
             .build();
 
-    assertEquals(apiFilter, expectedFilter);
+    assertEquals(expectedFilter, apiFilter);
     FieldFilter roundTripped = serializer.decodeFieldFilter(apiFilter.getFieldFilter());
     assertEquals(roundTripped, inputFilter);
     assertTrue(roundTripped instanceof KeyFieldFilter);
@@ -918,7 +918,7 @@ public final class RemoteSerializerTest {
    * Wraps the given query in TargetData. This is useful because the APIs we're testing accept
    * TargetData, but for the most part we're just testing variations on Query.
    */
-  private TargetData wrapTargetData(Query query) {
+  private static TargetData wrapTargetData(Query query) {
     return new TargetData(query.toTarget(), 1, 2, QueryPurpose.LISTEN);
   }
 
