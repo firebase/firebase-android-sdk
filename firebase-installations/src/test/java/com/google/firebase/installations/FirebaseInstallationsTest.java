@@ -554,7 +554,7 @@ public class FirebaseInstallationsTest {
         PersistedInstallationEntry.INSTANCE.withRegisteredFid(
             TEST_FID_1,
             TEST_REFRESH_TOKEN,
-            // Make experation time to be 30 min ago
+            // Set expiration time to 30 minutes from now (within refresh period)
             utils.currentTimeInSecs()
                 - TEST_TOKEN_EXPIRATION_TIMESTAMP
                 + TimeUnit.MINUTES.toSeconds(30),
