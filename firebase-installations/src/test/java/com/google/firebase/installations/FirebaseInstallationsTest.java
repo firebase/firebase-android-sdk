@@ -557,7 +557,7 @@ public class FirebaseInstallationsTest {
             // Make experation time to be 30 min ago
             utils.currentTimeInSecs()
                 - TEST_TOKEN_EXPIRATION_TIMESTAMP
-                - TimeUnit.MINUTES.toSeconds(30),
+                + TimeUnit.MINUTES.toSeconds(30),
             TEST_AUTH_TOKEN,
             TEST_TOKEN_EXPIRATION_TIMESTAMP));
 
