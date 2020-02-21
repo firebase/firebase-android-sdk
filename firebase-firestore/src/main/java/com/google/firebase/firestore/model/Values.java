@@ -20,7 +20,6 @@ import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
-import com.google.common.base.Splitter;
 import com.google.firebase.firestore.util.Util;
 import com.google.firestore.v1.ArrayValue;
 import com.google.firestore.v1.ArrayValueOrBuilder;
@@ -264,16 +263,17 @@ public class Values {
   }
 
   private static int compareReferences(String leftPath, String rightPath) {
-    List<String> leftSegments = Splitter.on('/').splitToList(leftPath);
-    List<String> rightSegments = Splitter.on('/').splitToList(rightPath);
-    int minLength = Math.min(leftSegments.size(), rightSegments.size());
+    String[] leftSegments = leftPath.split("/", -1);
+    String[] rightSegments = rightPath.split("/", -1);
+
+    int minLength = Math.min(leftSegments.length, rightSegments.length);
     for (int i = 0; i < minLength; i++) {
-      int cmp = leftSegments.get(i).compareTo(rightSegments.get(i));
+      int cmp = leftSegments[i].compareTo(rightSegments[i]);
       if (cmp != 0) {
         return cmp;
       }
     }
-    return Util.compareIntegers(leftSegments.size(), rightSegments.size());
+    return Util.compareIntegers(leftSegments.length, rightSegments.length);
   }
 
   private static int compareGeoPoints(LatLng left, LatLng right) {

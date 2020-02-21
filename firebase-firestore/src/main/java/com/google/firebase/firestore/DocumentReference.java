@@ -14,8 +14,8 @@
 
 package com.google.firebase.firestore;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.firebase.firestore.util.Assert.fail;
+import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 import static com.google.firebase.firestore.util.Util.voidErrorTransformer;
 import static java.util.Collections.singletonList;
 

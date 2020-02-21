@@ -14,7 +14,7 @@
 
 package com.google.firebase.firestore;
 
-import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.firebase.firestore.util.Preconditions.checkArgument;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
