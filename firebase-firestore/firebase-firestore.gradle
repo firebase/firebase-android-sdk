@@ -131,7 +131,6 @@ dependencies {
     implementation 'com.google.android.gms:play-services-basement:17.0.0'
     implementation 'com.google.android.gms:play-services-tasks:17.0.0'
     implementation 'com.google.android.gms:play-services-base:17.0.0'
-    implementation 'com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava'
 
     implementation 'com.squareup.okhttp:okhttp:2.7.5'
     implementation('com.google.firebase:firebase-auth-interop:18.0.0') {
