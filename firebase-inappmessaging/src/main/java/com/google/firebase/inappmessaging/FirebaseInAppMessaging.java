@@ -16,6 +16,7 @@ package com.google.firebase.inappmessaging;
 
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
+
 import com.google.android.gms.common.annotation.KeepForSdk;
 import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -30,9 +31,12 @@ import com.google.firebase.inappmessaging.internal.Logging;
 import com.google.firebase.inappmessaging.internal.ProgramaticContextualTriggers;
 import com.google.firebase.inappmessaging.internal.injection.qualifiers.ProgrammaticTrigger;
 import com.google.firebase.inappmessaging.internal.injection.scopes.FirebaseAppScope;
-import io.reactivex.Maybe;
+import com.google.firebase.inappmessaging.model.TriggeredInAppMessage;
+
 import io.reactivex.disposables.Disposable;
+
 import java.util.concurrent.Executor;
+
 import javax.inject.Inject;
 
 /**
@@ -43,9 +47,9 @@ import javax.inject.Inject;
  * <p>This feature uses a Firebase Instance ID token to:
  *
  * <ul>
- *   <li>identify the app instance
- *   <li>fetch messages from the Firebase backend
- *   <li>send usage metrics to the Firebase backend.
+ * <li>identify the app instance
+ * <li>fetch messages from the Firebase backend
+ * <li>send usage metrics to the Firebase backend.
  * </ul>
  *
  * <p>To delete the Instance ID and the data associated with it, see {@link
@@ -61,8 +65,7 @@ public class FirebaseInAppMessaging {
   private final ProgramaticContextualTriggers programaticContextualTriggers;
 
   private boolean areMessagesSuppressed;
-
-  private Maybe<FirebaseInAppMessagingDisplay> listener = Maybe.empty();
+  private FirebaseInAppMessagingDisplay fiamDisplay;
 
   @VisibleForTesting
   @Inject
@@ -163,32 +166,6 @@ public class FirebaseInAppMessaging {
     return areMessagesSuppressed;
   }
 
-  private void initializeFiam() {
-    FirebaseInstanceId.getInstance()
-        .getInstanceId()
-        .addOnSuccessListener(
-            new OnSuccessListener<InstanceIdResult>() {
-              @Override
-              public void onSuccess(InstanceIdResult instanceIdResult) {
-                Disposable unusedSubscription =
-                    inAppMessageStreamManager
-                        .createFirebaseInAppMessageStream()
-                        .subscribe(
-                            triggeredInAppMessage ->
-                                listener
-                                    .doOnSuccess(
-                                        listener -> {
-                                          listener.displayMessage(
-                                              triggeredInAppMessage.getInAppMessage(),
-                                              displayCallbacksFactory.generateDisplayCallback(
-                                                  triggeredInAppMessage.getInAppMessage(),
-                                                  triggeredInAppMessage.getTriggeringEvent()));
-                                        })
-                                    .subscribe());
-              }
-            });
-  }
-
   /*
    * Called to set a new message display component for FIAM SDK. This is the method used
    * by both the default FIAM display SDK or any app wanting to customize the message
@@ -196,20 +173,20 @@ public class FirebaseInAppMessaging {
    */
   @Keep
   public void setMessageDisplayComponent(@NonNull FirebaseInAppMessagingDisplay messageDisplay) {
-    Logging.logi("Setting display event listener");
-    this.listener = Maybe.just(messageDisplay);
+    Logging.logi("Setting display event fiamDisplay");
+    this.fiamDisplay = messageDisplay;
   }
 
   /**
-   * Unregisters a listener to in app message display events.
+   * Unregisters a fiamDisplay to in app message display events.
    *
    * @hide
    */
   @Keep
   @KeepForSdk
   public void clearDisplayListener() {
-    Logging.logi("Removing display event listener");
-    this.listener = Maybe.empty();
+    Logging.logi("Removing display event fiamDisplay");
+    this.fiamDisplay = null;
   }
 
   /*
@@ -219,7 +196,7 @@ public class FirebaseInAppMessaging {
   // executed on worker thread
 
   /**
-   * Registers an impression listener with FIAM, which will be notified on every FIAM impression
+   * Registers an impression fiamDisplay with FIAM, which will be notified on every FIAM impression
    *
    * @param impressionListener
    */
@@ -229,7 +206,7 @@ public class FirebaseInAppMessaging {
   }
 
   /**
-   * Registers a click listener with FIAM, which will be notified on every FIAM click
+   * Registers a click fiamDisplay with FIAM, which will be notified on every FIAM click
    *
    * @param clickListener
    */
@@ -238,7 +215,7 @@ public class FirebaseInAppMessaging {
   }
 
   /**
-   * Registers a display error listener with FIAM, which will be notified on every FIAM display
+   * Registers a display error fiamDisplay with FIAM, which will be notified on every FIAM display
    * error
    *
    * @param displayErrorListener
@@ -251,7 +228,7 @@ public class FirebaseInAppMessaging {
   // Executed with provided executor
 
   /**
-   * Registers an impression listener with FIAM, which will be notified on every FIAM impression,
+   * Registers an impression fiamDisplay with FIAM, which will be notified on every FIAM impression,
    * and triggered on the provided executor
    *
    * @param impressionListener
@@ -264,7 +241,7 @@ public class FirebaseInAppMessaging {
   }
 
   /**
-   * Registers a click listener with FIAM, which will be notified on every FIAM click, and triggered
+   * Registers a click fiamDisplay with FIAM, which will be notified on every FIAM click, and triggered
    * on the provided executor
    *
    * @param clickListener
@@ -276,7 +253,7 @@ public class FirebaseInAppMessaging {
   }
 
   /**
-   * Registers a display error listener with FIAM, which will be notified on every FIAM display
+   * Registers a display error fiamDisplay with FIAM, which will be notified on every FIAM display
    * error, and triggered on the provided executor
    *
    * @param displayErrorListener
@@ -291,7 +268,7 @@ public class FirebaseInAppMessaging {
   // Removing individual listeners:
 
   /**
-   * Unregisters an impression listener
+   * Unregisters an impression fiamDisplay
    *
    * @param impressionListener
    */
@@ -301,7 +278,7 @@ public class FirebaseInAppMessaging {
   }
 
   /**
-   * Unregisters a click listener
+   * Unregisters a click fiamDisplay
    *
    * @param clickListener
    */
@@ -310,7 +287,7 @@ public class FirebaseInAppMessaging {
   }
 
   /**
-   * Unregisters a display error listener
+   * Unregisters a display error fiamDisplay
    *
    * @param displayErrorListener
    */
@@ -328,5 +305,28 @@ public class FirebaseInAppMessaging {
    */
   public void triggerEvent(String eventName) {
     programaticContextualTriggers.triggerEvent(eventName);
+  }
+
+  private void initializeFiam() {
+    FirebaseInstanceId.getInstance()
+        .getInstanceId()
+        .addOnSuccessListener(
+            instanceIdResult -> {
+              // Wait for instanceId before starting FIAM
+              Disposable unusedSubscription =
+                  inAppMessageStreamManager
+                      .createFirebaseInAppMessageStream()
+                      .subscribe(FirebaseInAppMessaging.this::triggerInAppMessage);
+            });
+  }
+
+  private void triggerInAppMessage(TriggeredInAppMessage inAppMessage){
+    if(this.fiamDisplay != null) {
+      fiamDisplay.displayMessage(
+          inAppMessage.getInAppMessage(),
+          displayCallbacksFactory.generateDisplayCallback(
+              inAppMessage.getInAppMessage(),
+              inAppMessage.getTriggeringEvent()));
+    }
   }
 }
