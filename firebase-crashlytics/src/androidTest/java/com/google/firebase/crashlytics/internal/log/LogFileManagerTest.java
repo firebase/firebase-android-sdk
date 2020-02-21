@@ -19,6 +19,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 import android.content.Context;
+import androidx.test.runner.AndroidJUnit4;
 import java.io.File;
 import java.util.Arrays;
 import java.util.Locale;
@@ -29,9 +30,9 @@ import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.MockitoAnnotations;
 
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(AndroidJUnit4.class)
 public class LogFileManagerTest {
 
   private static final int SMALL_MAX_LOG_SIZE = 100;
@@ -48,11 +49,24 @@ public class LogFileManagerTest {
 
   @Before
   public void setUp() throws Exception {
+    MockitoAnnotations.initMocks(this);
+
     final File tempDir = temporaryFolder.newFolder();
     Mockito.when(mockDirectoryProvider.getLogFileDir()).thenReturn(tempDir);
 
     testLogFile = new File(tempDir, "testLogFile.log");
     logFileManager = new LogFileManager(mockContext, mockDirectoryProvider);
+  }
+
+  @Test
+  public void testLogEmpty() throws Exception {
+    logFileManager.setLogFile(testLogFile, SMALL_MAX_LOG_SIZE);
+
+    final String logString = logFileManager.getLogString();
+
+    assertNull(logString);
+
+    logFileManager.clearLog();
   }
 
   @Test
@@ -74,7 +88,7 @@ public class LogFileManagerTest {
       sb.append("\n");
     }
 
-    final String logString = getLogString(logFileManager);
+    final String logString = logFileManager.getLogString();
 
     final String expected = sb.toString();
 
@@ -103,7 +117,7 @@ public class LogFileManagerTest {
       sb.append("\n");
     }
 
-    final String logString = getLogString(logFileManager);
+    final String logString = logFileManager.getLogString();
 
     final String expected = sb.toString();
 
@@ -139,7 +153,7 @@ public class LogFileManagerTest {
       }
     }
 
-    final String logString = getLogString(logFileManager);
+    final String logString = logFileManager.getLogString();
 
     final String expected = sb.toString();
 
@@ -176,7 +190,7 @@ public class LogFileManagerTest {
       }
     }
 
-    final String logString = getLogString(logFileManager);
+    final String logString = logFileManager.getLogString();
 
     final String expected = sb.toString();
 
@@ -211,7 +225,7 @@ public class LogFileManagerTest {
       }
     }
 
-    final String logString = getLogString(logFileManager);
+    final String logString = logFileManager.getLogString();
 
     final String expected = sb.toString();
 
@@ -244,7 +258,7 @@ public class LogFileManagerTest {
       }
     }
 
-    final String logString = getLogString(logFileManager);
+    final String logString = logFileManager.getLogString();
 
     final String expected = sb.toString();
 
@@ -264,7 +278,7 @@ public class LogFileManagerTest {
     logFileManager.setLogFile(testLogFile, maxLogSizeBytes);
 
     logFileManager.writeToLog(1, msg);
-    final String logString = getLogString(logFileManager);
+    final String logString = logFileManager.getLogString();
 
     final char[] expectedChars = new char[25];
     Arrays.fill(expectedChars, 'a');
@@ -289,7 +303,7 @@ public class LogFileManagerTest {
     logFileManager.setLogFile(testLogFile, maxLogSizeBytes);
 
     logFileManager.writeToLog(1, msg);
-    final String logString = getLogString(logFileManager);
+    final String logString = logFileManager.getLogString();
 
     final char[] expectedChars = new char[30];
     Arrays.fill(expectedChars, '行');
@@ -316,7 +330,7 @@ public class LogFileManagerTest {
     logFileManager.writeToLog(timestamp, logString);
 
     String expected = String.format(Locale.ENGLISH, logFormat, timestamp, logString);
-    assertEquals(expected, getLogString(logFileManager));
+    assertEquals(expected, logFileManager.getLogString());
 
     logFileManager.clearLog();
 
@@ -327,7 +341,7 @@ public class LogFileManagerTest {
     logFileManager.writeToLog(timestamp, logString);
 
     expected = String.format(Locale.ENGLISH, logFormat, timestamp, logString);
-    assertEquals(expected, getLogString(logFileManager));
+    assertEquals(expected, logFileManager.getLogString());
   }
 
   @Test
@@ -350,7 +364,7 @@ public class LogFileManagerTest {
     logFileManager.writeToLog(timestamp, logString);
 
     String expected = String.format(Locale.ENGLISH, logFormat, timestamp, logString);
-    assertEquals(expected, getLogString(logFileManager));
+    assertEquals(expected, logFileManager.getLogString());
 
     logFileManager.setCurrentSession("2");
 
@@ -361,10 +375,6 @@ public class LogFileManagerTest {
     logFileManager.writeToLog(timestamp, logString);
 
     expected = String.format(Locale.ENGLISH, logFormat, timestamp, logString);
-    assertEquals(expected, getLogString(logFileManager));
-  }
-
-  private static String getLogString(LogFileManager logFileManager) throws Exception {
-    return new String(logFileManager.getBytesForLog(), "UTF-8");
+    assertEquals(expected, logFileManager.getLogString());
   }
 }

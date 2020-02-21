@@ -16,7 +16,9 @@ package com.google.firebase.crashlytics.internal.common;
 
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.crashlytics.internal.Logger;
+import com.google.firebase.crashlytics.internal.log.LogFileManager;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
+import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event.Log;
 import com.google.firebase.crashlytics.internal.persistence.CrashlyticsReportPersistence;
 import com.google.firebase.crashlytics.internal.send.DataTransportCrashlyticsReportSender;
 import com.google.firebase.crashlytics.internal.settings.model.AppSettingsData;
@@ -37,6 +39,7 @@ public class FirebaseCrashlyticsReportManager implements CrashlyticsLifecycleEve
   private final CrashlyticsReportDataCapture dataCapture;
   private final CrashlyticsReportPersistence reportPersistence;
   private final DataTransportCrashlyticsReportSender reportsSender;
+  private final LogFileManager logFileManager;
   private final CurrentTimeProvider currentTimeProvider;
   private final Executor executor;
 
@@ -46,11 +49,13 @@ public class FirebaseCrashlyticsReportManager implements CrashlyticsLifecycleEve
       CrashlyticsReportDataCapture dataCapture,
       CrashlyticsReportPersistence reportPersistence,
       DataTransportCrashlyticsReportSender reportsSender,
+      LogFileManager logFileManager,
       CurrentTimeProvider currentTimeProvider,
       Executor executor) {
     this.dataCapture = dataCapture;
     this.reportPersistence = reportPersistence;
     this.reportsSender = reportsSender;
+    this.logFileManager = logFileManager;
     this.currentTimeProvider = currentTimeProvider;
     this.executor = executor;
   }
@@ -73,6 +78,11 @@ public class FirebaseCrashlyticsReportManager implements CrashlyticsLifecycleEve
   @Override
   public void onNonFatalEvent(Throwable event, Thread thread) {
     onEvent(event, thread, EVENT_TYPE_LOGGED, false);
+  }
+
+  @Override
+  public void onLog(long timestamp, String log) {
+    logFileManager.writeToLog(timestamp, log);
   }
 
   @Override
@@ -99,19 +109,31 @@ public class FirebaseCrashlyticsReportManager implements CrashlyticsLifecycleEve
       Throwable event, Thread thread, String eventType, boolean includeAllThreads) {
     final long timestamp = currentTimeProvider.getCurrentTimeMillis() / 1000;
 
-    final CrashlyticsReport.Session.Event capturedEvent =
-        dataCapture.captureEventData(
-            event,
-            thread,
-            eventType,
-            timestamp,
-            EVENT_THREAD_IMPORTANCE,
-            MAX_CHAINED_EXCEPTION_DEPTH,
-            includeAllThreads);
-
     final boolean isHighPriority = eventType.equals(EVENT_TYPE_CRASH);
 
-    reportPersistence.persistEvent(capturedEvent, currentSessionId, isHighPriority);
+    CrashlyticsReport.Session.Event.Builder eventBuilder =
+        dataCapture
+            .captureEventData(
+                event,
+                thread,
+                eventType,
+                timestamp,
+                EVENT_THREAD_IMPORTANCE,
+                MAX_CHAINED_EXCEPTION_DEPTH,
+                includeAllThreads)
+            .toBuilder();
+
+    final String content = logFileManager.getLogString();
+
+    if (content != null) {
+      eventBuilder.setLog(Log.builder().setContent(content).build());
+    } else {
+      Logger.getLogger().d(Logger.TAG, "No log data to include with this event.");
+    }
+
+    logFileManager.clearLog(); // Clear log to prepare for next event.
+
+    reportPersistence.persistEvent(eventBuilder.build(), currentSessionId, isHighPriority);
   }
 
   private boolean onReportSendComplete(Task<CrashlyticsReport> task) {
