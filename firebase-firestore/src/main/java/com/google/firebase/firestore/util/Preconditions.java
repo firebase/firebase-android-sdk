@@ -17,11 +17,10 @@ package com.google.firebase.firestore.util;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+//  This is an adaptation of
+//  https://github.com/google/guava/blob/master/guava/src/com/google/common/base/Preconditions.java.
 /**
- * This is an adaptation of
- * https://github.com/google/guava/blob/master/guava/src/com/google/common/base/Preconditions.java.
- *
- * <p>Static convenience methods that help a method or constructor check whether it was invoked
+ * Static convenience methods that help a method or constructor check whether it was invoked
  * correctly (that is, whether its <i>preconditions</i> were met).
  *
  * <p>If the precondition is not met, the {@code Preconditions} method throws an unchecked exception

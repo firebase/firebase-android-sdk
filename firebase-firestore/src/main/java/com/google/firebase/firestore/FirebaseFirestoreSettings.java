@@ -220,17 +220,18 @@ public final class FirebaseFirestoreSettings {
   @Override
   @NonNull
   public String toString() {
-    StringBuilder builder = new StringBuilder("FirebaseFirestoreSettings{");
-
-    builder.append(String.format("host=%s, ", host));
-    builder.append(String.format("sslEnabled=%s, ", sslEnabled));
-    builder.append(String.format("persistenceEnabled=%s, ", persistenceEnabled));
-    builder.append(
-        String.format("timestampsInSnapshotsEnabled=%s, ", timestampsInSnapshotsEnabled));
-    builder.append(String.format("cacheSizeBytes=%s", cacheSizeBytes));
-
-    builder.append("}");
-    return builder.toString();
+    return "FirebaseFirestoreSettings{"
+        + "host="
+        + host
+        + ", sslEnabled="
+        + sslEnabled
+        + ", persistenceEnabled="
+        + persistenceEnabled
+        + ", timestampsInSnapshotsEnabled="
+        + timestampsInSnapshotsEnabled
+        + ", cacheSizeBytes="
+        + cacheSizeBytes
+        + "}";
   }
 
   /** Returns the host of the Cloud Firestore backend. */
