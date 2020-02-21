@@ -16,17 +16,11 @@ package com.google.firebase.installations;
 
 import android.text.TextUtils;
 import com.google.firebase.installations.local.PersistedInstallationEntry;
-import java.util.Calendar;
 import java.util.concurrent.TimeUnit;
 
 /** Util methods used for {@link FirebaseInstallations} */
 class Utils {
   public static final long AUTH_TOKEN_EXPIRATION_BUFFER_IN_SECS = TimeUnit.HOURS.toSeconds(1);
-  private final Calendar calendar;
-
-  Utils(Calendar calendar) {
-    this.calendar = calendar;
-  }
 
   /**
    * Checks if the FIS Auth token is expired or going to expire in next 1 hour {@link
@@ -45,6 +39,6 @@ class Utils {
 
   /** Returns current time in seconds. */
   public long currentTimeInSecs() {
-    return TimeUnit.MILLISECONDS.toSeconds(calendar.getTimeInMillis());
+    return TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis());
   }
 }

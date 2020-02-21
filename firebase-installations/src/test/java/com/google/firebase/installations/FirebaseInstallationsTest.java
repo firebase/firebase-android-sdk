@@ -127,14 +127,13 @@ public class FirebaseInstallationsTest {
 
   private FirebaseInstallations firebaseInstallations;
   private Utils utils;
-  private FakeCalendar fakeCalendar;
 
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
     FirebaseApp.clearInstancesForTest();
     executor = new ThreadPoolExecutor(0, 1, 30L, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
-    fakeCalendar = new FakeCalendar(5000000L);
+
     firebaseApp =
         FirebaseApp.initializeApp(
             ApplicationProvider.getApplicationContext(),
@@ -146,7 +145,7 @@ public class FirebaseInstallationsTest {
     persistedInstallation = new PersistedInstallation(firebaseApp);
     persistedInstallation.clearForTesting();
 
-    utils = new Utils(fakeCalendar);
+    utils = new Utils();
     firebaseInstallations =
         new FirebaseInstallations(
             executor,
@@ -510,90 +509,6 @@ public class FirebaseInstallationsTest {
   }
 
   @Test
-  public void testGetId_expiredAuthTokenUncheckedException_statusUpdated() throws Exception {
-    // Start with a registered FID
-    persistedInstallation.insertOrUpdatePersistedInstallationEntry(
-        PersistedInstallationEntry.INSTANCE.withRegisteredFid(
-            TEST_FID_1,
-            TEST_REFRESH_TOKEN,
-            utils.currentTimeInSecs(),
-            TEST_AUTH_TOKEN,
-            TEST_TOKEN_EXPIRATION_TIMESTAMP));
-
-    // Move the time forward by the token expiration time.
-    fakeCalendar.advanceTimeBySeconds(TEST_TOKEN_EXPIRATION_TIMESTAMP);
-
-    // Mocking unchecked exception on FIS generateAuthToken
-    when(mockBackend.generateAuthToken(anyString(), anyString(), anyString(), anyString()))
-        .thenThrow(new IOException());
-
-    TestOnCompleteListener<String> onCompleteListener = new TestOnCompleteListener<>();
-    Task<String> getIdTask = firebaseInstallations.getId();
-    getIdTask.addOnCompleteListener(executor, onCompleteListener);
-    String fid = onCompleteListener.await();
-
-    assertWithMessage("getId Task failed").that(fid).isEqualTo(TEST_FID_1);
-
-    // Waiting for Task that generates auth token with the FIS Servers
-    executor.awaitTermination(500, TimeUnit.MILLISECONDS);
-
-    // Validate that registration status is still REGISTER
-    PersistedInstallationEntry entry = persistedInstallation.readPersistedInstallationEntryValue();
-    assertThat(entry.getFirebaseInstallationId(), equalTo(TEST_FID_1));
-    assertTrue("the entry doesn't have a registered fid: " + entry, entry.isRegistered());
-  }
-
-  /**
-   * The FID is successfully registered but the token is expired. A getId will cause the token to be
-   * refreshed in the background.
-   */
-  @Test
-  public void testGetId_expiredAuthToken_refreshesAuthToken() throws Exception {
-    // Start with a registered FID
-    persistedInstallation.insertOrUpdatePersistedInstallationEntry(
-        PersistedInstallationEntry.INSTANCE.withRegisteredFid(
-            TEST_FID_1,
-            TEST_REFRESH_TOKEN,
-            utils.currentTimeInSecs(),
-            TEST_AUTH_TOKEN,
-            TEST_TOKEN_EXPIRATION_TIMESTAMP));
-
-    // Make the server generateAuthToken() call return a refreshed token
-    when(mockBackend.generateAuthToken(anyString(), anyString(), anyString(), anyString()))
-        .thenReturn(TEST_TOKEN_RESULT);
-
-    // Move the time forward by the token expiration time.
-    fakeCalendar.advanceTimeBySeconds(TEST_TOKEN_EXPIRATION_TIMESTAMP);
-
-    // Get the ID, which should cause the SDK to realize that the auth token is expired and
-    // kick off a refresh of the token.
-    TestOnCompleteListener<String> onCompleteListener = new TestOnCompleteListener<>();
-    Task<String> getIdTask = firebaseInstallations.getId();
-    getIdTask.addOnCompleteListener(executor, onCompleteListener);
-    String fid = onCompleteListener.await();
-    assertWithMessage("getId Task failed").that(fid).isEqualTo(TEST_FID_1);
-
-    // Waiting for Task that registers FID on the FIS Servers
-    executor.awaitTermination(500, TimeUnit.MILLISECONDS);
-
-    TestOnCompleteListener<InstallationTokenResult> onCompleteListener2 =
-        new TestOnCompleteListener<>();
-    Task<InstallationTokenResult> task = firebaseInstallations.getToken(false);
-    task.addOnCompleteListener(executor, onCompleteListener2);
-    InstallationTokenResult installationTokenResult = onCompleteListener2.await();
-
-    // Check that the token has been refreshed
-    assertWithMessage("auth token is not what is expected after the refresh")
-        .that(installationTokenResult.getToken())
-        .isEqualTo(TEST_AUTH_TOKEN_2);
-
-    verify(mockBackend, never())
-        .createFirebaseInstallation(TEST_API_KEY, TEST_FID_1, TEST_PROJECT_ID, TEST_APP_ID_1, null);
-    verify(mockBackend, times(1))
-        .generateAuthToken(TEST_API_KEY, TEST_FID_1, TEST_PROJECT_ID, TEST_REFRESH_TOKEN);
-  }
-
-  @Test
   public void testGetAuthToken_fidDoesNotExist_successful() throws Exception {
     when(mockBackend.createFirebaseInstallation(
             anyString(), anyString(), anyString(), anyString(), any()))
@@ -639,12 +554,12 @@ public class FirebaseInstallationsTest {
         PersistedInstallationEntry.INSTANCE.withRegisteredFid(
             TEST_FID_1,
             TEST_REFRESH_TOKEN,
-            utils.currentTimeInSecs(),
+            // Make experation time to be 30 min ago
+            utils.currentTimeInSecs()
+                - TEST_TOKEN_EXPIRATION_TIMESTAMP
+                + TimeUnit.MINUTES.toSeconds(30),
             TEST_AUTH_TOKEN,
             TEST_TOKEN_EXPIRATION_TIMESTAMP));
-
-    // Move the time forward by the token expiration time.
-    fakeCalendar.advanceTimeBySeconds(TEST_TOKEN_EXPIRATION_TIMESTAMP);
 
     // have the server respond with a new token
     when(mockBackend.generateAuthToken(anyString(), anyString(), anyString(), anyString()))
@@ -754,47 +669,6 @@ public class FirebaseInstallationsTest {
           .that(((FirebaseInstallationsException) expected.getCause()).getStatus())
           .isEqualTo(Status.BAD_CONFIG);
     }
-  }
-
-  @Test
-  public void testGetAuthToken_multipleCallsDoNotForceRefresh_fetchedNewTokenOnce()
-      throws Exception {
-    // start with a valid fid and authtoken
-    persistedInstallation.insertOrUpdatePersistedInstallationEntry(
-        PersistedInstallationEntry.INSTANCE.withRegisteredFid(
-            TEST_FID_1,
-            TEST_REFRESH_TOKEN,
-            utils.currentTimeInSecs(),
-            TEST_AUTH_TOKEN,
-            TEST_TOKEN_EXPIRATION_TIMESTAMP));
-
-    // Make the server generateAuthToken() call return a refreshed token
-    when(mockBackend.generateAuthToken(anyString(), anyString(), anyString(), anyString()))
-        .thenReturn(TEST_TOKEN_RESULT);
-
-    // expire the authtoken by advancing the clock
-    fakeCalendar.advanceTimeBySeconds(TEST_TOKEN_EXPIRATION_TIMESTAMP);
-
-    // Call getToken multiple times with DO_NOT_FORCE_REFRESH option
-    Task<InstallationTokenResult> task1 = firebaseInstallations.getToken(false);
-    Task<InstallationTokenResult> task2 = firebaseInstallations.getToken(false);
-    TestOnCompleteListener<InstallationTokenResult> onCompleteListener1 =
-        new TestOnCompleteListener<>();
-    task1.addOnCompleteListener(executor, onCompleteListener1);
-    TestOnCompleteListener<InstallationTokenResult> onCompleteListener2 =
-        new TestOnCompleteListener<>();
-    task2.addOnCompleteListener(executor, onCompleteListener2);
-    onCompleteListener1.await();
-    onCompleteListener2.await();
-
-    assertWithMessage("Persisted Auth Token doesn't match")
-        .that(task1.getResult().getToken())
-        .isEqualTo(TEST_AUTH_TOKEN_2);
-    assertWithMessage("Persisted Auth Token doesn't match")
-        .that(task2.getResult().getToken())
-        .isEqualTo(TEST_AUTH_TOKEN_2);
-    verify(mockBackend, times(1))
-        .generateAuthToken(TEST_API_KEY, TEST_FID_1, TEST_PROJECT_ID, TEST_REFRESH_TOKEN);
   }
 
   @Test
