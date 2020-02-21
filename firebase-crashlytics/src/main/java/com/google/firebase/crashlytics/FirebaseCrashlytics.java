@@ -162,7 +162,7 @@ public class FirebaseCrashlytics {
    * <p>The value of any key at the time of a fatal or non-fatal event is associated with that
    * event.
    *
-   * <p>Keys and associated values are be visible in the session view on the Firebase Crashlytics
+   * <p>Keys and associated values are visible in the session view on the Firebase Crashlytics
    * console.
    *
    * <p>Accepts a maximum of 64 key/value pairs. New keys beyond that limit are ignored. Keys or
@@ -183,7 +183,7 @@ public class FirebaseCrashlytics {
    * <p>The value of any key at the time of a fatal or non-fatal event is associated with that
    * event.
    *
-   * <p>Keys and associated values are be visible in the session view on the Firebase Crashlytics
+   * <p>Keys and associated values are visible in the session view on the Firebase Crashlytics
    * console.
    *
    * <p>Accepts a maximum of 64 key/value pairs. New keys beyond that limit are ignored. Keys or
@@ -204,7 +204,7 @@ public class FirebaseCrashlytics {
    * <p>The value of any key at the time of a fatal or non-fatal event is associated with that
    * event.
    *
-   * <p>Keys and associated values are be visible in the session view on the Firebase Crashlytics
+   * <p>Keys and associated values are visible in the session view on the Firebase Crashlytics
    * console.
    *
    * <p>Accepts a maximum of 64 key/value pairs. New keys beyond that limit are ignored. Keys or
@@ -225,7 +225,7 @@ public class FirebaseCrashlytics {
    * <p>The value of any key at the time of a fatal or non-fatal event is associated with that
    * event.
    *
-   * <p>Keys and associated values are be visible in the session view on the Firebase Crashlytics
+   * <p>Keys and associated values are visible in the session view on the Firebase Crashlytics
    * console.
    *
    * <p>Accepts a maximum of 64 key/value pairs. New keys beyond that limit are ignored. Keys or
@@ -246,7 +246,7 @@ public class FirebaseCrashlytics {
    * <p>The value of any key at the time of a fatal or non-fatal event will be associated with that
    * event.
    *
-   * <p>Keys and associated values will be visible in the session view on the Firebase Crashlytics
+   * <p>Keys and associated values are visible in the session view on the Firebase Crashlytics
    * console.
    *
    * <p>A maximum of 64 key/value pairs can be written, and new keys added beyond that limit will be
@@ -267,7 +267,7 @@ public class FirebaseCrashlytics {
    * <p>The value of any key at the time of a fatal or non-fatal event is associated with that
    * event.
    *
-   * <p>Keys and associated values are be visible in the session view on the Firebase Crashlytics
+   * <p>Keys and associated values are visible in the session view on the Firebase Crashlytics
    * console.
    *
    * <p>Accepts a maximum of 64 key/value pairs. New keys beyond that limit are ignored. Keys or
@@ -305,7 +305,7 @@ public class FirebaseCrashlytics {
 
   /**
    * If automatic data collection is disabled, this method queues up all the reports on a device for
-   * deleting. Otherwise, this method is a no-op.
+   * deletion. Otherwise, this method is a no-op.
    */
   public void deleteUnsentReports() {
     core.deleteUnsentReports();
@@ -329,10 +329,10 @@ public class FirebaseCrashlytics {
    * as well as any Firebase-wide automatic data collection settings.
    *
    * <p>If automatic data collection is disabled for Crashlytics, crash reports are stored on the
-   * device. To check for reports, use the checkForUnsentReports method. Use sendUnsentReports to
-   * uploading existing reports even when automatic data collection is disabled. Use
-   * deleteUnsentReports to delete any reports stored on the device without sending them to
-   * Crashlytics
+   * device. To check for reports, use the {@link #checkForUnsentReports()} method. Use {@link
+   * #sendUnsentReports()} to upload existing reports even when automatic data collection is
+   * disabled. Use {@link #deleteUnsentReports()} to delete any reports stored on the device without
+   * sending them to Crashlytics.
    *
    * @param enabled whether to enable automatic data collection.
    */

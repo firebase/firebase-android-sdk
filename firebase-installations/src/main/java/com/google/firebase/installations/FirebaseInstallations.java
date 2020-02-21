@@ -42,8 +42,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Entry point for Firebase Installations.
@@ -70,9 +72,21 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   private final List<StateListener> listeners = new ArrayList<>();
 
   /* used for thread-level synchronization of generating and persisting fids */
-  private final Object lockGenerateFid = new Object();
+  private static final Object lockGenerateFid = new Object();
   /* file used for process-level syncronization of generating and persisting fids */
   private static final String LOCKFILE_NAME_GENERATE_FID = "generatefid.lock";
+  private static final String CHIME_FIREBASE_APP_NAME = "CHIME_ANDROID_SDK";
+
+  private static final ThreadFactory threadFactory =
+      new ThreadFactory() {
+        private final AtomicInteger mCount = new AtomicInteger(1);
+
+        @Override
+        public Thread newThread(Runnable r) {
+          return new Thread(
+              r, String.format("firebase-installations-executor-%d", mCount.getAndIncrement()));
+        }
+      };
 
   /** package private constructor. */
   FirebaseInstallations(
@@ -80,7 +94,13 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
       @Nullable UserAgentPublisher publisher,
       @Nullable HeartBeatInfo heartbeatInfo) {
     this(
-        new ThreadPoolExecutor(0, 1, 30L, TimeUnit.SECONDS, new LinkedBlockingQueue<>()),
+        new ThreadPoolExecutor(
+            /* corePoolSize= */ 0,
+            /* maximumPoolSize= */ 1,
+            /* keepAliveTime= */ 30L,
+            TimeUnit.SECONDS,
+            /* workQueue= */ new LinkedBlockingQueue<>(),
+            /* threadFactory= */ threadFactory),
         firebaseApp,
         new FirebaseInstallationServiceClient(
             firebaseApp.getApplicationContext(), publisher, heartbeatInfo),
@@ -127,9 +147,9 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   }
 
   /**
-   * Returns the {@link FirebaseInstallationsApi} initialized with the default {@link FirebaseApp}.
+   * Returns the {@link FirebaseInstallations} initialized with the default {@link FirebaseApp}.
    *
-   * @return a {@link FirebaseInstallationsApi} instance
+   * @return a {@link FirebaseInstallations} instance
    */
   @NonNull
   public static FirebaseInstallations getInstance() {
@@ -186,15 +206,14 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
    *
    * <p>Should only be called if the Firebase Installation is registered.
    *
-   * @param authTokenOption Options to get FIS Auth Token either by force refreshing or not. Accepts
-   *     {@link AuthTokenOption} values. Default value of AuthTokenOption = DO_NOT_FORCE_REFRESH.
+   * @param forceRefresh Options to get FIS Auth Token either by force refreshing or not.
    */
   @NonNull
   @Override
-  public Task<InstallationTokenResult> getToken(@AuthTokenOption int authTokenOption) {
+  public Task<InstallationTokenResult> getToken(boolean forceRefresh) {
     preConditionChecks();
     Task<InstallationTokenResult> task = addGetAuthTokenListener();
-    if (authTokenOption == FORCE_REFRESH) {
+    if (forceRefresh) {
       executor.execute(this::doGetAuthTokenForceRefresh);
     } else {
       executor.execute(this::doGetAuthTokenWithoutForceRefresh);
@@ -336,10 +355,10 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
    *     been persisted.
    */
   private PersistedInstallationEntry getPrefsWithGeneratedIdMultiProcessSafe() {
-    CrossProcessLock lock =
-        CrossProcessLock.acquire(firebaseApp.getApplicationContext(), LOCKFILE_NAME_GENERATE_FID);
-    try {
-      synchronized (lockGenerateFid) {
+    synchronized (lockGenerateFid) {
+      CrossProcessLock lock =
+          CrossProcessLock.acquire(firebaseApp.getApplicationContext(), LOCKFILE_NAME_GENERATE_FID);
+      try {
         PersistedInstallationEntry prefs =
             persistedInstallation.readPersistedInstallationEntryValue();
         // Check if a new FID needs to be created
@@ -355,21 +374,22 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
                   prefs.withUnregisteredFid(fid));
         }
         return prefs;
-      }
 
-    } finally {
-      lock.releaseAndClose();
+      } finally {
+        lock.releaseAndClose();
+      }
     }
   }
 
   private String readExistingIidOrCreateFid(PersistedInstallationEntry prefs) {
-    // Check if this firebase app is the default (first initialized) instance
-    if (!firebaseApp.isDefaultApp() || !prefs.shouldAttemptMigration()) {
+    // Check if this firebase app is the default (first initialized) instance or is a chime app
+    if ((!firebaseApp.getName().equals(CHIME_FIREBASE_APP_NAME) && !firebaseApp.isDefaultApp())
+        || !prefs.shouldAttemptMigration()) {
       return fidGenerator.createRandomFid();
     }
-    // For a default firebase installation, read the existing iid from shared prefs
+    // For a default/chime firebase installation, read the existing iid from shared prefs
     String fid = iidStore.readIid();
-    if (fid == null) {
+    if (TextUtils.isEmpty(fid)) {
       fid = fidGenerator.createRandomFid();
     }
     return fid;

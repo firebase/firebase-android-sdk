@@ -19,7 +19,9 @@ import com.google.firebase.abt.AbtExperimentInfo;
 import com.google.firebase.abt.FirebaseABTesting;
 import com.google.internal.firebase.inappmessaging.v1.CampaignProto;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.FetchEligibleCampaignsResponse;
+import developers.mobile.abt.FirebaseAbt;
 import java.util.ArrayList;
+import java.util.Date;
 import javax.inject.Inject;
 
 /** @hide */
@@ -32,7 +34,7 @@ public class AbtIntegrationHelper {
   }
 
   /**
-   * Take a {@link FetchEligibleCampaignsResponse} and update ABT with the currently running
+   * Takes a {@link FetchEligibleCampaignsResponse} and updates ABT with the currently running
    * experiments based on the content of the response.
    *
    * @param response the {@link FetchEligibleCampaignsResponse} containing an up to date experiment
@@ -41,12 +43,20 @@ public class AbtIntegrationHelper {
   public void updateRunningExperiments(FetchEligibleCampaignsResponse response) {
     ArrayList<AbtExperimentInfo> runningExperiments = new ArrayList<>();
     for (CampaignProto.ThickContent content : response.getMessagesList()) {
-      if (content
-          .getPayloadCase()
-          .equals(CampaignProto.ThickContent.PayloadCase.EXPERIMENTAL_PAYLOAD)) {
+      if (!content.getIsTestCampaign()
+          && content
+              .getPayloadCase()
+              .equals(CampaignProto.ThickContent.PayloadCase.EXPERIMENTAL_PAYLOAD)) {
+        FirebaseAbt.ExperimentPayload payload =
+            content.getExperimentalPayload().getExperimentPayload();
         runningExperiments.add(
-            AbtExperimentInfo.fromExperimentPayload(
-                content.getExperimentalPayload().getExperimentPayload()));
+            new AbtExperimentInfo(
+                payload.getExperimentId(),
+                payload.getVariantId(),
+                payload.getTriggerEvent(),
+                new Date(payload.getExperimentStartTimeMillis()),
+                payload.getTriggerTimeoutMillis(),
+                payload.getTimeToLiveMillis()));
       }
     }
     if (runningExperiments.isEmpty()) {
@@ -59,6 +69,30 @@ public class AbtIntegrationHelper {
     } catch (AbtException e) {
       Logging.loge(
           "Unable to register experiments with ABT, missing analytics?\n" + e.getMessage());
+    }
+  }
+
+  /**
+   * Takes a {@link FirebaseAbt.ExperimentPayload} and tells ABT to set it as an active experiment.
+   * This is meant to be called on an experimental FIAM that is getting displayed to a user, because
+   * that would indicate that the experiment is now active for that user.
+   *
+   * @param payload the {@link FirebaseAbt.ExperimentPayload} that should be set as active.
+   */
+  public void setExperimentActive(FirebaseAbt.ExperimentPayload payload) {
+    try {
+      Logging.logd("Updating active experiment: " + payload.toString());
+      abTesting.reportActiveExperiment(
+          new AbtExperimentInfo(
+              payload.getExperimentId(),
+              payload.getVariantId(),
+              payload.getTriggerEvent(),
+              new Date(payload.getExperimentStartTimeMillis()),
+              payload.getTriggerTimeoutMillis(),
+              payload.getTimeToLiveMillis()));
+    } catch (AbtException e) {
+      Logging.loge(
+          "Unable to set experiment as active with ABT, missing analytics?\n" + e.getMessage());
     }
   }
 }

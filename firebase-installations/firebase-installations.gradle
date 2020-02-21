@@ -40,8 +40,8 @@ android {
 dependencies {
     implementation project(':firebase-common')
     implementation project(':firebase-installations-interop')
+    implementation project(':firebase-components')
 
-    implementation 'androidx.appcompat:appcompat:1.0.2'
     implementation 'androidx.multidex:multidex:2.0.1'
     implementation 'com.google.android.gms:play-services-tasks:17.0.0'
 

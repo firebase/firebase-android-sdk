@@ -112,17 +112,18 @@ public class InAppMessageStreamManager {
     long campaignStartTime;
     long campaignEndTime;
     if (content.getPayloadCase().equals(ThickContent.PayloadCase.VANILLA_PAYLOAD)) {
+      // Handle the campaign case
       campaignStartTime = content.getVanillaPayload().getCampaignStartTimeMillis();
       campaignEndTime = content.getVanillaPayload().getCampaignEndTimeMillis();
+    } else if (content.getPayloadCase().equals(ThickContent.PayloadCase.EXPERIMENTAL_PAYLOAD)) {
+      // Handle the experiment case
+      campaignStartTime = content.getExperimentalPayload().getCampaignStartTimeMillis();
+      campaignEndTime = content.getExperimentalPayload().getCampaignEndTimeMillis();
     } else {
-      campaignStartTime =
-          content.getExperimentalPayload().getExperimentPayload().getExperimentStartTimeMillis();
-      campaignEndTime =
-          campaignStartTime
-              + content.getExperimentalPayload().getExperimentPayload().getTimeToLiveMillis();
+      // If we have no valid payload then don't display
+      return false;
     }
     long currentTime = clock.now();
-
     return currentTime > campaignStartTime && currentTime < campaignEndTime;
   }
 
@@ -185,19 +186,13 @@ public class InAppMessageStreamManager {
                       content.getIsTestCampaign()
                           ? Maybe.just(content)
                           : impressionStorageClient
-                              .isImpressed(content.getVanillaPayload().getCampaignId())
+                              .isImpressed(content)
                               .doOnError(
                                   e ->
                                       Logging.logw("Impression store read fail: " + e.getMessage()))
                               .onErrorResumeNext(
                                   Single.just(false)) // Absorb impression read errors
-                              .doOnSuccess(
-                                  isImpressed ->
-                                      Logging.logi(
-                                          String.format(
-                                              "Already impressed %s ? : %s",
-                                              content.getVanillaPayload().getCampaignName(),
-                                              isImpressed)))
+                              .doOnSuccess(isImpressed -> logImpressionStatus(content, isImpressed))
                               .filter(isImpressed -> !isImpressed)
                               .map(isImpressed -> content);
 
@@ -287,6 +282,20 @@ public class InAppMessageStreamManager {
     return Maybe.just(content);
   }
 
+  private static void logImpressionStatus(ThickContent content, Boolean isImpressed) {
+    if (content.getPayloadCase().equals(ThickContent.PayloadCase.VANILLA_PAYLOAD)) {
+      Logging.logi(
+          String.format(
+              "Already impressed campaign %s ? : %s",
+              content.getVanillaPayload().getCampaignName(), isImpressed));
+    } else if (content.getPayloadCase().equals(ThickContent.PayloadCase.EXPERIMENTAL_PAYLOAD)) {
+      Logging.logi(
+          String.format(
+              "Already impressed experiment %s ? : %s",
+              content.getExperimentalPayload().getCampaignName(), isImpressed));
+    }
+  }
+
   private Maybe<TriggeredInAppMessage> getTriggeredInAppMessageMaybe(
       String event,
       Function<ThickContent, Maybe<ThickContent>> filterAlreadyImpressed,
@@ -308,11 +317,21 @@ public class InAppMessageStreamManager {
     String campaignId;
     String campaignName;
     if (content.getPayloadCase().equals(ThickContent.PayloadCase.VANILLA_PAYLOAD)) {
+      // Handle vanilla campaign case
       campaignId = content.getVanillaPayload().getCampaignId();
       campaignName = content.getVanillaPayload().getCampaignName();
-    } else {
+    } else if (content.getPayloadCase().equals(ThickContent.PayloadCase.EXPERIMENTAL_PAYLOAD)) {
+      // Handle experiment case
       campaignId = content.getExperimentalPayload().getCampaignId();
-      campaignName = "experimental campaign placeholder";
+      campaignName = content.getExperimentalPayload().getCampaignName();
+      // At this point we set the experiment to become active in analytics.
+      // As long as it's not a test experiment.
+      if (!content.getIsTestCampaign()) {
+        abtIntegrationHelper.setExperimentActive(
+            content.getExperimentalPayload().getExperimentPayload());
+      }
+    } else {
+      return Maybe.empty();
     }
     InAppMessage inAppMessage =
         ProtoMarshallerClient.decode(

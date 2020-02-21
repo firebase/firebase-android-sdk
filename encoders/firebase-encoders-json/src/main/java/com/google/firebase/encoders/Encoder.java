@@ -25,5 +25,5 @@ import java.io.IOException;
 interface Encoder<TValue, TContext> {
 
   /** Encode {@code obj} using {@code TContext}. */
-  void encode(@NonNull TValue obj, @NonNull TContext context) throws EncodingException, IOException;
+  void encode(@NonNull TValue obj, @NonNull TContext context) throws IOException;
 }

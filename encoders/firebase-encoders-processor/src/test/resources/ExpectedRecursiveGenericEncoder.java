@@ -14,7 +14,6 @@
 
 package com.example;
 
-import com.google.firebase.encoders.EncodingException;
 import com.google.firebase.encoders.ObjectEncoder;
 import com.google.firebase.encoders.ObjectEncoderContext;
 import com.google.firebase.encoders.config.Configurator;
@@ -42,8 +41,7 @@ public final class AutoMainClassEncoder implements Configurator {
         static final MainClassEncoder INSTANCE = new MainClassEncoder();
 
         @Override
-        public void encode(MainClass value, ObjectEncoderContext ctx) throws IOException,
-                EncodingException {
+        public void encode(MainClass value, ObjectEncoderContext ctx) throws IOException {
             ctx.add("child", value.getChild());
         }
     }
@@ -52,8 +50,7 @@ public final class AutoMainClassEncoder implements Configurator {
         static final ChildEncoder INSTANCE = new ChildEncoder();
 
         @Override
-        public void encode(Child value, ObjectEncoderContext ctx) throws IOException,
-                EncodingException {
+        public void encode(Child value, ObjectEncoderContext ctx) throws IOException {
             ctx.add("stringChild", value.getStringChild());
             ctx.add("intChild", value.getIntChild());
             ctx.add("main", value.getMain());
