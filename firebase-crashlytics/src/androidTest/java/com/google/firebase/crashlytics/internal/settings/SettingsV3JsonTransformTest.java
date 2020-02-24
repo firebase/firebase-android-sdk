@@ -85,6 +85,7 @@ public class SettingsV3JsonTransformTest extends CrashlyticsTestCase {
         "https://reports.crashlytics.com/sdk-api/v1/platforms/android/apps/com.google.firebase.crashlytics.sdk.test/minidumps",
         appData.ndkReportsUrl);
     assertTrue(appData.updateRequired);
+    assertEquals(2, appData.reportUploadVariant);
   }
 
   private void assertSettingsData(SessionSettingsData settingsData) {

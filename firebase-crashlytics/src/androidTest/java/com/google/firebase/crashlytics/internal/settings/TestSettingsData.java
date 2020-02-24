@@ -41,6 +41,7 @@ public class TestSettingsData extends SettingsData {
         "http://localhost",
         "testBundleId",
         "testOrganizationId",
-        false);
+        false,
+        0);
   }
 }
