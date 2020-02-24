@@ -486,6 +486,9 @@ public abstract class CrashlyticsReport {
 
         public abstract int getUiOrientation();
 
+        @NonNull
+        public abstract Builder toBuilder();
+
         @AutoValue
         public abstract static class Execution {
 

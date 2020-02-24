@@ -15,14 +15,19 @@
 package com.google.firebase.crashlytics.internal.common;
 
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.crashlytics.core.UserMetadata;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.log.LogFileManager;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
-import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event.Log;
+import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.CustomAttribute;
+import com.google.firebase.crashlytics.internal.model.ImmutableList;
 import com.google.firebase.crashlytics.internal.persistence.CrashlyticsReportPersistence;
 import com.google.firebase.crashlytics.internal.send.DataTransportCrashlyticsReportSender;
 import com.google.firebase.crashlytics.internal.settings.model.AppSettingsData;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executor;
 
 /**
@@ -40,6 +45,7 @@ public class FirebaseCrashlyticsReportManager implements CrashlyticsLifecycleEve
   private final CrashlyticsReportPersistence reportPersistence;
   private final DataTransportCrashlyticsReportSender reportsSender;
   private final LogFileManager logFileManager;
+  private final UserMetadata reportMetadata;
   private final CurrentTimeProvider currentTimeProvider;
   private final Executor executor;
 
@@ -50,12 +56,14 @@ public class FirebaseCrashlyticsReportManager implements CrashlyticsLifecycleEve
       CrashlyticsReportPersistence reportPersistence,
       DataTransportCrashlyticsReportSender reportsSender,
       LogFileManager logFileManager,
+      UserMetadata reportMetadata,
       CurrentTimeProvider currentTimeProvider,
       Executor executor) {
     this.dataCapture = dataCapture;
     this.reportPersistence = reportPersistence;
     this.reportsSender = reportsSender;
     this.logFileManager = logFileManager;
+    this.reportMetadata = reportMetadata;
     this.currentTimeProvider = currentTimeProvider;
     this.executor = executor;
   }
@@ -86,6 +94,11 @@ public class FirebaseCrashlyticsReportManager implements CrashlyticsLifecycleEve
   }
 
   @Override
+  public void onCustomKey(String key, String value) {
+    reportMetadata.setCustomKey(key, value);
+  }
+
+  @Override
   public void onEndSession() {
     currentSessionId = null;
   }
@@ -111,27 +124,40 @@ public class FirebaseCrashlyticsReportManager implements CrashlyticsLifecycleEve
 
     final boolean isHighPriority = eventType.equals(EVENT_TYPE_CRASH);
 
-    CrashlyticsReport.Session.Event.Builder eventBuilder =
-        dataCapture
-            .captureEventData(
-                event,
-                thread,
-                eventType,
-                timestamp,
-                EVENT_THREAD_IMPORTANCE,
-                MAX_CHAINED_EXCEPTION_DEPTH,
-                includeAllThreads)
-            .toBuilder();
+    final CrashlyticsReport.Session.Event capturedEvent =
+        dataCapture.captureEventData(
+            event,
+            thread,
+            eventType,
+            timestamp,
+            EVENT_THREAD_IMPORTANCE,
+            MAX_CHAINED_EXCEPTION_DEPTH,
+            includeAllThreads);
+
+    final CrashlyticsReport.Session.Event.Builder eventBuilder = capturedEvent.toBuilder();
 
     final String content = logFileManager.getLogString();
 
     if (content != null) {
-      eventBuilder.setLog(Log.builder().setContent(content).build());
+      eventBuilder.setLog(
+          CrashlyticsReport.Session.Event.Log.builder().setContent(content).build());
     } else {
       Logger.getLogger().d(Logger.TAG, "No log data to include with this event.");
     }
 
     logFileManager.clearLog(); // Clear log to prepare for next event.
+
+    final List<CustomAttribute> sortedCustomAttributes =
+        getSortedCustomAttributes(reportMetadata.getCustomKeys());
+
+    if (sortedCustomAttributes != null) {
+      eventBuilder.setApp(
+          capturedEvent
+              .getApp()
+              .toBuilder()
+              .setCustomAttributes(ImmutableList.from(sortedCustomAttributes))
+              .build());
+    }
 
     reportPersistence.persistEvent(eventBuilder.build(), currentSessionId, isHighPriority);
   }
@@ -147,5 +173,25 @@ public class FirebaseCrashlyticsReportManager implements CrashlyticsLifecycleEve
     }
     // TODO: Something went wrong. Log? Throw?
     return false;
+  }
+
+  private static List<CustomAttribute> getSortedCustomAttributes(Map<String, String> attributes) {
+    if (attributes == null || attributes.isEmpty()) {
+      return null;
+    }
+
+    ArrayList<CustomAttribute> attributesList = new ArrayList<>();
+    attributesList.ensureCapacity(attributes.size());
+    for (Map.Entry<String, String> entry : attributes.entrySet()) {
+      attributesList.add(
+          CustomAttribute.builder().setKey(entry.getKey()).setValue(entry.getValue()).build());
+    }
+
+    // Sort by key
+    Collections.sort(
+        attributesList,
+        (CustomAttribute attr1, CustomAttribute attr2) -> attr1.getKey().compareTo(attr2.getKey()));
+
+    return attributesList;
   }
 }
