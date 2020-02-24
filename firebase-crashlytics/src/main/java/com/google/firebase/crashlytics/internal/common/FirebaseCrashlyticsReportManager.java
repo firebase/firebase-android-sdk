@@ -180,7 +180,8 @@ public class FirebaseCrashlyticsReportManager implements CrashlyticsLifecycleEve
       return null;
     }
 
-    List<CustomAttribute> attributesList = new ArrayList<>();
+    ArrayList<CustomAttribute> attributesList = new ArrayList<>();
+    attributesList.ensureCapacity(attributes.size());
     for (Map.Entry<String, String> entry : attributes.entrySet()) {
       attributesList.add(
           CustomAttribute.builder().setKey(entry.getKey()).setValue(entry.getValue()).build());

@@ -40,6 +40,8 @@ public class UserMetadata {
 
   @NonNull
   public Map<String, String> getCustomKeys() {
+    // Use of ConcurrentHashMap as the underlying attributes map guarantees safety should
+    // attributes be added after this unmodifiable view is returned.
     return Collections.unmodifiableMap(attributes);
   }
 

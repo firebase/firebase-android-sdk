@@ -35,6 +35,7 @@ import com.google.firebase.crashlytics.internal.persistence.CrashlyticsReportPer
 import com.google.firebase.crashlytics.internal.send.DataTransportCrashlyticsReportSender;
 import com.google.firebase.crashlytics.internal.settings.model.AppSettingsData;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -222,7 +223,7 @@ public class FirebaseCrashlyticsReportManagerTest {
   public void testOnNonFatalEvent_addsNoKeysToEventWhenNoneAvailable() {
     mockEventInteractions(System.currentTimeMillis());
 
-    final Map<String, String> attributes = new HashMap<>();
+    final Map<String, String> attributes = Collections.emptyMap();
 
     when(reportMetadata.getCustomKeys()).thenReturn(attributes);
 
@@ -273,7 +274,7 @@ public class FirebaseCrashlyticsReportManagerTest {
   public void testOnFatalEvent_addsNoKeysToEventWhenNoneAvailable() {
     mockEventInteractions(System.currentTimeMillis());
 
-    final Map<String, String> attributes = new HashMap<>();
+    final Map<String, String> attributes = Collections.emptyMap();
 
     when(reportMetadata.getCustomKeys()).thenReturn(attributes);
 
