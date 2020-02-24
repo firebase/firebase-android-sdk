@@ -60,6 +60,19 @@ public class CrashlyticsReportTest {
   }
 
   @Test
+  public void testWithUserId_returnsNewReportWithUserId() {
+    final CrashlyticsReport testReport = makeTestReport();
+
+    assertNull(testReport.getSession().getUser());
+
+    final CrashlyticsReport withUserIdReport = testReport.withUserId("userId");
+
+    assertNotEquals(testReport, withUserIdReport);
+    assertNotNull(withUserIdReport.getSession().getUser());
+    assertEquals("userId", withUserIdReport.getSession().getUser().getIdentifier());
+  }
+
+  @Test
   public void testGetSessionIdUtf8Bytes_returnsProperBytes() {
     final CrashlyticsReport testReport = makeTestReport();
     final byte[] expectedBytes = "identifier".getBytes(Charset.forName("UTF-8"));

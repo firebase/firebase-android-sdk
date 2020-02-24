@@ -121,6 +121,53 @@ public class CrashlyticsReportPersistenceTest {
   }
 
   @Test
+  public void testLoadFinalizedReports_reportWithUserId_returnsReportWithProperUserId() {
+    final String sessionId = "testSession";
+    final String userId = "testUser";
+    final CrashlyticsReport testReport = makeTestReport(sessionId);
+    final CrashlyticsReport.Session.Event testEvent = makeTestEvent();
+
+    reportPersistence.persistReport(testReport);
+    reportPersistence.persistEvent(testEvent, sessionId);
+    reportPersistence.persistUserIdForSession(userId, sessionId);
+    reportPersistence.finalizeReports("skippedSession");
+
+    final List<CrashlyticsReport> finalizedReports = reportPersistence.loadFinalizedReports();
+    assertEquals(1, finalizedReports.size());
+    final CrashlyticsReport finalizedReport = finalizedReports.get(0);
+    assertEquals(userId, finalizedReport.getSession().getUser().getIdentifier());
+  }
+
+  @Test
+  public void
+      testLoadFinalizedReports_reportsWithUserIdInMultipleSessions_returnsReportsWithProperUserIds() {
+    final String sessionId1 = "testSession1";
+    final CrashlyticsReport testReport1 = makeTestReport(sessionId1);
+    final String sessionId2 = "testSession2";
+    final CrashlyticsReport testReport2 = makeTestReport(sessionId2);
+    final CrashlyticsReport.Session.Event testEvent1 = makeTestEvent();
+    final CrashlyticsReport.Session.Event testEvent2 = makeTestEvent();
+    final String userId1 = "testUser1";
+    final String userId2 = "testUser2";
+
+    reportPersistence.persistReport(testReport1);
+    reportPersistence.persistReport(testReport2);
+    reportPersistence.persistEvent(testEvent1, sessionId1);
+    reportPersistence.persistEvent(testEvent2, sessionId2);
+    reportPersistence.persistUserIdForSession(userId1, sessionId1);
+    reportPersistence.persistUserIdForSession(userId2, sessionId2);
+
+    reportPersistence.finalizeReports("skippedSession");
+
+    final List<CrashlyticsReport> finalizedReports = reportPersistence.loadFinalizedReports();
+    assertEquals(2, finalizedReports.size());
+    final CrashlyticsReport finalizedReport1 = finalizedReports.get(0);
+    assertEquals(userId1, finalizedReport1.getSession().getUser().getIdentifier());
+    final CrashlyticsReport finalizedReport2 = finalizedReports.get(1);
+    assertEquals(userId2, finalizedReport2.getSession().getUser().getIdentifier());
+  }
+
+  @Test
   public void testDeleteFinalizedReport_removesReports() {
     final String sessionId = "testSession";
     final CrashlyticsReport testReport = makeTestReport(sessionId);

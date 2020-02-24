@@ -58,6 +58,13 @@ interface CrashlyticsLifecycleEvents {
    */
   void onCustomKey(String key, String value);
 
+  /**
+   * Called when a user ID is set by the user.
+   *
+   * @param userId
+   */
+  void onUserId(String userId);
+
   /** Called when the current session should be closed */
   void onEndSession();
 

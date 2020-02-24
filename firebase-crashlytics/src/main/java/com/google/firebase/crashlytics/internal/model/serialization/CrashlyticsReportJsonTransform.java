@@ -122,6 +122,9 @@ public class CrashlyticsReportJsonTransform {
         case "startedAt":
           builder.setStartedAt(jsonReader.nextLong());
           break;
+        case "user":
+          builder.setUser(parseUser(jsonReader));
+          break;
         case "app":
           builder.setApp(parseApp(jsonReader));
           break;
@@ -133,6 +136,27 @@ public class CrashlyticsReportJsonTransform {
           break;
         case "events":
           builder.setEvents(parseArray(jsonReader, CrashlyticsReportJsonTransform::parseEvent));
+          break;
+        default:
+          jsonReader.skipValue();
+          break;
+      }
+    }
+    jsonReader.endObject();
+
+    return builder.build();
+  }
+
+  private static CrashlyticsReport.Session.User parseUser(JsonReader jsonReader)
+      throws IOException {
+    final CrashlyticsReport.Session.User.Builder builder = CrashlyticsReport.Session.User.builder();
+
+    jsonReader.beginObject();
+    while (jsonReader.hasNext()) {
+      String name = jsonReader.nextName();
+      switch (name) {
+        case "identifier":
+          builder.setIdentifier(jsonReader.nextString());
           break;
         default:
           jsonReader.skipValue();
