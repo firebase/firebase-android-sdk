@@ -217,18 +217,18 @@ public class Values {
 
   private static int compareNumbers(Value left, Value right) {
     if (left.getValueTypeCase() == Value.ValueTypeCase.DOUBLE_VALUE) {
-      double thisDouble = left.getDoubleValue();
+      double leftDouble = left.getDoubleValue();
       if (right.getValueTypeCase() == Value.ValueTypeCase.DOUBLE_VALUE) {
-        return Util.compareDoubles(thisDouble, right.getDoubleValue());
+        return Util.compareDoubles(leftDouble, right.getDoubleValue());
       } else if (right.getValueTypeCase() == Value.ValueTypeCase.INTEGER_VALUE) {
-        return Util.compareMixed(thisDouble, right.getIntegerValue());
+        return Util.compareMixed(leftDouble, right.getIntegerValue());
       }
     } else if (left.getValueTypeCase() == Value.ValueTypeCase.INTEGER_VALUE) {
-      long thisLong = left.getIntegerValue();
+      long leftLong = left.getIntegerValue();
       if (right.getValueTypeCase() == Value.ValueTypeCase.INTEGER_VALUE) {
-        return Util.compareLongs(thisLong, right.getIntegerValue());
+        return Util.compareLongs(leftLong, right.getIntegerValue());
       } else if (right.getValueTypeCase() == Value.ValueTypeCase.DOUBLE_VALUE) {
-        return -1 * Util.compareMixed(right.getDoubleValue(), thisLong);
+        return -1 * Util.compareMixed(right.getDoubleValue(), leftLong);
       }
     }
 
