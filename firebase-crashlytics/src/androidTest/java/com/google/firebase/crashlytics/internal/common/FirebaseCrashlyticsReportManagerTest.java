@@ -349,7 +349,7 @@ public class FirebaseCrashlyticsReportManagerTest {
     final String sessionId2 = "sessionId2";
 
     final AppSettingsData appSettings =
-        new AppSettingsData(null, null, null, null, null, orgId, false);
+        new AppSettingsData(null, null, null, null, null, orgId, false, 0);
 
     final List<CrashlyticsReport> finalizedReports = new ArrayList<>();
     final CrashlyticsReport mockReport1 = mockReport(sessionId1, orgId);

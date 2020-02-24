@@ -91,8 +91,20 @@ class SettingsV3JsonTransform implements SettingsJsonTransform {
             SettingsJsonConstants.APP_UPDATE_REQUIRED_KEY,
             SettingsJsonConstants.APP_UPDATE_REQUIRED_DEFAULT);
 
+    final int reportUploadVariant =
+        appJson.optInt(
+            SettingsJsonConstants.APP_REPORT_UPLOAD_VARIANT_KEY,
+            SettingsJsonConstants.APP_REPORT_UPLOAD_VARIANT_DEFAULT);
+
     return new AppSettingsData(
-        status, url, reportsUrl, ndkReportsUrl, bundleId, organizationId, updateRequired);
+        status,
+        url,
+        reportsUrl,
+        ndkReportsUrl,
+        bundleId,
+        organizationId,
+        updateRequired,
+        reportUploadVariant);
   }
 
   private static FeaturesSettingsData buildFeaturesSessionDataFrom(JSONObject json) {
@@ -128,7 +140,8 @@ class SettingsV3JsonTransform implements SettingsJsonTransform {
     final JSONObject json =
         new JSONObject()
             .put(SettingsJsonConstants.APP_STATUS_KEY, appData.status)
-            .put(SettingsJsonConstants.APP_UPDATE_REQUIRED_KEY, appData.updateRequired);
+            .put(SettingsJsonConstants.APP_UPDATE_REQUIRED_KEY, appData.updateRequired)
+            .put(SettingsJsonConstants.APP_REPORT_UPLOAD_VARIANT_KEY, appData.reportUploadVariant);
 
     return json;
   }
