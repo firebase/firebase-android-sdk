@@ -183,7 +183,7 @@ public class FieldValueTest {
   }
 
   @Test
-  public void testDeletesMultipleNewFields() {
+  public void testDeletesMultipleFields() {
     ObjectValue object = wrapObject("a", "a", "b", "b", "c", "c");
     object = object.toBuilder().delete(field("a")).build();
     object = object.toBuilder().delete(field("b")).delete(field("c")).build();
