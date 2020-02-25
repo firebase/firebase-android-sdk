@@ -16,7 +16,6 @@ package com.google.firebase.inappmessaging.internal;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.inappmessaging.internal.InAppMessageStreamManager.ON_FOREGROUND;
-import static org.mockito.MockitoAnnotations.initMocks;
 
 import io.reactivex.flowables.ConnectableFlowable;
 import io.reactivex.subscribers.TestSubscriber;
