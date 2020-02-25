@@ -16,13 +16,10 @@ package com.google.firebase.inappmessaging;
 
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
-
 import com.google.android.gms.common.annotation.KeepForSdk;
 import com.google.android.gms.common.util.VisibleForTesting;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.iid.FirebaseInstanceId;
-import com.google.firebase.iid.InstanceIdResult;
 import com.google.firebase.inappmessaging.internal.DataCollectionHelper;
 import com.google.firebase.inappmessaging.internal.DeveloperListenerManager;
 import com.google.firebase.inappmessaging.internal.DisplayCallbacksFactory;
@@ -32,11 +29,8 @@ import com.google.firebase.inappmessaging.internal.ProgramaticContextualTriggers
 import com.google.firebase.inappmessaging.internal.injection.qualifiers.ProgrammaticTrigger;
 import com.google.firebase.inappmessaging.internal.injection.scopes.FirebaseAppScope;
 import com.google.firebase.inappmessaging.model.TriggeredInAppMessage;
-
 import io.reactivex.disposables.Disposable;
-
 import java.util.concurrent.Executor;
-
 import javax.inject.Inject;
 
 /**
@@ -47,9 +41,9 @@ import javax.inject.Inject;
  * <p>This feature uses a Firebase Instance ID token to:
  *
  * <ul>
- * <li>identify the app instance
- * <li>fetch messages from the Firebase backend
- * <li>send usage metrics to the Firebase backend.
+ *   <li>identify the app instance
+ *   <li>fetch messages from the Firebase backend
+ *   <li>send usage metrics to the Firebase backend.
  * </ul>
  *
  * <p>To delete the Instance ID and the data associated with it, see {@link
@@ -75,18 +69,21 @@ public class FirebaseInAppMessaging {
       DataCollectionHelper dataCollectionHelper,
       DisplayCallbacksFactory displayCallbacksFactory,
       DeveloperListenerManager developerListenerManager) {
-
     this.inAppMessageStreamManager = inAppMessageStreamManager;
     this.programaticContextualTriggers = programaticContextualTriggers;
-
     this.dataCollectionHelper = dataCollectionHelper;
     this.areMessagesSuppressed = false;
     this.displayCallbacksFactory = displayCallbacksFactory;
+    this.developerListenerManager = developerListenerManager;
+
     Logging.logi(
         "Starting InAppMessaging runtime with Instance ID "
             + FirebaseInstanceId.getInstance().getId());
-    this.developerListenerManager = developerListenerManager;
-    initializeFiam();
+
+    Disposable unused =
+        inAppMessageStreamManager
+            .createFirebaseInAppMessageStream()
+            .subscribe(FirebaseInAppMessaging.this::triggerInAppMessage);
   }
 
   /**
@@ -193,8 +190,6 @@ public class FirebaseInAppMessaging {
    * Adds/Removes the event listeners. These listeners are triggered after FIAM's internal metrics reporting, but regardless of success/failure of the FIAM-internal callbacks.
    */
 
-  // executed on worker thread
-
   /**
    * Registers an impression fiamDisplay with FIAM, which will be notified on every FIAM impression
    *
@@ -241,8 +236,8 @@ public class FirebaseInAppMessaging {
   }
 
   /**
-   * Registers a click fiamDisplay with FIAM, which will be notified on every FIAM click, and triggered
-   * on the provided executor
+   * Registers a click fiamDisplay with FIAM, which will be notified on every FIAM click, and
+   * triggered on the provided executor
    *
    * @param clickListener
    * @param executor
@@ -307,26 +302,12 @@ public class FirebaseInAppMessaging {
     programaticContextualTriggers.triggerEvent(eventName);
   }
 
-  private void initializeFiam() {
-    FirebaseInstanceId.getInstance()
-        .getInstanceId()
-        .addOnSuccessListener(
-            instanceIdResult -> {
-              // Wait for instanceId before starting FIAM
-              Disposable unusedSubscription =
-                  inAppMessageStreamManager
-                      .createFirebaseInAppMessageStream()
-                      .subscribe(FirebaseInAppMessaging.this::triggerInAppMessage);
-            });
-  }
-
-  private void triggerInAppMessage(TriggeredInAppMessage inAppMessage){
-    if(this.fiamDisplay != null) {
+  private void triggerInAppMessage(TriggeredInAppMessage inAppMessage) {
+    if (this.fiamDisplay != null) {
       fiamDisplay.displayMessage(
           inAppMessage.getInAppMessage(),
           displayCallbacksFactory.generateDisplayCallback(
-              inAppMessage.getInAppMessage(),
-              inAppMessage.getTriggeringEvent()));
+              inAppMessage.getInAppMessage(), inAppMessage.getTriggeringEvent()));
     }
   }
 }

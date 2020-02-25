@@ -157,7 +157,6 @@ public class InAppMessageStreamManager {
 
   public Flowable<TriggeredInAppMessage> createFirebaseInAppMessageStream() {
     return Flowable.merge(
-            Flowable.just(ON_FOREGROUND),
             appForegroundEventFlowable,
             analyticsEventsManager.getAnalyticsEventsFlowable(),
             programmaticTriggerEventFlowable)

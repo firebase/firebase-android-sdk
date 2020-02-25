@@ -14,10 +14,15 @@
 
 package com.google.firebase.inappmessaging.internal;
 
+import static com.google.firebase.inappmessaging.internal.InAppMessageStreamManager.ON_FOREGROUND;
+
 import android.app.Activity;
 import android.app.Application;
 import android.os.Bundle;
 import android.os.Handler;
+import io.reactivex.BackpressureStrategy;
+import io.reactivex.flowables.ConnectableFlowable;
+import io.reactivex.subjects.BehaviorSubject;
 
 /**
  * The {@link ForegroundNotifier} notifies listeners set via {@link #setListener(Listener)} when an
@@ -58,15 +63,11 @@ public class ForegroundNotifier implements Application.ActivityLifecycleCallback
   public static final long DELAY_MILLIS = 1000;
   private final Handler handler = new Handler();
   private boolean foreground = false, paused = true;
-  private Listener listener;
   private Runnable check;
+  private final BehaviorSubject<String> foregroundSubject = BehaviorSubject.create();
 
-  public void setListener(Listener listener) {
-    this.listener = listener;
-  }
-
-  public void removeListener(Listener listener) {
-    this.listener = null;
+  public ConnectableFlowable<String> foregroundFlowable() {
+    return foregroundSubject.toFlowable(BackpressureStrategy.BUFFER).publish();
   }
 
   @Override
@@ -81,7 +82,7 @@ public class ForegroundNotifier implements Application.ActivityLifecycleCallback
 
     if (wasBackground) {
       Logging.logi("went foreground");
-      listener.onForeground();
+      foregroundSubject.onNext(ON_FOREGROUND);
     }
   }
 
@@ -94,7 +95,7 @@ public class ForegroundNotifier implements Application.ActivityLifecycleCallback
     }
 
     handler.postDelayed(
-        check = () -> foreground = (foreground && paused) ? false : foreground, DELAY_MILLIS);
+        check = () -> foreground = (!foreground || !paused) && foreground, DELAY_MILLIS);
   }
 
   @Override
@@ -111,9 +112,4 @@ public class ForegroundNotifier implements Application.ActivityLifecycleCallback
 
   @Override
   public void onActivityDestroyed(Activity activity) {}
-
-  /** Listener to receive callbacks when app comes to the foreground */
-  public interface Listener {
-    void onForeground();
-  }
 }
