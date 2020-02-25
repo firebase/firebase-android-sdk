@@ -105,6 +105,8 @@ class CrashlyticsController {
   static final String FIREBASE_APPLICATION_EXCEPTION = "_ae";
   static final String FIREBASE_ANALYTICS_ORIGIN_CRASHLYTICS = "clx";
 
+  static final int REPORT_UPLOAD_VARIANT_LEGACY = 1;
+
   // region CLS File filters for retrieving specific sets of files.
 
   /** File filter that matches if a specified string is contained in the file name. */
@@ -581,9 +583,16 @@ class CrashlyticsController {
         final String reportsUrl = appSettingsData.reportsUrl;
         final String ndkReportsUrl = appSettingsData.ndkReportsUrl;
         final String organizationId = appSettingsData.organizationId;
+        final boolean isUsingReportsEndpoint =
+            appSettingsData.reportUploadVariant == REPORT_UPLOAD_VARIANT_LEGACY;
         final CreateReportSpiCall call = getCreateReportSpiCall(reportsUrl, ndkReportsUrl);
         return new ReportUploader(
-            organizationId, appData.googleAppId, reportManager, call, handlingExceptionCheck);
+            organizationId,
+            appData.googleAppId,
+            isUsingReportsEndpoint,
+            reportManager,
+            call,
+            handlingExceptionCheck);
       }
     };
   }

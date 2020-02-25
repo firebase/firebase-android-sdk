@@ -116,7 +116,8 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
     mockFileStore = mock(FileStore.class);
     when(mockFileStore.getFilesDir()).thenReturn(testFilesDirectory);
 
-    final SettingsData testSettingsData = new TestSettingsData();
+    final SettingsData testSettingsData =
+        new TestSettingsData(3, CrashlyticsController.REPORT_UPLOAD_VARIANT_LEGACY);
     appSettingsData = testSettingsData.appData;
     sessionSettingsData = testSettingsData.sessionData;
 

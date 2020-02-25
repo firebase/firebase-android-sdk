@@ -48,6 +48,7 @@ public class ReportUploader {
   private final CreateReportSpiCall createReportCall;
   private final String organizationId;
   private final String googleAppId;
+  private final boolean isUsingReportsEndpoint;
   private final ReportManager reportManager;
   private final HandlingExceptionCheck handlingExceptionCheck;
   private Thread uploadThread;
@@ -55,6 +56,7 @@ public class ReportUploader {
   public ReportUploader(
       String organizationId,
       String googleAppId,
+      boolean isUsingReportsEndpoint,
       ReportManager reportManager,
       CreateReportSpiCall createReportCall,
       HandlingExceptionCheck handlingExceptionCheck) {
@@ -64,6 +66,7 @@ public class ReportUploader {
     this.createReportCall = createReportCall;
     this.organizationId = organizationId;
     this.googleAppId = googleAppId;
+    this.isUsingReportsEndpoint = isUsingReportsEndpoint;
     this.reportManager = reportManager;
     this.handlingExceptionCheck = handlingExceptionCheck;
   }
@@ -96,14 +99,21 @@ public class ReportUploader {
       final CreateReportRequest requestData =
           new CreateReportRequest(organizationId, googleAppId, report);
 
-      final boolean sent = createReportCall.invoke(requestData, dataCollectionToken);
+      boolean sent;
+      // For now, send native reports to reports endpoint regardless of the setting.
+      if (isUsingReportsEndpoint || report.getType() == Report.Type.NATIVE) {
+        sent = createReportCall.invoke(requestData, dataCollectionToken);
 
-      Logger.getLogger()
-          .i(
-              Logger.TAG,
-              "Crashlytics report upload "
-                  + (sent ? "complete: " : "FAILED: ")
-                  + report.getIdentifier());
+        Logger.getLogger()
+            .i(
+                Logger.TAG,
+                "Crashlytics report upload "
+                    + (sent ? "complete: " : "FAILED: ")
+                    + report.getIdentifier());
+      } else {
+        Logger.getLogger().d(Logger.TAG, "Send to reports endpoint disabled. Removing report.");
+        sent = true;
+      }
 
       if (sent) {
         reportManager.deleteReport(report);
