@@ -36,9 +36,9 @@ public class ForegroundNotifierTest {
   @Before
   public void setup() {
     foregroundNotifier = new ForegroundNotifier();
-    ConnectableFlowable<String> x = foregroundNotifier.foregroundFlowable();
-    x.connect();
-    subscriber = x.test();
+    ConnectableFlowable<String> foregroundFlowable = foregroundNotifier.foregroundFlowable();
+    foregroundFlowable.connect();
+    subscriber = foregroundFlowable.test();
   }
 
   @Test
