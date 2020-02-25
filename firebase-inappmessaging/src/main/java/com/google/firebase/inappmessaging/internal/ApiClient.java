@@ -141,19 +141,15 @@ public class ApiClient {
   private ClientAppInfo getClientAppInfo() throws ExecutionException, InterruptedException {
     ClientAppInfo.Builder builder =
         ClientAppInfo.newBuilder().setGmpAppId(firebaseApp.getOptions().getApplicationId());
-
     InstanceIdResult instanceIdResult = Tasks.await(firebaseInstanceId.getInstanceId());
 
     String instanceId = instanceIdResult.getId();
-    if (!TextUtils.isEmpty(instanceId)) {
-      builder.setAppInstanceId(instanceId);
-    }
-
     String instanceToken = instanceIdResult.getToken();
-    if (!TextUtils.isEmpty(instanceToken)) {
-      builder.setAppInstanceIdToken(instanceToken);
+    if (!TextUtils.isEmpty(instanceId) && !TextUtils.isEmpty(instanceToken)) {
+      builder.setAppInstanceId(instanceId);
+    } else {
+      Logging.logw("Empty instance ID or instance token");
     }
-
     return builder.build();
   }
 

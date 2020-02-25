@@ -25,11 +25,8 @@ import io.reactivex.flowables.ConnectableFlowable;
 import io.reactivex.subjects.BehaviorSubject;
 
 /**
- * The {@link ForegroundNotifier} notifies listeners set via {@link #setListener(Listener)} when an
+ * The {@link ForegroundNotifier} notifies listeners via {@link #foregroundFlowable()} when an
  * application comes to the foreground.
- *
- * <p>This class is necessary because we are unable to use Android architecture components. See
- * discussion in cl/172370669
  *
  * <p>Supported foreground scenarios
  *
@@ -44,7 +41,7 @@ import io.reactivex.subjects.BehaviorSubject;
  *
  * <ul>
  *   <li>When an app is foregrounded for the first time after app icon is clicked, it is moved to
- *       the foreground state and listener is notified
+ *       the foreground state and an event is published
  *   <li>When any activity in the app is paused and {@link #onActivityPaused(Activity)} callback is
  *       received, the app is considered to be paused until the next activity starts and the {@link
  *       #onActivityResumed(Activity)} callback is received. A runnable is simultaneously scheduled
@@ -53,8 +50,8 @@ import io.reactivex.subjects.BehaviorSubject;
  *       the {@link #onActivityResumed(Activity)}, the app never went out of view for the user and
  *       is considered to have never gone to the background. The runnable is removed and the app
  *       remains in the foreground.
- *   <li>Similar to the first step, listener is notified in the {@link #onActivityResumed(Activity)}
- *       callback if the app was deemed to be in the background</>
+ *   <li>Similar to the first step, an event is published in the {@link
+ *       #onActivityResumed(Activity)} callback if the app was deemed to be in the background</>
  * </ul>
  *
  * @hide
@@ -66,6 +63,7 @@ public class ForegroundNotifier implements Application.ActivityLifecycleCallback
   private Runnable check;
   private final BehaviorSubject<String> foregroundSubject = BehaviorSubject.create();
 
+  /** @returns a {@link ConnectableFlowable} representing a stream of foreground events */
   public ConnectableFlowable<String> foregroundFlowable() {
     return foregroundSubject.toFlowable(BackpressureStrategy.BUFFER).publish();
   }

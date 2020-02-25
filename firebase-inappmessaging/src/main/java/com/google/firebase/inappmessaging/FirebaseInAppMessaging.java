@@ -170,7 +170,7 @@ public class FirebaseInAppMessaging {
    */
   @Keep
   public void setMessageDisplayComponent(@NonNull FirebaseInAppMessagingDisplay messageDisplay) {
-    Logging.logi("Setting display event fiamDisplay");
+    Logging.logi("Setting display event component");
     this.fiamDisplay = messageDisplay;
   }
 
@@ -182,7 +182,7 @@ public class FirebaseInAppMessaging {
   @Keep
   @KeepForSdk
   public void clearDisplayListener() {
-    Logging.logi("Removing display event fiamDisplay");
+    Logging.logi("Removing display event component");
     this.fiamDisplay = null;
   }
 
@@ -191,7 +191,7 @@ public class FirebaseInAppMessaging {
    */
 
   /**
-   * Registers an impression fiamDisplay with FIAM, which will be notified on every FIAM impression
+   * Registers an impression listener with FIAM, which will be notified on every FIAM impression
    *
    * @param impressionListener
    */
@@ -201,7 +201,7 @@ public class FirebaseInAppMessaging {
   }
 
   /**
-   * Registers a click fiamDisplay with FIAM, which will be notified on every FIAM click
+   * Registers a click listener with FIAM, which will be notified on every FIAM click
    *
    * @param clickListener
    */
@@ -210,7 +210,7 @@ public class FirebaseInAppMessaging {
   }
 
   /**
-   * Registers a display error fiamDisplay with FIAM, which will be notified on every FIAM display
+   * Registers a display error listener with FIAM, which will be notified on every FIAM display
    * error
    *
    * @param displayErrorListener
@@ -223,7 +223,7 @@ public class FirebaseInAppMessaging {
   // Executed with provided executor
 
   /**
-   * Registers an impression fiamDisplay with FIAM, which will be notified on every FIAM impression,
+   * Registers an impression listener with FIAM, which will be notified on every FIAM impression,
    * and triggered on the provided executor
    *
    * @param impressionListener
@@ -236,8 +236,8 @@ public class FirebaseInAppMessaging {
   }
 
   /**
-   * Registers a click fiamDisplay with FIAM, which will be notified on every FIAM click, and
-   * triggered on the provided executor
+   * Registers a click listener with FIAM, which will be notified on every FIAM click, and triggered
+   * on the provided executor
    *
    * @param clickListener
    * @param executor
@@ -248,7 +248,7 @@ public class FirebaseInAppMessaging {
   }
 
   /**
-   * Registers a display error fiamDisplay with FIAM, which will be notified on every FIAM display
+   * Registers a display error listener with FIAM, which will be notified on every FIAM display
    * error, and triggered on the provided executor
    *
    * @param displayErrorListener
@@ -263,7 +263,7 @@ public class FirebaseInAppMessaging {
   // Removing individual listeners:
 
   /**
-   * Unregisters an impression fiamDisplay
+   * Unregisters an impression listener
    *
    * @param impressionListener
    */
@@ -273,7 +273,7 @@ public class FirebaseInAppMessaging {
   }
 
   /**
-   * Unregisters a click fiamDisplay
+   * Unregisters a click listener
    *
    * @param clickListener
    */
@@ -282,7 +282,7 @@ public class FirebaseInAppMessaging {
   }
 
   /**
-   * Unregisters a display error fiamDisplay
+   * Unregisters a display error listener
    *
    * @param displayErrorListener
    */
