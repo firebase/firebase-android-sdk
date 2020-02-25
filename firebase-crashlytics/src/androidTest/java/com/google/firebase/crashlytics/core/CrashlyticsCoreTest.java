@@ -600,7 +600,8 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     Thread.setDefaultUncaughtExceptionHandler(NOOP_HANDLER);
 
     SettingsController mockSettingsController = mock(SettingsController.class);
-    final SettingsData settings = new TestSettingsData();
+    final SettingsData settings =
+        new TestSettingsData(3, CrashlyticsController.REPORT_UPLOAD_VARIANT_LEGACY);
     when(mockSettingsController.getSettings()).thenReturn(settings);
     when(mockSettingsController.getAppSettings()).thenReturn(Tasks.forResult(settings.appData));
 
