@@ -99,10 +99,11 @@ public class ReportUploader {
       final CreateReportRequest requestData =
           new CreateReportRequest(organizationId, googleAppId, report);
 
-      boolean sent;
+      boolean shouldDeleteReport;
       // For now, send native reports to reports endpoint regardless of the setting.
+      // TODO: Remove report type check once all reports can be sent through DataTransport
       if (isUsingReportsEndpoint || report.getType() == Report.Type.NATIVE) {
-        sent = createReportCall.invoke(requestData, dataCollectionToken);
+        final boolean sent = createReportCall.invoke(requestData, dataCollectionToken);
 
         Logger.getLogger()
             .i(
@@ -110,12 +111,13 @@ public class ReportUploader {
                 "Crashlytics report upload "
                     + (sent ? "complete: " : "FAILED: ")
                     + report.getIdentifier());
+        shouldDeleteReport = sent;
       } else {
         Logger.getLogger().d(Logger.TAG, "Send to reports endpoint disabled. Removing report.");
-        sent = true;
+        shouldDeleteReport = true;
       }
 
-      if (sent) {
+      if (shouldDeleteReport) {
         reportManager.deleteReport(report);
         removed = true;
       }

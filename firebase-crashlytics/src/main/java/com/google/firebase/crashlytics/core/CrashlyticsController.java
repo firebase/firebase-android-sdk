@@ -105,6 +105,7 @@ class CrashlyticsController {
   static final String FIREBASE_APPLICATION_EXCEPTION = "_ae";
   static final String FIREBASE_ANALYTICS_ORIGIN_CRASHLYTICS = "clx";
 
+  // Used to determine whether to upload reports through the legacy reports endpoint
   static final int REPORT_UPLOAD_VARIANT_LEGACY = 1;
 
   // region CLS File filters for retrieving specific sets of files.
