@@ -135,6 +135,15 @@ public class CrashlyticsReportPersistence {
     writeTextFile(new File(sessionDirectory, USER_FILE_NAME), userId);
   }
 
+  public void deleteAllReports() {
+    final List<File> reportFiles = new ArrayList<>();
+    reportFiles.addAll(getAllFilesInDirectory(priorityReportsDirectory));
+    reportFiles.addAll(getAllFilesInDirectory(reportsDirectory));
+    for (File reportFile : reportFiles) {
+      reportFile.delete();
+    }
+  }
+
   public void deleteFinalizedReport(String sessionId) {
     final List<File> reportFiles = new ArrayList<>();
     final FilenameFilter filter = (d, f) -> f.startsWith(sessionId);

@@ -22,6 +22,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 import com.google.android.gms.tasks.Task;
@@ -349,7 +350,15 @@ public class FirebaseCrashlyticsReportManagerTest {
     final String sessionId2 = "sessionId2";
 
     final AppSettingsData appSettings =
-        new AppSettingsData(null, null, null, null, null, orgId, false, 0);
+        new AppSettingsData(
+            null,
+            null,
+            null,
+            null,
+            null,
+            orgId,
+            false,
+            FirebaseCrashlyticsReportManager.REPORT_UPLOAD_VARIANT_DATATRANSPORT);
 
     final List<CrashlyticsReport> finalizedReports = new ArrayList<>();
     final CrashlyticsReport mockReport1 = mockReport(sessionId1, orgId);
@@ -372,6 +381,34 @@ public class FirebaseCrashlyticsReportManagerTest {
 
     verify(reportPersistence).deleteFinalizedReport(sessionId1);
     verify(reportPersistence, never()).deleteFinalizedReport(sessionId2);
+  }
+
+  @Test
+  public void onReportSend_reportsAreDeletedWithoutBeingSent_whenReportUploadVariantIsNotSet() {
+    final String orgId = "testOrgId";
+    final AppSettingsData appSettings =
+        new AppSettingsData(null, null, null, null, null, orgId, false, 0);
+
+    reportManager.onSendReports(appSettings);
+
+    verify(reportPersistence).deleteAllReports();
+    verify(reportPersistence, never()).loadFinalizedReports();
+    verify(reportPersistence, never()).deleteFinalizedReport(anyString());
+    verifyZeroInteractions(reportSender);
+  }
+
+  @Test
+  public void onReportSend_reportsAreDeletedWithoutBeingSent_whenReportUploadVariantSetToLegacy() {
+    final String orgId = "testOrgId";
+    final AppSettingsData appSettings =
+        new AppSettingsData(null, null, null, null, null, orgId, false, 1);
+
+    reportManager.onSendReports(appSettings);
+
+    verify(reportPersistence).deleteAllReports();
+    verify(reportPersistence, never()).loadFinalizedReports();
+    verify(reportPersistence, never()).deleteFinalizedReport(anyString());
+    verifyZeroInteractions(reportSender);
   }
 
   private void mockEventInteractions(long timestamp) {

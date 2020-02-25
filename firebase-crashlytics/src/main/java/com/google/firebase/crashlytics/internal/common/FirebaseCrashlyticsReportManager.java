@@ -41,6 +41,9 @@ public class FirebaseCrashlyticsReportManager implements CrashlyticsLifecycleEve
   private static final int EVENT_THREAD_IMPORTANCE = 4;
   private static final int MAX_CHAINED_EXCEPTION_DEPTH = 8;
 
+  // Used to determine whether to upload reports through the new DataTransport API.
+  static final int REPORT_UPLOAD_VARIANT_DATATRANSPORT = 2;
+
   private final CrashlyticsReportDataCapture dataCapture;
   private final CrashlyticsReportPersistence reportPersistence;
   private final DataTransportCrashlyticsReportSender reportsSender;
@@ -116,6 +119,11 @@ public class FirebaseCrashlyticsReportManager implements CrashlyticsLifecycleEve
 
   @Override
   public void onSendReports(AppSettingsData appSettingsData) {
+    if (appSettingsData.reportUploadVariant != REPORT_UPLOAD_VARIANT_DATATRANSPORT) {
+      Logger.getLogger().d(Logger.TAG, "Send via DataTransport disabled. Removing reports.");
+      reportPersistence.deleteAllReports();
+      return;
+    }
     final List<CrashlyticsReport> reportsToSend = reportPersistence.loadFinalizedReports();
     for (CrashlyticsReport report : reportsToSend) {
       reportsSender
