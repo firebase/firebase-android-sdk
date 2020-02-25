@@ -202,6 +202,29 @@ public class CrashlyticsReportPersistenceTest {
   }
 
   @Test
+  public void testDeleteAllReports_removesAllReports() {
+    final String sessionId1 = "testSession1";
+    final CrashlyticsReport testReport1 = makeTestReport(sessionId1);
+    final String sessionId2 = "testSession2";
+    final CrashlyticsReport testReport2 = makeTestReport(sessionId2);
+    final CrashlyticsReport.Session.Event testEvent1 = makeTestEvent();
+    final CrashlyticsReport.Session.Event testEvent2 = makeTestEvent();
+
+    reportPersistence.persistReport(testReport1);
+    reportPersistence.persistReport(testReport2);
+    reportPersistence.persistEvent(testEvent1, sessionId1);
+    reportPersistence.persistEvent(testEvent2, sessionId2);
+
+    reportPersistence.finalizeReports("skippedSession");
+
+    assertEquals(2, reportPersistence.loadFinalizedReports().size());
+
+    reportPersistence.deleteAllReports();
+
+    assertEquals(0, reportPersistence.loadFinalizedReports().size());
+  }
+
+  @Test
   public void testPersistEvent_keepsAppropriateNumberOfMostRecentEvents() {
     final String sessionId = "testSession";
     final CrashlyticsReport testReport = makeTestReport(sessionId);
