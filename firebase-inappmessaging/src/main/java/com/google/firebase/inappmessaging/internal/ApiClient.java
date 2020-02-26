@@ -95,7 +95,8 @@ public class ApiClient {
             instanceIdResultTask -> {
               InstanceIdResult instanceIdResult = instanceIdResultTask.getResult();
               if (instanceIdResult == null) {
-                throw new IllegalArgumentException("InstanceID is null");
+                Logging.logw("InstanceID is null, not calling backend");
+                return createCacheExpiringResponse();
               }
               return withCacheExpirationSafeguards(
                   grpcClient
