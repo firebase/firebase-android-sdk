@@ -17,6 +17,7 @@ package com.google.firebase.installations;
 import android.content.Context;
 import android.util.Log;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
@@ -49,30 +50,29 @@ class CrossProcessLock {
       // Use the file channel to create a lock on the file.
       // This method blocks until it can retrieve the lock.
       lock = channel.lock();
-      CrossProcessLock crossProcessLock = new CrossProcessLock(channel, lock);
-      channel = null;
-      lock = null;
-      return crossProcessLock;
+      return new CrossProcessLock(channel, lock);
     } catch (IOException e) {
       // Certain conditions can cause file locking to fail, such as out of disk or bad permissions.
       // In any case, the acquire will fail and return null instead of a held lock.
       Log.e(TAG, "encountered error while creating and acquiring the lock, ignoring", e);
-      return null;
-    } finally {
+
+      // Clean up any dangling resources
       if (lock != null) {
         try {
           lock.release();
-        } catch (IOException e) {
+        } catch (IOException e2) {
           // nothing to do here
         }
       }
       if (channel != null) {
         try {
           channel.close();
-        } catch (IOException e) {
+        } catch (IOException e3) {
           // nothing to do here
         }
       }
+
+      return null;
     }
   }
 
