@@ -801,7 +801,7 @@ public class FirebaseRemoteConfig {
       // If there is no firebasePersonalization instance, then this FRC is either in a non-3P
       // namespace or in a non-main FirebaseApp, so there is no reason to call Personalization.
       // For more info: RemoteConfigComponent#isAbtSupported.
-      firebasePersonalization.pullArm(key);
+      executor.execute(() -> firebasePersonalization.pullArm(key));
     }
   }
 
