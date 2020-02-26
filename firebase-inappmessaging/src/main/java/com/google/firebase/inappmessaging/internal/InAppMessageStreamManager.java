@@ -14,6 +14,7 @@
 
 package com.google.firebase.inappmessaging.internal;
 
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.inappmessaging.CommonTypesProto.TriggeringCondition;
 import com.google.firebase.inappmessaging.internal.injection.qualifiers.AppForeground;
 import com.google.firebase.inappmessaging.internal.injection.qualifiers.ProgrammaticTrigger;
@@ -233,7 +234,7 @@ public class InAppMessageStreamManager {
 
               Function<CampaignImpressionList, Maybe<FetchEligibleCampaignsResponse>> serviceFetch =
                   impressions ->
-                      Maybe.fromCallable(() -> apiClient.getFiams(impressions))
+                      taskToMaybe(apiClient.getFiams(impressions))
                           .doOnSuccess(
                               resp ->
                                   Logging.logi(
@@ -345,5 +346,18 @@ public class InAppMessageStreamManager {
     }
 
     return Maybe.just(new TriggeredInAppMessage(inAppMessage, event));
+  }
+
+  private static <T> Maybe<T> taskToMaybe(Task<T> task) {
+    return Maybe.create(emitter -> {
+      task.addOnSuccessListener(result -> {
+        emitter.onSuccess(result);
+        emitter.onComplete();
+      });
+      task.addOnFailureListener(e -> {
+        emitter.onError(e);
+        emitter.onComplete();
+      });
+    });
   }
 }

@@ -19,6 +19,13 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.os.Build.VERSION;
 import android.text.TextUtils;
+
+import androidx.annotation.NonNull;
+
+import com.google.android.gms.tasks.Continuation;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.developers.mobile.targeting.proto.ClientSignalsProto.ClientSignals;
@@ -31,11 +38,23 @@ import com.google.internal.firebase.inappmessaging.v1.sdkserving.CampaignImpress
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.ClientAppInfo;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.FetchEligibleCampaignsRequest;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.FetchEligibleCampaignsResponse;
+
 import dagger.Lazy;
+import io.reactivex.BackpressureStrategy;
+import io.reactivex.Flowable;
+import io.reactivex.FlowableEmitter;
+import io.reactivex.FlowableOnSubscribe;
+import io.reactivex.Maybe;
+import io.reactivex.MaybeEmitter;
+import io.reactivex.MaybeOnSubscribe;
+
 import java.util.Locale;
 import java.util.TimeZone;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+
 import javax.annotation.Nullable;
 
 /**
@@ -82,31 +101,30 @@ public class ApiClient {
     return FetchEligibleCampaignsResponse.newBuilder().setExpirationEpochTimestampMillis(1).build();
   }
 
-  FetchEligibleCampaignsResponse getFiams(CampaignImpressionList impressionList) {
+  Task<FetchEligibleCampaignsResponse> getFiams(CampaignImpressionList impressionList) {
     if (!dataCollectionHelper.isAutomaticDataCollectionEnabled()) {
       Logging.logi(DATA_COLLECTION_DISABLED_ERROR);
-      return createCacheExpiringResponse();
+      return Tasks.forResult(createCacheExpiringResponse());
     }
-
     Logging.logi(FETCHING_CAMPAIGN_MESSAGE);
-
     providerInstaller.install();
-    try {
-      return withCacheExpirationSafeguards(
-          grpcClient
-              .get()
-              .fetchEligibleCampaigns(
-                  FetchEligibleCampaignsRequest.newBuilder()
-                      // The project Id we expect is the gcm sender id
-                      .setProjectNumber(firebaseApp.getOptions().getGcmSenderId())
-                      .addAllAlreadySeenCampaigns(impressionList.getAlreadySeenCampaignsList())
-                      .setClientSignals(getClientSignals())
-                      .setRequestingClientApp(getClientAppInfo())
-                      .build()));
-    } catch (Exception e) {
-      Logging.logi("Exception while fetching FIAM: " + e.getMessage());
-      return FetchEligibleCampaignsResponse.getDefaultInstance();
-    }
+      return firebaseInstanceId.getInstanceId().continueWith(instanceIdResultTask -> {
+        InstanceIdResult instanceIdResult = instanceIdResultTask.getResult();
+        if(instanceIdResult == null){
+          throw new IllegalArgumentException("InstanceID is null");
+        }
+        return withCacheExpirationSafeguards(grpcClient
+            .get()
+            .fetchEligibleCampaigns(
+                FetchEligibleCampaignsRequest.newBuilder()
+                    // The project Id we expect is the gcm sender id
+                    .setProjectNumber(firebaseApp.getOptions().getGcmSenderId())
+                    .addAllAlreadySeenCampaigns(impressionList.getAlreadySeenCampaignsList())
+                    .setClientSignals(getClientSignals())
+                    .setRequestingClientApp(getClientAppInfo(instanceIdResult))
+                    .build()));
+      });
+
   }
 
   private FetchEligibleCampaignsResponse withCacheExpirationSafeguards(
@@ -138,15 +156,14 @@ public class ApiClient {
     return clientSignals.build();
   }
 
-  private ClientAppInfo getClientAppInfo() throws ExecutionException, InterruptedException {
+  private ClientAppInfo getClientAppInfo(InstanceIdResult instanceIdResult) {
     ClientAppInfo.Builder builder =
         ClientAppInfo.newBuilder().setGmpAppId(firebaseApp.getOptions().getApplicationId());
-    InstanceIdResult instanceIdResult = Tasks.await(firebaseInstanceId.getInstanceId());
-
     String instanceId = instanceIdResult.getId();
     String instanceToken = instanceIdResult.getToken();
     if (!TextUtils.isEmpty(instanceId) && !TextUtils.isEmpty(instanceToken)) {
       builder.setAppInstanceId(instanceId);
+      builder.setAppInstanceIdToken(instanceToken);
     } else {
       Logging.logw("Empty instance ID or instance token");
     }
