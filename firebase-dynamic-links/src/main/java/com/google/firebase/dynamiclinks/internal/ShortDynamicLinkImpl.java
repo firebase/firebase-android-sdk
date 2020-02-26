@@ -44,7 +44,7 @@ public final class ShortDynamicLinkImpl extends AbstractSafeParcelable implement
       @Param(id = 3) List<WarningImpl> warnings) {
     this.shortLink = shortLink;
     this.previewLink = previewLink;
-    this.warnings = warnings == null ? Collections.<>emptyList() : warnings;
+    this.warnings = warnings == null ? Collections.emptyList() : warnings;
   }
 
   @Override
