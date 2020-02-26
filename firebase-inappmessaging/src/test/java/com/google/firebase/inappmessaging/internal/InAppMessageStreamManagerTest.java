@@ -468,7 +468,8 @@ public class InAppMessageStreamManagerTest {
   @Test
   public void stream_onApiClientFailure_absorbsErrors() {
     Throwable t = new StatusRuntimeException(Status.DATA_LOSS);
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenThrow(t);
+    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS))
+        .thenReturn(Tasks.forException(new Exception(t)));
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
 
