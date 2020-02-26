@@ -49,7 +49,8 @@ public class CrashlyticsReportJsonTransform {
   }
 
   @Nullable
-  public CrashlyticsReport reportFromJson(@NonNull String json) {
+  public CrashlyticsReport reportFromJson(@Nullable String json) {
+    // TODO: decide on error handling within readTextFile and make this @NonNull once decided
     try (JsonReader jsonReader = new JsonReader(new StringReader(json))) {
       return parseReport(jsonReader);
     } catch (IOException e) {

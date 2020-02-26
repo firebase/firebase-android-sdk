@@ -25,6 +25,8 @@ import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event.Application.Execution.Signal;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event.Application.Execution.Thread.Frame;
 import com.google.firebase.crashlytics.internal.model.ImmutableList;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Rule;
@@ -36,6 +38,7 @@ import org.junit.runner.RunWith;
 public class CrashlyticsReportPersistenceTest {
 
   private static final int DEFAULT_MAX_EVENTS_TO_KEEP = 4;
+  private static final int DEFAULT_MAX_REPORTS_TO_KEEP = 4;
 
   private CrashlyticsReportPersistence reportPersistence;
 
@@ -44,7 +47,8 @@ public class CrashlyticsReportPersistenceTest {
   @Before
   public void setUp() throws Exception {
     reportPersistence =
-        new CrashlyticsReportPersistence(folder.newFolder(), DEFAULT_MAX_EVENTS_TO_KEEP);
+        new CrashlyticsReportPersistence(
+            folder.newFolder(), DEFAULT_MAX_EVENTS_TO_KEEP, DEFAULT_MAX_REPORTS_TO_KEEP);
   }
 
   @Test
@@ -114,10 +118,65 @@ public class CrashlyticsReportPersistenceTest {
 
     final List<CrashlyticsReport> finalizedReports = reportPersistence.loadFinalizedReports();
     assertEquals(2, finalizedReports.size());
-    final CrashlyticsReport finalizedReport1 = finalizedReports.get(0);
+    final CrashlyticsReport finalizedReport1 = finalizedReports.get(1);
     assertEquals(testReport1.withEvents(ImmutableList.from(testEvent1)), finalizedReport1);
-    final CrashlyticsReport finalizedReport2 = finalizedReports.get(1);
+    final CrashlyticsReport finalizedReport2 = finalizedReports.get(0);
     assertEquals(testReport2.withEvents(ImmutableList.from(testEvent2)), finalizedReport2);
+  }
+
+  @Test
+  public void testFinalizeReports_capsReports() {
+    for (int i = 0; i < 10; i++) {
+      persistReportWithEvent(reportPersistence, "testSession" + i, true);
+    }
+    reportPersistence.finalizeReports("skippedSession");
+
+    final List<CrashlyticsReport> finalizedReports = reportPersistence.loadFinalizedReports();
+    assertEquals(4, finalizedReports.size());
+  }
+
+  @Test
+  public void testFinalizeReports_removesLowPriorityReportsFirst() {
+    for (int i = 0; i < 10; i++) {
+      boolean priority = i >= 3 && i <= 8;
+      String sessionId = "testSession" + i + (priority ? "high" : "low");
+      persistReportWithEvent(reportPersistence, sessionId, priority);
+    }
+
+    reportPersistence.finalizeReports("skippedSession");
+
+    final List<CrashlyticsReport> finalizedReports = reportPersistence.loadFinalizedReports();
+    assertEquals(4, finalizedReports.size());
+    for (CrashlyticsReport finalizedReport : finalizedReports) {
+      assertTrue(finalizedReport.getSession().getIdentifier().contains("high"));
+    }
+  }
+
+  @Test
+  public void testFinalizeReports_removesOldestReportsFirst() {
+    for (int i = 0; i < 8; i++) {
+      String sessionId = "testSession" + i;
+      persistReportWithEvent(reportPersistence, sessionId, true);
+    }
+
+    reportPersistence.finalizeReports("skippedSession");
+
+    final List<CrashlyticsReport> finalizedReports = reportPersistence.loadFinalizedReports();
+    assertEquals(4, finalizedReports.size());
+    List<String> reportIdentifiers = new ArrayList<>();
+    for (CrashlyticsReport finalizedReport : finalizedReports) {
+      reportIdentifiers.add(finalizedReport.getSession().getIdentifier());
+    }
+
+    List<String> expectedSessions =
+        Arrays.asList("testSession4", "testSession5", "testSession6", "testSession7");
+    List<String> unexpectedSessions =
+        Arrays.asList("testSession0", "testSession1", "testSession2", "testSession3");
+
+    assertTrue(reportIdentifiers.containsAll(expectedSessions));
+    for (String unexpectedSession : unexpectedSessions) {
+      assertFalse(reportIdentifiers.contains(unexpectedSession));
+    }
   }
 
   @Test
@@ -161,9 +220,9 @@ public class CrashlyticsReportPersistenceTest {
 
     final List<CrashlyticsReport> finalizedReports = reportPersistence.loadFinalizedReports();
     assertEquals(2, finalizedReports.size());
-    final CrashlyticsReport finalizedReport1 = finalizedReports.get(0);
+    final CrashlyticsReport finalizedReport1 = finalizedReports.get(1);
     assertEquals(userId1, finalizedReport1.getSession().getUser().getIdentifier());
-    final CrashlyticsReport finalizedReport2 = finalizedReports.get(1);
+    final CrashlyticsReport finalizedReport2 = finalizedReports.get(0);
     assertEquals(userId2, finalizedReport2.getSession().getUser().getIdentifier());
   }
 
@@ -249,6 +308,14 @@ public class CrashlyticsReportPersistenceTest {
     assertEquals(
         testReport.withEvents(ImmutableList.from(testEvent2, testEvent3, testEvent4, testEvent5)),
         finalizedReport);
+  }
+
+  private static void persistReportWithEvent(
+      CrashlyticsReportPersistence reportPersistence, String sessionId, boolean isHighPriority) {
+    CrashlyticsReport testReport = makeTestReport(sessionId);
+    reportPersistence.persistReport(testReport);
+    final CrashlyticsReport.Session.Event testEvent = makeTestEvent();
+    reportPersistence.persistEvent(testEvent, sessionId, isHighPriority);
   }
 
   private static CrashlyticsReport makeTestReport(String sessionId) {
