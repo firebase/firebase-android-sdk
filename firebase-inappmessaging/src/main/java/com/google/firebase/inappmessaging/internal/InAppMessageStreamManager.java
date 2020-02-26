@@ -349,15 +349,18 @@ public class InAppMessageStreamManager {
   }
 
   private static <T> Maybe<T> taskToMaybe(Task<T> task) {
-    return Maybe.create(emitter -> {
-      task.addOnSuccessListener(result -> {
-        emitter.onSuccess(result);
-        emitter.onComplete();
-      });
-      task.addOnFailureListener(e -> {
-        emitter.onError(e);
-        emitter.onComplete();
-      });
-    });
+    return Maybe.create(
+        emitter -> {
+          task.addOnSuccessListener(
+              result -> {
+                emitter.onSuccess(result);
+                emitter.onComplete();
+              });
+          task.addOnFailureListener(
+              e -> {
+                emitter.onError(e);
+                emitter.onComplete();
+              });
+        });
   }
 }
