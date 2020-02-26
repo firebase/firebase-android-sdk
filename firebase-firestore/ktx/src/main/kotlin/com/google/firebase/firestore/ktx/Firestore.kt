@@ -174,7 +174,14 @@ class FirebaseFirestoreKtxRegistrar : ComponentRegistrar {
 fun DocumentReference.toFlow(metadataChanges: MetadataChanges = MetadataChanges.EXCLUDE) = callbackFlow {
     val listener = addSnapshotListener(metadataChanges) { value, error ->
         if (value != null && value.exists()) {
-            offer(value)
+            /**
+             * Offer will throw if the channel is canceled.
+             * To avoid that, we wrap the call in runCatching.
+             * See https://github.com/Kotlin/kotlinx.coroutines/issues/974
+             */
+            runCatching {
+                offer(value)
+            }
         } else if (error != null) {
             close(error)
         }
@@ -191,7 +198,14 @@ fun DocumentReference.toFlow(metadataChanges: MetadataChanges = MetadataChanges.
 fun Query.toFlow(metadataChanges: MetadataChanges = MetadataChanges.EXCLUDE) = callbackFlow {
     val listener = addSnapshotListener(metadataChanges) { value, error ->
         if (value != null) {
-            offer(value)
+            /**
+             * Offer will throw if the channel is canceled.
+             * To avoid that, we wrap the call in runCatching.
+             * See https://github.com/Kotlin/kotlinx.coroutines/issues/974
+             */
+            runCatching {
+                offer(value)
+            }
         } else if (error != null) {
             close(error)
         }
