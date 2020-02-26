@@ -29,6 +29,7 @@ import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFiel
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.TIME_ZONE;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFieldKey.ENTRIES;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFieldKey.EXPERIMENT_DESCRIPTIONS;
+import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFieldKey.PERSONALIZATION_METADATA;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFieldKey.STATE;
 
 import androidx.annotation.StringDef;
@@ -78,11 +79,12 @@ public class RemoteConfigConstants {
   }
 
   /** Keys of fields in the Fetch response body from the Firebase Remote Config server. */
-  @StringDef({ENTRIES, EXPERIMENT_DESCRIPTIONS, STATE})
+  @StringDef({ENTRIES, EXPERIMENT_DESCRIPTIONS, PERSONALIZATION_METADATA, STATE})
   @Retention(RetentionPolicy.SOURCE)
   public @interface ResponseFieldKey {
     String ENTRIES = "entries";
     String EXPERIMENT_DESCRIPTIONS = "experimentDescriptions";
+    String PERSONALIZATION_METADATA = "personalizationMetadata";
     String STATE = "state";
   }
 

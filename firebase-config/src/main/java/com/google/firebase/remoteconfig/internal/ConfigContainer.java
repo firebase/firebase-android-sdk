@@ -30,6 +30,7 @@ public class ConfigContainer {
   private static final String CONFIGS_KEY = "configs_key";
   private static final String FETCH_TIME_KEY = "fetch_time_key";
   private static final String ABT_EXPERIMENTS_KEY = "abt_experiments_key";
+  private static final String PERSONALIZATION_METADATA_KEY = "personalization_metadata_key";
 
   private static final Date DEFAULTS_FETCH_TIME = new Date(0L);
 
@@ -52,21 +53,29 @@ public class ConfigContainer {
 
   private JSONArray abtExperiments;
 
+  private JSONArray personalizationMetadata;
+
   /**
    * Creates a new container with the specified configs and fetch time.
    *
    * <p>The {@code configsJson} must not be modified.
    */
-  private ConfigContainer(JSONObject configsJson, Date fetchTime, JSONArray abtExperiments)
+  private ConfigContainer(
+      JSONObject configsJson,
+      Date fetchTime,
+      JSONArray abtExperiments,
+      JSONArray personalizationMetadata)
       throws JSONException {
     JSONObject containerJson = new JSONObject();
     containerJson.put(CONFIGS_KEY, configsJson);
     containerJson.put(FETCH_TIME_KEY, fetchTime.getTime());
     containerJson.put(ABT_EXPERIMENTS_KEY, abtExperiments);
+    containerJson.put(PERSONALIZATION_METADATA_KEY, personalizationMetadata);
 
     this.configsJson = configsJson;
     this.fetchTime = fetchTime;
     this.abtExperiments = abtExperiments;
+    this.personalizationMetadata = personalizationMetadata;
 
     this.containerJson = containerJson;
   }
@@ -80,7 +89,8 @@ public class ConfigContainer {
     return new ConfigContainer(
         containerJson.getJSONObject(CONFIGS_KEY),
         new Date(containerJson.getLong(FETCH_TIME_KEY)),
-        containerJson.getJSONArray(ABT_EXPERIMENTS_KEY));
+        containerJson.getJSONArray(ABT_EXPERIMENTS_KEY),
+        containerJson.getJSONArray(PERSONALIZATION_METADATA_KEY));
   }
 
   /**
@@ -102,6 +112,10 @@ public class ConfigContainer {
 
   public JSONArray getAbtExperiments() {
     return abtExperiments;
+  }
+
+  public JSONArray getPersonalizationMetadata() {
+    return personalizationMetadata;
   }
 
   @Override
@@ -129,20 +143,24 @@ public class ConfigContainer {
 
   /** Builder for creating an instance of {@link ConfigContainer}. */
   public static class Builder {
+
     private JSONObject builderConfigsJson;
     private Date builderFetchTime;
     private JSONArray builderAbtExperiments;
+    private JSONArray builderPersonalizationMetadata;
 
     private Builder() {
       builderConfigsJson = new JSONObject();
       builderFetchTime = DEFAULTS_FETCH_TIME;
       builderAbtExperiments = new JSONArray();
+      builderPersonalizationMetadata = new JSONArray();
     }
 
     public Builder(ConfigContainer otherContainer) {
       this.builderConfigsJson = otherContainer.getConfigs();
       this.builderFetchTime = otherContainer.getFetchTime();
       this.builderAbtExperiments = otherContainer.getAbtExperiments();
+      this.builderPersonalizationMetadata = otherContainer.getPersonalizationMetadata();
     }
 
     public Builder replaceConfigsWith(Map<String, String> configsMap) {
@@ -179,9 +197,25 @@ public class ConfigContainer {
       return this;
     }
 
+    public Builder withPersonalizationMetadata(JSONArray personalizationMetadata) {
+      try {
+        this.builderPersonalizationMetadata = new JSONArray(personalizationMetadata.toString());
+      } catch (JSONException e) {
+        // We serialize and deserialize the JSONArray to guarantee that it cannot be mutated after
+        // being set in the builder.
+        // A JSONException should never occur because the JSON that is being deserialized is
+        // guaranteed to be valid.
+      }
+      return this;
+    }
+
     /** If a fetch time is not provided, the defaults container fetch time is used. */
     public ConfigContainer build() throws JSONException {
-      return new ConfigContainer(builderConfigsJson, builderFetchTime, builderAbtExperiments);
+      return new ConfigContainer(
+          builderConfigsJson,
+          builderFetchTime,
+          builderAbtExperiments,
+          builderPersonalizationMetadata);
     }
   }
 

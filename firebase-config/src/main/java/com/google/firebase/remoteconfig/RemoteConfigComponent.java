@@ -27,6 +27,7 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.abt.FirebaseABTesting;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.personalization.FirebasePersonalization;
 import com.google.firebase.remoteconfig.internal.ConfigCacheClient;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHttpClient;
@@ -78,6 +79,7 @@ public class RemoteConfigComponent {
   private final FirebaseApp firebaseApp;
   private final FirebaseInstanceId firebaseInstanceId;
   private final FirebaseABTesting firebaseAbt;
+  private final FirebasePersonalization firebasePersonalization;
   @Nullable private final AnalyticsConnector analyticsConnector;
 
   private final String appId;
@@ -91,6 +93,7 @@ public class RemoteConfigComponent {
       FirebaseApp firebaseApp,
       FirebaseInstanceId firebaseInstanceId,
       FirebaseABTesting firebaseAbt,
+      FirebasePersonalization firebasePersonalization,
       @Nullable AnalyticsConnector analyticsConnector) {
     this(
         context,
@@ -98,6 +101,7 @@ public class RemoteConfigComponent {
         firebaseApp,
         firebaseInstanceId,
         firebaseAbt,
+        firebasePersonalization,
         analyticsConnector,
         new LegacyConfigsHandler(context, firebaseApp.getOptions().getApplicationId()),
         /* loadGetDefault= */ true);
@@ -111,6 +115,7 @@ public class RemoteConfigComponent {
       FirebaseApp firebaseApp,
       FirebaseInstanceId firebaseInstanceId,
       FirebaseABTesting firebaseAbt,
+      FirebasePersonalization firebasePersonalization,
       @Nullable AnalyticsConnector analyticsConnector,
       LegacyConfigsHandler legacyConfigsHandler,
       boolean loadGetDefault) {
@@ -119,6 +124,7 @@ public class RemoteConfigComponent {
     this.firebaseApp = firebaseApp;
     this.firebaseInstanceId = firebaseInstanceId;
     this.firebaseAbt = firebaseAbt;
+    this.firebasePersonalization = firebasePersonalization;
     this.analyticsConnector = analyticsConnector;
 
     this.appId = firebaseApp.getOptions().getApplicationId();
@@ -158,6 +164,7 @@ public class RemoteConfigComponent {
         namespace,
         firebaseInstanceId,
         firebaseAbt,
+        firebasePersonalization,
         executorService,
         fetchedCacheClient,
         activatedCacheClient,
@@ -173,6 +180,7 @@ public class RemoteConfigComponent {
       String namespace,
       FirebaseInstanceId firebaseInstanceId,
       FirebaseABTesting firebaseAbt,
+      FirebasePersonalization firebasePersonalization,
       Executor executor,
       ConfigCacheClient fetchedClient,
       ConfigCacheClient activatedClient,
@@ -187,6 +195,7 @@ public class RemoteConfigComponent {
               firebaseApp,
               firebaseInstanceId,
               isAbtSupported(firebaseApp, namespace) ? firebaseAbt : null,
+              isAbtSupported(firebaseApp, namespace) ? firebasePersonalization : null,
               executor,
               fetchedClient,
               activatedClient,

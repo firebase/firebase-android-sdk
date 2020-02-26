@@ -24,6 +24,7 @@ import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
 import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.personalization.component.PersonalizationComponent;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.util.Arrays;
 import java.util.List;
@@ -45,6 +46,7 @@ public class RemoteConfigRegistrar implements ComponentRegistrar {
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.required(FirebaseInstanceId.class))
             .add(Dependency.required(AbtComponent.class))
+            .add(Dependency.required(PersonalizationComponent.class))
             .add(Dependency.optional(AnalyticsConnector.class))
             .factory(
                 container ->
@@ -53,6 +55,7 @@ public class RemoteConfigRegistrar implements ComponentRegistrar {
                         container.get(FirebaseApp.class),
                         container.get(FirebaseInstanceId.class),
                         container.get(AbtComponent.class).get(OriginService.REMOTE_CONFIG),
+                        container.get(PersonalizationComponent.class).get(),
                         container.get(AnalyticsConnector.class)))
             .eagerInDefaultApp()
             .build(),

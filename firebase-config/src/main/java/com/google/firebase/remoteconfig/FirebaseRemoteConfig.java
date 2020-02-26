@@ -28,6 +28,8 @@ import com.google.firebase.abt.AbtException;
 import com.google.firebase.abt.FirebaseABTesting;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.iid.InstanceIdResult;
+import com.google.firebase.personalization.FirebasePersonalization;
+import com.google.firebase.personalization.PersonalizationException;
 import com.google.firebase.remoteconfig.internal.ConfigCacheClient;
 import com.google.firebase.remoteconfig.internal.ConfigContainer;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler;
@@ -142,6 +144,12 @@ public class FirebaseRemoteConfig {
    */
   @Nullable private final FirebaseABTesting firebaseAbt;
 
+  /**
+   * Firebase Personalization is only valid for the 3P namespace, so the Personalization variable
+   * will be null if the current instance of Firebase Remote Config is using a non-3P namespace.
+   */
+  @Nullable private final FirebasePersonalization firebasePersonalization;
+
   private final Executor executor;
   private final ConfigCacheClient fetchedConfigsCache;
   private final ConfigCacheClient activatedConfigsCache;
@@ -161,6 +169,7 @@ public class FirebaseRemoteConfig {
       FirebaseApp firebaseApp,
       FirebaseInstanceId firebaseInstanceId,
       @Nullable FirebaseABTesting firebaseAbt,
+      @Nullable FirebasePersonalization firebasePersonalization,
       Executor executor,
       ConfigCacheClient fetchedConfigsCache,
       ConfigCacheClient activatedConfigsCache,
@@ -172,6 +181,7 @@ public class FirebaseRemoteConfig {
     this.firebaseApp = firebaseApp;
     this.firebaseInstanceId = firebaseInstanceId;
     this.firebaseAbt = firebaseAbt;
+    this.firebasePersonalization = firebasePersonalization;
     this.executor = executor;
     this.fetchedConfigsCache = fetchedConfigsCache;
     this.activatedConfigsCache = activatedConfigsCache;
@@ -358,6 +368,7 @@ public class FirebaseRemoteConfig {
    */
   @NonNull
   public String getString(@NonNull String key) {
+    pullArm(key);
     return getHandler.getString(key);
   }
 
@@ -383,6 +394,7 @@ public class FirebaseRemoteConfig {
    *     given key.
    */
   public boolean getBoolean(@NonNull String key) {
+    pullArm(key);
     return getHandler.getBoolean(key);
   }
 
@@ -405,6 +417,7 @@ public class FirebaseRemoteConfig {
   @NonNull
   @Deprecated
   public byte[] getByteArray(@NonNull String key) {
+    pullArm(key);
     return getHandler.getByteArray(key);
   }
 
@@ -426,6 +439,7 @@ public class FirebaseRemoteConfig {
    *     given key.
    */
   public double getDouble(@NonNull String key) {
+    pullArm(key);
     return getHandler.getDouble(key);
   }
 
@@ -447,6 +461,7 @@ public class FirebaseRemoteConfig {
    *     given key.
    */
   public long getLong(@NonNull String key) {
+    pullArm(key);
     return getHandler.getLong(key);
   }
 
@@ -467,6 +482,7 @@ public class FirebaseRemoteConfig {
    */
   @NonNull
   public FirebaseRemoteConfigValue getValue(@NonNull String key) {
+    pullArm(key);
     return getHandler.getValue(key);
   }
 
@@ -657,7 +673,8 @@ public class FirebaseRemoteConfig {
 
   /**
    * Processes the result of the put task that persists activated configs. If the task is
-   * successful, clears the fetched cache and updates the ABT SDK with the current experiments.
+   * successful, clears the fetched cache and updates the ABT SDK with the current experiments, and
+   * the Personalization SDK with the current metadata.
    *
    * @param putTask the {@link Task} returned by a {@link ConfigCacheClient#put(ConfigContainer)}
    *     call on {@link #activatedConfigsCache}.
@@ -672,6 +689,7 @@ public class FirebaseRemoteConfig {
       // values from the put task must be non-null.
       if (putTask.getResult() != null) {
         updateAbtWithActivatedExperiments(putTask.getResult().getAbtExperiments());
+        updatePersonalizationWithActivatedMetadata(putTask.getResult());
       } else {
         // Should never happen.
         Log.e(TAG, "Activated configs written to disk are null.");
@@ -771,6 +789,41 @@ public class FirebaseRemoteConfig {
       experimentInfoMaps.add(experimentInfo);
     }
     return experimentInfoMaps;
+  }
+
+  /**
+   * Notifies the Firebase Personalization SDK about a get() call.
+   *
+   * @hide
+   */
+  void pullArm(String key) {
+    if (firebasePersonalization != null) {
+      // If there is no firebasePersonalization instance, then this FRC is either in a non-3P
+      // namespace or in a non-main FirebaseApp, so there is no reason to call Personalization.
+      // For more info: RemoteConfigComponent#isAbtSupported.
+      firebasePersonalization.pullArm(key);
+    }
+  }
+
+  /**
+   * Notifies the Firebase Personalization SDK about activated metadata.
+   *
+   * @hide
+   */
+  void updatePersonalizationWithActivatedMetadata(@NonNull ConfigContainer configs) {
+    if (firebasePersonalization == null) {
+      // If there is no firebasePersonalization instance, then this FRC is either in a non-3P
+      // namespace or in a non-main FirebaseApp, so there is no reason to call Personalization.
+      // For more info: RemoteConfigComponent#isAbtSupported.
+      return;
+    }
+
+    try {
+      firebasePersonalization.updateArmsCache(
+          configs.getPersonalizationMetadata(), configs.getConfigs(), configs.getFetchTime());
+    } catch (PersonalizationException e) {
+      Log.w(TAG, "Could not update Personalization metadata.", e);
+    }
   }
 
   /** Returns true if the fetched configs are fresher than the activated configs. */
