@@ -17,7 +17,6 @@ package com.google.firebase.installations;
 import android.content.Context;
 import android.util.Log;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
