@@ -115,6 +115,10 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
     reportPersistence.finalizeReports(currentSessionId);
   }
 
+  public void removeAllReports() {
+    reportPersistence.deleteAllReports();
+  }
+
   /**
    * Send all finalized reports.
    *
