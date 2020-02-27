@@ -132,7 +132,7 @@ public class SessionReportingCoordinatorTest {
     verify(mockEventBuilder)
         .setLog(CrashlyticsReport.Session.Event.Log.builder().setContent(testLog).build());
     verify(mockEventBuilder).build();
-    verify(logFileManager).clearLog();
+    verify(logFileManager, never()).clearLog();
   }
 
   @Test
@@ -148,7 +148,7 @@ public class SessionReportingCoordinatorTest {
 
     verify(mockEventBuilder, never()).setLog(any(CrashlyticsReport.Session.Event.Log.class));
     verify(mockEventBuilder).build();
-    verify(logFileManager).clearLog();
+    verify(logFileManager, never()).clearLog();
   }
 
   @Test
@@ -167,7 +167,7 @@ public class SessionReportingCoordinatorTest {
     verify(mockEventBuilder)
         .setLog(CrashlyticsReport.Session.Event.Log.builder().setContent(testLog).build());
     verify(mockEventBuilder).build();
-    verify(logFileManager).clearLog();
+    verify(logFileManager, never()).clearLog();
   }
 
   @Test
@@ -183,7 +183,7 @@ public class SessionReportingCoordinatorTest {
 
     verify(mockEventBuilder, never()).setLog(any(CrashlyticsReport.Session.Event.Log.class));
     verify(mockEventBuilder).build();
-    verify(logFileManager).clearLog();
+    verify(logFileManager, never()).clearLog();
   }
 
   @Test
@@ -218,7 +218,7 @@ public class SessionReportingCoordinatorTest {
     verify(mockEventAppBuilder).build();
     verify(mockEventBuilder).setApp(mockEventApp);
     verify(mockEventBuilder).build();
-    verify(logFileManager).clearLog();
+    verify(logFileManager, never()).clearLog();
   }
 
   @Test
@@ -238,7 +238,7 @@ public class SessionReportingCoordinatorTest {
     verify(mockEventAppBuilder, never()).build();
     verify(mockEventBuilder, never()).setApp(mockEventApp);
     verify(mockEventBuilder).build();
-    verify(logFileManager).clearLog();
+    verify(logFileManager, never()).clearLog();
   }
 
   @Test
@@ -273,7 +273,7 @@ public class SessionReportingCoordinatorTest {
     verify(mockEventAppBuilder).build();
     verify(mockEventBuilder).setApp(mockEventApp);
     verify(mockEventBuilder).build();
-    verify(logFileManager).clearLog();
+    verify(logFileManager, never()).clearLog();
   }
 
   @Test
@@ -293,7 +293,7 @@ public class SessionReportingCoordinatorTest {
     verify(mockEventAppBuilder, never()).build();
     verify(mockEventBuilder, never()).setApp(mockEventApp);
     verify(mockEventBuilder).build();
-    verify(logFileManager).clearLog();
+    verify(logFileManager, never()).clearLog();
   }
 
   @Test
