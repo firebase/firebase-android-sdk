@@ -289,21 +289,6 @@ public class FirebaseCrashlyticsReportManagerTest {
   }
 
   @Test
-  public void testOnEndSession_addsUserIdToReport() {
-    final String userId = "testUser";
-    final String sessionId = "testSessionId";
-    final long timestamp = System.currentTimeMillis();
-    when(mockCurrentTimeProvider.getCurrentTimeMillis()).thenReturn(timestamp);
-    when(dataCapture.captureReportData(anyString(), anyLong())).thenReturn(mockReport);
-    when(reportMetadata.getUserId()).thenReturn(userId);
-
-    reportManager.onBeginSession(sessionId);
-    reportManager.onEndSession();
-
-    verify(reportPersistence).persistUserIdForSession(userId, sessionId);
-  }
-
-  @Test
   public void onLog_writesToLogFileManager() {
     long timestamp = System.currentTimeMillis();
     String log = "this is a log";
@@ -408,6 +393,21 @@ public class FirebaseCrashlyticsReportManagerTest {
     verify(reportPersistence, never()).loadFinalizedReports();
     verify(reportPersistence, never()).deleteFinalizedReport(anyString());
     verifyZeroInteractions(reportSender);
+  }
+
+  @Test
+  public void testPersistUserIdForCurrentSession_persistsCurrentUserIdForCurrentSessionId() {
+    final String currentSessionId = "currentSessionId";
+    final String userId = "testUserId";
+    final long timestamp = System.currentTimeMillis();
+    when(mockCurrentTimeProvider.getCurrentTimeMillis()).thenReturn(timestamp);
+    when(dataCapture.captureReportData(anyString(), anyLong())).thenReturn(mockReport);
+    when(reportMetadata.getUserId()).thenReturn(userId);
+
+    reportManager.onBeginSession(currentSessionId);
+    reportManager.persistUserIdForCurrentSession();
+
+    verify(reportPersistence).persistUserIdForSession(userId, currentSessionId);
   }
 
   private void mockEventInteractions(long timestamp) {

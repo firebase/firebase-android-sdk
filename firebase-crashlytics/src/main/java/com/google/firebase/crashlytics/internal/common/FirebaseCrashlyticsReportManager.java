@@ -103,9 +103,12 @@ public class FirebaseCrashlyticsReportManager implements CrashlyticsLifecycleEve
     reportMetadata.setUserId(userId);
   }
 
+  public void persistUserIdForCurrentSession() {
+    reportPersistence.persistUserIdForSession(reportMetadata.getUserId(), currentSessionId);
+  }
+
   @Override
   public void onEndSession() {
-    reportPersistence.persistUserIdForSession(reportMetadata.getUserId(), currentSessionId);
     currentSessionId = null;
   }
 
