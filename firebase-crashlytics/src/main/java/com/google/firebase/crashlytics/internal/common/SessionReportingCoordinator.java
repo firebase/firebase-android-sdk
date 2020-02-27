@@ -110,17 +110,17 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
     reportPersistence.persistUserIdForSession(reportMetadata.getUserId(), currentSessionId);
   }
 
-  /**
-   * Creates finalized reports for all sessions besides the current session.
-   */
+  /** Creates finalized reports for all sessions besides the current session. */
   public void finalizeSessions() {
     reportPersistence.finalizeReports(currentSessionId);
   }
 
   /**
    * Send all finalized reports.
+   *
    * @param appSettingsData
-   * @param reportSendCompleteExecutor executor on which to run report cleanup after each report is sent.
+   * @param reportSendCompleteExecutor executor on which to run report cleanup after each report is
+   *     sent.
    */
   public void sendReports(AppSettingsData appSettingsData, Executor reportSendCompleteExecutor) {
     if (appSettingsData.reportUploadVariant != REPORT_UPLOAD_VARIANT_DATATRANSPORT) {
