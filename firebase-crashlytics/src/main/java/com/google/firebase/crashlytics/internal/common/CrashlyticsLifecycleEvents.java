@@ -67,10 +67,4 @@ interface CrashlyticsLifecycleEvents {
 
   /** Called when the current session should be closed */
   void onEndSession();
-
-  /**
-   * Called before sending reports to clean up any still-open sessions, attach any associated events
-   * to those sessions, and prepare finalized reports to be sent.
-   */
-  void onFinalizeSessions();
 }

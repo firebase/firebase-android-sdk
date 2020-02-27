@@ -321,7 +321,7 @@ public class SessionReportingCoordinatorTest {
   public void onSessionsFinalize_finalizesReports() {
     final String sessionId = "testSessionId";
     reportManager.onBeginSession(sessionId);
-    reportManager.onFinalizeSessions();
+    reportManager.finalizeSessions();
 
     verify(reportPersistence).finalizeReports(sessionId);
   }
