@@ -79,16 +79,6 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
   }
 
   @Override
-  public void onFatalEvent(Throwable event, Thread thread) {
-    onEvent(event, thread, EVENT_TYPE_CRASH, true);
-  }
-
-  @Override
-  public void onNonFatalEvent(Throwable event, Thread thread) {
-    onEvent(event, thread, EVENT_TYPE_LOGGED, false);
-  }
-
-  @Override
   public void onLog(long timestamp, String log) {
     logFileManager.writeToLog(timestamp, log);
   }
@@ -103,13 +93,21 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
     reportMetadata.setUserId(userId);
   }
 
-  public void persistUserIdForCurrentSession() {
-    reportPersistence.persistUserIdForSession(reportMetadata.getUserId(), currentSessionId);
-  }
-
   @Override
   public void onEndSession() {
     currentSessionId = null;
+  }
+
+  public void persistFatalEvent(Throwable event, Thread thread) {
+    persistEvent(event, thread, EVENT_TYPE_CRASH, true);
+  }
+
+  public void persistNonFatalEvent(Throwable event, Thread thread) {
+    persistEvent(event, thread, EVENT_TYPE_LOGGED, false);
+  }
+
+  public void persistUserId() {
+    reportPersistence.persistUserIdForSession(reportMetadata.getUserId(), currentSessionId);
   }
 
   /**
@@ -138,7 +136,7 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
     }
   }
 
-  private void onEvent(
+  private void persistEvent(
       Throwable event, Thread thread, String eventType, boolean includeAllThreads) {
     final long timestamp = currentTimeProvider.getCurrentTimeMillis() / 1000;
 

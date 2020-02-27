@@ -14,8 +14,6 @@
 
 package com.google.firebase.crashlytics.internal.common;
 
-import com.google.firebase.crashlytics.internal.settings.model.AppSettingsData;
-
 /** This class defines Crashlytics lifecycle events */
 interface CrashlyticsLifecycleEvents {
 
@@ -25,22 +23,6 @@ interface CrashlyticsLifecycleEvents {
    * @param sessionId the identifier for the new session
    */
   void onBeginSession(String sessionId);
-
-  /**
-   * Called when a fatal event occurs.
-   *
-   * @param event the fatal event
-   * @param thread the thread on which the fatal event occurred
-   */
-  void onFatalEvent(Throwable event, Thread thread);
-
-  /**
-   * Called when a non-fatal event occurs.
-   *
-   * @param event the non-fatal event
-   * @param thread the thread on which the non-fatal event occurred
-   */
-  void onNonFatalEvent(Throwable event, Thread thread);
 
   /**
    * Called when a message is logged by the user.
