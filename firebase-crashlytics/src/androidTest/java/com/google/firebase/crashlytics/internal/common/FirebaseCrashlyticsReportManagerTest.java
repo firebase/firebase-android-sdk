@@ -74,8 +74,7 @@ public class FirebaseCrashlyticsReportManagerTest {
             reportSender,
             logFileManager,
             reportMetadata,
-            mockCurrentTimeProvider,
-            Runnable::run);
+            mockCurrentTimeProvider);
   }
 
   @Test
@@ -374,7 +373,7 @@ public class FirebaseCrashlyticsReportManagerTest {
     when(reportSender.sendReport(mockReport1)).thenReturn(successfulTask);
     when(reportSender.sendReport(mockReport2)).thenReturn(failedTask);
 
-    reportManager.sendReports(appSettings);
+    reportManager.sendReports(appSettings, Runnable::run);
 
     verify(reportSender).sendReport(mockReport1);
     verify(reportSender).sendReport(mockReport2);
@@ -389,7 +388,7 @@ public class FirebaseCrashlyticsReportManagerTest {
     final AppSettingsData appSettings =
         new AppSettingsData(null, null, null, null, null, orgId, false, 0);
 
-    reportManager.sendReports(appSettings);
+    reportManager.sendReports(appSettings, Runnable::run);
 
     verify(reportPersistence).deleteAllReports();
     verify(reportPersistence, never()).loadFinalizedReports();
@@ -403,7 +402,7 @@ public class FirebaseCrashlyticsReportManagerTest {
     final AppSettingsData appSettings =
         new AppSettingsData(null, null, null, null, null, orgId, false, 1);
 
-    reportManager.sendReports(appSettings);
+    reportManager.sendReports(appSettings, Runnable::run);
 
     verify(reportPersistence).deleteAllReports();
     verify(reportPersistence, never()).loadFinalizedReports();

@@ -50,7 +50,6 @@ public class FirebaseCrashlyticsReportManager implements CrashlyticsLifecycleEve
   private final LogFileManager logFileManager;
   private final UserMetadata reportMetadata;
   private final CurrentTimeProvider currentTimeProvider;
-  private final Executor executor;
 
   private String currentSessionId;
 
@@ -60,15 +59,13 @@ public class FirebaseCrashlyticsReportManager implements CrashlyticsLifecycleEve
       DataTransportCrashlyticsReportSender reportsSender,
       LogFileManager logFileManager,
       UserMetadata reportMetadata,
-      CurrentTimeProvider currentTimeProvider,
-      Executor executor) {
+      CurrentTimeProvider currentTimeProvider) {
     this.dataCapture = dataCapture;
     this.reportPersistence = reportPersistence;
     this.reportsSender = reportsSender;
     this.logFileManager = logFileManager;
     this.reportMetadata = reportMetadata;
     this.currentTimeProvider = currentTimeProvider;
-    this.executor = executor;
   }
 
   @Override
@@ -117,7 +114,12 @@ public class FirebaseCrashlyticsReportManager implements CrashlyticsLifecycleEve
     reportPersistence.finalizeReports(currentSessionId);
   }
 
-  public void sendReports(AppSettingsData appSettingsData) {
+  /**
+   * Send all finalized reports.
+   * @param appSettingsData
+   * @param reportSendCompleteExecutor executor on which to run report cleanup after each report is sent.
+   */
+  public void sendReports(AppSettingsData appSettingsData, Executor reportSendCompleteExecutor) {
     if (appSettingsData.reportUploadVariant != REPORT_UPLOAD_VARIANT_DATATRANSPORT) {
       Logger.getLogger().d(Logger.TAG, "Send via DataTransport disabled. Removing reports.");
       reportPersistence.deleteAllReports();
@@ -127,7 +129,7 @@ public class FirebaseCrashlyticsReportManager implements CrashlyticsLifecycleEve
     for (CrashlyticsReport report : reportsToSend) {
       reportsSender
           .sendReport(report.withOrganizationId(appSettingsData.organizationId))
-          .continueWith(executor, this::onReportSendComplete);
+          .continueWith(reportSendCompleteExecutor, this::onReportSendComplete);
     }
   }
 
