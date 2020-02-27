@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.crashlytics.internal.breadcrumbs;
+package com.google.firebase.crashlytics.internal.analytics;
 
 import static org.mockito.Mockito.*;
 
@@ -21,10 +21,10 @@ import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.analytics.connector.AnalyticsConnector.AnalyticsConnectorHandle;
 import com.google.firebase.analytics.connector.AnalyticsConnector.AnalyticsConnectorListener;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
-import com.google.firebase.crashlytics.internal.breadcrumbs.AnalyticsConnectorBreadcrumbsReceiver.BreadcrumbHandler;
+import com.google.firebase.crashlytics.internal.analytics.AnalyticsConnectorReceiver.BreadcrumbHandler;
 import org.mockito.ArgumentCaptor;
 
-public class AnalyticsConnectorBreadcrumbsReceiverTest extends CrashlyticsTestCase {
+public class AnalyticsConnectorReceiverTest extends CrashlyticsTestCase {
 
   private BreadcrumbHandler mockBreadcrumbHandler;
   private AnalyticsConnector mockAnalyticsConnector;
@@ -39,8 +39,8 @@ public class AnalyticsConnectorBreadcrumbsReceiverTest extends CrashlyticsTestCa
   }
 
   public void testAnalyticsConnectorRegisters() {
-    AnalyticsConnectorBreadcrumbsReceiver receiver =
-        new AnalyticsConnectorBreadcrumbsReceiver(mockAnalyticsConnector, mockBreadcrumbHandler);
+    AnalyticsConnectorReceiver receiver =
+        new AnalyticsConnectorReceiver(mockAnalyticsConnector, mockBreadcrumbHandler);
     when(mockAnalyticsConnector.registerAnalyticsConnectorListener(
             anyString(), any(AnalyticsConnectorListener.class)))
         .thenReturn(mockAnalyticsHandle);
@@ -48,20 +48,19 @@ public class AnalyticsConnectorBreadcrumbsReceiverTest extends CrashlyticsTestCa
     assertTrue("Receiver not properly registered", receiver.register());
 
     verify(mockAnalyticsConnector)
-        .registerAnalyticsConnectorListener(
-            AnalyticsConnectorBreadcrumbsReceiver.CRASH_ORIGIN, receiver);
+        .registerAnalyticsConnectorListener(AnalyticsConnectorReceiver.CRASH_ORIGIN, receiver);
   }
 
   public void testRegisterFailsWhenAnalyticsConnectorIsNull() {
-    AnalyticsConnectorBreadcrumbsReceiver receiver =
-        new AnalyticsConnectorBreadcrumbsReceiver(null, mockBreadcrumbHandler);
+    AnalyticsConnectorReceiver receiver =
+        new AnalyticsConnectorReceiver(null, mockBreadcrumbHandler);
 
     assertFalse("Receiver was unexpectedly registered", receiver.register());
   }
 
   public void testRegisterFailsWhenAnalyticsConnectorReturnsNull() {
-    AnalyticsConnectorBreadcrumbsReceiver receiver =
-        new AnalyticsConnectorBreadcrumbsReceiver(mockAnalyticsConnector, mockBreadcrumbHandler);
+    AnalyticsConnectorReceiver receiver =
+        new AnalyticsConnectorReceiver(mockAnalyticsConnector, mockBreadcrumbHandler);
     when(mockAnalyticsConnector.registerAnalyticsConnectorListener(
             anyString(), any(AnalyticsConnectorListener.class)))
         .thenReturn(null);
@@ -70,8 +69,8 @@ public class AnalyticsConnectorBreadcrumbsReceiverTest extends CrashlyticsTestCa
   }
 
   public void testUnregister() {
-    AnalyticsConnectorBreadcrumbsReceiver receiver =
-        new AnalyticsConnectorBreadcrumbsReceiver(mockAnalyticsConnector, mockBreadcrumbHandler);
+    AnalyticsConnectorReceiver receiver =
+        new AnalyticsConnectorReceiver(mockAnalyticsConnector, mockBreadcrumbHandler);
     when(mockAnalyticsConnector.registerAnalyticsConnectorListener(
             anyString(), any(AnalyticsConnectorListener.class)))
         .thenReturn(mockAnalyticsHandle);
@@ -84,8 +83,8 @@ public class AnalyticsConnectorBreadcrumbsReceiverTest extends CrashlyticsTestCa
   }
 
   public void testUnregisterIsNoOpWhenAnalyticsConnectorRegisterFails() {
-    AnalyticsConnectorBreadcrumbsReceiver receiver =
-        new AnalyticsConnectorBreadcrumbsReceiver(mockAnalyticsConnector, mockBreadcrumbHandler);
+    AnalyticsConnectorReceiver receiver =
+        new AnalyticsConnectorReceiver(mockAnalyticsConnector, mockBreadcrumbHandler);
     when(mockAnalyticsConnector.registerAnalyticsConnectorListener(
             anyString(), any(AnalyticsConnectorListener.class)))
         .thenReturn(null);
@@ -96,8 +95,8 @@ public class AnalyticsConnectorBreadcrumbsReceiverTest extends CrashlyticsTestCa
   }
 
   public void testUnregisterIsNoOpWhenNullAnalyticsConnector() {
-    AnalyticsConnectorBreadcrumbsReceiver receiver =
-        new AnalyticsConnectorBreadcrumbsReceiver(null, mockBreadcrumbHandler);
+    AnalyticsConnectorReceiver receiver =
+        new AnalyticsConnectorReceiver(null, mockBreadcrumbHandler);
 
     assertFalse("Receiver was unexpectedly registered", receiver.register());
 
@@ -105,8 +104,8 @@ public class AnalyticsConnectorBreadcrumbsReceiverTest extends CrashlyticsTestCa
   }
 
   public void testBreadcrumbHandlerReceivesCorrectBreadcrumbJson() {
-    AnalyticsConnectorBreadcrumbsReceiver receiver =
-        new AnalyticsConnectorBreadcrumbsReceiver(mockAnalyticsConnector, mockBreadcrumbHandler);
+    AnalyticsConnectorReceiver receiver =
+        new AnalyticsConnectorReceiver(mockAnalyticsConnector, mockBreadcrumbHandler);
     ArgumentCaptor<AnalyticsConnectorListener> listenerCapture =
         ArgumentCaptor.forClass(AnalyticsConnector.AnalyticsConnectorListener.class);
     when(mockAnalyticsConnector.registerAnalyticsConnectorListener(
@@ -128,8 +127,8 @@ public class AnalyticsConnectorBreadcrumbsReceiverTest extends CrashlyticsTestCa
   }
 
   public void testBreadcrumbHandlerWithEmptyParams() {
-    AnalyticsConnectorBreadcrumbsReceiver receiver =
-        new AnalyticsConnectorBreadcrumbsReceiver(mockAnalyticsConnector, mockBreadcrumbHandler);
+    AnalyticsConnectorReceiver receiver =
+        new AnalyticsConnectorReceiver(mockAnalyticsConnector, mockBreadcrumbHandler);
     ArgumentCaptor<AnalyticsConnectorListener> listenerCapture =
         ArgumentCaptor.forClass(AnalyticsConnector.AnalyticsConnectorListener.class);
     when(mockAnalyticsConnector.registerAnalyticsConnectorListener(
@@ -148,8 +147,8 @@ public class AnalyticsConnectorBreadcrumbsReceiverTest extends CrashlyticsTestCa
   }
 
   public void testBreadcrumbHandlerDoesNotPassEventMissingName() {
-    AnalyticsConnectorBreadcrumbsReceiver receiver =
-        new AnalyticsConnectorBreadcrumbsReceiver(mockAnalyticsConnector, mockBreadcrumbHandler);
+    AnalyticsConnectorReceiver receiver =
+        new AnalyticsConnectorReceiver(mockAnalyticsConnector, mockBreadcrumbHandler);
     ArgumentCaptor<AnalyticsConnectorListener> listenerCapture =
         ArgumentCaptor.forClass(AnalyticsConnector.AnalyticsConnectorListener.class);
     when(mockAnalyticsConnector.registerAnalyticsConnectorListener(
@@ -169,8 +168,8 @@ public class AnalyticsConnectorBreadcrumbsReceiverTest extends CrashlyticsTestCa
   }
 
   public void testBreadcrumbHandlerDoesNotPassEventNullParams() {
-    AnalyticsConnectorBreadcrumbsReceiver receiver =
-        new AnalyticsConnectorBreadcrumbsReceiver(mockAnalyticsConnector, mockBreadcrumbHandler);
+    AnalyticsConnectorReceiver receiver =
+        new AnalyticsConnectorReceiver(mockAnalyticsConnector, mockBreadcrumbHandler);
     ArgumentCaptor<AnalyticsConnectorListener> listenerCapture =
         ArgumentCaptor.forClass(AnalyticsConnector.AnalyticsConnectorListener.class);
     when(mockAnalyticsConnector.registerAnalyticsConnectorListener(

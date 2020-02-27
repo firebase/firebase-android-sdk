@@ -24,9 +24,9 @@ import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.crashlytics.BuildConfig;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.Logger;
-import com.google.firebase.crashlytics.internal.breadcrumbs.AnalyticsConnectorBreadcrumbsReceiver;
-import com.google.firebase.crashlytics.internal.breadcrumbs.AnalyticsConnectorBreadcrumbsReceiver.BreadcrumbHandler;
-import com.google.firebase.crashlytics.internal.breadcrumbs.BreadcrumbsReceiver;
+import com.google.firebase.crashlytics.internal.analytics.AnalyticsConnectorReceiver;
+import com.google.firebase.crashlytics.internal.analytics.AnalyticsConnectorReceiver.BreadcrumbHandler;
+import com.google.firebase.crashlytics.internal.analytics.AnalyticsReceiver;
 import com.google.firebase.crashlytics.internal.common.CommonUtils;
 import com.google.firebase.crashlytics.internal.common.DataCollectionArbiter;
 import com.google.firebase.crashlytics.internal.common.ExecutorUtils;
@@ -153,8 +153,9 @@ public class CrashlyticsCore {
 
       final AppData appData = AppData.create(context, idManager, googleAppId, mappingFileId);
       final UnityVersionProvider unityVersionProvider = new ResourceUnityVersionProvider(context);
-      final BreadcrumbsReceiver breadcrumbsReceiver =
-          new AnalyticsConnectorBreadcrumbsReceiver(
+
+      final AnalyticsReceiver analyticsReceiver =
+          new AnalyticsConnectorReceiver(
               analyticsConnector,
               new BreadcrumbHandler() {
                 @Override
@@ -180,7 +181,7 @@ public class CrashlyticsCore {
               null,
               nativeComponent,
               unityVersionProvider,
-              breadcrumbsReceiver,
+              analyticsReceiver,
               analyticsConnector);
 
       // If the file is present at this point, then the previous run's initialization
@@ -239,7 +240,7 @@ public class CrashlyticsCore {
     controller.cleanInvalidTempFiles();
 
     try {
-      controller.registerBreadcrumbsReceiver();
+      controller.registerAnalyticsListener();
 
       final Settings settingsData = settingsProvider.getSettings();
 

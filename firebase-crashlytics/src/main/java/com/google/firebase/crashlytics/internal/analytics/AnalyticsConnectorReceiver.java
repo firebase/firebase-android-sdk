@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.crashlytics.internal.breadcrumbs;
+package com.google.firebase.crashlytics.internal.analytics;
 
 import android.os.Bundle;
 import androidx.annotation.NonNull;
@@ -24,25 +24,27 @@ import com.google.firebase.crashlytics.internal.Logger;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class AnalyticsConnectorBreadcrumbsReceiver
-    implements AnalyticsConnectorListener, BreadcrumbsReceiver {
+public class AnalyticsConnectorReceiver implements AnalyticsConnectorListener, AnalyticsReceiver {
 
   public interface BreadcrumbHandler {
     void dropBreadcrumb(String breadcrumb);
   }
 
-  static final String CRASH_ORIGIN = "crash";
-  private static final String EVENT_NAME_KEY = "name";
+  static final String CRASH_ORIGIN = "clx";
+  public static final String EVENT_NAME_KEY = "name";
+  public static final String APP_EXCEPTION_EVENT_NAME = "_ae";
+  private static final String EVENT_ORIGIN_KEY = "_o";
   private static final String EVENT_PARAMS_KEY = "params";
   private static final String BREADCRUMB_PARAMS_KEY = "parameters";
   private static final String BREADCRUMB_PREFIX = "$A$:";
 
   private final AnalyticsConnector analyticsConnector;
   private final BreadcrumbHandler breadcrumbHandler;
+  private CrashlyticsOriginEventListener crashOriginEventListener;
 
   private AnalyticsConnectorHandle analyticsConnectorHandle;
 
-  public AnalyticsConnectorBreadcrumbsReceiver(
+  public AnalyticsConnectorReceiver(
       AnalyticsConnector analyticsConnector, BreadcrumbHandler breadcrumbHandler) {
     this.analyticsConnector = analyticsConnector;
     this.breadcrumbHandler = breadcrumbHandler;
@@ -76,13 +78,22 @@ public class AnalyticsConnectorBreadcrumbsReceiver
   }
 
   @Override
-  public void onMessageTriggered(int id, @Nullable Bundle extras) {
-    if (extras == null) {
-      return;
-    }
+  public void setCrashlyticsOriginEventListener(@Nullable CrashlyticsOriginEventListener l) {
+    this.crashOriginEventListener = l;
+  }
 
-    final String name = extras.getString(EVENT_NAME_KEY);
-    if (name == null) {
+  @Override
+  public @Nullable CrashlyticsOriginEventListener getCrashlyticsOriginEventListener() {
+    return crashOriginEventListener;
+  }
+
+  @Override
+  public void onMessageTriggered(int id, @Nullable Bundle extras) {
+
+    Logger.getLogger()
+        .d(Logger.TAG, "AnalyticsConnectorReceiver received message: " + id + " " + extras);
+
+    if (extras == null) {
       return;
     }
 
@@ -91,11 +102,22 @@ public class AnalyticsConnectorBreadcrumbsReceiver
       params = new Bundle();
     }
 
-    try {
-      final String serializedEvent = BREADCRUMB_PREFIX + serializeEvent(name, params);
-      breadcrumbHandler.dropBreadcrumb(serializedEvent);
-    } catch (JSONException e) {
-      Logger.getLogger().w(Logger.TAG, "Unable to serialize Firebase Analytics event.");
+    final String origin = params.getString(EVENT_ORIGIN_KEY);
+    if (CRASH_ORIGIN.equals(origin)) {
+      if (crashOriginEventListener != null) {
+        crashOriginEventListener.onCrashOriginEvent(id, extras);
+      }
+    } else { // Drop breadcrumbs for all named events which did not originate from Crashlytics
+      final String name = extras.getString(EVENT_NAME_KEY);
+      if (name == null) {
+        return;
+      }
+      try {
+        final String serializedEvent = BREADCRUMB_PREFIX + serializeEvent(name, params);
+        breadcrumbHandler.dropBreadcrumb(serializedEvent);
+      } catch (JSONException e) {
+        Logger.getLogger().w(Logger.TAG, "Unable to serialize Firebase Analytics event.");
+      }
     }
   }
 
