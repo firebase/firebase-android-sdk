@@ -49,7 +49,6 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
   private final DataTransportCrashlyticsReportSender reportsSender;
   private final LogFileManager logFileManager;
   private final UserMetadata reportMetadata;
-  private final CurrentTimeProvider currentTimeProvider;
 
   private String currentSessionId;
 
@@ -58,19 +57,16 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
       CrashlyticsReportPersistence reportPersistence,
       DataTransportCrashlyticsReportSender reportsSender,
       LogFileManager logFileManager,
-      UserMetadata reportMetadata,
-      CurrentTimeProvider currentTimeProvider) {
+      UserMetadata reportMetadata) {
     this.dataCapture = dataCapture;
     this.reportPersistence = reportPersistence;
     this.reportsSender = reportsSender;
     this.logFileManager = logFileManager;
     this.reportMetadata = reportMetadata;
-    this.currentTimeProvider = currentTimeProvider;
   }
 
   @Override
-  public void onBeginSession(String sessionId) {
-    final long timestamp = currentTimeProvider.getCurrentTimeMillis() / 1000;
+  public void onBeginSession(String sessionId, long timestamp) {
     currentSessionId = sessionId;
 
     final CrashlyticsReport capturedReport = dataCapture.captureReportData(sessionId, timestamp);
@@ -98,12 +94,12 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
     currentSessionId = null;
   }
 
-  public void persistFatalEvent(Throwable event, Thread thread) {
-    persistEvent(event, thread, EVENT_TYPE_CRASH, true);
+  public void persistFatalEvent(Throwable event, Thread thread, long timestamp) {
+    persistEvent(event, thread, EVENT_TYPE_CRASH, timestamp, true);
   }
 
-  public void persistNonFatalEvent(Throwable event, Thread thread) {
-    persistEvent(event, thread, EVENT_TYPE_LOGGED, false);
+  public void persistNonFatalEvent(Throwable event, Thread thread, long timestamp) {
+    persistEvent(event, thread, EVENT_TYPE_LOGGED, timestamp, false);
   }
 
   public void persistUserId() {
@@ -146,8 +142,7 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
   }
 
   private void persistEvent(
-      Throwable event, Thread thread, String eventType, boolean includeAllThreads) {
-    final long timestamp = currentTimeProvider.getCurrentTimeMillis() / 1000;
+      Throwable event, Thread thread, String eventType, long timestamp, boolean includeAllThreads) {
 
     final boolean isHighPriority = eventType.equals(EVENT_TYPE_CRASH);
 
