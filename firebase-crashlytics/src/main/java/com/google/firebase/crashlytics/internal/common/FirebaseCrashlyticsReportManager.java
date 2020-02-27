@@ -117,8 +117,7 @@ public class FirebaseCrashlyticsReportManager implements CrashlyticsLifecycleEve
     reportPersistence.finalizeReports(currentSessionId);
   }
 
-  @Override
-  public void onSendReports(AppSettingsData appSettingsData) {
+  public void sendReports(AppSettingsData appSettingsData) {
     if (appSettingsData.reportUploadVariant != REPORT_UPLOAD_VARIANT_DATATRANSPORT) {
       Logger.getLogger().d(Logger.TAG, "Send via DataTransport disabled. Removing reports.");
       reportPersistence.deleteAllReports();

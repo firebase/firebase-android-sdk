@@ -374,7 +374,7 @@ public class FirebaseCrashlyticsReportManagerTest {
     when(reportSender.sendReport(mockReport1)).thenReturn(successfulTask);
     when(reportSender.sendReport(mockReport2)).thenReturn(failedTask);
 
-    reportManager.onSendReports(appSettings);
+    reportManager.sendReports(appSettings);
 
     verify(reportSender).sendReport(mockReport1);
     verify(reportSender).sendReport(mockReport2);
@@ -389,7 +389,7 @@ public class FirebaseCrashlyticsReportManagerTest {
     final AppSettingsData appSettings =
         new AppSettingsData(null, null, null, null, null, orgId, false, 0);
 
-    reportManager.onSendReports(appSettings);
+    reportManager.sendReports(appSettings);
 
     verify(reportPersistence).deleteAllReports();
     verify(reportPersistence, never()).loadFinalizedReports();
@@ -403,7 +403,7 @@ public class FirebaseCrashlyticsReportManagerTest {
     final AppSettingsData appSettings =
         new AppSettingsData(null, null, null, null, null, orgId, false, 1);
 
-    reportManager.onSendReports(appSettings);
+    reportManager.sendReports(appSettings);
 
     verify(reportPersistence).deleteAllReports();
     verify(reportPersistence, never()).loadFinalizedReports();

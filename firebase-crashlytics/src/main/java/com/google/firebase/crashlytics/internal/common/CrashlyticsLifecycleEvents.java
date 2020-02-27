@@ -73,11 +73,4 @@ interface CrashlyticsLifecycleEvents {
    * to those sessions, and prepare finalized reports to be sent.
    */
   void onFinalizeSessions();
-
-  /**
-   * Called when Crashlytics can send reports, after app settings data is available.
-   *
-   * @param appSettingsData app settings data for augmenting the report, if necessary
-   */
-  void onSendReports(AppSettingsData appSettingsData);
 }
