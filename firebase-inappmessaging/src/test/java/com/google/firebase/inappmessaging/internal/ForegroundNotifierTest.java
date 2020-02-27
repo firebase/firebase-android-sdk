@@ -14,15 +14,14 @@
 
 package com.google.firebase.inappmessaging.internal;
 
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.MockitoAnnotations.initMocks;
+import static com.google.common.truth.Truth.assertThat;
+import static com.google.firebase.inappmessaging.internal.InAppMessageStreamManager.ON_FOREGROUND;
 
-import com.google.firebase.inappmessaging.internal.ForegroundNotifier.Listener;
+import io.reactivex.flowables.ConnectableFlowable;
+import io.reactivex.subscribers.TestSubscriber;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
@@ -30,47 +29,40 @@ import org.robolectric.annotation.Config;
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
 public class ForegroundNotifierTest {
-  @Mock Listener listener;
+
   private ForegroundNotifier foregroundNotifier;
+  private TestSubscriber<String> subscriber;
 
   @Before
   public void setup() {
-    initMocks(this);
     foregroundNotifier = new ForegroundNotifier();
+    ConnectableFlowable<String> foregroundFlowable = foregroundNotifier.foregroundFlowable();
+    foregroundFlowable.connect();
+    subscriber = foregroundFlowable.test();
   }
 
   @Test
   public void notifier_onActivityResumedForFirstTime_notifiesListener() {
-    ForegroundNotifier foregroundNotifier = new ForegroundNotifier();
-    foregroundNotifier.setListener(listener);
-
     foregroundNotifier.onActivityResumed(null);
-
-    verify(listener).onForeground();
+    assertThat(subscriber.getEvents().get(0)).contains(ON_FOREGROUND);
   }
 
   @Test
   public void notifier_onActivityResumedBeforeRunnable_doesNotNotifyListener() {
-    foregroundNotifier.setListener(listener);
-
     foregroundNotifier.onActivityResumed(null); // called once
-    verify(listener, times(1)).onForeground();
+    assertThat(subscriber.getEvents().get(0)).hasSize(1);
     foregroundNotifier.onActivityPaused(null);
     foregroundNotifier.onActivityResumed(null); // should not be called
-
-    verify(listener, times(1)).onForeground();
+    assertThat(subscriber.getEvents().get(0)).hasSize(1);
   }
 
   @Test
   public void notifier_onActivityResumedAfterRunnableExecution_notifiesListener() {
-    foregroundNotifier.setListener(listener);
-
     foregroundNotifier.onActivityResumed(null); // 1
-    verify(listener, times(1)).onForeground();
+    assertThat(subscriber.getEvents().get(0)).hasSize(1);
     foregroundNotifier.onActivityPaused(null);
     Robolectric.flushForegroundThreadScheduler();
     foregroundNotifier.onActivityResumed(null); // 2
-
-    verify(listener, times(2)).onForeground();
+    assertThat(subscriber.getEvents().get(0)).hasSize(2);
   }
 }
