@@ -45,7 +45,7 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-public class FirebaseCrashlyticsReportManagerTest {
+public class SessionReportingCoordinatorTest {
 
   @Mock private CrashlyticsReportDataCapture dataCapture;
   @Mock private CrashlyticsReportPersistence reportPersistence;
@@ -61,14 +61,14 @@ public class FirebaseCrashlyticsReportManagerTest {
   @Mock private Exception mockException;
   @Mock private Thread mockThread;
 
-  private FirebaseCrashlyticsReportManager reportManager;
+  private SessionReportingCoordinator reportManager;
 
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
 
     reportManager =
-        new FirebaseCrashlyticsReportManager(
+        new SessionReportingCoordinator(
             dataCapture,
             reportPersistence,
             reportSender,
@@ -342,7 +342,7 @@ public class FirebaseCrashlyticsReportManagerTest {
             null,
             orgId,
             false,
-            FirebaseCrashlyticsReportManager.REPORT_UPLOAD_VARIANT_DATATRANSPORT);
+            SessionReportingCoordinator.REPORT_UPLOAD_VARIANT_DATATRANSPORT);
 
     final List<CrashlyticsReport> finalizedReports = new ArrayList<>();
     final CrashlyticsReport mockReport1 = mockReport(sessionId1, orgId);

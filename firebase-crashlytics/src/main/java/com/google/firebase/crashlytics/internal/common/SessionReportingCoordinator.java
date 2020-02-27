@@ -34,7 +34,7 @@ import java.util.concurrent.Executor;
  * This class handles Crashlytics lifecycle events and manages capture, persistence, and sending of
  * reports to Firebase Crashlytics.
  */
-public class FirebaseCrashlyticsReportManager implements CrashlyticsLifecycleEvents {
+public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
 
   private static final String EVENT_TYPE_CRASH = "crash";
   private static final String EVENT_TYPE_LOGGED = "error";
@@ -53,7 +53,7 @@ public class FirebaseCrashlyticsReportManager implements CrashlyticsLifecycleEve
 
   private String currentSessionId;
 
-  FirebaseCrashlyticsReportManager(
+  SessionReportingCoordinator(
       CrashlyticsReportDataCapture dataCapture,
       CrashlyticsReportPersistence reportPersistence,
       DataTransportCrashlyticsReportSender reportsSender,
