@@ -107,6 +107,8 @@ class CrashlyticsController {
 
   // Used to determine whether to upload reports through the legacy reports endpoint
   static final int REPORT_UPLOAD_VARIANT_LEGACY = 1;
+  // Used to determine whether to upload reports through the new DataTransport API.
+  static final int REPORT_UPLOAD_VARIANT_DATATRANSPORT = 2;
 
   // region CLS File filters for retrieving specific sets of files.
 
@@ -585,7 +587,7 @@ class CrashlyticsController {
         final String ndkReportsUrl = appSettingsData.ndkReportsUrl;
         final String organizationId = appSettingsData.organizationId;
         final boolean isUsingReportsEndpoint =
-            appSettingsData.reportUploadVariant == REPORT_UPLOAD_VARIANT_LEGACY;
+            appSettingsData.reportUploadVariant != REPORT_UPLOAD_VARIANT_DATATRANSPORT;
         final CreateReportSpiCall call = getCreateReportSpiCall(reportsUrl, ndkReportsUrl);
         return new ReportUploader(
             organizationId,

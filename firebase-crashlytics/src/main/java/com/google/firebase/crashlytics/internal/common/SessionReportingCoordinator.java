@@ -36,19 +36,21 @@ import java.util.concurrent.Executor;
  */
 public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
 
+  public interface SendCheck {
+    boolean shouldSendViaDataTransport(int variant);
+  }
+
   private static final String EVENT_TYPE_CRASH = "crash";
   private static final String EVENT_TYPE_LOGGED = "error";
   private static final int EVENT_THREAD_IMPORTANCE = 4;
   private static final int MAX_CHAINED_EXCEPTION_DEPTH = 8;
-
-  // Used to determine whether to upload reports through the new DataTransport API.
-  static final int REPORT_UPLOAD_VARIANT_DATATRANSPORT = 2;
 
   private final CrashlyticsReportDataCapture dataCapture;
   private final CrashlyticsReportPersistence reportPersistence;
   private final DataTransportCrashlyticsReportSender reportsSender;
   private final LogFileManager logFileManager;
   private final UserMetadata reportMetadata;
+  private final SendCheck sendCheck;
   private final CurrentTimeProvider currentTimeProvider;
 
   private String currentSessionId;
@@ -59,12 +61,14 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
       DataTransportCrashlyticsReportSender reportsSender,
       LogFileManager logFileManager,
       UserMetadata reportMetadata,
+      SendCheck sendCheck,
       CurrentTimeProvider currentTimeProvider) {
     this.dataCapture = dataCapture;
     this.reportPersistence = reportPersistence;
     this.reportsSender = reportsSender;
     this.logFileManager = logFileManager;
     this.reportMetadata = reportMetadata;
+    this.sendCheck = sendCheck;
     this.currentTimeProvider = currentTimeProvider;
   }
 
@@ -123,7 +127,7 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
    *     sent.
    */
   public void sendReports(AppSettingsData appSettingsData, Executor reportSendCompleteExecutor) {
-    if (appSettingsData.reportUploadVariant != REPORT_UPLOAD_VARIANT_DATATRANSPORT) {
+    if (!sendCheck.shouldSendViaDataTransport(appSettingsData.reportUploadVariant)) {
       Logger.getLogger().d(Logger.TAG, "Send via DataTransport disabled. Removing reports.");
       reportPersistence.deleteAllReports();
       return;

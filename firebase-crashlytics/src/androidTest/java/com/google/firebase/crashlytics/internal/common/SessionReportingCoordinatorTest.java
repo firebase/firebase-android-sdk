@@ -28,6 +28,7 @@ import static org.mockito.Mockito.when;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.crashlytics.core.UserMetadata;
+import com.google.firebase.crashlytics.internal.common.SessionReportingCoordinator.SendCheck;
 import com.google.firebase.crashlytics.internal.log.LogFileManager;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.CustomAttribute;
@@ -52,6 +53,7 @@ public class SessionReportingCoordinatorTest {
   @Mock private DataTransportCrashlyticsReportSender reportSender;
   @Mock private LogFileManager logFileManager;
   @Mock private UserMetadata reportMetadata;
+  @Mock private SendCheck mockSendCheck;
   @Mock private CurrentTimeProvider mockCurrentTimeProvider;
   @Mock private CrashlyticsReport mockReport;
   @Mock private CrashlyticsReport.Session.Event mockEvent;
@@ -74,6 +76,7 @@ public class SessionReportingCoordinatorTest {
             reportSender,
             logFileManager,
             reportMetadata,
+            mockSendCheck,
             mockCurrentTimeProvider);
   }
 
@@ -329,20 +332,11 @@ public class SessionReportingCoordinatorTest {
   @Test
   @SuppressWarnings("unchecked")
   public void onReportSend_successfulReportsAreDeleted() {
+    when(mockSendCheck.shouldSendViaDataTransport(anyInt())).thenReturn(true);
     final String orgId = "testOrgId";
     final String sessionId1 = "sessionId1";
     final String sessionId2 = "sessionId2";
-
-    final AppSettingsData appSettings =
-        new AppSettingsData(
-            null,
-            null,
-            null,
-            null,
-            null,
-            orgId,
-            false,
-            SessionReportingCoordinator.REPORT_UPLOAD_VARIANT_DATATRANSPORT);
+    final AppSettingsData appSettings = mockAppSettings(orgId);
 
     final List<CrashlyticsReport> finalizedReports = new ArrayList<>();
     final CrashlyticsReport mockReport1 = mockReport(sessionId1, orgId);
@@ -368,24 +362,9 @@ public class SessionReportingCoordinatorTest {
   }
 
   @Test
-  public void onReportSend_reportsAreDeletedWithoutBeingSent_whenReportUploadVariantIsNotSet() {
-    final String orgId = "testOrgId";
-    final AppSettingsData appSettings =
-        new AppSettingsData(null, null, null, null, null, orgId, false, 0);
-
-    reportManager.sendReports(appSettings, Runnable::run);
-
-    verify(reportPersistence).deleteAllReports();
-    verify(reportPersistence, never()).loadFinalizedReports();
-    verify(reportPersistence, never()).deleteFinalizedReport(anyString());
-    verifyZeroInteractions(reportSender);
-  }
-
-  @Test
-  public void onReportSend_reportsAreDeletedWithoutBeingSent_whenReportUploadVariantSetToLegacy() {
-    final String orgId = "testOrgId";
-    final AppSettingsData appSettings =
-        new AppSettingsData(null, null, null, null, null, orgId, false, 1);
+  public void onReportSend_reportsAreDeletedWithoutBeingSent_whenSendCheckIsFalse() {
+    when(mockSendCheck.shouldSendViaDataTransport(anyInt())).thenReturn(false);
+    final AppSettingsData appSettings = mockAppSettings("testOrgId");
 
     reportManager.sendReports(appSettings, Runnable::run);
 
@@ -436,5 +415,9 @@ public class SessionReportingCoordinatorTest {
     when(mockReport.getSession()).thenReturn(mockSession);
     when(mockReport.withOrganizationId(orgId)).thenReturn(mockReport);
     return mockReport;
+  }
+
+  private static AppSettingsData mockAppSettings(String orgId) {
+    return new AppSettingsData(null, null, null, null, null, orgId, false, 0);
   }
 }
