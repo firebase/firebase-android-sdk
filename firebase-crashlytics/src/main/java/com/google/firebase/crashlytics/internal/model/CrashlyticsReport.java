@@ -498,7 +498,8 @@ public abstract class CrashlyticsReport {
         @Nullable
         public abstract ImmutableList<CustomAttribute> getCustomAttributes();
 
-        public abstract boolean isBackground();
+        @Nullable
+        public abstract Boolean getBackground();
 
         public abstract int getUiOrientation();
 
@@ -617,7 +618,7 @@ public abstract class CrashlyticsReport {
             @NonNull
             public abstract String getType();
 
-            @NonNull
+            @Nullable
             public abstract String getReason();
 
             @NonNull
@@ -706,11 +707,11 @@ public abstract class CrashlyticsReport {
             public abstract String getName();
 
             @Ignore
-            @NonNull
+            @Nullable
             public abstract String getUuid();
 
             @Field(name = "uuid")
-            @NonNull
+            @Nullable
             public byte[] getUuidUtf8Bytes() {
               return getUuid().getBytes(UTF_8);
             }
@@ -729,7 +730,7 @@ public abstract class CrashlyticsReport {
               public abstract Builder setName(@NonNull String value);
 
               @NonNull
-              public abstract Builder setUuid(@NonNull String value);
+              public abstract Builder setUuid(@Nullable String value);
 
               @NonNull
               public Builder setUuidFromUtf8Bytes(@NonNull byte[] utf8Bytes) {
@@ -774,7 +775,7 @@ public abstract class CrashlyticsReport {
               @NonNull ImmutableList<CustomAttribute> value);
 
           @NonNull
-          public abstract Builder setBackground(boolean value);
+          public abstract Builder setBackground(@Nullable Boolean value);
 
           @NonNull
           public abstract Builder setUiOrientation(int value);
@@ -792,7 +793,8 @@ public abstract class CrashlyticsReport {
           return new AutoValue_CrashlyticsReport_Session_Event_Device.Builder();
         }
 
-        public abstract double getBatteryLevel();
+        @Nullable
+        public abstract Double getBatteryLevel();
 
         public abstract int getBatteryVelocity();
 
@@ -809,7 +811,7 @@ public abstract class CrashlyticsReport {
         public abstract static class Builder {
 
           @NonNull
-          public abstract Builder setBatteryLevel(double value);
+          public abstract Builder setBatteryLevel(Double value);
 
           @NonNull
           public abstract Builder setBatteryVelocity(int value);
