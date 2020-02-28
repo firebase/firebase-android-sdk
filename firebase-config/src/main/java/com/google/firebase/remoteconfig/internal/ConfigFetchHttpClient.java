@@ -294,7 +294,8 @@ public class ConfigFetchHttpClient {
     requestBodyMap.put(COUNTRY_CODE, locale.getCountry());
 
     // Locale#toLanguageTag() was added in API level 21 (Lollipop)
-    String languageCode = Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
+    String languageCode =
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
             ? locale.toLanguageTag()
             : locale.toString();
     requestBodyMap.put(LANGUAGE_CODE, languageCode);
