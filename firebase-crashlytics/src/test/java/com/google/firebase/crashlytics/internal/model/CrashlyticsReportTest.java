@@ -95,6 +95,20 @@ public class CrashlyticsReportTest {
   }
 
   @Test
+  public void testGetBinaryImageUuidUtf8Bytes_returnsNullWhenUuidIsNull() {
+    final String expectedUuid = null;
+    final byte[] expectedBytes = null;
+    final BinaryImage binaryImage =
+        BinaryImage.builder()
+            .setName("binary")
+            .setBaseAddress(0)
+            .setSize(100000)
+            .setUuid(expectedUuid)
+            .build();
+    assertArrayEquals(expectedBytes, binaryImage.getUuidUtf8Bytes());
+  }
+
+  @Test
   public void testSetSessionIdUtf8Bytes_returnsProperSessionId() {
     final CrashlyticsReport testReport = makeTestReport();
     final String testSessionId = "testSessionId";
