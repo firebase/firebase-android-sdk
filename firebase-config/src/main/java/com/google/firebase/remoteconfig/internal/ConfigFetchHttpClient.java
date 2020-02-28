@@ -291,7 +291,7 @@ public class ConfigFetchHttpClient {
 
     Locale locale = context.getResources().getConfiguration().locale;
     requestBodyMap.put(COUNTRY_CODE, locale.getCountry());
-    requestBodyMap.put(LANGUAGE_CODE, locale.toString());
+    requestBodyMap.put(LANGUAGE_CODE, locale.toLanguageTag());
 
     requestBodyMap.put(PLATFORM_VERSION, Integer.toString(android.os.Build.VERSION.SDK_INT));
 
