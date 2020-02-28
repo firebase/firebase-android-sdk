@@ -200,7 +200,8 @@ public class CrashlyticsReportDataCapture {
 
   private Event.Device populateEventDeviceData(int orientation) {
     final BatteryState battery = BatteryState.get(context);
-    final double batteryLevel = (double) battery.getBatteryLevel();
+    final Float batteryLevel = battery.getBatteryLevel();
+    final Double batteryLevelDouble = (batteryLevel != null) ? batteryLevel.doubleValue() : null;
     final int batteryVelocity = battery.getBatteryVelocity();
     final boolean proximityEnabled = CommonUtils.getProximitySensorEnabled(context);
     final long usedRamBytes =
@@ -209,7 +210,7 @@ public class CrashlyticsReportDataCapture {
         CommonUtils.calculateUsedDiskSpaceInBytes(Environment.getDataDirectory().getPath());
 
     return Event.Device.builder()
-        .setBatteryLevel(batteryLevel)
+        .setBatteryLevel(batteryLevelDouble)
         .setBatteryVelocity(batteryVelocity)
         .setProximityOn(proximityEnabled)
         .setOrientation(orientation)
