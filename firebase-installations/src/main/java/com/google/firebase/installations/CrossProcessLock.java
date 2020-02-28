@@ -24,7 +24,7 @@ import java.nio.channels.FileLock;
 
 /** Use file locking to acquire a lock that will also block other processes. */
 class CrossProcessLock {
-  private final static String TAG = "CrossProcessLock";
+  private static final String TAG = "CrossProcessLock";
   private final FileChannel channel;
   private final FileLock lock;
 
@@ -34,11 +34,12 @@ class CrossProcessLock {
   }
 
   /**
-   * Create and return a lock that is exclusive across processes. If another process
-   * has the lock then this call will block until it is released.
+   * Create and return a lock that is exclusive across processes. If another process has the lock
+   * then this call will block until it is released.
+   *
    * @param lockName the lockname is global across all processes of an app
-   * @return a CrossProcessLock if success. If the lock failed to acquire (maybe due to disk full
-   * or other unexpected and unsupported permissions) then null will be returned.
+   * @return a CrossProcessLock if success. If the lock failed to acquire (maybe due to disk full or
+   *     other unexpected and unsupported permissions) then null will be returned.
    */
   static CrossProcessLock acquire(Context appContext, String lockName) {
     FileChannel channel = null;
