@@ -14,6 +14,7 @@
 
 package com.google.firebase.crashlytics.internal.persistence;
 
+import androidx.annotation.NonNull;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event;
 import com.google.firebase.crashlytics.internal.model.ImmutableList;
@@ -30,6 +31,7 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -60,6 +62,8 @@ public class CrashlyticsReportPersistence {
 
   private static final CrashlyticsReportJsonTransform TRANSFORM =
       new CrashlyticsReportJsonTransform();
+  private static final Comparator<? super File> SESSION_ID_COMPARATOR =
+      (f1, f2) -> -f1.getName().compareTo(f2.getName());
 
   private final AtomicInteger eventCounter = new AtomicInteger(0);
 
@@ -72,13 +76,17 @@ public class CrashlyticsReportPersistence {
 
   // TODO: Add settings override
   private final int defaultMaxEventsToKeep;
+  // TODO: Add settings override
+  private final int defaultMaxReportsToKeep;
 
-  public CrashlyticsReportPersistence(File rootDirectory, int defaultMaxEventsToKeep) {
+  public CrashlyticsReportPersistence(
+      File rootDirectory, int defaultMaxEventsToKeep, int defaultMaxReportsToKeep) {
     final File workingDirectory = new File(rootDirectory, WORKING_DIRECTORY_NAME);
     openSessionsDirectory = new File(workingDirectory, OPEN_SESSIONS_DIRECTORY_NAME);
     priorityReportsDirectory = new File(workingDirectory, PRIORITY_REPORTS_DIRECTORY);
     reportsDirectory = new File(workingDirectory, REPORTS_DIRECTORY);
     this.defaultMaxEventsToKeep = defaultMaxEventsToKeep;
+    this.defaultMaxReportsToKeep = defaultMaxReportsToKeep;
   }
 
   public void persistReport(CrashlyticsReport report) {
@@ -136,20 +144,18 @@ public class CrashlyticsReportPersistence {
   }
 
   public void deleteAllReports() {
-    final List<File> reportFiles = new ArrayList<>();
-    reportFiles.addAll(getAllFilesInDirectory(priorityReportsDirectory));
-    reportFiles.addAll(getAllFilesInDirectory(reportsDirectory));
-    for (File reportFile : reportFiles) {
+    for (File reportFile : getAllFinalizedReportFiles()) {
       reportFile.delete();
     }
   }
 
   public void deleteFinalizedReport(String sessionId) {
-    final List<File> reportFiles = new ArrayList<>();
     final FilenameFilter filter = (d, f) -> f.startsWith(sessionId);
-    reportFiles.addAll(getFilesInDirectory(priorityReportsDirectory, filter));
-    reportFiles.addAll(getFilesInDirectory(reportsDirectory, filter));
-    for (File reportFile : reportFiles) {
+    List<File> filteredReports =
+        sortAndCombineReportFiles(
+            getFilesInDirectory(priorityReportsDirectory, filter),
+            getFilesInDirectory(reportsDirectory, filter));
+    for (File reportFile : filteredReports) {
       reportFile.delete();
     }
   }
@@ -157,8 +163,6 @@ public class CrashlyticsReportPersistence {
   // TODO: Deal with potential runtime exceptions
   public void finalizeReports(String currentSessionId) {
     // TODO: Trim down to maximum allowed # of open sessions
-
-    // TODO: Trim down to maximum allowed # of complete reports, deleting non-fatal reports first.
 
     // TODO: Need to implement procedure to skip finalizing the current session when this is
     //  called on app start, but keep the current session when called at crash time. Currently
@@ -207,20 +211,56 @@ public class CrashlyticsReportPersistence {
             TRANSFORM.reportToJson(report.withEvents(ImmutableList.from(events))));
       }
       recursiveDelete(sessionDirectory);
+      capFinalizedReports();
     }
   }
 
+  /**
+   * @return finalized (no longer changing) Crashlytics Reports, sorted first from high to low
+   *     priority, secondarily sorted from most recent to least
+   */
   public List<CrashlyticsReport> loadFinalizedReports() {
-    final List<CrashlyticsReport> allReports = new ArrayList<>();
-    final List<File> priorityReports = getAllFilesInDirectory(priorityReportsDirectory);
-    for (File reportFile : priorityReports) {
-      allReports.add(TRANSFORM.reportFromJson(readTextFile(reportFile)));
-    }
-    final List<File> reports = getAllFilesInDirectory(reportsDirectory);
-    for (File reportFile : reports) {
+    final List<File> allReportFiles = getAllFinalizedReportFiles();
+    final ArrayList<CrashlyticsReport> allReports = new ArrayList<>();
+    allReports.ensureCapacity(allReportFiles.size());
+    for (File reportFile : getAllFinalizedReportFiles()) {
       allReports.add(TRANSFORM.reportFromJson(readTextFile(reportFile)));
     }
     return allReports;
+  }
+
+  private void capFinalizedReports() {
+    List<File> allReportFiles = getAllFinalizedReportFiles();
+    int reportCount = allReportFiles.size();
+    if (reportCount > defaultMaxReportsToKeep) {
+      // Make a sublist of the reports that go over the size limit
+      List<File> filesToRemove = allReportFiles.subList(defaultMaxReportsToKeep, reportCount);
+      for (File reportFile : filesToRemove) {
+        reportFile.delete();
+      }
+    }
+  }
+
+  /**
+   * @return finalized (no longer changing) files for Crashlytics Reports, sorted first from high to
+   *     low priority, secondarily sorted from most recent to least
+   */
+  @NonNull
+  private List<File> getAllFinalizedReportFiles() {
+    return sortAndCombineReportFiles(
+        getAllFilesInDirectory(priorityReportsDirectory), getAllFilesInDirectory(reportsDirectory));
+  }
+
+  @NonNull
+  private static List<File> sortAndCombineReportFiles(
+      List<File> priorityReports, List<File> reports) {
+    Collections.sort(priorityReports, SESSION_ID_COMPARATOR);
+    Collections.sort(reports, SESSION_ID_COMPARATOR);
+    final ArrayList<File> allReportsFiles = new ArrayList<>();
+    allReportsFiles.ensureCapacity(priorityReports.size() + reports.size());
+    allReportsFiles.addAll(priorityReports);
+    allReportsFiles.addAll(reports);
+    return allReportsFiles;
   }
 
   private static boolean isHighPriorityEventFile(String fileName) {
