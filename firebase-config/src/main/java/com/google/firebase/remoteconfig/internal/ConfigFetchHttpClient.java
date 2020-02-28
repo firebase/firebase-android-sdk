@@ -36,6 +36,7 @@ import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
+import android.os.Build;
 import android.util.Log;
 import androidx.annotation.Keep;
 import androidx.annotation.VisibleForTesting;
@@ -291,7 +292,13 @@ public class ConfigFetchHttpClient {
 
     Locale locale = context.getResources().getConfiguration().locale;
     requestBodyMap.put(COUNTRY_CODE, locale.getCountry());
-    requestBodyMap.put(LANGUAGE_CODE, locale.toString());
+
+    // Locale#toLanguageTag() was added in API level 21 (Lollipop)
+    String languageCode =
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
+            ? locale.toLanguageTag()
+            : locale.toString();
+    requestBodyMap.put(LANGUAGE_CODE, languageCode);
 
     requestBodyMap.put(PLATFORM_VERSION, Integer.toString(android.os.Build.VERSION.SDK_INT));
 
