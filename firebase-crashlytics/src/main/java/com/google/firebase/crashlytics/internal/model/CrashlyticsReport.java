@@ -713,7 +713,8 @@ public abstract class CrashlyticsReport {
             @Field(name = "uuid")
             @Nullable
             public byte[] getUuidUtf8Bytes() {
-              return getUuid().getBytes(UTF_8);
+              final String uuid = getUuid();
+              return (uuid != null) ? uuid.getBytes(UTF_8) : null;
             }
 
             /** Builder for {@link BinaryImage}. */
