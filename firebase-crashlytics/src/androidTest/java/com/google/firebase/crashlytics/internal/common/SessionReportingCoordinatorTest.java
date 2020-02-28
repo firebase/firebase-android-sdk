@@ -385,6 +385,13 @@ public class SessionReportingCoordinatorTest {
     verify(reportPersistence).persistUserIdForSession(userId, currentSessionId);
   }
 
+  @Test
+  public void testRemoveAllReports_deletesPersistedReports() {
+    reportManager.removeAllReports();
+
+    verify(reportPersistence).deleteAllReports();
+  }
+
   private void mockEventInteractions(long timestamp) {
     when(mockCurrentTimeProvider.getCurrentTimeMillis()).thenReturn(timestamp);
     when(mockEvent.toBuilder()).thenReturn(mockEventBuilder);
