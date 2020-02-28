@@ -210,7 +210,7 @@ public class ConfigFetchHttpClientTest {
 
   @Test
   public void fetch_requestEncodesLanguageSubtags() throws Exception {
-    String languageTag = "zh-TW_#Hant";  // Taiwan Chinese in traditional script
+    String languageTag = "zh-Hant-TW";  // Taiwan Chinese in traditional script
     context.getResources().getConfiguration().setLocale(Locale.forLanguageTag(languageTag));
 
     setServerResponseTo(noChangeResponseBody, SECOND_ETAG);
