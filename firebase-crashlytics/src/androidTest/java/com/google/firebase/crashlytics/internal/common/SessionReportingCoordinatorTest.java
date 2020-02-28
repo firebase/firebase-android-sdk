@@ -53,7 +53,6 @@ public class SessionReportingCoordinatorTest {
   @Mock private LogFileManager logFileManager;
   @Mock private UserMetadata reportMetadata;
   @Mock private SendReportPredicate mockSendReportPredicate;
-  @Mock private CurrentTimeProvider mockCurrentTimeProvider;
   @Mock private CrashlyticsReport mockReport;
   @Mock private CrashlyticsReport.Session.Event mockEvent;
   @Mock private CrashlyticsReport.Session.Event.Builder mockEventBuilder;
@@ -70,72 +69,65 @@ public class SessionReportingCoordinatorTest {
 
     reportManager =
         new SessionReportingCoordinator(
-            dataCapture,
-            reportPersistence,
-            reportSender,
-            logFileManager,
-            reportMetadata,
-            mockCurrentTimeProvider);
+            dataCapture, reportPersistence, reportSender, logFileManager, reportMetadata);
   }
 
   @Test
   public void testOnSessionBegin_persistsReportForSessionId() {
     final String sessionId = "testSessionId";
     final long timestamp = System.currentTimeMillis();
-    when(mockCurrentTimeProvider.getCurrentTimeMillis()).thenReturn(timestamp);
-    final long timestampSeconds = timestamp / 1000;
     when(dataCapture.captureReportData(anyString(), anyLong())).thenReturn(mockReport);
 
-    reportManager.onBeginSession(sessionId);
+    reportManager.onBeginSession(sessionId, timestamp);
 
-    verify(dataCapture).captureReportData(sessionId, timestampSeconds);
+    verify(dataCapture).captureReportData(sessionId, timestamp);
     verify(reportPersistence).persistReport(mockReport);
   }
 
   @Test
-  public void testOnFatalEvent_persistsHighPriorityEventForSessionId() {
+  public void testFatalEvent_persistsHighPriorityEventForSessionId() {
     final String eventType = "crash";
     final String sessionId = "testSessionId";
     final long timestamp = System.currentTimeMillis();
-    final long timestampSeconds = timestamp / 1000;
 
-    mockEventInteractions(timestamp);
+    mockEventInteractions();
 
-    reportManager.onBeginSession(sessionId);
-    reportManager.persistFatalEvent(mockException, mockThread);
+    reportManager.onBeginSession(sessionId, timestamp);
+    reportManager.persistFatalEvent(mockException, mockThread, timestamp);
 
     verify(dataCapture)
-        .captureEventData(mockException, mockThread, eventType, timestampSeconds, 4, 8, true);
+        .captureEventData(mockException, mockThread, eventType, timestamp, 4, 8, true);
     verify(reportPersistence).persistEvent(mockEvent, sessionId, true);
   }
 
   @Test
-  public void testOnNonFatalEvent_persistsNormalPriorityEventForSessionId() {
+  public void testNonFatalEvent_persistsNormalPriorityEventForSessionId() {
     final String eventType = "error";
     final String sessionId = "testSessionId";
     final long timestamp = System.currentTimeMillis();
-    final long timestampSeconds = timestamp / 1000;
 
-    mockEventInteractions(timestamp);
+    mockEventInteractions();
 
-    reportManager.onBeginSession(sessionId);
-    reportManager.persistNonFatalEvent(mockException, mockThread);
+    reportManager.onBeginSession(sessionId, timestamp);
+    reportManager.persistNonFatalEvent(mockException, mockThread, timestamp);
 
     verify(dataCapture)
-        .captureEventData(mockException, mockThread, eventType, timestampSeconds, 4, 8, false);
+        .captureEventData(mockException, mockThread, eventType, timestamp, 4, 8, false);
     verify(reportPersistence).persistEvent(mockEvent, sessionId, false);
   }
 
   @Test
-  public void testOnNonFatalEvent_addsLogsToEvent() {
-    mockEventInteractions(System.currentTimeMillis());
+  public void testNonFatalEvent_addsLogsToEvent() {
+    long timestamp = System.currentTimeMillis();
+
+    mockEventInteractions();
 
     final String testLog = "test\nlog";
 
     when(logFileManager.getLogString()).thenReturn(testLog);
 
-    reportManager.onBeginSession("testSessionId");
-    reportManager.persistNonFatalEvent(mockException, mockThread);
+    reportManager.onBeginSession("testSessionId", timestamp);
+    reportManager.persistNonFatalEvent(mockException, mockThread, timestamp);
 
     verify(mockEventBuilder)
         .setLog(CrashlyticsReport.Session.Event.Log.builder().setContent(testLog).build());
@@ -144,12 +136,15 @@ public class SessionReportingCoordinatorTest {
   }
 
   @Test
-  public void testOnNonFatalEvent_addsNoLogsToEventWhenNoneAvailable() {
-    mockEventInteractions(System.currentTimeMillis());
+  public void testNonFatalEvent_addsNoLogsToEventWhenNoneAvailable() {
+    long timestamp = System.currentTimeMillis();
+
+    mockEventInteractions();
+
     when(logFileManager.getLogString()).thenReturn(null);
 
-    reportManager.onBeginSession("testSessionId");
-    reportManager.persistNonFatalEvent(mockException, mockThread);
+    reportManager.onBeginSession("testSessionId", timestamp);
+    reportManager.persistNonFatalEvent(mockException, mockThread, timestamp);
 
     verify(mockEventBuilder, never()).setLog(any(CrashlyticsReport.Session.Event.Log.class));
     verify(mockEventBuilder).build();
@@ -157,15 +152,17 @@ public class SessionReportingCoordinatorTest {
   }
 
   @Test
-  public void testOnFatalEvent_addsLogsToEvent() {
-    mockEventInteractions(System.currentTimeMillis());
+  public void testFatalEvent_addsLogsToEvent() {
+    long timestamp = System.currentTimeMillis();
+
+    mockEventInteractions();
 
     final String testLog = "test\nlog";
 
     when(logFileManager.getLogString()).thenReturn(testLog);
 
-    reportManager.onBeginSession("testSessionId");
-    reportManager.persistFatalEvent(mockException, mockThread);
+    reportManager.onBeginSession("testSessionId", timestamp);
+    reportManager.persistFatalEvent(mockException, mockThread, timestamp);
 
     verify(mockEventBuilder)
         .setLog(CrashlyticsReport.Session.Event.Log.builder().setContent(testLog).build());
@@ -174,13 +171,15 @@ public class SessionReportingCoordinatorTest {
   }
 
   @Test
-  public void testOnFatalEvent_addsNoLogsToEventWhenNoneAvailable() {
-    mockEventInteractions(System.currentTimeMillis());
+  public void testFatalEvent_addsNoLogsToEventWhenNoneAvailable() {
+    final long timestamp = System.currentTimeMillis();
+
+    mockEventInteractions();
 
     when(logFileManager.getLogString()).thenReturn(null);
 
-    reportManager.onBeginSession("testSessionId");
-    reportManager.persistFatalEvent(mockException, mockThread);
+    reportManager.onBeginSession("testSessionId", timestamp);
+    reportManager.persistFatalEvent(mockException, mockThread, timestamp);
 
     verify(mockEventBuilder, never()).setLog(any(CrashlyticsReport.Session.Event.Log.class));
     verify(mockEventBuilder).build();
@@ -188,8 +187,10 @@ public class SessionReportingCoordinatorTest {
   }
 
   @Test
-  public void testOnNonFatalEvent_addsSortedKeysToEvent() {
-    mockEventInteractions(System.currentTimeMillis());
+  public void testNonFatalEvent_addsSortedKeysToEvent() {
+    final long timestamp = System.currentTimeMillis();
+
+    mockEventInteractions();
 
     final String testKey1 = "testKey1";
     final String testValue1 = "testValue1";
@@ -210,8 +211,8 @@ public class SessionReportingCoordinatorTest {
 
     when(reportMetadata.getCustomKeys()).thenReturn(attributes);
 
-    reportManager.onBeginSession("testSessionId");
-    reportManager.persistNonFatalEvent(mockException, mockThread);
+    reportManager.onBeginSession("testSessionId", timestamp);
+    reportManager.persistNonFatalEvent(mockException, mockThread, timestamp);
 
     verify(mockEventAppBuilder).setCustomAttributes(expectedCustomAttributes);
     verify(mockEventAppBuilder).build();
@@ -221,15 +222,17 @@ public class SessionReportingCoordinatorTest {
   }
 
   @Test
-  public void testOnNonFatalEvent_addsNoKeysToEventWhenNoneAvailable() {
-    mockEventInteractions(System.currentTimeMillis());
+  public void testNonFatalEvent_addsNoKeysToEventWhenNoneAvailable() {
+    final long timestamp = System.currentTimeMillis();
+
+    mockEventInteractions();
 
     final Map<String, String> attributes = Collections.emptyMap();
 
     when(reportMetadata.getCustomKeys()).thenReturn(attributes);
 
-    reportManager.onBeginSession("testSessionId");
-    reportManager.persistNonFatalEvent(mockException, mockThread);
+    reportManager.onBeginSession("testSessionId", timestamp);
+    reportManager.persistNonFatalEvent(mockException, mockThread, timestamp);
 
     verify(mockEventAppBuilder, never()).setCustomAttributes(any());
     verify(mockEventAppBuilder, never()).build();
@@ -239,8 +242,10 @@ public class SessionReportingCoordinatorTest {
   }
 
   @Test
-  public void testOnFatalEvent_addsSortedKeysToEvent() {
-    mockEventInteractions(System.currentTimeMillis());
+  public void testFatalEvent_addsSortedKeysToEvent() {
+    final long timestamp = System.currentTimeMillis();
+
+    mockEventInteractions();
 
     final String testKey1 = "testKey1";
     final String testValue1 = "testValue1";
@@ -261,8 +266,8 @@ public class SessionReportingCoordinatorTest {
 
     when(reportMetadata.getCustomKeys()).thenReturn(attributes);
 
-    reportManager.onBeginSession("testSessionId");
-    reportManager.persistFatalEvent(mockException, mockThread);
+    reportManager.onBeginSession("testSessionId", timestamp);
+    reportManager.persistFatalEvent(mockException, mockThread, timestamp);
 
     verify(mockEventAppBuilder).setCustomAttributes(expectedCustomAttributes);
     verify(mockEventAppBuilder).build();
@@ -272,15 +277,17 @@ public class SessionReportingCoordinatorTest {
   }
 
   @Test
-  public void testOnFatalEvent_addsNoKeysToEventWhenNoneAvailable() {
-    mockEventInteractions(System.currentTimeMillis());
+  public void testFatalEvent_addsNoKeysToEventWhenNoneAvailable() {
+    final long timestamp = System.currentTimeMillis();
+
+    mockEventInteractions();
 
     final Map<String, String> attributes = Collections.emptyMap();
 
     when(reportMetadata.getCustomKeys()).thenReturn(attributes);
 
-    reportManager.onBeginSession("testSessionId");
-    reportManager.persistFatalEvent(mockException, mockThread);
+    reportManager.onBeginSession("testSessionId", timestamp);
+    reportManager.persistFatalEvent(mockException, mockThread, timestamp);
 
     verify(mockEventAppBuilder, never()).setCustomAttributes(any());
     verify(mockEventAppBuilder, never()).build();
@@ -321,7 +328,7 @@ public class SessionReportingCoordinatorTest {
   @Test
   public void onSessionsFinalize_finalizesReports() {
     final String sessionId = "testSessionId";
-    reportManager.onBeginSession(sessionId);
+    reportManager.onBeginSession(sessionId, System.currentTimeMillis());
     reportManager.finalizeSessions();
 
     verify(reportPersistence).finalizeReports(sessionId);
@@ -361,7 +368,6 @@ public class SessionReportingCoordinatorTest {
   @Test
   public void onReportSend_reportsAreDeletedWithoutBeingSent_whenSendPredicateIsFalse() {
     when(mockSendReportPredicate.shouldSendViaDataTransport()).thenReturn(false);
-
     reportManager.sendReports("testOrgId", Runnable::run, mockSendReportPredicate);
 
     verify(reportPersistence).deleteAllReports();
@@ -375,11 +381,10 @@ public class SessionReportingCoordinatorTest {
     final String currentSessionId = "currentSessionId";
     final String userId = "testUserId";
     final long timestamp = System.currentTimeMillis();
-    when(mockCurrentTimeProvider.getCurrentTimeMillis()).thenReturn(timestamp);
     when(dataCapture.captureReportData(anyString(), anyLong())).thenReturn(mockReport);
     when(reportMetadata.getUserId()).thenReturn(userId);
 
-    reportManager.onBeginSession(currentSessionId);
+    reportManager.onBeginSession(currentSessionId, timestamp);
     reportManager.persistUserId();
 
     verify(reportPersistence).persistUserIdForSession(userId, currentSessionId);
@@ -392,8 +397,7 @@ public class SessionReportingCoordinatorTest {
     verify(reportPersistence).deleteAllReports();
   }
 
-  private void mockEventInteractions(long timestamp) {
-    when(mockCurrentTimeProvider.getCurrentTimeMillis()).thenReturn(timestamp);
+  private void mockEventInteractions() {
     when(mockEvent.toBuilder()).thenReturn(mockEventBuilder);
     when(mockEventBuilder.build()).thenReturn(mockEvent);
     when(mockEvent.getApp()).thenReturn(mockEventApp);

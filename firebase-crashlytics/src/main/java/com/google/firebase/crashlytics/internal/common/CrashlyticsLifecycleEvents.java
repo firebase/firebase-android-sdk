@@ -22,7 +22,7 @@ interface CrashlyticsLifecycleEvents {
    *
    * @param sessionId the identifier for the new session
    */
-  void onBeginSession(String sessionId);
+  void onBeginSession(String sessionId, long timestamp);
 
   /**
    * Called when a message is logged by the user.
