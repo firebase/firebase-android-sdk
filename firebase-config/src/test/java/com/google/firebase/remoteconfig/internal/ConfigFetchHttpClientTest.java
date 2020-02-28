@@ -36,6 +36,8 @@ import static com.google.firebase.remoteconfig.testutil.Assert.assertThrows;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import android.content.Context;
+import android.os.Build;
+
 import com.google.android.gms.common.util.MockClock;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;
@@ -221,6 +223,23 @@ public class ConfigFetchHttpClientTest {
     JSONObject requestBody = new JSONObject(fakeHttpURLConnection.getOutputStream().toString());
     assertThat(requestBody.get(LANGUAGE_CODE)).isEqualTo(languageTag);
   }
+
+  @Test
+  @Config(sdk = Build.VERSION_CODES.KITKAT /* 19 */)
+  public void fetch_localeUsesToStringBelowLollipop() throws Exception {
+    String languageTag = "zh-Hant-TW";  // Taiwan Chinese in traditional script
+    String languageString = "zh_TW_#Hant";
+    context.getResources().getConfiguration().setLocale(Locale.forLanguageTag(languageTag));
+
+    setServerResponseTo(noChangeResponseBody, SECOND_ETAG);
+
+    Map<String, String> userProperties = ImmutableMap.of("up1", "hello", "up2", "world");
+    fetch(FIRST_ETAG, userProperties);
+
+    JSONObject requestBody = new JSONObject(fakeHttpURLConnection.getOutputStream().toString());
+    assertThat(requestBody.get(LANGUAGE_CODE)).isEqualTo(languageString);
+  }
+
 
   @Test
   public void fetch_instanceIdIsNull_throwsFRCClientException() throws Exception {
