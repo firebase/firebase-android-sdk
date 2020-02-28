@@ -31,10 +31,10 @@ import java.util.Map;
 import java.util.concurrent.Executor;
 
 /**
- * This class handles Crashlytics lifecycle events and manages capture, persistence, and sending of
- * reports to Firebase Crashlytics.
+ * This class handles Crashlytics lifecycle events and coordinates session data capture and
+ * persistence, as well as sending of reports to Firebase Crashlytics.
  */
-public class FirebaseCrashlyticsReportManager implements CrashlyticsLifecycleEvents {
+public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
 
   private static final String EVENT_TYPE_CRASH = "crash";
   private static final String EVENT_TYPE_LOGGED = "error";
@@ -50,25 +50,22 @@ public class FirebaseCrashlyticsReportManager implements CrashlyticsLifecycleEve
   private final LogFileManager logFileManager;
   private final UserMetadata reportMetadata;
   private final CurrentTimeProvider currentTimeProvider;
-  private final Executor executor;
 
   private String currentSessionId;
 
-  FirebaseCrashlyticsReportManager(
+  SessionReportingCoordinator(
       CrashlyticsReportDataCapture dataCapture,
       CrashlyticsReportPersistence reportPersistence,
       DataTransportCrashlyticsReportSender reportsSender,
       LogFileManager logFileManager,
       UserMetadata reportMetadata,
-      CurrentTimeProvider currentTimeProvider,
-      Executor executor) {
+      CurrentTimeProvider currentTimeProvider) {
     this.dataCapture = dataCapture;
     this.reportPersistence = reportPersistence;
     this.reportsSender = reportsSender;
     this.logFileManager = logFileManager;
     this.reportMetadata = reportMetadata;
     this.currentTimeProvider = currentTimeProvider;
-    this.executor = executor;
   }
 
   @Override
@@ -79,16 +76,6 @@ public class FirebaseCrashlyticsReportManager implements CrashlyticsLifecycleEve
     final CrashlyticsReport capturedReport = dataCapture.captureReportData(sessionId, timestamp);
 
     reportPersistence.persistReport(capturedReport);
-  }
-
-  @Override
-  public void onFatalEvent(Throwable event, Thread thread) {
-    onEvent(event, thread, EVENT_TYPE_CRASH, true);
-  }
-
-  @Override
-  public void onNonFatalEvent(Throwable event, Thread thread) {
-    onEvent(event, thread, EVENT_TYPE_LOGGED, false);
   }
 
   @Override
@@ -108,17 +95,34 @@ public class FirebaseCrashlyticsReportManager implements CrashlyticsLifecycleEve
 
   @Override
   public void onEndSession() {
-    reportPersistence.persistUserIdForSession(reportMetadata.getUserId(), currentSessionId);
     currentSessionId = null;
   }
 
-  @Override
-  public void onFinalizeSessions() {
+  public void persistFatalEvent(Throwable event, Thread thread) {
+    persistEvent(event, thread, EVENT_TYPE_CRASH, true);
+  }
+
+  public void persistNonFatalEvent(Throwable event, Thread thread) {
+    persistEvent(event, thread, EVENT_TYPE_LOGGED, false);
+  }
+
+  public void persistUserId() {
+    reportPersistence.persistUserIdForSession(reportMetadata.getUserId(), currentSessionId);
+  }
+
+  /** Creates finalized reports for all sessions besides the current session. */
+  public void finalizeSessions() {
     reportPersistence.finalizeReports(currentSessionId);
   }
 
-  @Override
-  public void onSendReports(AppSettingsData appSettingsData) {
+  /**
+   * Send all finalized reports.
+   *
+   * @param appSettingsData
+   * @param reportSendCompleteExecutor executor on which to run report cleanup after each report is
+   *     sent.
+   */
+  public void sendReports(AppSettingsData appSettingsData, Executor reportSendCompleteExecutor) {
     if (appSettingsData.reportUploadVariant != REPORT_UPLOAD_VARIANT_DATATRANSPORT) {
       Logger.getLogger().d(Logger.TAG, "Send via DataTransport disabled. Removing reports.");
       reportPersistence.deleteAllReports();
@@ -128,11 +132,11 @@ public class FirebaseCrashlyticsReportManager implements CrashlyticsLifecycleEve
     for (CrashlyticsReport report : reportsToSend) {
       reportsSender
           .sendReport(report.withOrganizationId(appSettingsData.organizationId))
-          .continueWith(executor, this::onReportSendComplete);
+          .continueWith(reportSendCompleteExecutor, this::onReportSendComplete);
     }
   }
 
-  private void onEvent(
+  private void persistEvent(
       Throwable event, Thread thread, String eventType, boolean includeAllThreads) {
     final long timestamp = currentTimeProvider.getCurrentTimeMillis() / 1000;
 

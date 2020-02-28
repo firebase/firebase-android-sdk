@@ -45,7 +45,7 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-public class FirebaseCrashlyticsReportManagerTest {
+public class SessionReportingCoordinatorTest {
 
   @Mock private CrashlyticsReportDataCapture dataCapture;
   @Mock private CrashlyticsReportPersistence reportPersistence;
@@ -61,21 +61,20 @@ public class FirebaseCrashlyticsReportManagerTest {
   @Mock private Exception mockException;
   @Mock private Thread mockThread;
 
-  private FirebaseCrashlyticsReportManager reportManager;
+  private SessionReportingCoordinator reportManager;
 
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
 
     reportManager =
-        new FirebaseCrashlyticsReportManager(
+        new SessionReportingCoordinator(
             dataCapture,
             reportPersistence,
             reportSender,
             logFileManager,
             reportMetadata,
-            mockCurrentTimeProvider,
-            Runnable::run);
+            mockCurrentTimeProvider);
   }
 
   @Test
@@ -102,7 +101,7 @@ public class FirebaseCrashlyticsReportManagerTest {
     mockEventInteractions(timestamp);
 
     reportManager.onBeginSession(sessionId);
-    reportManager.onFatalEvent(mockException, mockThread);
+    reportManager.persistFatalEvent(mockException, mockThread);
 
     verify(dataCapture)
         .captureEventData(mockException, mockThread, eventType, timestampSeconds, 4, 8, true);
@@ -119,7 +118,7 @@ public class FirebaseCrashlyticsReportManagerTest {
     mockEventInteractions(timestamp);
 
     reportManager.onBeginSession(sessionId);
-    reportManager.onNonFatalEvent(mockException, mockThread);
+    reportManager.persistNonFatalEvent(mockException, mockThread);
 
     verify(dataCapture)
         .captureEventData(mockException, mockThread, eventType, timestampSeconds, 4, 8, false);
@@ -135,7 +134,7 @@ public class FirebaseCrashlyticsReportManagerTest {
     when(logFileManager.getLogString()).thenReturn(testLog);
 
     reportManager.onBeginSession("testSessionId");
-    reportManager.onNonFatalEvent(mockException, mockThread);
+    reportManager.persistNonFatalEvent(mockException, mockThread);
 
     verify(mockEventBuilder)
         .setLog(CrashlyticsReport.Session.Event.Log.builder().setContent(testLog).build());
@@ -149,7 +148,7 @@ public class FirebaseCrashlyticsReportManagerTest {
     when(logFileManager.getLogString()).thenReturn(null);
 
     reportManager.onBeginSession("testSessionId");
-    reportManager.onNonFatalEvent(mockException, mockThread);
+    reportManager.persistNonFatalEvent(mockException, mockThread);
 
     verify(mockEventBuilder, never()).setLog(any(CrashlyticsReport.Session.Event.Log.class));
     verify(mockEventBuilder).build();
@@ -165,7 +164,7 @@ public class FirebaseCrashlyticsReportManagerTest {
     when(logFileManager.getLogString()).thenReturn(testLog);
 
     reportManager.onBeginSession("testSessionId");
-    reportManager.onFatalEvent(mockException, mockThread);
+    reportManager.persistFatalEvent(mockException, mockThread);
 
     verify(mockEventBuilder)
         .setLog(CrashlyticsReport.Session.Event.Log.builder().setContent(testLog).build());
@@ -180,7 +179,7 @@ public class FirebaseCrashlyticsReportManagerTest {
     when(logFileManager.getLogString()).thenReturn(null);
 
     reportManager.onBeginSession("testSessionId");
-    reportManager.onFatalEvent(mockException, mockThread);
+    reportManager.persistFatalEvent(mockException, mockThread);
 
     verify(mockEventBuilder, never()).setLog(any(CrashlyticsReport.Session.Event.Log.class));
     verify(mockEventBuilder).build();
@@ -211,7 +210,7 @@ public class FirebaseCrashlyticsReportManagerTest {
     when(reportMetadata.getCustomKeys()).thenReturn(attributes);
 
     reportManager.onBeginSession("testSessionId");
-    reportManager.onNonFatalEvent(mockException, mockThread);
+    reportManager.persistNonFatalEvent(mockException, mockThread);
 
     verify(mockEventAppBuilder).setCustomAttributes(expectedCustomAttributes);
     verify(mockEventAppBuilder).build();
@@ -229,7 +228,7 @@ public class FirebaseCrashlyticsReportManagerTest {
     when(reportMetadata.getCustomKeys()).thenReturn(attributes);
 
     reportManager.onBeginSession("testSessionId");
-    reportManager.onNonFatalEvent(mockException, mockThread);
+    reportManager.persistNonFatalEvent(mockException, mockThread);
 
     verify(mockEventAppBuilder, never()).setCustomAttributes(any());
     verify(mockEventAppBuilder, never()).build();
@@ -262,7 +261,7 @@ public class FirebaseCrashlyticsReportManagerTest {
     when(reportMetadata.getCustomKeys()).thenReturn(attributes);
 
     reportManager.onBeginSession("testSessionId");
-    reportManager.onFatalEvent(mockException, mockThread);
+    reportManager.persistFatalEvent(mockException, mockThread);
 
     verify(mockEventAppBuilder).setCustomAttributes(expectedCustomAttributes);
     verify(mockEventAppBuilder).build();
@@ -280,28 +279,13 @@ public class FirebaseCrashlyticsReportManagerTest {
     when(reportMetadata.getCustomKeys()).thenReturn(attributes);
 
     reportManager.onBeginSession("testSessionId");
-    reportManager.onFatalEvent(mockException, mockThread);
+    reportManager.persistFatalEvent(mockException, mockThread);
 
     verify(mockEventAppBuilder, never()).setCustomAttributes(any());
     verify(mockEventAppBuilder, never()).build();
     verify(mockEventBuilder, never()).setApp(mockEventApp);
     verify(mockEventBuilder).build();
     verify(logFileManager).clearLog();
-  }
-
-  @Test
-  public void testOnEndSession_addsUserIdToReport() {
-    final String userId = "testUser";
-    final String sessionId = "testSessionId";
-    final long timestamp = System.currentTimeMillis();
-    when(mockCurrentTimeProvider.getCurrentTimeMillis()).thenReturn(timestamp);
-    when(dataCapture.captureReportData(anyString(), anyLong())).thenReturn(mockReport);
-    when(reportMetadata.getUserId()).thenReturn(userId);
-
-    reportManager.onBeginSession(sessionId);
-    reportManager.onEndSession();
-
-    verify(reportPersistence).persistUserIdForSession(userId, sessionId);
   }
 
   @Test
@@ -337,7 +321,7 @@ public class FirebaseCrashlyticsReportManagerTest {
   public void onSessionsFinalize_finalizesReports() {
     final String sessionId = "testSessionId";
     reportManager.onBeginSession(sessionId);
-    reportManager.onFinalizeSessions();
+    reportManager.finalizeSessions();
 
     verify(reportPersistence).finalizeReports(sessionId);
   }
@@ -358,7 +342,7 @@ public class FirebaseCrashlyticsReportManagerTest {
             null,
             orgId,
             false,
-            FirebaseCrashlyticsReportManager.REPORT_UPLOAD_VARIANT_DATATRANSPORT);
+            SessionReportingCoordinator.REPORT_UPLOAD_VARIANT_DATATRANSPORT);
 
     final List<CrashlyticsReport> finalizedReports = new ArrayList<>();
     final CrashlyticsReport mockReport1 = mockReport(sessionId1, orgId);
@@ -374,7 +358,7 @@ public class FirebaseCrashlyticsReportManagerTest {
     when(reportSender.sendReport(mockReport1)).thenReturn(successfulTask);
     when(reportSender.sendReport(mockReport2)).thenReturn(failedTask);
 
-    reportManager.onSendReports(appSettings);
+    reportManager.sendReports(appSettings, Runnable::run);
 
     verify(reportSender).sendReport(mockReport1);
     verify(reportSender).sendReport(mockReport2);
@@ -389,7 +373,7 @@ public class FirebaseCrashlyticsReportManagerTest {
     final AppSettingsData appSettings =
         new AppSettingsData(null, null, null, null, null, orgId, false, 0);
 
-    reportManager.onSendReports(appSettings);
+    reportManager.sendReports(appSettings, Runnable::run);
 
     verify(reportPersistence).deleteAllReports();
     verify(reportPersistence, never()).loadFinalizedReports();
@@ -403,12 +387,27 @@ public class FirebaseCrashlyticsReportManagerTest {
     final AppSettingsData appSettings =
         new AppSettingsData(null, null, null, null, null, orgId, false, 1);
 
-    reportManager.onSendReports(appSettings);
+    reportManager.sendReports(appSettings, Runnable::run);
 
     verify(reportPersistence).deleteAllReports();
     verify(reportPersistence, never()).loadFinalizedReports();
     verify(reportPersistence, never()).deleteFinalizedReport(anyString());
     verifyZeroInteractions(reportSender);
+  }
+
+  @Test
+  public void testPersistUserIdForCurrentSession_persistsCurrentUserIdForCurrentSessionId() {
+    final String currentSessionId = "currentSessionId";
+    final String userId = "testUserId";
+    final long timestamp = System.currentTimeMillis();
+    when(mockCurrentTimeProvider.getCurrentTimeMillis()).thenReturn(timestamp);
+    when(dataCapture.captureReportData(anyString(), anyLong())).thenReturn(mockReport);
+    when(reportMetadata.getUserId()).thenReturn(userId);
+
+    reportManager.onBeginSession(currentSessionId);
+    reportManager.persistUserId();
+
+    verify(reportPersistence).persistUserIdForSession(userId, currentSessionId);
   }
 
   private void mockEventInteractions(long timestamp) {
