@@ -23,7 +23,6 @@ import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.CustomAt
 import com.google.firebase.crashlytics.internal.model.ImmutableList;
 import com.google.firebase.crashlytics.internal.persistence.CrashlyticsReportPersistence;
 import com.google.firebase.crashlytics.internal.send.DataTransportCrashlyticsReportSender;
-import com.google.firebase.crashlytics.internal.settings.model.AppSettingsData;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -36,8 +35,8 @@ import java.util.concurrent.Executor;
  */
 public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
 
-  public interface SendCheck {
-    boolean shouldSendViaDataTransport(int variant);
+  public interface SendReportPredicate {
+    boolean shouldSendViaDataTransport();
   }
 
   private static final String EVENT_TYPE_CRASH = "crash";
@@ -50,7 +49,6 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
   private final DataTransportCrashlyticsReportSender reportsSender;
   private final LogFileManager logFileManager;
   private final UserMetadata reportMetadata;
-  private final SendCheck sendCheck;
   private final CurrentTimeProvider currentTimeProvider;
 
   private String currentSessionId;
@@ -61,14 +59,12 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
       DataTransportCrashlyticsReportSender reportsSender,
       LogFileManager logFileManager,
       UserMetadata reportMetadata,
-      SendCheck sendCheck,
       CurrentTimeProvider currentTimeProvider) {
     this.dataCapture = dataCapture;
     this.reportPersistence = reportPersistence;
     this.reportsSender = reportsSender;
     this.logFileManager = logFileManager;
     this.reportMetadata = reportMetadata;
-    this.sendCheck = sendCheck;
     this.currentTimeProvider = currentTimeProvider;
   }
 
@@ -122,12 +118,17 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
   /**
    * Send all finalized reports.
    *
-   * @param appSettingsData
+   * @param organizationId The organization ID this crash report should be associated with
    * @param reportSendCompleteExecutor executor on which to run report cleanup after each report is
    *     sent.
+   * @param sendReportPredicate Predicate determining whether to send reports before cleaning them
+   *     up
    */
-  public void sendReports(AppSettingsData appSettingsData, Executor reportSendCompleteExecutor) {
-    if (!sendCheck.shouldSendViaDataTransport(appSettingsData.reportUploadVariant)) {
+  public void sendReports(
+      String organizationId,
+      Executor reportSendCompleteExecutor,
+      SendReportPredicate sendReportPredicate) {
+    if (!sendReportPredicate.shouldSendViaDataTransport()) {
       Logger.getLogger().d(Logger.TAG, "Send via DataTransport disabled. Removing reports.");
       reportPersistence.deleteAllReports();
       return;
@@ -135,7 +136,7 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
     final List<CrashlyticsReport> reportsToSend = reportPersistence.loadFinalizedReports();
     for (CrashlyticsReport report : reportsToSend) {
       reportsSender
-          .sendReport(report.withOrganizationId(appSettingsData.organizationId))
+          .sendReport(report.withOrganizationId(organizationId))
           .continueWith(reportSendCompleteExecutor, this::onReportSendComplete);
     }
   }
