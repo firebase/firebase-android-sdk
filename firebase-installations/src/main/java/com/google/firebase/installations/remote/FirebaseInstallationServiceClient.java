@@ -37,7 +37,6 @@ import com.google.firebase.platforminfo.UserAgentPublisher;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.ObjectStreamException
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.Charset;
@@ -179,7 +178,7 @@ public class FirebaseInstallationServiceClient {
       throws IOException {
     OutputStream outputStream = httpURLConnection.getOutputStream();
     if (outputStream == null) {
-      throw new ObjectStreamException("Cannot send CreateInstallation request to FIS. No OutputStream available.");
+      throw new IOException("Cannot send CreateInstallation request to FIS. No OutputStream available.");
     }
     
     GZIPOutputStream gzipOutputStream = new GZIPOutputStream(outputStream);
@@ -207,7 +206,7 @@ public class FirebaseInstallationServiceClient {
       throws IOException {
     OutputStream outputStream = httpURLConnection.getOutputStream();
     if (outputStream == null) {
-      throw new ObjectStreamException("Cannot send GenerateAuthToken request to FIS. No OutputStream available.");
+      throw new IOException("Cannot send GenerateAuthToken request to FIS. No OutputStream available.");
     }
     
     GZIPOutputStream gzipOutputStream = new GZIPOutputStream(outputStream);
