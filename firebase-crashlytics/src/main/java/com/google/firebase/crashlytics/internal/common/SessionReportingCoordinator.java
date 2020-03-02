@@ -14,6 +14,7 @@
 
 package com.google.firebase.crashlytics.internal.common;
 
+import android.content.Context;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.crashlytics.core.UserMetadata;
 import com.google.firebase.crashlytics.internal.Logger;
@@ -22,7 +23,9 @@ import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.CustomAttribute;
 import com.google.firebase.crashlytics.internal.model.ImmutableList;
 import com.google.firebase.crashlytics.internal.persistence.CrashlyticsReportPersistence;
+import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.send.DataTransportCrashlyticsReportSender;
+import com.google.firebase.crashlytics.internal.stacktrace.StackTraceTrimmingStrategy;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -43,6 +46,29 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
   private static final String EVENT_TYPE_LOGGED = "error";
   private static final int EVENT_THREAD_IMPORTANCE = 4;
   private static final int MAX_CHAINED_EXCEPTION_DEPTH = 8;
+
+  private static final int DEFAULT_MAX_EVENTS_TO_KEEP = 8;
+  private static final int DEFAULT_MAX_REPORTS_TO_KEEP = 4;
+
+  public static SessionReportingCoordinator create(
+      Context context,
+      IdManager idManager,
+      FileStore fileStore,
+      AppData appData,
+      LogFileManager logFileManager,
+      UserMetadata userMetadata,
+      StackTraceTrimmingStrategy stackTraceTrimmingStrategy) {
+    final CrashlyticsReportDataCapture dataCapture =
+        new CrashlyticsReportDataCapture(context, idManager, appData, stackTraceTrimmingStrategy);
+    // TODO: getFilesDir creates the directory if it doesn't exist. Defer this.
+    final CrashlyticsReportPersistence reportPersistence =
+        new CrashlyticsReportPersistence(
+            fileStore.getFilesDir(), DEFAULT_MAX_EVENTS_TO_KEEP, DEFAULT_MAX_REPORTS_TO_KEEP);
+    final DataTransportCrashlyticsReportSender reportSender =
+        DataTransportCrashlyticsReportSender.create(context);
+    return new SessionReportingCoordinator(
+        dataCapture, reportPersistence, reportSender, logFileManager, userMetadata);
+  }
 
   private final CrashlyticsReportDataCapture dataCapture;
   private final CrashlyticsReportPersistence reportPersistence;
@@ -167,7 +193,8 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
       Logger.getLogger().d(Logger.TAG, "No log data to include with this event.");
     }
 
-    logFileManager.clearLog(); // Clear log to prepare for next event.
+    // TODO: Put this back once support for reports endpoint is removed.
+    // logFileManager.clearLog(); // Clear log to prepare for next event.
 
     final List<CustomAttribute> sortedCustomAttributes =
         getSortedCustomAttributes(reportMetadata.getCustomKeys());

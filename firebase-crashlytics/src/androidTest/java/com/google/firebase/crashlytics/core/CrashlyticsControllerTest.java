@@ -83,7 +83,9 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
       new FileFilter() {
         @Override
         public boolean accept(File pathname) {
-          return pathname.isDirectory() && !pathname.getName().equals("log-files");
+          return pathname.isDirectory()
+              && !pathname.getName().equals("log-files")
+              && !pathname.getName().equals("report-persistence");
         }
       };
 

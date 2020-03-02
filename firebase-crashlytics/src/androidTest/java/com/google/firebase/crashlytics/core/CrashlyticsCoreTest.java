@@ -190,7 +190,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
 
     appRestart();
 
-    assertEquals(1, crashlyticsFilesDir.listFiles(ONLY_DIRECTORIES).length);
+    assertEquals(1, crashlyticsFilesDir.listFiles(ONLY_SESSION_DIRECTORIES).length);
     assertTrue(logFilesDir.isDirectory());
     assertFalse(fatalSessionsDir.exists());
     assertFalse(nativeSessionsDir.exists());
@@ -203,7 +203,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     javaCrash(new RuntimeException());
 
     // Directories
-    assertEquals(2, crashlyticsFilesDir.listFiles(ONLY_DIRECTORIES).length);
+    assertEquals(2, crashlyticsFilesDir.listFiles(ONLY_SESSION_DIRECTORIES).length);
     assertTrue(logFilesDir.isDirectory());
     assertTrue(fatalSessionsDir.isDirectory());
 
@@ -222,7 +222,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
 
     CrashlyticsCore core = appRestart();
 
-    assertEquals(1, crashlyticsFilesDir.listFiles(ONLY_DIRECTORIES).length);
+    assertEquals(1, crashlyticsFilesDir.listFiles(ONLY_SESSION_DIRECTORIES).length);
     assertTrue(logFilesDir.isDirectory());
     assertFalse(fatalSessionsDir.exists());
     assertFalse(nativeSessionsDir.exists());
@@ -253,7 +253,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
 
     javaCrash(new NullPointerException());
 
-    assertEquals(2, crashlyticsFilesDir.listFiles(ONLY_DIRECTORIES).length);
+    assertEquals(2, crashlyticsFilesDir.listFiles(ONLY_SESSION_DIRECTORIES).length);
     assertTrue(logFilesDir.isDirectory());
     assertTrue(fatalSessionsDir.isDirectory());
     assertFalse(nativeSessionsDir.exists());
@@ -271,7 +271,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     appRestart();
     appRestart();
 
-    assertEquals(1, crashlyticsFilesDir.listFiles(ONLY_DIRECTORIES).length);
+    assertEquals(1, crashlyticsFilesDir.listFiles(ONLY_SESSION_DIRECTORIES).length);
     assertTrue(logFilesDir.isDirectory());
     assertFalse(nativeSessionsDir.exists());
     assertFalse(fatalSessionsDir.exists());
@@ -286,7 +286,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
 
     CrashlyticsCore core = appRestart();
 
-    assertEquals(1, crashlyticsFilesDir.listFiles(ONLY_DIRECTORIES).length);
+    assertEquals(1, crashlyticsFilesDir.listFiles(ONLY_SESSION_DIRECTORIES).length);
     assertTrue(logFilesDir.isDirectory());
     assertFalse(nonFatalSessionDir.exists());
     assertFalse(nativeSessionsDir.exists());
@@ -304,7 +304,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     appRestart();
 
     assertEquals(0, crashlyticsFilesDir.listFiles(NON_FATAL_FILES_FILTER).length);
-    assertEquals(2, crashlyticsFilesDir.listFiles(ONLY_DIRECTORIES).length);
+    assertEquals(2, crashlyticsFilesDir.listFiles(ONLY_SESSION_DIRECTORIES).length);
     assertTrue(logFilesDir.isDirectory());
     assertTrue(nonFatalSessionDir.isDirectory());
     assertFalse(nativeSessionsDir.exists());
@@ -329,7 +329,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     // mock native crash data.
     appRestart();
 
-    assertEquals(1, crashlyticsFilesDir.listFiles(ONLY_DIRECTORIES).length);
+    assertEquals(1, crashlyticsFilesDir.listFiles(ONLY_SESSION_DIRECTORIES).length);
     assertTrue(logFilesDir.isDirectory());
     assertEquals(0, crashlyticsFilesDir.listFiles(NON_FATAL_FILES_FILTER).length);
     assertFalse(nativeSessionsDir.isDirectory());
@@ -340,7 +340,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
 
     appRestart(mocknativeComponent);
 
-    assertEquals(2, crashlyticsFilesDir.listFiles(ONLY_DIRECTORIES).length);
+    assertEquals(2, crashlyticsFilesDir.listFiles(ONLY_SESSION_DIRECTORIES).length);
     assertTrue(logFilesDir.isDirectory());
     assertEquals(0, crashlyticsFilesDir.listFiles(NON_FATAL_FILES_FILTER).length);
     assertEquals(
@@ -368,7 +368,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     // mock native crash data.
     CrashlyticsCore core = appRestart();
 
-    assertEquals(1, crashlyticsFilesDir.listFiles(ONLY_DIRECTORIES).length);
+    assertEquals(1, crashlyticsFilesDir.listFiles(ONLY_SESSION_DIRECTORIES).length);
     assertTrue(logFilesDir.isDirectory());
     assertEquals(0, crashlyticsFilesDir.listFiles(NON_FATAL_FILES_FILTER).length);
     assertFalse(nativeSessionsDir.isDirectory());
@@ -403,7 +403,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     // mock native crash data.
     appRestart();
 
-    assertEquals(1, crashlyticsFilesDir.listFiles(ONLY_DIRECTORIES).length);
+    assertEquals(1, crashlyticsFilesDir.listFiles(ONLY_SESSION_DIRECTORIES).length);
     assertTrue(logFilesDir.isDirectory());
     assertEquals(0, crashlyticsFilesDir.listFiles(NON_FATAL_FILES_FILTER).length);
     assertFalse(nativeSessionsDir.isDirectory());
@@ -439,7 +439,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
 
     appRestart(mocknativeComponent);
 
-    assertEquals(1, crashlyticsFilesDir.listFiles(ONLY_DIRECTORIES).length);
+    assertEquals(1, crashlyticsFilesDir.listFiles(ONLY_SESSION_DIRECTORIES).length);
     assertTrue(logFilesDir.isDirectory());
     assertEquals(0, crashlyticsFilesDir.listFiles(NON_FATAL_FILES_FILTER).length);
     assertFalse(nativeSessionsDir.isDirectory());
@@ -451,7 +451,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     javaCrash(new IllegalStateException());
     appRestart(mocknativeComponent);
 
-    assertEquals(2, crashlyticsFilesDir.listFiles(ONLY_DIRECTORIES).length);
+    assertEquals(2, crashlyticsFilesDir.listFiles(ONLY_SESSION_DIRECTORIES).length);
     assertTrue(logFilesDir.isDirectory());
     assertTrue(fatalSessionsDir.isDirectory());
     assertEquals(1, fatalSessionsDir.listFiles(CLS_FILE_FILTER).length);
@@ -464,7 +464,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
 
     appRestart(mocknativeComponent);
 
-    assertEquals(3, crashlyticsFilesDir.listFiles(ONLY_DIRECTORIES).length);
+    assertEquals(3, crashlyticsFilesDir.listFiles(ONLY_SESSION_DIRECTORIES).length);
     assertTrue(logFilesDir.isDirectory());
     assertTrue(fatalSessionsDir.isDirectory());
     assertEquals(1, fatalSessionsDir.listFiles(CLS_FILE_FILTER).length);
@@ -481,7 +481,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     javaCrash(new NullPointerException());
     appRestart(mocknativeComponent);
 
-    assertEquals(3, crashlyticsFilesDir.listFiles(ONLY_DIRECTORIES).length);
+    assertEquals(3, crashlyticsFilesDir.listFiles(ONLY_SESSION_DIRECTORIES).length);
     assertTrue(logFilesDir.isDirectory());
     assertTrue(fatalSessionsDir.isDirectory());
     assertEquals(2, fatalSessionsDir.listFiles(CLS_FILE_FILTER).length);
@@ -670,10 +670,10 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     }
   }
 
-  private static class DirectoriesOnlyFilter implements FileFilter {
+  private static class SessionDirectoriesOnlyFilter implements FileFilter {
     @Override
     public boolean accept(File file) {
-      return file.isDirectory();
+      return file.isDirectory() && !file.getName().equals("report-persistence");
     }
   }
 
@@ -728,7 +728,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     }
   }
 
-  private static class AnySessionIdDirectoryFilter extends DirectoriesOnlyFilter {
+  private static class AnySessionIdDirectoryFilter extends SessionDirectoriesOnlyFilter {
     private static String ANY_SESSION_ID_REGEX =
         "[A-Z0-9]{12}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{12}";
 
@@ -739,7 +739,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
   }
 
   private static final FileFilter ONLY_FILES = new FilesOnlyFilter();
-  private static final FileFilter ONLY_DIRECTORIES = new DirectoriesOnlyFilter();
+  private static final FileFilter ONLY_SESSION_DIRECTORIES = new SessionDirectoriesOnlyFilter();
   private static final FileExtensionFilter CLS_FILE_FILTER = new FileExtensionFilter(".cls");
   private static final FileExtensionFilter META_FILE_FILTER = new FileExtensionFilter(".meta");
   private static final FileFilter NON_FATAL_FILES_FILTER = new NonFatalFilesFilter();
