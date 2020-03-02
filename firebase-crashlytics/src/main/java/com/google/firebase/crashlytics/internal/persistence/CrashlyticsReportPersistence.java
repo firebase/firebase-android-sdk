@@ -62,8 +62,8 @@ public class CrashlyticsReportPersistence {
 
   private static final CrashlyticsReportJsonTransform TRANSFORM =
       new CrashlyticsReportJsonTransform();
-  private static final Comparator<? super File> SESSION_ID_COMPARATOR =
-      (f1, f2) -> -f1.getName().compareTo(f2.getName());
+  private static final Comparator<? super File> LATEST_SESSION_ID_FIRST_COMPARATOR =
+      (f1, f2) -> f2.getName().compareTo(f1.getName());
 
   private final AtomicInteger eventCounter = new AtomicInteger(0);
 
@@ -75,18 +75,21 @@ public class CrashlyticsReportPersistence {
   private final File reportsDirectory;
 
   // TODO: Add settings override
-  private final int defaultMaxEventsToKeep;
+  private final int maxEventsToKeep;
   // TODO: Add settings override
-  private final int defaultMaxReportsToKeep;
+  private final int maxReportsToKeep;
+  // TODO: Add settings override
+  private final int maxOpenSessions;
 
   public CrashlyticsReportPersistence(
-      File rootDirectory, int defaultMaxEventsToKeep, int defaultMaxReportsToKeep) {
+      File rootDirectory, int maxEventsToKeep, int maxReportsToKeep, int maxOpenSessions) {
     final File workingDirectory = new File(rootDirectory, WORKING_DIRECTORY_NAME);
     openSessionsDirectory = new File(workingDirectory, OPEN_SESSIONS_DIRECTORY_NAME);
     priorityReportsDirectory = new File(workingDirectory, PRIORITY_REPORTS_DIRECTORY);
     reportsDirectory = new File(workingDirectory, REPORTS_DIRECTORY);
-    this.defaultMaxEventsToKeep = defaultMaxEventsToKeep;
-    this.defaultMaxReportsToKeep = defaultMaxReportsToKeep;
+    this.maxEventsToKeep = maxEventsToKeep;
+    this.maxReportsToKeep = maxReportsToKeep;
+    this.maxOpenSessions = maxOpenSessions;
   }
 
   public void persistReport(CrashlyticsReport report) {
@@ -130,7 +133,7 @@ public class CrashlyticsReportPersistence {
     final String json = TRANSFORM.eventToJson(event);
     final String fileName = generateEventFilename(eventCounter.getAndIncrement(), isHighPriority);
     writeTextFile(new File(sessionDirectory, fileName), json);
-    trimEvents(sessionDirectory, defaultMaxEventsToKeep);
+    trimEvents(sessionDirectory, maxEventsToKeep);
   }
 
   public void persistUserIdForSession(String userId, String sessionId) {
@@ -162,16 +165,10 @@ public class CrashlyticsReportPersistence {
 
   // TODO: Deal with potential runtime exceptions
   public void finalizeReports(String currentSessionId) {
-    // TODO: Trim down to maximum allowed # of open sessions
-
     // TODO: Need to implement procedure to skip finalizing the current session when this is
     //  called on app start, but keep the current session when called at crash time. Currently
     //  this only works when called at app start.
-    final FileFilter sessionDirectoryFilter =
-        (f) -> f.isDirectory() && !f.getName().equals(currentSessionId);
-
-    final List<File> sessionDirectories =
-        getFilesInDirectory(openSessionsDirectory, sessionDirectoryFilter);
+    List<File> sessionDirectories = capAndGetOpenSessions(currentSessionId);
     for (File sessionDirectory : sessionDirectories) {
       final List<File> eventFiles =
           getFilesInDirectory(
@@ -211,8 +208,9 @@ public class CrashlyticsReportPersistence {
             TRANSFORM.reportToJson(report.withEvents(ImmutableList.from(events))));
       }
       recursiveDelete(sessionDirectory);
-      capFinalizedReports();
     }
+
+    capFinalizedReports();
   }
 
   /**
@@ -229,15 +227,37 @@ public class CrashlyticsReportPersistence {
     return allReports;
   }
 
+  private List<File> capAndGetOpenSessions(String currentSessionId) {
+    final FileFilter sessionDirectoryFilter =
+        (f) -> f.isDirectory() && !f.getName().equals(currentSessionId);
+    List<File> openSessionDirectories =
+        getFilesInDirectory(openSessionsDirectory, sessionDirectoryFilter);
+    Collections.sort(openSessionDirectories, LATEST_SESSION_ID_FIRST_COMPARATOR);
+    if (openSessionDirectories.size() <= maxOpenSessions) {
+      return openSessionDirectories;
+    }
+
+    // Make a sublist of the reports that go over the size limit
+    List<File> openSessionDirectoriesToRemove =
+        openSessionDirectories.subList(maxOpenSessions, openSessionDirectories.size());
+    for (File openSessionDirectory : openSessionDirectoriesToRemove) {
+      recursiveDelete(openSessionDirectory);
+    }
+    return openSessionDirectories.subList(0, maxOpenSessions);
+  }
+
   private void capFinalizedReports() {
-    List<File> allReportFiles = getAllFinalizedReportFiles();
-    int reportCount = allReportFiles.size();
-    if (reportCount > defaultMaxReportsToKeep) {
-      // Make a sublist of the reports that go over the size limit
-      List<File> filesToRemove = allReportFiles.subList(defaultMaxReportsToKeep, reportCount);
-      for (File reportFile : filesToRemove) {
-        reportFile.delete();
-      }
+    List<File> finalizedReportFiles = getAllFinalizedReportFiles();
+
+    int fileCount = finalizedReportFiles.size();
+    if (fileCount <= maxReportsToKeep) {
+      return;
+    }
+
+    // Make a sublist of the reports that go over the size limit
+    List<File> filesToRemove = finalizedReportFiles.subList(maxReportsToKeep, fileCount);
+    for (File reportFile : filesToRemove) {
+      reportFile.delete();
     }
   }
 
@@ -254,8 +274,8 @@ public class CrashlyticsReportPersistence {
   @NonNull
   private static List<File> sortAndCombineReportFiles(
       List<File> priorityReports, List<File> reports) {
-    Collections.sort(priorityReports, SESSION_ID_COMPARATOR);
-    Collections.sort(reports, SESSION_ID_COMPARATOR);
+    Collections.sort(priorityReports, LATEST_SESSION_ID_FIRST_COMPARATOR);
+    Collections.sort(reports, LATEST_SESSION_ID_FIRST_COMPARATOR);
     final ArrayList<File> allReportsFiles = new ArrayList<>();
     allReportsFiles.ensureCapacity(priorityReports.size() + reports.size());
     allReportsFiles.addAll(priorityReports);

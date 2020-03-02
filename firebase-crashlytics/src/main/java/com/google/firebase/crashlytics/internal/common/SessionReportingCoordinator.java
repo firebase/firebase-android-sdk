@@ -49,6 +49,7 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
 
   private static final int DEFAULT_MAX_EVENTS_TO_KEEP = 8;
   private static final int DEFAULT_MAX_REPORTS_TO_KEEP = 4;
+  private static final int DEFAULT_MAX_SESSIONS_TO_KEEP = 8;
 
   public static SessionReportingCoordinator create(
       Context context,
@@ -63,7 +64,10 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
     // TODO: getFilesDir creates the directory if it doesn't exist. Defer this.
     final CrashlyticsReportPersistence reportPersistence =
         new CrashlyticsReportPersistence(
-            fileStore.getFilesDir(), DEFAULT_MAX_EVENTS_TO_KEEP, DEFAULT_MAX_REPORTS_TO_KEEP);
+            fileStore.getFilesDir(),
+            DEFAULT_MAX_EVENTS_TO_KEEP,
+            DEFAULT_MAX_REPORTS_TO_KEEP,
+            DEFAULT_MAX_SESSIONS_TO_KEEP);
     final DataTransportCrashlyticsReportSender reportSender =
         DataTransportCrashlyticsReportSender.create(context);
     return new SessionReportingCoordinator(

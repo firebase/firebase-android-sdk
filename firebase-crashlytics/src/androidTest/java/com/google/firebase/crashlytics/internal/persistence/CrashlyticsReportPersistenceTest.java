@@ -25,6 +25,7 @@ import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event.Application.Execution.Signal;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event.Application.Execution.Thread.Frame;
 import com.google.firebase.crashlytics.internal.model.ImmutableList;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -37,8 +38,7 @@ import org.junit.runner.RunWith;
 @RunWith(AndroidJUnit4.class)
 public class CrashlyticsReportPersistenceTest {
 
-  private static final int DEFAULT_MAX_EVENTS_TO_KEEP = 4;
-  private static final int DEFAULT_MAX_REPORTS_TO_KEEP = 4;
+  private static final int VERY_LARGE_UPPER_LIMIT = 9999;
 
   private CrashlyticsReportPersistence reportPersistence;
 
@@ -48,7 +48,10 @@ public class CrashlyticsReportPersistenceTest {
   public void setUp() throws Exception {
     reportPersistence =
         new CrashlyticsReportPersistence(
-            folder.newFolder(), DEFAULT_MAX_EVENTS_TO_KEEP, DEFAULT_MAX_REPORTS_TO_KEEP);
+            folder.newFolder(),
+            VERY_LARGE_UPPER_LIMIT,
+            VERY_LARGE_UPPER_LIMIT,
+            VERY_LARGE_UPPER_LIMIT);
   }
 
   @Test
@@ -125,7 +128,14 @@ public class CrashlyticsReportPersistenceTest {
   }
 
   @Test
-  public void testFinalizeReports_capsReports() {
+  public void testFinalizeReports_capsOpenSessions() throws IOException {
+    // Use a lower limit for the number of max open sessions to validate
+    // that sessions become capped when reports are finalized
+    // TODO: Refactor open session management so that it can be tested independently
+    reportPersistence =
+        new CrashlyticsReportPersistence(
+            folder.newFolder(), VERY_LARGE_UPPER_LIMIT, VERY_LARGE_UPPER_LIMIT, 4);
+
     for (int i = 0; i < 10; i++) {
       persistReportWithEvent(reportPersistence, "testSession" + i, true);
     }
@@ -136,7 +146,77 @@ public class CrashlyticsReportPersistenceTest {
   }
 
   @Test
-  public void testFinalizeReports_removesLowPriorityReportsFirst() {
+  public void testFinalizeReports_capsOldestSessionsFirst() throws IOException {
+    // Use a lower limit for the number of max open sessions to validate
+    // that sessions become capped when reports are finalized
+    reportPersistence =
+        new CrashlyticsReportPersistence(
+            folder.newFolder(), VERY_LARGE_UPPER_LIMIT, VERY_LARGE_UPPER_LIMIT, 4);
+
+    for (int i = 0; i < 8; i++) {
+      persistReportWithEvent(reportPersistence, "testSession" + i, true);
+    }
+    reportPersistence.finalizeReports("skippedSession");
+
+    final List<CrashlyticsReport> finalizedReports = reportPersistence.loadFinalizedReports();
+    assertEquals(4, finalizedReports.size());
+
+    List<String> reportIdentifiers = new ArrayList<>();
+    for (CrashlyticsReport finalizedReport : finalizedReports) {
+      reportIdentifiers.add(finalizedReport.getSession().getIdentifier());
+    }
+    List<String> expectedSessions =
+        Arrays.asList("testSession4", "testSession5", "testSession6", "testSession7");
+    List<String> unexpectedSessions =
+        Arrays.asList("testSession0", "testSession1", "testSession2", "testSession3");
+
+    assertTrue(reportIdentifiers.containsAll(expectedSessions));
+    for (String unexpectedSession : unexpectedSessions) {
+      assertFalse(reportIdentifiers.contains(unexpectedSession));
+    }
+  }
+
+  @Test
+  public void testFinalizeReports_skipsCappingCurrentSession() throws IOException {
+    // Use a lower limit for the number of max open sessions to validate
+    // that sessions become capped when reports are finalized
+    reportPersistence =
+        new CrashlyticsReportPersistence(
+            folder.newFolder(), VERY_LARGE_UPPER_LIMIT, VERY_LARGE_UPPER_LIMIT, 4);
+
+    for (int i = 0; i < 10; i++) {
+      persistReportWithEvent(reportPersistence, "testSession" + i, true);
+    }
+    reportPersistence.finalizeReports("testSession5");
+    List<CrashlyticsReport> finalizedReports = reportPersistence.loadFinalizedReports();
+    assertEquals(4, finalizedReports.size());
+    persistReportWithEvent(reportPersistence, "testSession11", true);
+    reportPersistence.finalizeReports("testSession11");
+    finalizedReports = reportPersistence.loadFinalizedReports();
+    assertEquals(5, finalizedReports.size());
+  }
+
+  @Test
+  public void testFinalizeReports_capsReports() throws IOException {
+    reportPersistence =
+        new CrashlyticsReportPersistence(
+            folder.newFolder(), VERY_LARGE_UPPER_LIMIT, 4, VERY_LARGE_UPPER_LIMIT);
+
+    for (int i = 0; i < 10; i++) {
+      persistReportWithEvent(reportPersistence, "testSession" + i, true);
+    }
+    reportPersistence.finalizeReports("skippedSession");
+
+    final List<CrashlyticsReport> finalizedReports = reportPersistence.loadFinalizedReports();
+    assertEquals(4, finalizedReports.size());
+  }
+
+  @Test
+  public void testFinalizeReports_removesLowPriorityReportsFirst() throws IOException {
+    reportPersistence =
+        new CrashlyticsReportPersistence(
+            folder.newFolder(), VERY_LARGE_UPPER_LIMIT, 4, VERY_LARGE_UPPER_LIMIT);
+
     for (int i = 0; i < 10; i++) {
       boolean priority = i >= 3 && i <= 8;
       String sessionId = "testSession" + i + (priority ? "high" : "low");
@@ -153,7 +233,10 @@ public class CrashlyticsReportPersistenceTest {
   }
 
   @Test
-  public void testFinalizeReports_removesOldestReportsFirst() {
+  public void testFinalizeReports_removesOldestReportsFirst() throws IOException {
+    reportPersistence =
+        new CrashlyticsReportPersistence(
+            folder.newFolder(), VERY_LARGE_UPPER_LIMIT, 4, VERY_LARGE_UPPER_LIMIT);
     for (int i = 0; i < 8; i++) {
       String sessionId = "testSession" + i;
       persistReportWithEvent(reportPersistence, sessionId, true);
@@ -284,7 +367,10 @@ public class CrashlyticsReportPersistenceTest {
   }
 
   @Test
-  public void testPersistEvent_keepsAppropriateNumberOfMostRecentEvents() {
+  public void testPersistEvent_keepsAppropriateNumberOfMostRecentEvents() throws IOException {
+    reportPersistence =
+        new CrashlyticsReportPersistence(
+            folder.newFolder(), 4, VERY_LARGE_UPPER_LIMIT, VERY_LARGE_UPPER_LIMIT);
     final String sessionId = "testSession";
     final CrashlyticsReport testReport = makeTestReport(sessionId);
     final CrashlyticsReport.Session.Event testEvent1 = makeTestEvent("type1", "reason1");
@@ -304,7 +390,7 @@ public class CrashlyticsReportPersistenceTest {
     final List<CrashlyticsReport> finalizedReports = reportPersistence.loadFinalizedReports();
     assertEquals(1, finalizedReports.size());
     final CrashlyticsReport finalizedReport = finalizedReports.get(0);
-    assertEquals(DEFAULT_MAX_EVENTS_TO_KEEP, finalizedReport.getSession().getEvents().size());
+    assertEquals(4, finalizedReport.getSession().getEvents().size());
     assertEquals(
         testReport.withEvents(ImmutableList.from(testEvent2, testEvent3, testEvent4, testEvent5)),
         finalizedReport);
