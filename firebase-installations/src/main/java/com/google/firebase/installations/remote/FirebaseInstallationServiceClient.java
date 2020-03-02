@@ -37,7 +37,7 @@ import com.google.firebase.platforminfo.UserAgentPublisher;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.ObjectStreamException
+import java.io.ObjectStreamException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.Charset;
