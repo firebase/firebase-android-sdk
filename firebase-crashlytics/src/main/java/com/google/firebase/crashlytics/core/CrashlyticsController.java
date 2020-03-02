@@ -623,11 +623,6 @@ class CrashlyticsController {
     };
   }
 
-  private SessionReportingCoordinator.SendReportPredicate shouldSendViaDataTransport(
-      int reportUploadVariant) {
-    return () -> REPORT_UPLOAD_VARIANT_DATATRANSPORT == reportUploadVariant;
-  }
-
   // region Internal "public" API for data capture
 
   /** Log a timestamped string to the log file. */
@@ -796,7 +791,7 @@ class CrashlyticsController {
 
     Logger.getLogger().d(Logger.TAG, "Finalizing previously open sessions.");
     try {
-      doCloseSessions(maxCustomExceptionEvents, true);
+      doCloseSessions(maxCustomExceptionEvents, false);
     } catch (Exception e) {
       Logger.getLogger().e(Logger.TAG, "Unable to finalize previously open sessions.", e);
       return false;
@@ -824,21 +819,21 @@ class CrashlyticsController {
     writeSessionDevice(sessionIdentifier);
     logFileManager.setCurrentSession(sessionIdentifier);
 
-    // Firebase Crashlytics requires session IDs without dashes.
-    reportingCoordinator.onBeginSession(sessionIdentifier.replaceAll("-", ""), startedAtSeconds);
+    reportingCoordinator.onBeginSession(
+        makeFirebaseSessionIdentifier(sessionIdentifier), startedAtSeconds);
   }
 
   void doCloseSessions(int maxCustomExceptionEvents) throws Exception {
-    doCloseSessions(maxCustomExceptionEvents, false);
+    doCloseSessions(maxCustomExceptionEvents, true);
   }
 
   /**
    * Not synchronized/locked. Must be executed from the single thread executor service used by this
    * class.
    */
-  private void doCloseSessions(int maxCustomExceptionEvents, boolean excludeCurrent)
+  private void doCloseSessions(int maxCustomExceptionEvents, boolean includeCurrent)
       throws Exception {
-    final int offset = excludeCurrent ? 1 : 0;
+    final int offset = includeCurrent ? 0 : 1;
 
     trimOpenSessions(MAX_OPEN_SESSIONS + offset);
 
@@ -856,7 +851,7 @@ class CrashlyticsController {
     // maximum chance that the user code that sets this information has been run.
     writeSessionUser(mostRecentSessionIdToClose);
 
-    if (!excludeCurrent) {
+    if (includeCurrent) {
       reportingCoordinator.onEndSession();
     }
 
@@ -1214,6 +1209,16 @@ class CrashlyticsController {
     } finally {
       CommonUtils.closeQuietly(gos);
     }
+  }
+
+  /** Removes dashes in the Crashlytics session identifier to conform to Firebase constraints. */
+  private static String makeFirebaseSessionIdentifier(String sessionIdentifier) {
+    return sessionIdentifier.replaceAll("-", "");
+  }
+
+  private static SessionReportingCoordinator.SendReportPredicate shouldSendViaDataTransport(
+      int reportUploadVariant) {
+    return () -> REPORT_UPLOAD_VARIANT_DATATRANSPORT == reportUploadVariant;
   }
 
   // region Serialization to protobuf
