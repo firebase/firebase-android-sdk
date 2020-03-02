@@ -59,7 +59,7 @@ public class SettingsJsonParserTest extends CrashlyticsTestCase {
     final SettingsData settingsData = settingsJsonParser.parseSettingsJson(testJson);
 
     Assert.assertEquals(
-        "https://api.crashlytics.com/spi/v1/platforms/android/apps/com.google.firebase.crashlytics.sdk.test",
+        "https://update.crashlytics.com/spi/v1/platforms/android/apps/com.google.firebase.crashlytics.sdk.test",
         settingsData.appData.url);
     Assert.assertEquals("12345abcde12345abcde1234", settingsData.appData.organizationId);
     Assert.assertEquals("com.google.firebase.crashlytics.sdk.test", settingsData.appData.bundleId);

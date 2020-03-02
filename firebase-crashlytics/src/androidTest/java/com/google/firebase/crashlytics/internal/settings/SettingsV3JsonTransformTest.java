@@ -75,8 +75,8 @@ public class SettingsV3JsonTransformTest extends CrashlyticsTestCase {
     assertEquals(isAppNew ? "new" : "activated", appData.status);
     assertEquals(
         isAppNew
-            ? "https://api.crashlytics.com/spi/v1/platforms/android/apps"
-            : "https://api.crashlytics.com/spi/v1/platforms/android/apps/com.google.firebase.crashlytics.sdk.test",
+            ? "https://update.crashlytics.com/spi/v1/platforms/android/apps"
+            : "https://update.crashlytics.com/spi/v1/platforms/android/apps/com.google.firebase.crashlytics.sdk.test",
         appData.url);
     assertEquals(
         "https://reports.crashlytics.com/spi/v1/platforms/android/apps/com.google.firebase.crashlytics.sdk.test/reports",

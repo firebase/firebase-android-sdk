@@ -26,9 +26,9 @@ import org.json.JSONObject;
 class SettingsV3JsonTransform implements SettingsJsonTransform {
 
   private static final String CRASHLYTICS_APP_URL =
-      "https://api.crashlytics.com/spi/v1/platforms/android/apps";
+      "https://update.crashlytics.com/spi/v1/platforms/android/apps";
   private static final String CRASHLYTICS_APP_URL_FORMAT =
-      "https://api.crashlytics.com/spi/v1/platforms/android/apps/%s";
+      "https://update.crashlytics.com/spi/v1/platforms/android/apps/%s";
   private static final String REPORTS_URL_FORMAT =
       "https://reports.crashlytics.com/spi/v1/platforms/android/apps/%s/reports";
   private static final String NDK_REPORTS_URL_FORMAT =
