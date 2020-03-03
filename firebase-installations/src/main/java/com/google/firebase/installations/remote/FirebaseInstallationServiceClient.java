@@ -178,9 +178,10 @@ public class FirebaseInstallationServiceClient {
       throws IOException {
     OutputStream outputStream = httpURLConnection.getOutputStream();
     if (outputStream == null) {
-      throw new IOException("Cannot send CreateInstallation request to FIS. No OutputStream available.");
+      throw new IOException(
+          "Cannot send CreateInstallation request to FIS. No OutputStream available.");
     }
-    
+
     GZIPOutputStream gzipOutputStream = new GZIPOutputStream(outputStream);
     try {
       gzipOutputStream.write(
@@ -206,9 +207,10 @@ public class FirebaseInstallationServiceClient {
       throws IOException {
     OutputStream outputStream = httpURLConnection.getOutputStream();
     if (outputStream == null) {
-      throw new IOException("Cannot send GenerateAuthToken request to FIS. No OutputStream available.");
+      throw new IOException(
+          "Cannot send GenerateAuthToken request to FIS. No OutputStream available.");
     }
-    
+
     GZIPOutputStream gzipOutputStream = new GZIPOutputStream(outputStream);
     try {
       gzipOutputStream.write(buildGenerateAuthTokenRequestBody().toString().getBytes("UTF-8"));
