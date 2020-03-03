@@ -44,9 +44,9 @@ public class IidStore {
   private static final String STORE_KEY_PUB = "|S||P|";
   private static final String STORE_KEY_ID = "|S|id";
   private static final String STORE_KEY_TOKEN = "|T|";
-  private static final String DEFAULT_SCOPE = "|*";
   private static final String JSON_TOKEN_KEY = "token";
   private static final String JSON_ENCODED_PREFIX = "{";
+  private static final String [] ALLOWABLE_SCOPES = new String[]{"*", "FCM", "GCM"};
 
   @GuardedBy("iidPrefs")
   private final SharedPreferences iidPrefs;
@@ -86,14 +86,23 @@ public class IidStore {
     return projectNumber;
   }
 
-  private String createTokenKey(@NonNull String senderId) {
-    return STORE_KEY_TOKEN + senderId + DEFAULT_SCOPE;
+  private String createTokenKey(@NonNull String senderId, @NonNull String scope) {
+    return STORE_KEY_TOKEN + senderId + " | " + scope;
   }
 
   @Nullable
   public String readToken() {
     synchronized (iidPrefs) {
-      String token = iidPrefs.getString(createTokenKey(defaultSenderId), null);
+      Log.d("Rayo", "readToken: defaultSenderId: " + defaultSenderId);
+      String token = null;
+
+      for (String scope : ALLOWABLE_SCOPES) {
+        token = iidPrefs.getString(createTokenKey(defaultSenderId, scope), null);
+        if (!TextUtils.isEmpty(token)) {
+          break;
+        }
+      }
+
       if (TextUtils.isEmpty(token)) {
         return null;
       }
