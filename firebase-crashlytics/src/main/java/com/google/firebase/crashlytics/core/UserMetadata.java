@@ -1,4 +1,4 @@
-// Copyright 2019 Google LLC
+// Copyright 2020 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,13 +14,14 @@
 
 package com.google.firebase.crashlytics.core;
 
+import androidx.annotation.NonNull;
 import com.google.firebase.crashlytics.internal.Logger;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /** Handles attributes set by the user. */
-class UserMetadata {
+public class UserMetadata {
   static final int MAX_ATTRIBUTES = 64;
   static final int MAX_ATTRIBUTE_SIZE = 1024;
 
@@ -37,7 +38,10 @@ class UserMetadata {
     userId = sanitizeAttribute(identifier);
   }
 
+  @NonNull
   public Map<String, String> getCustomKeys() {
+    // Use of ConcurrentHashMap as the underlying attributes map guarantees safety should
+    // attributes be added after this unmodifiable view is returned.
     return Collections.unmodifiableMap(attributes);
   }
 

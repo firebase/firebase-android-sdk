@@ -89,6 +89,10 @@ public class LogFileManager {
     return currentLog.getLogAsBytes();
   }
 
+  public String getLogString() {
+    return currentLog.getLogAsString();
+  }
+
   /** Empty the log. */
   public void clearLog() {
     currentLog.deleteLogFile();
@@ -139,6 +143,11 @@ public class LogFileManager {
 
     @Override
     public byte[] getLogAsBytes() {
+      return null;
+    }
+
+    @Override
+    public String getLogAsString() {
       return null;
     }
 
