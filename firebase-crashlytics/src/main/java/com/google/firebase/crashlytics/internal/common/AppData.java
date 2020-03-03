@@ -1,4 +1,4 @@
-// Copyright 2019 Google LLC
+// Copyright 2020 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,15 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.crashlytics.core;
+package com.google.firebase.crashlytics.internal.common;
 
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import com.google.firebase.crashlytics.internal.common.IdManager;
 
 /** Carries static information about the app. */
-class AppData {
+public class AppData {
   public final String googleAppId;
   public final String buildId;
 
@@ -30,7 +29,8 @@ class AppData {
   public final String versionCode;
   public final String versionName;
 
-  static AppData create(Context context, IdManager idManager, String googleAppId, String buildId)
+  public static AppData create(
+      Context context, IdManager idManager, String googleAppId, String buildId)
       throws PackageManager.NameNotFoundException {
     final String packageName = context.getPackageName();
     final String installerPackageName = idManager.getInstallerPackageName();
@@ -44,7 +44,7 @@ class AppData {
         googleAppId, buildId, installerPackageName, packageName, versionCode, versionName);
   }
 
-  AppData(
+  public AppData(
       String googleAppId,
       String buildId,
       String installerPackageName,

@@ -48,6 +48,7 @@ public class ReportUploader {
   private final CreateReportSpiCall createReportCall;
   private final String organizationId;
   private final String googleAppId;
+  private final boolean isUsingReportsEndpoint;
   private final ReportManager reportManager;
   private final HandlingExceptionCheck handlingExceptionCheck;
   private Thread uploadThread;
@@ -55,6 +56,7 @@ public class ReportUploader {
   public ReportUploader(
       String organizationId,
       String googleAppId,
+      boolean isUsingReportsEndpoint,
       ReportManager reportManager,
       CreateReportSpiCall createReportCall,
       HandlingExceptionCheck handlingExceptionCheck) {
@@ -64,6 +66,7 @@ public class ReportUploader {
     this.createReportCall = createReportCall;
     this.organizationId = organizationId;
     this.googleAppId = googleAppId;
+    this.isUsingReportsEndpoint = isUsingReportsEndpoint;
     this.reportManager = reportManager;
     this.handlingExceptionCheck = handlingExceptionCheck;
   }
@@ -96,16 +99,25 @@ public class ReportUploader {
       final CreateReportRequest requestData =
           new CreateReportRequest(organizationId, googleAppId, report);
 
-      final boolean sent = createReportCall.invoke(requestData, dataCollectionToken);
+      boolean shouldDeleteReport;
+      // For now, send native reports to reports endpoint regardless of the setting.
+      // TODO: Remove report type check once all reports can be sent through DataTransport
+      if (isUsingReportsEndpoint || report.getType() == Report.Type.NATIVE) {
+        final boolean sent = createReportCall.invoke(requestData, dataCollectionToken);
 
-      Logger.getLogger()
-          .i(
-              Logger.TAG,
-              "Crashlytics report upload "
-                  + (sent ? "complete: " : "FAILED: ")
-                  + report.getIdentifier());
+        Logger.getLogger()
+            .i(
+                Logger.TAG,
+                "Crashlytics report upload "
+                    + (sent ? "complete: " : "FAILED: ")
+                    + report.getIdentifier());
+        shouldDeleteReport = sent;
+      } else {
+        Logger.getLogger().d(Logger.TAG, "Send to reports endpoint disabled. Removing report.");
+        shouldDeleteReport = true;
+      }
 
-      if (sent) {
+      if (shouldDeleteReport) {
         reportManager.deleteReport(report);
         removed = true;
       }

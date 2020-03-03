@@ -27,6 +27,7 @@ import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.breadcrumbs.AnalyticsConnectorBreadcrumbsReceiver;
 import com.google.firebase.crashlytics.internal.breadcrumbs.AnalyticsConnectorBreadcrumbsReceiver.BreadcrumbHandler;
 import com.google.firebase.crashlytics.internal.breadcrumbs.BreadcrumbsReceiver;
+import com.google.firebase.crashlytics.internal.common.AppData;
 import com.google.firebase.crashlytics.internal.common.CommonUtils;
 import com.google.firebase.crashlytics.internal.common.DataCollectionArbiter;
 import com.google.firebase.crashlytics.internal.common.ExecutorUtils;

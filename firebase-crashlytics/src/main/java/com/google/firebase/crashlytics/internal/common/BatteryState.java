@@ -1,4 +1,4 @@
-// Copyright 2019 Google LLC
+// Copyright 2020 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.crashlytics.core;
+package com.google.firebase.crashlytics.internal.common;
 
 import android.content.Context;
 import android.content.Intent;
@@ -20,7 +20,7 @@ import android.content.IntentFilter;
 import android.os.BatteryManager;
 
 /** A utility class representing the state of the battery. */
-class BatteryState {
+public class BatteryState {
   static final int VELOCITY_UNPLUGGED = 1;
   static final int VELOCITY_CHARGING = 2;
   static final int VELOCITY_FULL = 3;
@@ -41,7 +41,7 @@ class BatteryState {
    * Returns the battery level in the range of [0, 1], if present. May return null, if Android
    * returns a null or malformed Intent.
    */
-  Float getBatteryLevel() {
+  public Float getBatteryLevel() {
     return level;
   }
 
@@ -51,7 +51,7 @@ class BatteryState {
    *
    * @return an int value that mimics the UIDeviceBatteryState enum.
    */
-  int getBatteryVelocity() {
+  public int getBatteryVelocity() {
     if (!powerConnected || level == null) {
       return VELOCITY_UNPLUGGED;
     } else if (level < 0.99) {
