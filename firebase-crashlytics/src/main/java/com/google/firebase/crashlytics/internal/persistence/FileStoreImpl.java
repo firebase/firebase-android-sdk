@@ -24,23 +24,18 @@ public class FileStoreImpl implements FileStore {
 
   private final Context context;
 
-  /** Relative sub-path to use for storing files. */
-  private final String filePath;
-
   public FileStoreImpl(Context context) {
     this.context = context;
-    this.filePath = FILES_PATH;
-  }
-
-  public FileStoreImpl(Context context, String filePath) {
-    this.context = context;
-    this.filePath = filePath;
   }
 
   /** @return Directory to store internal files. */
   @Override
   public File getFilesDir() {
-    return prepare(new File(context.getFilesDir(), filePath));
+    return prepare(new File(context.getFilesDir(), FILES_PATH));
+  }
+
+  public String getFilesDirPath() {
+    return new File(context.getFilesDir(), FILES_PATH).getPath();
   }
 
   File prepare(File file) {
