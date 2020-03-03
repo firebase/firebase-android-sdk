@@ -63,7 +63,7 @@ public class DataTransportCrashlyticsReportSender {
   public Task<CrashlyticsReport> sendReport(@NonNull CrashlyticsReport report) {
     TaskCompletionSource<CrashlyticsReport> tcs = new TaskCompletionSource<>();
     transport.schedule(
-        Event.ofUrgent(report), // TODO: Make sure this is reasonable.
+        Event.ofUrgent(report),
         error -> {
           if (error != null) {
             tcs.trySetException(error);
