@@ -104,23 +104,23 @@ public class AnalyticsConnectorReceiver implements AnalyticsConnectorListener, A
 
     final String origin = params.getString(EVENT_ORIGIN_KEY);
     if (CRASHLYTICS_ORIGIN.equals(origin)) {
-      fireCrashlyticsOriginEvent(id, extras);
+      dispatchCrashlyticsOriginEvent(id, extras);
     } else {
       // Drop breadcrumbs for all named events which did not originate from Crashlytics
       final String name = extras.getString(EVENT_NAME_KEY);
       if (name != null) {
-        fireBreadcrumbEvent(name, params);
+        dispatchBreadcrumbEvent(name, params);
       }
     }
   }
 
-  private void fireCrashlyticsOriginEvent(int id, @Nullable Bundle extras) {
+  private void dispatchCrashlyticsOriginEvent(int id, @Nullable Bundle extras) {
     if (crashOriginEventListener != null) {
       crashOriginEventListener.onCrashlyticsOriginEvent(id, extras);
     }
   }
 
-  private void fireBreadcrumbEvent(String name, Bundle params) {
+  private void dispatchBreadcrumbEvent(String name, Bundle params) {
     try {
       final String serializedEvent = BREADCRUMB_PREFIX + serializeEvent(name, params);
       breadcrumbHandler.dropBreadcrumb(serializedEvent);
