@@ -13,4 +13,4 @@
 // limitations under the License.
 
 /** @hide */
-package com.google.firebase.crashlytics.internal.breadcrumbs;
+package com.google.firebase.crashlytics.internal.analytics;
