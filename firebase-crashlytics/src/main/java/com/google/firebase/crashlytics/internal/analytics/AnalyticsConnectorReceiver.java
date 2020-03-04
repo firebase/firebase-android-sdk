@@ -30,7 +30,7 @@ public class AnalyticsConnectorReceiver implements AnalyticsConnectorListener, A
     void dropBreadcrumb(String breadcrumb);
   }
 
-  static final String CRASH_ORIGIN = "clx";
+  static final String CRASHLYTICS_ORIGIN = "clx";
   public static final String EVENT_NAME_KEY = "name";
   public static final String APP_EXCEPTION_EVENT_NAME = "_ae";
   private static final String EVENT_ORIGIN_KEY = "_o";
@@ -65,7 +65,7 @@ public class AnalyticsConnectorReceiver implements AnalyticsConnectorListener, A
     }
 
     analyticsConnectorHandle =
-        analyticsConnector.registerAnalyticsConnectorListener(CRASH_ORIGIN, this);
+        analyticsConnector.registerAnalyticsConnectorListener(CRASHLYTICS_ORIGIN, this);
 
     return analyticsConnectorHandle != null;
   }
@@ -103,21 +103,29 @@ public class AnalyticsConnectorReceiver implements AnalyticsConnectorListener, A
     }
 
     final String origin = params.getString(EVENT_ORIGIN_KEY);
-    if (CRASH_ORIGIN.equals(origin)) {
-      if (crashOriginEventListener != null) {
-        crashOriginEventListener.onCrashlyticsOriginEvent(id, extras);
-      }
-    } else { // Drop breadcrumbs for all named events which did not originate from Crashlytics
+    if (CRASHLYTICS_ORIGIN.equals(origin)) {
+      fireCrashlyticsOriginEvent(id, extras);
+    } else {
+      // Drop breadcrumbs for all named events which did not originate from Crashlytics
       final String name = extras.getString(EVENT_NAME_KEY);
-      if (name == null) {
-        return;
+      if (name != null) {
+        fireBreadcrumbEvent(name, params);
       }
-      try {
-        final String serializedEvent = BREADCRUMB_PREFIX + serializeEvent(name, params);
-        breadcrumbHandler.dropBreadcrumb(serializedEvent);
-      } catch (JSONException e) {
-        Logger.getLogger().w(Logger.TAG, "Unable to serialize Firebase Analytics event.");
-      }
+    }
+  }
+
+  private void fireCrashlyticsOriginEvent(int id, @Nullable Bundle extras) {
+    if (crashOriginEventListener != null) {
+      crashOriginEventListener.onCrashlyticsOriginEvent(id, extras);
+    }
+  }
+
+  private void fireBreadcrumbEvent(String name, Bundle params) {
+    try {
+      final String serializedEvent = BREADCRUMB_PREFIX + serializeEvent(name, params);
+      breadcrumbHandler.dropBreadcrumb(serializedEvent);
+    } catch (JSONException e) {
+      Logger.getLogger().w(Logger.TAG, "Unable to serialize Firebase Analytics event.");
     }
   }
 

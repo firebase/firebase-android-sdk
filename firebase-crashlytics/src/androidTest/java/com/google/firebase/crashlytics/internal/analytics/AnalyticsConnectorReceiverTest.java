@@ -48,7 +48,8 @@ public class AnalyticsConnectorReceiverTest extends CrashlyticsTestCase {
     assertTrue("Receiver not properly registered", receiver.register());
 
     verify(mockAnalyticsConnector)
-        .registerAnalyticsConnectorListener(AnalyticsConnectorReceiver.CRASH_ORIGIN, receiver);
+        .registerAnalyticsConnectorListener(
+            AnalyticsConnectorReceiver.CRASHLYTICS_ORIGIN, receiver);
   }
 
   public void testRegisterFailsWhenAnalyticsConnectorIsNull() {
