@@ -24,6 +24,7 @@ import android.util.Log;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import com.google.firebase.FirebaseApp;
 import java.security.KeyFactory;
 import java.security.MessageDigest;
@@ -46,7 +47,7 @@ public class IidStore {
   private static final String STORE_KEY_TOKEN = "|T|";
   private static final String JSON_TOKEN_KEY = "token";
   private static final String JSON_ENCODED_PREFIX = "{";
-  private static final String [] ALLOWABLE_SCOPES = new String[]{"*", "FCM", "GCM"};
+  private static final String [] ALLOWABLE_SCOPES = new String[]{"*", "FCM", "GCM", ""};
 
   @GuardedBy("iidPrefs")
   private final SharedPreferences iidPrefs;
@@ -60,6 +61,12 @@ public class IidStore {
             .getSharedPreferences(IID_SHARED_PREFS_NAME, Context.MODE_PRIVATE);
 
     defaultSenderId = getDefaultSenderId(firebaseApp);
+  }
+
+  @VisibleForTesting
+  public IidStore(@NonNull SharedPreferences iidPrefs, @Nullable String defaultSenderId) {
+    this.iidPrefs = iidPrefs;
+    this.defaultSenderId = defaultSenderId;
   }
 
   private static String getDefaultSenderId(FirebaseApp app) {
@@ -87,31 +94,21 @@ public class IidStore {
   }
 
   private String createTokenKey(@NonNull String senderId, @NonNull String scope) {
-    return STORE_KEY_TOKEN + senderId + " | " + scope;
+    return STORE_KEY_TOKEN + senderId + "|" + scope;
   }
 
   @Nullable
   public String readToken() {
     synchronized (iidPrefs) {
-      Log.d("Rayo", "readToken: defaultSenderId: " + defaultSenderId);
-      String token = null;
-
       for (String scope : ALLOWABLE_SCOPES) {
-        token = iidPrefs.getString(createTokenKey(defaultSenderId, scope), null);
-        if (!TextUtils.isEmpty(token)) {
-          break;
+        String tokenKey = createTokenKey(defaultSenderId, scope);
+        String token = iidPrefs.getString(tokenKey, null);
+        if (token != null && !token.isEmpty()) {
+          return token.startsWith(JSON_ENCODED_PREFIX) ? parseIidTokenFromJson(token) : token;
         }
       }
 
-      if (TextUtils.isEmpty(token)) {
-        return null;
-      }
-
-      if (token.startsWith(JSON_ENCODED_PREFIX)) {
-        return parseIidTokenFromJson(token);
-      }
-      // Legacy value, token is whole string
-      return token;
+      return null;
     }
   }
 
