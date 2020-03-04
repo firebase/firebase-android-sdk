@@ -83,11 +83,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
@@ -1810,82 +1806,46 @@ class CrashlyticsController {
   }
 
   /**
-   * Helper class that listens for Crashlytics origin events from FA and provides a method to block
-   * while waiting for a Crash event to occur. The implementation assumes there can be at most ONE
-   * app exception event being processed and waited upon at a time.
-   */
-  private static class BlockingCrashEventListener
-      implements AnalyticsReceiver.CrashlyticsOriginEventListener {
-    private static final int APP_EXCEPTION_CALLBACK_TIMEOUT_MS = 2000;
-
-    private final CountDownLatch eventLatch = new CountDownLatch(1);
-
-    public void awaitEvent() throws InterruptedException {
-      Logger.getLogger()
-          .d(Logger.TAG, "Background thread awaiting app exception callback from FA...");
-
-      if (eventLatch.await(APP_EXCEPTION_CALLBACK_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
-        Logger.getLogger().d(Logger.TAG, "App exception callback received from FA listener.");
-      } else {
-        Logger.getLogger()
-            .d(
-                Logger.TAG,
-                "Timeout exceeded while awaiting app exception callback from FA listener.");
-      }
-    }
-
-    @Override
-    public void onCrashlyticsOriginEvent(int id, Bundle extras) {
-      String eventName = extras.getString(AnalyticsConnectorReceiver.EVENT_NAME_KEY);
-      if (AnalyticsConnectorReceiver.APP_EXCEPTION_EVENT_NAME.equals(eventName)) {
-        eventLatch.countDown();
-      }
-    }
-  }
-
-  /**
    * Send an App Exception event to Firebase Analytics. FA records the event asynchronously, so this
    * method returns a Task in case the caller wants to verify that the event was recorded by FA and
    * will not be lost.
    */
   private Task<Void> recordFatalFirebaseEvent(long timestamp) {
-    final ThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1);
-    return Tasks.call(
-        executor,
-        new Callable<Void>() {
-          @Override
-          public Void call() throws Exception {
-            if (firebaseCrashExists()) {
-              Logger.getLogger()
-                  .d(
-                      Logger.TAG,
-                      "Skipping logging Crashlytics event to Firebase, FirebaseCrash exists");
-              return null;
-            }
-            if (analyticsConnector == null) {
-              Logger.getLogger()
-                  .d(
-                      Logger.TAG,
-                      "Skipping logging Crashlytics event to Firebase, no Firebase Analytics");
-              return null;
-            }
-            final BlockingCrashEventListener blockingListener = new BlockingCrashEventListener();
-            analyticsReceiver.setCrashlyticsOriginEventListener(blockingListener);
 
-            Logger.getLogger().d(Logger.TAG, "Logging Crashlytics event to Firebase");
-            final Bundle params = new Bundle();
-            params.putInt(FIREBASE_CRASH_TYPE, FIREBASE_CRASH_TYPE_FATAL);
-            params.putLong(FIREBASE_TIMESTAMP, timestamp);
+    if (firebaseCrashExists()) {
+      Logger.getLogger()
+          .d(Logger.TAG, "Skipping logging Crashlytics event to Firebase, FirebaseCrash exists");
+      return Tasks.forResult(null);
+    }
+    if (analyticsConnector == null) {
+      Logger.getLogger()
+          .d(Logger.TAG, "Skipping logging Crashlytics event to Firebase, no Firebase Analytics");
+      return Tasks.forResult(null);
+    }
 
-            analyticsConnector.logEvent(
-                FIREBASE_ANALYTICS_ORIGIN_CRASHLYTICS, FIREBASE_APPLICATION_EXCEPTION, params);
-
-            blockingListener.awaitEvent();
+    final TaskCompletionSource<Void> source = new TaskCompletionSource<>();
+    // This listener completes the TaskCompletionSource when it receives any app exception event
+    // that originated from Crashlytics. The implementation assumes there can be at most ONE app
+    // exception event being processed and waited upon at a time.
+    analyticsReceiver.setCrashlyticsOriginEventListener(
+        (id, extras) -> {
+          String eventName = extras.getString(AnalyticsConnectorReceiver.EVENT_NAME_KEY);
+          if (AnalyticsConnectorReceiver.APP_EXCEPTION_EVENT_NAME.equals(eventName)) {
+            Logger.getLogger().d(Logger.TAG, "Received app exception event callback from FA");
+            source.setResult(null);
+            // Remove itself as a listener, as we're only expecting a single event.
             analyticsReceiver.setCrashlyticsOriginEventListener(null);
-
-            return null;
           }
         });
+
+    Logger.getLogger().d(Logger.TAG, "Logging Crashlytics event to Firebase Analytics");
+    final Bundle params = new Bundle();
+    params.putInt(FIREBASE_CRASH_TYPE, FIREBASE_CRASH_TYPE_FATAL);
+    params.putLong(FIREBASE_TIMESTAMP, timestamp);
+    analyticsConnector.logEvent(
+        FIREBASE_ANALYTICS_ORIGIN_CRASHLYTICS, FIREBASE_APPLICATION_EXCEPTION, params);
+
+    return source.getTask();
   }
 
   private boolean firebaseCrashExists() {
