@@ -84,6 +84,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
@@ -390,7 +391,6 @@ class CrashlyticsController {
     // reflect when we get around to executing the task later.
     final Date time = new Date();
 
-    final Task<Void> recordFatalFirebaseEventTask = recordFatalFirebaseEvent(time.getTime());
     final Task<Void> handleUncaughtExceptionTask =
         backgroundWorker.submitTask(
             new Callable<Task<Void>>() {
@@ -398,6 +398,9 @@ class CrashlyticsController {
               public Task<Void> call() throws Exception {
                 // We've fatally crashed, so write the marker file that indicates a crash occurred.
                 crashMarker.create();
+
+                final Task<Void> recordFatalFirebaseEventTask =
+                    recordFatalFirebaseEvent(time.getTime());
 
                 long timestampSeconds = time.getTime() / 1000;
                 reportingCoordinator.persistFatalEvent(ex, thread, timestampSeconds);
@@ -420,30 +423,36 @@ class CrashlyticsController {
 
                 Executor executor = backgroundWorker.getExecutor();
 
-                return settingsDataProvider
-                    .getAppSettings()
-                    .onSuccessTask(
-                        executor,
-                        new SuccessContinuation<AppSettingsData, Void>() {
-                          @NonNull
-                          @Override
-                          public Task<Void> then(@Nullable AppSettingsData appSettingsData)
-                              throws Exception {
-                            // Data collection is enabled, so it's safe to send the report.
-                            boolean dataCollectionToken = true;
-                            sendSessionReports(appSettingsData, dataCollectionToken);
-                            reportingCoordinator.sendReports(
-                                appSettingsData.organizationId,
-                                executor,
-                                shouldSendViaDataTransport(appSettingsData.reportUploadVariant));
-                            return recordFatalFirebaseEventTask;
-                          }
-                        });
+                return Tasks.whenAll(
+                    recordFatalFirebaseEventTask,
+                    settingsDataProvider
+                        .getAppSettings()
+                        .onSuccessTask(
+                            executor,
+                            new SuccessContinuation<AppSettingsData, Void>() {
+                              @NonNull
+                              @Override
+                              public Task<Void> then(@Nullable AppSettingsData appSettingsData)
+                                  throws Exception {
+                                // Data collection is enabled, so it's safe to send the report.
+                                boolean dataCollectionToken = true;
+                                sendSessionReports(appSettingsData, dataCollectionToken);
+                                reportingCoordinator.sendReports(
+                                    appSettingsData.organizationId,
+                                    executor,
+                                    shouldSendViaDataTransport(
+                                        appSettingsData.reportUploadVariant));
+                                return null;
+                              }
+                            }));
               }
             });
 
     try {
-      Utils.awaitEvenIfOnMainThread(handleUncaughtExceptionTask);
+      Utils.awaitEvenIfOnMainThread(
+          handleUncaughtExceptionTask,
+          CrashlyticsCore.DEFAULT_MAIN_HANDLER_TIMEOUT_SEC,
+          TimeUnit.SECONDS);
     } catch (Exception e) {
       // Nothing to do in this case.
     }
@@ -1832,7 +1841,7 @@ class CrashlyticsController {
           String eventName = extras.getString(AnalyticsConnectorReceiver.EVENT_NAME_KEY);
           if (AnalyticsConnectorReceiver.APP_EXCEPTION_EVENT_NAME.equals(eventName)) {
             Logger.getLogger().d(Logger.TAG, "Received app exception event callback from FA");
-            source.setResult(null);
+            source.trySetResult(null);
             // Remove itself as a listener, as we're only expecting a single event.
             analyticsReceiver.setCrashlyticsOriginEventListener(null);
           }

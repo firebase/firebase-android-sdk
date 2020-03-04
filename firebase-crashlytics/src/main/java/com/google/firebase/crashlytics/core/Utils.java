@@ -14,7 +14,6 @@
 
 package com.google.firebase.crashlytics.core;
 
-import android.os.Looper;
 import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.Task;
@@ -162,11 +161,13 @@ public final class Utils {
    * you should feel slightly bad about it.
    *
    * @param task the task to block on
+   * @param timeout The max time to wait
+   * @param timeoutUnit TimeUnit for timeout
    * @return the value that was returned by the task, if successful.
    * @throws InterruptedException if the method was interrupted
    * @throws TimeoutException if the method timed out while waiting for the task.
    */
-  public static <T> T awaitEvenIfOnMainThread(Task<T> task)
+  public static <T> T awaitEvenIfOnMainThread(Task<T> task, long timeout, TimeUnit timeoutUnit)
       throws InterruptedException, TimeoutException {
     CountDownLatch latch = new CountDownLatch(1);
 
@@ -180,11 +181,7 @@ public final class Utils {
           }
         });
 
-    if (Looper.getMainLooper() == Looper.myLooper()) {
-      latch.await(CrashlyticsCore.DEFAULT_MAIN_HANDLER_TIMEOUT_SEC, TimeUnit.SECONDS);
-    } else {
-      latch.await();
-    }
+    latch.await(timeout, timeoutUnit);
 
     if (task.isComplete()) {
       return task.getResult();

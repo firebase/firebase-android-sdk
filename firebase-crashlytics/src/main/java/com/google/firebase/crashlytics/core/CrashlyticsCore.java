@@ -60,7 +60,7 @@ public class CrashlyticsCore {
   static final String CRASHLYTICS_REQUIRE_BUILD_ID = "com.crashlytics.RequireBuildId";
   static final boolean CRASHLYTICS_REQUIRE_BUILD_ID_DEFAULT = true;
 
-  static final int DEFAULT_MAIN_HANDLER_TIMEOUT_SEC = 4;
+  public static final int DEFAULT_MAIN_HANDLER_TIMEOUT_SEC = 4;
 
   // If this marker sticks around, the app is crashing before we finished initializing
   private static final String INITIALIZATION_MARKER_FILE_NAME = "initialization_marker";
@@ -465,7 +465,8 @@ public class CrashlyticsCore {
 
     Boolean result;
     try {
-      result = Utils.awaitEvenIfOnMainThread(task);
+      result =
+          Utils.awaitEvenIfOnMainThread(task, DEFAULT_MAIN_HANDLER_TIMEOUT_SEC, TimeUnit.SECONDS);
     } catch (Exception e) {
       didCrashOnPreviousExecution = false;
       return;
