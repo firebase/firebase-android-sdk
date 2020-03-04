@@ -47,7 +47,7 @@ public class IidStore {
   private static final String STORE_KEY_SEPARATOR = "|";
   private static final String JSON_TOKEN_KEY = "token";
   private static final String JSON_ENCODED_PREFIX = "{";
-  private static final String[] ALLOWABLE_SCOPES = new String[]{"*", "FCM", "GCM", ""};
+  private static final String[] ALLOWABLE_SCOPES = new String[] {"*", "FCM", "GCM", ""};
 
   @GuardedBy("iidPrefs")
   private final SharedPreferences iidPrefs;
