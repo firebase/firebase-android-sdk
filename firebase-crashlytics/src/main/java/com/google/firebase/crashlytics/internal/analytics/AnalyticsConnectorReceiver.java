@@ -78,8 +78,8 @@ public class AnalyticsConnectorReceiver implements AnalyticsConnectorListener, A
   }
 
   @Override
-  public void setCrashlyticsOriginEventListener(@Nullable CrashlyticsOriginEventListener l) {
-    this.crashOriginEventListener = l;
+  public void setCrashlyticsOriginEventListener(@Nullable CrashlyticsOriginEventListener listener) {
+    this.crashOriginEventListener = listener;
   }
 
   @Override
@@ -105,7 +105,7 @@ public class AnalyticsConnectorReceiver implements AnalyticsConnectorListener, A
     final String origin = params.getString(EVENT_ORIGIN_KEY);
     if (CRASH_ORIGIN.equals(origin)) {
       if (crashOriginEventListener != null) {
-        crashOriginEventListener.onCrashOriginEvent(id, extras);
+        crashOriginEventListener.onCrashlyticsOriginEvent(id, extras);
       }
     } else { // Drop breadcrumbs for all named events which did not originate from Crashlytics
       final String name = extras.getString(EVENT_NAME_KEY);

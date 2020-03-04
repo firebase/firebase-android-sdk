@@ -1816,25 +1816,26 @@ class CrashlyticsController {
    */
   private static class BlockingCrashEventListener
       implements AnalyticsReceiver.CrashlyticsOriginEventListener {
+    private static final int APP_EXCEPTION_CALLBACK_TIMEOUT_MS = 2000;
 
     private final CountDownLatch eventLatch = new CountDownLatch(1);
 
     public void awaitEvent() throws InterruptedException {
       Logger.getLogger()
-          .d(Logger.TAG, "Background thread awaiting crash event callback from FA...");
+          .d(Logger.TAG, "Background thread awaiting app exception callback from FA...");
 
-      if (eventLatch.await(2000, TimeUnit.MILLISECONDS)) {
-        Logger.getLogger().d(Logger.TAG, "Crash event callback received from FA listener.");
+      if (eventLatch.await(APP_EXCEPTION_CALLBACK_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
+        Logger.getLogger().d(Logger.TAG, "App exception callback received from FA listener.");
       } else {
         Logger.getLogger()
             .d(
                 Logger.TAG,
-                "Timeout exceeded while awaiting crash event callback from FA listener.");
+                "Timeout exceeded while awaiting app exception callback from FA listener.");
       }
     }
 
     @Override
-    public void onCrashOriginEvent(int id, Bundle extras) {
+    public void onCrashlyticsOriginEvent(int id, Bundle extras) {
       String eventName = extras.getString(AnalyticsConnectorReceiver.EVENT_NAME_KEY);
       if (AnalyticsConnectorReceiver.APP_EXCEPTION_EVENT_NAME.equals(eventName)) {
         eventLatch.countDown();

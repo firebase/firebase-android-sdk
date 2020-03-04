@@ -26,7 +26,7 @@ public interface AnalyticsReceiver {
    * Firebase Analytics SDK.
    */
   interface CrashlyticsOriginEventListener {
-    void onCrashOriginEvent(int id, Bundle extras);
+    void onCrashlyticsOriginEvent(int id, Bundle extras);
   }
 
   /**
@@ -39,7 +39,7 @@ public interface AnalyticsReceiver {
   /** Unregister breadcrumb receiver with its associated event source. */
   void unregister();
 
-  void setCrashlyticsOriginEventListener(@Nullable CrashlyticsOriginEventListener l);
+  void setCrashlyticsOriginEventListener(@Nullable CrashlyticsOriginEventListener listener);
 
   @Nullable
   CrashlyticsOriginEventListener getCrashlyticsOriginEventListener();
