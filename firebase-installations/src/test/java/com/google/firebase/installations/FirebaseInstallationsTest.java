@@ -23,8 +23,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.matches;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
@@ -350,9 +348,9 @@ public class FirebaseInstallationsTest {
 
   @Test
   public void testReadToken_wildcard() {
-    SharedPreferences prefs =
-        firebaseApp.getApplicationContext().getSharedPreferences("test", 0);
-    prefs.edit()
+    SharedPreferences prefs = firebaseApp.getApplicationContext().getSharedPreferences("test", 0);
+    prefs
+        .edit()
         .putString("|T|123|OTHER", "tokenOTHER")
         .putString("|T|unused|*", "tokenFOREIGN")
         .putString("|T|123|GCM", "tokenGCM")
@@ -367,9 +365,9 @@ public class FirebaseInstallationsTest {
 
   @Test
   public void testReadToken_fcm() {
-    SharedPreferences prefs =
-        firebaseApp.getApplicationContext().getSharedPreferences("test", 0);
-    prefs.edit()
+    SharedPreferences prefs = firebaseApp.getApplicationContext().getSharedPreferences("test", 0);
+    prefs
+        .edit()
         .putString("|T|123|OTHER", "tokenOTHER")
         .putString("|T|unused|*", "tokenFOREIGN")
         .putString("|T|123|GCM", "tokenGCM")
@@ -384,9 +382,9 @@ public class FirebaseInstallationsTest {
 
   @Test
   public void testReadToken_gcm() {
-    SharedPreferences prefs =
-        firebaseApp.getApplicationContext().getSharedPreferences("test", 0);
-    prefs.edit()
+    SharedPreferences prefs = firebaseApp.getApplicationContext().getSharedPreferences("test", 0);
+    prefs
+        .edit()
         .putString("|T|123|OTHER", "tokenOTHER")
         .putString("|T|unused|*", "tokenFOREIGN")
         .putString("|T|123|GCM", "tokenGCM")
@@ -401,9 +399,9 @@ public class FirebaseInstallationsTest {
 
   @Test
   public void testReadToken_empty() {
-    SharedPreferences prefs =
-        firebaseApp.getApplicationContext().getSharedPreferences("test", 0);
-    prefs.edit()
+    SharedPreferences prefs = firebaseApp.getApplicationContext().getSharedPreferences("test", 0);
+    prefs
+        .edit()
         .putString("|T|123|OTHER", "tokenOTHER")
         .putString("|T|unused|*", "tokenFOREIGN")
         .putString("|T|unused|GCM", "tokenGCM")
@@ -418,9 +416,9 @@ public class FirebaseInstallationsTest {
 
   @Test
   public void testReadToken_null() {
-    SharedPreferences prefs =
-        firebaseApp.getApplicationContext().getSharedPreferences("test", 0);
-    prefs.edit()
+    SharedPreferences prefs = firebaseApp.getApplicationContext().getSharedPreferences("test", 0);
+    prefs
+        .edit()
         .putString("|T|123|OTHER", "tokenOTHER")
         .putString("|T|unused|*", "tokenFOREIGN")
         .putString("|T|unused|GCM", "tokenGCM")
@@ -435,9 +433,9 @@ public class FirebaseInstallationsTest {
 
   @Test
   public void testReadToken_withJsonformatting() {
-    SharedPreferences prefs =
-        firebaseApp.getApplicationContext().getSharedPreferences("test", 0);
-    prefs.edit()
+    SharedPreferences prefs = firebaseApp.getApplicationContext().getSharedPreferences("test", 0);
+    prefs
+        .edit()
         .putString("|T|123|OTHER", "tokenOTHER")
         .putString("|T|unused|*", "tokenFOREIGN")
         .putString("|T|unused|GCM", "tokenGCM")

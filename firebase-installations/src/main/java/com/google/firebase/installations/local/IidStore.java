@@ -18,7 +18,6 @@ import static android.content.ContentValues.TAG;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
 import androidx.annotation.GuardedBy;
@@ -45,9 +44,10 @@ public class IidStore {
   private static final String STORE_KEY_PUB = "|S||P|";
   private static final String STORE_KEY_ID = "|S|id";
   private static final String STORE_KEY_TOKEN = "|T|";
+  private static final String STORE_KEY_SEPARATOR = "|";
   private static final String JSON_TOKEN_KEY = "token";
   private static final String JSON_ENCODED_PREFIX = "{";
-  private static final String [] ALLOWABLE_SCOPES = new String[]{"*", "FCM", "GCM", ""};
+  private static final String[] ALLOWABLE_SCOPES = new String[]{"*", "FCM", "GCM", ""};
 
   @GuardedBy("iidPrefs")
   private final SharedPreferences iidPrefs;
@@ -94,7 +94,7 @@ public class IidStore {
   }
 
   private String createTokenKey(@NonNull String senderId, @NonNull String scope) {
-    return STORE_KEY_TOKEN + senderId + "|" + scope;
+    return STORE_KEY_TOKEN + senderId + STORE_KEY_SEPARATOR + scope;
   }
 
   @Nullable
