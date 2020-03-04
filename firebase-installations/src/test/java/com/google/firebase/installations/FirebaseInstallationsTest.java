@@ -17,6 +17,7 @@ package com.google.firebase.installations;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -429,7 +430,7 @@ public class FirebaseInstallationsTest {
         .commit();
 
     IidStore iidStore = new IidStore(prefs, "123");
-    assertThat(iidStore.readToken(), isNull());
+    assertNull(iidStore.readToken());
   }
 
   @Test
