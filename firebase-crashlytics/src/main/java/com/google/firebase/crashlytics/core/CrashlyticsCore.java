@@ -183,7 +183,8 @@ public class CrashlyticsCore {
               nativeComponent,
               unityVersionProvider,
               analyticsReceiver,
-              analyticsConnector);
+              analyticsConnector,
+              settingsProvider);
 
       // If the file is present at this point, then the previous run's initialization
       // did not complete, and we want to perform initialization synchronously this time.

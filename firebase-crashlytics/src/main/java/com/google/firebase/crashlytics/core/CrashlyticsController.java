@@ -310,7 +310,8 @@ class CrashlyticsController {
       CrashlyticsNativeComponent nativeComponent,
       UnityVersionProvider unityVersionProvider,
       AnalyticsReceiver analyticsReceiver,
-      AnalyticsConnector analyticsConnector) {
+      AnalyticsConnector analyticsConnector,
+      SettingsDataProvider settingsDataProvider) {
     this.context = context;
     this.backgroundWorker = backgroundWorker;
     this.httpRequestFactory = httpRequestFactory;
@@ -350,7 +351,8 @@ class CrashlyticsController {
             appData,
             logFileManager,
             userMetadata,
-            stackTraceTrimmingStrategy);
+            stackTraceTrimmingStrategy,
+            settingsDataProvider);
   }
 
   private Context getContext() {
