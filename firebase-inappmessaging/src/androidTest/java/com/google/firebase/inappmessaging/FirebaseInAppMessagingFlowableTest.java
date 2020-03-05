@@ -44,6 +44,7 @@ import android.content.Context;
 import android.os.Bundle;
 import android.os.Looper;
 import android.util.Log;
+import androidx.annotation.NonNull;
 import androidx.test.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
@@ -53,6 +54,7 @@ import com.google.firebase.FirebaseOptions;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.events.Subscriber;
 import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.iid.InstanceIdResult;
 import com.google.firebase.inappmessaging.CommonTypesProto.Event;
 import com.google.firebase.inappmessaging.CommonTypesProto.Priority;
 import com.google.firebase.inappmessaging.CommonTypesProto.TriggeringCondition;
@@ -223,7 +225,22 @@ public class FirebaseInAppMessagingFlowableTest {
         spy((Application) InstrumentationRegistry.getTargetContext().getApplicationContext());
     String id = FirebaseInstanceId.getInstance().getId();
     when(instanceId.getId()).thenReturn(id);
-    when(instanceId.getToken()).thenReturn("token"); // getToken() waits on a response from IID.
+    when(instanceId.getInstanceId())
+        .thenReturn(
+            Tasks.forResult(
+                new InstanceIdResult() {
+                  @NonNull
+                  @Override
+                  public String getId() {
+                    return id;
+                  }
+
+                  @NonNull
+                  @Override
+                  public String getToken() {
+                    return "token";
+                  }
+                }));
     when(testDeviceHelper.isAppInstallFresh()).thenReturn(false);
     when(testDeviceHelper.isDeviceInTestMode()).thenReturn(false);
 
@@ -235,7 +252,7 @@ public class FirebaseInAppMessagingFlowableTest {
     universalComponentBuilder =
         DaggerTestUniversalComponent.builder()
             .testGrpcModule(new TestGrpcModule(grpcServerRule.getChannel()))
-            .testForegroundNotifierModule(new TestForegroundNotifierModule(foregroundNotifier))
+            .testForegroundFlowableModule(new TestForegroundFlowableModule(foregroundNotifier))
             .applicationModule(new ApplicationModule(application))
             .appMeasurementModule(
                 new AppMeasurementModule(analyticsConnector, firebaseEventSubscriber))

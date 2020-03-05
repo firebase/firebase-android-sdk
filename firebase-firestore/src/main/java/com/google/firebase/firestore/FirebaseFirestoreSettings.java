@@ -14,11 +14,10 @@
 
 package com.google.firebase.firestore;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import com.google.common.base.MoreObjects;
 
 /** Settings used to configure a {@link FirebaseFirestore} instance. */
 public final class FirebaseFirestoreSettings {
@@ -221,12 +220,18 @@ public final class FirebaseFirestoreSettings {
   @Override
   @NonNull
   public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("host", host)
-        .add("sslEnabled", sslEnabled)
-        .add("persistenceEnabled", persistenceEnabled)
-        .add("timestampsInSnapshotsEnabled", timestampsInSnapshotsEnabled)
-        .toString();
+    return "FirebaseFirestoreSettings{"
+        + "host="
+        + host
+        + ", sslEnabled="
+        + sslEnabled
+        + ", persistenceEnabled="
+        + persistenceEnabled
+        + ", timestampsInSnapshotsEnabled="
+        + timestampsInSnapshotsEnabled
+        + ", cacheSizeBytes="
+        + cacheSizeBytes
+        + "}";
   }
 
   /** Returns the host of the Cloud Firestore backend. */

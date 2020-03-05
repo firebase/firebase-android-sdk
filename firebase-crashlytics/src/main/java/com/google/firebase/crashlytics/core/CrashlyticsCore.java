@@ -24,9 +24,10 @@ import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.crashlytics.BuildConfig;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.Logger;
-import com.google.firebase.crashlytics.internal.breadcrumbs.AnalyticsConnectorBreadcrumbsReceiver;
-import com.google.firebase.crashlytics.internal.breadcrumbs.AnalyticsConnectorBreadcrumbsReceiver.BreadcrumbHandler;
-import com.google.firebase.crashlytics.internal.breadcrumbs.BreadcrumbsReceiver;
+import com.google.firebase.crashlytics.internal.analytics.AnalyticsConnectorReceiver;
+import com.google.firebase.crashlytics.internal.analytics.AnalyticsConnectorReceiver.BreadcrumbHandler;
+import com.google.firebase.crashlytics.internal.analytics.AnalyticsReceiver;
+import com.google.firebase.crashlytics.internal.common.AppData;
 import com.google.firebase.crashlytics.internal.common.CommonUtils;
 import com.google.firebase.crashlytics.internal.common.DataCollectionArbiter;
 import com.google.firebase.crashlytics.internal.common.ExecutorUtils;
@@ -153,8 +154,9 @@ public class CrashlyticsCore {
 
       final AppData appData = AppData.create(context, idManager, googleAppId, mappingFileId);
       final UnityVersionProvider unityVersionProvider = new ResourceUnityVersionProvider(context);
-      final BreadcrumbsReceiver breadcrumbsReceiver =
-          new AnalyticsConnectorBreadcrumbsReceiver(
+
+      final AnalyticsReceiver analyticsReceiver =
+          new AnalyticsConnectorReceiver(
               analyticsConnector,
               new BreadcrumbHandler() {
                 @Override
@@ -180,7 +182,7 @@ public class CrashlyticsCore {
               null,
               nativeComponent,
               unityVersionProvider,
-              breadcrumbsReceiver,
+              analyticsReceiver,
               analyticsConnector);
 
       // If the file is present at this point, then the previous run's initialization
@@ -239,7 +241,7 @@ public class CrashlyticsCore {
     controller.cleanInvalidTempFiles();
 
     try {
-      controller.registerBreadcrumbsReceiver();
+      controller.registerAnalyticsListener();
 
       final Settings settingsData = settingsProvider.getSettings();
 
@@ -347,32 +349,8 @@ public class CrashlyticsCore {
    * @see #logException(Throwable)
    */
   public void log(final String msg) {
-    doLog(Log.DEBUG, Logger.TAG, msg);
-  }
-
-  private void doLog(int priority, String tag, String msg) {
     final long timestamp = System.currentTimeMillis() - startTime;
-    controller.writeToLog(timestamp, formatLogMessage(priority, tag, msg));
-  }
-
-  /**
-   * Add text logging that will be sent with your next report, using {@link
-   * CrashlyticsCore#log(String)}. The message will also be printed to LogCat using
-   * android.util.Log.println(priority, tag, msg).
-   *
-   * @param priority The priority/type constant of this log message, as defined in android.util.Log.
-   *     One of: ERROR, WARN, INFO, DEBUG, VERBOSE.
-   * @param tag Used to identify the source of a log message. It usually identifies the class or
-   *     activity where the log call occurs.
-   * @param msg The message you would like logged.
-   * @see #log(String)
-   * @see android.util.Log#println(int, String, String)
-   */
-  public void log(int priority, String tag, String msg) {
-    doLog(priority, tag, msg);
-
-    // concatenate after "" to avoid NullPointerException if either String is null.
-    Logger.getLogger().log(priority, "" + tag, "" + msg, true);
+    controller.writeToLog(timestamp, msg);
   }
 
   public void setUserId(String identifier) {
@@ -504,10 +482,6 @@ public class CrashlyticsCore {
   // endregion
 
   // region Static utilities
-
-  private static String formatLogMessage(int priority, String tag, String msg) {
-    return CommonUtils.logPriorityToString(priority) + "/" + tag + " " + msg;
-  }
 
   static boolean isBuildIdValid(String buildId, boolean requiresBuildId) {
     if (!requiresBuildId) {

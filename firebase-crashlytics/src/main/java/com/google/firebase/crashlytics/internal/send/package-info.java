@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2020 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,23 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.inappmessaging.internal.injection.modules;
-
-import com.google.firebase.inappmessaging.internal.ForegroundNotifier;
-import dagger.Module;
-import dagger.Provides;
-import javax.inject.Singleton;
-
-/**
- * Bindings for app foreground listener
- *
- * @hide
- */
-@Module
-public class ForegroundNotifierModule {
-  @Provides
-  @Singleton
-  public ForegroundNotifier providesForeground() {
-    return new ForegroundNotifier();
-  }
-}
+/** @hide */
+package com.google.firebase.crashlytics.internal.send;

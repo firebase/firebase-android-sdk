@@ -37,7 +37,6 @@ import com.google.firebase.installations.remote.TokenResult;
 import com.google.firebase.platforminfo.UserAgentPublisher;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -105,7 +104,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
         new FirebaseInstallationServiceClient(
             firebaseApp.getApplicationContext(), publisher, heartbeatInfo),
         new PersistedInstallation(firebaseApp),
-        new Utils(Calendar.getInstance()),
+        new Utils(),
         new IidStore(firebaseApp),
         new RandomFidGenerator());
   }
@@ -376,7 +375,12 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
         return prefs;
 
       } finally {
-        lock.releaseAndClose();
+        // It is possible that the lock acquisition failed, resulting in lock being null.
+        // We handle this case by going on with our business even if the acquisition failed
+        // but we need to be sure to only release if we got a lock.
+        if (lock != null) {
+          lock.releaseAndClose();
+        }
       }
     }
   }

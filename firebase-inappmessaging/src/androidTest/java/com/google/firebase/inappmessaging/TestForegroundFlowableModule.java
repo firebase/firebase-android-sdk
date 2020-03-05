@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2020 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,22 +14,31 @@
 
 package com.google.firebase.inappmessaging;
 
+import android.app.Application;
 import com.google.firebase.inappmessaging.internal.ForegroundNotifier;
+import com.google.firebase.inappmessaging.internal.injection.qualifiers.AppForeground;
 import dagger.Module;
 import dagger.Provides;
+import io.reactivex.flowables.ConnectableFlowable;
 import javax.inject.Singleton;
 
 @Module
-public class TestForegroundNotifierModule {
+public class TestForegroundFlowableModule {
+
   private final ForegroundNotifier foregroundNotifier;
 
-  public TestForegroundNotifierModule(ForegroundNotifier foregroundNotifier) {
+  public TestForegroundFlowableModule(ForegroundNotifier foregroundNotifier) {
     this.foregroundNotifier = foregroundNotifier;
   }
 
   @Provides
   @Singleton
-  public ForegroundNotifier providesForeroundListener() {
-    return foregroundNotifier;
+  @AppForeground
+  public ConnectableFlowable<String> providesAppForegroundEventStream(Application application) {
+    ConnectableFlowable<String> foregroundFlowable = foregroundNotifier.foregroundFlowable();
+    foregroundFlowable.connect();
+
+    application.registerActivityLifecycleCallbacks(foregroundNotifier);
+    return foregroundFlowable;
   }
 }

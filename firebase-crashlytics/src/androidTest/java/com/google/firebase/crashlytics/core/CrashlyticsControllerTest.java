@@ -45,7 +45,8 @@ import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
 import com.google.firebase.crashlytics.internal.MissingNativeComponent;
 import com.google.firebase.crashlytics.internal.NativeSessionFileProvider;
-import com.google.firebase.crashlytics.internal.breadcrumbs.BreadcrumbsReceiver;
+import com.google.firebase.crashlytics.internal.analytics.AnalyticsReceiver;
+import com.google.firebase.crashlytics.internal.common.AppData;
 import com.google.firebase.crashlytics.internal.common.CommonUtils;
 import com.google.firebase.crashlytics.internal.common.DataCollectionArbiter;
 import com.google.firebase.crashlytics.internal.common.IdManager;
@@ -82,7 +83,9 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
       new FileFilter() {
         @Override
         public boolean accept(File pathname) {
-          return pathname.isDirectory() && !pathname.getName().equals("log-files");
+          return pathname.isDirectory()
+              && !pathname.getName().equals("log-files")
+              && !pathname.getName().equals("report-persistence");
         }
       };
 
@@ -91,7 +94,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
   private SettingsDataProvider testSettingsDataProvider;
   private FileStore mockFileStore;
   private File testFilesDirectory;
-  private BreadcrumbsReceiver mockBreadcrumbsReceiver;
+  private AnalyticsReceiver mockAnalyticsReceiver;
   private AppSettingsData appSettingsData;
   private SessionSettingsData sessionSettingsData;
 
@@ -106,7 +109,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
 
     BatteryIntentProvider.returnNull = false;
 
-    mockBreadcrumbsReceiver = mock(BreadcrumbsReceiver.class);
+    mockAnalyticsReceiver = mock(AnalyticsReceiver.class);
 
     // For each test case, create a new, random subdirectory to guarantee a clean slate for file
     // manipulation.
@@ -114,8 +117,10 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
     testFilesDirectory.mkdirs();
     mockFileStore = mock(FileStore.class);
     when(mockFileStore.getFilesDir()).thenReturn(testFilesDirectory);
+    when(mockFileStore.getFilesDirPath()).thenReturn(testFilesDirectory.getPath());
 
-    final SettingsData testSettingsData = new TestSettingsData();
+    final SettingsData testSettingsData =
+        new TestSettingsData(3, CrashlyticsController.REPORT_UPLOAD_VARIANT_LEGACY);
     appSettingsData = testSettingsData.appData;
     sessionSettingsData = testSettingsData.sessionData;
 
@@ -232,7 +237,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
               reportUploaderProvider,
               nativeComponent,
               unityVersionProvider,
-              mockBreadcrumbsReceiver,
+              mockAnalyticsReceiver,
               analyticsConnector);
       return controller;
     }
@@ -1017,9 +1022,9 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
 
   public void testAnalyticsEventListenerIsRegistered() throws Exception {
     final CrashlyticsController controller = builder().build();
-    controller.registerBreadcrumbsReceiver();
+    controller.registerAnalyticsListener();
 
-    Mockito.verify(mockBreadcrumbsReceiver, Mockito.times(1)).register();
+    Mockito.verify(mockAnalyticsReceiver, Mockito.times(1)).register();
   }
 
   public void testGeneratorAndAnalyzerVersion() throws Exception {
