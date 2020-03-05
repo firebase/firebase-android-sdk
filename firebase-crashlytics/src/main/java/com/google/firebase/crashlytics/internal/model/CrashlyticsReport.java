@@ -84,9 +84,8 @@ public abstract class CrashlyticsReport {
   @NonNull
   public abstract Session getSession();
 
-  // TODO: Add back once NDK data is ready to be serialized
-  // @Nullable
-  // public abstract byte[] getNdkPayload();
+  @Nullable
+  public abstract FilesPayload getNdkPayload();
 
   @NonNull
   protected abstract Builder toBuilder();
@@ -121,6 +120,58 @@ public abstract class CrashlyticsReport {
   @NonNull
   public CrashlyticsReport withUserId(@NonNull String userId) {
     return toBuilder().setSession(getSession().withUserId(userId)).build();
+  }
+
+  @AutoValue
+  public abstract static class FilesPayload {
+
+    @NonNull
+    public static Builder builder() {
+      return new AutoValue_CrashlyticsReport_FilesPayload.Builder();
+    }
+
+    @NonNull
+    public abstract ImmutableList<File> getFiles();
+
+    @NonNull
+    public abstract String getOrgId();
+
+    @AutoValue
+    public abstract static class File {
+
+      @NonNull
+      public static Builder builder() {
+        return new AutoValue_CrashlyticsReport_FilesPayload_File.Builder();
+      }
+
+      @NonNull
+      public abstract String getFilename();
+
+      @NonNull
+      public abstract byte[] getContents();
+
+      /** Builder for {@link File}. */
+      @AutoValue.Builder
+      public abstract static class Builder {
+
+        public abstract Builder setFilename(String value);
+
+        public abstract Builder setContents(byte[] value);
+
+        public abstract File build();
+      }
+    }
+
+    /** Builder for {@link FilesPayload}. */
+    @AutoValue.Builder
+    public abstract static class Builder {
+
+      public abstract Builder setFiles(ImmutableList<File> value);
+
+      public abstract Builder setOrgId(String value);
+
+      public abstract FilesPayload build();
+    }
   }
 
   @AutoValue
@@ -905,6 +956,9 @@ public abstract class CrashlyticsReport {
 
     @NonNull
     public abstract Builder setSession(@NonNull Session value);
+
+    @NonNull
+    public abstract Builder setNdkPayload(FilesPayload value);
 
     @NonNull
     public abstract CrashlyticsReport build();
