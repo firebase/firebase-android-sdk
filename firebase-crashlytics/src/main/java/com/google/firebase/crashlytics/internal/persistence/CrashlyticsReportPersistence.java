@@ -19,6 +19,7 @@ import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event;
 import com.google.firebase.crashlytics.internal.model.ImmutableList;
 import com.google.firebase.crashlytics.internal.model.serialization.CrashlyticsReportJsonTransform;
+import com.google.firebase.crashlytics.internal.settings.SettingsDataProvider;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileFilter;
@@ -45,6 +46,7 @@ public class CrashlyticsReportPersistence {
 
   private static final Charset UTF_8 = Charset.forName("UTF-8");
 
+  private static final int MAX_OPEN_SESSIONS = 8;
   private static final String WORKING_DIRECTORY_NAME = "report-persistence";
   private static final String OPEN_SESSIONS_DIRECTORY_NAME = "sessions";
   private static final String PRIORITY_REPORTS_DIRECTORY = "priority-reports";
@@ -74,22 +76,15 @@ public class CrashlyticsReportPersistence {
   private final File priorityReportsDirectory;
   private final File reportsDirectory;
 
-  // TODO: Add settings override
-  private final int maxEventsToKeep;
-  // TODO: Add settings override
-  private final int maxReportsToKeep;
-  // TODO: Add settings override
-  private final int maxOpenSessions;
+  private final SettingsDataProvider settingsDataProvider;
 
   public CrashlyticsReportPersistence(
-      File rootDirectory, int maxEventsToKeep, int maxReportsToKeep, int maxOpenSessions) {
+      File rootDirectory, SettingsDataProvider settingsDataProvider) {
     final File workingDirectory = new File(rootDirectory, WORKING_DIRECTORY_NAME);
     openSessionsDirectory = new File(workingDirectory, OPEN_SESSIONS_DIRECTORY_NAME);
     priorityReportsDirectory = new File(workingDirectory, PRIORITY_REPORTS_DIRECTORY);
     reportsDirectory = new File(workingDirectory, REPORTS_DIRECTORY);
-    this.maxEventsToKeep = maxEventsToKeep;
-    this.maxReportsToKeep = maxReportsToKeep;
-    this.maxOpenSessions = maxOpenSessions;
+    this.settingsDataProvider = settingsDataProvider;
   }
 
   public void persistReport(CrashlyticsReport report) {
@@ -124,6 +119,8 @@ public class CrashlyticsReportPersistence {
    */
   public void persistEvent(
       CrashlyticsReport.Session.Event event, String sessionId, boolean isHighPriority) {
+    int maxEventsToKeep =
+        settingsDataProvider.getSettings().getSessionData().maxCustomExceptionEvents;
     final File sessionDirectory = getSessionDirectoryById(sessionId);
     if (!sessionDirectory.isDirectory()) {
       // No open session for this ID
@@ -233,20 +230,22 @@ public class CrashlyticsReportPersistence {
     List<File> openSessionDirectories =
         getFilesInDirectory(openSessionsDirectory, sessionDirectoryFilter);
     Collections.sort(openSessionDirectories, LATEST_SESSION_ID_FIRST_COMPARATOR);
-    if (openSessionDirectories.size() <= maxOpenSessions) {
+    if (openSessionDirectories.size() <= MAX_OPEN_SESSIONS) {
       return openSessionDirectories;
     }
 
     // Make a sublist of the reports that go over the size limit
     List<File> openSessionDirectoriesToRemove =
-        openSessionDirectories.subList(maxOpenSessions, openSessionDirectories.size());
+        openSessionDirectories.subList(MAX_OPEN_SESSIONS, openSessionDirectories.size());
     for (File openSessionDirectory : openSessionDirectoriesToRemove) {
       recursiveDelete(openSessionDirectory);
     }
-    return openSessionDirectories.subList(0, maxOpenSessions);
+    return openSessionDirectories.subList(0, MAX_OPEN_SESSIONS);
   }
 
   private void capFinalizedReports() {
+    int maxReportsToKeep =
+        settingsDataProvider.getSettings().getSessionData().maxCompleteSessionsCount;
     List<File> finalizedReportFiles = getAllFinalizedReportFiles();
 
     int fileCount = finalizedReportFiles.size();

@@ -18,6 +18,7 @@ import android.content.Context;
 import android.text.TextUtils;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.common.CommonUtils;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -25,8 +26,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 class BreakpadController implements NativeComponentController {
 
@@ -56,8 +55,7 @@ class BreakpadController implements NativeComponentController {
         initSuccess = nativeApi.initialize(crashReportPath, context.getAssets());
       }
     } catch (IOException e) {
-      Logger.getLogger(FirebaseCrashlyticsNdk.TAG)
-          .log(Level.SEVERE, "Error initializing CrashlyticsNdk", e);
+      Logger.getLogger().e("Error initializing CrashlyticsNdk", e);
     }
     return initSuccess;
   }

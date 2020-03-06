@@ -53,8 +53,7 @@ public class UserMetadata {
     key = sanitizeAttribute(key);
 
     if (attributes.size() >= MAX_ATTRIBUTES && !attributes.containsKey(key)) {
-      Logger.getLogger()
-          .d(Logger.TAG, "Exceeded maximum number of custom attributes (" + MAX_ATTRIBUTES + ")");
+      Logger.getLogger().d("Exceeded maximum number of custom attributes (" + MAX_ATTRIBUTES + ")");
       return;
     }
 

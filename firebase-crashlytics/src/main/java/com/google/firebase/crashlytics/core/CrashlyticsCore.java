@@ -129,7 +129,7 @@ public class CrashlyticsCore {
     // before starting the crash detector make sure that this was built with our build
     // tools.
     final String mappingFileId = CommonUtils.getMappingFileId(context);
-    Logger.getLogger().d(Logger.TAG, "Mapping file id is: " + mappingFileId);
+    Logger.getLogger().d("Mapping file ID is: " + mappingFileId);
 
     // Throw an exception and halt the app if the build ID is required and not present.
     // TODO: This flag is no longer supported and should be removed, as part of a larger refactor
@@ -144,7 +144,7 @@ public class CrashlyticsCore {
     final String googleAppId = app.getOptions().getApplicationId();
 
     try {
-      Logger.getLogger().i(Logger.TAG, "Initializing Crashlytics " + getVersion());
+      Logger.getLogger().i("Initializing Crashlytics " + getVersion());
 
       final FileStore fileStore = new FileStoreImpl(context);
       crashMarker = new CrashlyticsFileMarker(CRASH_MARKER_FILE_NAME, fileStore);
@@ -165,8 +165,7 @@ public class CrashlyticsCore {
                 }
               });
 
-      Logger.getLogger()
-          .d(Logger.TAG, "Installer package name is: " + appData.installerPackageName);
+      Logger.getLogger().d("Installer package name is: " + appData.installerPackageName);
 
       controller =
           new CrashlyticsController(
@@ -183,7 +182,8 @@ public class CrashlyticsCore {
               nativeComponent,
               unityVersionProvider,
               analyticsReceiver,
-              analyticsConnector);
+              analyticsConnector,
+              settingsProvider);
 
       // If the file is present at this point, then the previous run's initialization
       // did not complete, and we want to perform initialization synchronously this time.
@@ -199,7 +199,6 @@ public class CrashlyticsCore {
       if (initializeSynchronously && CommonUtils.canTryConnection(context)) {
         Logger.getLogger()
             .d(
-                Logger.TAG,
                 "Crashlytics did not finish previous background "
                     + "initialization. Initializing synchronously.");
         // finishInitSynchronously blocks the UI thread while it finishes background init.
@@ -209,15 +208,12 @@ public class CrashlyticsCore {
       }
     } catch (Exception e) {
       Logger.getLogger()
-          .e(
-              Logger.TAG,
-              "Crashlytics was not started due to an exception during initialization",
-              e);
+          .e("Crashlytics was not started due to an exception during initialization", e);
       controller = null;
       return false;
     }
 
-    Logger.getLogger().d(Logger.TAG, "Exception handling initialization successful");
+    Logger.getLogger().d("Exception handling initialization successful");
     return true;
   }
 
@@ -246,8 +242,7 @@ public class CrashlyticsCore {
       final Settings settingsData = settingsProvider.getSettings();
 
       if (!settingsData.getFeaturesData().collectReports) {
-        Logger.getLogger()
-            .d(Logger.TAG, "Collection of crash reports disabled in Crashlytics settings.");
+        Logger.getLogger().d("Collection of crash reports disabled in Crashlytics settings.");
         // TODO: This isn't actually an error condition, so figure out the right way to
         // handle this case.
         return Tasks.forException(
@@ -255,7 +250,7 @@ public class CrashlyticsCore {
       }
 
       if (!controller.finalizeSessions(settingsData.getSessionData().maxCustomExceptionEvents)) {
-        Logger.getLogger().d(Logger.TAG, "Could not finalize previous sessions.");
+        Logger.getLogger().d("Could not finalize previous sessions.");
       }
 
       // TODO: Move this call out of this method, so that the return value merely indicates
@@ -265,10 +260,7 @@ public class CrashlyticsCore {
           CLS_DEFAULT_PROCESS_DELAY, settingsProvider.getAppSettings());
     } catch (Exception e) {
       Logger.getLogger()
-          .e(
-              Logger.TAG,
-              "Crashlytics encountered a problem during asynchronous initialization.",
-              e);
+          .e("Crashlytics encountered a problem during asynchronous initialization.", e);
       return Tasks.forException(e);
     } finally {
       // The only thing that compels us to leave the marker and start synchronously next time
@@ -326,8 +318,7 @@ public class CrashlyticsCore {
    */
   public void logException(final Throwable throwable) {
     if (throwable == null) {
-      Logger.getLogger()
-          .log(Log.WARN, Logger.TAG, "Crashlytics is ignoring a request to log a null exception.");
+      Logger.getLogger().w("Crashlytics is ignoring a request to log a null exception.");
       return;
     }
 
@@ -396,18 +387,17 @@ public class CrashlyticsCore {
 
     Logger.getLogger()
         .d(
-            Logger.TAG,
             "Crashlytics detected incomplete initialization on previous app launch."
                 + " Will initialize synchronously.");
 
     try {
       future.get(DEFAULT_MAIN_HANDLER_TIMEOUT_SEC, TimeUnit.SECONDS);
     } catch (InterruptedException e) {
-      Logger.getLogger().e(Logger.TAG, "Crashlytics was interrupted during initialization.", e);
+      Logger.getLogger().e("Crashlytics was interrupted during initialization.", e);
     } catch (ExecutionException e) {
-      Logger.getLogger().e(Logger.TAG, "Problem encountered during Crashlytics initialization.", e);
+      Logger.getLogger().e("Problem encountered during Crashlytics initialization.", e);
     } catch (TimeoutException e) {
-      Logger.getLogger().e(Logger.TAG, "Crashlytics timed out during initialization.", e);
+      Logger.getLogger().e("Crashlytics timed out during initialization.", e);
     }
   }
 
@@ -418,7 +408,7 @@ public class CrashlyticsCore {
     // Create the Crashlytics initialization marker file, which is used to determine
     // whether the app crashed before initialization could complete.
     initializationMarker.create();
-    Logger.getLogger().d(Logger.TAG, "Initialization marker file created.");
+    Logger.getLogger().d("Initialization marker file created.");
   }
 
   /** Enqueues a job to remove the Crashlytics initialization marker file */
@@ -429,14 +419,11 @@ public class CrashlyticsCore {
           public Boolean call() throws Exception {
             try {
               final boolean removed = initializationMarker.remove();
-              Logger.getLogger().d(Logger.TAG, "Initialization marker file removed: " + removed);
+              Logger.getLogger().d("Initialization marker file removed: " + removed);
               return removed;
             } catch (Exception e) {
               Logger.getLogger()
-                  .e(
-                      Logger.TAG,
-                      "Problem encountered deleting Crashlytics initialization marker.",
-                      e);
+                  .e("Problem encountered deleting Crashlytics initialization marker.", e);
               return false;
             }
           }
@@ -481,7 +468,7 @@ public class CrashlyticsCore {
 
   static boolean isBuildIdValid(String buildId, boolean requiresBuildId) {
     if (!requiresBuildId) {
-      Logger.getLogger().d(Logger.TAG, "Configured not to require a build ID.");
+      Logger.getLogger().d("Configured not to require a build ID.");
       return true;
     }
 

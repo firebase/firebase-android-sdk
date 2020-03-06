@@ -55,7 +55,7 @@ final class ProcMapEntryParser {
 
       return new ProcMapEntry(address, size, perms, path);
     } catch (Exception e) {
-      Logger.getLogger().d(Logger.TAG, "Could not parse map entry: " + mapEntry);
+      Logger.getLogger().d("Could not parse map entry: " + mapEntry);
       return null;
     }
   }

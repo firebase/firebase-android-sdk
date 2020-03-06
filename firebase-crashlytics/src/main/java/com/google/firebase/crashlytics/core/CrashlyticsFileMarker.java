@@ -50,7 +50,7 @@ class CrashlyticsFileMarker {
     try {
       wasCreated = getMarkerFile().createNewFile();
     } catch (IOException e) {
-      Logger.getLogger().e(Logger.TAG, "Error creating marker: " + markerName, e);
+      Logger.getLogger().e("Error creating marker: " + markerName, e);
     }
     return wasCreated;
   }

@@ -79,7 +79,7 @@ public class DataCollectionArbiter {
       } catch (PackageManager.NameNotFoundException e) {
         // This shouldn't happen since it's this app's package, but fall through to default
         // if so.
-        Logger.getLogger().d(Logger.TAG, "Unable to get PackageManager. Falling through", e);
+        Logger.getLogger().d("Unable to get PackageManager. Falling through", e);
       }
     }
 
