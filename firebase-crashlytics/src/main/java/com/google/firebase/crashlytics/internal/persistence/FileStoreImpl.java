@@ -43,10 +43,10 @@ public class FileStoreImpl implements FileStore {
       if (file.exists() || file.mkdirs()) {
         return file;
       } else {
-        Logger.getLogger().w(Logger.TAG, "Couldn't create file");
+        Logger.getLogger().w("Couldn't create file");
       }
     } else {
-      Logger.getLogger().d(Logger.TAG, "Null File");
+      Logger.getLogger().d("Null File");
     }
     return null;
   }
@@ -56,7 +56,6 @@ public class FileStoreImpl implements FileStore {
     if (!Environment.MEDIA_MOUNTED.equals(state)) {
       Logger.getLogger()
           .w(
-              Logger.TAG,
               "External Storage is not mounted and/or writable\n"
                   + "Have you declared android.permission.WRITE_EXTERNAL_STORAGE "
                   + "in the manifest?");

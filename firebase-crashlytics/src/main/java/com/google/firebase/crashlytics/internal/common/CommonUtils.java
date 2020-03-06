@@ -134,7 +134,7 @@ public class CommonUtils {
           }
         }
       } catch (Exception e) {
-        Logger.getLogger().e(Logger.TAG, "Error parsing " + file, e);
+        Logger.getLogger().e("Error parsing " + file, e);
       } finally {
         CommonUtils.closeOrLog(br, "Failed to close system file reader.");
       }
@@ -182,8 +182,7 @@ public class CommonUtils {
       String arch = Build.CPU_ABI;
 
       if (TextUtils.isEmpty(arch)) {
-        Logger.getLogger()
-            .d(Logger.TAG, "Architecture#getValue()::Build.CPU_ABI returned null or empty");
+        Logger.getLogger().d("Architecture#getValue()::Build.CPU_ABI returned null or empty");
         return UNKNOWN;
       }
 
@@ -220,12 +219,10 @@ public class CommonUtils {
             // leave in this handling since we don't know for certain it isn't.
             bytes = convertMemInfoToBytes(result, "GB", BYTES_IN_A_GIGABYTE);
           } else {
-            Logger.getLogger()
-                .d(Logger.TAG, "Unexpected meminfo format while computing RAM: " + result);
+            Logger.getLogger().d("Unexpected meminfo format while computing RAM: " + result);
           }
         } catch (NumberFormatException e) {
-          Logger.getLogger()
-              .e(Logger.TAG, "Unexpected meminfo format while computing RAM: " + result, e);
+          Logger.getLogger().e("Unexpected meminfo format while computing RAM: " + result, e);
         }
       }
       totalRamInBytes = bytes;
@@ -300,7 +297,7 @@ public class CommonUtils {
 
       return CommonUtils.hexify(digest.digest());
     } catch (Exception e) {
-      Logger.getLogger().e(Logger.TAG, "Could not calculate hash for app icon.", e);
+      Logger.getLogger().e("Could not calculate hash for app icon.", e);
     }
 
     return "";
@@ -313,10 +310,7 @@ public class CommonUtils {
       digest = java.security.MessageDigest.getInstance(algorithm);
     } catch (NoSuchAlgorithmException e) {
       Logger.getLogger()
-          .e(
-              Logger.TAG,
-              "Could not create hashing algorithm: " + algorithm + ", returning empty string.",
-              e);
+          .e("Could not create hashing algorithm: " + algorithm + ", returning empty string.", e);
       return "";
     }
     // :TODO: Need to specify character encoding??
@@ -410,7 +404,7 @@ public class CommonUtils {
    */
   public static void logControlled(Context context, String msg) {
     if (isClsTrace(context)) {
-      Logger.getLogger().d(Logger.TAG, msg);
+      Logger.getLogger().d(msg);
     }
   }
 
@@ -420,7 +414,7 @@ public class CommonUtils {
    */
   public static void logControlledError(Context context, String msg, Throwable tr) {
     if (isClsTrace(context)) {
-      Logger.getLogger().e(Logger.TAG, msg);
+      Logger.getLogger().e(msg);
     }
   }
 
@@ -430,7 +424,7 @@ public class CommonUtils {
    */
   public static void logControlled(Context context, int level, String tag, String msg) {
     if (isClsTrace(context)) {
-      Logger.getLogger().log(level, Logger.TAG, msg);
+      Logger.getLogger().log(level, msg);
     }
   }
 
@@ -659,7 +653,7 @@ public class CommonUtils {
       try {
         c.close();
       } catch (IOException e) {
-        Logger.getLogger().e(Logger.TAG, message, e);
+        Logger.getLogger().e(message, e);
       }
     }
   }
@@ -669,7 +663,7 @@ public class CommonUtils {
       try {
         f.flush();
       } catch (IOException e) {
-        Logger.getLogger().e(Logger.TAG, message, e);
+        Logger.getLogger().e(message, e);
       }
     }
   }
@@ -791,7 +785,7 @@ public class CommonUtils {
       final String sha1 = CommonUtils.sha1(is);
       return CommonUtils.isNullOrEmpty(sha1) ? null : sha1;
     } catch (Exception e) {
-      Logger.getLogger().w(Logger.TAG, "Could not calculate hash for app icon:" + e.getMessage());
+      Logger.getLogger().w("Could not calculate hash for app icon:" + e.getMessage());
     } finally {
       CommonUtils.closeOrLog(is, "Failed to close icon input stream.");
     }
@@ -830,7 +824,7 @@ public class CommonUtils {
     final int id = CommonUtils.getResourcesIdentifier(context, UNITY_EDITOR_VERSION, "string");
     if (id != 0) {
       version = context.getResources().getString(id);
-      Logger.getLogger().d(Logger.TAG, "Unity Editor version is: " + version);
+      Logger.getLogger().d("Unity Editor version is: " + version);
     }
     return version;
   }
