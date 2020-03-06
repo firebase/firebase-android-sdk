@@ -45,13 +45,9 @@ class ApkSizeJsonBuilder {
         }
 
         def results = sdkApkSizes.collect { new Result(it.first, "apk ($it.second)", it.third) }
-        def log = TestLogFinder.currentLogLink
+        def log = TestLogFinder.generateCurrentLogLink()
         def report = new Report(Metric.BinarySize, results, log)
 
-        def json = JsonOutput.toJson(report)
-
-        println JsonOutput.prettyPrint(json)
-
-        return json
+        return report.toJson()
     }
 }

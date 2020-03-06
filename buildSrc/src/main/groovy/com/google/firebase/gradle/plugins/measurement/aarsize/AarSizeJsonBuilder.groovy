@@ -46,13 +46,9 @@ class AarSizeJsonBuilder {
         }
 
         def results = sdkAarSizes.collect { new Result(it.first, "aar", it.second) }
-        def log = TestLogFinder.currentLogLink
+        def log = TestLogFinder.generateCurrentLogLink()
         def report = new Report(Metric.BinarySize, results, log)
 
-        def json = JsonOutput.toJson(report)
-
-        println JsonOutput.prettyPrint(json)
-
-        return json
+        return report.toJson()
     }
 }
