@@ -238,7 +238,8 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
               nativeComponent,
               unityVersionProvider,
               mockAnalyticsReceiver,
-              analyticsConnector);
+              analyticsConnector,
+              testSettingsDataProvider);
       return controller;
     }
   }

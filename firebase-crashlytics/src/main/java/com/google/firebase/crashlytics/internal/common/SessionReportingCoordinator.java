@@ -25,6 +25,7 @@ import com.google.firebase.crashlytics.internal.model.ImmutableList;
 import com.google.firebase.crashlytics.internal.persistence.CrashlyticsReportPersistence;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.send.DataTransportCrashlyticsReportSender;
+import com.google.firebase.crashlytics.internal.settings.SettingsDataProvider;
 import com.google.firebase.crashlytics.internal.stacktrace.StackTraceTrimmingStrategy;
 import java.io.File;
 import java.util.ArrayList;
@@ -59,16 +60,13 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
       AppData appData,
       LogFileManager logFileManager,
       UserMetadata userMetadata,
-      StackTraceTrimmingStrategy stackTraceTrimmingStrategy) {
+      StackTraceTrimmingStrategy stackTraceTrimmingStrategy,
+      SettingsDataProvider settingsProvider) {
     final File rootFilesDirectory = new File(fileStore.getFilesDirPath());
     final CrashlyticsReportDataCapture dataCapture =
         new CrashlyticsReportDataCapture(context, idManager, appData, stackTraceTrimmingStrategy);
     final CrashlyticsReportPersistence reportPersistence =
-        new CrashlyticsReportPersistence(
-            rootFilesDirectory,
-            DEFAULT_MAX_EVENTS_TO_KEEP,
-            DEFAULT_MAX_REPORTS_TO_KEEP,
-            DEFAULT_MAX_SESSIONS_TO_KEEP);
+        new CrashlyticsReportPersistence(rootFilesDirectory, settingsProvider);
     final DataTransportCrashlyticsReportSender reportSender =
         DataTransportCrashlyticsReportSender.create(context);
     return new SessionReportingCoordinator(
