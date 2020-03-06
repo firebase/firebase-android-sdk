@@ -323,6 +323,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     ndkDataDir.mkdir();
     final NativeSessionFileProvider ndkData = populateNdkData(ndkDataDir);
     final CrashlyticsNativeComponent mocknativeComponent = mock(CrashlyticsNativeComponent.class);
+    when(mocknativeComponent.hasCrashDataForSession(anyString())).thenReturn(true);
     when(mocknativeComponent.getSessionFileProvider(anyString())).thenReturn(ndkData);
 
     // Initialize Crashlytics to open a session, then "restart app" with an NDK provider to provide
@@ -362,6 +363,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     ndkDataDir.mkdir();
     final NativeSessionFileProvider ndkData = populateNdkData(ndkDataDir);
     final CrashlyticsNativeComponent mocknativeComponent = mock(CrashlyticsNativeComponent.class);
+    when(mocknativeComponent.hasCrashDataForSession(anyString())).thenReturn(true);
     when(mocknativeComponent.getSessionFileProvider(anyString())).thenReturn(ndkData);
 
     // Initialize Crashlytics to open a session, then "restart app" with an NDK provider to provide
@@ -397,6 +399,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     ndkDataDir.mkdir();
     final NativeSessionFileProvider ndkData = populateNdkData(ndkDataDir);
     final CrashlyticsNativeComponent mocknativeComponent = mock(CrashlyticsNativeComponent.class);
+    when(mocknativeComponent.hasCrashDataForSession(anyString())).thenReturn(true);
     when(mocknativeComponent.getSessionFileProvider(anyString())).thenReturn(ndkData);
 
     // Initialize Crashlytics to open a session, then "restart app" with an NDK provider to provide
@@ -432,10 +435,6 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     final NativeSessionFileProvider emptyNdkData =
         new MissingNativeComponent().getSessionFileProvider("missing");
     final CrashlyticsNativeComponent mocknativeComponent = mock(CrashlyticsNativeComponent.class);
-    when(mocknativeComponent.getSessionFileProvider(anyString()))
-        .thenReturn(emptyNdkData) // Java crash
-        .thenReturn(populateNdkData(ndkDataDir)) // Native crash
-        .thenReturn(emptyNdkData); // Java crash
 
     appRestart(mocknativeComponent);
 
@@ -448,7 +447,12 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
         crashlyticsFilesDir.listFiles(new SessionBeginFilesWithExtensionFilter(CLS_FILE_FILTER))
             .length);
 
+    when(mocknativeComponent.hasCrashDataForSession(anyString())).thenReturn(false);
+    when(mocknativeComponent.getSessionFileProvider(anyString()))
+        .thenReturn(emptyNdkData); // Java crash
+
     javaCrash(new IllegalStateException());
+
     appRestart(mocknativeComponent);
 
     assertEquals(2, crashlyticsFilesDir.listFiles(ONLY_SESSION_DIRECTORIES).length);
@@ -461,6 +465,10 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
         4,
         crashlyticsFilesDir.listFiles(new SessionBeginFilesWithExtensionFilter(CLS_FILE_FILTER))
             .length);
+
+    when(mocknativeComponent.hasCrashDataForSession(anyString())).thenReturn(true);
+    when(mocknativeComponent.getSessionFileProvider(anyString()))
+        .thenReturn(populateNdkData(ndkDataDir)); // Native crash
 
     appRestart(mocknativeComponent);
 
@@ -477,6 +485,9 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     File[] nativeSessionsDirectories = nativeSessionsDir.listFiles(ANY_SESSION_ID_DIRECTORY_FILTER);
     assertEquals(1, nativeSessionsDirectories.length);
     assertEquals(7, nativeSessionsDirectories[0].listFiles().length);
+
+    when(mocknativeComponent.hasCrashDataForSession(anyString())).thenReturn(false);
+    when(mocknativeComponent.getSessionFileProvider(anyString())).thenReturn(emptyNdkData);
 
     javaCrash(new NullPointerException());
     appRestart(mocknativeComponent);
