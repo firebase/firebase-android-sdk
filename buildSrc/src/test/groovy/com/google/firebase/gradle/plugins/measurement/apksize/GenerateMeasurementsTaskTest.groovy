@@ -42,15 +42,4 @@ public class GenerateMeasurementsTaskTest {
 	assertTrue(Files.exists(testProject.getApkSizeReportPath()))
     }
 
-    @Test
-    public void generate_withTable() {
-        BuildResult result = testProject.build("generate")
-
-        if (!result.tasks(TaskOutcome.FAILED).isEmpty()) {
-            throw new AssertionError("Smoke test for generate failed", result.getFailure())
-        }
-
-	assertFalse(Files.exists(testProject.getApkSizeReportPath()))
-        assertTrue("Output missing `APK Sizes`", result.getOutput().contains("APK Sizes"))
-    }
 }

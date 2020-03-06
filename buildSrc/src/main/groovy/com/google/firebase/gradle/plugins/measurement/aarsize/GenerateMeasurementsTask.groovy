@@ -75,16 +75,11 @@ public class GenerateMeasurementsTask extends DefaultTask {
                 subprojects[name] = f.length()
             }
         }
-        if (project.hasProperty("pull_request")) {
-            def pullRequestNumber = project.properties["pull_request"]
-            generateJson(pullRequestNumber, subprojects)
-        } else {
-            generateTable(subprojects)
-        }
+        generateJson(subprojects)
     }
 
-    private def generateJson(pullRequestNumber, subprojects) {
-        def builder = new AarSizeJsonBuilder(pullRequestNumber)
+    private def generateJson(subprojects) {
+        def builder = new AarSizeJsonBuilder()
         subprojects.each { name, aarSize ->
             builder.addAarSize(name, aarSize)
         }
