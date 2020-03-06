@@ -859,8 +859,13 @@ class CrashlyticsController {
     if (includeCurrent) {
       reportingCoordinator.onEndSession();
     } else if (nativeComponent.hasCrashDataForSession(mostRecentSessionIdToClose)) {
+      // We only finalize the current session if it's a Java crash, so only finalize native crash
+      // data when we aren't including current.
       finalizePreviousNativeSession(mostRecentSessionIdToClose);
-      nativeComponent.finalizeSession(mostRecentSessionIdToClose);
+      if (!nativeComponent.finalizeSession(mostRecentSessionIdToClose)) {
+        Logger.getLogger()
+            .d(Logger.TAG, "Could not finalize native session: " + mostRecentSessionIdToClose);
+      }
     }
 
     closeOpenSessions(sessionBeginFiles, offset, maxCustomExceptionEvents);
