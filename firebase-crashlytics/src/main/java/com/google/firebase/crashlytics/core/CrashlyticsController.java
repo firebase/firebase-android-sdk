@@ -383,7 +383,6 @@ class CrashlyticsController {
 
     Logger.getLogger()
         .d(
-            Logger.TAG,
             "Crashlytics is handling uncaught "
                 + "exception \""
                 + ex
@@ -464,13 +463,13 @@ class CrashlyticsController {
   //       should be sent or deleted, at which point the promise will be resolved with the action.
   private Task<Boolean> waitForReportAction() {
     if (dataCollectionArbiter.isAutomaticDataCollectionEnabled()) {
-      Logger.getLogger().d(Logger.TAG, "Automatic data collection is enabled. Allowing upload.");
+      Logger.getLogger().d("Automatic data collection is enabled. Allowing upload.");
       unsentReportsAvailable.trySetResult(false);
       return Tasks.forResult(true);
     }
 
-    Logger.getLogger().d(Logger.TAG, "Automatic data collection is disabled.");
-    Logger.getLogger().d(Logger.TAG, "Notifying that unsent reports are available.");
+    Logger.getLogger().d("Automatic data collection is disabled.");
+    Logger.getLogger().d("Notifying that unsent reports are available.");
     unsentReportsAvailable.trySetResult(true);
 
     // If data collection gets enabled while we are waiting for an action, go ahead and send the
@@ -487,7 +486,7 @@ class CrashlyticsController {
                   }
                 });
 
-    Logger.getLogger().d(Logger.TAG, "Waiting for send/deleteUnsentReports to be called.");
+    Logger.getLogger().d("Waiting for send/deleteUnsentReports to be called.");
     // Wait for either the processReports callback to be called, or data collection to be enabled.
     return Utils.race(collectionEnabled, reportActionProvided.getTask());
   }
@@ -501,7 +500,7 @@ class CrashlyticsController {
       return sessionId != null && nativeComponent.hasCrashDataForSession(sessionId);
     }
 
-    Logger.getLogger().d(Logger.TAG, "Found previous crash marker.");
+    Logger.getLogger().d("Found previous crash marker.");
     crashMarker.remove();
 
     return Boolean.TRUE;
@@ -514,8 +513,7 @@ class CrashlyticsController {
     // and 2) when there's a fatal crash. So no new reports will become available while the app is
     // running.
     if (!checkForUnsentReportsCalled.compareAndSet(false, true)) {
-      Logger.getLogger()
-          .d(Logger.TAG, "checkForUnsentReports should only be called once per execution.");
+      Logger.getLogger().d("checkForUnsentReports should only be called once per execution.");
       return Tasks.forResult(false);
     }
     return unsentReportsAvailable.getTask();
@@ -534,11 +532,11 @@ class CrashlyticsController {
   Task<Void> submitAllReports(float delay, Task<AppSettingsData> appSettingsDataTask) {
     if (!reportManager.areReportsAvailable()) {
       // Just notify the user that there are no reports and stop.
-      Logger.getLogger().d(Logger.TAG, "No reports are available.");
+      Logger.getLogger().d("No reports are available.");
       unsentReportsAvailable.trySetResult(false);
       return Tasks.forResult(null);
     }
-    Logger.getLogger().d(Logger.TAG, "Unsent reports are available.");
+    Logger.getLogger().d("Unsent reports are available.");
 
     return waitForReportAction()
         .onSuccessTask(
@@ -554,14 +552,14 @@ class CrashlyticsController {
                         List<Report> reports = reportManager.findReports();
 
                         if (!send) {
-                          Logger.getLogger().d(Logger.TAG, "Reports are being deleted.");
+                          Logger.getLogger().d("Reports are being deleted.");
                           reportManager.deleteReports(reports);
                           reportingCoordinator.removeAllReports();
                           unsentReportsHandled.trySetResult(null);
                           return Tasks.forResult(null);
                         }
 
-                        Logger.getLogger().d(Logger.TAG, "Reports are being sent.");
+                        Logger.getLogger().d("Reports are being sent.");
 
                         // waitForReportAction guarantees we got user permission.
                         boolean dataCollectionToken = send;
@@ -675,8 +673,7 @@ class CrashlyticsController {
       if (context != null && CommonUtils.isAppDebuggable(context)) {
         throw ex;
       } else {
-        Logger.getLogger()
-            .e(Logger.TAG, "Attempting to set custom attribute with null key, ignoring.", null);
+        Logger.getLogger().e("Attempting to set custom attribute with null key, ignoring.", null);
         return;
       }
     }
@@ -789,19 +786,18 @@ class CrashlyticsController {
     backgroundWorker.checkRunningOnThread();
 
     if (isHandlingException()) {
-      Logger.getLogger()
-          .d(Logger.TAG, "Skipping session finalization because a crash has already occurred.");
+      Logger.getLogger().d("Skipping session finalization because a crash has already occurred.");
       return Boolean.FALSE;
     }
 
-    Logger.getLogger().d(Logger.TAG, "Finalizing previously open sessions.");
+    Logger.getLogger().d("Finalizing previously open sessions.");
     try {
       doCloseSessions(maxCustomExceptionEvents, false);
     } catch (Exception e) {
-      Logger.getLogger().e(Logger.TAG, "Unable to finalize previously open sessions.", e);
+      Logger.getLogger().e("Unable to finalize previously open sessions.", e);
       return false;
     }
-    Logger.getLogger().d(Logger.TAG, "Closed all previously open sessions");
+    Logger.getLogger().d("Closed all previously open sessions");
 
     return true;
   }
@@ -814,7 +810,7 @@ class CrashlyticsController {
     final long startedAtSeconds = new Date().getTime() / 1000;
     final String sessionIdentifier = new CLSUUID(idManager).toString();
 
-    Logger.getLogger().d(Logger.TAG, "Opening a new session with ID " + sessionIdentifier);
+    Logger.getLogger().d("Opening a new session with ID " + sessionIdentifier);
 
     nativeComponent.openSession(sessionIdentifier);
 
@@ -845,7 +841,7 @@ class CrashlyticsController {
     final File[] sessionBeginFiles = listSortedSessionBeginFiles();
 
     if (sessionBeginFiles.length <= offset) {
-      Logger.getLogger().d(Logger.TAG, "No open sessions to be closed.");
+      Logger.getLogger().d("No open sessions to be closed.");
       return;
     }
 
@@ -871,13 +867,13 @@ class CrashlyticsController {
    */
   private void closeOpenSessions(
       File[] sessionBeginFiles, int beginIndex, int maxLoggedExceptionsCount) {
-    Logger.getLogger().d(Logger.TAG, "Closing open sessions.");
+    Logger.getLogger().d("Closing open sessions.");
 
     for (int i = beginIndex; i < sessionBeginFiles.length; ++i) {
       final File sessionBeginFile = sessionBeginFiles[i];
       final String sessionIdentifier = getSessionIdFromSessionFile(sessionBeginFile);
 
-      Logger.getLogger().d(Logger.TAG, "Closing session: " + sessionIdentifier);
+      Logger.getLogger().d("Closing session: " + sessionIdentifier);
       writeSessionPartsToSessionFile(sessionBeginFile, sessionIdentifier, maxLoggedExceptionsCount);
     }
   }
@@ -900,8 +896,7 @@ class CrashlyticsController {
     try {
       fos.closeInProgressStream();
     } catch (IOException ex) {
-      Logger.getLogger()
-          .e(Logger.TAG, "Error closing session file stream in the presence of an exception", ex);
+      Logger.getLogger().e("Error closing session file stream in the presence of an exception", ex);
     }
   }
 
@@ -1018,14 +1013,14 @@ class CrashlyticsController {
       final Matcher matcher = SESSION_FILE_PATTERN.matcher(fileName);
 
       if (!matcher.matches()) {
-        Logger.getLogger().d(Logger.TAG, "Deleting unknown file: " + fileName);
+        Logger.getLogger().d("Deleting unknown file: " + fileName);
         sessionPartFile.delete();
         continue;
       }
 
       final String sessionId = matcher.group(1);
       if (!sessionIdsToKeep.contains(sessionId)) {
-        Logger.getLogger().d(Logger.TAG, "Trimming session file: " + fileName);
+        Logger.getLogger().d("Trimming session file: " + fileName);
         sessionPartFile.delete();
       }
     }
@@ -1042,7 +1037,6 @@ class CrashlyticsController {
     if (nonFatalFiles.length > maxLoggedExceptionsCount) {
       Logger.getLogger()
           .d(
-              Logger.TAG,
               String.format(
                   Locale.US, "Trimming down to %d logged exceptions.", maxLoggedExceptionsCount));
       trimSessionEventFiles(sessionId, maxLoggedExceptionsCount);
@@ -1080,7 +1074,7 @@ class CrashlyticsController {
     // to be opened properly and is now invalid. Clean it up by moving it to a quarantine
     // directory where it can be dealt with separately.
     for (File invalidFile : invalidFiles) {
-      Logger.getLogger().d(Logger.TAG, "Found invalid session part file: " + invalidFile);
+      Logger.getLogger().d("Found invalid session part file: " + invalidFile);
       invalidSessionIds.add(getSessionIdFromSessionFile(invalidFile));
     }
 
@@ -1100,7 +1094,7 @@ class CrashlyticsController {
         };
 
     for (File sessionFile : listFilesMatching(invalidSessionFilter)) {
-      Logger.getLogger().d(Logger.TAG, "Deleting invalid session file: " + sessionFile);
+      Logger.getLogger().d("Deleting invalid session file: " + sessionFile);
       sessionFile.delete();
     }
   }
@@ -1119,7 +1113,7 @@ class CrashlyticsController {
       finalizePreviousNativeSession(previousSessionId);
       return nativeComponent.finalizeSession(previousSessionId);
     } catch (Exception e) {
-      Logger.getLogger().e(Logger.TAG, "Unable to finalize native crash " + previousSessionId, e);
+      Logger.getLogger().e("Unable to finalize native crash " + previousSessionId, e);
       return false;
     }
   }
@@ -1137,7 +1131,7 @@ class CrashlyticsController {
     final File sessionOs = nativeSessionFileProvider.getOsFile();
 
     if (minidump == null || !minidump.exists()) {
-      Logger.getLogger().w(Logger.TAG, "No minidump data found for session " + previousSessionId);
+      Logger.getLogger().w("No minidump data found for session " + previousSessionId);
       return;
     }
 
@@ -1153,7 +1147,7 @@ class CrashlyticsController {
     final File nativeSessionDirectory = new File(getNativeSessionFilesDir(), previousSessionId);
 
     if (!nativeSessionDirectory.mkdirs()) {
-      Logger.getLogger().d(Logger.TAG, "Couldn't create native sessions directory");
+      Logger.getLogger().d("Couldn't create native sessions directory");
       return;
     }
 
@@ -1239,8 +1233,7 @@ class CrashlyticsController {
       final String currentSessionId = getCurrentSessionId();
 
       if (currentSessionId == null) {
-        Logger.getLogger()
-            .e(Logger.TAG, "Tried to write a fatal exception while no session was open.", null);
+        Logger.getLogger().e("Tried to write a fatal exception while no session was open.", null);
         return;
       }
 
@@ -1248,7 +1241,7 @@ class CrashlyticsController {
       cos = CodedOutputStream.newInstance(fos);
       writeSessionEvent(cos, thread, ex, eventTime, EVENT_TYPE_CRASH, true);
     } catch (Exception e) {
-      Logger.getLogger().e(Logger.TAG, "An error occurred in the fatal exception logger", e);
+      Logger.getLogger().e("An error occurred in the fatal exception logger", e);
     } finally {
       CommonUtils.flushOrLog(cos, "Failed to flush to session begin file.");
       CommonUtils.closeOrLog(fos, "Failed to close fatal exception file output stream.");
@@ -1263,8 +1256,7 @@ class CrashlyticsController {
     final String currentSessionId = getCurrentSessionId();
 
     if (currentSessionId == null) {
-      Logger.getLogger()
-          .e(Logger.TAG, "Tried to write a non-fatal exception while no session was open.", null);
+      Logger.getLogger().e("Tried to write a non-fatal exception while no session was open.", null);
       return;
     }
 
@@ -1273,7 +1265,6 @@ class CrashlyticsController {
     try {
       Logger.getLogger()
           .d(
-              Logger.TAG,
               "Crashlytics is logging non-fatal exception \""
                   + ex
                   + "\" from thread "
@@ -1287,7 +1278,7 @@ class CrashlyticsController {
       cos = CodedOutputStream.newInstance(fos);
       writeSessionEvent(cos, thread, ex, eventTime, EVENT_TYPE_LOGGED, false);
     } catch (Exception e) {
-      Logger.getLogger().e(Logger.TAG, "An error occurred in the non-fatal exception logger", e);
+      Logger.getLogger().e("An error occurred in the non-fatal exception logger", e);
     } finally {
       CommonUtils.flushOrLog(cos, "Failed to flush to non-fatal file.");
       CommonUtils.closeOrLog(fos, "Failed to close non-fatal file output stream.");
@@ -1298,7 +1289,7 @@ class CrashlyticsController {
       // closed before we attempt to trim.
       trimSessionEventFiles(currentSessionId, MAX_LOCAL_LOGGED_EXCEPTIONS);
     } catch (Exception e) {
-      Logger.getLogger().e(Logger.TAG, "An error occurred when trimming non-fatal files.", e);
+      Logger.getLogger().e("An error occurred when trimming non-fatal files.", e);
     }
   }
 
@@ -1561,22 +1552,19 @@ class CrashlyticsController {
    */
   private void writeSessionPartsToSessionFile(
       File sessionBeginFile, String sessionId, int maxLoggedExceptionsCount) {
-    Logger.getLogger().d(Logger.TAG, "Collecting session parts for ID " + sessionId);
+    Logger.getLogger().d("Collecting session parts for ID " + sessionId);
 
     final File[] fatalFiles =
         listFilesMatching(new FileNameContainsFilter(sessionId + SESSION_FATAL_TAG));
     final boolean hasFatal = fatalFiles != null && fatalFiles.length > 0;
     Logger.getLogger()
-        .d(
-            Logger.TAG,
-            String.format(Locale.US, "Session %s has fatal exception: %s", sessionId, hasFatal));
+        .d(String.format(Locale.US, "Session %s has fatal exception: %s", sessionId, hasFatal));
 
     final File[] nonFatalFiles =
         listFilesMatching(new FileNameContainsFilter(sessionId + SESSION_NON_FATAL_TAG));
     final boolean hasNonFatal = nonFatalFiles != null && nonFatalFiles.length > 0;
     Logger.getLogger()
         .d(
-            Logger.TAG,
             String.format(
                 Locale.US, "Session %s has non-fatal exceptions: %s", sessionId, hasNonFatal));
 
@@ -1586,10 +1574,10 @@ class CrashlyticsController {
       final File fatalFile = hasFatal ? fatalFiles[0] : null;
       synthesizeSessionFile(sessionBeginFile, sessionId, trimmedNonFatalFiles, fatalFile);
     } else {
-      Logger.getLogger().d(Logger.TAG, "No events present for session ID " + sessionId);
+      Logger.getLogger().d("No events present for session ID " + sessionId);
     }
 
-    Logger.getLogger().d(Logger.TAG, "Removing session part files for ID " + sessionId);
+    Logger.getLogger().d("Removing session part files for ID " + sessionId);
     deleteSessionPartFilesFor(sessionId);
   }
 
@@ -1609,7 +1597,7 @@ class CrashlyticsController {
       fos = new ClsFileOutputStream(outputDir, sessionId);
       cos = CodedOutputStream.newInstance(fos);
 
-      Logger.getLogger().d(Logger.TAG, "Collecting SessionStart data for session ID " + sessionId);
+      Logger.getLogger().d("Collecting SessionStart data for session ID " + sessionId);
       writeToCosFromFile(cos, sessionBeginFile);
 
       cos.writeUInt64(4, new Date().getTime() / 1000);
@@ -1627,8 +1615,7 @@ class CrashlyticsController {
         writeToCosFromFile(cos, fatalFile);
       }
     } catch (Exception e) {
-      Logger.getLogger()
-          .e(Logger.TAG, "Failed to write session file for session ID: " + sessionId, e);
+      Logger.getLogger().e("Failed to write session file for session ID: " + sessionId, e);
       // Need to set this ugly flag because we can't close the CFOS before we flush the
       // COS.
       exceptionDuringWrite = true;
@@ -1660,7 +1647,6 @@ class CrashlyticsController {
       try {
         Logger.getLogger()
             .d(
-                Logger.TAG,
                 String.format(
                     Locale.US,
                     "Found Non Fatal for session ID %s in %s ",
@@ -1668,7 +1654,7 @@ class CrashlyticsController {
                     nonFatalFile.getName()));
         writeToCosFromFile(cos, nonFatalFile);
       } catch (Exception e) {
-        Logger.getLogger().e(Logger.TAG, "Error writting non-fatal to session.", e);
+        Logger.getLogger().e("Error writting non-fatal to session.", e);
       }
     }
   }
@@ -1679,10 +1665,9 @@ class CrashlyticsController {
           listFilesMatching(new FileNameContainsFilter(sessionId + tag + SESSION_FILE_EXTENSION));
 
       if (sessionPartFiles.length == 0) {
-        Logger.getLogger()
-            .e(Logger.TAG, "Can't find " + tag + " data for session ID " + sessionId, null);
+        Logger.getLogger().e("Can't find " + tag + " data for session ID " + sessionId, null);
       } else {
-        Logger.getLogger().d(Logger.TAG, "Collecting " + tag + " data for session ID " + sessionId);
+        Logger.getLogger().d("Collecting " + tag + " data for session ID " + sessionId);
         writeToCosFromFile(cos, sessionPartFiles[0]);
       }
     }
@@ -1706,8 +1691,7 @@ class CrashlyticsController {
    */
   private static void writeToCosFromFile(CodedOutputStream cos, File file) throws IOException {
     if (!file.exists()) {
-      Logger.getLogger()
-          .e(Logger.TAG, "Tried to include a file that doesn't exist: " + file.getName(), null);
+      Logger.getLogger().e("Tried to include a file that doesn't exist: " + file.getName(), null);
       return;
     }
 
@@ -1776,9 +1760,7 @@ class CrashlyticsController {
   void registerAnalyticsListener() {
     final boolean analyticsRegistered = analyticsReceiver.register();
     Logger.getLogger()
-        .d(
-            Logger.TAG,
-            "Registered Firebase Analytics event listener for breadcrumbs: " + analyticsRegistered);
+        .d("Registered Firebase Analytics event listener for breadcrumbs: " + analyticsRegistered);
   }
 
   private CreateReportSpiCall getCreateReportSpiCall(String reportsUrl, String ndkReportsUrl) {
@@ -1821,16 +1803,13 @@ class CrashlyticsController {
     private final CountDownLatch eventLatch = new CountDownLatch(1);
 
     public void awaitEvent() throws InterruptedException {
-      Logger.getLogger()
-          .d(Logger.TAG, "Background thread awaiting app exception callback from FA...");
+      Logger.getLogger().d("Background thread awaiting app exception callback from FA...");
 
       if (eventLatch.await(APP_EXCEPTION_CALLBACK_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
-        Logger.getLogger().d(Logger.TAG, "App exception callback received from FA listener.");
+        Logger.getLogger().d("App exception callback received from FA listener.");
       } else {
         Logger.getLogger()
-            .d(
-                Logger.TAG,
-                "Timeout exceeded while awaiting app exception callback from FA listener.");
+            .d("Timeout exceeded while awaiting app exception callback from FA listener.");
       }
     }
 
@@ -1857,22 +1836,18 @@ class CrashlyticsController {
           public Void call() throws Exception {
             if (firebaseCrashExists()) {
               Logger.getLogger()
-                  .d(
-                      Logger.TAG,
-                      "Skipping logging Crashlytics event to Firebase, FirebaseCrash exists");
+                  .d("Skipping logging Crashlytics event to Firebase, FirebaseCrash exists");
               return null;
             }
             if (analyticsConnector == null) {
               Logger.getLogger()
-                  .d(
-                      Logger.TAG,
-                      "Skipping logging Crashlytics event to Firebase, no Firebase Analytics");
+                  .d("Skipping logging Crashlytics event to Firebase, no Firebase Analytics");
               return null;
             }
             final BlockingCrashEventListener blockingListener = new BlockingCrashEventListener();
             analyticsReceiver.setCrashlyticsOriginEventListener(blockingListener);
 
-            Logger.getLogger().d(Logger.TAG, "Logging Crashlytics event to Firebase");
+            Logger.getLogger().d("Logging Crashlytics event to Firebase");
             final Bundle params = new Bundle();
             params.putInt(FIREBASE_CRASH_TYPE, FIREBASE_CRASH_TYPE_FATAL);
             params.putLong(FIREBASE_TIMESTAMP, timestamp);
@@ -1942,7 +1917,7 @@ class CrashlyticsController {
         return;
       }
 
-      Logger.getLogger().d(Logger.TAG, "Attempting to send crash report at time of crash...");
+      Logger.getLogger().d("Attempting to send crash report at time of crash...");
 
       reportUploader.uploadReport(report, dataCollectionToken);
     }
