@@ -861,8 +861,7 @@ class CrashlyticsController {
       // data when we aren't including current.
       finalizePreviousNativeSession(mostRecentSessionIdToClose);
       if (!nativeComponent.finalizeSession(mostRecentSessionIdToClose)) {
-        Logger.getLogger()
-            .d("Could not finalize native session: " + mostRecentSessionIdToClose);
+        Logger.getLogger().d("Could not finalize native session: " + mostRecentSessionIdToClose);
       }
     }
 
