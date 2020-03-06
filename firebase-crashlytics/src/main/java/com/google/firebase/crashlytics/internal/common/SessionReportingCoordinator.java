@@ -160,7 +160,7 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
       Executor reportSendCompleteExecutor,
       SendReportPredicate sendReportPredicate) {
     if (!sendReportPredicate.shouldSendViaDataTransport()) {
-      Logger.getLogger().d(Logger.TAG, "Send via DataTransport disabled. Removing reports.");
+      Logger.getLogger().d("Send via DataTransport disabled. Removing reports.");
       reportPersistence.deleteAllReports();
       return;
     }
@@ -195,7 +195,7 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
       eventBuilder.setLog(
           CrashlyticsReport.Session.Event.Log.builder().setContent(content).build());
     } else {
-      Logger.getLogger().d(Logger.TAG, "No log data to include with this event.");
+      Logger.getLogger().d("No log data to include with this event.");
     }
 
     // TODO: Put this back once support for reports endpoint is removed.
@@ -221,7 +221,7 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
       // TODO: if the report is fatal, send an analytics event.
       final CrashlyticsReport report = task.getResult();
       final String reportId = report.getSession().getIdentifier();
-      Logger.getLogger().i(Logger.TAG, "Crashlytics report sent successfully: " + reportId);
+      Logger.getLogger().i("Crashlytics report sent successfully: " + reportId);
       reportPersistence.deleteFinalizedReport(reportId);
       return true;
     }

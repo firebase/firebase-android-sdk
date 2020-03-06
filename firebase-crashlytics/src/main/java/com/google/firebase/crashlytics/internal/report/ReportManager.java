@@ -47,7 +47,7 @@ public class ReportManager {
   }
 
   public List<Report> findReports() {
-    Logger.getLogger().d(Logger.TAG, "Checking for crash reports...");
+    Logger.getLogger().d("Checking for crash reports...");
 
     File[] clsFiles = reportFilesProvider.getCompleteSessionFiles();
     File[] nativeReportFiles = reportFilesProvider.getNativeReportFiles();
@@ -55,7 +55,7 @@ public class ReportManager {
     final List<Report> reports = new LinkedList<>();
     if (clsFiles != null) {
       for (File file : clsFiles) {
-        Logger.getLogger().d(Logger.TAG, "Found crash report " + file.getPath());
+        Logger.getLogger().d("Found crash report " + file.getPath());
         reports.add(new SessionReport(file));
       }
     }
@@ -67,7 +67,7 @@ public class ReportManager {
     }
 
     if (reports.isEmpty()) {
-      Logger.getLogger().d(Logger.TAG, "No reports found.");
+      Logger.getLogger().d("No reports found.");
     }
 
     return reports;

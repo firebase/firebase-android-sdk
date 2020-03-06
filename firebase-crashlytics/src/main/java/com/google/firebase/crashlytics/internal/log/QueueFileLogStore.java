@@ -105,8 +105,7 @@ class QueueFileLogStore implements FileLogStore {
             }
           });
     } catch (IOException e) {
-      Logger.getLogger()
-          .e(Logger.TAG, "A problem occurred while reading the Crashlytics log file.", e);
+      Logger.getLogger().e("A problem occurred while reading the Crashlytics log file.", e);
     }
 
     return new LogBytes(logBytes, offsetHolder[0]);
@@ -129,7 +128,7 @@ class QueueFileLogStore implements FileLogStore {
       try {
         logFile = new QueueFile(workingFile);
       } catch (IOException e) {
-        Logger.getLogger().e(Logger.TAG, "Could not open log file: " + workingFile, e);
+        Logger.getLogger().e("Could not open log file: " + workingFile, e);
       }
     }
   }
@@ -177,7 +176,7 @@ class QueueFileLogStore implements FileLogStore {
         logFile.remove();
       }
     } catch (IOException e) {
-      Logger.getLogger().e(Logger.TAG, "There was a problem writing to the Crashlytics log.", e);
+      Logger.getLogger().e("There was a problem writing to the Crashlytics log.", e);
     }
   }
 }

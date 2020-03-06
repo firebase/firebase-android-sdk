@@ -84,20 +84,19 @@ public class DefaultCreateReportSpiCall extends AbstractSpiCall implements Creat
     httpRequest = applyHeadersTo(httpRequest, requestData);
     httpRequest = applyMultipartDataTo(httpRequest, requestData.report);
 
-    Logger.getLogger().d(Logger.TAG, "Sending report to: " + getUrl());
+    Logger.getLogger().d("Sending report to: " + getUrl());
 
     try {
       final HttpResponse httpResponse = httpRequest.execute();
 
       final int statusCode = httpResponse.code();
 
-      Logger.getLogger()
-          .d(Logger.TAG, "Create report request ID: " + httpResponse.header(HEADER_REQUEST_ID));
-      Logger.getLogger().d(Logger.TAG, "Result was: " + statusCode);
+      Logger.getLogger().d("Create report request ID: " + httpResponse.header(HEADER_REQUEST_ID));
+      Logger.getLogger().d("Result was: " + statusCode);
 
       return ResponseParser.ResponseActionDiscard == ResponseParser.parse(statusCode);
     } catch (IOException ioe) {
-      Logger.getLogger().e(Logger.TAG, "Create report HTTP request failed.", ioe);
+      Logger.getLogger().e("Create report HTTP request failed.", ioe);
       throw new RuntimeException(ioe);
     }
   }
@@ -123,19 +122,14 @@ public class DefaultCreateReportSpiCall extends AbstractSpiCall implements Creat
 
     if (report.getFiles().length == 1) {
       Logger.getLogger()
-          .d(
-              Logger.TAG,
-              "Adding single file "
-                  + report.getFileName()
-                  + " to report "
-                  + report.getIdentifier());
+          .d("Adding single file " + report.getFileName() + " to report " + report.getIdentifier());
       return request.part(FILE_PARAM, report.getFileName(), FILE_CONTENT_TYPE, report.getFile());
     }
 
     int i = 0;
     for (File file : report.getFiles()) {
       Logger.getLogger()
-          .d(Logger.TAG, "Adding file " + file.getName() + " to report " + report.getIdentifier());
+          .d("Adding file " + file.getName() + " to report " + report.getIdentifier());
       request = request.part(MULTI_FILE_PARAM + i + "]", file.getName(), FILE_CONTENT_TYPE, file);
       i++;
     }

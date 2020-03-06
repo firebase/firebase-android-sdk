@@ -183,7 +183,7 @@ public class DefaultSettingsSpiCallTest extends CrashlyticsTestCase {
 
     assertNull(defaultSettingsSpiCall.handleResponse(mockHttpResponse));
     // Verify failing to parse a JSON object does not result in an error log.
-    verify(mockLogger, never()).e(anyString(), anyString());
+    verify(mockLogger, never()).e(anyString());
   }
 
   public void testHandleResponse_requestNotSuccessful() throws IOException {
@@ -192,8 +192,7 @@ public class DefaultSettingsSpiCallTest extends CrashlyticsTestCase {
 
     assertNull(defaultSettingsSpiCall.handleResponse(mockHttpResponse));
     verify(mockHttpResponse, never()).body();
-    verify(mockLogger, times(1))
-        .e(eq(Logger.TAG), eq("Failed to retrieve settings from " + TEST_URL));
+    verify(mockLogger, times(1)).e(eq("Failed to retrieve settings from " + TEST_URL));
   }
 
   public void testRequestWasSuccessful_successfulStatusCodes() {

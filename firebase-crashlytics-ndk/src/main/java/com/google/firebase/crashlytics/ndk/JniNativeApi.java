@@ -15,7 +15,7 @@
 package com.google.firebase.crashlytics.ndk;
 
 import android.content.res.AssetManager;
-import android.util.Log;
+import com.google.firebase.crashlytics.internal.Logger;
 
 /** JNI implementation of the native API interface. */
 @SuppressWarnings("PMD.AvoidUsingNativeCode")
@@ -34,13 +34,13 @@ class JniNativeApi implements NativeApi {
       // This can happen if the APK doesn't contain the correct binary for this architecture,
       // most likely because the user sideloaded the APK that was intended for a different
       // architecture. We can't reasonably recover, and Crashlytics may not be
-      // initialized yet. So all we can do is write the error to LogCat.
-      Log.e(
-          FirebaseCrashlyticsNdk.TAG,
-          "libcrashlytics could not be loaded. "
-              + "This APK may not have been compiled for this device's architecture. "
-              + "NDK crashes will not be reported to Crashlytics:\n"
-              + e.getLocalizedMessage());
+      // initialized yet. So all we can do is write the error to logs
+      Logger.getLogger()
+          .e(
+              "libcrashlytics could not be loaded. "
+                  + "This APK may not have been compiled for this device's architecture. "
+                  + "NDK crashes will not be reported to Crashlytics:\n"
+                  + e.getLocalizedMessage());
     }
     LIB_CRASHLYTICS_LOADED = loadSuccessful;
   }

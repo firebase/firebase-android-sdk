@@ -244,26 +244,26 @@ public class SettingsController implements SettingsDataProvider {
             if (SettingsCacheBehavior.IGNORE_CACHE_EXPIRATION.equals(cacheBehavior)
                 || !settingsData.isExpired(currentTimeMillis)) {
               toReturn = settingsData;
-              Logger.getLogger().d(Logger.TAG, "Returning cached settings.");
+              Logger.getLogger().d("Returning cached settings.");
             } else {
-              Logger.getLogger().d(Logger.TAG, "Cached settings have expired.");
+              Logger.getLogger().d("Cached settings have expired.");
             }
           } else {
-            Logger.getLogger().e(Logger.TAG, "Failed to parse cached settings data.", null);
+            Logger.getLogger().e("Failed to parse cached settings data.", null);
           }
         } else {
-          Logger.getLogger().d(Logger.TAG, "No cached settings data found.");
+          Logger.getLogger().d("No cached settings data found.");
         }
       }
     } catch (Exception e) {
-      Logger.getLogger().e(Logger.TAG, "Failed to get cached settings", e);
+      Logger.getLogger().e("Failed to get cached settings", e);
     }
 
     return toReturn;
   }
 
   private void logSettings(JSONObject json, String message) throws JSONException {
-    Logger.getLogger().d(Logger.TAG, message + json.toString());
+    Logger.getLogger().d(message + json.toString());
   }
 
   private String getStoredBuildInstanceIdentifier() {
