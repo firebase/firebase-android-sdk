@@ -60,7 +60,7 @@ class MetaDataStore {
       writer.write(userDataString);
       writer.flush();
     } catch (Exception e) {
-      Logger.getLogger().e(Logger.TAG, "Error serializing user metadata.", e);
+      Logger.getLogger().e("Error serializing user metadata.", e);
     } finally {
       CommonUtils.closeOrLog(writer, "Failed to close user metadata file.");
     }
@@ -77,7 +77,7 @@ class MetaDataStore {
       is = new FileInputStream(f);
       return jsonToUserData(CommonUtils.streamToString(is));
     } catch (Exception e) {
-      Logger.getLogger().e(Logger.TAG, "Error deserializing user metadata.", e);
+      Logger.getLogger().e("Error deserializing user metadata.", e);
     } finally {
       CommonUtils.closeOrLog(is, "Failed to close user metadata file.");
     }
@@ -93,7 +93,7 @@ class MetaDataStore {
       writer.write(keyDataString);
       writer.flush();
     } catch (Exception e) {
-      Logger.getLogger().e(Logger.TAG, "Error serializing key/value metadata.", e);
+      Logger.getLogger().e("Error serializing key/value metadata.", e);
     } finally {
       CommonUtils.closeOrLog(writer, "Failed to close key/value metadata file.");
     }
@@ -110,7 +110,7 @@ class MetaDataStore {
       is = new FileInputStream(f);
       return jsonToKeysData(CommonUtils.streamToString(is));
     } catch (Exception e) {
-      Logger.getLogger().e(Logger.TAG, "Error deserializing user metadata.", e);
+      Logger.getLogger().e("Error deserializing user metadata.", e);
     } finally {
       CommonUtils.closeOrLog(is, "Failed to close user metadata file.");
     }

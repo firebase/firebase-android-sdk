@@ -66,7 +66,7 @@ public class FirebaseCrashlytics {
         new CrashlyticsCore(app, idManager, nativeComponent, arbiter, analyticsConnector);
 
     if (!onboarding.onPreExecute()) {
-      Logger.getLogger().e(Logger.TAG, "Unable to start Crashlytics.");
+      Logger.getLogger().e("Unable to start Crashlytics.");
       return null;
     }
 

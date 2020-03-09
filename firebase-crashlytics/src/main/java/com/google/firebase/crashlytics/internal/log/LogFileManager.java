@@ -72,8 +72,7 @@ public class LogFileManager {
         CommonUtils.getBooleanResourceValue(context, COLLECT_CUSTOM_LOGS, true);
 
     if (!isLoggingEnabled) {
-      Logger.getLogger()
-          .d(Logger.TAG, "Preferences requested no custom logs. Aborting log file creation.");
+      Logger.getLogger().d("Preferences requested no custom logs. Aborting log file creation.");
       return;
     }
 

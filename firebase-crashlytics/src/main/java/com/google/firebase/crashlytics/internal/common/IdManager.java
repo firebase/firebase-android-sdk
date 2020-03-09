@@ -107,7 +107,7 @@ public class IdManager implements InstallIdProvider {
       // If it is a legacy upgrade, we'll migrate the legacy ID to the new pref store.
       final SharedPreferences legacyPrefs = CommonUtils.getLegacySharedPrefs(appContext);
       final String legacyId = legacyPrefs.getString(PREFKEY_LEGACY_INSTALLATION_UUID, null);
-      Logger.getLogger().d(Logger.TAG, "No cached FID; legacy id is " + legacyId);
+      Logger.getLogger().d("No cached FID; legacy id is " + legacyId);
 
       if (legacyId == null) {
         // if there's no legacy ID, this must be a new Crashlytics install.
@@ -121,8 +121,7 @@ public class IdManager implements InstallIdProvider {
       // we have a cached FID, so check if it has been changed since previous launch
       if (cachedFid.equals(currentFid)) {
         crashlyticsInstallId = prefs.getString(PREFKEY_INSTALLATION_UUID, null);
-        Logger.getLogger()
-            .d(Logger.TAG, "Found matching FID, using Crashlytics IID: " + crashlyticsInstallId);
+        Logger.getLogger().d("Found matching FID, using Crashlytics IID: " + crashlyticsInstallId);
         // Since we've cached an FID previously, the IID should always exist at this point.
         // But check just in case:
         if (crashlyticsInstallId == null) {
@@ -138,7 +137,7 @@ public class IdManager implements InstallIdProvider {
 
   private synchronized void migrateLegacyId(
       String legacyId, String fidToCache, SharedPreferences prefs, SharedPreferences legacyPrefs) {
-    Logger.getLogger().d(Logger.TAG, "Migrating legacy Crashlytics IID: " + legacyId);
+    Logger.getLogger().d("Migrating legacy Crashlytics IID: " + legacyId);
     prefs
         .edit()
         .putString(PREFKEY_INSTALLATION_UUID, legacyId)
@@ -153,7 +152,7 @@ public class IdManager implements InstallIdProvider {
 
   private synchronized String createAndStoreIid(String fidToCache, SharedPreferences prefs) {
     final String iid = formatId(UUID.randomUUID().toString());
-    Logger.getLogger().d(Logger.TAG, "Created new Crashlytics IID: " + iid);
+    Logger.getLogger().d("Created new Crashlytics IID: " + iid);
     prefs
         .edit()
         .putString(PREFKEY_INSTALLATION_UUID, iid)

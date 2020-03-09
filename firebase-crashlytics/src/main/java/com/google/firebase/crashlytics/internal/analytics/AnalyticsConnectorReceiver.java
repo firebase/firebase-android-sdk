@@ -58,7 +58,6 @@ public class AnalyticsConnectorReceiver implements AnalyticsConnectorListener, A
       // unexpected states that will prevent the breadcrumbs feature from working.
       Logger.getLogger()
           .d(
-              Logger.TAG,
               "Firebase Analytics is not present; you will not see automatic logging of "
                   + "events before a crash occurs.");
       return false;
@@ -90,8 +89,7 @@ public class AnalyticsConnectorReceiver implements AnalyticsConnectorListener, A
   @Override
   public void onMessageTriggered(int id, @Nullable Bundle extras) {
 
-    Logger.getLogger()
-        .d(Logger.TAG, "AnalyticsConnectorReceiver received message: " + id + " " + extras);
+    Logger.getLogger().d("AnalyticsConnectorReceiver received message: " + id + " " + extras);
 
     if (extras == null) {
       return;
@@ -125,7 +123,7 @@ public class AnalyticsConnectorReceiver implements AnalyticsConnectorListener, A
       final String serializedEvent = BREADCRUMB_PREFIX + serializeEvent(name, params);
       breadcrumbHandler.dropBreadcrumb(serializedEvent);
     } catch (JSONException e) {
-      Logger.getLogger().w(Logger.TAG, "Unable to serialize Firebase Analytics event.");
+      Logger.getLogger().w("Unable to serialize Firebase Analytics event.");
     }
   }
 
