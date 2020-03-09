@@ -24,10 +24,10 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.developers.mobile.targeting.proto.ClientSignalsProto.ClientSignals;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.iid.FirebaseInstanceId;
-import com.google.firebase.iid.InstanceIdResult;
 import com.google.firebase.inappmessaging.internal.injection.scopes.FirebaseAppScope;
 import com.google.firebase.inappmessaging.internal.time.Clock;
+import com.google.firebase.installations.FirebaseInstallationsApi;
+import com.google.firebase.installations.InstallationTokenResult;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.CampaignImpressionList;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.ClientAppInfo;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.FetchEligibleCampaignsRequest;
@@ -53,7 +53,7 @@ public class ApiClient {
   private final Lazy<GrpcClient> grpcClient;
   private final FirebaseApp firebaseApp;
   private final Application application;
-  private final FirebaseInstanceId firebaseInstanceId;
+  private final FirebaseInstallationsApi firebaseInstallations;
   private final DataCollectionHelper dataCollectionHelper;
   private final Clock clock;
   private final ProviderInstaller providerInstaller;
@@ -62,14 +62,14 @@ public class ApiClient {
       Lazy<GrpcClient> grpcClient,
       FirebaseApp firebaseApp,
       Application application,
-      FirebaseInstanceId firebaseInstanceId,
+      FirebaseInstallationsApi firebaseInstallations,
       DataCollectionHelper dataCollectionHelper,
       Clock clock,
       ProviderInstaller providerInstaller) {
     this.grpcClient = grpcClient;
     this.firebaseApp = firebaseApp;
     this.application = application;
-    this.firebaseInstanceId = firebaseInstanceId;
+    this.firebaseInstallations = firebaseInstallations;
     this.dataCollectionHelper = dataCollectionHelper;
     this.clock = clock;
     this.providerInstaller = providerInstaller;
@@ -89,28 +89,35 @@ public class ApiClient {
     }
     Logging.logi(FETCHING_CAMPAIGN_MESSAGE);
     providerInstaller.install();
-    return firebaseInstanceId
-        .getInstanceId()
-        .continueWith(
-            instanceIdResultTask -> {
-              InstanceIdResult instanceIdResult = instanceIdResultTask.getResult();
-              if (instanceIdResult == null) {
-                Logging.logw("InstanceID is null, not calling backend");
-                return createCacheExpiringResponse();
-              }
-              return withCacheExpirationSafeguards(
-                  grpcClient
-                      .get()
-                      .fetchEligibleCampaigns(
-                          FetchEligibleCampaignsRequest.newBuilder()
-                              // The project Id we expect is the gcm sender id
-                              .setProjectNumber(firebaseApp.getOptions().getGcmSenderId())
-                              .addAllAlreadySeenCampaigns(
-                                  impressionList.getAlreadySeenCampaignsList())
-                              .setClientSignals(getClientSignals())
-                              .setRequestingClientApp(getClientAppInfo(instanceIdResult))
-                              .build()));
-            });
+    return firebaseInstallations
+        .getId()
+        .continueWithTask(
+            idTask ->
+                firebaseInstallations
+                    .getToken(false)
+                    .continueWith(
+                        tokenResultTask -> {
+                          String idResult = idTask.getResult();
+                          InstallationTokenResult tokenResult = tokenResultTask.getResult();
+                          if (tokenResult == null || idResult == null) {
+                            Logging.logw("Installation ID or Token is null, not calling backend");
+                            return createCacheExpiringResponse();
+                          }
+                          return withCacheExpirationSafeguards(
+                              grpcClient
+                                  .get()
+                                  .fetchEligibleCampaigns(
+                                      FetchEligibleCampaignsRequest.newBuilder()
+                                          // The project Id we expect is the gcm sender id
+                                          .setProjectNumber(
+                                              firebaseApp.getOptions().getGcmSenderId())
+                                          .addAllAlreadySeenCampaigns(
+                                              impressionList.getAlreadySeenCampaignsList())
+                                          .setClientSignals(getClientSignals())
+                                          .setRequestingClientApp(
+                                              getClientAppInfo(idResult, tokenResult))
+                                          .build()));
+                        }));
   }
 
   private FetchEligibleCampaignsResponse withCacheExpirationSafeguards(
@@ -142,13 +149,12 @@ public class ApiClient {
     return clientSignals.build();
   }
 
-  private ClientAppInfo getClientAppInfo(InstanceIdResult instanceIdResult) {
+  private ClientAppInfo getClientAppInfo(String id, InstallationTokenResult tokenResult) {
     ClientAppInfo.Builder builder =
         ClientAppInfo.newBuilder().setGmpAppId(firebaseApp.getOptions().getApplicationId());
-    String instanceId = instanceIdResult.getId();
-    String instanceToken = instanceIdResult.getToken();
-    if (!TextUtils.isEmpty(instanceId) && !TextUtils.isEmpty(instanceToken)) {
-      builder.setAppInstanceId(instanceId);
+    String instanceToken = tokenResult.getToken();
+    if (!TextUtils.isEmpty(id) && !TextUtils.isEmpty(instanceToken)) {
+      builder.setAppInstanceId(id);
       builder.setAppInstanceIdToken(instanceToken);
     } else {
       Logging.logw("Empty instance ID or instance token");
