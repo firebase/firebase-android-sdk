@@ -51,10 +51,69 @@ https://firebase.google.com.
 
 ## Getting Started
 
-* Install the latest Android Studio (should be 3.0.1 or later)
-* Clone the repo (`git clone git@github.com:firebase/firebase-android-sdk.git`)
-* Import the firebase-android-sdk gradle project into Android Studio using the
-  **Import project(Gradle, Eclipse ADT, etc.** option.
+1. Install Android Studio
+
+   Android Studio is the recommended IDE for use when developing the Firebase
+   Android SDK.
+
+   Download and install the latest version of Android Studio from
+   https://developer.android.com/studio. If using an older version of Android
+   Studio, it must be version 3.0.1 or later.
+
+1. Delete the .idea Directory
+
+   In order to ensure that the initial import of the project into Android Studio
+   succeeds, temporarily delete the `.idea` subdirectory that is located in the
+   root of this Git repository:
+
+   ```bash
+   rm -rf .idea
+   ```
+
+1. Import the Project into Android Studio
+
+   Select the "Import Project (Gradle, Eclipse ADT, etc.)" option from Android
+   Studio's "Welcome" screen. When prompted to select a directory, choose the
+   directory into which this Git repository was cloned; do *not* select one of
+   the subdirectories, as they rely on being part of the root project.
+
+   If the import appears to have not worked correctly, make sure that the
+   `.idea` directory was deleted, as instructed above.
+
+1. Wait for Gradle Sync to complete in Android Studio.
+
+   Wait for the Gradle Sync operation to complete. If this is the first time
+   that Android Studio has been used, then this may take about 10 minutes while
+   all of the Gradle build dependencies are downloaded.
+
+   The Gradle Sync has completed when there is a list of about 25 projects in
+   the left navigation pane of Android Studio.
+
+1. Close Android Studio and Restore the .idea Directory
+
+   Close the Android Studio project by selecting "Close Project" from the "File"
+   menu.
+
+   Restore the `.idea` directory that was previously deleted, by running the
+   following command:
+
+   ```bash
+   git checkout .idea
+   ```
+
+1. Re-Launch Android Studio
+
+   Launch Android Studio again and open the project that was previously
+   imported. The "Run Configurations" drop-down list in the toolbar should now
+   be populated.
+
+1. You're Ready!
+
+   You are now ready to develop the Firebase Android SDK. The next step is
+   probably to execute the unit tests or integration tests of the specific
+   project in which you are interested. There are some general instructions
+   below but each project may have specialized instructions. So make sure to
+   read any README.md files in the package's subdirectory.
 
 ## Testing
 
