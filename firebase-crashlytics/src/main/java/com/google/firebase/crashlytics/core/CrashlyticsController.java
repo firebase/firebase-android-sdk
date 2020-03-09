@@ -856,6 +856,13 @@ class CrashlyticsController {
 
     if (includeCurrent) {
       reportingCoordinator.onEndSession();
+    } else if (nativeComponent.hasCrashDataForSession(mostRecentSessionIdToClose)) {
+      // We only finalize the current session if it's a Java crash, so only finalize native crash
+      // data when we aren't including current.
+      finalizePreviousNativeSession(mostRecentSessionIdToClose);
+      if (!nativeComponent.finalizeSession(mostRecentSessionIdToClose)) {
+        Logger.getLogger().d("Could not finalize native session: " + mostRecentSessionIdToClose);
+      }
     }
 
     closeOpenSessions(sessionBeginFiles, offset, maxCustomExceptionEvents);
@@ -1103,24 +1110,8 @@ class CrashlyticsController {
 
   // endregion
 
-  // TODO: Finalize native sessions for *all* older open sessions, not just previous.
-  boolean finalizeNativeSessions() {
-    backgroundWorker.checkRunningOnThread();
-    final String previousSessionId = getPreviousSessionId();
-    if (previousSessionId == null) {
-      // No previous session to finalize
-      return true;
-    }
-    try {
-      finalizePreviousNativeSession(previousSessionId);
-      return nativeComponent.finalizeSession(previousSessionId);
-    } catch (Exception e) {
-      Logger.getLogger().e("Unable to finalize native crash " + previousSessionId, e);
-      return false;
-    }
-  }
-
   private void finalizePreviousNativeSession(String previousSessionId) throws IOException {
+    Logger.getLogger().d("Finalizing native report for session " + previousSessionId);
     NativeSessionFileProvider nativeSessionFileProvider =
         nativeComponent.getSessionFileProvider(previousSessionId);
 
