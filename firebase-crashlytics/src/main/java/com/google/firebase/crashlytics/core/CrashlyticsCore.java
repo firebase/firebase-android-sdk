@@ -249,10 +249,6 @@ public class CrashlyticsCore {
             new RuntimeException("Collection of crash reports disabled in Crashlytics settings."));
       }
 
-      if (!controller.finalizeNativeSessions()) {
-        Logger.getLogger().d("Could not finalize native sessions.");
-      }
-
       if (!controller.finalizeSessions(settingsData.getSessionData().maxCustomExceptionEvents)) {
         Logger.getLogger().d("Could not finalize previous sessions.");
       }

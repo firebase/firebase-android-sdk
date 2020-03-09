@@ -387,6 +387,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
     TestUtils.writeStringToFile("os", os);
 
     final CrashlyticsNativeComponent mockNativeComponent = mock(CrashlyticsNativeComponent.class);
+    when(mockNativeComponent.hasCrashDataForSession(anyString())).thenReturn(true);
     when(mockNativeComponent.getSessionFileProvider(anyString()))
         .thenReturn(
             new NativeSessionFileProvider() {
@@ -432,7 +433,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
     // Create a new session, leaving the previous session to be finalized.
     controller.openSession();
 
-    controller.finalizeNativeSessions();
+    controller.finalizeSessions(sessionSettingsData.maxCustomExceptionEvents);
 
     final File[] nativeDirectories = controller.listNativeSessionFileDirectories();
 
@@ -446,7 +447,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
 
   public void testMissingNativeComponentCausesNoReports() {
     final CrashlyticsController controller = createController();
-    controller.finalizeNativeSessions();
+    controller.finalizeSessions(sessionSettingsData.maxCustomExceptionEvents);
 
     final File[] sessionFiles = controller.listNativeSessionFileDirectories();
 
