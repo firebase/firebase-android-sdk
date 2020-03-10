@@ -16,7 +16,6 @@ package com.google.firebase.crashlytics.internal.common;
 
 import android.content.Context;
 import com.google.android.gms.tasks.Task;
-import com.google.firebase.crashlytics.core.UserMetadata;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.log.LogFileManager;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
@@ -38,7 +37,7 @@ import java.util.concurrent.Executor;
  * This class handles Crashlytics lifecycle events and coordinates session data capture and
  * persistence, as well as sending of reports to Firebase Crashlytics.
  */
-public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
+class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
 
   public interface SendReportPredicate {
     boolean shouldSendViaDataTransport();

@@ -1,4 +1,4 @@
-// Copyright 2019 Google LLC
+// Copyright 2020 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,14 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.crashlytics.core;
+package com.google.firebase.crashlytics.internal.common;
 
 import android.os.Looper;
 import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
-import com.google.firebase.crashlytics.internal.common.ExecutorUtils;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.util.ArrayList;

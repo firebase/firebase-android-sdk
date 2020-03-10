@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.crashlytics.core;
+package com.google.firebase.crashlytics.internal.common;
 
 import android.content.Context;
 import com.google.firebase.crashlytics.internal.report.ReportUploader;
