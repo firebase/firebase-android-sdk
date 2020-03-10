@@ -18,7 +18,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.firebase.DataCollectionDefaultChange;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.events.Subscriber;
-import com.google.firebase.iid.FirebaseInstanceId;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.inject.Inject;
 
@@ -43,16 +42,10 @@ public class DataCollectionHelper {
   public DataCollectionHelper(
       FirebaseApp firebaseApp,
       SharedPreferencesUtils sharedPreferencesUtils,
-      FirebaseInstanceId firebaseInstanceId,
       Subscriber firebaseEventsSubscriber) {
     this.sharedPreferencesUtils = sharedPreferencesUtils;
     isGlobalAutomaticDataCollectionEnabled =
         new AtomicBoolean(firebaseApp.isDataCollectionDefaultEnabled());
-    if (isAutomaticDataCollectionEnabled()) {
-      // Trigger this as early as possible, to minimize any latencies on returning the token
-      firebaseInstanceId.getToken();
-    }
-
     firebaseEventsSubscriber.subscribe(
         DataCollectionDefaultChange.class,
         event -> {
