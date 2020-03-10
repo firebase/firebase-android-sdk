@@ -28,13 +28,12 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.app.Application;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.inappmessaging.CommonTypesProto.Event;
 import com.google.firebase.inappmessaging.CommonTypesProto.Priority;
 import com.google.firebase.inappmessaging.CommonTypesProto.TriggeringCondition;
-import com.google.firebase.inappmessaging.FirebaseInAppMessagingTest.ShadowFirebaseInstanceId;
 import com.google.firebase.inappmessaging.MessagesProto.Content;
 import com.google.firebase.inappmessaging.internal.CampaignCacheClient;
 import com.google.firebase.inappmessaging.internal.DataCollectionHelper;
@@ -44,9 +43,9 @@ import com.google.firebase.inappmessaging.internal.InAppMessageStreamManager;
 import com.google.firebase.inappmessaging.internal.ProgramaticContextualTriggers;
 import com.google.firebase.inappmessaging.internal.RateLimiterClient;
 import com.google.firebase.inappmessaging.internal.Schedulers;
-import com.google.firebase.inappmessaging.model.Action;
-import com.google.firebase.inappmessaging.model.InAppMessage;
 import com.google.firebase.inappmessaging.model.TriggeredInAppMessage;
+import com.google.firebase.installations.FirebaseInstallationsApi;
+import com.google.firebase.installations.InstallationTokenResult;
 import com.google.internal.firebase.inappmessaging.v1.CampaignProto.ThickContent;
 import com.google.internal.firebase.inappmessaging.v1.CampaignProto.VanillaCampaignPayload;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.FetchEligibleCampaignsResponse;
@@ -61,13 +60,9 @@ import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
-import org.robolectric.annotation.Implementation;
-import org.robolectric.annotation.Implements;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(
-    manifest = Config.NONE,
-    shadows = {ShadowFirebaseInstanceId.class})
+@Config(manifest = Config.NONE)
 public class FirebaseInAppMessagingTest {
   private static final long PAST = 1000000;
   private static final long NOW = PAST + 100000;
@@ -118,7 +113,7 @@ public class FirebaseInAppMessagingTest {
   private static final FetchEligibleCampaignsResponse campaignsResponse =
       campaignsResponseBuilder.build();
 
-  @Mock private static FirebaseInstanceId firebaseInstanceId;
+  @Mock private FirebaseInstallationsApi firebaseInstallations;
   @Mock private Schedulers schedulers;
   @Mock private InAppMessageStreamManager inAppMessageStreamManager;
   @Mock private FirebaseInAppMessagingDisplay firebaseInAppMessagingDisplay;
@@ -167,11 +162,16 @@ public class FirebaseInAppMessagingTest {
 
     when(campaignCacheClient.get()).thenReturn(Maybe.just(campaignsResponse));
 
-    when(firebaseInstanceId.getId()).thenReturn(INSTANCE_ID);
-    when(firebaseInstanceId.getToken()).thenReturn(INSTANCE_TOKEN);
+    when(firebaseInstallations.getId()).thenReturn(Tasks.forResult(INSTANCE_ID));
+    when(firebaseInstallations.getToken(false))
+        .thenReturn(
+            Tasks.forResult(
+                InstallationTokenResult.builder()
+                    .setToken(INSTANCE_TOKEN)
+                    .setTokenCreationTimestamp(1)
+                    .setTokenExpirationTimestamp(1)
+                    .build()));
 
-    when(firebaseInstanceId.getId()).thenReturn(INSTANCE_ID);
-    when(firebaseInstanceId.getToken()).thenReturn(INSTANCE_TOKEN);
     when(dataCollectionHelper.isAutomaticDataCollectionEnabled()).thenReturn(true);
 
     when(displayCallbacksFactory.generateDisplayCallback(
@@ -183,6 +183,7 @@ public class FirebaseInAppMessagingTest {
             inAppMessageStreamManager,
             programaticContextualTriggers,
             dataCollectionHelper,
+            firebaseInstallations,
             displayCallbacksFactory,
             listenerScheduler);
   }
@@ -195,6 +196,7 @@ public class FirebaseInAppMessagingTest {
             inAppMessageStreamManager,
             programaticContextualTriggers,
             dataCollectionHelper,
+            firebaseInstallations,
             displayCallbacksFactory,
             listenerScheduler);
     when(displayCallbacksFactory.generateDisplayCallback(
@@ -215,6 +217,7 @@ public class FirebaseInAppMessagingTest {
             inAppMessageStreamManager,
             programaticContextualTriggers,
             dataCollectionHelper,
+            firebaseInstallations,
             displayCallbacksFactory,
             listenerScheduler);
 
@@ -236,6 +239,7 @@ public class FirebaseInAppMessagingTest {
             inAppMessageStreamManager,
             programaticContextualTriggers,
             dataCollectionHelper,
+            firebaseInstallations,
             displayCallbacksFactory,
             listenerScheduler);
 
@@ -251,6 +255,7 @@ public class FirebaseInAppMessagingTest {
             inAppMessageStreamManager,
             programaticContextualTriggers,
             dataCollectionHelper,
+            firebaseInstallations,
             displayCallbacksFactory,
             listenerScheduler);
 
@@ -265,6 +270,7 @@ public class FirebaseInAppMessagingTest {
             inAppMessageStreamManager,
             programaticContextualTriggers,
             dataCollectionHelper,
+            firebaseInstallations,
             displayCallbacksFactory,
             listenerScheduler);
 
@@ -278,6 +284,7 @@ public class FirebaseInAppMessagingTest {
             inAppMessageStreamManager,
             programaticContextualTriggers,
             dataCollectionHelper,
+            firebaseInstallations,
             displayCallbacksFactory,
             listenerScheduler);
 
@@ -294,24 +301,14 @@ public class FirebaseInAppMessagingTest {
             inAppMessageStreamManager,
             programaticContextualTriggers,
             dataCollectionHelper,
+            firebaseInstallations,
             displayCallbacksFactory,
             listenerScheduler);
 
     firebaseInAppMessaging.addClickListener(
-        new FirebaseInAppMessagingClickListener() {
-          @Override
-          public void messageClicked(InAppMessage inAppMessage, Action action) {
-            // Nothing
-          }
+        (inAppMessage, action) -> {
+          // Nothing
         });
     verify(listenerScheduler, times(1)).addClickListener(any());
-  }
-
-  @Implements(FirebaseInstanceId.class)
-  public static class ShadowFirebaseInstanceId {
-    @Implementation
-    public static FirebaseInstanceId getInstance() {
-      return firebaseInstanceId;
-    }
   }
 }

@@ -20,7 +20,7 @@ import android.content.IntentFilter;
 import android.os.BatteryManager;
 
 /** A utility class representing the state of the battery. */
-public class BatteryState {
+class BatteryState {
   static final int VELOCITY_UNPLUGGED = 1;
   static final int VELOCITY_CHARGING = 2;
   static final int VELOCITY_FULL = 3;

@@ -1,4 +1,4 @@
-// Copyright 2019 Google LLC
+// Copyright 2020 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.crashlytics.core;
+package com.google.firebase.crashlytics.internal.common;
 
-import static com.google.firebase.crashlytics.core.CrashlyticsController.LARGEST_FILE_NAME_FIRST;
-import static com.google.firebase.crashlytics.core.CrashlyticsController.SESSION_APP_TAG;
-import static com.google.firebase.crashlytics.core.CrashlyticsController.SESSION_BEGIN_TAG;
-import static com.google.firebase.crashlytics.core.CrashlyticsController.SESSION_DEVICE_TAG;
-import static com.google.firebase.crashlytics.core.CrashlyticsController.SESSION_FATAL_TAG;
-import static com.google.firebase.crashlytics.core.CrashlyticsController.SESSION_NON_FATAL_TAG;
-import static com.google.firebase.crashlytics.core.CrashlyticsController.SESSION_OS_TAG;
-import static com.google.firebase.crashlytics.core.CrashlyticsController.SESSION_USER_TAG;
+import static com.google.firebase.crashlytics.internal.common.CrashlyticsController.LARGEST_FILE_NAME_FIRST;
+import static com.google.firebase.crashlytics.internal.common.CrashlyticsController.SESSION_APP_TAG;
+import static com.google.firebase.crashlytics.internal.common.CrashlyticsController.SESSION_BEGIN_TAG;
+import static com.google.firebase.crashlytics.internal.common.CrashlyticsController.SESSION_DEVICE_TAG;
+import static com.google.firebase.crashlytics.internal.common.CrashlyticsController.SESSION_FATAL_TAG;
+import static com.google.firebase.crashlytics.internal.common.CrashlyticsController.SESSION_NON_FATAL_TAG;
+import static com.google.firebase.crashlytics.internal.common.CrashlyticsController.SESSION_OS_TAG;
+import static com.google.firebase.crashlytics.internal.common.CrashlyticsController.SESSION_USER_TAG;
 import static com.google.firebase.crashlytics.internal.proto.ClsFileOutputStream.IN_PROGRESS_SESSION_FILE_EXTENSION;
 import static com.google.firebase.crashlytics.internal.proto.ClsFileOutputStream.SESSION_FILE_EXTENSION;
 import static org.mockito.Mockito.*;
@@ -46,10 +46,6 @@ import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
 import com.google.firebase.crashlytics.internal.MissingNativeComponent;
 import com.google.firebase.crashlytics.internal.NativeSessionFileProvider;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsReceiver;
-import com.google.firebase.crashlytics.internal.common.AppData;
-import com.google.firebase.crashlytics.internal.common.CommonUtils;
-import com.google.firebase.crashlytics.internal.common.DataCollectionArbiter;
-import com.google.firebase.crashlytics.internal.common.IdManager;
 import com.google.firebase.crashlytics.internal.network.HttpRequestFactory;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.report.ReportManager;

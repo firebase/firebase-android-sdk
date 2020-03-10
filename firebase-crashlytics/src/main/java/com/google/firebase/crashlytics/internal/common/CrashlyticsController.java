@@ -1,4 +1,4 @@
-// Copyright 2019 Google LLC
+// Copyright 2020 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package com.google.firebase.crashlytics.core;
+package com.google.firebase.crashlytics.internal.common;
 
 import static com.google.firebase.crashlytics.internal.proto.ClsFileOutputStream.IN_PROGRESS_SESSION_FILE_EXTENSION;
 import static com.google.firebase.crashlytics.internal.proto.ClsFileOutputStream.SESSION_FILE_EXTENSION;
@@ -35,13 +35,6 @@ import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.NativeSessionFileProvider;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsConnectorReceiver;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsReceiver;
-import com.google.firebase.crashlytics.internal.common.AppData;
-import com.google.firebase.crashlytics.internal.common.BatteryState;
-import com.google.firebase.crashlytics.internal.common.CommonUtils;
-import com.google.firebase.crashlytics.internal.common.DataCollectionArbiter;
-import com.google.firebase.crashlytics.internal.common.DeliveryMechanism;
-import com.google.firebase.crashlytics.internal.common.IdManager;
-import com.google.firebase.crashlytics.internal.common.SessionReportingCoordinator;
 import com.google.firebase.crashlytics.internal.log.LogFileManager;
 import com.google.firebase.crashlytics.internal.ndk.NativeFileUtils;
 import com.google.firebase.crashlytics.internal.network.HttpRequestFactory;

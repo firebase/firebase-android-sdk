@@ -67,6 +67,8 @@ public class AbtIntegrationHelperTest {
   public void setUp() {
     MockitoAnnotations.initMocks(this);
     abtIntegrationHelper = new AbtIntegrationHelper(abTesting);
+    // make executor immediately execute
+    abtIntegrationHelper.executor = Runnable::run;
   }
 
   @Test

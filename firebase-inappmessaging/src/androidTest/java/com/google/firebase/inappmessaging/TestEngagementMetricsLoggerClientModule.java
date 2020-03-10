@@ -16,12 +16,12 @@ package com.google.firebase.inappmessaging;
 
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
-import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.inappmessaging.internal.DeveloperListenerManager;
 import com.google.firebase.inappmessaging.internal.MetricsLoggerClient;
 import com.google.firebase.inappmessaging.internal.MetricsLoggerClient.EngagementMetricsLoggerInterface;
 import com.google.firebase.inappmessaging.internal.injection.scopes.FirebaseAppScope;
 import com.google.firebase.inappmessaging.internal.time.Clock;
+import com.google.firebase.installations.FirebaseInstallationsApi;
 import dagger.Module;
 import dagger.Provides;
 
@@ -38,8 +38,8 @@ public class TestEngagementMetricsLoggerClientModule {
 
   @Provides
   @FirebaseAppScope
-  public MetricsLoggerClient providesApiClient(
-      FirebaseInstanceId firebaseInstanceId,
+  public MetricsLoggerClient providesMetricLoggerClient(
+      FirebaseInstallationsApi firebaseInstallations,
       AnalyticsConnector analyticsConnector,
       Clock clock,
       DeveloperListenerManager developerListenerManager) {
@@ -47,7 +47,7 @@ public class TestEngagementMetricsLoggerClientModule {
         engagementMetricsLoggerInterface,
         analyticsConnector,
         firebaseApp,
-        firebaseInstanceId,
+        firebaseInstallations,
         clock,
         developerListenerManager);
   }
