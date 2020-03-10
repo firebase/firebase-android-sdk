@@ -1104,96 +1104,12 @@ class CrashlyticsController {
   // endregion
 
   private void finalizePreviousNativeSession(String previousSessionId) throws IOException {
-    Logger.getLogger().d("Finalizing native report for session " + previousSessionId);
-    NativeSessionFileProvider nativeSessionFileProvider =
-        nativeComponent.getSessionFileProvider(previousSessionId);
+    // TODO: Provide a set of inputstreams?
+    // reportingCoordinator.persistNativeEvent(nativeSessionDirectory);
 
-    final File minidump = nativeSessionFileProvider.getMinidumpFile();
-    final File binaryImages = nativeSessionFileProvider.getBinaryImagesFile();
-    final File metadata = nativeSessionFileProvider.getMetadataFile();
-    final File sessionFile = nativeSessionFileProvider.getSessionFile();
-    final File sessionApp = nativeSessionFileProvider.getAppFile();
-    final File sessionDevice = nativeSessionFileProvider.getDeviceFile();
-    final File sessionOs = nativeSessionFileProvider.getOsFile();
 
-    if (minidump == null || !minidump.exists()) {
-      Logger.getLogger().w("No minidump data found for session " + previousSessionId);
-      return;
-    }
-
-    final File filesDir = getFilesDir();
-    final MetaDataStore metaDataStore = new MetaDataStore(filesDir);
-    final File sessionUser = metaDataStore.getUserDataFileForSession(previousSessionId);
-    final File sessionKeys = metaDataStore.getKeysFileForSession(previousSessionId);
-
-    final LogFileManager previousSessionLogManager =
-        new LogFileManager(getContext(), logFileDirectoryProvider, previousSessionId);
-    final byte[] logs = previousSessionLogManager.getBytesForLog();
-
-    final File nativeSessionDirectory = new File(getNativeSessionFilesDir(), previousSessionId);
-
-    if (!nativeSessionDirectory.mkdirs()) {
-      Logger.getLogger().d("Couldn't create native sessions directory");
-      return;
-    }
-
-    gzipFile(minidump, new File(nativeSessionDirectory, "minidump"));
-    gzipIfNotEmpty(
-        NativeFileUtils.binaryImagesJsonFromMapsFile(binaryImages, context),
-        new File(nativeSessionDirectory, "binaryImages"));
-    gzipFile(metadata, new File(nativeSessionDirectory, "metadata"));
-    gzipFile(sessionFile, new File(nativeSessionDirectory, "session"));
-    gzipFile(sessionApp, new File(nativeSessionDirectory, "app"));
-    gzipFile(sessionDevice, new File(nativeSessionDirectory, "device"));
-    gzipFile(sessionOs, new File(nativeSessionDirectory, "os"));
-    gzipFile(sessionUser, new File(nativeSessionDirectory, "user"));
-    gzipFile(sessionKeys, new File(nativeSessionDirectory, "keys"));
-    gzipIfNotEmpty(logs, new File(nativeSessionDirectory, "logs"));
-
-    previousSessionLogManager.clearLog();
-  }
-
-  // TODO: Maybe make this a separate collaborator/serializer
-  private static void gzipFile(@NonNull File input, @NonNull File output) throws IOException {
-    if (!input.exists() || !input.isFile()) {
-      return;
-    }
-    byte[] buffer = new byte[1024];
-    FileInputStream fis = null;
-    GZIPOutputStream gos = null;
-    try {
-      fis = new FileInputStream(input);
-      gos = new GZIPOutputStream(new FileOutputStream(output));
-
-      int read;
-
-      while ((read = fis.read(buffer)) > 0) {
-        gos.write(buffer, 0, read);
-      }
-
-      gos.finish();
-    } finally {
-      CommonUtils.closeQuietly(fis);
-      CommonUtils.closeQuietly(gos);
-    }
-  }
-
-  private static void gzipIfNotEmpty(@Nullable byte[] content, @NonNull File path)
-      throws IOException {
-    if (content != null && content.length > 0) {
-      gzip(content, path);
-    }
-  }
-
-  private static void gzip(@NonNull byte[] bytes, @NonNull File path) throws IOException {
-    GZIPOutputStream gos = null;
-    try {
-      gos = new GZIPOutputStream(new FileOutputStream(path));
-      gos.write(bytes, 0, bytes.length);
-      gos.finish();
-    } finally {
-      CommonUtils.closeQuietly(gos);
-    }
+    // TODO: Do this in the gzipfilenativething
+    // previousSessionLogManager.clearLog();
   }
 
   private static long getCurrentTimestampSeconds() {
