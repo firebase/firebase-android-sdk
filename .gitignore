@@ -5,6 +5,5 @@ build/
 captures/
 local.properties
 google-services.json
-/build.gradle
 _artifacts
 .DS_Store
