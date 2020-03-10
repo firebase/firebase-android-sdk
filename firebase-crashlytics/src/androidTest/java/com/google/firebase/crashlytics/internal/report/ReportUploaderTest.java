@@ -22,9 +22,9 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
-import com.google.firebase.crashlytics.core.TestNativeReportFilesProvider;
-import com.google.firebase.crashlytics.core.TestReportFilesProvider;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
+import com.google.firebase.crashlytics.internal.common.TestNativeReportFilesProvider;
+import com.google.firebase.crashlytics.internal.common.TestReportFilesProvider;
 import com.google.firebase.crashlytics.internal.report.model.CreateReportRequest;
 import com.google.firebase.crashlytics.internal.report.model.Report;
 import com.google.firebase.crashlytics.internal.report.network.CreateReportSpiCall;

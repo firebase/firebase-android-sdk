@@ -1,4 +1,4 @@
-// Copyright 2019 Google LLC
+// Copyright 2020 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.crashlytics.core;
+package com.google.firebase.crashlytics.internal.common;
 
 import android.content.Context;
 import android.util.Log;
@@ -27,11 +27,6 @@ import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsConnectorReceiver;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsConnectorReceiver.BreadcrumbHandler;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsReceiver;
-import com.google.firebase.crashlytics.internal.common.AppData;
-import com.google.firebase.crashlytics.internal.common.CommonUtils;
-import com.google.firebase.crashlytics.internal.common.DataCollectionArbiter;
-import com.google.firebase.crashlytics.internal.common.ExecutorUtils;
-import com.google.firebase.crashlytics.internal.common.IdManager;
 import com.google.firebase.crashlytics.internal.network.HttpRequestFactory;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.persistence.FileStoreImpl;
