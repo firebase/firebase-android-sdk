@@ -126,7 +126,12 @@ public class ApiClientTest {
     when(firebaseInstallations.getId()).thenReturn(Tasks.forResult(INSTANCE_ID));
     when(firebaseInstallations.getToken(false))
         .thenReturn(
-            Tasks.forResult(InstallationTokenResult.builder().setToken(INSTANCE_TOKEN).build()));
+            Tasks.forResult(
+                InstallationTokenResult.builder()
+                    .setToken(INSTANCE_TOKEN)
+                    .setTokenCreationTimestamp(1)
+                    .setTokenExpirationTimestamp(1)
+                    .build()));
     TimeZone.setDefault(TimeZone.getTimeZone(TIME_ZONE));
   }
 

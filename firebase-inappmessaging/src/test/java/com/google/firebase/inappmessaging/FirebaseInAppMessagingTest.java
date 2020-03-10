@@ -165,7 +165,12 @@ public class FirebaseInAppMessagingTest {
     when(firebaseInstallations.getId()).thenReturn(Tasks.forResult(INSTANCE_ID));
     when(firebaseInstallations.getToken(false))
         .thenReturn(
-            Tasks.forResult(InstallationTokenResult.builder().setToken(INSTANCE_TOKEN).build()));
+            Tasks.forResult(
+                InstallationTokenResult.builder()
+                    .setToken(INSTANCE_TOKEN)
+                    .setTokenCreationTimestamp(1)
+                    .setTokenExpirationTimestamp(1)
+                    .build()));
 
     when(dataCollectionHelper.isAutomaticDataCollectionEnabled()).thenReturn(true);
 
