@@ -28,7 +28,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.app.Application;
-import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
@@ -44,8 +43,6 @@ import com.google.firebase.inappmessaging.internal.InAppMessageStreamManager;
 import com.google.firebase.inappmessaging.internal.ProgramaticContextualTriggers;
 import com.google.firebase.inappmessaging.internal.RateLimiterClient;
 import com.google.firebase.inappmessaging.internal.Schedulers;
-import com.google.firebase.inappmessaging.model.Action;
-import com.google.firebase.inappmessaging.model.InAppMessage;
 import com.google.firebase.inappmessaging.model.TriggeredInAppMessage;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
@@ -168,30 +165,7 @@ public class FirebaseInAppMessagingTest {
     when(firebaseInstallations.getId()).thenReturn(Tasks.forResult(INSTANCE_ID));
     when(firebaseInstallations.getToken(false))
         .thenReturn(
-            Tasks.forResult(
-                new InstallationTokenResult() {
-                  @NonNull
-                  @Override
-                  public String getToken() {
-                    return INSTANCE_TOKEN;
-                  }
-
-                  @Override
-                  public long getTokenExpirationTimestamp() {
-                    return 0;
-                  }
-
-                  @Override
-                  public long getTokenCreationTimestamp() {
-                    return 0;
-                  }
-
-                  @NonNull
-                  @Override
-                  public Builder toBuilder() {
-                    return null;
-                  }
-                }));
+            Tasks.forResult(InstallationTokenResult.builder().setToken(INSTANCE_TOKEN).build()));
 
     when(dataCollectionHelper.isAutomaticDataCollectionEnabled()).thenReturn(true);
 
@@ -327,20 +301,9 @@ public class FirebaseInAppMessagingTest {
             listenerScheduler);
 
     firebaseInAppMessaging.addClickListener(
-        new FirebaseInAppMessagingClickListener() {
-          @Override
-          public void messageClicked(InAppMessage inAppMessage, Action action) {
-            // Nothing
-          }
+        (inAppMessage, action) -> {
+          // Nothing
         });
     verify(listenerScheduler, times(1)).addClickListener(any());
   }
-
-  //  @Implements(FirebaseInstanceId.class)
-  //  public static class ShadowFirebaseInstanceId {
-  //    @Implementation
-  //    public static FirebaseInstanceId getInstance() {
-  //      return firebaseInstanceId;
-  //    }
-  //  }
 }

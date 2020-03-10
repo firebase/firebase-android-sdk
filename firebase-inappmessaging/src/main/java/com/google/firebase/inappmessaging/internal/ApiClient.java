@@ -89,35 +89,30 @@ public class ApiClient {
     }
     Logging.logi(FETCHING_CAMPAIGN_MESSAGE);
     providerInstaller.install();
-    return firebaseInstallations
-        .getId()
-        .continueWithTask(
-            idTask ->
-                firebaseInstallations
-                    .getToken(false)
-                    .continueWith(
-                        tokenResultTask -> {
-                          String idResult = idTask.getResult();
-                          InstallationTokenResult tokenResult = tokenResultTask.getResult();
-                          if (tokenResult == null || idResult == null) {
-                            Logging.logw("Installation ID or Token is null, not calling backend");
-                            return createCacheExpiringResponse();
-                          }
-                          return withCacheExpirationSafeguards(
-                              grpcClient
-                                  .get()
-                                  .fetchEligibleCampaigns(
-                                      FetchEligibleCampaignsRequest.newBuilder()
-                                          // The project Id we expect is the gcm sender id
-                                          .setProjectNumber(
-                                              firebaseApp.getOptions().getGcmSenderId())
-                                          .addAllAlreadySeenCampaigns(
-                                              impressionList.getAlreadySeenCampaignsList())
-                                          .setClientSignals(getClientSignals())
-                                          .setRequestingClientApp(
-                                              getClientAppInfo(idResult, tokenResult))
-                                          .build()));
-                        }));
+    Task<String> idTask = firebaseInstallations.getId();
+    Task<InstallationTokenResult> tokenTask = firebaseInstallations.getToken(false);
+    return Tasks.whenAll(idTask, tokenTask)
+        .continueWith(
+            (unused) -> {
+              String idResult = idTask.getResult();
+              InstallationTokenResult tokenResult = tokenTask.getResult();
+              if (tokenResult == null || idResult == null) {
+                Logging.logw("Installation ID or Token is null, not calling backend");
+                return createCacheExpiringResponse();
+              }
+              return withCacheExpirationSafeguards(
+                  grpcClient
+                      .get()
+                      .fetchEligibleCampaigns(
+                          FetchEligibleCampaignsRequest.newBuilder()
+                              // The project Id we expect is the gcm sender id
+                              .setProjectNumber(firebaseApp.getOptions().getGcmSenderId())
+                              .addAllAlreadySeenCampaigns(
+                                  impressionList.getAlreadySeenCampaignsList())
+                              .setClientSignals(getClientSignals())
+                              .setRequestingClientApp(getClientAppInfo(idResult, tokenResult))
+                              .build()));
+            });
   }
 
   private FetchEligibleCampaignsResponse withCacheExpirationSafeguards(

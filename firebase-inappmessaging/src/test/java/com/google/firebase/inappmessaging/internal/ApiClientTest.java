@@ -26,7 +26,6 @@ import android.app.Application;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
-import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Tasks;
 import com.google.developers.mobile.targeting.proto.ClientSignalsProto.ClientSignals;
 import com.google.firebase.FirebaseApp;
@@ -127,30 +126,7 @@ public class ApiClientTest {
     when(firebaseInstallations.getId()).thenReturn(Tasks.forResult(INSTANCE_ID));
     when(firebaseInstallations.getToken(false))
         .thenReturn(
-            Tasks.forResult(
-                new InstallationTokenResult() {
-                  @NonNull
-                  @Override
-                  public String getToken() {
-                    return INSTANCE_TOKEN;
-                  }
-
-                  @Override
-                  public long getTokenExpirationTimestamp() {
-                    return 0;
-                  }
-
-                  @Override
-                  public long getTokenCreationTimestamp() {
-                    return 0;
-                  }
-
-                  @NonNull
-                  @Override
-                  public Builder toBuilder() {
-                    return null;
-                  }
-                }));
+            Tasks.forResult(InstallationTokenResult.builder().setToken(INSTANCE_TOKEN).build()));
     TimeZone.setDefault(TimeZone.getTimeZone(TIME_ZONE));
   }
 

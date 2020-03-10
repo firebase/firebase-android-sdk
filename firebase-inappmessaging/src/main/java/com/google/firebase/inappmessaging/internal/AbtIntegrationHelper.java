@@ -30,7 +30,7 @@ import javax.inject.Inject;
 /** @hide */
 @FirebaseAppScope
 public class AbtIntegrationHelper {
-  private FirebaseABTesting abTesting;
+  private final FirebaseABTesting abTesting;
   private static final Executor executor = Executors.newSingleThreadExecutor();
 
   @Inject

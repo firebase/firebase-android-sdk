@@ -44,7 +44,6 @@ import android.content.Context;
 import android.os.Bundle;
 import android.os.Looper;
 import android.util.Log;
-import androidx.annotation.NonNull;
 import androidx.test.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
@@ -228,30 +227,8 @@ public class FirebaseInAppMessagingFlowableTest {
     when(firebaseInstallations.getId()).thenReturn(Tasks.forResult(INSTANCE_ID));
     when(firebaseInstallations.getToken(false))
         .thenReturn(
-            Tasks.forResult(
-                new InstallationTokenResult() {
-                  @NonNull
-                  @Override
-                  public String getToken() {
-                    return INSTANCE_TOKEN;
-                  }
+            Tasks.forResult(InstallationTokenResult.builder().setToken(INSTANCE_TOKEN).build()));
 
-                  @Override
-                  public long getTokenExpirationTimestamp() {
-                    return 0;
-                  }
-
-                  @Override
-                  public long getTokenCreationTimestamp() {
-                    return 0;
-                  }
-
-                  @NonNull
-                  @Override
-                  public Builder toBuilder() {
-                    return null;
-                  }
-                }));
     when(testDeviceHelper.isAppInstallFresh()).thenReturn(false);
     when(testDeviceHelper.isDeviceInTestMode()).thenReturn(false);
 
