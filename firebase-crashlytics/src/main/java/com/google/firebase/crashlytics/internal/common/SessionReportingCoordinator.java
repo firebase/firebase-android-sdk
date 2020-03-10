@@ -15,11 +15,13 @@
 package com.google.firebase.crashlytics.internal.common;
 
 import android.content.Context;
+import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.log.LogFileManager;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.CustomAttribute;
+import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.FilesPayload;
 import com.google.firebase.crashlytics.internal.model.ImmutableList;
 import com.google.firebase.crashlytics.internal.persistence.CrashlyticsReportPersistence;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
@@ -128,6 +130,23 @@ class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
 
   public void persistNonFatalEvent(Throwable event, Thread thread, long timestamp) {
     persistEvent(event, thread, EVENT_TYPE_LOGGED, timestamp, false);
+  }
+
+  public void persistNativeEvent(@NonNull File nativeEventFilesDir) {
+    // TODO: Consider passing some sort of transformer instead of the raw files dir.
+    /*gzipFile(minidump, new File(nativeSessionDirectory, "minidump"));
+    gzipIfNotEmpty(
+        NativeFileUtils.binaryImagesJsonFromMapsFile(binaryImages, context),
+        new File(nativeSessionDirectory, "binaryImages"));
+    gzipFile(metadata, new File(nativeSessionDirectory, "metadata"));
+    gzipFile(sessionFile, new File(nativeSessionDirectory, "session"));
+    gzipFile(sessionApp, new File(nativeSessionDirectory, "app"));
+    gzipFile(sessionDevice, new File(nativeSessionDirectory, "device"));
+    gzipFile(sessionOs, new File(nativeSessionDirectory, "os"));
+    gzipFile(sessionUser, new File(nativeSessionDirectory, "user"));
+    gzipFile(sessionKeys, new File(nativeSessionDirectory, "keys"));
+    gzipIfNotEmpty(logs, new File(nativeSessionDirectory, "logs"));*/
+    final FilesPayload.File minidump = FilesPayload.File.builder().setFilename("minidump_file").setContents(new byte[0]).build();
   }
 
   public void persistUserId() {
