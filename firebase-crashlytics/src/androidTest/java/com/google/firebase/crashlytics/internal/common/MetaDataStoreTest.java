@@ -15,8 +15,6 @@
 package com.google.firebase.crashlytics.internal.common;
 
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
-import com.google.firebase.crashlytics.internal.common.MetaDataStore;
-import com.google.firebase.crashlytics.internal.common.UserMetadata;
 import java.io.File;
 import java.util.Collections;
 import java.util.HashMap;

@@ -14,8 +14,6 @@
 
 package com.google.firebase.crashlytics.internal.common;
 
-import com.google.firebase.crashlytics.internal.common.CommonUtils;
-import com.google.firebase.crashlytics.internal.common.IdManager;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Date;

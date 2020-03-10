@@ -17,8 +17,6 @@ package com.google.firebase.crashlytics.internal.common;
 import static org.mockito.Mockito.mock;
 
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
-import com.google.firebase.crashlytics.internal.common.CLSUUID;
-import com.google.firebase.crashlytics.internal.common.IdManager;
 import com.google.firebase.iid.internal.FirebaseInstanceIdInternal;
 
 public class CLSUUIDTest extends CrashlyticsTestCase {
