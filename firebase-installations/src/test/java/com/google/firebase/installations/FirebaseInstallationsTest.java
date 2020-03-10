@@ -663,8 +663,10 @@ public class FirebaseInstallationsTest {
     // There is nothing more we can do.
     PersistedInstallationEntry updatedInstallationEntry =
         persistedInstallation.readPersistedInstallationEntryValue();
-    // //assertThat(TEST_FID_1, eq(updatedInstallationEntry.getFirebaseInstallationId()));
-    // //assertThat(updatedInstallationEntry).hasRegistrationStatus(RegistrationStatus.REGISTER_ERROR);
+    assertThat(updatedInstallationEntry.getFirebaseInstallationId(), equalTo(TEST_FID_1));
+    assertTrue(
+        "the entry doesn't have an error fid: " + updatedInstallationEntry,
+        updatedInstallationEntry.isErrored());
   }
 
   /**
@@ -750,7 +752,8 @@ public class FirebaseInstallationsTest {
             TEST_TOKEN_EXPIRATION_TIMESTAMP));
 
     // Move the time forward by the token expiration time.
-    fakeClock.advanceTimeBySeconds(TEST_TOKEN_EXPIRATION_TIMESTAMP);
+    fakeClock.advanceTimeBySeconds(
+        TEST_TOKEN_EXPIRATION_TIMESTAMP - TimeUnit.MINUTES.toSeconds(30));
 
     // have the server respond with a new token
     when(mockBackend.generateAuthToken(anyString(), anyString(), anyString(), anyString()))
@@ -862,10 +865,9 @@ public class FirebaseInstallationsTest {
     assertTrue(persistedInstallation.readPersistedInstallationEntryValue().isNotGenerated());
   }
 
-  // /**
-  //  * Check that a call to generateAuthToken(FORCE_REFRESH) fails if the backend client call
-  //  * fails.
-  //  */
+  /**
+   * Check that a call to generateAuthToken(FORCE_REFRESH) fails if the backend client call fails.
+   */
   @Test
   public void testGetAuthToken_serverError_failure() throws Exception {
     // start the test with a registered FID

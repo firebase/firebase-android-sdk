@@ -20,6 +20,6 @@ package com.google.firebase.installations.time;
  * @hide
  */
 public interface Clock {
-  /** Returns the current, absolute time according to this clock. */
+  /** Returns the current time in milliseconds since EPOCH in UTC. */
   long now();
 }
