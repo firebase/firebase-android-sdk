@@ -22,7 +22,6 @@ import android.content.pm.PackageManager;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.crashlytics.core.Utils;
 import com.google.firebase.crashlytics.internal.Logger;
 
 // Determines whether automatic data collection is enabled.

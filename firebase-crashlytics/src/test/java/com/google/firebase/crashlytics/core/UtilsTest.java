@@ -16,6 +16,7 @@ package com.google.firebase.crashlytics.core;
 
 import static org.junit.Assert.assertEquals;
 
+import com.google.firebase.crashlytics.internal.common.Utils;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.util.Comparator;

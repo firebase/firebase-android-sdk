@@ -1,4 +1,4 @@
-// Copyright 2019 Google LLC
+// Copyright 2020 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,5 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/** @hide */
-package com.google.firebase.crashlytics.core;
+package com.google.firebase.crashlytics.internal.common;
+
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+
+final class TestUtils {
+  private TestUtils() {}
+
+  public static void writeStringToFile(String s, File f) throws IOException {
+    BufferedWriter writer = null;
+    try {
+      writer = new BufferedWriter(new FileWriter(f));
+      writer.write(s);
+    } finally {
+      if (writer != null) {
+        writer.close();
+      }
+    }
+  }
+}

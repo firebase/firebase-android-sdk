@@ -16,7 +16,6 @@ package com.google.firebase.crashlytics.internal.common;
 
 import android.content.Context;
 import com.google.android.gms.tasks.Task;
-import com.google.firebase.crashlytics.core.UserMetadata;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.log.LogFileManager;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
