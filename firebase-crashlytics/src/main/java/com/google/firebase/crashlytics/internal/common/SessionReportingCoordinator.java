@@ -37,7 +37,7 @@ import java.util.concurrent.Executor;
  * This class handles Crashlytics lifecycle events and coordinates session data capture and
  * persistence, as well as sending of reports to Firebase Crashlytics.
  */
-public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
+class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
 
   public interface SendReportPredicate {
     boolean shouldSendViaDataTransport();

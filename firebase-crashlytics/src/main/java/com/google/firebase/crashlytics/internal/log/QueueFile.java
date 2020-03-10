@@ -19,7 +19,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.firebase.crashlytics.internal.common;
+package com.google.firebase.crashlytics.internal.log;
 
 import java.io.Closeable;
 import java.io.File;
@@ -57,7 +57,7 @@ import java.util.logging.Logger;
  * @author Bob Lee (bob@squareup.com)
  */
 @SuppressWarnings("PMD")
-public class QueueFile implements Closeable {
+class QueueFile implements Closeable {
   private static final Logger LOGGER = Logger.getLogger(QueueFile.class.getName());
 
   /** Initial file size in bytes. */
