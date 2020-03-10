@@ -15,7 +15,6 @@
 package com.google.firebase.inappmessaging.internal;
 
 import androidx.annotation.VisibleForTesting;
-
 import com.google.firebase.abt.AbtException;
 import com.google.firebase.abt.AbtExperimentInfo;
 import com.google.firebase.abt.FirebaseABTesting;
@@ -34,8 +33,7 @@ import javax.inject.Inject;
 public class AbtIntegrationHelper {
   private final FirebaseABTesting abTesting;
 
-  @VisibleForTesting
-  Executor executor = Executors.newSingleThreadExecutor();
+  @VisibleForTesting Executor executor = Executors.newSingleThreadExecutor();
 
   @Inject
   public AbtIntegrationHelper(FirebaseABTesting abTesting) {

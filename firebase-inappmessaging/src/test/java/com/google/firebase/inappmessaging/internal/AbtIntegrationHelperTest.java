@@ -30,8 +30,6 @@ import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
-import java.util.concurrent.Executor;
-
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
 public class AbtIntegrationHelperTest {
