@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.spec;
 
+import static com.google.common.base.Strings.emptyToNull;
 import static com.google.firebase.firestore.TestUtil.waitFor;
 import static com.google.firebase.firestore.testutil.TestUtil.ARBITRARY_SEQUENCE_NUMBER;
 import static com.google.firebase.firestore.testutil.TestUtil.deleteMutation;
@@ -131,6 +132,14 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
   // Disables all other tests; useful for debugging. Multiple tests can have
   // this tag and they'll all be run (but all others won't).
   private static final String EXCLUSIVE_TAG = "exclusive";
+
+  // The name of a Java system property ({@link System#getProperty(String)}) whose value is the name
+  // of the sole spec test to execute. This is an alternative to setting the {@link #EXCLUSIVE_TAG}
+  // tag, which requires modifying the JSON file. To use this property, specify
+  // -DexclusiveSpecTest=<TestName> to the Java runtime, replacing <TestName> with the name of the
+  // test to execute exclusively.  The <TestName> value is the result of appending the "itName" of
+  // the test to its "describeName", separated by a space character.
+  private static final String EXCLUSIVE_PROPERTY = "exclusiveSpecTest";
 
   // Tags on tests that should be excluded from execution, useful to allow the platforms to
   // temporarily diverge or for features that are designed to be platform specific (such as
@@ -1097,6 +1106,12 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
       parsedSpecFiles.add(new Pair<>(f.getName(), fileJSON));
     }
 
+    String exclusiveTestNameFromSystemProperty =
+        emptyToNull(System.getProperty(EXCLUSIVE_PROPERTY));
+    if (exclusiveTestNameFromSystemProperty != null) {
+      exclusiveMode = true;
+    }
+
     for (Pair<String, JSONObject> parsedSpecFile : parsedSpecFiles) {
       String fileName = parsedSpecFile.first;
       JSONObject fileJSON = parsedSpecFile.second;
@@ -1115,7 +1130,17 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
         JSONArray steps = testJSON.getJSONArray("steps");
         Set<String> tags = getTestTags(testJSON);
 
-        boolean runTest = shouldRunTest(tags) && (!exclusiveMode || tags.contains(EXCLUSIVE_TAG));
+        boolean runTest;
+        if (!shouldRunTest(tags)) {
+          runTest = false;
+        } else if (!exclusiveMode) {
+          runTest = true;
+        } else if (tags.contains(EXCLUSIVE_TAG)) {
+          runTest = true;
+        } else {
+          runTest = name.equals(exclusiveTestNameFromSystemProperty);
+        }
+
         boolean measureRuntime = tags.contains(BENCHMARK_TAG);
         if (runTest) {
           long start = System.currentTimeMillis();
