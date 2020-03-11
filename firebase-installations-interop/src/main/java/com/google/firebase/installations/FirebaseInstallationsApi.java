@@ -14,6 +14,7 @@
 
 package com.google.firebase.installations;
 
+import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
 
 /**
@@ -28,9 +29,19 @@ public interface FirebaseInstallationsApi {
    * Async function that returns a globally unique identifier of this Firebase app installation.
    * This is a url-safe base64 string of a 128-bit integer.
    */
+  @NonNull
   Task<String> getId();
 
-  /** Async function that returns a auth token(public key) of this Firebase app installation. */
+  /**
+   * Async function that returns a auth token(public key) of this Firebase app installation.
+   *
+   * @param forceRefresh If set to TRUE this method will trigger a server request to generate new
+   *     AuthToken every time when called. Otherwise it will return a locally cached token if
+   *     available and valid. It is strongly recommended to set this field to FALSE unless a
+   *     previously returned token turned out to be expired (which in itself is an indicator for
+   *     time synchronization issues).
+   */
+  @NonNull
   Task<InstallationTokenResult> getToken(boolean forceRefresh);
 
   /**
@@ -38,5 +49,6 @@ public interface FirebaseInstallationsApi {
    * would possibly lead Firebase Notification, Firebase RemoteConfig, Firebase Predictions or
    * Firebase In-App Messaging not function properly.
    */
+  @NonNull
   Task<Void> delete();
 }
