@@ -510,12 +510,4 @@ public class DisplayCallbacksImplTest {
     verify(metricsLoggerClient, times(1))
         .logDismiss(BANNER_MESSAGE_MODEL, InAppMessagingDismissType.SWIPE);
   }
-
-  //  @Implements(FirebaseInstanceId.class)
-  //  public static class ShadowFirebaseInstanceId {
-  //    @Implementation
-  //    public static FirebaseInstanceId getInstance() {
-  //      return firebaseInstanceId;
-  //    }
-  //  }
 }
