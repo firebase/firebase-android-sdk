@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import com.google.firebase.encoders.EncodingException;
 import com.google.firebase.encoders.ObjectEncoder;
 import com.google.firebase.encoders.ObjectEncoderContext;
 import com.google.firebase.encoders.config.Configurator;
@@ -41,8 +40,7 @@ public final class AutoGenericClassEncoder implements Configurator {
         static final GenericClassEncoder INSTANCE = new GenericClassEncoder();
 
         @Override
-        public void encode(GenericClass value, ObjectEncoderContext ctx) throws IOException,
-                EncodingException {
+        public void encode(GenericClass value, ObjectEncoderContext ctx) throws IOException {
             ctx.add("t", value.getT());
             ctx.add("u", value.getU());
         }

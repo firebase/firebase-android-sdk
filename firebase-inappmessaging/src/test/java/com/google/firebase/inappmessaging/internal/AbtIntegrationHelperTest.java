@@ -50,6 +50,16 @@ public class AbtIntegrationHelperTest {
                       CampaignProto.ExperimentalCampaignPayload.getDefaultInstance()))
           .build();
 
+  private static final FetchEligibleCampaignsResponse testExperimentResponse =
+      FetchEligibleCampaignsResponse.newBuilder()
+          .addMessages(
+              CampaignProto.ThickContent.newBuilder()
+                  .setContent(MessagesProto.Content.getDefaultInstance())
+                  .setIsTestCampaign(true)
+                  .setExperimentalPayload(
+                      CampaignProto.ExperimentalCampaignPayload.getDefaultInstance()))
+          .build();
+
   @Mock private FirebaseABTesting abTesting;
   private AbtIntegrationHelper abtIntegrationHelper;
 
@@ -57,6 +67,8 @@ public class AbtIntegrationHelperTest {
   public void setUp() {
     MockitoAnnotations.initMocks(this);
     abtIntegrationHelper = new AbtIntegrationHelper(abTesting);
+    // make executor immediately execute
+    abtIntegrationHelper.executor = Runnable::run;
   }
 
   @Test
@@ -69,5 +81,11 @@ public class AbtIntegrationHelperTest {
   public void updateRunningExperiments_yesExperiments_callsAbt() throws Exception {
     abtIntegrationHelper.updateRunningExperiments(yesExperimentResponse);
     verify(abTesting).validateRunningExperiments(Mockito.any());
+  }
+
+  @Test
+  public void updateRunningExperiments_testExperiments_doesNotCallAbt() throws Exception {
+    abtIntegrationHelper.updateRunningExperiments(testExperimentResponse);
+    verifyZeroInteractions(abTesting);
   }
 }

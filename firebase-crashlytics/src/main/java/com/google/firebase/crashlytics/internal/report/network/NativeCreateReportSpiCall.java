@@ -14,9 +14,9 @@
 
 package com.google.firebase.crashlytics.internal.report.network;
 
-import com.google.firebase.crashlytics.core.CrashlyticsCore;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.common.AbstractSpiCall;
+import com.google.firebase.crashlytics.internal.common.CrashlyticsCore;
 import com.google.firebase.crashlytics.internal.common.ResponseParser;
 import com.google.firebase.crashlytics.internal.network.HttpMethod;
 import com.google.firebase.crashlytics.internal.network.HttpRequest;
@@ -67,14 +67,14 @@ public class NativeCreateReportSpiCall extends AbstractSpiCall implements Create
     httpRequest = applyHeadersTo(httpRequest, requestData.googleAppId);
     httpRequest = applyMultipartDataTo(httpRequest, requestData.organizationId, requestData.report);
 
-    Logger.getLogger().d(Logger.TAG, "Sending report to: " + getUrl());
+    Logger.getLogger().d("Sending report to: " + getUrl());
 
     try {
       HttpResponse httpResponse = httpRequest.execute();
 
       final int statusCode = httpResponse.code();
 
-      Logger.getLogger().d(Logger.TAG, "Result was: " + statusCode);
+      Logger.getLogger().d("Result was: " + statusCode);
 
       return ResponseParser.ResponseActionDiscard == ResponseParser.parse(statusCode);
     } catch (IOException ioe) {

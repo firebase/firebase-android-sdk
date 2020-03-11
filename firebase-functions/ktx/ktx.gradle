@@ -19,7 +19,7 @@ plugins {
 
 firebaseLibrary {
     releaseWith project(':firebase-functions')
-    publishJavadoc = false
+    publishJavadoc = true
     publishSources = true
     testLab.enabled = true
 }

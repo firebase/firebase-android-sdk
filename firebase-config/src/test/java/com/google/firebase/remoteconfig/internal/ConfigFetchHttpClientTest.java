@@ -36,6 +36,7 @@ import static com.google.firebase.remoteconfig.testutil.Assert.assertThrows;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import android.content.Context;
+import android.os.Build;
 import com.google.android.gms.common.util.MockClock;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;
@@ -199,13 +200,43 @@ public class ConfigFetchHttpClientTest {
     assertThat(requestBody.get(APP_ID)).isEqualTo(FAKE_APP_ID);
     Locale locale = context.getResources().getConfiguration().locale;
     assertThat(requestBody.get(COUNTRY_CODE)).isEqualTo(locale.getCountry());
-    assertThat(requestBody.get(LANGUAGE_CODE)).isEqualTo(locale.toString());
+    assertThat(requestBody.get(LANGUAGE_CODE)).isEqualTo(locale.toLanguageTag());
     assertThat(requestBody.getInt(PLATFORM_VERSION)).isEqualTo(android.os.Build.VERSION.SDK_INT);
     assertThat(requestBody.get(TIME_ZONE)).isEqualTo(TimeZone.getDefault().getID());
     assertThat(requestBody.get(PACKAGE_NAME)).isEqualTo(context.getPackageName());
     assertThat(requestBody.get(SDK_VERSION)).isEqualTo(BuildConfig.VERSION_NAME);
     assertThat(requestBody.getJSONObject(ANALYTICS_USER_PROPERTIES).toString())
         .isEqualTo(new JSONObject(userProperties).toString());
+  }
+
+  @Test
+  public void fetch_requestEncodesLanguageSubtags() throws Exception {
+    String languageTag = "zh-Hant-TW"; // Taiwan Chinese in traditional script
+    context.getResources().getConfiguration().setLocale(Locale.forLanguageTag(languageTag));
+
+    setServerResponseTo(noChangeResponseBody, SECOND_ETAG);
+
+    Map<String, String> userProperties = ImmutableMap.of("up1", "hello", "up2", "world");
+    fetch(FIRST_ETAG, userProperties);
+
+    JSONObject requestBody = new JSONObject(fakeHttpURLConnection.getOutputStream().toString());
+    assertThat(requestBody.get(LANGUAGE_CODE)).isEqualTo(languageTag);
+  }
+
+  @Test
+  @Config(sdk = Build.VERSION_CODES.KITKAT /* 19 */)
+  public void fetch_localeUsesToStringBelowLollipop() throws Exception {
+    String languageTag = "zh-Hant-TW"; // Taiwan Chinese in traditional script
+    String languageString = "zh_TW_#Hant";
+    context.getResources().getConfiguration().setLocale(Locale.forLanguageTag(languageTag));
+
+    setServerResponseTo(noChangeResponseBody, SECOND_ETAG);
+
+    Map<String, String> userProperties = ImmutableMap.of("up1", "hello", "up2", "world");
+    fetch(FIRST_ETAG, userProperties);
+
+    JSONObject requestBody = new JSONObject(fakeHttpURLConnection.getOutputStream().toString());
+    assertThat(requestBody.get(LANGUAGE_CODE)).isEqualTo(languageString);
   }
 
   @Test

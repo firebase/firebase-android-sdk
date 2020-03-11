@@ -72,8 +72,7 @@ public class LogFileManager {
         CommonUtils.getBooleanResourceValue(context, COLLECT_CUSTOM_LOGS, true);
 
     if (!isLoggingEnabled) {
-      Logger.getLogger()
-          .d(Logger.TAG, "Preferences requested no custom logs. Aborting log file creation.");
+      Logger.getLogger().d("Preferences requested no custom logs. Aborting log file creation.");
       return;
     }
 
@@ -87,6 +86,10 @@ public class LogFileManager {
 
   public byte[] getBytesForLog() {
     return currentLog.getLogAsBytes();
+  }
+
+  public String getLogString() {
+    return currentLog.getLogAsString();
   }
 
   /** Empty the log. */
@@ -139,6 +142,11 @@ public class LogFileManager {
 
     @Override
     public byte[] getLogAsBytes() {
+      return null;
+    }
+
+    @Override
+    public String getLogAsString() {
       return null;
     }
 

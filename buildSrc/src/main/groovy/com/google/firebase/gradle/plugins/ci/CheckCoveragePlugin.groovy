@@ -102,6 +102,7 @@ class CheckCoveragePlugin implements Plugin<Project> {
 
         def commit = head ?: base
 
+        // TODO(yifany): use com.google.firebase.gradle.plugins.measurement.TestLogFinder
         def domain = "android-ci.firebaseopensource.com"
         def bucket = "android-ci"
         def dir = type == "presubmit" ? "pr-logs/pull/${org}_${repo}/${pr}" : "logs"

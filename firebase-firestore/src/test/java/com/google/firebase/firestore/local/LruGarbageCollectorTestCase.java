@@ -33,11 +33,11 @@ import com.google.firebase.firestore.core.ListenSequence;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.Precondition;
 import com.google.firebase.firestore.model.mutation.SetMutation;
-import com.google.firebase.firestore.model.value.ObjectValue;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -578,7 +578,7 @@ public abstract class LruGarbageCollectorTestCase {
         () -> {
           SnapshotVersion newVersion = version(3);
           Document doc =
-              new Document(middleDocToUpdate, newVersion, Document.DocumentState.SYNCED, testValue);
+              new Document(middleDocToUpdate, newVersion, testValue, Document.DocumentState.SYNCED);
           documentCache.add(doc, newVersion);
           updateTargetInTransaction(middleTarget);
         });

@@ -21,11 +21,11 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
-import com.google.firebase.crashlytics.core.CrashlyticsCore;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.MissingNativeComponent;
 import com.google.firebase.crashlytics.internal.Onboarding;
+import com.google.firebase.crashlytics.internal.common.CrashlyticsCore;
 import com.google.firebase.crashlytics.internal.common.DataCollectionArbiter;
 import com.google.firebase.crashlytics.internal.common.ExecutorUtils;
 import com.google.firebase.crashlytics.internal.common.IdManager;
@@ -66,7 +66,7 @@ public class FirebaseCrashlytics {
         new CrashlyticsCore(app, idManager, nativeComponent, arbiter, analyticsConnector);
 
     if (!onboarding.onPreExecute()) {
-      Logger.getLogger().e(Logger.TAG, "Unable to start Crashlytics.");
+      Logger.getLogger().e("Unable to start Crashlytics.");
       return null;
     }
 

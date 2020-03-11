@@ -22,8 +22,9 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
-import com.google.firebase.crashlytics.core.TestReportFilesProvider;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
+import com.google.firebase.crashlytics.internal.common.TestNativeReportFilesProvider;
+import com.google.firebase.crashlytics.internal.common.TestReportFilesProvider;
 import com.google.firebase.crashlytics.internal.report.model.CreateReportRequest;
 import com.google.firebase.crashlytics.internal.report.model.Report;
 import com.google.firebase.crashlytics.internal.report.network.CreateReportSpiCall;
@@ -40,12 +41,12 @@ public class ReportUploaderTest extends CrashlyticsTestCase {
   private TestReportFilesProvider reportFilesProvider;
   private ReportManager reportManager;
   private ReportUploader reportUploader;
+  private ReportUploader.HandlingExceptionCheck mockHandlingExceptionCheck;
 
   @Override
   protected void setUp() throws Exception {
     mockCall = mock(CreateReportSpiCall.class);
-    final ReportUploader.HandlingExceptionCheck mockHandlingExceptionCheck =
-        mock(ReportUploader.HandlingExceptionCheck.class);
+    mockHandlingExceptionCheck = mock(ReportUploader.HandlingExceptionCheck.class);
     when(mockHandlingExceptionCheck.isHandlingException()).thenReturn(false);
 
     reportFilesProvider = new TestReportFilesProvider(getContext());
@@ -56,6 +57,7 @@ public class ReportUploaderTest extends CrashlyticsTestCase {
         new ReportUploader(
             "testOrganizationId",
             "testGoogleAppId",
+            true,
             reportManager,
             mockCall,
             mockHandlingExceptionCheck);
@@ -109,6 +111,54 @@ public class ReportUploaderTest extends CrashlyticsTestCase {
     assertFalse(reportManager.findReports().isEmpty());
 
     verifyZeroInteractions(mockCall);
+  }
+
+  public void testSendReport_deletesWithoutSendingWhenNotUsingReportsEndpoint() throws Exception {
+    final boolean isUsingReportsEndpoint = false;
+    reportUploader =
+        new ReportUploader(
+            "testOrganizationId",
+            "testGoogleAppId",
+            isUsingReportsEndpoint,
+            reportManager,
+            mockCall,
+            mockHandlingExceptionCheck);
+
+    reportFilesProvider.createTestCrashFile();
+
+    final boolean sent = uploadAndWait();
+    assertTrue(sent);
+    assertEquals(0, reportManager.findReports().size());
+
+    verifyZeroInteractions(mockCall);
+  }
+
+  public void testSendReport_sendsNativeCrashesRegardlessOfEndpointFlag() throws Exception {
+    final TestNativeReportFilesProvider nativeReportFilesProvider =
+        new TestNativeReportFilesProvider(getContext());
+    reportManager = new ReportManager(nativeReportFilesProvider);
+
+    final boolean isUsingReportsEndpoint = false;
+    reportUploader =
+        new ReportUploader(
+            "testOrganizationId",
+            "testGoogleAppId",
+            isUsingReportsEndpoint,
+            reportManager,
+            mockCall,
+            mockHandlingExceptionCheck);
+
+    when(mockCall.invoke(any(CreateReportRequest.class), eq(true))).thenReturn(true);
+
+    nativeReportFilesProvider.createTestCrashDirectory();
+
+    final boolean sent = uploadAndWait();
+    assertTrue(sent);
+    assertEquals(0, reportManager.findReports().size());
+
+    verify(mockCall).invoke(any(CreateReportRequest.class), eq(true));
+
+    verifyNoMoreInteractions(mockCall);
   }
 
   /**

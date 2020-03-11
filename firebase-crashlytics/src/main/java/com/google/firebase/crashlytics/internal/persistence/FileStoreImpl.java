@@ -24,23 +24,18 @@ public class FileStoreImpl implements FileStore {
 
   private final Context context;
 
-  /** Relative sub-path to use for storing files. */
-  private final String filePath;
-
   public FileStoreImpl(Context context) {
     this.context = context;
-    this.filePath = FILES_PATH;
-  }
-
-  public FileStoreImpl(Context context, String filePath) {
-    this.context = context;
-    this.filePath = filePath;
   }
 
   /** @return Directory to store internal files. */
   @Override
   public File getFilesDir() {
-    return prepare(new File(context.getFilesDir(), filePath));
+    return prepare(new File(context.getFilesDir(), FILES_PATH));
+  }
+
+  public String getFilesDirPath() {
+    return new File(context.getFilesDir(), FILES_PATH).getPath();
   }
 
   File prepare(File file) {
@@ -48,10 +43,10 @@ public class FileStoreImpl implements FileStore {
       if (file.exists() || file.mkdirs()) {
         return file;
       } else {
-        Logger.getLogger().w(Logger.TAG, "Couldn't create file");
+        Logger.getLogger().w("Couldn't create file");
       }
     } else {
-      Logger.getLogger().d(Logger.TAG, "Null File");
+      Logger.getLogger().d("Null File");
     }
     return null;
   }
@@ -61,7 +56,6 @@ public class FileStoreImpl implements FileStore {
     if (!Environment.MEDIA_MOUNTED.equals(state)) {
       Logger.getLogger()
           .w(
-              Logger.TAG,
               "External Storage is not mounted and/or writable\n"
                   + "Have you declared android.permission.WRITE_EXTERNAL_STORAGE "
                   + "in the manifest?");

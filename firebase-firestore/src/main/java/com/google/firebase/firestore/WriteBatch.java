@@ -14,7 +14,7 @@
 
 package com.google.firebase.firestore;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -86,8 +86,8 @@ public class WriteBatch {
     verifyNotCommitted();
     ParsedSetData parsed =
         options.isMerge()
-            ? firestore.getDataConverter().parseMergeData(data, options.getFieldMask())
-            : firestore.getDataConverter().parseSetData(data);
+            ? firestore.getUserDataReader().parseMergeData(data, options.getFieldMask())
+            : firestore.getUserDataReader().parseSetData(data);
     mutations.addAll(parsed.toMutationList(documentRef.getKey(), Precondition.NONE));
     return this;
   }
@@ -104,7 +104,7 @@ public class WriteBatch {
   @NonNull
   public WriteBatch update(
       @NonNull DocumentReference documentRef, @NonNull Map<String, Object> data) {
-    ParsedUpdateData parsedData = firestore.getDataConverter().parseUpdateData(data);
+    ParsedUpdateData parsedData = firestore.getUserDataReader().parseUpdateData(data);
     return update(documentRef, parsedData);
   }
 
@@ -127,7 +127,7 @@ public class WriteBatch {
       Object... moreFieldsAndValues) {
     ParsedUpdateData parsedData =
         firestore
-            .getDataConverter()
+            .getUserDataReader()
             .parseUpdateData(
                 Util.collectUpdateArguments(
                     /* fieldPathOffset= */ 1, field, value, moreFieldsAndValues));
@@ -152,7 +152,7 @@ public class WriteBatch {
       Object... moreFieldsAndValues) {
     ParsedUpdateData parsedData =
         firestore
-            .getDataConverter()
+            .getUserDataReader()
             .parseUpdateData(
                 Util.collectUpdateArguments(
                     /* fieldPathOffset= */ 1, fieldPath, value, moreFieldsAndValues));

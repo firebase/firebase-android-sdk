@@ -23,8 +23,8 @@ import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.SuccessContinuation;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.crashlytics.core.CrashlyticsCore;
 import com.google.firebase.crashlytics.internal.common.CommonUtils;
+import com.google.firebase.crashlytics.internal.common.CrashlyticsCore;
 import com.google.firebase.crashlytics.internal.common.DataCollectionArbiter;
 import com.google.firebase.crashlytics.internal.common.DeliveryMechanism;
 import com.google.firebase.crashlytics.internal.common.IdManager;
@@ -92,7 +92,7 @@ public class Onboarding {
 
       return true;
     } catch (PackageManager.NameNotFoundException e) {
-      Logger.getLogger().e(Logger.TAG, "Failed init", e);
+      Logger.getLogger().e("Failed init", e);
     }
     return false;
   }
@@ -128,7 +128,7 @@ public class Onboarding {
                       backgroundExecutor,
                       dataCollectionToken);
                 } catch (Exception e) {
-                  Logger.getLogger().e(Logger.TAG, "Error performing auto configuration.", e);
+                  Logger.getLogger().e("Error performing auto configuration.", e);
                   throw e;
                 }
                 return null;
@@ -161,7 +161,7 @@ public class Onboarding {
               @Override
               public Object then(@NonNull Task<Void> task) throws Exception {
                 if (!task.isSuccessful()) {
-                  Logger.getLogger().e(Logger.TAG, "Error fetching settings.", task.getException());
+                  Logger.getLogger().e("Error fetching settings.", task.getException());
                 }
                 return null;
               }
@@ -185,7 +185,7 @@ public class Onboarding {
             SettingsCacheBehavior.SKIP_CACHE_LOOKUP, backgroundExecutor);
       } else {
         // Failed to create the app. We're not configured!
-        Logger.getLogger().e(Logger.TAG, "Failed to create app with Crashlytics service.", null);
+        Logger.getLogger().e("Failed to create app with Crashlytics service.", null);
       }
     } else if (AppSettingsData.STATUS_CONFIGURED.equals(appSettings.status)) {
       // Shouldn't be possible to see this status, but included for completeness.
@@ -194,8 +194,7 @@ public class Onboarding {
     } else if (appSettings.updateRequired) {
       // A non-critical update. We'll attempt it, but won't halt things if we fail, since
       // we're already well configured.
-      Logger.getLogger()
-          .d(Logger.TAG, "Server says an update is required - forcing a full App update.");
+      Logger.getLogger().d("Server says an update is required - forcing a full App update.");
       performUpdateApp(appSettings, googleAppId, dataCollectionToken);
     }
   }
