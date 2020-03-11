@@ -122,6 +122,11 @@ public class FirebaseFunctions {
     handler.post(runnable);
   }
 
+  @NonNull
+  public static String hello() {
+    return "World";
+  }
+
   /**
    * Creates a Cloud Functions client with the given app and region.
    *
