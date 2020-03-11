@@ -15,6 +15,7 @@
 package com.google.firebase.installations;
 
 import android.text.TextUtils;
+import android.util.Log;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -27,6 +28,7 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseException;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.heartbeatinfo.HeartBeatInfo;
+import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.installations.FirebaseInstallationsException.Status;
 import com.google.firebase.installations.local.IidStore;
 import com.google.firebase.installations.local.PersistedInstallation;
@@ -36,9 +38,11 @@ import com.google.firebase.installations.remote.InstallationResponse;
 import com.google.firebase.installations.remote.TokenResult;
 import com.google.firebase.platforminfo.UserAgentPublisher;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
@@ -75,6 +79,11 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   /* file used for process-level syncronization of generating and persisting fids */
   private static final String LOCKFILE_NAME_GENERATE_FID = "generatefid.lock";
   private static final String CHIME_FIREBASE_APP_NAME = "CHIME_ANDROID_SDK";
+
+  /* File used to read the version of Instance-ID(IID) SDK if it exists in the dependency tree.
+  This is needed to prevent incompatible versions of IID SDK to be used in parallel with FIS SDK. */
+  private static final String IID_SDK_PROP_FILE = "/firebase-iid.properties";
+  private static final String TAG = "FirebaseInstallations";
 
   private static final ThreadFactory threadFactory =
       new ThreadFactory() {
@@ -124,6 +133,16 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     this.utils = utils;
     this.iidStore = iidStore;
     this.fidGenerator = fidGenerator;
+    // preventParallelUsageOfIncompatibleVersionOfInstanceIdSDk();
+  }
+
+  private static void preventParallelUsageOfIncompatibleVersionOfInstanceIdSDk()
+      throws FirebaseInstallationsException {
+    if (!isIIDVersionCompatible()) {
+      throw new IllegalStateException(
+          "FirebaseInstallations will not work correctly with current version of Firebase "
+              + "Instance ID. Please update your Firebase Instance ID version.");
+    }
   }
 
   /**
@@ -489,6 +508,34 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     }
 
     persistedInstallation.insertOrUpdatePersistedInstallationEntry(entry.withNoGeneratedFid());
+    return null;
+  }
+
+  private static boolean isIIDVersionCompatible() {
+    try {
+      final Class<FirebaseInstanceId> firebaseInstanceIdClass = FirebaseInstanceId.class;
+    } catch (NoClassDefFoundError exception) {
+      // It is OK if there is no IID SDK at all.
+      return true;
+    }
+    String iidVersion = getIIDVersion();
+    if (TextUtils.isEmpty(iidVersion)) {
+      return false;
+    }
+    return true;
+  }
+
+  @Nullable
+  private static String getIIDVersion() {
+    try (InputStream fs = FirebaseInstallations.class.getResourceAsStream(IID_SDK_PROP_FILE)) {
+      Properties props = new Properties();
+      if (fs != null) {
+        props.load(fs);
+        return props.getProperty("version", /* defaultValue */ null);
+      }
+    } catch (IOException | IllegalArgumentException e) {
+      Log.w(TAG, "Could not read IID SDK version.", e);
+    }
     return null;
   }
 }
