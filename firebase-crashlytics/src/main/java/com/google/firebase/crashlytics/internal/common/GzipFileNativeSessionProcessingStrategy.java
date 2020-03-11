@@ -14,28 +14,44 @@
 
 package com.google.firebase.crashlytics.internal.common;
 
+import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import com.google.firebase.crashlytics.core.MetaDataStore;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.NativeSessionFileProvider;
-import com.google.firebase.crashlytics.internal.log.LogFileManager;
 import com.google.firebase.crashlytics.internal.ndk.NativeFileUtils;
-import com.google.firebase.crashlytics.internal.persistence.FileStore;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.zip.GZIPOutputStream;
 
-class GzipFileNativeSessionHandler implements NativeComponentSessionHandler<Void> {
+class GzipFileNativeSessionProcessingStrategy implements NativeSessionProcessingStrategy<Void> {
 
-  private CrashlyticsNativeComponent nativeComponent;
-  private FileStore fileStore;
+  interface OutputDirectoryProvider {
+    File getOutputDirectory(String sessionId);
+  }
+
+  private final Context context;
+  private final OutputDirectoryProvider outputDirectoryProvider;
+
+  public GzipFileNativeSessionProcessingStrategy(
+      Context context, OutputDirectoryProvider outputDirectoryProvider) {
+    this.context = context;
+    this.outputDirectoryProvider = outputDirectoryProvider;
+  }
 
   @Override
-  public Void handlePreviousNativeSession(String sessionId) throws IOException {
+  public Void processNativeSession(
+      CrashlyticsNativeComponent nativeComponent,
+      String sessionId,
+      InputStream keysInput,
+      InputStream logsInput,
+      InputStream userInput)
+      throws IOException {
     Logger.getLogger().d("Finalizing native report for session " + sessionId);
     NativeSessionFileProvider nativeSessionFileProvider =
         nativeComponent.getSessionFileProvider(sessionId);
@@ -53,24 +69,15 @@ class GzipFileNativeSessionHandler implements NativeComponentSessionHandler<Void
       return null;
     }
 
-    final File filesDir = fileStore.getFilesDir();
-    final MetaDataStore metaDataStore = new MetaDataStore(filesDir);
-    final File sessionUser = metaDataStore.getUserDataFileForSession(sessionId);
-    final File sessionKeys = metaDataStore.getKeysFileForSession(sessionId);
-
-    final LogFileManager previousSessionLogManager =
-        new LogFileManager(getContext(), logFileDirectoryProvider, sessionId);
-    final byte[] logs = previousSessionLogManager.getBytesForLog();
-
-    final File nativeSessionDirectory = new File(getNativeSessionFilesDir(), sessionId);
+    final File nativeSessionDirectory = outputDirectoryProvider.getOutputDirectory(sessionId);
 
     if (!nativeSessionDirectory.mkdirs()) {
       Logger.getLogger().d("Couldn't create native sessions directory");
-      return;
+      return null;
     }
 
     gzipFile(minidump, new File(nativeSessionDirectory, "minidump"));
-    gzipIfNotEmpty(
+    gzipBytes(
         NativeFileUtils.binaryImagesJsonFromMapsFile(binaryImages, context),
         new File(nativeSessionDirectory, "binaryImages"));
     gzipFile(metadata, new File(nativeSessionDirectory, "metadata"));
@@ -78,49 +85,55 @@ class GzipFileNativeSessionHandler implements NativeComponentSessionHandler<Void
     gzipFile(sessionApp, new File(nativeSessionDirectory, "app"));
     gzipFile(sessionDevice, new File(nativeSessionDirectory, "device"));
     gzipFile(sessionOs, new File(nativeSessionDirectory, "os"));
-    gzipFile(sessionUser, new File(nativeSessionDirectory, "user"));
-    gzipFile(sessionKeys, new File(nativeSessionDirectory, "keys"));
-    gzipIfNotEmpty(logs, new File(nativeSessionDirectory, "logs"));
+    gzipInputStream(userInput, new File(nativeSessionDirectory, "user"));
+    gzipInputStream(keysInput, new File(nativeSessionDirectory, "keys"));
+    gzipInputStream(logsInput, new File(nativeSessionDirectory, "logs"));
 
     return null;
   }
 
-  private static void gzipFile(@NonNull File input, @NonNull File output) throws IOException {
-    if (!input.exists() || !input.isFile()) {
+  private static void gzipBytes(@Nullable byte[] bytes, @NonNull File outputFile)
+      throws IOException {
+    if (bytes == null || bytes.length == 0) {
+      return;
+    }
+    ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
+    try {
+      gzipInputStream(bis, outputFile);
+    } finally {
+      CommonUtils.closeQuietly(bis);
+    }
+  }
+
+  private static void gzipFile(@Nullable File input, @NonNull File outputFile) throws IOException {
+    if (input == null) {
+      return;
+    }
+    FileInputStream fis = null;
+    try {
+      fis = new FileInputStream(input);
+      gzipInputStream(fis, outputFile);
+    } finally {
+      CommonUtils.closeQuietly(fis);
+    }
+  }
+
+  private static void gzipInputStream(@Nullable InputStream input, @NonNull File output)
+      throws IOException {
+    if (input == null) {
       return;
     }
     byte[] buffer = new byte[1024];
-    FileInputStream fis = null;
     GZIPOutputStream gos = null;
     try {
-      fis = new FileInputStream(input);
       gos = new GZIPOutputStream(new FileOutputStream(output));
 
       int read;
 
-      while ((read = fis.read(buffer)) > 0) {
+      while ((read = input.read(buffer)) > 0) {
         gos.write(buffer, 0, read);
       }
 
-      gos.finish();
-    } finally {
-      CommonUtils.closeQuietly(fis);
-      CommonUtils.closeQuietly(gos);
-    }
-  }
-
-  private static void gzipIfNotEmpty(@Nullable byte[] content, @NonNull File path)
-      throws IOException {
-    if (content != null && content.length > 0) {
-      gzip(content, path);
-    }
-  }
-
-  private static void gzip(@NonNull byte[] bytes, @NonNull File path) throws IOException {
-    GZIPOutputStream gos = null;
-    try {
-      gos = new GZIPOutputStream(new FileOutputStream(path));
-      gos.write(bytes, 0, bytes.length);
       gos.finish();
     } finally {
       CommonUtils.closeQuietly(gos);

@@ -14,8 +14,21 @@
 
 package com.google.firebase.crashlytics.internal.common;
 
+import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import java.io.IOException;
+import java.io.InputStream;
 
-interface NativeComponentSessionHandler<T> {
-  T handlePreviousNativeSession(String sessionId) throws IOException;
+/**
+ * Strategy for processing session data from the {@link CrashlyticsNativeComponent}
+ *
+ * @param <T> processed session output type
+ */
+interface NativeSessionProcessingStrategy<T> {
+  T processNativeSession(
+      CrashlyticsNativeComponent nativeComponent,
+      String sessionId,
+      InputStream keysInput,
+      InputStream logsInput,
+      InputStream userInput)
+      throws IOException;
 }
