@@ -83,26 +83,14 @@ public class GenerateMeasurementsTask extends DefaultTask {
         def variants = project.android.applicationVariants
 
         // Check if we need to run human-readable table or JSON upload mode.
-        if (project.hasProperty("pull_request")) {
-            def pullRequestNumber = project.properties["pull_request"]
-            generateJson(pullRequestNumber, variants)
-        } else {
-            generateTable(variants)
-        }
+        generateJson(variants)
     }
 
-    private def generateJson(pullRequestNumber, variants) {
+    private def generateJson(variants) {
         def sdkMap = createSdkMap()
-        def builder = new ApkSizeJsonBuilder(pullRequestNumber)
+        def builder = new ApkSizeJsonBuilder()
         def variantProcessor = {projectName, buildType, apkSize ->
-            def name = "$projectName-$buildType"
-            def sdkId = sdkMap[name]
-
-            if (sdkId == null) {
-                throw new IllegalStateException("$name not included in SDK map")
-            }
-
-            builder.addApkSize(sdkId, apkSize)
+            builder.addApkSize(projectName, buildType, apkSize)
         }
 
         calculateSizes(variants, variantProcessor)
