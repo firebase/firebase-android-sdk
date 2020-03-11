@@ -1,4 +1,4 @@
-// Copyright 2019 Google LLC
+// Copyright 2020 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,6 +22,21 @@
 #endif
 
 #include <dlfcn.h>
+#include <android/log.h>
+
+namespace firebase::crashlytics {
+    void Initialize(JNIEnv *jni_env);
+    void Terminate();
+
+    void Log(const char *msg);
+    void SetCustomKey(const char *key, bool value);
+    void SetCustomKey(const char *key, const char *value);
+    void SetCustomKey(const char *key, double value);
+    void SetCustomKey(const char *key, float value);
+    void SetCustomKey(const char *key, int value);
+    void SetCustomKey(const char *key, long value);
+    void SetUserId(const char *id);
+};
 
 // THIS IS THE LEGACY PUBLIC C++ API FOR THE FABRIC CRASHLYTICS NDK, INTENDED FOR BACKWARDS
 // COMPATIBILITY ONLY. THIS API IS DEPRECATED AND SCHEDULED FOR REPLACEMENT IN 2020.
@@ -91,6 +106,70 @@ struct  __crashlytics_context {
 
 static inline crashlytics_context_t* crashlytics_init()                                   __CRASHLYTICS_DECORATED;
 static inline void                   crashlytics_free(crashlytics_context_t** context)    __CRASHLYTICS_DECORATED;
+
+
+namespace firebase::crashlytics {
+    crashlytics_context_t *context;
+
+    bool VerifyCrashlytics() {
+        if (context) {
+            return true;
+        }
+        __android_log_print(ANDROID_LOG_ERROR, "FirebaseCrashlytics",
+                            "Could not use Crashlytics NDK interface; Crashlytics not initialized.");
+        return false;
+    }
+
+    void Initialize(JNIEnv *jni_env) {
+        context = crashlytics_init();
+        VerifyCrashlytics();
+    }
+
+    void Terminate() {
+        if (VerifyCrashlytics()) {
+            crashlytics_free(&context);
+        }
+    }
+
+    void Log(const char *msg) {
+        if (VerifyCrashlytics()) {
+            context->log(context, msg);
+        }
+    }
+
+    void SetCustomKey(const char *key, const char *value) {
+        if (VerifyCrashlytics()) {
+            context->set(context, key, value);
+        }
+    }
+
+    void SetCustomKey(const char *key, bool value) {
+        SetCustomKey(key, value ? "true" : "false");
+    }
+
+    void SetCustomKey(const char *key, double value) {
+        SetCustomKey(key, std::to_string(value).c_str());
+    }
+
+    void SetCustomKey(const char *key, float value) {
+        SetCustomKey(key, std::to_string(value).c_str());
+    }
+
+    void SetCustomKey(const char *key, int value) {
+        SetCustomKey(key, std::to_string(value).c_str());
+    }
+
+    void SetCustomKey(const char *key, long value) {
+        SetCustomKey(key, std::to_string(value).c_str());
+    }
+
+    void SetUserId(const char *id) {
+        if (VerifyCrashlytics()) {
+            context->set_user_id(context, id);
+        }
+    }
+};
+
 
 /*! Implementation ---------------------------------------------------------------------------------------------*/
 
