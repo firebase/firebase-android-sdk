@@ -32,7 +32,15 @@ public interface FirebaseInstallationsApi {
   @NonNull
   Task<String> getId();
 
-  /** Async function that returns a auth token(public key) of this Firebase app installation. */
+  /**
+   * Async function that returns a auth token(public key) of this Firebase app installation.
+   *
+   * @param forceRefresh If set to TRUE this method will trigger a server request to generate new
+   *     AuthToken every time when called. Otherwise it will return a locally cached token if
+   *     available and valid. It is strongly recommended to set this field to FALSE unless a
+   *     previously returned token turned out to be expired (which in itself is an indicator for
+   *     time synchronization issues).
+   */
   @NonNull
   Task<InstallationTokenResult> getToken(boolean forceRefresh);
 
