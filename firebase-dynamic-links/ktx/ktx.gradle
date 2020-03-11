@@ -19,7 +19,7 @@ plugins {
 
 firebaseLibrary {
     releaseWith project(':firebase-dynamic-links')
-    publishJavadoc = false
+    publishJavadoc = true
     publishSources = true
 }
 
