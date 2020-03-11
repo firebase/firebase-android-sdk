@@ -19,7 +19,7 @@ plugins {
 
 firebaseLibrary {
     releaseWith project(':firebase-inappmessaging-display')
-    publishJavadoc = false
+    publishJavadoc = true
     publishSources = true
 }
 
