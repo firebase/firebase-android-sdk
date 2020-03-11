@@ -146,7 +146,8 @@ class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
     gzipFile(sessionUser, new File(nativeSessionDirectory, "user"));
     gzipFile(sessionKeys, new File(nativeSessionDirectory, "keys"));
     gzipIfNotEmpty(logs, new File(nativeSessionDirectory, "logs"));*/
-    final FilesPayload.File minidump = FilesPayload.File.builder().setFilename("minidump_file").setContents(new byte[0]).build();
+    final FilesPayload.File minidump =
+        FilesPayload.File.builder().setFilename("minidump_file").setContents(new byte[0]).build();
   }
 
   public void persistUserId() {
