@@ -48,6 +48,7 @@ public class ReportUploader {
   private final CreateReportSpiCall createReportCall;
   private final String organizationId;
   private final String googleAppId;
+  private final boolean isUsingReportsEndpoint;
   private final ReportManager reportManager;
   private final HandlingExceptionCheck handlingExceptionCheck;
   private Thread uploadThread;
@@ -55,6 +56,7 @@ public class ReportUploader {
   public ReportUploader(
       String organizationId,
       String googleAppId,
+      boolean isUsingReportsEndpoint,
       ReportManager reportManager,
       CreateReportSpiCall createReportCall,
       HandlingExceptionCheck handlingExceptionCheck) {
@@ -64,6 +66,7 @@ public class ReportUploader {
     this.createReportCall = createReportCall;
     this.organizationId = organizationId;
     this.googleAppId = googleAppId;
+    this.isUsingReportsEndpoint = isUsingReportsEndpoint;
     this.reportManager = reportManager;
     this.handlingExceptionCheck = handlingExceptionCheck;
   }
@@ -71,7 +74,7 @@ public class ReportUploader {
   public synchronized void uploadReportsAsync(
       List<Report> reports, boolean dataCollectionToken, float delay) {
     if (uploadThread != null) {
-      Logger.getLogger().d(Logger.TAG, "Report upload has already been started.");
+      Logger.getLogger().d("Report upload has already been started.");
       return;
     }
 
@@ -96,21 +99,29 @@ public class ReportUploader {
       final CreateReportRequest requestData =
           new CreateReportRequest(organizationId, googleAppId, report);
 
-      final boolean sent = createReportCall.invoke(requestData, dataCollectionToken);
+      boolean shouldDeleteReport;
+      // For now, send native reports to reports endpoint regardless of the setting.
+      // TODO: Remove report type check once all reports can be sent through DataTransport
+      if (isUsingReportsEndpoint || report.getType() == Report.Type.NATIVE) {
+        final boolean sent = createReportCall.invoke(requestData, dataCollectionToken);
 
-      Logger.getLogger()
-          .i(
-              Logger.TAG,
-              "Crashlytics report upload "
-                  + (sent ? "complete: " : "FAILED: ")
-                  + report.getIdentifier());
+        Logger.getLogger()
+            .i(
+                "Crashlytics report upload "
+                    + (sent ? "complete: " : "FAILED: ")
+                    + report.getIdentifier());
+        shouldDeleteReport = sent;
+      } else {
+        Logger.getLogger().d("Send to reports endpoint disabled. Removing report.");
+        shouldDeleteReport = true;
+      }
 
-      if (sent) {
+      if (shouldDeleteReport) {
         reportManager.deleteReport(report);
         removed = true;
       }
     } catch (Exception e) {
-      Logger.getLogger().e(Logger.TAG, "Error occurred sending report " + report, e);
+      Logger.getLogger().e("Error occurred sending report " + report, e);
     }
     return removed;
   }
@@ -132,16 +143,13 @@ public class ReportUploader {
         attemptUploadWithRetry(reports, dataCollectionToken);
       } catch (Exception e) {
         Logger.getLogger()
-            .e(
-                Logger.TAG,
-                "An unexpected error occurred while attempting to upload crash reports.",
-                e);
+            .e("An unexpected error occurred while attempting to upload crash reports.", e);
       }
       uploadThread = null;
     }
 
     private void attemptUploadWithRetry(List<Report> reports, boolean dataCollectionToken) {
-      Logger.getLogger().d(Logger.TAG, "Starting report processing in " + delay + " second(s)...");
+      Logger.getLogger().d("Starting report processing in " + delay + " second(s)...");
 
       if (delay > 0) {
         try {
@@ -174,7 +182,7 @@ public class ReportUploader {
           return;
         }
 
-        Logger.getLogger().d(Logger.TAG, "Attempting to send " + reports.size() + " report(s)");
+        Logger.getLogger().d("Attempting to send " + reports.size() + " report(s)");
         ArrayList<Report> remaining = new ArrayList<>();
         for (Report report : reports) {
           boolean removed = uploadReport(report, dataCollectionToken);
@@ -186,9 +194,7 @@ public class ReportUploader {
         if (reports.size() > 0) {
           final long interval = RETRY_INTERVALS[Math.min(retryCount++, RETRY_INTERVALS.length - 1)];
           Logger.getLogger()
-              .d(
-                  Logger.TAG,
-                  "Report submission: scheduling delayed retry in " + interval + " seconds");
+              .d("Report submission: scheduling delayed retry in " + interval + " seconds");
           try {
             Thread.sleep(interval * 1000);
           } catch (InterruptedException e) {

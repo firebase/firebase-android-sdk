@@ -45,7 +45,7 @@ public class CachedSettingsIo {
    *     cached data could be found, or an error occurred.
    */
   public JSONObject readCachedSettings() {
-    Logger.getLogger().d(Logger.TAG, "Reading cached settings...");
+    Logger.getLogger().d("Reading cached settings...");
 
     FileInputStream fis = null;
     JSONObject toReturn = null;
@@ -59,10 +59,10 @@ public class CachedSettingsIo {
 
         toReturn = new JSONObject(settingsStr);
       } else {
-        Logger.getLogger().d(Logger.TAG, "No cached settings found.");
+        Logger.getLogger().d("No cached settings found.");
       }
     } catch (Exception e) {
-      Logger.getLogger().e(Logger.TAG, "Failed to fetch cached settings", e);
+      Logger.getLogger().e("Failed to fetch cached settings", e);
     } finally {
       CommonUtils.closeOrLog(fis, "Error while closing settings cache file.");
     }
@@ -78,7 +78,7 @@ public class CachedSettingsIo {
    * @param settingsJson JSON data to write to the cache
    */
   public void writeCachedSettings(long expiresAtMillis, JSONObject settingsJson) {
-    Logger.getLogger().d(Logger.TAG, "Writing settings to cache file...");
+    Logger.getLogger().d("Writing settings to cache file...");
 
     if (settingsJson != null) {
       FileWriter writer = null;
@@ -90,7 +90,7 @@ public class CachedSettingsIo {
         writer.write(settingsJson.toString());
         writer.flush();
       } catch (Exception e) {
-        Logger.getLogger().e(Logger.TAG, "Failed to cache settings", e);
+        Logger.getLogger().e("Failed to cache settings", e);
       } finally {
         CommonUtils.closeOrLog(writer, "Failed to close settings writer.");
       }

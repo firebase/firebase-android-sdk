@@ -142,6 +142,14 @@ public final class GetterFactory {
                 genericType, ownerType));
         return genericType;
       }
+      if (ownerType.getTypeArguments().get(index) instanceof TypeVariable) {
+        messager.printMessage(
+            Diagnostic.Kind.WARNING,
+            String.format(
+                "%s is a generic type, make sure you register encoders for types of %s that you plan to use.",
+                ownerType, genericType));
+        return genericType;
+      }
       return resolveTypeArguments(ownerType, ownerType.getTypeArguments().get(index));
     }
     return genericType;

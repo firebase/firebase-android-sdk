@@ -15,7 +15,6 @@
 package com.google.firebase.crashlytics.internal.common;
 
 import com.google.firebase.crashlytics.FirebaseCrashlytics;
-import com.google.firebase.crashlytics.core.CrashlyticsCore;
 import com.google.firebase.crashlytics.internal.network.HttpMethod;
 import com.google.firebase.crashlytics.internal.network.HttpRequest;
 import com.google.firebase.crashlytics.internal.network.HttpRequestFactory;

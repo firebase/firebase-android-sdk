@@ -27,6 +27,7 @@ import dagger.Component;
       // Test modules
       TestApiClientModule.class,
       TestEngagementMetricsLoggerClientModule.class,
+      TestAbTestingModule.class,
 
       // Real modules
       GrpcClientModule.class

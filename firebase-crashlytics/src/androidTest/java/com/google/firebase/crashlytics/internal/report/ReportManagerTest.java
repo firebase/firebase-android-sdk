@@ -14,8 +14,8 @@
 
 package com.google.firebase.crashlytics.internal.report;
 
-import com.google.firebase.crashlytics.core.TestReportFilesProvider;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
+import com.google.firebase.crashlytics.internal.common.TestReportFilesProvider;
 import com.google.firebase.crashlytics.internal.report.model.Report;
 import java.io.IOException;
 import java.util.List;

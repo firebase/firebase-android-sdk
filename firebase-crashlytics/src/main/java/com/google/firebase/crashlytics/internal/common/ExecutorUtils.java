@@ -83,13 +83,11 @@ public final class ExecutorUtils {
                   @Override
                   public void onRun() {
                     try {
-                      Logger.getLogger()
-                          .d(Logger.TAG, "Executing shutdown hook for " + serviceName);
+                      Logger.getLogger().d("Executing shutdown hook for " + serviceName);
                       service.shutdown();
                       if (!service.awaitTermination(terminationTimeout, timeUnit)) {
                         Logger.getLogger()
                             .d(
-                                Logger.TAG,
                                 serviceName
                                     + " did not shut down in the"
                                     + " allocated time. Requesting immediate shutdown.");
@@ -98,7 +96,6 @@ public final class ExecutorUtils {
                     } catch (InterruptedException e) {
                       Logger.getLogger()
                           .d(
-                              Logger.TAG,
                               String.format(
                                   Locale.US,
                                   "Interrupted while waiting for %s to shut down."

@@ -29,13 +29,13 @@ import android.database.sqlite.SQLiteStatement;
 import android.database.sqlite.SQLiteTransactionListener;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
-import com.google.common.base.Function;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.util.Consumer;
 import com.google.firebase.firestore.util.FileUtil;
+import com.google.firebase.firestore.util.Function;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Supplier;
 import java.io.File;
@@ -108,7 +108,10 @@ public final class SQLitePersistence extends Persistence {
       DatabaseId databaseId,
       LocalSerializer serializer,
       LruGarbageCollector.Params params) {
-    this(serializer, params, new OpenHelper(context, databaseName(persistenceKey, databaseId)));
+    this(
+        serializer,
+        params,
+        new OpenHelper(context, serializer, databaseName(persistenceKey, databaseId)));
   }
 
   public SQLitePersistence(
@@ -274,10 +277,12 @@ public final class SQLitePersistence extends Persistence {
    */
   private static class OpenHelper extends SQLiteOpenHelper {
 
+    private final LocalSerializer serializer;
     private boolean configured;
 
-    OpenHelper(Context context, String databaseName) {
+    OpenHelper(Context context, LocalSerializer serializer, String databaseName) {
       super(context, databaseName, null, SQLiteSchema.VERSION);
+      this.serializer = serializer;
     }
 
     @Override
@@ -303,13 +308,13 @@ public final class SQLitePersistence extends Persistence {
     @Override
     public void onCreate(SQLiteDatabase db) {
       ensureConfigured(db);
-      new SQLiteSchema(db).runMigrations(0);
+      new SQLiteSchema(db, serializer).runMigrations(0);
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
       ensureConfigured(db);
-      new SQLiteSchema(db).runMigrations(oldVersion);
+      new SQLiteSchema(db, serializer).runMigrations(oldVersion);
     }
 
     @Override

@@ -19,4 +19,7 @@ import java.io.File;
 public interface FileStore {
   /** @return Directory to store internal files. */
   File getFilesDir();
+
+  /** @return Pathname string for the directory to store internal files. */
+  String getFilesDirPath();
 }

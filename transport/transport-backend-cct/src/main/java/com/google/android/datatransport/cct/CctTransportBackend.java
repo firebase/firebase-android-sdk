@@ -182,7 +182,7 @@ final class CctTransportBackend implements TransportBackend {
               .setRequestUptimeMs(uptimeClock.getTime())
               .setClientInfo(
                   ClientInfo.builder()
-                      .setClientType(ClientInfo.ClientType.ANDROID)
+                      .setClientType(ClientInfo.ClientType.ANDROID_FIREBASE)
                       .setAndroidClientInfo(
                           AndroidClientInfo.builder()
                               .setSdkVersion(firstEvent.getInteger(KEY_SDK_VERSION))

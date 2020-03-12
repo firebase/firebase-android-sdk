@@ -15,6 +15,7 @@
 package com.google.firebase.inappmessaging.internal;
 
 import com.google.firebase.inappmessaging.internal.injection.qualifiers.ImpressionStore;
+import com.google.internal.firebase.inappmessaging.v1.CampaignProto;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.CampaignImpression;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.CampaignImpressionList;
 import io.reactivex.Completable;
@@ -84,7 +85,11 @@ public class ImpressionStorageClient {
   }
 
   /** Returns {@code Single.just(true)} if the campaign has been impressed */
-  public Single<Boolean> isImpressed(String campaignId) {
+  public Single<Boolean> isImpressed(CampaignProto.ThickContent content) {
+    String campaignId =
+        content.getPayloadCase().equals(CampaignProto.ThickContent.PayloadCase.VANILLA_PAYLOAD)
+            ? content.getVanillaPayload().getCampaignId()
+            : content.getExperimentalPayload().getCampaignId();
     return getAllImpressions()
         .map(CampaignImpressionList::getAlreadySeenCampaignsList)
         .flatMapObservable(Observable::fromIterable)

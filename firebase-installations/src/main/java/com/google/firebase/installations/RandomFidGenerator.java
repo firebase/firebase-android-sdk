@@ -19,6 +19,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.UUID;
 
+/** @hide */
 public class RandomFidGenerator {
   /**
    * 1 Byte with the first 4 header-bits set to the identifying FID prefix 0111 (0x7). Use this

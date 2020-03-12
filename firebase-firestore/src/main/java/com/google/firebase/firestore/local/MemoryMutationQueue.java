@@ -14,8 +14,8 @@
 
 package com.google.firebase.firestore.local;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
+import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 import static java.util.Collections.emptyList;
 
 import androidx.annotation.Nullable;

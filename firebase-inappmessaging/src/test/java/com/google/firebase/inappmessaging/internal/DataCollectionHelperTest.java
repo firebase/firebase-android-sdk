@@ -15,7 +15,6 @@
 package com.google.firebase.inappmessaging.internal;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -28,7 +27,6 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.events.Event;
 import com.google.firebase.events.EventHandler;
 import com.google.firebase.events.Subscriber;
-import com.google.firebase.iid.FirebaseInstanceId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
@@ -46,7 +44,6 @@ public final class DataCollectionHelperTest {
 
   @Mock private Application application;
   @Mock private FirebaseApp firebaseApp;
-  @Mock private FirebaseInstanceId firebaseInstanceId;
   @Mock private SharedPreferencesUtils sharedPreferencesUtils;
 
   @Mock private Subscriber subscriber;
@@ -56,8 +53,6 @@ public final class DataCollectionHelperTest {
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
-    when(firebaseInstanceId.getToken()).thenReturn("token");
-    when(firebaseInstanceId.getId()).thenReturn("id");
   }
 
   @Test
@@ -69,11 +64,9 @@ public final class DataCollectionHelperTest {
         .thenReturn(false);
     when(firebaseApp.isDataCollectionDefaultEnabled()).thenReturn(true);
     dataCollectionHelper =
-        new DataCollectionHelper(
-            firebaseApp, sharedPreferencesUtils, firebaseInstanceId, subscriber);
+        new DataCollectionHelper(firebaseApp, sharedPreferencesUtils, subscriber);
 
     assertThat(dataCollectionHelper.isAutomaticDataCollectionEnabled()).isTrue();
-    verify(firebaseInstanceId, atLeastOnce()).getToken();
   }
 
   @Test
@@ -86,8 +79,7 @@ public final class DataCollectionHelperTest {
     when(firebaseApp.isDataCollectionDefaultEnabled()).thenReturn(true);
 
     dataCollectionHelper =
-        new DataCollectionHelper(
-            firebaseApp, sharedPreferencesUtils, firebaseInstanceId, subscriber);
+        new DataCollectionHelper(firebaseApp, sharedPreferencesUtils, subscriber);
     dataCollectionHelper.setAutomaticDataCollectionEnabled(false);
     verify(sharedPreferencesUtils, times(1))
         .setBooleanPreference(DataCollectionHelper.AUTO_INIT_PREFERENCES, false);
@@ -106,10 +98,8 @@ public final class DataCollectionHelperTest {
     when(firebaseApp.isDataCollectionDefaultEnabled()).thenReturn(true);
 
     dataCollectionHelper =
-        new DataCollectionHelper(
-            firebaseApp, sharedPreferencesUtils, firebaseInstanceId, subscriber);
+        new DataCollectionHelper(firebaseApp, sharedPreferencesUtils, subscriber);
     assertThat(dataCollectionHelper.isAutomaticDataCollectionEnabled()).isFalse();
-    verify(firebaseInstanceId, times(0)).getToken();
   }
 
   @Test
@@ -124,11 +114,9 @@ public final class DataCollectionHelperTest {
         .thenReturn(true);
 
     dataCollectionHelper =
-        new DataCollectionHelper(
-            firebaseApp, sharedPreferencesUtils, firebaseInstanceId, subscriber);
+        new DataCollectionHelper(firebaseApp, sharedPreferencesUtils, subscriber);
 
     assertThat(dataCollectionHelper.isAutomaticDataCollectionEnabled()).isTrue();
-    verify(firebaseInstanceId, times(1)).getToken();
     verify(sharedPreferencesUtils, never())
         .isManifestSet(DataCollectionHelper.MANIFEST_METADATA_AUTO_INIT_ENABLED);
     verify(sharedPreferencesUtils, never())
@@ -152,8 +140,7 @@ public final class DataCollectionHelperTest {
 
     // Case 1:
     dataCollectionHelper =
-        new DataCollectionHelper(
-            firebaseApp, sharedPreferencesUtils, firebaseInstanceId, subscriber);
+        new DataCollectionHelper(firebaseApp, sharedPreferencesUtils, subscriber);
     assertThat(dataCollectionHelper.isAutomaticDataCollectionEnabled()).isFalse();
 
     verify(sharedPreferencesUtils, never())
@@ -172,8 +159,7 @@ public final class DataCollectionHelperTest {
         .thenReturn(false);
     when(firebaseApp.isDataCollectionDefaultEnabled()).thenReturn(true);
     dataCollectionHelper =
-        new DataCollectionHelper(
-            firebaseApp, sharedPreferencesUtils, firebaseInstanceId, subscriber);
+        new DataCollectionHelper(firebaseApp, sharedPreferencesUtils, subscriber);
 
     assertThat(dataCollectionHelper.isAutomaticDataCollectionEnabled()).isFalse();
     verify(sharedPreferencesUtils, never())
@@ -192,8 +178,7 @@ public final class DataCollectionHelperTest {
     when(firebaseApp.isDataCollectionDefaultEnabled()).thenReturn(false);
 
     dataCollectionHelper =
-        new DataCollectionHelper(
-            firebaseApp, sharedPreferencesUtils, firebaseInstanceId, subscriber);
+        new DataCollectionHelper(firebaseApp, sharedPreferencesUtils, subscriber);
 
     assertThat(dataCollectionHelper.isAutomaticDataCollectionEnabled()).isFalse();
     verify(sharedPreferencesUtils, never())
@@ -218,10 +203,7 @@ public final class DataCollectionHelperTest {
     TestFirebaseEventSubscriber testFirebaseEventSubscriber = new TestFirebaseEventSubscriber();
 
     dataCollectionHelper =
-        new DataCollectionHelper(
-            firebaseApp, sharedPreferencesUtils, firebaseInstanceId, testFirebaseEventSubscriber);
-    verify(firebaseInstanceId, times(0)).getToken();
-
+        new DataCollectionHelper(firebaseApp, sharedPreferencesUtils, testFirebaseEventSubscriber);
     // Now let's turn on the global flag:
 
     assertThat(testFirebaseEventSubscriber.dataCollectionHandlers.size()).isEqualTo(1);

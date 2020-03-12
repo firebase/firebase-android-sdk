@@ -18,7 +18,6 @@ import android.text.TextUtils;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.abt.FirebaseABTesting.OriginService;
 import com.google.firebase.analytics.connector.AnalyticsConnector.ConditionalUserProperty;
-import developers.mobile.abt.FirebaseAbt;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -128,8 +127,7 @@ public class AbtExperimentInfo {
   private final long timeToLiveInMillis;
 
   /** Creates an instance of {@link AbtExperimentInfo} with all the required keys. */
-  @VisibleForTesting
-  AbtExperimentInfo(
+  public AbtExperimentInfo(
       String experimentId,
       String variantId,
       String triggerEventName,
@@ -238,6 +236,10 @@ public class AbtExperimentInfo {
     }
   }
 
+  static void validateAbtExperimentInfo(AbtExperimentInfo experimentInfo) throws AbtException {
+    validateExperimentInfoMap(experimentInfo.toStringMap());
+  }
+
   /**
    * Used for testing {@code FirebaseABTesting#replaceAllExperiments(List)} without leaking the
    * implementation details of this class.
@@ -304,20 +306,5 @@ public class AbtExperimentInfo {
         new Date(conditionalUserProperty.creationTimestamp),
         conditionalUserProperty.triggerTimeout,
         conditionalUserProperty.timeToLive);
-  }
-
-  /**
-   * Converts a {@link developers.mobile.abt.FirebaseAbt.ExperimentPayload} to an {@link
-   * AbtExperimentInfo}. Does not do any validation due to proto limitations.
-   */
-  public static AbtExperimentInfo fromExperimentPayload(
-      FirebaseAbt.ExperimentPayload experimentPayload) {
-    return new AbtExperimentInfo(
-        experimentPayload.getExperimentId(),
-        experimentPayload.getVariantId(),
-        experimentPayload.getTriggerEvent(),
-        new Date(experimentPayload.getExperimentStartTimeMillis()),
-        experimentPayload.getTriggerTimeoutMillis(),
-        experimentPayload.getTimeToLiveMillis());
   }
 }

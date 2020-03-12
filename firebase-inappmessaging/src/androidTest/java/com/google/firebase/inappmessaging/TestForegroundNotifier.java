@@ -14,25 +14,27 @@
 
 package com.google.firebase.inappmessaging;
 
+import static com.google.firebase.inappmessaging.internal.InAppMessageStreamManager.ON_FOREGROUND;
+
 import android.app.Activity;
 import android.os.Bundle;
 import com.google.firebase.inappmessaging.internal.ForegroundNotifier;
+import io.reactivex.BackpressureStrategy;
+import io.reactivex.flowables.ConnectableFlowable;
+import io.reactivex.subjects.BehaviorSubject;
 
 public class TestForegroundNotifier extends ForegroundNotifier {
 
-  private Listener listener;
+  private final BehaviorSubject<String> foregroundSubject = BehaviorSubject.create();
+
+  @Override
+  public ConnectableFlowable<String> foregroundFlowable() {
+    return foregroundSubject.toFlowable(BackpressureStrategy.BUFFER).publish();
+  }
 
   public void notifyForeground() {
-    listener.onForeground();
+    foregroundSubject.onNext(ON_FOREGROUND);
   }
-
-  @Override
-  public void setListener(Listener listener) {
-    this.listener = listener;
-  }
-
-  @Override
-  public void removeListener(Listener listener) {}
 
   @Override
   public void onActivityResumed(Activity activity) {}

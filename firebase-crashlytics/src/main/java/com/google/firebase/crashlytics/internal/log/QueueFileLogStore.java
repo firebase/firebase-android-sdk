@@ -16,14 +16,16 @@ package com.google.firebase.crashlytics.internal.log;
 
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.common.CommonUtils;
-import com.google.firebase.crashlytics.internal.common.QueueFile;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.util.Locale;
 
 /** Class which manages the storage of log entries in a single QueueFile. */
 class QueueFileLogStore implements FileLogStore {
+
+  private static final Charset UTF_8 = Charset.forName("UTF-8");
 
   private final File workingFile;
   private final int maxLogSize;
@@ -62,6 +64,12 @@ class QueueFileLogStore implements FileLogStore {
     return rawBytes;
   }
 
+  @Override
+  public String getLogAsString() {
+    final byte[] logBytes = getLogAsBytes();
+    return (logBytes != null) ? new String(logBytes, UTF_8) : null;
+  }
+
   private LogBytes getLogBytes() {
     if (!workingFile.exists()) {
       return null;
@@ -96,8 +104,7 @@ class QueueFileLogStore implements FileLogStore {
             }
           });
     } catch (IOException e) {
-      Logger.getLogger()
-          .e(Logger.TAG, "A problem occurred while reading the Crashlytics log file.", e);
+      Logger.getLogger().e("A problem occurred while reading the Crashlytics log file.", e);
     }
 
     return new LogBytes(logBytes, offsetHolder[0]);
@@ -120,7 +127,7 @@ class QueueFileLogStore implements FileLogStore {
       try {
         logFile = new QueueFile(workingFile);
       } catch (IOException e) {
-        Logger.getLogger().e(Logger.TAG, "Could not open log file: " + workingFile, e);
+        Logger.getLogger().e("Could not open log file: " + workingFile, e);
       }
     }
   }
@@ -159,7 +166,7 @@ class QueueFileLogStore implements FileLogStore {
       msg = msg.replaceAll("\r", " ");
       msg = msg.replaceAll("\n", " ");
 
-      final byte[] msgBytes = String.format(Locale.US, "%d %s%n", timestamp, msg).getBytes("UTF-8");
+      final byte[] msgBytes = String.format(Locale.US, "%d %s%n", timestamp, msg).getBytes(UTF_8);
 
       logFile.add(msgBytes);
 
@@ -168,7 +175,7 @@ class QueueFileLogStore implements FileLogStore {
         logFile.remove();
       }
     } catch (IOException e) {
-      Logger.getLogger().e(Logger.TAG, "There was a problem writing to the Crashlytics log.", e);
+      Logger.getLogger().e("There was a problem writing to the Crashlytics log.", e);
     }
   }
 }

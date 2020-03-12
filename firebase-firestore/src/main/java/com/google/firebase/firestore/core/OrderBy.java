@@ -16,8 +16,9 @@ package com.google.firebase.firestore.core;
 
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.FieldPath;
-import com.google.firebase.firestore.model.value.FieldValue;
+import com.google.firebase.firestore.model.Values;
 import com.google.firebase.firestore.util.Assert;
+import com.google.firestore.v1.Value;
 
 /** Represents a sort order for a Firestore Query */
 public class OrderBy {
@@ -61,11 +62,11 @@ public class OrderBy {
     if (field.equals(FieldPath.KEY_PATH)) {
       return direction.getComparisonModifier() * d1.getKey().compareTo(d2.getKey());
     } else {
-      FieldValue v1 = d1.getField(field);
-      FieldValue v2 = d2.getField(field);
+      Value v1 = d1.getField(field);
+      Value v2 = d2.getField(field);
       Assert.hardAssert(
           v1 != null && v2 != null, "Trying to compare documents on fields that don't exist.");
-      return direction.getComparisonModifier() * v1.compareTo(v2);
+      return direction.getComparisonModifier() * Values.compare(v1, v2);
     }
   }
 

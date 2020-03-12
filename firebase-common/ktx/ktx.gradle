@@ -39,6 +39,7 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlinVersion"
 
     implementation project(':firebase-common')
+    implementation project(':firebase-components')
     implementation 'androidx.annotation:annotation:1.1.0'
 
     testImplementation "org.robolectric:robolectric:$robolectricVersion"

@@ -22,12 +22,14 @@ import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler
 import com.google.firebase.remoteconfig.internal.ConfigMetadataClient
 import java.util.concurrent.Executor
 import com.google.firebase.abt.FirebaseABTesting
+import com.google.firebase.iid.FirebaseInstanceId
 
 // This method is a workaround for testing. It enable us to create a FirebaseRemoteConfig object
 // with mocks using the package-private constructor.
 fun createRemoteConfig(
     context: Context?,
     firebaseApp: FirebaseApp,
+    firebaseInstanceId: FirebaseInstanceId,
     firebaseAbt: FirebaseABTesting?,
     executor: Executor,
     fetchedConfigsCache: ConfigCacheClient,
@@ -40,6 +42,7 @@ fun createRemoteConfig(
         return FirebaseRemoteConfig(
             context,
             firebaseApp,
+            firebaseInstanceId,
             firebaseAbt,
             executor,
             fetchedConfigsCache,

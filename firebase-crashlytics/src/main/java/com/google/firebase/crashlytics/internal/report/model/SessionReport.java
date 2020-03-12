@@ -63,7 +63,7 @@ public class SessionReport implements Report {
 
   @Override
   public void remove() {
-    Logger.getLogger().d(Logger.TAG, "Removing report at " + file.getPath());
+    Logger.getLogger().d("Removing report at " + file.getPath());
     file.delete();
   }
 

@@ -23,17 +23,15 @@ import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.NoDocument;
+import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.UnknownDocument;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
-import com.google.firebase.firestore.model.value.FieldValue;
-import com.google.firebase.firestore.model.value.ObjectValue;
 import com.google.firebase.firestore.remote.RemoteSerializer;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /** Serializer for values stored in the LocalStore. */
 public final class LocalSerializer {
@@ -55,12 +53,7 @@ public final class LocalSerializer {
       builder.setHasCommittedMutations(noDocument.hasCommittedMutations());
     } else if (document instanceof Document) {
       Document existingDocument = (Document) document;
-      // Use the memoized encoded form if it exists.
-      if (existingDocument.getProto() != null) {
-        builder.setDocument(existingDocument.getProto());
-      } else {
-        builder.setDocument(encodeDocument(existingDocument));
-      }
+      builder.setDocument(encodeDocument(existingDocument));
       builder.setHasCommittedMutations(existingDocument.hasCommittedMutations());
     } else if (document instanceof UnknownDocument) {
       builder.setUnknownDocument(encodeUnknownDocument((UnknownDocument) document));
@@ -97,12 +90,7 @@ public final class LocalSerializer {
     com.google.firestore.v1.Document.Builder builder =
         com.google.firestore.v1.Document.newBuilder();
     builder.setName(rpcSerializer.encodeKey(document.getKey()));
-
-    ObjectValue value = document.getData();
-    for (Map.Entry<String, FieldValue> entry : value.getInternalValue()) {
-      builder.putFields(entry.getKey(), rpcSerializer.encodeValue(entry.getValue()));
-    }
-
+    builder.putAllFields(document.getData().getFieldsMap());
     Timestamp updateTime = document.getVersion().getTimestamp();
     builder.setUpdateTime(rpcSerializer.encodeTimestamp(updateTime));
     return builder.build();
@@ -116,11 +104,10 @@ public final class LocalSerializer {
     return new Document(
         key,
         version,
+        ObjectValue.fromMap(document.getFieldsMap()),
         hasCommittedMutations
             ? Document.DocumentState.COMMITTED_MUTATIONS
-            : Document.DocumentState.SYNCED,
-        document,
-        rpcSerializer::decodeValue);
+            : Document.DocumentState.SYNCED);
   }
 
   /** Encodes a NoDocument value to the equivalent proto. */

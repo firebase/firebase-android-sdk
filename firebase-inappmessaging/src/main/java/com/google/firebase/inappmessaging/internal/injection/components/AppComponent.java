@@ -16,8 +16,8 @@ package com.google.firebase.inappmessaging.internal.injection.components;
 
 import com.google.android.datatransport.TransportFactory;
 import com.google.firebase.inappmessaging.FirebaseInAppMessaging;
+import com.google.firebase.inappmessaging.internal.AbtIntegrationHelper;
 import com.google.firebase.inappmessaging.internal.DisplayCallbacksFactory;
-import com.google.firebase.inappmessaging.internal.injection.modules.AbTestingModule;
 import com.google.firebase.inappmessaging.internal.injection.modules.ApiClientModule;
 import com.google.firebase.inappmessaging.internal.injection.modules.GrpcClientModule;
 import com.google.firebase.inappmessaging.internal.injection.modules.TransportClientModule;
@@ -34,12 +34,7 @@ import dagger.Component;
 @FirebaseAppScope
 @Component(
     dependencies = {UniversalComponent.class},
-    modules = {
-      ApiClientModule.class,
-      AbTestingModule.class,
-      GrpcClientModule.class,
-      TransportClientModule.class
-    })
+    modules = {ApiClientModule.class, GrpcClientModule.class, TransportClientModule.class})
 public interface AppComponent {
   FirebaseInAppMessaging providesFirebaseInAppMessaging();
 
@@ -47,7 +42,8 @@ public interface AppComponent {
 
   @Component.Builder
   interface Builder {
-    Builder abTestingModule(AbTestingModule module);
+    @BindsInstance
+    Builder abtIntegrationHelper(AbtIntegrationHelper integrationHelper);
 
     Builder apiClientModule(ApiClientModule module);
 

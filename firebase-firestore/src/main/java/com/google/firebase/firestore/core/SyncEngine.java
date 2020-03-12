@@ -21,8 +21,6 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
-import com.google.common.base.Function;
-import com.google.common.collect.Lists;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.FirebaseFirestoreException;
@@ -46,6 +44,7 @@ import com.google.firebase.firestore.remote.RemoteEvent;
 import com.google.firebase.firestore.remote.RemoteStore;
 import com.google.firebase.firestore.remote.TargetChange;
 import com.google.firebase.firestore.util.AsyncQueue;
+import com.google.firebase.firestore.util.Function;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Util;
 import io.grpc.Status;
@@ -354,17 +353,17 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     if (limboResolution != null && limboResolution.receivedDocument) {
       return DocumentKey.emptyKeySet().insert(limboResolution.key);
     } else {
-      List<DocumentKey> remoteKeys = Lists.newArrayList();
+      ImmutableSortedSet<DocumentKey> remoteKeys = DocumentKey.emptyKeySet();
       if (queriesByTarget.containsKey(targetId)) {
         for (Query query : queriesByTarget.get(targetId)) {
           if (queryViewsByQuery.containsKey(query)) {
-            remoteKeys.addAll(
-                Lists.newArrayList(queryViewsByQuery.get(query).getView().getSyncedDocuments()));
+            remoteKeys =
+                remoteKeys.unionWith(queryViewsByQuery.get(query).getView().getSyncedDocuments());
           }
         }
       }
 
-      return new ImmutableSortedSet(remoteKeys, DocumentKey.comparator());
+      return remoteKeys;
     }
   }
 
@@ -461,11 +460,11 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
       return;
     }
 
-    if (pendingWritesCallbacks.containsKey(largestPendingBatchId)) {
-      pendingWritesCallbacks.get(largestPendingBatchId).add(userTask);
-    } else {
-      pendingWritesCallbacks.put(largestPendingBatchId, Lists.newArrayList(userTask));
+    if (!pendingWritesCallbacks.containsKey(largestPendingBatchId)) {
+      pendingWritesCallbacks.put(largestPendingBatchId, new ArrayList());
     }
+
+    pendingWritesCallbacks.get(largestPendingBatchId).add(userTask);
   }
 
   /** Resolves tasks waiting for this batch id to get acknowledged by server, if there are any. */

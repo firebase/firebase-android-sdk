@@ -14,10 +14,18 @@
 
 package com.google.firebase.crashlytics.internal.log;
 
+import androidx.annotation.Nullable;
+
 interface FileLogStore {
   void writeToLog(long timestamp, String msg);
 
+  /** Get log file contents as bytes. Returns null if no data is available. */
+  @Nullable
   byte[] getLogAsBytes();
+
+  /** Get log file contents as a String. Returns null if no data is available. */
+  @Nullable
+  String getLogAsString();
 
   void closeLogFile();
 

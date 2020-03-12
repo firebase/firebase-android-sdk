@@ -16,7 +16,6 @@ package com.google.android.datatransport.cct.internal;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import com.google.firebase.encoders.EncodingException;
 import com.google.firebase.encoders.ObjectEncoder;
 import com.google.firebase.encoders.ObjectEncoderContext;
 import java.io.IOException;
@@ -27,7 +26,7 @@ public final class NetworkConnectionInfoEncoder
   public void encode(
       @Nullable AutoValue_NetworkConnectionInfo obj,
       @NonNull ObjectEncoderContext objectEncoderContext)
-      throws EncodingException, IOException {
+      throws IOException {
     if (obj.getMobileSubtype() != null) {
       objectEncoderContext.add("mobileSubtype", obj.getMobileSubtype().name());
     }

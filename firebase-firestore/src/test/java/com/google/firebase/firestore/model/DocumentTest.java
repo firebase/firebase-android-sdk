@@ -15,7 +15,6 @@
 package com.google.firebase.firestore.model;
 
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
-import static com.google.firebase.firestore.testutil.TestUtil.field;
 import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.testutil.TestUtil.version;
@@ -24,7 +23,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 
-import com.google.firebase.firestore.model.value.ObjectValue;
 import java.util.Map;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -39,27 +37,12 @@ public class DocumentTest {
   public void testInstantiation() {
     Document document =
         new Document(
-            key("messages/first"), version(1), Document.DocumentState.SYNCED, wrapObject("a", 1));
+            key("messages/first"), version(1), wrapObject("a", 1), Document.DocumentState.SYNCED);
 
     assertEquals(key("messages/first"), document.getKey());
     assertEquals(version(1), document.getVersion());
     assertEquals(wrapObject("a", 1), document.getData());
     assertFalse(document.hasLocalMutations());
-  }
-
-  @Test
-  public void testExtractFields() {
-    ObjectValue data =
-        wrapObject(
-            "desc",
-            "Discuss all the project related stuff",
-            "owner",
-            map("name", "Jonny", "title", "scallywag"));
-    Document document =
-        new Document(key("rooms/eros"), version(1), Document.DocumentState.SYNCED, data);
-
-    assertEquals("Discuss all the project related stuff", document.getFieldValue(field("desc")));
-    assertEquals("scallywag", document.getFieldValue(field("owner.title")));
   }
 
   @Test

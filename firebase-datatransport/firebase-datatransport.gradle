@@ -46,6 +46,7 @@ android {
 
 dependencies {
     implementation project(':firebase-common')
+    implementation project(':firebase-components')
     implementation project(':transport:transport-api')
     implementation project(':transport:transport-runtime')
     implementation project(':transport:transport-backend-cct')

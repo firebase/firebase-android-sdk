@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import com.google.firebase.encoders.EncodingException;
 import com.google.firebase.encoders.ObjectEncoder;
 import com.google.firebase.encoders.ObjectEncoderContext;
 import com.google.firebase.encoders.config.Configurator;
@@ -47,8 +46,7 @@ public final class AutoGenericsEncoder implements Configurator {
         static final GenericsEncoder INSTANCE = new GenericsEncoder();
 
         @Override
-        public void encode(Generics value, ObjectEncoderContext ctx) throws IOException,
-                EncodingException {
+        public void encode(Generics value, ObjectEncoderContext ctx) throws IOException {
             ctx.add("bar3", value.getBar3());
             ctx.add("bar4", value.getBar4());
             ctx.add("multi", value.getMulti());
@@ -59,7 +57,7 @@ public final class AutoGenericsEncoder implements Configurator {
         static final BarEncoder INSTANCE = new BarEncoder();
 
         @Override
-        public void encode(Bar value, ObjectEncoderContext ctx) throws IOException, EncodingException {
+        public void encode(Bar value, ObjectEncoderContext ctx) throws IOException {
             ctx.add("foo", value.getFoo());
         }
     }
@@ -68,7 +66,7 @@ public final class AutoGenericsEncoder implements Configurator {
         static final BazEncoder INSTANCE = new BazEncoder();
 
         @Override
-        public void encode(Baz value, ObjectEncoderContext ctx) throws IOException, EncodingException {
+        public void encode(Baz value, ObjectEncoderContext ctx) throws IOException {
             ctx.add("t", value.getT());
         }
     }
@@ -77,7 +75,7 @@ public final class AutoGenericsEncoder implements Configurator {
         static final FooEncoder INSTANCE = new FooEncoder();
 
         @Override
-        public void encode(Foo value, ObjectEncoderContext ctx) throws IOException, EncodingException {
+        public void encode(Foo value, ObjectEncoderContext ctx) throws IOException {
             ctx.add("t", value.getT());
         }
     }
@@ -86,8 +84,7 @@ public final class AutoGenericsEncoder implements Configurator {
         static final Member3Encoder INSTANCE = new Member3Encoder();
 
         @Override
-        public void encode(Member3 value, ObjectEncoderContext ctx) throws IOException,
-                EncodingException {
+        public void encode(Member3 value, ObjectEncoderContext ctx) throws IOException {
         }
     }
 
@@ -95,8 +92,7 @@ public final class AutoGenericsEncoder implements Configurator {
         static final Member4Encoder INSTANCE = new Member4Encoder();
 
         @Override
-        public void encode(Member4 value, ObjectEncoderContext ctx) throws IOException,
-                EncodingException {
+        public void encode(Member4 value, ObjectEncoderContext ctx) throws IOException {
         }
     }
 
@@ -104,8 +100,7 @@ public final class AutoGenericsEncoder implements Configurator {
         static final MultiEncoder INSTANCE = new MultiEncoder();
 
         @Override
-        public void encode(Multi value, ObjectEncoderContext ctx) throws IOException,
-                EncodingException {
+        public void encode(Multi value, ObjectEncoderContext ctx) throws IOException {
             ctx.add("fooT", value.getFooT());
             ctx.add("fooU", value.getFooU());
         }
@@ -115,8 +110,7 @@ public final class AutoGenericsEncoder implements Configurator {
         static final MemberEncoder INSTANCE = new MemberEncoder();
 
         @Override
-        public void encode(Member value, ObjectEncoderContext ctx) throws IOException,
-                EncodingException {
+        public void encode(Member value, ObjectEncoderContext ctx) throws IOException {
         }
     }
 
@@ -124,8 +118,7 @@ public final class AutoGenericsEncoder implements Configurator {
         static final Member2Encoder INSTANCE = new Member2Encoder();
 
         @Override
-        public void encode(Member2 value, ObjectEncoderContext ctx) throws IOException,
-                EncodingException {
+        public void encode(Member2 value, ObjectEncoderContext ctx) throws IOException {
         }
     }
 }

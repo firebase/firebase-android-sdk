@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import com.google.firebase.encoders.EncodingException;
 import com.google.firebase.encoders.ObjectEncoder;
 import com.google.firebase.encoders.ObjectEncoderContext;
 import com.google.firebase.encoders.config.Configurator;
@@ -39,7 +38,7 @@ public final class AutoSimpleClassEncoder implements Configurator {
 
     @Override
     public void encode(SimpleClass value, ObjectEncoderContext ctx)
-        throws IOException, EncodingException {
+        throws IOException {
       ctx.add("int", value.getInt());
       ctx.add("bool", value.isBool());
       ctx.add("map", value.getMap());

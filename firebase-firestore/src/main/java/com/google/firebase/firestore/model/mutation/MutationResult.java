@@ -14,11 +14,11 @@
 
 package com.google.firebase.firestore.model.mutation;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 
 import androidx.annotation.Nullable;
 import com.google.firebase.firestore.model.SnapshotVersion;
-import com.google.firebase.firestore.model.value.FieldValue;
+import com.google.firestore.v1.Value;
 import java.util.List;
 
 /**
@@ -31,9 +31,9 @@ import java.util.List;
  */
 public final class MutationResult {
   private final SnapshotVersion version;
-  @Nullable private final List<FieldValue> transformResults;
+  @Nullable private final List<Value> transformResults;
 
-  public MutationResult(SnapshotVersion version, @Nullable List<FieldValue> transformResults) {
+  public MutationResult(SnapshotVersion version, @Nullable List<Value> transformResults) {
     this.version = checkNotNull(version);
     this.transformResults = transformResults;
   }
@@ -56,12 +56,12 @@ public final class MutationResult {
 
   /**
    * The resulting fields returned from the backend after a TransformMutation has been committed.
-   * Contains one FieldValue for each FieldTransform that was in the mutation.
+   * Contains one Value for each FieldTransform that was in the mutation.
    *
    * <p>Will be null if the mutation was not a TransformMutation.
    */
   @Nullable
-  public List<FieldValue> getTransformResults() {
+  public List<Value> getTransformResults() {
     return transformResults;
   }
 }

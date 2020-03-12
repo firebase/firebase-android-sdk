@@ -20,11 +20,13 @@ import android.util.Log;
 public class Logger {
   public static final String TAG = "FirebaseCrashlytics";
 
-  static final Logger DEFAULT_LOGGER = new Logger();
+  static final Logger DEFAULT_LOGGER = new Logger(TAG);
 
+  private final String tag;
   private int logLevel;
 
-  public Logger() {
+  public Logger(String tag) {
+    this.tag = tag;
     this.logLevel = Log.INFO;
   }
 
@@ -33,66 +35,66 @@ public class Logger {
     return DEFAULT_LOGGER;
   }
 
-  public boolean isLoggable(String tag, int level) {
+  private boolean canLog(int level) {
     return logLevel <= level || Log.isLoggable(tag, level);
   }
 
-  public void d(String tag, String text, Throwable throwable) {
-    if (isLoggable(tag, Log.DEBUG)) {
+  public void d(String text, Throwable throwable) {
+    if (canLog(Log.DEBUG)) {
       Log.d(tag, text, throwable);
     }
   }
 
-  public void v(String tag, String text, Throwable throwable) {
-    if (isLoggable(tag, Log.VERBOSE)) {
+  public void v(String text, Throwable throwable) {
+    if (canLog(Log.VERBOSE)) {
       Log.v(tag, text, throwable);
     }
   }
 
-  public void i(String tag, String text, Throwable throwable) {
-    if (isLoggable(tag, Log.INFO)) {
+  public void i(String text, Throwable throwable) {
+    if (canLog(Log.INFO)) {
       Log.i(tag, text, throwable);
     }
   }
 
-  public void w(String tag, String text, Throwable throwable) {
-    if (isLoggable(tag, Log.WARN)) {
+  public void w(String text, Throwable throwable) {
+    if (canLog(Log.WARN)) {
       Log.w(tag, text, throwable);
     }
   }
 
-  public void e(String tag, String text, Throwable throwable) {
-    if (isLoggable(tag, Log.ERROR)) {
+  public void e(String text, Throwable throwable) {
+    if (canLog(Log.ERROR)) {
       Log.e(tag, text, throwable);
     }
   }
 
-  public void d(String tag, String text) {
-    d(tag, text, null);
+  public void d(String text) {
+    d(text, null);
   }
 
-  public void v(String tag, String text) {
-    v(tag, text, null);
+  public void v(String text) {
+    v(text, null);
   }
 
-  public void i(String tag, String text) {
-    i(tag, text, null);
+  public void i(String text) {
+    i(text, null);
   }
 
-  public void w(String tag, String text) {
-    w(tag, text, null);
+  public void w(String text) {
+    w(text, null);
   }
 
-  public void e(String tag, String text) {
-    e(tag, text, null);
+  public void e(String text) {
+    e(text, null);
   }
 
-  public void log(int priority, String tag, String msg) {
-    log(priority, tag, msg, false);
+  public void log(int priority, String msg) {
+    log(priority, msg, false);
   }
 
-  public void log(int priority, String tag, String msg, boolean forceLog) {
-    if (forceLog || isLoggable(tag, priority)) {
+  public void log(int priority, String msg, boolean forceLog) {
+    if (forceLog || canLog(priority)) {
       Log.println(priority, tag, msg);
     }
   }

@@ -14,6 +14,8 @@
 
 package com.google.firebase.firestore.model;
 
+import static com.google.firebase.firestore.util.Assert.hardAssert;
+
 import androidx.annotation.NonNull;
 
 /** Represents a particular database in Firestore */
@@ -35,6 +37,18 @@ public final class DatabaseId implements Comparable<DatabaseId> {
   private DatabaseId(String projectId, String databaseId) {
     this.projectId = projectId;
     this.databaseId = databaseId;
+  }
+
+  /** Returns a DatabaseId from a fully qualified resource name. */
+  public static DatabaseId fromName(String name) {
+    ResourcePath resourceName = ResourcePath.fromString(name);
+    hardAssert(
+        resourceName.length() >= 3
+            && resourceName.getSegment(0).equals("projects")
+            && resourceName.getSegment(2).equals("databases"),
+        "Tried to parse an invalid resource name: %s",
+        resourceName);
+    return new DatabaseId(resourceName.getSegment(1), resourceName.getSegment(3));
   }
 
   public String getProjectId() {

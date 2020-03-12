@@ -29,10 +29,10 @@ public class NativeSessionReport implements Report {
   @Override
   public void remove() {
     for (File file : getFiles()) {
-      Logger.getLogger().d(Logger.TAG, "Removing native report file at " + file.getPath());
+      Logger.getLogger().d("Removing native report file at " + file.getPath());
       file.delete();
     }
-    Logger.getLogger().d(Logger.TAG, "Removing native report directory at " + reportDirectory);
+    Logger.getLogger().d("Removing native report directory at " + reportDirectory);
     reportDirectory.delete();
   }
 

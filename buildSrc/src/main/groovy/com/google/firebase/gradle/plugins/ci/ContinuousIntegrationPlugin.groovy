@@ -40,7 +40,8 @@ class ContinuousIntegrationPlugin implements Plugin<Project> {
                 ContinuousIntegrationExtension)
 
         project.configure(project.subprojects) {
-            def checkDependents = it.task('checkDependents') {}
+            def checkDependents = it.task('checkDependents')
+            def checkCoverageDependents = it.task('checkCoverageDependents')
             def connectedCheckDependents = it.task('connectedCheckDependents')
             def deviceCheckDependents = it.task('deviceCheckDependents')
 
@@ -50,6 +51,11 @@ class ContinuousIntegrationPlugin implements Plugin<Project> {
                             .releaseUnitTestRuntimeClasspath.getTaskDependencyFromProjectDependency(
                             false, "checkDependents"))
                     checkDependents.dependsOn 'check'
+
+                    checkCoverageDependents.dependsOn(configurations
+                            .releaseUnitTestRuntimeClasspath.getTaskDependencyFromProjectDependency(
+                            false, "checkCoverageDependents"))
+                    checkCoverageDependents.dependsOn 'checkCoverage'
                 }
 
                 if (it.name == 'releaseAndroidTestRuntimeClasspath') {
@@ -71,6 +77,10 @@ class ContinuousIntegrationPlugin implements Plugin<Project> {
                     checkDependents.dependsOn(configurations
                             .annotationProcessor.getTaskDependencyFromProjectDependency(
                             false, "checkDependents"))
+                    checkCoverageDependents.dependsOn(configurations
+                            .annotationProcessor.getTaskDependencyFromProjectDependency(
+                            false, "checkCoverageDependents"))
+
                     deviceCheckDependents.dependsOn(configurations
                             .annotationProcessor.getTaskDependencyFromProjectDependency(
                             false, "deviceCheckDependents"))
@@ -108,6 +118,15 @@ class ContinuousIntegrationPlugin implements Plugin<Project> {
                 task.dependsOn("$it.path:checkDependents")
             }
         }
+
+        project.task('checkCoverageChanged') { task ->
+            task.group = 'verification'
+            task.description = 'Runs the checkCoverage task in all changed projects.'
+            affectedProjects.each {
+                task.dependsOn("$it.path:checkCoverageDependents")
+            }
+        }
+
         project.task('connectedCheckChanged') { task ->
             task.group = 'verification'
             task.description = 'Runs the connectedCheck task in all changed projects.'

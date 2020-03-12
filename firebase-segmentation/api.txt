@@ -1,0 +1,23 @@
+// Signature format: 2.0
+package com.google.firebase.segmentation {
+
+  public class FirebaseSegmentation {
+    method @NonNull public static com.google.firebase.segmentation.FirebaseSegmentation getInstance();
+    method @NonNull public static com.google.firebase.segmentation.FirebaseSegmentation getInstance(@NonNull com.google.firebase.FirebaseApp);
+    method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> setCustomInstallationId(@Nullable String);
+    field public static final String TAG = "FirebaseSegmentation";
+  }
+
+  public class SetCustomInstallationIdException extends com.google.firebase.FirebaseException {
+    method @NonNull public com.google.firebase.segmentation.SetCustomInstallationIdException.Status getStatus();
+  }
+
+  public enum SetCustomInstallationIdException.Status {
+    enum_constant public static final com.google.firebase.segmentation.SetCustomInstallationIdException.Status BACKEND_ERROR;
+    enum_constant public static final com.google.firebase.segmentation.SetCustomInstallationIdException.Status CLIENT_ERROR;
+    enum_constant public static final com.google.firebase.segmentation.SetCustomInstallationIdException.Status DUPLICATED_CUSTOM_INSTALLATION_ID;
+    enum_constant public static final com.google.firebase.segmentation.SetCustomInstallationIdException.Status UNKNOWN;
+  }
+
+}
+

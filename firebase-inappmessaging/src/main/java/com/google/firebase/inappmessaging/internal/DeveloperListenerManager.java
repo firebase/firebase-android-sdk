@@ -182,7 +182,7 @@ public class DeveloperListenerManager {
     }
   }
 
-  private class ImpressionExecutorAndListener
+  private static class ImpressionExecutorAndListener
       extends ExecutorAndListener<FirebaseInAppMessagingImpressionListener> {
     FirebaseInAppMessagingImpressionListener listener;
 
@@ -203,7 +203,7 @@ public class DeveloperListenerManager {
     }
   }
 
-  private class ClicksExecutorAndListener
+  private static class ClicksExecutorAndListener
       extends ExecutorAndListener<FirebaseInAppMessagingClickListener> {
     FirebaseInAppMessagingClickListener listener;
 
@@ -223,7 +223,7 @@ public class DeveloperListenerManager {
     }
   }
 
-  private class ErrorsExecutorAndListener
+  private static class ErrorsExecutorAndListener
       extends ExecutorAndListener<FirebaseInAppMessagingDisplayErrorListener> {
     FirebaseInAppMessagingDisplayErrorListener listener;
 

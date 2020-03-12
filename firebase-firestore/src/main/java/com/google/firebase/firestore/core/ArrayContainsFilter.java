@@ -16,19 +16,18 @@ package com.google.firebase.firestore.core;
 
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.FieldPath;
-import com.google.firebase.firestore.model.value.ArrayValue;
-import com.google.firebase.firestore.model.value.FieldValue;
+import com.google.firebase.firestore.model.Values;
+import com.google.firestore.v1.Value;
 
 /** A Filter that implements the array-contains operator. */
 public class ArrayContainsFilter extends FieldFilter {
-  ArrayContainsFilter(FieldPath field, FieldValue value) {
+  ArrayContainsFilter(FieldPath field, Value value) {
     super(field, Operator.ARRAY_CONTAINS, value);
   }
 
   @Override
   public boolean matches(Document doc) {
-    FieldValue other = doc.getField(getField());
-    return other instanceof ArrayValue
-        && ((ArrayValue) other).getInternalValue().contains(getValue());
+    Value other = doc.getField(getField());
+    return Values.isArray(other) && Values.contains(other.getArrayValue(), getValue());
   }
 }

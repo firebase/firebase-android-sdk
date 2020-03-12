@@ -14,10 +14,10 @@
 
 package com.google.firebase.crashlytics.internal.settings.network;
 
-import com.google.firebase.crashlytics.core.CrashlyticsCore;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.common.AbstractSpiCall;
 import com.google.firebase.crashlytics.internal.common.CommonUtils;
+import com.google.firebase.crashlytics.internal.common.CrashlyticsCore;
 import com.google.firebase.crashlytics.internal.network.HttpMethod;
 import com.google.firebase.crashlytics.internal.network.HttpRequest;
 import com.google.firebase.crashlytics.internal.network.HttpRequestFactory;
@@ -80,17 +80,15 @@ public class DefaultSettingsSpiCall extends AbstractSpiCall implements SettingsS
       HttpRequest httpRequest = getHttpRequest(queryParams);
       httpRequest = applyHeadersTo(httpRequest, requestData);
 
-      logger.d(Logger.TAG, "Requesting settings from " + getUrl());
-      logger.d(Logger.TAG, "Settings query params were: " + queryParams);
+      logger.d("Requesting settings from " + getUrl());
+      logger.d("Settings query params were: " + queryParams);
 
       final HttpResponse httpResponse = httpRequest.execute();
-      logger.d(
-          Logger.TAG,
-          "Settings request ID: " + httpResponse.header(AbstractSpiCall.HEADER_REQUEST_ID));
+      logger.d("Settings request ID: " + httpResponse.header(AbstractSpiCall.HEADER_REQUEST_ID));
 
       toReturn = handleResponse(httpResponse);
     } catch (IOException e) {
-      logger.e(Logger.TAG, "Settings request failed.", e);
+      logger.e("Settings request failed.", e);
       toReturn = null;
     }
 
@@ -100,13 +98,13 @@ public class DefaultSettingsSpiCall extends AbstractSpiCall implements SettingsS
   /** package private for testing */
   JSONObject handleResponse(HttpResponse httpResponse) {
     final int statusCode = httpResponse.code();
-    logger.d(Logger.TAG, "Settings result was: " + statusCode);
+    logger.d("Settings result was: " + statusCode);
 
     final JSONObject toReturn;
     if (requestWasSuccessful(statusCode)) {
       toReturn = getJsonObjectFrom(httpResponse.body());
     } else {
-      logger.e(Logger.TAG, "Failed to retrieve settings from " + getUrl());
+      logger.e("Failed to retrieve settings from " + getUrl());
       toReturn = null;
     }
     return toReturn;
@@ -128,8 +126,8 @@ public class DefaultSettingsSpiCall extends AbstractSpiCall implements SettingsS
     try {
       return new JSONObject(httpRequestBody);
     } catch (Exception e) {
-      logger.d(Logger.TAG, "Failed to parse settings JSON from " + getUrl(), e);
-      logger.d(Logger.TAG, "Settings response " + httpRequestBody);
+      logger.d("Failed to parse settings JSON from " + getUrl(), e);
+      logger.d("Settings response " + httpRequestBody);
       return null;
     }
   }

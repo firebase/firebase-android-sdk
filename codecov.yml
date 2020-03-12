@@ -1,0 +1,20 @@
+codecov:
+  require_ci_to_pass: no
+  notify:
+    wait_for_ci: no
+
+coverage:
+  status:
+    project:
+      default:
+      FirebaseCommon:
+        flags: FirebaseCommon
+        informational: true
+    patch:
+      default:
+      FirebaseCommon:
+        flags: FirebaseCommon
+        informational: true
+
+comment:
+  layout: "flags, footer"

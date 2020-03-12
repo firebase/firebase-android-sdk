@@ -170,6 +170,26 @@ public class FirestoreTest {
   }
 
   @Test
+  public void testUpdateWithEmptyObjectReplacesAllFields() {
+    DocumentReference documentReference = testDocument();
+    documentReference.set(map("a", "a"));
+
+    waitFor(documentReference.update("a", Collections.emptyMap()));
+    DocumentSnapshot snapshot = waitFor(documentReference.get());
+    assertEquals(map("a", Collections.emptyMap()), snapshot.getData());
+  }
+
+  @Test
+  public void testMergeWithEmptyObjectReplacesAllFields() {
+    DocumentReference documentReference = testDocument();
+    documentReference.set(map("a", "a"));
+
+    waitFor(documentReference.set(map("a", Collections.emptyMap()), SetOptions.merge()));
+    DocumentSnapshot snapshot = waitFor(documentReference.get());
+    assertEquals(map("a", Collections.emptyMap()), snapshot.getData());
+  }
+
+  @Test
   public void testCanDeleteFieldUsingMerge() {
     DocumentReference documentReference = testCollection("rooms").document("eros");
 

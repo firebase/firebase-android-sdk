@@ -86,7 +86,7 @@ public class IntegrationTestUtil {
 
   // Whether the integration tests should run against a local Firestore emulator instead of the
   // Production environment. Note that the Android Emulator treats "10.0.2.2" as its host machine.
-  // TODO(mrschmidt): Support multiple envrionments (Emulator, QA, Nightly, Production)
+  // TODO(mrschmidt): Support multiple environments (Emulator, QA, Nightly, Production)
   private static final boolean CONNECT_TO_EMULATOR = BuildConfig.USE_EMULATOR_FOR_TESTS;
   private static final String EMULATOR_HOST = "10.0.2.2";
   private static final int EMULATOR_PORT = 8080;

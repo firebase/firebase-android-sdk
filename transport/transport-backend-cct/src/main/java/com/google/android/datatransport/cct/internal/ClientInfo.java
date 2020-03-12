@@ -22,7 +22,7 @@ import com.google.auto.value.AutoValue;
 public abstract class ClientInfo {
   public enum ClientType {
     UNKNOWN(0),
-    ANDROID(4);
+    ANDROID_FIREBASE(23);
 
     private final int value;
 
