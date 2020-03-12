@@ -35,7 +35,7 @@ public class FirebaseInstallationsRegistrarTest {
   }
 
   @Test
-  public void getFirebaseInstallationsInstance() throws FirebaseInstallationsException {
+  public void getFirebaseInstallationsInstance() {
     FirebaseApp defaultApp =
         FirebaseApp.initializeApp(
             ApplicationProvider.getApplicationContext(),
