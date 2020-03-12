@@ -83,6 +83,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   /* File used to read the version of Instance-ID(IID) SDK if it exists in the dependency tree.
   This is needed to prevent incompatible versions of IID SDK to be used in parallel with FIS SDK. */
   private static final String IID_SDK_PROP_FILE = "/firebase-iid.properties";
+  private static final String IID_VERSION_WITH_FIS = "20.1.1";
   private static final String TAG = "FirebaseInstallations";
 
   private static final ThreadFactory threadFactory =
@@ -133,16 +134,51 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     this.utils = utils;
     this.iidStore = iidStore;
     this.fidGenerator = fidGenerator;
-    // preventParallelUsageOfIncompatibleVersionOfInstanceIdSDk();
+    preventParallelUsageOfIncompatibleVersionOfInstanceIdSDk();
   }
 
-  private static void preventParallelUsageOfIncompatibleVersionOfInstanceIdSDk()
-      throws FirebaseInstallationsException {
+  private void preventParallelUsageOfIncompatibleVersionOfInstanceIdSDk() {
     if (!isIIDVersionCompatible()) {
       throw new IllegalStateException(
           "FirebaseInstallations will not work correctly with current version of Firebase "
-              + "Instance ID. Please update your Firebase Instance ID version.");
+              + "Instance ID SDK. Please update your Firebase Instance ID version.");
     }
+  }
+
+  /**
+   * Returns TRUE iff IID SDK is not used along with FIS SDK or IID SDK version is &gt than 20.1.1,
+   * otherwise returns FALSE.
+   */
+  private boolean isIIDVersionCompatible() {
+    try {
+      final Class<FirebaseInstanceId> firebaseInstanceIdClass = FirebaseInstanceId.class;
+    } catch (NoClassDefFoundError exception) {
+      // It is OK if there is no IID SDK at all.
+      return true;
+    }
+    String iidVersion = getIIDVersion();
+    // IID SDK version is incompatible if it is older than the IID SDK version with FIS
+    // dependency(i.e 20.1.1).
+    if (TextUtils.isEmpty(iidVersion)
+        && utils.compareVersions(IID_VERSION_WITH_FIS, iidVersion) >= 1) {
+      return false;
+    }
+    return true;
+  }
+
+  /** Returns the version string of firebase-iid SDK read from the properties file. */
+  @Nullable
+  private static String getIIDVersion() {
+    try (InputStream fs = FirebaseInstallations.class.getResourceAsStream(IID_SDK_PROP_FILE)) {
+      Properties props = new Properties();
+      if (fs != null) {
+        props.load(fs);
+        return props.getProperty("version", /* defaultValue */ null);
+      }
+    } catch (IOException | IllegalArgumentException e) {
+      Log.w(TAG, "Could not read IID SDK version.", e);
+    }
+    return null;
   }
 
   /**
@@ -508,34 +544,6 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     }
 
     persistedInstallation.insertOrUpdatePersistedInstallationEntry(entry.withNoGeneratedFid());
-    return null;
-  }
-
-  private static boolean isIIDVersionCompatible() {
-    try {
-      final Class<FirebaseInstanceId> firebaseInstanceIdClass = FirebaseInstanceId.class;
-    } catch (NoClassDefFoundError exception) {
-      // It is OK if there is no IID SDK at all.
-      return true;
-    }
-    String iidVersion = getIIDVersion();
-    if (TextUtils.isEmpty(iidVersion)) {
-      return false;
-    }
-    return true;
-  }
-
-  @Nullable
-  private static String getIIDVersion() {
-    try (InputStream fs = FirebaseInstallations.class.getResourceAsStream(IID_SDK_PROP_FILE)) {
-      Properties props = new Properties();
-      if (fs != null) {
-        props.load(fs);
-        return props.getProperty("version", /* defaultValue */ null);
-      }
-    } catch (IOException | IllegalArgumentException e) {
-      Log.w(TAG, "Could not read IID SDK version.", e);
-    }
     return null;
   }
 }

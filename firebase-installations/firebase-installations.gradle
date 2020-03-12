@@ -37,8 +37,6 @@ android {
     }
 }
 
-def lintVersion = '26.3.0'
-
 dependencies {
     implementation project(':firebase-common')
     implementation project(':firebase-installations-interop')
@@ -47,8 +45,6 @@ dependencies {
     implementation 'androidx.multidex:multidex:2.0.1'
     implementation 'com.google.android.gms:play-services-tasks:17.0.0'
 
-    compileOnly "com.android.tools.lint:lint-api:$lintVersion"
-    compileOnly "com.android.tools.lint:lint-checks:$lintVersion"
     compileOnly "com.google.auto.value:auto-value-annotations:1.6.5"
     compileOnly ("com.google.firebase:firebase-iid:20.0.2"){
         exclude group: "com.google.firebase", module: "firebase-common"
