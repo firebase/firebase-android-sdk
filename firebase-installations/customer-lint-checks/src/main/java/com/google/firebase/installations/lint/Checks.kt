@@ -17,7 +17,7 @@ package com.google.firebase.installations.lint
 import com.android.tools.lint.client.api.IssueRegistry
 import com.android.tools.lint.detector.api.Issue
 
-class Checks: IssueRegistry() {
+class Checks : IssueRegistry() {
     override val issues: List<Issue>
         get() = listOf(IncompatibleIidVersionDetector.INCOMPATIBLE_IID_VERSION)
 }
