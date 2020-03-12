@@ -52,6 +52,8 @@ class GzipFileNativeSessionProcessingStrategy implements NativeSessionProcessing
       InputStream logsInput,
       InputStream userInput)
       throws IOException {
+    // TODO: Move all this back into the controller, and feed these files and keys/logs/user into
+    //  a list of input stream makers to be passed to the gzipper/CrashlyticsReport maker
     Logger.getLogger().d("Finalizing native report for session " + sessionId);
     NativeSessionFileProvider nativeSessionFileProvider =
         nativeComponent.getSessionFileProvider(sessionId);
@@ -75,6 +77,8 @@ class GzipFileNativeSessionProcessingStrategy implements NativeSessionProcessing
       Logger.getLogger().d("Couldn't create native sessions directory");
       return null;
     }
+
+    // TODO: A class that takes something and turns it into a new object - filename/inputstream
 
     gzipFile(minidump, new File(nativeSessionDirectory, "minidump"));
     gzipBytes(
