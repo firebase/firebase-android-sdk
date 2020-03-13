@@ -32,9 +32,11 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.Logger;
+import com.google.firebase.crashlytics.internal.NativeSessionFileProvider;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsConnectorReceiver;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsReceiver;
 import com.google.firebase.crashlytics.internal.log.LogFileManager;
+import com.google.firebase.crashlytics.internal.ndk.NativeFileUtils;
 import com.google.firebase.crashlytics.internal.network.HttpRequestFactory;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.proto.ClsFileOutputStream;
@@ -56,14 +58,13 @@ import com.google.firebase.crashlytics.internal.stacktrace.RemoveRepeatsStrategy
 import com.google.firebase.crashlytics.internal.stacktrace.StackTraceTrimmingStrategy;
 import com.google.firebase.crashlytics.internal.stacktrace.TrimmedThrowableData;
 import com.google.firebase.crashlytics.internal.unity.UnityVersionProvider;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -1104,47 +1105,34 @@ class CrashlyticsController {
 
   private void finalizePreviousNativeSession(String previousSessionId) throws IOException {
     Logger.getLogger().d("Finalizing native report for session " + previousSessionId);
-    final GzipFileNativeSessionProcessingStrategy strategy =
-        new GzipFileNativeSessionProcessingStrategy(
-            context, (sessionId) -> new File(getNativeSessionFilesDir(), sessionId));
-
-    final File filesDir = getFilesDir();
-    final MetaDataStore metaDataStore = new MetaDataStore(filesDir);
-    final File userFile = metaDataStore.getUserDataFileForSession(previousSessionId);
-    final File keysFile = metaDataStore.getKeysFileForSession(previousSessionId);
-
-    final LogFileManager previousSessionLogManager =
-        new LogFileManager(getContext(), logFileDirectoryProvider, previousSessionId);
-    byte[] logBytes = previousSessionLogManager.getBytesForLog();
-
-    InputStream keysInput = null;
-    InputStream logsInput = null;
-    InputStream userInput = null;
-    try {
-      userInput = openFileStream(userFile);
-      keysInput = openFileStream(keysFile);
-      if (logBytes != null && logBytes.length > 0) {
-        logsInput = new ByteArrayInputStream(logBytes);
-      }
-      strategy.processNativeSession(
-          nativeComponent, previousSessionId, keysInput, logsInput, userInput);
-    } finally {
-      CommonUtils.closeQuietly(keysInput);
-      CommonUtils.closeQuietly(logsInput);
-      CommonUtils.closeQuietly(userInput);
+    NativeSessionFileProvider nativeSessionFileProvider =
+        nativeComponent.getSessionFileProvider(previousSessionId);
+    File minidumpFile = nativeSessionFileProvider.getMinidumpFile();
+    if (minidumpFile == null || !minidumpFile.exists()) {
+      Logger.getLogger().w("No minidump data found for session " + previousSessionId);
+      return;
     }
+    final LogFileManager previousSessionLogManager =
+        new LogFileManager(context, logFileDirectoryProvider, previousSessionId);
+    final File nativeSessionDirectory = new File(getNativeSessionFilesDir(), previousSessionId);
+
+    if (!nativeSessionDirectory.mkdirs()) {
+      Logger.getLogger().d("Couldn't create native sessions directory");
+      return;
+    }
+
+    List<NativeSessionFile> nativeSessionFiles =
+        getNativeSessionFiles(
+            nativeSessionFileProvider,
+            previousSessionId,
+            getContext(),
+            getFilesDir(),
+            previousSessionLogManager.getBytesForLog());
+
+    NativeSessionFileGzipper.processNativeSessions(nativeSessionDirectory, nativeSessionFiles);
+    reportingCoordinator.finalizeNativeEvent(nativeSessionFiles, previousSessionId);
 
     previousSessionLogManager.clearLog();
-  }
-
-  private static FileInputStream openFileStream(File f) {
-    FileInputStream stream;
-    try {
-      stream = new FileInputStream(f);
-    } catch (FileNotFoundException fnf) {
-      stream = null;
-    }
-    return stream;
   }
 
   private static long getCurrentTimestampSeconds() {
@@ -1866,6 +1854,42 @@ class CrashlyticsController {
 
       reportUploader.uploadReport(report, dataCollectionToken);
     }
+  }
+
+  static List<NativeSessionFile> getNativeSessionFiles(
+      NativeSessionFileProvider fileProvider,
+      String previousSessionId,
+      Context context,
+      File filesDir,
+      byte[] logBytes) {
+
+    final MetaDataStore metaDataStore = new MetaDataStore(filesDir);
+    final File userFile = metaDataStore.getUserDataFileForSession(previousSessionId);
+    final File keysFile = metaDataStore.getKeysFileForSession(previousSessionId);
+
+    byte[] binaryImageBytes = null;
+    try {
+      binaryImageBytes =
+          NativeFileUtils.binaryImagesJsonFromMapsFile(fileProvider.getBinaryImagesFile(), context);
+    } catch (IOException e) {
+      // Keep processing, we'll add an empty binaryImages object.
+    }
+
+    List<NativeSessionFile> nativeSessionFiles = new ArrayList<>();
+    nativeSessionFiles.add(new BytesBackedNativeSessionFile("logs", logBytes));
+    nativeSessionFiles.add(new BytesBackedNativeSessionFile("binaryImages", binaryImageBytes));
+    nativeSessionFiles.add(
+        new FileBackedNativeSessionFile("metadata", fileProvider.getMetadataFile()));
+    nativeSessionFiles.add(
+        new FileBackedNativeSessionFile("session", fileProvider.getSessionFile()));
+    nativeSessionFiles.add(new FileBackedNativeSessionFile("app", fileProvider.getAppFile()));
+    nativeSessionFiles.add(new FileBackedNativeSessionFile("device", fileProvider.getDeviceFile()));
+    nativeSessionFiles.add(new FileBackedNativeSessionFile("os", fileProvider.getOsFile()));
+    nativeSessionFiles.add(
+        new FileBackedNativeSessionFile("minidump", fileProvider.getMinidumpFile()));
+    nativeSessionFiles.add(new FileBackedNativeSessionFile("user", userFile));
+    nativeSessionFiles.add(new FileBackedNativeSessionFile("keys", keysFile));
+    return nativeSessionFiles;
   }
 
   private static final class LogFileDirectoryProvider implements LogFileManager.DirectoryProvider {

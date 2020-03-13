@@ -14,21 +14,27 @@
 
 package com.google.firebase.crashlytics.internal.common;
 
-import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
-import java.io.IOException;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import java.io.InputStream;
 
 /**
- * Strategy for processing session data from the {@link CrashlyticsNativeComponent}
- *
- * @param <T> processed session output type
+ * An abstraction of a "File" resource sent to the Crashlytics backend when an NDK Crash has
+ * occurred.
  */
-interface NativeSessionProcessingStrategy<T> {
-  T processNativeSession(
-      CrashlyticsNativeComponent nativeComponent,
-      String sessionId,
-      InputStream keysInput,
-      InputStream logsInput,
-      InputStream userInput)
-      throws IOException;
+interface NativeSessionFile {
+  /** Shortname of the file, e.g., "logs" */
+  @NonNull
+  String getName();
+
+  /** Representation of the NativeSessionFile as a stream */
+  @Nullable
+  InputStream getStream();
+
+  /**
+   * Representation of the NativeSessionFile as {@link CrashlyticsReport.FilesPayload.File} object.
+   */
+  @Nullable
+  CrashlyticsReport.FilesPayload.File asFilePayload();
 }
