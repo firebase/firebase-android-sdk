@@ -68,35 +68,20 @@ class IncompatibleIidVersionDetector : Detector() {
     }
 
     private fun isIncompatibleVersion(coordinates: MavenCoordinates): Boolean {
-        // firebase-iid v20.1.0 is compatible with FirebaseInstallations, but contains a bug that
-        // was fixed in v20.1.1
-        val validIidVersionWithFis = "20.1.1"
-
-        // IID SDK version is incompatible if it is older than the IID SDK version with FIS
-        // dependency(i.e 20.1.1).
-        return compareVersions(validIidVersionWithFis, coordinates.version) == 1
-    }
-
-    private fun compareVersions(versionA: String, versionB: String): Int {
-        val versionAComponents = versionA.split('.').toTypedArray()
-        val versionBComponents = versionB.split('.').toTypedArray()
-        val k = Math.min(versionAComponents.size, versionBComponents.size)
-        for (i in 0..k - 1) {
-            if (versionAComponents.get(i) > versionBComponents.get(i)) {
-                return 1
-            }
-            if (versionAComponents.get(i) < versionBComponents.get(i)) {
-                return -1
-            }
+        val versionComponents = coordinates.version.split('.').toTypedArray()
+        // check if correct SemVer format
+        if (3 != versionComponents.size) {
+            return true
         }
-
-        if (versionAComponents.size == versionBComponents.size) {
-            return 0
+        // Incompatible if major version is before v20
+        if (20 > versionComponents.get(0).toInt()) {
+            return true
         }
-        if (versionAComponents.size < versionBComponents.size) {
-            return -1
-        } else {
-            return 1
+        // Compatible if major version is after v21
+        if (21 <= versionComponents.get(0).toInt()) {
+            return false
         }
+        // Its compatible if major version is v20 and minor version is after v20.1
+        return 1 > versionComponents.get(1).toInt()
     }
 }
