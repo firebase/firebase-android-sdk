@@ -69,7 +69,7 @@ class IncompatibleIidVersionDetector : Detector() {
 
     private fun isIncompatibleVersion(coordinates: MavenCoordinates): Boolean {
         val versionComponents = coordinates.version.split('.').toTypedArray()
-        // check if correct SemVer format
+        // check if correct version format
         if (3 != versionComponents.size) {
             return true
         }
