@@ -39,7 +39,7 @@ class IncompatibleIidVersionDetector : Detector() {
 
                 explanation = """
            These versions of FirebaseInstanceId and FirebaseInstallations can not be used in parallel.
-           Please update your Firebase Instance ID to a version 20.1.0 or later.
+           Please update your Firebase Instance ID to a version 20.1.1 or later.
             """,
                 category = Category.INTEROPERABILITY,
                 priority = 1,
@@ -68,8 +68,8 @@ class IncompatibleIidVersionDetector : Detector() {
     }
 
     private fun isIncompatibleVersion(coordinates: MavenCoordinates): Boolean {
-        // firebase-iid v20.1.0 already depended on FirebaseInstallations for identifier creation,
-        // but had an issue of possible silent failures. Thus, v20.1.1 or later is recommended.
+        // firebase-iid v20.1.0 is compatible with FirebaseInstallations, but contains a bug that
+        // was fixed in v20.1.1
         val validIidVersionWithFis = "20.1.1"
 
         // IID SDK version is incompatible if it is older than the IID SDK version with FIS
