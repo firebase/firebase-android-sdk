@@ -68,6 +68,6 @@ class IncompatibleIidVersionDetector : Detector() {
 
     private fun isIncompatibleVersion(coordinates: MavenCoordinates): Boolean {
         // TODO: implement version check
-        return coordinates.version != "0.0.0"
+        return coordinates.version == "0.0.0"
     }
 }
