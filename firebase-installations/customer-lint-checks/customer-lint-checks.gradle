@@ -16,7 +16,8 @@ plugins {
     id 'org.jetbrains.kotlin.jvm'
 }
 
-def lintVersion = '26.4.1'
+// support Android Gradle Plugin 3.2+
+def lintVersion = '26.2.1'
 
 dependencies {
     compileOnly "com.android.tools.lint:lint-api:$lintVersion"
@@ -27,6 +28,8 @@ dependencies {
     testImplementation "com.android.tools.lint:lint-tests:$lintVersion"
     testImplementation "com.android.tools:testutils:$lintVersion"
 }
+
+compileKotlin.kotlinOptions.apiVersion = '1.2'
 
 jar {
     manifest {
