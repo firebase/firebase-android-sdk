@@ -32,9 +32,11 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.Logger;
+import com.google.firebase.crashlytics.internal.NativeSessionFileProvider;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsConnectorReceiver;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsReceiver;
 import com.google.firebase.crashlytics.internal.log.LogFileManager;
+import com.google.firebase.crashlytics.internal.ndk.NativeFileUtils;
 import com.google.firebase.crashlytics.internal.network.HttpRequestFactory;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.proto.ClsFileOutputStream;
@@ -56,7 +58,7 @@ import com.google.firebase.crashlytics.internal.stacktrace.RemoveRepeatsStrategy
 import com.google.firebase.crashlytics.internal.stacktrace.StackTraceTrimmingStrategy;
 import com.google.firebase.crashlytics.internal.stacktrace.TrimmedThrowableData;
 import com.google.firebase.crashlytics.internal.unity.UnityVersionProvider;
-import java.io.ByteArrayInputStream;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -1104,34 +1106,28 @@ class CrashlyticsController {
 
   private void finalizePreviousNativeSession(String previousSessionId) throws IOException {
     Logger.getLogger().d("Finalizing native report for session " + previousSessionId);
-    final GzipFileNativeSessionProcessingStrategy strategy =
-        new GzipFileNativeSessionProcessingStrategy(
-            context, (sessionId) -> new File(getNativeSessionFilesDir(), sessionId));
-
-    final File filesDir = getFilesDir();
-    final MetaDataStore metaDataStore = new MetaDataStore(filesDir);
-    final File userFile = metaDataStore.getUserDataFileForSession(previousSessionId);
-    final File keysFile = metaDataStore.getKeysFileForSession(previousSessionId);
+    NativeSessionFileProvider sessionFileProvider = nativeComponent.getSessionFileProvider(previousSessionId);
+    File minidumpFile = sessionFileProvider.getMinidumpFile();
+    if (minidumpFile == null || !minidumpFile.exists()) {
+      Logger.getLogger().w("No minidump data found for session " + previousSessionId);
+      return;
+    }
 
     final LogFileManager previousSessionLogManager =
-        new LogFileManager(getContext(), logFileDirectoryProvider, previousSessionId);
-    byte[] logBytes = previousSessionLogManager.getBytesForLog();
+            new LogFileManager(context, logFileDirectoryProvider, previousSessionId);
 
-    InputStream keysInput = null;
-    InputStream logsInput = null;
-    InputStream userInput = null;
-    try {
-      userInput = openFileStream(userFile);
-      keysInput = openFileStream(keysFile);
-      if (logBytes != null && logBytes.length > 0) {
-        logsInput = new ByteArrayInputStream(logBytes);
-      }
-      strategy.processNativeSession(
-          nativeComponent, previousSessionId, keysInput, logsInput, userInput);
-    } finally {
-      CommonUtils.closeQuietly(keysInput);
-      CommonUtils.closeQuietly(logsInput);
-      CommonUtils.closeQuietly(userInput);
+    List<NativeSessionStreamProvider> streams = getNativeSessionStreams(
+            sessionFileProvider,
+            previousSessionId,
+            getContext(),
+            getFilesDir(),
+            previousSessionLogManager.getBytesForLog());
+
+    final GzipFileNativeSessionProcessingStrategy2 gzipStrategy =
+            GzipFileNativeSessionProcessingStrategy2.create(getNativeSessionFilesDir(), previousSessionId);
+
+    if (gzipStrategy != null) {
+      gzipStrategy.processNativeSessions(streams);
     }
 
     previousSessionLogManager.clearLog();
@@ -1859,6 +1855,39 @@ class CrashlyticsController {
       reportUploader.uploadReport(report, dataCollectionToken);
     }
   }
+
+  static List<NativeSessionStreamProvider> getNativeSessionStreams(
+          NativeSessionFileProvider fileProvider,
+          String previousSessionId,
+          Context context,
+          File filesDir,
+          byte[] logBytes) {
+        List<NativeSessionStreamProvider> providers = new LinkedList<>();
+        final MetaDataStore metaDataStore = new MetaDataStore(filesDir);
+        final File userFile = metaDataStore.getUserDataFileForSession(previousSessionId);
+        final File keysFile = metaDataStore.getKeysFileForSession(previousSessionId);
+
+        byte[] binaryImageBytes = null;
+        try {
+          binaryImageBytes = NativeFileUtils.binaryImagesJsonFromMapsFile(fileProvider.getBinaryImagesFile(), context);
+        } catch (IOException e) {
+          // TODO(jakeout): something... ?
+        }
+
+        providers.add(new ByteSessionStreamProvider("logs", logBytes));
+        providers.add(new ByteSessionStreamProvider("binaryImages", binaryImageBytes));
+        providers.add(new FileSessionStreamProvider("metadata", fileProvider.getMetadataFile()));
+        providers.add(new FileSessionStreamProvider("session", fileProvider.getSessionFile()));
+        providers.add(new FileSessionStreamProvider("app", fileProvider.getAppFile()));
+        providers.add(new FileSessionStreamProvider("device", fileProvider.getDeviceFile()));
+        providers.add(new FileSessionStreamProvider("os", fileProvider.getOsFile()));
+        providers.add(new FileSessionStreamProvider("minidump", fileProvider.getMinidumpFile()));
+        providers.add(new FileSessionStreamProvider("user", userFile));
+        providers.add(new FileSessionStreamProvider("keys", keysFile));
+
+        return providers;
+  }
+
 
   private static final class LogFileDirectoryProvider implements LogFileManager.DirectoryProvider {
 
