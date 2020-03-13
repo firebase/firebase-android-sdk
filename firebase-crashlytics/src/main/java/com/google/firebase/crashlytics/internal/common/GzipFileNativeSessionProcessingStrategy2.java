@@ -52,7 +52,6 @@ public class GzipFileNativeSessionProcessingStrategy2 {
             try {
                 inputStream = stream.getStream();
                 gzipInputStream(inputStream, new File(nativeSessionDirectory, stream.getName()));
-
             } finally {
                 CommonUtils.closeQuietly(inputStream);
             }

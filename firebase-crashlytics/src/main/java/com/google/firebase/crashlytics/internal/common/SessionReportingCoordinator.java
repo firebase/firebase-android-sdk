@@ -132,22 +132,9 @@ class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
     persistEvent(event, thread, EVENT_TYPE_LOGGED, timestamp, false);
   }
 
-  public void persistNativeEvent(@NonNull File nativeEventFilesDir) {
-    // TODO: Consider passing some sort of transformer instead of the raw files dir.
-    /*gzipFile(minidump, new File(nativeSessionDirectory, "minidump"));
-    gzipIfNotEmpty(
-        NativeFileUtils.binaryImagesJsonFromMapsFile(binaryImages, context),
-        new File(nativeSessionDirectory, "binaryImages"));
-    gzipFile(metadata, new File(nativeSessionDirectory, "metadata"));
-    gzipFile(sessionFile, new File(nativeSessionDirectory, "session"));
-    gzipFile(sessionApp, new File(nativeSessionDirectory, "app"));
-    gzipFile(sessionDevice, new File(nativeSessionDirectory, "device"));
-    gzipFile(sessionOs, new File(nativeSessionDirectory, "os"));
-    gzipFile(sessionUser, new File(nativeSessionDirectory, "user"));
-    gzipFile(sessionKeys, new File(nativeSessionDirectory, "keys"));
-    gzipIfNotEmpty(logs, new File(nativeSessionDirectory, "logs"));*/
-    final FilesPayload.File minidump =
-        FilesPayload.File.builder().setFilename("minidump_file").setContents(new byte[0]).build();
+  public void persistNativeEvent(@NonNull List<NativeSessionStreamProvider> nativeEvents) {
+
+    reportPersistence.persistNativeEvent(nativeEvents);
   }
 
   public void persistUserId() {

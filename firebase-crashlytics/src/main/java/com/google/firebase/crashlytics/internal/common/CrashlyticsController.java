@@ -66,6 +66,7 @@ import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -1130,6 +1131,8 @@ class CrashlyticsController {
       gzipStrategy.processNativeSessions(streams);
     }
 
+    reportingCoordinator.persistNativeEvent(streams);
+
     previousSessionLogManager.clearLog();
   }
 
@@ -1862,7 +1865,7 @@ class CrashlyticsController {
           Context context,
           File filesDir,
           byte[] logBytes) {
-        List<NativeSessionStreamProvider> providers = new LinkedList<>();
+        List<NativeSessionStreamProvider> providers = new ArrayList<>();
         final MetaDataStore metaDataStore = new MetaDataStore(filesDir);
         final File userFile = metaDataStore.getUserDataFileForSession(previousSessionId);
         final File keysFile = metaDataStore.getKeysFileForSession(previousSessionId);
