@@ -15,9 +15,13 @@
 package com.google.firebase.installations.lint
 
 import com.android.tools.lint.client.api.IssueRegistry
+import com.android.tools.lint.detector.api.CURRENT_API
 import com.android.tools.lint.detector.api.Issue
 
 class Checks : IssueRegistry() {
     override val issues: List<Issue>
         get() = listOf(IncompatibleIidVersionDetector.INCOMPATIBLE_IID_VERSION)
+
+    override val api: Int
+        get() = CURRENT_API
 }
