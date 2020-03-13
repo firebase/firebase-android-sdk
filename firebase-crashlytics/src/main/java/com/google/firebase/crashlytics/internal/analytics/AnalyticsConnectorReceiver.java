@@ -69,11 +69,7 @@ public class AnalyticsConnectorReceiver implements AnalyticsConnectorListener, A
 
     if (analyticsConnectorHandle == null) {
       Logger.getLogger()
-          .d(
-              "Could not register AnalyticsConnectorListener with origin "
-                  + "\""
-                  + CRASHLYTICS_ORIGIN
-                  + "\"");
+          .d("Could not register AnalyticsConnectorListener with Crashlytics origin.");
       // Older versions of FA don't support CRASHLYTICS_ORIGIN. We can try using the old Firebase
       // Crash Reporting origin
       analyticsConnectorHandle =
@@ -84,9 +80,9 @@ public class AnalyticsConnectorReceiver implements AnalyticsConnectorListener, A
       if (analyticsConnectorHandle != null) {
         Logger.getLogger()
             .w(
-                "Outdated version of Firebase Analytics detected. For improved "
-                    + "performance and compatibility with Crashlytics, please update to the latest "
-                    + "version of Firebase Analytics.");
+                "A new version of the Google Analytics for Firebase SDK is now available. "
+                    + "For improved performance and compatibility with Crashlytics, please "
+                    + "update to the latest version.");
       }
     }
 
