@@ -14,16 +14,8 @@
 
 package com.google.firebase.installations.lint
 
-import com.android.tools.lint.detector.api.Detector
-
 import com.android.builder.model.MavenCoordinates
-import com.android.tools.lint.detector.api.Category
-import com.android.tools.lint.detector.api.Context
-import com.android.tools.lint.detector.api.Implementation
-import com.android.tools.lint.detector.api.Issue
-import com.android.tools.lint.detector.api.Location
-import com.android.tools.lint.detector.api.Scope
-import com.android.tools.lint.detector.api.Severity
+import com.android.tools.lint.detector.api.*
 import java.util.EnumSet
 
 class IncompatibleIidVersionDetector : Detector() {
@@ -61,7 +53,8 @@ class IncompatibleIidVersionDetector : Detector() {
                     if (isIncompatibleVersion(coordinates)) {
                         context.report(INCOMPATIBLE_IID_VERSION,
                                 Location.create(context.file),
-                                "Incompatible IID version found in variant ${variant.name}: ${lib.name.removeSuffix("@aar")}")
+                                "Incompatible IID version found in variant ${variant.name}: ${lib.name.removeSuffix("@aar")}.\n" +
+                                        "To resolve this issue, consider updating the build file to the latest firebase-iid version.")
                     }
                 }
             }
