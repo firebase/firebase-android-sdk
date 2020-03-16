@@ -310,10 +310,12 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     }
 
     triggerOnStateReached(prefs);
-    networkExecutor.execute(() -> run(forceRefresh));
+    // Execute network calls (CreateInstallations or GenerateAuthToken) to the FIS Servers on
+    // a separate executor i.e networkExecutor
+    networkExecutor.execute(() -> fisNetworkCall(forceRefresh));
   }
 
-  private void run(boolean forceRefresh) {
+  private void fisNetworkCall(boolean forceRefresh) {
     PersistedInstallationEntry prefs = getPrefsWithGeneratedIdMultiProcessSafe();
     // There are two possible cleanup steps to perform at this stage: the FID may need to
     // be registered with the server or the FID is registered but we need a fresh authtoken.
