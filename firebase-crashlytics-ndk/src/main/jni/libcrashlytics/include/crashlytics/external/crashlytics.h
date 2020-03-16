@@ -16,9 +16,6 @@
 
 #include <cstddef>
 #include <string>
-
-#include <android/log.h>
-#include <jni.h>
 #include <dlfcn.h>
 
 /// @brief Firebase Crashlytics NDK API, for Android apps which use native code.
@@ -34,7 +31,7 @@ namespace firebase::crashlytics {
     ///
     /// This must be called prior to calling any other methods in the firebase:crashlytics
     /// namespace.
-    void Initialize(JNIEnv *jni_env);
+    void Initialize();
 
     /// @brief Terminate the Crashlytics API.
     ///
@@ -104,37 +101,35 @@ namespace firebase::crashlytics {
     static inline __crashlytics_context_t* __crashlytics_init() __CRASHLYTICS_DECORATED;
     static inline void                     __crashlytics_free(__crashlytics_context_t **context) __CRASHLYTICS_DECORATED;
 
-    __crashlytics_context_t *context;
+    __crashlytics_context_t *__context;
 
     bool VerifyCrashlytics() {
-        if (context) {
+        if (__context) {
             return true;
         }
-        __android_log_print(ANDROID_LOG_ERROR, "FirebaseCrashlytics",
-                            "Could not use Crashlytics NDK interface; Crashlytics not initialized.");
         return false;
     }
 
-    void Initialize(JNIEnv *jni_env) {
-        context = __crashlytics_init();
+    void Initialize() {
+        __context = __crashlytics_init();
         VerifyCrashlytics();
     }
 
     void Terminate() {
         if (VerifyCrashlytics()) {
-            __crashlytics_free(&context);
+            __crashlytics_free(&__context);
         }
     }
 
     void Log(const char *msg) {
         if (VerifyCrashlytics()) {
-            context->__log(context->__ctx, msg);
+            __context->__log(__context->__ctx, msg);
         }
     }
 
     void SetCustomKey(const char *key, const char *value) {
         if (VerifyCrashlytics()) {
-            context->__set(context->__ctx, key, value);
+            __context->__set(__context->__ctx, key, value);
         }
     }
 
@@ -160,7 +155,7 @@ namespace firebase::crashlytics {
 
     void SetUserId(const char *id) {
         if (VerifyCrashlytics()) {
-            context->__set_user_id(context->__ctx, id);
+            __context->__set_user_id(__context->__ctx, id);
         }
     }
 
