@@ -34,13 +34,14 @@ public class MetricsReportUploader {
 
     String owner = System.getenv("REPO_OWNER");
     String repo = System.getenv("REPO_NAME");
+    String branch = System.getenv("PULL_BASE_REF");
     String baseCommit = System.getenv("PULL_BASE_SHA");
     String headCommit = System.getenv("PULL_PULL_SHA");
     String pullRequest = System.getenv("PULL_NUMBER");
 
-    String commit = headCommit != null && !headCommit.isEmpty() ? headCommit : headCommit;
+    String commit = headCommit != null && !headCommit.isEmpty() ? headCommit : baseCommit;
 
-    post(project, report, owner, repo, commit, baseCommit, pullRequest);
+    post(project, report, owner, repo, commit, branch, baseCommit, pullRequest);
   }
 
   private static void post(
@@ -49,6 +50,7 @@ public class MetricsReportUploader {
       String owner,
       String repo,
       String commit,
+      String branch,
       String baseCommit,
       String pullRequest) {
     String post = "-X POST";
@@ -56,10 +58,10 @@ public class MetricsReportUploader {
     String headerContentType = "-H \"Content-Type: application/json\"";
     String body = String.format("-d @%s", report);
 
-    String template = "%s/repos/%s/%s/commits/%s/reports";
-    String endpoint = String.format(template, METRICS_SERVICE_URL, owner, repo, commit);
+    String template = "%s/repos/%s/%s/commits/%s/reports/?branch=%s";
+    String endpoint = String.format(template, METRICS_SERVICE_URL, owner, repo, commit, branch);
     if (pullRequest != null && !pullRequest.isEmpty()) {
-      endpoint += String.format("?base_commit=%s&pull_request=%s", baseCommit, pullRequest);
+      endpoint += String.format("&base_commit=%s&pull_request=%s", baseCommit, pullRequest);
     }
 
     String request =
