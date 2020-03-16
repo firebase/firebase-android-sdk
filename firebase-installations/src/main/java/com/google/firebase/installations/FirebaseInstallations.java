@@ -40,7 +40,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -62,11 +61,11 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   private final FirebaseApp firebaseApp;
   private final FirebaseInstallationServiceClient serviceClient;
   private final PersistedInstallation persistedInstallation;
-  private final ExecutorService executor;
   private final Utils utils;
   private final IidStore iidStore;
   private final RandomFidGenerator fidGenerator;
   private final Object lock = new Object();
+  private final ExecutorService backgroundExecutor;
   private final ExecutorService networkExecutor;
 
   @GuardedBy("lock")
@@ -74,7 +73,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
   /* used for thread-level synchronization of generating and persisting fids */
   private static final Object lockGenerateFid = new Object();
-  /* file used for process-level syncronization of generating and persisting fids */
+  /* file used for process-level synchronization of generating and persisting fids */
   private static final String LOCKFILE_NAME_GENERATE_FID = "generatefid.lock";
   private static final String CHIME_FIREBASE_APP_NAME = "CHIME_ANDROID_SDK";
 
@@ -112,7 +111,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   }
 
   FirebaseInstallations(
-      ExecutorService executor,
+      ExecutorService backgroundExecutor,
       FirebaseApp firebaseApp,
       FirebaseInstallationServiceClient serviceClient,
       PersistedInstallation persistedInstallation,
@@ -121,12 +120,14 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
       RandomFidGenerator fidGenerator) {
     this.firebaseApp = firebaseApp;
     this.serviceClient = serviceClient;
-    this.executor = executor;
     this.persistedInstallation = persistedInstallation;
     this.utils = utils;
     this.iidStore = iidStore;
     this.fidGenerator = fidGenerator;
-    this.networkExecutor = Executors.newSingleThreadExecutor();
+    this.backgroundExecutor = backgroundExecutor;
+    this.networkExecutor =
+        new ThreadPoolExecutor(
+            1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(), threadFactory);
   }
 
   /**
@@ -198,7 +199,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   public Task<String> getId() {
     preConditionChecks();
     Task<String> task = addGetIdListener();
-    executor.execute(this::doGetId);
+    backgroundExecutor.execute(this::doGetId);
     return task;
   }
 
@@ -216,9 +217,9 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     preConditionChecks();
     Task<InstallationTokenResult> task = addGetAuthTokenListener();
     if (forceRefresh) {
-      executor.execute(this::doGetAuthTokenForceRefresh);
+      backgroundExecutor.execute(this::doGetAuthTokenForceRefresh);
     } else {
-      executor.execute(this::doGetAuthTokenWithoutForceRefresh);
+      backgroundExecutor.execute(this::doGetAuthTokenWithoutForceRefresh);
     }
     return task;
   }
@@ -231,7 +232,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   @NonNull
   @Override
   public Task<Void> delete() {
-    return Tasks.call(executor, this::deleteFirebaseInstallationId);
+    return Tasks.call(backgroundExecutor, this::deleteFirebaseInstallationId);
   }
 
   private Task<String> addGetIdListener() {
