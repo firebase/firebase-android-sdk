@@ -75,42 +75,34 @@ namespace firebase::crashlytics {
 
     /** END PUBLIC API **/
 
-struct         __crashlytics_context;
-struct         __crashlytics_unspecified;
-typedef struct __crashlytics_context                    __crashlytics_context_t;
-typedef struct __crashlytics_unspecified                __crashlytics_unspecified_t;
+    struct         __crashlytics_context;
+    struct         __crashlytics_unspecified;
+    typedef struct __crashlytics_context                    __crashlytics_context_t;
+    typedef struct __crashlytics_unspecified                __crashlytics_unspecified_t;
 
-typedef void   (*__crashlytics_set_t)                   (__crashlytics_context_t *, const char *, const char *);
-typedef void   (*__crashlytics_log_t)                   (__crashlytics_context_t *, const char *);
-typedef void   (*__crashlytics_set_user_id_t)           (__crashlytics_context_t *, const char *);
+    typedef __crashlytics_unspecified_t*    (*__crashlytics_initialize_t)      ();
+    typedef void                            (*__crashlytics_set_internal_t)    (__crashlytics_unspecified_t *, const char *, const char *);
+    typedef void                            (*__crashlytics_log_internal_t)    (__crashlytics_unspecified_t *, const char *);
+    typedef void                            (*__crashlytics_set_user_id_internal_t)(__crashlytics_unspecified_t *, const char *);
+    typedef void                            (*__crashlytics_dispose_t)         (__crashlytics_unspecified_t *);
 
-typedef __crashlytics_unspecified_t*    (*__crashlytics_initialize_t)      ();
-typedef void                            (*__crashlytics_set_internal_t)    (__crashlytics_unspecified_t *, const char *, const char *);
-typedef void                            (*__crashlytics_log_internal_t)    (__crashlytics_unspecified_t *, const char *);
-typedef void                            (*__crashlytics_dispose_t)         (__crashlytics_unspecified_t *);
+    struct __crashlytics_context {
 
-typedef void                            (*__crashlytics_set_user_id_internal_t)(__crashlytics_unspecified_t *, const char *);
+        __crashlytics_set_internal_t __set;
+        __crashlytics_log_internal_t __log;
+        __crashlytics_set_user_id_internal_t __set_user_id;
 
-struct  __crashlytics_context {
-
-        __crashlytics_set_internal_t                   __set;
-        __crashlytics_log_internal_t                   __log;
-        __crashlytics_set_user_id_internal_t           __set_user_id;
-
-        __crashlytics_unspecified_t*                   __ctx;
-        __crashlytics_dispose_t                        __dispose;
-};
+        __crashlytics_unspecified_t *__ctx;
+        __crashlytics_dispose_t __dispose;
+    };
 
 #define __CRASHLYTICS_NULL_CONTEXT                             (struct __crashlytics_context *) 0
 #define __CRASHLYTICS_INITIALIZE_FAILURE                       (struct __crashlytics_unspecified *) 0
 #define __CRASHLYTICS_DECORATED                                __attribute__ ((always_inline))
 
 
-static inline __crashlytics_context_t* __crashlytics_init()                                   __CRASHLYTICS_DECORATED;
-static inline void                     __crashlytics_free(__crashlytics_context_t** context)  __CRASHLYTICS_DECORATED;
-
-
-/*** Implementation for public API */
+    static inline __crashlytics_context_t* __crashlytics_init() __CRASHLYTICS_DECORATED;
+    static inline void                     __crashlytics_free(__crashlytics_context_t **context) __CRASHLYTICS_DECORATED;
 
     __crashlytics_context_t *context;
 
@@ -180,76 +172,69 @@ static inline void                     __crashlytics_free(__crashlytics_context_
         }                                                               \
     } while (0)
 
-static inline __crashlytics_context_t* __crashlytics_allocate()                             __CRASHLYTICS_DECORATED;
-static inline __crashlytics_context_t* __crashlytics_allocate()
-{
-    return new __crashlytics_context_t;
-}
-
-static inline __crashlytics_context_t* __crashlytics_construct(
-        __crashlytics_unspecified_t* ctx, void* sym_set, void* sym_log, void* sym_dispose, void* sym_set_user_id
-)  __CRASHLYTICS_DECORATED;
-static inline __crashlytics_context_t* __crashlytics_construct(
-        __crashlytics_unspecified_t* ctx, void* sym_set, void* sym_log, void* sym_dispose, void* sym_set_user_id
-)
-{
-    __crashlytics_context_t* context;
-
-    __CRASHLYTICS_NULL_ON_NULL(context = __crashlytics_allocate());
-
-    context->__set                 = (__crashlytics_set_internal_t) sym_set;
-    context->__log                 = (__crashlytics_log_internal_t) sym_log;
-    context->__set_user_id         = (__crashlytics_set_user_id_internal_t) sym_set_user_id;
-    context->__ctx                 = ctx;
-    context->__dispose             = (__crashlytics_dispose_t) sym_dispose;
-
-    return context;
-}
-
-static inline __crashlytics_context_t* __crashlytics_init()
-{
-    void* lib;
-    void* sym_ini;
-    void* sym_log;
-    void* sym_set;
-    void* sym_dispose;
-    void* sym_set_user_id;
-
-    __CRASHLYTICS_NULL_ON_NULL(lib                     = dlopen("libcrashlytics.so", RTLD_LAZY | RTLD_LOCAL));
-    __CRASHLYTICS_NULL_ON_NULL(sym_ini                 = dlsym(lib, "external_api_initialize"));
-    __CRASHLYTICS_NULL_ON_NULL(sym_set                 = dlsym(lib, "external_api_set"));
-    __CRASHLYTICS_NULL_ON_NULL(sym_log                 = dlsym(lib, "external_api_log"));
-    __CRASHLYTICS_NULL_ON_NULL(sym_dispose             = dlsym(lib, "external_api_dispose"));
-    __CRASHLYTICS_NULL_ON_NULL(sym_set_user_id         = dlsym(lib, "external_api_set_user_id"));
-
-    __crashlytics_unspecified_t* ctx = ((__crashlytics_initialize_t) sym_ini)();
-
-    return ctx == __CRASHLYTICS_INITIALIZE_FAILURE ? __CRASHLYTICS_NULL_CONTEXT : __crashlytics_construct(
-            ctx,
-            sym_set,
-            sym_log,
-            sym_dispose,
-            sym_set_user_id
-    );
-}
-
-static inline void __crashlytics_deallocate(__crashlytics_context_t* context)  __CRASHLYTICS_DECORATED;
-static inline void __crashlytics_deallocate(__crashlytics_context_t* context)
-{
-    delete context;
-}
-
-static inline void __crashlytics_free(__crashlytics_context_t** context)
-{
-    if ((*context) != __CRASHLYTICS_NULL_CONTEXT) {
-        (*context)->__dispose((*context)->__ctx);
-
-        __crashlytics_deallocate(*context);
-
-        (*context) = __CRASHLYTICS_NULL_CONTEXT;
+    static inline __crashlytics_context_t *__crashlytics_allocate() __CRASHLYTICS_DECORATED;
+    static inline __crashlytics_context_t *__crashlytics_allocate() {
+        return new __crashlytics_context_t;
     }
-}
 
-}; // end namespace firebase::crashlytics
+    static inline __crashlytics_context_t *__crashlytics_construct(
+            __crashlytics_unspecified_t *ctx, void *sym_set, void *sym_log, void *sym_dispose, void *sym_set_user_id)  __CRASHLYTICS_DECORATED;
+    static inline __crashlytics_context_t *__crashlytics_construct(
+            __crashlytics_unspecified_t *ctx, void *sym_set, void *sym_log, void *sym_dispose, void *sym_set_user_id) {
+        __crashlytics_context_t *context;
+
+        __CRASHLYTICS_NULL_ON_NULL(context = __crashlytics_allocate());
+
+        context->__set = (__crashlytics_set_internal_t) sym_set;
+        context->__log = (__crashlytics_log_internal_t) sym_log;
+        context->__set_user_id = (__crashlytics_set_user_id_internal_t) sym_set_user_id;
+        context->__ctx = ctx;
+        context->__dispose = (__crashlytics_dispose_t) sym_dispose;
+
+        return context;
+    }
+
+    static inline __crashlytics_context_t *__crashlytics_init() {
+        void *lib;
+        void *sym_ini;
+        void *sym_log;
+        void *sym_set;
+        void *sym_dispose;
+        void *sym_set_user_id;
+
+        __CRASHLYTICS_NULL_ON_NULL(lib = dlopen("libcrashlytics.so", RTLD_LAZY | RTLD_LOCAL));
+        __CRASHLYTICS_NULL_ON_NULL(sym_ini = dlsym(lib, "external_api_initialize"));
+        __CRASHLYTICS_NULL_ON_NULL(sym_set = dlsym(lib, "external_api_set"));
+        __CRASHLYTICS_NULL_ON_NULL(sym_log = dlsym(lib, "external_api_log"));
+        __CRASHLYTICS_NULL_ON_NULL(sym_dispose = dlsym(lib, "external_api_dispose"));
+        __CRASHLYTICS_NULL_ON_NULL(sym_set_user_id = dlsym(lib, "external_api_set_user_id"));
+
+        __crashlytics_unspecified_t *ctx = ((__crashlytics_initialize_t) sym_ini)();
+
+        return ctx == __CRASHLYTICS_INITIALIZE_FAILURE ? __CRASHLYTICS_NULL_CONTEXT
+                                                       : __crashlytics_construct(
+                        ctx,
+                        sym_set,
+                        sym_log,
+                        sym_dispose,
+                        sym_set_user_id
+                );
+    }
+
+    static inline void __crashlytics_deallocate(__crashlytics_context_t *context)  __CRASHLYTICS_DECORATED;
+    static inline void __crashlytics_deallocate(__crashlytics_context_t *context) {
+        delete context;
+    }
+
+    static inline void __crashlytics_free(__crashlytics_context_t **context) {
+        if ((*context) != __CRASHLYTICS_NULL_CONTEXT) {
+            (*context)->__dispose((*context)->__ctx);
+
+            __crashlytics_deallocate(*context);
+
+            (*context) = __CRASHLYTICS_NULL_CONTEXT;
+        }
+    }
+}  // end namespace firebase::crashlytics
 
 #endif /* __CRASHLYTICS_H__ */
