@@ -40,6 +40,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -66,6 +67,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   private final IidStore iidStore;
   private final RandomFidGenerator fidGenerator;
   private final Object lock = new Object();
+  private final ExecutorService networkExecutor;
 
   @GuardedBy("lock")
   private final List<StateListener> listeners = new ArrayList<>();
@@ -124,6 +126,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     this.utils = utils;
     this.iidStore = iidStore;
     this.fidGenerator = fidGenerator;
+    this.networkExecutor = Executors.newSingleThreadExecutor();
   }
 
   /**
@@ -307,7 +310,11 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     }
 
     triggerOnStateReached(prefs);
+    networkExecutor.execute(() -> run(forceRefresh));
+  }
 
+  private void run(boolean forceRefresh) {
+    PersistedInstallationEntry prefs = getPrefsWithGeneratedIdMultiProcessSafe();
     // There are two possible cleanup steps to perform at this stage: the FID may need to
     // be registered with the server or the FID is registered but we need a fresh authtoken.
     // Registering will also result in a fresh authtoken. Do the appropriate step here.
