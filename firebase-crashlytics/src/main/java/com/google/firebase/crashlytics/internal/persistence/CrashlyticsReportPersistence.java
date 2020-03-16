@@ -50,6 +50,7 @@ public class CrashlyticsReportPersistence {
   private static final String WORKING_DIRECTORY_NAME = "report-persistence";
   private static final String OPEN_SESSIONS_DIRECTORY_NAME = "sessions";
   private static final String PRIORITY_REPORTS_DIRECTORY = "priority-reports";
+  private static final String NATIVE_REPORTS_DIRECTORY = "native-reports";
   private static final String REPORTS_DIRECTORY = "reports";
 
   private static final String REPORT_FILE_NAME = "report";
@@ -76,6 +77,9 @@ public class CrashlyticsReportPersistence {
   private final File priorityReportsDirectory;
   private final File reportsDirectory;
 
+  // Storage for ndk Reports
+  private final File nativeReportsDirectory;
+
   private final SettingsDataProvider settingsDataProvider;
 
   public CrashlyticsReportPersistence(
@@ -84,6 +88,7 @@ public class CrashlyticsReportPersistence {
     openSessionsDirectory = new File(workingDirectory, OPEN_SESSIONS_DIRECTORY_NAME);
     priorityReportsDirectory = new File(workingDirectory, PRIORITY_REPORTS_DIRECTORY);
     reportsDirectory = new File(workingDirectory, REPORTS_DIRECTORY);
+    nativeReportsDirectory = new File(workingDirectory, NATIVE_REPORTS_DIRECTORY);
     this.settingsDataProvider = settingsDataProvider;
   }
 
@@ -158,6 +163,13 @@ public class CrashlyticsReportPersistence {
     for (File reportFile : filteredReports) {
       reportFile.delete();
     }
+  }
+
+  public void finalizeNativeEvent(
+      CrashlyticsReport crashlyticsReport, CrashlyticsReport.FilesPayload files, String sessionId) {
+    CrashlyticsReport report = crashlyticsReport.withNdkPayload(files);
+    final File outputDirectory = prepareDirectory(nativeReportsDirectory);
+    writeTextFile(new File(outputDirectory, sessionId), TRANSFORM.reportToJson(report));
   }
 
   // TODO: Deal with potential runtime exceptions
@@ -267,18 +279,26 @@ public class CrashlyticsReportPersistence {
   @NonNull
   private List<File> getAllFinalizedReportFiles() {
     return sortAndCombineReportFiles(
-        getAllFilesInDirectory(priorityReportsDirectory), getAllFilesInDirectory(reportsDirectory));
+        getAllFilesInDirectory(priorityReportsDirectory),
+        getAllFilesInDirectory(reportsDirectory),
+        getAllFilesInDirectory(nativeReportsDirectory));
   }
 
   @NonNull
-  private static List<File> sortAndCombineReportFiles(
-      List<File> priorityReports, List<File> reports) {
-    Collections.sort(priorityReports, LATEST_SESSION_ID_FIRST_COMPARATOR);
-    Collections.sort(reports, LATEST_SESSION_ID_FIRST_COMPARATOR);
+  private static List<File> sortAndCombineReportFiles(List<File>... reports) {
+    for (List<File> reportList : reports) {
+      Collections.sort(reportList, LATEST_SESSION_ID_FIRST_COMPARATOR);
+    }
+
     final ArrayList<File> allReportsFiles = new ArrayList<>();
-    allReportsFiles.ensureCapacity(priorityReports.size() + reports.size());
-    allReportsFiles.addAll(priorityReports);
-    allReportsFiles.addAll(reports);
+    int totalReports = 0;
+    for (List<File> reportList : reports) {
+      totalReports += reportList.size();
+    }
+    allReportsFiles.ensureCapacity(totalReports);
+    for (List<File> reportList : reports) {
+      allReportsFiles.addAll(reportList);
+    }
     return allReportsFiles;
   }
 
