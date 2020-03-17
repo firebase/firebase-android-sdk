@@ -76,8 +76,10 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   /* file used for process-level synchronization of generating and persisting fids */
   private static final String LOCKFILE_NAME_GENERATE_FID = "generatefid.lock";
   private static final String CHIME_FIREBASE_APP_NAME = "CHIME_ANDROID_SDK";
-
-  private static final ThreadFactory threadFactory =
+  private static final int CORE_POOL_SIZE = 0;
+  private static final int MAXIMUM_POOL_SIZE = 1;
+  private static final long KEEP_ALIVE_TIME_IN_SECONDS = 30L;
+  private static final ThreadFactory THREAD_FACTORY =
       new ThreadFactory() {
         private final AtomicInteger mCount = new AtomicInteger(1);
 
@@ -95,12 +97,12 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
       @Nullable HeartBeatInfo heartbeatInfo) {
     this(
         new ThreadPoolExecutor(
-            /* corePoolSize= */ 0,
-            /* maximumPoolSize= */ 1,
-            /* keepAliveTime= */ 30L,
+            /* corePoolSize= */ CORE_POOL_SIZE,
+            /* maximumPoolSize= */ MAXIMUM_POOL_SIZE,
+            /* keepAliveTime= */ KEEP_ALIVE_TIME_IN_SECONDS,
             TimeUnit.SECONDS,
             /* workQueue= */ new LinkedBlockingQueue<>(),
-            /* threadFactory= */ threadFactory),
+            /* threadFactory= */ THREAD_FACTORY),
         firebaseApp,
         new FirebaseInstallationServiceClient(
             firebaseApp.getApplicationContext(), publisher, heartbeatInfo),
@@ -127,7 +129,12 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     this.backgroundExecutor = backgroundExecutor;
     this.networkExecutor =
         new ThreadPoolExecutor(
-            1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(), threadFactory);
+            /* corePoolSize= */ CORE_POOL_SIZE,
+            /* maximumPoolSize= */ MAXIMUM_POOL_SIZE,
+            /* keepAliveTime= */ 0L,
+            TimeUnit.MILLISECONDS,
+            /* workQueue= */ new LinkedBlockingQueue<>(),
+            /* threadFactory= */ THREAD_FACTORY);
   }
 
   /**
@@ -313,10 +320,10 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     triggerOnStateReached(prefs);
     // Execute network calls (CreateInstallations or GenerateAuthToken) to the FIS Servers on
     // a separate executor i.e networkExecutor
-    networkExecutor.execute(() -> fisNetworkCall(forceRefresh));
+    networkExecutor.execute(() -> doNetworkCall(forceRefresh));
   }
 
-  private void fisNetworkCall(boolean forceRefresh) {
+  private void doNetworkCall(boolean forceRefresh) {
     PersistedInstallationEntry prefs = getPrefsWithGeneratedIdMultiProcessSafe();
     // There are two possible cleanup steps to perform at this stage: the FID may need to
     // be registered with the server or the FID is registered but we need a fresh authtoken.
