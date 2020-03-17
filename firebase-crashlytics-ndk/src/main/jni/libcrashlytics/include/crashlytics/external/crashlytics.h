@@ -32,44 +32,44 @@ namespace firebase { namespace crashlytics {
     /// This must be called prior to calling any other methods in the firebase:crashlytics
     /// namespace. This call is only required for adding custom metadata to crash reports. Use of
     /// this header file is NOT required for Android NDK crash reporting.
-    void inline Initialize();
+    inline void Initialize();
 
     /// @brief Terminate the Crashlytics NDK API.
     ///
     /// Cleans up resources associated with the API. Subsequent calls to the Crashlytics native API
     /// will have no effect.
-    void inline Terminate();
+    inline void Terminate();
 
     /// @brief Logs a message to be included in the next fatal or non-fatal report.
-    void inline Log(const char *msg);
+    inline void Log(const char* msg);
 
     /// @brief Records a custom key and value to be associated with subsequent fatal and non-fatal
     /// reports.
-    void inline SetCustomKey(const char *key, bool value);
+    inline void SetCustomKey(const char* key, bool value);
 
     /// @brief Records a custom key and value to be associated with subsequent fatal and non-fatal
     /// reports.
-    void inline SetCustomKey(const char *key, const char *value);
+    inline void SetCustomKey(const char* key, const char *value);
 
     /// @brief Records a custom key and value to be associated with subsequent fatal and non-fatal
     /// reports.
-    void inline SetCustomKey(const char *key, double value);
+    inline void SetCustomKey(const char* key, double value);
 
     /// @brief Records a custom key and value to be associated with subsequent fatal and non-fatal
     /// reports.
-    void inline SetCustomKey(const char *key, float value);
+    inline void SetCustomKey(const char* key, float value);
 
     /// @brief Records a custom key and value to be associated with subsequent fatal and non-fatal
     /// reports.
-    void inline SetCustomKey(const char *key, int value);
+    inline void SetCustomKey(const char* key, int value);
 
     /// @brief Records a custom key and value to be associated with subsequent fatal and non-fatal
     /// reports.
-    void inline SetCustomKey(const char *key, long value);
+    inline void SetCustomKey(const char* key, long value);
 
     /// @brief Records a user ID (identifier) that's associated with subsequent fatal and non-fatal
     /// reports.
-    void inline SetUserId(const char *id);
+    inline void SetUserId(const char* id);
 
     /** END PUBLIC API **/
 
@@ -90,7 +90,7 @@ namespace firebase { namespace crashlytics {
         __crashlytics_log_internal_t __log;
         __crashlytics_set_user_id_internal_t __set_user_id;
 
-        __crashlytics_unspecified_t *__ctx;
+        __crashlytics_unspecified_t* __ctx;
         __crashlytics_dispose_t __dispose;
     };
 
@@ -100,61 +100,61 @@ namespace firebase { namespace crashlytics {
 
 
     static inline __crashlytics_context_t* __crashlytics_init() __CRASHLYTICS_DECORATED;
-    static inline void                     __crashlytics_free(__crashlytics_context_t **context) __CRASHLYTICS_DECORATED;
+    static inline void                     __crashlytics_free(__crashlytics_context_t** context) __CRASHLYTICS_DECORATED;
 
-    __crashlytics_context_t *__context;
+    __crashlytics_context_t* __context;
 
-    bool inline VerifyCrashlytics() {
+    inline bool VerifyCrashlytics() {
         if (__context) {
             return true;
         }
         return false;
     }
 
-    void inline Initialize() {
+    inline void Initialize() {
         __context = __crashlytics_init();
         VerifyCrashlytics();
     }
 
-    void inline Terminate() {
+    inline void Terminate() {
         if (VerifyCrashlytics()) {
             __crashlytics_free(&__context);
         }
     }
 
-    void inline Log(const char *msg) {
+    inline void Log(const char* msg) {
         if (VerifyCrashlytics()) {
             __context->__log(__context->__ctx, msg);
         }
     }
 
-    void inline SetCustomKey(const char *key, const char *value) {
+    inline void SetCustomKey(const char* key, const char* value) {
         if (VerifyCrashlytics()) {
             __context->__set(__context->__ctx, key, value);
         }
     }
 
-    void inline SetCustomKey(const char *key, bool value) {
+    inline void SetCustomKey(const char* key, bool value) {
         SetCustomKey(key, value ? "true" : "false");
     }
 
-    void inline SetCustomKey(const char *key, double value) {
+    inline void SetCustomKey(const char* key, double value) {
         SetCustomKey(key, std::to_string(value).c_str());
     }
 
-    void inline SetCustomKey(const char *key, float value) {
+    inline void SetCustomKey(const char* key, float value) {
         SetCustomKey(key, std::to_string(value).c_str());
     }
 
-    void inline SetCustomKey(const char *key, int value) {
+    inline void SetCustomKey(const char* key, int value) {
         SetCustomKey(key, std::to_string(value).c_str());
     }
 
-    void inline SetCustomKey(const char *key, long value) {
+    inline void SetCustomKey(const char* key, long value) {
         SetCustomKey(key, std::to_string(value).c_str());
     }
 
-    void inline SetUserId(const char *id) {
+    inline void SetUserId(const char* id) {
         if (VerifyCrashlytics()) {
             __context->__set_user_id(__context->__ctx, id);
         }
@@ -168,16 +168,16 @@ namespace firebase { namespace crashlytics {
         }                                                               \
     } while (0)
 
-    static inline __crashlytics_context_t *__crashlytics_allocate() __CRASHLYTICS_DECORATED;
-    static inline __crashlytics_context_t *__crashlytics_allocate() {
+    static inline __crashlytics_context_t* __crashlytics_allocate() __CRASHLYTICS_DECORATED;
+    static inline __crashlytics_context_t* __crashlytics_allocate() {
         return new __crashlytics_context_t;
     }
 
-    static inline __crashlytics_context_t *__crashlytics_construct(
-            __crashlytics_unspecified_t *ctx, void *sym_set, void *sym_log, void *sym_dispose, void *sym_set_user_id)  __CRASHLYTICS_DECORATED;
-    static inline __crashlytics_context_t *__crashlytics_construct(
-            __crashlytics_unspecified_t *ctx, void *sym_set, void *sym_log, void *sym_dispose, void *sym_set_user_id) {
-        __crashlytics_context_t *context;
+    static inline __crashlytics_context_t* __crashlytics_construct(
+            __crashlytics_unspecified_t* ctx, void* sym_set, void* sym_log, void* sym_dispose, void* sym_set_user_id)  __CRASHLYTICS_DECORATED;
+    static inline __crashlytics_context_t* __crashlytics_construct(
+            __crashlytics_unspecified_t* ctx, void* sym_set, void* sym_log, void* sym_dispose, void* sym_set_user_id) {
+        __crashlytics_context_t* context;
 
         __CRASHLYTICS_NULL_ON_NULL(context = __crashlytics_allocate());
 
@@ -190,13 +190,13 @@ namespace firebase { namespace crashlytics {
         return context;
     }
 
-    static inline __crashlytics_context_t *__crashlytics_init() {
-        void *lib;
-        void *sym_ini;
-        void *sym_log;
-        void *sym_set;
-        void *sym_dispose;
-        void *sym_set_user_id;
+    static inline __crashlytics_context_t* __crashlytics_init() {
+        void* lib;
+        void* sym_ini;
+        void* sym_log;
+        void* sym_set;
+        void* sym_dispose;
+        void* sym_set_user_id;
 
         __CRASHLYTICS_NULL_ON_NULL(lib = dlopen("libcrashlytics.so", RTLD_LAZY | RTLD_LOCAL));
         __CRASHLYTICS_NULL_ON_NULL(sym_ini = dlsym(lib, "external_api_initialize"));
@@ -205,7 +205,7 @@ namespace firebase { namespace crashlytics {
         __CRASHLYTICS_NULL_ON_NULL(sym_dispose = dlsym(lib, "external_api_dispose"));
         __CRASHLYTICS_NULL_ON_NULL(sym_set_user_id = dlsym(lib, "external_api_set_user_id"));
 
-        __crashlytics_unspecified_t *ctx = ((__crashlytics_initialize_t) sym_ini)();
+        __crashlytics_unspecified_t* ctx = ((__crashlytics_initialize_t) sym_ini)();
 
         return ctx == __CRASHLYTICS_INITIALIZE_FAILURE ? __CRASHLYTICS_NULL_CONTEXT
                                                        : __crashlytics_construct(
@@ -217,12 +217,12 @@ namespace firebase { namespace crashlytics {
                 );
     }
 
-    static inline void __crashlytics_deallocate(__crashlytics_context_t *context)  __CRASHLYTICS_DECORATED;
-    static inline void __crashlytics_deallocate(__crashlytics_context_t *context) {
+    static inline void __crashlytics_deallocate(__crashlytics_context_t* context)  __CRASHLYTICS_DECORATED;
+    static inline void __crashlytics_deallocate(__crashlytics_context_t* context) {
         delete context;
     }
 
-    static inline void __crashlytics_free(__crashlytics_context_t **context) {
+    static inline void __crashlytics_free(__crashlytics_context_t** context) {
         if ((*context) != __CRASHLYTICS_NULL_CONTEXT) {
             (*context)->__dispose((*context)->__ctx);
 
