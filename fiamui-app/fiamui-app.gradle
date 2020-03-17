@@ -13,7 +13,6 @@
 // limitations under the License.
 
 apply plugin: "com.android.application"
-apply plugin: com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabPlugin
 
 android {
   compileSdkVersion project.targetSdkVersion
