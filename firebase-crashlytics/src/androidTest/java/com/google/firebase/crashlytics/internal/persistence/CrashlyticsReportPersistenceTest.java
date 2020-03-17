@@ -581,6 +581,7 @@ public class CrashlyticsReportPersistenceTest {
         .setIdentifier(sessionId)
         .setStartedAt(0)
         .setApp(makeTestApplication())
+        .setGeneratorType(3)
         .build();
   }
 

@@ -211,6 +211,8 @@ public abstract class CrashlyticsReport {
     @Nullable
     public abstract ImmutableList<Event> getEvents();
 
+    public abstract int getGeneratorType();
+
     @NonNull
     public abstract Builder toBuilder();
 
@@ -279,6 +281,9 @@ public abstract class CrashlyticsReport {
 
       @NonNull
       public abstract Builder setEvents(@NonNull ImmutableList<Event> value);
+
+      @NonNull
+      public abstract Builder setGeneratorType(int generatorType);
 
       @NonNull
       public abstract Session build();
