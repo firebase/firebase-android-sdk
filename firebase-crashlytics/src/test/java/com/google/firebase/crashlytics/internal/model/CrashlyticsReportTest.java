@@ -202,6 +202,7 @@ public class CrashlyticsReportTest {
         .setIdentifier("identifier")
         .setStartedAt(0)
         .setApp(makeTestApplication())
+        .setGeneratorType(3)
         .build();
   }
 

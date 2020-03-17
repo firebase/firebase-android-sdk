@@ -78,6 +78,7 @@ public class CrashlyticsReportJsonTransformTest {
         .setCrashed(true)
         .setApp(makeTestApplication())
         .setUser(User.builder().setIdentifier("user").build())
+        .setGeneratorType(3)
         .build();
   }
 
