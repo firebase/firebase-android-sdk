@@ -28,7 +28,6 @@ import butterknife.ButterKnife;
 import butterknife.OnClick;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.common.collect.ImmutableMap;
-import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.firebase.inappmessaging.display.FirebaseInAppMessagingDisplay;
 import com.google.firebase.inappmessaging.model.*;
 import me.priyesh.chroma.ChromaDialog;
@@ -118,13 +117,6 @@ public class MainActivity extends AppCompatActivity {
     setContentView(R.layout.activity_main);
 
     ButterKnife.bind(this);
-
-    FirebaseAnalytics analytics = FirebaseAnalytics.getInstance(this);
-    Bundle bundle = new Bundle();
-    bundle.putString(FirebaseAnalytics.Param.ITEM_ID, "id");
-    bundle.putString(FirebaseAnalytics.Param.ITEM_NAME, "name");
-    bundle.putString(FirebaseAnalytics.Param.CONTENT_TYPE, "image");
-    analytics.logEvent(FirebaseAnalytics.Event.SELECT_CONTENT, bundle);
 
     bindColorPicker(colorBodyBgContainer, colorBodyBgPreview);
     bindColorPicker(colorBodyTextContainer, colorBodyTextPreview);
