@@ -123,6 +123,22 @@ public abstract class CrashlyticsReport {
     return toBuilder().setSession(getSession().withUserId(userId)).build();
   }
 
+  /**
+   * Augment an existing {@link CrashlyticsReport} with fields set at session end.
+   *
+   * @param endedAt Session end time, by device clock, in posix seconds since epoch, UTC
+   * @param isCrashed whether the session ended unexpectedly
+   * @param userId the currently set user ID, if any, or null
+   * @return a new {@link CrashlyticsReport} with appropriate fields set
+   */
+  @NonNull
+  public CrashlyticsReport withSessionEndFields(
+      long endedAt, boolean isCrashed, @Nullable String userId) {
+    return toBuilder()
+        .setSession(getSession().withSessionEndFields(endedAt, isCrashed, userId))
+        .build();
+  }
+
   @AutoValue
   public abstract static class CustomAttribute {
 
@@ -212,6 +228,17 @@ public abstract class CrashlyticsReport {
     @NonNull
     Session withUserId(@NonNull String userId) {
       return toBuilder().setUser(User.builder().setIdentifier(userId).build()).build();
+    }
+
+    @NonNull
+    Session withSessionEndFields(long timestamp, boolean isCrashed, @Nullable String userId) {
+      final Builder builder = toBuilder();
+      builder.setEndedAt(timestamp);
+      builder.setCrashed(isCrashed);
+      if (userId != null) {
+        builder.setUser(User.builder().setIdentifier(userId).build()).build();
+      }
+      return builder.build();
     }
 
     /** Builder for {@link Session}. */

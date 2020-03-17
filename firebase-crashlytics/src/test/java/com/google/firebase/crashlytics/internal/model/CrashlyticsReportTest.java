@@ -73,6 +73,51 @@ public class CrashlyticsReportTest {
   }
 
   @Test
+  public void testWithSessionEndFields_returnsNewReportWithSessionEndFields() {
+    final CrashlyticsReport testReport = makeTestReport();
+
+    assertNull(testReport.getSession().getEndedAt());
+    assertFalse(testReport.getSession().isCrashed());
+    assertNull(testReport.getSession().getUser());
+
+    final long endedAt = System.currentTimeMillis();
+    final boolean isCrashed = true;
+    final String userId = "userId";
+
+    final CrashlyticsReport withSessionEndFieldsReport =
+        testReport.withSessionEndFields(endedAt, isCrashed, userId);
+
+    assertNotEquals(testReport, withSessionEndFieldsReport);
+    assertNotNull(withSessionEndFieldsReport.getSession().getUser());
+    assertNotNull(withSessionEndFieldsReport.getSession().getEndedAt());
+    assertEquals(endedAt, withSessionEndFieldsReport.getSession().getEndedAt().longValue());
+    assertEquals(isCrashed, withSessionEndFieldsReport.getSession().isCrashed());
+    assertEquals(userId, withSessionEndFieldsReport.getSession().getUser().getIdentifier());
+  }
+
+  @Test
+  public void testWithSessionEndFieldsNullUser_returnsNewReportWithSessionEndFieldsNullUser() {
+    final CrashlyticsReport testReport = makeTestReport();
+
+    assertNull(testReport.getSession().getEndedAt());
+    assertFalse(testReport.getSession().isCrashed());
+    assertNull(testReport.getSession().getUser());
+
+    final long endedAt = System.currentTimeMillis();
+    final boolean isCrashed = true;
+
+    final CrashlyticsReport withSessionEndFieldsReport =
+        testReport.withSessionEndFields(endedAt, isCrashed, null);
+
+    assertNotEquals(testReport, withSessionEndFieldsReport);
+    assertNotNull(withSessionEndFieldsReport.getSession().getUser());
+    assertNotNull(withSessionEndFieldsReport.getSession().getEndedAt());
+    assertEquals(endedAt, withSessionEndFieldsReport.getSession().getEndedAt().longValue());
+    assertEquals(isCrashed, withSessionEndFieldsReport.getSession().isCrashed());
+    assertNull(withSessionEndFieldsReport.getSession().getUser());
+  }
+
+  @Test
   public void testGetSessionIdUtf8Bytes_returnsProperBytes() {
     final CrashlyticsReport testReport = makeTestReport();
     final byte[] expectedBytes = "identifier".getBytes(Charset.forName("UTF-8"));
