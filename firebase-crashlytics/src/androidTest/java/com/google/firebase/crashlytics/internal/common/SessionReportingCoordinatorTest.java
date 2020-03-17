@@ -328,9 +328,10 @@ public class SessionReportingCoordinatorTest {
   public void onSessionsFinalize_finalizesReports() {
     final String sessionId = "testSessionId";
     reportManager.onBeginSession(sessionId, System.currentTimeMillis());
-    reportManager.finalizeSessions();
+    final long endedAt = System.currentTimeMillis();
+    reportManager.finalizeSessions(endedAt);
 
-    verify(reportPersistence).finalizeReports(sessionId);
+    verify(reportPersistence).finalizeReports(sessionId, endedAt);
   }
 
   @Test

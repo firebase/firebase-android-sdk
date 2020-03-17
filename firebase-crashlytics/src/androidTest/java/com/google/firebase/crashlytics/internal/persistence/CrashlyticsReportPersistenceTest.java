@@ -75,8 +75,9 @@ public class CrashlyticsReportPersistenceTest {
   @Test
   public void testLoadFinalizedReports_reportWithNoEvents_returnsNothing() {
     final String sessionId = "testSession";
+    final long timestamp = System.currentTimeMillis();
     reportPersistence.persistReport(makeTestReport(sessionId));
-    reportPersistence.finalizeReports(sessionId);
+    reportPersistence.finalizeReports(sessionId, timestamp);
     assertTrue(reportPersistence.loadFinalizedReports().isEmpty());
   }
 
@@ -88,12 +89,19 @@ public class CrashlyticsReportPersistenceTest {
 
     reportPersistence.persistReport(testReport);
     reportPersistence.persistEvent(testEvent, sessionId);
-    reportPersistence.finalizeReports("skippedSession");
+
+    final long endedAt = System.currentTimeMillis();
+
+    reportPersistence.finalizeReports("skippedSession", endedAt);
 
     final List<CrashlyticsReport> finalizedReports = reportPersistence.loadFinalizedReports();
     assertEquals(1, finalizedReports.size());
     final CrashlyticsReport finalizedReport = finalizedReports.get(0);
-    assertEquals(testReport.withEvents(ImmutableList.from(testEvent)), finalizedReport);
+    assertEquals(
+        testReport
+            .withSessionEndFields(endedAt, false, null)
+            .withEvents(ImmutableList.from(testEvent)),
+        finalizedReport);
   }
 
   @Test
@@ -107,12 +115,18 @@ public class CrashlyticsReportPersistenceTest {
     reportPersistence.persistEvent(testEvent, sessionId);
     reportPersistence.persistEvent(testEvent2, sessionId);
 
-    reportPersistence.finalizeReports("skippedSession");
+    final long endedAt = System.currentTimeMillis();
+
+    reportPersistence.finalizeReports("skippedSession", endedAt);
 
     final List<CrashlyticsReport> finalizedReports = reportPersistence.loadFinalizedReports();
     assertEquals(1, finalizedReports.size());
     final CrashlyticsReport finalizedReport = finalizedReports.get(0);
-    assertEquals(testReport.withEvents(ImmutableList.from(testEvent, testEvent2)), finalizedReport);
+    assertEquals(
+        testReport
+            .withSessionEndFields(endedAt, false, null)
+            .withEvents(ImmutableList.from(testEvent, testEvent2)),
+        finalizedReport);
   }
 
   @Test
@@ -130,14 +144,24 @@ public class CrashlyticsReportPersistenceTest {
     reportPersistence.persistEvent(testEvent1, sessionId1);
     reportPersistence.persistEvent(testEvent2, sessionId2);
 
-    reportPersistence.finalizeReports("skippedSession");
+    final long endedAt = System.currentTimeMillis();
+
+    reportPersistence.finalizeReports("skippedSession", endedAt);
 
     final List<CrashlyticsReport> finalizedReports = reportPersistence.loadFinalizedReports();
     assertEquals(2, finalizedReports.size());
     final CrashlyticsReport finalizedReport1 = finalizedReports.get(1);
-    assertEquals(testReport1.withEvents(ImmutableList.from(testEvent1)), finalizedReport1);
+    assertEquals(
+        testReport1
+            .withSessionEndFields(endedAt, false, null)
+            .withEvents(ImmutableList.from(testEvent1)),
+        finalizedReport1);
     final CrashlyticsReport finalizedReport2 = finalizedReports.get(0);
-    assertEquals(testReport2.withEvents(ImmutableList.from(testEvent2)), finalizedReport2);
+    assertEquals(
+        testReport2
+            .withSessionEndFields(endedAt, false, null)
+            .withEvents(ImmutableList.from(testEvent2)),
+        finalizedReport2);
   }
 
   @Test
@@ -145,7 +169,10 @@ public class CrashlyticsReportPersistenceTest {
     for (int i = 0; i < 10; i++) {
       persistReportWithEvent(reportPersistence, "testSession" + i, true);
     }
-    reportPersistence.finalizeReports("skippedSession");
+
+    final long endedAt = System.currentTimeMillis();
+
+    reportPersistence.finalizeReports("skippedSession", endedAt);
 
     final List<CrashlyticsReport> finalizedReports = reportPersistence.loadFinalizedReports();
     assertEquals(8, finalizedReports.size());
@@ -157,7 +184,10 @@ public class CrashlyticsReportPersistenceTest {
     for (int i = 0; i < 16; i++) {
       persistReportWithEvent(reportPersistence, "testSession" + format.format(i), true);
     }
-    reportPersistence.finalizeReports("skippedSession");
+
+    final long endedAt = System.currentTimeMillis();
+
+    reportPersistence.finalizeReports("skippedSession", endedAt);
 
     final List<CrashlyticsReport> finalizedReports = reportPersistence.loadFinalizedReports();
     assertEquals(8, finalizedReports.size());
@@ -182,11 +212,14 @@ public class CrashlyticsReportPersistenceTest {
     for (int i = 0; i < 16; i++) {
       persistReportWithEvent(reportPersistence, "testSession" + i, true);
     }
-    reportPersistence.finalizeReports("testSession5");
+
+    final long endedAt = System.currentTimeMillis();
+
+    reportPersistence.finalizeReports("testSession5", endedAt);
     List<CrashlyticsReport> finalizedReports = reportPersistence.loadFinalizedReports();
     assertEquals(8, finalizedReports.size());
     persistReportWithEvent(reportPersistence, "testSession11", true);
-    reportPersistence.finalizeReports("testSession11");
+    reportPersistence.finalizeReports("testSession11", endedAt);
     finalizedReports = reportPersistence.loadFinalizedReports();
     assertEquals(9, finalizedReports.size());
   }
@@ -199,7 +232,8 @@ public class CrashlyticsReportPersistenceTest {
     for (int i = 0; i < 10; i++) {
       persistReportWithEvent(reportPersistence, "testSession" + i, true);
     }
-    reportPersistence.finalizeReports("skippedSession");
+
+    reportPersistence.finalizeReports("skippedSession", 0L);
 
     final List<CrashlyticsReport> finalizedReports = reportPersistence.loadFinalizedReports();
     assertEquals(4, finalizedReports.size());
@@ -221,7 +255,8 @@ public class CrashlyticsReportPersistenceTest {
     for (int i = 0; i < 16; i++) {
       persistReportWithEvent(reportPersistence, "testSession" + format.format(i), true);
     }
-    reportPersistence.finalizeReports("skippedSession");
+
+    reportPersistence.finalizeReports("skippedSession", 0L);
     List<CrashlyticsReport> finalizedReports = reportPersistence.loadFinalizedReports();
     assertEquals(4, finalizedReports.size());
     when(settingsMock.getSessionData()).thenReturn(sessionSettingsDataMockDifferentValues);
@@ -230,7 +265,7 @@ public class CrashlyticsReportPersistenceTest {
       persistReportWithEvent(reportPersistence, "testSession" + i, true);
     }
 
-    reportPersistence.finalizeReports("skippedSession");
+    reportPersistence.finalizeReports("skippedSession", 0L);
 
     finalizedReports = reportPersistence.loadFinalizedReports();
     assertEquals(8, finalizedReports.size());
@@ -248,7 +283,7 @@ public class CrashlyticsReportPersistenceTest {
       persistReportWithEvent(reportPersistence, sessionId, priority);
     }
 
-    reportPersistence.finalizeReports("skippedSession");
+    reportPersistence.finalizeReports("skippedSession", 0L);
 
     final List<CrashlyticsReport> finalizedReports = reportPersistence.loadFinalizedReports();
     assertEquals(4, finalizedReports.size());
@@ -267,7 +302,7 @@ public class CrashlyticsReportPersistenceTest {
       persistReportWithEvent(reportPersistence, sessionId, true);
     }
 
-    reportPersistence.finalizeReports("skippedSession");
+    reportPersistence.finalizeReports("skippedSession", 0L);
 
     final List<CrashlyticsReport> finalizedReports = reportPersistence.loadFinalizedReports();
     assertEquals(4, finalizedReports.size());
@@ -297,11 +332,13 @@ public class CrashlyticsReportPersistenceTest {
     reportPersistence.persistReport(testReport);
     reportPersistence.persistEvent(testEvent, sessionId);
     reportPersistence.persistUserIdForSession(userId, sessionId);
-    reportPersistence.finalizeReports("skippedSession");
+
+    reportPersistence.finalizeReports("skippedSession", 0L);
 
     final List<CrashlyticsReport> finalizedReports = reportPersistence.loadFinalizedReports();
     assertEquals(1, finalizedReports.size());
     final CrashlyticsReport finalizedReport = finalizedReports.get(0);
+    assertNotNull(finalizedReport.getSession().getUser());
     assertEquals(userId, finalizedReport.getSession().getUser().getIdentifier());
   }
 
@@ -324,13 +361,15 @@ public class CrashlyticsReportPersistenceTest {
     reportPersistence.persistUserIdForSession(userId1, sessionId1);
     reportPersistence.persistUserIdForSession(userId2, sessionId2);
 
-    reportPersistence.finalizeReports("skippedSession");
+    reportPersistence.finalizeReports("skippedSession", 0L);
 
     final List<CrashlyticsReport> finalizedReports = reportPersistence.loadFinalizedReports();
     assertEquals(2, finalizedReports.size());
     final CrashlyticsReport finalizedReport1 = finalizedReports.get(1);
+    assertNotNull(finalizedReport1.getSession().getUser());
     assertEquals(userId1, finalizedReport1.getSession().getUser().getIdentifier());
     final CrashlyticsReport finalizedReport2 = finalizedReports.get(0);
+    assertNotNull(finalizedReport2.getSession().getUser());
     assertEquals(userId2, finalizedReport2.getSession().getUser().getIdentifier());
   }
 
@@ -342,7 +381,8 @@ public class CrashlyticsReportPersistenceTest {
 
     reportPersistence.persistReport(testReport);
     reportPersistence.persistEvent(testEvent, sessionId);
-    reportPersistence.finalizeReports("skippedSession");
+
+    reportPersistence.finalizeReports("skippedSession", 0L);
 
     assertEquals(1, reportPersistence.loadFinalizedReports().size());
 
@@ -359,7 +399,8 @@ public class CrashlyticsReportPersistenceTest {
 
     reportPersistence.persistReport(testReport);
     reportPersistence.persistEvent(testEvent, sessionId);
-    reportPersistence.finalizeReports("skippedSession");
+
+    reportPersistence.finalizeReports("skippedSession", 0L);
 
     assertEquals(1, reportPersistence.loadFinalizedReports().size());
 
@@ -382,7 +423,7 @@ public class CrashlyticsReportPersistenceTest {
     reportPersistence.persistEvent(testEvent1, sessionId1);
     reportPersistence.persistEvent(testEvent2, sessionId2);
 
-    reportPersistence.finalizeReports("skippedSession");
+    reportPersistence.finalizeReports("skippedSession", 0L);
 
     assertEquals(2, reportPersistence.loadFinalizedReports().size());
 
@@ -410,14 +451,19 @@ public class CrashlyticsReportPersistenceTest {
     reportPersistence.persistEvent(testEvent3, sessionId);
     reportPersistence.persistEvent(testEvent4, sessionId);
     reportPersistence.persistEvent(testEvent5, sessionId);
-    reportPersistence.finalizeReports("skippedSession");
+
+    final long endedAt = System.currentTimeMillis();
+
+    reportPersistence.finalizeReports("skippedSession", endedAt);
 
     final List<CrashlyticsReport> finalizedReports = reportPersistence.loadFinalizedReports();
     assertEquals(1, finalizedReports.size());
     final CrashlyticsReport finalizedReport = finalizedReports.get(0);
     assertEquals(4, finalizedReport.getSession().getEvents().size());
     assertEquals(
-        testReport.withEvents(ImmutableList.from(testEvent2, testEvent3, testEvent4, testEvent5)),
+        testReport
+            .withSessionEndFields(endedAt, false, null)
+            .withEvents(ImmutableList.from(testEvent2, testEvent3, testEvent4, testEvent5)),
         finalizedReport);
   }
 
@@ -448,14 +494,19 @@ public class CrashlyticsReportPersistenceTest {
     reportPersistence.persistEvent(testEvent3, sessionId);
     reportPersistence.persistEvent(testEvent4, sessionId);
     reportPersistence.persistEvent(testEvent5, sessionId);
-    reportPersistence.finalizeReports("skippedSession");
+
+    long endedAt = System.currentTimeMillis();
+
+    reportPersistence.finalizeReports("skippedSession", endedAt);
 
     final List<CrashlyticsReport> finalizedReports = reportPersistence.loadFinalizedReports();
     assertEquals(1, finalizedReports.size());
     final CrashlyticsReport finalizedReport = finalizedReports.get(0);
     assertEquals(4, finalizedReport.getSession().getEvents().size());
     assertEquals(
-        testReport.withEvents(ImmutableList.from(testEvent2, testEvent3, testEvent4, testEvent5)),
+        testReport
+            .withSessionEndFields(endedAt, false, null)
+            .withEvents(ImmutableList.from(testEvent2, testEvent3, testEvent4, testEvent5)),
         finalizedReport);
 
     when(settingsMock.getSessionData()).thenReturn(sessionSettingsDataMockDifferentValues);
@@ -479,23 +530,28 @@ public class CrashlyticsReportPersistenceTest {
     reportPersistence.persistEvent(testEvent8, sessionId2);
     reportPersistence.persistEvent(testEvent9, sessionId2);
     reportPersistence.persistEvent(testEvent10, sessionId2);
-    reportPersistence.finalizeReports("skippedSession");
+
+    endedAt = System.currentTimeMillis();
+
+    reportPersistence.finalizeReports("skippedSession", endedAt);
 
     final List<CrashlyticsReport> finalizedReports2 = reportPersistence.loadFinalizedReports();
     assertEquals(2, finalizedReports2.size());
     final CrashlyticsReport finalizedReport2 = finalizedReports2.get(0);
     assertEquals(8, finalizedReport2.getSession().getEvents().size());
     assertEquals(
-        testReport2.withEvents(
-            ImmutableList.from(
-                testEvent3,
-                testEvent4,
-                testEvent5,
-                testEvent6,
-                testEvent7,
-                testEvent8,
-                testEvent9,
-                testEvent10)),
+        testReport2
+            .withSessionEndFields(endedAt, false, null)
+            .withEvents(
+                ImmutableList.from(
+                    testEvent3,
+                    testEvent4,
+                    testEvent5,
+                    testEvent6,
+                    testEvent7,
+                    testEvent8,
+                    testEvent9,
+                    testEvent10)),
         finalizedReport2);
   }
 
