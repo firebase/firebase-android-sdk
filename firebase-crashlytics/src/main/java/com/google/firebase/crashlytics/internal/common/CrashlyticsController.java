@@ -860,7 +860,7 @@ class CrashlyticsController {
 
     closeOpenSessions(sessionBeginFiles, offset, maxCustomExceptionEvents);
 
-    reportingCoordinator.finalizeSessions();
+    reportingCoordinator.finalizeSessions(new Date().getTime() / 1000);
   }
 
   /**

@@ -161,7 +161,7 @@ public class CrashlyticsReportPersistence {
   }
 
   // TODO: Deal with potential runtime exceptions
-  public void finalizeReports(String currentSessionId) {
+  public void finalizeReports(String currentSessionId, long sessionEndTime) {
     // TODO: Need to implement procedure to skip finalizing the current session when this is
     //  called on app start, but keep the current session when called at crash time. Currently
     //  this only works when called at app start.
@@ -192,17 +192,20 @@ public class CrashlyticsReportPersistence {
 
         CrashlyticsReport report =
             TRANSFORM.reportFromJson(readTextFile(new File(sessionDirectory, REPORT_FILE_NAME)));
-        final String sessionId = report.getSession().getIdentifier();
 
-        if (userId != null) {
-          report = report.withUserId(userId);
+        // TODO: Handle null case
+
+        if (report != null) {
+          report = report.withSessionEndFields(sessionEndTime, isHighPriorityReport, userId);
+
+          final String sessionId = report.getSession().getIdentifier();
+
+          final File outputDirectory =
+              prepareDirectory(isHighPriorityReport ? priorityReportsDirectory : reportsDirectory);
+          writeTextFile(
+              new File(outputDirectory, sessionId),
+              TRANSFORM.reportToJson(report.withEvents(ImmutableList.from(events))));
         }
-
-        final File outputDirectory =
-            prepareDirectory(isHighPriorityReport ? priorityReportsDirectory : reportsDirectory);
-        writeTextFile(
-            new File(outputDirectory, sessionId),
-            TRANSFORM.reportToJson(report.withEvents(ImmutableList.from(events))));
       }
       recursiveDelete(sessionDirectory);
     }

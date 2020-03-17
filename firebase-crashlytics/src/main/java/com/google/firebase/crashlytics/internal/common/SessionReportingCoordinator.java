@@ -135,8 +135,8 @@ class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
   }
 
   /** Creates finalized reports for all sessions besides the current session. */
-  public void finalizeSessions() {
-    reportPersistence.finalizeReports(currentSessionId);
+  public void finalizeSessions(long timestamp) {
+    reportPersistence.finalizeReports(currentSessionId, timestamp);
   }
 
   public void removeAllReports() {
