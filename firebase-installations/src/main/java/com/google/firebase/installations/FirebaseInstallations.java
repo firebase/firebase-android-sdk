@@ -97,12 +97,12 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
       @Nullable HeartBeatInfo heartbeatInfo) {
     this(
         new ThreadPoolExecutor(
-            /* corePoolSize= */ CORE_POOL_SIZE,
-            /* maximumPoolSize= */ MAXIMUM_POOL_SIZE,
-            /* keepAliveTime= */ KEEP_ALIVE_TIME_IN_SECONDS,
+            CORE_POOL_SIZE,
+            MAXIMUM_POOL_SIZE,
+            KEEP_ALIVE_TIME_IN_SECONDS,
             TimeUnit.SECONDS,
-            /* workQueue= */ new LinkedBlockingQueue<>(),
-            /* threadFactory= */ THREAD_FACTORY),
+            new LinkedBlockingQueue<>(),
+            THREAD_FACTORY),
         firebaseApp,
         new FirebaseInstallationServiceClient(
             firebaseApp.getApplicationContext(), publisher, heartbeatInfo),
@@ -129,12 +129,12 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     this.backgroundExecutor = backgroundExecutor;
     this.networkExecutor =
         new ThreadPoolExecutor(
-            /* corePoolSize= */ CORE_POOL_SIZE,
-            /* maximumPoolSize= */ MAXIMUM_POOL_SIZE,
-            /* keepAliveTime= */ 0L,
-            TimeUnit.MILLISECONDS,
-            /* workQueue= */ new LinkedBlockingQueue<>(),
-            /* threadFactory= */ THREAD_FACTORY);
+            CORE_POOL_SIZE,
+            MAXIMUM_POOL_SIZE,
+            KEEP_ALIVE_TIME_IN_SECONDS,
+            TimeUnit.SECONDS,
+            new LinkedBlockingQueue<>(),
+            THREAD_FACTORY);
   }
 
   /**
