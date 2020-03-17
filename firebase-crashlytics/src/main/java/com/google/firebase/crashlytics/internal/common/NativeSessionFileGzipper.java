@@ -26,8 +26,7 @@ import java.util.zip.GZIPOutputStream;
 /** Copies {@link NativeSessionFile} into gzipped files within a provided path. */
 class NativeSessionFileGzipper {
 
-  static void processNativeSessions(File nativeSessionDirectory, List<NativeSessionFile> streams)
-      throws IOException {
+  static void processNativeSessions(File nativeSessionDirectory, List<NativeSessionFile> streams) {
 
     for (NativeSessionFile stream : streams) {
       InputStream inputStream = null;

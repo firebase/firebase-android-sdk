@@ -40,6 +40,9 @@ class FileBackedNativeSessionFile implements NativeSessionFile {
 
   @Override
   public InputStream getStream() {
+    if (!file.exists() || !file.isFile()) {
+      return null;
+    }
     try {
       return new FileInputStream(file);
     } catch (FileNotFoundException f) {
@@ -61,14 +64,15 @@ class FileBackedNativeSessionFile implements NativeSessionFile {
   private byte[] asBytes() {
     final byte[] readBuffer = new byte[8192];
     final ByteArrayOutputStream bos = new ByteArrayOutputStream();
-    try (InputStream stream = new FileInputStream(file)) {
+    try (InputStream stream = getStream()) {
+      if (stream == null) {
+        return null;
+      }
       int read;
       while ((read = stream.read(readBuffer)) > 0) {
         bos.write(readBuffer, 0, read);
       }
       return bos.toByteArray();
-    } catch (FileNotFoundException e) {
-      return null;
     } catch (IOException e) {
       return null;
     }
