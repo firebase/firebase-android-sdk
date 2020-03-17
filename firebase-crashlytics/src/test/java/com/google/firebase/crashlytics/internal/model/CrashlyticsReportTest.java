@@ -110,7 +110,6 @@ public class CrashlyticsReportTest {
         testReport.withSessionEndFields(endedAt, isCrashed, null);
 
     assertNotEquals(testReport, withSessionEndFieldsReport);
-    assertNotNull(withSessionEndFieldsReport.getSession().getUser());
     assertNotNull(withSessionEndFieldsReport.getSession().getEndedAt());
     assertEquals(endedAt, withSessionEndFieldsReport.getSession().getEndedAt().longValue());
     assertEquals(isCrashed, withSessionEndFieldsReport.getSession().isCrashed());
