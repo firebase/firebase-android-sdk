@@ -23,6 +23,7 @@ import com.google.android.datatransport.cct.CCTDestination;
 import com.google.android.datatransport.runtime.TransportRuntime;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.firebase.crashlytics.internal.common.CrashlyticsReportWithSessionId;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.model.serialization.CrashlyticsReportJsonTransform;
 import java.nio.charset.Charset;
@@ -60,10 +61,11 @@ public class DataTransportCrashlyticsReportSender {
     this.transport = transport;
   }
 
-  public Task<CrashlyticsReport> sendReport(@NonNull CrashlyticsReport report) {
-    TaskCompletionSource<CrashlyticsReport> tcs = new TaskCompletionSource<>();
+  public Task<CrashlyticsReportWithSessionId> sendReport(
+      @NonNull CrashlyticsReportWithSessionId report) {
+    TaskCompletionSource<CrashlyticsReportWithSessionId> tcs = new TaskCompletionSource<>();
     transport.schedule(
-        Event.ofUrgent(report),
+        Event.ofUrgent(report.getReport()),
         error -> {
           if (error != null) {
             tcs.trySetException(error);

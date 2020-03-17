@@ -15,6 +15,7 @@
 package com.google.firebase.crashlytics.internal.persistence;
 
 import androidx.annotation.NonNull;
+import com.google.firebase.crashlytics.internal.common.CrashlyticsReportWithSessionId;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event;
 import com.google.firebase.crashlytics.internal.model.ImmutableList;
@@ -159,8 +160,9 @@ public class CrashlyticsReportPersistence {
   public void deleteFinalizedReport(String sessionId) {
     final FilenameFilter filter = (d, f) -> f.startsWith(sessionId);
     List<File> filteredReports =
-        sortAndCombineReportFiles(
+        combineReportFiles(
             getFilesInDirectory(priorityReportsDirectory, filter),
+            getFilesInDirectory(nativeReportsDirectory, filter),
             getFilesInDirectory(reportsDirectory, filter));
     for (File reportFile : filteredReports) {
       reportFile.delete();
@@ -191,12 +193,18 @@ public class CrashlyticsReportPersistence {
    * @return finalized (no longer changing) Crashlytics Reports, sorted first from high to low
    *     priority, secondarily sorted from most recent to least
    */
-  public List<CrashlyticsReport> loadFinalizedReports() {
+  public List<CrashlyticsReportWithSessionId> loadFinalizedReports() {
     final List<File> allReportFiles = getAllFinalizedReportFiles();
-    final ArrayList<CrashlyticsReport> allReports = new ArrayList<>();
+    final ArrayList<CrashlyticsReportWithSessionId> allReports = new ArrayList<>();
     allReports.ensureCapacity(allReportFiles.size());
     for (File reportFile : getAllFinalizedReportFiles()) {
-      allReports.add(TRANSFORM.reportFromJson(readTextFile(reportFile)));
+      // TODO: Handle null value in jsonReport in a way that eventually cleans up file.
+      CrashlyticsReport jsonReport = TRANSFORM.reportFromJson(readTextFile(reportFile));
+      allReports.add(
+          CrashlyticsReportWithSessionId.builder()
+              .setReport(jsonReport)
+              .setSessionId(reportFile.getName())
+              .build());
     }
     return allReports;
   }

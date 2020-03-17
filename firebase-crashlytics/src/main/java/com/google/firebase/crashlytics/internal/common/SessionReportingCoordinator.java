@@ -50,10 +50,6 @@ class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
   private static final int EVENT_THREAD_IMPORTANCE = 4;
   private static final int MAX_CHAINED_EXCEPTION_DEPTH = 8;
 
-  private static final int DEFAULT_MAX_EVENTS_TO_KEEP = 8;
-  private static final int DEFAULT_MAX_REPORTS_TO_KEEP = 4;
-  private static final int DEFAULT_MAX_SESSIONS_TO_KEEP = 8;
-
   public static SessionReportingCoordinator create(
       Context context,
       IdManager idManager,
@@ -185,17 +181,21 @@ class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
       reportPersistence.deleteAllReports();
       return;
     }
-    final List<CrashlyticsReport> reportsToSend = reportPersistence.loadFinalizedReports();
-    for (CrashlyticsReport report : reportsToSend) {
-      if (report.getNdkPayload() != null
+    final List<CrashlyticsReportWithSessionId> reportsToSend =
+        reportPersistence.loadFinalizedReports();
+    for (CrashlyticsReportWithSessionId report : reportsToSend) {
+      if (report.getReport().getNdkPayload() != null
           && !sendNativeReportPredicate.shouldSendViaDataTransport()) {
         Logger.getLogger().d("Send native reports via DataTransport disabled. Removing reports.");
-        //        reportPersistence.deleteFinalizedReport(report.getNdkPayload());
-        // TODO: Delete that thang
+        reportPersistence.deleteFinalizedReport(report.getSessionId());
         continue;
       }
       reportsSender
-          .sendReport(report.withOrganizationId(organizationId))
+          .sendReport(
+              CrashlyticsReportWithSessionId.builder()
+                  .setReport(report.getReport().withOrganizationId(organizationId))
+                  .setSessionId(report.getSessionId())
+                  .build())
           .continueWith(reportSendCompleteExecutor, this::onReportSendComplete);
     }
   }
@@ -244,13 +244,13 @@ class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
     reportPersistence.persistEvent(eventBuilder.build(), currentSessionId, isHighPriority);
   }
 
-  private boolean onReportSendComplete(Task<CrashlyticsReport> task) {
+  private boolean onReportSendComplete(Task<CrashlyticsReportWithSessionId> task) {
+    // FIXME: Native delete that thang
     if (task.isSuccessful()) {
       // TODO: if the report is fatal, send an analytics event.
-      final CrashlyticsReport report = task.getResult();
-      final String reportId = report.getSession().getIdentifier();
-      Logger.getLogger().i("Crashlytics report sent successfully: " + reportId);
-      reportPersistence.deleteFinalizedReport(reportId);
+      final CrashlyticsReportWithSessionId report = task.getResult();
+      Logger.getLogger().i("Crashlytics report sent successfully: " + report.getSessionId());
+      reportPersistence.deleteFinalizedReport(report.getSessionId());
       return true;
     }
     // TODO: Something went wrong. Log? Throw?

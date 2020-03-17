@@ -349,16 +349,17 @@ public class SessionReportingCoordinatorTest {
     final String sessionId1 = "sessionId1";
     final String sessionId2 = "sessionId2";
 
-    final List<CrashlyticsReport> finalizedReports = new ArrayList<>();
-    final CrashlyticsReport mockReport1 = mockReport(sessionId1, orgId);
-    final CrashlyticsReport mockReport2 = mockReport(sessionId2, orgId);
+    final List<CrashlyticsReportWithSessionId> finalizedReports = new ArrayList<>();
+    final CrashlyticsReportWithSessionId mockReport1 = mockReportWithSessionId(sessionId1, orgId);
+    final CrashlyticsReportWithSessionId mockReport2 = mockReportWithSessionId(sessionId2, orgId);
     finalizedReports.add(mockReport1);
     finalizedReports.add(mockReport2);
 
     when(reportPersistence.loadFinalizedReports()).thenReturn(finalizedReports);
 
-    final Task<CrashlyticsReport> successfulTask = Tasks.forResult(mockReport1);
-    final Task<CrashlyticsReport> failedTask = Tasks.forException(new Exception("fail"));
+    final Task<CrashlyticsReportWithSessionId> successfulTask = Tasks.forResult(mockReport1);
+    final Task<CrashlyticsReportWithSessionId> failedTask =
+        Tasks.forException(new Exception("fail"));
 
     when(reportSender.sendReport(mockReport1)).thenReturn(successfulTask);
     when(reportSender.sendReport(mockReport2)).thenReturn(failedTask);
@@ -434,5 +435,13 @@ public class SessionReportingCoordinatorTest {
     when(mockReport.getSession()).thenReturn(mockSession);
     when(mockReport.withOrganizationId(orgId)).thenReturn(mockReport);
     return mockReport;
+  }
+
+  private static CrashlyticsReportWithSessionId mockReportWithSessionId(
+      String sessionId, String orgId) {
+    return CrashlyticsReportWithSessionId.builder()
+        .setReport(mockReport(sessionId, orgId))
+        .setSessionId(sessionId)
+        .build();
   }
 }
