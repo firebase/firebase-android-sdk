@@ -67,6 +67,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
@@ -561,6 +562,16 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
     Arrays.sort(testOrder, LARGEST_FILE_NAME_FIRST);
 
     assertTrue(Arrays.equals(expectedOrder, testOrder));
+  }
+
+  @Test
+  public void testFinalizePreviousNativeSession_finalizesPreviousNativeSession() {
+    final CrashlyticsController controller = createController();
+  }
+
+  @Test
+  public void testGetNativeSessionFiles_getsNativeSessionFiles() {
+    // FIXME:
   }
 
   // TODO: There's only ever one open session now that we can close sessions while offline.

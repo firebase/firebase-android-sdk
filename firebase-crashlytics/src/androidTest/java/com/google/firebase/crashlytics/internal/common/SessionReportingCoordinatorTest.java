@@ -325,6 +325,11 @@ public class SessionReportingCoordinatorTest {
   }
 
   @Test
+  public void testFinalizeSessionWithNativeEvent_finalizesSession() {
+    // FIXME:
+  }
+
+  @Test
   public void onSessionsFinalize_finalizesReports() {
     final String sessionId = "testSessionId";
     reportManager.onBeginSession(sessionId, System.currentTimeMillis());

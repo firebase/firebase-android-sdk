@@ -374,6 +374,11 @@ public class CrashlyticsReportPersistenceTest {
   }
 
   @Test
+  public void testFinalizeSessionWithNativeEvent_writesNativeSessions() {
+    // FIXME:
+  }
+
+  @Test
   public void testDeleteFinalizedReport_removesReports() {
     final String sessionId = "testSession";
     final CrashlyticsReport testReport = makeTestReport(sessionId);

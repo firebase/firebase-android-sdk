@@ -14,6 +14,7 @@
 
 package com.google.firebase.crashlytics.internal.common;
 
+import androidx.annotation.NonNull;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -21,17 +22,16 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.Charset;
 
 /** A {@link NativeSessionFile} backed by a {@link File} currently on disk. */
 class FileBackedNativeSessionFile implements NativeSessionFile {
 
-  private final File f;
+  private final File file;
   private final String name;
 
-  FileBackedNativeSessionFile(String name, File f) {
+  FileBackedNativeSessionFile(@NonNull String name, @NonNull File file) {
     this.name = name;
-    this.f = f;
+    this.file = file;
   }
 
   public String getName() {
@@ -41,7 +41,7 @@ class FileBackedNativeSessionFile implements NativeSessionFile {
   @Override
   public InputStream getStream() {
     try {
-      return new FileInputStream(f);
+      return new FileInputStream(file);
     } catch (FileNotFoundException f) {
       return null;
     }
@@ -61,7 +61,7 @@ class FileBackedNativeSessionFile implements NativeSessionFile {
   private byte[] asBytes() {
     final byte[] readBuffer = new byte[8192];
     final ByteArrayOutputStream bos = new ByteArrayOutputStream();
-    try (InputStream stream = new FileInputStream(f)) {
+    try (InputStream stream = new FileInputStream(file)) {
       int read;
       while ((read = stream.read(readBuffer)) > 0) {
         bos.write(readBuffer, 0, read);
