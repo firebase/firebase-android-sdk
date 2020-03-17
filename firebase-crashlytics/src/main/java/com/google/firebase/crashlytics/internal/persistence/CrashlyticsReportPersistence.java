@@ -244,9 +244,10 @@ public class CrashlyticsReportPersistence {
   @NonNull
   private List<File> getAllFinalizedReportFiles() {
     return sortAndCombineReportFiles(
-        getAllFilesInDirectory(priorityReportsDirectory),
-        getAllFilesInDirectory(reportsDirectory),
-        getAllFilesInDirectory(nativeReportsDirectory));
+        combineReportFiles(
+            getAllFilesInDirectory(priorityReportsDirectory),
+            getAllFilesInDirectory(nativeReportsDirectory)),
+        getAllFilesInDirectory(reportsDirectory));
   }
 
   private File getSessionDirectoryById(String sessionId) {
@@ -309,6 +310,10 @@ public class CrashlyticsReportPersistence {
       Collections.sort(reportList, LATEST_SESSION_ID_FIRST_COMPARATOR);
     }
 
+    return combineReportFiles(reports);
+  }
+
+  private static List<File> combineReportFiles(List<File>... reports) {
     final ArrayList<File> allReportsFiles = new ArrayList<>();
     int totalReports = 0;
     for (List<File> reportList : reports) {
