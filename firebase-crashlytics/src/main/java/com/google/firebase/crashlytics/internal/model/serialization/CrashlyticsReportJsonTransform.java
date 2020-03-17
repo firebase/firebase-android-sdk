@@ -97,6 +97,9 @@ public class CrashlyticsReportJsonTransform {
         case "session":
           builder.setSession(parseSession(jsonReader));
           break;
+        case "ndkPayload":
+          builder.setNdkPayload(parseNdkPayload(jsonReader));
+          break;
         default:
           jsonReader.skipValue();
           break;
@@ -146,6 +149,55 @@ public class CrashlyticsReportJsonTransform {
           break;
         case "generatorType":
           builder.setGeneratorType(jsonReader.nextInt());
+          break;
+        default:
+          jsonReader.skipValue();
+          break;
+      }
+    }
+    jsonReader.endObject();
+
+    return builder.build();
+  }
+
+  private static CrashlyticsReport.FilesPayload parseNdkPayload(JsonReader jsonReader)
+      throws IOException {
+    final CrashlyticsReport.FilesPayload.Builder builder = CrashlyticsReport.FilesPayload.builder();
+
+    jsonReader.beginObject();
+    while (jsonReader.hasNext()) {
+      String name = jsonReader.nextName();
+      switch (name) {
+        case "files":
+          builder.setFiles(parseArray(jsonReader, CrashlyticsReportJsonTransform::parseFile));
+          break;
+        case "orgId":
+          builder.setOrgId(jsonReader.nextString());
+          break;
+        default:
+          jsonReader.skipValue();
+          break;
+      }
+    }
+    jsonReader.endObject();
+
+    return builder.build();
+  }
+
+  private static CrashlyticsReport.FilesPayload.File parseFile(JsonReader jsonReader)
+      throws IOException {
+    final CrashlyticsReport.FilesPayload.File.Builder builder =
+        CrashlyticsReport.FilesPayload.File.builder();
+
+    jsonReader.beginObject();
+    while (jsonReader.hasNext()) {
+      String name = jsonReader.nextName();
+      switch (name) {
+        case "filename":
+          builder.setFilename(jsonReader.nextString());
+          break;
+        case "contents":
+          builder.setContents(Base64.decode(jsonReader.nextString(), Base64.NO_WRAP));
           break;
         default:
           jsonReader.skipValue();

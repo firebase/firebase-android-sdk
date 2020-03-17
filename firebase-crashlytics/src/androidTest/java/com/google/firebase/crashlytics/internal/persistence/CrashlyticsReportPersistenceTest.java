@@ -375,7 +375,29 @@ public class CrashlyticsReportPersistenceTest {
 
   @Test
   public void testFinalizeSessionWithNativeEvent_writesNativeSessions() {
-    // FIXME:
+    byte[] testContents = {0, 2, 20, 10};
+    CrashlyticsReport.FilesPayload filesPayload =
+        CrashlyticsReport.FilesPayload.builder()
+            .setOrgId("orgId")
+            .setFiles(
+                ImmutableList.from(
+                    CrashlyticsReport.FilesPayload.File.builder()
+                        .setContents(testContents)
+                        .setFilename("bytes")
+                        .build()))
+            .build();
+
+    CrashlyticsReport report = makeTestNativeReport();
+    List<CrashlyticsReport> finalizedReports = reportPersistence.loadFinalizedReports();
+
+    assertEquals(0, finalizedReports.size());
+
+    reportPersistence.finalizeSessionWithNativeEvent("sessionId", report, filesPayload);
+
+    finalizedReports = reportPersistence.loadFinalizedReports();
+    assertEquals(1, finalizedReports.size());
+    assertEquals(
+        report.withNdkPayload(filesPayload).withOrganizationId("orgId"), finalizedReports.get(0));
   }
 
   @Test
@@ -577,6 +599,17 @@ public class CrashlyticsReportPersistenceTest {
         .setBuildVersion("1")
         .setDisplayVersion("1.0.0")
         .setSession(makeTestSession(sessionId))
+        .build();
+  }
+
+  private static CrashlyticsReport makeTestNativeReport() {
+    return CrashlyticsReport.builder()
+        .setSdkVersion("sdkVersion")
+        .setGmpAppId("gmpAppId")
+        .setPlatform(1)
+        .setInstallationUuid("installationId")
+        .setBuildVersion("1")
+        .setDisplayVersion("1.0.0")
         .build();
   }
 

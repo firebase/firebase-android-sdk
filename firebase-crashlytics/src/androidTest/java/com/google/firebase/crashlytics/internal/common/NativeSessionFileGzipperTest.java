@@ -65,19 +65,17 @@ public class NativeSessionFileGzipperTest extends CrashlyticsTestCase {
   }
 
   @Test
-  public void testProcessNativeSessionsWhenDataIsNull_putsFilesInCorrectLocation()
-      throws IOException {
-    //    String fileBackedSessionName = "file";
-    //    String byteBackedSessionName = "byte";
-    //    FileBackedNativeSessionFile fileSession =
-    //            new FileBackedNativeSessionFile(fileBackedSessionName, missingFile);
-    //    BytesBackedNativeSessionFile byteSession =
-    //            new BytesBackedNativeSessionFile(byteBackedSessionName, testContents);
-    //    List<NativeSessionFile> files = Arrays.asList(fileSession, byteSession);
-    //    NativeSessionFileGzipper.processNativeSessions(gzipDir, files);
-    //
-    //    assertEquals(Sets.newSet(
-    //            new File(gzipDir, byteBackedSessionName)),
-    //            Sets.newSet(gzipDir.listFiles()));
+  public void testProcessNativeSessionsWhenDataIsNull_putsFilesInCorrectLocation() {
+    String fileBackedSessionName = "file";
+    String byteBackedSessionName = "byte";
+    FileBackedNativeSessionFile fileSession =
+        new FileBackedNativeSessionFile(fileBackedSessionName, missingFile);
+    BytesBackedNativeSessionFile byteSession =
+        new BytesBackedNativeSessionFile(byteBackedSessionName, testContents);
+    List<NativeSessionFile> files = Arrays.asList(fileSession, byteSession);
+    NativeSessionFileGzipper.processNativeSessions(gzipDir, files);
+
+    assertEquals(
+        Sets.newSet(new File(gzipDir, byteBackedSessionName)), Sets.newSet(gzipDir.listFiles()));
   }
 }
