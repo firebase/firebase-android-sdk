@@ -97,8 +97,8 @@ public abstract class CrashlyticsReport {
    */
   @NonNull
   public CrashlyticsReport withEvents(@NonNull ImmutableList<Event> events) {
-    if (this.getNdkPayload() != null) {
-      throw new IllegalStateException("NDK Reports cannot have sessions added to them.");
+    if (getSession() == null) {
+      throw new IllegalStateException("Reports without sessions cannot have events added to them.");
     }
 
     return toBuilder().setSession(getSession().withEvents(events)).build();

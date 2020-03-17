@@ -67,7 +67,7 @@ class FileBackedNativeSessionFile implements NativeSessionFile {
       while ((read = stream.read(readBuffer)) > 0) {
         bos.write(readBuffer, 0, read);
       }
-      return new String(bos.toByteArray(), UTF_8).getBytes();
+      return bos.toByteArray();
     } catch (FileNotFoundException e) {
       return null;
     } catch (IOException e) {
