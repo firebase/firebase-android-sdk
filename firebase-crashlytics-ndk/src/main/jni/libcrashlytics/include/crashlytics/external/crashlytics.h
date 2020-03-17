@@ -23,7 +23,7 @@
 /// This API is optional: It enables adding custom metadata to your native Crashlytics crash
 /// reports. See <a href="https://firebase.google.com/docs/crashlytics">the developer guides</a>
 /// for information on using Firebase Crashlytics in your NDK-enabled Android apps.
-namespace firebase::crashlytics {
+namespace firebase { namespace crashlytics {
 
     /** PUBLIC API **/
 
@@ -32,44 +32,44 @@ namespace firebase::crashlytics {
     /// This must be called prior to calling any other methods in the firebase:crashlytics
     /// namespace. This call is only required for adding custom metadata to crash reports. Use of
     /// this header file is NOT required for Android NDK crash reporting.
-    void Initialize();
+    void inline Initialize();
 
     /// @brief Terminate the Crashlytics NDK API.
     ///
     /// Cleans up resources associated with the API. Subsequent calls to the Crashlytics native API
     /// will have no effect.
-    void Terminate();
+    void inline Terminate();
 
     /// @brief Logs a message to be included in the next fatal or non-fatal report.
-    void Log(const char *msg);
+    void inline Log(const char *msg);
 
     /// @brief Records a custom key and value to be associated with subsequent fatal and non-fatal
     /// reports.
-    void SetCustomKey(const char *key, bool value);
+    void inline SetCustomKey(const char *key, bool value);
 
     /// @brief Records a custom key and value to be associated with subsequent fatal and non-fatal
     /// reports.
-    void SetCustomKey(const char *key, const char *value);
+    void inline SetCustomKey(const char *key, const char *value);
 
     /// @brief Records a custom key and value to be associated with subsequent fatal and non-fatal
     /// reports.
-    void SetCustomKey(const char *key, double value);
+    void inline SetCustomKey(const char *key, double value);
 
     /// @brief Records a custom key and value to be associated with subsequent fatal and non-fatal
     /// reports.
-    void SetCustomKey(const char *key, float value);
+    void inline SetCustomKey(const char *key, float value);
 
     /// @brief Records a custom key and value to be associated with subsequent fatal and non-fatal
     /// reports.
-    void SetCustomKey(const char *key, int value);
+    void inline SetCustomKey(const char *key, int value);
 
     /// @brief Records a custom key and value to be associated with subsequent fatal and non-fatal
     /// reports.
-    void SetCustomKey(const char *key, long value);
+    void inline SetCustomKey(const char *key, long value);
 
     /// @brief Records a user ID (identifier) that's associated with subsequent fatal and non-fatal
     /// reports.
-    void SetUserId(const char *id);
+    void inline SetUserId(const char *id);
 
     /** END PUBLIC API **/
 
@@ -104,57 +104,57 @@ namespace firebase::crashlytics {
 
     __crashlytics_context_t *__context;
 
-    bool VerifyCrashlytics() {
+    bool inline VerifyCrashlytics() {
         if (__context) {
             return true;
         }
         return false;
     }
 
-    void Initialize() {
+    void inline Initialize() {
         __context = __crashlytics_init();
         VerifyCrashlytics();
     }
 
-    void Terminate() {
+    void inline Terminate() {
         if (VerifyCrashlytics()) {
             __crashlytics_free(&__context);
         }
     }
 
-    void Log(const char *msg) {
+    void inline Log(const char *msg) {
         if (VerifyCrashlytics()) {
             __context->__log(__context->__ctx, msg);
         }
     }
 
-    void SetCustomKey(const char *key, const char *value) {
+    void inline SetCustomKey(const char *key, const char *value) {
         if (VerifyCrashlytics()) {
             __context->__set(__context->__ctx, key, value);
         }
     }
 
-    void SetCustomKey(const char *key, bool value) {
+    void inline SetCustomKey(const char *key, bool value) {
         SetCustomKey(key, value ? "true" : "false");
     }
 
-    void SetCustomKey(const char *key, double value) {
+    void inline SetCustomKey(const char *key, double value) {
         SetCustomKey(key, std::to_string(value).c_str());
     }
 
-    void SetCustomKey(const char *key, float value) {
+    void inline SetCustomKey(const char *key, float value) {
         SetCustomKey(key, std::to_string(value).c_str());
     }
 
-    void SetCustomKey(const char *key, int value) {
+    void inline SetCustomKey(const char *key, int value) {
         SetCustomKey(key, std::to_string(value).c_str());
     }
 
-    void SetCustomKey(const char *key, long value) {
+    void inline SetCustomKey(const char *key, long value) {
         SetCustomKey(key, std::to_string(value).c_str());
     }
 
-    void SetUserId(const char *id) {
+    void inline SetUserId(const char *id) {
         if (VerifyCrashlytics()) {
             __context->__set_user_id(__context->__ctx, id);
         }
@@ -231,6 +231,6 @@ namespace firebase::crashlytics {
             (*context) = __CRASHLYTICS_NULL_CONTEXT;
         }
     }
-}  // end namespace firebase::crashlytics
+}}  // end namespace firebase::crashlytics
 
 #endif /* __CRASHLYTICS_H__ */
