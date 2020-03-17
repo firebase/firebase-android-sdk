@@ -168,7 +168,7 @@ public class CrashlyticsReportPersistence {
   }
 
   public void finalizeSessionWithNativeEvent(
-          String sessionId, CrashlyticsReport crashlyticsReport, CrashlyticsReport.FilesPayload files) {
+      String sessionId, CrashlyticsReport crashlyticsReport, CrashlyticsReport.FilesPayload files) {
     CrashlyticsReport report = crashlyticsReport.withNdkPayload(files);
     final File outputDirectory = prepareDirectory(nativeReportsDirectory);
     writeTextFile(new File(outputDirectory, sessionId), TRANSFORM.reportToJson(report));

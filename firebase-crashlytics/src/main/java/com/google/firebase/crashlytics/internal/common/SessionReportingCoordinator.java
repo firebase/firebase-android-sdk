@@ -133,7 +133,7 @@ class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
   }
 
   public void finalizeSessionWithNativeEvent(
-          String sessionId, @NonNull List<NativeSessionFile> nativeSessionFiles) {
+      String sessionId, @NonNull List<NativeSessionFile> nativeSessionFiles) {
     try {
       FilesPayload.Builder filesPayloadBuilder = FilesPayload.builder();
       ArrayList<FilesPayload.File> nativeFiles = new ArrayList<>();
@@ -147,7 +147,7 @@ class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
       filesPayloadBuilder.setFiles(ImmutableList.from(nativeFiles));
 
       reportPersistence.finalizeSessionWithNativeEvent(
-              sessionId, dataCapture.captureReportData(), filesPayloadBuilder.build());
+          sessionId, dataCapture.captureReportData(), filesPayloadBuilder.build());
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
