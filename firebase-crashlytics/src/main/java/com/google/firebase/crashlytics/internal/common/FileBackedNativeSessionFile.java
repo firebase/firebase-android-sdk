@@ -25,7 +25,6 @@ import java.nio.charset.Charset;
 
 /** A {@link NativeSessionFile} backed by a {@link File} currently on disk. */
 class FileBackedNativeSessionFile implements NativeSessionFile {
-  private static final Charset UTF_8 = Charset.forName("UTF-8");
 
   private final File f;
   private final String name;
