@@ -144,6 +144,9 @@ public class CrashlyticsReportJsonTransform {
         case "events":
           builder.setEvents(parseArray(jsonReader, CrashlyticsReportJsonTransform::parseEvent));
           break;
+        case "generatorType":
+          builder.setGeneratorType(jsonReader.nextInt());
+          break;
         default:
           jsonReader.skipValue();
           break;
