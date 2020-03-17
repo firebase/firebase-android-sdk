@@ -66,6 +66,8 @@ public class CrashlyticsReportPersistence {
       new CrashlyticsReportJsonTransform();
   private static final Comparator<? super File> LATEST_SESSION_ID_FIRST_COMPARATOR =
       (f1, f2) -> f2.getName().compareTo(f1.getName());
+  private static final FilenameFilter EVENT_FILE_FILTER =
+      (f, name) -> name.startsWith(EVENT_FILE_NAME_PREFIX);
 
   private final AtomicInteger eventCounter = new AtomicInteger(0);
 
@@ -239,15 +241,14 @@ public class CrashlyticsReportPersistence {
   }
 
   private void synthesizeReportFile(File sessionDirectory, long sessionEndTime) {
-    final List<File> eventFiles =
-        getFilesInDirectory(sessionDirectory, (f, name) -> name.startsWith(EVENT_FILE_NAME_PREFIX));
+    final List<File> eventFiles = getFilesInDirectory(sessionDirectory, EVENT_FILE_FILTER);
 
     // Only process the session if it has associated events
     if (eventFiles.isEmpty()) {
       return;
     }
 
-    // TODO: Handle all nullable return values
+    // TODO: Handle all nullable return values in below function calls
 
     Collections.sort(eventFiles);
     final List<Event> events = new ArrayList<>();
