@@ -73,7 +73,9 @@ public class CrashlyticsReportJsonTransformTest {
     return Session.builder()
         .setGenerator("generator")
         .setIdentifier("identifier")
-        .setStartedAt(0)
+        .setStartedAt(1L)
+        .setEndedAt(1L)
+        .setCrashed(true)
         .setApp(makeTestApplication())
         .setUser(User.builder().setIdentifier("user").build())
         .build();

@@ -397,7 +397,7 @@ class CrashlyticsController {
                 // We've fatally crashed, so write the marker file that indicates a crash occurred.
                 crashMarker.create();
 
-                long timestampSeconds = time.getTime() / 1000;
+                long timestampSeconds = getTimestampSeconds(time);
                 reportingCoordinator.persistFatalEvent(ex, thread, timestampSeconds);
                 writeFatal(thread, ex, timestampSeconds);
 
@@ -648,7 +648,7 @@ class CrashlyticsController {
           @Override
           public void run() {
             if (!isHandlingException()) {
-              long timestampSeconds = time.getTime() / 1000;
+              long timestampSeconds = getTimestampSeconds(time);
               reportingCoordinator.persistNonFatalEvent(ex, thread, timestampSeconds);
               doWriteNonFatal(thread, ex, timestampSeconds);
             }
@@ -802,7 +802,7 @@ class CrashlyticsController {
    * class.
    */
   private void doOpenSession() throws Exception {
-    final long startedAtSeconds = new Date().getTime() / 1000;
+    final long startedAtSeconds = getCurrentTimestampSeconds();
     final String sessionIdentifier = new CLSUUID(idManager).toString();
 
     Logger.getLogger().d("Opening a new session with ID " + sessionIdentifier);
@@ -860,7 +860,7 @@ class CrashlyticsController {
 
     closeOpenSessions(sessionBeginFiles, offset, maxCustomExceptionEvents);
 
-    reportingCoordinator.finalizeSessions();
+    reportingCoordinator.finalizeSessions(getCurrentTimestampSeconds());
   }
 
   /**
@@ -1194,6 +1194,14 @@ class CrashlyticsController {
     } finally {
       CommonUtils.closeQuietly(gos);
     }
+  }
+
+  private static long getCurrentTimestampSeconds() {
+    return getTimestampSeconds(new Date());
+  }
+
+  private static long getTimestampSeconds(Date date) {
+    return date.getTime() / 1000;
   }
 
   /** Removes dashes in the Crashlytics session identifier to conform to Firebase constraints. */
@@ -1586,7 +1594,7 @@ class CrashlyticsController {
       Logger.getLogger().d("Collecting SessionStart data for session ID " + sessionId);
       writeToCosFromFile(cos, sessionBeginFile);
 
-      cos.writeUInt64(4, new Date().getTime() / 1000);
+      cos.writeUInt64(4, getCurrentTimestampSeconds());
       cos.writeBool(5, hasFatal);
 
       cos.writeUInt32(11, ANALYZER_VERSION);
