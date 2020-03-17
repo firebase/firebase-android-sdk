@@ -52,6 +52,7 @@ public class SessionReportingCoordinatorTest {
   @Mock private LogFileManager logFileManager;
   @Mock private UserMetadata reportMetadata;
   @Mock private SendReportPredicate mockSendReportPredicate;
+  @Mock private SendReportPredicate mockSendNativeReportPredicate;
   @Mock private CrashlyticsReport mockReport;
   @Mock private CrashlyticsReport.Session.Event mockEvent;
   @Mock private CrashlyticsReport.Session.Event.Builder mockEventBuilder;
@@ -343,6 +344,7 @@ public class SessionReportingCoordinatorTest {
   @SuppressWarnings("unchecked")
   public void onReportSend_successfulReportsAreDeleted() {
     when(mockSendReportPredicate.shouldSendViaDataTransport()).thenReturn(true);
+    when(mockSendNativeReportPredicate.shouldSendViaDataTransport()).thenReturn(true);
     final String orgId = "testOrgId";
     final String sessionId1 = "sessionId1";
     final String sessionId2 = "sessionId2";
@@ -361,7 +363,8 @@ public class SessionReportingCoordinatorTest {
     when(reportSender.sendReport(mockReport1)).thenReturn(successfulTask);
     when(reportSender.sendReport(mockReport2)).thenReturn(failedTask);
 
-    reportManager.sendReports(orgId, Runnable::run, mockSendReportPredicate);
+    reportManager.sendReports(
+        orgId, Runnable::run, mockSendReportPredicate, mockSendNativeReportPredicate);
 
     verify(reportSender).sendReport(mockReport1);
     verify(reportSender).sendReport(mockReport2);
@@ -373,13 +376,17 @@ public class SessionReportingCoordinatorTest {
   @Test
   public void onReportSend_reportsAreDeletedWithoutBeingSent_whenSendPredicateIsFalse() {
     when(mockSendReportPredicate.shouldSendViaDataTransport()).thenReturn(false);
-    reportManager.sendReports("testOrgId", Runnable::run, mockSendReportPredicate);
+    when(mockSendNativeReportPredicate.shouldSendViaDataTransport()).thenReturn(false);
+    reportManager.sendReports(
+        "testOrgId", Runnable::run, mockSendReportPredicate, mockSendNativeReportPredicate);
 
     verify(reportPersistence).deleteAllReports();
     verify(reportPersistence, never()).loadFinalizedReports();
     verify(reportPersistence, never()).deleteFinalizedReport(anyString());
     verifyZeroInteractions(reportSender);
   }
+
+  // FIXME: Add a test here
 
   @Test
   public void testPersistUserIdForCurrentSession_persistsCurrentUserIdForCurrentSessionId() {

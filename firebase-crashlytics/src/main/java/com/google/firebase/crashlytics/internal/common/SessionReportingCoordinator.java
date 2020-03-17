@@ -147,7 +147,7 @@ class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
       filesPayloadBuilder.setFiles(ImmutableList.from(nativeFiles));
 
       reportPersistence.finalizeSessionWithNativeEvent(
-          sessionId, dataCapture.captureReportData(), filesPayloadBuilder.build());
+          sessionId, dataCapture.captureReportData().withNdkPayload(filesPayloadBuilder.build()));
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
@@ -178,7 +178,8 @@ class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
   public void sendReports(
       String organizationId,
       Executor reportSendCompleteExecutor,
-      SendReportPredicate sendReportPredicate) {
+      SendReportPredicate sendReportPredicate,
+      SendReportPredicate sendNativeReportPredicate) {
     if (!sendReportPredicate.shouldSendViaDataTransport()) {
       Logger.getLogger().d("Send via DataTransport disabled. Removing reports.");
       reportPersistence.deleteAllReports();
@@ -186,6 +187,13 @@ class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
     }
     final List<CrashlyticsReport> reportsToSend = reportPersistence.loadFinalizedReports();
     for (CrashlyticsReport report : reportsToSend) {
+      if (report.getNdkPayload() != null
+          && !sendNativeReportPredicate.shouldSendViaDataTransport()) {
+        Logger.getLogger().d("Send native reports via DataTransport disabled. Removing reports.");
+        //        reportPersistence.deleteFinalizedReport(report.getNdkPayload());
+        // TODO: Delete that thang
+        continue;
+      }
       reportsSender
           .sendReport(report.withOrganizationId(organizationId))
           .continueWith(reportSendCompleteExecutor, this::onReportSendComplete);

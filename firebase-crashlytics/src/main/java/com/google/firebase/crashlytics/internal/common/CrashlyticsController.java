@@ -433,7 +433,9 @@ class CrashlyticsController {
                             reportingCoordinator.sendReports(
                                 appSettingsData.organizationId,
                                 executor,
-                                shouldSendViaDataTransport(appSettingsData.reportUploadVariant));
+                                shouldSendViaDataTransport(appSettingsData.reportUploadVariant),
+                                shouldSendViaDataTransport(
+                                    appSettingsData.nativeReportUploadVariant));
                             return recordFatalFirebaseEventTask;
                           }
                         });
@@ -587,8 +589,9 @@ class CrashlyticsController {
                                 reportingCoordinator.sendReports(
                                     appSettingsData.organizationId,
                                     executor,
+                                    shouldSendViaDataTransport(appSettingsData.reportUploadVariant),
                                     shouldSendViaDataTransport(
-                                        appSettingsData.reportUploadVariant));
+                                        appSettingsData.nativeReportUploadVariant));
                                 unsentReportsHandled.trySetResult(null);
 
                                 return Tasks.forResult(null);
@@ -1103,7 +1106,7 @@ class CrashlyticsController {
 
   // endregion
 
-  private void finalizePreviousNativeSession(String previousSessionId) throws IOException {
+  private void finalizePreviousNativeSession(String previousSessionId) {
     Logger.getLogger().d("Finalizing native report for session " + previousSessionId);
     NativeSessionFileProvider nativeSessionFileProvider =
         nativeComponent.getSessionFileProvider(previousSessionId);
@@ -1128,10 +1131,8 @@ class CrashlyticsController {
             getContext(),
             getFilesDir(),
             previousSessionLogManager.getBytesForLog());
-
     NativeSessionFileGzipper.processNativeSessions(nativeSessionDirectory, nativeSessionFiles);
     reportingCoordinator.finalizeSessionWithNativeEvent(previousSessionId, nativeSessionFiles);
-
     previousSessionLogManager.clearLog();
   }
 

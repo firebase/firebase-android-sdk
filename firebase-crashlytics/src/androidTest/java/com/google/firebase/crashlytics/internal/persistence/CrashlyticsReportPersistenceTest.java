@@ -387,12 +387,12 @@ public class CrashlyticsReportPersistenceTest {
                         .build()))
             .build();
 
-    CrashlyticsReport report = makeTestNativeReport();
+    CrashlyticsReport report = makeTestNativeReport().withNdkPayload(filesPayload);
     List<CrashlyticsReport> finalizedReports = reportPersistence.loadFinalizedReports();
 
     assertEquals(0, finalizedReports.size());
 
-    reportPersistence.finalizeSessionWithNativeEvent("sessionId", report, filesPayload);
+    reportPersistence.finalizeSessionWithNativeEvent("sessionId", report);
 
     finalizedReports = reportPersistence.loadFinalizedReports();
     assertEquals(1, finalizedReports.size());
