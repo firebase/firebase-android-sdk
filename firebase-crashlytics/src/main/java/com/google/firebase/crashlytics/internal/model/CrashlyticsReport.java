@@ -157,7 +157,7 @@ public abstract class CrashlyticsReport {
 
     @NonNull
     public static Builder builder() {
-      return new AutoValue_CrashlyticsReport_Session.Builder();
+      return new AutoValue_CrashlyticsReport_Session.Builder().setCrashed(false);
     }
 
     @NonNull
@@ -175,6 +175,11 @@ public abstract class CrashlyticsReport {
 
     public abstract long getStartedAt();
 
+    @Nullable
+    public abstract Long getEndedAt();
+
+    public abstract boolean isCrashed();
+
     @NonNull
     public abstract Application getApp();
 
@@ -191,7 +196,7 @@ public abstract class CrashlyticsReport {
     public abstract ImmutableList<Event> getEvents();
 
     @NonNull
-    protected abstract Builder toBuilder();
+    public abstract Builder toBuilder();
 
     @NonNull
     Session withEvents(@NonNull ImmutableList<Event> events) {
@@ -226,6 +231,12 @@ public abstract class CrashlyticsReport {
 
       @NonNull
       public abstract Builder setStartedAt(long startedAt);
+
+      @NonNull
+      public abstract Builder setEndedAt(@NonNull Long endedAt);
+
+      @NonNull
+      public abstract Builder setCrashed(boolean crashed);
 
       @NonNull
       public abstract Builder setUser(@NonNull User value);

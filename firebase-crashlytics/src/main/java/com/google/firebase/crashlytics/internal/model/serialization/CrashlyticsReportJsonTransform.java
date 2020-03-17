@@ -123,6 +123,12 @@ public class CrashlyticsReportJsonTransform {
         case "startedAt":
           builder.setStartedAt(jsonReader.nextLong());
           break;
+        case "endedAt":
+          builder.setEndedAt(jsonReader.nextLong());
+          break;
+        case "crashed":
+          builder.setCrashed(jsonReader.nextBoolean());
+          break;
         case "user":
           builder.setUser(parseUser(jsonReader));
           break;
