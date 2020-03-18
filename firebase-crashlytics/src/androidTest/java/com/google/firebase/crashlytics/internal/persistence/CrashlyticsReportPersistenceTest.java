@@ -35,12 +35,15 @@ import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
+import org.mockito.internal.util.collections.Sets;
 
 @RunWith(AndroidJUnit4.class)
 public class CrashlyticsReportPersistenceTest {
@@ -300,6 +303,46 @@ public class CrashlyticsReportPersistenceTest {
     for (CrashlyticsReportWithSessionId finalizedReport : finalizedReports) {
       assertTrue(finalizedReport.getReport().getSession().getIdentifier().contains("high"));
     }
+  }
+
+  @Test
+  public void testFinalizeReports_prioritizesNativeAndNonnativeFatals() throws IOException {
+    byte[] testContents = {0, 2, 20, 10};
+    CrashlyticsReport.FilesPayload filesPayload =
+        CrashlyticsReport.FilesPayload.builder()
+            .setOrgId("orgId")
+            .setFiles(
+                ImmutableList.from(
+                    CrashlyticsReport.FilesPayload.File.builder()
+                        .setContents(testContents)
+                        .setFilename("bytes")
+                        .build()))
+            .build();
+
+    CrashlyticsReport report = makeTestNativeReport().withNdkPayload(filesPayload);
+    reportPersistence =
+        new CrashlyticsReportPersistence(
+            folder.newFolder(), getSettingsMock(4, VERY_LARGE_UPPER_LIMIT));
+
+    reportPersistence.finalizeSessionWithNativeEvent("testSession1native", report);
+    persistReportWithEvent(reportPersistence, "testSession2low", false);
+    persistReportWithEvent(reportPersistence, "testSession3low", false);
+    persistReportWithEvent(reportPersistence, "testSession4high", true);
+    persistReportWithEvent(reportPersistence, "testSession5high", true);
+    reportPersistence.finalizeSessionWithNativeEvent("testSession6native", report);
+    reportPersistence.finalizeReports("skippedSession", 0L);
+
+    final List<CrashlyticsReportWithSessionId> finalizedReports =
+        reportPersistence.loadFinalizedReports();
+    assertEquals(4, finalizedReports.size());
+    Set<String> reportNames = new HashSet<>();
+    for (CrashlyticsReportWithSessionId finalizedReport : finalizedReports) {
+      reportNames.add(finalizedReport.getSessionId());
+    }
+    assertEquals(
+        Sets.newSet(
+            "testSession1native", "testSession4high", "testSession5high", "testSession6native"),
+        reportNames);
   }
 
   @Test

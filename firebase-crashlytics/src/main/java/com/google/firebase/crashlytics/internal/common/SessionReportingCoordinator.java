@@ -245,7 +245,6 @@ class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
   }
 
   private boolean onReportSendComplete(Task<CrashlyticsReportWithSessionId> task) {
-    // FIXME: Native delete that thang
     if (task.isSuccessful()) {
       // TODO: if the report is fatal, send an analytics event.
       final CrashlyticsReportWithSessionId report = task.getResult();

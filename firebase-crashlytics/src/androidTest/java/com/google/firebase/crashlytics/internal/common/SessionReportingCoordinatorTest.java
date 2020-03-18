@@ -14,11 +14,13 @@
 
 package com.google.firebase.crashlytics.internal.common;
 
+import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -35,12 +37,14 @@ import com.google.firebase.crashlytics.internal.model.ImmutableList;
 import com.google.firebase.crashlytics.internal.persistence.CrashlyticsReportPersistence;
 import com.google.firebase.crashlytics.internal.send.DataTransportCrashlyticsReportSender;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -326,8 +330,21 @@ public class SessionReportingCoordinatorTest {
   }
 
   @Test
-  public void testFinalizeSessionWithNativeEvent_finalizesSession() {
-    // FIXME:
+  public void testFinalizeSessionWithNativeEvent_createsCrashlyticsReportWithNativePayload() {
+    byte[] testBytes = {0, 2, 20, 10};
+    String byteBackedSessionName = "byte";
+    BytesBackedNativeSessionFile byteSession =
+        new BytesBackedNativeSessionFile(byteBackedSessionName, testBytes);
+    when(dataCapture.captureReportData()).thenReturn(makeTestNativeReport());
+
+    reportManager.finalizeSessionWithNativeEvent("id", Arrays.asList(byteSession));
+
+    ArgumentCaptor<CrashlyticsReport> report = ArgumentCaptor.forClass(CrashlyticsReport.class);
+    verify(reportPersistence).finalizeSessionWithNativeEvent(eq("id"), report.capture());
+    CrashlyticsReport.FilesPayload ndkPayloadFinalized = report.getValue().getNdkPayload();
+    assertEquals(1, ndkPayloadFinalized.getFiles().size());
+    assertEquals(testBytes, ndkPayloadFinalized.getFiles().get(0).getContents());
+    assertEquals(byteBackedSessionName, ndkPayloadFinalized.getFiles().get(0).getFilename());
   }
 
   @Test
@@ -408,6 +425,17 @@ public class SessionReportingCoordinatorTest {
     reportManager.removeAllReports();
 
     verify(reportPersistence).deleteAllReports();
+  }
+
+  private static CrashlyticsReport makeTestNativeReport() {
+    return CrashlyticsReport.builder()
+        .setSdkVersion("sdkVersion")
+        .setGmpAppId("gmpAppId")
+        .setPlatform(1)
+        .setInstallationUuid("installationId")
+        .setBuildVersion("1")
+        .setDisplayVersion("1.0.0")
+        .build();
   }
 
   private void mockEventInteractions() {
