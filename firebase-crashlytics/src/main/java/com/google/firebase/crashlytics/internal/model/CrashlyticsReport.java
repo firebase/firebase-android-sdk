@@ -128,16 +128,19 @@ public abstract class CrashlyticsReport {
    */
   @NonNull
   public CrashlyticsReport withOrganizationId(@NonNull String organizationId) {
-    FilesPayload ndkReport = getNdkPayload();
-    return ndkReport != null
-        ? toBuilder()
-            .setNdkPayload(
-                FilesPayload.builder()
-                    .setFiles(ndkReport.getFiles())
-                    .setOrgId(organizationId)
-                    .build())
-            .build()
-        : toBuilder().setSession(getSession().withOrganizationId(organizationId)).build();
+    CrashlyticsReport.Builder builder = toBuilder();
+
+    FilesPayload ndkPayload = getNdkPayload();
+    if (ndkPayload != null) {
+      builder.setNdkPayload(ndkPayload.toBuilder().setOrgId(organizationId).build());
+    }
+
+    Session session = getSession();
+    if (session != null) {
+      builder.setSession(session.withOrganizationId(organizationId));
+    }
+
+    return builder.build();
   }
 
   /**
@@ -148,7 +151,8 @@ public abstract class CrashlyticsReport {
   @NonNull
   public CrashlyticsReport withNdkPayload(@NonNull FilesPayload filesPayload) {
     if (getType() == Type.JAVA) {
-      throw new IllegalStateException("NDK Reports cannot have sessions within them.");
+      throw new IllegalStateException(
+          "Cannot add an NDK payload to a report with an existing Session.");
     }
 
     return toBuilder().setNdkPayload(filesPayload).build();
@@ -194,6 +198,8 @@ public abstract class CrashlyticsReport {
 
     @Nullable
     public abstract String getOrgId();
+
+    abstract Builder toBuilder();
 
     @AutoValue
     public abstract static class File {

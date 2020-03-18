@@ -399,29 +399,31 @@ public class SessionReportingCoordinatorTest {
   public void
       onReportSend_javaReportsAreSentNativeReportsDeletedWithoutBeingSent_whenDataTransportStateJavaOnly() {
     final String orgId = "testOrgId";
-    final String sessionId1 = "sessionId1";
-    final String sessionId2 = "sessionId2";
+    final String sessionIdJava = "sessionIdJava";
+    final String sessionIdNative = "sessionIdNative";
 
     final List<CrashlyticsReportWithSessionId> finalizedReports = new ArrayList<>();
-    final CrashlyticsReportWithSessionId mockReport1 = mockReportWithSessionId(sessionId1, orgId);
-    final CrashlyticsReportWithSessionId mockReport2 = mockReportWithSessionId(sessionId2, orgId);
-    finalizedReports.add(mockReport1);
-    finalizedReports.add(mockReport2);
+    final CrashlyticsReportWithSessionId mockReportJava =
+        mockReportWithSessionId(sessionIdJava, orgId);
+    final CrashlyticsReportWithSessionId mockReportNative =
+        mockReportWithSessionId(sessionIdNative, orgId);
+    finalizedReports.add(mockReportJava);
+    finalizedReports.add(mockReportNative);
 
-    when(mockReport1.getReport().getType()).thenReturn(CrashlyticsReport.Type.JAVA);
-    when(mockReport2.getReport().getType()).thenReturn(CrashlyticsReport.Type.NATIVE);
+    when(mockReportJava.getReport().getType()).thenReturn(CrashlyticsReport.Type.JAVA);
+    when(mockReportNative.getReport().getType()).thenReturn(CrashlyticsReport.Type.NATIVE);
 
     when(reportPersistence.loadFinalizedReports()).thenReturn(finalizedReports);
 
-    when(reportSender.sendReport(mockReport1)).thenReturn(Tasks.forResult(mockReport1));
+    when(reportSender.sendReport(mockReportJava)).thenReturn(Tasks.forResult(mockReportJava));
 
     reportManager.sendReports(orgId, Runnable::run, DataTransportState.JAVA_ONLY);
 
-    verify(reportSender).sendReport(mockReport1);
-    verify(reportSender, never()).sendReport(mockReport2);
+    verify(reportSender).sendReport(mockReportJava);
+    verify(reportSender, never()).sendReport(mockReportNative);
 
-    verify(reportPersistence).deleteFinalizedReport(sessionId1);
-    verify(reportPersistence).deleteFinalizedReport(sessionId2);
+    verify(reportPersistence).deleteFinalizedReport(sessionIdJava);
+    verify(reportPersistence).deleteFinalizedReport(sessionIdNative);
   }
 
   @Test

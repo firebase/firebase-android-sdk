@@ -164,7 +164,7 @@ class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
    * @param organizationId The organization ID this crash report should be associated with
    * @param reportSendCompleteExecutor executor on which to run report cleanup after each report is
    *     sent.
-   * @param dataTransportState
+   * @param dataTransportState used to determine whether to send the report before cleaning it up.
    */
   public void sendReports(
       String organizationId,

@@ -115,12 +115,11 @@ public class ReportUploaderTest extends CrashlyticsTestCase {
   }
 
   public void testSendReport_deletesWithoutSendingWhenDataTransportAll() throws Exception {
-    final DataTransportState dataTransportState = DataTransportState.ALL;
     reportUploader =
         new ReportUploader(
             "testOrganizationId",
             "testGoogleAppId",
-            dataTransportState,
+            DataTransportState.ALL,
             reportManager,
             mockCall,
             mockHandlingExceptionCheck);
@@ -139,12 +138,11 @@ public class ReportUploaderTest extends CrashlyticsTestCase {
         new TestNativeReportFilesProvider(getContext());
     reportManager = new ReportManager(nativeReportFilesProvider);
 
-    final DataTransportState dataTransportState = DataTransportState.JAVA_ONLY;
     reportUploader =
         new ReportUploader(
             "testOrganizationId",
             "testGoogleAppId",
-            dataTransportState,
+            DataTransportState.JAVA_ONLY,
             reportManager,
             mockCall,
             mockHandlingExceptionCheck);
