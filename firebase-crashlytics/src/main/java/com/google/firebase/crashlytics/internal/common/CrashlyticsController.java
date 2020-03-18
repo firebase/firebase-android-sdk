@@ -1132,7 +1132,8 @@ class CrashlyticsController {
             getFilesDir(),
             previousSessionLogManager.getBytesForLog());
     NativeSessionFileGzipper.processNativeSessions(nativeSessionDirectory, nativeSessionFiles);
-    reportingCoordinator.finalizeSessionWithNativeEvent(previousSessionId, nativeSessionFiles);
+    reportingCoordinator.finalizeSessionWithNativeEvent(
+        makeFirebaseSessionIdentifier(previousSessionId), nativeSessionFiles);
     previousSessionLogManager.clearLog();
   }
 
