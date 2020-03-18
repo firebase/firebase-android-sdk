@@ -46,6 +46,9 @@ public class CrashlyticsReportDataCapture {
   private static final String GENERATOR =
       String.format(Locale.US, "Crashlytics Android SDK/%s", BuildConfig.VERSION_NAME);
 
+  // GeneratorType ANDROID_SDK = 3;
+  private static final int GENERATOR_TYPE = 3;
+
   private static final int REPORT_ANDROID_PLATFORM = 4;
   private static final int SESSION_ANDROID_PLATFORM = 3;
   private static final String SIGNAL_DEFAULT = "0";
@@ -123,6 +126,7 @@ public class CrashlyticsReportDataCapture {
         .setApp(populateSessionApplicationData())
         .setOs(populateSessionOperatingSystemData())
         .setDevice(populateSessionDeviceData())
+        .setGeneratorType(GENERATOR_TYPE)
         .build();
   }
 

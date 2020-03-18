@@ -243,7 +243,6 @@ public class InAppMessageStreamManager {
                                           "Successfully fetched %d messages from backend",
                                           resp.getMessagesList().size())))
                           .doOnSuccess(analyticsEventsManager::updateContextualTriggers)
-                          .doOnSuccess(abtIntegrationHelper::updateRunningExperiments)
                           .doOnSuccess(testDeviceHelper::processCampaignFetch)
                           .doOnError(e -> Logging.logw("Service fetch error: " + e.getMessage()))
                           .onErrorResumeNext(Maybe.empty()); // Absorb service failures

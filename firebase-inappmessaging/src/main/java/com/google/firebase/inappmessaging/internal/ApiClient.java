@@ -96,8 +96,8 @@ public class ApiClient {
             (unused) -> {
               String idResult = idTask.getResult();
               InstallationTokenResult tokenResult = tokenTask.getResult();
-              if (tokenResult == null || idResult == null) {
-                Logging.logw("Installation ID or Token is null, not calling backend");
+              if (TextUtils.isEmpty(idResult) || TextUtils.isEmpty(tokenResult.getToken())) {
+                Logging.logw("Installation ID or Token is empty, not calling backend");
                 return createCacheExpiringResponse();
               }
               return withCacheExpirationSafeguards(
@@ -144,16 +144,12 @@ public class ApiClient {
     return clientSignals.build();
   }
 
-  private ClientAppInfo getClientAppInfo(String id, InstallationTokenResult tokenResult) {
+  private ClientAppInfo getClientAppInfo(
+      String installationId, InstallationTokenResult installationToken) {
     ClientAppInfo.Builder builder =
         ClientAppInfo.newBuilder().setGmpAppId(firebaseApp.getOptions().getApplicationId());
-    String instanceToken = tokenResult.getToken();
-    if (!TextUtils.isEmpty(id) && !TextUtils.isEmpty(instanceToken)) {
-      builder.setAppInstanceId(id);
-      builder.setAppInstanceIdToken(instanceToken);
-    } else {
-      Logging.logw("Empty instance ID or instance token");
-    }
+    builder.setAppInstanceId(installationId);
+    builder.setAppInstanceIdToken(installationToken.getToken());
     return builder.build();
   }
 
