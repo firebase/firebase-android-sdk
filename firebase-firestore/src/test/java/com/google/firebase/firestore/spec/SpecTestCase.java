@@ -94,6 +94,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import org.json.JSONArray;
@@ -133,13 +134,15 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
   // this tag and they'll all be run (but all others won't).
   private static final String EXCLUSIVE_TAG = "exclusive";
 
-  // The name of a Java system property ({@link System#getProperty(String)}) whose value is the name
-  // of the sole spec test to execute. This is an alternative to setting the {@link #EXCLUSIVE_TAG}
-  // tag, which requires modifying the JSON file. To use this property, specify
-  // -DexclusiveSpecTest=<TestName> to the Java runtime, replacing <TestName> with the name of the
-  // test to execute exclusively.  The <TestName> value is the result of appending the "itName" of
-  // the test to its "describeName", separated by a space character.
-  private static final String EXCLUSIVE_PROPERTY = "exclusiveSpecTest";
+  // The name of a Java system property ({@link System#getProperty(String)}) whose value is a filter
+  // that specifies which tests to execute. The value of this property is a regular expression that
+  // is matched against the name of each test. Using this property is an alternative to setting the
+  // {@link #EXCLUSIVE_TAG} tag, which requires modifying the JSON file. To use this property,
+  // specify -DspecTestFilter=<Regex> to the Java runtime, replacing <Regex> with a regular
+  // expression; a test will be executed if and only if its name matches this regular expression.
+  // In this context, a test's "name" is the result of appending its "itName" to its "describeName",
+  // separated by a space character.
+  private static final String TEST_FILTER_PROPERTY = "specTestFilter";
 
   // Tags on tests that should be excluded from execution, useful to allow the platforms to
   // temporarily diverge or for features that are designed to be platform specific (such as
@@ -1106,10 +1109,14 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
       parsedSpecFiles.add(new Pair<>(f.getName(), fileJSON));
     }
 
-    String exclusiveTestNameFromSystemProperty =
-        emptyToNull(System.getProperty(EXCLUSIVE_PROPERTY));
-    if (exclusiveTestNameFromSystemProperty != null) {
+    String testNameFilterFromSystemProperty =
+        emptyToNull(System.getProperty(TEST_FILTER_PROPERTY));
+    Pattern testNameFilter;
+    if (testNameFilterFromSystemProperty == null) {
+      testNameFilter = null;
+    } else {
       exclusiveMode = true;
+      testNameFilter = Pattern.compile(testNameFilterFromSystemProperty);
     }
 
     for (Pair<String, JSONObject> parsedSpecFile : parsedSpecFiles) {
@@ -1137,8 +1144,10 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
           runTest = true;
         } else if (tags.contains(EXCLUSIVE_TAG)) {
           runTest = true;
+        } else if (testNameFilter != null) {
+          runTest = testNameFilter.matcher(name).find();
         } else {
-          runTest = name.equals(exclusiveTestNameFromSystemProperty);
+          runTest = false;
         }
 
         boolean measureRuntime = tags.contains(BENCHMARK_TAG);
