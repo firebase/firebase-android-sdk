@@ -55,9 +55,7 @@ public class ProtoMarshallerClient {
     }
 
     if (in.hasBody()) {
-      if (!in.getBody().getText().isEmpty()) {
-        builder.setBody(decode(in.getBody()));
-      }
+      builder.setBody(decode(in.getBody()));
     }
 
     if (in.hasTitle()) {
@@ -99,9 +97,7 @@ public class ProtoMarshallerClient {
     }
 
     if (in.hasBody()) {
-      if (!in.getBody().getText().isEmpty()) {
-        builder.setBody(decode(in.getBody()));
-      }
+      builder.setBody(decode(in.getBody()));
     }
 
     if (in.hasTitle()) {
@@ -120,9 +116,7 @@ public class ProtoMarshallerClient {
     }
 
     if (in.hasBody()) {
-      if (!in.getBody().getText().isEmpty()) {
-        builder.setBody(decode(in.getBody()));
-      }
+      builder.setBody(decode(in.getBody()));
     }
 
     if (!TextUtils.isEmpty(in.getBackgroundHexColor())) {
@@ -198,15 +192,18 @@ public class ProtoMarshallerClient {
   }
 
   private static Text decode(MessagesProto.Text in) {
+    if (TextUtils.isEmpty(in.getText())) {
+      return null;
+    }
+
     Text.Builder builder = Text.builder();
 
     if (!TextUtils.isEmpty(in.getHexColor())) {
       builder.setHexColor(in.getHexColor());
     }
 
-    if (!TextUtils.isEmpty(in.getText())) {
-      builder.setText(in.getText());
-    }
+    // We know the text is not empty here
+    builder.setText(in.getText());
 
     return builder.build();
   }
