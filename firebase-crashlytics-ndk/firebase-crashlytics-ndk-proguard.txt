@@ -1,4 +1,4 @@
-# Copyright 2018 Google LLC
+# Copyright 2020 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,6 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Prevent FirebaseCrashlytics from being obfuscated because the Crashlytics native libs call
-# FirebaseCrashlytics public methods dynamically via JNI.
+# Prevent FirebaseCrashlytics from being obfuscated, because the Crashlytics
+# native libraries call FirebaseCrashlytics public methods dynamically via JNI.
 -keep public class com.google.firebase.crashlytics.FirebaseCrashlytics { public *; }
