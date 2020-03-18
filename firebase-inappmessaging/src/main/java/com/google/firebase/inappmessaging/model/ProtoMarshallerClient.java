@@ -55,7 +55,9 @@ public class ProtoMarshallerClient {
     }
 
     if (in.hasBody()) {
-      builder.setBody(decode(in.getBody()));
+      if (!in.getBody().getText().isEmpty()) {
+        builder.setBody(decode(in.getBody()));
+      }
     }
 
     if (in.hasTitle()) {
@@ -97,7 +99,9 @@ public class ProtoMarshallerClient {
     }
 
     if (in.hasBody()) {
-      builder.setBody(decode(in.getBody()));
+      if (!in.getBody().getText().isEmpty()) {
+        builder.setBody(decode(in.getBody()));
+      }
     }
 
     if (in.hasTitle()) {
@@ -116,7 +120,9 @@ public class ProtoMarshallerClient {
     }
 
     if (in.hasBody()) {
-      builder.setBody(decode(in.getBody()));
+      if (!in.getBody().getText().isEmpty()) {
+        builder.setBody(decode(in.getBody()));
+      }
     }
 
     if (!TextUtils.isEmpty(in.getBackgroundHexColor())) {
