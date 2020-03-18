@@ -307,19 +307,7 @@ public class CrashlyticsReportPersistenceTest {
 
   @Test
   public void testFinalizeReports_prioritizesNativeAndNonnativeFatals() throws IOException {
-    byte[] testContents = {0, 2, 20, 10};
-    CrashlyticsReport.FilesPayload filesPayload =
-        CrashlyticsReport.FilesPayload.builder()
-            .setOrgId("orgId")
-            .setFiles(
-                ImmutableList.from(
-                    CrashlyticsReport.FilesPayload.File.builder()
-                        .setContents(testContents)
-                        .setFilename("bytes")
-                        .build()))
-            .build();
-
-    CrashlyticsReport report = makeTestNativeReport().withNdkPayload(filesPayload);
+    CrashlyticsReport report = makeTestNativeReport();
     reportPersistence =
         new CrashlyticsReportPersistence(
             folder.newFolder(), getSettingsMock(4, VERY_LARGE_UPPER_LIMIT));
@@ -332,11 +320,8 @@ public class CrashlyticsReportPersistenceTest {
     reportPersistence.finalizeSessionWithNativeEvent("testSession6native", report);
     reportPersistence.finalizeReports("skippedSession", 0L);
 
-    final List<CrashlyticsReportWithSessionId> finalizedReports =
-        reportPersistence.loadFinalizedReports();
-    assertEquals(4, finalizedReports.size());
     Set<String> reportNames = new HashSet<>();
-    for (CrashlyticsReportWithSessionId finalizedReport : finalizedReports) {
+    for (CrashlyticsReportWithSessionId finalizedReport : reportPersistence.loadFinalizedReports()) {
       reportNames.add(finalizedReport.getSessionId());
     }
     assertEquals(
@@ -431,19 +416,7 @@ public class CrashlyticsReportPersistenceTest {
 
   @Test
   public void testFinalizeSessionWithNativeEvent_writesNativeSessions() {
-    byte[] testContents = {0, 2, 20, 10};
-    CrashlyticsReport.FilesPayload filesPayload =
-        CrashlyticsReport.FilesPayload.builder()
-            .setOrgId("orgId")
-            .setFiles(
-                ImmutableList.from(
-                    CrashlyticsReport.FilesPayload.File.builder()
-                        .setContents(testContents)
-                        .setFilename("bytes")
-                        .build()))
-            .build();
-
-    CrashlyticsReport report = makeTestNativeReport().withNdkPayload(filesPayload);
+    CrashlyticsReport report = makeTestNativeReport();
     List<CrashlyticsReportWithSessionId> finalizedReports =
         reportPersistence.loadFinalizedReports();
 
@@ -453,9 +426,7 @@ public class CrashlyticsReportPersistenceTest {
 
     finalizedReports = reportPersistence.loadFinalizedReports();
     assertEquals(1, finalizedReports.size());
-    assertEquals(
-        report.withNdkPayload(filesPayload).withOrganizationId("orgId"),
-        finalizedReports.get(0).getReport());
+    assertEquals(report, finalizedReports.get(0).getReport());
   }
 
   @Test
@@ -651,27 +622,34 @@ public class CrashlyticsReportPersistenceTest {
     reportPersistence.persistEvent(testEvent, sessionId, isHighPriority);
   }
 
-  private static CrashlyticsReport makeTestReport(String sessionId) {
+  private static CrashlyticsReport.Builder makeIncompleteReport() {
     return CrashlyticsReport.builder()
         .setSdkVersion("sdkVersion")
         .setGmpAppId("gmpAppId")
         .setPlatform(1)
         .setInstallationUuid("installationId")
         .setBuildVersion("1")
-        .setDisplayVersion("1.0.0")
-        .setSession(makeTestSession(sessionId))
-        .build();
+        .setDisplayVersion("1.0.0");
+  }
+
+  private static CrashlyticsReport makeTestReport(String sessionId) {
+    return makeIncompleteReport().setSession(makeTestSession(sessionId)).build();
   }
 
   private static CrashlyticsReport makeTestNativeReport() {
-    return CrashlyticsReport.builder()
-        .setSdkVersion("sdkVersion")
-        .setGmpAppId("gmpAppId")
-        .setPlatform(1)
-        .setInstallationUuid("installationId")
-        .setBuildVersion("1")
-        .setDisplayVersion("1.0.0")
-        .build();
+    byte[] testContents = {0, 2, 20, 10};
+    CrashlyticsReport.FilesPayload filesPayload =
+            CrashlyticsReport.FilesPayload.builder()
+                    .setOrgId("orgId")
+                    .setFiles(
+                            ImmutableList.from(
+                                    CrashlyticsReport.FilesPayload.File.builder()
+                                            .setContents(testContents)
+                                            .setFilename("bytes")
+                                            .build()))
+                    .build();
+
+    return makeIncompleteReport().setNdkPayload(filesPayload).build();
   }
 
   private static CrashlyticsReport.Session makeTestSession(String sessionId) {

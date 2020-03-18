@@ -332,7 +332,7 @@ public class SessionReportingCoordinatorTest {
     String byteBackedSessionName = "byte";
     BytesBackedNativeSessionFile byteSession =
         new BytesBackedNativeSessionFile(byteBackedSessionName, testBytes);
-    when(dataCapture.captureReportData()).thenReturn(makeTestNativeReport());
+    when(dataCapture.captureReportData()).thenReturn(makeIncompleteReport());
 
     reportManager.finalizeSessionWithNativeEvent("id", Arrays.asList(byteSession));
 
@@ -447,7 +447,7 @@ public class SessionReportingCoordinatorTest {
     verify(reportPersistence).deleteAllReports();
   }
 
-  private static CrashlyticsReport makeTestNativeReport() {
+  private static CrashlyticsReport makeIncompleteReport() {
     return CrashlyticsReport.builder()
         .setSdkVersion("sdkVersion")
         .setGmpAppId("gmpAppId")

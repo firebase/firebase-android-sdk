@@ -15,6 +15,8 @@
 package com.google.firebase.crashlytics.internal.common;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -34,11 +36,14 @@ class FileBackedNativeSessionFile implements NativeSessionFile {
     this.file = file;
   }
 
+  @Override
+  @NonNull
   public String getName() {
     return this.name;
   }
 
   @Override
+  @Nullable
   public InputStream getStream() {
     if (!file.exists() || !file.isFile()) {
       return null;
@@ -51,11 +56,12 @@ class FileBackedNativeSessionFile implements NativeSessionFile {
   }
 
   @Override
+  @Nullable
   public CrashlyticsReport.FilesPayload.File asFilePayload() {
     byte[] bytes = asBytes();
     return bytes != null
         ? CrashlyticsReport.FilesPayload.File.builder()
-            .setContents(asBytes())
+            .setContents(bytes)
             .setFilename(name)
             .build()
         : null;

@@ -49,7 +49,7 @@ class NativeSessionFileGzipper {
     if (input == null) {
       return;
     }
-    byte[] buffer = new byte[1024];
+    byte[] buffer = new byte[8192];
     GZIPOutputStream gos = null;
     try {
       gos = new GZIPOutputStream(new FileOutputStream(output));

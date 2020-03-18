@@ -30,16 +30,20 @@ class BytesBackedNativeSessionFile implements NativeSessionFile {
     this.bytes = bytes;
   }
 
+  @Override
+  @NonNull
   public String getName() {
     return this.name;
   }
 
   @Override
+  @Nullable
   public InputStream getStream() {
     return isEmpty() ? null : new ByteArrayInputStream(bytes);
   }
 
   @Override
+  @Nullable
   public CrashlyticsReport.FilesPayload.File asFilePayload() {
     return isEmpty()
         ? null
