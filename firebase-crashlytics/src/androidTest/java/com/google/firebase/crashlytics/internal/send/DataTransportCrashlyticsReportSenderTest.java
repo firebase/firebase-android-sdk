@@ -53,8 +53,8 @@ public class DataTransportCrashlyticsReportSenderTest {
   public void testSendReportsSuccessful() throws Exception {
     doAnswer(callbackAnswer(null)).when(mockTransport).schedule(any(), any());
 
-    final CrashlyticsReportWithSessionId report1 = mock(CrashlyticsReportWithSessionId.class);
-    final CrashlyticsReportWithSessionId report2 = mock(CrashlyticsReportWithSessionId.class);
+    final CrashlyticsReportWithSessionId report1 = mockReportWithSessionId();
+    final CrashlyticsReportWithSessionId report2 = mockReportWithSessionId();
 
     final Task<CrashlyticsReportWithSessionId> send1 = reportSender.sendReport(report1);
     final Task<CrashlyticsReportWithSessionId> send2 = reportSender.sendReport(report2);
@@ -77,8 +77,8 @@ public class DataTransportCrashlyticsReportSenderTest {
     final Exception ex = new Exception("fail");
     doAnswer(callbackAnswer(ex)).when(mockTransport).schedule(any(), any());
 
-    final CrashlyticsReportWithSessionId report1 = mock(CrashlyticsReportWithSessionId.class);
-    final CrashlyticsReportWithSessionId report2 = mock(CrashlyticsReportWithSessionId.class);
+    final CrashlyticsReportWithSessionId report1 = mockReportWithSessionId();
+    final CrashlyticsReportWithSessionId report2 = mockReportWithSessionId();
 
     final Task<CrashlyticsReportWithSessionId> send1 = reportSender.sendReport(report1);
     final Task<CrashlyticsReportWithSessionId> send2 = reportSender.sendReport(report2);
@@ -104,8 +104,8 @@ public class DataTransportCrashlyticsReportSenderTest {
         .when(mockTransport)
         .schedule(any(), any());
 
-    final CrashlyticsReportWithSessionId report1 = mock(CrashlyticsReportWithSessionId.class);
-    final CrashlyticsReportWithSessionId report2 = mock(CrashlyticsReportWithSessionId.class);
+    final CrashlyticsReportWithSessionId report1 = mockReportWithSessionId();
+    final CrashlyticsReportWithSessionId report2 = mockReportWithSessionId();
 
     final Task<CrashlyticsReportWithSessionId> send1 = reportSender.sendReport(report1);
     final Task<CrashlyticsReportWithSessionId> send2 = reportSender.sendReport(report2);
@@ -129,5 +129,12 @@ public class DataTransportCrashlyticsReportSenderTest {
       callback.onSchedule(failure);
       return null;
     };
+  }
+
+  private static CrashlyticsReportWithSessionId mockReportWithSessionId() {
+    return CrashlyticsReportWithSessionId.builder()
+        .setSessionId("sessionId")
+        .setReport(mock(CrashlyticsReport.class))
+        .build();
   }
 }

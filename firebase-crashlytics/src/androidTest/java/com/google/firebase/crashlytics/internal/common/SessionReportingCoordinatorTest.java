@@ -29,7 +29,6 @@ import static org.mockito.Mockito.when;
 
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.crashlytics.internal.common.SessionReportingCoordinator.SendReportPredicate;
 import com.google.firebase.crashlytics.internal.log.LogFileManager;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.CustomAttribute;
@@ -55,8 +54,6 @@ public class SessionReportingCoordinatorTest {
   @Mock private DataTransportCrashlyticsReportSender reportSender;
   @Mock private LogFileManager logFileManager;
   @Mock private UserMetadata reportMetadata;
-  @Mock private SendReportPredicate mockSendReportPredicate;
-  @Mock private SendReportPredicate mockSendNativeReportPredicate;
   @Mock private CrashlyticsReport mockReport;
   @Mock private CrashlyticsReport.Session.Event mockEvent;
   @Mock private CrashlyticsReport.Session.Event.Builder mockEventBuilder;
@@ -360,8 +357,6 @@ public class SessionReportingCoordinatorTest {
   @Test
   @SuppressWarnings("unchecked")
   public void onReportSend_successfulReportsAreDeleted() {
-    when(mockSendReportPredicate.shouldSendViaDataTransport()).thenReturn(true);
-    when(mockSendNativeReportPredicate.shouldSendViaDataTransport()).thenReturn(true);
     final String orgId = "testOrgId";
     final String sessionId1 = "sessionId1";
     final String sessionId2 = "sessionId2";
@@ -381,8 +376,7 @@ public class SessionReportingCoordinatorTest {
     when(reportSender.sendReport(mockReport1)).thenReturn(successfulTask);
     when(reportSender.sendReport(mockReport2)).thenReturn(failedTask);
 
-    reportManager.sendReports(
-        orgId, Runnable::run, mockSendReportPredicate, mockSendNativeReportPredicate);
+    reportManager.sendReports(orgId, Runnable::run, DataTransportState.ALL);
 
     verify(reportSender).sendReport(mockReport1);
     verify(reportSender).sendReport(mockReport2);
@@ -392,11 +386,8 @@ public class SessionReportingCoordinatorTest {
   }
 
   @Test
-  public void onReportSend_reportsAreDeletedWithoutBeingSent_whenSendPredicateIsFalse() {
-    when(mockSendReportPredicate.shouldSendViaDataTransport()).thenReturn(false);
-    when(mockSendNativeReportPredicate.shouldSendViaDataTransport()).thenReturn(false);
-    reportManager.sendReports(
-        "testOrgId", Runnable::run, mockSendReportPredicate, mockSendNativeReportPredicate);
+  public void onReportSend_reportsAreDeletedWithoutBeingSent_whenDataTransportStateNone() {
+    reportManager.sendReports("testOrgId", Runnable::run, DataTransportState.NONE);
 
     verify(reportPersistence).deleteAllReports();
     verify(reportPersistence, never()).loadFinalizedReports();
@@ -404,7 +395,34 @@ public class SessionReportingCoordinatorTest {
     verifyZeroInteractions(reportSender);
   }
 
-  // FIXME: Add a test here
+  @Test
+  public void
+      onReportSend_javaReportsAreSentNativeReportsDeletedWithoutBeingSent_whenDataTransportStateJavaOnly() {
+    final String orgId = "testOrgId";
+    final String sessionId1 = "sessionId1";
+    final String sessionId2 = "sessionId2";
+
+    final List<CrashlyticsReportWithSessionId> finalizedReports = new ArrayList<>();
+    final CrashlyticsReportWithSessionId mockReport1 = mockReportWithSessionId(sessionId1, orgId);
+    final CrashlyticsReportWithSessionId mockReport2 = mockReportWithSessionId(sessionId2, orgId);
+    finalizedReports.add(mockReport1);
+    finalizedReports.add(mockReport2);
+
+    when(mockReport1.getReport().getType()).thenReturn(CrashlyticsReport.Type.JAVA);
+    when(mockReport2.getReport().getType()).thenReturn(CrashlyticsReport.Type.NATIVE);
+
+    when(reportPersistence.loadFinalizedReports()).thenReturn(finalizedReports);
+
+    when(reportSender.sendReport(mockReport1)).thenReturn(Tasks.forResult(mockReport1));
+
+    reportManager.sendReports(orgId, Runnable::run, DataTransportState.JAVA_ONLY);
+
+    verify(reportSender).sendReport(mockReport1);
+    verify(reportSender, never()).sendReport(mockReport2);
+
+    verify(reportPersistence).deleteFinalizedReport(sessionId1);
+    verify(reportPersistence).deleteFinalizedReport(sessionId2);
+  }
 
   @Test
   public void testPersistUserIdForCurrentSession_persistsCurrentUserIdForCurrentSessionId() {

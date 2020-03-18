@@ -41,10 +41,6 @@ import java.util.concurrent.Executor;
  */
 class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
 
-  public interface SendReportPredicate {
-    boolean shouldSendViaDataTransport();
-  }
-
   private static final String EVENT_TYPE_CRASH = "crash";
   private static final String EVENT_TYPE_LOGGED = "error";
   private static final int EVENT_THREAD_IMPORTANCE = 4;
@@ -168,15 +164,13 @@ class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
    * @param organizationId The organization ID this crash report should be associated with
    * @param reportSendCompleteExecutor executor on which to run report cleanup after each report is
    *     sent.
-   * @param sendReportPredicate Predicate determining whether to send reports before cleaning them
-   *     up
+   * @param dataTransportState
    */
   public void sendReports(
       String organizationId,
       Executor reportSendCompleteExecutor,
-      SendReportPredicate sendReportPredicate,
-      SendReportPredicate sendNativeReportPredicate) {
-    if (!sendReportPredicate.shouldSendViaDataTransport()) {
+      DataTransportState dataTransportState) {
+    if (dataTransportState == DataTransportState.NONE) {
       Logger.getLogger().d("Send via DataTransport disabled. Removing reports.");
       reportPersistence.deleteAllReports();
       return;
@@ -184,8 +178,8 @@ class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
     final List<CrashlyticsReportWithSessionId> reportsToSend =
         reportPersistence.loadFinalizedReports();
     for (CrashlyticsReportWithSessionId report : reportsToSend) {
-      if (report.getReport().getNdkPayload() != null
-          && !sendNativeReportPredicate.shouldSendViaDataTransport()) {
+      if (report.getReport().getType() == CrashlyticsReport.Type.NATIVE
+          && dataTransportState != DataTransportState.ALL) {
         Logger.getLogger().d("Send native reports via DataTransport disabled. Removing reports.");
         reportPersistence.deleteFinalizedReport(report.getSessionId());
         continue;

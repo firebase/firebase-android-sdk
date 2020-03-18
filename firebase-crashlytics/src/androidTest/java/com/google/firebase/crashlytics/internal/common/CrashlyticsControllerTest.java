@@ -119,8 +119,8 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
     final SettingsData testSettingsData =
         new TestSettingsData(
             3,
-            CrashlyticsController.REPORT_UPLOAD_VARIANT_LEGACY,
-            CrashlyticsController.REPORT_UPLOAD_VARIANT_LEGACY);
+            DataTransportState.REPORT_UPLOAD_VARIANT_LEGACY,
+            DataTransportState.REPORT_UPLOAD_VARIANT_LEGACY);
     appSettingsData = testSettingsData.appData;
     sessionSettingsData = testSettingsData.sessionData;
 

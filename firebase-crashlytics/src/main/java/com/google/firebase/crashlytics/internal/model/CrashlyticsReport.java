@@ -57,11 +57,27 @@ public abstract class CrashlyticsReport {
     int UNKNOWN = 7;
   }
 
+  public enum Type {
+    INCOMPLETE,
+    JAVA,
+    NATIVE
+  }
+
   private static final Charset UTF_8 = Charset.forName("UTF-8");
 
   @NonNull
   public static Builder builder() {
     return new AutoValue_CrashlyticsReport.Builder();
+  }
+
+  @Ignore
+  public Type getType() {
+    if (getSession() != null) {
+      return Type.JAVA;
+    } else if (getNdkPayload() != null) {
+      return Type.NATIVE;
+    }
+    return Type.INCOMPLETE;
   }
 
   @NonNull
@@ -131,7 +147,7 @@ public abstract class CrashlyticsReport {
    */
   @NonNull
   public CrashlyticsReport withNdkPayload(@NonNull FilesPayload filesPayload) {
-    if (this.getSession() != null) {
+    if (getType() == Type.JAVA) {
       throw new IllegalStateException("NDK Reports cannot have sessions within them.");
     }
 

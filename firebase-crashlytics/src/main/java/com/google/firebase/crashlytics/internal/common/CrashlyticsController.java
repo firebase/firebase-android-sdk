@@ -104,11 +104,6 @@ class CrashlyticsController {
   static final String FIREBASE_APPLICATION_EXCEPTION = "_ae";
   static final String FIREBASE_ANALYTICS_ORIGIN_CRASHLYTICS = "clx";
 
-  // Used to determine whether to upload reports through the legacy reports endpoint
-  static final int REPORT_UPLOAD_VARIANT_LEGACY = 1;
-  // Used to determine whether to upload reports through the new DataTransport API.
-  static final int REPORT_UPLOAD_VARIANT_DATATRANSPORT = 2;
-
   // region CLS File filters for retrieving specific sets of files.
 
   /** File filter that matches if a specified string is contained in the file name. */
@@ -433,9 +428,7 @@ class CrashlyticsController {
                             reportingCoordinator.sendReports(
                                 appSettingsData.organizationId,
                                 executor,
-                                shouldSendViaDataTransport(appSettingsData.reportUploadVariant),
-                                shouldSendViaDataTransport(
-                                    appSettingsData.nativeReportUploadVariant));
+                                DataTransportState.getState(appSettingsData));
                             return recordFatalFirebaseEventTask;
                           }
                         });
@@ -589,9 +582,7 @@ class CrashlyticsController {
                                 reportingCoordinator.sendReports(
                                     appSettingsData.organizationId,
                                     executor,
-                                    shouldSendViaDataTransport(appSettingsData.reportUploadVariant),
-                                    shouldSendViaDataTransport(
-                                        appSettingsData.nativeReportUploadVariant));
+                                    DataTransportState.getState(appSettingsData));
                                 unsentReportsHandled.trySetResult(null);
 
                                 return Tasks.forResult(null);
@@ -610,13 +601,11 @@ class CrashlyticsController {
         final String reportsUrl = appSettingsData.reportsUrl;
         final String ndkReportsUrl = appSettingsData.ndkReportsUrl;
         final String organizationId = appSettingsData.organizationId;
-        final boolean isUsingReportsEndpoint =
-            appSettingsData.reportUploadVariant != REPORT_UPLOAD_VARIANT_DATATRANSPORT;
         final CreateReportSpiCall call = getCreateReportSpiCall(reportsUrl, ndkReportsUrl);
         return new ReportUploader(
             organizationId,
             appData.googleAppId,
-            isUsingReportsEndpoint,
+            DataTransportState.getState(appSettingsData),
             reportManager,
             call,
             handlingExceptionCheck);
@@ -1148,11 +1137,6 @@ class CrashlyticsController {
   /** Removes dashes in the Crashlytics session identifier to conform to Firebase constraints. */
   private static String makeFirebaseSessionIdentifier(String sessionIdentifier) {
     return sessionIdentifier.replaceAll("-", "");
-  }
-
-  private static SessionReportingCoordinator.SendReportPredicate shouldSendViaDataTransport(
-      int reportUploadVariant) {
-    return () -> REPORT_UPLOAD_VARIANT_DATATRANSPORT == reportUploadVariant;
   }
 
   // region Serialization to protobuf
