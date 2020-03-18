@@ -47,14 +47,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Entry point for Firebase Installations.
+ * Entry point for Firebase installations.
  *
- * <p>Firebase Installations does
+ * <p>The Firebase installations service:
  *
  * <ul>
- *   <li>provide unique identifier for a Firebase installation
- *   <li>provide auth token of a Firebase installation
- *   <li>provide a API to GDPR-delete a Firebase installation
+ *   <li>provides a unique identifier for a Firebase installation
+ *   <li>provides an auth token for a Firebase installation
+ *   <li>provides a API to perform GDPR-compliant deletion of a Firebase installation.
  * </ul>
  */
 public class FirebaseInstallations implements FirebaseInstallationsApi {
@@ -212,11 +212,11 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
   /**
    * Returns a valid authentication token for the Firebase installation. Generates a new token if
-   * one doesn't exist, is expired or about to expire.
+   * one doesn't exist, is expired,  or is about to expire.
    *
-   * <p>Should only be called if the Firebase Installation is registered.
+   * <p>Should only be called if the Firebase installation is registered.
    *
-   * @param forceRefresh Options to get FIS Auth Token either by force refreshing or not.
+   * @param forceRefresh Options to get an auth token either by force refreshing or not.
    */
   @NonNull
   @Override
@@ -232,9 +232,9 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   }
 
   /**
-   * Call to delete this Firebase app installation from Firebase backend. This call would possibly
-   * lead Firebase Notification, Firebase RemoteConfig, Firebase Predictions or Firebase In-App
-   * Messaging not function properly.
+   * Call to delete this Firebase app installation from the Firebase backend. This call may
+   * cause Firebase Cloud Messaging, Firebase Remote Config, Firebase Predictions, or
+   * Firebase In-App Messaging to not function properly.
    */
   @NonNull
   @Override
