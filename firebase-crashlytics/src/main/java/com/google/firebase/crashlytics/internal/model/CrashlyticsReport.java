@@ -150,12 +150,7 @@ public abstract class CrashlyticsReport {
    */
   @NonNull
   public CrashlyticsReport withNdkPayload(@NonNull FilesPayload filesPayload) {
-    if (getType() == Type.JAVA) {
-      throw new IllegalStateException(
-          "Cannot add an NDK payload to a report with an existing Session.");
-    }
-
-    return toBuilder().setNdkPayload(filesPayload).build();
+    return toBuilder().setSession(null).setNdkPayload(filesPayload).build();
   }
 
   /**

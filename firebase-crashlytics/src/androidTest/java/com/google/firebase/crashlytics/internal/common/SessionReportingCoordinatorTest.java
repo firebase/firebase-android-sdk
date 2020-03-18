@@ -332,13 +332,12 @@ public class SessionReportingCoordinatorTest {
     String byteBackedSessionName = "byte";
     BytesBackedNativeSessionFile byteSession =
         new BytesBackedNativeSessionFile(byteBackedSessionName, testBytes);
-    when(dataCapture.captureReportData()).thenReturn(makeIncompleteReport());
-
     reportManager.finalizeSessionWithNativeEvent("id", Arrays.asList(byteSession));
 
-    ArgumentCaptor<CrashlyticsReport> report = ArgumentCaptor.forClass(CrashlyticsReport.class);
-    verify(reportPersistence).finalizeSessionWithNativeEvent(eq("id"), report.capture());
-    CrashlyticsReport.FilesPayload ndkPayloadFinalized = report.getValue().getNdkPayload();
+    ArgumentCaptor<CrashlyticsReport.FilesPayload> filesPayload =
+        ArgumentCaptor.forClass(CrashlyticsReport.FilesPayload.class);
+    verify(reportPersistence).finalizeSessionWithNativeEvent(eq("id"), filesPayload.capture());
+    CrashlyticsReport.FilesPayload ndkPayloadFinalized = filesPayload.getValue();
     assertEquals(1, ndkPayloadFinalized.getFiles().size());
     assertEquals(testBytes, ndkPayloadFinalized.getFiles().get(0).getContents());
     assertEquals(byteBackedSessionName, ndkPayloadFinalized.getFiles().get(0).getFilename());

@@ -138,8 +138,7 @@ class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
 
       filesPayloadBuilder.setFiles(ImmutableList.from(nativeFiles));
 
-      reportPersistence.finalizeSessionWithNativeEvent(
-          sessionId, dataCapture.captureReportData().withNdkPayload(filesPayloadBuilder.build()));
+      reportPersistence.finalizeSessionWithNativeEvent(sessionId, filesPayloadBuilder.build());
     } catch (Exception e) {
       throw new RuntimeException(e);
     }

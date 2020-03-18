@@ -170,9 +170,32 @@ public class CrashlyticsReportPersistence {
   }
 
   public void finalizeSessionWithNativeEvent(
-      String sessionId, CrashlyticsReport crashlyticsReport) {
+      String sessionId, CrashlyticsReport.FilesPayload build) {
     final File outputDirectory = prepareDirectory(nativeReportsDirectory);
-    writeTextFile(new File(outputDirectory, sessionId), TRANSFORM.reportToJson(crashlyticsReport));
+
+    File sessionFile = new File(getSessionDirectoryById(sessionId), REPORT_FILE_NAME);
+
+    if (!sessionFile.exists()) {
+      return;
+    }
+
+    String textFile = readTextFile(sessionFile);
+
+    if (textFile == null) {
+      return;
+    }
+
+    CrashlyticsReport report = TRANSFORM.reportFromJson(textFile);
+
+    // In the unlikely event the open non-native report has been cleaned up,
+    // we no longer can retrieve the relevant context about the session.
+    if (report == null) {
+      return;
+    }
+
+    report = report.withNdkPayload(build);
+
+    writeTextFile(new File(outputDirectory, sessionId), TRANSFORM.reportToJson(report));
   }
 
   // TODO: Deal with potential runtime exceptions
