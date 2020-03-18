@@ -567,16 +567,6 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
     assertTrue(Arrays.equals(expectedOrder, testOrder));
   }
 
-  @Test
-  public void testFinalizePreviousNativeSession_finalizesPreviousNativeSession() {
-    final CrashlyticsController controller = createController();
-  }
-
-  @Test
-  public void testGetNativeSessionFiles_getsNativeSessionFiles() {
-    // FIXME:
-  }
-
   // TODO: There's only ever one open session now that we can close sessions while offline.
   // Is that the behavior we want?
   /*
