@@ -18,11 +18,9 @@ import com.google.firebase.encoders.config.Configurator;
 import com.google.firebase.encoders.config.EncoderConfig;
 import java.io.IOException;
 import java.lang.Override;
-import javax.annotation.Generated;
 
 /**
  * @hide */
-@Generated("com.google.firebase.encoders.processor.EncodableProcessor")
 public final class AutoTypeWithListEncoder implements Configurator {
     public static final int CODEGEN_VERSION = 1;
 
