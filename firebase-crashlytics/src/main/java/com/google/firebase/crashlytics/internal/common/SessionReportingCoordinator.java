@@ -126,22 +126,18 @@ class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
 
   public void finalizeSessionWithNativeEvent(
       String sessionId, @NonNull List<NativeSessionFile> nativeSessionFiles) {
-    try {
-      FilesPayload.Builder filesPayloadBuilder = FilesPayload.builder();
-      ArrayList<FilesPayload.File> nativeFiles = new ArrayList<>();
-      for (NativeSessionFile nativeSessionFile : nativeSessionFiles) {
-        FilesPayload.File filePayload = nativeSessionFile.asFilePayload();
-        if (filePayload != null) {
-          nativeFiles.add(filePayload);
-        }
+    FilesPayload.Builder filesPayloadBuilder = FilesPayload.builder();
+    ArrayList<FilesPayload.File> nativeFiles = new ArrayList<>();
+    for (NativeSessionFile nativeSessionFile : nativeSessionFiles) {
+      FilesPayload.File filePayload = nativeSessionFile.asFilePayload();
+      if (filePayload != null) {
+        nativeFiles.add(filePayload);
       }
-
-      filesPayloadBuilder.setFiles(ImmutableList.from(nativeFiles));
-
-      reportPersistence.finalizeSessionWithNativeEvent(sessionId, filesPayloadBuilder.build());
-    } catch (Exception e) {
-      throw new RuntimeException(e);
     }
+
+    filesPayloadBuilder.setFiles(ImmutableList.from(nativeFiles));
+
+    reportPersistence.finalizeSessionWithNativeEvent(sessionId, filesPayloadBuilder.build());
   }
 
   public void persistUserId() {
