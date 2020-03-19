@@ -20,7 +20,6 @@ import com.google.auto.value.AutoValue;
 import com.google.firebase.encoders.annotations.Encodable;
 import com.google.firebase.encoders.processor.getters.Getter;
 import com.google.firebase.encoders.processor.getters.GetterFactory;
-import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.JavaFile;
@@ -64,6 +63,11 @@ public class EncodableProcessor extends AbstractProcessor {
   private GetterFactory getterFactory;
 
   @Override
+  public SourceVersion getSupportedSourceVersion() {
+    return SourceVersion.latestSupported();
+  }
+
+  @Override
   public synchronized void init(ProcessingEnvironment processingEnvironment) {
     super.init(processingEnvironment);
     elements = processingEnvironment.getElementUtils();
@@ -88,15 +92,14 @@ public class EncodableProcessor extends AbstractProcessor {
     ClassName className =
         ClassName.bestGuess("Auto" + Names.generatedClassName(element) + "Encoder");
     ClassName configurator = ClassName.get("com.google.firebase.encoders.config", "Configurator");
+
+    // TODO(vkryachko): add @Generated annotation in a way that is compatible with Java versions
+    // before and after 9. See https://github.com/google/dagger/pull/882
     TypeSpec.Builder encoderBuilder =
         TypeSpec.classBuilder(className)
             .addJavadoc("@hide")
             .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
             .addSuperinterface(configurator)
-            .addAnnotation(
-                AnnotationSpec.builder(ClassName.get("javax.annotation", "Generated"))
-                    .addMember("value", "$S", getClass().getName())
-                    .build())
             .addField(
                 FieldSpec.builder(
                         TypeName.INT,
