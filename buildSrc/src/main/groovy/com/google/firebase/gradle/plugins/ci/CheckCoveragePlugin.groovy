@@ -30,6 +30,12 @@ class CheckCoveragePlugin implements Plugin<Project> {
                 toolVersion = '0.8.5'
             }
 
+            tasks.withType(Test) {
+                jacoco {
+                    excludes = ['jdk.internal.*']
+                }
+            }
+
             task('checkCoverage', type: JacocoReport) {
                 dependsOn 'check'
                 description 'Generates check coverage report and uploads to Codecov.io.'
