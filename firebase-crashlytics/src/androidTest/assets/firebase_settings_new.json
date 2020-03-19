@@ -8,6 +8,7 @@
   "app": {
     "status": "new",
     "report_upload_variant": 2,
+    "native_report_upload_variant": 2,
     "update_required": true
   },
   "fabric": {

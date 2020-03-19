@@ -86,6 +86,7 @@ public class SettingsV3JsonTransformTest extends CrashlyticsTestCase {
         appData.ndkReportsUrl);
     assertTrue(appData.updateRequired);
     assertEquals(2, appData.reportUploadVariant);
+    assertEquals(2, appData.nativeReportUploadVariant);
   }
 
   private void assertSettingsData(SessionSettingsData settingsData) {

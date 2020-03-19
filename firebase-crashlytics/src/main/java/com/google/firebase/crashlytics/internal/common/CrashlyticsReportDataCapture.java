@@ -80,15 +80,11 @@ public class CrashlyticsReportDataCapture {
   }
 
   public CrashlyticsReport captureReportData(String identifier, long timestamp) {
-    return CrashlyticsReport.builder()
-        .setSdkVersion(BuildConfig.VERSION_NAME)
-        .setGmpAppId(appData.googleAppId)
-        .setInstallationUuid(idManager.getCrashlyticsInstallId())
-        .setBuildVersion(appData.versionCode)
-        .setDisplayVersion(appData.versionName)
-        .setPlatform(REPORT_ANDROID_PLATFORM)
-        .setSession(populateSessionData(identifier, timestamp))
-        .build();
+    return buildReportData().setSession(populateSessionData(identifier, timestamp)).build();
+  }
+
+  public CrashlyticsReport captureReportData() {
+    return buildReportData().build();
   }
 
   public Event captureEventData(
@@ -116,6 +112,16 @@ public class CrashlyticsReportDataCapture {
                 includeAllThreads))
         .setDevice(populateEventDeviceData(orientation))
         .build();
+  }
+
+  private CrashlyticsReport.Builder buildReportData() {
+    return CrashlyticsReport.builder()
+        .setSdkVersion(BuildConfig.VERSION_NAME)
+        .setGmpAppId(appData.googleAppId)
+        .setInstallationUuid(idManager.getCrashlyticsInstallId())
+        .setBuildVersion(appData.versionCode)
+        .setDisplayVersion(appData.versionName)
+        .setPlatform(REPORT_ANDROID_PLATFORM);
   }
 
   private CrashlyticsReport.Session populateSessionData(String identifier, long timestamp) {

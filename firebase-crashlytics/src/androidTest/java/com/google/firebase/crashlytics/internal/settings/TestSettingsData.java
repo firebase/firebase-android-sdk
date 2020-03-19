@@ -22,13 +22,14 @@ import com.google.firebase.crashlytics.internal.settings.model.SettingsData;
 public class TestSettingsData extends SettingsData {
 
   public TestSettingsData() {
-    this(2, 0);
+    this(2, 0, 0);
   }
 
-  public TestSettingsData(int settingsVersion, int reportUploadVariant) {
+  public TestSettingsData(
+      int settingsVersion, int reportUploadVariant, int nativeReportUploadVariant) {
     super(
         5,
-        buildAppData(reportUploadVariant),
+        buildAppData(reportUploadVariant, nativeReportUploadVariant),
         buildSettingsData(),
         buildFeaturesData(),
         settingsVersion,
@@ -43,7 +44,8 @@ public class TestSettingsData extends SettingsData {
     return new SessionSettingsData(64, 4);
   }
 
-  private static AppSettingsData buildAppData(int reportUploadVariant) {
+  private static AppSettingsData buildAppData(
+      int reportUploadVariant, int nativeReportUploadVariant) {
     return new AppSettingsData(
         AppSettingsData.STATUS_ACTIVATED,
         "http://localhost",
@@ -52,6 +54,7 @@ public class TestSettingsData extends SettingsData {
         "testBundleId",
         "testOrganizationId",
         false,
-        reportUploadVariant);
+        reportUploadVariant,
+        nativeReportUploadVariant);
   }
 }
