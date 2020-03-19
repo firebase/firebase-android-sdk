@@ -25,22 +25,8 @@ public abstract class CrashlyticsReportWithSessionId {
 
   public abstract String getSessionId();
 
-  @AutoValue.Builder
-  public abstract static class Builder {
-
-    @NonNull
-    public abstract CrashlyticsReportWithSessionId.Builder setReport(
-        @NonNull CrashlyticsReport value);
-
-    @NonNull
-    public abstract CrashlyticsReportWithSessionId.Builder setSessionId(@NonNull String value);
-
-    @NonNull
-    public abstract CrashlyticsReportWithSessionId build();
-  }
-
   @NonNull
-  public static CrashlyticsReportWithSessionId.Builder builder() {
-    return new AutoValue_CrashlyticsReportWithSessionId.Builder();
+  public static CrashlyticsReportWithSessionId create(CrashlyticsReport report, String sessionId) {
+    return new AutoValue_CrashlyticsReportWithSessionId(report, sessionId);
   }
 }

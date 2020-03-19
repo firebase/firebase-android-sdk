@@ -223,11 +223,7 @@ public class CrashlyticsReportPersistence {
     for (File reportFile : getAllFinalizedReportFiles()) {
       // TODO: Handle null value in jsonReport in a way that eventually cleans up file.
       CrashlyticsReport jsonReport = TRANSFORM.reportFromJson(readTextFile(reportFile));
-      allReports.add(
-          CrashlyticsReportWithSessionId.builder()
-              .setReport(jsonReport)
-              .setSessionId(reportFile.getName())
-              .build());
+      allReports.add(CrashlyticsReportWithSessionId.create(jsonReport, reportFile.getName()));
     }
     return allReports;
   }

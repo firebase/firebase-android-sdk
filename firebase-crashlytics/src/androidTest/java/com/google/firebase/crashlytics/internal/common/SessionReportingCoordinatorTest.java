@@ -486,9 +486,6 @@ public class SessionReportingCoordinatorTest {
 
   private static CrashlyticsReportWithSessionId mockReportWithSessionId(
       String sessionId, String orgId) {
-    return CrashlyticsReportWithSessionId.builder()
-        .setReport(mockReport(sessionId, orgId))
-        .setSessionId(sessionId)
-        .build();
+    return CrashlyticsReportWithSessionId.create(mockReport(sessionId, orgId), sessionId);
   }
 }

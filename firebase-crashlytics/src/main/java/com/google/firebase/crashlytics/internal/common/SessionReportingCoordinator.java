@@ -182,10 +182,8 @@ class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
       }
       reportsSender
           .sendReport(
-              CrashlyticsReportWithSessionId.builder()
-                  .setReport(report.getReport().withOrganizationId(organizationId))
-                  .setSessionId(report.getSessionId())
-                  .build())
+              CrashlyticsReportWithSessionId.create(
+                  report.getReport().withOrganizationId(organizationId), report.getSessionId()))
           .continueWith(reportSendCompleteExecutor, this::onReportSendComplete);
     }
   }
