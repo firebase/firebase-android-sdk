@@ -1109,8 +1109,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
       parsedSpecFiles.add(new Pair<>(f.getName(), fileJSON));
     }
 
-    String testNameFilterFromSystemProperty =
-        emptyToNull(System.getProperty(TEST_FILTER_PROPERTY));
+    String testNameFilterFromSystemProperty = emptyToNull(System.getProperty(TEST_FILTER_PROPERTY));
     Pattern testNameFilter;
     if (testNameFilterFromSystemProperty == null) {
       testNameFilter = null;
@@ -1118,6 +1117,9 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
       exclusiveMode = true;
       testNameFilter = Pattern.compile(testNameFilterFromSystemProperty);
     }
+
+    int testPassCount = 0;
+    int testSkipCount = 0;
 
     for (Pair<String, JSONObject> parsedSpecFile : parsedSpecFiles) {
       String fileName = parsedSpecFile.first;
@@ -1157,18 +1159,21 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
             info("Spec test: " + name);
             runSteps(steps, config);
             ranAtLeastOneTest = true;
+            testPassCount++;
           } catch (AssertionError e) {
-            throw new AssertionError("Spec test failure: " + name, e);
+            throw new AssertionError("Spec test failure: " + name + " (" + fileName + ")", e);
           }
           long end = System.currentTimeMillis();
           if (measureRuntime) {
             info("Runtime: " + (end - start) + " ms");
           }
         } else {
+          testSkipCount++;
           info("  [SKIPPED] Spec test: " + name);
         }
       }
     }
+    info(getClass().getName() + " completed; pass=" + testPassCount + " skip=" + testSkipCount);
     assertTrue(ranAtLeastOneTest);
   }
 
