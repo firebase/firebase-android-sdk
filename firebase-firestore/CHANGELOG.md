@@ -1,4 +1,10 @@
-# Unreleased 
+# Unreleased
+
+# 21.4.2
+- Remove Guava dependency from the SDK. This should eliminate crashes caused
+  by user App depending on a wrong flavor of Guava (#1125).
+
+# 21.4.1
 - [fixed] Fixed a performance regression introduced by the addition of
   `Query.limitToLast(n: long)` in Firestore 23.3.1.
 - [changed] Changed the in-memory representation of Firestore documents to
