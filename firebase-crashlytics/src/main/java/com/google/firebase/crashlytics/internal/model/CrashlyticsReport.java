@@ -164,9 +164,11 @@ public abstract class CrashlyticsReport {
   @NonNull
   public CrashlyticsReport withSessionEndFields(
       long endedAt, boolean isCrashed, @Nullable String userId) {
-    return toBuilder()
-        .setSession(getSession().withSessionEndFields(endedAt, isCrashed, userId))
-        .build();
+    final Builder builder = toBuilder();
+    if (getSession() != null) {
+      builder.setSession(getSession().withSessionEndFields(endedAt, isCrashed, userId));
+    }
+    return builder.build();
   }
 
   @AutoValue
