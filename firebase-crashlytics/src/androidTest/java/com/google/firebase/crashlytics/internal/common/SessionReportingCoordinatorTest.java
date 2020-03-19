@@ -14,11 +14,13 @@
 
 package com.google.firebase.crashlytics.internal.common;
 
+import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -27,7 +29,6 @@ import static org.mockito.Mockito.when;
 
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.crashlytics.internal.common.SessionReportingCoordinator.SendReportPredicate;
 import com.google.firebase.crashlytics.internal.log.LogFileManager;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.CustomAttribute;
@@ -35,12 +36,14 @@ import com.google.firebase.crashlytics.internal.model.ImmutableList;
 import com.google.firebase.crashlytics.internal.persistence.CrashlyticsReportPersistence;
 import com.google.firebase.crashlytics.internal.send.DataTransportCrashlyticsReportSender;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -51,7 +54,6 @@ public class SessionReportingCoordinatorTest {
   @Mock private DataTransportCrashlyticsReportSender reportSender;
   @Mock private LogFileManager logFileManager;
   @Mock private UserMetadata reportMetadata;
-  @Mock private SendReportPredicate mockSendReportPredicate;
   @Mock private CrashlyticsReport mockReport;
   @Mock private CrashlyticsReport.Session.Event mockEvent;
   @Mock private CrashlyticsReport.Session.Event.Builder mockEventBuilder;
@@ -325,6 +327,23 @@ public class SessionReportingCoordinatorTest {
   }
 
   @Test
+  public void testFinalizeSessionWithNativeEvent_createsCrashlyticsReportWithNativePayload() {
+    byte[] testBytes = {0, 2, 20, 10};
+    String byteBackedSessionName = "byte";
+    BytesBackedNativeSessionFile byteSession =
+        new BytesBackedNativeSessionFile(byteBackedSessionName, "not_applicable", testBytes);
+    reportManager.finalizeSessionWithNativeEvent("id", Arrays.asList(byteSession));
+
+    ArgumentCaptor<CrashlyticsReport.FilesPayload> filesPayload =
+        ArgumentCaptor.forClass(CrashlyticsReport.FilesPayload.class);
+    verify(reportPersistence).finalizeSessionWithNativeEvent(eq("id"), filesPayload.capture());
+    CrashlyticsReport.FilesPayload ndkPayloadFinalized = filesPayload.getValue();
+    assertEquals(1, ndkPayloadFinalized.getFiles().size());
+    assertEquals(testBytes, ndkPayloadFinalized.getFiles().get(0).getContents());
+    assertEquals(byteBackedSessionName, ndkPayloadFinalized.getFiles().get(0).getFilename());
+  }
+
+  @Test
   public void onSessionsFinalize_finalizesReports() {
     final String sessionId = "testSessionId";
     reportManager.onBeginSession(sessionId, System.currentTimeMillis());
@@ -337,26 +356,26 @@ public class SessionReportingCoordinatorTest {
   @Test
   @SuppressWarnings("unchecked")
   public void onReportSend_successfulReportsAreDeleted() {
-    when(mockSendReportPredicate.shouldSendViaDataTransport()).thenReturn(true);
     final String orgId = "testOrgId";
     final String sessionId1 = "sessionId1";
     final String sessionId2 = "sessionId2";
 
-    final List<CrashlyticsReport> finalizedReports = new ArrayList<>();
-    final CrashlyticsReport mockReport1 = mockReport(sessionId1, orgId);
-    final CrashlyticsReport mockReport2 = mockReport(sessionId2, orgId);
+    final List<CrashlyticsReportWithSessionId> finalizedReports = new ArrayList<>();
+    final CrashlyticsReportWithSessionId mockReport1 = mockReportWithSessionId(sessionId1, orgId);
+    final CrashlyticsReportWithSessionId mockReport2 = mockReportWithSessionId(sessionId2, orgId);
     finalizedReports.add(mockReport1);
     finalizedReports.add(mockReport2);
 
     when(reportPersistence.loadFinalizedReports()).thenReturn(finalizedReports);
 
-    final Task<CrashlyticsReport> successfulTask = Tasks.forResult(mockReport1);
-    final Task<CrashlyticsReport> failedTask = Tasks.forException(new Exception("fail"));
+    final Task<CrashlyticsReportWithSessionId> successfulTask = Tasks.forResult(mockReport1);
+    final Task<CrashlyticsReportWithSessionId> failedTask =
+        Tasks.forException(new Exception("fail"));
 
     when(reportSender.sendReport(mockReport1)).thenReturn(successfulTask);
     when(reportSender.sendReport(mockReport2)).thenReturn(failedTask);
 
-    reportManager.sendReports(orgId, Runnable::run, mockSendReportPredicate);
+    reportManager.sendReports(orgId, Runnable::run, DataTransportState.ALL);
 
     verify(reportSender).sendReport(mockReport1);
     verify(reportSender).sendReport(mockReport2);
@@ -366,14 +385,44 @@ public class SessionReportingCoordinatorTest {
   }
 
   @Test
-  public void onReportSend_reportsAreDeletedWithoutBeingSent_whenSendPredicateIsFalse() {
-    when(mockSendReportPredicate.shouldSendViaDataTransport()).thenReturn(false);
-    reportManager.sendReports("testOrgId", Runnable::run, mockSendReportPredicate);
+  public void onReportSend_reportsAreDeletedWithoutBeingSent_whenDataTransportStateNone() {
+    reportManager.sendReports("testOrgId", Runnable::run, DataTransportState.NONE);
 
     verify(reportPersistence).deleteAllReports();
     verify(reportPersistence, never()).loadFinalizedReports();
     verify(reportPersistence, never()).deleteFinalizedReport(anyString());
     verifyZeroInteractions(reportSender);
+  }
+
+  @Test
+  public void
+      onReportSend_javaReportsAreSentNativeReportsDeletedWithoutBeingSent_whenDataTransportStateJavaOnly() {
+    final String orgId = "testOrgId";
+    final String sessionIdJava = "sessionIdJava";
+    final String sessionIdNative = "sessionIdNative";
+
+    final List<CrashlyticsReportWithSessionId> finalizedReports = new ArrayList<>();
+    final CrashlyticsReportWithSessionId mockReportJava =
+        mockReportWithSessionId(sessionIdJava, orgId);
+    final CrashlyticsReportWithSessionId mockReportNative =
+        mockReportWithSessionId(sessionIdNative, orgId);
+    finalizedReports.add(mockReportJava);
+    finalizedReports.add(mockReportNative);
+
+    when(mockReportJava.getReport().getType()).thenReturn(CrashlyticsReport.Type.JAVA);
+    when(mockReportNative.getReport().getType()).thenReturn(CrashlyticsReport.Type.NATIVE);
+
+    when(reportPersistence.loadFinalizedReports()).thenReturn(finalizedReports);
+
+    when(reportSender.sendReport(mockReportJava)).thenReturn(Tasks.forResult(mockReportJava));
+
+    reportManager.sendReports(orgId, Runnable::run, DataTransportState.JAVA_ONLY);
+
+    verify(reportSender).sendReport(mockReportJava);
+    verify(reportSender, never()).sendReport(mockReportNative);
+
+    verify(reportPersistence).deleteFinalizedReport(sessionIdJava);
+    verify(reportPersistence).deleteFinalizedReport(sessionIdNative);
   }
 
   @Test
@@ -395,6 +444,17 @@ public class SessionReportingCoordinatorTest {
     reportManager.removeAllReports();
 
     verify(reportPersistence).deleteAllReports();
+  }
+
+  private static CrashlyticsReport makeIncompleteReport() {
+    return CrashlyticsReport.builder()
+        .setSdkVersion("sdkVersion")
+        .setGmpAppId("gmpAppId")
+        .setPlatform(1)
+        .setInstallationUuid("installationId")
+        .setBuildVersion("1")
+        .setDisplayVersion("1.0.0")
+        .build();
   }
 
   private void mockEventInteractions() {
@@ -422,5 +482,10 @@ public class SessionReportingCoordinatorTest {
     when(mockReport.getSession()).thenReturn(mockSession);
     when(mockReport.withOrganizationId(orgId)).thenReturn(mockReport);
     return mockReport;
+  }
+
+  private static CrashlyticsReportWithSessionId mockReportWithSessionId(
+      String sessionId, String orgId) {
+    return CrashlyticsReportWithSessionId.create(mockReport(sessionId, orgId), sessionId);
   }
 }

@@ -16,6 +16,7 @@ package com.google.firebase.crashlytics.internal.report;
 
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.common.BackgroundPriorityRunnable;
+import com.google.firebase.crashlytics.internal.common.DataTransportState;
 import com.google.firebase.crashlytics.internal.report.model.CreateReportRequest;
 import com.google.firebase.crashlytics.internal.report.model.Report;
 import com.google.firebase.crashlytics.internal.report.network.CreateReportSpiCall;
@@ -48,7 +49,7 @@ public class ReportUploader {
   private final CreateReportSpiCall createReportCall;
   private final String organizationId;
   private final String googleAppId;
-  private final boolean isUsingReportsEndpoint;
+  private final DataTransportState dataTransportState;
   private final ReportManager reportManager;
   private final HandlingExceptionCheck handlingExceptionCheck;
   private Thread uploadThread;
@@ -56,7 +57,7 @@ public class ReportUploader {
   public ReportUploader(
       String organizationId,
       String googleAppId,
-      boolean isUsingReportsEndpoint,
+      DataTransportState dataTransportState,
       ReportManager reportManager,
       CreateReportSpiCall createReportCall,
       HandlingExceptionCheck handlingExceptionCheck) {
@@ -66,7 +67,7 @@ public class ReportUploader {
     this.createReportCall = createReportCall;
     this.organizationId = organizationId;
     this.googleAppId = googleAppId;
-    this.isUsingReportsEndpoint = isUsingReportsEndpoint;
+    this.dataTransportState = dataTransportState;
     this.reportManager = reportManager;
     this.handlingExceptionCheck = handlingExceptionCheck;
   }
@@ -99,21 +100,24 @@ public class ReportUploader {
       final CreateReportRequest requestData =
           new CreateReportRequest(organizationId, googleAppId, report);
 
-      boolean shouldDeleteReport;
-      // For now, send native reports to reports endpoint regardless of the setting.
-      // TODO: Remove report type check once all reports can be sent through DataTransport
-      if (isUsingReportsEndpoint || report.getType() == Report.Type.NATIVE) {
-        final boolean sent = createReportCall.invoke(requestData, dataCollectionToken);
+      boolean shouldDeleteReport = true;
 
+      if (dataTransportState == DataTransportState.ALL) {
+        Logger.getLogger()
+            .d("Send to Reports Endpoint disabled. Removing Reports Endpoint report.");
+      } else if (dataTransportState == DataTransportState.JAVA_ONLY
+          && report.getType() == Report.Type.JAVA) {
+        Logger.getLogger()
+            .d(
+                "Send to Reports Endpoint for non-native reports disabled. Removing Reports Uploader report.");
+      } else {
+        final boolean sent = createReportCall.invoke(requestData, dataCollectionToken);
         Logger.getLogger()
             .i(
-                "Crashlytics report upload "
+                "Crashlytics Reports Endpoint upload "
                     + (sent ? "complete: " : "FAILED: ")
                     + report.getIdentifier());
         shouldDeleteReport = sent;
-      } else {
-        Logger.getLogger().d("Send to reports endpoint disabled. Removing report.");
-        shouldDeleteReport = true;
       }
 
       if (shouldDeleteReport) {

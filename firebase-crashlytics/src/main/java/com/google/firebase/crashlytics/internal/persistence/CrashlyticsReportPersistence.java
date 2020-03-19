@@ -15,6 +15,7 @@
 package com.google.firebase.crashlytics.internal.persistence;
 
 import androidx.annotation.NonNull;
+import com.google.firebase.crashlytics.internal.common.CrashlyticsReportWithSessionId;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event;
 import com.google.firebase.crashlytics.internal.model.ImmutableList;
@@ -50,6 +51,7 @@ public class CrashlyticsReportPersistence {
   private static final String WORKING_DIRECTORY_NAME = "report-persistence";
   private static final String OPEN_SESSIONS_DIRECTORY_NAME = "sessions";
   private static final String PRIORITY_REPORTS_DIRECTORY = "priority-reports";
+  private static final String NATIVE_REPORTS_DIRECTORY = "native-reports";
   private static final String REPORTS_DIRECTORY = "reports";
 
   private static final String REPORT_FILE_NAME = "report";
@@ -78,6 +80,9 @@ public class CrashlyticsReportPersistence {
   private final File priorityReportsDirectory;
   private final File reportsDirectory;
 
+  // Storage for ndk Reports
+  private final File nativeReportsDirectory;
+
   private final SettingsDataProvider settingsDataProvider;
 
   public CrashlyticsReportPersistence(
@@ -86,6 +91,7 @@ public class CrashlyticsReportPersistence {
     openSessionsDirectory = new File(workingDirectory, OPEN_SESSIONS_DIRECTORY_NAME);
     priorityReportsDirectory = new File(workingDirectory, PRIORITY_REPORTS_DIRECTORY);
     reportsDirectory = new File(workingDirectory, REPORTS_DIRECTORY);
+    nativeReportsDirectory = new File(workingDirectory, NATIVE_REPORTS_DIRECTORY);
     this.settingsDataProvider = settingsDataProvider;
   }
 
@@ -154,12 +160,42 @@ public class CrashlyticsReportPersistence {
   public void deleteFinalizedReport(String sessionId) {
     final FilenameFilter filter = (d, f) -> f.startsWith(sessionId);
     List<File> filteredReports =
-        sortAndCombineReportFiles(
+        combineReportFiles(
             getFilesInDirectory(priorityReportsDirectory, filter),
+            getFilesInDirectory(nativeReportsDirectory, filter),
             getFilesInDirectory(reportsDirectory, filter));
     for (File reportFile : filteredReports) {
       reportFile.delete();
     }
+  }
+
+  public void finalizeSessionWithNativeEvent(
+      String sessionId, CrashlyticsReport.FilesPayload build) {
+    final File outputDirectory = prepareDirectory(nativeReportsDirectory);
+
+    File sessionFile = new File(getSessionDirectoryById(sessionId), REPORT_FILE_NAME);
+
+    if (!sessionFile.exists()) {
+      return;
+    }
+
+    String textFile = readTextFile(sessionFile);
+
+    if (textFile == null) {
+      return;
+    }
+
+    CrashlyticsReport report = TRANSFORM.reportFromJson(textFile);
+
+    // In the unlikely event the open non-native report has been cleaned up,
+    // we no longer can retrieve the relevant context about the session.
+    if (report == null) {
+      return;
+    }
+
+    report = report.withNdkPayload(build);
+
+    writeTextFile(new File(outputDirectory, sessionId), TRANSFORM.reportToJson(report));
   }
 
   // TODO: Deal with potential runtime exceptions
@@ -180,12 +216,14 @@ public class CrashlyticsReportPersistence {
    * @return finalized (no longer changing) Crashlytics Reports, sorted first from high to low
    *     priority, secondarily sorted from most recent to least
    */
-  public List<CrashlyticsReport> loadFinalizedReports() {
+  public List<CrashlyticsReportWithSessionId> loadFinalizedReports() {
     final List<File> allReportFiles = getAllFinalizedReportFiles();
-    final ArrayList<CrashlyticsReport> allReports = new ArrayList<>();
+    final ArrayList<CrashlyticsReportWithSessionId> allReports = new ArrayList<>();
     allReports.ensureCapacity(allReportFiles.size());
     for (File reportFile : getAllFinalizedReportFiles()) {
-      allReports.add(TRANSFORM.reportFromJson(readTextFile(reportFile)));
+      // TODO: Handle null value in jsonReport in a way that eventually cleans up file.
+      CrashlyticsReport jsonReport = TRANSFORM.reportFromJson(readTextFile(reportFile));
+      allReports.add(CrashlyticsReportWithSessionId.create(jsonReport, reportFile.getName()));
     }
     return allReports;
   }
@@ -233,7 +271,10 @@ public class CrashlyticsReportPersistence {
   @NonNull
   private List<File> getAllFinalizedReportFiles() {
     return sortAndCombineReportFiles(
-        getAllFilesInDirectory(priorityReportsDirectory), getAllFilesInDirectory(reportsDirectory));
+        combineReportFiles(
+            getAllFilesInDirectory(priorityReportsDirectory),
+            getAllFilesInDirectory(nativeReportsDirectory)),
+        getAllFilesInDirectory(reportsDirectory));
   }
 
   private File getSessionDirectoryById(String sessionId) {
@@ -291,14 +332,24 @@ public class CrashlyticsReportPersistence {
   }
 
   @NonNull
-  private static List<File> sortAndCombineReportFiles(
-      List<File> priorityReports, List<File> reports) {
-    Collections.sort(priorityReports, LATEST_SESSION_ID_FIRST_COMPARATOR);
-    Collections.sort(reports, LATEST_SESSION_ID_FIRST_COMPARATOR);
+  private static List<File> sortAndCombineReportFiles(List<File>... reports) {
+    for (List<File> reportList : reports) {
+      Collections.sort(reportList, LATEST_SESSION_ID_FIRST_COMPARATOR);
+    }
+
+    return combineReportFiles(reports);
+  }
+
+  private static List<File> combineReportFiles(List<File>... reports) {
     final ArrayList<File> allReportsFiles = new ArrayList<>();
-    allReportsFiles.ensureCapacity(priorityReports.size() + reports.size());
-    allReportsFiles.addAll(priorityReports);
-    allReportsFiles.addAll(reports);
+    int totalReports = 0;
+    for (List<File> reportList : reports) {
+      totalReports += reportList.size();
+    }
+    allReportsFiles.ensureCapacity(totalReports);
+    for (List<File> reportList : reports) {
+      allReportsFiles.addAll(reportList);
+    }
     return allReportsFiles;
   }
 

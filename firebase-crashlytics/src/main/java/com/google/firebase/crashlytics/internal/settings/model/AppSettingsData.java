@@ -28,6 +28,7 @@ public class AppSettingsData {
   public final String organizationId;
   public final boolean updateRequired;
   public final int reportUploadVariant;
+  public final int nativeReportUploadVariant;
 
   public AppSettingsData(
       String status,
@@ -37,7 +38,8 @@ public class AppSettingsData {
       String bundleId,
       String organizationId,
       boolean updateRequired,
-      int reportUploadVariant) {
+      int reportUploadVariant,
+      int nativeReportUploadVariant) {
     this.status = status;
     this.url = url;
     this.reportsUrl = reportsUrl;
@@ -46,10 +48,11 @@ public class AppSettingsData {
     this.organizationId = organizationId;
     this.updateRequired = updateRequired;
     this.reportUploadVariant = reportUploadVariant;
+    this.nativeReportUploadVariant = nativeReportUploadVariant;
   }
 
   public AppSettingsData(
       String status, String url, String reportsUrl, String ndkReportsUrl, boolean updateRequired) {
-    this(status, url, reportsUrl, ndkReportsUrl, null, null, updateRequired, 0);
+    this(status, url, reportsUrl, ndkReportsUrl, null, null, updateRequired, 0, 0);
   }
 }

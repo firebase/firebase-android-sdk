@@ -64,6 +64,7 @@ import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -85,7 +86,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.zip.GZIPOutputStream;
 
 @SuppressWarnings("PMD")
 class CrashlyticsController {
@@ -103,11 +103,6 @@ class CrashlyticsController {
   static final String FIREBASE_TIMESTAMP = "timestamp";
   static final String FIREBASE_APPLICATION_EXCEPTION = "_ae";
   static final String FIREBASE_ANALYTICS_ORIGIN_CRASHLYTICS = "clx";
-
-  // Used to determine whether to upload reports through the legacy reports endpoint
-  static final int REPORT_UPLOAD_VARIANT_LEGACY = 1;
-  // Used to determine whether to upload reports through the new DataTransport API.
-  static final int REPORT_UPLOAD_VARIANT_DATATRANSPORT = 2;
 
   // region CLS File filters for retrieving specific sets of files.
 
@@ -433,7 +428,7 @@ class CrashlyticsController {
                             reportingCoordinator.sendReports(
                                 appSettingsData.organizationId,
                                 executor,
-                                shouldSendViaDataTransport(appSettingsData.reportUploadVariant));
+                                DataTransportState.getState(appSettingsData));
                             return recordFatalFirebaseEventTask;
                           }
                         });
@@ -587,8 +582,7 @@ class CrashlyticsController {
                                 reportingCoordinator.sendReports(
                                     appSettingsData.organizationId,
                                     executor,
-                                    shouldSendViaDataTransport(
-                                        appSettingsData.reportUploadVariant));
+                                    DataTransportState.getState(appSettingsData));
                                 unsentReportsHandled.trySetResult(null);
 
                                 return Tasks.forResult(null);
@@ -607,13 +601,11 @@ class CrashlyticsController {
         final String reportsUrl = appSettingsData.reportsUrl;
         final String ndkReportsUrl = appSettingsData.ndkReportsUrl;
         final String organizationId = appSettingsData.organizationId;
-        final boolean isUsingReportsEndpoint =
-            appSettingsData.reportUploadVariant != REPORT_UPLOAD_VARIANT_DATATRANSPORT;
         final CreateReportSpiCall call = getCreateReportSpiCall(reportsUrl, ndkReportsUrl);
         return new ReportUploader(
             organizationId,
             appData.googleAppId,
-            isUsingReportsEndpoint,
+            DataTransportState.getState(appSettingsData),
             reportManager,
             call,
             handlingExceptionCheck);
@@ -1103,33 +1095,17 @@ class CrashlyticsController {
 
   // endregion
 
-  private void finalizePreviousNativeSession(String previousSessionId) throws IOException {
+  private void finalizePreviousNativeSession(String previousSessionId) {
     Logger.getLogger().d("Finalizing native report for session " + previousSessionId);
     NativeSessionFileProvider nativeSessionFileProvider =
         nativeComponent.getSessionFileProvider(previousSessionId);
-
-    final File minidump = nativeSessionFileProvider.getMinidumpFile();
-    final File binaryImages = nativeSessionFileProvider.getBinaryImagesFile();
-    final File metadata = nativeSessionFileProvider.getMetadataFile();
-    final File sessionFile = nativeSessionFileProvider.getSessionFile();
-    final File sessionApp = nativeSessionFileProvider.getAppFile();
-    final File sessionDevice = nativeSessionFileProvider.getDeviceFile();
-    final File sessionOs = nativeSessionFileProvider.getOsFile();
-
-    if (minidump == null || !minidump.exists()) {
+    File minidumpFile = nativeSessionFileProvider.getMinidumpFile();
+    if (minidumpFile == null || !minidumpFile.exists()) {
       Logger.getLogger().w("No minidump data found for session " + previousSessionId);
       return;
     }
-
-    final File filesDir = getFilesDir();
-    final MetaDataStore metaDataStore = new MetaDataStore(filesDir);
-    final File sessionUser = metaDataStore.getUserDataFileForSession(previousSessionId);
-    final File sessionKeys = metaDataStore.getKeysFileForSession(previousSessionId);
-
     final LogFileManager previousSessionLogManager =
-        new LogFileManager(getContext(), logFileDirectoryProvider, previousSessionId);
-    final byte[] logs = previousSessionLogManager.getBytesForLog();
-
+        new LogFileManager(context, logFileDirectoryProvider, previousSessionId);
     final File nativeSessionDirectory = new File(getNativeSessionFilesDir(), previousSessionId);
 
     if (!nativeSessionDirectory.mkdirs()) {
@@ -1137,63 +1113,17 @@ class CrashlyticsController {
       return;
     }
 
-    gzipFile(minidump, new File(nativeSessionDirectory, "minidump"));
-    gzipIfNotEmpty(
-        NativeFileUtils.binaryImagesJsonFromMapsFile(binaryImages, context),
-        new File(nativeSessionDirectory, "binaryImages"));
-    gzipFile(metadata, new File(nativeSessionDirectory, "metadata"));
-    gzipFile(sessionFile, new File(nativeSessionDirectory, "session"));
-    gzipFile(sessionApp, new File(nativeSessionDirectory, "app"));
-    gzipFile(sessionDevice, new File(nativeSessionDirectory, "device"));
-    gzipFile(sessionOs, new File(nativeSessionDirectory, "os"));
-    gzipFile(sessionUser, new File(nativeSessionDirectory, "user"));
-    gzipFile(sessionKeys, new File(nativeSessionDirectory, "keys"));
-    gzipIfNotEmpty(logs, new File(nativeSessionDirectory, "logs"));
-
+    List<NativeSessionFile> nativeSessionFiles =
+        getNativeSessionFiles(
+            nativeSessionFileProvider,
+            previousSessionId,
+            getContext(),
+            getFilesDir(),
+            previousSessionLogManager.getBytesForLog());
+    NativeSessionFileGzipper.processNativeSessions(nativeSessionDirectory, nativeSessionFiles);
+    reportingCoordinator.finalizeSessionWithNativeEvent(
+        makeFirebaseSessionIdentifier(previousSessionId), nativeSessionFiles);
     previousSessionLogManager.clearLog();
-  }
-
-  // TODO: Maybe make this a separate collaborator/serializer
-  private static void gzipFile(@NonNull File input, @NonNull File output) throws IOException {
-    if (!input.exists() || !input.isFile()) {
-      return;
-    }
-    byte[] buffer = new byte[1024];
-    FileInputStream fis = null;
-    GZIPOutputStream gos = null;
-    try {
-      fis = new FileInputStream(input);
-      gos = new GZIPOutputStream(new FileOutputStream(output));
-
-      int read;
-
-      while ((read = fis.read(buffer)) > 0) {
-        gos.write(buffer, 0, read);
-      }
-
-      gos.finish();
-    } finally {
-      CommonUtils.closeQuietly(fis);
-      CommonUtils.closeQuietly(gos);
-    }
-  }
-
-  private static void gzipIfNotEmpty(@Nullable byte[] content, @NonNull File path)
-      throws IOException {
-    if (content != null && content.length > 0) {
-      gzip(content, path);
-    }
-  }
-
-  private static void gzip(@NonNull byte[] bytes, @NonNull File path) throws IOException {
-    GZIPOutputStream gos = null;
-    try {
-      gos = new GZIPOutputStream(new FileOutputStream(path));
-      gos.write(bytes, 0, bytes.length);
-      gos.finish();
-    } finally {
-      CommonUtils.closeQuietly(gos);
-    }
   }
 
   private static long getCurrentTimestampSeconds() {
@@ -1207,11 +1137,6 @@ class CrashlyticsController {
   /** Removes dashes in the Crashlytics session identifier to conform to Firebase constraints. */
   private static String makeFirebaseSessionIdentifier(String sessionIdentifier) {
     return sessionIdentifier.replaceAll("-", "");
-  }
-
-  private static SessionReportingCoordinator.SendReportPredicate shouldSendViaDataTransport(
-      int reportUploadVariant) {
-    return () -> REPORT_UPLOAD_VARIANT_DATATRANSPORT == reportUploadVariant;
   }
 
   // region Serialization to protobuf
@@ -1915,6 +1840,50 @@ class CrashlyticsController {
 
       reportUploader.uploadReport(report, dataCollectionToken);
     }
+  }
+
+  static List<NativeSessionFile> getNativeSessionFiles(
+      NativeSessionFileProvider fileProvider,
+      String previousSessionId,
+      Context context,
+      File filesDir,
+      byte[] logBytes) {
+
+    final MetaDataStore metaDataStore = new MetaDataStore(filesDir);
+    final File userFile = metaDataStore.getUserDataFileForSession(previousSessionId);
+    final File keysFile = metaDataStore.getKeysFileForSession(previousSessionId);
+
+    byte[] binaryImageBytes = null;
+    try {
+      binaryImageBytes =
+          NativeFileUtils.binaryImagesJsonFromMapsFile(fileProvider.getBinaryImagesFile(), context);
+    } catch (IOException e) {
+      // Keep processing, we'll add an empty binaryImages object.
+    }
+
+    List<NativeSessionFile> nativeSessionFiles = new ArrayList<>();
+    nativeSessionFiles.add(new BytesBackedNativeSessionFile("logs_file", "logs", logBytes));
+    nativeSessionFiles.add(
+        new BytesBackedNativeSessionFile("binary_images_file", "binaryImages", binaryImageBytes));
+    nativeSessionFiles.add(
+        new FileBackedNativeSessionFile(
+            "crash_meta_file", "metadata", fileProvider.getMetadataFile()));
+    nativeSessionFiles.add(
+        new FileBackedNativeSessionFile(
+            "session_meta_file", "session", fileProvider.getSessionFile()));
+    nativeSessionFiles.add(
+        new FileBackedNativeSessionFile("app_meta_file", "app", fileProvider.getAppFile()));
+    nativeSessionFiles.add(
+        new FileBackedNativeSessionFile(
+            "device_meta_file", "device", fileProvider.getDeviceFile()));
+    nativeSessionFiles.add(
+        new FileBackedNativeSessionFile("os_meta_file", "os", fileProvider.getOsFile()));
+    nativeSessionFiles.add(
+        new FileBackedNativeSessionFile(
+            "minidump_file", "minidump", fileProvider.getMinidumpFile()));
+    nativeSessionFiles.add(new FileBackedNativeSessionFile("user_meta_file", "user", userFile));
+    nativeSessionFiles.add(new FileBackedNativeSessionFile("keys_file", "keys", keysFile));
+    return nativeSessionFiles;
   }
 
   private static final class LogFileDirectoryProvider implements LogFileManager.DirectoryProvider {
