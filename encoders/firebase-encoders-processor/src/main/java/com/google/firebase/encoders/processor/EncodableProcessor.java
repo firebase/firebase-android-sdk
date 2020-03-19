@@ -93,10 +93,6 @@ public class EncodableProcessor extends AbstractProcessor {
             .addJavadoc("@hide")
             .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
             .addSuperinterface(configurator)
-            .addAnnotation(
-                AnnotationSpec.builder(ClassName.get("javax.annotation", "Generated"))
-                    .addMember("value", "$S", getClass().getName())
-                    .build())
             .addField(
                 FieldSpec.builder(
                         TypeName.INT,
