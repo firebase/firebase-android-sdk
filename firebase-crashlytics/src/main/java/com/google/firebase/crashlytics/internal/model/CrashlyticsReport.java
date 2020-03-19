@@ -154,17 +154,6 @@ public abstract class CrashlyticsReport {
   }
 
   /**
-   * Augment an existing {@link CrashlyticsReport} with a given user ID.
-   *
-   * @return a new {@link CrashlyticsReport} with its Session.User object containing the given user
-   *     ID.
-   */
-  @NonNull
-  public CrashlyticsReport withUserId(@NonNull String userId) {
-    return toBuilder().setSession(getSession().withUserId(userId)).build();
-  }
-
-  /**
    * Augment an existing {@link CrashlyticsReport} with fields set at session end.
    *
    * @param endedAt Session end time, by device clock, in posix seconds since epoch, UTC
@@ -320,11 +309,6 @@ public abstract class CrashlyticsReport {
     Session withOrganizationId(@NonNull String organizationId) {
       final Application app = getApp().withOrganizationId(organizationId);
       return toBuilder().setApp(app).build();
-    }
-
-    @NonNull
-    Session withUserId(@NonNull String userId) {
-      return toBuilder().setUser(User.builder().setIdentifier(userId).build()).build();
     }
 
     @NonNull
