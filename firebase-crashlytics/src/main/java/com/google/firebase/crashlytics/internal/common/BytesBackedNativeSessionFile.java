@@ -23,17 +23,22 @@ import java.io.InputStream;
 /** A {@link NativeSessionFile} backed by a byte array. */
 class BytesBackedNativeSessionFile implements NativeSessionFile {
   private final byte[] bytes;
-  private final String name;
+  private final String dataTransportFilename;
+  private final String reportsEndpointFilename;
 
-  BytesBackedNativeSessionFile(@NonNull String name, @Nullable byte[] bytes) {
-    this.name = name;
+  BytesBackedNativeSessionFile(
+      @NonNull String dataTransportFilename,
+      @NonNull String reportsEndpointFilename,
+      @Nullable byte[] bytes) {
+    this.dataTransportFilename = dataTransportFilename;
+    this.reportsEndpointFilename = reportsEndpointFilename;
     this.bytes = bytes;
   }
 
   @Override
   @NonNull
-  public String getName() {
-    return this.name;
+  public String getReportsEndpointFilename() {
+    return this.reportsEndpointFilename;
   }
 
   @Override
@@ -49,7 +54,7 @@ class BytesBackedNativeSessionFile implements NativeSessionFile {
         ? null
         : CrashlyticsReport.FilesPayload.File.builder()
             .setContents(bytes)
-            .setFilename(name)
+            .setFilename(dataTransportFilename)
             .build();
   }
 

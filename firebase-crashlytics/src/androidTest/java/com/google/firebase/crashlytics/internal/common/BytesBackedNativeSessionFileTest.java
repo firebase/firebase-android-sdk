@@ -30,7 +30,7 @@ public class BytesBackedNativeSessionFileTest {
   @Test
   public void testAsStream_convertsToStream() throws IOException {
     BytesBackedNativeSessionFile nativeSessionFile =
-        new BytesBackedNativeSessionFile("file", testBytes);
+        new BytesBackedNativeSessionFile("file_name", "file", testBytes);
     byte[] readBytes = new byte[4];
     nativeSessionFile.getStream().read(readBytes);
     assertArrayEquals(testBytes, readBytes);
@@ -39,24 +39,24 @@ public class BytesBackedNativeSessionFileTest {
   @Test
   public void testAsStreamWhenEmpty_returnsNull() {
     BytesBackedNativeSessionFile nativeSessionFile =
-        new BytesBackedNativeSessionFile("file", emptyBytes);
+        new BytesBackedNativeSessionFile("file_name", "file", emptyBytes);
     assertNull(nativeSessionFile.getStream());
   }
 
   @Test
   public void testAsFilePayload_convertsToFilePayload() {
     BytesBackedNativeSessionFile nativeSessionFile =
-        new BytesBackedNativeSessionFile("file", testBytes);
+        new BytesBackedNativeSessionFile("file_name", "file", testBytes);
     CrashlyticsReport.FilesPayload.File filesPayload = nativeSessionFile.asFilePayload();
     assertNotNull(filesPayload);
     assertArrayEquals(testBytes, filesPayload.getContents());
-    assertEquals("file", filesPayload.getFilename());
+    assertEquals("file_name", filesPayload.getFilename());
   }
 
   @Test
   public void testAsFilePayloadWhenEmpty_convertsToNull() {
     BytesBackedNativeSessionFile nativeSessionFile =
-        new BytesBackedNativeSessionFile("file", emptyBytes);
+        new BytesBackedNativeSessionFile("file_name", "file", emptyBytes);
     assertNull(nativeSessionFile.asFilePayload());
   }
 }

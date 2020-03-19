@@ -331,7 +331,7 @@ public class SessionReportingCoordinatorTest {
     byte[] testBytes = {0, 2, 20, 10};
     String byteBackedSessionName = "byte";
     BytesBackedNativeSessionFile byteSession =
-        new BytesBackedNativeSessionFile(byteBackedSessionName, testBytes);
+        new BytesBackedNativeSessionFile(byteBackedSessionName, "not_applicable", testBytes);
     reportManager.finalizeSessionWithNativeEvent("id", Arrays.asList(byteSession));
 
     ArgumentCaptor<CrashlyticsReport.FilesPayload> filesPayload =

@@ -28,17 +28,22 @@ import java.io.InputStream;
 class FileBackedNativeSessionFile implements NativeSessionFile {
 
   private final File file;
-  private final String name;
+  private final String dataTransportFilename;
+  private final String reportsEndpointFilename;
 
-  FileBackedNativeSessionFile(@NonNull String name, @NonNull File file) {
-    this.name = name;
+  FileBackedNativeSessionFile(
+      @NonNull String dataTransportFilename,
+      @NonNull String reportsEndpointFilename,
+      @NonNull File file) {
+    this.dataTransportFilename = dataTransportFilename;
+    this.reportsEndpointFilename = reportsEndpointFilename;
     this.file = file;
   }
 
   @Override
   @NonNull
-  public String getName() {
-    return this.name;
+  public String getReportsEndpointFilename() {
+    return this.reportsEndpointFilename;
   }
 
   @Override
@@ -59,7 +64,10 @@ class FileBackedNativeSessionFile implements NativeSessionFile {
   public CrashlyticsReport.FilesPayload.File asFilePayload() {
     byte[] bytes = asBytes();
     return bytes != null
-        ? CrashlyticsReport.FilesPayload.File.builder().setContents(bytes).setFilename(name).build()
+        ? CrashlyticsReport.FilesPayload.File.builder()
+            .setContents(bytes)
+            .setFilename(dataTransportFilename)
+            .build()
         : null;
   }
 

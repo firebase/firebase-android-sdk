@@ -35,7 +35,8 @@ class NativeSessionFileGzipper {
         if (inputStream == null) {
           continue;
         }
-        gzipInputStream(inputStream, new File(nativeSessionDirectory, stream.getName()));
+        gzipInputStream(
+            inputStream, new File(nativeSessionDirectory, stream.getReportsEndpointFilename()));
       } catch (Exception e) {
         // Skip invalid files.
       } finally {

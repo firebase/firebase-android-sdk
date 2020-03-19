@@ -57,7 +57,7 @@ public class FileBackedNativeSessionFileTest extends CrashlyticsTestCase {
   @Test
   public void testAsStream_convertsToStream() throws IOException {
     FileBackedNativeSessionFile nativeSessionFile =
-        new FileBackedNativeSessionFile("file", testFile);
+        new FileBackedNativeSessionFile("file_name", "file", testFile);
     byte[] readBytes = new byte[4];
     nativeSessionFile.getStream().read(readBytes);
     assertArrayEquals(testContents, readBytes);
@@ -66,7 +66,7 @@ public class FileBackedNativeSessionFileTest extends CrashlyticsTestCase {
   @Test
   public void testAsStreamWhenEmpty_returnsEmpty() throws IOException {
     FileBackedNativeSessionFile nativeSessionFile =
-        new FileBackedNativeSessionFile("file", emptyFile);
+        new FileBackedNativeSessionFile("file_name", "file", emptyFile);
     byte[] readBytes = new byte[0];
     nativeSessionFile.getStream().read(readBytes);
     assertArrayEquals(emptyContents, readBytes);
@@ -75,34 +75,34 @@ public class FileBackedNativeSessionFileTest extends CrashlyticsTestCase {
   @Test
   public void testAsStreamWhenMissing_returnsNull() {
     FileBackedNativeSessionFile nativeSessionFile =
-        new FileBackedNativeSessionFile("file", missingFile);
+        new FileBackedNativeSessionFile("file_name", "file", missingFile);
     assertNull(nativeSessionFile.getStream());
   }
 
   @Test
   public void testAsFilePayload_convertsToFilePayload() {
     FileBackedNativeSessionFile nativeSessionFile =
-        new FileBackedNativeSessionFile("file", testFile);
+        new FileBackedNativeSessionFile("file_name", "file", testFile);
     CrashlyticsReport.FilesPayload.File filesPayload = nativeSessionFile.asFilePayload();
     assertNotNull(filesPayload);
     assertArrayEquals(testContents, filesPayload.getContents());
-    assertEquals("file", filesPayload.getFilename());
+    assertEquals("file_name", filesPayload.getFilename());
   }
 
   @Test
   public void testAsFilePayloadWhenEmpty_returnsEmptyPayload() {
     FileBackedNativeSessionFile nativeSessionFile =
-        new FileBackedNativeSessionFile("file", emptyFile);
+        new FileBackedNativeSessionFile("file_name", "file", emptyFile);
     CrashlyticsReport.FilesPayload.File filesPayload = nativeSessionFile.asFilePayload();
     assertNotNull(filesPayload);
     assertArrayEquals(emptyContents, filesPayload.getContents());
-    assertEquals("file", filesPayload.getFilename());
+    assertEquals("file_name", filesPayload.getFilename());
   }
 
   @Test
   public void testAsFilePayloadWhenMissing_convertsToNull() {
     FileBackedNativeSessionFile nativeSessionFile =
-        new FileBackedNativeSessionFile("file", missingFile);
+        new FileBackedNativeSessionFile("file_name", "file", missingFile);
     assertNull(nativeSessionFile.asFilePayload());
   }
 }

@@ -1862,19 +1862,27 @@ class CrashlyticsController {
     }
 
     List<NativeSessionFile> nativeSessionFiles = new ArrayList<>();
-    nativeSessionFiles.add(new BytesBackedNativeSessionFile("logs", logBytes));
-    nativeSessionFiles.add(new BytesBackedNativeSessionFile("binaryImages", binaryImageBytes));
+    nativeSessionFiles.add(new BytesBackedNativeSessionFile("logs_file", "logs", logBytes));
     nativeSessionFiles.add(
-        new FileBackedNativeSessionFile("metadata", fileProvider.getMetadataFile()));
+        new BytesBackedNativeSessionFile("binary_images_file", "binaryImages", binaryImageBytes));
     nativeSessionFiles.add(
-        new FileBackedNativeSessionFile("session", fileProvider.getSessionFile()));
-    nativeSessionFiles.add(new FileBackedNativeSessionFile("app", fileProvider.getAppFile()));
-    nativeSessionFiles.add(new FileBackedNativeSessionFile("device", fileProvider.getDeviceFile()));
-    nativeSessionFiles.add(new FileBackedNativeSessionFile("os", fileProvider.getOsFile()));
+        new FileBackedNativeSessionFile(
+            "crash_meta_file", "metadata", fileProvider.getMetadataFile()));
     nativeSessionFiles.add(
-        new FileBackedNativeSessionFile("minidump", fileProvider.getMinidumpFile()));
-    nativeSessionFiles.add(new FileBackedNativeSessionFile("user", userFile));
-    nativeSessionFiles.add(new FileBackedNativeSessionFile("keys", keysFile));
+        new FileBackedNativeSessionFile(
+            "session_meta_file", "session", fileProvider.getSessionFile()));
+    nativeSessionFiles.add(
+        new FileBackedNativeSessionFile("app_meta_file", "app", fileProvider.getAppFile()));
+    nativeSessionFiles.add(
+        new FileBackedNativeSessionFile(
+            "device_meta_file", "device", fileProvider.getDeviceFile()));
+    nativeSessionFiles.add(
+        new FileBackedNativeSessionFile("os_meta_file", "os", fileProvider.getOsFile()));
+    nativeSessionFiles.add(
+        new FileBackedNativeSessionFile(
+            "minidump_file", "minidump", fileProvider.getMinidumpFile()));
+    nativeSessionFiles.add(new FileBackedNativeSessionFile("user_meta_file", "user", userFile));
+    nativeSessionFiles.add(new FileBackedNativeSessionFile("keys_file", "keys", keysFile));
     return nativeSessionFiles;
   }
 

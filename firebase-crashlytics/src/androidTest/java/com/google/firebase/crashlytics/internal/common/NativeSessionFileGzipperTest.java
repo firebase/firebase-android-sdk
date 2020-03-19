@@ -52,9 +52,9 @@ public class NativeSessionFileGzipperTest extends CrashlyticsTestCase {
     String fileBackedSessionName = "file";
     String byteBackedSessionName = "byte";
     FileBackedNativeSessionFile fileSession =
-        new FileBackedNativeSessionFile(fileBackedSessionName, testFile);
+        new FileBackedNativeSessionFile("not_applicable", fileBackedSessionName, testFile);
     BytesBackedNativeSessionFile byteSession =
-        new BytesBackedNativeSessionFile(byteBackedSessionName, testContents);
+        new BytesBackedNativeSessionFile("not_applicable", byteBackedSessionName, testContents);
     List<NativeSessionFile> files = Arrays.asList(fileSession, byteSession);
     NativeSessionFileGzipper.processNativeSessions(gzipDir, files);
 
@@ -69,9 +69,9 @@ public class NativeSessionFileGzipperTest extends CrashlyticsTestCase {
     String fileBackedSessionName = "file";
     String byteBackedSessionName = "byte";
     FileBackedNativeSessionFile fileSession =
-        new FileBackedNativeSessionFile(fileBackedSessionName, missingFile);
+        new FileBackedNativeSessionFile("not_applicable", fileBackedSessionName, missingFile);
     BytesBackedNativeSessionFile byteSession =
-        new BytesBackedNativeSessionFile(byteBackedSessionName, testContents);
+        new BytesBackedNativeSessionFile("not_applicable", byteBackedSessionName, testContents);
     List<NativeSessionFile> files = Arrays.asList(fileSession, byteSession);
     NativeSessionFileGzipper.processNativeSessions(gzipDir, files);
 

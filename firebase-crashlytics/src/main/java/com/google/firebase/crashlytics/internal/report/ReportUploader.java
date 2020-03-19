@@ -103,16 +103,18 @@ public class ReportUploader {
       boolean shouldDeleteReport = true;
 
       if (dataTransportState == DataTransportState.ALL) {
-        Logger.getLogger().d("Send to reports endpoint disabled. Removing report.");
+        Logger.getLogger()
+            .d("Send to Reports Endpoint disabled. Removing Reports Endpoint report.");
       } else if (dataTransportState == DataTransportState.JAVA_ONLY
           && report.getType() == Report.Type.JAVA) {
         Logger.getLogger()
-            .d("Send to reports endpoint for non-native reports disabled. Removing report.");
+            .d(
+                "Send to Reports Endpoint for non-native reports disabled. Removing Reports Uploader report.");
       } else {
         final boolean sent = createReportCall.invoke(requestData, dataCollectionToken);
         Logger.getLogger()
             .i(
-                "Crashlytics report upload "
+                "Crashlytics Reports Endpoint upload "
                     + (sent ? "complete: " : "FAILED: ")
                     + report.getIdentifier());
         shouldDeleteReport = sent;

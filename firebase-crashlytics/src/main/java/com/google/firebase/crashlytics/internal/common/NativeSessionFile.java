@@ -24,9 +24,10 @@ import java.io.InputStream;
  * occurred.
  */
 interface NativeSessionFile {
-  /** Shortname of the file, e.g., "logs" */
+
+  /** Shortname of the file sent to the reports endpoint, e.g., "logs" */
   @NonNull
-  String getName();
+  String getReportsEndpointFilename();
 
   /** Representation of the NativeSessionFile as a stream */
   @Nullable

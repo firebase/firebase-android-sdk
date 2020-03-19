@@ -170,7 +170,7 @@ class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
       Executor reportSendCompleteExecutor,
       DataTransportState dataTransportState) {
     if (dataTransportState == DataTransportState.NONE) {
-      Logger.getLogger().d("Send via DataTransport disabled. Removing reports.");
+      Logger.getLogger().d("Send via DataTransport disabled. Removing DataTransport reports.");
       reportPersistence.deleteAllReports();
       return;
     }
@@ -179,7 +179,8 @@ class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
     for (CrashlyticsReportWithSessionId report : reportsToSend) {
       if (report.getReport().getType() == CrashlyticsReport.Type.NATIVE
           && dataTransportState != DataTransportState.ALL) {
-        Logger.getLogger().d("Send native reports via DataTransport disabled. Removing reports.");
+        Logger.getLogger()
+            .d("Send native reports via DataTransport disabled. Removing DataTransport reports.");
         reportPersistence.deleteFinalizedReport(report.getSessionId());
         continue;
       }
@@ -241,7 +242,8 @@ class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
     if (task.isSuccessful()) {
       // TODO: if the report is fatal, send an analytics event.
       final CrashlyticsReportWithSessionId report = task.getResult();
-      Logger.getLogger().i("Crashlytics report sent successfully: " + report.getSessionId());
+      Logger.getLogger()
+          .i("Crashlytics report successfully enqueued to DataTransport: " + report.getSessionId());
       reportPersistence.deleteFinalizedReport(report.getSessionId());
       return true;
     }
