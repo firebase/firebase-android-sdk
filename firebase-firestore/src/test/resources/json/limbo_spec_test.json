@@ -3616,7 +3616,19 @@
           "primary": true
         },
         "expectedState": {
-          "isPrimary": true
+          "isPrimary": true,
+          "activeTargets": {
+            "2": {
+              "queries": [
+                {
+                  "path": "collection",
+                  "filters": [],
+                  "orderBys": []
+                }
+              ],
+              "resumeToken": "resume-token-1000000"
+            }
+          }
         },
         "clientIndex": 1
       },
@@ -3646,20 +3658,6 @@
       },
       {
         "drainQueue": true,
-        "expectedState": {
-          "activeTargets": {
-            "2": {
-              "queries": [
-                {
-                  "path": "collection",
-                  "filters": [],
-                  "orderBys": []
-                }
-              ],
-              "resumeToken": "resume-token-1000000"
-            }
-          }
-        },
         "clientIndex": 1
       },
       {
