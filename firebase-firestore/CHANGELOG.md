@@ -1,8 +1,9 @@
 # Unreleased
 
 # 21.4.2
-- [fixed] Remove Guava dependency from the SDK. This should eliminate crashes caused
-  by user App depending on a wrong flavor of Guava (#1125).
+- [changed] Removed Guava dependency from the SDK. This change is the first
+  step in eliminating crashes caused by apps that depend on the wrong flavor of
+  Guava (#1125).
 
 # 21.4.1
 - [fixed] Fixed a performance regression introduced by the addition of
