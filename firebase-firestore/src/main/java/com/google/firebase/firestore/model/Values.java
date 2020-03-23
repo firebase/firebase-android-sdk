@@ -45,6 +45,7 @@ public class Values {
    * support server timestamps.
    */
   public static final int TYPE_ORDER_NULL = 0;
+
   public static final int TYPE_ORDER_BOOLEAN = 1;
   public static final int TYPE_ORDER_NUMBER = 2;
   public static final int TYPE_ORDER_TIMESTAMP = 3;
