@@ -16,7 +16,6 @@ package com.google.firebase.firestore;
 
 import static com.google.firebase.firestore.model.ServerTimestamps.getLocalWriteTime;
 import static com.google.firebase.firestore.model.ServerTimestamps.getPreviousValue;
-import static com.google.firebase.firestore.model.ServerTimestamps.isServerTimestamp;
 import static com.google.firebase.firestore.model.Values.TYPE_ORDER_ARRAY;
 import static com.google.firebase.firestore.model.Values.TYPE_ORDER_BLOB;
 import static com.google.firebase.firestore.model.Values.TYPE_ORDER_BOOLEAN;
@@ -80,7 +79,9 @@ public class UserDataWriter {
       case TYPE_ORDER_BOOLEAN:
         return value.getBooleanValue();
       case TYPE_ORDER_NUMBER:
-        return value.getValueTypeCase().equals(Value.ValueTypeCase.INTEGER_VALUE) ? value.getIntegerValue() : value.getDoubleValue();
+        return value.getValueTypeCase().equals(Value.ValueTypeCase.INTEGER_VALUE)
+            ? (Object) value.getIntegerValue() // Cast to Object to prevent type coercion to double
+            : (Object) value.getDoubleValue();
       case TYPE_ORDER_STRING:
         return value.getStringValue();
       case TYPE_ORDER_BLOB:

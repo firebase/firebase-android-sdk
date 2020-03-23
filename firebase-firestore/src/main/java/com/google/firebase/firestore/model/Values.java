@@ -41,8 +41,8 @@ public class Values {
       Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build();
 
   /**
-   * The order of types in Firestore. This order is based on the backend's ordering,
-   * but modified to support server timestamps.
+   * The order of types in Firestore. This order is based on the backend's ordering, but modified to
+   * support server timestamps.
    */
   public static final int TYPE_ORDER_NULL = 0;
   public static final int TYPE_ORDER_BOOLEAN = 1;
