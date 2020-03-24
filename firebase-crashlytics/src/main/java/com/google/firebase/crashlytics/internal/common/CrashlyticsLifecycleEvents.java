@@ -14,6 +14,8 @@
 
 package com.google.firebase.crashlytics.internal.common;
 
+import androidx.annotation.NonNull;
+
 /** This class defines Crashlytics lifecycle events */
 interface CrashlyticsLifecycleEvents {
 
@@ -22,7 +24,7 @@ interface CrashlyticsLifecycleEvents {
    *
    * @param sessionId the identifier for the new session
    */
-  void onBeginSession(String sessionId, long timestamp);
+  void onBeginSession(@NonNull String sessionId, long timestamp);
 
   /**
    * Called when a message is logged by the user.

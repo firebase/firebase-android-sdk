@@ -22,9 +22,9 @@ import java.io.InputStream;
 
 /** A {@link NativeSessionFile} backed by a byte array. */
 class BytesBackedNativeSessionFile implements NativeSessionFile {
-  private final byte[] bytes;
-  private final String dataTransportFilename;
-  private final String reportsEndpointFilename;
+  @Nullable private final byte[] bytes;
+  @NonNull private final String dataTransportFilename;
+  @NonNull private final String reportsEndpointFilename;
 
   BytesBackedNativeSessionFile(
       @NonNull String dataTransportFilename,

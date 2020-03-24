@@ -61,6 +61,7 @@ public class DataTransportCrashlyticsReportSender {
     this.transport = transport;
   }
 
+  @NonNull
   public Task<CrashlyticsReportWithSessionId> sendReport(
       @NonNull CrashlyticsReportWithSessionId report) {
     TaskCompletionSource<CrashlyticsReportWithSessionId> tcs = new TaskCompletionSource<>();
