@@ -16,7 +16,18 @@ package com.google.firebase.firestore;
 
 import static com.google.firebase.firestore.model.ServerTimestamps.getLocalWriteTime;
 import static com.google.firebase.firestore.model.ServerTimestamps.getPreviousValue;
-import static com.google.firebase.firestore.model.ServerTimestamps.isServerTimestamp;
+import static com.google.firebase.firestore.model.Values.TYPE_ORDER_ARRAY;
+import static com.google.firebase.firestore.model.Values.TYPE_ORDER_BLOB;
+import static com.google.firebase.firestore.model.Values.TYPE_ORDER_BOOLEAN;
+import static com.google.firebase.firestore.model.Values.TYPE_ORDER_GEOPOINT;
+import static com.google.firebase.firestore.model.Values.TYPE_ORDER_MAP;
+import static com.google.firebase.firestore.model.Values.TYPE_ORDER_NULL;
+import static com.google.firebase.firestore.model.Values.TYPE_ORDER_NUMBER;
+import static com.google.firebase.firestore.model.Values.TYPE_ORDER_REFERENCE;
+import static com.google.firebase.firestore.model.Values.TYPE_ORDER_SERVER_TIMESTAMP;
+import static com.google.firebase.firestore.model.Values.TYPE_ORDER_STRING;
+import static com.google.firebase.firestore.model.Values.TYPE_ORDER_TIMESTAMP;
+import static com.google.firebase.firestore.model.Values.typeOrder;
 import static com.google.firebase.firestore.util.Assert.fail;
 
 import androidx.annotation.RestrictTo;
@@ -52,31 +63,30 @@ public class UserDataWriter {
   }
 
   Object convertValue(Value value) {
-    switch (value.getValueTypeCase()) {
-      case MAP_VALUE:
-        if (isServerTimestamp(value)) {
-          return convertServerTimestamp(value);
-        }
+    switch (typeOrder(value)) {
+      case TYPE_ORDER_MAP:
         return convertObject(value.getMapValue().getFieldsMap());
-      case ARRAY_VALUE:
+      case TYPE_ORDER_ARRAY:
         return convertArray(value.getArrayValue());
-      case REFERENCE_VALUE:
+      case TYPE_ORDER_REFERENCE:
         return convertReference(value);
-      case TIMESTAMP_VALUE:
+      case TYPE_ORDER_TIMESTAMP:
         return convertTimestamp(value.getTimestampValue());
-      case NULL_VALUE:
+      case TYPE_ORDER_SERVER_TIMESTAMP:
+        return convertServerTimestamp(value);
+      case TYPE_ORDER_NULL:
         return null;
-      case BOOLEAN_VALUE:
+      case TYPE_ORDER_BOOLEAN:
         return value.getBooleanValue();
-      case INTEGER_VALUE:
-        return value.getIntegerValue();
-      case DOUBLE_VALUE:
-        return value.getDoubleValue();
-      case STRING_VALUE:
+      case TYPE_ORDER_NUMBER:
+        return value.getValueTypeCase().equals(Value.ValueTypeCase.INTEGER_VALUE)
+            ? (Object) value.getIntegerValue() // Cast to Object to prevent type coercion to double
+            : (Object) value.getDoubleValue();
+      case TYPE_ORDER_STRING:
         return value.getStringValue();
-      case BYTES_VALUE:
+      case TYPE_ORDER_BLOB:
         return Blob.fromByteString(value.getBytesValue());
-      case GEO_POINT_VALUE:
+      case TYPE_ORDER_GEOPOINT:
         return new GeoPoint(
             value.getGeoPointValue().getLatitude(), value.getGeoPointValue().getLongitude());
       default:
