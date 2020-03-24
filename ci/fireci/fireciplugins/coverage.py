@@ -33,7 +33,7 @@ from fireci import gradle
 )
 @ci_command()
 def coverage_check(gradle_task):
-  gradle.run(gradle_task)
+  gradle.run(gradle_task, '--continue')
 
   test_report = parse_xml_reports()
   post_request(test_report)
