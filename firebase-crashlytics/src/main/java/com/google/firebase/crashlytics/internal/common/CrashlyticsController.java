@@ -646,7 +646,7 @@ class CrashlyticsController {
   }
 
   /** Log a caught exception - write out Throwable as event section of protobuf */
-  void writeNonFatalException(final Thread thread, final Throwable ex) {
+  void writeNonFatalException(@NonNull final Thread thread, @NonNull final Throwable ex) {
     // Capture and close over the current time, so that we get the exact call time,
     // rather than the time at which the task executes.
     final Date time = new Date();
@@ -676,7 +676,7 @@ class CrashlyticsController {
       if (context != null && CommonUtils.isAppDebuggable(context)) {
         throw ex;
       } else {
-        Logger.getLogger().e("Attempting to set custom attribute with null key, ignoring.", null);
+        Logger.getLogger().e("Attempting to set custom attribute with null key, ignoring.");
         return;
       }
     }
@@ -1169,7 +1169,7 @@ class CrashlyticsController {
       final String currentSessionId = getCurrentSessionId();
 
       if (currentSessionId == null) {
-        Logger.getLogger().e("Tried to write a fatal exception while no session was open.", null);
+        Logger.getLogger().e("Tried to write a fatal exception while no session was open.");
         return;
       }
 
@@ -1188,11 +1188,11 @@ class CrashlyticsController {
    * Not synchronized/locked. Must be executed from the single thread executor service used by this
    * class.
    */
-  private void doWriteNonFatal(Thread thread, Throwable ex, long eventTime) {
+  private void doWriteNonFatal(@NonNull Thread thread, @NonNull Throwable ex, long eventTime) {
     final String currentSessionId = getCurrentSessionId();
 
     if (currentSessionId == null) {
-      Logger.getLogger().e("Tried to write a non-fatal exception while no session was open.", null);
+      Logger.getLogger().d("Tried to write a non-fatal exception while no session was open.");
       return;
     }
 
@@ -1601,7 +1601,7 @@ class CrashlyticsController {
           listFilesMatching(new FileNameContainsFilter(sessionId + tag + SESSION_FILE_EXTENSION));
 
       if (sessionPartFiles.length == 0) {
-        Logger.getLogger().e("Can't find " + tag + " data for session ID " + sessionId, null);
+        Logger.getLogger().d("Can't find " + tag + " data for session ID " + sessionId);
       } else {
         Logger.getLogger().d("Collecting " + tag + " data for session ID " + sessionId);
         writeToCosFromFile(cos, sessionPartFiles[0]);
@@ -1630,7 +1630,7 @@ class CrashlyticsController {
    */
   private static void writeToCosFromFile(CodedOutputStream cos, File file) throws IOException {
     if (!file.exists()) {
-      Logger.getLogger().e("Tried to include a file that doesn't exist: " + file.getName(), null);
+      Logger.getLogger().e("Tried to include a file that doesn't exist: " + file.getName());
       return;
     }
 
