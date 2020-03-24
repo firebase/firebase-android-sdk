@@ -428,8 +428,8 @@ class CrashlyticsController {
                               throws Exception {
                             if (appSettingsData == null) {
                               Logger.getLogger()
-                                  .d(
-                                      "Did not receive app settings, cannot send reports at crash time.");
+                                  .w(
+                                      "Received null app settings, cannot send reports at crash time.");
                               return Tasks.forResult(null);
                             }
                             // Data collection is enabled, so it's safe to send the report.
@@ -579,8 +579,8 @@ class CrashlyticsController {
                                   throws Exception {
                                 if (appSettingsData == null) {
                                   Logger.getLogger()
-                                      .d(
-                                          "Did not receive app settings, cannot send reports during app startup.");
+                                      .w(
+                                          "Received null app settings, cannot send reports during app startup.");
                                   return Tasks.forResult(null);
                                 }
                                 // Append the most recent org ID to each report file, even if it
