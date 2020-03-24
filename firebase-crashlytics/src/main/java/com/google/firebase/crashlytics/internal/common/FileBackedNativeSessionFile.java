@@ -27,9 +27,9 @@ import java.io.InputStream;
 /** A {@link NativeSessionFile} backed by a {@link File} currently on disk. */
 class FileBackedNativeSessionFile implements NativeSessionFile {
 
-  private final File file;
-  private final String dataTransportFilename;
-  private final String reportsEndpointFilename;
+  @NonNull private final File file;
+  @NonNull private final String dataTransportFilename;
+  @NonNull private final String reportsEndpointFilename;
 
   FileBackedNativeSessionFile(
       @NonNull String dataTransportFilename,

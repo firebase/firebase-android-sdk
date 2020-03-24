@@ -34,6 +34,7 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.os.BatteryManager;
 import android.os.Bundle;
+import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
@@ -186,7 +187,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
       return setReportUploaderProvider(
           new ReportUploader.Provider() {
             @Override
-            public ReportUploader createReportUploader(AppSettingsData settingsData) {
+            public ReportUploader createReportUploader(@NonNull AppSettingsData settingsData) {
               return uploader;
             }
           });

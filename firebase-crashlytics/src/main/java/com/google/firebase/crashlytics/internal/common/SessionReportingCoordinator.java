@@ -16,6 +16,7 @@ package com.google.firebase.crashlytics.internal.common;
 
 import android.content.Context;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.log.LogFileManager;
@@ -72,7 +73,7 @@ class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
   private final LogFileManager logFileManager;
   private final UserMetadata reportMetadata;
 
-  private String currentSessionId;
+  @Nullable private String currentSessionId;
 
   SessionReportingCoordinator(
       CrashlyticsReportDataCapture dataCapture,
@@ -88,7 +89,7 @@ class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
   }
 
   @Override
-  public void onBeginSession(String sessionId, long timestamp) {
+  public void onBeginSession(@NonNull String sessionId, long timestamp) {
     currentSessionId = sessionId;
 
     final CrashlyticsReport capturedReport = dataCapture.captureReportData(sessionId, timestamp);
@@ -116,17 +117,17 @@ class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
     currentSessionId = null;
   }
 
-  public void persistFatalEvent(Throwable event, Thread thread, long timestamp) {
+  public void persistFatalEvent(@NonNull Throwable event, @NonNull Thread thread, long timestamp) {
     persistEvent(event, thread, EVENT_TYPE_CRASH, timestamp, true);
   }
 
-  public void persistNonFatalEvent(Throwable event, Thread thread, long timestamp) {
+  public void persistNonFatalEvent(
+      @NonNull Throwable event, @NonNull Thread thread, long timestamp) {
     persistEvent(event, thread, EVENT_TYPE_LOGGED, timestamp, false);
   }
 
   public void finalizeSessionWithNativeEvent(
-      String sessionId, @NonNull List<NativeSessionFile> nativeSessionFiles) {
-    FilesPayload.Builder filesPayloadBuilder = FilesPayload.builder();
+      @NonNull String sessionId, @NonNull List<NativeSessionFile> nativeSessionFiles) {
     ArrayList<FilesPayload.File> nativeFiles = new ArrayList<>();
     for (NativeSessionFile nativeSessionFile : nativeSessionFiles) {
       FilesPayload.File filePayload = nativeSessionFile.asFilePayload();
@@ -135,13 +136,22 @@ class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
       }
     }
 
-    filesPayloadBuilder.setFiles(ImmutableList.from(nativeFiles));
-
-    reportPersistence.finalizeSessionWithNativeEvent(sessionId, filesPayloadBuilder.build());
+    reportPersistence.finalizeSessionWithNativeEvent(
+        sessionId, FilesPayload.builder().setFiles(ImmutableList.from(nativeFiles)).build());
   }
 
   public void persistUserId() {
-    reportPersistence.persistUserIdForSession(reportMetadata.getUserId(), currentSessionId);
+    final String sessionId = currentSessionId;
+    if (sessionId == null) {
+      Logger.getLogger().d("Could not persist user ID; no current session");
+      return;
+    }
+    final String userId = reportMetadata.getUserId();
+    if (userId == null) {
+      Logger.getLogger().d("Could not persist user ID; no user ID available");
+      return;
+    }
+    reportPersistence.persistUserIdForSession(userId, sessionId);
   }
 
   /** Creates finalized reports for all sessions besides the current session. */
@@ -162,9 +172,9 @@ class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
    * @param dataTransportState used to determine whether to send the report before cleaning it up.
    */
   public void sendReports(
-      String organizationId,
-      Executor reportSendCompleteExecutor,
-      DataTransportState dataTransportState) {
+      @Nullable String organizationId,
+      @NonNull Executor reportSendCompleteExecutor,
+      @NonNull DataTransportState dataTransportState) {
     if (dataTransportState == DataTransportState.NONE) {
       Logger.getLogger().d("Send via DataTransport disabled. Removing DataTransport reports.");
       reportPersistence.deleteAllReports();
@@ -172,24 +182,42 @@ class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
     }
     final List<CrashlyticsReportWithSessionId> reportsToSend =
         reportPersistence.loadFinalizedReports();
-    for (CrashlyticsReportWithSessionId report : reportsToSend) {
-      if (report.getReport().getType() == CrashlyticsReport.Type.NATIVE
+    for (CrashlyticsReportWithSessionId reportWithSessionId : reportsToSend) {
+      if (reportWithSessionId.getReport().getType() == CrashlyticsReport.Type.NATIVE
           && dataTransportState != DataTransportState.ALL) {
         Logger.getLogger()
             .d("Send native reports via DataTransport disabled. Removing DataTransport reports.");
-        reportPersistence.deleteFinalizedReport(report.getSessionId());
+        reportPersistence.deleteFinalizedReport(reportWithSessionId.getSessionId());
         continue;
       }
+
+      // When an organization ID is available, hydrate the underlying report with it, otherwise pass
+      // through.
+      final CrashlyticsReportWithSessionId reportToSend =
+          (organizationId == null)
+              ? reportWithSessionId
+              : CrashlyticsReportWithSessionId.create(
+                  reportWithSessionId.getReport().withOrganizationId(organizationId),
+                  reportWithSessionId.getSessionId());
+
       reportsSender
-          .sendReport(
-              CrashlyticsReportWithSessionId.create(
-                  report.getReport().withOrganizationId(organizationId), report.getSessionId()))
+          .sendReport(reportToSend)
           .continueWith(reportSendCompleteExecutor, this::onReportSendComplete);
     }
   }
 
   private void persistEvent(
-      Throwable event, Thread thread, String eventType, long timestamp, boolean includeAllThreads) {
+      @NonNull Throwable event,
+      @NonNull Thread thread,
+      @NonNull String eventType,
+      long timestamp,
+      boolean includeAllThreads) {
+    final String sessionId = currentSessionId;
+
+    if (sessionId == null) {
+      Logger.getLogger().d("Cannot persist event, no currently open session");
+      return;
+    }
 
     final boolean isHighPriority = eventType.equals(EVENT_TYPE_CRASH);
 
@@ -220,7 +248,7 @@ class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
     final List<CustomAttribute> sortedCustomAttributes =
         getSortedCustomAttributes(reportMetadata.getCustomKeys());
 
-    if (sortedCustomAttributes != null) {
+    if (!sortedCustomAttributes.isEmpty()) {
       eventBuilder.setApp(
           capturedEvent
               .getApp()
@@ -229,27 +257,27 @@ class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
               .build());
     }
 
-    reportPersistence.persistEvent(eventBuilder.build(), currentSessionId, isHighPriority);
+    reportPersistence.persistEvent(eventBuilder.build(), sessionId, isHighPriority);
   }
 
-  private boolean onReportSendComplete(Task<CrashlyticsReportWithSessionId> task) {
+  private boolean onReportSendComplete(@NonNull Task<CrashlyticsReportWithSessionId> task) {
     if (task.isSuccessful()) {
-      // TODO: if the report is fatal, send an analytics event.
+      // TODO: Consolidate sending analytics event here, which will capture both native and
+      // non-native fatal reports
       final CrashlyticsReportWithSessionId report = task.getResult();
       Logger.getLogger()
-          .i("Crashlytics report successfully enqueued to DataTransport: " + report.getSessionId());
+          .d("Crashlytics report successfully enqueued to DataTransport: " + report.getSessionId());
       reportPersistence.deleteFinalizedReport(report.getSessionId());
       return true;
     }
-    // TODO: Something went wrong. Log? Throw?
+    Logger.getLogger()
+        .d("Crashlytics report could not be enqueued to DataTransport", task.getException());
     return false;
   }
 
-  private static List<CustomAttribute> getSortedCustomAttributes(Map<String, String> attributes) {
-    if (attributes == null || attributes.isEmpty()) {
-      return null;
-    }
-
+  @NonNull
+  private static List<CustomAttribute> getSortedCustomAttributes(
+      @NonNull Map<String, String> attributes) {
     ArrayList<CustomAttribute> attributesList = new ArrayList<>();
     attributesList.ensureCapacity(attributes.size());
     for (Map.Entry<String, String> entry : attributes.entrySet()) {

@@ -14,6 +14,7 @@
 
 package com.google.firebase.crashlytics.internal.report.network;
 
+import androidx.annotation.Nullable;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.common.AbstractSpiCall;
 import com.google.firebase.crashlytics.internal.common.CrashlyticsCore;
@@ -94,8 +95,10 @@ public class NativeCreateReportSpiCall extends AbstractSpiCall implements Create
   }
 
   private HttpRequest applyMultipartDataTo(
-      HttpRequest httpRequest, String organizationId, Report report) {
-    httpRequest.part(ORGANIZATION_IDENTIFIER_PARAM, organizationId);
+      HttpRequest httpRequest, @Nullable String organizationId, Report report) {
+    if (organizationId != null) {
+      httpRequest.part(ORGANIZATION_IDENTIFIER_PARAM, organizationId);
+    }
     httpRequest.part(REPORT_IDENTIFIER_PARAM, report.getIdentifier());
     for (File f : report.getFiles()) {
       if (f.getName().equals("minidump")) {

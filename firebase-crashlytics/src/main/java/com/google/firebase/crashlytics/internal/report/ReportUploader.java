@@ -14,6 +14,8 @@
 
 package com.google.firebase.crashlytics.internal.report;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.common.BackgroundPriorityRunnable;
 import com.google.firebase.crashlytics.internal.common.DataTransportState;
@@ -33,7 +35,7 @@ public class ReportUploader {
 
   /** An interface that can create a ReportUploader. */
   public interface Provider {
-    ReportUploader createReportUploader(AppSettingsData appSettingsData);
+    ReportUploader createReportUploader(@NonNull AppSettingsData appSettingsData);
   }
 
   public interface ReportFilesProvider {
@@ -47,7 +49,7 @@ public class ReportUploader {
   private static final short[] RETRY_INTERVALS = {10, 20, 30, 60, 120, 300};
 
   private final CreateReportSpiCall createReportCall;
-  private final String organizationId;
+  @Nullable private final String organizationId;
   private final String googleAppId;
   private final DataTransportState dataTransportState;
   private final ReportManager reportManager;
@@ -55,7 +57,7 @@ public class ReportUploader {
   private Thread uploadThread;
 
   public ReportUploader(
-      String organizationId,
+      @Nullable String organizationId,
       String googleAppId,
       DataTransportState dataTransportState,
       ReportManager reportManager,
