@@ -14,13 +14,15 @@
 
 package com.google.firebase.crashlytics.internal.report.model;
 
+import androidx.annotation.Nullable;
+
 /** Immutable value object capturing the data needed to make a create report SPI web request. */
 public class CreateReportRequest {
-  public final String organizationId;
+  @Nullable public final String organizationId;
   public final String googleAppId;
   public final Report report;
 
-  public CreateReportRequest(String organizationId, String googleAppId, Report report) {
+  public CreateReportRequest(@Nullable String organizationId, String googleAppId, Report report) {
     this.organizationId = organizationId;
     this.googleAppId = googleAppId;
     this.report = report;

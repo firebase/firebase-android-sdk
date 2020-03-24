@@ -359,7 +359,9 @@ class CrashlyticsController {
         new CrashlyticsUncaughtExceptionHandler.CrashListener() {
           @Override
           public void onUncaughtException(
-              SettingsDataProvider settingsDataProvider, Thread thread, Throwable ex) {
+              @NonNull SettingsDataProvider settingsDataProvider,
+              @NonNull Thread thread,
+              @NonNull Throwable ex) {
             handleUncaughtException(settingsDataProvider, thread, ex);
           }
         };
@@ -369,7 +371,9 @@ class CrashlyticsController {
   }
 
   synchronized void handleUncaughtException(
-      SettingsDataProvider settingsDataProvider, final Thread thread, final Throwable ex) {
+      @NonNull SettingsDataProvider settingsDataProvider,
+      @NonNull final Thread thread,
+      @NonNull final Throwable ex) {
 
     Logger.getLogger()
         .d(
@@ -422,6 +426,12 @@ class CrashlyticsController {
                           @Override
                           public Task<Void> then(@Nullable AppSettingsData appSettingsData)
                               throws Exception {
+                            if (appSettingsData == null) {
+                              Logger.getLogger()
+                                  .d(
+                                      "Did not receive app settings, cannot send reports at crash time.");
+                              return Tasks.forResult(null);
+                            }
                             // Data collection is enabled, so it's safe to send the report.
                             boolean dataCollectionToken = true;
                             sendSessionReports(appSettingsData, dataCollectionToken);
@@ -567,6 +577,12 @@ class CrashlyticsController {
                               @Override
                               public Task<Void> then(@Nullable AppSettingsData appSettingsData)
                                   throws Exception {
+                                if (appSettingsData == null) {
+                                  Logger.getLogger()
+                                      .d(
+                                          "Did not receive app settings, cannot send reports during app startup.");
+                                  return Tasks.forResult(null);
+                                }
                                 // Append the most recent org ID to each report file, even if it
                                 // was already appended during the crash time upload. This way
                                 // we'll always have the most recent value available attached.
@@ -597,7 +613,7 @@ class CrashlyticsController {
   private ReportUploader.Provider defaultReportUploader() {
     return new ReportUploader.Provider() {
       @Override
-      public ReportUploader createReportUploader(AppSettingsData appSettingsData) {
+      public ReportUploader createReportUploader(@NonNull AppSettingsData appSettingsData) {
         final String reportsUrl = appSettingsData.reportsUrl;
         final String ndkReportsUrl = appSettingsData.ndkReportsUrl;
         final String organizationId = appSettingsData.organizationId;
@@ -1135,7 +1151,8 @@ class CrashlyticsController {
   }
 
   /** Removes dashes in the Crashlytics session identifier to conform to Firebase constraints. */
-  private static String makeFirebaseSessionIdentifier(String sessionIdentifier) {
+  @NonNull
+  private static String makeFirebaseSessionIdentifier(@NonNull String sessionIdentifier) {
     return sessionIdentifier.replaceAll("-", "");
   }
 
@@ -1230,8 +1247,8 @@ class CrashlyticsController {
     }
   }
 
-  private static void appendToProtoFile(File file, CodedOutputStreamWriteAction writeAction)
-      throws Exception {
+  private static void appendToProtoFile(
+      @NonNull File file, @NonNull CodedOutputStreamWriteAction writeAction) throws Exception {
     FileOutputStream fos = null;
     CodedOutputStream cos = null;
     try {
@@ -1592,8 +1609,11 @@ class CrashlyticsController {
     }
   }
 
-  private static void appendOrganizationIdToSessionFile(String organizationId, File file)
-      throws Exception {
+  private static void appendOrganizationIdToSessionFile(
+      @Nullable String organizationId, @NonNull File file) throws Exception {
+    if (organizationId == null) {
+      return;
+    }
     appendToProtoFile(
         file,
         new CodedOutputStreamWriteAction() {
@@ -1698,7 +1718,7 @@ class CrashlyticsController {
     return new CompositeCreateReportSpiCall(defaultCreateReportSpiCall, nativeCreateReportSpiCall);
   }
 
-  private void sendSessionReports(AppSettingsData appSettings, boolean dataCollectionToken)
+  private void sendSessionReports(@NonNull AppSettingsData appSettings, boolean dataCollectionToken)
       throws Exception {
     final Context context = getContext();
     final ReportUploader reportUploader = reportUploaderProvider.createReportUploader(appSettings);
@@ -1842,6 +1862,7 @@ class CrashlyticsController {
     }
   }
 
+  @NonNull
   static List<NativeSessionFile> getNativeSessionFiles(
       NativeSessionFileProvider fileProvider,
       String previousSessionId,
@@ -1857,7 +1878,7 @@ class CrashlyticsController {
     try {
       binaryImageBytes =
           NativeFileUtils.binaryImagesJsonFromMapsFile(fileProvider.getBinaryImagesFile(), context);
-    } catch (IOException e) {
+    } catch (Exception e) {
       // Keep processing, we'll add an empty binaryImages object.
     }
 

@@ -14,6 +14,7 @@
 
 package com.google.firebase.crashlytics.internal.common;
 
+import androidx.annotation.NonNull;
 import com.google.firebase.crashlytics.internal.Logger;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -116,10 +117,12 @@ class MetaDataStore {
     return Collections.emptyMap();
   }
 
+  @NonNull
   public File getUserDataFileForSession(String sessionId) {
     return new File(filesDir, sessionId + USERDATA_SUFFIX + METADATA_EXT);
   }
 
+  @NonNull
   public File getKeysFileForSession(String sessionId) {
     return new File(filesDir, sessionId + KEYDATA_SUFFIX + METADATA_EXT);
   }

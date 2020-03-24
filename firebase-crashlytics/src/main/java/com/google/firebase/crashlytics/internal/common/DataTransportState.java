@@ -14,6 +14,7 @@
 
 package com.google.firebase.crashlytics.internal.common;
 
+import androidx.annotation.NonNull;
 import com.google.firebase.crashlytics.internal.settings.model.AppSettingsData;
 
 public enum DataTransportState {
@@ -26,6 +27,7 @@ public enum DataTransportState {
   // Used to determine whether to upload reports through the new DataTransport API.
   static final int REPORT_UPLOAD_VARIANT_DATATRANSPORT = 2;
 
+  @NonNull
   static DataTransportState getState(boolean dataTransportState, boolean dataTransportNativeState) {
     if (!dataTransportState) {
       return NONE;
@@ -36,7 +38,8 @@ public enum DataTransportState {
     return ALL;
   }
 
-  static DataTransportState getState(AppSettingsData appSettingsData) {
+  @NonNull
+  static DataTransportState getState(@NonNull AppSettingsData appSettingsData) {
     final boolean dataTransportState =
         appSettingsData.reportUploadVariant == REPORT_UPLOAD_VARIANT_DATATRANSPORT;
     final boolean dataTransportNativeState =
