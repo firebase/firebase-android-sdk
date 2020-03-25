@@ -38,7 +38,7 @@ public class MetricsReportUploader {
     String headCommit = System.getenv("PULL_PULL_SHA");
     String pullRequest = System.getenv("PULL_NUMBER");
 
-    String commit = headCommit != null && !headCommit.isEmpty() ? headCommit : headCommit;
+    String commit = headCommit != null && !headCommit.isEmpty() ? headCommit : baseCommit;
 
     post(project, report, owner, repo, commit, baseCommit, pullRequest);
   }
