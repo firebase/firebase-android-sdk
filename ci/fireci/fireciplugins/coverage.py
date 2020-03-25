@@ -15,6 +15,7 @@
 import click
 import glob
 import json
+import logging
 import os
 import re
 import requests
@@ -24,51 +25,10 @@ import xml.etree.ElementTree as ElementTree
 from fireci import ci_command
 from fireci import gradle
 
-
-@click.option(
-  '--gradle-task',
-  type=click.Choice(['checkCoverage', 'checkCoverageChanged']),
-  default='checkCoverage',
-  help='Run coverage tasks for affected products only in pre-submit and all products in post-submit'
-)
-@ci_command()
-def coverage_check(gradle_task):
-  gradle.run(gradle_task, '--continue')
-
-  test_report = parse_xml_reports()
-  post_request(test_report)
+_logger = logging.getLogger('fireci.coverage')
 
 
-def parse_xml_reports():
-  test_results = []
-
-  xml_reports = glob.glob('./**/reports/jacoco/*.xml', recursive=True)
-  for xml_report in xml_reports:
-    sdk = re.search(r'([^/]*)\.xml', xml_report).group(1)
-    report = ElementTree.parse(xml_report).getroot()
-    sdk_coverage = calculate_coverage(report)
-    test_results.append({'sdk': sdk, 'type': '', 'value': sdk_coverage})
-
-    for source_file in report.findall('.//sourcefile'):
-      file_name = source_file.attrib['name']
-      file_coverage = calculate_coverage(source_file)
-      test_results.append({'sdk': sdk, 'type': file_name, 'value': file_coverage})
-
-  test_report = {'metric': 'Coverage', 'results': test_results, 'log': find_prow_job_link()}
-
-  return json.dumps(test_report)
-
-
-def calculate_coverage(element):
-  counter = element.find('counter[@type="LINE"]')
-  if counter is not None:
-    covered = int(counter.attrib['covered'])
-    missed = int(counter.attrib['missed'])
-    return covered / (covered + missed)
-  return 0
-
-
-def find_prow_job_link():
+def prow_job_log_link():
   job_name = os.getenv('JOB_NAME')
   job_type = os.getenv('JOB_TYPE')
   build_id = os.getenv('BUILD_ID')
@@ -87,22 +47,85 @@ def find_prow_job_link():
   return f'https://{domain}/view/gcs/{bucket}/{directory}/{path}'
 
 
-def post_request(data):
-  metrics_service_url = os.getenv('METRICS_SERVICE_URL')
+def gcloud_identity_token():
+  result = subprocess.run(['gcloud', 'auth', 'print-identity-token'], stdout=subprocess.PIPE, check=True)
+  return result.stdout.decode('utf-8').strip()
+
+
+@click.option(
+  '--gradle-task',
+  default='checkCoverage',
+  help='The gradle task, which collects coverage for affected or all products.'
+)
+@click.option(
+  '--log',
+  default=prow_job_log_link,
+  help='The link to the log of the prow job, which runs this coverage check.'
+)
+@click.option(
+  '--metrics-service-url',
+  envvar='METRICS_SERVICE_URL',
+  help='The URL to the metrics service, which persists data and calculates diff.'
+)
+@click.option(
+  '--access-token',
+  default=gcloud_identity_token,
+  help='The access token, used to authorize http requests to the metrics service.'
+)
+@ci_command()
+def coverage(gradle_task, log, metrics_service_url, access_token):
+  """Produces and uploads code coverage reports."""
+
+  gradle.run(gradle_task, '--continue')
+
+  test_results = parse_xml_reports()
+  test_report = {'metric': 'Coverage', 'results': test_results, 'log': log}
+
+  post_report(metrics_service_url, access_token, test_report)
+
+
+def parse_xml_reports():
+  test_results = []
+
+  xml_reports = glob.glob('./**/reports/jacoco/*.xml', recursive=True)
+  _logger.info(f'Found {len(xml_reports)} coverage reports: {xml_reports}')
+
+  for xml_report in xml_reports:
+    sdk = re.search(r'([^/]*)\.xml', xml_report).group(1)
+    report = ElementTree.parse(xml_report).getroot()
+    sdk_coverage = calculate_coverage(report)
+    test_results.append({'sdk': sdk, 'type': '', 'value': sdk_coverage})
+
+    for source_file in report.findall('.//sourcefile'):
+      file_name = source_file.attrib['name']
+      file_coverage = calculate_coverage(source_file)
+      test_results.append({'sdk': sdk, 'type': file_name, 'value': file_coverage})
+
+  return test_results
+
+
+def calculate_coverage(element):
+  counter = element.find('counter[@type="LINE"]')
+  if counter is not None:
+    covered = int(counter.attrib['covered'])
+    missed = int(counter.attrib['missed'])
+    return covered / (covered + missed)
+  return 0
+
+
+def post_report(metrics_service_url, access_token, test_report):
   endpoint = construct_request_endpoint()
-  headers = construct_request_header()
+  headers = {'Authorization': f'Bearer {access_token}', 'Content-Type': 'application/json'}
+  data = json.dumps(test_report)
 
-  print('Posting to the metrics service ...')
-  print(f'Request endpoint: {endpoint}')
-  print(f'Request data: {data}')
-  result = requests.post(f'{metrics_service_url}{endpoint}', data=data, headers=headers)
-  print(f'Response: {result.text}')
+  _logger.info('Posting to the metrics service ...')
+  _logger.info(f'Request endpoint: {endpoint}')
+  _logger.info(f'Request data: {data}')
 
+  request_url = f'{metrics_service_url}{endpoint}'
+  result = requests.post(request_url, data=data, headers=headers)
 
-def construct_request_header():
-  result = subprocess.run(['gcloud', 'auth', 'print-identity-token'], stdout=subprocess.PIPE)
-  access_token = result.stdout.decode('utf-8').strip()
-  return {'Authorization': f'Bearer {access_token}', 'Content-Type': 'application/json'}
+  _logger.info(f'Response: {result.text}')
 
 
 def construct_request_endpoint():
