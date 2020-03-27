@@ -35,12 +35,14 @@ public class MetricsReportUploader {
 
     String owner = System.getenv("REPO_OWNER");
     String repo = System.getenv("REPO_NAME");
-    String branch = System.getenv("PULL_BASE_REF");
     String baseCommit = System.getenv("PULL_BASE_SHA");
     String headCommit = System.getenv("PULL_PULL_SHA");
+    String baseRef = System.getenv("PULL_BASE_REF");
+    String pullRef = System.getenv("PULL_REFS");
     String pullRequest = System.getenv("PULL_NUMBER");
 
     String commit = headCommit != null && !headCommit.isEmpty() ? headCommit : baseCommit;
+    String branch = pullRef != null && !pullRef.isEmpty() ? pullRef : baseRef;
 
     post(project, report, owner, repo, commit, branch, baseCommit, pullRequest);
   }
