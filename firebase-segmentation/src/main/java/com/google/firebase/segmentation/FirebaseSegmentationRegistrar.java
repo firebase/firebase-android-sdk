@@ -19,6 +19,7 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
+import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.util.Arrays;
 import java.util.List;
@@ -32,7 +33,11 @@ public class FirebaseSegmentationRegistrar implements ComponentRegistrar {
     return Arrays.asList(
         Component.builder(FirebaseSegmentation.class)
             .add(Dependency.required(FirebaseApp.class))
-            .factory(c -> new FirebaseSegmentation(c.get(FirebaseApp.class)))
+            .add(Dependency.required(FirebaseInstallationsApi.class))
+            .factory(
+                c ->
+                    new FirebaseSegmentation(
+                        c.get(FirebaseApp.class), c.get(FirebaseInstallationsApi.class)))
             .build(),
         LibraryVersionComponent.create("fire-segmentation", BuildConfig.VERSION_NAME));
   }

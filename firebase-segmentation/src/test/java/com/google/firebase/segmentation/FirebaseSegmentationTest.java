@@ -27,8 +27,8 @@ import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-import com.google.firebase.iid.FirebaseInstanceId;
-import com.google.firebase.iid.InstanceIdResult;
+import com.google.firebase.installations.FirebaseInstallationsApi;
+import com.google.firebase.installations.InstallationTokenResult;
 import com.google.firebase.segmentation.local.CustomInstallationIdCache;
 import com.google.firebase.segmentation.local.CustomInstallationIdCacheEntryValue;
 import com.google.firebase.segmentation.remote.SegmentationServiceClient;
@@ -44,6 +44,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 
@@ -51,10 +52,11 @@ import org.robolectric.RobolectricTestRunner;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class FirebaseSegmentationTest {
   private static final String CUSTOM_INSTALLATION_ID = "123";
-  private static final String FIREBASE_INSTANCE_ID = "cAAAAAAAAAA";
+  private static final String FIREBASE_INSTALLATION_ID = "fid_is_better_than_iid";
+  private static final String FIREBASE_INSTALLATION_ID_TOKEN = "fis_token";
 
   private FirebaseApp firebaseApp;
-  @Mock private FirebaseInstanceId firebaseInstanceId;
+  @Mock private FirebaseInstallationsApi firebaseInstallationsApi;
   @Mock private SegmentationServiceClient backendClientReturnsOk;
   @Mock private SegmentationServiceClient backendClientReturnsError;
 
@@ -88,20 +90,33 @@ public class FirebaseSegmentationTest {
     when(backendClientReturnsError.clearCustomInstallationId(
             anyLong(), anyString(), anyString(), anyString()))
         .thenReturn(SegmentationServiceClient.Code.SERVER_ERROR);
-    when(firebaseInstanceId.getInstanceId())
+    when(firebaseInstallationsApi.getId()).thenReturn(Tasks.forResult(FIREBASE_INSTALLATION_ID));
+    when(firebaseInstallationsApi.getToken(Mockito.anyBoolean()))
         .thenReturn(
             Tasks.forResult(
-                new InstanceIdResult() {
+                new InstallationTokenResult() {
                   @NonNull
                   @Override
-                  public String getId() {
-                    return FIREBASE_INSTANCE_ID;
+                  public String getToken() {
+                    return FIREBASE_INSTALLATION_ID_TOKEN;
                   }
 
                   @NonNull
                   @Override
-                  public String getToken() {
-                    return "iid_token";
+                  public long getTokenExpirationTimestamp() {
+                    return 0;
+                  }
+
+                  @NonNull
+                  @Override
+                  public long getTokenCreationTimestamp() {
+                    return 0;
+                  }
+
+                  @NonNull
+                  @Override
+                  public Builder toBuilder() {
+                    return null;
                   }
                 }));
     when(cacheReturnsError.insertOrUpdateCacheEntry(any())).thenReturn(false);
@@ -119,7 +134,7 @@ public class FirebaseSegmentationTest {
   public void testUpdateCustomInstallationId_CacheOk_BackendOk() throws Exception {
     FirebaseSegmentation firebaseSegmentation =
         new FirebaseSegmentation(
-            firebaseApp, firebaseInstanceId, actualCache, backendClientReturnsOk);
+            firebaseApp, firebaseInstallationsApi, actualCache, backendClientReturnsOk);
 
     // No exception, means success.
     TestOnCompleteListener<Void> onCompleteListener = new TestOnCompleteListener<>();
@@ -129,7 +144,7 @@ public class FirebaseSegmentationTest {
     assertNull(onCompleteListener.await());
     CustomInstallationIdCacheEntryValue entryValue = actualCache.readCacheEntryValue();
     assertThat(entryValue.getCustomInstallationId()).isEqualTo(CUSTOM_INSTALLATION_ID);
-    assertThat(entryValue.getFirebaseInstanceId()).isEqualTo(FIREBASE_INSTANCE_ID);
+    assertThat(entryValue.getFirebaseInstanceId()).isEqualTo(FIREBASE_INSTALLATION_ID);
     assertThat(entryValue.getCacheStatus()).isEqualTo(CustomInstallationIdCache.CacheStatus.SYNCED);
   }
 
@@ -138,7 +153,7 @@ public class FirebaseSegmentationTest {
       throws InterruptedException {
     FirebaseSegmentation firebaseSegmentation =
         new FirebaseSegmentation(
-            firebaseApp, firebaseInstanceId, actualCache, backendClientReturnsError);
+            firebaseApp, firebaseInstallationsApi, actualCache, backendClientReturnsError);
 
     // Expect exception
     try {
@@ -157,7 +172,7 @@ public class FirebaseSegmentationTest {
 
     CustomInstallationIdCacheEntryValue entryValue = actualCache.readCacheEntryValue();
     assertThat(entryValue.getCustomInstallationId()).isEqualTo(CUSTOM_INSTALLATION_ID);
-    assertThat(entryValue.getFirebaseInstanceId()).isEqualTo(FIREBASE_INSTANCE_ID);
+    assertThat(entryValue.getFirebaseInstanceId()).isEqualTo(FIREBASE_INSTALLATION_ID);
     assertThat(entryValue.getCacheStatus())
         .isEqualTo(CustomInstallationIdCache.CacheStatus.PENDING_UPDATE);
   }
@@ -170,7 +185,7 @@ public class FirebaseSegmentationTest {
         .thenReturn(SegmentationServiceClient.Code.CONFLICT);
     FirebaseSegmentation firebaseSegmentation =
         new FirebaseSegmentation(
-            firebaseApp, firebaseInstanceId, actualCache, backendClientReturnsError);
+            firebaseApp, firebaseInstallationsApi, actualCache, backendClientReturnsError);
 
     // Expect exception
     try {
@@ -195,7 +210,7 @@ public class FirebaseSegmentationTest {
   public void testUpdateCustomInstallationId_CacheError_BackendOk() throws InterruptedException {
     FirebaseSegmentation firebaseSegmentation =
         new FirebaseSegmentation(
-            firebaseApp, firebaseInstanceId, cacheReturnsError, backendClientReturnsOk);
+            firebaseApp, firebaseInstallationsApi, cacheReturnsError, backendClientReturnsOk);
 
     // Expect exception
     try {
@@ -218,11 +233,11 @@ public class FirebaseSegmentationTest {
     actualCache.insertOrUpdateCacheEntry(
         CustomInstallationIdCacheEntryValue.create(
             CUSTOM_INSTALLATION_ID,
-            FIREBASE_INSTANCE_ID,
+            FIREBASE_INSTALLATION_ID,
             CustomInstallationIdCache.CacheStatus.SYNCED));
     FirebaseSegmentation firebaseSegmentation =
         new FirebaseSegmentation(
-            firebaseApp, firebaseInstanceId, actualCache, backendClientReturnsOk);
+            firebaseApp, firebaseInstallationsApi, actualCache, backendClientReturnsOk);
 
     // No exception, means success.
     TestOnCompleteListener<Void> onCompleteListener = new TestOnCompleteListener<>();
@@ -239,11 +254,11 @@ public class FirebaseSegmentationTest {
     actualCache.insertOrUpdateCacheEntry(
         CustomInstallationIdCacheEntryValue.create(
             CUSTOM_INSTALLATION_ID,
-            FIREBASE_INSTANCE_ID,
+            FIREBASE_INSTALLATION_ID,
             CustomInstallationIdCache.CacheStatus.SYNCED));
     FirebaseSegmentation firebaseSegmentation =
         new FirebaseSegmentation(
-            firebaseApp, firebaseInstanceId, actualCache, backendClientReturnsError);
+            firebaseApp, firebaseInstallationsApi, actualCache, backendClientReturnsError);
 
     // Expect exception
     try {
@@ -262,7 +277,7 @@ public class FirebaseSegmentationTest {
 
     CustomInstallationIdCacheEntryValue entryValue = actualCache.readCacheEntryValue();
     assertThat(entryValue.getCustomInstallationId().isEmpty()).isTrue();
-    assertThat(entryValue.getFirebaseInstanceId()).isEqualTo(FIREBASE_INSTANCE_ID);
+    assertThat(entryValue.getFirebaseInstanceId()).isEqualTo(FIREBASE_INSTALLATION_ID);
     assertThat(entryValue.getCacheStatus())
         .isEqualTo(CustomInstallationIdCache.CacheStatus.PENDING_CLEAR);
   }
@@ -271,7 +286,7 @@ public class FirebaseSegmentationTest {
   public void testClearCustomInstallationId_CacheError_BackendOk() throws InterruptedException {
     FirebaseSegmentation firebaseSegmentation =
         new FirebaseSegmentation(
-            firebaseApp, firebaseInstanceId, cacheReturnsError, backendClientReturnsOk);
+            firebaseApp, firebaseInstallationsApi, cacheReturnsError, backendClientReturnsOk);
 
     // Expect exception
     try {

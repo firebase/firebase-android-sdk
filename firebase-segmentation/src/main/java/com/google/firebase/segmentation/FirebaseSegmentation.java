@@ -21,8 +21,8 @@ import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.iid.FirebaseInstanceId;
-import com.google.firebase.iid.InstanceIdResult;
+import com.google.firebase.installations.FirebaseInstallationsApi;
+import com.google.firebase.installations.InstallationTokenResult;
 import com.google.firebase.segmentation.SetCustomInstallationIdException.Status;
 import com.google.firebase.segmentation.local.CustomInstallationIdCache;
 import com.google.firebase.segmentation.local.CustomInstallationIdCacheEntryValue;
@@ -38,26 +38,26 @@ public class FirebaseSegmentation {
   public static final String TAG = "FirebaseSegmentation";
 
   private final FirebaseApp firebaseApp;
-  private final FirebaseInstanceId firebaseInstanceId;
+  private final FirebaseInstallationsApi firebaseInstallationsApi;
   private final CustomInstallationIdCache localCache;
   private final SegmentationServiceClient backendServiceClient;
   private final Executor executor;
 
-  FirebaseSegmentation(FirebaseApp firebaseApp) {
+  FirebaseSegmentation(FirebaseApp firebaseApp, FirebaseInstallationsApi firebaseInstallationsApi) {
     this(
         firebaseApp,
-        FirebaseInstanceId.getInstance(firebaseApp),
+        firebaseInstallationsApi,
         new CustomInstallationIdCache(firebaseApp),
         new SegmentationServiceClient(firebaseApp.getApplicationContext()));
   }
 
   FirebaseSegmentation(
       FirebaseApp firebaseApp,
-      FirebaseInstanceId firebaseInstanceId,
+      FirebaseInstallationsApi firebaseInstallationsApi,
       CustomInstallationIdCache localCache,
       SegmentationServiceClient backendServiceClient) {
     this.firebaseApp = firebaseApp;
-    this.firebaseInstanceId = firebaseInstanceId;
+    this.firebaseInstallationsApi = firebaseInstallationsApi;
     this.localCache = localCache;
     this.backendServiceClient = backendServiceClient;
     this.executor = Executors.newFixedThreadPool(4);
@@ -82,7 +82,7 @@ public class FirebaseSegmentation {
    */
   @NonNull
   public static FirebaseSegmentation getInstance(@NonNull FirebaseApp app) {
-    Preconditions.checkArgument(app != null, "Null is not a valid value of FirebaseApp.");
+    Preconditions.checkArgument(app != null, "Null is not a valid value " + "of FirebaseApp.");
     return app.get(FirebaseSegmentation.class);
   }
 
@@ -125,20 +125,21 @@ public class FirebaseSegmentation {
       return null;
     }
 
-    InstanceIdResult instanceIdResult;
+    String fid;
+    InstallationTokenResult installationTokenResult;
     try {
-      instanceIdResult = Tasks.await(firebaseInstanceId.getInstanceId());
+      fid = Tasks.await(firebaseInstallationsApi.getId());
+      // No need to force refresh token.
+      installationTokenResult = Tasks.await(firebaseInstallationsApi.getToken(false));
     } catch (ExecutionException | InterruptedException e) {
       throw new SetCustomInstallationIdException(
-          Status.CLIENT_ERROR, "Failed to get Firebase instance id");
+          Status.CLIENT_ERROR, "Failed to get Firebase installation ID and token");
     }
 
     boolean firstUpdateCacheResult =
         localCache.insertOrUpdateCacheEntry(
             CustomInstallationIdCacheEntryValue.create(
-                customInstallationId,
-                instanceIdResult.getId(),
-                CustomInstallationIdCache.CacheStatus.PENDING_UPDATE));
+                customInstallationId, fid, CustomInstallationIdCache.CacheStatus.PENDING_UPDATE));
 
     if (!firstUpdateCacheResult) {
       throw new SetCustomInstallationIdException(
@@ -146,15 +147,13 @@ public class FirebaseSegmentation {
     }
 
     // Start requesting backend when first cache updae is done.
-    String iid = instanceIdResult.getId();
-    String iidToken = instanceIdResult.getToken();
     Code backendRequestResult =
         backendServiceClient.updateCustomInstallationId(
             Utils.getProjectNumberFromAppId(firebaseApp.getOptions().getApplicationId()),
             firebaseApp.getOptions().getApiKey(),
             customInstallationId,
-            iid,
-            iidToken);
+            fid,
+            installationTokenResult.getToken());
 
     boolean finalUpdateCacheResult;
     switch (backendRequestResult) {
@@ -162,9 +161,7 @@ public class FirebaseSegmentation {
         finalUpdateCacheResult =
             localCache.insertOrUpdateCacheEntry(
                 CustomInstallationIdCacheEntryValue.create(
-                    customInstallationId,
-                    instanceIdResult.getId(),
-                    CustomInstallationIdCache.CacheStatus.SYNCED));
+                    customInstallationId, fid, CustomInstallationIdCache.CacheStatus.SYNCED));
         break;
       case UNAUTHORIZED:
         localCache.clear();
@@ -174,14 +171,16 @@ public class FirebaseSegmentation {
         localCache.clear();
         throw new SetCustomInstallationIdException(
             Status.DUPLICATED_CUSTOM_INSTALLATION_ID,
-            "The custom installation id is used by another Firebase installation in your project.");
+            "The custom installation id is used by another "
+                + "Firebase installation in your project.");
       case HTTP_CLIENT_ERROR:
         localCache.clear();
         throw new SetCustomInstallationIdException(Status.CLIENT_ERROR, "Http client error(4xx)");
       case NETWORK_ERROR:
       case SERVER_ERROR:
       default:
-        // These are considered retryable errors, so not to clean up the cache.
+        // These are considered retryable errors, so not to clean up
+        // the cache.
         throw new SetCustomInstallationIdException(Status.BACKEND_ERROR);
     }
 
@@ -212,32 +211,33 @@ public class FirebaseSegmentation {
    */
   @WorkerThread
   private Void clearCustomInstallationId() throws SetCustomInstallationIdException {
-    InstanceIdResult instanceIdResult;
+    String fid;
+    InstallationTokenResult installationTokenResult;
     try {
-      instanceIdResult = Tasks.await(firebaseInstanceId.getInstanceId());
+      fid = Tasks.await(firebaseInstallationsApi.getId());
+      // No need to force refresh token.
+      installationTokenResult = Tasks.await(firebaseInstallationsApi.getToken(false));
     } catch (ExecutionException | InterruptedException e) {
       throw new SetCustomInstallationIdException(
-          Status.CLIENT_ERROR, "Failed to get Firebase instance id");
+          Status.CLIENT_ERROR, "Failed to get Firebase installation ID and token");
     }
 
     boolean firstUpdateCacheResult =
         localCache.insertOrUpdateCacheEntry(
             CustomInstallationIdCacheEntryValue.create(
-                "", instanceIdResult.getId(), CustomInstallationIdCache.CacheStatus.PENDING_CLEAR));
+                "", fid, CustomInstallationIdCache.CacheStatus.PENDING_CLEAR));
 
     if (!firstUpdateCacheResult) {
       throw new SetCustomInstallationIdException(
           Status.CLIENT_ERROR, "Failed to update client side cache");
     }
 
-    String iid = instanceIdResult.getId();
-    String iidToken = instanceIdResult.getToken();
     Code backendRequestResult =
         backendServiceClient.clearCustomInstallationId(
             Utils.getProjectNumberFromAppId(firebaseApp.getOptions().getApplicationId()),
             firebaseApp.getOptions().getApiKey(),
-            iid,
-            iidToken);
+            fid,
+            installationTokenResult.getToken());
 
     boolean finalUpdateCacheResult;
     switch (backendRequestResult) {
