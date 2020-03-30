@@ -112,7 +112,8 @@ public class ImpressionStorageClient {
     }
     Logging.logd("Clearing impressions for: " + idsToClear.toString());
     getAllImpressions()
-        .doOnSuccess(
+        .defaultIfEmpty(EMPTY_IMPRESSIONS)
+        .flatMapCompletable(
             (storedImpressions) -> {
               Logging.logd("Existing impressions: " + storedImpressions.toString());
               CampaignImpressionList.Builder clearedImpressionListBuilder =
@@ -125,9 +126,10 @@ public class ImpressionStorageClient {
               }
               CampaignImpressionList clearedImpressionList = clearedImpressionListBuilder.build();
               Logging.logd("New impression list: " + clearedImpressionList.toString());
-              storageClient
+              return storageClient
                   .write(clearedImpressionList)
                   .doOnComplete(() -> initInMemCache(clearedImpressionList));
-            });
+            })
+        .blockingAwait();
   }
 }
