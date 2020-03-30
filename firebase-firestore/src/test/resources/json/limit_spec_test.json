@@ -603,7 +603,7 @@
           "targetIds": []
         },
         "expectedState": {
-          "limboDocs": [
+          "activeLimboDocs": [
             "collection/a"
           ],
           "activeTargets": {
@@ -665,7 +665,7 @@
           "targetIds": []
         },
         "expectedState": {
-          "limboDocs": [],
+          "activeLimboDocs": [],
           "activeTargets": {
             "2": {
               "queries": [
@@ -883,7 +883,7 @@
           "targetIds": []
         },
         "expectedState": {
-          "limboDocs": [],
+          "activeLimboDocs": [],
           "activeTargets": {
             "2": {
               "queries": [
@@ -1222,7 +1222,7 @@
           "targetIds": []
         },
         "expectedState": {
-          "limboDocs": [],
+          "activeLimboDocs": [],
           "activeTargets": {
             "2": {
               "queries": [
@@ -3407,7 +3407,7 @@
           }
         ],
         "expectedState": {
-          "limboDocs": [
+          "activeLimboDocs": [
             "collection/a"
           ],
           "activeTargets": {
@@ -3455,7 +3455,7 @@
         ],
         "expectedState": {
           "activeTargets": {},
-          "limboDocs": []
+          "activeLimboDocs": []
         }
       },
       {
@@ -3469,7 +3469,8 @@
         "restart": true,
         "expectedState": {
           "activeTargets": {},
-          "limboDocs": []
+          "activeLimboDocs": [],
+          "enqueuedLimboDocs": []
         }
       },
       {
@@ -3648,7 +3649,7 @@
           "targetIds": []
         },
         "expectedState": {
-          "limboDocs": [
+          "activeLimboDocs": [
             "collection/a"
           ],
           "activeTargets": {
@@ -3701,7 +3702,7 @@
           "targetIds": []
         },
         "expectedState": {
-          "limboDocs": [],
+          "activeLimboDocs": [],
           "activeTargets": {
             "2": {
               "queries": [
@@ -4568,7 +4569,7 @@
           "targetIds": []
         },
         "expectedState": {
-          "limboDocs": [
+          "activeLimboDocs": [
             "collection/a",
             "collection/b"
           ],
@@ -4651,7 +4652,7 @@
           "targetIds": []
         },
         "expectedState": {
-          "limboDocs": [
+          "activeLimboDocs": [
             "collection/b",
             "collection/c"
           ],
@@ -4790,7 +4791,7 @@
           "targetIds": []
         },
         "expectedState": {
-          "limboDocs": [
+          "activeLimboDocs": [
             "collection/c",
             "collection/d"
           ],
@@ -4929,7 +4930,7 @@
           "targetIds": []
         },
         "expectedState": {
-          "limboDocs": [
+          "activeLimboDocs": [
             "collection/d"
           ],
           "activeTargets": {
@@ -5057,7 +5058,7 @@
           "targetIds": []
         },
         "expectedState": {
-          "limboDocs": [],
+          "activeLimboDocs": [],
           "activeTargets": {
             "2": {
               "queries": [

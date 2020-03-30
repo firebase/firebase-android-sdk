@@ -30,7 +30,8 @@
         "restart": true,
         "expectedState": {
           "activeTargets": {},
-          "limboDocs": [],
+          "activeLimboDocs": [],
+          "enqueuedLimboDocs": [],
           "numOutstandingWrites": 2
         }
       },
@@ -80,7 +81,8 @@
         "restart": true,
         "expectedState": {
           "activeTargets": {},
-          "limboDocs": []
+          "activeLimboDocs": [],
+          "enqueuedLimboDocs": []
         }
       },
       {
@@ -248,7 +250,8 @@
         "restart": true,
         "expectedState": {
           "activeTargets": {},
-          "limboDocs": []
+          "activeLimboDocs": [],
+          "enqueuedLimboDocs": []
         }
       },
       {
@@ -686,7 +689,8 @@
         "restart": true,
         "expectedState": {
           "activeTargets": {},
-          "limboDocs": [],
+          "activeLimboDocs": [],
+          "enqueuedLimboDocs": [],
           "numOutstandingWrites": 1
         }
       },
@@ -702,7 +706,8 @@
         "restart": true,
         "expectedState": {
           "activeTargets": {},
-          "limboDocs": [],
+          "activeLimboDocs": [],
+          "enqueuedLimboDocs": [],
           "numOutstandingWrites": 2
         }
       },
@@ -1050,7 +1055,8 @@
         "shutdown": true,
         "expectedState": {
           "activeTargets": {},
-          "limboDocs": []
+          "activeLimboDocs": [],
+          "enqueuedLimboDocs": []
         },
         "clientIndex": 0
       },
@@ -1125,7 +1131,8 @@
         "shutdown": true,
         "expectedState": {
           "activeTargets": {},
-          "limboDocs": []
+          "activeLimboDocs": [],
+          "enqueuedLimboDocs": []
         },
         "clientIndex": 0
       },
@@ -1175,7 +1182,8 @@
         "enableNetwork": false,
         "expectedState": {
           "activeTargets": {},
-          "limboDocs": [],
+          "activeLimboDocs": [],
+          "enqueuedLimboDocs": [],
           "isPrimary": true
         },
         "clientIndex": 0
@@ -1213,7 +1221,8 @@
         "enableNetwork": false,
         "expectedState": {
           "activeTargets": {},
-          "limboDocs": [],
+          "activeLimboDocs": [],
+          "enqueuedLimboDocs": [],
           "isPrimary": true
         },
         "clientIndex": 1
@@ -1290,7 +1299,8 @@
         "shutdown": true,
         "expectedState": {
           "activeTargets": {},
-          "limboDocs": []
+          "activeLimboDocs": [],
+          "enqueuedLimboDocs": []
         },
         "clientIndex": 0
       },

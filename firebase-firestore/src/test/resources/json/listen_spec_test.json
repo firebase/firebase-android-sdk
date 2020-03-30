@@ -1822,7 +1822,8 @@
         "restart": true,
         "expectedState": {
           "activeTargets": {},
-          "limboDocs": []
+          "activeLimboDocs": [],
+          "enqueuedLimboDocs": []
         }
       },
       {
@@ -2010,8 +2011,8 @@
               "key": "collection/a",
               "version": 1000,
               "value": {
-                "v": "v1000",
-                "visible": true
+                "visible": true,
+                "v": "v1000"
               },
               "options": {
                 "hasLocalMutations": false,
@@ -2055,8 +2056,8 @@
                 "key": "collection/a",
                 "version": 1000,
                 "value": {
-                  "v": "v1000",
-                  "visible": true
+                  "visible": true,
+                  "v": "v1000"
                 },
                 "options": {
                   "hasLocalMutations": false,
@@ -2131,8 +2132,8 @@
                 "key": "collection/a",
                 "version": 1000,
                 "value": {
-                  "v": "v1000",
-                  "visible": true
+                  "visible": true,
+                  "v": "v1000"
                 },
                 "options": {
                   "hasLocalMutations": false,
@@ -2158,8 +2159,8 @@
               "key": "collection/a",
               "version": 3000,
               "value": {
-                "v": "v3000",
-                "visible": false
+                "visible": false,
+                "v": "v3000"
               },
               "options": {
                 "hasLocalMutations": false,
@@ -2197,8 +2198,8 @@
                 "key": "collection/a",
                 "version": 3000,
                 "value": {
-                  "v": "v3000",
-                  "visible": false
+                  "visible": false,
+                  "v": "v3000"
                 },
                 "options": {
                   "hasLocalMutations": false,
@@ -2280,8 +2281,8 @@
               "key": "collection/a",
               "version": 2000,
               "value": {
-                "v": "v2000",
-                "visible": false
+                "visible": false,
+                "v": "v2000"
               },
               "options": {
                 "hasLocalMutations": false,
@@ -2387,8 +2388,8 @@
                 "key": "collection/a",
                 "version": 3000,
                 "value": {
-                  "v": "v3000",
-                  "visible": false
+                  "visible": false,
+                  "v": "v3000"
                 },
                 "options": {
                   "hasLocalMutations": false,
@@ -2500,8 +2501,8 @@
               "key": "collection/a",
               "version": 1000,
               "value": {
-                "v": "v1000",
-                "visible": true
+                "visible": true,
+                "v": "v1000"
               },
               "options": {
                 "hasLocalMutations": false,
@@ -2545,8 +2546,8 @@
                 "key": "collection/a",
                 "version": 1000,
                 "value": {
-                  "v": "v1000",
-                  "visible": true
+                  "visible": true,
+                  "v": "v1000"
                 },
                 "options": {
                   "hasLocalMutations": false,
@@ -2621,8 +2622,8 @@
                 "key": "collection/a",
                 "version": 1000,
                 "value": {
-                  "v": "v1000",
-                  "visible": true
+                  "visible": true,
+                  "v": "v1000"
                 },
                 "options": {
                   "hasLocalMutations": false,
@@ -2680,8 +2681,8 @@
                 "key": "collection/a",
                 "version": 1000,
                 "value": {
-                  "v": "v1000",
-                  "visible": true
+                  "visible": true,
+                  "v": "v1000"
                 },
                 "options": {
                   "hasLocalMutations": false,
@@ -2763,8 +2764,8 @@
               "key": "collection/a",
               "version": 2000,
               "value": {
-                "v": "v2000",
-                "visible": false
+                "visible": false,
+                "v": "v2000"
               },
               "options": {
                 "hasLocalMutations": false,
@@ -3245,7 +3246,8 @@
         "enableNetwork": false,
         "expectedState": {
           "activeTargets": {},
-          "limboDocs": []
+          "activeLimboDocs": [],
+          "enqueuedLimboDocs": []
         },
         "expectedSnapshotEvents": [
           {
@@ -4781,12 +4783,12 @@
               "key": "collection/a",
               "version": 2000,
               "value": {
+                "foo": "bar",
                 "array": [
                   1,
                   42,
                   3
-                ],
-                "foo": "bar"
+                ]
               },
               "options": {
                 "hasLocalMutations": false,
@@ -4831,12 +4833,12 @@
                 "key": "collection/a",
                 "version": 2000,
                 "value": {
+                  "foo": "bar",
                   "array": [
                     1,
                     42,
                     3
-                  ],
-                  "foo": "bar"
+                  ]
                 },
                 "options": {
                   "hasLocalMutations": false,
@@ -4929,12 +4931,12 @@
                 "key": "collection/a",
                 "version": 2000,
                 "value": {
+                  "foo": "bar",
                   "array": [
                     1,
                     42,
                     3
-                  ],
-                  "foo": "bar"
+                  ]
                 },
                 "options": {
                   "hasLocalMutations": false,
@@ -5311,7 +5313,8 @@
         "restart": true,
         "expectedState": {
           "activeTargets": {},
-          "limboDocs": []
+          "activeLimboDocs": [],
+          "enqueuedLimboDocs": []
         }
       },
       {
@@ -5506,7 +5509,8 @@
         "restart": true,
         "expectedState": {
           "activeTargets": {},
-          "limboDocs": []
+          "activeLimboDocs": [],
+          "enqueuedLimboDocs": []
         }
       },
       {
@@ -9695,7 +9699,8 @@
         "enableNetwork": false,
         "expectedState": {
           "activeTargets": {},
-          "limboDocs": []
+          "activeLimboDocs": [],
+          "enqueuedLimboDocs": []
         },
         "clientIndex": 0
       },
@@ -9877,7 +9882,8 @@
         "enableNetwork": false,
         "expectedState": {
           "activeTargets": {},
-          "limboDocs": []
+          "activeLimboDocs": [],
+          "enqueuedLimboDocs": []
         },
         "clientIndex": 1
       },
@@ -9926,7 +9932,8 @@
         "enableNetwork": false,
         "expectedState": {
           "activeTargets": {},
-          "limboDocs": []
+          "activeLimboDocs": [],
+          "enqueuedLimboDocs": []
         },
         "expectedSnapshotEvents": [
           {
@@ -10154,7 +10161,8 @@
         "enableNetwork": false,
         "expectedState": {
           "activeTargets": {},
-          "limboDocs": []
+          "activeLimboDocs": [],
+          "enqueuedLimboDocs": []
         },
         "expectedSnapshotEvents": [
           {
@@ -10389,7 +10397,8 @@
         "enableNetwork": false,
         "expectedState": {
           "activeTargets": {},
-          "limboDocs": []
+          "activeLimboDocs": [],
+          "enqueuedLimboDocs": []
         },
         "clientIndex": 1
       },
@@ -10462,7 +10471,8 @@
         "enableNetwork": false,
         "expectedState": {
           "activeTargets": {},
-          "limboDocs": [],
+          "activeLimboDocs": [],
+          "enqueuedLimboDocs": [],
           "isPrimary": true
         },
         "clientIndex": 0
@@ -10532,7 +10542,8 @@
         "enableNetwork": false,
         "expectedState": {
           "activeTargets": {},
-          "limboDocs": []
+          "activeLimboDocs": [],
+          "enqueuedLimboDocs": []
         },
         "expectedSnapshotEvents": [
           {
@@ -10552,7 +10563,8 @@
         "shutdown": true,
         "expectedState": {
           "activeTargets": {},
-          "limboDocs": []
+          "activeLimboDocs": [],
+          "enqueuedLimboDocs": []
         },
         "clientIndex": 0
       },
@@ -10786,7 +10798,8 @@
         "shutdown": true,
         "expectedState": {
           "activeTargets": {},
-          "limboDocs": []
+          "activeLimboDocs": [],
+          "enqueuedLimboDocs": []
         },
         "clientIndex": 0
       },
@@ -11089,7 +11102,8 @@
         "shutdown": true,
         "expectedState": {
           "activeTargets": {},
-          "limboDocs": []
+          "activeLimboDocs": [],
+          "enqueuedLimboDocs": []
         },
         "clientIndex": 0
       },
@@ -12260,7 +12274,8 @@
         "shutdown": true,
         "expectedState": {
           "activeTargets": {},
-          "limboDocs": []
+          "activeLimboDocs": [],
+          "enqueuedLimboDocs": []
         },
         "clientIndex": 0
       },
@@ -12512,7 +12527,8 @@
         "shutdown": true,
         "expectedState": {
           "activeTargets": {},
-          "limboDocs": []
+          "activeLimboDocs": [],
+          "enqueuedLimboDocs": []
         },
         "clientIndex": 1
       },

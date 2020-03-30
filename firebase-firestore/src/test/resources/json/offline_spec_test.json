@@ -585,7 +585,7 @@
           "targetIds": []
         },
         "expectedState": {
-          "limboDocs": [
+          "activeLimboDocs": [
             "collection/a"
           ],
           "activeTargets": {
@@ -745,7 +745,7 @@
           }
         ],
         "expectedState": {
-          "limboDocs": [],
+          "activeLimboDocs": [],
           "activeTargets": {
             "2": {
               "queries": [
@@ -1148,7 +1148,8 @@
         "enableNetwork": false,
         "expectedState": {
           "activeTargets": {},
-          "limboDocs": []
+          "activeLimboDocs": [],
+          "enqueuedLimboDocs": []
         }
       },
       {
