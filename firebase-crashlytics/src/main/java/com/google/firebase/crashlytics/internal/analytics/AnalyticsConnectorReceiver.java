@@ -41,9 +41,10 @@ public class AnalyticsConnectorReceiver implements AnalyticsConnectorListener, A
 
   private final AnalyticsConnector analyticsConnector;
   private final BreadcrumbHandler breadcrumbHandler;
-  private CrashlyticsOriginEventListener crashOriginEventListener;
 
   private AnalyticsConnectorHandle analyticsConnectorHandle;
+
+  @Nullable private CrashlyticsAppExceptionEventListener appExceptionEventListener;
 
   public AnalyticsConnectorReceiver(
       AnalyticsConnector analyticsConnector, BreadcrumbHandler breadcrumbHandler) {
@@ -97,48 +98,46 @@ public class AnalyticsConnectorReceiver implements AnalyticsConnectorListener, A
   }
 
   @Override
-  public void setCrashlyticsOriginEventListener(@Nullable CrashlyticsOriginEventListener listener) {
-    this.crashOriginEventListener = listener;
-  }
-
-  @Override
-  public @Nullable CrashlyticsOriginEventListener getCrashlyticsOriginEventListener() {
-    return crashOriginEventListener;
+  public void setCrashlyticsAppExceptionEventListener(
+      @Nullable CrashlyticsAppExceptionEventListener listener) {
+    appExceptionEventListener = listener;
   }
 
   @Override
   public void onMessageTriggered(int id, @Nullable Bundle extras) {
-
     Logger.getLogger().d("AnalyticsConnectorReceiver received message: " + id + " " + extras);
 
     if (extras == null) {
       return;
     }
 
-    Bundle params = extras.getBundle(EVENT_PARAMS_KEY);
-    if (params == null) {
-      params = new Bundle();
-    }
+    final String name = extras.getString(EVENT_NAME_KEY);
 
-    final String origin = params.getString(EVENT_ORIGIN_KEY);
-    if (CRASHLYTICS_ORIGIN.equals(origin)) {
-      dispatchCrashlyticsOriginEvent(id, extras);
-    } else {
-      // Drop breadcrumbs for all named events which did not originate from Crashlytics
-      final String name = extras.getString(EVENT_NAME_KEY);
-      if (name != null) {
+    if (name != null) {
+      Bundle params = extras.getBundle(EVENT_PARAMS_KEY);
+      if (params == null) {
+        params = new Bundle();
+      }
+      final String origin = params.getString(EVENT_ORIGIN_KEY);
+      if (CRASHLYTICS_ORIGIN.equals(origin)) {
+        dispatchCrashlyticsOriginEvent(name, params);
+      } else {
+        // Place breadcrumbs for all named events which did not originate from Crashlytics
         dispatchBreadcrumbEvent(name, params);
       }
     }
   }
 
-  private void dispatchCrashlyticsOriginEvent(int id, @Nullable Bundle extras) {
-    if (crashOriginEventListener != null) {
-      crashOriginEventListener.onCrashlyticsOriginEvent(id, extras);
+  private void dispatchCrashlyticsOriginEvent(@NonNull String name, @NonNull Bundle params) {
+    if (appExceptionEventListener != null) {
+      if (APP_EXCEPTION_EVENT_NAME.equals(name)) {
+        Logger.getLogger().d("Received app exception event callback from FA");
+        appExceptionEventListener.onCrashlyticsAppExceptionEvent();
+      }
     }
   }
 
-  private void dispatchBreadcrumbEvent(String name, Bundle params) {
+  private void dispatchBreadcrumbEvent(@NonNull String name, @NonNull Bundle params) {
     try {
       final String serializedEvent = BREADCRUMB_PREFIX + serializeEvent(name, params);
       breadcrumbHandler.dropBreadcrumb(serializedEvent);

@@ -14,19 +14,18 @@
 
 package com.google.firebase.crashlytics.internal.analytics;
 
-import android.os.Bundle;
 import androidx.annotation.Nullable;
 
 /** Receiver for Firebase Analytics events reported to Crashlytics */
 public interface AnalyticsReceiver {
 
   /**
-   * Listener for Firebase Analytics events that originated from Crashlytics. This functions as a
-   * callback so we can confirm that Crashlytics-originating events have been received by the
+   * Listener for Firebase app exception events that originated from Crashlytics. This functions as
+   * a callback so we can confirm that Crashlytics-originating events have been received by the
    * Firebase Analytics SDK.
    */
-  interface CrashlyticsOriginEventListener {
-    void onCrashlyticsOriginEvent(int id, Bundle extras);
+  interface CrashlyticsAppExceptionEventListener {
+    void onCrashlyticsAppExceptionEvent();
   }
 
   /**
@@ -39,8 +38,6 @@ public interface AnalyticsReceiver {
   /** Unregister breadcrumb receiver with its associated event source. */
   void unregister();
 
-  void setCrashlyticsOriginEventListener(@Nullable CrashlyticsOriginEventListener listener);
-
-  @Nullable
-  CrashlyticsOriginEventListener getCrashlyticsOriginEventListener();
+  void setCrashlyticsAppExceptionEventListener(
+      @Nullable CrashlyticsAppExceptionEventListener listener);
 }
