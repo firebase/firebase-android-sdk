@@ -171,16 +171,14 @@ public class FirebaseSegmentation {
         localCache.clear();
         throw new SetCustomInstallationIdException(
             Status.DUPLICATED_CUSTOM_INSTALLATION_ID,
-            "The custom installation id is used by another "
-                + "Firebase installation in your project.");
+            "The custom installation id is used by another Firebase installation in your project.");
       case HTTP_CLIENT_ERROR:
         localCache.clear();
         throw new SetCustomInstallationIdException(Status.CLIENT_ERROR, "Http client error(4xx)");
       case NETWORK_ERROR:
       case SERVER_ERROR:
       default:
-        // These are considered retryable errors, so not to clean up
-        // the cache.
+        // These are considered retryable errors, so not to clean up the cache.
         throw new SetCustomInstallationIdException(Status.BACKEND_ERROR);
     }
 
