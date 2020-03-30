@@ -95,6 +95,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import org.json.JSONArray;
@@ -176,7 +177,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
   private Map<Query, QueryListener> queryListeners;
 
   /** Set of documents that are expected to be in limbo. Verified at every step. */
-  private Set<DocumentKey> expectedLimboDocs;
+  private Set<DocumentKey> expectedActiveLimboDocs;
 
   /** Set of expected active targets, keyed by target ID. */
   private Map<Integer, Pair<List<TargetData>, String>> expectedActiveTargets;
@@ -263,7 +264,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     events = new ArrayList<>();
     queryListeners = new HashMap<>();
 
-    expectedLimboDocs = new HashSet<>();
+    expectedActiveLimboDocs = new HashSet<>();
     expectedActiveTargets = new HashMap<>();
 
     snapshotsInSyncListeners = Collections.synchronizedList(new ArrayList<>());
@@ -910,11 +911,11 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
             expectedState.getInt("watchStreamRequestCount"),
             datastore.getWatchStreamRequestCount());
       }
-      if (expectedState.has("limboDocs")) {
-        expectedLimboDocs = new HashSet<>();
-        JSONArray limboDocs = expectedState.getJSONArray("limboDocs");
+      if (expectedState.has("activeLimboDocs")) {
+        expectedActiveLimboDocs = new HashSet<>();
+        JSONArray limboDocs = expectedState.getJSONArray("activeLimboDocs");
         for (int i = 0; i < limboDocs.length(); i++) {
-          expectedLimboDocs.add(key((String) limboDocs.get(i)));
+          expectedActiveLimboDocs.add(key((String) limboDocs.get(i)));
         }
       }
       if (expectedState.has("activeTargets")) {
@@ -989,20 +990,18 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     Map<DocumentKey, Integer> actualLimboDocs =
         new HashMap<>(syncEngine.getCurrentLimboDocuments());
 
-    // Validate that each limbo doc has an expected active target
+    // Validate that each active limbo doc has an expected active target
     for (Map.Entry<DocumentKey, Integer> limboDoc : actualLimboDocs.entrySet()) {
-      assertTrue(
-          "Found limbo doc " + limboDoc.getKey() + " without an expected active target",
-          expectedActiveTargets.containsKey(limboDoc.getValue()));
+      assertTrue("Found limbo doc " + limboDoc.getKey() + ", but its target ID " + limboDoc.getValue() + " was not in the set of expected active target IDs " + expectedActiveTargets.keySet().stream().sorted().map(String::valueOf).collect(Collectors.joining(", ")), expectedActiveTargets.containsKey(limboDoc.getValue()));
     }
 
-    for (DocumentKey expectedLimboDoc : expectedLimboDocs) {
+    for (DocumentKey expectedLimboDoc : expectedActiveLimboDocs) {
       assertTrue(
           "Expected doc to be in limbo, but was not: " + expectedLimboDoc,
           actualLimboDocs.containsKey(expectedLimboDoc));
       actualLimboDocs.remove(expectedLimboDoc);
     }
-    assertTrue("Unexpected docs in limbo: " + actualLimboDocs, actualLimboDocs.isEmpty());
+    assertTrue("Unexpected active docs in limbo: " + actualLimboDocs, actualLimboDocs.isEmpty());
   }
 
   private void validateActiveTargets() {
