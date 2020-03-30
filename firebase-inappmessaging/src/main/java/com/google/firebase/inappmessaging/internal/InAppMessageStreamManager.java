@@ -242,6 +242,11 @@ public class InAppMessageStreamManager {
                                           Locale.US,
                                           "Successfully fetched %d messages from backend",
                                           resp.getMessagesList().size())))
+                          .doOnSuccess(resp -> {
+                            impressionStorageClient.clearImpressions(resp)
+                                .doOnError(e -> Logging.loge("Impression store write failure"))
+                                .doOnComplete(() -> Logging.logd("Impression store write success"));
+                          })
                           .doOnSuccess(analyticsEventsManager::updateContextualTriggers)
                           .doOnSuccess(testDeviceHelper::processCampaignFetch)
                           .doOnError(e -> Logging.logw("Service fetch error: " + e.getMessage()))

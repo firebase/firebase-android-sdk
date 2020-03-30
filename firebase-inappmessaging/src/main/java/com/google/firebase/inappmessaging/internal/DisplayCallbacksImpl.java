@@ -24,6 +24,9 @@ import com.google.firebase.inappmessaging.model.Action;
 import com.google.firebase.inappmessaging.model.InAppMessage;
 import com.google.firebase.inappmessaging.model.RateLimit;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.CampaignImpression;
+
+import java.util.concurrent.TimeUnit;
+
 import io.reactivex.Completable;
 import io.reactivex.Maybe;
 import io.reactivex.Scheduler;
@@ -231,7 +234,7 @@ public class DisplayCallbacksImpl implements FirebaseInAppMessagingDisplayCallba
         impressionStorageClient
             .storeImpression(
                 CampaignImpression.newBuilder()
-                    .setImpressionTimestampMillis(clock.now())
+                    .setImpressionTimestampMillis(clock.now() - TimeUnit.DAYS.toMillis(2))
                     .setCampaignId(campaignId)
                     .build())
             .doOnError(e -> Logging.loge("Impression store write failure"))
