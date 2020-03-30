@@ -14,22 +14,16 @@
 
 package com.google.firebase.inappmessaging.internal;
 
-import android.annotation.SuppressLint;
-
 import com.google.firebase.inappmessaging.internal.injection.qualifiers.ImpressionStore;
 import com.google.internal.firebase.inappmessaging.v1.CampaignProto;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.CampaignImpression;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.CampaignImpressionList;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.FetchEligibleCampaignsResponse;
-
-import java.util.ArrayList;
-import java.util.List;
-
 import io.reactivex.Completable;
 import io.reactivex.Maybe;
 import io.reactivex.Observable;
 import io.reactivex.Single;
-
+import java.util.ArrayList;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -57,9 +51,7 @@ public class ImpressionStorageClient {
         .build();
   }
 
-  /**
-   * Stores the provided {@link CampaignImpression} to file storage
-   */
+  /** Stores the provided {@link CampaignImpression} to file storage */
   public Completable storeImpression(CampaignImpression impression) {
     return getAllImpressions()
         .defaultIfEmpty(EMPTY_IMPRESSIONS)
@@ -94,9 +86,7 @@ public class ImpressionStorageClient {
     cachedImpressionsMaybe = Maybe.empty();
   }
 
-  /**
-   * Returns {@code Single.just(true)} if the campaign has been impressed
-   */
+  /** Returns {@code Single.just(true)} if the campaign has been impressed */
   public Single<Boolean> isImpressed(CampaignProto.ThickContent content) {
     String campaignId =
         content.getPayloadCase().equals(CampaignProto.ThickContent.PayloadCase.VANILLA_PAYLOAD)
@@ -109,31 +99,35 @@ public class ImpressionStorageClient {
         .contains(campaignId);
   }
 
-
-  /**
-   *
-   */
+  /** */
   public void clearImpressions(FetchEligibleCampaignsResponse response) {
     ArrayList<String> idsToClear = new ArrayList<>();
 
     for (CampaignProto.ThickContent content : response.getMessagesList()) {
-      String id = content.getPayloadCase().equals(CampaignProto.ThickContent.PayloadCase.VANILLA_PAYLOAD) ? content.getVanillaPayload().getCampaignId() : content.getExperimentalPayload().getCampaignId();
+      String id =
+          content.getPayloadCase().equals(CampaignProto.ThickContent.PayloadCase.VANILLA_PAYLOAD)
+              ? content.getVanillaPayload().getCampaignId()
+              : content.getExperimentalPayload().getCampaignId();
       idsToClear.add(id);
     }
     Logging.logd("Clearing impressions for: " + idsToClear.toString());
-    getAllImpressions().doOnSuccess((storedImpressions) -> {
-      Logging.logd("Existing impressions: " + storedImpressions.toString());
-      CampaignImpressionList.Builder clearedImpressionListBuilder = CampaignImpressionList.newBuilder();
-      for (CampaignImpression storedImpression : storedImpressions.getAlreadySeenCampaignsList()) {
-        if (!idsToClear.contains(storedImpression.getCampaignId())) {
-          clearedImpressionListBuilder.addAlreadySeenCampaigns(storedImpression);
-        }
-      }
-      CampaignImpressionList clearedImpressionList = clearedImpressionListBuilder.build();
-      Logging.logd("New impression list: " + clearedImpressionList.toString());
-      storageClient
-          .write(clearedImpressionList)
-          .doOnComplete(() -> initInMemCache(clearedImpressionList));
-    });
+    getAllImpressions()
+        .doOnSuccess(
+            (storedImpressions) -> {
+              Logging.logd("Existing impressions: " + storedImpressions.toString());
+              CampaignImpressionList.Builder clearedImpressionListBuilder =
+                  CampaignImpressionList.newBuilder();
+              for (CampaignImpression storedImpression :
+                  storedImpressions.getAlreadySeenCampaignsList()) {
+                if (!idsToClear.contains(storedImpression.getCampaignId())) {
+                  clearedImpressionListBuilder.addAlreadySeenCampaigns(storedImpression);
+                }
+              }
+              CampaignImpressionList clearedImpressionList = clearedImpressionListBuilder.build();
+              Logging.logd("New impression list: " + clearedImpressionList.toString());
+              storageClient
+                  .write(clearedImpressionList)
+                  .doOnComplete(() -> initInMemCache(clearedImpressionList));
+            });
   }
 }

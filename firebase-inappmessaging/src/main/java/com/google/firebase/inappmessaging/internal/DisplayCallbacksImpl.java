@@ -24,13 +24,11 @@ import com.google.firebase.inappmessaging.model.Action;
 import com.google.firebase.inappmessaging.model.InAppMessage;
 import com.google.firebase.inappmessaging.model.RateLimit;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.CampaignImpression;
-
-import java.util.concurrent.TimeUnit;
-
 import io.reactivex.Completable;
 import io.reactivex.Maybe;
 import io.reactivex.Scheduler;
 import io.reactivex.disposables.Disposable;
+import java.util.concurrent.TimeUnit;
 
 public class DisplayCallbacksImpl implements FirebaseInAppMessagingDisplayCallbacks {
 
