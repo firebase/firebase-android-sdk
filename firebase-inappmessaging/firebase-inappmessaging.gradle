@@ -119,6 +119,9 @@ dependencies {
     implementation project(':firebase-installations-interop')
     runtimeOnly project(':firebase-installations')
 
+    //To provide @Generated annotations
+    compileOnly 'javax.annotation:jsr250-api:1.0'
+
     implementation 'com.google.android.gms:play-services-tasks:17.0.0'
     implementation 'io.grpc:grpc-stub:1.21.0'
     implementation 'io.grpc:grpc-protobuf-lite:1.21.0'

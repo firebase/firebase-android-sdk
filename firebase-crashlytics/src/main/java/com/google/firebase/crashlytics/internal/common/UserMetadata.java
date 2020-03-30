@@ -15,6 +15,7 @@
 package com.google.firebase.crashlytics.internal.common;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.firebase.crashlytics.internal.Logger;
 import java.util.Collections;
 import java.util.Map;
@@ -30,6 +31,7 @@ public class UserMetadata {
 
   public UserMetadata() {}
 
+  @Nullable
   public String getUserId() {
     return userId;
   }

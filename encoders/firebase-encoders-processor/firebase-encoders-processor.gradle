@@ -16,6 +16,9 @@ plugins {
     id 'java-library'
 }
 
+def jvm = org.gradle.internal.jvm.Jvm.current()
+
+
 dependencies {
     implementation project(':encoders:firebase-encoders-processor:test-support')
     implementation 'com.google.auto.service:auto-service-annotations:1.0-rc6'
@@ -30,7 +33,7 @@ dependencies {
     annotationProcessor 'com.google.auto.service:auto-service:1.0-rc6'
 
     testImplementation 'com.google.testing.compile:compile-testing:0.18'
-    testImplementation files(org.gradle.internal.jvm.Jvm.current().getToolsJar())
+    if (jvm.getToolsJar() != null) testImplementation files(jvm.getToolsJar())
     testImplementation 'com.google.truth:truth:1.0'
 
 }

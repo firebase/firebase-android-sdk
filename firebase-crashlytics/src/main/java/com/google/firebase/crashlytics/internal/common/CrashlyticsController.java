@@ -64,6 +64,7 @@ import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -85,7 +86,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.zip.GZIPOutputStream;
 
 @SuppressWarnings("PMD")
 class CrashlyticsController {
@@ -103,11 +103,6 @@ class CrashlyticsController {
   static final String FIREBASE_TIMESTAMP = "timestamp";
   static final String FIREBASE_APPLICATION_EXCEPTION = "_ae";
   static final String FIREBASE_ANALYTICS_ORIGIN_CRASHLYTICS = "clx";
-
-  // Used to determine whether to upload reports through the legacy reports endpoint
-  static final int REPORT_UPLOAD_VARIANT_LEGACY = 1;
-  // Used to determine whether to upload reports through the new DataTransport API.
-  static final int REPORT_UPLOAD_VARIANT_DATATRANSPORT = 2;
 
   // region CLS File filters for retrieving specific sets of files.
 
@@ -364,7 +359,9 @@ class CrashlyticsController {
         new CrashlyticsUncaughtExceptionHandler.CrashListener() {
           @Override
           public void onUncaughtException(
-              SettingsDataProvider settingsDataProvider, Thread thread, Throwable ex) {
+              @NonNull SettingsDataProvider settingsDataProvider,
+              @NonNull Thread thread,
+              @NonNull Throwable ex) {
             handleUncaughtException(settingsDataProvider, thread, ex);
           }
         };
@@ -374,7 +371,9 @@ class CrashlyticsController {
   }
 
   synchronized void handleUncaughtException(
-      SettingsDataProvider settingsDataProvider, final Thread thread, final Throwable ex) {
+      @NonNull SettingsDataProvider settingsDataProvider,
+      @NonNull final Thread thread,
+      @NonNull final Throwable ex) {
 
     Logger.getLogger()
         .d(
@@ -427,13 +426,19 @@ class CrashlyticsController {
                           @Override
                           public Task<Void> then(@Nullable AppSettingsData appSettingsData)
                               throws Exception {
+                            if (appSettingsData == null) {
+                              Logger.getLogger()
+                                  .w(
+                                      "Received null app settings, cannot send reports at crash time.");
+                              return Tasks.forResult(null);
+                            }
                             // Data collection is enabled, so it's safe to send the report.
                             boolean dataCollectionToken = true;
                             sendSessionReports(appSettingsData, dataCollectionToken);
                             reportingCoordinator.sendReports(
                                 appSettingsData.organizationId,
                                 executor,
-                                shouldSendViaDataTransport(appSettingsData.reportUploadVariant));
+                                DataTransportState.getState(appSettingsData));
                             return recordFatalFirebaseEventTask;
                           }
                         });
@@ -572,6 +577,12 @@ class CrashlyticsController {
                               @Override
                               public Task<Void> then(@Nullable AppSettingsData appSettingsData)
                                   throws Exception {
+                                if (appSettingsData == null) {
+                                  Logger.getLogger()
+                                      .w(
+                                          "Received null app settings, cannot send reports during app startup.");
+                                  return Tasks.forResult(null);
+                                }
                                 // Append the most recent org ID to each report file, even if it
                                 // was already appended during the crash time upload. This way
                                 // we'll always have the most recent value available attached.
@@ -587,8 +598,7 @@ class CrashlyticsController {
                                 reportingCoordinator.sendReports(
                                     appSettingsData.organizationId,
                                     executor,
-                                    shouldSendViaDataTransport(
-                                        appSettingsData.reportUploadVariant));
+                                    DataTransportState.getState(appSettingsData));
                                 unsentReportsHandled.trySetResult(null);
 
                                 return Tasks.forResult(null);
@@ -603,17 +613,15 @@ class CrashlyticsController {
   private ReportUploader.Provider defaultReportUploader() {
     return new ReportUploader.Provider() {
       @Override
-      public ReportUploader createReportUploader(AppSettingsData appSettingsData) {
+      public ReportUploader createReportUploader(@NonNull AppSettingsData appSettingsData) {
         final String reportsUrl = appSettingsData.reportsUrl;
         final String ndkReportsUrl = appSettingsData.ndkReportsUrl;
         final String organizationId = appSettingsData.organizationId;
-        final boolean isUsingReportsEndpoint =
-            appSettingsData.reportUploadVariant != REPORT_UPLOAD_VARIANT_DATATRANSPORT;
         final CreateReportSpiCall call = getCreateReportSpiCall(reportsUrl, ndkReportsUrl);
         return new ReportUploader(
             organizationId,
             appData.googleAppId,
-            isUsingReportsEndpoint,
+            DataTransportState.getState(appSettingsData),
             reportManager,
             call,
             handlingExceptionCheck);
@@ -638,7 +646,7 @@ class CrashlyticsController {
   }
 
   /** Log a caught exception - write out Throwable as event section of protobuf */
-  void writeNonFatalException(final Thread thread, final Throwable ex) {
+  void writeNonFatalException(@NonNull final Thread thread, @NonNull final Throwable ex) {
     // Capture and close over the current time, so that we get the exact call time,
     // rather than the time at which the task executes.
     final Date time = new Date();
@@ -668,7 +676,7 @@ class CrashlyticsController {
       if (context != null && CommonUtils.isAppDebuggable(context)) {
         throw ex;
       } else {
-        Logger.getLogger().e("Attempting to set custom attribute with null key, ignoring.", null);
+        Logger.getLogger().e("Attempting to set custom attribute with null key, ignoring.");
         return;
       }
     }
@@ -1103,33 +1111,17 @@ class CrashlyticsController {
 
   // endregion
 
-  private void finalizePreviousNativeSession(String previousSessionId) throws IOException {
+  private void finalizePreviousNativeSession(String previousSessionId) {
     Logger.getLogger().d("Finalizing native report for session " + previousSessionId);
     NativeSessionFileProvider nativeSessionFileProvider =
         nativeComponent.getSessionFileProvider(previousSessionId);
-
-    final File minidump = nativeSessionFileProvider.getMinidumpFile();
-    final File binaryImages = nativeSessionFileProvider.getBinaryImagesFile();
-    final File metadata = nativeSessionFileProvider.getMetadataFile();
-    final File sessionFile = nativeSessionFileProvider.getSessionFile();
-    final File sessionApp = nativeSessionFileProvider.getAppFile();
-    final File sessionDevice = nativeSessionFileProvider.getDeviceFile();
-    final File sessionOs = nativeSessionFileProvider.getOsFile();
-
-    if (minidump == null || !minidump.exists()) {
+    File minidumpFile = nativeSessionFileProvider.getMinidumpFile();
+    if (minidumpFile == null || !minidumpFile.exists()) {
       Logger.getLogger().w("No minidump data found for session " + previousSessionId);
       return;
     }
-
-    final File filesDir = getFilesDir();
-    final MetaDataStore metaDataStore = new MetaDataStore(filesDir);
-    final File sessionUser = metaDataStore.getUserDataFileForSession(previousSessionId);
-    final File sessionKeys = metaDataStore.getKeysFileForSession(previousSessionId);
-
     final LogFileManager previousSessionLogManager =
-        new LogFileManager(getContext(), logFileDirectoryProvider, previousSessionId);
-    final byte[] logs = previousSessionLogManager.getBytesForLog();
-
+        new LogFileManager(context, logFileDirectoryProvider, previousSessionId);
     final File nativeSessionDirectory = new File(getNativeSessionFilesDir(), previousSessionId);
 
     if (!nativeSessionDirectory.mkdirs()) {
@@ -1137,63 +1129,17 @@ class CrashlyticsController {
       return;
     }
 
-    gzipFile(minidump, new File(nativeSessionDirectory, "minidump"));
-    gzipIfNotEmpty(
-        NativeFileUtils.binaryImagesJsonFromMapsFile(binaryImages, context),
-        new File(nativeSessionDirectory, "binaryImages"));
-    gzipFile(metadata, new File(nativeSessionDirectory, "metadata"));
-    gzipFile(sessionFile, new File(nativeSessionDirectory, "session"));
-    gzipFile(sessionApp, new File(nativeSessionDirectory, "app"));
-    gzipFile(sessionDevice, new File(nativeSessionDirectory, "device"));
-    gzipFile(sessionOs, new File(nativeSessionDirectory, "os"));
-    gzipFile(sessionUser, new File(nativeSessionDirectory, "user"));
-    gzipFile(sessionKeys, new File(nativeSessionDirectory, "keys"));
-    gzipIfNotEmpty(logs, new File(nativeSessionDirectory, "logs"));
-
+    List<NativeSessionFile> nativeSessionFiles =
+        getNativeSessionFiles(
+            nativeSessionFileProvider,
+            previousSessionId,
+            getContext(),
+            getFilesDir(),
+            previousSessionLogManager.getBytesForLog());
+    NativeSessionFileGzipper.processNativeSessions(nativeSessionDirectory, nativeSessionFiles);
+    reportingCoordinator.finalizeSessionWithNativeEvent(
+        makeFirebaseSessionIdentifier(previousSessionId), nativeSessionFiles);
     previousSessionLogManager.clearLog();
-  }
-
-  // TODO: Maybe make this a separate collaborator/serializer
-  private static void gzipFile(@NonNull File input, @NonNull File output) throws IOException {
-    if (!input.exists() || !input.isFile()) {
-      return;
-    }
-    byte[] buffer = new byte[1024];
-    FileInputStream fis = null;
-    GZIPOutputStream gos = null;
-    try {
-      fis = new FileInputStream(input);
-      gos = new GZIPOutputStream(new FileOutputStream(output));
-
-      int read;
-
-      while ((read = fis.read(buffer)) > 0) {
-        gos.write(buffer, 0, read);
-      }
-
-      gos.finish();
-    } finally {
-      CommonUtils.closeQuietly(fis);
-      CommonUtils.closeQuietly(gos);
-    }
-  }
-
-  private static void gzipIfNotEmpty(@Nullable byte[] content, @NonNull File path)
-      throws IOException {
-    if (content != null && content.length > 0) {
-      gzip(content, path);
-    }
-  }
-
-  private static void gzip(@NonNull byte[] bytes, @NonNull File path) throws IOException {
-    GZIPOutputStream gos = null;
-    try {
-      gos = new GZIPOutputStream(new FileOutputStream(path));
-      gos.write(bytes, 0, bytes.length);
-      gos.finish();
-    } finally {
-      CommonUtils.closeQuietly(gos);
-    }
   }
 
   private static long getCurrentTimestampSeconds() {
@@ -1205,13 +1151,9 @@ class CrashlyticsController {
   }
 
   /** Removes dashes in the Crashlytics session identifier to conform to Firebase constraints. */
-  private static String makeFirebaseSessionIdentifier(String sessionIdentifier) {
+  @NonNull
+  private static String makeFirebaseSessionIdentifier(@NonNull String sessionIdentifier) {
     return sessionIdentifier.replaceAll("-", "");
-  }
-
-  private static SessionReportingCoordinator.SendReportPredicate shouldSendViaDataTransport(
-      int reportUploadVariant) {
-    return () -> REPORT_UPLOAD_VARIANT_DATATRANSPORT == reportUploadVariant;
   }
 
   // region Serialization to protobuf
@@ -1227,7 +1169,7 @@ class CrashlyticsController {
       final String currentSessionId = getCurrentSessionId();
 
       if (currentSessionId == null) {
-        Logger.getLogger().e("Tried to write a fatal exception while no session was open.", null);
+        Logger.getLogger().e("Tried to write a fatal exception while no session was open.");
         return;
       }
 
@@ -1246,11 +1188,11 @@ class CrashlyticsController {
    * Not synchronized/locked. Must be executed from the single thread executor service used by this
    * class.
    */
-  private void doWriteNonFatal(Thread thread, Throwable ex, long eventTime) {
+  private void doWriteNonFatal(@NonNull Thread thread, @NonNull Throwable ex, long eventTime) {
     final String currentSessionId = getCurrentSessionId();
 
     if (currentSessionId == null) {
-      Logger.getLogger().e("Tried to write a non-fatal exception while no session was open.", null);
+      Logger.getLogger().d("Tried to write a non-fatal exception while no session was open.");
       return;
     }
 
@@ -1305,8 +1247,8 @@ class CrashlyticsController {
     }
   }
 
-  private static void appendToProtoFile(File file, CodedOutputStreamWriteAction writeAction)
-      throws Exception {
+  private static void appendToProtoFile(
+      @NonNull File file, @NonNull CodedOutputStreamWriteAction writeAction) throws Exception {
     FileOutputStream fos = null;
     CodedOutputStream cos = null;
     try {
@@ -1659,7 +1601,7 @@ class CrashlyticsController {
           listFilesMatching(new FileNameContainsFilter(sessionId + tag + SESSION_FILE_EXTENSION));
 
       if (sessionPartFiles.length == 0) {
-        Logger.getLogger().e("Can't find " + tag + " data for session ID " + sessionId, null);
+        Logger.getLogger().d("Can't find " + tag + " data for session ID " + sessionId);
       } else {
         Logger.getLogger().d("Collecting " + tag + " data for session ID " + sessionId);
         writeToCosFromFile(cos, sessionPartFiles[0]);
@@ -1667,8 +1609,11 @@ class CrashlyticsController {
     }
   }
 
-  private static void appendOrganizationIdToSessionFile(String organizationId, File file)
-      throws Exception {
+  private static void appendOrganizationIdToSessionFile(
+      @Nullable String organizationId, @NonNull File file) throws Exception {
+    if (organizationId == null) {
+      return;
+    }
     appendToProtoFile(
         file,
         new CodedOutputStreamWriteAction() {
@@ -1685,7 +1630,7 @@ class CrashlyticsController {
    */
   private static void writeToCosFromFile(CodedOutputStream cos, File file) throws IOException {
     if (!file.exists()) {
-      Logger.getLogger().e("Tried to include a file that doesn't exist: " + file.getName(), null);
+      Logger.getLogger().e("Tried to include a file that doesn't exist: " + file.getName());
       return;
     }
 
@@ -1773,7 +1718,7 @@ class CrashlyticsController {
     return new CompositeCreateReportSpiCall(defaultCreateReportSpiCall, nativeCreateReportSpiCall);
   }
 
-  private void sendSessionReports(AppSettingsData appSettings, boolean dataCollectionToken)
+  private void sendSessionReports(@NonNull AppSettingsData appSettings, boolean dataCollectionToken)
       throws Exception {
     final Context context = getContext();
     final ReportUploader reportUploader = reportUploaderProvider.createReportUploader(appSettings);
@@ -1915,6 +1860,51 @@ class CrashlyticsController {
 
       reportUploader.uploadReport(report, dataCollectionToken);
     }
+  }
+
+  @NonNull
+  static List<NativeSessionFile> getNativeSessionFiles(
+      NativeSessionFileProvider fileProvider,
+      String previousSessionId,
+      Context context,
+      File filesDir,
+      byte[] logBytes) {
+
+    final MetaDataStore metaDataStore = new MetaDataStore(filesDir);
+    final File userFile = metaDataStore.getUserDataFileForSession(previousSessionId);
+    final File keysFile = metaDataStore.getKeysFileForSession(previousSessionId);
+
+    byte[] binaryImageBytes = null;
+    try {
+      binaryImageBytes =
+          NativeFileUtils.binaryImagesJsonFromMapsFile(fileProvider.getBinaryImagesFile(), context);
+    } catch (Exception e) {
+      // Keep processing, we'll add an empty binaryImages object.
+    }
+
+    List<NativeSessionFile> nativeSessionFiles = new ArrayList<>();
+    nativeSessionFiles.add(new BytesBackedNativeSessionFile("logs_file", "logs", logBytes));
+    nativeSessionFiles.add(
+        new BytesBackedNativeSessionFile("binary_images_file", "binaryImages", binaryImageBytes));
+    nativeSessionFiles.add(
+        new FileBackedNativeSessionFile(
+            "crash_meta_file", "metadata", fileProvider.getMetadataFile()));
+    nativeSessionFiles.add(
+        new FileBackedNativeSessionFile(
+            "session_meta_file", "session", fileProvider.getSessionFile()));
+    nativeSessionFiles.add(
+        new FileBackedNativeSessionFile("app_meta_file", "app", fileProvider.getAppFile()));
+    nativeSessionFiles.add(
+        new FileBackedNativeSessionFile(
+            "device_meta_file", "device", fileProvider.getDeviceFile()));
+    nativeSessionFiles.add(
+        new FileBackedNativeSessionFile("os_meta_file", "os", fileProvider.getOsFile()));
+    nativeSessionFiles.add(
+        new FileBackedNativeSessionFile(
+            "minidump_file", "minidump", fileProvider.getMinidumpFile()));
+    nativeSessionFiles.add(new FileBackedNativeSessionFile("user_meta_file", "user", userFile));
+    nativeSessionFiles.add(new FileBackedNativeSessionFile("keys_file", "keys", keysFile));
+    return nativeSessionFiles;
   }
 
   private static final class LogFileDirectoryProvider implements LogFileManager.DirectoryProvider {

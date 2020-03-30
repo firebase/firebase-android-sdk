@@ -46,7 +46,13 @@ class CrashlyticsUncaughtExceptionHandler implements Thread.UncaughtExceptionHan
   public void uncaughtException(Thread thread, Throwable ex) {
     isHandlingException.set(true);
     try {
-      crashListener.onUncaughtException(settingsDataProvider, thread, ex);
+      if (thread == null) {
+        Logger.getLogger().e("Could not handle uncaught exception; null thread");
+      } else if (ex == null) {
+        Logger.getLogger().e("Could not handle uncaught exception; null throwable");
+      } else {
+        crashListener.onUncaughtException(settingsDataProvider, thread, ex);
+      }
     } catch (Exception e) {
       Logger.getLogger().e("An error occurred in the uncaught exception handler", e);
     } finally {

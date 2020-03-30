@@ -212,7 +212,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
   /**
    * Returns a valid authentication token for the Firebase installation. Generates a new token if
-   * one doesn't exist, is expired,  or is about to expire.
+   * one doesn't exist, is expired, or is about to expire.
    *
    * <p>Should only be called if the Firebase installation is registered.
    *
@@ -232,9 +232,9 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   }
 
   /**
-   * Call to delete this Firebase app installation from the Firebase backend. This call may
-   * cause Firebase Cloud Messaging, Firebase Remote Config, Firebase Predictions, or
-   * Firebase In-App Messaging to not function properly.
+   * Call to delete this Firebase app installation from the Firebase backend. This call may cause
+   * Firebase Cloud Messaging, Firebase Remote Config, Firebase Predictions, or Firebase In-App
+   * Messaging to not function properly.
    */
   @NonNull
   @Override

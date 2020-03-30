@@ -311,12 +311,7 @@ public class CrashlyticsCore {
    * Throwable was thrown. The Throwable will always be processed on a background thread, so it is
    * safe to invoke this method from the main thread.
    */
-  public void logException(final Throwable throwable) {
-    if (throwable == null) {
-      Logger.getLogger().w("Crashlytics is ignoring a request to log a null exception.");
-      return;
-    }
-
+  public void logException(@NonNull Throwable throwable) {
     controller.writeNonFatalException(Thread.currentThread(), throwable);
   }
 

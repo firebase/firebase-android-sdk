@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.spec;
 
+import static com.google.common.base.Strings.emptyToNull;
 import static com.google.firebase.firestore.TestUtil.waitFor;
 import static com.google.firebase.firestore.testutil.TestUtil.ARBITRARY_SEQUENCE_NUMBER;
 import static com.google.firebase.firestore.testutil.TestUtil.deleteMutation;
@@ -93,6 +94,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import org.json.JSONArray;
@@ -131,6 +133,16 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
   // Disables all other tests; useful for debugging. Multiple tests can have
   // this tag and they'll all be run (but all others won't).
   private static final String EXCLUSIVE_TAG = "exclusive";
+
+  // The name of a Java system property ({@link System#getProperty(String)}) whose value is a filter
+  // that specifies which tests to execute. The value of this property is a regular expression that
+  // is matched against the name of each test. Using this property is an alternative to setting the
+  // {@link #EXCLUSIVE_TAG} tag, which requires modifying the JSON file. To use this property,
+  // specify -DspecTestFilter=<Regex> to the Java runtime, replacing <Regex> with a regular
+  // expression; a test will be executed if and only if its name matches this regular expression.
+  // In this context, a test's "name" is the result of appending its "itName" to its "describeName",
+  // separated by a space character.
+  private static final String TEST_FILTER_PROPERTY = "specTestFilter";
 
   // Tags on tests that should be excluded from execution, useful to allow the platforms to
   // temporarily diverge or for features that are designed to be platform specific (such as
@@ -1097,6 +1109,18 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
       parsedSpecFiles.add(new Pair<>(f.getName(), fileJSON));
     }
 
+    String testNameFilterFromSystemProperty = emptyToNull(System.getProperty(TEST_FILTER_PROPERTY));
+    Pattern testNameFilter;
+    if (testNameFilterFromSystemProperty == null) {
+      testNameFilter = null;
+    } else {
+      exclusiveMode = true;
+      testNameFilter = Pattern.compile(testNameFilterFromSystemProperty);
+    }
+
+    int testPassCount = 0;
+    int testSkipCount = 0;
+
     for (Pair<String, JSONObject> parsedSpecFile : parsedSpecFiles) {
       String fileName = parsedSpecFile.first;
       JSONObject fileJSON = parsedSpecFile.second;
@@ -1115,7 +1139,19 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
         JSONArray steps = testJSON.getJSONArray("steps");
         Set<String> tags = getTestTags(testJSON);
 
-        boolean runTest = shouldRunTest(tags) && (!exclusiveMode || tags.contains(EXCLUSIVE_TAG));
+        boolean runTest;
+        if (!shouldRunTest(tags)) {
+          runTest = false;
+        } else if (!exclusiveMode) {
+          runTest = true;
+        } else if (tags.contains(EXCLUSIVE_TAG)) {
+          runTest = true;
+        } else if (testNameFilter != null) {
+          runTest = testNameFilter.matcher(name).find();
+        } else {
+          runTest = false;
+        }
+
         boolean measureRuntime = tags.contains(BENCHMARK_TAG);
         if (runTest) {
           long start = System.currentTimeMillis();
@@ -1123,18 +1159,21 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
             info("Spec test: " + name);
             runSteps(steps, config);
             ranAtLeastOneTest = true;
+            testPassCount++;
           } catch (AssertionError e) {
-            throw new AssertionError("Spec test failure: " + name, e);
+            throw new AssertionError("Spec test failure: " + name + " (" + fileName + ")", e);
           }
           long end = System.currentTimeMillis();
           if (measureRuntime) {
             info("Runtime: " + (end - start) + " ms");
           }
         } else {
+          testSkipCount++;
           info("  [SKIPPED] Spec test: " + name);
         }
       }
     }
+    info(getClass().getName() + " completed; pass=" + testPassCount + " skip=" + testSkipCount);
     assertTrue(ranAtLeastOneTest);
   }
 

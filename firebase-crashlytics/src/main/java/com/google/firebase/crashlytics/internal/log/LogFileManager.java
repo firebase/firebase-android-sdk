@@ -15,6 +15,7 @@
 package com.google.firebase.crashlytics.internal.log;
 
 import android.content.Context;
+import androidx.annotation.Nullable;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.common.CommonUtils;
 import java.io.File;
@@ -88,6 +89,7 @@ public class LogFileManager {
     return currentLog.getLogAsBytes();
   }
 
+  @Nullable
   public String getLogString() {
     return currentLog.getLogAsString();
   }

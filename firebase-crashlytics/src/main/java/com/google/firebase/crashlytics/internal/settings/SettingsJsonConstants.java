@@ -44,10 +44,12 @@ class SettingsJsonConstants {
   static final String APP_NDK_REPORTS_URL_KEY = "ndk_reports_url";
   static final String APP_UPDATE_REQUIRED_KEY = "update_required";
   static final String APP_REPORT_UPLOAD_VARIANT_KEY = "report_upload_variant";
+  static final String APP_NATIVE_REPORT_UPLOAD_VARIANT_KEY = "native_report_upload_variant";
 
   // App JSON Defaults
   static final boolean APP_UPDATE_REQUIRED_DEFAULT = false;
   static final int APP_REPORT_UPLOAD_VARIANT_DEFAULT = 0;
+  static final int APP_NATIVE_REPORT_UPLOAD_VARIANT_DEFAULT = 0;
 
   // Settings JSON Keys
   static final String SETTINGS_MAX_CUSTOM_EXCEPTION_EVENTS_KEY = "max_custom_exception_events";

@@ -17,7 +17,6 @@ package com.google.firebase.crashlytics.internal.model.serialization;
 import android.util.Base64;
 import android.util.JsonReader;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import com.google.firebase.crashlytics.internal.model.AutoCrashlyticsReportEncoder;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.CustomAttribute;
@@ -48,28 +47,26 @@ public class CrashlyticsReportJsonTransform {
     return CRASHLYTICS_REPORT_JSON_ENCODER.encode(event);
   }
 
-  @Nullable
-  public CrashlyticsReport reportFromJson(@Nullable String json) {
-    // TODO: decide on error handling within readTextFile and make this @NonNull once decided
+  @NonNull
+  public CrashlyticsReport reportFromJson(@NonNull String json) throws IOException {
     try (JsonReader jsonReader = new JsonReader(new StringReader(json))) {
       return parseReport(jsonReader);
-    } catch (IOException e) {
-      // TODO: Handle the IOException
-      return null;
+    } catch (IllegalStateException e) {
+      throw new IOException(e);
     }
   }
 
-  @Nullable
-  public CrashlyticsReport.Session.Event eventFromJson(@NonNull String json) {
+  @NonNull
+  public CrashlyticsReport.Session.Event eventFromJson(@NonNull String json) throws IOException {
     try (JsonReader jsonReader = new JsonReader(new StringReader(json))) {
       return parseEvent(jsonReader);
-    } catch (IOException e) {
-      // TODO: Handle the IOException
-      return null;
+    } catch (IllegalStateException e) {
+      throw new IOException(e);
     }
   }
 
-  private static CrashlyticsReport parseReport(JsonReader jsonReader) throws IOException {
+  @NonNull
+  private static CrashlyticsReport parseReport(@NonNull JsonReader jsonReader) throws IOException {
     final CrashlyticsReport.Builder builder = CrashlyticsReport.builder();
 
     jsonReader.beginObject();
@@ -97,6 +94,9 @@ public class CrashlyticsReportJsonTransform {
         case "session":
           builder.setSession(parseSession(jsonReader));
           break;
+        case "ndkPayload":
+          builder.setNdkPayload(parseNdkPayload(jsonReader));
+          break;
         default:
           jsonReader.skipValue();
           break;
@@ -106,7 +106,9 @@ public class CrashlyticsReportJsonTransform {
     return builder.build();
   }
 
-  private static CrashlyticsReport.Session parseSession(JsonReader jsonReader) throws IOException {
+  @NonNull
+  private static CrashlyticsReport.Session parseSession(@NonNull JsonReader jsonReader)
+      throws IOException {
     final CrashlyticsReport.Session.Builder builder = CrashlyticsReport.Session.builder();
 
     jsonReader.beginObject();
@@ -157,7 +159,59 @@ public class CrashlyticsReportJsonTransform {
     return builder.build();
   }
 
-  private static CrashlyticsReport.Session.User parseUser(JsonReader jsonReader)
+  @NonNull
+  private static CrashlyticsReport.FilesPayload parseNdkPayload(@NonNull JsonReader jsonReader)
+      throws IOException {
+    final CrashlyticsReport.FilesPayload.Builder builder = CrashlyticsReport.FilesPayload.builder();
+
+    jsonReader.beginObject();
+    while (jsonReader.hasNext()) {
+      String name = jsonReader.nextName();
+      switch (name) {
+        case "files":
+          builder.setFiles(parseArray(jsonReader, CrashlyticsReportJsonTransform::parseFile));
+          break;
+        case "orgId":
+          builder.setOrgId(jsonReader.nextString());
+          break;
+        default:
+          jsonReader.skipValue();
+          break;
+      }
+    }
+    jsonReader.endObject();
+
+    return builder.build();
+  }
+
+  @NonNull
+  private static CrashlyticsReport.FilesPayload.File parseFile(@NonNull JsonReader jsonReader)
+      throws IOException {
+    final CrashlyticsReport.FilesPayload.File.Builder builder =
+        CrashlyticsReport.FilesPayload.File.builder();
+
+    jsonReader.beginObject();
+    while (jsonReader.hasNext()) {
+      String name = jsonReader.nextName();
+      switch (name) {
+        case "filename":
+          builder.setFilename(jsonReader.nextString());
+          break;
+        case "contents":
+          builder.setContents(Base64.decode(jsonReader.nextString(), Base64.NO_WRAP));
+          break;
+        default:
+          jsonReader.skipValue();
+          break;
+      }
+    }
+    jsonReader.endObject();
+
+    return builder.build();
+  }
+
+  @NonNull
+  private static CrashlyticsReport.Session.User parseUser(@NonNull JsonReader jsonReader)
       throws IOException {
     final CrashlyticsReport.Session.User.Builder builder = CrashlyticsReport.Session.User.builder();
 
@@ -178,7 +232,8 @@ public class CrashlyticsReportJsonTransform {
     return builder.build();
   }
 
-  private static CrashlyticsReport.Session.Application parseApp(JsonReader jsonReader)
+  @NonNull
+  private static CrashlyticsReport.Session.Application parseApp(@NonNull JsonReader jsonReader)
       throws IOException {
     final CrashlyticsReport.Session.Application.Builder builder =
         CrashlyticsReport.Session.Application.builder();
@@ -209,7 +264,8 @@ public class CrashlyticsReportJsonTransform {
     return builder.build();
   }
 
-  private static CrashlyticsReport.Session.OperatingSystem parseOs(JsonReader jsonReader)
+  @NonNull
+  private static CrashlyticsReport.Session.OperatingSystem parseOs(@NonNull JsonReader jsonReader)
       throws IOException {
     final CrashlyticsReport.Session.OperatingSystem.Builder builder =
         CrashlyticsReport.Session.OperatingSystem.builder();
@@ -240,7 +296,8 @@ public class CrashlyticsReportJsonTransform {
     return builder.build();
   }
 
-  private static CrashlyticsReport.Session.Device parseDevice(JsonReader jsonReader)
+  @NonNull
+  private static CrashlyticsReport.Session.Device parseDevice(@NonNull JsonReader jsonReader)
       throws IOException {
     final CrashlyticsReport.Session.Device.Builder builder =
         CrashlyticsReport.Session.Device.builder();
@@ -286,7 +343,8 @@ public class CrashlyticsReportJsonTransform {
     return builder.build();
   }
 
-  private static Event parseEvent(JsonReader jsonReader) throws IOException {
+  @NonNull
+  private static Event parseEvent(@NonNull JsonReader jsonReader) throws IOException {
     final Event.Builder builder = Event.builder();
 
     jsonReader.beginObject();
@@ -317,7 +375,9 @@ public class CrashlyticsReportJsonTransform {
     return builder.build();
   }
 
-  private static Event.Application parseEventApp(JsonReader jsonReader) throws IOException {
+  @NonNull
+  private static Event.Application parseEventApp(@NonNull JsonReader jsonReader)
+      throws IOException {
     final Event.Application.Builder builder = Event.Application.builder();
 
     jsonReader.beginObject();
@@ -346,7 +406,8 @@ public class CrashlyticsReportJsonTransform {
     return builder.build();
   }
 
-  private static Event.Application.Execution parseEventExecution(JsonReader jsonReader)
+  @NonNull
+  private static Event.Application.Execution parseEventExecution(@NonNull JsonReader jsonReader)
       throws IOException {
     final Event.Application.Execution.Builder builder = Event.Application.Execution.builder();
 
@@ -377,8 +438,9 @@ public class CrashlyticsReportJsonTransform {
     return builder.build();
   }
 
+  @NonNull
   private static Event.Application.Execution.Exception parseEventExecutionException(
-      JsonReader jsonReader) throws IOException {
+      @NonNull JsonReader jsonReader) throws IOException {
     final Event.Application.Execution.Exception.Builder builder =
         Event.Application.Execution.Exception.builder();
 
@@ -411,7 +473,8 @@ public class CrashlyticsReportJsonTransform {
     return builder.build();
   }
 
-  private static Event.Application.Execution.Signal parseEventSignal(JsonReader jsonReader)
+  @NonNull
+  private static Event.Application.Execution.Signal parseEventSignal(@NonNull JsonReader jsonReader)
       throws IOException {
     final Event.Application.Execution.Signal.Builder builder =
         Event.Application.Execution.Signal.builder();
@@ -438,8 +501,9 @@ public class CrashlyticsReportJsonTransform {
     return builder.build();
   }
 
+  @NonNull
   private static Event.Application.Execution.BinaryImage parseEventBinaryImage(
-      JsonReader jsonReader) throws IOException {
+      @NonNull JsonReader jsonReader) throws IOException {
     final Event.Application.Execution.BinaryImage.Builder builder =
         Event.Application.Execution.BinaryImage.builder();
 
@@ -468,7 +532,8 @@ public class CrashlyticsReportJsonTransform {
     return builder.build();
   }
 
-  private static Event.Application.Execution.Thread parseEventThread(JsonReader jsonReader)
+  @NonNull
+  private static Event.Application.Execution.Thread parseEventThread(@NonNull JsonReader jsonReader)
       throws IOException {
     final Event.Application.Execution.Thread.Builder builder =
         Event.Application.Execution.Thread.builder();
@@ -496,8 +561,9 @@ public class CrashlyticsReportJsonTransform {
     return builder.build();
   }
 
-  private static Event.Application.Execution.Thread.Frame parseEventFrame(JsonReader jsonReader)
-      throws IOException {
+  @NonNull
+  private static Event.Application.Execution.Thread.Frame parseEventFrame(
+      @NonNull JsonReader jsonReader) throws IOException {
     final Event.Application.Execution.Thread.Frame.Builder builder =
         Event.Application.Execution.Thread.Frame.builder();
 
@@ -529,7 +595,8 @@ public class CrashlyticsReportJsonTransform {
     return builder.build();
   }
 
-  private static Event.Device parseEventDevice(JsonReader jsonReader) throws IOException {
+  @NonNull
+  private static Event.Device parseEventDevice(@NonNull JsonReader jsonReader) throws IOException {
     final Event.Device.Builder builder = Event.Device.builder();
 
     jsonReader.beginObject();
@@ -563,7 +630,8 @@ public class CrashlyticsReportJsonTransform {
     return builder.build();
   }
 
-  private static Event.Log parseEventLog(JsonReader jsonReader) throws IOException {
+  @NonNull
+  private static Event.Log parseEventLog(@NonNull JsonReader jsonReader) throws IOException {
     final Event.Log.Builder builder = Event.Log.builder();
 
     jsonReader.beginObject();
@@ -582,7 +650,9 @@ public class CrashlyticsReportJsonTransform {
     return builder.build();
   }
 
-  private static CustomAttribute parseCustomAttribute(JsonReader jsonReader) throws IOException {
+  @NonNull
+  private static CustomAttribute parseCustomAttribute(@NonNull JsonReader jsonReader)
+      throws IOException {
     final CustomAttribute.Builder builder = CustomAttribute.builder();
 
     jsonReader.beginObject();
@@ -604,8 +674,9 @@ public class CrashlyticsReportJsonTransform {
     return builder.build();
   }
 
+  @NonNull
   private static <T> ImmutableList<T> parseArray(
-      JsonReader jsonReader, ObjectParser<T> objectParser) throws IOException {
+      @NonNull JsonReader jsonReader, @NonNull ObjectParser<T> objectParser) throws IOException {
     final List<T> objects = new ArrayList<>();
 
     jsonReader.beginArray();
@@ -618,6 +689,6 @@ public class CrashlyticsReportJsonTransform {
   }
 
   private interface ObjectParser<T> {
-    T parse(JsonReader jsonReader) throws IOException;
+    T parse(@NonNull JsonReader jsonReader) throws IOException;
   }
 }
