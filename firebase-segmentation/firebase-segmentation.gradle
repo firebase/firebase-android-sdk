@@ -40,14 +40,12 @@ android {
 dependencies {
     implementation project(':firebase-common')
     implementation project(':firebase-components')
-    
-    implementation('com.google.firebase:firebase-installations-interop:16.0.0') {
-        exclude group: "com.google.firebase", module: "firebase-common"
-    }
+    implementation project(':firebase-installations-interop')
+    runtimeOnly project(':firebase-installations')
 
     implementation 'androidx.appcompat:appcompat:1.1.0'
     implementation 'androidx.multidex:multidex:2.0.1'
-    implementation 'com.google.android.gms:play-services-tasks:17.0.0'
+    implementation 'com.google.android.gms:play-services-tasks:17.0.2'
 
     compileOnly "com.google.auto.value:auto-value-annotations:1.6.5"
     annotationProcessor "com.google.auto.value:auto-value:1.6.2"
