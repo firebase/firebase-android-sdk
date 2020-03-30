@@ -14,6 +14,7 @@
 
 package com.google.firebase.inappmessaging.internal;
 
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.inappmessaging.CommonTypesProto.TriggeringCondition;
 import com.google.firebase.inappmessaging.internal.injection.qualifiers.AppForeground;
 import com.google.firebase.inappmessaging.internal.injection.qualifiers.ProgrammaticTrigger;
@@ -186,19 +187,13 @@ public class InAppMessageStreamManager {
                       content.getIsTestCampaign()
                           ? Maybe.just(content)
                           : impressionStorageClient
-                              .isImpressed(content.getVanillaPayload().getCampaignId())
+                              .isImpressed(content)
                               .doOnError(
                                   e ->
                                       Logging.logw("Impression store read fail: " + e.getMessage()))
                               .onErrorResumeNext(
                                   Single.just(false)) // Absorb impression read errors
-                              .doOnSuccess(
-                                  isImpressed ->
-                                      Logging.logi(
-                                          String.format(
-                                              "Already impressed %s ? : %s",
-                                              content.getVanillaPayload().getCampaignName(),
-                                              isImpressed)))
+                              .doOnSuccess(isImpressed -> logImpressionStatus(content, isImpressed))
                               .filter(isImpressed -> !isImpressed)
                               .map(isImpressed -> content);
 
@@ -239,7 +234,7 @@ public class InAppMessageStreamManager {
 
               Function<CampaignImpressionList, Maybe<FetchEligibleCampaignsResponse>> serviceFetch =
                   impressions ->
-                      Maybe.fromCallable(() -> apiClient.getFiams(impressions))
+                      taskToMaybe(apiClient.getFiams(impressions))
                           .doOnSuccess(
                               resp ->
                                   Logging.logi(
@@ -248,7 +243,6 @@ public class InAppMessageStreamManager {
                                           "Successfully fetched %d messages from backend",
                                           resp.getMessagesList().size())))
                           .doOnSuccess(analyticsEventsManager::updateContextualTriggers)
-                          .doOnSuccess(abtIntegrationHelper::updateRunningExperiments)
                           .doOnSuccess(testDeviceHelper::processCampaignFetch)
                           .doOnError(e -> Logging.logw("Service fetch error: " + e.getMessage()))
                           .onErrorResumeNext(Maybe.empty()); // Absorb service failures
@@ -288,6 +282,20 @@ public class InAppMessageStreamManager {
     return Maybe.just(content);
   }
 
+  private static void logImpressionStatus(ThickContent content, Boolean isImpressed) {
+    if (content.getPayloadCase().equals(ThickContent.PayloadCase.VANILLA_PAYLOAD)) {
+      Logging.logi(
+          String.format(
+              "Already impressed campaign %s ? : %s",
+              content.getVanillaPayload().getCampaignName(), isImpressed));
+    } else if (content.getPayloadCase().equals(ThickContent.PayloadCase.EXPERIMENTAL_PAYLOAD)) {
+      Logging.logi(
+          String.format(
+              "Already impressed experiment %s ? : %s",
+              content.getExperimentalPayload().getCampaignName(), isImpressed));
+    }
+  }
+
   private Maybe<TriggeredInAppMessage> getTriggeredInAppMessageMaybe(
       String event,
       Function<ThickContent, Maybe<ThickContent>> filterAlreadyImpressed,
@@ -317,8 +325,11 @@ public class InAppMessageStreamManager {
       campaignId = content.getExperimentalPayload().getCampaignId();
       campaignName = content.getExperimentalPayload().getCampaignName();
       // At this point we set the experiment to become active in analytics.
-      abtIntegrationHelper.setExperimentActive(
-          content.getExperimentalPayload().getExperimentPayload());
+      // As long as it's not a test experiment.
+      if (!content.getIsTestCampaign()) {
+        abtIntegrationHelper.setExperimentActive(
+            content.getExperimentalPayload().getExperimentPayload());
+      }
     } else {
       return Maybe.empty();
     }
@@ -334,5 +345,21 @@ public class InAppMessageStreamManager {
     }
 
     return Maybe.just(new TriggeredInAppMessage(inAppMessage, event));
+  }
+
+  private static <T> Maybe<T> taskToMaybe(Task<T> task) {
+    return Maybe.create(
+        emitter -> {
+          task.addOnSuccessListener(
+              result -> {
+                emitter.onSuccess(result);
+                emitter.onComplete();
+              });
+          task.addOnFailureListener(
+              e -> {
+                emitter.onError(e);
+                emitter.onComplete();
+              });
+        });
   }
 }

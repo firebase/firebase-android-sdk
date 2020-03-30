@@ -63,7 +63,7 @@ public class JsonValueObjectEncoderContextTest {
   }
 
   @Test
-  public void testRegisterOverride() throws IOException, EncodingException {
+  public void testRegisterOverride() throws IOException {
     ObjectEncoder<DummyClass> objectEncoder =
         (o, ctx) -> {
           ctx.add("Inner", InnerDummyClass.INSTANCE);
@@ -100,7 +100,7 @@ public class JsonValueObjectEncoderContextTest {
   }
 
   @Test
-  public void testEncodingPrimitiveTypes() throws IOException, EncodingException {
+  public void testEncodingPrimitiveTypes() throws IOException {
     ObjectEncoder<DummyClass> objectEncoder =
         (o, ctx) -> {
           ctx.add("String", "string")
@@ -123,7 +123,7 @@ public class JsonValueObjectEncoderContextTest {
   }
 
   @Test
-  public void testEncodingTimestamp() throws IOException, EncodingException {
+  public void testEncodingTimestamp() throws IOException {
     ObjectEncoder<DummyClass> objectEncoder =
         (o, ctx) -> {
           ctx.add("Timestamp", CALENDAR.getTime());
@@ -139,7 +139,7 @@ public class JsonValueObjectEncoderContextTest {
   }
 
   @Test
-  public void testEncodingArrayPrimitives() throws IOException, EncodingException {
+  public void testEncodingArrayPrimitives() throws IOException {
     ObjectEncoder<DummyClass> objectEncoder =
         (o, ctx) -> {
           ctx.add("String", new String[] {"string1", "string2"})
@@ -169,7 +169,7 @@ public class JsonValueObjectEncoderContextTest {
   }
 
   @Test
-  public void testEncodingNumbers() throws EncodingException {
+  public void testEncodingNumbers() {
     ObjectEncoder<DummyClass> objectEncoder =
         (o, ctx) -> ctx.add("Number", new Number[] {1, 2473946328429347632L, 0.0d});
 
@@ -183,7 +183,7 @@ public class JsonValueObjectEncoderContextTest {
   }
 
   @Test
-  public void testEncodingLongs() throws EncodingException {
+  public void testEncodingLongs() {
     ObjectEncoder<DummyClass> objectEncoder =
         (o, ctx) -> ctx.add("long", new long[] {1L, 2473946328429347632L});
 
@@ -202,14 +202,14 @@ public class JsonValueObjectEncoderContextTest {
   }
 
   @Test
-  public void testEncodingEnum_withNoCustomEncoder() throws EncodingException {
+  public void testEncodingEnum_withNoCustomEncoder() {
     String result =
         new JsonDataEncoderBuilder().build().encode(new MyEnum[] {MyEnum.VALUE_1, MyEnum.VALUE_2});
     assertThat(result).isEqualTo("[\"VALUE_1\",\"VALUE_2\"]");
   }
 
   @Test
-  public void testEncodingEnum_withCustomEncoder() throws EncodingException {
+  public void testEncodingEnum_withCustomEncoder() {
     ValueEncoder<MyEnum> encoder = (o, ctx) -> ctx.add(o.name().toLowerCase());
     String result =
         new JsonDataEncoderBuilder()
@@ -220,7 +220,7 @@ public class JsonValueObjectEncoderContextTest {
   }
 
   @Test
-  public void testEncodingCollection() throws IOException, EncodingException {
+  public void testEncodingCollection() throws IOException {
     ObjectEncoder<InnerDummyClass> anotherObjectEncoder =
         (o, ctx) -> {
           ctx.add("Name", "innerClass");
@@ -249,7 +249,7 @@ public class JsonValueObjectEncoderContextTest {
   }
 
   @Test
-  public void testEncodingMap_withStringKey_shouldSucceed() throws EncodingException {
+  public void testEncodingMap_withStringKey_shouldSucceed() {
     ObjectEncoder<DummyClass> objectEncoder =
         (o, ctx) -> {
           ctx.add("map", Collections.singletonMap("key", true));
@@ -281,7 +281,7 @@ public class JsonValueObjectEncoderContextTest {
   }
 
   @Test
-  public void testEncodingBytes() throws IOException, EncodingException {
+  public void testEncodingBytes() throws IOException {
     ObjectEncoder<DummyClass> objectEncoder =
         (o, ctx) -> {
           ctx.add("Bytes", "My {custom} value.".getBytes(Charset.forName("UTF-8")));
@@ -297,7 +297,7 @@ public class JsonValueObjectEncoderContextTest {
   }
 
   @Test
-  public void testEncodingCollectionBoxedPrimitives() throws IOException, EncodingException {
+  public void testEncodingCollectionBoxedPrimitives() throws IOException {
     ObjectEncoder<DummyClass> objectEncoder =
         (o, ctx) -> {
           ctx.add("Integer", Lists.newArrayList(1, 2, 3))
@@ -320,7 +320,7 @@ public class JsonValueObjectEncoderContextTest {
   }
 
   @Test
-  public void testEncodingNestedCollection() throws IOException, EncodingException {
+  public void testEncodingNestedCollection() throws IOException {
     ObjectEncoder<InnerDummyClass> anotherObjectEncoder =
         (o, ctx) -> {
           ctx.add("Name", "innerClass");
@@ -351,7 +351,7 @@ public class JsonValueObjectEncoderContextTest {
   }
 
   @Test
-  public void testEncodingComplexTypes_InnerEncoder() throws IOException, EncodingException {
+  public void testEncodingComplexTypes_InnerEncoder() throws IOException {
     ObjectEncoder<DummyClass> objectEncoder =
         (o, ctx) -> {
           ctx.add("String", "string")
@@ -382,8 +382,7 @@ public class JsonValueObjectEncoderContextTest {
   }
 
   @Test
-  public void testEncodingComplexTypes_InnerExtendedEncoder()
-      throws IOException, EncodingException {
+  public void testEncodingComplexTypes_InnerExtendedEncoder() throws IOException {
     ObjectEncoder<DummyClass> objectEncoder =
         (o, ctx) -> {
           ctx.add("String", "string")
@@ -410,13 +409,13 @@ public class JsonValueObjectEncoderContextTest {
   }
 
   @Test
-  public void testMissingEncoder() throws IOException, EncodingException {
+  public void testMissingEncoder() throws IOException {
     DataEncoder dataEncoder = new JsonDataEncoderBuilder().build();
     assertThrows(EncodingException.class, () -> dataEncoder.encode(DummyClass.INSTANCE));
   }
 
   @Test
-  public void testEncoderError() throws IOException, EncodingException {
+  public void testEncoderError() throws IOException {
     ObjectEncoder<DummyClass> objectEncoder = (o, ctx) -> ctx.add("name", "value");
     Writer mockWriter = mock(Writer.class);
     doThrow(IOException.class).when(mockWriter).write(any(String.class));
@@ -431,7 +430,7 @@ public class JsonValueObjectEncoderContextTest {
   }
 
   @Test
-  public void testNested_whenUsedCorrectly_shouldProduceNestedJson() throws EncodingException {
+  public void testNested_whenUsedCorrectly_shouldProduceNestedJson() {
     ObjectEncoder<DummyClass> objectEncoder =
         (o, ctx) -> {
           ctx.add("name", "value");
@@ -454,7 +453,7 @@ public class JsonValueObjectEncoderContextTest {
   }
 
   @Test
-  public void testTwiceNested_whenUsedCorrectly_shouldProduceNestedJson() throws EncodingException {
+  public void testTwiceNested_whenUsedCorrectly_shouldProduceNestedJson() {
     ObjectEncoder<DummyClass> objectEncoder =
         (o, ctx) -> {
           ctx.add("name", "value");
@@ -489,7 +488,7 @@ public class JsonValueObjectEncoderContextTest {
   }
 
   @Test
-  public void testInline_shouldProduceValuesInParentObject() throws EncodingException {
+  public void testInline_shouldProduceValuesInParentObject() {
     ObjectEncoder<DummyClass> objectEncoder =
         (o, ctx) -> ctx.add("name", "value").inline(InnerDummyClass.INSTANCE).add("after1", true);
     ObjectEncoder<InnerDummyClass> innerEncoder = (o, ctx) -> ctx.add("inner", "class");
@@ -505,7 +504,7 @@ public class JsonValueObjectEncoderContextTest {
   }
 
   @Test
-  public void testNestedInline_shouldProduceValuesInParentObject() throws EncodingException {
+  public void testNestedInline_shouldProduceValuesInParentObject() {
     ObjectEncoder<DummyClass> objectEncoder =
         (o, ctx) -> ctx.add("name", "value").inline(InnerDummyClass.INSTANCE).add("after1", true);
     ObjectEncoder<InnerDummyClass> innerEncoder =

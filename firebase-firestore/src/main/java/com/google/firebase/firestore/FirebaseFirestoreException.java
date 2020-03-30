@@ -14,7 +14,7 @@
 
 package com.google.firebase.firestore;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 
 import android.util.SparseArray;
 import androidx.annotation.NonNull;

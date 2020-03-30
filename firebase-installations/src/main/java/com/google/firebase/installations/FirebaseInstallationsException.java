@@ -17,7 +17,11 @@ package com.google.firebase.installations;
 import androidx.annotation.NonNull;
 import com.google.firebase.FirebaseException;
 
-/** The class for all Exceptions thrown by {@link FirebaseInstallations}. */
+/**
+ * The class for all Exceptions thrown by {@link FirebaseInstallations}.
+ *
+ * @hide
+ */
 public class FirebaseInstallationsException extends FirebaseException {
   public enum Status {
     /**

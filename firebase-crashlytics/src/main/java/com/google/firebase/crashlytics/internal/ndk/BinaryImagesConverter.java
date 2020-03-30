@@ -81,7 +81,7 @@ class BinaryImagesConverter {
       final JSONArray maps = rawObj.getJSONArray("maps");
       mapsString = joinMapsEntries(maps);
     } catch (JSONException e) {
-      Logger.getLogger().w(Logger.TAG, "Unable to parse proc maps string", e);
+      Logger.getLogger().w("Unable to parse proc maps string", e);
       return binaryImagesJson;
     }
 
@@ -113,14 +113,14 @@ class BinaryImagesConverter {
     try {
       uuid = fileIdStrategy.createId(binFile);
     } catch (IOException e) {
-      Logger.getLogger().d(Logger.TAG, "Could not generate ID for file " + mapInfo.path, e);
+      Logger.getLogger().d("Could not generate ID for file " + mapInfo.path, e);
       return null;
     }
 
     try {
       return createBinaryImageJson(uuid, mapInfo);
     } catch (JSONException e) {
-      Logger.getLogger().d(Logger.TAG, "Could not create a binary image json string", e);
+      Logger.getLogger().d("Could not create a binary image json string", e);
     }
 
     return null;
@@ -147,7 +147,7 @@ class BinaryImagesConverter {
             context.getPackageManager().getApplicationInfo(context.getPackageName(), 0);
         missingFile = new File(ai.nativeLibraryDir, missingFile.getName());
       } catch (PackageManager.NameNotFoundException e) {
-        Logger.getLogger().e(Logger.TAG, "Error getting ApplicationInfo", e);
+        Logger.getLogger().e("Error getting ApplicationInfo", e);
       }
     }
     return missingFile;
@@ -159,7 +159,7 @@ class BinaryImagesConverter {
     try {
       binaryImagesObject.put("binary_images", binaryImages);
     } catch (JSONException e) {
-      Logger.getLogger().w(Logger.TAG, "Binary images string is null", e);
+      Logger.getLogger().w("Binary images string is null", e);
       return new byte[] {};
     }
     return binaryImagesObject.toString().getBytes(Charset.forName("UTF-8"));

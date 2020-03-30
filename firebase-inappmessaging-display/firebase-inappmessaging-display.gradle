@@ -62,15 +62,14 @@ android {
 dependencies {
     implementation project(':firebase-common')
     implementation project(':firebase-inappmessaging')
+    implementation project(':firebase-components')
 
-    implementation ('com.google.firebase:firebase-iid:20.0.1') {
-        exclude group: "com.google.firebase", module: "firebase-common"
-    }
     implementation('com.google.firebase:firebase-measurement-connector:18.0.0') {
         exclude group: 'com.google.firebase', module: 'firebase-common'
     }
 
-    implementation 'androidx.appcompat:appcompat:1.0.2'
+    implementation 'com.google.android.gms:play-services-tasks:17.0.0'
+    implementation 'androidx.appcompat:appcompat:1.1.0'
     implementation 'androidx.cardview:cardview:1.0.0'
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
     implementation 'androidx.browser:browser:1.0.0'
@@ -82,13 +81,13 @@ dependencies {
     implementation "com.squareup.okhttp:okhttp:2.7.5"
 
     annotationProcessor "com.google.dagger:dagger-compiler:2.24"
-    annotationProcessor 'com.google.auto.value:auto-value:1.6.2'
+    annotationProcessor 'com.google.auto.value:auto-value:1.6.5'
     annotationProcessor 'com.ryanharter.auto.value:auto-value-parcel:0.2.6'
 
     testImplementation "org.robolectric:robolectric:4.2"
     testImplementation "junit:junit:4.12"
     testImplementation "org.mockito:mockito-core:2.25.0"
-    testImplementation "com.google.truth:truth:0.44"
+    testImplementation "com.google.truth:truth:1.0"
     testImplementation 'com.google.guava:guava:27.1-android'
 
     androidTestImplementation "org.mockito:mockito-core:2.25.0"

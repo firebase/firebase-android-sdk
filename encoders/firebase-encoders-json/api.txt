@@ -2,11 +2,11 @@
 package com.google.firebase.encoders {
 
   public interface DataEncoder {
-    method public void encode(@NonNull Object, @NonNull java.io.Writer) throws com.google.firebase.encoders.EncodingException, java.io.IOException;
-    method @NonNull public String encode(@NonNull Object) throws com.google.firebase.encoders.EncodingException;
+    method public void encode(@NonNull Object, @NonNull java.io.Writer) throws java.io.IOException;
+    method @NonNull public String encode(@NonNull Object);
   }
 
-  public final class EncodingException extends java.lang.Exception {
+  public final class EncodingException extends java.lang.RuntimeException {
     ctor public EncodingException(@NonNull String);
     ctor public EncodingException(@NonNull String, @NonNull Exception);
   }
@@ -15,12 +15,12 @@ package com.google.firebase.encoders {
   }
 
   public interface ObjectEncoderContext {
-    method @NonNull public com.google.firebase.encoders.ObjectEncoderContext add(@NonNull String, @Nullable Object) throws com.google.firebase.encoders.EncodingException, java.io.IOException;
-    method @NonNull public com.google.firebase.encoders.ObjectEncoderContext add(@NonNull String, double) throws com.google.firebase.encoders.EncodingException, java.io.IOException;
-    method @NonNull public com.google.firebase.encoders.ObjectEncoderContext add(@NonNull String, int) throws com.google.firebase.encoders.EncodingException, java.io.IOException;
-    method @NonNull public com.google.firebase.encoders.ObjectEncoderContext add(@NonNull String, long) throws com.google.firebase.encoders.EncodingException, java.io.IOException;
-    method @NonNull public com.google.firebase.encoders.ObjectEncoderContext add(@NonNull String, boolean) throws com.google.firebase.encoders.EncodingException, java.io.IOException;
-    method @NonNull public com.google.firebase.encoders.ObjectEncoderContext inline(@Nullable Object) throws com.google.firebase.encoders.EncodingException, java.io.IOException;
+    method @NonNull public com.google.firebase.encoders.ObjectEncoderContext add(@NonNull String, @Nullable Object) throws java.io.IOException;
+    method @NonNull public com.google.firebase.encoders.ObjectEncoderContext add(@NonNull String, double) throws java.io.IOException;
+    method @NonNull public com.google.firebase.encoders.ObjectEncoderContext add(@NonNull String, int) throws java.io.IOException;
+    method @NonNull public com.google.firebase.encoders.ObjectEncoderContext add(@NonNull String, long) throws java.io.IOException;
+    method @NonNull public com.google.firebase.encoders.ObjectEncoderContext add(@NonNull String, boolean) throws java.io.IOException;
+    method @NonNull public com.google.firebase.encoders.ObjectEncoderContext inline(@Nullable Object) throws java.io.IOException;
     method @NonNull public com.google.firebase.encoders.ObjectEncoderContext nested(@NonNull String) throws java.io.IOException;
   }
 
@@ -28,12 +28,12 @@ package com.google.firebase.encoders {
   }
 
   public interface ValueEncoderContext {
-    method @NonNull public com.google.firebase.encoders.ValueEncoderContext add(@Nullable String) throws com.google.firebase.encoders.EncodingException, java.io.IOException;
-    method @NonNull public com.google.firebase.encoders.ValueEncoderContext add(double) throws com.google.firebase.encoders.EncodingException, java.io.IOException;
-    method @NonNull public com.google.firebase.encoders.ValueEncoderContext add(int) throws com.google.firebase.encoders.EncodingException, java.io.IOException;
-    method @NonNull public com.google.firebase.encoders.ValueEncoderContext add(long) throws com.google.firebase.encoders.EncodingException, java.io.IOException;
-    method @NonNull public com.google.firebase.encoders.ValueEncoderContext add(boolean) throws com.google.firebase.encoders.EncodingException, java.io.IOException;
-    method @NonNull public com.google.firebase.encoders.ValueEncoderContext add(@NonNull byte[]) throws com.google.firebase.encoders.EncodingException, java.io.IOException;
+    method @NonNull public com.google.firebase.encoders.ValueEncoderContext add(@Nullable String) throws java.io.IOException;
+    method @NonNull public com.google.firebase.encoders.ValueEncoderContext add(double) throws java.io.IOException;
+    method @NonNull public com.google.firebase.encoders.ValueEncoderContext add(int) throws java.io.IOException;
+    method @NonNull public com.google.firebase.encoders.ValueEncoderContext add(long) throws java.io.IOException;
+    method @NonNull public com.google.firebase.encoders.ValueEncoderContext add(boolean) throws java.io.IOException;
+    method @NonNull public com.google.firebase.encoders.ValueEncoderContext add(@NonNull byte[]) throws java.io.IOException;
   }
 
 }
@@ -72,6 +72,7 @@ package com.google.firebase.encoders.json {
     ctor public JsonDataEncoderBuilder();
     method @NonNull public com.google.firebase.encoders.DataEncoder build();
     method @NonNull public com.google.firebase.encoders.json.JsonDataEncoderBuilder configureWith(@NonNull com.google.firebase.encoders.config.Configurator);
+    method @NonNull public com.google.firebase.encoders.json.JsonDataEncoderBuilder ignoreNullValues(boolean);
     method @NonNull public <T> com.google.firebase.encoders.json.JsonDataEncoderBuilder registerEncoder(@NonNull Class<T>, @NonNull com.google.firebase.encoders.ObjectEncoder<? super T>);
     method @NonNull public <T> com.google.firebase.encoders.json.JsonDataEncoderBuilder registerEncoder(@NonNull Class<T>, @NonNull com.google.firebase.encoders.ValueEncoder<? super T>);
     method @NonNull public com.google.firebase.encoders.json.JsonDataEncoderBuilder registerFallbackEncoder(@NonNull com.google.firebase.encoders.ObjectEncoder<java.lang.Object>);

@@ -14,6 +14,7 @@
 
 package com.google.firebase.gradle.plugins.ci
 
+import com.google.firebase.gradle.plugins.FirebaseLibraryPlugin
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -102,6 +103,10 @@ class ContinuousIntegrationPlugin implements Plugin<Project> {
                     tasks.maybeCreate('check')
                     tasks.maybeCreate('deviceCheck')
                 }
+
+                if (!isFirebaseLibrary(it)) {
+                    tasks.maybeCreate('checkCoverage')
+                }
             }
         }
 
@@ -166,5 +171,9 @@ class ContinuousIntegrationPlugin implements Plugin<Project> {
 
     private static boolean isAndroidProject(Project project) {
         ANDROID_PLUGINS.find { plugin -> project.plugins.hasPlugin(plugin) }
+    }
+
+    private static boolean isFirebaseLibrary(Project project) {
+        project.plugins.hasPlugin(FirebaseLibraryPlugin.class)
     }
 }

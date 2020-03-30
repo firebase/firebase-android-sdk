@@ -36,6 +36,7 @@ import com.google.firebase.installations.remote.InstallationResponse.ResponseCod
 import com.google.firebase.platforminfo.UserAgentPublisher;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.Charset;
@@ -44,7 +45,11 @@ import java.util.zip.GZIPOutputStream;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-/** Http client that sends request to Firebase Installations backend API. */
+/**
+ * Http client that sends request to Firebase Installations backend API.
+ *
+ * @hide
+ */
 public class FirebaseInstallationServiceClient {
   private static final String FIREBASE_INSTALLATIONS_API_DOMAIN =
       "firebaseinstallations.googleapis.com";
@@ -171,7 +176,13 @@ public class FirebaseInstallationServiceClient {
   private void writeFIDCreateRequestBodyToOutputStream(
       HttpURLConnection httpURLConnection, @NonNull String fid, @NonNull String appId)
       throws IOException {
-    GZIPOutputStream gzipOutputStream = new GZIPOutputStream(httpURLConnection.getOutputStream());
+    OutputStream outputStream = httpURLConnection.getOutputStream();
+    if (outputStream == null) {
+      throw new IOException(
+          "Cannot send CreateInstallation request to FIS. No OutputStream available.");
+    }
+
+    GZIPOutputStream gzipOutputStream = new GZIPOutputStream(outputStream);
     try {
       gzipOutputStream.write(
           buildCreateFirebaseInstallationRequestBody(fid, appId).toString().getBytes("UTF-8"));
@@ -194,7 +205,13 @@ public class FirebaseInstallationServiceClient {
 
   private void writeGenerateAuthTokenRequestBodyToOutputStream(HttpURLConnection httpURLConnection)
       throws IOException {
-    GZIPOutputStream gzipOutputStream = new GZIPOutputStream(httpURLConnection.getOutputStream());
+    OutputStream outputStream = httpURLConnection.getOutputStream();
+    if (outputStream == null) {
+      throw new IOException(
+          "Cannot send GenerateAuthToken request to FIS. No OutputStream available.");
+    }
+
+    GZIPOutputStream gzipOutputStream = new GZIPOutputStream(outputStream);
     try {
       gzipOutputStream.write(buildGenerateAuthTokenRequestBody().toString().getBytes("UTF-8"));
     } catch (JSONException e) {

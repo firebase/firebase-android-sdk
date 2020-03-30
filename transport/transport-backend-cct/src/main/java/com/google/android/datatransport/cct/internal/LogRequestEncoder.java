@@ -30,7 +30,7 @@ public final class LogRequestEncoder implements ObjectEncoder<AutoValue_LogReque
    */
   private void encodeLogSource(
       @Nullable AutoValue_LogRequest obj, @NonNull ObjectEncoderContext objectEncoderContext)
-      throws EncodingException, IOException {
+      throws IOException {
     if (obj.getLogSourceName() != null) {
       objectEncoderContext.add("logSourceName", obj.getLogSourceName());
     } else if (obj.getLogSource() != Integer.MIN_VALUE) {
@@ -43,7 +43,7 @@ public final class LogRequestEncoder implements ObjectEncoder<AutoValue_LogReque
   @Override
   public void encode(
       @Nullable AutoValue_LogRequest obj, @NonNull ObjectEncoderContext objectEncoderContext)
-      throws EncodingException, IOException {
+      throws IOException {
     objectEncoderContext
         .add("requestTimeMs", obj.getRequestTimeMs())
         .add("requestUptimeMs", obj.getRequestUptimeMs());

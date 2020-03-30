@@ -46,12 +46,11 @@ import com.google.firebase.firestore.local.QueryPurpose;
 import com.google.firebase.firestore.local.TargetData;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
+import com.google.firebase.firestore.model.Values;
 import com.google.firebase.firestore.model.mutation.Mutation;
-import com.google.firebase.firestore.model.value.FieldValue;
-import com.google.firebase.firestore.model.value.NullValue;
-import com.google.firebase.firestore.model.value.ReferenceValue;
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChange;
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChangeType;
 import com.google.firebase.firestore.testutil.TestUtil;
@@ -81,7 +80,6 @@ import com.google.firestore.v1.Target.QueryTarget;
 import com.google.firestore.v1.TargetChange;
 import com.google.firestore.v1.TargetChange.TargetChangeType;
 import com.google.firestore.v1.Value;
-import com.google.firestore.v1.Value.ValueTypeCase;
 import com.google.firestore.v1.Write;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Int32Value;
@@ -112,32 +110,26 @@ public final class RemoteSerializerTest {
     serializer = new RemoteSerializer(databaseId);
   }
 
-  public static com.google.firestore.v1.Value.Builder valueBuilder() {
-    return com.google.firestore.v1.Value.newBuilder();
-  }
-
-  private void assertRoundTrip(
-      FieldValue value, com.google.firestore.v1.Value proto, ValueTypeCase typeCase) {
-    com.google.firestore.v1.Value actual = serializer.encodeValue(value);
+  private void assertRoundTrip(Value actual, Value proto, Value.ValueTypeCase typeCase) {
     assertEquals(typeCase, actual.getValueTypeCase());
     assertEquals(proto, actual);
-    assertEquals(value, serializer.decodeValue(proto));
+    assertTrue(Values.equals(actual, proto));
   }
 
   @Test
   public void testEncodesNull() {
-    FieldValue value = NullValue.nullValue();
-    com.google.firestore.v1.Value proto = valueBuilder().setNullValueValue(0).build();
-    assertRoundTrip(value, proto, ValueTypeCase.NULL_VALUE);
+    Value value = wrap(null);
+    Value proto = Value.newBuilder().setNullValueValue(0).build();
+    assertRoundTrip(value, proto, Value.ValueTypeCase.NULL_VALUE);
   }
 
   @Test
   public void testEncodesBoolean() {
     List<Boolean> tests = asList(true, false);
     for (Boolean test : tests) {
-      FieldValue value = wrap(test);
-      com.google.firestore.v1.Value proto = valueBuilder().setBooleanValue(test).build();
-      assertRoundTrip(value, proto, ValueTypeCase.BOOLEAN_VALUE);
+      Value value = wrap(test);
+      Value proto = Value.newBuilder().setBooleanValue(test).build();
+      assertRoundTrip(value, proto, Value.ValueTypeCase.BOOLEAN_VALUE);
     }
   }
 
@@ -145,9 +137,9 @@ public final class RemoteSerializerTest {
   public void testEncodesIntegers() {
     List<Long> tests = asList(Long.MIN_VALUE, -100L, -1L, 0L, 1L, 100L, Long.MAX_VALUE);
     for (Long test : tests) {
-      FieldValue value = wrap(test);
-      com.google.firestore.v1.Value proto = valueBuilder().setIntegerValue(test).build();
-      assertRoundTrip(value, proto, ValueTypeCase.INTEGER_VALUE);
+      Value value = wrap(test);
+      Value proto = Value.newBuilder().setIntegerValue(test).build();
+      assertRoundTrip(value, proto, Value.ValueTypeCase.INTEGER_VALUE);
     }
   }
 
@@ -173,9 +165,9 @@ public final class RemoteSerializerTest {
             Double.MAX_VALUE,
             Double.POSITIVE_INFINITY);
     for (Double test : tests) {
-      FieldValue value = wrap(test);
-      com.google.firestore.v1.Value proto = valueBuilder().setDoubleValue(test).build();
-      assertRoundTrip(value, proto, ValueTypeCase.DOUBLE_VALUE);
+      Value value = wrap(test);
+      Value proto = Value.newBuilder().setDoubleValue(test).build();
+      assertRoundTrip(value, proto, Value.ValueTypeCase.DOUBLE_VALUE);
     }
   }
 
@@ -183,9 +175,9 @@ public final class RemoteSerializerTest {
   public void testEncodesStrings() {
     List<String> tests = asList("", "a", "abc def", "æ", "\0\ud7ff\ue000\uffff", "(╯°□°）╯︵ ┻━┻");
     for (String test : tests) {
-      FieldValue value = wrap(test);
-      com.google.firestore.v1.Value proto = valueBuilder().setStringValue(test).build();
-      assertRoundTrip(value, proto, ValueTypeCase.STRING_VALUE);
+      Value value = wrap(test);
+      Value proto = Value.newBuilder().setStringValue(test).build();
+      assertRoundTrip(value, proto, Value.ValueTypeCase.STRING_VALUE);
     }
   }
 
@@ -204,61 +196,61 @@ public final class RemoteSerializerTest {
     Timestamp ts1 = Timestamp.newBuilder().setNanos(500000000).setSeconds(1451730050).build();
 
     Timestamp ts2 = Timestamp.newBuilder().setNanos(0).setSeconds(1466160615).build();
-    List<com.google.firestore.v1.Value> expected =
+    List<Value> expected =
         asList(
-            valueBuilder().setTimestampValue(ts1).build(),
-            valueBuilder().setTimestampValue(ts2).build());
+            Value.newBuilder().setTimestampValue(ts1).build(),
+            Value.newBuilder().setTimestampValue(ts2).build());
 
     for (int i = 0; i < tests.size(); i++) {
-      FieldValue value = wrap(tests.get(i));
-      assertRoundTrip(value, expected.get(i), ValueTypeCase.TIMESTAMP_VALUE);
+      Value value = wrap(tests.get(i));
+      assertRoundTrip(value, expected.get(i), Value.ValueTypeCase.TIMESTAMP_VALUE);
     }
   }
 
   @Test
   public void testEncodesGeoPoints() {
-    FieldValue geoPoint = wrap(new GeoPoint(1.23, 4.56));
-    com.google.firestore.v1.Value.Builder proto = valueBuilder();
+    Value geoPoint = wrap(new GeoPoint(1.23, 4.56));
+    Value.Builder proto = Value.newBuilder();
     proto.setGeoPointValue(LatLng.newBuilder().setLatitude(1.23).setLongitude(4.56));
 
-    assertRoundTrip(geoPoint, proto.build(), ValueTypeCase.GEO_POINT_VALUE);
+    assertRoundTrip(geoPoint, proto.build(), Value.ValueTypeCase.GEO_POINT_VALUE);
   }
 
   @Test
   public void testEncodesBlobs() {
-    FieldValue blob = wrap(TestUtil.blob(0, 1, 2, 3));
-    com.google.firestore.v1.Value.Builder proto = valueBuilder();
+    Value blob = wrap(TestUtil.blob(0, 1, 2, 3));
+    Value.Builder proto = Value.newBuilder();
     proto.setBytesValue(TestUtil.byteString(0, 1, 2, 3));
 
-    assertRoundTrip(blob, proto.build(), ValueTypeCase.BYTES_VALUE);
+    assertRoundTrip(blob, proto.build(), Value.ValueTypeCase.BYTES_VALUE);
   }
 
   @Test
   public void testEncodesReferences() {
     DocumentReference value = ref("foo/bar");
-    FieldValue ref = wrap(value);
-    com.google.firestore.v1.Value.Builder proto = valueBuilder();
+    Value ref = wrap(value);
+    Value.Builder proto = Value.newBuilder();
     proto.setReferenceValue("projects/project/databases/(default)/documents/foo/bar");
 
-    assertRoundTrip(ref, proto.build(), ValueTypeCase.REFERENCE_VALUE);
+    assertRoundTrip(ref, proto.build(), Value.ValueTypeCase.REFERENCE_VALUE);
   }
 
   @Test
   public void testEncodeArrays() {
-    FieldValue model = wrap(asList(true, "foo"));
+    Value model = wrap(asList(true, "foo"));
     ArrayValue.Builder builder = ArrayValue.newBuilder();
     builder
-        .addValues(valueBuilder().setBooleanValue(true))
-        .addValues(valueBuilder().setStringValue("foo"));
+        .addValues(Value.newBuilder().setBooleanValue(true))
+        .addValues(Value.newBuilder().setStringValue("foo"));
 
-    com.google.firestore.v1.Value.Builder proto = valueBuilder();
+    Value.Builder proto = Value.newBuilder();
     proto.setArrayValue(builder);
-    assertRoundTrip(model, proto.build(), ValueTypeCase.ARRAY_VALUE);
+    assertRoundTrip(model, proto.build(), Value.ValueTypeCase.ARRAY_VALUE);
   }
 
   @Test
   public void testEncodesNestedObjects() {
-    FieldValue model =
+    ObjectValue model =
         TestUtil.wrapObject(
             map(
                 "b",
@@ -277,44 +269,42 @@ public final class RemoteSerializerTest {
                 map("d", 100, "nested", map("e", Long.MIN_VALUE))));
 
     MapValue.Builder inner =
-        MapValue.newBuilder().putFields("b", valueBuilder().setBooleanValue(false).build());
+        MapValue.newBuilder().putFields("b", Value.newBuilder().setBooleanValue(false).build());
     ArrayValue.Builder array =
         ArrayValue.newBuilder()
-            .addValues(valueBuilder().setIntegerValue(2))
-            .addValues(valueBuilder().setStringValue("bar"))
-            .addValues(valueBuilder().setMapValue(inner));
+            .addValues(Value.newBuilder().setIntegerValue(2))
+            .addValues(Value.newBuilder().setStringValue("bar"))
+            .addValues(Value.newBuilder().setMapValue(inner));
 
     inner =
         MapValue.newBuilder()
-            .putFields("e", valueBuilder().setIntegerValue(Long.MIN_VALUE).build());
+            .putFields("e", Value.newBuilder().setIntegerValue(Long.MIN_VALUE).build());
 
     MapValue.Builder middle =
         MapValue.newBuilder()
-            .putFields("d", valueBuilder().setIntegerValue(100).build())
-            .putFields("nested", valueBuilder().setMapValue(inner).build());
+            .putFields("d", Value.newBuilder().setIntegerValue(100).build())
+            .putFields("nested", Value.newBuilder().setMapValue(inner).build());
 
     MapValue.Builder obj =
         MapValue.newBuilder()
-            .putFields("b", valueBuilder().setBooleanValue(true).build())
-            .putFields("d", valueBuilder().setDoubleValue(Double.MAX_VALUE).build())
-            .putFields("i", valueBuilder().setIntegerValue(1).build())
-            .putFields("n", valueBuilder().setNullValueValue(0).build())
-            .putFields("s", valueBuilder().setStringValue("foo").build())
-            .putFields("a", valueBuilder().setArrayValue(array).build())
-            .putFields("o", valueBuilder().setMapValue(middle).build());
+            .putFields("b", Value.newBuilder().setBooleanValue(true).build())
+            .putFields("d", Value.newBuilder().setDoubleValue(Double.MAX_VALUE).build())
+            .putFields("i", Value.newBuilder().setIntegerValue(1).build())
+            .putFields("n", Value.newBuilder().setNullValueValue(0).build())
+            .putFields("s", Value.newBuilder().setStringValue("foo").build())
+            .putFields("a", Value.newBuilder().setArrayValue(array).build())
+            .putFields("o", Value.newBuilder().setMapValue(middle).build());
 
-    com.google.firestore.v1.Value proto = valueBuilder().setMapValue(obj).build();
-    assertRoundTrip(model, proto, ValueTypeCase.MAP_VALUE);
+    Value proto = Value.newBuilder().setMapValue(obj).build();
+    assertRoundTrip(model.getProto(), proto, Value.ValueTypeCase.MAP_VALUE);
   }
 
   @Test
   public void testEncodeDeleteMutation() {
     Mutation mutation = deleteMutation("docs/1");
 
-    com.google.firestore.v1.Write expected =
-        com.google.firestore.v1.Write.newBuilder()
-            .setDelete("projects/p/databases/d/documents/docs/1")
-            .build();
+    Write expected =
+        Write.newBuilder().setDelete("projects/p/databases/d/documents/docs/1").build();
     assertRoundTripForMutation(mutation, expected);
   }
 
@@ -322,7 +312,7 @@ public final class RemoteSerializerTest {
   public void testEncodeVerifyMutation() {
     Mutation mutation = verifyMutation("docs/1", 4);
 
-    com.google.firestore.v1.Write expected =
+    Write expected =
         Write.newBuilder()
             .setVerify("projects/p/databases/d/documents/docs/1")
             .setCurrentDocument(
@@ -337,12 +327,12 @@ public final class RemoteSerializerTest {
   public void testEncodeSetMutation() {
     Mutation mutation = setMutation("docs/1", map("key", "value"));
 
-    com.google.firestore.v1.Write expected =
-        com.google.firestore.v1.Write.newBuilder()
+    Write expected =
+        Write.newBuilder()
             .setUpdate(
                 Document.newBuilder()
                     .setName("projects/p/databases/d/documents/docs/1")
-                    .putFields("key", valueBuilder().setStringValue("value").build()))
+                    .putFields("key", Value.newBuilder().setStringValue("value").build()))
             .build();
 
     assertRoundTripForMutation(mutation, expected);
@@ -352,13 +342,13 @@ public final class RemoteSerializerTest {
   public void testEncodesPatchMutation() {
     Mutation mutation = patchMutation("docs/1", map("key", "value", "key2", true));
 
-    com.google.firestore.v1.Write expected =
-        com.google.firestore.v1.Write.newBuilder()
+    Write expected =
+        Write.newBuilder()
             .setUpdate(
                 Document.newBuilder()
                     .setName("projects/p/databases/d/documents/docs/1")
-                    .putFields("key", valueBuilder().setStringValue("value").build())
-                    .putFields("key2", valueBuilder().setBooleanValue(true).build()))
+                    .putFields("key", Value.newBuilder().setStringValue("value").build())
+                    .putFields("key2", Value.newBuilder().setBooleanValue(true).build()))
             .setUpdateMask(DocumentMask.newBuilder().addAllFieldPaths(asList("key", "key2")))
             .setCurrentDocument(Precondition.newBuilder().setExists(true))
             .build();
@@ -371,13 +361,13 @@ public final class RemoteSerializerTest {
     Mutation mutation =
         patchMutation("docs/1", map("key", "value", "key2", true), asList(field("key")));
 
-    com.google.firestore.v1.Write expected =
-        com.google.firestore.v1.Write.newBuilder()
+    Write expected =
+        Write.newBuilder()
             .setUpdate(
                 Document.newBuilder()
                     .setName("projects/p/databases/d/documents/docs/1")
-                    .putFields("key", valueBuilder().setStringValue("value").build())
-                    .putFields("key2", valueBuilder().setBooleanValue(true).build()))
+                    .putFields("key", Value.newBuilder().setStringValue("value").build())
+                    .putFields("key2", Value.newBuilder().setBooleanValue(true).build()))
             .setUpdateMask(DocumentMask.newBuilder().addFieldPaths("key"))
             .build();
 
@@ -395,8 +385,8 @@ public final class RemoteSerializerTest {
                 "bar.baz",
                 com.google.firebase.firestore.FieldValue.serverTimestamp()));
 
-    com.google.firestore.v1.Write expected =
-        com.google.firestore.v1.Write.newBuilder()
+    Write expected =
+        Write.newBuilder()
             .setTransform(
                 DocumentTransform.newBuilder()
                     .setDocument("projects/p/databases/d/documents/docs/1")
@@ -425,8 +415,8 @@ public final class RemoteSerializerTest {
                 "a", com.google.firebase.firestore.FieldValue.arrayUnion("a", 2),
                 "bar.baz", com.google.firebase.firestore.FieldValue.arrayRemove(map("x", 1))));
 
-    com.google.firestore.v1.Write expected =
-        com.google.firestore.v1.Write.newBuilder()
+    Write expected =
+        Write.newBuilder()
             .setTransform(
                 DocumentTransform.newBuilder()
                     .setDocument("projects/p/databases/d/documents/docs/1")
@@ -434,15 +424,12 @@ public final class RemoteSerializerTest {
                         DocumentTransform.FieldTransform.newBuilder()
                             .setFieldPath("a")
                             .setAppendMissingElements(
-                                ArrayValue.newBuilder()
-                                    .addValues(serializer.encodeValue(wrap("a")))
-                                    .addValues(serializer.encodeValue(wrap(2)))))
+                                ArrayValue.newBuilder().addValues(wrap("a")).addValues(wrap(2))))
                     .addFieldTransforms(
                         DocumentTransform.FieldTransform.newBuilder()
                             .setFieldPath("bar.baz")
                             .setRemoveAllFromArray(
-                                ArrayValue.newBuilder()
-                                    .addValues(serializer.encodeValue(wrap(map("x", 1)))))))
+                                ArrayValue.newBuilder().addValues(wrap(map("x", 1))))))
             .setCurrentDocument(Precondition.newBuilder().setExists(true))
             .build();
 
@@ -567,7 +554,7 @@ public final class RemoteSerializerTest {
                         StructuredQuery.FieldFilter.newBuilder()
                             .setField(FieldReference.newBuilder().setFieldPath("prop"))
                             .setOp(Operator.LESS_THAN)
-                            .setValue(valueBuilder().setIntegerValue(42))))
+                            .setValue(Value.newBuilder().setIntegerValue(42))))
             .addOrderBy(
                 Order.newBuilder()
                     .setField(FieldReference.newBuilder().setFieldPath("prop"))
@@ -613,7 +600,7 @@ public final class RemoteSerializerTest {
                                             .setField(
                                                 FieldReference.newBuilder().setFieldPath("prop"))
                                             .setOp(Operator.LESS_THAN)
-                                            .setValue(valueBuilder().setIntegerValue(42))))
+                                            .setValue(Value.newBuilder().setIntegerValue(42))))
                             .addFilters(
                                 Filter.newBuilder()
                                     .setFieldFilter(
@@ -621,7 +608,7 @@ public final class RemoteSerializerTest {
                                             .setField(
                                                 FieldReference.newBuilder().setFieldPath("author"))
                                             .setOp(Operator.EQUAL)
-                                            .setValue(valueBuilder().setStringValue("dimond"))))
+                                            .setValue(Value.newBuilder().setStringValue("dimond"))))
                             .addFilters(
                                 Filter.newBuilder()
                                     .setFieldFilter(
@@ -629,7 +616,8 @@ public final class RemoteSerializerTest {
                                             .setField(
                                                 FieldReference.newBuilder().setFieldPath("tags"))
                                             .setOp(Operator.ARRAY_CONTAINS)
-                                            .setValue(valueBuilder().setStringValue("pending"))))))
+                                            .setValue(
+                                                Value.newBuilder().setStringValue("pending"))))))
             .addOrderBy(
                 Order.newBuilder()
                     .setField(FieldReference.newBuilder().setFieldPath("prop"))
@@ -657,18 +645,18 @@ public final class RemoteSerializerTest {
     StructuredQuery.Filter apiFilter = serializer.encodeUnaryOrFieldFilter(inputFilter);
 
     ArrayValue.Builder inFilterValue =
-        ArrayValue.newBuilder().addValues(valueBuilder().setIntegerValue(42));
+        ArrayValue.newBuilder().addValues(Value.newBuilder().setIntegerValue(42));
     StructuredQuery.Filter expectedFilter =
         Filter.newBuilder()
             .setFieldFilter(
                 StructuredQuery.FieldFilter.newBuilder()
                     .setField(FieldReference.newBuilder().setFieldPath("field"))
                     .setOp(Operator.IN)
-                    .setValue(valueBuilder().setArrayValue(inFilterValue))
+                    .setValue(Value.newBuilder().setArrayValue(inFilterValue))
                     .build())
             .build();
 
-    assertEquals(apiFilter, expectedFilter);
+    assertEquals(expectedFilter, apiFilter);
     FieldFilter roundTripped = serializer.decodeFieldFilter(apiFilter.getFieldFilter());
     assertEquals(roundTripped, inputFilter);
     assertTrue(roundTripped instanceof InFilter);
@@ -680,18 +668,18 @@ public final class RemoteSerializerTest {
     StructuredQuery.Filter apiFilter = serializer.encodeUnaryOrFieldFilter(inputFilter);
 
     ArrayValue.Builder arrayContainsAnyFilterValue =
-        ArrayValue.newBuilder().addValues(valueBuilder().setIntegerValue(42));
+        ArrayValue.newBuilder().addValues(Value.newBuilder().setIntegerValue(42));
     StructuredQuery.Filter expectedFilter =
         Filter.newBuilder()
             .setFieldFilter(
                 StructuredQuery.FieldFilter.newBuilder()
                     .setField(FieldReference.newBuilder().setFieldPath("field"))
                     .setOp(Operator.ARRAY_CONTAINS_ANY)
-                    .setValue(valueBuilder().setArrayValue(arrayContainsAnyFilterValue))
+                    .setValue(Value.newBuilder().setArrayValue(arrayContainsAnyFilterValue))
                     .build())
             .build();
 
-    assertEquals(apiFilter, expectedFilter);
+    assertEquals(expectedFilter, apiFilter);
     FieldFilter roundTripped = serializer.decodeFieldFilter(apiFilter.getFieldFilter());
     assertEquals(roundTripped, inputFilter);
     assertTrue(roundTripped instanceof ArrayContainsAnyFilter);
@@ -709,13 +697,13 @@ public final class RemoteSerializerTest {
                     .setField(FieldReference.newBuilder().setFieldPath("__name__"))
                     .setOp(Operator.EQUAL)
                     .setValue(
-                        valueBuilder()
+                        Value.newBuilder()
                             .setReferenceValue(
                                 "projects/project/databases/(default)/documents/project/database"))
                     .build())
             .build();
 
-    assertEquals(apiFilter, expectedFilter);
+    assertEquals(expectedFilter, apiFilter);
     FieldFilter roundTripped = serializer.decodeFieldFilter(apiFilter.getFieldFilter());
     assertEquals(roundTripped, inputFilter);
     assertTrue(roundTripped instanceof KeyFieldFilter);
@@ -860,8 +848,8 @@ public final class RemoteSerializerTest {
   public void testEncodesBounds() {
     Query q =
         Query.atPath(ResourcePath.fromString("docs"))
-            .startAt(new Bound(asList(ReferenceValue.valueOf(databaseId, key("foo/bar"))), true))
-            .endAt(new Bound(asList(ReferenceValue.valueOf(databaseId, key("foo/baz"))), false));
+            .startAt(new Bound(asList(Values.refValue(databaseId, key("foo/bar"))), true))
+            .endAt(new Bound(asList(Values.refValue(databaseId, key("foo/baz"))), false));
     Target actual = serializer.encodeTarget(wrapTargetData(q));
 
     StructuredQuery.Builder structuredQueryBuilder =
@@ -872,13 +860,13 @@ public final class RemoteSerializerTest {
                 Cursor.newBuilder()
                     .setBefore(true)
                     .addValues(
-                        valueBuilder()
+                        Value.newBuilder()
                             .setReferenceValue("projects/p/databases/d/documents/foo/bar")))
             .setEndAt(
                 Cursor.newBuilder()
                     .setBefore(false)
                     .addValues(
-                        valueBuilder()
+                        Value.newBuilder()
                             .setReferenceValue("projects/p/databases/d/documents/foo/baz")));
 
     QueryTarget.Builder queryBuilder =
@@ -930,7 +918,7 @@ public final class RemoteSerializerTest {
    * Wraps the given query in TargetData. This is useful because the APIs we're testing accept
    * TargetData, but for the most part we're just testing variations on Query.
    */
-  private TargetData wrapTargetData(Query query) {
+  private static TargetData wrapTargetData(Query query) {
     return new TargetData(query.toTarget(), 1, 2, QueryPurpose.LISTEN);
   }
 

@@ -38,10 +38,6 @@ class GetIdListener implements StateListener {
   @Override
   public boolean onException(
       PersistedInstallationEntry persistedInstallationEntry, Exception exception) {
-    if (persistedInstallationEntry.isErrored()) {
-      taskCompletionSource.trySetException(exception);
-      return true;
-    }
     return false;
   }
 }

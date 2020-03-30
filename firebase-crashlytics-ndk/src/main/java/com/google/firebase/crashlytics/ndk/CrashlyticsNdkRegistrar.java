@@ -15,7 +15,6 @@
 package com.google.firebase.crashlytics.ndk;
 
 import android.content.Context;
-import com.crashlytics.android.ndk.BuildConfig;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentContainer;
 import com.google.firebase.components.ComponentRegistrar;

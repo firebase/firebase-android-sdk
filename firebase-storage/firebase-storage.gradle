@@ -76,6 +76,7 @@ android {
 
 dependencies {
     implementation project(':firebase-common')
+    implementation project(':firebase-components')
 
     implementation 'androidx.annotation:annotation:1.1.0'
     implementation 'com.google.android.gms:play-services-base:17.0.0'

@@ -143,13 +143,15 @@ final class Dokka {
                     cfg.exclude("package-list");
                     cfg.filesMatching(
                         "_toc.yaml",
-                        fileCopy ->
-                            fileCopy.setRelativePath(
-                                new RelativePath(
-                                    true,
-                                    "client",
-                                    firebaseLibrary.artifactId.get(),
-                                    "_toc.yaml")));
+                        fileCopy -> {
+                          fileCopy.setRelativePath(
+                              new RelativePath(
+                                  true, "client", firebaseLibrary.artifactId.get(), "_toc.yaml"));
+                          fileCopy.filter(
+                              line ->
+                                  line.replaceFirst(
+                                      "\\spath:\\s/", " path: /docs/reference/kotlin/"));
+                        });
                     cfg.filesMatching(
                         "**/*.html",
                         fileCopy ->

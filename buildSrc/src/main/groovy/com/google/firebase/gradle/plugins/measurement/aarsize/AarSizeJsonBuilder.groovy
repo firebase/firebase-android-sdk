@@ -15,6 +15,11 @@
 
 package com.google.firebase.gradle.plugins.measurement.aarsize
 
+import com.google.firebase.gradle.plugins.measurement.TestLogFinder
+import groovy.json.JsonOutput
+
+import static com.google.firebase.gradle.plugins.measurement.MetricsServiceApi.*
+
 /** A helper class that generates the AAR size measurement JSON report. */
 class AarSizeJsonBuilder {
 
@@ -25,11 +30,9 @@ class AarSizeJsonBuilder {
     private static final String AAR_SIZE_COLUMN = "aar_size"
 
     // This comes in as a String and goes out as a String, so we might as well keep it a String
-    private final String pullRequestNumber
     private final List<Tuple2<Integer, Integer>> sdkAarSizes
 
-    AarSizeJsonBuilder(pullRequestNumber) {
-        this.pullRequestNumber = pullRequestNumber
+    AarSizeJsonBuilder() {
         this.sdkAarSizes = []
     }
 
@@ -42,27 +45,10 @@ class AarSizeJsonBuilder {
             throw new IllegalStateException("Empty - No sizes were added")
         }
 
-        def sizes = sdkAarSizes.collect {
-            "[$pullRequestNumber, \"$it.first\", $it.second]"
-        }.join(", ")
+        def results = sdkAarSizes.collect { new Result(it.first, "aar", it.second) }
+        def log = TestLogFinder.generateCurrentLogLink()
+        def report = new Report(Metric.BinarySize, results, log)
 
-        def json = """
-            {
-                tables: [
-                    {
-                        table_name: "$PULL_REQUEST_TABLE",
-                        column_names: ["$PULL_REQUEST_COLUMN"],
-                        replace_measurements: [[$pullRequestNumber]],
-                    },
-                    {
-                        table_name: "$AAR_SIZE_TABLE",
-                        column_names: ["$PULL_REQUEST_COLUMN", "$SDK_COLUMN", "$AAR_SIZE_COLUMN"],
-                        replace_measurements: [$sizes],
-                    },
-                ],
-            }
-        """
-
-        return json
+        return report.toJson()
     }
 }

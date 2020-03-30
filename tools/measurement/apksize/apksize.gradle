@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import com.google.firebase.gradle.plugins.measurement.MetricsReportUploader
 import com.google.firebase.gradle.plugins.measurement.UploadMeasurementsTask
 import com.google.firebase.gradle.plugins.measurement.aarsize.GenerateMeasurementsTask as GenerateAarMeasurementTask
 import com.google.firebase.gradle.plugins.measurement.apksize.GenerateMeasurementsTask
@@ -42,7 +43,11 @@ task generateApkSizeMeasurements(type: GenerateMeasurementsTask) {
     group 'Measurements'
 
     sdkMapFile = file("sdks.csv")
-    reportFile = file("$buildDir/size-report.json")
+    reportFile = file("$buildDir/apk-size-report.json")
+
+    doLast {
+        upload reportFile
+    }
 }
 
 task generateAarSizeMeasurements(type: GenerateAarMeasurementTask) {
@@ -51,6 +56,10 @@ task generateAarSizeMeasurements(type: GenerateAarMeasurementTask) {
 
     dependsOn (":publishAllToBuildDir")
     reportFile = file("$buildDir/aar-size-report.json")
+
+    doLast {
+        upload reportFile
+    }
 }
 
 /**
@@ -66,8 +75,12 @@ task uploadApkSizeMeasurements(type: UploadMeasurementsTask) {
     dependsOn generateApkSizeMeasurements
     dependsOn generateAarSizeMeasurements
 
-    reportFiles = files("$buildDir/size-report.json", "$buildDir/aar-size-report.json")
+    reportFiles = files("$buildDir/apk-size-report.json", "$buildDir/aar-size-report.json")
     uploader = "https://storage.googleapis.com/firebase-engprod-metrics/upload_tool.jar"
+}
+
+private def upload(File reportFile) {
+    MetricsReportUploader.upload(project, reportFile.toString())
 }
 
 // ==========================================================================

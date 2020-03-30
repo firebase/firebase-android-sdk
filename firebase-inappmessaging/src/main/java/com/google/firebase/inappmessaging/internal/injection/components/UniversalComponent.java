@@ -29,7 +29,6 @@ import com.google.firebase.inappmessaging.internal.injection.modules.AnalyticsEv
 import com.google.firebase.inappmessaging.internal.injection.modules.AppMeasurementModule;
 import com.google.firebase.inappmessaging.internal.injection.modules.ApplicationModule;
 import com.google.firebase.inappmessaging.internal.injection.modules.ForegroundFlowableModule;
-import com.google.firebase.inappmessaging.internal.injection.modules.ForegroundNotifierModule;
 import com.google.firebase.inappmessaging.internal.injection.modules.GrpcChannelModule;
 import com.google.firebase.inappmessaging.internal.injection.modules.ProgrammaticContextualTriggerFlowableModule;
 import com.google.firebase.inappmessaging.internal.injection.modules.ProtoStorageClientModule;
@@ -59,7 +58,6 @@ import javax.inject.Singleton;
       GrpcChannelModule.class,
       SchedulerModule.class,
       ApplicationModule.class,
-      ForegroundNotifierModule.class,
       ForegroundFlowableModule.class,
       ProgrammaticContextualTriggerFlowableModule.class,
       AnalyticsEventsModule.class,

@@ -75,8 +75,8 @@ import javax.inject.Provider;
  *   <li>send usage metrics to the Firebase backend.
  * </ul>
  *
- * <p>To delete the Instance ID and the data associated with it, see {@link
- * com.google.firebase.iid.FirebaseInstanceId#deleteInstanceId}.
+ * <p>To delete the Instance ID and the data associated with it, see
+ * FirebaseInstallationsApi#delete.
  */
 @Keep
 @FirebaseAppScope
