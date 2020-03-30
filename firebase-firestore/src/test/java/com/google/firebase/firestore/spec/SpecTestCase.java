@@ -992,7 +992,17 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
 
     // Validate that each active limbo doc has an expected active target
     for (Map.Entry<DocumentKey, Integer> limboDoc : actualLimboDocs.entrySet()) {
-      assertTrue("Found limbo doc " + limboDoc.getKey() + ", but its target ID " + limboDoc.getValue() + " was not in the set of expected active target IDs " + expectedActiveTargets.keySet().stream().sorted().map(String::valueOf).collect(Collectors.joining(", ")), expectedActiveTargets.containsKey(limboDoc.getValue()));
+      assertTrue(
+          "Found limbo doc "
+              + limboDoc.getKey()
+              + ", but its target ID "
+              + limboDoc.getValue()
+              + " was not in the set of expected active target IDs "
+              + expectedActiveTargets.keySet().stream()
+                  .sorted()
+                  .map(String::valueOf)
+                  .collect(Collectors.joining(", ")),
+          expectedActiveTargets.containsKey(limboDoc.getValue()));
     }
 
     for (DocumentKey expectedLimboDoc : expectedActiveLimboDocs) {
