@@ -18,7 +18,6 @@ import com.google.android.datatransport.TransportFactory;
 import com.google.firebase.inappmessaging.FirebaseInAppMessaging;
 import com.google.firebase.inappmessaging.internal.AbtIntegrationHelper;
 import com.google.firebase.inappmessaging.internal.DisplayCallbacksFactory;
-import com.google.firebase.inappmessaging.internal.injection.modules.AbTestingModule;
 import com.google.firebase.inappmessaging.internal.injection.modules.ApiClientModule;
 import com.google.firebase.inappmessaging.internal.injection.modules.GrpcClientModule;
 import com.google.firebase.inappmessaging.internal.injection.modules.TransportClientModule;

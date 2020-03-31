@@ -38,7 +38,7 @@ public class TestEngagementMetricsLoggerClientModule {
 
   @Provides
   @FirebaseAppScope
-  public MetricsLoggerClient providesApiClient(
+  public MetricsLoggerClient providesMetricLoggerClient(
       FirebaseInstanceId firebaseInstanceId,
       AnalyticsConnector analyticsConnector,
       Clock clock,

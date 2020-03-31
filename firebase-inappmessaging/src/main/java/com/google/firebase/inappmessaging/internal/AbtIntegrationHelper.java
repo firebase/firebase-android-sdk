@@ -52,8 +52,8 @@ public class AbtIntegrationHelper {
     for (CampaignProto.ThickContent content : response.getMessagesList()) {
       if (!content.getIsTestCampaign()
           && content
-          .getPayloadCase()
-          .equals(CampaignProto.ThickContent.PayloadCase.EXPERIMENTAL_PAYLOAD)) {
+              .getPayloadCase()
+              .equals(CampaignProto.ThickContent.PayloadCase.EXPERIMENTAL_PAYLOAD)) {
         FirebaseAbt.ExperimentPayload payload =
             content.getExperimentalPayload().getExperimentPayload();
         runningExperiments.add(
