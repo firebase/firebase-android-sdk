@@ -28,12 +28,12 @@ import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
 import com.google.firebase.events.Subscriber;
 import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.inappmessaging.internal.AbtIntegrationHelper;
 import com.google.firebase.inappmessaging.internal.ProgramaticContextualTriggers;
 import com.google.firebase.inappmessaging.internal.injection.components.AppComponent;
 import com.google.firebase.inappmessaging.internal.injection.components.DaggerAppComponent;
 import com.google.firebase.inappmessaging.internal.injection.components.DaggerUniversalComponent;
 import com.google.firebase.inappmessaging.internal.injection.components.UniversalComponent;
-import com.google.firebase.inappmessaging.internal.injection.modules.AbTestingModule;
 import com.google.firebase.inappmessaging.internal.injection.modules.AnalyticsEventsModule;
 import com.google.firebase.inappmessaging.internal.injection.modules.ApiClientModule;
 import com.google.firebase.inappmessaging.internal.injection.modules.AppMeasurementModule;
@@ -92,7 +92,11 @@ public class FirebaseInAppMessagingRegistrar implements ComponentRegistrar {
 
     AppComponent instance =
         DaggerAppComponent.builder()
-            .abTestingModule(new AbTestingModule(abTesting))
+            .abtIntegrationHelper(
+                new AbtIntegrationHelper(
+                    container
+                        .get(AbtComponent.class)
+                        .get(FirebaseABTesting.OriginService.INAPP_MESSAGING)))
             .apiClientModule(
                 new ApiClientModule(firebaseApp, firebaseInstanceId, universalComponent.clock()))
             .grpcClientModule(new GrpcClientModule(firebaseApp))
