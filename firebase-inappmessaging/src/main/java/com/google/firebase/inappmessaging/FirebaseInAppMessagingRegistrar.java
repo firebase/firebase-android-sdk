@@ -73,8 +73,6 @@ public class FirebaseInAppMessagingRegistrar implements ComponentRegistrar {
     FirebaseApp firebaseApp = container.get(FirebaseApp.class);
     FirebaseInstanceId firebaseInstanceId = container.get(FirebaseInstanceId.class);
     AnalyticsConnector analyticsConnector = container.get(AnalyticsConnector.class);
-    FirebaseABTesting abTesting =
-        container.get(AbtComponent.class).get(FirebaseABTesting.OriginService.INAPP_MESSAGING);
     Subscriber firebaseEventsSubscriber = container.get(Subscriber.class);
 
     Application application = (Application) firebaseApp.getApplicationContext();
