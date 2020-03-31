@@ -203,7 +203,7 @@ public class SessionProtobufHelper {
     if (logBytes != null) {
       logByteString = ByteString.copyFrom(logBytes);
     } else {
-      Logger.getLogger().d(Logger.TAG, "No log data to include with this event.");
+      Logger.getLogger().d("No log data to include with this event.");
     }
 
     cos.writeTag(10, WireFormat.WIRETYPE_LENGTH_DELIMITED);

@@ -27,6 +27,8 @@ import org.json.JSONObject;
 /**
  * A layer that locally persists a few Firebase Installation attributes on top the Firebase
  * Installation API.
+ *
+ * @hide
  */
 public class PersistedInstallation {
   private final File dataFile;

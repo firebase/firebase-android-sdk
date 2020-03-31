@@ -254,7 +254,7 @@ public class GrpcCallProvider {
             Executors.BACKGROUND_EXECUTOR,
             () -> {
               ManagedChannel channel = initChannel(context, databaseInfo);
-              onConnectivityStateChange(channel);
+              asyncQueue.enqueueAndForget(() -> onConnectivityStateChange(channel));
               FirestoreGrpc.FirestoreStub firestoreStub =
                   FirestoreGrpc.newStub(channel)
                       .withCallCredentials(firestoreHeaders)

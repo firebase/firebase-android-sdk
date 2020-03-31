@@ -15,11 +15,14 @@
 package com.google.firebase.inappmessaging.internal;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.firebase.inappmessaging.testutil.TestData.CAMPAIGN_ID_STRING;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
+import com.google.internal.firebase.inappmessaging.v1.CampaignProto;
+import com.google.internal.firebase.inappmessaging.v1.CampaignProto.ThickContent;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.CampaignImpression;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.CampaignImpressionList;
 import com.google.protobuf.Parser;
@@ -39,11 +42,32 @@ import org.robolectric.annotation.Config;
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
 public class ImpressionStorageClientTest {
-  private static final String CAMPAIGN_ID = "campaign_id";
+  private static final ThickContent vanillaCampaign =
+      ThickContent.newBuilder()
+          .setVanillaPayload(
+              CampaignProto.VanillaCampaignPayload.newBuilder().setCampaignId(CAMPAIGN_ID_STRING))
+          .build();
+  private static final ThickContent experimentalCampaign =
+      ThickContent.newBuilder()
+          .setExperimentalPayload(
+              CampaignProto.ExperimentalCampaignPayload.newBuilder()
+                  .setCampaignId(CAMPAIGN_ID_STRING + "2"))
+          .build();
+
   private static final CampaignImpression campaignImpression =
-      CampaignImpression.newBuilder().setCampaignId(CAMPAIGN_ID).build();
+      CampaignImpression.newBuilder()
+          .setCampaignId(vanillaCampaign.getVanillaPayload().getCampaignId())
+          .build();
   private static final CampaignImpressionList campaignImpressionList =
       CampaignImpressionList.newBuilder().addAlreadySeenCampaigns(campaignImpression).build();
+
+  private static final CampaignImpression experimentImpression =
+      CampaignImpression.newBuilder()
+          .setCampaignId(experimentalCampaign.getExperimentalPayload().getCampaignId())
+          .build();
+  private static final CampaignImpressionList experimentImpressionList =
+      CampaignImpressionList.newBuilder().addAlreadySeenCampaigns(experimentImpression).build();
+
   @Mock private ProtoStorageClient storageClient;
   private ImpressionStorageClient impressionStorageClient;
   private Completable fakeWrite;
@@ -58,8 +82,8 @@ public class ImpressionStorageClientTest {
   public void setup() throws IOException {
     initMocks(this);
     impressionStorageClient = new ImpressionStorageClient(storageClient);
-
     fakeRead = Maybe.fromCallable(() -> campaignImpressionList);
+    wasWritten = false;
     fakeWrite =
         Completable.fromCallable(
             () -> {
@@ -195,7 +219,7 @@ public class ImpressionStorageClientTest {
   @Test
   public void isImpressed_ifCampaignImpressed_isTrue() {
     TestSubscriber<Boolean> subscriber =
-        impressionStorageClient.isImpressed(CAMPAIGN_ID).toFlowable().test();
+        impressionStorageClient.isImpressed(vanillaCampaign).toFlowable().test();
 
     assertThat(subscriber.getEvents().get(0)).containsExactly(true);
   }
@@ -203,7 +227,32 @@ public class ImpressionStorageClientTest {
   @Test
   public void isImpressed_ifCampaignNotImpressed_isFalse() {
     TestSubscriber<Boolean> subscriber =
-        impressionStorageClient.isImpressed("some_other_campaign_id").toFlowable().test();
+        impressionStorageClient
+            .isImpressed(
+                ThickContent.newBuilder()
+                    .setVanillaPayload(
+                        CampaignProto.VanillaCampaignPayload.newBuilder().setCampaignId("WALRUS"))
+                    .build())
+            .toFlowable()
+            .test();
+
+    assertThat(subscriber.getEvents().get(0)).containsExactly(false);
+  }
+
+  @Test
+  public void isImpressed_ifExperimentImpressed_isTrue() {
+    when(storageClient.read(any(CampaignImpressionsParser.class)))
+        .thenReturn(Maybe.fromCallable(() -> experimentImpressionList));
+    TestSubscriber<Boolean> subscriber =
+        impressionStorageClient.isImpressed(experimentalCampaign).toFlowable().test();
+
+    assertThat(subscriber.getEvents().get(0)).containsExactly(true);
+  }
+
+  @Test
+  public void isImpressed_ifExperimentNotImpressed_isFalse() {
+    TestSubscriber<Boolean> subscriber =
+        impressionStorageClient.isImpressed(experimentalCampaign).toFlowable().test();
 
     assertThat(subscriber.getEvents().get(0)).containsExactly(false);
   }
@@ -213,7 +262,7 @@ public class ImpressionStorageClientTest {
     when(storageClient.read(any(CampaignImpressionsParser.class))).thenReturn(Maybe.empty());
 
     TestSubscriber<Boolean> subscriber =
-        impressionStorageClient.isImpressed(CAMPAIGN_ID).toFlowable().test();
+        impressionStorageClient.isImpressed(vanillaCampaign).toFlowable().test();
 
     assertThat(subscriber.getEvents().get(0)).containsExactly(false);
   }
@@ -224,7 +273,7 @@ public class ImpressionStorageClientTest {
         .thenReturn(Maybe.error(new IOException()));
 
     TestSubscriber<Boolean> subscriber =
-        impressionStorageClient.isImpressed(CAMPAIGN_ID).toFlowable().test();
+        impressionStorageClient.isImpressed(vanillaCampaign).toFlowable().test();
 
     subscriber.assertError(IOException.class);
   }

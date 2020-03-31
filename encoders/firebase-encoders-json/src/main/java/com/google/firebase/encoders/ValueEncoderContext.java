@@ -28,25 +28,25 @@ public interface ValueEncoderContext {
 
   /** Adds {@code value} as a primitive encoded value. */
   @NonNull
-  ValueEncoderContext add(@Nullable String value) throws IOException, EncodingException;
+  ValueEncoderContext add(@Nullable String value) throws IOException;
 
   /** Adds {@code value} as a primitive encoded value. */
   @NonNull
-  ValueEncoderContext add(double value) throws IOException, EncodingException;
+  ValueEncoderContext add(double value) throws IOException;
 
   /** Adds {@code value} as a primitive encoded value. */
   @NonNull
-  ValueEncoderContext add(int value) throws IOException, EncodingException;
+  ValueEncoderContext add(int value) throws IOException;
 
   /** Adds {@code value} as a primitive encoded value. */
   @NonNull
-  ValueEncoderContext add(long value) throws IOException, EncodingException;
+  ValueEncoderContext add(long value) throws IOException;
 
   /** Adds {@code value} as a primitive encoded value. */
   @NonNull
-  ValueEncoderContext add(boolean value) throws IOException, EncodingException;
+  ValueEncoderContext add(boolean value) throws IOException;
 
   /** Adds {@code value} as a encoded array of bytes. */
   @NonNull
-  ValueEncoderContext add(@NonNull byte[] bytes) throws IOException, EncodingException;
+  ValueEncoderContext add(@NonNull byte[] bytes) throws IOException;
 }

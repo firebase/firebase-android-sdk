@@ -540,12 +540,12 @@ public class TransactionTest {
                 transaction -> {
                   counter.incrementAndGet();
                   // Get the doc once.
-                  DocumentSnapshot snapshot1 = transaction.get(doc);
+                  transaction.get(doc);
                   // Do a write outside of the transaction. Because the transaction will retry, set
                   // the document to a different value each time.
                   waitFor(doc.set(map("count", 1234.0 + counter.get())));
                   // Get the doc again in the transaction with the new version.
-                  DocumentSnapshot snapshot2 = transaction.get(doc);
+                  transaction.get(doc);
                   // The get itself will fail, because we already read an earlier version of this
                   // document.
                   fail("Should have thrown exception");

@@ -177,7 +177,7 @@ message ClientInfo {
 
     enum ClientType {
         UNKNOWN = 0;
-        ANDROID = 4; // TODO(haneym): Change to FIRELOG_ANDROID.
+        ANDROID_FIREBASE = 23;
     }
 
     // The client type for this client. One of the enum values defined above.

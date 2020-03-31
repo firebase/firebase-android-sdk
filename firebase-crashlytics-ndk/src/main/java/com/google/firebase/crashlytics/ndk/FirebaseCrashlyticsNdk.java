@@ -15,20 +15,14 @@
 package com.google.firebase.crashlytics.ndk;
 
 import android.content.Context;
-import android.util.Log;
 import androidx.annotation.NonNull;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
+import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.NativeSessionFileProvider;
 import java.io.File;
 
 /** The Crashlytics NDK Kit provides crash reporting functionality for Android NDK users. */
 class FirebaseCrashlyticsNdk implements CrashlyticsNativeComponent {
-
-  /**
-   * Matches the non-NDK TAG in the Crashlytics Logger, so log levels for all of Crashlytics can be
-   * set with a single command.
-   */
-  static final String TAG = "FirebaseCrashlytics";
 
   /** Relative sub-path to use for storing files. */
   private static final String FILES_PATH = ".com.google.firebase.crashlytics-ndk";
@@ -55,8 +49,8 @@ class FirebaseCrashlyticsNdk implements CrashlyticsNativeComponent {
   @Override
   public boolean openSession(String sessionId) {
     final boolean initSuccess = controller.initialize(sessionId);
-    // TODO: Clean up logging
-    Log.i(TAG, "Crashlytics NDK initialization " + (initSuccess ? "successful" : "FAILED"));
+    Logger.getLogger()
+        .i("Crashlytics NDK initialization " + (initSuccess ? "successful" : "FAILED"));
     return initSuccess;
   }
 

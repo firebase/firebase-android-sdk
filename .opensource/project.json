@@ -8,6 +8,7 @@
     "pages": {
         "README.md": "Development Guide",
         "docs/ktx/common.md": "Common KTX",
+        "docs/ktx/dynamic-links.md": "Dynamic Links KTX",
         "docs/ktx/firestore.md": "Firestore KTX",
         "docs/ktx/functions.md": "Functions KTX",
         "docs/ktx/inappmessaging.md": "In-App Messaging KTX",

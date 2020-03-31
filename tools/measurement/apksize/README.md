@@ -30,8 +30,3 @@ database:DATABASE
 user:USER
 password:PASSWORD
 ```
-
-## Current Support
-
-All projects in this repository are supported with an aggressive ProGuard
-profile. Less aggressive ProGuard profiles will be added at a future date.

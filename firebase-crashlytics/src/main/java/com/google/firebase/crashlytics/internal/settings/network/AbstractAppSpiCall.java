@@ -62,7 +62,7 @@ abstract class AbstractAppSpiCall extends AbstractSpiCall implements AppSpiCall 
     httpRequest = applyHeadersTo(httpRequest, requestData);
     httpRequest = applyMultipartDataTo(httpRequest, requestData);
 
-    Logger.getLogger().d(Logger.TAG, "Sending app info to " + getUrl());
+    Logger.getLogger().d("Sending app info to " + getUrl());
 
     try {
       final HttpResponse httpResponse = httpRequest.execute();
@@ -71,14 +71,12 @@ abstract class AbstractAppSpiCall extends AbstractSpiCall implements AppSpiCall 
       final String kind = "POST".equalsIgnoreCase(httpRequest.method()) ? "Create" : "Update";
 
       Logger.getLogger()
-          .d(
-              Logger.TAG,
-              kind + " app request ID: " + httpResponse.header(AbstractSpiCall.HEADER_REQUEST_ID));
-      Logger.getLogger().d(Logger.TAG, "Result was " + statusCode);
+          .d(kind + " app request ID: " + httpResponse.header(AbstractSpiCall.HEADER_REQUEST_ID));
+      Logger.getLogger().d("Result was " + statusCode);
 
       return ResponseParser.ResponseActionDiscard == ResponseParser.parse(statusCode);
     } catch (IOException ioe) {
-      Logger.getLogger().e(Logger.TAG, "HTTP request failed.", ioe);
+      Logger.getLogger().e("HTTP request failed.", ioe);
       throw new RuntimeException(ioe);
     }
   }

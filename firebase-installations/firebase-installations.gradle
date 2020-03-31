@@ -40,14 +40,17 @@ android {
 dependencies {
     implementation project(':firebase-common')
     implementation project(':firebase-installations-interop')
+    implementation project(':firebase-components')
 
-    implementation 'androidx.appcompat:appcompat:1.0.2'
     implementation 'androidx.multidex:multidex:2.0.1'
     implementation 'com.google.android.gms:play-services-tasks:17.0.0'
 
 
     compileOnly "com.google.auto.value:auto-value-annotations:1.6.5"
     annotationProcessor "com.google.auto.value:auto-value:1.6.2"
+
+    // ship the check within the SDK
+    lintPublish project(':firebase-installations:customer-lint-checks')
 
     testImplementation 'androidx.test:core:1.2.0'
     testImplementation 'junit:junit:4.12'

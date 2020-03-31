@@ -62,7 +62,7 @@ android {
 
 dependencies {
     // TODO(vkryachko): have sdks depend on components directly once components are released.
-    api project(':firebase-components')
+    implementation project(':firebase-components')
     implementation 'com.google.android.gms:play-services-basement:17.0.0'
     implementation "com.google.android.gms:play-services-tasks:17.0.0"
 

@@ -25,10 +25,10 @@ import android.database.sqlite.SQLiteStatement;
 import android.text.TextUtils;
 import android.util.Log;
 import androidx.annotation.VisibleForTesting;
-import com.google.common.base.Preconditions;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.proto.Target;
 import com.google.firebase.firestore.util.Consumer;
+import com.google.firebase.firestore.util.Preconditions;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.ArrayList;
 import java.util.List;
@@ -49,7 +49,7 @@ class SQLiteSchema {
    * The version of the schema. Increase this by one for each migration added to runMigrations
    * below.
    */
-  static final int VERSION = 10;
+  static final int VERSION = 11;
 
   // Remove this constant and increment VERSION to enable indexing support
   static final int INDEXING_SUPPORT_VERSION = VERSION + 1;
@@ -65,9 +65,11 @@ class SQLiteSchema {
 
   private final SQLiteDatabase db;
 
-  // PORTING NOTE: The Android client doesn't need to use a serializer to remove held write acks.
-  SQLiteSchema(SQLiteDatabase db) {
+  private final LocalSerializer serializer;
+
+  SQLiteSchema(SQLiteDatabase db, LocalSerializer serializer) {
     this.db = db;
+    this.serializer = serializer;
   }
 
   void runMigrations() {
@@ -149,6 +151,11 @@ class SQLiteSchema {
       // to ensure data integrity. While the schema did not change between version 9 and 10, we use
       // the schema bump to version 10 to clear any affected data.
       dropLastLimboFreeSnapshotVersion();
+    }
+
+    if (fromVersion < 11 && toVersion >= 11) {
+      // Schema version 11 changed the format of canonical IDs in the target cache.
+      rewriteCanonicalIds();
     }
 
     /*
@@ -529,6 +536,26 @@ class SQLiteSchema {
     }
     return columns;
   }
+
+  private void rewriteCanonicalIds() {
+    new SQLitePersistence.Query(db, "SELECT target_id, target_proto FROM targets")
+        .forEach(
+            cursor -> {
+              int targetId = cursor.getInt(0);
+              byte[] targetProtoBytes = cursor.getBlob(1);
+
+              try {
+                Target targetProto = Target.parseFrom(targetProtoBytes);
+                TargetData targetData = serializer.decodeTargetData(targetProto);
+                String updatedCanonicalId = targetData.getTarget().getCanonicalId();
+                db.execSQL(
+                    "UPDATE targets SET canonical_id  = ? WHERE target_id = ?",
+                    new Object[] {updatedCanonicalId, targetId});
+              } catch (InvalidProtocolBufferException e) {
+                throw fail("Failed to decode Query data for target %s", targetId);
+              }
+            });
+  };
 
   private boolean tableExists(String table) {
     return !new SQLitePersistence.Query(db, "SELECT 1=1 FROM sqlite_master WHERE tbl_name = ?")

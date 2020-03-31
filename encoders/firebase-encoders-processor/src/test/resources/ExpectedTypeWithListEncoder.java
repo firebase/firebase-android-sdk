@@ -12,18 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import com.google.firebase.encoders.EncodingException;
 import com.google.firebase.encoders.ObjectEncoder;
 import com.google.firebase.encoders.ObjectEncoderContext;
 import com.google.firebase.encoders.config.Configurator;
 import com.google.firebase.encoders.config.EncoderConfig;
 import java.io.IOException;
 import java.lang.Override;
-import javax.annotation.Generated;
 
 /**
  * @hide */
-@Generated("com.google.firebase.encoders.processor.EncodableProcessor")
 public final class AutoTypeWithListEncoder implements Configurator {
     public static final int CODEGEN_VERSION = 1;
 
@@ -42,8 +39,7 @@ public final class AutoTypeWithListEncoder implements Configurator {
         static final TypeWithListEncoder INSTANCE = new TypeWithListEncoder();
 
         @Override
-        public void encode(TypeWithList value, ObjectEncoderContext ctx) throws IOException,
-                EncodingException {
+        public void encode(TypeWithList value, ObjectEncoderContext ctx) throws IOException {
             ctx.add("member", value.getMember());
         }
     }
@@ -52,8 +48,7 @@ public final class AutoTypeWithListEncoder implements Configurator {
         static final MemberEncoder INSTANCE = new MemberEncoder();
 
         @Override
-        public void encode(Member value, ObjectEncoderContext ctx) throws IOException,
-                EncodingException {
+        public void encode(Member value, ObjectEncoderContext ctx) throws IOException {
         }
     }
 }

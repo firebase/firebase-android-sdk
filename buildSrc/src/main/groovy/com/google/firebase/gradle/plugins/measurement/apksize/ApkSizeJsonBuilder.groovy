@@ -15,6 +15,10 @@
 
 package com.google.firebase.gradle.plugins.measurement.apksize
 
+import static com.google.firebase.gradle.plugins.measurement.MetricsServiceApi.*
+import com.google.firebase.gradle.plugins.measurement.TestLogFinder
+import groovy.json.JsonOutput
+
 /** A helper class that generates the APK size measurement JSON report. */
 class ApkSizeJsonBuilder {
 
@@ -25,44 +29,25 @@ class ApkSizeJsonBuilder {
     private static final String APK_SIZE_COLUMN = "apk_size"
 
     // This comes in as a String and goes out as a String, so we might as well keep it a String
-    private final String pullRequestNumber
-    private final List<Tuple2<Integer, Integer>> sdkSizes
+    private final List<Tuple3<String, String, Integer>> sdkApkSizes
 
-    ApkSizeJsonBuilder(pullRequestNumber) {
-        this.pullRequestNumber = pullRequestNumber
-        this.sdkSizes = []
+    ApkSizeJsonBuilder() {
+        this.sdkApkSizes = []
     }
 
-    def addApkSize(sdkId, size) {
-        sdkSizes.add(new Tuple2(sdkId, size))
+    def addApkSize(sdk, type, size) {
+        sdkApkSizes.add(new Tuple3(sdk, type, size))
     }
 
     def toJsonString() {
-        if (sdkSizes.isEmpty()) {
+        if (sdkApkSizes.isEmpty()) {
             throw new IllegalStateException("No sizes were added")
         }
 
-        def sizes = sdkSizes.collect {
-            "[$pullRequestNumber, $it.first, $it.second]"
-        }.join(", ")
+        def results = sdkApkSizes.collect { new Result(it.first, "apk ($it.second)", it.third) }
+        def log = TestLogFinder.generateCurrentLogLink()
+        def report = new Report(Metric.BinarySize, results, log)
 
-        def json = """
-            {
-                tables: [
-                    {
-                        table_name: "$PULL_REQUEST_TABLE",
-                        column_names: ["$PULL_REQUEST_COLUMN"],
-                        replace_measurements: [[$pullRequestNumber]],
-                    },
-                    {
-                        table_name: "$APK_SIZE_TABLE",
-                        column_names: ["$PULL_REQUEST_COLUMN", "$SDK_COLUMN", "$APK_SIZE_COLUMN"],
-                        replace_measurements: [$sizes],
-                    },
-                ],
-            }
-        """
-
-        return json
+        return report.toJson()
     }
 }

@@ -3,19 +3,8 @@ package com.google.firebase.installations {
 
   public abstract class InstallationTokenResult {
     ctor public InstallationTokenResult();
-    method @NonNull public static com.google.firebase.installations.InstallationTokenResult.Builder builder();
     method @NonNull public abstract String getToken();
-    method @NonNull public abstract long getTokenCreationTimestamp();
     method @NonNull public abstract long getTokenExpirationTimestamp();
-    method @NonNull public abstract com.google.firebase.installations.InstallationTokenResult.Builder toBuilder();
-  }
-
-  public abstract static class InstallationTokenResult.Builder {
-    ctor public InstallationTokenResult.Builder();
-    method @NonNull public abstract com.google.firebase.installations.InstallationTokenResult build();
-    method @NonNull public abstract com.google.firebase.installations.InstallationTokenResult.Builder setToken(@NonNull String);
-    method @NonNull public abstract com.google.firebase.installations.InstallationTokenResult.Builder setTokenCreationTimestamp(long);
-    method @NonNull public abstract com.google.firebase.installations.InstallationTokenResult.Builder setTokenExpirationTimestamp(long);
   }
 
 }

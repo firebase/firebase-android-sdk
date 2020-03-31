@@ -32,8 +32,8 @@ import com.google.firebase.firestore.core.DocumentViewChange;
 import com.google.firebase.firestore.core.ViewSnapshot;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentSet;
-import com.google.firebase.firestore.model.value.ObjectValue;
-import com.google.firebase.firestore.model.value.ServerTimestampValue;
+import com.google.firebase.firestore.model.ObjectValue;
+import com.google.firebase.firestore.model.ServerTimestamps;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -86,7 +86,7 @@ public class QuerySnapshotTest {
         .thenReturn(new FirebaseFirestoreSettings.Builder().build());
 
     ObjectValue objectData =
-        ObjectValue.fromMap(map("timestamp", new ServerTimestampValue(Timestamp.now(), null)));
+        ObjectValue.fromMap(map("timestamp", ServerTimestamps.valueOf(Timestamp.now(), null)));
     QuerySnapshot foo = TestUtil.querySnapshot("foo", map(), map("a", objectData), true, false);
 
     List<POJO> docs = foo.toObjects(POJO.class);

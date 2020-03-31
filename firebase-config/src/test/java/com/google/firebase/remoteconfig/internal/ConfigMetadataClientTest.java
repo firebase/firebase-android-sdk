@@ -19,7 +19,7 @@ import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.LAST_FETCH_S
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.LAST_FETCH_STATUS_NO_FETCH_YET;
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.LAST_FETCH_STATUS_SUCCESS;
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.LAST_FETCH_STATUS_THROTTLED;
-import static com.google.firebase.remoteconfig.RemoteConfigComponent.NETWORK_CONNECTION_TIMEOUT_IN_SECONDS;
+import static com.google.firebase.remoteconfig.RemoteConfigComponent.CONNECTION_TIMEOUT_IN_SECONDS;
 import static com.google.firebase.remoteconfig.internal.ConfigFetchHandler.DEFAULT_MINIMUM_FETCH_INTERVAL_IN_SECONDS;
 import static com.google.firebase.remoteconfig.internal.ConfigMetadataClient.LAST_FETCH_TIME_IN_MILLIS_NO_FETCH_YET;
 import static com.google.firebase.remoteconfig.internal.ConfigMetadataClient.LAST_FETCH_TIME_NO_FETCH_YET;
@@ -80,8 +80,7 @@ public class ConfigMetadataClientTest {
 
   @Test
   public void getFetchTimeoutInSeconds_isNotSet_returnsDefault() {
-    assertThat(metadataClient.getFetchTimeoutInSeconds())
-        .isEqualTo(NETWORK_CONNECTION_TIMEOUT_IN_SECONDS);
+    assertThat(metadataClient.getFetchTimeoutInSeconds()).isEqualTo(CONNECTION_TIMEOUT_IN_SECONDS);
   }
 
   @Test
@@ -199,7 +198,7 @@ public class ConfigMetadataClientTest {
     assertThat(info.getLastFetchStatus()).isEqualTo(LAST_FETCH_STATUS_NO_FETCH_YET);
     assertThat(info.getConfigSettings().isDeveloperModeEnabled()).isFalse();
     assertThat(info.getConfigSettings().getFetchTimeoutInSeconds())
-        .isEqualTo(NETWORK_CONNECTION_TIMEOUT_IN_SECONDS);
+        .isEqualTo(CONNECTION_TIMEOUT_IN_SECONDS);
     assertThat(info.getConfigSettings().getMinimumFetchIntervalInSeconds())
         .isEqualTo(DEFAULT_MINIMUM_FETCH_INTERVAL_IN_SECONDS);
   }
@@ -311,7 +310,7 @@ public class ConfigMetadataClientTest {
     assertThat(info.getLastFetchStatus()).isEqualTo(LAST_FETCH_STATUS_NO_FETCH_YET);
     assertThat(info.getConfigSettings().isDeveloperModeEnabled()).isFalse();
     assertThat(info.getConfigSettings().getFetchTimeoutInSeconds())
-        .isEqualTo(NETWORK_CONNECTION_TIMEOUT_IN_SECONDS);
+        .isEqualTo(CONNECTION_TIMEOUT_IN_SECONDS);
     assertThat(info.getConfigSettings().getMinimumFetchIntervalInSeconds())
         .isEqualTo(DEFAULT_MINIMUM_FETCH_INTERVAL_IN_SECONDS);
   }
