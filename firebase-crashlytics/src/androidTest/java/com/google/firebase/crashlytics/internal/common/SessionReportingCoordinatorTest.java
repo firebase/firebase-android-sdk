@@ -14,6 +14,7 @@
 
 package com.google.firebase.crashlytics.internal.common;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -339,7 +340,11 @@ public class SessionReportingCoordinatorTest {
     verify(reportPersistence).finalizeSessionWithNativeEvent(eq("id"), filesPayload.capture());
     CrashlyticsReport.FilesPayload ndkPayloadFinalized = filesPayload.getValue();
     assertEquals(1, ndkPayloadFinalized.getFiles().size());
-    assertEquals(testBytes, ndkPayloadFinalized.getFiles().get(0).getContents());
+
+    assertArrayEquals(
+        testBytes,
+        TestUtils.gzipToBytes(
+            ndkPayloadFinalized.getFiles().get(0).getContents(), testBytes.length));
     assertEquals(byteBackedSessionName, ndkPayloadFinalized.getFiles().get(0).getFilename());
   }
 
