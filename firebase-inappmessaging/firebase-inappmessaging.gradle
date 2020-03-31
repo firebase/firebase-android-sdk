@@ -131,8 +131,6 @@ dependencies {
     implementation('com.google.firebase:firebase-iid:20.1.4') {
         exclude group: 'com.google.firebase', module: 'firebase-common'
         exclude group: 'com.google.firebase', module: 'firebase-components'
-        exclude group: 'com.google.firebase', module: 'firebase-installations'
-        exclude group: 'com.google.firebase', module: 'firebase-installations-interop'
     }
 
     implementation('com.google.firebase:firebase-measurement-connector:18.0.0') {
