@@ -816,7 +816,7 @@ public class FirebaseInAppMessagingFlowableTest {
   }
 
   @Test
-  @Ignore("Does not work yet")
+  @Ignore("Broken due to Impression Store changes. Needs fixing.")
   public void whenlogImpressionFails_doesNotFilterCampaign()
       throws ExecutionException, InterruptedException, TimeoutException, FileNotFoundException {
     doThrow(new NullPointerException("e1")).when(application).openFileInput(IMPRESSIONS_STORE_FILE);
@@ -943,7 +943,7 @@ public class FirebaseInAppMessagingFlowableTest {
   }
 
   @Test
-  @Ignore("Does not work yet")
+  @Ignore("Broken due to Impression Store changes. Needs fixing.")
   public void onImpressionLog_cachesImpressionsInMemory()
       throws ExecutionException, InterruptedException, TimeoutException, FileNotFoundException {
     CampaignMetadata otherMetadata =
@@ -999,7 +999,7 @@ public class FirebaseInAppMessagingFlowableTest {
   }
 
   @Test
-  @Ignore("Does not work yet")
+  @Ignore("Broken due to Impression Store changes. Needs fixing.")
   public void onImpressionStoreReadFailure_doesNotFilter()
       throws ExecutionException, InterruptedException, TimeoutException, IOException {
     doThrow(new NullPointerException("e1")).when(application).openFileInput(IMPRESSIONS_STORE_FILE);
@@ -1015,7 +1015,7 @@ public class FirebaseInAppMessagingFlowableTest {
   // We work around this by failing hard on the fake service if we do not find an empty impression
   // list
   @Test
-  @Ignore("Does not work yet")
+  @Ignore("Broken due to Impression Store changes. Needs fixing.")
   public void whenImpressionStorageClientFails_injectsEmptyImpressionListUpstream()
       throws ExecutionException, InterruptedException, TimeoutException, FileNotFoundException {
     VanillaCampaignPayload otherCampaign =
