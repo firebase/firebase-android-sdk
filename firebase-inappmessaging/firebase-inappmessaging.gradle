@@ -127,8 +127,11 @@ dependencies {
     implementation 'io.reactivex.rxjava2:rxjava:2.1.14'
     implementation 'io.reactivex.rxjava2:rxandroid:2.0.2'
     implementation 'com.google.auto.value:auto-value-annotations:1.6.5'
-    implementation ('com.google.firebase:firebase-iid:20.0.1') {
-        exclude group: "com.google.firebase", module: "firebase-common"
+    implementation('com.google.firebase:firebase-iid:20.1.4') {
+        exclude group: 'com.google.firebase', module: 'firebase-common'
+        exclude group: 'com.google.firebase', module: 'firebase-components'
+        exclude group: 'com.google.firebase', module: 'firebase-installations'
+        exclude group: 'com.google.firebase', module: 'firebase-installations-interop'
     }
 
     implementation('com.google.firebase:firebase-measurement-connector:18.0.0') {
