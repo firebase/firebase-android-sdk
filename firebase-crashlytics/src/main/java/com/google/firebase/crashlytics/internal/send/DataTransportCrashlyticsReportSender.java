@@ -18,11 +18,14 @@ import android.content.Context;
 import androidx.annotation.NonNull;
 import com.google.android.datatransport.Encoding;
 import com.google.android.datatransport.Event;
+import com.google.android.datatransport.Transformer;
 import com.google.android.datatransport.Transport;
 import com.google.android.datatransport.cct.CCTDestination;
 import com.google.android.datatransport.runtime.TransportRuntime;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.common.CrashlyticsReportWithSessionId;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.model.serialization.CrashlyticsReportJsonTransform;
@@ -41,8 +44,14 @@ public class DataTransportCrashlyticsReportSender {
   private static final String CRASHLYTICS_API_KEY =
       mergeStrings("AzSBpY4F0rHiHFdinTvM", "IayrSTFL9eJ69YeSUO2");
   private static final String CRASHLYTICS_TRANSPORT_NAME = "FIREBASE_CRASHLYTICS_REPORT";
+  private static final Transformer<CrashlyticsReport, byte[]> DEFAULT_TRANSFORM =
+      (r) -> TRANSFORM.reportToJson(r).getBytes(Charset.forName("UTF-8"));
+
+  // Assumed limit of 1MB, with a little extra headroom
+  private static final int MAX_DATATRANSPORT_BYTES = 1024 * 832;
 
   private final Transport<CrashlyticsReport> transport;
+  private final Transformer<CrashlyticsReport, byte[]> transportTransform;
 
   public static DataTransportCrashlyticsReportSender create(Context context) {
     TransportRuntime.initialize(context);
@@ -53,26 +62,42 @@ public class DataTransportCrashlyticsReportSender {
                 CRASHLYTICS_TRANSPORT_NAME,
                 CrashlyticsReport.class,
                 Encoding.of("json"),
-                r -> TRANSFORM.reportToJson(r).getBytes(Charset.forName("UTF-8")));
-    return new DataTransportCrashlyticsReportSender(transport);
+                DEFAULT_TRANSFORM);
+    return new DataTransportCrashlyticsReportSender(transport, DEFAULT_TRANSFORM);
   }
 
-  DataTransportCrashlyticsReportSender(Transport<CrashlyticsReport> transport) {
+  DataTransportCrashlyticsReportSender(
+      Transport<CrashlyticsReport> transport,
+      Transformer<CrashlyticsReport, byte[]> transportTransform) {
     this.transport = transport;
+    this.transportTransform = transportTransform;
   }
 
   @NonNull
   public Task<CrashlyticsReportWithSessionId> sendReport(
-      @NonNull CrashlyticsReportWithSessionId report) {
+      @NonNull CrashlyticsReportWithSessionId reportWithSessionId) {
+    final CrashlyticsReport report = reportWithSessionId.getReport();
+
+    // Workaround for b/152905875, impose a maximum size on reports.
+    final int reportSize = transportTransform.apply(report).length;
+    if (reportSize > MAX_DATATRANSPORT_BYTES) {
+      Logger.getLogger()
+          .d(
+              String.format(
+                  "Report is too large to be sent via DataTransport. Maximum size is %d bytes. Report size is %d bytes. Removing report.",
+                  MAX_DATATRANSPORT_BYTES, reportSize));
+      return Tasks.forResult(reportWithSessionId);
+    }
+
     TaskCompletionSource<CrashlyticsReportWithSessionId> tcs = new TaskCompletionSource<>();
     transport.schedule(
-        Event.ofUrgent(report.getReport()),
+        Event.ofUrgent(report),
         error -> {
           if (error != null) {
             tcs.trySetException(error);
             return;
           }
-          tcs.trySetResult(report);
+          tcs.trySetResult(reportWithSessionId);
         });
     return tcs.getTask();
   }
