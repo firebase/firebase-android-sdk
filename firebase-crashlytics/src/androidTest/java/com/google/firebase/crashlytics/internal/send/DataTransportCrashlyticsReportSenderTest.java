@@ -20,8 +20,12 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import androidx.test.runner.AndroidJUnit4;
+import com.google.android.datatransport.Transformer;
 import com.google.android.datatransport.Transport;
 import com.google.android.datatransport.TransportScheduleCallback;
 import com.google.android.gms.tasks.Task;
@@ -40,13 +44,15 @@ import org.mockito.stubbing.Answer;
 public class DataTransportCrashlyticsReportSenderTest {
 
   @Mock private Transport<CrashlyticsReport> mockTransport;
+  @Mock private Transformer<CrashlyticsReport, byte[]> mockTransform;
 
   private DataTransportCrashlyticsReportSender reportSender;
 
   @Before
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
-    reportSender = new DataTransportCrashlyticsReportSender(mockTransport);
+    when(mockTransform.apply(any())).thenReturn(new byte[0]);
+    reportSender = new DataTransportCrashlyticsReportSender(mockTransport, mockTransform);
   }
 
   @Test
@@ -121,6 +127,26 @@ public class DataTransportCrashlyticsReportSenderTest {
     assertEquals(report1, send1.getResult());
     assertFalse(send2.isSuccessful());
     assertEquals(ex, send2.getException());
+  }
+
+  @Test
+  public void testSendLargeReport_successfulWithoutSchedulingToDataTransport() throws Exception {
+    doAnswer(callbackAnswer(null)).when(mockTransport).schedule(any(), any());
+
+    final CrashlyticsReportWithSessionId report = mockReportWithSessionId();
+
+    when(mockTransform.apply(report.getReport())).thenReturn(new byte[1024 * 1024]);
+
+    final Task<CrashlyticsReportWithSessionId> send = reportSender.sendReport(report);
+
+    try {
+      Tasks.await(send);
+    } catch (ExecutionException e) {
+      // Allow this to fall through
+    }
+
+    assertTrue(send.isSuccessful());
+    verify(mockTransport, never()).schedule(any(), any());
   }
 
   private static Answer<Void> callbackAnswer(Exception failure) {
