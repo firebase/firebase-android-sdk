@@ -23,7 +23,7 @@ import io.reactivex.Completable;
 import io.reactivex.Maybe;
 import io.reactivex.Observable;
 import io.reactivex.Single;
-import java.util.ArrayList;
+import java.util.HashSet;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -100,9 +100,8 @@ public class ImpressionStorageClient {
   }
 
   /** */
-  public void clearImpressions(FetchEligibleCampaignsResponse response) {
-    ArrayList<String> idsToClear = new ArrayList<>();
-
+  public Completable clearImpressions(FetchEligibleCampaignsResponse response) {
+    HashSet<String> idsToClear = new HashSet<>();
     for (CampaignProto.ThickContent content : response.getMessagesList()) {
       String id =
           content.getPayloadCase().equals(CampaignProto.ThickContent.PayloadCase.VANILLA_PAYLOAD)
@@ -110,8 +109,8 @@ public class ImpressionStorageClient {
               : content.getExperimentalPayload().getCampaignId();
       idsToClear.add(id);
     }
-    Logging.logd("Potential impression to clear: " + idsToClear.toString());
-    getAllImpressions()
+    Logging.logd("Potential impressions to clear: " + idsToClear.toString());
+    return getAllImpressions()
         .defaultIfEmpty(EMPTY_IMPRESSIONS)
         .flatMapCompletable(
             (storedImpressions) -> {
@@ -129,7 +128,6 @@ public class ImpressionStorageClient {
               return storageClient
                   .write(clearedImpressionList)
                   .doOnComplete(() -> initInMemCache(clearedImpressionList));
-            })
-        .blockingAwait();
+            });
   }
 }

@@ -28,7 +28,6 @@ import io.reactivex.Completable;
 import io.reactivex.Maybe;
 import io.reactivex.Scheduler;
 import io.reactivex.disposables.Disposable;
-import java.util.concurrent.TimeUnit;
 
 public class DisplayCallbacksImpl implements FirebaseInAppMessagingDisplayCallbacks {
 
@@ -232,7 +231,7 @@ public class DisplayCallbacksImpl implements FirebaseInAppMessagingDisplayCallba
         impressionStorageClient
             .storeImpression(
                 CampaignImpression.newBuilder()
-                    .setImpressionTimestampMillis(clock.now() - TimeUnit.DAYS.toMillis(2))
+                    .setImpressionTimestampMillis(clock.now())
                     .setCampaignId(campaignId)
                     .build())
             .doOnError(e -> Logging.loge("Impression store write failure"))
