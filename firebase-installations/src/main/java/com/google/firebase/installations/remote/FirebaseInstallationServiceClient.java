@@ -77,6 +77,8 @@ public class FirebaseInstallationServiceClient {
 
   private static final String X_ANDROID_IID_MIGRATION_KEY = "x-goog-fis-android-iid-migration-auth";
 
+  private static final String API_KEY_HEADER = "x-goog-api-key";
+
   private static final int NETWORK_TIMEOUT_MILLIS = 10000;
 
   private static final Pattern EXPIRATION_TIMESTAMP_PATTERN = Pattern.compile("[0-9]+s");
@@ -133,13 +135,12 @@ public class FirebaseInstallationServiceClient {
     URL url =
         new URL(
             String.format(
-                "https://%s/%s/%s?key=%s",
+                "https://%s/%s/%s",
                 FIREBASE_INSTALLATIONS_API_DOMAIN,
                 FIREBASE_INSTALLATIONS_API_VERSION,
-                resourceName,
-                apiKey));
+                resourceName));
     while (retryCount <= MAX_RETRIES) {
-      HttpURLConnection httpURLConnection = openHttpURLConnection(url);
+      HttpURLConnection httpURLConnection = openHttpURLConnection(url, apiKey);
 
       try {
         httpURLConnection.setRequestMethod("POST");
@@ -249,15 +250,14 @@ public class FirebaseInstallationServiceClient {
     URL url =
         new URL(
             String.format(
-                "https://%s/%s/%s?key=%s",
+                "https://%s/%s/%s",
                 FIREBASE_INSTALLATIONS_API_DOMAIN,
                 FIREBASE_INSTALLATIONS_API_VERSION,
-                resourceName,
-                apiKey));
+                resourceName));
 
     int retryCount = 0;
     while (retryCount <= MAX_RETRIES) {
-      HttpURLConnection httpURLConnection = openHttpURLConnection(url);
+      HttpURLConnection httpURLConnection = openHttpURLConnection(url, apiKey);
       httpURLConnection.setRequestMethod("DELETE");
       httpURLConnection.addRequestProperty("Authorization", "FIS_v2 " + refreshToken);
 
@@ -310,13 +310,12 @@ public class FirebaseInstallationServiceClient {
     URL url =
         new URL(
             String.format(
-                "https://%s/%s/%s?key=%s",
+                "https://%s/%s/%s",
                 FIREBASE_INSTALLATIONS_API_DOMAIN,
                 FIREBASE_INSTALLATIONS_API_VERSION,
-                resourceName,
-                apiKey));
+                resourceName));
     while (retryCount <= MAX_RETRIES) {
-      HttpURLConnection httpURLConnection = openHttpURLConnection(url);
+      HttpURLConnection httpURLConnection = openHttpURLConnection(url, apiKey);
       try {
         httpURLConnection.setRequestMethod("POST");
         httpURLConnection.addRequestProperty("Authorization", "FIS_v2 " + refreshToken);
@@ -346,7 +345,7 @@ public class FirebaseInstallationServiceClient {
     throw new IOException();
   }
 
-  private HttpURLConnection openHttpURLConnection(URL url) throws IOException {
+  private HttpURLConnection openHttpURLConnection(URL url, String apiKey) throws IOException {
     HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
     httpURLConnection.setConnectTimeout(NETWORK_TIMEOUT_MILLIS);
     httpURLConnection.setReadTimeout(NETWORK_TIMEOUT_MILLIS);
@@ -363,6 +362,7 @@ public class FirebaseInstallationServiceClient {
       }
     }
     httpURLConnection.addRequestProperty(X_ANDROID_CERT_HEADER_KEY, getFingerprintHashForPackage());
+    httpURLConnection.addRequestProperty(API_KEY_HEADER, apiKey);
     return httpURLConnection;
   }
 
