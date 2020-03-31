@@ -24,10 +24,10 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.developers.mobile.targeting.proto.ClientSignalsProto.ClientSignals;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.iid.InstanceIdResult;
 import com.google.firebase.inappmessaging.internal.injection.scopes.FirebaseAppScope;
 import com.google.firebase.inappmessaging.internal.time.Clock;
-import com.google.firebase.installations.FirebaseInstallationsApi;
-import com.google.firebase.installations.InstallationTokenResult;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.CampaignImpressionList;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.ClientAppInfo;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.FetchEligibleCampaignsRequest;
@@ -53,7 +53,7 @@ public class ApiClient {
   private final Lazy<GrpcClient> grpcClient;
   private final FirebaseApp firebaseApp;
   private final Application application;
-  private final FirebaseInstallationsApi firebaseInstallations;
+  private final FirebaseInstanceId firebaseInstanceId;
   private final DataCollectionHelper dataCollectionHelper;
   private final Clock clock;
   private final ProviderInstaller providerInstaller;
@@ -62,14 +62,14 @@ public class ApiClient {
       Lazy<GrpcClient> grpcClient,
       FirebaseApp firebaseApp,
       Application application,
-      FirebaseInstallationsApi firebaseInstallations,
+      FirebaseInstanceId firebaseInstanceId,
       DataCollectionHelper dataCollectionHelper,
       Clock clock,
       ProviderInstaller providerInstaller) {
     this.grpcClient = grpcClient;
     this.firebaseApp = firebaseApp;
     this.application = application;
-    this.firebaseInstallations = firebaseInstallations;
+    this.firebaseInstanceId = firebaseInstanceId;
     this.dataCollectionHelper = dataCollectionHelper;
     this.clock = clock;
     this.providerInstaller = providerInstaller;
@@ -89,15 +89,13 @@ public class ApiClient {
     }
     Logging.logi(FETCHING_CAMPAIGN_MESSAGE);
     providerInstaller.install();
-    Task<String> idTask = firebaseInstallations.getId();
-    Task<InstallationTokenResult> tokenTask = firebaseInstallations.getToken(false);
-    return Tasks.whenAll(idTask, tokenTask)
+    return firebaseInstanceId
+        .getInstanceId()
         .continueWith(
-            (unused) -> {
-              String idResult = idTask.getResult();
-              InstallationTokenResult tokenResult = tokenTask.getResult();
-              if (TextUtils.isEmpty(idResult) || TextUtils.isEmpty(tokenResult.getToken())) {
-                Logging.logw("Installation ID or Token is empty, not calling backend");
+            instanceIdResultTask -> {
+              InstanceIdResult instanceIdResult = instanceIdResultTask.getResult();
+              if (instanceIdResult == null) {
+                Logging.logw("InstanceID is null, not calling backend");
                 return createCacheExpiringResponse();
               }
               return withCacheExpirationSafeguards(
@@ -110,7 +108,7 @@ public class ApiClient {
                               .addAllAlreadySeenCampaigns(
                                   impressionList.getAlreadySeenCampaignsList())
                               .setClientSignals(getClientSignals())
-                              .setRequestingClientApp(getClientAppInfo(idResult, tokenResult))
+                              .setRequestingClientApp(getClientAppInfo(instanceIdResult))
                               .build()));
             });
   }
@@ -144,12 +142,17 @@ public class ApiClient {
     return clientSignals.build();
   }
 
-  private ClientAppInfo getClientAppInfo(
-      String installationId, InstallationTokenResult installationToken) {
+  private ClientAppInfo getClientAppInfo(InstanceIdResult instanceIdResult) {
     ClientAppInfo.Builder builder =
         ClientAppInfo.newBuilder().setGmpAppId(firebaseApp.getOptions().getApplicationId());
-    builder.setAppInstanceId(installationId);
-    builder.setAppInstanceIdToken(installationToken.getToken());
+    String instanceId = instanceIdResult.getId();
+    String instanceToken = instanceIdResult.getToken();
+    if (!TextUtils.isEmpty(instanceId) && !TextUtils.isEmpty(instanceToken)) {
+      builder.setAppInstanceId(instanceId);
+      builder.setAppInstanceIdToken(instanceToken);
+    } else {
+      Logging.logw("Empty instance ID or instance token");
+    }
     return builder.build();
   }
 

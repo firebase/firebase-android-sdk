@@ -116,13 +116,10 @@ dependencies {
     implementation project(':protolite-well-known-types')
     implementation project(':transport:transport-api')
     implementation project(':firebase-datatransport')
-    implementation project(':firebase-installations-interop')
-    runtimeOnly project(':firebase-installations')
 
     //To provide @Generated annotations
     compileOnly 'javax.annotation:jsr250-api:1.0'
 
-    implementation 'com.google.android.gms:play-services-tasks:17.0.0'
     implementation 'io.grpc:grpc-stub:1.21.0'
     implementation 'io.grpc:grpc-protobuf-lite:1.21.0'
     implementation 'io.grpc:grpc-okhttp:1.21.0'
@@ -130,6 +127,9 @@ dependencies {
     implementation 'io.reactivex.rxjava2:rxjava:2.1.14'
     implementation 'io.reactivex.rxjava2:rxandroid:2.0.2'
     implementation 'com.google.auto.value:auto-value-annotations:1.6.5'
+    implementation ('com.google.firebase:firebase-iid:20.0.1') {
+        exclude group: "com.google.firebase", module: "firebase-common"
+    }
 
     implementation('com.google.firebase:firebase-measurement-connector:18.0.0') {
         exclude group: 'com.google.firebase', module: 'firebase-common'
