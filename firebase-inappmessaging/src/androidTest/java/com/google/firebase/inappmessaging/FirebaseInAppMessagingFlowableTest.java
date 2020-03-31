@@ -816,6 +816,24 @@ public class FirebaseInAppMessagingFlowableTest {
   }
 
   @Test
+  @Ignore("Does not work yet")
+  public void whenlogImpressionFails_doesNotFilterCampaign()
+      throws ExecutionException, InterruptedException, TimeoutException, FileNotFoundException {
+    doThrow(new NullPointerException("e1")).when(application).openFileInput(IMPRESSIONS_STORE_FILE);
+
+    Task<Void> logImpressionTask =
+        displayCallbacksFactory
+            .generateDisplayCallback(MODAL_MESSAGE_MODEL, ANALYTICS_EVENT_NAME)
+            .impressionDetected();
+    await().timeout(2, SECONDS).until(logImpressionTask::isComplete);
+    assertThat(logImpressionTask.getException()).hasMessageThat().contains("e1");
+    analyticsConnector.invokeListenerOnEvent(ANALYTICS_EVENT_NAME);
+    waitUntilNotified(subscriber);
+
+    assertSingleSuccessNotification(subscriber);
+  }
+
+  @Test
   public void logImpression_whenlogEventLimitIncrementFails_doesNotRateLimit()
       throws ExecutionException, InterruptedException, TimeoutException, FileNotFoundException {
     CampaignMetadata otherMetadata =
@@ -925,6 +943,7 @@ public class FirebaseInAppMessagingFlowableTest {
   }
 
   @Test
+  @Ignore("Does not work yet")
   public void onImpressionLog_cachesImpressionsInMemory()
       throws ExecutionException, InterruptedException, TimeoutException, FileNotFoundException {
     CampaignMetadata otherMetadata =
@@ -977,6 +996,67 @@ public class FirebaseInAppMessagingFlowableTest {
     waitUntilNotified(subscriber);
 
     assertSingleSuccessNotification(subscriber);
+  }
+
+  @Test
+  @Ignore("Does not work yet")
+  public void onImpressionStoreReadFailure_doesNotFilter()
+      throws ExecutionException, InterruptedException, TimeoutException, IOException {
+    doThrow(new NullPointerException("e1")).when(application).openFileInput(IMPRESSIONS_STORE_FILE);
+
+    analyticsConnector.invokeListenerOnEvent(ANALYTICS_EVENT_NAME);
+    waitUntilNotified(subscriber);
+
+    assertSingleSuccessNotification(subscriber);
+  }
+
+  // There is not a purely functional way to determine if our clients inject the impressed
+  // campaigns upstream since we filter impressions from the response on the client as well.
+  // We work around this by failing hard on the fake service if we do not find an empty impression
+  // list
+  @Test
+  @Ignore("Does not work yet")
+  public void whenImpressionStorageClientFails_injectsEmptyImpressionListUpstream()
+      throws ExecutionException, InterruptedException, TimeoutException, FileNotFoundException {
+    VanillaCampaignPayload otherCampaign =
+        VanillaCampaignPayload.newBuilder(vanillaCampaign.build())
+            .setCampaignId("otherCampaignId")
+            .setCampaignName("other_name")
+            .build();
+    ThickContent otherContent =
+        ThickContent.newBuilder(thickContent)
+            .setContent(BANNER_MESSAGE_PROTO)
+            .clearVanillaPayload()
+            .clearTriggeringConditions()
+            .addTriggeringConditions(
+                TriggeringCondition.newBuilder().setEvent(Event.newBuilder().setName("event2")))
+            .setVanillaPayload(otherCampaign)
+            .build();
+    FetchEligibleCampaignsResponse response =
+        FetchEligibleCampaignsResponse.newBuilder(eligibleCampaigns)
+            .addMessages(otherContent)
+            .build();
+
+    InAppMessagingSdkServingImplBase fakeFilteringService =
+        new InAppMessagingSdkServingImplBase() {
+          @Override
+          public void fetchEligibleCampaigns(
+              FetchEligibleCampaignsRequest request,
+              StreamObserver<FetchEligibleCampaignsResponse> responseObserver) {
+
+            // Fail if impressions list is not empty
+            assertThat(request.getAlreadySeenCampaignsList()).isEmpty();
+
+            responseObserver.onNext(response);
+            responseObserver.onCompleted();
+          }
+        };
+    grpcServerRule.getServiceRegistry().addService(fakeFilteringService);
+    doThrow(new NullPointerException("e1")).when(application).openFileInput(IMPRESSIONS_STORE_FILE);
+    analyticsConnector.invokeListenerOnEvent(ANALYTICS_EVENT_NAME);
+    analyticsConnector.invokeListenerOnEvent("event2");
+
+    waitUntilNotified(subscriber);
   }
 
   @Test
