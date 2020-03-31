@@ -23,6 +23,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.zip.GZIPOutputStream;
 
 /** A {@link NativeSessionFile} backed by a {@link File} currently on disk. */
 class FileBackedNativeSessionFile implements NativeSessionFile {
@@ -71,17 +72,20 @@ class FileBackedNativeSessionFile implements NativeSessionFile {
         : null;
   }
 
+  @Nullable
   private byte[] asBytes() {
     final byte[] readBuffer = new byte[8192];
-    final ByteArrayOutputStream bos = new ByteArrayOutputStream();
     try (InputStream stream = getStream()) {
       if (stream == null) {
         return null;
       }
+      final ByteArrayOutputStream bos = new ByteArrayOutputStream();
+      final GZIPOutputStream gos = new GZIPOutputStream(bos);
       int read;
       while ((read = stream.read(readBuffer)) > 0) {
-        bos.write(readBuffer, 0, read);
+        gos.write(readBuffer, 0, read);
       }
+      gos.finish();
       return bos.toByteArray();
     } catch (IOException e) {
       return null;

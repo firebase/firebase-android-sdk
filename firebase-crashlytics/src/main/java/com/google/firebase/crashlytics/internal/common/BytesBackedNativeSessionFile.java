@@ -18,7 +18,10 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.util.zip.GZIPOutputStream;
 
 /** A {@link NativeSessionFile} backed by a byte array. */
 class BytesBackedNativeSessionFile implements NativeSessionFile {
@@ -53,12 +56,25 @@ class BytesBackedNativeSessionFile implements NativeSessionFile {
     return isEmpty()
         ? null
         : CrashlyticsReport.FilesPayload.File.builder()
-            .setContents(bytes)
+            .setContents(asGzippedBytes())
             .setFilename(dataTransportFilename)
             .build();
   }
 
   private boolean isEmpty() {
     return bytes == null || bytes.length == 0;
+  }
+
+  @Nullable
+  private byte[] asGzippedBytes() {
+    try {
+      final ByteArrayOutputStream bos = new ByteArrayOutputStream();
+      final GZIPOutputStream gos = new GZIPOutputStream(bos);
+      gos.write(bytes);
+      gos.finish();
+      return bos.toByteArray();
+    } catch (IOException e) {
+      return null;
+    }
   }
 }
