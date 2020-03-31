@@ -99,7 +99,10 @@ public class ImpressionStorageClient {
         .contains(campaignId);
   }
 
-  /** */
+  /**
+   * Clears impressions for all campaigns found in the provided {@link
+   * FetchEligibleCampaignsResponse}
+   */
   public Completable clearImpressions(FetchEligibleCampaignsResponse response) {
     HashSet<String> idsToClear = new HashSet<>();
     for (CampaignProto.ThickContent content : response.getMessagesList()) {
