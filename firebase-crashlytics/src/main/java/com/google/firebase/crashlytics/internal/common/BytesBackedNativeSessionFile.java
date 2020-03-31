@@ -67,9 +67,8 @@ class BytesBackedNativeSessionFile implements NativeSessionFile {
 
   @Nullable
   private byte[] asGzippedBytes() {
-    try {
-      final ByteArrayOutputStream bos = new ByteArrayOutputStream();
-      final GZIPOutputStream gos = new GZIPOutputStream(bos);
+    try (ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        GZIPOutputStream gos = new GZIPOutputStream(bos)) {
       gos.write(bytes);
       gos.finish();
       return bos.toByteArray();

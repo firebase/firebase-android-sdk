@@ -63,7 +63,7 @@ class FileBackedNativeSessionFile implements NativeSessionFile {
   @Override
   @Nullable
   public CrashlyticsReport.FilesPayload.File asFilePayload() {
-    byte[] bytes = asBytes();
+    byte[] bytes = asGzippedBytes();
     return bytes != null
         ? CrashlyticsReport.FilesPayload.File.builder()
             .setContents(bytes)
@@ -73,14 +73,14 @@ class FileBackedNativeSessionFile implements NativeSessionFile {
   }
 
   @Nullable
-  private byte[] asBytes() {
+  private byte[] asGzippedBytes() {
     final byte[] readBuffer = new byte[8192];
-    try (InputStream stream = getStream()) {
+    try (InputStream stream = getStream();
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        GZIPOutputStream gos = new GZIPOutputStream(bos)) {
       if (stream == null) {
         return null;
       }
-      final ByteArrayOutputStream bos = new ByteArrayOutputStream();
-      final GZIPOutputStream gos = new GZIPOutputStream(bos);
       int read;
       while ((read = stream.read(readBuffer)) > 0) {
         gos.write(readBuffer, 0, read);

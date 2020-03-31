@@ -38,9 +38,8 @@ final class TestUtils {
 
   public static byte[] gzipToBytes(byte[] compressed, int numBytes) {
     byte[] outputArray = new byte[numBytes];
-    try {
-      ByteArrayInputStream bis = new ByteArrayInputStream(compressed);
-      GZIPInputStream gis = new GZIPInputStream(bis);
+    try (ByteArrayInputStream bis = new ByteArrayInputStream(compressed);
+        GZIPInputStream gis = new GZIPInputStream(bis)) {
       gis.read(outputArray);
       return outputArray;
     } catch (Exception e) {
