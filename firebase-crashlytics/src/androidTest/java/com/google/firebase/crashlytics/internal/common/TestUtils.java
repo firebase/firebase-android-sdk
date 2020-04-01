@@ -15,9 +15,12 @@
 package com.google.firebase.crashlytics.internal.common;
 
 import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.zip.GZIPInputStream;
 
 final class TestUtils {
   private TestUtils() {}
@@ -31,6 +34,21 @@ final class TestUtils {
       if (writer != null) {
         writer.close();
       }
+    }
+  }
+
+  public static byte[] inflateGzipToRawBytes(byte[] compressed) {
+    try (ByteArrayInputStream bis = new ByteArrayInputStream(compressed);
+        GZIPInputStream gis = new GZIPInputStream(bis);
+        ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+      int value = gis.read();
+      while (value != -1) {
+        bos.write(value);
+        value = gis.read();
+      }
+      return bos.toByteArray();
+    } catch (Exception e) {
+      return null;
     }
   }
 }
