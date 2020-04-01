@@ -343,8 +343,7 @@ public class SessionReportingCoordinatorTest {
 
     assertArrayEquals(
         testBytes,
-        TestUtils.gzipToBytes(
-            ndkPayloadFinalized.getFiles().get(0).getContents(), testBytes.length));
+        TestUtils.inflateGzipToRawBytes(ndkPayloadFinalized.getFiles().get(0).getContents()));
     assertEquals(byteBackedSessionName, ndkPayloadFinalized.getFiles().get(0).getFilename());
   }
 

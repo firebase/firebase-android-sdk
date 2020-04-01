@@ -49,8 +49,7 @@ public class BytesBackedNativeSessionFileTest {
         new BytesBackedNativeSessionFile("file_name", "file", testBytes);
     CrashlyticsReport.FilesPayload.File filesPayload = nativeSessionFile.asFilePayload();
     assertNotNull(filesPayload);
-    assertArrayEquals(
-        testBytes, TestUtils.gzipToBytes(filesPayload.getContents(), testBytes.length));
+    assertArrayEquals(testBytes, TestUtils.inflateGzipToRawBytes(filesPayload.getContents()));
     assertEquals("file_name", filesPayload.getFilename());
   }
 
