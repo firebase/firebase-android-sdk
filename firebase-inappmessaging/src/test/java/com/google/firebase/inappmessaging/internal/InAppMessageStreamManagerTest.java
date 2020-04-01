@@ -198,6 +198,8 @@ public class InAppMessageStreamManagerTest {
             abtIntegrationHelper);
     subscriber = streamManager.createFirebaseInAppMessageStream().test();
     when(application.getApplicationContext()).thenReturn(application);
+    when(impressionStorageClient.clearImpressions(any(FetchEligibleCampaignsResponse.class)))
+        .thenReturn(Completable.complete());
     when(rateLimiterClient.isRateLimited(appForegroundRateLimit)).thenReturn(Single.just(false));
     when(campaignCacheClient.get()).thenReturn(Maybe.empty());
     when(campaignCacheClient.put(any(FetchEligibleCampaignsResponse.class)))
