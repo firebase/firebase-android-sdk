@@ -27,6 +27,7 @@ dependencies {
     testImplementation "com.android.tools.lint:lint:$lintVersion"
     testImplementation "com.android.tools.lint:lint-tests:$lintVersion"
     testImplementation "com.android.tools:testutils:$lintVersion"
+    testImplementation "com.google.truth:truth:$googleTruthVersion"
 }
 
 compileKotlin.kotlinOptions.apiVersion = '1.2'
