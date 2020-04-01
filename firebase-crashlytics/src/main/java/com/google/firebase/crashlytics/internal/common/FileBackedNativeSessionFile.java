@@ -23,6 +23,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.zip.GZIPOutputStream;
 
 /** A {@link NativeSessionFile} backed by a {@link File} currently on disk. */
 class FileBackedNativeSessionFile implements NativeSessionFile {
@@ -62,7 +63,7 @@ class FileBackedNativeSessionFile implements NativeSessionFile {
   @Override
   @Nullable
   public CrashlyticsReport.FilesPayload.File asFilePayload() {
-    byte[] bytes = asBytes();
+    byte[] bytes = asGzippedBytes();
     return bytes != null
         ? CrashlyticsReport.FilesPayload.File.builder()
             .setContents(bytes)
@@ -71,17 +72,20 @@ class FileBackedNativeSessionFile implements NativeSessionFile {
         : null;
   }
 
-  private byte[] asBytes() {
+  @Nullable
+  private byte[] asGzippedBytes() {
     final byte[] readBuffer = new byte[8192];
-    final ByteArrayOutputStream bos = new ByteArrayOutputStream();
-    try (InputStream stream = getStream()) {
+    try (InputStream stream = getStream();
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        GZIPOutputStream gos = new GZIPOutputStream(bos)) {
       if (stream == null) {
         return null;
       }
       int read;
       while ((read = stream.read(readBuffer)) > 0) {
-        bos.write(readBuffer, 0, read);
+        gos.write(readBuffer, 0, read);
       }
+      gos.finish();
       return bos.toByteArray();
     } catch (IOException e) {
       return null;

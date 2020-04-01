@@ -85,7 +85,7 @@ public class FileBackedNativeSessionFileTest extends CrashlyticsTestCase {
         new FileBackedNativeSessionFile("file_name", "file", testFile);
     CrashlyticsReport.FilesPayload.File filesPayload = nativeSessionFile.asFilePayload();
     assertNotNull(filesPayload);
-    assertArrayEquals(testContents, filesPayload.getContents());
+    assertArrayEquals(testContents, TestUtils.inflateGzipToRawBytes(filesPayload.getContents()));
     assertEquals("file_name", filesPayload.getFilename());
   }
 
@@ -95,7 +95,7 @@ public class FileBackedNativeSessionFileTest extends CrashlyticsTestCase {
         new FileBackedNativeSessionFile("file_name", "file", emptyFile);
     CrashlyticsReport.FilesPayload.File filesPayload = nativeSessionFile.asFilePayload();
     assertNotNull(filesPayload);
-    assertArrayEquals(emptyContents, filesPayload.getContents());
+    assertArrayEquals(emptyContents, TestUtils.inflateGzipToRawBytes(filesPayload.getContents()));
     assertEquals("file_name", filesPayload.getFilename());
   }
 
