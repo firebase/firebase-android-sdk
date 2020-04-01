@@ -57,7 +57,6 @@ dependencies {
   implementation project(path: ":firebase-inappmessaging-display")
   implementation project(path: ":firebase-inappmessaging")
   implementation 'com.google.guava:guava:24.1-jre-android'
-  implementation "com.google.firebase:firebase-measurement-connector:18.0.0"
 
   implementation('com.google.firebase:firebase-analytics:17.0.0') {
     exclude group: 'com.google.firebase', module: 'firebase-common'
