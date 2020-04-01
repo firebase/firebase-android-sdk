@@ -20,13 +20,23 @@ plugins {
 def lintVersion = '26.2.1'
 
 dependencies {
-    compileOnly "com.android.tools.lint:lint-api:$lintVersion"
-    compileOnly "com.android.tools.lint:lint-checks:$lintVersion"
+    compileOnly ("com.android.tools.lint:lint-api:$lintVersion") {
+        exclude group: "com.google.protobuf", module: "protobuf-java"
+    }
+    compileOnly ("com.android.tools.lint:lint-checks:$lintVersion") {
+        exclude group: "com.google.protobuf", module: "protobuf-java"
+    }
 
     testImplementation "junit:junit:4.12"
-    testImplementation "com.android.tools.lint:lint:$lintVersion"
-    testImplementation "com.android.tools.lint:lint-tests:$lintVersion"
-    testImplementation "com.android.tools:testutils:$lintVersion"
+    testImplementation ("com.android.tools.lint:lint:$lintVersion")  {
+        exclude group: "com.google.protobuf", module: "protobuf-java"
+    }
+    testImplementation ("com.android.tools.lint:lint-tests:$lintVersion")  {
+        exclude group: "com.google.protobuf", module: "protobuf-java"
+    }
+    testImplementation ("com.android.tools:testutils:$lintVersion") {
+        exclude group: "com.google.protobuf", module: "protobuf-java"
+    }
 }
 
 compileKotlin.kotlinOptions.apiVersion = '1.2'

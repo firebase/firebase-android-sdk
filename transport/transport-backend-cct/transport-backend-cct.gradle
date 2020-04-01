@@ -25,7 +25,7 @@ protobuf {
     // Configure the protoc executable
     protoc {
         // Download from repositories
-        artifact = 'com.google.protobuf:protoc:3.10.1'
+        artifact = 'com.google.protobuf:protoc:3.10.0'
     }
     generateProtoTasks {
         all().each { task ->
@@ -60,8 +60,7 @@ dependencies {
 
     annotationProcessor "com.google.auto.value:auto-value:1.6.2"
 
-    testImplementation 'com.google.protobuf:protobuf-java:3.10.0'
-    testImplementation 'com.google.protobuf:protobuf-java-util:3.10.0'
+    testImplementation 'com.google.protobuf:protobuf-javalite:3.11.0'
     testImplementation 'androidx.test:core:1.2.0'
     testImplementation 'junit:junit:4.12'
     testImplementation "com.google.truth:truth:$googleTruthVersion"

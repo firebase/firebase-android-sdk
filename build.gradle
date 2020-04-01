@@ -50,7 +50,7 @@ ext {
     errorproneVersion = '2.3.2'
     errorproneJavacVersion = '9+181-r4173-1'
     googleTruthVersion = '0.45'
-    grpcVersion = '1.26.0'
+    grpcVersion = '1.28.0'
     robolectricVersion = '4.1'
 }
 
@@ -161,6 +161,10 @@ configure(subprojects) {
 
         sub.apply plugin: LicenseResolverPlugin
     }
+}
+
+configurations.all {
+    exclude group: "com.google.protobuf", module: "protobuf-java"
 }
 
 

@@ -30,7 +30,9 @@ dependencies {
   testImplementation ("com.android.tools.lint:lint:$lintVersion") {
     exclude group: "com.google.protobuf", module: "protobuf-java"
   }
-  testImplementation "com.android.tools.lint:lint-tests:$lintVersion"
+  testImplementation ("com.android.tools.lint:lint-tests:$lintVersion") {
+    exclude group: "com.google.protobuf", module: "protobuf-java"
+  }
   testImplementation "com.android.tools:testutils:$lintVersion"
 }
 

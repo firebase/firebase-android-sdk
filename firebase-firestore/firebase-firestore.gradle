@@ -104,6 +104,7 @@ configurations.all {
             force 'com.google.guava:guava:28.1-android'
         }
     }
+    exclude group: "com.google.protobuf", module: "protobuf-java"
 }
 
 dependencies {
