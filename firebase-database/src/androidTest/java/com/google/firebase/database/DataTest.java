@@ -2749,13 +2749,13 @@ public class DataTest {
   @Test
   public void testServerIncrementOverwritesExistingDataOnline()
       throws DatabaseException, TimeoutException, InterruptedException {
-    serverIncrementOverwritesExistingData(true);
+    serverIncrementOverwritesExistingData(/* online= */ true);
   }
 
   @Test
   public void testServerIncrementOverwritesExistingDataOffline()
       throws DatabaseException, TimeoutException, InterruptedException {
-    serverIncrementOverwritesExistingData(false);
+    serverIncrementOverwritesExistingData(/* online= */ false);
   }
 
   public void serverIncrementOverwritesExistingData(boolean online)
@@ -2830,13 +2830,13 @@ public class DataTest {
   @Test
   public void testServerIncrementPriorityOnline()
       throws DatabaseException, TimeoutException, InterruptedException {
-    serverIncrementPriority(true);
+    serverIncrementPriority(/* online= */ true);
   }
 
   @Test
   public void testServerIncrementPriorityOffline()
       throws DatabaseException, TimeoutException, InterruptedException {
-    serverIncrementPriority(false);
+    serverIncrementPriority(/* online= */ false);
   }
 
   public void serverIncrementPriority(boolean online)

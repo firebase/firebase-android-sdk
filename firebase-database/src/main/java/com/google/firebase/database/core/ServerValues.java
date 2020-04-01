@@ -14,6 +14,8 @@
 
 package com.google.firebase.database.core;
 
+import com.google.firebase.database.core.ValueProvider.DeferredValueProvider;
+import com.google.firebase.database.core.ValueProvider.ExistingValueProvider;
 import com.google.firebase.database.core.utilities.Clock;
 import com.google.firebase.database.core.utilities.Utilities;
 import com.google.firebase.database.snapshot.ChildKey;

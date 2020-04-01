@@ -16,6 +16,7 @@ package com.google.firebase.database.core;
 
 import com.google.firebase.database.snapshot.ChildKey;
 import com.google.firebase.database.snapshot.Node;
+import java.util.ArrayList;
 
 /**
  * A ValueProvider defers the calculation of a Node's value until needed.
@@ -25,8 +26,54 @@ import com.google.firebase.database.snapshot.Node;
  * value resolution, we ned a wrapper class that will let us share code {@see
  * https://github.com/firebase/firebase-js-sdk/issues/2487}.
  */
-public interface ValueProvider {
-  ValueProvider getImmediateChild(ChildKey childKey);
+abstract class ValueProvider {
+  public abstract ValueProvider getImmediateChild(ChildKey childKey);
 
-  Node node();
+  public abstract Node node();
+
+  /**
+   * An ExistingValueProvider implements the ValueProvider interface for a Node whose value is
+   * known.
+   */
+  public static class ExistingValueProvider extends ValueProvider {
+    private final Node node;
+
+    ExistingValueProvider(Node node) {
+      this.node = node;
+    }
+
+    @Override
+    public ValueProvider getImmediateChild(ChildKey childKey) {
+      Node child = node.getImmediateChild(childKey);
+      return new ExistingValueProvider(child);
+    }
+
+    @Override
+    public Node node() {
+      return node;
+    }
+  }
+
+  /** A DeferredValueProvider computes the value of a Node only when {@link #node()} is invoked. */
+  public static class DeferredValueProvider extends ValueProvider {
+
+    private final SyncTree syncTree;
+    private final Path path;
+
+    DeferredValueProvider(SyncTree syncTree, Path path) {
+      this.syncTree = syncTree;
+      this.path = path;
+    }
+
+    @Override
+    public ValueProvider getImmediateChild(ChildKey childKey) {
+      Path child = path.child(childKey);
+      return new DeferredValueProvider(syncTree, child);
+    }
+
+    @Override
+    public Node node() {
+      return syncTree.calcCompleteEventCache(path, new ArrayList<>());
+    }
+  }
 }

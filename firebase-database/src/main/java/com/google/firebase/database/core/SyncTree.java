@@ -242,9 +242,6 @@ public class SyncTree {
             boolean needToReevaluate = pendingWriteTree.removeWrite(writeId);
             if (write.isVisible()) {
               if (!revert) {
-                ArrayList<Long> excludeThis = new ArrayList<>();
-                excludeThis.add(write.getWriteId());
-                Node existing = calcCompleteEventCache(write.getPath(), excludeThis);
                 Map<String, Object> serverValues = ServerValues.generateServerValues(serverClock);
                 if (write.isOverwrite()) {
                   Node resolvedNode =
