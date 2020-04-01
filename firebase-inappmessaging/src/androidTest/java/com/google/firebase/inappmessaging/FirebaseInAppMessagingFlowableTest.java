@@ -44,6 +44,7 @@ import android.content.Context;
 import android.os.Bundle;
 import android.os.Looper;
 import android.util.Log;
+import androidx.annotation.NonNull;
 import androidx.test.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
@@ -52,6 +53,8 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.events.Subscriber;
+import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.iid.InstanceIdResult;
 import com.google.firebase.inappmessaging.CommonTypesProto.Event;
 import com.google.firebase.inappmessaging.CommonTypesProto.Priority;
 import com.google.firebase.inappmessaging.CommonTypesProto.TriggeringCondition;
@@ -69,8 +72,6 @@ import com.google.firebase.inappmessaging.internal.injection.modules.Programmati
 import com.google.firebase.inappmessaging.model.BannerMessage;
 import com.google.firebase.inappmessaging.model.CampaignMetadata;
 import com.google.firebase.inappmessaging.model.InAppMessage;
-import com.google.firebase.installations.FirebaseInstallationsApi;
-import com.google.firebase.installations.InstallationTokenResult;
 import com.google.internal.firebase.inappmessaging.v1.CampaignProto.ThickContent;
 import com.google.internal.firebase.inappmessaging.v1.CampaignProto.VanillaCampaignPayload;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.CampaignImpression;
@@ -112,10 +113,8 @@ import org.mockito.Mock;
 @RunWith(AndroidJUnit4.class)
 public class FirebaseInAppMessagingFlowableTest {
 
-  private static final String PROJECT_NUMBER = "gcm-sender-id";
-  private static final String APP_ID = "app-id";
-  private static final String INSTANCE_ID = "instance-id";
-  private static final String INSTANCE_TOKEN = "token";
+  public static final String PROJECT_NUMBER = "gcm-sender-id";
+  public static final String APP_ID = "app-id";
   private static final long PAST = 1000000;
   private static final long NOW = PAST + 100000;
   private static final long FUTURE = NOW + 1000000;
@@ -168,7 +167,7 @@ public class FirebaseInAppMessagingFlowableTest {
   @Mock
   private MetricsLoggerClient.EngagementMetricsLoggerInterface engagementMetricsLoggerInterface;
 
-  @Mock private FirebaseInstallationsApi firebaseInstallations;
+  @Mock private FirebaseInstanceId instanceId;
   @Mock private TestDeviceHelper testDeviceHelper;
   @Mock private Subscriber firebaseEventSubscriber;
   @Mock private AbtIntegrationHelper abtIntegrationHelper;
@@ -224,16 +223,24 @@ public class FirebaseInAppMessagingFlowableTest {
     clearProtoDiskCache(InstrumentationRegistry.getTargetContext());
     application =
         spy((Application) InstrumentationRegistry.getTargetContext().getApplicationContext());
-    when(firebaseInstallations.getId()).thenReturn(Tasks.forResult(INSTANCE_ID));
-    when(firebaseInstallations.getToken(false))
+    String id = FirebaseInstanceId.getInstance().getId();
+    when(instanceId.getId()).thenReturn(id);
+    when(instanceId.getInstanceId())
         .thenReturn(
             Tasks.forResult(
-                InstallationTokenResult.builder()
-                    .setToken(INSTANCE_TOKEN)
-                    .setTokenCreationTimestamp(1)
-                    .setTokenExpirationTimestamp(1)
-                    .build()));
+                new InstanceIdResult() {
+                  @NonNull
+                  @Override
+                  public String getId() {
+                    return id;
+                  }
 
+                  @NonNull
+                  @Override
+                  public String getToken() {
+                    return "token";
+                  }
+                }));
     when(testDeviceHelper.isAppInstallFresh()).thenReturn(false);
     when(testDeviceHelper.isDeviceInTestMode()).thenReturn(false);
 
@@ -265,7 +272,7 @@ public class FirebaseInAppMessagingFlowableTest {
             .grpcClientModule(new GrpcClientModule(app))
             .testApiClientModule(
                 new TestApiClientModule(
-                    app, firebaseInstallations, testDeviceHelper, universalComponent.clock()));
+                    app, instanceId, testDeviceHelper, universalComponent.clock()));
     TestAppComponent appComponent = appComponentBuilder.build();
 
     instance = appComponent.providesFirebaseInAppMessaging();
@@ -705,7 +712,7 @@ public class FirebaseInAppMessagingFlowableTest {
             .setClientTimestampMillis(NOW)
             .setClientApp(
                 ClientAppInfo.newBuilder()
-                    .setFirebaseInstanceId(INSTANCE_ID)
+                    .setFirebaseInstanceId(FirebaseInstanceId.getInstance().getId())
                     .setGoogleAppId(APP_ID))
             .setEventType(EventType.IMPRESSION_EVENT_TYPE)
             .build();
@@ -735,7 +742,7 @@ public class FirebaseInAppMessagingFlowableTest {
             .setClientTimestampMillis(NOW)
             .setClientApp(
                 ClientAppInfo.newBuilder()
-                    .setFirebaseInstanceId(INSTANCE_ID)
+                    .setFirebaseInstanceId(FirebaseInstanceId.getInstance().getId())
                     .setGoogleAppId(APP_ID))
             .setEventType(EventType.IMPRESSION_EVENT_TYPE)
             .build();
@@ -766,7 +773,7 @@ public class FirebaseInAppMessagingFlowableTest {
             .setClientTimestampMillis(NOW)
             .setClientApp(
                 ClientAppInfo.newBuilder()
-                    .setFirebaseInstanceId(INSTANCE_ID)
+                    .setFirebaseInstanceId(FirebaseInstanceId.getInstance().getId())
                     .setGoogleAppId(APP_ID))
             .setRenderErrorReason(RenderErrorReason.IMAGE_DISPLAY_ERROR)
             .build();
@@ -797,7 +804,7 @@ public class FirebaseInAppMessagingFlowableTest {
             .setClientTimestampMillis(NOW)
             .setClientApp(
                 ClientAppInfo.newBuilder()
-                    .setFirebaseInstanceId(INSTANCE_ID)
+                    .setFirebaseInstanceId(FirebaseInstanceId.getInstance().getId())
                     .setGoogleAppId(APP_ID))
             .setDismissType(DismissType.AUTO)
             .build();

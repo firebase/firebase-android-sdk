@@ -42,15 +42,16 @@ import static org.mockito.Mockito.when;
 
 import android.app.Application;
 import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
+import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.inappmessaging.CommonTypesProto.Event;
 import com.google.firebase.inappmessaging.CommonTypesProto.Priority;
 import com.google.firebase.inappmessaging.CommonTypesProto.TriggeringCondition;
 import com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks;
 import com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks.InAppMessagingDismissType;
 import com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks.InAppMessagingErrorReason;
+import com.google.firebase.inappmessaging.FirebaseInAppMessagingTest.ShadowFirebaseInstanceId;
 import com.google.firebase.inappmessaging.MessagesProto;
 import com.google.firebase.inappmessaging.MessagesProto.Content;
 import com.google.firebase.inappmessaging.internal.time.FakeClock;
@@ -60,8 +61,6 @@ import com.google.firebase.inappmessaging.model.CardMessage;
 import com.google.firebase.inappmessaging.model.InAppMessage;
 import com.google.firebase.inappmessaging.model.RateLimit;
 import com.google.firebase.inappmessaging.model.TriggeredInAppMessage;
-import com.google.firebase.installations.FirebaseInstallationsApi;
-import com.google.firebase.installations.InstallationTokenResult;
 import com.google.internal.firebase.inappmessaging.v1.CampaignProto.ThickContent;
 import com.google.internal.firebase.inappmessaging.v1.CampaignProto.VanillaCampaignPayload;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.CampaignImpression;
@@ -79,9 +78,13 @@ import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
+import org.robolectric.annotation.Implementation;
+import org.robolectric.annotation.Implements;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(manifest = Config.NONE)
+@Config(
+    manifest = Config.NONE,
+    shadows = {ShadowFirebaseInstanceId.class})
 public class DisplayCallbacksImplTest {
   private static final long PAST = 1000000;
   private static final long NOW = PAST + 100000;
@@ -138,7 +141,7 @@ public class DisplayCallbacksImplTest {
           .setTimeToLiveMillis(TimeUnit.DAYS.toMillis(1))
           .build();
 
-  @Mock private static FirebaseInstallationsApi firebaseInstallations;
+  @Mock private static FirebaseInstanceId firebaseInstanceId;
   @Mock private static MetricsLoggerClient metricsLoggerClient;
   @Mock private Schedulers schedulers;
   @Mock private ImpressionStorageClient impressionStorageClient;
@@ -198,16 +201,11 @@ public class DisplayCallbacksImplTest {
     when(campaignCacheClient.get()).thenReturn(Maybe.just(campaignsResponse));
     when(rateLimiterClient.increment(appForegroundRateLimit)).thenReturn(fakeRateLimitCompletable);
 
-    when(firebaseInstallations.getId()).thenReturn(Tasks.forResult(INSTANCE_ID));
-    when(firebaseInstallations.getToken(false))
-        .thenReturn(
-            Tasks.forResult(
-                InstallationTokenResult.builder()
-                    .setToken(INSTANCE_TOKEN)
-                    .setTokenCreationTimestamp(1)
-                    .setTokenExpirationTimestamp(1)
-                    .build()));
+    when(firebaseInstanceId.getId()).thenReturn(INSTANCE_ID);
+    when(firebaseInstanceId.getToken()).thenReturn(INSTANCE_TOKEN);
 
+    when(firebaseInstanceId.getId()).thenReturn(INSTANCE_ID);
+    when(firebaseInstanceId.getToken()).thenReturn(INSTANCE_TOKEN);
     when(dataCollectionHelper.isAutomaticDataCollectionEnabled()).thenReturn(true);
     FakeClock clock = new FakeClock(NOW);
 
@@ -509,5 +507,13 @@ public class DisplayCallbacksImplTest {
 
     verify(metricsLoggerClient, times(1))
         .logDismiss(BANNER_MESSAGE_MODEL, InAppMessagingDismissType.SWIPE);
+  }
+
+  @Implements(FirebaseInstanceId.class)
+  public static class ShadowFirebaseInstanceId {
+    @Implementation
+    public static FirebaseInstanceId getInstance() {
+      return firebaseInstanceId;
+    }
   }
 }
