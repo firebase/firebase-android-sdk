@@ -21,8 +21,8 @@ import java.util.ArrayList;
 /** A DeferredValueProvider computes the value of a Node only when {@link #node()} is invoked. */
 public class DeferredValueProvider implements ValueProvider {
 
-  final private SyncTree syncTree;
-  final private Path path;
+  private final SyncTree syncTree;
+  private final Path path;
 
   DeferredValueProvider(SyncTree syncTree, Path path) {
     this.syncTree = syncTree;

@@ -257,7 +257,7 @@ public class Utilities {
     }
   }
 
-  /** A nullable-aware equals method .*/
+  /** A nullable-aware equals method . */
   public static boolean equals(@Nullable Object left, @Nullable Object right) {
     if (left == right) {
       return true;

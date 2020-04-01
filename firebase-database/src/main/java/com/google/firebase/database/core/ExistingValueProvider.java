@@ -21,7 +21,7 @@ import com.google.firebase.database.snapshot.Node;
  * An ExistingValueProvider implements the ValueProvider interface for a Node whose value is known.
  */
 public class ExistingValueProvider implements ValueProvider {
-  final private Node node;
+  private final Node node;
 
   ExistingValueProvider(Node node) {
     this.node = node;
