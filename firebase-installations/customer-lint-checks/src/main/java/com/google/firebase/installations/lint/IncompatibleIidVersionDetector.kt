@@ -14,7 +14,6 @@
 
 package com.google.firebase.installations.lint
 
-import com.android.builder.model.MavenCoordinates
 import com.android.builder.model.Variant
 import com.android.tools.lint.detector.api.Category
 import com.android.tools.lint.detector.api.Context
@@ -70,7 +69,7 @@ class IncompatibleIidVersionDetector : Detector() {
             for (lib in variant.mainArtifact.dependencies.libraries) {
                 val coordinates = lib.resolvedCoordinates
                 if (coordinates.groupId == "com.google.firebase" && coordinates.artifactId == "firebase-iid") {
-                    if (!isCompatibleVersion(coordinates)) {
+                    if (!isCompatibleVersion(coordinates.version)) {
                         context.report(INCOMPATIBLE_IID_VERSION,
                                 Location.create(context.file),
                                 "Incompatible IID version found in variant ${variant.name}: ${lib.name.removeSuffix("@aar")}.\n" +
@@ -96,8 +95,8 @@ class IncompatibleIidVersionDetector : Detector() {
         return variantsMethod.invoke(model) as List<Variant>
     }
 
-    private fun isCompatibleVersion(coordinates: MavenCoordinates): Boolean {
-        val versionComponents = coordinates.version.split('.', limit = 3).toTypedArray()
+    internal fun isCompatibleVersion(version: String): Boolean {
+        val versionComponents = version.split('.', limit = 3).toTypedArray()
 
         // Incompatible if major version is before v20
         if (20 > versionComponents[0].toInt()) {
