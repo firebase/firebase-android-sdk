@@ -19,6 +19,7 @@ import androidx.annotation.NonNull;
 import com.google.android.gms.common.annotation.KeepForSdk;
 import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.inappmessaging.internal.DataCollectionHelper;
 import com.google.firebase.inappmessaging.internal.DeveloperListenerManager;
 import com.google.firebase.inappmessaging.internal.DisplayCallbacksFactory;
@@ -28,7 +29,6 @@ import com.google.firebase.inappmessaging.internal.ProgramaticContextualTriggers
 import com.google.firebase.inappmessaging.internal.injection.qualifiers.ProgrammaticTrigger;
 import com.google.firebase.inappmessaging.internal.injection.scopes.FirebaseAppScope;
 import com.google.firebase.inappmessaging.model.TriggeredInAppMessage;
-import com.google.firebase.installations.FirebaseInstallationsApi;
 import io.reactivex.disposables.Disposable;
 import java.util.concurrent.Executor;
 import javax.inject.Inject;
@@ -47,7 +47,7 @@ import javax.inject.Inject;
  * </ul>
  *
  * <p>To delete the Instance ID and the data associated with it, see {@link
- * FirebaseInstallationsApi.#delete}.
+ * com.google.firebase.iid.FirebaseInstanceId#deleteInstanceId}.
  */
 @FirebaseAppScope
 public class FirebaseInAppMessaging {
@@ -56,7 +56,6 @@ public class FirebaseInAppMessaging {
   private final DataCollectionHelper dataCollectionHelper;
   private final DisplayCallbacksFactory displayCallbacksFactory;
   private final DeveloperListenerManager developerListenerManager;
-  private final FirebaseInstallationsApi firebaseInstallations;
   private final ProgramaticContextualTriggers programaticContextualTriggers;
 
   private boolean areMessagesSuppressed;
@@ -68,21 +67,18 @@ public class FirebaseInAppMessaging {
       InAppMessageStreamManager inAppMessageStreamManager,
       @ProgrammaticTrigger ProgramaticContextualTriggers programaticContextualTriggers,
       DataCollectionHelper dataCollectionHelper,
-      FirebaseInstallationsApi firebaseInstallations,
       DisplayCallbacksFactory displayCallbacksFactory,
       DeveloperListenerManager developerListenerManager) {
     this.inAppMessageStreamManager = inAppMessageStreamManager;
-    this.firebaseInstallations = firebaseInstallations;
     this.programaticContextualTriggers = programaticContextualTriggers;
     this.dataCollectionHelper = dataCollectionHelper;
     this.areMessagesSuppressed = false;
     this.displayCallbacksFactory = displayCallbacksFactory;
     this.developerListenerManager = developerListenerManager;
 
-    firebaseInstallations
-        .getId()
-        .addOnSuccessListener(
-            id -> Logging.logi("Starting InAppMessaging runtime with Installation ID " + id));
+    Logging.logi(
+        "Starting InAppMessaging runtime with Instance ID "
+            + FirebaseInstanceId.getInstance().getId());
 
     Disposable unused =
         inAppMessageStreamManager
@@ -118,8 +114,9 @@ public class FirebaseInAppMessaging {
    *
    * <p>When enabled, generates a registration token on app startup if there is no valid one and
    * generates a new token when it is deleted (which prevents {@link
-   * FirebaseInstallationsApi.#delete} from stopping the periodic sending of data). This setting is
-   * persisted across app restarts and overrides the setting specified in your manifest.
+   * com.google.firebase.iid.FirebaseInstanceId#deleteInstanceId} from stopping the periodic sending
+   * of data). This setting is persisted across app restarts and overrides the setting specified in
+   * your manifest.
    *
    * <p>By default, auto-initialization is enabled. If you need to change the default, (for example,
    * because you want to prompt the user before generates/refreshes a registration token on app
