@@ -249,12 +249,12 @@ public class SyncTree {
                 if (write.isOverwrite()) {
                   Node resolvedNode =
                       ServerValues.resolveDeferredValueSnapshot(
-                          write.getOverwrite(), existing, serverValues);
+                          write.getOverwrite(), SyncTree.this, write.getPath(), serverValues);
                   persistenceManager.applyUserWriteToServerCache(write.getPath(), resolvedNode);
                 } else {
                   CompoundWrite resolvedMerge =
                       ServerValues.resolveDeferredValueMerge(
-                          write.getMerge(), existing, serverValues);
+                          write.getMerge(), SyncTree.this, write.getPath(), serverValues);
                   persistenceManager.applyUserWriteToServerCache(write.getPath(), resolvedMerge);
                 }
               }

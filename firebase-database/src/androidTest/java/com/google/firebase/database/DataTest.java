@@ -2747,7 +2747,18 @@ public class DataTest {
   }
 
   @Test
-  public void testServerIncrementOverwritesExistingData()
+  public void testServerIncrementOverwritesExistingDataOnline()
+      throws DatabaseException, TimeoutException, InterruptedException {
+    serverIncrementOverwritesExistingData(true);
+  }
+
+  @Test
+  public void testServerIncrementOverwritesExistingDataOffline()
+      throws DatabaseException, TimeoutException, InterruptedException {
+    serverIncrementOverwritesExistingData(false);
+  }
+
+  public void serverIncrementOverwritesExistingData(boolean online)
       throws DatabaseException, TimeoutException, InterruptedException {
     DatabaseConfig cfg = IntegrationTestHelpers.newTestConfig();
     DatabaseReference ref = IntegrationTestHelpers.rootWithConfig(cfg);
@@ -2756,7 +2767,9 @@ public class DataTest {
     List<Object> expectedValues = new ArrayList<>();
 
     // Going offline ensures that local events get queued up before server events
-    IntegrationTestHelpers.goOffline(cfg);
+    if (!online) {
+      IntegrationTestHelpers.goOffline(cfg);
+    }
 
     // Phaser is the closest built-in to a bidrectional latch. We could use a semaphore with a fixed
     // number of permits, but the test would be fragile since the permit count isn't closely related
@@ -2808,12 +2821,25 @@ public class DataTest {
       assertEquals(expectedValues, foundValues);
     } finally {
       ref.removeEventListener(listener);
-      IntegrationTestHelpers.goOnline(cfg);
+      if (!online) {
+        IntegrationTestHelpers.goOnline(cfg);
+      }
     }
   }
 
   @Test
-  public void testServerIncrementPriority()
+  public void testServerIncrementPriorityOnline()
+      throws DatabaseException, TimeoutException, InterruptedException {
+    serverIncrementPriority(true);
+  }
+
+  @Test
+  public void testServerIncrementPriorityOffline()
+      throws DatabaseException, TimeoutException, InterruptedException {
+    serverIncrementPriority(false);
+  }
+
+  public void serverIncrementPriority(boolean online)
       throws DatabaseException, TimeoutException, InterruptedException {
     DatabaseConfig cfg = IntegrationTestHelpers.newTestConfig();
     DatabaseReference ref = IntegrationTestHelpers.rootWithConfig(cfg);
@@ -2822,7 +2848,9 @@ public class DataTest {
     List<Object> expectedPriorities = new ArrayList<>();
 
     // Going offline ensures that local events get queued up before server events
-    IntegrationTestHelpers.goOffline(cfg);
+    if (!online) {
+      IntegrationTestHelpers.goOffline(cfg);
+    }
 
     // Phaser is the closest built-in to a bidrectional latch. We could use a semaphore with a fixed
     // number of permits, but the test would be fragile since the permit count isn't closely related
@@ -2859,7 +2887,9 @@ public class DataTest {
       assertEquals(expectedPriorities, foundPriorities);
     } finally {
       ref.removeEventListener(listener);
-      IntegrationTestHelpers.goOnline(cfg);
+      if (!online) {
+        IntegrationTestHelpers.goOnline(cfg);
+      }
     }
   }
 

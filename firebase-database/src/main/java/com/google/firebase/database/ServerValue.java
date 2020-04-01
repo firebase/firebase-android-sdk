@@ -45,6 +45,7 @@ public class ServerValue {
    * @param delta the amount to modify the current value atomically.
    * @return a placeholder value for modifying data atomically server-side.
    */
+  @NonNull
   static final Object increment(long delta) {
     return createParameterizedServerValuePlaceholder(ServerValues.NAME_OP_INCREMENT, delta);
   }
@@ -61,6 +62,7 @@ public class ServerValue {
    * @param delta the amount to modify the current value atomically.
    * @return a placeholder value for modifying data atomically server-side.
    */
+  @NonNull
   static final Object increment(double delta) {
     return createParameterizedServerValuePlaceholder(ServerValues.NAME_OP_INCREMENT, delta);
   }

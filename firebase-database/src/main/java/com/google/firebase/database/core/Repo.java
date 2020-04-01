@@ -227,14 +227,14 @@ public class Repo implements PersistentConnection.Delegate {
       }
       lastWriteId = write.getWriteId();
       nextWriteId = write.getWriteId() + 1;
-      Node existing = serverSyncTree.calcCompleteEventCache(write.getPath(), new ArrayList<>());
       if (write.isOverwrite()) {
         if (operationLogger.logsDebug()) {
           operationLogger.debug("Restoring overwrite with id " + write.getWriteId());
         }
         connection.put(write.getPath().asList(), write.getOverwrite().getValue(true), onComplete);
         Node resolved =
-            ServerValues.resolveDeferredValueSnapshot(write.getOverwrite(), existing, serverValues);
+            ServerValues.resolveDeferredValueSnapshot(
+                write.getOverwrite(), serverSyncTree, write.getPath(), serverValues);
         serverSyncTree.applyUserOverwrite(
             write.getPath(),
             write.getOverwrite(),
@@ -248,7 +248,8 @@ public class Repo implements PersistentConnection.Delegate {
         }
         connection.merge(write.getPath().asList(), write.getMerge().getValue(true), onComplete);
         CompoundWrite resolved =
-            ServerValues.resolveDeferredValueMerge(write.getMerge(), existing, serverValues);
+            ServerValues.resolveDeferredValueMerge(
+                write.getMerge(), serverSyncTree, write.getPath(), serverValues);
         serverSyncTree.applyUserMerge(
             write.getPath(), write.getMerge(), resolved, write.getWriteId(), /*persist=*/ false);
       }
@@ -483,9 +484,8 @@ public class Repo implements PersistentConnection.Delegate {
 
     // Start with our existing data and merge each child into it.
     Map<String, Object> serverValues = ServerValues.generateServerValues(serverClock);
-    Node existing = serverSyncTree.calcCompleteEventCache(path, new ArrayList<>());
     CompoundWrite resolved =
-        ServerValues.resolveDeferredValueMerge(updates, existing, serverValues);
+        ServerValues.resolveDeferredValueMerge(updates, serverSyncTree, path, serverValues);
 
     final long writeId = this.getNextWriteId();
     List<? extends Event> events =
