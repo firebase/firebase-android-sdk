@@ -101,7 +101,8 @@ public class ImpressionStorageClient {
 
   /**
    * Clears impressions for all campaigns found in the provided {@link
-   * FetchEligibleCampaignsResponse}
+   * FetchEligibleCampaignsResponse} This is done because we trust the server to deliver campaigns
+   * which should be shown again for scheduled campaigns.
    */
   public Completable clearImpressions(FetchEligibleCampaignsResponse response) {
     HashSet<String> idsToClear = new HashSet<>();
