@@ -436,9 +436,7 @@ class CrashlyticsController {
                             boolean dataCollectionToken = true;
                             sendSessionReports(appSettingsData, dataCollectionToken);
                             reportingCoordinator.sendReports(
-                                appSettingsData.organizationId,
-                                executor,
-                                DataTransportState.getState(appSettingsData));
+                                executor, DataTransportState.getState(appSettingsData));
                             return recordFatalFirebaseEventTask;
                           }
                         });
@@ -596,9 +594,7 @@ class CrashlyticsController {
                                     reportUploaderProvider.createReportUploader(appSettingsData);
                                 uploader.uploadReportsAsync(reports, dataCollectionToken, delay);
                                 reportingCoordinator.sendReports(
-                                    appSettingsData.organizationId,
-                                    executor,
-                                    DataTransportState.getState(appSettingsData));
+                                    executor, DataTransportState.getState(appSettingsData));
                                 unsentReportsHandled.trySetResult(null);
 
                                 return Tasks.forResult(null);

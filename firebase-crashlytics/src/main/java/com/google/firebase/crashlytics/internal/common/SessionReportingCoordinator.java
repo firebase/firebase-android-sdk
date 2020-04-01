@@ -166,13 +166,11 @@ class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
   /**
    * Send all finalized reports.
    *
-   * @param organizationId The organization ID this crash report should be associated with
    * @param reportSendCompleteExecutor executor on which to run report cleanup after each report is
    *     sent.
    * @param dataTransportState used to determine whether to send the report before cleaning it up.
    */
   public void sendReports(
-      @Nullable String organizationId,
       @NonNull Executor reportSendCompleteExecutor,
       @NonNull DataTransportState dataTransportState) {
     if (dataTransportState == DataTransportState.NONE) {
@@ -182,23 +180,14 @@ class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
     }
     final List<CrashlyticsReportWithSessionId> reportsToSend =
         reportPersistence.loadFinalizedReports();
-    for (CrashlyticsReportWithSessionId reportWithSessionId : reportsToSend) {
-      if (reportWithSessionId.getReport().getType() == CrashlyticsReport.Type.NATIVE
+    for (CrashlyticsReportWithSessionId reportToSend : reportsToSend) {
+      if (reportToSend.getReport().getType() == CrashlyticsReport.Type.NATIVE
           && dataTransportState != DataTransportState.ALL) {
         Logger.getLogger()
             .d("Send native reports via DataTransport disabled. Removing DataTransport reports.");
-        reportPersistence.deleteFinalizedReport(reportWithSessionId.getSessionId());
+        reportPersistence.deleteFinalizedReport(reportToSend.getSessionId());
         continue;
       }
-
-      // When an organization ID is available, hydrate the underlying report with it, otherwise pass
-      // through.
-      final CrashlyticsReportWithSessionId reportToSend =
-          (organizationId == null)
-              ? reportWithSessionId
-              : CrashlyticsReportWithSessionId.create(
-                  reportWithSessionId.getReport().withOrganizationId(organizationId),
-                  reportWithSessionId.getSessionId());
 
       reportsSender
           .sendReport(reportToSend)
