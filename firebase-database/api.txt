@@ -188,6 +188,8 @@ package com.google.firebase.database {
   public class ServerValue {
     ctor public ServerValue();
     field @NonNull public static final java.util.Map<java.lang.String,java.lang.String> TIMESTAMP;
+    field @NonNull public static final Object increment(double);
+    field @NonNull public static final Object increment(long);
   }
 
   @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @java.lang.annotation.Target({java.lang.annotation.ElementType.TYPE}) public @interface ThrowOnExtraProperties {
