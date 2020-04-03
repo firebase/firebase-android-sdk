@@ -31,10 +31,10 @@ import static org.mockito.Mockito.when;
 
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.os.Bundle;
-import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
+import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.inappmessaging.CampaignAnalytics;
 import com.google.firebase.inappmessaging.DismissType;
 import com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks.InAppMessagingDismissType;
@@ -44,7 +44,6 @@ import com.google.firebase.inappmessaging.internal.FakeAnalyticsConnector.Logged
 import com.google.firebase.inappmessaging.internal.FakeAnalyticsConnector.LoggedUserProperty;
 import com.google.firebase.inappmessaging.internal.MetricsLoggerClient.EngagementMetricsLoggerInterface;
 import com.google.firebase.inappmessaging.internal.time.FakeClock;
-import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.protobuf.InvalidProtocolBufferException;
 import org.junit.Before;
 import org.junit.Test;
@@ -76,7 +75,7 @@ public class MetricsLoggerClientTest {
 
   @Mock FirebaseApp firebaseApp;
   @Captor ArgumentCaptor<byte[]> byteArrayCaptor;
-  @Mock private FirebaseInstallationsApi firebaseInstallations;
+  @Mock private FirebaseInstanceId firebaseInstanceId;
   @Mock private MetricsLoggerClient metricsLoggerClient;
   @Mock private EngagementMetricsLoggerInterface engagementMetricsLoggerInterface;
   @Mock private AnalyticsConnector analyticsConnector;
@@ -89,7 +88,7 @@ public class MetricsLoggerClientTest {
     MockitoAnnotations.initMocks(this);
     when(firebaseApp.getName()).thenReturn("app1");
     when(firebaseApp.getOptions()).thenReturn(firebaseOptions);
-    when(firebaseInstallations.getId()).thenReturn(Tasks.forResult(INSTANCE_ID));
+    when(firebaseInstanceId.getId()).thenReturn(INSTANCE_ID);
     clock = new FakeClock(NOW);
     analytics = new FakeAnalyticsConnector();
     FakeAnalyticsConnector.resetState();
@@ -98,7 +97,7 @@ public class MetricsLoggerClientTest {
             engagementMetricsLoggerInterface,
             analyticsConnector,
             firebaseApp,
-            firebaseInstallations,
+            firebaseInstanceId,
             clock,
             developerListenerManager);
   }
@@ -110,7 +109,7 @@ public class MetricsLoggerClientTest {
             engagementMetricsLoggerInterface,
             null,
             firebaseApp,
-            firebaseInstallations,
+            firebaseInstanceId,
             clock,
             developerListenerManager);
 
@@ -126,7 +125,7 @@ public class MetricsLoggerClientTest {
             engagementMetricsLoggerInterface,
             null,
             firebaseApp,
-            firebaseInstallations,
+            firebaseInstanceId,
             clock,
             developerListenerManager);
 
@@ -141,7 +140,7 @@ public class MetricsLoggerClientTest {
             engagementMetricsLoggerInterface,
             analyticsConnector,
             firebaseApp,
-            firebaseInstallations,
+            firebaseInstanceId,
             clock,
             developerListenerManager);
 
@@ -523,7 +522,7 @@ public class MetricsLoggerClientTest {
             engagementMetricsLoggerInterface,
             analytics,
             firebaseApp,
-            firebaseInstallations,
+            firebaseInstanceId,
             clock,
             developerListenerManager);
 
@@ -550,7 +549,7 @@ public class MetricsLoggerClientTest {
             engagementMetricsLoggerInterface,
             analytics,
             firebaseApp,
-            firebaseInstallations,
+            firebaseInstanceId,
             clock,
             developerListenerManager);
 
@@ -570,7 +569,7 @@ public class MetricsLoggerClientTest {
             engagementMetricsLoggerInterface,
             analytics,
             firebaseApp,
-            firebaseInstallations,
+            firebaseInstanceId,
             clock,
             developerListenerManager);
 
@@ -590,7 +589,7 @@ public class MetricsLoggerClientTest {
             engagementMetricsLoggerInterface,
             analytics,
             firebaseApp,
-            firebaseInstallations,
+            firebaseInstanceId,
             clock,
             developerListenerManager);
 
@@ -619,7 +618,7 @@ public class MetricsLoggerClientTest {
             engagementMetricsLoggerInterface,
             analytics,
             firebaseApp,
-            firebaseInstallations,
+            firebaseInstanceId,
             clock,
             developerListenerManager);
 
@@ -647,7 +646,7 @@ public class MetricsLoggerClientTest {
             engagementMetricsLoggerInterface,
             analytics,
             firebaseApp,
-            firebaseInstallations,
+            firebaseInstanceId,
             clock,
             developerListenerManager);
 

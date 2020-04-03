@@ -20,7 +20,10 @@ import com.android.tools.lint.detector.api.Issue
 
 class Checks : IssueRegistry() {
     override val issues: List<Issue>
-        get() = listOf(IncompatibleIidVersionDetector.INCOMPATIBLE_IID_VERSION)
+        get() = listOf(
+                IncompatibleIidVersionDetector.INCOMPATIBLE_IID_VERSION,
+                IncompatibleIidVersionDetector.IID_COMPATIBILITY_CHECK_FAILURE
+        )
 
     override val api: Int
         get() = CURRENT_API

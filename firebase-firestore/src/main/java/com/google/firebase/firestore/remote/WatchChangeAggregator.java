@@ -31,6 +31,7 @@ import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.remote.WatchChange.DocumentChange;
 import com.google.firebase.firestore.remote.WatchChange.ExistenceFilterWatchChange;
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChange;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -162,7 +163,13 @@ public class WatchChangeAggregator {
     if (!targetIds.isEmpty()) {
       return targetIds;
     } else {
-      return targetStates.keySet();
+      List<Integer> activeIds = new ArrayList<>();
+      for (Integer id : targetStates.keySet()) {
+        if (isActiveTarget(id)) {
+          activeIds.add(id);
+        }
+      }
+      return activeIds;
     }
   }
 
