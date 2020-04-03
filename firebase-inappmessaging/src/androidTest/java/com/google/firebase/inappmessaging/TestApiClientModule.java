@@ -17,6 +17,7 @@ package com.google.firebase.inappmessaging;
 import android.app.Application;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.events.Subscriber;
+import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.inappmessaging.internal.ApiClient;
 import com.google.firebase.inappmessaging.internal.DataCollectionHelper;
 import com.google.firebase.inappmessaging.internal.GrpcClient;
@@ -25,7 +26,6 @@ import com.google.firebase.inappmessaging.internal.SharedPreferencesUtils;
 import com.google.firebase.inappmessaging.internal.TestDeviceHelper;
 import com.google.firebase.inappmessaging.internal.injection.scopes.FirebaseAppScope;
 import com.google.firebase.inappmessaging.internal.time.Clock;
-import com.google.firebase.installations.FirebaseInstallationsApi;
 import dagger.Lazy;
 import dagger.Module;
 import dagger.Provides;
@@ -36,26 +36,26 @@ import javax.inject.Singleton;
 public class TestApiClientModule {
 
   private final FirebaseApp firebaseApp;
-  private final FirebaseInstallationsApi firebaseInstallations;
+  private final FirebaseInstanceId firebaseInstanceId;
   private SharedPreferencesUtils sharedPreferencesUtils;
   private TestDeviceHelper testDeviceHelper;
   private Clock clock;
 
   public TestApiClientModule(
       FirebaseApp firebaseApp,
-      FirebaseInstallationsApi firebaseInstallations,
+      FirebaseInstanceId instanceId,
       TestDeviceHelper testDeviceHelper,
       Clock clock) {
     this.firebaseApp = firebaseApp;
-    this.firebaseInstallations = firebaseInstallations;
+    this.firebaseInstanceId = instanceId;
     this.testDeviceHelper = testDeviceHelper;
     this.sharedPreferencesUtils = new SharedPreferencesUtils(firebaseApp);
     this.clock = clock;
   }
 
   @Provides
-  FirebaseInstallationsApi providesFirebaseInstallations() {
-    return firebaseInstallations;
+  FirebaseInstanceId providesFirebaseInstanceId() {
+    return firebaseInstanceId;
   }
 
   @Provides
@@ -66,7 +66,8 @@ public class TestApiClientModule {
 
   @Provides
   DataCollectionHelper providesDataCollectionHelper(Subscriber firebaseEventSubscriber) {
-    return new DataCollectionHelper(firebaseApp, sharedPreferencesUtils, firebaseEventSubscriber);
+    return new DataCollectionHelper(
+        firebaseApp, sharedPreferencesUtils, firebaseInstanceId, firebaseEventSubscriber);
   }
 
   @Provides
@@ -85,7 +86,7 @@ public class TestApiClientModule {
         grpcClient,
         firebaseApp,
         application,
-        firebaseInstallations,
+        firebaseInstanceId,
         dataCollectionHelper,
         clock,
         providerInstaller);

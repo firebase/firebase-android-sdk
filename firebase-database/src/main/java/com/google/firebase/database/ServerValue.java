@@ -34,7 +34,8 @@ public class ServerValue {
       createScalarServerValuePlaceholder(ServerValues.NAME_OP_TIMESTAMP);
 
   /**
-   * Adds the given delta to the current value at a location.
+   * Returns a placeholder value that can be used to atomically increment the current database value
+   * by the provided delta.
    *
    * <p>The delta must be an long or a double value. If the current value is not an integer or
    * double, or if the data does not yet exist, the transformation will set the data to the delta
@@ -45,12 +46,14 @@ public class ServerValue {
    * @param delta the amount to modify the current value atomically.
    * @return a placeholder value for modifying data atomically server-side.
    */
-  static final Object increment(long delta) {
+  @NonNull
+  public static final Object increment(long delta) {
     return createParameterizedServerValuePlaceholder(ServerValues.NAME_OP_INCREMENT, delta);
   }
 
   /**
-   * Adds the given delta to the current value at a location.
+   * Returns a placeholder value that can be used to atomically increment the current database value
+   * by the provided delta.
    *
    * <p>The delta must be an long or a double value. If the current value is not an integer or
    * double, or if the data does not yet exist, the transformation will set the data to the delta
@@ -61,7 +64,8 @@ public class ServerValue {
    * @param delta the amount to modify the current value atomically.
    * @return a placeholder value for modifying data atomically server-side.
    */
-  static final Object increment(double delta) {
+  @NonNull
+  public static final Object increment(double delta) {
     return createParameterizedServerValuePlaceholder(ServerValues.NAME_OP_INCREMENT, delta);
   }
 
