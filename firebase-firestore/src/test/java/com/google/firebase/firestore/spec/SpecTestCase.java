@@ -154,6 +154,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
           : Sets.newHashSet("no-android", BENCHMARK_TAG, "multi-client");
 
   private boolean garbageCollectionEnabled;
+  private int maxConcurrentLimboResolutions;
   private boolean networkEnabled = true;
 
   //
@@ -176,8 +177,17 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
    */
   private Map<Query, QueryListener> queryListeners;
 
-  /** Set of documents that are expected to be in limbo. Verified at every step. */
+  /**
+   * Set of documents that are expected to be in limbo with an active target. Verified at every
+   * step.
+   */
   private Set<DocumentKey> expectedActiveLimboDocs;
+
+  /**
+   * Set of documents that are expected to be in limbo, enqueued for resolution and, therefore,
+   * without an active target. Verified at every step.
+   */
+  private Set<DocumentKey> expectedEnqueuedLimboDocs;
 
   /** Set of expected active targets, keyed by target ID. */
   private Map<Integer, Pair<List<TargetData>, String>> expectedActiveTargets;
@@ -251,6 +261,8 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     outstandingWrites = new HashMap<>();
 
     this.garbageCollectionEnabled = config.optBoolean("useGarbageCollection", false);
+    this.maxConcurrentLimboResolutions =
+        config.optInt("maxConcurrentLimboResolutions", Integer.MAX_VALUE);
 
     currentUser = User.UNAUTHENTICATED;
 
@@ -265,6 +277,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     queryListeners = new HashMap<>();
 
     expectedActiveLimboDocs = new HashSet<>();
+    expectedEnqueuedLimboDocs = new HashSet<>();
     expectedActiveTargets = new HashMap<>();
 
     snapshotsInSyncListeners = Collections.synchronizedList(new ArrayList<>());
@@ -294,7 +307,8 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     ConnectivityMonitor connectivityMonitor =
         new AndroidConnectivityMonitor(ApplicationProvider.getApplicationContext());
     remoteStore = new RemoteStore(this, localStore, datastore, queue, connectivityMonitor);
-    syncEngine = new SyncEngine(localStore, remoteStore, currentUser);
+    syncEngine =
+        new SyncEngine(localStore, remoteStore, currentUser, maxConcurrentLimboResolutions);
     eventManager = new EventManager(syncEngine);
     localStore.start();
     remoteStore.start();
@@ -918,6 +932,13 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
           expectedActiveLimboDocs.add(key((String) limboDocs.get(i)));
         }
       }
+      if (expectedState.has("enqueuedLimboDocs")) {
+        expectedEnqueuedLimboDocs = new HashSet<>();
+        JSONArray limboDocs = expectedState.getJSONArray("enqueuedLimboDocs");
+        for (int i = 0; i < limboDocs.length(); i++) {
+          expectedEnqueuedLimboDocs.add(key((String) limboDocs.get(i)));
+        }
+      }
       if (expectedState.has("activeTargets")) {
         expectedActiveTargets = new HashMap<>();
         JSONObject activeTargets = expectedState.getJSONObject("activeTargets");
@@ -950,7 +971,8 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     // Always validate the we received the expected number of events.
     validateUserCallbacks(expectedState);
     // Always validate that the expected limbo docs match the actual limbo docs.
-    validateLimboDocs();
+    validateActiveLimboDocs();
+    validateEnqueuedLimboDocs();
     // Always validate that the expected active targets match the actual active targets.
     validateActiveTargets();
   }
@@ -984,11 +1006,11 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     }
   }
 
-  private void validateLimboDocs() {
+  private void validateActiveLimboDocs() {
     // Make a copy so it can modified while checking against the expected limbo docs.
     @SuppressWarnings("VisibleForTests")
     Map<DocumentKey, Integer> actualLimboDocs =
-        new HashMap<>(syncEngine.getCurrentLimboDocuments());
+        new HashMap<>(syncEngine.getActiveLimboDocumentResolutions());
 
     // Validate that each active limbo doc has an expected active target
     for (Map.Entry<DocumentKey, Integer> limboDoc : actualLimboDocs.entrySet()) {
@@ -1012,6 +1034,37 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
       actualLimboDocs.remove(expectedLimboDoc);
     }
     assertTrue("Unexpected active docs in limbo: " + actualLimboDocs, actualLimboDocs.isEmpty());
+  }
+
+  private void validateEnqueuedLimboDocs() {
+    Set<DocumentKey> actualLimboDocs =
+        new HashSet<>(syncEngine.getEnqueuedLimboDocumentResolutions());
+
+    for (DocumentKey key : actualLimboDocs) {
+      assertTrue(
+          "Found enqueued limbo doc "
+              + key.getPath().canonicalString()
+              + ", but it was not in the set of expected enqueued limbo documents ("
+              + expectedEnqueuedLimboDocs.stream()
+                  .sorted()
+                  .map(String::valueOf)
+                  .collect(Collectors.joining(", "))
+              + ")",
+          expectedEnqueuedLimboDocs.contains(key));
+    }
+
+    for (DocumentKey key : expectedEnqueuedLimboDocs) {
+      assertTrue(
+          "Expected doc "
+              + key.getPath().canonicalString()
+              + " to be enqueued for limbo resolution, but it was not in the queue ("
+              + actualLimboDocs.stream()
+                  .sorted()
+                  .map(String::valueOf)
+                  .collect(Collectors.joining(", "))
+              + ")",
+          actualLimboDocs.contains(key));
+    }
   }
 
   private void validateActiveTargets() {
