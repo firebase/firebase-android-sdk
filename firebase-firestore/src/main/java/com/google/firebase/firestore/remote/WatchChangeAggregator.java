@@ -164,7 +164,7 @@ public class WatchChangeAggregator {
       return targetIds;
     } else {
       List<Integer> activeIds = new ArrayList<>();
-      for (int id : targetStates.keySet()) {
+      for (Integer id : targetStates.keySet()) {
         if (isActiveTarget(id)) {
           activeIds.add(id);
         }
