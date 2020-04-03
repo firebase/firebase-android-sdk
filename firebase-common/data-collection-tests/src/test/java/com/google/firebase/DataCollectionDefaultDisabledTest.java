@@ -46,6 +46,12 @@ public class DataCollectionDefaultDisabledTest {
   }
 
   @Test
+  public void isDataCollectionDefaultEnabled_whenMetadataFalseAndPrefsNull_shouldReturnFalse() {
+    setSharedPreferencesTo(null);
+    withApp(app -> assertThat(app.isDataCollectionDefaultEnabled()).isFalse());
+  }
+
+  @Test
   public void setDataCollectionDefaultEnabledTrue_shouldUpdateSharedPrefs() {
     withApp(
         app -> {
@@ -58,6 +64,17 @@ public class DataCollectionDefaultDisabledTest {
                       DataCollectionConfigStorage.DATA_COLLECTION_DEFAULT_ENABLED, false))
               .isTrue();
           assertThat(app.isDataCollectionDefaultEnabled()).isTrue();
+          app.setDataCollectionDefaultEnabled(false);
+          assertThat(
+                  prefs.getBoolean(
+                      DataCollectionConfigStorage.DATA_COLLECTION_DEFAULT_ENABLED, false))
+              .isFalse();
+          assertThat(app.isDataCollectionDefaultEnabled()).isFalse();
+          app.setDataCollectionDefaultEnabled(null);
+          assertThat(prefs.contains(DataCollectionConfigStorage.DATA_COLLECTION_DEFAULT_ENABLED))
+              .isFalse();
+          // Fallback on manifest value
+          assertThat(app.isDataCollectionDefaultEnabled()).isFalse();
         });
   }
 
@@ -77,6 +94,9 @@ public class DataCollectionDefaultDisabledTest {
 
           app.setDataCollectionDefaultEnabled(false);
           assertThat(changeListener.changes).containsExactly(true, false).inOrder();
+
+          app.setDataCollectionDefaultEnabled(null);
+          assertThat(changeListener.changes).containsExactly(true, false, null).inOrder();
         });
   }
 }

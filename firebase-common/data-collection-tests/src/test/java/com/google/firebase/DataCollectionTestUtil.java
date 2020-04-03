@@ -52,10 +52,17 @@ final class DataCollectionTestUtil {
             Context.MODE_PRIVATE);
   }
 
-  static void setSharedPreferencesTo(boolean enabled) {
-    getSharedPreferences()
-        .edit()
-        .putBoolean(DataCollectionConfigStorage.DATA_COLLECTION_DEFAULT_ENABLED, enabled)
-        .commit();
+  static void setSharedPreferencesTo(Boolean enabled) {
+    if (enabled != null) {
+      getSharedPreferences()
+          .edit()
+          .putBoolean(DataCollectionConfigStorage.DATA_COLLECTION_DEFAULT_ENABLED, enabled)
+          .commit();
+    } else {
+      getSharedPreferences()
+          .edit()
+          .remove(DataCollectionConfigStorage.DATA_COLLECTION_DEFAULT_ENABLED)
+          .apply();
+    }
   }
 }
