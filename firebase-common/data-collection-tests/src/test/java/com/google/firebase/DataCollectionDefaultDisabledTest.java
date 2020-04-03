@@ -96,7 +96,13 @@ public class DataCollectionDefaultDisabledTest {
           assertThat(changeListener.changes).containsExactly(true, false).inOrder();
 
           app.setDataCollectionDefaultEnabled(null);
-          assertThat(changeListener.changes).containsExactly(true, false, null).inOrder();
+          assertThat(changeListener.changes).containsExactly(true, false).inOrder();
+
+          app.setDataCollectionDefaultEnabled(true);
+          assertThat(changeListener.changes).containsExactly(true, false, true).inOrder();
+
+          app.setDataCollectionDefaultEnabled(null);
+          assertThat(changeListener.changes).containsExactly(true, false, true, false).inOrder();
         });
   }
 }

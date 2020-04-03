@@ -24,10 +24,10 @@ import com.google.android.gms.common.annotation.KeepForSdk;
 @KeepForSdk
 public final class DataCollectionDefaultChange {
   /** The new value. */
-  @KeepForSdk public final Boolean enabled;
+  @KeepForSdk public final boolean enabled;
 
   @KeepForSdk
-  public DataCollectionDefaultChange(Boolean enabled) {
+  public DataCollectionDefaultChange(boolean enabled) {
     this.enabled = enabled;
   }
 }

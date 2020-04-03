@@ -24,6 +24,7 @@ import androidx.core.content.ContextCompat;
 import com.google.firebase.DataCollectionDefaultChange;
 import com.google.firebase.events.Event;
 import com.google.firebase.events.Publisher;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /** Encapsulates data collection configuration. */
 public class DataCollectionConfigStorage {
@@ -36,7 +37,7 @@ public class DataCollectionConfigStorage {
   private final Context applicationContext;
   private final SharedPreferences sharedPreferences;
   private final Publisher publisher;
-  private Boolean dataCollectionDefaultEnabled;
+  private final AtomicBoolean dataCollectionDefaultEnabled;
 
   public DataCollectionConfigStorage(
       Context applicationContext, String persistenceKey, Publisher publisher) {
@@ -45,7 +46,7 @@ public class DataCollectionConfigStorage {
         applicationContext.getSharedPreferences(
             FIREBASE_APP_PREFS + persistenceKey, Context.MODE_PRIVATE);
     this.publisher = publisher;
-    this.dataCollectionDefaultEnabled = readAutoDataCollectionEnabled();
+    this.dataCollectionDefaultEnabled = new AtomicBoolean(readAutoDataCollectionEnabled());
   }
 
   private static Context directBootSafe(Context applicationContext) {
@@ -56,25 +57,32 @@ public class DataCollectionConfigStorage {
     return ContextCompat.createDeviceProtectedStorageContext(applicationContext);
   }
 
-  public Boolean isEnabled() {
-    return dataCollectionDefaultEnabled;
+  public boolean isEnabled() {
+    return dataCollectionDefaultEnabled.get();
   }
 
   public void setEnabled(Boolean enabled) {
-    if (dataCollectionDefaultEnabled != enabled) {
-      if (enabled == null) {
-        sharedPreferences.edit().remove(DATA_COLLECTION_DEFAULT_ENABLED).apply();
-        this.dataCollectionDefaultEnabled = readManifestDataCollectionEnabled();
-      } else {
-        sharedPreferences.edit().putBoolean(DATA_COLLECTION_DEFAULT_ENABLED, enabled).apply();
-        this.dataCollectionDefaultEnabled = enabled;
+    if (enabled == null) {
+      sharedPreferences.edit().remove(DATA_COLLECTION_DEFAULT_ENABLED).apply();
+      boolean manifestSetting = readManifestDataCollectionEnabled();
+      if (dataCollectionDefaultEnabled.compareAndSet(!manifestSetting, manifestSetting)) {
+        publisher.publish(
+            new Event<>(
+                DataCollectionDefaultChange.class,
+                new DataCollectionDefaultChange(manifestSetting)));
       }
-      publisher.publish(
-          new Event<>(DataCollectionDefaultChange.class, new DataCollectionDefaultChange(enabled)));
+    } else {
+      boolean apiSetting = Boolean.TRUE.equals(enabled);
+      sharedPreferences.edit().putBoolean(DATA_COLLECTION_DEFAULT_ENABLED, apiSetting).apply();
+      if (dataCollectionDefaultEnabled.compareAndSet(!apiSetting, apiSetting)) {
+        publisher.publish(
+            new Event<>(
+                DataCollectionDefaultChange.class, new DataCollectionDefaultChange(apiSetting)));
+      }
     }
   }
 
-  private Boolean readManifestDataCollectionEnabled() {
+  private boolean readManifestDataCollectionEnabled() {
     try {
       PackageManager packageManager = applicationContext.getPackageManager();
       if (packageManager != null) {
@@ -90,10 +98,10 @@ public class DataCollectionConfigStorage {
     } catch (PackageManager.NameNotFoundException e) {
       // This shouldn't happen since it's this app's package, but fall through to default if so.
     }
-    return null;
+    return true;
   }
 
-  private Boolean readAutoDataCollectionEnabled() {
+  private boolean readAutoDataCollectionEnabled() {
     if (sharedPreferences.contains(DATA_COLLECTION_DEFAULT_ENABLED)) {
       return sharedPreferences.getBoolean(DATA_COLLECTION_DEFAULT_ENABLED, true);
     }

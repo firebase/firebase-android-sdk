@@ -370,7 +370,7 @@ public class FirebaseApp {
    * @hide
    */
   @KeepForSdk
-  public Boolean isDataCollectionDefaultEnabled() {
+  public boolean isDataCollectionDefaultEnabled() {
     checkNotDeleted();
     return dataCollectionConfigStorage.get().isEnabled();
   }
