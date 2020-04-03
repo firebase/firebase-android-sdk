@@ -42,17 +42,16 @@ import com.google.android.datatransport.runtime.logging.Logging;
 import com.google.android.datatransport.runtime.time.Clock;
 import com.google.firebase.encoders.DataEncoder;
 import com.google.firebase.encoders.EncodingException;
-import java.io.ByteArrayOutputStream;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.ByteBuffer;
-import java.nio.channels.Channels;
-import java.nio.channels.WritableByteChannel;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -264,50 +263,46 @@ final class CctTransportBackend implements TransportBackend {
       connection.setRequestProperty(API_KEY_HEADER_KEY, request.apiKey);
     }
 
-    WritableByteChannel channel = Channels.newChannel(connection.getOutputStream());
-    try {
-      ByteArrayOutputStream output = new ByteArrayOutputStream();
-      GZIPOutputStream gzipOutputStream = new GZIPOutputStream(output);
-
-      try {
-        dataEncoder.encode(request.requestBody, new OutputStreamWriter(gzipOutputStream));
-      } catch (EncodingException | IOException e) {
-        Logging.e(LOG_TAG, "Couldn't encode request, returning with 400", e);
-        return new HttpResponse(400, null, 0);
-      } finally {
-        gzipOutputStream.close();
-      }
-      channel.write(ByteBuffer.wrap(output.toByteArray()));
-      int responseCode = connection.getResponseCode();
-      Logging.i(LOG_TAG, "Status Code: " + responseCode);
-      Logging.i(LOG_TAG, "Content-Type: " + connection.getHeaderField("Content-Type"));
-      Logging.i(LOG_TAG, "Content-Encoding: " + connection.getHeaderField("Content-Encoding"));
-
-      if (responseCode == 302 || responseCode == 301 || responseCode == 307) {
-        String redirect = connection.getHeaderField("Location");
-        return new HttpResponse(responseCode, new URL(redirect), 0);
-      }
-      if (responseCode != 200) {
-        return new HttpResponse(responseCode, null, 0);
-      }
-
-      InputStream inputStream;
-      String contentEncoding = connection.getHeaderField(CONTENT_ENCODING_HEADER_KEY);
-      if (contentEncoding != null && contentEncoding.equals(GZIP_CONTENT_ENCODING)) {
-        inputStream = new GZIPInputStream(connection.getInputStream());
-      } else {
-        inputStream = connection.getInputStream();
-      }
-      try {
-        long nextRequestMillis =
-            LogResponse.fromJson(new InputStreamReader(inputStream)).getNextRequestWaitMillis();
-        return new HttpResponse(responseCode, null, nextRequestMillis);
-      } finally {
-        inputStream.close();
-      }
-    } finally {
-      channel.close();
+    try (OutputStream conn = connection.getOutputStream();
+        OutputStream outputStream = new GZIPOutputStream(conn)) {
+      // note: it's very important to use a BufferedWriter for efficient use of resources as the
+      // JsonWriter often writes one character at a time.
+      dataEncoder.encode(
+          request.requestBody, new BufferedWriter(new OutputStreamWriter(outputStream)));
+    } catch (EncodingException | IOException e) {
+      Logging.e(LOG_TAG, "Couldn't encode request, returning with 400", e);
+      return new HttpResponse(400, null, 0);
     }
+
+    int responseCode = connection.getResponseCode();
+    Logging.i(LOG_TAG, "Status Code: " + responseCode);
+    Logging.i(LOG_TAG, "Content-Type: " + connection.getHeaderField("Content-Type"));
+    Logging.i(LOG_TAG, "Content-Encoding: " + connection.getHeaderField("Content-Encoding"));
+
+    if (responseCode == 302 || responseCode == 301 || responseCode == 307) {
+      String redirect = connection.getHeaderField("Location");
+      return new HttpResponse(responseCode, new URL(redirect), 0);
+    }
+    if (responseCode != 200) {
+      return new HttpResponse(responseCode, null, 0);
+    }
+
+    try (InputStream connStream = connection.getInputStream();
+        InputStream inputStream =
+            maybeUnGzip(connStream, connection.getHeaderField(CONTENT_ENCODING_HEADER_KEY))) {
+      long nextRequestMillis =
+          LogResponse.fromJson(new BufferedReader(new InputStreamReader(inputStream)))
+              .getNextRequestWaitMillis();
+      return new HttpResponse(responseCode, null, nextRequestMillis);
+    }
+  }
+
+  private static InputStream maybeUnGzip(InputStream input, String contentEncoding)
+      throws IOException {
+    if (GZIP_CONTENT_ENCODING.equals(contentEncoding)) {
+      return new GZIPInputStream(input);
+    }
+    return input;
   }
 
   @Override
