@@ -16,6 +16,7 @@ package com.google.firebase.database.core.utilities;
 
 import android.net.Uri;
 import android.util.Base64;
+import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.database.DatabaseError;
@@ -254,5 +255,16 @@ public class Utilities {
       // If a listener is supplied we do not want to create a Task
       return new Pair<>(null, optListener);
     }
+  }
+
+  /** A nullable-aware equals method. */
+  public static boolean equals(@Nullable Object left, @Nullable Object right) {
+    if (left == right) {
+      return true;
+    }
+    if (left == null || right == null) {
+      return false;
+    }
+    return left.equals(right);
   }
 }
