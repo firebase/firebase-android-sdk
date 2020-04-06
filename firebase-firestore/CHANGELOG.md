@@ -1,4 +1,6 @@
 # Unreleased 
+- [changed] Firestore now limits the number of concurrent document lookups it
+  will perform when resolving inconsistencies in the local cache (#1374).
 - [fixed] Fixed a performance regression introduced by the addition of
   `Query.limitToLast(n: long)` in Firestore 23.3.1.
 - [changed] Changed the in-memory representation of Firestore documents to
