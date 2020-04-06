@@ -16,6 +16,8 @@ package com.google.firebase;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.os.Build;
+import androidx.core.content.ContextCompat;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.internal.DataCollectionConfigStorage;
 import java.util.function.Consumer;
@@ -45,8 +47,15 @@ final class DataCollectionTestUtil {
     }
   }
 
+  private static Context directBootSafe(Context applicationContext) {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
+      return applicationContext;
+    }
+    return ContextCompat.createDeviceProtectedStorageContext(applicationContext);
+  }
+
   static SharedPreferences getSharedPreferences() {
-    return ApplicationProvider.getApplicationContext()
+    return directBootSafe(ApplicationProvider.getApplicationContext())
         .getSharedPreferences(
             FIREBASE_APP_PREFS + FirebaseApp.getPersistenceKey(APP_NAME, OPTIONS),
             Context.MODE_PRIVATE);
