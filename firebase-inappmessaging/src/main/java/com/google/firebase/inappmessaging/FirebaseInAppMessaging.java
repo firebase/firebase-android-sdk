@@ -16,6 +16,8 @@ package com.google.firebase.inappmessaging;
 
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import com.google.android.gms.common.annotation.KeepForSdk;
 import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.firebase.FirebaseApp;
@@ -111,7 +113,7 @@ public class FirebaseInAppMessaging {
 
   // TODO: Add public api docs
   @Keep
-  public void setAutomaticDataCollectionEnabled(Boolean isAutomaticCollectionEnabled) {
+  public void setAutomaticDataCollectionEnabled(@Nullable Boolean isAutomaticCollectionEnabled) {
     dataCollectionHelper.setAutomaticDataCollectionEnabled(isAutomaticCollectionEnabled);
   }
 
