@@ -54,31 +54,33 @@ public class DataCollectionConfigStorage {
         || ContextCompat.isDeviceProtectedStorage(applicationContext)) {
       return applicationContext;
     }
-    return ContextCompat.createDeviceProtectedStorageContext(applicationContext);
+    Context deviceContext = ContextCompat.createDeviceProtectedStorageContext(applicationContext);
+    // Move shared prefs to direct boot.
+    deviceContext.moveSharedPreferencesFrom(applicationContext, DATA_COLLECTION_DEFAULT_ENABLED);
+    return deviceContext;
   }
 
   public boolean isEnabled() {
     return dataCollectionDefaultEnabled.get();
   }
 
-  public void setEnabled(Boolean enabled) {
+  private synchronized void updateDataCollectionDefaultEnabled(boolean enabled) {
+    if (dataCollectionDefaultEnabled.compareAndSet(!enabled, enabled)) {
+      publisher.publish(
+          new Event<>(
+              DataCollectionDefaultChange.class, new DataCollectionDefaultChange(manifestSetting)));
+    }
+  }
+
+  public synchronized void setEnabled(Boolean enabled) {
     if (enabled == null) {
       sharedPreferences.edit().remove(DATA_COLLECTION_DEFAULT_ENABLED).apply();
-      boolean manifestSetting = readManifestDataCollectionEnabled();
-      if (dataCollectionDefaultEnabled.compareAndSet(!manifestSetting, manifestSetting)) {
-        publisher.publish(
-            new Event<>(
-                DataCollectionDefaultChange.class,
-                new DataCollectionDefaultChange(manifestSetting)));
-      }
+      updateDataCollectionDefaultEnabled(readManifestDataCollectionEnabled());
+
     } else {
       boolean apiSetting = Boolean.TRUE.equals(enabled);
       sharedPreferences.edit().putBoolean(DATA_COLLECTION_DEFAULT_ENABLED, apiSetting).apply();
-      if (dataCollectionDefaultEnabled.compareAndSet(!apiSetting, apiSetting)) {
-        publisher.publish(
-            new Event<>(
-                DataCollectionDefaultChange.class, new DataCollectionDefaultChange(apiSetting)));
-      }
+      updateDataCollectionDefaultEnabled(apiSetting);
     }
   }
 
