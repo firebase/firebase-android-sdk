@@ -38,8 +38,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLConnection;
 import java.nio.charset.Charset;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPOutputStream;
@@ -168,11 +170,6 @@ public class FirebaseInstallationServiceClient {
         return InstallationResponse.builder().setResponseCode(ResponseCode.BAD_CONFIG).build();
       } finally {
         httpURLConnection.disconnect();
-        try {
-          httpURLConnection.getInputStream().close();
-        } catch (IOException unused) {
-
-        }
       }
     }
 
@@ -184,20 +181,24 @@ public class FirebaseInstallationServiceClient {
       throws IOException {
     try {
       writeRequestBodyToOutputStream(
-          httpURLConnection, buildCreateFirebaseInstallationRequestBody(fid, appId));
+          httpURLConnection, getJsonBytes(buildCreateFirebaseInstallationRequestBody(fid, appId)));
     } catch (JSONException e) {
       throw new IllegalStateException(e);
     }
   }
 
-  private static void writeRequestBodyToOutputStream(
-      HttpURLConnection httpURLConnection, JSONObject jsonObject) throws IOException {
-    try (OutputStream outputStream = httpURLConnection.getOutputStream()) {
+  private static byte[] getJsonBytes(JSONObject jsonObject) throws UnsupportedEncodingException {
+    return jsonObject.toString().getBytes("UTF-8");
+  }
+
+  private static void writeRequestBodyToOutputStream(URLConnection urlConnection, byte[] jsonBytes)
+      throws IOException {
+    try (OutputStream outputStream = urlConnection.getOutputStream()) {
       if (outputStream == null) {
         throw new IOException("Cannot send request to FIS servers. No OutputStream available.");
       }
       try (GZIPOutputStream gzipOutputStream = new GZIPOutputStream(outputStream)) {
-        gzipOutputStream.write(jsonObject.toString().getBytes("UTF-8"));
+        gzipOutputStream.write(jsonBytes);
       }
     }
   }
@@ -215,7 +216,8 @@ public class FirebaseInstallationServiceClient {
   private void writeGenerateAuthTokenRequestBodyToOutputStream(HttpURLConnection httpURLConnection)
       throws IOException {
     try {
-      writeRequestBodyToOutputStream(httpURLConnection, buildGenerateAuthTokenRequestBody());
+      writeRequestBodyToOutputStream(
+          httpURLConnection, getJsonBytes(buildGenerateAuthTokenRequestBody()));
     } catch (JSONException e) {
       throw new IllegalStateException(e);
     }
@@ -339,11 +341,6 @@ public class FirebaseInstallationServiceClient {
         return TokenResult.builder().setResponseCode(TokenResult.ResponseCode.BAD_CONFIG).build();
       } finally {
         httpURLConnection.disconnect();
-        try {
-          httpURLConnection.getInputStream().close();
-        } catch (IOException unused) {
-
-        }
       }
     }
     throw new IOException();
