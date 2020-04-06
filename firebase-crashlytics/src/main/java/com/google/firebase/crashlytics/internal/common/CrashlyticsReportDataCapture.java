@@ -46,6 +46,9 @@ public class CrashlyticsReportDataCapture {
   private static final String GENERATOR =
       String.format(Locale.US, "Crashlytics Android SDK/%s", BuildConfig.VERSION_NAME);
 
+  // GeneratorType ANDROID_SDK = 3;
+  private static final int GENERATOR_TYPE = 3;
+
   private static final int REPORT_ANDROID_PLATFORM = 4;
   private static final int SESSION_ANDROID_PLATFORM = 3;
   private static final String SIGNAL_DEFAULT = "0";
@@ -77,15 +80,11 @@ public class CrashlyticsReportDataCapture {
   }
 
   public CrashlyticsReport captureReportData(String identifier, long timestamp) {
-    return CrashlyticsReport.builder()
-        .setSdkVersion(BuildConfig.VERSION_NAME)
-        .setGmpAppId(appData.googleAppId)
-        .setInstallationUuid(idManager.getCrashlyticsInstallId())
-        .setBuildVersion(appData.versionCode)
-        .setDisplayVersion(appData.versionName)
-        .setPlatform(REPORT_ANDROID_PLATFORM)
-        .setSession(populateSessionData(identifier, timestamp))
-        .build();
+    return buildReportData().setSession(populateSessionData(identifier, timestamp)).build();
+  }
+
+  public CrashlyticsReport captureReportData() {
+    return buildReportData().build();
   }
 
   public Event captureEventData(
@@ -115,6 +114,16 @@ public class CrashlyticsReportDataCapture {
         .build();
   }
 
+  private CrashlyticsReport.Builder buildReportData() {
+    return CrashlyticsReport.builder()
+        .setSdkVersion(BuildConfig.VERSION_NAME)
+        .setGmpAppId(appData.googleAppId)
+        .setInstallationUuid(idManager.getCrashlyticsInstallId())
+        .setBuildVersion(appData.versionCode)
+        .setDisplayVersion(appData.versionName)
+        .setPlatform(REPORT_ANDROID_PLATFORM);
+  }
+
   private CrashlyticsReport.Session populateSessionData(String identifier, long timestamp) {
     return CrashlyticsReport.Session.builder()
         .setStartedAt(timestamp)
@@ -123,6 +132,7 @@ public class CrashlyticsReportDataCapture {
         .setApp(populateSessionApplicationData())
         .setOs(populateSessionOperatingSystemData())
         .setDevice(populateSessionDeviceData())
+        .setGeneratorType(GENERATOR_TYPE)
         .build();
   }
 

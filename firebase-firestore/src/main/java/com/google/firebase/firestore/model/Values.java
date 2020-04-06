@@ -40,18 +40,22 @@ public class Values {
   public static final Value NULL_VALUE =
       Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build();
 
-  /** The order of types in Firestore; this order is defined by the backend. */
+  /**
+   * The order of types in Firestore. This order is based on the backend's ordering, but modified to
+   * support server timestamps.
+   */
   public static final int TYPE_ORDER_NULL = 0;
 
   public static final int TYPE_ORDER_BOOLEAN = 1;
   public static final int TYPE_ORDER_NUMBER = 2;
   public static final int TYPE_ORDER_TIMESTAMP = 3;
-  public static final int TYPE_ORDER_STRING = 4;
-  public static final int TYPE_ORDER_BLOB = 5;
-  public static final int TYPE_ORDER_REFERENCE = 6;
-  public static final int TYPE_ORDER_GEOPOINT = 7;
-  public static final int TYPE_ORDER_ARRAY = 8;
-  public static final int TYPE_ORDER_MAP = 9;
+  public static final int TYPE_ORDER_SERVER_TIMESTAMP = 4;
+  public static final int TYPE_ORDER_STRING = 5;
+  public static final int TYPE_ORDER_BLOB = 6;
+  public static final int TYPE_ORDER_REFERENCE = 7;
+  public static final int TYPE_ORDER_GEOPOINT = 8;
+  public static final int TYPE_ORDER_ARRAY = 9;
+  public static final int TYPE_ORDER_MAP = 10;
 
   /** Returns the backend's type order of the given Value type. */
   public static int typeOrder(Value value) {
@@ -78,7 +82,7 @@ public class Values {
         return TYPE_ORDER_ARRAY;
       case MAP_VALUE:
         if (isServerTimestamp(value)) {
-          return TYPE_ORDER_TIMESTAMP;
+          return TYPE_ORDER_SERVER_TIMESTAMP;
         }
         return TYPE_ORDER_MAP;
       default:
@@ -106,21 +110,11 @@ public class Values {
         return arrayEquals(left, right);
       case TYPE_ORDER_MAP:
         return objectEquals(left, right);
-      case TYPE_ORDER_TIMESTAMP:
-        return timestampEquals(left, right);
+      case TYPE_ORDER_SERVER_TIMESTAMP:
+        return getLocalWriteTime(left).equals(getLocalWriteTime(right));
       default:
         return left.equals(right);
     }
-  }
-
-  private static boolean timestampEquals(Value left, Value right) {
-    if (isServerTimestamp(left) && isServerTimestamp(right)) {
-      return getLocalWriteTime(left).equals(getLocalWriteTime(right));
-    } else if (isServerTimestamp(left) || isServerTimestamp(right)) {
-      return false;
-    }
-
-    return left.getTimestampValue().equals(right.getTimestampValue());
   }
 
   private static boolean numberEquals(Value left, Value right) {
@@ -197,7 +191,9 @@ public class Values {
       case TYPE_ORDER_NUMBER:
         return compareNumbers(left, right);
       case TYPE_ORDER_TIMESTAMP:
-        return compareTimestamps(left, right);
+        return compareTimestamps(left.getTimestampValue(), right.getTimestampValue());
+      case TYPE_ORDER_SERVER_TIMESTAMP:
+        return compareTimestamps(getLocalWriteTime(left), getLocalWriteTime(right));
       case TYPE_ORDER_STRING:
         return left.getStringValue().compareTo(right.getStringValue());
       case TYPE_ORDER_BLOB:
@@ -235,30 +231,11 @@ public class Values {
     throw fail("Unexpected values: %s vs %s", left, right);
   }
 
-  private static int compareTimestamps(Value left, Value right) {
-    if (isServerTimestamp(left)) {
-      if (isServerTimestamp(right)) {
-        return compareTimestamps(getLocalWriteTime(left), getLocalWriteTime(right));
-      } else {
-        // Server timestamps come after all concrete timestamps.
-        return 1;
-      }
-    } else {
-      if (isServerTimestamp(right)) {
-        // Server timestamps come after all concrete timestamps.
-        return -1;
-      } else {
-        return compareTimestamps(left.getTimestampValue(), right.getTimestampValue());
-      }
-    }
-  }
-
   private static int compareTimestamps(Timestamp left, Timestamp right) {
     int cmp = Util.compareLongs(left.getSeconds(), right.getSeconds());
     if (cmp != 0) {
       return cmp;
     }
-
     return Util.compareIntegers(left.getNanos(), right.getNanos());
   }
 

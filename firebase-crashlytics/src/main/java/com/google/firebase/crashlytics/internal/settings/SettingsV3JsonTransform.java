@@ -96,6 +96,11 @@ class SettingsV3JsonTransform implements SettingsJsonTransform {
             SettingsJsonConstants.APP_REPORT_UPLOAD_VARIANT_KEY,
             SettingsJsonConstants.APP_REPORT_UPLOAD_VARIANT_DEFAULT);
 
+    final int nativeReportUploadVariant =
+        appJson.optInt(
+            SettingsJsonConstants.APP_NATIVE_REPORT_UPLOAD_VARIANT_KEY,
+            SettingsJsonConstants.APP_NATIVE_REPORT_UPLOAD_VARIANT_DEFAULT);
+
     return new AppSettingsData(
         status,
         url,
@@ -104,7 +109,8 @@ class SettingsV3JsonTransform implements SettingsJsonTransform {
         bundleId,
         organizationId,
         updateRequired,
-        reportUploadVariant);
+        reportUploadVariant,
+        nativeReportUploadVariant);
   }
 
   private static FeaturesSettingsData buildFeaturesSessionDataFrom(JSONObject json) {
@@ -141,7 +147,10 @@ class SettingsV3JsonTransform implements SettingsJsonTransform {
         new JSONObject()
             .put(SettingsJsonConstants.APP_STATUS_KEY, appData.status)
             .put(SettingsJsonConstants.APP_UPDATE_REQUIRED_KEY, appData.updateRequired)
-            .put(SettingsJsonConstants.APP_REPORT_UPLOAD_VARIANT_KEY, appData.reportUploadVariant);
+            .put(SettingsJsonConstants.APP_REPORT_UPLOAD_VARIANT_KEY, appData.reportUploadVariant)
+            .put(
+                SettingsJsonConstants.APP_NATIVE_REPORT_UPLOAD_VARIANT_KEY,
+                appData.nativeReportUploadVariant);
 
     return json;
   }

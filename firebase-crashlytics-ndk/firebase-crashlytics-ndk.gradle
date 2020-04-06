@@ -34,6 +34,7 @@ android {
         targetSdkVersion androidVersion
         versionName version
 
+        consumerProguardFiles 'firebase-crashlytics-ndk-proguard.txt'
         multiDexEnabled true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }

@@ -20,6 +20,7 @@ import static com.google.firebase.inappmessaging.EventType.IMPRESSION_EVENT_TYPE
 import android.os.Bundle;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
+import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.inappmessaging.BuildConfig;
 import com.google.firebase.inappmessaging.CampaignAnalytics;
 import com.google.firebase.inappmessaging.ClientAppInfo;
@@ -35,7 +36,6 @@ import com.google.firebase.inappmessaging.model.CardMessage;
 import com.google.firebase.inappmessaging.model.ImageOnlyMessage;
 import com.google.firebase.inappmessaging.model.InAppMessage;
 import com.google.firebase.inappmessaging.model.ModalMessage;
-import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.util.HashMap;
 import java.util.Map;
 import javax.annotation.Nullable;
@@ -74,7 +74,7 @@ public class MetricsLoggerClient {
 
   private final EngagementMetricsLoggerInterface engagementMetricsLogger;
   private final FirebaseApp firebaseApp;
-  private final FirebaseInstallationsApi firebaseInstallations;
+  private final FirebaseInstanceId firebaseInstanceId;
   private final Clock clock;
   private final AnalyticsConnector analyticsConnector;
   private final DeveloperListenerManager developerListenerManager;
@@ -83,103 +83,78 @@ public class MetricsLoggerClient {
       EngagementMetricsLoggerInterface engagementMetricsLogger,
       AnalyticsConnector analyticsConnector,
       FirebaseApp firebaseApp,
-      FirebaseInstallationsApi firebaseInstallations,
+      FirebaseInstanceId firebaseInstanceId,
       Clock clock,
       DeveloperListenerManager developerListenerManager) {
     this.engagementMetricsLogger = engagementMetricsLogger;
     this.analyticsConnector = analyticsConnector;
     this.firebaseApp = firebaseApp;
-    this.firebaseInstallations = firebaseInstallations;
+    this.firebaseInstanceId = firebaseInstanceId;
     this.clock = clock;
     this.developerListenerManager = developerListenerManager;
   }
 
   /** Log impression */
-  void logImpression(InAppMessage message) {
+  public void logImpression(InAppMessage message) {
     if (!isTestCampaign(message)) {
       // If message is not a test message then log analytics
-      firebaseInstallations
-          .getId()
-          .addOnSuccessListener(
-              id -> {
-                engagementMetricsLogger.logEvent(
-                    createEventEntry(message, id, IMPRESSION_EVENT_TYPE).toByteArray());
-                logEventAsync(
-                    message,
-                    AnalyticsConstants.ANALYTICS_IMPRESSION_EVENT,
-                    impressionCountsAsConversion(message));
-              });
+      engagementMetricsLogger.logEvent(
+          createEventEntry(message, IMPRESSION_EVENT_TYPE).toByteArray());
+      logEventAsync(
+          message,
+          AnalyticsConstants.ANALYTICS_IMPRESSION_EVENT,
+          impressionCountsAsConversion(message));
     }
     // No matter what, always trigger developer callbacks
     developerListenerManager.impressionDetected(message);
   }
 
   /** Log click */
-  void logMessageClick(InAppMessage message, Action action) {
+  public void logMessageClick(InAppMessage message, Action action) {
     if (!isTestCampaign(message)) {
       // If message is not a test message then log analytics
-      firebaseInstallations
-          .getId()
-          .addOnSuccessListener(
-              id -> {
-                engagementMetricsLogger.logEvent(
-                    createEventEntry(message, id, CLICK_EVENT_TYPE).toByteArray());
-                logEventAsync(message, AnalyticsConstants.ANALYTICS_ACTION_EVENT, true);
-              });
+      engagementMetricsLogger.logEvent(createEventEntry(message, CLICK_EVENT_TYPE).toByteArray());
+      logEventAsync(message, AnalyticsConstants.ANALYTICS_ACTION_EVENT, true);
     }
     // No matter what, always trigger developer callbacks
     developerListenerManager.messageClicked(message, action);
   }
 
   /** Log Rendering error */
-  void logRenderError(InAppMessage message, InAppMessagingErrorReason errorReason) {
+  public void logRenderError(InAppMessage message, InAppMessagingErrorReason errorReason) {
     if (!isTestCampaign(message)) {
       // If message is not a test message then log analytics
-      firebaseInstallations
-          .getId()
-          .addOnSuccessListener(
-              id ->
-                  engagementMetricsLogger.logEvent(
-                      createRenderErrorEntry(message, id, errorTransform.get(errorReason))
-                          .toByteArray()));
+      engagementMetricsLogger.logEvent(
+          createRenderErrorEntry(message, errorTransform.get(errorReason)).toByteArray());
     }
     // No matter what, always trigger developer callbacks
     developerListenerManager.displayErrorEncountered(message, errorReason);
   }
 
   /** Log dismiss */
-  void logDismiss(InAppMessage message, InAppMessagingDismissType dismissType) {
+  public void logDismiss(InAppMessage message, InAppMessagingDismissType dismissType) {
     if (!isTestCampaign(message)) {
       // If message is not a test message then log analytics
-      firebaseInstallations
-          .getId()
-          .addOnSuccessListener(
-              id -> {
-                engagementMetricsLogger.logEvent(
-                    createDismissEntry(message, id, dismissTransform.get(dismissType))
-                        .toByteArray());
-                logEventAsync(message, AnalyticsConstants.ANALYTICS_DISMISS_EVENT, false);
-              });
+      engagementMetricsLogger.logEvent(
+          createDismissEntry(message, dismissTransform.get(dismissType)).toByteArray());
+      logEventAsync(message, AnalyticsConstants.ANALYTICS_DISMISS_EVENT, false);
     }
   }
 
-  private CampaignAnalytics createEventEntry(InAppMessage message, String id, EventType eventType) {
-    return createCampaignAnalyticsBuilder(message, id).setEventType(eventType).build();
+  private CampaignAnalytics createEventEntry(InAppMessage message, EventType eventType) {
+    return createCampaignAnalyticsBuilder(message).setEventType(eventType).build();
   }
 
-  private CampaignAnalytics createDismissEntry(
-      InAppMessage message, String id, DismissType dismissType) {
-    return createCampaignAnalyticsBuilder(message, id).setDismissType(dismissType).build();
+  private CampaignAnalytics createDismissEntry(InAppMessage message, DismissType dismissType) {
+    return createCampaignAnalyticsBuilder(message).setDismissType(dismissType).build();
   }
 
-  private CampaignAnalytics createRenderErrorEntry(
-      InAppMessage message, String id, RenderErrorReason reason) {
-    return createCampaignAnalyticsBuilder(message, id).setRenderErrorReason(reason).build();
+  private CampaignAnalytics createRenderErrorEntry(InAppMessage message, RenderErrorReason reason) {
+    return createCampaignAnalyticsBuilder(message).setRenderErrorReason(reason).build();
   }
 
-  private CampaignAnalytics.Builder createCampaignAnalyticsBuilder(
-      InAppMessage message, String id) {
-    ClientAppInfo clientAppInfo = createClientAppInfo(id);
+  private CampaignAnalytics.Builder createCampaignAnalyticsBuilder(InAppMessage message) {
+    ClientAppInfo clientAppInfo = createClientAppInfo();
     return CampaignAnalytics.newBuilder()
         .setFiamSdkVersion(BuildConfig.VERSION_NAME)
         .setProjectNumber(firebaseApp.getOptions().getGcmSenderId())
@@ -188,10 +163,10 @@ public class MetricsLoggerClient {
         .setClientTimestampMillis(clock.now());
   }
 
-  private ClientAppInfo createClientAppInfo(String id) {
+  private ClientAppInfo createClientAppInfo() {
     return ClientAppInfo.newBuilder()
         .setGoogleAppId(firebaseApp.getOptions().getApplicationId())
-        .setFirebaseInstanceId(id)
+        .setFirebaseInstanceId(firebaseInstanceId.getId())
         .build();
   }
 

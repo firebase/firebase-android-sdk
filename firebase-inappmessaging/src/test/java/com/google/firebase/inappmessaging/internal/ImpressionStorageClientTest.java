@@ -25,6 +25,7 @@ import com.google.internal.firebase.inappmessaging.v1.CampaignProto;
 import com.google.internal.firebase.inappmessaging.v1.CampaignProto.ThickContent;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.CampaignImpression;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.CampaignImpressionList;
+import com.google.internal.firebase.inappmessaging.v1.sdkserving.FetchEligibleCampaignsResponse;
 import com.google.protobuf.Parser;
 import io.reactivex.Completable;
 import io.reactivex.Maybe;
@@ -276,6 +277,46 @@ public class ImpressionStorageClientTest {
         impressionStorageClient.isImpressed(vanillaCampaign).toFlowable().test();
 
     subscriber.assertError(IOException.class);
+  }
+
+  @Test
+  public void clearImpressions_clearsImpressionsForFetchedCampaign() {
+    // verify campaign is impressed.
+    TestSubscriber<Boolean> subscriber =
+        impressionStorageClient.isImpressed(vanillaCampaign).toFlowable().test();
+    assertThat(subscriber.getEvents().get(0)).containsExactly(true);
+
+    // clear impressions for a fetch response containing that campaign.
+    // This simulates having received the campaign again from the server.
+    impressionStorageClient
+        .clearImpressions(
+            FetchEligibleCampaignsResponse.newBuilder().addMessages(vanillaCampaign).build())
+        .subscribe();
+
+    // Verify campaign is no longer impressed.
+    TestSubscriber<Boolean> subscriber2 =
+        impressionStorageClient.isImpressed(vanillaCampaign).toFlowable().test();
+    assertThat(subscriber2.getEvents().get(0)).containsExactly(false);
+  }
+
+  @Test
+  public void clearImpressions_doesNotClearImpressionForUnfetchedCampaign() {
+    // verify initial campaign is impressed.
+    TestSubscriber<Boolean> subscriber =
+        impressionStorageClient.isImpressed(vanillaCampaign).toFlowable().test();
+    assertThat(subscriber.getEvents().get(0)).containsExactly(true);
+
+    // clear impressions for a fetch response containing a different campaign.
+    // This simulates having received the campaign again from the server.
+    impressionStorageClient
+        .clearImpressions(
+            FetchEligibleCampaignsResponse.newBuilder().addMessages(experimentalCampaign).build())
+        .subscribe();
+
+    // Verify campaign is still impressed.
+    TestSubscriber<Boolean> subscriber2 =
+        impressionStorageClient.isImpressed(vanillaCampaign).toFlowable().test();
+    assertThat(subscriber2.getEvents().get(0)).containsExactly(true);
   }
 
   interface CampaignImpressionsParser extends Parser<CampaignImpressionList> {}

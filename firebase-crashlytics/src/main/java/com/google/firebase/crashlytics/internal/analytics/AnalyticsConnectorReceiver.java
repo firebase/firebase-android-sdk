@@ -31,6 +31,7 @@ public class AnalyticsConnectorReceiver implements AnalyticsConnectorListener, A
   }
 
   static final String CRASHLYTICS_ORIGIN = "clx";
+  static final String LEGACY_CRASH_ORIGIN = "crash";
   public static final String EVENT_NAME_KEY = "name";
   public static final String APP_EXCEPTION_EVENT_NAME = "_ae";
   private static final String EVENT_ORIGIN_KEY = "_o";
@@ -65,6 +66,25 @@ public class AnalyticsConnectorReceiver implements AnalyticsConnectorListener, A
 
     analyticsConnectorHandle =
         analyticsConnector.registerAnalyticsConnectorListener(CRASHLYTICS_ORIGIN, this);
+
+    if (analyticsConnectorHandle == null) {
+      Logger.getLogger()
+          .d("Could not register AnalyticsConnectorListener with Crashlytics origin.");
+      // Older versions of FA don't support CRASHLYTICS_ORIGIN. We can try using the old Firebase
+      // Crash Reporting origin
+      analyticsConnectorHandle =
+          analyticsConnector.registerAnalyticsConnectorListener(LEGACY_CRASH_ORIGIN, this);
+
+      // If FA allows us to connect with the legacy origin, but not the new one, nudge customers
+      // to update their FA version.
+      if (analyticsConnectorHandle != null) {
+        Logger.getLogger()
+            .w(
+                "A new version of the Google Analytics for Firebase SDK is now available. "
+                    + "For improved performance and compatibility with Crashlytics, please "
+                    + "update to the latest version.");
+      }
+    }
 
     return analyticsConnectorHandle != null;
   }
