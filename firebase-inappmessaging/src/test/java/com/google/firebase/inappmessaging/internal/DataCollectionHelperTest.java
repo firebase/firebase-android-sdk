@@ -92,7 +92,8 @@ public final class DataCollectionHelperTest {
     verify(sharedPreferencesUtils, times(1))
         .setBooleanPreference(DataCollectionHelper.AUTO_INIT_PREFERENCES, false);
     dataCollectionHelper.setAutomaticDataCollectionEnabled(null);
-    verify(sharedPreferencesUtils, times(1)).clearPreference(DataCollectionHelper.AUTO_INIT_PREFERENCES);
+    verify(sharedPreferencesUtils, times(1))
+        .clearPreference(DataCollectionHelper.AUTO_INIT_PREFERENCES);
   }
 
   @Test
