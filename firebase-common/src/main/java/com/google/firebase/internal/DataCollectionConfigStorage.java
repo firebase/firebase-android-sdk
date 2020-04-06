@@ -67,8 +67,7 @@ public class DataCollectionConfigStorage {
   private synchronized void updateDataCollectionDefaultEnabled(boolean enabled) {
     if (dataCollectionDefaultEnabled.compareAndSet(!enabled, enabled)) {
       publisher.publish(
-          new Event<>(
-              DataCollectionDefaultChange.class, new DataCollectionDefaultChange(manifestSetting)));
+          new Event<>(DataCollectionDefaultChange.class, new DataCollectionDefaultChange(enabled)));
     }
   }
 
