@@ -157,6 +157,7 @@ public class FirebaseInstallationServiceClient {
         writeFIDCreateRequestBodyToOutputStream(httpURLConnection, fid, appId);
 
         int httpResponseCode = httpURLConnection.getResponseCode();
+
         if (httpResponseCode == 200) {
           return readCreateResponse(httpURLConnection);
         }
