@@ -43,21 +43,17 @@ public class DataCollectionConfigStorage {
       Context applicationContext, String persistenceKey, Publisher publisher) {
     this.applicationContext = directBootSafe(applicationContext);
     this.sharedPreferences =
-        applicationContext.getSharedPreferences(
+        this.applicationContext.getSharedPreferences(
             FIREBASE_APP_PREFS + persistenceKey, Context.MODE_PRIVATE);
     this.publisher = publisher;
     this.dataCollectionDefaultEnabled = new AtomicBoolean(readAutoDataCollectionEnabled());
   }
 
   private static Context directBootSafe(Context applicationContext) {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N
-        || ContextCompat.isDeviceProtectedStorage(applicationContext)) {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
       return applicationContext;
     }
-    Context deviceContext = ContextCompat.createDeviceProtectedStorageContext(applicationContext);
-    // Move shared prefs to direct boot.
-    deviceContext.moveSharedPreferencesFrom(applicationContext, DATA_COLLECTION_DEFAULT_ENABLED);
-    return deviceContext;
+    return ContextCompat.createDeviceProtectedStorageContext(applicationContext);
   }
 
   public boolean isEnabled() {
