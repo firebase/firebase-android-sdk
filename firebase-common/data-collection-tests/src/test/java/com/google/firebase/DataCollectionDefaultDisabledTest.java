@@ -22,12 +22,10 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import android.content.SharedPreferences;
-
 import androidx.core.content.ContextCompat;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.firebase.internal.DataCollectionConfigStorage;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -36,9 +34,11 @@ import org.junit.runner.RunWith;
 public class DataCollectionDefaultDisabledTest {
 
   @Before
-  public void setUp(){
-      when(ContextCompat.createDeviceProtectedStorageContext(any())).thenReturn(ApplicationProvider.getApplicationContext());
+  public void setUp() {
+    when(ContextCompat.createDeviceProtectedStorageContext(any()))
+        .thenReturn(ApplicationProvider.getApplicationContext());
   }
+
   @Test
   public void isDataCollectionDefaultEnabled_whenMetadataFalse_shouldReturnFalse() {
     withApp(app -> assertThat(app.isDataCollectionDefaultEnabled()).isFalse());

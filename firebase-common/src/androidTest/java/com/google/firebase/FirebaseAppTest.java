@@ -410,6 +410,9 @@ public class FirebaseAppTest {
     assertTrue(firebaseApp.isDataCollectionDefaultEnabled());
     firebaseApp.setDataCollectionDefaultEnabled(false);
     assertFalse(firebaseApp.isDataCollectionDefaultEnabled());
+    // Because default is true.
+    firebaseApp.setDataCollectionDefaultEnabled(null);
+    assertTrue(firebaseApp.isDataCollectionDefaultEnabled());
   }
 
   /** Returns mock context that forwards calls to targetContext and localBroadcastManager. */
