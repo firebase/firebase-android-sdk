@@ -51,6 +51,10 @@ class CrossProcessLock {
       // This method blocks until it can retrieve the lock.
       lock = channel.lock();
       return new CrossProcessLock(channel, lock);
+    } catch (FileNotFoundException e) {
+      // Firebase Installations will silently fail if the disk is full or can not be accessed for other reasons.
+      // This has been done to temporarily quick-fix apps from crash-looping on devices with full disk.
+      // Presumably the SDK will throw error (instead of an exception) later when it cannot persist the FID and data.
     } catch (IOException e) {
       // Certain conditions can cause file locking to fail, such as out of disk or bad permissions.
       // In any case, the acquire will fail and return null instead of a held lock.
