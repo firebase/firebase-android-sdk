@@ -109,6 +109,12 @@ public class FirebaseInAppMessaging {
     return dataCollectionHelper.isAutomaticDataCollectionEnabled();
   }
 
+  // TODO: Add public api docs
+  @Keep
+  public void setAutomaticDataCollectionEnabled(Boolean isAutomaticCollectionEnabled) {
+    dataCollectionHelper.setAutomaticDataCollectionEnabled(isAutomaticCollectionEnabled);
+  }
+
   /**
    * Enable or disable automatic data collection for Firebase In-App Messaging.
    *

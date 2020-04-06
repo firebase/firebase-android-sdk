@@ -121,6 +121,17 @@ public class DataCollectionHelper {
     sharedPreferencesUtils.setBooleanPreference(AUTO_INIT_PREFERENCES, isEnabled);
   }
 
+  // TODO: Add docs similar to the function present in FirebaseInAppMessaging.java
+  public void setAutomaticDataCollectionEnabled(Boolean isEnabled) {
+    // Update SharedPreferences, so that we preserve state across app restarts
+    if (isEnabled == null) {
+      sharedPreferencesUtils.clearPreference(AUTO_INIT_PREFERENCES);
+    } else {
+      sharedPreferencesUtils.setBooleanPreference(
+          AUTO_INIT_PREFERENCES, Boolean.TRUE.equals(isEnabled));
+    }
+  }
+
   private boolean readAutomaticDataCollectionEnabledFromPreferences() {
     return sharedPreferencesUtils.getBooleanPreference(AUTO_INIT_PREFERENCES, true);
   }
