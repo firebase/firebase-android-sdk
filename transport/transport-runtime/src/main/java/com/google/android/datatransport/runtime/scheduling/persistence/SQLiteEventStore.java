@@ -51,6 +51,7 @@ import javax.inject.Singleton;
 @Singleton
 @WorkerThread
 public class SQLiteEventStore implements EventStore, SynchronizationGuard {
+
   private static final String LOG_TAG = "SQLiteEventStore";
 
   static final int MAX_RETRIES = 10;
@@ -104,16 +105,39 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
               }
 
               long contextId = ensureTransportContext(db, transportContext);
+              int maxBlobSizePerRow = config.getMaxBlobSizePerRow();
+
+              byte[] payloadBytes = event.getEncodedPayload().getBytes();
+              boolean inline = payloadBytes.length <= maxBlobSizePerRow;
               ContentValues values = new ContentValues();
               values.put("context_id", contextId);
               values.put("transport_name", event.getTransportName());
               values.put("timestamp_ms", event.getEventMillis());
               values.put("uptime_ms", event.getUptimeMillis());
               values.put("payload_encoding", event.getEncodedPayload().getEncoding().getName());
-              values.put("payload", event.getEncodedPayload().getBytes());
               values.put("code", event.getCode());
               values.put("num_attempts", 0);
+              values.put("inline", inline);
+              values.put("payload", inline ? payloadBytes : new byte[0]);
               long newEventId = db.insert("events", null, values);
+              if (!inline) {
+                int numChunks = payloadBytes.length / maxBlobSizePerRow;
+                if (payloadBytes.length % maxBlobSizePerRow != 0) {
+                  numChunks += 1;
+                }
+                for (int chunk = 1; chunk <= numChunks; chunk++) {
+                  byte[] chunkBytes =
+                      Arrays.copyOfRange(
+                          payloadBytes,
+                          (chunk - 1) * maxBlobSizePerRow,
+                          Math.min((chunk) * maxBlobSizePerRow, payloadBytes.length));
+                  ContentValues payloadValues = new ContentValues();
+                  payloadValues.put("event_id", newEventId);
+                  payloadValues.put("sequence_num", chunk);
+                  payloadValues.put("bytes", chunkBytes);
+                  db.insert("event_payloads", null, payloadValues);
+                }
+              }
 
               // TODO: insert all with one sql query.
               for (Map.Entry<String, String> entry : event.getMetadata().entrySet()) {
@@ -358,7 +382,8 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
               "uptime_ms",
               "payload_encoding",
               "payload",
-              "code"
+              "code",
+              "inline",
             },
             "context_id = ?",
             new String[] {contextId.toString()},
@@ -369,13 +394,19 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
         cursor -> {
           while (cursor.moveToNext()) {
             long id = cursor.getLong(0);
+            boolean inline = cursor.getInt(7) != 0;
             EventInternal.Builder event =
                 EventInternal.builder()
                     .setTransportName(cursor.getString(1))
                     .setEventMillis(cursor.getLong(2))
-                    .setUptimeMillis(cursor.getLong(3))
-                    .setEncodedPayload(
-                        new EncodedPayload(toEncoding(cursor.getString(4)), cursor.getBlob(5)));
+                    .setUptimeMillis(cursor.getLong(3));
+            if (inline) {
+              event.setEncodedPayload(
+                  new EncodedPayload(toEncoding(cursor.getString(4)), cursor.getBlob(5)));
+            } else {
+              event.setEncodedPayload(
+                  new EncodedPayload(toEncoding(cursor.getString(4)), readPayload(id)));
+            }
             if (!cursor.isNull(6)) {
               event.setCode(cursor.getInt(6));
             }
@@ -384,6 +415,37 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
           return null;
         });
     return events;
+  }
+
+  private byte[] readPayload(long eventId) {
+    return tryWithCursor(
+        getDb()
+            .query(
+                "event_payloads",
+                new String[] {"bytes"},
+                "event_id = ?",
+                new String[] {String.valueOf(eventId)},
+                null,
+                null,
+                "sequence_num"),
+        cursor -> {
+          List<byte[]> chunks = new ArrayList<>();
+          while (cursor.moveToNext()) {
+            chunks.add(cursor.getBlob(0));
+          }
+          int totalLength = 0;
+          for (byte[] chunk : chunks) {
+            totalLength += chunk.length;
+          }
+          byte[] payloadBytes = new byte[totalLength];
+          int offset = 0;
+          for (int i = 0; i < chunks.size(); i++) {
+            byte[] chunk = chunks.get(i);
+            System.arraycopy(chunk, 0, payloadBytes, offset, chunk.length);
+            offset += chunk.length;
+          }
+          return payloadBytes;
+        });
   }
 
   private static Encoding toEncoding(@Nullable String value) {

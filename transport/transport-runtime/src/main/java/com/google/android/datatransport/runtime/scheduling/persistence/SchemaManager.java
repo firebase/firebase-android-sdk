@@ -13,6 +13,7 @@
 // limitations under the License.
 package com.google.android.datatransport.runtime.scheduling.persistence;
 
+import android.content.ContentValues;
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
@@ -73,7 +74,15 @@ final class SchemaManager extends SQLiteOpenHelper {
 
   private static final String DROP_CONTEXTS_SQL = "DROP TABLE transport_contexts";
 
-  static int SCHEMA_VERSION = 3;
+  private static final String CREATE_PAYLOADS_TABLE_V4 =
+      "CREATE TABLE event_payloads "
+          + "(sequence_num INTEGER NOT NULL,"
+          + " event_id INTEGER NOT NULL,"
+          + " bytes BLOB NOT NULL,"
+          + "FOREIGN KEY (event_id) REFERENCES events(_id) ON DELETE CASCADE,"
+          + "PRIMARY KEY (sequence_num, event_id))";
+
+  static int SCHEMA_VERSION = 4;
 
   private static final SchemaManager.Migration MIGRATE_TO_V1 =
       (db) -> {
@@ -95,8 +104,17 @@ final class SchemaManager extends SQLiteOpenHelper {
   private static final SchemaManager.Migration MIGRATE_TO_V3 =
       db -> db.execSQL("ALTER TABLE events ADD COLUMN payload_encoding TEXT");
 
+  private static final SchemaManager.Migration MIGRATE_TO_V4 =
+      db -> {
+        db.execSQL("ALTER TABLE events ADD COLUMN inline BOOLEAN DEFAULT 1");
+        ContentValues values = new ContentValues();
+        values.put("inline", 1);
+        db.update("events", values, null, new String[0]);
+        db.execSQL(CREATE_PAYLOADS_TABLE_V4);
+      };
+
   private static final List<Migration> INCREMENTAL_MIGRATIONS =
-      Arrays.asList(MIGRATE_TO_V1, MIGRATE_TO_V2, MIGRATE_TO_V3);
+      Arrays.asList(MIGRATE_TO_V1, MIGRATE_TO_V2, MIGRATE_TO_V3, MIGRATE_TO_V4);
 
   @Inject
   SchemaManager(Context context, @Named("SCHEMA_VERSION") int schemaVersion) {

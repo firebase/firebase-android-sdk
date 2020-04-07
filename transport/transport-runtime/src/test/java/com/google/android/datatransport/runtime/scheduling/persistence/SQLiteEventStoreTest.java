@@ -26,6 +26,7 @@ import com.google.android.datatransport.runtime.time.Clock;
 import com.google.android.datatransport.runtime.time.TestClock;
 import com.google.android.datatransport.runtime.time.UptimeClock;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import org.junit.Test;
@@ -53,7 +54,12 @@ public class SQLiteEventStoreTest {
 
   private static final long HOUR = 60 * 60 * 1000;
   private static final EventStoreConfig CONFIG =
-      EventStoreConfig.DEFAULT.toBuilder().setLoadBatchSize(5).setEventCleanUpAge(HOUR).build();
+      EventStoreConfig.DEFAULT
+          .toBuilder()
+          .setLoadBatchSize(5)
+          .setEventCleanUpAge(HOUR)
+          .setMaxBlobSizePerRow(6)
+          .build();
 
   private final TestClock clock = new TestClock(1);
   private final SQLiteEventStore store = newStoreWithConfig(clock, CONFIG);
@@ -72,6 +78,22 @@ public class SQLiteEventStoreTest {
     Iterable<PersistedEvent> events = store.loadBatch(TRANSPORT_CONTEXT);
 
     assertThat(newEvent.getEvent()).isEqualTo(EVENT);
+    assertThat(events).containsExactly(newEvent);
+  }
+
+  @Test
+  public void persist_withNonInlineBlob_correctlyRoundTrips() {
+    EventInternal event =
+        EVENT
+            .toBuilder()
+            .setEncodedPayload(
+                new EncodedPayload(
+                    JSON_ENCODING, "LongerThanSixBytes".getBytes(StandardCharsets.UTF_8)))
+            .build();
+    PersistedEvent newEvent = store.persist(TRANSPORT_CONTEXT, event);
+    Iterable<PersistedEvent> events = store.loadBatch(TRANSPORT_CONTEXT);
+
+    assertThat(newEvent.getEvent()).isEqualTo(event);
     assertThat(events).containsExactly(newEvent);
   }
 
