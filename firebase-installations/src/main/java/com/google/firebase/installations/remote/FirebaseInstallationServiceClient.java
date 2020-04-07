@@ -38,7 +38,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
@@ -180,15 +179,19 @@ public class FirebaseInstallationServiceClient {
   private void writeFIDCreateRequestBodyToOutputStream(
       HttpURLConnection httpURLConnection, @NonNull String fid, @NonNull String appId)
       throws IOException {
-    try {
-      writeRequestBodyToOutputStream(
-          httpURLConnection, getJsonBytes(buildCreateFirebaseInstallationRequestBody(fid, appId)));
-    } catch (JSONException e) {
-      throw new IllegalStateException(e);
-    }
+    writeRequestBodyToOutputStream(
+        httpURLConnection, getJsonBytes(buildCreateFirebaseInstallationRequestBody(fid, appId)));
   }
 
-  private static byte[] getJsonBytes(JSONObject jsonObject) throws UnsupportedEncodingException {
+  /**
+   * Encodes {@link JSONObject} String representation into a sequence of bytes using the UTF-8
+   * charset.
+   *
+   * @return The resulting byte array.
+   * @throws java.io.UnsupportedEncodingException A type of {@link IOException}, if the named
+   *     charset is not supported.
+   */
+  private static byte[] getJsonBytes(JSONObject jsonObject) throws IOException {
     return jsonObject.toString().getBytes("UTF-8");
   }
 
@@ -204,33 +207,52 @@ public class FirebaseInstallationServiceClient {
     }
   }
 
-  private static JSONObject buildCreateFirebaseInstallationRequestBody(String fid, String appId)
-      throws JSONException {
-    JSONObject firebaseInstallationData = new JSONObject();
-    firebaseInstallationData.put("fid", fid);
-    firebaseInstallationData.put("appId", appId);
-    firebaseInstallationData.put("authVersion", FIREBASE_INSTALLATION_AUTH_VERSION);
-    firebaseInstallationData.put("sdkVersion", SDK_VERSION_PREFIX + VERSION_NAME);
-    return firebaseInstallationData;
-  }
-
-  private void writeGenerateAuthTokenRequestBodyToOutputStream(HttpURLConnection httpURLConnection)
-      throws IOException {
+  /**
+   * Builds a {@link JSONObject} with the required name & value to send as a request body for FID
+   * creation.
+   *
+   * @return A {@link JSONObject} with name & value required for FID creation.
+   * @throws IllegalStateException If {@link JSONException} is thrown due to non-null names while
+   *     {@link JSONObject} creation.
+   */
+  private static JSONObject buildCreateFirebaseInstallationRequestBody(String fid, String appId) {
     try {
-      writeRequestBodyToOutputStream(
-          httpURLConnection, getJsonBytes(buildGenerateAuthTokenRequestBody()));
+      JSONObject firebaseInstallationData = new JSONObject();
+      firebaseInstallationData.put("fid", fid);
+      firebaseInstallationData.put("appId", appId);
+      firebaseInstallationData.put("authVersion", FIREBASE_INSTALLATION_AUTH_VERSION);
+      firebaseInstallationData.put("sdkVersion", SDK_VERSION_PREFIX + VERSION_NAME);
+      return firebaseInstallationData;
     } catch (JSONException e) {
       throw new IllegalStateException(e);
     }
   }
 
-  private static JSONObject buildGenerateAuthTokenRequestBody() throws JSONException {
-    JSONObject sdkVersionData = new JSONObject();
-    sdkVersionData.put("sdkVersion", SDK_VERSION_PREFIX + VERSION_NAME);
+  private void writeGenerateAuthTokenRequestBodyToOutputStream(HttpURLConnection httpURLConnection)
+      throws IOException {
+    writeRequestBodyToOutputStream(
+        httpURLConnection, getJsonBytes(buildGenerateAuthTokenRequestBody()));
+  }
 
-    JSONObject firebaseInstallationData = new JSONObject();
-    firebaseInstallationData.put("installation", sdkVersionData);
-    return firebaseInstallationData;
+  /**
+   * Builds a {@link JSONObject} with the required name & value to send as a request body for
+   * generating auth token.
+   *
+   * @return A {@link JSONObject} with name & value required for generating auth token.
+   * @throws IllegalStateException If {@link JSONException} is thrown due to non-null names while
+   *     {@link JSONObject} creation.
+   */
+  private static JSONObject buildGenerateAuthTokenRequestBody() {
+    try {
+      JSONObject sdkVersionData = new JSONObject();
+      sdkVersionData.put("sdkVersion", SDK_VERSION_PREFIX + VERSION_NAME);
+
+      JSONObject firebaseInstallationData = new JSONObject();
+      firebaseInstallationData.put("installation", sdkVersionData);
+      return firebaseInstallationData;
+    } catch (JSONException e) {
+      throw new IllegalStateException(e);
+    }
   }
 
   /**
