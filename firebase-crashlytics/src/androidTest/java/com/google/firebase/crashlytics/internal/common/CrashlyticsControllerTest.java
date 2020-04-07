@@ -843,6 +843,8 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
 
     arbiter.setCrashlyticsDataCollectionEnabled(true);
     assertTrue(arbiter.isAutomaticDataCollectionEnabled());
+    arbiter.setCrashlyticsDataCollectionEnabled(false);
+    assertFalse(arbiter.isAutomaticDataCollectionEnabled());
     arbiter.setCrashlyticsDataCollectionEnabled(null);
     assertTrue(arbiter.isAutomaticDataCollectionEnabled());
     await(task);
