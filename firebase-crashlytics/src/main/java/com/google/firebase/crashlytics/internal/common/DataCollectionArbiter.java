@@ -62,23 +62,10 @@ public class DataCollectionArbiter {
       enabled = sharedPreferences.getBoolean(FIREBASE_CRASHLYTICS_COLLECTION_ENABLED, true);
       explicitlySet = true;
     } else {
-      try {
-        final PackageManager packageManager = applicationContext.getPackageManager();
-        if (packageManager != null) {
-          final ApplicationInfo applicationInfo =
-              packageManager.getApplicationInfo(
-                  applicationContext.getPackageName(), PackageManager.GET_META_DATA);
-          if (applicationInfo != null
-              && applicationInfo.metaData != null
-              && applicationInfo.metaData.containsKey(FIREBASE_CRASHLYTICS_COLLECTION_ENABLED)) {
-            enabled = applicationInfo.metaData.getBoolean(FIREBASE_CRASHLYTICS_COLLECTION_ENABLED);
-            explicitlySet = true;
-          }
-        }
-      } catch (PackageManager.NameNotFoundException e) {
-        // This shouldn't happen since it's this app's package, but fall through to default
-        // if so.
-        Logger.getLogger().d("Unable to get PackageManager. Falling through", e);
+      Boolean manifestSetting = readDataCollectionManifestValueEnabled(applicationContext);
+      if (manifestSetting != null) {
+        explicitlySet = true;
+        enabled = Boolean.TRUE.equals(manifestSetting);
       }
     }
 
@@ -93,7 +80,29 @@ public class DataCollectionArbiter {
     }
   }
 
-  public boolean isAutomaticDataCollectionEnabled() {
+  private Boolean readDataCollectionManifestValueEnabled(Context applicationContext) {
+    try {
+      final PackageManager packageManager = applicationContext.getPackageManager();
+      if (packageManager != null) {
+        final ApplicationInfo applicationInfo =
+            packageManager.getApplicationInfo(
+                applicationContext.getPackageName(), PackageManager.GET_META_DATA);
+        if (applicationInfo != null
+            && applicationInfo.metaData != null
+            && applicationInfo.metaData.containsKey(FIREBASE_CRASHLYTICS_COLLECTION_ENABLED)) {
+          return applicationInfo.metaData.getBoolean(FIREBASE_CRASHLYTICS_COLLECTION_ENABLED);
+        }
+      }
+    } catch (PackageManager.NameNotFoundException e) {
+      // This shouldn't happen since it's this app's package, but fall through to default
+      // if so.
+      Logger.getLogger().d("Unable to get PackageManager. Falling through", e);
+      return null;
+    }
+    return null;
+  }
+
+  public synchronized boolean isAutomaticDataCollectionEnabled() {
     if (crashlyticsDataCollectionExplicitlySet) {
       return crashlyticsDataCollectionEnabled;
     }
@@ -107,13 +116,29 @@ public class DataCollectionArbiter {
   }
 
   @SuppressLint({"CommitPrefEdits", "ApplySharedPref"})
-  public void setCrashlyticsDataCollectionEnabled(boolean enabled) {
-    crashlyticsDataCollectionEnabled = enabled;
-    crashlyticsDataCollectionExplicitlySet = true;
-    sharedPreferences.edit().putBoolean(FIREBASE_CRASHLYTICS_COLLECTION_ENABLED, enabled).commit();
+  public synchronized void setCrashlyticsDataCollectionEnabled(Boolean enabled) {
+    if (enabled == null) {
+      sharedPreferences.edit().remove(FIREBASE_CRASHLYTICS_COLLECTION_ENABLED).commit();
+      Boolean manifestSetting =
+          readDataCollectionManifestValueEnabled(firebaseApp.getApplicationContext());
+      if (manifestSetting == null) {
+        crashlyticsDataCollectionExplicitlySet = false;
+        crashlyticsDataCollectionEnabled = firebaseApp.isDataCollectionDefaultEnabled();
+      } else {
+        crashlyticsDataCollectionExplicitlySet = true;
+        crashlyticsDataCollectionEnabled = Boolean.TRUE.equals(manifestSetting);
+      }
+    } else {
+      crashlyticsDataCollectionExplicitlySet = true;
+      crashlyticsDataCollectionEnabled = Boolean.TRUE.equals(enabled);
+      sharedPreferences
+          .edit()
+          .putBoolean(FIREBASE_CRASHLYTICS_COLLECTION_ENABLED, crashlyticsDataCollectionEnabled)
+          .commit();
+    }
 
     synchronized (taskLock) {
-      if (enabled) {
+      if (crashlyticsDataCollectionEnabled) {
         if (!taskResolved) {
           dataCollectionEnabledTask.trySetResult(null);
           taskResolved = true;
