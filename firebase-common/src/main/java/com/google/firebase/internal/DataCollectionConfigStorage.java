@@ -24,7 +24,6 @@ import androidx.core.content.ContextCompat;
 import com.google.firebase.DataCollectionDefaultChange;
 import com.google.firebase.events.Event;
 import com.google.firebase.events.Publisher;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /** Encapsulates data collection configuration. */
 public class DataCollectionConfigStorage {
@@ -34,19 +33,19 @@ public class DataCollectionConfigStorage {
   public static final String DATA_COLLECTION_DEFAULT_ENABLED =
       "firebase_data_collection_default_enabled";
 
-  private final Context applicationContext;
+  private final Context deviceProtectedContext;
   private final SharedPreferences sharedPreferences;
   private final Publisher publisher;
-  private final AtomicBoolean dataCollectionDefaultEnabled;
+  private boolean dataCollectionDefaultEnabled;
 
   public DataCollectionConfigStorage(
       Context applicationContext, String persistenceKey, Publisher publisher) {
-    this.applicationContext = directBootSafe(applicationContext);
+    this.deviceProtectedContext = directBootSafe(applicationContext);
     this.sharedPreferences =
-        this.applicationContext.getSharedPreferences(
+        deviceProtectedContext.getSharedPreferences(
             FIREBASE_APP_PREFS + persistenceKey, Context.MODE_PRIVATE);
     this.publisher = publisher;
-    this.dataCollectionDefaultEnabled = new AtomicBoolean(readAutoDataCollectionEnabled());
+    this.dataCollectionDefaultEnabled = readAutoDataCollectionEnabled();
   }
 
   private static Context directBootSafe(Context applicationContext) {
@@ -56,12 +55,13 @@ public class DataCollectionConfigStorage {
     return ContextCompat.createDeviceProtectedStorageContext(applicationContext);
   }
 
-  public boolean isEnabled() {
-    return dataCollectionDefaultEnabled.get();
+  public synchronized boolean isEnabled() {
+    return dataCollectionDefaultEnabled;
   }
 
   private synchronized void updateDataCollectionDefaultEnabled(boolean enabled) {
-    if (dataCollectionDefaultEnabled.compareAndSet(!enabled, enabled)) {
+    if (dataCollectionDefaultEnabled != enabled) {
+      dataCollectionDefaultEnabled = enabled;
       publisher.publish(
           new Event<>(DataCollectionDefaultChange.class, new DataCollectionDefaultChange(enabled)));
     }
@@ -81,11 +81,11 @@ public class DataCollectionConfigStorage {
 
   private boolean readManifestDataCollectionEnabled() {
     try {
-      PackageManager packageManager = applicationContext.getPackageManager();
+      PackageManager packageManager = deviceProtectedContext.getPackageManager();
       if (packageManager != null) {
         ApplicationInfo applicationInfo =
             packageManager.getApplicationInfo(
-                applicationContext.getPackageName(), PackageManager.GET_META_DATA);
+                deviceProtectedContext.getPackageName(), PackageManager.GET_META_DATA);
         if (applicationInfo != null
             && applicationInfo.metaData != null
             && applicationInfo.metaData.containsKey(DATA_COLLECTION_DEFAULT_ENABLED)) {
