@@ -400,13 +400,15 @@ public class FirebaseAppTest {
     isUserUnlocked.set(false);
     FirebaseApp firebaseApp = FirebaseApp.initializeApp(mockContext);
     assert (firebaseApp != null);
-    firebaseApp.setDataCollectionDefaultEnabled(true);
-    assertTrue(firebaseApp.isDataCollectionDefaultEnabled());
+    firebaseApp.setDataCollectionDefaultEnabled(false);
+    assertFalse(firebaseApp.isDataCollectionDefaultEnabled());
     // User unlocks the device.
     isUserUnlocked.set(true);
     Intent userUnlockBroadcast = new Intent(Intent.ACTION_USER_UNLOCKED);
     localBroadcastManager.sendBroadcastSync(userUnlockBroadcast);
 
+    assertFalse(firebaseApp.isDataCollectionDefaultEnabled());
+    firebaseApp.setDataCollectionDefaultEnabled(true);
     assertTrue(firebaseApp.isDataCollectionDefaultEnabled());
     firebaseApp.setDataCollectionDefaultEnabled(false);
     assertFalse(firebaseApp.isDataCollectionDefaultEnabled());
