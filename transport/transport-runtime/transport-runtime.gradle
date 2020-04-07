@@ -57,7 +57,7 @@ android {
 
 dependencies {
     implementation project(':transport:transport-api')
-    implementation 'com.google.dagger:dagger:2.24'
+    implementation 'com.google.dagger:dagger:2.27'
     implementation 'androidx.annotation:annotation:1.1.0'
 
     compileOnly "com.google.auto.value:auto-value-annotations:1.6.5"
