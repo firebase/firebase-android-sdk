@@ -107,13 +107,19 @@ public class DataCollectionArbiter {
   }
 
   @SuppressLint({"CommitPrefEdits", "ApplySharedPref"})
-  public void setCrashlyticsDataCollectionEnabled(boolean enabled) {
-    crashlyticsDataCollectionEnabled = enabled;
-    crashlyticsDataCollectionExplicitlySet = true;
-    sharedPreferences.edit().putBoolean(FIREBASE_CRASHLYTICS_COLLECTION_ENABLED, enabled).commit();
+  public void setCrashlyticsDataCollectionEnabled(Boolean enabled) {
 
+    if(enabled == null) {
+      crashlyticsDataCollectionExplicitlySet = false;
+      sharedPreferences.edit().remove(FIREBASE_CRASHLYTICS_COLLECTION_ENABLED).commit();
+    }
+    else {
+      crashlyticsDataCollectionEnabled = enabled;
+      crashlyticsDataCollectionExplicitlySet = true;
+      sharedPreferences.edit().putBoolean(FIREBASE_CRASHLYTICS_COLLECTION_ENABLED, enabled).commit();
+    }
     synchronized (taskLock) {
-      if (enabled) {
+      if (Boolean.TRUE.equals(enabled) || (enabled == null && firebaseApp.isDataCollectionDefaultEnabled())) {
         if (!taskResolved) {
           dataCollectionEnabledTask.trySetResult(null);
           taskResolved = true;

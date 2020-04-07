@@ -272,9 +272,11 @@ public class CrashlyticsCore {
 
   // endregion
 
-  public void setCrashlyticsCollectionEnabled(boolean enabled) {
+  public void setCrashlyticsCollectionEnabled(Boolean enabled) {
     dataCollectionArbiter.setCrashlyticsDataCollectionEnabled(enabled);
   }
+
+
 
   // region Unsent report management.
 
