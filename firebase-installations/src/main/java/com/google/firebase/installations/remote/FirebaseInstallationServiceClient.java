@@ -35,10 +35,12 @@ import com.google.firebase.installations.FirebaseInstallationsException.Status;
 import com.google.firebase.installations.remote.InstallationResponse.ResponseCode;
 import com.google.firebase.platforminfo.UserAgentPublisher;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLConnection;
 import java.nio.charset.Charset;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPOutputStream;
@@ -177,58 +179,80 @@ public class FirebaseInstallationServiceClient {
   private void writeFIDCreateRequestBodyToOutputStream(
       HttpURLConnection httpURLConnection, @NonNull String fid, @NonNull String appId)
       throws IOException {
-    OutputStream outputStream = httpURLConnection.getOutputStream();
-    if (outputStream == null) {
-      throw new IOException(
-          "Cannot send CreateInstallation request to FIS. No OutputStream available.");
-    }
+    writeRequestBodyToOutputStream(
+        httpURLConnection, getJsonBytes(buildCreateFirebaseInstallationRequestBody(fid, appId)));
+  }
 
-    GZIPOutputStream gzipOutputStream = new GZIPOutputStream(outputStream);
-    try {
-      gzipOutputStream.write(
-          buildCreateFirebaseInstallationRequestBody(fid, appId).toString().getBytes("UTF-8"));
-    } catch (JSONException e) {
-      throw new IllegalStateException(e);
-    } finally {
-      gzipOutputStream.close();
+  /**
+   * Encodes {@link JSONObject} String representation into a sequence of bytes using the UTF-8
+   * charset.
+   *
+   * @return The resulting byte array.
+   * @throws java.io.UnsupportedEncodingException A type of {@link IOException}, if the named
+   *     charset is not supported.
+   */
+  private static byte[] getJsonBytes(JSONObject jsonObject) throws IOException {
+    return jsonObject.toString().getBytes("UTF-8");
+  }
+
+  private static void writeRequestBodyToOutputStream(URLConnection urlConnection, byte[] jsonBytes)
+      throws IOException {
+    try (OutputStream outputStream = urlConnection.getOutputStream()) {
+      if (outputStream == null) {
+        throw new IOException("Cannot send request to FIS servers. No OutputStream available.");
+      }
+      try (GZIPOutputStream gzipOutputStream = new GZIPOutputStream(outputStream)) {
+        gzipOutputStream.write(jsonBytes);
+      }
     }
   }
 
-  private static JSONObject buildCreateFirebaseInstallationRequestBody(String fid, String appId)
-      throws JSONException {
-    JSONObject firebaseInstallationData = new JSONObject();
-    firebaseInstallationData.put("fid", fid);
-    firebaseInstallationData.put("appId", appId);
-    firebaseInstallationData.put("authVersion", FIREBASE_INSTALLATION_AUTH_VERSION);
-    firebaseInstallationData.put("sdkVersion", SDK_VERSION_PREFIX + VERSION_NAME);
-    return firebaseInstallationData;
+  /**
+   * Builds a {@link JSONObject} with the required name & value to send as a request body for FID
+   * creation.
+   *
+   * @return A {@link JSONObject} with name & value required for FID creation.
+   * @throws IllegalStateException If {@link JSONException} is thrown due to non-null names while
+   *     {@link JSONObject} creation.
+   */
+  private static JSONObject buildCreateFirebaseInstallationRequestBody(String fid, String appId) {
+    try {
+      JSONObject firebaseInstallationData = new JSONObject();
+      firebaseInstallationData.put("fid", fid);
+      firebaseInstallationData.put("appId", appId);
+      firebaseInstallationData.put("authVersion", FIREBASE_INSTALLATION_AUTH_VERSION);
+      firebaseInstallationData.put("sdkVersion", SDK_VERSION_PREFIX + VERSION_NAME);
+      return firebaseInstallationData;
+    } catch (JSONException e) {
+      throw new IllegalStateException(e);
+    }
   }
 
   private void writeGenerateAuthTokenRequestBodyToOutputStream(HttpURLConnection httpURLConnection)
       throws IOException {
-    OutputStream outputStream = httpURLConnection.getOutputStream();
-    if (outputStream == null) {
-      throw new IOException(
-          "Cannot send GenerateAuthToken request to FIS. No OutputStream available.");
-    }
-
-    GZIPOutputStream gzipOutputStream = new GZIPOutputStream(outputStream);
-    try {
-      gzipOutputStream.write(buildGenerateAuthTokenRequestBody().toString().getBytes("UTF-8"));
-    } catch (JSONException e) {
-      throw new IllegalStateException(e);
-    } finally {
-      gzipOutputStream.close();
-    }
+    writeRequestBodyToOutputStream(
+        httpURLConnection, getJsonBytes(buildGenerateAuthTokenRequestBody()));
   }
 
-  private static JSONObject buildGenerateAuthTokenRequestBody() throws JSONException {
-    JSONObject sdkVersionData = new JSONObject();
-    sdkVersionData.put("sdkVersion", SDK_VERSION_PREFIX + VERSION_NAME);
+  /**
+   * Builds a {@link JSONObject} with the required name & value to send as a request body for
+   * generating auth token.
+   *
+   * @return A {@link JSONObject} with name & value required for generating auth token.
+   * @throws IllegalStateException If {@link JSONException} is thrown due to non-null names while
+   *     {@link JSONObject} creation.
+   */
+  private static JSONObject buildGenerateAuthTokenRequestBody() {
+    try {
+      JSONObject sdkVersionData = new JSONObject();
+      sdkVersionData.put("sdkVersion", SDK_VERSION_PREFIX + VERSION_NAME);
 
-    JSONObject firebaseInstallationData = new JSONObject();
-    firebaseInstallationData.put("installation", sdkVersionData);
-    return firebaseInstallationData;
+      JSONObject firebaseInstallationData = new JSONObject();
+      firebaseInstallationData.put("installation", sdkVersionData);
+      return firebaseInstallationData;
+    } catch (JSONException e) {
+      throw new IllegalStateException(e);
+    }
   }
 
   /**
@@ -368,7 +392,8 @@ public class FirebaseInstallationServiceClient {
 
   // Read the response from the createFirebaseInstallation API.
   private InstallationResponse readCreateResponse(HttpURLConnection conn) throws IOException {
-    JsonReader reader = new JsonReader(new InputStreamReader(conn.getInputStream(), UTF_8));
+    InputStream inputStream = conn.getInputStream();
+    JsonReader reader = new JsonReader(new InputStreamReader(inputStream, UTF_8));
     TokenResult.Builder tokenResult = TokenResult.builder();
     InstallationResponse.Builder builder = InstallationResponse.builder();
     reader.beginObject();
@@ -401,13 +426,14 @@ public class FirebaseInstallationServiceClient {
     }
     reader.endObject();
     reader.close();
-
+    inputStream.close();
     return builder.setResponseCode(ResponseCode.OK).build();
   }
 
   // Read the response from the generateAuthToken FirebaseInstallation API.
   private TokenResult readGenerateAuthTokenResponse(HttpURLConnection conn) throws IOException {
-    JsonReader reader = new JsonReader(new InputStreamReader(conn.getInputStream(), UTF_8));
+    InputStream inputStream = conn.getInputStream();
+    JsonReader reader = new JsonReader(new InputStreamReader(inputStream, UTF_8));
     TokenResult.Builder builder = TokenResult.builder();
     reader.beginObject();
     while (reader.hasNext()) {
@@ -422,6 +448,7 @@ public class FirebaseInstallationServiceClient {
     }
     reader.endObject();
     reader.close();
+    inputStream.close();
 
     return builder.setResponseCode(TokenResult.ResponseCode.OK).build();
   }
