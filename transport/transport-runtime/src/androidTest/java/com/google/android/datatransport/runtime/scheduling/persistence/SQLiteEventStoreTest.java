@@ -1,4 +1,4 @@
-// Copyright 2019 Google LLC
+// Copyright 2020 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@ package com.google.android.datatransport.runtime.scheduling.persistence;
 import static com.google.android.datatransport.runtime.scheduling.persistence.SchemaManager.SCHEMA_VERSION;
 import static com.google.common.truth.Truth.assertThat;
 
+import androidx.test.core.app.ApplicationProvider;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.datatransport.Encoding;
 import com.google.android.datatransport.Priority;
 import com.google.android.datatransport.runtime.EncodedPayload;
@@ -26,15 +28,13 @@ import com.google.android.datatransport.runtime.time.Clock;
 import com.google.android.datatransport.runtime.time.TestClock;
 import com.google.android.datatransport.runtime.time.UptimeClock;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.UUID;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.robolectric.RobolectricTestRunner;
-import org.robolectric.RuntimeEnvironment;
 
-@RunWith(RobolectricTestRunner.class)
+@RunWith(AndroidJUnit4.class)
 public class SQLiteEventStoreTest {
   private static final TransportContext TRANSPORT_CONTEXT =
       TransportContext.builder().setBackendName("backend1").build();
@@ -53,12 +53,13 @@ public class SQLiteEventStoreTest {
           .build();
 
   private static final long HOUR = 60 * 60 * 1000;
+  private static final int MAX_BLOB_SIZE = 6;
   private static final EventStoreConfig CONFIG =
       EventStoreConfig.DEFAULT
           .toBuilder()
           .setLoadBatchSize(5)
           .setEventCleanUpAge(HOUR)
-          .setMaxBlobSizePerRow(6)
+          .setMaxBlobSizePerRow(MAX_BLOB_SIZE)
           .build();
 
   private final TestClock clock = new TestClock(1);
@@ -69,7 +70,10 @@ public class SQLiteEventStoreTest {
         clock,
         new UptimeClock(),
         config,
-        new SchemaManager(RuntimeEnvironment.application, SCHEMA_VERSION));
+        new SchemaManager(
+            ApplicationProvider.getApplicationContext(),
+            UUID.randomUUID().toString(),
+            SCHEMA_VERSION));
   }
 
   @Test
@@ -83,18 +87,27 @@ public class SQLiteEventStoreTest {
 
   @Test
   public void persist_withNonInlineBlob_correctlyRoundTrips() {
+    byte[] payload = "LongerThanSixBytes".getBytes(Charset.defaultCharset());
     EventInternal event =
-        EVENT
-            .toBuilder()
-            .setEncodedPayload(
-                new EncodedPayload(
-                    JSON_ENCODING, "LongerThanSixBytes".getBytes(StandardCharsets.UTF_8)))
-            .build();
+        EVENT.toBuilder().setEncodedPayload(new EncodedPayload(JSON_ENCODING, payload)).build();
     PersistedEvent newEvent = store.persist(TRANSPORT_CONTEXT, event);
     Iterable<PersistedEvent> events = store.loadBatch(TRANSPORT_CONTEXT);
 
     assertThat(newEvent.getEvent()).isEqualTo(event);
     assertThat(events).containsExactly(newEvent);
+    long expectedRows = payload.length / MAX_BLOB_SIZE;
+    if (payload.length % MAX_BLOB_SIZE != 0) {
+      expectedRows += 1;
+    }
+    long payloadRows =
+        store.getDb().compileStatement("select count(*) from event_payloads").simpleQueryForLong();
+    assertThat(payloadRows).isEqualTo(expectedRows);
+
+    store.recordSuccess(events);
+    assertThat(store.loadBatch(TRANSPORT_CONTEXT)).isEmpty();
+    payloadRows =
+        store.getDb().compileStatement("select count(*) from event_payloads").simpleQueryForLong();
+    assertThat(payloadRows).isEqualTo(0);
   }
 
   @Test

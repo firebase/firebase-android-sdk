@@ -77,7 +77,8 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
     this.config = config;
   }
 
-  private SQLiteDatabase getDb() {
+  @VisibleForTesting
+  SQLiteDatabase getDb() {
     return retryIfDbLocked(
         schemaManager::getWritableDatabase,
         ex -> {

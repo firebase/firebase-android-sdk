@@ -26,7 +26,7 @@ import javax.inject.Named;
 final class SchemaManager extends SQLiteOpenHelper {
   // TODO: when we do schema upgrades in the future we need to make sure both downgrades and
   // upgrades work as expected, e.g. `up+down+up` is equivalent to `up`.
-  private static final String DB_NAME = "com.google.android.datatransport.events";
+  static final String DB_NAME = "com.google.android.datatransport.events";
   private final int schemaVersion;
   private boolean configured = false;
 
@@ -117,8 +117,11 @@ final class SchemaManager extends SQLiteOpenHelper {
       Arrays.asList(MIGRATE_TO_V1, MIGRATE_TO_V2, MIGRATE_TO_V3, MIGRATE_TO_V4);
 
   @Inject
-  SchemaManager(Context context, @Named("SCHEMA_VERSION") int schemaVersion) {
-    super(context, DB_NAME, null, schemaVersion);
+  SchemaManager(
+      Context context,
+      @Named("SQLITE_DB_NAME") String dbName,
+      @Named("SCHEMA_VERSION") int schemaVersion) {
+    super(context, dbName, null, schemaVersion);
     this.schemaVersion = schemaVersion;
   }
 
