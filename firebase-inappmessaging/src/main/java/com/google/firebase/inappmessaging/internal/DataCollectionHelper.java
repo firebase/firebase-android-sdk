@@ -135,7 +135,8 @@ public class DataCollectionHelper {
    * enabled by default.
    *
    * <p>If you need to change the default, (for example, because you want to prompt the user before
-   * generates/refreshes a registration token on app startup), add to your application’s manifest:
+   * generates/refreshes a registration token on app startup), add the following
+   * to your application’s manifest:
    *
    * <pre>{@code
    * <meta-data android:name="firebase_inapp_messaging_auto_init_enabled" android:value="false" />

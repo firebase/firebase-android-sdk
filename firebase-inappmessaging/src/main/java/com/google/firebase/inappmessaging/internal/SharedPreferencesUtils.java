@@ -51,7 +51,7 @@ public class SharedPreferencesUtils {
   }
 
   /**
-   * Helper method for clearing the value in the apps stored preferences.
+   * Helper method for clearing the value in the app's stored preferences.
    *
    * @param preference the preference key.
    */
