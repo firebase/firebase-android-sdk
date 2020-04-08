@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2020 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import org.robolectric.annotation.Config;
 
 @RunWith(AndroidJUnit4.class)
 @Config(sdk = 19)
-public class DataCollectionDefaultEnabledTest {
+public class DataCollectionPreNDefaultEnabledTest {
 
   @Test
   public void isDataCollectionDefaultEnabled_shouldDefaultToTrue() {
@@ -37,9 +37,11 @@ public class DataCollectionDefaultEnabledTest {
 
   @Test
   public void isDataCollectionDefaultEnabled_whenPrefsFalse_shouldReturnFalse() {
-    setSharedPreferencesTo(false);
-
-    withApp(app -> assertThat(app.isDataCollectionDefaultEnabled()).isFalse());
+    withApp(
+        app -> {
+          setSharedPreferencesTo(false);
+          assertThat(app.isDataCollectionDefaultEnabled()).isFalse();
+        });
   }
 
   @Test

@@ -1,4 +1,4 @@
-// Copyright 2019 Google LLC
+// Copyright 2020 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,7 +19,9 @@ import static com.google.firebase.DataCollectionTestUtil.getSharedPreferences;
 import static com.google.firebase.DataCollectionTestUtil.setSharedPreferencesTo;
 import static com.google.firebase.DataCollectionTestUtil.withApp;
 
+import android.content.Context;
 import android.content.SharedPreferences;
+import androidx.core.content.ContextCompat;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.firebase.internal.DataCollectionConfigStorage;
 import org.junit.Test;
@@ -27,8 +29,8 @@ import org.junit.runner.RunWith;
 import org.robolectric.annotation.Config;
 
 @RunWith(AndroidJUnit4.class)
-@Config(sdk = 19)
-public class DataCollectionDefaultDisabledTest {
+@Config(sdk = 25)
+public class DataCollectionPostNDefaultDisabledTest {
 
   @Test
   public void isDataCollectionDefaultEnabled_whenMetadataFalse_shouldReturnFalse() {
@@ -43,8 +45,13 @@ public class DataCollectionDefaultDisabledTest {
 
   @Test
   public void isDataCollectionDefaultEnabled_whenMetadataFalseAndPrefsTrue_shouldReturnTrue() {
-    setSharedPreferencesTo(true);
-    withApp(app -> assertThat(app.isDataCollectionDefaultEnabled()).isTrue());
+    withApp(
+        app -> {
+          Context directBootContext =
+              ContextCompat.createDeviceProtectedStorageContext(app.getApplicationContext());
+          setSharedPreferencesTo(directBootContext, true);
+          assertThat(app.isDataCollectionDefaultEnabled()).isTrue();
+        });
   }
 
   @Test
@@ -57,8 +64,10 @@ public class DataCollectionDefaultDisabledTest {
   public void setDataCollectionDefaultEnabledTrue_shouldUpdateSharedPrefs() {
     withApp(
         app -> {
+          Context directBootContext =
+              ContextCompat.createDeviceProtectedStorageContext(app.getApplicationContext());
           app.setDataCollectionDefaultEnabled(true);
-          SharedPreferences prefs = getSharedPreferences();
+          SharedPreferences prefs = getSharedPreferences(directBootContext);
           assertThat(prefs.contains(DataCollectionConfigStorage.DATA_COLLECTION_DEFAULT_ENABLED))
               .isTrue();
           assertThat(
