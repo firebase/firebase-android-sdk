@@ -220,6 +220,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     View view = new View(query, queryResult.getRemoteKeys());
     View.DocumentChanges viewDocChanges = view.computeDocChanges(queryResult.getDocuments());
     ViewChange viewChange = view.applyChanges(viewDocChanges, synthesizedCurrentChange);
+    updateTrackedLimboDocuments(viewChange.getLimboChanges(), targetId);
 
     QueryView queryView = new QueryView(query, targetId, view);
     queryViewsByQuery.put(query, queryView);
