@@ -129,26 +129,6 @@ public class DataTransportCrashlyticsReportSenderTest {
     assertEquals(ex, send2.getException());
   }
 
-  @Test
-  public void testSendLargeReport_successfulWithoutSchedulingToDataTransport() throws Exception {
-    doAnswer(callbackAnswer(null)).when(mockTransport).schedule(any(), any());
-
-    final CrashlyticsReportWithSessionId report = mockReportWithSessionId();
-
-    when(mockTransform.apply(report.getReport())).thenReturn(new byte[1024 * 1024]);
-
-    final Task<CrashlyticsReportWithSessionId> send = reportSender.sendReport(report);
-
-    try {
-      Tasks.await(send);
-    } catch (ExecutionException e) {
-      // Allow this to fall through
-    }
-
-    assertTrue(send.isSuccessful());
-    verify(mockTransport, never()).schedule(any(), any());
-  }
-
   private static Answer<Void> callbackAnswer(Exception failure) {
     return (i) -> {
       final TransportScheduleCallback callback = i.getArgument(1);
