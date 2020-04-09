@@ -858,7 +858,6 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
     assertFalse(arbiter.isAutomaticDataCollectionEnabled());
 
     await(task);
-
     verify(mockReportManager).areReportsAvailable();
     verify(mockReportManager).findReports();
     verifyNoMoreInteractions(mockReportManager);

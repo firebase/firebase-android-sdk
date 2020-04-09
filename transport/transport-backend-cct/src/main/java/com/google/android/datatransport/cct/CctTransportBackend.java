@@ -27,7 +27,6 @@ import com.google.android.datatransport.backend.cct.BuildConfig;
 import com.google.android.datatransport.cct.internal.AndroidClientInfo;
 import com.google.android.datatransport.cct.internal.BatchedLogRequest;
 import com.google.android.datatransport.cct.internal.ClientInfo;
-import com.google.android.datatransport.cct.internal.JsonBatchedLogRequestEncoder;
 import com.google.android.datatransport.cct.internal.LogEvent;
 import com.google.android.datatransport.cct.internal.LogRequest;
 import com.google.android.datatransport.cct.internal.LogResponse;
@@ -88,7 +87,7 @@ final class CctTransportBackend implements TransportBackend {
   private static final String KEY_FINGERPRINT = "fingerprint";
   private static final String KEY_TIMEZONE_OFFSET = "tz-offset";
 
-  private final DataEncoder dataEncoder = JsonBatchedLogRequestEncoder.createJsonEncoder();
+  private final DataEncoder dataEncoder = BatchedLogRequest.createDataEncoder();
 
   private final ConnectivityManager connectivityManager;
   final URL endPoint;
@@ -197,7 +196,7 @@ final class CctTransportBackend implements TransportBackend {
 
       // set log source to either its numeric value or its name.
       try {
-        requestBuilder.setSource(Integer.valueOf(entry.getKey()));
+        requestBuilder.setSource(Integer.parseInt(entry.getKey()));
       } catch (NumberFormatException ex) {
         requestBuilder.setSource(entry.getKey());
       }
