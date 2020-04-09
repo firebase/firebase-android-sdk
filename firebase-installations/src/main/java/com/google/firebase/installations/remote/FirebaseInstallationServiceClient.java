@@ -291,13 +291,13 @@ public class FirebaseInstallationServiceClient {
       httpURLConnection.addRequestProperty("Authorization", "FIS_v2 " + refreshToken);
 
       int httpResponseCode = httpURLConnection.getResponseCode();
-      httpURLConnection.disconnect();
 
       if (httpResponseCode == 200 || httpResponseCode == 401 || httpResponseCode == 404) {
         return;
       }
 
       Log.w(FIS_TAG, readErrorResponse(httpURLConnection));
+      httpURLConnection.disconnect();
 
       if (httpResponseCode == 429 || (httpResponseCode >= 500 && httpResponseCode < 600)) {
         retryCount++;
