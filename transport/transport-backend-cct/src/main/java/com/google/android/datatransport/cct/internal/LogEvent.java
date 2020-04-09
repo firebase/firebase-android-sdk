@@ -23,7 +23,8 @@ public abstract class LogEvent {
 
   public abstract long getEventTimeMs();
 
-  public abstract int getEventCode();
+  @Nullable
+  public abstract Integer getEventCode();
 
   public abstract long getEventUptimeMs();
 
@@ -51,7 +52,7 @@ public abstract class LogEvent {
   }
 
   private static Builder builder() {
-    return new AutoValue_LogEvent.Builder().setEventCode(Integer.MIN_VALUE);
+    return new AutoValue_LogEvent.Builder();
   }
 
   @AutoValue.Builder
@@ -60,7 +61,7 @@ public abstract class LogEvent {
     public abstract Builder setEventTimeMs(long value);
 
     @NonNull
-    public abstract Builder setEventCode(int value);
+    public abstract Builder setEventCode(@Nullable Integer value);
 
     @NonNull
     public abstract Builder setEventUptimeMs(long value);
