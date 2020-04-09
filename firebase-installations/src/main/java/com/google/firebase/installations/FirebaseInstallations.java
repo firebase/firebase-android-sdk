@@ -143,12 +143,9 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
    * or empty.
    */
   private void preConditionChecks() {
-    Preconditions.checkNotEmpty(getApplicationId(), "Firebase App ID should not be empty or null.");
-    Preconditions.checkNotEmpty(
-        getProjectIdentifier(), "Firebase project ID should not be empty or null.");
-    Preconditions.checkNotEmpty(
-        getApiKey(),
-        "Firebase API key used for authenticating requests from your app should not be empty or null.");
+    Preconditions.checkNotEmpty(getApplicationId());
+    Preconditions.checkNotEmpty(getProjectIdentifier());
+    Preconditions.checkNotEmpty(getApiKey());
   }
 
   /** Returns the Project Id or Project Number for the Firebase Project. */
