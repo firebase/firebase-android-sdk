@@ -19,14 +19,18 @@ import static com.google.firebase.DataCollectionTestUtil.getSharedPreferences;
 import static com.google.firebase.DataCollectionTestUtil.setSharedPreferencesTo;
 import static com.google.firebase.DataCollectionTestUtil.withApp;
 
+import android.content.Context;
 import android.content.SharedPreferences;
+import androidx.core.content.ContextCompat;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.firebase.internal.DataCollectionConfigStorage;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.robolectric.annotation.Config;
 
 @RunWith(AndroidJUnit4.class)
-public class DataCollectionDefaultEnabledTest {
+@Config(sdk = 25)
+public class DataCollectionPostNDefaultEnabledTest {
 
   @Test
   public void isDataCollectionDefaultEnabled_shouldDefaultToTrue() {
@@ -35,9 +39,13 @@ public class DataCollectionDefaultEnabledTest {
 
   @Test
   public void isDataCollectionDefaultEnabled_whenPrefsFalse_shouldReturnFalse() {
-    setSharedPreferencesTo(false);
-
-    withApp(app -> assertThat(app.isDataCollectionDefaultEnabled()).isFalse());
+    withApp(
+        app -> {
+          Context directBootContext =
+              ContextCompat.createDeviceProtectedStorageContext(app.getApplicationContext());
+          setSharedPreferencesTo(directBootContext, false);
+          assertThat(app.isDataCollectionDefaultEnabled()).isFalse();
+        });
   }
 
   @Test
@@ -52,7 +60,9 @@ public class DataCollectionDefaultEnabledTest {
     withApp(
         app -> {
           app.setDataCollectionDefaultEnabled(false);
-          SharedPreferences prefs = getSharedPreferences();
+          Context directBootContext =
+              ContextCompat.createDeviceProtectedStorageContext(app.getApplicationContext());
+          SharedPreferences prefs = getSharedPreferences(directBootContext);
           assertThat(prefs.contains(DataCollectionConfigStorage.DATA_COLLECTION_DEFAULT_ENABLED))
               .isTrue();
           assertThat(

@@ -842,9 +842,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
     Task<Void> task = controller.submitAllReports(1.0f, testSettingsDataProvider.getAppSettings());
 
     arbiter.setCrashlyticsDataCollectionEnabled(true);
-
     await(task);
-
     verify(mockReportManager).areReportsAvailable();
     verify(mockReportManager).findReports();
     verifyNoMoreInteractions(mockReportManager);
