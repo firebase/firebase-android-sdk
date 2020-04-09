@@ -17,6 +17,7 @@ package com.google.android.datatransport.runtime.scheduling.persistence;
 import static com.google.android.datatransport.runtime.scheduling.persistence.SchemaManager.SCHEMA_VERSION;
 import static com.google.common.truth.Truth.assertThat;
 
+import android.database.DatabaseUtils;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.datatransport.Encoding;
@@ -53,13 +54,13 @@ public class SQLiteEventStoreTest {
           .build();
 
   private static final long HOUR = 60 * 60 * 1000;
-  private static final int MAX_BLOB_SIZE = 6;
+  private static final int MAX_BLOB_SIZE_BYTES = 6;
   private static final EventStoreConfig CONFIG =
       EventStoreConfig.DEFAULT
           .toBuilder()
           .setLoadBatchSize(5)
           .setEventCleanUpAge(HOUR)
-          .setMaxBlobSizePerRow(MAX_BLOB_SIZE)
+          .setMaxBlobByteSizePerRow(MAX_BLOB_SIZE_BYTES)
           .build();
 
   private final TestClock clock = new TestClock(1);
@@ -95,18 +96,36 @@ public class SQLiteEventStoreTest {
 
     assertThat(newEvent.getEvent()).isEqualTo(event);
     assertThat(events).containsExactly(newEvent);
-    long expectedRows = payload.length / MAX_BLOB_SIZE;
-    if (payload.length % MAX_BLOB_SIZE != 0) {
+  }
+
+  @Test
+  public void persist_withNonInlineBlob_correctlyStoresPayloadInSeparateTable() {
+    byte[] payload = "LongerThanSixBytes".getBytes(Charset.defaultCharset());
+    EventInternal event =
+        EVENT.toBuilder().setEncodedPayload(new EncodedPayload(JSON_ENCODING, payload)).build();
+    PersistedEvent newEvent = store.persist(TRANSPORT_CONTEXT, event);
+
+    long expectedRows = payload.length / MAX_BLOB_SIZE_BYTES;
+    if (payload.length % MAX_BLOB_SIZE_BYTES != 0) {
       expectedRows += 1;
     }
+
     long payloadRows =
-        store.getDb().compileStatement("select count(*) from event_payloads").simpleQueryForLong();
+        DatabaseUtils.queryNumEntries(
+            store.getDb(),
+            "event_payloads",
+            "event_id = ?",
+            new String[] {String.valueOf(newEvent.getId())});
     assertThat(payloadRows).isEqualTo(expectedRows);
 
-    store.recordSuccess(events);
+    store.recordSuccess(store.loadBatch(TRANSPORT_CONTEXT));
     assertThat(store.loadBatch(TRANSPORT_CONTEXT)).isEmpty();
     payloadRows =
-        store.getDb().compileStatement("select count(*) from event_payloads").simpleQueryForLong();
+        DatabaseUtils.queryNumEntries(
+            store.getDb(),
+            "event_payloads",
+            "event_id = ?",
+            new String[] {String.valueOf(newEvent.getId())});
     assertThat(payloadRows).isEqualTo(0);
   }
 

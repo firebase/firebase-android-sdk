@@ -33,7 +33,7 @@ public abstract class TestEventStoreModule {
         .setLoadBatchSize(LOAD_BATCH_SIZE)
         .setCriticalSectionEnterTimeoutMs(LOCK_TIME_OUT_MS)
         .setEventCleanUpAge(60 * 1000)
-        .setMaxBlobSizePerRow(80 * 1000)
+        .setMaxBlobByteSizePerRow(80 * 1000)
         .build();
   }
 

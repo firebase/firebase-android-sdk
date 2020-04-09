@@ -13,7 +13,6 @@
 // limitations under the License.
 package com.google.android.datatransport.runtime.scheduling.persistence;
 
-import android.content.ContentValues;
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
@@ -106,10 +105,7 @@ final class SchemaManager extends SQLiteOpenHelper {
 
   private static final SchemaManager.Migration MIGRATE_TO_V4 =
       db -> {
-        db.execSQL("ALTER TABLE events ADD COLUMN inline BOOLEAN DEFAULT 1");
-        ContentValues values = new ContentValues();
-        values.put("inline", 1);
-        db.update("events", values, null, new String[0]);
+        db.execSQL("ALTER TABLE events ADD COLUMN inline BOOLEAN NOT NULL DEFAULT 1");
         db.execSQL(CREATE_PAYLOADS_TABLE_V4);
       };
 

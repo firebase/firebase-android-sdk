@@ -130,8 +130,14 @@ public class SchemaManagerTest {
 
     // Upgrade to V4
     schemaManager.onUpgrade(schemaManager.getWritableDatabase(), oldVersion, newVersion);
-
     assertThat(store.loadBatch(CONTEXT1)).containsExactly(event1);
+
+    long inlineRows =
+        store
+            .getDb()
+            .compileStatement("SELECT COUNT(*) from events where inline = 1")
+            .simpleQueryForLong();
+    assertThat(inlineRows).isEqualTo(1);
   }
 
   @Test

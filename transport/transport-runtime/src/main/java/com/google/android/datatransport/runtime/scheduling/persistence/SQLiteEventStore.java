@@ -106,7 +106,7 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
               }
 
               long contextId = ensureTransportContext(db, transportContext);
-              int maxBlobSizePerRow = config.getMaxBlobSizePerRow();
+              int maxBlobSizePerRow = config.getMaxBlobByteSizePerRow();
 
               byte[] payloadBytes = event.getEncodedPayload().getBytes();
               boolean inline = payloadBytes.length <= maxBlobSizePerRow;
@@ -122,10 +122,8 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
               values.put("payload", inline ? payloadBytes : new byte[0]);
               long newEventId = db.insert("events", null, values);
               if (!inline) {
-                int numChunks = payloadBytes.length / maxBlobSizePerRow;
-                if (payloadBytes.length % maxBlobSizePerRow != 0) {
-                  numChunks += 1;
-                }
+                int numChunks = (int) Math.ceil((double) payloadBytes.length / maxBlobSizePerRow);
+
                 for (int chunk = 1; chunk <= numChunks; chunk++) {
                   byte[] chunkBytes =
                       Arrays.copyOfRange(
@@ -431,13 +429,13 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
                 "sequence_num"),
         cursor -> {
           List<byte[]> chunks = new ArrayList<>();
-          while (cursor.moveToNext()) {
-            chunks.add(cursor.getBlob(0));
-          }
           int totalLength = 0;
-          for (byte[] chunk : chunks) {
+          while (cursor.moveToNext()) {
+            byte[] chunk = cursor.getBlob(0);
+            chunks.add(chunk);
             totalLength += chunk.length;
           }
+
           byte[] payloadBytes = new byte[totalLength];
           int offset = 0;
           for (int i = 0; i < chunks.size(); i++) {
