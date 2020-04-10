@@ -1,4 +1,4 @@
-// Copyright 2019 Google LLC
+// Copyright 2020 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,59 +24,68 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.firebase.internal.DataCollectionConfigStorage;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.robolectric.annotation.Config;
 
 @RunWith(AndroidJUnit4.class)
-public class DataCollectionDefaultDisabledTest {
+@Config(sdk = 19)
+public class DataCollectionPreNDefaultEnabledTest {
 
   @Test
-  public void isDataCollectionDefaultEnabled_whenMetadataFalse_shouldReturnFalse() {
-    withApp(app -> assertThat(app.isDataCollectionDefaultEnabled()).isFalse());
-  }
-
-  @Test
-  public void isDataCollectionDefaultEnabled_whenMetadataFalseAndPrefsFalse_shouldReturnFalse() {
-    setSharedPreferencesTo(false);
-    withApp(app -> assertThat(app.isDataCollectionDefaultEnabled()).isFalse());
-  }
-
-  @Test
-  public void isDataCollectionDefaultEnabled_whenMetadataFalseAndPrefsTrue_shouldReturnTrue() {
-    setSharedPreferencesTo(true);
+  public void isDataCollectionDefaultEnabled_shouldDefaultToTrue() {
     withApp(app -> assertThat(app.isDataCollectionDefaultEnabled()).isTrue());
   }
 
   @Test
-  public void setDataCollectionDefaultEnabledTrue_shouldUpdateSharedPrefs() {
+  public void isDataCollectionDefaultEnabled_whenPrefsFalse_shouldReturnFalse() {
     withApp(
         app -> {
-          app.setDataCollectionDefaultEnabled(true);
+          setSharedPreferencesTo(false);
+          assertThat(app.isDataCollectionDefaultEnabled()).isFalse();
+        });
+  }
+
+  @Test
+  public void isDataCollectionDefaultEnabled_whenPrefsTrue_shouldReturnTrue() {
+    setSharedPreferencesTo(true);
+
+    withApp(app -> assertThat(app.isDataCollectionDefaultEnabled()).isTrue());
+  }
+
+  @Test
+  public void setDataCollectionDefaultEnabledFalse_shouldUpdateSharedPrefs() {
+    withApp(
+        app -> {
+          app.setDataCollectionDefaultEnabled(false);
           SharedPreferences prefs = getSharedPreferences();
           assertThat(prefs.contains(DataCollectionConfigStorage.DATA_COLLECTION_DEFAULT_ENABLED))
               .isTrue();
           assertThat(
                   prefs.getBoolean(
-                      DataCollectionConfigStorage.DATA_COLLECTION_DEFAULT_ENABLED, false))
-              .isTrue();
-          assertThat(app.isDataCollectionDefaultEnabled()).isTrue();
+                      DataCollectionConfigStorage.DATA_COLLECTION_DEFAULT_ENABLED, true))
+              .isFalse();
+          assertThat(app.isDataCollectionDefaultEnabled()).isFalse();
         });
   }
 
   @Test
-  public void setDataCollectionDefaultEnabledTrue_shouldEmitEvents() {
+  public void setDataCollectionDefaultEnabled_shouldNotAffectOtherFirebaseAppInstances() {
     withApp(
-        app -> {
-          DataCollectionDefaultChangeRegistrar.ChangeListener changeListener =
-              app.get(DataCollectionDefaultChangeRegistrar.ChangeListener.class);
-          assertThat(changeListener.changes).isEmpty();
+        "app1",
+        app1 -> {
+          withApp(
+              "app2",
+              app2 -> {
+                assertThat(app1.isDataCollectionDefaultEnabled()).isTrue();
+                assertThat(app2.isDataCollectionDefaultEnabled()).isTrue();
+              });
 
-          app.setDataCollectionDefaultEnabled(false);
-          assertThat(changeListener.changes).isEmpty();
-
-          app.setDataCollectionDefaultEnabled(true);
-          assertThat(changeListener.changes).containsExactly(true);
-
-          app.setDataCollectionDefaultEnabled(false);
-          assertThat(changeListener.changes).containsExactly(true, false).inOrder();
+          app1.setDataCollectionDefaultEnabled(false);
+          withApp(
+              "app2",
+              app2 -> {
+                assertThat(app1.isDataCollectionDefaultEnabled()).isFalse();
+                assertThat(app2.isDataCollectionDefaultEnabled()).isTrue();
+              });
         });
   }
 }
