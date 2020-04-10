@@ -1091,8 +1091,7 @@ class CrashlyticsController {
 
   // endregion
 
-  @Nullable
-  private void finalizePreviousNativeSession(String previousSessionId) {
+  private void finalizePreviousNativeSession(@Nullable String previousSessionId) {
     Logger.getLogger().d("Finalizing native report for session " + previousSessionId);
     NativeSessionFileProvider nativeSessionFileProvider =
         nativeComponent.getSessionFileProvider(previousSessionId);
