@@ -46,7 +46,7 @@ import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
 import com.google.firebase.crashlytics.internal.MissingNativeComponent;
 import com.google.firebase.crashlytics.internal.NativeSessionFileProvider;
-import com.google.firebase.crashlytics.internal.analytics.AnalyticsReceiver;
+import com.google.firebase.crashlytics.internal.analytics.AnalyticsBridge;
 import com.google.firebase.crashlytics.internal.network.HttpRequestFactory;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.report.ReportManager;
@@ -91,7 +91,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
   private SettingsDataProvider testSettingsDataProvider;
   private FileStore mockFileStore;
   private File testFilesDirectory;
-  private AnalyticsReceiver mockAnalyticsReceiver;
+  private AnalyticsBridge mockAnalyticsBridge;
   private AppSettingsData appSettingsData;
   private SessionSettingsData sessionSettingsData;
 
@@ -106,7 +106,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
 
     BatteryIntentProvider.returnNull = false;
 
-    mockAnalyticsReceiver = mock(AnalyticsReceiver.class);
+    mockAnalyticsBridge = mock(AnalyticsBridge.class);
 
     // For each test case, create a new, random subdirectory to guarantee a clean slate for file
     // manipulation.
@@ -237,7 +237,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
               reportUploaderProvider,
               nativeComponent,
               unityVersionProvider,
-              mockAnalyticsReceiver,
+              mockAnalyticsBridge,
               analyticsConnector,
               testSettingsDataProvider);
       return controller;
@@ -1026,7 +1026,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
     final CrashlyticsController controller = builder().build();
     controller.registerAnalyticsListener();
 
-    Mockito.verify(mockAnalyticsReceiver, Mockito.times(1)).register();
+    Mockito.verify(mockAnalyticsBridge, Mockito.times(1)).register();
   }
 
   public void testGeneratorAndAnalyzerVersion() throws Exception {

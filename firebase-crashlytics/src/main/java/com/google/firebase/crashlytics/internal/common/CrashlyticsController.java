@@ -20,7 +20,6 @@ import android.app.ActivityManager.RunningAppProcessInfo;
 import android.content.Context;
 import android.os.Build;
 import android.os.Build.VERSION;
-import android.os.Bundle;
 import android.os.Environment;
 import android.os.StatFs;
 import androidx.annotation.NonNull;
@@ -29,12 +28,11 @@ import com.google.android.gms.tasks.SuccessContinuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.NativeSessionFileProvider;
-import com.google.firebase.crashlytics.internal.analytics.AnalyticsReceiver;
-import com.google.firebase.crashlytics.internal.analytics.AnalyticsReceiver.CrashlyticsAppExceptionEventListener;
+import com.google.firebase.crashlytics.internal.analytics.AnalyticsBridge;
+import com.google.firebase.crashlytics.internal.analytics.AnalyticsConnectorBridge.BreadcrumbHandler;
 import com.google.firebase.crashlytics.internal.log.LogFileManager;
 import com.google.firebase.crashlytics.internal.ndk.NativeFileUtils;
 import com.google.firebase.crashlytics.internal.network.HttpRequestFactory;
@@ -94,12 +92,6 @@ class CrashlyticsController {
   static final String SESSION_DEVICE_TAG = "SessionDevice";
   static final String SESSION_BEGIN_TAG = "BeginSession";
   static final String SESSION_EVENT_MISSING_BINARY_IMGS_TAG = "SessionMissingBinaryImages";
-
-  static final String FIREBASE_CRASH_TYPE = "fatal";
-  static final String FIREBASE_TIMESTAMP = "timestamp";
-  static final String FIREBASE_APPLICATION_EXCEPTION = "_ae";
-  static final String FIREBASE_ANALYTICS_ORIGIN_CRASHLYTICS = "clx";
-  static final int FIREBASE_CRASH_TYPE_FATAL = 1;
 
   // region CLS File filters for retrieving specific sets of files.
 
@@ -257,13 +249,10 @@ class CrashlyticsController {
   private final CrashlyticsNativeComponent nativeComponent;
   private final StackTraceTrimmingStrategy stackTraceTrimmingStrategy;
   private final String unityVersion;
-  private final AnalyticsReceiver analyticsReceiver;
-  private final AnalyticsConnector analyticsConnector;
+  private final AnalyticsBridge analyticsBridge;
   private final SessionReportingCoordinator reportingCoordinator;
 
   private CrashlyticsUncaughtExceptionHandler crashHandler;
-
-  private Task<Void> recordFatalFirebaseEventsTask = Tasks.forResult(null);
 
   // A promise that will be resolved when unsent reports are found on the device, and
   // send/deleteUnsentReports can be called to decide how to deal with them.
@@ -294,8 +283,7 @@ class CrashlyticsController {
       ReportUploader.Provider reportUploaderProvider,
       CrashlyticsNativeComponent nativeComponent,
       UnityVersionProvider unityVersionProvider,
-      AnalyticsReceiver analyticsReceiver,
-      AnalyticsConnector analyticsConnector,
+      AnalyticsBridge analyticsBridge,
       SettingsDataProvider settingsDataProvider) {
     this.context = context;
     this.backgroundWorker = backgroundWorker;
@@ -313,8 +301,7 @@ class CrashlyticsController {
     }
     this.nativeComponent = nativeComponent;
     this.unityVersion = unityVersionProvider.getUnityVersion();
-    this.analyticsReceiver = analyticsReceiver;
-    this.analyticsConnector = analyticsConnector;
+    this.analyticsBridge = analyticsBridge;
 
     this.userMetadata = new UserMetadata();
 
@@ -437,7 +424,7 @@ class CrashlyticsController {
                                 return Tasks.forResult(null);
                               }
                             });
-                return Tasks.whenAll(recordFatalFirebaseEventsTask, sendSessionsWithAppSettings);
+                return Tasks.whenAll(sendSessionsWithAppSettings, analyticsBridge.getAnalyticsTaskChain());
               }
             });
 
@@ -1698,10 +1685,8 @@ class CrashlyticsController {
     return new File(getFilesDir(), NONFATAL_SESSION_DIR);
   }
 
-  void registerAnalyticsListener() {
-    final boolean analyticsRegistered = analyticsReceiver.register();
-    Logger.getLogger()
-        .d("Registered Firebase Analytics event listener for breadcrumbs: " + analyticsRegistered);
+  void registerBreadcrumbHandler(BreadcrumbHandler breadcrumbHandler) {
+    analyticsBridge.registerBreadcrumbHandler(breadcrumbHandler);
   }
 
   private CreateReportSpiCall getCreateReportSpiCall(String reportsUrl, String ndkReportsUrl) {
@@ -1732,56 +1717,14 @@ class CrashlyticsController {
     }
   }
 
-  /**
-   * Send an App Exception event to Firebase Analytics. FA records the event asynchronously, so this
-   * method returns a Task in case the caller wants to verify that the event was recorded by FA and
-   * will not be lost.
-   */
   private void recordFatalFirebaseEvent(long timestamp) {
-    final Executor executor = backgroundWorker.getExecutor();
-    // Add another iteration of this task to the existing task chain.
-    // Keeping each iteration serialized in a chain ensures that we receive the callback for the
-    // sent event before sending another.
-    recordFatalFirebaseEventsTask =
-        recordFatalFirebaseEventsTask.continueWithTask(
-            executor,
-            (previousTask) -> {
-              if (firebaseCrashExists()) {
-                Logger.getLogger()
-                    .d("Skipping logging Crashlytics event to Firebase, FirebaseCrash exists");
-                return Tasks.forResult(null);
-              }
-              if (analyticsConnector == null) {
-                Logger.getLogger()
-                    .d("Skipping logging Crashlytics event to Firebase, no Firebase Analytics");
-                return Tasks.forResult(null);
-              }
+    if (firebaseCrashExists()) {
+      Logger.getLogger()
+          .d("Skipping logging Crashlytics event to Firebase, FirebaseCrash exists");
+      return;
+    }
 
-              final TaskCompletionSource<Void> source = new TaskCompletionSource<>();
-
-              final CrashlyticsAppExceptionEventListener callback =
-                  () -> {
-                    // Only listen for a single event callback
-                    analyticsReceiver.setCrashlyticsAppExceptionEventListener(null);
-                    Logger.getLogger().d("Crashlytics app exception event sent successfully");
-                    source.trySetResult(null);
-                  };
-
-              // TODO: Add some sort of small (~500ms) timeout in case we don't see the event
-              //  come back through the receiver.
-              analyticsReceiver.setCrashlyticsAppExceptionEventListener(callback);
-
-              Logger.getLogger().d("Sending Crashlytics app exception event to Firebase Analytics");
-
-              final Bundle params = new Bundle();
-              params.putInt(FIREBASE_CRASH_TYPE, FIREBASE_CRASH_TYPE_FATAL);
-              params.putLong(FIREBASE_TIMESTAMP, timestamp);
-
-              analyticsConnector.logEvent(
-                  FIREBASE_ANALYTICS_ORIGIN_CRASHLYTICS, FIREBASE_APPLICATION_EXCEPTION, params);
-
-              return source.getTask();
-            });
+    analyticsBridge.recordFatalFirebaseEvent(timestamp);
   }
 
   private boolean firebaseCrashExists() {

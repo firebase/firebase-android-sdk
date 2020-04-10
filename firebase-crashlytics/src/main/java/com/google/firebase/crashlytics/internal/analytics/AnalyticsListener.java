@@ -1,4 +1,4 @@
-// Copyright 2019 Google LLC
+// Copyright 2020 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,64 +21,36 @@ import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.analytics.connector.AnalyticsConnector.AnalyticsConnectorHandle;
 import com.google.firebase.analytics.connector.AnalyticsConnector.AnalyticsConnectorListener;
 import com.google.firebase.crashlytics.internal.Logger;
+import com.google.firebase.crashlytics.internal.analytics.AnalyticsConnectorBridge.BreadcrumbHandler;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class AnalyticsConnectorReceiver implements AnalyticsConnectorListener, AnalyticsReceiver {
+public class AnalyticsListener implements AnalyticsConnectorListener {
+  private static final String CRASHLYTICS_ORIGIN = "clx";
+  private static final String LEGACY_CRASH_ORIGIN = "crash";
 
-  public interface BreadcrumbHandler {
-    void dropBreadcrumb(String breadcrumb);
-  }
-
-  static final String CRASHLYTICS_ORIGIN = "clx";
-  static final String LEGACY_CRASH_ORIGIN = "crash";
-  public static final String EVENT_NAME_KEY = "name";
-  public static final String APP_EXCEPTION_EVENT_NAME = "_ae";
+  private static final String EVENT_NAME_KEY = "name";
+  private static final String APP_EXCEPTION_EVENT_NAME = "_ae";
   private static final String EVENT_ORIGIN_KEY = "_o";
   private static final String EVENT_PARAMS_KEY = "params";
+
   private static final String BREADCRUMB_PARAMS_KEY = "parameters";
   private static final String BREADCRUMB_PREFIX = "$A$:";
 
-  private final AnalyticsConnector analyticsConnector;
-  private final BreadcrumbHandler breadcrumbHandler;
+  public static AnalyticsConnectorHandle subscribeToAnalyticsEvents(@NonNull AnalyticsConnector analyticsConnector, @NonNull AnalyticsListener listener) {
+    AnalyticsConnectorHandle handle =
+        analyticsConnector.registerAnalyticsConnectorListener(CRASHLYTICS_ORIGIN, listener);
 
-  private AnalyticsConnectorHandle analyticsConnectorHandle;
-
-  @Nullable private CrashlyticsAppExceptionEventListener appExceptionEventListener;
-
-  public AnalyticsConnectorReceiver(
-      AnalyticsConnector analyticsConnector, BreadcrumbHandler breadcrumbHandler) {
-    this.analyticsConnector = analyticsConnector;
-    this.breadcrumbHandler = breadcrumbHandler;
-  }
-
-  @Override
-  public boolean register() {
-    if (analyticsConnector == null) {
-      // This is a valid state, if the app does not have Firebase Analytics, so we'll log
-      // at the DEBUG level. The rest of the logging below uses WARN because they are
-      // unexpected states that will prevent the breadcrumbs feature from working.
-      Logger.getLogger()
-          .d(
-              "Firebase Analytics is not present; you will not see automatic logging of "
-                  + "events before a crash occurs.");
-      return false;
-    }
-
-    analyticsConnectorHandle =
-        analyticsConnector.registerAnalyticsConnectorListener(CRASHLYTICS_ORIGIN, this);
-
-    if (analyticsConnectorHandle == null) {
+    if (handle == null) {
       Logger.getLogger()
           .d("Could not register AnalyticsConnectorListener with Crashlytics origin.");
       // Older versions of FA don't support CRASHLYTICS_ORIGIN. We can try using the old Firebase
       // Crash Reporting origin
-      analyticsConnectorHandle =
-          analyticsConnector.registerAnalyticsConnectorListener(LEGACY_CRASH_ORIGIN, this);
+      handle = analyticsConnector.registerAnalyticsConnectorListener(LEGACY_CRASH_ORIGIN, listener);
 
       // If FA allows us to connect with the legacy origin, but not the new one, nudge customers
       // to update their FA version.
-      if (analyticsConnectorHandle != null) {
+      if (handle != null) {
         Logger.getLogger()
             .w(
                 "A new version of the Google Analytics for Firebase SDK is now available. "
@@ -87,25 +59,18 @@ public class AnalyticsConnectorReceiver implements AnalyticsConnectorListener, A
       }
     }
 
-    return analyticsConnectorHandle != null;
+    return handle;
   }
 
-  @Override
-  public void unregister() {
-    if (analyticsConnectorHandle != null) {
-      analyticsConnectorHandle.unregister();
-    }
-  }
+  @Nullable
+  private AppExceptionEventTaskHandler appExceptionEventTaskHandler;
 
-  @Override
-  public void setCrashlyticsAppExceptionEventListener(
-      @Nullable CrashlyticsAppExceptionEventListener listener) {
-    appExceptionEventListener = listener;
-  }
+  @Nullable
+  private BreadcrumbHandler breadcrumbHandler;
 
   @Override
   public void onMessageTriggered(int id, @Nullable Bundle extras) {
-    Logger.getLogger().d("AnalyticsConnectorReceiver received message: " + id + " " + extras);
+    Logger.getLogger().d("Received Analytics message: " + id + " " + extras);
 
     if (extras == null) {
       return;
@@ -120,7 +85,9 @@ public class AnalyticsConnectorReceiver implements AnalyticsConnectorListener, A
       }
       final String origin = params.getString(EVENT_ORIGIN_KEY);
       if (CRASHLYTICS_ORIGIN.equals(origin)) {
-        dispatchCrashlyticsOriginEvent(name, params);
+        if (APP_EXCEPTION_EVENT_NAME.equals(name) && appExceptionEventTaskHandler != null) {
+          appExceptionEventTaskHandler.handleRecordedAppExceptionEvent();
+        }
       } else {
         // Place breadcrumbs for all named events which did not originate from Crashlytics
         dispatchBreadcrumbEvent(name, params);
@@ -128,24 +95,26 @@ public class AnalyticsConnectorReceiver implements AnalyticsConnectorListener, A
     }
   }
 
-  private void dispatchCrashlyticsOriginEvent(@NonNull String name, @NonNull Bundle params) {
-    if (appExceptionEventListener != null) {
-      if (APP_EXCEPTION_EVENT_NAME.equals(name)) {
-        Logger.getLogger().d("Received app exception event callback from FA");
-        appExceptionEventListener.onCrashlyticsAppExceptionEvent();
+  public void setBreadcrumbHandler(@Nullable BreadcrumbHandler breadcrumbHandler) {
+    this.breadcrumbHandler = breadcrumbHandler;
+  }
+
+  public void setAppExceptionEventTaskHandler(@Nullable AppExceptionEventTaskHandler appExceptionEventTaskHandler) {
+    this.appExceptionEventTaskHandler = appExceptionEventTaskHandler;
+  }
+
+  private void dispatchBreadcrumbEvent(@NonNull String name, @NonNull Bundle params) {
+    if (breadcrumbHandler != null) {
+      try {
+        final String serializedEvent = BREADCRUMB_PREFIX + serializeEvent(name, params);
+        breadcrumbHandler.dropBreadcrumb(serializedEvent);
+      } catch (JSONException e) {
+        Logger.getLogger().w("Unable to serialize Firebase Analytics event.");
       }
     }
   }
 
-  private void dispatchBreadcrumbEvent(@NonNull String name, @NonNull Bundle params) {
-    try {
-      final String serializedEvent = BREADCRUMB_PREFIX + serializeEvent(name, params);
-      breadcrumbHandler.dropBreadcrumb(serializedEvent);
-    } catch (JSONException e) {
-      Logger.getLogger().w("Unable to serialize Firebase Analytics event.");
-    }
-  }
-
+  @NonNull
   private static String serializeEvent(@NonNull String name, @NonNull Bundle params)
       throws JSONException {
 

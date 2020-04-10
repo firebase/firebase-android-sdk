@@ -21,7 +21,7 @@ import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.analytics.connector.AnalyticsConnector.AnalyticsConnectorHandle;
 import com.google.firebase.analytics.connector.AnalyticsConnector.AnalyticsConnectorListener;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
-import com.google.firebase.crashlytics.internal.analytics.AnalyticsConnectorReceiver.BreadcrumbHandler;
+import com.google.firebase.crashlytics.internal.analytics.AnalyticsConnectorBridge.BreadcrumbHandler;
 import org.mockito.ArgumentCaptor;
 
 public class AnalyticsConnectorReceiverTest extends CrashlyticsTestCase {
@@ -39,8 +39,8 @@ public class AnalyticsConnectorReceiverTest extends CrashlyticsTestCase {
   }
 
   public void testAnalyticsConnectorRegisters() {
-    AnalyticsConnectorReceiver receiver =
-        new AnalyticsConnectorReceiver(mockAnalyticsConnector, mockBreadcrumbHandler);
+    AnalyticsConnectorBridge receiver =
+        new AnalyticsConnectorBridge(mockAnalyticsConnector, mockBreadcrumbHandler);
     when(mockAnalyticsConnector.registerAnalyticsConnectorListener(
             anyString(), any(AnalyticsConnectorListener.class)))
         .thenReturn(mockAnalyticsHandle);
@@ -49,19 +49,19 @@ public class AnalyticsConnectorReceiverTest extends CrashlyticsTestCase {
 
     verify(mockAnalyticsConnector)
         .registerAnalyticsConnectorListener(
-            AnalyticsConnectorReceiver.CRASHLYTICS_ORIGIN, receiver);
+            AnalyticsConnectorBridge.CRASHLYTICS_ORIGIN, receiver);
   }
 
   public void testRegisterFailsWhenAnalyticsConnectorIsNull() {
-    AnalyticsConnectorReceiver receiver =
-        new AnalyticsConnectorReceiver(null, mockBreadcrumbHandler);
+    AnalyticsConnectorBridge receiver =
+        new AnalyticsConnectorBridge(null, mockBreadcrumbHandler);
 
     assertFalse("Receiver was unexpectedly registered", receiver.register());
   }
 
   public void testRegisterFailsWhenAnalyticsConnectorReturnsNull() {
-    AnalyticsConnectorReceiver receiver =
-        new AnalyticsConnectorReceiver(mockAnalyticsConnector, mockBreadcrumbHandler);
+    AnalyticsConnectorBridge receiver =
+        new AnalyticsConnectorBridge(mockAnalyticsConnector, mockBreadcrumbHandler);
     when(mockAnalyticsConnector.registerAnalyticsConnectorListener(
             anyString(), any(AnalyticsConnectorListener.class)))
         .thenReturn(null);
@@ -70,8 +70,8 @@ public class AnalyticsConnectorReceiverTest extends CrashlyticsTestCase {
   }
 
   public void testUnregister() {
-    AnalyticsConnectorReceiver receiver =
-        new AnalyticsConnectorReceiver(mockAnalyticsConnector, mockBreadcrumbHandler);
+    AnalyticsConnectorBridge receiver =
+        new AnalyticsConnectorBridge(mockAnalyticsConnector, mockBreadcrumbHandler);
     when(mockAnalyticsConnector.registerAnalyticsConnectorListener(
             anyString(), any(AnalyticsConnectorListener.class)))
         .thenReturn(mockAnalyticsHandle);
@@ -84,8 +84,8 @@ public class AnalyticsConnectorReceiverTest extends CrashlyticsTestCase {
   }
 
   public void testUnregisterIsNoOpWhenAnalyticsConnectorRegisterFails() {
-    AnalyticsConnectorReceiver receiver =
-        new AnalyticsConnectorReceiver(mockAnalyticsConnector, mockBreadcrumbHandler);
+    AnalyticsConnectorBridge receiver =
+        new AnalyticsConnectorBridge(mockAnalyticsConnector, mockBreadcrumbHandler);
     when(mockAnalyticsConnector.registerAnalyticsConnectorListener(
             anyString(), any(AnalyticsConnectorListener.class)))
         .thenReturn(null);
@@ -96,8 +96,8 @@ public class AnalyticsConnectorReceiverTest extends CrashlyticsTestCase {
   }
 
   public void testUnregisterIsNoOpWhenNullAnalyticsConnector() {
-    AnalyticsConnectorReceiver receiver =
-        new AnalyticsConnectorReceiver(null, mockBreadcrumbHandler);
+    AnalyticsConnectorBridge receiver =
+        new AnalyticsConnectorBridge(null, mockBreadcrumbHandler);
 
     assertFalse("Receiver was unexpectedly registered", receiver.register());
 
@@ -105,8 +105,8 @@ public class AnalyticsConnectorReceiverTest extends CrashlyticsTestCase {
   }
 
   public void testBreadcrumbHandlerReceivesCorrectBreadcrumbJson() {
-    AnalyticsConnectorReceiver receiver =
-        new AnalyticsConnectorReceiver(mockAnalyticsConnector, mockBreadcrumbHandler);
+    AnalyticsConnectorBridge receiver =
+        new AnalyticsConnectorBridge(mockAnalyticsConnector, mockBreadcrumbHandler);
     ArgumentCaptor<AnalyticsConnectorListener> listenerCapture =
         ArgumentCaptor.forClass(AnalyticsConnector.AnalyticsConnectorListener.class);
     when(mockAnalyticsConnector.registerAnalyticsConnectorListener(
@@ -128,8 +128,8 @@ public class AnalyticsConnectorReceiverTest extends CrashlyticsTestCase {
   }
 
   public void testBreadcrumbHandlerWithEmptyParams() {
-    AnalyticsConnectorReceiver receiver =
-        new AnalyticsConnectorReceiver(mockAnalyticsConnector, mockBreadcrumbHandler);
+    AnalyticsConnectorBridge receiver =
+        new AnalyticsConnectorBridge(mockAnalyticsConnector, mockBreadcrumbHandler);
     ArgumentCaptor<AnalyticsConnectorListener> listenerCapture =
         ArgumentCaptor.forClass(AnalyticsConnector.AnalyticsConnectorListener.class);
     when(mockAnalyticsConnector.registerAnalyticsConnectorListener(
@@ -148,8 +148,8 @@ public class AnalyticsConnectorReceiverTest extends CrashlyticsTestCase {
   }
 
   public void testBreadcrumbHandlerDoesNotPassEventMissingName() {
-    AnalyticsConnectorReceiver receiver =
-        new AnalyticsConnectorReceiver(mockAnalyticsConnector, mockBreadcrumbHandler);
+    AnalyticsConnectorBridge receiver =
+        new AnalyticsConnectorBridge(mockAnalyticsConnector, mockBreadcrumbHandler);
     ArgumentCaptor<AnalyticsConnectorListener> listenerCapture =
         ArgumentCaptor.forClass(AnalyticsConnector.AnalyticsConnectorListener.class);
     when(mockAnalyticsConnector.registerAnalyticsConnectorListener(
@@ -169,8 +169,8 @@ public class AnalyticsConnectorReceiverTest extends CrashlyticsTestCase {
   }
 
   public void testBreadcrumbHandlerDoesNotPassEventNullParams() {
-    AnalyticsConnectorReceiver receiver =
-        new AnalyticsConnectorReceiver(mockAnalyticsConnector, mockBreadcrumbHandler);
+    AnalyticsConnectorBridge receiver =
+        new AnalyticsConnectorBridge(mockAnalyticsConnector, mockBreadcrumbHandler);
     ArgumentCaptor<AnalyticsConnectorListener> listenerCapture =
         ArgumentCaptor.forClass(AnalyticsConnector.AnalyticsConnectorListener.class);
     when(mockAnalyticsConnector.registerAnalyticsConnectorListener(

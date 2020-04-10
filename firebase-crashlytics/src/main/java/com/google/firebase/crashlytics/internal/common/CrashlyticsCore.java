@@ -24,9 +24,11 @@ import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.crashlytics.BuildConfig;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.Logger;
-import com.google.firebase.crashlytics.internal.analytics.AnalyticsConnectorReceiver;
-import com.google.firebase.crashlytics.internal.analytics.AnalyticsConnectorReceiver.BreadcrumbHandler;
-import com.google.firebase.crashlytics.internal.analytics.AnalyticsReceiver;
+import com.google.firebase.crashlytics.internal.analytics.AnalyticsConnectorBridge;
+import com.google.firebase.crashlytics.internal.analytics.AnalyticsBridge;
+import com.google.firebase.crashlytics.internal.analytics.AnalyticsConnectorBridge.BreadcrumbHandler;
+import com.google.firebase.crashlytics.internal.analytics.AnalyticsListener;
+import com.google.firebase.crashlytics.internal.analytics.DisabledAnalyticsBridge;
 import com.google.firebase.crashlytics.internal.network.HttpRequestFactory;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.persistence.FileStoreImpl;
@@ -150,15 +152,10 @@ public class CrashlyticsCore {
       final AppData appData = AppData.create(context, idManager, googleAppId, mappingFileId);
       final UnityVersionProvider unityVersionProvider = new ResourceUnityVersionProvider(context);
 
-      final AnalyticsReceiver analyticsReceiver =
-          new AnalyticsConnectorReceiver(
-              analyticsConnector,
-              new BreadcrumbHandler() {
-                @Override
-                public void dropBreadcrumb(String breadcrumb) {
-                  log(breadcrumb);
-                }
-              });
+      final AnalyticsBridge analyticsBridge = (analyticsConnector != null) ?
+          new AnalyticsConnectorBridge(
+              analyticsConnector, new AnalyticsListener(), backgroundWorker.getExecutor()) :
+          new DisabledAnalyticsBridge();
 
       Logger.getLogger().d("Installer package name is: " + appData.installerPackageName);
 
@@ -176,8 +173,7 @@ public class CrashlyticsCore {
               null,
               nativeComponent,
               unityVersionProvider,
-              analyticsReceiver,
-              analyticsConnector,
+              analyticsBridge,
               settingsProvider);
 
       // If the file is present at this point, then the previous run's initialization
@@ -232,7 +228,7 @@ public class CrashlyticsCore {
     controller.cleanInvalidTempFiles();
 
     try {
-      controller.registerAnalyticsListener();
+      controller.registerBreadcrumbHandler(this::log);
 
       final Settings settingsData = settingsProvider.getSettings();
 

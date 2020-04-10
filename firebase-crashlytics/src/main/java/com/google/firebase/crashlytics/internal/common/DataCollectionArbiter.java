@@ -30,7 +30,7 @@ public class DataCollectionArbiter {
       "firebase_crashlytics_collection_enabled";
 
   // State for waitForDataCollectionEnabled().
-  private Object taskLock = new Object();
+  private final Object taskLock = new Object();
   TaskCompletionSource<Void> dataCollectionEnabledTask = new TaskCompletionSource<>();
   boolean taskResolved = false;
 
