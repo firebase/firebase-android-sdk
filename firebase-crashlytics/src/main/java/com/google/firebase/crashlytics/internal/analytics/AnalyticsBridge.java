@@ -17,9 +17,7 @@ package com.google.firebase.crashlytics.internal.analytics;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsConnectorBridge.BreadcrumbHandler;
 
-/**
- * Bridge for integration between Analytics and Crashlytics.
- */
+/** Bridge for integration between Analytics and Crashlytics. */
 public interface AnalyticsBridge {
   void registerBreadcrumbHandler(BreadcrumbHandler breadcrumbHandler);
 

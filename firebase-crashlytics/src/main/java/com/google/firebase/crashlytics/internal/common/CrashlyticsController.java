@@ -424,7 +424,8 @@ class CrashlyticsController {
                                 return Tasks.forResult(null);
                               }
                             });
-                return Tasks.whenAll(sendSessionsWithAppSettings, analyticsBridge.getAnalyticsTaskChain());
+                return Tasks.whenAll(
+                    sendSessionsWithAppSettings, analyticsBridge.getAnalyticsTaskChain());
               }
             });
 
@@ -1718,8 +1719,7 @@ class CrashlyticsController {
 
   private void recordFatalFirebaseEvent(long timestamp) {
     if (firebaseCrashExists()) {
-      Logger.getLogger()
-          .d("Skipping logging Crashlytics event to Firebase, FirebaseCrash exists");
+      Logger.getLogger().d("Skipping logging Crashlytics event to Firebase, FirebaseCrash exists");
       return;
     }
 

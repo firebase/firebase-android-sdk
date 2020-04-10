@@ -34,7 +34,6 @@ class AnalyticsConnectorAppExceptionEventRecorder implements AppExceptionEventRe
   @Override
   public void recordAppExceptionEvent(long timestamp) {
 
-
     final Bundle params = new Bundle();
     params.putInt(FIREBASE_CRASH_TYPE, FIREBASE_CRASH_TYPE_FATAL);
     params.putLong(FIREBASE_TIMESTAMP, timestamp);

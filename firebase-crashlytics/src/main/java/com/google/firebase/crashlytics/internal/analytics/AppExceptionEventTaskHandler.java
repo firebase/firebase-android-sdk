@@ -18,5 +18,6 @@ import com.google.android.gms.tasks.Task;
 
 interface AppExceptionEventTaskHandler {
   Task<Void> createRecordAppExceptionEventTask(long timestamp);
+
   void handleRecordedAppExceptionEvent();
 }

@@ -19,25 +19,23 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsConnectorBridge.BreadcrumbHandler;
 
-/**
- * Analytics bridge implementation for use when Firebase Analytics is not available.
- */
+/** Analytics bridge implementation for use when Firebase Analytics is not available. */
 public class DisabledAnalyticsBridge implements AnalyticsBridge {
-    @Override
-    public void registerBreadcrumbHandler(BreadcrumbHandler breadcrumbHandler) {
-      Logger.getLogger()
-          .d(
-              "Firebase Analytics is not present; you will not see automatic logging of "
-                  + "events before a crash occurs.");
-    }
+  @Override
+  public void registerBreadcrumbHandler(BreadcrumbHandler breadcrumbHandler) {
+    Logger.getLogger()
+        .d(
+            "Firebase Analytics is not present; you will not see automatic logging of "
+                + "events before a crash occurs.");
+  }
 
-    @Override
-    public void recordFatalFirebaseEvent(long timestamp) {
-      // Do nothing.
-    }
+  @Override
+  public void recordFatalFirebaseEvent(long timestamp) {
+    // Do nothing.
+  }
 
-    @Override
-    public Task<Void> getAnalyticsTaskChain() {
-      return Tasks.forResult(null);
-    }
+  @Override
+  public Task<Void> getAnalyticsTaskChain() {
+    return Tasks.forResult(null);
+  }
 }

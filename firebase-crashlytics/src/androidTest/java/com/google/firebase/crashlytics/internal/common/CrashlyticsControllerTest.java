@@ -54,7 +54,6 @@ import com.google.firebase.crashlytics.internal.report.model.Report;
 import com.google.firebase.crashlytics.internal.settings.SettingsDataProvider;
 import com.google.firebase.crashlytics.internal.settings.TestSettingsData;
 import com.google.firebase.crashlytics.internal.settings.model.AppSettingsData;
-import com.google.firebase.crashlytics.internal.settings.model.FeaturesSettingsData;
 import com.google.firebase.crashlytics.internal.settings.model.SessionSettingsData;
 import com.google.firebase.crashlytics.internal.settings.model.SettingsData;
 import com.google.firebase.crashlytics.internal.unity.UnityVersionProvider;
@@ -67,7 +66,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 public class CrashlyticsControllerTest extends CrashlyticsTestCase {
@@ -976,7 +974,8 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
     final BreadcrumbHandler mockBreadcrumbHandler = mock(BreadcrumbHandler.class);
     final CrashlyticsController controller = builder().build();
     controller.registerBreadcrumbHandler(mockBreadcrumbHandler);
-    Mockito.verify(mockAnalyticsBridge, Mockito.times(1)).registerBreadcrumbHandler(mockBreadcrumbHandler);
+    Mockito.verify(mockAnalyticsBridge, Mockito.times(1))
+        .registerBreadcrumbHandler(mockBreadcrumbHandler);
   }
 
   public void testGeneratorAndAnalyzerVersion() throws Exception {

@@ -37,7 +37,8 @@ public class AnalyticsListener implements AnalyticsConnectorListener {
   private static final String BREADCRUMB_PARAMS_KEY = "parameters";
   private static final String BREADCRUMB_PREFIX = "$A$:";
 
-  public static AnalyticsConnectorHandle subscribeToAnalyticsEvents(@NonNull AnalyticsConnector analyticsConnector, @NonNull AnalyticsListener listener) {
+  public static AnalyticsConnectorHandle subscribeToAnalyticsEvents(
+      @NonNull AnalyticsConnector analyticsConnector, @NonNull AnalyticsListener listener) {
     AnalyticsConnectorHandle handle =
         analyticsConnector.registerAnalyticsConnectorListener(CRASHLYTICS_ORIGIN, listener);
 
@@ -62,11 +63,9 @@ public class AnalyticsListener implements AnalyticsConnectorListener {
     return handle;
   }
 
-  @Nullable
-  private AppExceptionEventTaskHandler appExceptionEventTaskHandler;
+  @Nullable private AppExceptionEventTaskHandler appExceptionEventTaskHandler;
 
-  @Nullable
-  private BreadcrumbHandler breadcrumbHandler;
+  @Nullable private BreadcrumbHandler breadcrumbHandler;
 
   @Override
   public void onMessageTriggered(int id, @Nullable Bundle extras) {
@@ -99,7 +98,8 @@ public class AnalyticsListener implements AnalyticsConnectorListener {
     this.breadcrumbHandler = breadcrumbHandler;
   }
 
-  public void setAppExceptionEventTaskHandler(@Nullable AppExceptionEventTaskHandler appExceptionEventTaskHandler) {
+  public void setAppExceptionEventTaskHandler(
+      @Nullable AppExceptionEventTaskHandler appExceptionEventTaskHandler) {
     this.appExceptionEventTaskHandler = appExceptionEventTaskHandler;
   }
 

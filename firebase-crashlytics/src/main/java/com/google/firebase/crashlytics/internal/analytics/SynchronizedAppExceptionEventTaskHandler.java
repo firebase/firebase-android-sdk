@@ -26,14 +26,11 @@ class SynchronizedAppExceptionEventTaskHandler implements AppExceptionEventTaskH
     void onAppExceptionEvent();
   }
 
-  @NonNull
-  private final Object recordCrashlyticsEventLock = new Object();
+  @NonNull private final Object recordCrashlyticsEventLock = new Object();
 
-  @NonNull
-  private final AppExceptionEventRecorder appExceptionEventRecorder;
+  @NonNull private final AppExceptionEventRecorder appExceptionEventRecorder;
 
-  @Nullable
-  private AppExceptionEventCallback appExceptionEventCallback;
+  @Nullable private AppExceptionEventCallback appExceptionEventCallback;
 
   SynchronizedAppExceptionEventTaskHandler(
       @NonNull AppExceptionEventRecorder appExceptionEventRecorder) {
@@ -42,14 +39,15 @@ class SynchronizedAppExceptionEventTaskHandler implements AppExceptionEventTaskH
 
   @Override
   public Task<Void> createRecordAppExceptionEventTask(long timestamp) {
-    synchronized(recordCrashlyticsEventLock) {
+    synchronized (recordCrashlyticsEventLock) {
       final TaskCompletionSource<Void> source = new TaskCompletionSource<>();
 
-      appExceptionEventCallback = () -> {
-        appExceptionEventCallback = null;
-        Logger.getLogger().d("Crashlytics app exception event sent successfully");
-        source.trySetResult(null);
-      };
+      appExceptionEventCallback =
+          () -> {
+            appExceptionEventCallback = null;
+            Logger.getLogger().d("Crashlytics app exception event sent successfully");
+            source.trySetResult(null);
+          };
 
       appExceptionEventRecorder.recordAppExceptionEvent(timestamp);
 
@@ -59,12 +57,11 @@ class SynchronizedAppExceptionEventTaskHandler implements AppExceptionEventTaskH
 
   @Override
   public void handleRecordedAppExceptionEvent() {
-    synchronized(recordCrashlyticsEventLock) {
+    synchronized (recordCrashlyticsEventLock) {
       if (appExceptionEventCallback != null) {
         Logger.getLogger().d("Received app exception event callback from FA");
         appExceptionEventCallback.onAppExceptionEvent();
       }
     }
   }
-
 }

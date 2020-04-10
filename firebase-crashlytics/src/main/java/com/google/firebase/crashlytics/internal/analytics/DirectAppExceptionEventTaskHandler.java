@@ -20,8 +20,7 @@ import com.google.android.gms.tasks.Tasks;
 
 class DirectAppExceptionEventTaskHandler implements AppExceptionEventTaskHandler {
 
-  @NonNull
-  private final AppExceptionEventRecorder appExceptionEventRecorder;
+  @NonNull private final AppExceptionEventRecorder appExceptionEventRecorder;
 
   DirectAppExceptionEventTaskHandler(@NonNull AppExceptionEventRecorder appExceptionEventRecorder) {
     this.appExceptionEventRecorder = appExceptionEventRecorder;

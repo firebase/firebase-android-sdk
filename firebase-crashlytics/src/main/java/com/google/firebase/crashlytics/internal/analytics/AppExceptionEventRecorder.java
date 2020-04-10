@@ -17,5 +17,4 @@ package com.google.firebase.crashlytics.internal.analytics;
 interface AppExceptionEventRecorder {
 
   void recordAppExceptionEvent(long timestamp);
-
 }

@@ -14,18 +14,14 @@
 
 package com.google.firebase.crashlytics.internal.analytics;
 
-import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.analytics.connector.AnalyticsConnector.AnalyticsConnectorHandle;
-import com.google.firebase.analytics.connector.AnalyticsConnector.AnalyticsConnectorListener;
 import com.google.firebase.crashlytics.internal.Logger;
 import java.util.concurrent.Executor;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 public class AnalyticsConnectorBridge implements AnalyticsBridge {
 
@@ -33,29 +29,31 @@ public class AnalyticsConnectorBridge implements AnalyticsBridge {
     void dropBreadcrumb(String breadcrumb);
   }
 
-  @NonNull
-  private final Executor executor;
+  @NonNull private final Executor executor;
 
-  @Nullable
-  private final AnalyticsConnectorHandle analyticsConnectorHandle;
+  @Nullable private final AnalyticsConnectorHandle analyticsConnectorHandle;
 
-  @NonNull
-  private final AnalyticsListener analyticsListener;
+  @NonNull private final AnalyticsListener analyticsListener;
 
-  @NonNull
-  private Task<Void> recordFatalFirebaseEventsTaskChain = Tasks.forResult(null);
+  @NonNull private Task<Void> recordFatalFirebaseEventsTaskChain = Tasks.forResult(null);
 
-  @NonNull
-  private final AppExceptionEventTaskHandler appExceptionEventTaskHandler;
+  @NonNull private final AppExceptionEventTaskHandler appExceptionEventTaskHandler;
 
   public AnalyticsConnectorBridge(
-      @NonNull AnalyticsConnector analyticsConnector, @NonNull AnalyticsListener analyticsListener, @NonNull Executor executor) {
-    final AppExceptionEventRecorder appExceptionEventRecorder = new AnalyticsConnectorAppExceptionEventRecorder(analyticsConnector);
+      @NonNull AnalyticsConnector analyticsConnector,
+      @NonNull AnalyticsListener analyticsListener,
+      @NonNull Executor executor) {
+    final AppExceptionEventRecorder appExceptionEventRecorder =
+        new AnalyticsConnectorAppExceptionEventRecorder(analyticsConnector);
     this.executor = executor;
     // TODO: Pull this out for mocking
-    this.analyticsConnectorHandle = AnalyticsListener.subscribeToAnalyticsEvents(analyticsConnector, analyticsListener);
+    this.analyticsConnectorHandle =
+        AnalyticsListener.subscribeToAnalyticsEvents(analyticsConnector, analyticsListener);
     this.analyticsListener = analyticsListener;
-    this.appExceptionEventTaskHandler = (analyticsConnectorHandle == null) ? new DirectAppExceptionEventTaskHandler(appExceptionEventRecorder) : new SynchronizedAppExceptionEventTaskHandler(appExceptionEventRecorder);
+    this.appExceptionEventTaskHandler =
+        (analyticsConnectorHandle == null)
+            ? new DirectAppExceptionEventTaskHandler(appExceptionEventRecorder)
+            : new SynchronizedAppExceptionEventTaskHandler(appExceptionEventRecorder);
     this.analyticsListener.setAppExceptionEventTaskHandler(appExceptionEventTaskHandler);
   }
 
@@ -67,12 +65,12 @@ public class AnalyticsConnectorBridge implements AnalyticsBridge {
       breadcrumbsRegistered = true;
     }
     Logger.getLogger()
-        .d("Registered Firebase Analytics event listener for breadcrumbs: " + breadcrumbsRegistered);
+        .d(
+            "Registered Firebase Analytics event listener for breadcrumbs: "
+                + breadcrumbsRegistered);
   }
 
-  /**
-   * Send an App Exception event to Firebase Analytics.
-   */
+  /** Send an App Exception event to Firebase Analytics. */
   public void recordFatalFirebaseEvent(long timestamp) {
     // Add another iteration of this task to the existing task chain.
     // Keeping each iteration serialized in a chain ensures that we receive the callback for the
@@ -85,7 +83,6 @@ public class AnalyticsConnectorBridge implements AnalyticsBridge {
               return appExceptionEventTaskHandler.createRecordAppExceptionEventTask(timestamp);
             });
   }
-
 
   @NonNull
   public Task<Void> getAnalyticsTaskChain() {

@@ -24,9 +24,8 @@ import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.crashlytics.BuildConfig;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.Logger;
-import com.google.firebase.crashlytics.internal.analytics.AnalyticsConnectorBridge;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsBridge;
-import com.google.firebase.crashlytics.internal.analytics.AnalyticsConnectorBridge.BreadcrumbHandler;
+import com.google.firebase.crashlytics.internal.analytics.AnalyticsConnectorBridge;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsListener;
 import com.google.firebase.crashlytics.internal.analytics.DisabledAnalyticsBridge;
 import com.google.firebase.crashlytics.internal.network.HttpRequestFactory;
@@ -152,10 +151,11 @@ public class CrashlyticsCore {
       final AppData appData = AppData.create(context, idManager, googleAppId, mappingFileId);
       final UnityVersionProvider unityVersionProvider = new ResourceUnityVersionProvider(context);
 
-      final AnalyticsBridge analyticsBridge = (analyticsConnector != null) ?
-          new AnalyticsConnectorBridge(
-              analyticsConnector, new AnalyticsListener(), backgroundWorker.getExecutor()) :
-          new DisabledAnalyticsBridge();
+      final AnalyticsBridge analyticsBridge =
+          (analyticsConnector != null)
+              ? new AnalyticsConnectorBridge(
+                  analyticsConnector, new AnalyticsListener(), backgroundWorker.getExecutor())
+              : new DisabledAnalyticsBridge();
 
       Logger.getLogger().d("Installer package name is: " + appData.installerPackageName);
 
