@@ -20,6 +20,7 @@ import static com.google.firebase.installations.BuildConfig.VERSION_NAME;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.text.TextUtils;
 import android.util.JsonReader;
 import android.util.Log;
 import androidx.annotation.NonNull;
@@ -511,13 +512,15 @@ public class FirebaseInstallationServiceClient {
         : Long.parseLong(expiresIn.substring(0, expiresIn.length() - 1));
   }
 
-  private void logFisCommunicationError(HttpURLConnection conn) {
+  private static void logFisCommunicationError(HttpURLConnection conn) {
     String logString = readErrorResponse(conn);
-    Log.w(FIS_TAG, logString);
+    if (!TextUtils.isEmpty(logString)) {
+      Log.w(FIS_TAG, logString);
+    }
   }
 
   // Read the error message from the response.
-  private String readErrorResponse(HttpURLConnection conn) {
+  private static String readErrorResponse(HttpURLConnection conn) {
     try (BufferedReader reader =
         new BufferedReader(new InputStreamReader(conn.getErrorStream(), UTF_8))) {
       StringBuilder response = new StringBuilder();
@@ -528,7 +531,7 @@ public class FirebaseInstallationServiceClient {
           "Error when communicating with the Firebase Installations server API. HTTP response: [%d %s: %s]",
           conn.getResponseCode(), conn.getResponseMessage(), response);
     } catch (IOException ignored) {
-      return "";
+      return null;
     }
   }
 }
