@@ -14,30 +14,13 @@
 
 package com.google.firebase.crashlytics.internal.analytics;
 
-import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsConnectorBridge.BreadcrumbHandler;
 
-/** Receiver for Firebase Analytics events reported to Crashlytics */
-// TODO: Change to AnaltyicsBridge or something
+/**
+ * Bridge for integration between Analytics and Crashlytics.
+ */
 public interface AnalyticsBridge {
-  //
-  // /**
-  //  * Listener for Firebase app exception events that originated from Crashlytics. This functions as
-  //  * a callback so we can confirm that Crashlytics-originating events have been received by the
-  //  * Firebase Analytics SDK.
-  //  */
-  // interface CrashlyticsAppExceptionEventListener {
-  //   void onCrashlyticsAppExceptionEvent();
-  // }
-
-  /**
-   * Register analytics receiver with its associated event source.
-   */
-  // boolean register();
-  //
-  // /** Unregister breadcrumb receiver with its associated event source. */
-  // void unregister();
   void registerBreadcrumbHandler(BreadcrumbHandler breadcrumbHandler);
 
   void recordFatalFirebaseEvent(long timestamp);
