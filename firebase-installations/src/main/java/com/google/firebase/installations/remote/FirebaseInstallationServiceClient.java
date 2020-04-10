@@ -290,27 +290,30 @@ public class FirebaseInstallationServiceClient {
     int retryCount = 0;
     while (retryCount <= MAX_RETRIES) {
       HttpURLConnection httpURLConnection = openHttpURLConnection(url, apiKey);
-      httpURLConnection.setRequestMethod("DELETE");
-      httpURLConnection.addRequestProperty("Authorization", "FIS_v2 " + refreshToken);
+      try {
+        httpURLConnection.setRequestMethod("DELETE");
+        httpURLConnection.addRequestProperty("Authorization", "FIS_v2 " + refreshToken);
 
-      int httpResponseCode = httpURLConnection.getResponseCode();
+        int httpResponseCode = httpURLConnection.getResponseCode();
 
-      if (httpResponseCode == 200 || httpResponseCode == 401 || httpResponseCode == 404) {
-        return;
+        if (httpResponseCode == 200 || httpResponseCode == 401 || httpResponseCode == 404) {
+          return;
+        }
+
+        logFisCommunicationError(httpURLConnection);
+
+        if (httpResponseCode == 429 || (httpResponseCode >= 500 && httpResponseCode < 600)) {
+          retryCount++;
+          continue;
+        }
+
+        logBadConfigError();
+
+        throw new FirebaseInstallationsException(
+            "Bad config while trying to delete FID", Status.BAD_CONFIG);
+      } finally {
+        httpURLConnection.disconnect();
       }
-
-      logFisCommunicationError(httpURLConnection);
-      httpURLConnection.disconnect();
-
-      if (httpResponseCode == 429 || (httpResponseCode >= 500 && httpResponseCode < 600)) {
-        retryCount++;
-        continue;
-      }
-
-      logBadConfigError();
-
-      throw new FirebaseInstallationsException(
-          "Bad config while trying to delete FID", Status.BAD_CONFIG);
     }
 
     throw new IOException();
@@ -520,6 +523,7 @@ public class FirebaseInstallationServiceClient {
   }
 
   // Read the error message from the response.
+  @Nullable
   private static String readErrorResponse(HttpURLConnection conn) {
     try (BufferedReader reader =
         new BufferedReader(new InputStreamReader(conn.getErrorStream(), UTF_8))) {
