@@ -33,13 +33,11 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.os.BatteryManager;
-import android.os.Bundle;
 import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.crashlytics.device.session.Crashlytics;
 import com.google.firebase.crashlytics.device.session.Crashlytics.Session;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
@@ -47,6 +45,7 @@ import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
 import com.google.firebase.crashlytics.internal.MissingNativeComponent;
 import com.google.firebase.crashlytics.internal.NativeSessionFileProvider;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsBridge;
+import com.google.firebase.crashlytics.internal.analytics.AnalyticsConnectorBridge.BreadcrumbHandler;
 import com.google.firebase.crashlytics.internal.network.HttpRequestFactory;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.report.ReportManager;
@@ -152,7 +151,6 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
     private ReportUploader.Provider reportUploaderProvider;
     private CrashlyticsNativeComponent nativeComponent;
     private UnityVersionProvider unityVersionProvider;
-    private AnalyticsConnector analyticsConnector;
 
     ControllerBuilder() {
       dataCollectionArbiter = mock(DataCollectionArbiter.class);
@@ -162,8 +160,6 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
 
       unityVersionProvider = mock(UnityVersionProvider.class);
       when(unityVersionProvider.getUnityVersion()).thenReturn(null);
-
-      analyticsConnector = mock(AnalyticsConnector.class);
 
       reportManager = null;
     }
@@ -203,11 +199,6 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
       return this;
     }
 
-    public ControllerBuilder setAnalyticsConnector(AnalyticsConnector connector) {
-      analyticsConnector = connector;
-      return this;
-    }
-
     public CrashlyticsController build() {
       HttpRequestFactory mockRequestFactory = mock(HttpRequestFactory.class);
 
@@ -238,7 +229,6 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
               nativeComponent,
               unityVersionProvider,
               mockAnalyticsBridge,
-              analyticsConnector,
               testSettingsDataProvider);
       return controller;
     }
@@ -980,53 +970,13 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
     }
   }
 
-  public void testFirebaseAnalyticsEventIsSent_whenSettingFalseClientFlagTrue() throws Exception {
-    final AnalyticsConnector mockFirebaseAnalyticsLogger = mock(AnalyticsConnector.class);
-    final CrashlyticsController controller =
-        builder().setAnalyticsConnector(mockFirebaseAnalyticsLogger).build();
-    controller.openSession();
-    controller.handleUncaughtException(
-        firebaseCrashlyticsSettingsProvider(),
-        Thread.currentThread(),
-        new RuntimeException("Fatal"));
-    controller.finalizeSessions(sessionSettingsData.maxCustomExceptionEvents);
+  // TODO: Add tests that the app exception event is sent for both Java and NDK sessions
 
-    assertFirebaseAnalyticsCrashEvent(mockFirebaseAnalyticsLogger);
-  }
-
-  public void testFirebaseAnalyticsEventIsSent_whenSettingTrueClientFlagFalse() throws Exception {
-    final AnalyticsConnector mockFirebaseAnalyticsLogger = mock(AnalyticsConnector.class);
-    final CrashlyticsController controller =
-        builder().setAnalyticsConnector(mockFirebaseAnalyticsLogger).build();
-    controller.openSession();
-    controller.handleUncaughtException(
-        firebaseCrashlyticsSettingsProvider(),
-        Thread.currentThread(),
-        new RuntimeException("Fatal"));
-    controller.finalizeSessions(sessionSettingsData.maxCustomExceptionEvents);
-
-    assertFirebaseAnalyticsCrashEvent(mockFirebaseAnalyticsLogger);
-  }
-
-  public void testFirebaseAnalyticsEventIsSent_whenSettingTrueClientFlagTrue() throws Exception {
-    final AnalyticsConnector mockFirebaseAnalyticsLogger = mock(AnalyticsConnector.class);
-    final CrashlyticsController controller =
-        builder().setAnalyticsConnector(mockFirebaseAnalyticsLogger).build();
-    controller.openSession();
-    controller.handleUncaughtException(
-        firebaseCrashlyticsSettingsProvider(),
-        Thread.currentThread(),
-        new RuntimeException("Fatal"));
-    controller.finalizeSessions(sessionSettingsData.maxCustomExceptionEvents);
-
-    assertFirebaseAnalyticsCrashEvent(mockFirebaseAnalyticsLogger);
-  }
-
-  public void testAnalyticsEventListenerIsRegistered() throws Exception {
+  public void testBreadcrumbHandlerIsRegistered() throws Exception {
+    final BreadcrumbHandler mockBreadcrumbHandler = mock(BreadcrumbHandler.class);
     final CrashlyticsController controller = builder().build();
-    controller.registerAnalyticsListener();
-
-    Mockito.verify(mockAnalyticsBridge, Mockito.times(1)).register();
+    controller.registerBreadcrumbHandler(mockBreadcrumbHandler);
+    Mockito.verify(mockAnalyticsBridge, Mockito.times(1)).registerBreadcrumbHandler(mockBreadcrumbHandler);
   }
 
   public void testGeneratorAndAnalyzerVersion() throws Exception {
@@ -1099,33 +1049,6 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
         fis.close();
       }
     }
-  }
-
-  private SettingsDataProvider firebaseCrashlyticsSettingsProvider() {
-    final FeaturesSettingsData featureData = new FeaturesSettingsData(false);
-    final SettingsData testSettingsData = new TestSettingsData();
-    final SettingsData settingsData =
-        new SettingsData(
-            1, testSettingsData.appData, testSettingsData.sessionData, featureData, 2, 1000);
-    final SettingsDataProvider settingsProvider = mock(SettingsDataProvider.class);
-    Mockito.when(settingsProvider.getSettings()).thenReturn(settingsData);
-    Mockito.when(settingsProvider.getAppSettings())
-        .thenReturn(Tasks.forResult(settingsData.appData));
-    return settingsProvider;
-  }
-
-  private void assertFirebaseAnalyticsCrashEvent(AnalyticsConnector mockFirebaseAnalyticsLogger) {
-    final ArgumentCaptor<Bundle> captor = ArgumentCaptor.forClass(Bundle.class);
-
-    Mockito.verify(mockFirebaseAnalyticsLogger, Mockito.times(1))
-        .logEvent(
-            Mockito.eq(CrashlyticsController.FIREBASE_ANALYTICS_ORIGIN_CRASHLYTICS),
-            Mockito.eq(CrashlyticsController.FIREBASE_APPLICATION_EXCEPTION),
-            captor.capture());
-    assertEquals(
-        CrashlyticsController.FIREBASE_CRASH_TYPE_FATAL,
-        captor.getValue().getInt(CrashlyticsController.FIREBASE_CRASH_TYPE));
-    assertTrue(captor.getValue().getLong(CrashlyticsController.FIREBASE_TIMESTAMP) > 0);
   }
 
   @Override
