@@ -21,8 +21,8 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.crashlytics.internal.Logger;
 
 /**
- * Records an app exception event and returns a task which waits to be resolved until the event is
- * recorded. The task creation and resolution are synchronized.
+ * Records an app exception event and returns a task which waits to be resolved until the
+ * onEventRecorded callback is invoked. The task creation and resolution are synchronized.
  */
 public class SynchronizedAppExceptionEventHandler implements AppExceptionEventHandler {
 

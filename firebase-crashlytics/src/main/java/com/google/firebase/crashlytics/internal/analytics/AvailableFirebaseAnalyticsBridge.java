@@ -22,7 +22,7 @@ import com.google.firebase.crashlytics.internal.breadcrumbs.BreadcrumbHandler;
 import com.google.firebase.crashlytics.internal.breadcrumbs.BreadcrumbSource;
 import java.util.concurrent.Executor;
 
-/** Analytics bridge for use when Firebase Analytics is available. */
+/** Analytics bridge implementation for use when Firebase Analytics is available. */
 public class AvailableFirebaseAnalyticsBridge implements AnalyticsBridge {
 
   @NonNull private Task<Void> recordFatalFirebaseEventsTaskChain = Tasks.forResult(null);

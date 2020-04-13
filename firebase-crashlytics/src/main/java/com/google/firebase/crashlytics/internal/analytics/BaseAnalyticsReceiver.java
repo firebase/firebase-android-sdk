@@ -17,8 +17,9 @@ package com.google.firebase.crashlytics.internal.analytics;
 import android.os.Bundle;
 
 /**
- * AnalyticsReceiver which sends analytics events from the Crashlytics origin to the Crashlytics
- * origin AnalyticsReceiver, and all other events to the breadcrumbs AnalyticsReceiver.
+ * AnalyticsReceiver which splits incoming analytics events by origin, sending those from the
+ * Crashlytics origin to the Crashlytics origin AnalyticsReceiver, and all others to the breadcrumb
+ * AnalyticsReceiver.
  */
 public class BaseAnalyticsReceiver implements AnalyticsReceiver {
 

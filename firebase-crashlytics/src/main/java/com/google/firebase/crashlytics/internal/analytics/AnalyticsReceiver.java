@@ -16,7 +16,7 @@ package com.google.firebase.crashlytics.internal.analytics;
 
 import android.os.Bundle;
 
-/** A receiver of events from Firebase Analytics. */
+/** Receiver for Firebase Analytics events reported to Crashlytics. */
 public interface AnalyticsReceiver {
   void onEvent(String name, Bundle params);
 }

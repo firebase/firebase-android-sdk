@@ -23,7 +23,10 @@ import com.google.firebase.crashlytics.internal.breadcrumbs.BreadcrumbSource;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-/** AnalyticsReceiver which serializes Firebase Analytics events into Crashlytics breadcrumbs. */
+/**
+ * AnalyticsReceiver which serializes Firebase Analytics events into Crashlytics breadcrumbs, then
+ * passes them to a BreadcrumbHandler.
+ */
 public class BreadcrumbAnalyticsReceiver implements AnalyticsReceiver, BreadcrumbSource {
 
   private static final String BREADCRUMB_NAME_KEY = "name";

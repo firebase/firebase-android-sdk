@@ -16,6 +16,7 @@ package com.google.firebase.crashlytics.internal.breadcrumbs;
 
 import com.google.firebase.crashlytics.internal.Logger;
 
+/** BreadcrumbSource for use when listening for breadcrumb events is disabled. */
 public class DisabledBreadcrumbSource implements BreadcrumbSource {
 
   @Override

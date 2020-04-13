@@ -19,7 +19,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 
 /**
- * Records app exception events directly and immediately resolves the returned task. Event recording
+ * Records app exception events directly and immediately resolves the returned task. onEventRecorded
  * callback is ignored.
  */
 public class DirectAppExceptionEventHandler implements AppExceptionEventHandler {
