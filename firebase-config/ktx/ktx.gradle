@@ -48,9 +48,10 @@ dependencies {
     implementation project(':firebase-components')
     implementation project(':firebase-common:ktx')
     implementation project(':firebase-config')
-    implementation project (':firebase-abt')
-    implementation ('com.google.firebase:firebase-iid:20.0.1') {
-        exclude group: "com.google.firebase", module: "firebase-common"
+    implementation project(':firebase-abt')
+    implementation ('com.google.firebase:firebase-iid:20.1.5') {
+        exclude group: 'com.google.firebase', module: 'firebase-common'
+        exclude group: 'com.google.firebase', module: 'firebase-components'
     }
     implementation 'androidx.annotation:annotation:1.1.0'
 

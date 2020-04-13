@@ -20,6 +20,7 @@ import static com.google.firebase.installations.BuildConfig.VERSION_NAME;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.text.TextUtils;
 import android.util.JsonReader;
 import android.util.Log;
 import androidx.annotation.NonNull;
@@ -34,6 +35,7 @@ import com.google.firebase.installations.FirebaseInstallationsException;
 import com.google.firebase.installations.FirebaseInstallationsException.Status;
 import com.google.firebase.installations.remote.InstallationResponse.ResponseCode;
 import com.google.firebase.platforminfo.UserAgentPublisher;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -89,6 +91,8 @@ public class FirebaseInstallationServiceClient {
   private static final Charset UTF_8 = Charset.forName("UTF-8");
 
   private static final String SDK_VERSION_PREFIX = "a:";
+
+  private static final String FIS_TAG = "Firebase-Installations";
 
   @VisibleForTesting
   static final String PARSING_EXPIRATION_TIME_ERROR_MESSAGE = "Invalid Expiration Timestamp.";
@@ -161,10 +165,14 @@ public class FirebaseInstallationServiceClient {
           return readCreateResponse(httpURLConnection);
         }
 
+        logFisCommunicationError(httpURLConnection);
+
         if (httpResponseCode == 429 || (httpResponseCode >= 500 && httpResponseCode < 600)) {
           retryCount++;
           continue;
         }
+
+        logBadConfigError();
 
         // Return empty installation response with BAD_CONFIG response code after max retries
         return InstallationResponse.builder().setResponseCode(ResponseCode.BAD_CONFIG).build();
@@ -282,23 +290,30 @@ public class FirebaseInstallationServiceClient {
     int retryCount = 0;
     while (retryCount <= MAX_RETRIES) {
       HttpURLConnection httpURLConnection = openHttpURLConnection(url, apiKey);
-      httpURLConnection.setRequestMethod("DELETE");
-      httpURLConnection.addRequestProperty("Authorization", "FIS_v2 " + refreshToken);
+      try {
+        httpURLConnection.setRequestMethod("DELETE");
+        httpURLConnection.addRequestProperty("Authorization", "FIS_v2 " + refreshToken);
 
-      int httpResponseCode = httpURLConnection.getResponseCode();
-      httpURLConnection.disconnect();
+        int httpResponseCode = httpURLConnection.getResponseCode();
 
-      if (httpResponseCode == 200 || httpResponseCode == 401 || httpResponseCode == 404) {
-        return;
+        if (httpResponseCode == 200 || httpResponseCode == 401 || httpResponseCode == 404) {
+          return;
+        }
+
+        logFisCommunicationError(httpURLConnection);
+
+        if (httpResponseCode == 429 || (httpResponseCode >= 500 && httpResponseCode < 600)) {
+          retryCount++;
+          continue;
+        }
+
+        logBadConfigError();
+
+        throw new FirebaseInstallationsException(
+            "Bad config while trying to delete FID", Status.BAD_CONFIG);
+      } finally {
+        httpURLConnection.disconnect();
       }
-
-      if (httpResponseCode == 429 || (httpResponseCode >= 500 && httpResponseCode < 600)) {
-        retryCount++;
-        continue;
-      }
-
-      throw new FirebaseInstallationsException(
-          "bad config while trying to delete FID", Status.BAD_CONFIG);
     }
 
     throw new IOException();
@@ -352,6 +367,8 @@ public class FirebaseInstallationServiceClient {
           return readGenerateAuthTokenResponse(httpURLConnection);
         }
 
+        logFisCommunicationError(httpURLConnection);
+
         if (httpResponseCode == 401 || httpResponseCode == 404) {
           return TokenResult.builder().setResponseCode(TokenResult.ResponseCode.AUTH_ERROR).build();
         }
@@ -361,12 +378,23 @@ public class FirebaseInstallationServiceClient {
           continue;
         }
 
+        logBadConfigError();
+
         return TokenResult.builder().setResponseCode(TokenResult.ResponseCode.BAD_CONFIG).build();
       } finally {
         httpURLConnection.disconnect();
       }
     }
     throw new IOException();
+  }
+
+  private static void logBadConfigError() {
+    Log.e(
+        FIS_TAG,
+        "Firebase Installations can not communicate with Firebase server APIs due "
+            + "to invalid configuration. Please update your Firebase initialization process"
+            + " and set valid Firebase options (API key, Project ID, Application ID) when"
+            + " initializing Firebase.");
   }
 
   private HttpURLConnection openHttpURLConnection(URL url, String apiKey) throws IOException {
@@ -485,5 +513,29 @@ public class FirebaseInstallationServiceClient {
     return (expiresIn == null || expiresIn.length() == 0)
         ? 0L
         : Long.parseLong(expiresIn.substring(0, expiresIn.length() - 1));
+  }
+
+  private static void logFisCommunicationError(HttpURLConnection conn) {
+    String logString = readErrorResponse(conn);
+    if (!TextUtils.isEmpty(logString)) {
+      Log.w(FIS_TAG, logString);
+    }
+  }
+
+  // Read the error message from the response.
+  @Nullable
+  private static String readErrorResponse(HttpURLConnection conn) {
+    try (BufferedReader reader =
+        new BufferedReader(new InputStreamReader(conn.getErrorStream(), UTF_8))) {
+      StringBuilder response = new StringBuilder();
+      for (String input = reader.readLine(); input != null; input = reader.readLine()) {
+        response.append(input).append('\n');
+      }
+      return String.format(
+          "Error when communicating with the Firebase Installations server API. HTTP response: [%d %s: %s]",
+          conn.getResponseCode(), conn.getResponseMessage(), response);
+    } catch (IOException ignored) {
+      return null;
+    }
   }
 }
