@@ -12,9 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.crashlytics.internal.analytics;
-
-/** Interface for recording app exception events. */
-public interface AppExceptionEventRecorder {
-  void recordAppExceptionEvent(long timestamp);
-}
+/** @hide */
+package com.google.firebase.crashlytics.internal.breadcrumbs;

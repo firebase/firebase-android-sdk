@@ -14,28 +14,31 @@
 
 package com.google.firebase.crashlytics.internal.analytics;
 
+import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.crashlytics.internal.Logger;
-import com.google.firebase.crashlytics.internal.analytics.AnalyticsConnectorBridge.BreadcrumbHandler;
 
-/** Analytics bridge implementation for use when Firebase Analytics is not available. */
-public class DisabledAnalyticsBridge implements AnalyticsBridge {
-  @Override
-  public void registerBreadcrumbHandler(BreadcrumbHandler breadcrumbHandler) {
-    Logger.getLogger()
-        .d(
-            "Firebase Analytics is not present; you will not see automatic logging of "
-                + "events before a crash occurs.");
+/**
+ * Records app exception events directly and immediately resolves the returned task. Event recording
+ * callback is ignored.
+ */
+public class DirectAppExceptionEventHandler implements AppExceptionEventHandler {
+
+  @NonNull private final AppExceptionEventRecorder appExceptionEventRecorder;
+
+  public DirectAppExceptionEventHandler(
+      @NonNull AppExceptionEventRecorder appExceptionEventRecorder) {
+    this.appExceptionEventRecorder = appExceptionEventRecorder;
   }
 
   @Override
-  public void recordFatalFirebaseEvent(long timestamp) {
-    // Do nothing.
-  }
-
-  @Override
-  public Task<Void> getAnalyticsTaskChain() {
+  public Task<Void> recordAppExceptionEvent(long timestamp) {
+    appExceptionEventRecorder.recordAppExceptionEvent(timestamp);
     return Tasks.forResult(null);
+  }
+
+  @Override
+  public void onEventRecorded() {
+    // Not waiting on a callback, so do nothing.
   }
 }

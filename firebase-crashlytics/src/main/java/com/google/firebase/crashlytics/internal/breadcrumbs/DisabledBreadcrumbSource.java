@@ -12,9 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.crashlytics.internal.analytics;
+package com.google.firebase.crashlytics.internal.breadcrumbs;
 
-/** Interface for recording app exception events. */
-public interface AppExceptionEventRecorder {
-  void recordAppExceptionEvent(long timestamp);
+import com.google.firebase.crashlytics.internal.Logger;
+
+public class DisabledBreadcrumbSource implements BreadcrumbSource {
+
+  @Override
+  public void registerBreadcrumbHandler(BreadcrumbHandler breadcrumbHandler) {
+    Logger.getLogger().d("Could not register handler for breadcrumbs events.");
+  }
 }

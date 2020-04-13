@@ -14,26 +14,25 @@
 
 package com.google.firebase.crashlytics.internal.analytics;
 
+import android.os.Bundle;
 import androidx.annotation.NonNull;
-import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.Tasks;
 
-class DirectAppExceptionEventTaskHandler implements AppExceptionEventTaskHandler {
+/** AnalyticsReceiver which handles events from the Crashlytics origin. */
+public class CrashlyticsOriginAnalyticsReceiver implements AnalyticsReceiver {
 
-  @NonNull private final AppExceptionEventRecorder appExceptionEventRecorder;
+  private static final String APP_EXCEPTION_EVENT_NAME = "_ae";
 
-  DirectAppExceptionEventTaskHandler(@NonNull AppExceptionEventRecorder appExceptionEventRecorder) {
-    this.appExceptionEventRecorder = appExceptionEventRecorder;
+  @NonNull private final AppExceptionEventHandler appExceptionEventHandler;
+
+  public CrashlyticsOriginAnalyticsReceiver(
+      @NonNull AppExceptionEventHandler appExceptionEventHandler) {
+    this.appExceptionEventHandler = appExceptionEventHandler;
   }
 
   @Override
-  public Task<Void> createRecordAppExceptionEventTask(long timestamp) {
-    appExceptionEventRecorder.recordAppExceptionEvent(timestamp);
-    return Tasks.forResult(null);
-  }
-
-  @Override
-  public void handleRecordedAppExceptionEvent() {
-    // Not waiting on a callback, so do nothing.
+  public void onEvent(String name, Bundle params) {
+    if (APP_EXCEPTION_EVENT_NAME.equals(name)) {
+      appExceptionEventHandler.onEventRecorded();
+    }
   }
 }

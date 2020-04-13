@@ -16,8 +16,12 @@ package com.google.firebase.crashlytics.internal.analytics;
 
 import com.google.android.gms.tasks.Task;
 
-interface AppExceptionEventTaskHandler {
-  Task<Void> createRecordAppExceptionEventTask(long timestamp);
+/**
+ * Interface for recording an app exception event and separately responding when the event is
+ * recorded.
+ */
+public interface AppExceptionEventHandler {
+  Task<Void> recordAppExceptionEvent(long timestamp);
 
-  void handleRecordedAppExceptionEvent();
+  void onEventRecorded();
 }

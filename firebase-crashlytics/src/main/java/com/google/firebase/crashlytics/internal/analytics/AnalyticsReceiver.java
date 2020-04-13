@@ -14,7 +14,9 @@
 
 package com.google.firebase.crashlytics.internal.analytics;
 
-/** Interface for recording app exception events. */
-public interface AppExceptionEventRecorder {
-  void recordAppExceptionEvent(long timestamp);
+import android.os.Bundle;
+
+/** A receiver of events from Firebase Analytics. */
+public interface AnalyticsReceiver {
+  void onEvent(String name, Bundle params);
 }

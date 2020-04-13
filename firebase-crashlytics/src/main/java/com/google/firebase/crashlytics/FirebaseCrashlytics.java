@@ -21,10 +21,24 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
+import com.google.firebase.analytics.connector.AnalyticsConnector.AnalyticsConnectorHandle;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.MissingNativeComponent;
 import com.google.firebase.crashlytics.internal.Onboarding;
+import com.google.firebase.crashlytics.internal.analytics.AnalyticsBridge;
+import com.google.firebase.crashlytics.internal.analytics.AnalyticsConnectorAppExceptionEventRecorder;
+import com.google.firebase.crashlytics.internal.analytics.AppExceptionEventHandler;
+import com.google.firebase.crashlytics.internal.analytics.AppExceptionEventRecorder;
+import com.google.firebase.crashlytics.internal.analytics.AvailableFirebaseAnalyticsBridge;
+import com.google.firebase.crashlytics.internal.analytics.BaseAnalyticsReceiver;
+import com.google.firebase.crashlytics.internal.analytics.BreadcrumbAnalyticsReceiver;
+import com.google.firebase.crashlytics.internal.analytics.CrashlyticsOriginAnalyticsReceiver;
+import com.google.firebase.crashlytics.internal.analytics.DirectAppExceptionEventHandler;
+import com.google.firebase.crashlytics.internal.analytics.MissingFirebaseAnalyticsBridge;
+import com.google.firebase.crashlytics.internal.analytics.SynchronizedAppExceptionEventHandler;
+import com.google.firebase.crashlytics.internal.breadcrumbs.BreadcrumbSource;
+import com.google.firebase.crashlytics.internal.breadcrumbs.DisabledBreadcrumbSource;
 import com.google.firebase.crashlytics.internal.common.CrashlyticsCore;
 import com.google.firebase.crashlytics.internal.common.DataCollectionArbiter;
 import com.google.firebase.crashlytics.internal.common.ExecutorUtils;
@@ -32,6 +46,7 @@ import com.google.firebase.crashlytics.internal.common.IdManager;
 import com.google.firebase.crashlytics.internal.settings.SettingsController;
 import com.google.firebase.iid.internal.FirebaseInstanceIdInternal;
 import java.util.concurrent.Callable;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 
 /**
@@ -44,6 +59,9 @@ import java.util.concurrent.ExecutorService;
  * FirebaseCrashlytics.
  */
 public class FirebaseCrashlytics {
+
+  private static final String CRASHLYTICS_ORIGIN = "clx";
+  private static final String LEGACY_CRASH_ORIGIN = "crash";
 
   static @Nullable FirebaseCrashlytics init(
       @NonNull FirebaseApp app,
@@ -61,9 +79,16 @@ public class FirebaseCrashlytics {
       nativeComponent = new MissingNativeComponent();
     }
 
+    final ExecutorService crashHandlerExecutor =
+        ExecutorUtils.buildSingleThreadExecutorService("Crashlytics Exception Handler");
+
+    final AnalyticsBridge analyticsBridge =
+        createAnalyticsBridge(analyticsConnector, crashHandlerExecutor);
+
     final Onboarding onboarding = new Onboarding(app, context, idManager, arbiter);
     final CrashlyticsCore core =
-        new CrashlyticsCore(app, idManager, nativeComponent, arbiter, analyticsConnector);
+        new CrashlyticsCore(
+            app, idManager, nativeComponent, arbiter, analyticsBridge, crashHandlerExecutor);
 
     if (!onboarding.onPreExecute()) {
       Logger.getLogger().e("Unable to start Crashlytics.");
@@ -91,6 +116,68 @@ public class FirebaseCrashlytics {
         });
 
     return new FirebaseCrashlytics(core);
+  }
+
+  private static AnalyticsBridge createAnalyticsBridge(
+      @Nullable AnalyticsConnector analyticsConnector, @NonNull Executor executor) {
+    if (analyticsConnector == null) {
+      return new MissingFirebaseAnalyticsBridge();
+    }
+
+    final AppExceptionEventRecorder appExceptionEventRecorder =
+        new AnalyticsConnectorAppExceptionEventRecorder(analyticsConnector);
+
+    final CrashlyticsAnalyticsListener crashlyticsAnalyticsListener =
+        new CrashlyticsAnalyticsListener();
+    final AnalyticsConnectorHandle handle =
+        subscribeToAnalyticsEvents(analyticsConnector, crashlyticsAnalyticsListener);
+
+    AppExceptionEventHandler appExceptionEventHandler =
+        new DirectAppExceptionEventHandler(appExceptionEventRecorder);
+    BreadcrumbSource breadcrumbSource = new DisabledBreadcrumbSource();
+
+    if (handle != null) {
+      appExceptionEventHandler =
+          new SynchronizedAppExceptionEventHandler(appExceptionEventRecorder);
+      final BreadcrumbAnalyticsReceiver breadcrumbAnalyticsReceiver =
+          new BreadcrumbAnalyticsReceiver();
+      final CrashlyticsOriginAnalyticsReceiver crashlyticsOriginAnalyticsReceiver =
+          new CrashlyticsOriginAnalyticsReceiver(appExceptionEventHandler);
+      crashlyticsAnalyticsListener.setAnalyticsReceiver(
+          new BaseAnalyticsReceiver(
+              breadcrumbAnalyticsReceiver, crashlyticsOriginAnalyticsReceiver));
+      breadcrumbSource = breadcrumbAnalyticsReceiver;
+    }
+
+    return new AvailableFirebaseAnalyticsBridge(
+        breadcrumbSource, appExceptionEventHandler, executor);
+  }
+
+  private static AnalyticsConnectorHandle subscribeToAnalyticsEvents(
+      @NonNull AnalyticsConnector analyticsConnector,
+      @NonNull CrashlyticsAnalyticsListener listener) {
+    AnalyticsConnectorHandle handle =
+        analyticsConnector.registerAnalyticsConnectorListener(CRASHLYTICS_ORIGIN, listener);
+
+    if (handle == null) {
+      Logger.getLogger()
+          .d("Could not register AnalyticsConnectorListener with Crashlytics origin.");
+      // Older versions of FA don't support CRASHLYTICS_ORIGIN. We can try using the old Firebase
+      // Crash Reporting origin
+      handle = analyticsConnector.registerAnalyticsConnectorListener(LEGACY_CRASH_ORIGIN, listener);
+
+      // If FA allows us to connect with the legacy origin, but not the new one, nudge customers
+      // to update their FA version.
+      if (handle != null) {
+        Logger.getLogger()
+            .w(
+                "A new version of the Google Analytics for Firebase SDK is now available. "
+                    + "For improved performance and compatibility with Crashlytics, please "
+                    + "update to the latest version.");
+      }
+    }
+
+    return handle;
   }
 
   private final CrashlyticsCore core;

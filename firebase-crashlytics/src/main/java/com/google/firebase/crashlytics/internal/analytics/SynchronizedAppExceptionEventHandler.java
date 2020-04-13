@@ -20,7 +20,11 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.crashlytics.internal.Logger;
 
-class SynchronizedAppExceptionEventTaskHandler implements AppExceptionEventTaskHandler {
+/**
+ * Records an app exception event and returns a task which waits to be resolved until the event is
+ * recorded. The task creation and resolution are synchronized.
+ */
+public class SynchronizedAppExceptionEventHandler implements AppExceptionEventHandler {
 
   private interface AppExceptionEventCallback {
     void onAppExceptionEvent();
@@ -32,13 +36,13 @@ class SynchronizedAppExceptionEventTaskHandler implements AppExceptionEventTaskH
 
   @Nullable private AppExceptionEventCallback appExceptionEventCallback;
 
-  SynchronizedAppExceptionEventTaskHandler(
+  public SynchronizedAppExceptionEventHandler(
       @NonNull AppExceptionEventRecorder appExceptionEventRecorder) {
     this.appExceptionEventRecorder = appExceptionEventRecorder;
   }
 
   @Override
-  public Task<Void> createRecordAppExceptionEventTask(long timestamp) {
+  public Task<Void> recordAppExceptionEvent(long timestamp) {
     synchronized (recordCrashlyticsEventLock) {
       final TaskCompletionSource<Void> source = new TaskCompletionSource<>();
 
@@ -56,7 +60,7 @@ class SynchronizedAppExceptionEventTaskHandler implements AppExceptionEventTaskH
   }
 
   @Override
-  public void handleRecordedAppExceptionEvent() {
+  public void onEventRecorded() {
     synchronized (recordCrashlyticsEventLock) {
       if (appExceptionEventCallback != null) {
         Logger.getLogger().d("Received app exception event callback from FA");

@@ -17,7 +17,8 @@ package com.google.firebase.crashlytics.internal.analytics;
 import android.os.Bundle;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
 
-class AnalyticsConnectorAppExceptionEventRecorder implements AppExceptionEventRecorder {
+/** Records app exception events to the Firebase Analytics connector. */
+public class AnalyticsConnectorAppExceptionEventRecorder implements AppExceptionEventRecorder {
 
   private static final String FIREBASE_CRASH_TYPE = "fatal";
   private static final String FIREBASE_TIMESTAMP = "timestamp";
@@ -27,13 +28,12 @@ class AnalyticsConnectorAppExceptionEventRecorder implements AppExceptionEventRe
 
   private final AnalyticsConnector analyticsConnector;
 
-  AnalyticsConnectorAppExceptionEventRecorder(AnalyticsConnector analyticsConnector) {
+  public AnalyticsConnectorAppExceptionEventRecorder(AnalyticsConnector analyticsConnector) {
     this.analyticsConnector = analyticsConnector;
   }
 
   @Override
   public void recordAppExceptionEvent(long timestamp) {
-
     final Bundle params = new Bundle();
     params.putInt(FIREBASE_CRASH_TYPE, FIREBASE_CRASH_TYPE_FATAL);
     params.putLong(FIREBASE_TIMESTAMP, timestamp);

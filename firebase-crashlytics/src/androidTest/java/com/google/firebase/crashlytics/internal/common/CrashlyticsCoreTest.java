@@ -30,6 +30,7 @@ import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
 import com.google.firebase.crashlytics.internal.MissingNativeComponent;
 import com.google.firebase.crashlytics.internal.NativeSessionFileProvider;
+import com.google.firebase.crashlytics.internal.analytics.MissingFirebaseAnalyticsBridge;
 import com.google.firebase.crashlytics.internal.persistence.FileStoreImpl;
 import com.google.firebase.crashlytics.internal.settings.SettingsController;
 import com.google.firebase.crashlytics.internal.settings.TestSettingsData;
@@ -669,7 +670,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
               new IdManager(context, "unused", instanceIdMock),
               nativeComponent,
               arbiter,
-              null,
+              new MissingFirebaseAnalyticsBridge(),
               new SameThreadExecutorService());
       return crashlyticsCore;
     }

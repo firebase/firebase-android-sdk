@@ -20,14 +20,10 @@ import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.crashlytics.BuildConfig;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsBridge;
-import com.google.firebase.crashlytics.internal.analytics.AnalyticsConnectorBridge;
-import com.google.firebase.crashlytics.internal.analytics.AnalyticsListener;
-import com.google.firebase.crashlytics.internal.analytics.DisabledAnalyticsBridge;
 import com.google.firebase.crashlytics.internal.network.HttpRequestFactory;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.persistence.FileStoreImpl;
@@ -75,49 +71,30 @@ public class CrashlyticsCore {
   private CrashlyticsController controller;
 
   private final IdManager idManager;
-  private final AnalyticsConnector analyticsConnector;
+  private final AnalyticsBridge analyticsBridge;
   private ExecutorService crashHandlerExecutor;
   private CrashlyticsBackgroundWorker backgroundWorker;
 
   private CrashlyticsNativeComponent nativeComponent;
-
-  // region Constructors
 
   public CrashlyticsCore(
       FirebaseApp app,
       IdManager idManager,
       CrashlyticsNativeComponent nativeComponent,
       DataCollectionArbiter dataCollectionArbiter,
-      AnalyticsConnector analyticsConnector) {
-    this(
-        app,
-        idManager,
-        nativeComponent,
-        dataCollectionArbiter,
-        analyticsConnector,
-        ExecutorUtils.buildSingleThreadExecutorService("Crashlytics Exception Handler"));
-  }
-
-  CrashlyticsCore(
-      FirebaseApp app,
-      IdManager idManager,
-      CrashlyticsNativeComponent nativeComponent,
-      DataCollectionArbiter dataCollectionArbiter,
-      AnalyticsConnector analyticsConnector,
+      AnalyticsBridge analyticsBridge,
       ExecutorService crashHandlerExecutor) {
     this.app = app;
     this.dataCollectionArbiter = dataCollectionArbiter;
     this.context = app.getApplicationContext();
     this.idManager = idManager;
     this.nativeComponent = nativeComponent;
-    this.analyticsConnector = analyticsConnector;
+    this.analyticsBridge = analyticsBridge;
     this.crashHandlerExecutor = crashHandlerExecutor;
     this.backgroundWorker = new CrashlyticsBackgroundWorker(crashHandlerExecutor);
 
     startTime = System.currentTimeMillis();
   }
-
-  // endregion
 
   // region Initialization
 
@@ -150,12 +127,6 @@ public class CrashlyticsCore {
 
       final AppData appData = AppData.create(context, idManager, googleAppId, mappingFileId);
       final UnityVersionProvider unityVersionProvider = new ResourceUnityVersionProvider(context);
-
-      final AnalyticsBridge analyticsBridge =
-          (analyticsConnector != null)
-              ? new AnalyticsConnectorBridge(
-                  analyticsConnector, new AnalyticsListener(), backgroundWorker.getExecutor())
-              : new DisabledAnalyticsBridge();
 
       Logger.getLogger().d("Installer package name is: " + appData.installerPackageName);
 
