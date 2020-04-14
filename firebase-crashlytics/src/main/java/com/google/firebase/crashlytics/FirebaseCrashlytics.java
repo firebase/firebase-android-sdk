@@ -60,8 +60,8 @@ import java.util.concurrent.ExecutorService;
  */
 public class FirebaseCrashlytics {
 
-  private static final String CRASHLYTICS_ORIGIN = "clx";
-  private static final String LEGACY_CRASH_ORIGIN = "crash";
+  private static final String FIREBASE_CRASHLYTICS_ANALYTICS_ORIGIN = "clx";
+  private static final String LEGACY_CRASH_ANALYTICS_ORIGIN = "crash";
 
   static @Nullable FirebaseCrashlytics init(
       @NonNull FirebaseApp app,
@@ -132,9 +132,8 @@ public class FirebaseCrashlytics {
     final AnalyticsConnectorHandle handle =
         subscribeToAnalyticsEvents(analyticsConnector, crashlyticsAnalyticsListener);
 
-    AppExceptionEventHandler appExceptionEventHandler =
-        new DirectAppExceptionEventHandler(appExceptionEventRecorder);
-    BreadcrumbSource breadcrumbSource = new DisabledBreadcrumbSource();
+    final AppExceptionEventHandler appExceptionEventHandler;
+    final BreadcrumbSource breadcrumbSource;
 
     if (handle != null) {
       appExceptionEventHandler =
@@ -147,6 +146,9 @@ public class FirebaseCrashlytics {
           new BaseAnalyticsReceiver(
               breadcrumbAnalyticsReceiver, crashlyticsOriginAnalyticsReceiver));
       breadcrumbSource = breadcrumbAnalyticsReceiver;
+    } else {
+      appExceptionEventHandler = new DirectAppExceptionEventHandler(appExceptionEventRecorder);
+      breadcrumbSource = new DisabledBreadcrumbSource();
     }
 
     return new AvailableFirebaseAnalyticsBridge(
@@ -157,14 +159,17 @@ public class FirebaseCrashlytics {
       @NonNull AnalyticsConnector analyticsConnector,
       @NonNull CrashlyticsAnalyticsListener listener) {
     AnalyticsConnectorHandle handle =
-        analyticsConnector.registerAnalyticsConnectorListener(CRASHLYTICS_ORIGIN, listener);
+        analyticsConnector.registerAnalyticsConnectorListener(
+            FIREBASE_CRASHLYTICS_ANALYTICS_ORIGIN, listener);
 
     if (handle == null) {
       Logger.getLogger()
           .d("Could not register AnalyticsConnectorListener with Crashlytics origin.");
       // Older versions of FA don't support CRASHLYTICS_ORIGIN. We can try using the old Firebase
       // Crash Reporting origin
-      handle = analyticsConnector.registerAnalyticsConnectorListener(LEGACY_CRASH_ORIGIN, listener);
+      handle =
+          analyticsConnector.registerAnalyticsConnectorListener(
+              LEGACY_CRASH_ANALYTICS_ORIGIN, listener);
 
       // If FA allows us to connect with the legacy origin, but not the new one, nudge customers
       // to update their FA version.
