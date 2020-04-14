@@ -25,7 +25,7 @@ import java.util.concurrent.Executor;
 /** Analytics bridge implementation for use when Firebase Analytics is available. */
 public class AvailableFirebaseAnalyticsBridge implements AnalyticsBridge {
 
-  @NonNull private Task<Void> recordFatalFirebaseEventsTaskChain = Tasks.forResult(null);
+  @NonNull private Task<Void> recordFatalAnalyticsEventsTaskChain = Tasks.forResult(null);
 
   @NonNull private final BreadcrumbSource breadcrumbSource;
 
@@ -48,12 +48,12 @@ public class AvailableFirebaseAnalyticsBridge implements AnalyticsBridge {
   }
 
   @Override
-  public void recordFatalFirebaseEvent(long timestamp) {
+  public void recordFatalAnalyticsEvent(long timestamp) {
     // Add another iteration of this task to the existing task chain.
     // Keeping each iteration serialized in a chain ensures that we receive the callback for the
     // sent event before trying to send another.
-    recordFatalFirebaseEventsTaskChain =
-        recordFatalFirebaseEventsTaskChain.continueWithTask(
+    recordFatalAnalyticsEventsTaskChain =
+        recordFatalAnalyticsEventsTaskChain.continueWithTask(
             executor,
             (previousTask) -> {
               Logger.getLogger().d("Sending Crashlytics app exception event to Firebase Analytics");
@@ -63,6 +63,6 @@ public class AvailableFirebaseAnalyticsBridge implements AnalyticsBridge {
 
   @Override
   public Task<Void> getAnalyticsTaskChain() {
-    return recordFatalFirebaseEventsTaskChain;
+    return recordFatalAnalyticsEventsTaskChain;
   }
 }

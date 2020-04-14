@@ -31,7 +31,7 @@ public class MissingFirebaseAnalyticsBridge implements AnalyticsBridge {
   }
 
   @Override
-  public void recordFatalFirebaseEvent(long timestamp) {
+  public void recordFatalAnalyticsEvent(long timestamp) {
     // Do nothing.
   }
 

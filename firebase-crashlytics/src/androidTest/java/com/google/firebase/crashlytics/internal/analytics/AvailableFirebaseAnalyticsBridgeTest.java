@@ -69,7 +69,7 @@ public class AvailableFirebaseAnalyticsBridgeTest {
     final Task<Void> recordTask = source.getTask();
     Mockito.when(mockAppExceptionEventHandler.recordAppExceptionEvent(anyLong()))
         .thenReturn(recordTask);
-    bridge.recordFatalFirebaseEvent(System.currentTimeMillis());
+    bridge.recordFatalAnalyticsEvent(System.currentTimeMillis());
     final Task<Void> analyticsTaskChain = bridge.getAnalyticsTaskChain();
     assertFalse(analyticsTaskChain.isComplete());
     assertFalse(analyticsTaskChain.isSuccessful());
@@ -81,7 +81,7 @@ public class AvailableFirebaseAnalyticsBridgeTest {
     final Task<Void> recordTask = source.getTask();
     Mockito.when(mockAppExceptionEventHandler.recordAppExceptionEvent(anyLong()))
         .thenReturn(recordTask);
-    bridge.recordFatalFirebaseEvent(System.currentTimeMillis());
+    bridge.recordFatalAnalyticsEvent(System.currentTimeMillis());
     final Task<Void> analyticsTaskChain = bridge.getAnalyticsTaskChain();
     assertFalse(analyticsTaskChain.isComplete());
     assertFalse(analyticsTaskChain.isSuccessful());
@@ -103,8 +103,8 @@ public class AvailableFirebaseAnalyticsBridgeTest {
     Mockito.when(mockAppExceptionEventHandler.recordAppExceptionEvent(anyLong()))
         .thenReturn(recordTask1)
         .thenReturn(recordTask2);
-    bridge.recordFatalFirebaseEvent(timestamp1);
-    bridge.recordFatalFirebaseEvent(timestamp2);
+    bridge.recordFatalAnalyticsEvent(timestamp1);
+    bridge.recordFatalAnalyticsEvent(timestamp2);
     final Task<Void> analyticsTaskChain = bridge.getAnalyticsTaskChain();
     assertFalse(analyticsTaskChain.isComplete());
     assertFalse(analyticsTaskChain.isSuccessful());
@@ -130,8 +130,8 @@ public class AvailableFirebaseAnalyticsBridgeTest {
         .thenReturn(recordTask2);
 
     // Call in succession
-    bridge.recordFatalFirebaseEvent(timestamp1);
-    bridge.recordFatalFirebaseEvent(timestamp2);
+    bridge.recordFatalAnalyticsEvent(timestamp1);
+    bridge.recordFatalAnalyticsEvent(timestamp2);
 
     // Verify that the event handler is called only for the first timestamp.
     Mockito.verify(mockAppExceptionEventHandler, Mockito.times(1))

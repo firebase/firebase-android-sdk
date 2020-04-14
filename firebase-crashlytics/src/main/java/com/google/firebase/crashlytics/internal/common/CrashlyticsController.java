@@ -1126,7 +1126,7 @@ class CrashlyticsController {
     reportingCoordinator.finalizeSessionWithNativeEvent(
         makeFirebaseSessionIdentifier(previousSessionId), nativeSessionFiles);
     previousSessionLogManager.clearLog();
-    recordFatalFirebaseEvent(timestamp);
+    recordFatalAnalyticsEvent(timestamp);
   }
 
   private static long getCurrentTimestampSeconds() {
@@ -1501,7 +1501,7 @@ class CrashlyticsController {
       if (fatalFile != null) {
         // Could be null if this is an upgrade from a previous SDK version
         Long timestamp = getTimestampForFatal(sessionId);
-        recordFatalFirebaseEvent((timestamp != null) ? timestamp : fatalFile.lastModified());
+        recordFatalAnalyticsEvent((timestamp != null) ? timestamp : fatalFile.lastModified());
       }
     } else {
       Logger.getLogger().d("No events present for session ID " + sessionId);
@@ -1741,7 +1741,7 @@ class CrashlyticsController {
     }
   }
 
-  private void recordFatalFirebaseEvent(long timestamp) {
+  private void recordFatalAnalyticsEvent(long timestamp) {
     if (firebaseCrashExists()) {
       Logger.getLogger().d("Skipping logging Crashlytics event to Firebase, FirebaseCrash exists");
       return;
@@ -1749,7 +1749,7 @@ class CrashlyticsController {
 
     Logger.getLogger().d("Recording fatal analytics event for timestamp " + timestamp);
 
-    analyticsBridge.recordFatalFirebaseEvent(timestamp);
+    analyticsBridge.recordFatalAnalyticsEvent(timestamp);
   }
 
   private boolean firebaseCrashExists() {

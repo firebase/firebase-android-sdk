@@ -21,7 +21,7 @@ import com.google.firebase.crashlytics.internal.breadcrumbs.BreadcrumbHandler;
 public interface AnalyticsBridge {
   void registerBreadcrumbHandler(BreadcrumbHandler breadcrumbHandler);
 
-  void recordFatalFirebaseEvent(long timestamp);
+  void recordFatalAnalyticsEvent(long timestamp);
 
   Task<Void> getAnalyticsTaskChain();
 }
