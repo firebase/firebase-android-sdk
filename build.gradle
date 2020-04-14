@@ -43,12 +43,11 @@ buildscript {
 }
 
 apply from: 'sdkProperties.gradle'
+apply from: "gradle/errorProne.gradle"
 
 ext {
     playServicesVersion = '16.0.1'
     supportAnnotationsVersion = '28.0.0'
-    errorproneVersion = '2.3.2'
-    errorproneJavacVersion = '9+181-r4173-1'
     googleTruthVersion = '0.45'
     robolectricVersion = '4.1'
 }
@@ -72,12 +71,7 @@ configure(subprojects) {
         jcenter()
         mavenLocal()
     }
-    apply plugin: 'net.ltgt.errorprone'
-    dependencies {
-        errorprone "com.google.errorprone:error_prone_core:$errorproneVersion"
-        errorproneJavac "com.google.errorprone:javac:$errorproneJavacVersion"
 
-    }
     apply plugin: 'com.github.sherter.google-java-format'
     googleJavaFormat {
         toolVersion = '1.7'
@@ -97,10 +91,6 @@ configure(subprojects) {
         exclude 'src/testUtil/java/com/google/firebase/firestore/testutil/Assert.java'
         exclude 'src/testUtil/java/com/google/firebase/firestore/testutil/ThrowingRunnable.java'
         exclude '**/package-info.java'
-    }
-
-    tasks.withType(JavaCompile) {
-        options.errorprone.excludedPaths = '.*/build/generated/.*'
     }
 
     apply plugin: "org.jlleitschuh.gradle.ktlint"
