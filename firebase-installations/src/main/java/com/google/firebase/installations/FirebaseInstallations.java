@@ -148,12 +148,14 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     Preconditions.checkNotEmpty(getApiKey());
     Preconditions.checkArgument(
         Utils.isValidAppIdFormat(getApplicationId()),
-        "Invalid AppId format. Please refer to"
-            + " https://firebase.google.com/support/privacy/init-options for details.");
+            "Please set your Application ID. A valid Firebase App ID is required to communicate "
+                    + "with Firebase server APIs: It identifies your application with Firebase."
+                    + "Please refer to https://firebase.google.com/support/privacy/init-options.");
     Preconditions.checkArgument(
         Utils.isValidApiKeyFormat(getApiKey()),
-        "Invalid Api-key format. Please refer to"
-            + " https://firebase.google.com/support/privacy/init-options for details.");
+            "Please set a valid API key. A Firebase API key is required to communicate with "
+                    + "Firebase server APIs: It authenticates your project with Google."
+                    + "Please refer to https://firebase.google.com/support/privacy/init-options.");
   }
 
   /** Returns the Project Id or Project Number for the Firebase Project. */

@@ -15,6 +15,9 @@
 package com.google.firebase.installations;
 
 import android.text.TextUtils;
+
+import androidx.annotation.Nullable;
+
 import com.google.firebase.installations.local.PersistedInstallationEntry;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
@@ -46,11 +49,11 @@ class Utils {
     return TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis());
   }
 
-  static boolean isValidAppIdFormat(String AppId) {
-    return AppId.contains(APP_ID_IDENTIFICATION_SUBSTRING);
+  static boolean isValidAppIdFormat(@Nullable String appId) {
+    return appId.contains(APP_ID_IDENTIFICATION_SUBSTRING);
   }
 
-  static boolean isValidApiKeyFormat(String ApiKey) {
-    return API_KEY_FORMAT.matcher(ApiKey).matches();
+  static boolean isValidApiKeyFormat(@Nullable String apiKey) {
+    return API_KEY_FORMAT.matcher(apiKey).matches();
   }
 }
