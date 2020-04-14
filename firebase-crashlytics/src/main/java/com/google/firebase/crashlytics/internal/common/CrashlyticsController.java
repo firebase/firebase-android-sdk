@@ -1160,7 +1160,8 @@ class CrashlyticsController {
         return;
       }
 
-      new File(getFilesDir(), currentSessionId + SESSION_FATAL_TIMESTAMP_TAG + eventTime).createNewFile();
+      new File(getFilesDir(), currentSessionId + SESSION_FATAL_TIMESTAMP_TAG + eventTime)
+          .createNewFile();
 
       fos = new ClsFileOutputStream(getFilesDir(), currentSessionId + SESSION_FATAL_TAG);
       cos = CodedOutputStream.newInstance(fos);
