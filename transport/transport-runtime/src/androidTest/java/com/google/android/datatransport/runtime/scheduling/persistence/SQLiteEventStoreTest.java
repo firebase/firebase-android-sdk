@@ -1,4 +1,4 @@
-// Copyright 2019 Google LLC
+// Copyright 2020 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,6 +17,9 @@ package com.google.android.datatransport.runtime.scheduling.persistence;
 import static com.google.android.datatransport.runtime.scheduling.persistence.SchemaManager.SCHEMA_VERSION;
 import static com.google.common.truth.Truth.assertThat;
 
+import android.database.DatabaseUtils;
+import androidx.test.core.app.ApplicationProvider;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.datatransport.Encoding;
 import com.google.android.datatransport.Priority;
 import com.google.android.datatransport.runtime.EncodedPayload;
@@ -28,12 +31,11 @@ import com.google.android.datatransport.runtime.time.UptimeClock;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.UUID;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.robolectric.RobolectricTestRunner;
-import org.robolectric.RuntimeEnvironment;
 
-@RunWith(RobolectricTestRunner.class)
+@RunWith(AndroidJUnit4.class)
 public class SQLiteEventStoreTest {
   private static final TransportContext TRANSPORT_CONTEXT =
       TransportContext.builder().setBackendName("backend1").build();
@@ -52,8 +54,14 @@ public class SQLiteEventStoreTest {
           .build();
 
   private static final long HOUR = 60 * 60 * 1000;
+  private static final int MAX_BLOB_SIZE_BYTES = 6;
   private static final EventStoreConfig CONFIG =
-      EventStoreConfig.DEFAULT.toBuilder().setLoadBatchSize(5).setEventCleanUpAge(HOUR).build();
+      EventStoreConfig.DEFAULT
+          .toBuilder()
+          .setLoadBatchSize(5)
+          .setEventCleanUpAge(HOUR)
+          .setMaxBlobByteSizePerRow(MAX_BLOB_SIZE_BYTES)
+          .build();
 
   private final TestClock clock = new TestClock(1);
   private final SQLiteEventStore store = newStoreWithConfig(clock, CONFIG);
@@ -63,7 +71,10 @@ public class SQLiteEventStoreTest {
         clock,
         new UptimeClock(),
         config,
-        new SchemaManager(RuntimeEnvironment.application, SCHEMA_VERSION));
+        new SchemaManager(
+            ApplicationProvider.getApplicationContext(),
+            UUID.randomUUID().toString(),
+            SCHEMA_VERSION));
   }
 
   @Test
@@ -73,6 +84,49 @@ public class SQLiteEventStoreTest {
 
     assertThat(newEvent.getEvent()).isEqualTo(EVENT);
     assertThat(events).containsExactly(newEvent);
+  }
+
+  @Test
+  public void persist_withNonInlineBlob_correctlyRoundTrips() {
+    byte[] payload = "LongerThanSixBytes".getBytes(Charset.defaultCharset());
+    EventInternal event =
+        EVENT.toBuilder().setEncodedPayload(new EncodedPayload(JSON_ENCODING, payload)).build();
+    PersistedEvent newEvent = store.persist(TRANSPORT_CONTEXT, event);
+    Iterable<PersistedEvent> events = store.loadBatch(TRANSPORT_CONTEXT);
+
+    assertThat(newEvent.getEvent()).isEqualTo(event);
+    assertThat(events).containsExactly(newEvent);
+  }
+
+  @Test
+  public void persist_withNonInlineBlob_correctlyStoresPayloadInSeparateTable() {
+    byte[] payload = "LongerThanSixBytes".getBytes(Charset.defaultCharset());
+    EventInternal event =
+        EVENT.toBuilder().setEncodedPayload(new EncodedPayload(JSON_ENCODING, payload)).build();
+    PersistedEvent newEvent = store.persist(TRANSPORT_CONTEXT, event);
+
+    long expectedRows = payload.length / MAX_BLOB_SIZE_BYTES;
+    if (payload.length % MAX_BLOB_SIZE_BYTES != 0) {
+      expectedRows += 1;
+    }
+
+    long payloadRows =
+        DatabaseUtils.queryNumEntries(
+            store.getDb(),
+            "event_payloads",
+            "event_id = ?",
+            new String[] {String.valueOf(newEvent.getId())});
+    assertThat(payloadRows).isEqualTo(expectedRows);
+
+    store.recordSuccess(store.loadBatch(TRANSPORT_CONTEXT));
+    assertThat(store.loadBatch(TRANSPORT_CONTEXT)).isEmpty();
+    payloadRows =
+        DatabaseUtils.queryNumEntries(
+            store.getDb(),
+            "event_payloads",
+            "event_id = ?",
+            new String[] {String.valueOf(newEvent.getId())});
+    assertThat(payloadRows).isEqualTo(0);
   }
 
   @Test

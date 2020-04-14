@@ -17,6 +17,7 @@ package com.google.firebase.installations;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -82,7 +83,7 @@ public class FirebaseInstallationsTest {
   public static final String TEST_AUTH_TOKEN_3 = "fis.auth.token3";
   public static final String TEST_AUTH_TOKEN_4 = "fis.auth.token4";
 
-  public static final String TEST_API_KEY = "apiKey";
+  public static final String TEST_API_KEY = "AIzaSyabcdefghijklmnopqrstuvwxyz1234567";
 
   public static final String TEST_REFRESH_TOKEN = "1:test-refresh-token";
 
@@ -964,5 +965,44 @@ public class FirebaseInstallationsTest {
           "the entry was expected to still be registered since the delete failed: " + entry,
           entry.isRegistered());
     }
+  }
+
+  @Test
+  public void testAppIdCheck() {
+    // valid appid
+    assertTrue(Utils.isValidAppIdFormat("1:123456789:android:abcdef"));
+    assertTrue(Utils.isValidAppIdFormat("1:515438998704:android:e78ec19738058349"));
+    assertTrue(Utils.isValidAppIdFormat("1:208472424340:android:a243f98a00873753"));
+    assertTrue(Utils.isValidAppIdFormat("1:755541669657:ios:4d6d5a5ce71e9d30"));
+    assertTrue(Utils.isValidAppIdFormat("1:1086610230652:ios:852c7f6ee799ff89"));
+    assertTrue(Utils.isValidAppIdFormat("1:35006771263:web:32b6f4a5b95acd2c"));
+    // invalid appid
+    assertFalse(Utils.isValidAppIdFormat("abc.abc.abc"));
+    assertFalse(
+        Utils.isValidAppIdFormat(
+            "com.google.firebase.samples.messaging.advanced")); // using pakage name as App ID
+  }
+
+  @Test
+  public void testApiKeyCheck() {
+    // valid ApiKey
+    assertTrue(Utils.isValidApiKeyFormat("AIzaSyabcdefghijklmnopqrstuvwxyz1234567"));
+    assertTrue(Utils.isValidApiKeyFormat("AIzaSyA4UrcGxgwQFTfaI3no3t7Lt1sjmdnP5sQ"));
+    assertTrue(Utils.isValidApiKeyFormat("AIzaSyA5_iVawFQ8ABuTZNUdcwERLJv_a_p4wtM"));
+    assertTrue(Utils.isValidApiKeyFormat("AIzaSyANUvH9H9BsUccjsu2pCmEkOPjjaXeDQgY"));
+    assertTrue(Utils.isValidApiKeyFormat("AIzaSyASWm6HmTMdYWpgMnjRBjxcQ9CKctWmLd4"));
+    assertTrue(Utils.isValidApiKeyFormat("AIzaSyAdOS2zB6NCsk1pCdZ4-P6GBdi_UUPwX7c"));
+    assertTrue(Utils.isValidApiKeyFormat("AIzaSyAnLA7NfeLquW1tJFpx_eQCxoX-oo6YyIs"));
+    // invalid ApiKey
+    assertFalse(
+        Utils.isValidApiKeyFormat("BIzaSyabcdefghijklmnopqrstuvwxyz1234567")); // wrong prefix
+    assertFalse(Utils.isValidApiKeyFormat("AIzaSyabcdefghijklmnopqrstuvwxyz")); // wrong length
+    assertFalse(Utils.isValidApiKeyFormat("AIzaSyabcdefghijklmno:qrstuvwxyzabcdefg")); // wrong char
+    assertFalse(Utils.isValidApiKeyFormat("AIzaSyabcdefghijklmno qrstuvwxyzabcdefg")); // wrong char
+    assertFalse(
+        Utils.isValidApiKeyFormat(
+                "AAAAdpB7anM:APA91bFFK03DIT8y3l5uymwbKcUDJdYqTRSP9Qcxg8SU5kKPalEpObdx0C0xv8gQttdWlL"
+                        + "W4hLvvHA0JoDKA6Lrvbi-edUjFCPY_WJkuvHxFwGWXjnj4yI4sPQ27mXuSVIyAbgX4aTK0QY"
+                        + "pIKq2j1NBi7ZU75gunQg")); // using FCM server key as API key.
   }
 }
