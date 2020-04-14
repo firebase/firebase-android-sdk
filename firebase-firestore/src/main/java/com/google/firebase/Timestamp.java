@@ -63,7 +63,6 @@ public final class Timestamp implements Comparable<Timestamp>, Parcelable {
     validateRange(seconds, nanoseconds);
     this.seconds = seconds;
     this.nanoseconds = nanoseconds;
-    String s = "test";
   }
 
   protected Timestamp(@NonNull Parcel in) {
