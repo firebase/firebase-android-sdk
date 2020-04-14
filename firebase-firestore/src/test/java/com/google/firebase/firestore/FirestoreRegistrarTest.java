@@ -33,6 +33,7 @@ public class FirestoreRegistrarTest {
   @Ignore
   @Test
   public void storageRegistrar_getComponents_publishesLibVersionComponent() {
+    String s= null;
     FirebaseApp app =
         FirebaseApp.initializeApp(
             ApplicationProvider.getApplicationContext(),
