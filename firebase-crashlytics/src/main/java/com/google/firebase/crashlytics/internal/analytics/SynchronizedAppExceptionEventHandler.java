@@ -36,6 +36,8 @@ public class SynchronizedAppExceptionEventHandler implements AppExceptionEventHa
 
   @Nullable private AppExceptionEventCallback appExceptionEventCallback;
 
+  @Nullable private Task<Void> currentTask;
+
   public SynchronizedAppExceptionEventHandler(
       @NonNull AppExceptionEventRecorder appExceptionEventRecorder) {
     this.appExceptionEventRecorder = appExceptionEventRecorder;
@@ -44,6 +46,12 @@ public class SynchronizedAppExceptionEventHandler implements AppExceptionEventHa
   @Override
   public Task<Void> recordAppExceptionEvent(long timestamp) {
     synchronized (recordCrashlyticsEventLock) {
+      final Task<Void> task = currentTask;
+      if (task != null) {
+        Logger.getLogger().d("Recording app exception event in progress.");
+        return task;
+      }
+
       final TaskCompletionSource<Void> source = new TaskCompletionSource<>();
 
       appExceptionEventCallback =
@@ -55,7 +63,9 @@ public class SynchronizedAppExceptionEventHandler implements AppExceptionEventHa
 
       appExceptionEventRecorder.recordAppExceptionEvent(timestamp);
 
-      return source.getTask();
+      currentTask = source.getTask();
+
+      return currentTask;
     }
   }
 
@@ -66,6 +76,8 @@ public class SynchronizedAppExceptionEventHandler implements AppExceptionEventHa
         Logger.getLogger().d("Received app exception event callback from FA");
         appExceptionEventCallback.onAppExceptionEvent();
       }
+
+      currentTask = null;
     }
   }
 }
