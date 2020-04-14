@@ -16,11 +16,12 @@ package com.google.firebase.installations;
 
 import android.text.TextUtils;
 
-import androidx.annotation.Nullable;
+import androidx.annotation.NonNull;
 
 import com.google.firebase.installations.local.PersistedInstallationEntry;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
+
+import com.google.re2j.Pattern;
 
 /** Util methods used for {@link FirebaseInstallations} */
 class Utils {
@@ -49,11 +50,11 @@ class Utils {
     return TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis());
   }
 
-  static boolean isValidAppIdFormat(@Nullable String appId) {
+  static boolean isValidAppIdFormat(@NonNull String appId) {
     return appId.contains(APP_ID_IDENTIFICATION_SUBSTRING);
   }
 
-  static boolean isValidApiKeyFormat(@Nullable String apiKey) {
+  static boolean isValidApiKeyFormat(@NonNull String apiKey) {
     return API_KEY_FORMAT.matcher(apiKey).matches();
   }
 }

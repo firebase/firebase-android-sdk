@@ -44,6 +44,7 @@ dependencies {
 
     implementation 'androidx.multidex:multidex:2.0.1'
     implementation 'com.google.android.gms:play-services-tasks:17.0.0'
+    implementation  'com.google.re2j:re2j:1.0'
 
 
     compileOnly "com.google.auto.value:auto-value-annotations:1.6.5"
