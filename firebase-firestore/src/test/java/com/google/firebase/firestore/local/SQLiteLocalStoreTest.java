@@ -20,8 +20,10 @@ import org.junit.runner.RunWith;
 import org.robolectric.ParameterizedRobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
+import android.os.Build;
+
 @RunWith(ParameterizedRobolectricTestRunner.class)
-@Config(manifest = Config.NONE)
+@Config(manifest = Config.NONE, sdk = Build.VERSION_CODES.O_MR1)
 public class SQLiteLocalStoreTest extends LocalStoreTestCase {
 
   private QueryEngine queryEngine;
