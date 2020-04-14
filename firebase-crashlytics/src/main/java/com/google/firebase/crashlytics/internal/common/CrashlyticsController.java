@@ -1150,19 +1150,16 @@ class CrashlyticsController {
    * class.
    */
   private void writeFatal(Thread thread, Throwable ex, long eventTime) {
+    final String currentSessionId = getCurrentSessionId();
+
+    if (currentSessionId == null) {
+      Logger.getLogger().e("Tried to write a fatal exception while no session was open.");
+      return;
+    }
+
     ClsFileOutputStream fos = null;
     CodedOutputStream cos = null;
     try {
-      final String currentSessionId = getCurrentSessionId();
-
-      if (currentSessionId == null) {
-        Logger.getLogger().e("Tried to write a fatal exception while no session was open.");
-        return;
-      }
-
-      new File(getFilesDir(), currentSessionId + SESSION_FATAL_TIMESTAMP_TAG + eventTime)
-          .createNewFile();
-
       fos = new ClsFileOutputStream(getFilesDir(), currentSessionId + SESSION_FATAL_TAG);
       cos = CodedOutputStream.newInstance(fos);
       writeSessionEvent(cos, thread, ex, eventTime, EVENT_TYPE_CRASH, true);
@@ -1171,6 +1168,13 @@ class CrashlyticsController {
     } finally {
       CommonUtils.flushOrLog(cos, "Failed to flush to session begin file.");
       CommonUtils.closeOrLog(fos, "Failed to close fatal exception file output stream.");
+    }
+
+    try {
+      new File(getFilesDir(), currentSessionId + SESSION_FATAL_TIMESTAMP_TAG + eventTime)
+          .createNewFile();
+    } catch (IOException e) {
+      Logger.getLogger().d("Could not write fatal timestamp file.");
     }
   }
 
