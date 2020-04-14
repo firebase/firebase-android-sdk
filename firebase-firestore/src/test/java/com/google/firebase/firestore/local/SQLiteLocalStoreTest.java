@@ -23,7 +23,7 @@ import org.robolectric.annotation.Config;
 import android.os.Build;
 
 @RunWith(ParameterizedRobolectricTestRunner.class)
-@Config(manifest = Config.NONE, sdk = Build.VERSION_CODES.O_MR1)
+@Config(manifest = Config.NONE, sdk = Build.VERSION_CODES.Q)
 public class SQLiteLocalStoreTest extends LocalStoreTestCase {
 
   private QueryEngine queryEngine;
