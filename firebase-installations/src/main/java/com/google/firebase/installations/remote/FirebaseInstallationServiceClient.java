@@ -20,6 +20,7 @@ import static com.google.firebase.installations.BuildConfig.VERSION_NAME;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.text.TextUtils;
 import android.util.JsonReader;
 import android.util.Log;
 import androidx.annotation.NonNull;
@@ -34,11 +35,14 @@ import com.google.firebase.installations.FirebaseInstallationsException;
 import com.google.firebase.installations.FirebaseInstallationsException.Status;
 import com.google.firebase.installations.remote.InstallationResponse.ResponseCode;
 import com.google.firebase.platforminfo.UserAgentPublisher;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLConnection;
 import java.nio.charset.Charset;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPOutputStream;
@@ -87,6 +91,8 @@ public class FirebaseInstallationServiceClient {
   private static final Charset UTF_8 = Charset.forName("UTF-8");
 
   private static final String SDK_VERSION_PREFIX = "a:";
+
+  private static final String FIS_TAG = "Firebase-Installations";
 
   @VisibleForTesting
   static final String PARSING_EXPIRATION_TIME_ERROR_MESSAGE = "Invalid Expiration Timestamp.";
@@ -159,10 +165,14 @@ public class FirebaseInstallationServiceClient {
           return readCreateResponse(httpURLConnection);
         }
 
+        logFisCommunicationError(httpURLConnection);
+
         if (httpResponseCode == 429 || (httpResponseCode >= 500 && httpResponseCode < 600)) {
           retryCount++;
           continue;
         }
+
+        logBadConfigError();
 
         // Return empty installation response with BAD_CONFIG response code after max retries
         return InstallationResponse.builder().setResponseCode(ResponseCode.BAD_CONFIG).build();
@@ -177,58 +187,80 @@ public class FirebaseInstallationServiceClient {
   private void writeFIDCreateRequestBodyToOutputStream(
       HttpURLConnection httpURLConnection, @NonNull String fid, @NonNull String appId)
       throws IOException {
-    OutputStream outputStream = httpURLConnection.getOutputStream();
-    if (outputStream == null) {
-      throw new IOException(
-          "Cannot send CreateInstallation request to FIS. No OutputStream available.");
-    }
+    writeRequestBodyToOutputStream(
+        httpURLConnection, getJsonBytes(buildCreateFirebaseInstallationRequestBody(fid, appId)));
+  }
 
-    GZIPOutputStream gzipOutputStream = new GZIPOutputStream(outputStream);
-    try {
-      gzipOutputStream.write(
-          buildCreateFirebaseInstallationRequestBody(fid, appId).toString().getBytes("UTF-8"));
-    } catch (JSONException e) {
-      throw new IllegalStateException(e);
-    } finally {
-      gzipOutputStream.close();
+  /**
+   * Encodes {@link JSONObject} String representation into a sequence of bytes using the UTF-8
+   * charset.
+   *
+   * @return The resulting byte array.
+   * @throws java.io.UnsupportedEncodingException A type of {@link IOException}, if the named
+   *     charset is not supported.
+   */
+  private static byte[] getJsonBytes(JSONObject jsonObject) throws IOException {
+    return jsonObject.toString().getBytes("UTF-8");
+  }
+
+  private static void writeRequestBodyToOutputStream(URLConnection urlConnection, byte[] jsonBytes)
+      throws IOException {
+    try (OutputStream outputStream = urlConnection.getOutputStream()) {
+      if (outputStream == null) {
+        throw new IOException("Cannot send request to FIS servers. No OutputStream available.");
+      }
+      try (GZIPOutputStream gzipOutputStream = new GZIPOutputStream(outputStream)) {
+        gzipOutputStream.write(jsonBytes);
+      }
     }
   }
 
-  private static JSONObject buildCreateFirebaseInstallationRequestBody(String fid, String appId)
-      throws JSONException {
-    JSONObject firebaseInstallationData = new JSONObject();
-    firebaseInstallationData.put("fid", fid);
-    firebaseInstallationData.put("appId", appId);
-    firebaseInstallationData.put("authVersion", FIREBASE_INSTALLATION_AUTH_VERSION);
-    firebaseInstallationData.put("sdkVersion", SDK_VERSION_PREFIX + VERSION_NAME);
-    return firebaseInstallationData;
+  /**
+   * Builds a {@link JSONObject} with the required name & value to send as a request body for FID
+   * creation.
+   *
+   * @return A {@link JSONObject} with name & value required for FID creation.
+   * @throws IllegalStateException If {@link JSONException} is thrown due to non-null names while
+   *     {@link JSONObject} creation.
+   */
+  private static JSONObject buildCreateFirebaseInstallationRequestBody(String fid, String appId) {
+    try {
+      JSONObject firebaseInstallationData = new JSONObject();
+      firebaseInstallationData.put("fid", fid);
+      firebaseInstallationData.put("appId", appId);
+      firebaseInstallationData.put("authVersion", FIREBASE_INSTALLATION_AUTH_VERSION);
+      firebaseInstallationData.put("sdkVersion", SDK_VERSION_PREFIX + VERSION_NAME);
+      return firebaseInstallationData;
+    } catch (JSONException e) {
+      throw new IllegalStateException(e);
+    }
   }
 
   private void writeGenerateAuthTokenRequestBodyToOutputStream(HttpURLConnection httpURLConnection)
       throws IOException {
-    OutputStream outputStream = httpURLConnection.getOutputStream();
-    if (outputStream == null) {
-      throw new IOException(
-          "Cannot send GenerateAuthToken request to FIS. No OutputStream available.");
-    }
-
-    GZIPOutputStream gzipOutputStream = new GZIPOutputStream(outputStream);
-    try {
-      gzipOutputStream.write(buildGenerateAuthTokenRequestBody().toString().getBytes("UTF-8"));
-    } catch (JSONException e) {
-      throw new IllegalStateException(e);
-    } finally {
-      gzipOutputStream.close();
-    }
+    writeRequestBodyToOutputStream(
+        httpURLConnection, getJsonBytes(buildGenerateAuthTokenRequestBody()));
   }
 
-  private static JSONObject buildGenerateAuthTokenRequestBody() throws JSONException {
-    JSONObject sdkVersionData = new JSONObject();
-    sdkVersionData.put("sdkVersion", SDK_VERSION_PREFIX + VERSION_NAME);
+  /**
+   * Builds a {@link JSONObject} with the required name & value to send as a request body for
+   * generating auth token.
+   *
+   * @return A {@link JSONObject} with name & value required for generating auth token.
+   * @throws IllegalStateException If {@link JSONException} is thrown due to non-null names while
+   *     {@link JSONObject} creation.
+   */
+  private static JSONObject buildGenerateAuthTokenRequestBody() {
+    try {
+      JSONObject sdkVersionData = new JSONObject();
+      sdkVersionData.put("sdkVersion", SDK_VERSION_PREFIX + VERSION_NAME);
 
-    JSONObject firebaseInstallationData = new JSONObject();
-    firebaseInstallationData.put("installation", sdkVersionData);
-    return firebaseInstallationData;
+      JSONObject firebaseInstallationData = new JSONObject();
+      firebaseInstallationData.put("installation", sdkVersionData);
+      return firebaseInstallationData;
+    } catch (JSONException e) {
+      throw new IllegalStateException(e);
+    }
   }
 
   /**
@@ -258,23 +290,30 @@ public class FirebaseInstallationServiceClient {
     int retryCount = 0;
     while (retryCount <= MAX_RETRIES) {
       HttpURLConnection httpURLConnection = openHttpURLConnection(url, apiKey);
-      httpURLConnection.setRequestMethod("DELETE");
-      httpURLConnection.addRequestProperty("Authorization", "FIS_v2 " + refreshToken);
+      try {
+        httpURLConnection.setRequestMethod("DELETE");
+        httpURLConnection.addRequestProperty("Authorization", "FIS_v2 " + refreshToken);
 
-      int httpResponseCode = httpURLConnection.getResponseCode();
-      httpURLConnection.disconnect();
+        int httpResponseCode = httpURLConnection.getResponseCode();
 
-      if (httpResponseCode == 200 || httpResponseCode == 401 || httpResponseCode == 404) {
-        return;
+        if (httpResponseCode == 200 || httpResponseCode == 401 || httpResponseCode == 404) {
+          return;
+        }
+
+        logFisCommunicationError(httpURLConnection);
+
+        if (httpResponseCode == 429 || (httpResponseCode >= 500 && httpResponseCode < 600)) {
+          retryCount++;
+          continue;
+        }
+
+        logBadConfigError();
+
+        throw new FirebaseInstallationsException(
+            "Bad config while trying to delete FID", Status.BAD_CONFIG);
+      } finally {
+        httpURLConnection.disconnect();
       }
-
-      if (httpResponseCode == 429 || (httpResponseCode >= 500 && httpResponseCode < 600)) {
-        retryCount++;
-        continue;
-      }
-
-      throw new FirebaseInstallationsException(
-          "bad config while trying to delete FID", Status.BAD_CONFIG);
     }
 
     throw new IOException();
@@ -328,6 +367,8 @@ public class FirebaseInstallationServiceClient {
           return readGenerateAuthTokenResponse(httpURLConnection);
         }
 
+        logFisCommunicationError(httpURLConnection);
+
         if (httpResponseCode == 401 || httpResponseCode == 404) {
           return TokenResult.builder().setResponseCode(TokenResult.ResponseCode.AUTH_ERROR).build();
         }
@@ -337,12 +378,23 @@ public class FirebaseInstallationServiceClient {
           continue;
         }
 
+        logBadConfigError();
+
         return TokenResult.builder().setResponseCode(TokenResult.ResponseCode.BAD_CONFIG).build();
       } finally {
         httpURLConnection.disconnect();
       }
     }
     throw new IOException();
+  }
+
+  private static void logBadConfigError() {
+    Log.e(
+        FIS_TAG,
+        "Firebase Installations can not communicate with Firebase server APIs due "
+            + "to invalid configuration. Please update your Firebase initialization process"
+            + " and set valid Firebase options (API key, Project ID, Application ID) when"
+            + " initializing Firebase.");
   }
 
   private HttpURLConnection openHttpURLConnection(URL url, String apiKey) throws IOException {
@@ -368,7 +420,8 @@ public class FirebaseInstallationServiceClient {
 
   // Read the response from the createFirebaseInstallation API.
   private InstallationResponse readCreateResponse(HttpURLConnection conn) throws IOException {
-    JsonReader reader = new JsonReader(new InputStreamReader(conn.getInputStream(), UTF_8));
+    InputStream inputStream = conn.getInputStream();
+    JsonReader reader = new JsonReader(new InputStreamReader(inputStream, UTF_8));
     TokenResult.Builder tokenResult = TokenResult.builder();
     InstallationResponse.Builder builder = InstallationResponse.builder();
     reader.beginObject();
@@ -401,13 +454,14 @@ public class FirebaseInstallationServiceClient {
     }
     reader.endObject();
     reader.close();
-
+    inputStream.close();
     return builder.setResponseCode(ResponseCode.OK).build();
   }
 
   // Read the response from the generateAuthToken FirebaseInstallation API.
   private TokenResult readGenerateAuthTokenResponse(HttpURLConnection conn) throws IOException {
-    JsonReader reader = new JsonReader(new InputStreamReader(conn.getInputStream(), UTF_8));
+    InputStream inputStream = conn.getInputStream();
+    JsonReader reader = new JsonReader(new InputStreamReader(inputStream, UTF_8));
     TokenResult.Builder builder = TokenResult.builder();
     reader.beginObject();
     while (reader.hasNext()) {
@@ -422,6 +476,7 @@ public class FirebaseInstallationServiceClient {
     }
     reader.endObject();
     reader.close();
+    inputStream.close();
 
     return builder.setResponseCode(TokenResult.ResponseCode.OK).build();
   }
@@ -458,5 +513,29 @@ public class FirebaseInstallationServiceClient {
     return (expiresIn == null || expiresIn.length() == 0)
         ? 0L
         : Long.parseLong(expiresIn.substring(0, expiresIn.length() - 1));
+  }
+
+  private static void logFisCommunicationError(HttpURLConnection conn) {
+    String logString = readErrorResponse(conn);
+    if (!TextUtils.isEmpty(logString)) {
+      Log.w(FIS_TAG, logString);
+    }
+  }
+
+  // Read the error message from the response.
+  @Nullable
+  private static String readErrorResponse(HttpURLConnection conn) {
+    try (BufferedReader reader =
+        new BufferedReader(new InputStreamReader(conn.getErrorStream(), UTF_8))) {
+      StringBuilder response = new StringBuilder();
+      for (String input = reader.readLine(); input != null; input = reader.readLine()) {
+        response.append(input).append('\n');
+      }
+      return String.format(
+          "Error when communicating with the Firebase Installations server API. HTTP response: [%d %s: %s]",
+          conn.getResponseCode(), conn.getResponseMessage(), response);
+    } catch (IOException ignored) {
+      return null;
+    }
   }
 }
