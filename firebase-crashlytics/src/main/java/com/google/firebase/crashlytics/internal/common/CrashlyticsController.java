@@ -87,6 +87,7 @@ class CrashlyticsController {
   static final String SESSION_USER_TAG = "SessionUser";
   static final String SESSION_NON_FATAL_TAG = "SessionEvent";
   static final String SESSION_FATAL_TAG = "SessionCrash";
+  static final String SESSION_FATAL_TIMESTAMP_TAG = "SessionCrashTime";
   static final String SESSION_APP_TAG = "SessionApp";
   static final String SESSION_OS_TAG = "SessionOS";
   static final String SESSION_DEVICE_TAG = "SessionDevice";
@@ -1110,7 +1111,8 @@ class CrashlyticsController {
       return;
     }
 
-    // FIXME: Figure out exactly where the timestamp comes from
+    // Because we cannot read the minidump binary to get its timestamp,
+    // just use the file creation time.
     final long timestamp = minidumpFile.lastModified();
 
     List<NativeSessionFile> nativeSessionFiles =
@@ -1157,6 +1159,8 @@ class CrashlyticsController {
         Logger.getLogger().e("Tried to write a fatal exception while no session was open.");
         return;
       }
+
+      new File(getFilesDir(), currentSessionId + SESSION_FATAL_TIMESTAMP_TAG + eventTime).createNewFile();
 
       fos = new ClsFileOutputStream(getFilesDir(), currentSessionId + SESSION_FATAL_TAG);
       cos = CodedOutputStream.newInstance(fos);
@@ -1495,8 +1499,9 @@ class CrashlyticsController {
       final File fatalFile = hasFatal ? fatalFiles[0] : null;
       synthesizeSessionFile(sessionBeginFile, sessionId, trimmedNonFatalFiles, fatalFile);
       if (fatalFile != null) {
-        // FIXME: Get the proper event time
-        recordFatalFirebaseEvent(fatalFile.lastModified());
+        // Could be null if this is an upgrade from a previous SDK version
+        Long timestamp = getTimestampForFatal(sessionId);
+        recordFatalFirebaseEvent((timestamp != null) ? timestamp : fatalFile.lastModified());
       }
     } else {
       Logger.getLogger().d("No events present for session ID " + sessionId);
@@ -1596,6 +1601,25 @@ class CrashlyticsController {
         writeToCosFromFile(cos, sessionPartFiles[0]);
       }
     }
+  }
+
+  private Long getTimestampForFatal(@NonNull String sessionId) {
+    final String timestampFilePrefix = sessionId + SESSION_FATAL_TIMESTAMP_TAG;
+    final File[] timestampFiles =
+        listFilesMatching(new FileNameContainsFilter(timestampFilePrefix));
+    final File timestampFile = timestampFiles.length > 0 ? timestampFiles[0] : null;
+    if (timestampFile != null) {
+      final String timestampString =
+          timestampFile.getName().substring(timestampFilePrefix.length());
+      try {
+        return Long.parseLong(timestampString);
+      } catch (NumberFormatException nfe) {
+        Logger.getLogger().d("Could not parse timestamp string: " + timestampString);
+        return null;
+      }
+    }
+    Logger.getLogger().d("No timestamp file present for session " + sessionId);
+    return null;
   }
 
   private static void appendOrganizationIdToSessionFile(
@@ -1722,6 +1746,8 @@ class CrashlyticsController {
       Logger.getLogger().d("Skipping logging Crashlytics event to Firebase, FirebaseCrash exists");
       return;
     }
+
+    Logger.getLogger().d("Recording fatal analytics event for timestamp " + timestamp);
 
     analyticsBridge.recordFatalFirebaseEvent(timestamp);
   }
