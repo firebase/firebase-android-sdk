@@ -14,12 +14,12 @@
 
 package com.google.firebase.firestore.local;
 
+import android.os.Build;
 import java.util.Arrays;
 import java.util.Collection;
 import org.junit.runner.RunWith;
 import org.robolectric.ParameterizedRobolectricTestRunner;
 import org.robolectric.annotation.Config;
-import android.os.Build;
 
 @RunWith(ParameterizedRobolectricTestRunner.class)
 @Config(manifest = Config.NONE, sdk = Build.VERSION_CODES.Q)
