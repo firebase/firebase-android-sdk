@@ -33,7 +33,6 @@ public class FirestoreRegistrarTest {
   @Ignore
   @Test
   public void storageRegistrar_getComponents_publishesLibVersionComponent() {
-    String s = null;
     FirebaseApp app =
         FirebaseApp.initializeApp(
             ApplicationProvider.getApplicationContext(),
@@ -45,5 +44,6 @@ public class FirestoreRegistrarTest {
     String actualUserAgent = userAgentPublisher.getUserAgent();
 
     assertThat(actualUserAgent).contains("fire-fst");
+    assertThat(false).isTrue();
   }
 }
