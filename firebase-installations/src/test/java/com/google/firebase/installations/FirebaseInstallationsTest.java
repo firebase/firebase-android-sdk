@@ -1001,8 +1001,8 @@ public class FirebaseInstallationsTest {
     assertFalse(Utils.isValidApiKeyFormat("AIzaSyabcdefghijklmno qrstuvwxyzabcdefg")); // wrong char
     assertFalse(
         Utils.isValidApiKeyFormat(
-                "AAAAdpB7anM:APA91bFFK03DIT8y3l5uymwbKcUDJdYqTRSP9Qcxg8SU5kKPalEpObdx0C0xv8gQttdWlL"
-                        + "W4hLvvHA0JoDKA6Lrvbi-edUjFCPY_WJkuvHxFwGWXjnj4yI4sPQ27mXuSVIyAbgX4aTK0QY"
-                        + "pIKq2j1NBi7ZU75gunQg")); // using FCM server key as API key.
+            "AAAAdpB7anM:APA91bFFK03DIT8y3l5uymwbKcUDJdYqTRSP9Qcxg8SU5kKPalEpObdx0C0xv8gQttdWlL"
+                + "W4hLvvHA0JoDKA6Lrvbi-edUjFCPY_WJkuvHxFwGWXjnj4yI4sPQ27mXuSVIyAbgX4aTK0QY"
+                + "pIKq2j1NBi7ZU75gunQg")); // using FCM server key as API key.
   }
 }

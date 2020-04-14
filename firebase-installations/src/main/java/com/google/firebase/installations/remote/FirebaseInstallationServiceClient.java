@@ -213,8 +213,12 @@ public class FirebaseInstallationServiceClient {
     try {
       gzipOutputStream.write(jsonBytes);
     } finally {
-      gzipOutputStream.close();
-      outputStream.close();
+      try {
+        gzipOutputStream.close();
+        outputStream.close();
+      } catch (IOException ignored) {
+
+      }
     }
   }
 
@@ -528,7 +532,11 @@ public class FirebaseInstallationServiceClient {
   // Read the error message from the response.
   @Nullable
   private static String readErrorResponse(HttpURLConnection conn) {
-    BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getErrorStream(), UTF_8));
+    InputStream errorStream = conn.getErrorStream();
+    if (errorStream == null) {
+      return null;
+    }
+    BufferedReader reader = new BufferedReader(new InputStreamReader(errorStream, UTF_8));
     try {
       StringBuilder response = new StringBuilder();
       for (String input = reader.readLine(); input != null; input = reader.readLine()) {
@@ -541,9 +549,7 @@ public class FirebaseInstallationServiceClient {
       return null;
     } finally {
       try {
-        if (reader != null) {
-          reader.close();
-        }
+        reader.close();
       } catch (IOException ignored) {
 
       }

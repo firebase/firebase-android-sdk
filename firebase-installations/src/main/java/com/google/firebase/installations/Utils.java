@@ -15,9 +15,7 @@
 package com.google.firebase.installations;
 
 import android.text.TextUtils;
-
 import androidx.annotation.Nullable;
-
 import com.google.firebase.installations.local.PersistedInstallationEntry;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
