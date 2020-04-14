@@ -205,12 +205,19 @@ public class FirebaseInstallationServiceClient {
 
   private static void writeRequestBodyToOutputStream(URLConnection urlConnection, byte[] jsonBytes)
       throws IOException {
-    try (OutputStream outputStream = urlConnection.getOutputStream()) {
-      if (outputStream == null) {
-        throw new IOException("Cannot send request to FIS servers. No OutputStream available.");
-      }
-      try (GZIPOutputStream gzipOutputStream = new GZIPOutputStream(outputStream)) {
-        gzipOutputStream.write(jsonBytes);
+    OutputStream outputStream = urlConnection.getOutputStream();
+    if (outputStream == null) {
+      throw new IOException("Cannot send request to FIS servers. No OutputStream available.");
+    }
+    GZIPOutputStream gzipOutputStream = new GZIPOutputStream(outputStream);
+    try {
+      gzipOutputStream.write(jsonBytes);
+    } finally {
+      try {
+        gzipOutputStream.close();
+        outputStream.close();
+      } catch (IOException ignored) {
+
       }
     }
   }
@@ -525,8 +532,12 @@ public class FirebaseInstallationServiceClient {
   // Read the error message from the response.
   @Nullable
   private static String readErrorResponse(HttpURLConnection conn) {
-    try (BufferedReader reader =
-        new BufferedReader(new InputStreamReader(conn.getErrorStream(), UTF_8))) {
+    InputStream errorStream = conn.getErrorStream();
+    if (errorStream == null) {
+      return null;
+    }
+    BufferedReader reader = new BufferedReader(new InputStreamReader(errorStream, UTF_8));
+    try {
       StringBuilder response = new StringBuilder();
       for (String input = reader.readLine(); input != null; input = reader.readLine()) {
         response.append(input).append('\n');
@@ -536,6 +547,12 @@ public class FirebaseInstallationServiceClient {
           conn.getResponseCode(), conn.getResponseMessage(), response);
     } catch (IOException ignored) {
       return null;
+    } finally {
+      try {
+        reader.close();
+      } catch (IOException ignored) {
+
+      }
     }
   }
 }
