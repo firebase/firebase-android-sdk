@@ -21,7 +21,8 @@ import com.google.auto.value.AutoValue;
 @AutoValue
 public abstract class AndroidClientInfo {
   /** This comes from android.os.Build.VERSION.SDK_INT. */
-  public abstract int getSdkVersion();
+  @Nullable
+  public abstract Integer getSdkVersion();
 
   /**
    * Textual description of the client platform. e.g., "Nexus 4". This comes from
@@ -59,14 +60,14 @@ public abstract class AndroidClientInfo {
 
   @NonNull
   public static Builder builder() {
-    return new AutoValue_AndroidClientInfo.Builder().setSdkVersion(Integer.MIN_VALUE);
+    return new AutoValue_AndroidClientInfo.Builder();
   }
 
   @AutoValue.Builder
   public abstract static class Builder {
 
     @NonNull
-    public abstract Builder setSdkVersion(int value);
+    public abstract Builder setSdkVersion(@Nullable Integer value);
 
     @NonNull
     public abstract Builder setModel(@Nullable String value);

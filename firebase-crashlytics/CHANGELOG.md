@@ -1,3 +1,33 @@
+# 17.0.0-beta04
+
+- [changed] Imposed a limit on the maximum crash report payload size.
+
+- [fixed] Reduced crash report payload size.
+
+# 17.0.0-beta03
+
+- [fixed] Fixed internal bugs to improve crash analysis and grouping.
+
+- [changed] Improved compatibility with Google Analytics. For best
+  performance, make sure you're using the latest versions of the
+  Firebase Crashlytics SDK and the Firebase SDK for Google Analytics.
+
+- [changed] Updated remaining Crashlytics backend API calls to prepare
+  for Fabric sunset.
+
+# 17.0.0-beta02
+
+- [changed] Removed superfluous `D/FirebaseCrashlytics` prefix from logs.
+  ([#1202](https://github.com/firebase/firebase-android-sdk/issues/1202))
+
+- [changed] Updated Crashlytics backend API calls in preparation for
+  Fabric sunset.
+
+- [changed] Upgraded Firebase Analytics integration to improve crash-free
+  users accuracy. For improved performance, we recommend that you upgrade to the
+  latest version of the Firebase SDK for Firebase Analytics with this
+  version of Firebase Crashlytics.
+
 # 17.0.0-beta01
 
 This release for Firebase Crashlytics includes the initial beta release of
