@@ -15,17 +15,12 @@
 package com.google.firebase.installations;
 
 import android.text.TextUtils;
-import androidx.annotation.NonNull;
 import com.google.firebase.installations.local.PersistedInstallationEntry;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern; // not using re2j for SDK size considerations
 
 /** Util methods used for {@link FirebaseInstallations} */
 class Utils {
   public static final long AUTH_TOKEN_EXPIRATION_BUFFER_IN_SECS = TimeUnit.HOURS.toSeconds(1);
-
-  private static final String APP_ID_IDENTIFICATION_SUBSTRING = ":";
-  private static final Pattern API_KEY_FORMAT = Pattern.compile("\\AA[\\w-]{38}\\z");
 
   /**
    * Checks if the FIS Auth token is expired or going to expire in next 1 hour {@link
@@ -45,13 +40,5 @@ class Utils {
   /** Returns current time in seconds. */
   public long currentTimeInSecs() {
     return TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis());
-  }
-
-  static boolean isValidAppIdFormat(@NonNull String appId) {
-    return appId.contains(APP_ID_IDENTIFICATION_SUBSTRING);
-  }
-
-  static boolean isValidApiKeyFormat(@NonNull String apiKey) {
-    return API_KEY_FORMAT.matcher(apiKey).matches();
   }
 }
