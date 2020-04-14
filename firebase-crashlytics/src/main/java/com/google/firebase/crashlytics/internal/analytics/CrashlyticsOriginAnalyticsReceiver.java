@@ -30,7 +30,7 @@ public class CrashlyticsOriginAnalyticsReceiver implements AnalyticsReceiver {
   }
 
   @Override
-  public void onEvent(String name, Bundle params) {
+  public void onEvent(@NonNull String name, @NonNull Bundle params) {
     if (APP_EXCEPTION_EVENT_NAME.equals(name)) {
       appExceptionEventHandler.onEventRecorded();
     }

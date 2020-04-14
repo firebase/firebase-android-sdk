@@ -15,6 +15,7 @@
 package com.google.firebase.crashlytics.internal.analytics;
 
 import android.os.Bundle;
+import androidx.annotation.NonNull;
 
 /**
  * AnalyticsReceiver which splits incoming analytics events by origin, sending those from the
@@ -37,7 +38,7 @@ public class BaseAnalyticsReceiver implements AnalyticsReceiver {
   }
 
   @Override
-  public void onEvent(String name, Bundle params) {
+  public void onEvent(@NonNull String name, @NonNull Bundle params) {
     final String origin = params.getString(EVENT_ORIGIN_KEY);
     if (CRASHLYTICS_ORIGIN.equals(origin)) {
       crashlyticsOriginAnalyticsReceiver.onEvent(name, params);

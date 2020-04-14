@@ -36,7 +36,7 @@ public class BreadcrumbAnalyticsReceiver implements AnalyticsReceiver, Breadcrum
   @Nullable private BreadcrumbHandler breadcrumbHandler;
 
   @Override
-  public void onEvent(String name, Bundle params) {
+  public void onEvent(@NonNull String name, @NonNull Bundle params) {
     final BreadcrumbHandler handler = breadcrumbHandler;
     if (handler != null) {
       try {

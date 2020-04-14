@@ -14,10 +14,25 @@
 
 package com.google.firebase.crashlytics.internal.analytics;
 
-import android.os.Bundle;
-import androidx.annotation.NonNull;
+import static org.junit.Assert.*;
 
-/** Receiver for Firebase Analytics events reported to Crashlytics. */
-public interface AnalyticsReceiver {
-  void onEvent(@NonNull String name, @NonNull Bundle params);
+import com.google.android.gms.tasks.Task;
+import org.junit.Before;
+import org.junit.Test;
+
+public class MissingFirebaseAnalyticsBridgeTest {
+
+  private MissingFirebaseAnalyticsBridge bridge;
+
+  @Before
+  public void setUp() throws Exception {
+    bridge = new MissingFirebaseAnalyticsBridge();
+  }
+
+  @Test
+  public void testGetAnalyticsTaskChainReturnsCompleteTask() {
+    final Task<Void> taskChain = bridge.getAnalyticsTaskChain();
+    assertTrue(taskChain.isComplete());
+    assertTrue(taskChain.isSuccessful());
+  }
 }
