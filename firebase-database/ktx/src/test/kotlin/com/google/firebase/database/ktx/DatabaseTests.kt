@@ -218,7 +218,7 @@ class MutableDataTests : BaseTestCase() {
                 goalkeeper = false,
                 avg_goals_per_game = 0.35
         )
-        val mutableData = createMutableData(data)
+        val mutableData = createMutableData(data.toMap())
         assertThat(mutableData.getValue<Player>()).isEqualTo(data)
     }
 }
