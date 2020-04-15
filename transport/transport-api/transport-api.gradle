@@ -21,10 +21,10 @@ firebaseLibrary{
 }
 
 android {
-    compileSdkVersion 28
+    compileSdkVersion project.targetSdkVersion
     defaultConfig {
         minSdkVersion 14
-        targetSdkVersion 28
+        targetSdkVersion project.targetSdkVersion
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 

@@ -20,17 +20,15 @@ firebaseLibrary {
     testLab.enabled = true
 }
 
-def androidVersion = 28
-
 android {
     adbOptions {
         timeOutInMs 60 * 1000
     }
 
-    compileSdkVersion androidVersion
+    compileSdkVersion project.targetSdkVersion
     defaultConfig {
         minSdkVersion 16
-        targetSdkVersion androidVersion
+        targetSdkVersion project.targetSdkVersion
         versionName version
 
         multiDexEnabled true
