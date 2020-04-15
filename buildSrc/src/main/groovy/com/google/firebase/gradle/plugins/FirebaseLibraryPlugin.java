@@ -63,6 +63,7 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
                           test.systemProperty("robolectric.dependency.repo.id", "central");
                           test.systemProperty(
                               "robolectric.dependency.repo.url", "https://repo1.maven.org/maven2");
+                          test.systemProperty("javax.net.ssl.trustStoreType", "JKS");
                         })));
 
     // skip debug tests in CI
