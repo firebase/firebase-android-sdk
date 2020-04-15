@@ -21,7 +21,7 @@ import org.robolectric.ParameterizedRobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
 @RunWith(ParameterizedRobolectricTestRunner.class)
-@Config(manifest = Config.NONE)
+@Config(manifest = Config.NONE, sdk = 29)
 public class MemoryLocalStoreTest extends LocalStoreTestCase {
 
   private QueryEngine queryEngine;
