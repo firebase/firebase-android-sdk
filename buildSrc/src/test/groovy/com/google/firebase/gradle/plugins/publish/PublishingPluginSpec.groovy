@@ -89,7 +89,7 @@ class PublishingPluginSpec extends Specification {
 
     List<Project> subprojects = []
 
-    final String rootProject = """
+    String rootProject = """
         buildscript {
             repositories {
                 google()
