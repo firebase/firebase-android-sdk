@@ -38,7 +38,13 @@ android {
             srcDir 'src/test/kotlin'
         }
     }
-    testOptions.unitTests.includeAndroidResources = true
+
+    testOptions.unitTests{
+        includeAndroidResources = true
+        all {
+            systemProperty 'javax.net.ssl.trustStoreType', 'JKS'
+        }
+    }
 }
 
 dependencies {

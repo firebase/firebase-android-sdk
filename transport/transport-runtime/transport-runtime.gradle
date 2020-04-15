@@ -35,10 +35,10 @@ firebaseLibrary {
 }
 
 android {
-    compileSdkVersion 28
+    compileSdkVersion project.targetSdkVersion
     defaultConfig {
-        minSdkVersion 14
-        targetSdkVersion 28
+        minSdkVersion project.minSdkVersion
+        targetSdkVersion project.targetSdkVersion
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     compileOptions {
@@ -52,7 +52,9 @@ android {
             }
         }
     }
-    testOptions.unitTests.includeAndroidResources = true
+    testOptions.unitTests {
+        includeAndroidResources = true
+    }
 }
 
 dependencies {
@@ -69,7 +71,7 @@ dependencies {
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation 'androidx.test:core:1.2.0'
     testImplementation 'androidx.test.ext:junit:1.1.1'
-    testImplementation 'org.robolectric:robolectric:4.2'
+    testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation 'org.mockito:mockito-core:2.25.0'
 
     androidTestImplementation 'junit:junit:4.13-beta-3'
