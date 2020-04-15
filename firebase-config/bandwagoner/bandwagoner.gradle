@@ -64,9 +64,11 @@ dependencies {
     // The alternative would be to make common an "api" dep of remote-config.
     // It should not matter for released artifacts.
     implementation project(":firebase-common")
+    implementation project(":firebase-components")
 
-    implementation('com.google.firebase:firebase-iid:20.0.1') {
+    implementation('com.google.firebase:firebase-iid:20.1.5') {
         exclude group: 'com.google.firebase', module: 'firebase-common'
+        exclude group: 'com.google.firebase', module: 'firebase-components'
     }
 
     implementation 'com.google.android.gms:play-services-basement:17.0.0'

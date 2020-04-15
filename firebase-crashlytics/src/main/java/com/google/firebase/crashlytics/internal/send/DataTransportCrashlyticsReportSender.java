@@ -18,6 +18,7 @@ import android.content.Context;
 import androidx.annotation.NonNull;
 import com.google.android.datatransport.Encoding;
 import com.google.android.datatransport.Event;
+import com.google.android.datatransport.Transformer;
 import com.google.android.datatransport.Transport;
 import com.google.android.datatransport.cct.CCTDestination;
 import com.google.android.datatransport.runtime.TransportRuntime;
@@ -41,8 +42,11 @@ public class DataTransportCrashlyticsReportSender {
   private static final String CRASHLYTICS_API_KEY =
       mergeStrings("AzSBpY4F0rHiHFdinTvM", "IayrSTFL9eJ69YeSUO2");
   private static final String CRASHLYTICS_TRANSPORT_NAME = "FIREBASE_CRASHLYTICS_REPORT";
+  private static final Transformer<CrashlyticsReport, byte[]> DEFAULT_TRANSFORM =
+      (r) -> TRANSFORM.reportToJson(r).getBytes(Charset.forName("UTF-8"));
 
   private final Transport<CrashlyticsReport> transport;
+  private final Transformer<CrashlyticsReport, byte[]> transportTransform;
 
   public static DataTransportCrashlyticsReportSender create(Context context) {
     TransportRuntime.initialize(context);
@@ -53,26 +57,31 @@ public class DataTransportCrashlyticsReportSender {
                 CRASHLYTICS_TRANSPORT_NAME,
                 CrashlyticsReport.class,
                 Encoding.of("json"),
-                r -> TRANSFORM.reportToJson(r).getBytes(Charset.forName("UTF-8")));
-    return new DataTransportCrashlyticsReportSender(transport);
+                DEFAULT_TRANSFORM);
+    return new DataTransportCrashlyticsReportSender(transport, DEFAULT_TRANSFORM);
   }
 
-  DataTransportCrashlyticsReportSender(Transport<CrashlyticsReport> transport) {
+  DataTransportCrashlyticsReportSender(
+      Transport<CrashlyticsReport> transport,
+      Transformer<CrashlyticsReport, byte[]> transportTransform) {
     this.transport = transport;
+    this.transportTransform = transportTransform;
   }
 
   @NonNull
   public Task<CrashlyticsReportWithSessionId> sendReport(
-      @NonNull CrashlyticsReportWithSessionId report) {
+      @NonNull CrashlyticsReportWithSessionId reportWithSessionId) {
+    final CrashlyticsReport report = reportWithSessionId.getReport();
+
     TaskCompletionSource<CrashlyticsReportWithSessionId> tcs = new TaskCompletionSource<>();
     transport.schedule(
-        Event.ofUrgent(report.getReport()),
+        Event.ofUrgent(report),
         error -> {
           if (error != null) {
             tcs.trySetException(error);
             return;
           }
-          tcs.trySetResult(report);
+          tcs.trySetResult(reportWithSessionId);
         });
     return tcs.getTask();
   }

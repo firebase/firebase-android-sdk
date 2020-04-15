@@ -17,6 +17,7 @@ package com.google.firebase.installations;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -82,7 +83,7 @@ public class FirebaseInstallationsTest {
   public static final String TEST_AUTH_TOKEN_3 = "fis.auth.token3";
   public static final String TEST_AUTH_TOKEN_4 = "fis.auth.token4";
 
-  public static final String TEST_API_KEY = "apiKey";
+  public static final String TEST_API_KEY = "AIzaSyabcdefghijklmnopqrstuvwxyz1234567";
 
   public static final String TEST_REFRESH_TOKEN = "1:test-refresh-token";
 

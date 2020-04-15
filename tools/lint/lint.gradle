@@ -19,12 +19,8 @@ plugins {
 def lintVersion = '26.4.1'
 
 dependencies {
-  compileOnly ("com.android.tools.lint:lint-api:$lintVersion") {
-    exclude group: "com.google.protobuf", module: "protobuf-java"
-  }
-  compileOnly ("com.android.tools.lint:lint-checks:$lintVersion") {
-    exclude group: "com.google.protobuf", module: "protobuf-java"
-  }
+  compileOnly "com.android.tools.lint:lint-api:$lintVersion"
+  compileOnly "com.android.tools.lint:lint-checks:$lintVersion"
 
   testImplementation "junit:junit:4.12"
   testImplementation ("com.android.tools.lint:lint:$lintVersion") {

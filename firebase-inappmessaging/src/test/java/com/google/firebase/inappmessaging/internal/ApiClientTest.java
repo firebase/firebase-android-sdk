@@ -26,14 +26,15 @@ import android.app.Application;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
+import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Tasks;
 import com.google.developers.mobile.targeting.proto.ClientSignalsProto.ClientSignals;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
+import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.iid.InstanceIdResult;
 import com.google.firebase.inappmessaging.internal.time.FakeClock;
 import com.google.firebase.inappmessaging.internal.time.SystemClock;
-import com.google.firebase.installations.FirebaseInstallationsApi;
-import com.google.firebase.installations.InstallationTokenResult;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.CampaignImpression;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.CampaignImpressionList;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.ClientAppInfo;
@@ -89,7 +90,7 @@ public class ApiClientTest {
   @Mock private FirebaseApp firebaseApp;
   @Mock private Application application;
   @Mock private PackageManager packageManager;
-  @Mock private FirebaseInstallationsApi firebaseInstallations;
+  @Mock private FirebaseInstanceId firebaseInstanceId;
   @Mock private DataCollectionHelper dataCollectionHelper;
   private ProviderInstaller providerInstaller;
   private FakeClock clock;
@@ -117,21 +118,28 @@ public class ApiClientTest {
             () -> mockGrpcClient,
             firebaseApp,
             application,
-            firebaseInstallations,
+            firebaseInstanceId,
             dataCollectionHelper,
             clock,
             providerInstaller);
     when(application.getPackageName()).thenReturn(PACKAGE_NAME);
     when(packageManager.getPackageInfo(PACKAGE_NAME, 0)).thenReturn(packageInfo);
-    when(firebaseInstallations.getId()).thenReturn(Tasks.forResult(INSTANCE_ID));
-    when(firebaseInstallations.getToken(false))
+    when(firebaseInstanceId.getInstanceId())
         .thenReturn(
             Tasks.forResult(
-                InstallationTokenResult.builder()
-                    .setToken(INSTANCE_TOKEN)
-                    .setTokenCreationTimestamp(1)
-                    .setTokenExpirationTimestamp(1)
-                    .build()));
+                new InstanceIdResult() {
+                  @NonNull
+                  @Override
+                  public String getId() {
+                    return INSTANCE_ID;
+                  }
+
+                  @NonNull
+                  @Override
+                  public String getToken() {
+                    return INSTANCE_TOKEN;
+                  }
+                }));
     TimeZone.setDefault(TimeZone.getTimeZone(TIME_ZONE));
   }
 
@@ -159,7 +167,7 @@ public class ApiClientTest {
   public void getFiams_doesNotCallGrpcClientWithEmptyIIDToken() {
     when(mockGrpcClient.fetchEligibleCampaigns(any(FetchEligibleCampaignsRequest.class)))
         .thenReturn(testFetchEligibleCampaignsResponse);
-    when(firebaseInstallations.getId()).thenReturn(Tasks.forResult(null));
+    when(firebaseInstanceId.getInstanceId()).thenReturn(Tasks.forResult(null));
 
     FetchEligibleCampaignsResponse response =
         apiClient.getFiams(campaignImpressionList).getResult();
@@ -172,7 +180,7 @@ public class ApiClientTest {
   public void getFiams_doesNotCallGrpcClientWithNullIIDToken() {
     when(mockGrpcClient.fetchEligibleCampaigns(any(FetchEligibleCampaignsRequest.class)))
         .thenReturn(testFetchEligibleCampaignsResponse);
-    when(firebaseInstallations.getId()).thenReturn(Tasks.forResult(null));
+    when(firebaseInstanceId.getInstanceId()).thenReturn(Tasks.forResult(null));
 
     FetchEligibleCampaignsResponse response =
         apiClient.getFiams(campaignImpressionList).getResult();

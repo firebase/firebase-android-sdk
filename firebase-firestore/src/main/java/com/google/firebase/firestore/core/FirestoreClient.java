@@ -67,6 +67,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
 
   private static final String LOG_TAG = "FirestoreClient";
+  private static final int MAX_CONCURRENT_LIMBO_RESOLUTIONS = 100;
 
   private final DatabaseInfo databaseInfo;
   private final CredentialsProvider credentialsProvider;
@@ -279,7 +280,7 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
     ConnectivityMonitor connectivityMonitor = new AndroidConnectivityMonitor(context);
     remoteStore = new RemoteStore(this, localStore, datastore, asyncQueue, connectivityMonitor);
 
-    syncEngine = new SyncEngine(localStore, remoteStore, user);
+    syncEngine = new SyncEngine(localStore, remoteStore, user, MAX_CONCURRENT_LIMBO_RESOLUTIONS);
     eventManager = new EventManager(syncEngine);
 
     // NOTE: RemoteStore depends on LocalStore (for persisting stream tokens, refilling mutation
