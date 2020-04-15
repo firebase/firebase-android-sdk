@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2020 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,15 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-apply plugin: 'java-library'
+package com.google.firebase.gradle.plugins;
 
+import groovy.lang.Closure;
+import java.util.function.Consumer;
 
-dependencies {
-    implementation 'com.google.errorprone:error_prone_check_api:2.3.2'
-    implementation 'com.google.auto.service:auto-service:1.0-rc4'
-    annotationProcessor 'com.google.auto.service:auto-service:1.0-rc4'
+public final class ClosureUtil {
 
-    testImplementation 'junit:junit:4.12'
-    testImplementation 'com.google.errorprone:error_prone_test_helpers:2.3.3'
-    testImplementation 'com.google.errorprone:javac:9+181-r4173-1'
+  private static final Object FAKE_THIS = new Object();
+
+  private ClosureUtil() {}
+
+  /** Create a groovy closure backed by a lambda. */
+  public static <T> Closure<T> closureOf(Consumer<T> action) {
+    return new Closure<T>(FAKE_THIS) {
+      void doCall(T t) {
+        action.accept(t);
+      }
+    };
+  }
 }

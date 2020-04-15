@@ -14,6 +14,8 @@
 
 package com.google.firebase.gradle.plugins;
 
+import static com.google.firebase.gradle.plugins.ClosureUtil.closureOf;
+
 import com.android.build.gradle.LibraryExtension;
 import com.android.build.gradle.api.AndroidSourceSet;
 import com.google.common.collect.ImmutableList;
@@ -50,6 +52,18 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
             types
                 .getByName("release")
                 .setSigningConfig(types.getByName("debug").getSigningConfig()));
+
+    android.testOptions(
+        options ->
+            options
+                .getUnitTests()
+                .all(
+                    closureOf(
+                        test -> {
+                          test.systemProperty("robolectric.dependency.repo.id", "central");
+                          test.systemProperty(
+                              "robolectric.dependency.repo.url", "https://repo1.maven.org/maven2");
+                        })));
 
     // skip debug tests in CI
     // TODO(vkryachko): provide ability for teams to control this if needed
