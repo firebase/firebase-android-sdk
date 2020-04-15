@@ -29,7 +29,7 @@ class LicenseResolverPluginSpec extends Specification {
     @Rule TemporaryFolder testProjectDir = new TemporaryFolder()
     File buildFile
 
-    final String buildConfig = """
+    String buildConfig = """
         buildscript {
             repositories {
                 google()

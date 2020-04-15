@@ -50,7 +50,7 @@ ext {
     errorproneVersion = '2.3.2'
     errorproneJavacVersion = '9+181-r4173-1'
     googleTruthVersion = '0.45'
-    robolectricVersion = '4.1'
+    robolectricVersion = '4.3.1'
 }
 
 apply plugin: com.google.firebase.gradle.plugins.publish.PublishingPlugin

@@ -37,10 +37,10 @@ protobuf {
 }
 
 android {
-    compileSdkVersion 28
+    compileSdkVersion project.targetSdkVersion
     defaultConfig {
-        minSdkVersion 14
-        targetSdkVersion 28
+        minSdkVersion project.minSdkVersion
+        targetSdkVersion project.targetSdkVersion
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         versionName version
     }
@@ -70,7 +70,7 @@ dependencies {
     testImplementation 'com.github.tomakehurst:wiremock:2.26.3'
     //Android compatible version of Apache httpclient.
     testImplementation 'org.apache.httpcomponents:httpclient-android:4.3.5.1'
-    testImplementation 'org.robolectric:robolectric:4.3.1'
+    testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation 'junit:junit:4.13-beta-2'
 
     androidTestImplementation 'androidx.test:runner:1.2.0'

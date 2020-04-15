@@ -38,6 +38,7 @@ android {
             srcDir 'src/test/kotlin'
         }
     }
+
     testOptions.unitTests.includeAndroidResources = true
 }
 
