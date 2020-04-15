@@ -18,7 +18,6 @@ import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.net.Uri;
 import android.text.TextUtils;
 import android.util.Log;
@@ -224,6 +223,7 @@ public abstract class NetworkRequest {
     return resultBody;
   }
 
+  @SuppressWarnings("deprecation")
   public void performRequestStart(String token) {
     if (mException != null) {
       resultCode = INITIALIZATION_EXCEPTION;
@@ -235,7 +235,7 @@ public abstract class NetworkRequest {
     }
     ConnectivityManager connMgr =
         (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-    NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
+    android.net.NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
     if (networkInfo == null || !networkInfo.isConnected()) {
       resultCode = NETWORK_UNAVAILABLE;
       mException = new SocketException("Network subsystem is unavailable");
@@ -286,10 +286,11 @@ public abstract class NetworkRequest {
     performRequest(authToken);
   }
 
+  @SuppressWarnings("deprecation")
   private boolean ensureNetworkAvailable(Context context) {
     ConnectivityManager connMgr =
         (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-    NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
+    android.net.NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
     if (networkInfo == null || !networkInfo.isConnected()) {
       mException = new SocketException("Network subsystem is unavailable");
       resultCode = NETWORK_UNAVAILABLE;
