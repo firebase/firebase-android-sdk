@@ -53,6 +53,7 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
                 .getByName("release")
                 .setSigningConfig(types.getByName("debug").getSigningConfig()));
 
+    // see https://github.com/robolectric/robolectric/issues/5456
     android.testOptions(
         options ->
             options

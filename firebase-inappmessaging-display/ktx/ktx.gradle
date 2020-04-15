@@ -39,12 +39,7 @@ android {
         }
     }
 
-    testOptions.unitTests{
-        includeAndroidResources = true
-        all {
-            systemProperty 'javax.net.ssl.trustStoreType', 'JKS'
-        }
-    }
+    testOptions.unitTests.includeAndroidResources = true
 }
 
 dependencies {
