@@ -62,7 +62,7 @@ dependencies {
     implementation 'com.google.dagger:dagger:2.27'
     implementation 'androidx.annotation:annotation:1.1.0'
 
-    compileOnly "com.google.auto.value:auto-value-annotations:1.6.5"
+    compileOnly "com.google.auto.value:auto-value-annotations:1.6.6"
 
     annotationProcessor "com.google.auto.value:auto-value:1.6.5"
     annotationProcessor 'com.google.dagger:dagger-compiler:2.24'
