@@ -66,7 +66,7 @@ dependencies {
     implementation 'com.google.android.gms:play-services-basement:17.0.0'
     implementation "com.google.android.gms:play-services-tasks:17.0.0"
 
-    api 'com.google.auto.value:auto-value-annotations:1.6.5'
+    compileOnly 'com.google.auto.value:auto-value-annotations:1.6.6'
     compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
 
     // needed for Kotlin detection to compile, but not necessarily present at runtime.
@@ -79,7 +79,7 @@ dependencies {
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation 'org.mockito:mockito-core:2.25.0'
 
-    annotationProcessor 'com.google.auto.value:auto-value:1.6.2'
+    annotationProcessor 'com.google.auto.value:auto-value:1.6.5'
 
     androidTestImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test:runner:1.2.0'
