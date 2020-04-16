@@ -15,6 +15,9 @@
 package com.google.firebase.inappmessaging.internal;
 
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.iid.InstanceIdResult;
 import com.google.firebase.inappmessaging.CommonTypesProto.TriggeringCondition;
 import com.google.firebase.inappmessaging.internal.injection.qualifiers.AppForeground;
 import com.google.firebase.inappmessaging.internal.injection.qualifiers.ProgrammaticTrigger;
@@ -36,6 +39,8 @@ import io.reactivex.flowables.ConnectableFlowable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
 import java.util.Locale;
+import java.util.concurrent.Callable;
+
 import javax.inject.Inject;
 
 /**
@@ -59,6 +64,8 @@ public class InAppMessageStreamManager {
   private final AnalyticsEventsManager analyticsEventsManager;
   private final TestDeviceHelper testDeviceHelper;
   private final AbtIntegrationHelper abtIntegrationHelper;
+  private final FirebaseInstanceId firebaseInstanceId;
+  private final DataCollectionHelper dataCollectionHelper;
 
   @Inject
   public InAppMessageStreamManager(
@@ -73,6 +80,8 @@ public class InAppMessageStreamManager {
       RateLimiterClient rateLimiterClient,
       @AppForeground RateLimit appForegroundRateLimit,
       TestDeviceHelper testDeviceHelper,
+      FirebaseInstanceId firebaseInstanceId,
+      DataCollectionHelper dataCollectionHelper,
       AbtIntegrationHelper abtIntegrationHelper) {
     this.appForegroundEventFlowable = appForegroundEventFlowable;
     this.programmaticTriggerEventFlowable = programmaticTriggerEventFlowable;
@@ -85,6 +94,8 @@ public class InAppMessageStreamManager {
     this.rateLimiterClient = rateLimiterClient;
     this.appForegroundRateLimit = appForegroundRateLimit;
     this.testDeviceHelper = testDeviceHelper;
+    this.dataCollectionHelper = dataCollectionHelper;
+    this.firebaseInstanceId = firebaseInstanceId;
     this.abtIntegrationHelper = abtIntegrationHelper;
   }
 
@@ -162,6 +173,7 @@ public class InAppMessageStreamManager {
             analyticsEventsManager.getAnalyticsEventsFlowable(),
             programmaticTriggerEventFlowable)
         .doOnNext(e -> Logging.logd("Event Triggered: " + e))
+        // The observeOn means that all closures downstream will be execured on the IO thread.
         .observeOn(schedulers.io())
         .concatMap(
             event -> {
@@ -232,22 +244,38 @@ public class InAppMessageStreamManager {
                       .defaultIfEmpty(CampaignImpressionList.getDefaultInstance())
                       .onErrorResumeNext(Maybe.just(CampaignImpressionList.getDefaultInstance()));
 
-              Function<CampaignImpressionList, Maybe<FetchEligibleCampaignsResponse>> serviceFetch =
-                  impressions ->
-                      taskToMaybe(apiClient.getFiams(impressions))
-                          .doOnSuccess(
-                              resp ->
-                                  Logging.logi(
-                                      String.format(
-                                          Locale.US,
-                                          "Successfully fetched %d messages from backend",
-                                          resp.getMessagesList().size())))
-                          .doOnSuccess(
-                              resp -> impressionStorageClient.clearImpressions(resp).subscribe())
-                          .doOnSuccess(analyticsEventsManager::updateContextualTriggers)
-                          .doOnSuccess(testDeviceHelper::processCampaignFetch)
-                          .doOnError(e -> Logging.logw("Service fetch error: " + e.getMessage()))
-                          .onErrorResumeNext(Maybe.empty()); // Absorb service failures
+              Maybe<InstanceIdResult> getIID = Maybe.fromCallable(() -> {
+                Task<InstanceIdResult> t = firebaseInstanceId.getInstanceId();
+                // This should be safe since these callbacks never happen on the UI thread.
+                Tasks.await(t);
+                if(t.isSuccessful() && t.getResult() != null) {
+                  return t.getResult();
+                } else {
+                  return null;
+                }
+              });
+
+              Function<CampaignImpressionList, Maybe<FetchEligibleCampaignsResponse>> serviceFetch = campaignImpressionList -> {
+                if (!dataCollectionHelper.isAutomaticDataCollectionEnabled()) {
+                  return Maybe.just(FetchEligibleCampaignsResponse.newBuilder().setExpirationEpochTimestampMillis(1).build());
+                }
+
+                return getIID.flatMap(iid -> Maybe.fromCallable(() -> apiClient.getFiams(iid, campaignImpressionList)))
+                        .doOnSuccess(
+                                resp ->
+                                        Logging.logi(
+                                                String.format(
+                                                        Locale.US,
+                                                        "Successfully fetched %d messages from backend",
+                                                        resp.getMessagesList().size())))
+                        .doOnSuccess(
+                                resp -> impressionStorageClient.clearImpressions(resp).subscribe())
+                        .doOnSuccess(analyticsEventsManager::updateContextualTriggers)
+                        .doOnSuccess(testDeviceHelper::processCampaignFetch)
+                        .doOnError(e -> Logging.logw("Service fetch error: " + e.getMessage()))
+                        .onErrorResumeNext(Maybe.empty()); // Absorb service failures
+              };
+
 
               if (shouldIgnoreCache(event)) {
                 Logging.logi(
@@ -268,6 +296,7 @@ public class InAppMessageStreamManager {
                   .flatMap(selectThickContent)
                   .toFlowable();
             })
+        //
         .observeOn(schedulers.mainThread()); // Updates are delivered on the main thread
   }
 

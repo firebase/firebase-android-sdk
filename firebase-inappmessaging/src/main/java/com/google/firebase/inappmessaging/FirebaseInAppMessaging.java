@@ -80,10 +80,14 @@ public class FirebaseInAppMessaging {
         "Starting InAppMessaging runtime with Instance ID "
             + FirebaseInstanceId.getInstance().getId());
 
+    // Nothing happens in RXJava until the Observable is subscribed to.
+    // We fake a subscription and throw it away.
     Disposable unused =
         inAppMessageStreamManager
             .createFirebaseInAppMessageStream()
-            .subscribe(FirebaseInAppMessaging.this::triggerInAppMessage);
+            .subscribe(
+                    //Note that because we have an ObserveOn(mainThread) on L273 of StreamManager, this closure will be invoked on the main thread
+                    FirebaseInAppMessaging.this::triggerInAppMessage);
   }
 
   /**
@@ -304,6 +308,7 @@ public class FirebaseInAppMessaging {
 
   private void triggerInAppMessage(TriggeredInAppMessage inAppMessage) {
     if (this.fiamDisplay != null) {
+      // The APIs that control the UI are going to be called on the main thread. Yay!
       fiamDisplay.displayMessage(
           inAppMessage.getInAppMessage(),
           displayCallbacksFactory.generateDisplayCallback(

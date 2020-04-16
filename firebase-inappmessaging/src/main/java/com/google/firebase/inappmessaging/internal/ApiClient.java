@@ -53,8 +53,6 @@ public class ApiClient {
   private final Lazy<GrpcClient> grpcClient;
   private final FirebaseApp firebaseApp;
   private final Application application;
-  private final FirebaseInstanceId firebaseInstanceId;
-  private final DataCollectionHelper dataCollectionHelper;
   private final Clock clock;
   private final ProviderInstaller providerInstaller;
 
@@ -62,55 +60,36 @@ public class ApiClient {
       Lazy<GrpcClient> grpcClient,
       FirebaseApp firebaseApp,
       Application application,
-      FirebaseInstanceId firebaseInstanceId,
-      DataCollectionHelper dataCollectionHelper,
       Clock clock,
       ProviderInstaller providerInstaller) {
     this.grpcClient = grpcClient;
     this.firebaseApp = firebaseApp;
     this.application = application;
-    this.firebaseInstanceId = firebaseInstanceId;
-    this.dataCollectionHelper = dataCollectionHelper;
     this.clock = clock;
     this.providerInstaller = providerInstaller;
   }
 
-  @VisibleForTesting
-  static FetchEligibleCampaignsResponse createCacheExpiringResponse() {
-    // Within the cache, we use '0' as a special case to 'never' expire. '1' is used when we want to
-    // retry the getFiams call on subsequent event triggers, and force the cache to always expire
-    return FetchEligibleCampaignsResponse.newBuilder().setExpirationEpochTimestampMillis(1).build();
-  }
 
-  Task<FetchEligibleCampaignsResponse> getFiams(CampaignImpressionList impressionList) {
-    if (!dataCollectionHelper.isAutomaticDataCollectionEnabled()) {
-      Logging.logi(DATA_COLLECTION_DISABLED_ERROR);
-      return Tasks.forResult(createCacheExpiringResponse());
-    }
+
+  // This layer need not reason about any asynchronousity at all.
+  // You should be able to write all code here like it was composed of blocking calls.
+  // This was you can manage all asynchronous behavior in the manager and choose what thread to run things on in one consolidated place.
+  FetchEligibleCampaignsResponse getFiams(InstanceIdResult instanceIdResult, CampaignImpressionList impressionList) {
     Logging.logi(FETCHING_CAMPAIGN_MESSAGE);
     providerInstaller.install();
-    return firebaseInstanceId
-        .getInstanceId()
-        .continueWith(
-            instanceIdResultTask -> {
-              InstanceIdResult instanceIdResult = instanceIdResultTask.getResult();
-              if (instanceIdResult == null) {
-                Logging.logw("InstanceID is null, not calling backend");
-                return createCacheExpiringResponse();
-              }
-              return withCacheExpirationSafeguards(
-                  grpcClient
-                      .get()
-                      .fetchEligibleCampaigns(
-                          FetchEligibleCampaignsRequest.newBuilder()
-                              // The project Id we expect is the gcm sender id
-                              .setProjectNumber(firebaseApp.getOptions().getGcmSenderId())
-                              .addAllAlreadySeenCampaigns(
-                                  impressionList.getAlreadySeenCampaignsList())
-                              .setClientSignals(getClientSignals())
-                              .setRequestingClientApp(getClientAppInfo(instanceIdResult))
-                              .build()));
-            });
+
+    return withCacheExpirationSafeguards(
+        grpcClient
+            .get()
+            .fetchEligibleCampaigns(
+                FetchEligibleCampaignsRequest.newBuilder()
+                    // The project Id we expect is the gcm sender id
+                    .setProjectNumber(firebaseApp.getOptions().getGcmSenderId())
+                    .addAllAlreadySeenCampaigns(
+                        impressionList.getAlreadySeenCampaignsList())
+                    .setClientSignals(getClientSignals())
+                    .setRequestingClientApp(getClientAppInfo(instanceIdResult))
+                    .build()));
   }
 
   private FetchEligibleCampaignsResponse withCacheExpirationSafeguards(
