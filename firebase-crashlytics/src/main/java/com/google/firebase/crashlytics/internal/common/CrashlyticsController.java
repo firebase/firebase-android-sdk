@@ -435,9 +435,10 @@ class CrashlyticsController {
                             // Data collection is enabled, so it's safe to send the report.
                             boolean dataCollectionToken = true;
                             sendSessionReports(appSettingsData, dataCollectionToken);
-                            reportingCoordinator.sendReports(
-                                executor, DataTransportState.getState(appSettingsData));
-                            return recordFatalFirebaseEventTask;
+                            return Tasks.whenAll(
+                                reportingCoordinator.sendReports(
+                                    executor, DataTransportState.getState(appSettingsData)),
+                                recordFatalFirebaseEventTask);
                           }
                         });
               }
