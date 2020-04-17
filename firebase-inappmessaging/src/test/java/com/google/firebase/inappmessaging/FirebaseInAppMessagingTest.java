@@ -239,8 +239,8 @@ public class FirebaseInAppMessagingTest {
             displayCallbacksFactory,
             listenerScheduler);
 
-    firebaseInAppMessaging.setAutomaticDataCollectionEnabled(true);
-    verify(dataCollectionHelper).setAutomaticDataCollectionEnabled(true);
+    firebaseInAppMessaging.setAutomaticDataCollectionEnabled(Boolean.TRUE);
+    verify(dataCollectionHelper).setAutomaticDataCollectionEnabled(Boolean.TRUE);
     assertThat(firebaseInAppMessaging.isAutomaticDataCollectionEnabled()).isTrue();
   }
 
@@ -254,8 +254,23 @@ public class FirebaseInAppMessagingTest {
             displayCallbacksFactory,
             listenerScheduler);
 
-    firebaseInAppMessaging.setAutomaticDataCollectionEnabled(false);
-    verify(dataCollectionHelper).setAutomaticDataCollectionEnabled(false);
+    firebaseInAppMessaging.setAutomaticDataCollectionEnabled(Boolean.FALSE);
+    verify(dataCollectionHelper).setAutomaticDataCollectionEnabled(Boolean.FALSE);
+    assertThat(firebaseInAppMessaging.isAutomaticDataCollectionEnabled()).isTrue();
+  }
+
+  @Test
+  public void automaticDataCollectionDisabling_clearsInDataCollectionHelper() {
+    firebaseInAppMessaging =
+        new FirebaseInAppMessaging(
+            inAppMessageStreamManager,
+            programaticContextualTriggers,
+            dataCollectionHelper,
+            displayCallbacksFactory,
+            listenerScheduler);
+
+    firebaseInAppMessaging.setAutomaticDataCollectionEnabled(null);
+    verify(dataCollectionHelper).setAutomaticDataCollectionEnabled(null);
   }
 
   @Test
