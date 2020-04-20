@@ -1,4 +1,4 @@
-// Copyright 2019 Google LLC
+// Copyright 2020 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,17 +14,26 @@
 
 package com.google.android.datatransport.runtime;
 
-import dagger.Module;
-import dagger.Provides;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-import javax.inject.Singleton;
+import static org.junit.Assert.fail;
 
-@Module
-abstract class ExecutionModule {
-  @Singleton
-  @Provides
-  static Executor executor() {
-    return new SafeLoggingExecutor(Executors.newSingleThreadExecutor());
+import androidx.test.ext.junit.runners.AndroidJUnit4;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+@RunWith(AndroidJUnit4.class)
+public class SafeLoggingExecutorTest {
+
+  private static final SafeLoggingExecutor EXECUTOR = new SafeLoggingExecutor(Runnable::run);
+
+  @Test
+  public void execute() {
+    try {
+      EXECUTOR.execute(
+          () -> {
+            throw new RuntimeException("Test exception");
+          });
+    } catch (Exception e) {
+      fail("Expected exception to be caught but was not: " + e);
+    }
   }
 }
