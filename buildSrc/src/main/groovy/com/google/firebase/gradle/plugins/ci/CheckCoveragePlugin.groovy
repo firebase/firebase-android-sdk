@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.gradle.plugins.measurement.coverage
+package com.google.firebase.gradle.plugins.ci
 
 import com.google.firebase.gradle.plugins.FirebaseLibraryExtension
 import com.google.firebase.gradle.plugins.FirebaseLibraryPlugin
