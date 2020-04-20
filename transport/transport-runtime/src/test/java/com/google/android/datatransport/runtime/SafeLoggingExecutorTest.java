@@ -26,7 +26,7 @@ public class SafeLoggingExecutorTest {
   private static final SafeLoggingExecutor EXECUTOR = new SafeLoggingExecutor(Runnable::run);
 
   @Test
-  public void execute() {
+  public void execute_shouldNotCrashThread() {
     try {
       EXECUTOR.execute(
           () -> {
