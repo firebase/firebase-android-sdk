@@ -30,7 +30,7 @@ def P(name, value):
 
 
 @stats.measure_call('gradle')
-def run(*args, gradle_opts='', workdir=None, gradle_bin_dir='.', check=True):
+def run(*args, gradle_opts='', workdir=None, check=True):
   """Invokes gradle with specified args and gradle_opts."""
   new_env = dict(os.environ)
   if gradle_opts:
@@ -39,7 +39,7 @@ def run(*args, gradle_opts='', workdir=None, gradle_bin_dir='.', check=True):
       'ADB_INSTALL_TIMEOUT'] = ADB_INSTALL_TIMEOUT  # 5 minutes, rather than 2 minutes
   stats.propagate_context_into(new_env)
 
-  command = [os.path.join(gradle_bin_dir, 'gradlew')] + list(args)
+  command = ['./gradlew'] + list(args)
   _logger.info('Executing gradle command: "%s" in directory: "%s"',
                " ".join(command), workdir if workdir else '.')
   return subprocess.run(

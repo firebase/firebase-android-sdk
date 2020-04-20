@@ -17,15 +17,10 @@ import logging
 import os
 import requests
 
-from fireci import prow_utils
-
 _logger = logging.getLogger('fireci.uploader')
 
 
-def post_report(
-    test_report,
-    metrics_service_url=os.getenv('METRICS_SERVICE_URL'),
-    access_token=prow_utils.gcloud_identity_token()):
+def post_report(test_report, metrics_service_url, access_token):
   """Post a report to the metrics service backend."""
 
   endpoint = _construct_request_endpoint()
