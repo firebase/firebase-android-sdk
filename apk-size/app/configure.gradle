@@ -1,0 +1,50 @@
+// Copyright 2020 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+
+repositories {
+    maven {
+        url '../../build/m2repository/'
+    }
+    google()
+    jcenter()
+}
+
+// firebase-inappmessaging-display fails with `java.lang.OutOfMemoryError (no error message)`
+// in task `:transformDexArchiveWithExternalLibsDexMergerForFirebase-inappmessaging-displayRelease`
+//
+// firebase-inappmessaging-display-ktx fails with `java.lang.OutOfMemoryError: GC overhead limit exceeded`
+// in task `:transformClassesAndResourcesWithR8ForFirebase-inappmessaging-display-ktxAggressive`
+//
+// Setting max heap size to 16g in gradle.properties and android.dexOptions did not help.
+// When running with `gradle --continue`, failing tasks did not timeout. Thus, disable for now.
+// TODO (yifany): Needs further investigation.
+def blacklist = [
+        'firebase-inappmessaging-display',
+        'firebase-inappmessaging-display-ktx'
+]
+if (project.hasProperty('sdks')) {
+    project.android {
+        sdks.split(',').each { sdk ->
+            def (groupId, artifactId, version) = sdk.split(':')
+            if (blacklist.contains(artifactId)) {
+                return
+            }
+            productFlavors.create(artifactId) {
+                dimension 'apkSize'
+            }
+            dependencies.add("${artifactId}Implementation", sdk)
+        }
+    }
+}
