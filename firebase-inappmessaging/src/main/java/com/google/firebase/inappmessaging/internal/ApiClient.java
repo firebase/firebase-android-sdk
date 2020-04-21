@@ -65,10 +65,6 @@ public class ApiClient {
     this.providerInstaller = providerInstaller;
   }
 
-  // This layer need not reason about any asynchronousity at all.
-  // You should be able to write all code here like it was composed of blocking calls.
-  // This was you can manage all asynchronous behavior in the manager and choose what thread to run
-  // things on in one consolidated place.
   FetchEligibleCampaignsResponse getFiams(
       InstanceIdResult instanceIdResult, CampaignImpressionList impressionList) {
     Logging.logi(FETCHING_CAMPAIGN_MESSAGE);

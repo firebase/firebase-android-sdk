@@ -80,8 +80,6 @@ public class FirebaseInAppMessaging {
         "Starting InAppMessaging runtime with Instance ID "
             + FirebaseInstanceId.getInstance().getId());
 
-    // Nothing happens in RXJava until the Observable is subscribed to.
-    // We fake a subscription and throw it away.
     Disposable unused =
         inAppMessageStreamManager
             .createFirebaseInAppMessageStream()
