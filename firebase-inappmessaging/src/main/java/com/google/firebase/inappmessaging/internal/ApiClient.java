@@ -42,8 +42,6 @@ import javax.annotation.Nullable;
 @FirebaseAppScope
 public class ApiClient {
 
-  private static final String DATA_COLLECTION_DISABLED_ERROR =
-      "Automatic data collection is disabled, not attempting campaign fetch from service.";
   private static final String FETCHING_CAMPAIGN_MESSAGE = "Fetching campaigns from service.";
 
   private final Lazy<GrpcClient> grpcClient;
@@ -113,17 +111,11 @@ public class ApiClient {
   }
 
   private ClientAppInfo getClientAppInfo(InstanceIdResult instanceIdResult) {
-    ClientAppInfo.Builder builder =
-        ClientAppInfo.newBuilder().setGmpAppId(firebaseApp.getOptions().getApplicationId());
-    String instanceId = instanceIdResult.getId();
-    String instanceToken = instanceIdResult.getToken();
-    if (!TextUtils.isEmpty(instanceId) && !TextUtils.isEmpty(instanceToken)) {
-      builder.setAppInstanceId(instanceId);
-      builder.setAppInstanceIdToken(instanceToken);
-    } else {
-      Logging.logw("Empty instance ID or instance token");
-    }
-    return builder.build();
+    return ClientAppInfo.newBuilder()
+        .setGmpAppId(firebaseApp.getOptions().getApplicationId())
+        .setAppInstanceId(instanceIdResult.getId())
+        .setAppInstanceIdToken(instanceIdResult.getToken())
+        .build();
   }
 
   @Nullable

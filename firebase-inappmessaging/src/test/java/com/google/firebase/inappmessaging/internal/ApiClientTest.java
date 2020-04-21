@@ -139,43 +139,6 @@ public class ApiClientTest {
         .isEqualTo(testFetchEligibleCampaignsResponse);
   }
 
-  //  @Test
-  //  public void getFiams_doesntFetchIfDataCollectionisNotEnabled() {
-  //    when(dataCollectionHelper.isAutomaticDataCollectionEnabled()).thenReturn(false);
-  //
-  //    FetchEligibleCampaignsResponse response =
-  //        apiClient.getFiams(IID_RESULT, campaignImpressionList);
-  //    assertThat(response).isEqualTo(cacheExpiringResponse);
-  //    verify(mockGrpcClient, times(0))
-  //        .fetchEligibleCampaigns(fetchEligibleCampaignsRequestArgcaptor.capture());
-  //  }
-  //
-  //  @Test
-  //  public void getFiams_doesNotCallGrpcClientWithEmptyIIDToken() {
-  //    when(mockGrpcClient.fetchEligibleCampaigns(any(FetchEligibleCampaignsRequest.class)))
-  //        .thenReturn(testFetchEligibleCampaignsResponse);
-  //    when(firebaseInstanceId.getInstanceId()).thenReturn(Tasks.forResult(null));
-  //
-  //    FetchEligibleCampaignsResponse response =
-  //        apiClient.getFiams(IID_RESULT, campaignImpressionList).getResult();
-  //    assertThat(response).isEqualTo(cacheExpiringResponse);
-  //    verify(mockGrpcClient, times(0))
-  //        .fetchEligibleCampaigns(fetchEligibleCampaignsRequestArgcaptor.capture());
-  //  }
-  //
-  //  @Test
-  //  public void getFiams_doesNotCallGrpcClientWithNullIIDToken() {
-  //    when(mockGrpcClient.fetchEligibleCampaigns(any(FetchEligibleCampaignsRequest.class)))
-  //        .thenReturn(testFetchEligibleCampaignsResponse);
-  //    when(firebaseInstanceId.getInstanceId()).thenReturn(Tasks.forResult(null));
-  //
-  //    FetchEligibleCampaignsResponse response =
-  //        apiClient.getFiams(IID_RESULT, campaignImpressionList).getResult();
-  //    assertThat(response).isEqualTo(cacheExpiringResponse);
-  //    verify(mockGrpcClient, times(0))
-  //        .fetchEligibleCampaigns(fetchEligibleCampaignsRequestArgcaptor.capture());
-  //  }
-
   @Test
   public void getFiams_constructsCampaignsRequestWithProjectNumberFromGcmSenderId() {
     when(mockGrpcClient.fetchEligibleCampaigns(fetchEligibleCampaignsRequestArgcaptor.capture()))

@@ -14,6 +14,8 @@
 
 package com.google.firebase.inappmessaging.internal;
 
+import android.text.TextUtils;
+import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.iid.InstanceIdResult;
@@ -38,6 +40,7 @@ import io.reactivex.flowables.ConnectableFlowable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
 import java.util.Locale;
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 
 /**
@@ -245,14 +248,18 @@ public class InAppMessageStreamManager {
               Function<CampaignImpressionList, Maybe<FetchEligibleCampaignsResponse>> serviceFetch =
                   campaignImpressionList -> {
                     if (!dataCollectionHelper.isAutomaticDataCollectionEnabled()) {
-                      return Maybe.just(
-                          FetchEligibleCampaignsResponse.newBuilder()
-                              .setExpirationEpochTimestampMillis(1)
-                              .build());
+                      Logging.logi(
+                          "Automatic data collection is disabled, not attempting campaign fetch from service.");
+                      return Maybe.just(cacheExpiringResponse());
                     }
+
                     // blocking get occurs on the IO thread because that's what we observeOn above
                     return Maybe.fromCallable(getIID::blockingGet)
-                        .map(iid -> apiClient.getFiams(iid, campaignImpressionList))
+                        .map(
+                            iid ->
+                                validIID(iid)
+                                    ? apiClient.getFiams(iid, campaignImpressionList)
+                                    : cacheExpiringResponse())
                         .doOnSuccess(
                             resp ->
                                 Logging.logi(
@@ -366,6 +373,17 @@ public class InAppMessageStreamManager {
     }
 
     return Maybe.just(new TriggeredInAppMessage(inAppMessage, event));
+  }
+
+  private static boolean validIID(@Nullable InstanceIdResult iid) {
+    return iid != null && !TextUtils.isEmpty(iid.getId()) && !TextUtils.isEmpty(iid.getToken());
+  }
+
+  @VisibleForTesting
+  static FetchEligibleCampaignsResponse cacheExpiringResponse() {
+    // Within the cache, we use '0' as a special case to 'never' expire. '1' is used when we want to
+    // retry the getFiams call on subsequent event triggers, and force the cache to always expire
+    return FetchEligibleCampaignsResponse.newBuilder().setExpirationEpochTimestampMillis(1).build();
   }
 
   private static <T> Maybe<T> taskToMaybe(Task<T> task) {

@@ -245,6 +245,38 @@ public class InAppMessageStreamManagerTest {
   }
 
   @Test
+  public void stream_onAppOpen_dataCollectionDisabled_doesNotFetch() {
+    when(dataCollectionHelper.isAutomaticDataCollectionEnabled()).thenReturn(false);
+    appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
+
+    subscriber.assertNoValues();
+    verify(mockApiClient, times(0)).getFiams(any(), any());
+    verify(campaignCacheClient, times(1)).put(InAppMessageStreamManager.cacheExpiringResponse());
+  }
+
+  @Test
+  public void stream_onAppOpen_withEmptyIID_doesNotFetch() {
+    when(firebaseInstanceId.getInstanceId())
+        .thenReturn(
+            Tasks.forResult(
+                new InstanceIdResult() {
+                  @Override
+                  public String getId() {
+                    return "";
+                  }
+
+                  @Override
+                  public String getToken() {
+                    return "";
+                  }
+                }));
+
+    appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
+    verify(mockApiClient, times(0)).getFiams(any(), any());
+    verify(campaignCacheClient, times(1)).put(InAppMessageStreamManager.cacheExpiringResponse());
+  }
+
+  @Test
   public void stream_onAnalyticsEvent_notifiesSubscriber() {
     when(mockApiClient.getFiams(IID_RESULT, CAMPAIGN_IMPRESSIONS)).thenReturn(campaignsResponse);
 
