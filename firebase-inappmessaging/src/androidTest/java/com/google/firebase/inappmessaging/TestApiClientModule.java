@@ -80,14 +80,11 @@ public class TestApiClientModule {
   ApiClient providesApiClient(
       Lazy<GrpcClient> grpcClient,
       Application application,
-      DataCollectionHelper dataCollectionHelper,
       ProviderInstaller providerInstaller) {
     return new ApiClient(
         grpcClient,
         firebaseApp,
         application,
-        firebaseInstanceId,
-        dataCollectionHelper,
         clock,
         providerInstaller);
   }
