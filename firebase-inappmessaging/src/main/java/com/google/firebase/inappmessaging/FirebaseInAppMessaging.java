@@ -83,8 +83,7 @@ public class FirebaseInAppMessaging {
     Disposable unused =
         inAppMessageStreamManager
             .createFirebaseInAppMessageStream()
-            .subscribe(
-                FirebaseInAppMessaging.this::triggerInAppMessage);
+            .subscribe(FirebaseInAppMessaging.this::triggerInAppMessage);
   }
 
   /**
