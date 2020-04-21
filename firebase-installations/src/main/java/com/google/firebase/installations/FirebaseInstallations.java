@@ -161,9 +161,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   /** Returns the Project Id or Project Number for the Firebase Project. */
   @Nullable
   String getProjectIdentifier() {
-    return TextUtils.isEmpty(firebaseApp.getOptions().getProjectId())
-        ? firebaseApp.getOptions().getGcmSenderId()
-        : firebaseApp.getOptions().getProjectId();
+    return firebaseApp.getOptions().getProjectId();
   }
 
   /**
