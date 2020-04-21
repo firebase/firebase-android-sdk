@@ -85,8 +85,6 @@ public class ApiClientModule {
         grpcClient,
         firebaseApp,
         application,
-        firebaseInstanceId,
-        dataCollectionHelper,
         clock,
         providerInstaller);
   }

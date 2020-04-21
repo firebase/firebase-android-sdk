@@ -40,6 +40,7 @@ import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
 import java.util.Locale;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
@@ -173,7 +174,6 @@ public class InAppMessageStreamManager {
             analyticsEventsManager.getAnalyticsEventsFlowable(),
             programmaticTriggerEventFlowable)
         .doOnNext(e -> Logging.logd("Event Triggered: " + e))
-        // The observeOn means that all closures downstream will be execured on the IO thread.
         .observeOn(schedulers.io())
         .concatMap(
             event -> {
@@ -260,7 +260,7 @@ public class InAppMessageStreamManager {
                   return Maybe.just(FetchEligibleCampaignsResponse.newBuilder().setExpirationEpochTimestampMillis(1).build());
                 }
 
-                return getIID.flatMap(iid -> Maybe.fromCallable(() -> apiClient.getFiams(iid, campaignImpressionList)))
+                return getIID.map(iid -> apiClient.getFiams(iid, campaignImpressionList))
                         .doOnSuccess(
                                 resp ->
                                         Logging.logi(
