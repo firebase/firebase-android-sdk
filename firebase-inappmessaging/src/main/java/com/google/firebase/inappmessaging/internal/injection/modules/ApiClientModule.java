@@ -79,7 +79,6 @@ public class ApiClientModule {
   ApiClient providesApiClient(
       Lazy<GrpcClient> grpcClient,
       Application application,
-      DataCollectionHelper dataCollectionHelper,
       ProviderInstaller providerInstaller) {
     return new ApiClient(grpcClient, firebaseApp, application, clock, providerInstaller);
   }
