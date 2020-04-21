@@ -17,10 +17,10 @@ package com.google.firebase.installations;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -966,6 +966,7 @@ public class FirebaseInstallationsTest {
           entry.isRegistered());
     }
   }
+
   @Test
   public void testAppIdCheck() {
     // valid appid
@@ -978,8 +979,8 @@ public class FirebaseInstallationsTest {
     // invalid appid
     assertFalse(Utils.isValidAppIdFormat("abc.abc.abc"));
     assertFalse(
-            Utils.isValidAppIdFormat(
-                    "com.google.firebase.samples.messaging.advanced")); // using pakage name as App ID
+        Utils.isValidAppIdFormat(
+            "com.google.firebase.samples.messaging.advanced")); // using pakage name as App ID
   }
 
   @Test
@@ -994,14 +995,14 @@ public class FirebaseInstallationsTest {
     assertTrue(Utils.isValidApiKeyFormat("AIzaSyAnLA7NfeLquW1tJFpx_eQCxoX-oo6YyIs"));
     // invalid ApiKey
     assertFalse(
-            Utils.isValidApiKeyFormat("BIzaSyabcdefghijklmnopqrstuvwxyz1234567")); // wrong prefix
+        Utils.isValidApiKeyFormat("BIzaSyabcdefghijklmnopqrstuvwxyz1234567")); // wrong prefix
     assertFalse(Utils.isValidApiKeyFormat("AIzaSyabcdefghijklmnopqrstuvwxyz")); // wrong length
     assertFalse(Utils.isValidApiKeyFormat("AIzaSyabcdefghijklmno:qrstuvwxyzabcdefg")); // wrong char
     assertFalse(Utils.isValidApiKeyFormat("AIzaSyabcdefghijklmno qrstuvwxyzabcdefg")); // wrong char
     assertFalse(
-            Utils.isValidApiKeyFormat(
-                    "AAAAdpB7anM:APA91bFFK03DIT8y3l5uymwbKcUDJdYqTRSP9Qcxg8SU5kKPalEpObdx0C0xv8gQttdWlL"
-                            + "W4hLvvHA0JoDKA6Lrvbi-edUjFCPY_WJkuvHxFwGWXjnj4yI4sPQ27mXuSVIyAbgX4aTK0QY"
-                            + "pIKq2j1NBi7ZU75gunQg")); // using FCM server key as API key.
+        Utils.isValidApiKeyFormat(
+            "AAAAdpB7anM:APA91bFFK03DIT8y3l5uymwbKcUDJdYqTRSP9Qcxg8SU5kKPalEpObdx0C0xv8gQttdWlL"
+                + "W4hLvvHA0JoDKA6Lrvbi-edUjFCPY_WJkuvHxFwGWXjnj4yI4sPQ27mXuSVIyAbgX4aTK0QY"
+                + "pIKq2j1NBi7ZU75gunQg")); // using FCM server key as API key.
   }
 }
