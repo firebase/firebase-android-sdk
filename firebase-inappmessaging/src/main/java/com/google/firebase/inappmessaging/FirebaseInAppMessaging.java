@@ -86,8 +86,7 @@ public class FirebaseInAppMessaging {
         inAppMessageStreamManager
             .createFirebaseInAppMessageStream()
             .subscribe(
-                    //Note that because we have an ObserveOn(mainThread) on L273 of StreamManager, this closure will be invoked on the main thread
-                    FirebaseInAppMessaging.this::triggerInAppMessage);
+                FirebaseInAppMessaging.this::triggerInAppMessage);
   }
 
   /**

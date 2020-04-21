@@ -19,12 +19,8 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.os.Build.VERSION;
 import android.text.TextUtils;
-import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.Tasks;
-import com.google.common.annotations.VisibleForTesting;
 import com.google.developers.mobile.targeting.proto.ClientSignalsProto.ClientSignals;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.iid.InstanceIdResult;
 import com.google.firebase.inappmessaging.internal.injection.scopes.FirebaseAppScope;
 import com.google.firebase.inappmessaging.internal.time.Clock;
@@ -69,12 +65,12 @@ public class ApiClient {
     this.providerInstaller = providerInstaller;
   }
 
-
-
   // This layer need not reason about any asynchronousity at all.
   // You should be able to write all code here like it was composed of blocking calls.
-  // This was you can manage all asynchronous behavior in the manager and choose what thread to run things on in one consolidated place.
-  FetchEligibleCampaignsResponse getFiams(InstanceIdResult instanceIdResult, CampaignImpressionList impressionList) {
+  // This was you can manage all asynchronous behavior in the manager and choose what thread to run
+  // things on in one consolidated place.
+  FetchEligibleCampaignsResponse getFiams(
+      InstanceIdResult instanceIdResult, CampaignImpressionList impressionList) {
     Logging.logi(FETCHING_CAMPAIGN_MESSAGE);
     providerInstaller.install();
 
@@ -85,8 +81,7 @@ public class ApiClient {
                 FetchEligibleCampaignsRequest.newBuilder()
                     // The project Id we expect is the gcm sender id
                     .setProjectNumber(firebaseApp.getOptions().getGcmSenderId())
-                    .addAllAlreadySeenCampaigns(
-                        impressionList.getAlreadySeenCampaignsList())
+                    .addAllAlreadySeenCampaigns(impressionList.getAlreadySeenCampaignsList())
                     .setClientSignals(getClientSignals())
                     .setRequestingClientApp(getClientAppInfo(instanceIdResult))
                     .build()));

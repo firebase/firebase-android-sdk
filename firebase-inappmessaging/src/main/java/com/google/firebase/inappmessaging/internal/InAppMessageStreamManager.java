@@ -15,7 +15,6 @@
 package com.google.firebase.inappmessaging.internal;
 
 import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.iid.InstanceIdResult;
 import com.google.firebase.inappmessaging.CommonTypesProto.TriggeringCondition;
@@ -39,9 +38,6 @@ import io.reactivex.flowables.ConnectableFlowable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
 import java.util.Locale;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-
 import javax.inject.Inject;
 
 /**
@@ -244,38 +240,33 @@ public class InAppMessageStreamManager {
                       .defaultIfEmpty(CampaignImpressionList.getDefaultInstance())
                       .onErrorResumeNext(Maybe.just(CampaignImpressionList.getDefaultInstance()));
 
-              Maybe<InstanceIdResult> getIID = Maybe.fromCallable(() -> {
-                Task<InstanceIdResult> t = firebaseInstanceId.getInstanceId();
-                // This should be safe since these callbacks never happen on the UI thread.
-                Tasks.await(t);
-                if(t.isSuccessful() && t.getResult() != null) {
-                  return t.getResult();
-                } else {
-                  return null;
-                }
-              });
+              Maybe<InstanceIdResult> getIID = taskToMaybe(firebaseInstanceId.getInstanceId());
 
-              Function<CampaignImpressionList, Maybe<FetchEligibleCampaignsResponse>> serviceFetch = campaignImpressionList -> {
-                if (!dataCollectionHelper.isAutomaticDataCollectionEnabled()) {
-                  return Maybe.just(FetchEligibleCampaignsResponse.newBuilder().setExpirationEpochTimestampMillis(1).build());
-                }
-
-                return getIID.map(iid -> apiClient.getFiams(iid, campaignImpressionList))
+              Function<CampaignImpressionList, Maybe<FetchEligibleCampaignsResponse>> serviceFetch =
+                  campaignImpressionList -> {
+                    if (!dataCollectionHelper.isAutomaticDataCollectionEnabled()) {
+                      return Maybe.just(
+                          FetchEligibleCampaignsResponse.newBuilder()
+                              .setExpirationEpochTimestampMillis(1)
+                              .build());
+                    }
+                    // blocking get occurs on the IO thread because that's what we observeOn above
+                    return Maybe.fromCallable(getIID::blockingGet)
+                        .map(iid -> apiClient.getFiams(iid, campaignImpressionList))
                         .doOnSuccess(
-                                resp ->
-                                        Logging.logi(
-                                                String.format(
-                                                        Locale.US,
-                                                        "Successfully fetched %d messages from backend",
-                                                        resp.getMessagesList().size())))
+                            resp ->
+                                Logging.logi(
+                                    String.format(
+                                        Locale.US,
+                                        "Successfully fetched %d messages from backend",
+                                        resp.getMessagesList().size())))
                         .doOnSuccess(
-                                resp -> impressionStorageClient.clearImpressions(resp).subscribe())
+                            resp -> impressionStorageClient.clearImpressions(resp).subscribe())
                         .doOnSuccess(analyticsEventsManager::updateContextualTriggers)
                         .doOnSuccess(testDeviceHelper::processCampaignFetch)
                         .doOnError(e -> Logging.logw("Service fetch error: " + e.getMessage()))
                         .onErrorResumeNext(Maybe.empty()); // Absorb service failures
-              };
-
+                  };
 
               if (shouldIgnoreCache(event)) {
                 Logging.logi(
@@ -296,7 +287,6 @@ public class InAppMessageStreamManager {
                   .flatMap(selectThickContent)
                   .toFlowable();
             })
-        //
         .observeOn(schedulers.mainThread()); // Updates are delivered on the main thread
   }
 

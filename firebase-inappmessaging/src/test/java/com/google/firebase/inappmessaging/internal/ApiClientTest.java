@@ -27,7 +27,6 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import androidx.annotation.NonNull;
-import com.google.android.gms.tasks.Tasks;
 import com.google.developers.mobile.targeting.proto.ClientSignalsProto.ClientSignals;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
@@ -61,19 +60,20 @@ public class ApiClientTest {
   private static final String CAMPAIGN_ID = "campaign_id";
   private static final String INSTANCE_ID = "instance_id";
   private static final String INSTANCE_TOKEN = "instance_token";
-  private static final InstanceIdResult IID_RESULT = new InstanceIdResult() {
-    @NonNull
-    @Override
-    public String getId() {
-      return INSTANCE_ID;
-    }
+  private static final InstanceIdResult IID_RESULT =
+      new InstanceIdResult() {
+        @NonNull
+        @Override
+        public String getId() {
+          return INSTANCE_ID;
+        }
 
-    @NonNull
-    @Override
-    public String getToken() {
-      return INSTANCE_TOKEN;
-    }
-  };
+        @NonNull
+        @Override
+        public String getToken() {
+          return INSTANCE_TOKEN;
+        }
+      };
   private static final CampaignImpressionList campaignImpressionList =
       CampaignImpressionList.newBuilder()
           .addAlreadySeenCampaigns(
@@ -124,12 +124,7 @@ public class ApiClientTest {
             .build();
 
     apiClient =
-        new ApiClient(
-            () -> mockGrpcClient,
-            firebaseApp,
-            application,
-            clock,
-            providerInstaller);
+        new ApiClient(() -> mockGrpcClient, firebaseApp, application, clock, providerInstaller);
     when(application.getPackageName()).thenReturn(PACKAGE_NAME);
     when(packageManager.getPackageInfo(PACKAGE_NAME, 0)).thenReturn(packageInfo);
     TimeZone.setDefault(TimeZone.getTimeZone(TIME_ZONE));
@@ -144,42 +139,42 @@ public class ApiClientTest {
         .isEqualTo(testFetchEligibleCampaignsResponse);
   }
 
-//  @Test
-//  public void getFiams_doesntFetchIfDataCollectionisNotEnabled() {
-//    when(dataCollectionHelper.isAutomaticDataCollectionEnabled()).thenReturn(false);
-//
-//    FetchEligibleCampaignsResponse response =
-//        apiClient.getFiams(IID_RESULT, campaignImpressionList);
-//    assertThat(response).isEqualTo(cacheExpiringResponse);
-//    verify(mockGrpcClient, times(0))
-//        .fetchEligibleCampaigns(fetchEligibleCampaignsRequestArgcaptor.capture());
-//  }
-//
-//  @Test
-//  public void getFiams_doesNotCallGrpcClientWithEmptyIIDToken() {
-//    when(mockGrpcClient.fetchEligibleCampaigns(any(FetchEligibleCampaignsRequest.class)))
-//        .thenReturn(testFetchEligibleCampaignsResponse);
-//    when(firebaseInstanceId.getInstanceId()).thenReturn(Tasks.forResult(null));
-//
-//    FetchEligibleCampaignsResponse response =
-//        apiClient.getFiams(IID_RESULT, campaignImpressionList).getResult();
-//    assertThat(response).isEqualTo(cacheExpiringResponse);
-//    verify(mockGrpcClient, times(0))
-//        .fetchEligibleCampaigns(fetchEligibleCampaignsRequestArgcaptor.capture());
-//  }
-//
-//  @Test
-//  public void getFiams_doesNotCallGrpcClientWithNullIIDToken() {
-//    when(mockGrpcClient.fetchEligibleCampaigns(any(FetchEligibleCampaignsRequest.class)))
-//        .thenReturn(testFetchEligibleCampaignsResponse);
-//    when(firebaseInstanceId.getInstanceId()).thenReturn(Tasks.forResult(null));
-//
-//    FetchEligibleCampaignsResponse response =
-//        apiClient.getFiams(IID_RESULT, campaignImpressionList).getResult();
-//    assertThat(response).isEqualTo(cacheExpiringResponse);
-//    verify(mockGrpcClient, times(0))
-//        .fetchEligibleCampaigns(fetchEligibleCampaignsRequestArgcaptor.capture());
-//  }
+  //  @Test
+  //  public void getFiams_doesntFetchIfDataCollectionisNotEnabled() {
+  //    when(dataCollectionHelper.isAutomaticDataCollectionEnabled()).thenReturn(false);
+  //
+  //    FetchEligibleCampaignsResponse response =
+  //        apiClient.getFiams(IID_RESULT, campaignImpressionList);
+  //    assertThat(response).isEqualTo(cacheExpiringResponse);
+  //    verify(mockGrpcClient, times(0))
+  //        .fetchEligibleCampaigns(fetchEligibleCampaignsRequestArgcaptor.capture());
+  //  }
+  //
+  //  @Test
+  //  public void getFiams_doesNotCallGrpcClientWithEmptyIIDToken() {
+  //    when(mockGrpcClient.fetchEligibleCampaigns(any(FetchEligibleCampaignsRequest.class)))
+  //        .thenReturn(testFetchEligibleCampaignsResponse);
+  //    when(firebaseInstanceId.getInstanceId()).thenReturn(Tasks.forResult(null));
+  //
+  //    FetchEligibleCampaignsResponse response =
+  //        apiClient.getFiams(IID_RESULT, campaignImpressionList).getResult();
+  //    assertThat(response).isEqualTo(cacheExpiringResponse);
+  //    verify(mockGrpcClient, times(0))
+  //        .fetchEligibleCampaigns(fetchEligibleCampaignsRequestArgcaptor.capture());
+  //  }
+  //
+  //  @Test
+  //  public void getFiams_doesNotCallGrpcClientWithNullIIDToken() {
+  //    when(mockGrpcClient.fetchEligibleCampaigns(any(FetchEligibleCampaignsRequest.class)))
+  //        .thenReturn(testFetchEligibleCampaignsResponse);
+  //    when(firebaseInstanceId.getInstanceId()).thenReturn(Tasks.forResult(null));
+  //
+  //    FetchEligibleCampaignsResponse response =
+  //        apiClient.getFiams(IID_RESULT, campaignImpressionList).getResult();
+  //    assertThat(response).isEqualTo(cacheExpiringResponse);
+  //    verify(mockGrpcClient, times(0))
+  //        .fetchEligibleCampaigns(fetchEligibleCampaignsRequestArgcaptor.capture());
+  //  }
 
   @Test
   public void getFiams_constructsCampaignsRequestWithProjectNumberFromGcmSenderId() {

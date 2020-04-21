@@ -18,9 +18,7 @@ import com.google.firebase.inappmessaging.internal.injection.scopes.FirebaseAppS
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.FetchEligibleCampaignsRequest;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.FetchEligibleCampaignsResponse;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.InAppMessagingSdkServingGrpc.InAppMessagingSdkServingBlockingStub;
-
 import java.util.concurrent.TimeUnit;
-
 import javax.inject.Inject;
 
 /**

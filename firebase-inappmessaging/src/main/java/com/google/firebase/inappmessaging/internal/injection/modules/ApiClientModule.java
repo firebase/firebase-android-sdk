@@ -81,11 +81,6 @@ public class ApiClientModule {
       Application application,
       DataCollectionHelper dataCollectionHelper,
       ProviderInstaller providerInstaller) {
-    return new ApiClient(
-        grpcClient,
-        firebaseApp,
-        application,
-        clock,
-        providerInstaller);
+    return new ApiClient(grpcClient, firebaseApp, application, clock, providerInstaller);
   }
 }
