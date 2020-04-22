@@ -12,7 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-ext {
-    targetSdkVersion = 29
-    minSdkVersion = 14
+apply plugin: "com.android.application"
+apply from: "default.gradle"
+android {
+    flavorDimensions "apkSize"
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
 }
+
+apply from: "src/base/base.gradle"
+apply from: "configure.gradle"

@@ -32,7 +32,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.app.Application;
+import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.iid.InstanceIdResult;
 import com.google.firebase.inappmessaging.CommonTypesProto.Event;
 import com.google.firebase.inappmessaging.CommonTypesProto.Priority;
 import com.google.firebase.inappmessaging.CommonTypesProto.TriggeringCondition;
@@ -76,6 +79,8 @@ public class InAppMessageStreamManagerTest {
   private static final long PAST = 1000000;
   private static final long NOW = PAST + 100000;
   private static final long FUTURE = NOW + 1000000;
+  private static final String INSTANCE_ID = "instance_id";
+  private static final String INSTANCE_TOKEN = "instance_token";
 
   private static final TriggeringCondition.Builder ON_ANALYTICS_TRIGGER =
       TriggeringCondition.newBuilder().setEvent(Event.newBuilder().setName(ANALYTICS_EVENT_NAME));
@@ -134,6 +139,21 @@ public class InAppMessageStreamManagerTest {
           .setLimiterKey(LIMITER_KEY)
           .setTimeToLiveMillis(TimeUnit.DAYS.toMillis(1))
           .build();
+  private static final InstanceIdResult IID_RESULT =
+      new InstanceIdResult() {
+        @NonNull
+        @Override
+        public String getId() {
+          return INSTANCE_ID;
+        }
+
+        @NonNull
+        @Override
+        public String getToken() {
+          return INSTANCE_TOKEN;
+        }
+      };
+
   @Mock private ApiClient mockApiClient;
   @Mock private Application application;
   @Mock private CampaignCacheClient campaignCacheClient;
@@ -142,6 +162,8 @@ public class InAppMessageStreamManagerTest {
   @Mock private AbtIntegrationHelper abtIntegrationHelper;
   @Mock private RateLimiterClient rateLimiterClient;
   @Mock private AnalyticsEventsManager analyticsEventsManager;
+  @Mock private FirebaseInstanceId firebaseInstanceId;
+  @Mock private DataCollectionHelper dataCollectionHelper;
   @Captor private ArgumentCaptor<CampaignImpressionList> campaignImpressionListArgumentCaptor;
 
   private InAppMessageStreamManager streamManager;
@@ -195,9 +217,12 @@ public class InAppMessageStreamManagerTest {
             rateLimiterClient,
             appForegroundRateLimit,
             testDeviceHelper,
+            firebaseInstanceId,
+            dataCollectionHelper,
             abtIntegrationHelper);
     subscriber = streamManager.createFirebaseInAppMessageStream().test();
     when(application.getApplicationContext()).thenReturn(application);
+    when(dataCollectionHelper.isAutomaticDataCollectionEnabled()).thenReturn(true);
     when(impressionStorageClient.clearImpressions(any(FetchEligibleCampaignsResponse.class)))
         .thenReturn(Completable.complete());
     when(rateLimiterClient.isRateLimited(appForegroundRateLimit)).thenReturn(Single.just(false));
@@ -207,12 +232,12 @@ public class InAppMessageStreamManagerTest {
     when(impressionStorageClient.isImpressed(any(ThickContent.class)))
         .thenReturn(Single.just(false));
     when(impressionStorageClient.getAllImpressions()).thenReturn(Maybe.just(CAMPAIGN_IMPRESSIONS));
+    when(firebaseInstanceId.getInstanceId()).thenReturn(Tasks.forResult(IID_RESULT));
   }
 
   @Test
   public void stream_onAppOpen_notifiesSubscriber() {
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS))
-        .thenReturn(Tasks.forResult(campaignsResponse));
+    when(mockApiClient.getFiams(IID_RESULT, CAMPAIGN_IMPRESSIONS)).thenReturn(campaignsResponse);
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
 
@@ -220,9 +245,40 @@ public class InAppMessageStreamManagerTest {
   }
 
   @Test
+  public void stream_onAppOpen_dataCollectionDisabled_doesNotFetch() {
+    when(dataCollectionHelper.isAutomaticDataCollectionEnabled()).thenReturn(false);
+    appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
+
+    subscriber.assertNoValues();
+    verify(mockApiClient, times(0)).getFiams(any(), any());
+    verify(campaignCacheClient, times(1)).put(InAppMessageStreamManager.cacheExpiringResponse());
+  }
+
+  @Test
+  public void stream_onAppOpen_withEmptyIID_doesNotFetch() {
+    when(firebaseInstanceId.getInstanceId())
+        .thenReturn(
+            Tasks.forResult(
+                new InstanceIdResult() {
+                  @Override
+                  public String getId() {
+                    return "";
+                  }
+
+                  @Override
+                  public String getToken() {
+                    return "";
+                  }
+                }));
+
+    appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
+    verify(mockApiClient, times(0)).getFiams(any(), any());
+    verify(campaignCacheClient, times(1)).put(InAppMessageStreamManager.cacheExpiringResponse());
+  }
+
+  @Test
   public void stream_onAnalyticsEvent_notifiesSubscriber() {
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS))
-        .thenReturn(Tasks.forResult(campaignsResponse));
+    when(mockApiClient.getFiams(IID_RESULT, CAMPAIGN_IMPRESSIONS)).thenReturn(campaignsResponse);
 
     analyticsEmitter.onNext(ANALYTICS_EVENT_NAME);
 
@@ -231,8 +287,7 @@ public class InAppMessageStreamManagerTest {
 
   @Test
   public void stream_onProgrammaticTrigger_notifiesSubscriber() {
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS))
-        .thenReturn(Tasks.forResult(campaignsResponse));
+    when(mockApiClient.getFiams(IID_RESULT, CAMPAIGN_IMPRESSIONS)).thenReturn(campaignsResponse);
 
     programmaticTriggerEmitter.onNext(ANALYTICS_EVENT_NAME);
 
@@ -241,8 +296,7 @@ public class InAppMessageStreamManagerTest {
 
   @Test
   public void stream_onAppOpen_remainsOpen() {
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS))
-        .thenReturn(Tasks.forResult(campaignsResponse));
+    when(mockApiClient.getFiams(IID_RESULT, CAMPAIGN_IMPRESSIONS)).thenReturn(campaignsResponse);
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
 
@@ -252,8 +306,7 @@ public class InAppMessageStreamManagerTest {
   @Test
   public void stream_onUnrelatedForegroundEvent_doesNotTrigger() {
     String unrelatedAnalyticsEvent = "some_other_event";
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS))
-        .thenReturn(Tasks.forResult(campaignsResponse));
+    when(mockApiClient.getFiams(IID_RESULT, CAMPAIGN_IMPRESSIONS)).thenReturn(campaignsResponse);
 
     appForegroundEmitter.onNext(unrelatedAnalyticsEvent);
 
@@ -263,8 +316,7 @@ public class InAppMessageStreamManagerTest {
   @Test
   public void stream_onUnrelatedAnalyticsEvent_doesNotTrigger() {
     String unrelatedAnalyticsEvent = "some_other_event";
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS))
-        .thenReturn(Tasks.forResult(campaignsResponse));
+    when(mockApiClient.getFiams(IID_RESULT, CAMPAIGN_IMPRESSIONS)).thenReturn(campaignsResponse);
 
     analyticsEmitter.onNext(unrelatedAnalyticsEvent);
 
@@ -288,7 +340,7 @@ public class InAppMessageStreamManagerTest {
             .addMessages(t)
             .build();
 
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(Tasks.forResult(r));
+    when(mockApiClient.getFiams(IID_RESULT, CAMPAIGN_IMPRESSIONS)).thenReturn(r);
 
     analyticsEmitter.onNext(ANALYTICS_EVENT_NAME);
 
@@ -312,7 +364,7 @@ public class InAppMessageStreamManagerTest {
             .addMessages(t)
             .build();
 
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(Tasks.forResult(r));
+    when(mockApiClient.getFiams(IID_RESULT, CAMPAIGN_IMPRESSIONS)).thenReturn(r);
 
     analyticsEmitter.onNext(ANALYTICS_EVENT_NAME);
 
@@ -336,7 +388,7 @@ public class InAppMessageStreamManagerTest {
             .addMessages(t)
             .build();
 
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(Tasks.forResult(r));
+    when(mockApiClient.getFiams(IID_RESULT, CAMPAIGN_IMPRESSIONS)).thenReturn(r);
 
     analyticsEmitter.onNext(ANALYTICS_EVENT_NAME);
 
@@ -361,7 +413,7 @@ public class InAppMessageStreamManagerTest {
             .addMessages(t)
             .build();
 
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(Tasks.forResult(r));
+    when(mockApiClient.getFiams(IID_RESULT, CAMPAIGN_IMPRESSIONS)).thenReturn(r);
 
     analyticsEmitter.onNext(ANALYTICS_EVENT_NAME);
 
@@ -387,7 +439,7 @@ public class InAppMessageStreamManagerTest {
             .addMessages(t)
             .build();
 
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(Tasks.forResult(r));
+    when(mockApiClient.getFiams(IID_RESULT, CAMPAIGN_IMPRESSIONS)).thenReturn(r);
 
     analyticsEmitter.onNext(ANALYTICS_EVENT_NAME);
 
@@ -412,7 +464,7 @@ public class InAppMessageStreamManagerTest {
             .addMessages(t)
             .build();
 
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(Tasks.forResult(r));
+    when(mockApiClient.getFiams(IID_RESULT, CAMPAIGN_IMPRESSIONS)).thenReturn(r);
 
     analyticsEmitter.onNext(ANALYTICS_EVENT_NAME);
 
@@ -436,7 +488,7 @@ public class InAppMessageStreamManagerTest {
             .addMessages(t)
             .build();
 
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(Tasks.forResult(r));
+    when(mockApiClient.getFiams(IID_RESULT, CAMPAIGN_IMPRESSIONS)).thenReturn(r);
 
     analyticsEmitter.onNext(ANALYTICS_EVENT_NAME);
 
@@ -459,7 +511,7 @@ public class InAppMessageStreamManagerTest {
             .addMessages(highPriorityContent)
             .addMessages(testContent)
             .build();
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(Tasks.forResult(r));
+    when(mockApiClient.getFiams(IID_RESULT, CAMPAIGN_IMPRESSIONS)).thenReturn(r);
 
     analyticsEmitter.onNext(ANALYTICS_EVENT_NAME);
 
@@ -470,8 +522,7 @@ public class InAppMessageStreamManagerTest {
   @Test
   public void stream_onApiClientFailure_absorbsErrors() {
     Throwable t = new StatusRuntimeException(Status.DATA_LOSS);
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS))
-        .thenReturn(Tasks.forException(new Exception(t)));
+    when(mockApiClient.getFiams(IID_RESULT, CAMPAIGN_IMPRESSIONS)).thenThrow(t);
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
 
@@ -491,8 +542,7 @@ public class InAppMessageStreamManagerTest {
 
   @Test
   public void stream_onServiceFetchSuccess_cachesValue() {
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS))
-        .thenReturn(Tasks.forResult(campaignsResponse));
+    when(mockApiClient.getFiams(IID_RESULT, CAMPAIGN_IMPRESSIONS)).thenReturn(campaignsResponse);
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
 
@@ -501,8 +551,7 @@ public class InAppMessageStreamManagerTest {
 
   @Test
   public void stream_onServiceFetchSuccess_updatesContextualTriggers() {
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS))
-        .thenReturn(Tasks.forResult(campaignsResponse));
+    when(mockApiClient.getFiams(IID_RESULT, CAMPAIGN_IMPRESSIONS)).thenReturn(campaignsResponse);
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
     verify(analyticsEventsManager).updateContextualTriggers(campaignsResponse);
@@ -510,7 +559,8 @@ public class InAppMessageStreamManagerTest {
 
   @Test
   public void stream_onServiceFetchFailure_doesNotCacheValue() {
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenThrow(new RuntimeException("e"));
+    when(mockApiClient.getFiams(IID_RESULT, CAMPAIGN_IMPRESSIONS))
+        .thenThrow(new RuntimeException("e"));
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
 
@@ -519,8 +569,7 @@ public class InAppMessageStreamManagerTest {
 
   @Test
   public void stream_whenAppInstallIsFresh_doesNotCacheValue() {
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS))
-        .thenReturn(Tasks.forResult(campaignsResponse));
+    when(mockApiClient.getFiams(IID_RESULT, CAMPAIGN_IMPRESSIONS)).thenReturn(campaignsResponse);
     when(testDeviceHelper.isAppInstallFresh()).thenReturn(true);
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
@@ -530,8 +579,7 @@ public class InAppMessageStreamManagerTest {
 
   @Test
   public void stream_whenDeviceIsInTestMode_doesNotCacheValue() {
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS))
-        .thenReturn(Tasks.forResult(campaignsResponse));
+    when(mockApiClient.getFiams(IID_RESULT, CAMPAIGN_IMPRESSIONS)).thenReturn(campaignsResponse);
     when(testDeviceHelper.isDeviceInTestMode()).thenReturn(true);
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
@@ -542,8 +590,7 @@ public class InAppMessageStreamManagerTest {
   @Test
   public void stream_onCacheReadFailure_notifiesValueFetchedFromService() {
     when(campaignCacheClient.get()).thenReturn(Maybe.error(new NullPointerException()));
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS))
-        .thenReturn(Tasks.forResult(campaignsResponse));
+    when(mockApiClient.getFiams(IID_RESULT, CAMPAIGN_IMPRESSIONS)).thenReturn(campaignsResponse);
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
 
@@ -553,8 +600,8 @@ public class InAppMessageStreamManagerTest {
   @Test
   public void stream_onCacheAndApiFail_absorbsFailure() {
     when(campaignCacheClient.get()).thenReturn(Maybe.error(new NullPointerException()));
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS))
-        .thenReturn(Tasks.forException(new NullPointerException()));
+    when(mockApiClient.getFiams(IID_RESULT, CAMPAIGN_IMPRESSIONS))
+        .thenThrow(new NullPointerException());
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
 
@@ -567,8 +614,7 @@ public class InAppMessageStreamManagerTest {
   public void stream_onCacheWriteFailure_AbsorbsError() {
     when(campaignCacheClient.put(any(FetchEligibleCampaignsResponse.class)))
         .thenReturn(Completable.error(new NullPointerException()));
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS))
-        .thenReturn(Tasks.forResult(campaignsResponse));
+    when(mockApiClient.getFiams(IID_RESULT, CAMPAIGN_IMPRESSIONS)).thenReturn(campaignsResponse);
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
 
@@ -579,8 +625,7 @@ public class InAppMessageStreamManagerTest {
   public void stream_whenCampaignImpressed_filtersCampaign() {
     when(impressionStorageClient.isImpressed(any(ThickContent.class)))
         .thenReturn(Single.just(true));
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS))
-        .thenReturn(Tasks.forResult(campaignsResponse));
+    when(mockApiClient.getFiams(IID_RESULT, CAMPAIGN_IMPRESSIONS)).thenReturn(campaignsResponse);
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
 
@@ -591,8 +636,7 @@ public class InAppMessageStreamManagerTest {
   public void stream_whenCampaignImpressionStoreFails_doesNotFilterCampaign() {
     when(impressionStorageClient.isImpressed(any(ThickContent.class)))
         .thenReturn(Single.error(new Exception("e1")));
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS))
-        .thenReturn(Tasks.forResult(campaignsResponse));
+    when(mockApiClient.getFiams(IID_RESULT, CAMPAIGN_IMPRESSIONS)).thenReturn(campaignsResponse);
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
 
@@ -603,8 +647,7 @@ public class InAppMessageStreamManagerTest {
   public void stream_whenCampaignImpressionStoreFail_doesNotFilterCampaign() {
     when(impressionStorageClient.isImpressed(any(ThickContent.class)))
         .thenReturn(Single.error(new Exception("e1")));
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS))
-        .thenReturn(Tasks.forResult(campaignsResponse));
+    when(mockApiClient.getFiams(IID_RESULT, CAMPAIGN_IMPRESSIONS)).thenReturn(campaignsResponse);
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
 
@@ -615,8 +658,8 @@ public class InAppMessageStreamManagerTest {
   public void stream_whenCampaignImpressionStoreFails_absorbsError() {
     when(impressionStorageClient.getAllImpressions())
         .thenReturn(Maybe.error(new NullPointerException()));
-    when(mockApiClient.getFiams(any(CampaignImpressionList.class)))
-        .thenReturn(Tasks.forResult(campaignsResponse));
+    when(mockApiClient.getFiams(any(InstanceIdResult.class), any(CampaignImpressionList.class)))
+        .thenReturn(campaignsResponse);
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
 
@@ -627,8 +670,9 @@ public class InAppMessageStreamManagerTest {
   public void stream_whenCampaignImpressionStoreFails_wiresEmptyImpressionList() {
     when(impressionStorageClient.getAllImpressions())
         .thenReturn(Maybe.error(new NullPointerException()));
-    when(mockApiClient.getFiams(campaignImpressionListArgumentCaptor.capture()))
-        .thenReturn(Tasks.forResult(campaignsResponse));
+    when(mockApiClient.getFiams(
+            any(InstanceIdResult.class), campaignImpressionListArgumentCaptor.capture()))
+        .thenReturn(campaignsResponse);
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
 
@@ -638,8 +682,7 @@ public class InAppMessageStreamManagerTest {
 
   @Test
   public void stream_whenAppOpenRateLimited_doesNotTrigger() {
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS))
-        .thenReturn(Tasks.forResult(campaignsResponse));
+    when(mockApiClient.getFiams(IID_RESULT, CAMPAIGN_IMPRESSIONS)).thenReturn(campaignsResponse);
     when(rateLimiterClient.isRateLimited(appForegroundRateLimit)).thenReturn(Single.just(true));
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
@@ -668,7 +711,7 @@ public class InAppMessageStreamManagerTest {
             .setExpirationEpochTimestampMillis(FUTURE)
             .addMessages(testMessageContent)
             .build();
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(Tasks.forResult(response));
+    when(mockApiClient.getFiams(IID_RESULT, CAMPAIGN_IMPRESSIONS)).thenReturn(response);
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
 
@@ -696,15 +739,14 @@ public class InAppMessageStreamManagerTest {
             .addMessages(testMessageContent)
             .build();
 
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(Tasks.forResult(r));
+    when(mockApiClient.getFiams(IID_RESULT, CAMPAIGN_IMPRESSIONS)).thenReturn(r);
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
     assertExpectedMessageTriggered(subscriber, testTriggered);
   }
 
   @Test
   public void stream_whenRateLimitingClientFails_triggers() {
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS))
-        .thenReturn(Tasks.forResult(campaignsResponse));
+    when(mockApiClient.getFiams(IID_RESULT, CAMPAIGN_IMPRESSIONS)).thenReturn(campaignsResponse);
     when(rateLimiterClient.isRateLimited(appForegroundRateLimit))
         .thenReturn(Single.error(new NullPointerException("e1")));
 
@@ -714,8 +756,7 @@ public class InAppMessageStreamManagerTest {
 
   @Test
   public void stream_whenAppOpenRateLimited_notifiesAnalyticsSubscriber() {
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS))
-        .thenReturn(Tasks.forResult(campaignsResponse));
+    when(mockApiClient.getFiams(IID_RESULT, CAMPAIGN_IMPRESSIONS)).thenReturn(campaignsResponse);
     when(rateLimiterClient.isRateLimited(appForegroundRateLimit)).thenReturn(Single.just(true));
 
     analyticsEmitter.onNext(ANALYTICS_EVENT_NAME);

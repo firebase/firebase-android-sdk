@@ -63,6 +63,12 @@ Firebase Android libraries exercise all three types of tests recommended by the
 Depending on the requirements of the specific project, some or all of these
 tests may be used to support changes.
 
+> :warning: **Running tests with errorprone**
+>
+> To run with errorprone add `withErrorProne` to the command line, e.g.
+>
+> `./gradlew :<firebase-project>:check withErrorProne`.
+
 ### Unit Testing
 
 These are tests that run on your machine's local Java Virtual Machine (JVM). At
