@@ -77,17 +77,7 @@ public class ApiClientModule {
   @Provides
   @FirebaseAppScope
   ApiClient providesApiClient(
-      Lazy<GrpcClient> grpcClient,
-      Application application,
-      DataCollectionHelper dataCollectionHelper,
-      ProviderInstaller providerInstaller) {
-    return new ApiClient(
-        grpcClient,
-        firebaseApp,
-        application,
-        firebaseInstanceId,
-        dataCollectionHelper,
-        clock,
-        providerInstaller);
+      Lazy<GrpcClient> grpcClient, Application application, ProviderInstaller providerInstaller) {
+    return new ApiClient(grpcClient, firebaseApp, application, clock, providerInstaller);
   }
 }

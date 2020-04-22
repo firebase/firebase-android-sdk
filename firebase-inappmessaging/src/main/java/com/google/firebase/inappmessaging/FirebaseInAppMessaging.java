@@ -342,6 +342,7 @@ public class FirebaseInAppMessaging {
 
   private void triggerInAppMessage(TriggeredInAppMessage inAppMessage) {
     if (this.fiamDisplay != null) {
+      // The APIs that control the UI are going to be called on the main thread. Yay!
       fiamDisplay.displayMessage(
           inAppMessage.getInAppMessage(),
           displayCallbacksFactory.generateDisplayCallback(
