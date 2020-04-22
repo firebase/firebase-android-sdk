@@ -254,7 +254,7 @@ public class InAppMessageStreamManager {
                     }
 
                     // blocking get occurs on the IO thread because that's what we observeOn above
-                    return Maybe.fromCallable(getIID::blockingGet)
+                    return getIID
                         .filter(InAppMessageStreamManager::validIID)
                         .map(iid -> apiClient.getFiams(iid, campaignImpressionList))
                         .switchIfEmpty(Maybe.just(cacheExpiringResponse()))
