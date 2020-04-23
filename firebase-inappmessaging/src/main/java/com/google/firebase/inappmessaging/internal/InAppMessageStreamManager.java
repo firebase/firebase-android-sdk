@@ -243,7 +243,9 @@ public class InAppMessageStreamManager {
                       .defaultIfEmpty(CampaignImpressionList.getDefaultInstance())
                       .onErrorResumeNext(Maybe.just(CampaignImpressionList.getDefaultInstance()));
 
-              Maybe<InstanceIdResult> getIID = taskToMaybe(firebaseInstanceId.getInstanceId());
+              // we need to observe on IO here to override the default behavior coming from Tasks
+              Maybe<InstanceIdResult> getIID =
+                  taskToMaybe(firebaseInstanceId.getInstanceId()).observeOn(schedulers.io());
 
               Function<CampaignImpressionList, Maybe<FetchEligibleCampaignsResponse>> serviceFetch =
                   campaignImpressionList -> {
@@ -253,8 +255,7 @@ public class InAppMessageStreamManager {
                       return Maybe.just(cacheExpiringResponse());
                     }
 
-                    // blocking get occurs on the IO thread because that's what we observeOn above
-                    return Maybe.fromCallable(getIID::blockingGet)
+                    return getIID
                         .filter(InAppMessageStreamManager::validIID)
                         .map(iid -> apiClient.getFiams(iid, campaignImpressionList))
                         .switchIfEmpty(Maybe.just(cacheExpiringResponse()))
