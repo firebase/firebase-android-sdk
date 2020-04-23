@@ -14,7 +14,7 @@
 
 package com.google.firebase.gradle.plugins.publish
 
-import com.google.firebase.gradle.plugins.publish.Publisher.Mode
+import com.google.firebase.gradle.plugins.publish.Mode
 import groovy.text.SimpleTemplateEngine
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
