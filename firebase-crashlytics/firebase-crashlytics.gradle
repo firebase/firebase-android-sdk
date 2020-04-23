@@ -14,6 +14,7 @@
 
 plugins {
     id 'firebase-library'
+    id 'LicenseResolverPlugin'
 }
 
 firebaseLibrary {
@@ -45,6 +46,11 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+}
+
+thirdPartyLicenses {
+    add 'Protocol Buffers', "file://${projectDir}/third_party_licenses/protocol_buffers/LICENSE"
+    add 'Tape', "file://${projectDir}/third_party_licenses/tape/LICENSE"
 }
 
 dependencies {
