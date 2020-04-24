@@ -40,7 +40,7 @@ public class SQLiteSpecTest extends SpecTestCase {
 
   @Override
   protected SQLiteComponentProvider initializeComponentProvider(
-      ComponentProvider.Configuration configuration, final boolean garbageCollectionEnabled) {
+      ComponentProvider.Configuration configuration, boolean garbageCollectionEnabled) {
     SQLiteComponentProvider provider = new SQLiteComponentProvider();
     provider.initialize(configuration);
     return provider;

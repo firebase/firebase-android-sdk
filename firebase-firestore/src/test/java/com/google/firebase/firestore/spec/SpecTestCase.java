@@ -242,7 +242,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
   //
 
   protected abstract ComponentProvider initializeComponentProvider(
-      ComponentProvider.Configuration configuration, final boolean garbageCollectionEnabled);
+      ComponentProvider.Configuration configuration, boolean garbageCollectionEnabled);
 
   private boolean shouldRun(Set<String> tags) {
     for (String tag : tags) {

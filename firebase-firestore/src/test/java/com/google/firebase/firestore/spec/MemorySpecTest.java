@@ -40,7 +40,7 @@ public class MemorySpecTest extends SpecTestCase {
 
   @Override
   protected MemoryComponentProvider initializeComponentProvider(
-      ComponentProvider.Configuration configuration, final boolean garbageCollectionEnabled) {
+      ComponentProvider.Configuration configuration, boolean garbageCollectionEnabled) {
     MemoryComponentProvider provider =
         new MemoryComponentProvider() {
           @Override
