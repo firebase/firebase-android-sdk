@@ -14,8 +14,8 @@
 
 package com.google.firebase.firestore.spec;
 
-import com.google.firebase.firestore.local.Persistence;
-import com.google.firebase.firestore.local.PersistenceTestHelpers;
+import com.google.firebase.firestore.core.ComponentProvider;
+import com.google.firebase.firestore.core.SQLiteComponentProvider;
 import java.util.Set;
 import org.json.JSONObject;
 import org.junit.runner.RunWith;
@@ -27,23 +27,23 @@ import org.robolectric.annotation.Config;
 public class SQLiteSpecTest extends SpecTestCase {
 
   private static final String EAGER_GC = "eager-gc";
-  private String databaseName;
 
   @Override
   protected void specSetUp(JSONObject config) {
-    databaseName = PersistenceTestHelpers.nextSQLiteDatabaseName();
     super.specSetUp(config);
   }
 
   @Override
   protected void specTearDown() throws Exception {
-    databaseName = null;
     super.specTearDown();
   }
 
   @Override
-  Persistence getPersistence(boolean garbageCollectionEnabled) {
-    return PersistenceTestHelpers.createSQLitePersistence(databaseName);
+  protected SQLiteComponentProvider initializeComponentProvider(
+      ComponentProvider.Configuration configuration, boolean garbageCollectionEnabled) {
+    SQLiteComponentProvider provider = new SQLiteComponentProvider();
+    provider.initialize(configuration);
+    return provider;
   }
 
   @Override

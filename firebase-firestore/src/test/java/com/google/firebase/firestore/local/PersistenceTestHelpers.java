@@ -16,6 +16,7 @@ package com.google.firebase.firestore.local;
 
 import android.content.Context;
 import androidx.test.core.app.ApplicationProvider;
+import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.remote.RemoteSerializer;
 
@@ -28,6 +29,14 @@ public final class PersistenceTestHelpers {
     return "test-" + databaseNameCounter++;
   }
 
+  public static DatabaseInfo nextDatabaseInfo() {
+    return new DatabaseInfo(
+        DatabaseId.forDatabase("project", "database"),
+        nextSQLiteDatabaseName(),
+        "localhost",
+        /* sslEnabled= */ false);
+  }
+
   public static SQLitePersistence createSQLitePersistence(String name) {
     return openSQLitePersistence(name, LruGarbageCollector.Params.Default());
   }
@@ -37,7 +46,7 @@ public final class PersistenceTestHelpers {
    * @return a new SQLitePersistence with an empty database and an up-to-date schema.
    */
   public static SQLitePersistence createSQLitePersistence() {
-    return createSQLitePersistence(LruGarbageCollector.Params.Default());
+    return openSQLitePersistence(nextSQLiteDatabaseName(), LruGarbageCollector.Params.Default());
   }
 
   public static SQLitePersistence createSQLitePersistence(LruGarbageCollector.Params params) {
@@ -52,10 +61,6 @@ public final class PersistenceTestHelpers {
     MemoryPersistence persistence = MemoryPersistence.createEagerGcMemoryPersistence();
     persistence.start();
     return persistence;
-  }
-
-  public static MemoryPersistence createLRUMemoryPersistence() {
-    return createLRUMemoryPersistence(LruGarbageCollector.Params.Default());
   }
 
   public static MemoryPersistence createLRUMemoryPersistence(LruGarbageCollector.Params params) {
