@@ -39,7 +39,10 @@ import com.google.common.collect.Sets;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.auth.User;
+import com.google.firebase.firestore.core.ComponentProvider;
+import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.core.DocumentViewChange;
 import com.google.firebase.firestore.core.DocumentViewChange.Type;
 import com.google.firebase.firestore.core.EventManager;
@@ -48,10 +51,8 @@ import com.google.firebase.firestore.core.OnlineState;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.core.QueryListener;
 import com.google.firebase.firestore.core.SyncEngine;
-import com.google.firebase.firestore.local.IndexFreeQueryEngine;
-import com.google.firebase.firestore.local.LocalStore;
 import com.google.firebase.firestore.local.Persistence;
-import com.google.firebase.firestore.local.QueryEngine;
+import com.google.firebase.firestore.local.PersistenceTestHelpers;
 import com.google.firebase.firestore.local.QueryPurpose;
 import com.google.firebase.firestore.local.TargetData;
 import com.google.firebase.firestore.model.Document;
@@ -62,8 +63,6 @@ import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatchResult;
 import com.google.firebase.firestore.model.mutation.MutationResult;
-import com.google.firebase.firestore.remote.AndroidConnectivityMonitor;
-import com.google.firebase.firestore.remote.ConnectivityMonitor;
 import com.google.firebase.firestore.remote.ExistenceFilter;
 import com.google.firebase.firestore.remote.MockDatastore;
 import com.google.firebase.firestore.remote.RemoteEvent;
@@ -119,8 +118,8 @@ import org.robolectric.android.util.concurrent.RoboExecutorService;
  *
  * <ol>
  *   <li>Subclass SpecTestCase.
- *   <li>override {@link #getPersistence} to create and return an appropriate Persistence
- *       implementation.
+ *   <li>override {@link #initializeComponentProvider(ComponentProvider.Configuration, boolean)} to
+ *       return appropriate components.
  * </ol>
  */
 public abstract class SpecTestCase implements RemoteStoreCallback {
@@ -167,6 +166,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
   private RemoteStore remoteStore;
   private SyncEngine syncEngine;
   private EventManager eventManager;
+  private DatabaseInfo databaseInfo;
 
   /** Events to be checked by the expectations. */
   private List<QueryEvent> events;
@@ -241,7 +241,8 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
   // Methods for tracking state of writes.
   //
 
-  abstract Persistence getPersistence(boolean garbageCollectionEnabled);
+  protected abstract ComponentProvider initializeComponentProvider(
+      ComponentProvider.Configuration configuration, final boolean garbageCollectionEnabled);
 
   private boolean shouldRun(Set<String> tags) {
     for (String tag : tags) {
@@ -265,6 +266,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
         config.optInt("maxConcurrentLimboResolutions", Integer.MAX_VALUE);
 
     currentUser = User.UNAUTHENTICATED;
+    databaseInfo = PersistenceTestHelpers.nextDatabaseInfo();
 
     if (config.optInt("numClients", 1) != 1) {
       throw Assert.fail("The Android client does not support multi-client tests");
@@ -295,23 +297,25 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
    * Sets up a new client. Is used to initially setup the client initially and after every restart.
    */
   private void initClient() {
-    localPersistence = getPersistence(garbageCollectionEnabled);
-    QueryEngine queryEngine = new IndexFreeQueryEngine();
-    LocalStore localStore = new LocalStore(localPersistence, queryEngine, currentUser);
-
     queue = new AsyncQueue();
+    datastore = new MockDatastore(databaseInfo, queue, ApplicationProvider.getApplicationContext());
 
-    // Set up the sync engine and various stores.
-    datastore = new MockDatastore(queue, ApplicationProvider.getApplicationContext());
+    ComponentProvider.Configuration configuration =
+        new ComponentProvider.Configuration(
+            ApplicationProvider.getApplicationContext(),
+            queue,
+            databaseInfo,
+            datastore,
+            currentUser,
+            maxConcurrentLimboResolutions,
+            new FirebaseFirestoreSettings.Builder().build());
 
-    ConnectivityMonitor connectivityMonitor =
-        new AndroidConnectivityMonitor(ApplicationProvider.getApplicationContext());
-    remoteStore = new RemoteStore(this, localStore, datastore, queue, connectivityMonitor);
-    syncEngine =
-        new SyncEngine(localStore, remoteStore, currentUser, maxConcurrentLimboResolutions);
-    eventManager = new EventManager(syncEngine);
-    localStore.start();
-    remoteStore.start();
+    ComponentProvider provider =
+        initializeComponentProvider(configuration, garbageCollectionEnabled);
+    localPersistence = provider.getPersistence();
+    remoteStore = provider.getRemoteStore();
+    syncEngine = provider.getSyncEngine();
+    eventManager = provider.getEventManager();
   }
 
   @Override
