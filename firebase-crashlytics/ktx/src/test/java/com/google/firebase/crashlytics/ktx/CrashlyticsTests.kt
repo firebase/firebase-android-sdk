@@ -29,8 +29,8 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 
-const val APP_ID = "APP_ID"
-const val API_KEY = "API_KEY"
+const val APP_ID = "1:1234567890:android:321abc456def7890"
+const val API_KEY = "AIzaSyDOCAbC123dEf456GhI789jKl012-MnO"
 
 const val EXISTING_APP = "existing"
 
