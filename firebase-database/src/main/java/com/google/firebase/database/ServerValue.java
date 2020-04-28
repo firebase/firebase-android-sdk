@@ -37,9 +37,9 @@ public class ServerValue {
    * Returns a placeholder value that can be used to atomically increment the current database value
    * by the provided delta.
    *
-   * <p>The delta must be an long or a double value. If the current value is not a number, or if
-   * the database value does not yet exist, the transformation will set the database value to the
-   * delta value. If either the delta value or the existing value are doubles, both values will be
+   * <p>The delta must be an long or a double value. If the current value is not a number, or if the
+   * database value does not yet exist, the transformation will set the database value to the delta
+   * value. If either the delta value or the existing value are doubles, both values will be
    * interpreted as doubles. Double arithmetic and representation of double values follow IEEE 754
    * semantics. If there is positive/negative integer overflow, the sum is calculated as a double.
    *
