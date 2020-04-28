@@ -131,7 +131,7 @@ public class PublishingPlugin implements Plugin<Project> {
                                 publication -> {
                                   publication.from(sub.getComponents().findByName("android"));
                                   publication.setArtifactId(firebaseLibrary.artifactId.get());
-                                  publication.setGroupId(firebaseLibrary.artifactId.get());
+                                  publication.setGroupId(firebaseLibrary.groupId.get());
                                   if (firebaseLibrary.publishSources) {
                                     publication.artifact(
                                         sub.getTasks()
