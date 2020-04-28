@@ -142,17 +142,17 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
    * FirebaseOptions#getApplicationId()} , and ({@link FirebaseOptions#getProjectId()} are not null
    * or empty.
    */
-  private void preConditionChecks() {
-    Preconditions.checkNotEmpty(getApplicationId());
-    Preconditions.checkNotEmpty(getProjectIdentifier());
-    Preconditions.checkNotEmpty(getApiKey());
+  private static void preConditionChecks(@NonNull FirebaseApp app) {
+    Preconditions.checkNotEmpty(app.getOptions().getApplicationId());
+    Preconditions.checkNotEmpty(app.getOptions().getProjectId());
+    Preconditions.checkNotEmpty(app.getOptions().getApiKey());
     Preconditions.checkArgument(
-        Utils.isValidAppIdFormat(getApplicationId()),
+        Utils.isValidAppIdFormat(app.getOptions().getApplicationId()),
         "Please set your Application ID. A valid Firebase App ID is required to communicate "
             + "with Firebase server APIs: It identifies your application with Firebase."
             + "Please refer to https://firebase.google.com/support/privacy/init-options.");
     Preconditions.checkArgument(
-        Utils.isValidApiKeyFormat(getApiKey()),
+        Utils.isValidApiKeyFormat(app.getOptions().getApiKey()),
         "Please set a valid API key. A Firebase API key is required to communicate with "
             + "Firebase server APIs: It authenticates your project with Google."
             + "Please refer to https://firebase.google.com/support/privacy/init-options.");
@@ -184,6 +184,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   @NonNull
   public static FirebaseInstallations getInstance(@NonNull FirebaseApp app) {
     Preconditions.checkArgument(app != null, "Null is not a valid value of FirebaseApp.");
+    preConditionChecks(app);
     return (FirebaseInstallations) app.get(FirebaseInstallationsApi.class);
   }
 
@@ -212,7 +213,6 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   @NonNull
   @Override
   public Task<String> getId() {
-    preConditionChecks();
     Task<String> task = addGetIdListener();
     backgroundExecutor.execute(this::doGetId);
     return task;
@@ -229,7 +229,6 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   @NonNull
   @Override
   public Task<InstallationTokenResult> getToken(boolean forceRefresh) {
-    preConditionChecks();
     Task<InstallationTokenResult> task = addGetAuthTokenListener();
     if (forceRefresh) {
       backgroundExecutor.execute(this::doGetAuthTokenForceRefresh);
