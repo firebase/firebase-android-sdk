@@ -37,6 +37,9 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
+import groovy.transform.CompileStatic;
+
+@CompileStatic
 abstract class GenerateLicensesTask extends DefaultTask {
     private static final int NEW_LINE_LENGTH = "\n".getBytes().length;
 

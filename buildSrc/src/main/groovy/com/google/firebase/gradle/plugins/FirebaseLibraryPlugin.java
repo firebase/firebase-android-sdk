@@ -24,7 +24,6 @@ import com.google.firebase.gradle.plugins.apiinfo.ApiInformationTask;
 import com.google.firebase.gradle.plugins.apiinfo.GenerateApiTxtFileTask;
 import com.google.firebase.gradle.plugins.apiinfo.GenerateStubsTask;
 import com.google.firebase.gradle.plugins.apiinfo.GetMetalavaJarTask;
-import com.google.firebase.gradle.plugins.ci.Coverage;
 import com.google.firebase.gradle.plugins.ci.device.FirebaseTestServer;
 import java.io.File;
 import java.nio.file.Paths;
@@ -42,10 +41,7 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
     project.apply(ImmutableMap.of("plugin", "com.android.library"));
 
     FirebaseLibraryExtension firebaseLibrary =
-        project
-            .getExtensions()
-            .create(
-                "firebaseLibrary", FirebaseLibraryExtension.class, project, LibraryType.ANDROID);
+        project.getExtensions().create("firebaseLibrary", FirebaseLibraryExtension.class, project);
 
     LibraryExtension android = project.getExtensions().getByType(LibraryExtension.class);
 
@@ -89,7 +85,7 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
 
     android.testServer(new FirebaseTestServer(project, firebaseLibrary.testLab));
 
-    setupStaticAnalysis(project, firebaseLibrary);
+    setupStaticAnalysis(project, android, firebaseLibrary);
 
     // reduce the likelihood of kotlin module files colliding.
     project
@@ -204,7 +200,8 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
             });
   }
 
-  private static void setupStaticAnalysis(Project project, FirebaseLibraryExtension library) {
+  private static void setupStaticAnalysis(
+      Project project, LibraryExtension android, FirebaseLibraryExtension library) {
     project.afterEvaluate(
         p ->
             project
@@ -229,7 +226,6 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
                     }));
 
     project.getTasks().register("firebaseLint", task -> task.dependsOn("lint"));
-    Coverage.apply(library);
   }
 
   private static String kotlinModuleName(Project project) {
