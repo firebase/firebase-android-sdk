@@ -156,7 +156,7 @@ licenses {
         def result = publish(Mode.RELEASE, project2)
         then: 'build fails'
         Exception e = thrown(Exception)
-        e.getMessage().contains("Failed to release project ':childProject2'")
+        e.getMessage().contains("Failed to release com.example:childProject2")
     }
 
     def "Publish with released dependency"() {
