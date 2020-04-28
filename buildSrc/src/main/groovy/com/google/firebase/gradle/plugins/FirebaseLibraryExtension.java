@@ -18,7 +18,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabExtension;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
@@ -31,9 +30,7 @@ import org.gradle.api.provider.Property;
 import org.gradle.api.publish.maven.MavenPom;
 
 public class FirebaseLibraryExtension {
-
-  public final Project project;
-  public final LibraryType type;
+  private final Project project;
   private final Set<FirebaseLibraryExtension> librariesToCoRelease = new HashSet<>();
 
   /** Indicates whether the library has public javadoc. */
@@ -69,9 +66,8 @@ public class FirebaseLibraryExtension {
       };
 
   @Inject
-  public FirebaseLibraryExtension(Project project, LibraryType type) {
+  public FirebaseLibraryExtension(Project project) {
     this.project = project;
-    this.type = type;
     this.testLab = new FirebaseTestLabExtension(project.getObjects());
     this.artifactId = project.getObjects().property(String.class);
     this.groupId = project.getObjects().property(String.class);
@@ -138,13 +134,6 @@ public class FirebaseLibraryExtension {
         .build();
   }
 
-  public Set<FirebaseLibraryExtension> getLibrariesToRelease() {
-    return ImmutableSet.<FirebaseLibraryExtension>builder()
-        .add(this)
-        .addAll(librariesToCoRelease)
-        .build();
-  }
-
   /** Provides a hook to customize pom generation. */
   public void customizePom(Action<MavenPom> action) {
     customizePomAction = action;
@@ -158,32 +147,5 @@ public class FirebaseLibraryExtension {
 
   public void staticAnalysis(Action<FirebaseStaticAnalysis> action) {
     action.execute(staticAnalysis);
-  }
-
-  public String getVersion() {
-    return project.getVersion().toString();
-  }
-
-  public Optional<String> getLatestReleasedVersion() {
-    if (project.hasProperty("latestReleasedVersion")) {
-      return Optional.of(
-          project.getExtensions().getExtraProperties().get("latestReleasedVersion").toString());
-    }
-    return Optional.empty();
-  }
-
-  public String getMavenName() {
-    return groupId.get() + ":" + artifactId.get();
-  }
-
-  public String getPath() {
-    return project.getPath();
-  }
-
-  @Override
-  public String toString() {
-    return String.format(
-        "FirebaseLibraryExtension{name=\"%s:%s\", project=\"%s\", type=\"%s\"}",
-        groupId.get(), artifactId.get(), getPath(), type);
   }
 }
