@@ -184,6 +184,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   @NonNull
   public static FirebaseInstallations getInstance(@NonNull FirebaseApp app) {
     Preconditions.checkArgument(app != null, "Null is not a valid value of FirebaseApp.");
+    preConditionChecks();
     return (FirebaseInstallations) app.get(FirebaseInstallationsApi.class);
   }
 
