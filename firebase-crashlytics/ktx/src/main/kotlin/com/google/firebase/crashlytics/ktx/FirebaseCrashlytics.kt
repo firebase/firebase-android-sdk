@@ -26,21 +26,12 @@ import com.google.firebase.platforminfo.LibraryVersionComponent
 val Firebase.crashlytics: FirebaseCrashlytics
     get() = FirebaseCrashlytics.getInstance()
 
-fun FirebaseCrashlytics.setCustomKeys(vararg pairs: Pair<String, Any>) {
-    for ((key, value) in pairs) {
-        when (value) {
-            is Boolean -> setCustomKey(key, value)
-            is Double -> setCustomKey(key, value)
-            is Float -> setCustomKey(key, value)
-            is Int -> setCustomKey(key, value)
-            is Long -> setCustomKey(key, value)
-            is String -> setCustomKey(key, value)
-            else -> {
-                val valueType = value::class.java.componentType!!.canonicalName
-                throw IllegalArgumentException("Illegal value type $valueType for key \"$key\"")
-            }
-        }
-    }
+/**
+ * Associates all key-value parameters with the reports
+ */
+fun FirebaseCrashlytics.setCustomKeys(init: KeyValueBuilder.() -> Unit) {
+    val builder = KeyValueBuilder(this)
+    builder.init()
 }
 
 internal const val LIBRARY_NAME: String = "fire-cls-ktx"
