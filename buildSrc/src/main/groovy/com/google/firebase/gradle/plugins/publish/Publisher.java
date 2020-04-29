@@ -34,9 +34,7 @@ import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.artifacts.ProjectDependency;
 import org.gradle.api.publish.maven.MavenPublication;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.w3c.dom.Text;
 
 public class Publisher {
   private static String UNRELEASED_VERSION = "unreleased";
@@ -126,14 +124,20 @@ public class Publisher {
     Configuration dummyDependencyConfiguration =
         project.getConfigurations().create("publisherDummyConfig");
     Set<Dependency> nonProjectDependencies =
-        project.getConfigurations().getByName("releaseRuntimeClasspath").getAllDependencies()
+        project
+            .getConfigurations()
+            .getByName("releaseRuntimeClasspath")
+            .getAllDependencies()
             .stream()
             .filter(dep -> !(dep instanceof ProjectDependency))
             .collect(Collectors.toSet());
 
     dummyDependencyConfiguration.getDependencies().addAll(nonProjectDependencies);
     try {
-      return project.getConfigurations().getByName("releaseRuntimeClasspath").getAllDependencies()
+      return project
+          .getConfigurations()
+          .getByName("releaseRuntimeClasspath")
+          .getAllDependencies()
           .stream()
           .map(dep -> getType(dummyDependencyConfiguration, dep))
           .filter(Objects::nonNull)

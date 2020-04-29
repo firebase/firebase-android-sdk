@@ -22,7 +22,6 @@ import java.net.URI;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
@@ -99,6 +98,10 @@ public class PublishingPlugin implements Plugin<Project> {
                                   .getByType(FirebaseLibraryExtension.class))
                       .flatMap(lib -> lib.getLibrariesToRelease().stream())
                       .collect(Collectors.toSet());
+              project
+                  .getExtensions()
+                  .getExtraProperties()
+                  .set("projectsToPublish", projectsToPublish);
 
               Publisher publisher = new Publisher(publishMode, projectsToPublish);
               project.subprojects(
