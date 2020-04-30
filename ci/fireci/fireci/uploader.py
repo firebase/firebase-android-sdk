@@ -57,5 +57,5 @@ def _construct_request_endpoint():
 
 
 def _get_commit_hash(revision):
-  result = subprocess.run(['git', 'rev-parse', revision], capture_output=True, check=True)
+  result = subprocess.run(['git', 'rev-parse', revision], stdout=subprocess.PIPE, check=True)
   return result.stdout.decode('utf-8').strip()
