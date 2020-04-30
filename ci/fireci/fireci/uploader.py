@@ -16,6 +16,7 @@ import json
 import logging
 import os
 import requests
+import subprocess
 
 _logger = logging.getLogger('fireci.uploader')
 
@@ -41,14 +42,20 @@ def _construct_request_endpoint():
   repo_owner = os.getenv('REPO_OWNER')
   repo_name = os.getenv('REPO_NAME')
   branch = os.getenv('PULL_BASE_REF')
-  base_commit = os.getenv('PULL_BASE_SHA')
-  head_commit = os.getenv('PULL_PULL_SHA')
   pull_request = os.getenv('PULL_NUMBER')
 
-  commit = head_commit if head_commit else base_commit
+  commit = _get_commit_hash('HEAD@{0}')
 
-  endpoint = f'/repos/{repo_owner}/{repo_name}/commits/{commit}/reports?branch={branch}'
+  endpoint = f'/repos/{repo_owner}/{repo_name}/commits/{commit}/reports'
   if pull_request:
-    endpoint += f'&pull_request={pull_request}&base_commit={base_commit}'
+    base_commit = _get_commit_hash('HEAD@{1}')
+    endpoint += f'?pull_request={pull_request}&base_commit={base_commit}'
+  else:
+    endpoint += f'?branch={branch}'
 
   return endpoint
+
+
+def _get_commit_hash(revision):
+  result = subprocess.run(['git', 'rev-parse', revision], capture_output=True, check=True)
+  return result.stdout.decode('utf-8').strip()
