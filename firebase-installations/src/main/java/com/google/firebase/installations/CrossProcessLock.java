@@ -54,7 +54,8 @@ class CrossProcessLock {
     } catch (IOException | Error e) {
       // Certain conditions can cause file locking to fail, such as out of disk or bad permissions.
       // In any case, the acquire will fail and return null instead of a held lock.
-      // NOTE: In Java 7 & 8, FileKey creation failure wraps IOException into Error.
+      // NOTE: In Java 7 & 8, FileKey creation failure might wrap IOException into Error. See
+      // https://bugs.openjdk.java.net/browse/JDK-8025619 for details.
       Log.e(TAG, "encountered error while creating and acquiring the lock, ignoring", e);
 
       // Clean up any dangling resources
