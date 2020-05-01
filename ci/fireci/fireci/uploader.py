@@ -52,8 +52,8 @@ def _construct_request_endpoint(note):
     base_commit = _get_commit_hash('HEAD@{1}')
     endpoint += f'?pull_request={pull_request}&base_commit={base_commit}'
 
-    head_commit_info = _get_commit_info('HEAD@{0}')
-    note += f'\nMerge commit created by Prow: {head_commit_info}\n'
+    commit_note = _get_prow_commit_note('HEAD@{0}')
+    note += f'\n{commit_note}\n'
     endpoint += f'&note={urllib.parse.quote(note)}'
   else:
     endpoint += f'?branch={branch}'
@@ -66,9 +66,10 @@ def _get_commit_hash(revision):
   return result.stdout.decode('utf-8').strip()
 
 
-def _get_commit_info(revision):
+def _get_prow_commit_note(revision):
+  template = 'Head commit (%h) is created by Prow via merging commits: %p.'
   result = subprocess.run(
-    ['git', 'show', revision, '--format=(%h) - Parent commits: %P', '-s'],
+    ['git', 'show', revision, f'--format={template}', '-s'],
     stdout=subprocess.PIPE,
     check=True,
   )
