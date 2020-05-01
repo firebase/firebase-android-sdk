@@ -72,4 +72,4 @@ def _get_commit_info(revision):
     stdout=subprocess.PIPE,
     check=True,
   )
-  return result.stdout.decode('utf-8').strip()
+  return result.stdout.decode('utf-8').strip().replace("'", '')
