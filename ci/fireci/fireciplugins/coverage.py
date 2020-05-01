@@ -56,7 +56,12 @@ def coverage(pull_request, log, metrics_service_url, access_token):
   test_results = _parse_xml_reports()
   test_report = {'metric': 'Coverage', 'results': test_results, 'log': log}
 
-  uploader.post_report(test_report, metrics_service_url, access_token)
+  note = '''
+HTML coverage reports can be produced locally with `./gradlew <product>:checkCoverage`.
+Report files are located at `<product-build-dir>/reports/jacoco/`.
+'''
+
+  uploader.post_report(test_report, metrics_service_url, access_token, note)
 
 
 def _parse_xml_reports():
