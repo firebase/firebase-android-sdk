@@ -51,9 +51,10 @@ class CrossProcessLock {
       // This method blocks until it can retrieve the lock.
       lock = channel.lock();
       return new CrossProcessLock(channel, lock);
-    } catch (IOException e) {
+    } catch (IOException | Error e) {
       // Certain conditions can cause file locking to fail, such as out of disk or bad permissions.
       // In any case, the acquire will fail and return null instead of a held lock.
+      // NOTE: In Java 7 & 8, FileKey creation failure wraps IOException into Error.
       Log.e(TAG, "encountered error while creating and acquiring the lock, ignoring", e);
 
       // Clean up any dangling resources
