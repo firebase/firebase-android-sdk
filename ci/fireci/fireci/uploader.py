@@ -73,4 +73,4 @@ def _get_prow_commit_note(revision):
     stdout=subprocess.PIPE,
     check=True,
   )
-  return result.stdout.decode('utf-8').strip().replace("'", '')
+  return result.stdout.decode('utf-8').strip()
