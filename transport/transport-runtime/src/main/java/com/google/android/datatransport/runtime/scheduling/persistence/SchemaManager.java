@@ -25,7 +25,7 @@ import javax.inject.Named;
 final class SchemaManager extends SQLiteOpenHelper {
   // TODO: when we do schema upgrades in the future we need to make sure both downgrades and
   // upgrades work as expected, e.g. `up+down+up` is equivalent to `up`.
-  private static final String DB_NAME = "com.google.android.datatransport.events";
+  static final String DB_NAME = "com.google.android.datatransport.events";
   private final int schemaVersion;
   private boolean configured = false;
 
@@ -73,7 +73,15 @@ final class SchemaManager extends SQLiteOpenHelper {
 
   private static final String DROP_CONTEXTS_SQL = "DROP TABLE transport_contexts";
 
-  static int SCHEMA_VERSION = 3;
+  private static final String CREATE_PAYLOADS_TABLE_V4 =
+      "CREATE TABLE event_payloads "
+          + "(sequence_num INTEGER NOT NULL,"
+          + " event_id INTEGER NOT NULL,"
+          + " bytes BLOB NOT NULL,"
+          + "FOREIGN KEY (event_id) REFERENCES events(_id) ON DELETE CASCADE,"
+          + "PRIMARY KEY (sequence_num, event_id))";
+
+  static int SCHEMA_VERSION = 4;
 
   private static final SchemaManager.Migration MIGRATE_TO_V1 =
       (db) -> {
@@ -95,12 +103,21 @@ final class SchemaManager extends SQLiteOpenHelper {
   private static final SchemaManager.Migration MIGRATE_TO_V3 =
       db -> db.execSQL("ALTER TABLE events ADD COLUMN payload_encoding TEXT");
 
+  private static final SchemaManager.Migration MIGRATE_TO_V4 =
+      db -> {
+        db.execSQL("ALTER TABLE events ADD COLUMN inline BOOLEAN NOT NULL DEFAULT 1");
+        db.execSQL(CREATE_PAYLOADS_TABLE_V4);
+      };
+
   private static final List<Migration> INCREMENTAL_MIGRATIONS =
-      Arrays.asList(MIGRATE_TO_V1, MIGRATE_TO_V2, MIGRATE_TO_V3);
+      Arrays.asList(MIGRATE_TO_V1, MIGRATE_TO_V2, MIGRATE_TO_V3, MIGRATE_TO_V4);
 
   @Inject
-  SchemaManager(Context context, @Named("SCHEMA_VERSION") int schemaVersion) {
-    super(context, DB_NAME, null, schemaVersion);
+  SchemaManager(
+      Context context,
+      @Named("SQLITE_DB_NAME") String dbName,
+      @Named("SCHEMA_VERSION") int schemaVersion) {
+    super(context, dbName, null, schemaVersion);
     this.schemaVersion = schemaVersion;
   }
 

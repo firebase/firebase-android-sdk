@@ -34,7 +34,7 @@ import dagger.Provides;
  */
 @Module
 public class TransportClientModule {
-  private static final String TRANSPORT_NAME = "731";
+  private static final String TRANSPORT_NAME = "FIREBASE_INAPPMESSAGING";
 
   @Provides
   @FirebaseAppScope

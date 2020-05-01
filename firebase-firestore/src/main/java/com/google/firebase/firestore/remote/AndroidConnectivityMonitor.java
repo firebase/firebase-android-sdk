@@ -23,7 +23,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 import android.net.Network;
-import android.net.NetworkInfo;
 import android.os.Build;
 import androidx.annotation.Nullable;
 import com.google.firebase.firestore.util.Consumer;
@@ -124,10 +123,11 @@ public final class AndroidConnectivityMonitor implements ConnectivityMonitor {
     private boolean isConnected = false;
 
     @Override
+    @SuppressWarnings("deprecation")
     public void onReceive(Context context, Intent intent) {
       ConnectivityManager conn =
           (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-      NetworkInfo networkInfo = conn.getActiveNetworkInfo();
+      android.net.NetworkInfo networkInfo = conn.getActiveNetworkInfo();
       boolean wasConnected = isConnected;
       isConnected = networkInfo != null && networkInfo.isConnected();
       if (isConnected && !wasConnected) {
