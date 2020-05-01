@@ -53,7 +53,7 @@ def _construct_request_endpoint(note):
     endpoint += f'?pull_request={pull_request}&base_commit={base_commit}'
 
     head_commit_info = _get_commit_info('HEAD@{0}')
-    note += f'\nHead Commit: {head_commit_info}\n'
+    note += f'\nMerge commit created by Prow: {head_commit_info}\n'
     endpoint += f'&note={urllib.parse.quote(note)}'
   else:
     endpoint += f'?branch={branch}'
@@ -68,7 +68,7 @@ def _get_commit_hash(revision):
 
 def _get_commit_info(revision):
   result = subprocess.run(
-    ['git', 'show', revision, '--format=%C(auto)(%h) - %s', '--abbrev-commit', '-s'],
+    ['git', 'show', revision, '--format=(%h) - Parent commits: %P', '-s'],
     stdout=subprocess.PIPE,
     check=True,
   )
