@@ -68,7 +68,7 @@ def _get_commit_hash(revision):
 
 def _get_commit_info(revision):
   result = subprocess.run(
-    ['git', 'show', revision, '--format=oneline', '--abbrev-commit', '-s'],
+    ['git', 'show', revision, '--format="%C(auto)(%h) - %s"', '--abbrev-commit', '-s'],
     stdout=subprocess.PIPE,
     check=True,
   )
