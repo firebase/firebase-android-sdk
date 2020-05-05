@@ -14,11 +14,8 @@
 
 package com.google.firebase.inappmessaging.internal;
 
-import android.text.TextUtils;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
-import com.google.firebase.iid.FirebaseInstanceId;
-import com.google.firebase.iid.InstanceIdResult;
 import com.google.firebase.inappmessaging.CommonTypesProto.TriggeringCondition;
 import com.google.firebase.inappmessaging.internal.injection.qualifiers.AppForeground;
 import com.google.firebase.inappmessaging.internal.injection.qualifiers.ProgrammaticTrigger;
@@ -29,6 +26,7 @@ import com.google.firebase.inappmessaging.model.MessageType;
 import com.google.firebase.inappmessaging.model.ProtoMarshallerClient;
 import com.google.firebase.inappmessaging.model.RateLimit;
 import com.google.firebase.inappmessaging.model.TriggeredInAppMessage;
+import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.internal.firebase.inappmessaging.v1.CampaignProto.ThickContent;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.CampaignImpressionList;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.FetchEligibleCampaignsResponse;
@@ -40,7 +38,6 @@ import io.reactivex.flowables.ConnectableFlowable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
 import java.util.Locale;
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 
 /**
@@ -64,7 +61,7 @@ public class InAppMessageStreamManager {
   private final AnalyticsEventsManager analyticsEventsManager;
   private final TestDeviceHelper testDeviceHelper;
   private final AbtIntegrationHelper abtIntegrationHelper;
-  private final FirebaseInstanceId firebaseInstanceId;
+  private final FirebaseInstallationsApi firebaseInstallations;
   private final DataCollectionHelper dataCollectionHelper;
 
   @Inject
@@ -80,7 +77,7 @@ public class InAppMessageStreamManager {
       RateLimiterClient rateLimiterClient,
       @AppForeground RateLimit appForegroundRateLimit,
       TestDeviceHelper testDeviceHelper,
-      FirebaseInstanceId firebaseInstanceId,
+      FirebaseInstallationsApi firebaseInstallations,
       DataCollectionHelper dataCollectionHelper,
       AbtIntegrationHelper abtIntegrationHelper) {
     this.appForegroundEventFlowable = appForegroundEventFlowable;
@@ -95,7 +92,7 @@ public class InAppMessageStreamManager {
     this.appForegroundRateLimit = appForegroundRateLimit;
     this.testDeviceHelper = testDeviceHelper;
     this.dataCollectionHelper = dataCollectionHelper;
-    this.firebaseInstanceId = firebaseInstanceId;
+    this.firebaseInstallations = firebaseInstallations;
     this.abtIntegrationHelper = abtIntegrationHelper;
   }
 
@@ -243,9 +240,12 @@ public class InAppMessageStreamManager {
                       .defaultIfEmpty(CampaignImpressionList.getDefaultInstance())
                       .onErrorResumeNext(Maybe.just(CampaignImpressionList.getDefaultInstance()));
 
-              // we need to observe on IO here to override the default behavior coming from Tasks
-              Maybe<InstanceIdResult> getIID =
-                  taskToMaybe(firebaseInstanceId.getInstanceId()).observeOn(schedulers.io());
+              Maybe<InstallationIdResult> getIID =
+                  Maybe.zip(
+                          taskToMaybe(firebaseInstallations.getId()),
+                          taskToMaybe(firebaseInstallations.getToken(false)),
+                          InstallationIdResult::new)
+                      .observeOn(schedulers.io());
 
               Function<CampaignImpressionList, Maybe<FetchEligibleCampaignsResponse>> serviceFetch =
                   campaignImpressionList -> {
@@ -256,7 +256,7 @@ public class InAppMessageStreamManager {
                     }
 
                     return getIID
-                        .filter(InAppMessageStreamManager::validIID)
+                        .filter(InstallationIdResult::isValid)
                         .map(iid -> apiClient.getFiams(iid, campaignImpressionList))
                         .switchIfEmpty(Maybe.just(cacheExpiringResponse()))
                         .doOnSuccess(
@@ -372,10 +372,6 @@ public class InAppMessageStreamManager {
     }
 
     return Maybe.just(new TriggeredInAppMessage(inAppMessage, event));
-  }
-
-  private static boolean validIID(@Nullable InstanceIdResult iid) {
-    return iid != null && !TextUtils.isEmpty(iid.getId()) && !TextUtils.isEmpty(iid.getToken());
   }
 
   @VisibleForTesting

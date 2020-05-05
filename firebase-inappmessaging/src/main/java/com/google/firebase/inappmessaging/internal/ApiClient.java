@@ -21,7 +21,6 @@ import android.os.Build.VERSION;
 import android.text.TextUtils;
 import com.google.developers.mobile.targeting.proto.ClientSignalsProto.ClientSignals;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.iid.InstanceIdResult;
 import com.google.firebase.inappmessaging.internal.injection.scopes.FirebaseAppScope;
 import com.google.firebase.inappmessaging.internal.time.Clock;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.CampaignImpressionList;
@@ -64,7 +63,7 @@ public class ApiClient {
   }
 
   FetchEligibleCampaignsResponse getFiams(
-      InstanceIdResult instanceIdResult, CampaignImpressionList impressionList) {
+      InstallationIdResult installationIdResult, CampaignImpressionList impressionList) {
     Logging.logi(FETCHING_CAMPAIGN_MESSAGE);
     providerInstaller.install();
 
@@ -77,7 +76,7 @@ public class ApiClient {
                     .setProjectNumber(firebaseApp.getOptions().getGcmSenderId())
                     .addAllAlreadySeenCampaigns(impressionList.getAlreadySeenCampaignsList())
                     .setClientSignals(getClientSignals())
-                    .setRequestingClientApp(getClientAppInfo(instanceIdResult))
+                    .setRequestingClientApp(getClientAppInfo(installationIdResult))
                     .build()));
   }
 
@@ -110,11 +109,11 @@ public class ApiClient {
     return clientSignals.build();
   }
 
-  private ClientAppInfo getClientAppInfo(InstanceIdResult instanceIdResult) {
+  private ClientAppInfo getClientAppInfo(InstallationIdResult installationIdResult) {
     return ClientAppInfo.newBuilder()
         .setGmpAppId(firebaseApp.getOptions().getApplicationId())
-        .setAppInstanceId(instanceIdResult.getId())
-        .setAppInstanceIdToken(instanceIdResult.getToken())
+        .setAppInstanceId(installationIdResult.getId())
+        .setAppInstanceIdToken(installationIdResult.getToken())
         .build();
   }
 

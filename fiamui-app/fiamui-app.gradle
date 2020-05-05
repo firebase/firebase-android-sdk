@@ -58,21 +58,21 @@ dependencies {
   implementation project(path: ":firebase-inappmessaging")
   implementation 'com.google.guava:guava:24.1-jre-android'
 
-  implementation('com.google.firebase:firebase-analytics:17.0.0') {
+  implementation('com.google.firebase:firebase-analytics:17.4.0') {
     exclude group: 'com.google.firebase', module: 'firebase-common'
   }
 
-  implementation "com.android.installreferrer:installreferrer:1.0"
-  implementation 'com.google.android.material:material:1.0.0'
-  implementation 'androidx.appcompat:appcompat:1.0.2'
+  implementation "com.android.installreferrer:installreferrer:1.1.2"
+  implementation 'com.google.android.material:material:1.1.0'
+  implementation 'androidx.appcompat:appcompat:1.1.0'
   implementation 'androidx.annotation:annotation:1.1.0'
-  implementation 'androidx.media:media:1.0.1'
+  implementation 'androidx.media:media:1.1.0'
   implementation 'androidx.legacy:legacy-support-v4:1.0.0'
   implementation "com.google.code.findbugs:jsr305:3.0.2"
-  implementation "com.squareup.okio:okio:1.13.0"
+  implementation "com.squareup.okio:okio:2.2.2"
   implementation "com.squareup.okhttp:okhttp:2.7.5"
-  implementation "com.google.auto.value:auto-value-annotations:1.6.5"
-  implementation "com.google.android.gms:play-services-basement:17.0.0"
+  implementation "com.google.auto.value:auto-value-annotations:1.6.6"
+  implementation "com.google.android.gms:play-services-basement:17.2.1"
 
   // The following dependencies are not required to use the FIAM UI library.
   // They are used to make some aspects of the demo app implementation simpler for
