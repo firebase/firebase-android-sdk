@@ -15,7 +15,6 @@
 package com.google.firebase.gradle.plugins.ci;
 
 import com.google.common.collect.ImmutableSet;
-
 import com.google.common.io.CharStreams;
 import java.io.File;
 import java.io.IOException;
