@@ -27,7 +27,6 @@ import com.google.firebase.components.ComponentContainer;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
 import com.google.firebase.events.Subscriber;
-import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.inappmessaging.internal.AbtIntegrationHelper;
 import com.google.firebase.inappmessaging.internal.ProgramaticContextualTriggers;
 import com.google.firebase.inappmessaging.internal.injection.components.AppComponent;
@@ -40,6 +39,7 @@ import com.google.firebase.inappmessaging.internal.injection.modules.AppMeasurem
 import com.google.firebase.inappmessaging.internal.injection.modules.ApplicationModule;
 import com.google.firebase.inappmessaging.internal.injection.modules.GrpcClientModule;
 import com.google.firebase.inappmessaging.internal.injection.modules.ProgrammaticContextualTriggerFlowableModule;
+import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.util.Arrays;
 import java.util.List;
@@ -57,7 +57,7 @@ public class FirebaseInAppMessagingRegistrar implements ComponentRegistrar {
     return Arrays.asList(
         Component.builder(FirebaseInAppMessaging.class)
             .add(Dependency.required(Context.class))
-            .add(Dependency.required(FirebaseInstanceId.class))
+            .add(Dependency.required(FirebaseInstallationsApi.class))
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.required(AbtComponent.class))
             .add(Dependency.optional(AnalyticsConnector.class))
@@ -71,7 +71,7 @@ public class FirebaseInAppMessagingRegistrar implements ComponentRegistrar {
 
   private FirebaseInAppMessaging providesFirebaseInAppMessaging(ComponentContainer container) {
     FirebaseApp firebaseApp = container.get(FirebaseApp.class);
-    FirebaseInstanceId firebaseInstanceId = container.get(FirebaseInstanceId.class);
+    FirebaseInstallationsApi firebaseInstallations = container.get(FirebaseInstallationsApi.class);
     AnalyticsConnector analyticsConnector = container.get(AnalyticsConnector.class);
     Subscriber firebaseEventsSubscriber = container.get(Subscriber.class);
 
@@ -96,7 +96,7 @@ public class FirebaseInAppMessagingRegistrar implements ComponentRegistrar {
                         .get(AbtComponent.class)
                         .get(FirebaseABTesting.OriginService.INAPP_MESSAGING)))
             .apiClientModule(
-                new ApiClientModule(firebaseApp, firebaseInstanceId, universalComponent.clock()))
+                new ApiClientModule(firebaseApp, firebaseInstallations, universalComponent.clock()))
             .grpcClientModule(new GrpcClientModule(firebaseApp))
             .universalComponent(universalComponent)
             .transportFactory(container.get(TransportFactory.class))
