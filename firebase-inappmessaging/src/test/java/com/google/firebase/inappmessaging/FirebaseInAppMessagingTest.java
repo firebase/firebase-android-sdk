@@ -141,7 +141,7 @@ public class FirebaseInAppMessagingTest {
         }
       };
   private static final InstallationIdResult FID_RESULT =
-      new InstallationIdResult(INSTALLATION_ID, INSTALLATION_TOKEN_RESULT);
+      InstallationIdResult.create(INSTALLATION_ID, INSTALLATION_TOKEN_RESULT);
 
   @Mock private FirebaseInstallationsApi firebaseInstallations;
   @Mock private Schedulers schedulers;

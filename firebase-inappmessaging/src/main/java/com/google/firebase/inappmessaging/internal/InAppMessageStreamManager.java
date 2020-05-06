@@ -14,6 +14,7 @@
 
 package com.google.firebase.inappmessaging.internal;
 
+import android.text.TextUtils;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.inappmessaging.CommonTypesProto.TriggeringCondition;
@@ -244,7 +245,7 @@ public class InAppMessageStreamManager {
                   Maybe.zip(
                           taskToMaybe(firebaseInstallations.getId()),
                           taskToMaybe(firebaseInstallations.getToken(false)),
-                          InstallationIdResult::new)
+                          InstallationIdResult::create)
                       .observeOn(schedulers.io());
 
               Function<CampaignImpressionList, Maybe<FetchEligibleCampaignsResponse>> serviceFetch =
@@ -256,7 +257,7 @@ public class InAppMessageStreamManager {
                     }
 
                     return getIID
-                        .filter(InstallationIdResult::isValid)
+                        .filter(InAppMessageStreamManager::validIID)
                         .map(iid -> apiClient.getFiams(iid, campaignImpressionList))
                         .switchIfEmpty(Maybe.just(cacheExpiringResponse()))
                         .doOnSuccess(
@@ -372,6 +373,11 @@ public class InAppMessageStreamManager {
     }
 
     return Maybe.just(new TriggeredInAppMessage(inAppMessage, event));
+  }
+
+  private static boolean validIID(InstallationIdResult iid) {
+    return !TextUtils.isEmpty(iid.installationId())
+        && !TextUtils.isEmpty(iid.installationTokenResult().getToken());
   }
 
   @VisibleForTesting

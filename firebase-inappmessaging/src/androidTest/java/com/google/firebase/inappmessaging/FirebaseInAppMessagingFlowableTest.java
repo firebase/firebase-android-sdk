@@ -60,7 +60,6 @@ import com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks
 import com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks.InAppMessagingErrorReason;
 import com.google.firebase.inappmessaging.internal.AbtIntegrationHelper;
 import com.google.firebase.inappmessaging.internal.DisplayCallbacksFactory;
-import com.google.firebase.inappmessaging.internal.InstallationIdResult;
 import com.google.firebase.inappmessaging.internal.MetricsLoggerClient;
 import com.google.firebase.inappmessaging.internal.ProgramaticContextualTriggers;
 import com.google.firebase.inappmessaging.internal.TestDeviceHelper;
@@ -181,8 +180,6 @@ public class FirebaseInAppMessagingFlowableTest {
           return null;
         }
       };
-  private static final InstallationIdResult FID_RESULT =
-      new InstallationIdResult(INSTALLATION_ID, INSTALLATION_TOKEN_RESULT);
 
   static {
     FirebaseApp.initializeApp(InstrumentationRegistry.getContext(), options);

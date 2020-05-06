@@ -164,7 +164,7 @@ public class InAppMessageStreamManagerTest {
         }
       };
   private static final InstallationIdResult FID_RESULT =
-      new InstallationIdResult(INSTALLATION_ID, INSTALLATION_TOKEN_RESULT);
+      InstallationIdResult.create(INSTALLATION_ID, INSTALLATION_TOKEN_RESULT);
 
   @Mock private ApiClient mockApiClient;
   @Mock private Application application;
@@ -193,9 +193,10 @@ public class InAppMessageStreamManagerTest {
 
   private void assertExpectedGetFiamsCall() {
     assertThat(campaignImpressionListArgumentCaptor.getValue()).isEqualTo(CAMPAIGN_IMPRESSIONS);
-    assertThat(installationIdResultArgumentCaptor.getValue().getId()).isEqualTo(FID_RESULT.getId());
-    assertThat(installationIdResultArgumentCaptor.getValue().getToken())
-        .isEqualTo(FID_RESULT.getToken());
+    assertThat(installationIdResultArgumentCaptor.getValue().installationId())
+        .isEqualTo(FID_RESULT.installationId());
+    assertThat(installationIdResultArgumentCaptor.getValue().installationTokenResult().getToken())
+        .isEqualTo(FID_RESULT.installationTokenResult().getToken());
   }
 
   private static void assertExpectedMessageTriggered(

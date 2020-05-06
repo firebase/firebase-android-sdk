@@ -112,8 +112,8 @@ public class ApiClient {
   private ClientAppInfo getClientAppInfo(InstallationIdResult installationIdResult) {
     return ClientAppInfo.newBuilder()
         .setGmpAppId(firebaseApp.getOptions().getApplicationId())
-        .setAppInstanceId(installationIdResult.getId())
-        .setAppInstanceIdToken(installationIdResult.getToken())
+        .setAppInstanceId(installationIdResult.installationId())
+        .setAppInstanceIdToken(installationIdResult.installationTokenResult().getToken())
         .build();
   }
 

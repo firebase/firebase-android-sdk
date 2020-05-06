@@ -14,27 +14,22 @@
 
 package com.google.firebase.inappmessaging.internal;
 
-import android.text.TextUtils;
+import com.google.auto.value.AutoValue;
 import com.google.firebase.installations.InstallationTokenResult;
 
-public class InstallationIdResult {
-  private String id;
-  private InstallationTokenResult token;
-
-  public InstallationIdResult(String id, InstallationTokenResult token) {
-    this.id = id;
-    this.token = token;
+/**
+ * Class to encapsulate the values pulled from the getId and getToken methods of the FIS API. Since
+ * FIAM needs both of these results and FIS doesn't provide an API to fetch both of them this data
+ * class facilitates the encapsulation of both values once they are fetched individually.
+ */
+@AutoValue
+public abstract class InstallationIdResult {
+  public static InstallationIdResult create(
+      String installationId, InstallationTokenResult installationTokenResult) {
+    return new AutoValue_InstallationIdResult(installationId, installationTokenResult);
   }
 
-  String getId() {
-    return id;
-  }
+  abstract String installationId();
 
-  String getToken() {
-    return token.getToken();
-  }
-
-  boolean isValid() {
-    return !TextUtils.isEmpty(this.id) && !TextUtils.isEmpty(this.token.getToken());
-  }
+  abstract InstallationTokenResult installationTokenResult();
 }

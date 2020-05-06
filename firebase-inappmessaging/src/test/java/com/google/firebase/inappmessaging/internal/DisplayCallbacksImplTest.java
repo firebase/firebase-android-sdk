@@ -162,7 +162,7 @@ public class DisplayCallbacksImplTest {
         }
       };
   private static final InstallationIdResult FID_RESULT =
-      new InstallationIdResult(INSTALLATION_ID, INSTALLATION_TOKEN_RESULT);
+      InstallationIdResult.create(INSTALLATION_ID, INSTALLATION_TOKEN_RESULT);
 
   @Mock private static FirebaseInstallationsApi firebaseInstallations;
   @Mock private static MetricsLoggerClient metricsLoggerClient;
