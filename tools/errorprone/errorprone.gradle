@@ -22,10 +22,5 @@ dependencies {
 
     testImplementation 'junit:junit:4.12'
     testImplementation 'com.google.errorprone:error_prone_test_helpers:2.3.3'
-    testCompile 'com.google.errorprone:javac:9+181-r4173-1'
-}
-
-
-test {
-    jvmArgs "-Xbootclasspath/p:${-> project.configurations.testCompile.find { it.name.startsWith("javac-") }}"
+    testImplementation 'com.google.errorprone:javac:9+181-r4173-1'
 }

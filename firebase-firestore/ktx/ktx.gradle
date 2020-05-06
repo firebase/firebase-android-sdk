@@ -23,7 +23,7 @@ firebaseLibrary {
 }
 
 android {
-    compileSdkVersion 28
+    compileSdkVersion project.targetSdkVersion
     defaultConfig {
         minSdkVersion project.minSdkVersion
         multiDexEnabled true

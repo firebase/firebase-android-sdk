@@ -86,7 +86,7 @@ dependencies {
     testImplementation 'org.mockito:mockito-core:2.25.0'
     testImplementation 'com.google.truth:truth:0.44'
     testImplementation 'junit:junit:4.12'
-    testImplementation 'org.robolectric:robolectric:4.2'
+    testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation "org.skyscreamer:jsonassert:1.5.0"
 
     androidTestImplementation 'androidx.test:runner:1.2.0'

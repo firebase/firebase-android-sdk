@@ -27,7 +27,6 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import androidx.annotation.NonNull;
-import com.google.android.gms.tasks.Tasks;
 import com.google.developers.mobile.targeting.proto.ClientSignalsProto.ClientSignals;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
@@ -59,6 +58,22 @@ public class ApiClientTest {
   public static final String TIME_ZONE = "Europe/London";
   private static final String TEST_PROJECT_NUMBER = "123";
   private static final String CAMPAIGN_ID = "campaign_id";
+  private static final String INSTANCE_ID = "instance_id";
+  private static final String INSTANCE_TOKEN = "instance_token";
+  private static final InstanceIdResult IID_RESULT =
+      new InstanceIdResult() {
+        @NonNull
+        @Override
+        public String getId() {
+          return INSTANCE_ID;
+        }
+
+        @NonNull
+        @Override
+        public String getToken() {
+          return INSTANCE_TOKEN;
+        }
+      };
   private static final CampaignImpressionList campaignImpressionList =
       CampaignImpressionList.newBuilder()
           .addAlreadySeenCampaigns(
@@ -68,8 +83,6 @@ public class ApiClientTest {
       FetchEligibleCampaignsResponse.getDefaultInstance();
   private static final String PACKAGE_NAME = "package_name";
   private static final String VERSION_NAME = "version_name";
-  private static final String INSTANCE_ID = "instance_id";
-  private static final String INSTANCE_TOKEN = "instance_token";
   private static final String APPLICATION_ID = "application_id";
   // This can never be static because of the some validations in firebase options
   private final FirebaseOptions firebaseOptions =
@@ -79,8 +92,6 @@ public class ApiClientTest {
           .setApplicationId(APPLICATION_ID)
           .build();
   private final PackageInfo packageInfo = new PackageInfo();
-  private final FetchEligibleCampaignsResponse cacheExpiringResponse =
-      ApiClient.createCacheExpiringResponse();
   private ApiClient apiClient;
 
   @Captor
@@ -104,7 +115,6 @@ public class ApiClientTest {
     packageInfo.versionName = VERSION_NAME;
     when(firebaseApp.getOptions()).thenReturn(firebaseOptions);
     when(application.getPackageManager()).thenReturn(packageManager);
-    when(dataCollectionHelper.isAutomaticDataCollectionEnabled()).thenReturn(true);
     doNothing().when(providerInstaller).install();
     clock = new FakeClock(new SystemClock().now());
     testFetchEligibleCampaignsResponse =
@@ -114,32 +124,9 @@ public class ApiClientTest {
             .build();
 
     apiClient =
-        new ApiClient(
-            () -> mockGrpcClient,
-            firebaseApp,
-            application,
-            firebaseInstanceId,
-            dataCollectionHelper,
-            clock,
-            providerInstaller);
+        new ApiClient(() -> mockGrpcClient, firebaseApp, application, clock, providerInstaller);
     when(application.getPackageName()).thenReturn(PACKAGE_NAME);
     when(packageManager.getPackageInfo(PACKAGE_NAME, 0)).thenReturn(packageInfo);
-    when(firebaseInstanceId.getInstanceId())
-        .thenReturn(
-            Tasks.forResult(
-                new InstanceIdResult() {
-                  @NonNull
-                  @Override
-                  public String getId() {
-                    return INSTANCE_ID;
-                  }
-
-                  @NonNull
-                  @Override
-                  public String getToken() {
-                    return INSTANCE_TOKEN;
-                  }
-                }));
     TimeZone.setDefault(TimeZone.getTimeZone(TIME_ZONE));
   }
 
@@ -148,45 +135,8 @@ public class ApiClientTest {
     when(mockGrpcClient.fetchEligibleCampaigns(any(FetchEligibleCampaignsRequest.class)))
         .thenReturn(testFetchEligibleCampaignsResponse);
 
-    assertThat(apiClient.getFiams(campaignImpressionList).getResult())
+    assertThat(apiClient.getFiams(IID_RESULT, campaignImpressionList))
         .isEqualTo(testFetchEligibleCampaignsResponse);
-  }
-
-  @Test
-  public void getFiams_doesntFetchIfDataCollectionisNotEnabled() {
-    when(dataCollectionHelper.isAutomaticDataCollectionEnabled()).thenReturn(false);
-
-    FetchEligibleCampaignsResponse response =
-        apiClient.getFiams(campaignImpressionList).getResult();
-    assertThat(response).isEqualTo(cacheExpiringResponse);
-    verify(mockGrpcClient, times(0))
-        .fetchEligibleCampaigns(fetchEligibleCampaignsRequestArgcaptor.capture());
-  }
-
-  @Test
-  public void getFiams_doesNotCallGrpcClientWithEmptyIIDToken() {
-    when(mockGrpcClient.fetchEligibleCampaigns(any(FetchEligibleCampaignsRequest.class)))
-        .thenReturn(testFetchEligibleCampaignsResponse);
-    when(firebaseInstanceId.getInstanceId()).thenReturn(Tasks.forResult(null));
-
-    FetchEligibleCampaignsResponse response =
-        apiClient.getFiams(campaignImpressionList).getResult();
-    assertThat(response).isEqualTo(cacheExpiringResponse);
-    verify(mockGrpcClient, times(0))
-        .fetchEligibleCampaigns(fetchEligibleCampaignsRequestArgcaptor.capture());
-  }
-
-  @Test
-  public void getFiams_doesNotCallGrpcClientWithNullIIDToken() {
-    when(mockGrpcClient.fetchEligibleCampaigns(any(FetchEligibleCampaignsRequest.class)))
-        .thenReturn(testFetchEligibleCampaignsResponse);
-    when(firebaseInstanceId.getInstanceId()).thenReturn(Tasks.forResult(null));
-
-    FetchEligibleCampaignsResponse response =
-        apiClient.getFiams(campaignImpressionList).getResult();
-    assertThat(response).isEqualTo(cacheExpiringResponse);
-    verify(mockGrpcClient, times(0))
-        .fetchEligibleCampaigns(fetchEligibleCampaignsRequestArgcaptor.capture());
   }
 
   @Test
@@ -194,7 +144,7 @@ public class ApiClientTest {
     when(mockGrpcClient.fetchEligibleCampaigns(fetchEligibleCampaignsRequestArgcaptor.capture()))
         .thenReturn(testFetchEligibleCampaignsResponse);
 
-    apiClient.getFiams(campaignImpressionList);
+    apiClient.getFiams(IID_RESULT, campaignImpressionList);
 
     assertThat(fetchEligibleCampaignsRequestArgcaptor.getValue().getProjectNumber())
         .isEqualTo(TEST_PROJECT_NUMBER);
@@ -205,7 +155,7 @@ public class ApiClientTest {
     when(mockGrpcClient.fetchEligibleCampaigns(fetchEligibleCampaignsRequestArgcaptor.capture()))
         .thenReturn(testFetchEligibleCampaignsResponse);
 
-    apiClient.getFiams(campaignImpressionList);
+    apiClient.getFiams(IID_RESULT, campaignImpressionList);
 
     assertThat(fetchEligibleCampaignsRequestArgcaptor.getValue().getAlreadySeenCampaignsList())
         .containsExactlyElementsIn(campaignImpressionList.getAlreadySeenCampaignsList());
@@ -216,7 +166,7 @@ public class ApiClientTest {
     when(mockGrpcClient.fetchEligibleCampaigns(fetchEligibleCampaignsRequestArgcaptor.capture()))
         .thenReturn(testFetchEligibleCampaignsResponse);
 
-    apiClient.getFiams(campaignImpressionList);
+    apiClient.getFiams(IID_RESULT, campaignImpressionList);
 
     ClientSignals clientSignals =
         fetchEligibleCampaignsRequestArgcaptor.getValue().getClientSignals();
@@ -231,7 +181,7 @@ public class ApiClientTest {
         .thenReturn(testFetchEligibleCampaignsResponse);
     when(packageManager.getPackageInfo(PACKAGE_NAME, 0)).thenThrow(new NameNotFoundException());
 
-    apiClient.getFiams(campaignImpressionList);
+    apiClient.getFiams(IID_RESULT, campaignImpressionList);
 
     ClientSignals clientSignals =
         fetchEligibleCampaignsRequestArgcaptor.getValue().getClientSignals();
@@ -244,7 +194,7 @@ public class ApiClientTest {
     when(mockGrpcClient.fetchEligibleCampaigns(fetchEligibleCampaignsRequestArgcaptor.capture()))
         .thenReturn(testFetchEligibleCampaignsResponse);
 
-    apiClient.getFiams(campaignImpressionList);
+    apiClient.getFiams(IID_RESULT, campaignImpressionList);
 
     ClientSignals clientSignals =
         fetchEligibleCampaignsRequestArgcaptor.getValue().getClientSignals();
@@ -258,7 +208,7 @@ public class ApiClientTest {
     when(mockGrpcClient.fetchEligibleCampaigns(fetchEligibleCampaignsRequestArgcaptor.capture()))
         .thenReturn(testFetchEligibleCampaignsResponse);
 
-    apiClient.getFiams(campaignImpressionList);
+    apiClient.getFiams(IID_RESULT, campaignImpressionList);
 
     ClientSignals clientSignals =
         fetchEligibleCampaignsRequestArgcaptor.getValue().getClientSignals();
@@ -272,7 +222,7 @@ public class ApiClientTest {
     when(mockGrpcClient.fetchEligibleCampaigns(fetchEligibleCampaignsRequestArgcaptor.capture()))
         .thenReturn(testFetchEligibleCampaignsResponse);
 
-    apiClient.getFiams(campaignImpressionList);
+    apiClient.getFiams(IID_RESULT, campaignImpressionList);
 
     ClientSignals clientSignals =
         fetchEligibleCampaignsRequestArgcaptor.getValue().getClientSignals();
@@ -287,7 +237,7 @@ public class ApiClientTest {
 
     verify(providerInstaller, times(0)).install();
 
-    apiClient.getFiams(campaignImpressionList);
+    apiClient.getFiams(IID_RESULT, campaignImpressionList);
 
     verify(providerInstaller, times(1)).install();
   }
@@ -297,7 +247,7 @@ public class ApiClientTest {
     when(mockGrpcClient.fetchEligibleCampaigns(fetchEligibleCampaignsRequestArgcaptor.capture()))
         .thenReturn(testFetchEligibleCampaignsResponse);
 
-    apiClient.getFiams(campaignImpressionList);
+    apiClient.getFiams(IID_RESULT, campaignImpressionList);
 
     ClientAppInfo clientAppInfo =
         fetchEligibleCampaignsRequestArgcaptor.getValue().getRequestingClientApp();
@@ -310,7 +260,7 @@ public class ApiClientTest {
     when(mockGrpcClient.fetchEligibleCampaigns(fetchEligibleCampaignsRequestArgcaptor.capture()))
         .thenReturn(testFetchEligibleCampaignsResponse);
 
-    apiClient.getFiams(campaignImpressionList);
+    apiClient.getFiams(IID_RESULT, campaignImpressionList);
 
     ClientAppInfo clientAppInfo =
         fetchEligibleCampaignsRequestArgcaptor.getValue().getRequestingClientApp();
@@ -323,7 +273,7 @@ public class ApiClientTest {
     when(mockGrpcClient.fetchEligibleCampaigns(fetchEligibleCampaignsRequestArgcaptor.capture()))
         .thenReturn(testFetchEligibleCampaignsResponse);
 
-    apiClient.getFiams(campaignImpressionList);
+    apiClient.getFiams(IID_RESULT, campaignImpressionList);
 
     ClientAppInfo clientAppInfo =
         fetchEligibleCampaignsRequestArgcaptor.getValue().getRequestingClientApp();
@@ -344,7 +294,7 @@ public class ApiClientTest {
         .thenReturn(badCacheTimestamp);
 
     FetchEligibleCampaignsResponse fetchFiamsSafe =
-        apiClient.getFiams(campaignImpressionList).getResult();
+        apiClient.getFiams(IID_RESULT, campaignImpressionList);
 
     // Now should be:
     assertThat(fetchFiamsSafe.getExpirationEpochTimestampMillis()).isGreaterThan(clock.now());
@@ -366,7 +316,7 @@ public class ApiClientTest {
         .thenReturn(badCacheTimestamp);
 
     FetchEligibleCampaignsResponse fetchFiamsSafe =
-        apiClient.getFiams(campaignImpressionList).getResult();
+        apiClient.getFiams(IID_RESULT, campaignImpressionList);
 
     // Now should be:
     assertThat(fetchFiamsSafe.getExpirationEpochTimestampMillis()).isGreaterThan(clock.now());

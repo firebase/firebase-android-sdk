@@ -338,7 +338,10 @@ public class FirebaseCrashlytics {
    * disabled. Use {@link #deleteUnsentReports()} to delete any reports stored on the device without
    * sending them to Crashlytics.
    *
-   * @param enabled whether to enable automatic data collection.
+   * @param enabled whether to enable automatic data collection. When set to `false`, the new value
+   *     does not apply until the next run of the app. If you want to disable data collection by
+   *     default for all app runs, add the `firebase_crashlytics_collection_enabled` flag to your
+   *     app's AndroidManifest.xml.
    */
   public void setCrashlyticsCollectionEnabled(boolean enabled) {
     core.setCrashlyticsCollectionEnabled(enabled);

@@ -137,7 +137,7 @@ dependencies {
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation 'junit:junit:4.12'
     testImplementation 'androidx.test:runner:1.2.0'
-    testImplementation ('org.robolectric:robolectric:4.2') {
+    testImplementation ("org.robolectric:robolectric:$robolectricVersion") {
         exclude group: 'com.google.protobuf', module: 'protobuf-java'
     }
     testImplementation "io.grpc:grpc-testing:$grpcVersion"
