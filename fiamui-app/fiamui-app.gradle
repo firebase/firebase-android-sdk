@@ -54,8 +54,9 @@ android {
 }
 
 dependencies {
-  implementation project(path: ":firebase-inappmessaging-display")
-  implementation project(path: ":firebase-inappmessaging")
+  implementation project(":firebase-inappmessaging-display")
+  implementation project(":firebase-inappmessaging")
+
   implementation 'com.google.guava:guava:24.1-jre-android'
 
   implementation('com.google.firebase:firebase-analytics:17.4.0') {
