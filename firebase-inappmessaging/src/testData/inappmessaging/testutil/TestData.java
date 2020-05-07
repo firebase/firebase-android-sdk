@@ -30,8 +30,8 @@ public class TestData {
   // ************************* METADATA *************************
   public static final String ANALYTICS_EVENT_NAME = "event1";
   public static final String ON_FOREGROUND_EVENT_NAME = "ON_FOREGROUND";
-  public static final String INSTANCE_ID = "instance_id";
-  public static final String INSTANCE_TOKEN = "instance_token";
+  public static final String INSTALLATION_ID = "instance_id";
+  public static final String INSTALLATION_TOKEN = "instance_token";
   public static final boolean IS_NOT_TEST_MESSAGE = false;
   public static final boolean IS_TEST_MESSAGE = true;
   public static final String MESSAGE_BACKGROUND_HEX_STRING = "#FFFFFF";
