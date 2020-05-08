@@ -537,7 +537,7 @@ public class FirebaseInstallationServiceClient {
       @Nullable String appId, @NonNull String apiKey, @NonNull String projectId) {
     return String.format(
         "Firebase options used while communicating with Firebase server APIs: %s, %s, %s",
-        appId != null ? appId : "", apiKey, projectId);
+        TextUtils.isEmpty(appId) ? "" : appId, apiKey, projectId);
   }
 
   // Read the error message from the response.
