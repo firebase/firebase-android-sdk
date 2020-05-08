@@ -76,7 +76,7 @@ dependencies {
     exclude group: 'com.google.firebase', module: 'protolite-well-known-types'
   }
   implementation "com.google.firebase:firebase-functions"
-  implementation "com.google.firebase:firebase-inappmessaging" {
+  implementation ("com.google.firebase:firebase-inappmessaging") {
     exclude group: 'com.google.firebase', module: 'protolite-well-known-types'
   }
   implementation "com.google.firebase:firebase-messaging"
