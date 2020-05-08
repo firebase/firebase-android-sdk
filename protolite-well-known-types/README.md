@@ -1,5 +1,5 @@
 # Protolite well known types
-This is the proto lite bindingss of the proto [well known types](https://github.com/google/protobuf/tree/5ce724bcebebb56914da6efc40b85c4c801e6fe1/src/google/protobuf) and the google cloud types.
+This is the proto lite bindings of the proto [well known types](https://github.com/google/protobuf/tree/5ce724bcebebb56914da6efc40b85c4c801e6fe1/src/google/protobuf) and the google cloud types.
 
 ## Problem
 When an app uses multiple firebase SDKs, gradle has the ability to [resolve version conflicts](https://docs.gradle.org/current/dsl/org.gradle.api.artifacts.ResolutionStrategy.html) in overlapping libraries that these SDKs may depend on. The caveat with protobuf is that in addition to a runtime, standard practices to use protobuf will result in final artifacts containing class files of the compiled higher level proto datatypes like TimeStamp.class, Any.class etc.
