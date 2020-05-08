@@ -52,7 +52,7 @@ android {
 
 dependencies {
     implementation 'com.google.protobuf:protobuf-javalite:3.11.0'
-    compile 'com.google.protobuf:protobuf-java:3.11.4'
+//    compile 'com.google.protobuf:protobuf-java:3.11.4'
 
     protobuf("com.google.api.grpc:proto-google-common-protos:1.17.0"){
         exclude group: "com.google.protobuf", module: "protobuf-java"
