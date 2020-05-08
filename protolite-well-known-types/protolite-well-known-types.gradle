@@ -46,7 +46,7 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
-    sourceSets.main.resources.srcDirs = ['build/extracted-protos/main/']
+    sourceSets.main.resources.srcDirs = ['build/extracted-protos/main/', "src/main/proto"]
     sourceSets.main.resources.includes = ['**/*.proto']
 }
 
