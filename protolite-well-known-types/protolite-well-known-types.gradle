@@ -17,7 +17,6 @@ plugins {
     id 'com.google.protobuf'
 }
 
-
 protobuf {
     protoc {
         artifact = 'com.google.protobuf:protoc:3.10.0'
@@ -46,12 +45,22 @@ android {
         }
     }
 
-    sourceSets.main.resources.srcDirs = ['build/extracted-protos/main/']
-    sourceSets.main.resources.includes = ['**/*.proto']
+    sourceSets.main.resources.srcDirs = [
+            'build/extracted-protos/main/google/type/date.proto',
+            'build/extracted-protos/main/google/type/latlng.proto',
+            'build/extracted-protos/main/google/type/timeofday.proto',
+    ]
+    sourceSets.main.resources.includes = [
+            'build/extracted-protos/main/google/type/date.proto',
+            'build/extracted-protos/main/google/type/timeofday.proto',
+            'build/extracted-protos/main/google/type/date.proto',
+    ]
 }
 
 dependencies {
     implementation 'com.google.protobuf:protobuf-javalite:3.11.0'
-    protobuf 'com.google.protobuf:protobuf-java:3.11.4'
-    protobuf("com.google.api.grpc:proto-google-common-protos:1.17.0")
+//    protobuf("com.google.api.grpc:proto-google-common-protos:1.17.0")
+    protobuf("com.google.api.grpc:proto-google-common-protos:1.17.0") {
+        exclude group: "com.google.protobuf", module: "protobuf-java"
+    }
 }
