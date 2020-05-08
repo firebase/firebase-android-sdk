@@ -58,4 +58,5 @@ android {
 
 dependencies {
     implementation 'com.google.protobuf:protobuf-javalite:3.11.0'
+    protobuf("com.google.api.grpc:proto-google-common-protos:1.17.0")
 }
