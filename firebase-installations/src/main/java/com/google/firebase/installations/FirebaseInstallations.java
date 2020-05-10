@@ -351,7 +351,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     }
 
     // Store the prefs to persist the result of the previous step.
-    persistedInstallation.insertOrUpdatePersistedInstallationEntry(prefs);
+    insertOrUpdatePrefs(prefs);
 
     // Let the caller know about the result.
     if (prefs.isErrored()) {
@@ -362,6 +362,29 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
       triggerOnException(prefs, new IOException("cleared fid due to auth error"));
     } else {
       triggerOnStateReached(prefs);
+    }
+  }
+
+  /**
+   * Inserting or Updating the prefs. This operation is made cross-process and cross-thread safe by
+   * wrapping all the processing first in a java synchronization block and wrapping that in a
+   * cross-process lock created using FileLocks.
+   */
+  private void insertOrUpdatePrefs(PersistedInstallationEntry prefs) {
+    synchronized (lockGenerateFid) {
+      CrossProcessLock lock =
+          CrossProcessLock.acquire(firebaseApp.getApplicationContext(), LOCKFILE_NAME_GENERATE_FID);
+      try {
+        // Store the prefs to persist the result of the previous step.
+        persistedInstallation.insertOrUpdatePersistedInstallationEntry(prefs);
+      } finally {
+        // It is possible that the lock acquisition failed, resulting in lock being null.
+        // We handle this case by going on with our business even if the acquisition failed
+        // but we need to be sure to only release if we got a lock.
+        if (lock != null) {
+          lock.releaseAndClose();
+        }
+      }
     }
   }
 
@@ -513,7 +536,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
       }
     }
 
-    persistedInstallation.insertOrUpdatePersistedInstallationEntry(entry.withNoGeneratedFid());
+    insertOrUpdatePrefs(entry.withNoGeneratedFid());
     return null;
   }
 }

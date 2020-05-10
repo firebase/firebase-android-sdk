@@ -165,7 +165,7 @@ public class FirebaseInstallationServiceClient {
           return readCreateResponse(httpURLConnection);
         }
 
-        logFisCommunicationError(httpURLConnection);
+        logFisCommunicationError(httpURLConnection, appId, apiKey, projectID);
 
         if (httpResponseCode == 429 || (httpResponseCode >= 500 && httpResponseCode < 600)) {
           retryCount++;
@@ -307,7 +307,7 @@ public class FirebaseInstallationServiceClient {
           return;
         }
 
-        logFisCommunicationError(httpURLConnection);
+        logFisCommunicationError(httpURLConnection, null, apiKey, projectID);
 
         if (httpResponseCode == 429 || (httpResponseCode >= 500 && httpResponseCode < 600)) {
           retryCount++;
@@ -374,7 +374,7 @@ public class FirebaseInstallationServiceClient {
           return readGenerateAuthTokenResponse(httpURLConnection);
         }
 
-        logFisCommunicationError(httpURLConnection);
+        logFisCommunicationError(httpURLConnection, null, apiKey, projectID);
 
         if (httpResponseCode == 401 || httpResponseCode == 404) {
           return TokenResult.builder().setResponseCode(TokenResult.ResponseCode.AUTH_ERROR).build();
@@ -522,11 +522,23 @@ public class FirebaseInstallationServiceClient {
         : Long.parseLong(expiresIn.substring(0, expiresIn.length() - 1));
   }
 
-  private static void logFisCommunicationError(HttpURLConnection conn) {
+  private static void logFisCommunicationError(
+      HttpURLConnection conn,
+      @Nullable String appId,
+      @NonNull String apiKey,
+      @NonNull String projectId) {
     String logString = readErrorResponse(conn);
     if (!TextUtils.isEmpty(logString)) {
       Log.w(FIS_TAG, logString);
+      Log.w(FIS_TAG, availableFirebaseOptions(appId, apiKey, projectId));
     }
+  }
+
+  private static String availableFirebaseOptions(
+      @Nullable String appId, @NonNull String apiKey, @NonNull String projectId) {
+    return String.format(
+        "Firebase options used while communicating with Firebase server APIs: %s, %s%s",
+        apiKey, projectId, TextUtils.isEmpty(appId) ? "" : ", " + appId);
   }
 
   // Read the error message from the response.
