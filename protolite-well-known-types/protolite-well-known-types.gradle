@@ -57,7 +57,7 @@ android {
         Task deleteDuration = task "${String.format("deleteDuration" + variant.name.capitalize())}" {
             doLast {
                 println("******************************")
-                new File("${project.getBuildDir().getAbsolutePath()}/intermediates/javac/${variant.name}/compile${variant.name}JavaWithJavac/classes/com/google/protobuf/").eachFile(FileType.FILES) { file ->
+                new File("${project.getBuildDir().getAbsolutePath()}/intermediates/javac/${variant.name}/compile${variant.name.capitalize()}JavaWithJavac/classes/com/google/protobuf/").eachFile(FileType.FILES) { file ->
                     if (file.name.contains('Duration')) {
                         file.delete()
                     }
