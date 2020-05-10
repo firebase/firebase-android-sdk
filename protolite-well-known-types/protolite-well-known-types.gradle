@@ -56,7 +56,6 @@ android {
         Task retrolambdaTask = getTasksByName("transformClassesWithRetrolambdaFor" + variant.name.capitalize(), true).first()
         Task deleteDuration = task "${String.format("deleteDuration" + variant.name.capitalize())}" {
             doLast {
-                println("******************************")
                 new File("${project.getBuildDir().getAbsolutePath()}/intermediates/javac/${variant.name}/compile${variant.name.capitalize()}JavaWithJavac/classes/com/google/protobuf/").eachFile(FileType.FILES) { file ->
                     if (file.name.contains('Duration')) {
                         file.delete()
@@ -81,7 +80,7 @@ dependencies {
 
     protobuf files('src/lib/proto')
 
-    protobuf("com.google.api.grpc:proto-google-common-protos:1.17.0"){
+    protobuf("com.google.api.grpc:proto-google-common-protos:1.18.0"){
         exclude group: "com.google.protobuf", module: "protobuf-java"
     }
 }
