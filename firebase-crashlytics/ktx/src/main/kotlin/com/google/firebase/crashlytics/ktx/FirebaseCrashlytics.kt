@@ -38,7 +38,7 @@ internal const val LIBRARY_NAME: String = "fire-cls-ktx"
 
 /** @suppress */
 @Keep
-class FirebaseCrashlyticsRegistrar : ComponentRegistrar {
+class FirebaseCrashlyticsKtxRegistrar : ComponentRegistrar {
     override fun getComponents(): List<Component<*>> =
             listOf(LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME))
 }
