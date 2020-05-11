@@ -48,8 +48,8 @@ class CrossProcessLock {
       File file = new File(appContext.getFilesDir(), lockName);
       channel = new RandomAccessFile(file, "rw").getChannel();
       // Use the file channel to create a lock on the file.
-      // This method blocks until it can retrieve the lock.
-      lock = channel.lock();
+      // This method does not block and only attempts to acquire the lock.
+      lock = channel.tryLock();
       return new CrossProcessLock(channel, lock);
     } catch (IOException | Error e) {
       // Certain conditions can cause file locking to fail, such as out of disk or bad permissions.
@@ -64,6 +64,7 @@ class CrossProcessLock {
           lock.release();
         } catch (IOException e2) {
           // nothing to do here
+          Log.e(TAG, "encountered error while releasing the lock, ignoring", e);
         }
       }
       if (channel != null) {
@@ -71,6 +72,7 @@ class CrossProcessLock {
           channel.close();
         } catch (IOException e3) {
           // nothing to do here
+          Log.e(TAG, "encountered error while closing the channel, ignoring", e);
         }
       }
 

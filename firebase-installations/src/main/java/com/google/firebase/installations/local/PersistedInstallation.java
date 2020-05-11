@@ -14,8 +14,10 @@
 
 package com.google.firebase.installations.local;
 
+import android.util.Log;
 import androidx.annotation.NonNull;
 import com.google.firebase.FirebaseApp;
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -31,6 +33,7 @@ import org.json.JSONObject;
  * @hide
  */
 public class PersistedInstallation {
+  private static final String TAG = "PersistedInstallation";
   private final File dataFile;
   @NonNull private final FirebaseApp firebaseApp;
 
@@ -124,6 +127,7 @@ public class PersistedInstallation {
       }
       return new JSONObject(baos.toString());
     } catch (IOException | JSONException e) {
+      Log.e(TAG, "error encountered while reading persisted firebase installation." + e);
       return new JSONObject();
     }
   }
@@ -150,10 +154,11 @@ public class PersistedInstallation {
           File.createTempFile(
               SETTINGS_FILE_NAME_PREFIX, "tmp", firebaseApp.getApplicationContext().getFilesDir());
 
-      // Werialize the JSON object into a string and write the bytes to a temp file
-      FileOutputStream fos = new FileOutputStream(tmpFile);
-      fos.write(json.toString().getBytes("UTF-8"));
-      fos.close();
+      // Serialize the JSON object into a string and write the bytes to a temp file
+      BufferedOutputStream bufferedOutputStream =
+          new BufferedOutputStream(new FileOutputStream(tmpFile));
+      bufferedOutputStream.write(json.toString().getBytes("UTF-8"));
+      bufferedOutputStream.close();
 
       // Snapshot the temp file to the actual file
       if (!tmpFile.renameTo(dataFile)) {
@@ -164,6 +169,7 @@ public class PersistedInstallation {
       // There isn't a lot we can do when this happens, other than crash the process. It is a
       // bit nicer to eat the error and hope that the user clears some storage space on their
       // device.
+      Log.e(TAG, "error encountered while persisting firebase installation." + e);
     }
 
     // Return the prefs that were written to make it easy for the caller to use them in a
