@@ -634,7 +634,8 @@ public class FirebaseInAppMessagingDisplayTest {
 
   private void startActivity(Activity activity) {
     fiamUI.onActivityStarted(activity);
-    verify(headless, atLeastOnce()).setMessageDisplayComponent(inAppMessageTriggerListenerCaptor.capture());
+    verify(headless, atLeastOnce())
+        .setMessageDisplayComponent(inAppMessageTriggerListenerCaptor.capture());
     assertThat(fiamUI.currentActivityName.equals(activity.getLocalClassName())).isTrue();
     listener = inAppMessageTriggerListenerCaptor.getValue();
   }
