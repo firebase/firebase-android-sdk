@@ -101,6 +101,8 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
   private InAppMessage inAppMessage;
   private FirebaseInAppMessagingDisplayCallbacks callbacks;
 
+  @VisibleForTesting String currentActivityName = "";
+
   @Inject
   FirebaseInAppMessagingDisplay(
       FirebaseInAppMessaging headlessInAppMessaging,
@@ -182,19 +184,7 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
   @Override
   public void onActivityStarted(final Activity activity) {
     super.onActivityStarted(activity);
-    // Register FIAM listener with the headless sdk.
-    headlessInAppMessaging.setMessageDisplayComponent(
-        (iam, cb) -> {
-          // When we are in the middle of showing a message, we ignore other notifications these
-          // messages will be fired when the corresponding events happen the next time.
-          if (inAppMessage != null || headlessInAppMessaging.areMessagesSuppressed()) {
-            Logging.logd("Active FIAM exists. Skipping trigger");
-            return;
-          }
-          inAppMessage = iam;
-          callbacks = cb;
-          showActiveFiam(activity);
-        });
+    bindFiamToActivity(activity);
   }
 
   /**
@@ -205,10 +195,7 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
   @Keep
   @Override
   public void onActivityPaused(Activity activity) {
-    // clear all state scoped to activity and dismiss fiam
-    headlessInAppMessaging.clearDisplayListener();
-    imageLoader.cancelTag(activity.getClass());
-    removeDisplayedFiam(activity);
+    unbindFiamFromActivity(activity);
     super.onActivityPaused(activity);
   }
 
@@ -220,10 +207,8 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
   @Keep
   @Override
   public void onActivityDestroyed(Activity activity) {
-    // clear all state scoped to activity and dismiss fiam
-    headlessInAppMessaging.clearDisplayListener();
-    imageLoader.cancelTag(activity.getClass());
-    removeDisplayedFiam(activity);
+    unbindFiamFromActivity(activity);
+    headlessInAppMessaging.removeAllListeners();
     super.onActivityDestroyed(activity);
   }
 
@@ -236,8 +221,39 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
   @Override
   public void onActivityResumed(Activity activity) {
     super.onActivityResumed(activity);
+    bindFiamToActivity(activity);
+  }
+
+  private void bindFiamToActivity(Activity activity) {
+    if (!currentActivityName.equals(activity.getLocalClassName())) {
+      Logging.logi("Binding to activity: " + activity.getLocalClassName());
+      headlessInAppMessaging.setMessageDisplayComponent(
+          (iam, cb) -> {
+            // When we are in the middle of showing a message, we ignore other notifications these
+            // messages will be fired when the corresponding events happen the next time.
+            if (inAppMessage != null || headlessInAppMessaging.areMessagesSuppressed()) {
+              Logging.logd("Active FIAM exists. Skipping trigger");
+              return;
+            }
+            inAppMessage = iam;
+            callbacks = cb;
+            showActiveFiam(activity);
+          });
+      // set the current activity to be the one passed in
+      currentActivityName = activity.getLocalClassName();
+    }
     if (inAppMessage != null) {
       showActiveFiam(activity);
+    }
+  }
+
+  private void unbindFiamFromActivity(Activity activity) {
+    if (currentActivityName.equals(activity.getLocalClassName())) {
+      Logging.logi("Unbinding from activity: " + activity.getLocalClassName());
+      headlessInAppMessaging.clearDisplayListener();
+      imageLoader.cancelTag(activity.getClass());
+      removeDisplayedFiam(activity);
+      currentActivityName = "";
     }
   }
 
@@ -318,8 +334,7 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
 
     Map<Action, View.OnClickListener> actionListeners = new HashMap<>();
     // If the message has an action, but not an action url, we dismiss when the action
-    // button is
-    // clicked;
+    // button is clicked
     for (Action action : extractActions(inAppMessage)) {
 
       final View.OnClickListener actionListener;

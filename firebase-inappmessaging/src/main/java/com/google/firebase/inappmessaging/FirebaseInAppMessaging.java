@@ -99,7 +99,6 @@ public class FirebaseInAppMessaging {
    * @return
    */
   @NonNull
-  @Keep
   public static FirebaseInAppMessaging getInstance() {
     return FirebaseApp.getInstance().get(FirebaseInAppMessaging.class);
   }
@@ -109,7 +108,6 @@ public class FirebaseInAppMessaging {
    *
    * @return true if auto initialization is required
    */
-  @Keep
   public boolean isAutomaticDataCollectionEnabled() {
     return dataCollectionHelper.isAutomaticDataCollectionEnabled();
   }
@@ -145,7 +143,6 @@ public class FirebaseInAppMessaging {
    *
    * @param isAutomaticCollectionEnabled Whether isEnabled
    */
-  @Keep
   public void setAutomaticDataCollectionEnabled(@Nullable Boolean isAutomaticCollectionEnabled) {
     dataCollectionHelper.setAutomaticDataCollectionEnabled(isAutomaticCollectionEnabled);
   }
@@ -172,7 +169,6 @@ public class FirebaseInAppMessaging {
    *
    * @param isAutomaticCollectionEnabled Whether isEnabled
    */
-  @Keep
   public void setAutomaticDataCollectionEnabled(boolean isAutomaticCollectionEnabled) {
     dataCollectionHelper.setAutomaticDataCollectionEnabled(isAutomaticCollectionEnabled);
   }
@@ -187,7 +183,6 @@ public class FirebaseInAppMessaging {
    *
    * @param areMessagesSuppressed Whether messages should be suppressed
    */
-  @Keep
   public void setMessagesSuppressed(@NonNull Boolean areMessagesSuppressed) {
     this.areMessagesSuppressed = areMessagesSuppressed;
   }
@@ -198,17 +193,15 @@ public class FirebaseInAppMessaging {
    *
    * @return true if messages should be suppressed
    */
-  @Keep
   public boolean areMessagesSuppressed() {
     return areMessagesSuppressed;
   }
 
-  /*
+  /**
    * Called to set a new message display component for FIAM SDK. This is the method used
    * by both the default FIAM display SDK or any app wanting to customize the message
    * display.
    */
-  @Keep
   public void setMessageDisplayComponent(@NonNull FirebaseInAppMessagingDisplay messageDisplay) {
     Logging.logi("Setting display event component");
     this.fiamDisplay = messageDisplay;
@@ -219,8 +212,6 @@ public class FirebaseInAppMessaging {
    *
    * @hide
    */
-  @Keep
-  @KeepForSdk
   public void clearDisplayListener() {
     Logging.logi("Removing display event component");
     this.fiamDisplay = null;
@@ -332,11 +323,19 @@ public class FirebaseInAppMessaging {
   }
 
   /**
+   * Removes all registered listeners.
+   *
+   * @hide
+   */
+  public void removeAllListeners() {
+    developerListenerManager.removeAllListeners();
+  }
+
+  /**
    * Programmatically trigger a contextual trigger. This will display any eligible in-app messages
    * that are triggered by this event
    *
    * @param eventName
-   * @hide // hiding until api is finalized
    */
   public void triggerEvent(String eventName) {
     programaticContextualTriggers.triggerEvent(eventName);
