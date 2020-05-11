@@ -15,6 +15,7 @@ package com.google.android.datatransport.runtime.scheduling.persistence;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.os.Build;
 import java.util.Arrays;
@@ -30,12 +31,20 @@ final class SchemaManager extends SQLiteOpenHelper {
   private boolean configured = false;
 
   // Schema migration guidelines
-  // 1. Model migration at Vn as an operation performed on the database at Vn-1.
-  // 2. Append the migration to the ordered list of Migrations in the static initializer
-  // 3. Write tests that cover the following scenarios migrating to Vn from V0..Vn-1
+  // 1. Only migrations that are backward compatible are allowed. Developers may move back and forth
+  // between versions
+    // ✔ Adding a nullable column
+    // ✔ Adding a non null column with default
+    // Adding a table may or may not be acceptable
+  // ❌ Deleting a column,table,index
+  // ❌ Renaming a column,table,index
+
+  // 2. Model migration at Vn as an operation performed on the database at Vn-1.
+  // 3. Append the migration to the ordered list of Migrations in the static initializer
+  // 4. Write tests that cover the following scenarios migrating to Vn from V0..Vn-1
   // Note: Migrations handle only upgrades. Downgrades will drop and recreate all tables/indices.
   private static final String CREATE_EVENTS_SQL_V1 =
-      "CREATE TABLE events "
+      "CREATE TABLE IF NOT EXISTS events "
           + "(_id INTEGER PRIMARY KEY,"
           + " context_id INTEGER NOT NULL,"
           + " transport_name TEXT NOT NULL,"
@@ -47,7 +56,7 @@ final class SchemaManager extends SQLiteOpenHelper {
           + "FOREIGN KEY (context_id) REFERENCES transport_contexts(_id) ON DELETE CASCADE)";
 
   private static final String CREATE_EVENT_METADATA_SQL_V1 =
-      "CREATE TABLE event_metadata "
+      "CREATE TABLE IF NOT EXISTS event_metadata "
           + "(_id INTEGER PRIMARY KEY,"
           + " event_id INTEGER NOT NULL,"
           + " name TEXT NOT NULL,"
@@ -55,26 +64,20 @@ final class SchemaManager extends SQLiteOpenHelper {
           + "FOREIGN KEY (event_id) REFERENCES events(_id) ON DELETE CASCADE)";
 
   private static final String CREATE_CONTEXTS_SQL_V1 =
-      "CREATE TABLE transport_contexts "
+      "CREATE TABLE IF NOT EXISTS transport_contexts "
           + "(_id INTEGER PRIMARY KEY,"
           + " backend_name TEXT NOT NULL,"
           + " priority INTEGER NOT NULL,"
           + " next_request_ms INTEGER NOT NULL)";
 
   private static final String CREATE_EVENT_BACKEND_INDEX_V1 =
-      "CREATE INDEX events_backend_id on events(context_id)";
+      "CREATE INDEX IF NOT EXISTS events_backend_id on events(context_id)";
 
   private static final String CREATE_CONTEXT_BACKEND_PRIORITY_INDEX_V1 =
-      "CREATE UNIQUE INDEX contexts_backend_priority on transport_contexts(backend_name, priority)";
-
-  private static final String DROP_EVENTS_SQL = "DROP TABLE events";
-
-  private static final String DROP_EVENT_METADATA_SQL = "DROP TABLE event_metadata";
-
-  private static final String DROP_CONTEXTS_SQL = "DROP TABLE transport_contexts";
+      "CREATE UNIQUE INDEX IF NOT EXISTS contexts_backend_priority on transport_contexts(backend_name, priority)";
 
   private static final String CREATE_PAYLOADS_TABLE_V4 =
-      "CREATE TABLE event_payloads "
+      "CREATE TABLE IF NOT EXISTS event_payloads "
           + "(sequence_num INTEGER NOT NULL,"
           + " event_id INTEGER NOT NULL,"
           + " bytes BLOB NOT NULL,"
@@ -94,18 +97,35 @@ final class SchemaManager extends SQLiteOpenHelper {
 
   private static final SchemaManager.Migration MIGRATE_TO_V2 =
       (db) -> {
-        db.execSQL("ALTER TABLE transport_contexts ADD COLUMN extras BLOB");
+        try {
+          db.execSQL("ALTER TABLE transport_contexts ADD COLUMN extras BLOB");
+        } catch (SQLiteException ignored) {
+        }
+
         db.execSQL(
-            "CREATE UNIQUE INDEX contexts_backend_priority_extras on transport_contexts(backend_name, priority, extras)");
-        db.execSQL("DROP INDEX contexts_backend_priority");
+            "CREATE UNIQUE INDEX IF NOT EXISTS contexts_backend_priority_extras on transport_contexts(backend_name, priority, extras)");
+
+        // This migration is safe since all older versions delete tables and recreate onDowngrade.
+        // We no longer allow these mutations
+        db.execSQL("DROP INDEX IF EXISTS contexts_backend_priority");
       };
 
   private static final SchemaManager.Migration MIGRATE_TO_V3 =
-      db -> db.execSQL("ALTER TABLE events ADD COLUMN payload_encoding TEXT");
+      (db) -> {
+        try {
+          db.execSQL("ALTER TABLE events ADD COLUMN payload_encoding TEXT");
+        } catch (SQLiteException ignored) {
+        }
+      };
 
   private static final SchemaManager.Migration MIGRATE_TO_V4 =
       db -> {
-        db.execSQL("ALTER TABLE events ADD COLUMN inline BOOLEAN NOT NULL DEFAULT 1");
+        try {
+          db.execSQL("ALTER TABLE events ADD COLUMN inline BOOLEAN NOT NULL DEFAULT 1");
+        } catch (SQLiteException ignored) {
+
+        }
+
         db.execSQL(CREATE_PAYLOADS_TABLE_V4);
       };
 
@@ -119,6 +139,7 @@ final class SchemaManager extends SQLiteOpenHelper {
       @Named("SCHEMA_VERSION") int schemaVersion) {
     super(context, dbName, null, schemaVersion);
     this.schemaVersion = schemaVersion;
+
   }
 
   @Override
@@ -157,14 +178,7 @@ final class SchemaManager extends SQLiteOpenHelper {
   }
 
   @Override
-  public void onDowngrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-    db.execSQL(DROP_EVENTS_SQL);
-    db.execSQL(DROP_EVENT_METADATA_SQL);
-    db.execSQL(DROP_CONTEXTS_SQL);
-    // Indices are dropped automatically when the tables are dropped
-
-    onCreate(db, newVersion);
-  }
+  public void onDowngrade(SQLiteDatabase db, int oldVersion, int newVersion) {}
 
   @Override
   public void onOpen(SQLiteDatabase db) {

@@ -13,28 +13,19 @@
 // limitations under the License.
 package com.google.android.datatransport.runtime.scheduling.persistence;
 
-import android.content.ContentValues;
-import android.database.sqlite.SQLiteDatabase;
-
-import static com.google.android.datatransport.runtime.scheduling.persistence.SchemaManager.DB_NAME;
-import static com.google.android.datatransport.runtime.scheduling.persistence.SchemaManager.SCHEMA_VERSION;
-import static com.google.common.truth.Truth.assertThat;
-
 import androidx.test.core.app.ApplicationProvider;
-
-import com.google.android.datatransport.runtime.EventInternal;
-import com.google.android.datatransport.runtime.TransportContext;
-import com.google.android.datatransport.runtime.util.PriorityMapping;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.ParameterizedRobolectricTestRunner;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+
+import static com.google.android.datatransport.runtime.scheduling.persistence.SchemaManager.DB_NAME;
+import static com.google.android.datatransport.runtime.scheduling.persistence.SchemaManager.SCHEMA_VERSION;
 
 @RunWith(ParameterizedRobolectricTestRunner.class)
 public class SchemaManagerMigrationTest {
@@ -51,13 +42,14 @@ public class SchemaManagerMigrationTest {
     @ParameterizedRobolectricTestRunner.Parameters(name = "lowVersion = {0}, highVersion = {1}")
     public static Collection<Object[]> data() {
         Collection<Object[]> params = new ArrayList<>();
-        for(int lowVersion  = 1 ; lowVersion < SCHEMA_VERSION; lowVersion ++) {
-            for (int highVersion = lowVersion + 1; highVersion <= SCHEMA_VERSION; highVersion++) {
-                params.add(new Object[]{lowVersion, highVersion});
+        for (int fromVersion = 1; fromVersion < SCHEMA_VERSION; fromVersion++) {
+            for (int toVersion = fromVersion + 1; toVersion <= SCHEMA_VERSION; toVersion++) {
+                params.add(new Object[]{fromVersion, toVersion});
             }
         }
         return params;
     }
+
 
     public SchemaManagerMigrationTest(int lowVersion, int highVersion) {
         this.lowVersion = lowVersion;
@@ -105,36 +97,5 @@ public class SchemaManagerMigrationTest {
 
         schemaManager.onUpgrade(schemaManager.getWritableDatabase(), lowVersion, highVersion);
         simulatorMap.get(highVersion).simulate(schemaManager);
-    }
-
-    private PersistedEvent simulatedPersistOnV1Database(
-            SchemaManager schemaManager, TransportContext transportContext, EventInternal eventInternal) {
-        SQLiteDatabase db = schemaManager.getWritableDatabase();
-
-        ContentValues record = new ContentValues();
-        record.put("backend_name", transportContext.getBackendName());
-        record.put("priority", PriorityMapping.toInt(transportContext.getPriority()));
-        record.put("next_request_ms", 0);
-        long contextId = db.insert("transport_contexts", null, record);
-
-        ContentValues values = new ContentValues();
-        values.put("context_id", contextId);
-        values.put("transport_name", eventInternal.getTransportName());
-        values.put("timestamp_ms", eventInternal.getEventMillis());
-        values.put("uptime_ms", eventInternal.getUptimeMillis());
-        values.put("payload", eventInternal.getPayload());
-        values.put("code", eventInternal.getCode());
-        values.put("num_attempts", 0);
-        long newEventId = db.insert("events", null, values);
-
-        for (Map.Entry<String, String> entry : eventInternal.getMetadata().entrySet()) {
-            ContentValues metadata = new ContentValues();
-            metadata.put("event_id", newEventId);
-            metadata.put("name", entry.getKey());
-            metadata.put("value", entry.getValue());
-            db.insert("event_metadata", null, metadata);
-        }
-
-        return PersistedEvent.create(newEventId, transportContext, eventInternal);
     }
 }
