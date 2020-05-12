@@ -27,10 +27,12 @@ class CrossProcessLock {
   private static final String TAG = "CrossProcessLock";
   private final FileChannel channel;
   private final FileLock lock;
+  private final RandomAccessFile randomAccessFile;
 
-  private CrossProcessLock(FileChannel channel, FileLock lock) {
+  private CrossProcessLock(FileChannel channel, FileLock lock, RandomAccessFile randomAccessFile) {
     this.channel = channel;
     this.lock = lock;
+    this.randomAccessFile = randomAccessFile;
   }
 
   /**
@@ -52,7 +54,7 @@ class CrossProcessLock {
       // Use the file channel to create a lock on the file.
       // This method blocks until it can retrieve the lock.
       lock = channel.lock();
-      return new CrossProcessLock(channel, lock);
+      return new CrossProcessLock(channel, lock, randomAccessFile);
     } catch (IOException | Error e) {
       // Certain conditions can cause file locking to fail, such as out of disk or bad permissions.
       // In any case, the acquire will fail and return null instead of a held lock.
@@ -66,7 +68,7 @@ class CrossProcessLock {
           lock.release();
         } catch (IOException e2) {
           // nothing to do here
-          Log.e(TAG, "encountered error while releasing the lock, ignoring", e);
+          Log.e(TAG, "encountered error while releasing the lock, ignoring", e2);
         }
       }
       if (channel != null) {
@@ -74,20 +76,20 @@ class CrossProcessLock {
           channel.close();
         } catch (IOException e3) {
           // nothing to do here
-          Log.e(TAG, "encountered error while closing the channel, ignoring", e);
+          Log.e(TAG, "encountered error while closing the channel, ignoring", e3);
+        }
+      }
+
+      if (randomAccessFile != null) {
+        try {
+          randomAccessFile.close();
+        } catch (IOException e4) {
+          // nothing to do here
+          Log.e(TAG, "encountered error while closing the channel, ignoring", e4);
         }
       }
 
       return null;
-    } finally {
-      if (randomAccessFile != null) {
-        try {
-          randomAccessFile.close();
-        } catch (IOException e) {
-          // nothing to do here
-          Log.e(TAG, "encountered error while closing the channel, ignoring", e);
-        }
-      }
     }
   }
 
@@ -99,6 +101,9 @@ class CrossProcessLock {
       }
       if (channel != null) {
         channel.close();
+      }
+      if (randomAccessFile != null) {
+        randomAccessFile.close();
       }
     } catch (IOException e) {
       // nothing to do here
