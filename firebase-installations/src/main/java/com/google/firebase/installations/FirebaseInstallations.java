@@ -372,19 +372,10 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
    */
   private void insertOrUpdatePrefs(PersistedInstallationEntry prefs) {
     synchronized (lockGenerateFid) {
-      CrossProcessLock lock =
-          CrossProcessLock.acquire(firebaseApp.getApplicationContext(), LOCKFILE_NAME_GENERATE_FID);
-      try {
-        // Store the prefs to persist the result of the previous step.
-        persistedInstallation.insertOrUpdatePersistedInstallationEntry(prefs);
-      } finally {
-        // It is possible that the lock acquisition failed, resulting in lock being null.
-        // We handle this case by going on with our business even if the acquisition failed
-        // but we need to be sure to only release if we got a lock.
-        if (lock != null) {
-          lock.releaseAndClose();
-        }
-      }
+      CrossProcessLock.whileLocked(
+          firebaseApp.getApplicationContext(),
+          LOCKFILE_NAME_GENERATE_FID,
+          () -> persistedInstallation.insertOrUpdatePersistedInstallationEntry(prefs));
     }
   }
 
@@ -403,34 +394,28 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
    */
   private PersistedInstallationEntry getPrefsWithGeneratedIdMultiProcessSafe() {
     synchronized (lockGenerateFid) {
-      CrossProcessLock lock =
-          CrossProcessLock.acquire(firebaseApp.getApplicationContext(), LOCKFILE_NAME_GENERATE_FID);
-      try {
-        PersistedInstallationEntry prefs =
-            persistedInstallation.readPersistedInstallationEntryValue();
-        // Check if a new FID needs to be created
-        if (prefs.isNotGenerated()) {
-          // For a default firebase installation read the existing iid. For other custom firebase
-          // installations create a new fid
-
-          // Only one single thread from one single process can execute this block
-          // at any given time.
-          String fid = readExistingIidOrCreateFid(prefs);
-          prefs =
-              persistedInstallation.insertOrUpdatePersistedInstallationEntry(
-                  prefs.withUnregisteredFid(fid));
-        }
-        return prefs;
-
-      } finally {
-        // It is possible that the lock acquisition failed, resulting in lock being null.
-        // We handle this case by going on with our business even if the acquisition failed
-        // but we need to be sure to only release if we got a lock.
-        if (lock != null) {
-          lock.releaseAndClose();
-        }
-      }
+      return CrossProcessLock.whileLocked(
+          firebaseApp.getApplicationContext(),
+          LOCKFILE_NAME_GENERATE_FID,
+          this::readLatestPersistedInstallationsMultiProcessSafe);
     }
+  }
+
+  private PersistedInstallationEntry readLatestPersistedInstallationsMultiProcessSafe() {
+    PersistedInstallationEntry prefs = persistedInstallation.readPersistedInstallationEntryValue();
+    // Check if a new FID needs to be created
+    if (prefs.isNotGenerated()) {
+      // For a default firebase installation read the existing iid. For other custom firebase
+      // installations create a new fid
+
+      // Only one single thread from one single process can execute this block
+      // at any given time.
+      String fid = readExistingIidOrCreateFid(prefs);
+      prefs =
+          persistedInstallation.insertOrUpdatePersistedInstallationEntry(
+              prefs.withUnregisteredFid(fid));
+    }
+    return prefs;
   }
 
   private String readExistingIidOrCreateFid(PersistedInstallationEntry prefs) {

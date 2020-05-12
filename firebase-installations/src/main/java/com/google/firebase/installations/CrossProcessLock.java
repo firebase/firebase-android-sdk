@@ -16,6 +16,7 @@ package com.google.firebase.installations;
 
 import android.content.Context;
 import android.util.Log;
+import com.google.firebase.installations.local.PersistedInstallationEntry;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -25,36 +26,32 @@ import java.nio.channels.FileLock;
 /** Use file locking to acquire a lock that will also block other processes. */
 class CrossProcessLock {
   private static final String TAG = "CrossProcessLock";
-  private final FileChannel channel;
-  private final FileLock lock;
-  private final RandomAccessFile randomAccessFile;
 
-  private CrossProcessLock(FileChannel channel, FileLock lock, RandomAccessFile randomAccessFile) {
-    this.channel = channel;
-    this.lock = lock;
-    this.randomAccessFile = randomAccessFile;
+  interface CrossProcessPersistedInstallation {
+    PersistedInstallationEntry getPersistedInstallations();
   }
 
   /**
-   * Create and return a lock that is exclusive across processes. If another process has the lock
-   * then this call will block until it is released.
+   * Create a lock that is exclusive across processes. If another process has the lock then this
+   * call will block until it is released.
    *
    * @param lockName the lockname is global across all processes of an app
    * @return a CrossProcessLock if success. If the lock failed to acquire (maybe due to disk full or
    *     other unexpected and unsupported permissions) then null will be returned.
    */
-  static CrossProcessLock acquire(Context appContext, String lockName) {
-    FileChannel channel = null;
-    FileLock lock = null;
-    RandomAccessFile randomAccessFile = null;
-    try {
-      File file = new File(appContext.getFilesDir(), lockName);
-      randomAccessFile = new RandomAccessFile(file, "rw");
-      channel = randomAccessFile.getChannel();
-      // Use the file channel to create a lock on the file.
-      // This method blocks until it can retrieve the lock.
-      lock = channel.lock();
-      return new CrossProcessLock(channel, lock, randomAccessFile);
+  static PersistedInstallationEntry whileLocked(
+      Context applicationContext,
+      String lockName,
+      CrossProcessPersistedInstallation persistedInstallation) {
+
+    File file = new File(applicationContext.getFilesDir(), lockName);
+    try (RandomAccessFile randomAccessFile = new RandomAccessFile(file, "rw");
+        FileChannel channel = randomAccessFile.getChannel();
+        // Use the file channel to create a lock on the file.
+        // This method blocks until it can retrieve the lock.
+        FileLock lock = channel.lock()) {
+
+      return persistedInstallation.getPersistedInstallations();
     } catch (IOException | Error e) {
       // Certain conditions can cause file locking to fail, such as out of disk or bad permissions.
       // In any case, the acquire will fail and return null instead of a held lock.
@@ -62,57 +59,7 @@ class CrossProcessLock {
       // https://bugs.openjdk.java.net/browse/JDK-8025619 for details.
       Log.e(TAG, "encountered error while creating and acquiring the lock, ignoring", e);
 
-      // Clean up any dangling resources
-      if (lock != null) {
-        try {
-          lock.release();
-        } catch (IOException e2) {
-          // nothing to do here
-          Log.e(TAG, "encountered error while releasing the lock, ignoring", e2);
-        }
-      }
-      if (channel != null) {
-        try {
-          channel.close();
-        } catch (IOException e3) {
-          // nothing to do here
-          Log.e(TAG, "encountered error while closing the channel, ignoring", e3);
-        }
-      }
-
-      if (randomAccessFile != null) {
-        try {
-          randomAccessFile.close();
-        } catch (IOException e4) {
-          // nothing to do here
-          Log.e(TAG, "encountered error while closing the channel, ignoring", e4);
-        }
-      }
-
       return null;
-    }
-  }
-
-  /** Release a previously acquired lock and free any underlying resources. */
-  void releaseAndClose() {
-    try {
-      if (lock != null) {
-        lock.release();
-      }
-      if (channel != null) {
-        channel.close();
-      }
-    } catch (IOException e) {
-      // nothing to do here
-      Log.e(TAG, "encountered error while releasing, ignoring", e);
-    }finally{
-      if (randomAccessFile != null) {
-        try {
-          randomAccessFile.close();
-        } catch (IOException e) {
-          Log.e(TAG, "encountered error while releasing, ignoring", e);
-        }
-      }
     }
   }
 }
