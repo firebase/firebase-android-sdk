@@ -102,12 +102,17 @@ class CrossProcessLock {
       if (channel != null) {
         channel.close();
       }
-      if (randomAccessFile != null) {
-        randomAccessFile.close();
-      }
     } catch (IOException e) {
       // nothing to do here
       Log.e(TAG, "encountered error while releasing, ignoring", e);
+    }finally{
+      if (randomAccessFile != null) {
+        try {
+          randomAccessFile.close();
+        } catch (IOException e) {
+          Log.e(TAG, "encountered error while releasing, ignoring", e);
+        }
+      }
     }
   }
 }
