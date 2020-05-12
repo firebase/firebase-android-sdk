@@ -407,6 +407,7 @@ public class FirebaseInstallationServiceClient {
   private HttpURLConnection openHttpURLConnection(URL url, String apiKey) throws IOException {
     HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
     httpURLConnection.setConnectTimeout(NETWORK_TIMEOUT_MILLIS);
+    httpURLConnection.setUseCaches(false);
     httpURLConnection.setReadTimeout(NETWORK_TIMEOUT_MILLIS);
     httpURLConnection.addRequestProperty(CONTENT_TYPE_HEADER_KEY, JSON_CONTENT_TYPE);
     httpURLConnection.addRequestProperty(ACCEPT_HEADER_KEY, JSON_CONTENT_TYPE);
