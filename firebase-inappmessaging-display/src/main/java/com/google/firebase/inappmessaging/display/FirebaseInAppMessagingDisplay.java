@@ -25,7 +25,6 @@ import android.text.TextUtils;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewTreeObserver.OnGlobalLayoutListener;
-import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -78,7 +77,6 @@ import javax.inject.Provider;
  * <p>To delete the Instance ID and the data associated with it, see {@link
  * FirebaseInstallationsApi#delete}.
  */
-@Keep
 @FirebaseAppScope
 public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplayImpl {
   static final long IMPRESSION_THRESHOLD_MILLIS = 5 * 1000; // 5 seconds is a valid impression
@@ -131,7 +129,6 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
    * FirebaseApp#getInstance()}
    */
   @NonNull
-  @Keep
   public static FirebaseInAppMessagingDisplay getInstance() {
     return FirebaseApp.getInstance().get(FirebaseInAppMessagingDisplay.class);
   }
@@ -145,7 +142,6 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
    *
    * @hide
    */
-  @Keep
   public void testMessage(
       Activity activity,
       InAppMessage inAppMessage,
@@ -160,7 +156,6 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
    *
    * @hide
    */
-  @Keep
   public void setFiamListener(FiamListener listener) {
     this.fiamListener = listener;
   }
@@ -170,58 +165,31 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
    *
    * @hide
    */
-  @Keep
   public void clearFiamListener() {
     this.fiamListener = null;
   }
 
   /**
-   * Clears fiam listener
+   * Bind FIAM listener on Activity resume.
    *
    * @hide
    */
-  @Keep
-  @Override
-  public void onActivityStarted(final Activity activity) {
-    super.onActivityStarted(activity);
-    bindFiamToActivity(activity);
-  }
-
-  /**
-   * Clear fiam listener on activity paused
-   *
-   * @hide
-   */
-  @Keep
-  @Override
-  public void onActivityPaused(Activity activity) {
-    unbindFiamFromActivity(activity);
-    super.onActivityPaused(activity);
-  }
-
-  /**
-   * Clear fiam listener on activity destroyed
-   *
-   * @hide
-   */
-  @Keep
-  @Override
-  public void onActivityDestroyed(Activity activity) {
-    unbindFiamFromActivity(activity);
-    headlessInAppMessaging.removeAllListeners();
-    super.onActivityDestroyed(activity);
-  }
-
-  /**
-   * Clear fiam listener on activity resumed
-   *
-   * @hide
-   */
-  @Keep
   @Override
   public void onActivityResumed(Activity activity) {
     super.onActivityResumed(activity);
     bindFiamToActivity(activity);
+  }
+
+  /**
+   * Clear FIAM listener on activity paused
+   *
+   * @hide
+   */
+  @Override
+  public void onActivityPaused(Activity activity) {
+    unbindFiamFromActivity(activity);
+    headlessInAppMessaging.removeAllListeners();
+    super.onActivityPaused(activity);
   }
 
   private void bindFiamToActivity(Activity activity) {
