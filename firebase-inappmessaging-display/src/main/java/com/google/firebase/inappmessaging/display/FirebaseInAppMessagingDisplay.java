@@ -101,7 +101,7 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
   private InAppMessage inAppMessage;
   private FirebaseInAppMessagingDisplayCallbacks callbacks;
 
-  @VisibleForTesting String currentActivityName = "";
+  @VisibleForTesting @Nullable String currentlyBoundActivityName;
 
   @Inject
   FirebaseInAppMessagingDisplay(
@@ -225,7 +225,10 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
   }
 
   private void bindFiamToActivity(Activity activity) {
-    if (!currentActivityName.equals(activity.getLocalClassName())) {
+    // If we have no currently bound activity or are currently bound to a different activity then
+    // bind to this new activity.
+    if (currentlyBoundActivityName == null
+        || !currentlyBoundActivityName.equals(activity.getLocalClassName())) {
       Logging.logi("Binding to activity: " + activity.getLocalClassName());
       headlessInAppMessaging.setMessageDisplayComponent(
           (iam, cb) -> {
@@ -239,8 +242,9 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
             callbacks = cb;
             showActiveFiam(activity);
           });
-      // set the current activity to be the one passed in
-      currentActivityName = activity.getLocalClassName();
+      // set the current activity to be the one passed in so that we know not to bind again to the
+      // same activity
+      currentlyBoundActivityName = activity.getLocalClassName();
     }
     if (inAppMessage != null) {
       showActiveFiam(activity);
@@ -248,12 +252,15 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
   }
 
   private void unbindFiamFromActivity(Activity activity) {
-    if (currentActivityName.equals(activity.getLocalClassName())) {
+    // If we are attempting to unbind from an activity, first check to see that we are currently
+    // bound to it
+    if (currentlyBoundActivityName != null
+        && currentlyBoundActivityName.equals(activity.getLocalClassName())) {
       Logging.logi("Unbinding from activity: " + activity.getLocalClassName());
       headlessInAppMessaging.clearDisplayListener();
       imageLoader.cancelTag(activity.getClass());
       removeDisplayedFiam(activity);
-      currentActivityName = "";
+      currentlyBoundActivityName = null;
     }
   }
 

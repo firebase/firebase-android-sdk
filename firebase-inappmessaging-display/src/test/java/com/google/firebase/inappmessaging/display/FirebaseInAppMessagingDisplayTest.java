@@ -636,18 +636,18 @@ public class FirebaseInAppMessagingDisplayTest {
     fiamUI.onActivityStarted(activity);
     verify(headless, atLeastOnce())
         .setMessageDisplayComponent(inAppMessageTriggerListenerCaptor.capture());
-    assertThat(fiamUI.currentActivityName.equals(activity.getLocalClassName())).isTrue();
+    assertThat(fiamUI.currentlyBoundActivityName.equals(activity.getLocalClassName())).isTrue();
     listener = inAppMessageTriggerListenerCaptor.getValue();
   }
 
   private void pauseActivity(Activity activity) {
     fiamUI.onActivityPaused(activity);
-    assertThat(fiamUI.currentActivityName.equals(activity.getLocalClassName())).isFalse();
+    assertThat(fiamUI.currentlyBoundActivityName).isNull();
   }
 
   private void resumeActivity(Activity activity) {
     fiamUI.onActivityResumed(activity);
-    assertThat(fiamUI.currentActivityName.equals(activity.getLocalClassName())).isTrue();
+    assertThat(fiamUI.currentlyBoundActivityName.equals(activity.getLocalClassName())).isTrue();
   }
 
   static class TestActivity extends Activity {}
