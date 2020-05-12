@@ -334,7 +334,7 @@ public class FirebaseInAppMessaging {
    *
    * @param eventName
    */
-  public void triggerEvent(String eventName) {
+  public void triggerEvent(@NonNull String eventName) {
     programaticContextualTriggers.triggerEvent(eventName);
   }
 
