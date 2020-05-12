@@ -39,7 +39,7 @@ public class ContinuousIntegrationPlugin implements Plugin<Project> {
           Task connectedCheckDependents = sub.task("connectedCheckDependents");
           Task deviceCheckDependents = sub.task("deviceCheckDependents");
 
-          project
+          sub
               .getConfigurations()
               .all(
                   cfg -> {
@@ -101,9 +101,9 @@ public class ContinuousIntegrationPlugin implements Plugin<Project> {
     Set<Project> affectedProjects =
         new AffectedProjectFinder(project, extension.getIgnorePaths()).find();
 
-    setupChangedTask(project, affectedProjects, "checkChanged");
-    setupChangedTask(project, affectedProjects, "checkCoverageChanged");
-    setupChangedTask(project, affectedProjects, "deviceCheckChanged");
+    setupChangedTask(project, affectedProjects, "check");
+    setupChangedTask(project, affectedProjects, "checkCoverage");
+    setupChangedTask(project, affectedProjects, "deviceCheck");
   }
 
   private static void setupChangedTask(
@@ -114,7 +114,7 @@ public class ContinuousIntegrationPlugin implements Plugin<Project> {
             check + "Changed",
             task -> {
               task.setGroup("verification");
-              task.setDescription("Runs the " + check + " task in all changed projects.");
+              task.setDescription("Runs the " + check + "Changed task in all changed projects.");
               task.setDependsOn(
                   affectedProjects.stream()
                       .map(p -> p.getPath() + ":" + check + "Dependents")

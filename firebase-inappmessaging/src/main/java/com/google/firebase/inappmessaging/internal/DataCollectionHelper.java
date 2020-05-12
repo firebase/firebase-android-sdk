@@ -18,7 +18,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.firebase.DataCollectionDefaultChange;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.events.Subscriber;
-import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.inject.Inject;
 
@@ -43,16 +43,10 @@ public class DataCollectionHelper {
   public DataCollectionHelper(
       FirebaseApp firebaseApp,
       SharedPreferencesUtils sharedPreferencesUtils,
-      FirebaseInstanceId firebaseInstanceId,
       Subscriber firebaseEventsSubscriber) {
     this.sharedPreferencesUtils = sharedPreferencesUtils;
     isGlobalAutomaticDataCollectionEnabled =
         new AtomicBoolean(firebaseApp.isDataCollectionDefaultEnabled());
-    if (isAutomaticDataCollectionEnabled()) {
-      // Trigger this as early as possible, to minimize any latencies on returning the token
-      firebaseInstanceId.getToken();
-    }
-
     firebaseEventsSubscriber.subscribe(
         DataCollectionDefaultChange.class,
         event -> {
@@ -93,9 +87,8 @@ public class DataCollectionHelper {
    *
    * <p>When enabled, generates a registration token on app startup if there is no valid one and
    * generates a new token when it is deleted (which prevents {@link
-   * com.google.firebase.iid.FirebaseInstanceId#deleteInstanceId} from stopping the periodic sending
-   * of data). This setting is persisted across app restarts and overrides the setting specified in
-   * your manifest.
+   * FirebaseInstallationsApi#delete()} from stopping the periodic sending of data). This setting is
+   * persisted across app restarts and overrides the setting specified in your manifest.
    *
    * <p>
    *
@@ -126,9 +119,8 @@ public class DataCollectionHelper {
    *
    * <p>When enabled, generates a registration token on app startup if there is no valid one and
    * generates a new token when it is deleted (which prevents {@link
-   * com.google.firebase.iid.FirebaseInstanceId#deleteInstanceId} from stopping the periodic sending
-   * of data). This setting is persisted across app restarts and overrides the setting specified in
-   * your manifest.
+   * FirebaseInstallationsApi#delete()} from stopping the periodic sending of data). This setting is
+   * persisted across app restarts and overrides the setting specified in your manifest.
    *
    * <p>When null, the enablement of the auto-initialization depends on the manifest and then on the
    * global enablement setting in this order. If none of these settings are present then it is
@@ -151,7 +143,7 @@ public class DataCollectionHelper {
    *
    * <pre>{@code FirebaseInAppMessaging.getInstance().setAutomaticDataCollectionEnabled(null)}</pre>
    *
-   * @param isAutomaticCollectionEnabled Whether isEnabled
+   * @param isEnabled Whether isEnabled
    */
   public void setAutomaticDataCollectionEnabled(Boolean isEnabled) {
     // Update SharedPreferences, so that we preserve state across app restarts

@@ -69,7 +69,7 @@ public class AffectedProjectFinder {
   private static Set<String> changedPaths(File workDir) {
     try {
       Process process =
-          Runtime.getRuntime().exec("git diff --name-only --submodule=diff", null, workDir);
+          Runtime.getRuntime().exec("git diff --name-only --submodule=diff HEAD@{0} HEAD@{1}", null, workDir);
       process.waitFor();
       return ImmutableSet.copyOf(
           CharStreams.readLines(new InputStreamReader(process.getInputStream())));

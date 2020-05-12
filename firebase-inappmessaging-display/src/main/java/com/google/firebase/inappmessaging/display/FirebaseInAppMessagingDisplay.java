@@ -76,7 +76,7 @@ import javax.inject.Provider;
  * </ul>
  *
  * <p>To delete the Instance ID and the data associated with it, see {@link
- * com.google.firebase.iid.FirebaseInstanceId#deleteInstanceId}.
+ * FirebaseInstallationsApi#delete}.
  */
 @Keep
 @FirebaseAppScope

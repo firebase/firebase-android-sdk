@@ -64,22 +64,18 @@ dependencies {
     implementation project(':firebase-inappmessaging')
     implementation project(':firebase-components')
 
-    implementation('com.google.firebase:firebase-iid:20.0.1') {
-        exclude group: 'com.google.firebase', module: 'firebase-common'
-    }
-
     implementation('com.google.firebase:firebase-measurement-connector:18.0.0') {
         exclude group: 'com.google.firebase', module: 'firebase-common'
     }
 
-    implementation 'com.google.android.gms:play-services-tasks:17.0.0'
+    implementation 'com.google.android.gms:play-services-tasks:17.0.2'
     implementation 'androidx.appcompat:appcompat:1.1.0'
     implementation 'androidx.cardview:cardview:1.0.0'
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
     implementation 'androidx.browser:browser:1.0.0'
     implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
-    implementation 'com.google.auto.value:auto-value-annotations:1.6.5'
-    implementation "com.google.dagger:dagger:2.24"
+    implementation 'com.google.auto.value:auto-value-annotations:1.6.6'
+    implementation "com.google.dagger:dagger:2.27"
 
     implementation "com.squareup.picasso:picasso:2.71828"
     implementation "com.squareup.okhttp:okhttp:2.7.5"
@@ -100,8 +96,10 @@ dependencies {
     androidTestImplementation 'androidx.annotation:annotation:1.1.0'
     androidTestImplementation 'androidx.test:runner:1.2.0'
     androidTestImplementation 'androidx.test:rules:1.2.0'
-    androidTestImplementation ("com.google.firebase:firebase-analytics:17.0.0") {
+    androidTestImplementation ("com.google.firebase:firebase-analytics:17.4.0") {
         exclude group: "com.google.firebase", module: "firebase-common"
+        exclude group: "com.google.firebase", module: "firebase-components"
+        exclude group: "com.google.firebase", module: "firebase-installations-interop"
+        exclude group: "com.google.firebase", module: "firebase-installations"
     }
-
 }

@@ -28,9 +28,10 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
+import java.util.UUID
 
-const val APP_ID = "APP_ID"
-const val API_KEY = "API_KEY"
+internal const val APP_ID = "APP:ID"
+internal val API_KEY = "ABC" + UUID.randomUUID().toString()
 
 const val EXISTING_APP = "existing"
 

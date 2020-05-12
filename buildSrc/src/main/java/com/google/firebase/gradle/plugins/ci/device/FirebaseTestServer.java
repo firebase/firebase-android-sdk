@@ -46,7 +46,7 @@ public class FirebaseTestServer extends TestServer {
     // test lab requires an "app" apk, so we give an empty apk to it.
     String testedApkPath =
         testedApk != null
-            ? testApk.toString()
+            ? testedApk.toString()
             : project.getRootDir() + "/buildSrc/resources/dummy.apk";
     project
         .getLogger()
