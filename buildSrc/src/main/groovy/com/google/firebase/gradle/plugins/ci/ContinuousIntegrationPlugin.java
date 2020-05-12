@@ -39,7 +39,7 @@ public class ContinuousIntegrationPlugin implements Plugin<Project> {
           Task connectedCheckDependents = sub.task("connectedCheckDependents");
           Task deviceCheckDependents = sub.task("deviceCheckDependents");
 
-          project
+          sub
               .getConfigurations()
               .all(
                   cfg -> {
