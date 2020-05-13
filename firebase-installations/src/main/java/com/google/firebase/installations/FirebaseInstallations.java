@@ -67,6 +67,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   private final Object lock = new Object();
   private final ExecutorService backgroundExecutor;
   private final ExecutorService networkExecutor;
+  private final CrossProcessLock crossProcessLock;
 
   @GuardedBy("lock")
   private final List<StateListener> listeners = new ArrayList<>();
@@ -135,6 +136,9 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
             TimeUnit.SECONDS,
             new LinkedBlockingQueue<>(),
             THREAD_FACTORY);
+    this.crossProcessLock =
+        new CrossProcessLock(
+            firebaseApp.getApplicationContext().getFilesDir(), LOCKFILE_NAME_GENERATE_FID);
   }
 
   /**
@@ -372,9 +376,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
    */
   private void insertOrUpdatePrefs(PersistedInstallationEntry prefs) {
     synchronized (lockGenerateFid) {
-      CrossProcessLock.whileLocked(
-          firebaseApp.getApplicationContext(),
-          LOCKFILE_NAME_GENERATE_FID,
+      crossProcessLock.synchronize(
           () -> persistedInstallation.insertOrUpdatePersistedInstallationEntry(prefs));
     }
   }
@@ -394,10 +396,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
    */
   private PersistedInstallationEntry getPrefsWithGeneratedIdMultiProcessSafe() {
     synchronized (lockGenerateFid) {
-      return CrossProcessLock.whileLocked(
-          firebaseApp.getApplicationContext(),
-          LOCKFILE_NAME_GENERATE_FID,
-          this::readLatestPersistedInstallationsMultiProcessSafe);
+      return crossProcessLock.synchronize(this::readLatestPersistedInstallationsMultiProcessSafe);
     }
   }
 

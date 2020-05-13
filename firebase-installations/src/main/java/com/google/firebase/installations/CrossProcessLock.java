@@ -14,9 +14,7 @@
 
 package com.google.firebase.installations;
 
-import android.content.Context;
 import android.util.Log;
-import com.google.firebase.installations.local.PersistedInstallationEntry;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -27,31 +25,34 @@ import java.nio.channels.FileLock;
 class CrossProcessLock {
   private static final String TAG = "CrossProcessLock";
 
-  interface CrossProcessPersistedInstallation {
-    PersistedInstallationEntry getPersistedInstallations();
+  private final String lockFileName;
+  private final File fileDir;
+
+  CrossProcessLock(File fileDir, String lockFileName) {
+    this.lockFileName = lockFileName;
+    this.fileDir = fileDir;
+  }
+
+  interface Producer<T> {
+    T produce();
   }
 
   /**
    * Create a lock that is exclusive across processes. If another process has the lock then this
    * call will block until it is released.
    *
-   * @param lockName the lockname is global across all processes of an app
    * @return a CrossProcessLock if success. If the lock failed to acquire (maybe due to disk full or
    *     other unexpected and unsupported permissions) then null will be returned.
    */
-  static PersistedInstallationEntry whileLocked(
-      Context applicationContext,
-      String lockName,
-      CrossProcessPersistedInstallation persistedInstallation) {
-
-    File file = new File(applicationContext.getFilesDir(), lockName);
+  <T> T synchronize(Producer<T> persistedInstallation) {
+    File file = new File(fileDir, lockFileName);
     try (RandomAccessFile randomAccessFile = new RandomAccessFile(file, "rw");
         FileChannel channel = randomAccessFile.getChannel();
         // Use the file channel to create a lock on the file.
         // This method blocks until it can retrieve the lock.
         FileLock lock = channel.lock()) {
 
-      return persistedInstallation.getPersistedInstallations();
+      return persistedInstallation.produce();
     } catch (IOException | Error e) {
       // Certain conditions can cause file locking to fail, such as out of disk or bad permissions.
       // In any case, the acquire will fail and return null instead of a held lock.
