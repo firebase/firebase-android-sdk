@@ -562,7 +562,7 @@ public class SQLiteSchemaTest {
                 Target targetProto = Target.parseFrom(targetProtoBytes);
                 TargetData targetData = serializer.decodeTargetData(targetProto);
                 String expectedCanonicalId = targetData.getTarget().getCanonicalId();
-                assertEquals(actualCanonicalId, expectedCanonicalId);
+                assertEquals(expectedCanonicalId, actualCanonicalId);
               } catch (InvalidProtocolBufferException e) {
                 fail("Failed to decode Target data");
               }
