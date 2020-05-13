@@ -65,7 +65,6 @@ public class IndexedQueryEngineTest {
 
     SQLitePersistence persistence = PersistenceTestHelpers.createSQLitePersistence();
     SQLiteCollectionIndex index = new SQLiteCollectionIndex(persistence, User.UNAUTHENTICATED);
-    MutationQueue mutationQueue = persistence.getMutationQueue(User.UNAUTHENTICATED);
     remoteDocuments = persistence.getRemoteDocumentCache();
     queryEngine = new IndexedQueryEngine(index);
   }
