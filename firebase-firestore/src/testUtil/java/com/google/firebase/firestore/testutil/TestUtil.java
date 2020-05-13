@@ -20,7 +20,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.fail;
 
-import androidx.annotation.NonNull;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.android.gms.common.internal.Preconditions;
@@ -554,15 +553,6 @@ public class TestUtil {
 
     String snapshotString = "snapshot-" + snapshotVersion;
     return ByteString.copyFrom(snapshotString, Charsets.UTF_8);
-  }
-
-  @NonNull
-  private static ByteString resumeToken(SnapshotVersion snapshotVersion) {
-    if (snapshotVersion.equals(SnapshotVersion.NONE)) {
-      return ByteString.EMPTY;
-    } else {
-      return ByteString.copyFromUtf8(snapshotVersion.toString());
-    }
   }
 
   public static ByteString streamToken(String contents) {
