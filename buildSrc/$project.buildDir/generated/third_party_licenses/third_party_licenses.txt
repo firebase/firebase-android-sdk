@@ -1,3 +1,0 @@
-customLib1:
-Test license
-

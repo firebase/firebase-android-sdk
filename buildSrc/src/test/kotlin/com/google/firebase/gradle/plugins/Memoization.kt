@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2020 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,16 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.example.firebase.fiamui;
+package com.google.firebase.gradle.plugins
 
-import android.content.Context;
-import android.provider.Settings;
-
-public class TestUtils {
-
-  public static boolean isInTestLab(Context context) {
-    String testLabSetting =
-        Settings.System.getString(context.getContentResolver(), "firebase.test.lab");
-    return ("true".equals(testLabSetting));
-  }
+class Memoize1<in T, out R>(val f: (T) -> R) : (T) -> R {
+    private val values = mutableMapOf<T, R>()
+    override fun invoke(x: T): R {
+        return values.getOrPut(x, { f(x) })
+    }
 }
+
+fun <T, R> ((T) -> R).memoize(): (T) -> R = Memoize1(this)
