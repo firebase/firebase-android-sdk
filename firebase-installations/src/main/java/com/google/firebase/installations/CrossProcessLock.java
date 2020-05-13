@@ -58,7 +58,7 @@ class CrossProcessLock {
       // In any case, the acquire will fail and return null instead of a held lock.
       // NOTE: In Java 7 & 8, FileKey creation failure might wrap IOException into Error. See
       // https://bugs.openjdk.java.net/browse/JDK-8025619 for details.
-      Log.e(TAG, "encountered error while creating and acquiring the lock, ignoring", e);
+      Log.e(TAG, "Error while creating and acquiring the lock.", e);
 
       return null;
     }

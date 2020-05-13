@@ -127,7 +127,7 @@ public class PersistedInstallation {
       }
       return new JSONObject(baos.toString());
     } catch (IOException | JSONException e) {
-      Log.e(TAG, "error encountered while reading persisted firebase installation." + e);
+      Log.e(TAG, "Error encountered while reading persisted firebase installation.", e);
       return new JSONObject();
     }
   }
@@ -169,7 +169,7 @@ public class PersistedInstallation {
       // There isn't a lot we can do when this happens, other than crash the process. It is a
       // bit nicer to eat the error and hope that the user clears some storage space on their
       // device.
-      Log.e(TAG, "error encountered while persisting firebase installation." + e);
+      Log.e(TAG, "Error encountered while persisting firebase installation.", e);
     }
 
     // Return the prefs that were written to make it easy for the caller to use them in a
