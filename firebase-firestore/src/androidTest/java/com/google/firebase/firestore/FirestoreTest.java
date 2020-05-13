@@ -1060,7 +1060,7 @@ public class FirestoreTest {
         testFirestore(provider().projectId(), Level.DEBUG, newTestSettings(), "dbPersistenceKey");
     DocumentReference docRef2 = firestore2.document(docRef.getPath());
     DocumentSnapshot doc = waitFor(docRef2.get());
-    assertEquals(true, doc.exists());
+    assertTrue(doc.exists());
   }
 
   @Test
