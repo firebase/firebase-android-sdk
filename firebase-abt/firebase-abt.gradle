@@ -25,7 +25,7 @@ firebaseLibrary {
 // TODO(issue/568): Remove this once legacy logic is removed from Remote Config.
 protobuf {
     protoc {
-        artifact = 'com.google.protobuf:protoc:3.10.0'
+        artifact = 'com.google.protobuf:protoc:3.11.0'
     }
     generateProtoTasks {
         all().each { task ->
