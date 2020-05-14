@@ -31,8 +31,11 @@ namespace firebase { namespace crashlytics {
 
 /// @brief Initialize the Crashlytics NDK API, for Android apps using native code.
 ///
-/// This must be called prior to calling any other methods in the firebase:crashlytics
-/// namespace. This call is only required for adding custom metadata to crash reports. Use of
+/// This allows finer grained control of when the native API is initialized. Calling this
+/// function is not not strictly necessary as the API will be initialized on the first call
+/// to any of the functions within the firebase::crashlytics namespace.
+///
+/// This call is only required for adding custom metadata to crash reports. Use of
 /// this header file is NOT required for Android NDK crash reporting.
 inline bool Initialize();
 
