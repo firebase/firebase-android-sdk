@@ -17,6 +17,7 @@
 #include <cstddef>
 #include <string>
 #include <memory>
+#include <functional>
 #include <dlfcn.h>
 
 /// @brief Firebase Crashlytics NDK API, for Android apps which use native code.
@@ -94,8 +95,10 @@ struct __crashlytics_context {
 #define __CRASHLYTICS_INITIALIZE_FAILURE                       (struct __crashlytics_unspecified *) 0
 #define __CRASHLYTICS_DECORATED                                __attribute__ ((always_inline))
 
-inline __crashlytics_context_t* __crashlytics_context()                                 __CRASHLYTICS_DECORATED;
-inline __crashlytics_context_t* __crashlytics_init()                                    __CRASHLYTICS_DECORATED;
+inline const __crashlytics_context_t* __crashlytics_context()                           __CRASHLYTICS_DECORATED;
+inline __crashlytics_context_t*       __crashlytics_init()                              __CRASHLYTICS_DECORATED;
+
+inline void invoke(const std::function<void (const __crashlytics_context_t *)>& func)   __CRASHLYTICS_DECORATED;
 
 } // end namespace detail
 
@@ -104,11 +107,15 @@ inline bool Initialize() {
 }
 
 inline void Log(const char* msg) {
-    detail::__crashlytics_context()->__log(detail::__crashlytics_context()->__ctx, msg);
+    detail::invoke([&](const detail::__crashlytics_context_t* context) {
+        context->__log(context->__ctx, msg);
+    });
 }
 
 inline void SetCustomKey(const char* key, const char* value) {
-    detail::__crashlytics_context()->__set(detail::__crashlytics_context()->__ctx, key, value);
+    detail::invoke([&](const detail::__crashlytics_context_t* context) {
+        context->__set(context->__ctx, key, value);
+    });
 }
 
 inline void SetCustomKey(const char* key, bool value) {
@@ -132,7 +139,9 @@ inline void SetCustomKey(const char* key, long value) {
 }
 
 inline void SetUserId(const char* id) {
-    detail::__crashlytics_context()->__set_user_id(detail::__crashlytics_context()->__ctx, id);
+    detail::invoke([&](const detail::__crashlytics_context_t* context) {
+        context->__set_user_id(context->__ctx, id);
+    });
 }
 
 namespace detail {
@@ -161,8 +170,8 @@ inline __crashlytics_context_t* __crashlytics_construct(
     return context;
 }
 
-inline __crashlytics_context_t* __crashlytics_context() {
-    static std::unique_ptr<__crashlytics_context_t> context(__crashlytics_init());
+inline const __crashlytics_context_t* __crashlytics_context() {
+    static std::unique_ptr<__crashlytics_context_t> context { __crashlytics_init() };
     return context.get();
 }
 
@@ -192,6 +201,13 @@ inline __crashlytics_context_t* __crashlytics_init() {
             sym_dispose,
             sym_set_user_id
         );
+}
+
+inline void invoke(const std::function<void (const __crashlytics_context_t *)>& func) {
+    const __crashlytics_context_t* context = __crashlytics_context();
+    if (context != nullptr) {
+        func(context);
+    }
 }
 
 } // end namespace detail
