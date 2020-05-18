@@ -68,6 +68,8 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   private final ExecutorService backgroundExecutor;
   private final ExecutorService networkExecutor;
 
+  private String cachedFid = null;
+
   @GuardedBy("lock")
   private final List<StateListener> listeners = new ArrayList<>();
 
@@ -215,7 +217,11 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   public Task<String> getId() {
     preConditionChecks();
     TaskCompletionSource<String> taskCompletionSource = new TaskCompletionSource<>();
-    taskCompletionSource.trySetResult(doGetId());
+    if (cachedFid != null) {
+      taskCompletionSource.trySetResult(cachedFid);
+    } else {
+      taskCompletionSource.trySetResult(doGetId());
+    }
     return taskCompletionSource.getTask();
   }
 
@@ -454,6 +460,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
     switch (response.getResponseCode()) {
       case OK:
+        cachedFid = response.getFid();
         return prefs.withRegisteredFid(
             response.getFid(),
             response.getRefreshToken(),
@@ -493,6 +500,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
       case AUTH_ERROR:
         // The the server refused to generate a new auth token due to bad credentials, clear the
         // FID to force the generation of a new one.
+        cachedFid = null;
         return prefs.withNoGeneratedFid();
       default:
         throw new IOException();
@@ -519,7 +527,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
             "Failed to delete a Firebase Installation.", Status.BAD_CONFIG);
       }
     }
-
+    cachedFid = null;
     insertOrUpdatePrefs(entry.withNoGeneratedFid());
     return null;
   }
