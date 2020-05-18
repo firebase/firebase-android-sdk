@@ -73,6 +73,10 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
   /* used for thread-level synchronization of generating and persisting fids */
   private static final Object lockGenerateFid = new Object();
+
+  /* used for thread-level synchronization of getting a fid. */
+  private static final Object lockGetFid = new Object();
+
   /* file used for process-level synchronization of generating and persisting fids */
   private static final String LOCKFILE_NAME_GENERATE_FID = "generatefid.lock";
   private static final String CHIME_FIREBASE_APP_NAME = "CHIME_ANDROID_SDK";
@@ -213,9 +217,11 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   @Override
   public Task<String> getId() {
     preConditionChecks();
-    Task<String> task = addGetIdListener();
-    backgroundExecutor.execute(this::doGetId);
-    return task;
+    synchronized (lockGetFid) {
+      TaskCompletionSource<String> taskCompletionSource = new TaskCompletionSource<>();
+      taskCompletionSource.trySetResult(doGetId());
+      return taskCompletionSource.getTask();
+    }
   }
 
   /**
@@ -231,11 +237,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   public Task<InstallationTokenResult> getToken(boolean forceRefresh) {
     preConditionChecks();
     Task<InstallationTokenResult> task = addGetAuthTokenListener();
-    if (forceRefresh) {
-      backgroundExecutor.execute(this::doGetAuthTokenForceRefresh);
-    } else {
-      backgroundExecutor.execute(this::doGetAuthTokenWithoutForceRefresh);
-    }
+    backgroundExecutor.execute(() -> doGetAuthToken(forceRefresh));
     return task;
   }
 
@@ -248,15 +250,6 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   @Override
   public Task<Void> delete() {
     return Tasks.call(backgroundExecutor, this::deleteFirebaseInstallationId);
-  }
-
-  private Task<String> addGetIdListener() {
-    TaskCompletionSource<String> taskCompletionSource = new TaskCompletionSource<>();
-    StateListener l = new GetIdListener(taskCompletionSource);
-    synchronized (lock) {
-      listeners.add(l);
-    }
-    return taskCompletionSource.getTask();
   }
 
   private Task<InstallationTokenResult> addGetAuthTokenListener() {
@@ -295,16 +288,12 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     }
   }
 
-  private final void doGetId() {
-    doRegistrationInternal(false);
-  }
-
-  private final void doGetAuthTokenWithoutForceRefresh() {
-    doRegistrationInternal(false);
-  }
-
-  private final void doGetAuthTokenForceRefresh() {
-    doRegistrationInternal(true);
+  private String doGetId() {
+    PersistedInstallationEntry prefs = getPrefsWithGeneratedIdMultiProcessSafe();
+    // Execute network calls (CreateInstallations) to the FIS Servers on a separate executor
+    // i.e networkExecutor
+    networkExecutor.execute(() -> doNetworkCall(false));
+    return prefs.getFirebaseInstallationId();
   }
 
   /**
@@ -316,7 +305,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
    * @param forceRefresh true if this is for a getAuthToken call and if the caller wants to fetch a
    *     new auth token from the server even if an unexpired auth token exists on the client.
    */
-  private final void doRegistrationInternal(boolean forceRefresh) {
+  private void doGetAuthToken(boolean forceRefresh) {
     PersistedInstallationEntry prefs = getPrefsWithGeneratedIdMultiProcessSafe();
 
     // Since the caller wants to force an authtoken refresh remove the authtoken from the
@@ -520,7 +509,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
    * storage.
    */
   private Void deleteFirebaseInstallationId() throws FirebaseInstallationsException, IOException {
-    PersistedInstallationEntry entry = persistedInstallation.readPersistedInstallationEntryValue();
+    PersistedInstallationEntry entry = getPrefsWithGeneratedIdMultiProcessSafe();
     if (entry.isRegistered()) {
       // Call the FIS servers to delete this Firebase Installation Id.
       try {
