@@ -217,11 +217,9 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   @Override
   public Task<String> getId() {
     preConditionChecks();
-    synchronized (lockGetFid) {
-      TaskCompletionSource<String> taskCompletionSource = new TaskCompletionSource<>();
-      taskCompletionSource.trySetResult(doGetId());
-      return taskCompletionSource.getTask();
-    }
+    TaskCompletionSource<String> taskCompletionSource = new TaskCompletionSource<>();
+    taskCompletionSource.trySetResult(doGetId());
+    return taskCompletionSource.getTask();
   }
 
   /**
@@ -321,7 +319,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   }
 
   private void doNetworkCall(boolean forceRefresh) {
-    PersistedInstallationEntry prefs = getPrefsWithGeneratedIdMultiProcessSafe();
+    PersistedInstallationEntry prefs = getMultiProcessSafePrefs();
     // There are two possible cleanup steps to perform at this stage: the FID may need to
     // be registered with the server or the FID is registered but we need a fresh authtoken.
     // Registering will also result in a fresh authtoken. Do the appropriate step here.
@@ -509,7 +507,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
    * storage.
    */
   private Void deleteFirebaseInstallationId() throws FirebaseInstallationsException, IOException {
-    PersistedInstallationEntry entry = getPrefsWithGeneratedIdMultiProcessSafe();
+    PersistedInstallationEntry entry = getMultiProcessSafePrefs();
     if (entry.isRegistered()) {
       // Call the FIS servers to delete this Firebase Installation Id.
       try {
@@ -527,5 +525,32 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
     insertOrUpdatePrefs(entry.withNoGeneratedFid());
     return null;
+  }
+
+  /**
+   * Loads the persisted prefs. This operation is made cross-process and cross-thread safe by
+   * wrapping all the processing first in a java synchronization block and wrapping that in a
+   * cross-process lock created using FileLocks.
+   *
+   * @return a persisted prefs
+   */
+  private PersistedInstallationEntry getMultiProcessSafePrefs() {
+    synchronized (lockGenerateFid) {
+      CrossProcessLock lock =
+          CrossProcessLock.acquire(firebaseApp.getApplicationContext(), LOCKFILE_NAME_GENERATE_FID);
+      try {
+        PersistedInstallationEntry prefs =
+            persistedInstallation.readPersistedInstallationEntryValue();
+        return prefs;
+
+      } finally {
+        // It is possible that the lock acquisition failed, resulting in lock being null.
+        // We handle this case by going on with our business even if the acquisition failed
+        // but we need to be sure to only release if we got a lock.
+        if (lock != null) {
+          lock.releaseAndClose();
+        }
+      }
+    }
   }
 }
