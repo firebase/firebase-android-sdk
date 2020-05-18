@@ -33,12 +33,6 @@ final class SchemaManager extends SQLiteOpenHelper {
   // Schema migration guidelines
   // 1. Only migrations that are backward compatible are allowed. Developers may move back and forth
   // between versions
-    // ✔ Adding a nullable column
-    // ✔ Adding a non null column with default
-    // Adding a table may or may not be acceptable
-  // ❌ Deleting a column,table,index
-  // ❌ Renaming a column,table,index
-
   // 2. Model migration at Vn as an operation performed on the database at Vn-1.
   // 3. Append the migration to the ordered list of Migrations in the static initializer
   // 4. Write tests that cover the following scenarios migrating to Vn from V0..Vn-1
@@ -123,7 +117,6 @@ final class SchemaManager extends SQLiteOpenHelper {
         try {
           db.execSQL("ALTER TABLE events ADD COLUMN inline BOOLEAN NOT NULL DEFAULT 1");
         } catch (SQLiteException ignored) {
-
         }
 
         db.execSQL(CREATE_PAYLOADS_TABLE_V4);
@@ -139,7 +132,6 @@ final class SchemaManager extends SQLiteOpenHelper {
       @Named("SCHEMA_VERSION") int schemaVersion) {
     super(context, dbName, null, schemaVersion);
     this.schemaVersion = schemaVersion;
-
   }
 
   @Override

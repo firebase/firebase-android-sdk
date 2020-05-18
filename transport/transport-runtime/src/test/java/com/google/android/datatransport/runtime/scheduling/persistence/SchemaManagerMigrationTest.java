@@ -13,89 +13,88 @@
 // limitations under the License.
 package com.google.android.datatransport.runtime.scheduling.persistence;
 
+import static com.google.android.datatransport.runtime.scheduling.persistence.SchemaManager.DB_NAME;
+import static com.google.android.datatransport.runtime.scheduling.persistence.SchemaManager.SCHEMA_VERSION;
+
 import androidx.test.core.app.ApplicationProvider;
-
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.robolectric.ParameterizedRobolectricTestRunner;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-
-import static com.google.android.datatransport.runtime.scheduling.persistence.SchemaManager.DB_NAME;
-import static com.google.android.datatransport.runtime.scheduling.persistence.SchemaManager.SCHEMA_VERSION;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.robolectric.ParameterizedRobolectricTestRunner;
 
 @RunWith(ParameterizedRobolectricTestRunner.class)
 public class SchemaManagerMigrationTest {
-    private final int highVersion;
-    private final int lowVersion;
+  private final int highVersion;
+  private final int lowVersion;
 
-    private static Map<Integer, StateSimulations.StateSimulator> simulatorMap = new HashMap<>();
-    static {
-        simulatorMap.put(1, new StateSimulations.V1());
-        simulatorMap.put(2, new StateSimulations.V2());
-        simulatorMap.put(3, new StateSimulations.V3());
-        simulatorMap.put(4, new StateSimulations.V4());
+  private static Map<Integer, StateSimulations.StateSimulator> simulatorMap = new HashMap<>();
+
+  static {
+    simulatorMap.put(1, new StateSimulations.V1());
+    simulatorMap.put(2, new StateSimulations.V2());
+    simulatorMap.put(3, new StateSimulations.V3());
+    simulatorMap.put(4, new StateSimulations.V4());
+  }
+
+  @ParameterizedRobolectricTestRunner.Parameters(name = "lowVersion = {0}, highVersion = {1}")
+  public static Collection<Object[]> data() {
+    Collection<Object[]> params = new ArrayList<>();
+    for (int fromVersion = 1; fromVersion < SCHEMA_VERSION; fromVersion++) {
+      for (int toVersion = fromVersion + 1; toVersion <= SCHEMA_VERSION; toVersion++) {
+        params.add(new Object[] {fromVersion, toVersion});
+      }
     }
-    @ParameterizedRobolectricTestRunner.Parameters(name = "lowVersion = {0}, highVersion = {1}")
-    public static Collection<Object[]> data() {
-        Collection<Object[]> params = new ArrayList<>();
-        for (int fromVersion = 1; fromVersion < SCHEMA_VERSION; fromVersion++) {
-            for (int toVersion = fromVersion + 1; toVersion <= SCHEMA_VERSION; toVersion++) {
-                params.add(new Object[]{fromVersion, toVersion});
-            }
-        }
-        return params;
-    }
+    return params;
+  }
 
+  public SchemaManagerMigrationTest(int lowVersion, int highVersion) {
+    this.lowVersion = lowVersion;
+    this.highVersion = highVersion;
+  }
 
-    public SchemaManagerMigrationTest(int lowVersion, int highVersion) {
-        this.lowVersion = lowVersion;
-        this.highVersion = highVersion;
-    }
+  @Test
+  public void upgrade_migratesSuccessfully() {
+    SchemaManager schemaManager =
+        new SchemaManager(ApplicationProvider.getApplicationContext(), DB_NAME, lowVersion);
+    schemaManager.onUpgrade(schemaManager.getWritableDatabase(), lowVersion, highVersion);
+    simulatorMap.get(highVersion).simulate(schemaManager);
+  }
 
-    @Test
-    public void upgrade_migratesSuccessfully() {
-        SchemaManager schemaManager =
-                new SchemaManager(ApplicationProvider.getApplicationContext(), DB_NAME, lowVersion);
-        schemaManager.onUpgrade(schemaManager.getWritableDatabase(), lowVersion, highVersion);
-        simulatorMap.get(highVersion).simulate(schemaManager);
-    }
+  @Test
+  public void downgrade_migratesSuccessfully() {
+    SchemaManager schemaManager =
+        new SchemaManager(ApplicationProvider.getApplicationContext(), DB_NAME, highVersion);
+    schemaManager.onDowngrade(schemaManager.getWritableDatabase(), highVersion, lowVersion);
+    simulatorMap.get(lowVersion).simulate(schemaManager);
+  }
 
-    @Test
-    public void downgrade_migratesSuccessfully() {
-        SchemaManager schemaManager =
-                new SchemaManager(ApplicationProvider.getApplicationContext(), DB_NAME, highVersion);
-        schemaManager.onDowngrade(schemaManager.getWritableDatabase(), highVersion, lowVersion);
-        simulatorMap.get(lowVersion).simulate(schemaManager);
-    }
+  @Test
+  public void downgrade_upgrade_migratesSuccessfully() {
+    SchemaManager schemaManager =
+        new SchemaManager(ApplicationProvider.getApplicationContext(), DB_NAME, highVersion);
 
-    @Test
-    public void downgrade_upgrade_migratesSuccessfully() {
-        SchemaManager schemaManager =
-                new SchemaManager(ApplicationProvider.getApplicationContext(), DB_NAME, highVersion);
+    schemaManager.onDowngrade(schemaManager.getWritableDatabase(), highVersion, lowVersion);
+    simulatorMap.get(lowVersion).simulate(schemaManager);
 
-        schemaManager.onDowngrade(schemaManager.getWritableDatabase(), highVersion, lowVersion);
-        simulatorMap.get(lowVersion).simulate(schemaManager);
+    schemaManager.onUpgrade(schemaManager.getWritableDatabase(), lowVersion, highVersion);
+    simulatorMap.get(highVersion).simulate(schemaManager);
+  }
 
-        schemaManager.onUpgrade(schemaManager.getWritableDatabase(), lowVersion, highVersion);
-        simulatorMap.get(highVersion).simulate(schemaManager);
-    }
+  @Test
+  public void upgrade_downgrade_upgrade_migratesSuccessfully() {
+    SchemaManager schemaManager =
+        new SchemaManager(ApplicationProvider.getApplicationContext(), DB_NAME, lowVersion);
 
-    @Test
-    public void upgrade_downgrade_upgrade_migratesSuccessfully() {
-        SchemaManager schemaManager =
-                new SchemaManager(ApplicationProvider.getApplicationContext(), DB_NAME, lowVersion);
+    schemaManager.onUpgrade(schemaManager.getWritableDatabase(), lowVersion, highVersion);
+    simulatorMap.get(highVersion).simulate(schemaManager);
 
-        schemaManager.onUpgrade(schemaManager.getWritableDatabase(), lowVersion, highVersion);
-        simulatorMap.get(highVersion).simulate(schemaManager);
+    schemaManager.onDowngrade(schemaManager.getWritableDatabase(), highVersion, lowVersion);
+    simulatorMap.get(lowVersion).simulate(schemaManager);
 
-        schemaManager.onDowngrade(schemaManager.getWritableDatabase(), highVersion, lowVersion);
-        simulatorMap.get(lowVersion).simulate(schemaManager);
-
-        schemaManager.onUpgrade(schemaManager.getWritableDatabase(), lowVersion, highVersion);
-        simulatorMap.get(highVersion).simulate(schemaManager);
-    }
+    schemaManager.onUpgrade(schemaManager.getWritableDatabase(), lowVersion, highVersion);
+    simulatorMap.get(highVersion).simulate(schemaManager);
+  }
 }
