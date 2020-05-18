@@ -74,9 +74,6 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   /* used for thread-level synchronization of generating and persisting fids */
   private static final Object lockGenerateFid = new Object();
 
-  /* used for thread-level synchronization of getting a fid. */
-  private static final Object lockGetFid = new Object();
-
   /* file used for process-level synchronization of generating and persisting fids */
   private static final String LOCKFILE_NAME_GENERATE_FID = "generatefid.lock";
   private static final String CHIME_FIREBASE_APP_NAME = "CHIME_ANDROID_SDK";
