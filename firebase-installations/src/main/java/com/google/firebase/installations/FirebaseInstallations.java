@@ -67,7 +67,8 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   private final Object lock = new Object();
   private final ExecutorService backgroundExecutor;
   private final ExecutorService networkExecutor;
-
+  /* FID of this Firebase Installations instance. Cached after successfully registering and
+  persisting the FID locally. NOTE: cachedFid resets if FID is deleted.*/
   private String cachedFid = null;
 
   @GuardedBy("lock")
@@ -217,11 +218,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   public Task<String> getId() {
     preConditionChecks();
     TaskCompletionSource<String> taskCompletionSource = new TaskCompletionSource<>();
-    if (cachedFid != null) {
-      taskCompletionSource.trySetResult(cachedFid);
-    } else {
-      taskCompletionSource.trySetResult(doGetId());
-    }
+    taskCompletionSource.trySetResult(doGetId());
     return taskCompletionSource.getTask();
   }
 
@@ -290,6 +287,9 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   }
 
   private String doGetId() {
+    if (cachedFid != null) {
+      return cachedFid;
+    }
     PersistedInstallationEntry prefs = getPrefsWithGeneratedIdMultiProcessSafe();
     // Execute network calls (CreateInstallations) to the FIS Servers on a separate executor
     // i.e networkExecutor
@@ -342,6 +342,11 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
     // Store the prefs to persist the result of the previous step.
     insertOrUpdatePrefs(prefs);
+
+    // Update cachedFID, if FID is successfully REGISTERED and persisted.
+    if (prefs.isRegistered()) {
+      cachedFid = prefs.getFirebaseInstallationId();
+    }
 
     // Let the caller know about the result.
     if (prefs.isErrored()) {
@@ -460,7 +465,6 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
     switch (response.getResponseCode()) {
       case OK:
-        cachedFid = response.getFid();
         return prefs.withRegisteredFid(
             response.getFid(),
             response.getRefreshToken(),
@@ -512,6 +516,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
    * storage.
    */
   private Void deleteFirebaseInstallationId() throws FirebaseInstallationsException, IOException {
+    cachedFid = null;
     PersistedInstallationEntry entry = getMultiProcessSafePrefs();
     if (entry.isRegistered()) {
       // Call the FIS servers to delete this Firebase Installation Id.
@@ -527,7 +532,6 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
             "Failed to delete a Firebase Installation.", Status.BAD_CONFIG);
       }
     }
-    cachedFid = null;
     insertOrUpdatePrefs(entry.withNoGeneratedFid());
     return null;
   }
