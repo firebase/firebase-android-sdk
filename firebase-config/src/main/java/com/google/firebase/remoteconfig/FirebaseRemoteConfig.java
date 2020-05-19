@@ -26,8 +26,8 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.abt.AbtException;
 import com.google.firebase.abt.FirebaseABTesting;
-import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.iid.InstanceIdResult;
+import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.remoteconfig.internal.ConfigCacheClient;
 import com.google.firebase.remoteconfig.internal.ConfigContainer;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler;
@@ -149,7 +149,7 @@ public class FirebaseRemoteConfig {
   private final ConfigFetchHandler fetchHandler;
   private final ConfigGetParameterHandler getHandler;
   private final ConfigMetadataClient frcMetadata;
-  private final FirebaseInstanceId firebaseInstanceId;
+  private final FirebaseInstallationsApi firebaseInstallations;
 
   /**
    * Firebase Remote Config constructor.
@@ -159,7 +159,7 @@ public class FirebaseRemoteConfig {
   FirebaseRemoteConfig(
       Context context,
       FirebaseApp firebaseApp,
-      FirebaseInstanceId firebaseInstanceId,
+      FirebaseInstallationsApi firebaseInstallations,
       @Nullable FirebaseABTesting firebaseAbt,
       Executor executor,
       ConfigCacheClient fetchedConfigsCache,
@@ -170,7 +170,7 @@ public class FirebaseRemoteConfig {
       ConfigMetadataClient frcMetadata) {
     this.context = context;
     this.firebaseApp = firebaseApp;
-    this.firebaseInstanceId = firebaseInstanceId;
+    this.firebaseInstallations = firebaseInstallations;
     this.firebaseAbt = firebaseAbt;
     this.executor = executor;
     this.fetchedConfigsCache = fetchedConfigsCache;
@@ -191,14 +191,14 @@ public class FirebaseRemoteConfig {
     Task<ConfigContainer> defaultsConfigsTask = defaultConfigsCache.get();
     Task<ConfigContainer> fetchedConfigsTask = fetchedConfigsCache.get();
     Task<FirebaseRemoteConfigInfo> metadataTask = Tasks.call(executor, this::getInfo);
-    Task<InstanceIdResult> instanceIdTask = firebaseInstanceId.getInstanceId();
+    Task<String> installationsIdTask = firebaseInstallations.getId();
 
     return Tasks.whenAllComplete(
             activatedConfigsTask,
             defaultsConfigsTask,
             fetchedConfigsTask,
             metadataTask,
-            instanceIdTask)
+            installationsIdTask)
         .continueWith(executor, (unusedListOfCompletedTasks) -> metadataTask.getResult());
   }
 
