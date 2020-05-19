@@ -35,6 +35,8 @@ import com.google.firebase.remoteconfig.internal.ConfigFetchHandler.FetchRespons
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
 import com.google.firebase.remoteconfig.internal.ConfigMetadataClient;
 import com.google.firebase.remoteconfig.internal.DefaultsXmlParser;
+import com.google.firebase.remoteconfig.internal.ConfigLogger;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -42,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -132,7 +135,7 @@ public class FirebaseRemoteConfig {
    *
    * @hide
    */
-  public static final String TAG = "FirebaseRemoteConfig";
+  private final ConfigLogger logger = ConfigLogger.createLogger();
 
   private final Context context;
   private final FirebaseApp firebaseApp;
@@ -674,7 +677,7 @@ public class FirebaseRemoteConfig {
         updateAbtWithActivatedExperiments(putTask.getResult().getAbtExperiments());
       } else {
         // Should never happen.
-        Log.e(TAG, "Activated configs written to disk are null.");
+        logger.e("Activated configs written to disk are null.");
       }
       return true;
     }
