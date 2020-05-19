@@ -265,10 +265,11 @@ public final class FirestoreClient {
   }
 
   public void removeSnapshotsInSyncListener(EventListener<Void> listener) {
+    // Checks for shutdown but does not raise error, allowing remove after shutdown to be a no-op.
     if (isTerminated()) {
       return;
     }
-    eventManager.removeSnapshotsInSyncListener(listener);
+    asyncQueue.enqueueAndForget(() -> eventManager.removeSnapshotsInSyncListener(listener));
   }
 
   private void verifyNotTerminated() {
