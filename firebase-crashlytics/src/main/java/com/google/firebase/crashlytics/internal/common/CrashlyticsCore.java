@@ -87,21 +87,6 @@ public class CrashlyticsCore {
       IdManager idManager,
       CrashlyticsNativeComponent nativeComponent,
       DataCollectionArbiter dataCollectionArbiter,
-      AnalyticsConnector analyticsConnector) {
-    this(
-        app,
-        idManager,
-        nativeComponent,
-        dataCollectionArbiter,
-        analyticsConnector,
-        ExecutorUtils.buildSingleThreadExecutorService("Crashlytics Exception Handler"));
-  }
-
-  CrashlyticsCore(
-      FirebaseApp app,
-      IdManager idManager,
-      CrashlyticsNativeComponent nativeComponent,
-      DataCollectionArbiter dataCollectionArbiter,
       AnalyticsConnector analyticsConnector,
       ExecutorService crashHandlerExecutor) {
     this.app = app;

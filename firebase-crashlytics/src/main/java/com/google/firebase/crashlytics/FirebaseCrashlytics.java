@@ -61,9 +61,13 @@ public class FirebaseCrashlytics {
       nativeComponent = new MissingNativeComponent();
     }
 
+    final ExecutorService crashHandlerExecutor =
+        ExecutorUtils.buildSingleThreadExecutorService("Crashlytics Exception Handler");
+
     final Onboarding onboarding = new Onboarding(app, context, idManager, arbiter);
     final CrashlyticsCore core =
-        new CrashlyticsCore(app, idManager, nativeComponent, arbiter, analyticsConnector);
+        new CrashlyticsCore(
+            app, idManager, nativeComponent, arbiter, analyticsConnector, crashHandlerExecutor);
 
     if (!onboarding.onPreExecute()) {
       Logger.getLogger().e("Unable to start Crashlytics.");
