@@ -293,7 +293,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     PersistedInstallationEntry prefs = getPrefsWithGeneratedIdMultiProcessSafe();
     // Execute network calls (CreateInstallations) to the FIS Servers on a separate executor
     // i.e networkExecutor
-    networkExecutor.execute(() -> doNetworkCall(false));
+    networkExecutor.execute(() -> doNetworkCallIfNecessary(false));
     return prefs.getFirebaseInstallationId();
   }
 
@@ -318,10 +318,10 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     triggerOnStateReached(prefs);
     // Execute network calls (CreateInstallations or GenerateAuthToken) to the FIS Servers on
     // a separate executor i.e networkExecutor
-    networkExecutor.execute(() -> doNetworkCall(forceRefresh));
+    networkExecutor.execute(() -> doNetworkCallIfNecessary(forceRefresh));
   }
 
-  private void doNetworkCall(boolean forceRefresh) {
+  private void doNetworkCallIfNecessary(boolean forceRefresh) {
     PersistedInstallationEntry prefs = getMultiProcessSafePrefs();
     // There are two possible cleanup steps to perform at this stage: the FID may need to
     // be registered with the server or the FID is registered but we need a fresh authtoken.
