@@ -156,7 +156,7 @@ public class RemoteConfigComponent {
     return get(
         firebaseApp,
         namespace,
-        firebaseInstanceId,
+        firebaseInstallations,
         firebaseAbt,
         executorService,
         fetchedCacheClient,
@@ -240,7 +240,7 @@ public class RemoteConfigComponent {
   synchronized ConfigFetchHandler getFetchHandler(
       String namespace, ConfigCacheClient fetchedCacheClient, ConfigMetadataClient metadataClient) {
     return new ConfigFetchHandler(
-        firebaseInstanceId,
+        firebaseInstallations,
         isPrimaryApp(firebaseApp) ? analyticsConnector : null,
         executorService,
         DEFAULT_CLOCK,

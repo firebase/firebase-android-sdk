@@ -35,8 +35,8 @@ import com.google.android.gms.common.util.Clock;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
-import com.google.firebase.iid.FirebaseInstanceId;
-import com.google.firebase.iid.InstanceIdResult;
+import com.google.firebase.installations.FirebaseInstallationsApi;
+import com.google.firebase.installations.InstallationTokenResult;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigClientException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigFetchThrottledException;
@@ -78,7 +78,7 @@ public class ConfigFetchHandler {
    */
   @VisibleForTesting static final int HTTP_TOO_MANY_REQUESTS = 429;
 
-  private final FirebaseInstanceId firebaseInstanceId;
+  private final FirebaseInstallationsApi firebaseInstallations;
   @Nullable private final AnalyticsConnector analyticsConnector;
 
   private final Executor executor;
@@ -92,7 +92,7 @@ public class ConfigFetchHandler {
 
   /** FRC Fetch Handler constructor. */
   public ConfigFetchHandler(
-      FirebaseInstanceId firebaseInstanceId,
+      FirebaseInstallationsApi firebaseInstallations,
       @Nullable AnalyticsConnector analyticsConnector,
       Executor executor,
       Clock clock,
@@ -101,7 +101,7 @@ public class ConfigFetchHandler {
       ConfigFetchHttpClient frcBackendApiClient,
       ConfigMetadataClient frcMetadata,
       Map<String, String> customHttpHeaders) {
-    this.firebaseInstanceId = firebaseInstanceId;
+    this.firebaseInstallations = firebaseInstallations;
     this.analyticsConnector = analyticsConnector;
     this.executor = executor;
     this.clock = clock;
@@ -189,20 +189,32 @@ public class ConfigFetchHandler {
                   createThrottledMessage(backoffEndTime.getTime() - currentTime.getTime()),
                   backoffEndTime.getTime()));
     } else {
-      Task<InstanceIdResult> instanceIdTask = firebaseInstanceId.getInstanceId();
+      Task<String> installationIdTask = firebaseInstallations.getId();
+      Task<InstallationTokenResult> installationTokenTask = firebaseInstallations.getToken(false);
       fetchResponseTask =
-          instanceIdTask.continueWithTask(
+              Tasks.whenAllComplete(
+                      installationIdTask,
+                      installationTokenTask)
+          .continueWithTask(
               executor,
-              (completedIidTask) -> {
-                if (!completedIidTask.isSuccessful()) {
+              (completedInstallationsTasks) -> {
+                if (!installationIdTask.isSuccessful()) {
                   return Tasks.forException(
                       new FirebaseRemoteConfigClientException(
-                          "Failed to get Firebase Instance ID token for fetch.",
-                          completedIidTask.getException()));
+                          "Failed to get Firebase Installation ID for fetch.",
+                              installationIdTask.getException()));
                 }
 
-                InstanceIdResult instanceIdResult = completedIidTask.getResult();
-                return fetchFromBackendAndCacheResponse(instanceIdResult, currentTime);
+                if (!installationTokenTask.isSuccessful()) {
+                  return Tasks.forException(
+                          new FirebaseRemoteConfigClientException(
+                                  "Failed to get Firebase Installation token for fetch.",
+                                  installationTokenTask.getException()));
+                }
+
+                String installationId = installationIdTask.getResult();
+                String installationToken = installationTokenTask.getResult().getToken();
+                return fetchFromBackendAndCacheResponse(installationId, installationToken, currentTime);
               });
     }
 
@@ -262,9 +274,9 @@ public class ConfigFetchHandler {
    * {@code fetchedConfigsCache}.
    */
   private Task<FetchResponse> fetchFromBackendAndCacheResponse(
-      InstanceIdResult instanceId, Date fetchTime) {
+      String installationId, String installationToken, Date fetchTime) {
     try {
-      FetchResponse fetchResponse = fetchFromBackend(instanceId, fetchTime);
+      FetchResponse fetchResponse = fetchFromBackend(installationId, installationToken, fetchTime);
       if (fetchResponse.getStatus() != Status.BACKEND_UPDATES_FETCHED) {
         return Tasks.forResult(fetchResponse);
       }
@@ -286,7 +298,7 @@ public class ConfigFetchHandler {
    *     error connecting to the server.
    */
   @WorkerThread
-  private FetchResponse fetchFromBackend(InstanceIdResult instanceId, Date currentTime)
+  private FetchResponse fetchFromBackend(String installationId, String installationToken, Date currentTime)
       throws FirebaseRemoteConfigException {
     try {
       HttpURLConnection urlConnection = frcBackendApiClient.createHttpURLConnection();
@@ -294,8 +306,8 @@ public class ConfigFetchHandler {
       FetchResponse response =
           frcBackendApiClient.fetch(
               urlConnection,
-              instanceId.getId(),
-              instanceId.getToken(),
+              installationId,
+              installationToken,
               getUserProperties(),
               frcMetadata.getLastFetchETag(),
               customHttpHeaders,

@@ -26,8 +26,8 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.abt.AbtException;
 import com.google.firebase.abt.FirebaseABTesting;
-import com.google.firebase.iid.InstanceIdResult;
 import com.google.firebase.installations.FirebaseInstallationsApi;
+import com.google.firebase.installations.InstallationTokenResult;
 import com.google.firebase.remoteconfig.internal.ConfigCacheClient;
 import com.google.firebase.remoteconfig.internal.ConfigContainer;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler;
@@ -191,14 +191,16 @@ public class FirebaseRemoteConfig {
     Task<ConfigContainer> defaultsConfigsTask = defaultConfigsCache.get();
     Task<ConfigContainer> fetchedConfigsTask = fetchedConfigsCache.get();
     Task<FirebaseRemoteConfigInfo> metadataTask = Tasks.call(executor, this::getInfo);
-    Task<String> installationsIdTask = firebaseInstallations.getId();
+    Task<String> installationIdTask = firebaseInstallations.getId();
+    Task<InstallationTokenResult> installationTokenTask = firebaseInstallations.getToken(false);
 
     return Tasks.whenAllComplete(
             activatedConfigsTask,
             defaultsConfigsTask,
             fetchedConfigsTask,
             metadataTask,
-            installationsIdTask)
+            installationIdTask,
+            installationTokenTask)
         .continueWith(executor, (unusedListOfCompletedTasks) -> metadataTask.getResult());
   }
 

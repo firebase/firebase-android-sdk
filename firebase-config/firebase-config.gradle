@@ -90,6 +90,7 @@ dependencies {
 
     implementation 'com.google.firebase:firebase-measurement-connector:18.0.0'
     implementation 'com.google.protobuf:protobuf-lite:3.0.1'
+    implementation 'com.google.android.gms:play-services-tasks:17.0.2'
 
     compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
 
