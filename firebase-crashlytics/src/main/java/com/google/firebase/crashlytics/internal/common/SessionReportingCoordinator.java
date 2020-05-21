@@ -18,6 +18,7 @@ import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.log.LogFileManager;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
@@ -170,16 +171,17 @@ class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
    *     sent.
    * @param dataTransportState used to determine whether to send the report before cleaning it up.
    */
-  public void sendReports(
+  Task<Void> sendReports(
       @NonNull Executor reportSendCompleteExecutor,
       @NonNull DataTransportState dataTransportState) {
     if (dataTransportState == DataTransportState.NONE) {
       Logger.getLogger().d("Send via DataTransport disabled. Removing DataTransport reports.");
       reportPersistence.deleteAllReports();
-      return;
+      return Tasks.forResult(null);
     }
     final List<CrashlyticsReportWithSessionId> reportsToSend =
         reportPersistence.loadFinalizedReports();
+    final List<Task<Boolean>> sendTasks = new ArrayList<>();
     for (CrashlyticsReportWithSessionId reportToSend : reportsToSend) {
       if (reportToSend.getReport().getType() == CrashlyticsReport.Type.NATIVE
           && dataTransportState != DataTransportState.ALL) {
@@ -189,10 +191,12 @@ class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
         continue;
       }
 
-      reportsSender
-          .sendReport(reportToSend)
-          .continueWith(reportSendCompleteExecutor, this::onReportSendComplete);
+      sendTasks.add(
+          reportsSender
+              .sendReport(reportToSend)
+              .continueWith(reportSendCompleteExecutor, this::onReportSendComplete));
     }
+    return Tasks.whenAll(sendTasks);
   }
 
   private void persistEvent(

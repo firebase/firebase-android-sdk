@@ -779,16 +779,6 @@ public class ValidationTest {
     expectWriteSuccess(data, /*includeSets=*/ true, /*includeUpdates=*/ true);
   }
 
-  /** Performs a write using each update API and makes sure it succeeds. */
-  private static void expectUpdateSuccess(Map<String, Object> data) {
-    expectWriteSuccess(data, /*includeSets=*/ false, /*includeUpdates=*/ true);
-  }
-
-  /** Performs a write using each set API and makes sure it succeeds. */
-  private static void expectSetSuccess(Object data) {
-    expectWriteSuccess(data, /*includeSets=*/ true, /*includeUpdates=*/ false);
-  }
-
   /**
    * Performs a write using each set and/or update API and makes sure it fails with the expected
    * reason.
