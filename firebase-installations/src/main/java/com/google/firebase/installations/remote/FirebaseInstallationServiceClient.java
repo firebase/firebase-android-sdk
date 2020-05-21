@@ -70,6 +70,9 @@ public class FirebaseInstallationServiceClient {
   private static final String CONTENT_ENCODING_HEADER_KEY = "Content-Encoding";
   private static final String GZIP_CONTENT_ENCODING = "gzip";
 
+  private static final String CACHE_CONTROL_HEADER_KEY = "Cache-Control";
+  private static final String CACHE_CONTROL_DIRECTIVE = "no-cache";
+
   /** Heartbeat tag for firebase installations. */
   private static final String FIREBASE_INSTALLATIONS_ID_HEARTBEAT_TAG = "fire-installations-id";
 
@@ -412,6 +415,7 @@ public class FirebaseInstallationServiceClient {
     httpURLConnection.addRequestProperty(CONTENT_TYPE_HEADER_KEY, JSON_CONTENT_TYPE);
     httpURLConnection.addRequestProperty(ACCEPT_HEADER_KEY, JSON_CONTENT_TYPE);
     httpURLConnection.addRequestProperty(CONTENT_ENCODING_HEADER_KEY, GZIP_CONTENT_ENCODING);
+    httpURLConnection.addRequestProperty(CACHE_CONTROL_HEADER_KEY, CACHE_CONTROL_DIRECTIVE);
     httpURLConnection.addRequestProperty(X_ANDROID_PACKAGE_HEADER_KEY, context.getPackageName());
     if (heartbeatInfo != null && userAgentPublisher != null) {
       HeartBeat heartbeat = heartbeatInfo.getHeartBeatCode(FIREBASE_INSTALLATIONS_ID_HEARTBEAT_TAG);
