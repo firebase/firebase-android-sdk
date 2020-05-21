@@ -192,30 +192,29 @@ public class ConfigFetchHandler {
       Task<String> installationIdTask = firebaseInstallations.getId();
       Task<InstallationTokenResult> installationTokenTask = firebaseInstallations.getToken(false);
       fetchResponseTask =
-              Tasks.whenAllComplete(
-                      installationIdTask,
-                      installationTokenTask)
-          .continueWithTask(
-              executor,
-              (completedInstallationsTasks) -> {
-                if (!installationIdTask.isSuccessful()) {
-                  return Tasks.forException(
-                      new FirebaseRemoteConfigClientException(
-                          "Failed to get Firebase Installation ID for fetch.",
-                              installationIdTask.getException()));
-                }
-
-                if (!installationTokenTask.isSuccessful()) {
-                  return Tasks.forException(
+          Tasks.whenAllComplete(installationIdTask, installationTokenTask)
+              .continueWithTask(
+                  executor,
+                  (completedInstallationsTasks) -> {
+                    if (!installationIdTask.isSuccessful()) {
+                      return Tasks.forException(
                           new FirebaseRemoteConfigClientException(
-                                  "Failed to get Firebase Installation token for fetch.",
-                                  installationTokenTask.getException()));
-                }
+                              "Failed to get Firebase Installation ID for fetch.",
+                              installationIdTask.getException()));
+                    }
 
-                String installationId = installationIdTask.getResult();
-                String installationToken = installationTokenTask.getResult().getToken();
-                return fetchFromBackendAndCacheResponse(installationId, installationToken, currentTime);
-              });
+                    if (!installationTokenTask.isSuccessful()) {
+                      return Tasks.forException(
+                          new FirebaseRemoteConfigClientException(
+                              "Failed to get Firebase Installation token for fetch.",
+                              installationTokenTask.getException()));
+                    }
+
+                    String installationId = installationIdTask.getResult();
+                    String installationToken = installationTokenTask.getResult().getToken();
+                    return fetchFromBackendAndCacheResponse(
+                        installationId, installationToken, currentTime);
+                  });
     }
 
     return fetchResponseTask.continueWithTask(
@@ -298,7 +297,8 @@ public class ConfigFetchHandler {
    *     error connecting to the server.
    */
   @WorkerThread
-  private FetchResponse fetchFromBackend(String installationId, String installationToken, Date currentTime)
+  private FetchResponse fetchFromBackend(
+      String installationId, String installationToken, Date currentTime)
       throws FirebaseRemoteConfigException {
     try {
       HttpURLConnection urlConnection = frcBackendApiClient.createHttpURLConnection();

@@ -59,8 +59,8 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
-import com.google.firebase.iid.FirebaseInstanceId;
-import com.google.firebase.remoteconfig.FakeInstanceIdResult;
+import com.google.firebase.installations.FirebaseInstallationsApi;
+import com.google.firebase.installations.InstallationTokenResult;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigClientException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigFetchThrottledException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigServerException;
@@ -98,8 +98,14 @@ import org.skyscreamer.jsonassert.JSONAssert;
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
 public class ConfigFetchHandlerTest {
-  private static final String INSTANCE_ID_STRING = "fake instance id";
-  private static final String INSTANCE_ID_TOKEN_STRING = "fake instance id token";
+  private static final String INSTALLATION_ID = "fake installation id";
+  private static final String INSTALLATION_TOKEN = "fake installation token";
+  private static final InstallationTokenResult INSTALLATION_TOKEN_RESULT =
+      InstallationTokenResult.builder()
+          .setToken(INSTALLATION_TOKEN)
+          .setTokenCreationTimestamp(1)
+          .setTokenExpirationTimestamp(1)
+          .build();
   private static final long DEFAULT_CACHE_EXPIRATION_IN_MILLISECONDS =
       SECONDS.toMillis(DEFAULT_MINIMUM_FETCH_INTERVAL_IN_SECONDS);
 
@@ -114,7 +120,7 @@ public class ConfigFetchHandlerTest {
   @Mock private ConfigFetchHttpClient mockBackendFetchApiClient;
 
   private Context context;
-  @Mock private FirebaseInstanceId mockFirebaseInstanceId;
+  @Mock private FirebaseInstallationsApi mockFirebaseInstallations;
   private ConfigMetadataClient metadataClient;
 
   private ConfigFetchHandler fetchHandler;
@@ -184,7 +190,7 @@ public class ConfigFetchHandlerTest {
         .fetch(
             any(HttpURLConnection.class),
             /* instanceId= */ any(),
-            /* instanceIdToken= */ eq(INSTANCE_ID_TOKEN_STRING),
+            /* instanceIdToken= */ eq(INSTALLATION_TOKEN),
             /* analyticsUserProperties= */ any(),
             /* lastFetchETag= */ any(),
             /* customHeaders= */ any(),
@@ -193,12 +199,12 @@ public class ConfigFetchHandlerTest {
 
   @Test
   public void fetch_failToGetIidToken_throwsRemoteConfigException() throws Exception {
-    when(mockFirebaseInstanceId.getInstanceId())
+    when(mockFirebaseInstallations.getId())
         .thenReturn(Tasks.forException(new IOException("SERVICE_NOT_AVAILABLE")));
     fetchCallToHttpClientReturnsConfigWithCurrentTime(firstFetchedContainer);
 
     assertThrowsClientException(
-        fetchHandler.fetch(), "Failed to get Firebase Instance ID token for fetch.");
+        fetchHandler.fetch(), "Failed to get Firebase Installation ID for fetch.");
 
     verifyBackendIsNeverCalled();
   }
@@ -705,7 +711,7 @@ public class ConfigFetchHandlerTest {
     ConfigFetchHandler fetchHandler =
         spy(
             new ConfigFetchHandler(
-                mockFirebaseInstanceId,
+                mockFirebaseInstallations,
                 analyticsConnector,
                 directExecutor,
                 mockClock,
@@ -898,10 +904,9 @@ public class ConfigFetchHandlerTest {
   }
 
   private void loadInstanceIdAndToken() {
-    when(mockFirebaseInstanceId.getInstanceId())
-        .thenReturn(
-            Tasks.forResult(
-                new FakeInstanceIdResult(INSTANCE_ID_STRING, INSTANCE_ID_TOKEN_STRING)));
+    when(mockFirebaseInstallations.getId()).thenReturn(Tasks.forResult(INSTALLATION_ID));
+    when(mockFirebaseInstallations.getToken(false))
+        .thenReturn(Tasks.forResult(INSTALLATION_TOKEN_RESULT));
   }
 
   private void loadCacheAndClockWithConfig(
