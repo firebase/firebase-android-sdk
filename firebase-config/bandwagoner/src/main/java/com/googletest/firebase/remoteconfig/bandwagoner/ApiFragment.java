@@ -95,7 +95,7 @@ public class ApiFragment extends Fragment {
     TextView sdkVersionText = rootView.findViewById(R.id.sdk_version_text);
 
     TextView iidText = rootView.findViewById(R.id.iid_text);
-
+    
     Task<String> installationIdTask = firebaseInstallations.getId();
     Task<InstallationTokenResult> installationAuthTokenTask = firebaseInstallations.getToken(false);
 

@@ -16,6 +16,7 @@
 
 apply plugin: 'com.android.application'
 apply plugin: com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabPlugin
+apply plugin: 'com.google.gms.google-services'
 
 android {
     compileSdkVersion project.targetSdkVersion
