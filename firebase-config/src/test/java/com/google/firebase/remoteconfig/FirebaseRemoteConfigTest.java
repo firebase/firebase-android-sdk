@@ -52,6 +52,7 @@ import com.google.firebase.remoteconfig.internal.ConfigContainer;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler.FetchResponse;
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
+import com.google.firebase.remoteconfig.internal.ConfigLogger;
 import com.google.firebase.remoteconfig.internal.ConfigMetadataClient;
 import java.io.IOException;
 import java.util.Date;
@@ -86,6 +87,7 @@ public final class FirebaseRemoteConfigTest {
   private static final String APP_ID = "1:14368190084:android:09cb977358c6f241";
   private static final String API_KEY = "api_key";
 
+  private static final String DEFAULT_NAMESPACE = "firebase";
   private static final String FIREPERF_NAMESPACE = "fireperf";
 
   private static final String STRING_KEY = "string_key";
@@ -166,7 +168,8 @@ public final class FirebaseRemoteConfigTest {
             mockDefaultsCache,
             mockFetchHandler,
             mockGetHandler,
-            metadataClient);
+            metadataClient,
+            ConfigLogger.getLogger(DEFAULT_NAMESPACE));
 
     // Set up an FRC instance for the Fireperf namespace that uses mocked clients.
     fireperfFrc =
