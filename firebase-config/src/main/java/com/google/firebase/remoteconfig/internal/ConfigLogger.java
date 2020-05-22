@@ -35,9 +35,7 @@ public class ConfigLogger {
     this.logLevel = Log.INFO;
   }
 
-  /**
-   * Get the logger for {@param namespace} or create one if it does not already exist.
-   */
+  /** Get the logger for {@param namespace} or create one if it does not already exist. */
   public static ConfigLogger getLogger(String namespace) {
     if (configNamespaceLoggers.containsKey(namespace)) {
       return configNamespaceLoggers.get(namespace);
@@ -57,9 +55,7 @@ public class ConfigLogger {
     this.logLevel = logLevel;
   }
 
-  /**
-   * Get the current log level for this logger.
-   */
+  /** Get the current log level for this logger. */
   public int getLogLevel() {
     return logLevel;
   }
