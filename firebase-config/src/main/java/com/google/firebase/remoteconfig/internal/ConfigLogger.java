@@ -60,52 +60,62 @@ public class ConfigLogger {
     return logLevel;
   }
 
+  /** Send a {@link Log#VERBOSE} log message and log the exception. */
   public void v(String text, Throwable throwable) {
     if (canLog(Log.VERBOSE)) {
       Log.v(tag, text, throwable);
     }
   }
 
+  /** Send a {@link Log#DEBUG} log message and log the exception. */
   public void d(String text, Throwable throwable) {
     if (canLog(Log.DEBUG)) {
       Log.d(tag, text, throwable);
     }
   }
 
+  /** Send a {@link Log#INFO} log message and log the exception. */
   public void i(String text, Throwable throwable) {
     if (canLog(Log.INFO)) {
       Log.i(tag, text, throwable);
     }
   }
 
+  /** Send a {@link Log#WARN} log message and log the exception. */
   public void w(String text, Throwable throwable) {
     if (canLog(Log.WARN)) {
       Log.w(tag, text, throwable);
     }
   }
 
+  /** Send a {@link Log#ERROR} log message and log the exception. */
   public void e(String text, Throwable throwable) {
     if (canLog(Log.WARN)) {
       Log.e(tag, text, throwable);
     }
   }
 
+  /** Send a {@link Log#VERBOSE} log message. */
   public void v(String text) {
     v(text, null);
   }
 
+  /** Send a {@link Log#DEBUG} log message. */
   public void d(String text) {
     d(text, null);
   }
 
+  /** Send a {@link Log#INFO} log message. */
   public void i(String text) {
     i(text, null);
   }
 
+  /** Send a {@link Log#WARN} log message. */
   public void w(String text) {
     w(text, null);
   }
 
+  /** Send a {@link Log#ERROR} log message. */
   public void e(String text) {
     e(text, null);
   }
