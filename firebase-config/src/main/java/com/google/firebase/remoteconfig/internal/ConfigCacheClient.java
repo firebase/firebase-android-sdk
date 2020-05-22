@@ -14,9 +14,6 @@
 
 package com.google.firebase.remoteconfig.internal;
 
-import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.TAG;
-
-import android.util.Log;
 import androidx.annotation.AnyThread;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
@@ -58,6 +55,7 @@ public class ConfigCacheClient {
 
   private final ExecutorService executorService;
   private final ConfigStorageClient storageClient;
+  private final ConfigLogger logger;
 
   /**
    * Represents the {@link ConfigContainer} stored in disk. If the value is null, then there have
@@ -71,9 +69,11 @@ public class ConfigCacheClient {
    * Creates a new cache client that executes async calls through {@code executorService} and is
    * backed by {@code storageClient}.
    */
-  private ConfigCacheClient(ExecutorService executorService, ConfigStorageClient storageClient) {
+  private ConfigCacheClient(
+      ExecutorService executorService, ConfigStorageClient storageClient, ConfigLogger logger) {
     this.executorService = executorService;
     this.storageClient = storageClient;
+    this.logger = logger;
 
     cachedContainerTask = null;
   }
@@ -112,7 +112,7 @@ public class ConfigCacheClient {
     try {
       return await(get(), diskReadTimeoutInSeconds, TimeUnit.SECONDS);
     } catch (InterruptedException | ExecutionException | TimeoutException e) {
-      Log.d(TAG, "Reading from storage file failed.", e);
+      logger.d("Reading from storage file failed.", e);
       return null;
     }
   }
@@ -211,10 +211,10 @@ public class ConfigCacheClient {
    * underlying file name.
    */
   public static synchronized ConfigCacheClient getInstance(
-      ExecutorService executorService, ConfigStorageClient storageClient) {
+      ExecutorService executorService, ConfigStorageClient storageClient, ConfigLogger logger) {
     String fileName = storageClient.getFileName();
     if (!clientInstances.containsKey(fileName)) {
-      clientInstances.put(fileName, new ConfigCacheClient(executorService, storageClient));
+      clientInstances.put(fileName, new ConfigCacheClient(executorService, storageClient, logger));
     }
     return clientInstances.get(fileName);
   }

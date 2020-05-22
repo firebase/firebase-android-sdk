@@ -15,7 +15,6 @@
 package com.google.firebase.remoteconfig;
 
 import android.content.Context;
-import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -33,10 +32,9 @@ import com.google.firebase.remoteconfig.internal.ConfigContainer;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler.FetchResponse;
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
+import com.google.firebase.remoteconfig.internal.ConfigLogger;
 import com.google.firebase.remoteconfig.internal.ConfigMetadataClient;
 import com.google.firebase.remoteconfig.internal.DefaultsXmlParser;
-import com.google.firebase.remoteconfig.internal.ConfigLogger;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -44,7 +42,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -130,13 +127,6 @@ public class FirebaseRemoteConfig {
    */
   public static final int LAST_FETCH_STATUS_THROTTLED = 2;
 
-  /**
-   * The general logging tag for all Firebase Remote Config logs.
-   *
-   * @hide
-   */
-  private final ConfigLogger logger = ConfigLogger.createLogger();
-
   private final Context context;
   private final FirebaseApp firebaseApp;
   /**
@@ -152,6 +142,7 @@ public class FirebaseRemoteConfig {
   private final ConfigFetchHandler fetchHandler;
   private final ConfigGetParameterHandler getHandler;
   private final ConfigMetadataClient frcMetadata;
+  private final ConfigLogger logger;
   private final FirebaseInstanceId firebaseInstanceId;
 
   /**
@@ -170,7 +161,8 @@ public class FirebaseRemoteConfig {
       ConfigCacheClient defaultConfigsCache,
       ConfigFetchHandler fetchHandler,
       ConfigGetParameterHandler getHandler,
-      ConfigMetadataClient frcMetadata) {
+      ConfigMetadataClient frcMetadata,
+      ConfigLogger logger) {
     this.context = context;
     this.firebaseApp = firebaseApp;
     this.firebaseInstanceId = firebaseInstanceId;
@@ -182,6 +174,7 @@ public class FirebaseRemoteConfig {
     this.fetchHandler = fetchHandler;
     this.getHandler = getHandler;
     this.frcMetadata = frcMetadata;
+    this.logger = logger;
   }
 
   /**
@@ -610,7 +603,8 @@ public class FirebaseRemoteConfig {
    */
   @Deprecated
   public void setDefaults(@XmlRes int resourceId) {
-    Map<String, String> xmlDefaults = DefaultsXmlParser.getDefaultsFromXml(context, resourceId);
+    Map<String, String> xmlDefaults =
+        DefaultsXmlParser.getDefaultsFromXml(context, resourceId, logger);
     setDefaultsWithStringsMap(xmlDefaults);
   }
 
@@ -622,7 +616,8 @@ public class FirebaseRemoteConfig {
    */
   @NonNull
   public Task<Void> setDefaultsAsync(@XmlRes int resourceId) {
-    Map<String, String> xmlDefaults = DefaultsXmlParser.getDefaultsFromXml(context, resourceId);
+    Map<String, String> xmlDefaults =
+        DefaultsXmlParser.getDefaultsFromXml(context, resourceId, logger);
     return setDefaultsWithStringsMapAsync(xmlDefaults);
   }
 
@@ -645,6 +640,21 @@ public class FirebaseRemoteConfig {
           frcMetadata.clear();
           return null;
         });
+  }
+
+  /**
+   * Set the log level for this {@link FirebaseRemoteConfig}'s namespace. Log messages at or above
+   * {@param logLevel} will be written.
+   *
+   * @param logLevel Log level as specified by {@link android.util.Log}.
+   */
+  public void setLogLevel(int logLevel) {
+    logger.setLogLevel(logLevel);
+  }
+
+  /** Get the log level for this {@link FirebaseRemoteConfig}'s namespace. */
+  public int getLogLevel() {
+    return logger.getLogLevel();
   }
 
   /**
@@ -694,7 +704,7 @@ public class FirebaseRemoteConfig {
           ConfigContainer.newBuilder().replaceConfigsWith(defaultsStringMap).build();
       defaultConfigsCache.putWithoutWaitingForDiskWrite(defaultConfigs);
     } catch (JSONException e) {
-      Log.e(TAG, "The provided defaults map could not be processed.", e);
+      logger.e("The provided defaults map could not be processed.", e);
     }
   }
 
@@ -709,7 +719,7 @@ public class FirebaseRemoteConfig {
     try {
       defaultConfigs = ConfigContainer.newBuilder().replaceConfigsWith(defaultsStringMap).build();
     } catch (JSONException e) {
-      Log.e(TAG, "The provided defaults map could not be processed.", e);
+      logger.e("The provided defaults map could not be processed.", e);
       return Tasks.forResult(null);
     }
 
@@ -738,11 +748,11 @@ public class FirebaseRemoteConfig {
       List<Map<String, String>> experimentInfoMaps = toExperimentInfoMaps(abtExperiments);
       firebaseAbt.replaceAllExperiments(experimentInfoMaps);
     } catch (JSONException e) {
-      Log.e(TAG, "Could not parse ABT experiments from the JSON response.", e);
+      logger.e("Could not parse ABT experiments from the JSON response.", e);
     } catch (AbtException e) {
       // TODO(issues/256): Find a way to log errors for all non-Analytics related exceptions
       // without coupling the FRC and ABT SDKs.
-      Log.w(TAG, "Could not update ABT experiments.", e);
+      logger.w("Could not update ABT experiments.", e);
     }
   }
 

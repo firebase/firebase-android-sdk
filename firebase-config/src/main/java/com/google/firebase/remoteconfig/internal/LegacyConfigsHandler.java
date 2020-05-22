@@ -16,11 +16,8 @@
 
 package com.google.firebase.remoteconfig.internal;
 
-import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.TAG;
-
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.util.Log;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
@@ -129,12 +126,14 @@ public class LegacyConfigsHandler {
 
   private final Context context;
   private final String appId;
+  private final ConfigLogger logger;
   private final SharedPreferences legacySettings;
 
   /** The Legacy Configs Handler constructor. */
-  public LegacyConfigsHandler(Context context, String appId) {
+  public LegacyConfigsHandler(Context context, String appId, ConfigLogger logger) {
     this.context = context;
     this.appId = appId;
+    this.logger = logger;
 
     this.legacySettings =
         context.getSharedPreferences(LEGACY_SETTINGS_FILE_NAME, Context.MODE_PRIVATE);
@@ -256,7 +255,7 @@ public class LegacyConfigsHandler {
         convertedLegacyConfigs.put(namespace, configsBuilder.build());
       } catch (JSONException e) {
         // Skip configs that cannot be parsed.
-        Log.d(TAG, "A set of legacy configs could not be converted.");
+        logger.d("A set of legacy configs could not be converted.");
       }
     }
     return convertedLegacyConfigs;
@@ -275,7 +274,7 @@ public class LegacyConfigsHandler {
           abtExperiments.put(convertLegacyAbtExperiment(deserializedPayload));
         } catch (JSONException e) {
           // Ignore ABT experiments that cannot be parsed.
-          Log.d(TAG, "A legacy ABT experiment could not be parsed.", e);
+          logger.d("A legacy ABT experiment could not be parsed.", e);
         }
       }
     }
@@ -292,7 +291,7 @@ public class LegacyConfigsHandler {
       }
       return ExperimentPayload.parseFrom(payloadArray);
     } catch (InvalidProtocolBufferException e) {
-      Log.d(TAG, "Payload was not defined or could not be deserialized.", e);
+      logger.d("Payload was not defined or could not be deserialized.", e);
       return null;
     }
   }
@@ -339,10 +338,10 @@ public class LegacyConfigsHandler {
       fileInputStream = context.openFileInput(LEGACY_CONFIGS_FILE_NAME);
       persistedConfig = PersistedConfig.parseFrom(fileInputStream);
     } catch (FileNotFoundException fileNotFoundException) {
-      Log.d(TAG, "Persisted config file was not found.", fileNotFoundException);
+      logger.d("Persisted config file was not found.", fileNotFoundException);
       return null;
     } catch (IOException ioException) {
-      Log.d(TAG, "Cannot initialize from persisted config.", ioException);
+      logger.d("Cannot initialize from persisted config.", ioException);
       return null;
     } finally {
       try {
@@ -350,7 +349,7 @@ public class LegacyConfigsHandler {
           fileInputStream.close();
         }
       } catch (IOException ioException) {
-        Log.d(TAG, "Failed to close persisted config file.", ioException);
+        logger.d("Failed to close persisted config file.", ioException);
       }
     }
     return persistedConfig;

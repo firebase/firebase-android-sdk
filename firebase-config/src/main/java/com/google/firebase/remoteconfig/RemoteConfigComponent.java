@@ -100,7 +100,12 @@ public class RemoteConfigComponent {
         firebaseInstanceId,
         firebaseAbt,
         analyticsConnector,
-        new LegacyConfigsHandler(context, firebaseApp.getOptions().getApplicationId()),
+        // Use the default (3P) logger for LegacyConfigsHandler it loads configs (including 3P)
+        // independent of a namespace.
+        new LegacyConfigsHandler(
+            context,
+            firebaseApp.getOptions().getApplicationId(),
+            ConfigLogger.getLogger(DEFAULT_NAMESPACE)),
         /* loadGetDefault= */ true);
   }
 
@@ -164,7 +169,7 @@ public class RemoteConfigComponent {
         activatedCacheClient,
         defaultsCacheClient,
         getFetchHandler(namespace, fetchedCacheClient, metadataClient),
-        getGetHandler(activatedCacheClient, defaultsCacheClient),
+        getGetHandler(activatedCacheClient, defaultsCacheClient, namespace),
         metadataClient);
   }
 
@@ -194,7 +199,8 @@ public class RemoteConfigComponent {
               defaultsClient,
               fetchHandler,
               getHandler,
-              metadataClient);
+              metadataClient,
+              ConfigLogger.getLogger(namespace));
       in.startLoadingConfigsFromDisk();
       frcNamespaceInstances.put(namespace, in);
     }
@@ -221,7 +227,9 @@ public class RemoteConfigComponent {
             "%s_%s_%s_%s.json",
             FIREBASE_REMOTE_CONFIG_FILE_NAME_PREFIX, appId, namespace, configStoreType);
     return ConfigCacheClient.getInstance(
-        Executors.newCachedThreadPool(), ConfigStorageClient.getInstance(context, fileName));
+        Executors.newCachedThreadPool(),
+        ConfigStorageClient.getInstance(context, fileName),
+        ConfigLogger.getLogger(namespace));
   }
 
   @VisibleForTesting
@@ -234,7 +242,8 @@ public class RemoteConfigComponent {
         apiKey,
         namespace,
         /* connectTimeoutInSeconds= */ metadataClient.getFetchTimeoutInSeconds(),
-        /* readTimeoutInSeconds= */ metadataClient.getFetchTimeoutInSeconds());
+        /* readTimeoutInSeconds= */ metadataClient.getFetchTimeoutInSeconds(),
+        ConfigLogger.getLogger(namespace));
   }
 
   @VisibleForTesting
@@ -253,8 +262,11 @@ public class RemoteConfigComponent {
   }
 
   private ConfigGetParameterHandler getGetHandler(
-      ConfigCacheClient activatedCacheClient, ConfigCacheClient defaultsCacheClient) {
-    return new ConfigGetParameterHandler(activatedCacheClient, defaultsCacheClient);
+      ConfigCacheClient activatedCacheClient,
+      ConfigCacheClient defaultsCacheClient,
+      String namespace) {
+    return new ConfigGetParameterHandler(
+        activatedCacheClient, defaultsCacheClient, ConfigLogger.getLogger(namespace));
   }
 
   @VisibleForTesting

@@ -14,7 +14,6 @@
 
 package com.google.firebase.remoteconfig.internal;
 
-import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.TAG;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.FETCH_REGEX_URL;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.ANALYTICS_USER_PROPERTIES;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.APP_ID;
@@ -37,7 +36,6 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.os.Build;
-import android.util.Log;
 import androidx.annotation.Keep;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.util.AndroidUtilsLight;
@@ -86,6 +84,7 @@ public class ConfigFetchHttpClient {
   private final String namespace;
   private final long connectTimeoutInSeconds;
   private final long readTimeoutInSeconds;
+  private final ConfigLogger logger;
 
   /** Creates a client for {@link #fetch}ing data from the Firebase Remote Config server. */
   public ConfigFetchHttpClient(
@@ -94,7 +93,8 @@ public class ConfigFetchHttpClient {
       String apiKey,
       String namespace,
       long connectTimeoutInSeconds,
-      long readTimeoutInSeconds) {
+      long readTimeoutInSeconds,
+      ConfigLogger logger) {
     this.context = context;
     this.appId = appId;
     this.apiKey = apiKey;
@@ -102,6 +102,7 @@ public class ConfigFetchHttpClient {
     this.namespace = namespace;
     this.connectTimeoutInSeconds = connectTimeoutInSeconds;
     this.readTimeoutInSeconds = readTimeoutInSeconds;
+    this.logger = logger;
   }
 
   /** Used to verify that the timeout is being set correctly. */
@@ -260,13 +261,13 @@ public class ConfigFetchHttpClient {
       hash = AndroidUtilsLight.getPackageCertificateHashBytes(context, context.getPackageName());
 
       if (hash == null) {
-        Log.e(TAG, "Could not get fingerprint hash for package: " + context.getPackageName());
+        logger.e("Could not get fingerprint hash for package: " + context.getPackageName());
         return null;
       } else {
         return Hex.bytesToStringUppercase(hash, /* zeroTerminated= */ false);
       }
     } catch (PackageManager.NameNotFoundException e) {
-      Log.e(TAG, "No such package: " + context.getPackageName(), e);
+      logger.e("No such package: " + context.getPackageName(), e);
       return null;
     }
   }
