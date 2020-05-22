@@ -16,6 +16,7 @@ package com.google.firebase.remoteconfig {
     method @NonNull public static com.google.firebase.remoteconfig.FirebaseRemoteConfig getInstance();
     method @NonNull public static com.google.firebase.remoteconfig.FirebaseRemoteConfig getInstance(@NonNull com.google.firebase.FirebaseApp);
     method @NonNull public java.util.Set<java.lang.String> getKeysByPrefix(@NonNull String);
+    method public int getLogLevel();
     method public long getLong(@NonNull String);
     method @NonNull public String getString(@NonNull String);
     method @NonNull public com.google.firebase.remoteconfig.FirebaseRemoteConfigValue getValue(@NonNull String);
@@ -26,6 +27,7 @@ package com.google.firebase.remoteconfig {
     method @Deprecated public void setDefaults(@XmlRes int);
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> setDefaultsAsync(@NonNull java.util.Map<java.lang.String,java.lang.Object>);
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> setDefaultsAsync(@XmlRes int);
+    method public void setLogLevel(int);
     field public static final boolean DEFAULT_VALUE_FOR_BOOLEAN = false;
     field public static final byte[] DEFAULT_VALUE_FOR_BYTE_ARRAY;
     field public static final double DEFAULT_VALUE_FOR_DOUBLE = 0.0;
