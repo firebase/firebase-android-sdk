@@ -55,7 +55,10 @@ dependencies {
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation 'junit:junit:4.12'
     testImplementation "com.google.truth:truth:$googleTruthVersion"
-    testImplementation ("com.google.firebase:firebase-analytics:17.4.2") {
+    androidTestImplementation ("com.google.firebase:firebase-analytics:17.4.2") {
         exclude group: "com.google.firebase", module: "firebase-common"
+        exclude group: "com.google.firebase", module: "firebase-components"
+        exclude group: "com.google.firebase", module: "firebase-installations-interop"
+        exclude group: "com.google.firebase", module: "firebase-installations"
     }
 }
