@@ -142,8 +142,12 @@ final class SchemaManager extends SQLiteOpenHelper {
 
   @Override
   public void onCreate(SQLiteDatabase db) {
+    onCreate(db, schemaVersion);
+  }
+
+  private void onCreate(SQLiteDatabase db, int version) {
     ensureConfigured(db);
-    upgrade(db, 0, schemaVersion);
+    upgrade(db, 0, version);
   }
 
   @Override
@@ -159,7 +163,7 @@ final class SchemaManager extends SQLiteOpenHelper {
     db.execSQL(DROP_CONTEXTS_SQL);
     // Indices are dropped automatically when the tables are dropped
 
-    onCreate(db);
+    onCreate(db, newVersion);
   }
 
   @Override
