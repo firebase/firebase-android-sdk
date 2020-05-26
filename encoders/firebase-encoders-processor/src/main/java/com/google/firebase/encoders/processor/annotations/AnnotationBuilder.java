@@ -61,6 +61,10 @@ import javax.lang.model.util.ElementFilter;
  *
  *   public MyAnnotation build() { return new MyAnnotationImpl(value, str); }
  *
+ *   private static class MyAnnotationImpl implements MyAnnotation {
+ *     // implementation details ...
+ *   }
+ *
  * }
  * }</pre>
  */
