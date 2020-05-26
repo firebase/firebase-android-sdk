@@ -25,6 +25,13 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.util.ElementFilter;
 
+/**
+ * Generates compliant equals() method implementation.
+ *
+ * @see <a
+ *     href="https://docs.oracle.com/javase/7/docs/api/java/lang/annotation/Annotation.html#equals(java.lang.Object)">Annotation#equals()</a>
+ *     requirements.
+ */
 class EqualsMethod {
   static MethodSpec generate(TypeElement annotation) {
     MethodSpec.Builder equalsBuilder =

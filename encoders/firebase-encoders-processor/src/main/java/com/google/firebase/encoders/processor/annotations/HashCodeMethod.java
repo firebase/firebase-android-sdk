@@ -24,6 +24,13 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.util.ElementFilter;
 
+/**
+ * Generates compliant hashCode() method implementation.
+ *
+ * @see <a
+ *     href="https://docs.oracle.com/javase/7/docs/api/java/lang/annotation/Annotation.html#hashCode()">Annotation#hashCode()</a>
+ *     requirements.
+ */
 class HashCodeMethod {
   static MethodSpec generate(TypeElement annotation) {
     MethodSpec.Builder hashCodeBuilder =
