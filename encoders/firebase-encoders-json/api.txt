@@ -62,6 +62,10 @@ package com.google.firebase.encoders.annotations {
   @java.lang.annotation.Target(java.lang.annotation.ElementType.METHOD) @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) public static @interface Encodable.Ignore {
   }
 
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @java.lang.annotation.Target(java.lang.annotation.ElementType.ANNOTATION_TYPE) public @interface ExtraProperty {
+    method public abstract Class<?>[] allowedTypes() default {};
+  }
+
 }
 
 package com.google.firebase.encoders.config {
