@@ -81,6 +81,8 @@ final class SchemaManager extends SQLiteOpenHelper {
           + "FOREIGN KEY (event_id) REFERENCES events(_id) ON DELETE CASCADE,"
           + "PRIMARY KEY (sequence_num, event_id))";
 
+  private static final String DROP_PAYLOADS_SQL = "DROP TABLE IF EXISTS event_payloads";
+
   static int SCHEMA_VERSION = 4;
 
   private static final SchemaManager.Migration MIGRATE_TO_V1 =
@@ -102,10 +104,10 @@ final class SchemaManager extends SQLiteOpenHelper {
 
   private static final SchemaManager.Migration MIGRATE_TO_V3 =
       db -> db.execSQL("ALTER TABLE events ADD COLUMN payload_encoding TEXT");
-
   private static final SchemaManager.Migration MIGRATE_TO_V4 =
       db -> {
         db.execSQL("ALTER TABLE events ADD COLUMN inline BOOLEAN NOT NULL DEFAULT 1");
+        db.execSQL(DROP_PAYLOADS_SQL);
         db.execSQL(CREATE_PAYLOADS_TABLE_V4);
       };
 
@@ -142,8 +144,12 @@ final class SchemaManager extends SQLiteOpenHelper {
 
   @Override
   public void onCreate(SQLiteDatabase db) {
+    onCreate(db, schemaVersion);
+  }
+
+  private void onCreate(SQLiteDatabase db, int version) {
     ensureConfigured(db);
-    upgrade(db, 0, schemaVersion);
+    upgrade(db, 0, version);
   }
 
   @Override
@@ -157,9 +163,10 @@ final class SchemaManager extends SQLiteOpenHelper {
     db.execSQL(DROP_EVENTS_SQL);
     db.execSQL(DROP_EVENT_METADATA_SQL);
     db.execSQL(DROP_CONTEXTS_SQL);
+    db.execSQL(DROP_PAYLOADS_SQL);
     // Indices are dropped automatically when the tables are dropped
 
-    onCreate(db);
+    onCreate(db, newVersion);
   }
 
   @Override
