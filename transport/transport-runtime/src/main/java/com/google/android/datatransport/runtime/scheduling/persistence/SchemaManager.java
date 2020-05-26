@@ -15,7 +15,6 @@ package com.google.android.datatransport.runtime.scheduling.persistence;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.os.Build;
 import java.util.Arrays;
@@ -97,12 +96,7 @@ final class SchemaManager extends SQLiteOpenHelper {
 
   private static final SchemaManager.Migration MIGRATE_TO_V2 =
       (db) -> {
-        try {
-          db.execSQL("ALTER TABLE transport_contexts ADD COLUMN extras BLOB");
-        } catch (SQLiteException ignored) {
-
-        }
-        db.execSQL("DROP INDEX IF EXISTS contexts_backend_priority_extras");
+        db.execSQL("ALTER TABLE transport_contexts ADD COLUMN extras BLOB");
         db.execSQL(
             "CREATE UNIQUE INDEX contexts_backend_priority_extras on transport_contexts(backend_name, priority, extras)");
         db.execSQL("DROP INDEX IF EXISTS contexts_backend_priority");
@@ -110,18 +104,11 @@ final class SchemaManager extends SQLiteOpenHelper {
 
   private static final SchemaManager.Migration MIGRATE_TO_V3 =
       db -> {
-        try {
-          db.execSQL("ALTER TABLE events ADD COLUMN payload_encoding TEXT");
-        } catch (SQLiteException ignored) {
-        }
+        db.execSQL("ALTER TABLE events ADD COLUMN payload_encoding TEXT");
       };
   private static final SchemaManager.Migration MIGRATE_TO_V4 =
       db -> {
-        try {
-          db.execSQL("ALTER TABLE events ADD COLUMN inline BOOLEAN NOT NULL DEFAULT 1");
-        } catch (SQLiteException ignored) {
-
-        }
+        db.execSQL("ALTER TABLE events ADD COLUMN inline BOOLEAN NOT NULL DEFAULT 1");
         db.execSQL(DROP_PAYLOADS_SQL);
         db.execSQL(CREATE_PAYLOADS_TABLE_V4);
       };
@@ -159,8 +146,12 @@ final class SchemaManager extends SQLiteOpenHelper {
 
   @Override
   public void onCreate(SQLiteDatabase db) {
+    onCreate(db, schemaVersion);
+  }
+
+  private void onCreate(SQLiteDatabase db, int version) {
     ensureConfigured(db);
-    upgrade(db, 0, schemaVersion);
+    upgrade(db, 0, version);
   }
 
   @Override
@@ -177,7 +168,7 @@ final class SchemaManager extends SQLiteOpenHelper {
     db.execSQL(DROP_PAYLOADS_SQL);
     // Indices are dropped automatically when the tables are dropped
 
-    onCreate(db);
+    onCreate(db, newVersion);
   }
 
   @Override
