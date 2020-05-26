@@ -222,9 +222,9 @@ public final class AnnotationBuilder {
     }
     annotationImpl.addMethod(constructorBuilder.build());
 
-    // TODO(vkryachko): generate proper equals() and hashCode().
-    // annotationImpl.addMethod(EqualsMethod.generate(annotation));
-    // annotationImpl.addMethod(HashCodeMethod.generate(annotation));
+    annotationImpl.addMethod(EqualsMethod.generate(annotation));
+    annotationImpl.addMethod(HashCodeMethod.generate(annotation));
+    annotationImpl.addMethod(ToStringMethod.generate(annotation));
 
     return new AnnotationImpl(annotationImpl.build(), defaults);
   }
