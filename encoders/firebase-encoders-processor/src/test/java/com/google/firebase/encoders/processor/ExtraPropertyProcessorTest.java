@@ -32,14 +32,15 @@ public class ExtraPropertyProcessorTest {
             .withProcessors(new ExtraPropertyProcessor())
             .compile(
                 JavaFileObjects.forSourceLines(
-                    "EmptyAnnotation",
+                    "com.example.EmptyAnnotation",
+                    "package com.example;",
                     "import com.google.firebase.encoders.annotations.ExtraProperty;",
                     "@ExtraProperty",
                     "public @interface EmptyAnnotation {}"));
 
     assertThat(result).succeededWithoutWarnings();
     assertThat(result)
-        .generatedSourceFile("AtEmptyAnnotation")
+        .generatedSourceFile("com/example/AtEmptyAnnotation")
         .hasSourceEquivalentTo(JavaFileObjects.forResource("ExpectedAtEmptyAnnotation.java"));
   }
 
@@ -50,11 +51,18 @@ public class ExtraPropertyProcessorTest {
             .withProcessors(new ExtraPropertyProcessor())
             .compile(
                 JavaFileObjects.forSourceLines(
-                    "MyAnnotation",
+                    "com.example.MyAnnotation",
+                    "package com.example;",
                     "import com.google.firebase.encoders.annotations.ExtraProperty;",
                     "@ExtraProperty",
                     "public @interface MyAnnotation {",
                     "int intVal();",
+                    "long longVal();",
+                    "boolean boolVal();",
+                    "short shortVal();",
+                    "float floatVal();",
+                    "double doubleVal();",
+                    "double[] doubleArrayVal();",
                     "String strVal() default \"default\";",
                     "MyEnum enumVal() default MyEnum.VALUE1;",
                     "enum MyEnum { VALUE1, VALUE2 }",
@@ -62,7 +70,7 @@ public class ExtraPropertyProcessorTest {
 
     assertThat(result).succeededWithoutWarnings();
     assertThat(result)
-        .generatedSourceFile("AtMyAnnotation")
+        .generatedSourceFile("com/example/AtMyAnnotation")
         .hasSourceEquivalentTo(JavaFileObjects.forResource("ExpectedAtMyAnnotation.java"));
   }
 }

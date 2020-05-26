@@ -12,8 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+package com.example;
+
 import java.lang.Class;
+import java.lang.Object;
 import java.lang.Override;
+import java.lang.String;
 import java.lang.annotation.Annotation;
 
 public final class AtEmptyAnnotation {
@@ -39,6 +43,26 @@ public final class AtEmptyAnnotation {
     @Override
     public Class<? extends Annotation> annotationType() {
       return EmptyAnnotation.class;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+      if (this == other) return true;
+      if (!(other instanceof EmptyAnnotation)) return false;
+      EmptyAnnotation that = (EmptyAnnotation) other;
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      return 0;
+    }
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder("@com.example.EmptyAnnotation");
+      return sb.toString();
     }
   }
 }
