@@ -14,7 +14,6 @@
 
 package com.google.firebase.encoders.processor.annotations;
 
-import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.MethodSpec;
 import java.util.Arrays;
