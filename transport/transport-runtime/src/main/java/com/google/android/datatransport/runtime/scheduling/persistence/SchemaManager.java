@@ -99,13 +99,11 @@ final class SchemaManager extends SQLiteOpenHelper {
         db.execSQL("ALTER TABLE transport_contexts ADD COLUMN extras BLOB");
         db.execSQL(
             "CREATE UNIQUE INDEX contexts_backend_priority_extras on transport_contexts(backend_name, priority, extras)");
-        db.execSQL("DROP INDEX IF EXISTS contexts_backend_priority");
+        db.execSQL("DROP INDEX contexts_backend_priority");
       };
 
   private static final SchemaManager.Migration MIGRATE_TO_V3 =
-      db -> {
-        db.execSQL("ALTER TABLE events ADD COLUMN payload_encoding TEXT");
-      };
+      db -> db.execSQL("ALTER TABLE events ADD COLUMN payload_encoding TEXT");
   private static final SchemaManager.Migration MIGRATE_TO_V4 =
       db -> {
         db.execSQL("ALTER TABLE events ADD COLUMN inline BOOLEAN NOT NULL DEFAULT 1");
