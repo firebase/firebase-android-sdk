@@ -16,7 +16,6 @@ package com.google.firebase.encoders;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import androidx.annotation.NonNull;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -41,7 +40,7 @@ public class FieldDescriptorTest {
   public void fieldDescriptor_shouldEqualItself() {
     FieldDescriptor field1 = FieldDescriptor.builder(FIELD_NAME_1).build();
 
-    assertThat(field1).isEqualTo(field1);
+    assertThat(field1.equals(field1)).isTrue();
     assertThat(field1.hashCode()).isEqualTo(field1.hashCode());
   }
 
@@ -108,10 +107,19 @@ public class FieldDescriptorTest {
         return MyAnnotation.class;
       }
 
-      @NonNull
       @Override
       public String toString() {
         return "@MyAnnotation";
+      }
+
+      @Override
+      public boolean equals(Object obj) {
+        return super.equals(obj);
+      }
+
+      @Override
+      public int hashCode() {
+        return super.hashCode();
       }
     }
   }
@@ -125,10 +133,19 @@ public class FieldDescriptorTest {
       return Override.class;
     }
 
-    @NonNull
     @Override
     public String toString() {
       return "@Override";
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      return super.equals(obj);
+    }
+
+    @Override
+    public int hashCode() {
+      return super.hashCode();
     }
   }
 }

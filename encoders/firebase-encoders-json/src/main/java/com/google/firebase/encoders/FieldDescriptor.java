@@ -83,10 +83,7 @@ public final class FieldDescriptor {
 
     FieldDescriptor that = (FieldDescriptor) o;
 
-    if (!name.equals(that.name)) {
-      return false;
-    }
-    return properties.equals(that.properties);
+    return name.equals(that.name) && properties.equals(that.properties);
   }
 
   @Override
