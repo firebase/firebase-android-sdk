@@ -50,28 +50,28 @@ android {
     }
 
     sourceSets.main.resources.srcDirs = ['build/extracted-protos/main/', 'src/main/proto']
-    // sourceSets.main.resources.includes = ['**/*.proto']
+    sourceSets.main.resources.includes = ['**/*.proto']
 
-    // libraryVariants.all { variant ->
-    //     Task retrolambdaTask = getTasksByName("transformClassesWithRetrolambdaFor" + variant.name.capitalize(), true).first()
-    //     Task deleteDuration = task "${String.format("deleteDuration" + variant.name.capitalize())}" {
-    //         doLast {
-    //             new File("${project.getBuildDir().getAbsolutePath()}/intermediates/javac/${variant.name}/compile${variant.name.capitalize()}JavaWithJavac/classes/com/google/protobuf/").eachFile(FileType.FILES) { file ->
-    //                 if (file.name.contains('Duration')) {
-    //                     file.delete()
-    //                 }
-    //             }
-    //             new File("${project.getBuildDir().getAbsolutePath()}/intermediates/transforms/retrolambda/${variant.name}/0/com/google/protobuf/").eachFile(FileType.FILES) { file ->
-    //                 if (file.name.contains('Duration')) {
-    //                     file.delete()
-    //                 }
-    //             }
-    //         }
-    //     }
-    //     variant.processJavaResources.dependsOn(deleteDuration)
-    //     deleteDuration.mustRunAfter(retrolambdaTask)
-    //     deleteDuration.dependsOn(retrolambdaTask)
-    // }
+    libraryVariants.all { variant ->
+        Task retrolambdaTask = getTasksByName("transformClassesWithRetrolambdaFor" + variant.name.capitalize(), true).first()
+        Task deleteDuration = task "${String.format("deleteDuration" + variant.name.capitalize())}" {
+            doLast {
+                new File("${project.getBuildDir().getAbsolutePath()}/intermediates/javac/${variant.name}/compile${variant.name.capitalize()}JavaWithJavac/classes/com/google/protobuf/").eachFile(FileType.FILES) { file ->
+                    if (file.name.contains('Duration')) {
+                        file.delete()
+                    }
+                }
+                new File("${project.getBuildDir().getAbsolutePath()}/intermediates/transforms/retrolambda/${variant.name}/0/com/google/protobuf/").eachFile(FileType.FILES) { file ->
+                    if (file.name.contains('Duration')) {
+                        file.delete()
+                    }
+                }
+            }
+        }
+        variant.processJavaResources.dependsOn(deleteDuration)
+        deleteDuration.mustRunAfter(retrolambdaTask)
+        deleteDuration.dependsOn(retrolambdaTask)
+    }
 }
 
 
