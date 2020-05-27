@@ -39,6 +39,9 @@ namespace firebase { namespace crashlytics {
 /// this header file is NOT required for Android NDK crash reporting.
 inline bool Initialize();
 
+/// Deprecated
+inline void Terminate();
+
 /// @brief Logs a message to be included in the next fatal or non-fatal report.
 inline void Log(const char* msg);
 
@@ -107,6 +110,10 @@ inline void invoke(const std::function<void (const __crashlytics_context_t *)>& 
 
 inline bool Initialize() {
     return detail::__crashlytics_context() != nullptr;
+}
+
+inline void Terminate() {
+    // no-op
 }
 
 inline void Log(const char* msg) {

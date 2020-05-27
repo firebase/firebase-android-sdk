@@ -339,6 +339,8 @@ void force_crashlytics_h_to_compile_as_cplusplus()
     SetCustomKey("key", "value");
     SetUserId("user");
 
+    Terminate();
+
     //! Make sure everything is defined.
     external_api_initialize();
     external_api_dispose(nullptr);
