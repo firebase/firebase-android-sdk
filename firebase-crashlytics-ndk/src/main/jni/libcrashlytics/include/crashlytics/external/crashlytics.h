@@ -39,7 +39,7 @@ namespace firebase { namespace crashlytics {
 /// this header file is NOT required for Android NDK crash reporting.
 inline bool Initialize();
 
-/// Deprecated
+/// Deprecated; now a no-op and does not need to be called.
 inline void Terminate();
 
 /// @brief Logs a message to be included in the next fatal or non-fatal report.
