@@ -56,8 +56,8 @@ public:
     typedef typename Storage::value_type entry_type;
     typedef typename Storage::size_type size_type;
 
-    constexpr size_type upper_bound() { return std::tuple_size<Storage>::value; }
-    constexpr size_type entry_bound() { return maps_entry_length<entry_type>::value; }
+    constexpr size_type upper_bound() const { return std::tuple_size<Storage>::value; }
+    constexpr size_type entry_bound() const { return maps_entry_length<entry_type>::value; }
 
     maps() : count(0) {}
    ~maps() {}
