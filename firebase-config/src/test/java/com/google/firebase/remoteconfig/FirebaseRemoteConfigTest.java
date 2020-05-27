@@ -87,7 +87,6 @@ public final class FirebaseRemoteConfigTest {
   private static final String APP_ID = "1:14368190084:android:09cb977358c6f241";
   private static final String API_KEY = "api_key";
 
-  private static final String DEFAULT_NAMESPACE = "firebase";
   private static final String FIREPERF_NAMESPACE = "fireperf";
 
   private static final String STRING_KEY = "string_key";

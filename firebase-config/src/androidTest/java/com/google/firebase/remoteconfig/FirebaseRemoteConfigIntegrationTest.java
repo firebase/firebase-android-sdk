@@ -53,7 +53,6 @@ import org.skyscreamer.jsonassert.JSONAssert;
 public class FirebaseRemoteConfigIntegrationTest {
   private static final String API_KEY = "api_key";
   private static final String APP_ID = "1:14368190084:android:09cb977358c6f241";
-  private static final String NAMESPACE = "firebase";
 
   @Mock private ConfigCacheClient mockFetchedCache;
   @Mock private ConfigCacheClient mockActivatedCache;

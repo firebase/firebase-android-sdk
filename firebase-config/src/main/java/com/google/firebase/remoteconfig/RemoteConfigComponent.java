@@ -100,9 +100,8 @@ public class RemoteConfigComponent {
         firebaseInstanceId,
         firebaseAbt,
         analyticsConnector,
-        // Use the default (3P) logger for LegacyConfigsHandler since it loads configs (including
-        // 3P)
-        // independent of a namespace.
+        // Use a separate logger for  LegacyConfigsHandler since it loads configs independent of a
+        // namespace before the FirebaseRemoteConfig instance is created.
         new LegacyConfigsHandler(
             context, firebaseApp.getOptions().getApplicationId(), ConfigLogger.getLogger()),
         /* loadGetDefault= */ true);
