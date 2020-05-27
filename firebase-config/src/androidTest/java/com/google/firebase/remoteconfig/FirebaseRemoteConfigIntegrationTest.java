@@ -65,6 +65,8 @@ public class FirebaseRemoteConfigIntegrationTest {
   @Mock private ConfigCacheClient mockFireperfFetchedCache;
   @Mock private ConfigCacheClient mockFireperfActivatedCache;
 
+  @Mock private ConfigLogger mockLogger;
+
   @Mock private FirebaseABTesting mockFirebaseAbt;
   @Mock private FirebaseInstanceId mockFirebaseInstanceId;
   private FirebaseRemoteConfig frc;
@@ -107,7 +109,7 @@ public class FirebaseRemoteConfigIntegrationTest {
             mockFetchHandler,
             mockGetHandler,
             metadataClient,
-            ConfigLogger.getLogger(NAMESPACE));
+            mockLogger);
   }
 
   @Test

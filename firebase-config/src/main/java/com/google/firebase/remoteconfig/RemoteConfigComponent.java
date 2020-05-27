@@ -104,9 +104,7 @@ public class RemoteConfigComponent {
         // 3P)
         // independent of a namespace.
         new LegacyConfigsHandler(
-            context,
-            firebaseApp.getOptions().getApplicationId(),
-            ConfigLogger.getLogger(DEFAULT_NAMESPACE)),
+            context, firebaseApp.getOptions().getApplicationId(), ConfigLogger.getLogger()),
         /* loadGetDefault= */ true);
   }
 
@@ -156,10 +154,12 @@ public class RemoteConfigComponent {
   @VisibleForTesting
   @KeepForSdk
   public synchronized FirebaseRemoteConfig get(String namespace) {
-    ConfigCacheClient fetchedCacheClient = getCacheClient(namespace, FETCH_FILE_NAME);
-    ConfigCacheClient activatedCacheClient = getCacheClient(namespace, ACTIVATE_FILE_NAME);
-    ConfigCacheClient defaultsCacheClient = getCacheClient(namespace, DEFAULTS_FILE_NAME);
+    ConfigLogger logger = ConfigLogger.getLogger();
+    ConfigCacheClient fetchedCacheClient = getCacheClient(namespace, FETCH_FILE_NAME, logger);
+    ConfigCacheClient activatedCacheClient = getCacheClient(namespace, ACTIVATE_FILE_NAME, logger);
+    ConfigCacheClient defaultsCacheClient = getCacheClient(namespace, DEFAULTS_FILE_NAME, logger);
     ConfigMetadataClient metadataClient = getMetadataClient(context, appId, namespace);
+
     return get(
         firebaseApp,
         namespace,
@@ -169,9 +169,10 @@ public class RemoteConfigComponent {
         fetchedCacheClient,
         activatedCacheClient,
         defaultsCacheClient,
-        getFetchHandler(namespace, fetchedCacheClient, metadataClient),
-        getGetHandler(activatedCacheClient, defaultsCacheClient, namespace),
-        metadataClient);
+        getFetchHandler(namespace, fetchedCacheClient, metadataClient, logger),
+        getGetHandler(activatedCacheClient, defaultsCacheClient, logger),
+        metadataClient,
+        logger);
   }
 
   @VisibleForTesting
@@ -186,7 +187,8 @@ public class RemoteConfigComponent {
       ConfigCacheClient defaultsClient,
       ConfigFetchHandler fetchHandler,
       ConfigGetParameterHandler getHandler,
-      ConfigMetadataClient metadataClient) {
+      ConfigMetadataClient metadataClient,
+      ConfigLogger logger) {
     if (!frcNamespaceInstances.containsKey(namespace)) {
       FirebaseRemoteConfig in =
           new FirebaseRemoteConfig(
@@ -201,7 +203,7 @@ public class RemoteConfigComponent {
               fetchHandler,
               getHandler,
               metadataClient,
-              ConfigLogger.getLogger(namespace));
+              logger);
       in.startLoadingConfigsFromDisk();
       frcNamespaceInstances.put(namespace, in);
     }
@@ -213,8 +215,9 @@ public class RemoteConfigComponent {
     this.customHeaders = customHeaders;
   }
 
-  private ConfigCacheClient getCacheClient(String namespace, String configStoreType) {
-    return getCacheClient(context, appId, namespace, configStoreType);
+  private ConfigCacheClient getCacheClient(
+      String namespace, String configStoreType, ConfigLogger logger) {
+    return getCacheClient(context, appId, namespace, configStoreType, logger);
   }
 
   /**
@@ -222,7 +225,11 @@ public class RemoteConfigComponent {
    * to provide it access is to keep this method public and static.
    */
   public static ConfigCacheClient getCacheClient(
-      Context context, String appId, String namespace, String configStoreType) {
+      Context context,
+      String appId,
+      String namespace,
+      String configStoreType,
+      ConfigLogger logger) {
     String fileName =
         String.format(
             "%s_%s_%s_%s.json",
@@ -230,12 +237,12 @@ public class RemoteConfigComponent {
     return ConfigCacheClient.getInstance(
         Executors.newCachedThreadPool(),
         ConfigStorageClient.getInstance(context, fileName),
-        ConfigLogger.getLogger(namespace));
+        logger);
   }
 
   @VisibleForTesting
   ConfigFetchHttpClient getFrcBackendApiClient(
-      String apiKey, String namespace, ConfigMetadataClient metadataClient) {
+      String apiKey, String namespace, ConfigMetadataClient metadataClient, ConfigLogger logger) {
     String appId = firebaseApp.getOptions().getApplicationId();
     return new ConfigFetchHttpClient(
         context,
@@ -244,12 +251,15 @@ public class RemoteConfigComponent {
         namespace,
         /* connectTimeoutInSeconds= */ metadataClient.getFetchTimeoutInSeconds(),
         /* readTimeoutInSeconds= */ metadataClient.getFetchTimeoutInSeconds(),
-        ConfigLogger.getLogger(namespace));
+        logger);
   }
 
   @VisibleForTesting
   synchronized ConfigFetchHandler getFetchHandler(
-      String namespace, ConfigCacheClient fetchedCacheClient, ConfigMetadataClient metadataClient) {
+      String namespace,
+      ConfigCacheClient fetchedCacheClient,
+      ConfigMetadataClient metadataClient,
+      ConfigLogger logger) {
     return new ConfigFetchHandler(
         firebaseInstanceId,
         isPrimaryApp(firebaseApp) ? analyticsConnector : null,
@@ -257,7 +267,8 @@ public class RemoteConfigComponent {
         DEFAULT_CLOCK,
         DEFAULT_RANDOM,
         fetchedCacheClient,
-        getFrcBackendApiClient(firebaseApp.getOptions().getApiKey(), namespace, metadataClient),
+        getFrcBackendApiClient(
+            firebaseApp.getOptions().getApiKey(), namespace, metadataClient, logger),
         metadataClient,
         this.customHeaders);
   }
@@ -265,9 +276,8 @@ public class RemoteConfigComponent {
   private ConfigGetParameterHandler getGetHandler(
       ConfigCacheClient activatedCacheClient,
       ConfigCacheClient defaultsCacheClient,
-      String namespace) {
-    return new ConfigGetParameterHandler(
-        activatedCacheClient, defaultsCacheClient, ConfigLogger.getLogger(namespace));
+      ConfigLogger logger) {
+    return new ConfigGetParameterHandler(activatedCacheClient, defaultsCacheClient, logger);
   }
 
   @VisibleForTesting

@@ -15,8 +15,6 @@
 package com.google.firebase.remoteconfig.internal;
 
 import android.util.Log;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * A per-namespace logger with settable log level. Defaults to level {@link Log#INFO}.
@@ -25,7 +23,6 @@ import java.util.Map;
  */
 public class ConfigLogger {
   private static final String TAG = "FirebaseRemoteConfig";
-  private static final Map<String, ConfigLogger> configNamespaceLoggers = new HashMap<>();
 
   private final String tag;
   private int logLevel;
@@ -36,14 +33,8 @@ public class ConfigLogger {
   }
 
   /** Get the logger for {@param namespace} or create one if it does not already exist. */
-  public static ConfigLogger getLogger(String namespace) {
-    if (configNamespaceLoggers.containsKey(namespace)) {
-      return configNamespaceLoggers.get(namespace);
-    }
-
-    ConfigLogger logger = new ConfigLogger(TAG);
-    configNamespaceLoggers.put(namespace, logger);
-    return logger;
+  public static ConfigLogger getLogger() {
+    return new ConfigLogger(TAG);
   }
 
   /**
@@ -121,6 +112,6 @@ public class ConfigLogger {
   }
 
   private boolean canLog(int level) {
-    return logLevel <= level || Log.isLoggable(tag, level);
+    return logLevel <= level;
   }
 }

@@ -165,8 +165,7 @@ public class LegacyConfigsHandlerTest {
                     newKeyValue(KEY1, FIREBASE_DEFAULTS_VALUE1),
                     newKeyValue(KEY2, FIREBASE_DEFAULTS_VALUE2))));
 
-    legacyConfigsHandler =
-        spy(new LegacyConfigsHandler(context, APP_ID, ConfigLogger.getLogger(FIREBASE_NAMESPACE)));
+    legacyConfigsHandler = spy(new LegacyConfigsHandler(context, APP_ID, ConfigLogger.getLogger()));
 
     allCacheClientsMaps = new HashMap<>();
     for (String namespace : ALL_NAMESPACES) {

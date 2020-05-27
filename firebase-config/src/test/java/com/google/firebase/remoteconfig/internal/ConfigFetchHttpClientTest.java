@@ -100,7 +100,7 @@ public class ConfigFetchHttpClientTest {
             DEFAULT_NAMESPACE,
             /* connectTimeoutInSeconds= */ 10L,
             /* readTimeoutInSeconds= */ 10L,
-            ConfigLogger.getLogger(DEFAULT_NAMESPACE));
+            ConfigLogger.getLogger());
 
     hasChangeResponseBody =
         new JSONObject()
@@ -271,7 +271,7 @@ public class ConfigFetchHttpClientTest {
             DEFAULT_NAMESPACE,
             /* connectTimeoutInSeconds= */ 15L,
             /* readTimeoutInSeconds= */ 20L,
-            ConfigLogger.getLogger(DEFAULT_NAMESPACE));
+            ConfigLogger.getLogger());
     setServerResponseTo(noChangeResponseBody, SECOND_ETAG);
 
     fetch(FIRST_ETAG);

@@ -360,7 +360,7 @@ public class LegacyConfigsHandler {
    * #ACTIVATE_FILE_NAME}, {@link #FETCH_FILE_NAME} or {@link #DEFAULTS_FILE_NAME}).
    */
   ConfigCacheClient getCacheClient(String namespace, String configStoreType) {
-    return RemoteConfigComponent.getCacheClient(context, appId, namespace, configStoreType);
+    return RemoteConfigComponent.getCacheClient(context, appId, namespace, configStoreType, logger);
   }
 
   /** Container for all the configs in a single namespace. */
