@@ -25,6 +25,7 @@ import com.google.firebase.platforminfo.UserAgentPublisher
 import com.google.firebase.remoteconfig.internal.ConfigCacheClient
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler
+import com.google.firebase.remoteconfig.internal.ConfigLogger
 import com.google.firebase.remoteconfig.internal.ConfigMetadataClient
 import com.google.common.util.concurrent.MoreExecutors
 import com.google.firebase.iid.FirebaseInstanceId
@@ -137,7 +138,8 @@ class ConfigTests : BaseTestCase() {
             defaultConfigsCache = mock(ConfigCacheClient::class.java),
             fetchHandler = mock(ConfigFetchHandler::class.java),
             getHandler = mockGetHandler,
-            frcMetadata = mock(ConfigMetadataClient::class.java))
+            frcMetadata = mock(ConfigMetadataClient::class.java),
+            configLogger = mock(ConfigLogger::class.java))
 
         `when`(mockGetHandler.getValue("KEY")).thenReturn(StringRemoteConfigValue("non default value"))
         assertThat(remoteConfig["KEY"].asString()).isEqualTo("non default value")
