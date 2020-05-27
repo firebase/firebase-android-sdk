@@ -16,10 +16,14 @@ package com.google.firebase.remoteconfig
 
 import android.content.Context
 import com.google.firebase.FirebaseApp
+import com.google.firebase.remoteconfig.internal.ConfigCacheClient
+import com.google.firebase.remoteconfig.internal.ConfigFetchHandler
+import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler
+import com.google.firebase.remoteconfig.internal.ConfigLogger
+import com.google.firebase.remoteconfig.internal.ConfigMetadataClient
 import java.util.concurrent.Executor
 import com.google.firebase.abt.FirebaseABTesting
 import com.google.firebase.iid.FirebaseInstanceId
-import com.google.firebase.remoteconfig.internal.*
 
 // This method is a workaround for testing. It enable us to create a FirebaseRemoteConfig object
 // with mocks using the package-private constructor.
