@@ -48,7 +48,7 @@ public final class SdkUtil {
   public static File getAndroidJar(Project project) {
     LibraryExtension android = project.getExtensions().findByType(LibraryExtension.class);
     if (android == null) {
-      throw new GradleException("Project " + project.getPath() + " is not an android library.");
+      return null;
     }
     return new File(
         getSdkDir(project),

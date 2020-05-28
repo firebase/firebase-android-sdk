@@ -14,7 +14,6 @@
 
 package com.google.firebase.gradle.plugins.publish;
 
-import com.android.build.gradle.LibraryExtension;
 import com.google.common.collect.ImmutableMap;
 import com.google.firebase.gradle.plugins.FirebaseLibraryExtension;
 import digital.wup.android_maven_publish.AndroidMavenPublishPlugin;
@@ -106,11 +105,11 @@ public class PublishingPlugin implements Plugin<Project> {
               Publisher publisher = new Publisher(publishMode, projectsToPublish);
               project.subprojects(
                   sub -> {
-                    if (!sub.getPlugins().hasPlugin("firebase-library")) {
+                    FirebaseLibraryExtension firebaseLibrary =
+                        sub.getExtensions().findByType(FirebaseLibraryExtension.class);
+                    if (firebaseLibrary == null) {
                       return;
                     }
-                    FirebaseLibraryExtension firebaseLibrary =
-                        sub.getExtensions().getByType(FirebaseLibraryExtension.class);
 
                     sub.apply(ImmutableMap.of("plugin", AndroidMavenPublishPlugin.class));
                     PublishingExtension publishing =
@@ -132,7 +131,9 @@ public class PublishingPlugin implements Plugin<Project> {
                                 "mavenAar",
                                 MavenPublication.class,
                                 publication -> {
-                                  publication.from(sub.getComponents().findByName("android"));
+                                  publication.from(
+                                      sub.getComponents()
+                                          .findByName(firebaseLibrary.type.getComponentName()));
                                   publication.setArtifactId(firebaseLibrary.artifactId.get());
                                   publication.setGroupId(firebaseLibrary.groupId.get());
                                   if (firebaseLibrary.publishSources) {
@@ -142,13 +143,7 @@ public class PublishingPlugin implements Plugin<Project> {
                                                 "sourceJar",
                                                 Jar.class,
                                                 jar -> {
-                                                  jar.from(
-                                                      sub.getExtensions()
-                                                          .getByType(LibraryExtension.class)
-                                                          .getSourceSets()
-                                                          .getByName("main")
-                                                          .getJava()
-                                                          .getSrcDirs());
+                                                  jar.from(firebaseLibrary.getSrcDirs());
                                                   jar.getArchiveClassifier().set("sources");
                                                 }));
                                   }
