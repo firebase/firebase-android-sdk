@@ -42,7 +42,7 @@ public class ConfigLogger {
    *
    * @param logLevel Log level as specified by {@link Log}.
    */
-  public void setLogLevel(int logLevel) {
+  public synchronized void setLogLevel(int logLevel) {
     this.logLevel = logLevel;
   }
 
