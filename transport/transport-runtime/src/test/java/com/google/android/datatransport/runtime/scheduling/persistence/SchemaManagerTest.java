@@ -141,33 +141,6 @@ public class SchemaManagerTest {
   }
 
   @Test
-  public void downgradeV2ToV1_withNonEmptyDB_isLossy() {
-    int fromVersion = 2;
-    int toVersion = fromVersion - 1;
-    SchemaManager schemaManager =
-        new SchemaManager(ApplicationProvider.getApplicationContext(), DB_NAME, fromVersion);
-    SQLiteEventStore store = new SQLiteEventStore(clock, new UptimeClock(), CONFIG, schemaManager);
-    PersistedEvent event1 = store.persist(CONTEXT1, EVENT1);
-
-    schemaManager.onDowngrade(schemaManager.getWritableDatabase(), toVersion, fromVersion);
-
-    long contextCount =
-        schemaManager
-            .getReadableDatabase()
-            .compileStatement("select count(*) from transport_contexts")
-            .simpleQueryForLong();
-
-    long eventCount =
-        schemaManager
-            .getReadableDatabase()
-            .compileStatement("select count(*) from events")
-            .simpleQueryForLong();
-
-    assertThat(contextCount).isEqualTo(0);
-    assertThat(eventCount).isEqualTo(0);
-  }
-
-  @Test
   public void upgrade_toANonExistentVersion_fails() {
     int oldVersion = 1;
     int nonExistentVersion = 1000;
