@@ -76,35 +76,60 @@ public class FirebaseCrashlytics {
 
     final Onboarding onboarding = new Onboarding(app, context, idManager, arbiter);
 
+    // Integration with Firebase Analytics
+
+    // Supplies breadcrumb events
     final BreadcrumbSource breadcrumbSource;
+    // Facade for logging events to FA from Crashlytics.
     final AnalyticsEventLogger analyticsEventLogger;
 
     if (analyticsConnector != null) {
-      final CrashlyticsOriginAnalyticsEventLogger baseAnalyticsEventLogger =
+      // If FA is available, create a logger to log events from the Crashlytics origin.
+      final CrashlyticsOriginAnalyticsEventLogger directAnalyticsEventLogger =
           new CrashlyticsOriginAnalyticsEventLogger(analyticsConnector);
 
+      // Create a listener to register for events coming from FA, which supplies both breadcrumbs
+      // as well as Crashlytics-origin events through different streams.
       final CrashlyticsAnalyticsListener crashlyticsAnalyticsListener =
           new CrashlyticsAnalyticsListener();
+
+      // Registering our listener with FA should return a "handle", in which case we know we've
+      // registered successfully. Subsequent calls to register a listener will return null.
       final AnalyticsConnectorHandle analyticsConnectorHandle =
           subscribeToAnalyticsEvents(analyticsConnector, crashlyticsAnalyticsListener);
 
       if (analyticsConnectorHandle != null) {
+        // Create the event receiver which will supply breadcrumb events to Crashlytics
         final BreadcrumbAnalyticsEventReceiver breadcrumbReceiver =
             new BreadcrumbAnalyticsEventReceiver();
+        // Logging events to FA is an asynchronous operation. This logger will send events to
+        // FA and block until FA returns the same event back to us, from the Crashlytics origin.
+        // However, in the case that data collection has been disabled on FA, we will not receive
+        // the event back (it will be silently dropped), so we set up a short timeout after which
+        // we will assume that FA data collection is disabled and move on.
         final BlockingAnalyticsEventLogger blockingAnalyticsEventLogger =
             new BlockingAnalyticsEventLogger(
-                baseAnalyticsEventLogger, APP_EXCEPTION_CALLBACK_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+                directAnalyticsEventLogger, APP_EXCEPTION_CALLBACK_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+
+        // Set the appropriate event receivers to receive events from the FA listener
         crashlyticsAnalyticsListener.setBreadcrumbEventReceiver(breadcrumbReceiver);
         crashlyticsAnalyticsListener.setCrashlyticsOriginEventReceiver(
             blockingAnalyticsEventLogger);
 
+        // Set the breadcrumb event receiver as the breadcrumb source for Crashlytics.
         breadcrumbSource = breadcrumbReceiver;
+        // Set the blocking analytics event logger for Crashlytics.
         analyticsEventLogger = blockingAnalyticsEventLogger;
       } else {
+        // FA is enabled, but the listener was not registered successfully.
+        // We cannot listen for breadcrumbs.
         breadcrumbSource = new DisabledBreadcrumbSource();
-        analyticsEventLogger = baseAnalyticsEventLogger;
+        // We cannot listen for Crashlytics origin events, but we can still send events, so set the
+        // non-blocking analytics event logger for Crashlytics.
+        analyticsEventLogger = directAnalyticsEventLogger;
       }
     } else {
+      // FA is entirely unavailable. We cannot listen for breadcrumbs or send events.
       breadcrumbSource = new DisabledBreadcrumbSource();
       analyticsEventLogger = new UnavailableAnalyticsEventLogger();
     }
