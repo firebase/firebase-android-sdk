@@ -84,8 +84,7 @@ public class ConfigGetParameterHandlerTest {
     MockitoAnnotations.initMocks(this);
 
     getHandler =
-        new ConfigGetParameterHandler(
-            mockActivatedCache, mockDefaultsCache, ConfigLogger.getLogger());
+        new ConfigGetParameterHandler(mockActivatedCache, mockDefaultsCache, new ConfigLogger());
   }
 
   @Test

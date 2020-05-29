@@ -15,26 +15,20 @@
 package com.google.firebase.remoteconfig.internal;
 
 import android.util.Log;
+import androidx.annotation.VisibleForTesting;
 
 /**
- * A per-namespace logger with settable log level. Defaults to level {@link Log#INFO}.
+ * A logger with settable log level. Defaults to level {@link Log#INFO}.
  *
  * @author danasilver
  */
 public class ConfigLogger {
-  private static final String TAG = "FirebaseRemoteConfig";
+  @VisibleForTesting static final String TAG = "FirebaseRemoteConfig";
 
-  private final String tag;
   private int logLevel;
 
-  private ConfigLogger(String tag) {
-    this.tag = tag;
+  public ConfigLogger() {
     this.logLevel = Log.INFO;
-  }
-
-  /** Get the logger for {@param namespace} or create one if it does not already exist. */
-  public static ConfigLogger getLogger() {
-    return new ConfigLogger(TAG);
   }
 
   /**
@@ -54,35 +48,35 @@ public class ConfigLogger {
   /** Send a {@link Log#VERBOSE} log message and log the exception. */
   public void v(String text, Throwable throwable) {
     if (canLog(Log.VERBOSE)) {
-      Log.v(tag, text, throwable);
+      Log.v(TAG, text, throwable);
     }
   }
 
   /** Send a {@link Log#DEBUG} log message and log the exception. */
   public void d(String text, Throwable throwable) {
     if (canLog(Log.DEBUG)) {
-      Log.d(tag, text, throwable);
+      Log.d(TAG, text, throwable);
     }
   }
 
   /** Send a {@link Log#INFO} log message and log the exception. */
   public void i(String text, Throwable throwable) {
     if (canLog(Log.INFO)) {
-      Log.i(tag, text, throwable);
+      Log.i(TAG, text, throwable);
     }
   }
 
   /** Send a {@link Log#WARN} log message and log the exception. */
   public void w(String text, Throwable throwable) {
     if (canLog(Log.WARN)) {
-      Log.w(tag, text, throwable);
+      Log.w(TAG, text, throwable);
     }
   }
 
   /** Send a {@link Log#ERROR} log message and log the exception. */
   public void e(String text, Throwable throwable) {
-    if (canLog(Log.WARN)) {
-      Log.e(tag, text, throwable);
+    if (canLog(Log.ERROR)) {
+      Log.e(TAG, text, throwable);
     }
   }
 

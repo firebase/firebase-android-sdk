@@ -103,7 +103,7 @@ public class RemoteConfigComponent {
         // Use a separate logger for  LegacyConfigsHandler since it loads configs independent of a
         // namespace before the FirebaseRemoteConfig instance is created.
         new LegacyConfigsHandler(
-            context, firebaseApp.getOptions().getApplicationId(), ConfigLogger.getLogger()),
+            context, firebaseApp.getOptions().getApplicationId(), new ConfigLogger()),
         /* loadGetDefault= */ true);
   }
 
@@ -153,7 +153,7 @@ public class RemoteConfigComponent {
   @VisibleForTesting
   @KeepForSdk
   public synchronized FirebaseRemoteConfig get(String namespace) {
-    ConfigLogger logger = ConfigLogger.getLogger();
+    ConfigLogger logger = new ConfigLogger();
     ConfigCacheClient fetchedCacheClient = getCacheClient(namespace, FETCH_FILE_NAME, logger);
     ConfigCacheClient activatedCacheClient = getCacheClient(namespace, ACTIVATE_FILE_NAME, logger);
     ConfigCacheClient defaultsCacheClient = getCacheClient(namespace, DEFAULTS_FILE_NAME, logger);

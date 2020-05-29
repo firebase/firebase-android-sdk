@@ -15,6 +15,7 @@
 package com.google.firebase.remoteconfig.internal;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.firebase.remoteconfig.internal.ConfigLogger.TAG;
 
 import android.util.Log;
 import java.util.List;
@@ -33,9 +34,7 @@ public class ConfigLoggerTest {
   @Rule
   public final ExpectedLogMessagesRule expectedLogMessagesRule = new ExpectedLogMessagesRule();
 
-  private static final String TAG = "FirebaseRemoteConfig";
-
-  private ConfigLogger logger = ConfigLogger.getLogger();
+  private ConfigLogger logger = new ConfigLogger();
 
   @Test
   public void i_loggerAtDefaultLogLevel_logs() {
@@ -69,7 +68,7 @@ public class ConfigLoggerTest {
   }
 
   @Test
-  public void getLogLevel_getsSetLogLevel() {
+  public void getLogLevel_getsCurrentLevel() {
     logger.setLogLevel(Log.WARN);
 
     assertThat(logger.getLogLevel()).isEqualTo(Log.WARN);

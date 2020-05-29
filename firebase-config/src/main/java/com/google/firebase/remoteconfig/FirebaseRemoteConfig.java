@@ -643,7 +643,7 @@ public class FirebaseRemoteConfig {
   }
 
   /**
-   * Set the log level for this {@link FirebaseRemoteConfig}'s namespace. Log messages at or above
+   * Set the log level for this {@link FirebaseRemoteConfig} instance. Log messages at or above
    * {@param logLevel} will be written.
    *
    * @param logLevel Log level as specified by {@link android.util.Log}.
@@ -652,7 +652,7 @@ public class FirebaseRemoteConfig {
     logger.setLogLevel(logLevel);
   }
 
-  /** Get the log level for this {@link FirebaseRemoteConfig}'s namespace. */
+  /** Get the log level for this {@link FirebaseRemoteConfig} instance. */
   public int getLogLevel() {
     return logger.getLogLevel();
   }
