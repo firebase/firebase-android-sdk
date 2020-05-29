@@ -109,7 +109,9 @@ public class FirebaseCrashlytics {
         // we will assume that FA data collection is disabled and move on.
         final BlockingAnalyticsEventLogger blockingAnalyticsEventLogger =
             new BlockingAnalyticsEventLogger(
-                directAnalyticsEventLogger, APP_EXCEPTION_CALLBACK_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+                directAnalyticsEventLogger,
+                APP_EXCEPTION_CALLBACK_TIMEOUT_MS,
+                TimeUnit.MILLISECONDS);
 
         // Set the appropriate event receivers to receive events from the FA listener
         crashlyticsAnalyticsListener.setBreadcrumbEventReceiver(breadcrumbReceiver);
