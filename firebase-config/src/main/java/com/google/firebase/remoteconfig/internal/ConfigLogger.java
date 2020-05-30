@@ -28,7 +28,7 @@ public class ConfigLogger {
   private int logLevel;
 
   public ConfigLogger() {
-    this.logLevel = Log.INFO;
+    this.logLevel = Log.VERBOSE;
   }
 
   /**
