@@ -72,7 +72,7 @@ public abstract class TypeToken<T> {
   }
 
   @NonNull
-  private static <T> TypeToken<T> of(@NonNull Type type) {
+  static <T> TypeToken<T> of(@NonNull Type type) {
     if (type instanceof WildcardType) {
       if (((WildcardType) type).getLowerBounds().length == 0) {
         return of(((WildcardType) type).getUpperBounds()[0]);
@@ -83,24 +83,16 @@ public abstract class TypeToken<T> {
       return new ArrayToken<T>(TypeToken.of(componentType));
     } else if (type instanceof ParameterizedType) {
       ParameterizedType parameterizedType = (ParameterizedType) type;
-      Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
       Class<T> rawType = (Class<T>) parameterizedType.getRawType();
-      TypeTokenContainer container =
-          new TypeTokenContainer() {
-            @NonNull
-            @Override
-            public <V> TypeToken<V> at(int index) {
-              return TypeToken.of(actualTypeArguments[index]);
-            }
-          };
-      return new ClassToken<T>(rawType, container);
+      return new ClassToken<T>(
+          rawType, new TypeTokenContainer(parameterizedType.getActualTypeArguments()));
     } else if (type instanceof Class<?>) {
       Class<T> typeToken = (Class<T>) type;
       if (typeToken.isArray()) {
         Class<?> componentTypeToken = typeToken.getComponentType();
         return new ArrayToken<T>(TypeToken.of(componentTypeToken));
       }
-      return new ClassToken<T>((Class<T>) typeToken);
+      return new ClassToken<T>(typeToken);
     } else {
       throw new IllegalArgumentException("Type: " + type.toString() + " not supported.");
     }
@@ -118,7 +110,7 @@ public abstract class TypeToken<T> {
 
     private ClassToken(Class<T> token) {
       this.rawType = token;
-      this.typeArguments = null;
+      this.typeArguments = new TypeTokenContainer(null);
     }
 
     private ClassToken(Class<T> rawType, TypeTokenContainer typeArguments) {
