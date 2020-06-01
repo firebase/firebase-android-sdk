@@ -958,7 +958,7 @@ public class FirebaseInstallationsTest {
       assertWithMessage("Exception class doesn't match")
           .that(expected)
           .hasCauseThat()
-          .isInstanceOf(IOException.class);
+          .isInstanceOf(FirebaseInstallationsException.class);
       PersistedInstallationEntry entry =
           persistedInstallation.readPersistedInstallationEntryValue();
       assertTrue(

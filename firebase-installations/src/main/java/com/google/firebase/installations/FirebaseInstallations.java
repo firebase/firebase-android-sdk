@@ -335,7 +335,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
         // nothing more to do, get out now
         return;
       }
-    } catch (IOException e) {
+    } catch (IOException | FirebaseInstallationsException e) {
       triggerOnException(prefs, e);
       return;
     }
@@ -444,7 +444,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
   /** Registers the created Fid with FIS servers and update the persisted state. */
   private PersistedInstallationEntry registerFidWithServer(PersistedInstallationEntry prefs)
-      throws IOException {
+      throws FirebaseInstallationsException, IOException {
 
     // Note: Default value of instanceIdMigrationAuth: null
     String iidToken = null;
@@ -474,7 +474,9 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
       case BAD_CONFIG:
         return prefs.withFisError("BAD CONFIG");
       default:
-        throw new IOException();
+        throw new FirebaseInstallationsException(
+            "Firebase Installations Service is unavailable. Please try again later.",
+            Status.UNAVAILABLE);
     }
   }
 
@@ -485,7 +487,8 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
    * for the fid.
    */
   private PersistedInstallationEntry fetchAuthTokenFromServer(
-      @NonNull PersistedInstallationEntry prefs) throws IOException {
+      @NonNull PersistedInstallationEntry prefs)
+      throws FirebaseInstallationsException, IOException {
     TokenResult tokenResult =
         serviceClient.generateAuthToken(
             /*apiKey= */ getApiKey(),
@@ -507,7 +510,9 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
         cachedFid = null;
         return prefs.withNoGeneratedFid();
       default:
-        throw new IOException();
+        throw new FirebaseInstallationsException(
+            "Firebase Installations Service is unavailable. Please try again later.",
+            Status.UNAVAILABLE);
     }
   }
 
@@ -515,7 +520,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
    * Deletes the firebase installation id of the {@link FirebaseApp} from FIS servers and local
    * storage.
    */
-  private Void deleteFirebaseInstallationId() throws FirebaseInstallationsException, IOException {
+  private Void deleteFirebaseInstallationId() throws FirebaseInstallationsException {
     cachedFid = null;
     PersistedInstallationEntry entry = getMultiProcessSafePrefs();
     if (entry.isRegistered()) {
@@ -527,7 +532,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
             /*projectID= */ getProjectIdentifier(),
             /*refreshToken= */ entry.getRefreshToken());
 
-      } catch (FirebaseException exception) {
+      } catch (FirebaseException | IOException exception) {
         throw new FirebaseInstallationsException(
             "Failed to delete a Firebase Installation.", Status.BAD_CONFIG);
       }
