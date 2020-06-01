@@ -153,15 +153,11 @@ public class TypeTokenTest {
 
   @Test
   public void boundedWildcardTypeWithSuper_notSupported() {
-    TypeToken<List<? super Foo>> typeToken = TypeToken.of(new Safe<List<? super Foo>>() {});
-    assertThat(typeToken).isInstanceOf(TypeToken.ClassToken.class);
-    TypeToken.ClassToken<List<? super Foo>> typeClassToken =
-        (TypeToken.ClassToken<List<? super Foo>>) typeToken;
     assertThrows(
         "<? super T> is not supported",
-        RuntimeException.class,
+        IllegalArgumentException.class,
         () -> {
-          typeClassToken.getTypeArguments().at(0);
+          TypeToken.of(new Safe<List<? super Foo>>() {});
         });
   }
 }
