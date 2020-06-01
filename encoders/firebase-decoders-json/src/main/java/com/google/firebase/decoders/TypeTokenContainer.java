@@ -20,8 +20,25 @@ import androidx.annotation.NonNull;
  * {@link TypeTokenContainer} is used to get actual type parameter in a generic class at given
  * index.
  */
-// TODO: change from interface to class
-public interface TypeTokenContainer {
+public final class TypeTokenContainer {
+  private final TypeToken<?>[] typeTokens;
+
+  @NonNull public static final TypeTokenContainer EMPTY = new TypeTokenContainer();
+
+  private TypeTokenContainer() {
+    typeTokens = new TypeToken[0];
+  }
+
+  public TypeTokenContainer(@NonNull TypeToken[] typeTokens) {
+    this.typeTokens = typeTokens;
+  }
+
   @NonNull
-  <T> TypeToken<T> at(int index);
+  public <T> TypeToken<T> at(int index) {
+    if (index >= typeTokens.length || index < 0)
+      throw new IllegalArgumentException("No type token at index: " + index);
+    @SuppressWarnings("unchecked")
+    TypeToken<T> typeToken = (TypeToken<T>) typeTokens[index];
+    return typeToken;
+  }
 }
