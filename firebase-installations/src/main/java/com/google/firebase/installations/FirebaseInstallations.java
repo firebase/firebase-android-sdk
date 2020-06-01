@@ -523,17 +523,11 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     PersistedInstallationEntry entry = getMultiProcessSafePrefs();
     if (entry.isRegistered()) {
       // Call the FIS servers to delete this Firebase Installation Id.
-      try {
-        serviceClient.deleteFirebaseInstallation(
-            /*apiKey= */ getApiKey(),
-            /*fid= */ entry.getFirebaseInstallationId(),
-            /*projectID= */ getProjectIdentifier(),
-            /*refreshToken= */ entry.getRefreshToken());
-
-      } catch (FirebaseInstallationsException exception) {
-        throw new FirebaseInstallationsException(
-            "Failed to delete a Firebase Installation.", Status.BAD_CONFIG);
-      }
+      serviceClient.deleteFirebaseInstallation(
+          /*apiKey= */ getApiKey(),
+          /*fid= */ entry.getFirebaseInstallationId(),
+          /*projectID= */ getProjectIdentifier(),
+          /*refreshToken= */ entry.getRefreshToken());
     }
     insertOrUpdatePrefs(entry.withNoGeneratedFid());
     return null;

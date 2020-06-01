@@ -908,7 +908,7 @@ public class FirebaseInstallationsTest {
             TEST_AUTH_TOKEN,
             TEST_TOKEN_EXPIRATION_TIMESTAMP));
 
-    doThrow(new FirebaseInstallationsException("Server Error", Status.UNAVAILABLE))
+    doThrow(new FirebaseInstallationsException("Server Error", Status.BAD_CONFIG))
         .when(mockBackend)
         .deleteFirebaseInstallation(anyString(), anyString(), anyString(), anyString());
 
