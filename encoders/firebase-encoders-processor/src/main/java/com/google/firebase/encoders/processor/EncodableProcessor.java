@@ -24,7 +24,6 @@ import com.google.firebase.encoders.processor.getters.Getter;
 import com.google.firebase.encoders.processor.getters.GetterFactory;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
-import com.squareup.javapoet.CodeBlock.Builder;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
@@ -276,7 +275,7 @@ public class EncodableProcessor extends AbstractProcessor {
         if (getter.inline()) {
           methodBuilder.addCode("ctx.inline(value.$L);\n", getter.expression());
         } else {
-          Builder codeBuilder;
+          CodeBlock.Builder codeBuilder;
           if (getter.annotationDescriptors().isEmpty()) {
             codeBuilder = CodeBlock.builder().add("$T.of($S)", fieldDescriptor, getter.name());
           } else {
@@ -289,9 +288,6 @@ public class EncodableProcessor extends AbstractProcessor {
               ClassName annotationBuilder =
                   builderName(
                       ClassName.get((TypeElement) desc.type().getAnnotationType().asElement()));
-              desc.properties().stream()
-                  .map(p -> p.value().toString())
-                  .collect(Collectors.joining(","));
               codeBuilder.add(".withProperty($T.builder()\n", annotationBuilder);
               for (AnnotationProperty property : desc.properties()) {
                 codeBuilder.add("$>.$L($L)\n$<", property.name(), property.value());
