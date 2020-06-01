@@ -28,7 +28,6 @@ import androidx.annotation.Nullable;
 import com.google.android.gms.common.util.AndroidUtilsLight;
 import com.google.android.gms.common.util.Hex;
 import com.google.android.gms.common.util.VisibleForTesting;
-import com.google.firebase.FirebaseException;
 import com.google.firebase.heartbeatinfo.HeartBeatInfo;
 import com.google.firebase.heartbeatinfo.HeartBeatInfo.HeartBeat;
 import com.google.firebase.installations.FirebaseInstallationsException;
@@ -41,6 +40,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.Charset;
@@ -138,16 +138,10 @@ public class FirebaseInstallationServiceClient {
       @NonNull String projectID,
       @NonNull String appId,
       @Nullable String iidToken)
-      throws FirebaseInstallationsException, IOException {
+      throws FirebaseInstallationsException {
     String resourceName = String.format(CREATE_REQUEST_RESOURCE_NAME_FORMAT, projectID);
     int retryCount = 0;
-    URL url =
-        new URL(
-            String.format(
-                "https://%s/%s/%s",
-                FIREBASE_INSTALLATIONS_API_DOMAIN,
-                FIREBASE_INSTALLATIONS_API_VERSION,
-                resourceName));
+    URL url = getURL(resourceName);
     while (retryCount <= MAX_RETRIES) {
       HttpURLConnection httpURLConnection = openHttpURLConnection(url, apiKey);
 
@@ -291,15 +285,9 @@ public class FirebaseInstallationServiceClient {
       @NonNull String fid,
       @NonNull String projectID,
       @NonNull String refreshToken)
-      throws FirebaseException, IOException {
+      throws FirebaseInstallationsException {
     String resourceName = String.format(DELETE_REQUEST_RESOURCE_NAME_FORMAT, projectID, fid);
-    URL url =
-        new URL(
-            String.format(
-                "https://%s/%s/%s",
-                FIREBASE_INSTALLATIONS_API_DOMAIN,
-                FIREBASE_INSTALLATIONS_API_VERSION,
-                resourceName));
+    URL url = getURL(resourceName);
 
     int retryCount = 0;
     while (retryCount <= MAX_RETRIES) {
@@ -337,6 +325,17 @@ public class FirebaseInstallationServiceClient {
         Status.UNAVAILABLE);
   }
 
+  private URL getURL(String resourceName) throws FirebaseInstallationsException {
+    try {
+      return new URL(
+          String.format(
+              "https://%s/%s/%s",
+              FIREBASE_INSTALLATIONS_API_DOMAIN, FIREBASE_INSTALLATIONS_API_VERSION, resourceName));
+    } catch (MalformedURLException e) {
+      throw new FirebaseInstallationsException(e.getMessage(), Status.UNAVAILABLE);
+    }
+  }
+
   /**
    * Generates a new auth token for a FID on the FIS Servers by calling FirebaseInstallations API
    * generateAuthToken method.
@@ -360,17 +359,11 @@ public class FirebaseInstallationServiceClient {
       @NonNull String fid,
       @NonNull String projectID,
       @NonNull String refreshToken)
-      throws FirebaseInstallationsException, IOException {
+      throws FirebaseInstallationsException {
     String resourceName =
         String.format(GENERATE_AUTH_TOKEN_REQUEST_RESOURCE_NAME_FORMAT, projectID, fid);
     int retryCount = 0;
-    URL url =
-        new URL(
-            String.format(
-                "https://%s/%s/%s",
-                FIREBASE_INSTALLATIONS_API_DOMAIN,
-                FIREBASE_INSTALLATIONS_API_VERSION,
-                resourceName));
+    URL url = getURL(resourceName);
     while (retryCount <= MAX_RETRIES) {
       HttpURLConnection httpURLConnection = openHttpURLConnection(url, apiKey);
       try {
@@ -421,35 +414,33 @@ public class FirebaseInstallationServiceClient {
 
   private HttpURLConnection openHttpURLConnection(URL url, String apiKey)
       throws FirebaseInstallationsException {
+    HttpURLConnection httpURLConnection;
     try {
-      HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
-      httpURLConnection.setConnectTimeout(NETWORK_TIMEOUT_MILLIS);
-      httpURLConnection.setUseCaches(false);
-      httpURLConnection.setReadTimeout(NETWORK_TIMEOUT_MILLIS);
-      httpURLConnection.addRequestProperty(CONTENT_TYPE_HEADER_KEY, JSON_CONTENT_TYPE);
-      httpURLConnection.addRequestProperty(ACCEPT_HEADER_KEY, JSON_CONTENT_TYPE);
-      httpURLConnection.addRequestProperty(CONTENT_ENCODING_HEADER_KEY, GZIP_CONTENT_ENCODING);
-      httpURLConnection.addRequestProperty(CACHE_CONTROL_HEADER_KEY, CACHE_CONTROL_DIRECTIVE);
-      httpURLConnection.addRequestProperty(X_ANDROID_PACKAGE_HEADER_KEY, context.getPackageName());
-      if (heartbeatInfo != null && userAgentPublisher != null) {
-        HeartBeat heartbeat =
-            heartbeatInfo.getHeartBeatCode(FIREBASE_INSTALLATIONS_ID_HEARTBEAT_TAG);
-        if (heartbeat != HeartBeat.NONE) {
-          httpURLConnection.addRequestProperty(
-              USER_AGENT_HEADER, userAgentPublisher.getUserAgent());
-          httpURLConnection.addRequestProperty(
-              HEART_BEAT_HEADER, Integer.toString(heartbeat.getCode()));
-        }
-      }
-      httpURLConnection.addRequestProperty(
-          X_ANDROID_CERT_HEADER_KEY, getFingerprintHashForPackage());
-      httpURLConnection.addRequestProperty(API_KEY_HEADER, apiKey);
-      return httpURLConnection;
+      httpURLConnection = (HttpURLConnection) url.openConnection();
     } catch (IOException ignored) {
       throw new FirebaseInstallationsException(
           "Firebase Installations Service is unavailable. Please try again later.",
           Status.UNAVAILABLE);
     }
+    httpURLConnection.setConnectTimeout(NETWORK_TIMEOUT_MILLIS);
+    httpURLConnection.setUseCaches(false);
+    httpURLConnection.setReadTimeout(NETWORK_TIMEOUT_MILLIS);
+    httpURLConnection.addRequestProperty(CONTENT_TYPE_HEADER_KEY, JSON_CONTENT_TYPE);
+    httpURLConnection.addRequestProperty(ACCEPT_HEADER_KEY, JSON_CONTENT_TYPE);
+    httpURLConnection.addRequestProperty(CONTENT_ENCODING_HEADER_KEY, GZIP_CONTENT_ENCODING);
+    httpURLConnection.addRequestProperty(CACHE_CONTROL_HEADER_KEY, CACHE_CONTROL_DIRECTIVE);
+    httpURLConnection.addRequestProperty(X_ANDROID_PACKAGE_HEADER_KEY, context.getPackageName());
+    if (heartbeatInfo != null && userAgentPublisher != null) {
+      HeartBeat heartbeat = heartbeatInfo.getHeartBeatCode(FIREBASE_INSTALLATIONS_ID_HEARTBEAT_TAG);
+      if (heartbeat != HeartBeat.NONE) {
+        httpURLConnection.addRequestProperty(USER_AGENT_HEADER, userAgentPublisher.getUserAgent());
+        httpURLConnection.addRequestProperty(
+            HEART_BEAT_HEADER, Integer.toString(heartbeat.getCode()));
+      }
+    }
+    httpURLConnection.addRequestProperty(X_ANDROID_CERT_HEADER_KEY, getFingerprintHashForPackage());
+    httpURLConnection.addRequestProperty(API_KEY_HEADER, apiKey);
+    return httpURLConnection;
   }
 
   // Read the response from the createFirebaseInstallation API.

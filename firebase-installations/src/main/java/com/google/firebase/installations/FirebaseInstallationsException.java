@@ -29,9 +29,10 @@ public class FirebaseInstallationsException extends FirebaseException {
      * Project.
      */
     BAD_CONFIG,
+
     /**
-     * The service is currently unavailable. This is a most likely a transient condition and may be
-     * corrected by retrying with a backoff.
+     * The service is currently unavailable. This is a most likely due to a transient condition and
+     * may be corrected by retrying. We recommend exponential backoff when retrying requests."
      */
     UNAVAILABLE,
   }

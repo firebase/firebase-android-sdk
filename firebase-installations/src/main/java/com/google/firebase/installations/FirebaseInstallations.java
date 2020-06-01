@@ -24,7 +24,6 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.FirebaseException;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.heartbeatinfo.HeartBeatInfo;
 import com.google.firebase.installations.FirebaseInstallationsException.Status;
@@ -335,7 +334,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
         // nothing more to do, get out now
         return;
       }
-    } catch (IOException | FirebaseInstallationsException e) {
+    } catch (FirebaseInstallationsException e) {
       triggerOnException(prefs, e);
       return;
     }
@@ -444,7 +443,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
   /** Registers the created Fid with FIS servers and update the persisted state. */
   private PersistedInstallationEntry registerFidWithServer(PersistedInstallationEntry prefs)
-      throws FirebaseInstallationsException, IOException {
+      throws FirebaseInstallationsException {
 
     // Note: Default value of instanceIdMigrationAuth: null
     String iidToken = null;
@@ -487,8 +486,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
    * for the fid.
    */
   private PersistedInstallationEntry fetchAuthTokenFromServer(
-      @NonNull PersistedInstallationEntry prefs)
-      throws FirebaseInstallationsException, IOException {
+      @NonNull PersistedInstallationEntry prefs) throws FirebaseInstallationsException {
     TokenResult tokenResult =
         serviceClient.generateAuthToken(
             /*apiKey= */ getApiKey(),
@@ -532,7 +530,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
             /*projectID= */ getProjectIdentifier(),
             /*refreshToken= */ entry.getRefreshToken());
 
-      } catch (FirebaseException | IOException exception) {
+      } catch (FirebaseInstallationsException exception) {
         throw new FirebaseInstallationsException(
             "Failed to delete a Firebase Installation.", Status.BAD_CONFIG);
       }
