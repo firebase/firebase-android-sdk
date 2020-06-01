@@ -53,6 +53,7 @@ public abstract class TypeToken<T> {
     if (superclass instanceof Class) {
       throw new IllegalArgumentException("Missing type parameters");
     }
+    @SuppressWarnings("ConstantConditions") // Safe because superclass is not instanceof Class
     Type type = ((ParameterizedType) superclass).getActualTypeArguments()[0];
     return of(type);
   }
@@ -72,7 +73,7 @@ public abstract class TypeToken<T> {
   }
 
   @NonNull
-  static <T> TypeToken<T> of(@NonNull Type type) {
+  private static <T> TypeToken<T> of(@NonNull Type type) {
     if (type instanceof WildcardType) {
       if (((WildcardType) type).getLowerBounds().length == 0) {
         return of(((WildcardType) type).getUpperBounds()[0]);
@@ -83,14 +84,25 @@ public abstract class TypeToken<T> {
       return new ArrayToken<T>(TypeToken.of(componentType));
     } else if (type instanceof ParameterizedType) {
       ParameterizedType parameterizedType = (ParameterizedType) type;
+      @SuppressWarnings(
+          "unchecked") // Safe because rawType of parameterizedType is always instance of Class<T>
       Class<T> rawType = (Class<T>) parameterizedType.getRawType();
-      return new ClassToken<T>(
-          rawType, new TypeTokenContainer(parameterizedType.getActualTypeArguments()));
+      Type[] types = parameterizedType.getActualTypeArguments();
+      TypeToken[] typeTokens = new TypeToken[types.length];
+      for (int i = 0; i < types.length; i++) {
+        typeTokens[i] = TypeToken.of(types[i]);
+      }
+      return new ClassToken<T>(rawType, new TypeTokenContainer(typeTokens));
     } else if (type instanceof Class<?>) {
+      @SuppressWarnings("unchecked") // Safe because type is instance of Class<?>
       Class<T> typeToken = (Class<T>) type;
       if (typeToken.isArray()) {
         Class<?> componentTypeToken = typeToken.getComponentType();
-        return new ArrayToken<T>(TypeToken.of(componentTypeToken));
+        @SuppressWarnings(
+            "ConstantConditions") // Safe because typeToken is an Array and componentTypeToken will
+                                  // never be null
+        ArrayToken<T> arrayToken = new ArrayToken<T>(TypeToken.of(componentTypeToken));
+        return arrayToken;
       }
       return new ClassToken<T>(typeToken);
     } else {
@@ -108,9 +120,9 @@ public abstract class TypeToken<T> {
     private final Class<T> rawType;
     private final TypeTokenContainer typeArguments;
 
-    private ClassToken(Class<T> token) {
-      this.rawType = token;
-      this.typeArguments = new TypeTokenContainer(null);
+    private ClassToken(Class<T> rawType) {
+      this.rawType = rawType;
+      this.typeArguments = TypeTokenContainer.EMPTY;
     }
 
     private ClassToken(Class<T> rawType, TypeTokenContainer typeArguments) {

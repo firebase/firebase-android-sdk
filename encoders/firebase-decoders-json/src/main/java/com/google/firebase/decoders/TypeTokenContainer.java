@@ -15,33 +15,30 @@
 package com.google.firebase.decoders;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import java.lang.reflect.Type;
 
 /**
  * {@link TypeTokenContainer} is used to get actual type parameter in a generic class at given
  * index.
  */
-public class TypeTokenContainer {
+public final class TypeTokenContainer {
   private final TypeToken<?>[] typeTokens;
 
-  TypeTokenContainer(@Nullable Type[] types) {
-    TypeToken[] typeTokens;
-    if (types == null) {
-      typeTokens = new TypeToken[0];
-    } else {
-      typeTokens = new TypeToken[types.length];
-      for (int i = 0; i < types.length; i++) {
-        typeTokens[i] = TypeToken.of(types[i]);
-      }
-    }
+  @NonNull public static final TypeTokenContainer EMPTY = new TypeTokenContainer();
+
+  private TypeTokenContainer() {
+    typeTokens = new TypeToken[0];
+  }
+
+  public TypeTokenContainer(@NonNull TypeToken[] typeTokens) {
     this.typeTokens = typeTokens;
   }
 
   @NonNull
   public <T> TypeToken<T> at(int index) {
-    if (index >= typeTokens.length)
-      throw new NullPointerException("No type token at index: " + index);
-    return (TypeToken<T>) typeTokens[index];
+    if (index >= typeTokens.length || index < 0)
+      throw new IllegalArgumentException("No type token at index: " + index);
+    @SuppressWarnings("unchecked")
+    TypeToken<T> typeToken = (TypeToken<T>) typeTokens[index];
+    return typeToken;
   }
 }
