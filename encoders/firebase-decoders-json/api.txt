@@ -19,8 +19,10 @@ package com.google.firebase.decoders {
     method @NonNull public com.google.firebase.decoders.TypeTokenContainer getTypeArguments();
   }
 
-  public class TypeTokenContainer {
+  public final class TypeTokenContainer {
+    ctor public TypeTokenContainer(@NonNull com.google.firebase.decoders.TypeToken[]);
     method @NonNull public <T> com.google.firebase.decoders.TypeToken<T> at(int);
+    field @NonNull public static final com.google.firebase.decoders.TypeTokenContainer EMPTY;
   }
 
 }

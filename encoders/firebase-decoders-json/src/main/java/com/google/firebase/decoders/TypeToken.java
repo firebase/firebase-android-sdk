@@ -53,7 +53,8 @@ public abstract class TypeToken<T> {
     if (superclass instanceof Class) {
       throw new IllegalArgumentException("Missing type parameters");
     }
-    @SuppressWarnings("ConstantConditions") // Safe because superclass is not instanceof Class
+    // Safe because superclass is not instanceof Class
+    @SuppressWarnings("ConstantConditions")
     Type type = ((ParameterizedType) superclass).getActualTypeArguments()[0];
     return of(type);
   }
@@ -84,8 +85,8 @@ public abstract class TypeToken<T> {
       return new ArrayToken<T>(TypeToken.of(componentType));
     } else if (type instanceof ParameterizedType) {
       ParameterizedType parameterizedType = (ParameterizedType) type;
-      @SuppressWarnings(
-          "unchecked") // Safe because rawType of parameterizedType is always instance of Class<T>
+      // Safe because rawType of parameterizedType is always instance of Class<T>
+      @SuppressWarnings("unchecked")
       Class<T> rawType = (Class<T>) parameterizedType.getRawType();
       Type[] types = parameterizedType.getActualTypeArguments();
       TypeToken[] typeTokens = new TypeToken[types.length];
@@ -94,13 +95,13 @@ public abstract class TypeToken<T> {
       }
       return new ClassToken<T>(rawType, new TypeTokenContainer(typeTokens));
     } else if (type instanceof Class<?>) {
-      @SuppressWarnings("unchecked") // Safe because type is instance of Class<?>
+      // Safe because type is instance of Class<?>
+      @SuppressWarnings("unchecked")
       Class<T> typeToken = (Class<T>) type;
       if (typeToken.isArray()) {
         Class<?> componentTypeToken = typeToken.getComponentType();
-        @SuppressWarnings(
-            "ConstantConditions") // Safe because typeToken is an Array and componentTypeToken will
-                                  // never be null
+        // Safe because typeToken is an Array and componentTypeToken will never be null
+        @SuppressWarnings("ConstantConditions")
         ArrayToken<T> arrayToken = new ArrayToken<T>(TypeToken.of(componentTypeToken));
         return arrayToken;
       }
