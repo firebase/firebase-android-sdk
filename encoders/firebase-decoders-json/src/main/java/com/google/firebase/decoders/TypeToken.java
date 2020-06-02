@@ -15,6 +15,7 @@
 package com.google.firebase.decoders;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -140,6 +141,34 @@ public abstract class TypeToken<T> {
     public TypeTokenContainer getTypeArguments() {
       return typeArguments;
     }
+
+    @Override
+    public int hashCode() {
+      return 11 * rawType.hashCode() + typeArguments.hashCode();
+    }
+
+    @Override
+    public boolean equals(@Nullable Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (!(o instanceof ClassToken)) {
+        return false;
+      }
+      ClassToken<?> that = (ClassToken<?>) o;
+      return this.rawType.equals(that.rawType) && this.typeArguments.equals(that.typeArguments);
+    }
+
+    @NonNull
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder();
+      sb.append("ClassToken{ ");
+      sb.append("RawType: ").append(rawType).append(", ");
+      sb.append("TypeArguments: ").append(typeArguments).append("");
+      sb.append(" }");
+      return sb.toString();
+    }
   }
 
   /**
@@ -156,6 +185,35 @@ public abstract class TypeToken<T> {
     @NonNull
     public TypeToken<?> getComponentType() {
       return componentType;
+    }
+
+    @Override
+    public int hashCode() {
+      int result = 41;
+      result += componentType.hashCode();
+      return result;
+    }
+
+    @Override
+    public boolean equals(@Nullable Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (!(o instanceof ArrayToken)) {
+        return false;
+      }
+      ArrayToken<?> that = (ArrayToken<?>) o;
+      return this.componentType.equals(that.componentType);
+    }
+
+    @NonNull
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder();
+      sb.append("ArrayToken{ ");
+      sb.append("ComponentType: ").append(componentType);
+      sb.append(" }");
+      return sb.toString();
     }
   }
 }
