@@ -141,7 +141,7 @@ public class FirebaseInstallationServiceClient {
       throws FirebaseInstallationsException {
     String resourceName = String.format(CREATE_REQUEST_RESOURCE_NAME_FORMAT, projectID);
     int retryCount = 0;
-    URL url = getURL(resourceName);
+    URL url = getFullyQualifiedRequestUri(resourceName);
     while (retryCount <= MAX_RETRIES) {
       HttpURLConnection httpURLConnection = openHttpURLConnection(url, apiKey);
 
@@ -287,7 +287,7 @@ public class FirebaseInstallationServiceClient {
       @NonNull String refreshToken)
       throws FirebaseInstallationsException {
     String resourceName = String.format(DELETE_REQUEST_RESOURCE_NAME_FORMAT, projectID, fid);
-    URL url = getURL(resourceName);
+    URL url = getFullyQualifiedRequestUri(resourceName);
 
     int retryCount = 0;
     while (retryCount <= MAX_RETRIES) {
@@ -325,7 +325,8 @@ public class FirebaseInstallationServiceClient {
         Status.UNAVAILABLE);
   }
 
-  private URL getURL(String resourceName) throws FirebaseInstallationsException {
+  private URL getFullyQualifiedRequestUri(String resourceName)
+      throws FirebaseInstallationsException {
     try {
       return new URL(
           String.format(
@@ -363,7 +364,7 @@ public class FirebaseInstallationServiceClient {
     String resourceName =
         String.format(GENERATE_AUTH_TOKEN_REQUEST_RESOURCE_NAME_FORMAT, projectID, fid);
     int retryCount = 0;
-    URL url = getURL(resourceName);
+    URL url = getFullyQualifiedRequestUri(resourceName);
     while (retryCount <= MAX_RETRIES) {
       HttpURLConnection httpURLConnection = openHttpURLConnection(url, apiKey);
       try {
