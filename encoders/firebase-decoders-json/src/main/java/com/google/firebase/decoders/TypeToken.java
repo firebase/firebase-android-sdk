@@ -15,12 +15,11 @@
 package com.google.firebase.decoders;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.WildcardType;
-
-// TODO: implement hashCode(), equals(), and toString().
 
 /**
  * {@link TypeToken} is used to represent types supported by the library in a type-safe manner.
@@ -113,6 +112,15 @@ public abstract class TypeToken<T> {
 
   private TypeToken() {}
 
+  @NonNull
+  abstract String getTypeTokenLiteral();
+
+  @NonNull
+  @Override
+  public String toString() {
+    return "TypeToken{" + getTypeTokenLiteral() + "}";
+  }
+
   /**
    * {@link ClassToken} is used to represent types in a type-safe manner, including Primitive types,
    * Plain class types, Generic types, and Wildcard types.
@@ -140,6 +148,29 @@ public abstract class TypeToken<T> {
     public TypeTokenContainer getTypeArguments() {
       return typeArguments;
     }
+
+    @Override
+    public int hashCode() {
+      return 11 * rawType.hashCode() + typeArguments.hashCode();
+    }
+
+    @Override
+    public boolean equals(@Nullable Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (!(o instanceof ClassToken)) {
+        return false;
+      }
+      ClassToken<?> that = (ClassToken<?>) o;
+      return this.rawType.equals(that.rawType) && this.typeArguments.equals(that.typeArguments);
+    }
+
+    @NonNull
+    @Override
+    String getTypeTokenLiteral() {
+      return rawType.getSimpleName() + typeArguments;
+    }
   }
 
   /**
@@ -156,6 +187,29 @@ public abstract class TypeToken<T> {
     @NonNull
     public TypeToken<?> getComponentType() {
       return componentType;
+    }
+
+    @Override
+    public int hashCode() {
+      return componentType.hashCode() + 31;
+    }
+
+    @Override
+    public boolean equals(@Nullable Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (!(o instanceof ArrayToken)) {
+        return false;
+      }
+      ArrayToken<?> that = (ArrayToken<?>) o;
+      return this.componentType.equals(that.componentType);
+    }
+
+    @NonNull
+    @Override
+    String getTypeTokenLiteral() {
+      return componentType.getTypeTokenLiteral() + "[]";
     }
   }
 }
