@@ -1,23 +1,53 @@
+// Copyright 2019 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 plugins {
     id 'firebase-library'
     id 'com.google.protobuf'
+    id "androidx.benchmark"
 }
 
 firebaseLibrary {
     publishSources = true
     publishJavadoc = false
+
+    testLab {
+        enabled = true
+
+        device 'model=walleye,version=28' // Pixel2
+        device 'model=walleye,version=27' // Pixel2
+        device 'model=victara,version=19' // Moto X
+        device 'model=Nexus4,version=22'
+        device 'model=Nexus7,version=21'
+        device 'model=Nexus4,version=19'
+        device 'model=starqlteue,version=26' // Galaxy S9
+        device 'model=m0,version=18' // Galaxy S3
+        device 'model=hero2lte,version=23' // Galaxy S7
+        device 'model=htc_m8,version=19' // HTC One (M8)
+    }
 }
 
 protobuf {
     // Configure the protoc executable
     protoc {
         // Download from repositories
-        artifact = 'com.google.protobuf:protoc:3.11.4'
+        artifact = 'com.google.protobuf:protoc:3.12.2'
     }
     generateProtoTasks {
         all().each { task ->
             task.builtins {
-                java { }
+                java { option 'lite' }
             }
         }
     }
@@ -29,7 +59,7 @@ android {
         minSdkVersion project.minSdkVersion
         targetSdkVersion project.targetSdkVersion
         versionName version
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner "androidx.benchmark.junit4.AndroidBenchmarkRunner"
     }
 
     compileOptions {
@@ -41,26 +71,29 @@ android {
             includeAndroidResources = true
         }
     }
-
-    sourceSets.main.java {
-        srcDir 'src/json/java'
-    }
 }
 
 dependencies {
     implementation 'androidx.annotation:annotation:1.1.0'
+    implementation 'androidx.core:core:1.1.0'
     implementation project(":encoders:firebase-encoders-json")
 
     annotationProcessor project(":encoders:firebase-encoders-processor")
 
     testImplementation 'androidx.test:runner:1.2.0'
     testImplementation 'androidx.test.ext:junit:1.1.1'
-    testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation 'junit:junit:4.13-rc-1'
     testImplementation "com.google.truth:truth:$googleTruthVersion"
-    testImplementation 'org.mockito:mockito-core:2.25.0'
-    testImplementation 'com.google.protobuf:protobuf-java:3.11.4'
+    testImplementation 'com.google.protobuf:protobuf-javalite:3.12.2'
+
     testAnnotationProcessor project(":encoders:firebase-encoders-processor")
+
+    androidTestImplementation 'androidx.test:runner:1.2.0'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.1'
+    androidTestImplementation "androidx.benchmark:benchmark-junit4:1.0.0"
+    androidTestImplementation 'com.google.protobuf:protobuf-javalite:3.12.2'
+
+    androidTestAnnotationProcessor project(":encoders:firebase-encoders-processor")
 
 }
 

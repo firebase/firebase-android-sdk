@@ -1,7 +1,7 @@
 // Signature format: 2.0
 package com.google.firebase.encoders {
 
-  public interface DataEncoder {
+  public interface DataEncoder extends com.google.firebase.encoders.GenericEncoder<java.io.Writer,java.lang.String> {
     method public void encode(@NonNull Object, @NonNull java.io.Writer) throws java.io.IOException;
     method @NonNull public String encode(@NonNull Object);
   }
@@ -21,6 +21,11 @@ package com.google.firebase.encoders {
   public static final class FieldDescriptor.Builder {
     method @NonNull public com.google.firebase.encoders.FieldDescriptor build();
     method @NonNull public <T extends java.lang.annotation.Annotation> com.google.firebase.encoders.FieldDescriptor.Builder withProperty(@NonNull T);
+  }
+
+  public interface GenericEncoder<TOutput, TResult> {
+    method public void encode(@NonNull Object, @NonNull TOutput) throws java.io.IOException;
+    method @NonNull public TResult encode(@NonNull Object);
   }
 
   public interface ObjectEncoder<T> {

@@ -24,11 +24,14 @@ import com.google.firebase.encoders.ValueEncoder;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
 
 class ProtobufDataEncoderContext implements ObjectEncoderContext {
+  private static final Charset UTF_8 = Charset.forName("UTF-8");
+
   private final Map<Class<?>, ObjectEncoder<?>> objectEncoders;
   private final Map<Class<?>, ValueEncoder<?>> valueEncoders;
   private final ObjectEncoder<Object> fallbackEncoder;
@@ -108,8 +111,9 @@ class ProtobufDataEncoderContext implements ObjectEncoderContext {
       int tag = getTag(field);
       int wire = 2;
       writeVarint((tag << 3) | wire);
-      writeVarint(seq.length());
-      output.write(seq.toString().getBytes("UTF-8"));
+      byte[] bytes = seq.toString().getBytes(UTF_8);
+      writeVarint(bytes.length);
+      output.write(bytes);
       return this;
     }
     if (obj instanceof Collection) {
@@ -124,7 +128,7 @@ class ProtobufDataEncoderContext implements ObjectEncoderContext {
     if (obj instanceof Map) {
       @SuppressWarnings("unchecked")
       Map<Object, Object> map = (Map<Object, Object>) obj;
-      if (!(map).isEmpty()) {
+      if (!map.isEmpty()) {
         return doEncode(DEFAULT_MAP_ENCODER, field, map);
       }
       return this;
