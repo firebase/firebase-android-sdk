@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package google_cct;
+
+option java_package = "com.google.firebase.encoders.proto";
+option java_multiple_files = true;
+
+message Hello {
+  int32 my_int = 1;
+  string str = 2;
+  repeated World world = 3;
+
+  message World {
+    bool my_bool = 1;
+    map<string, int32> my_map = 2;
+    HeyHey hey_hey = 3;
+  }
+
+  message HeyHey {
+    string bar = 1;
+  }
+}

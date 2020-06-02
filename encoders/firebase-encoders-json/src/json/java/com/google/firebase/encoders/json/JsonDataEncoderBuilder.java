@@ -123,6 +123,7 @@ public final class JsonDataEncoderBuilder implements EncoderConfig<JsonDataEncod
       }
 
       @Override
+      @NonNull
       public String encode(@NonNull Object o) {
         StringWriter stringWriter = new StringWriter();
         try {

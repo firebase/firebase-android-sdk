@@ -25,12 +25,14 @@ import java.io.Writer;
  * object hierarchy and return it in the right format. Clients of this interface are not concerned
  * with how objects are encoded.
  */
-public interface DataEncoder {
+public interface DataEncoder extends GenericEncoder<Writer, String> {
 
   /** Encodes {@code obj} into {@code writer}. */
+  @Override
   void encode(@NonNull Object obj, @NonNull Writer writer) throws IOException;
 
   /** Returns the string-encoded representation of {@code obj}. */
   @NonNull
+  @Override
   String encode(@NonNull Object obj);
 }

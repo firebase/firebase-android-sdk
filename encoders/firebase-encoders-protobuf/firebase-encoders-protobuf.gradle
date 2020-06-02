@@ -1,0 +1,69 @@
+plugins {
+    id 'firebase-library'
+    id 'com.google.protobuf'
+}
+
+firebaseLibrary {
+    publishSources = true
+    publishJavadoc = false
+}
+
+protobuf {
+    // Configure the protoc executable
+    protoc {
+        // Download from repositories
+        artifact = 'com.google.protobuf:protoc:3.11.4'
+    }
+    generateProtoTasks {
+        all().each { task ->
+            task.builtins {
+                java { }
+            }
+        }
+    }
+}
+
+android {
+    compileSdkVersion project.targetSdkVersion
+    defaultConfig {
+        minSdkVersion project.minSdkVersion
+        targetSdkVersion project.targetSdkVersion
+        versionName version
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    testOptions {
+        unitTests {
+            includeAndroidResources = true
+        }
+    }
+
+    sourceSets.main.java {
+        srcDir 'src/json/java'
+    }
+}
+
+dependencies {
+    implementation 'androidx.annotation:annotation:1.1.0'
+    implementation project(":encoders:firebase-encoders-json")
+
+    annotationProcessor project(":encoders:firebase-encoders-processor")
+
+    testImplementation 'androidx.test:runner:1.2.0'
+    testImplementation 'androidx.test.ext:junit:1.1.1'
+    testImplementation "org.robolectric:robolectric:$robolectricVersion"
+    testImplementation 'junit:junit:4.13-rc-1'
+    testImplementation "com.google.truth:truth:$googleTruthVersion"
+    testImplementation 'org.mockito:mockito-core:2.25.0'
+    testImplementation 'com.google.protobuf:protobuf-java:3.11.4'
+    testAnnotationProcessor project(":encoders:firebase-encoders-processor")
+
+}
+
+tasks.withType(JavaCompile) {
+    options.compilerArgs << "-Werror"
+}
