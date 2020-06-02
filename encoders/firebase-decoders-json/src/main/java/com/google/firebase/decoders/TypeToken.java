@@ -21,8 +21,6 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.WildcardType;
 
-// TODO: implement hashCode(), equals(), and toString().
-
 /**
  * {@link TypeToken} is used to represent types supported by the library in a type-safe manner.
  *
@@ -114,6 +112,15 @@ public abstract class TypeToken<T> {
 
   private TypeToken() {}
 
+  @NonNull
+  abstract String getTypeTokenLiteral();
+
+  @NonNull
+  @Override
+  public String toString() {
+    return "TypeToken{" + getTypeTokenLiteral() + "}";
+  }
+
   /**
    * {@link ClassToken} is used to represent types in a type-safe manner, including Primitive types,
    * Plain class types, Generic types, and Wildcard types.
@@ -161,13 +168,8 @@ public abstract class TypeToken<T> {
 
     @NonNull
     @Override
-    public String toString() {
-      StringBuilder sb = new StringBuilder();
-      sb.append("ClassToken{ ");
-      sb.append("RawType: ").append(rawType).append(", ");
-      sb.append("TypeArguments: ").append(typeArguments).append("");
-      sb.append(" }");
-      return sb.toString();
+    String getTypeTokenLiteral() {
+      return rawType.getSimpleName() + typeArguments;
     }
   }
 
@@ -189,9 +191,7 @@ public abstract class TypeToken<T> {
 
     @Override
     public int hashCode() {
-      int result = 41;
-      result += componentType.hashCode();
-      return result;
+      return componentType.hashCode() + 31;
     }
 
     @Override
@@ -208,12 +208,8 @@ public abstract class TypeToken<T> {
 
     @NonNull
     @Override
-    public String toString() {
-      StringBuilder sb = new StringBuilder();
-      sb.append("ArrayToken{ ");
-      sb.append("ComponentType: ").append(componentType);
-      sb.append(" }");
-      return sb.toString();
+    String getTypeTokenLiteral() {
+      return componentType.getTypeTokenLiteral() + "[]";
     }
   }
 }

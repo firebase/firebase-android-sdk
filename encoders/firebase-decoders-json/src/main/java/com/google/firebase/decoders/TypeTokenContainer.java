@@ -16,6 +16,7 @@ package com.google.firebase.decoders;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import java.util.Arrays;
 
 /**
  * {@link TypeTokenContainer} is used to get actual type parameter in a generic class at given
@@ -45,11 +46,7 @@ public final class TypeTokenContainer {
 
   @Override
   public int hashCode() {
-    int result = 11;
-    for (int i = 0; i < typeTokens.length; i++) {
-      result += (i * i + i + 41) * typeTokens[i].hashCode();
-    }
-    return result;
+    return Arrays.hashCode(typeTokens);
   }
 
   @Override
@@ -61,29 +58,21 @@ public final class TypeTokenContainer {
       return false;
     }
     TypeTokenContainer that = (TypeTokenContainer) o;
-    if (this.typeTokens.length != that.typeTokens.length) {
-      return false;
-    } else {
-      for (int i = 0; i < typeTokens.length; i++) {
-        if (!this.typeTokens[i].equals(that.typeTokens[i])) return false;
-      }
-      return true;
-    }
+    return Arrays.equals(this.typeTokens, that.typeTokens);
   }
 
   @NonNull
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("TypeContainer[");
     for (int i = 0; i < typeTokens.length; i++) {
+      if (i == 0) sb.append('<');
       if (i != typeTokens.length - 1) {
-        sb.append(typeTokens[i]).append(", ");
+        sb.append(typeTokens[i].getTypeTokenLiteral()).append(", ");
       } else {
-        sb.append(typeTokens[i]);
+        sb.append(typeTokens[i].getTypeTokenLiteral()).append('>');
       }
     }
-    sb.append("]");
     return sb.toString();
   }
 }
