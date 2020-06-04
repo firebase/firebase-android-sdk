@@ -397,6 +397,7 @@ public class FirebaseApp {
    *
    * <p>This api has been deprecated. Please use the api which takes in a Java boolean
    *
+   * @deprecated Use {@link #setDataCollectionDefaultEnabled(Boolean)} instead.
    * @hide
    */
   @KeepForSdk
