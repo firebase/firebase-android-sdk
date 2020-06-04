@@ -1,0 +1,29 @@
+// Signature format: 2.0
+package com.google.firebase.decoders {
+
+  public abstract class Safe<T> {
+    ctor public Safe();
+  }
+
+  public abstract class TypeToken<T> {
+    method @NonNull public static <T> com.google.firebase.decoders.TypeToken<T> of(@NonNull com.google.firebase.decoders.Safe<T>);
+    method @NonNull public static <T> com.google.firebase.decoders.TypeToken<T> of(@NonNull Class<T>);
+  }
+
+  public static class TypeToken.ArrayToken<T> extends com.google.firebase.decoders.TypeToken<T> {
+    method @NonNull public com.google.firebase.decoders.TypeToken<?> getComponentType();
+  }
+
+  public static class TypeToken.ClassToken<T> extends com.google.firebase.decoders.TypeToken<T> {
+    method @NonNull public Class<T> getRawType();
+    method @NonNull public com.google.firebase.decoders.TypeTokenContainer getTypeArguments();
+  }
+
+  public final class TypeTokenContainer {
+    ctor public TypeTokenContainer(@NonNull com.google.firebase.decoders.TypeToken[]);
+    method @NonNull public <T> com.google.firebase.decoders.TypeToken<T> at(int);
+    field @NonNull public static final com.google.firebase.decoders.TypeTokenContainer EMPTY;
+  }
+
+}
+

@@ -28,7 +28,6 @@ import androidx.annotation.Nullable;
 import com.google.android.gms.common.util.AndroidUtilsLight;
 import com.google.android.gms.common.util.Hex;
 import com.google.android.gms.common.util.VisibleForTesting;
-import com.google.firebase.FirebaseException;
 import com.google.firebase.heartbeatinfo.HeartBeatInfo;
 import com.google.firebase.heartbeatinfo.HeartBeatInfo.HeartBeat;
 import com.google.firebase.installations.FirebaseInstallationsException;
@@ -41,6 +40,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.Charset;
@@ -69,6 +69,9 @@ public class FirebaseInstallationServiceClient {
   private static final String JSON_CONTENT_TYPE = "application/json";
   private static final String CONTENT_ENCODING_HEADER_KEY = "Content-Encoding";
   private static final String GZIP_CONTENT_ENCODING = "gzip";
+
+  private static final String CACHE_CONTROL_HEADER_KEY = "Cache-Control";
+  private static final String CACHE_CONTROL_DIRECTIVE = "no-cache";
 
   /** Heartbeat tag for firebase installations. */
   private static final String FIREBASE_INSTALLATIONS_ID_HEARTBEAT_TAG = "fire-installations-id";
@@ -124,8 +127,8 @@ public class FirebaseInstallationServiceClient {
    *       <li>400: return response with status BAD_CONFIG
    *       <li>403: return response with status BAD_CONFIG
    *       <li>403: return response with status BAD_CONFIG
-   *       <li>429: throw IOException
-   *       <li>500: throw IOException
+   *       <li>429: throw FirebaseInstallationsException
+   *       <li>500: throw FirebaseInstallationsException
    *     </ul>
    */
   @NonNull
@@ -135,16 +138,10 @@ public class FirebaseInstallationServiceClient {
       @NonNull String projectID,
       @NonNull String appId,
       @Nullable String iidToken)
-      throws IOException {
+      throws FirebaseInstallationsException {
     String resourceName = String.format(CREATE_REQUEST_RESOURCE_NAME_FORMAT, projectID);
     int retryCount = 0;
-    URL url =
-        new URL(
-            String.format(
-                "https://%s/%s/%s",
-                FIREBASE_INSTALLATIONS_API_DOMAIN,
-                FIREBASE_INSTALLATIONS_API_VERSION,
-                resourceName));
+    URL url = getFullyQualifiedRequestUri(resourceName);
     while (retryCount <= MAX_RETRIES) {
       HttpURLConnection httpURLConnection = openHttpURLConnection(url, apiKey);
 
@@ -176,12 +173,16 @@ public class FirebaseInstallationServiceClient {
 
         // Return empty installation response with BAD_CONFIG response code after max retries
         return InstallationResponse.builder().setResponseCode(ResponseCode.BAD_CONFIG).build();
+      } catch (IOException ignored) {
+        retryCount++;
       } finally {
         httpURLConnection.disconnect();
       }
     }
 
-    throw new IOException();
+    throw new FirebaseInstallationsException(
+        "Firebase Installations Service is unavailable. Please try again later.",
+        Status.UNAVAILABLE);
   }
 
   private void writeFIDCreateRequestBodyToOutputStream(
@@ -284,15 +285,9 @@ public class FirebaseInstallationServiceClient {
       @NonNull String fid,
       @NonNull String projectID,
       @NonNull String refreshToken)
-      throws FirebaseException, IOException {
+      throws FirebaseInstallationsException {
     String resourceName = String.format(DELETE_REQUEST_RESOURCE_NAME_FORMAT, projectID, fid);
-    URL url =
-        new URL(
-            String.format(
-                "https://%s/%s/%s",
-                FIREBASE_INSTALLATIONS_API_DOMAIN,
-                FIREBASE_INSTALLATIONS_API_VERSION,
-                resourceName));
+    URL url = getFullyQualifiedRequestUri(resourceName);
 
     int retryCount = 0;
     while (retryCount <= MAX_RETRIES) {
@@ -318,12 +313,28 @@ public class FirebaseInstallationServiceClient {
 
         throw new FirebaseInstallationsException(
             "Bad config while trying to delete FID", Status.BAD_CONFIG);
+      } catch (IOException ignored) {
+        retryCount++;
       } finally {
         httpURLConnection.disconnect();
       }
     }
 
-    throw new IOException();
+    throw new FirebaseInstallationsException(
+        "Firebase Installations Service is unavailable. Please try again later.",
+        Status.UNAVAILABLE);
+  }
+
+  private URL getFullyQualifiedRequestUri(String resourceName)
+      throws FirebaseInstallationsException {
+    try {
+      return new URL(
+          String.format(
+              "https://%s/%s/%s",
+              FIREBASE_INSTALLATIONS_API_DOMAIN, FIREBASE_INSTALLATIONS_API_VERSION, resourceName));
+    } catch (MalformedURLException e) {
+      throw new FirebaseInstallationsException(e.getMessage(), Status.UNAVAILABLE);
+    }
   }
 
   /**
@@ -339,8 +350,8 @@ public class FirebaseInstallationServiceClient {
    *       <li>401: return response with status INVALID_AUTH
    *       <li>403: return response with status BAD_CONFIG
    *       <li>404: return response with status INVALID_AUTH
-   *       <li>429: throw IOException
-   *       <li>500: throw IOException
+   *       <li>429: throw FirebaseInstallationsException
+   *       <li>500: throw FirebaseInstallationsException
    *     </ul>
    */
   @NonNull
@@ -349,17 +360,11 @@ public class FirebaseInstallationServiceClient {
       @NonNull String fid,
       @NonNull String projectID,
       @NonNull String refreshToken)
-      throws IOException {
+      throws FirebaseInstallationsException {
     String resourceName =
         String.format(GENERATE_AUTH_TOKEN_REQUEST_RESOURCE_NAME_FORMAT, projectID, fid);
     int retryCount = 0;
-    URL url =
-        new URL(
-            String.format(
-                "https://%s/%s/%s",
-                FIREBASE_INSTALLATIONS_API_DOMAIN,
-                FIREBASE_INSTALLATIONS_API_VERSION,
-                resourceName));
+    URL url = getFullyQualifiedRequestUri(resourceName);
     while (retryCount <= MAX_RETRIES) {
       HttpURLConnection httpURLConnection = openHttpURLConnection(url, apiKey);
       try {
@@ -388,11 +393,15 @@ public class FirebaseInstallationServiceClient {
         logBadConfigError();
 
         return TokenResult.builder().setResponseCode(TokenResult.ResponseCode.BAD_CONFIG).build();
+      } catch (IOException ignored) {
+        retryCount++;
       } finally {
         httpURLConnection.disconnect();
       }
     }
-    throw new IOException();
+    throw new FirebaseInstallationsException(
+        "Firebase Installations Service is unavailable. Please try again later.",
+        Status.UNAVAILABLE);
   }
 
   private static void logBadConfigError() {
@@ -404,13 +413,23 @@ public class FirebaseInstallationServiceClient {
             + " initializing Firebase.");
   }
 
-  private HttpURLConnection openHttpURLConnection(URL url, String apiKey) throws IOException {
-    HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
+  private HttpURLConnection openHttpURLConnection(URL url, String apiKey)
+      throws FirebaseInstallationsException {
+    HttpURLConnection httpURLConnection;
+    try {
+      httpURLConnection = (HttpURLConnection) url.openConnection();
+    } catch (IOException ignored) {
+      throw new FirebaseInstallationsException(
+          "Firebase Installations Service is unavailable. Please try again later.",
+          Status.UNAVAILABLE);
+    }
     httpURLConnection.setConnectTimeout(NETWORK_TIMEOUT_MILLIS);
+    httpURLConnection.setUseCaches(false);
     httpURLConnection.setReadTimeout(NETWORK_TIMEOUT_MILLIS);
     httpURLConnection.addRequestProperty(CONTENT_TYPE_HEADER_KEY, JSON_CONTENT_TYPE);
     httpURLConnection.addRequestProperty(ACCEPT_HEADER_KEY, JSON_CONTENT_TYPE);
     httpURLConnection.addRequestProperty(CONTENT_ENCODING_HEADER_KEY, GZIP_CONTENT_ENCODING);
+    httpURLConnection.addRequestProperty(CACHE_CONTROL_HEADER_KEY, CACHE_CONTROL_DIRECTIVE);
     httpURLConnection.addRequestProperty(X_ANDROID_PACKAGE_HEADER_KEY, context.getPackageName());
     if (heartbeatInfo != null && userAgentPublisher != null) {
       HeartBeat heartbeat = heartbeatInfo.getHeartBeatCode(FIREBASE_INSTALLATIONS_ID_HEARTBEAT_TAG);
