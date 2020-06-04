@@ -45,6 +45,8 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.abt.AbtException;
 import com.google.firebase.abt.FirebaseABTesting;
+import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.iid.InstanceIdResult;
 import com.google.firebase.remoteconfig.internal.ConfigCacheClient;
 import com.google.firebase.remoteconfig.internal.ConfigContainer;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler;
@@ -94,6 +96,11 @@ public final class FirebaseRemoteConfigTest {
 
   private static final String ETAG = "ETag";
 
+  private static final String INSTANCE_ID_STRING = "fake instance id";
+  private static final String INSTANCE_ID_TOKEN_STRING = "fake instance id token";
+  private static final InstanceIdResult INSTANCE_ID_RESULT =
+      new FakeInstanceIdResult(INSTANCE_ID_STRING, INSTANCE_ID_TOKEN_STRING);
+
   // We use a HashMap so that Mocking is easier.
   private static final HashMap<String, Object> DEFAULTS_MAP = new HashMap<>();
   private static final HashMap<String, String> DEFAULTS_STRING_MAP = new HashMap<>();
@@ -114,6 +121,7 @@ public final class FirebaseRemoteConfigTest {
   @Mock private FirebaseRemoteConfigInfo mockFrcInfo;
 
   @Mock private FirebaseABTesting mockFirebaseAbt;
+  @Mock private FirebaseInstanceId mockFirebaseInstanceId;
 
   private FirebaseRemoteConfig frc;
   private FirebaseRemoteConfig fireperfFrc;
@@ -150,6 +158,7 @@ public final class FirebaseRemoteConfigTest {
         new FirebaseRemoteConfig(
             context,
             firebaseApp,
+            mockFirebaseInstanceId,
             mockFirebaseAbt,
             directExecutor,
             mockFetchedCache,
@@ -166,6 +175,7 @@ public final class FirebaseRemoteConfigTest {
             .get(
                 firebaseApp,
                 FIREPERF_NAMESPACE,
+                mockFirebaseInstanceId,
                 /*firebaseAbt=*/ null,
                 directExecutor,
                 mockFireperfFetchedCache,
@@ -197,6 +207,7 @@ public final class FirebaseRemoteConfigTest {
     loadCacheWithConfig(mockFetchedCache, /*container=*/ null);
     loadCacheWithConfig(mockDefaultsCache, /*container=*/ null);
     loadActivatedCacheWithIncompleteTask();
+    loadInstanceIdAndToken();
 
     Task<FirebaseRemoteConfigInfo> initStatus = frc.ensureInitialized();
 
@@ -210,6 +221,7 @@ public final class FirebaseRemoteConfigTest {
     loadCacheWithConfig(mockFetchedCache, /*container=*/ null);
     loadCacheWithConfig(mockDefaultsCache, /*container=*/ null);
     loadCacheWithConfig(mockActivatedCache, /*container=*/ null);
+    loadInstanceIdAndToken();
 
     Task<FirebaseRemoteConfigInfo> initStatus = frc.ensureInitialized();
 
@@ -1164,6 +1176,10 @@ public final class FirebaseRemoteConfigTest {
   private void load2pFetchHandlerWithResponse() {
     when(mockFireperfFetchHandler.fetch())
         .thenReturn(Tasks.forResult(firstFetchedContainerResponse));
+  }
+
+  private void loadInstanceIdAndToken() {
+    when(mockFirebaseInstanceId.getInstanceId()).thenReturn(Tasks.forResult(INSTANCE_ID_RESULT));
   }
 
   private static int getResourceId(String xmlResourceName) {

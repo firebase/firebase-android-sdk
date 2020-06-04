@@ -12,20 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import com.google.firebase.encoders.EncodingException;
+import com.google.firebase.encoders.FieldDescriptor;
 import com.google.firebase.encoders.ObjectEncoder;
 import com.google.firebase.encoders.ObjectEncoderContext;
 import com.google.firebase.encoders.config.Configurator;
 import com.google.firebase.encoders.config.EncoderConfig;
 import java.io.IOException;
 import java.lang.Override;
-import javax.annotation.Generated;
 
 /**
  * @hide */
-@Generated("com.google.firebase.encoders.processor.EncodableProcessor")
 public final class AutoTypeWithListEncoder implements Configurator {
-    public static final int CODEGEN_VERSION = 1;
+    public static final int CODEGEN_VERSION = 2;
 
     public static final Configurator CONFIG = new AutoTypeWithListEncoder();
 
@@ -41,10 +39,11 @@ public final class AutoTypeWithListEncoder implements Configurator {
     private static final class TypeWithListEncoder implements ObjectEncoder<TypeWithList> {
         static final TypeWithListEncoder INSTANCE = new TypeWithListEncoder();
 
+        private static final FieldDescriptor MEMBER_DESCRIPTOR = FieldDescriptor.of("member");
+
         @Override
-        public void encode(TypeWithList value, ObjectEncoderContext ctx) throws IOException,
-                EncodingException {
-            ctx.add("member", value.getMember());
+        public void encode(TypeWithList value, ObjectEncoderContext ctx) throws IOException {
+            ctx.add(MEMBER_DESCRIPTOR, value.getMember());
         }
     }
 
@@ -52,8 +51,7 @@ public final class AutoTypeWithListEncoder implements Configurator {
         static final MemberEncoder INSTANCE = new MemberEncoder();
 
         @Override
-        public void encode(Member value, ObjectEncoderContext ctx) throws IOException,
-                EncodingException {
+        public void encode(Member value, ObjectEncoderContext ctx) throws IOException {
         }
     }
 }

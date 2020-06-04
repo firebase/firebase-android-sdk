@@ -21,8 +21,8 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
+import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.SnapshotVersion;
-import com.google.firebase.firestore.model.value.ObjectValue;
 
 /**
  * A mutation that creates or replaces the document at the given key with the object value contents.
@@ -72,7 +72,7 @@ public final class SetMutation extends Mutation {
     // accepted the mutation so the precondition must have held.
 
     SnapshotVersion version = mutationResult.getVersion();
-    return new Document(getKey(), version, Document.DocumentState.COMMITTED_MUTATIONS, value);
+    return new Document(getKey(), version, value, Document.DocumentState.COMMITTED_MUTATIONS);
   }
 
   @Nullable
@@ -86,7 +86,7 @@ public final class SetMutation extends Mutation {
     }
 
     SnapshotVersion version = getPostMutationVersion(maybeDoc);
-    return new Document(getKey(), version, Document.DocumentState.LOCAL_MUTATIONS, value);
+    return new Document(getKey(), version, value, Document.DocumentState.LOCAL_MUTATIONS);
   }
 
   /** Returns the object value to use when setting the document. */

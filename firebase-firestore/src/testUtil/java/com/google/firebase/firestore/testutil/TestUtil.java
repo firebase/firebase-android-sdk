@@ -20,7 +20,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.fail;
 
-import androidx.annotation.NonNull;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.android.gms.common.internal.Preconditions;
@@ -33,9 +32,8 @@ import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.Blob;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.TestAccessHelper;
-import com.google.firebase.firestore.UserDataConverter;
+import com.google.firebase.firestore.UserDataReader;
 import com.google.firebase.firestore.core.FieldFilter;
-import com.google.firebase.firestore.core.Filter;
 import com.google.firebase.firestore.core.Filter.Operator;
 import com.google.firebase.firestore.core.OrderBy;
 import com.google.firebase.firestore.core.OrderBy.Direction;
@@ -51,9 +49,11 @@ import com.google.firebase.firestore.model.DocumentSet;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.NoDocument;
+import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.UnknownDocument;
+import com.google.firebase.firestore.model.Values;
 import com.google.firebase.firestore.model.mutation.DeleteMutation;
 import com.google.firebase.firestore.model.mutation.FieldMask;
 import com.google.firebase.firestore.model.mutation.FieldTransform;
@@ -63,13 +63,12 @@ import com.google.firebase.firestore.model.mutation.Precondition;
 import com.google.firebase.firestore.model.mutation.SetMutation;
 import com.google.firebase.firestore.model.mutation.TransformMutation;
 import com.google.firebase.firestore.model.mutation.VerifyMutation;
-import com.google.firebase.firestore.model.value.FieldValue;
-import com.google.firebase.firestore.model.value.ObjectValue;
 import com.google.firebase.firestore.remote.RemoteEvent;
 import com.google.firebase.firestore.remote.TargetChange;
 import com.google.firebase.firestore.remote.WatchChange;
 import com.google.firebase.firestore.remote.WatchChange.DocumentChange;
 import com.google.firebase.firestore.remote.WatchChangeAggregator;
+import com.google.firestore.v1.Value;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -126,17 +125,21 @@ public class TestUtil {
 
   public static final Map<String, Object> EMPTY_MAP = new HashMap<>();
 
-  public static FieldValue wrap(Object value) {
+  public static Value wrap(Object value) {
     DatabaseId databaseId = DatabaseId.forProject("project");
-    UserDataConverter dataConverter = new UserDataConverter(databaseId);
+    UserDataReader dataReader = new UserDataReader(databaseId);
     // HACK: We use parseQueryValue() since it accepts scalars as well as arrays / objects, and
     // our tests currently use wrap() pretty generically so we don't know the intent.
-    return dataConverter.parseQueryValue(value);
+    return dataReader.parseQueryValue(value);
+  }
+
+  public static Value wrapRef(DatabaseId databaseId, DocumentKey key) {
+    return Values.refValue(databaseId, key);
   }
 
   public static ObjectValue wrapObject(Map<String, Object> value) {
     // Cast is safe here because value passed in is a map
-    return (ObjectValue) wrap(value);
+    return new ObjectValue(wrap(value));
   }
 
   public static ObjectValue wrapObject(Object... entries) {
@@ -179,21 +182,21 @@ public class TestUtil {
 
   public static Document doc(String key, long version, Map<String, Object> data) {
     return new Document(
-        key(key), version(version), Document.DocumentState.SYNCED, wrapObject(data));
+        key(key), version(version), wrapObject(data), Document.DocumentState.SYNCED);
   }
 
   public static Document doc(DocumentKey key, long version, Map<String, Object> data) {
-    return new Document(key, version(version), Document.DocumentState.SYNCED, wrapObject(data));
+    return new Document(key, version(version), wrapObject(data), Document.DocumentState.SYNCED);
   }
 
   public static Document doc(
       String key, long version, ObjectValue data, Document.DocumentState documentState) {
-    return new Document(key(key), version(version), documentState, data);
+    return new Document(key(key), version(version), data, documentState);
   }
 
   public static Document doc(
       String key, long version, Map<String, Object> data, Document.DocumentState documentState) {
-    return new Document(key(key), version(version), documentState, wrapObject(data));
+    return new Document(key(key), version(version), wrapObject(data), documentState);
   }
 
   public static NoDocument deletedDoc(String key, long version) {
@@ -225,12 +228,7 @@ public class TestUtil {
   }
 
   public static FieldFilter filter(String key, String operator, Object value) {
-    Filter filter = FieldFilter.create(field(key), operatorFromString(operator), wrap(value));
-    if (filter instanceof FieldFilter) {
-      return (FieldFilter) filter;
-    } else {
-      throw new IllegalArgumentException("Unrecognized filter: " + filter.toString());
-    }
+    return FieldFilter.create(field(key), operatorFromString(operator), wrap(value));
   }
 
   public static Operator operatorFromString(String s) {
@@ -478,14 +476,14 @@ public class TestUtil {
 
   public static PatchMutation patchMutation(
       String path, Map<String, Object> values, @Nullable List<FieldPath> updateMask) {
-    ObjectValue objectValue = ObjectValue.emptyObject();
+    ObjectValue.Builder objectValue = ObjectValue.newBuilder();
     ArrayList<FieldPath> objectMask = new ArrayList<>();
     for (Entry<String, Object> entry : values.entrySet()) {
       FieldPath fieldPath = field(entry.getKey());
       objectMask.add(fieldPath);
       if (!entry.getValue().equals(DELETE_SENTINEL)) {
-        FieldValue parsedValue = wrap(entry.getValue());
-        objectValue = objectValue.set(fieldPath, parsedValue);
+        Value parsedValue = wrap(entry.getValue());
+        objectValue.set(fieldPath, parsedValue);
       }
     }
 
@@ -498,7 +496,7 @@ public class TestUtil {
 
     return new PatchMutation(
         key(path),
-        objectValue,
+        objectValue.build(),
         FieldMask.fromSet(fieldMaskPaths),
         merge ? Precondition.NONE : Precondition.exists(true));
   }
@@ -517,8 +515,8 @@ public class TestUtil {
    * must not contain any non-sentinel data.
    */
   public static TransformMutation transformMutation(String path, Map<String, Object> data) {
-    UserDataConverter dataConverter = new UserDataConverter(DatabaseId.forProject("project"));
-    ParsedUpdateData result = dataConverter.parseUpdateData(data);
+    UserDataReader dataReader = new UserDataReader(DatabaseId.forProject("project"));
+    ParsedUpdateData result = dataReader.parseUpdateData(data);
 
     // The order of the transforms doesn't matter, but we sort them so tests can assume a particular
     // order.
@@ -555,15 +553,6 @@ public class TestUtil {
 
     String snapshotString = "snapshot-" + snapshotVersion;
     return ByteString.copyFrom(snapshotString, Charsets.UTF_8);
-  }
-
-  @NonNull
-  private static ByteString resumeToken(SnapshotVersion snapshotVersion) {
-    if (snapshotVersion.equals(SnapshotVersion.NONE)) {
-      return ByteString.EMPTY;
-    } else {
-      return ByteString.copyFromUtf8(snapshotVersion.toString());
-    }
   }
 
   public static ByteString streamToken(String contents) {

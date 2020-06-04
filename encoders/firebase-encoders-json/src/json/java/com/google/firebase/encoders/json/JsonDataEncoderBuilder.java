@@ -35,7 +35,7 @@ import java.util.TimeZone;
 
 public final class JsonDataEncoderBuilder implements EncoderConfig<JsonDataEncoderBuilder> {
 
-  private final ObjectEncoder<Object> DEFAULT_FALLBACK_ENCODER =
+  private static final ObjectEncoder<Object> DEFAULT_FALLBACK_ENCODER =
       (o, ctx) -> {
         throw new EncodingException(
             "Couldn't find encoder for type " + o.getClass().getCanonicalName());
@@ -44,6 +44,7 @@ public final class JsonDataEncoderBuilder implements EncoderConfig<JsonDataEncod
   private final Map<Class<?>, ObjectEncoder<?>> objectEncoders = new HashMap<>();
   private final Map<Class<?>, ValueEncoder<?>> valueEncoders = new HashMap<>();
   private ObjectEncoder<Object> fallbackEncoder = DEFAULT_FALLBACK_ENCODER;
+  private boolean ignoreNullValues = false;
 
   private static final class TimestampEncoder implements ValueEncoder<Date> {
     private static final DateFormat rfc339;
@@ -54,8 +55,7 @@ public final class JsonDataEncoderBuilder implements EncoderConfig<JsonDataEncod
     }
 
     @Override
-    public void encode(@NonNull Date o, @NonNull ValueEncoderContext ctx)
-        throws EncodingException, IOException {
+    public void encode(@NonNull Date o, @NonNull ValueEncoderContext ctx) throws IOException {
       ctx.add(rfc339.format(o));
     }
   }
@@ -105,20 +105,25 @@ public final class JsonDataEncoderBuilder implements EncoderConfig<JsonDataEncod
   }
 
   @NonNull
+  public JsonDataEncoderBuilder ignoreNullValues(boolean ignore) {
+    this.ignoreNullValues = ignore;
+    return this;
+  }
+
+  @NonNull
   public DataEncoder build() {
     return new DataEncoder() {
       @Override
-      public void encode(@NonNull Object o, @NonNull Writer writer)
-          throws IOException, EncodingException {
+      public void encode(@NonNull Object o, @NonNull Writer writer) throws IOException {
         JsonValueObjectEncoderContext encoderContext =
             new JsonValueObjectEncoderContext(
-                writer, objectEncoders, valueEncoders, fallbackEncoder);
+                writer, objectEncoders, valueEncoders, fallbackEncoder, ignoreNullValues);
         encoderContext.add(o, false);
         encoderContext.close();
       }
 
       @Override
-      public String encode(@NonNull Object o) throws EncodingException {
+      public String encode(@NonNull Object o) {
         StringWriter stringWriter = new StringWriter();
         try {
           encode(o, stringWriter);

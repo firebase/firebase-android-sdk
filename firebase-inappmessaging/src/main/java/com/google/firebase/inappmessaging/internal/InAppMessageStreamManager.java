@@ -14,6 +14,9 @@
 
 package com.google.firebase.inappmessaging.internal;
 
+import android.text.TextUtils;
+import androidx.annotation.VisibleForTesting;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.inappmessaging.CommonTypesProto.TriggeringCondition;
 import com.google.firebase.inappmessaging.internal.injection.qualifiers.AppForeground;
 import com.google.firebase.inappmessaging.internal.injection.qualifiers.ProgrammaticTrigger;
@@ -24,8 +27,8 @@ import com.google.firebase.inappmessaging.model.MessageType;
 import com.google.firebase.inappmessaging.model.ProtoMarshallerClient;
 import com.google.firebase.inappmessaging.model.RateLimit;
 import com.google.firebase.inappmessaging.model.TriggeredInAppMessage;
+import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.internal.firebase.inappmessaging.v1.CampaignProto.ThickContent;
-import com.google.internal.firebase.inappmessaging.v1.CampaignProto.VanillaCampaignPayload;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.CampaignImpressionList;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.FetchEligibleCampaignsResponse;
 import io.reactivex.Completable;
@@ -58,6 +61,9 @@ public class InAppMessageStreamManager {
   private final RateLimit appForegroundRateLimit;
   private final AnalyticsEventsManager analyticsEventsManager;
   private final TestDeviceHelper testDeviceHelper;
+  private final AbtIntegrationHelper abtIntegrationHelper;
+  private final FirebaseInstallationsApi firebaseInstallations;
+  private final DataCollectionHelper dataCollectionHelper;
 
   @Inject
   public InAppMessageStreamManager(
@@ -71,7 +77,10 @@ public class InAppMessageStreamManager {
       ImpressionStorageClient impressionStorageClient,
       RateLimiterClient rateLimiterClient,
       @AppForeground RateLimit appForegroundRateLimit,
-      TestDeviceHelper testDeviceHelper) {
+      TestDeviceHelper testDeviceHelper,
+      FirebaseInstallationsApi firebaseInstallations,
+      DataCollectionHelper dataCollectionHelper,
+      AbtIntegrationHelper abtIntegrationHelper) {
     this.appForegroundEventFlowable = appForegroundEventFlowable;
     this.programmaticTriggerEventFlowable = programmaticTriggerEventFlowable;
     this.campaignCacheClient = campaignCacheClient;
@@ -83,6 +92,9 @@ public class InAppMessageStreamManager {
     this.rateLimiterClient = rateLimiterClient;
     this.appForegroundRateLimit = appForegroundRateLimit;
     this.testDeviceHelper = testDeviceHelper;
+    this.dataCollectionHelper = dataCollectionHelper;
+    this.firebaseInstallations = firebaseInstallations;
+    this.abtIntegrationHelper = abtIntegrationHelper;
   }
 
   private static boolean containsTriggeringCondition(String event, ThickContent content) {
@@ -106,11 +118,22 @@ public class InAppMessageStreamManager {
     return tc.getEvent().getName().equals(event);
   }
 
-  private static boolean isActive(Clock clock, VanillaCampaignPayload vanillaPayload) {
-    long campaignStartTime = vanillaPayload.getCampaignStartTimeMillis();
-    long campaignEndTime = vanillaPayload.getCampaignEndTimeMillis();
+  private static boolean isActive(Clock clock, ThickContent content) {
+    long campaignStartTime;
+    long campaignEndTime;
+    if (content.getPayloadCase().equals(ThickContent.PayloadCase.VANILLA_PAYLOAD)) {
+      // Handle the campaign case
+      campaignStartTime = content.getVanillaPayload().getCampaignStartTimeMillis();
+      campaignEndTime = content.getVanillaPayload().getCampaignEndTimeMillis();
+    } else if (content.getPayloadCase().equals(ThickContent.PayloadCase.EXPERIMENTAL_PAYLOAD)) {
+      // Handle the experiment case
+      campaignStartTime = content.getExperimentalPayload().getCampaignStartTimeMillis();
+      campaignEndTime = content.getExperimentalPayload().getCampaignEndTimeMillis();
+    } else {
+      // If we have no valid payload then don't display
+      return false;
+    }
     long currentTime = clock.now();
-
     return currentTime > campaignStartTime && currentTime < campaignEndTime;
   }
 
@@ -147,7 +170,7 @@ public class InAppMessageStreamManager {
             appForegroundEventFlowable,
             analyticsEventsManager.getAnalyticsEventsFlowable(),
             programmaticTriggerEventFlowable)
-        .doOnNext(e -> Logging.logd("Event Triggered: " + e.toString()))
+        .doOnNext(e -> Logging.logd("Event Triggered: " + e))
         .observeOn(schedulers.io())
         .concatMap(
             event -> {
@@ -173,19 +196,13 @@ public class InAppMessageStreamManager {
                       content.getIsTestCampaign()
                           ? Maybe.just(content)
                           : impressionStorageClient
-                              .isImpressed(content.getVanillaPayload().getCampaignId())
+                              .isImpressed(content)
                               .doOnError(
                                   e ->
                                       Logging.logw("Impression store read fail: " + e.getMessage()))
                               .onErrorResumeNext(
                                   Single.just(false)) // Absorb impression read errors
-                              .doOnSuccess(
-                                  isImpressed ->
-                                      Logging.logi(
-                                          String.format(
-                                              "Already impressed %s ? : %s",
-                                              content.getVanillaPayload().getCampaignName(),
-                                              isImpressed)))
+                              .doOnSuccess(isImpressed -> logImpressionStatus(content, isImpressed))
                               .filter(isImpressed -> !isImpressed)
                               .map(isImpressed -> content);
 
@@ -196,14 +213,12 @@ public class InAppMessageStreamManager {
                   thickContent -> {
                     switch (thickContent.getContent().getMessageDetailsCase()) {
                       case BANNER:
-                        return Maybe.just(thickContent);
                       case IMAGE_ONLY:
-                        return Maybe.just(thickContent);
                       case MODAL:
-                        return Maybe.just(thickContent);
                       case CARD:
                         return Maybe.just(thickContent);
                       default:
+                        Logging.logd("Filtering non-displayable message");
                         return Maybe.empty();
                     }
                   };
@@ -226,20 +241,39 @@ public class InAppMessageStreamManager {
                       .defaultIfEmpty(CampaignImpressionList.getDefaultInstance())
                       .onErrorResumeNext(Maybe.just(CampaignImpressionList.getDefaultInstance()));
 
+              Maybe<InstallationIdResult> getIID =
+                  Maybe.zip(
+                          taskToMaybe(firebaseInstallations.getId()),
+                          taskToMaybe(firebaseInstallations.getToken(false)),
+                          InstallationIdResult::create)
+                      .observeOn(schedulers.io());
+
               Function<CampaignImpressionList, Maybe<FetchEligibleCampaignsResponse>> serviceFetch =
-                  impressions ->
-                      Maybe.fromCallable(() -> apiClient.getFiams(impressions))
-                          .doOnSuccess(
-                              resp ->
-                                  Logging.logi(
-                                      String.format(
-                                          Locale.US,
-                                          "Successfully fetched %d messages from backend",
-                                          resp.getMessagesList().size())))
-                          .doOnSuccess(analyticsEventsManager::updateContextualTriggers)
-                          .doOnSuccess(testDeviceHelper::processCampaignFetch)
-                          .doOnError(e -> Logging.logw("Service fetch error: " + e.getMessage()))
-                          .onErrorResumeNext(Maybe.empty()); // Absorb service failures
+                  campaignImpressionList -> {
+                    if (!dataCollectionHelper.isAutomaticDataCollectionEnabled()) {
+                      Logging.logi(
+                          "Automatic data collection is disabled, not attempting campaign fetch from service.");
+                      return Maybe.just(cacheExpiringResponse());
+                    }
+
+                    return getIID
+                        .filter(InAppMessageStreamManager::validIID)
+                        .map(iid -> apiClient.getFiams(iid, campaignImpressionList))
+                        .switchIfEmpty(Maybe.just(cacheExpiringResponse()))
+                        .doOnSuccess(
+                            resp ->
+                                Logging.logi(
+                                    String.format(
+                                        Locale.US,
+                                        "Successfully fetched %d messages from backend",
+                                        resp.getMessagesList().size())))
+                        .doOnSuccess(
+                            resp -> impressionStorageClient.clearImpressions(resp).subscribe())
+                        .doOnSuccess(analyticsEventsManager::updateContextualTriggers)
+                        .doOnSuccess(testDeviceHelper::processCampaignFetch)
+                        .doOnError(e -> Logging.logw("Service fetch error: " + e.getMessage()))
+                        .onErrorResumeNext(Maybe.empty()); // Absorb service failures
+                  };
 
               if (shouldIgnoreCache(event)) {
                 Logging.logi(
@@ -276,6 +310,20 @@ public class InAppMessageStreamManager {
     return Maybe.just(content);
   }
 
+  private static void logImpressionStatus(ThickContent content, Boolean isImpressed) {
+    if (content.getPayloadCase().equals(ThickContent.PayloadCase.VANILLA_PAYLOAD)) {
+      Logging.logi(
+          String.format(
+              "Already impressed campaign %s ? : %s",
+              content.getVanillaPayload().getCampaignName(), isImpressed));
+    } else if (content.getPayloadCase().equals(ThickContent.PayloadCase.EXPERIMENTAL_PAYLOAD)) {
+      Logging.logi(
+          String.format(
+              "Already impressed experiment %s ? : %s",
+              content.getExperimentalPayload().getCampaignName(), isImpressed));
+    }
+  }
+
   private Maybe<TriggeredInAppMessage> getTriggeredInAppMessageMaybe(
       String event,
       Function<ThickContent, Maybe<ThickContent>> filterAlreadyImpressed,
@@ -283,12 +331,7 @@ public class InAppMessageStreamManager {
       Function<ThickContent, Maybe<ThickContent>> filterDisplayable,
       FetchEligibleCampaignsResponse response) {
     return Flowable.fromIterable(response.getMessagesList())
-        .filter(
-            content -> content.getPayloadCase().equals(ThickContent.PayloadCase.VANILLA_PAYLOAD))
-        .filter(
-            content ->
-                testDeviceHelper.isDeviceInTestMode()
-                    || isActive(clock, content.getVanillaPayload()))
+        .filter(content -> testDeviceHelper.isDeviceInTestMode() || isActive(clock, content))
         .filter(content -> containsTriggeringCondition(event, content))
         .flatMapMaybe(filterAlreadyImpressed)
         .flatMapMaybe(appForegroundRateLimitFilter)
@@ -298,19 +341,65 @@ public class InAppMessageStreamManager {
         .flatMap(content -> triggeredInAppMessage(content, event));
   }
 
-  private Maybe<TriggeredInAppMessage> triggeredInAppMessage(
-      ThickContent thickContent, String event) {
+  private Maybe<TriggeredInAppMessage> triggeredInAppMessage(ThickContent content, String event) {
+    String campaignId;
+    String campaignName;
+    if (content.getPayloadCase().equals(ThickContent.PayloadCase.VANILLA_PAYLOAD)) {
+      // Handle vanilla campaign case
+      campaignId = content.getVanillaPayload().getCampaignId();
+      campaignName = content.getVanillaPayload().getCampaignName();
+    } else if (content.getPayloadCase().equals(ThickContent.PayloadCase.EXPERIMENTAL_PAYLOAD)) {
+      // Handle experiment case
+      campaignId = content.getExperimentalPayload().getCampaignId();
+      campaignName = content.getExperimentalPayload().getCampaignName();
+      // At this point we set the experiment to become active in analytics.
+      // As long as it's not a test experiment.
+      if (!content.getIsTestCampaign()) {
+        abtIntegrationHelper.setExperimentActive(
+            content.getExperimentalPayload().getExperimentPayload());
+      }
+    } else {
+      return Maybe.empty();
+    }
     InAppMessage inAppMessage =
         ProtoMarshallerClient.decode(
-            thickContent.getContent(),
-            thickContent.getVanillaPayload().getCampaignId(),
-            thickContent.getVanillaPayload().getCampaignName(),
-            thickContent.getIsTestCampaign(),
-            thickContent.getDataBundleMap());
+            content.getContent(),
+            campaignId,
+            campaignName,
+            content.getIsTestCampaign(),
+            content.getDataBundleMap());
     if (inAppMessage.getMessageType().equals(MessageType.UNSUPPORTED)) {
       return Maybe.empty();
     }
 
     return Maybe.just(new TriggeredInAppMessage(inAppMessage, event));
+  }
+
+  private static boolean validIID(InstallationIdResult iid) {
+    return !TextUtils.isEmpty(iid.installationId())
+        && !TextUtils.isEmpty(iid.installationTokenResult().getToken());
+  }
+
+  @VisibleForTesting
+  static FetchEligibleCampaignsResponse cacheExpiringResponse() {
+    // Within the cache, we use '0' as a special case to 'never' expire. '1' is used when we want to
+    // retry the getFiams call on subsequent event triggers, and force the cache to always expire
+    return FetchEligibleCampaignsResponse.newBuilder().setExpirationEpochTimestampMillis(1).build();
+  }
+
+  private static <T> Maybe<T> taskToMaybe(Task<T> task) {
+    return Maybe.create(
+        emitter -> {
+          task.addOnSuccessListener(
+              result -> {
+                emitter.onSuccess(result);
+                emitter.onComplete();
+              });
+          task.addOnFailureListener(
+              e -> {
+                emitter.onError(e);
+                emitter.onComplete();
+              });
+        });
   }
 }

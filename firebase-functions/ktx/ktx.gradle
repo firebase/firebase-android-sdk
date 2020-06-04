@@ -19,7 +19,7 @@ plugins {
 
 firebaseLibrary {
     releaseWith project(':firebase-functions')
-    publishJavadoc = false
+    publishJavadoc = true
     publishSources = true
     testLab.enabled = true
 }
@@ -47,6 +47,7 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlinVersion"
 
     implementation project(':firebase-common')
+    implementation project(':firebase-components')
     implementation project(':firebase-common:ktx')
     implementation project(':firebase-functions')
     implementation 'androidx.annotation:annotation:1.1.0'

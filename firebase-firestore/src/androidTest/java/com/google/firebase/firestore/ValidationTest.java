@@ -461,37 +461,40 @@ public class ValidationTest {
     TaskCompletionSource<Void> offlineCallbackDone = new TaskCompletionSource<>();
     TaskCompletionSource<Void> onlineCallbackDone = new TaskCompletionSource<>();
 
-    collection.addSnapshotListener(
-        (snapshot, error) -> {
-          assertNotNull(snapshot);
+    ListenerRegistration listenerRegistration =
+        collection.addSnapshotListener(
+            (snapshot, error) -> {
+              assertNotNull(snapshot);
 
-          // Skip the initial empty snapshot.
-          if (snapshot.isEmpty()) return;
+              // Skip the initial empty snapshot.
+              if (snapshot.isEmpty()) return;
 
-          assertThat(snapshot.getDocuments()).hasSize(1);
-          DocumentSnapshot docSnap = snapshot.getDocuments().get(0);
+              assertThat(snapshot.getDocuments()).hasSize(1);
+              DocumentSnapshot docSnap = snapshot.getDocuments().get(0);
 
-          if (snapshot.getMetadata().hasPendingWrites()) {
-            // Offline snapshot. Since the server timestamp is uncommitted, we shouldn't be able to
-            // query by it.
-            assertThrows(
-                IllegalArgumentException.class,
-                () ->
-                    collection
-                        .orderBy("timestamp")
-                        .endAt(docSnap)
-                        .addSnapshotListener((snapshot2, error2) -> {}));
-            offlineCallbackDone.setResult(null);
-          } else {
-            // Online snapshot. Since the server timestamp is committed, we should be able to query
-            // by it.
-            collection
-                .orderBy("timestamp")
-                .endAt(docSnap)
-                .addSnapshotListener((snapshot2, error2) -> {});
-            onlineCallbackDone.setResult(null);
-          }
-        });
+              if (snapshot.getMetadata().hasPendingWrites()) {
+                // Offline snapshot. Since the server timestamp is uncommitted, we shouldn't be able
+                // to query by it.
+                assertThrows(
+                    IllegalArgumentException.class,
+                    () ->
+                        collection
+                            .orderBy("timestamp")
+                            .endAt(docSnap)
+                            .addSnapshotListener((snapshot2, error2) -> {}));
+                // Use `trySetResult` since the callbacks fires twice if the WatchStream
+                // acknowledges the Write before the WriteStream.
+                offlineCallbackDone.trySetResult(null);
+              } else {
+                // Online snapshot. Since the server timestamp is committed, we should be able to
+                // query by it.
+                collection
+                    .orderBy("timestamp")
+                    .endAt(docSnap)
+                    .addSnapshotListener((snapshot2, error2) -> {});
+                onlineCallbackDone.trySetResult(null);
+              }
+            });
 
     DocumentReference document = collection.document();
     document.set(map("timestamp", FieldValue.serverTimestamp()));
@@ -499,6 +502,8 @@ public class ValidationTest {
 
     waitFor(collection.firestore.getClient().enableNetwork());
     waitFor(onlineCallbackDone.getTask());
+
+    listenerRegistration.remove();
   }
 
   @Test
@@ -772,16 +777,6 @@ public class ValidationTest {
   /** Performs a write using each write API and makes sure it succeeds. */
   private static void expectWriteSuccess(Object data) {
     expectWriteSuccess(data, /*includeSets=*/ true, /*includeUpdates=*/ true);
-  }
-
-  /** Performs a write using each update API and makes sure it succeeds. */
-  private static void expectUpdateSuccess(Map<String, Object> data) {
-    expectWriteSuccess(data, /*includeSets=*/ false, /*includeUpdates=*/ true);
-  }
-
-  /** Performs a write using each set API and makes sure it succeeds. */
-  private static void expectSetSuccess(Object data) {
-    expectWriteSuccess(data, /*includeSets=*/ true, /*includeUpdates=*/ false);
   }
 
   /**

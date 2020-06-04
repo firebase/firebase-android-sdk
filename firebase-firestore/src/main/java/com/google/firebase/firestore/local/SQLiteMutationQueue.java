@@ -14,9 +14,9 @@
 
 package com.google.firebase.firestore.local;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
+import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 
 import android.database.Cursor;
 import android.database.sqlite.SQLiteStatement;
@@ -318,7 +318,7 @@ final class SQLiteMutationQueue implements MutationQueue {
       Collections.sort(
           result,
           (MutationBatch lhs, MutationBatch rhs) ->
-              Util.compareInts(lhs.getBatchId(), rhs.getBatchId()));
+              Util.compareIntegers(lhs.getBatchId(), rhs.getBatchId()));
     }
     return result;
   }

@@ -14,7 +14,6 @@ LOCAL_C_INCLUDES := $(LOCAL_PATH)/include
 rwildcard=$(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2) $(filter $(subst *,%,$2),$d))
 
 SRC_FILE_LIST := $(call rwildcard, $(LOCAL_PATH)/src/, *.cpp)
-SRC_FILE_LIST += $(LOCAL_PATH)/src/external/api_c.c
 
 LOCAL_SRC_FILES := $(SRC_FILE_LIST:$(LOCAL_PATH)/%=%)
 LOCAL_STATIC_LIBRARIES := breakpad_client

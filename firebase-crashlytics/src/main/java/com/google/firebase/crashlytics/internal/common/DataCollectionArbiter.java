@@ -22,7 +22,6 @@ import android.content.pm.PackageManager;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.crashlytics.core.Utils;
 import com.google.firebase.crashlytics.internal.Logger;
 
 // Determines whether automatic data collection is enabled.
@@ -79,7 +78,7 @@ public class DataCollectionArbiter {
       } catch (PackageManager.NameNotFoundException e) {
         // This shouldn't happen since it's this app's package, but fall through to default
         // if so.
-        Logger.getLogger().d(Logger.TAG, "Unable to get PackageManager. Falling through", e);
+        Logger.getLogger().d("Unable to get PackageManager. Falling through", e);
       }
     }
 

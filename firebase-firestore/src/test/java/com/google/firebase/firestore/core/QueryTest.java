@@ -28,9 +28,14 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.Blob;
+import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.testutil.ComparatorTester;
+import com.google.firebase.firestore.testutil.TestUtil;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import org.junit.Test;
@@ -552,5 +557,69 @@ public class QueryTest {
 
     query = baseQuery.endAt(new Bound(Collections.emptyList(), true));
     assertFalse(query.matchesAllDocuments());
+  }
+
+  @Test
+  public void testCanonicalIdsAreStable() {
+    // This test aims to ensure that we do not break canonical IDs, as they are used as keys in
+    // the TargetCache.
+
+    Query baseQuery = Query.atPath(ResourcePath.fromString("collection"));
+
+    assertCanonicalId(baseQuery, "collection|f:|ob:__name__asc");
+    assertCanonicalId(
+        baseQuery.filter(filter("a", ">", "a")), "collection|f:a>a|ob:aasc__name__asc");
+    assertCanonicalId(
+        baseQuery.filter(filter("a", "<=", new GeoPoint(90.0, -90.0))),
+        "collection|f:a<=geo(90.0,-90.0)|ob:aasc__name__asc");
+    assertCanonicalId(
+        baseQuery.filter(filter("a", "<=", new Timestamp(60, 3000))),
+        "collection|f:a<=time(60,3000)|ob:aasc__name__asc");
+    assertCanonicalId(
+        baseQuery.filter(filter("a", ">=", Blob.fromBytes(new byte[] {1, 2, 3}))),
+        "collection|f:a>=010203|ob:aasc__name__asc");
+    assertCanonicalId(
+        baseQuery.filter(filter("a", "==", Arrays.asList(1, 2, 3))),
+        "collection|f:a==[1,2,3]|ob:__name__asc");
+    assertCanonicalId(
+        baseQuery.filter(filter("a", "==", Double.NaN)), "collection|f:a==NaN|ob:__name__asc");
+    assertCanonicalId(
+        baseQuery.filter(filter("__name__", "==", ref("collection/id"))),
+        "collection|f:__name__==collection/id|ob:__name__asc");
+    assertCanonicalId(
+        baseQuery.filter(filter("a", "==", map("a", "b", "inner", map("d", "c")))),
+        "collection|f:a=={a:b,inner:{d:c}}|ob:__name__asc");
+    assertCanonicalId(
+        baseQuery.filter(filter("a", "in", Arrays.asList(1, 2, 3))),
+        "collection|f:ain[1,2,3]|ob:__name__asc");
+    assertCanonicalId(
+        baseQuery.filter(filter("a", "array-contains-any", Arrays.asList(1, 2, 3))),
+        "collection|f:aarray_contains_any[1,2,3]|ob:__name__asc");
+    assertCanonicalId(
+        baseQuery.filter(filter("a", "array-contains", "a")),
+        "collection|f:aarray_containsa|ob:__name__asc");
+    assertCanonicalId(baseQuery.orderBy(orderBy("a")), "collection|f:|ob:aasc__name__asc");
+    assertCanonicalId(
+        baseQuery
+            .orderBy(orderBy("a"))
+            .startAt(
+                new Bound(
+                    Arrays.asList(TestUtil.wrap("foo"), TestUtil.wrap(Arrays.asList(1, 2, 3))),
+                    true)),
+        "collection|f:|ob:aasc__name__asc|lb:b:foo,[1,2,3]");
+    assertCanonicalId(
+        baseQuery
+            .orderBy(orderBy("a"))
+            .endAt(
+                new Bound(
+                    Arrays.asList(TestUtil.wrap("foo"), TestUtil.wrap(Arrays.asList(1, 2, 3))),
+                    false)),
+        "collection|f:|ob:aasc__name__asc|ub:a:foo,[1,2,3]");
+    assertCanonicalId(baseQuery.limitToFirst(5), "collection|f:|ob:__name__asc|l:5");
+    assertCanonicalId(baseQuery.limitToLast(5), "collection|f:|ob:__name__desc|l:5");
+  }
+
+  private void assertCanonicalId(Query query, String expectedCanonicalId) {
+    assertEquals(expectedCanonicalId, query.toTarget().getCanonicalId());
   }
 }

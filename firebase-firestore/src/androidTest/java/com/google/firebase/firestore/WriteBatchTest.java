@@ -222,7 +222,7 @@ public class WriteBatchTest {
     assertTrue(localSnap.getMetadata().hasPendingWrites());
     assertEquals(asList(map("when", null), map("when", null)), querySnapshotToValues(localSnap));
 
-    QuerySnapshot serverSnap = accumulator.await();
+    QuerySnapshot serverSnap = accumulator.awaitRemoteEvent();
     assertFalse(serverSnap.getMetadata().hasPendingWrites());
     assertEquals(2, serverSnap.size());
     Timestamp when = serverSnap.getDocuments().get(0).getTimestamp("when");

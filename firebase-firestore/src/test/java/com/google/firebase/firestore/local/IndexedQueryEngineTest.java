@@ -65,10 +65,7 @@ public class IndexedQueryEngineTest {
 
     SQLitePersistence persistence = PersistenceTestHelpers.createSQLitePersistence();
     SQLiteCollectionIndex index = new SQLiteCollectionIndex(persistence, User.UNAUTHENTICATED);
-    MutationQueue mutationQueue = persistence.getMutationQueue(User.UNAUTHENTICATED);
     remoteDocuments = persistence.getRemoteDocumentCache();
-    LocalDocumentsView localDocuments =
-        new LocalDocumentsView(remoteDocuments, mutationQueue, persistence.getIndexManager());
     queryEngine = new IndexedQueryEngine(index);
   }
 
@@ -215,7 +212,7 @@ public class IndexedQueryEngineTest {
 
     ImmutableSortedMap<DocumentKey, Document> results =
         queryEngine.getDocumentsMatchingQuery(
-            query, /* targetData= */ null, DocumentKey.emptyKeySet());
+            query, /* lastLimboFreeSnapshotVersion= */ null, DocumentKey.emptyKeySet());
 
     assertThat(results).doesNotContain(IGNORED_DOC.getKey());
     assertThat(results).contains(MATCHING_DOC.getKey());
@@ -231,7 +228,7 @@ public class IndexedQueryEngineTest {
 
     ImmutableSortedMap<DocumentKey, Document> results =
         queryEngine.getDocumentsMatchingQuery(
-            query, /* targetData= */ null, DocumentKey.emptyKeySet());
+            query, /* lastLimboFreeSnapshotVersion= */ null, DocumentKey.emptyKeySet());
 
     assertThat(results).doesNotContain(IGNORED_DOC.getKey());
     assertThat(results).contains(MATCHING_DOC.getKey());
@@ -247,7 +244,7 @@ public class IndexedQueryEngineTest {
 
     ImmutableSortedMap<DocumentKey, Document> results =
         queryEngine.getDocumentsMatchingQuery(
-            query, /* targetData= */ null, DocumentKey.emptyKeySet());
+            query, /* lastLimboFreeSnapshotVersion= */ null, DocumentKey.emptyKeySet());
 
     assertThat(results).doesNotContain(IGNORED_DOC.getKey());
     assertThat(results).doesNotContain(MATCHING_DOC.getKey());
@@ -266,7 +263,7 @@ public class IndexedQueryEngineTest {
 
     ImmutableSortedMap<DocumentKey, Document> results =
         queryEngine.getDocumentsMatchingQuery(
-            query, /* targetData= */ null, DocumentKey.emptyKeySet());
+            query, /* lastLimboFreeSnapshotVersion= */ null, DocumentKey.emptyKeySet());
 
     assertThat(results).doesNotContain(ignoredDoc.getKey());
     assertThat(results).contains(matchingDoc.getKey());
@@ -281,7 +278,7 @@ public class IndexedQueryEngineTest {
 
     ImmutableSortedMap<DocumentKey, Document> results =
         queryEngine.getDocumentsMatchingQuery(
-            query, /* targetData= */ null, DocumentKey.emptyKeySet());
+            query, /* lastLimboFreeSnapshotVersion= */ null, DocumentKey.emptyKeySet());
 
     assertThat(results).doesNotContain(IGNORED_DOC.getKey());
     assertThat(results).contains(MATCHING_DOC.getKey());

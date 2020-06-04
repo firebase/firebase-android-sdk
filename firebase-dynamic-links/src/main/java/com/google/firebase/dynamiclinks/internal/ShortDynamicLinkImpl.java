@@ -19,6 +19,7 @@ import android.os.Parcel;
 import com.google.android.gms.common.internal.safeparcel.AbstractSafeParcelable;
 import com.google.android.gms.common.internal.safeparcel.SafeParcelable;
 import com.google.firebase.dynamiclinks.ShortDynamicLink;
+import java.util.Collections;
 import java.util.List;
 
 /** {@link SafeParcelable} implementation of {@link ShortDynamicLink}. */
@@ -43,7 +44,7 @@ public final class ShortDynamicLinkImpl extends AbstractSafeParcelable implement
       @Param(id = 3) List<WarningImpl> warnings) {
     this.shortLink = shortLink;
     this.previewLink = previewLink;
-    this.warnings = warnings;
+    this.warnings = warnings == null ? Collections.emptyList() : warnings;
   }
 
   @Override
@@ -95,6 +96,11 @@ public final class ShortDynamicLinkImpl extends AbstractSafeParcelable implement
     @Override
     public void writeToParcel(Parcel dest, int flags) {
       WarningImplCreator.writeToParcel(this, dest, flags);
+    }
+
+    @Override
+    public String toString() {
+      return message;
     }
   }
 }

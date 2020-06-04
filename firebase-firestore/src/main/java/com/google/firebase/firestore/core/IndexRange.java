@@ -18,14 +18,14 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
 import com.google.firebase.firestore.model.FieldPath;
-import com.google.firebase.firestore.model.value.FieldValue;
+import com.google.firestore.v1.Value;
 
 /** A range of index field values over which a cursor should iterate. */
 public class IndexRange {
 
   // If start and end are both null, any field value will be considered within range.
-  @Nullable private final FieldValue start;
-  @Nullable private final FieldValue end;
+  @Nullable private final Value start;
+  @Nullable private final Value end;
   private final FieldPath fieldPath;
 
   private IndexRange(Builder builder) {
@@ -41,13 +41,13 @@ public class IndexRange {
 
   /** Returns the inclusive start position of the index lookup. */
   @Nullable
-  public FieldValue getStart() {
+  public Value getStart() {
     return start;
   }
 
   /** Returns the inclusive end position of the index lookup. */
   @Nullable
-  public FieldValue getEnd() {
+  public Value getEnd() {
     return end;
   }
 
@@ -58,8 +58,8 @@ public class IndexRange {
   /** Builder class for IndexRange. */
   public static class Builder {
     private FieldPath fieldPath;
-    private FieldValue start;
-    private FieldValue end;
+    private Value start;
+    private Value end;
 
     /** Specifies the field path for the index lookup. */
     public Builder setFieldPath(FieldPath fieldPath) {
@@ -68,13 +68,13 @@ public class IndexRange {
     }
 
     /** Specifies the inclusive start position for the index lookup. */
-    public Builder setStart(FieldValue start) {
+    public Builder setStart(Value start) {
       this.start = start;
       return this;
     }
 
     /** Specifies the inclusive end position of the index lookup. */
-    public Builder setEnd(FieldValue end) {
+    public Builder setEnd(Value end) {
       this.end = end;
       return this;
     }

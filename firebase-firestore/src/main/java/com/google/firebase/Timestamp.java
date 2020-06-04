@@ -14,7 +14,7 @@
 
 package com.google.firebase;
 
-import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.firebase.firestore.util.Preconditions.checkArgument;
 
 import android.os.Parcel;
 import android.os.Parcelable;

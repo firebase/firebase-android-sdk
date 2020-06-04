@@ -39,9 +39,7 @@ public class AbtComponent {
   private final Context appContext;
   private final AnalyticsConnector analyticsConnector;
 
-  /**
-   * Firebase ABT Component constructor.
-   */
+  /** Firebase ABT Component constructor. */
   @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
   protected AbtComponent(Context appContext, AnalyticsConnector analyticsConnector) {
     this.appContext = appContext;

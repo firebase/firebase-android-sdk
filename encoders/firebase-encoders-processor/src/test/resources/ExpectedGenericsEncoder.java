@@ -12,18 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import com.google.firebase.encoders.EncodingException;
+import com.google.firebase.encoders.FieldDescriptor;
 import com.google.firebase.encoders.ObjectEncoder;
 import com.google.firebase.encoders.ObjectEncoderContext;
 import com.google.firebase.encoders.config.Configurator;
 import com.google.firebase.encoders.config.EncoderConfig;
 import java.io.IOException;
 import java.lang.Override;
-import javax.annotation.Generated;
 
-@Generated("com.google.firebase.encoders.processor.EncodableProcessor")
+/**
+ * @hide */
 public final class AutoGenericsEncoder implements Configurator {
-    public static final int CODEGEN_VERSION = 1;
+    public static final int CODEGEN_VERSION = 2;
 
     public static final Configurator CONFIG = new AutoGenericsEncoder();
 
@@ -46,39 +46,50 @@ public final class AutoGenericsEncoder implements Configurator {
     private static final class GenericsEncoder implements ObjectEncoder<Generics> {
         static final GenericsEncoder INSTANCE = new GenericsEncoder();
 
+        private static final FieldDescriptor BAR3_DESCRIPTOR = FieldDescriptor.of("bar3");
+
+        private static final FieldDescriptor BAR4_DESCRIPTOR = FieldDescriptor.of("bar4");
+
+        private static final FieldDescriptor MULTI_DESCRIPTOR = FieldDescriptor.of("multi");
+
         @Override
-        public void encode(Generics value, ObjectEncoderContext ctx) throws IOException,
-                EncodingException {
-            ctx.add("bar3", value.getBar3());
-            ctx.add("bar4", value.getBar4());
-            ctx.add("multi", value.getMulti());
+        public void encode(Generics value, ObjectEncoderContext ctx) throws IOException {
+            ctx.add(BAR3_DESCRIPTOR, value.getBar3());
+            ctx.add(BAR4_DESCRIPTOR, value.getBar4());
+            ctx.add(MULTI_DESCRIPTOR, value.getMulti());
         }
     }
 
     private static final class BarEncoder implements ObjectEncoder<Bar> {
         static final BarEncoder INSTANCE = new BarEncoder();
 
+        private static final FieldDescriptor FOO_DESCRIPTOR = FieldDescriptor.of("foo");
+
         @Override
-        public void encode(Bar value, ObjectEncoderContext ctx) throws IOException, EncodingException {
-            ctx.add("foo", value.getFoo());
+        public void encode(Bar value, ObjectEncoderContext ctx) throws IOException {
+            ctx.add(FOO_DESCRIPTOR, value.getFoo());
         }
     }
 
     private static final class BazEncoder implements ObjectEncoder<Baz> {
         static final BazEncoder INSTANCE = new BazEncoder();
 
+        private static final FieldDescriptor T_DESCRIPTOR = FieldDescriptor.of("t");
+
         @Override
-        public void encode(Baz value, ObjectEncoderContext ctx) throws IOException, EncodingException {
-            ctx.add("t", value.getT());
+        public void encode(Baz value, ObjectEncoderContext ctx) throws IOException {
+            ctx.add(T_DESCRIPTOR, value.getT());
         }
     }
 
     private static final class FooEncoder implements ObjectEncoder<Foo> {
         static final FooEncoder INSTANCE = new FooEncoder();
 
+        private static final FieldDescriptor T_DESCRIPTOR = FieldDescriptor.of("t");
+
         @Override
-        public void encode(Foo value, ObjectEncoderContext ctx) throws IOException, EncodingException {
-            ctx.add("t", value.getT());
+        public void encode(Foo value, ObjectEncoderContext ctx) throws IOException {
+            ctx.add(T_DESCRIPTOR, value.getT());
         }
     }
 
@@ -86,8 +97,7 @@ public final class AutoGenericsEncoder implements Configurator {
         static final Member3Encoder INSTANCE = new Member3Encoder();
 
         @Override
-        public void encode(Member3 value, ObjectEncoderContext ctx) throws IOException,
-                EncodingException {
+        public void encode(Member3 value, ObjectEncoderContext ctx) throws IOException {
         }
     }
 
@@ -95,19 +105,21 @@ public final class AutoGenericsEncoder implements Configurator {
         static final Member4Encoder INSTANCE = new Member4Encoder();
 
         @Override
-        public void encode(Member4 value, ObjectEncoderContext ctx) throws IOException,
-                EncodingException {
+        public void encode(Member4 value, ObjectEncoderContext ctx) throws IOException {
         }
     }
 
     private static final class MultiEncoder implements ObjectEncoder<Multi> {
         static final MultiEncoder INSTANCE = new MultiEncoder();
 
+        private static final FieldDescriptor FOOT_DESCRIPTOR = FieldDescriptor.of("fooT");
+
+        private static final FieldDescriptor FOOU_DESCRIPTOR = FieldDescriptor.of("fooU");
+
         @Override
-        public void encode(Multi value, ObjectEncoderContext ctx) throws IOException,
-                EncodingException {
-            ctx.add("fooT", value.getFooT());
-            ctx.add("fooU", value.getFooU());
+        public void encode(Multi value, ObjectEncoderContext ctx) throws IOException {
+            ctx.add(FOOT_DESCRIPTOR, value.getFooT());
+            ctx.add(FOOU_DESCRIPTOR, value.getFooU());
         }
     }
 
@@ -115,8 +127,7 @@ public final class AutoGenericsEncoder implements Configurator {
         static final MemberEncoder INSTANCE = new MemberEncoder();
 
         @Override
-        public void encode(Member value, ObjectEncoderContext ctx) throws IOException,
-                EncodingException {
+        public void encode(Member value, ObjectEncoderContext ctx) throws IOException {
         }
     }
 
@@ -124,8 +135,7 @@ public final class AutoGenericsEncoder implements Configurator {
         static final Member2Encoder INSTANCE = new Member2Encoder();
 
         @Override
-        public void encode(Member2 value, ObjectEncoderContext ctx) throws IOException,
-                EncodingException {
+        public void encode(Member2 value, ObjectEncoderContext ctx) throws IOException {
         }
     }
 }

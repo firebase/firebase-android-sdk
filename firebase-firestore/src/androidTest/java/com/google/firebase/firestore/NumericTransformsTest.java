@@ -96,6 +96,14 @@ public class NumericTransformsTest {
   }
 
   @Test
+  public void mergeOnExistingDocumentWithIncrement() {
+    waitFor(docRef.set(map("sum", 1)));
+    expectLocalAndRemoteValue(1);
+    waitFor(docRef.set(map("sum", FieldValue.increment(1337)), SetOptions.merge()));
+    expectLocalAndRemoteValue(1338L);
+  }
+
+  @Test
   public void integerIncrementWithExistingInteger() {
     writeInitialData(map("sum", 1337L));
     waitFor(docRef.update("sum", FieldValue.increment(1)));

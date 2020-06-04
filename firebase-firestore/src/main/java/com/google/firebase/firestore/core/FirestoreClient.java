@@ -21,8 +21,6 @@ import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
-import com.google.common.base.Function;
-import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
@@ -30,32 +28,21 @@ import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.EventManager.ListenOptions;
-import com.google.firebase.firestore.local.IndexFreeQueryEngine;
-import com.google.firebase.firestore.local.LocalSerializer;
+import com.google.firebase.firestore.local.GarbageCollectionScheduler;
 import com.google.firebase.firestore.local.LocalStore;
-import com.google.firebase.firestore.local.LruDelegate;
-import com.google.firebase.firestore.local.LruGarbageCollector;
-import com.google.firebase.firestore.local.MemoryPersistence;
 import com.google.firebase.firestore.local.Persistence;
-import com.google.firebase.firestore.local.QueryEngine;
 import com.google.firebase.firestore.local.QueryResult;
-import com.google.firebase.firestore.local.SQLitePersistence;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.NoDocument;
 import com.google.firebase.firestore.model.mutation.Mutation;
-import com.google.firebase.firestore.model.mutation.MutationBatchResult;
-import com.google.firebase.firestore.remote.AndroidConnectivityMonitor;
-import com.google.firebase.firestore.remote.ConnectivityMonitor;
 import com.google.firebase.firestore.remote.Datastore;
 import com.google.firebase.firestore.remote.GrpcMetadataProvider;
-import com.google.firebase.firestore.remote.RemoteEvent;
-import com.google.firebase.firestore.remote.RemoteSerializer;
 import com.google.firebase.firestore.remote.RemoteStore;
 import com.google.firebase.firestore.util.AsyncQueue;
+import com.google.firebase.firestore.util.Function;
 import com.google.firebase.firestore.util.Logger;
-import io.grpc.Status;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -64,9 +51,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * FirestoreClient is a top-level class that constructs and owns all of the pieces of the client SDK
  * architecture.
  */
-public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
+public final class FirestoreClient {
 
   private static final String LOG_TAG = "FirestoreClient";
+  private static final int MAX_CONCURRENT_LIMBO_RESOLUTIONS = 100;
 
   private final DatabaseInfo databaseInfo;
   private final CredentialsProvider credentialsProvider;
@@ -80,7 +68,7 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
   private final GrpcMetadataProvider metadataProvider;
 
   // LRU-related
-  @Nullable private LruGarbageCollector.Scheduler lruScheduler;
+  @Nullable private GarbageCollectionScheduler gcScheduler;
 
   public FirestoreClient(
       final Context context,
@@ -105,11 +93,7 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
           try {
             // Block on initial user being available
             User initialUser = Tasks.await(firstUser.getTask());
-            initialize(
-                context,
-                initialUser,
-                settings.isPersistenceEnabled(),
-                settings.getCacheSizeBytes());
+            initialize(context, initialUser, settings);
           } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
           }
@@ -148,8 +132,8 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
         () -> {
           remoteStore.shutdown();
           persistence.shutdown();
-          if (lruScheduler != null) {
-            lruScheduler.stop();
+          if (gcScheduler != null) {
+            gcScheduler.stop();
           }
         });
   }
@@ -240,52 +224,39 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
     return source.getTask();
   }
 
-  private void initialize(Context context, User user, boolean usePersistence, long cacheSizeBytes) {
+  private void initialize(Context context, User user, FirebaseFirestoreSettings settings) {
     // Note: The initialization work must all be synchronous (we can't dispatch more work) since
     // external write/listen operations could get queued to run before that subsequent work
     // completes.
     Logger.debug(LOG_TAG, "Initializing. user=%s", user.getUid());
 
-    LruGarbageCollector gc = null;
-    if (usePersistence) {
-      LocalSerializer serializer =
-          new LocalSerializer(new RemoteSerializer(databaseInfo.getDatabaseId()));
-      LruGarbageCollector.Params params =
-          LruGarbageCollector.Params.WithCacheSizeBytes(cacheSizeBytes);
-      SQLitePersistence sqlitePersistence =
-          new SQLitePersistence(
-              context,
-              databaseInfo.getPersistenceKey(),
-              databaseInfo.getDatabaseId(),
-              serializer,
-              params);
-      LruDelegate lruDelegate = sqlitePersistence.getReferenceDelegate();
-      gc = lruDelegate.getGarbageCollector();
-      persistence = sqlitePersistence;
-    } else {
-      persistence = MemoryPersistence.createEagerGcMemoryPersistence();
-    }
-
-    persistence.start();
-    QueryEngine queryEngine = new IndexFreeQueryEngine();
-    localStore = new LocalStore(persistence, queryEngine, user);
-    if (gc != null) {
-      lruScheduler = gc.newScheduler(asyncQueue, localStore);
-      lruScheduler.start();
-    }
-
     Datastore datastore =
         new Datastore(databaseInfo, asyncQueue, credentialsProvider, context, metadataProvider);
-    ConnectivityMonitor connectivityMonitor = new AndroidConnectivityMonitor(context);
-    remoteStore = new RemoteStore(this, localStore, datastore, asyncQueue, connectivityMonitor);
+    ComponentProvider.Configuration configuration =
+        new ComponentProvider.Configuration(
+            context,
+            asyncQueue,
+            databaseInfo,
+            datastore,
+            user,
+            MAX_CONCURRENT_LIMBO_RESOLUTIONS,
+            settings);
 
-    syncEngine = new SyncEngine(localStore, remoteStore, user);
-    eventManager = new EventManager(syncEngine);
+    ComponentProvider provider =
+        settings.isPersistenceEnabled()
+            ? new SQLiteComponentProvider()
+            : new MemoryComponentProvider();
+    provider.initialize(configuration);
+    persistence = provider.getPersistence();
+    gcScheduler = provider.getGargabeCollectionScheduler();
+    localStore = provider.getLocalStore();
+    remoteStore = provider.getRemoteStore();
+    syncEngine = provider.getSyncEngine();
+    eventManager = provider.getEventManager();
 
-    // NOTE: RemoteStore depends on LocalStore (for persisting stream tokens, refilling mutation
-    // queue, etc.) so must be started after LocalStore.
-    localStore.start();
-    remoteStore.start();
+    if (gcScheduler != null) {
+      gcScheduler.start();
+    }
   }
 
   public void addSnapshotsInSyncListener(EventListener<Void> listener) {
@@ -294,45 +265,16 @@ public final class FirestoreClient implements RemoteStore.RemoteStoreCallback {
   }
 
   public void removeSnapshotsInSyncListener(EventListener<Void> listener) {
+    // Checks for shutdown but does not raise error, allowing remove after shutdown to be a no-op.
     if (isTerminated()) {
       return;
     }
-    eventManager.removeSnapshotsInSyncListener(listener);
+    asyncQueue.enqueueAndForget(() -> eventManager.removeSnapshotsInSyncListener(listener));
   }
 
   private void verifyNotTerminated() {
     if (this.isTerminated()) {
       throw new IllegalStateException("The client has already been terminated");
     }
-  }
-
-  @Override
-  public void handleRemoteEvent(RemoteEvent remoteEvent) {
-    syncEngine.handleRemoteEvent(remoteEvent);
-  }
-
-  @Override
-  public void handleRejectedListen(int targetId, Status error) {
-    syncEngine.handleRejectedListen(targetId, error);
-  }
-
-  @Override
-  public void handleSuccessfulWrite(MutationBatchResult mutationBatchResult) {
-    syncEngine.handleSuccessfulWrite(mutationBatchResult);
-  }
-
-  @Override
-  public void handleRejectedWrite(int batchId, Status error) {
-    syncEngine.handleRejectedWrite(batchId, error);
-  }
-
-  @Override
-  public void handleOnlineStateChange(OnlineState onlineState) {
-    syncEngine.handleOnlineStateChange(onlineState);
-  }
-
-  @Override
-  public ImmutableSortedSet<DocumentKey> getRemoteKeysForTarget(int targetId) {
-    return syncEngine.getRemoteKeysForTarget(targetId);
   }
 }

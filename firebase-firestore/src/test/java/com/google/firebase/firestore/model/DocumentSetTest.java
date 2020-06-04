@@ -24,7 +24,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import com.google.firebase.firestore.model.value.FieldValue;
+import com.google.firestore.v1.Value;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -39,9 +39,9 @@ public class DocumentSetTest {
 
   private static final Comparator<Document> TEST_COMPARATOR =
       (left, right) -> {
-        FieldValue leftValue = left.getField(field("sort"));
-        FieldValue rightValue = right.getField(field("sort"));
-        return leftValue.compareTo(rightValue);
+        Value leftValue = left.getField(field("sort"));
+        Value rightValue = right.getField(field("sort"));
+        return Values.compare(leftValue, rightValue);
       };
 
   private static final Document DOC1 = doc("docs/1", 0, map("sort", 2));
