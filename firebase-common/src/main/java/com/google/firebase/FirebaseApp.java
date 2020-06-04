@@ -390,6 +390,23 @@ public class FirebaseApp {
   }
 
   /**
+   * Enable or disable automatic data collection across all SDKs.
+   *
+   * <p>Note: this value is respected by all SDKs unless overridden by the developer via SDK
+   * specific mechanisms.
+   *
+   * <p>This api has been deprecated. Please use the api which takes in a Java boolean
+   *
+   * @hide
+   */
+  @KeepForSdk
+  @Deprecated
+  public void setDataCollectionDefaultEnabled(boolean enabled) {
+    checkNotDeleted();
+    setDataCollectionDefaultEnabled(Boolean.valueOf(enabled));
+  }
+
+  /**
    * Default constructor.
    *
    * @hide
