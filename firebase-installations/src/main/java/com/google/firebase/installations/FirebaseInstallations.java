@@ -68,6 +68,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   private final ExecutorService networkExecutor;
   /* FID of this Firebase Installations instance. Cached after successfully registering and
   persisting the FID locally. NOTE: cachedFid resets if FID is deleted.*/
+  @GuardedBy("this")
   private String cachedFid;
 
   @GuardedBy("lock")
