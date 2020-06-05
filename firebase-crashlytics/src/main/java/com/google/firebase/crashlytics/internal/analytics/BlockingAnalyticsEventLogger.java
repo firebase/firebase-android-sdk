@@ -15,6 +15,7 @@
 package com.google.firebase.crashlytics.internal.analytics;
 
 import android.os.Bundle;
+import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.crashlytics.internal.Logger;
@@ -28,7 +29,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class BlockingAnalyticsEventLogger implements AnalyticsEventReceiver, AnalyticsEventLogger {
 
-  private static final String APP_EXCEPTION_EVENT_NAME = "_ae";
+  static final String APP_EXCEPTION_EVENT_NAME = "_ae";
 
   private final CrashlyticsOriginAnalyticsEventLogger baseAnalyticsEventLogger;
   private final int timeout;
@@ -37,6 +38,7 @@ public class BlockingAnalyticsEventLogger implements AnalyticsEventReceiver, Ana
   private final Object latchLock = new Object();
 
   private CountDownLatch eventLatch;
+  private boolean callbackReceived = false;
 
   public BlockingAnalyticsEventLogger(
       @NonNull CrashlyticsOriginAnalyticsEventLogger baseAnalyticsEventLogger,
@@ -52,12 +54,14 @@ public class BlockingAnalyticsEventLogger implements AnalyticsEventReceiver, Ana
     synchronized (latchLock) {
       Logger.getLogger().d("Logging Crashlytics event to Firebase");
       this.eventLatch = new CountDownLatch(1);
+      this.callbackReceived = false;
 
       baseAnalyticsEventLogger.logEvent(name, params);
 
       Logger.getLogger().d("Awaiting app exception callback from FA...");
       try {
         if (eventLatch.await(timeout, timeUnit)) {
+          callbackReceived = true;
           Logger.getLogger().d("App exception callback received from FA listener.");
         } else {
           Logger.getLogger()
@@ -71,6 +75,7 @@ public class BlockingAnalyticsEventLogger implements AnalyticsEventReceiver, Ana
     }
   }
 
+  /** Must be called on a different thread than logEvent. */
   @Override
   public void onEvent(@NonNull String name, @NonNull Bundle params) {
     final CountDownLatch eventLatch = this.eventLatch;
@@ -82,5 +87,10 @@ public class BlockingAnalyticsEventLogger implements AnalyticsEventReceiver, Ana
     if (APP_EXCEPTION_EVENT_NAME.equals(name)) {
       eventLatch.countDown();
     }
+  }
+
+  /* For testing */
+  boolean isCallbackReceived() {
+    return callbackReceived;
   }
 }

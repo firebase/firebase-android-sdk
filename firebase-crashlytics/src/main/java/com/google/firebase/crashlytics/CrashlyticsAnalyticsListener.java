@@ -28,10 +28,10 @@ import com.google.firebase.crashlytics.internal.analytics.AnalyticsEventReceiver
  */
 class CrashlyticsAnalyticsListener implements AnalyticsConnectorListener {
 
-  private static final String EVENT_ORIGIN_KEY = "_o";
-  private static final String EVENT_NAME_KEY = "name";
-  private static final String EVENT_PARAMS_KEY = "params";
-  private static final String CRASHLYTICS_ORIGIN = "clx";
+  static final String EVENT_ORIGIN_KEY = "_o";
+  static final String EVENT_NAME_KEY = "name";
+  static final String EVENT_PARAMS_KEY = "params";
+  static final String CRASHLYTICS_ORIGIN = "clx";
 
   private AnalyticsEventReceiver crashlyticsOriginEventReceiver;
   private AnalyticsEventReceiver breadcrumbEventReceiver;
