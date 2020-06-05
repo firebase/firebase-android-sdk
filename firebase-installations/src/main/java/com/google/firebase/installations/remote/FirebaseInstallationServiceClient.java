@@ -86,7 +86,7 @@ public class FirebaseInstallationServiceClient {
 
   private static final String API_KEY_HEADER = "x-goog-api-key";
 
-  private static final int NETWORK_TIMEOUT_MILLIS = 10000;
+  private static final int NETWORK_TIMEOUT_MILLIS = 30000;
 
   private static final Pattern EXPIRATION_TIMESTAMP_PATTERN = Pattern.compile("[0-9]+s");
 
