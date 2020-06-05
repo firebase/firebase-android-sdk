@@ -145,6 +145,7 @@ public class Context {
         this.isPersistenceEnabled(),
         FirebaseDatabase.getSdkVersion(),
         this.getUserAgent(),
+        firebaseApp.getOptions().getApplicationId(),
         this.getSSLCacheDirectory().getAbsolutePath());
   }
 

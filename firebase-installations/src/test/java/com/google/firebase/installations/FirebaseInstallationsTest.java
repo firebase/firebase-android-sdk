@@ -37,7 +37,6 @@ import android.content.SharedPreferences;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.FirebaseException;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.installations.FirebaseInstallationsException.Status;
 import com.google.firebase.installations.local.IidStore;
@@ -128,6 +127,9 @@ public class FirebaseInstallationsTest {
           .setResponseCode(TokenResult.ResponseCode.OK)
           .build();
 
+  private static final FirebaseInstallationsException NETWORK_ERROR =
+      new FirebaseInstallationsException("simulated network error", Status.UNAVAILABLE);
+
   private FirebaseInstallations firebaseInstallations;
   private Utils utils;
 
@@ -185,9 +187,9 @@ public class FirebaseInstallationsTest {
   public void testGetId_noNetwork_noIid() throws Exception {
     when(mockBackend.createFirebaseInstallation(
             anyString(), anyString(), anyString(), anyString(), any()))
-        .thenThrow(new IOException());
+        .thenThrow(NETWORK_ERROR);
     when(mockBackend.generateAuthToken(anyString(), anyString(), anyString(), anyString()))
-        .thenThrow(new IOException());
+        .thenThrow(NETWORK_ERROR);
     when(mockIidStore.readIid()).thenReturn(null);
     when(mockIidStore.readToken()).thenReturn(null);
 
@@ -220,9 +222,9 @@ public class FirebaseInstallationsTest {
             TEST_PROJECT_ID,
             TEST_APP_ID_1,
             TEST_INSTANCE_ID_TOKEN_1))
-        .thenThrow(new IOException());
+        .thenThrow(NETWORK_ERROR);
     when(mockBackend.generateAuthToken(anyString(), anyString(), anyString(), anyString()))
-        .thenThrow(new IOException());
+        .thenThrow(NETWORK_ERROR);
     when(mockIidStore.readIid()).thenReturn(TEST_INSTANCE_ID_1);
     when(mockIidStore.readToken()).thenReturn(TEST_INSTANCE_ID_TOKEN_1);
 
@@ -251,9 +253,9 @@ public class FirebaseInstallationsTest {
   public void testGetId_noNetwork_fidAlreadyGenerated() throws Exception {
     when(mockBackend.createFirebaseInstallation(
             anyString(), anyString(), anyString(), anyString(), any()))
-        .thenThrow(new IOException());
+        .thenThrow(NETWORK_ERROR);
     when(mockBackend.generateAuthToken(anyString(), anyString(), anyString(), anyString()))
-        .thenThrow(new IOException());
+        .thenThrow(NETWORK_ERROR);
 
     persistedInstallation.insertOrUpdatePersistedInstallationEntry(
         PersistedInstallationEntry.INSTANCE.withUnregisteredFid("generatedFid"));
@@ -581,12 +583,9 @@ public class FirebaseInstallationsTest {
     // //assertThat(updatedInstallationEntry).hasRegistrationStatus(RegistrationStatus.REGISTER_ERROR);
   }
 
-  /**
-   * A registration that fails with an IOException will not cause the FID to be put into the error
-   * state.
-   */
+  /** A registration that fails will not cause the FID to be put into the error state. */
   @Test
-  public void testGetId_fidRegistrationUncheckedException_statusUpdated() throws Exception {
+  public void testGetId_fidRegistrationFailed_statusNotUpdated() throws Exception {
     // set initial state to having an unregistered FID
     persistedInstallation.insertOrUpdatePersistedInstallationEntry(
         PersistedInstallationEntry.INSTANCE.withUnregisteredFid(TEST_FID_1));
@@ -594,7 +593,7 @@ public class FirebaseInstallationsTest {
     // Mocking unchecked exception on FIS createFirebaseInstallation
     when(mockBackend.createFirebaseInstallation(
             anyString(), anyString(), anyString(), anyString(), any()))
-        .thenThrow(new IOException());
+        .thenThrow(new FirebaseInstallationsException("Registration Failed", Status.BAD_CONFIG));
 
     TestOnCompleteListener<String> onCompleteListener = new TestOnCompleteListener<>();
     Task<String> getIdTask = firebaseInstallations.getId();
@@ -909,7 +908,7 @@ public class FirebaseInstallationsTest {
             TEST_AUTH_TOKEN,
             TEST_TOKEN_EXPIRATION_TIMESTAMP));
 
-    doThrow(new FirebaseException("Server Error"))
+    doThrow(new FirebaseInstallationsException("Server Error", Status.BAD_CONFIG))
         .when(mockBackend)
         .deleteFirebaseInstallation(anyString(), anyString(), anyString(), anyString());
 
@@ -944,7 +943,7 @@ public class FirebaseInstallationsTest {
             TEST_AUTH_TOKEN,
             TEST_TOKEN_EXPIRATION_TIMESTAMP));
 
-    doThrow(new IOException("simulated network error"))
+    doThrow(NETWORK_ERROR)
         .when(mockBackend)
         .deleteFirebaseInstallation(anyString(), anyString(), anyString(), anyString());
 
@@ -958,7 +957,7 @@ public class FirebaseInstallationsTest {
       assertWithMessage("Exception class doesn't match")
           .that(expected)
           .hasCauseThat()
-          .isInstanceOf(IOException.class);
+          .isInstanceOf(FirebaseInstallationsException.class);
       PersistedInstallationEntry entry =
           persistedInstallation.readPersistedInstallationEntryValue();
       assertTrue(

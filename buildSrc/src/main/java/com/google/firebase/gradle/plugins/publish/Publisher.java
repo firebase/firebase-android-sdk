@@ -93,15 +93,17 @@ public class Publisher {
     Map<String, String> deps = getDependencyTypes(library.project);
 
     NodeList dependencies = rootElement.getElementsByTagName("dependency");
+    List<Element> depsToRemove = new ArrayList<>();
     for (int i = 0; i < dependencies.getLength(); i++) {
       Element dep = (Element) dependencies.item(i);
       String groupId = dep.getElementsByTagName("groupId").item(0).getTextContent();
       String artifactId = dep.getElementsByTagName("artifactId").item(0).getTextContent();
 
       if (SUPPORT_GROUP_IDS.contains(groupId) && "multidex".equals(artifactId)) {
-        dep.getParentNode().removeChild(dep);
+        depsToRemove.add(dep);
         continue;
       }
+
       Element type = dep.getOwnerDocument().createElement("type");
       type.setTextContent(deps.get(groupId + ":" + artifactId));
       dep.appendChild(type);
@@ -113,6 +115,9 @@ public class Publisher {
       Element scope = dep.getOwnerDocument().createElement("scope");
       scope.setTextContent("compile");
       dep.appendChild(scope);
+    }
+    for (Element dep : depsToRemove) {
+      dep.getParentNode().removeChild(dep);
     }
   }
 
