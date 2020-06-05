@@ -19,6 +19,3 @@
 -dontwarn com.google.j2objc.annotations.**
 -dontwarn afu.org.checkerframework.**
 
--keepclassmembers class * extends com.google.protobuf.GeneratedMessageLite {
-  <fields>;
-}
