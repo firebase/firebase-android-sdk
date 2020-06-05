@@ -66,7 +66,7 @@ public class FirebaseRemoteConfig {
    * <p>{@link FirebaseRemoteConfig} uses the default {@link FirebaseApp}, so if no {@link
    * FirebaseApp} has been initialized yet, this method throws an {@link IllegalStateException}.
    *
-   * <p>To identify the current app instance, the fetch request creates a Firebase Installations ID,
+   * <p>To identify the current app instance, the fetch request creates a Firebase installation ID,
    * which periodically sends data to the Firebase backend. To stop the periodic sync, call {@link
    * com.google.firebase.installations.FirebaseInstallations#delete}. To create a new token and
    * resume the periodic sync, call {@code fetch} again.
@@ -303,7 +303,7 @@ public class FirebaseRemoteConfig {
    * FirebaseRemoteConfigSettings.Builder#setMinimumFetchIntervalInSeconds(long)}; the static
    * default is 12 hours.
    *
-   * <p>To identify the current app instance, the fetch request creates a Firebase Instance ID,
+   * <p>To identify the current app instance, the fetch request creates a Firebase installation ID,
    * which periodically sends data to the Firebase backend. To stop the periodic sync, call {@link
    * com.google.firebase.installations.FirebaseInstallations#delete}. To create a new token and
    * resume the periodic sync, call {@code fetch} again.
@@ -326,7 +326,7 @@ public class FirebaseRemoteConfig {
    * <p>Depending on the time elapsed since the last fetch from the Firebase Remote Config backend,
    * configs are either served from local storage, or fetched from the backend.
    *
-   * <p>To identify the current app instance, the fetch request creates a Firebase Instance ID,
+   * <p>To identify the current app instance, the fetch request creates a Firebase installation ID,
    * which periodically sends data to the Firebase backend. To stop the periodic sync, call {@link
    * com.google.firebase.installations.FirebaseInstallations#delete}. To create a new token and
    * resume the periodic sync, call {@code fetch} again.
