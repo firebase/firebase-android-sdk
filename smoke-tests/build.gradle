@@ -72,9 +72,9 @@ dependencies {
   implementation "com.google.firebase:firebase-config"
   implementation "com.google.firebase:firebase-database"
   implementation "com.google.firebase:firebase-dynamic-links"
-  implementation ("com.google.firebase:firebase-firestore")
+  implementation "com.google.firebase:firebase-firestore"
   implementation "com.google.firebase:firebase-functions"
-  implementation ("com.google.firebase:firebase-inappmessaging")
+  implementation "com.google.firebase:firebase-inappmessaging"
   implementation "com.google.firebase:firebase-messaging"
   implementation "com.google.firebase:firebase-ml-natural-language"
   implementation "com.google.firebase:firebase-ml-natural-language-smart-reply-model"
