@@ -27,7 +27,6 @@ import org.junit.runners.Suite;
   BuildOnlyTest.class,
   DatabaseTest.class,
   DynamicLinksTest.class,
-  FiamTest.class,
   FirestoreTest.class,
   FunctionsTest.class,
   RemoteConfigTest.class,
