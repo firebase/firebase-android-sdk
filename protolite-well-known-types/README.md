@@ -29,7 +29,7 @@ A typical grpc and protobuf-lite configuration should look like
 ```groovy
 protobuf {
   protoc {
-    artifact = 'com.google.protobuf:protoc:$protocVersion'
+    artifact = "com.google.protobuf:protoc:$protocVersion"
   }
   plugins {
     grpc {
