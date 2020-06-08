@@ -49,6 +49,7 @@ dependencies {
     implementation project(':firebase-components')
     implementation project(':firebase-common:ktx')
     implementation project(':firebase-inappmessaging')
+    implementation project(':firebase-inappmessaging:ktx')
     implementation project(':firebase-inappmessaging-display')
     implementation 'androidx.annotation:annotation:1.1.0'
 
