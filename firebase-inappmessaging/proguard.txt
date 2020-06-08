@@ -18,4 +18,3 @@
 -dontwarn okio.**
 -dontwarn com.google.j2objc.annotations.**
 -dontwarn afu.org.checkerframework.**
-
