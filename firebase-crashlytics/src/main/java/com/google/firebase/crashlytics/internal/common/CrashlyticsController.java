@@ -98,7 +98,7 @@ class CrashlyticsController {
   static final String FIREBASE_CRASH_TYPE = "fatal";
   static final String FIREBASE_TIMESTAMP = "timestamp";
   static final String FIREBASE_APPLICATION_EXCEPTION = "_ae";
-  static final String FIREBASE_ANALYTICS_ORIGIN_CRASHLYTICS = "clx";
+  static final String APP_EXCEPTION_MARKER_PREFIX = ".ae";
 
   // region CLS File filters for retrieving specific sets of files.
 
@@ -165,6 +165,9 @@ class CrashlyticsController {
           return super.accept(dir, filename) && filename.endsWith(SESSION_FILE_EXTENSION);
         }
       };
+
+  static final FilenameFilter APP_EXCEPTION_MARKER_FILTER =
+      (directory, filename) -> filename.startsWith(APP_EXCEPTION_MARKER_PREFIX);
 
   /**
    * Matches *.cls filenames with exactly 39 character names (32 UUID + 3 dashes + dot + extension).
@@ -391,6 +394,7 @@ class CrashlyticsController {
                 long timestampSeconds = getTimestampSeconds(time);
                 reportingCoordinator.persistFatalEvent(ex, thread, timestampSeconds);
                 writeFatal(thread, ex, timestampSeconds);
+                writeAppExceptionMarker(time.getTime());
 
                 Settings settings = settingsDataProvider.getSettings();
                 int maxCustomExceptionEvents = settings.getSessionData().maxCustomExceptionEvents;
@@ -428,7 +432,7 @@ class CrashlyticsController {
                             boolean dataCollectionToken = true;
                             sendSessionReports(appSettingsData, dataCollectionToken);
                             return Tasks.whenAll(
-                                logAnalyticsAppExceptionEvent(time.getTime()),
+                                logAnalyticsAppExceptionEvents(),
                                 reportingCoordinator.sendReports(
                                     executor, DataTransportState.getState(appSettingsData)));
                           }
@@ -544,6 +548,7 @@ class CrashlyticsController {
 
                         if (!send) {
                           Logger.getLogger().d("Reports are being deleted.");
+                          deleteFiles(listAppExceptionMarkerFiles());
                           reportManager.deleteReports(reports);
                           reportingCoordinator.removeAllReports();
                           unsentReportsHandled.trySetResult(null);
@@ -583,6 +588,7 @@ class CrashlyticsController {
                                         appSettingsData.organizationId, report.getFile());
                                   }
                                 }
+                                logAnalyticsAppExceptionEvents();
                                 ReportUploader uploader =
                                     reportUploaderProvider.createReportUploader(appSettingsData);
                                 uploader.uploadReportsAsync(reports, dataCollectionToken, delay);
@@ -899,16 +905,6 @@ class CrashlyticsController {
     }
   }
 
-  /**
-   * Not synchronized/locked. Must be executed from the single thread executor service used by this
-   * class.
-   */
-  private void deleteSessionPartFilesFor(String sessionId) {
-    for (File file : listSessionPartFilesFor(sessionId)) {
-      file.delete();
-    }
-  }
-
   /** Lists any files that contain the session ID that aren't the completed session file itself. */
   private File[] listSessionPartFilesFor(String sessionId) {
     return listFilesMatching(new SessionPartFileFilter(sessionId));
@@ -932,6 +928,10 @@ class CrashlyticsController {
     return listFilesMatching(SESSION_BEGIN_FILE_FILTER);
   }
 
+  File[] listAppExceptionMarkerFiles() {
+    return listFilesMatching(APP_EXCEPTION_MARKER_FILTER);
+  }
+
   private File[] listSortedSessionBeginFiles() {
     final File[] sessionBeginFiles = listSessionBeginFiles();
     Arrays.sort(sessionBeginFiles, LARGEST_FILE_NAME_FIRST);
@@ -944,10 +944,6 @@ class CrashlyticsController {
 
   private File[] listFilesMatching(File directory, FilenameFilter filter) {
     return ensureFileArrayNotNull(directory.listFiles(filter));
-  }
-
-  private File[] listFiles(File directory) {
-    return ensureFileArrayNotNull(directory.listFiles());
   }
 
   private File[] ensureFileArrayNotNull(File[] files) {
@@ -1109,6 +1105,9 @@ class CrashlyticsController {
       Logger.getLogger().w("No minidump data found for session " + previousSessionId);
       return;
     }
+    // Because we don't want to read the minidump to get its timestamp, just use file creation time.
+    final long eventTime = minidumpFile.lastModified();
+
     final LogFileManager previousSessionLogManager =
         new LogFileManager(context, logFileDirectoryProvider, previousSessionId);
     final File nativeSessionDirectory = new File(getNativeSessionFilesDir(), previousSessionId);
@@ -1118,6 +1117,7 @@ class CrashlyticsController {
       return;
     }
 
+    writeAppExceptionMarker(eventTime);
     List<NativeSessionFile> nativeSessionFiles =
         getNativeSessionFiles(
             nativeSessionFileProvider,
@@ -1170,6 +1170,14 @@ class CrashlyticsController {
     } finally {
       CommonUtils.flushOrLog(cos, "Failed to flush to session begin file.");
       CommonUtils.closeOrLog(fos, "Failed to close fatal exception file output stream.");
+    }
+  }
+
+  private void writeAppExceptionMarker(long eventTime) {
+    try {
+      new File(getFilesDir(), APP_EXCEPTION_MARKER_PREFIX + eventTime).createNewFile();
+    } catch (IOException e) {
+      Logger.getLogger().d("Could not write app exception marker.");
     }
   }
 
@@ -1503,7 +1511,7 @@ class CrashlyticsController {
     }
 
     Logger.getLogger().d("Removing session part files for ID " + sessionId);
-    deleteSessionPartFilesFor(sessionId);
+    deleteFiles(listSessionPartFilesFor(sessionId));
   }
 
   /** Synthesize all session data into the final session file for submission. */
@@ -1714,10 +1722,28 @@ class CrashlyticsController {
   }
 
   /**
-   * Send an App Exception event to Firebase Analytics. FA records the event asynchronously, so this
+   * Send App Exception events to Firebase Analytics. FA records the event asynchronously, so this
    * method returns a Task in case the caller wants to verify that the event was recorded by FA and
    * will not be lost.
    */
+  private Task<Void> logAnalyticsAppExceptionEvents() {
+    final List<Task<Void>> events = new ArrayList<>();
+
+    final File[] appExceptionMarkers = listAppExceptionMarkerFiles();
+    for (File markerFile : appExceptionMarkers) {
+      try {
+        final long timestamp =
+            Long.parseLong(markerFile.getName().substring(APP_EXCEPTION_MARKER_PREFIX.length()));
+        events.add(logAnalyticsAppExceptionEvent(timestamp));
+      } catch (NumberFormatException nfe) {
+        Logger.getLogger().d("Could not parse timestamp from file " + markerFile.getName());
+      }
+      markerFile.delete();
+    }
+
+    return Tasks.whenAll(events);
+  }
+
   private Task<Void> logAnalyticsAppExceptionEvent(long timestamp) {
     if (firebaseCrashExists()) {
       Logger.getLogger().d("Skipping logging Crashlytics event to Firebase, FirebaseCrash exists");
@@ -1740,7 +1766,16 @@ class CrashlyticsController {
         });
   }
 
-  private boolean firebaseCrashExists() {
+  private static void deleteFiles(File[] files) {
+    if (files == null) {
+      return;
+    }
+    for (File file : files) {
+      file.delete();
+    }
+  }
+
+  private static boolean firebaseCrashExists() {
     try {
       final Class clazz = Class.forName("com.google.firebase.crash.FirebaseCrash");
       return true;
