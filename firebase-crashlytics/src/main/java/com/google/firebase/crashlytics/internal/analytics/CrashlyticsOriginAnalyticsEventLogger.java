@@ -25,7 +25,7 @@ import com.google.firebase.analytics.connector.AnalyticsConnector;
  */
 public class CrashlyticsOriginAnalyticsEventLogger implements AnalyticsEventLogger {
 
-  private static final String FIREBASE_ANALYTICS_ORIGIN_CRASHLYTICS = "clx";
+  static final String FIREBASE_ANALYTICS_ORIGIN_CRASHLYTICS = "clx";
 
   public CrashlyticsOriginAnalyticsEventLogger(@NonNull AnalyticsConnector analyticsConnector) {
     this.analyticsConnector = analyticsConnector;
