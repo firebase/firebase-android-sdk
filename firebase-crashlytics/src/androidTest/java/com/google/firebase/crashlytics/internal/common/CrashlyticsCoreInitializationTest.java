@@ -26,10 +26,11 @@ import android.content.res.Resources;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
 import com.google.firebase.crashlytics.internal.MissingNativeComponent;
+import com.google.firebase.crashlytics.internal.analytics.UnavailableAnalyticsEventLogger;
+import com.google.firebase.crashlytics.internal.breadcrumbs.DisabledBreadcrumbSource;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.persistence.FileStoreImpl;
 import com.google.firebase.crashlytics.internal.settings.SettingsController;
@@ -86,7 +87,6 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
     private IdManager idManager;
     private CrashlyticsNativeComponent nativeComponent;
     private DataCollectionArbiter arbiter;
-    private AnalyticsConnector analyticsConnector;
     private ExecutorService crashHandlerExecutor;
 
     public CoreBuilder(Context context, FirebaseOptions firebaseOptions) {
@@ -102,8 +102,6 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
       arbiter = mock(DataCollectionArbiter.class);
       when(arbiter.isAutomaticDataCollectionEnabled()).thenReturn(true);
 
-      analyticsConnector = null;
-
       crashHandlerExecutor = new SameThreadExecutorService();
     }
 
@@ -114,7 +112,13 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
 
     public CrashlyticsCore build() {
       return new CrashlyticsCore(
-          app, idManager, nativeComponent, arbiter, analyticsConnector, crashHandlerExecutor);
+          app,
+          idManager,
+          nativeComponent,
+          arbiter,
+          new DisabledBreadcrumbSource(),
+          new UnavailableAnalyticsEventLogger(),
+          crashHandlerExecutor);
     }
   }
 
