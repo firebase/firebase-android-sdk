@@ -56,7 +56,7 @@ public class FirebaseCrashlytics {
 
   private static final String FIREBASE_CRASHLYTICS_ANALYTICS_ORIGIN = "clx";
   private static final String LEGACY_CRASH_ANALYTICS_ORIGIN = "crash";
-  private static final int APP_EXCEPTION_CALLBACK_TIMEOUT_MS = 250;
+  private static final int APP_EXCEPTION_CALLBACK_TIMEOUT_MS = 500;
 
   static @Nullable FirebaseCrashlytics init(
       @NonNull FirebaseApp app,
