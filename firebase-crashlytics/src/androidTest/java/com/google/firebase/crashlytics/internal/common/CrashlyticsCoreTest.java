@@ -30,6 +30,10 @@ import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
 import com.google.firebase.crashlytics.internal.MissingNativeComponent;
 import com.google.firebase.crashlytics.internal.NativeSessionFileProvider;
+import com.google.firebase.crashlytics.internal.analytics.UnavailableAnalyticsEventLogger;
+import com.google.firebase.crashlytics.internal.breadcrumbs.BreadcrumbHandler;
+import com.google.firebase.crashlytics.internal.breadcrumbs.BreadcrumbSource;
+import com.google.firebase.crashlytics.internal.breadcrumbs.DisabledBreadcrumbSource;
 import com.google.firebase.crashlytics.internal.persistence.FileStoreImpl;
 import com.google.firebase.crashlytics.internal.settings.SettingsController;
 import com.google.firebase.crashlytics.internal.settings.TestSettingsData;
@@ -39,6 +43,7 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
+import org.mockito.Mockito;
 
 public class CrashlyticsCoreTest extends CrashlyticsTestCase {
 
@@ -57,6 +62,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
       new MissingNativeComponent();
 
   private CrashlyticsCore crashlyticsCore;
+  private BreadcrumbSource mockBreadcrumbSource;
   private File rootFilesDir;
   private File crashlyticsFilesDir;
 
@@ -70,6 +76,8 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     super.setUp();
     rootFilesDir = getContext().getFilesDir();
     recursiveDelete(rootFilesDir);
+
+    mockBreadcrumbSource = mock(BreadcrumbSource.class);
 
     crashlyticsCore = appRestart();
 
@@ -181,6 +189,10 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
 
   public void testEmptyBuildIdRequiredFalse() {
     assertTrue(CrashlyticsCore.isBuildIdValid("", false));
+  }
+
+  public void testBreadcrumbSourceIsRegistered() {
+    Mockito.verify(mockBreadcrumbSource).registerBreadcrumbHandler(any(BreadcrumbHandler.class));
   }
 
   public void testFreshStartAndCrash() throws Exception {
@@ -594,6 +606,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     CrashlyticsCore core =
         CoreBuilder.newBuilder()
             .setCrashlyticsnativeComponent(mocknativeComponent)
+            .setBreadcrumbSource(mockBreadcrumbSource)
             .build(getContext());
     return await(startCoreAsync(core));
   }
@@ -635,6 +648,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
   private static class CoreBuilder {
     private DataCollectionArbiter arbiter;
     private CrashlyticsNativeComponent nativeComponent;
+    private BreadcrumbSource breadcrumbSource;
 
     CoreBuilder() {
       setDataCollectionEnabled(true);
@@ -655,6 +669,11 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
       return this;
     }
 
+    CoreBuilder setBreadcrumbSource(BreadcrumbSource breadcrumbSource) {
+      this.breadcrumbSource = breadcrumbSource;
+      return this;
+    }
+
     CrashlyticsCore build(Context context) {
       FirebaseOptions testFirebaseOptions;
       testFirebaseOptions = new FirebaseOptions.Builder().setApplicationId(GOOGLE_APP_ID).build();
@@ -663,13 +682,16 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
       when(app.getApplicationContext()).thenReturn(context);
       when(app.getOptions()).thenReturn(testFirebaseOptions);
       FirebaseInstanceIdInternal instanceIdMock = mock(FirebaseInstanceIdInternal.class);
+      BreadcrumbSource breadcrumbSource =
+          this.breadcrumbSource == null ? new DisabledBreadcrumbSource() : this.breadcrumbSource;
       final CrashlyticsCore crashlyticsCore =
           new CrashlyticsCore(
               app,
               new IdManager(context, "unused", instanceIdMock),
               nativeComponent,
               arbiter,
-              null,
+              breadcrumbSource,
+              new UnavailableAnalyticsEventLogger(),
               new SameThreadExecutorService());
       return crashlyticsCore;
     }
