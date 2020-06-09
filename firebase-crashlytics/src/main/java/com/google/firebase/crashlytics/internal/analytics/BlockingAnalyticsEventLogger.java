@@ -15,7 +15,6 @@
 package com.google.firebase.crashlytics.internal.analytics;
 
 import android.os.Bundle;
-import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.crashlytics.internal.Logger;
