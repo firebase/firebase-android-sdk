@@ -56,7 +56,7 @@ public class FirebaseCrashlytics {
 
   private static final String FIREBASE_CRASHLYTICS_ANALYTICS_ORIGIN = "clx";
   private static final String LEGACY_CRASH_ANALYTICS_ORIGIN = "crash";
-  private static final int APP_EXCEPTION_CALLBACK_TIMEOUT_MS = 250;
+  private static final int APP_EXCEPTION_CALLBACK_TIMEOUT_MS = 500;
 
   static @Nullable FirebaseCrashlytics init(
       @NonNull FirebaseApp app,
@@ -85,6 +85,7 @@ public class FirebaseCrashlytics {
 
     if (analyticsConnector != null) {
       // If FA is available, create a logger to log events from the Crashlytics origin.
+      Logger.getLogger().d("Firebase Analytics is available.");
       final CrashlyticsOriginAnalyticsEventLogger directAnalyticsEventLogger =
           new CrashlyticsOriginAnalyticsEventLogger(analyticsConnector);
 
@@ -99,6 +100,7 @@ public class FirebaseCrashlytics {
           subscribeToAnalyticsEvents(analyticsConnector, crashlyticsAnalyticsListener);
 
       if (analyticsConnectorHandle != null) {
+        Logger.getLogger().d("Firebase Analytics listener registered successfully.");
         // Create the event receiver which will supply breadcrumb events to Crashlytics
         final BreadcrumbAnalyticsEventReceiver breadcrumbReceiver =
             new BreadcrumbAnalyticsEventReceiver();
@@ -123,6 +125,7 @@ public class FirebaseCrashlytics {
         // Set the blocking analytics event logger for Crashlytics.
         analyticsEventLogger = blockingAnalyticsEventLogger;
       } else {
+        Logger.getLogger().d("Firebase Analytics listener registration failed.");
         // FA is enabled, but the listener was not registered successfully.
         // We cannot listen for breadcrumbs.
         breadcrumbSource = new DisabledBreadcrumbSource();
@@ -132,6 +135,7 @@ public class FirebaseCrashlytics {
       }
     } else {
       // FA is entirely unavailable. We cannot listen for breadcrumbs or send events.
+      Logger.getLogger().d("Firebase Analytics is unavailable.");
       breadcrumbSource = new DisabledBreadcrumbSource();
       analyticsEventLogger = new UnavailableAnalyticsEventLogger();
     }
