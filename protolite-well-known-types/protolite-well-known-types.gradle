@@ -17,10 +17,6 @@ plugins {
     id 'com.google.protobuf'
 }
 
-firebaseLibrary {
-    publishJavadoc = false
-}
-
 protobuf {
     protoc {
         artifact = "com.google.protobuf:protoc:$protocVersion"
