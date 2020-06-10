@@ -96,22 +96,26 @@ public class ApiFragment extends Fragment {
 
     TextView iidText = rootView.findViewById(R.id.iid_text);
 
-    Task<String> idTask = firebaseInstallations.getId();
-    Task<InstallationTokenResult> tokenTask = firebaseInstallations.getToken(false);
+    Task<String> installationIdTask = firebaseInstallations.getId();
+    Task<InstallationTokenResult> installationAuthTokenTask = firebaseInstallations.getToken(false);
 
-    Tasks.whenAllComplete(idTask, tokenTask)
+    Tasks.whenAllComplete(installationIdTask, installationAuthTokenTask)
         .addOnCompleteListener(
             unusedCompletedTasks -> {
-              if (idTask.isSuccessful()) {
-                iidText.setText(String.format("Installation ID: %s", idTask.getResult()));
+              if (installationIdTask.isSuccessful()) {
+                iidText.setText(
+                    String.format("Installation ID: %s", installationIdTask.getResult()));
               } else {
-                Log.e(TAG, "Error getting Installation ID", idTask.getException());
+                Log.e(TAG, "Error getting installation ID", installationIdTask.getException());
               }
 
-              if (tokenTask.isSuccessful()) {
-                apiCallResultsText.setText(tokenTask.getResult().getToken());
+              if (installationAuthTokenTask.isSuccessful()) {
+                apiCallResultsText.setText(installationAuthTokenTask.getResult().getToken());
               } else {
-                Log.e(TAG, "Error getting Installation Token", tokenTask.getException());
+                Log.e(
+                    TAG,
+                    "Error getting installation authentication token",
+                    installationAuthTokenTask.getException());
               }
             });
 

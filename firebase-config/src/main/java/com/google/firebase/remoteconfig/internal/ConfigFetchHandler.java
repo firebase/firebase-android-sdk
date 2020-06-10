@@ -190,9 +190,10 @@ public class ConfigFetchHandler {
                   backoffEndTime.getTime()));
     } else {
       Task<String> installationIdTask = firebaseInstallations.getId();
-      Task<InstallationTokenResult> installationTokenTask = firebaseInstallations.getToken(false);
+      Task<InstallationTokenResult> installationAuthTokenTask =
+          firebaseInstallations.getToken(false);
       fetchResponseTask =
-          Tasks.whenAllComplete(installationIdTask, installationTokenTask)
+          Tasks.whenAllComplete(installationIdTask, installationAuthTokenTask)
               .continueWithTask(
                   executor,
                   (completedInstallationsTasks) -> {
@@ -203,15 +204,15 @@ public class ConfigFetchHandler {
                               installationIdTask.getException()));
                     }
 
-                    if (!installationTokenTask.isSuccessful()) {
+                    if (!installationAuthTokenTask.isSuccessful()) {
                       return Tasks.forException(
                           new FirebaseRemoteConfigClientException(
                               "Failed to get Firebase Installation token for fetch.",
-                              installationTokenTask.getException()));
+                              installationAuthTokenTask.getException()));
                     }
 
                     String installationId = installationIdTask.getResult();
-                    String installationToken = installationTokenTask.getResult().getToken();
+                    String installationToken = installationAuthTokenTask.getResult().getToken();
                     return fetchFromBackendAndCacheResponse(
                         installationId, installationToken, currentTime);
                   });

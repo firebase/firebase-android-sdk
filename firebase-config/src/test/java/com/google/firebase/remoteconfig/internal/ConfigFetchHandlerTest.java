@@ -98,8 +98,9 @@ import org.skyscreamer.jsonassert.JSONAssert;
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
 public class ConfigFetchHandlerTest {
-  private static final String INSTALLATION_ID = "fake installation id";
-  private static final String INSTALLATION_TOKEN = "fake installation token";
+  private static final String INSTALLATION_ID = "'fL71_VyL3uo9jNMWu1L60S";
+  private static final String INSTALLATION_TOKEN =
+      "eyJhbGciOiJF.eyJmaWQiOiJmaXMt.AB2LPV8wRQIhAPs4NvEgA3uhubH";
   private static final InstallationTokenResult INSTALLATION_TOKEN_RESULT =
       InstallationTokenResult.builder()
           .setToken(INSTALLATION_TOKEN)

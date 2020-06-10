@@ -96,8 +96,9 @@ public final class FirebaseRemoteConfigTest {
 
   private static final String ETAG = "ETag";
 
-  private static final String INSTALLATION_ID = "fake instance id";
-  private static final String INSTALLATION_TOKEN = "fake instance id token";
+  private static final String INSTALLATION_ID = "'fL71_VyL3uo9jNMWu1L60S";
+  private static final String INSTALLATION_TOKEN =
+      "eyJhbGciOiJF.eyJmaWQiOiJmaXMt.AB2LPV8wRQIhAPs4NvEgA3uhubH";
   private static final InstallationTokenResult INSTALLATION_TOKEN_RESULT =
       InstallationTokenResult.builder()
           .setToken(INSTALLATION_TOKEN)
