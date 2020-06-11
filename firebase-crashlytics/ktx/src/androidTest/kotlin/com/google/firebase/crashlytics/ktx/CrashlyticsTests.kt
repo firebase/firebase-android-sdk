@@ -14,7 +14,9 @@
 
 package com.google.firebase.crashlytics.ktx
 
+import android.content.Context
 import androidx.test.InstrumentationRegistry
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.runner.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
@@ -27,9 +29,6 @@ import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.Test
 import org.junit.runner.RunWith
-
-// const val APP_ID = "APP_ID"
-// const val API_KEY = "API_KEY"
 
 @RunWith(AndroidJUnit4::class)
 class CrashlyticsTests {
@@ -46,9 +45,8 @@ class CrashlyticsTests {
     }
 
     @Test
-    fun FirebaseCrashlyticsDelegates() {
+    fun firebaseCrashlyticsDelegates() {
         assertThat(Firebase.crashlytics).isSameInstanceAs(FirebaseCrashlytics.getInstance())
-        assertThat("ss").isEqualTo("ssr")
     }
 
     @Test
@@ -59,9 +57,21 @@ class CrashlyticsTests {
 
 @RunWith(AndroidJUnit4::class)
 class LibraryVersionTest {
+    companion object {
+        lateinit var app: FirebaseApp
+
+        @BeforeClass @JvmStatic fun setup() {
+            app = Firebase.initialize(InstrumentationRegistry.getContext())!!
+        }
+
+        @AfterClass @JvmStatic fun cleanup() {
+            app.delete()
+        }
+    }
+
     @Test
-    fun LibraryRegistrationAtRuntime() {
+    fun libraryRegistrationAtRuntime() {
         val publisher = Firebase.app.get(UserAgentPublisher::class.java)
-        assertThat(publisher.userAgent).contains(LIBRARY_NAME + 'x')
+        assertThat(publisher.userAgent).contains(LIBRARY_NAME)
     }
 }

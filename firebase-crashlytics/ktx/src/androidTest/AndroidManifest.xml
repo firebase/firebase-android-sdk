@@ -3,12 +3,11 @@
   <!--Although the *SdkVersion is captured in gradle build files, this is required for non gradle builds-->
   <!--<uses-sdk android:minSdkVersion="16" android:targetSdkVersion="23" />-->
   <uses-permission android:name="android.permission.INTERNET"/>
-  <application
-      android:usesCleartextTraffic="true">
+  <application>
     <uses-library android:name="android.test.runner" />
   </application>
 
   <instrumentation
-    android:name="com.google.android.apps.common.testing.testrunner.Google3InstrumentationTestRunner"
+    android:name="androidx.test.runner.AndroidJUnitRunner"
     android:targetPackage="com.google.firebase.crashlytics.ktx" />
 </manifest>
