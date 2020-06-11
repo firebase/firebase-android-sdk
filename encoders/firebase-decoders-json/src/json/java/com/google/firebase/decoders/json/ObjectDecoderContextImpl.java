@@ -21,7 +21,6 @@ import com.google.firebase.decoders.TypeToken;
 import com.google.firebase.encoders.FieldDescriptor;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
 public class ObjectDecoderContextImpl<T> implements ObjectDecoderContext<T> {
   private final Map<String, FieldRef<?>> refs = new HashMap<>();

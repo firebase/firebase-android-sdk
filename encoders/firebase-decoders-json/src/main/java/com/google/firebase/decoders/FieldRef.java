@@ -69,6 +69,7 @@ public abstract class FieldRef<T> {
     }
 
     @NonNull
+    @Override
     public TypeToken<T> getTypeToken() {
       return super.typeToken;
     }

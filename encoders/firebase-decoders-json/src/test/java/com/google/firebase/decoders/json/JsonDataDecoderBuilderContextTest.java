@@ -15,6 +15,7 @@
 package com.google.firebase.decoders.json;
 
 import static com.google.common.truth.Truth.assertThat;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import androidx.annotation.NonNull;
 import com.google.firebase.decoders.FieldRef;
@@ -107,10 +108,10 @@ public class JsonDataDecoderBuilderContextTest {
         new JsonDataDecoderBuilderContext(objectDecoders);
     String json =
         "{\"a\":1, \"b\":true, \"t\":\"str\", \"subFoo\": {\"a\":1, \"b\":true, \"t\":\"str\"}}";
-    InputStream input = new ByteArrayInputStream(json.getBytes());
+    InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
     Foo<String> foo2 =
         jsonDataDecoderBuilderContext.decode(input, TypeToken.of(new Safe<Foo<String>>() {}));
-    input = new ByteArrayInputStream(json.getBytes());
+    input = new ByteArrayInputStream(json.getBytes(UTF_8));
     Foo<String> foo =
         jsonDataDecoderBuilderContext.decode(input, TypeToken.of(new Safe<Foo<String>>() {}));
 
@@ -151,7 +152,7 @@ public class JsonDataDecoderBuilderContextTest {
     JsonDataDecoderBuilderContext jsonDataDecoderBuilderContext =
         new JsonDataDecoderBuilderContext(objectDecoders);
     String json = "{\"t\":\"hello\", \"node\": {\"t\":\"world\", \"node\": null}}";
-    InputStream input = new ByteArrayInputStream(json.getBytes());
+    InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
     Node<String> node =
         jsonDataDecoderBuilderContext.decode(input, TypeToken.of(new Safe<Node<String>>() {}));
 
@@ -169,7 +170,7 @@ public class JsonDataDecoderBuilderContextTest {
         new JsonDataDecoderBuilderContext(objectDecoders);
 
     String json = "{\"t\":\"hello\", \"node\": {\"t\":\"world\", \"node\": null}}";
-    InputStream input = new ByteArrayInputStream(json.getBytes());
+    InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
     Node<String> strNode =
         jsonDataDecoderBuilderContext.decode(input, TypeToken.of(new Safe<Node<String>>() {}));
 
@@ -178,7 +179,7 @@ public class JsonDataDecoderBuilderContextTest {
     assertThat(strNode.node.node).isEqualTo(null);
 
     json = "{\"t\":true, \"node\": {\"t\":false, \"node\": null}}";
-    input = new ByteArrayInputStream(json.getBytes());
+    input = new ByteArrayInputStream(json.getBytes(UTF_8));
     Node<Boolean> booleanNode =
         jsonDataDecoderBuilderContext.decode(input, TypeToken.of(new Safe<Node<Boolean>>() {}));
     assertThat(booleanNode.t).isEqualTo(true);
@@ -239,7 +240,7 @@ public class JsonDataDecoderBuilderContextTest {
         new JsonDataDecoderBuilderContext(objectDecoders);
 
     String json = "{\"i\":1, \"s\":1, \"l\":1, \"d\":1.1, \"f\":1.1, \"b\":true, \"c\":\"c\"}";
-    InputStream input = new ByteArrayInputStream(json.getBytes());
+    InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
     Primitives primitives =
         jsonDataDecoderBuilderContext.decode(input, TypeToken.of(Primitives.class));
 
@@ -316,7 +317,7 @@ public class JsonDataDecoderBuilderContextTest {
 
     String json =
         "{\"i\":1, \"s\":1, \"l\":1, \"d\":1.1, \"f\":1.1, \"b\":true, \"c\":\"c\", \"str\": \"str\"}";
-    InputStream input = new ByteArrayInputStream(json.getBytes());
+    InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
     SingleValues singleValues =
         jsonDataDecoderBuilderContext.decode(input, TypeToken.of(SingleValues.class));
 
