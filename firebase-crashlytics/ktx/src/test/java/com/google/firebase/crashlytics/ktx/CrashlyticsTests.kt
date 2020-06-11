@@ -70,7 +70,6 @@ class CrashlyticsTests : BaseTestCase() {
     fun `Firebase#crashlytics should delegate to FirebaseCrashlytics#getInstance()`() {
         assertThat(Firebase.crashlytics).isSameInstanceAs(FirebaseCrashlytics.getInstance())
     }
-
 }
 
 @RunWith(RobolectricTestRunner::class)
