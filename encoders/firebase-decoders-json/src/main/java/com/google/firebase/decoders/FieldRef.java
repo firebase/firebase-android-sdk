@@ -44,6 +44,8 @@ public abstract class FieldRef<T> {
   @NonNull
   public static final Primitive<Character> CHAR = new Primitive<>(TypeToken.of(char.class));
 
+  @NonNull public static Primitive<Integer> INT = new Primitive<>(TypeToken.of(int.class));
+
   @NonNull
   public static <T> Boxed<T> of(@NonNull TypeToken<T> typeToken) {
     return new Boxed<T>(typeToken);
@@ -51,8 +53,6 @@ public abstract class FieldRef<T> {
 
   /** Used to represent primitive data type. */
   public static final class Primitive<T> extends FieldRef<T> {
-    @NonNull public static Primitive<Integer> INT = new Primitive<>(TypeToken.of(int.class));
-
     private Primitive(@NonNull TypeToken<T> typeToken) {
       super.typeToken = typeToken;
     }

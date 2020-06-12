@@ -60,7 +60,7 @@ public class ObjectDecoderContextImpl<T> implements ObjectDecoderContext<T> {
   @Override
   public <TField> FieldRef.Boxed<TField> decode(
       @NonNull FieldDescriptor fileDescriptor, @NonNull TypeToken<TField> typeToken) {
-    FieldRef.Boxed<TField> ref = FieldRef.Boxed.of(typeToken);
+    FieldRef.Boxed<TField> ref = FieldRef.of(typeToken);
     refs.put(fileDescriptor.getName(), ref);
     return ref;
   }
