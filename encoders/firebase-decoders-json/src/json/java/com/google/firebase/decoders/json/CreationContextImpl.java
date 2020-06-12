@@ -25,32 +25,8 @@ public class CreationContextImpl implements CreationContext {
 
   CreationContextImpl() {}
 
-  void put(@NonNull FieldRef<?> ref, @Nullable Object val) {
-    ctx.put(ref, val);
-  }
-
   // TODO: avoid auto-boxing for all primitive types
-  void put(@NonNull FieldRef<?> ref, int val) {
-    ctx.put(ref, val);
-  }
-
-  void put(@NonNull FieldRef<?> ref, short val) {
-    ctx.put(ref, val);
-  }
-
-  void put(@NonNull FieldRef<?> ref, long val) {
-    ctx.put(ref, val);
-  }
-
-  void put(@NonNull FieldRef<?> ref, float val) {
-    ctx.put(ref, val);
-  }
-
-  void put(@NonNull FieldRef<?> ref, double val) {
-    ctx.put(ref, val);
-  }
-
-  void put(@NonNull FieldRef<?> ref, boolean val) {
+  void put(@NonNull FieldRef<?> ref, @Nullable Object val) {
     ctx.put(ref, val);
   }
 

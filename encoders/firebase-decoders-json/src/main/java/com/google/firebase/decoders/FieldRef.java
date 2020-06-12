@@ -29,22 +29,29 @@ public abstract class FieldRef<T> {
   @NonNull
   public abstract TypeToken<T> getTypeToken();
 
+  @NonNull
+  public static final Primitive<Boolean> BOOLEAN = new Primitive<>(TypeToken.of(boolean.class));
+
+  @NonNull public static final Primitive<Short> SHORT = new Primitive<>(TypeToken.of(short.class));
+
+  @NonNull public static final Primitive<Long> LONG = new Primitive<>(TypeToken.of(long.class));
+
+  @NonNull public static final Primitive<Float> FLOAT = new Primitive<>(TypeToken.of(float.class));
+
+  @NonNull
+  public static final Primitive<Double> DOUBLE = new Primitive<>(TypeToken.of(double.class));
+
+  @NonNull
+  public static final Primitive<Character> CHAR = new Primitive<>(TypeToken.of(char.class));
+
+  @NonNull
+  public static <T> Boxed<T> of(@NonNull TypeToken<T> typeToken) {
+    return new Boxed<T>(typeToken);
+  }
+
   /** Used to represent primitive data type. */
   public static final class Primitive<T> extends FieldRef<T> {
     @NonNull public static Primitive<Integer> INT = new Primitive<>(TypeToken.of(int.class));
-
-    @NonNull
-    public static Primitive<Boolean> BOOLEAN = new Primitive<>(TypeToken.of(boolean.class));
-
-    @NonNull public static Primitive<Short> SHORT = new Primitive<>(TypeToken.of(short.class));
-
-    @NonNull public static Primitive<Long> LONG = new Primitive<>(TypeToken.of(long.class));
-
-    @NonNull public static Primitive<Float> FLOAT = new Primitive<>(TypeToken.of(float.class));
-
-    @NonNull public static Primitive<Double> DOUBLE = new Primitive<>(TypeToken.of(double.class));
-
-    @NonNull public static Primitive<Character> CHAR = new Primitive<>(TypeToken.of(char.class));
 
     private Primitive(@NonNull TypeToken<T> typeToken) {
       super.typeToken = typeToken;
@@ -59,12 +66,16 @@ public abstract class FieldRef<T> {
 
   /** Use it to represent Boxed Data type */
   public static final class Boxed<T> extends FieldRef<T> {
-    @NonNull
-    public static <T> Boxed<T> of(@NonNull TypeToken<T> typeToken) {
-      return new Boxed<T>(typeToken);
-    }
 
     private Boxed(@NonNull TypeToken<T> typeToken) {
+      if (typeToken instanceof TypeToken.ClassToken) {
+        Class<?> clazz = ((TypeToken.ClassToken<T>) typeToken).getRawType();
+        if (clazz.isPrimitive())
+          throw new IllegalArgumentException(
+              "FieldRef.Boxed<T> can only be used to hold non-primitive type.\n"
+                  + clazz
+                  + "was found.");
+      }
       super.typeToken = typeToken;
     }
 
