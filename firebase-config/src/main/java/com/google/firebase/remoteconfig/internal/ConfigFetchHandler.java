@@ -37,6 +37,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
+import com.google.firebase.perf.metrics.Trace;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigClientException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigFetchThrottledException;
@@ -48,6 +49,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.net.HttpURLConnection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.Executor;
@@ -114,11 +116,13 @@ public class ConfigFetchHandler {
   }
 
   /**
-   * Calls {@link #fetch(long)} with the {@link
    * ConfigMetadataClient#getMinimumFetchIntervalInSeconds()}.
+   *
+   * @param trace
+   * @param performanceTracer
    */
-  public Task<FetchResponse> fetch() {
-    return fetch(frcMetadata.getMinimumFetchIntervalInSeconds());
+  public Task<FetchResponse> fetch(Trace trace, PerformanceTracer performanceTracer) {
+    return fetch(frcMetadata.getMinimumFetchIntervalInSeconds(), trace, performanceTracer);
   }
 
   /**
@@ -149,16 +153,26 @@ public class ConfigFetchHandler {
    *     the configs fetched from the backend. If the backend was not called or the backend had no
    *     updates, the {@link FetchResponse}'s configs will be {@code null}.
    */
-  public Task<FetchResponse> fetch(long minimumFetchIntervalInSeconds) {
+  public Task<FetchResponse> fetch(
+      long minimumFetchIntervalInSeconds, Trace trace, PerformanceTracer performanceTracer) {
     long fetchIntervalInSeconds =
         frcMetadata.isDeveloperModeEnabled() ? 0L : minimumFetchIntervalInSeconds;
-
+    trace.putMetric("minimum_fetch_interval_hours", HOURS.convert(fetchIntervalInSeconds, SECONDS));
+    Timer cacheReadTimer = performanceTracer.newTimer();
+    cacheReadTimer.start();
     return fetchedConfigsCache
         .get()
+        .addOnCompleteListener(
+            task -> {
+              cacheReadTimer.stop();
+              trace.putMetric(
+                  "cache_read_latency_milliseconds", cacheReadTimer.getElapsedTimeMillis());
+            })
         .continueWithTask(
             executor,
             (cachedFetchConfigsTask) ->
-                fetchIfCacheExpiredAndNotThrottled(cachedFetchConfigsTask, fetchIntervalInSeconds));
+                fetchIfCacheExpiredAndNotThrottled(
+                    cachedFetchConfigsTask, fetchIntervalInSeconds, trace, performanceTracer));
   }
 
   /**
@@ -169,18 +183,25 @@ public class ConfigFetchHandler {
    * fetch time and {@link BackoffMetadata} in {@link ConfigMetadataClient}.
    */
   private Task<FetchResponse> fetchIfCacheExpiredAndNotThrottled(
-      Task<ConfigContainer> cachedFetchConfigsTask, long minimumFetchIntervalInSeconds) {
+      Task<ConfigContainer> cachedFetchConfigsTask,
+      long minimumFetchIntervalInSeconds,
+      Trace trace,
+      PerformanceTracer performanceTracer) {
     Date currentTime = new Date(clock.currentTimeMillis());
+
     if (cachedFetchConfigsTask.isSuccessful()
         && areCachedFetchConfigsValid(minimumFetchIntervalInSeconds, currentTime)) {
+      trace.putAttribute("cache", "hit");
       // Keep the cached fetch values if the cache has not expired yet.
       return Tasks.forResult(FetchResponse.forLocalStorageUsed(currentTime));
     }
+    trace.putAttribute("cache", "miss");
 
     Task<FetchResponse> fetchResponseTask;
 
     Date backoffEndTime = getBackoffEndTimeInMillis(currentTime);
     if (backoffEndTime != null) {
+      //      trace.putAttribute("throttled_by_client", "yes");
       // TODO(issues/260): Provide a way for users to check for throttled status so exceptions
       // aren't the only way for users to determine if they're throttled.
       fetchResponseTask =
@@ -214,7 +235,7 @@ public class ConfigFetchHandler {
                     String installationId = installationIdTask.getResult();
                     String installationToken = installationAuthTokenTask.getResult().getToken();
                     return fetchFromBackendAndCacheResponse(
-                        installationId, installationToken, currentTime);
+                        installationId, installationToken, currentTime, trace, performanceTracer);
                   });
     }
 
@@ -274,12 +295,31 @@ public class ConfigFetchHandler {
    * {@code fetchedConfigsCache}.
    */
   private Task<FetchResponse> fetchFromBackendAndCacheResponse(
-      String installationId, String installationToken, Date fetchTime) {
+      String installationId,
+      String installationToken,
+      Date fetchTime,
+      Trace trace,
+      PerformanceTracer performanceTracer) {
     try {
-      FetchResponse fetchResponse = fetchFromBackend(installationId, installationToken, fetchTime);
+      Timer backendElaspsedTime = performanceTracer.newTimer();
+      backendElaspsedTime.start();
+      FetchResponse fetchResponse =
+          fetchFromBackend(installationId, installationToken, fetchTime, trace);
+      backendElaspsedTime.stop();
+      trace.putMetric(
+          "service_call_latency_milliseconds", backendElaspsedTime.getElapsedTimeMillis());
+
       if (fetchResponse.getStatus() != Status.BACKEND_UPDATES_FETCHED) {
         return Tasks.forResult(fetchResponse);
       }
+
+      Iterator<String> keys = fetchResponse.getFetchedConfigs().getConfigs().keys();
+
+      while (keys.hasNext()) {
+        String ignored = keys.next();
+        trace.incrementMetric("parameter_keys_count", 1);
+      }
+
       return fetchedConfigsCache
           .put(fetchResponse.getFetchedConfigs())
           .onSuccessTask(executor, (putContainer) -> Tasks.forResult(fetchResponse));
@@ -299,11 +339,10 @@ public class ConfigFetchHandler {
    */
   @WorkerThread
   private FetchResponse fetchFromBackend(
-      String installationId, String installationToken, Date currentTime)
+      String installationId, String installationToken, Date currentTime, Trace trace)
       throws FirebaseRemoteConfigException {
     try {
       HttpURLConnection urlConnection = frcBackendApiClient.createHttpURLConnection();
-
       FetchResponse response =
           frcBackendApiClient.fetch(
               urlConnection,
@@ -320,16 +359,22 @@ public class ConfigFetchHandler {
       // If the execute method did not throw exceptions, then the server sent a successful response
       // and the client can stop backing off.
       frcMetadata.resetBackoff();
-
+      //      trace.putAttribute("backend_fetch", "success");
+      //      trace.putAttribute("throttled_by_service", "no");
+      trace.putAttribute("backend_status_code", Integer.toString(200));
       return response;
     } catch (FirebaseRemoteConfigServerException serverHttpError) {
+      //      trace.putAttribute("backend_fetch", "failure");
+      trace.putAttribute(
+          "backend_status_code", Integer.toString(serverHttpError.getHttpStatusCode()));
       BackoffMetadata backoffMetadata =
           updateAndReturnBackoffMetadata(serverHttpError.getHttpStatusCode(), currentTime);
-
       if (shouldThrottle(backoffMetadata, serverHttpError.getHttpStatusCode())) {
+        //        trace.putAttribute("throttled_by_service", "yes");
         throw new FirebaseRemoteConfigFetchThrottledException(
             backoffMetadata.getBackoffEndTime().getTime());
       }
+      //      trace.putAttribute("throttled_by_service", "no");
       // TODO(issues/264): Move the generic message logic to the ConfigFetchHttpClient.
       throw createExceptionWithGenericMessage(serverHttpError);
     }

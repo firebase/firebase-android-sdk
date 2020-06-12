@@ -702,13 +702,13 @@ public class ConfigGetParameterHandlerTest {
 
   private void loadActivatedAsyncCacheWithIncompleteTask() {
     TaskCompletionSource<ConfigContainer> taskSource = new TaskCompletionSource<>();
-    when(mockActivatedCache.get()).thenReturn(taskSource.getTask());
+    when(mockActivatedCache.get(trace)).thenReturn(taskSource.getTask());
   }
 
   private static void loadCacheWithConfig(
       ConfigCacheClient cacheClient, ConfigContainer container) {
     when(cacheClient.getBlocking()).thenReturn(container);
-    when(cacheClient.get()).thenReturn(Tasks.forResult(container));
+    when(cacheClient.get(trace)).thenReturn(Tasks.forResult(container));
   }
 
   private static ConfigContainer newContainer(Map<String, String> configsMap) throws Exception {

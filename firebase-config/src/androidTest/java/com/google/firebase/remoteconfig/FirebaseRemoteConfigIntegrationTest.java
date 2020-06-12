@@ -92,10 +92,10 @@ public class FirebaseRemoteConfigIntegrationTest {
                 .build());
 
     // Catch all to avoid NPEs (the getters should never return null).
-    when(mockFetchedCache.get()).thenReturn(Tasks.forResult(null));
-    when(mockActivatedCache.get()).thenReturn(Tasks.forResult(null));
-    when(mockFireperfFetchedCache.get()).thenReturn(Tasks.forResult(null));
-    when(mockFireperfActivatedCache.get()).thenReturn(Tasks.forResult(null));
+    when(mockFetchedCache.get(trace)).thenReturn(Tasks.forResult(null));
+    when(mockActivatedCache.get(trace)).thenReturn(Tasks.forResult(null));
+    when(mockFireperfFetchedCache.get(trace)).thenReturn(Tasks.forResult(null));
+    when(mockFireperfActivatedCache.get(trace)).thenReturn(Tasks.forResult(null));
 
     frc =
         new FirebaseRemoteConfig(

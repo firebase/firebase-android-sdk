@@ -155,10 +155,10 @@ public final class FirebaseRemoteConfigTest {
     FirebaseApp firebaseApp = initializeFirebaseApp(context);
 
     // Catch all to avoid NPEs (the getters should never return null).
-    when(mockFetchedCache.get()).thenReturn(Tasks.forResult(null));
-    when(mockActivatedCache.get()).thenReturn(Tasks.forResult(null));
-    when(mockFireperfFetchedCache.get()).thenReturn(Tasks.forResult(null));
-    when(mockFireperfActivatedCache.get()).thenReturn(Tasks.forResult(null));
+    when(mockFetchedCache.get(trace)).thenReturn(Tasks.forResult(null));
+    when(mockActivatedCache.get(trace)).thenReturn(Tasks.forResult(null));
+    when(mockFireperfFetchedCache.get(trace)).thenReturn(Tasks.forResult(null));
+    when(mockFireperfActivatedCache.get(trace)).thenReturn(Tasks.forResult(null));
 
     frc =
         new FirebaseRemoteConfig(
@@ -238,7 +238,7 @@ public final class FirebaseRemoteConfigTest {
 
   @Test
   public void fetchAndActivate_hasNetworkError_taskReturnsException() {
-    when(mockFetchHandler.fetch())
+    when(mockFetchHandler.fetch(trace, performanceTracer))
         .thenReturn(Tasks.forException(new IOException("Network call failed.")));
 
     Task<Boolean> task = frc.fetchAndActivate();
@@ -834,7 +834,8 @@ public final class FirebaseRemoteConfigTest {
 
   @Test
   public void fetch_hasNoErrors_taskReturnsSuccess() {
-    when(mockFetchHandler.fetch()).thenReturn(Tasks.forResult(firstFetchedContainerResponse));
+    when(mockFetchHandler.fetch(trace, performanceTracer))
+        .thenReturn(Tasks.forResult(firstFetchedContainerResponse));
 
     Task<Void> fetchTask = frc.fetch();
 
@@ -843,7 +844,7 @@ public final class FirebaseRemoteConfigTest {
 
   @Test
   public void fetch_hasNetworkError_taskReturnsException() {
-    when(mockFetchHandler.fetch())
+    when(mockFetchHandler.fetch(trace, performanceTracer))
         .thenReturn(
             Tasks.forException(new FirebaseRemoteConfigClientException("Network call failed.")));
 
@@ -857,7 +858,7 @@ public final class FirebaseRemoteConfigTest {
   @Test
   public void fetchWithInterval_hasNoErrors_taskReturnsSuccess() {
     long minimumFetchIntervalInSeconds = 600L;
-    when(mockFetchHandler.fetch(minimumFetchIntervalInSeconds))
+    when(mockFetchHandler.fetch(minimumFetchIntervalInSeconds, performanceTracer))
         .thenReturn(Tasks.forResult(firstFetchedContainerResponse));
 
     Task<Void> fetchTask = frc.fetch(minimumFetchIntervalInSeconds);
@@ -868,7 +869,7 @@ public final class FirebaseRemoteConfigTest {
   @Test
   public void fetchWithInterval_hasNetworkError_taskReturnsException() {
     long minimumFetchIntervalInSeconds = 600L;
-    when(mockFetchHandler.fetch(minimumFetchIntervalInSeconds))
+    when(mockFetchHandler.fetch(minimumFetchIntervalInSeconds, performanceTracer))
         .thenReturn(
             Tasks.forException(new FirebaseRemoteConfigClientException("Network call failed.")));
 
@@ -1156,18 +1157,18 @@ public final class FirebaseRemoteConfigTest {
   private static void loadCacheWithConfig(
       ConfigCacheClient cacheClient, ConfigContainer container) {
     when(cacheClient.getBlocking()).thenReturn(container);
-    when(cacheClient.get()).thenReturn(Tasks.forResult(container));
+    when(cacheClient.get(trace)).thenReturn(Tasks.forResult(container));
   }
 
   private static void loadCacheWithIoException(ConfigCacheClient cacheClient) {
     when(cacheClient.getBlocking()).thenReturn(null);
-    when(cacheClient.get())
+    when(cacheClient.get(trace))
         .thenReturn(Tasks.forException(new IOException("Should have handled disk error.")));
   }
 
   private void loadActivatedCacheWithIncompleteTask() {
     TaskCompletionSource<ConfigContainer> taskSource = new TaskCompletionSource<>();
-    when(mockActivatedCache.get()).thenReturn(taskSource.getTask());
+    when(mockActivatedCache.get(trace)).thenReturn(taskSource.getTask());
   }
 
   private static void cachePutReturnsConfig(
@@ -1176,11 +1177,12 @@ public final class FirebaseRemoteConfigTest {
   }
 
   private void loadFetchHandlerWithResponse() {
-    when(mockFetchHandler.fetch()).thenReturn(Tasks.forResult(firstFetchedContainerResponse));
+    when(mockFetchHandler.fetch(trace, performanceTracer))
+        .thenReturn(Tasks.forResult(firstFetchedContainerResponse));
   }
 
   private void load2pFetchHandlerWithResponse() {
-    when(mockFireperfFetchHandler.fetch())
+    when(mockFireperfFetchHandler.fetch(trace, performanceTracer))
         .thenReturn(Tasks.forResult(firstFetchedContainerResponse));
   }
 

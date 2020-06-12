@@ -80,6 +80,13 @@ dependencies {
     implementation 'com.google.firebase:firebase-measurement-connector:18.0.0'
     implementation "com.google.protobuf:protobuf-javalite:$javaliteVersion"
     implementation 'com.google.android.gms:play-services-tasks:17.0.2'
+    implementation ('com.google.firebase:firebase-perf:19.0.7') {
+        exclude group: 'com.google.firebase', module: 'firebase-common'
+        exclude group: 'com.google.firebase', module: 'firebase-components'
+        exclude group: 'com.google.firebase', module: 'firebase-config'
+        exclude group: 'com.google.firebase', module: 'firebase-installations'
+        exclude group: 'com.google.firebase', module: 'firebase-installations-interop'
+    }
 
     compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
 
@@ -88,6 +95,7 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation "org.skyscreamer:jsonassert:1.5.0"
+
 
     androidTestImplementation 'androidx.test:runner:1.2.0'
     androidTestImplementation 'org.mockito:mockito-core:2.25.0'
