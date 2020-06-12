@@ -85,7 +85,7 @@ public final class GetterFactory {
       return Optional.empty();
     }
     Optional<String> fieldName = inferName(element);
-    if (!fieldName.isPresent()) {
+    if (fieldName.isEmpty()) {
       return Optional.empty();
     }
     TypeMirror returnType = resolveTypeArguments(ownerType, element.getReturnType());
