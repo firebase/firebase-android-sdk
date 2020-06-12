@@ -99,11 +99,11 @@ import org.skyscreamer.jsonassert.JSONAssert;
 @Config(manifest = Config.NONE)
 public class ConfigFetchHandlerTest {
   private static final String INSTALLATION_ID = "'fL71_VyL3uo9jNMWu1L60S";
-  private static final String INSTALLATION_TOKEN =
+  private static final String INSTALLATION_AUTH_TOKEN =
       "eyJhbGciOiJF.eyJmaWQiOiJmaXMt.AB2LPV8wRQIhAPs4NvEgA3uhubH";
   private static final InstallationTokenResult INSTALLATION_TOKEN_RESULT =
       InstallationTokenResult.builder()
-          .setToken(INSTALLATION_TOKEN)
+          .setToken(INSTALLATION_AUTH_TOKEN)
           .setTokenCreationTimestamp(1)
           .setTokenExpirationTimestamp(1)
           .build();
@@ -141,7 +141,7 @@ public class ConfigFetchHandlerTest {
         new ConfigMetadataClient(context.getSharedPreferences("test_file", Context.MODE_PRIVATE));
 
     loadBackendApiClient();
-    loadInstanceIdAndToken();
+    loadInstallationIdAndAuthToken();
 
     /*
      * Every fetch starts with a call to retrieve the cached fetch values. Return successfully in
@@ -180,10 +180,10 @@ public class ConfigFetchHandlerTest {
   }
 
   @Test
-  public void fetch_firstFetch_includesIidToken() throws Exception {
+  public void fetch_firstFetch_includesInstallationAuthToken() throws Exception {
     fetchCallToHttpClientReturnsConfigWithCurrentTime(firstFetchedContainer);
 
-    assertWithMessage("Fetch() does not include IID token.")
+    assertWithMessage("Fetch() does not include installation auth token.")
         .that(fetchHandler.fetch().isSuccessful())
         .isTrue();
 
@@ -191,7 +191,7 @@ public class ConfigFetchHandlerTest {
         .fetch(
             any(HttpURLConnection.class),
             /* instanceId= */ any(),
-            /* instanceIdToken= */ eq(INSTALLATION_TOKEN),
+            /* instanceIdToken= */ eq(INSTALLATION_AUTH_TOKEN),
             /* analyticsUserProperties= */ any(),
             /* lastFetchETag= */ any(),
             /* customHeaders= */ any(),
@@ -199,13 +199,14 @@ public class ConfigFetchHandlerTest {
   }
 
   @Test
-  public void fetch_failToGetIidToken_throwsRemoteConfigException() throws Exception {
+  public void fetch_failToGetInstallationAuthToken_throwsRemoteConfigException() throws Exception {
     when(mockFirebaseInstallations.getId())
         .thenReturn(Tasks.forException(new IOException("SERVICE_NOT_AVAILABLE")));
     fetchCallToHttpClientReturnsConfigWithCurrentTime(firstFetchedContainer);
 
     assertThrowsClientException(
-        fetchHandler.fetch(), "Failed to get Firebase Installation ID for fetch.");
+        fetchHandler.fetch(),
+        "Firebase Installations failed to get installation auth token for fetch.");
 
     verifyBackendIsNeverCalled();
   }
@@ -904,7 +905,7 @@ public class ConfigFetchHandlerTest {
     this.responseETag = responseETag;
   }
 
-  private void loadInstanceIdAndToken() {
+  private void loadInstallationIdAndAuthToken() {
     when(mockFirebaseInstallations.getId()).thenReturn(Tasks.forResult(INSTALLATION_ID));
     when(mockFirebaseInstallations.getToken(false))
         .thenReturn(Tasks.forResult(INSTALLATION_TOKEN_RESULT));
