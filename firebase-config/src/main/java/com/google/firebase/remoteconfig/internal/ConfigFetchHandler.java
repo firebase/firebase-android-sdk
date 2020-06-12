@@ -200,14 +200,14 @@ public class ConfigFetchHandler {
                     if (!installationIdTask.isSuccessful()) {
                       return Tasks.forException(
                           new FirebaseRemoteConfigClientException(
-                              "Failed to get Firebase Installation ID for fetch.",
+                              "Firebase Installations failed to get installation ID for fetch.",
                               installationIdTask.getException()));
                     }
 
                     if (!installationAuthTokenTask.isSuccessful()) {
                       return Tasks.forException(
                           new FirebaseRemoteConfigClientException(
-                              "Failed to get Firebase Installation token for fetch.",
+                              "Firebase Installations failed to get installation auth token for fetch.",
                               installationAuthTokenTask.getException()));
                     }
 
