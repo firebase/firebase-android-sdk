@@ -14,12 +14,9 @@
 
 package com.google.firebase.remoteconfig.internal;
 
-import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.TAG;
-
 import android.content.Context;
 import android.content.res.Resources;
 import android.content.res.XmlResourceParser;
-import android.util.Log;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -73,14 +70,14 @@ public class DefaultsXmlParser {
    * @param context the application context.
    * @param resourceId the resource id of the defaults XML file.
    */
-  public static Map<String, String> getDefaultsFromXml(Context context, int resourceId) {
+  public static Map<String, String> getDefaultsFromXml(
+      Context context, int resourceId, ConfigLogger logger) {
     Map<String, String> defaultsMap = new HashMap<>();
 
     try {
       Resources resources = context.getResources();
       if (resources == null) {
-        Log.e(
-            TAG,
+        logger.e(
             "Could not find the resources of the current context "
                 + "while trying to set defaults from an XML.");
         return defaultsMap;
@@ -101,7 +98,7 @@ public class DefaultsXmlParser {
             if (key != null && value != null) {
               defaultsMap.put(key, value);
             } else {
-              Log.w(TAG, "An entry in the defaults XML has an invalid key and/or value tag.");
+              logger.w("An entry in the defaults XML has an invalid key and/or value tag.");
             }
             key = null;
             value = null;
@@ -117,7 +114,7 @@ public class DefaultsXmlParser {
                 value = xmlParser.getText();
                 break;
               default:
-                Log.w(TAG, "Encountered an unexpected tag while parsing the defaults XML.");
+                logger.w("Encountered an unexpected tag while parsing the defaults XML.");
                 break;
             }
           }
@@ -125,7 +122,7 @@ public class DefaultsXmlParser {
         eventType = xmlParser.next();
       }
     } catch (XmlPullParserException | IOException e) {
-      Log.e(TAG, "Encountered an error while parsing the defaults XML file.", e);
+      logger.e("Encountered an error while parsing the defaults XML file.", e);
     }
     return defaultsMap;
   }

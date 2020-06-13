@@ -74,7 +74,8 @@ public class ConfigCacheClientTest {
 
     ConfigCacheClient.clearInstancesForTest();
     when(mockStorageClient.getFileName()).thenReturn("FILE_NAME");
-    cacheClient = ConfigCacheClient.getInstance(cacheThreadPool, mockStorageClient);
+    cacheClient =
+        ConfigCacheClient.getInstance(cacheThreadPool, mockStorageClient, new ConfigLogger());
 
     configContainer =
         ConfigContainer.newBuilder()

@@ -38,6 +38,7 @@ import com.google.firebase.remoteconfig.internal.ConfigContainer;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHttpClient;
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
+import com.google.firebase.remoteconfig.internal.ConfigLogger;
 import com.google.firebase.remoteconfig.internal.ConfigMetadataClient;
 import com.google.firebase.remoteconfig.internal.LegacyConfigsHandler;
 import java.util.concurrent.ExecutorService;
@@ -73,6 +74,7 @@ public class RemoteConfigComponentTest {
   @Mock private ConfigFetchHandler mockFetchHandler;
   @Mock private ConfigGetParameterHandler mockGetParameterHandler;
   @Mock private ConfigMetadataClient mockMetadataClient;
+  @Mock private ConfigLogger logger;
 
   private Context context;
   private ExecutorService directExecutor;
@@ -132,7 +134,7 @@ public class RemoteConfigComponentTest {
 
     ConfigFetchHandler fetchHandler =
         getNewFrcComponent()
-            .getFetchHandler(DEFAULT_NAMESPACE, mockFetchedCache, mockMetadataClient);
+            .getFetchHandler(DEFAULT_NAMESPACE, mockFetchedCache, mockMetadataClient, logger);
 
     assertThat(fetchHandler.getAnalyticsConnector()).isNull();
   }
@@ -145,7 +147,8 @@ public class RemoteConfigComponentTest {
     when(mockMetadataClient.getFetchTimeoutInSeconds()).thenReturn(CONNECTION_TIMEOUT_IN_SECONDS);
 
     ConfigFetchHttpClient frcBackendClient =
-        frcComponent.getFrcBackendApiClient(DUMMY_API_KEY, DEFAULT_NAMESPACE, mockMetadataClient);
+        frcComponent.getFrcBackendApiClient(
+            DUMMY_API_KEY, DEFAULT_NAMESPACE, mockMetadataClient, logger);
 
     int actualConnectTimeout = getConnectTimeoutInSeconds(frcBackendClient);
     int actualReadTimeout = getReadTimeoutInSeconds(frcBackendClient);
@@ -164,7 +167,8 @@ public class RemoteConfigComponentTest {
         .thenReturn(customConnectionTimeoutInSeconds);
 
     ConfigFetchHttpClient frcBackendClient =
-        frcComponent.getFrcBackendApiClient(DUMMY_API_KEY, DEFAULT_NAMESPACE, mockMetadataClient);
+        frcComponent.getFrcBackendApiClient(
+            DUMMY_API_KEY, DEFAULT_NAMESPACE, mockMetadataClient, logger);
 
     int actualConnectTimeout = getConnectTimeoutInSeconds(frcBackendClient);
     int actualReadTimeout = getReadTimeoutInSeconds(frcBackendClient);
@@ -209,7 +213,8 @@ public class RemoteConfigComponentTest {
         mockDefaultsCache,
         mockFetchHandler,
         mockGetParameterHandler,
-        mockMetadataClient);
+        mockMetadataClient,
+        logger);
   }
 
   private void loadConfigsWithExperimentsForActivate() throws Exception {

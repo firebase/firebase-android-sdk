@@ -52,6 +52,7 @@ import com.google.firebase.remoteconfig.internal.ConfigContainer;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler.FetchResponse;
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
+import com.google.firebase.remoteconfig.internal.ConfigLogger;
 import com.google.firebase.remoteconfig.internal.ConfigMetadataClient;
 import java.io.IOException;
 import java.util.Date;
@@ -118,6 +119,8 @@ public final class FirebaseRemoteConfigTest {
   @Mock private ConfigFetchHandler mockFireperfFetchHandler;
   @Mock private ConfigGetParameterHandler mockFireperfGetHandler;
 
+  @Mock private ConfigLogger mockLogger;
+
   @Mock private FirebaseRemoteConfigInfo mockFrcInfo;
 
   @Mock private FirebaseABTesting mockFirebaseAbt;
@@ -166,7 +169,8 @@ public final class FirebaseRemoteConfigTest {
             mockDefaultsCache,
             mockFetchHandler,
             mockGetHandler,
-            metadataClient);
+            metadataClient,
+            mockLogger);
 
     // Set up an FRC instance for the Fireperf namespace that uses mocked clients.
     fireperfFrc =
@@ -183,7 +187,8 @@ public final class FirebaseRemoteConfigTest {
                 mockFireperfDefaultsCache,
                 mockFireperfFetchHandler,
                 mockFireperfGetHandler,
-                RemoteConfigComponent.getMetadataClient(context, APP_ID, FIREPERF_NAMESPACE));
+                RemoteConfigComponent.getMetadataClient(context, APP_ID, FIREPERF_NAMESPACE),
+                mockLogger);
 
     firstFetchedContainer =
         ConfigContainer.newBuilder()

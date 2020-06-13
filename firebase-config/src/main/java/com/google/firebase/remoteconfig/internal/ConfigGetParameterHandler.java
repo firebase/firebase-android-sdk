@@ -19,12 +19,10 @@ import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.DEFAULT_VALU
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.DEFAULT_VALUE_FOR_DOUBLE;
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.DEFAULT_VALUE_FOR_LONG;
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.DEFAULT_VALUE_FOR_STRING;
-import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.TAG;
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.VALUE_SOURCE_DEFAULT;
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.VALUE_SOURCE_REMOTE;
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.VALUE_SOURCE_STATIC;
 
-import android.util.Log;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
@@ -71,11 +69,15 @@ public class ConfigGetParameterHandler {
 
   private final ConfigCacheClient activatedConfigsCache;
   private final ConfigCacheClient defaultConfigsCache;
+  private final ConfigLogger logger;
 
   public ConfigGetParameterHandler(
-      ConfigCacheClient activatedConfigsCache, ConfigCacheClient defaultConfigsCache) {
+      ConfigCacheClient activatedConfigsCache,
+      ConfigCacheClient defaultConfigsCache,
+      ConfigLogger logger) {
     this.activatedConfigsCache = activatedConfigsCache;
     this.defaultConfigsCache = defaultConfigsCache;
+    this.logger = logger;
   }
 
   /**
@@ -407,8 +409,7 @@ public class ConfigGetParameterHandler {
     return cacheClient.getBlocking();
   }
 
-  private static void logParameterValueDoesNotExist(String key, String valueType) {
-    Log.w(
-        TAG, String.format("No value of type '%s' exists for parameter key '%s'.", valueType, key));
+  private void logParameterValueDoesNotExist(String key, String valueType) {
+    logger.w(String.format("No value of type '%s' exists for parameter key '%s'.", valueType, key));
   }
 }

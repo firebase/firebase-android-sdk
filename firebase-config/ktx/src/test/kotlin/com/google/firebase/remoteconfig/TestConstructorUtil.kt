@@ -19,6 +19,7 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.remoteconfig.internal.ConfigCacheClient
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler
+import com.google.firebase.remoteconfig.internal.ConfigLogger
 import com.google.firebase.remoteconfig.internal.ConfigMetadataClient
 import java.util.concurrent.Executor
 import com.google.firebase.abt.FirebaseABTesting
@@ -37,7 +38,8 @@ fun createRemoteConfig(
     defaultConfigsCache: ConfigCacheClient,
     fetchHandler: ConfigFetchHandler,
     getHandler: ConfigGetParameterHandler,
-    frcMetadata: ConfigMetadataClient
+    frcMetadata: ConfigMetadataClient,
+    configLogger: ConfigLogger
 ): FirebaseRemoteConfig {
         return FirebaseRemoteConfig(
             context,
@@ -50,6 +52,7 @@ fun createRemoteConfig(
             defaultConfigsCache,
             fetchHandler,
             getHandler,
-            frcMetadata
+            frcMetadata,
+            configLogger
     )
 }

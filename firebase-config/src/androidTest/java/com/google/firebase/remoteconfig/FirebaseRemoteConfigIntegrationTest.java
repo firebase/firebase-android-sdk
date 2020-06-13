@@ -35,6 +35,7 @@ import com.google.firebase.remoteconfig.internal.ConfigCacheClient;
 import com.google.firebase.remoteconfig.internal.ConfigContainer;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler;
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
+import com.google.firebase.remoteconfig.internal.ConfigLogger;
 import com.google.firebase.remoteconfig.internal.ConfigMetadataClient;
 import java.util.Date;
 import java.util.HashMap;
@@ -62,6 +63,8 @@ public class FirebaseRemoteConfigIntegrationTest {
 
   @Mock private ConfigCacheClient mockFireperfFetchedCache;
   @Mock private ConfigCacheClient mockFireperfActivatedCache;
+
+  @Mock private ConfigLogger mockLogger;
 
   @Mock private FirebaseABTesting mockFirebaseAbt;
   @Mock private FirebaseInstanceId mockFirebaseInstanceId;
@@ -104,7 +107,8 @@ public class FirebaseRemoteConfigIntegrationTest {
             mockDefaultsCache,
             mockFetchHandler,
             mockGetHandler,
-            metadataClient);
+            metadataClient,
+            mockLogger);
   }
 
   @Test
