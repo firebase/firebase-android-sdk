@@ -1,8 +1,65 @@
 // Signature format: 2.0
 package com.google.firebase.decoders {
 
+  public interface CreationContext {
+    method @Nullable public <TField> TField get(@NonNull com.google.firebase.decoders.FieldRef.Boxed<TField>);
+    method public boolean getBoolean(@NonNull com.google.firebase.decoders.FieldRef.Primitive<java.lang.Boolean>);
+    method public char getChar(@NonNull com.google.firebase.decoders.FieldRef.Primitive<java.lang.Character>);
+    method public double getDouble(@NonNull com.google.firebase.decoders.FieldRef.Primitive<java.lang.Double>);
+    method public float getFloat(@NonNull com.google.firebase.decoders.FieldRef.Primitive<java.lang.Float>);
+    method public int getInteger(@NonNull com.google.firebase.decoders.FieldRef.Primitive<java.lang.Integer>);
+    method public long getLong(@NonNull com.google.firebase.decoders.FieldRef.Primitive<java.lang.Long>);
+    method public short getShort(@NonNull com.google.firebase.decoders.FieldRef.Primitive<java.lang.Short>);
+  }
+
+  public interface DataDecoder {
+    method @NonNull public <T> T decode(@NonNull java.io.InputStream, @NonNull com.google.firebase.decoders.TypeToken<T>) throws java.io.IOException;
+  }
+
+  public abstract class FieldRef<T> {
+    ctor public FieldRef();
+    method @NonNull public abstract com.google.firebase.decoders.TypeToken<T> getTypeToken();
+    method @NonNull public static <T> com.google.firebase.decoders.FieldRef.Boxed<T> of(@NonNull com.google.firebase.decoders.TypeToken<T>);
+    field @NonNull public static final com.google.firebase.decoders.FieldRef.Primitive<java.lang.Boolean> BOOLEAN;
+    field @NonNull public static final com.google.firebase.decoders.FieldRef.Primitive<java.lang.Character> CHAR;
+    field @NonNull public static final com.google.firebase.decoders.FieldRef.Primitive<java.lang.Double> DOUBLE;
+    field @NonNull public static final com.google.firebase.decoders.FieldRef.Primitive<java.lang.Float> FLOAT;
+    field @NonNull public static final com.google.firebase.decoders.FieldRef.Primitive<java.lang.Integer> INT;
+    field @NonNull public static final com.google.firebase.decoders.FieldRef.Primitive<java.lang.Long> LONG;
+    field @NonNull public static final com.google.firebase.decoders.FieldRef.Primitive<java.lang.Short> SHORT;
+  }
+
+  public static final class FieldRef.Boxed<T> extends com.google.firebase.decoders.FieldRef<T> {
+    method @NonNull public com.google.firebase.decoders.TypeToken<T> getTypeToken();
+  }
+
+  public static final class FieldRef.Primitive<T> extends com.google.firebase.decoders.FieldRef<T> {
+    method @NonNull public com.google.firebase.decoders.TypeToken<T> getTypeToken();
+  }
+
+  public interface ObjectDecoder<T> {
+    method @NonNull public com.google.firebase.decoders.TypeCreator<T> decode(@NonNull com.google.firebase.decoders.ObjectDecoderContext<T>);
+  }
+
+  public interface ObjectDecoderContext<T> {
+    method @NonNull public <TField> com.google.firebase.decoders.FieldRef.Boxed<TField> decode(@NonNull com.google.firebase.encoders.FieldDescriptor, @NonNull com.google.firebase.decoders.TypeToken<TField>);
+    method @NonNull public com.google.firebase.decoders.FieldRef.Primitive<java.lang.Boolean> decodeBoolean(@NonNull com.google.firebase.encoders.FieldDescriptor);
+    method @NonNull public com.google.firebase.decoders.FieldRef.Primitive<java.lang.Character> decodeChar(@NonNull com.google.firebase.encoders.FieldDescriptor);
+    method @NonNull public com.google.firebase.decoders.FieldRef.Primitive<java.lang.Double> decodeDouble(@NonNull com.google.firebase.encoders.FieldDescriptor);
+    method @NonNull public com.google.firebase.decoders.FieldRef.Primitive<java.lang.Float> decodeFloat(@NonNull com.google.firebase.encoders.FieldDescriptor);
+    method @NonNull public com.google.firebase.decoders.FieldRef.Primitive<java.lang.Integer> decodeInteger(@NonNull com.google.firebase.encoders.FieldDescriptor);
+    method @NonNull public com.google.firebase.decoders.FieldRef.Primitive<java.lang.Long> decodeLong(@NonNull com.google.firebase.encoders.FieldDescriptor);
+    method @NonNull public com.google.firebase.decoders.FieldRef.Primitive<java.lang.Short> decodeShort(@NonNull com.google.firebase.encoders.FieldDescriptor);
+    method @NonNull public <TTypeArgument> com.google.firebase.decoders.TypeToken<TTypeArgument> getTypeArgument(int);
+    method @NonNull public com.google.firebase.decoders.TypeToken.ClassToken<T> getTypeToken();
+  }
+
   public abstract class Safe<T> {
     ctor public Safe();
+  }
+
+  public interface TypeCreator<T> {
+    method @NonNull public T create(@NonNull com.google.firebase.decoders.CreationContext);
   }
 
   public abstract class TypeToken<T> {
@@ -23,6 +80,39 @@ package com.google.firebase.decoders {
     ctor public TypeTokenContainer(@NonNull com.google.firebase.decoders.TypeToken[]);
     method @NonNull public <T> com.google.firebase.decoders.TypeToken<T> at(int);
     field @NonNull public static final com.google.firebase.decoders.TypeTokenContainer EMPTY;
+  }
+
+}
+
+package com.google.firebase.decoders.json {
+
+  public class CreationContextImpl implements com.google.firebase.decoders.CreationContext {
+    method @Nullable public <TField> TField get(@NonNull com.google.firebase.decoders.FieldRef.Boxed<TField>);
+    method public boolean getBoolean(@NonNull com.google.firebase.decoders.FieldRef.Primitive<java.lang.Boolean>);
+    method public char getChar(@NonNull com.google.firebase.decoders.FieldRef.Primitive<java.lang.Character>);
+    method public double getDouble(@NonNull com.google.firebase.decoders.FieldRef.Primitive<java.lang.Double>);
+    method public float getFloat(@NonNull com.google.firebase.decoders.FieldRef.Primitive<java.lang.Float>);
+    method public int getInteger(@NonNull com.google.firebase.decoders.FieldRef.Primitive<java.lang.Integer>);
+    method public long getLong(@NonNull com.google.firebase.decoders.FieldRef.Primitive<java.lang.Long>);
+    method public short getShort(@NonNull com.google.firebase.decoders.FieldRef.Primitive<java.lang.Short>);
+  }
+
+  public class JsonDataDecoderBuilderContext implements com.google.firebase.decoders.DataDecoder {
+    method @NonNull public <T> T decode(@NonNull java.io.InputStream, @NonNull com.google.firebase.decoders.TypeToken<T>) throws java.io.IOException;
+  }
+
+  public class ObjectDecoderContextImpl<T> implements com.google.firebase.decoders.ObjectDecoderContext<T> {
+    method @NonNull public <TField> com.google.firebase.decoders.FieldRef.Boxed<TField> decode(@NonNull com.google.firebase.encoders.FieldDescriptor, @NonNull com.google.firebase.decoders.TypeToken<TField>);
+    method @NonNull public com.google.firebase.decoders.FieldRef.Primitive<java.lang.Boolean> decodeBoolean(@NonNull com.google.firebase.encoders.FieldDescriptor);
+    method @NonNull public com.google.firebase.decoders.FieldRef.Primitive<java.lang.Character> decodeChar(@NonNull com.google.firebase.encoders.FieldDescriptor);
+    method @NonNull public com.google.firebase.decoders.FieldRef.Primitive<java.lang.Double> decodeDouble(@NonNull com.google.firebase.encoders.FieldDescriptor);
+    method @NonNull public com.google.firebase.decoders.FieldRef.Primitive<java.lang.Float> decodeFloat(@NonNull com.google.firebase.encoders.FieldDescriptor);
+    method @NonNull public com.google.firebase.decoders.FieldRef.Primitive<java.lang.Integer> decodeInteger(@NonNull com.google.firebase.encoders.FieldDescriptor);
+    method @NonNull public com.google.firebase.decoders.FieldRef.Primitive<java.lang.Long> decodeLong(@NonNull com.google.firebase.encoders.FieldDescriptor);
+    method @NonNull public com.google.firebase.decoders.FieldRef.Primitive<java.lang.Short> decodeShort(@NonNull com.google.firebase.encoders.FieldDescriptor);
+    method @NonNull public <TTypeArgument> com.google.firebase.decoders.TypeToken<TTypeArgument> getTypeArgument(int);
+    method @NonNull public com.google.firebase.decoders.TypeToken.ClassToken<T> getTypeToken();
+    method @NonNull public static <T> com.google.firebase.decoders.json.ObjectDecoderContextImpl<T> of(@NonNull com.google.firebase.decoders.TypeToken.ClassToken<T>);
   }
 
 }

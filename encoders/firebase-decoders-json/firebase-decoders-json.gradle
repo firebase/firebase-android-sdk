@@ -39,6 +39,9 @@ android {
             includeAndroidResources = true
         }
     }
+    sourceSets.main.java {
+        srcDir 'src/json/java'
+    }
 }
 
 dependencies {
@@ -50,7 +53,7 @@ dependencies {
     testImplementation 'junit:junit:4.13-rc-1'
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation 'org.mockito:mockito-core:2.25.0'
-
+    implementation project(path: ':encoders:firebase-encoders-json')
 }
 
 tasks.withType(JavaCompile) {
