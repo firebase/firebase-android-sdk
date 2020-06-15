@@ -39,12 +39,12 @@ crashlytics.setCustomKey("double_key", 1.0)
 
 **Kotlin + KTX**
 ```kotlin
-crashlytics.setCustomKeys(
-    "str_key" to "hello",
-    "bool_key" to true,
-    "int_key" to 1,
-    "long_key" to 1L,
-    "float_key" to 1.0f,
-    "double_key" to 1.0
-)
+crashlytics.setCustomKeys {
+    key("str_key", "hello")
+    key("bool_key", true)
+    key("int_key", 1)
+    key("long_key", 1L)
+    key("float_key", 1.0f)
+    key("double_key", 1.0)
+}
 ```
