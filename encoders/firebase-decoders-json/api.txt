@@ -18,15 +18,11 @@ package com.google.firebase.decoders {
 
   public abstract class FieldRef<T> {
     ctor public FieldRef();
+    method @NonNull public static <T> com.google.firebase.decoders.FieldRef.Boxed<T> boxed(@NonNull com.google.firebase.encoders.FieldDescriptor, @NonNull com.google.firebase.decoders.TypeToken<T>);
+    method @Nullable public Object getDefaultValue();
     method @NonNull public abstract com.google.firebase.decoders.TypeToken<T> getTypeToken();
-    method @NonNull public static <T> com.google.firebase.decoders.FieldRef.Boxed<T> of(@NonNull com.google.firebase.decoders.TypeToken<T>);
-    field @NonNull public static final com.google.firebase.decoders.FieldRef.Primitive<java.lang.Boolean> BOOLEAN;
-    field @NonNull public static final com.google.firebase.decoders.FieldRef.Primitive<java.lang.Character> CHAR;
-    field @NonNull public static final com.google.firebase.decoders.FieldRef.Primitive<java.lang.Double> DOUBLE;
-    field @NonNull public static final com.google.firebase.decoders.FieldRef.Primitive<java.lang.Float> FLOAT;
-    field @NonNull public static final com.google.firebase.decoders.FieldRef.Primitive<java.lang.Integer> INT;
-    field @NonNull public static final com.google.firebase.decoders.FieldRef.Primitive<java.lang.Long> LONG;
-    field @NonNull public static final com.google.firebase.decoders.FieldRef.Primitive<java.lang.Short> SHORT;
+    method public boolean isRequired();
+    method @NonNull public static <T> com.google.firebase.decoders.FieldRef.Primitive<T> primitive(@NonNull com.google.firebase.encoders.FieldDescriptor, @NonNull com.google.firebase.decoders.TypeToken<T>);
   }
 
   public static final class FieldRef.Boxed<T> extends com.google.firebase.decoders.FieldRef<T> {

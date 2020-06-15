@@ -78,8 +78,7 @@ public class JsonDataDecoderBuilderContext implements DataDecoder {
       String fieldName = reader.nextName();
       FieldRef<?> fieldRef = decoderCtx.getFieldRef(fieldName);
       if (reader.peek().equals(JsonToken.NULL)) {
-        reader.nextNull();
-        creationCtx.put(fieldRef, null);
+        handleNullValue(fieldRef, creationCtx);
       } else if (fieldRef instanceof FieldRef.Primitive) {
         decodePrimitive(fieldRef, creationCtx);
       } else if (isSingleValue(fieldRef)) {
@@ -90,6 +89,20 @@ public class JsonDataDecoderBuilderContext implements DataDecoder {
     }
     reader.endObject();
     return creationCtx;
+  }
+
+  private <T> void handleNullValue(FieldRef<T> fieldRef, CreationContextImpl creationCtx)
+      throws IOException {
+    reader.nextNull();
+    if (fieldRef.isRequired())
+      throw new IllegalArgumentException(fieldRef + " is required.\n" + "But null was found.");
+    if (fieldRef instanceof FieldRef.Primitive && fieldRef.getDefaultValue() == null) {
+      throw new IllegalArgumentException(
+          fieldRef
+              + " is optional primitive type.\n"
+              + "Consider assign an non-null default value.");
+    }
+    creationCtx.put(fieldRef, fieldRef.getDefaultValue());
   }
 
   private <T> boolean isSingleValue(FieldRef<T> fieldRef) {

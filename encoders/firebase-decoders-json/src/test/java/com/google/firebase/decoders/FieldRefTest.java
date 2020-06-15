@@ -16,6 +16,7 @@ package com.google.firebase.decoders;
 
 import static org.junit.Assert.assertThrows;
 
+import com.google.firebase.encoders.FieldDescriptor;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -23,12 +24,24 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class FieldRefTest {
   @Test
-  public void primitivesTypeTokenUsedToCreateFieldRef_shouldThrowILLegalArgumentException() {
+  public void primitivesTypeTokenUsedToCreateBoxedFieldRef_shouldThrowILLegalArgumentException() {
     assertThrows(
         "FieldRef.Boxed<T> can only be used to hold non-primitive type.",
         IllegalArgumentException.class,
         () -> {
-          FieldRef.of(TypeToken.of(int.class));
+          FieldRef.boxed(FieldDescriptor.of("test"), TypeToken.of(int.class));
+        });
+  }
+
+  static class Foo {}
+
+  @Test
+  public void objectTypeTokenUsedToCreatePrimitiveFieldRef_shouldThrowILLegalArgumentException() {
+    assertThrows(
+        "FieldRef.Primitive<T> can only be used to hold primitive type.",
+        IllegalArgumentException.class,
+        () -> {
+          FieldRef.primitive(FieldDescriptor.of("test"), TypeToken.of(Foo.class));
         });
   }
 }

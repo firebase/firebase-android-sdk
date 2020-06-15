@@ -16,6 +16,7 @@ package com.google.firebase.decoders.json;
 
 import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.Assert.assertThrows;
 
 import androidx.annotation.NonNull;
 import com.google.firebase.decoders.FieldRef;
@@ -329,5 +330,132 @@ public class JsonDataDecoderBuilderContextTest {
     assertThat(singleValues.b).isEqualTo(true);
     assertThat(singleValues.c).isEqualTo('c');
     assertThat(singleValues.str).isEqualTo("str");
+  }
+
+  static class MyFoo {
+    String str;
+
+    MyFoo(String str) {
+      this.str = str;
+    }
+  }
+
+  static class MyFooRequiredDecoder implements ObjectDecoder<MyFoo> {
+
+    @NonNull
+    @Override
+    public TypeCreator<MyFoo> decode(@NonNull ObjectDecoderContext<MyFoo> ctx) {
+      FieldRef.Boxed<String> strField =
+          ctx.decode(FieldDescriptor.required("str"), TypeToken.of(String.class));
+      return (creationCtx -> new MyFoo(creationCtx.get(strField)));
+    }
+  }
+
+  @Test
+  public void requireFieldEncounterNullValue_shouldThrowException() throws IOException {
+    Map<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
+    objectDecoders.put(MyFoo.class, new MyFooRequiredDecoder());
+    JsonDataDecoderBuilderContext jsonDataDecoderBuilderContext =
+        new JsonDataDecoderBuilderContext(objectDecoders);
+
+    String json = "{\"str\": null}";
+    InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
+
+    assertThrows(
+        "Required Field should always have NonNull value",
+        IllegalArgumentException.class,
+        () -> {
+          jsonDataDecoderBuilderContext.decode(input, TypeToken.of(MyFoo.class));
+        });
+  }
+
+  static class MyFooOptionalDecoder implements ObjectDecoder<MyFoo> {
+
+    @NonNull
+    @Override
+    public TypeCreator<MyFoo> decode(@NonNull ObjectDecoderContext<MyFoo> ctx) {
+      FieldRef.Boxed<String> strField =
+          ctx.decode(FieldDescriptor.optional("str", "optional_value"), TypeToken.of(String.class));
+      return (creationCtx -> new MyFoo(creationCtx.get(strField)));
+    }
+  }
+
+  @Test
+  public void optionalObjectFieldEncounterNullValue_shouldAssignDefaultValue() throws IOException {
+    Map<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
+    objectDecoders.put(MyFoo.class, new MyFooOptionalDecoder());
+    JsonDataDecoderBuilderContext jsonDataDecoderBuilderContext =
+        new JsonDataDecoderBuilderContext(objectDecoders);
+
+    String json = "{\"str\": null}";
+    InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
+
+    MyFoo myFoo = jsonDataDecoderBuilderContext.decode(input, TypeToken.of(MyFoo.class));
+
+    assertThat(myFoo.str).isEqualTo("optional_value");
+  }
+
+  static class IntFoo {
+    int i;
+
+    IntFoo(int i) {
+      this.i = i;
+    }
+  }
+
+  static class IntFooDecoder implements ObjectDecoder<IntFoo> {
+
+    @NonNull
+    @Override
+    public TypeCreator<IntFoo> decode(@NonNull ObjectDecoderContext<IntFoo> ctx) {
+      FieldRef.Primitive<Integer> intField = ctx.decodeInteger(FieldDescriptor.optional("i", 1));
+      return (creationCtx -> new IntFoo(creationCtx.getInteger(intField)));
+    }
+  }
+
+  @Test
+  public void
+      optionalPrimitiveFieldEncounterNullValueWithNonNullDefaultValue_shouldAssignDefaultValue()
+          throws IOException {
+    Map<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
+    objectDecoders.put(IntFoo.class, new IntFooDecoder());
+    JsonDataDecoderBuilderContext jsonDataDecoderBuilderContext =
+        new JsonDataDecoderBuilderContext(objectDecoders);
+
+    String json = "{\"i\": 1}";
+    InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
+
+    IntFoo intFoo = jsonDataDecoderBuilderContext.decode(input, TypeToken.of(IntFoo.class));
+
+    assertThat(intFoo.i).isEqualTo(1);
+  }
+
+  static class IntFooNullValueDecoder implements ObjectDecoder<IntFoo> {
+
+    @NonNull
+    @Override
+    public TypeCreator<IntFoo> decode(@NonNull ObjectDecoderContext<IntFoo> ctx) {
+      FieldRef.Primitive<Integer> intField = ctx.decodeInteger(FieldDescriptor.optional("i", null));
+      return (creationCtx -> new IntFoo(creationCtx.getInteger(intField)));
+    }
+  }
+
+  @Test
+  public void optionalPrimitiveFieldEncounterNullValueWithNullDefaultValue_shouldThrowException()
+      throws IOException {
+    Map<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
+    objectDecoders.put(IntFoo.class, new IntFooNullValueDecoder());
+    JsonDataDecoderBuilderContext jsonDataDecoderBuilderContext =
+        new JsonDataDecoderBuilderContext(objectDecoders);
+
+    String json = "{\"i\": null}";
+    InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
+
+    assertThrows(
+        "Required Field should always have NonNull value",
+        IllegalArgumentException.class,
+        () -> {
+          jsonDataDecoderBuilderContext.decode(input, TypeToken.of(IntFoo.class));
+        });
   }
 }

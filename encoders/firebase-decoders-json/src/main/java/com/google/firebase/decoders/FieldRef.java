@@ -15,6 +15,8 @@
 package com.google.firebase.decoders;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import com.google.firebase.encoders.FieldDescriptor;
 
 // TODO: support required, optional.
 
@@ -25,35 +27,44 @@ import androidx.annotation.NonNull;
  */
 public abstract class FieldRef<T> {
   private TypeToken<T> typeToken;
+  private FieldDescriptor fieldDescriptor;
 
   @NonNull
   public abstract TypeToken<T> getTypeToken();
 
-  @NonNull
-  public static final Primitive<Boolean> BOOLEAN = new Primitive<>(TypeToken.of(boolean.class));
+  public boolean isRequired() {
+    return fieldDescriptor.isRequired();
+  }
 
-  @NonNull public static final Primitive<Short> SHORT = new Primitive<>(TypeToken.of(short.class));
-
-  @NonNull public static final Primitive<Long> LONG = new Primitive<>(TypeToken.of(long.class));
-
-  @NonNull public static final Primitive<Float> FLOAT = new Primitive<>(TypeToken.of(float.class));
-
-  @NonNull
-  public static final Primitive<Double> DOUBLE = new Primitive<>(TypeToken.of(double.class));
+  @Nullable
+  public Object getDefaultValue() {
+    return fieldDescriptor.getDefaultValue();
+  }
 
   @NonNull
-  public static final Primitive<Character> CHAR = new Primitive<>(TypeToken.of(char.class));
-
-  @NonNull public static final Primitive<Integer> INT = new Primitive<>(TypeToken.of(int.class));
+  public static <T> Boxed<T> boxed(
+      @NonNull FieldDescriptor fieldDescriptor, @NonNull TypeToken<T> typeToken) {
+    return new Boxed<T>(fieldDescriptor, typeToken);
+  }
 
   @NonNull
-  public static <T> Boxed<T> of(@NonNull TypeToken<T> typeToken) {
-    return new Boxed<T>(typeToken);
+  public static <T> Primitive<T> primitive(
+      @NonNull FieldDescriptor fieldDescriptor, @NonNull TypeToken<T> typeToken) {
+    return new Primitive<T>(fieldDescriptor, typeToken);
   }
 
   /** Used to represent primitive data type. */
   public static final class Primitive<T> extends FieldRef<T> {
-    private Primitive(@NonNull TypeToken<T> typeToken) {
+    private Primitive(FieldDescriptor fieldDescriptor, @NonNull TypeToken<T> typeToken) {
+      if (typeToken instanceof TypeToken.ClassToken) {
+        Class<?> clazz = ((TypeToken.ClassToken<T>) typeToken).getRawType();
+        if (!clazz.isPrimitive())
+          throw new IllegalArgumentException(
+              "FieldRef.Primitive<T> can only be used to hold primitive type.\n"
+                  + clazz
+                  + "was found.");
+      }
+      super.fieldDescriptor = fieldDescriptor;
       super.typeToken = typeToken;
     }
 
@@ -67,7 +78,7 @@ public abstract class FieldRef<T> {
   /** Use it to represent Boxed Data type */
   public static final class Boxed<T> extends FieldRef<T> {
 
-    private Boxed(@NonNull TypeToken<T> typeToken) {
+    private Boxed(FieldDescriptor fieldDescriptor, @NonNull TypeToken<T> typeToken) {
       if (typeToken instanceof TypeToken.ClassToken) {
         Class<?> clazz = ((TypeToken.ClassToken<T>) typeToken).getRawType();
         if (clazz.isPrimitive())
@@ -76,6 +87,7 @@ public abstract class FieldRef<T> {
                   + clazz
                   + "was found.");
       }
+      super.fieldDescriptor = fieldDescriptor;
       super.typeToken = typeToken;
     }
 

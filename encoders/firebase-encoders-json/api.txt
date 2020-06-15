@@ -13,9 +13,13 @@ package com.google.firebase.encoders {
 
   public final class FieldDescriptor {
     method @NonNull public static com.google.firebase.encoders.FieldDescriptor.Builder builder(@NonNull String);
+    method @Nullable public Object getDefaultValue();
     method @NonNull public String getName();
     method @Nullable public <T extends java.lang.annotation.Annotation> T getProperty(@NonNull Class<T>);
+    method public boolean isRequired();
     method @NonNull public static com.google.firebase.encoders.FieldDescriptor of(@NonNull String);
+    method @NonNull public static com.google.firebase.encoders.FieldDescriptor optional(@NonNull String, @Nullable Object);
+    method @NonNull public static com.google.firebase.encoders.FieldDescriptor required(@NonNull String);
   }
 
   public static final class FieldDescriptor.Builder {

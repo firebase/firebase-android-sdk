@@ -43,17 +43,38 @@ import java.util.Map;
 public final class FieldDescriptor {
 
   private final String name;
+  private final boolean required;
+  private final Object defaultValue;
   private final Map<Class<?>, Object> properties;
 
   private FieldDescriptor(String name, Map<Class<?>, Object> properties) {
     this.name = name;
     this.properties = properties;
+    required = false;
+    defaultValue = null;
+  }
+
+  private FieldDescriptor(
+      String name, Map<Class<?>, Object> properties, boolean required, Object defaultValue) {
+    this.name = name;
+    this.properties = properties;
+    this.required = required;
+    this.defaultValue = defaultValue;
   }
 
   /** Name of the field. */
   @NonNull
   public String getName() {
     return name;
+  }
+
+  public boolean isRequired() {
+    return required;
+  }
+
+  @Nullable
+  public Object getDefaultValue() {
+    return defaultValue;
   }
 
   /**
@@ -67,9 +88,23 @@ public final class FieldDescriptor {
     return (T) properties.get(type);
   }
 
+  /**
+   * {@link FieldDescriptor} will be initialized with default behavior: optional field with null
+   * default value.
+   */
   @NonNull
   public static FieldDescriptor of(@NonNull String name) {
     return new FieldDescriptor(name, Collections.emptyMap());
+  }
+
+  @NonNull
+  public static FieldDescriptor required(@NonNull String name) {
+    return new FieldDescriptor(name, Collections.emptyMap(), true, null);
+  }
+
+  @NonNull
+  public static FieldDescriptor optional(@NonNull String name, @Nullable Object defaultValue) {
+    return new FieldDescriptor(name, Collections.emptyMap(), false, defaultValue);
   }
 
   @NonNull
