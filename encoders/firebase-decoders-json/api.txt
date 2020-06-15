@@ -24,6 +24,7 @@ package com.google.firebase.decoders {
     field @NonNull public static final com.google.firebase.decoders.FieldRef.Primitive<java.lang.Character> CHAR;
     field @NonNull public static final com.google.firebase.decoders.FieldRef.Primitive<java.lang.Double> DOUBLE;
     field @NonNull public static final com.google.firebase.decoders.FieldRef.Primitive<java.lang.Float> FLOAT;
+    field @NonNull public static com.google.firebase.decoders.FieldRef.Primitive<java.lang.Integer> INT;
     field @NonNull public static final com.google.firebase.decoders.FieldRef.Primitive<java.lang.Long> LONG;
     field @NonNull public static final com.google.firebase.decoders.FieldRef.Primitive<java.lang.Short> SHORT;
   }
@@ -34,7 +35,6 @@ package com.google.firebase.decoders {
 
   public static final class FieldRef.Primitive<T> extends com.google.firebase.decoders.FieldRef<T> {
     method @NonNull public com.google.firebase.decoders.TypeToken<T> getTypeToken();
-    field @NonNull public static com.google.firebase.decoders.FieldRef.Primitive<java.lang.Integer> INT;
   }
 
   public interface ObjectDecoder<T> {
