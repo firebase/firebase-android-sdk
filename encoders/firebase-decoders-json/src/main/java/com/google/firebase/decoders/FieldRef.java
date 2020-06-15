@@ -44,7 +44,7 @@ public abstract class FieldRef<T> {
   @NonNull
   public static final Primitive<Character> CHAR = new Primitive<>(TypeToken.of(char.class));
 
-  @NonNull public static Primitive<Integer> INT = new Primitive<>(TypeToken.of(int.class));
+  @NonNull public static final Primitive<Integer> INT = new Primitive<>(TypeToken.of(int.class));
 
   @NonNull
   public static <T> Boxed<T> of(@NonNull TypeToken<T> typeToken) {
