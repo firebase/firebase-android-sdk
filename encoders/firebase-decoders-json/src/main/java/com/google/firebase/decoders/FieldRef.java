@@ -53,6 +53,12 @@ public abstract class FieldRef<T> {
     return new Primitive<T>(fieldDescriptor, typeToken);
   }
 
+  @NonNull
+  @Override
+  public String toString() {
+    return "FieldRef{" + typeToken + ", " + fieldDescriptor + "}";
+  }
+
   /** Used to represent primitive data type. */
   public static final class Primitive<T> extends FieldRef<T> {
     private Primitive(FieldDescriptor fieldDescriptor, @NonNull TypeToken<T> typeToken) {
