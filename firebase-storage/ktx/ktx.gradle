@@ -59,4 +59,5 @@ dependencies {
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation 'junit:junit:4.12'
     testImplementation "com.google.truth:truth:$googleTruthVersion"
+    testImplementation 'org.mockito:mockito-core:3.3.3'
 }
