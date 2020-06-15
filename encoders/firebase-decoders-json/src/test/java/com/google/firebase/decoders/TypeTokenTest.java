@@ -46,7 +46,7 @@ public class TypeTokenTest {
   public void generalArrayTypeWithSafe_componentTypeIsCorrectlyCaptured() {
     TypeToken<Foo[]> typeToken = TypeToken.of(new Safe<Foo[]>() {});
     assertThat(typeToken).isInstanceOf(TypeToken.ArrayToken.class);
-    TypeToken.ArrayToken<Foo[]> arrayToken = (TypeToken.ArrayToken<Foo[]>) typeToken;
+    TypeToken.ArrayToken<Foo> arrayToken = (TypeToken.ArrayToken<Foo>) typeToken;
     TypeToken<?> componentTypeToken = arrayToken.getComponentType();
     assertThat(componentTypeToken).isInstanceOf(TypeToken.ClassToken.class);
     TypeToken.ClassToken<Foo> componentToken = (TypeToken.ClassToken<Foo>) componentTypeToken;
@@ -57,7 +57,7 @@ public class TypeTokenTest {
   public void generalArrayTypeWithoutSafe_componentTypeIsCorrectlyCaptured() {
     TypeToken<Foo[]> typeToken = TypeToken.of(Foo[].class);
     assertThat(typeToken).isInstanceOf(TypeToken.ArrayToken.class);
-    TypeToken.ArrayToken<Foo[]> arrayToken = (TypeToken.ArrayToken<Foo[]>) typeToken;
+    TypeToken.ArrayToken<Foo> arrayToken = (TypeToken.ArrayToken<Foo>) typeToken;
     TypeToken<?> componentTypeToken = arrayToken.getComponentType();
     assertThat(componentTypeToken).isInstanceOf(TypeToken.ClassToken.class);
     TypeToken.ClassToken<Foo> componentToken = (TypeToken.ClassToken<Foo>) componentTypeToken;
@@ -68,8 +68,7 @@ public class TypeTokenTest {
   public void genericArrayType_rawTypeIsCorrectlyCaptured() {
     TypeToken<List<String>[]> typeToken = TypeToken.of(new Safe<List<String>[]>() {});
     assertThat(typeToken).isInstanceOf(TypeToken.ArrayToken.class);
-    TypeToken.ArrayToken<List<String>[]> arrayToken =
-        (TypeToken.ArrayToken<List<String>[]>) typeToken;
+    TypeToken.ArrayToken<List<String>> arrayToken = (TypeToken.ArrayToken<List<String>>) typeToken;
     TypeToken<List<String>> componentType = (TypeToken<List<String>>) arrayToken.getComponentType();
     assertThat(componentType).isInstanceOf(TypeToken.ClassToken.class);
     TypeToken.ClassToken<List<String>> componentClassType =

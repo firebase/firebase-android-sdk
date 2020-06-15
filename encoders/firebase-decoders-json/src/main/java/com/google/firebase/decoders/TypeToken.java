@@ -81,7 +81,14 @@ public abstract class TypeToken<T> {
       throw new IllegalArgumentException("<? super T> is not supported");
     } else if (type instanceof GenericArrayType) {
       Type componentType = ((GenericArrayType) type).getGenericComponentType();
-      return new ArrayToken<T>(TypeToken.of(componentType));
+      @SuppressWarnings("unchecked")
+      /*
+       Safe, since class ArrayToken<T> extends TypeToken<T[]>, therefore,
+       type parameter in ArrayToken is always the "de-array" type parameter of TypeToken.
+       In this case, type parameter in componentType is the "de-array" type parameter of T.
+      */
+      TypeToken<T> typeToken = (TypeToken<T>) new ArrayToken(TypeToken.of(componentType));
+      return typeToken;
     } else if (type instanceof ParameterizedType) {
       ParameterizedType parameterizedType = (ParameterizedType) type;
       // Safe because rawType of parameterizedType is always instance of Class<T>
@@ -94,17 +101,22 @@ public abstract class TypeToken<T> {
       }
       return new ClassToken<T>(rawType, new TypeTokenContainer(typeTokens));
     } else if (type instanceof Class<?>) {
+      Class<?> rawClazz = (Class<?>) type;
+      if (rawClazz.isArray()) {
+        @SuppressWarnings({"unchecked", "ConstantConditions"})
+        /*
+         Safe, since class ArrayToken<T> extends TypeToken<T[]>, therefore,
+         type parameter in ArrayToken is always the "de-array" type parameter of TypeToken.
+         In this case, type parameter in componentType is the "de-array" type parameter of T.
+        */
+        TypeToken<T> typeToken =
+            (TypeToken<T>) new ArrayToken(TypeToken.of(rawClazz.getComponentType()));
+        return typeToken;
+      }
       // Safe because type is instance of Class<?>
       @SuppressWarnings("unchecked")
-      Class<T> typeToken = (Class<T>) type;
-      if (typeToken.isArray()) {
-        Class<?> componentTypeToken = typeToken.getComponentType();
-        // Safe because typeToken is an Array and componentTypeToken will never be null
-        @SuppressWarnings("ConstantConditions")
-        ArrayToken<T> arrayToken = new ArrayToken<T>(TypeToken.of(componentTypeToken));
-        return arrayToken;
-      }
-      return new ClassToken<T>(typeToken);
+      Class<T> clazz = (Class<T>) rawClazz;
+      return new ClassToken<T>(clazz);
     } else {
       throw new IllegalArgumentException("Type: " + type.toString() + " not supported.");
     }
@@ -177,10 +189,10 @@ public abstract class TypeToken<T> {
    * {@link ArrayToken} is used to represent Array types in a type-safe manner. such as: primitive
    * arrays(i.e. {@code int[]}) and object arrays(i.e. {@code Foo[]})
    */
-  public static class ArrayToken<T> extends TypeToken<T> {
-    private final TypeToken<?> componentType;
+  public static class ArrayToken<T> extends TypeToken<T[]> {
+    private final TypeToken<T> componentType;
 
-    private ArrayToken(TypeToken<?> componentType) {
+    private ArrayToken(TypeToken<T> componentType) {
       this.componentType = componentType;
     }
 
