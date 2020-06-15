@@ -68,7 +68,7 @@ public abstract class FieldRef<T> {
           throw new IllegalArgumentException(
               "FieldRef.Primitive<T> can only be used to hold primitive type.\n"
                   + clazz
-                  + "was found.");
+                  + " was found.");
       }
       super.fieldDescriptor = fieldDescriptor;
       super.typeToken = typeToken;
@@ -91,7 +91,7 @@ public abstract class FieldRef<T> {
           throw new IllegalArgumentException(
               "FieldRef.Boxed<T> can only be used to hold non-primitive type.\n"
                   + clazz
-                  + "was found.");
+                  + " was found.");
       }
       super.fieldDescriptor = fieldDescriptor;
       super.typeToken = typeToken;
