@@ -200,7 +200,7 @@ public class ConfigFetchHandlerTest {
 
   @Test
   public void fetch_failToGetInstallationAuthToken_throwsRemoteConfigException() throws Exception {
-    when(mockFirebaseInstallations.getId())
+    when(mockFirebaseInstallations.getToken(false))
         .thenReturn(Tasks.forException(new IOException("SERVICE_NOT_AVAILABLE")));
     fetchCallToHttpClientReturnsConfigWithCurrentTime(firstFetchedContainer);
 
