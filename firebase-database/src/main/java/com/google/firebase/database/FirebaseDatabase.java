@@ -14,12 +14,13 @@
 
 package com.google.firebase.database;
 
-import static com.google.android.gms.common.internal.Preconditions.checkNotNull;
-
 import android.text.TextUtils;
+
 import androidx.annotation.NonNull;
+
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
+import com.google.firebase.database.annotations.Nullable;
 import com.google.firebase.database.core.DatabaseConfig;
 import com.google.firebase.database.core.Path;
 import com.google.firebase.database.core.Repo;
@@ -28,6 +29,11 @@ import com.google.firebase.database.core.RepoManager;
 import com.google.firebase.database.core.utilities.ParsedUrl;
 import com.google.firebase.database.core.utilities.Utilities;
 import com.google.firebase.database.core.utilities.Validation;
+import com.google.firebase.emulators.EmulatedServiceSettings;
+import com.google.firebase.emulators.EmulatorSettings;
+import com.google.firebase.emulators.FirebaseEmulators;
+
+import static com.google.android.gms.common.internal.Preconditions.checkNotNull;
 
 /**
  * The entry point for accessing a Firebase Database. You can get an instance by calling {@link
@@ -99,7 +105,7 @@ public class FirebaseDatabase {
               + "FirebaseApp or from your getInstance() call.");
     }
 
-    ParsedUrl parsedUrl = Utilities.parseUrl(url);
+    ParsedUrl parsedUrl = Utilities.parseUrl(url, getEmulatorServiceSettings(app));
     if (!parsedUrl.path.isEmpty()) {
       throw new DatabaseException(
           "Specified Database URL '"
@@ -112,6 +118,13 @@ public class FirebaseDatabase {
     checkNotNull(app, "Provided FirebaseApp must not be null.");
     FirebaseDatabaseComponent component = app.get(FirebaseDatabaseComponent.class);
     checkNotNull(component, "Firebase Database component is not present.");
+
+    EmulatorSettings emulatorSettings = app.getEmulatorSettings();
+    EmulatedServiceSettings serviceSettings =
+        emulatorSettings != null
+            ? emulatorSettings.getServiceSettings(FirebaseEmulators.DATABASE)
+            : null;
+
     return component.get(parsedUrl.repoInfo);
   }
 
@@ -188,7 +201,7 @@ public class FirebaseDatabase {
           "Can't pass null for argument 'url' in " + "FirebaseDatabase.getReferenceFromUrl()");
     }
 
-    ParsedUrl parsedUrl = Utilities.parseUrl(url);
+    ParsedUrl parsedUrl = Utilities.parseUrl(url, getEmulatorServiceSettings(this.app));
     if (!parsedUrl.repoInfo.host.equals(this.repo.getRepoInfo().host)) {
       throw new DatabaseException(
           "Invalid URL ("
@@ -286,6 +299,14 @@ public class FirebaseDatabase {
   public synchronized void setPersistenceCacheSizeBytes(long cacheSizeInBytes) {
     assertUnfrozen("setPersistenceCacheSizeBytes");
     this.config.setPersistenceCacheSizeBytes(cacheSizeInBytes);
+  }
+
+  @Nullable
+  private static EmulatedServiceSettings getEmulatorServiceSettings(@NonNull FirebaseApp app) {
+    EmulatorSettings emulatorSettings = app.getEmulatorSettings();
+    return emulatorSettings != null
+        ? emulatorSettings.getServiceSettings(FirebaseEmulators.DATABASE)
+        : null;
   }
 
   /** @return The semver version for this build of the Firebase Database client */

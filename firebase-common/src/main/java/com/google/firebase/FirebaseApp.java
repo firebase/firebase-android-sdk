@@ -14,8 +14,6 @@
 
 package com.google.firebase;
 
-import static com.google.android.gms.common.util.Base64Utils.encodeUrlSafeNoPadding;
-
 import android.annotation.TargetApi;
 import android.app.Application;
 import android.content.BroadcastReceiver;
@@ -27,11 +25,13 @@ import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
 import android.util.Log;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.collection.ArrayMap;
 import androidx.core.os.UserManagerCompat;
+
 import com.google.android.gms.common.annotation.KeepForSdk;
 import com.google.android.gms.common.api.internal.BackgroundDetector;
 import com.google.android.gms.common.internal.Objects;
@@ -44,12 +44,14 @@ import com.google.firebase.components.ComponentDiscoveryService;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.ComponentRuntime;
 import com.google.firebase.components.Lazy;
+import com.google.firebase.emulators.EmulatorSettings;
 import com.google.firebase.events.Publisher;
 import com.google.firebase.heartbeatinfo.DefaultHeartBeatInfo;
 import com.google.firebase.internal.DataCollectionConfigStorage;
 import com.google.firebase.platforminfo.DefaultUserAgentPublisher;
 import com.google.firebase.platforminfo.KotlinDetector;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
+
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -59,7 +61,10 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+
 import javax.annotation.concurrent.GuardedBy;
+
+import static com.google.android.gms.common.util.Base64Utils.encodeUrlSafeNoPadding;
 
 /**
  * The entry point of Firebase SDKs. It holds common configuration and state for Firebase APIs. Most
@@ -109,6 +114,7 @@ public class FirebaseApp {
   private final String name;
   private final FirebaseOptions options;
   private final ComponentRuntime componentRuntime;
+  private EmulatorSettings emulatorSettings;
 
   // Default disabled. We released Firebase publicly without this feature, so making it default
   // enabled is a backwards incompatible change.
@@ -140,6 +146,13 @@ public class FirebaseApp {
   public FirebaseOptions getOptions() {
     checkNotDeleted();
     return options;
+  }
+
+  /** Returns the specified {@link EmulatorSettings}. */
+  @Nullable
+  public EmulatorSettings getEmulatorSettings() {
+    checkNotDeleted();
+    return emulatorSettings;
   }
 
   @Override
@@ -303,6 +316,24 @@ public class FirebaseApp {
 
     firebaseApp.initializeAllApis();
     return firebaseApp;
+  }
+
+  /**
+   * Specify which services should access local emulators for this FirebaseApp instance.
+   *
+   * <p>For example, if the {@link EmulatorSettings} contain {@link
+   * com.google.firebase.emulators.EmulatedServiceSettings} for {@link
+   * com.google.firebase.emulators.FirebaseEmulators#FIRESTORE}, then calls to Cloud Firestore will
+   * communicate with the emulator rather than production.
+   *
+   * @param emulatorSettings the emulator settings for all services.
+   */
+  public void enableEmulators(@NonNull EmulatorSettings emulatorSettings) {
+    checkNotDeleted();
+    Preconditions.checkState(
+        !(this.emulatorSettings != null && this.emulatorSettings.isAccessed()),
+        "Cannot enable emulators after Firebase SDKs have already been used.");
+    this.emulatorSettings = emulatorSettings;
   }
 
   /**

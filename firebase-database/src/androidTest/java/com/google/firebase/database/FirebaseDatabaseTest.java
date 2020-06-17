@@ -14,14 +14,9 @@
 
 package com.google.firebase.database;
 
-import static com.google.firebase.database.IntegrationTestHelpers.fromSingleQuotedString;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.fail;
-
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
+
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.database.core.DatabaseConfig;
@@ -30,14 +25,25 @@ import com.google.firebase.database.core.persistence.DefaultPersistenceManager;
 import com.google.firebase.database.core.persistence.MockPersistenceStorageEngine;
 import com.google.firebase.database.core.persistence.PersistenceManager;
 import com.google.firebase.database.future.WriteFuture;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import com.google.firebase.emulators.EmulatedServiceSettings;
+import com.google.firebase.emulators.EmulatorSettings;
+import com.google.firebase.emulators.FirebaseEmulators;
+
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import static com.google.firebase.database.IntegrationTestHelpers.fromSingleQuotedString;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.fail;
 
 @org.junit.runner.RunWith(AndroidJUnit4.class)
 public class FirebaseDatabaseTest {
@@ -62,6 +68,27 @@ public class FirebaseDatabaseTest {
     FirebaseDatabase db = FirebaseDatabase.getInstance(app);
 
     assertEquals(IntegrationTestValues.getAltNamespace(), db.getReference().toString());
+  }
+
+  @Test
+  public void getInstanceForAppWithEmulator() {
+    FirebaseApp app =
+        appForDatabaseUrl(IntegrationTestValues.getAltNamespace(), "getInstanceForAppWithEmulator");
+
+    EmulatedServiceSettings serviceSettings =
+        new EmulatedServiceSettings.Builder("10.0.2.2", 9000).build();
+    EmulatorSettings emulatorSettings =
+        new EmulatorSettings.Builder()
+            .addEmulatedService(FirebaseEmulators.DATABASE, serviceSettings)
+            .build();
+    app.enableEmulators(emulatorSettings);
+
+    FirebaseDatabase db = FirebaseDatabase.getInstance(app);
+    DatabaseReference rootRef = db.getReference();
+    assertEquals(rootRef.toString(), "http://10.0.2.2:9000");
+
+    DatabaseReference urlReference = db.getReferenceFromUrl("https://otherns.firebaseio.com");
+    assertEquals(urlReference.toString(), "http://10.0.2.2:9000");
   }
 
   @Test

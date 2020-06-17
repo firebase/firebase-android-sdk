@@ -16,7 +16,10 @@ package com.google.firebase.database.core.utilities;
 
 import android.net.Uri;
 import android.util.Base64;
+
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.database.DatabaseError;
@@ -24,6 +27,8 @@ import com.google.firebase.database.DatabaseException;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.core.Path;
 import com.google.firebase.database.core.RepoInfo;
+import com.google.firebase.emulators.EmulatedServiceSettings;
+
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -32,7 +37,13 @@ import java.util.Map;
 public class Utilities {
   private static final char[] HEX_CHARACTERS = "0123456789abcdef".toCharArray();
 
-  public static ParsedUrl parseUrl(String url) throws DatabaseException {
+  public static ParsedUrl parseUrl(@NonNull String url) {
+    return Utilities.parseUrl(url, null);
+  }
+
+  public static ParsedUrl parseUrl(
+      @NonNull String url, @Nullable EmulatedServiceSettings serviceSettings)
+      throws DatabaseException {
     try {
       Uri uri = Uri.parse(url);
 
@@ -72,6 +83,13 @@ public class Utilities {
       // from our expected behavior. Do a manual replace to fix it.
       originalPathString = originalPathString.replace("+", " ");
       Validation.validateRootPathString(originalPathString);
+
+      // TODO: Should log this out
+      if (serviceSettings != null) {
+        repoInfo.secure = false;
+        repoInfo.host = serviceSettings.host + ":" + serviceSettings.port;
+        repoInfo.internalHost = repoInfo.host;
+      }
 
       ParsedUrl parsedUrl = new ParsedUrl();
       parsedUrl.path = new Path(originalPathString);
