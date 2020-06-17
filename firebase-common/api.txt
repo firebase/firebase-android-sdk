@@ -2,8 +2,10 @@
 package com.google.firebase {
 
   public class FirebaseApp {
+    method public void enableEmulators(@NonNull com.google.firebase.emulators.EmulatorSettings);
     method @NonNull public android.content.Context getApplicationContext();
     method @NonNull public static java.util.List<com.google.firebase.FirebaseApp> getApps(@NonNull android.content.Context);
+    method @Nullable public com.google.firebase.emulators.EmulatorSettings getEmulatorSettings();
     method @NonNull public static com.google.firebase.FirebaseApp getInstance();
     method @NonNull public static com.google.firebase.FirebaseApp getInstance(@NonNull String);
     method @NonNull public String getName();
@@ -43,6 +45,35 @@ package com.google.firebase {
 
   public class FirebaseTooManyRequestsException extends com.google.firebase.FirebaseException {
     ctor public FirebaseTooManyRequestsException(@NonNull String);
+  }
+
+}
+
+package com.google.firebase.emulators {
+
+  public class EmulatedServiceSettings {
+    field public final String host;
+    field public final int port;
+  }
+
+  public static final class EmulatedServiceSettings.Builder {
+    ctor public EmulatedServiceSettings.Builder(@NonNull String, int);
+    method @NonNull public com.google.firebase.emulators.EmulatedServiceSettings build();
+  }
+
+  public class EmulatorSettings {
+  }
+
+  public static final class EmulatorSettings.Builder {
+    ctor public EmulatorSettings.Builder();
+    method @NonNull public com.google.firebase.emulators.EmulatorSettings.Builder addEmulatedService(@NonNull com.google.firebase.emulators.FirebaseEmulators, @NonNull com.google.firebase.emulators.EmulatedServiceSettings);
+    method @NonNull public com.google.firebase.emulators.EmulatorSettings build();
+  }
+
+  public enum FirebaseEmulators {
+    enum_constant public static final com.google.firebase.emulators.FirebaseEmulators DATABASE;
+    enum_constant public static final com.google.firebase.emulators.FirebaseEmulators FIRESTORE;
+    enum_constant public static final com.google.firebase.emulators.FirebaseEmulators FUNCTIONS;
   }
 
 }
