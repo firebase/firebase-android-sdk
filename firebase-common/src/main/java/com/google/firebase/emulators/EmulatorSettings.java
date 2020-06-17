@@ -17,6 +17,7 @@ package com.google.firebase.emulators;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.google.android.gms.common.annotation.KeepForSdk;
 import com.google.firebase.components.Preconditions;
 
 import java.util.Collections;
@@ -28,8 +29,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Settings that control which Firebase services should access a local emulator, rather than
  * production.
  *
+ * <p>TODO(samstern): Un-hide this once Firestore, Database, and Functions are implemented
+ *
  * @see com.google.firebase.FirebaseApp#enableEmulators(EmulatorSettings)
+ * @hide
  */
+@KeepForSdk
 public class EmulatorSettings {
 
   public static final class Builder {

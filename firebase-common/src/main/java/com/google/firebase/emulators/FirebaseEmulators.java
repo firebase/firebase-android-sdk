@@ -14,13 +14,19 @@
 
 package com.google.firebase.emulators;
 
+import com.google.android.gms.common.annotation.KeepForSdk;
+
 /**
  * Enum for Firebase services that can be emulated using the Firebase Emulator Suite.
+ *
+ * <p>TODO(samstern): Un-hide this once Firestore, Database, and Functions are implemented
  *
  * @see com.google.firebase.FirebaseApp#enableEmulators(EmulatorSettings)
  * @see EmulatorSettings
  * @see EmulatedServiceSettings
+ * @hide
  */
+@KeepForSdk
 public enum FirebaseEmulators {
   DATABASE,
   FIRESTORE,

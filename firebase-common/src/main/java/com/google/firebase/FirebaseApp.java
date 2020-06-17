@@ -148,7 +148,14 @@ public class FirebaseApp {
     return options;
   }
 
-  /** Returns the specified {@link EmulatorSettings}. */
+  /**
+   * Returns the specified {@link EmulatorSettings}.
+   *
+   * <p>TODO(samstern): Un-hide this once Firestore, Database, and Functions are implemented
+   *
+   * @hide
+   */
+  @KeepForSdk
   @Nullable
   public EmulatorSettings getEmulatorSettings() {
     checkNotDeleted();
@@ -326,8 +333,12 @@ public class FirebaseApp {
    * com.google.firebase.emulators.FirebaseEmulators#FIRESTORE}, then calls to Cloud Firestore will
    * communicate with the emulator rather than production.
    *
+   * <p>TODO(samstern): Un-hide this once Firestore, Database, and Functions are implemented
+   *
    * @param emulatorSettings the emulator settings for all services.
+   * @hide
    */
+  @KeepForSdk
   public void enableEmulators(@NonNull EmulatorSettings emulatorSettings) {
     checkNotDeleted();
     Preconditions.checkState(

@@ -16,11 +16,17 @@ package com.google.firebase.emulators;
 
 import androidx.annotation.NonNull;
 
+import com.google.android.gms.common.annotation.KeepForSdk;
+
 /**
  * Settings to connect a single Firebase service to a local emulator.
  *
+ * <p>TODO(samstern): Un-hide this once Firestore, Database, and Functions are implemented
+ *
  * @see EmulatorSettings
+ * @hide
  */
+@KeepForSdk
 public class EmulatedServiceSettings {
 
   public static final class Builder {
