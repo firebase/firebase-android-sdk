@@ -30,7 +30,7 @@ import com.google.common.util.concurrent.MoreExecutors;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.abt.FirebaseABTesting;
-import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.remoteconfig.internal.ConfigCacheClient;
 import com.google.firebase.remoteconfig.internal.ConfigContainer;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler;
@@ -64,7 +64,7 @@ public class FirebaseRemoteConfigIntegrationTest {
   @Mock private ConfigCacheClient mockFireperfActivatedCache;
 
   @Mock private FirebaseABTesting mockFirebaseAbt;
-  @Mock private FirebaseInstanceId mockFirebaseInstanceId;
+  @Mock private FirebaseInstallationsApi mockFirebaseInstallations;
   private FirebaseRemoteConfig frc;
 
   // We use a HashMap so that Mocking is easier.
@@ -96,7 +96,7 @@ public class FirebaseRemoteConfigIntegrationTest {
         new FirebaseRemoteConfig(
             context,
             firebaseApp,
-            mockFirebaseInstanceId,
+            mockFirebaseInstallations,
             mockFirebaseAbt,
             directExecutor,
             mockFetchedCache,
