@@ -86,6 +86,7 @@ public abstract class TypeToken<T> {
       }
       throw new IllegalArgumentException("<? super T> is not supported");
     } else if (type instanceof GenericArrayType) {
+      // TODO: Support GenericArrayType
       throw new IllegalArgumentException("GenericArrayType is not supported.");
     } else if (type instanceof ParameterizedType) {
       ParameterizedType parameterizedType = (ParameterizedType) type;
