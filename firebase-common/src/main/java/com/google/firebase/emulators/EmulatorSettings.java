@@ -32,7 +32,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @see com.google.firebase.FirebaseApp#enableEmulators(EmulatorSettings)
  * @hide
  */
-@KeepForSdk
 public class EmulatorSettings {
 
   public static final class Builder {

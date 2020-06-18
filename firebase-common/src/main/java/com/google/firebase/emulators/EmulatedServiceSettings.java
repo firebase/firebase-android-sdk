@@ -25,7 +25,6 @@ import com.google.android.gms.common.annotation.KeepForSdk;
  * @see EmulatorSettings
  * @hide
  */
-@KeepForSdk
 public class EmulatedServiceSettings {
 
   public static final class Builder {

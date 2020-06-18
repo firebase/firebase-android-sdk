@@ -152,7 +152,6 @@ public class FirebaseApp {
    *
    * @hide
    */
-  @KeepForSdk
   @Nullable
   public EmulatorSettings getEmulatorSettings() {
     checkNotDeleted();
@@ -334,7 +333,6 @@ public class FirebaseApp {
    * @param emulatorSettings the emulator settings for all services.
    * @hide
    */
-  @KeepForSdk
   public void enableEmulators(@NonNull EmulatorSettings emulatorSettings) {
     checkNotDeleted();
     Preconditions.checkState(

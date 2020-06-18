@@ -27,7 +27,6 @@ import com.google.android.gms.common.annotation.KeepForSdk;
  * @see EmulatedServiceSettings
  * @hide
  */
-@KeepForSdk
 public class FirebaseEmulator {
 
   public final String name;
