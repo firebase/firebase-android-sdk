@@ -330,4 +330,90 @@ public class JsonDataDecoderBuilderContextTest {
     assertThat(singleValues.c).isEqualTo('c');
     assertThat(singleValues.str).isEqualTo("str");
   }
+
+  static class ArrFoo {
+    int i;
+
+    ArrFoo(int i) {
+      this.i = i;
+    }
+  }
+
+  static class ArrFooObjectDecoder implements ObjectDecoder<ArrFoo> {
+    @NonNull
+    @Override
+    public TypeCreator<ArrFoo> decode(@NonNull ObjectDecoderContext<ArrFoo> ctx) {
+      FieldRef.Primitive<Integer> iField = ctx.decodeInteger(FieldDescriptor.of("i"));
+      return (creationCtx -> new ArrFoo(creationCtx.getInteger(iField)));
+    }
+  }
+
+  @Test
+  public void arrayOfObjects_shouldBeDecodedCorrectly() throws IOException {
+    Map<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
+    objectDecoders.put(ArrFoo.class, new ArrFooObjectDecoder());
+    JsonDataDecoderBuilderContext jsonDataDecoderBuilderContext =
+        new JsonDataDecoderBuilderContext(objectDecoders);
+
+    String json = "[{\"i\":0}, {\"i\":1}]";
+    InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
+    ArrFoo[] arrFoo =
+        jsonDataDecoderBuilderContext.decode(input, TypeToken.of(new Safe<ArrFoo[]>() {}));
+    assertThat(arrFoo[0].i).isEqualTo(0);
+    assertThat(arrFoo[1].i).isEqualTo(1);
+  }
+
+  @Test
+  public void arrayOfSingleValue_shouldBeDecodedCorrectly() throws IOException {
+    Map<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
+    JsonDataDecoderBuilderContext jsonDataDecoderBuilderContext =
+        new JsonDataDecoderBuilderContext(objectDecoders);
+
+    String json = "[\"a\",\"b\"]";
+    InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
+    String[] arr =
+        jsonDataDecoderBuilderContext.decode(input, TypeToken.of(new Safe<String[]>() {}));
+    assertThat(arr[0]).isEqualTo("a");
+    assertThat(arr[1]).isEqualTo("b");
+  }
+
+  @Test
+  public void arrayOfPrimitive_shouldBeDecodedCorrectly() throws IOException {
+    Map<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
+    JsonDataDecoderBuilderContext jsonDataDecoderBuilderContext =
+        new JsonDataDecoderBuilderContext(objectDecoders);
+
+    String json = "[0, 1]";
+    InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
+    int[] arr = jsonDataDecoderBuilderContext.decode(input, TypeToken.of(new Safe<int[]>() {}));
+    assertThat(arr[0]).isEqualTo(0);
+    assertThat(arr[1]).isEqualTo(1);
+  }
+
+  @Test
+  public void arrayOfArray_shouldBeDecodedCorrectly() throws IOException {
+    Map<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
+    JsonDataDecoderBuilderContext jsonDataDecoderBuilderContext =
+        new JsonDataDecoderBuilderContext(objectDecoders);
+
+    String json = "[[0, 1], [0, 1]]";
+    InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
+    int[][] arr = jsonDataDecoderBuilderContext.decode(input, TypeToken.of(new Safe<int[][]>() {}));
+    assertThat(arr[0][0]).isEqualTo(0);
+    assertThat(arr[0][1]).isEqualTo(1);
+    assertThat(arr[0][0]).isEqualTo(0);
+    assertThat(arr[1][1]).isEqualTo(1);
+  }
+
+  @Test
+  public void emptyArray_shouldBeDecodedWithNullValue() throws IOException {
+    Map<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
+    JsonDataDecoderBuilderContext jsonDataDecoderBuilderContext =
+        new JsonDataDecoderBuilderContext(objectDecoders);
+
+    String json = "[]";
+    InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
+    int[] arr = jsonDataDecoderBuilderContext.decode(input, TypeToken.of(new Safe<int[]>() {}));
+    assertThat(arr).isEqualTo(null);
+  }
 }

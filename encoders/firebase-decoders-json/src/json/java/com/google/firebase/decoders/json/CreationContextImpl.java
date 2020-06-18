@@ -52,7 +52,7 @@ public class CreationContextImpl implements CreationContext {
 
   @Override
   public short getShort(@NonNull FieldRef.Primitive<Short> ref) {
-    return ((Integer) ctx.get(ref)).shortValue();
+    return (short) ctx.get(ref);
   }
 
   @Override
@@ -62,7 +62,7 @@ public class CreationContextImpl implements CreationContext {
 
   @Override
   public float getFloat(@NonNull FieldRef.Primitive<Float> ref) {
-    return ((Double) ctx.get(ref)).floatValue();
+    return (float) ctx.get(ref);
   }
 
   @Override
@@ -72,6 +72,6 @@ public class CreationContextImpl implements CreationContext {
 
   @Override
   public char getChar(@NonNull FieldRef.Primitive<Character> ref) {
-    return ((String) ctx.get(ref)).charAt(0);
+    return (char) ctx.get(ref);
   }
 }
