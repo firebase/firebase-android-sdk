@@ -36,6 +36,12 @@ import java.lang.reflect.WildcardType;
  * </ol>
  */
 public abstract class TypeToken<T> {
+  private Class<T> rawType;
+
+  @NonNull
+  public Class<T> getRawType() {
+    return rawType;
+  }
 
   /**
    * Return an {@link TypeToken} to represent generic type {@code T}.
@@ -80,8 +86,7 @@ public abstract class TypeToken<T> {
       }
       throw new IllegalArgumentException("<? super T> is not supported");
     } else if (type instanceof GenericArrayType) {
-      Type componentType = ((GenericArrayType) type).getGenericComponentType();
-      return new ArrayToken<T>(TypeToken.of(componentType));
+      throw new IllegalArgumentException("GenericArrayType is not supported.");
     } else if (type instanceof ParameterizedType) {
       ParameterizedType parameterizedType = (ParameterizedType) type;
       // Safe because rawType of parameterizedType is always instance of Class<T>
@@ -101,7 +106,7 @@ public abstract class TypeToken<T> {
         Class<?> componentTypeToken = typeToken.getComponentType();
         // Safe because typeToken is an Array and componentTypeToken will never be null
         @SuppressWarnings("ConstantConditions")
-        ArrayToken<T> arrayToken = new ArrayToken<T>(TypeToken.of(componentTypeToken));
+        ArrayToken<T> arrayToken = new ArrayToken<T>(typeToken, TypeToken.of(componentTypeToken));
         return arrayToken;
       }
       return new ClassToken<T>(typeToken);
@@ -126,22 +131,16 @@ public abstract class TypeToken<T> {
    * Plain class types, Generic types, and Wildcard types.
    */
   public static class ClassToken<T> extends TypeToken<T> {
-    private final Class<T> rawType;
     private final TypeTokenContainer typeArguments;
 
     private ClassToken(Class<T> rawType) {
-      this.rawType = rawType;
+      super.rawType = rawType;
       this.typeArguments = TypeTokenContainer.EMPTY;
     }
 
     private ClassToken(Class<T> rawType, TypeTokenContainer typeArguments) {
-      this.rawType = rawType;
+      super.rawType = rawType;
       this.typeArguments = typeArguments;
-    }
-
-    @NonNull
-    public Class<T> getRawType() {
-      return rawType;
     }
 
     @NonNull
@@ -151,7 +150,7 @@ public abstract class TypeToken<T> {
 
     @Override
     public int hashCode() {
-      return 11 * rawType.hashCode() + typeArguments.hashCode();
+      return 11 * super.rawType.hashCode() + typeArguments.hashCode();
     }
 
     @Override
@@ -163,13 +162,14 @@ public abstract class TypeToken<T> {
         return false;
       }
       ClassToken<?> that = (ClassToken<?>) o;
-      return this.rawType.equals(that.rawType) && this.typeArguments.equals(that.typeArguments);
+      return super.rawType.equals(that.getRawType())
+          && this.typeArguments.equals(that.typeArguments);
     }
 
     @NonNull
     @Override
     String getTypeTokenLiteral() {
-      return rawType.getSimpleName() + typeArguments;
+      return super.rawType.getSimpleName() + typeArguments;
     }
   }
 
@@ -180,7 +180,8 @@ public abstract class TypeToken<T> {
   public static class ArrayToken<T> extends TypeToken<T> {
     private final TypeToken<?> componentType;
 
-    private ArrayToken(TypeToken<?> componentType) {
+    private ArrayToken(Class<T> rawType, TypeToken<?> componentType) {
+      super.rawType = rawType;
       this.componentType = componentType;
     }
 
