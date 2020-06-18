@@ -71,8 +71,7 @@ public class FirebaseDatabaseTest {
     FirebaseApp app =
         appForDatabaseUrl(IntegrationTestValues.getAltNamespace(), "getInstanceForAppWithEmulator");
 
-    EmulatedServiceSettings serviceSettings =
-        new EmulatedServiceSettings.Builder("10.0.2.2", 9000).build();
+    EmulatedServiceSettings serviceSettings = new EmulatedServiceSettings("10.0.2.2", 9000);
     EmulatorSettings emulatorSettings =
         new EmulatorSettings.Builder()
             .addEmulatedService(FirebaseDatabase.EMULATOR, serviceSettings)

@@ -429,8 +429,7 @@ public class FirebaseAppTest {
     // dependency for this test.
     FirebaseEmulator emulator = FirebaseEmulator.forName("database");
 
-    EmulatedServiceSettings databaseSettings =
-        new EmulatedServiceSettings.Builder("10.0.2.2", 9000).build();
+    EmulatedServiceSettings databaseSettings = new EmulatedServiceSettings("10.0.2.2", 9000);
     EmulatorSettings emulatorSettings =
         new EmulatorSettings.Builder().addEmulatedService(emulator, databaseSettings).build();
 
@@ -446,8 +445,7 @@ public class FirebaseAppTest {
 
     FirebaseEmulator emulator = FirebaseEmulator.forName("database");
 
-    EmulatedServiceSettings databaseSettings =
-        new EmulatedServiceSettings.Builder("10.0.2.2", 9000).build();
+    EmulatedServiceSettings databaseSettings = new EmulatedServiceSettings("10.0.2.2", 9000);
     EmulatorSettings emulatorSettings =
         new EmulatorSettings.Builder().addEmulatedService(emulator, databaseSettings).build();
     firebaseApp.enableEmulators(emulatorSettings);

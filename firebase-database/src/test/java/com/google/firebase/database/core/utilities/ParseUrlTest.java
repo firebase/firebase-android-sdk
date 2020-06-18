@@ -93,8 +93,7 @@ public class ParseUrlTest {
 
   @Test
   public void testUrlParsingWithEmulator() {
-    EmulatedServiceSettings serviceSettings =
-        new EmulatedServiceSettings.Builder("10.0.2.2", 9000).build();
+    EmulatedServiceSettings serviceSettings = new EmulatedServiceSettings("10.0.2.2", 9000);
 
     ParsedUrl parsedUrl = Utilities.parseUrl("https://myns.firebaseio.com", serviceSettings);
     assertFalse(parsedUrl.repoInfo.secure);

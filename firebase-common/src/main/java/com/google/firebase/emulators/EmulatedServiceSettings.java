@@ -26,33 +26,10 @@ import androidx.annotation.NonNull;
  */
 public class EmulatedServiceSettings {
 
-  public static final class Builder {
-
-    private final String host;
-    private final int port;
-
-    /**
-     * Create a new EmulatedServiceSettings builder.
-     *
-     * @param host the host where the local emulator is running. If you want to access 'localhost'
-     *     from an Android Emulator use '10.0.2.2' instead.
-     * @param port the port where the local emulator is running.
-     */
-    public Builder(@NonNull String host, int port) {
-      this.host = host;
-      this.port = port;
-    }
-
-    @NonNull
-    public EmulatedServiceSettings build() {
-      return new EmulatedServiceSettings(this.host, this.port);
-    }
-  }
-
   public final String host;
   public final int port;
 
-  private EmulatedServiceSettings(@NonNull String host, int port) {
+  public EmulatedServiceSettings(@NonNull String host, int port) {
     this.host = host;
     this.port = port;
   }
