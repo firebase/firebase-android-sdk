@@ -62,7 +62,7 @@ public class EmulatorSettings {
 
     @NonNull
     public EmulatorSettings build() {
-      return new EmulatorSettings(settingsMap);
+      return new EmulatorSettings(new HashMap<>(settingsMap));
     }
   }
 
