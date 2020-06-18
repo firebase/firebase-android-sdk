@@ -111,7 +111,7 @@ public class FirebaseApp {
   private final String name;
   private final FirebaseOptions options;
   private final ComponentRuntime componentRuntime;
-  private EmulatorSettings emulatorSettings = EmulatorSettings.DEFAULT;
+  private EmulatorSettings emulatorSettings = EmulatorSettings.getDefault();
 
   // Default disabled. We released Firebase publicly without this feature, so making it default
   // enabled is a backwards incompatible change.
@@ -146,7 +146,7 @@ public class FirebaseApp {
   }
 
   /**
-   * Returns the specified {@link EmulatorSettings} or {@link EmulatorSettings#DEFAULT}.
+   * Returns the specified {@link EmulatorSettings} or a default.
    *
    * <p>TODO(samstern): Un-hide this once Firestore, Database, and Functions are implemented
    *
@@ -336,7 +336,7 @@ public class FirebaseApp {
   public void enableEmulators(@NonNull EmulatorSettings emulatorSettings) {
     checkNotDeleted();
     Preconditions.checkState(
-        !(this.emulatorSettings != null && this.emulatorSettings.isAccessed()),
+        !this.emulatorSettings.isAccessed(),
         "Cannot enable emulators after Firebase SDKs have already been used.");
     this.emulatorSettings = emulatorSettings;
   }

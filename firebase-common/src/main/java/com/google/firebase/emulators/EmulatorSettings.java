@@ -33,8 +33,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class EmulatorSettings {
 
-  /** Empty emulator settings to be used as an internal default * */
-  public static final EmulatorSettings DEFAULT = new EmulatorSettings.Builder().build();
+  /** Empty emulator settings to be used as an internal default */
+  public static EmulatorSettings getDefault() {
+    return new EmulatorSettings.Builder().build();
+  }
 
   public static final class Builder {
 
