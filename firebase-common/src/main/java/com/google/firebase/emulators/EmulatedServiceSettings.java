@@ -15,7 +15,6 @@
 package com.google.firebase.emulators;
 
 import androidx.annotation.NonNull;
-
 import com.google.android.gms.common.annotation.KeepForSdk;
 
 /**

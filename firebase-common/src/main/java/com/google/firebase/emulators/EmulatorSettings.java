@@ -16,10 +16,8 @@ package com.google.firebase.emulators;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-
 import com.google.android.gms.common.annotation.KeepForSdk;
 import com.google.firebase.components.Preconditions;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -53,7 +51,7 @@ public class EmulatorSettings {
      */
     @NonNull
     public Builder addEmulatedService(
-            @NonNull FirebaseEmulator emulator, @NonNull EmulatedServiceSettings settings) {
+        @NonNull FirebaseEmulator emulator, @NonNull EmulatedServiceSettings settings) {
       Preconditions.checkState(
           !settingsMap.containsKey(emulator),
           "Cannot call addEmulatedService twice for " + emulator.toString());

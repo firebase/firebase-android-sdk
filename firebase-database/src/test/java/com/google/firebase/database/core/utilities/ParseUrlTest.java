@@ -14,16 +14,15 @@
 
 package com.google.firebase.database.core.utilities;
 
-import com.google.firebase.database.DatabaseException;
-import com.google.firebase.emulators.EmulatedServiceSettings;
-
-import org.junit.Test;
-import org.robolectric.RobolectricTestRunner;
-import org.robolectric.annotation.Config;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+
+import com.google.firebase.database.DatabaseException;
+import com.google.firebase.emulators.EmulatedServiceSettings;
+import org.junit.Test;
+import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 
 @org.junit.runner.RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)

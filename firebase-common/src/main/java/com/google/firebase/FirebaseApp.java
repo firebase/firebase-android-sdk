@@ -14,6 +14,8 @@
 
 package com.google.firebase;
 
+import static com.google.android.gms.common.util.Base64Utils.encodeUrlSafeNoPadding;
+
 import android.annotation.TargetApi;
 import android.app.Application;
 import android.content.BroadcastReceiver;
@@ -25,13 +27,11 @@ import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
 import android.util.Log;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.collection.ArrayMap;
 import androidx.core.os.UserManagerCompat;
-
 import com.google.android.gms.common.annotation.KeepForSdk;
 import com.google.android.gms.common.api.internal.BackgroundDetector;
 import com.google.android.gms.common.internal.Objects;
@@ -52,7 +52,6 @@ import com.google.firebase.internal.DataCollectionConfigStorage;
 import com.google.firebase.platforminfo.DefaultUserAgentPublisher;
 import com.google.firebase.platforminfo.KotlinDetector;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
-
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -62,10 +61,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-
 import javax.annotation.concurrent.GuardedBy;
-
-import static com.google.android.gms.common.util.Base64Utils.encodeUrlSafeNoPadding;
 
 /**
  * The entry point of Firebase SDKs. It holds common configuration and state for Firebase APIs. Most
@@ -330,9 +326,8 @@ public class FirebaseApp {
    * Specify which services should access local emulators for this FirebaseApp instance.
    *
    * <p>For example, if the {@link EmulatorSettings} contain {@link
-   * com.google.firebase.emulators.EmulatedServiceSettings} for {@link
-   * FirebaseEmulator#FIRESTORE}, then calls to Cloud Firestore will
-   * communicate with the emulator rather than production.
+   * com.google.firebase.emulators.EmulatedServiceSettings} for {@link FirebaseEmulator#FIRESTORE},
+   * then calls to Cloud Firestore will communicate with the emulator rather than production.
    *
    * <p>TODO(samstern): Un-hide this once Firestore, Database, and Functions are implemented
    *

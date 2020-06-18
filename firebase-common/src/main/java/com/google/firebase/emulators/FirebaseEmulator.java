@@ -15,7 +15,6 @@
 package com.google.firebase.emulators;
 
 import androidx.annotation.NonNull;
-
 import com.google.android.gms.common.annotation.KeepForSdk;
 
 /**
@@ -35,6 +34,7 @@ public class FirebaseEmulator {
 
   /**
    * Only to be called by SDKs which support emulators in order to make constants.
+   *
    * @hide
    */
   @NonNull

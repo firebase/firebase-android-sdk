@@ -14,9 +14,14 @@
 
 package com.google.firebase.database;
 
+import static com.google.firebase.database.IntegrationTestHelpers.fromSingleQuotedString;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.fail;
+
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
-
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.database.core.DatabaseConfig;
@@ -27,23 +32,14 @@ import com.google.firebase.database.core.persistence.PersistenceManager;
 import com.google.firebase.database.future.WriteFuture;
 import com.google.firebase.emulators.EmulatedServiceSettings;
 import com.google.firebase.emulators.EmulatorSettings;
-import com.google.firebase.emulators.FirebaseEmulator;
-
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import static com.google.firebase.database.IntegrationTestHelpers.fromSingleQuotedString;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.fail;
 
 @org.junit.runner.RunWith(AndroidJUnit4.class)
 public class FirebaseDatabaseTest {

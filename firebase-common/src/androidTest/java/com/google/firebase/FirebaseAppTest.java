@@ -14,6 +14,19 @@
 
 package com.google.firebase;
 
+import static com.google.android.gms.common.util.Base64Utils.decodeUrlSafeNoPadding;
+import static com.google.common.truth.Truth.assertThat;
+import static com.google.firebase.common.testutil.Assert.assertThrows;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import android.content.BroadcastReceiver;
 import android.content.ComponentCallbacks2;
 import android.content.Context;
@@ -21,11 +34,9 @@ import android.content.ContextWrapper;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.UserManager;
-
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.test.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
-
 import com.google.android.gms.common.api.internal.BackgroundDetector;
 import com.google.common.base.Defaults;
 import com.google.firebase.auth.FirebaseAuth;
@@ -39,13 +50,6 @@ import com.google.firebase.emulators.EmulatorSettings;
 import com.google.firebase.emulators.FirebaseEmulator;
 import com.google.firebase.platforminfo.UserAgentPublisher;
 import com.google.firebase.testing.FirebaseAppRule;
-
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.stubbing.Answer;
-
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -55,19 +59,11 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static com.google.android.gms.common.util.Base64Utils.decodeUrlSafeNoPadding;
-import static com.google.common.truth.Truth.assertThat;
-import static com.google.firebase.common.testutil.Assert.assertThrows;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.reset;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.stubbing.Answer;
 
 /** Unit tests for {@link com.google.firebase.FirebaseApp}. */
 // TODO(arondeak): uncomment lines when Firebase API targets are in integ.
@@ -436,9 +432,7 @@ public class FirebaseAppTest {
     EmulatedServiceSettings databaseSettings =
         new EmulatedServiceSettings.Builder("10.0.2.2", 9000).build();
     EmulatorSettings emulatorSettings =
-        new EmulatorSettings.Builder()
-            .addEmulatedService(emulator, databaseSettings)
-            .build();
+        new EmulatorSettings.Builder().addEmulatedService(emulator, databaseSettings).build();
 
     // Set twice
     firebaseApp.enableEmulators(emulatorSettings);
@@ -455,9 +449,7 @@ public class FirebaseAppTest {
     EmulatedServiceSettings databaseSettings =
         new EmulatedServiceSettings.Builder("10.0.2.2", 9000).build();
     EmulatorSettings emulatorSettings =
-        new EmulatorSettings.Builder()
-            .addEmulatedService(emulator, databaseSettings)
-            .build();
+        new EmulatorSettings.Builder().addEmulatedService(emulator, databaseSettings).build();
     firebaseApp.enableEmulators(emulatorSettings);
 
     // Access (as if from the Database SDK)
