@@ -30,7 +30,6 @@ import com.google.firebase.database.core.utilities.ParsedUrl;
 import com.google.firebase.database.core.utilities.Utilities;
 import com.google.firebase.database.core.utilities.Validation;
 import com.google.firebase.emulators.EmulatedServiceSettings;
-import com.google.firebase.emulators.EmulatorSettings;
 import com.google.firebase.emulators.FirebaseEmulator;
 
 /**
@@ -118,10 +117,6 @@ public class FirebaseDatabase {
     checkNotNull(app, "Provided FirebaseApp must not be null.");
     FirebaseDatabaseComponent component = app.get(FirebaseDatabaseComponent.class);
     checkNotNull(component, "Firebase Database component is not present.");
-
-    EmulatorSettings emulatorSettings = app.getEmulatorSettings();
-    EmulatedServiceSettings serviceSettings =
-        emulatorSettings != null ? emulatorSettings.getServiceSettings(EMULATOR) : null;
 
     return component.get(parsedUrl.repoInfo);
   }
@@ -301,8 +296,7 @@ public class FirebaseDatabase {
 
   @Nullable
   private static EmulatedServiceSettings getEmulatorServiceSettings(@NonNull FirebaseApp app) {
-    EmulatorSettings emulatorSettings = app.getEmulatorSettings();
-    return emulatorSettings != null ? emulatorSettings.getServiceSettings(EMULATOR) : null;
+    return app.getEmulatorSettings().getServiceSettings(EMULATOR);
   }
 
   /** @return The semver version for this build of the Firebase Database client */

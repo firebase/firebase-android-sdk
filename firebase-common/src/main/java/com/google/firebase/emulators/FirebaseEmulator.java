@@ -15,7 +15,6 @@
 package com.google.firebase.emulators;
 
 import androidx.annotation.NonNull;
-import com.google.android.gms.common.annotation.KeepForSdk;
 
 /**
  * Identifier Firebase services that can be emulated using the Firebase Emulator Suite.

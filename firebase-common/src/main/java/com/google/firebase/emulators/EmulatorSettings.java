@@ -16,7 +16,6 @@ package com.google.firebase.emulators;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import com.google.android.gms.common.annotation.KeepForSdk;
 import com.google.firebase.components.Preconditions;
 import java.util.Collections;
 import java.util.HashMap;
@@ -33,6 +32,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @hide
  */
 public class EmulatorSettings {
+
+  /** Empty emulator settings to be used as an internal default * */
+  public static final EmulatorSettings DEFAULT = new EmulatorSettings.Builder().build();
 
   public static final class Builder {
 
