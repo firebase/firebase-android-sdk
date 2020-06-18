@@ -14,9 +14,9 @@
 
 package com.google.firebase.firestore;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
+import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 
 import android.app.Activity;
 import androidx.annotation.NonNull;
@@ -39,12 +39,12 @@ import com.google.firebase.firestore.core.ViewSnapshot;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.ResourcePath;
-import com.google.firebase.firestore.model.value.ArrayValue;
-import com.google.firebase.firestore.model.value.FieldValue;
-import com.google.firebase.firestore.model.value.ReferenceValue;
-import com.google.firebase.firestore.model.value.ServerTimestampValue;
+import com.google.firebase.firestore.model.ServerTimestamps;
+import com.google.firebase.firestore.model.Values;
 import com.google.firebase.firestore.util.Executors;
 import com.google.firebase.firestore.util.Util;
+import com.google.firestore.v1.ArrayValue;
+import com.google.firestore.v1.Value;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -326,7 +326,7 @@ public class Query {
   private Query whereHelper(@NonNull FieldPath fieldPath, Operator op, Object value) {
     checkNotNull(fieldPath, "Provided field path must not be null.");
     checkNotNull(op, "Provided op must not be null.");
-    FieldValue fieldValue;
+    Value fieldValue;
     com.google.firebase.firestore.model.FieldPath internalPath = fieldPath.getInternalPath();
     if (internalPath.isKeyField()) {
       if (op == Operator.ARRAY_CONTAINS || op == Operator.ARRAY_CONTAINS_ANY) {
@@ -336,11 +336,11 @@ public class Query {
                 + "' queries on FieldPath.documentId().");
       } else if (op == Operator.IN) {
         validateDisjunctiveFilterElements(value, op);
-        List<FieldValue> referenceList = new ArrayList<>();
+        ArrayValue.Builder referenceList = ArrayValue.newBuilder();
         for (Object arrayValue : (List) value) {
-          referenceList.add(parseDocumentIdValue(arrayValue));
+          referenceList.addValues(parseDocumentIdValue(arrayValue));
         }
-        fieldValue = ArrayValue.fromList(referenceList);
+        fieldValue = Value.newBuilder().setArrayValue(referenceList).build();
       } else {
         fieldValue = parseDocumentIdValue(value);
       }
@@ -367,7 +367,7 @@ public class Query {
    * Parses the given documentIdValue into a ReferenceValue, throwing appropriate errors if the
    * value is anything other than a DocumentReference or String, or if the string is malformed.
    */
-  private ReferenceValue parseDocumentIdValue(Object documentIdValue) {
+  private Value parseDocumentIdValue(Object documentIdValue) {
     if (documentIdValue instanceof String) {
       String documentId = (String) documentIdValue;
       if (documentId.isEmpty()) {
@@ -392,11 +392,10 @@ public class Query {
                 + path.length()
                 + ").");
       }
-      return ReferenceValue.valueOf(
-          this.getFirestore().getDatabaseId(), DocumentKey.fromPath(path));
+      return Values.refValue(this.getFirestore().getDatabaseId(), DocumentKey.fromPath(path));
     } else if (documentIdValue instanceof DocumentReference) {
       DocumentReference ref = (DocumentReference) documentIdValue;
-      return ReferenceValue.valueOf(this.getFirestore().getDatabaseId(), ref.getKey());
+      return Values.refValue(this.getFirestore().getDatabaseId(), ref.getKey());
     } else {
       throw new IllegalArgumentException(
           "Invalid query. When querying with FieldPath.documentId() you must provide a valid "
@@ -740,7 +739,7 @@ public class Query {
               + "().");
     }
     Document document = snapshot.getDocument();
-    List<FieldValue> components = new ArrayList<>();
+    List<Value> components = new ArrayList<>();
 
     // Because people expect to continue/end a query at the exact document provided, we need to
     // use the implicit sort order rather than the explicit sort order, because it's guaranteed to
@@ -749,10 +748,10 @@ public class Query {
     // orders), multiple documents could match the position, yielding duplicate results.
     for (OrderBy orderBy : query.getOrderBy()) {
       if (orderBy.getField().equals(com.google.firebase.firestore.model.FieldPath.KEY_PATH)) {
-        components.add(ReferenceValue.valueOf(firestore.getDatabaseId(), document.getKey()));
+        components.add(Values.refValue(firestore.getDatabaseId(), document.getKey()));
       } else {
-        FieldValue value = document.getField(orderBy.getField());
-        if (value instanceof ServerTimestampValue) {
+        Value value = document.getField(orderBy.getField());
+        if (ServerTimestamps.isServerTimestamp(value)) {
           throw new IllegalArgumentException(
               "Invalid query. You are trying to start or end a query using a document for which "
                   + "the field '"
@@ -785,7 +784,7 @@ public class Query {
               + "than or equal to the number of orderBy() clauses.");
     }
 
-    List<FieldValue> components = new ArrayList<>();
+    List<Value> components = new ArrayList<>();
     for (int i = 0; i < values.length; i++) {
       Object rawValue = values[i];
       OrderBy orderBy = explicitOrderBy.get(i);
@@ -819,9 +818,9 @@ public class Query {
                   + "' is not because it contains an odd number of segments.");
         }
         DocumentKey key = DocumentKey.fromPath(path);
-        components.add(ReferenceValue.valueOf(firestore.getDatabaseId(), key));
+        components.add(Values.refValue(firestore.getDatabaseId(), key));
       } else {
-        FieldValue wrapped = firestore.getUserDataReader().parseQueryValue(rawValue);
+        Value wrapped = firestore.getUserDataReader().parseQueryValue(rawValue);
         components.add(wrapped);
       }
     }

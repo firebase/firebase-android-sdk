@@ -75,8 +75,8 @@ public class SettingsV3JsonTransformTest extends CrashlyticsTestCase {
     assertEquals(isAppNew ? "new" : "activated", appData.status);
     assertEquals(
         isAppNew
-            ? "https://api.crashlytics.com/spi/v1/platforms/android/apps"
-            : "https://api.crashlytics.com/spi/v1/platforms/android/apps/com.google.firebase.crashlytics.sdk.test",
+            ? "https://update.crashlytics.com/spi/v1/platforms/android/apps"
+            : "https://update.crashlytics.com/spi/v1/platforms/android/apps/com.google.firebase.crashlytics.sdk.test",
         appData.url);
     assertEquals(
         "https://reports.crashlytics.com/spi/v1/platforms/android/apps/com.google.firebase.crashlytics.sdk.test/reports",
@@ -85,6 +85,8 @@ public class SettingsV3JsonTransformTest extends CrashlyticsTestCase {
         "https://reports.crashlytics.com/sdk-api/v1/platforms/android/apps/com.google.firebase.crashlytics.sdk.test/minidumps",
         appData.ndkReportsUrl);
     assertTrue(appData.updateRequired);
+    assertEquals(2, appData.reportUploadVariant);
+    assertEquals(2, appData.nativeReportUploadVariant);
   }
 
   private void assertSettingsData(SessionSettingsData settingsData) {

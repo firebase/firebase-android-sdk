@@ -142,7 +142,7 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
                   "(%x) Stream closed.",
                   System.identityHashCode(AbstractStream.this));
             } else {
-              Logger.debug(
+              Logger.warn(
                   AbstractStream.this.getClass().getSimpleName(),
                   "(%x) Stream closed with status: %s.",
                   System.identityHashCode(AbstractStream.this),

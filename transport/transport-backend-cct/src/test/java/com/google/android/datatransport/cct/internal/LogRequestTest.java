@@ -14,6 +14,7 @@
 
 package com.google.android.datatransport.cct.internal;
 
+import static com.google.android.datatransport.cct.internal.BatchedLogRequest.createDataEncoder;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.extensions.proto.ProtoTruth.assertThat;
 
@@ -120,7 +121,7 @@ public class LogRequestTest {
   public void testBuildClientInfo_withEmptyAndroidClientInfo() {
     assertThat(
             ClientInfo.builder()
-                .setClientType(ClientInfo.ClientType.ANDROID)
+                .setClientType(ClientInfo.ClientType.ANDROID_FIREBASE)
                 .setAndroidClientInfo(AndroidClientInfo.builder().build())
                 .build())
         .isInstanceOf(ClientInfo.class);
@@ -130,7 +131,7 @@ public class LogRequestTest {
   public void testBuildClientInfo_withAndroidClientInfo() {
     assertThat(
             ClientInfo.builder()
-                .setClientType(ClientInfo.ClientType.ANDROID)
+                .setClientType(ClientInfo.ClientType.ANDROID_FIREBASE)
                 .setAndroidClientInfo(
                     AndroidClientInfo.builder()
                         .setDevice("device")
@@ -169,7 +170,7 @@ public class LogRequestTest {
                 .setRequestTimeMs(4300L)
                 .setClientInfo(
                     ClientInfo.builder()
-                        .setClientType(ClientInfo.ClientType.ANDROID)
+                        .setClientType(ClientInfo.ClientType.ANDROID_FIREBASE)
                         .setAndroidClientInfo(
                             AndroidClientInfo.builder().setDevice("device").build())
                         .build())
@@ -199,7 +200,7 @@ public class LogRequestTest {
             .setRequestTimeMs(4300L)
             .setClientInfo(
                 ClientInfo.builder()
-                    .setClientType(ClientInfo.ClientType.ANDROID)
+                    .setClientType(ClientInfo.ClientType.ANDROID_FIREBASE)
                     .setAndroidClientInfo(AndroidClientInfo.builder().setDevice("device").build())
                     .build())
             .setSource("logSource")
@@ -211,7 +212,7 @@ public class LogRequestTest {
     com.google.android.datatransport.cct.internal.BatchedLogRequest batchedLogRequest =
         com.google.android.datatransport.cct.internal.BatchedLogRequest.create(requests);
 
-    String json = JsonBatchedLogRequestEncoder.createJsonEncoder().encode(batchedLogRequest);
+    String json = createDataEncoder().encode(batchedLogRequest);
 
     BatchedLogRequest.Builder protoLogRequestBuilder = BatchedLogRequest.newBuilder();
     JsonFormat.parser().merge(json, protoLogRequestBuilder);
@@ -228,7 +229,7 @@ public class LogRequestTest {
                         com.google.android.datatransport.cct.proto.ClientInfo.newBuilder()
                             .setClientType(
                                 com.google.android.datatransport.cct.proto.ClientInfo.ClientType
-                                    .ANDROID)
+                                    .ANDROID_FIREBASE)
                             .setAndroidClientInfo(
                                 com.google.android.datatransport.cct.proto.AndroidClientInfo
                                     .newBuilder()

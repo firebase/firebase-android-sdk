@@ -21,12 +21,13 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigValue
 import com.google.firebase.remoteconfig.createRemoteConfig
 import com.google.firebase.ktx.Firebase
+import com.google.firebase.platforminfo.UserAgentPublisher
 import com.google.firebase.remoteconfig.internal.ConfigCacheClient
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler
 import com.google.firebase.remoteconfig.internal.ConfigMetadataClient
 import com.google.common.util.concurrent.MoreExecutors
-import com.google.firebase.iid.FirebaseInstanceId
+import com.google.firebase.installations.FirebaseInstallationsApi
 import com.google.firebase.ktx.app
 import com.google.firebase.ktx.initialize
 import org.junit.After
@@ -128,7 +129,7 @@ class ConfigTests : BaseTestCase() {
         val remoteConfig = createRemoteConfig(
             context = null,
             firebaseApp = Firebase.app(EXISTING_APP),
-            firebaseInstanceId = mock(FirebaseInstanceId::class.java),
+            firebaseInstallations = mock(FirebaseInstallationsApi::class.java),
             firebaseAbt = null,
             executor = directExecutor,
             fetchedConfigsCache = mock(ConfigCacheClient::class.java),
@@ -140,5 +141,14 @@ class ConfigTests : BaseTestCase() {
 
         `when`(mockGetHandler.getValue("KEY")).thenReturn(StringRemoteConfigValue("non default value"))
         assertThat(remoteConfig["KEY"].asString()).isEqualTo("non default value")
+    }
+}
+
+@RunWith(RobolectricTestRunner::class)
+class LibraryVersionTest : BaseTestCase() {
+    @Test
+    fun `library version should be registered with runtime`() {
+        val publisher = Firebase.app.get(UserAgentPublisher::class.java)
+        assertThat(publisher.userAgent).contains(LIBRARY_NAME)
     }
 }

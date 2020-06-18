@@ -143,6 +143,12 @@ public class DeveloperListenerManager {
     registeredErrorListeners.remove(displayErrorListener);
   }
 
+  public void removeAllListeners() {
+    registeredClickListeners.clear();
+    registeredImpressionListeners.clear();
+    registeredErrorListeners.clear();
+  }
+
   /** The thread factory for Storage threads. */
   static class FIAMThreadFactory implements ThreadFactory {
     private final AtomicInteger threadNumber = new AtomicInteger(1);
@@ -182,7 +188,7 @@ public class DeveloperListenerManager {
     }
   }
 
-  private class ImpressionExecutorAndListener
+  private static class ImpressionExecutorAndListener
       extends ExecutorAndListener<FirebaseInAppMessagingImpressionListener> {
     FirebaseInAppMessagingImpressionListener listener;
 
@@ -203,7 +209,7 @@ public class DeveloperListenerManager {
     }
   }
 
-  private class ClicksExecutorAndListener
+  private static class ClicksExecutorAndListener
       extends ExecutorAndListener<FirebaseInAppMessagingClickListener> {
     FirebaseInAppMessagingClickListener listener;
 
@@ -223,7 +229,7 @@ public class DeveloperListenerManager {
     }
   }
 
-  private class ErrorsExecutorAndListener
+  private static class ErrorsExecutorAndListener
       extends ExecutorAndListener<FirebaseInAppMessagingDisplayErrorListener> {
     FirebaseInAppMessagingDisplayErrorListener listener;
 

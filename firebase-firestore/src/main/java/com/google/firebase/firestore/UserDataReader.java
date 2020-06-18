@@ -14,8 +14,8 @@
 
 package com.google.firebase.firestore;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
+import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
@@ -31,29 +31,21 @@ import com.google.firebase.firestore.core.UserData.ParsedSetData;
 import com.google.firebase.firestore.core.UserData.ParsedUpdateData;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.FieldPath;
+import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.mutation.ArrayTransformOperation;
 import com.google.firebase.firestore.model.mutation.FieldMask;
 import com.google.firebase.firestore.model.mutation.NumericIncrementTransformOperation;
 import com.google.firebase.firestore.model.mutation.ServerTimestampOperation;
-import com.google.firebase.firestore.model.value.ArrayValue;
-import com.google.firebase.firestore.model.value.BlobValue;
-import com.google.firebase.firestore.model.value.BooleanValue;
-import com.google.firebase.firestore.model.value.DoubleValue;
-import com.google.firebase.firestore.model.value.FieldValue;
-import com.google.firebase.firestore.model.value.GeoPointValue;
-import com.google.firebase.firestore.model.value.IntegerValue;
-import com.google.firebase.firestore.model.value.NullValue;
-import com.google.firebase.firestore.model.value.NumberValue;
-import com.google.firebase.firestore.model.value.ObjectValue;
-import com.google.firebase.firestore.model.value.ReferenceValue;
-import com.google.firebase.firestore.model.value.StringValue;
-import com.google.firebase.firestore.model.value.TimestampValue;
 import com.google.firebase.firestore.util.Assert;
 import com.google.firebase.firestore.util.CustomClassMapper;
 import com.google.firebase.firestore.util.Util;
+import com.google.firestore.v1.ArrayValue;
+import com.google.firestore.v1.MapValue;
+import com.google.firestore.v1.Value;
+import com.google.protobuf.NullValue;
+import com.google.type.LatLng;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -117,7 +109,7 @@ public final class UserDataReader {
 
     ParseAccumulator accumulator = new ParseAccumulator(UserData.Source.Update);
     ParseContext context = accumulator.rootContext();
-    ObjectValue updateData = ObjectValue.emptyObject();
+    ObjectValue.Builder updateData = ObjectValue.newBuilder();
 
     for (Entry<String, Object> entry : data.entrySet()) {
       FieldPath fieldPath =
@@ -130,16 +122,15 @@ public final class UserDataReader {
         context.addToFieldMask(fieldPath);
       } else {
         @Nullable
-        FieldValue parsedValue =
-            convertAndParseFieldData(fieldValue, context.childContext(fieldPath));
+        Value parsedValue = convertAndParseFieldData(fieldValue, context.childContext(fieldPath));
         if (parsedValue != null) {
           context.addToFieldMask(fieldPath);
-          updateData = updateData.set(fieldPath, parsedValue);
+          updateData.set(fieldPath, parsedValue);
         }
       }
     }
 
-    return accumulator.toUpdateData(updateData);
+    return accumulator.toUpdateData(updateData.build());
   }
 
   /**
@@ -155,7 +146,7 @@ public final class UserDataReader {
 
     ParseAccumulator accumulator = new ParseAccumulator(UserData.Source.Update);
     ParseContext context = accumulator.rootContext();
-    ObjectValue updateData = ObjectValue.emptyObject();
+    ObjectValue.Builder updateData = ObjectValue.newBuilder();
 
     Iterator<Object> iterator = fieldsAndValues.iterator();
     while (iterator.hasNext()) {
@@ -181,20 +172,19 @@ public final class UserDataReader {
         // Add it to the field mask, but don't add anything to updateData.
         context.addToFieldMask(parsedField);
       } else {
-        FieldValue parsedValue =
-            convertAndParseFieldData(fieldValue, context.childContext(parsedField));
+        Value parsedValue = convertAndParseFieldData(fieldValue, context.childContext(parsedField));
         if (parsedValue != null) {
           context.addToFieldMask(parsedField);
-          updateData = updateData.set(parsedField, parsedValue);
+          updateData.set(parsedField, parsedValue);
         }
       }
     }
 
-    return accumulator.toUpdateData(updateData);
+    return accumulator.toUpdateData(updateData.build());
   }
 
   /** Parse a "query value" (e.g. value in a where filter or a value in a cursor bound). */
-  public FieldValue parseQueryValue(Object input) {
+  public Value parseQueryValue(Object input) {
     return parseQueryValue(input, false);
   }
 
@@ -204,12 +194,12 @@ public final class UserDataReader {
    * @param allowArrays Whether the query value is an array that may directly contain additional
    *     arrays (e.g. the operand of a `whereIn` query).
    */
-  public FieldValue parseQueryValue(Object input, boolean allowArrays) {
+  public Value parseQueryValue(Object input, boolean allowArrays) {
     ParseAccumulator accumulator =
         new ParseAccumulator(
             allowArrays ? UserData.Source.ArrayArgument : UserData.Source.Argument);
 
-    @Nullable FieldValue parsed = convertAndParseFieldData(input, accumulator.rootContext());
+    @Nullable Value parsed = convertAndParseFieldData(input, accumulator.rootContext());
     hardAssert(parsed != null, "Parsed data should not be null.");
     hardAssert(
         accumulator.getFieldTransforms().isEmpty(),
@@ -218,7 +208,7 @@ public final class UserDataReader {
   }
 
   /** Converts a POJO to native types and then parses it into model types. */
-  private FieldValue convertAndParseFieldData(Object input, ParseContext context) {
+  private Value convertAndParseFieldData(Object input, ParseContext context) {
     Object converted = CustomClassMapper.convertToPlainJavaTypes(input);
     return parseData(converted, context);
   }
@@ -239,12 +229,11 @@ public final class UserDataReader {
     }
 
     Object converted = CustomClassMapper.convertToPlainJavaTypes(input);
-    FieldValue value = parseData(converted, context);
-
-    if (!(value instanceof ObjectValue)) {
+    Value parsedValue = parseData(converted, context);
+    if (parsedValue.getValueTypeCase() != Value.ValueTypeCase.MAP_VALUE) {
       throw new IllegalArgumentException(badDocReason + "of type: " + Util.typeName(input));
     }
-    return (ObjectValue) value;
+    return new ObjectValue(parsedValue);
   }
 
   /**
@@ -257,7 +246,7 @@ public final class UserDataReader {
    *     not be included in the resulting parsed data.
    */
   @Nullable
-  private FieldValue parseData(Object input, ParseContext context) {
+  private Value parseData(Object input, ParseContext context) {
     if (input instanceof Map) {
       return parseMap((Map<?, ?>) input, context);
 
@@ -291,43 +280,42 @@ public final class UserDataReader {
     }
   }
 
-  private <K, V> ObjectValue parseMap(Map<K, V> map, ParseContext context) {
-    Map<String, FieldValue> result = new HashMap<>();
-
+  private <K, V> Value parseMap(Map<K, V> map, ParseContext context) {
     if (map.isEmpty()) {
       if (context.getPath() != null && !context.getPath().isEmpty()) {
         context.addToFieldMask(context.getPath());
       }
-      return ObjectValue.emptyObject();
+      return Value.newBuilder().setMapValue(MapValue.getDefaultInstance()).build();
     } else {
+      MapValue.Builder mapBuilder = MapValue.newBuilder();
       for (Entry<K, V> entry : map.entrySet()) {
         if (!(entry.getKey() instanceof String)) {
           throw context.createError(
               String.format("Non-String Map key (%s) is not allowed", entry.getValue()));
         }
         String key = (String) entry.getKey();
-        @Nullable FieldValue parsedValue = parseData(entry.getValue(), context.childContext(key));
+        @Nullable Value parsedValue = parseData(entry.getValue(), context.childContext(key));
         if (parsedValue != null) {
-          result.put(key, parsedValue);
+          mapBuilder.putFields(key, parsedValue);
         }
       }
+      return Value.newBuilder().setMapValue(mapBuilder).build();
     }
-    return ObjectValue.fromMap(result);
   }
 
-  private <T> ArrayValue parseList(List<T> list, ParseContext context) {
-    List<FieldValue> result = new ArrayList<>(list.size());
+  private <T> Value parseList(List<T> list, ParseContext context) {
+    ArrayValue.Builder arrayBuilder = ArrayValue.newBuilder();
     int entryIndex = 0;
     for (T entry : list) {
-      @Nullable FieldValue parsedEntry = parseData(entry, context.childContext(entryIndex));
+      @Nullable Value parsedEntry = parseData(entry, context.childContext(entryIndex));
       if (parsedEntry == null) {
         // Just include nulls in the array for fields being replaced with a sentinel.
-        parsedEntry = NullValue.nullValue();
+        parsedEntry = Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build();
       }
-      result.add(parsedEntry);
+      arrayBuilder.addValues(parsedEntry);
       entryIndex++;
     }
-    return ArrayValue.fromList(result);
+    return Value.newBuilder().setArrayValue(arrayBuilder).build();
   }
 
   /**
@@ -366,13 +354,13 @@ public final class UserDataReader {
       context.addToFieldTransforms(context.getPath(), ServerTimestampOperation.getInstance());
 
     } else if (value instanceof ArrayUnionFieldValue) {
-      List<FieldValue> parsedElements =
+      List<Value> parsedElements =
           parseArrayTransformElements(((ArrayUnionFieldValue) value).getElements());
       ArrayTransformOperation arrayUnion = new ArrayTransformOperation.Union(parsedElements);
       context.addToFieldTransforms(context.getPath(), arrayUnion);
 
     } else if (value instanceof ArrayRemoveFieldValue) {
-      List<FieldValue> parsedElements =
+      List<Value> parsedElements =
           parseArrayTransformElements(((ArrayRemoveFieldValue) value).getElements());
       ArrayTransformOperation arrayRemove = new ArrayTransformOperation.Remove(parsedElements);
       context.addToFieldTransforms(context.getPath(), arrayRemove);
@@ -382,7 +370,7 @@ public final class UserDataReader {
       com.google.firebase.firestore.FieldValue.NumericIncrementFieldValue
           numericIncrementFieldValue =
               (com.google.firebase.firestore.FieldValue.NumericIncrementFieldValue) value;
-      NumberValue operand = (NumberValue) parseQueryValue(numericIncrementFieldValue.getOperand());
+      Value operand = parseQueryValue(numericIncrementFieldValue.getOperand());
       NumericIncrementTransformOperation incrementOperation =
           new NumericIncrementTransformOperation(operand);
       context.addToFieldTransforms(context.getPath(), incrementOperation);
@@ -398,35 +386,37 @@ public final class UserDataReader {
    * @return The parsed value, or {@code null} if the value was a FieldValue sentinel that should
    *     not be included in the resulting parsed data.
    */
-  private FieldValue parseScalarValue(Object input, ParseContext context) {
+  private Value parseScalarValue(Object input, ParseContext context) {
     if (input == null) {
-      return NullValue.nullValue();
+      return Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build();
     } else if (input instanceof Integer) {
-      return IntegerValue.valueOf(((Integer) input).longValue());
+      return Value.newBuilder().setIntegerValue((Integer) input).build();
     } else if (input instanceof Long) {
-      return IntegerValue.valueOf(((Long) input));
+      return Value.newBuilder().setIntegerValue((Long) input).build();
     } else if (input instanceof Float) {
-      return DoubleValue.valueOf(((Float) input).doubleValue());
+      return Value.newBuilder().setDoubleValue(((Float) input).doubleValue()).build();
     } else if (input instanceof Double) {
-      return DoubleValue.valueOf((Double) input);
+      return Value.newBuilder().setDoubleValue((Double) input).build();
     } else if (input instanceof Boolean) {
-      return BooleanValue.valueOf((Boolean) input);
+      return Value.newBuilder().setBooleanValue((Boolean) input).build();
     } else if (input instanceof String) {
-      return StringValue.valueOf((String) input);
+      return Value.newBuilder().setStringValue((String) input).build();
     } else if (input instanceof Date) {
-      return TimestampValue.valueOf(new Timestamp((Date) input));
+      Timestamp timestamp = new Timestamp((Date) input);
+      return parseTimestamp(timestamp);
     } else if (input instanceof Timestamp) {
       Timestamp timestamp = (Timestamp) input;
-      long seconds = timestamp.getSeconds();
-      // Firestore backend truncates precision down to microseconds. To ensure offline mode works
-      // the same with regards to truncation, perform the truncation immediately without waiting for
-      // the backend to do that.
-      int truncatedNanoseconds = timestamp.getNanoseconds() / 1000 * 1000;
-      return TimestampValue.valueOf(new Timestamp(seconds, truncatedNanoseconds));
+      return parseTimestamp(timestamp);
     } else if (input instanceof GeoPoint) {
-      return GeoPointValue.valueOf((GeoPoint) input);
+      GeoPoint geoPoint = (GeoPoint) input;
+      return Value.newBuilder()
+          .setGeoPointValue(
+              LatLng.newBuilder()
+                  .setLatitude(geoPoint.getLatitude())
+                  .setLongitude(geoPoint.getLongitude()))
+          .build();
     } else if (input instanceof Blob) {
-      return BlobValue.valueOf((Blob) input);
+      return Value.newBuilder().setBytesValue(((Blob) input).toByteString()).build();
     } else if (input instanceof DocumentReference) {
       DocumentReference ref = (DocumentReference) input;
       // TODO: Rework once pre-converter is ported to Android.
@@ -442,7 +432,14 @@ public final class UserDataReader {
                   databaseId.getDatabaseId()));
         }
       }
-      return ReferenceValue.valueOf(databaseId, ref.getKey());
+      return Value.newBuilder()
+          .setReferenceValue(
+              String.format(
+                  "projects/%s/databases/%s/documents/%s",
+                  databaseId.getProjectId(),
+                  databaseId.getDatabaseId(),
+                  ((DocumentReference) input).getPath()))
+          .build();
     } else if (input.getClass().isArray()) {
       throw context.createError("Arrays are not supported; use a List instead");
     } else {
@@ -450,10 +447,24 @@ public final class UserDataReader {
     }
   }
 
-  private List<FieldValue> parseArrayTransformElements(List<Object> elements) {
+  private Value parseTimestamp(Timestamp timestamp) {
+    // Firestore backend truncates precision down to microseconds. To ensure offline mode works
+    // the same with regards to truncation, perform the truncation immediately without waiting for
+    // the backend to do that.
+    int truncatedNanoseconds = timestamp.getNanoseconds() / 1000 * 1000;
+
+    return Value.newBuilder()
+        .setTimestampValue(
+            com.google.protobuf.Timestamp.newBuilder()
+                .setSeconds(timestamp.getSeconds())
+                .setNanos(truncatedNanoseconds))
+        .build();
+  }
+
+  private List<Value> parseArrayTransformElements(List<Object> elements) {
     ParseAccumulator accumulator = new ParseAccumulator(UserData.Source.Argument);
 
-    ArrayList<FieldValue> result = new ArrayList<>(elements.size());
+    List<Value> result = new ArrayList<>(elements.size());
     for (int i = 0; i < elements.size(); i++) {
       Object element = elements.get(i);
       // Although array transforms are used with writes, the actual elements

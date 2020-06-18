@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.spec;
 
+import static com.google.common.base.Strings.emptyToNull;
 import static com.google.firebase.firestore.TestUtil.waitFor;
 import static com.google.firebase.firestore.testutil.TestUtil.ARBITRARY_SEQUENCE_NUMBER;
 import static com.google.firebase.firestore.testutil.TestUtil.deleteMutation;
@@ -38,7 +39,10 @@ import com.google.common.collect.Sets;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.auth.User;
+import com.google.firebase.firestore.core.ComponentProvider;
+import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.core.DocumentViewChange;
 import com.google.firebase.firestore.core.DocumentViewChange.Type;
 import com.google.firebase.firestore.core.EventManager;
@@ -47,10 +51,8 @@ import com.google.firebase.firestore.core.OnlineState;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.core.QueryListener;
 import com.google.firebase.firestore.core.SyncEngine;
-import com.google.firebase.firestore.local.IndexFreeQueryEngine;
-import com.google.firebase.firestore.local.LocalStore;
 import com.google.firebase.firestore.local.Persistence;
-import com.google.firebase.firestore.local.QueryEngine;
+import com.google.firebase.firestore.local.PersistenceTestHelpers;
 import com.google.firebase.firestore.local.QueryPurpose;
 import com.google.firebase.firestore.local.TargetData;
 import com.google.firebase.firestore.model.Document;
@@ -61,8 +63,6 @@ import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatchResult;
 import com.google.firebase.firestore.model.mutation.MutationResult;
-import com.google.firebase.firestore.remote.AndroidConnectivityMonitor;
-import com.google.firebase.firestore.remote.ConnectivityMonitor;
 import com.google.firebase.firestore.remote.ExistenceFilter;
 import com.google.firebase.firestore.remote.MockDatastore;
 import com.google.firebase.firestore.remote.RemoteEvent;
@@ -93,6 +93,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import org.json.JSONArray;
@@ -116,8 +118,8 @@ import org.robolectric.android.util.concurrent.RoboExecutorService;
  *
  * <ol>
  *   <li>Subclass SpecTestCase.
- *   <li>override {@link #getPersistence} to create and return an appropriate Persistence
- *       implementation.
+ *   <li>override {@link #initializeComponentProvider(ComponentProvider.Configuration, boolean)} to
+ *       return appropriate components.
  * </ol>
  */
 public abstract class SpecTestCase implements RemoteStoreCallback {
@@ -132,6 +134,16 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
   // this tag and they'll all be run (but all others won't).
   private static final String EXCLUSIVE_TAG = "exclusive";
 
+  // The name of a Java system property ({@link System#getProperty(String)}) whose value is a filter
+  // that specifies which tests to execute. The value of this property is a regular expression that
+  // is matched against the name of each test. Using this property is an alternative to setting the
+  // {@link #EXCLUSIVE_TAG} tag, which requires modifying the JSON file. To use this property,
+  // specify -DspecTestFilter=<Regex> to the Java runtime, replacing <Regex> with a regular
+  // expression; a test will be executed if and only if its name matches this regular expression.
+  // In this context, a test's "name" is the result of appending its "itName" to its "describeName",
+  // separated by a space character.
+  private static final String TEST_FILTER_PROPERTY = "specTestFilter";
+
   // Tags on tests that should be excluded from execution, useful to allow the platforms to
   // temporarily diverge or for features that are designed to be platform specific (such as
   // 'multi-client').
@@ -141,6 +153,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
           : Sets.newHashSet("no-android", BENCHMARK_TAG, "multi-client");
 
   private boolean garbageCollectionEnabled;
+  private int maxConcurrentLimboResolutions;
   private boolean networkEnabled = true;
 
   //
@@ -153,6 +166,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
   private RemoteStore remoteStore;
   private SyncEngine syncEngine;
   private EventManager eventManager;
+  private DatabaseInfo databaseInfo;
 
   /** Events to be checked by the expectations. */
   private List<QueryEvent> events;
@@ -163,8 +177,17 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
    */
   private Map<Query, QueryListener> queryListeners;
 
-  /** Set of documents that are expected to be in limbo. Verified at every step. */
-  private Set<DocumentKey> expectedLimboDocs;
+  /**
+   * Set of documents that are expected to be in limbo with an active target. Verified at every
+   * step.
+   */
+  private Set<DocumentKey> expectedActiveLimboDocs;
+
+  /**
+   * Set of documents that are expected to be in limbo, enqueued for resolution and, therefore,
+   * without an active target. Verified at every step.
+   */
+  private Set<DocumentKey> expectedEnqueuedLimboDocs;
 
   /** Set of expected active targets, keyed by target ID. */
   private Map<Integer, Pair<List<TargetData>, String>> expectedActiveTargets;
@@ -218,7 +241,8 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
   // Methods for tracking state of writes.
   //
 
-  abstract Persistence getPersistence(boolean garbageCollectionEnabled);
+  protected abstract ComponentProvider initializeComponentProvider(
+      ComponentProvider.Configuration configuration, boolean garbageCollectionEnabled);
 
   private boolean shouldRun(Set<String> tags) {
     for (String tag : tags) {
@@ -238,8 +262,11 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     outstandingWrites = new HashMap<>();
 
     this.garbageCollectionEnabled = config.optBoolean("useGarbageCollection", false);
+    this.maxConcurrentLimboResolutions =
+        config.optInt("maxConcurrentLimboResolutions", Integer.MAX_VALUE);
 
     currentUser = User.UNAUTHENTICATED;
+    databaseInfo = PersistenceTestHelpers.nextDatabaseInfo();
 
     if (config.optInt("numClients", 1) != 1) {
       throw Assert.fail("The Android client does not support multi-client tests");
@@ -251,7 +278,8 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     events = new ArrayList<>();
     queryListeners = new HashMap<>();
 
-    expectedLimboDocs = new HashSet<>();
+    expectedActiveLimboDocs = new HashSet<>();
+    expectedEnqueuedLimboDocs = new HashSet<>();
     expectedActiveTargets = new HashMap<>();
 
     snapshotsInSyncListeners = Collections.synchronizedList(new ArrayList<>());
@@ -269,22 +297,25 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
    * Sets up a new client. Is used to initially setup the client initially and after every restart.
    */
   private void initClient() {
-    localPersistence = getPersistence(garbageCollectionEnabled);
-    QueryEngine queryEngine = new IndexFreeQueryEngine();
-    LocalStore localStore = new LocalStore(localPersistence, queryEngine, currentUser);
-
     queue = new AsyncQueue();
+    datastore = new MockDatastore(databaseInfo, queue, ApplicationProvider.getApplicationContext());
 
-    // Set up the sync engine and various stores.
-    datastore = new MockDatastore(queue, ApplicationProvider.getApplicationContext());
+    ComponentProvider.Configuration configuration =
+        new ComponentProvider.Configuration(
+            ApplicationProvider.getApplicationContext(),
+            queue,
+            databaseInfo,
+            datastore,
+            currentUser,
+            maxConcurrentLimboResolutions,
+            new FirebaseFirestoreSettings.Builder().build());
 
-    ConnectivityMonitor connectivityMonitor =
-        new AndroidConnectivityMonitor(ApplicationProvider.getApplicationContext());
-    remoteStore = new RemoteStore(this, localStore, datastore, queue, connectivityMonitor);
-    syncEngine = new SyncEngine(localStore, remoteStore, currentUser);
-    eventManager = new EventManager(syncEngine);
-    localStore.start();
-    remoteStore.start();
+    ComponentProvider provider =
+        initializeComponentProvider(configuration, garbageCollectionEnabled);
+    localPersistence = provider.getPersistence();
+    remoteStore = provider.getRemoteStore();
+    syncEngine = provider.getSyncEngine();
+    eventManager = provider.getEventManager();
   }
 
   @Override
@@ -898,11 +929,18 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
             expectedState.getInt("watchStreamRequestCount"),
             datastore.getWatchStreamRequestCount());
       }
-      if (expectedState.has("limboDocs")) {
-        expectedLimboDocs = new HashSet<>();
-        JSONArray limboDocs = expectedState.getJSONArray("limboDocs");
+      if (expectedState.has("activeLimboDocs")) {
+        expectedActiveLimboDocs = new HashSet<>();
+        JSONArray limboDocs = expectedState.getJSONArray("activeLimboDocs");
         for (int i = 0; i < limboDocs.length(); i++) {
-          expectedLimboDocs.add(key((String) limboDocs.get(i)));
+          expectedActiveLimboDocs.add(key((String) limboDocs.get(i)));
+        }
+      }
+      if (expectedState.has("enqueuedLimboDocs")) {
+        expectedEnqueuedLimboDocs = new HashSet<>();
+        JSONArray limboDocs = expectedState.getJSONArray("enqueuedLimboDocs");
+        for (int i = 0; i < limboDocs.length(); i++) {
+          expectedEnqueuedLimboDocs.add(key((String) limboDocs.get(i)));
         }
       }
       if (expectedState.has("activeTargets")) {
@@ -937,7 +975,8 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     // Always validate the we received the expected number of events.
     validateUserCallbacks(expectedState);
     // Always validate that the expected limbo docs match the actual limbo docs.
-    validateLimboDocs();
+    validateActiveLimboDocs();
+    validateEnqueuedLimboDocs();
     // Always validate that the expected active targets match the actual active targets.
     validateActiveTargets();
   }
@@ -971,26 +1010,65 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     }
   }
 
-  private void validateLimboDocs() {
+  private void validateActiveLimboDocs() {
     // Make a copy so it can modified while checking against the expected limbo docs.
     @SuppressWarnings("VisibleForTests")
     Map<DocumentKey, Integer> actualLimboDocs =
-        new HashMap<>(syncEngine.getCurrentLimboDocuments());
+        new HashMap<>(syncEngine.getActiveLimboDocumentResolutions());
 
-    // Validate that each limbo doc has an expected active target
+    // Validate that each active limbo doc has an expected active target
     for (Map.Entry<DocumentKey, Integer> limboDoc : actualLimboDocs.entrySet()) {
       assertTrue(
-          "Found limbo doc " + limboDoc.getKey() + " without an expected active target",
+          "Found limbo doc "
+              + limboDoc.getKey()
+              + ", but its target ID "
+              + limboDoc.getValue()
+              + " was not in the set of expected active target IDs "
+              + expectedActiveTargets.keySet().stream()
+                  .sorted()
+                  .map(String::valueOf)
+                  .collect(Collectors.joining(", ")),
           expectedActiveTargets.containsKey(limboDoc.getValue()));
     }
 
-    for (DocumentKey expectedLimboDoc : expectedLimboDocs) {
+    for (DocumentKey expectedLimboDoc : expectedActiveLimboDocs) {
       assertTrue(
           "Expected doc to be in limbo, but was not: " + expectedLimboDoc,
           actualLimboDocs.containsKey(expectedLimboDoc));
       actualLimboDocs.remove(expectedLimboDoc);
     }
-    assertTrue("Unexpected docs in limbo: " + actualLimboDocs, actualLimboDocs.isEmpty());
+    assertTrue("Unexpected active docs in limbo: " + actualLimboDocs, actualLimboDocs.isEmpty());
+  }
+
+  private void validateEnqueuedLimboDocs() {
+    Set<DocumentKey> actualLimboDocs =
+        new HashSet<>(syncEngine.getEnqueuedLimboDocumentResolutions());
+
+    for (DocumentKey key : actualLimboDocs) {
+      assertTrue(
+          "Found enqueued limbo doc "
+              + key.getPath().canonicalString()
+              + ", but it was not in the set of expected enqueued limbo documents ("
+              + expectedEnqueuedLimboDocs.stream()
+                  .sorted()
+                  .map(String::valueOf)
+                  .collect(Collectors.joining(", "))
+              + ")",
+          expectedEnqueuedLimboDocs.contains(key));
+    }
+
+    for (DocumentKey key : expectedEnqueuedLimboDocs) {
+      assertTrue(
+          "Expected doc "
+              + key.getPath().canonicalString()
+              + " to be enqueued for limbo resolution, but it was not in the queue ("
+              + actualLimboDocs.stream()
+                  .sorted()
+                  .map(String::valueOf)
+                  .collect(Collectors.joining(", "))
+              + ")",
+          actualLimboDocs.contains(key));
+    }
   }
 
   private void validateActiveTargets() {
@@ -1097,6 +1175,18 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
       parsedSpecFiles.add(new Pair<>(f.getName(), fileJSON));
     }
 
+    String testNameFilterFromSystemProperty = emptyToNull(System.getProperty(TEST_FILTER_PROPERTY));
+    Pattern testNameFilter;
+    if (testNameFilterFromSystemProperty == null) {
+      testNameFilter = null;
+    } else {
+      exclusiveMode = true;
+      testNameFilter = Pattern.compile(testNameFilterFromSystemProperty);
+    }
+
+    int testPassCount = 0;
+    int testSkipCount = 0;
+
     for (Pair<String, JSONObject> parsedSpecFile : parsedSpecFiles) {
       String fileName = parsedSpecFile.first;
       JSONObject fileJSON = parsedSpecFile.second;
@@ -1115,7 +1205,19 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
         JSONArray steps = testJSON.getJSONArray("steps");
         Set<String> tags = getTestTags(testJSON);
 
-        boolean runTest = shouldRunTest(tags) && (!exclusiveMode || tags.contains(EXCLUSIVE_TAG));
+        boolean runTest;
+        if (!shouldRunTest(tags)) {
+          runTest = false;
+        } else if (!exclusiveMode) {
+          runTest = true;
+        } else if (tags.contains(EXCLUSIVE_TAG)) {
+          runTest = true;
+        } else if (testNameFilter != null) {
+          runTest = testNameFilter.matcher(name).find();
+        } else {
+          runTest = false;
+        }
+
         boolean measureRuntime = tags.contains(BENCHMARK_TAG);
         if (runTest) {
           long start = System.currentTimeMillis();
@@ -1123,18 +1225,21 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
             info("Spec test: " + name);
             runSteps(steps, config);
             ranAtLeastOneTest = true;
+            testPassCount++;
           } catch (AssertionError e) {
-            throw new AssertionError("Spec test failure: " + name, e);
+            throw new AssertionError("Spec test failure: " + name + " (" + fileName + ")", e);
           }
           long end = System.currentTimeMillis();
           if (measureRuntime) {
             info("Runtime: " + (end - start) + " ms");
           }
         } else {
+          testSkipCount++;
           info("  [SKIPPED] Spec test: " + name);
         }
       }
     }
+    info(getClass().getName() + " completed; pass=" + testPassCount + " skip=" + testSkipCount);
     assertTrue(ranAtLeastOneTest);
   }
 

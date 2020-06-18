@@ -15,8 +15,6 @@
 package com.google.firebase.abt;
 
 import static com.google.firebase.abt.AbtExperimentInfo.validateAbtExperimentInfo;
-import static com.google.firebase.abt.FirebaseABTesting.OriginService.INAPP_MESSAGING;
-import static com.google.firebase.abt.FirebaseABTesting.OriginService.REMOTE_CONFIG;
 
 import android.content.Context;
 import androidx.annotation.Nullable;
@@ -67,7 +65,7 @@ public class FirebaseABTesting {
    * Select keys of fields in the experiment descriptions returned from the Firebase Remote Config
    * server.
    */
-  @StringDef({REMOTE_CONFIG, INAPP_MESSAGING})
+  @StringDef({OriginService.REMOTE_CONFIG, OriginService.INAPP_MESSAGING})
   @Retention(RetentionPolicy.SOURCE)
   public @interface OriginService {
 

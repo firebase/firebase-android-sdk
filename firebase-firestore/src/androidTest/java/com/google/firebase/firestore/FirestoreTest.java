@@ -98,7 +98,7 @@ public class FirestoreTest {
       fail("Should have thrown exception");
     } catch (RuntimeException e) {
       assertEquals(
-          ((FirebaseFirestoreException) e.getCause().getCause()).getCode(), Code.UNAVAILABLE);
+          Code.UNAVAILABLE, ((FirebaseFirestoreException) e.getCause().getCause()).getCode());
     }
     writerSnap = waitFor(writerRef.get());
     assertEquals(map("a", "a", "b", "b"), writerSnap.getData());
@@ -167,6 +167,26 @@ public class FirestoreTest {
     snapshot = waitFor(documentReference.get(Source.SERVER));
     assertEquals(map("a", Collections.emptyMap(), "b", Collections.emptyMap()), snapshot.getData());
     listenerRegistration.remove();
+  }
+
+  @Test
+  public void testUpdateWithEmptyObjectReplacesAllFields() {
+    DocumentReference documentReference = testDocument();
+    documentReference.set(map("a", "a"));
+
+    waitFor(documentReference.update("a", Collections.emptyMap()));
+    DocumentSnapshot snapshot = waitFor(documentReference.get());
+    assertEquals(map("a", Collections.emptyMap()), snapshot.getData());
+  }
+
+  @Test
+  public void testMergeWithEmptyObjectReplacesAllFields() {
+    DocumentReference documentReference = testDocument();
+    documentReference.set(map("a", "a"));
+
+    waitFor(documentReference.set(map("a", Collections.emptyMap()), SetOptions.merge()));
+    DocumentSnapshot snapshot = waitFor(documentReference.get());
+    assertEquals(map("a", Collections.emptyMap()), snapshot.getData());
   }
 
   @Test
@@ -1040,7 +1060,7 @@ public class FirestoreTest {
         testFirestore(provider().projectId(), Level.DEBUG, newTestSettings(), "dbPersistenceKey");
     DocumentReference docRef2 = firestore2.document(docRef.getPath());
     DocumentSnapshot doc = waitFor(docRef2.get());
-    assertEquals(doc.exists(), true);
+    assertTrue(doc.exists());
   }
 
   @Test
@@ -1092,7 +1112,7 @@ public class FirestoreTest {
 
     // Verify new instance works.
     DocumentSnapshot doc = waitFor(newInstance.document("abc/123").get());
-    assertEquals(doc.get("field"), 100L);
+    assertEquals(100L, doc.get("field"));
     waitFor(newInstance.document("abc/123").delete());
 
     // Verify it is different instance.
@@ -1213,7 +1233,6 @@ public class FirestoreTest {
   public void testPendingWriteTaskResolveWhenOfflineIfThereIsNoPending() {
     DocumentReference documentReference = testCollection("abc").document("123");
     FirebaseFirestore firestore = documentReference.getFirestore();
-    Map<String, Object> data = map("foo", "bar");
 
     // Prevent pending writes receiving acknowledgement.
     waitFor(firestore.disableNetwork());

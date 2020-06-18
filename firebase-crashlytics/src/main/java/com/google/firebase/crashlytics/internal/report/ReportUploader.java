@@ -14,8 +14,11 @@
 
 package com.google.firebase.crashlytics.internal.report;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.common.BackgroundPriorityRunnable;
+import com.google.firebase.crashlytics.internal.common.DataTransportState;
 import com.google.firebase.crashlytics.internal.report.model.CreateReportRequest;
 import com.google.firebase.crashlytics.internal.report.model.Report;
 import com.google.firebase.crashlytics.internal.report.network.CreateReportSpiCall;
@@ -32,7 +35,7 @@ public class ReportUploader {
 
   /** An interface that can create a ReportUploader. */
   public interface Provider {
-    ReportUploader createReportUploader(AppSettingsData appSettingsData);
+    ReportUploader createReportUploader(@NonNull AppSettingsData appSettingsData);
   }
 
   public interface ReportFilesProvider {
@@ -46,15 +49,17 @@ public class ReportUploader {
   private static final short[] RETRY_INTERVALS = {10, 20, 30, 60, 120, 300};
 
   private final CreateReportSpiCall createReportCall;
-  private final String organizationId;
+  @Nullable private final String organizationId;
   private final String googleAppId;
+  private final DataTransportState dataTransportState;
   private final ReportManager reportManager;
   private final HandlingExceptionCheck handlingExceptionCheck;
   private Thread uploadThread;
 
   public ReportUploader(
-      String organizationId,
+      @Nullable String organizationId,
       String googleAppId,
+      DataTransportState dataTransportState,
       ReportManager reportManager,
       CreateReportSpiCall createReportCall,
       HandlingExceptionCheck handlingExceptionCheck) {
@@ -64,6 +69,7 @@ public class ReportUploader {
     this.createReportCall = createReportCall;
     this.organizationId = organizationId;
     this.googleAppId = googleAppId;
+    this.dataTransportState = dataTransportState;
     this.reportManager = reportManager;
     this.handlingExceptionCheck = handlingExceptionCheck;
   }
@@ -71,7 +77,7 @@ public class ReportUploader {
   public synchronized void uploadReportsAsync(
       List<Report> reports, boolean dataCollectionToken, float delay) {
     if (uploadThread != null) {
-      Logger.getLogger().d(Logger.TAG, "Report upload has already been started.");
+      Logger.getLogger().d("Report upload has already been started.");
       return;
     }
 
@@ -96,21 +102,32 @@ public class ReportUploader {
       final CreateReportRequest requestData =
           new CreateReportRequest(organizationId, googleAppId, report);
 
-      final boolean sent = createReportCall.invoke(requestData, dataCollectionToken);
+      boolean shouldDeleteReport = true;
 
-      Logger.getLogger()
-          .i(
-              Logger.TAG,
-              "Crashlytics report upload "
-                  + (sent ? "complete: " : "FAILED: ")
-                  + report.getIdentifier());
+      if (dataTransportState == DataTransportState.ALL) {
+        Logger.getLogger()
+            .d("Send to Reports Endpoint disabled. Removing Reports Endpoint report.");
+      } else if (dataTransportState == DataTransportState.JAVA_ONLY
+          && report.getType() == Report.Type.JAVA) {
+        Logger.getLogger()
+            .d(
+                "Send to Reports Endpoint for non-native reports disabled. Removing Reports Uploader report.");
+      } else {
+        final boolean sent = createReportCall.invoke(requestData, dataCollectionToken);
+        Logger.getLogger()
+            .i(
+                "Crashlytics Reports Endpoint upload "
+                    + (sent ? "complete: " : "FAILED: ")
+                    + report.getIdentifier());
+        shouldDeleteReport = sent;
+      }
 
-      if (sent) {
+      if (shouldDeleteReport) {
         reportManager.deleteReport(report);
         removed = true;
       }
     } catch (Exception e) {
-      Logger.getLogger().e(Logger.TAG, "Error occurred sending report " + report, e);
+      Logger.getLogger().e("Error occurred sending report " + report, e);
     }
     return removed;
   }
@@ -132,16 +149,13 @@ public class ReportUploader {
         attemptUploadWithRetry(reports, dataCollectionToken);
       } catch (Exception e) {
         Logger.getLogger()
-            .e(
-                Logger.TAG,
-                "An unexpected error occurred while attempting to upload crash reports.",
-                e);
+            .e("An unexpected error occurred while attempting to upload crash reports.", e);
       }
       uploadThread = null;
     }
 
     private void attemptUploadWithRetry(List<Report> reports, boolean dataCollectionToken) {
-      Logger.getLogger().d(Logger.TAG, "Starting report processing in " + delay + " second(s)...");
+      Logger.getLogger().d("Starting report processing in " + delay + " second(s)...");
 
       if (delay > 0) {
         try {
@@ -174,7 +188,7 @@ public class ReportUploader {
           return;
         }
 
-        Logger.getLogger().d(Logger.TAG, "Attempting to send " + reports.size() + " report(s)");
+        Logger.getLogger().d("Attempting to send " + reports.size() + " report(s)");
         ArrayList<Report> remaining = new ArrayList<>();
         for (Report report : reports) {
           boolean removed = uploadReport(report, dataCollectionToken);
@@ -186,9 +200,7 @@ public class ReportUploader {
         if (reports.size() > 0) {
           final long interval = RETRY_INTERVALS[Math.min(retryCount++, RETRY_INTERVALS.length - 1)];
           Logger.getLogger()
-              .d(
-                  Logger.TAG,
-                  "Report submission: scheduling delayed retry in " + interval + " seconds");
+              .d("Report submission: scheduling delayed retry in " + interval + " seconds");
           try {
             Thread.sleep(interval * 1000);
           } catch (InterruptedException e) {

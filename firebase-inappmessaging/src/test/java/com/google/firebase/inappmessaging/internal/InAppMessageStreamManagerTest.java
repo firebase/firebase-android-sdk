@@ -26,18 +26,22 @@ import static com.google.firebase.inappmessaging.testutil.TestProtos.BANNER_MESS
 import static io.reactivex.BackpressureStrategy.BUFFER;
 import static io.reactivex.schedulers.Schedulers.trampoline;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.app.Application;
+import androidx.annotation.NonNull;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.inappmessaging.CommonTypesProto.Event;
 import com.google.firebase.inappmessaging.CommonTypesProto.Priority;
 import com.google.firebase.inappmessaging.CommonTypesProto.TriggeringCondition;
 import com.google.firebase.inappmessaging.internal.time.FakeClock;
 import com.google.firebase.inappmessaging.model.RateLimit;
 import com.google.firebase.inappmessaging.model.TriggeredInAppMessage;
+import com.google.firebase.installations.FirebaseInstallationsApi;
+import com.google.firebase.installations.InstallationTokenResult;
 import com.google.internal.firebase.inappmessaging.v1.CampaignProto;
 import com.google.internal.firebase.inappmessaging.v1.CampaignProto.ThickContent;
 import com.google.internal.firebase.inappmessaging.v1.CampaignProto.VanillaCampaignPayload;
@@ -63,6 +67,7 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
@@ -74,6 +79,8 @@ public class InAppMessageStreamManagerTest {
   private static final long PAST = 1000000;
   private static final long NOW = PAST + 100000;
   private static final long FUTURE = NOW + 1000000;
+  private static final String INSTALLATION_ID = "instance_id";
+  private static final String INSTALLATION_TOKEN = "instance_token";
 
   private static final TriggeringCondition.Builder ON_ANALYTICS_TRIGGER =
       TriggeringCondition.newBuilder().setEvent(Event.newBuilder().setName(ANALYTICS_EVENT_NAME));
@@ -132,6 +139,33 @@ public class InAppMessageStreamManagerTest {
           .setLimiterKey(LIMITER_KEY)
           .setTimeToLiveMillis(TimeUnit.DAYS.toMillis(1))
           .build();
+
+  private static final InstallationTokenResult INSTALLATION_TOKEN_RESULT =
+      new InstallationTokenResult() {
+        @NonNull
+        @Override
+        public String getToken() {
+          return INSTALLATION_TOKEN;
+        }
+
+        @Override
+        public long getTokenExpirationTimestamp() {
+          return 0;
+        }
+
+        @Override
+        public long getTokenCreationTimestamp() {
+          return 0;
+        }
+
+        @Override
+        public Builder toBuilder() {
+          return null;
+        }
+      };
+  private static final InstallationIdResult FID_RESULT =
+      InstallationIdResult.create(INSTALLATION_ID, INSTALLATION_TOKEN_RESULT);
+
   @Mock private ApiClient mockApiClient;
   @Mock private Application application;
   @Mock private CampaignCacheClient campaignCacheClient;
@@ -140,9 +174,11 @@ public class InAppMessageStreamManagerTest {
   @Mock private AbtIntegrationHelper abtIntegrationHelper;
   @Mock private RateLimiterClient rateLimiterClient;
   @Mock private AnalyticsEventsManager analyticsEventsManager;
+  @Mock private FirebaseInstallationsApi firebaseInstallations;
+  @Mock private DataCollectionHelper dataCollectionHelper;
+  @Captor private ArgumentCaptor<InstallationIdResult> installationIdResultArgumentCaptor;
   @Captor private ArgumentCaptor<CampaignImpressionList> campaignImpressionListArgumentCaptor;
 
-  private InAppMessageStreamManager streamManager;
   private FlowableEmitter<String> appForegroundEmitter;
   private TestSubscriber<TriggeredInAppMessage> subscriber;
   private FlowableEmitter<String> analyticsEmitter;
@@ -153,6 +189,14 @@ public class InAppMessageStreamManagerTest {
     return subscriber.getEvents().get(0).stream()
         .map(obj -> (TriggeredInAppMessage) obj)
         .collect(Collectors.toList());
+  }
+
+  private void assertExpectedGetFiamsCall() {
+    assertThat(campaignImpressionListArgumentCaptor.getValue()).isEqualTo(CAMPAIGN_IMPRESSIONS);
+    assertThat(installationIdResultArgumentCaptor.getValue().installationId())
+        .isEqualTo(FID_RESULT.installationId());
+    assertThat(installationIdResultArgumentCaptor.getValue().installationTokenResult().getToken())
+        .isEqualTo(FID_RESULT.installationTokenResult().getToken());
   }
 
   private static void assertExpectedMessageTriggered(
@@ -180,7 +224,7 @@ public class InAppMessageStreamManagerTest {
         Flowable.<String>create(e -> programmaticTriggerEmitter = e, BUFFER).publish();
     programmaticTriggerFlowable.connect();
 
-    streamManager =
+    InAppMessageStreamManager streamManager =
         new InAppMessageStreamManager(
             appForegroundEventFlowable,
             programmaticTriggerFlowable,
@@ -193,70 +237,154 @@ public class InAppMessageStreamManagerTest {
             rateLimiterClient,
             appForegroundRateLimit,
             testDeviceHelper,
+            firebaseInstallations,
+            dataCollectionHelper,
             abtIntegrationHelper);
     subscriber = streamManager.createFirebaseInAppMessageStream().test();
     when(application.getApplicationContext()).thenReturn(application);
+    when(dataCollectionHelper.isAutomaticDataCollectionEnabled()).thenReturn(true);
+    when(impressionStorageClient.clearImpressions(any(FetchEligibleCampaignsResponse.class)))
+        .thenReturn(Completable.complete());
     when(rateLimiterClient.isRateLimited(appForegroundRateLimit)).thenReturn(Single.just(false));
     when(campaignCacheClient.get()).thenReturn(Maybe.empty());
     when(campaignCacheClient.put(any(FetchEligibleCampaignsResponse.class)))
         .thenReturn(Completable.complete());
-    when(impressionStorageClient.isImpressed(anyString())).thenReturn(Single.just(false));
+    when(impressionStorageClient.isImpressed(any(ThickContent.class)))
+        .thenReturn(Single.just(false));
     when(impressionStorageClient.getAllImpressions()).thenReturn(Maybe.just(CAMPAIGN_IMPRESSIONS));
+    when(firebaseInstallations.getId()).thenReturn(Tasks.forResult(INSTALLATION_ID));
+    when(firebaseInstallations.getToken(false))
+        .thenReturn(Tasks.forResult(INSTALLATION_TOKEN_RESULT));
   }
 
   @Test
   public void stream_onAppOpen_notifiesSubscriber() {
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(campaignsResponse);
+    when(mockApiClient.getFiams(
+            installationIdResultArgumentCaptor.capture(),
+            campaignImpressionListArgumentCaptor.capture()))
+        .thenReturn(campaignsResponse);
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
 
+    assertExpectedGetFiamsCall();
     assertExpectedMessageTriggered(subscriber, onForegroundTriggered);
   }
 
   @Test
+  public void stream_onAppOpen_dataCollectionDisabled_doesNotFetch() {
+    when(dataCollectionHelper.isAutomaticDataCollectionEnabled()).thenReturn(false);
+    appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
+
+    subscriber.assertNoValues();
+    verify(mockApiClient, times(0)).getFiams(any(), any());
+    verify(campaignCacheClient, times(1)).put(InAppMessageStreamManager.cacheExpiringResponse());
+  }
+
+  @Test
+  public void stream_onAppOpen_withEmptyIID_doesNotFetch() {
+    when(firebaseInstallations.getId()).thenReturn(Tasks.forResult(""));
+
+    appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
+    verify(mockApiClient, times(0)).getFiams(any(), any());
+    verify(campaignCacheClient, times(1)).put(InAppMessageStreamManager.cacheExpiringResponse());
+  }
+
+  @Test
+  public void stream_onAppOpen_withEmptyFIDToken_doesNotFetch() {
+    when(firebaseInstallations.getToken(false))
+        .thenReturn(
+            Tasks.forResult(
+                new InstallationTokenResult() {
+                  @Override
+                  public String getToken() {
+                    return "";
+                  }
+
+                  @Override
+                  public long getTokenExpirationTimestamp() {
+                    return 0;
+                  }
+
+                  @Override
+                  public long getTokenCreationTimestamp() {
+                    return 0;
+                  }
+
+                  @Override
+                  public Builder toBuilder() {
+                    return null;
+                  }
+                }));
+
+    appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
+    verify(mockApiClient, times(0)).getFiams(any(), any());
+    verify(campaignCacheClient, times(1)).put(InAppMessageStreamManager.cacheExpiringResponse());
+  }
+
+  @Test
   public void stream_onAnalyticsEvent_notifiesSubscriber() {
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(campaignsResponse);
+    when(mockApiClient.getFiams(
+            installationIdResultArgumentCaptor.capture(),
+            campaignImpressionListArgumentCaptor.capture()))
+        .thenReturn(campaignsResponse);
 
     analyticsEmitter.onNext(ANALYTICS_EVENT_NAME);
 
+    assertExpectedGetFiamsCall();
     assertExpectedMessageTriggered(subscriber, onAnalyticsTriggered);
   }
 
   @Test
   public void stream_onProgrammaticTrigger_notifiesSubscriber() {
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(campaignsResponse);
+    when(mockApiClient.getFiams(
+            installationIdResultArgumentCaptor.capture(),
+            campaignImpressionListArgumentCaptor.capture()))
+        .thenReturn(campaignsResponse);
 
     programmaticTriggerEmitter.onNext(ANALYTICS_EVENT_NAME);
 
+    assertExpectedGetFiamsCall();
     assertExpectedMessageTriggered(subscriber, onAnalyticsTriggered);
   }
 
   @Test
   public void stream_onAppOpen_remainsOpen() {
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(campaignsResponse);
+    when(mockApiClient.getFiams(
+            installationIdResultArgumentCaptor.capture(),
+            campaignImpressionListArgumentCaptor.capture()))
+        .thenReturn(campaignsResponse);
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
 
+    assertExpectedGetFiamsCall();
     subscriber.assertNotComplete();
   }
 
   @Test
   public void stream_onUnrelatedForegroundEvent_doesNotTrigger() {
     String unrelatedAnalyticsEvent = "some_other_event";
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(campaignsResponse);
+    when(mockApiClient.getFiams(
+            installationIdResultArgumentCaptor.capture(),
+            campaignImpressionListArgumentCaptor.capture()))
+        .thenReturn(campaignsResponse);
 
     appForegroundEmitter.onNext(unrelatedAnalyticsEvent);
 
+    assertExpectedGetFiamsCall();
     subscriber.assertNoValues();
   }
 
   @Test
   public void stream_onUnrelatedAnalyticsEvent_doesNotTrigger() {
     String unrelatedAnalyticsEvent = "some_other_event";
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(campaignsResponse);
+    when(mockApiClient.getFiams(
+            installationIdResultArgumentCaptor.capture(),
+            campaignImpressionListArgumentCaptor.capture()))
+        .thenReturn(campaignsResponse);
 
     analyticsEmitter.onNext(unrelatedAnalyticsEvent);
 
+    assertExpectedGetFiamsCall();
     subscriber.assertNoValues();
   }
 
@@ -277,10 +405,14 @@ public class InAppMessageStreamManagerTest {
             .addMessages(t)
             .build();
 
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(r);
+    when(mockApiClient.getFiams(
+            installationIdResultArgumentCaptor.capture(),
+            campaignImpressionListArgumentCaptor.capture()))
+        .thenReturn(r);
 
     analyticsEmitter.onNext(ANALYTICS_EVENT_NAME);
 
+    assertExpectedGetFiamsCall();
     assertExpectedMessageTriggered(subscriber, onAnalyticsTriggered);
   }
 
@@ -301,10 +433,14 @@ public class InAppMessageStreamManagerTest {
             .addMessages(t)
             .build();
 
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(r);
+    when(mockApiClient.getFiams(
+            installationIdResultArgumentCaptor.capture(),
+            campaignImpressionListArgumentCaptor.capture()))
+        .thenReturn(r);
 
     analyticsEmitter.onNext(ANALYTICS_EVENT_NAME);
 
+    assertExpectedGetFiamsCall();
     subscriber.assertNoValues();
   }
 
@@ -325,10 +461,14 @@ public class InAppMessageStreamManagerTest {
             .addMessages(t)
             .build();
 
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(r);
+    when(mockApiClient.getFiams(
+            installationIdResultArgumentCaptor.capture(),
+            campaignImpressionListArgumentCaptor.capture()))
+        .thenReturn(r);
 
     analyticsEmitter.onNext(ANALYTICS_EVENT_NAME);
 
+    assertExpectedGetFiamsCall();
     subscriber.assertNoValues();
   }
 
@@ -350,11 +490,46 @@ public class InAppMessageStreamManagerTest {
             .addMessages(t)
             .build();
 
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(r);
+    when(mockApiClient.getFiams(
+            installationIdResultArgumentCaptor.capture(),
+            campaignImpressionListArgumentCaptor.capture()))
+        .thenReturn(r);
 
     analyticsEmitter.onNext(ANALYTICS_EVENT_NAME);
 
+    assertExpectedGetFiamsCall();
     assertExpectedMessageTriggered(subscriber, onAnalyticsTriggered);
+  }
+
+  @Test
+  public void stream_ontestExperiment_doesNotSetExperimentActive() {
+    ThickContent t =
+        thickContentBuilder
+            .clearVanillaPayload()
+            .setIsTestCampaign(true)
+            .setExperimentalPayload(
+                CampaignProto.ExperimentalCampaignPayload.newBuilder()
+                    .setCampaignStartTimeMillis(PAST)
+                    .setCampaignEndTimeMillis(FUTURE)
+                    .setExperimentPayload(FirebaseAbt.ExperimentPayload.getDefaultInstance()))
+            .build();
+
+    FetchEligibleCampaignsResponse r =
+        FetchEligibleCampaignsResponse.newBuilder()
+            .setExpirationEpochTimestampMillis(FUTURE)
+            .addMessages(t)
+            .build();
+
+    when(mockApiClient.getFiams(
+            installationIdResultArgumentCaptor.capture(),
+            campaignImpressionListArgumentCaptor.capture()))
+        .thenReturn(r);
+
+    analyticsEmitter.onNext(ANALYTICS_EVENT_NAME);
+
+    assertExpectedGetFiamsCall();
+    assertExpectedMessageTriggered(subscriber, onAnalyticsTriggered);
+    verify(abtIntegrationHelper, never()).setExperimentActive(Mockito.any());
   }
 
   @Test
@@ -374,10 +549,14 @@ public class InAppMessageStreamManagerTest {
             .addMessages(t)
             .build();
 
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(r);
+    when(mockApiClient.getFiams(
+            installationIdResultArgumentCaptor.capture(),
+            campaignImpressionListArgumentCaptor.capture()))
+        .thenReturn(r);
 
     analyticsEmitter.onNext(ANALYTICS_EVENT_NAME);
 
+    assertExpectedGetFiamsCall();
     subscriber.assertNoValues();
   }
 
@@ -398,10 +577,14 @@ public class InAppMessageStreamManagerTest {
             .addMessages(t)
             .build();
 
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(r);
+    when(mockApiClient.getFiams(
+            installationIdResultArgumentCaptor.capture(),
+            campaignImpressionListArgumentCaptor.capture()))
+        .thenReturn(r);
 
     analyticsEmitter.onNext(ANALYTICS_EVENT_NAME);
 
+    assertExpectedGetFiamsCall();
     subscriber.assertNoValues();
   }
 
@@ -416,15 +599,19 @@ public class InAppMessageStreamManagerTest {
             .setPriority(Priority.newBuilder().setValue(2))
             .setIsTestCampaign(true)
             .build();
-    FetchEligibleCampaignsResponse response =
+    FetchEligibleCampaignsResponse r =
         FetchEligibleCampaignsResponse.newBuilder(campaignsResponse)
             .addMessages(highPriorityContent)
             .addMessages(testContent)
             .build();
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(response);
+    when(mockApiClient.getFiams(
+            installationIdResultArgumentCaptor.capture(),
+            campaignImpressionListArgumentCaptor.capture()))
+        .thenReturn(r);
 
     analyticsEmitter.onNext(ANALYTICS_EVENT_NAME);
 
+    assertExpectedGetFiamsCall();
     assertExpectedMessageTriggered(
         subscriber, new TriggeredInAppMessage(BANNER_TEST_MESSAGE_MODEL, ANALYTICS_EVENT_NAME));
   }
@@ -432,10 +619,14 @@ public class InAppMessageStreamManagerTest {
   @Test
   public void stream_onApiClientFailure_absorbsErrors() {
     Throwable t = new StatusRuntimeException(Status.DATA_LOSS);
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenThrow(t);
+    when(mockApiClient.getFiams(
+            installationIdResultArgumentCaptor.capture(),
+            campaignImpressionListArgumentCaptor.capture()))
+        .thenThrow(t);
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
 
+    assertExpectedGetFiamsCall();
     subscriber.assertNotComplete();
     subscriber.assertNoErrors();
     subscriber.assertNoValues();
@@ -452,67 +643,96 @@ public class InAppMessageStreamManagerTest {
 
   @Test
   public void stream_onServiceFetchSuccess_cachesValue() {
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(campaignsResponse);
+    when(mockApiClient.getFiams(
+            installationIdResultArgumentCaptor.capture(),
+            campaignImpressionListArgumentCaptor.capture()))
+        .thenReturn(campaignsResponse);
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
 
+    assertExpectedGetFiamsCall();
     verify(campaignCacheClient).put(campaignsResponse);
   }
 
   @Test
   public void stream_onServiceFetchSuccess_updatesContextualTriggers() {
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(campaignsResponse);
+    when(mockApiClient.getFiams(
+            installationIdResultArgumentCaptor.capture(),
+            campaignImpressionListArgumentCaptor.capture()))
+        .thenReturn(campaignsResponse);
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
+
+    assertExpectedGetFiamsCall();
     verify(analyticsEventsManager).updateContextualTriggers(campaignsResponse);
   }
 
   @Test
   public void stream_onServiceFetchFailure_doesNotCacheValue() {
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenThrow(new RuntimeException("e"));
+    when(mockApiClient.getFiams(
+            installationIdResultArgumentCaptor.capture(),
+            campaignImpressionListArgumentCaptor.capture()))
+        .thenThrow(new RuntimeException("e"));
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
 
+    assertExpectedGetFiamsCall();
     verify(campaignCacheClient, times(0)).put(campaignsResponse);
   }
 
   @Test
   public void stream_whenAppInstallIsFresh_doesNotCacheValue() {
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(campaignsResponse);
+    when(mockApiClient.getFiams(
+            installationIdResultArgumentCaptor.capture(),
+            campaignImpressionListArgumentCaptor.capture()))
+        .thenReturn(campaignsResponse);
     when(testDeviceHelper.isAppInstallFresh()).thenReturn(true);
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
 
+    assertExpectedGetFiamsCall();
     verify(campaignCacheClient, times(0)).put(any());
   }
 
   @Test
   public void stream_whenDeviceIsInTestMode_doesNotCacheValue() {
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(campaignsResponse);
+    when(mockApiClient.getFiams(
+            installationIdResultArgumentCaptor.capture(),
+            campaignImpressionListArgumentCaptor.capture()))
+        .thenReturn(campaignsResponse);
     when(testDeviceHelper.isDeviceInTestMode()).thenReturn(true);
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
 
+    assertExpectedGetFiamsCall();
     verify(campaignCacheClient, times(0)).put(any());
   }
 
   @Test
   public void stream_onCacheReadFailure_notifiesValueFetchedFromService() {
     when(campaignCacheClient.get()).thenReturn(Maybe.error(new NullPointerException()));
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(campaignsResponse);
+    when(mockApiClient.getFiams(
+            installationIdResultArgumentCaptor.capture(),
+            campaignImpressionListArgumentCaptor.capture()))
+        .thenReturn(campaignsResponse);
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
 
+    assertExpectedGetFiamsCall();
     assertExpectedMessageTriggered(subscriber, onForegroundTriggered);
   }
 
   @Test
   public void stream_onCacheAndApiFail_absorbsFailure() {
     when(campaignCacheClient.get()).thenReturn(Maybe.error(new NullPointerException()));
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenThrow(new NullPointerException());
+    when(mockApiClient.getFiams(
+            installationIdResultArgumentCaptor.capture(),
+            campaignImpressionListArgumentCaptor.capture()))
+        .thenThrow(new NullPointerException());
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
 
+    assertExpectedGetFiamsCall();
     subscriber.assertNotComplete();
     subscriber.assertNoErrors();
     subscriber.assertNoValues();
@@ -522,42 +742,59 @@ public class InAppMessageStreamManagerTest {
   public void stream_onCacheWriteFailure_AbsorbsError() {
     when(campaignCacheClient.put(any(FetchEligibleCampaignsResponse.class)))
         .thenReturn(Completable.error(new NullPointerException()));
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(campaignsResponse);
+    when(mockApiClient.getFiams(
+            installationIdResultArgumentCaptor.capture(),
+            campaignImpressionListArgumentCaptor.capture()))
+        .thenReturn(campaignsResponse);
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
 
+    assertExpectedGetFiamsCall();
     assertExpectedMessageTriggered(subscriber, onForegroundTriggered);
   }
 
   @Test
   public void stream_whenCampaignImpressed_filtersCampaign() {
-    when(impressionStorageClient.isImpressed(anyString())).thenReturn(Single.just(true));
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(campaignsResponse);
+    when(impressionStorageClient.isImpressed(any(ThickContent.class)))
+        .thenReturn(Single.just(true));
+    when(mockApiClient.getFiams(
+            installationIdResultArgumentCaptor.capture(),
+            campaignImpressionListArgumentCaptor.capture()))
+        .thenReturn(campaignsResponse);
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
 
+    assertExpectedGetFiamsCall();
     subscriber.assertNoValues();
   }
 
   @Test
   public void stream_whenCampaignImpressionStoreFails_doesNotFilterCampaign() {
-    when(impressionStorageClient.isImpressed(anyString()))
+    when(impressionStorageClient.isImpressed(any(ThickContent.class)))
         .thenReturn(Single.error(new Exception("e1")));
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(campaignsResponse);
+    when(mockApiClient.getFiams(
+            installationIdResultArgumentCaptor.capture(),
+            campaignImpressionListArgumentCaptor.capture()))
+        .thenReturn(campaignsResponse);
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
 
+    assertExpectedGetFiamsCall();
     assertExpectedMessageTriggered(subscriber, onForegroundTriggered);
   }
 
   @Test
   public void stream_whenCampaignImpressionStoreFail_doesNotFilterCampaign() {
-    when(impressionStorageClient.isImpressed(anyString()))
+    when(impressionStorageClient.isImpressed(any(ThickContent.class)))
         .thenReturn(Single.error(new Exception("e1")));
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(campaignsResponse);
+    when(mockApiClient.getFiams(
+            installationIdResultArgumentCaptor.capture(),
+            campaignImpressionListArgumentCaptor.capture()))
+        .thenReturn(campaignsResponse);
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
 
+    assertExpectedGetFiamsCall();
     assertExpectedMessageTriggered(subscriber, onForegroundTriggered);
   }
 
@@ -565,7 +802,8 @@ public class InAppMessageStreamManagerTest {
   public void stream_whenCampaignImpressionStoreFails_absorbsError() {
     when(impressionStorageClient.getAllImpressions())
         .thenReturn(Maybe.error(new NullPointerException()));
-    when(mockApiClient.getFiams(any(CampaignImpressionList.class))).thenReturn(campaignsResponse);
+    when(mockApiClient.getFiams(any(InstallationIdResult.class), any(CampaignImpressionList.class)))
+        .thenReturn(campaignsResponse);
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
 
@@ -576,7 +814,8 @@ public class InAppMessageStreamManagerTest {
   public void stream_whenCampaignImpressionStoreFails_wiresEmptyImpressionList() {
     when(impressionStorageClient.getAllImpressions())
         .thenReturn(Maybe.error(new NullPointerException()));
-    when(mockApiClient.getFiams(campaignImpressionListArgumentCaptor.capture()))
+    when(mockApiClient.getFiams(
+            any(InstallationIdResult.class), campaignImpressionListArgumentCaptor.capture()))
         .thenReturn(campaignsResponse);
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
@@ -587,11 +826,15 @@ public class InAppMessageStreamManagerTest {
 
   @Test
   public void stream_whenAppOpenRateLimited_doesNotTrigger() {
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(campaignsResponse);
+    when(mockApiClient.getFiams(
+            installationIdResultArgumentCaptor.capture(),
+            campaignImpressionListArgumentCaptor.capture()))
+        .thenReturn(campaignsResponse);
     when(rateLimiterClient.isRateLimited(appForegroundRateLimit)).thenReturn(Single.just(true));
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
 
+    assertExpectedGetFiamsCall();
     subscriber.assertNoValues();
   }
 
@@ -616,10 +859,14 @@ public class InAppMessageStreamManagerTest {
             .setExpirationEpochTimestampMillis(FUTURE)
             .addMessages(testMessageContent)
             .build();
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(response);
+    when(mockApiClient.getFiams(
+            installationIdResultArgumentCaptor.capture(),
+            campaignImpressionListArgumentCaptor.capture()))
+        .thenReturn(response);
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
 
+    assertExpectedGetFiamsCall();
     assertExpectedMessageTriggered(subscriber, testTriggered);
   }
 
@@ -638,36 +885,49 @@ public class InAppMessageStreamManagerTest {
 
     TriggeredInAppMessage testTriggered =
         new TriggeredInAppMessage(BANNER_TEST_MESSAGE_MODEL, ON_FOREGROUND_EVENT_NAME);
-    FetchEligibleCampaignsResponse response =
+    FetchEligibleCampaignsResponse r =
         FetchEligibleCampaignsResponse.newBuilder()
             .setExpirationEpochTimestampMillis(FUTURE)
             .addMessages(testMessageContent)
             .build();
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(response);
+
+    when(mockApiClient.getFiams(
+            installationIdResultArgumentCaptor.capture(),
+            campaignImpressionListArgumentCaptor.capture()))
+        .thenReturn(r);
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
 
+    assertExpectedGetFiamsCall();
     assertExpectedMessageTriggered(subscriber, testTriggered);
   }
 
   @Test
   public void stream_whenRateLimitingClientFails_triggers() {
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(campaignsResponse);
+    when(mockApiClient.getFiams(
+            installationIdResultArgumentCaptor.capture(),
+            campaignImpressionListArgumentCaptor.capture()))
+        .thenReturn(campaignsResponse);
     when(rateLimiterClient.isRateLimited(appForegroundRateLimit))
         .thenReturn(Single.error(new NullPointerException("e1")));
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
 
+    assertExpectedGetFiamsCall();
     assertExpectedMessageTriggered(subscriber, onForegroundTriggered);
   }
 
   @Test
   public void stream_whenAppOpenRateLimited_notifiesAnalyticsSubscriber() {
-    when(mockApiClient.getFiams(CAMPAIGN_IMPRESSIONS)).thenReturn(campaignsResponse);
+    when(mockApiClient.getFiams(
+            installationIdResultArgumentCaptor.capture(),
+            campaignImpressionListArgumentCaptor.capture()))
+        .thenReturn(campaignsResponse);
     when(rateLimiterClient.isRateLimited(appForegroundRateLimit)).thenReturn(Single.just(true));
 
     analyticsEmitter.onNext(ANALYTICS_EVENT_NAME);
 
+    assertExpectedGetFiamsCall();
     assertExpectedMessageTriggered(subscriber, onAnalyticsTriggered);
   }
 }

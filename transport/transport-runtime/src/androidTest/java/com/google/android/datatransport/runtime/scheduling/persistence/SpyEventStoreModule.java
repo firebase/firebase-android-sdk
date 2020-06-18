@@ -54,4 +54,10 @@ public abstract class SpyEventStoreModule {
   static int schemaVersion() {
     return SchemaManager.SCHEMA_VERSION;
   }
+
+  @Provides
+  @Named("SQLITE_DB_NAME")
+  static String dbName() {
+    return SchemaManager.DB_NAME;
+  }
 }

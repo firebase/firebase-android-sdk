@@ -19,7 +19,7 @@ plugins {
 
 firebaseLibrary {
     releaseWith project(':firebase-config')
-    publishJavadoc = false
+    publishJavadoc = true
     publishSources = true
 }
 
@@ -48,10 +48,10 @@ dependencies {
     implementation project(':firebase-components')
     implementation project(':firebase-common:ktx')
     implementation project(':firebase-config')
-    implementation project (':firebase-abt')
-    implementation ('com.google.firebase:firebase-iid:20.0.1') {
-        exclude group: "com.google.firebase", module: "firebase-common"
-    }
+    implementation project(':firebase-abt')
+    implementation project(':firebase-installations-interop')
+    runtimeOnly project(':firebase-installations')
+
     implementation 'androidx.annotation:annotation:1.1.0'
 
     testImplementation "org.robolectric:robolectric:$robolectricVersion"

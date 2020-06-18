@@ -26,9 +26,9 @@ import org.json.JSONObject;
 class SettingsV3JsonTransform implements SettingsJsonTransform {
 
   private static final String CRASHLYTICS_APP_URL =
-      "https://api.crashlytics.com/spi/v1/platforms/android/apps";
+      "https://update.crashlytics.com/spi/v1/platforms/android/apps";
   private static final String CRASHLYTICS_APP_URL_FORMAT =
-      "https://api.crashlytics.com/spi/v1/platforms/android/apps/%s";
+      "https://update.crashlytics.com/spi/v1/platforms/android/apps/%s";
   private static final String REPORTS_URL_FORMAT =
       "https://reports.crashlytics.com/spi/v1/platforms/android/apps/%s/reports";
   private static final String NDK_REPORTS_URL_FORMAT =
@@ -91,8 +91,26 @@ class SettingsV3JsonTransform implements SettingsJsonTransform {
             SettingsJsonConstants.APP_UPDATE_REQUIRED_KEY,
             SettingsJsonConstants.APP_UPDATE_REQUIRED_DEFAULT);
 
+    final int reportUploadVariant =
+        appJson.optInt(
+            SettingsJsonConstants.APP_REPORT_UPLOAD_VARIANT_KEY,
+            SettingsJsonConstants.APP_REPORT_UPLOAD_VARIANT_DEFAULT);
+
+    final int nativeReportUploadVariant =
+        appJson.optInt(
+            SettingsJsonConstants.APP_NATIVE_REPORT_UPLOAD_VARIANT_KEY,
+            SettingsJsonConstants.APP_NATIVE_REPORT_UPLOAD_VARIANT_DEFAULT);
+
     return new AppSettingsData(
-        status, url, reportsUrl, ndkReportsUrl, bundleId, organizationId, updateRequired);
+        status,
+        url,
+        reportsUrl,
+        ndkReportsUrl,
+        bundleId,
+        organizationId,
+        updateRequired,
+        reportUploadVariant,
+        nativeReportUploadVariant);
   }
 
   private static FeaturesSettingsData buildFeaturesSessionDataFrom(JSONObject json) {
@@ -128,7 +146,11 @@ class SettingsV3JsonTransform implements SettingsJsonTransform {
     final JSONObject json =
         new JSONObject()
             .put(SettingsJsonConstants.APP_STATUS_KEY, appData.status)
-            .put(SettingsJsonConstants.APP_UPDATE_REQUIRED_KEY, appData.updateRequired);
+            .put(SettingsJsonConstants.APP_UPDATE_REQUIRED_KEY, appData.updateRequired)
+            .put(SettingsJsonConstants.APP_REPORT_UPLOAD_VARIANT_KEY, appData.reportUploadVariant)
+            .put(
+                SettingsJsonConstants.APP_NATIVE_REPORT_UPLOAD_VARIANT_KEY,
+                appData.nativeReportUploadVariant);
 
     return json;
   }

@@ -1,4 +1,25 @@
-# Unreleased (21.4.0)
+# Unreleased
+- [fixed] Fixed an issue that may have prevented the client from connecting
+  to the backend immediately after a user signed in.
+
+# 21.4.3
+- [changed] Firestore now limits the number of concurrent document lookups it
+  will perform when resolving inconsistencies in the local cache (#1374).
+
+# 21.4.2
+- [changed] Removed Guava dependency from the SDK. This change is the first
+  step in eliminating crashes caused by apps that depend on the wrong flavor of
+  Guava (#1125).
+
+# 21.4.1
+- [fixed] Fixed a performance regression introduced by the addition of
+  `Query.limitToLast(n: long)` in Firestore 23.3.1.
+- [changed] Changed the in-memory representation of Firestore documents to
+  reduce memory allocations and improve performance. Calls to 
+  `DocumentSnapshot.getData()` and `DocumentSnapshot.toObject()` will see
+  the biggest improvement.
+
+# 21.4.0
 - [feature] Firestore previously required that every document read in a
   transaction must also be written. This requirement has been removed, and
   you can now read a document in a transaction without writing to it.

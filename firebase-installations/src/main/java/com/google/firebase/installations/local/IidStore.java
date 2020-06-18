@@ -18,12 +18,12 @@ import static android.content.ContentValues.TAG;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import com.google.firebase.FirebaseApp;
 import java.security.KeyFactory;
 import java.security.MessageDigest;
@@ -36,15 +36,18 @@ import org.json.JSONObject;
 
 /**
  * Read existing iid only for default (first initialized) instance of this firebase application.*
+ *
+ * @hide
  */
 public class IidStore {
   private static final String IID_SHARED_PREFS_NAME = "com.google.android.gms.appid";
   private static final String STORE_KEY_PUB = "|S||P|";
   private static final String STORE_KEY_ID = "|S|id";
   private static final String STORE_KEY_TOKEN = "|T|";
-  private static final String DEFAULT_SCOPE = "|*";
+  private static final String STORE_KEY_SEPARATOR = "|";
   private static final String JSON_TOKEN_KEY = "token";
   private static final String JSON_ENCODED_PREFIX = "{";
+  private static final String[] ALLOWABLE_SCOPES = new String[] {"*", "FCM", "GCM", ""};
 
   @GuardedBy("iidPrefs")
   private final SharedPreferences iidPrefs;
@@ -58,6 +61,12 @@ public class IidStore {
             .getSharedPreferences(IID_SHARED_PREFS_NAME, Context.MODE_PRIVATE);
 
     defaultSenderId = getDefaultSenderId(firebaseApp);
+  }
+
+  @VisibleForTesting
+  public IidStore(@NonNull SharedPreferences iidPrefs, @Nullable String defaultSenderId) {
+    this.iidPrefs = iidPrefs;
+    this.defaultSenderId = defaultSenderId;
   }
 
   private static String getDefaultSenderId(FirebaseApp app) {
@@ -84,23 +93,22 @@ public class IidStore {
     return projectNumber;
   }
 
-  private String createTokenKey(@NonNull String senderId) {
-    return STORE_KEY_TOKEN + senderId + DEFAULT_SCOPE;
+  private String createTokenKey(@NonNull String senderId, @NonNull String scope) {
+    return STORE_KEY_TOKEN + senderId + STORE_KEY_SEPARATOR + scope;
   }
 
   @Nullable
   public String readToken() {
     synchronized (iidPrefs) {
-      String token = iidPrefs.getString(createTokenKey(defaultSenderId), null);
-      if (TextUtils.isEmpty(token)) {
-        return null;
+      for (String scope : ALLOWABLE_SCOPES) {
+        String tokenKey = createTokenKey(defaultSenderId, scope);
+        String token = iidPrefs.getString(tokenKey, null);
+        if (token != null && !token.isEmpty()) {
+          return token.startsWith(JSON_ENCODED_PREFIX) ? parseIidTokenFromJson(token) : token;
+        }
       }
 
-      if (token.startsWith(JSON_ENCODED_PREFIX)) {
-        return parseIidTokenFromJson(token);
-      }
-      // Legacy value, token is whole string
-      return token;
+      return null;
     }
   }
 
