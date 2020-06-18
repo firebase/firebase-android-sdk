@@ -74,12 +74,12 @@ dependencies {
     implementation project(':firebase-common')
     implementation project(':firebase-abt')
     implementation project(':firebase-components')
-    implementation('com.google.firebase:firebase-iid:20.1.5') {
-        exclude group: 'com.google.firebase', module: 'firebase-common'
-        exclude group: 'com.google.firebase', module: 'firebase-components'
-    }
+    implementation project(':firebase-installations-interop')
+    runtimeOnly project(':firebase-installations')
+
     implementation 'com.google.firebase:firebase-measurement-connector:18.0.0'
     implementation "com.google.protobuf:protobuf-javalite:$javaliteVersion"
+    implementation 'com.google.android.gms:play-services-tasks:17.0.2'
 
     compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
 

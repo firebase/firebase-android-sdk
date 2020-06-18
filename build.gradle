@@ -67,6 +67,10 @@ firebaseContinuousIntegration {
     ]
 }
 
+if(JavaVersion.current() != JavaVersion.VERSION_11){
+    throw new GradleException("This build must be run with java 11. You're using ${JavaVersion.current()}.")
+}
+
 configure(subprojects) {
     repositories {
         google()
