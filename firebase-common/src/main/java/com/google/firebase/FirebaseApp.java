@@ -45,7 +45,6 @@ import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.ComponentRuntime;
 import com.google.firebase.components.Lazy;
 import com.google.firebase.emulators.EmulatorSettings;
-import com.google.firebase.emulators.FirebaseEmulator;
 import com.google.firebase.events.Publisher;
 import com.google.firebase.heartbeatinfo.DefaultHeartBeatInfo;
 import com.google.firebase.internal.DataCollectionConfigStorage;
@@ -111,6 +110,8 @@ public class FirebaseApp {
   private final String name;
   private final FirebaseOptions options;
   private final ComponentRuntime componentRuntime;
+
+  private final AtomicBoolean emulatorSettingsFrozen = new AtomicBoolean(false);
   private EmulatorSettings emulatorSettings = EmulatorSettings.getDefault();
 
   // Default disabled. We released Firebase publicly without this feature, so making it default
@@ -155,7 +156,7 @@ public class FirebaseApp {
   @NonNull
   public EmulatorSettings getEmulatorSettings() {
     checkNotDeleted();
-    emulatorSettings.freeze();
+    emulatorSettingsFrozen.set(true);
     return emulatorSettings;
   }
 
@@ -326,7 +327,7 @@ public class FirebaseApp {
    * Specify which services should access local emulators for this FirebaseApp instance.
    *
    * <p>For example, if the {@link EmulatorSettings} contain {@link
-   * com.google.firebase.emulators.EmulatedServiceSettings} for {@link FirebaseEmulator#FIRESTORE},
+   * com.google.firebase.emulators.EmulatedServiceSettings} for {@link FirebaseDatabase#EMULATOR},
    * then calls to Cloud Firestore will communicate with the emulator rather than production.
    *
    * <p>TODO(samstern): Un-hide this once Firestore, Database, and Functions are implemented
@@ -337,7 +338,7 @@ public class FirebaseApp {
   public void enableEmulators(@NonNull EmulatorSettings emulatorSettings) {
     checkNotDeleted();
     Preconditions.checkState(
-        !this.emulatorSettings.isFrozen(),
+        !this.emulatorSettingsFrozen.get(),
         "Cannot enable emulators after Firebase SDKs have already been used.");
     this.emulatorSettings = emulatorSettings;
   }

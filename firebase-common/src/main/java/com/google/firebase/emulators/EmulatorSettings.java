@@ -14,14 +14,12 @@
 
 package com.google.firebase.emulators;
 
-import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.components.Preconditions;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Settings that control which Firebase services should access a local emulator, rather than
@@ -33,8 +31,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @hide
  */
 public class EmulatorSettings {
-
-  private static final String LOG_TAG = "FirebaseApp";
 
   /** Empty emulator settings to be used as an internal default */
   public static EmulatorSettings getDefault() {
@@ -71,7 +67,6 @@ public class EmulatorSettings {
     }
   }
 
-  private final AtomicBoolean frozen = new AtomicBoolean(false);
   private final Map<FirebaseEmulator, EmulatedServiceSettings> settingsMap;
 
   private EmulatorSettings(@NonNull Map<FirebaseEmulator, EmulatedServiceSettings> settingsMap) {
@@ -79,39 +74,12 @@ public class EmulatorSettings {
   }
 
   /**
-   * To be called by {@link com.google.firebase.FirebaseApp} once these settings have been accessed
-   * so that we know when we have passed the point of no return for changing them.
-   *
-   * @hide
-   */
-  public void freeze() {
-    this.frozen.set(true);
-  }
-
-  /**
-   * Determine if any Firebase SDK has already accessed the emulator settings. When true, attempting
-   * to change the settings should throw an error.
-   *
-   * @hide
-   */
-  public boolean isFrozen() {
-    return frozen.get();
-  }
-
-  /**
-   * Fetch the emulation settings for a single Firebase service. Once this method has been called
-   * {@link #isFrozen()} will return true.
+   * Fetch the emulation settings for a single Firebase service.
    *
    * @hide
    */
   @Nullable
   public EmulatedServiceSettings getServiceSettings(@NonNull FirebaseEmulator emulator) {
-    if (!this.frozen.get()) {
-      Log.w(
-          LOG_TAG,
-          "getServiceSettings() was called on EmulatorSettings before freezing, this may lead to unexpected behavior.");
-    }
-
     if (settingsMap.containsKey(emulator)) {
       return settingsMap.get(emulator);
     }
