@@ -27,7 +27,7 @@ import com.google.firebase.database.core.persistence.PersistenceManager;
 import com.google.firebase.database.future.WriteFuture;
 import com.google.firebase.emulators.EmulatedServiceSettings;
 import com.google.firebase.emulators.EmulatorSettings;
-import com.google.firebase.emulators.FirebaseEmulators;
+import com.google.firebase.emulators.FirebaseEmulator;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -79,7 +79,7 @@ public class FirebaseDatabaseTest {
         new EmulatedServiceSettings.Builder("10.0.2.2", 9000).build();
     EmulatorSettings emulatorSettings =
         new EmulatorSettings.Builder()
-            .addEmulatedService(FirebaseEmulators.DATABASE, serviceSettings)
+            .addEmulatedService(FirebaseDatabase.EMULATOR, serviceSettings)
             .build();
     app.enableEmulators(emulatorSettings);
 

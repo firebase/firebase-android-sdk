@@ -31,7 +31,7 @@ import com.google.firebase.database.core.utilities.Utilities;
 import com.google.firebase.database.core.utilities.Validation;
 import com.google.firebase.emulators.EmulatedServiceSettings;
 import com.google.firebase.emulators.EmulatorSettings;
-import com.google.firebase.emulators.FirebaseEmulators;
+import com.google.firebase.emulators.FirebaseEmulator;
 
 import static com.google.android.gms.common.internal.Preconditions.checkNotNull;
 
@@ -41,6 +41,8 @@ import static com.google.android.gms.common.internal.Preconditions.checkNotNull;
  * {@link FirebaseDatabase#getReference()}.
  */
 public class FirebaseDatabase {
+
+  public static final FirebaseEmulator EMULATOR = FirebaseEmulator.forName("database");
 
   private static final String SDK_VERSION = BuildConfig.VERSION_NAME;
 
@@ -122,7 +124,7 @@ public class FirebaseDatabase {
     EmulatorSettings emulatorSettings = app.getEmulatorSettings();
     EmulatedServiceSettings serviceSettings =
         emulatorSettings != null
-            ? emulatorSettings.getServiceSettings(FirebaseEmulators.DATABASE)
+            ? emulatorSettings.getServiceSettings(EMULATOR)
             : null;
 
     return component.get(parsedUrl.repoInfo);
@@ -305,7 +307,7 @@ public class FirebaseDatabase {
   private static EmulatedServiceSettings getEmulatorServiceSettings(@NonNull FirebaseApp app) {
     EmulatorSettings emulatorSettings = app.getEmulatorSettings();
     return emulatorSettings != null
-        ? emulatorSettings.getServiceSettings(FirebaseEmulators.DATABASE)
+        ? emulatorSettings.getServiceSettings(EMULATOR)
         : null;
   }
 

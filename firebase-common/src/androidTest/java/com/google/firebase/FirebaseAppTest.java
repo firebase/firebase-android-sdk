@@ -36,7 +36,7 @@ import com.google.firebase.components.TestComponentTwo;
 import com.google.firebase.components.TestUserAgentDependentComponent;
 import com.google.firebase.emulators.EmulatedServiceSettings;
 import com.google.firebase.emulators.EmulatorSettings;
-import com.google.firebase.emulators.FirebaseEmulators;
+import com.google.firebase.emulators.FirebaseEmulator;
 import com.google.firebase.platforminfo.UserAgentPublisher;
 import com.google.firebase.testing.FirebaseAppRule;
 
@@ -429,11 +429,15 @@ public class FirebaseAppTest {
     Context mockContext = createForwardingMockContext();
     FirebaseApp firebaseApp = FirebaseApp.initializeApp(mockContext);
 
+    // A developer would call FirebaseDatabase.EMULATOR but we can't introduce that
+    // dependency for this test.
+    FirebaseEmulator emulator = FirebaseEmulator.forName("database");
+
     EmulatedServiceSettings databaseSettings =
         new EmulatedServiceSettings.Builder("10.0.2.2", 9000).build();
     EmulatorSettings emulatorSettings =
         new EmulatorSettings.Builder()
-            .addEmulatedService(FirebaseEmulators.DATABASE, databaseSettings)
+            .addEmulatedService(emulator, databaseSettings)
             .build();
 
     // Set twice
@@ -446,16 +450,18 @@ public class FirebaseAppTest {
     Context mockContext = createForwardingMockContext();
     FirebaseApp firebaseApp = FirebaseApp.initializeApp(mockContext);
 
+    FirebaseEmulator emulator = FirebaseEmulator.forName("database");
+
     EmulatedServiceSettings databaseSettings =
         new EmulatedServiceSettings.Builder("10.0.2.2", 9000).build();
     EmulatorSettings emulatorSettings =
         new EmulatorSettings.Builder()
-            .addEmulatedService(FirebaseEmulators.DATABASE, databaseSettings)
+            .addEmulatedService(emulator, databaseSettings)
             .build();
     firebaseApp.enableEmulators(emulatorSettings);
 
     // Access (as if from the Database SDK)
-    firebaseApp.getEmulatorSettings().getServiceSettings(FirebaseEmulators.DATABASE);
+    firebaseApp.getEmulatorSettings().getServiceSettings(emulator);
 
     // Try to set again
     assertThrows(IllegalStateException.class, () -> firebaseApp.enableEmulators(emulatorSettings));

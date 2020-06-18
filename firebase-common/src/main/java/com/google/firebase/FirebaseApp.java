@@ -45,6 +45,7 @@ import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.ComponentRuntime;
 import com.google.firebase.components.Lazy;
 import com.google.firebase.emulators.EmulatorSettings;
+import com.google.firebase.emulators.FirebaseEmulator;
 import com.google.firebase.events.Publisher;
 import com.google.firebase.heartbeatinfo.DefaultHeartBeatInfo;
 import com.google.firebase.internal.DataCollectionConfigStorage;
@@ -330,7 +331,7 @@ public class FirebaseApp {
    *
    * <p>For example, if the {@link EmulatorSettings} contain {@link
    * com.google.firebase.emulators.EmulatedServiceSettings} for {@link
-   * com.google.firebase.emulators.FirebaseEmulators#FIRESTORE}, then calls to Cloud Firestore will
+   * FirebaseEmulator#FIRESTORE}, then calls to Cloud Firestore will
    * communicate with the emulator rather than production.
    *
    * <p>TODO(samstern): Un-hide this once Firestore, Database, and Functions are implemented

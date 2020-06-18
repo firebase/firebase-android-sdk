@@ -39,7 +39,7 @@ public class EmulatorSettings {
 
   public static final class Builder {
 
-    private final Map<FirebaseEmulators, EmulatedServiceSettings> settingsMap = new HashMap<>();
+    private final Map<FirebaseEmulator, EmulatedServiceSettings> settingsMap = new HashMap<>();
 
     /** Constructs an empty builder. */
     public Builder() {}
@@ -53,7 +53,7 @@ public class EmulatorSettings {
      */
     @NonNull
     public Builder addEmulatedService(
-        @NonNull FirebaseEmulators emulator, @NonNull EmulatedServiceSettings settings) {
+            @NonNull FirebaseEmulator emulator, @NonNull EmulatedServiceSettings settings) {
       Preconditions.checkState(
           !settingsMap.containsKey(emulator),
           "Cannot call addEmulatedService twice for " + emulator.toString());
@@ -68,9 +68,9 @@ public class EmulatorSettings {
   }
 
   private final AtomicBoolean accessed = new AtomicBoolean(false);
-  private final Map<FirebaseEmulators, EmulatedServiceSettings> settingsMap;
+  private final Map<FirebaseEmulator, EmulatedServiceSettings> settingsMap;
 
-  private EmulatorSettings(@NonNull Map<FirebaseEmulators, EmulatedServiceSettings> settingsMap) {
+  private EmulatorSettings(@NonNull Map<FirebaseEmulator, EmulatedServiceSettings> settingsMap) {
     this.settingsMap = Collections.unmodifiableMap(settingsMap);
   }
 
@@ -91,7 +91,7 @@ public class EmulatorSettings {
    * @hide
    */
   @Nullable
-  public EmulatedServiceSettings getServiceSettings(@NonNull FirebaseEmulators emulator) {
+  public EmulatedServiceSettings getServiceSettings(@NonNull FirebaseEmulator emulator) {
     accessed.set(true);
 
     if (settingsMap.containsKey(emulator)) {

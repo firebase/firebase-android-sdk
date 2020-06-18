@@ -14,10 +14,12 @@
 
 package com.google.firebase.emulators;
 
+import androidx.annotation.NonNull;
+
 import com.google.android.gms.common.annotation.KeepForSdk;
 
 /**
- * Enum for Firebase services that can be emulated using the Firebase Emulator Suite.
+ * Identifier Firebase services that can be emulated using the Firebase Emulator Suite.
  *
  * <p>TODO(samstern): Un-hide this once Firestore, Database, and Functions are implemented
  *
@@ -27,8 +29,20 @@ import com.google.android.gms.common.annotation.KeepForSdk;
  * @hide
  */
 @KeepForSdk
-public enum FirebaseEmulators {
-  DATABASE,
-  FIRESTORE,
-  FUNCTIONS,
+public class FirebaseEmulator {
+
+  public final String name;
+
+  /**
+   * Only to be called by SDKs which support emulators in order to make constants.
+   * @hide
+   */
+  @NonNull
+  public static FirebaseEmulator forName(String name) {
+    return new FirebaseEmulator(name);
+  }
+
+  private FirebaseEmulator(String name) {
+    this.name = name;
+  }
 }
