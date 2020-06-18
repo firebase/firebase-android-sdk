@@ -155,6 +155,7 @@ public class FirebaseApp {
   @NonNull
   public EmulatorSettings getEmulatorSettings() {
     checkNotDeleted();
+    emulatorSettings.freeze();
     return emulatorSettings;
   }
 
@@ -336,7 +337,7 @@ public class FirebaseApp {
   public void enableEmulators(@NonNull EmulatorSettings emulatorSettings) {
     checkNotDeleted();
     Preconditions.checkState(
-        !this.emulatorSettings.isAccessed(),
+        !this.emulatorSettings.isFrozen(),
         "Cannot enable emulators after Firebase SDKs have already been used.");
     this.emulatorSettings = emulatorSettings;
   }

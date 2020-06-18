@@ -14,6 +14,7 @@
 
 package com.google.firebase.emulators;
 
+import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.components.Preconditions;
@@ -32,6 +33,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @hide
  */
 public class EmulatorSettings {
+
+  private static final String LOG_TAG = "FirebaseApp";
 
   /** Empty emulator settings to be used as an internal default */
   public static EmulatorSettings getDefault() {
@@ -68,11 +71,21 @@ public class EmulatorSettings {
     }
   }
 
-  private final AtomicBoolean accessed = new AtomicBoolean(false);
+  private final AtomicBoolean frozen = new AtomicBoolean(false);
   private final Map<FirebaseEmulator, EmulatedServiceSettings> settingsMap;
 
   private EmulatorSettings(@NonNull Map<FirebaseEmulator, EmulatedServiceSettings> settingsMap) {
     this.settingsMap = Collections.unmodifiableMap(settingsMap);
+  }
+
+  /**
+   * To be called by {@link com.google.firebase.FirebaseApp} once these settings have been accessed
+   * so that we know when we have passed the point of no return for changing them.
+   *
+   * @hide
+   */
+  public void freeze() {
+    this.frozen.set(true);
   }
 
   /**
@@ -81,19 +94,23 @@ public class EmulatorSettings {
    *
    * @hide
    */
-  public boolean isAccessed() {
-    return accessed.get();
+  public boolean isFrozen() {
+    return frozen.get();
   }
 
   /**
    * Fetch the emulation settings for a single Firebase service. Once this method has been called
-   * {@link #isAccessed()} will return true.
+   * {@link #isFrozen()} will return true.
    *
    * @hide
    */
   @Nullable
   public EmulatedServiceSettings getServiceSettings(@NonNull FirebaseEmulator emulator) {
-    accessed.set(true);
+    if (!this.frozen.get()) {
+      Log.w(
+          LOG_TAG,
+          "getServiceSettings() was called on EmulatorSettings before freezing, this may lead to unexpected behavior.");
+    }
 
     if (settingsMap.containsKey(emulator)) {
       return settingsMap.get(emulator);
