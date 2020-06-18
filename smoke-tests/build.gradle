@@ -33,10 +33,6 @@ apply plugin: "com.android.application"
 android {
   compileSdkVersion 29
 
-  lintOptions {
-    abortOnError false
-  }
-
   defaultConfig {
     minSdkVersion 16
     multiDexEnabled true
