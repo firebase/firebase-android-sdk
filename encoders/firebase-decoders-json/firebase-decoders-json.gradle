@@ -54,7 +54,6 @@ dependencies {
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation 'org.mockito:mockito-core:2.25.0'
     implementation project(path: ':encoders:firebase-encoders-json')
-    implementation project(path: ':encoders:firebase-encoders-processor:test-support')
 }
 
 tasks.withType(JavaCompile) {
