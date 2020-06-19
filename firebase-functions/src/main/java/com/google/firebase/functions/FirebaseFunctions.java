@@ -27,6 +27,9 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.emulators.EmulatedServiceSettings;
+import com.google.firebase.emulators.EmulatorSettings;
+import com.google.firebase.emulators.FirebaseEmulator;
 import com.google.firebase.functions.FirebaseFunctionsException.Code;
 import java.io.IOException;
 import java.io.InterruptedIOException;
@@ -46,6 +49,13 @@ import org.json.JSONObject;
 
 /** FirebaseFunctions lets you call Cloud Functions for Firebase. */
 public class FirebaseFunctions {
+
+  /**
+   * Emulator identifier, see {@link
+   * com.google.firebase.emulators.EmulatorSettings.Builder#addEmulatedService(FirebaseEmulator,
+   * EmulatedServiceSettings)}
+   */
+  public static final FirebaseEmulator EMULATOR = FirebaseEmulator.forName("functions");
 
   /** A task that will be resolved once ProviderInstaller has installed what it needs to. */
   private static final TaskCompletionSource<Void> providerInstalled = new TaskCompletionSource<>();
@@ -75,12 +85,25 @@ public class FirebaseFunctions {
   private String urlFormat = "https://%1$s-%2$s.cloudfunctions.net/%3$s";
 
   FirebaseFunctions(
-      Context context, String projectId, String region, ContextProvider contextProvider) {
+      Context context,
+      String projectId,
+      String region,
+      ContextProvider contextProvider,
+      @Nullable EmulatedServiceSettings emulatorSettings) {
     this.client = new OkHttpClient();
     this.serializer = new Serializer();
     this.contextProvider = Preconditions.checkNotNull(contextProvider);
     this.projectId = Preconditions.checkNotNull(projectId);
     this.region = Preconditions.checkNotNull(region);
+
+    if (emulatorSettings != null) {
+      urlFormat =
+          "http://"
+              + emulatorSettings.getHost()
+              + ":"
+              + emulatorSettings.getPort()
+              + "/%2$s/%1$s/%3$s";
+    }
 
     maybeInstallProviders(context);
   }
@@ -192,7 +215,9 @@ public class FirebaseFunctions {
    * https://firebase.google.com/docs/functions/local-emulator
    *
    * @param origin The origin of the local emulator, such as "http://10.0.2.2:5005".
+   * @deprecated see {@link FirebaseApp#enableEmulators(EmulatorSettings)}
    */
+  @Deprecated
   public void useFunctionsEmulator(@NonNull String origin) {
     Preconditions.checkNotNull(origin, "origin cannot be null");
     urlFormat = origin + "/%2$s/%1$s/%3$s";
