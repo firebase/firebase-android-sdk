@@ -22,6 +22,7 @@ import com.google.firebase.decoders.FieldRef;
 import com.google.firebase.decoders.ObjectDecoder;
 import com.google.firebase.decoders.TypeCreator;
 import com.google.firebase.decoders.TypeToken;
+import com.google.firebase.encoders.EncodingException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -58,7 +59,7 @@ public class JsonDataDecoderBuilderContext implements DataDecoder {
       TypeToken.ArrayToken<T> arrayToken = (TypeToken.ArrayToken<T>) typeToken;
       return (T) decodeArrayToken(arrayToken);
     }
-    return null;
+    throw new EncodingException("Unknown typeToken: " + typeToken);
   }
 
   private <T> T decodeClassToken(TypeToken.ClassToken<T> classToken) throws IOException {
