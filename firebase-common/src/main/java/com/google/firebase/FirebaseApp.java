@@ -112,7 +112,7 @@ public class FirebaseApp {
   private final ComponentRuntime componentRuntime;
 
   private final AtomicBoolean emulatorSettingsFrozen = new AtomicBoolean(false);
-  private EmulatorSettings emulatorSettings = EmulatorSettings.getDefault();
+  private EmulatorSettings emulatorSettings = EmulatorSettings.DEFAULT;
 
   // Default disabled. We released Firebase publicly without this feature, so making it default
   // enabled is a backwards incompatible change.

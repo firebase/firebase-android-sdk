@@ -28,7 +28,7 @@ import androidx.annotation.NonNull;
  */
 public final class FirebaseEmulator {
 
-  public final String name;
+  private final String name;
 
   /**
    * Only to be called by SDKs which support emulators in order to make constants.
@@ -42,5 +42,9 @@ public final class FirebaseEmulator {
 
   private FirebaseEmulator(String name) {
     this.name = name;
+  }
+
+  public String getName() {
+    return name;
   }
 }
