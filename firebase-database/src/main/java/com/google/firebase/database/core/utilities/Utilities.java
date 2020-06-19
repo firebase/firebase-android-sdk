@@ -62,7 +62,7 @@ public class Utilities {
 
       RepoInfo repoInfo = new RepoInfo();
       if (emulatorSettings != null) {
-        repoInfo.host = emulatorSettings.host + ":" + emulatorSettings.port;
+        repoInfo.host = emulatorSettings.getHost() + ":" + emulatorSettings.getPort();
         repoInfo.secure = false;
       } else {
         repoInfo.host = host.toLowerCase();
