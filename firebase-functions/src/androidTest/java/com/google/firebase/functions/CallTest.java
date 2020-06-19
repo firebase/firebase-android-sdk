@@ -25,6 +25,7 @@ import androidx.test.runner.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.emulators.EmulatedServiceSettings;
 import com.google.firebase.functions.FirebaseFunctionsException.Code;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -38,6 +39,8 @@ import org.junit.runner.RunWith;
 @RunWith(AndroidJUnit4.class)
 public class CallTest {
   private static FirebaseApp app;
+
+  private static final EmulatedServiceSettings NO_EMULATOR = null;
 
   @BeforeClass
   public static void setUp() {
@@ -91,7 +94,7 @@ public class CallTest {
               HttpsCallableContext context = new HttpsCallableContext("token", null);
               return Tasks.forResult(context);
             },
-            null);
+            NO_EMULATOR);
 
     HttpsCallableReference function = functions.getHttpsCallable("tokenTest");
     Task<HttpsCallableResult> result = function.call(new HashMap<>());
@@ -112,7 +115,7 @@ public class CallTest {
               HttpsCallableContext context = new HttpsCallableContext(null, "iid");
               return Tasks.forResult(context);
             },
-            null);
+            NO_EMULATOR);
 
     HttpsCallableReference function = functions.getHttpsCallable("instanceIdTest");
     Task<HttpsCallableResult> result = function.call(new HashMap<>());

@@ -28,7 +28,6 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.emulators.EmulatedServiceSettings;
-import com.google.firebase.emulators.EmulatorSettings;
 import com.google.firebase.emulators.FirebaseEmulator;
 import com.google.firebase.functions.FirebaseFunctionsException.Code;
 import java.io.IOException;
@@ -54,6 +53,10 @@ public class FirebaseFunctions {
    * Emulator identifier, see {@link
    * com.google.firebase.emulators.EmulatorSettings.Builder#addEmulatedService(FirebaseEmulator,
    * EmulatedServiceSettings)}
+   *
+   * <p>TODO(samstern): Un-hide this once Firestore, Database, and Functions are implemented
+   *
+   * @hide
    */
   public static final FirebaseEmulator EMULATOR = FirebaseEmulator.forName("functions");
 
@@ -215,9 +218,7 @@ public class FirebaseFunctions {
    * https://firebase.google.com/docs/functions/local-emulator
    *
    * @param origin The origin of the local emulator, such as "http://10.0.2.2:5005".
-   * @deprecated see {@link FirebaseApp#enableEmulators(EmulatorSettings)}
    */
-  @Deprecated
   public void useFunctionsEmulator(@NonNull String origin) {
     Preconditions.checkNotNull(origin, "origin cannot be null");
     urlFormat = origin + "/%2$s/%1$s/%3$s";
