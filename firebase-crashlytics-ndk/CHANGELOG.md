@@ -1,3 +1,18 @@
+# 17.1.0
+
+- [changed] Updated `firebase-crashlytics` dependency to v17.1.0.
+
+# 17.0.1
+
+- [changed] Updated `firebase-crashlytics` dependency to v17.0.1.
+
+# 17.0.0
+
+- [changed] The Firebase Crashlytics SDK for NDK is now generally
+  available.
+
+- [changed] Updated `firebase-crashlytics` dependency to v17.0.0.
+
 # 17.0.0-beta04
 
 - [changed] Updated `firebase-crashlytics` dependency to v17.0.0-beta-04.
