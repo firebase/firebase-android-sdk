@@ -39,7 +39,7 @@ public class Utilities {
   }
 
   public static ParsedUrl parseUrl(
-      @NonNull String url, @Nullable EmulatedServiceSettings serviceSettings)
+      @NonNull String url, @Nullable EmulatedServiceSettings emulatorSettings)
       throws DatabaseException {
     try {
       Uri uri = Uri.parse(url);
@@ -54,39 +54,35 @@ public class Utilities {
         throw new IllegalArgumentException("Database URL does not specify a valid host");
       }
 
-      RepoInfo repoInfo = new RepoInfo();
-      repoInfo.host = host.toLowerCase();
-
-      int port = uri.getPort();
-      if (port != -1) {
-        repoInfo.secure = scheme.equals("https") || scheme.equals("wss");
-        repoInfo.host += ":" + port;
-      } else {
-        repoInfo.secure = true;
+      String namespace = uri.getQueryParameter("ns");
+      if (namespace == null) {
+        String[] parts = host.split("\\.", -1);
+        namespace = parts[0].toLowerCase();
       }
 
-      String namespaceParam = uri.getQueryParameter("ns");
-      if (namespaceParam != null) {
-        repoInfo.namespace = namespaceParam;
+      RepoInfo repoInfo = new RepoInfo();
+      if (emulatorSettings != null) {
+        repoInfo.host = emulatorSettings.host + ":" + emulatorSettings.port;
+        repoInfo.secure = false;
       } else {
-        String[] parts = host.split("\\.", -1);
-        repoInfo.namespace = parts[0].toLowerCase();
+        repoInfo.host = host.toLowerCase();
+        int port = uri.getPort();
+        if (port != -1) {
+          repoInfo.secure = scheme.equals("https") || scheme.equals("wss");
+          repoInfo.host += ":" + port;
+        } else {
+          repoInfo.secure = true;
+        }
       }
 
       repoInfo.internalHost = repoInfo.host;
+      repoInfo.namespace = namespace;
 
       String originalPathString = extractPathString(url);
       // URLEncoding a space turns it into a '+', which is different
       // from our expected behavior. Do a manual replace to fix it.
       originalPathString = originalPathString.replace("+", " ");
       Validation.validateRootPathString(originalPathString);
-
-      // TODO: Should log this out
-      if (serviceSettings != null) {
-        repoInfo.secure = false;
-        repoInfo.host = serviceSettings.host + ":" + serviceSettings.port;
-        repoInfo.internalHost = repoInfo.host;
-      }
 
       ParsedUrl parsedUrl = new ParsedUrl();
       parsedUrl.path = new Path(originalPathString);
