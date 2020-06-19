@@ -36,7 +36,8 @@ import java.lang.reflect.WildcardType;
  * </ol>
  */
 public abstract class TypeToken<T> {
-  private Class<T> rawType;
+  @NonNull
+  protected Class<T> rawType;
 
   @NonNull
   public Class<T> getRawType() {
@@ -149,7 +150,7 @@ public abstract class TypeToken<T> {
 
     @Override
     public int hashCode() {
-      return 11 * getRawType().hashCode() + typeArguments.hashCode();
+      return 11 * rawType.hashCode() + typeArguments.hashCode();
     }
 
     @Override
@@ -161,14 +162,14 @@ public abstract class TypeToken<T> {
         return false;
       }
       ClassToken<?> that = (ClassToken<?>) o;
-      return getRawType().equals(that.getRawType())
+      return rawType.equals(that.getRawType())
           && this.typeArguments.equals(that.typeArguments);
     }
 
     @NonNull
     @Override
     String getTypeTokenLiteral() {
-      return getRawType().getSimpleName() + typeArguments;
+      return rawType.getSimpleName() + typeArguments;
     }
   }
 
