@@ -85,18 +85,13 @@ public class JsonDataDecoderBuilderContext implements DataDecoder {
 
   private static <T, E> T convertGenericListToArray(
       List<E> list, TypeToken.ArrayToken<T> arrayToken) {
-    if (list.size() == 0) return null;
     @SuppressWarnings("unchecked")
     TypeToken<E> componentTypeToken = (TypeToken<E>) arrayToken.getComponentType();
-    if (componentTypeToken instanceof TypeToken.ClassToken) {
-      TypeToken.ClassToken<E> componentClassToken = (TypeToken.ClassToken<E>) componentTypeToken;
-      Class<E> componentClass = componentClassToken.getRawType();
-      if (componentClassToken.getRawType().isPrimitive()) {
-        return convertGenericListToPrimitiveArray(list, componentClass, arrayToken);
-      }
+    if (componentTypeToken.getRawType().isPrimitive()) {
+      return convertGenericListToPrimitiveArray(list, componentTypeToken.getRawType(), arrayToken);
     }
     @SuppressWarnings("unchecked") // Safe, list is not empty
-    E[] arr = (E[]) Array.newInstance(list.get(0).getClass(), list.size());
+    E[] arr = (E[]) Array.newInstance(componentTypeToken.getRawType(), list.size());
     @SuppressWarnings("unchecked") // Safe, because T == E[]
     T t = (T) list.toArray(arr);
     return t;

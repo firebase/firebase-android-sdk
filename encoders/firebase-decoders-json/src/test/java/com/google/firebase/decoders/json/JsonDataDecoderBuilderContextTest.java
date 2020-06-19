@@ -406,7 +406,7 @@ public class JsonDataDecoderBuilderContextTest {
   }
 
   @Test
-  public void emptyArray_shouldBeDecodedWithNullValue() throws IOException {
+  public void emptyArray_shouldBeDecodedWithEmptyArray() throws IOException {
     Map<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
     JsonDataDecoderBuilderContext jsonDataDecoderBuilderContext =
         new JsonDataDecoderBuilderContext(objectDecoders);
@@ -414,6 +414,33 @@ public class JsonDataDecoderBuilderContextTest {
     String json = "[]";
     InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
     int[] arr = jsonDataDecoderBuilderContext.decode(input, TypeToken.of(new Safe<int[]>() {}));
-    assertThat(arr).isEqualTo(null);
+    assertThat(arr).isEqualTo(new int[0]);
+  }
+
+  @Test
+  public void arrayOfArrayWithEmptyArray_shouldBeDecodedCorrectly() throws IOException {
+    Map<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
+    JsonDataDecoderBuilderContext jsonDataDecoderBuilderContext =
+        new JsonDataDecoderBuilderContext(objectDecoders);
+
+    String json = "[[],[1]]";
+    InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
+    int[][] arr = jsonDataDecoderBuilderContext.decode(input, TypeToken.of(new Safe<int[][]>() {}));
+    assertThat(arr[0]).isEqualTo(new int[0]);
+    assertThat(arr[1]).isEqualTo(new int[] {1});
+  }
+
+  @Test
+  public void arrayOfArrayWithEmptyArrayNon_shouldBeDecodedCorrectly() throws IOException {
+    Map<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
+    JsonDataDecoderBuilderContext jsonDataDecoderBuilderContext =
+        new JsonDataDecoderBuilderContext(objectDecoders);
+
+    String json = "[[],[\"1\"]]";
+    InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
+    String[][] arr =
+        jsonDataDecoderBuilderContext.decode(input, TypeToken.of(new Safe<String[][]>() {}));
+    assertThat(arr[0]).isEqualTo(new String[0]);
+    assertThat(arr[1]).isEqualTo(new String[] {"1"});
   }
 }
