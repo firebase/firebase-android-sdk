@@ -73,8 +73,6 @@ import javax.inject.Provider;
  *   <li>fetch messages from the Firebase backend
  *   <li>send usage metrics to the Firebase backend.
  * </ul>
- *
- * <p>To delete the Installation ID and the data associated with it, see {@link}.
  */
 @FirebaseAppScope
 public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplayImpl {
