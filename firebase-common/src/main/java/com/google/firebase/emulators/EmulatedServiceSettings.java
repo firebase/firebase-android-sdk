@@ -24,7 +24,7 @@ import androidx.annotation.NonNull;
  * @see EmulatorSettings
  * @hide
  */
-public class EmulatedServiceSettings {
+public final class EmulatedServiceSettings {
 
   public final String host;
   public final int port;
