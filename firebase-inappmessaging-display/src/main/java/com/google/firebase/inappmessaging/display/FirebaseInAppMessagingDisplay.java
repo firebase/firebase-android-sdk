@@ -66,7 +66,7 @@ import javax.inject.Provider;
  * <p>Firebase In-App Messaging Display will automatically initialize, start listening for events,
  * and display eligible in-app messages.
  *
- * <p>This feature uses a Firebase Instance ID token to:
+ * <p>This feature uses a Firebase Installation ID token to:
  *
  * <ul>
  *   <li>identify the app instance
@@ -74,8 +74,7 @@ import javax.inject.Provider;
  *   <li>send usage metrics to the Firebase backend.
  * </ul>
  *
- * <p>To delete the Instance ID and the data associated with it, see {@link
- * FirebaseInstallationsApi#delete}.
+ * <p>To delete the Installation ID and the data associated with it, see {@link}.
  */
 @FirebaseAppScope
 public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplayImpl {

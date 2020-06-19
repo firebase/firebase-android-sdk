@@ -119,7 +119,7 @@ public class CardMessage extends InAppMessage {
     return portraitImageData;
   }
 
-  /** Gets the {@link ImageData} displayed when the phone is in a landcscape orientation */
+  /** Gets the {@link ImageData} displayed when the phone is in a landscape orientation */
   @Nullable
   public ImageData getLandscapeImageData() {
     return landscapeImageData;
@@ -148,8 +148,8 @@ public class CardMessage extends InAppMessage {
   }
 
   /**
-   * @deprecated Use getPrimaryAction() instead. Gets the primary {@link Action} associated with
-   *     this message
+   * @deprecated This method is deprecated. Use {@link #getPrimaryAction()} or {@link
+   *     #getSecondaryAction()} instead.
    */
   @Nullable
   @Deprecated
@@ -173,8 +173,8 @@ public class CardMessage extends InAppMessage {
   }
 
   /**
-   * @deprecated Use getPortraitImageData() instead. Gets the {@link ImageData} associated with this
-   *     message
+   * @deprecated This method is deprecated. Use {@link #getPortraitImageData()} or {@link
+   *     #getLandscapeImageData()} instead.
    */
   @Nullable
   @Deprecated

@@ -70,35 +70,55 @@ public abstract class InAppMessage {
     this.data = data;
   }
 
-  /** @deprecated Use the message specific methods instead. */
+  /**
+   * @deprecated This method is deprecated. Use the message specific methods (see {@link
+   *     CardMessage}, {@link ModalMessage}, {@link BannerMessage}, {@link ImageOnlyMessage})
+   *     instead.
+   */
   @Nullable
   @Deprecated
   public Text getTitle() {
     return title;
   }
 
-  /** @deprecated Use the message specific methods (see {@link CardMessage}) instead. */
+  /**
+   * @deprecated This method is deprecated. Use the message specific methods (see {@link
+   *     CardMessage}, {@link ModalMessage}, {@link BannerMessage}, {@link ImageOnlyMessage})
+   *     instead.
+   */
   @Nullable
   @Deprecated
   public Text getBody() {
     return body;
   }
 
-  /** @deprecated Use the message specific methods (see {@link CardMessage}) instead. */
+  /**
+   * @deprecated This method is deprecated. Use the message specific methods (see {@link
+   *     CardMessage}, {@link ModalMessage}, {@link BannerMessage}, {@link ImageOnlyMessage})
+   *     instead.
+   */
   @Nullable
   @Deprecated
   public String getImageUrl() {
     return imageUrl;
   }
 
-  /** @deprecated Use the message specific methods (see {@link CardMessage}) instead. */
+  /**
+   * @deprecated This method is deprecated. Use the message specific methods (see {@link
+   *     CardMessage}, {@link ModalMessage}, {@link BannerMessage}, {@link ImageOnlyMessage})
+   *     instead.
+   */
   @Nullable
   @Deprecated
   public ImageData getImageData() {
     return imageData;
   }
 
-  /** @deprecated Use the message specific methods (see {@link CardMessage}) */
+  /**
+   * @deprecated This method is deprecated. Use the message specific methods (see {@link
+   *     CardMessage}, {@link ModalMessage}, {@link BannerMessage}, {@link ImageOnlyMessage})
+   *     instead.
+   */
   @Nullable
   @Deprecated
   public Button getActionButton() {
@@ -108,33 +128,43 @@ public abstract class InAppMessage {
     return actionButton;
   }
 
-  /** @deprecated Use the message specific methods (see {@link CardMessage}) instead. */
+  /**
+   * @deprecated This method is deprecated. Use the message specific methods (see {@link
+   *     CardMessage}, {@link ModalMessage}, {@link BannerMessage}, {@link ImageOnlyMessage})
+   *     instead.
+   */
   @Deprecated
   @Nullable
   public abstract Action getAction();
 
-  /** @deprecated Use the message specific methods (see {@link CardMessage}) instead. */
+  /**
+   * @deprecated This method is deprecated. Use the message specific methods (see {@link
+   *     CardMessage}, {@link ModalMessage}, {@link BannerMessage}, {@link ImageOnlyMessage})
+   *     instead.
+   */
   @Nullable
   @Deprecated
   public String getBackgroundHexColor() {
     return backgroundHexColor;
   }
 
-  /** @deprecated Use getCampaignMetadata().getCampaignId() instead. */
+  /** @deprecated This method is deprecated. Use getCampaignMetadata().getCampaignId() instead. */
   @Nullable
   @Deprecated
   public String getCampaignId() {
     return campaignMetadata.getCampaignId();
   }
 
-  /** @deprecated Use getCampaignMetadata().getCampaignName() instead. */
+  /** @deprecated This method is deprecated. Use getCampaignMetadata().getCampaignName() instead. */
   @Nullable
   @Deprecated
   public String getCampaignName() {
     return campaignMetadata.getCampaignName();
   }
 
-  /** @deprecated Use getCampaignMetadata().getIsTestMessage() instead. */
+  /**
+   * @deprecated This method is deprecated. Use getCampaignMetadata().getIsTestMessage() instead.
+   */
   @Nullable
   @Deprecated
   public Boolean getIsTestMessage() {
@@ -146,12 +176,17 @@ public abstract class InAppMessage {
   public MessageType getMessageType() {
     return messageType;
   }
+
   /** Gets the {@link CampaignMetadata} of the message */
   @Nullable
   public CampaignMetadata getCampaignMetadata() {
     return campaignMetadata;
   }
 
+  /**
+   * Gets the extra data map of the message. This is defined in the Firebase Console for each
+   * campaign.
+   */
   @Nullable
   public Map<String, String> getData() {
     return data;

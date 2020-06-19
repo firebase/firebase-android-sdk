@@ -16,7 +16,12 @@ package com.google.firebase.inappmessaging.model;
 
 import androidx.annotation.NonNull;
 
-/** Provides the following about any message, */
+/**
+ * Provides the following about any message,
+ * <li>Campaign ID
+ * <li>Campaign Name
+ * <li>Campaign Test Message State
+ */
 public class CampaignMetadata {
   private final String campaignId;
   private final String campaignName;
@@ -33,16 +38,19 @@ public class CampaignMetadata {
     this.isTestMessage = isTestMessage;
   }
 
+  /** Gets the campaign id associated with this message */
   @NonNull
   public String getCampaignId() {
     return campaignId;
   }
 
+  /** Gets the campaign name associated with this message */
   @NonNull
   public String getCampaignName() {
     return campaignName;
   }
 
+  /** returns true if the message is a test message */
   public boolean getIsTestMessage() {
     return isTestMessage;
   }
