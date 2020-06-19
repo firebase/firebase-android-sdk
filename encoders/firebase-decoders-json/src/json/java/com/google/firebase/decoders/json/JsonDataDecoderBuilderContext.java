@@ -71,10 +71,9 @@ public class JsonDataDecoderBuilderContext implements DataDecoder {
     }
   }
 
-  private <T, E> T decodeArrayToken(TypeToken.ArrayToken<T> arrayToken) throws IOException {
-    @SuppressWarnings("unchecked")
-    TypeToken<E> componentTypeToken = (TypeToken<E>) arrayToken.getComponentType();
-    List<E> list = new ArrayList<>();
+  private <T> T decodeArrayToken(TypeToken.ArrayToken<T> arrayToken) throws IOException {
+    TypeToken<?> componentTypeToken = arrayToken.getComponentType();
+    List<Object> list = new ArrayList<>();
     reader.beginArray();
     while (reader.hasNext()) {
       list.add(decode(componentTypeToken));
@@ -84,7 +83,7 @@ public class JsonDataDecoderBuilderContext implements DataDecoder {
   }
 
   private static <T, E> T convertGenericListToArray(
-      List<E> list, TypeToken.ArrayToken<T> arrayToken) {
+      List<Object> list, TypeToken.ArrayToken<T> arrayToken) {
     @SuppressWarnings("unchecked")
     TypeToken<E> componentTypeToken = (TypeToken<E>) arrayToken.getComponentType();
     if (componentTypeToken.getRawType().isPrimitive()) {
@@ -97,8 +96,8 @@ public class JsonDataDecoderBuilderContext implements DataDecoder {
     return t;
   }
 
-  private static <E, T> T convertGenericListToPrimitiveArray(
-      List<E> list, Class<E> clazz, TypeToken.ArrayToken<T> arrayToken) {
+  private static <T> T convertGenericListToPrimitiveArray(
+      List<Object> list, Class<?> clazz, TypeToken.ArrayToken<T> arrayToken) {
     if (clazz.equals(int.class)) {
       int[] arr = new int[list.size()];
       for (int i = 0; i < list.size(); i++) {
