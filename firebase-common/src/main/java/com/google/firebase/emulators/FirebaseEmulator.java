@@ -26,7 +26,7 @@ import androidx.annotation.NonNull;
  * @see EmulatedServiceSettings
  * @hide
  */
-public class FirebaseEmulator {
+public final class FirebaseEmulator {
 
   public final String name;
 
