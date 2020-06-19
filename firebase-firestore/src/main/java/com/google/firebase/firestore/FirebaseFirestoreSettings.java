@@ -27,11 +27,9 @@ public final class FirebaseFirestoreSettings {
    */
   public static final long CACHE_SIZE_UNLIMITED = -1;
 
-  /** @hide */
-  public static final String DEFAULT_HOST = "firestore.googleapis.com";
-
   private static final long MINIMUM_CACHE_BYTES = 1 * 1024 * 1024; // 1 MB
   private static final long DEFAULT_CACHE_SIZE_BYTES = 100 * 1024 * 1024; // 100 MB
+  private static final String DEFAULT_HOST = "firestore.googleapis.com";
   private static final boolean DEFAULT_TIMESTAMPS_IN_SNAPSHOTS_ENABLED = true;
 
   /** A Builder for creating {@code FirebaseFirestoreSettings}. */

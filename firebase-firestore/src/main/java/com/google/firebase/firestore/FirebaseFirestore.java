@@ -27,9 +27,6 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.internal.InternalAuthProvider;
-import com.google.firebase.emulators.EmulatedServiceSettings;
-import com.google.firebase.emulators.EmulatorSettings;
-import com.google.firebase.emulators.FirebaseEmulator;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.auth.EmptyCredentialsProvider;
@@ -58,9 +55,6 @@ import java.util.concurrent.Executor;
  */
 public class FirebaseFirestore {
 
-  /** Emulator identifier. See {@link FirebaseApp#enableEmulators(EmulatorSettings)} */
-  public static FirebaseEmulator EMULATOR = FirebaseEmulator.forName("firestore");
-
   /**
    * Provides a registry management interface for {@code FirebaseFirestore} instances.
    *
@@ -87,7 +81,6 @@ public class FirebaseFirestore {
   private FirebaseFirestoreSettings settings;
   private volatile FirestoreClient client;
   private final GrpcMetadataProvider metadataProvider;
-  private final EmulatedServiceSettings emulatorSettings;
 
   @NonNull
   public static FirebaseFirestore getInstance() {
@@ -151,8 +144,7 @@ public class FirebaseFirestore {
             queue,
             app,
             instanceRegistry,
-            metadataProvider,
-            app.getEmulatorSettings().getServiceSettings(EMULATOR));
+            metadataProvider);
     return firestore;
   }
 
@@ -165,8 +157,7 @@ public class FirebaseFirestore {
       AsyncQueue asyncQueue,
       @Nullable FirebaseApp firebaseApp,
       InstanceRegistry instanceRegistry,
-      @Nullable GrpcMetadataProvider metadataProvider,
-      @Nullable EmulatedServiceSettings emulatorSettings) {
+      @Nullable GrpcMetadataProvider metadataProvider) {
     this.context = checkNotNull(context);
     this.databaseId = checkNotNull(checkNotNull(databaseId));
     this.userDataReader = new UserDataReader(databaseId);
@@ -177,12 +168,8 @@ public class FirebaseFirestore {
     this.firebaseApp = firebaseApp;
     this.instanceRegistry = instanceRegistry;
     this.metadataProvider = metadataProvider;
-    this.emulatorSettings = emulatorSettings;
 
-    this.settings = new FirebaseFirestoreSettings.Builder().build();
-    if (this.emulatorSettings != null) {
-      this.settings = mergeEmulatorSettings(settings, emulatorSettings);
-    }
+    settings = new FirebaseFirestoreSettings.Builder().build();
   }
 
   /** Returns the settings used by this {@code FirebaseFirestore} object. */
@@ -206,11 +193,6 @@ public class FirebaseFirestore {
                 + "You can only call setFirestoreSettings() before calling any other methods on a "
                 + "FirebaseFirestore object.");
       }
-
-      if (this.emulatorSettings != null) {
-        settings = mergeEmulatorSettings(settings, this.emulatorSettings);
-      }
-
       this.settings = settings;
     }
   }
@@ -231,23 +213,6 @@ public class FirebaseFirestore {
           new FirestoreClient(
               context, databaseInfo, settings, credentialsProvider, asyncQueue, metadataProvider);
     }
-  }
-
-  private FirebaseFirestoreSettings mergeEmulatorSettings(
-      @NonNull FirebaseFirestoreSettings settings,
-      @NonNull EmulatedServiceSettings emulatorSettings) {
-
-    if (!FirebaseFirestoreSettings.DEFAULT_HOST.equals(settings.getHost())) {
-      throw new IllegalStateException(
-          "Cannot change the Firestore host through FirebaseFirestoreSettings when "
-              + "EmulatedServiceSettings are also in effect. "
-              + "Make sure to only set the host in one location.");
-    }
-
-    return new FirebaseFirestoreSettings.Builder(settings)
-        .setHost(emulatorSettings.getHost() + ":" + emulatorSettings.getPort())
-        .setSslEnabled(false)
-        .build();
   }
 
   /** Returns the FirebaseApp instance to which this {@code FirebaseFirestore} belongs. */
