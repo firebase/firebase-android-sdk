@@ -22,10 +22,14 @@ import com.google.firebase.decoders.FieldRef;
 import com.google.firebase.decoders.ObjectDecoder;
 import com.google.firebase.decoders.TypeCreator;
 import com.google.firebase.decoders.TypeToken;
+import com.google.firebase.encoders.EncodingException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class JsonDataDecoderBuilderContext implements DataDecoder {
@@ -50,26 +54,109 @@ public class JsonDataDecoderBuilderContext implements DataDecoder {
   private <T> T decode(TypeToken<T> typeToken) throws IOException {
     if (typeToken instanceof TypeToken.ClassToken) {
       TypeToken.ClassToken<T> classToken = (TypeToken.ClassToken<T>) typeToken;
-      CreationContextImpl creationContext = decodeObject(classToken);
-      @SuppressWarnings("unchecked")
-      // Safe, because typeToken and TypeCreator always have same type parameter
-      TypeCreator<T> creator = (TypeCreator<T>) typeCreators.get(classToken);
-      if (creator == null)
-        throw new IllegalArgumentException(
-            "TypeCreator of " + classToken.getRawType() + " is not register.");
-      return (T) creator.create(creationContext);
-
+      return decodeClassToken(classToken);
     } else if (typeToken instanceof TypeToken.ArrayToken) {
-      // TODO: Change typeParameter T in ArrayToken<T> to represent component type.
-      /**
-       * reader.beginArray(); List<T> l = new LinkedList<>(); while reader.hasNext: T val =
-       * decode(arrayToken.getComponentType()); l.add(val); reader.endArray(); return l.toArray();
-       */
+      TypeToken.ArrayToken<T> arrayToken = (TypeToken.ArrayToken<T>) typeToken;
+      return (T) decodeArrayToken(arrayToken);
+    }
+    throw new EncodingException("Unknown typeToken: " + typeToken);
+  }
+
+  private <T> T decodeClassToken(TypeToken.ClassToken<T> classToken) throws IOException {
+    if (classToken.getRawType().isPrimitive()) {
+      return decodePrimitive(classToken);
+    } else if (isSingleValue(classToken)) {
+      return decodeSingleValue(classToken);
+    } else {
+      return decodeObject(classToken);
+    }
+  }
+
+  private <T> T decodeArrayToken(TypeToken.ArrayToken<T> arrayToken) throws IOException {
+    TypeToken<?> componentTypeToken = arrayToken.getComponentType();
+    List<Object> list = new ArrayList<>();
+    reader.beginArray();
+    while (reader.hasNext()) {
+      list.add(decode(componentTypeToken));
+    }
+    reader.endArray();
+    return convertGenericListToArray(list, arrayToken);
+  }
+
+  private static <T, E> T convertGenericListToArray(
+      List<Object> list, TypeToken.ArrayToken<T> arrayToken) {
+    @SuppressWarnings("unchecked")
+    TypeToken<E> componentTypeToken = (TypeToken<E>) arrayToken.getComponentType();
+    if (componentTypeToken.getRawType().isPrimitive()) {
+      return convertGenericListToPrimitiveArray(list, componentTypeToken.getRawType(), arrayToken);
+    }
+    @SuppressWarnings("unchecked") // Safe, list is not empty
+    E[] arr = (E[]) Array.newInstance(componentTypeToken.getRawType(), list.size());
+    @SuppressWarnings("unchecked") // Safe, because T == E[]
+    T t = (T) list.toArray(arr);
+    return t;
+  }
+
+  private static <T> T convertGenericListToPrimitiveArray(
+      List<Object> list, Class<?> clazz, TypeToken.ArrayToken<T> arrayToken) {
+    if (clazz.equals(int.class)) {
+      int[] arr = new int[list.size()];
+      for (int i = 0; i < list.size(); i++) {
+        arr[i] = (int) list.get(i);
+      }
+      return (T) arr;
+    } else if (clazz.equals(short.class)) {
+      short[] arr = new short[list.size()];
+      for (int i = 0; i < list.size(); i++) {
+        arr[i] = (short) list.get(i);
+      }
+      return (T) arr;
+    } else if (clazz.equals(long.class)) {
+      long[] arr = new long[list.size()];
+      for (int i = 0; i < list.size(); i++) {
+        arr[i] = (long) list.get(i);
+      }
+      return (T) arr;
+    } else if (clazz.equals(double.class)) {
+      double[] arr = new double[list.size()];
+      for (int i = 0; i < list.size(); i++) {
+        arr[i] = (double) list.get(i);
+      }
+      return (T) arr;
+    } else if (clazz.equals(float.class)) {
+      float[] arr = new float[list.size()];
+      for (int i = 0; i < list.size(); i++) {
+        arr[i] = (float) list.get(i);
+      }
+      return (T) arr;
+    } else if (clazz.equals(char.class)) {
+      char[] arr = new char[list.size()];
+      for (int i = 0; i < list.size(); i++) {
+        arr[i] = (char) list.get(i);
+      }
+      return (T) arr;
+    } else if (clazz.equals(boolean.class)) {
+      boolean[] arr = new boolean[list.size()];
+      for (int i = 0; i < list.size(); i++) {
+        arr[i] = (boolean) list.get(i);
+      }
+      return (T) arr;
     }
     return null;
   }
 
-  private <T> CreationContextImpl decodeObject(TypeToken.ClassToken<T> classToken)
+  private <T> T decodeObject(TypeToken.ClassToken<T> classToken) throws IOException {
+    CreationContextImpl creationContext = decodeObjectContext(classToken);
+    @SuppressWarnings("unchecked")
+    // Safe, because typeToken and TypeCreator always have same type parameter
+    TypeCreator<T> creator = (TypeCreator<T>) typeCreators.get(classToken);
+    if (creator == null)
+      throw new IllegalArgumentException(
+          "TypeCreator of " + classToken.getRawType() + " is not register.");
+    return (T) creator.create(creationContext);
+  }
+
+  private <T> CreationContextImpl decodeObjectContext(TypeToken.ClassToken<T> classToken)
       throws IOException {
     CreationContextImpl creationCtx = new CreationContextImpl();
     ObjectDecoderContextImpl<T> decoderCtx = getObjectDecodersCtx(classToken);
@@ -93,65 +180,96 @@ public class JsonDataDecoderBuilderContext implements DataDecoder {
   }
 
   private <T> boolean isSingleValue(FieldRef<T> fieldRef) {
-    TypeToken typeToken = fieldRef.getTypeToken();
+    TypeToken<T> typeToken = fieldRef.getTypeToken();
+    return isSingleValue(typeToken);
+  }
+
+  private <T> boolean isSingleValue(TypeToken<T> typeToken) {
     if (typeToken instanceof TypeToken.ClassToken) {
       Class<?> clazz = ((TypeToken.ClassToken) typeToken).getRawType();
-      return clazz.equals(Character.class)
-          || clazz.equals(Byte.class)
-          || clazz.equals(Short.class)
-          || clazz.equals(Integer.class)
-          || clazz.equals(Long.class)
-          || clazz.equals(Float.class)
-          || clazz.equals(Double.class)
-          || clazz.equals(String.class)
-          || clazz.equals(Boolean.class);
+      return isSingleValue(clazz);
     }
     return false;
   }
 
-  // TODO: support Date
+  private <T> boolean isSingleValue(Class<T> clazz) {
+    return clazz.equals(Character.class)
+        || clazz.equals(Byte.class)
+        || clazz.equals(Short.class)
+        || clazz.equals(Integer.class)
+        || clazz.equals(Long.class)
+        || clazz.equals(Float.class)
+        || clazz.equals(Double.class)
+        || clazz.equals(String.class)
+        || clazz.equals(Boolean.class);
+  }
+
   private <T> void decodeSingleValue(FieldRef ref, CreationContextImpl creationContext)
       throws IOException {
-    TypeToken.ClassToken<?> classToken = (TypeToken.ClassToken<?>) ref.getTypeToken();
-    Class<?> clazz = classToken.getRawType();
+    @SuppressWarnings("unchecked")
+    TypeToken.ClassToken<T> classToken = (TypeToken.ClassToken<T>) ref.getTypeToken();
+    creationContext.put(ref, decodeSingleValue(classToken));
+  }
+
+  // TODO: support Date
+  @SuppressWarnings("unchecked")
+  private <T> T decodeSingleValue(TypeToken.ClassToken<T> classToken) throws IOException {
+    Class<T> clazz = classToken.getRawType();
     if (clazz.equals(Boolean.class)) {
-      creationContext.put(ref, (Boolean) reader.nextBoolean());
+      return (T) (Boolean) reader.nextBoolean();
     } else if (clazz.equals(Integer.class)) {
-      creationContext.put(ref, (Integer) reader.nextInt());
+      return (T) (Integer) reader.nextInt();
     } else if (clazz.equals(Short.class)) {
-      creationContext.put(ref, (Short) ((Integer) reader.nextInt()).shortValue());
+      return (T) ((Short) ((Integer) reader.nextInt()).shortValue());
     } else if (clazz.equals(Long.class)) {
-      creationContext.put(ref, (Long) reader.nextLong());
+      return (T) (Long) reader.nextLong();
     } else if (clazz.equals(Double.class)) {
-      creationContext.put(ref, (Double) reader.nextDouble());
+      return (T) (Double) reader.nextDouble();
     } else if (clazz.equals(Float.class)) {
-      creationContext.put(ref, (Float) ((Double) reader.nextDouble()).floatValue());
+      return (T) (Float) ((Double) reader.nextDouble()).floatValue();
     } else if (clazz.equals(String.class)) {
-      creationContext.put(ref, reader.nextString());
+      return (T) reader.nextString();
     } else if (clazz.equals(Character.class)) {
-      creationContext.put(ref, (Character) reader.nextString().charAt(0));
+      return (T) (Character) reader.nextString().charAt(0);
+    } else {
+      throw new IllegalArgumentException("Excepted Single Value Type. " + clazz + " was found.");
     }
   }
 
+  // TODO: Avoid auto-boxing and un-boxing
   private <T> void decodePrimitive(FieldRef ref, CreationContextImpl creationContext)
       throws IOException {
-    TypeToken.ClassToken<?> classToken = (TypeToken.ClassToken<?>) ref.getTypeToken();
-    Class<?> clazz = classToken.getRawType();
+    @SuppressWarnings("unchecked")
+    TypeToken<T> typeToken = (TypeToken<T>) ref.getTypeToken();
+    if (typeToken instanceof TypeToken.ClassToken) {
+      @SuppressWarnings("unchecked")
+      TypeToken.ClassToken<T> classToken = (TypeToken.ClassToken<T>) ref.getTypeToken();
+      creationContext.put(ref, decodePrimitive(classToken));
+    } else {
+      throw new IllegalArgumentException(
+          "FieldRef should contain ClassToken type.\n" + typeToken + " was found.");
+    }
+  }
 
+  @SuppressWarnings("unchecked")
+  private <T> T decodePrimitive(TypeToken.ClassToken<T> classToken) throws IOException {
+    Class<T> clazz = classToken.getRawType();
     if (clazz.equals(boolean.class)) {
-      creationContext.put(ref, reader.nextBoolean());
+      return (T) (Boolean) reader.nextBoolean();
     } else if (clazz.equals(int.class)) {
-      creationContext.put(ref, reader.nextInt());
+      return (T) (Integer) reader.nextInt();
     } else if (clazz.equals(short.class)) {
-      creationContext.put(ref, reader.nextInt());
+      return (T) (Short) ((Integer) reader.nextInt()).shortValue();
     } else if (clazz.equals(long.class)) {
-      creationContext.put(ref, reader.nextLong());
+      return (T) (Long) reader.nextLong();
     } else if (clazz.equals(double.class)) {
-      creationContext.put(ref, reader.nextDouble());
+      return (T) (Double) reader.nextDouble();
     } else if (clazz.equals(float.class)) {
-      creationContext.put(ref, reader.nextDouble());
+      return (T) (Float) ((Double) reader.nextDouble()).floatValue();
     } else if (clazz.equals(char.class)) {
-      creationContext.put(ref, reader.nextString());
+      return (T) (Character) reader.nextString().charAt(0);
+    } else {
+      throw new IllegalArgumentException("Excepted primitive type. But " + clazz + " was found.");
     }
   }
 
