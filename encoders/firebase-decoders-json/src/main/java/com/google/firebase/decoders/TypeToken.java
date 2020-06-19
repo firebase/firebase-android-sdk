@@ -36,8 +36,7 @@ import java.lang.reflect.WildcardType;
  * </ol>
  */
 public abstract class TypeToken<T> {
-  @NonNull
-  protected Class<T> rawType;
+  @NonNull protected Class<T> rawType;
 
   @NonNull
   public Class<T> getRawType() {
@@ -92,7 +91,7 @@ public abstract class TypeToken<T> {
       throw new IllegalArgumentException("<? super T> is not supported");
     } else if (type instanceof GenericArrayType) {
       throw new IllegalArgumentException(
-          "Generic Arrays are not supported, " + "please use Lists instead.");
+          "Generic Arrays are not supported, please use Lists instead.");
     } else if (type instanceof ParameterizedType) {
       ParameterizedType parameterizedType = (ParameterizedType) type;
       // Safe because rawType of parameterizedType is always instance of Class<T>
@@ -162,8 +161,7 @@ public abstract class TypeToken<T> {
         return false;
       }
       ClassToken<?> that = (ClassToken<?>) o;
-      return rawType.equals(that.getRawType())
-          && this.typeArguments.equals(that.typeArguments);
+      return rawType.equals(that.getRawType()) && this.typeArguments.equals(that.typeArguments);
     }
 
     @NonNull
