@@ -58,7 +58,13 @@ import java.util.concurrent.Executor;
  */
 public class FirebaseFirestore {
 
-  /** Emulator identifier. See {@link FirebaseApp#enableEmulators(EmulatorSettings)} */
+  /**
+   * Emulator identifier. See {@link FirebaseApp#enableEmulators(EmulatorSettings)}
+   *
+   * <p>TODO(samstern): Un-hide this once Firestore, Database, and Functions are implemented
+   *
+   * @hide
+   */
   public static FirebaseEmulator EMULATOR = FirebaseEmulator.forName("firestore");
 
   /**
