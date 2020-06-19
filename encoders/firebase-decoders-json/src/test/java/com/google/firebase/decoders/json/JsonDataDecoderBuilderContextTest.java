@@ -373,8 +373,7 @@ public class JsonDataDecoderBuilderContextTest {
     InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
     String[] arr =
         jsonDataDecoderBuilderContext.decode(input, TypeToken.of(new Safe<String[]>() {}));
-    assertThat(arr[0]).isEqualTo("a");
-    assertThat(arr[1]).isEqualTo("b");
+    assertThat(arr).isEqualTo(new String[] {"a", "b"});
   }
 
   @Test
@@ -386,8 +385,7 @@ public class JsonDataDecoderBuilderContextTest {
     String json = "[0, 1]";
     InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
     int[] arr = jsonDataDecoderBuilderContext.decode(input, TypeToken.of(new Safe<int[]>() {}));
-    assertThat(arr[0]).isEqualTo(0);
-    assertThat(arr[1]).isEqualTo(1);
+    assertThat(arr).isEqualTo(new int[] {0, 1});
   }
 
   @Test
@@ -399,10 +397,7 @@ public class JsonDataDecoderBuilderContextTest {
     String json = "[[0, 1], [0, 1]]";
     InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
     int[][] arr = jsonDataDecoderBuilderContext.decode(input, TypeToken.of(new Safe<int[][]>() {}));
-    assertThat(arr[0][0]).isEqualTo(0);
-    assertThat(arr[0][1]).isEqualTo(1);
-    assertThat(arr[0][0]).isEqualTo(0);
-    assertThat(arr[1][1]).isEqualTo(1);
+    assertThat(arr).isEqualTo(new int[][] {{0, 1}, {0, 1}});
   }
 
   @Test
@@ -426,8 +421,7 @@ public class JsonDataDecoderBuilderContextTest {
     String json = "[[],[1]]";
     InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
     int[][] arr = jsonDataDecoderBuilderContext.decode(input, TypeToken.of(new Safe<int[][]>() {}));
-    assertThat(arr[0]).isEqualTo(new int[0]);
-    assertThat(arr[1]).isEqualTo(new int[] {1});
+    assertThat(arr).isEqualTo(new int[][] {{}, {1}});
   }
 
   @Test
@@ -440,7 +434,6 @@ public class JsonDataDecoderBuilderContextTest {
     InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
     String[][] arr =
         jsonDataDecoderBuilderContext.decode(input, TypeToken.of(new Safe<String[][]>() {}));
-    assertThat(arr[0]).isEqualTo(new String[0]);
-    assertThat(arr[1]).isEqualTo(new String[] {"1"});
+    assertThat(arr).isEqualTo(new String[][] {{}, {"1"}});
   }
 }
