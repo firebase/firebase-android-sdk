@@ -30,7 +30,7 @@ import java.util.Map;
  * @see com.google.firebase.FirebaseApp#enableEmulators(EmulatorSettings)
  * @hide
  */
-public class EmulatorSettings {
+public final class EmulatorSettings {
 
   /** Empty emulator settings to be used as an internal default */
   public static EmulatorSettings getDefault() {
