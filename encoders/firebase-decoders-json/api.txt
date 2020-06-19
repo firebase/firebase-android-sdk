@@ -63,8 +63,10 @@ package com.google.firebase.decoders {
   }
 
   public abstract class TypeToken<T> {
+    method @NonNull public Class<T> getRawType();
     method @NonNull public static <T> com.google.firebase.decoders.TypeToken<T> of(@NonNull com.google.firebase.decoders.Safe<T>);
     method @NonNull public static <T> com.google.firebase.decoders.TypeToken<T> of(@NonNull Class<T>);
+    field @NonNull protected Class<T> rawType;
   }
 
   public static class TypeToken.ArrayToken<T> extends com.google.firebase.decoders.TypeToken<T> {
@@ -72,7 +74,6 @@ package com.google.firebase.decoders {
   }
 
   public static class TypeToken.ClassToken<T> extends com.google.firebase.decoders.TypeToken<T> {
-    method @NonNull public Class<T> getRawType();
     method @NonNull public com.google.firebase.decoders.TypeTokenContainer getTypeArguments();
   }
 
