@@ -139,6 +139,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
             TimeUnit.SECONDS,
             new LinkedBlockingQueue<>(),
             THREAD_FACTORY);
+    preConditionChecks();
   }
 
   /**
@@ -216,7 +217,6 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   @NonNull
   @Override
   public Task<String> getId() {
-    preConditionChecks();
     return Tasks.forResult(doGetId());
   }
 
@@ -231,7 +231,6 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   @NonNull
   @Override
   public Task<InstallationTokenResult> getToken(boolean forceRefresh) {
-    preConditionChecks();
     Task<InstallationTokenResult> task = addGetAuthTokenListener();
     backgroundExecutor.execute(() -> doGetAuthToken(forceRefresh));
     return task;
