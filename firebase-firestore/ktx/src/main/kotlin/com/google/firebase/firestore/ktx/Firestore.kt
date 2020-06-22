@@ -26,10 +26,15 @@ import com.google.firebase.firestore.QueryDocumentSnapshot
 import com.google.firebase.firestore.QuerySnapshot
 import com.google.firebase.firestore.FirebaseFirestoreSettings
 import com.google.firebase.firestore.MetadataChanges
+import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.platforminfo.LibraryVersionComponent
-import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.withContext
 
 /** Returns the [FirebaseFirestore] instance of the default [FirebaseApp]. */
 val Firebase.firestore: FirebaseFirestore
@@ -171,23 +176,23 @@ class FirebaseFirestoreKtxRegistrar : ComponentRegistrar {
  * Attach a snapshotListener to a DocumentReference and use it as a coroutine flow
  * @param metadataChanges Indicates whether metadata-only changes
  */
-fun DocumentReference.toFlow(metadataChanges: MetadataChanges = MetadataChanges.EXCLUDE) = callbackFlow {
-    val listener = addSnapshotListener(metadataChanges) { value, error ->
-        if (value != null && value.exists()) {
-            /**
-             * Offer will throw if the channel is canceled.
-             * To avoid that, we wrap the call in runCatching.
-             * See https://github.com/Kotlin/kotlinx.coroutines/issues/974
-             */
-            runCatching {
-                offer(value)
-            }
-        } else if (error != null) {
-            close(error)
+fun DocumentReference.toFlow(metadataChanges: MetadataChanges = MetadataChanges.EXCLUDE) = flow {
+    val channel = Channel<DocumentSnapshot>(Channel.CONFLATED)
+    var listener: ListenerRegistration? = null
+    withContext(Dispatchers.Main.immediate) {
+        listener = addSnapshotListener(metadataChanges) { value, error ->
+            value?.let { channel.offer(it) }
+            error?.let { channel.close(it) }
         }
     }
-    awaitClose {
-        listener.remove()
+    try {
+        for (value in channel) {
+            emit(value)
+        }
+    } finally {
+        withContext(Dispatchers.Main.immediate + NonCancellable) {
+            listener?.remove()
+        }
     }
 }
 
@@ -195,22 +200,22 @@ fun DocumentReference.toFlow(metadataChanges: MetadataChanges = MetadataChanges.
  * Attach a snapshotListener to a Query and use it as a coroutine flow
  * @param metadataChanges Indicates whether metadata-only changes
  */
-fun Query.toFlow(metadataChanges: MetadataChanges = MetadataChanges.EXCLUDE) = callbackFlow {
-    val listener = addSnapshotListener(metadataChanges) { value, error ->
-        if (value != null) {
-            /**
-             * Offer will throw if the channel is canceled.
-             * To avoid that, we wrap the call in runCatching.
-             * See https://github.com/Kotlin/kotlinx.coroutines/issues/974
-             */
-            runCatching {
-                offer(value)
-            }
-        } else if (error != null) {
-            close(error)
+fun Query.toFlow(metadataChanges: MetadataChanges = MetadataChanges.EXCLUDE): Flow<QuerySnapshot> = flow {
+    val channel = Channel<QuerySnapshot>(Channel.CONFLATED)
+    var listener: ListenerRegistration? = null
+    withContext(Dispatchers.Main.immediate) {
+        listener = addSnapshotListener(metadataChanges) { value, error ->
+            value?.let { channel.offer(it) }
+            error?.let { channel.close(it) }
         }
     }
-    awaitClose {
-        listener.remove()
+    try {
+        for (value in channel) {
+            emit(value)
+        }
+    } finally {
+        withContext(Dispatchers.Main.immediate + NonCancellable) {
+            listener?.remove()
+        }
     }
 }
