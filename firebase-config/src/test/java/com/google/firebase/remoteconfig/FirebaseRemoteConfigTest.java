@@ -45,8 +45,8 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.abt.AbtException;
 import com.google.firebase.abt.FirebaseABTesting;
-import com.google.firebase.iid.FirebaseInstanceId;
-import com.google.firebase.iid.InstanceIdResult;
+import com.google.firebase.installations.FirebaseInstallationsApi;
+import com.google.firebase.installations.InstallationTokenResult;
 import com.google.firebase.remoteconfig.internal.ConfigCacheClient;
 import com.google.firebase.remoteconfig.internal.ConfigContainer;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler;
@@ -96,10 +96,15 @@ public final class FirebaseRemoteConfigTest {
 
   private static final String ETAG = "ETag";
 
-  private static final String INSTANCE_ID_STRING = "fake instance id";
-  private static final String INSTANCE_ID_TOKEN_STRING = "fake instance id token";
-  private static final InstanceIdResult INSTANCE_ID_RESULT =
-      new FakeInstanceIdResult(INSTANCE_ID_STRING, INSTANCE_ID_TOKEN_STRING);
+  private static final String INSTALLATION_ID = "'fL71_VyL3uo9jNMWu1L60S";
+  private static final String INSTALLATION_TOKEN =
+      "eyJhbGciOiJF.eyJmaWQiOiJmaXMt.AB2LPV8wRQIhAPs4NvEgA3uhubH";
+  private static final InstallationTokenResult INSTALLATION_TOKEN_RESULT =
+      InstallationTokenResult.builder()
+          .setToken(INSTALLATION_TOKEN)
+          .setTokenCreationTimestamp(1)
+          .setTokenExpirationTimestamp(1)
+          .build();
 
   // We use a HashMap so that Mocking is easier.
   private static final HashMap<String, Object> DEFAULTS_MAP = new HashMap<>();
@@ -121,7 +126,7 @@ public final class FirebaseRemoteConfigTest {
   @Mock private FirebaseRemoteConfigInfo mockFrcInfo;
 
   @Mock private FirebaseABTesting mockFirebaseAbt;
-  @Mock private FirebaseInstanceId mockFirebaseInstanceId;
+  @Mock private FirebaseInstallationsApi mockFirebaseInstallations;
 
   private FirebaseRemoteConfig frc;
   private FirebaseRemoteConfig fireperfFrc;
@@ -158,7 +163,7 @@ public final class FirebaseRemoteConfigTest {
         new FirebaseRemoteConfig(
             context,
             firebaseApp,
-            mockFirebaseInstanceId,
+            mockFirebaseInstallations,
             mockFirebaseAbt,
             directExecutor,
             mockFetchedCache,
@@ -175,7 +180,7 @@ public final class FirebaseRemoteConfigTest {
             .get(
                 firebaseApp,
                 FIREPERF_NAMESPACE,
-                mockFirebaseInstanceId,
+                mockFirebaseInstallations,
                 /*firebaseAbt=*/ null,
                 directExecutor,
                 mockFireperfFetchedCache,
@@ -1179,7 +1184,9 @@ public final class FirebaseRemoteConfigTest {
   }
 
   private void loadInstanceIdAndToken() {
-    when(mockFirebaseInstanceId.getInstanceId()).thenReturn(Tasks.forResult(INSTANCE_ID_RESULT));
+    when(mockFirebaseInstallations.getId()).thenReturn(Tasks.forResult(INSTALLATION_ID));
+    when(mockFirebaseInstallations.getToken(false))
+        .thenReturn(Tasks.forResult(INSTALLATION_TOKEN_RESULT));
   }
 
   private static int getResourceId(String xmlResourceName) {

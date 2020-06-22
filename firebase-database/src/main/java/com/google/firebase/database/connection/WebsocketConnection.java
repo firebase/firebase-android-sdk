@@ -186,6 +186,7 @@ class WebsocketConnection {
             host, hostInfo.isSecure(), hostInfo.getNamespace(), optLastSessionId);
     Map<String, String> extraHeaders = new HashMap<String, String>();
     extraHeaders.put("User-Agent", this.connectionContext.getUserAgent());
+    extraHeaders.put("X-Firebase-GMPID", this.connectionContext.getApplicationId());
     WebSocket ws = new WebSocket(this.connectionContext, uri, /*protocol=*/ null, extraHeaders);
     WSClientTubesock client = new WSClientTubesock(ws);
     return client;

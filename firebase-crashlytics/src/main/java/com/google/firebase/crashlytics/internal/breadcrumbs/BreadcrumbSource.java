@@ -12,21 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.encoders.processor.getters;
+package com.google.firebase.crashlytics.internal.breadcrumbs;
 
-import com.google.auto.value.AutoValue;
-import javax.lang.model.element.AnnotationValue;
+import androidx.annotation.Nullable;
 
-/** Represents an annotation property/method with its value as explicitly set in source. */
-@AutoValue
-public abstract class AnnotationProperty {
-  /** Name of the property, e.g. \"value\". */
-  public abstract String name();
-
-  /** Value of the property. */
-  public abstract AnnotationValue value();
-
-  public static AnnotationProperty create(String name, AnnotationValue value) {
-    return new AutoValue_AnnotationProperty(name, value);
-  }
+/** Interface for a source of breadcrumbs. Allows registration of a breadcrumb handler. */
+public interface BreadcrumbSource {
+  void registerBreadcrumbHandler(@Nullable BreadcrumbHandler breadcrumbHandler);
 }

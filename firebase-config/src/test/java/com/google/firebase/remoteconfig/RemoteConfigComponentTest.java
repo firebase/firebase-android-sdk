@@ -32,7 +32,7 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.abt.FirebaseABTesting;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
-import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.remoteconfig.internal.ConfigCacheClient;
 import com.google.firebase.remoteconfig.internal.ConfigContainer;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler;
@@ -63,7 +63,7 @@ public class RemoteConfigComponentTest {
   private static final String DUMMY_API_KEY = "api_key";
 
   @Mock private FirebaseApp mockFirebaseApp;
-  @Mock private FirebaseInstanceId mockFirebaseIid;
+  @Mock private FirebaseInstallationsApi mockFirebaseInstallations;
   @Mock private FirebaseABTesting mockFirebaseAbt;
   @Mock private AnalyticsConnector mockAnalyticsConnector;
   @Mock private LegacyConfigsHandler mockLegacyConfigsHandler;
@@ -177,7 +177,7 @@ public class RemoteConfigComponentTest {
         context,
         directExecutor,
         mockFirebaseApp,
-        mockFirebaseIid,
+        mockFirebaseInstallations,
         mockFirebaseAbt,
         mockAnalyticsConnector,
         mockLegacyConfigsHandler,
@@ -189,7 +189,7 @@ public class RemoteConfigComponentTest {
         context,
         directExecutor,
         mockFirebaseApp,
-        mockFirebaseIid,
+        mockFirebaseInstallations,
         mockFirebaseAbt,
         mockAnalyticsConnector,
         mockLegacyConfigsHandler,
@@ -201,7 +201,7 @@ public class RemoteConfigComponentTest {
     return frcComponent.get(
         mockFirebaseApp,
         namespace,
-        mockFirebaseIid,
+        mockFirebaseInstallations,
         mockFirebaseAbt,
         directExecutor,
         mockFetchedCache,

@@ -1,9 +1,9 @@
-// Copyright 2018 Google LLC
+// Copyright 2020 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
-//
 // You may obtain a copy of the License at
+//
 //      http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
@@ -12,31 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.remoteconfig;
+package com.google.firebase.crashlytics.internal.breadcrumbs;
 
-import com.google.firebase.iid.InstanceIdResult;
+import androidx.annotation.Nullable;
+import com.google.firebase.crashlytics.internal.Logger;
 
-/**
- * Implementation of InstanceIdResult intended for testing.
- *
- * @author Dana Silver
- */
-public class FakeInstanceIdResult implements InstanceIdResult {
-  private final String id;
-  private final String token;
-
-  public FakeInstanceIdResult(String id, String token) {
-    this.id = id;
-    this.token = token;
-  }
+/** BreadcrumbSource for use when listening for breadcrumb events is disabled. */
+public class DisabledBreadcrumbSource implements BreadcrumbSource {
 
   @Override
-  public String getId() {
-    return id;
-  }
-
-  @Override
-  public String getToken() {
-    return token;
+  public void registerBreadcrumbHandler(@Nullable BreadcrumbHandler breadcrumbHandler) {
+    Logger.getLogger().d("Could not register handler for breadcrumbs events.");
   }
 }
