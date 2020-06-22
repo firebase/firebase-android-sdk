@@ -28,7 +28,6 @@ android {
         versionCode 1
         versionName version
         multiDexEnabled true
-
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -87,8 +86,8 @@ dependencies {
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation "junit:junit:4.12"
     testImplementation "org.mockito:mockito-core:2.25.0"
-    testImplementation "com.google.truth:truth:1.0"
-    testImplementation 'com.google.guava:guava:27.1-android'
+    testImplementation "com.google.truth:truth:1.0.1"
+    testImplementation 'com.google.guava:guava:28.1-android'
 
     androidTestImplementation "org.mockito:mockito-core:2.25.0"
     androidTestImplementation "com.google.dexmaker:dexmaker:1.2"
@@ -96,7 +95,7 @@ dependencies {
     androidTestImplementation 'androidx.annotation:annotation:1.1.0'
     androidTestImplementation 'androidx.test:runner:1.2.0'
     androidTestImplementation 'androidx.test:rules:1.2.0'
-    androidTestImplementation ("com.google.firebase:firebase-analytics:17.4.0") {
+    androidTestImplementation ("com.google.firebase:firebase-analytics:17.4.2") {
         exclude group: "com.google.firebase", module: "firebase-common"
         exclude group: "com.google.firebase", module: "firebase-components"
         exclude group: "com.google.firebase", module: "firebase-installations-interop"

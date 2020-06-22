@@ -38,7 +38,12 @@ android {
             srcDir 'src/test/kotlin'
         }
     }
-
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+        // Neccesary for Dagger
+        incremental = false
+    }
     testOptions.unitTests.includeAndroidResources = true
 }
 
@@ -56,7 +61,10 @@ dependencies {
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation 'junit:junit:4.12'
     testImplementation "com.google.truth:truth:$googleTruthVersion"
-    testImplementation ("com.google.firebase:firebase-analytics:17.0.0") {
+    testImplementation ("com.google.firebase:firebase-analytics:17.4.2") {
         exclude group: "com.google.firebase", module: "firebase-common"
+        exclude group: "com.google.firebase", module: "firebase-components"
+        exclude group: "com.google.firebase", module: "firebase-installations-interop"
+        exclude group: "com.google.firebase", module: "firebase-installations"
     }
 }
