@@ -147,7 +147,6 @@ public abstract class ApiInformationTask extends DefaultTask {
                 args.addAll(Arrays.asList("--baseline", getBaselineFile().getAbsolutePath()));
               }
               spec.setArgs(args);
-              spec.setIgnoreExitValue(true);
               try {
                 spec.setStandardOutput(new FileOutputStream(getOutputFile()));
               } catch (FileNotFoundException e) {
