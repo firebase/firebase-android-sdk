@@ -186,9 +186,7 @@ public class FirebaseFirestore {
     this.emulatorSettings = emulatorSettings;
 
     this.settings = new FirebaseFirestoreSettings.Builder().build();
-    if (this.emulatorSettings != null) {
-      this.settings = mergeEmulatorSettings(settings, emulatorSettings);
-    }
+    this.settings = mergeEmulatorSettings(settings, emulatorSettings);
   }
 
   /** Returns the settings used by this {@code FirebaseFirestore} object. */
@@ -204,6 +202,8 @@ public class FirebaseFirestore {
   public void setFirestoreSettings(@NonNull FirebaseFirestoreSettings settings) {
     synchronized (databaseId) {
       checkNotNull(settings, "Provided settings must not be null.");
+      settings = mergeEmulatorSettings(settings, emulatorSettings);
+
       // As a special exception, don't throw if the same settings are passed repeatedly. This
       // should make it simpler to get a Firestore instance in an activity.
       if (client != null && !this.settings.equals(settings)) {
@@ -211,10 +211,6 @@ public class FirebaseFirestore {
             "FirebaseFirestore has already been started and its settings can no longer be changed. "
                 + "You can only call setFirestoreSettings() before calling any other methods on a "
                 + "FirebaseFirestore object.");
-      }
-
-      if (this.emulatorSettings != null) {
-        settings = mergeEmulatorSettings(settings, this.emulatorSettings);
       }
 
       this.settings = settings;
@@ -241,13 +237,14 @@ public class FirebaseFirestore {
 
   private FirebaseFirestoreSettings mergeEmulatorSettings(
       @NonNull FirebaseFirestoreSettings settings,
-      @NonNull EmulatedServiceSettings emulatorSettings) {
+      @Nullable EmulatedServiceSettings emulatorSettings) {
+    if (emulatorSettings == null) {
+      return settings;
+    }
 
     if (!FirebaseFirestoreSettings.DEFAULT_HOST.equals(settings.getHost())) {
       throw new IllegalStateException(
-          "Cannot change the Firestore host through FirebaseFirestoreSettings when "
-              + "EmulatedServiceSettings are also in effect. "
-              + "Make sure to only set the host in one location.");
+          "Cannot specify the host in FirebaseFirestoreSettings when EmulatedServiceSettings is provided.");
     }
 
     return new FirebaseFirestoreSettings.Builder(settings)

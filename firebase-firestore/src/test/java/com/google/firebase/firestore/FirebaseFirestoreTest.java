@@ -16,6 +16,8 @@ package com.google.firebase.firestore;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import androidx.annotation.NonNull;
 import androidx.test.platform.app.InstrumentationRegistry;
@@ -69,7 +71,7 @@ public class FirebaseFirestoreTest {
     assertFalse(settings.isPersistenceEnabled());
   }
 
-  @Test(expected = IllegalStateException.class)
+  @Test
   public void getInstance_withEmulator_mergeSettingsFailure() {
     FirebaseApp app = getApp("getInstance_withEmulator_mergeSettingsFailure");
     app.enableEmulators(
@@ -78,9 +80,64 @@ public class FirebaseFirestoreTest {
                 FirebaseFirestore.EMULATOR, new EmulatedServiceSettings("10.0.2.2", 8080))
             .build());
 
+    try {
+      FirebaseFirestore firestore = FirebaseFirestore.getInstance(app);
+      firestore.setFirestoreSettings(
+          new FirebaseFirestoreSettings.Builder().setHost("myhost.com").build());
+      fail("Exception should be thrown");
+    } catch (Exception e) {
+      assertTrue(e instanceof IllegalStateException);
+      assertEquals(
+          e.getMessage(),
+          "Cannot specify the host in FirebaseFirestoreSettings when EmulatedServiceSettings is provided.");
+    }
+  }
+
+  @Test
+  public void setSettings_repeatedSuccess() {
+    FirebaseApp app = getApp("setSettings_repeatedSuccess");
     FirebaseFirestore firestore = FirebaseFirestore.getInstance(app);
-    firestore.setFirestoreSettings(
-        new FirebaseFirestoreSettings.Builder().setHost("myhost.com").build());
+
+    FirebaseFirestoreSettings settings =
+        new FirebaseFirestoreSettings.Builder().setHost("myhost.com").setSslEnabled(false).build();
+    firestore.setFirestoreSettings(settings);
+
+    // This should 'start' Firestore
+    DocumentReference reference = firestore.document("foo/bar");
+
+    // Second settings set should pass because the settings are equal
+    firestore.setFirestoreSettings(settings);
+  }
+
+  @Test
+  public void setSettings_repeatedFailure() {
+    FirebaseApp app = getApp("setSettings_repeatedFailure");
+    FirebaseFirestore firestore = FirebaseFirestore.getInstance(app);
+
+    FirebaseFirestoreSettings settings =
+        new FirebaseFirestoreSettings.Builder().setHost("myhost.com").setSslEnabled(false).build();
+
+    FirebaseFirestoreSettings otherSettings =
+        new FirebaseFirestoreSettings.Builder()
+            .setHost("otherhost.com")
+            .setSslEnabled(false)
+            .build();
+
+    firestore.setFirestoreSettings(settings);
+
+    // This should 'start' Firestore
+    DocumentReference reference = firestore.document("foo/bar");
+
+    try {
+      firestore.setFirestoreSettings(otherSettings);
+      fail("Exception should be thrown");
+    } catch (Exception e) {
+      assertTrue(e instanceof IllegalStateException);
+      assertTrue(
+          e.getMessage()
+              .startsWith(
+                  "FirebaseFirestore has already been started and its settings can no longer be changed."));
+    }
   }
 
   @NonNull
