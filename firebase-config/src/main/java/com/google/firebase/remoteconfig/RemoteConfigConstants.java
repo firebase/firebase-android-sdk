@@ -33,8 +33,8 @@ public final class RemoteConfigConstants {
    * server.
    *
    * <p>{@code INSTANCE_ID} and {@code INSTANCE_ID_TOKEN} are legacy names for the fields that used
-   * to be populated by the IID SDK and now come from the Firebase Installations SDK. The fields are
-   * now the installation ID and installation auth token, respectively.
+   * to be populated by the IID SDK. The fields have been replaced by the installation ID and
+   * installation auth token, respectively, which are fetched from the FIS SDK.
    */
   @StringDef({
     RequestFieldKey.INSTANCE_ID,
