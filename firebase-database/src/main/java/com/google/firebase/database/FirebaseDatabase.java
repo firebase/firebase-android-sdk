@@ -30,6 +30,7 @@ import com.google.firebase.database.core.utilities.ParsedUrl;
 import com.google.firebase.database.core.utilities.Utilities;
 import com.google.firebase.database.core.utilities.Validation;
 import com.google.firebase.emulators.EmulatedServiceSettings;
+import com.google.firebase.emulators.EmulatorSettings;
 import com.google.firebase.emulators.FirebaseEmulator;
 
 /**
@@ -39,6 +40,13 @@ import com.google.firebase.emulators.FirebaseEmulator;
  */
 public class FirebaseDatabase {
 
+  /**
+   * Emulator identifier. See {@link FirebaseApp#enableEmulators(EmulatorSettings)}
+   *
+   * <p>TODO(samstern): Un-hide this once Firestore, Database, and Functions are implemented
+   *
+   * @hide
+   */
   public static final FirebaseEmulator EMULATOR = FirebaseEmulator.forName("database");
 
   private static final String SDK_VERSION = BuildConfig.VERSION_NAME;

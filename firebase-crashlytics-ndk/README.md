@@ -13,11 +13,9 @@ In addition, **this project requires NDK version r17c to build.**
 
 ### Setting up NDK r17c
 
-1. Download the appropriate zip for your build environment
-[here](https://developer.android.com/ndk/downloads/older_releases.html).
-2. Unzip the package into an accessible directory.
-3. In your `local.properties` file in the root of this project, add
-`ndk.dir=/path/to/android-ndk-r17c` with the path to the unzipped package.
+1. Follow the instructions
+[here](https://developer.android.com/studio/projects/install-ndk#specific-version)
+to install NDK version 17.2.4988734.
 
 ## Building
 
