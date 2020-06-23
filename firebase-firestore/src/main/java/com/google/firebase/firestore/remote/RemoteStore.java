@@ -211,6 +211,11 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
         (NetworkStatus networkStatus) -> {
           workerQueue.enqueueAndForget(
               () -> {
+                if (networkStatus.equals(NetworkStatus.UNREACHABLE)) {
+                  Logger.debug(LOG_TAG, "Ignoring reachability callback for unavailable network");
+                  return;
+                }
+
                 // If the network has been explicitly disabled, make sure we don't accidentally
                 // re-enable it.
                 if (canUseNetwork()) {
@@ -277,6 +282,8 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
     networkEnabled = false;
     disableNetworkInternal();
     onlineStateTracker.updateState(OnlineState.UNKNOWN);
+    writeStream.inhibitBackoff();
+    watchStream.inhibitBackoff();
     enableNetwork();
   }
 
