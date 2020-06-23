@@ -211,10 +211,8 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
         (NetworkStatus networkStatus) -> {
           workerQueue.enqueueAndForget(
               () -> {
-                if (networkStatus.equals(NetworkStatus.UNREACHABLE)) {
-                  Logger.debug(LOG_TAG, "Ignoring reachability callback for unavailable network");
-                  return;
-                }
+                // Porting Note: Unlike iOS, `restartNetwork()` is called even when the network
+                // becomes unreachable as we don't have any other way to tear down our stream.
 
                 // If the network has been explicitly disabled, make sure we don't accidentally
                 // re-enable it.
