@@ -110,6 +110,28 @@ public class FirebaseFirestoreTest {
   }
 
   @Test
+  public void setSettings_repeatedSuccess_withEmulator() {
+    FirebaseApp app = getApp("setSettings_repeatedSuccess_withEmulator");
+    app.enableEmulators(
+        new EmulatorSettings.Builder()
+            .addEmulatedService(
+                FirebaseFirestore.EMULATOR, new EmulatedServiceSettings("10.0.2.2", 8080))
+            .build());
+
+    FirebaseFirestore firestore = FirebaseFirestore.getInstance(app);
+
+    FirebaseFirestoreSettings settings =
+        new FirebaseFirestoreSettings.Builder().setPersistenceEnabled(false).build();
+    firestore.setFirestoreSettings(settings);
+
+    // This should 'start' Firestore
+    DocumentReference reference = firestore.document("foo/bar");
+
+    // Second settings set should pass because the settings are equal
+    firestore.setFirestoreSettings(settings);
+  }
+
+  @Test
   public void setSettings_repeatedFailure() {
     FirebaseApp app = getApp("setSettings_repeatedFailure");
     FirebaseFirestore firestore = FirebaseFirestore.getInstance(app);
