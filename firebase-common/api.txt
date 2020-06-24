@@ -53,7 +53,7 @@ package com.google.firebase.emulators {
 
   public final class EmulatedServiceSettings {
     ctor public EmulatedServiceSettings(@NonNull String, int);
-    method public String getHost();
+    method @NonNull public String getHost();
     method public int getPort();
   }
 
@@ -68,7 +68,7 @@ package com.google.firebase.emulators {
   }
 
   public final class FirebaseEmulator {
-    method public String getName();
+    method @NonNull public String getName();
   }
 
 }
