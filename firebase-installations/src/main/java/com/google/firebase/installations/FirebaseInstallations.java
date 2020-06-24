@@ -94,6 +94,21 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
         }
       };
 
+  private static final String API_KEY_VALIDATION_MSG =
+      "Please set a valid API key. A Firebase API key is required to communicate with "
+          + "Firebase server APIs: It authenticates your project with Google."
+          + "Please refer to https://firebase.google.com/support/privacy/init-options.";
+
+  private static final String APP_ID_VALIDATION_MSG =
+      "Please set your Application ID. A valid Firebase App ID is required to communicate "
+          + "with Firebase server APIs: It identifies your application with Firebase."
+          + "Please refer to https://firebase.google.com/support/privacy/init-options.";
+
+  private static final String PROJECT_ID_VALIDATION_MSG =
+      "Please set your Project ID. A valid Firebase Project ID is required to communicate "
+          + "with Firebase server APIs: It identifies your application with Firebase."
+          + "Please refer to https://firebase.google.com/support/privacy/init-options.";
+
   /** package private constructor. */
   FirebaseInstallations(
       FirebaseApp firebaseApp,
@@ -147,19 +162,12 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
    * or empty.
    */
   private void preConditionChecks() {
-    Preconditions.checkNotEmpty(getApplicationId());
-    Preconditions.checkNotEmpty(getProjectIdentifier());
-    Preconditions.checkNotEmpty(getApiKey());
+    Preconditions.checkNotEmpty(getApplicationId(), APP_ID_VALIDATION_MSG);
+    Preconditions.checkNotEmpty(getProjectIdentifier(), PROJECT_ID_VALIDATION_MSG);
+    Preconditions.checkNotEmpty(getApiKey(), API_KEY_VALIDATION_MSG);
     Preconditions.checkArgument(
-        Utils.isValidAppIdFormat(getApplicationId()),
-        "Please set your Application ID. A valid Firebase App ID is required to communicate "
-            + "with Firebase server APIs: It identifies your application with Firebase."
-            + "Please refer to https://firebase.google.com/support/privacy/init-options.");
-    Preconditions.checkArgument(
-        Utils.isValidApiKeyFormat(getApiKey()),
-        "Please set a valid API key. A Firebase API key is required to communicate with "
-            + "Firebase server APIs: It authenticates your project with Google."
-            + "Please refer to https://firebase.google.com/support/privacy/init-options.");
+        Utils.isValidAppIdFormat(getApplicationId()), APP_ID_VALIDATION_MSG);
+    Preconditions.checkArgument(Utils.isValidApiKeyFormat(getApiKey()), API_KEY_VALIDATION_MSG);
   }
 
   /** Returns the Project Id or Project Number for the Firebase Project. */

@@ -84,7 +84,8 @@ import org.skyscreamer.jsonassert.JSONAssert;
     shadows = {ShadowPreconditions.class})
 public final class FirebaseRemoteConfigTest {
   private static final String APP_ID = "1:14368190084:android:09cb977358c6f241";
-  private static final String API_KEY = "api_key";
+  private static final String API_KEY = "AIzaSyabcdefghijklmnopqrstuvwxyz1234567";
+  private static final String PROJECT_ID = "fake-frc-test-id";
 
   private static final String FIREPERF_NAMESPACE = "fireperf";
 
@@ -1220,6 +1221,11 @@ public final class FirebaseRemoteConfigTest {
     FirebaseApp.clearInstancesForTest();
 
     return FirebaseApp.initializeApp(
-        context, new FirebaseOptions.Builder().setApiKey(API_KEY).setApplicationId(APP_ID).build());
+        context,
+        new FirebaseOptions.Builder()
+            .setApiKey(API_KEY)
+            .setApplicationId(APP_ID)
+            .setProjectId(PROJECT_ID)
+            .build());
   }
 }
