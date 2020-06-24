@@ -51,6 +51,7 @@ import org.json.JSONObject;
 public class FirebaseFunctions {
 
   /** Emulator identifier. See {@link FirebaseApp#enableEmulators(EmulatorSettings)} */
+  @NonNull
   public static final FirebaseEmulator EMULATOR = FirebaseEmulator.forName("functions");
 
   /** A task that will be resolved once ProviderInstaller has installed what it needs to. */

@@ -8,7 +8,7 @@ package com.google.firebase.functions {
     method @NonNull public static com.google.firebase.functions.FirebaseFunctions getInstance(@NonNull String);
     method @NonNull public static com.google.firebase.functions.FirebaseFunctions getInstance();
     method @Deprecated public void useFunctionsEmulator(@NonNull String);
-    field public static final com.google.firebase.emulators.FirebaseEmulator EMULATOR;
+    field @NonNull public static final com.google.firebase.emulators.FirebaseEmulator EMULATOR;
   }
 
   public class FirebaseFunctionsException extends com.google.firebase.FirebaseException {
