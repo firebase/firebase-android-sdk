@@ -457,7 +457,8 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     // Note: Default value of instanceIdMigrationAuth: null
     String iidToken = null;
 
-    if (prefs.getFirebaseInstallationId().length() == 11) {
+    if (prefs.getFirebaseInstallationId() != null
+        && prefs.getFirebaseInstallationId().length() == 11) {
       // For a default firebase installation, read the stored star scoped iid token. This token
       // will be used for authenticating Instance-ID when migrating to FIS.
       iidToken = iidStore.readToken();
