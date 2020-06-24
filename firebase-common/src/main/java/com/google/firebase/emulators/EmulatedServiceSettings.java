@@ -19,10 +19,7 @@ import androidx.annotation.NonNull;
 /**
  * Settings to connect a single Firebase service to a local emulator.
  *
- * <p>TODO(samstern): Un-hide this once Firestore, Database, and Functions are implemented
- *
  * @see EmulatorSettings
- * @hide
  */
 public final class EmulatedServiceSettings {
 

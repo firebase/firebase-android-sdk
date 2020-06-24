@@ -2,8 +2,10 @@
 package com.google.firebase {
 
   public class FirebaseApp {
+    method public void enableEmulators(@NonNull com.google.firebase.emulators.EmulatorSettings);
     method @NonNull public android.content.Context getApplicationContext();
     method @NonNull public static java.util.List<com.google.firebase.FirebaseApp> getApps(@NonNull android.content.Context);
+    method @NonNull public com.google.firebase.emulators.EmulatorSettings getEmulatorSettings();
     method @NonNull public static com.google.firebase.FirebaseApp getInstance();
     method @NonNull public static com.google.firebase.FirebaseApp getInstance(@NonNull String);
     method @NonNull public String getName();
@@ -43,6 +45,30 @@ package com.google.firebase {
 
   public class FirebaseTooManyRequestsException extends com.google.firebase.FirebaseException {
     ctor public FirebaseTooManyRequestsException(@NonNull String);
+  }
+
+}
+
+package com.google.firebase.emulators {
+
+  public final class EmulatedServiceSettings {
+    ctor public EmulatedServiceSettings(@NonNull String, int);
+    method public String getHost();
+    method public int getPort();
+  }
+
+  public final class EmulatorSettings {
+    field public static final com.google.firebase.emulators.EmulatorSettings DEFAULT;
+  }
+
+  public static final class EmulatorSettings.Builder {
+    ctor public EmulatorSettings.Builder();
+    method @NonNull public com.google.firebase.emulators.EmulatorSettings.Builder addEmulatedService(@NonNull com.google.firebase.emulators.FirebaseEmulator, @NonNull com.google.firebase.emulators.EmulatedServiceSettings);
+    method @NonNull public com.google.firebase.emulators.EmulatorSettings build();
+  }
+
+  public final class FirebaseEmulator {
+    method public String getName();
   }
 
 }
