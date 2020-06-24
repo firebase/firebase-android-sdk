@@ -32,7 +32,7 @@ val crashlytics = Firebase.crashlytics
 crashlytics.setCustomKey("str_key", "hello")
 crashlytics.setCustomKey("bool_key", true)
 crashlytics.setCustomKey("int_key", 1)
-crashlytics.setCustomKey("int_key", 1L)
+crashlytics.setCustomKey("long_key", 1L)
 crashlytics.setCustomKey("float_key", 1.0f)
 crashlytics.setCustomKey("double_key", 1.0)
 ```
