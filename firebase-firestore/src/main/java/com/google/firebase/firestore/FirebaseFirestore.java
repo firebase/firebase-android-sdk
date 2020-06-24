@@ -59,8 +59,7 @@ import java.util.concurrent.Executor;
 public class FirebaseFirestore {
 
   /** Emulator identifier. See {@link FirebaseApp#enableEmulators(EmulatorSettings)} */
-  @NonNull
-  public static final FirebaseEmulator EMULATOR = FirebaseEmulator.forName("firestore");
+  @NonNull public static final FirebaseEmulator EMULATOR = FirebaseEmulator.forName("firestore");
 
   /**
    * Provides a registry management interface for {@code FirebaseFirestore} instances.
