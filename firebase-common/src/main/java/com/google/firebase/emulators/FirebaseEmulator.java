@@ -33,14 +33,15 @@ public final class FirebaseEmulator {
    * @hide
    */
   @NonNull
-  public static FirebaseEmulator forName(String name) {
+  public static FirebaseEmulator forName(@NonNull String name) {
     return new FirebaseEmulator(name);
   }
 
-  private FirebaseEmulator(String name) {
+  private FirebaseEmulator(@NonNull String name) {
     this.name = name;
   }
 
+  @NonNull
   public String getName() {
     return name;
   }

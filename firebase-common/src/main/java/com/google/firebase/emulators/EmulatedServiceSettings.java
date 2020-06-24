@@ -31,6 +31,7 @@ public final class EmulatedServiceSettings {
     this.port = port;
   }
 
+  @NonNull
   public String getHost() {
     return host;
   }
