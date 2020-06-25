@@ -256,6 +256,7 @@ public class JsonDataDecoderBuilderContext implements DataDecoder {
       }
     }
     reader.endObject();
+    decoderCtx.decodeInlineObjIfAny(creationCtx);
     return creationCtx;
   }
 

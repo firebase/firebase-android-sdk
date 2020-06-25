@@ -16,7 +16,9 @@ package com.google.firebase.decoders.json;
 
 import androidx.annotation.NonNull;
 import com.google.firebase.decoders.FieldRef;
+import com.google.firebase.decoders.ObjectDecoder;
 import com.google.firebase.decoders.ObjectDecoderContext;
+import com.google.firebase.decoders.TypeCreator;
 import com.google.firebase.decoders.TypeToken;
 import com.google.firebase.encoders.FieldDescriptor;
 import java.util.HashMap;
@@ -24,6 +26,7 @@ import java.util.Map;
 
 public class ObjectDecoderContextImpl<T> implements ObjectDecoderContext<T> {
   private final Map<String, FieldRef<?>> refs = new HashMap<>();
+  private final Map<FieldRef<?>, TypeCreator<?>> inlineObjCreators = new HashMap<>();
   private final TypeToken.ClassToken<T> classToken;
 
   @NonNull
@@ -41,6 +44,14 @@ public class ObjectDecoderContextImpl<T> implements ObjectDecoderContext<T> {
       return refs.get(fieldName);
     } else {
       throw new IllegalArgumentException(fieldName + " was not register in ObjectDecoder.");
+    }
+  }
+
+  void decodeInlineObjIfAny(@NonNull CreationContextImpl creationCtx) {
+    for (Map.Entry<FieldRef<?>, TypeCreator<?>> entry : this.inlineObjCreators.entrySet()) {
+      FieldRef<?> ref = entry.getKey();
+      TypeCreator<?> creator = entry.getValue();
+      creationCtx.put(ref, creator.create(creationCtx));
     }
   }
 
@@ -62,6 +73,19 @@ public class ObjectDecoderContextImpl<T> implements ObjectDecoderContext<T> {
       @NonNull FieldDescriptor fileDescriptor, @NonNull TypeToken<TField> typeToken) {
     FieldRef.Boxed<TField> ref = FieldRef.of(typeToken);
     refs.put(fileDescriptor.getName(), ref);
+    return ref;
+  }
+
+  @NonNull
+  @Override
+  public <TField> FieldRef.Boxed<TField> decodeInline(
+      @NonNull TypeToken.ClassToken<TField> classToken,
+      @NonNull ObjectDecoder<TField> objectDecoder) {
+    FieldRef.Boxed<TField> ref = FieldRef.of(classToken);
+    ObjectDecoderContextImpl<TField> objDecoderCtx = ObjectDecoderContextImpl.of(classToken);
+    TypeCreator<TField> creator = objectDecoder.decode(objDecoderCtx);
+    inlineObjCreators.put(ref, creator);
+    refs.putAll(objDecoderCtx.refs);
     return ref;
   }
 
