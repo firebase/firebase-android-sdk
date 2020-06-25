@@ -47,6 +47,7 @@ package com.google.firebase.decoders {
     method @NonNull public com.google.firebase.decoders.FieldRef.Primitive<java.lang.Character> decodeChar(@NonNull com.google.firebase.encoders.FieldDescriptor);
     method @NonNull public com.google.firebase.decoders.FieldRef.Primitive<java.lang.Double> decodeDouble(@NonNull com.google.firebase.encoders.FieldDescriptor);
     method @NonNull public com.google.firebase.decoders.FieldRef.Primitive<java.lang.Float> decodeFloat(@NonNull com.google.firebase.encoders.FieldDescriptor);
+    method @NonNull public <TField> com.google.firebase.decoders.FieldRef.Boxed<TField> decodeInline(@NonNull com.google.firebase.decoders.TypeToken.ClassToken<TField>, @NonNull com.google.firebase.decoders.ObjectDecoder<TField>);
     method @NonNull public com.google.firebase.decoders.FieldRef.Primitive<java.lang.Integer> decodeInteger(@NonNull com.google.firebase.encoders.FieldDescriptor);
     method @NonNull public com.google.firebase.decoders.FieldRef.Primitive<java.lang.Long> decodeLong(@NonNull com.google.firebase.encoders.FieldDescriptor);
     method @NonNull public com.google.firebase.decoders.FieldRef.Primitive<java.lang.Short> decodeShort(@NonNull com.google.firebase.encoders.FieldDescriptor);
@@ -108,6 +109,7 @@ package com.google.firebase.decoders.json {
     method @NonNull public com.google.firebase.decoders.FieldRef.Primitive<java.lang.Character> decodeChar(@NonNull com.google.firebase.encoders.FieldDescriptor);
     method @NonNull public com.google.firebase.decoders.FieldRef.Primitive<java.lang.Double> decodeDouble(@NonNull com.google.firebase.encoders.FieldDescriptor);
     method @NonNull public com.google.firebase.decoders.FieldRef.Primitive<java.lang.Float> decodeFloat(@NonNull com.google.firebase.encoders.FieldDescriptor);
+    method @NonNull public <TField> com.google.firebase.decoders.FieldRef.Boxed<TField> decodeInline(@NonNull com.google.firebase.decoders.TypeToken.ClassToken<TField>, @NonNull com.google.firebase.decoders.ObjectDecoder<TField>);
     method @NonNull public com.google.firebase.decoders.FieldRef.Primitive<java.lang.Integer> decodeInteger(@NonNull com.google.firebase.encoders.FieldDescriptor);
     method @NonNull public com.google.firebase.decoders.FieldRef.Primitive<java.lang.Long> decodeLong(@NonNull com.google.firebase.encoders.FieldDescriptor);
     method @NonNull public com.google.firebase.decoders.FieldRef.Primitive<java.lang.Short> decodeShort(@NonNull com.google.firebase.encoders.FieldDescriptor);
