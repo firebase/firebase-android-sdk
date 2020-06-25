@@ -40,14 +40,8 @@ import com.google.firebase.emulators.FirebaseEmulator;
  */
 public class FirebaseDatabase {
 
-  /**
-   * Emulator identifier. See {@link FirebaseApp#enableEmulators(EmulatorSettings)}
-   *
-   * <p>TODO(samstern): Un-hide this once Firestore, Database, and Functions are implemented
-   *
-   * @hide
-   */
-  public static final FirebaseEmulator EMULATOR = FirebaseEmulator.forName("database");
+  /** Emulator identifier. See {@link FirebaseApp#enableEmulators(EmulatorSettings)} */
+  @NonNull public static final FirebaseEmulator EMULATOR = FirebaseEmulator.forName("database");
 
   private static final String SDK_VERSION = BuildConfig.VERSION_NAME;
 

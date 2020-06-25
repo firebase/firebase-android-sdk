@@ -39,8 +39,8 @@ import org.robolectric.RuntimeEnvironment
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 
-const val APP_ID = "APP_ID"
-const val API_KEY = "API_KEY"
+const val APP_ID = "1:14368190084:android:09cb977358c6f241"
+const val API_KEY = "AIzaSyabcdefghijklmnopqrstuvwxyz1234567"
 
 const val EXISTING_APP = "existing"
 

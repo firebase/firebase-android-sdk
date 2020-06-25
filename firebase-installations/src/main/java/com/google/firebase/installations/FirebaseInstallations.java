@@ -94,6 +94,21 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
         }
       };
 
+  private static final String API_KEY_VALIDATION_MSG =
+      "Please set a valid API key. A Firebase API key is required to communicate with "
+          + "Firebase server APIs: It authenticates your project with Google."
+          + "Please refer to https://firebase.google.com/support/privacy/init-options.";
+
+  private static final String APP_ID_VALIDATION_MSG =
+      "Please set your Application ID. A valid Firebase App ID is required to communicate "
+          + "with Firebase server APIs: It identifies your application with Firebase."
+          + "Please refer to https://firebase.google.com/support/privacy/init-options.";
+
+  private static final String PROJECT_ID_VALIDATION_MSG =
+      "Please set your Project ID. A valid Firebase Project ID is required to communicate "
+          + "with Firebase server APIs: It identifies your application with Firebase."
+          + "Please refer to https://firebase.google.com/support/privacy/init-options.";
+
   /** package private constructor. */
   FirebaseInstallations(
       FirebaseApp firebaseApp,
@@ -139,7 +154,6 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
             TimeUnit.SECONDS,
             new LinkedBlockingQueue<>(),
             THREAD_FACTORY);
-    preConditionChecks();
   }
 
   /**
@@ -148,19 +162,12 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
    * or empty.
    */
   private void preConditionChecks() {
-    Preconditions.checkNotEmpty(getApplicationId());
-    Preconditions.checkNotEmpty(getProjectIdentifier());
-    Preconditions.checkNotEmpty(getApiKey());
+    Preconditions.checkNotEmpty(getApplicationId(), APP_ID_VALIDATION_MSG);
+    Preconditions.checkNotEmpty(getProjectIdentifier(), PROJECT_ID_VALIDATION_MSG);
+    Preconditions.checkNotEmpty(getApiKey(), API_KEY_VALIDATION_MSG);
     Preconditions.checkArgument(
-        Utils.isValidAppIdFormat(getApplicationId()),
-        "Please set your Application ID. A valid Firebase App ID is required to communicate "
-            + "with Firebase server APIs: It identifies your application with Firebase."
-            + "Please refer to https://firebase.google.com/support/privacy/init-options.");
-    Preconditions.checkArgument(
-        Utils.isValidApiKeyFormat(getApiKey()),
-        "Please set a valid API key. A Firebase API key is required to communicate with "
-            + "Firebase server APIs: It authenticates your project with Google."
-            + "Please refer to https://firebase.google.com/support/privacy/init-options.");
+        Utils.isValidAppIdFormat(getApplicationId()), APP_ID_VALIDATION_MSG);
+    Preconditions.checkArgument(Utils.isValidApiKeyFormat(getApiKey()), API_KEY_VALIDATION_MSG);
   }
 
   /** Returns the Project Id or Project Number for the Firebase Project. */
@@ -217,6 +224,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   @NonNull
   @Override
   public Task<String> getId() {
+    preConditionChecks();
     return Tasks.forResult(doGetId());
   }
 
@@ -231,6 +239,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   @NonNull
   @Override
   public Task<InstallationTokenResult> getToken(boolean forceRefresh) {
+    preConditionChecks();
     Task<InstallationTokenResult> task = addGetAuthTokenListener();
     backgroundExecutor.execute(() -> doGetAuthToken(forceRefresh));
     return task;
@@ -456,7 +465,8 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     // Note: Default value of instanceIdMigrationAuth: null
     String iidToken = null;
 
-    if (prefs.getFirebaseInstallationId().length() == 11) {
+    if (prefs.getFirebaseInstallationId() != null
+        && prefs.getFirebaseInstallationId().length() == 11) {
       // For a default firebase installation, read the stored star scoped iid token. This token
       // will be used for authenticating Instance-ID when migrating to FIS.
       iidToken = iidStore.readToken();

@@ -54,7 +54,7 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
 
   private static final String LOG_TAG = "SQLiteEventStore";
 
-  static final int MAX_RETRIES = 10;
+  static final int MAX_RETRIES = 16;
 
   private static final int LOCK_RETRY_BACK_OFF_MILLIS = 50;
   private static final Encoding PROTOBUF_ENCODING = Encoding.of("proto");
