@@ -63,6 +63,11 @@ public interface ObjectDecoderContext<T> {
   <TField> FieldRef.Boxed<TField> decode(
       @NonNull FieldDescriptor fileDescriptor, @NonNull TypeToken<TField> typeToken);
 
+  @NonNull
+  <TField> FieldRef.Boxed<TField> decodeInline(
+      @NonNull TypeToken.ClassToken<TField> classToken,
+      @NonNull ObjectDecoder<TField> objectDecoder);
+
   /** Decode {@link FieldDescriptor} into a {@link FieldRef} */
   @NonNull
   FieldRef.Primitive<Boolean> decodeBoolean(@NonNull FieldDescriptor fileDescriptor);

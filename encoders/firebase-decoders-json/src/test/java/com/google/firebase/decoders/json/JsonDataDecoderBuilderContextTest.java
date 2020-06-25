@@ -436,4 +436,63 @@ public class JsonDataDecoderBuilderContextTest {
         jsonDataDecoderBuilderContext.decode(input, TypeToken.of(new Safe<String[][]>() {}));
     assertThat(arr).isEqualTo(new String[][] {{}, {"1"}});
   }
+
+  static class MyFoo {
+    String s;
+    MySubFoo subFoo;
+
+    MyFoo(String s, MySubFoo subFoo) {
+      this.s = s;
+      this.subFoo = subFoo;
+    }
+  }
+
+  static class MySubFoo {
+    int i;
+
+    MySubFoo(int i) {
+      this.i = i;
+    }
+  }
+
+  static class MyFooObjectDecoder implements ObjectDecoder<MyFoo> {
+
+    @NonNull
+    @Override
+    public TypeCreator<MyFoo> decode(@NonNull ObjectDecoderContext<MyFoo> ctx) {
+      FieldRef.Boxed<String> sField =
+          ctx.decode(FieldDescriptor.of("str"), TypeToken.of(String.class));
+      FieldRef.Boxed<MySubFoo> subFooField =
+          ctx.decodeInline(
+              (TypeToken.ClassToken<MySubFoo>) TypeToken.of(new Safe<MySubFoo>() {}),
+              new MySubFooObjectDecoder());
+      return (creationCtx -> new MyFoo(creationCtx.get(sField), creationCtx.get(subFooField)));
+    }
+  }
+
+  static class MySubFooObjectDecoder implements ObjectDecoder<MySubFoo> {
+
+    @NonNull
+    @Override
+    public TypeCreator<MySubFoo> decode(@NonNull ObjectDecoderContext<MySubFoo> ctx) {
+      FieldRef.Primitive<Integer> iField = ctx.decodeInteger(FieldDescriptor.of("i"));
+      return (creationCtx -> new MySubFoo(creationCtx.getInteger(iField)));
+    }
+  }
+
+  @Test
+  public void decodeInline_shouldDecodeCorrectly() throws IOException {
+    Map<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
+    objectDecoders.put(MyFoo.class, new MyFooObjectDecoder());
+    objectDecoders.put(MySubFoo.class, new MySubFooObjectDecoder());
+    JsonDataDecoderBuilderContext jsonDataDecoderBuilderContext =
+        new JsonDataDecoderBuilderContext(objectDecoders);
+
+    String json = "{\"str\": \"str\", \"i\": 1}";
+    InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
+    MyFoo myFoo = jsonDataDecoderBuilderContext.decode(input, TypeToken.of(new Safe<MyFoo>() {}));
+    System.out.println(myFoo);
+    assertThat(myFoo.s).isEqualTo("str");
+    assertThat(myFoo.subFoo.i).isEqualTo(1);
+  }
 }
