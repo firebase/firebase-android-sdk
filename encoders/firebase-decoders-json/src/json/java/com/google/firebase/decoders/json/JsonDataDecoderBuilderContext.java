@@ -164,25 +164,11 @@ public class JsonDataDecoderBuilderContext implements DataDecoder {
     while (reader.hasNext()) {
       String fieldName = reader.nextName();
       FieldRef<?> fieldRef = decoderCtx.getFieldRef(fieldName);
-      if (reader.peek().equals(JsonToken.NULL)) {
-        reader.nextNull();
-        creationCtx.put(fieldRef, null);
-      } else if (fieldRef instanceof FieldRef.Primitive) {
-        decodePrimitive(fieldRef, creationCtx);
-      } else if (isSingleValue(fieldRef)) {
-        decodeSingleValue(fieldRef, creationCtx);
-      } else if (fieldRef instanceof FieldRef.Boxed) {
-        creationCtx.put(fieldRef, decode(fieldRef.getTypeToken()));
-      }
+      creationCtx.put(fieldRef, decode(fieldRef.getTypeToken()));
     }
     reader.endObject();
     decoderCtx.decodeInlineObjIfAny(creationCtx);
     return creationCtx;
-  }
-
-  private <T> boolean isSingleValue(FieldRef<T> fieldRef) {
-    TypeToken<T> typeToken = fieldRef.getTypeToken();
-    return isSingleValue(typeToken);
   }
 
   private <T> boolean isSingleValue(TypeToken<T> typeToken) {
@@ -203,13 +189,6 @@ public class JsonDataDecoderBuilderContext implements DataDecoder {
         || clazz.equals(Double.class)
         || clazz.equals(String.class)
         || clazz.equals(Boolean.class);
-  }
-
-  private <T> void decodeSingleValue(FieldRef ref, CreationContextImpl creationContext)
-      throws IOException {
-    @SuppressWarnings("unchecked")
-    TypeToken.ClassToken<T> classToken = (TypeToken.ClassToken<T>) ref.getTypeToken();
-    creationContext.put(ref, decodeSingleValue(classToken));
   }
 
   // TODO: support Date
@@ -238,20 +217,6 @@ public class JsonDataDecoderBuilderContext implements DataDecoder {
   }
 
   // TODO: Avoid auto-boxing and un-boxing
-  private <T> void decodePrimitive(FieldRef ref, CreationContextImpl creationContext)
-      throws IOException {
-    @SuppressWarnings("unchecked")
-    TypeToken<T> typeToken = (TypeToken<T>) ref.getTypeToken();
-    if (typeToken instanceof TypeToken.ClassToken) {
-      @SuppressWarnings("unchecked")
-      TypeToken.ClassToken<T> classToken = (TypeToken.ClassToken<T>) ref.getTypeToken();
-      creationContext.put(ref, decodePrimitive(classToken));
-    } else {
-      throw new IllegalArgumentException(
-          "FieldRef should contain ClassToken type.\n" + typeToken + " was found.");
-    }
-  }
-
   @SuppressWarnings("unchecked")
   private <T> T decodePrimitive(TypeToken.ClassToken<T> classToken) throws IOException {
     Class<T> clazz = classToken.getRawType();
