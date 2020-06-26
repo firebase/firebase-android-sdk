@@ -1,0 +1,23 @@
+// Signature format: 2.0
+package com.google.firebase.encoders.protobuf {
+
+  public class LengthCountingOutputStream extends java.io.OutputStream {
+    ctor public LengthCountingOutputStream();
+    method public int getLength();
+    method public void write(int) throws java.io.IOException;
+  }
+
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @java.lang.annotation.Target({java.lang.annotation.ElementType.METHOD, java.lang.annotation.ElementType.FIELD}) public @interface Protobuf {
+    method public abstract int tag();
+  }
+
+  public class ProtobufDataEncoderBuilder implements com.google.firebase.encoders.config.EncoderConfig<com.google.firebase.encoders.protobuf.ProtobufDataEncoderBuilder> {
+    ctor public ProtobufDataEncoderBuilder();
+    method @NonNull public com.google.firebase.encoders.GenericEncoder<java.io.OutputStream,byte[]> build();
+    method @NonNull public com.google.firebase.encoders.protobuf.ProtobufDataEncoderBuilder configureWith(@NonNull com.google.firebase.encoders.config.Configurator);
+    method @NonNull public <U> com.google.firebase.encoders.protobuf.ProtobufDataEncoderBuilder registerEncoder(@NonNull Class<U>, @NonNull com.google.firebase.encoders.ObjectEncoder<? super U>);
+    method @NonNull public <U> com.google.firebase.encoders.protobuf.ProtobufDataEncoderBuilder registerEncoder(@NonNull Class<U>, @NonNull com.google.firebase.encoders.ValueEncoder<? super U>);
+  }
+
+}
+
