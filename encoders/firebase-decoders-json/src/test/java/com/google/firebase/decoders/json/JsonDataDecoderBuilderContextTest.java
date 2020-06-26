@@ -16,7 +16,6 @@ package com.google.firebase.decoders.json;
 
 import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertThrows;
 
 import androidx.annotation.NonNull;
 import com.google.firebase.decoders.FieldRef;

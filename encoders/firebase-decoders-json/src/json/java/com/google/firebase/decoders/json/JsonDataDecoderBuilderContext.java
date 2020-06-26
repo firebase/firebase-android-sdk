@@ -28,10 +28,10 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public class JsonDataDecoderBuilderContext implements DataDecoder {
   private Map<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
@@ -150,9 +150,7 @@ public class JsonDataDecoderBuilderContext implements DataDecoder {
 
   private <T> boolean isPreDefinedObject(TypeToken.ClassToken<T> classToken) {
     Class<T> clazz = classToken.getRawType();
-    return List.class.isAssignableFrom(clazz)
-        || Map.class.isAssignableFrom(clazz)
-        || Set.class.isAssignableFrom(clazz);
+    return Collection.class.isAssignableFrom(clazz) || Map.class.isAssignableFrom(clazz);
   }
 
   private <T> T decodePreDefinedObject(TypeToken.ClassToken<T> classToken) throws IOException {
@@ -161,12 +159,11 @@ public class JsonDataDecoderBuilderContext implements DataDecoder {
       @SuppressWarnings("unchecked")
       T t = (T) decodeMap((TypeToken.ClassToken<Map>) classToken);
       return t;
-    } else if (List.class.isAssignableFrom(clazz)) {
-      // TODO: support List
-    } else if (Set.class.isAssignableFrom(clazz)) {
-      // TODO: support List
+    } else {
+      @SuppressWarnings("unchecked")
+      T t = (T) decodeCollection((TypeToken.ClassToken<Collection>) classToken);
+      return t;
     }
-    return null;
   }
 
   private <K, V, T extends Map<K, V>> T decodeMap(TypeToken.ClassToken<T> classToken)
@@ -200,6 +197,27 @@ public class JsonDataDecoderBuilderContext implements DataDecoder {
     reader.endObject();
 
     return map;
+  }
+
+  private <E, T extends Collection<E>> T decodeCollection(TypeToken.ClassToken<T> classToken)
+      throws IOException {
+    TypeToken<E> componentTypeToken = classToken.getTypeArguments().at(0);
+    T collection = null;
+    try {
+      collection = classToken.getRawType().getDeclaredConstructor().newInstance();
+    } catch (Exception e) {
+      throw new IllegalArgumentException(
+          classToken.getRawType()
+              + " cannot be initialized.\n"
+              + "Do not pass abstract class and an interface.\n"
+              + e);
+    }
+    reader.beginArray();
+    while (reader.hasNext()) {
+      collection.add(decode(componentTypeToken));
+    }
+    reader.endArray();
+    return collection;
   }
 
   @SuppressWarnings("unchecked")
