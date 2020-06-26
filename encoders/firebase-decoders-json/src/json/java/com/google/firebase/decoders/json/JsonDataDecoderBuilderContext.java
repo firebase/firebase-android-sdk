@@ -52,7 +52,10 @@ public class JsonDataDecoderBuilderContext implements DataDecoder {
   }
 
   private <T> T decode(TypeToken<T> typeToken) throws IOException {
-    if (typeToken instanceof TypeToken.ClassToken) {
+    if (reader.peek().equals(JsonToken.NULL)) {
+      reader.nextNull();
+      return defaultValue(typeToken);
+    } else if (typeToken instanceof TypeToken.ClassToken) {
       TypeToken.ClassToken<T> classToken = (TypeToken.ClassToken<T>) typeToken;
       return decodeClassToken(classToken);
     } else if (typeToken instanceof TypeToken.ArrayToken) {
@@ -91,53 +94,55 @@ public class JsonDataDecoderBuilderContext implements DataDecoder {
       return convertGenericListToPrimitiveArray(list, componentTypeToken.getRawType(), arrayToken);
     }
     @SuppressWarnings("unchecked") // Safe, list is not empty
-    E[] arr = (E[]) Array.newInstance(componentTypeToken.getRawType(), list.size());
+    E[] arr =
+        (E[]) Array.newInstance(componentTypeToken.getRawType(), list == null ? 0 : list.size());
     @SuppressWarnings("unchecked") // Safe, because T == E[]
-    T t = (T) list.toArray(arr);
+    T t = list == null ? (T) arr : (T) list.toArray(arr);
     return t;
   }
 
   private static <T> T convertGenericListToPrimitiveArray(
       List<Object> list, Class<?> clazz, TypeToken.ArrayToken<T> arrayToken) {
+    int size = list == null ? 0 : list.size();
     if (clazz.equals(int.class)) {
-      int[] arr = new int[list.size()];
-      for (int i = 0; i < list.size(); i++) {
+      int[] arr = new int[size];
+      for (int i = 0; i < size; i++) {
         arr[i] = (int) list.get(i);
       }
       return (T) arr;
     } else if (clazz.equals(short.class)) {
-      short[] arr = new short[list.size()];
-      for (int i = 0; i < list.size(); i++) {
+      short[] arr = new short[size];
+      for (int i = 0; i < size; i++) {
         arr[i] = (short) list.get(i);
       }
       return (T) arr;
     } else if (clazz.equals(long.class)) {
-      long[] arr = new long[list.size()];
-      for (int i = 0; i < list.size(); i++) {
+      long[] arr = new long[size];
+      for (int i = 0; i < size; i++) {
         arr[i] = (long) list.get(i);
       }
       return (T) arr;
     } else if (clazz.equals(double.class)) {
-      double[] arr = new double[list.size()];
-      for (int i = 0; i < list.size(); i++) {
+      double[] arr = new double[size];
+      for (int i = 0; i < size; i++) {
         arr[i] = (double) list.get(i);
       }
       return (T) arr;
     } else if (clazz.equals(float.class)) {
-      float[] arr = new float[list.size()];
-      for (int i = 0; i < list.size(); i++) {
+      float[] arr = new float[size];
+      for (int i = 0; i < size; i++) {
         arr[i] = (float) list.get(i);
       }
       return (T) arr;
     } else if (clazz.equals(char.class)) {
-      char[] arr = new char[list.size()];
-      for (int i = 0; i < list.size(); i++) {
+      char[] arr = new char[size];
+      for (int i = 0; i < size; i++) {
         arr[i] = (char) list.get(i);
       }
       return (T) arr;
     } else if (clazz.equals(boolean.class)) {
-      boolean[] arr = new boolean[list.size()];
-      for (int i = 0; i < list.size(); i++) {
+      boolean[] arr = new boolean[size];
+      for (int i = 0; i < size; i++) {
         arr[i] = (boolean) list.get(i);
       }
       return (T) arr;
@@ -237,6 +242,35 @@ public class JsonDataDecoderBuilderContext implements DataDecoder {
     } else {
       throw new IllegalArgumentException("Excepted primitive type. But " + clazz + " was found.");
     }
+  }
+
+  @SuppressWarnings("unchecked")
+  private <T> T defaultValue(TypeToken<T> typeToken) {
+    if (typeToken instanceof TypeToken.ArrayToken) {
+      return convertGenericListToArray(null, (TypeToken.ArrayToken<T>) typeToken);
+    } else if (typeToken instanceof TypeToken.ClassToken) {
+      Class<T> clazz = typeToken.getRawType();
+      if (clazz.equals(String.class)) {
+        return (T) "";
+      } else if (clazz.equals(boolean.class) || clazz.equals(Boolean.class)) {
+        return (T) Boolean.valueOf(false);
+      } else if (clazz.equals(int.class) || clazz.equals(Integer.class)) {
+        return (T) Integer.valueOf(0);
+      } else if (clazz.equals(long.class) || clazz.equals(Long.class)) {
+        return (T) Long.valueOf(0);
+      } else if (clazz.equals(short.class) || clazz.equals(Short.class)) {
+        return (T) Short.valueOf((short) 0);
+      } else if (clazz.equals(float.class) || clazz.equals(Float.class)) {
+        return (T) Float.valueOf(0);
+      } else if (clazz.equals(double.class) || clazz.equals(Double.class)) {
+        return (T) Double.valueOf(0);
+      } else if (clazz.equals(char.class) || clazz.equals(Character.class)) {
+        return (T) (Character) Character.MIN_VALUE;
+      } else {
+        return null;
+      }
+    }
+    throw new EncodingException("Unknown typeToken: " + typeToken);
   }
 
   private <T> ObjectDecoderContextImpl<T> getObjectDecodersCtx(TypeToken.ClassToken<T> classToken) {
