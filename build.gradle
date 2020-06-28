@@ -36,7 +36,7 @@ buildscript {
         classpath 'gradle.plugin.com.github.sherter.google-java-format:google-java-format-gradle-plugin:0.8'
         classpath 'com.google.gms:google-services:4.3.3'
         classpath 'me.tatarka:gradle-retrolambda:3.7.1'
-        classpath 'digital.wup:android-maven-publish:3.6.2'
+        classpath 'digital.wup:android-maven-publish:3.6.3'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
         classpath 'org.jlleitschuh.gradle:ktlint-gradle:7.1.0'
     }
