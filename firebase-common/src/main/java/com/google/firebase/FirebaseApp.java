@@ -149,8 +149,9 @@ public class FirebaseApp {
   /**
    * Returns the specified {@link EmulatorSettings} or a default.
    *
-   * <p>Calling this method "freezes" the emulator settings and future calls to enableEmulators on
-   * the same FirebaseApp instance will fail.
+   * <p>TODO(samstern): Un-hide this once Firestore, Database, and Functions are implemented
+   *
+   * @hide
    */
   @NonNull
   public EmulatorSettings getEmulatorSettings() {
@@ -329,7 +330,10 @@ public class FirebaseApp {
    * com.google.firebase.emulators.EmulatedServiceSettings} for {@link FirebaseDatabase#EMULATOR},
    * then calls to Cloud Firestore will communicate with the emulator rather than production.
    *
+   * <p>TODO(samstern): Un-hide this once Firestore, Database, and Functions are implemented
+   *
    * @param emulatorSettings the emulator settings for all services.
+   * @hide
    */
   public void enableEmulators(@NonNull EmulatorSettings emulatorSettings) {
     checkNotDeleted();
