@@ -248,7 +248,8 @@ public class JsonDataDecoderBuilderContext implements DataDecoder {
   @SuppressWarnings("unchecked")
   private <T> T defaultValue(TypeToken<T> typeToken) {
     if (typeToken instanceof TypeToken.ArrayToken) {
-      return convertGenericListToArray(Collections.emptyList(), (TypeToken.ArrayToken<T>) typeToken);
+      return convertGenericListToArray(
+          Collections.emptyList(), (TypeToken.ArrayToken<T>) typeToken);
     } else if (typeToken instanceof TypeToken.ClassToken) {
       Class<T> clazz = typeToken.getRawType();
       if (clazz.equals(String.class)) {
