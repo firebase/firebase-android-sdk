@@ -28,6 +28,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -247,7 +248,7 @@ public class JsonDataDecoderBuilderContext implements DataDecoder {
   @SuppressWarnings("unchecked")
   private <T> T defaultValue(TypeToken<T> typeToken) {
     if (typeToken instanceof TypeToken.ArrayToken) {
-      return convertGenericListToArray(null, (TypeToken.ArrayToken<T>) typeToken);
+      return convertGenericListToArray(Collections.emptyList(), (TypeToken.ArrayToken<T>) typeToken);
     } else if (typeToken instanceof TypeToken.ClassToken) {
       Class<T> clazz = typeToken.getRawType();
       if (clazz.equals(String.class)) {
