@@ -18,8 +18,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import android.content.SharedPreferences;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
-import com.google.firebase.iid.internal.FirebaseInstanceIdInternal;
+import com.google.firebase.installations.FirebaseInstallationsApi;
 
 public class IdManagerTest extends CrashlyticsTestCase {
 
@@ -56,8 +57,8 @@ public class IdManagerTest extends CrashlyticsTestCase {
   }
 
   private IdManager createIdManager(String instanceId) {
-    FirebaseInstanceIdInternal iid = mock(FirebaseInstanceIdInternal.class);
-    when(iid.getId()).thenReturn(instanceId);
+    FirebaseInstallationsApi iid = mock(FirebaseInstallationsApi.class);
+    when(iid.getId()).thenReturn(Tasks.forResult(instanceId));
     return new IdManager(getContext(), getContext().getPackageName(), iid);
   }
 

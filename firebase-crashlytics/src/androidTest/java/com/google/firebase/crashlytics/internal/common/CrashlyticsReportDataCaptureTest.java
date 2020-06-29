@@ -21,10 +21,11 @@ import static org.mockito.Mockito.when;
 import android.content.Context;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.runner.AndroidJUnit4;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event.Application.Execution;
 import com.google.firebase.crashlytics.internal.stacktrace.StackTraceTrimmingStrategy;
-import com.google.firebase.iid.internal.FirebaseInstanceIdInternal;
+import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
@@ -43,12 +44,12 @@ public class CrashlyticsReportDataCaptureTest {
 
   @Mock private StackTraceTrimmingStrategy stackTraceTrimmingStrategy;
 
-  @Mock private FirebaseInstanceIdInternal instanceIdMock;
+  @Mock private FirebaseInstallationsApi instanceIdMock;
 
   @Before
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
-    when(instanceIdMock.getId()).thenReturn("installId");
+    when(instanceIdMock.getId()).thenReturn(Tasks.forResult("installId"));
     when(stackTraceTrimmingStrategy.getTrimmedStackTrace(any(StackTraceElement[].class)))
         .thenAnswer(i -> i.getArguments()[0]);
     final Context context = ApplicationProvider.getApplicationContext();

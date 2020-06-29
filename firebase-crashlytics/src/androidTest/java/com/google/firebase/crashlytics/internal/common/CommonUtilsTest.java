@@ -25,9 +25,10 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.util.Log;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
 import com.google.firebase.crashlytics.internal.Logger;
-import com.google.firebase.iid.internal.FirebaseInstanceIdInternal;
+import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
@@ -352,7 +353,8 @@ public class CommonUtilsTest extends CrashlyticsTestCase {
 
   private File createEmptyClsFile(File dir) throws IOException {
     final Context context = getContext();
-    FirebaseInstanceIdInternal instanceIdMock = mock(FirebaseInstanceIdInternal.class);
+    FirebaseInstallationsApi instanceIdMock = mock(FirebaseInstallationsApi.class);
+    when(instanceIdMock.getId()).thenReturn(Tasks.forResult("instanceId"));
     final CLSUUID id =
         new CLSUUID(new IdManager(context, context.getPackageName(), instanceIdMock));
     final File f = new File(dir, id.toString() + ".cls");
