@@ -27,11 +27,23 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.Array;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.PriorityQueue;
+import java.util.Queue;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.SortedSet;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 public class JsonDataDecoderBuilderContext implements DataDecoder {
   private Map<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
@@ -173,17 +185,7 @@ public class JsonDataDecoderBuilderContext implements DataDecoder {
     if (!isSingleValue(keyTypeToken))
       throw new IllegalArgumentException(keyTypeToken + " cannot be used as Map key.");
 
-    T map = null;
-    try {
-      map = classToken.getRawType().getDeclaredConstructor().newInstance();
-    } catch (Exception e) {
-      throw new IllegalArgumentException(
-          classToken.getRawType()
-              + " cannot be initialized.\n"
-              + "Do not pass abstract class and an interface.\n"
-              + e);
-    }
-
+    T map = newInstance(classToken);
     reader.beginObject();
     while (reader.hasNext()) {
       String keyLiteral = reader.nextName();
@@ -202,22 +204,40 @@ public class JsonDataDecoderBuilderContext implements DataDecoder {
   private <E, T extends Collection<E>> T decodeCollection(TypeToken.ClassToken<T> classToken)
       throws IOException {
     TypeToken<E> componentTypeToken = classToken.getTypeArguments().at(0);
-    T collection = null;
-    try {
-      collection = classToken.getRawType().getDeclaredConstructor().newInstance();
-    } catch (Exception e) {
-      throw new IllegalArgumentException(
-          classToken.getRawType()
-              + " cannot be initialized.\n"
-              + "Do not pass abstract class and an interface.\n"
-              + e);
-    }
+    T collection = newInstance(classToken);
     reader.beginArray();
     while (reader.hasNext()) {
       collection.add(decode(componentTypeToken));
     }
     reader.endArray();
     return collection;
+  }
+
+  @SuppressWarnings("unchecked")
+  private <T> T newInstance(TypeToken.ClassToken<T> classToken) {
+    Class<T> clazz = classToken.getRawType();
+    if (clazz.equals(HashMap.class) || clazz.equals(Map.class)) {
+      return (T) new HashMap<>();
+    } else if (clazz.equals(LinkedHashMap.class)) {
+      return (T) new LinkedHashMap<>();
+    } else if (clazz.equals(TreeMap.class) || clazz.equals(SortedMap.class)) {
+      return (T) new TreeMap<>();
+    } else if (clazz.equals(ArrayList.class) || clazz.equals(List.class)) {
+      return (T) new ArrayList<>();
+    } else if (clazz.equals(ArrayDeque.class)
+        || clazz.equals(Deque.class)
+        || clazz.equals(Queue.class)) {
+      return (T) new ArrayDeque<>();
+    } else if (clazz.equals(PriorityQueue.class)) {
+      return (T) new PriorityQueue<>();
+    } else if (clazz.equals(HashSet.class) || clazz.equals(Set.class)) {
+      return (T) new HashSet<>();
+    } else if (clazz.equals(LinkedHashSet.class)) {
+      return (T) new LinkedHashSet<>();
+    } else if (clazz.equals(TreeSet.class) || clazz.equals(SortedSet.class)) {
+      return (T) new TreeSet<>();
+    }
+    throw new IllegalArgumentException(classToken + " not supported.");
   }
 
   @SuppressWarnings("unchecked")

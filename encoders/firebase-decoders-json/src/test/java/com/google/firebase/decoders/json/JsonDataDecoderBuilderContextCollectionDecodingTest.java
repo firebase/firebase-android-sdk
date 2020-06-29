@@ -16,7 +16,6 @@ package com.google.firebase.decoders.json;
 
 import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertThrows;
 
 import androidx.annotation.NonNull;
 import com.google.firebase.decoders.FieldRef;
@@ -29,12 +28,17 @@ import com.google.firebase.encoders.FieldDescriptor;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -61,7 +65,7 @@ public class JsonDataDecoderBuilderContextCollectionDecodingTest {
   static class ListFoo {
     List<String> l;
 
-    public ListFoo(List<String> l) {
+    ListFoo(List<String> l) {
       this.l = l;
     }
   }
@@ -70,8 +74,8 @@ public class JsonDataDecoderBuilderContextCollectionDecodingTest {
     @NonNull
     @Override
     public TypeCreator<ListFoo> decode(@NonNull ObjectDecoderContext<ListFoo> ctx) {
-      FieldRef.Boxed<LinkedList<String>> lField =
-          ctx.decode(FieldDescriptor.of("l"), TypeToken.of(new Safe<LinkedList<String>>() {}));
+      FieldRef.Boxed<List<String>> lField =
+          ctx.decode(FieldDescriptor.of("l"), TypeToken.of(new Safe<List<String>>() {}));
       return (creationCtx -> new ListFoo(creationCtx.get(lField)));
     }
   }
@@ -93,7 +97,7 @@ public class JsonDataDecoderBuilderContextCollectionDecodingTest {
   }
 
   @Test
-  public void decodeAbstractClass_shouldThrowException() throws IOException {
+  public void list_shouldBeDecodedAsArrayListClassInDefault() throws IOException {
     Map<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
     JsonDataDecoderBuilderContext jsonDataDecoderBuilderContext =
         new JsonDataDecoderBuilderContext(objectDecoders);
@@ -101,11 +105,65 @@ public class JsonDataDecoderBuilderContextCollectionDecodingTest {
     String json = "[1,2]";
     InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
 
-    assertThrows(
-        "Abstract class and an interface can not be initialized",
-        IllegalArgumentException.class,
-        () -> {
-          jsonDataDecoderBuilderContext.decode(input, TypeToken.of(new Safe<List<Integer>>() {}));
-        });
+    List<Integer> l =
+        jsonDataDecoderBuilderContext.decode(input, TypeToken.of(new Safe<List<Integer>>() {}));
+    assertThat(l instanceof ArrayList).isTrue();
+  }
+
+  @Test
+  public void set_shouldBeDecodedAsHashSetClassInDefault() throws IOException {
+    Map<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
+    JsonDataDecoderBuilderContext jsonDataDecoderBuilderContext =
+        new JsonDataDecoderBuilderContext(objectDecoders);
+
+    String json = "[1,2]";
+    InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
+
+    Set<Integer> l =
+        jsonDataDecoderBuilderContext.decode(input, TypeToken.of(new Safe<Set<Integer>>() {}));
+    assertThat(l instanceof HashSet).isTrue();
+  }
+
+  @Test
+  public void queue_shouldBeDecodedAsArrayDequeInDefault() throws IOException {
+    Map<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
+    JsonDataDecoderBuilderContext jsonDataDecoderBuilderContext =
+        new JsonDataDecoderBuilderContext(objectDecoders);
+
+    String json = "[1,2]";
+    InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
+
+    Queue<Integer> l =
+        jsonDataDecoderBuilderContext.decode(input, TypeToken.of(new Safe<Queue<Integer>>() {}));
+    assertThat(l instanceof ArrayDeque).isTrue();
+  }
+
+  @Test
+  public void dequeue_shouldBeDecodedAsArrayDequeInDefault() throws IOException {
+    Map<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
+    JsonDataDecoderBuilderContext jsonDataDecoderBuilderContext =
+        new JsonDataDecoderBuilderContext(objectDecoders);
+
+    String json = "[1,2]";
+    InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
+
+    Deque<Integer> l =
+        jsonDataDecoderBuilderContext.decode(input, TypeToken.of(new Safe<Deque<Integer>>() {}));
+    assertThat(l instanceof ArrayDeque).isTrue();
+  }
+
+  @Test
+  public void sortedSet_shouldBeDecodedAsTreeSetInDefault() throws IOException {
+    Map<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
+    JsonDataDecoderBuilderContext jsonDataDecoderBuilderContext =
+        new JsonDataDecoderBuilderContext(objectDecoders);
+
+    String json = "[1,2]";
+    InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
+
+    SortedSet<Integer> l =
+        jsonDataDecoderBuilderContext.decode(
+            input, TypeToken.of(new Safe<SortedSet<Integer>>() {}));
+    assertThat(l instanceof TreeSet).isTrue();
   }
 }

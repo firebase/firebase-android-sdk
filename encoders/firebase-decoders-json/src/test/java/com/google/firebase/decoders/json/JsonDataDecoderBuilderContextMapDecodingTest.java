@@ -31,6 +31,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -160,20 +162,32 @@ public class JsonDataDecoderBuilderContextMapDecodingTest {
   }
 
   @Test
-  public void decodeAbstractMapClass_shouldThrowException() throws IOException {
+  public void map_shouldDecodedAsHashMapClassInDefault() throws IOException {
     Map<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
     JsonDataDecoderBuilderContext jsonDataDecoderBuilderContext =
         new JsonDataDecoderBuilderContext(objectDecoders);
 
-    String json = "{\"1\": \"1\", \"2\": \"2\"}";
+    String json = "{\"1\": \"1\"}";
     InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
 
-    assertThrows(
-        "Abstract class and an interface can not be initialized",
-        IllegalArgumentException.class,
-        () -> {
-          jsonDataDecoderBuilderContext.decode(
-              input, TypeToken.of(new Safe<Map<String, String>>() {}));
-        });
+    Map<String, String> map =
+        jsonDataDecoderBuilderContext.decode(
+            input, TypeToken.of(new Safe<Map<String, String>>() {}));
+    assertThat(map instanceof HashMap).isTrue();
+  }
+
+  @Test
+  public void sortedMap_shouldDecodedAsHashMapClassInDefault() throws IOException {
+    Map<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
+    JsonDataDecoderBuilderContext jsonDataDecoderBuilderContext =
+        new JsonDataDecoderBuilderContext(objectDecoders);
+
+    String json = "{\"1\": \"1\"}";
+    InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
+
+    SortedMap<String, String> map =
+        jsonDataDecoderBuilderContext.decode(
+            input, TypeToken.of(new Safe<SortedMap<String, String>>() {}));
+    assertThat(map instanceof TreeMap).isTrue();
   }
 }
