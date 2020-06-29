@@ -16,6 +16,7 @@ package com.google.firebase.decoders.json;
 
 import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.Assert.assertThrows;
 
 import androidx.annotation.NonNull;
 import com.google.firebase.decoders.FieldRef;
@@ -37,15 +38,32 @@ import org.robolectric.RobolectricTestRunner;
 @RunWith(RobolectricTestRunner.class)
 public class JsonDataDecoderBuilderContextDefaultValueTest {
   @Test
-  public void nullValueInNumericArray_shouldBeDecodedAsZero() throws IOException {
+  public void nullValueInBoxedNumericArray_shouldKeptAsNull() throws IOException {
+    Map<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
+    JsonDataDecoderBuilderContext jsonDataDecoderBuilderContext =
+        new JsonDataDecoderBuilderContext(objectDecoders);
+
+    String json = "[0, null]";
+    InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
+    Integer[] intArr =
+        jsonDataDecoderBuilderContext.decode(input, TypeToken.of(new Safe<Integer[]>() {}));
+    assertThat(intArr).isEqualTo(new Integer[] {0, null});
+  }
+
+  @Test
+  public void nullValueInPrimitiveNumericArray_shouldThrowException() throws IOException {
     Map<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
     JsonDataDecoderBuilderContext jsonDataDecoderBuilderContext =
         new JsonDataDecoderBuilderContext(objectDecoders);
 
     String json = "[null]";
     InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
-    int[] intArr = jsonDataDecoderBuilderContext.decode(input, TypeToken.of(new Safe<int[]>() {}));
-    assertThat(intArr).isEqualTo(new int[] {0});
+    assertThrows(
+        "primitive element should not have null value",
+        Exception.class,
+        () -> {
+          jsonDataDecoderBuilderContext.decode(input, TypeToken.of(new Safe<int[]>() {}));
+        });
   }
 
   static class Foo {
@@ -56,6 +74,7 @@ public class JsonDataDecoderBuilderContextDefaultValueTest {
     float f;
     boolean b;
     char c;
+    int[] ai;
     Integer ii;
     Short ss;
     Long ll;
@@ -65,6 +84,7 @@ public class JsonDataDecoderBuilderContextDefaultValueTest {
     Character cc;
     String str;
     Object obj;
+    Integer[] aii;
 
     Foo(
         int i,
@@ -74,6 +94,7 @@ public class JsonDataDecoderBuilderContextDefaultValueTest {
         float f,
         boolean b,
         char c,
+        int[] ai,
         Integer ii,
         Short ss,
         Long ll,
@@ -82,7 +103,8 @@ public class JsonDataDecoderBuilderContextDefaultValueTest {
         Boolean bb,
         Character cc,
         String str,
-        Object obj) {
+        Object obj,
+        Integer[] aii) {
       this.i = i;
       this.s = s;
       this.l = l;
@@ -90,6 +112,7 @@ public class JsonDataDecoderBuilderContextDefaultValueTest {
       this.f = f;
       this.b = b;
       this.c = c;
+      this.ai = ai;
       this.ii = ii;
       this.ss = ss;
       this.ll = ll;
@@ -99,6 +122,7 @@ public class JsonDataDecoderBuilderContextDefaultValueTest {
       this.cc = cc;
       this.str = str;
       this.obj = obj;
+      this.aii = aii;
     }
   }
 
@@ -114,6 +138,8 @@ public class JsonDataDecoderBuilderContextDefaultValueTest {
       FieldRef.Primitive<Float> fField = ctx.decodeFloat(FieldDescriptor.of("f"));
       FieldRef.Primitive<Boolean> bField = ctx.decodeBoolean(FieldDescriptor.of("b"));
       FieldRef.Primitive<Character> cField = ctx.decodeChar(FieldDescriptor.of("c"));
+      FieldRef.Boxed<int[]> aiField =
+          ctx.decode(FieldDescriptor.of("ai"), TypeToken.of(int[].class));
       FieldRef.Boxed<Integer> iiField =
           ctx.decode(FieldDescriptor.of("ii"), TypeToken.of(Integer.class));
       FieldRef.Boxed<Short> ssField =
@@ -131,6 +157,8 @@ public class JsonDataDecoderBuilderContextDefaultValueTest {
           ctx.decode(FieldDescriptor.of("str"), TypeToken.of(String.class));
       FieldRef.Boxed<Object> objField =
           ctx.decode(FieldDescriptor.of("obj"), TypeToken.of(Object.class));
+      FieldRef.Boxed<Integer[]> aiiField =
+          ctx.decode(FieldDescriptor.of("aii"), TypeToken.of(Integer[].class));
 
       return (creationCtx ->
           new Foo(
@@ -141,6 +169,7 @@ public class JsonDataDecoderBuilderContextDefaultValueTest {
               creationCtx.getFloat(fField),
               creationCtx.getBoolean(bField),
               creationCtx.getChar(cField),
+              creationCtx.get(aiField),
               creationCtx.get(iiField),
               creationCtx.get(ssField),
               creationCtx.get(llField),
@@ -149,19 +178,20 @@ public class JsonDataDecoderBuilderContextDefaultValueTest {
               creationCtx.get(bbField),
               creationCtx.get(ccField),
               creationCtx.get(strField),
-              creationCtx.get(objField)));
+              creationCtx.get(objField),
+              creationCtx.get(aiiField)));
     }
   }
 
   @Test
-  public void defaultNumericValues_areDecodeCorrectly() throws IOException {
+  public void jsonInputWithNullValues_DefaultValuesAreDecodeCorrectly() throws IOException {
     Map<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
     objectDecoders.put(Foo.class, new FooObjectDecoder());
     JsonDataDecoderBuilderContext jsonDataDecoderBuilderContext =
         new JsonDataDecoderBuilderContext(objectDecoders);
 
     String json =
-        "{\"i\":null, \"s\":null, \"l\":null, \"d\":null, \"f\":null, \"b\":null, \"c\":null, \"ii\":null, \"ss\":null, \"ll\":null, \"dd\":null, \"ff\":null, \"bb\":null, \"cc\":null, \"str\":null, \"obj\":null}";
+        "{\"s\":null, \"l\":null, \"d\":null, \"f\":null, \"b\":null, \"c\":null, \"ai\":null, \"ii\":null, \"ss\":null, \"ll\":null, \"dd\":null, \"ff\":null, \"bb\":null, \"cc\":null, \"str\":null, \"obj\":null, \"aii\":null}";
     InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
     Foo foo = jsonDataDecoderBuilderContext.decode(input, TypeToken.of(Foo.class));
 
@@ -172,6 +202,7 @@ public class JsonDataDecoderBuilderContextDefaultValueTest {
     assertThat(foo.f).isEqualTo(Float.valueOf(0));
     assertThat(foo.b).isEqualTo(false);
     assertThat(foo.c).isEqualTo(Character.MIN_VALUE);
+    assertThat(foo.ai).isEqualTo(new int[0]);
     assertThat(foo.ii).isEqualTo(0);
     assertThat(foo.ss).isEqualTo(0);
     assertThat(foo.ll).isEqualTo(0);
@@ -181,5 +212,37 @@ public class JsonDataDecoderBuilderContextDefaultValueTest {
     assertThat(foo.cc).isEqualTo(Character.MIN_VALUE);
     assertThat(foo.str).isEqualTo("");
     assertThat(foo.obj).isEqualTo(null);
+    assertThat(foo.aii).isEqualTo(new Integer[0]);
+  }
+
+  @Test
+  public void jsonInputWithMissingEntries_DefaultValuesAreDecodeCorrectly() throws IOException {
+    Map<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
+    objectDecoders.put(Foo.class, new FooObjectDecoder());
+    JsonDataDecoderBuilderContext jsonDataDecoderBuilderContext =
+        new JsonDataDecoderBuilderContext(objectDecoders);
+
+    String json = "{}";
+    InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
+    Foo foo = jsonDataDecoderBuilderContext.decode(input, TypeToken.of(Foo.class));
+
+    assertThat(foo.i).isEqualTo(0);
+    assertThat(foo.s).isEqualTo(0);
+    assertThat(foo.l).isEqualTo(0);
+    assertThat(foo.d).isEqualTo(Double.valueOf(0));
+    assertThat(foo.f).isEqualTo(Float.valueOf(0));
+    assertThat(foo.b).isEqualTo(false);
+    assertThat(foo.c).isEqualTo(Character.MIN_VALUE);
+    assertThat(foo.ai).isEqualTo(new int[0]);
+    assertThat(foo.ii).isEqualTo(0);
+    assertThat(foo.ss).isEqualTo(0);
+    assertThat(foo.ll).isEqualTo(0);
+    assertThat(foo.dd).isEqualTo(Double.valueOf(0));
+    assertThat(foo.ff).isEqualTo(Float.valueOf(0));
+    assertThat(foo.bb).isEqualTo(false);
+    assertThat(foo.cc).isEqualTo(Character.MIN_VALUE);
+    assertThat(foo.str).isEqualTo("");
+    assertThat(foo.obj).isEqualTo(null);
+    assertThat(foo.aii).isEqualTo(new Integer[0]);
   }
 }

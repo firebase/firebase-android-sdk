@@ -28,7 +28,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,7 +54,7 @@ public class JsonDataDecoderBuilderContext implements DataDecoder {
   private <T> T decode(TypeToken<T> typeToken) throws IOException {
     if (reader.peek().equals(JsonToken.NULL)) {
       reader.nextNull();
-      return defaultValue(typeToken);
+      return null;
     } else if (typeToken instanceof TypeToken.ClassToken) {
       TypeToken.ClassToken<T> classToken = (TypeToken.ClassToken<T>) typeToken;
       return decodeClassToken(classToken);
@@ -87,8 +86,7 @@ public class JsonDataDecoderBuilderContext implements DataDecoder {
     return convertGenericListToArray(list, arrayToken);
   }
 
-  private static <T, E> T convertGenericListToArray(
-      List<Object> list, TypeToken.ArrayToken<T> arrayToken) {
+  static <T, E> T convertGenericListToArray(List<Object> list, TypeToken.ArrayToken<T> arrayToken) {
     @SuppressWarnings("unchecked")
     TypeToken<E> componentTypeToken = (TypeToken<E>) arrayToken.getComponentType();
     if (componentTypeToken.getRawType().isPrimitive()) {
@@ -243,36 +241,6 @@ public class JsonDataDecoderBuilderContext implements DataDecoder {
     } else {
       throw new IllegalArgumentException("Excepted primitive type. But " + clazz + " was found.");
     }
-  }
-
-  @SuppressWarnings("unchecked")
-  private <T> T defaultValue(TypeToken<T> typeToken) {
-    if (typeToken instanceof TypeToken.ArrayToken) {
-      return convertGenericListToArray(
-          Collections.emptyList(), (TypeToken.ArrayToken<T>) typeToken);
-    } else if (typeToken instanceof TypeToken.ClassToken) {
-      Class<T> clazz = typeToken.getRawType();
-      if (clazz.equals(String.class)) {
-        return (T) "";
-      } else if (clazz.equals(boolean.class) || clazz.equals(Boolean.class)) {
-        return (T) Boolean.valueOf(false);
-      } else if (clazz.equals(int.class) || clazz.equals(Integer.class)) {
-        return (T) Integer.valueOf(0);
-      } else if (clazz.equals(long.class) || clazz.equals(Long.class)) {
-        return (T) Long.valueOf(0);
-      } else if (clazz.equals(short.class) || clazz.equals(Short.class)) {
-        return (T) Short.valueOf((short) 0);
-      } else if (clazz.equals(float.class) || clazz.equals(Float.class)) {
-        return (T) Float.valueOf(0);
-      } else if (clazz.equals(double.class) || clazz.equals(Double.class)) {
-        return (T) Double.valueOf(0);
-      } else if (clazz.equals(char.class) || clazz.equals(Character.class)) {
-        return (T) (Character) Character.MIN_VALUE;
-      } else {
-        return null;
-      }
-    }
-    throw new EncodingException("Unknown typeToken: " + typeToken);
   }
 
   private <T> ObjectDecoderContextImpl<T> getObjectDecodersCtx(TypeToken.ClassToken<T> classToken) {

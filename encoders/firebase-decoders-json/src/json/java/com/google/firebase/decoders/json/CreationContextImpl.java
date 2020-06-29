@@ -18,6 +18,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.decoders.CreationContext;
 import com.google.firebase.decoders.FieldRef;
+import com.google.firebase.decoders.TypeToken;
+import com.google.firebase.encoders.EncodingException;
+import java.util.Collections;
 import java.util.HashMap;
 
 public class CreationContextImpl implements CreationContext {
@@ -34,44 +37,90 @@ public class CreationContextImpl implements CreationContext {
   @Override
   public <TField> TField get(@NonNull FieldRef.Boxed<TField> ref) {
     Object val = ctx.get(ref);
-    if (val == null) return null;
+    if (val == null) {
+      return getDefault(ref.getTypeToken());
+    }
     @SuppressWarnings("unchecked")
     TField tField = (TField) val;
     return tField;
   }
 
+  @SuppressWarnings("unchecked")
+  private <T> T getDefault(TypeToken<T> typeToken) {
+    if (typeToken instanceof TypeToken.ArrayToken) {
+      return JsonDataDecoderBuilderContext.convertGenericListToArray(
+          Collections.emptyList(), (TypeToken.ArrayToken<T>) typeToken);
+    } else if (typeToken instanceof TypeToken.ClassToken) {
+      Class<T> clazz = typeToken.getRawType();
+      if (clazz.equals(String.class)) {
+        return (T) "";
+      } else if (clazz.equals(Boolean.class)) {
+        return (T) Boolean.valueOf(false);
+      } else if (clazz.equals(Integer.class)) {
+        return (T) Integer.valueOf(0);
+      } else if (clazz.equals(Long.class)) {
+        return (T) Long.valueOf(0);
+      } else if (clazz.equals(Short.class)) {
+        return (T) Short.valueOf((short) 0);
+      } else if (clazz.equals(Float.class)) {
+        return (T) Float.valueOf(0);
+      } else if (clazz.equals(Double.class)) {
+        return (T) Double.valueOf(0);
+      } else if (clazz.equals(Character.class)) {
+        return (T) (Character) Character.MIN_VALUE;
+      } else {
+        return null;
+      }
+    }
+    throw new EncodingException("Unknown typeToken: " + typeToken);
+  }
+
   @Override
   public boolean getBoolean(@NonNull FieldRef.Primitive<Boolean> ref) {
-    return (boolean) ctx.get(ref);
+    Object val = ctx.get(ref);
+    if (val == null) return false;
+    return (boolean) val;
   }
 
   @Override
   public int getInteger(@NonNull FieldRef.Primitive<Integer> ref) {
-    return (int) ctx.get(ref);
+    Object val = ctx.get(ref);
+    if (val == null) return 0;
+    return (int) val;
   }
 
   @Override
   public short getShort(@NonNull FieldRef.Primitive<Short> ref) {
-    return (short) ctx.get(ref);
+    Object val = ctx.get(ref);
+    if (val == null) return 0;
+    return (short) val;
   }
 
   @Override
   public long getLong(@NonNull FieldRef.Primitive<Long> ref) {
-    return (long) ctx.get(ref);
+    Object val = ctx.get(ref);
+    if (val == null) return 0;
+    return (long) val;
   }
 
   @Override
   public float getFloat(@NonNull FieldRef.Primitive<Float> ref) {
-    return (float) ctx.get(ref);
+    Object val = ctx.get(ref);
+    if (val == null) return 0;
+    return (float) val;
   }
 
   @Override
   public double getDouble(@NonNull FieldRef.Primitive<Double> ref) {
-    return (double) ctx.get(ref);
+    Object val = ctx.get(ref);
+    if (val == null) return 0;
+    return (double) val;
   }
 
   @Override
   public char getChar(@NonNull FieldRef.Primitive<Character> ref) {
-    return (char) ctx.get(ref);
+    Object val = ctx.get(ref);
+    if (val == null) return Character.MIN_VALUE;
+    return (char) val;
   }
 }
