@@ -220,7 +220,7 @@ class DynamicLinksTests : BaseTestCase() {
             }
         }
 
-        val efr = Integer.parseInt(dynamicLink.uri.getQueryParameter("efr")) == 1
+        val efr = Integer.parseInt(dynamicLink.uri.getQueryParameter("efr")!!) == 1
         assertThat(efr).isEqualTo(forcedRedirect)
     }
 }
