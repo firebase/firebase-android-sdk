@@ -18,15 +18,25 @@ import androidx.annotation.Keep
 import com.google.firebase.FirebaseApp
 import com.google.firebase.components.Component
 import com.google.firebase.components.ComponentRegistrar
+import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldPath
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.QueryDocumentSnapshot
 import com.google.firebase.firestore.QuerySnapshot
 import com.google.firebase.firestore.FirebaseFirestoreSettings
+import com.google.firebase.firestore.MetadataChanges
+import com.google.firebase.firestore.ListenerRegistration
 
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.platforminfo.LibraryVersionComponent
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.withContext
 
 /** Returns the [FirebaseFirestore] instance of the default [FirebaseApp]. */
 val Firebase.firestore: FirebaseFirestore
@@ -162,4 +172,52 @@ internal const val LIBRARY_NAME: String = "fire-fst-ktx"
 class FirebaseFirestoreKtxRegistrar : ComponentRegistrar {
     override fun getComponents(): List<Component<*>> =
             listOf(LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME))
+}
+
+/**
+ * Attach a snapshotListener to a DocumentReference and use it as a coroutine flow
+ * @param metadataChanges Indicates whether metadata-only changes
+ */
+fun DocumentReference.toFlow(metadataChanges: MetadataChanges = MetadataChanges.EXCLUDE) = flow {
+    val channel = Channel<DocumentSnapshot>(Channel.CONFLATED)
+    var listener: ListenerRegistration? = null
+    withContext(Dispatchers.Main.immediate) {
+        listener = addSnapshotListener(metadataChanges) { value, error ->
+            value?.let { channel.offer(it) }
+            error?.let { channel.close(it) }
+        }
+    }
+    try {
+        for (value in channel) {
+            emit(value)
+        }
+    } finally {
+        withContext(Dispatchers.Main.immediate + NonCancellable) {
+            listener?.remove()
+        }
+    }
+}
+
+/**
+ * Attach a snapshotListener to a Query and use it as a coroutine flow
+ * @param metadataChanges Indicates whether metadata-only changes
+ */
+fun Query.toFlow(metadataChanges: MetadataChanges = MetadataChanges.EXCLUDE): Flow<QuerySnapshot> = flow {
+    val channel = Channel<QuerySnapshot>(Channel.CONFLATED)
+    var listener: ListenerRegistration? = null
+    withContext(Dispatchers.Main.immediate) {
+        listener = addSnapshotListener(metadataChanges) { value, error ->
+            value?.let { channel.offer(it) }
+            error?.let { channel.close(it) }
+        }
+    }
+    try {
+        for (value in channel) {
+            emit(value)
+        }
+    } finally {
+        withContext(Dispatchers.Main.immediate + NonCancellable) {
+            listener?.remove()
+        }
+    }
 }
