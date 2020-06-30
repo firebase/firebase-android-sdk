@@ -152,7 +152,6 @@ package com.google.firebase.firestore {
     method public static void setLoggingEnabled(boolean);
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> terminate();
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> waitForPendingWrites();
-    field @NonNull public static final com.google.firebase.emulators.FirebaseEmulator EMULATOR;
   }
 
   public class FirebaseFirestoreException extends com.google.firebase.FirebaseException {

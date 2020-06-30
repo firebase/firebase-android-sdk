@@ -4,8 +4,6 @@
   the app was in the background.
 - [fixed] Fixed an issue that may have prevented the client from connecting
   to the backend immediately after a user signed in.
-- [feature] Firestore now supports connecting to a local emulator via
-  `FirebaseApp.enableEmulators()`.
 
 # 21.4.3
 - [changed] Firestore now limits the number of concurrent document lookups it
