@@ -25,7 +25,10 @@ import java.util.Map;
  * Settings that control which Firebase services should access a local emulator, rather than
  * production.
  *
+ * <p>TODO(samstern): Un-hide this once Firestore, Database, and Functions are implemented
+ *
  * @see com.google.firebase.FirebaseApp#enableEmulators(EmulatorSettings)
+ * @hide
  */
 public final class EmulatorSettings {
 

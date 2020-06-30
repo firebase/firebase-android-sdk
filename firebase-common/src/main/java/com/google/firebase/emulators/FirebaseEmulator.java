@@ -19,9 +19,12 @@ import androidx.annotation.NonNull;
 /**
  * Identifier Firebase services that can be emulated using the Firebase Emulator Suite.
  *
+ * <p>TODO(samstern): Un-hide this once Firestore, Database, and Functions are implemented
+ *
  * @see com.google.firebase.FirebaseApp#enableEmulators(EmulatorSettings)
  * @see EmulatorSettings
  * @see EmulatedServiceSettings
+ * @hide
  */
 public final class FirebaseEmulator {
 
@@ -33,15 +36,14 @@ public final class FirebaseEmulator {
    * @hide
    */
   @NonNull
-  public static FirebaseEmulator forName(@NonNull String name) {
+  public static FirebaseEmulator forName(String name) {
     return new FirebaseEmulator(name);
   }
 
-  private FirebaseEmulator(@NonNull String name) {
+  private FirebaseEmulator(String name) {
     this.name = name;
   }
 
-  @NonNull
   public String getName() {
     return name;
   }
