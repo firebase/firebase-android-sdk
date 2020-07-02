@@ -14,6 +14,8 @@
 
 package com.google.firebase.dynamiclinks.ktx
 
+import android.content.Intent
+import android.net.Uri
 import androidx.annotation.Keep
 import com.google.android.gms.tasks.Task
 import com.google.firebase.FirebaseApp
@@ -21,6 +23,7 @@ import com.google.firebase.dynamiclinks.FirebaseDynamicLinks
 import com.google.firebase.components.Component
 import com.google.firebase.components.ComponentRegistrar
 import com.google.firebase.dynamiclinks.DynamicLink
+import com.google.firebase.dynamiclinks.PendingDynamicLinkData
 import com.google.firebase.dynamiclinks.ShortDynamicLink
 
 import com.google.firebase.ktx.Firebase
@@ -116,6 +119,32 @@ fun FirebaseDynamicLinks.shortLinkAsync(suffix: Int, init: DynamicLink.Builder.(
     val builder = FirebaseDynamicLinks.getInstance().createDynamicLink()
     builder.init()
     return builder.buildShortDynamicLink(suffix)
+}
+
+/**
+ * Returns the [PendingDynamicLinkData] present in this [Intent], using the
+ * [FirebaseDynamicLinks] instance of the given [FirebaseApp].
+ */
+fun Intent.getFirebaseDynamicLink(firebaseApp: FirebaseApp): Task<PendingDynamicLinkData> {
+    return FirebaseDynamicLinks.getInstance(firebaseApp).getDynamicLink(this)
+}
+
+/**
+ * Returns the [PendingDynamicLinkData] present in this [Uri], using the
+ * [FirebaseDynamicLinks] instance of the given [FirebaseApp].
+ */
+fun Uri.getFirebaseDynamicLink(firebaseApp: FirebaseApp): Task<PendingDynamicLinkData> {
+    return FirebaseDynamicLinks.getInstance(firebaseApp).getDynamicLink(this)
+}
+
+/** Returns the [PendingDynamicLinkData] present in this [Intent] */
+fun Intent.getFirebaseDynamicLink(): Task<PendingDynamicLinkData> {
+    return FirebaseDynamicLinks.getInstance().getDynamicLink(this)
+}
+
+/** Returns the [PendingDynamicLinkData] present in this [Uri] */
+fun Uri.getFirebaseDynamicLink(): Task<PendingDynamicLinkData> {
+    return FirebaseDynamicLinks.getInstance().getDynamicLink(this)
 }
 
 internal const val LIBRARY_NAME: String = "fire-dl-ktx"
