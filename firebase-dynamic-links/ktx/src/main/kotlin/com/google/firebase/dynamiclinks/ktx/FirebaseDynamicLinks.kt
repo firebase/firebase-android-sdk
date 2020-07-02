@@ -147,11 +147,11 @@ fun Uri.getFirebaseDynamicLink(): Task<PendingDynamicLinkData> {
     return FirebaseDynamicLinks.getInstance().getDynamicLink(this)
 }
 
-/** Destructuring declaration for [ShortDynamicLink] to provide previewLink */
-operator fun ShortDynamicLink.component1() = previewLink
-
 /** Destructuring declaration for [ShortDynamicLink] to provide shortLink */
-operator fun ShortDynamicLink.component2() = shortLink
+operator fun ShortDynamicLink.component1() = shortLink
+
+/** Destructuring declaration for [ShortDynamicLink] to provide previewLink */
+operator fun ShortDynamicLink.component2() = previewLink
 
 /** Destructuring declaration for [ShortDynamicLink] to provide warnings */
 operator fun ShortDynamicLink.component3(): List<ShortDynamicLink.Warning> = warnings
