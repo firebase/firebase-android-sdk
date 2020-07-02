@@ -16,13 +16,12 @@ package com.google.firebase.database.ktx
 
 import androidx.annotation.Keep
 import com.google.firebase.FirebaseApp
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.GenericTypeIndicator
-import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.components.Component
 import com.google.firebase.components.ComponentRegistrar
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.GenericTypeIndicator
 import com.google.firebase.database.MutableData
-
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.platforminfo.LibraryVersionComponent
 
