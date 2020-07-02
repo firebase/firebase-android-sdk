@@ -19,13 +19,12 @@ import android.net.Uri
 import androidx.annotation.Keep
 import com.google.android.gms.tasks.Task
 import com.google.firebase.FirebaseApp
-import com.google.firebase.dynamiclinks.FirebaseDynamicLinks
 import com.google.firebase.components.Component
 import com.google.firebase.components.ComponentRegistrar
 import com.google.firebase.dynamiclinks.DynamicLink
+import com.google.firebase.dynamiclinks.FirebaseDynamicLinks
 import com.google.firebase.dynamiclinks.PendingDynamicLinkData
 import com.google.firebase.dynamiclinks.ShortDynamicLink
-
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.platforminfo.LibraryVersionComponent
 
