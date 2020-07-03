@@ -112,7 +112,9 @@ public class SmokeTestsPlugin implements Plugin<Project> {
   private static void getChangedProjectsLoop(Collection<Project> projects, Set<Project> changed) {
     for (Project p : projects) {
       // Skip project if it is not a Firebase library.
-      if (p.getExtensions().findByType(FirebaseLibraryExtension.class) == null) {
+      FirebaseLibraryExtension library =
+          p.getExtensions().findByType(FirebaseLibraryExtension.class);
+      if (library == null) {
         continue;
       }
 
@@ -123,7 +125,7 @@ public class SmokeTestsPlugin implements Plugin<Project> {
 
       // Find all (head) dependencies to other projects in this repository.
       DependencySet all =
-          p.getConfigurations().getByName("releaseRuntimeClasspath").getAllDependencies();
+          p.getConfigurations().getByName(library.getRuntimeClasspath()).getAllDependencies();
       Set<Project> affected =
           all.stream()
               .filter(it -> it instanceof ProjectDependency)
