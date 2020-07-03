@@ -52,7 +52,10 @@ public class JsonDataDecoderBuilderContext implements DataDecoder {
   }
 
   private <T> T decode(TypeToken<T> typeToken) throws IOException {
-    if (typeToken instanceof TypeToken.ClassToken) {
+    if (reader.peek().equals(JsonToken.NULL)) {
+      reader.nextNull();
+      return null;
+    } else if (typeToken instanceof TypeToken.ClassToken) {
       TypeToken.ClassToken<T> classToken = (TypeToken.ClassToken<T>) typeToken;
       return decodeClassToken(classToken);
     } else if (typeToken instanceof TypeToken.ArrayToken) {
@@ -83,61 +86,62 @@ public class JsonDataDecoderBuilderContext implements DataDecoder {
     return convertGenericListToArray(list, arrayToken);
   }
 
-  private static <T, E> T convertGenericListToArray(
-      List<Object> list, TypeToken.ArrayToken<T> arrayToken) {
+  static <T, E> T convertGenericListToArray(List<Object> list, TypeToken.ArrayToken<T> arrayToken) {
     @SuppressWarnings("unchecked")
     TypeToken<E> componentTypeToken = (TypeToken<E>) arrayToken.getComponentType();
     if (componentTypeToken.getRawType().isPrimitive()) {
       return convertGenericListToPrimitiveArray(list, componentTypeToken.getRawType(), arrayToken);
     }
     @SuppressWarnings("unchecked") // Safe, list is not empty
-    E[] arr = (E[]) Array.newInstance(componentTypeToken.getRawType(), list.size());
+    E[] arr =
+        (E[]) Array.newInstance(componentTypeToken.getRawType(), list == null ? 0 : list.size());
     @SuppressWarnings("unchecked") // Safe, because T == E[]
-    T t = (T) list.toArray(arr);
+    T t = list == null ? (T) arr : (T) list.toArray(arr);
     return t;
   }
 
   private static <T> T convertGenericListToPrimitiveArray(
       List<Object> list, Class<?> clazz, TypeToken.ArrayToken<T> arrayToken) {
+    int size = list == null ? 0 : list.size();
     if (clazz.equals(int.class)) {
-      int[] arr = new int[list.size()];
-      for (int i = 0; i < list.size(); i++) {
+      int[] arr = new int[size];
+      for (int i = 0; i < size; i++) {
         arr[i] = (int) list.get(i);
       }
       return (T) arr;
     } else if (clazz.equals(short.class)) {
-      short[] arr = new short[list.size()];
-      for (int i = 0; i < list.size(); i++) {
+      short[] arr = new short[size];
+      for (int i = 0; i < size; i++) {
         arr[i] = (short) list.get(i);
       }
       return (T) arr;
     } else if (clazz.equals(long.class)) {
-      long[] arr = new long[list.size()];
-      for (int i = 0; i < list.size(); i++) {
+      long[] arr = new long[size];
+      for (int i = 0; i < size; i++) {
         arr[i] = (long) list.get(i);
       }
       return (T) arr;
     } else if (clazz.equals(double.class)) {
-      double[] arr = new double[list.size()];
-      for (int i = 0; i < list.size(); i++) {
+      double[] arr = new double[size];
+      for (int i = 0; i < size; i++) {
         arr[i] = (double) list.get(i);
       }
       return (T) arr;
     } else if (clazz.equals(float.class)) {
-      float[] arr = new float[list.size()];
-      for (int i = 0; i < list.size(); i++) {
+      float[] arr = new float[size];
+      for (int i = 0; i < size; i++) {
         arr[i] = (float) list.get(i);
       }
       return (T) arr;
     } else if (clazz.equals(char.class)) {
-      char[] arr = new char[list.size()];
-      for (int i = 0; i < list.size(); i++) {
+      char[] arr = new char[size];
+      for (int i = 0; i < size; i++) {
         arr[i] = (char) list.get(i);
       }
       return (T) arr;
     } else if (clazz.equals(boolean.class)) {
-      boolean[] arr = new boolean[list.size()];
-      for (int i = 0; i < list.size(); i++) {
+      boolean[] arr = new boolean[size];
+      for (int i = 0; i < size; i++) {
         arr[i] = (boolean) list.get(i);
       }
       return (T) arr;
@@ -164,25 +168,11 @@ public class JsonDataDecoderBuilderContext implements DataDecoder {
     while (reader.hasNext()) {
       String fieldName = reader.nextName();
       FieldRef<?> fieldRef = decoderCtx.getFieldRef(fieldName);
-      if (reader.peek().equals(JsonToken.NULL)) {
-        reader.nextNull();
-        creationCtx.put(fieldRef, null);
-      } else if (fieldRef instanceof FieldRef.Primitive) {
-        decodePrimitive(fieldRef, creationCtx);
-      } else if (isSingleValue(fieldRef)) {
-        decodeSingleValue(fieldRef, creationCtx);
-      } else if (fieldRef instanceof FieldRef.Boxed) {
-        creationCtx.put(fieldRef, decode(fieldRef.getTypeToken()));
-      }
+      creationCtx.put(fieldRef, decode(fieldRef.getTypeToken()));
     }
     reader.endObject();
     decoderCtx.decodeInlineObjIfAny(creationCtx);
     return creationCtx;
-  }
-
-  private <T> boolean isSingleValue(FieldRef<T> fieldRef) {
-    TypeToken<T> typeToken = fieldRef.getTypeToken();
-    return isSingleValue(typeToken);
   }
 
   private <T> boolean isSingleValue(TypeToken<T> typeToken) {
@@ -203,13 +193,6 @@ public class JsonDataDecoderBuilderContext implements DataDecoder {
         || clazz.equals(Double.class)
         || clazz.equals(String.class)
         || clazz.equals(Boolean.class);
-  }
-
-  private <T> void decodeSingleValue(FieldRef ref, CreationContextImpl creationContext)
-      throws IOException {
-    @SuppressWarnings("unchecked")
-    TypeToken.ClassToken<T> classToken = (TypeToken.ClassToken<T>) ref.getTypeToken();
-    creationContext.put(ref, decodeSingleValue(classToken));
   }
 
   // TODO: support Date
@@ -238,20 +221,6 @@ public class JsonDataDecoderBuilderContext implements DataDecoder {
   }
 
   // TODO: Avoid auto-boxing and un-boxing
-  private <T> void decodePrimitive(FieldRef ref, CreationContextImpl creationContext)
-      throws IOException {
-    @SuppressWarnings("unchecked")
-    TypeToken<T> typeToken = (TypeToken<T>) ref.getTypeToken();
-    if (typeToken instanceof TypeToken.ClassToken) {
-      @SuppressWarnings("unchecked")
-      TypeToken.ClassToken<T> classToken = (TypeToken.ClassToken<T>) ref.getTypeToken();
-      creationContext.put(ref, decodePrimitive(classToken));
-    } else {
-      throw new IllegalArgumentException(
-          "FieldRef should contain ClassToken type.\n" + typeToken + " was found.");
-    }
-  }
-
   @SuppressWarnings("unchecked")
   private <T> T decodePrimitive(TypeToken.ClassToken<T> classToken) throws IOException {
     Class<T> clazz = classToken.getRawType();

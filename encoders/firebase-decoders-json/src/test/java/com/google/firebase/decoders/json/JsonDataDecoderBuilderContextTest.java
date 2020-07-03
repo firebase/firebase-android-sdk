@@ -491,7 +491,6 @@ public class JsonDataDecoderBuilderContextTest {
     String json = "{\"str\": \"str\", \"i\": 1}";
     InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
     MyFoo myFoo = jsonDataDecoderBuilderContext.decode(input, TypeToken.of(new Safe<MyFoo>() {}));
-    System.out.println(myFoo);
     assertThat(myFoo.s).isEqualTo("str");
     assertThat(myFoo.subFoo.i).isEqualTo(1);
   }
