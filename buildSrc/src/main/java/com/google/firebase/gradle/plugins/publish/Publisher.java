@@ -90,7 +90,7 @@ public class Publisher {
   }
 
   private static void processDependencies(FirebaseLibraryExtension library, Element rootElement) {
-    Map<String, String> deps = getDependencyTypes(library.project);
+    Map<String, String> deps = getDependencyTypes(library);
 
     NodeList dependencies = rootElement.getElementsByTagName("dependency");
     List<Element> depsToRemove = new ArrayList<>();
@@ -125,13 +125,14 @@ public class Publisher {
     return baseVersion + (Mode.SNAPSHOT.equals(mode) ? "-SNAPSHOT" : "");
   }
 
-  private static Map<String, String> getDependencyTypes(Project project) {
+  private static Map<String, String> getDependencyTypes(FirebaseLibraryExtension firebaseLibrary) {
+    Project project = firebaseLibrary.project;
     Configuration dummyDependencyConfiguration =
         project.getConfigurations().create("publisherDummyConfig");
     Set<Dependency> nonProjectDependencies =
         project
             .getConfigurations()
-            .getByName("releaseRuntimeClasspath")
+            .getByName(firebaseLibrary.getRuntimeClasspath())
             .getAllDependencies()
             .stream()
             .filter(dep -> !(dep instanceof ProjectDependency))
@@ -141,7 +142,7 @@ public class Publisher {
     try {
       return project
           .getConfigurations()
-          .getByName("releaseRuntimeClasspath")
+          .getByName(firebaseLibrary.getRuntimeClasspath())
           .getAllDependencies()
           .stream()
           .map(dep -> getType(dummyDependencyConfiguration, dep))

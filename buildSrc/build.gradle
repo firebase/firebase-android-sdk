@@ -70,6 +70,11 @@ gradlePlugin {
             id = 'firebase-library'
             implementationClass = 'com.google.firebase.gradle.plugins.FirebaseLibraryPlugin'
         }
+
+        firebaseJavaLibraryPlugin {
+            id = "firebase-java-library"
+            implementationClass = 'com.google.firebase.gradle.plugins.FirebaseJavaLibraryPlugin'
+        }
     }
 }
 

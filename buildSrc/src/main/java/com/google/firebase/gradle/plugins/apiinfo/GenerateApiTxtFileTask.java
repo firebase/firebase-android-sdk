@@ -16,19 +16,18 @@ package com.google.firebase.gradle.plugins.apiinfo;
 
 import com.android.build.gradle.api.AndroidSourceSet;
 import com.google.firebase.gradle.plugins.SdkUtil;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 import org.gradle.api.DefaultTask;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.OutputFile;
+import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.TaskAction;
 
 public abstract class GenerateApiTxtFileTask extends DefaultTask {
@@ -39,7 +38,7 @@ public abstract class GenerateApiTxtFileTask extends DefaultTask {
   @OutputFile
   abstract File getApiTxt();
 
-  abstract AndroidSourceSet getSourceSet();
+  abstract Object getSourceSet();
 
   @InputFiles
   public abstract FileCollection getClassPath();
@@ -50,7 +49,7 @@ public abstract class GenerateApiTxtFileTask extends DefaultTask {
   @Input
   abstract boolean getUpdateBaseline();
 
-  public abstract void setSourceSet(AndroidSourceSet value);
+  public abstract void setSourceSet(Object value);
 
   public abstract void setClassPath(FileCollection value);
 
@@ -62,10 +61,19 @@ public abstract class GenerateApiTxtFileTask extends DefaultTask {
 
   public abstract void setApiTxt(File value);
 
+  private Set<File> getSourceDirs() {
+    if (getSourceSet() instanceof SourceSet) {
+      return ((SourceSet) getSourceSet()).getJava().getSrcDirs();
+    } else if (getSourceSet() instanceof AndroidSourceSet) {
+      return ((AndroidSourceSet) getSourceSet()).getJava().getSrcDirs();
+    }
+    throw new IllegalStateException("Unsupported sourceSet provided: " + getSourceSet().getClass());
+  }
+
   @TaskAction
   void execute() {
     String sourcePath =
-        getSourceSet().getJava().getSrcDirs().stream()
+        getSourceDirs().stream()
             .filter(File::exists)
             .map(File::getAbsolutePath)
             .collect(Collectors.joining(":"));
@@ -76,10 +84,14 @@ public abstract class GenerateApiTxtFileTask extends DefaultTask {
       return;
     }
     String classPath =
-        Stream.concat(
-                getClassPath().getFiles().stream(), Stream.of(SdkUtil.getAndroidJar(getProject())))
+        getClassPath().getFiles().stream()
             .map(File::getAbsolutePath)
             .collect(Collectors.joining(":"));
+
+    File androidJar = SdkUtil.getAndroidJar(getProject());
+    if (androidJar != null) {
+      classPath += ":" + androidJar.getAbsolutePath();
+    }
     List<String> args =
         new ArrayList<>(
             Arrays.asList(
@@ -88,7 +100,7 @@ public abstract class GenerateApiTxtFileTask extends DefaultTask {
                 "--source-path",
                 sourcePath,
                 "--classpath",
-                    classPath,
+                classPath,
                 "--api",
                 getApiTxt().getAbsolutePath(),
                 "--format=v2"));
