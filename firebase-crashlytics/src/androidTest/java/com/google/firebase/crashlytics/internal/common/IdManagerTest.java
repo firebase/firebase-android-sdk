@@ -21,6 +21,7 @@ import android.content.SharedPreferences;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
 import com.google.firebase.installations.FirebaseInstallationsApi;
+import java.util.concurrent.TimeoutException;
 
 public class IdManagerTest extends CrashlyticsTestCase {
 
@@ -74,6 +75,22 @@ public class IdManagerTest extends CrashlyticsTestCase {
 
     // subsequent calls should return the same id
     assertEquals(installId, idManager.getCrashlyticsInstallId());
+  }
+
+  public void testGetIdExceptionalCase() {
+    FirebaseInstallationsApi iid = mock(FirebaseInstallationsApi.class);
+    when(iid.getId())
+        .thenReturn(Tasks.forException(new TimeoutException("Fetching id timed out.")));
+    prefs
+        .edit()
+        .putString(IdManager.PREFKEY_INSTALLATION_UUID, "foo-value")
+        .putString(IdManager.PREFKEY_FIREBASE_IID, "other-value")
+        .apply();
+
+    final IdManager idManager = new IdManager(getContext(), getContext().getPackageName(), iid);
+    final String installId = idManager.getCrashlyticsInstallId();
+    assertNotNull(installId);
+    assertEquals("foo-value", installId);
   }
 
   public void testInstanceIdChanges() {

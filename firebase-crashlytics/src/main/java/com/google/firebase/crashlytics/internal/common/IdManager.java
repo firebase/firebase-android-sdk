@@ -23,7 +23,6 @@ import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.util.Locale;
 import java.util.UUID;
-import java.util.concurrent.TimeoutException;
 import java.util.regex.Pattern;
 
 public class IdManager implements InstallIdProvider {
@@ -104,13 +103,19 @@ public class IdManager implements InstallIdProvider {
     // This way, Crashlytics privacy controls are consistent with the rest of Firebase.
     Task<String> currentFidTask = firebaseInstallationsApi.getId();
     String currentFid = null;
+    final String cachedFid = prefs.getString(PREFKEY_FIREBASE_IID, null);
+
     try {
       currentFid = Utils.awaitEvenIfOnMainThread(currentFidTask);
-    } catch (InterruptedException | TimeoutException e) {
+    } catch (Exception e) {
       Logger.getLogger().d("Failed to retrieve installation id", e);
-    }
 
-    final String cachedFid = prefs.getString(PREFKEY_FIREBASE_IID, null);
+      // this avoids rotating the identifier in the case that there was an exception which is likely
+      // to succeed in a future invocation
+      if (cachedFid != null) {
+        currentFid = cachedFid;
+      }
+    }
 
     if (cachedFid == null) {
       // This must be either 1) a new installation or 2) an upgrade from the legacy
