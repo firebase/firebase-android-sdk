@@ -80,8 +80,14 @@ public class JsonDataDecoderBuilderContext implements DataDecoder {
       return decodePrimitive(classToken);
     } else if (isSingleValue(classToken)) {
       return decodeSingleValue(classToken);
-    } else if (isPreDefinedObject(classToken)) {
-      return decodePreDefinedObject(classToken);
+    } else if (isMap(classToken)) {
+      @SuppressWarnings("unchecked")
+      T map = (T) decodeMap((TypeToken.ClassToken<Map>) classToken);
+      return map;
+    } else if (isCollection(classToken)) {
+      @SuppressWarnings("unchecked")
+      T collection = (T) decodeCollection((TypeToken.ClassToken<Collection>) classToken);
+      return collection;
     } else {
       return decodeObject(classToken);
     }
@@ -160,22 +166,14 @@ public class JsonDataDecoderBuilderContext implements DataDecoder {
     return null;
   }
 
-  private <T> boolean isPreDefinedObject(TypeToken.ClassToken<T> classToken) {
+  private <T> boolean isMap(TypeToken.ClassToken<T> classToken) {
     Class<T> clazz = classToken.getRawType();
-    return Collection.class.isAssignableFrom(clazz) || Map.class.isAssignableFrom(clazz);
+    return Map.class.isAssignableFrom(clazz);
   }
 
-  private <T> T decodePreDefinedObject(TypeToken.ClassToken<T> classToken) throws IOException {
+  private <T> boolean isCollection(TypeToken.ClassToken<T> classToken) {
     Class<T> clazz = classToken.getRawType();
-    if (Map.class.isAssignableFrom(clazz)) {
-      @SuppressWarnings("unchecked")
-      T t = (T) decodeMap((TypeToken.ClassToken<Map>) classToken);
-      return t;
-    } else {
-      @SuppressWarnings("unchecked")
-      T t = (T) decodeCollection((TypeToken.ClassToken<Collection>) classToken);
-      return t;
-    }
+    return Collection.class.isAssignableFrom(clazz);
   }
 
   private <K, V, T extends Map<K, V>> T decodeMap(TypeToken.ClassToken<T> classToken)
@@ -185,7 +183,7 @@ public class JsonDataDecoderBuilderContext implements DataDecoder {
     if (!isSingleValue(keyTypeToken))
       throw new IllegalArgumentException(keyTypeToken + " cannot be used as Map key.");
 
-    T map = newInstance(classToken);
+    T map = newMap(classToken);
     reader.beginObject();
     while (reader.hasNext()) {
       String keyLiteral = reader.nextName();
@@ -204,7 +202,7 @@ public class JsonDataDecoderBuilderContext implements DataDecoder {
   private <E, T extends Collection<E>> T decodeCollection(TypeToken.ClassToken<T> classToken)
       throws IOException {
     TypeToken<E> componentTypeToken = classToken.getTypeArguments().at(0);
-    T collection = newInstance(classToken);
+    T collection = newCollection(classToken);
     reader.beginArray();
     while (reader.hasNext()) {
       collection.add(decode(componentTypeToken));
@@ -214,7 +212,7 @@ public class JsonDataDecoderBuilderContext implements DataDecoder {
   }
 
   @SuppressWarnings("unchecked")
-  private <T> T newInstance(TypeToken.ClassToken<T> classToken) {
+  private <T> T newMap(TypeToken.ClassToken<T> classToken) {
     Class<T> clazz = classToken.getRawType();
     if (clazz.equals(HashMap.class) || clazz.equals(Map.class)) {
       return (T) new HashMap<>();
@@ -222,7 +220,14 @@ public class JsonDataDecoderBuilderContext implements DataDecoder {
       return (T) new LinkedHashMap<>();
     } else if (clazz.equals(TreeMap.class) || clazz.equals(SortedMap.class)) {
       return (T) new TreeMap<>();
-    } else if (clazz.equals(ArrayList.class) || clazz.equals(List.class)) {
+    }
+    throw new IllegalArgumentException(clazz + " not supported.");
+  }
+
+  @SuppressWarnings("unchecked")
+  private <T> T newCollection(TypeToken.ClassToken<T> classToken) {
+    Class<T> clazz = classToken.getRawType();
+    if (clazz.equals(ArrayList.class) || clazz.equals(List.class)) {
       return (T) new ArrayList<>();
     } else if (clazz.equals(ArrayDeque.class)
         || clazz.equals(Deque.class)
@@ -259,7 +264,7 @@ public class JsonDataDecoderBuilderContext implements DataDecoder {
     } else if (clazz.equals(String.class)) {
       return (K) keyLiteral;
     } else {
-      throw new IllegalArgumentException("Excepted Single Value Type. " + clazz + " was found.");
+      throw new EncodingException("Excepted Single Value Type. " + clazz + " was found.");
     }
   }
 
