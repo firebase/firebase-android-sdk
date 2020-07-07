@@ -148,7 +148,7 @@ public class CardMessage extends InAppMessage {
   }
 
   /**
-   * @deprecated This method is deprecated. Use {@link #getPrimaryAction()} or {@link
+   * @deprecated Use {@link #getPrimaryAction()} or {@link
    *     #getSecondaryAction()} instead.
    */
   @Nullable
@@ -173,7 +173,7 @@ public class CardMessage extends InAppMessage {
   }
 
   /**
-   * @deprecated This method is deprecated. Use {@link #getPortraitImageData()} or {@link
+   * @deprecated Use {@link #getPortraitImageData()} or {@link
    *     #getLandscapeImageData()} instead.
    */
   @Nullable

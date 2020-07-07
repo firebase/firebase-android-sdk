@@ -71,7 +71,7 @@ public abstract class InAppMessage {
   }
 
   /**
-   * @deprecated This method is deprecated. Use the message specific methods (see {@link
+   * @deprecated Use the message specific methods (see {@link
    *     CardMessage}, {@link ModalMessage}, {@link BannerMessage}, {@link ImageOnlyMessage})
    *     instead.
    */
@@ -82,7 +82,7 @@ public abstract class InAppMessage {
   }
 
   /**
-   * @deprecated This method is deprecated. Use the message specific methods (see {@link
+   * @deprecated Use the message specific methods (see {@link
    *     CardMessage}, {@link ModalMessage}, {@link BannerMessage}, {@link ImageOnlyMessage})
    *     instead.
    */
@@ -93,7 +93,7 @@ public abstract class InAppMessage {
   }
 
   /**
-   * @deprecated This method is deprecated. Use the message specific methods (see {@link
+   * @deprecated Use the message specific methods (see {@link
    *     CardMessage}, {@link ModalMessage}, {@link BannerMessage}, {@link ImageOnlyMessage})
    *     instead.
    */
@@ -104,7 +104,7 @@ public abstract class InAppMessage {
   }
 
   /**
-   * @deprecated This method is deprecated. Use the message specific methods (see {@link
+   * @deprecated Use the message specific methods (see {@link
    *     CardMessage}, {@link ModalMessage}, {@link BannerMessage}, {@link ImageOnlyMessage})
    *     instead.
    */
@@ -115,7 +115,7 @@ public abstract class InAppMessage {
   }
 
   /**
-   * @deprecated This method is deprecated. Use the message specific methods (see {@link
+   * @deprecated Use the message specific methods (see {@link
    *     CardMessage}, {@link ModalMessage}, {@link BannerMessage}, {@link ImageOnlyMessage})
    *     instead.
    */
@@ -129,7 +129,7 @@ public abstract class InAppMessage {
   }
 
   /**
-   * @deprecated This method is deprecated. Use the message specific methods (see {@link
+   * @deprecated Use the message specific methods (see {@link
    *     CardMessage}, {@link ModalMessage}, {@link BannerMessage}, {@link ImageOnlyMessage})
    *     instead.
    */
@@ -138,7 +138,7 @@ public abstract class InAppMessage {
   public abstract Action getAction();
 
   /**
-   * @deprecated This method is deprecated. Use the message specific methods (see {@link
+   * @deprecated Use the message specific methods (see {@link
    *     CardMessage}, {@link ModalMessage}, {@link BannerMessage}, {@link ImageOnlyMessage})
    *     instead.
    */
@@ -149,7 +149,7 @@ public abstract class InAppMessage {
   }
 
   /**
-   * @deprecated This method is deprecated. Use {@link #getCampaignMetadata()#getCampaignId()}
+   * @deprecated Use {@link #getCampaignMetadata()#getCampaignId()}
    *     instead.
    */
   @Nullable
@@ -159,7 +159,7 @@ public abstract class InAppMessage {
   }
 
   /**
-   * @deprecated This method is deprecated. Use {@link #getCampaignMetadata()#getCampaignName()}
+   * @deprecated Use {@link #getCampaignMetadata()#getCampaignName()}
    *     instead.
    */
   @Nullable
@@ -169,7 +169,7 @@ public abstract class InAppMessage {
   }
 
   /**
-   * @deprecated This method is deprecated. Use {@link #getCampaignMetadata()#getIsTestMessage()}
+   * @deprecated Use {@link #getCampaignMetadata()#getIsTestMessage()}
    *     instead.
    */
   @Nullable

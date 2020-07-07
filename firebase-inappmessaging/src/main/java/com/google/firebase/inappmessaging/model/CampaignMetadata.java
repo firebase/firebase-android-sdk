@@ -50,7 +50,7 @@ public class CampaignMetadata {
     return campaignName;
   }
 
-  /** returns true if the message is a test message */
+  /** Returns true if the message is a test message */
   public boolean getIsTestMessage() {
     return isTestMessage;
   }
