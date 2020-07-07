@@ -24,10 +24,6 @@ buildscript {
     }
 }
 
-plugins {
-    id "com.dorongold.task-tree" version "1.5"
-}
-
 apply from: '../sdkProperties.gradle'
 
 task clean(type: Delete) {

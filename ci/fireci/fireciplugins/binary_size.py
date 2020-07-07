@@ -57,7 +57,7 @@ def binary_size(pull_request, log, metrics_service_url, access_token):
   artifacts = affected_artifacts if pull_request else all_artifacts
   sdks = ','.join(artifacts)
 
-  gradle.run('repack', '-p', 'apk-size', '--continue', gradle.P('sdks', sdks), check=False)
+  gradle.run('assemble', '-p', 'apk-size', '--continue', gradle.P('sdks', sdks), check=False)
 
   test_results = _measure_aar_sizes(artifacts) + _measure_apk_sizes(artifacts)
   test_report = {'metric': 'BinarySize', 'results': test_results, 'log': log}
@@ -84,11 +84,11 @@ def _measure_apk_sizes(artifacts):
 
   for artifact in artifacts:
     group_id, artifact_id, version = artifact.split(':')
-    apk_zip_files = glob.glob(f'./apk-size/**/{artifact_id}/**/*.zip', recursive=True)
+    apk_files = glob.glob(f'./apk-size/**/{artifact_id}/**/*.apk', recursive=True)
 
-    for zip_file in apk_zip_files:
-      build_type = re.search(fr'{artifact_id}/([^/]*)/', zip_file).group(1)
-      apk_size = os.path.getsize(zip_file)
+    for apk_file in apk_files:
+      build_type = re.search(fr'{artifact_id}/([^/]*)/', apk_file).group(1)
+      apk_size = os.path.getsize(apk_file)
       test_results.append({'sdk': artifact_id, 'type': f'apk ({build_type})', 'value': apk_size})
 
   return test_results
