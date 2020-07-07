@@ -79,18 +79,19 @@ public class IdManagerTest extends CrashlyticsTestCase {
 
   public void testGetIdExceptionalCase() {
     FirebaseInstallationsApi iid = mock(FirebaseInstallationsApi.class);
+    final String expectedInstallId = "expectedInstallId";
     when(iid.getId())
         .thenReturn(Tasks.forException(new TimeoutException("Fetching id timed out.")));
     prefs
         .edit()
-        .putString(IdManager.PREFKEY_INSTALLATION_UUID, "foo-value")
-        .putString(IdManager.PREFKEY_FIREBASE_IID, "other-value")
+        .putString(IdManager.PREFKEY_INSTALLATION_UUID, expectedInstallId)
+        .putString(IdManager.PREFKEY_FIREBASE_IID, "firebase-iid")
         .apply();
 
     final IdManager idManager = new IdManager(getContext(), getContext().getPackageName(), iid);
-    final String installId = idManager.getCrashlyticsInstallId();
-    assertNotNull(installId);
-    assertEquals("foo-value", installId);
+    final String actualInstallId = idManager.getCrashlyticsInstallId();
+    assertNotNull(actualInstallId);
+    assertEquals(expectedInstallId, actualInstallId);
   }
 
   public void testInstanceIdChanges() {
