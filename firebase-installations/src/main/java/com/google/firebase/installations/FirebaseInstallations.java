@@ -224,6 +224,12 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   @Override
   public Task<String> getId() {
     preConditionChecks();
+    // Return cached fid if available.
+    String fid = getCacheFid();
+    if (fid != null) {
+      return Tasks.forResult(fid);
+    }
+
     Task<String> task = addGetIdListener();
     backgroundExecutor.execute(this::doGetId);
     return task;
@@ -324,14 +330,6 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
   private final void doGetId() {
     doRegistrationInternal(false);
-//    if (cachedFid != null) {
-//      return cachedFid;
-//    }
-//    PersistedInstallationEntry prefs = getPrefsWithGeneratedIdMultiProcessSafe();
-//    // Execute network calls (CreateInstallations) to the FIS Servers on a separate executor
-//    // i.e networkExecutor
-//    networkExecutor.execute(() -> doNetworkCallIfNecessary(false));
-//    return prefs.getFirebaseInstallationId();
   }
 
   /**
