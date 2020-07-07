@@ -20,8 +20,12 @@ buildscript {
 
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.4.2'
+        classpath 'com.android.tools.build:gradle:4.1.0-beta02'
     }
+}
+
+plugins {
+    id "com.dorongold.task-tree" version "1.5"
 }
 
 apply from: '../sdkProperties.gradle'
