@@ -147,10 +147,7 @@ public class CardMessage extends InAppMessage {
     return secondaryAction;
   }
 
-  /**
-   * @deprecated Use {@link #getPrimaryAction()} or {@link
-   *     #getSecondaryAction()} instead.
-   */
+  /** @deprecated Use {@link #getPrimaryAction()} or {@link #getSecondaryAction()} instead. */
   @Nullable
   @Deprecated
   @Override
@@ -173,8 +170,7 @@ public class CardMessage extends InAppMessage {
   }
 
   /**
-   * @deprecated Use {@link #getPortraitImageData()} or {@link
-   *     #getLandscapeImageData()} instead.
+   * @deprecated Use {@link #getPortraitImageData()} or {@link #getLandscapeImageData()} instead.
    */
   @Nullable
   @Deprecated
