@@ -66,10 +66,6 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   private final Object lock = new Object();
   private final ExecutorService backgroundExecutor;
   private final ExecutorService networkExecutor;
-  /* FID of this Firebase Installations instance. Cached after successfully registering and
-  persisting the FID locally. NOTE: cachedFid resets if FID is deleted.*/
-  @GuardedBy("this")
-  private String cachedFid;
 
   @GuardedBy("lock")
   private final List<StateListener> listeners = new ArrayList<>();
@@ -225,7 +221,9 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   @Override
   public Task<String> getId() {
     preConditionChecks();
-    return Tasks.forResult(doGetId());
+    Task<String> task = addGetIdListener();
+    backgroundExecutor.execute(this::doGetId);
+    return task;
   }
 
   /**
@@ -241,7 +239,11 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   public Task<InstallationTokenResult> getToken(boolean forceRefresh) {
     preConditionChecks();
     Task<InstallationTokenResult> task = addGetAuthTokenListener();
-    backgroundExecutor.execute(() -> doGetAuthToken(forceRefresh));
+    if (forceRefresh) {
+      backgroundExecutor.execute(this::doGetAuthTokenForceRefresh);
+    } else {
+      backgroundExecutor.execute(this::doGetAuthTokenWithoutForceRefresh);
+    }
     return task;
   }
 
@@ -254,6 +256,15 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   @Override
   public Task<Void> delete() {
     return Tasks.call(backgroundExecutor, this::deleteFirebaseInstallationId);
+  }
+
+  private Task<String> addGetIdListener() {
+    TaskCompletionSource<String> taskCompletionSource = new TaskCompletionSource<>();
+    StateListener l = new GetIdListener(taskCompletionSource);
+    synchronized (lock) {
+      listeners.add(l);
+    }
+    return taskCompletionSource.getTask();
   }
 
   private Task<InstallationTokenResult> addGetAuthTokenListener() {
@@ -292,25 +303,16 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     }
   }
 
-  private synchronized void updateCacheFid(String cachedFid) {
-    this.cachedFid = cachedFid;
+  private final void doGetId() {
+    doRegistrationInternal(false);
   }
 
-  private synchronized String getCacheFid() {
-    return cachedFid;
+  private final void doGetAuthTokenWithoutForceRefresh() {
+    doRegistrationInternal(false);
   }
 
-  private String doGetId() {
-
-    String fid = getCacheFid();
-    if (fid != null) {
-      return fid;
-    }
-    PersistedInstallationEntry prefs = getPrefsWithGeneratedIdMultiProcessSafe();
-    // Execute network calls (CreateInstallations) to the FIS Servers on a separate executor
-    // i.e networkExecutor
-    networkExecutor.execute(() -> doNetworkCallIfNecessary(false));
-    return prefs.getFirebaseInstallationId();
+  private final void doGetAuthTokenForceRefresh() {
+    doRegistrationInternal(true);
   }
 
   /**
@@ -322,7 +324,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
    * @param forceRefresh true if this is for a getAuthToken call and if the caller wants to fetch a
    *     new auth token from the server even if an unexpired auth token exists on the client.
    */
-  private void doGetAuthToken(boolean forceRefresh) {
+  private final void doRegistrationInternal(boolean forceRefresh) {
     PersistedInstallationEntry prefs = getPrefsWithGeneratedIdMultiProcessSafe();
 
     // Since the caller wants to force an authtoken refresh remove the authtoken from the
@@ -358,11 +360,6 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
     // Store the prefs to persist the result of the previous step.
     insertOrUpdatePrefs(prefs);
-
-    // Update cachedFID, if FID is successfully REGISTERED and persisted.
-    if (prefs.isRegistered()) {
-      updateCacheFid(prefs.getFirebaseInstallationId());
-    }
 
     // Let the caller know about the result.
     if (prefs.isErrored()) {
@@ -523,7 +520,6 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
       case AUTH_ERROR:
         // The the server refused to generate a new auth token due to bad credentials, clear the
         // FID to force the generation of a new one.
-        updateCacheFid(null);
         return prefs.withNoGeneratedFid();
       default:
         throw new FirebaseInstallationsException(
@@ -537,7 +533,6 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
    * storage.
    */
   private Void deleteFirebaseInstallationId() throws FirebaseInstallationsException {
-    updateCacheFid(null);
     PersistedInstallationEntry entry = getMultiProcessSafePrefs();
     if (entry.isRegistered()) {
       // Call the FIS servers to delete this Firebase Installation Id.
@@ -547,6 +542,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
           /*projectID= */ getProjectIdentifier(),
           /*refreshToken= */ entry.getRefreshToken());
     }
+
     insertOrUpdatePrefs(entry.withNoGeneratedFid());
     return null;
   }
