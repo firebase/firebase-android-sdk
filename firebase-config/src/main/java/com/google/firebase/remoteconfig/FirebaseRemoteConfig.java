@@ -69,8 +69,8 @@ public class FirebaseRemoteConfig {
    * <p>Note: Also initializes the Firebase installations SDK that creates installation IDs to
    * identify Firebase installations and periodically sends data to Firebase servers. Remote Config
    * requires installation IDs for Fetch requests. To stop the periodic sync, call {@link
-   * com.google.firebase.installations.FirebaseInstallations#delete()}. Sending a Fetch request after
-   * deletion will create a new installation ID for this Firebase installation and resume the
+   * com.google.firebase.installations.FirebaseInstallations#delete()}. Sending a Fetch request
+   * after deletion will create a new installation ID for this Firebase installation and resume the
    * periodic sync.
    *
    * @return A singleton instance of {@link FirebaseRemoteConfig} for the default {@link
@@ -308,8 +308,8 @@ public class FirebaseRemoteConfig {
    * <p>Note: Also initializes the Firebase installations SDK that creates installation IDs to
    * identify Firebase installations and periodically sends data to Firebase servers. Remote Config
    * requires installation IDs for Fetch requests. To stop the periodic sync, call {@link
-   * com.google.firebase.installations.FirebaseInstallations#delete()}. Sending a Fetch request after
-   * deletion will create a new installation ID for this Firebase installation and resume the
+   * com.google.firebase.installations.FirebaseInstallations#delete()}. Sending a Fetch request
+   * after deletion will create a new installation ID for this Firebase installation and resume the
    * periodic sync.
    *
    * @return {@link Task} representing the {@code fetch} call.
@@ -333,8 +333,8 @@ public class FirebaseRemoteConfig {
    * <p>Note: Also initializes the Firebase installations SDK that creates installation IDs to
    * identify Firebase installations and periodically sends data to Firebase servers. Remote Config
    * requires installation IDs for Fetch requests. To stop the periodic sync, call {@link
-   * com.google.firebase.installations.FirebaseInstallations#delete()}. Sending a Fetch request after
-   * deletion will create a new installation ID for this Firebase installation and resume the
+   * com.google.firebase.installations.FirebaseInstallations#delete()}. Sending a Fetch request
+   * after deletion will create a new installation ID for this Firebase installation and resume the
    * periodic sync.
    *
    * @param minimumFetchIntervalInSeconds If configs in the local storage were fetched more than
