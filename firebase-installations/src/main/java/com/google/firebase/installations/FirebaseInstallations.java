@@ -231,7 +231,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     }
 
     Task<String> task = addGetIdListener();
-    backgroundExecutor.execute(this::doGetId);
+    backgroundExecutor.execute(() -> doRegistrationInternal(false));
     return task;
   }
 
@@ -248,11 +248,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   public Task<InstallationTokenResult> getToken(boolean forceRefresh) {
     preConditionChecks();
     Task<InstallationTokenResult> task = addGetAuthTokenListener();
-    if (forceRefresh) {
-      backgroundExecutor.execute(this::doGetAuthTokenForceRefresh);
-    } else {
-      backgroundExecutor.execute(this::doGetAuthTokenWithoutForceRefresh);
-    }
+    backgroundExecutor.execute(() -> doRegistrationInternal(forceRefresh));
     return task;
   }
 
@@ -270,9 +266,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   private Task<String> addGetIdListener() {
     TaskCompletionSource<String> taskCompletionSource = new TaskCompletionSource<>();
     StateListener l = new GetIdListener(taskCompletionSource);
-    synchronized (lock) {
-      listeners.add(l);
-    }
+    addStateListeners(l);
     return taskCompletionSource.getTask();
   }
 
@@ -280,10 +274,14 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     TaskCompletionSource<InstallationTokenResult> taskCompletionSource =
         new TaskCompletionSource<>();
     StateListener l = new GetAuthTokenListener(utils, taskCompletionSource);
+    addStateListeners(l);
+    return taskCompletionSource.getTask();
+  }
+
+  private void addStateListeners(StateListener l) {
     synchronized (lock) {
       listeners.add(l);
     }
-    return taskCompletionSource.getTask();
   }
 
   private void triggerOnStateReached(PersistedInstallationEntry persistedInstallationEntry) {
@@ -318,18 +316,6 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
   private synchronized String getCacheFid() {
     return cachedFid;
-  }
-
-  private final void doGetAuthTokenForceRefresh() {
-    doRegistrationInternal(true);
-  }
-
-  private final void doGetAuthTokenWithoutForceRefresh() {
-    doRegistrationInternal(false);
-  }
-
-  private final void doGetId() {
-    doRegistrationInternal(false);
   }
 
   /**

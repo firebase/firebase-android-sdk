@@ -17,6 +17,10 @@ package com.google.firebase.installations;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.installations.local.PersistedInstallationEntry;
 
+/**
+ * This class manages {@link PersistedInstallationEntry} state transitions valid for getId() and
+ * updates the caller once the id is generated.
+ */
 class GetIdListener implements StateListener {
   final TaskCompletionSource<String> taskCompletionSource;
 
@@ -32,6 +36,8 @@ class GetIdListener implements StateListener {
       taskCompletionSource.trySetResult(persistedInstallationEntry.getFirebaseInstallationId());
       return true;
     }
+    // Don't update the caller if the PersistedInstallationEntry registration status is
+    // ATTEMPT_MIGRATION or NOT_GENERATED.
     return false;
   }
 
