@@ -233,7 +233,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     }
 
     Task<String> task = addGetIdListener();
-    backgroundExecutor.execute(() -> doRegistrationInternal(false));
+    backgroundExecutor.execute(() -> doRegistrationOrRefresh(false));
     return task;
   }
 
@@ -250,7 +250,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   public Task<InstallationTokenResult> getToken(boolean forceRefresh) {
     preConditionChecks();
     Task<InstallationTokenResult> task = addGetAuthTokenListener();
-    backgroundExecutor.execute(() -> doRegistrationInternal(forceRefresh));
+    backgroundExecutor.execute(() -> doRegistrationOrRefresh(forceRefresh));
     return task;
   }
 
@@ -329,7 +329,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
    * @param forceRefresh true if this is for a getAuthToken call and if the caller wants to fetch a
    *     new auth token from the server even if an unexpired auth token exists on the client.
    */
-  private final void doRegistrationInternal(boolean forceRefresh) {
+  private final void doRegistrationOrRefresh(boolean forceRefresh) {
 
     PersistedInstallationEntry prefs = getPrefsWithGeneratedIdMultiProcessSafe();
 
