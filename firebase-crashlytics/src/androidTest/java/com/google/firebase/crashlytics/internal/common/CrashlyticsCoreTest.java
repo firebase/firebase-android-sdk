@@ -681,14 +681,14 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
       FirebaseApp app = mock(FirebaseApp.class);
       when(app.getApplicationContext()).thenReturn(context);
       when(app.getOptions()).thenReturn(testFirebaseOptions);
-      FirebaseInstallationsApi instanceIdMock = mock(FirebaseInstallationsApi.class);
-      when(instanceIdMock.getId()).thenReturn(Tasks.forResult("instanceId"));
+      FirebaseInstallationsApi installationsApiMock = mock(FirebaseInstallationsApi.class);
+      when(installationsApiMock.getId()).thenReturn(Tasks.forResult("instanceId"));
       BreadcrumbSource breadcrumbSource =
           this.breadcrumbSource == null ? new DisabledBreadcrumbSource() : this.breadcrumbSource;
       final CrashlyticsCore crashlyticsCore =
           new CrashlyticsCore(
               app,
-              new IdManager(context, "unused", instanceIdMock),
+              new IdManager(context, "unused", installationsApiMock),
               nativeComponent,
               arbiter,
               breadcrumbSource,

@@ -28,9 +28,9 @@ public class CLSUUIDTest extends CrashlyticsTestCase {
 
   protected void setUp() throws Exception {
     super.setUp();
-    FirebaseInstallationsApi instanceIdMock = mock(FirebaseInstallationsApi.class);
-    when(instanceIdMock.getId()).thenReturn(Tasks.forResult("instanceId"));
-    idManager = new IdManager(getContext(), getContext().getPackageName(), instanceIdMock);
+    FirebaseInstallationsApi installationsApiMock = mock(FirebaseInstallationsApi.class);
+    when(installationsApiMock.getId()).thenReturn(Tasks.forResult("instanceId"));
+    idManager = new IdManager(getContext(), getContext().getPackageName(), installationsApiMock);
     uuid = new CLSUUID(idManager);
   }
 

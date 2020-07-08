@@ -353,10 +353,10 @@ public class CommonUtilsTest extends CrashlyticsTestCase {
 
   private File createEmptyClsFile(File dir) throws IOException {
     final Context context = getContext();
-    FirebaseInstallationsApi instanceIdMock = mock(FirebaseInstallationsApi.class);
-    when(instanceIdMock.getId()).thenReturn(Tasks.forResult("instanceId"));
+    FirebaseInstallationsApi installationsApiMock = mock(FirebaseInstallationsApi.class);
+    when(installationsApiMock.getId()).thenReturn(Tasks.forResult("instanceId"));
     final CLSUUID id =
-        new CLSUUID(new IdManager(context, context.getPackageName(), instanceIdMock));
+        new CLSUUID(new IdManager(context, context.getPackageName(), installationsApiMock));
     final File f = new File(dir, id.toString() + ".cls");
     f.createNewFile();
     return f;

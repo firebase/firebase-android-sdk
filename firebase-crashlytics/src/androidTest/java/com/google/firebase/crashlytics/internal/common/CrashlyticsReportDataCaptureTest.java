@@ -44,16 +44,17 @@ public class CrashlyticsReportDataCaptureTest {
 
   @Mock private StackTraceTrimmingStrategy stackTraceTrimmingStrategy;
 
-  @Mock private FirebaseInstallationsApi instanceIdMock;
+  @Mock private FirebaseInstallationsApi installationsApiMock;
 
   @Before
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
-    when(instanceIdMock.getId()).thenReturn(Tasks.forResult("installId"));
+    when(installationsApiMock.getId()).thenReturn(Tasks.forResult("installId"));
     when(stackTraceTrimmingStrategy.getTrimmedStackTrace(any(StackTraceElement[].class)))
         .thenAnswer(i -> i.getArguments()[0]);
     final Context context = ApplicationProvider.getApplicationContext();
-    final IdManager idManager = new IdManager(context, context.getPackageName(), instanceIdMock);
+    final IdManager idManager =
+        new IdManager(context, context.getPackageName(), installationsApiMock);
     final AppData appData = AppData.create(context, idManager, "googleAppId", "buildId");
     dataCapture =
         new CrashlyticsReportDataCapture(context, idManager, appData, stackTraceTrimmingStrategy);

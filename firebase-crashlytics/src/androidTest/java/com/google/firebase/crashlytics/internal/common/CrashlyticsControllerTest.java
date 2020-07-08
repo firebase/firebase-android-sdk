@@ -99,9 +99,9 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
 
     testContext = getContext();
 
-    FirebaseInstallationsApi instanceIdMock = mock(FirebaseInstallationsApi.class);
-    when(instanceIdMock.getId()).thenReturn(Tasks.forResult("instanceId"));
-    idManager = new IdManager(testContext, testContext.getPackageName(), instanceIdMock);
+    FirebaseInstallationsApi installationsApiMock = mock(FirebaseInstallationsApi.class);
+    when(installationsApiMock.getId()).thenReturn(Tasks.forResult("instanceId"));
+    idManager = new IdManager(testContext, testContext.getPackageName(), installationsApiMock);
 
     BatteryIntentProvider.returnNull = false;
 
