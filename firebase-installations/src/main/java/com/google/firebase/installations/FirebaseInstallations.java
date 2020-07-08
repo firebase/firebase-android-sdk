@@ -225,6 +225,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   @Override
   public Task<String> getId() {
     preConditionChecks();
+
     // Return cached fid if available.
     String fid = getCacheFid();
     if (fid != null) {
