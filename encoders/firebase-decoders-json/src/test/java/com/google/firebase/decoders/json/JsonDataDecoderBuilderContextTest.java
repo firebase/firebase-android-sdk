@@ -18,16 +18,24 @@ import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import androidx.annotation.NonNull;
+
+import com.google.firebase.decoders.AnnotationProcessor;
 import com.google.firebase.decoders.FieldRef;
 import com.google.firebase.decoders.ObjectDecoder;
 import com.google.firebase.decoders.ObjectDecoderContext;
 import com.google.firebase.decoders.Safe;
 import com.google.firebase.decoders.TypeCreator;
 import com.google.firebase.decoders.TypeToken;
+import com.google.firebase.decoders.Wrapper;
 import com.google.firebase.encoders.FieldDescriptor;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.annotation.Annotation;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.Test;
@@ -493,5 +501,67 @@ public class JsonDataDecoderBuilderContextTest {
     MyFoo myFoo = jsonDataDecoderBuilderContext.decode(input, TypeToken.of(new Safe<MyFoo>() {}));
     assertThat(myFoo.s).isEqualTo("str");
     assertThat(myFoo.subFoo.i).isEqualTo(1);
+  }
+
+  @Retention(RetentionPolicy.RUNTIME)
+  @Target({ElementType.METHOD, ElementType.FIELD})
+  public @interface Default {
+    Default INSTANCE = new DefaultImpl();
+    class DefaultImpl implements Default {
+
+      @Override
+      public Class<? extends Annotation> annotationType() {
+        return Default.class;
+      }
+    }
+  }
+
+  static class AnnotationFoo {
+    @Default
+    Integer i;
+
+    AnnotationFoo(Integer i) {
+      this.i = i;
+    }
+  }
+
+
+  static class AnnotationFooObjectDecoder implements ObjectDecoder<AnnotationFoo> {
+
+    @NonNull
+    @Override
+    public TypeCreator<AnnotationFoo> decode(@NonNull ObjectDecoderContext<AnnotationFoo> ctx) {
+      FieldDescriptor fieldDescriptor = FieldDescriptor
+              .builder("i")
+              .withProperty(Default.INSTANCE)
+              .build();
+      FieldRef.Boxed<Integer> iField = ctx.decode(fieldDescriptor, TypeToken.of(Integer.class));
+      return (creationCtx -> new AnnotationFoo(creationCtx.get(iField)));    }
+  }
+
+  @Test
+  public void customizedAnnotation_shouldProcessCorrectly() throws IOException {
+    Map<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
+    Map<Class<?>, AnnotationProcessor> delegates = new HashMap<>();
+
+    objectDecoders.put(AnnotationFoo.class, new AnnotationFooObjectDecoder());
+    delegates.put(Default.class, new AnnotationProcessor() {
+
+      @Override
+      public <T> void process(@NonNull Wrapper<T> result) {
+        if (result.getTypeToken().getRawType().equals(Integer.class) && result.getValue() == null) {
+          result.setValue((T)(Integer) 2);
+        }
+        //some other types
+      }
+    });
+
+    JsonDataDecoderBuilderContext jsonDataDecoderBuilderContext =
+            new JsonDataDecoderBuilderContext(objectDecoders, delegates);
+
+    String json = "{\"i\":null}";
+    InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
+    AnnotationFoo foo = jsonDataDecoderBuilderContext.decode(input, TypeToken.of(new Safe<AnnotationFoo>() {}));
+    assertThat(foo.i).isEqualTo(2);
   }
 }

@@ -17,11 +17,14 @@ package com.google.firebase.decoders.json;
 import android.util.JsonReader;
 import android.util.JsonToken;
 import androidx.annotation.NonNull;
+
+import com.google.firebase.decoders.AnnotationProcessor;
 import com.google.firebase.decoders.DataDecoder;
 import com.google.firebase.decoders.FieldRef;
 import com.google.firebase.decoders.ObjectDecoder;
 import com.google.firebase.decoders.TypeCreator;
 import com.google.firebase.decoders.TypeToken;
+import com.google.firebase.decoders.Wrapper;
 import com.google.firebase.encoders.EncodingException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,6 +44,11 @@ public class JsonDataDecoderBuilderContext implements DataDecoder {
 
   JsonDataDecoderBuilderContext(@NonNull Map<Class<?>, ObjectDecoder<?>> objectDecoders) {
     this.objectDecoders = objectDecoders;
+  }
+
+  JsonDataDecoderBuilderContext(@NonNull Map<Class<?>, ObjectDecoder<?>> objectDecoders, Map<Class<?>, AnnotationProcessor> delegates) {
+    this.objectDecoders = objectDecoders;
+    this.annotationProcessors = delegates;
   }
 
   @NonNull
@@ -160,15 +168,26 @@ public class JsonDataDecoderBuilderContext implements DataDecoder {
     return (T) creator.create(creationContext);
   }
 
-  private <T> CreationContextImpl decodeObjectContext(TypeToken.ClassToken<T> classToken)
+
+  Map<Class<?>, AnnotationProcessor> annotationProcessors = new HashMap<>();
+
+
+
+  private <T, TField> CreationContextImpl decodeObjectContext(TypeToken.ClassToken<T> classToken)
       throws IOException {
     CreationContextImpl creationCtx = new CreationContextImpl();
     ObjectDecoderContextImpl<T> decoderCtx = getObjectDecodersCtx(classToken);
     reader.beginObject();
     while (reader.hasNext()) {
       String fieldName = reader.nextName();
-      FieldRef<?> fieldRef = decoderCtx.getFieldRef(fieldName);
-      creationCtx.put(fieldRef, decode(fieldRef.getTypeToken()));
+      FieldRef<TField> fieldRef = (FieldRef<TField>) decoderCtx.getFieldRef(fieldName);
+      TField val = decode(fieldRef.getTypeToken());
+      Wrapper<TField> valWrapper = Wrapper.of(val, fieldRef.getTypeToken());
+      Map<Class<?>, Object> annotations = fieldRef.getProperties();
+      for (Map.Entry<Class<?>, Object> entry: annotations.entrySet()) {
+        annotationProcessors.get(entry.getKey()).process(valWrapper);
+      }
+      creationCtx.put(fieldRef, valWrapper.getValue());
     }
     reader.endObject();
     decoderCtx.decodeInlineObjIfAny(creationCtx);

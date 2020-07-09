@@ -45,6 +45,11 @@ public final class FieldDescriptor {
   private final String name;
   private final Map<Class<?>, Object> properties;
 
+  @NonNull
+  public Map<Class<?>, Object> getProperties() {
+    return properties;
+  }
+
   private FieldDescriptor(String name, Map<Class<?>, Object> properties) {
     this.name = name;
     this.properties = properties;

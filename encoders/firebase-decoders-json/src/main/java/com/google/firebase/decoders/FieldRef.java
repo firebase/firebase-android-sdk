@@ -15,6 +15,9 @@
 package com.google.firebase.decoders;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
+import java.util.Map;
 
 // TODO: support required, optional.
 
@@ -25,9 +28,13 @@ import androidx.annotation.NonNull;
  */
 public abstract class FieldRef<T> {
   private TypeToken<T> typeToken;
+  private Map<Class<?>, Object> properties;
 
   @NonNull
   public abstract TypeToken<T> getTypeToken();
+
+  @NonNull
+  public abstract Map<Class<?>, Object> getProperties();
 
   @NonNull
   public static final Primitive<Boolean> BOOLEAN = new Primitive<>(TypeToken.of(boolean.class));
@@ -48,41 +55,60 @@ public abstract class FieldRef<T> {
 
   @NonNull
   public static <T> Boxed<T> of(@NonNull TypeToken<T> typeToken) {
-    return new Boxed<T>(typeToken);
+    return new Boxed<T>(typeToken, null);
+  }
+
+  @NonNull
+  public static <T> Boxed<T> of(@NonNull TypeToken<T> typeToken, @NonNull Map<Class<?>, Object> properties) {
+    return new Boxed<T>(typeToken, properties);
   }
 
   /** Used to represent primitive data type. */
   public static final class Primitive<T> extends FieldRef<T> {
     private Primitive(@NonNull TypeToken<T> typeToken) {
       super.typeToken = typeToken;
+      super.properties = null;
     }
 
     @NonNull
     @Override
     public TypeToken<T> getTypeToken() {
       return super.typeToken;
+    }
+
+    @NonNull
+    @Override
+    public Map<Class<?>, Object> getProperties() {
+      return null;
     }
   }
 
   /** Use it to represent Boxed Data type */
   public static final class Boxed<T> extends FieldRef<T> {
 
-    private Boxed(@NonNull TypeToken<T> typeToken) {
+    private Boxed(@NonNull TypeToken<T> typeToken, @Nullable Map<Class<?>, Object> properties) {
       if (typeToken instanceof TypeToken.ClassToken) {
         Class<?> clazz = ((TypeToken.ClassToken<T>) typeToken).getRawType();
         if (clazz.isPrimitive())
           throw new IllegalArgumentException(
-              "FieldRef.Boxed<T> can only be used to hold non-primitive type.\n"
-                  + clazz
-                  + "was found.");
+                  "FieldRef.Boxed<T> can only be used to hold non-primitive type.\n"
+                          + clazz
+                          + "was found.");
       }
       super.typeToken = typeToken;
+      super.properties = properties;
     }
 
     @NonNull
     @Override
     public TypeToken<T> getTypeToken() {
       return super.typeToken;
+    }
+
+    @NonNull
+    @Override
+    public Map<Class<?>, Object> getProperties() {
+      return super.properties;
     }
   }
 }
