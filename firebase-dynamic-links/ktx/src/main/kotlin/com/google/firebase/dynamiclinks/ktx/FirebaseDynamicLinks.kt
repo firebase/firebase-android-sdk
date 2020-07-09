@@ -14,8 +14,6 @@
 
 package com.google.firebase.dynamiclinks.ktx
 
-import android.content.Intent
-import android.net.Uri
 import androidx.annotation.Keep
 import com.google.android.gms.tasks.Task
 import com.google.firebase.FirebaseApp
