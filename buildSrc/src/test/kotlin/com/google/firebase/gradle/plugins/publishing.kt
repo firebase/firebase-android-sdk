@@ -28,12 +28,13 @@ data class Project(
     val projectDependencies: Set<Project> = setOf(),
     val externalDependencies: Set<Artifact> = setOf(),
     val releaseWith: Project? = null,
-    val customizePom: String? = null
+    val customizePom: String? = null,
+    val libraryType: LibraryType = LibraryType.ANDROID
 ) {
     fun generateBuildFile(): String {
         return """
             plugins {
-                id 'firebase-library'
+                id 'firebase-${if (libraryType == LibraryType.JAVA) "java-" else ""}library'
             }
             group = '$group'
             version = '$version'
@@ -42,7 +43,7 @@ data class Project(
                 ${if (releaseWith != null) "releaseWith project(':${releaseWith.name}')" else ""}
                 ${if (customizePom != null) "customizePom {$customizePom}" else ""}
             }
-            android.compileSdkVersion = 26
+            ${if (libraryType == LibraryType.ANDROID) "android.compileSdkVersion = 26" else ""}
 
             repositories {
                 google()

@@ -22,8 +22,8 @@ import com.android.tools.lint.detector.api.Implementation
 import com.android.tools.lint.detector.api.Issue
 import com.android.tools.lint.detector.api.Location
 import com.android.tools.lint.detector.api.Project
-import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.Scope
+import com.android.tools.lint.detector.api.Severity
 import java.util.EnumSet
 
 class IncompatibleIidVersionDetector : Detector() {

@@ -16,25 +16,22 @@ package com.google.firebase.gradle.plugins.apiinfo;
 
 import com.android.build.gradle.api.AndroidSourceSet;
 import com.google.firebase.gradle.plugins.SdkUtil;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
-
 import org.gradle.api.DefaultTask;
 import org.gradle.api.GradleException;
-import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.OutputFile;
+import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.TaskAction;
 
 /**
@@ -49,7 +46,7 @@ public abstract class ApiInformationTask extends DefaultTask {
   @InputFile
   abstract File getApiTxt();
 
-  abstract AndroidSourceSet getSourceSet();
+  abstract Object getSourceSet();
 
   @InputFiles
   abstract FileCollection getClassPath();
@@ -66,7 +63,7 @@ public abstract class ApiInformationTask extends DefaultTask {
   @OutputFile
   abstract File getOutputFile();
 
-  public abstract void setSourceSet(AndroidSourceSet value);
+  public abstract void setSourceSet(Object value);
 
   public abstract void setClassPath(FileCollection value);
 
@@ -82,10 +79,19 @@ public abstract class ApiInformationTask extends DefaultTask {
 
   public abstract void setOutputFile(File value);
 
+  private Set<File> getSourceDirs() {
+    if (getSourceSet() instanceof SourceSet) {
+      return ((SourceSet) getSourceSet()).getJava().getSrcDirs();
+    } else if (getSourceSet() instanceof AndroidSourceSet) {
+      return ((AndroidSourceSet) getSourceSet()).getJava().getSrcDirs();
+    }
+    throw new IllegalStateException("Unsupported sourceSet provided: " + getSourceSet().getClass());
+  }
+
   @TaskAction
   void execute() {
     String sourcePath =
-        getSourceSet().getJava().getSrcDirs().stream()
+        getSourceDirs().stream()
             .filter(File::exists)
             .map(File::getAbsolutePath)
             .collect(Collectors.joining(":"));
@@ -97,10 +103,16 @@ public abstract class ApiInformationTask extends DefaultTask {
     }
 
     String classPath =
-        Stream.concat(
-                getClassPath().getFiles().stream(), Stream.of(SdkUtil.getAndroidJar(getProject())))
+        getClassPath().getFiles().stream()
             .map(File::getAbsolutePath)
             .collect(Collectors.joining(":"));
+
+    File androidJar = SdkUtil.getAndroidJar(getProject());
+    if (androidJar != null) {
+      classPath += ":" + androidJar.getAbsolutePath();
+    }
+
+    String cp = classPath;
 
     File outputFileDir = getOutputFile().getParentFile();
     if (!outputFileDir.exists()) {
@@ -119,7 +131,7 @@ public abstract class ApiInformationTask extends DefaultTask {
                       "--source-path",
                       sourcePath,
                       "--classpath",
-                      classPath,
+                      cp,
                       "--api",
                       getOutputApiFile().getAbsolutePath(),
                       "--format=v2"));
