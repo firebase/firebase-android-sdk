@@ -120,32 +120,6 @@ fun FirebaseDynamicLinks.shortLinkAsync(suffix: Int, init: DynamicLink.Builder.(
     return builder.buildShortDynamicLink(suffix)
 }
 
-/**
- * Returns the [PendingDynamicLinkData] present in this [Intent], using the
- * [FirebaseDynamicLinks] instance of the given [FirebaseApp].
- */
-fun Intent.getFirebaseDynamicLink(firebaseApp: FirebaseApp): Task<PendingDynamicLinkData> {
-    return FirebaseDynamicLinks.getInstance(firebaseApp).getDynamicLink(this)
-}
-
-/**
- * Returns the [PendingDynamicLinkData] present in this [Uri], using the
- * [FirebaseDynamicLinks] instance of the given [FirebaseApp].
- */
-fun Uri.getFirebaseDynamicLink(firebaseApp: FirebaseApp): Task<PendingDynamicLinkData> {
-    return FirebaseDynamicLinks.getInstance(firebaseApp).getDynamicLink(this)
-}
-
-/** Returns the [PendingDynamicLinkData] present in this [Intent] */
-fun Intent.getFirebaseDynamicLink(): Task<PendingDynamicLinkData> {
-    return FirebaseDynamicLinks.getInstance().getDynamicLink(this)
-}
-
-/** Returns the [PendingDynamicLinkData] present in this [Uri] */
-fun Uri.getFirebaseDynamicLink(): Task<PendingDynamicLinkData> {
-    return FirebaseDynamicLinks.getInstance().getDynamicLink(this)
-}
-
 /** Destructuring declaration for [ShortDynamicLink] to provide shortLink */
 operator fun ShortDynamicLink.component1() = shortLink
 
