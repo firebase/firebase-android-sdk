@@ -28,23 +28,12 @@ protobuf {
     // Configure the protoc executable
     protoc {
         // Download from repositories
-        artifact = 'com.google.protobuf:protoc:3.4.0'
-    }
-    plugins {
-        javalite {
-            // The codegen for lite comes as a separate artifact
-            artifact = 'com.google.protobuf:protoc-gen-javalite:3.0.0'
-        }
+        artifact = "com.google.protobuf:protoc:$protocVersion"
     }
     generateProtoTasks {
         all().each { task ->
             task.builtins {
-                // In most cases you don't need the full Java output
-                // if you use the lite output.
-                remove java
-            }
-            task.plugins {
-                javalite {}
+                java { option 'lite' }
             }
         }
     }
@@ -86,18 +75,19 @@ dependencies {
     implementation project (':firebase-abt')
     implementation project (':firebase-personalization')
     implementation project(':firebase-components')
-    implementation ('com.google.firebase:firebase-iid:20.0.1') {
-        exclude group: "com.google.firebase", module: "firebase-common"
-    }
+    implementation project(':firebase-installations-interop')
+    runtimeOnly project(':firebase-installations')
+
     implementation 'com.google.firebase:firebase-measurement-connector:18.0.0'
-    implementation 'com.google.protobuf:protobuf-lite:3.0.1'
+    implementation "com.google.protobuf:protobuf-javalite:$javaliteVersion"
+    implementation 'com.google.android.gms:play-services-tasks:17.0.2'
 
     compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
 
     testImplementation 'org.mockito:mockito-core:2.25.0'
     testImplementation 'com.google.truth:truth:0.44'
     testImplementation 'junit:junit:4.12'
-    testImplementation 'org.robolectric:robolectric:4.2'
+    testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation "org.skyscreamer:jsonassert:1.5.0"
 
     androidTestImplementation 'androidx.test:runner:1.2.0'

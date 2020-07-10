@@ -17,12 +17,11 @@ package com.google.firebase.dynamiclinks.ktx
 import androidx.annotation.Keep
 import com.google.android.gms.tasks.Task
 import com.google.firebase.FirebaseApp
-import com.google.firebase.dynamiclinks.FirebaseDynamicLinks
 import com.google.firebase.components.Component
 import com.google.firebase.components.ComponentRegistrar
 import com.google.firebase.dynamiclinks.DynamicLink
+import com.google.firebase.dynamiclinks.FirebaseDynamicLinks
 import com.google.firebase.dynamiclinks.ShortDynamicLink
-
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.platforminfo.LibraryVersionComponent
 
@@ -122,7 +121,7 @@ internal const val LIBRARY_NAME: String = "fire-dl-ktx"
 
 /** @suppress */
 @Keep
-class FirebaseDynamicLinksRegistrar : ComponentRegistrar {
+class FirebaseDynamicLinksKtxRegistrar : ComponentRegistrar {
     override fun getComponents(): List<Component<*>> =
             listOf(LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME))
 }

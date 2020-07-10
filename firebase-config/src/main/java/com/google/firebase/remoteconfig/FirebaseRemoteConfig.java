@@ -26,10 +26,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.abt.AbtException;
 import com.google.firebase.abt.FirebaseABTesting;
-import com.google.firebase.iid.FirebaseInstanceId;
-import com.google.firebase.iid.InstanceIdResult;
 import com.google.firebase.personalization.FirebasePersonalization;
-import com.google.firebase.personalization.PersonalizationException;
 import com.google.firebase.remoteconfig.internal.ConfigCacheClient;
 import com.google.firebase.remoteconfig.internal.ConfigContainer;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler;
@@ -68,10 +65,12 @@ public class FirebaseRemoteConfig {
    * <p>{@link FirebaseRemoteConfig} uses the default {@link FirebaseApp}, so if no {@link
    * FirebaseApp} has been initialized yet, this method throws an {@link IllegalStateException}.
    *
-   * <p>To identify the current app instance, the fetch request creates a Firebase Instance ID
-   * token, which periodically sends data to the Firebase backend. To stop the periodic sync, call
-   * {@link com.google.firebase.iid.FirebaseInstanceId#deleteInstanceId}. To create a new token and
-   * resume the periodic sync, call {@code fetchConfig} again.
+   * <p>Note: Also initializes the Firebase installations SDK that creates installation IDs to
+   * identify Firebase installations and periodically sends data to Firebase servers. Remote Config
+   * requires installation IDs for Fetch requests. To stop the periodic sync, call {@link
+   * com.google.firebase.installations.FirebaseInstallations#delete()}. Sending a Fetch request
+   * after deletion will create a new installation ID for this Firebase installation and resume the
+   * periodic sync.
    *
    * @return A singleton instance of {@link FirebaseRemoteConfig} for the default {@link
    *     FirebaseApp}.
@@ -157,7 +156,7 @@ public class FirebaseRemoteConfig {
   private final ConfigFetchHandler fetchHandler;
   private final ConfigGetParameterHandler getHandler;
   private final ConfigMetadataClient frcMetadata;
-  private final FirebaseInstanceId firebaseInstanceId;
+  private final FirebaseInstallationsApi firebaseInstallations;
 
   /**
    * Firebase Remote Config constructor.
@@ -167,7 +166,7 @@ public class FirebaseRemoteConfig {
   FirebaseRemoteConfig(
       Context context,
       FirebaseApp firebaseApp,
-      FirebaseInstanceId firebaseInstanceId,
+      FirebaseInstallationsApi firebaseInstallations,
       @Nullable FirebaseABTesting firebaseAbt,
       @Nullable FirebasePersonalization firebasePersonalization,
       Executor executor,
@@ -179,7 +178,7 @@ public class FirebaseRemoteConfig {
       ConfigMetadataClient frcMetadata) {
     this.context = context;
     this.firebaseApp = firebaseApp;
-    this.firebaseInstanceId = firebaseInstanceId;
+    this.firebaseInstallations = firebaseInstallations;
     this.firebaseAbt = firebaseAbt;
     this.firebasePersonalization = firebasePersonalization;
     this.executor = executor;
@@ -201,14 +200,16 @@ public class FirebaseRemoteConfig {
     Task<ConfigContainer> defaultsConfigsTask = defaultConfigsCache.get();
     Task<ConfigContainer> fetchedConfigsTask = fetchedConfigsCache.get();
     Task<FirebaseRemoteConfigInfo> metadataTask = Tasks.call(executor, this::getInfo);
-    Task<InstanceIdResult> instanceIdTask = firebaseInstanceId.getInstanceId();
+    Task<String> installationIdTask = firebaseInstallations.getId();
+    Task<InstallationTokenResult> installationTokenTask = firebaseInstallations.getToken(false);
 
     return Tasks.whenAllComplete(
             activatedConfigsTask,
             defaultsConfigsTask,
             fetchedConfigsTask,
             metadataTask,
-            instanceIdTask)
+            installationIdTask,
+            installationTokenTask)
         .continueWith(executor, (unusedListOfCompletedTasks) -> metadataTask.getResult());
   }
 
@@ -311,10 +312,12 @@ public class FirebaseRemoteConfig {
    * FirebaseRemoteConfigSettings.Builder#setMinimumFetchIntervalInSeconds(long)}; the static
    * default is 12 hours.
    *
-   * <p>To identify the current app instance, the fetch request creates a Firebase Instance ID
-   * token, which periodically sends data to the Firebase backend. To stop the periodic sync, call
-   * {@link com.google.firebase.iid.FirebaseInstanceId#deleteInstanceId}. To create a new token and
-   * resume the periodic sync, call {@code fetchConfig} again.
+   * <p>Note: Also initializes the Firebase installations SDK that creates installation IDs to
+   * identify Firebase installations and periodically sends data to Firebase servers. Remote Config
+   * requires installation IDs for Fetch requests. To stop the periodic sync, call {@link
+   * com.google.firebase.installations.FirebaseInstallations#delete()}. Sending a Fetch request
+   * after deletion will create a new installation ID for this Firebase installation and resume the
+   * periodic sync.
    *
    * @return {@link Task} representing the {@code fetch} call.
    */
@@ -334,10 +337,12 @@ public class FirebaseRemoteConfig {
    * <p>Depending on the time elapsed since the last fetch from the Firebase Remote Config backend,
    * configs are either served from local storage, or fetched from the backend.
    *
-   * <p>To identify the current app instance, the fetch request creates a Firebase Instance ID
-   * token, which periodically sends data to the Firebase backend. To stop the periodic sync, call
-   * {@link com.google.firebase.iid.FirebaseInstanceId#deleteInstanceId}. To create a new token and
-   * resume the periodic sync, call {@code fetchConfig} again.
+   * <p>Note: Also initializes the Firebase installations SDK that creates installation IDs to
+   * identify Firebase installations and periodically sends data to Firebase servers. Remote Config
+   * requires installation IDs for Fetch requests. To stop the periodic sync, call {@link
+   * com.google.firebase.installations.FirebaseInstallations#delete()}. Sending a Fetch request
+   * after deletion will create a new installation ID for this Firebase installation and resume the
+   * periodic sync.
    *
    * @param minimumFetchIntervalInSeconds If configs in the local storage were fetched more than
    *     this many seconds ago, configs are served from the backend instead of local storage.

@@ -30,6 +30,8 @@ import com.google.firebase.database.core.persistence.DefaultPersistenceManager;
 import com.google.firebase.database.core.persistence.MockPersistenceStorageEngine;
 import com.google.firebase.database.core.persistence.PersistenceManager;
 import com.google.firebase.database.future.WriteFuture;
+import com.google.firebase.emulators.EmulatedServiceSettings;
+import com.google.firebase.emulators.EmulatorSettings;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -62,6 +64,26 @@ public class FirebaseDatabaseTest {
     FirebaseDatabase db = FirebaseDatabase.getInstance(app);
 
     assertEquals(IntegrationTestValues.getAltNamespace(), db.getReference().toString());
+  }
+
+  @Test
+  public void getInstanceForAppWithEmulator() {
+    FirebaseApp app =
+        appForDatabaseUrl(IntegrationTestValues.getAltNamespace(), "getInstanceForAppWithEmulator");
+
+    EmulatedServiceSettings serviceSettings = new EmulatedServiceSettings("10.0.2.2", 9000);
+    EmulatorSettings emulatorSettings =
+        new EmulatorSettings.Builder()
+            .addEmulatedService(FirebaseDatabase.EMULATOR, serviceSettings)
+            .build();
+    app.enableEmulators(emulatorSettings);
+
+    FirebaseDatabase db = FirebaseDatabase.getInstance(app);
+    DatabaseReference rootRef = db.getReference();
+    assertEquals(rootRef.toString(), "http://10.0.2.2:9000");
+
+    DatabaseReference urlReference = db.getReferenceFromUrl("https://otherns.firebaseio.com");
+    assertEquals(urlReference.toString(), "http://10.0.2.2:9000");
   }
 
   @Test

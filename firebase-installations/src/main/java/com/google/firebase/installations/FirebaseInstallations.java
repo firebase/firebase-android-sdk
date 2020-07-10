@@ -24,7 +24,6 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.FirebaseException;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.heartbeatinfo.HeartBeatInfo;
 import com.google.firebase.installations.FirebaseInstallationsException.Status;
@@ -47,36 +46,44 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Entry point for Firebase Installations.
+ * Entry point for Firebase installations.
  *
- * <p>Firebase Installations does
+ * <p>The Firebase installations service:
  *
  * <ul>
- *   <li>provide unique identifier for a Firebase installation
- *   <li>provide auth token of a Firebase installation
- *   <li>provide a API to GDPR-delete a Firebase installation
+ *   <li>provides a unique identifier for a Firebase installation
+ *   <li>provides an auth token for a Firebase installation
+ *   <li>provides a API to perform GDPR-compliant deletion of a Firebase installation.
  * </ul>
  */
 public class FirebaseInstallations implements FirebaseInstallationsApi {
   private final FirebaseApp firebaseApp;
   private final FirebaseInstallationServiceClient serviceClient;
   private final PersistedInstallation persistedInstallation;
-  private final ExecutorService executor;
   private final Utils utils;
   private final IidStore iidStore;
   private final RandomFidGenerator fidGenerator;
   private final Object lock = new Object();
+  private final ExecutorService backgroundExecutor;
+  private final ExecutorService networkExecutor;
+  /* FID of this Firebase Installations instance. Cached after successfully registering and
+  persisting the FID locally. NOTE: cachedFid resets if FID is deleted.*/
+  @GuardedBy("this")
+  private String cachedFid;
 
   @GuardedBy("lock")
   private final List<StateListener> listeners = new ArrayList<>();
 
   /* used for thread-level synchronization of generating and persisting fids */
   private static final Object lockGenerateFid = new Object();
-  /* file used for process-level syncronization of generating and persisting fids */
+
+  /* file used for process-level synchronization of generating and persisting fids */
   private static final String LOCKFILE_NAME_GENERATE_FID = "generatefid.lock";
   private static final String CHIME_FIREBASE_APP_NAME = "CHIME_ANDROID_SDK";
-
-  private static final ThreadFactory threadFactory =
+  private static final int CORE_POOL_SIZE = 0;
+  private static final int MAXIMUM_POOL_SIZE = 1;
+  private static final long KEEP_ALIVE_TIME_IN_SECONDS = 30L;
+  private static final ThreadFactory THREAD_FACTORY =
       new ThreadFactory() {
         private final AtomicInteger mCount = new AtomicInteger(1);
 
@@ -87,6 +94,21 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
         }
       };
 
+  private static final String API_KEY_VALIDATION_MSG =
+      "Please set a valid API key. A Firebase API key is required to communicate with "
+          + "Firebase server APIs: It authenticates your project with Google."
+          + "Please refer to https://firebase.google.com/support/privacy/init-options.";
+
+  private static final String APP_ID_VALIDATION_MSG =
+      "Please set your Application ID. A valid Firebase App ID is required to communicate "
+          + "with Firebase server APIs: It identifies your application with Firebase."
+          + "Please refer to https://firebase.google.com/support/privacy/init-options.";
+
+  private static final String PROJECT_ID_VALIDATION_MSG =
+      "Please set your Project ID. A valid Firebase Project ID is required to communicate "
+          + "with Firebase server APIs: It identifies your application with Firebase."
+          + "Please refer to https://firebase.google.com/support/privacy/init-options.";
+
   /** package private constructor. */
   FirebaseInstallations(
       FirebaseApp firebaseApp,
@@ -94,12 +116,12 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
       @Nullable HeartBeatInfo heartbeatInfo) {
     this(
         new ThreadPoolExecutor(
-            /* corePoolSize= */ 0,
-            /* maximumPoolSize= */ 1,
-            /* keepAliveTime= */ 30L,
+            CORE_POOL_SIZE,
+            MAXIMUM_POOL_SIZE,
+            KEEP_ALIVE_TIME_IN_SECONDS,
             TimeUnit.SECONDS,
-            /* workQueue= */ new LinkedBlockingQueue<>(),
-            /* threadFactory= */ threadFactory),
+            new LinkedBlockingQueue<>(),
+            THREAD_FACTORY),
         firebaseApp,
         new FirebaseInstallationServiceClient(
             firebaseApp.getApplicationContext(), publisher, heartbeatInfo),
@@ -110,7 +132,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   }
 
   FirebaseInstallations(
-      ExecutorService executor,
+      ExecutorService backgroundExecutor,
       FirebaseApp firebaseApp,
       FirebaseInstallationServiceClient serviceClient,
       PersistedInstallation persistedInstallation,
@@ -119,11 +141,19 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
       RandomFidGenerator fidGenerator) {
     this.firebaseApp = firebaseApp;
     this.serviceClient = serviceClient;
-    this.executor = executor;
     this.persistedInstallation = persistedInstallation;
     this.utils = utils;
     this.iidStore = iidStore;
     this.fidGenerator = fidGenerator;
+    this.backgroundExecutor = backgroundExecutor;
+    this.networkExecutor =
+        new ThreadPoolExecutor(
+            CORE_POOL_SIZE,
+            MAXIMUM_POOL_SIZE,
+            KEEP_ALIVE_TIME_IN_SECONDS,
+            TimeUnit.SECONDS,
+            new LinkedBlockingQueue<>(),
+            THREAD_FACTORY);
   }
 
   /**
@@ -132,17 +162,18 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
    * or empty.
    */
   private void preConditionChecks() {
-    Preconditions.checkNotEmpty(getApplicationId());
-    Preconditions.checkNotEmpty(getProjectIdentifier());
-    Preconditions.checkNotEmpty(getApiKey());
+    Preconditions.checkNotEmpty(getApplicationId(), APP_ID_VALIDATION_MSG);
+    Preconditions.checkNotEmpty(getProjectIdentifier(), PROJECT_ID_VALIDATION_MSG);
+    Preconditions.checkNotEmpty(getApiKey(), API_KEY_VALIDATION_MSG);
+    Preconditions.checkArgument(
+        Utils.isValidAppIdFormat(getApplicationId()), APP_ID_VALIDATION_MSG);
+    Preconditions.checkArgument(Utils.isValidApiKeyFormat(getApiKey()), API_KEY_VALIDATION_MSG);
   }
 
   /** Returns the Project Id or Project Number for the Firebase Project. */
   @Nullable
   String getProjectIdentifier() {
-    return TextUtils.isEmpty(firebaseApp.getOptions().getProjectId())
-        ? firebaseApp.getOptions().getGcmSenderId()
-        : firebaseApp.getOptions().getProjectId();
+    return firebaseApp.getOptions().getProjectId();
   }
 
   /**
@@ -194,49 +225,50 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   @Override
   public Task<String> getId() {
     preConditionChecks();
+
+    // Return cached fid if available.
+    String fid = getCacheFid();
+    if (fid != null) {
+      return Tasks.forResult(fid);
+    }
+
     Task<String> task = addGetIdListener();
-    executor.execute(this::doGetId);
+    backgroundExecutor.execute(() -> doRegistrationOrRefresh(false));
     return task;
   }
 
   /**
    * Returns a valid authentication token for the Firebase installation. Generates a new token if
-   * one doesn't exist, is expired or about to expire.
+   * one doesn't exist, is expired, or is about to expire.
    *
-   * <p>Should only be called if the Firebase Installation is registered.
+   * <p>Should only be called if the Firebase installation is registered.
    *
-   * @param forceRefresh Options to get FIS Auth Token either by force refreshing or not.
+   * @param forceRefresh Options to get an auth token either by force refreshing or not.
    */
   @NonNull
   @Override
   public Task<InstallationTokenResult> getToken(boolean forceRefresh) {
     preConditionChecks();
     Task<InstallationTokenResult> task = addGetAuthTokenListener();
-    if (forceRefresh) {
-      executor.execute(this::doGetAuthTokenForceRefresh);
-    } else {
-      executor.execute(this::doGetAuthTokenWithoutForceRefresh);
-    }
+    backgroundExecutor.execute(() -> doRegistrationOrRefresh(forceRefresh));
     return task;
   }
 
   /**
-   * Call to delete this Firebase app installation from Firebase backend. This call would possibly
-   * lead Firebase Notification, Firebase RemoteConfig, Firebase Predictions or Firebase In-App
-   * Messaging not function properly.
+   * Call to delete this Firebase app installation from the Firebase backend. This call may cause
+   * Firebase Cloud Messaging, Firebase Remote Config, Firebase Predictions, or Firebase In-App
+   * Messaging to not function properly.
    */
   @NonNull
   @Override
   public Task<Void> delete() {
-    return Tasks.call(executor, this::deleteFirebaseInstallationId);
+    return Tasks.call(backgroundExecutor, this::deleteFirebaseInstallationId);
   }
 
   private Task<String> addGetIdListener() {
     TaskCompletionSource<String> taskCompletionSource = new TaskCompletionSource<>();
     StateListener l = new GetIdListener(taskCompletionSource);
-    synchronized (lock) {
-      listeners.add(l);
-    }
+    addStateListeners(l);
     return taskCompletionSource.getTask();
   }
 
@@ -244,10 +276,14 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     TaskCompletionSource<InstallationTokenResult> taskCompletionSource =
         new TaskCompletionSource<>();
     StateListener l = new GetAuthTokenListener(utils, taskCompletionSource);
+    addStateListeners(l);
+    return taskCompletionSource.getTask();
+  }
+
+  private void addStateListeners(StateListener l) {
     synchronized (lock) {
       listeners.add(l);
     }
-    return taskCompletionSource.getTask();
   }
 
   private void triggerOnStateReached(PersistedInstallationEntry persistedInstallationEntry) {
@@ -276,16 +312,12 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     }
   }
 
-  private final void doGetId() {
-    doRegistrationInternal(false);
+  private synchronized void updateCacheFid(String cachedFid) {
+    this.cachedFid = cachedFid;
   }
 
-  private final void doGetAuthTokenWithoutForceRefresh() {
-    doRegistrationInternal(false);
-  }
-
-  private final void doGetAuthTokenForceRefresh() {
-    doRegistrationInternal(true);
+  private synchronized String getCacheFid() {
+    return cachedFid;
   }
 
   /**
@@ -297,7 +329,8 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
    * @param forceRefresh true if this is for a getAuthToken call and if the caller wants to fetch a
    *     new auth token from the server even if an unexpired auth token exists on the client.
    */
-  private final void doRegistrationInternal(boolean forceRefresh) {
+  private final void doRegistrationOrRefresh(boolean forceRefresh) {
+
     PersistedInstallationEntry prefs = getPrefsWithGeneratedIdMultiProcessSafe();
 
     // Since the caller wants to force an authtoken refresh remove the authtoken from the
@@ -307,7 +340,13 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     }
 
     triggerOnStateReached(prefs);
+    // Execute network calls (CreateInstallations or GenerateAuthToken) to the FIS Servers on
+    // a separate executor i.e networkExecutor
+    networkExecutor.execute(() -> doNetworkCallIfNecessary(forceRefresh));
+  }
 
+  private void doNetworkCallIfNecessary(boolean forceRefresh) {
+    PersistedInstallationEntry prefs = getMultiProcessSafePrefs();
     // There are two possible cleanup steps to perform at this stage: the FID may need to
     // be registered with the server or the FID is registered but we need a fresh authtoken.
     // Registering will also result in a fresh authtoken. Do the appropriate step here.
@@ -320,13 +359,18 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
         // nothing more to do, get out now
         return;
       }
-    } catch (IOException e) {
+    } catch (FirebaseInstallationsException e) {
       triggerOnException(prefs, e);
       return;
     }
 
     // Store the prefs to persist the result of the previous step.
-    persistedInstallation.insertOrUpdatePersistedInstallationEntry(prefs);
+    insertOrUpdatePrefs(prefs);
+
+    // Update cachedFID, if FID is successfully REGISTERED and persisted.
+    if (prefs.isRegistered()) {
+      updateCacheFid(prefs.getFirebaseInstallationId());
+    }
 
     // Let the caller know about the result.
     if (prefs.isErrored()) {
@@ -337,6 +381,29 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
       triggerOnException(prefs, new IOException("cleared fid due to auth error"));
     } else {
       triggerOnStateReached(prefs);
+    }
+  }
+
+  /**
+   * Inserting or Updating the prefs. This operation is made cross-process and cross-thread safe by
+   * wrapping all the processing first in a java synchronization block and wrapping that in a
+   * cross-process lock created using FileLocks.
+   */
+  private void insertOrUpdatePrefs(PersistedInstallationEntry prefs) {
+    synchronized (lockGenerateFid) {
+      CrossProcessLock lock =
+          CrossProcessLock.acquire(firebaseApp.getApplicationContext(), LOCKFILE_NAME_GENERATE_FID);
+      try {
+        // Store the prefs to persist the result of the previous step.
+        persistedInstallation.insertOrUpdatePersistedInstallationEntry(prefs);
+      } finally {
+        // It is possible that the lock acquisition failed, resulting in lock being null.
+        // We handle this case by going on with our business even if the acquisition failed
+        // but we need to be sure to only release if we got a lock.
+        if (lock != null) {
+          lock.releaseAndClose();
+        }
+      }
     }
   }
 
@@ -375,7 +442,12 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
         return prefs;
 
       } finally {
-        lock.releaseAndClose();
+        // It is possible that the lock acquisition failed, resulting in lock being null.
+        // We handle this case by going on with our business even if the acquisition failed
+        // but we need to be sure to only release if we got a lock.
+        if (lock != null) {
+          lock.releaseAndClose();
+        }
       }
     }
   }
@@ -396,12 +468,13 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
   /** Registers the created Fid with FIS servers and update the persisted state. */
   private PersistedInstallationEntry registerFidWithServer(PersistedInstallationEntry prefs)
-      throws IOException {
+      throws FirebaseInstallationsException {
 
     // Note: Default value of instanceIdMigrationAuth: null
     String iidToken = null;
 
-    if (prefs.getFirebaseInstallationId().length() == 11) {
+    if (prefs.getFirebaseInstallationId() != null
+        && prefs.getFirebaseInstallationId().length() == 11) {
       // For a default firebase installation, read the stored star scoped iid token. This token
       // will be used for authenticating Instance-ID when migrating to FIS.
       iidToken = iidStore.readToken();
@@ -426,7 +499,9 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
       case BAD_CONFIG:
         return prefs.withFisError("BAD CONFIG");
       default:
-        throw new IOException();
+        throw new FirebaseInstallationsException(
+            "Firebase Installations Service is unavailable. Please try again later.",
+            Status.UNAVAILABLE);
     }
   }
 
@@ -437,7 +512,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
    * for the fid.
    */
   private PersistedInstallationEntry fetchAuthTokenFromServer(
-      @NonNull PersistedInstallationEntry prefs) throws IOException {
+      @NonNull PersistedInstallationEntry prefs) throws FirebaseInstallationsException {
     TokenResult tokenResult =
         serviceClient.generateAuthToken(
             /*apiKey= */ getApiKey(),
@@ -456,9 +531,12 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
       case AUTH_ERROR:
         // The the server refused to generate a new auth token due to bad credentials, clear the
         // FID to force the generation of a new one.
+        updateCacheFid(null);
         return prefs.withNoGeneratedFid();
       default:
-        throw new IOException();
+        throw new FirebaseInstallationsException(
+            "Firebase Installations Service is unavailable. Please try again later.",
+            Status.UNAVAILABLE);
     }
   }
 
@@ -466,24 +544,45 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
    * Deletes the firebase installation id of the {@link FirebaseApp} from FIS servers and local
    * storage.
    */
-  private Void deleteFirebaseInstallationId() throws FirebaseInstallationsException, IOException {
-    PersistedInstallationEntry entry = persistedInstallation.readPersistedInstallationEntryValue();
+  private Void deleteFirebaseInstallationId() throws FirebaseInstallationsException {
+    updateCacheFid(null);
+    PersistedInstallationEntry entry = getMultiProcessSafePrefs();
     if (entry.isRegistered()) {
       // Call the FIS servers to delete this Firebase Installation Id.
-      try {
-        serviceClient.deleteFirebaseInstallation(
-            /*apiKey= */ getApiKey(),
-            /*fid= */ entry.getFirebaseInstallationId(),
-            /*projectID= */ getProjectIdentifier(),
-            /*refreshToken= */ entry.getRefreshToken());
+      serviceClient.deleteFirebaseInstallation(
+          /*apiKey= */ getApiKey(),
+          /*fid= */ entry.getFirebaseInstallationId(),
+          /*projectID= */ getProjectIdentifier(),
+          /*refreshToken= */ entry.getRefreshToken());
+    }
+    insertOrUpdatePrefs(entry.withNoGeneratedFid());
+    return null;
+  }
 
-      } catch (FirebaseException exception) {
-        throw new FirebaseInstallationsException(
-            "Failed to delete a Firebase Installation.", Status.BAD_CONFIG);
+  /**
+   * Loads the persisted prefs. This operation is made cross-process and cross-thread safe by
+   * wrapping all the processing first in a java synchronization block and wrapping that in a
+   * cross-process lock created using FileLocks.
+   *
+   * @return a persisted prefs
+   */
+  private PersistedInstallationEntry getMultiProcessSafePrefs() {
+    synchronized (lockGenerateFid) {
+      CrossProcessLock lock =
+          CrossProcessLock.acquire(firebaseApp.getApplicationContext(), LOCKFILE_NAME_GENERATE_FID);
+      try {
+        PersistedInstallationEntry prefs =
+            persistedInstallation.readPersistedInstallationEntryValue();
+        return prefs;
+
+      } finally {
+        // It is possible that the lock acquisition failed, resulting in lock being null.
+        // We handle this case by going on with our business even if the acquisition failed
+        // but we need to be sure to only release if we got a lock.
+        if (lock != null) {
+          lock.releaseAndClose();
+        }
       }
     }
-
-    persistedInstallation.insertOrUpdatePersistedInstallationEntry(entry.withNoGeneratedFid());
-    return null;
   }
 }

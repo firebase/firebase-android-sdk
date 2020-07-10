@@ -16,6 +16,7 @@ package com.google.firebase.inappmessaging.internal;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -161,5 +162,14 @@ public class SharedPreferencesUtilsTest {
 
     verify(editor).putBoolean(TEST_PREFERENCE, false);
     verify(editor).apply();
+  }
+
+  @Test
+  public void getBooleanPreference_correctlyRemovesPreference() throws Exception {
+    sharedPreferencesUtils.setBooleanPreference(TEST_PREFERENCE, false);
+    verify(editor).putBoolean(TEST_PREFERENCE, false);
+    sharedPreferencesUtils.clearPreference(TEST_PREFERENCE);
+    verify(editor).remove(TEST_PREFERENCE);
+    verify(editor, times(2)).apply();
   }
 }

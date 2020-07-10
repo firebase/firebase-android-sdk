@@ -23,7 +23,6 @@ import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
-import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.personalization.component.PersonalizationComponent;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.util.Arrays;
@@ -44,7 +43,7 @@ public class RemoteConfigRegistrar implements ComponentRegistrar {
         Component.builder(RemoteConfigComponent.class)
             .add(Dependency.required(Context.class))
             .add(Dependency.required(FirebaseApp.class))
-            .add(Dependency.required(FirebaseInstanceId.class))
+            .add(Dependency.required(FirebaseInstallationsApi.class))
             .add(Dependency.required(AbtComponent.class))
             .add(Dependency.required(PersonalizationComponent.class))
             .add(Dependency.optional(AnalyticsConnector.class))
@@ -53,7 +52,7 @@ public class RemoteConfigRegistrar implements ComponentRegistrar {
                     new RemoteConfigComponent(
                         container.get(Context.class),
                         container.get(FirebaseApp.class),
-                        container.get(FirebaseInstanceId.class),
+                        container.get(FirebaseInstallationsApi.class),
                         container.get(AbtComponent.class).get(OriginService.REMOTE_CONFIG),
                         container.get(PersonalizationComponent.class).get(),
                         container.get(AnalyticsConnector.class)))

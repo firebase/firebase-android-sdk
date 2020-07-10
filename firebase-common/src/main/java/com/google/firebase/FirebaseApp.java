@@ -44,6 +44,7 @@ import com.google.firebase.components.ComponentDiscoveryService;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.ComponentRuntime;
 import com.google.firebase.components.Lazy;
+import com.google.firebase.emulators.EmulatorSettings;
 import com.google.firebase.events.Publisher;
 import com.google.firebase.heartbeatinfo.DefaultHeartBeatInfo;
 import com.google.firebase.internal.DataCollectionConfigStorage;
@@ -110,6 +111,9 @@ public class FirebaseApp {
   private final FirebaseOptions options;
   private final ComponentRuntime componentRuntime;
 
+  private final AtomicBoolean emulatorSettingsFrozen = new AtomicBoolean(false);
+  private EmulatorSettings emulatorSettings = EmulatorSettings.DEFAULT;
+
   // Default disabled. We released Firebase publicly without this feature, so making it default
   // enabled is a backwards incompatible change.
   private final AtomicBoolean automaticResourceManagementEnabled = new AtomicBoolean(false);
@@ -140,6 +144,20 @@ public class FirebaseApp {
   public FirebaseOptions getOptions() {
     checkNotDeleted();
     return options;
+  }
+
+  /**
+   * Returns the specified {@link EmulatorSettings} or a default.
+   *
+   * <p>TODO(samstern): Un-hide this once Firestore, Database, and Functions are implemented
+   *
+   * @hide
+   */
+  @NonNull
+  public EmulatorSettings getEmulatorSettings() {
+    checkNotDeleted();
+    emulatorSettingsFrozen.set(true);
+    return emulatorSettings;
   }
 
   @Override
@@ -306,6 +324,26 @@ public class FirebaseApp {
   }
 
   /**
+   * Specify which services should access local emulators for this FirebaseApp instance.
+   *
+   * <p>For example, if the {@link EmulatorSettings} contain {@link
+   * com.google.firebase.emulators.EmulatedServiceSettings} for {@link FirebaseDatabase#EMULATOR},
+   * then calls to Cloud Firestore will communicate with the emulator rather than production.
+   *
+   * <p>TODO(samstern): Un-hide this once Firestore, Database, and Functions are implemented
+   *
+   * @param emulatorSettings the emulator settings for all services.
+   * @hide
+   */
+  public void enableEmulators(@NonNull EmulatorSettings emulatorSettings) {
+    checkNotDeleted();
+    Preconditions.checkState(
+        !this.emulatorSettingsFrozen.get(),
+        "Cannot enable emulators after Firebase SDKs have already been used.");
+    this.emulatorSettings = emulatorSettings;
+  }
+
+  /**
    * Deletes the {@link FirebaseApp} and all its data. All calls to this {@link FirebaseApp}
    * instance will throw once it has been called.
    *
@@ -384,9 +422,24 @@ public class FirebaseApp {
    * @hide
    */
   @KeepForSdk
-  public void setDataCollectionDefaultEnabled(boolean enabled) {
+  public void setDataCollectionDefaultEnabled(Boolean enabled) {
     checkNotDeleted();
     dataCollectionConfigStorage.get().setEnabled(enabled);
+  }
+
+  /**
+   * Enable or disable automatic data collection across all SDKs.
+   *
+   * <p>Note: this value is respected by all SDKs unless overridden by the developer via SDK
+   * specific mechanisms.
+   *
+   * @deprecated Use {@link #setDataCollectionDefaultEnabled(Boolean)} instead.
+   * @hide
+   */
+  @KeepForSdk
+  @Deprecated
+  public void setDataCollectionDefaultEnabled(boolean enabled) {
+    setDataCollectionDefaultEnabled(Boolean.valueOf(enabled));
   }
 
   /**

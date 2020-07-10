@@ -1,3 +1,11 @@
+# Unreleased
+
+- [changed] Added internal HTTP header to the WebChannel connection.
+
+# 19.3.0
+- [feature] Added ServerValue.increment() to support atomic field value increments
+  without transactions.
+
 # 19.2.0
 - [changed] Added support for type wildcards in GenericTypeIndicator, expanding
   our custom class serialization to include classes with wildcard generics

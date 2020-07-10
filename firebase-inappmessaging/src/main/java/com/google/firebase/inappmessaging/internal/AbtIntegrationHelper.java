@@ -14,19 +14,26 @@
 
 package com.google.firebase.inappmessaging.internal;
 
+import androidx.annotation.VisibleForTesting;
 import com.google.firebase.abt.AbtException;
 import com.google.firebase.abt.AbtExperimentInfo;
 import com.google.firebase.abt.FirebaseABTesting;
+import com.google.firebase.inappmessaging.internal.injection.scopes.FirebaseAppScope;
 import com.google.internal.firebase.inappmessaging.v1.CampaignProto;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.FetchEligibleCampaignsResponse;
 import developers.mobile.abt.FirebaseAbt;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import javax.inject.Inject;
 
 /** @hide */
+@FirebaseAppScope
 public class AbtIntegrationHelper {
-  private static FirebaseABTesting abTesting;
+  private final FirebaseABTesting abTesting;
+
+  @VisibleForTesting Executor executor = Executors.newSingleThreadExecutor();
 
   @Inject
   public AbtIntegrationHelper(FirebaseABTesting abTesting) {
@@ -40,7 +47,7 @@ public class AbtIntegrationHelper {
    * @param response the {@link FetchEligibleCampaignsResponse} containing an up to date experiment
    *     list.
    */
-  public void updateRunningExperiments(FetchEligibleCampaignsResponse response) {
+  void updateRunningExperiments(FetchEligibleCampaignsResponse response) {
     ArrayList<AbtExperimentInfo> runningExperiments = new ArrayList<>();
     for (CampaignProto.ThickContent content : response.getMessagesList()) {
       if (!content.getIsTestCampaign()
@@ -62,14 +69,17 @@ public class AbtIntegrationHelper {
     if (runningExperiments.isEmpty()) {
       return;
     }
-    try {
-      Logging.logd(
-          "Updating running experiments with: " + runningExperiments.size() + " experiments");
-      abTesting.validateRunningExperiments(runningExperiments);
-    } catch (AbtException e) {
-      Logging.loge(
-          "Unable to register experiments with ABT, missing analytics?\n" + e.getMessage());
-    }
+    executor.execute(
+        () -> {
+          try {
+            Logging.logd(
+                "Updating running experiments with: " + runningExperiments.size() + " experiments");
+            abTesting.validateRunningExperiments(runningExperiments);
+          } catch (AbtException e) {
+            Logging.loge(
+                "Unable to register experiments with ABT, missing analytics?\n" + e.getMessage());
+          }
+        });
   }
 
   /**
@@ -79,20 +89,24 @@ public class AbtIntegrationHelper {
    *
    * @param payload the {@link FirebaseAbt.ExperimentPayload} that should be set as active.
    */
-  public void setExperimentActive(FirebaseAbt.ExperimentPayload payload) {
-    try {
-      Logging.logd("Updating active experiment: " + payload.toString());
-      abTesting.reportActiveExperiment(
-          new AbtExperimentInfo(
-              payload.getExperimentId(),
-              payload.getVariantId(),
-              payload.getTriggerEvent(),
-              new Date(payload.getExperimentStartTimeMillis()),
-              payload.getTriggerTimeoutMillis(),
-              payload.getTimeToLiveMillis()));
-    } catch (AbtException e) {
-      Logging.loge(
-          "Unable to set experiment as active with ABT, missing analytics?\n" + e.getMessage());
-    }
+  void setExperimentActive(FirebaseAbt.ExperimentPayload payload) {
+    executor.execute(
+        () -> {
+          try {
+            Logging.logd("Updating active experiment: " + payload.toString());
+            abTesting.reportActiveExperiment(
+                new AbtExperimentInfo(
+                    payload.getExperimentId(),
+                    payload.getVariantId(),
+                    payload.getTriggerEvent(),
+                    new Date(payload.getExperimentStartTimeMillis()),
+                    payload.getTriggerTimeoutMillis(),
+                    payload.getTimeToLiveMillis()));
+          } catch (AbtException e) {
+            Logging.loge(
+                "Unable to set experiment as active with ABT, missing analytics?\n"
+                    + e.getMessage());
+          }
+        });
   }
 }

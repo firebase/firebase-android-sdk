@@ -143,6 +143,12 @@ public class DeveloperListenerManager {
     registeredErrorListeners.remove(displayErrorListener);
   }
 
+  public void removeAllListeners() {
+    registeredClickListeners.clear();
+    registeredImpressionListeners.clear();
+    registeredErrorListeners.clear();
+  }
+
   /** The thread factory for Storage threads. */
   static class FIAMThreadFactory implements ThreadFactory {
     private final AtomicInteger threadNumber = new AtomicInteger(1);

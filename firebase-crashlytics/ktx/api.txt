@@ -1,0 +1,21 @@
+// Signature format: 2.0
+package com.google.firebase.crashlytics.ktx {
+
+  public final class FirebaseCrashlyticsKt {
+    ctor public FirebaseCrashlyticsKt();
+    method @NonNull public static com.google.firebase.crashlytics.FirebaseCrashlytics getCrashlytics(@NonNull com.google.firebase.ktx.Firebase);
+    method public static void setCustomKeys(@NonNull com.google.firebase.crashlytics.FirebaseCrashlytics, @NonNull kotlin.jvm.functions.Function1<? super com.google.firebase.crashlytics.ktx.KeyValueBuilder,kotlin.Unit> init);
+  }
+
+  public final class KeyValueBuilder {
+    ctor public KeyValueBuilder(@NonNull com.google.firebase.crashlytics.FirebaseCrashlytics crashlytics);
+    method public void key(@NonNull String key, boolean value);
+    method public void key(@NonNull String key, double value);
+    method public void key(@NonNull String key, float value);
+    method public void key(@NonNull String key, int value);
+    method public void key(@NonNull String key, long value);
+    method public void key(@NonNull String key, @NonNull String value);
+  }
+
+}
+

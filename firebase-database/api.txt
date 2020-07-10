@@ -187,6 +187,8 @@ package com.google.firebase.database {
 
   public class ServerValue {
     ctor public ServerValue();
+    method @NonNull public static final Object increment(long);
+    method @NonNull public static final Object increment(double);
     field @NonNull public static final java.util.Map<java.lang.String,java.lang.String> TIMESTAMP;
   }
 
