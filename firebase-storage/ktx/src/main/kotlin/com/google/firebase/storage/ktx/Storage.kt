@@ -16,6 +16,10 @@ package com.google.firebase.storage.ktx
 
 import androidx.annotation.Keep
 import com.google.firebase.FirebaseApp
+import com.google.firebase.components.Component
+import com.google.firebase.components.ComponentRegistrar
+import com.google.firebase.ktx.Firebase
+import com.google.firebase.platforminfo.LibraryVersionComponent
 import com.google.firebase.storage.FileDownloadTask
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.ListResult
@@ -23,10 +27,6 @@ import com.google.firebase.storage.StorageMetadata
 import com.google.firebase.storage.StorageReference
 import com.google.firebase.storage.StreamDownloadTask
 import com.google.firebase.storage.UploadTask
-import com.google.firebase.components.Component
-import com.google.firebase.components.ComponentRegistrar
-import com.google.firebase.ktx.Firebase
-import com.google.firebase.platforminfo.LibraryVersionComponent
 
 /** Returns the [FirebaseStorage] instance of the default [FirebaseApp]. */
 val Firebase.storage: FirebaseStorage
