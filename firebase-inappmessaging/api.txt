@@ -18,7 +18,7 @@ package com.google.firebase.inappmessaging {
     method public void setAutomaticDataCollectionEnabled(boolean);
     method public void setMessageDisplayComponent(@NonNull com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplay);
     method public void setMessagesSuppressed(@NonNull Boolean);
-    method public void triggerEvent(String);
+    method public void triggerEvent(@NonNull String);
   }
 
   public interface FirebaseInAppMessagingClickListener {

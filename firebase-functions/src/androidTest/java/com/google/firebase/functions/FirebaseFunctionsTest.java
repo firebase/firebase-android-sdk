@@ -15,32 +15,24 @@
 package com.google.firebase.functions;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
-import androidx.test.InstrumentationRegistry;
+import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.FirebaseOptions;
+import com.google.firebase.emulators.EmulatedServiceSettings;
+import com.google.firebase.emulators.EmulatorSettings;
 import java.net.URL;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @RunWith(AndroidJUnit4.class)
 public class FirebaseFunctionsTest {
-  private final FirebaseApp app = mock(FirebaseApp.class);
-  private final ContextProvider provider = mock(ContextProvider.class);
-
-  @Before
-  public void setUp() {
-    when(app.get(FunctionsMultiResourceComponent.class))
-        .thenReturn(
-            new FunctionsMultiResourceComponent(
-                InstrumentationRegistry.getTargetContext(), provider, "my-project"));
-  }
 
   @Test
   public void testGetUrl() {
+    FirebaseApp app = getApp("testGetUrl");
+
     FirebaseFunctions functions = FirebaseFunctions.getInstance(app, "my-region");
     URL url = functions.getURL("my-endpoint");
     assertEquals("https://my-region-my-project.cloudfunctions.net/my-endpoint", url.toString());
@@ -48,5 +40,53 @@ public class FirebaseFunctionsTest {
     functions = FirebaseFunctions.getInstance(app);
     url = functions.getURL("my-endpoint");
     assertEquals("https://us-central1-my-project.cloudfunctions.net/my-endpoint", url.toString());
+  }
+
+  @Test
+  public void testGetUrl_withEmulator() {
+    FirebaseApp app = getApp("testGetUrl_withEmulator");
+
+    app.enableEmulators(
+        new EmulatorSettings.Builder()
+            .addEmulatedService(
+                FirebaseFunctions.EMULATOR, new EmulatedServiceSettings("10.0.2.2", 5001))
+            .build());
+
+    URL withRegion = FirebaseFunctions.getInstance(app, "my-region").getURL("my-endpoint");
+    assertEquals("http://10.0.2.2:5001/my-project/my-region/my-endpoint", withRegion.toString());
+
+    URL withoutRegion = FirebaseFunctions.getInstance(app).getURL("my-endpoint");
+    assertEquals(
+        "http://10.0.2.2:5001/my-project/us-central1/my-endpoint", withoutRegion.toString());
+  }
+
+  @Test
+  public void testGetUrl_withEmulator_matchesOldImpl() {
+    FirebaseApp app = getApp("testGetUrl_withEmulator_matchesOldImpl");
+
+    app.enableEmulators(
+        new EmulatorSettings.Builder()
+            .addEmulatedService(
+                FirebaseFunctions.EMULATOR, new EmulatedServiceSettings("10.0.2.2", 5001))
+            .build());
+
+    FirebaseFunctions functions = FirebaseFunctions.getInstance(app);
+    URL newImplUrl = functions.getURL("my-endpoint");
+
+    functions.useFunctionsEmulator("http://10.0.2.2:5001");
+    URL oldImplUrl = functions.getURL("my-endpoint");
+
+    assertEquals(newImplUrl.toString(), oldImplUrl.toString());
+  }
+
+  private FirebaseApp getApp(String name) {
+    return FirebaseApp.initializeApp(
+        InstrumentationRegistry.getInstrumentation().getTargetContext(),
+        new FirebaseOptions.Builder()
+            .setProjectId("my-project")
+            .setApplicationId("appid")
+            .setApiKey("apikey")
+            .build(),
+        name);
   }
 }

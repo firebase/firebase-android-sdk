@@ -18,8 +18,8 @@ import android.net.Uri
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
-import com.google.firebase.ktx.Firebase
 import com.google.firebase.dynamiclinks.FirebaseDynamicLinks
+import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.app
 import com.google.firebase.ktx.initialize
 import org.junit.After
@@ -220,7 +220,7 @@ class DynamicLinksTests : BaseTestCase() {
             }
         }
 
-        val efr = Integer.parseInt(dynamicLink.uri.getQueryParameter("efr")) == 1
+        val efr = Integer.parseInt(dynamicLink.uri.getQueryParameter("efr")!!) == 1
         assertThat(efr).isEqualTo(forcedRedirect)
     }
 }

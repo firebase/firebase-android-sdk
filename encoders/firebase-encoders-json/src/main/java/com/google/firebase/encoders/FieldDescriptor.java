@@ -68,11 +68,6 @@ public final class FieldDescriptor {
   }
 
   @NonNull
-  public static FieldDescriptor of(@NonNull String name) {
-    return new FieldDescriptor(name, Collections.emptyMap());
-  }
-
-  @NonNull
   public static Builder builder(@NonNull String name) {
     return new Builder(name);
   }

@@ -17,6 +17,7 @@ package com.google.firebase.encoders.processor.annotations;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.MethodSpec;
+import com.squareup.javapoet.MethodSpec.Builder;
 import java.util.List;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
@@ -26,7 +27,7 @@ import javax.lang.model.util.ElementFilter;
 final class ToStringMethod {
   static MethodSpec generate(TypeElement element) {
     ClassName.get(element).reflectionName();
-    MethodSpec.Builder result =
+    Builder result =
         MethodSpec.methodBuilder("toString")
             .addModifiers(Modifier.PUBLIC)
             .returns(String.class)

@@ -16,6 +16,8 @@ package com.google.firebase.functions;
 
 import android.content.Context;
 import androidx.annotation.GuardedBy;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.emulators.EmulatedServiceSettings;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -31,19 +33,25 @@ class FunctionsMultiResourceComponent {
 
   private final Context applicationContext;
   private final ContextProvider contextProvider;
-  private final String projectId;
+  private final FirebaseApp app;
 
   FunctionsMultiResourceComponent(
-      Context applicationContext, ContextProvider contextProvider, String projectId) {
+      Context applicationContext, ContextProvider contextProvider, FirebaseApp app) {
     this.applicationContext = applicationContext;
     this.contextProvider = contextProvider;
-    this.projectId = projectId;
+    this.app = app;
   }
 
   synchronized FirebaseFunctions get(String region) {
     FirebaseFunctions functions = instances.get(region);
+    String projectId = app.getOptions().getProjectId();
+    EmulatedServiceSettings emulatorSettings =
+        app.getEmulatorSettings().getServiceSettings(FirebaseFunctions.EMULATOR);
+
     if (functions == null) {
-      functions = new FirebaseFunctions(applicationContext, projectId, region, contextProvider);
+      functions =
+          new FirebaseFunctions(
+              applicationContext, projectId, region, contextProvider, emulatorSettings);
       instances.put(region, functions);
     }
     return functions;
