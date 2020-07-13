@@ -118,14 +118,14 @@ operator fun FileDownloadTask.TaskSnapshot.component2() = totalByteCount
  *
  * @return the items of the [ListResult]
  */
-operator fun ListResult.component1(): MutableList<StorageReference> = items
+operator fun ListResult.component1(): List<StorageReference> = items
 
 /**
  * Destructuring declaration for [ListResult] to provide its prefixes
  *
  * @return the prefixes of the [ListResult]
  */
-operator fun ListResult.component2(): MutableList<StorageReference> = prefixes
+operator fun ListResult.component2(): List<StorageReference> = prefixes
 
 /**
  * Destructuring declaration for [ListResult] to provide its pageToken
