@@ -38,7 +38,7 @@ import com.google.firebase.crashlytics.internal.common.DataCollectionArbiter;
 import com.google.firebase.crashlytics.internal.common.ExecutorUtils;
 import com.google.firebase.crashlytics.internal.common.IdManager;
 import com.google.firebase.crashlytics.internal.settings.SettingsController;
-import com.google.firebase.iid.internal.FirebaseInstanceIdInternal;
+import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -60,13 +60,13 @@ public class FirebaseCrashlytics {
 
   static @Nullable FirebaseCrashlytics init(
       @NonNull FirebaseApp app,
-      @NonNull FirebaseInstanceIdInternal instanceId,
+      @NonNull FirebaseInstallationsApi firebaseInstallationsApi,
       @Nullable CrashlyticsNativeComponent nativeComponent,
       @Nullable AnalyticsConnector analyticsConnector) {
     Context context = app.getApplicationContext();
     // Set up the IdManager.
     final String appIdentifier = context.getPackageName();
-    final IdManager idManager = new IdManager(context, appIdentifier, instanceId);
+    final IdManager idManager = new IdManager(context, appIdentifier, firebaseInstallationsApi);
 
     final DataCollectionArbiter arbiter = new DataCollectionArbiter(app);
 

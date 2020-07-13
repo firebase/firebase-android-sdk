@@ -21,6 +21,7 @@ import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
+import com.squareup.javapoet.TypeSpec.Builder;
 import com.squareup.javapoet.WildcardTypeName;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
@@ -79,7 +80,7 @@ public final class AnnotationBuilder {
 
   private static TypeSpec createBuilder(
       ClassName builderName, ClassName annotationName, AnnotationImpl annotationImpl) {
-    TypeSpec.Builder annotationBuilder =
+    Builder annotationBuilder =
         TypeSpec.classBuilder(builderName)
             .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
             .addType(annotationImpl.typeSpec);
@@ -171,7 +172,7 @@ public final class AnnotationBuilder {
 
   private static AnnotationImpl createAnnotationImpl(TypeElement annotation) {
     String implName = annotation.getSimpleName().toString() + "Impl";
-    TypeSpec.Builder annotationImpl =
+    Builder annotationImpl =
         TypeSpec.classBuilder(implName)
             .addModifiers(Modifier.PRIVATE, Modifier.STATIC, Modifier.FINAL)
             .addSuperinterface(TypeName.get(annotation.asType()))

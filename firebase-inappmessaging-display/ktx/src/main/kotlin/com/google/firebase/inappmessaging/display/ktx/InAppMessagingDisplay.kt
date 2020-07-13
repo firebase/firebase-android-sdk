@@ -16,9 +16,9 @@ package com.google.firebase.inappmessaging.display.ktx
 
 import androidx.annotation.Keep
 import com.google.firebase.FirebaseApp
-import com.google.firebase.inappmessaging.display.FirebaseInAppMessagingDisplay
 import com.google.firebase.components.Component
 import com.google.firebase.components.ComponentRegistrar
+import com.google.firebase.inappmessaging.display.FirebaseInAppMessagingDisplay
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.platforminfo.LibraryVersionComponent
 

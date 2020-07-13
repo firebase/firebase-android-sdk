@@ -62,11 +62,8 @@ dependencies {
     implementation project(':transport:transport-api')
     implementation project(':transport:transport-runtime')
     implementation project(':transport:transport-backend-cct')
-    implementation ('com.google.firebase:firebase-iid:20.1.5') {
-        exclude group: "com.google.firebase", module: "firebase-common"
-        exclude group: "com.google.firebase", module: "firebase-components"
-    }
-    implementation 'com.google.firebase:firebase-iid-interop:17.0.0'
+    implementation project(':firebase-installations-interop')
+    runtimeOnly project(':firebase-installations')
     implementation 'com.google.firebase:firebase-measurement-connector:18.0.0'
     implementation "com.google.android.gms:play-services-tasks:17.0.0"
 

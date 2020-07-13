@@ -38,7 +38,7 @@ import com.google.firebase.crashlytics.internal.persistence.FileStoreImpl;
 import com.google.firebase.crashlytics.internal.settings.SettingsController;
 import com.google.firebase.crashlytics.internal.settings.TestSettingsData;
 import com.google.firebase.crashlytics.internal.settings.model.SettingsData;
-import com.google.firebase.iid.internal.FirebaseInstanceIdInternal;
+import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
@@ -681,13 +681,14 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
       FirebaseApp app = mock(FirebaseApp.class);
       when(app.getApplicationContext()).thenReturn(context);
       when(app.getOptions()).thenReturn(testFirebaseOptions);
-      FirebaseInstanceIdInternal instanceIdMock = mock(FirebaseInstanceIdInternal.class);
+      FirebaseInstallationsApi installationsApiMock = mock(FirebaseInstallationsApi.class);
+      when(installationsApiMock.getId()).thenReturn(Tasks.forResult("instanceId"));
       BreadcrumbSource breadcrumbSource =
           this.breadcrumbSource == null ? new DisabledBreadcrumbSource() : this.breadcrumbSource;
       final CrashlyticsCore crashlyticsCore =
           new CrashlyticsCore(
               app,
-              new IdManager(context, "unused", instanceIdMock),
+              new IdManager(context, "unused", installationsApiMock),
               nativeComponent,
               arbiter,
               breadcrumbSource,

@@ -19,6 +19,7 @@ plugins {
 
 firebaseLibrary {
     releaseWith project(':firebase-crashlytics')
+    testLab.enabled = true
     publishJavadoc = true
     publishSources = true
 }
@@ -37,6 +38,7 @@ android {
         test.java {
             srcDir 'src/test/kotlin'
         }
+        androidTest.java.srcDirs += 'src/androidTest/kotlin'
     }
     testOptions.unitTests.includeAndroidResources = true
 }
@@ -54,4 +56,17 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation 'org.mockito:mockito-core:2.25.0'
+
+    androidTestImplementation 'junit:junit:4.12'
+    androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
+    androidTestImplementation 'androidx.test:runner:1.2.0'
+    androidTestImplementation 'androidx.test:core:1.2.0'
 }
+
+// ==========================================================================
+// Copy from here down if you want to use the google-services plugin in your
+// androidTest integration tests.
+// ==========================================================================
+ext.packageName = "com.google.firebase.crashlytics.ktx"
+apply from: '../../gradle/googleServices.gradle'
+

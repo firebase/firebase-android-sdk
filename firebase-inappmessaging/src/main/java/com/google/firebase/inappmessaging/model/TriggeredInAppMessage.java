@@ -25,7 +25,6 @@ public class TriggeredInAppMessage {
   }
 
   public InAppMessage getInAppMessage() {
-
     return inAppMessage;
   }
 

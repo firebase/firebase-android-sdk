@@ -65,11 +65,13 @@ public class ImageData {
     this.bitmapData = bitmapData;
   }
 
+  /** Gets the URL associated with this image */
   @NonNull
   public String getImageUrl() {
     return imageUrl;
   }
 
+  /** Gets the bitmap associated with this image */
   @Nullable
   public Bitmap getBitmapData() {
     return bitmapData;

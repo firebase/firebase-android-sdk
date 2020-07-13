@@ -58,7 +58,7 @@ import com.google.firebase.crashlytics.internal.settings.model.FeaturesSettingsD
 import com.google.firebase.crashlytics.internal.settings.model.SessionSettingsData;
 import com.google.firebase.crashlytics.internal.settings.model.SettingsData;
 import com.google.firebase.crashlytics.internal.unity.UnityVersionProvider;
-import com.google.firebase.iid.internal.FirebaseInstanceIdInternal;
+import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
@@ -99,8 +99,9 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
 
     testContext = getContext();
 
-    FirebaseInstanceIdInternal instanceIdMock = mock(FirebaseInstanceIdInternal.class);
-    idManager = new IdManager(testContext, testContext.getPackageName(), instanceIdMock);
+    FirebaseInstallationsApi installationsApiMock = mock(FirebaseInstallationsApi.class);
+    when(installationsApiMock.getId()).thenReturn(Tasks.forResult("instanceId"));
+    idManager = new IdManager(testContext, testContext.getPackageName(), installationsApiMock);
 
     BatteryIntentProvider.returnNull = false;
 

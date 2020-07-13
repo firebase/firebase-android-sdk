@@ -1,9 +1,9 @@
-// Copyright 2018 Google LLC
+// Copyright 2020 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
-//
 // You may obtain a copy of the License at
+//
 //      http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
@@ -18,23 +18,18 @@ import static org.mockito.Mockito.mock;
 
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
-import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.util.Arrays;
 import java.util.List;
 
-/**
- * Mock {@link FirebaseInstanceId} for testing purposes.
- *
- * @author Miraziz Yusupov
- */
-public class MockFirebaseIidRegistrar implements ComponentRegistrar {
+public class MockFirebaseInstallationsApiRegistrar implements ComponentRegistrar {
   @Override
   public List<Component<?>> getComponents() {
-    Component<FirebaseInstanceId> mockFirebaseInstanceId =
-        Component.builder(FirebaseInstanceId.class)
-            .factory(container -> mock(FirebaseInstanceId.class))
+    Component<FirebaseInstallationsApi> mockFirebaseInstallations =
+        Component.builder(FirebaseInstallationsApi.class)
+            .factory(container -> mock(FirebaseInstallationsApi.class))
             .build();
 
-    return Arrays.asList(mockFirebaseInstanceId);
+    return Arrays.asList(mockFirebaseInstallations);
   }
 }

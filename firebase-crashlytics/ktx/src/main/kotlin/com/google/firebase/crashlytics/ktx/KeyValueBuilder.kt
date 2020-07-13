@@ -18,7 +18,7 @@ import com.google.firebase.crashlytics.FirebaseCrashlytics
 
 /** Helper class to enable fluent syntax in [setCustomKeys] */
 class KeyValueBuilder(
-        private val crashlytics: FirebaseCrashlytics
+    private val crashlytics: FirebaseCrashlytics
 ) {
 
     /** Sets a custom key and value that are associated with reports.  */
