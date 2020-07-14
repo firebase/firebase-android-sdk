@@ -27,15 +27,21 @@ import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.VALUE_SOURCE
 import android.util.Log;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+import com.google.auto.value.AutoValue;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigValue;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.Executor;
+import java.util.function.BiConsumer;
 import java.util.regex.Pattern;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -69,11 +75,17 @@ public class ConfigGetParameterHandler {
   static final Pattern FALSE_REGEX =
       Pattern.compile("^(0|false|f|no|n|off|)$", Pattern.CASE_INSENSITIVE);
 
+  private final List<BiConsumer<String, JSONObject>> listeners = new ArrayList<>();
+
+  private final Executor executor;
   private final ConfigCacheClient activatedConfigsCache;
   private final ConfigCacheClient defaultConfigsCache;
 
   public ConfigGetParameterHandler(
-      ConfigCacheClient activatedConfigsCache, ConfigCacheClient defaultConfigsCache) {
+      Executor executor,
+      ConfigCacheClient activatedConfigsCache,
+      ConfigCacheClient defaultConfigsCache) {
+    this.executor = executor;
     this.activatedConfigsCache = activatedConfigsCache;
     this.defaultConfigsCache = defaultConfigsCache;
   }
@@ -92,14 +104,14 @@ public class ConfigGetParameterHandler {
    * @param key A Firebase Remote Config parameter key.
    */
   public String getString(String key) {
-    String activatedString = getStringFromCache(activatedConfigsCache, key);
-    if (activatedString != null) {
-      return activatedString;
+    ConfigAndValue configAndValue = getStringFromCache(activatedConfigsCache, key);
+    if (configAndValue == null) {
+      configAndValue = getStringFromCache(defaultConfigsCache, key);
     }
 
-    String defaultsString = getStringFromCache(defaultConfigsCache, key);
-    if (defaultsString != null) {
-      return defaultsString;
+    if (configAndValue != null) {
+      callListeners(key, configAndValue.config());
+      return (String) configAndValue.value();
     }
 
     logParameterValueDoesNotExist(key, "String");
@@ -122,20 +134,18 @@ public class ConfigGetParameterHandler {
    * @param key A Firebase Remote Config parameter key with a {@code boolean} parameter value.
    */
   public boolean getBoolean(String key) {
-    String activatedString = getStringFromCache(activatedConfigsCache, key);
-    if (activatedString != null) {
-      if (TRUE_REGEX.matcher(activatedString).matches()) {
-        return true;
-      } else if (FALSE_REGEX.matcher(activatedString).matches()) {
-        return false;
-      }
+    ConfigAndValue configAndValue = getStringFromCache(activatedConfigsCache, key);
+    if (configAndValue == null) {
+      configAndValue = getStringFromCache(defaultConfigsCache, key);
     }
 
-    String defaultsString = getStringFromCache(defaultConfigsCache, key);
-    if (defaultsString != null) {
-      if (TRUE_REGEX.matcher(defaultsString).matches()) {
+    if (configAndValue != null) {
+      String value = (String) configAndValue.value();
+      if (TRUE_REGEX.matcher(value).matches()) {
+        callListeners(key, configAndValue.config());
         return true;
-      } else if (FALSE_REGEX.matcher(defaultsString).matches()) {
+      } else if (FALSE_REGEX.matcher(value).matches()) {
+        callListeners(key, configAndValue.config());
         return false;
       }
     }
@@ -158,14 +168,14 @@ public class ConfigGetParameterHandler {
    * @param key A Firebase Remote Config parameter key.
    */
   public byte[] getByteArray(String key) {
-    String activatedString = getStringFromCache(activatedConfigsCache, key);
-    if (activatedString != null) {
-      return activatedString.getBytes(FRC_BYTE_ARRAY_ENCODING);
+    ConfigAndValue configAndValue = getStringFromCache(activatedConfigsCache, key);
+    if (configAndValue == null) {
+      configAndValue = getStringFromCache(defaultConfigsCache, key);
     }
 
-    String defaultsString = getStringFromCache(defaultConfigsCache, key);
-    if (defaultsString != null) {
-      return defaultsString.getBytes(FRC_BYTE_ARRAY_ENCODING);
+    if (configAndValue != null) {
+      callListeners(key, configAndValue.config());
+      return ((String) configAndValue.value()).getBytes(FRC_BYTE_ARRAY_ENCODING);
     }
 
     logParameterValueDoesNotExist(key, "ByteArray");
@@ -188,14 +198,14 @@ public class ConfigGetParameterHandler {
    * @param key A Firebase Remote Config parameter key with a {@code double} parameter value.
    */
   public double getDouble(String key) {
-    Double activatedDouble = getDoubleFromCache(activatedConfigsCache, key);
-    if (activatedDouble != null) {
-      return activatedDouble;
+    ConfigAndValue configAndValue = getDoubleFromCache(activatedConfigsCache, key);
+    if (configAndValue == null) {
+      configAndValue = getDoubleFromCache(defaultConfigsCache, key);
     }
 
-    Double defaultsDouble = getDoubleFromCache(defaultConfigsCache, key);
-    if (defaultsDouble != null) {
-      return defaultsDouble;
+    if (configAndValue != null) {
+      callListeners(key, configAndValue.config());
+      return (Double) configAndValue.value();
     }
 
     logParameterValueDoesNotExist(key, "Double");
@@ -218,14 +228,14 @@ public class ConfigGetParameterHandler {
    * @param key A Firebase Remote Config parameter key with a {@code long} parameter value.
    */
   public long getLong(String key) {
-    Long activatedLong = getLongFromCache(activatedConfigsCache, key);
-    if (activatedLong != null) {
-      return activatedLong;
+    ConfigAndValue configAndValue = getLongFromCache(activatedConfigsCache, key);
+    if (configAndValue == null) {
+      configAndValue = getLongFromCache(defaultConfigsCache, key);
     }
 
-    Long defaultsLong = getLongFromCache(defaultConfigsCache, key);
-    if (defaultsLong != null) {
-      return defaultsLong;
+    if (configAndValue != null) {
+      callListeners(key, configAndValue.config());
+      return (Long) configAndValue.value();
     }
 
     logParameterValueDoesNotExist(key, "Long");
@@ -246,14 +256,18 @@ public class ConfigGetParameterHandler {
    * @param key A Firebase Remote Config parameter key.
    */
   public FirebaseRemoteConfigValue getValue(String key) {
-    String activatedString = getStringFromCache(activatedConfigsCache, key);
-    if (activatedString != null) {
-      return new FirebaseRemoteConfigValueImpl(activatedString, VALUE_SOURCE_REMOTE);
+    ConfigAndValue configAndValue = getStringFromCache(activatedConfigsCache, key);
+    if (configAndValue != null) {
+      callListeners(key, configAndValue.config());
+      return new FirebaseRemoteConfigValueImpl(
+          (String) configAndValue.value(), VALUE_SOURCE_REMOTE);
     }
 
-    String defaultsString = getStringFromCache(defaultConfigsCache, key);
-    if (defaultsString != null) {
-      return new FirebaseRemoteConfigValueImpl(defaultsString, VALUE_SOURCE_DEFAULT);
+    configAndValue = getStringFromCache(defaultConfigsCache, key);
+    if (configAndValue != null) {
+      callListeners(key, configAndValue.config());
+      return new FirebaseRemoteConfigValueImpl(
+          (String) configAndValue.value(), VALUE_SOURCE_DEFAULT);
     }
 
     logParameterValueDoesNotExist(key, "FirebaseRemoteConfigValue");
@@ -326,6 +340,33 @@ public class ConfigGetParameterHandler {
   }
 
   /**
+   * Adds a listener that will be called whenever one of the get methods is called.
+   *
+   * @param listener function that takes in the parameter key and the {@link ConfigContainer} JSON
+   */
+  public void addListener(BiConsumer<String, JSONObject> listener) {
+    synchronized (listeners) {
+      listeners.add(listener);
+    }
+  }
+
+  /**
+   * Calls all listeners in {@link #listeners}.
+   *
+   * @param key parameter key that was retrieved
+   * @param container the container the key was retrieved from
+   */
+  private void callListeners(String key, ConfigContainer container) {
+    JSONObject configs = container.getContainer();
+
+    synchronized (listeners) {
+      for (BiConsumer<String, JSONObject> listener : listeners) {
+        executor.execute(() -> listener.accept(key, configs));
+      }
+    }
+  }
+
+  /**
    * Returns the FRC parameter value for the given key in the given cache as a {@link String}, or
    * {@code null} if the key does not exist in the cache.
    *
@@ -333,14 +374,14 @@ public class ConfigGetParameterHandler {
    * @param key the FRC parameter key.
    */
   @Nullable
-  private static String getStringFromCache(ConfigCacheClient cacheClient, String key) {
+  private static ConfigAndValue getStringFromCache(ConfigCacheClient cacheClient, String key) {
     ConfigContainer cachedContainer = getConfigsFromCache(cacheClient);
     if (cachedContainer == null) {
       return null;
     }
 
     try {
-      return cachedContainer.getConfigs().getString(key);
+      return ConfigAndValue.create(cachedContainer, cachedContainer.getConfigs().getString(key));
     } catch (JSONException ignored) {
       return null;
     }
@@ -351,14 +392,14 @@ public class ConfigGetParameterHandler {
    * {@code null} if the key does not have a {@code double} value in the cache.
    */
   @Nullable
-  private static Double getDoubleFromCache(ConfigCacheClient cacheClient, String key) {
+  private static ConfigAndValue getDoubleFromCache(ConfigCacheClient cacheClient, String key) {
     ConfigContainer cachedContainer = getConfigsFromCache(cacheClient);
     if (cachedContainer == null) {
       return null;
     }
 
     try {
-      return cachedContainer.getConfigs().getDouble(key);
+      return ConfigAndValue.create(cachedContainer, cachedContainer.getConfigs().getDouble(key));
     } catch (JSONException ignored) {
       return null;
     }
@@ -369,14 +410,14 @@ public class ConfigGetParameterHandler {
    * {@code null} if the key does not have a {@code long} value in the cache.
    */
   @Nullable
-  private static Long getLongFromCache(ConfigCacheClient cacheClient, String key) {
+  private static ConfigAndValue getLongFromCache(ConfigCacheClient cacheClient, String key) {
     ConfigContainer cachedContainer = getConfigsFromCache(cacheClient);
     if (cachedContainer == null) {
       return null;
     }
 
     try {
-      return cachedContainer.getConfigs().getLong(key);
+      return ConfigAndValue.create(cachedContainer, cachedContainer.getConfigs().getLong(key));
     } catch (JSONException ignored) {
       return null;
     }
@@ -410,5 +451,16 @@ public class ConfigGetParameterHandler {
   private static void logParameterValueDoesNotExist(String key, String valueType) {
     Log.w(
         TAG, String.format("No value of type '%s' exists for parameter key '%s'.", valueType, key));
+  }
+
+  @AutoValue
+  abstract static class ConfigAndValue {
+    abstract ConfigContainer config();
+
+    abstract Object value();
+
+    static ConfigAndValue create(ConfigContainer config, Object value) {
+      return new AutoValue_ConfigGetParameterHandler_ConfigAndValue(config, value);
+    }
   }
 }

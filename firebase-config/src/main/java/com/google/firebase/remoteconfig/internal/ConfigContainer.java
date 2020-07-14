@@ -27,10 +27,10 @@ import org.json.JSONObject;
  * @author Miraziz Yusupov
  */
 public class ConfigContainer {
-  private static final String CONFIGS_KEY = "configs_key";
-  private static final String FETCH_TIME_KEY = "fetch_time_key";
-  private static final String ABT_EXPERIMENTS_KEY = "abt_experiments_key";
-  private static final String PERSONALIZATION_METADATA_KEY = "personalization_metadata_key";
+  static final String CONFIGS_KEY = "configs_key";
+  static final String FETCH_TIME_KEY = "fetch_time_key";
+  static final String ABT_EXPERIMENTS_KEY = "abt_experiments_key";
+  static final String PERSONALIZATION_METADATA_KEY = "personalization_metadata_key";
 
   private static final Date DEFAULTS_FETCH_TIME = new Date(0L);
 
@@ -93,6 +93,10 @@ public class ConfigContainer {
         containerJson.getJSONArray(PERSONALIZATION_METADATA_KEY));
   }
 
+  JSONObject getContainer() {
+    return containerJson;
+  }
+
   /**
    * Returns the FRC configs.
    *
@@ -143,7 +147,6 @@ public class ConfigContainer {
 
   /** Builder for creating an instance of {@link ConfigContainer}. */
   public static class Builder {
-
     private JSONObject builderConfigsJson;
     private Date builderFetchTime;
     private JSONArray builderAbtExperiments;

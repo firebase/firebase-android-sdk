@@ -32,7 +32,6 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.abt.FirebaseABTesting;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
-import com.google.firebase.personalization.FirebasePersonalization;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.remoteconfig.internal.ConfigCacheClient;
 import com.google.firebase.remoteconfig.internal.ConfigContainer;
@@ -67,7 +66,6 @@ public class RemoteConfigComponentTest {
   @Mock private FirebaseApp mockFirebaseApp;
   @Mock private FirebaseInstallationsApi mockFirebaseInstallations;
   @Mock private FirebaseABTesting mockFirebaseAbt;
-  @Mock private FirebasePersonalization mockFirebasePersonalization;
   @Mock private AnalyticsConnector mockAnalyticsConnector;
   @Mock private LegacyConfigsHandler mockLegacyConfigsHandler;
   @Mock private ConfigCacheClient mockFetchedCache;
@@ -182,7 +180,6 @@ public class RemoteConfigComponentTest {
         mockFirebaseApp,
         mockFirebaseInstallations,
         mockFirebaseAbt,
-        mockFirebasePersonalization,
         mockAnalyticsConnector,
         mockLegacyConfigsHandler,
         /* loadGetDefault= */ true);
@@ -195,7 +192,6 @@ public class RemoteConfigComponentTest {
         mockFirebaseApp,
         mockFirebaseInstallations,
         mockFirebaseAbt,
-        mockFirebasePersonalization,
         mockAnalyticsConnector,
         mockLegacyConfigsHandler,
         /* loadGetDefault= */ false);
@@ -208,7 +204,6 @@ public class RemoteConfigComponentTest {
         namespace,
         mockFirebaseInstallations,
         mockFirebaseAbt,
-        mockFirebasePersonalization,
         directExecutor,
         mockFetchedCache,
         mockActivatedCache,

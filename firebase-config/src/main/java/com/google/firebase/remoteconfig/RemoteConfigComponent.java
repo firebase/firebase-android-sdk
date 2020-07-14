@@ -26,7 +26,6 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.abt.FirebaseABTesting;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
-import com.google.firebase.personalization.FirebasePersonalization;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.remoteconfig.internal.ConfigCacheClient;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler;
@@ -35,6 +34,7 @@ import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
 import com.google.firebase.remoteconfig.internal.ConfigMetadataClient;
 import com.google.firebase.remoteconfig.internal.ConfigStorageClient;
 import com.google.firebase.remoteconfig.internal.LegacyConfigsHandler;
+import com.google.firebase.remoteconfig.internal.Personalization;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -79,7 +79,6 @@ public class RemoteConfigComponent {
   private final FirebaseApp firebaseApp;
   private final FirebaseInstallationsApi firebaseInstallations;
   private final FirebaseABTesting firebaseAbt;
-  private final FirebasePersonalization firebasePersonalization;
   @Nullable private final AnalyticsConnector analyticsConnector;
 
   private final String appId;
@@ -93,7 +92,6 @@ public class RemoteConfigComponent {
       FirebaseApp firebaseApp,
       FirebaseInstallationsApi firebaseInstallations,
       FirebaseABTesting firebaseAbt,
-      FirebasePersonalization firebasePersonalization,
       @Nullable AnalyticsConnector analyticsConnector) {
     this(
         context,
@@ -101,7 +99,6 @@ public class RemoteConfigComponent {
         firebaseApp,
         firebaseInstallations,
         firebaseAbt,
-        firebasePersonalization,
         analyticsConnector,
         new LegacyConfigsHandler(context, firebaseApp.getOptions().getApplicationId()),
         /* loadGetDefault= */ true);
@@ -115,7 +112,6 @@ public class RemoteConfigComponent {
       FirebaseApp firebaseApp,
       FirebaseInstallationsApi firebaseInstallations,
       FirebaseABTesting firebaseAbt,
-      FirebasePersonalization firebasePersonalization,
       @Nullable AnalyticsConnector analyticsConnector,
       LegacyConfigsHandler legacyConfigsHandler,
       boolean loadGetDefault) {
@@ -124,7 +120,6 @@ public class RemoteConfigComponent {
     this.firebaseApp = firebaseApp;
     this.firebaseInstallations = firebaseInstallations;
     this.firebaseAbt = firebaseAbt;
-    this.firebasePersonalization = firebasePersonalization;
     this.analyticsConnector = analyticsConnector;
 
     this.appId = firebaseApp.getOptions().getApplicationId();
@@ -159,18 +154,25 @@ public class RemoteConfigComponent {
     ConfigCacheClient activatedCacheClient = getCacheClient(namespace, ACTIVATE_FILE_NAME);
     ConfigCacheClient defaultsCacheClient = getCacheClient(namespace, DEFAULTS_FILE_NAME);
     ConfigMetadataClient metadataClient = getMetadataClient(context, appId, namespace);
+
+    ConfigGetParameterHandler getHandler = getGetHandler(activatedCacheClient, defaultsCacheClient);
+    Personalization personalization =
+        getPersonalization(firebaseApp, namespace, analyticsConnector);
+    if (personalization != null) {
+      getHandler.addListener(personalization::logArmActive);
+    }
+
     return get(
         firebaseApp,
         namespace,
         firebaseInstallations,
         firebaseAbt,
-        firebasePersonalization,
         executorService,
         fetchedCacheClient,
         activatedCacheClient,
         defaultsCacheClient,
         getFetchHandler(namespace, fetchedCacheClient, metadataClient),
-        getGetHandler(activatedCacheClient, defaultsCacheClient),
+        getHandler,
         metadataClient);
   }
 
@@ -180,7 +182,6 @@ public class RemoteConfigComponent {
       String namespace,
       FirebaseInstallationsApi firebaseInstallations,
       FirebaseABTesting firebaseAbt,
-      FirebasePersonalization firebasePersonalization,
       Executor executor,
       ConfigCacheClient fetchedClient,
       ConfigCacheClient activatedClient,
@@ -195,7 +196,6 @@ public class RemoteConfigComponent {
               firebaseApp,
               firebaseInstallations,
               isAbtSupported(firebaseApp, namespace) ? firebaseAbt : null,
-              isAbtSupported(firebaseApp, namespace) ? firebasePersonalization : null,
               executor,
               fetchedClient,
               activatedClient,
@@ -262,7 +262,8 @@ public class RemoteConfigComponent {
 
   private ConfigGetParameterHandler getGetHandler(
       ConfigCacheClient activatedCacheClient, ConfigCacheClient defaultsCacheClient) {
-    return new ConfigGetParameterHandler(activatedCacheClient, defaultsCacheClient);
+    return new ConfigGetParameterHandler(
+        executorService, activatedCacheClient, defaultsCacheClient);
   }
 
   @VisibleForTesting
@@ -273,6 +274,16 @@ public class RemoteConfigComponent {
             FIREBASE_REMOTE_CONFIG_FILE_NAME_PREFIX, appId, namespace, PREFERENCES_FILE_NAME);
     SharedPreferences preferences = context.getSharedPreferences(fileName, Context.MODE_PRIVATE);
     return new ConfigMetadataClient(preferences);
+  }
+
+  private static Personalization getPersonalization(
+      FirebaseApp firebaseApp, String namespace, @Nullable AnalyticsConnector analyticsConnector) {
+    if (isPrimaryApp(firebaseApp)
+        && namespace.equals(DEFAULT_NAMESPACE)
+        && analyticsConnector != null) {
+      return new Personalization(analyticsConnector);
+    }
+    return null;
   }
 
   /**
