@@ -14,8 +14,10 @@
 
 package com.google.firebase.remoteconfig;
 
+import androidx.annotation.Nullable;
+
 /** A port of {@link java.util.function.BiConsumer}, a generic consumer of values. */
 @FunctionalInterface
 public interface BiConsumer<T, U> {
-  void accept(T t, U u);
+  void accept(@Nullable T t, @Nullable U u);
 }
