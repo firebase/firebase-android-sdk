@@ -30,8 +30,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import android.os.Bundle;
-import com.google.auto.value.AutoValue;
-import com.google.common.collect.ImmutableMap;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
 import java.util.ArrayList;
 import java.util.List;
@@ -49,9 +47,6 @@ import org.robolectric.annotation.Config;
 @Config(manifest = Config.NONE)
 public class PersonalizationTest {
   private static final JSONObject CONFIG_CONTAINER = new JSONObject();
-
-  private static final ImmutableMap<String, Info> PERSONALIZATION_PARAMS =
-      ImmutableMap.of("key1", Info.create("id1", "value1"), "key2", Info.create("id2", "value2"));
 
   private static final List<Bundle> FAKE_LOGS = new ArrayList<>();
 
@@ -130,17 +125,5 @@ public class PersonalizationTest {
     params2.putString(ARM_KEY, "id2");
     params2.putString(ARM_VALUE, "value2");
     assertThat(FAKE_LOGS.get(1).toString()).isEqualTo(params2.toString());
-  }
-
-  /** Stores Personalization ID and Remote Config value. */
-  @AutoValue
-  abstract static class Info {
-    abstract String id();
-
-    abstract String value();
-
-    static Info create(String id, String value) {
-      return new AutoValue_PersonalizationTest_Info(id, value);
-    }
   }
 }

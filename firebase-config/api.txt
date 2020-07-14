@@ -1,6 +1,10 @@
 // Signature format: 2.0
 package com.google.firebase.remoteconfig {
 
+  @java.lang.FunctionalInterface public interface BiConsumer<T, U> {
+    method public void accept(@Nullable T, @Nullable U);
+  }
+
   public class FirebaseRemoteConfig {
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.Boolean> activate();
     method @Deprecated @WorkerThread public boolean activateFetched();
