@@ -18,18 +18,12 @@ import android.net.Uri
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
-import com.google.firebase.storage.FileDownloadTask
-import com.google.firebase.storage.FirebaseStorage
-import com.google.firebase.storage.ListResult
-import com.google.firebase.storage.StorageMetadata
-import com.google.firebase.storage.StreamDownloadTask
-import com.google.firebase.storage.UploadTask
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.app
 import com.google.firebase.ktx.initialize
 import com.google.firebase.platforminfo.UserAgentPublisher
-import com.google.firebase.storage.FirebaseStorage
-import com.google.firebase.storage.StorageMetadata
+import com.google.firebase.storage.*
+import java.io.ByteArrayInputStream
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -38,7 +32,7 @@ import org.mockito.Mockito
 import org.mockito.Mockito.`when`
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
-import java.io.ByteArrayInputStream
+import org.robolectric.annotation.Config
 
 const val APP_ID = "APP_ID"
 const val API_KEY = "API_KEY"
@@ -141,6 +135,7 @@ class StorageTests : BaseTestCase() {
         `when`(mockTaskSnapshot.uploadSessionUri).thenReturn(Uri.parse("https://test.com"))
 
         val (bytesTransferred, totalByteCount, metadata, sessionUri) = mockTaskSnapshot
+
         assertThat(bytesTransferred).isSameInstanceAs(mockTaskSnapshot.bytesTransferred)
         assertThat(totalByteCount).isSameInstanceAs(mockTaskSnapshot.totalByteCount)
         assertThat(metadata).isSameInstanceAs(mockTaskSnapshot.metadata)
@@ -155,6 +150,7 @@ class StorageTests : BaseTestCase() {
         `when`(mockTaskSnapshot.stream).thenReturn(ByteArrayInputStream("test".toByteArray()))
 
         val (bytesTransferred, totalByteCount, stream) = mockTaskSnapshot
+
         assertThat(bytesTransferred).isSameInstanceAs(mockTaskSnapshot.bytesTransferred)
         assertThat(totalByteCount).isSameInstanceAs(mockTaskSnapshot.totalByteCount)
         assertThat(stream).isSameInstanceAs(mockTaskSnapshot.stream)
@@ -167,10 +163,10 @@ class StorageTests : BaseTestCase() {
         `when`(mockTaskSnapshot.totalByteCount).thenReturn(100)
 
         val (bytesTransferred, totalByteCount) = mockTaskSnapshot
+
         assertThat(bytesTransferred).isSameInstanceAs(mockTaskSnapshot.bytesTransferred)
         assertThat(totalByteCount).isSameInstanceAs(mockTaskSnapshot.totalByteCount)
     }
-
 }
 
 @RunWith(RobolectricTestRunner::class)
