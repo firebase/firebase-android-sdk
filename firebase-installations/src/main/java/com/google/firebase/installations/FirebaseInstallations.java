@@ -110,8 +110,8 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
           + "Please refer to https://firebase.google.com/support/privacy/init-options.";
 
   private static final String AUTH_ERROR_MSG =
-      "Installation ID could not be validated with the Firebase servers (maybe deleted). "
-          + "Firebase Installations will need to create a new Installation ID/Token. "
+      "Installation ID could not be validated with the Firebase servers (maybe it was deleted). "
+          + "Firebase Installations will need to create a new Installation ID and auth token. "
           + "Please retry your last request.";
 
   /** package private constructor. */
