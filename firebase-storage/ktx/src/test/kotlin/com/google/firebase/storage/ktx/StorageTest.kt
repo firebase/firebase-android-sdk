@@ -22,7 +22,12 @@ import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.app
 import com.google.firebase.ktx.initialize
 import com.google.firebase.platforminfo.UserAgentPublisher
-import com.google.firebase.storage.*
+import com.google.firebase.storage.FileDownloadTask
+import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.ListResult
+import com.google.firebase.storage.StorageMetadata
+import com.google.firebase.storage.StreamDownloadTask
+import com.google.firebase.storage.UploadTask
 import java.io.ByteArrayInputStream
 import org.junit.After
 import org.junit.Before
@@ -32,7 +37,6 @@ import org.mockito.Mockito
 import org.mockito.Mockito.`when`
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
 
 const val APP_ID = "APP_ID"
 const val API_KEY = "API_KEY"
