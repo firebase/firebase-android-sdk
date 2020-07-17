@@ -256,6 +256,11 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
 
     final BindingWrapper bindingWrapper;
 
+    if (inAppMessage.getMessageType() == null) {
+      Logging.loge("The message type is null and not supported.");
+      return;
+    }
+
     switch (inAppMessage.getMessageType()) {
       case BANNER:
         bindingWrapper = bindingWrapperFactory.createBannerBindingWrapper(config, inAppMessage);
