@@ -41,6 +41,7 @@ public class DisplayCallbacksImpl implements FirebaseInAppMessagingDisplayCallba
   private final DataCollectionHelper dataCollectionHelper;
   private final InAppMessage inAppMessage;
   private final String triggeringEvent;
+  private final DeveloperListenerManager developerListenerManager;
 
   private static boolean wasImpressed;
   private static final String MESSAGE_CLICK = "message click to metrics logger";
@@ -56,7 +57,8 @@ public class DisplayCallbacksImpl implements FirebaseInAppMessagingDisplayCallba
       MetricsLoggerClient metricsLoggerClient,
       DataCollectionHelper dataCollectionHelper,
       InAppMessage inAppMessage,
-      String triggeringEvent) {
+      String triggeringEvent,
+      DeveloperListenerManager developerListenerManager) {
     this.impressionStorageClient = impressionStorageClient;
     this.clock = clock;
     this.schedulers = schedulers;
@@ -67,6 +69,7 @@ public class DisplayCallbacksImpl implements FirebaseInAppMessagingDisplayCallba
     this.dataCollectionHelper = dataCollectionHelper;
     this.inAppMessage = inAppMessage;
     this.triggeringEvent = triggeringEvent;
+    this.developerListenerManager = developerListenerManager;
 
     // just to be explicit
     wasImpressed = false;
@@ -134,7 +137,9 @@ public class DisplayCallbacksImpl implements FirebaseInAppMessagingDisplayCallba
      * avoid implicitly trusting an id that is provided through the app
      */
     if (shouldLog()) {
-      if (action.getActionUrl() == null) {
+      // Treat a click as a dismiss if the action has no url AND there are no click listeners
+      // registered.
+      if (action.getActionUrl() == null && developerListenerManager.noRegisteredClickListeners()) {
         return messageDismissed(InAppMessagingDismissType.CLICK);
       }
       return logMessageClick(action);

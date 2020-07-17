@@ -31,6 +31,7 @@ public class DisplayCallbacksFactory {
   private final RateLimit appForegroundRateLimit;
   private final MetricsLoggerClient metricsLoggerClient;
   private final DataCollectionHelper dataCollectionHelper;
+  private final DeveloperListenerManager developerListenerManager;
 
   @Inject
   public DisplayCallbacksFactory(
@@ -41,7 +42,8 @@ public class DisplayCallbacksFactory {
       CampaignCacheClient campaignCacheClient,
       @AppForeground RateLimit appForegroundRateLimit,
       MetricsLoggerClient metricsLoggerClient,
-      DataCollectionHelper dataCollectionHelper) {
+      DataCollectionHelper dataCollectionHelper,
+      DeveloperListenerManager developerListenerManager) {
     this.impressionStorageClient = impressionStorageClient;
     this.clock = clock;
     this.schedulers = schedulers;
@@ -50,6 +52,7 @@ public class DisplayCallbacksFactory {
     this.appForegroundRateLimit = appForegroundRateLimit;
     this.metricsLoggerClient = metricsLoggerClient;
     this.dataCollectionHelper = dataCollectionHelper;
+    this.developerListenerManager = developerListenerManager;
   }
 
   public FirebaseInAppMessagingDisplayCallbacks generateDisplayCallback(
@@ -65,6 +68,7 @@ public class DisplayCallbacksFactory {
         metricsLoggerClient,
         dataCollectionHelper,
         inAppMessage,
-        triggeringEvent);
+        triggeringEvent,
+        developerListenerManager);
   }
 }
