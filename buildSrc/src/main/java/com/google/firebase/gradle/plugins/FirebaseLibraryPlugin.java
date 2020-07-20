@@ -22,7 +22,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.firebase.gradle.plugins.apiinfo.ApiInformationTask;
 import com.google.firebase.gradle.plugins.apiinfo.GenerateApiTxtFileTask;
-import com.google.firebase.gradle.plugins.apiinfo.GenerateStubsTask;
 import com.google.firebase.gradle.plugins.apiinfo.GetMetalavaJarTask;
 import com.google.firebase.gradle.plugins.ci.Coverage;
 import com.google.firebase.gradle.plugins.ci.device.FirebaseTestServer;
@@ -173,10 +172,6 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
                 "docStubs",
                 GenerateStubsTask.class,
                 task -> {
-                  task.setMetalavaJarPath(metalavaOutputJarFile.getAbsolutePath());
-                  task.setOutputDir(new File(project.getBuildDir(), "doc-stubs"));
-                  task.dependsOn("getMetalavaJar");
-
                   task.setSourceSet(mainSourceSet);
                 });
     project.getTasks().getByName("check").dependsOn(docStubs);
