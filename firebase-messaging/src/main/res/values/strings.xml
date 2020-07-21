@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="gcm_no_args">String with no arguments</string>
+    <string name="gcm_2_args">First: %1$s and second %2$s</string>
+
+    <color name="google_blue">#4285F4</color>
+    <!-- Name of the notification category ("channel") used to display the notifications received
+       from the app's server via FCM, when the developer doesn't set their own value.
+       This text is shown when the user long-clicks the notification,
+       or opens the app's notification-settings. -->
+    <string name="fcm_fallback_notification_channel_label">Miscellaneous</string>
+</resources>
