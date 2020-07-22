@@ -94,16 +94,6 @@ public class FirebaseFunctions {
     this.projectId = Preconditions.checkNotNull(projectId);
     this.region = Preconditions.checkNotNull(region);
 
-    EmulatedServiceSettings emulatorSettings = app.getEmulatorSettings(EMULATOR);
-    if (emulatorSettings != null) {
-      urlFormat =
-          "http://"
-              + emulatorSettings.getHost()
-              + ":"
-              + emulatorSettings.getPort()
-              + "/%2$s/%1$s/%3$s";
-    }
-
     maybeInstallProviders(context);
   }
 
@@ -201,6 +191,16 @@ public class FirebaseFunctions {
    */
   @VisibleForTesting
   URL getURL(String function) {
+    EmulatedServiceSettings emulatorSettings = app.getEmulatorSettings(EMULATOR);
+    if (emulatorSettings != null) {
+      urlFormat =
+          "http://"
+              + emulatorSettings.getHost()
+              + ":"
+              + emulatorSettings.getPort()
+              + "/%2$s/%1$s/%3$s";
+    }
+
     String str = String.format(urlFormat, region, projectId, function);
     try {
       return new URL(str);

@@ -40,8 +40,6 @@ import org.junit.runner.RunWith;
 public class CallTest {
   private static FirebaseApp app;
 
-  private static final EmulatedServiceSettings NO_EMULATOR = null;
-
   @BeforeClass
   public static void setUp() {
     FirebaseApp.initializeApp(InstrumentationRegistry.getContext());
@@ -87,14 +85,14 @@ public class CallTest {
     // Override the normal token provider to simulate FirebaseAuth being logged in.
     FirebaseFunctions functions =
         new FirebaseFunctions(
+            app,
             app.getApplicationContext(),
             app.getOptions().getProjectId(),
             "us-central1",
             () -> {
               HttpsCallableContext context = new HttpsCallableContext("token", null);
               return Tasks.forResult(context);
-            },
-            NO_EMULATOR);
+            });
 
     HttpsCallableReference function = functions.getHttpsCallable("tokenTest");
     Task<HttpsCallableResult> result = function.call(new HashMap<>());
@@ -108,14 +106,14 @@ public class CallTest {
     // Override the normal token provider to simulate FirebaseAuth being logged in.
     FirebaseFunctions functions =
         new FirebaseFunctions(
+            app,
             app.getApplicationContext(),
             app.getOptions().getProjectId(),
             "us-central1",
             () -> {
               HttpsCallableContext context = new HttpsCallableContext(null, "iid");
               return Tasks.forResult(context);
-            },
-            NO_EMULATOR);
+            });
 
     HttpsCallableReference function = functions.getHttpsCallable("instanceIdTest");
     Task<HttpsCallableResult> result = function.call(new HashMap<>());
