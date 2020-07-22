@@ -18,7 +18,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.encoders.EncodingException;
 import com.google.firebase.encoders.FieldDescriptor;
-import com.google.firebase.encoders.FieldDescriptor.Builder;
 import com.google.firebase.encoders.ObjectEncoder;
 import com.google.firebase.encoders.ObjectEncoderContext;
 import com.google.firebase.encoders.annotations.Encodable;
@@ -101,9 +100,9 @@ final class ReflectiveObjectEncoderProvider implements ObjectEncoderProvider {
     if (name == null) {
       return null;
     }
-    Builder builder = FieldDescriptor.builder(name);
+    FieldDescriptor.Builder builder = FieldDescriptor.builder(name);
     for (Annotation annotation : method.getAnnotations()) {
-      if (!annotation.getClass().isAnnotationPresent(ExtraProperty.class)) {
+      if (!annotation.annotationType().isAnnotationPresent(ExtraProperty.class)) {
         continue;
       }
       builder.withProperty(annotation);
