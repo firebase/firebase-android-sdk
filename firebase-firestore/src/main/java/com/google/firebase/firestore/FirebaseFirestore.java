@@ -187,7 +187,7 @@ public class FirebaseFirestore {
    * can only be called before calling any other methods on this object.
    */
   public void setFirestoreSettings(@NonNull FirebaseFirestoreSettings settings) {
-    settings = mergeEmulatorSettings(settings, firebaseApp.getEmulatorSettings(EMULATOR));
+    settings = mergeEmulatorSettings(settings, getEmulatorSettings());
 
     synchronized (databaseId) {
       checkNotNull(settings, "Provided settings must not be null.");
@@ -223,6 +223,16 @@ public class FirebaseFirestore {
     getApp().setEmulatedServiceSettings(EMULATOR, serviceSettings);
 
     this.settings = mergeEmulatorSettings(this.settings, serviceSettings);
+  }
+
+  @Nullable
+  private EmulatedServiceSettings getEmulatorSettings() {
+    if (firebaseApp == null) {
+      // This condition is sometimes true in tests, never in reality.
+      return null;
+    }
+
+    return firebaseApp.getEmulatorSettings(EMULATOR);
   }
 
   private void ensureClientConfigured() {
