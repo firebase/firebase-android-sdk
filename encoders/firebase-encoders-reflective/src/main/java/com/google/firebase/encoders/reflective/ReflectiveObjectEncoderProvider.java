@@ -27,7 +27,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.Map;
 
 final class ReflectiveObjectEncoderProvider implements ObjectEncoderProvider {
@@ -68,7 +68,7 @@ final class ReflectiveObjectEncoderProvider implements ObjectEncoderProvider {
   @NonNull
   @Override
   public <T> ObjectEncoder<T> get(@NonNull Class<T> type) {
-    Map<FieldDescriptor, EncodingDescriptor> fields = new LinkedHashMap<>();
+    Map<FieldDescriptor, EncodingDescriptor> fields = new HashMap<>();
     for (Method method : type.getMethods()) {
       if (method.isAnnotationPresent(Encodable.Ignore.class)) {
         continue;
