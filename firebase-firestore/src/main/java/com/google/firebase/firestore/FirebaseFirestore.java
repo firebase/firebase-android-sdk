@@ -85,7 +85,6 @@ public class FirebaseFirestore {
   private FirebaseFirestoreSettings settings;
   private volatile FirestoreClient client;
   private final GrpcMetadataProvider metadataProvider;
-  private final EmulatedServiceSettings emulatorSettings;
 
   @NonNull
   public static FirebaseFirestore getInstance() {
@@ -173,10 +172,8 @@ public class FirebaseFirestore {
     this.firebaseApp = firebaseApp;
     this.instanceRegistry = instanceRegistry;
     this.metadataProvider = metadataProvider;
-    this.emulatorSettings = firebaseApp.getEmulatorSettings(EMULATOR);
 
     this.settings = new FirebaseFirestoreSettings.Builder().build();
-    this.settings = mergeEmulatorSettings(settings, emulatorSettings);
   }
 
   /** Returns the settings used by this {@code FirebaseFirestore} object. */
@@ -190,9 +187,10 @@ public class FirebaseFirestore {
    * can only be called before calling any other methods on this object.
    */
   public void setFirestoreSettings(@NonNull FirebaseFirestoreSettings settings) {
+    settings = mergeEmulatorSettings(settings, firebaseApp.getEmulatorSettings(EMULATOR));
+
     synchronized (databaseId) {
       checkNotNull(settings, "Provided settings must not be null.");
-      settings = mergeEmulatorSettings(settings, emulatorSettings);
 
       // As a special exception, don't throw if the same settings are passed repeatedly. This
       // should make it simpler to get a Firestore instance in an activity.
@@ -216,7 +214,15 @@ public class FirebaseFirestore {
    * @param port the emulator port (ex: 8080)
    */
   public void useEmulator(@NonNull String host, int port) {
-    getApp().setEmulatedServiceSettings(EMULATOR, new EmulatedServiceSettings(host, port));
+    if (this.client != null) {
+      throw new IllegalStateException(
+          "Cannot call useEmulator() after instance has already been initialized.");
+    }
+
+    EmulatedServiceSettings serviceSettings = new EmulatedServiceSettings(host, port);
+    getApp().setEmulatedServiceSettings(EMULATOR, serviceSettings);
+
+    this.settings = mergeEmulatorSettings(this.settings, serviceSettings);
   }
 
   private void ensureClientConfigured() {
@@ -246,7 +252,7 @@ public class FirebaseFirestore {
 
     if (!FirebaseFirestoreSettings.DEFAULT_HOST.equals(settings.getHost())) {
       throw new IllegalStateException(
-          "Cannot specify the host in FirebaseFirestoreSettings when EmulatedServiceSettings is provided.");
+          "Cannot specify the host in FirebaseFirestoreSettings when emulator settings are provided.");
     }
 
     return new FirebaseFirestoreSettings.Builder(settings)

@@ -86,7 +86,7 @@ class FirestoreTests : BaseTestCase() {
 
     @Test
     fun `FirebaseFirestoreSettings builder works`() {
-        val host = "http://10.0.0.2:8080"
+        val host = "http://10.0.2.2:8080"
         val isSslEnabled = false
         val isPersistenceEnabled = false
 

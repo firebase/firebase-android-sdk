@@ -320,7 +320,11 @@ public class FirebaseApp {
     return firebaseApp;
   }
 
-  /** @hide */
+  /**
+   * This should <b>only</b> ever be called from inside FirebaseFoo.useEmulator().
+   *
+   * @hide
+   */
   public void setEmulatedServiceSettings(
       @NonNull String emulator, @Nullable EmulatedServiceSettings settings) {
     checkNotDeleted();
