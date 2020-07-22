@@ -45,10 +45,6 @@ data class Project(
             }
             ${if (libraryType == LibraryType.ANDROID) "android.compileSdkVersion = 26" else ""}
 
-            repositories {
-                google()
-                jcenter()
-            }
             dependencies {
             ${projectDependencies.joinToString("\n") { "implementation project(':${it.name}')" }}
             ${externalDependencies.joinToString("\n") { "implementation '${it.simpleDepString}'" }}

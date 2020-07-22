@@ -18,6 +18,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.firebase.gradle.plugins.apiinfo.ApiInformationTask;
 import com.google.firebase.gradle.plugins.apiinfo.GenerateApiTxtFileTask;
+import com.google.firebase.gradle.plugins.apiinfo.GetMetalavaJarTask;
 import com.google.firebase.gradle.plugins.ci.Coverage;
 import java.io.File;
 import java.nio.file.Paths;
@@ -104,6 +105,14 @@ public class FirebaseJavaLibraryPlugin implements Plugin<Project> {
                     project.getPath().substring(1).replace(":", "_")));
     File outputApiFile = new File(outputFile.getAbsolutePath() + "_api.txt");
 
+    project
+        .getTasks()
+        .register(
+            "getMetalavaJar",
+            GetMetalavaJarTask.class,
+            task -> {
+              task.setOutputFile(metalavaOutputJarFile);
+            });
     File apiTxt =
         project.file("api.txt").exists()
             ? project.file("api.txt")
