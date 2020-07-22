@@ -40,7 +40,7 @@ import org.junit.Test;
 
 @org.junit.runner.RunWith(AndroidJUnit4.class)
 public class FirebaseDatabaseTest {
-  //  @Rule public RetryRule retryRule = new RetryRule(3);
+  @Rule public RetryRule retryRule = new RetryRule(3);
 
   @After
   public void tearDown() {
