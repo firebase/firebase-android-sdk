@@ -28,7 +28,6 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.emulators.EmulatedServiceSettings;
-import com.google.firebase.emulators.FirebaseEmulator;
 import com.google.firebase.functions.FirebaseFunctionsException.Code;
 import java.io.IOException;
 import java.io.InterruptedIOException;
@@ -49,16 +48,8 @@ import org.json.JSONObject;
 /** FirebaseFunctions lets you call Cloud Functions for Firebase. */
 public class FirebaseFunctions {
 
-  /**
-   * Emulator identifier, see {@link
-   * com.google.firebase.emulators.EmulatorSettings.Builder#addEmulatedService(FirebaseEmulator,
-   * EmulatedServiceSettings)}
-   *
-   * <p>TODO(samstern): Un-hide this once Firestore, Database, and Functions are implemented
-   *
-   * @hide
-   */
-  public static final FirebaseEmulator EMULATOR = FirebaseEmulator.forName("functions");
+  /** @hide */
+  public static final String EMULATOR = "functions";
 
   /** A task that will be resolved once ProviderInstaller has installed what it needs to. */
   private static final TaskCompletionSource<Void> providerInstalled = new TaskCompletionSource<>();
@@ -68,6 +59,9 @@ public class FirebaseFunctions {
    * providerInstalled lock.
    */
   private static boolean providerInstallStarted = false;
+
+  // The FirebaseApp instance
+  private final FirebaseApp app;
 
   // The network client to use for HTTPS requests.
   private final OkHttpClient client;
@@ -88,17 +82,19 @@ public class FirebaseFunctions {
   private String urlFormat = "https://%1$s-%2$s.cloudfunctions.net/%3$s";
 
   FirebaseFunctions(
+      FirebaseApp app,
       Context context,
       String projectId,
       String region,
-      ContextProvider contextProvider,
-      @Nullable EmulatedServiceSettings emulatorSettings) {
+      ContextProvider contextProvider) {
+    this.app = app;
     this.client = new OkHttpClient();
     this.serializer = new Serializer();
     this.contextProvider = Preconditions.checkNotNull(contextProvider);
     this.projectId = Preconditions.checkNotNull(projectId);
     this.region = Preconditions.checkNotNull(region);
 
+    EmulatedServiceSettings emulatorSettings = app.getEmulatorSettings(EMULATOR);
     if (emulatorSettings != null) {
       urlFormat =
           "http://"
@@ -213,15 +209,22 @@ public class FirebaseFunctions {
     }
   }
 
-  /**
-   * Changes this instance to point to a Cloud Functions emulator running locally. See
-   * https://firebase.google.com/docs/functions/local-emulator
-   *
-   * @param origin The origin of the local emulator, such as "http://10.0.2.2:5005".
-   */
+  /** @deprecated see {@link #useEmulator(String, int)} */
   public void useFunctionsEmulator(@NonNull String origin) {
     Preconditions.checkNotNull(origin, "origin cannot be null");
     urlFormat = origin + "/%2$s/%1$s/%3$s";
+  }
+
+  /**
+   * Modify this FirebaseDatabase instance to communicate with the Cloud Functions emulator.
+   *
+   * <p>Note: this must be called before this instance has been used to do any operations.
+   *
+   * @param host the emulator host (ex: 10.0.2.2)
+   * @param port the emulator port (ex: 5001)
+   */
+  public void useEmulator(@NonNull String host, int port) {
+    app.setEmulatedServiceSettings(EMULATOR, new EmulatedServiceSettings(host, port));
   }
 
   /**

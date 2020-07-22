@@ -24,7 +24,6 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.emulators.EmulatedServiceSettings;
-import com.google.firebase.emulators.EmulatorSettings;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -38,11 +37,8 @@ public class FirebaseFirestoreTest {
   public void getInstance_withEmulator() {
     FirebaseApp app = getApp("getInstance_withEmulator");
 
-    app.enableEmulators(
-        new EmulatorSettings.Builder()
-            .addEmulatedService(
-                FirebaseFirestore.EMULATOR, new EmulatedServiceSettings("10.0.2.2", 8080))
-            .build());
+    app.setEmulatedServiceSettings(
+        FirebaseFirestore.EMULATOR, new EmulatedServiceSettings("10.0.2.2", 8080));
 
     FirebaseFirestore firestore = FirebaseFirestore.getInstance(app);
     FirebaseFirestoreSettings settings = firestore.getFirestoreSettings();
@@ -54,11 +50,9 @@ public class FirebaseFirestoreTest {
   @Test
   public void getInstance_withEmulator_mergeSettingsSuccess() {
     FirebaseApp app = getApp("getInstance_withEmulator_mergeSettingsSuccess");
-    app.enableEmulators(
-        new EmulatorSettings.Builder()
-            .addEmulatedService(
-                FirebaseFirestore.EMULATOR, new EmulatedServiceSettings("10.0.2.2", 8080))
-            .build());
+
+    app.setEmulatedServiceSettings(
+        FirebaseFirestore.EMULATOR, new EmulatedServiceSettings("10.0.2.2", 8080));
 
     FirebaseFirestore firestore = FirebaseFirestore.getInstance(app);
     firestore.setFirestoreSettings(
@@ -74,11 +68,9 @@ public class FirebaseFirestoreTest {
   @Test
   public void getInstance_withEmulator_mergeSettingsFailure() {
     FirebaseApp app = getApp("getInstance_withEmulator_mergeSettingsFailure");
-    app.enableEmulators(
-        new EmulatorSettings.Builder()
-            .addEmulatedService(
-                FirebaseFirestore.EMULATOR, new EmulatedServiceSettings("10.0.2.2", 8080))
-            .build());
+
+    app.setEmulatedServiceSettings(
+        FirebaseFirestore.EMULATOR, new EmulatedServiceSettings("10.0.2.2", 8080));
 
     try {
       FirebaseFirestore firestore = FirebaseFirestore.getInstance(app);
@@ -112,11 +104,9 @@ public class FirebaseFirestoreTest {
   @Test
   public void setSettings_repeatedSuccess_withEmulator() {
     FirebaseApp app = getApp("setSettings_repeatedSuccess_withEmulator");
-    app.enableEmulators(
-        new EmulatorSettings.Builder()
-            .addEmulatedService(
-                FirebaseFirestore.EMULATOR, new EmulatedServiceSettings("10.0.2.2", 8080))
-            .build());
+
+    app.setEmulatedServiceSettings(
+        FirebaseFirestore.EMULATOR, new EmulatedServiceSettings("10.0.2.2", 8080));
 
     FirebaseFirestore firestore = FirebaseFirestore.getInstance(app);
 

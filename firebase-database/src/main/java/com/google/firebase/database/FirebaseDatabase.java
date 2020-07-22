@@ -20,7 +20,6 @@ import android.text.TextUtils;
 import androidx.annotation.NonNull;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-import com.google.firebase.database.annotations.Nullable;
 import com.google.firebase.database.core.DatabaseConfig;
 import com.google.firebase.database.core.Path;
 import com.google.firebase.database.core.Repo;
@@ -30,8 +29,6 @@ import com.google.firebase.database.core.utilities.ParsedUrl;
 import com.google.firebase.database.core.utilities.Utilities;
 import com.google.firebase.database.core.utilities.Validation;
 import com.google.firebase.emulators.EmulatedServiceSettings;
-import com.google.firebase.emulators.EmulatorSettings;
-import com.google.firebase.emulators.FirebaseEmulator;
 
 /**
  * The entry point for accessing a Firebase Database. You can get an instance by calling {@link
@@ -40,16 +37,10 @@ import com.google.firebase.emulators.FirebaseEmulator;
  */
 public class FirebaseDatabase {
 
-  /**
-   * Emulator identifier. See {@link FirebaseApp#enableEmulators(EmulatorSettings)}
-   *
-   * <p>TODO(samstern): Un-hide this once Firestore, Database, and Functions are implemented
-   *
-   * @hide
-   */
-  public static final FirebaseEmulator EMULATOR = FirebaseEmulator.forName("database");
-
   private static final String SDK_VERSION = BuildConfig.VERSION_NAME;
+
+  /** @hide */
+  public static final String EMULATOR = "database";
 
   private final FirebaseApp app;
   private final RepoInfo repoInfo;
@@ -112,7 +103,7 @@ public class FirebaseDatabase {
               + "FirebaseApp or from your getInstance() call.");
     }
 
-    ParsedUrl parsedUrl = Utilities.parseUrl(url, getEmulatorServiceSettings(app));
+    ParsedUrl parsedUrl = Utilities.parseUrl(url, app.getEmulatorSettings(EMULATOR));
     if (!parsedUrl.path.isEmpty()) {
       throw new DatabaseException(
           "Specified Database URL '"
@@ -137,7 +128,8 @@ public class FirebaseDatabase {
     return db;
   }
 
-  FirebaseDatabase(FirebaseApp app, RepoInfo repoInfo, DatabaseConfig config) {
+  FirebaseDatabase(
+      @NonNull FirebaseApp app, @NonNull RepoInfo repoInfo, @NonNull DatabaseConfig config) {
     this.app = app;
     this.repoInfo = repoInfo;
     this.config = config;
@@ -202,7 +194,7 @@ public class FirebaseDatabase {
           "Can't pass null for argument 'url' in " + "FirebaseDatabase.getReferenceFromUrl()");
     }
 
-    ParsedUrl parsedUrl = Utilities.parseUrl(url, getEmulatorServiceSettings(this.app));
+    ParsedUrl parsedUrl = Utilities.parseUrl(url, getApp().getEmulatorSettings(EMULATOR));
     if (!parsedUrl.repoInfo.host.equals(this.repo.getRepoInfo().host)) {
       throw new DatabaseException(
           "Invalid URL ("
@@ -302,9 +294,21 @@ public class FirebaseDatabase {
     this.config.setPersistenceCacheSizeBytes(cacheSizeInBytes);
   }
 
-  @Nullable
-  private static EmulatedServiceSettings getEmulatorServiceSettings(@NonNull FirebaseApp app) {
-    return app.getEmulatorSettings().getServiceSettings(EMULATOR);
+  /**
+   * Modify this FirebaseDatabase instance to communicate with the Realtime Database emulator.
+   *
+   * <p>Note: this must be called before this instance has been used to do any database operations.
+   *
+   * @param host the emulator host (ex: 10.0.2.2)
+   * @param port the emulator port (ex: 9000)
+   */
+  public void useEmulator(@NonNull String host, int port) {
+    if (this.repo != null) {
+      throw new IllegalStateException(
+          "Cannot call useEmulator() after instance has already been initialized.");
+    }
+
+    getApp().setEmulatedServiceSettings(EMULATOR, new EmulatedServiceSettings(host, port));
   }
 
   /** @return The semver version for this build of the Firebase Database client */
@@ -325,6 +329,7 @@ public class FirebaseDatabase {
 
   private synchronized void ensureRepo() {
     if (this.repo == null) {
+      this.repoInfo.applyEmulatorSettings(app.getEmulatorSettings(EMULATOR));
       repo = RepoManager.createRepo(this.config, this.repoInfo, this);
     }
   }

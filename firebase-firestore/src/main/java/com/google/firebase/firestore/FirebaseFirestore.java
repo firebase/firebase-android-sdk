@@ -28,8 +28,6 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.emulators.EmulatedServiceSettings;
-import com.google.firebase.emulators.EmulatorSettings;
-import com.google.firebase.emulators.FirebaseEmulator;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.auth.EmptyCredentialsProvider;
@@ -58,14 +56,8 @@ import java.util.concurrent.Executor;
  */
 public class FirebaseFirestore {
 
-  /**
-   * Emulator identifier. See {@link FirebaseApp#enableEmulators(EmulatorSettings)}
-   *
-   * <p>TODO(samstern): Un-hide this once Firestore, Database, and Functions are implemented
-   *
-   * @hide
-   */
-  public static FirebaseEmulator EMULATOR = FirebaseEmulator.forName("firestore");
+  /** @hide */
+  public static final String EMULATOR = "firestore";
 
   /**
    * Provides a registry management interface for {@code FirebaseFirestore} instances.
@@ -157,8 +149,7 @@ public class FirebaseFirestore {
             queue,
             app,
             instanceRegistry,
-            metadataProvider,
-            app.getEmulatorSettings().getServiceSettings(EMULATOR));
+            metadataProvider);
     return firestore;
   }
 
@@ -171,8 +162,7 @@ public class FirebaseFirestore {
       AsyncQueue asyncQueue,
       @Nullable FirebaseApp firebaseApp,
       InstanceRegistry instanceRegistry,
-      @Nullable GrpcMetadataProvider metadataProvider,
-      @Nullable EmulatedServiceSettings emulatorSettings) {
+      @Nullable GrpcMetadataProvider metadataProvider) {
     this.context = checkNotNull(context);
     this.databaseId = checkNotNull(checkNotNull(databaseId));
     this.userDataReader = new UserDataReader(databaseId);
@@ -183,7 +173,7 @@ public class FirebaseFirestore {
     this.firebaseApp = firebaseApp;
     this.instanceRegistry = instanceRegistry;
     this.metadataProvider = metadataProvider;
-    this.emulatorSettings = emulatorSettings;
+    this.emulatorSettings = firebaseApp.getEmulatorSettings(EMULATOR);
 
     this.settings = new FirebaseFirestoreSettings.Builder().build();
     this.settings = mergeEmulatorSettings(settings, emulatorSettings);
@@ -215,6 +205,18 @@ public class FirebaseFirestore {
 
       this.settings = settings;
     }
+  }
+
+  /**
+   * Modify this FirebaseDatabase instance to communicate with the Cloud Firestore emulator.
+   *
+   * <p>Note: this must be called before this instance has been used to do any operations.
+   *
+   * @param host the emulator host (ex: 10.0.2.2)
+   * @param port the emulator port (ex: 8080)
+   */
+  public void useEmulator(@NonNull String host, int port) {
+    getApp().setEmulatedServiceSettings(EMULATOR, new EmulatedServiceSettings(host, port));
   }
 
   private void ensureClientConfigured() {

@@ -30,20 +30,17 @@ import com.google.firebase.database.core.persistence.DefaultPersistenceManager;
 import com.google.firebase.database.core.persistence.MockPersistenceStorageEngine;
 import com.google.firebase.database.core.persistence.PersistenceManager;
 import com.google.firebase.database.future.WriteFuture;
-import com.google.firebase.emulators.EmulatedServiceSettings;
-import com.google.firebase.emulators.EmulatorSettings;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Ignore;
-import org.junit.Rule;
 import org.junit.Test;
 
 @org.junit.runner.RunWith(AndroidJUnit4.class)
 public class FirebaseDatabaseTest {
-  @Rule public RetryRule retryRule = new RetryRule(3);
+  //  @Rule public RetryRule retryRule = new RetryRule(3);
 
   @After
   public void tearDown() {
@@ -71,19 +68,32 @@ public class FirebaseDatabaseTest {
     FirebaseApp app =
         appForDatabaseUrl(IntegrationTestValues.getAltNamespace(), "getInstanceForAppWithEmulator");
 
-    EmulatedServiceSettings serviceSettings = new EmulatedServiceSettings("10.0.2.2", 9000);
-    EmulatorSettings emulatorSettings =
-        new EmulatorSettings.Builder()
-            .addEmulatedService(FirebaseDatabase.EMULATOR, serviceSettings)
-            .build();
-    app.enableEmulators(emulatorSettings);
-
     FirebaseDatabase db = FirebaseDatabase.getInstance(app);
+    db.useEmulator("10.0.2.2", 9000);
+
     DatabaseReference rootRef = db.getReference();
     assertEquals(rootRef.toString(), "http://10.0.2.2:9000");
 
     DatabaseReference urlReference = db.getReferenceFromUrl("https://otherns.firebaseio.com");
     assertEquals(urlReference.toString(), "http://10.0.2.2:9000");
+  }
+
+  @Test
+  public void getInstanceForAppWithEmulator_throwsIfSetLate() {
+    FirebaseApp app =
+        appForDatabaseUrl(
+            IntegrationTestValues.getAltNamespace(),
+            "getInstanceForAppWithEmulator_throwsIfSetLate");
+
+    FirebaseDatabase db = FirebaseDatabase.getInstance(app);
+    DatabaseReference rootRef = db.getReference();
+
+    try {
+      db.useEmulator("10.0.2.2", 9000);
+      fail("Expected to throw");
+    } catch (IllegalStateException e) {
+      // Expected to throw
+    }
   }
 
   @Test
