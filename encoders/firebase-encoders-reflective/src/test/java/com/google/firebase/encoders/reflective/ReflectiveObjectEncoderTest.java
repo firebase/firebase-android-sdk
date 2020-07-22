@@ -17,6 +17,8 @@ package com.google.firebase.encoders.reflective;
 import static com.google.common.truth.Truth.assertThat;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.firebase.encoders.DataEncoder;
 import com.google.firebase.encoders.annotations.Encodable;
 import com.google.firebase.encoders.json.JsonDataEncoderBuilder;
@@ -29,6 +31,7 @@ import org.junit.runner.RunWith;
 @RunWith(AndroidJUnit4.class)
 public class ReflectiveObjectEncoderTest {
   static class Foo {
+    @Encodable.Field(name = "hello")
     public String getString() {
       return "hello";
     }
@@ -40,6 +43,11 @@ public class ReflectiveObjectEncoderTest {
     @Encodable.Field(inline = true)
     public Member getInlineMember() {
       return new Member();
+    }
+
+    @Encodable.Ignore
+    public String getIgnored() {
+      return "ignored";
     }
 
     public Map<String, Number> getMap() {
@@ -54,7 +62,7 @@ public class ReflectiveObjectEncoderTest {
   }
 
   @Test
-  public void test() {
+  public void test() throws JsonProcessingException {
     DataEncoder encoder =
         new JsonDataEncoderBuilder()
             .registerFallbackEncoder(ReflectiveObjectEncoder.DEFAULT)
@@ -62,8 +70,13 @@ public class ReflectiveObjectEncoderTest {
 
     String result = encoder.encode(new Foo());
 
-    assertThat(result)
+    ObjectMapper mapper = new ObjectMapper();
+
+    assertThat(mapper.reader().readTree(result))
         .isEqualTo(
-            "{\"string\":\"hello\",\"member\":{\"bool\":false},\"map\":{\"key\":22},\"bool\":false}");
+            mapper
+                .reader()
+                .readTree(
+                    "{\"hello\":\"hello\",\"member\":{\"bool\":false},\"map\":{\"key\":22},\"bool\":false}"));
   }
 }
