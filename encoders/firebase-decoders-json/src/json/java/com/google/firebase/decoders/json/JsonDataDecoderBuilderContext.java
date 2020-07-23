@@ -27,10 +27,23 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.Array;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.PriorityQueue;
+import java.util.Queue;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.SortedSet;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 public class JsonDataDecoderBuilderContext implements DataDecoder {
   private Map<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
@@ -70,6 +83,14 @@ public class JsonDataDecoderBuilderContext implements DataDecoder {
       return decodePrimitive(classToken);
     } else if (isSingleValue(classToken)) {
       return decodeSingleValue(classToken);
+    } else if (isMap(classToken)) {
+      @SuppressWarnings("unchecked")
+      T map = (T) decodeMap((TypeToken.ClassToken<? extends Map>) classToken);
+      return map;
+    } else if (isCollection(classToken)) {
+      @SuppressWarnings("unchecked")
+      T collection = (T) decodeCollection((TypeToken.ClassToken<? extends Collection>) classToken);
+      return collection;
     } else {
       return decodeObject(classToken);
     }
@@ -147,6 +168,108 @@ public class JsonDataDecoderBuilderContext implements DataDecoder {
       return (T) arr;
     }
     return null;
+  }
+
+  private <T> boolean isMap(TypeToken.ClassToken<T> classToken) {
+    Class<T> clazz = classToken.getRawType();
+    return Map.class.isAssignableFrom(clazz);
+  }
+
+  private <T> boolean isCollection(TypeToken.ClassToken<T> classToken) {
+    Class<T> clazz = classToken.getRawType();
+    return Collection.class.isAssignableFrom(clazz);
+  }
+
+  private <K, V, T extends Map<K, V>> T decodeMap(TypeToken.ClassToken<T> classToken)
+      throws IOException {
+    TypeToken<K> keyTypeToken = classToken.getTypeArguments().at(0);
+    TypeToken<V> valTypeToken = classToken.getTypeArguments().at(1);
+    if (!isSingleValue(keyTypeToken))
+      throw new IllegalArgumentException(keyTypeToken + " cannot be used as Map key.");
+
+    T map = newMap(classToken);
+    reader.beginObject();
+    while (reader.hasNext()) {
+      String keyLiteral = reader.nextName();
+      K key = getActualKey(keyLiteral, keyTypeToken.getRawType());
+      V val = decode(valTypeToken);
+      V replaced = map.put(key, val);
+      if (replaced != null) {
+        throw new IllegalArgumentException("duplicate key: " + key);
+      }
+    }
+    reader.endObject();
+
+    return map;
+  }
+
+  private <E, T extends Collection<E>> T decodeCollection(TypeToken.ClassToken<T> classToken)
+      throws IOException {
+    TypeToken<E> componentTypeToken = classToken.getTypeArguments().at(0);
+    T collection = newCollection(classToken);
+    reader.beginArray();
+    while (reader.hasNext()) {
+      collection.add(decode(componentTypeToken));
+    }
+    reader.endArray();
+    return collection;
+  }
+
+  @SuppressWarnings("unchecked")
+  private <T> T newMap(TypeToken.ClassToken<T> classToken) {
+    Class<T> clazz = classToken.getRawType();
+    if (clazz.equals(HashMap.class) || clazz.equals(Map.class)) {
+      return (T) new HashMap<>();
+    } else if (clazz.equals(LinkedHashMap.class)) {
+      return (T) new LinkedHashMap<>();
+    } else if (clazz.equals(TreeMap.class) || clazz.equals(SortedMap.class)) {
+      return (T) new TreeMap<>();
+    }
+    throw new EncodingException(clazz + " not supported.");
+  }
+
+  @SuppressWarnings("unchecked")
+  private <T> T newCollection(TypeToken.ClassToken<T> classToken) {
+    Class<T> clazz = classToken.getRawType();
+    if (clazz.equals(ArrayList.class) || clazz.equals(List.class)) {
+      return (T) new ArrayList<>();
+    } else if (clazz.equals(ArrayDeque.class)
+        || clazz.equals(Deque.class)
+        || clazz.equals(Queue.class)) {
+      return (T) new ArrayDeque<>();
+    } else if (clazz.equals(PriorityQueue.class)) {
+      return (T) new PriorityQueue<>();
+    } else if (clazz.equals(HashSet.class) || clazz.equals(Set.class)) {
+      return (T) new HashSet<>();
+    } else if (clazz.equals(LinkedHashSet.class)) {
+      return (T) new LinkedHashSet<>();
+    } else if (clazz.equals(TreeSet.class) || clazz.equals(SortedSet.class)) {
+      return (T) new TreeSet<>();
+    }
+    throw new EncodingException(classToken + " not supported.");
+  }
+
+  @SuppressWarnings("unchecked")
+  private <K> K getActualKey(String keyLiteral, Class<K> clazz) {
+    if (clazz.equals(Integer.class)) {
+      return (K) (Integer) Integer.parseInt(keyLiteral);
+    } else if (clazz.equals(Double.class)) {
+      return (K) (Double) Double.parseDouble(keyLiteral);
+    } else if (clazz.equals(Float.class)) {
+      return (K) (Float) Float.parseFloat(keyLiteral);
+    } else if (clazz.equals(Short.class)) {
+      return (K) (Short) Short.parseShort(keyLiteral);
+    } else if (clazz.equals(Long.class)) {
+      return (K) (Long) Long.parseLong(keyLiteral);
+    } else if (clazz.equals(Character.class)) {
+      return (K) (Character) keyLiteral.charAt(0);
+    } else if (clazz.equals(Byte.class)) {
+      return (K) (Byte) Byte.parseByte(keyLiteral);
+    } else if (clazz.equals(String.class)) {
+      return (K) keyLiteral;
+    } else {
+      throw new EncodingException("Excepted Single Value Type. " + clazz + " was found.");
+    }
   }
 
   private <T> T decodeObject(TypeToken.ClassToken<T> classToken) throws IOException {
