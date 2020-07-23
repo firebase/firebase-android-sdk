@@ -97,10 +97,10 @@ public class JsonDataDecoderExtraPropertyTest {
   @Test
   public void customizedAnnotation_shouldProcessCorrectly() throws IOException {
     Map<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
-    Map<Class<?>, AnnotatedFieldHandler<?>> processors = new HashMap<>();
+    Map<Class<?>, AnnotatedFieldHandler<?>> fieldHandlers = new HashMap<>();
 
     objectDecoders.put(Foo.class, new FooObjectDecoder());
-    processors.put(
+    fieldHandlers.put(
         Default.class,
         new AnnotatedFieldHandler<Default>() {
           @Nullable
@@ -115,7 +115,7 @@ public class JsonDataDecoderExtraPropertyTest {
         });
 
     JsonDataDecoderBuilderContext jsonDataDecoderBuilderContext =
-        new JsonDataDecoderBuilderContext(objectDecoders, processors);
+        new JsonDataDecoderBuilderContext(objectDecoders, fieldHandlers);
 
     String json = "{\"str\":null}";
     InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
