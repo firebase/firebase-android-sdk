@@ -19,7 +19,9 @@ import androidx.annotation.Nullable;
 import java.lang.annotation.Annotation;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Describes a field of a given type.
@@ -62,14 +64,13 @@ public final class FieldDescriptor {
    * @return {@code T} annotation if present, null otherwise.
    */
   @Nullable
-  @SuppressWarnings("unchecked")
   public <T extends Annotation> T getProperty(@NonNull Class<T> type) {
     return type.cast(properties.get(type));
   }
 
   @NonNull
-  public Map<Class<? extends Annotation>, Annotation> getProperties() {
-    return properties;
+  public Set<Annotation> getAllAnnotations() {
+    return new HashSet<>(properties.values());
   }
 
   @NonNull

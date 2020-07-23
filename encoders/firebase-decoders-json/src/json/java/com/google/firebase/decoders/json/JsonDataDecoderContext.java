@@ -33,6 +33,7 @@ import java.lang.reflect.Array;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -54,15 +55,16 @@ public class JsonDataDecoderContext implements DataDecoder {
       new HashMap<>();
   private Map<TypeToken.ClassToken<?>, TypeCreator<?>> typeCreators = new HashMap<>();
   private JsonReader reader;
-  private Map<Class<?>, FieldModifier<?>> fieldModifier = new HashMap<>();
+  private final Map<Class<?>, FieldModifier<?>> fieldModifier;
 
   JsonDataDecoderContext(@NonNull Map<Class<?>, ObjectDecoder<?>> objectDecoders) {
     this.objectDecoders = objectDecoders;
+    this.fieldModifier = Collections.emptyMap();
   }
 
   JsonDataDecoderBuilderContext(
       @NonNull Map<Class<?>, ObjectDecoder<?>> objectDecoders,
-      Map<Class<?>, FieldModifier<?>> fieldModifier) {
+      @NonNull Map<Class<?>, FieldModifier<?>> fieldModifier) {
     this.objectDecoders = objectDecoders;
     this.fieldModifier = fieldModifier;
   }
@@ -311,39 +313,34 @@ public class JsonDataDecoderContext implements DataDecoder {
       ObjectDecoderContextImpl<T> decoderCtx, CreationContextImpl creationCtx) throws IOException {
     String fieldName = reader.nextName();
     FieldRef<?> fieldRef = decoderCtx.getFieldRef(fieldName);
-    FieldDescriptor fieldDescriptor = decoderCtx.getFieldDescriptors(fieldName);
+    FieldDescriptor fieldDescriptor = decoderCtx.getFieldDescriptors(fieldRef);
     Object val = decodeField(fieldRef.getTypeToken(), fieldDescriptor);
     creationCtx.put(fieldRef, val);
   }
 
-  private <TField, U extends Annotation> TField decodeField(
+  private <TField> TField decodeField(
       TypeToken<TField> fieldTypeToken, FieldDescriptor fieldDescriptor) throws IOException {
     TField val = decode(fieldTypeToken);
-
-    // apply annotation modifier
-    for (Class<? extends Annotation> annotationType : fieldDescriptor.getProperties().keySet()) {
-      val = applyFieldModifier(annotationType, fieldDescriptor, val, fieldTypeToken.getRawType());
-    }
-    return val;
+    return applyFieldModifiers(
+        fieldDescriptor.getAllAnnotations(), val, fieldTypeToken.getRawType());
   }
 
-  private <TField, U extends Annotation> TField applyFieldModifier(
-      Class<U> annotationType,
-      FieldDescriptor fieldDescriptor,
-      TField value,
-      Class<TField> fieldType) {
-    @SuppressWarnings(
-        "unchecked") // Safe, because each entry in fieldModifier always have the same type
-                     // parameter
-    FieldModifier<U> modifier = (FieldModifier<U>) fieldModifier.get(annotationType);
-    U annotation = fieldDescriptor.getProperty(annotationType);
-    if (modifier == null)
-      throw new IllegalArgumentException(
-          "FieldModifier: " + annotationType + " is not registered.");
-    if (annotation == null)
-      throw new IllegalArgumentException(
-          "Missing annotation: " + annotationType + " at " + fieldDescriptor);
-    return modifier.apply(annotation, value, fieldType);
+  private <TField, U extends Annotation> TField applyFieldModifiers(
+      Set<Annotation> annotations, TField value, Class<TField> fieldType) {
+    TField modified = value;
+    for (Annotation annotation : annotations) {
+      @SuppressWarnings(
+          "unchecked") // Safe, because U is acted as an type placeholder, used to cast annotation
+      FieldModifier<U> modifier = (FieldModifier<U>) fieldModifier.get(annotation.annotationType());
+      @SuppressWarnings(
+          "unchecked") // Safe, because each entry in fieldModifier always have the same type
+                       // parameter
+      U ann = (U) annotation;
+      if (modifier != null) {
+        modified = modifier.apply(ann, value, fieldType);
+      }
+    }
+    return modified;
   }
 
   private <T> boolean isSingleValue(TypeToken<T> typeToken) {

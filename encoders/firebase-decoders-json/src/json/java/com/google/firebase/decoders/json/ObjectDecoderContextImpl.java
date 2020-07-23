@@ -26,7 +26,7 @@ import java.util.Map;
 
 public class ObjectDecoderContextImpl<T> implements ObjectDecoderContext<T> {
   private final Map<String, FieldRef<?>> refs = new HashMap<>();
-  private final Map<String, FieldDescriptor> fieldDescriptors = new HashMap<>();
+  private final Map<FieldRef<?>, FieldDescriptor> fieldDescriptors = new HashMap<>();
   private final Map<FieldRef<?>, TypeCreator<?>> inlineObjCreators = new HashMap<>();
   private final TypeToken.ClassToken<T> classToken;
 
@@ -49,12 +49,10 @@ public class ObjectDecoderContextImpl<T> implements ObjectDecoderContext<T> {
   }
 
   @NonNull
-  FieldDescriptor getFieldDescriptors(@NonNull String fieldName) {
-    if (fieldDescriptors.containsKey(fieldName)) {
-      return fieldDescriptors.get(fieldName);
-    } else {
-      throw new IllegalArgumentException(fieldName + " was not register in ObjectDecoder.");
-    }
+  FieldDescriptor getFieldDescriptors(@NonNull FieldRef<?> fieldRef) {
+    FieldDescriptor fieldDescriptor = fieldDescriptors.get(fieldRef);
+    assert fieldDescriptor != null;
+    return fieldDescriptor;
   }
 
   void decodeInlineObjIfAny(@NonNull CreationContextImpl creationCtx) {
@@ -83,7 +81,7 @@ public class ObjectDecoderContextImpl<T> implements ObjectDecoderContext<T> {
       @NonNull FieldDescriptor fileDescriptor, @NonNull TypeToken<TField> typeToken) {
     FieldRef.Boxed<TField> ref = FieldRef.of(typeToken);
     refs.put(fileDescriptor.getName(), ref);
-    fieldDescriptors.put(fileDescriptor.getName(), fileDescriptor);
+    fieldDescriptors.put(ref, fileDescriptor);
     return ref;
   }
 
@@ -106,7 +104,7 @@ public class ObjectDecoderContextImpl<T> implements ObjectDecoderContext<T> {
   public FieldRef.Primitive<Boolean> decodeBoolean(@NonNull FieldDescriptor fileDescriptor) {
     FieldRef.Primitive<Boolean> ref = FieldRef.Primitive.BOOLEAN;
     refs.put(fileDescriptor.getName(), ref);
-    fieldDescriptors.put(fileDescriptor.getName(), fileDescriptor);
+    fieldDescriptors.put(ref, fileDescriptor);
     return ref;
   }
 
@@ -115,7 +113,7 @@ public class ObjectDecoderContextImpl<T> implements ObjectDecoderContext<T> {
   public FieldRef.Primitive<Short> decodeShort(@NonNull FieldDescriptor fileDescriptor) {
     FieldRef.Primitive<Short> ref = FieldRef.Primitive.SHORT;
     refs.put(fileDescriptor.getName(), ref);
-    fieldDescriptors.put(fileDescriptor.getName(), fileDescriptor);
+    fieldDescriptors.put(ref, fileDescriptor);
     return ref;
   }
 
@@ -124,7 +122,7 @@ public class ObjectDecoderContextImpl<T> implements ObjectDecoderContext<T> {
   public FieldRef.Primitive<Long> decodeLong(@NonNull FieldDescriptor fileDescriptor) {
     FieldRef.Primitive<Long> ref = FieldRef.Primitive.LONG;
     refs.put(fileDescriptor.getName(), ref);
-    fieldDescriptors.put(fileDescriptor.getName(), fileDescriptor);
+    fieldDescriptors.put(ref, fileDescriptor);
     return ref;
   }
 
@@ -133,7 +131,7 @@ public class ObjectDecoderContextImpl<T> implements ObjectDecoderContext<T> {
   public FieldRef.Primitive<Float> decodeFloat(@NonNull FieldDescriptor fileDescriptor) {
     FieldRef.Primitive<Float> ref = FieldRef.Primitive.FLOAT;
     refs.put(fileDescriptor.getName(), ref);
-    fieldDescriptors.put(fileDescriptor.getName(), fileDescriptor);
+    fieldDescriptors.put(ref, fileDescriptor);
     return ref;
   }
 
@@ -142,7 +140,7 @@ public class ObjectDecoderContextImpl<T> implements ObjectDecoderContext<T> {
   public FieldRef.Primitive<Double> decodeDouble(@NonNull FieldDescriptor fileDescriptor) {
     FieldRef.Primitive<Double> ref = FieldRef.Primitive.DOUBLE;
     refs.put(fileDescriptor.getName(), ref);
-    fieldDescriptors.put(fileDescriptor.getName(), fileDescriptor);
+    fieldDescriptors.put(ref, fileDescriptor);
     return ref;
   }
 
@@ -151,7 +149,7 @@ public class ObjectDecoderContextImpl<T> implements ObjectDecoderContext<T> {
   public FieldRef.Primitive<Character> decodeChar(@NonNull FieldDescriptor fileDescriptor) {
     FieldRef.Primitive<Character> ref = FieldRef.Primitive.CHAR;
     refs.put(fileDescriptor.getName(), ref);
-    fieldDescriptors.put(fileDescriptor.getName(), fileDescriptor);
+    fieldDescriptors.put(ref, fileDescriptor);
     return ref;
   }
 
@@ -160,7 +158,7 @@ public class ObjectDecoderContextImpl<T> implements ObjectDecoderContext<T> {
   public FieldRef.Primitive<Integer> decodeInteger(@NonNull FieldDescriptor fileDescriptor) {
     FieldRef.Primitive<Integer> ref = FieldRef.Primitive.INT;
     refs.put(fileDescriptor.getName(), ref);
-    fieldDescriptors.put(fileDescriptor.getName(), fileDescriptor);
+    fieldDescriptors.put(ref, fileDescriptor);
     return ref;
   }
 }
