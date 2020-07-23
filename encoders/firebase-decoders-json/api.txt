@@ -20,6 +20,10 @@ package com.google.firebase.decoders {
     method @NonNull public <U> T register(@NonNull Class<U>, @NonNull com.google.firebase.decoders.ObjectDecoder<? extends U>);
   }
 
+  public interface FieldModifier<U extends java.lang.annotation.Annotation> {
+    method @Nullable public <T> T apply(@NonNull U, @Nullable T, @NonNull Class<T>);
+  }
+
   public abstract class FieldRef<T> {
     ctor public FieldRef();
     method @NonNull public abstract com.google.firebase.decoders.TypeToken<T> getTypeToken();

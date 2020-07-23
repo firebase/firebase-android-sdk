@@ -17,15 +17,19 @@ package com.google.firebase.decoders.json;
 import android.util.JsonReader;
 import android.util.JsonToken;
 import androidx.annotation.NonNull;
+import com.google.firebase.decoders.FieldModifier;
 import com.google.firebase.decoders.DataDecoder;
 import com.google.firebase.decoders.FieldRef;
 import com.google.firebase.decoders.ObjectDecoder;
 import com.google.firebase.decoders.TypeCreator;
 import com.google.firebase.decoders.TypeToken;
 import com.google.firebase.encoders.EncodingException;
+import com.google.firebase.encoders.FieldDescriptor;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -51,9 +55,17 @@ public class JsonDataDecoderContext implements DataDecoder {
       new HashMap<>();
   private Map<TypeToken.ClassToken<?>, TypeCreator<?>> typeCreators = new HashMap<>();
   private JsonReader reader;
+  private Map<Class<?>, FieldModifier<?>> fieldModifier = new HashMap<>();
 
   JsonDataDecoderContext(@NonNull Map<Class<?>, ObjectDecoder<?>> objectDecoders) {
     this.objectDecoders = objectDecoders;
+  }
+
+  JsonDataDecoderBuilderContext(
+      @NonNull Map<Class<?>, ObjectDecoder<?>> objectDecoders,
+      Map<Class<?>, FieldModifier<?>> fieldModifier) {
+    this.objectDecoders = objectDecoders;
+    this.fieldModifier = fieldModifier;
   }
 
   @NonNull
@@ -289,13 +301,40 @@ public class JsonDataDecoderContext implements DataDecoder {
     ObjectDecoderContextImpl<T> decoderCtx = getObjectDecodersCtx(classToken);
     reader.beginObject();
     while (reader.hasNext()) {
-      String fieldName = reader.nextName();
-      FieldRef<?> fieldRef = decoderCtx.getFieldRef(fieldName);
-      creationCtx.put(fieldRef, decode(fieldRef.getTypeToken()));
+      decodeField(decoderCtx, creationCtx);
     }
     reader.endObject();
     decoderCtx.decodeInlineObjIfAny(creationCtx);
     return creationCtx;
+  }
+
+  private <T> void decodeField(ObjectDecoderContextImpl<T> decoderCtx, CreationContextImpl creationCtx) throws IOException {
+    String fieldName = reader.nextName();
+    FieldRef<?> fieldRef = decoderCtx.getFieldRef(fieldName);
+    FieldDescriptor fieldDescriptor = decoderCtx.getFieldDescriptors(fieldName);
+    Object val = decodeField(fieldRef.getTypeToken(), fieldDescriptor);
+    creationCtx.put(fieldRef, val);
+  }
+
+  private <TField, U extends Annotation> TField decodeField(TypeToken<TField> fieldTypeToken, FieldDescriptor fieldDescriptor) throws IOException {
+    TField val = decode(fieldTypeToken);
+
+    //apply annotation modifier
+    for (Class<? extends Annotation> annotationType: fieldDescriptor.getProperties().keySet()) {
+      val = applyFieldModifier(annotationType, fieldDescriptor, val, fieldTypeToken.getRawType());
+    }
+    return val;
+  }
+
+  private <TField, U extends Annotation> TField applyFieldModifier(Class<U> annotationType, FieldDescriptor fieldDescriptor, TField value, Class<TField> fieldType) {
+    @SuppressWarnings("unchecked") //Safe, because each entry in fieldModifier always have the same type parameter
+    FieldModifier<U> modifier = (FieldModifier<U>) fieldModifier.get(annotationType);
+    U annotation = fieldDescriptor.getProperty(annotationType);
+    if (modifier == null)
+      throw new IllegalArgumentException("FieldModifier: " + annotationType + " is not registered.");
+    if (annotation == null)
+      throw new IllegalArgumentException("Missing annotation: " + annotationType + " at " + fieldDescriptor);
+    return modifier.apply(annotation, value, fieldType);
   }
 
   private <T> boolean isSingleValue(TypeToken<T> typeToken) {
