@@ -1,6 +1,10 @@
 // Signature format: 2.0
 package com.google.firebase.decoders {
 
+  public interface AnnotatedFieldHandler<U extends java.lang.annotation.Annotation> {
+    method @Nullable public <T> T apply(@NonNull U, @Nullable T, @NonNull Class<T>);
+  }
+
   public interface CreationContext {
     method @Nullable public <TField> TField get(@NonNull com.google.firebase.decoders.FieldRef.Boxed<TField>);
     method public boolean getBoolean(@NonNull com.google.firebase.decoders.FieldRef.Primitive<java.lang.Boolean>);

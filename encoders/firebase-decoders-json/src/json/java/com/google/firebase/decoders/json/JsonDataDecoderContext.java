@@ -17,8 +17,8 @@ package com.google.firebase.decoders.json;
 import android.util.JsonReader;
 import android.util.JsonToken;
 import androidx.annotation.NonNull;
+import com.google.firebase.decoders.AnnotatedFieldHandler;
 import com.google.firebase.decoders.DataDecoder;
-import com.google.firebase.decoders.FieldModifier;
 import com.google.firebase.decoders.FieldRef;
 import com.google.firebase.decoders.ObjectDecoder;
 import com.google.firebase.decoders.TypeCreator;
@@ -55,18 +55,23 @@ public class JsonDataDecoderContext implements DataDecoder {
       new HashMap<>();
   private Map<TypeToken.ClassToken<?>, TypeCreator<?>> typeCreators = new HashMap<>();
   private JsonReader reader;
-  private final Map<Class<?>, FieldModifier<?>> fieldModifier;
+  private final Map<Class<?>, AnnotatedFieldHandler<?>> fieldHandlers;
 
+<<<<<<< HEAD:encoders/firebase-decoders-json/src/json/java/com/google/firebase/decoders/json/JsonDataDecoderContext.java
   JsonDataDecoderContext(@NonNull Map<Class<?>, ObjectDecoder<?>> objectDecoders) {
     this.objectDecoders = objectDecoders;
     this.fieldModifier = Collections.emptyMap();
+=======
+  JsonDataDecoderBuilderContext(@NonNull Map<Class<?>, ObjectDecoder<?>> objectDecoders) {
+    this(objectDecoders, Collections.emptyMap());
+>>>>>>> address comments:encoders/firebase-decoders-json/src/json/java/com/google/firebase/decoders/json/JsonDataDecoderBuilderContext.java
   }
 
   JsonDataDecoderBuilderContext(
       @NonNull Map<Class<?>, ObjectDecoder<?>> objectDecoders,
-      @NonNull Map<Class<?>, FieldModifier<?>> fieldModifier) {
+      @NonNull Map<Class<?>, AnnotatedFieldHandler<?>> fieldHandlers) {
     this.objectDecoders = objectDecoders;
-    this.fieldModifier = fieldModifier;
+    this.fieldHandlers = fieldHandlers;
   }
 
   @NonNull
@@ -321,23 +326,24 @@ public class JsonDataDecoderContext implements DataDecoder {
   private <TField> TField decodeField(
       TypeToken<TField> fieldTypeToken, FieldDescriptor fieldDescriptor) throws IOException {
     TField val = decode(fieldTypeToken);
-    return applyFieldModifiers(
+    return applyFieldHandlers(
         fieldDescriptor.getAllAnnotations(), val, fieldTypeToken.getRawType());
   }
 
-  private <TField, U extends Annotation> TField applyFieldModifiers(
-      Set<Annotation> annotations, TField value, Class<TField> fieldType) {
+  private <TField, U extends Annotation> TField applyFieldHandlers(
+      Collection<Annotation> annotations, TField value, Class<TField> fieldType) {
     TField modified = value;
     for (Annotation annotation : annotations) {
       @SuppressWarnings(
           "unchecked") // Safe, because U is acted as an type placeholder, used to cast annotation
-      FieldModifier<U> modifier = (FieldModifier<U>) fieldModifier.get(annotation.annotationType());
+      AnnotatedFieldHandler<U> handler =
+          (AnnotatedFieldHandler<U>) fieldHandlers.get(annotation.annotationType());
       @SuppressWarnings(
           "unchecked") // Safe, because each entry in fieldModifier always have the same type
       // parameter
       U ann = (U) annotation;
-      if (modifier != null) {
-        modified = modifier.apply(ann, value, fieldType);
+      if (handler != null) {
+        modified = handler.apply(ann, value, fieldType);
       }
     }
     return modified;

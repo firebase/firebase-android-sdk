@@ -19,7 +19,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import com.google.firebase.decoders.FieldModifier;
+import com.google.firebase.decoders.AnnotatedFieldHandler;
 import com.google.firebase.decoders.FieldRef;
 import com.google.firebase.decoders.ObjectDecoder;
 import com.google.firebase.decoders.ObjectDecoderContext;
@@ -74,19 +74,6 @@ public class JsonDataDecoderExtraPropertyTest {
     }
   }
 
-  private FieldModifier<Default> processor =
-      new FieldModifier<Default>() {
-        @Nullable
-        @Override
-        public <T> T apply(
-            @NonNull Default annotation, @Nullable T fieldDecodedResult, @NonNull Class<T> type) {
-          if (fieldDecodedResult == null) {
-            if (type.equals(String.class)) return (T) annotation.value();
-          }
-          return fieldDecodedResult;
-        }
-      };
-
   static class Foo {
     @Default("default")
     String str;
@@ -110,10 +97,22 @@ public class JsonDataDecoderExtraPropertyTest {
   @Test
   public void customizedAnnotation_shouldProcessCorrectly() throws IOException {
     Map<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
-    Map<Class<?>, FieldModifier<?>> processors = new HashMap<>();
+    Map<Class<?>, AnnotatedFieldHandler<?>> processors = new HashMap<>();
 
     objectDecoders.put(Foo.class, new FooObjectDecoder());
-    processors.put(Default.class, processor);
+    processors.put(
+        Default.class,
+        new AnnotatedFieldHandler<Default>() {
+          @Nullable
+          @Override
+          public <T> T apply(
+              @NonNull Default annotation, @Nullable T fieldDecodedResult, @NonNull Class<T> type) {
+            if (fieldDecodedResult == null) {
+              if (type.equals(String.class)) return (T) annotation.value();
+            }
+            return fieldDecodedResult;
+          }
+        });
 
     JsonDataDecoderBuilderContext jsonDataDecoderBuilderContext =
         new JsonDataDecoderBuilderContext(objectDecoders, processors);

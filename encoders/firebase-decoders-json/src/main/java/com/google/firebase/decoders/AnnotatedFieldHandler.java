@@ -18,7 +18,21 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import java.lang.annotation.Annotation;
 
-public interface FieldModifier<U extends Annotation> {
+/**
+ * {@link AnnotatedFieldHandler} provide a way to handle field values based on its annotation.
+ *
+ * <p>Each annotation type should be registered along with associated {@link AnnotatedFieldHandler},
+ * non-registered annotation will be skipped in the process of decoding.
+ */
+public interface AnnotatedFieldHandler<U extends Annotation> {
+  /**
+   * This method will be applied after annotated field is decoded, the return value of this method
+   * will be used as the decoded value of the annotated field.
+   *
+   * <p>If a field is annotated with multiple annotations, each annotation along with its {@link
+   * AnnotatedFieldHandler} will be applied, the return value of the last executed {@link
+   * AnnotatedFieldHandler} will be used as the decoded value of the annotated field.
+   */
   @Nullable
   <T> T apply(@NonNull U annotation, @Nullable T fieldDecodedResult, @NonNull Class<T> type);
 }
