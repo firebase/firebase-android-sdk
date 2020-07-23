@@ -40,21 +40,18 @@ public class JsonDataDecoderBuilderContextDefaultValueTest {
   @Test
   public void nullValueInBoxedNumericArray_shouldKeptAsNull() throws IOException {
     Map<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
-    JsonDataDecoderBuilderContext jsonDataDecoderBuilderContext =
-        new JsonDataDecoderBuilderContext(objectDecoders);
+    JsonDataDecoderContext jsonDataDecoderContext = new JsonDataDecoderContext(objectDecoders);
 
     String json = "[0, null]";
     InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
-    Integer[] intArr =
-        jsonDataDecoderBuilderContext.decode(input, TypeToken.of(new Safe<Integer[]>() {}));
+    Integer[] intArr = jsonDataDecoderContext.decode(input, TypeToken.of(new Safe<Integer[]>() {}));
     assertThat(intArr).isEqualTo(new Integer[] {0, null});
   }
 
   @Test
   public void nullValueInPrimitiveNumericArray_shouldThrowException() throws IOException {
     Map<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
-    JsonDataDecoderBuilderContext jsonDataDecoderBuilderContext =
-        new JsonDataDecoderBuilderContext(objectDecoders);
+    JsonDataDecoderContext jsonDataDecoderContext = new JsonDataDecoderContext(objectDecoders);
 
     String json = "[null]";
     InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
@@ -62,7 +59,7 @@ public class JsonDataDecoderBuilderContextDefaultValueTest {
         "primitive element should not have null value",
         Exception.class,
         () -> {
-          jsonDataDecoderBuilderContext.decode(input, TypeToken.of(new Safe<int[]>() {}));
+          jsonDataDecoderContext.decode(input, TypeToken.of(new Safe<int[]>() {}));
         });
   }
 
@@ -187,13 +184,12 @@ public class JsonDataDecoderBuilderContextDefaultValueTest {
   public void jsonInputWithNullValues_DefaultValuesAreDecodeCorrectly() throws IOException {
     Map<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
     objectDecoders.put(Foo.class, new FooObjectDecoder());
-    JsonDataDecoderBuilderContext jsonDataDecoderBuilderContext =
-        new JsonDataDecoderBuilderContext(objectDecoders);
+    JsonDataDecoderContext jsonDataDecoderContext = new JsonDataDecoderContext(objectDecoders);
 
     String json =
         "{\"s\":null, \"l\":null, \"d\":null, \"f\":null, \"b\":null, \"c\":null, \"ai\":null, \"ii\":null, \"ss\":null, \"ll\":null, \"dd\":null, \"ff\":null, \"bb\":null, \"cc\":null, \"str\":null, \"obj\":null, \"aii\":null}";
     InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
-    Foo foo = jsonDataDecoderBuilderContext.decode(input, TypeToken.of(Foo.class));
+    Foo foo = jsonDataDecoderContext.decode(input, TypeToken.of(Foo.class));
 
     assertThat(foo.i).isEqualTo(0);
     assertThat(foo.s).isEqualTo(0);
@@ -219,12 +215,11 @@ public class JsonDataDecoderBuilderContextDefaultValueTest {
   public void jsonInputWithMissingEntries_DefaultValuesAreDecodeCorrectly() throws IOException {
     Map<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
     objectDecoders.put(Foo.class, new FooObjectDecoder());
-    JsonDataDecoderBuilderContext jsonDataDecoderBuilderContext =
-        new JsonDataDecoderBuilderContext(objectDecoders);
+    JsonDataDecoderContext jsonDataDecoderContext = new JsonDataDecoderContext(objectDecoders);
 
     String json = "{}";
     InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
-    Foo foo = jsonDataDecoderBuilderContext.decode(input, TypeToken.of(Foo.class));
+    Foo foo = jsonDataDecoderContext.decode(input, TypeToken.of(Foo.class));
 
     assertThat(foo.i).isEqualTo(0);
     assertThat(foo.s).isEqualTo(0);
