@@ -48,7 +48,7 @@ public class CreationContextImpl implements CreationContext {
   @SuppressWarnings("unchecked")
   private <T> T getDefault(TypeToken<T> typeToken) {
     if (typeToken instanceof TypeToken.ArrayToken) {
-      return JsonDataDecoderBuilderContext.convertGenericListToArray(
+      return JsonDataDecoderContext.convertGenericListToArray(
           Collections.emptyList(), (TypeToken.ArrayToken<T>) typeToken);
     } else if (typeToken instanceof TypeToken.ClassToken) {
       Class<T> clazz = typeToken.getRawType();

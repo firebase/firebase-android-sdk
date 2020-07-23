@@ -28,7 +28,7 @@ public final class JsonDataDecoderBuilder implements DecoderConfig<JsonDataDecod
   @NonNull
   @Override
   public <T> JsonDataDecoderBuilder register(
-      @NonNull Class<T> clazz, @NonNull ObjectDecoder<T> objectDecoder) {
+      @NonNull Class<T> clazz, @NonNull ObjectDecoder<? extends T> objectDecoder) {
     objectDecoders.put(clazz, objectDecoder);
     return this;
   }
