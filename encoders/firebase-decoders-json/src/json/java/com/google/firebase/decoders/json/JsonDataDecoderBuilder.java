@@ -35,6 +35,6 @@ public final class JsonDataDecoderBuilder implements DecoderConfig<JsonDataDecod
 
   @NonNull
   public DataDecoder build() {
-    return new JsonDataDecoderBuilderContext(objectDecoders);
+    return new JsonDataDecoderContext(objectDecoders);
   }
 }
