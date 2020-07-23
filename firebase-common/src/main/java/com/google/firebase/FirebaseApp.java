@@ -44,7 +44,7 @@ import com.google.firebase.components.ComponentDiscoveryService;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.ComponentRuntime;
 import com.google.firebase.components.Lazy;
-import com.google.firebase.emulators.EmulatedServiceSettings;
+import com.google.firebase.emulators.EmulatorSettings;
 import com.google.firebase.events.Publisher;
 import com.google.firebase.heartbeatinfo.DefaultHeartBeatInfo;
 import com.google.firebase.internal.DataCollectionConfigStorage;
@@ -54,7 +54,6 @@ import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -112,8 +111,6 @@ public class FirebaseApp {
   private final FirebaseOptions options;
   private final ComponentRuntime componentRuntime;
 
-  private final Map<String, EmulatedServiceSettings> emulatorSettings = new HashMap<>();
-
   // Default disabled. We released Firebase publicly without this feature, so making it default
   // enabled is a backwards incompatible change.
   private final AtomicBoolean automaticResourceManagementEnabled = new AtomicBoolean(false);
@@ -144,17 +141,6 @@ public class FirebaseApp {
   public FirebaseOptions getOptions() {
     checkNotDeleted();
     return options;
-  }
-
-  /**
-   * Returns the specified {@link EmulatedServiceSettings}.
-   *
-   * @hide
-   */
-  @Nullable
-  public EmulatedServiceSettings getEmulatorSettings(@NonNull String emulator) {
-    checkNotDeleted();
-    return this.emulatorSettings.get(emulator);
   }
 
   @Override
@@ -321,17 +307,6 @@ public class FirebaseApp {
   }
 
   /**
-   * This should <b>only</b> ever be called from inside FirebaseFoo.useEmulator().
-   *
-   * @hide
-   */
-  public void setEmulatedServiceSettings(
-      @NonNull String emulator, @Nullable EmulatedServiceSettings settings) {
-    checkNotDeleted();
-    this.emulatorSettings.put(emulator, settings);
-  }
-
-  /**
    * Deletes the {@link FirebaseApp} and all its data. All calls to this {@link FirebaseApp}
    * instance will throw once it has been called.
    *
@@ -456,7 +431,8 @@ public class FirebaseApp {
             LibraryVersionComponent.create(FIREBASE_COMMON, BuildConfig.VERSION_NAME),
             kotlinVersion != null ? LibraryVersionComponent.create(KOTLIN, kotlinVersion) : null,
             DefaultUserAgentPublisher.component(),
-            DefaultHeartBeatInfo.component());
+            DefaultHeartBeatInfo.component(),
+            EmulatorSettings.component());
 
     dataCollectionConfigStorage =
         new Lazy<>(

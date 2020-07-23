@@ -29,6 +29,7 @@ import com.google.firebase.database.core.utilities.ParsedUrl;
 import com.google.firebase.database.core.utilities.Utilities;
 import com.google.firebase.database.core.utilities.Validation;
 import com.google.firebase.emulators.EmulatedServiceSettings;
+import com.google.firebase.emulators.EmulatorSettings;
 
 /**
  * The entry point for accessing a Firebase Database. You can get an instance by calling {@link
@@ -103,7 +104,7 @@ public class FirebaseDatabase {
               + "FirebaseApp or from your getInstance() call.");
     }
 
-    ParsedUrl parsedUrl = Utilities.parseUrl(url, app.getEmulatorSettings(EMULATOR));
+    ParsedUrl parsedUrl = Utilities.parseUrl(url, app.get(EmulatorSettings.class).get(EMULATOR));
     if (!parsedUrl.path.isEmpty()) {
       throw new DatabaseException(
           "Specified Database URL '"
@@ -194,7 +195,8 @@ public class FirebaseDatabase {
           "Can't pass null for argument 'url' in " + "FirebaseDatabase.getReferenceFromUrl()");
     }
 
-    ParsedUrl parsedUrl = Utilities.parseUrl(url, getApp().getEmulatorSettings(EMULATOR));
+    ParsedUrl parsedUrl =
+        Utilities.parseUrl(url, getApp().get(EmulatorSettings.class).get(EMULATOR));
     if (!parsedUrl.repoInfo.host.equals(this.repo.getRepoInfo().host)) {
       throw new DatabaseException(
           "Invalid URL ("
@@ -308,7 +310,7 @@ public class FirebaseDatabase {
           "Cannot call useEmulator() after instance has already been initialized.");
     }
 
-    getApp().setEmulatedServiceSettings(EMULATOR, new EmulatedServiceSettings(host, port));
+    getApp().get(EmulatorSettings.class).set(EMULATOR, new EmulatedServiceSettings(host, port));
   }
 
   /** @return The semver version for this build of the Firebase Database client */
@@ -329,7 +331,7 @@ public class FirebaseDatabase {
 
   private synchronized void ensureRepo() {
     if (this.repo == null) {
-      this.repoInfo.applyEmulatorSettings(app.getEmulatorSettings(EMULATOR));
+      this.repoInfo.applyEmulatorSettings(app.get(EmulatorSettings.class).get(EMULATOR));
       repo = RepoManager.createRepo(this.config, this.repoInfo, this);
     }
   }

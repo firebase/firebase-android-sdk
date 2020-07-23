@@ -28,6 +28,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.emulators.EmulatedServiceSettings;
+import com.google.firebase.emulators.EmulatorSettings;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.auth.EmptyCredentialsProvider;
@@ -220,7 +221,7 @@ public class FirebaseFirestore {
     }
 
     EmulatedServiceSettings serviceSettings = new EmulatedServiceSettings(host, port);
-    getApp().setEmulatedServiceSettings(EMULATOR, serviceSettings);
+    getApp().get(EmulatorSettings.class).set(EMULATOR, serviceSettings);
 
     this.settings = mergeEmulatorSettings(this.settings, serviceSettings);
   }
@@ -232,7 +233,7 @@ public class FirebaseFirestore {
       return null;
     }
 
-    return firebaseApp.getEmulatorSettings(EMULATOR);
+    return firebaseApp.get(EmulatorSettings.class).get(EMULATOR);
   }
 
   private void ensureClientConfigured() {

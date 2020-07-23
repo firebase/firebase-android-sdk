@@ -36,6 +36,7 @@ import java.util.List;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
 
 @org.junit.runner.RunWith(AndroidJUnit4.class)

@@ -28,6 +28,7 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.emulators.EmulatedServiceSettings;
+import com.google.firebase.emulators.EmulatorSettings;
 import com.google.firebase.functions.FirebaseFunctionsException.Code;
 import java.io.IOException;
 import java.io.InterruptedIOException;
@@ -191,7 +192,7 @@ public class FirebaseFunctions {
    */
   @VisibleForTesting
   URL getURL(String function) {
-    EmulatedServiceSettings emulatorSettings = app.getEmulatorSettings(EMULATOR);
+    EmulatedServiceSettings emulatorSettings = app.get(EmulatorSettings.class).get(EMULATOR);
     if (emulatorSettings != null) {
       urlFormat =
           "http://"
@@ -224,7 +225,7 @@ public class FirebaseFunctions {
    * @param port the emulator port (ex: 5001)
    */
   public void useEmulator(@NonNull String host, int port) {
-    app.setEmulatedServiceSettings(EMULATOR, new EmulatedServiceSettings(host, port));
+    app.get(EmulatorSettings.class).set(EMULATOR, new EmulatedServiceSettings(host, port));
   }
 
   /**
