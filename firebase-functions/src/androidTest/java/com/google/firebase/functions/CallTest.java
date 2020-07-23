@@ -91,7 +91,8 @@ public class CallTest {
             () -> {
               HttpsCallableContext context = new HttpsCallableContext("token", null);
               return Tasks.forResult(context);
-            });
+            },
+            null);
 
     HttpsCallableReference function = functions.getHttpsCallable("tokenTest");
     Task<HttpsCallableResult> result = function.call(new HashMap<>());
@@ -112,7 +113,8 @@ public class CallTest {
             () -> {
               HttpsCallableContext context = new HttpsCallableContext(null, "iid");
               return Tasks.forResult(context);
-            });
+            },
+            null);
 
     HttpsCallableReference function = functions.getHttpsCallable("instanceIdTest");
     Task<HttpsCallableResult> result = function.call(new HashMap<>());
