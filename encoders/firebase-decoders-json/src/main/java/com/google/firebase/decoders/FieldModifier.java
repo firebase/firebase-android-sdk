@@ -16,7 +16,6 @@ package com.google.firebase.decoders;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-
 import java.lang.annotation.Annotation;
 
 public interface FieldModifier<U extends Annotation> {

@@ -14,6 +14,7 @@ package com.google.firebase.encoders {
   public final class FieldDescriptor {
     method @NonNull public static com.google.firebase.encoders.FieldDescriptor.Builder builder(@NonNull String);
     method @NonNull public String getName();
+    method @NonNull public java.util.Map<java.lang.Class<? extends java.lang.annotation.Annotation>,java.lang.annotation.Annotation> getProperties();
     method @Nullable public <T extends java.lang.annotation.Annotation> T getProperty(@NonNull Class<T>);
     method @NonNull public static com.google.firebase.encoders.FieldDescriptor of(@NonNull String);
   }
