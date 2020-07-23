@@ -44,7 +44,6 @@ import com.google.firebase.components.ComponentDiscoveryService;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.ComponentRuntime;
 import com.google.firebase.components.Lazy;
-import com.google.firebase.emulators.EmulatorSettings;
 import com.google.firebase.events.Publisher;
 import com.google.firebase.heartbeatinfo.DefaultHeartBeatInfo;
 import com.google.firebase.internal.DataCollectionConfigStorage;
@@ -431,8 +430,7 @@ public class FirebaseApp {
             LibraryVersionComponent.create(FIREBASE_COMMON, BuildConfig.VERSION_NAME),
             kotlinVersion != null ? LibraryVersionComponent.create(KOTLIN, kotlinVersion) : null,
             DefaultUserAgentPublisher.component(),
-            DefaultHeartBeatInfo.component(),
-            EmulatorSettings.component());
+            DefaultHeartBeatInfo.component());
 
     dataCollectionConfigStorage =
         new Lazy<>(

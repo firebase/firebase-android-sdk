@@ -22,6 +22,7 @@ import com.google.firebase.database.android.AndroidAuthTokenProvider;
 import com.google.firebase.database.core.AuthTokenProvider;
 import com.google.firebase.database.core.DatabaseConfig;
 import com.google.firebase.database.core.RepoInfo;
+import com.google.firebase.emulators.EmulatedServiceSettings;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -37,6 +38,7 @@ class FirebaseDatabaseComponent {
 
   private final FirebaseApp app;
   private final AuthTokenProvider authProvider;
+  private EmulatedServiceSettings emulatorSettings;
 
   FirebaseDatabaseComponent(@NonNull FirebaseApp app, @Nullable InternalAuthProvider authProvider) {
     this.app = app;
@@ -67,5 +69,14 @@ class FirebaseDatabaseComponent {
       instances.put(repo, database);
     }
     return database;
+  }
+
+  @Nullable
+  public EmulatedServiceSettings getEmulatorSettings() {
+    return emulatorSettings;
+  }
+
+  public void setEmulatorSettings(@Nullable EmulatedServiceSettings emulatorSettings) {
+    this.emulatorSettings = emulatorSettings;
   }
 }

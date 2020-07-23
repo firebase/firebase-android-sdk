@@ -28,7 +28,6 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.emulators.EmulatedServiceSettings;
-import com.google.firebase.emulators.EmulatorSettings;
 import com.google.firebase.functions.FirebaseFunctionsException.Code;
 import java.io.IOException;
 import java.io.InterruptedIOException;
@@ -48,9 +47,6 @@ import org.json.JSONObject;
 
 /** FirebaseFunctions lets you call Cloud Functions for Firebase. */
 public class FirebaseFunctions {
-
-  /** @hide */
-  public static final String EMULATOR = "functions";
 
   /** A task that will be resolved once ProviderInstaller has installed what it needs to. */
   private static final TaskCompletionSource<Void> providerInstalled = new TaskCompletionSource<>();
@@ -81,6 +77,9 @@ public class FirebaseFunctions {
 
   // The format to use for constructing urls from region, projectId, and name.
   private String urlFormat = "https://%1$s-%2$s.cloudfunctions.net/%3$s";
+
+  // Emulator settings
+  private EmulatedServiceSettings emulatorSettings;
 
   FirebaseFunctions(
       FirebaseApp app,
@@ -192,7 +191,6 @@ public class FirebaseFunctions {
    */
   @VisibleForTesting
   URL getURL(String function) {
-    EmulatedServiceSettings emulatorSettings = app.get(EmulatorSettings.class).get(EMULATOR);
     if (emulatorSettings != null) {
       urlFormat =
           "http://"
@@ -225,7 +223,7 @@ public class FirebaseFunctions {
    * @param port the emulator port (ex: 5001)
    */
   public void useEmulator(@NonNull String host, int port) {
-    app.get(EmulatorSettings.class).set(EMULATOR, new EmulatedServiceSettings(host, port));
+    this.emulatorSettings = new EmulatedServiceSettings(host, port);
   }
 
   /**

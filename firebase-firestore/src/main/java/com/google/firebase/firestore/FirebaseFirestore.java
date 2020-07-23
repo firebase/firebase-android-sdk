@@ -28,7 +28,6 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.emulators.EmulatedServiceSettings;
-import com.google.firebase.emulators.EmulatorSettings;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.auth.EmptyCredentialsProvider;
@@ -57,9 +56,6 @@ import java.util.concurrent.Executor;
  */
 public class FirebaseFirestore {
 
-  /** @hide */
-  public static final String EMULATOR = "firestore";
-
   /**
    * Provides a registry management interface for {@code FirebaseFirestore} instances.
    *
@@ -86,6 +82,7 @@ public class FirebaseFirestore {
   private FirebaseFirestoreSettings settings;
   private volatile FirestoreClient client;
   private final GrpcMetadataProvider metadataProvider;
+  private EmulatedServiceSettings emulatorSettings;
 
   @NonNull
   public static FirebaseFirestore getInstance() {
@@ -188,7 +185,7 @@ public class FirebaseFirestore {
    * can only be called before calling any other methods on this object.
    */
   public void setFirestoreSettings(@NonNull FirebaseFirestoreSettings settings) {
-    settings = mergeEmulatorSettings(settings, getEmulatorSettings());
+    settings = mergeEmulatorSettings(settings, emulatorSettings);
 
     synchronized (databaseId) {
       checkNotNull(settings, "Provided settings must not be null.");
@@ -220,20 +217,8 @@ public class FirebaseFirestore {
           "Cannot call useEmulator() after instance has already been initialized.");
     }
 
-    EmulatedServiceSettings serviceSettings = new EmulatedServiceSettings(host, port);
-    getApp().get(EmulatorSettings.class).set(EMULATOR, serviceSettings);
-
-    this.settings = mergeEmulatorSettings(this.settings, serviceSettings);
-  }
-
-  @Nullable
-  private EmulatedServiceSettings getEmulatorSettings() {
-    if (firebaseApp == null) {
-      // This condition is sometimes true in tests, never in reality.
-      return null;
-    }
-
-    return firebaseApp.get(EmulatorSettings.class).get(EMULATOR);
+    this.emulatorSettings = new EmulatedServiceSettings(host, port);
+    this.settings = mergeEmulatorSettings(this.settings, this.emulatorSettings);
   }
 
   private void ensureClientConfigured() {
