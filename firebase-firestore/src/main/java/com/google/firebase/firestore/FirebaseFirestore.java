@@ -28,6 +28,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.emulators.EmulatedServiceSettings;
+import com.google.firebase.emulators.EmulatorSettingsHolder;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.auth.EmptyCredentialsProvider;
@@ -79,10 +80,10 @@ public class FirebaseFirestore {
   // When user requests to terminate, use this to notify `FirestoreMultiDbComponent` to deregister
   // this instance.
   private final InstanceRegistry instanceRegistry;
+  private final EmulatorSettingsHolder emulatorSettingsHolder;
   private FirebaseFirestoreSettings settings;
   private volatile FirestoreClient client;
   private final GrpcMetadataProvider metadataProvider;
-  private EmulatedServiceSettings emulatorSettings;
 
   @NonNull
   public static FirebaseFirestore getInstance() {
@@ -114,6 +115,7 @@ public class FirebaseFirestore {
       @Nullable InternalAuthProvider authProvider,
       @NonNull String database,
       @NonNull InstanceRegistry instanceRegistry,
+      @NonNull EmulatorSettingsHolder emulatorSettingsHolder,
       @Nullable GrpcMetadataProvider metadataProvider) {
     String projectId = app.getOptions().getProjectId();
     if (projectId == null) {
@@ -146,6 +148,7 @@ public class FirebaseFirestore {
             queue,
             app,
             instanceRegistry,
+            emulatorSettingsHolder,
             metadataProvider);
     return firestore;
   }
@@ -159,6 +162,7 @@ public class FirebaseFirestore {
       AsyncQueue asyncQueue,
       @Nullable FirebaseApp firebaseApp,
       InstanceRegistry instanceRegistry,
+      EmulatorSettingsHolder emulatorSettingsHolder,
       @Nullable GrpcMetadataProvider metadataProvider) {
     this.context = checkNotNull(context);
     this.databaseId = checkNotNull(checkNotNull(databaseId));
@@ -169,6 +173,7 @@ public class FirebaseFirestore {
     // NOTE: We allow firebaseApp to be null in tests only.
     this.firebaseApp = firebaseApp;
     this.instanceRegistry = instanceRegistry;
+    this.emulatorSettingsHolder = emulatorSettingsHolder;
     this.metadataProvider = metadataProvider;
 
     this.settings = new FirebaseFirestoreSettings.Builder().build();
@@ -185,7 +190,7 @@ public class FirebaseFirestore {
    * can only be called before calling any other methods on this object.
    */
   public void setFirestoreSettings(@NonNull FirebaseFirestoreSettings settings) {
-    settings = mergeEmulatorSettings(settings, emulatorSettings);
+    settings = mergeEmulatorSettings(settings, emulatorSettingsHolder.getEmulatorSettings());
 
     synchronized (databaseId) {
       checkNotNull(settings, "Provided settings must not be null.");
@@ -217,8 +222,10 @@ public class FirebaseFirestore {
           "Cannot call useEmulator() after instance has already been initialized.");
     }
 
-    this.emulatorSettings = new EmulatedServiceSettings(host, port);
-    this.settings = mergeEmulatorSettings(this.settings, this.emulatorSettings);
+    EmulatedServiceSettings emulatorSettings = new EmulatedServiceSettings(host, port);
+    emulatorSettingsHolder.setEmulatorSettings(emulatorSettings);
+
+    this.settings = mergeEmulatorSettings(this.settings, emulatorSettings);
   }
 
   private void ensureClientConfigured() {

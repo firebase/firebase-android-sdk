@@ -23,10 +23,11 @@ import com.google.firebase.database.core.AuthTokenProvider;
 import com.google.firebase.database.core.DatabaseConfig;
 import com.google.firebase.database.core.RepoInfo;
 import com.google.firebase.emulators.EmulatedServiceSettings;
+import com.google.firebase.emulators.EmulatorSettingsHolder;
 import java.util.HashMap;
 import java.util.Map;
 
-class FirebaseDatabaseComponent {
+class FirebaseDatabaseComponent implements EmulatorSettingsHolder {
   /**
    * A map of RepoInfo to FirebaseDatabase instance.
    *
@@ -65,17 +66,19 @@ class FirebaseDatabaseComponent {
       config.setFirebaseApp(app);
       config.setAuthTokenProvider(authProvider);
 
-      database = new FirebaseDatabase(app, repo, config);
+      database = new FirebaseDatabase(app, repo, config, this);
       instances.put(repo, database);
     }
     return database;
   }
 
+  @Override
   @Nullable
   public EmulatedServiceSettings getEmulatorSettings() {
     return emulatorSettings;
   }
 
+  @Override
   public void setEmulatorSettings(@Nullable EmulatedServiceSettings emulatorSettings) {
     this.emulatorSettings = emulatorSettings;
   }
