@@ -334,7 +334,7 @@ public class JsonDataDecoderContext implements DataDecoder {
       FieldModifier<U> modifier = (FieldModifier<U>) fieldModifier.get(annotation.annotationType());
       @SuppressWarnings(
           "unchecked") // Safe, because each entry in fieldModifier always have the same type
-                       // parameter
+      // parameter
       U ann = (U) annotation;
       if (modifier != null) {
         modified = modifier.apply(ann, value, fieldType);
