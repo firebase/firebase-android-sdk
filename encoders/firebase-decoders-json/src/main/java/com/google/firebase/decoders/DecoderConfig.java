@@ -23,5 +23,5 @@ import androidx.annotation.NonNull;
  */
 public interface DecoderConfig<T extends DecoderConfig<T>> {
   @NonNull
-  <U> T register(@NonNull Class<U> clazz, @NonNull ObjectDecoder<U> objectDecoder);
+  <U> T register(@NonNull Class<U> clazz, @NonNull ObjectDecoder<? extends U> objectDecoder);
 }
