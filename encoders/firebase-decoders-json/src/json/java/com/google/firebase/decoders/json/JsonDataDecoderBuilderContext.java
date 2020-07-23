@@ -82,11 +82,11 @@ public class JsonDataDecoderBuilderContext implements DataDecoder {
       return decodeSingleValue(classToken);
     } else if (isMap(classToken)) {
       @SuppressWarnings("unchecked")
-      T map = (T) decodeMap((TypeToken.ClassToken<Map>) classToken);
+      T map = (T) decodeMap((TypeToken.ClassToken<? extends Map>) classToken);
       return map;
     } else if (isCollection(classToken)) {
       @SuppressWarnings("unchecked")
-      T collection = (T) decodeCollection((TypeToken.ClassToken<Collection>) classToken);
+      T collection = (T) decodeCollection((TypeToken.ClassToken<? extends Collection>) classToken);
       return collection;
     } else {
       return decodeObject(classToken);
@@ -221,7 +221,7 @@ public class JsonDataDecoderBuilderContext implements DataDecoder {
     } else if (clazz.equals(TreeMap.class) || clazz.equals(SortedMap.class)) {
       return (T) new TreeMap<>();
     }
-    throw new IllegalArgumentException(clazz + " not supported.");
+    throw new EncodingException(clazz + " not supported.");
   }
 
   @SuppressWarnings("unchecked")
@@ -242,7 +242,7 @@ public class JsonDataDecoderBuilderContext implements DataDecoder {
     } else if (clazz.equals(TreeSet.class) || clazz.equals(SortedSet.class)) {
       return (T) new TreeSet<>();
     }
-    throw new IllegalArgumentException(classToken + " not supported.");
+    throw new EncodingException(classToken + " not supported.");
   }
 
   @SuppressWarnings("unchecked")
