@@ -44,6 +44,7 @@ android {
 dependencies {
     implementation 'androidx.annotation:annotation:1.1.0'
     implementation project(':encoders:firebase-encoders-json')
+    implementation project(':encoders:firebase-decoders-json')
 
     testImplementation 'androidx.test:runner:1.2.0'
     testImplementation 'androidx.test.ext:junit:1.1.1'
@@ -52,5 +53,4 @@ dependencies {
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation 'org.mockito:mockito-core:2.25.0'
     testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.11.1'
-
 }
