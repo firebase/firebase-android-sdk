@@ -114,7 +114,7 @@ package com.google.firebase.decoders.json {
   }
 
   public class JsonDataDecoderContext implements com.google.firebase.decoders.DataDecoder {
-    ctor public JsonDataDecoderContext();
+    method @NonNull public <T> T decode(@NonNull java.io.InputStream, @NonNull com.google.firebase.decoders.TypeToken<T>) throws java.io.IOException;
   }
 
   public class ObjectDecoderContextImpl<T> implements com.google.firebase.decoders.ObjectDecoderContext<T> {
