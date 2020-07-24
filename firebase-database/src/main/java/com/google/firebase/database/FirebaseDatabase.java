@@ -20,7 +20,6 @@ import android.text.TextUtils;
 import androidx.annotation.NonNull;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-import com.google.firebase.database.annotations.Nullable;
 import com.google.firebase.database.core.DatabaseConfig;
 import com.google.firebase.database.core.Path;
 import com.google.firebase.database.core.Repo;
@@ -30,7 +29,6 @@ import com.google.firebase.database.core.utilities.ParsedUrl;
 import com.google.firebase.database.core.utilities.Utilities;
 import com.google.firebase.database.core.utilities.Validation;
 import com.google.firebase.emulators.EmulatedServiceSettings;
-import com.google.firebase.emulators.EmulatorSettingsHolder;
 
 /**
  * The entry point for accessing a Firebase Database. You can get an instance by calling {@link
@@ -44,7 +42,7 @@ public class FirebaseDatabase {
   private final FirebaseApp app;
   private final RepoInfo repoInfo;
   private final DatabaseConfig config;
-  private final EmulatorSettingsHolder emulatorSettingsHolder;
+  private EmulatedServiceSettings emulatorSettings;
   private Repo repo; // Usage must be guarded by a call to ensureRepo().
 
   /**
@@ -107,8 +105,7 @@ public class FirebaseDatabase {
     FirebaseDatabaseComponent component = app.get(FirebaseDatabaseComponent.class);
     checkNotNull(component, "Firebase Database component is not present.");
 
-    EmulatedServiceSettings emulatorSettings = component.getEmulatorSettings();
-    ParsedUrl parsedUrl = Utilities.parseUrl(url, emulatorSettings);
+    ParsedUrl parsedUrl = Utilities.parseUrl(url);
     if (!parsedUrl.path.isEmpty()) {
       throw new DatabaseException(
           "Specified Database URL '"
@@ -124,20 +121,16 @@ public class FirebaseDatabase {
   /** This exists so Repo can create FirebaseDatabase objects to keep legacy tests working. */
   static FirebaseDatabase createForTests(
       FirebaseApp app, RepoInfo repoInfo, DatabaseConfig config) {
-    FirebaseDatabase db = new FirebaseDatabase(app, repoInfo, config, null);
+    FirebaseDatabase db = new FirebaseDatabase(app, repoInfo, config);
     db.ensureRepo();
     return db;
   }
 
   FirebaseDatabase(
-      @NonNull FirebaseApp app,
-      @NonNull RepoInfo repoInfo,
-      @NonNull DatabaseConfig config,
-      @Nullable FirebaseDatabaseComponent emulatorSettingsHolder) {
+      @NonNull FirebaseApp app, @NonNull RepoInfo repoInfo, @NonNull DatabaseConfig config) {
     this.app = app;
     this.repoInfo = repoInfo;
     this.config = config;
-    this.emulatorSettingsHolder = emulatorSettingsHolder;
   }
 
   /**
@@ -199,7 +192,7 @@ public class FirebaseDatabase {
           "Can't pass null for argument 'url' in " + "FirebaseDatabase.getReferenceFromUrl()");
     }
 
-    ParsedUrl parsedUrl = Utilities.parseUrl(url, getEmulatorSettings());
+    ParsedUrl parsedUrl = Utilities.parseUrl(url, this.emulatorSettings);
     if (!parsedUrl.repoInfo.host.equals(this.repo.getRepoInfo().host)) {
       throw new DatabaseException(
           "Invalid URL ("
@@ -313,23 +306,13 @@ public class FirebaseDatabase {
           "Cannot call useEmulator() after instance has already been initialized.");
     }
 
-    checkNotNull(emulatorSettingsHolder, "EmulatorSettingsHolder not found.");
-    emulatorSettingsHolder.setEmulatorSettings(new EmulatedServiceSettings(host, port));
+    this.emulatorSettings = new EmulatedServiceSettings(host, port);
   }
 
   /** @return The semver version for this build of the Firebase Database client */
   @NonNull
   public static String getSdkVersion() {
     return SDK_VERSION;
-  }
-
-  @Nullable
-  private EmulatedServiceSettings getEmulatorSettings() {
-    if (emulatorSettingsHolder != null) {
-      return emulatorSettingsHolder.getEmulatorSettings();
-    }
-
-    return null;
   }
 
   private void assertUnfrozen(String methodCalled) {
@@ -344,7 +327,7 @@ public class FirebaseDatabase {
 
   private synchronized void ensureRepo() {
     if (this.repo == null) {
-      this.repoInfo.applyEmulatorSettings(getEmulatorSettings());
+      this.repoInfo.applyEmulatorSettings(this.emulatorSettings);
       repo = RepoManager.createRepo(this.config, this.repoInfo, this);
     }
   }

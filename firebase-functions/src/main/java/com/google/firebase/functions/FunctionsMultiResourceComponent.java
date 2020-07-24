@@ -16,15 +16,12 @@ package com.google.firebase.functions;
 
 import android.content.Context;
 import androidx.annotation.GuardedBy;
-import androidx.annotation.Nullable;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.emulators.EmulatedServiceSettings;
-import com.google.firebase.emulators.EmulatorSettingsHolder;
 import java.util.HashMap;
 import java.util.Map;
 
 /** Multi-resource container for Functions. */
-class FunctionsMultiResourceComponent implements EmulatorSettingsHolder {
+class FunctionsMultiResourceComponent {
   /**
    * A static map from instance key to FirebaseFunctions instances. Instance keys region names.
    *
@@ -36,7 +33,6 @@ class FunctionsMultiResourceComponent implements EmulatorSettingsHolder {
   private final Context applicationContext;
   private final ContextProvider contextProvider;
   private final FirebaseApp app;
-  private EmulatedServiceSettings emulatorSettings;
 
   FunctionsMultiResourceComponent(
       Context applicationContext, ContextProvider contextProvider, FirebaseApp app) {
@@ -51,20 +47,9 @@ class FunctionsMultiResourceComponent implements EmulatorSettingsHolder {
 
     if (functions == null) {
       functions =
-          new FirebaseFunctions(app, applicationContext, projectId, region, contextProvider, this);
+          new FirebaseFunctions(app, applicationContext, projectId, region, contextProvider);
       instances.put(region, functions);
     }
     return functions;
-  }
-
-  @Override
-  @Nullable
-  public EmulatedServiceSettings getEmulatorSettings() {
-    return emulatorSettings;
-  }
-
-  @Override
-  public void setEmulatorSettings(@Nullable EmulatedServiceSettings emulatorSettings) {
-    this.emulatorSettings = emulatorSettings;
   }
 }

@@ -21,17 +21,13 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseAppLifecycleListener;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.auth.internal.InternalAuthProvider;
-import com.google.firebase.emulators.EmulatedServiceSettings;
-import com.google.firebase.emulators.EmulatorSettingsHolder;
 import com.google.firebase.firestore.remote.GrpcMetadataProvider;
 import java.util.HashMap;
 import java.util.Map;
 
 /** Multi-resource container for Cloud Firestore. */
 class FirestoreMultiDbComponent
-    implements FirebaseAppLifecycleListener,
-        FirebaseFirestore.InstanceRegistry,
-        EmulatorSettingsHolder {
+    implements FirebaseAppLifecycleListener, FirebaseFirestore.InstanceRegistry {
 
   /**
    * A static map from instance key to FirebaseFirestore instances. Instance keys are database
@@ -43,7 +39,6 @@ class FirestoreMultiDbComponent
   private final Context context;
   private final InternalAuthProvider authProvider;
   private final GrpcMetadataProvider metadataProvider;
-  private EmulatedServiceSettings emulatorSettings;
 
   FirestoreMultiDbComponent(
       @NonNull Context context,
@@ -64,7 +59,7 @@ class FirestoreMultiDbComponent
     if (firestore == null) {
       firestore =
           FirebaseFirestore.newInstance(
-              context, app, authProvider, databaseId, this, this, metadataProvider);
+              context, app, authProvider, databaseId, this, metadataProvider);
       instances.put(databaseId, firestore);
     }
     return firestore;
@@ -89,16 +84,5 @@ class FirestoreMultiDbComponent
       entry.getValue().terminateInternal();
       instances.remove(entry.getKey());
     }
-  }
-
-  @Nullable
-  @Override
-  public EmulatedServiceSettings getEmulatorSettings() {
-    return emulatorSettings;
-  }
-
-  @Override
-  public void setEmulatorSettings(@Nullable EmulatedServiceSettings emulatorSettings) {
-    this.emulatorSettings = emulatorSettings;
   }
 }

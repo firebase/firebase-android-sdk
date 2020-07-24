@@ -28,7 +28,6 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.emulators.EmulatedServiceSettings;
-import com.google.firebase.emulators.EmulatorSettingsHolder;
 import com.google.firebase.functions.FirebaseFunctionsException.Code;
 import java.io.IOException;
 import java.io.InterruptedIOException;
@@ -80,22 +79,20 @@ public class FirebaseFunctions {
   private String urlFormat = "https://%1$s-%2$s.cloudfunctions.net/%3$s";
 
   // Emulator settings
-  private EmulatorSettingsHolder emulatorSettingsHolder;
+  private EmulatedServiceSettings emulatorSettings;
 
   FirebaseFunctions(
       FirebaseApp app,
       Context context,
       String projectId,
       String region,
-      ContextProvider contextProvider,
-      FunctionsMultiResourceComponent emulatorSettingsHolder) {
+      ContextProvider contextProvider) {
     this.app = app;
     this.client = new OkHttpClient();
     this.serializer = new Serializer();
     this.contextProvider = Preconditions.checkNotNull(contextProvider);
     this.projectId = Preconditions.checkNotNull(projectId);
     this.region = Preconditions.checkNotNull(region);
-    this.emulatorSettingsHolder = emulatorSettingsHolder;
 
     maybeInstallProviders(context);
   }
@@ -194,7 +191,7 @@ public class FirebaseFunctions {
    */
   @VisibleForTesting
   URL getURL(String function) {
-    EmulatedServiceSettings emulatorSettings = getEmulatorSettings();
+    EmulatedServiceSettings emulatorSettings = this.emulatorSettings;
     if (emulatorSettings != null) {
       urlFormat =
           "http://"
@@ -227,17 +224,7 @@ public class FirebaseFunctions {
    * @param port the emulator port (ex: 5001)
    */
   public void useEmulator(@NonNull String host, int port) {
-    Preconditions.checkNotNull(emulatorSettingsHolder, "EmulatorSettingsHolder not present.");
-    emulatorSettingsHolder.setEmulatorSettings(new EmulatedServiceSettings(host, port));
-  }
-
-  @Nullable
-  private EmulatedServiceSettings getEmulatorSettings() {
-    if (emulatorSettingsHolder != null) {
-      return emulatorSettingsHolder.getEmulatorSettings();
-    }
-
-    return null;
+    this.emulatorSettings = new EmulatedServiceSettings(host, port);
   }
 
   /**
