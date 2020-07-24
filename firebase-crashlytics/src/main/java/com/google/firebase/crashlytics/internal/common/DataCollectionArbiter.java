@@ -127,6 +127,10 @@ public class DataCollectionArbiter {
     }
   }
 
+  public boolean getCrashlyticsDataCollectionEnabled() {
+    return crashlyticsDataCollectionEnabled;
+  }
+
   /**
    * Returns a task which will be resolved when either: 1) automatic data collection has been
    * enabled, or 2) grantDataCollectionPermission has been called.

@@ -664,6 +664,10 @@ class CrashlyticsController {
     cacheUserData(userMetadata);
   }
 
+  String getUserId() {
+    return userMetadata.getUserId();
+  }
+
   void setCustomKey(String key, String value) {
     try {
       userMetadata.setCustomKey(key, value);

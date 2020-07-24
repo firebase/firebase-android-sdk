@@ -251,6 +251,10 @@ public class CrashlyticsCore {
     dataCollectionArbiter.setCrashlyticsDataCollectionEnabled(enabled);
   }
 
+  public boolean getCrashlyticsCollectionEnabled() {
+    return dataCollectionArbiter.getCrashlyticsDataCollectionEnabled();
+  }
+
   // region Unsent report management.
 
   @NonNull
@@ -307,6 +311,10 @@ public class CrashlyticsCore {
 
   public void setUserId(String identifier) {
     controller.setUserId(identifier);
+  }
+
+  public String getUserId() {
+    return controller.getUserId();
   }
 
   /**
