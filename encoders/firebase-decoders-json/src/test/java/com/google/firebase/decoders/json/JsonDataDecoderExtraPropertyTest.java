@@ -114,12 +114,12 @@ public class JsonDataDecoderExtraPropertyTest {
           }
         });
 
-    JsonDataDecoderBuilderContext jsonDataDecoderBuilderContext =
-        new JsonDataDecoderBuilderContext(objectDecoders, fieldHandlers);
+    JsonDataDecoderContext jsonDataDecoderContext =
+        new JsonDataDecoderContext(objectDecoders, fieldHandlers);
 
     String json = "{\"str\":null}";
     InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
-    Foo foo = jsonDataDecoderBuilderContext.decode(input, TypeToken.of(new Safe<Foo>() {}));
+    Foo foo = jsonDataDecoderContext.decode(input, TypeToken.of(new Safe<Foo>() {}));
     assertThat(foo.str).isEqualTo("default");
   }
 }

@@ -57,17 +57,11 @@ public class JsonDataDecoderContext implements DataDecoder {
   private JsonReader reader;
   private final Map<Class<?>, AnnotatedFieldHandler<?>> fieldHandlers;
 
-<<<<<<< HEAD:encoders/firebase-decoders-json/src/json/java/com/google/firebase/decoders/json/JsonDataDecoderContext.java
   JsonDataDecoderContext(@NonNull Map<Class<?>, ObjectDecoder<?>> objectDecoders) {
-    this.objectDecoders = objectDecoders;
-    this.fieldModifier = Collections.emptyMap();
-=======
-  JsonDataDecoderBuilderContext(@NonNull Map<Class<?>, ObjectDecoder<?>> objectDecoders) {
     this(objectDecoders, Collections.emptyMap());
->>>>>>> address comments:encoders/firebase-decoders-json/src/json/java/com/google/firebase/decoders/json/JsonDataDecoderBuilderContext.java
   }
 
-  JsonDataDecoderBuilderContext(
+  JsonDataDecoderContext(
       @NonNull Map<Class<?>, ObjectDecoder<?>> objectDecoders,
       @NonNull Map<Class<?>, AnnotatedFieldHandler<?>> fieldHandlers) {
     this.objectDecoders = objectDecoders;
