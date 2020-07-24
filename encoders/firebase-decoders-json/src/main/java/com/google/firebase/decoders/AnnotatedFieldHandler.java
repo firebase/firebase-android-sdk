@@ -22,7 +22,8 @@ import java.lang.annotation.Annotation;
  * {@link AnnotatedFieldHandler} provide a way to handle field values based on its annotation.
  *
  * <p>Each annotation type should be registered along with associated {@link AnnotatedFieldHandler},
- * non-registered annotation will be skipped in the process of decoding.
+ * also annotations themselves need to be annotated with @ExtraProperty,
+ * all non-registered annotations will be skipped in the process of decoding.
  */
 public interface AnnotatedFieldHandler<U extends Annotation> {
   /**
