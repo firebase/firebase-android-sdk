@@ -77,6 +77,10 @@ public class FirebaseDatabaseTest {
 
     DatabaseReference urlReference = db.getReferenceFromUrl("https://otherns.firebaseio.com");
     assertEquals(urlReference.toString(), "http://10.0.2.2:9000");
+
+    DatabaseReference urlReferenceWithPath =
+        db.getReferenceFromUrl("https://otherns.firebaseio.com/foo");
+    assertEquals(urlReferenceWithPath.toString(), "http://10.0.2.2:9000/foo");
   }
 
   @Test
