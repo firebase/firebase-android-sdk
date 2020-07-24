@@ -218,7 +218,6 @@ public class FirebaseFirestore {
     }
 
     this.emulatorSettings = new EmulatedServiceSettings(host, port);
-    ;
     this.settings = mergeEmulatorSettings(this.settings, this.emulatorSettings);
   }
 

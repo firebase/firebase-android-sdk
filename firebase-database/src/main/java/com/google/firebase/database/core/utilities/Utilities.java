@@ -25,7 +25,6 @@ import com.google.firebase.database.DatabaseException;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.core.Path;
 import com.google.firebase.database.core.RepoInfo;
-import com.google.firebase.emulators.EmulatedServiceSettings;
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -33,15 +32,6 @@ import java.util.Map;
 
 public class Utilities {
   private static final char[] HEX_CHARACTERS = "0123456789abcdef".toCharArray();
-
-  public static ParsedUrl parseUrl(
-      @NonNull String url, @Nullable EmulatedServiceSettings emulatorSettings)
-      throws DatabaseException {
-    ParsedUrl parsedUrl = Utilities.parseUrl(url);
-    parsedUrl.repoInfo.applyEmulatorSettings(emulatorSettings);
-
-    return parsedUrl;
-  }
 
   public static ParsedUrl parseUrl(@NonNull String url) throws DatabaseException {
     try {

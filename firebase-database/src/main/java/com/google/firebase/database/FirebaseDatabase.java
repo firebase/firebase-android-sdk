@@ -193,7 +193,9 @@ public class FirebaseDatabase {
           "Can't pass null for argument 'url' in " + "FirebaseDatabase.getReferenceFromUrl()");
     }
 
-    ParsedUrl parsedUrl = Utilities.parseUrl(url, this.emulatorSettings);
+    ParsedUrl parsedUrl = Utilities.parseUrl(url);
+    parsedUrl.repoInfo.applyEmulatorSettings(this.emulatorSettings);
+
     if (!parsedUrl.repoInfo.host.equals(this.repo.getRepoInfo().host)) {
       throw new DatabaseException(
           "Invalid URL ("
