@@ -49,13 +49,12 @@ public class JsonDataDecoderBuilderContextCollectionDecodingTest {
   @Test
   public void collections_shouldBeCorrectlyDecoded() throws IOException {
     Map<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
-    JsonDataDecoderBuilderContext jsonDataDecoderBuilderContext =
-        new JsonDataDecoderBuilderContext(objectDecoders);
+    JsonDataDecoderContext jsonDataDecoderContext = new JsonDataDecoderContext(objectDecoders);
 
     String json = "[1,2]";
     InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
     Set<Integer> set =
-        jsonDataDecoderBuilderContext.decode(input, TypeToken.of(new Safe<HashSet<Integer>>() {}));
+        jsonDataDecoderContext.decode(input, TypeToken.of(new Safe<HashSet<Integer>>() {}));
     Set<Integer> set1 = new HashSet<>();
     set1.add(1);
     set1.add(2);
@@ -84,13 +83,11 @@ public class JsonDataDecoderBuilderContextCollectionDecodingTest {
   public void nestedCollection_shouldBeDecodedCorrectly() throws IOException {
     Map<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
     objectDecoders.put(ListFoo.class, new ListFooObjectDecoder());
-    JsonDataDecoderBuilderContext jsonDataDecoderBuilderContext =
-        new JsonDataDecoderBuilderContext(objectDecoders);
+    JsonDataDecoderContext jsonDataDecoderContext = new JsonDataDecoderContext(objectDecoders);
 
     String json = "{\"l\": [\"1\", \"2\"]}";
     InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
-    ListFoo listFoo =
-        jsonDataDecoderBuilderContext.decode(input, TypeToken.of(new Safe<ListFoo>() {}));
+    ListFoo listFoo = jsonDataDecoderContext.decode(input, TypeToken.of(new Safe<ListFoo>() {}));
 
     assertThat(listFoo.l.get(0)).isEqualTo("1");
     assertThat(listFoo.l.get(1)).isEqualTo("2");
@@ -99,71 +96,65 @@ public class JsonDataDecoderBuilderContextCollectionDecodingTest {
   @Test
   public void list_shouldBeDecodedAsArrayListClassInDefault() throws IOException {
     Map<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
-    JsonDataDecoderBuilderContext jsonDataDecoderBuilderContext =
-        new JsonDataDecoderBuilderContext(objectDecoders);
+    JsonDataDecoderContext jsonDataDecoderContext = new JsonDataDecoderContext(objectDecoders);
 
     String json = "[1,2]";
     InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
 
     List<Integer> l =
-        jsonDataDecoderBuilderContext.decode(input, TypeToken.of(new Safe<List<Integer>>() {}));
+        jsonDataDecoderContext.decode(input, TypeToken.of(new Safe<List<Integer>>() {}));
     assertThat(l instanceof ArrayList).isTrue();
   }
 
   @Test
   public void set_shouldBeDecodedAsHashSetClassInDefault() throws IOException {
     Map<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
-    JsonDataDecoderBuilderContext jsonDataDecoderBuilderContext =
-        new JsonDataDecoderBuilderContext(objectDecoders);
+    JsonDataDecoderContext jsonDataDecoderContext = new JsonDataDecoderContext(objectDecoders);
 
     String json = "[1,2]";
     InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
 
     Set<Integer> l =
-        jsonDataDecoderBuilderContext.decode(input, TypeToken.of(new Safe<Set<Integer>>() {}));
+        jsonDataDecoderContext.decode(input, TypeToken.of(new Safe<Set<Integer>>() {}));
     assertThat(l instanceof HashSet).isTrue();
   }
 
   @Test
   public void queue_shouldBeDecodedAsArrayDequeInDefault() throws IOException {
     Map<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
-    JsonDataDecoderBuilderContext jsonDataDecoderBuilderContext =
-        new JsonDataDecoderBuilderContext(objectDecoders);
+    JsonDataDecoderContext jsonDataDecoderContext = new JsonDataDecoderContext(objectDecoders);
 
     String json = "[1,2]";
     InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
 
     Queue<Integer> l =
-        jsonDataDecoderBuilderContext.decode(input, TypeToken.of(new Safe<Queue<Integer>>() {}));
+        jsonDataDecoderContext.decode(input, TypeToken.of(new Safe<Queue<Integer>>() {}));
     assertThat(l instanceof ArrayDeque).isTrue();
   }
 
   @Test
   public void dequeue_shouldBeDecodedAsArrayDequeInDefault() throws IOException {
     Map<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
-    JsonDataDecoderBuilderContext jsonDataDecoderBuilderContext =
-        new JsonDataDecoderBuilderContext(objectDecoders);
+    JsonDataDecoderContext jsonDataDecoderContext = new JsonDataDecoderContext(objectDecoders);
 
     String json = "[1,2]";
     InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
 
     Deque<Integer> l =
-        jsonDataDecoderBuilderContext.decode(input, TypeToken.of(new Safe<Deque<Integer>>() {}));
+        jsonDataDecoderContext.decode(input, TypeToken.of(new Safe<Deque<Integer>>() {}));
     assertThat(l instanceof ArrayDeque).isTrue();
   }
 
   @Test
   public void sortedSet_shouldBeDecodedAsTreeSetInDefault() throws IOException {
     Map<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
-    JsonDataDecoderBuilderContext jsonDataDecoderBuilderContext =
-        new JsonDataDecoderBuilderContext(objectDecoders);
+    JsonDataDecoderContext jsonDataDecoderContext = new JsonDataDecoderContext(objectDecoders);
 
     String json = "[1,2]";
     InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
 
     SortedSet<Integer> l =
-        jsonDataDecoderBuilderContext.decode(
-            input, TypeToken.of(new Safe<SortedSet<Integer>>() {}));
+        jsonDataDecoderContext.decode(input, TypeToken.of(new Safe<SortedSet<Integer>>() {}));
     assertThat(l instanceof TreeSet).isTrue();
   }
 }

@@ -45,14 +45,14 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-public class JsonDataDecoderBuilderContext implements DataDecoder {
+public class JsonDataDecoderContext implements DataDecoder {
   private Map<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
   private Map<TypeToken.ClassToken<?>, ObjectDecoderContextImpl<?>> objectDecoderContexts =
       new HashMap<>();
   private Map<TypeToken.ClassToken<?>, TypeCreator<?>> typeCreators = new HashMap<>();
   private JsonReader reader;
 
-  JsonDataDecoderBuilderContext(@NonNull Map<Class<?>, ObjectDecoder<?>> objectDecoders) {
+  JsonDataDecoderContext(@NonNull Map<Class<?>, ObjectDecoder<?>> objectDecoders) {
     this.objectDecoders = objectDecoders;
   }
 
