@@ -47,12 +47,15 @@ public class FirebaseFunctionsTest {
     FirebaseFunctions functions = FirebaseFunctions.getInstance(app);
     functions.useEmulator("10.0.2.2", 5001);
 
-    URL withRegion = FirebaseFunctions.getInstance(app, "my-region").getURL("my-endpoint");
-    assertEquals("http://10.0.2.2:5001/my-project/my-region/my-endpoint", withRegion.toString());
-
     URL withoutRegion = FirebaseFunctions.getInstance(app).getURL("my-endpoint");
     assertEquals(
         "http://10.0.2.2:5001/my-project/us-central1/my-endpoint", withoutRegion.toString());
+
+    FirebaseFunctions functionsWithRegion = FirebaseFunctions.getInstance(app, "my-region");
+    functionsWithRegion.useEmulator("10.0.2.2", 5001);
+
+    URL withRegion = functionsWithRegion.getURL("my-endpoint");
+    assertEquals("http://10.0.2.2:5001/my-project/my-region/my-endpoint", withRegion.toString());
   }
 
   @Test
