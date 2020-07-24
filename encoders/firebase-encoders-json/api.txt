@@ -13,6 +13,7 @@ package com.google.firebase.encoders {
 
   public final class FieldDescriptor {
     method @NonNull public static com.google.firebase.encoders.FieldDescriptor.Builder builder(@NonNull String);
+    method @NonNull public java.util.Collection<java.lang.annotation.Annotation> getAllAnnotations();
     method @NonNull public String getName();
     method @Nullable public <T extends java.lang.annotation.Annotation> T getProperty(@NonNull Class<T>);
     method @NonNull public static com.google.firebase.encoders.FieldDescriptor of(@NonNull String);

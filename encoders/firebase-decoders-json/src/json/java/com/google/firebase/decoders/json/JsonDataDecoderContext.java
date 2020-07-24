@@ -17,19 +17,23 @@ package com.google.firebase.decoders.json;
 import android.util.JsonReader;
 import android.util.JsonToken;
 import androidx.annotation.NonNull;
+import com.google.firebase.decoders.AnnotatedFieldHandler;
 import com.google.firebase.decoders.DataDecoder;
 import com.google.firebase.decoders.FieldRef;
 import com.google.firebase.decoders.ObjectDecoder;
 import com.google.firebase.decoders.TypeCreator;
 import com.google.firebase.decoders.TypeToken;
 import com.google.firebase.encoders.EncodingException;
+import com.google.firebase.encoders.FieldDescriptor;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -51,9 +55,17 @@ public class JsonDataDecoderContext implements DataDecoder {
       new HashMap<>();
   private Map<TypeToken.ClassToken<?>, TypeCreator<?>> typeCreators = new HashMap<>();
   private JsonReader reader;
+  private final Map<Class<?>, AnnotatedFieldHandler<?>> fieldHandlers;
 
   JsonDataDecoderContext(@NonNull Map<Class<?>, ObjectDecoder<?>> objectDecoders) {
+    this(objectDecoders, Collections.emptyMap());
+  }
+
+  JsonDataDecoderContext(
+      @NonNull Map<Class<?>, ObjectDecoder<?>> objectDecoders,
+      @NonNull Map<Class<?>, AnnotatedFieldHandler<?>> fieldHandlers) {
     this.objectDecoders = objectDecoders;
+    this.fieldHandlers = fieldHandlers;
   }
 
   @NonNull
@@ -289,13 +301,46 @@ public class JsonDataDecoderContext implements DataDecoder {
     ObjectDecoderContextImpl<T> decoderCtx = getObjectDecodersCtx(classToken);
     reader.beginObject();
     while (reader.hasNext()) {
-      String fieldName = reader.nextName();
-      FieldRef<?> fieldRef = decoderCtx.getFieldRef(fieldName);
-      creationCtx.put(fieldRef, decode(fieldRef.getTypeToken()));
+      decodeField(decoderCtx, creationCtx);
     }
     reader.endObject();
     decoderCtx.decodeInlineObjIfAny(creationCtx);
     return creationCtx;
+  }
+
+  private <T> void decodeField(
+      ObjectDecoderContextImpl<T> decoderCtx, CreationContextImpl creationCtx) throws IOException {
+    String fieldName = reader.nextName();
+    FieldRef<?> fieldRef = decoderCtx.getFieldRef(fieldName);
+    FieldDescriptor fieldDescriptor = decoderCtx.getFieldDescriptors(fieldRef);
+    Object val = decodeField(fieldRef.getTypeToken(), fieldDescriptor);
+    creationCtx.put(fieldRef, val);
+  }
+
+  private <TField> TField decodeField(
+      TypeToken<TField> fieldTypeToken, FieldDescriptor fieldDescriptor) throws IOException {
+    TField val = decode(fieldTypeToken);
+    return applyFieldHandlers(
+        fieldDescriptor.getAllAnnotations(), val, fieldTypeToken.getRawType());
+  }
+
+  private <TField, U extends Annotation> TField applyFieldHandlers(
+      Collection<Annotation> annotations, TField value, Class<TField> fieldType) {
+    TField modified = value;
+    for (Annotation annotation : annotations) {
+      @SuppressWarnings(
+          "unchecked") // Safe, because U is acted as an type placeholder, used to cast annotation
+      AnnotatedFieldHandler<U> handler =
+          (AnnotatedFieldHandler<U>) fieldHandlers.get(annotation.annotationType());
+      @SuppressWarnings(
+          "unchecked") // Safe, because each entry in fieldModifier always have the same type
+      // parameter
+      U ann = (U) annotation;
+      if (handler != null) {
+        modified = handler.apply(ann, value, fieldType);
+      }
+    }
+    return modified;
   }
 
   private <T> boolean isSingleValue(TypeToken<T> typeToken) {

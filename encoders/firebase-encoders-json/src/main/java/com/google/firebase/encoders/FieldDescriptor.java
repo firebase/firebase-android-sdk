@@ -17,6 +17,7 @@ package com.google.firebase.encoders;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import java.lang.annotation.Annotation;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -43,9 +44,9 @@ import java.util.Map;
 public final class FieldDescriptor {
 
   private final String name;
-  private final Map<Class<?>, Object> properties;
+  private final Map<Class<? extends Annotation>, Annotation> properties;
 
-  private FieldDescriptor(String name, Map<Class<?>, Object> properties) {
+  private FieldDescriptor(String name, Map<Class<? extends Annotation>, Annotation> properties) {
     this.name = name;
     this.properties = properties;
   }
@@ -65,6 +66,11 @@ public final class FieldDescriptor {
   @SuppressWarnings("unchecked")
   public <T extends Annotation> T getProperty(@NonNull Class<T> type) {
     return (T) properties.get(type);
+  }
+
+  @NonNull
+  public Collection<Annotation> getAllAnnotations() {
+    return properties.values();
   }
 
   @NonNull
@@ -107,7 +113,7 @@ public final class FieldDescriptor {
   public static final class Builder {
 
     private final String name;
-    private Map<Class<?>, Object> properties = null;
+    private Map<Class<? extends Annotation>, Annotation> properties = null;
 
     Builder(String name) {
       this.name = name;
