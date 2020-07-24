@@ -216,7 +216,7 @@ public class FirebaseFunctions {
   }
 
   /**
-   * Modify this FirebaseDatabase instance to communicate with the Cloud Functions emulator.
+   * Modify this FirebaseFunctions instance to communicate with the Cloud Functions emulator.
    *
    * <p>Note: this must be called before this instance has been used to do any operations.
    *

@@ -247,8 +247,9 @@ public class FirebaseFirestore {
     }
 
     if (!FirebaseFirestoreSettings.DEFAULT_HOST.equals(settings.getHost())) {
-      throw new IllegalStateException(
-          "Cannot specify the host in FirebaseFirestoreSettings when emulator settings are provided.");
+      Logger.warn(
+          TAG,
+          "Host has been set in FirebaseFirestoreSettings and useEmulator, emulator host will be used.");
     }
 
     return new FirebaseFirestoreSettings.Builder(settings)
