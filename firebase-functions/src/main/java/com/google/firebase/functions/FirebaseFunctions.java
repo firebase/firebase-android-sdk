@@ -79,7 +79,7 @@ public class FirebaseFunctions {
   private String urlFormat = "https://%1$s-%2$s.cloudfunctions.net/%3$s";
 
   // Emulator settings
-  private EmulatedServiceSettings emulatorSettings;
+  @Nullable private EmulatedServiceSettings emulatorSettings;
 
   FirebaseFunctions(
       FirebaseApp app,

@@ -20,6 +20,7 @@ import android.text.TextUtils;
 import androidx.annotation.NonNull;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
+import com.google.firebase.database.annotations.Nullable;
 import com.google.firebase.database.core.DatabaseConfig;
 import com.google.firebase.database.core.Path;
 import com.google.firebase.database.core.Repo;
@@ -42,7 +43,7 @@ public class FirebaseDatabase {
   private final FirebaseApp app;
   private final RepoInfo repoInfo;
   private final DatabaseConfig config;
-  private EmulatedServiceSettings emulatorSettings;
+  @Nullable private EmulatedServiceSettings emulatorSettings;
   private Repo repo; // Usage must be guarded by a call to ensureRepo().
 
   /**

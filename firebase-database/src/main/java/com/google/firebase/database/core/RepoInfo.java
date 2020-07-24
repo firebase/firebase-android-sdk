@@ -69,6 +69,7 @@ public final class RepoInfo {
     }
 
     this.host = settings.getHost() + ":" + settings.getPort();
+    this.internalHost = this.host;
     this.secure = false;
   }
 
