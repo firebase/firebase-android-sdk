@@ -96,6 +96,7 @@ package com.google.firebase.database {
     method public void setLogLevel(@NonNull com.google.firebase.database.Logger.Level);
     method public void setPersistenceCacheSizeBytes(long);
     method public void setPersistenceEnabled(boolean);
+    method public void useEmulator(@NonNull String, int);
   }
 
   public abstract class GenericTypeIndicator<T> {
