@@ -162,7 +162,7 @@ public class FirebaseFirestore {
       AsyncQueue asyncQueue,
       @Nullable FirebaseApp firebaseApp,
       InstanceRegistry instanceRegistry,
-      EmulatorSettingsHolder emulatorSettingsHolder,
+      @Nullable EmulatorSettingsHolder emulatorSettingsHolder,
       @Nullable GrpcMetadataProvider metadataProvider) {
     this.context = checkNotNull(context);
     this.databaseId = checkNotNull(checkNotNull(databaseId));
@@ -190,7 +190,7 @@ public class FirebaseFirestore {
    * can only be called before calling any other methods on this object.
    */
   public void setFirestoreSettings(@NonNull FirebaseFirestoreSettings settings) {
-    settings = mergeEmulatorSettings(settings, emulatorSettingsHolder.getEmulatorSettings());
+    settings = mergeEmulatorSettings(settings, getEmulatorSettings());
 
     synchronized (databaseId) {
       checkNotNull(settings, "Provided settings must not be null.");
@@ -221,11 +221,22 @@ public class FirebaseFirestore {
       throw new IllegalStateException(
           "Cannot call useEmulator() after instance has already been initialized.");
     }
+    checkNotNull(emulatorSettingsHolder, "EmulatedSettingsHolder must not be null.");
 
     EmulatedServiceSettings emulatorSettings = new EmulatedServiceSettings(host, port);
     emulatorSettingsHolder.setEmulatorSettings(emulatorSettings);
 
     this.settings = mergeEmulatorSettings(this.settings, emulatorSettings);
+  }
+
+  @Nullable
+  private EmulatedServiceSettings getEmulatorSettings() {
+    // This is only true in tests
+    if (emulatorSettingsHolder == null) {
+      return null;
+    }
+
+    return emulatorSettingsHolder.getEmulatorSettings();
   }
 
   private void ensureClientConfigured() {
