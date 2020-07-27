@@ -61,24 +61,6 @@ public class FirebaseFirestoreTest {
   }
 
   @Test
-  public void getInstance_withEmulator_mergeSettingsFailure() {
-    FirebaseApp app = getApp("getInstance_withEmulator_mergeSettingsFailure");
-
-    try {
-      FirebaseFirestore firestore = FirebaseFirestore.getInstance(app);
-      firestore.useEmulator("10.0.2.2", 8080);
-      firestore.setFirestoreSettings(
-          new FirebaseFirestoreSettings.Builder().setHost("myhost.com").build());
-      fail("Exception should be thrown");
-    } catch (Exception e) {
-      assertTrue(e instanceof IllegalStateException);
-      assertEquals(
-          e.getMessage(),
-          "Cannot specify the host in FirebaseFirestoreSettings when emulator settings are provided.");
-    }
-  }
-
-  @Test
   public void getInstance_withEmulator_lateFailure() {
     FirebaseApp app = getApp("getInstance_withEmulator_lateFailure");
 

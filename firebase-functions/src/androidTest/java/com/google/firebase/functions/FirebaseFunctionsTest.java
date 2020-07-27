@@ -47,7 +47,8 @@ public class FirebaseFunctionsTest {
     FirebaseFunctions functions = FirebaseFunctions.getInstance(app);
     functions.useEmulator("10.0.2.2", 5001);
 
-    URL withoutRegion = FirebaseFunctions.getInstance(app).getURL("my-endpoint");
+    FirebaseFunctions functionsWithoutRegion = FirebaseFunctions.getInstance(app);
+    URL withoutRegion = functionsWithoutRegion.getURL("my-endpoint");
     assertEquals(
         "http://10.0.2.2:5001/my-project/us-central1/my-endpoint", withoutRegion.toString());
 
@@ -70,6 +71,18 @@ public class FirebaseFunctionsTest {
     URL oldImplUrl = functions.getURL("my-endpoint");
 
     assertEquals(newImplUrl.toString(), oldImplUrl.toString());
+  }
+
+  @Test
+  public void testEmulatorSettings() {
+    FirebaseApp app = getApp("testEmulatorSettings");
+
+    FirebaseFunctions functions1 = FirebaseFunctions.getInstance(app);
+    functions1.useEmulator("10.0.2.2", 5001);
+
+    FirebaseFunctions functions2 = FirebaseFunctions.getInstance(app);
+
+    assertEquals(functions1.getURL("foo").toString(), functions2.getURL("foo").toString());
   }
 
   private FirebaseApp getApp(String name) {
