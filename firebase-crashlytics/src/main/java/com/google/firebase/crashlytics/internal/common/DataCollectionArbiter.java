@@ -125,7 +125,7 @@ public class DataCollectionArbiter {
     } else {
       sharedPreferences
           .edit()
-          .putBoolean(FIREBASE_CRASHLYTICS_COLLECTION_ENABLED, crashlyticsDataCollectionEnabled)
+          .putBoolean(FIREBASE_CRASHLYTICS_COLLECTION_ENABLED, enabled)
           .commit();
     }
     initializeEnabledAndExplicitSetValues(firebaseApp.getApplicationContext());
