@@ -93,11 +93,12 @@ public class ParseUrlTest {
 
   @Test
   public void testUrlParsingWithEmulator() {
-    EmulatedServiceSettings serviceSettings = new EmulatedServiceSettings("10.0.2.2", 9000);
+    ParsedUrl parsedUrl = Utilities.parseUrl("https://myns.firebaseio.com");
+    parsedUrl.repoInfo.applyEmulatorSettings(new EmulatedServiceSettings("10.0.2.2", 9000));
 
-    ParsedUrl parsedUrl = Utilities.parseUrl("https://myns.firebaseio.com", serviceSettings);
     assertFalse(parsedUrl.repoInfo.secure);
     assertEquals(parsedUrl.repoInfo.host, "10.0.2.2:9000");
+    assertEquals(parsedUrl.repoInfo.internalHost, "10.0.2.2:9000");
     assertEquals(parsedUrl.repoInfo.namespace, "myns");
   }
 }

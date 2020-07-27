@@ -28,8 +28,6 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.emulators.EmulatedServiceSettings;
-import com.google.firebase.emulators.EmulatorSettings;
-import com.google.firebase.emulators.FirebaseEmulator;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.auth.EmptyCredentialsProvider;
@@ -59,15 +57,6 @@ import java.util.concurrent.Executor;
 public class FirebaseFirestore {
 
   /**
-   * Emulator identifier. See {@link FirebaseApp#enableEmulators(EmulatorSettings)}
-   *
-   * <p>TODO(samstern): Un-hide this once Firestore, Database, and Functions are implemented
-   *
-   * @hide
-   */
-  public static FirebaseEmulator EMULATOR = FirebaseEmulator.forName("firestore");
-
-  /**
    * Provides a registry management interface for {@code FirebaseFirestore} instances.
    *
    * @hide
@@ -90,10 +79,10 @@ public class FirebaseFirestore {
   // When user requests to terminate, use this to notify `FirestoreMultiDbComponent` to deregister
   // this instance.
   private final InstanceRegistry instanceRegistry;
+  @Nullable private EmulatedServiceSettings emulatorSettings;
   private FirebaseFirestoreSettings settings;
   private volatile FirestoreClient client;
   private final GrpcMetadataProvider metadataProvider;
-  private final EmulatedServiceSettings emulatorSettings;
 
   @NonNull
   public static FirebaseFirestore getInstance() {
@@ -157,8 +146,7 @@ public class FirebaseFirestore {
             queue,
             app,
             instanceRegistry,
-            metadataProvider,
-            app.getEmulatorSettings().getServiceSettings(EMULATOR));
+            metadataProvider);
     return firestore;
   }
 
@@ -171,8 +159,7 @@ public class FirebaseFirestore {
       AsyncQueue asyncQueue,
       @Nullable FirebaseApp firebaseApp,
       InstanceRegistry instanceRegistry,
-      @Nullable GrpcMetadataProvider metadataProvider,
-      @Nullable EmulatedServiceSettings emulatorSettings) {
+      @Nullable GrpcMetadataProvider metadataProvider) {
     this.context = checkNotNull(context);
     this.databaseId = checkNotNull(checkNotNull(databaseId));
     this.userDataReader = new UserDataReader(databaseId);
@@ -183,10 +170,8 @@ public class FirebaseFirestore {
     this.firebaseApp = firebaseApp;
     this.instanceRegistry = instanceRegistry;
     this.metadataProvider = metadataProvider;
-    this.emulatorSettings = emulatorSettings;
 
     this.settings = new FirebaseFirestoreSettings.Builder().build();
-    this.settings = mergeEmulatorSettings(settings, emulatorSettings);
   }
 
   /** Returns the settings used by this {@code FirebaseFirestore} object. */
@@ -200,9 +185,10 @@ public class FirebaseFirestore {
    * can only be called before calling any other methods on this object.
    */
   public void setFirestoreSettings(@NonNull FirebaseFirestoreSettings settings) {
+    settings = mergeEmulatorSettings(settings, this.emulatorSettings);
+
     synchronized (databaseId) {
       checkNotNull(settings, "Provided settings must not be null.");
-      settings = mergeEmulatorSettings(settings, emulatorSettings);
 
       // As a special exception, don't throw if the same settings are passed repeatedly. This
       // should make it simpler to get a Firestore instance in an activity.
@@ -215,6 +201,24 @@ public class FirebaseFirestore {
 
       this.settings = settings;
     }
+  }
+
+  /**
+   * Modify this FirebaseDatabase instance to communicate with the Cloud Firestore emulator.
+   *
+   * <p>Note: this must be called before this instance has been used to do any operations.
+   *
+   * @param host the emulator host (ex: 10.0.2.2)
+   * @param port the emulator port (ex: 8080)
+   */
+  public void useEmulator(@NonNull String host, int port) {
+    if (this.client != null) {
+      throw new IllegalStateException(
+          "Cannot call useEmulator() after instance has already been initialized.");
+    }
+
+    this.emulatorSettings = new EmulatedServiceSettings(host, port);
+    this.settings = mergeEmulatorSettings(this.settings, this.emulatorSettings);
   }
 
   private void ensureClientConfigured() {
@@ -243,8 +247,9 @@ public class FirebaseFirestore {
     }
 
     if (!FirebaseFirestoreSettings.DEFAULT_HOST.equals(settings.getHost())) {
-      throw new IllegalStateException(
-          "Cannot specify the host in FirebaseFirestoreSettings when EmulatedServiceSettings is provided.");
+      Logger.warn(
+          TAG,
+          "Host has been set in FirebaseFirestoreSettings and useEmulator, emulator host will be used.");
     }
 
     return new FirebaseFirestoreSettings.Builder(settings)
