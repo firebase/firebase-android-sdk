@@ -55,22 +55,7 @@ public class DataCollectionArbiter {
 
     sharedPreferences = CommonUtils.getSharedPrefs(applicationContext);
 
-    boolean enabled = true;
-    boolean explicitlySet = false;
-
-    if (sharedPreferences.contains(FIREBASE_CRASHLYTICS_COLLECTION_ENABLED)) {
-      enabled = sharedPreferences.getBoolean(FIREBASE_CRASHLYTICS_COLLECTION_ENABLED, true);
-      explicitlySet = true;
-    } else {
-      Boolean manifestSetting = readDataCollectionManifestValueEnabled(applicationContext);
-      if (manifestSetting != null) {
-        explicitlySet = true;
-        enabled = Boolean.TRUE.equals(manifestSetting);
-      }
-    }
-
-    crashlyticsDataCollectionEnabled = enabled;
-    crashlyticsDataCollectionExplicitlySet = explicitlySet;
+    initializeEnabledAndExplicitSetValues(applicationContext);
 
     synchronized (taskLock) {
       if (isAutomaticDataCollectionEnabled()) {
@@ -78,6 +63,24 @@ public class DataCollectionArbiter {
         taskResolved = true;
       }
     }
+  }
+
+  private void initializeEnabledAndExplicitSetValues(Context context) {
+    boolean enabled = true;
+    boolean explicitlySet = false;
+
+    if (sharedPreferences.contains(FIREBASE_CRASHLYTICS_COLLECTION_ENABLED)) {
+      enabled = sharedPreferences.getBoolean(FIREBASE_CRASHLYTICS_COLLECTION_ENABLED, true);
+      explicitlySet = true;
+    } else {
+      Boolean manifestSetting = readDataCollectionManifestValueEnabled(context);
+      if (manifestSetting != null) {
+        explicitlySet = true;
+        enabled = Boolean.TRUE.equals(manifestSetting);
+      }
+    }
+    crashlyticsDataCollectionEnabled = enabled;
+    crashlyticsDataCollectionExplicitlySet = explicitlySet;
   }
 
   private Boolean readDataCollectionManifestValueEnabled(Context applicationContext) {
@@ -119,23 +122,13 @@ public class DataCollectionArbiter {
   public synchronized void setCrashlyticsDataCollectionEnabled(Boolean enabled) {
     if (enabled == null) {
       sharedPreferences.edit().remove(FIREBASE_CRASHLYTICS_COLLECTION_ENABLED).commit();
-      Boolean manifestSetting =
-          readDataCollectionManifestValueEnabled(firebaseApp.getApplicationContext());
-      if (manifestSetting == null) {
-        crashlyticsDataCollectionExplicitlySet = false;
-        crashlyticsDataCollectionEnabled = firebaseApp.isDataCollectionDefaultEnabled();
-      } else {
-        crashlyticsDataCollectionExplicitlySet = true;
-        crashlyticsDataCollectionEnabled = Boolean.TRUE.equals(manifestSetting);
-      }
     } else {
-      crashlyticsDataCollectionExplicitlySet = true;
-      crashlyticsDataCollectionEnabled = Boolean.TRUE.equals(enabled);
       sharedPreferences
           .edit()
           .putBoolean(FIREBASE_CRASHLYTICS_COLLECTION_ENABLED, crashlyticsDataCollectionEnabled)
           .commit();
     }
+    initializeEnabledAndExplicitSetValues(firebaseApp.getApplicationContext());
 
     synchronized (taskLock) {
       if (crashlyticsDataCollectionEnabled) {
