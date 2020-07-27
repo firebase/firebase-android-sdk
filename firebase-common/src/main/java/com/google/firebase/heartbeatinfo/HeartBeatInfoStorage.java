@@ -30,6 +30,9 @@ class HeartBeatInfoStorage {
 
   private static final String preferencesName = "FirebaseAppHeartBeat";
 
+  // Stores a key value mapping from timestamp to the sdkName and heartBeat code.
+  private static final String storagePreferencesName = "FirebaseAppHeartBeatStorage";
+
   private final SharedPreferences sharedPreferences;
 
   private HeartBeatInfoStorage(Context applicationContext) {
@@ -50,6 +53,7 @@ class HeartBeatInfoStorage {
     return instance;
   }
 
+  synchronized boolean storeHeartBeatInformation(String heartBeatTag, )
   /*
    Indicates whether or not we have to send a sdk heartbeat.
    A sdk heartbeat is sent either when there is no heartbeat sent ever for the sdk or
