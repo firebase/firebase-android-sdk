@@ -170,7 +170,6 @@ public class DisplayCallbacksImplTest {
   @Mock private ImpressionStorageClient impressionStorageClient;
   @Mock private InAppMessageStreamManager inAppMessageStreamManager;
   @Mock private DataCollectionHelper dataCollectionHelper;
-  @Mock private DeveloperListenerManager developerListenerManager;
   FirebaseApp firebaseApp1;
   FirebaseOptions options;
 
@@ -240,8 +239,7 @@ public class DisplayCallbacksImplTest {
             campaignCacheClient,
             appForegroundRateLimit,
             metricsLoggerClient,
-            dataCollectionHelper,
-            developerListenerManager);
+            dataCollectionHelper);
     displayCallbacksImpl =
         displayCallbacksFactory.generateDisplayCallback(BANNER_MESSAGE_MODEL, ANALYTICS_EVENT_NAME);
   }
@@ -405,7 +403,7 @@ public class DisplayCallbacksImplTest {
   }
 
   @Test
-  public void logMessageClick_logsAsDismissIfActionWithoutUrlTriggeredAndNoCallbacks() {
+  public void logMessageClick_logsAsDismissIfActionWithoutUrlTriggered() {
     CardMessage cardMessage =
         CardMessage.builder()
             .setTitle(TITLE_MODEL)
@@ -417,7 +415,6 @@ public class DisplayCallbacksImplTest {
                 new CampaignMetadata(CAMPAIGN_ID_STRING, CAMPAIGN_NAME_STRING, IS_NOT_TEST_MESSAGE),
                 DATA);
 
-    when(developerListenerManager.noRegisteredClickListeners()).thenReturn(true);
     displayCallbacksImpl =
         displayCallbacksFactory.generateDisplayCallback(cardMessage, ANALYTICS_EVENT_NAME);
 
@@ -425,29 +422,6 @@ public class DisplayCallbacksImplTest {
     verify(metricsLoggerClient, times(0))
         .logMessageClick(cardMessage, cardMessage.getSecondaryAction());
     verify(metricsLoggerClient, times(1)).logDismiss(cardMessage, InAppMessagingDismissType.CLICK);
-  }
-
-  @Test
-  public void logMessageClick_logsAsClickIfActionWithoutUrlTriggeredAndCallbacksPresent() {
-    CardMessage cardMessage =
-        CardMessage.builder()
-            .setTitle(TITLE_MODEL)
-            .setPortraitImageData(IMAGE_DATA)
-            .setBackgroundHexColor(MESSAGE_BACKGROUND_HEX_STRING)
-            .setPrimaryAction(ACTION_MODEL_WITH_BUTTON)
-            .setSecondaryAction(ACTION_MODEL_WITHOUT_URL)
-            .build(
-                new CampaignMetadata(CAMPAIGN_ID_STRING, CAMPAIGN_NAME_STRING, IS_NOT_TEST_MESSAGE),
-                DATA);
-
-    when(developerListenerManager.noRegisteredClickListeners()).thenReturn(false);
-    displayCallbacksImpl =
-        displayCallbacksFactory.generateDisplayCallback(cardMessage, ANALYTICS_EVENT_NAME);
-
-    displayCallbacksImpl.messageClicked(cardMessage.getSecondaryAction());
-    verify(metricsLoggerClient, times(1))
-        .logMessageClick(cardMessage, cardMessage.getSecondaryAction());
-    verify(metricsLoggerClient, times(0)).logDismiss(cardMessage, InAppMessagingDismissType.CLICK);
   }
 
   @Test

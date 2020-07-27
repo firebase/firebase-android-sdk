@@ -171,10 +171,6 @@ public class DeveloperListenerManager {
     registeredErrorListeners.clear();
   }
 
-  public boolean noRegisteredClickListeners() {
-    return registeredClickListeners.isEmpty();
-  }
-
   /** The thread factory for Storage threads. */
   static class FIAMThreadFactory implements ThreadFactory {
     private final AtomicInteger threadNumber = new AtomicInteger(1);

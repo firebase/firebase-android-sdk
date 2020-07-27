@@ -577,9 +577,7 @@ public class FirebaseInAppMessagingDisplayTest {
     verify(imageBindingWrapper)
         .inflate(onClickListenerArgCaptor.capture(), any(OnClickListener.class));
     onClickListenerArgCaptor.getValue().get(IMAGE_MESSAGE_MODEL.getAction()).onClick(null);
-
-    assertThat(shadowActivity.getNextStartedActivity().getData())
-        .isEqualTo(Uri.parse(ACTION_URL_STRING));
+    assertThat(shadowActivity.getNextStartedActivity()).isEqualTo(Uri.parse(ACTION_URL_STRING));
   }
 
   @Test

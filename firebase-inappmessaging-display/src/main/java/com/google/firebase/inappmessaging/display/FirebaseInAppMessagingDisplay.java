@@ -328,24 +328,8 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
                 callbacks = null;
               }
             };
-      } else if (action != null && TextUtils.isEmpty(action.getActionUrl())) {
-        // If the message has an action but no action url, attempt to call developer callback
-        Logging.logi("No action url found for action. Callback will be called if present");
-        actionListener =
-            new View.OnClickListener() {
-              @Override
-              public void onClick(View v) {
-                if (callbacks != null) {
-                  callbacks.messageClicked(action);
-                }
-                notifyFiamClick();
-                removeDisplayedFiam(activity);
-                inAppMessage = null;
-                callbacks = null;
-              }
-            };
       } else {
-        // this should never happen but as a fallback treat the action as dismiss
+        Logging.logi("No action url found for action. Treating as dismiss.");
         actionListener = dismissListener;
       }
       actionListeners.put(action, actionListener);
