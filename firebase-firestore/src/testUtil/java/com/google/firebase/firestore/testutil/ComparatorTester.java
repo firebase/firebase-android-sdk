@@ -70,7 +70,7 @@ import javax.annotation.Nullable;
  * @author bmaurer@google.com (Ben Maurer)
  */
 public class ComparatorTester {
-  @SuppressWarnings({"unchecked", "rawtypes"})
+  @SuppressWarnings({"rawtypes"})
   private final @Nullable Comparator comparator;
 
   /** The items that we are checking, stored as a sorted set of equivalence classes. */
@@ -192,7 +192,6 @@ public class ComparatorTester {
     }
   }
 
-  @SuppressWarnings("unchecked")
   private void testClassCast(Object obj) {
     if (comparator == null) {
       try {

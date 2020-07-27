@@ -331,15 +331,15 @@ namespace {
 void force_crashlytics_h_to_compile_as_cplusplus() __attribute__((unused));
 void force_crashlytics_h_to_compile_as_cplusplus()
 {
-    crashlytics_context_t* context = crashlytics_init();
+    using namespace firebase::crashlytics;
 
-    context->set(context, "key", "value");
-    context->log(context, "message");
+    Initialize();
 
-    context->set_user_id(context, "identifier");
+    Log("message");
+    SetCustomKey("key", "value");
+    SetUserId("user");
 
-    crashlytics_free(&context);
-
+    Terminate();
 
     //! Make sure everything is defined.
     external_api_initialize();

@@ -41,6 +41,7 @@ com.google.firebase.inappmessaging.display
 com.google.firebase.inappmessaging.display.ktx
 com.google.firebase.inappmessaging.ktx
 com.google.firebase.inappmessaging.model
+com.google.firebase.installations
 com.google.firebase.ktx
 com.google.firebase.messaging
 com.google.firebase.ml.common

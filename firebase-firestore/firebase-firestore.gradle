@@ -26,29 +26,22 @@ protobuf {
     // Configure the protoc executable
     protoc {
         // Download from repositories
-        artifact = 'com.google.protobuf:protoc:3.4.0'
+        artifact = "com.google.protobuf:protoc:$protocVersion"
     }
     plugins {
         grpc {
-            artifact = 'io.grpc:protoc-gen-grpc-java:1.21.0'
-        }
-        javalite {
-            // The codegen for lite comes as a separate artifact
-            artifact = 'com.google.protobuf:protoc-gen-javalite:3.0.0'
+            artifact = "io.grpc:protoc-gen-grpc-java:$grpcVersion"
         }
     }
     generateProtoTasks {
         all().each { task ->
             task.builtins {
-                // In most cases you don't need the full Java output
-                // if you use the lite output.
-                remove java
+                java { option 'lite' }
             }
             task.plugins {
                 grpc {
                     option 'lite'
                 }
-                javalite {}
             }
         }
     }
@@ -108,9 +101,10 @@ configurations.all {
     if(it.name.contains('AndroidTestRuntimeClasspath')) {
         it.resolutionStrategy {
             force 'org.checkerframework:checker-compat-qual:2.5.5'
-            force 'com.google.guava:guava:27.0.1-android'
+            force 'com.google.guava:guava:28.1-android'
         }
     }
+    exclude group: "com.google.protobuf", module: "protobuf-java"
 }
 
 dependencies {
@@ -124,10 +118,10 @@ dependencies {
     compileOnly 'javax.annotation:jsr250-api:1.0'
 
     implementation 'androidx.annotation:annotation:1.1.0'
-    implementation 'io.grpc:grpc-stub:1.21.0'
-    implementation 'io.grpc:grpc-protobuf-lite:1.21.0'
-    implementation 'io.grpc:grpc-okhttp:1.21.0'
-    implementation 'io.grpc:grpc-android:1.21.0'
+    implementation "io.grpc:grpc-stub:$grpcVersion"
+    implementation "io.grpc:grpc-protobuf-lite:$grpcVersion"
+    implementation "io.grpc:grpc-okhttp:$grpcVersion"
+    implementation "io.grpc:grpc-android:$grpcVersion"
     implementation 'com.google.android.gms:play-services-basement:17.0.0'
     implementation 'com.google.android.gms:play-services-tasks:17.0.0'
     implementation 'com.google.android.gms:play-services-base:17.0.0'
@@ -140,7 +134,7 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     testImplementation 'androidx.test:core:1.2.0'
     testImplementation 'org.mockito:mockito-core:2.25.0'
-    testImplementation ('org.robolectric:robolectric:4.2') {
+    testImplementation ("org.robolectric:robolectric:$robolectricVersion") {
         exclude group: 'com.google.protobuf', module: 'protobuf-java'
     }
     testImplementation "com.google.truth:truth:$googleTruthVersion"
@@ -148,7 +142,9 @@ dependencies {
     testImplementation 'com.google.guava:guava-testlib:12.0-rc2'
 
     androidTestImplementation 'junit:junit:4.12'
-    androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
+    androidTestImplementation("com.google.truth:truth:$googleTruthVersion"){
+        exclude group: "org.codehaus.mojo", module: "animal-sniffer-annotations"
+    }
     androidTestImplementation 'org.mockito:mockito-core:2.25.0'
     androidTestImplementation 'org.mockito:mockito-android:2.25.0'
     androidTestImplementation 'com.fasterxml.jackson.core:jackson-databind:2.9.8'

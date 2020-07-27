@@ -1,6 +1,22 @@
-# Unreleased 
+# Unreleased
+- [fixed] Removed a delay that may have prevented Firestore from immediately
+  reestablishing a network connection if a connectivity change occurred while
+  the app was in the background.
+- [fixed] Fixed an issue that may have prevented the client from connecting
+  to the backend immediately after a user signed in.
+- [feature] Cloud Firestore now supports connecting to a local emulator via
+ `FirebaseFirestore#useEmulator()`
+
+# 21.4.3
 - [changed] Firestore now limits the number of concurrent document lookups it
   will perform when resolving inconsistencies in the local cache (#1374).
+
+# 21.4.2
+- [changed] Removed Guava dependency from the SDK. This change is the first
+  step in eliminating crashes caused by apps that depend on the wrong flavor of
+  Guava (#1125).
+
+# 21.4.1
 - [fixed] Fixed a performance regression introduced by the addition of
   `Query.limitToLast(n: long)` in Firestore 23.3.1.
 - [changed] Changed the in-memory representation of Firestore documents to

@@ -305,10 +305,13 @@ public class CrashlyticsReportPersistence {
     }
 
     String userId = null;
-    try {
-      userId = readTextFile(new File(sessionDirectory, USER_FILE_NAME));
-    } catch (IOException e) {
-      Logger.getLogger().d("Could not read user ID file in " + sessionDirectory.getName(), e);
+    final File userIdFile = new File(sessionDirectory, USER_FILE_NAME);
+    if (userIdFile.isFile()) {
+      try {
+        userId = readTextFile(userIdFile);
+      } catch (IOException e) {
+        Logger.getLogger().d("Could not read user ID file in " + sessionDirectory.getName(), e);
+      }
     }
 
     final File reportFile = new File(sessionDirectory, REPORT_FILE_NAME);

@@ -20,13 +20,11 @@ import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.crashlytics.BuildConfig;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.Logger;
-import com.google.firebase.crashlytics.internal.analytics.AnalyticsConnectorReceiver;
-import com.google.firebase.crashlytics.internal.analytics.AnalyticsConnectorReceiver.BreadcrumbHandler;
-import com.google.firebase.crashlytics.internal.analytics.AnalyticsReceiver;
+import com.google.firebase.crashlytics.internal.analytics.AnalyticsEventLogger;
+import com.google.firebase.crashlytics.internal.breadcrumbs.BreadcrumbSource;
 import com.google.firebase.crashlytics.internal.network.HttpRequestFactory;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.persistence.FileStoreImpl;
@@ -74,7 +72,8 @@ public class CrashlyticsCore {
   private CrashlyticsController controller;
 
   private final IdManager idManager;
-  private final AnalyticsConnector analyticsConnector;
+  private final BreadcrumbSource breadcrumbSource;
+  private final AnalyticsEventLogger analyticsEventLogger;
   private ExecutorService crashHandlerExecutor;
   private CrashlyticsBackgroundWorker backgroundWorker;
 
@@ -87,29 +86,16 @@ public class CrashlyticsCore {
       IdManager idManager,
       CrashlyticsNativeComponent nativeComponent,
       DataCollectionArbiter dataCollectionArbiter,
-      AnalyticsConnector analyticsConnector) {
-    this(
-        app,
-        idManager,
-        nativeComponent,
-        dataCollectionArbiter,
-        analyticsConnector,
-        ExecutorUtils.buildSingleThreadExecutorService("Crashlytics Exception Handler"));
-  }
-
-  CrashlyticsCore(
-      FirebaseApp app,
-      IdManager idManager,
-      CrashlyticsNativeComponent nativeComponent,
-      DataCollectionArbiter dataCollectionArbiter,
-      AnalyticsConnector analyticsConnector,
+      BreadcrumbSource breadcrumbSource,
+      AnalyticsEventLogger analyticsEventLogger,
       ExecutorService crashHandlerExecutor) {
     this.app = app;
     this.dataCollectionArbiter = dataCollectionArbiter;
     this.context = app.getApplicationContext();
     this.idManager = idManager;
     this.nativeComponent = nativeComponent;
-    this.analyticsConnector = analyticsConnector;
+    this.breadcrumbSource = breadcrumbSource;
+    this.analyticsEventLogger = analyticsEventLogger;
     this.crashHandlerExecutor = crashHandlerExecutor;
     this.backgroundWorker = new CrashlyticsBackgroundWorker(crashHandlerExecutor);
 
@@ -150,16 +136,6 @@ public class CrashlyticsCore {
       final AppData appData = AppData.create(context, idManager, googleAppId, mappingFileId);
       final UnityVersionProvider unityVersionProvider = new ResourceUnityVersionProvider(context);
 
-      final AnalyticsReceiver analyticsReceiver =
-          new AnalyticsConnectorReceiver(
-              analyticsConnector,
-              new BreadcrumbHandler() {
-                @Override
-                public void dropBreadcrumb(String breadcrumb) {
-                  log(breadcrumb);
-                }
-              });
-
       Logger.getLogger().d("Installer package name is: " + appData.installerPackageName);
 
       controller =
@@ -176,8 +152,7 @@ public class CrashlyticsCore {
               null,
               nativeComponent,
               unityVersionProvider,
-              analyticsReceiver,
-              analyticsConnector,
+              analyticsEventLogger,
               settingsProvider);
 
       // If the file is present at this point, then the previous run's initialization
@@ -232,7 +207,7 @@ public class CrashlyticsCore {
     controller.cleanInvalidTempFiles();
 
     try {
-      controller.registerAnalyticsListener();
+      breadcrumbSource.registerBreadcrumbHandler(this::log);
 
       final Settings settingsData = settingsProvider.getSettings();
 

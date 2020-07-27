@@ -17,6 +17,7 @@ package com.google.firebase.installations;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -36,7 +37,6 @@ import android.content.SharedPreferences;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.FirebaseException;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.installations.FirebaseInstallationsException.Status;
 import com.google.firebase.installations.local.IidStore;
@@ -82,7 +82,7 @@ public class FirebaseInstallationsTest {
   public static final String TEST_AUTH_TOKEN_3 = "fis.auth.token3";
   public static final String TEST_AUTH_TOKEN_4 = "fis.auth.token4";
 
-  public static final String TEST_API_KEY = "apiKey";
+  public static final String TEST_API_KEY = "AIzaSyabcdefghijklmnopqrstuvwxyz1234567";
 
   public static final String TEST_REFRESH_TOKEN = "1:test-refresh-token";
 
@@ -126,6 +126,9 @@ public class FirebaseInstallationsTest {
           .setTokenExpirationTimestamp(TEST_TOKEN_EXPIRATION_TIMESTAMP)
           .setResponseCode(TokenResult.ResponseCode.OK)
           .build();
+
+  private static final FirebaseInstallationsException NETWORK_ERROR =
+      new FirebaseInstallationsException("simulated network error", Status.UNAVAILABLE);
 
   private FirebaseInstallations firebaseInstallations;
   private Utils utils;
@@ -184,9 +187,9 @@ public class FirebaseInstallationsTest {
   public void testGetId_noNetwork_noIid() throws Exception {
     when(mockBackend.createFirebaseInstallation(
             anyString(), anyString(), anyString(), anyString(), any()))
-        .thenThrow(new IOException());
+        .thenThrow(NETWORK_ERROR);
     when(mockBackend.generateAuthToken(anyString(), anyString(), anyString(), anyString()))
-        .thenThrow(new IOException());
+        .thenThrow(NETWORK_ERROR);
     when(mockIidStore.readIid()).thenReturn(null);
     when(mockIidStore.readToken()).thenReturn(null);
 
@@ -219,9 +222,9 @@ public class FirebaseInstallationsTest {
             TEST_PROJECT_ID,
             TEST_APP_ID_1,
             TEST_INSTANCE_ID_TOKEN_1))
-        .thenThrow(new IOException());
+        .thenThrow(NETWORK_ERROR);
     when(mockBackend.generateAuthToken(anyString(), anyString(), anyString(), anyString()))
-        .thenThrow(new IOException());
+        .thenThrow(NETWORK_ERROR);
     when(mockIidStore.readIid()).thenReturn(TEST_INSTANCE_ID_1);
     when(mockIidStore.readToken()).thenReturn(TEST_INSTANCE_ID_TOKEN_1);
 
@@ -250,9 +253,9 @@ public class FirebaseInstallationsTest {
   public void testGetId_noNetwork_fidAlreadyGenerated() throws Exception {
     when(mockBackend.createFirebaseInstallation(
             anyString(), anyString(), anyString(), anyString(), any()))
-        .thenThrow(new IOException());
+        .thenThrow(NETWORK_ERROR);
     when(mockBackend.generateAuthToken(anyString(), anyString(), anyString(), anyString()))
-        .thenThrow(new IOException());
+        .thenThrow(NETWORK_ERROR);
 
     persistedInstallation.insertOrUpdatePersistedInstallationEntry(
         PersistedInstallationEntry.INSTANCE.withUnregisteredFid("generatedFid"));
@@ -580,12 +583,9 @@ public class FirebaseInstallationsTest {
     // //assertThat(updatedInstallationEntry).hasRegistrationStatus(RegistrationStatus.REGISTER_ERROR);
   }
 
-  /**
-   * A registration that fails with an IOException will not cause the FID to be put into the error
-   * state.
-   */
+  /** A registration that fails will not cause the FID to be put into the error state. */
   @Test
-  public void testGetId_fidRegistrationUncheckedException_statusUpdated() throws Exception {
+  public void testGetId_fidRegistrationFailed_statusNotUpdated() throws Exception {
     // set initial state to having an unregistered FID
     persistedInstallation.insertOrUpdatePersistedInstallationEntry(
         PersistedInstallationEntry.INSTANCE.withUnregisteredFid(TEST_FID_1));
@@ -593,7 +593,7 @@ public class FirebaseInstallationsTest {
     // Mocking unchecked exception on FIS createFirebaseInstallation
     when(mockBackend.createFirebaseInstallation(
             anyString(), anyString(), anyString(), anyString(), any()))
-        .thenThrow(new IOException());
+        .thenThrow(new FirebaseInstallationsException("Registration Failed", Status.BAD_CONFIG));
 
     TestOnCompleteListener<String> onCompleteListener = new TestOnCompleteListener<>();
     Task<String> getIdTask = firebaseInstallations.getId();
@@ -908,7 +908,7 @@ public class FirebaseInstallationsTest {
             TEST_AUTH_TOKEN,
             TEST_TOKEN_EXPIRATION_TIMESTAMP));
 
-    doThrow(new FirebaseException("Server Error"))
+    doThrow(new FirebaseInstallationsException("Server Error", Status.BAD_CONFIG))
         .when(mockBackend)
         .deleteFirebaseInstallation(anyString(), anyString(), anyString(), anyString());
 
@@ -943,7 +943,7 @@ public class FirebaseInstallationsTest {
             TEST_AUTH_TOKEN,
             TEST_TOKEN_EXPIRATION_TIMESTAMP));
 
-    doThrow(new IOException("simulated network error"))
+    doThrow(NETWORK_ERROR)
         .when(mockBackend)
         .deleteFirebaseInstallation(anyString(), anyString(), anyString(), anyString());
 
@@ -957,12 +957,51 @@ public class FirebaseInstallationsTest {
       assertWithMessage("Exception class doesn't match")
           .that(expected)
           .hasCauseThat()
-          .isInstanceOf(IOException.class);
+          .isInstanceOf(FirebaseInstallationsException.class);
       PersistedInstallationEntry entry =
           persistedInstallation.readPersistedInstallationEntryValue();
       assertTrue(
           "the entry was expected to still be registered since the delete failed: " + entry,
           entry.isRegistered());
     }
+  }
+
+  @Test
+  public void testAppIdCheck() {
+    // valid appid
+    assertTrue(Utils.isValidAppIdFormat("1:123456789:android:abcdef"));
+    assertTrue(Utils.isValidAppIdFormat("1:515438998704:android:e78ec19738058349"));
+    assertTrue(Utils.isValidAppIdFormat("1:208472424340:android:a243f98a00873753"));
+    assertTrue(Utils.isValidAppIdFormat("1:755541669657:ios:4d6d5a5ce71e9d30"));
+    assertTrue(Utils.isValidAppIdFormat("1:1086610230652:ios:852c7f6ee799ff89"));
+    assertTrue(Utils.isValidAppIdFormat("1:35006771263:web:32b6f4a5b95acd2c"));
+    // invalid appid
+    assertFalse(Utils.isValidAppIdFormat("abc.abc.abc"));
+    assertFalse(
+        Utils.isValidAppIdFormat(
+            "com.google.firebase.samples.messaging.advanced")); // using pakage name as App ID
+  }
+
+  @Test
+  public void testApiKeyCheck() {
+    // valid ApiKey
+    assertTrue(Utils.isValidApiKeyFormat("AIzaSyabcdefghijklmnopqrstuvwxyz1234567"));
+    assertTrue(Utils.isValidApiKeyFormat("AIzaSyA4UrcGxgwQFTfaI3no3t7Lt1sjmdnP5sQ"));
+    assertTrue(Utils.isValidApiKeyFormat("AIzaSyA5_iVawFQ8ABuTZNUdcwERLJv_a_p4wtM"));
+    assertTrue(Utils.isValidApiKeyFormat("AIzaSyANUvH9H9BsUccjsu2pCmEkOPjjaXeDQgY"));
+    assertTrue(Utils.isValidApiKeyFormat("AIzaSyASWm6HmTMdYWpgMnjRBjxcQ9CKctWmLd4"));
+    assertTrue(Utils.isValidApiKeyFormat("AIzaSyAdOS2zB6NCsk1pCdZ4-P6GBdi_UUPwX7c"));
+    assertTrue(Utils.isValidApiKeyFormat("AIzaSyAnLA7NfeLquW1tJFpx_eQCxoX-oo6YyIs"));
+    // invalid ApiKey
+    assertFalse(
+        Utils.isValidApiKeyFormat("BIzaSyabcdefghijklmnopqrstuvwxyz1234567")); // wrong prefix
+    assertFalse(Utils.isValidApiKeyFormat("AIzaSyabcdefghijklmnopqrstuvwxyz")); // wrong length
+    assertFalse(Utils.isValidApiKeyFormat("AIzaSyabcdefghijklmno:qrstuvwxyzabcdefg")); // wrong char
+    assertFalse(Utils.isValidApiKeyFormat("AIzaSyabcdefghijklmno qrstuvwxyzabcdefg")); // wrong char
+    assertFalse(
+        Utils.isValidApiKeyFormat(
+            "AAAAdpB7anM:APA91bFFK03DIT8y3l5uymwbKcUDJdYqTRSP9Qcxg8SU5kKPalEpObdx0C0xv8gQttdWlL"
+                + "W4hLvvHA0JoDKA6Lrvbi-edUjFCPY_WJkuvHxFwGWXjnj4yI4sPQ27mXuSVIyAbgX4aTK0QY"
+                + "pIKq2j1NBi7ZU75gunQg")); // using FCM server key as API key.
   }
 }

@@ -45,6 +45,7 @@ android {
 dependencies {
   implementation (project(':firebase-storage')) {
     exclude group: 'com.google.firebase', module: 'firebase-common'
+    exclude group: 'com.google.firebase', module: 'firebase-components'
   }
 
   // We intentionally use an open ended version to pick up any SNAPSHOT

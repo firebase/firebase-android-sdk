@@ -217,12 +217,13 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
               currentTargetSyncState == SyncState.SYNCED);
     }
 
+    // TODO(wuandy): Investigate if we can extract the logic of view change computation and
+    // update tracked limbo in one place, and have both emitNewSnapsAndNotifyLocalStore
+    // and here to call that.
     View view = new View(query, queryResult.getRemoteKeys());
     View.DocumentChanges viewDocChanges = view.computeDocChanges(queryResult.getDocuments());
     ViewChange viewChange = view.applyChanges(viewDocChanges, synthesizedCurrentChange);
-    hardAssert(
-        view.getLimboDocuments().size() == 0,
-        "View returned limbo docs before target ack from the server");
+    updateTrackedLimboDocuments(viewChange.getLimboChanges(), targetId);
 
     QueryView queryView = new QueryView(query, targetId, view);
     queryViewsByQuery.put(query, queryView);

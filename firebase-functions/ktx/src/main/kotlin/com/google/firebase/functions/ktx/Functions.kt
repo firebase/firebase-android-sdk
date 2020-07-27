@@ -16,10 +16,9 @@ package com.google.firebase.functions.ktx
 
 import androidx.annotation.Keep
 import com.google.firebase.FirebaseApp
-import com.google.firebase.functions.FirebaseFunctions
 import com.google.firebase.components.Component
 import com.google.firebase.components.ComponentRegistrar
-
+import com.google.firebase.functions.FirebaseFunctions
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.platforminfo.LibraryVersionComponent
 

@@ -390,6 +390,21 @@ public class FirebaseApp {
   }
 
   /**
+   * Enable or disable automatic data collection across all SDKs.
+   *
+   * <p>Note: this value is respected by all SDKs unless overridden by the developer via SDK
+   * specific mechanisms.
+   *
+   * @deprecated Use {@link #setDataCollectionDefaultEnabled(Boolean)} instead.
+   * @hide
+   */
+  @KeepForSdk
+  @Deprecated
+  public void setDataCollectionDefaultEnabled(boolean enabled) {
+    setDataCollectionDefaultEnabled(Boolean.valueOf(enabled));
+  }
+
+  /**
    * Default constructor.
    *
    * @hide
