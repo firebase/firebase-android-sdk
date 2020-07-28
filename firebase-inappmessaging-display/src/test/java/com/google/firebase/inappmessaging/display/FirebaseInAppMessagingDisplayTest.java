@@ -37,6 +37,8 @@ import static org.robolectric.RuntimeEnvironment.application;
 import static org.robolectric.Shadows.shadowOf;
 
 import android.app.Activity;
+import android.content.Intent;
+import android.content.pm.ResolveInfo;
 import android.content.res.Configuration;
 import android.net.Uri;
 import android.util.DisplayMetrics;
@@ -47,6 +49,7 @@ import android.view.View.OnClickListener;
 import android.view.ViewTreeObserver;
 import android.widget.Button;
 import android.widget.ImageView;
+import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.inappmessaging.FirebaseInAppMessaging;
 import com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplay;
 import com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks;
@@ -83,6 +86,7 @@ import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 import org.robolectric.shadows.ShadowActivity;
+import org.robolectric.shadows.ShadowPackageManager;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 21, qualifiers = "port")
@@ -126,6 +130,7 @@ public class FirebaseInAppMessagingDisplayTest {
   private TestActivity activity;
   private TestSecondActivity activityTwo;
   private ShadowActivity shadowActivity;
+  private ShadowPackageManager shadowPackageManager;
   private FirebaseInAppMessagingDisplay listener;
   private FiamImageRequestCreator fakeRequestCreator = spy(new FakeRequestCreater(null));
 
@@ -174,6 +179,8 @@ public class FirebaseInAppMessagingDisplayTest {
           }
         });
 
+    shadowPackageManager =
+        shadowOf(ApplicationProvider.getApplicationContext().getPackageManager());
     activity = Robolectric.buildActivity(TestActivity.class).create().get();
     activityTwo = Robolectric.buildActivity(TestSecondActivity.class).create().get();
     shadowActivity = shadowOf(activity);
@@ -571,13 +578,35 @@ public class FirebaseInAppMessagingDisplayTest {
   }
 
   @Test
-  public void fiamClickListener_whenActionUrlProvided_opensCustomTab() {
+  public void fiamClickListener_whenActionUrlProvided_andChromeAvailable_opensCustomTab() {
+    final ResolveInfo resolveInfo = new ResolveInfo();
+    resolveInfo.resolvePackageName = "garbage";
+    final Intent customTabIntent =
+        new Intent("android.support.customtabs.action.CustomTabsService");
+    customTabIntent.setPackage("com.android.chrome");
+    shadowPackageManager.addResolveInfoForIntent(customTabIntent, resolveInfo);
     resumeActivity(activity);
     listener.displayMessage(IMAGE_MESSAGE_MODEL, callbacks);
     verify(imageBindingWrapper)
         .inflate(onClickListenerArgCaptor.capture(), any(OnClickListener.class));
     onClickListenerArgCaptor.getValue().get(IMAGE_MESSAGE_MODEL.getAction()).onClick(null);
-    assertThat(shadowActivity.getNextStartedActivity()).isEqualTo(Uri.parse(ACTION_URL_STRING));
+    assertThat(shadowActivity.getNextStartedActivity().getData())
+        .isEqualTo(Uri.parse(ACTION_URL_STRING));
+  }
+
+  @Test
+  public void fiamClickListener_whenActionUrlProvided_andBrowserAvailable_opensBrowserIntent() {
+    final ResolveInfo resolveInfo = new ResolveInfo();
+    resolveInfo.resolvePackageName = "garbage";
+    final Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(ACTION_URL_STRING));
+    shadowPackageManager.addResolveInfoForIntent(browserIntent, resolveInfo);
+    resumeActivity(activity);
+    listener.displayMessage(IMAGE_MESSAGE_MODEL, callbacks);
+    verify(imageBindingWrapper)
+        .inflate(onClickListenerArgCaptor.capture(), any(OnClickListener.class));
+    onClickListenerArgCaptor.getValue().get(IMAGE_MESSAGE_MODEL.getAction()).onClick(null);
+    assertThat(shadowActivity.getNextStartedActivity().getData())
+        .isEqualTo(Uri.parse(ACTION_URL_STRING));
   }
 
   @Test
