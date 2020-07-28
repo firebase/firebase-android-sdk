@@ -85,7 +85,7 @@ inline T* allocate_storage(U&& initial) noexcept
 template<typename T>
 inline void release_storage(T* storage)
 {
-    if (detail::duration(storage) == detail::Mmap) {
+    if (storage != nullptr && detail::duration(storage) == detail::Mmap) {
         //! Deallocate only if there was no fallback to static storage.
         page_allocator<T>().deallocate(storage, sizeof (T));
     }
