@@ -20,6 +20,8 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 import androidx.annotation.Keep;
+
+import com.fasterxml.jackson.databind.annotation.JsonAppend;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.firebase.database.core.utilities.encoding.CustomClassMapper;
@@ -674,6 +676,17 @@ public class MapperTest {
     Bar;
   }
 
+  private static enum PropertyNameEnum {
+    @PropertyName("Two") // pathological test
+    One,
+
+    @PropertyName("One")
+    Two,
+
+    @PropertyName("Three")
+    THREE
+  }
+
   private static enum ComplexEnum {
     One("one"),
     Two("two");
@@ -695,6 +708,9 @@ public class MapperTest {
     private SimpleEnum enumValue;
 
     public ComplexEnum complexEnum;
+
+    public PropertyNameEnum propertyNameEnum;
+    public PropertyNameEnum pathologicalEnum;
 
     public SimpleEnum getEnumValue() {
       return this.enumValue;
@@ -1870,17 +1886,21 @@ public class MapperTest {
     bean.enumField = SimpleEnum.Bar;
     bean.complexEnum = ComplexEnum.One;
     bean.setEnumValue(SimpleEnum.Foo);
+    bean.propertyNameEnum = PropertyNameEnum.THREE;
+    bean.pathologicalEnum = PropertyNameEnum.One;
 
-    assertJson("{'enumField': 'Bar', 'enumValue': 'Foo', 'complexEnum': 'One'}", serialize(bean));
+    assertJson("{'enumField': 'Bar', 'enumValue': 'Foo', 'complexEnum': 'One', 'propertyNameEnum': 'Three', 'pathologicalEnum': 'Two' }", serialize(bean));
   }
 
   @Test
   public void enumsAreParsed() {
-    String json = "{'enumField': 'Bar', 'enumValue': 'Foo', 'complexEnum': 'One'}";
+    String json = "{'enumField': 'Bar', 'enumValue': 'Foo', 'complexEnum': 'One', 'propertyNameEnum': 'Three', 'pathologicalEnum': 'Two' }";
     EnumBean bean = deserialize(json, EnumBean.class);
     assertEquals(bean.enumField, SimpleEnum.Bar);
     assertEquals(bean.enumValue, SimpleEnum.Foo);
     assertEquals(bean.complexEnum, ComplexEnum.One);
+    assertEquals(bean.propertyNameEnum, PropertyNameEnum.THREE);
+    assertEquals(bean.pathologicalEnum, PropertyNameEnum.One);
   }
 
   @Test
