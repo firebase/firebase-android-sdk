@@ -20,8 +20,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 import androidx.annotation.Keep;
-
-import com.fasterxml.jackson.databind.annotation.JsonAppend;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.firebase.database.core.utilities.encoding.CustomClassMapper;
@@ -1889,12 +1887,17 @@ public class MapperTest {
     bean.propertyNameEnum = PropertyNameEnum.THREE;
     bean.pathologicalEnum = PropertyNameEnum.One;
 
-    assertJson("{'enumField': 'Bar', 'enumValue': 'Foo', 'complexEnum': 'One', 'propertyNameEnum': 'Three', 'pathologicalEnum': 'Two' }", serialize(bean));
+    assertJson(
+        "{'enumField': 'Bar', 'enumValue': 'Foo', 'complexEnum': 'One', 'propertyNameEnum':"
+            + " 'Three', 'pathologicalEnum': 'Two' }",
+        serialize(bean));
   }
 
   @Test
   public void enumsAreParsed() {
-    String json = "{'enumField': 'Bar', 'enumValue': 'Foo', 'complexEnum': 'One', 'propertyNameEnum': 'Three', 'pathologicalEnum': 'Two' }";
+    String json =
+        "{'enumField': 'Bar', 'enumValue': 'Foo', 'complexEnum': 'One', 'propertyNameEnum':"
+            + " 'Three', 'pathologicalEnum': 'Two' }";
     EnumBean bean = deserialize(json, EnumBean.class);
     assertEquals(bean.enumField, SimpleEnum.Bar);
     assertEquals(bean.enumValue, SimpleEnum.Foo);
