@@ -16,6 +16,8 @@ package com.google.firebase.heartbeatinfo;
 
 import androidx.annotation.NonNull;
 
+import java.util.List;
+
 /**
  * Class provides information about heartbeats.
  *
@@ -44,4 +46,10 @@ public interface HeartBeatInfo {
 
   @NonNull
   HeartBeat getHeartBeatCode(@NonNull String heartBeatTag);
+
+  @NonNull
+  void storeHeartBeatInfo(@NonNull String heartBeatTag);
+
+  @NonNull
+  List<HeartBeatResult> getStoredHeartBeatInfo();
 }

@@ -21,6 +21,9 @@ import androidx.annotation.VisibleForTesting;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.Dependency;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /** Provides information as whether to send heart beat or not. */
 public class DefaultHeartBeatInfo implements HeartBeatInfo {
 
@@ -39,8 +42,8 @@ public class DefaultHeartBeatInfo implements HeartBeatInfo {
   @Override
   public @NonNull HeartBeat getHeartBeatCode(@NonNull String heartBeatTag) {
     long presentTime = System.currentTimeMillis();
-    boolean shouldSendSdkHB = storage.shouldSendSdkHeartBeat(heartBeatTag, presentTime);
-    boolean shouldSendGlobalHB = storage.shouldSendGlobalHeartBeat(presentTime);
+    boolean shouldSendSdkHB = storage.shouldSendSdkHeartBeat(heartBeatTag, presentTime, true);
+    boolean shouldSendGlobalHB = storage.shouldSendGlobalHeartBeat(presentTime, true);
     if (shouldSendSdkHB && shouldSendGlobalHB) {
       return HeartBeat.COMBINED;
     } else if (shouldSendGlobalHB) {
@@ -49,6 +52,44 @@ public class DefaultHeartBeatInfo implements HeartBeatInfo {
       return HeartBeat.SDK;
     }
     return HeartBeat.NONE;
+  }
+
+
+  @Override
+  public List<HeartBeatResult> getStoredHeartBeatInfo() {
+      List<SdkHeartBeatResult> sdkHeartBeatResults = storage.getStoredHeartBeats();
+      ArrayList<HeartBeatResult> heartBeatResults = new ArrayList<>();
+      long lastGlobalHeartBeat = storage.getLastGlobalHeartBeat();
+      long timeElapsed = 0;
+      boolean shouldSendGlobalHeartBeat = false;
+      for (int i = 0; i < sdkHeartBeatResults.size(); i++) {
+          SdkHeartBeatResult sdkHeartBeatResult = sdkHeartBeatResults.get(i);
+          HeartBeat heartBeat = HeartBeat.NONE;
+          timeElapsed = sdkHeartBeatResult.getMillis() - lastGlobalHeartBeat;
+          shouldSendGlobalHeartBeat = (timeElapsed >= (long) 1000 * 60 * 60 * 24);
+          if (shouldSendGlobalHeartBeat && sdkHeartBeatResult.getShouldSendSdkHeartBeat()) {
+              heartBeat = HeartBeat.COMBINED;
+          } else if (shouldSendGlobalHeartBeat && !sdkHeartBeatResult.getShouldSendSdkHeartBeat()) {
+              heartBeat = HeartBeat.GLOBAL;
+          } else if (sdkHeartBeatResult.getShouldSendSdkHeartBeat()) {
+              heartBeat = HeartBeat.SDK;
+          }
+          heartBeatResults.add(
+                  HeartBeatResult.create(
+                          sdkHeartBeatResult.getSdkName(), sdkHeartBeatResult.getMillis(), heartBeat));
+      }
+      return heartBeatResults;
+  }
+
+
+  @Override
+  public void storeHeartBeatInfo(@NonNull String heartBeatTag) {
+    long presentTime = System.currentTimeMillis();
+    boolean shouldSendSdkHB = storage.shouldSendSdkHeartBeat(heartBeatTag, presentTime, true);
+    boolean shouldSendGlobalHB = storage.shouldSendGlobalHeartBeat(presentTime, false);
+    if (shouldSendGlobalHB || shouldSendSdkHB) {
+      storage.storeHeartBeatInformation(heartBeatTag, presentTime, shouldSendSdkHB);
+    }
   }
 
   public static @NonNull Component<HeartBeatInfo> component() {

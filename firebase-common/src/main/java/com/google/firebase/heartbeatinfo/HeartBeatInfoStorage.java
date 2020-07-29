@@ -18,6 +18,11 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
+import com.google.firebase.heartbeatinfo.HeartBeatInfo.HeartBeat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Class responsible for storing all heartbeat related information.
@@ -34,16 +39,21 @@ class HeartBeatInfoStorage {
   private static final String storagePreferencesName = "FirebaseAppHeartBeatStorage";
 
   private final SharedPreferences sharedPreferences;
+  private final SharedPreferences heartBeatSharedPreferences;
 
   private HeartBeatInfoStorage(Context applicationContext) {
     this.sharedPreferences =
+        applicationContext.getSharedPreferences(preferencesName, Context.MODE_PRIVATE);
+    this.heartBeatSharedPreferences =
         applicationContext.getSharedPreferences(preferencesName, Context.MODE_PRIVATE);
   }
 
   @VisibleForTesting
   @RestrictTo(RestrictTo.Scope.TESTS)
-  HeartBeatInfoStorage(SharedPreferences preferences) {
+  HeartBeatInfoStorage(
+      SharedPreferences preferences, SharedPreferences heartBeatSharedPreferences) {
     this.sharedPreferences = preferences;
+    this.heartBeatSharedPreferences = heartBeatSharedPreferences;
   }
 
   static synchronized HeartBeatInfoStorage getInstance(Context applicationContext) {
@@ -53,22 +63,50 @@ class HeartBeatInfoStorage {
     return instance;
   }
 
-  synchronized boolean storeHeartBeatInformation(String heartBeatTag, )
+  synchronized void storeHeartBeatInformation(
+      String heartBeatTag, long millis, boolean sdkHeartBeat) {
+    this.heartBeatSharedPreferences
+        .edit()
+        .putString(String.valueOf(millis), heartBeatTag + ":" + sdkHeartBeat)
+        .apply();
+  }
+
+  synchronized long getLastGlobalHeartBeat(){
+    return sharedPreferences.getLong(GLOBAL, -1);
+  }
+
+  synchronized List<SdkHeartBeatResult> getStoredHeartBeats() {
+    ArrayList<SdkHeartBeatResult> sdkHeartBeatResults = new ArrayList<>();
+    for (Map.Entry<String, ?> entry : heartBeatSharedPreferences.getAll().entrySet()) {
+      long millis = Long.parseLong(entry.getKey());
+      String[] parts = ((String) entry.getValue()).split(":");
+      String sdkName = parts[0];
+      boolean shouldSendSdkHeartbeat = Boolean.getBoolean(parts[1]);
+      sdkHeartBeatResults.add(SdkHeartBeatResult.create(sdkName, millis, shouldSendSdkHeartbeat));
+    }
+    Collections.sort(sdkHeartBeatResults);
+    return sdkHeartBeatResults;
+  }
+
   /*
    Indicates whether or not we have to send a sdk heartbeat.
    A sdk heartbeat is sent either when there is no heartbeat sent ever for the sdk or
    when the last heartbeat send for the sdk was later than a day before.
   */
-  synchronized boolean shouldSendSdkHeartBeat(String heartBeatTag, long millis) {
+  synchronized boolean shouldSendSdkHeartBeat(String heartBeatTag, long millis, boolean update) {
     if (sharedPreferences.contains(heartBeatTag)) {
       long timeElapsed = millis - sharedPreferences.getLong(heartBeatTag, -1);
       if (timeElapsed >= (long) 1000 * 60 * 60 * 24) {
-        sharedPreferences.edit().putLong(heartBeatTag, millis).apply();
+        if (update) {
+          sharedPreferences.edit().putLong(heartBeatTag, millis).apply();
+        }
         return true;
       }
       return false;
     } else {
-      sharedPreferences.edit().putLong(heartBeatTag, millis).apply();
+      if (update) {
+        sharedPreferences.edit().putLong(heartBeatTag, millis).apply();
+      }
       return true;
     }
   }
@@ -77,7 +115,7 @@ class HeartBeatInfoStorage {
    Indicates whether or not we have to send a global heartbeat.
    A global heartbeat is set only once per day.
   */
-  synchronized boolean shouldSendGlobalHeartBeat(long millis) {
-    return shouldSendSdkHeartBeat(GLOBAL, millis);
+  synchronized boolean shouldSendGlobalHeartBeat(long millis, boolean update) {
+    return shouldSendSdkHeartBeat(GLOBAL, millis, update);
   }
 }
