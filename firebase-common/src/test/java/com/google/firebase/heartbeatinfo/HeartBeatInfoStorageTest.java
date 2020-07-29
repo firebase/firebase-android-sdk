@@ -64,6 +64,12 @@ public class HeartBeatInfoStorageTest {
   }
 
   @Test
+  public void getLastGlobalHeartBeat_returnsCorrectly() {
+      sharedPreferences.edit().putLong(GLOBAL, 1).apply();
+      assertThat(heartBeatInfoStorage.getLastGlobalHeartBeat()).isEqualTo(1);
+  }
+
+  @Test
   public void shouldSendGlobalHeartBeat_answerIsYes() {
     long currentTime = System.currentTimeMillis();
     assertThat(heartBeatInfoStorage.shouldSendGlobalHeartBeat(1, true)).isTrue();

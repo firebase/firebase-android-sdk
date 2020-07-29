@@ -15,6 +15,7 @@
 package com.google.firebase.heartbeatinfo;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -32,31 +33,31 @@ public class DefaultHeartBeatInfoTest {
 
   @Test
   public void getHeartBeatCode_noHeartBeat() {
-    when(storage.shouldSendSdkHeartBeat(anyString(), anyLong())).thenReturn(Boolean.FALSE);
+    when(storage.shouldSendSdkHeartBeat(anyString(), anyLong(), anyBoolean())).thenReturn(Boolean.FALSE);
     heartBeatInfo.getHeartBeatCode(testSdk);
     assertThat(heartBeatInfo.getHeartBeatCode(testSdk).getCode()).isEqualTo(0);
   }
 
   @Test
   public void getHeartBeatCode_sdkHeartBeat() {
-    when(storage.shouldSendSdkHeartBeat(anyString(), anyLong())).thenReturn(Boolean.TRUE);
-    when(storage.shouldSendGlobalHeartBeat(anyLong())).thenReturn(Boolean.FALSE);
+    when(storage.shouldSendSdkHeartBeat(anyString(), anyLong(), anyBoolean())).thenReturn(Boolean.TRUE);
+    when(storage.shouldSendGlobalHeartBeat(anyLong(), anyBoolean())).thenReturn(Boolean.FALSE);
     heartBeatInfo.getHeartBeatCode(testSdk);
     assertThat(heartBeatInfo.getHeartBeatCode(testSdk).getCode()).isEqualTo(1);
   }
 
   @Test
   public void getHeartBeatCode_globalHeartBeat() {
-    when(storage.shouldSendSdkHeartBeat(anyString(), anyLong())).thenReturn(Boolean.FALSE);
-    when(storage.shouldSendGlobalHeartBeat(anyLong())).thenReturn(Boolean.TRUE);
+    when(storage.shouldSendSdkHeartBeat(anyString(), anyLong(), anyBoolean())).thenReturn(Boolean.FALSE);
+    when(storage.shouldSendGlobalHeartBeat(anyLong(), anyBoolean())).thenReturn(Boolean.TRUE);
     heartBeatInfo.getHeartBeatCode(testSdk);
     assertThat(heartBeatInfo.getHeartBeatCode(testSdk).getCode()).isEqualTo(2);
   }
 
   @Test
   public void getHeartBeatCode_combinedHeartBeat() {
-    when(storage.shouldSendSdkHeartBeat(anyString(), anyLong())).thenReturn(Boolean.TRUE);
-    when(storage.shouldSendGlobalHeartBeat(anyLong())).thenReturn(Boolean.TRUE);
+    when(storage.shouldSendSdkHeartBeat(anyString(), anyLong(), anyBoolean())).thenReturn(Boolean.TRUE);
+    when(storage.shouldSendGlobalHeartBeat(anyLong(), anyBoolean())).thenReturn(Boolean.TRUE);
     heartBeatInfo.getHeartBeatCode(testSdk);
     assertThat(heartBeatInfo.getHeartBeatCode(testSdk).getCode()).isEqualTo(3);
   }
