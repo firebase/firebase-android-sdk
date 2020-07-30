@@ -84,7 +84,7 @@
     }
   }
 
-  private static AnnotatedFieldHandler<Default> defaultHandler =
+  private final static AnnotatedFieldHandler<Default> DEFAULT_HANDLER =
       new AnnotatedFieldHandler<Default>() {
         @Nullable
         @Override
@@ -115,20 +115,7 @@
     Map<Class<?>, AnnotatedFieldHandler<?>> fieldHandlers = new HashMap<>();
 
     objectDecoders.put(Foo.class, new FooObjectDecoder());
-    fieldHandlers.put(
-        Default.class,
-        new AnnotatedFieldHandler<Default>() {
-          @Nullable
-          @Override
-          public <T> T apply(
-              @NonNull Default annotation, @Nullable T fieldDecodedResult, @NonNull Class<T> type)
- {
-            if (fieldDecodedResult == null) {
-              if (type.equals(String.class)) return (T) annotation.value();
-            }
-            return fieldDecodedResult;
-          }
-        });
+    fieldHandlers.put(Default.class, DEFAULT_HANDLER);
 
     JsonDataDecoderContext jsonDataDecoderContext =
         new JsonDataDecoderContext(objectDecoders, fieldHandlers);
@@ -139,3 +126,19 @@
     assertThat(foo.str).isEqualTo("default");
   }
  }
+
+  @Test
+  public void customizedAnnotationRegisteredWithBuilder_shouldProcessCorrectly()
+      throws IOException {
+    DataDecoder decoder =
+        new JsonDataDecoderBuilder()
+            .register(Foo.class, new FooObjectDecoder())
+            .register(Default.class, DEFAULT_HANDLER)
+            .build();
+
+    String json = "{\"str\":null}";
+    InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
+    Foo foo = decoder.decode(input, TypeToken.of(new Safe<Foo>() {}));
+    assertThat(foo.str).isEqualTo("default");
+  }
+}

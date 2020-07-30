@@ -51,7 +51,7 @@ public final class JsonDataDecoderBuilder implements DecoderConfig<JsonDataDecod
   @NonNull
   @Override
   public <U extends Annotation> JsonDataDecoderBuilder register(
-      @NonNull Class<U> clazz, @NonNull AnnotatedFieldHandler<? extends U> objectDecoder) {
+      @NonNull Class<U> clazz, @NonNull AnnotatedFieldHandler<U> objectDecoder) {
     fieldHandlers.put(clazz, objectDecoder);
     return this;
   }
