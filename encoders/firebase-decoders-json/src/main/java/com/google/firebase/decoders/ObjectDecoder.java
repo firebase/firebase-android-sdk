@@ -14,8 +14,6 @@
 
 package com.google.firebase.decoders;
 
-import androidx.annotation.NonNull;
-
 /**
  * This interface should be implemented by a specific ObjectDecoder to provide its decoding logic.
  *
@@ -55,10 +53,11 @@ import androidx.annotation.NonNull;
  *
  * }</pre>
  */
-public interface ObjectDecoder<T> {
-  /**
-   * Should be override by specific ObjectDecoder to provide its decoding logic and Type Creation.
-   */
-  @NonNull
-  TypeCreator<T> decode(@NonNull ObjectDecoderContext<T> ctx);
+public interface ObjectDecoder<T> extends Decoder<T, ObjectDecoderContext<T>> {
+  //  /**
+  //   * Should be override by specific ObjectDecoder to provide its decoding logic and Type
+  // Creation.
+  //   */
+  //  @NonNull
+  //  TypeCreator<T> decode(@NonNull ObjectDecoderContext<T> ctx);
 }

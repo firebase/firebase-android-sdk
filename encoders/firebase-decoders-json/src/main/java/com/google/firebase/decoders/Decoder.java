@@ -17,14 +17,11 @@ package com.google.firebase.decoders;
 import androidx.annotation.NonNull;
 
 /**
- * Implemented by concrete {@link DataDecoder} builders.
+ * An {@link Decoder} takes objects and writes them in {@code DecoderContext}.
  *
- * <p>Used by clients to configure decoders without coupling to a particular decoder format.
+ * <p>This interface should be used as base for interfaces with concrete {@code Contexts}.
  */
-public interface DecoderConfig<T extends DecoderConfig<T>> {
+public interface Decoder<TValue, TContext> {
   @NonNull
-  <U> T register(@NonNull Class<U> clazz, @NonNull ObjectDecoder<? extends U> objectDecoder);
-
-  @NonNull
-  <U> T register(@NonNull Class<U> clazz, @NonNull ValueDecoder<? extends U> valueDecoder);
+  TypeCreator<TValue> decode(@NonNull TContext ctx);
 }
