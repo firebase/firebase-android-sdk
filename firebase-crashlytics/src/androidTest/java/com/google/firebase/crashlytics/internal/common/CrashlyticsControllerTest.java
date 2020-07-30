@@ -828,6 +828,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
 
     // Use a real DataCollectionArbiter to test its switching behavior.
     DataCollectionArbiter arbiter = new DataCollectionArbiter(app);
+    assertFalse(arbiter.isAutomaticDataCollectionEnabled());
 
     final ControllerBuilder builder = builder();
     builder.setDataCollectionArbiter(arbiter);

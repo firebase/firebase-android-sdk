@@ -29,15 +29,15 @@ public class DataCollectionArbiter {
   private static final String FIREBASE_CRASHLYTICS_COLLECTION_ENABLED =
       "firebase_crashlytics_collection_enabled";
 
+  private final SharedPreferences sharedPreferences;
+  private final FirebaseApp firebaseApp;
+
   // State for waitForDataCollectionEnabled().
-  private Object taskLock = new Object();
+  private final Object taskLock = new Object();
   TaskCompletionSource<Void> dataCollectionEnabledTask = new TaskCompletionSource<>();
   boolean taskResolved = false;
 
-  private final SharedPreferences sharedPreferences;
-  private volatile boolean crashlyticsDataCollectionExplicitlySet;
-  private volatile boolean crashlyticsDataCollectionEnabled;
-  private final FirebaseApp firebaseApp;
+  private Boolean crashlyticsDataCollectionEnabled;
 
   /**
    * A Task that will be resolved when explicit data collection permission is granted by calling
@@ -47,15 +47,17 @@ public class DataCollectionArbiter {
       new TaskCompletionSource<>();
 
   public DataCollectionArbiter(FirebaseApp app) {
-    this.firebaseApp = app;
-    Context applicationContext = app.getApplicationContext();
-    if (applicationContext == null) {
-      throw new RuntimeException("null context");
-    }
+    final Context applicationContext = app.getApplicationContext();
 
+    firebaseApp = app;
     sharedPreferences = CommonUtils.getSharedPrefs(applicationContext);
 
-    initializeEnabledAndExplicitSetValues(applicationContext);
+    Boolean dataCollectionEnabled = getDataCollectionValueFromSharedPreferences(sharedPreferences);
+    if (dataCollectionEnabled == null) {
+      dataCollectionEnabled = getDataCollectionValueFromManifest(applicationContext);
+    }
+
+    crashlyticsDataCollectionEnabled = dataCollectionEnabled;
 
     synchronized (taskLock) {
       if (isAutomaticDataCollectionEnabled()) {
@@ -65,51 +67,10 @@ public class DataCollectionArbiter {
     }
   }
 
-  private void initializeEnabledAndExplicitSetValues(Context context) {
-    boolean enabled = true;
-    boolean explicitlySet = false;
-
-    if (sharedPreferences.contains(FIREBASE_CRASHLYTICS_COLLECTION_ENABLED)) {
-      enabled = sharedPreferences.getBoolean(FIREBASE_CRASHLYTICS_COLLECTION_ENABLED, true);
-      explicitlySet = true;
-    } else {
-      Boolean manifestSetting = readDataCollectionManifestValueEnabled(context);
-      if (manifestSetting != null) {
-        explicitlySet = true;
-        enabled = Boolean.TRUE.equals(manifestSetting);
-      }
-    }
-    crashlyticsDataCollectionEnabled = enabled;
-    crashlyticsDataCollectionExplicitlySet = explicitlySet;
-  }
-
-  private Boolean readDataCollectionManifestValueEnabled(Context applicationContext) {
-    try {
-      final PackageManager packageManager = applicationContext.getPackageManager();
-      if (packageManager != null) {
-        final ApplicationInfo applicationInfo =
-            packageManager.getApplicationInfo(
-                applicationContext.getPackageName(), PackageManager.GET_META_DATA);
-        if (applicationInfo != null
-            && applicationInfo.metaData != null
-            && applicationInfo.metaData.containsKey(FIREBASE_CRASHLYTICS_COLLECTION_ENABLED)) {
-          return applicationInfo.metaData.getBoolean(FIREBASE_CRASHLYTICS_COLLECTION_ENABLED);
-        }
-      }
-    } catch (PackageManager.NameNotFoundException e) {
-      // This shouldn't happen since it's this app's package, but fall through to default
-      // if so.
-      Logger.getLogger().d("Unable to get PackageManager. Falling through", e);
-      return null;
-    }
-    return null;
-  }
-
   public synchronized boolean isAutomaticDataCollectionEnabled() {
-    if (crashlyticsDataCollectionExplicitlySet) {
-      return crashlyticsDataCollectionEnabled;
-    }
-    return firebaseApp.isDataCollectionDefaultEnabled();
+    return crashlyticsDataCollectionEnabled != null
+        ? crashlyticsDataCollectionEnabled
+        : firebaseApp.isDataCollectionDefaultEnabled();
   }
 
   public Task<Void> waitForAutomaticDataCollectionEnabled() {
@@ -118,20 +79,15 @@ public class DataCollectionArbiter {
     }
   }
 
-  @SuppressLint({"CommitPrefEdits", "ApplySharedPref"})
   public synchronized void setCrashlyticsDataCollectionEnabled(Boolean enabled) {
-    if (enabled == null) {
-      sharedPreferences.edit().remove(FIREBASE_CRASHLYTICS_COLLECTION_ENABLED).commit();
-    } else {
-      sharedPreferences
-          .edit()
-          .putBoolean(FIREBASE_CRASHLYTICS_COLLECTION_ENABLED, enabled)
-          .commit();
-    }
-    initializeEnabledAndExplicitSetValues(firebaseApp.getApplicationContext());
+    crashlyticsDataCollectionEnabled =
+        (enabled != null)
+            ? enabled
+            : getDataCollectionValueFromManifest(firebaseApp.getApplicationContext());
+    storeDataCollectionValueInSharedPreferences(sharedPreferences, enabled);
 
     synchronized (taskLock) {
-      if (crashlyticsDataCollectionEnabled) {
+      if (isAutomaticDataCollectionEnabled()) {
         if (!taskResolved) {
           dataCollectionEnabledTask.trySetResult(null);
           taskResolved = true;
@@ -167,5 +123,56 @@ public class DataCollectionArbiter {
       throw new IllegalStateException("An invalid data collection token was used.");
     }
     dataCollectionExplicitlyApproved.trySetResult(null);
+  }
+
+  @SuppressLint({"ApplySharedPref"})
+  private static void storeDataCollectionValueInSharedPreferences(
+      SharedPreferences sharedPreferences, Boolean enabled) {
+    final SharedPreferences.Editor prefsEditor = sharedPreferences.edit();
+    if (enabled != null) {
+      prefsEditor.putBoolean(FIREBASE_CRASHLYTICS_COLLECTION_ENABLED, enabled);
+    } else {
+      prefsEditor.remove(FIREBASE_CRASHLYTICS_COLLECTION_ENABLED);
+    }
+    prefsEditor.commit();
+  }
+
+  private static Boolean getDataCollectionValueFromSharedPreferences(
+      SharedPreferences sharedPreferences) {
+    if (sharedPreferences.contains(FIREBASE_CRASHLYTICS_COLLECTION_ENABLED)) {
+      return sharedPreferences.getBoolean(FIREBASE_CRASHLYTICS_COLLECTION_ENABLED, true);
+    }
+    return null;
+  }
+
+  private static Boolean getDataCollectionValueFromManifest(Context applicationContext) {
+    final Boolean manifestSetting =
+        readCrashlyticsDataCollectionEnabledFromManifest(applicationContext);
+    if (manifestSetting == null) {
+      return null;
+    }
+    return Boolean.TRUE.equals(manifestSetting);
+  }
+
+  private static Boolean readCrashlyticsDataCollectionEnabledFromManifest(
+      Context applicationContext) {
+    try {
+      final PackageManager packageManager = applicationContext.getPackageManager();
+      if (packageManager != null) {
+        final ApplicationInfo applicationInfo =
+            packageManager.getApplicationInfo(
+                applicationContext.getPackageName(), PackageManager.GET_META_DATA);
+        if (applicationInfo != null
+            && applicationInfo.metaData != null
+            && applicationInfo.metaData.containsKey(FIREBASE_CRASHLYTICS_COLLECTION_ENABLED)) {
+          return applicationInfo.metaData.getBoolean(FIREBASE_CRASHLYTICS_COLLECTION_ENABLED);
+        }
+      }
+    } catch (PackageManager.NameNotFoundException e) {
+      // This shouldn't happen since it's this app's package, but fall through to default
+      // if so.
+      Logger.getLogger().d("Unable to get PackageManager. Falling through", e);
+    }
+    return null;
   }
 }
