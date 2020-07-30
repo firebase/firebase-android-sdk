@@ -25,9 +25,12 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.datatransport.TransportFactory;
+import com.google.android.gms.measurement.AnalyticsValidator;
+import com.google.android.gms.measurement.AnalyticsValidator.LoggedEvent;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
+import com.google.firebase.analytics.connector.FakeConnectorComponent;
 import com.google.firebase.components.ComponentDiscoveryService;
 import com.google.firebase.messaging.AnalyticsTestHelper.Analytics;
 import com.google.firebase.messaging.Constants.AnalyticsKeys;
@@ -35,9 +38,6 @@ import com.google.firebase.messaging.Constants.FirelogAnalytics;
 import com.google.firebase.messaging.Constants.MessageNotificationKeys;
 import com.google.firebase.messaging.Constants.MessagePayloadKeys;
 import com.google.firebase.messaging.Constants.ScionAnalytics;
-import com.google.firebase.messaging.testing.AnalyticsValidator;
-import com.google.firebase.messaging.testing.AnalyticsValidator.LoggedEvent;
-import com.google.firebase.messaging.testing.FakeConnectorComponent;
 import com.google.firebase.messaging.testing.MessagingTestHelper;
 import java.util.List;
 import org.junit.Before;
@@ -117,7 +117,7 @@ public class MessagingAnalyticsRoboTest {
     Intent intent = new Intent();
     intent.putExtra(ANALYTICS_COMPOSER_ID, "composer_key");
 
-    MessagingAnalytics.logNotificationReceived(intent, /*transport= */ null);
+    MessagingAnalytics.logNotificationReceived(intent);
     MessagingAnalytics.logNotificationOpen(intent);
     MessagingAnalytics.logNotificationDismiss(intent);
     // No Exception is thrown = no crash, yeah
@@ -373,8 +373,9 @@ public class MessagingAnalyticsRoboTest {
   public void testComposerUiPopulatesParamMessageId() {
     Intent intent = new Intent();
     intent.putExtra(ANALYTICS_COMPOSER_ID, "campaign_id");
+    intent.putExtra(Constants.AnalyticsKeys.ENABLED, "1");
 
-    MessagingAnalytics.logNotificationReceived(intent, /*transport= */ null);
+    MessagingAnalytics.logNotificationReceived(intent);
 
     List<LoggedEvent> events = analyticsValidator.getLoggedEvents();
     assertThat(events).hasSize(1);
@@ -393,8 +394,9 @@ public class MessagingAnalyticsRoboTest {
   public void testTopicsApiPopulatesParamTopic_straightFromHttpTopicApi() {
     Intent intent = new Intent();
     intent.putExtra(MessagePayloadKeys.FROM, "/topics/test_topic");
+    intent.putExtra(Constants.AnalyticsKeys.ENABLED, "1");
 
-    MessagingAnalytics.logNotificationReceived(intent, /*transport= */ null);
+    MessagingAnalytics.logNotificationReceived(intent);
 
     List<AnalyticsValidator.LoggedEvent> events = analyticsValidator.getLoggedEvents();
     assertThat(events).hasSize(1);
@@ -417,8 +419,9 @@ public class MessagingAnalyticsRoboTest {
     Intent intent = new Intent();
     intent.putExtra(ANALYTICS_COMPOSER_ID, "campaign_id");
     intent.putExtra(MessagePayloadKeys.FROM, "/topics/test_topic");
+    intent.putExtra(Constants.AnalyticsKeys.ENABLED, "1");
 
-    MessagingAnalytics.logNotificationReceived(intent, /*transport= */ null);
+    MessagingAnalytics.logNotificationReceived(intent);
 
     List<AnalyticsValidator.LoggedEvent> events = analyticsValidator.getLoggedEvents();
     assertThat(events).hasSize(1);
@@ -436,10 +439,12 @@ public class MessagingAnalyticsRoboTest {
   @Test
   public void testTopicsApiPopulatesParamTopic_fromComposerUiWithFromNotATopic() {
     Intent intent = new Intent();
+    intent.putExtra(Constants.AnalyticsKeys.ENABLED, "1");
+
     intent.putExtra(ANALYTICS_COMPOSER_ID, "campaign_id");
     intent.putExtra(MessagePayloadKeys.FROM, "not_a_topic_name");
 
-    MessagingAnalytics.logNotificationReceived(intent, /*transport= */ null);
+    MessagingAnalytics.logNotificationReceived(intent);
 
     List<AnalyticsValidator.LoggedEvent> events = analyticsValidator.getLoggedEvents();
     assertThat(events).hasSize(1);
@@ -455,11 +460,13 @@ public class MessagingAnalyticsRoboTest {
   @Test
   public void analyticsMessageTimestamp() {
     Intent intent = new Intent();
+    intent.putExtra(Constants.AnalyticsKeys.ENABLED, "1");
+
     intent.putExtra(ANALYTICS_COMPOSER_ID, "campaign_id");
     intent.putExtra(ANALYTICS_MESSAGE_TIMESTAMP, "1234");
 
     // Notification with a valid timestamp
-    MessagingAnalytics.logNotificationReceived(intent, /*transport= */ null);
+    MessagingAnalytics.logNotificationReceived(intent);
 
     List<AnalyticsValidator.LoggedEvent> events = analyticsValidator.getLoggedEvents();
     assertThat(events).hasSize(1);
@@ -473,11 +480,13 @@ public class MessagingAnalyticsRoboTest {
   @Test
   public void analyticsMessageTimestamp_invalid() {
     Intent intent = new Intent();
+    intent.putExtra(Constants.AnalyticsKeys.ENABLED, "1");
+
     intent.putExtra(ANALYTICS_COMPOSER_ID, "campaign_id");
     // Notification with a corrupted timestamp
     intent.putExtra(ANALYTICS_MESSAGE_TIMESTAMP, "1234_garbage");
 
-    MessagingAnalytics.logNotificationReceived(intent, /*transport= */ null);
+    MessagingAnalytics.logNotificationReceived(intent);
 
     List<AnalyticsValidator.LoggedEvent> events = analyticsValidator.getLoggedEvents();
     assertThat(events).hasSize(1);
@@ -491,9 +500,11 @@ public class MessagingAnalyticsRoboTest {
   public void analyticsComposerLabel_missing() {
     Intent intent = new Intent();
     intent.putExtra(ANALYTICS_COMPOSER_ID, "campaign_id");
+    intent.putExtra(Constants.AnalyticsKeys.ENABLED, "1");
+
     // ANALYTICS_COMPOSER_LABEL not set
 
-    MessagingAnalytics.logNotificationReceived(intent, /*transport= */ null);
+    MessagingAnalytics.logNotificationReceived(intent);
 
     List<AnalyticsValidator.LoggedEvent> events = analyticsValidator.getLoggedEvents();
     assertThat(events).hasSize(1);
@@ -508,8 +519,9 @@ public class MessagingAnalyticsRoboTest {
     Intent intent = new Intent();
     intent.putExtra(ANALYTICS_COMPOSER_ID, "campaign_id");
     intent.putExtra(ANALYTICS_COMPOSER_LABEL, "human composer label");
+    intent.putExtra(Constants.AnalyticsKeys.ENABLED, "1");
 
-    MessagingAnalytics.logNotificationReceived(intent, /*transport= */ null);
+    MessagingAnalytics.logNotificationReceived(intent);
 
     List<AnalyticsValidator.LoggedEvent> events = analyticsValidator.getLoggedEvents();
     assertThat(events).hasSize(1);
@@ -523,7 +535,9 @@ public class MessagingAnalyticsRoboTest {
   @Test
   public void analyticsMessageLabel_missing() {
     Intent intent = new Intent();
-    MessagingAnalytics.logNotificationReceived(intent, /*transport= */ null);
+    intent.putExtra(Constants.AnalyticsKeys.ENABLED, "1");
+
+    MessagingAnalytics.logNotificationReceived(intent);
 
     List<AnalyticsValidator.LoggedEvent> events = analyticsValidator.getLoggedEvents();
     assertThat(events).hasSize(1);
@@ -537,7 +551,9 @@ public class MessagingAnalyticsRoboTest {
   public void analyticsMessageLabel_present() {
     Intent intent = new Intent();
     intent.putExtra(ANALYTICS_MESSAGE_LABEL, "developer-provided-label");
-    MessagingAnalytics.logNotificationReceived(intent, /*transport= */ null);
+    intent.putExtra(Constants.AnalyticsKeys.ENABLED, "1");
+
+    MessagingAnalytics.logNotificationReceived(intent);
 
     List<AnalyticsValidator.LoggedEvent> events = analyticsValidator.getLoggedEvents();
     assertThat(events).hasSize(1);
@@ -551,8 +567,9 @@ public class MessagingAnalyticsRoboTest {
   @Test
   public void notificationLifecycle_eventReceived_dataMessage() {
     Intent intent = new Intent();
+    intent.putExtra(Constants.AnalyticsKeys.ENABLED, "1");
 
-    MessagingAnalytics.logNotificationReceived(intent, /*transport= */ null);
+    MessagingAnalytics.logNotificationReceived(intent);
 
     List<AnalyticsValidator.LoggedEvent> events = analyticsValidator.getLoggedEvents();
     assertThat(events).hasSize(1);
@@ -565,11 +582,13 @@ public class MessagingAnalyticsRoboTest {
   @Test
   public void notificationLifecycle_eventReceived_notification() {
     Intent intent = new Intent();
+    intent.putExtra(Constants.AnalyticsKeys.ENABLED, "1");
+
     intent.putExtra(ANALYTICS_COMPOSER_ID, "campaign_id");
     // Set as notification.
     intent.putExtra("gcm.n.e", "1");
 
-    MessagingAnalytics.logNotificationReceived(intent, /*transport= */ null);
+    MessagingAnalytics.logNotificationReceived(intent);
 
     List<AnalyticsValidator.LoggedEvent> events = analyticsValidator.getLoggedEvents();
     assertThat(events).hasSize(1);
@@ -645,7 +664,7 @@ public class MessagingAnalyticsRoboTest {
     intent.putExtra(ANALYTICS_TRACK_CONVERSIONS, "1");
 
     // Notification received: NO user-property and NO Event.FIREBASE_CAMPAIGN is logged
-    MessagingAnalytics.logNotificationReceived(intent, /*transport= */ null);
+    MessagingAnalytics.logNotificationReceived(intent);
 
     assertThat(analyticsValidator.getLoggedEventNames())
         .doesNotContain(ScionAnalytics.EVENT_FIREBASE_CAMPAIGN);
@@ -726,7 +745,7 @@ public class MessagingAnalyticsRoboTest {
     // Extra: ANALYTICS_TRACK_CONVERSIONS="1" NOT set
 
     // Notification received: NO user-property and NO Event.FIREBASE_CAMPAIGN is logged
-    MessagingAnalytics.logNotificationReceived(intent, /*transport= */ null);
+    MessagingAnalytics.logNotificationReceived(intent);
 
     assertThat(analyticsValidator.getLoggedEventNames())
         .doesNotContain(ScionAnalytics.EVENT_FIREBASE_CAMPAIGN);
