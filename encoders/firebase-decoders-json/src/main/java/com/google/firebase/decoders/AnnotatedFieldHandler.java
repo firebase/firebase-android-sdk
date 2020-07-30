@@ -35,5 +35,5 @@ public interface AnnotatedFieldHandler<U extends Annotation> {
    * AnnotatedFieldHandler} will be used as the decoded value of the annotated field.
    */
   @Nullable
-  <T> T apply(@NonNull U annotation, @Nullable T fieldDecodedResult, @NonNull Class<T> type);
+  Object apply(@NonNull U annotation, @Nullable Object fieldDecodedResult, @NonNull Class<?> type);
 }

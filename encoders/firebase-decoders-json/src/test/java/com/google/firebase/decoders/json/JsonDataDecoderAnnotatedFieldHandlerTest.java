@@ -1,4 +1,4 @@
-// Copyright 2020 Google LLC
+package com.google.firebase.decoders.json;// Copyright 2020 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,13 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
- package com.google.firebase.decoders.json;
-
  import static com.google.common.truth.Truth.assertThat;
  import static java.nio.charset.StandardCharsets.UTF_8;
 
  import androidx.annotation.NonNull;
- import androidx.annotation.Nullable;
  import com.google.firebase.decoders.AnnotatedFieldHandler;
  import com.google.firebase.decoders.DataDecoder;
  import com.google.firebase.decoders.FieldRef;
@@ -42,8 +39,8 @@
  import org.junit.runner.RunWith;
  import org.robolectric.RobolectricTestRunner;
 
- @RunWith(RobolectricTestRunner.class)
- public class JsonDataDecoderAnnotatedFieldHandlerTest {
+@RunWith(RobolectricTestRunner.class)
+public class JsonDataDecoderAnnotatedFieldHandlerTest {
 
   @Retention(RetentionPolicy.RUNTIME)
   @Target({ElementType.METHOD, ElementType.FIELD})
@@ -84,19 +81,6 @@
     }
   }
 
-  private final static AnnotatedFieldHandler<Default> DEFAULT_HANDLER =
-      new AnnotatedFieldHandler<Default>() {
-        @Nullable
-        @Override
-        public <T> T apply(
-            @NonNull Default annotation, @Nullable T fieldDecodedResult, @NonNull Class<T> type) {
-          if (fieldDecodedResult == null) {
-            if (type.equals(String.class)) return (T) annotation.value();
-          }
-          return fieldDecodedResult;
-        }
-      };
-
   static class FooObjectDecoder implements ObjectDecoder<Foo> {
     @NonNull
     @Override
@@ -115,7 +99,16 @@
     Map<Class<?>, AnnotatedFieldHandler<?>> fieldHandlers = new HashMap<>();
 
     objectDecoders.put(Foo.class, new FooObjectDecoder());
-    fieldHandlers.put(Default.class, DEFAULT_HANDLER);
+    fieldHandlers.put(
+        Default.class,
+        (annotation, fieldDecodedResult, type) -> {
+          if (fieldDecodedResult == null) {
+            if (type.equals(String.class)) {
+              return ((Default) annotation).value();
+            }
+          }
+          return fieldDecodedResult;
+        });
 
     JsonDataDecoderContext jsonDataDecoderContext =
         new JsonDataDecoderContext(objectDecoders, fieldHandlers);
@@ -125,7 +118,6 @@
     Foo foo = jsonDataDecoderContext.decode(input, TypeToken.of(new Safe<Foo>() {}));
     assertThat(foo.str).isEqualTo("default");
   }
- }
 
   @Test
   public void customizedAnnotationRegisteredWithBuilder_shouldProcessCorrectly()
@@ -133,7 +125,16 @@
     DataDecoder decoder =
         new JsonDataDecoderBuilder()
             .register(Foo.class, new FooObjectDecoder())
-            .register(Default.class, DEFAULT_HANDLER)
+            .register(
+                Default.class,
+                (annotation, fieldDecodedResult, type) -> {
+                  if (fieldDecodedResult == null) {
+                    if (type.equals(String.class)) {
+                      return annotation.value();
+                    }
+                  }
+                  return fieldDecodedResult;
+                })
             .build();
 
     String json = "{\"str\":null}";

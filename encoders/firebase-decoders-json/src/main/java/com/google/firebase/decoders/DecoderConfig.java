@@ -31,5 +31,5 @@ public interface DecoderConfig<T extends DecoderConfig<T>> {
 
   @NonNull
   <U extends Annotation> T register(
-      @NonNull Class<U> clazz, @NonNull AnnotatedFieldHandler<U> objectDecoder);
+      @NonNull Class<U> clazz, @NonNull AnnotatedFieldHandler<U> handler);
 }

@@ -327,16 +327,16 @@ public class JsonDataDecoderContext implements DataDecoder {
     creationCtx.put(fieldRef, val);
   }
 
-  private <TField> TField decodeField(
-      TypeToken<TField> fieldTypeToken, FieldDescriptor fieldDescriptor) throws IOException {
-    TField val = decode(fieldTypeToken);
+  private Object decodeField(TypeToken<?> fieldTypeToken, FieldDescriptor fieldDescriptor)
+      throws IOException {
+    Object val = decode(fieldTypeToken);
     return applyFieldHandlers(
         fieldDescriptor.getAllAnnotations(), val, fieldTypeToken.getRawType());
   }
 
-  private <TField, U extends Annotation> TField applyFieldHandlers(
-      Collection<Annotation> annotations, TField value, Class<TField> fieldType) {
-    TField modified = value;
+  private <U extends Annotation> Object applyFieldHandlers(
+      Collection<Annotation> annotations, Object value, Class<?> fieldType) {
+    Object modified = value;
     for (Annotation annotation : annotations) {
       @SuppressWarnings(
           "unchecked") // Safe, because U is acted as an type placeholder, used to cast annotation
