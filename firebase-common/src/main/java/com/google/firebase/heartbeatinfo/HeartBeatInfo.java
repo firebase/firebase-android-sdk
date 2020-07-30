@@ -51,5 +51,5 @@ public interface HeartBeatInfo {
   void storeHeartBeatInfo(@NonNull String heartBeatTag);
 
   @NonNull
-  List<HeartBeatResult> getStoredHeartBeatInfo();
+  List<HeartBeatResult> getAndClearStoredHeartBeatInfo();
 }

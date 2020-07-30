@@ -56,8 +56,8 @@ public class DefaultHeartBeatInfo implements HeartBeatInfo {
 
 
   @Override
-  public List<HeartBeatResult> getStoredHeartBeatInfo() {
-      List<SdkHeartBeatResult> sdkHeartBeatResults = storage.getStoredHeartBeats();
+  public List<HeartBeatResult> getAndClearStoredHeartBeatInfo() {
+      List<SdkHeartBeatResult> sdkHeartBeatResults = storage.getStoredHeartBeats(true);
       ArrayList<HeartBeatResult> heartBeatResults = new ArrayList<>();
       long lastGlobalHeartBeat = storage.getLastGlobalHeartBeat();
       long timeElapsed = 0;

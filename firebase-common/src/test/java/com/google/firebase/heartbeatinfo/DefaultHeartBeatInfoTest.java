@@ -25,6 +25,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+import java.util.List;
+
 @RunWith(JUnit4.class)
 public class DefaultHeartBeatInfoTest {
   private String testSdk = "fire-test";
@@ -39,12 +41,32 @@ public class DefaultHeartBeatInfoTest {
   }
 
   @Test
+  public void storeHeartBeatCode_noHeartBeat() {
+    when(storage.shouldSendSdkHeartBeat(anyString(), anyLong(), anyBoolean())).thenReturn(Boolean.FALSE);
+    when(storage.shouldSendGlobalHeartBeat(anyLong(), anyBoolean())).thenReturn(Boolean.FALSE);
+    heartBeatInfo.storeHeartBeatInfo(testSdk);
+    List<HeartBeatResult> result =  heartBeatInfo.getAndClearStoredHeartBeatInfo();
+    assertThat(result.size()).isEqualTo(0);
+  }
+
+  @Test
+  public void storeHeartBeatCode_sdkButNoGlobalHeartBeat() {
+    when(storage.shouldSendSdkHeartBeat(anyString(), anyLong(), anyBoolean())).thenReturn(Boolean.TRUE);
+    when(storage.shouldSendGlobalHeartBeat(anyLong(), anyBoolean())).thenReturn(Boolean.FALSE);
+    when(storage.getLastGlobalHeartBeat()).thenReturn((long)1000000000);
+    heartBeatInfo.storeHeartBeatInfo(testSdk);
+    List<HeartBeatResult> result =  heartBeatInfo.getAndClearStoredHeartBeatInfo();
+    assertThat(result.size()).isEqualTo(1);
+  }
+
+  @Test
   public void getHeartBeatCode_sdkHeartBeat() {
     when(storage.shouldSendSdkHeartBeat(anyString(), anyLong(), anyBoolean())).thenReturn(Boolean.TRUE);
     when(storage.shouldSendGlobalHeartBeat(anyLong(), anyBoolean())).thenReturn(Boolean.FALSE);
     heartBeatInfo.getHeartBeatCode(testSdk);
     assertThat(heartBeatInfo.getHeartBeatCode(testSdk).getCode()).isEqualTo(1);
   }
+
 
   @Test
   public void getHeartBeatCode_globalHeartBeat() {

@@ -24,6 +24,8 @@ import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.List;
+
 @RunWith(AndroidJUnit4.class)
 public class HeartBeatInfoStorageTest {
   private final String testSdk = "testSdk";
@@ -68,6 +70,41 @@ public class HeartBeatInfoStorageTest {
       sharedPreferences.edit().putLong(GLOBAL, 1).apply();
       assertThat(heartBeatInfoStorage.getLastGlobalHeartBeat()).isEqualTo(1);
   }
+
+  @Test
+  public void storeHeartBeatInformation_storesProperly() {
+      heartBeatInfoStorage.storeHeartBeatInformation(testSdk, 200, true);
+      assertThat(heartBeatSharedPreferences.getString("200", "-1")).isEqualTo(testSdk+":"+true);
+  }
+
+  @Test
+  public void getStoredHeartBeat_returnsThreeStoredHeartBeats_noClear(){
+    heartBeatInfoStorage.storeHeartBeatInformation(testSdk, 200, true);
+    heartBeatInfoStorage.storeHeartBeatInformation(testSdk, 198, false);
+    heartBeatInfoStorage.storeHeartBeatInformation(testSdk, 199, true);
+    List<SdkHeartBeatResult> result = heartBeatInfoStorage.getStoredHeartBeats(false);
+    assertThat(result.size()).isEqualTo(3);
+    assertThat(result.get(0)).isEqualTo(SdkHeartBeatResult.create(testSdk, 198, false));
+    assertThat(result.get(1)).isEqualTo(SdkHeartBeatResult.create(testSdk, 199, true));
+    assertThat(result.get(2)).isEqualTo(SdkHeartBeatResult.create(testSdk, 200, true));
+    result = heartBeatInfoStorage.getStoredHeartBeats(false);
+    assertThat(result.size()).isEqualTo(3);
+  }
+
+  @Test
+  public void getStoredHeartBeat_returnsThreeStoredHeartBeats_withClear(){
+    heartBeatInfoStorage.storeHeartBeatInformation(testSdk, 200, true);
+    heartBeatInfoStorage.storeHeartBeatInformation(testSdk, 198, false);
+    heartBeatInfoStorage.storeHeartBeatInformation(testSdk, 199, true);
+    List<SdkHeartBeatResult> result = heartBeatInfoStorage.getStoredHeartBeats(true);
+    assertThat(result.size()).isEqualTo(3);
+    assertThat(result.get(0)).isEqualTo(SdkHeartBeatResult.create(testSdk, 198, false));
+    assertThat(result.get(1)).isEqualTo(SdkHeartBeatResult.create(testSdk, 199, true));
+    assertThat(result.get(2)).isEqualTo(SdkHeartBeatResult.create(testSdk, 200, true));
+    result = heartBeatInfoStorage.getStoredHeartBeats(false);
+    assertThat(result.size()).isEqualTo(0);
+  }
+
 
   @Test
   public void shouldSendGlobalHeartBeat_answerIsYes() {
