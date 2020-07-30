@@ -18,10 +18,13 @@ import androidx.annotation.NonNull;
 import com.google.firebase.decoders.DataDecoder;
 import com.google.firebase.decoders.DecoderConfig;
 import com.google.firebase.decoders.ObjectDecoder;
+import com.google.firebase.decoders.ValueDecoder;
+import java.util.Collections;
 import java.util.HashMap;
 
 public final class JsonDataDecoderBuilder implements DecoderConfig<JsonDataDecoderBuilder> {
   private final HashMap<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
+  private final HashMap<Class<?>, ValueDecoder<?>> valueDecoders = new HashMap<>();
 
   public JsonDataDecoderBuilder() {}
 
@@ -34,7 +37,15 @@ public final class JsonDataDecoderBuilder implements DecoderConfig<JsonDataDecod
   }
 
   @NonNull
+  @Override
+  public <U> JsonDataDecoderBuilder register(
+      @NonNull Class<U> clazz, @NonNull ValueDecoder<? extends U> valueDecoder) {
+    valueDecoders.put(clazz, valueDecoder);
+    return this;
+  }
+
+  @NonNull
   public DataDecoder build() {
-    return new JsonDataDecoderContext(objectDecoders);
+    return new JsonDataDecoderContext(objectDecoders, Collections.EMPTY_MAP, valueDecoders);
   }
 }

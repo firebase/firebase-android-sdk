@@ -22,6 +22,7 @@ package com.google.firebase.decoders {
 
   public interface DecoderConfig<T extends com.google.firebase.decoders.DecoderConfig<T>> {
     method @NonNull public <U> T register(@NonNull Class<U>, @NonNull com.google.firebase.decoders.ObjectDecoder<? extends U>);
+    method @NonNull public <U> T register(@NonNull Class<U>, @NonNull com.google.firebase.decoders.ValueDecoder<? extends U>);
   }
 
   public abstract class FieldRef<T> {
@@ -92,6 +93,18 @@ package com.google.firebase.decoders {
     field @NonNull public static final com.google.firebase.decoders.TypeTokenContainer EMPTY;
   }
 
+  public interface ValueDecoder<T> {
+    method @Nullable public T decode(@NonNull com.google.firebase.decoders.ValueDecoderContext) throws java.io.IOException;
+  }
+
+  public interface ValueDecoderContext {
+    method public boolean decodeBoolean() throws java.io.IOException;
+    method public double decodeDouble() throws java.io.IOException;
+    method public int decodeInteger() throws java.io.IOException;
+    method public long decodeLong() throws java.io.IOException;
+    method @NonNull public String decodeString() throws java.io.IOException;
+  }
+
 }
 
 package com.google.firebase.decoders.json {
@@ -111,6 +124,7 @@ package com.google.firebase.decoders.json {
     ctor public JsonDataDecoderBuilder();
     method @NonNull public com.google.firebase.decoders.DataDecoder build();
     method @NonNull public <T> com.google.firebase.decoders.json.JsonDataDecoderBuilder register(@NonNull Class<T>, @NonNull com.google.firebase.decoders.ObjectDecoder<? extends T>);
+    method @NonNull public <U> com.google.firebase.decoders.json.JsonDataDecoderBuilder register(@NonNull Class<U>, @NonNull com.google.firebase.decoders.ValueDecoder<? extends U>);
   }
 
   public class JsonDataDecoderContext implements com.google.firebase.decoders.DataDecoder {

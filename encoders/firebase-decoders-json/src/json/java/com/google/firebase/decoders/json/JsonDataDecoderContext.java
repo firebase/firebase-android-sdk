@@ -23,6 +23,7 @@ import com.google.firebase.decoders.FieldRef;
 import com.google.firebase.decoders.ObjectDecoder;
 import com.google.firebase.decoders.TypeCreator;
 import com.google.firebase.decoders.TypeToken;
+import com.google.firebase.decoders.ValueDecoder;
 import com.google.firebase.encoders.EncodingException;
 import com.google.firebase.encoders.FieldDescriptor;
 import java.io.IOException;
@@ -56,9 +57,10 @@ public class JsonDataDecoderContext implements DataDecoder {
   private Map<TypeToken.ClassToken<?>, TypeCreator<?>> typeCreators = new HashMap<>();
   private JsonReader reader;
   private final Map<Class<?>, AnnotatedFieldHandler<?>> fieldHandlers;
+  private Map<Class<?>, ValueDecoder<?>> valueDecoders = new HashMap<>();
 
   JsonDataDecoderContext(@NonNull Map<Class<?>, ObjectDecoder<?>> objectDecoders) {
-    this(objectDecoders, Collections.emptyMap());
+    this(objectDecoders, Collections.emptyMap(), Collections.emptyMap());
   }
 
   JsonDataDecoderContext(
@@ -66,6 +68,15 @@ public class JsonDataDecoderContext implements DataDecoder {
       @NonNull Map<Class<?>, AnnotatedFieldHandler<?>> fieldHandlers) {
     this.objectDecoders = objectDecoders;
     this.fieldHandlers = fieldHandlers;
+  }
+
+  JsonDataDecoderContext(
+      @NonNull Map<Class<?>, ObjectDecoder<?>> objectDecoders,
+      @NonNull Map<Class<?>, AnnotatedFieldHandler<?>> fieldHandlers,
+      @NonNull Map<Class<?>, ValueDecoder<?>> valueDecoders) {
+    this.objectDecoders = objectDecoders;
+    this.fieldHandlers = fieldHandlers;
+    this.valueDecoders = valueDecoders;
   }
 
   @NonNull
@@ -90,6 +101,15 @@ public class JsonDataDecoderContext implements DataDecoder {
     throw new EncodingException("Unknown typeToken: " + typeToken);
   }
 
+  private <T> T decodeValueObject(TypeToken.ClassToken<T> classToken) throws IOException {
+    @SuppressWarnings("unchecked")
+    ValueDecoder<T> valueDecoder = (ValueDecoder<T>) valueDecoders.get(classToken.getRawType());
+    if (valueDecoder != null) {
+      return valueDecoder.decode(ValueDecoderContextImpl.from(reader));
+    }
+    throw new EncodingException(classToken + " didn't have an ValueDecoder registered.");
+  }
+
   private <T> T decodeClassToken(TypeToken.ClassToken<T> classToken) throws IOException {
     if (classToken.getRawType().isPrimitive()) {
       return decodePrimitive(classToken);
@@ -103,6 +123,8 @@ public class JsonDataDecoderContext implements DataDecoder {
       @SuppressWarnings("unchecked")
       T collection = (T) decodeCollection((TypeToken.ClassToken<? extends Collection>) classToken);
       return collection;
+    } else if (valueDecoders.containsKey(classToken.getRawType())) {
+      return decodeValueObject(classToken);
     } else {
       return decodeObject(classToken);
     }
@@ -363,7 +385,6 @@ public class JsonDataDecoderContext implements DataDecoder {
         || clazz.equals(Boolean.class);
   }
 
-  // TODO: support Date
   @SuppressWarnings("unchecked")
   private <T> T decodeSingleValue(TypeToken.ClassToken<T> classToken) throws IOException {
     Class<T> clazz = classToken.getRawType();
