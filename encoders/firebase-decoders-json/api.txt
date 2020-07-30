@@ -50,7 +50,8 @@ package com.google.firebase.decoders {
     method @NonNull public com.google.firebase.decoders.TypeToken<T> getTypeToken();
   }
 
-  public interface ObjectDecoder<T> extends com.google.firebase.decoders.Decoder<T,com.google.firebase.decoders.ObjectDecoderContext<T>> {
+  public interface ObjectDecoder<T> {
+    method @NonNull public com.google.firebase.decoders.TypeCreator<T> decode(@NonNull com.google.firebase.decoders.ObjectDecoderContext<T>);
   }
 
   public interface ObjectDecoderContext<T> {
@@ -96,15 +97,16 @@ package com.google.firebase.decoders {
     field @NonNull public static final com.google.firebase.decoders.TypeTokenContainer EMPTY;
   }
 
-  public interface ValueDecoder<T> extends com.google.firebase.decoders.Decoder<T,com.google.firebase.decoders.ValueDecoderContext> {
+  public interface ValueDecoder<T> {
+    method @Nullable public T decode(@NonNull com.google.firebase.decoders.ValueDecoderContext) throws java.io.IOException;
   }
 
   public interface ValueDecoderContext {
-    method @NonNull public com.google.firebase.decoders.FieldRef.Primitive<java.lang.Boolean> decodeBoolean();
-    method @NonNull public com.google.firebase.decoders.FieldRef.Primitive<java.lang.Double> decodeDouble();
-    method @NonNull public com.google.firebase.decoders.FieldRef.Primitive<java.lang.Integer> decodeInteger();
-    method @NonNull public com.google.firebase.decoders.FieldRef.Primitive<java.lang.Long> decodeLong();
-    method @NonNull public com.google.firebase.decoders.FieldRef.Boxed<java.lang.String> decodeString();
+    method public boolean decodeBoolean() throws java.io.IOException;
+    method public double decodeDouble() throws java.io.IOException;
+    method public int decodeInteger() throws java.io.IOException;
+    method public long decodeLong() throws java.io.IOException;
+    method @NonNull public String decodeString() throws java.io.IOException;
   }
 
 }

@@ -14,10 +14,17 @@
 
 package com.google.firebase.decoders;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import java.io.IOException;
+
 /**
  * This interface should be implemented by a specific ValueDecoder to provide its decoding logic. A
  * {@code ValueDecoder} writes its decoding logic in {@link ValueDecoderContext}.
  *
  * <p>Use this interface if the object to decode was represented as a single or primitive value.
  */
-public interface ValueDecoder<T> extends Decoder<T, ValueDecoderContext> {}
+public interface ValueDecoder<T> {
+  @Nullable
+  T decode(@NonNull ValueDecoderContext ctx) throws IOException;
+}

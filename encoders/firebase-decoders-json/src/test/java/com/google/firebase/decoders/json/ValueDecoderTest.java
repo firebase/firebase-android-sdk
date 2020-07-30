@@ -45,16 +45,13 @@ public class ValueDecoderTest {
 
     @NonNull
     @Override
-    public TypeCreator<Date> decode(@NonNull ValueDecoderContext ctx) {
-      FieldRef.Boxed<String> fieldRef = ctx.decodeString();
-      return (creationCtx) -> {
-        String val = creationCtx.get(fieldRef);
-        try {
-          return new SimpleDateFormat("dd/MM/yyyy").parse(val);
-        } catch (ParseException e) {
-          throw new RuntimeException("Date Literal(" + val + ") with Wrong Format");
-        }
-      };
+    public Date decode(@NonNull ValueDecoderContext ctx) throws IOException {
+      String val = ctx.decodeString();
+      try {
+        return new SimpleDateFormat("dd/MM/yyyy").parse(val);
+      } catch (ParseException e) {
+        throw new RuntimeException("Date Literal(" + val + ") with Wrong Format");
+      }
     }
   }
 

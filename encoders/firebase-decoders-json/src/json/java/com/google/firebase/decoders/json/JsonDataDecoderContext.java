@@ -58,8 +58,6 @@ public class JsonDataDecoderContext implements DataDecoder {
   private JsonReader reader;
   private final Map<Class<?>, AnnotatedFieldHandler<?>> fieldHandlers;
   private Map<Class<?>, ValueDecoder<?>> valueDecoders = new HashMap<>();
-  private Map<TypeToken.ClassToken<?>, ValueDecoderContextImpl> valueDecoderContexts =
-      new HashMap<>();
 
   JsonDataDecoderContext(@NonNull Map<Class<?>, ObjectDecoder<?>> objectDecoders) {
     this(objectDecoders, Collections.emptyMap(), Collections.emptyMap());
@@ -104,34 +102,12 @@ public class JsonDataDecoderContext implements DataDecoder {
   }
 
   private <T> T decodeValueObject(TypeToken.ClassToken<T> classToken) throws IOException {
-    ValueDecoderContextImpl valueDecoderContext = getValueDecodersCtx(classToken);
     @SuppressWarnings("unchecked")
-    TypeCreator<T> creator = (TypeCreator<T>) typeCreators.get(classToken);
-    if (creator == null)
-      throw new IllegalArgumentException(
-          "TypeCreator of " + classToken.getRawType() + " is not register.");
-
-    FieldRef<?> ref = valueDecoderContext.getRef();
-    Class<?> fieldType = ref.getTypeToken().getRawType();
-    CreationContextImpl creationContext = new CreationContextImpl();
-    if (fieldType.equals(String.class)) {
-      creationContext.put(ref, reader.nextString());
-      return creator.create(creationContext);
-    } else if (fieldType.equals(boolean.class)) {
-      creationContext.put(ref, reader.nextBoolean());
-      return creator.create(creationContext);
-    } else if (fieldType.equals(int.class)) {
-      creationContext.put(ref, reader.nextInt());
-      return creator.create(creationContext);
-    } else if (fieldType.equals(long.class)) {
-      creationContext.put(ref, reader.nextLong());
-      return creator.create(creationContext);
-    } else if (fieldType.equals(double.class)) {
-      creationContext.put(ref, reader.nextDouble());
-      return creator.create(creationContext);
-    } else {
-      throw new EncodingException(classToken + " is not supported for ValueDecoder");
+    ValueDecoder<T> valueDecoder = (ValueDecoder<T>) valueDecoders.get(classToken.getRawType());
+    if (valueDecoder != null) {
+      return valueDecoder.decode(ValueDecoderContextImpl.from(reader));
     }
+    throw new EncodingException(classToken + " didn't have an ValueDecoder registered.");
   }
 
   private <T> T decodeClassToken(TypeToken.ClassToken<T> classToken) throws IOException {
@@ -475,19 +451,5 @@ public class JsonDataDecoderContext implements DataDecoder {
     objectDecoderContexts.put(classToken, objectDecoderCtx);
     typeCreators.put(classToken, creator);
     return objectDecoderCtx;
-  }
-
-  private ValueDecoderContextImpl getValueDecodersCtx(TypeToken.ClassToken<?> classToken) {
-    if (valueDecoderContexts.containsKey(classToken)) {
-      return valueDecoderContexts.get(classToken);
-    }
-    ValueDecoder<?> objectDecoder = valueDecoders.get(classToken.getRawType());
-    if (objectDecoder == null)
-      throw new IllegalArgumentException(classToken.getRawType() + " is not register.");
-    ValueDecoderContextImpl valueDecoderCtx = new ValueDecoderContextImpl();
-    TypeCreator<?> creator = objectDecoder.decode(valueDecoderCtx);
-    valueDecoderContexts.put(classToken, valueDecoderCtx);
-    typeCreators.put(classToken, creator);
-    return valueDecoderCtx;
   }
 }

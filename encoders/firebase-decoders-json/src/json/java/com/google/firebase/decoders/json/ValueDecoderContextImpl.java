@@ -14,78 +14,46 @@
 
 package com.google.firebase.decoders.json;
 
+import android.util.JsonReader;
 import androidx.annotation.NonNull;
-import com.google.firebase.decoders.FieldRef;
-import com.google.firebase.decoders.TypeToken;
 import com.google.firebase.decoders.ValueDecoderContext;
-import com.google.firebase.encoders.EncodingException;
+import java.io.IOException;
 
 class ValueDecoderContextImpl implements ValueDecoderContext {
 
-  private FieldRef<?> ref;
+  private final JsonReader reader;
 
-  ValueDecoderContextImpl() {}
+  static ValueDecoderContext from(JsonReader reader) {
+    return new ValueDecoderContextImpl(reader);
+  }
 
-  FieldRef<?> getRef() {
-    return ref;
+  private ValueDecoderContextImpl(JsonReader reader) {
+    this.reader = reader;
   }
 
   @NonNull
   @Override
-  public FieldRef.Boxed<String> decodeString() {
-    if (isDecoded()) {
-      throw new EncodingException("ValueDecoder can only be decoded once.");
-    }
-    FieldRef.Boxed<String> ref = FieldRef.of(TypeToken.of(String.class));
-    this.ref = ref;
-    return ref;
+  public String decodeString() throws IOException {
+    return reader.nextString();
   }
 
-  @NonNull
   @Override
-  public FieldRef.Primitive<Boolean> decodeBoolean() {
-    if (isDecoded()) {
-      throw new EncodingException("ValueDecoder can only be decoded once.");
-    }
-    FieldRef.Primitive<Boolean> ref = FieldRef.BOOLEAN;
-    this.ref = ref;
-    return ref;
+  public boolean decodeBoolean() throws IOException {
+    return reader.nextBoolean();
   }
 
-  @NonNull
   @Override
-  public FieldRef.Primitive<Integer> decodeInteger() {
-    if (isDecoded()) {
-      throw new EncodingException("ValueDecoder can only be decoded once.");
-    }
-    FieldRef.Primitive<Integer> ref = FieldRef.INT;
-    this.ref = ref;
-    return ref;
+  public int decodeInteger() throws IOException {
+    return reader.nextInt();
   }
 
-  @NonNull
   @Override
-  public FieldRef.Primitive<Long> decodeLong() {
-    if (isDecoded()) {
-      throw new EncodingException("ValueDecoder can only be decoded once.");
-    }
-    FieldRef.Primitive<Long> ref = FieldRef.LONG;
-    this.ref = ref;
-    return ref;
+  public long decodeLong() throws IOException {
+    return reader.nextLong();
   }
 
-  @NonNull
   @Override
-  public FieldRef.Primitive<Double> decodeDouble() {
-    if (isDecoded()) {
-      throw new EncodingException("ValueDecoder can only be decoded once.");
-    }
-    FieldRef.Primitive<Double> ref = FieldRef.DOUBLE;
-    this.ref = ref;
-    return ref;
-  }
-
-  private boolean isDecoded() {
-    return ref != null;
+  public double decodeDouble() throws IOException {
+    return reader.nextDouble();
   }
 }

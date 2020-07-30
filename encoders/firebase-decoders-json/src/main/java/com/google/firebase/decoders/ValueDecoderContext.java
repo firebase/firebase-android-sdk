@@ -15,49 +15,29 @@
 package com.google.firebase.decoders;
 
 import androidx.annotation.NonNull;
+import java.io.IOException;
 
 /**
  * {@link ValueDecoderContext} enables {@link ValueDecoder} to decode objects. {@link
  * ValueDecoderContext} should keep its decoding logic into a {@link ValueDecoderContext}. Decoding
- * method inside {@link ValueDecoderContext} should only be called once to indicate which value was
- * used to represent the object and kept a {@link FieldRef} to retrieve decoded value from {@link
- * CreationContext}.
+ * method inside {@link ValueDecoderContext} should only be called once to retrieve decoded value.
  *
  * <p>Note: Object decoded by {@link ValueDecoder} was represented as a single or primitive value.
  */
 public interface ValueDecoderContext {
-  /**
-   * Indicate Object was represented by {@code String}, returned {@link FieldRef} will be used to
-   * retrieve decoded value from {@link CreationContext}
-   */
+  /** Indicate Object was represented by {@code String}, , return decoded value. */
   @NonNull
-  FieldRef.Boxed<String> decodeString();
+  String decodeString() throws IOException;
 
-  /**
-   * Indicate Object was represented by {@code boolean}, returned {@link FieldRef} will be used to
-   * retrieve decoded value from {@link CreationContext}
-   */
-  @NonNull
-  FieldRef.Primitive<Boolean> decodeBoolean();
+  /** Indicate Object was represented by {@code boolean}, return decoded value. */
+  boolean decodeBoolean() throws IOException;
 
-  /**
-   * Indicate Object was represented by {@code int}, returned {@link FieldRef} will be used to
-   * retrieve decoded value from {@link CreationContext}
-   */
-  @NonNull
-  FieldRef.Primitive<Integer> decodeInteger();
+  /** Indicate Object was represented by {@code int}, return decoded value. */
+  int decodeInteger() throws IOException;
 
-  /**
-   * Indicate Object was represented by {@code long}, returned {@link FieldRef} will be used to
-   * retrieve decoded value from {@link CreationContext}
-   */
-  @NonNull
-  FieldRef.Primitive<Long> decodeLong();
+  /** Indicate Object was represented by {@code long}, return decoded value. */
+  long decodeLong() throws IOException;
 
-  /**
-   * Indicate Object was represented by {@code double}, returned {@link FieldRef} will be used to
-   * retrieve decoded value from {@link CreationContext}
-   */
-  @NonNull
-  FieldRef.Primitive<Double> decodeDouble();
+  /** Indicate Object was represented by {@code double}, return decoded value. */
+  double decodeDouble() throws IOException;
 }
