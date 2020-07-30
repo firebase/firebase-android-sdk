@@ -20,10 +20,6 @@ package com.google.firebase.decoders {
     method @NonNull public <T> T decode(@NonNull java.io.InputStream, @NonNull com.google.firebase.decoders.TypeToken<T>) throws java.io.IOException;
   }
 
-  public interface Decoder<TValue, TContext> {
-    method @NonNull public com.google.firebase.decoders.TypeCreator<TValue> decode(@NonNull TContext);
-  }
-
   public interface DecoderConfig<T extends com.google.firebase.decoders.DecoderConfig<T>> {
     method @NonNull public <U> T register(@NonNull Class<U>, @NonNull com.google.firebase.decoders.ObjectDecoder<? extends U>);
     method @NonNull public <U> T register(@NonNull Class<U>, @NonNull com.google.firebase.decoders.ValueDecoder<? extends U>);
