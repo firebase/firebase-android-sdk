@@ -73,12 +73,6 @@ public class DataCollectionArbiter {
         : firebaseApp.isDataCollectionDefaultEnabled();
   }
 
-  public Task<Void> waitForAutomaticDataCollectionEnabled() {
-    synchronized (taskLock) {
-      return dataCollectionEnabledTask.getTask();
-    }
-  }
-
   public synchronized void setCrashlyticsDataCollectionEnabled(Boolean enabled) {
     crashlyticsDataCollectionEnabled =
         (enabled != null)
@@ -98,6 +92,12 @@ public class DataCollectionArbiter {
           taskResolved = false;
         }
       }
+    }
+  }
+
+  public Task<Void> waitForAutomaticDataCollectionEnabled() {
+    synchronized (taskLock) {
+      return dataCollectionEnabledTask.getTask();
     }
   }
 
