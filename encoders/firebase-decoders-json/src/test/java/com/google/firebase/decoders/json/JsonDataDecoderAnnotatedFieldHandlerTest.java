@@ -18,8 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import com.google.firebase.decoders.AnnotatedFieldHandler;
+import com.google.firebase.decoders.DataDecoder;
 import com.google.firebase.decoders.FieldRef;
 import com.google.firebase.decoders.ObjectDecoder;
 import com.google.firebase.decoders.ObjectDecoderContext;
@@ -35,14 +34,12 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.util.HashMap;
-import java.util.Map;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 
 @RunWith(RobolectricTestRunner.class)
-public class JsonDataDecoderExtraPropertyTest {
+public class JsonDataDecoderAnnotatedFieldHandlerTest {
 
   @Retention(RetentionPolicy.RUNTIME)
   @Target({ElementType.METHOD, ElementType.FIELD})
@@ -74,7 +71,7 @@ public class JsonDataDecoderExtraPropertyTest {
     }
   }
 
-  static class Foo {
+  private static class Foo {
     @Default("default")
     String str;
 
@@ -96,30 +93,24 @@ public class JsonDataDecoderExtraPropertyTest {
 
   @Test
   public void customizedAnnotation_shouldProcessCorrectly() throws IOException {
-    Map<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
-    Map<Class<?>, AnnotatedFieldHandler<?>> fieldHandlers = new HashMap<>();
-
-    objectDecoders.put(Foo.class, new FooObjectDecoder());
-    fieldHandlers.put(
-        Default.class,
-        new AnnotatedFieldHandler<Default>() {
-          @Nullable
-          @Override
-          public <T> T apply(
-              @NonNull Default annotation, @Nullable T fieldDecodedResult, @NonNull Class<T> type) {
-            if (fieldDecodedResult == null) {
-              if (type.equals(String.class)) return (T) annotation.value();
-            }
-            return fieldDecodedResult;
-          }
-        });
-
-    JsonDataDecoderContext jsonDataDecoderContext =
-        new JsonDataDecoderContext(objectDecoders, fieldHandlers);
+    DataDecoder decoder =
+        new JsonDataDecoderBuilder()
+            .register(Foo.class, new FooObjectDecoder())
+            .register(
+                Default.class,
+                (annotation, fieldDecodedResult, type) -> {
+                  if (fieldDecodedResult == null) {
+                    if (type.equals(String.class)) {
+                      return annotation.value();
+                    }
+                  }
+                  return fieldDecodedResult;
+                })
+            .build();
 
     String json = "{\"str\":null}";
     InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
-    Foo foo = jsonDataDecoderContext.decode(input, TypeToken.of(new Safe<Foo>() {}));
+    Foo foo = decoder.decode(input, TypeToken.of(new Safe<Foo>() {}));
     assertThat(foo.str).isEqualTo("default");
   }
 }

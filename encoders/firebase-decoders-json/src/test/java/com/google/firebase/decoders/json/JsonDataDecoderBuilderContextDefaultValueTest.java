@@ -19,6 +19,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertThrows;
 
 import androidx.annotation.NonNull;
+import com.google.firebase.decoders.DataDecoder;
 import com.google.firebase.decoders.FieldRef;
 import com.google.firebase.decoders.ObjectDecoder;
 import com.google.firebase.decoders.ObjectDecoderContext;
@@ -29,8 +30,6 @@ import com.google.firebase.encoders.FieldDescriptor;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashMap;
-import java.util.Map;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -39,19 +38,17 @@ import org.robolectric.RobolectricTestRunner;
 public class JsonDataDecoderBuilderContextDefaultValueTest {
   @Test
   public void nullValueInBoxedNumericArray_shouldKeptAsNull() throws IOException {
-    Map<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
-    JsonDataDecoderContext jsonDataDecoderContext = new JsonDataDecoderContext(objectDecoders);
+    DataDecoder decoder = new JsonDataDecoderBuilder().build();
 
     String json = "[0, null]";
     InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
-    Integer[] intArr = jsonDataDecoderContext.decode(input, TypeToken.of(new Safe<Integer[]>() {}));
+    Integer[] intArr = decoder.decode(input, TypeToken.of(new Safe<Integer[]>() {}));
     assertThat(intArr).isEqualTo(new Integer[] {0, null});
   }
 
   @Test
   public void nullValueInPrimitiveNumericArray_shouldThrowException() throws IOException {
-    Map<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
-    JsonDataDecoderContext jsonDataDecoderContext = new JsonDataDecoderContext(objectDecoders);
+    DataDecoder decoder = new JsonDataDecoderBuilder().build();
 
     String json = "[null]";
     InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
@@ -59,7 +56,7 @@ public class JsonDataDecoderBuilderContextDefaultValueTest {
         "primitive element should not have null value",
         Exception.class,
         () -> {
-          jsonDataDecoderContext.decode(input, TypeToken.of(new Safe<int[]>() {}));
+          decoder.decode(input, TypeToken.of(new Safe<int[]>() {}));
         });
   }
 
@@ -182,14 +179,13 @@ public class JsonDataDecoderBuilderContextDefaultValueTest {
 
   @Test
   public void jsonInputWithNullValues_DefaultValuesAreDecodeCorrectly() throws IOException {
-    Map<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
-    objectDecoders.put(Foo.class, new FooObjectDecoder());
-    JsonDataDecoderContext jsonDataDecoderContext = new JsonDataDecoderContext(objectDecoders);
+    DataDecoder decoder =
+        new JsonDataDecoderBuilder().register(Foo.class, new FooObjectDecoder()).build();
 
     String json =
         "{\"s\":null, \"l\":null, \"d\":null, \"f\":null, \"b\":null, \"c\":null, \"ai\":null, \"ii\":null, \"ss\":null, \"ll\":null, \"dd\":null, \"ff\":null, \"bb\":null, \"cc\":null, \"str\":null, \"obj\":null, \"aii\":null}";
     InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
-    Foo foo = jsonDataDecoderContext.decode(input, TypeToken.of(Foo.class));
+    Foo foo = decoder.decode(input, TypeToken.of(Foo.class));
 
     assertThat(foo.i).isEqualTo(0);
     assertThat(foo.s).isEqualTo(0);
@@ -213,13 +209,12 @@ public class JsonDataDecoderBuilderContextDefaultValueTest {
 
   @Test
   public void jsonInputWithMissingEntries_DefaultValuesAreDecodeCorrectly() throws IOException {
-    Map<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
-    objectDecoders.put(Foo.class, new FooObjectDecoder());
-    JsonDataDecoderContext jsonDataDecoderContext = new JsonDataDecoderContext(objectDecoders);
+    DataDecoder decoder =
+        new JsonDataDecoderBuilder().register(Foo.class, new FooObjectDecoder()).build();
 
     String json = "{}";
     InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
-    Foo foo = jsonDataDecoderContext.decode(input, TypeToken.of(Foo.class));
+    Foo foo = decoder.decode(input, TypeToken.of(Foo.class));
 
     assertThat(foo.i).isEqualTo(0);
     assertThat(foo.s).isEqualTo(0);

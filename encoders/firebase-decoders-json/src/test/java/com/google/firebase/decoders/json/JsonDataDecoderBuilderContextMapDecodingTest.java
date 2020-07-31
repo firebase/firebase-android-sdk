@@ -19,6 +19,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertThrows;
 
 import androidx.annotation.NonNull;
+import com.google.firebase.decoders.DataDecoder;
 import com.google.firebase.decoders.FieldRef;
 import com.google.firebase.decoders.ObjectDecoder;
 import com.google.firebase.decoders.ObjectDecoderContext;
@@ -61,13 +62,12 @@ public class JsonDataDecoderBuilderContextMapDecodingTest {
 
   @Test
   public void nestedMap_shouldBeDecodedCorrectly() throws IOException {
-    Map<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
-    objectDecoders.put(MapFoo.class, new MapFooObjectDecoder());
-    JsonDataDecoderContext jsonDataDecoderContext = new JsonDataDecoderContext(objectDecoders);
+    DataDecoder decoder =
+        new JsonDataDecoderBuilder().register(MapFoo.class, new MapFooObjectDecoder()).build();
 
     String json = "{\"map\": {\"1\": \"1\", \"2\": \"2\"}}";
     InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
-    MapFoo mapFoo = jsonDataDecoderContext.decode(input, TypeToken.of(new Safe<MapFoo>() {}));
+    MapFoo mapFoo = decoder.decode(input, TypeToken.of(new Safe<MapFoo>() {}));
 
     assertThat(mapFoo.map.get("1")).isEqualTo("1");
     assertThat(mapFoo.map.get("2")).isEqualTo("2");
@@ -75,13 +75,12 @@ public class JsonDataDecoderBuilderContextMapDecodingTest {
 
   @Test
   public void map_shouldBeDecodedCorrectly() throws IOException {
-    Map<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
-    JsonDataDecoderContext jsonDataDecoderContext = new JsonDataDecoderContext(objectDecoders);
+    DataDecoder decoder = new JsonDataDecoderBuilder().build();
 
     String json = "{\"1.1\": \"1\", \"2.2\": \"2\"}";
     InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
     Map<Double, String> map =
-        jsonDataDecoderContext.decode(input, TypeToken.of(new Safe<HashMap<Double, String>>() {}));
+        decoder.decode(input, TypeToken.of(new Safe<HashMap<Double, String>>() {}));
 
     assertThat(map.get(1.1)).isEqualTo("1");
     assertThat(map.get(2.2)).isEqualTo("2");
@@ -106,24 +105,25 @@ public class JsonDataDecoderBuilderContextMapDecodingTest {
 
   @Test
   public void mapWithCustomizedObjectValue_shouldBeDecodedCorrectly() throws IOException {
-    Map<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
-    objectDecoders.put(SimpleFoo.class, new SimpleFooObjectDecoder());
-    JsonDataDecoderContext jsonDataDecoderContext = new JsonDataDecoderContext(objectDecoders);
+    DataDecoder decoder =
+        new JsonDataDecoderBuilder()
+            .register(SimpleFoo.class, new SimpleFooObjectDecoder())
+            .build();
 
     String json = "{\"1\": {\"i\":1}}";
     InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
     Map<String, SimpleFoo> map =
-        jsonDataDecoderContext.decode(
-            input, TypeToken.of(new Safe<HashMap<String, SimpleFoo>>() {}));
+        decoder.decode(input, TypeToken.of(new Safe<HashMap<String, SimpleFoo>>() {}));
 
     assertThat(map.get("1").i).isEqualTo(1);
   }
 
   @Test
   public void mapWithCustomizedObjectKey_shouldThrowException() throws IOException {
-    Map<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
-    objectDecoders.put(SimpleFoo.class, new SimpleFooObjectDecoder());
-    JsonDataDecoderContext jsonDataDecoderContext = new JsonDataDecoderContext(objectDecoders);
+    DataDecoder decoder =
+        new JsonDataDecoderBuilder()
+            .register(SimpleFoo.class, new SimpleFooObjectDecoder())
+            .build();
 
     String json = "{{\"i\":1}: \"1\"}";
     InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
@@ -132,15 +132,13 @@ public class JsonDataDecoderBuilderContextMapDecodingTest {
         "Customized Object cannot be used as Map key.",
         IllegalArgumentException.class,
         () -> {
-          jsonDataDecoderContext.decode(
-              input, TypeToken.of(new Safe<HashMap<SimpleFoo, String>>() {}));
+          decoder.decode(input, TypeToken.of(new Safe<HashMap<SimpleFoo, String>>() {}));
         });
   }
 
   @Test
   public void mapContainsDuplicateKeys_shouldThrowException() throws IOException {
-    Map<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
-    JsonDataDecoderContext jsonDataDecoderContext = new JsonDataDecoderContext(objectDecoders);
+    DataDecoder decoder = new JsonDataDecoderBuilder().build();
 
     String json = "{\"1\": \"1\", \"1\": \"2\"}";
     InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
@@ -149,35 +147,31 @@ public class JsonDataDecoderBuilderContextMapDecodingTest {
         "duplicate key found",
         IllegalArgumentException.class,
         () -> {
-          jsonDataDecoderContext.decode(
-              input, TypeToken.of(new Safe<HashMap<String, String>>() {}));
+          decoder.decode(input, TypeToken.of(new Safe<HashMap<String, String>>() {}));
         });
   }
 
   @Test
   public void map_shouldDecodedAsHashMapClassInDefault() throws IOException {
-    Map<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
-    JsonDataDecoderContext jsonDataDecoderContext = new JsonDataDecoderContext(objectDecoders);
+    DataDecoder decoder = new JsonDataDecoderBuilder().build();
 
     String json = "{\"1\": \"1\"}";
     InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
 
     Map<String, String> map =
-        jsonDataDecoderContext.decode(input, TypeToken.of(new Safe<Map<String, String>>() {}));
+        decoder.decode(input, TypeToken.of(new Safe<Map<String, String>>() {}));
     assertThat(map instanceof HashMap).isTrue();
   }
 
   @Test
   public void sortedMap_shouldDecodedAsHashMapClassInDefault() throws IOException {
-    Map<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
-    JsonDataDecoderContext jsonDataDecoderContext = new JsonDataDecoderContext(objectDecoders);
+    DataDecoder decoder = new JsonDataDecoderBuilder().build();
 
     String json = "{\"1\": \"1\"}";
     InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
 
     SortedMap<String, String> map =
-        jsonDataDecoderContext.decode(
-            input, TypeToken.of(new Safe<SortedMap<String, String>>() {}));
+        decoder.decode(input, TypeToken.of(new Safe<SortedMap<String, String>>() {}));
     assertThat(map instanceof TreeMap).isTrue();
   }
 }
