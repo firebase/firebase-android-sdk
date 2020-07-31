@@ -34,7 +34,6 @@ import java.lang.reflect.Array;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -51,32 +50,21 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 public class JsonDataDecoderContext implements DataDecoder {
-  private Map<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
   private Map<TypeToken.ClassToken<?>, ObjectDecoderContextImpl<?>> objectDecoderContexts =
       new HashMap<>();
   private Map<TypeToken.ClassToken<?>, TypeCreator<?>> typeCreators = new HashMap<>();
   private JsonReader reader;
-  private final Map<Class<?>, AnnotatedFieldHandler<?>> fieldHandlers;
-  private Map<Class<?>, ValueDecoder<?>> valueDecoders = new HashMap<>();
-
-  JsonDataDecoderContext(@NonNull Map<Class<?>, ObjectDecoder<?>> objectDecoders) {
-    this(objectDecoders, Collections.emptyMap(), Collections.emptyMap());
-  }
+  private final Map<Class<?>, ValueDecoder<?>> valueDecoders;
+  private final Map<Class<?>, ObjectDecoder<?>> objectDecoders;
+  private final Map<Class<? extends Annotation>, AnnotatedFieldHandler<?>> fieldHandlers;
 
   JsonDataDecoderContext(
       @NonNull Map<Class<?>, ObjectDecoder<?>> objectDecoders,
-      @NonNull Map<Class<?>, AnnotatedFieldHandler<?>> fieldHandlers) {
-    this.objectDecoders = objectDecoders;
-    this.fieldHandlers = fieldHandlers;
-  }
-
-  JsonDataDecoderContext(
-      @NonNull Map<Class<?>, ObjectDecoder<?>> objectDecoders,
-      @NonNull Map<Class<?>, AnnotatedFieldHandler<?>> fieldHandlers,
-      @NonNull Map<Class<?>, ValueDecoder<?>> valueDecoders) {
-    this.objectDecoders = objectDecoders;
-    this.fieldHandlers = fieldHandlers;
+      @NonNull Map<Class<?>, ValueDecoder<?>> valueDecoders,
+      @NonNull Map<Class<? extends Annotation>, AnnotatedFieldHandler<?>> fieldHandlers) {
     this.valueDecoders = valueDecoders;
+    this.objectDecoders = objectDecoders;
+    this.fieldHandlers = fieldHandlers;
   }
 
   @NonNull

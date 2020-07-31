@@ -15,6 +15,7 @@
 package com.google.firebase.decoders;
 
 import androidx.annotation.NonNull;
+import java.lang.annotation.Annotation;
 
 /**
  * Implemented by concrete {@link DataDecoder} builders.
@@ -27,4 +28,8 @@ public interface DecoderConfig<T extends DecoderConfig<T>> {
 
   @NonNull
   <U> T register(@NonNull Class<U> clazz, @NonNull ValueDecoder<? extends U> valueDecoder);
+
+  @NonNull
+  <U extends Annotation> T register(
+      @NonNull Class<U> clazz, @NonNull AnnotatedFieldHandler<? extends U> objectDecoder);
 }
