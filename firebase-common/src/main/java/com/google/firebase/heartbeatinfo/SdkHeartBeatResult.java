@@ -16,6 +16,7 @@ package com.google.firebase.heartbeatinfo;
 
 import com.google.auto.value.AutoValue;
 
+/** Stores the time when the sdk was used and if a sdk heartbeat should be sent for the same. */
 @AutoValue
 public abstract class SdkHeartBeatResult implements Comparable<SdkHeartBeatResult> {
   public abstract String getSdkName();
