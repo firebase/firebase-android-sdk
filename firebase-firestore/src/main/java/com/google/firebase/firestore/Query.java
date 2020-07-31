@@ -41,6 +41,8 @@ import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.ServerTimestamps;
 import com.google.firebase.firestore.model.Values;
+import com.google.firebase.firestore.performance.PerformanceTraceClient;
+import com.google.firebase.firestore.performance.Timer;
 import com.google.firebase.firestore.util.Executors;
 import com.google.firebase.firestore.util.Util;
 import com.google.firestore.v1.ArrayValue;
@@ -50,6 +52,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import com.google.firebase.perf.metrics.Trace;
 
 /**
  * A {@code Query} which you can read or listen to. You can also construct refined {@code Query}
@@ -850,6 +853,42 @@ public class Query {
    */
   @NonNull
   public Task<QuerySnapshot> get(@NonNull Source source) {
+    PerformanceTraceClient performanceTracer = PerformanceTraceClient.getInstance();
+    Trace queryTrace = performanceTracer.newTrace("name_of_query");
+
+    long recordsFetchedFromServer = 4;
+    long recordsFetchedFromCache = 9;
+
+    // We create a timer that mimics the duration metric that a query_trace provides, since we want to measure query execution time per document
+    Timer queryExecutionTimer = performanceTracer.newTimer();
+
+    //Read from cache
+    Timer cacheReadTimer = performanceTracer.newTimer();
+    cacheReadTimer.stop();
+    queryTrace.putMetric("cache_read_latency_milliseconds", cacheReadTimer.getElapsedTimeMillis());
+    queryTrace.putMetric("cache_result_set_size", recordsFetchedFromCache);
+
+
+    //Fetch from service
+    Timer serviceFetchTImer = performanceTracer.newTimer();
+    queryTrace.putMetric("server_result_set_size", recordsFetchedFromServer);
+    queryTrace.putMetric("total_result_size", recordsFetchedFromServer + recordsFetchedFromCache);
+    serviceFetchTImer.stop();
+    queryTrace.putMetric("service_call_latency_milliseconds", serviceFetchTImer.getElapsedTimeMillis());
+    queryTrace.putMetric("duration_per_record", queryExecutionTimer.getElapsedTimeMillis()/recordsFetchedFromServer + recordsFetchedFromCache);
+
+    //We can also add other metrics that might be useful: serialization_latency_milliseconds, deserialization_latency_milliseconds, client_side_sorting_or_filtering_latency_if_any
+
+    //    Attach attributes that any of these metrics can be filtered by. Limit 5 per trace
+    //    queryTrace.putAttribute("result", "success");
+    //    queryTrace.putAttribute("result", "AuthException");
+    //    queryTrace.putAttribute("firestore_sdk_version", "1.2.3");
+    //    queryTrace.putAttribute("offlineEnabled", "Yes/No")
+
+    //When you stop the trace, a metric called "Duration" is automatically collected. Note that you don't need to create a timer for this metric.
+    //Eg: https://firebase.corp.google.com/u/0/project/rcperfmon/performance/app/android:com.example.perfmon/details/trace/DURATION_TRACE/remote_config_fetch/duration/duration
+    queryTrace.stop();
+
     validateHasExplicitOrderByForLimitToLast();
     if (source == Source.CACHE) {
       return firestore
