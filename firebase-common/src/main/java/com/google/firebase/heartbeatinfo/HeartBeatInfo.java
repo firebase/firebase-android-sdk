@@ -15,7 +15,6 @@
 package com.google.firebase.heartbeatinfo;
 
 import androidx.annotation.NonNull;
-
 import java.util.List;
 
 /**

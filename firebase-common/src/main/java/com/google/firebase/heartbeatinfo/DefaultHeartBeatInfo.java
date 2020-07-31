@@ -20,7 +20,6 @@ import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.Dependency;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -54,33 +53,31 @@ public class DefaultHeartBeatInfo implements HeartBeatInfo {
     return HeartBeat.NONE;
   }
 
-
   @Override
   public List<HeartBeatResult> getAndClearStoredHeartBeatInfo() {
-      List<SdkHeartBeatResult> sdkHeartBeatResults = storage.getStoredHeartBeats(true);
-      ArrayList<HeartBeatResult> heartBeatResults = new ArrayList<>();
-      long lastGlobalHeartBeat = storage.getLastGlobalHeartBeat();
-      long timeElapsed = 0;
-      boolean shouldSendGlobalHeartBeat = false;
-      for (int i = 0; i < sdkHeartBeatResults.size(); i++) {
-          SdkHeartBeatResult sdkHeartBeatResult = sdkHeartBeatResults.get(i);
-          HeartBeat heartBeat = HeartBeat.NONE;
-          timeElapsed = sdkHeartBeatResult.getMillis() - lastGlobalHeartBeat;
-          shouldSendGlobalHeartBeat = (timeElapsed >= (long) 1000 * 60 * 60 * 24);
-          if (shouldSendGlobalHeartBeat && sdkHeartBeatResult.getShouldSendSdkHeartBeat()) {
-              heartBeat = HeartBeat.COMBINED;
-          } else if (shouldSendGlobalHeartBeat && !sdkHeartBeatResult.getShouldSendSdkHeartBeat()) {
-              heartBeat = HeartBeat.GLOBAL;
-          } else if (sdkHeartBeatResult.getShouldSendSdkHeartBeat()) {
-              heartBeat = HeartBeat.SDK;
-          }
-          heartBeatResults.add(
-                  HeartBeatResult.create(
-                          sdkHeartBeatResult.getSdkName(), sdkHeartBeatResult.getMillis(), heartBeat));
+    List<SdkHeartBeatResult> sdkHeartBeatResults = storage.getStoredHeartBeats(true);
+    ArrayList<HeartBeatResult> heartBeatResults = new ArrayList<>();
+    long lastGlobalHeartBeat = storage.getLastGlobalHeartBeat();
+    long timeElapsed = 0;
+    boolean shouldSendGlobalHeartBeat = false;
+    for (int i = 0; i < sdkHeartBeatResults.size(); i++) {
+      SdkHeartBeatResult sdkHeartBeatResult = sdkHeartBeatResults.get(i);
+      HeartBeat heartBeat = HeartBeat.NONE;
+      timeElapsed = sdkHeartBeatResult.getMillis() - lastGlobalHeartBeat;
+      shouldSendGlobalHeartBeat = (timeElapsed >= (long) 1000 * 60 * 60 * 24);
+      if (shouldSendGlobalHeartBeat && sdkHeartBeatResult.getShouldSendSdkHeartBeat()) {
+        heartBeat = HeartBeat.COMBINED;
+      } else if (shouldSendGlobalHeartBeat && !sdkHeartBeatResult.getShouldSendSdkHeartBeat()) {
+        heartBeat = HeartBeat.GLOBAL;
+      } else if (sdkHeartBeatResult.getShouldSendSdkHeartBeat()) {
+        heartBeat = HeartBeat.SDK;
       }
-      return heartBeatResults;
+      heartBeatResults.add(
+          HeartBeatResult.create(
+              sdkHeartBeatResult.getSdkName(), sdkHeartBeatResult.getMillis(), heartBeat));
+    }
+    return heartBeatResults;
   }
-
 
   @Override
   public void storeHeartBeatInfo(@NonNull String heartBeatTag) {

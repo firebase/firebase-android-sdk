@@ -20,11 +20,10 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.runner.AndroidJUnit4;
+import java.util.List;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import java.util.List;
 
 @RunWith(AndroidJUnit4.class)
 public class HeartBeatInfoStorageTest {
@@ -67,18 +66,18 @@ public class HeartBeatInfoStorageTest {
 
   @Test
   public void getLastGlobalHeartBeat_returnsCorrectly() {
-      sharedPreferences.edit().putLong(GLOBAL, 1).apply();
-      assertThat(heartBeatInfoStorage.getLastGlobalHeartBeat()).isEqualTo(1);
+    sharedPreferences.edit().putLong(GLOBAL, 1).apply();
+    assertThat(heartBeatInfoStorage.getLastGlobalHeartBeat()).isEqualTo(1);
   }
 
   @Test
   public void storeHeartBeatInformation_storesProperly() {
-      heartBeatInfoStorage.storeHeartBeatInformation(testSdk, 200, true);
-      assertThat(heartBeatSharedPreferences.getString("200", "-1")).isEqualTo(testSdk+":"+true);
+    heartBeatInfoStorage.storeHeartBeatInformation(testSdk, 200, true);
+    assertThat(heartBeatSharedPreferences.getString("200", "-1")).isEqualTo(testSdk + ":" + true);
   }
 
   @Test
-  public void getStoredHeartBeat_returnsThreeStoredHeartBeats_noClear(){
+  public void getStoredHeartBeat_returnsThreeStoredHeartBeats_noClear() {
     heartBeatInfoStorage.storeHeartBeatInformation(testSdk, 200, true);
     heartBeatInfoStorage.storeHeartBeatInformation(testSdk, 198, false);
     heartBeatInfoStorage.storeHeartBeatInformation(testSdk, 199, true);
@@ -92,7 +91,7 @@ public class HeartBeatInfoStorageTest {
   }
 
   @Test
-  public void getStoredHeartBeat_returnsThreeStoredHeartBeats_withClear(){
+  public void getStoredHeartBeat_returnsThreeStoredHeartBeats_withClear() {
     heartBeatInfoStorage.storeHeartBeatInformation(testSdk, 200, true);
     heartBeatInfoStorage.storeHeartBeatInformation(testSdk, 198, false);
     heartBeatInfoStorage.storeHeartBeatInformation(testSdk, 199, true);
@@ -104,7 +103,6 @@ public class HeartBeatInfoStorageTest {
     result = heartBeatInfoStorage.getStoredHeartBeats(false);
     assertThat(result.size()).isEqualTo(0);
   }
-
 
   @Test
   public void shouldSendGlobalHeartBeat_answerIsYes() {

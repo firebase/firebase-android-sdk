@@ -18,7 +18,6 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
-import com.google.firebase.heartbeatinfo.HeartBeatInfo.HeartBeat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -71,7 +70,7 @@ class HeartBeatInfoStorage {
         .apply();
   }
 
-  synchronized long getLastGlobalHeartBeat(){
+  synchronized long getLastGlobalHeartBeat() {
     return sharedPreferences.getLong(GLOBAL, -1);
   }
 
@@ -85,7 +84,7 @@ class HeartBeatInfoStorage {
       sdkHeartBeatResults.add(SdkHeartBeatResult.create(sdkName, millis, shouldSendSdkHeartbeat));
     }
     Collections.sort(sdkHeartBeatResults);
-    if(shouldClear) clearStoredHeartBeats();
+    if (shouldClear) clearStoredHeartBeats();
     return sdkHeartBeatResults;
   }
 
