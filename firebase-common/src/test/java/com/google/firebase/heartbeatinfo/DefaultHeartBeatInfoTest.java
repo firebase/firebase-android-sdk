@@ -57,7 +57,7 @@ public class DefaultHeartBeatInfoTest {
   @Test
   public void storeHeartBeatCode_sdkButNoGlobalHeartBeat() {
     ArrayList<SdkHeartBeatResult> returnResults = new ArrayList<>();
-    returnResults.add(SdkHeartBeatResult.create(testSdk, 1, true));
+    returnResults.add(SdkHeartBeatResult.create(testSdk, 1000000001, true));
     when(storage.shouldSendSdkHeartBeat(anyString(), anyLong(), anyBoolean()))
         .thenReturn(Boolean.TRUE);
     when(storage.shouldSendGlobalHeartBeat(anyLong(), anyBoolean())).thenReturn(Boolean.FALSE);
@@ -68,7 +68,8 @@ public class DefaultHeartBeatInfoTest {
     verify(storage, times(1)).storeHeartBeatInformation(anyString(), anyLong(), eq(true));
     assertThat(results.size()).isEqualTo(1);
     assertThat(results.get(0))
-        .isEqualTo(HeartBeatResult.create(testSdk, 1, HeartBeatInfo.HeartBeat.SDK));
+        .isEqualTo(HeartBeatResult.create(testSdk, 1000000001, HeartBeatInfo.HeartBeat.SDK));
+    verify(storage, times(1)).updateGlobalHeartBeat(1000000000);
   }
 
   @Test
@@ -86,6 +87,7 @@ public class DefaultHeartBeatInfoTest {
     assertThat(results.size()).isEqualTo(1);
     assertThat(results.get(0))
         .isEqualTo(HeartBeatResult.create(testSdk, 100000000, HeartBeatInfo.HeartBeat.GLOBAL));
+    verify(storage, times(1)).updateGlobalHeartBeat(100000000);
   }
 
   @Test
@@ -103,13 +105,15 @@ public class DefaultHeartBeatInfoTest {
     assertThat(results.size()).isEqualTo(1);
     assertThat(results.get(0))
         .isEqualTo(HeartBeatResult.create(testSdk, 100000000, HeartBeatInfo.HeartBeat.COMBINED));
+    verify(storage, times(1)).updateGlobalHeartBeat(100000000);
   }
 
   @Test
-  public void storeHeartBeatCode_TwoHeartBeats() {
+  public void storeHeartBeatCode_ThreeHeartBeats() {
     ArrayList<SdkHeartBeatResult> returnResults = new ArrayList<>();
     returnResults.add(SdkHeartBeatResult.create(testSdk, 100000000, true));
-    returnResults.add(SdkHeartBeatResult.create(testSdk, 1, false));
+    returnResults.add(SdkHeartBeatResult.create(testSdk, 200000000, false));
+    returnResults.add(SdkHeartBeatResult.create(testSdk, 200002000, true));
     when(storage.shouldSendSdkHeartBeat(anyString(), anyLong(), anyBoolean()))
         .thenReturn(Boolean.TRUE);
     when(storage.shouldSendGlobalHeartBeat(anyLong(), anyBoolean())).thenReturn(Boolean.TRUE);
@@ -118,11 +122,14 @@ public class DefaultHeartBeatInfoTest {
     heartBeatInfo.storeHeartBeatInfo(testSdk);
     List<HeartBeatResult> results = heartBeatInfo.getAndClearStoredHeartBeatInfo();
     verify(storage, times(1)).storeHeartBeatInformation(anyString(), anyLong(), eq(true));
-    assertThat(results.size()).isEqualTo(2);
+    assertThat(results.size()).isEqualTo(3);
     assertThat(results.get(0))
         .isEqualTo(HeartBeatResult.create(testSdk, 100000000, HeartBeatInfo.HeartBeat.COMBINED));
     assertThat(results.get(1))
-        .isEqualTo(HeartBeatResult.create(testSdk, 1, HeartBeatInfo.HeartBeat.NONE));
+        .isEqualTo(HeartBeatResult.create(testSdk, 200000000, HeartBeatInfo.HeartBeat.GLOBAL));
+    assertThat(results.get(2))
+        .isEqualTo(HeartBeatResult.create(testSdk, 200002000, HeartBeatInfo.HeartBeat.SDK));
+    verify(storage, times(1)).updateGlobalHeartBeat(200000000);
   }
 
   @Test

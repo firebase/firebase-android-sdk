@@ -72,9 +72,15 @@ public class DefaultHeartBeatInfo implements HeartBeatInfo {
       } else if (sdkHeartBeatResult.getShouldSendSdkHeartBeat()) {
         heartBeat = HeartBeat.SDK;
       }
+      if (shouldSendGlobalHeartBeat) {
+        lastGlobalHeartBeat = sdkHeartBeatResult.getMillis();
+      }
       heartBeatResults.add(
           HeartBeatResult.create(
               sdkHeartBeatResult.getSdkName(), sdkHeartBeatResult.getMillis(), heartBeat));
+    }
+    if (lastGlobalHeartBeat > 0) {
+      storage.updateGlobalHeartBeat(lastGlobalHeartBeat);
     }
     return heartBeatResults;
   }

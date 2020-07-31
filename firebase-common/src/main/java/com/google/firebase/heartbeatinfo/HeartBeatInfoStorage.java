@@ -74,6 +74,10 @@ class HeartBeatInfoStorage {
     return sharedPreferences.getLong(GLOBAL, -1);
   }
 
+  synchronized void updateGlobalHeartBeat(long millis) {
+    sharedPreferences.edit().putLong(GLOBAL, millis).apply();
+  }
+
   synchronized List<SdkHeartBeatResult> getStoredHeartBeats(boolean shouldClear) {
     ArrayList<SdkHeartBeatResult> sdkHeartBeatResults = new ArrayList<>();
     for (Map.Entry<String, ?> entry : heartBeatSharedPreferences.getAll().entrySet()) {
