@@ -17,6 +17,7 @@ package com.google.firebase.crashlytics.internal.common;
 import android.content.Context;
 import android.util.Log;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
@@ -247,7 +248,7 @@ public class CrashlyticsCore {
 
   // endregion
 
-  public void setCrashlyticsCollectionEnabled(Boolean enabled) {
+  public void setCrashlyticsCollectionEnabled(@Nullable Boolean enabled) {
     dataCollectionArbiter.setCrashlyticsDataCollectionEnabled(enabled);
   }
 
