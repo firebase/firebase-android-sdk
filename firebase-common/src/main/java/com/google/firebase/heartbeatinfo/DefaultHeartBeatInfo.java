@@ -65,11 +65,9 @@ public class DefaultHeartBeatInfo implements HeartBeatInfo {
       HeartBeat heartBeat = HeartBeat.NONE;
       timeElapsed = sdkHeartBeatResult.getMillis() - lastGlobalHeartBeat;
       shouldSendGlobalHeartBeat = (timeElapsed >= (long) 1000 * 60 * 60 * 24);
-      if (shouldSendGlobalHeartBeat && sdkHeartBeatResult.getShouldSendSdkHeartBeat()) {
+      if (shouldSendGlobalHeartBeat) {
         heartBeat = HeartBeat.COMBINED;
-      } else if (shouldSendGlobalHeartBeat && !sdkHeartBeatResult.getShouldSendSdkHeartBeat()) {
-        heartBeat = HeartBeat.GLOBAL;
-      } else if (sdkHeartBeatResult.getShouldSendSdkHeartBeat()) {
+      } else {
         heartBeat = HeartBeat.SDK;
       }
       if (shouldSendGlobalHeartBeat) {
@@ -90,7 +88,7 @@ public class DefaultHeartBeatInfo implements HeartBeatInfo {
     long presentTime = System.currentTimeMillis();
     boolean shouldSendSdkHB = storage.shouldSendSdkHeartBeat(heartBeatTag, presentTime, true);
     if (shouldSendSdkHB) {
-      storage.storeHeartBeatInformation(heartBeatTag, presentTime, shouldSendSdkHB);
+      storage.storeHeartBeatInformation(heartBeatTag, presentTime);
     }
   }
 

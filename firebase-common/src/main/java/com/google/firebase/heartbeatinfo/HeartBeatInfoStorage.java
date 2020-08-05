@@ -62,12 +62,8 @@ class HeartBeatInfoStorage {
     return instance;
   }
 
-  synchronized void storeHeartBeatInformation(
-      String heartBeatTag, long millis, boolean sdkHeartBeat) {
-    this.heartBeatSharedPreferences
-        .edit()
-        .putString(String.valueOf(millis), heartBeatTag + ":" + sdkHeartBeat)
-        .apply();
+  synchronized void storeHeartBeatInformation(String heartBeatTag, long millis) {
+    this.heartBeatSharedPreferences.edit().putString(String.valueOf(millis), heartBeatTag).apply();
   }
 
   synchronized long getLastGlobalHeartBeat() {
@@ -82,10 +78,8 @@ class HeartBeatInfoStorage {
     ArrayList<SdkHeartBeatResult> sdkHeartBeatResults = new ArrayList<>();
     for (Map.Entry<String, ?> entry : heartBeatSharedPreferences.getAll().entrySet()) {
       long millis = Long.parseLong(entry.getKey());
-      String[] parts = ((String) entry.getValue()).split(":");
-      String sdkName = parts[0];
-      boolean shouldSendSdkHeartbeat = Boolean.valueOf(parts[1]);
-      sdkHeartBeatResults.add(SdkHeartBeatResult.create(sdkName, millis, shouldSendSdkHeartbeat));
+      String sdkName = ((String) entry.getValue());
+      sdkHeartBeatResults.add(SdkHeartBeatResult.create(sdkName, millis));
     }
     Collections.sort(sdkHeartBeatResults);
     if (shouldClear) clearStoredHeartBeats();

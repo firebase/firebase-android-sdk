@@ -23,11 +23,8 @@ public abstract class SdkHeartBeatResult implements Comparable<SdkHeartBeatResul
 
   public abstract long getMillis();
 
-  public abstract boolean getShouldSendSdkHeartBeat();
-
-  public static SdkHeartBeatResult create(
-      String sdkName, long millis, boolean shouldSendSdkHeartBeat) {
-    return new AutoValue_SdkHeartBeatResult(sdkName, millis, shouldSendSdkHeartBeat);
+  public static SdkHeartBeatResult create(String sdkName, long millis) {
+    return new AutoValue_SdkHeartBeatResult(sdkName, millis);
   }
 
   @Override

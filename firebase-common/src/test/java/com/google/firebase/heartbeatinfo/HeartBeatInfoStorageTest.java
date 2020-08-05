@@ -72,34 +72,34 @@ public class HeartBeatInfoStorageTest {
 
   @Test
   public void storeHeartBeatInformation_storesProperly() {
-    heartBeatInfoStorage.storeHeartBeatInformation(testSdk, 200, true);
-    assertThat(heartBeatSharedPreferences.getString("200", "-1")).isEqualTo(testSdk + ":" + true);
+    heartBeatInfoStorage.storeHeartBeatInformation(testSdk, 200);
+    assertThat(heartBeatSharedPreferences.getString("200", "-1")).isEqualTo(testSdk);
   }
 
   @Test
   public void getStoredHeartBeat_returnsThreeStoredHeartBeats_noClear() {
-    heartBeatInfoStorage.storeHeartBeatInformation(testSdk, 200, true);
-    heartBeatInfoStorage.storeHeartBeatInformation(testSdk, 198, false);
-    heartBeatInfoStorage.storeHeartBeatInformation(testSdk, 199, true);
+    heartBeatInfoStorage.storeHeartBeatInformation(testSdk, 200);
+    heartBeatInfoStorage.storeHeartBeatInformation(testSdk, 198);
+    heartBeatInfoStorage.storeHeartBeatInformation(testSdk, 199);
     List<SdkHeartBeatResult> result = heartBeatInfoStorage.getStoredHeartBeats(false);
     assertThat(result.size()).isEqualTo(3);
-    assertThat(result.get(0)).isEqualTo(SdkHeartBeatResult.create(testSdk, 198, false));
-    assertThat(result.get(1)).isEqualTo(SdkHeartBeatResult.create(testSdk, 199, true));
-    assertThat(result.get(2)).isEqualTo(SdkHeartBeatResult.create(testSdk, 200, true));
+    assertThat(result.get(0)).isEqualTo(SdkHeartBeatResult.create(testSdk, 198));
+    assertThat(result.get(1)).isEqualTo(SdkHeartBeatResult.create(testSdk, 199));
+    assertThat(result.get(2)).isEqualTo(SdkHeartBeatResult.create(testSdk, 200));
     result = heartBeatInfoStorage.getStoredHeartBeats(false);
     assertThat(result.size()).isEqualTo(3);
   }
 
   @Test
   public void getStoredHeartBeat_returnsThreeStoredHeartBeats_withClear() {
-    heartBeatInfoStorage.storeHeartBeatInformation(testSdk, 200, true);
-    heartBeatInfoStorage.storeHeartBeatInformation(testSdk, 198, false);
-    heartBeatInfoStorage.storeHeartBeatInformation(testSdk, 199, true);
+    heartBeatInfoStorage.storeHeartBeatInformation(testSdk, 200);
+    heartBeatInfoStorage.storeHeartBeatInformation(testSdk, 198);
+    heartBeatInfoStorage.storeHeartBeatInformation(testSdk, 199);
     List<SdkHeartBeatResult> result = heartBeatInfoStorage.getStoredHeartBeats(true);
     assertThat(result.size()).isEqualTo(3);
-    assertThat(result.get(0)).isEqualTo(SdkHeartBeatResult.create(testSdk, 198, false));
-    assertThat(result.get(1)).isEqualTo(SdkHeartBeatResult.create(testSdk, 199, true));
-    assertThat(result.get(2)).isEqualTo(SdkHeartBeatResult.create(testSdk, 200, true));
+    assertThat(result.get(0)).isEqualTo(SdkHeartBeatResult.create(testSdk, 198));
+    assertThat(result.get(1)).isEqualTo(SdkHeartBeatResult.create(testSdk, 199));
+    assertThat(result.get(2)).isEqualTo(SdkHeartBeatResult.create(testSdk, 200));
     result = heartBeatInfoStorage.getStoredHeartBeats(false);
     assertThat(result.size()).isEqualTo(0);
   }
