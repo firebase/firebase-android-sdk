@@ -89,8 +89,7 @@ public class DefaultHeartBeatInfo implements HeartBeatInfo {
   public void storeHeartBeatInfo(@NonNull String heartBeatTag) {
     long presentTime = System.currentTimeMillis();
     boolean shouldSendSdkHB = storage.shouldSendSdkHeartBeat(heartBeatTag, presentTime, true);
-    boolean shouldSendGlobalHB = storage.shouldSendGlobalHeartBeat(presentTime, false);
-    if (shouldSendGlobalHB || shouldSendSdkHB) {
+    if (shouldSendSdkHB) {
       storage.storeHeartBeatInformation(heartBeatTag, presentTime, shouldSendSdkHB);
     }
   }
