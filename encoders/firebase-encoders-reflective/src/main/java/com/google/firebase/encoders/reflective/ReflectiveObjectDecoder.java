@@ -55,7 +55,7 @@ public class ReflectiveObjectDecoder implements ObjectDecoder<Object> {
     ObjectDecoder<U> decoder = (ObjectDecoder<U>) cache.get(type);
 
     if (decoder == null) {
-      decoder = ReflectiveObjectDecoderProvider.INSTANCE.get(type);
+      decoder = new ReflectiveObjectDecoderImpl<>();
       cache.put(type, decoder);
     }
     return decoder;
