@@ -1,6 +1,14 @@
 // Signature format: 2.0
 package com.google.firebase.encoders.reflective {
 
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @java.lang.annotation.Target(java.lang.annotation.ElementType.ANNOTATION_TYPE) public @interface Alias {
+    method public abstract Class<? extends java.lang.annotation.Annotation> value();
+  }
+
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @java.lang.annotation.Target(java.lang.annotation.ElementType.METHOD) public static @interface Alias.Property {
+    method public abstract String value();
+  }
+
   public class ReflectiveObjectDecoder implements com.google.firebase.decoders.ObjectDecoder<java.lang.Object> {
     method @NonNull public com.google.firebase.decoders.TypeCreator<java.lang.Object> decode(@NonNull com.google.firebase.decoders.ObjectDecoderContext<java.lang.Object>);
     field @NonNull public static com.google.firebase.encoders.reflective.ReflectiveObjectDecoder DEFAULT;

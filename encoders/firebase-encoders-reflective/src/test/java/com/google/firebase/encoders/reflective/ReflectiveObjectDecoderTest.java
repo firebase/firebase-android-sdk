@@ -26,6 +26,10 @@ import com.google.firebase.encoders.annotations.Encodable;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -154,5 +158,69 @@ public class ReflectiveObjectDecoderTest {
     MyFoo myFoo = decoder.decode(input, TypeToken.of(new Safe<MyFoo>() {}));
     assertThat(myFoo.s).isEqualTo("str");
     assertThat(myFoo.subFoo.i).isEqualTo(1);
+  }
+
+  @Target({ElementType.FIELD, ElementType.METHOD})
+  @Retention(RetentionPolicy.RUNTIME)
+  @Alias(Encodable.Field.class)
+  public @interface PropertyName {
+    @Alias.Property("name")
+    String value();
+  }
+
+  static class PropertyNameFoo {
+    private String str;
+
+    @PropertyName("newName")
+    public void setStr(String str) {
+      this.str = str;
+    }
+
+    public PropertyNameFoo() {}
+  }
+
+  @Test
+  public void aliasOfEncodableFieldName_ShouldDecodedCorrectly() throws IOException {
+    String json = "{\"newName\":\"str\"}";
+    InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
+    PropertyNameFoo foo = decoder.decode(input, TypeToken.of(PropertyNameFoo.class));
+    assertThat(foo.str).isEqualTo("str");
+  }
+
+  @Target({ElementType.FIELD, ElementType.METHOD})
+  @Retention(RetentionPolicy.RUNTIME)
+  @Alias(Encodable.Field.class)
+  public @interface Inline {
+    @Alias.Property("inline")
+    boolean value();
+  }
+
+  static class InlineFoo {
+    private InlineSubFoo inlineSubFoo;
+
+    @Inline(true)
+    public void setInlineSubFoo(InlineSubFoo inlineSubFoo) {
+      this.inlineSubFoo = inlineSubFoo;
+    }
+
+    public InlineFoo() {}
+  }
+
+  static class InlineSubFoo {
+    private String str;
+
+    public void setStr(String str) {
+      this.str = str;
+    }
+
+    public InlineSubFoo() {}
+  }
+
+  @Test
+  public void aliasOfEncodableFieldInline_ShouldDecodedCorrectly() throws IOException {
+    String json = "{\"str\":\"str\"}";
+    InputStream input = new ByteArrayInputStream(json.getBytes(UTF_8));
+    InlineFoo inlineFoo = decoder.decode(input, TypeToken.of(InlineFoo.class));
+    assertThat(inlineFoo.inlineSubFoo.str).isEqualTo("str");
   }
 }

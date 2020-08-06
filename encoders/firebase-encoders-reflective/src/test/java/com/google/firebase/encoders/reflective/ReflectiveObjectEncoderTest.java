@@ -22,6 +22,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.firebase.encoders.DataEncoder;
 import com.google.firebase.encoders.annotations.Encodable;
 import com.google.firebase.encoders.json.JsonDataEncoderBuilder;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.Map;
@@ -78,5 +82,112 @@ public class ReflectiveObjectEncoderTest {
                 .reader()
                 .readTree(
                     "{\"hello\":\"hello\",\"member\":{\"bool\":false},\"map\":{\"key\":22},\"bool\":false}"));
+  }
+
+  @Target({ElementType.FIELD, ElementType.METHOD})
+  @Retention(RetentionPolicy.RUNTIME)
+  @Alias(Encodable.Ignore.class)
+  public @interface Exclude {}
+
+  static class IgnoreFoo {
+    @Encodable.Ignore
+    public String getExclude() {
+      return "exclude";
+    }
+  }
+
+  static class ExcludeFoo {
+    @Exclude
+    public String getExclude() {
+      return "exclude";
+    }
+  }
+
+  @Test
+  public void getterMethodWithAliasOfEncodableIgnore_ShouldNotBeEncoded() {
+    DataEncoder encoder =
+        new JsonDataEncoderBuilder()
+            .registerFallbackEncoder(ReflectiveObjectEncoder.DEFAULT)
+            .build();
+
+    String ignoreFooResult = encoder.encode(new IgnoreFoo());
+    String excludeFooResult = encoder.encode(new ExcludeFoo());
+    assertThat(excludeFooResult).isEqualTo(ignoreFooResult);
+  }
+
+  static class EncodableFieldFoo {
+    @Encodable.Field(name = "newName")
+    public String getStr() {
+      return "str";
+    }
+  }
+
+  @Target({ElementType.FIELD, ElementType.METHOD})
+  @Retention(RetentionPolicy.RUNTIME)
+  @Alias(Encodable.Field.class)
+  public @interface PropertyName {
+    @Alias.Property("name")
+    String value();
+  }
+
+  static class PropertyNameFoo {
+    @PropertyName("newName")
+    public String getStr() {
+      return "str";
+    }
+  }
+
+  @Test
+  public void getterMethodWithAliasOfEncodableField_ShouldEncodedCorrectly() {
+    DataEncoder encoder =
+        new JsonDataEncoderBuilder()
+            .registerFallbackEncoder(ReflectiveObjectEncoder.DEFAULT)
+            .build();
+
+    String encodableFieldFooResult = encoder.encode(new EncodableFieldFoo());
+    String propertyNameFooResult = encoder.encode(new PropertyNameFoo());
+
+    assertThat(propertyNameFooResult).isEqualTo(encodableFieldFooResult);
+  }
+
+  @Target({ElementType.FIELD, ElementType.METHOD})
+  @Retention(RetentionPolicy.RUNTIME)
+  @Alias(Encodable.Field.class)
+  public @interface Inline {
+    @Alias.Property("inline")
+    boolean value();
+  }
+
+  static class EncodableInlineFoo {
+    @Encodable.Field(inline = true)
+    public SubFoo getStr() {
+      return new SubFoo();
+    }
+  }
+
+  static class InlineFoo {
+    @Inline(true)
+    public SubFoo getStr() {
+      return new SubFoo();
+    }
+  }
+
+  static class SubFoo {
+    public String getStr() {
+      return "str";
+    }
+  }
+
+  @Test
+  public void getterMethodWithAliasOfEncodableFieldInline_ShouldEncodedCorrectly() {
+    DataEncoder encoder =
+        new JsonDataEncoderBuilder()
+            .registerFallbackEncoder(ReflectiveObjectEncoder.DEFAULT)
+            .build();
+
+    String encodableInlineFooResult = encoder.encode(new EncodableInlineFoo());
+    String inlineFooResult = encoder.encode(new InlineFoo());
+
+    assertThat(inlineFooResult).isEqualTo(encodableInlineFooResult);
   }
 }
