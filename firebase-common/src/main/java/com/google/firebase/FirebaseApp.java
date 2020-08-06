@@ -275,8 +275,8 @@ public class FirebaseApp {
    * @param options represents the global {@link FirebaseOptions}
    * @param name unique name for the app. It is an error to initialize an app with an already
    *     existing name. Starting and ending whitespace characters in the name are ignored (trimmed).
-   * @throws IllegalStateException if an app with the same name has already been initialized.
    * @return an instance of {@link FirebaseApp}
+   * @throws IllegalStateException if an app with the same name has already been initialized.
    */
   @NonNull
   public static FirebaseApp initializeApp(
@@ -395,8 +395,8 @@ public class FirebaseApp {
    * <p>Note: this value is respected by all SDKs unless overridden by the developer via SDK
    * specific mechanisms.
    *
-   * @deprecated Use {@link #setDataCollectionDefaultEnabled(Boolean)} instead.
    * @hide
+   * @deprecated Use {@link #setDataCollectionDefaultEnabled(Boolean)} instead.
    */
   @KeepForSdk
   @Deprecated
@@ -467,8 +467,8 @@ public class FirebaseApp {
    * <p>If automatic resource management is enabled and the app is in the background a callback is
    * triggered immediately.
    *
-   * @see BackgroundStateChangeListener
    * @hide
+   * @see BackgroundStateChangeListener
    */
   @KeepForSdk
   public void addBackgroundStateChangeListener(BackgroundStateChangeListener listener) {
@@ -572,9 +572,14 @@ public class FirebaseApp {
   private void initializeAllApis() {
     boolean inDirectBoot = !UserManagerCompat.isUserUnlocked(applicationContext);
     if (inDirectBoot) {
+      Log.i(
+          LOG_TAG,
+          "Device in Direct Boot Mode: postponing initialization of Firebase APIs for app "
+              + getName());
       // Ensure that all APIs are initialized once the user unlocks the phone.
       UserUnlockReceiver.ensureReceiverRegistered(applicationContext);
     } else {
+      Log.i(LOG_TAG, "Device unlocked: initializing all Firebase APIs for app " + getName());
       componentRuntime.initializeEagerComponents(isDefaultApp());
     }
   }
@@ -686,6 +691,7 @@ public class FirebaseApp {
   }
 
   private static class UiExecutor implements Executor {
+
     private static final Handler HANDLER = new Handler(Looper.getMainLooper());
 
     @Override
