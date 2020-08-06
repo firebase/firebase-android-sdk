@@ -28,7 +28,7 @@ import java.util.Map;
 public final class JsonDataDecoderBuilder implements DecoderConfig<JsonDataDecoderBuilder> {
   private static final ObjectDecoder<Object> DEFAULT_FALLBACK_DECODER =
       (ctx) -> {
-        throw new EncodingException(ctx.getTypeToken().getRawType() + " is not register.");
+        throw new EncodingException(ctx.getTypeToken().getRawType() + " is not registered.");
       };
   private final HashMap<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
   private final HashMap<Class<?>, ValueDecoder<?>> valueDecoders = new HashMap<>();
