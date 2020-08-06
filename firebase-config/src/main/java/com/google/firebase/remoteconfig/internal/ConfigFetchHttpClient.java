@@ -27,6 +27,7 @@ import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFiel
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.PLATFORM_VERSION;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.SDK_VERSION;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.TIME_ZONE;
+import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFieldKey.ALL_ACTIVE_EXPERIMENTS;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFieldKey.ENTRIES;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFieldKey.EXPERIMENT_DESCRIPTIONS;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFieldKey.STATE;
@@ -398,6 +399,16 @@ public class ConfigFetchHttpClient {
       }
       if (experimentDescriptions != null) {
         containerBuilder.withAbtExperiments(experimentDescriptions);
+      }
+
+      JSONArray allActiveExperiments = null;
+      try {
+        allActiveExperiments = fetchResponse.getJSONArray(ALL_ACTIVE_EXPERIMENTS);
+      } catch (JSONException e) {
+        // Do nothing if entries do not exist.
+      }
+      if (allActiveExperiments != null) {
+        containerBuilder.withAbtAllActiveExperiments(allActiveExperiments);
       }
 
       return containerBuilder.build();

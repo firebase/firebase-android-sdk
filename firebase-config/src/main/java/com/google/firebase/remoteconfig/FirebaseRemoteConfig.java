@@ -253,7 +253,7 @@ public class FirebaseRemoteConfig {
             executor,
             newlyActivatedContainer -> {
               fetchedConfigsCache.clear();
-              updateAbtWithActivatedExperiments(newlyActivatedContainer.getAbtExperiments());
+              updateAbtWithActivatedExperiments(newlyActivatedContainer.getAbtAllActiveExperiments());
             });
     return true;
   }
@@ -679,7 +679,7 @@ public class FirebaseRemoteConfig {
       // then put into the activated cache. So, if the put is called and succeeds, then the returned
       // values from the put task must be non-null.
       if (putTask.getResult() != null) {
-        updateAbtWithActivatedExperiments(putTask.getResult().getAbtExperiments());
+        updateAbtWithActivatedExperiments(putTask.getResult().getAbtAllActiveExperiments());
       } else {
         // Should never happen.
         Log.e(TAG, "Activated configs written to disk are null.");
