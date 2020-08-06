@@ -317,6 +317,7 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
               @Override
               public void onClick(View v) {
                 if (callbacks != null) {
+                  Logging.logi("Calling callback for click action");
                   callbacks.messageClicked(action);
                 }
                 launchUriIntent(activity, Uri.parse(action.getActionUrl()));
@@ -534,12 +535,14 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
 
   private void launchUriIntent(Activity activity, Uri uri) {
     if (supportsCustomTabs(activity)) {
+      // If we can launch a chrome view, try that.
       CustomTabsIntent customTabsIntent = new CustomTabsIntent.Builder().build();
       Intent intent = customTabsIntent.intent;
       intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
       intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
       customTabsIntent.launchUrl(activity, uri);
     } else {
+      // If we can't launch a chrome view try to launch anything that can handle a URL.
       Intent browserIntent = new Intent(Intent.ACTION_VIEW, uri);
       ResolveInfo info = activity.getPackageManager().resolveActivity(browserIntent, 0);
       browserIntent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
@@ -547,6 +550,7 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
       if (info != null) {
         activity.startActivity(browserIntent);
       } else {
+        // If the device can't resolve a url then log, but don't crash.
         Logging.loge("Device cannot resolve intent for: " + Intent.ACTION_VIEW);
       }
     }

@@ -19,6 +19,6 @@ import com.google.firebase.inappmessaging.model.InAppMessage;
 
 public interface FirebaseInAppMessagingDismissListener {
 
-  // Triggered when a message is dismissed (ie: "x" button, in the modal view)
+  // Triggered when a message is dismissed (eg: "x" button, in the modal view)
   void messageDismissed(@NonNull InAppMessage inAppMessage);
 }
