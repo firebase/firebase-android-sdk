@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import com.example.AtMyAnnotation;
 import com.google.firebase.encoders.FieldDescriptor;
 import com.google.firebase.encoders.ObjectEncoder;
 import com.google.firebase.encoders.ObjectEncoderContext;
@@ -22,30 +23,31 @@ import java.lang.Override;
 
 /**
  * @hide */
-public final class AutoGenericClassEncoder implements Configurator {
-    public static final int CODEGEN_VERSION = 2;
+public final class AutoMyClassEncoder implements Configurator {
+  public static final int CODEGEN_VERSION = 2;
 
-    public static final Configurator CONFIG = new AutoGenericClassEncoder();
+  public static final Configurator CONFIG = new AutoMyClassEncoder();
 
-    private AutoGenericClassEncoder() {
-    }
+  private AutoMyClassEncoder() {
+  }
+
+  @Override
+  public void configure(EncoderConfig<?> cfg) {
+    cfg.registerEncoder(MyClass.class, MyClassEncoder.INSTANCE);
+  }
+
+  private static final class MyClassEncoder implements ObjectEncoder<MyClass> {
+    static final MyClassEncoder INSTANCE = new MyClassEncoder();
+
+    private static final FieldDescriptor HELLO_DESCRIPTOR = FieldDescriptor.builder("hello")
+        .withProperty(AtMyAnnotation.builder()
+            .value(42)
+            .build())
+        .build();
 
     @Override
-    public void configure(EncoderConfig<?> cfg) {
-        cfg.registerEncoder(GenericClass.class, GenericClassEncoder.INSTANCE);
+    public void encode(MyClass value, ObjectEncoderContext ctx) throws IOException {
+      ctx.add(HELLO_DESCRIPTOR, value.getHello());
     }
-
-    private static final class GenericClassEncoder implements ObjectEncoder<GenericClass> {
-        static final GenericClassEncoder INSTANCE = new GenericClassEncoder();
-
-        private static final FieldDescriptor T_DESCRIPTOR = FieldDescriptor.of("t");
-
-        private static final FieldDescriptor U_DESCRIPTOR = FieldDescriptor.of("u");
-
-        @Override
-        public void encode(GenericClass value, ObjectEncoderContext ctx) throws IOException {
-            ctx.add(T_DESCRIPTOR, value.getT());
-            ctx.add(U_DESCRIPTOR, value.getU());
-        }
-    }
+  }
 }

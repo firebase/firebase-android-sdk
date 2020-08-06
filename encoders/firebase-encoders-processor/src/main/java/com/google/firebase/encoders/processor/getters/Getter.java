@@ -15,6 +15,7 @@
 package com.google.firebase.encoders.processor.getters;
 
 import com.google.auto.value.AutoValue;
+import java.util.Set;
 import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
@@ -23,6 +24,12 @@ import javax.lang.model.type.TypeMirror;
 public abstract class Getter {
   /** Encoded name of the getter. */
   public abstract String name();
+
+  /**
+   * {@link com.google.firebase.encoders.annotations.ExtraProperty} annotations present on the
+   * getter.
+   */
+  public abstract Set<AnnotationDescriptor> annotationDescriptors();
 
   /**
    * Java expression to get the getter's value
@@ -49,7 +56,11 @@ public abstract class Getter {
   }
 
   public static Getter create(
-      String name, String expression, TypeMirror returnType, boolean inline) {
-    return new AutoValue_Getter(name, expression, returnType, inline);
+      String name,
+      Set<AnnotationDescriptor> descriptors,
+      String expression,
+      TypeMirror returnType,
+      boolean inline) {
+    return new AutoValue_Getter(name, descriptors, expression, returnType, inline);
   }
 }

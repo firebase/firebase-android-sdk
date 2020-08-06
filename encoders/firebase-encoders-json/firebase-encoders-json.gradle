@@ -39,7 +39,6 @@ android {
             includeAndroidResources = true
         }
     }
-
     sourceSets.main.java {
         srcDir 'src/json/java'
     }

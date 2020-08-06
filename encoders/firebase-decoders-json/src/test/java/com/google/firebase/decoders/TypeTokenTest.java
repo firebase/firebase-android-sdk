@@ -65,21 +65,18 @@ public class TypeTokenTest {
   }
 
   @Test
-  public void genericArrayType_rawTypeIsCorrectlyCaptured() {
-    TypeToken<List<String>[]> typeToken = TypeToken.of(new Safe<List<String>[]>() {});
-    assertThat(typeToken).isInstanceOf(TypeToken.ArrayToken.class);
-    TypeToken.ArrayToken<List<String>[]> arrayToken =
-        (TypeToken.ArrayToken<List<String>[]>) typeToken;
-    TypeToken<List<String>> componentType = (TypeToken<List<String>>) arrayToken.getComponentType();
-    assertThat(componentType).isInstanceOf(TypeToken.ClassToken.class);
-    TypeToken.ClassToken<List<String>> componentClassType =
-        (TypeToken.ClassToken<List<String>>) componentType;
-    assertThat(componentClassType.getRawType()).isEqualTo(List.class);
-    TypeToken<String> argumentType =
-        ((TypeToken.ClassToken<List<String>>) componentType).getTypeArguments().at(0);
-    assertThat(argumentType).isInstanceOf(TypeToken.ClassToken.class);
-    TypeToken.ClassToken<String> argumentClassType = (TypeToken.ClassToken<String>) argumentType;
-    assertThat(argumentClassType.getRawType()).isEqualTo(String.class);
+  public void arrayToken_shouldObtainCorrectRawType() {
+    assertThat(TypeToken.of(new Safe<Foo[]>() {}).getRawType()).isEqualTo(Foo[].class);
+  }
+
+  @Test
+  public void genericArrayType_shouldThrowException() {
+    assertThrows(
+        "GenericArray is not supported",
+        IllegalArgumentException.class,
+        () -> {
+          TypeToken.of(new Safe<List<String>[]>() {});
+        });
   }
 
   // Plain Class Type
