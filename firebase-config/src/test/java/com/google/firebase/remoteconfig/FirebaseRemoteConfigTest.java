@@ -162,7 +162,7 @@ public final class FirebaseRemoteConfigTest {
 
     frc =
         new FirebaseRemoteConfig(
-            context,
+                mockGetHandler, context,
             firebaseApp,
             mockFirebaseInstallations,
             mockFirebaseAbt,
@@ -171,8 +171,7 @@ public final class FirebaseRemoteConfigTest {
             mockActivatedCache,
             mockDefaultsCache,
             mockFetchHandler,
-            mockGetHandler,
-            metadataClient);
+                metadataClient, performanceTracer);
 
     // Set up an FRC instance for the Fireperf namespace that uses mocked clients.
     fireperfFrc =

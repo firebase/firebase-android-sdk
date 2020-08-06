@@ -36,7 +36,8 @@ import com.google.firebase.remoteconfig.internal.ConfigFetchHandler.FetchRespons
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
 import com.google.firebase.remoteconfig.internal.ConfigMetadataClient;
 import com.google.firebase.remoteconfig.internal.DefaultsXmlParser;
-import com.google.firebase.remoteconfig.internal.PerformanceTraceClient;
+import com.google.firebase.remoteconfig.internal.PerformanceTracer;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -59,6 +60,7 @@ import org.json.JSONObject;
  * @author Miraziz Yusupov
  */
 public class FirebaseRemoteConfig {
+  private final PerformanceTracer performanceTracer;
   // -------------------------------------------------------------------------------
   // Firebase Android Components logic.
 
@@ -161,17 +163,17 @@ public class FirebaseRemoteConfig {
    * @hide
    */
   FirebaseRemoteConfig(
-      Context context,
-      FirebaseApp firebaseApp,
-      FirebaseInstallationsApi firebaseInstallations,
-      @Nullable FirebaseABTesting firebaseAbt,
-      Executor executor,
-      ConfigCacheClient fetchedConfigsCache,
-      ConfigCacheClient activatedConfigsCache,
-      ConfigCacheClient defaultConfigsCache,
-      ConfigFetchHandler fetchHandler,
-      ConfigGetParameterHandler getHandler,
-      ConfigMetadataClient frcMetadata) {
+          ConfigGetParameterHandler getHandler, Context context,
+          FirebaseApp firebaseApp,
+          FirebaseInstallationsApi firebaseInstallations,
+          @Nullable FirebaseABTesting firebaseAbt,
+          Executor executor,
+          ConfigCacheClient fetchedConfigsCache,
+          ConfigCacheClient activatedConfigsCache,
+          ConfigCacheClient defaultConfigsCache,
+          ConfigFetchHandler fetchHandler,
+          ConfigMetadataClient frcMetadata,
+          PerformanceTracer performanceTracer) {
     this.context = context;
     this.firebaseApp = firebaseApp;
     this.firebaseInstallations = firebaseInstallations;
@@ -183,6 +185,7 @@ public class FirebaseRemoteConfig {
     this.fetchHandler = fetchHandler;
     this.getHandler = getHandler;
     this.frcMetadata = frcMetadata;
+    this.performanceTracer = performanceTracer;
   }
 
   /**
@@ -342,7 +345,6 @@ public class FirebaseRemoteConfig {
    */
   @NonNull
   public Task<Void> fetch(long minimumFetchIntervalInSeconds) {
-    PerformanceTraceClient performanceTracer = PerformanceTraceClient.getInstance();
     Trace trace = performanceTracer.startTrace("remote_config_fetch");
     trace.putAttribute("remote_config_sdk_version", BuildConfig.VERSION_NAME);
     Task<FetchResponse> fetchTask =

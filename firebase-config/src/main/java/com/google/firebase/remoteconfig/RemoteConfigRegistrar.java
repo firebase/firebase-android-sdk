@@ -24,6 +24,7 @@ import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
 import com.google.firebase.installations.FirebaseInstallationsApi;
+import com.google.firebase.perf.FirebasePerformance;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.util.Arrays;
 import java.util.List;
@@ -46,6 +47,7 @@ public class RemoteConfigRegistrar implements ComponentRegistrar {
             .add(Dependency.required(FirebaseInstallationsApi.class))
             .add(Dependency.required(AbtComponent.class))
             .add(Dependency.optional(AnalyticsConnector.class))
+            .add(Dependency.optionalProvider(FirebasePerformance.class))
             .factory(
                 container ->
                     new RemoteConfigComponent(
@@ -53,7 +55,8 @@ public class RemoteConfigRegistrar implements ComponentRegistrar {
                         container.get(FirebaseApp.class),
                         container.get(FirebaseInstallationsApi.class),
                         container.get(AbtComponent.class).get(OriginService.REMOTE_CONFIG),
-                        container.get(AnalyticsConnector.class)))
+                        container.get(AnalyticsConnector.class),
+                        container.getProvider(FirebasePerformance.class)))
             .eagerInDefaultApp()
             .build(),
         LibraryVersionComponent.create("fire-rc", BuildConfig.VERSION_NAME));

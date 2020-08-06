@@ -40,16 +40,17 @@ fun createRemoteConfig(
     frcMetadata: ConfigMetadataClient
 ): FirebaseRemoteConfig {
         return FirebaseRemoteConfig(
-            context,
-            firebaseApp,
-            firebaseInstallations,
-            firebaseAbt,
-            executor,
-            fetchedConfigsCache,
-            activatedConfigsCache,
-            defaultConfigsCache,
-            fetchHandler,
-            getHandler,
-            frcMetadata
-    )
+                getHandler,
+                context,
+                firebaseApp,
+                firebaseInstallations,
+                firebaseAbt,
+                executor,
+                fetchedConfigsCache,
+                activatedConfigsCache,
+                defaultConfigsCache,
+                fetchHandler,
+                frcMetadata,
+                performanceTracer
+        )
 }

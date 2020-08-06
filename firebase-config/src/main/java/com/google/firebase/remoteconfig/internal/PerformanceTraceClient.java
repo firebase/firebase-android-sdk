@@ -14,34 +14,35 @@
 
 package com.google.firebase.remoteconfig.internal;
 
+import com.google.firebase.inject.Provider;
 import com.google.firebase.perf.FirebasePerformance;
 import com.google.firebase.perf.metrics.Trace;
 import java.util.concurrent.TimeUnit;
 
 public class PerformanceTraceClient implements PerformanceTracer {
   private static PerformanceTraceClient instance;
-  private final FirebasePerformance firebasePerformance;
+  private final Provider<FirebasePerformance> firebasePerformance;
 
-  public static PerformanceTraceClient getInstance() {
+  public static PerformanceTraceClient getInstance(Provider<FirebasePerformance> firebasePerformance) {
     PerformanceTraceClient localRef = instance;
     if (localRef == null) {
       synchronized (PerformanceTracer.class) {
         localRef = instance;
         if (localRef == null) {
-          instance = localRef = new PerformanceTraceClient(FirebasePerformance.getInstance());
+          instance = localRef = new PerformanceTraceClient(firebasePerformance);
         }
       }
     }
     return localRef;
   }
 
-  private PerformanceTraceClient(FirebasePerformance firebasePerformance) {
+  private PerformanceTraceClient(Provider<FirebasePerformance> firebasePerformance) {
     this.firebasePerformance = firebasePerformance;
   }
 
   @Override
   public Trace newTrace(String s) {
-    return firebasePerformance.newTrace(s);
+    return firebasePerformance.get().newTrace(s);
   }
 
   @Override

@@ -26,7 +26,9 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.abt.FirebaseABTesting;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
+import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
+import com.google.firebase.perf.FirebasePerformance;
 import com.google.firebase.remoteconfig.internal.ConfigCacheClient;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHttpClient;
@@ -34,6 +36,9 @@ import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
 import com.google.firebase.remoteconfig.internal.ConfigMetadataClient;
 import com.google.firebase.remoteconfig.internal.ConfigStorageClient;
 import com.google.firebase.remoteconfig.internal.LegacyConfigsHandler;
+import com.google.firebase.remoteconfig.internal.PerformanceTraceClient;
+import com.google.firebase.remoteconfig.internal.PerformanceTracer;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -81,6 +86,7 @@ public class RemoteConfigComponent {
   @Nullable private final AnalyticsConnector analyticsConnector;
 
   private final String appId;
+  private final Provider<FirebasePerformance> firebasePerformanceProvider;
 
   @GuardedBy("this")
   private Map<String, String> customHeaders = new HashMap<>();
@@ -91,7 +97,8 @@ public class RemoteConfigComponent {
       FirebaseApp firebaseApp,
       FirebaseInstallationsApi firebaseInstallations,
       FirebaseABTesting firebaseAbt,
-      @Nullable AnalyticsConnector analyticsConnector) {
+      @Nullable AnalyticsConnector analyticsConnector,
+      Provider<FirebasePerformance> firebasePerformance) {
     this(
         context,
         Executors.newCachedThreadPool(),
@@ -100,7 +107,8 @@ public class RemoteConfigComponent {
         firebaseAbt,
         analyticsConnector,
         new LegacyConfigsHandler(context, firebaseApp.getOptions().getApplicationId()),
-        /* loadGetDefault= */ true);
+        /* loadGetDefault= */ true,
+        firebasePerformance);
   }
 
   /** Firebase Remote Config Component constructor for testing component logic. */
@@ -113,13 +121,15 @@ public class RemoteConfigComponent {
       FirebaseABTesting firebaseAbt,
       @Nullable AnalyticsConnector analyticsConnector,
       LegacyConfigsHandler legacyConfigsHandler,
-      boolean loadGetDefault) {
+      boolean loadGetDefault,
+      Provider<FirebasePerformance> firebasePerformance) {
     this.context = context;
     this.executorService = executorService;
     this.firebaseApp = firebaseApp;
     this.firebaseInstallations = firebaseInstallations;
     this.firebaseAbt = firebaseAbt;
     this.analyticsConnector = analyticsConnector;
+    this.firebasePerformanceProvider = firebasePerformance;
 
     this.appId = firebaseApp.getOptions().getApplicationId();
 
@@ -183,7 +193,7 @@ public class RemoteConfigComponent {
     if (!frcNamespaceInstances.containsKey(namespace)) {
       FirebaseRemoteConfig in =
           new FirebaseRemoteConfig(
-              context,
+                  getHandler, context,
               firebaseApp,
               firebaseInstallations,
               isAbtSupported(firebaseApp, namespace) ? firebaseAbt : null,
@@ -192,8 +202,8 @@ public class RemoteConfigComponent {
               activatedClient,
               defaultsClient,
               fetchHandler,
-              getHandler,
-              metadataClient);
+              metadataClient,
+              PerformanceTraceClient.getInstance(firebasePerformanceProvider));
       in.startLoadingConfigsFromDisk();
       frcNamespaceInstances.put(namespace, in);
     }
