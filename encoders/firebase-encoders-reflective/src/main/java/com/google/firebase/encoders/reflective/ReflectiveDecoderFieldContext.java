@@ -17,7 +17,6 @@ package com.google.firebase.encoders.reflective;
 import com.google.firebase.decoders.FieldRef;
 import com.google.firebase.encoders.EncodingException;
 import com.google.firebase.encoders.FieldDescriptor;
-import com.google.firebase.encoders.annotations.Encodable;
 import com.google.firebase.encoders.annotations.ExtraProperty;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AccessibleObject;
@@ -36,14 +35,19 @@ class ReflectiveDecoderFieldContext<T> {
   private Type genericType;
   private Class<T> rawType;
   private boolean inline;
+  private String decodingKey;
+  private boolean ignored;
 
   ReflectiveDecoderFieldContext(Method method) {
+    InternalAnnotationContext internalAnnotationContext = new InternalAnnotationContext(method);
+    inline = internalAnnotationContext.isInline();
+    decodingKey = internalAnnotationContext.getDecodingKey();
+    ignored = internalAnnotationContext.isIgnored();
     this.fieldDescriptor = buildFieldDescriptor(method);
     this.genericType = method.getGenericParameterTypes()[0];
     @SuppressWarnings("unchecked")
     Class<T> rawType = (Class<T>) method.getParameterTypes()[0];
     this.rawType = rawType;
-    this.inline = inline(method);
     method.setAccessible(true);
     this.setter =
         (obj, val) -> {
@@ -58,12 +62,15 @@ class ReflectiveDecoderFieldContext<T> {
   }
 
   ReflectiveDecoderFieldContext(Field field) {
+    InternalAnnotationContext internalAnnotationContext = new InternalAnnotationContext(field);
+    inline = internalAnnotationContext.isInline();
+    decodingKey = internalAnnotationContext.getDecodingKey();
+    ignored = internalAnnotationContext.isIgnored();
     this.fieldDescriptor = buildFieldDescriptor(field);
     this.genericType = field.getGenericType();
     @SuppressWarnings("unchecked")
     Class<T> rawType = (Class<T>) field.getType();
     this.rawType = rawType;
-    this.inline = inline(field);
     field.setAccessible(true);
     this.setter =
         (obj, val) -> {
@@ -105,12 +112,11 @@ class ReflectiveDecoderFieldContext<T> {
     return inline;
   }
 
-  private static boolean inline(AccessibleObject accessibleObject) {
-    Encodable.Field annotation = accessibleObject.getAnnotation(Encodable.Field.class);
-    return annotation != null && annotation.inline();
+  public boolean isIgnored() {
+    return ignored;
   }
 
-  private static FieldDescriptor buildFieldDescriptor(AccessibleObject accessibleObject) {
+  private FieldDescriptor buildFieldDescriptor(AccessibleObject accessibleObject) {
     Class<?> type;
     if (accessibleObject instanceof Field) {
       type = ((Field) accessibleObject).getType();
@@ -119,7 +125,6 @@ class ReflectiveDecoderFieldContext<T> {
     } else {
       throw new EncodingException("Constructor shouldn't be used to get its decoding key");
     }
-    String decodingKey = decodingKey(accessibleObject);
     Annotation[] annotations = accessibleObject.getDeclaredAnnotations();
     FieldDescriptor.Builder builder = FieldDescriptor.builder(decodingKey);
     for (Annotation annotation : annotations) {
@@ -135,32 +140,5 @@ class ReflectiveDecoderFieldContext<T> {
       }
     }
     return builder.build();
-  }
-
-  private static String decodingKey(AccessibleObject accessibleObject) {
-    String key;
-    if (accessibleObject instanceof Field) {
-      key = ((Field) accessibleObject).getName();
-    } else if (accessibleObject instanceof Method) {
-      key = fieldName((Method) accessibleObject);
-    } else {
-      throw new EncodingException("Constructor shouldn't be used to get its decoding key");
-    }
-    if (accessibleObject.isAnnotationPresent(Encodable.Field.class)) {
-      Encodable.Field annotation = accessibleObject.getAnnotation(Encodable.Field.class);
-      if (annotation != null && annotation.name().length() > 0) {
-        key = annotation.name();
-      }
-    }
-    return key;
-  }
-
-  private static String fieldName(Method method) {
-    String methodName = method.getName();
-    final String prefix = "set";
-    if (!methodName.startsWith(prefix)) {
-      throw new IllegalArgumentException("Unknown Bean prefix for method: " + methodName);
-    }
-    return Character.toLowerCase(methodName.charAt(3)) + methodName.substring(4);
   }
 }

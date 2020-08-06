@@ -15,12 +15,10 @@
 package com.google.firebase.encoders.reflective;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import com.google.firebase.encoders.EncodingException;
 import com.google.firebase.encoders.FieldDescriptor;
 import com.google.firebase.encoders.ObjectEncoder;
 import com.google.firebase.encoders.ObjectEncoderContext;
-import com.google.firebase.encoders.annotations.Encodable;
 import com.google.firebase.encoders.annotations.ExtraProperty;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
@@ -70,37 +68,28 @@ final class ReflectiveObjectEncoderProvider implements ObjectEncoderProvider {
   public <T> ObjectEncoder<T> get(@NonNull Class<T> type) {
     Map<FieldDescriptor, EncodingDescriptor> fields = new HashMap<>();
     for (Method method : type.getMethods()) {
-      if (method.isAnnotationPresent(Encodable.Ignore.class)) {
+      if (!shouldIncludeGetter(method)) {
         continue;
       }
 
-      Encodable.Field fieldAnnotation = method.getAnnotation(Encodable.Field.class);
-      FieldDescriptor descriptor = toFieldDescriptor(method, fieldAnnotation);
-      if (descriptor == null) {
+      InternalAnnotationContext internalAnnotationContext = new InternalAnnotationContext(method);
+      if (internalAnnotationContext.isIgnored()) {
         continue;
       }
+
+      FieldDescriptor descriptor =
+          toFieldDescriptor(method, internalAnnotationContext.getDecodingKey());
       method.setAccessible(true);
 
-      fields.put(
-          descriptor,
-          new EncodingDescriptor(fieldAnnotation != null && fieldAnnotation.inline(), method));
+      fields.put(descriptor, new EncodingDescriptor(internalAnnotationContext.isInline(), method));
     }
     @SuppressWarnings("unchecked")
     ObjectEncoder<T> encoder = (ObjectEncoder<T>) new ReflectiveObjectEncoderImpl(fields);
     return encoder;
   }
 
-  @Nullable
-  private static FieldDescriptor toFieldDescriptor(Method method, Encodable.Field fieldAnnotation) {
-    if (method.getAnnotation(Encodable.Ignore.class) != null) {
-      return null;
-    }
-
-    String name = toGetterName(method, fieldAnnotation);
-    if (name == null) {
-      return null;
-    }
-    FieldDescriptor.Builder builder = FieldDescriptor.builder(name);
+  private static FieldDescriptor toFieldDescriptor(Method method, String decodingKey) {
+    FieldDescriptor.Builder builder = FieldDescriptor.builder(decodingKey);
     for (Annotation annotation : method.getAnnotations()) {
       if (!annotation.annotationType().isAnnotationPresent(ExtraProperty.class)) {
         continue;
@@ -110,36 +99,19 @@ final class ReflectiveObjectEncoderProvider implements ObjectEncoderProvider {
     return builder.build();
   }
 
-  @Nullable
-  private static String toGetterName(Method m, @Nullable Encodable.Field fieldAnnotation) {
+  private static boolean shouldIncludeGetter(Method m) {
+    if (!m.getName().startsWith("get") && !m.getName().startsWith("is")) {
+      return false;
+    }
     Class<?> returnType = m.getReturnType();
     if (Modifier.isStatic(m.getModifiers())
         || !Modifier.isPublic(m.getModifiers())
         || m.getParameterTypes().length > 0
         || returnType.equals(void.class)
         || m.getDeclaringClass().equals(Object.class)) {
-      return null;
+      return false;
     }
-
-    if (fieldAnnotation != null) {
-      String annotationName = fieldAnnotation.name();
-      if (!annotationName.isEmpty()) {
-        return annotationName;
-      }
-    }
-
-    String methodName = m.getName();
-
-    if (returnType.equals(boolean.class)
-        && methodName.startsWith("is")
-        && methodName.length() > 2) {
-      return Character.toLowerCase(methodName.charAt(2)) + methodName.substring(3);
-    }
-
-    if (methodName.startsWith("get") && methodName.length() > 3) {
-      return Character.toLowerCase(methodName.charAt(3)) + methodName.substring(4);
-    }
-    return null;
+    return true;
   }
 
   private static class EncodingDescriptor {

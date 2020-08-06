@@ -23,7 +23,6 @@ import com.google.firebase.decoders.TypeCreator;
 import com.google.firebase.decoders.TypeToken;
 import com.google.firebase.encoders.EncodingException;
 import com.google.firebase.encoders.FieldDescriptor;
-import com.google.firebase.encoders.annotations.Encodable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -90,6 +89,9 @@ class ReflectiveObjectDecoderImpl<T> implements ObjectDecoder<T> {
   @SuppressWarnings("unchecked")
   private <TField> void decodeField(
       ObjectDecoderContext<T> ctx, ReflectiveDecoderFieldContext<TField> fieldContext) {
+    if (fieldContext.isIgnored()) {
+      return;
+    }
     Class<TField> fieldType = fieldContext.getFieldRawType();
     FieldDescriptor fieldDescriptor = fieldContext.getFieldDescriptor();
     FieldRef<TField> ref;
@@ -159,6 +161,9 @@ class ReflectiveObjectDecoderImpl<T> implements ObjectDecoder<T> {
       CreationContext creationCtx,
       Object instance,
       ReflectiveDecoderFieldContext<TField> fieldContext) {
+    if (fieldContext.isIgnored()) {
+      return;
+    }
     FieldRef<TField> ref = fieldContext.getFieldRef();
     Class<TField> fieldType = fieldContext.getFieldRawType();
     ReflectiveSetter<TField> fieldSetter = fieldContext.getReflectiveSetter();
@@ -207,7 +212,7 @@ class ReflectiveObjectDecoderImpl<T> implements ObjectDecoder<T> {
     if (method.getParameterTypes().length != 1) {
       return false;
     }
-    return !method.isAnnotationPresent(Encodable.Ignore.class);
+    return true;
   }
 
   private static boolean shouldIncludeField(Field field) {
@@ -223,7 +228,7 @@ class ReflectiveObjectDecoderImpl<T> implements ObjectDecoder<T> {
     if (Modifier.isTransient(field.getModifiers())) {
       return false;
     }
-    return !field.isAnnotationPresent(Encodable.Ignore.class);
+    return true;
   }
 
   private static String fieldName(Method method) {
