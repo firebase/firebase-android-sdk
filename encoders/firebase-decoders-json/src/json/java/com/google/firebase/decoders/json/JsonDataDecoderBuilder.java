@@ -20,15 +20,21 @@ import com.google.firebase.decoders.DataDecoder;
 import com.google.firebase.decoders.DecoderConfig;
 import com.google.firebase.decoders.ObjectDecoder;
 import com.google.firebase.decoders.ValueDecoder;
+import com.google.firebase.encoders.EncodingException;
 import java.lang.annotation.Annotation;
 import java.util.HashMap;
 import java.util.Map;
 
 public final class JsonDataDecoderBuilder implements DecoderConfig<JsonDataDecoderBuilder> {
+  private static final ObjectDecoder<Object> DEFAULT_FALLBACK_DECODER =
+      (ctx) -> {
+        throw new EncodingException(ctx.getTypeToken().getRawType() + " is not registered.");
+      };
   private final HashMap<Class<?>, ObjectDecoder<?>> objectDecoders = new HashMap<>();
   private final HashMap<Class<?>, ValueDecoder<?>> valueDecoders = new HashMap<>();
   private final Map<Class<? extends Annotation>, AnnotatedFieldHandler<?>> fieldHandlers =
       new HashMap<>();
+  private ObjectDecoder<Object> fallbackDecoder = DEFAULT_FALLBACK_DECODER;
 
   public JsonDataDecoderBuilder() {}
 
@@ -57,7 +63,15 @@ public final class JsonDataDecoderBuilder implements DecoderConfig<JsonDataDecod
   }
 
   @NonNull
+  public JsonDataDecoderBuilder registerFallBackDecoder(
+      @NonNull ObjectDecoder<Object> objectDecoder) {
+    this.fallbackDecoder = objectDecoder;
+    return this;
+  }
+
+  @NonNull
   public DataDecoder build() {
-    return new JsonDataDecoderContext(objectDecoders, valueDecoders, fieldHandlers);
+    return new JsonDataDecoderContext(
+        objectDecoders, valueDecoders, fieldHandlers, fallbackDecoder);
   }
 }

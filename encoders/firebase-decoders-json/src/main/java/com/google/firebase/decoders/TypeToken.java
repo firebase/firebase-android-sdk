@@ -83,7 +83,7 @@ public abstract class TypeToken<T> {
   }
 
   @NonNull
-  private static <T> TypeToken<T> of(@NonNull Type type) {
+  public static <T> TypeToken<T> of(@NonNull Type type) {
     if (type instanceof WildcardType) {
       if (((WildcardType) type).getLowerBounds().length == 0) {
         return of(((WildcardType) type).getUpperBounds()[0]);

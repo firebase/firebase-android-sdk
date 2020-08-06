@@ -57,14 +57,17 @@ public class JsonDataDecoderContext implements DataDecoder {
   private final Map<Class<?>, ValueDecoder<?>> valueDecoders;
   private final Map<Class<?>, ObjectDecoder<?>> objectDecoders;
   private final Map<Class<? extends Annotation>, AnnotatedFieldHandler<?>> fieldHandlers;
+  private final ObjectDecoder<?> fallBackObjectDecoder;
 
   JsonDataDecoderContext(
       @NonNull Map<Class<?>, ObjectDecoder<?>> objectDecoders,
       @NonNull Map<Class<?>, ValueDecoder<?>> valueDecoders,
-      @NonNull Map<Class<? extends Annotation>, AnnotatedFieldHandler<?>> fieldHandlers) {
+      @NonNull Map<Class<? extends Annotation>, AnnotatedFieldHandler<?>> fieldHandlers,
+      @NonNull ObjectDecoder<?> fallBackObjectDecoder) {
     this.valueDecoders = valueDecoders;
     this.objectDecoders = objectDecoders;
     this.fieldHandlers = fieldHandlers;
+    this.fallBackObjectDecoder = fallBackObjectDecoder;
   }
 
   @NonNull
@@ -430,8 +433,9 @@ public class JsonDataDecoderContext implements DataDecoder {
       return decoderCxt;
     }
     ObjectDecoder objectDecoder = objectDecoders.get(classToken.getRawType());
-    if (objectDecoder == null)
-      throw new IllegalArgumentException(classToken.getRawType() + " is not register.");
+    if (objectDecoder == null) {
+      objectDecoder = fallBackObjectDecoder;
+    }
     ObjectDecoderContextImpl<T> objectDecoderCtx = ObjectDecoderContextImpl.of(classToken);
     @SuppressWarnings("unchecked")
     // Safe, because creator and and classToken always have the same actual type parameter
