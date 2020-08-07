@@ -32,6 +32,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
+import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
+
 public class DefaultPersistenceManager implements PersistenceManager {
 
   private final PersistenceStorageEngine storageLayer;
@@ -208,10 +210,10 @@ public class DefaultPersistenceManager implements PersistenceManager {
 
   @Override
   public void setTrackedQueryKeys(QuerySpec query, Set<ChildKey> keys) {
-    assert !query.loadsAllData() : "We should only track keys for filtered queries.";
+    hardAssert(  !query.loadsAllData() , "We should only track keys for filtered queries.");
     TrackedQuery trackedQuery = this.trackedQueryManager.findTrackedQuery(query);
-    assert trackedQuery != null && trackedQuery.active
-        : "We only expect tracked keys for currently-active queries.";
+    hardAssert(  trackedQuery != null && trackedQuery.active,
+         "We only expect tracked keys for currently-active queries.";
 
     this.storageLayer.saveTrackedQueryKeys(trackedQuery.id, keys);
     // TODO: In the future we may want to try to prune the no-longer-tracked keys.
@@ -219,10 +221,10 @@ public class DefaultPersistenceManager implements PersistenceManager {
 
   @Override
   public void updateTrackedQueryKeys(QuerySpec query, Set<ChildKey> added, Set<ChildKey> removed) {
-    assert !query.loadsAllData() : "We should only track keys for filtered queries.";
+    hardAssert(  !query.loadsAllData() ,"We should only track keys for filtered queries.");
     TrackedQuery trackedQuery = this.trackedQueryManager.findTrackedQuery(query);
-    assert trackedQuery != null && trackedQuery.active
-        : "We only expect tracked keys for currently-active queries.";
+    hardAssert(  trackedQuery != null && trackedQuery.active
+        , "We only expect tracked keys for currently-active queries.");
 
     this.storageLayer.updateTrackedQueryKeys(trackedQuery.id, added, removed);
     // TODO: In the future we may want to try to prune the no-longer-tracked keys.

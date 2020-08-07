@@ -28,6 +28,7 @@ import com.google.firebase.database.core.RepoInfo;
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Locale;
 import java.util.Map;
 
 public class Utilities {
@@ -50,11 +51,11 @@ public class Utilities {
       String namespace = uri.getQueryParameter("ns");
       if (namespace == null) {
         String[] parts = host.split("\\.", -1);
-        namespace = parts[0].toLowerCase();
+        namespace = parts[0].toLowerCase(Locale.US);
       }
 
       RepoInfo repoInfo = new RepoInfo();
-      repoInfo.host = host.toLowerCase();
+      repoInfo.host = host.toLowerCase(Locale.US);
       int port = uri.getPort();
       if (port != -1) {
         repoInfo.secure = scheme.equals("https") || scheme.equals("wss");

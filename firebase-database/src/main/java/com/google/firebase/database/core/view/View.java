@@ -32,6 +32,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
+
 public class View {
 
   private final QuerySpec query;
@@ -120,7 +122,7 @@ public class View {
     List<Event> cancelEvents;
     if (cancelError != null) {
       cancelEvents = new ArrayList<Event>();
-      assert registration == null : "A cancel should cancel all event registrations";
+      hardAssert(  registration == null , "A cancel should cancel all event registrations");
       Path path = this.query.getPath();
       for (EventRegistration eventRegistration : this.eventRegistrations) {
         cancelEvents.add(new CancelEvent(eventRegistration, cancelError, path));
@@ -159,18 +161,15 @@ public class View {
       Operation operation, WriteTreeRef writesCache, Node optCompleteServerCache) {
     if (operation.getType() == Operation.OperationType.Merge
         && operation.getSource().getQueryParams() != null) {
-      assert this.viewCache.getCompleteServerSnap() != null
-          : "We should always have a full cache before handling merges";
-      assert this.viewCache.getCompleteEventSnap() != null
-          : "Missing event cache, even though we have a server cache";
+      hardAssert(  this.viewCache.getCompleteServerSnap() != null,"We should always have a full cache before handling merges";
+      hardAssert(  this.viewCache.getCompleteEventSnap() != null,"Missing event cache, even though we have a server cache";
     }
     ViewCache oldViewCache = this.viewCache;
     ViewProcessor.ProcessorResult result =
         this.processor.applyOperation(oldViewCache, operation, writesCache, optCompleteServerCache);
 
-    assert result.viewCache.getServerCache().isFullyInitialized()
-            || !oldViewCache.getServerCache().isFullyInitialized()
-        : "Once a server snap is complete, it should never go back";
+    hardAssert(  result.viewCache.getServerCache().isFullyInitialized()
+            || !oldViewCache.getServerCache().isFullyInitialized(),"Once a server snap is complete, it should never go back");
 
     this.viewCache = result.viewCache;
     List<DataEvent> events =

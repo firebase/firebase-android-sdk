@@ -21,6 +21,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
+
 public abstract class LeafNode<T extends LeafNode> implements Node {
   /** */
   protected static enum LeafType {
@@ -72,7 +74,7 @@ public abstract class LeafNode<T extends LeafNode> implements Node {
     } else if (node.isEmpty() && !front.isPriorityChildName()) {
       return this;
     } else {
-      assert !path.getFront().isPriorityChildName() || path.size() == 1;
+      hardAssert(  !path.getFront().isPriorityChildName() || path.size() == 1);
       return updateImmediateChild(front, EmptyNode.Empty().updateChild(path.popFront(), node));
     }
   }
@@ -175,7 +177,7 @@ public abstract class LeafNode<T extends LeafNode> implements Node {
     } else if (other instanceof ChildrenNode) {
       return -1;
     } else {
-      assert other.isLeafNode() : "Node is not leaf node!";
+      hardAssert(  other.isLeafNode() , "Node is not leaf node!");
       if (this instanceof LongNode && other instanceof DoubleNode) {
         return compareLongDoubleNodes((LongNode) this, (DoubleNode) other);
       } else if (this instanceof DoubleNode && other instanceof LongNode) {

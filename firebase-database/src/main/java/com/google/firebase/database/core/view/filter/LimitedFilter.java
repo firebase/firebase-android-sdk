@@ -26,6 +26,8 @@ import com.google.firebase.database.snapshot.Node;
 import com.google.firebase.database.snapshot.PriorityUtilities;
 import java.util.Iterator;
 
+import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
+
 /**
  * Applies a limit and a range to a node and uses RangedFilter to do the heavy lifting where
  * possible
@@ -73,7 +75,7 @@ public class LimitedFilter implements NodeFilter {
       CompleteChildSource source,
       ChildChangeAccumulator optChangeAccumulator) {
     // TODO: rename all cache stuff etc to general snap terminology
-    assert oldIndexed.getNode().getChildCount() == this.limit;
+    hardAssert(oldIndexed.getNode().getChildCount() == this.limit);
     NamedNode newChildNamedNode = new NamedNode(childKey, childSnap);
     NamedNode windowBoundary =
         this.reverse ? oldIndexed.getFirstChild() : oldIndexed.getLastChild();

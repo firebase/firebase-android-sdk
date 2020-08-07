@@ -16,6 +16,8 @@ package com.google.firebase.database.core.operation;
 
 import com.google.firebase.database.core.view.QueryParams;
 
+import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
+
 public class OperationSource {
 
   private static enum Source {
@@ -38,7 +40,7 @@ public class OperationSource {
     this.source = source;
     this.queryParams = queryParams;
     this.tagged = tagged;
-    assert !tagged || isFromServer();
+    hardAssert(  !tagged || isFromServer());
   }
 
   public boolean isFromUser() {

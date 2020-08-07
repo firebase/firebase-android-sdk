@@ -40,6 +40,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
+
 /**
  * SyncPoint represents a single location in a SyncTree with 1 or more event registrations, meaning
  * we need to maintain 1 or more Views at this location to cache server data and raise appropriate
@@ -98,7 +100,7 @@ public class SyncPoint {
     QueryParams queryParams = operation.getSource().getQueryParams();
     if (queryParams != null) {
       View view = this.views.get(queryParams);
-      assert view != null;
+      hardAssert(  view != null);
       return applyOperationToView(view, operation, writesCache, optCompleteServerCache);
     } else {
       List<DataEvent> events = new ArrayList<DataEvent>();

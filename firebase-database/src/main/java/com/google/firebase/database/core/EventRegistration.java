@@ -22,6 +22,8 @@ import com.google.firebase.database.core.view.Event;
 import com.google.firebase.database.core.view.QuerySpec;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
+
 public abstract class EventRegistration {
   private AtomicBoolean zombied = new AtomicBoolean(false);
   private EventRegistrationZombieListener listener;
@@ -56,8 +58,8 @@ public abstract class EventRegistration {
   }
 
   public void setOnZombied(EventRegistrationZombieListener listener) {
-    assert !isZombied();
-    assert this.listener == null;
+    hardAssert(!isZombied());
+    hardAssert(this.listener == null);
     this.listener = listener;
   }
 

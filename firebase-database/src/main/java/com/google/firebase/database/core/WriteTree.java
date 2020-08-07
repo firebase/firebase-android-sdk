@@ -25,6 +25,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
+
 /**
  * Defines a single user-initiated write operation. May be the result of a set(), transaction(), or
  * update() call. In the case of a set() or transaction, snap wil be non-null. In the case of an
@@ -67,7 +69,7 @@ public class WriteTree {
 
   /** Record a new overwrite from user code. */
   public void addOverwrite(Path path, Node snap, Long writeId, boolean visible) {
-    assert writeId > this.lastWriteId; // Stacking an older write on top of newer ones
+    hardAssert(  writeId > this.lastWriteId); // Stacking an older write on top of newer ones
     this.allWrites.add(new UserWriteRecord(writeId, path, snap, visible));
     if (visible) {
       this.visibleWrites = this.visibleWrites.addWrite(path, snap);
@@ -77,7 +79,7 @@ public class WriteTree {
 
   /** Record a new merge from user code. */
   public void addMerge(Path path, CompoundWrite changedChildren, Long writeId) {
-    assert writeId > this.lastWriteId; // Stacking an older write on top of newer ones
+    hardAssert(  writeId > this.lastWriteId); // Stacking an older write on top of newer ones
     this.allWrites.add(new UserWriteRecord(writeId, path, changedChildren));
     this.visibleWrites = this.visibleWrites.addWrites(path, changedChildren);
     this.lastWriteId = writeId;
@@ -126,7 +128,7 @@ public class WriteTree {
       }
       idx++;
     }
-    assert writeToRemove != null : "removeWrite called with nonexistent writeId";
+    hardAssert(  writeToRemove != null , "removeWrite called with nonexistent writeId");
 
     this.allWrites.remove(writeToRemove);
 
@@ -300,8 +302,8 @@ public class WriteTree {
       final Path childPath,
       final Node existingEventSnap,
       final Node existingServerSnap) {
-    assert existingEventSnap != null || existingServerSnap != null
-        : "Either existingEventSnap or existingServerSnap must exist";
+    hardAssert(  existingEventSnap != null || existingServerSnap != null,
+         "Either existingEventSnap or existingServerSnap must exist");
     Path path = treePath.child(childPath);
     if (this.visibleWrites.hasCompleteWrite(path)) {
       // At this point we can probably guarantee that we're in case 2, meaning no events

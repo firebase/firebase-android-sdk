@@ -23,6 +23,8 @@ import com.google.firebase.database.snapshot.NamedNode;
 import com.google.firebase.database.snapshot.Node;
 import com.google.firebase.database.snapshot.StringNode;
 
+import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
+
 public class NodeSizeEstimator {
 
   /**
@@ -61,7 +63,7 @@ public class NodeSizeEstimator {
     } else if (node.isLeafNode()) {
       return estimateLeafNodeSize((LeafNode<?>) node);
     } else {
-      assert node instanceof ChildrenNode : "Unexpected node type: " + node.getClass();
+      hardAssert(  node instanceof ChildrenNode , "Unexpected node type: " + node.getClass());
       long sum = 1; // opening brackets
       for (NamedNode entry : node) {
         sum += entry.getName().asString().length(); // key
@@ -82,7 +84,7 @@ public class NodeSizeEstimator {
     } else if (node.isLeafNode()) {
       return 1;
     } else {
-      assert node instanceof ChildrenNode : "Unexpected node type: " + node.getClass();
+      hardAssert(  node instanceof ChildrenNode ,"Unexpected node type: " + node.getClass());
       int sum = 0;
       for (NamedNode entry : node) {
         sum += nodeCount(entry.getNode());

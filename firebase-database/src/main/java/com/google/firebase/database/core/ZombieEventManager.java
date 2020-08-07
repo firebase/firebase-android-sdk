@@ -21,6 +21,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
+import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
+
 /**
  * {@link ZombieEventManager} records event registrations made from Query so that when they are
  * unregistered, we immediately "zombie" them so that all further events are suppressed. This stops
@@ -89,7 +91,7 @@ public class ZombieEventManager implements EventRegistrationZombieListener {
           globalEventRegistrations.remove(zombiedRegistration);
         }
       }
-      assert (found || !zombiedRegistration.isUserInitiated());
+      hardAssert(  (found || !zombiedRegistration.isUserInitiated());
 
       // If the registration was recorded twice, we need to remove its second
       // record.

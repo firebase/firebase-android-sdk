@@ -16,6 +16,8 @@ package com.google.firebase.database.core.utilities;
 
 import java.util.Random;
 
+import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
+
 public class PushIdGenerator {
 
   private static final String PUSH_CHARS =
@@ -37,7 +39,7 @@ public class PushIdGenerator {
       timeStampChars[i] = PUSH_CHARS.charAt((int) (now % 64));
       now = now / 64;
     }
-    assert (now == 0);
+    hardAssert (now == 0);
 
     result.append(timeStampChars);
 
@@ -51,7 +53,7 @@ public class PushIdGenerator {
     for (int i = 0; i < 12; i++) {
       result.append(PUSH_CHARS.charAt(lastRandChars[i]));
     }
-    assert (result.length() == 20);
+    hardAssert(  (result.length() == 20);
     return result.toString();
   }
 
