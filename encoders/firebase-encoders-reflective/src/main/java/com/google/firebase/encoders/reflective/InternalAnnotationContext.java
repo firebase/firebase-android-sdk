@@ -41,26 +41,27 @@ final class InternalAnnotationContext {
 
     // internal annotations
     if (accObj.isAnnotationPresent(Encodable.Ignore.class)) {
-      this.setIgnored(true);
+      this.ignored = true;
       return;
     }
     if (accObj.isAnnotationPresent(Encodable.Field.class)) {
       Encodable.Field annotation = accObj.getAnnotation(Encodable.Field.class);
       if (annotation != null && annotation.name().length() > 0) {
-        this.setDecodingKey(annotation.name());
+        this.decodingKey = annotation.name();
       }
       if (annotation != null) {
-        this.setInline(annotation.inline());
+        this.inline = annotation.inline();
       }
     }
 
+    // TODO: support Annotation @ExtraProperty
     // alias annotations
     for (Annotation annotation : accObj.getAnnotations()) {
       Alias alias = annotation.annotationType().getAnnotation(Alias.class);
       if (alias != null) {
         Class<? extends Annotation> actualAnnotationType = alias.value();
         if (actualAnnotationType.equals(Encodable.Ignore.class)) {
-          this.setIgnored(true);
+          this.ignored = true;
         } else if (actualAnnotationType.equals(Encodable.Field.class)) {
           for (Method method : annotation.annotationType().getDeclaredMethods()) {
             Alias.Property property = method.getAnnotation(Alias.Property.class);
@@ -73,20 +74,43 @@ final class InternalAnnotationContext {
               method.setAccessible(true);
               obj = method.invoke(annotation);
             } catch (IllegalAccessException e) {
-              throw new RuntimeException(e);
+              throw new EncodingException(
+                  "Method: "
+                      + method.getName()
+                      + " of Annotation:"
+                      + annotation
+                      + "encountered illegal access.\n"
+                      + e);
             } catch (InvocationTargetException e) {
-              throw new RuntimeException(e);
+              throw new EncodingException(
+                  "Method: "
+                      + method.getName()
+                      + " of Annotation:"
+                      + annotation
+                      + "encountered InvocationTarget.\n"
+                      + e);
             }
             if (propertyName.equals("name")) {
+              if (!method.getReturnType().equals(String.class)) {
+                throw new EncodingException(
+                    "Method annotated by @Alias.Property must return String value.");
+              }
               String val = (String) obj;
               if (val != null && val.length() > 0) {
-                this.setDecodingKey(val);
+                this.decodingKey = val;
               }
             } else if (propertyName.equals("inline")) {
+              if (!method.getReturnType().equals(boolean.class)) {
+                throw new EncodingException(
+                    "Method annotated by @Alias.inline must return String value.");
+              }
               Boolean val = (Boolean) obj;
               if (val != null) {
-                this.setInline(val);
+                this.inline = val;
               }
+            } else {
+              throw new EncodingException(
+                  "Annotation @Alias.Property should only has value of \"name\" and \"inline.\"");
             }
           }
         }
@@ -98,24 +122,12 @@ final class InternalAnnotationContext {
     return inline;
   }
 
-  public void setInline(boolean inline) {
-    this.inline = inline;
-  }
-
   public String getDecodingKey() {
     return decodingKey;
   }
 
-  public void setDecodingKey(String decodingKey) {
-    this.decodingKey = decodingKey;
-  }
-
   public boolean isIgnored() {
     return ignored;
-  }
-
-  public void setIgnored(boolean ignored) {
-    this.ignored = ignored;
   }
 
   private String fieldName(Method method) {
