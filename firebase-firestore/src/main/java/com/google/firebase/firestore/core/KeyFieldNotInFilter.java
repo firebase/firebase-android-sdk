@@ -23,17 +23,17 @@ import com.google.firestore.v1.Value;
 import java.util.ArrayList;
 import java.util.List;
 
-public class KeyFieldInFilter extends FieldFilter {
+public class KeyFieldNotInFilter extends FieldFilter {
   private final List<DocumentKey> keys = new ArrayList<>();
 
-  KeyFieldInFilter(FieldPath field, Value value) {
-    super(field, Operator.IN, value);
+  KeyFieldNotInFilter(FieldPath field, Value value) {
+    super(field, Operator.NOT_IN, value);
 
-    keys.addAll(extractDocumentKeysFromArrayValue(Operator.IN, value));
+    keys.addAll(extractDocumentKeysFromArrayValue(Operator.NOT_IN, value));
   }
 
   @Override
   public boolean matches(Document doc) {
-    return keys.contains(doc.getKey());
+    return !keys.contains(doc.getKey());
   }
 }

@@ -14,6 +14,8 @@
 
 package com.google.firebase.firestore.util;
 
+import static com.google.firebase.firestore.util.Assert.hardAssert;
+
 import android.os.Handler;
 import android.os.Looper;
 import androidx.annotation.Nullable;
@@ -22,6 +24,10 @@ import com.google.cloud.datastore.core.number.NumberComparisonHelper;
 import com.google.firebase.firestore.FieldPath;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
+import com.google.firebase.firestore.core.Filter.Operator;
+import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.Values;
+import com.google.firestore.v1.Value;
 import com.google.protobuf.ByteString;
 import io.grpc.Status;
 import io.grpc.StatusException;
@@ -233,5 +239,23 @@ public class Util {
       // Byte values are equal, continue with comparison
     }
     return Util.compareIntegers(left.size(), right.size());
+  }
+
+  public static List<DocumentKey> extractDocumentKeysFromArrayValue(
+      Operator operator, Value value) {
+    hardAssert(
+        operator == Operator.IN || operator == Operator.NOT_IN,
+        "extractDocumentKeysFromArrayValue requires IN or NOT_IN operators");
+    hardAssert(Values.isArray(value), "KeyFieldInFilter/KeyFieldNotInFilter expects an ArrayValue");
+    List<DocumentKey> keys = new ArrayList<>();
+    for (Value element : value.getArrayValue().getValuesList()) {
+      hardAssert(
+          Values.isReferenceValue(element),
+          "Comparing on key with "
+              + operator.toString()
+              + ", but an array value was not a ReferenceValue");
+      keys.add(DocumentKey.fromName(element.getReferenceValue()));
+    }
+    return keys;
   }
 }

@@ -14,26 +14,23 @@
 
 package com.google.firebase.firestore.core;
 
-import static com.google.firebase.firestore.util.Util.extractDocumentKeysFromArrayValue;
+import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import com.google.firebase.firestore.model.Document;
-import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
+import com.google.firebase.firestore.model.Values;
 import com.google.firestore.v1.Value;
-import java.util.ArrayList;
-import java.util.List;
 
-public class KeyFieldInFilter extends FieldFilter {
-  private final List<DocumentKey> keys = new ArrayList<>();
-
-  KeyFieldInFilter(FieldPath field, Value value) {
-    super(field, Operator.IN, value);
-
-    keys.addAll(extractDocumentKeysFromArrayValue(Operator.IN, value));
+/** A Filter that implements the not-in operator. */
+public class NotInFilter extends FieldFilter {
+  NotInFilter(FieldPath field, Value value) {
+    super(field, Operator.NOT_IN, value);
+    hardAssert(Values.isArray(value), "NotInFilter expects an ArrayValue");
   }
 
   @Override
   public boolean matches(Document doc) {
-    return keys.contains(doc.getKey());
+    Value other = doc.getField(getField());
+    return other != null && !Values.contains(getValue().getArrayValue(), other);
   }
 }

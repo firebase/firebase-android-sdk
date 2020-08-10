@@ -238,6 +238,8 @@ public class TestUtil {
       return Operator.LESS_THAN_OR_EQUAL;
     } else if (s.equals("==")) {
       return Operator.EQUAL;
+    } else if (s.equals("!=")) {
+      return Operator.NOT_EQUAL;
     } else if (s.equals(">")) {
       return Operator.GREATER_THAN;
     } else if (s.equals(">=")) {
@@ -246,6 +248,8 @@ public class TestUtil {
       return Operator.ARRAY_CONTAINS;
     } else if (s.equals("in")) {
       return Operator.IN;
+    } else if (s.equals("not-in")) {
+      return Operator.NOT_IN;
     } else if (s.equals("array-contains-any")) {
       return Operator.ARRAY_CONTAINS_ANY;
     } else {
@@ -605,6 +609,18 @@ public class TestUtil {
   public static <T> void assertSetEquals(List<T> expected, Set<T> actual) {
     Set<T> expectedSet = Sets.newHashSet(expected);
     assertEquals(expectedSet, actual);
+  }
+
+  /**
+   * Asserts that the contents of actual list is equal to that of the expected one.
+   *
+   * @param expected A list of the expected contents of the set, in any order.
+   * @param actual The list to compare against.
+   * @param <T> The type of the values of in common between the expected list and actual set.
+   */
+  // PORTING NOTE: JUnit and XCTest use reversed conventions on expected and actual values :-(.
+  public static <T> void assertArrayEquals(List<T> expected, List<T> actual) {
+    assertEquals(Sets.newHashSet(expected), Sets.newHashSet(actual));
   }
 
   /** Asserts that the given runnable block fails with an internal error. */
