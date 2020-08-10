@@ -25,12 +25,9 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.datatransport.TransportFactory;
-import com.google.firebase.messaging.testing.AnalyticsValidator;	
-import com.google.firebase.messaging.testing.AnalyticsValidator.LoggedEvent;	
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
-import com.google.firebase.messaging.testing.FakeConnectorComponent;
 import com.google.firebase.components.ComponentDiscoveryService;
 import com.google.firebase.messaging.AnalyticsTestHelper.Analytics;
 import com.google.firebase.messaging.Constants.AnalyticsKeys;
@@ -38,13 +35,15 @@ import com.google.firebase.messaging.Constants.FirelogAnalytics;
 import com.google.firebase.messaging.Constants.MessageNotificationKeys;
 import com.google.firebase.messaging.Constants.MessagePayloadKeys;
 import com.google.firebase.messaging.Constants.ScionAnalytics;
+import com.google.firebase.messaging.testing.AnalyticsValidator;
+import com.google.firebase.messaging.testing.AnalyticsValidator.LoggedEvent;
+import com.google.firebase.messaging.testing.FakeConnectorComponent;
 import com.google.firebase.messaging.testing.MessagingTestHelper;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
-
 
 /** Messaging Analytics tests */
 @RunWith(RobolectricTestRunner.class)
