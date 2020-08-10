@@ -171,7 +171,8 @@ public class SqlPersistenceStorageEngine implements PersistenceStorageEngine {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-      hardAssert(newVersion == DATABASE_VERSION, "Why is onUpgrade() called with a different version?");
+      hardAssert(
+          newVersion == DATABASE_VERSION, "Why is onUpgrade() called with a different version?");
       if (oldVersion <= 1) {
         // Leave old writes table.
 
@@ -1036,7 +1037,7 @@ public class SqlPersistenceStorageEngine implements PersistenceStorageEngine {
   }
 
   private static String pathPrefixStartToPrefixEnd(String prefix) {
-    hardAssert(prefix.endsWith("/") : "Path keys must end with a '/'"_;
+    hardAssert(prefix.endsWith("/"), "Path keys must end with a '/'");
     return prefix.substring(0, prefix.length() - 1) + (char) ('/' + 1);
   }
 

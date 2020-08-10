@@ -14,6 +14,8 @@
 
 package com.google.firebase.database.core;
 
+import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
+
 import com.google.firebase.database.DatabaseException;
 import com.google.firebase.database.snapshot.ChildKey;
 import java.util.ArrayList;
@@ -21,8 +23,6 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
-
-import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
 
 public class Path implements Iterable<ChildKey>, Comparable<Path> {
 

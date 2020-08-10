@@ -14,16 +14,16 @@
 
 package com.google.firebase.database.core.operation;
 
+import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
+
 import com.google.firebase.database.core.Path;
 import com.google.firebase.database.snapshot.ChildKey;
-
-import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
 
 public class ListenComplete extends Operation {
 
   public ListenComplete(OperationSource source, Path path) {
     super(OperationType.ListenComplete, source, path);
-    hardAssert(  !source.isFromUser() : "Can't have a listen complete from a user source");
+    hardAssert(!source.isFromUser(), "Can't have a listen complete from a user source");
   }
 
   @Override

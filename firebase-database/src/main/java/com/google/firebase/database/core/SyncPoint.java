@@ -14,6 +14,8 @@
 
 package com.google.firebase.database.core;
 
+import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
+
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.annotations.NotNull;
 import com.google.firebase.database.annotations.Nullable;
@@ -39,8 +41,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
 
 /**
  * SyncPoint represents a single location in a SyncTree with 1 or more event registrations, meaning
@@ -100,7 +100,7 @@ public class SyncPoint {
     QueryParams queryParams = operation.getSource().getQueryParams();
     if (queryParams != null) {
       View view = this.views.get(queryParams);
-      hardAssert(  view != null);
+      hardAssert(view != null);
       return applyOperationToView(view, operation, writesCache, optCompleteServerCache);
     } else {
       List<DataEvent> events = new ArrayList<DataEvent>();

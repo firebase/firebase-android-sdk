@@ -14,9 +14,9 @@
 
 package com.google.firebase.database.snapshot;
 
-import com.google.firebase.database.core.utilities.Utilities;
-
 import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
+
+import com.google.firebase.database.core.utilities.Utilities;
 
 public class ChildKey implements Comparable<ChildKey> {
   private final String key;
@@ -115,7 +115,7 @@ public class ChildKey implements Comparable<ChildKey> {
     } else if (key.equals(".priority")) {
       return PRIORITY_CHILD_KEY;
     } else {
-      hardAssert(  !key.contains("/"));
+      hardAssert(!key.contains("/"));
       return new ChildKey(key);
     }
   }

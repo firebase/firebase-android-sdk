@@ -14,11 +14,11 @@
 
 package com.google.firebase.database.core.utilities;
 
+import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
+
 import com.google.firebase.database.core.Path;
 import com.google.firebase.database.snapshot.ChildKey;
 import java.util.Map;
-
-import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
 
 public class Tree<T> {
   /** */
@@ -93,7 +93,7 @@ public class Tree<T> {
 
   public Path getPath() {
     if (parent != null) {
-      hardAssert(  name != null);
+      hardAssert(name != null);
       return parent.getPath().child(name);
     } else {
       return (name != null) ? new Path(name) : Path.getEmptyPath();

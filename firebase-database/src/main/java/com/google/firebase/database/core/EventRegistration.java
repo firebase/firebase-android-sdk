@@ -14,6 +14,8 @@
 
 package com.google.firebase.database.core;
 
+import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
+
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.annotations.NotNull;
 import com.google.firebase.database.core.view.Change;
@@ -21,8 +23,6 @@ import com.google.firebase.database.core.view.DataEvent;
 import com.google.firebase.database.core.view.Event;
 import com.google.firebase.database.core.view.QuerySpec;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
 
 public abstract class EventRegistration {
   private AtomicBoolean zombied = new AtomicBoolean(false);

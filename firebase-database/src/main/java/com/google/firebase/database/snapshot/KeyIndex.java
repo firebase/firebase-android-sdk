@@ -35,7 +35,7 @@ public class KeyIndex extends Index {
 
   @Override
   public NamedNode makePost(ChildKey name, Node value) {
-    hardAssert(  value instanceof StringNode);
+    hardAssert(value instanceof StringNode);
     // We just use empty node, but it'll never be compared, since our comparator only looks at name
     return new NamedNode(ChildKey.fromString((String) value.getValue()), EmptyNode.Empty());
   }

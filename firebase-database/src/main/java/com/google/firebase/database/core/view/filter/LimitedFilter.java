@@ -14,6 +14,8 @@
 
 package com.google.firebase.database.core.view.filter;
 
+import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
+
 import com.google.firebase.database.core.Path;
 import com.google.firebase.database.core.view.Change;
 import com.google.firebase.database.core.view.QueryParams;
@@ -25,8 +27,6 @@ import com.google.firebase.database.snapshot.NamedNode;
 import com.google.firebase.database.snapshot.Node;
 import com.google.firebase.database.snapshot.PriorityUtilities;
 import java.util.Iterator;
-
-import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
 
 /**
  * Applies a limit and a range to a node and uses RangedFilter to do the heavy lifting where

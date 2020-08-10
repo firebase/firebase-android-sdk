@@ -14,13 +14,13 @@
 
 package com.google.firebase.database.snapshot;
 
+import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
+
 import com.google.firebase.database.core.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
 
 /**
  * Applies a merge of a snap for a given interval of paths. Each leaf in the current node which the
@@ -74,8 +74,8 @@ public class RangeMerge {
     } else if (startComparison > 0 && endInNode && updateNode.isLeafNode()) {
       return updateNode;
     } else if (startComparison > 0 && endComparison == 0) {
-      hardAssert(  endInNode);
-      hardAssert(  !updateNode.isLeafNode());
+      hardAssert(endInNode);
+      hardAssert(!updateNode.isLeafNode());
       if (node.isLeafNode()) {
         // Update node was not a leaf node, so we can delete it
         return EmptyNode.Empty();
@@ -115,7 +115,7 @@ public class RangeMerge {
       return newNode;
     } else {
       // Unaffected by this range
-      hardAssert(  endComparison > 0 || startComparison <= 0);
+      hardAssert(endComparison > 0 || startComparison <= 0);
       return node;
     }
   }

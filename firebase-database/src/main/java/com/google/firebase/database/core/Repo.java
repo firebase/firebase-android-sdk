@@ -920,7 +920,7 @@ public class Repo implements PersistentConnection.Delegate {
     List<TransactionData> queue = node.getValue();
     if (queue != null) {
       queue = buildTransactionQueue(node);
-      hardAssert( queue.size() > 0); // Sending zero length transaction queue
+      hardAssert(queue.size() > 0); // Sending zero length transaction queue
 
       Boolean allRun = true;
       for (TransactionData transaction : queue) {
@@ -959,8 +959,9 @@ public class Repo implements PersistentConnection.Delegate {
     }
 
     for (TransactionData txn : queue) {
-      hardAssert(  txn.status
-          == TransactionStatus.RUN); // sendTransactionQueue: items in queue should all be run.'
+      hardAssert(
+          txn.status
+              == TransactionStatus.RUN); // sendTransactionQueue: items in queue should all be run.'
       txn.status = TransactionStatus.SENT;
       txn.retryCount++;
       Path relativePath = Path.getRelative(path, txn.path);
@@ -1116,7 +1117,7 @@ public class Repo implements PersistentConnection.Delegate {
       DatabaseError abortReason = null;
       List<Event> events = new ArrayList<Event>();
 
-      hardAssert(  relativePath != null); // rerunTransactionQueue: relativePath should not be null.
+      hardAssert(relativePath != null); // rerunTransactionQueue: relativePath should not be null.
 
       if (transaction.status == TransactionStatus.NEEDS_ABORT) {
         abortTransaction = true;
@@ -1321,14 +1322,15 @@ public class Repo implements PersistentConnection.Delegate {
         if (transaction.status == TransactionStatus.SENT_NEEDS_ABORT) {
           // No-op. Already marked
         } else if (transaction.status == TransactionStatus.SENT) {
-          hardAssert(  lastSent == i - 1); // All SENT items should be at beginning of queue.
+          hardAssert(lastSent == i - 1); // All SENT items should be at beginning of queue.
           lastSent = i;
           // Mark transaction for abort when it comes back.
           transaction.status = TransactionStatus.SENT_NEEDS_ABORT;
           transaction.abortReason = abortError;
         } else {
-          hardAssert(  transaction.status
-              == TransactionStatus.RUN); // Unexpected transaction status in abort
+          hardAssert(
+              transaction.status
+                  == TransactionStatus.RUN); // Unexpected transaction status in abort
           // We can abort this immediately.
           removeEventCallback(
               new ValueEventRegistration(
