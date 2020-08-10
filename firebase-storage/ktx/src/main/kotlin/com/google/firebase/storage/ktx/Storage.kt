@@ -50,84 +50,84 @@ fun storageMetadata(init: StorageMetadata.Builder.() -> Unit): StorageMetadata {
 }
 
 /**
- * Destructuring declaration for [UploadTask.TaskSnapshot] to provide bytesTransferred
+ * Destructuring declaration for [UploadTask.TaskSnapshot] to provide bytesTransferred.
  *
  * @return the bytesTransferred of the [UploadTask.TaskSnapshot]
  */
 operator fun UploadTask.TaskSnapshot.component1() = bytesTransferred
 
 /**
- * Destructuring declaration for [UploadTask.TaskSnapshot] to provide totalByteCount
+ * Destructuring declaration for [UploadTask.TaskSnapshot] to provide totalByteCount.
  *
  * @return the totalByteCount of the [UploadTask.TaskSnapshot]
  */
 operator fun UploadTask.TaskSnapshot.component2() = totalByteCount
 
 /**
- * Destructuring declaration for [UploadTask.TaskSnapshot] to provide its metadata
+ * Destructuring declaration for [UploadTask.TaskSnapshot] to provide its metadata.
  *
  * @return the metadata of the [UploadTask.TaskSnapshot]
  */
 operator fun UploadTask.TaskSnapshot.component3() = metadata
 
 /**
- * Destructuring declaration for [UploadTask.TaskSnapshot] to provide its uploadSessionUri
+ * Destructuring declaration for [UploadTask.TaskSnapshot] to provide its uploadSessionUri.
  *
  * @return the uploadSessionUri of the [UploadTask.TaskSnapshot]
  */
 operator fun UploadTask.TaskSnapshot.component4() = uploadSessionUri
 
 /**
- * Destructuring declaration for [StreamDownloadTask.TaskSnapshot] to provide bytesTransferred
+ * Destructuring declaration for [StreamDownloadTask.TaskSnapshot] to provide bytesTransferred.
  *
  * @return the bytesTransferred of the [StreamDownloadTask.TaskSnapshot]
  */
 operator fun StreamDownloadTask.TaskSnapshot.component1() = bytesTransferred
 
 /**
- * Destructuring declaration for [StreamDownloadTask.TaskSnapshot] to provide totalByteCount
+ * Destructuring declaration for [StreamDownloadTask.TaskSnapshot] to provide totalByteCount.
  *
  * @return the totalByteCount of the [StreamDownloadTask.TaskSnapshot]
  */
 operator fun StreamDownloadTask.TaskSnapshot.component2() = totalByteCount
 
 /**
- * Destructuring declaration for [StreamDownloadTask.TaskSnapshot] to provide its stream
+ * Destructuring declaration for [StreamDownloadTask.TaskSnapshot] to provide its stream.
  *
  * @return the stream of the [StreamDownloadTask.TaskSnapshot]
  */
 operator fun StreamDownloadTask.TaskSnapshot.component3() = stream
 
 /**
- * Destructuring declaration for [FileDownloadTask.TaskSnapshot] to provide bytesTransferred
+ * Destructuring declaration for [FileDownloadTask.TaskSnapshot] to provide bytesTransferred.
  *
  * @return the bytesTransferred of the [FileDownloadTask.TaskSnapshot]
  */
 operator fun FileDownloadTask.TaskSnapshot.component1() = bytesTransferred
 
 /**
- * Destructuring declaration for [FileDownloadTask.TaskSnapshot] to provide totalByteCount
+ * Destructuring declaration for [FileDownloadTask.TaskSnapshot] to provide totalByteCount.
  *
  * @return the totalByteCount of the [FileDownloadTask.TaskSnapshot]
  */
 operator fun FileDownloadTask.TaskSnapshot.component2() = totalByteCount
 
 /**
- * Destructuring declaration for [ListResult] to provide its items
+ * Destructuring declaration for [ListResult] to provide its items.
  *
  * @return the items of the [ListResult]
  */
 operator fun ListResult.component1(): List<StorageReference> = items
 
 /**
- * Destructuring declaration for [ListResult] to provide its prefixes
+ * Destructuring declaration for [ListResult] to provide its prefixes.
  *
  * @return the prefixes of the [ListResult]
  */
 operator fun ListResult.component2(): List<StorageReference> = prefixes
 
 /**
- * Destructuring declaration for [ListResult] to provide its pageToken
+ * Destructuring declaration for [ListResult] to provide its pageToken.
  *
  * @return the pageToken of the [ListResult]
  */
