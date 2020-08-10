@@ -36,7 +36,7 @@ android {
         main.java.srcDirs += 'src/main/kotlin'
         test.java {
             srcDir 'src/test/kotlin'
-            srcDir '../src/test/kotlin'
+            srcDir '../src/testUtil/java'
         }
         androidTest.java.srcDirs += 'src/androidTest/kotlin'
     }
