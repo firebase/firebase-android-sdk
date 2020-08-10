@@ -24,9 +24,9 @@ import com.google.firebase.ktx.initialize
 import com.google.firebase.platforminfo.UserAgentPublisher
 import com.google.firebase.storage.FileDownloadTask
 import com.google.firebase.storage.FirebaseStorage
-import com.google.firebase.storage.ListResult
 import com.google.firebase.storage.StorageMetadata
 import com.google.firebase.storage.StreamDownloadTask
+import com.google.firebase.storage.TestUtil
 import com.google.firebase.storage.UploadTask
 import java.io.ByteArrayInputStream
 import org.junit.After
@@ -116,10 +116,7 @@ class StorageTests : BaseTestCase() {
 
     @Test
     fun `ListResult destructuring declarations work`() {
-        val mockListResult = Mockito.mock(ListResult::class.java)
-        `when`(mockListResult.items).thenReturn(listOf())
-        `when`(mockListResult.prefixes).thenReturn(listOf())
-        `when`(mockListResult.pageToken).thenReturn(null)
+        val mockListResult = TestUtil.listResult(listOf(), listOf(), null)
 
         val (items, prefixes, pageToken) = mockListResult
         assertThat(items).isSameInstanceAs(mockListResult.items)

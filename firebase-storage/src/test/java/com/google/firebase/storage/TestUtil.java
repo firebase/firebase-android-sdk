@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.StringReader;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.junit.Assert;
 import org.robolectric.Robolectric;
@@ -149,5 +150,10 @@ public class TestUtil {
    */
   static void await(Task<?> task) throws InterruptedException {
     await(task, 3, TimeUnit.SECONDS);
+  }
+
+  public static ListResult listResult(
+      List<StorageReference> prefixes, List<StorageReference> items, @Nullable String pageToken) {
+    return new ListResult(prefixes, items, pageToken);
   }
 }
