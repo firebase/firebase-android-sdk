@@ -118,22 +118,22 @@ fun FirebaseDynamicLinks.shortLinkAsync(suffix: Int, init: DynamicLink.Builder.(
     return builder.buildShortDynamicLink(suffix)
 }
 
-/** Destructuring declaration for [ShortDynamicLink] to provide shortLink */
+/** Destructuring declaration for [ShortDynamicLink] to provide shortLink. */
 operator fun ShortDynamicLink.component1() = shortLink
 
-/** Destructuring declaration for [ShortDynamicLink] to provide previewLink */
+/** Destructuring declaration for [ShortDynamicLink] to provide previewLink. */
 operator fun ShortDynamicLink.component2() = previewLink
 
-/** Destructuring declaration for [ShortDynamicLink] to provide warnings */
+/** Destructuring declaration for [ShortDynamicLink] to provide warnings. */
 operator fun ShortDynamicLink.component3(): List<ShortDynamicLink.Warning> = warnings
 
-/** Destructuring declaration for [PendingDynamicLinkData] to provide link */
+/** Destructuring declaration for [PendingDynamicLinkData] to provide link. */
 operator fun PendingDynamicLinkData.component1() = link
 
-/** Destructuring declaration for [PendingDynamicLinkData] to provide minimumAppVersion */
+/** Destructuring declaration for [PendingDynamicLinkData] to provide minimumAppVersion. */
 operator fun PendingDynamicLinkData.component2() = minimumAppVersion
 
-/** Destructuring declaration for [PendingDynamicLinkData] to provide clickTimestamp */
+/** Destructuring declaration for [PendingDynamicLinkData] to provide clickTimestamp. */
 operator fun PendingDynamicLinkData.component3() = clickTimestamp
 
 internal const val LIBRARY_NAME: String = "fire-dl-ktx"
