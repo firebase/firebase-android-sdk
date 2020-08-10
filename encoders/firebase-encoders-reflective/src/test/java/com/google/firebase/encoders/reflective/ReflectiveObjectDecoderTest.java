@@ -22,6 +22,7 @@ import com.google.firebase.decoders.DataDecoder;
 import com.google.firebase.decoders.Safe;
 import com.google.firebase.decoders.TypeToken;
 import com.google.firebase.decoders.json.JsonDataDecoderBuilder;
+import com.google.firebase.encoders.annotations.Alias;
 import com.google.firebase.encoders.annotations.Encodable;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;

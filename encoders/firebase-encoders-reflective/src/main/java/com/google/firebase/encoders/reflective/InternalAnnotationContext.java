@@ -15,6 +15,7 @@
 package com.google.firebase.encoders.reflective;
 
 import com.google.firebase.encoders.EncodingException;
+import com.google.firebase.encoders.annotations.Alias;
 import com.google.firebase.encoders.annotations.Encodable;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AccessibleObject;

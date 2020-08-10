@@ -20,6 +20,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.firebase.encoders.DataEncoder;
+import com.google.firebase.encoders.annotations.Alias;
 import com.google.firebase.encoders.annotations.Encodable;
 import com.google.firebase.encoders.json.JsonDataEncoderBuilder;
 import java.lang.annotation.ElementType;
