@@ -362,7 +362,7 @@ public class Query {
     QueryParams newParams = params.startAt(node, childKey);
     validateLimit(newParams);
     validateQueryEndpoints(newParams);
-    assert newParams.isValid();
+    hardAssert(newParams.isValid());
     return new Query(repo, path, newParams, orderByCalled);
   }
 
@@ -460,7 +460,7 @@ public class Query {
     QueryParams newParams = params.endAt(node, childKey);
     validateLimit(newParams);
     validateQueryEndpoints(newParams);
-    assert newParams.isValid();
+    hardAssert(newParams.isValid());
     return new Query(repo, path, newParams, orderByCalled);
   }
 

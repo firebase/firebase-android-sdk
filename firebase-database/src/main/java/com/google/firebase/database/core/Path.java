@@ -14,6 +14,8 @@
 
 package com.google.firebase.database.core;
 
+import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
+
 import com.google.firebase.database.DatabaseException;
 import com.google.firebase.database.snapshot.ChildKey;
 import java.util.ArrayList;
@@ -51,7 +53,7 @@ public class Path implements Iterable<ChildKey>, Comparable<Path> {
     this.start = 0;
     this.end = segments.length;
     for (ChildKey name : segments) {
-      assert name != null : "Can't construct a path with a null value!";
+      hardAssert(name != null, "Can't construct a path with a null value!");
     }
   }
 
