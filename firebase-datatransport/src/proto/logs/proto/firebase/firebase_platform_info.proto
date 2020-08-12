@@ -1,0 +1,48 @@
+// Firebase Platform logging.
+
+syntax = "proto2";
+
+package logs.proto.firebase.platform;
+
+import "google/protobuf/timestamp.proto";
+
+option cc_api_version = 2;
+option java_api_version = 2;
+option java_package = "com.google.firebase.logging";
+
+import "google/protobuf/timestamp.proto";
+import "storage/datapol/annotations/proto/semantic_annotations.proto";
+
+// Details about the Firebase platform usage.
+// Next tag: 8
+message FirebasePlatformInfo {
+  enum SourceType {
+    UNKNOWN_SOURCE = 0;
+    FCM = 1;
+    AUTH = 2;
+    FIRESTORE = 3;
+    FIS = 4;
+  }
+
+  optional string app_id = 1;
+
+  // The client platform info.
+  optional string platform_info = 2;
+
+  // If true, this entry is only sent once a day (across all sources).
+  optional bool daily_heartbeat = 3;
+
+  // Which backend was used to capture the platform info.
+  optional SourceType source = 4;
+
+  // If true, this entry is only sent once a day for the given source.
+  optional bool source_heartbeat = 5;
+
+  // The instance id is used to deduplicate logs for the purposes of
+  // counting app instances for each platform.
+  optional string instance_id = 6
+      [(datapol.semantic_type) = ST_IDENTIFYING_ID];  // required.
+
+  // Time when server received the platform ID info
+  optional google.protobuf.Timestamp event_time = 7;
+}
