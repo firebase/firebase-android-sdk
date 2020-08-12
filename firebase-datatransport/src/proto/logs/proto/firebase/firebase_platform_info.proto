@@ -10,8 +10,6 @@ option cc_api_version = 2;
 option java_api_version = 2;
 option java_package = "com.google.firebase.logging";
 
-import "google/protobuf/timestamp.proto";
-import "storage/datapol/annotations/proto/semantic_annotations.proto";
 
 // Details about the Firebase platform usage.
 // Next tag: 8
@@ -40,8 +38,7 @@ message FirebasePlatformInfo {
 
   // The instance id is used to deduplicate logs for the purposes of
   // counting app instances for each platform.
-  optional string instance_id = 6
-      [(datapol.semantic_type) = ST_IDENTIFYING_ID];  // required.
+  optional string instance_id = 6;
 
   // Time when server received the platform ID info
   optional google.protobuf.Timestamp event_time = 7;

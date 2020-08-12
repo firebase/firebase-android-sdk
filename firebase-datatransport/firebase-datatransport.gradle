@@ -18,26 +18,23 @@ plugins {
 }
 
 protobuf {
-    // Configure the protoc executable
     protoc {
-        // Download from repositories
-        artifact = 'com.google.protobuf:protoc:3.4.0'
+        artifact = "com.google.protobuf:protoc:$protocVersion"
     }
     plugins {
-        javalite {
-            // The codegen for lite comes as a separate artifact
-            artifact = 'com.google.protobuf:protoc-gen-javalite:3.0.0'
+        grpc {
+            artifact = "io.grpc:protoc-gen-grpc-java:$grpcVersion"
         }
     }
     generateProtoTasks {
         all().each { task ->
             task.builtins {
-                // In most cases you don't need the full Java output
-                // if you use the lite output.
-                remove java
+                java { option 'lite' }
             }
             task.plugins {
-                javalite {}
+                grpc {
+                    option 'lite'
+                }
             }
         }
     }
@@ -69,16 +66,29 @@ android {
             includeAndroidResources = true
         }
     }
+    sourceSets {
+        main {
+            proto {
+                srcDir 'src/proto'
+            }
+            java {
+            }
+        }
+        test {
+            java {
+            }
+        }
+    }
 }
 
 dependencies {
     implementation project(':firebase-common')
     implementation project(':firebase-components')
+    implementation project(':protolite-well-known-types')
     implementation project(':transport:transport-api')
     implementation project(':transport:transport-runtime')
     implementation project(':transport:transport-backend-cct')
     implementation 'androidx.annotation:annotation:1.1.0'
-    implementation 'com.google.protobuf:protobuf-lite:3.0.0'
 
     testImplementation 'androidx.test:runner:1.2.0'
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
