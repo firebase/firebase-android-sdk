@@ -1,12 +1,13 @@
 // Firebase Platform logging.
 
-syntax = "proto2";
+syntax = "proto3";
 
 package logs.proto.firebase.platform;
 
 import "google/protobuf/timestamp.proto";
 
 option java_package = "com.google.firebase.logging";
+option java_multiple_files = true;
 
 
 // Details about the Firebase platform usage.
@@ -20,24 +21,24 @@ message FirebasePlatformInfo {
     FIS = 4;
   }
 
-  optional string app_id = 1;
+  string app_id = 1;
 
   // The client platform info.
-  optional string platform_info = 2;
+  string platform_info = 2;
 
   // If true, this entry is only sent once a day (across all sources).
-  optional bool daily_heartbeat = 3;
+  bool daily_heartbeat = 3;
 
   // Which backend was used to capture the platform info.
-  optional SourceType source = 4;
+  SourceType source = 4;
 
   // If true, this entry is only sent once a day for the given source.
-  optional bool source_heartbeat = 5;
+  bool source_heartbeat = 5;
 
   // The instance id is used to deduplicate logs for the purposes of
   // counting app instances for each platform.
-  optional string instance_id = 6;
+  string instance_id = 6;
 
   // Time when server received the platform ID info
-  optional google.protobuf.Timestamp event_time = 7;
+  google.protobuf.Timestamp event_time = 7;
 }

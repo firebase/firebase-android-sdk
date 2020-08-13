@@ -21,25 +21,14 @@ protobuf {
     protoc {
         artifact = "com.google.protobuf:protoc:$protocVersion"
     }
-    plugins {
-        grpc {
-            artifact = "io.grpc:protoc-gen-grpc-java:$grpcVersion"
-        }
-    }
     generateProtoTasks {
         all().each { task ->
             task.builtins {
                 java { option 'lite' }
             }
-            task.plugins {
-                grpc {
-                    option 'lite'
-                }
-            }
         }
     }
 }
-
 firebaseLibrary {
     publishJavadoc = false
     publishSources = true
@@ -84,10 +73,10 @@ android {
 dependencies {
     implementation project(':firebase-common')
     implementation project(':firebase-components')
-    implementation project(':protolite-well-known-types')
     implementation project(':transport:transport-api')
     implementation project(':transport:transport-runtime')
     implementation project(':transport:transport-backend-cct')
+    implementation project(':protolite-well-known-types')
     implementation 'androidx.annotation:annotation:1.1.0'
     implementation "com.google.protobuf:protobuf-javalite:$javaliteVersion"
 

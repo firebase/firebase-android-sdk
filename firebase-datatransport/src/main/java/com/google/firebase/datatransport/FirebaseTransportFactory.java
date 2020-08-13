@@ -21,6 +21,7 @@ import com.google.android.datatransport.Transport;
 import com.google.android.datatransport.TransportFactory;
 import com.google.android.datatransport.cct.CCTDestination;
 import com.google.android.datatransport.runtime.TransportRuntime;
+import com.google.firebase.logging.FirebasePlatformInfo;
 
 final class FirebaseTransportFactory implements TransportFactory {
 
@@ -44,10 +45,8 @@ final class FirebaseTransportFactory implements TransportFactory {
       Class<T> payloadType,
       Encoding payloadEncoding,
       Transformer<T, byte[]> payloadTransformer) {
-    //    transportFactory.getTransport(
-    //        PLATFORM_LOGGING_SOURCE_NAME,
-    //        FirebasePlatformInfo.class,
-    //        FirebasePlatformInfo::toByteArray);
+    transportFactory.getTransport(
+        PLATFORM_LOGGING_SOURCE_NAME, FirebasePlatformInfo.class, FirebasePlatformInfo::getPlatformInfo());
     return transportFactory.getTransport(name, payloadType, payloadEncoding, payloadTransformer);
   }
 }
