@@ -80,6 +80,7 @@ public class DefaultHeartBeatInfoTest {
     when(storage.shouldSendGlobalHeartBeat(anyLong(), anyBoolean())).thenReturn(Boolean.TRUE);
     when(storage.getLastGlobalHeartBeat()).thenReturn((long) 0);
     when(storage.getStoredHeartBeats(anyBoolean())).thenReturn(returnResults);
+    when(storage.isValidHeartBeat(0, 100000000)).thenReturn(true);
     heartBeatInfo.storeHeartBeatInfo(testSdk);
     List<HeartBeatResult> results = heartBeatInfo.getAndClearStoredHeartBeatInfo();
     verify(storage, times(1)).storeHeartBeatInformation(anyString(), anyLong());
@@ -100,6 +101,10 @@ public class DefaultHeartBeatInfoTest {
     when(storage.shouldSendGlobalHeartBeat(anyLong(), anyBoolean())).thenReturn(Boolean.TRUE);
     when(storage.getLastGlobalHeartBeat()).thenReturn((long) 0);
     when(storage.getStoredHeartBeats(anyBoolean())).thenReturn(returnResults);
+    when(storage.isValidHeartBeat(0, 100000000)).thenReturn(true);
+    when(storage.isValidHeartBeat(100000000, 200000000)).thenReturn(true);
+    when(storage.isValidHeartBeat(200000000, 200002000)).thenReturn(false);
+
     heartBeatInfo.storeHeartBeatInfo(testSdk);
     List<HeartBeatResult> results = heartBeatInfo.getAndClearStoredHeartBeatInfo();
     verify(storage, times(1)).storeHeartBeatInformation(anyString(), anyLong());

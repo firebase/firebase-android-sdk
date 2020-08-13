@@ -20,6 +20,7 @@ import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -90,6 +91,10 @@ class HeartBeatInfoStorage {
     heartBeatSharedPreferences.edit().clear().apply();
   }
 
+  boolean isValidHeartBeat(long base, long target) {
+    return !((new Date(base).getDate()) == (new Date(target).getDate()));
+  }
+
   /*
    Indicates whether or not we have to send a sdk heartbeat.
    A sdk heartbeat is sent either when there is no heartbeat sent ever for the sdk or
@@ -97,8 +102,7 @@ class HeartBeatInfoStorage {
   */
   synchronized boolean shouldSendSdkHeartBeat(String heartBeatTag, long millis, boolean update) {
     if (sharedPreferences.contains(heartBeatTag)) {
-      long timeElapsed = millis - sharedPreferences.getLong(heartBeatTag, -1);
-      if (timeElapsed >= (long) 1000 * 60 * 60 * 24) {
+      if (isValidHeartBeat(sharedPreferences.getLong(heartBeatTag, -1), millis)) {
         if (update) {
           sharedPreferences.edit().putLong(heartBeatTag, millis).apply();
         }

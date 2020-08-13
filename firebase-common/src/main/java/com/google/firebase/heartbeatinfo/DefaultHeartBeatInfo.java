@@ -58,13 +58,12 @@ public class DefaultHeartBeatInfo implements HeartBeatInfo {
     List<SdkHeartBeatResult> sdkHeartBeatResults = storage.getStoredHeartBeats(true);
     ArrayList<HeartBeatResult> heartBeatResults = new ArrayList<>();
     long lastGlobalHeartBeat = storage.getLastGlobalHeartBeat();
-    long timeElapsed = 0;
     boolean shouldSendGlobalHeartBeat = false;
     for (int i = 0; i < sdkHeartBeatResults.size(); i++) {
       SdkHeartBeatResult sdkHeartBeatResult = sdkHeartBeatResults.get(i);
-      HeartBeat heartBeat = HeartBeat.NONE;
-      timeElapsed = sdkHeartBeatResult.getMillis() - lastGlobalHeartBeat;
-      shouldSendGlobalHeartBeat = (timeElapsed >= (long) 1000 * 60 * 60 * 24);
+      HeartBeat heartBeat;
+      shouldSendGlobalHeartBeat =
+          storage.isValidHeartBeat(lastGlobalHeartBeat, sdkHeartBeatResult.getMillis());
       if (shouldSendGlobalHeartBeat) {
         heartBeat = HeartBeat.COMBINED;
       } else {

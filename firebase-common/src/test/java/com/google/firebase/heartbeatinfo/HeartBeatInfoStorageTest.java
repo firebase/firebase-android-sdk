@@ -71,6 +71,13 @@ public class HeartBeatInfoStorageTest {
   }
 
   @Test
+  public void isValidHeartBeat_returnsCorrectly() {
+    assertThat(heartBeatInfoStorage.isValidHeartBeat(0, 1000000000)).isTrue();
+    assertThat(heartBeatInfoStorage.isValidHeartBeat(0, 0)).isFalse();
+    assertThat(heartBeatInfoStorage.isValidHeartBeat(1000000000, 1000001000)).isFalse();
+  }
+
+  @Test
   public void storeHeartBeatInformation_storesProperly() {
     heartBeatInfoStorage.storeHeartBeatInformation(testSdk, 200);
     assertThat(heartBeatSharedPreferences.getString("200", "-1")).isEqualTo(testSdk);
