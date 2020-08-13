@@ -611,16 +611,10 @@ public class TestUtil {
     assertEquals(expectedSet, actual);
   }
 
-  /**
-   * Asserts that the contents of actual list is equal to that of the expected one.
-   *
-   * @param expected A list of the expected contents of the set, in any order.
-   * @param actual The list to compare against.
-   * @param <T> The type of the values of in common between the expected list and actual set.
-   */
-  // PORTING NOTE: JUnit and XCTest use reversed conventions on expected and actual values :-(.
-  public static <T> void assertArrayEquals(List<T> expected, List<T> actual) {
-    assertEquals(Sets.newHashSet(expected), Sets.newHashSet(actual));
+  public static <T> void assertSetEquals(Iterable<T> expected, Iterable<T> actual) {
+    Set<T> expectedSet = Sets.newHashSet(expected);
+    Set<T> actualSet = Sets.newHashSet(actual);
+    assertEquals(expectedSet, actualSet);
   }
 
   /** Asserts that the given runnable block fails with an internal error. */

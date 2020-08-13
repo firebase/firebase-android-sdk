@@ -14,11 +14,12 @@
 
 package com.google.firebase.firestore.core;
 
-import static com.google.firebase.firestore.util.Util.extractDocumentKeysFromArrayValue;
+import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
+import com.google.firebase.firestore.model.Values;
 import com.google.firestore.v1.Value;
 import java.util.ArrayList;
 import java.util.List;
@@ -35,5 +36,22 @@ public class KeyFieldInFilter extends FieldFilter {
   @Override
   public boolean matches(Document doc) {
     return keys.contains(doc.getKey());
+  }
+
+  static List<DocumentKey> extractDocumentKeysFromArrayValue(Operator operator, Value value) {
+    hardAssert(
+        operator == Operator.IN || operator == Operator.NOT_IN,
+        "extractDocumentKeysFromArrayValue requires IN or NOT_IN operators");
+    hardAssert(Values.isArray(value), "KeyFieldInFilter/KeyFieldNotInFilter expects an ArrayValue");
+    List<DocumentKey> keys = new ArrayList<>();
+    for (Value element : value.getArrayValue().getValuesList()) {
+      hardAssert(
+          Values.isReferenceValue(element),
+          "Comparing on key with "
+              + operator.toString()
+              + ", but an array value was not a ReferenceValue");
+      keys.add(DocumentKey.fromName(element.getReferenceValue()));
+    }
+    return keys;
   }
 }

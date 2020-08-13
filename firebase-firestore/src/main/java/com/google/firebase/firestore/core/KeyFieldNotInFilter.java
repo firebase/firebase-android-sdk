@@ -1,4 +1,4 @@
-// Copyright 2019 Google LLC
+// Copyright 2020 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
 
 package com.google.firebase.firestore.core;
 
-import static com.google.firebase.firestore.util.Util.extractDocumentKeysFromArrayValue;
+import static com.google.firebase.firestore.core.KeyFieldInFilter.extractDocumentKeysFromArrayValue;
 
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;

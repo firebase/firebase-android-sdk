@@ -74,14 +74,14 @@ public class FieldFilter extends Filter {
       }
     } else if (Values.isNullValue(value)) {
       // TODO(ne-queries): Update error message to include != operator.
-      if (operator != Filter.Operator.EQUAL && operator != Filter.Operator.NOT_EQUAL) {
+      if (operator != Operator.EQUAL && operator != Operator.NOT_EQUAL) {
         throw new IllegalArgumentException(
             "Invalid Query. Null supports only equality comparisons (via whereEqualTo()).");
       }
       return new FieldFilter(path, operator, value);
     } else if (Values.isNanValue(value)) {
       // TODO(ne-queries): Update error message to include != operator.
-      if (operator != Filter.Operator.EQUAL && operator != Filter.Operator.NOT_EQUAL) {
+      if (operator != Operator.EQUAL && operator != Operator.NOT_EQUAL) {
         throw new IllegalArgumentException(
             "Invalid Query. NaN supports only equality comparisons (via whereEqualTo()).");
       }

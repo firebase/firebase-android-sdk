@@ -20,7 +20,7 @@ import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCol
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollectionWithDocs;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testFirestore;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
-import static com.google.firebase.firestore.testutil.TestUtil.assertArrayEquals;
+import static com.google.firebase.firestore.testutil.TestUtil.assertSetEquals;
 import static com.google.firebase.firestore.testutil.TestUtil.expectError;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static java.util.Arrays.asList;
@@ -32,7 +32,6 @@ import static org.junit.Assert.assertTrue;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.firebase.firestore.Query.Direction;
 import com.google.firebase.firestore.testutil.EventAccumulator;
@@ -515,8 +514,7 @@ public class QueryTest {
     expectedDocsMap.remove("i");
 
     QuerySnapshot snapshot = waitFor(collection.whereNotEqualTo("zip", 98101L).get());
-    assertArrayEquals(
-        Lists.newArrayList(expectedDocsMap.values()), querySnapshotToValues(snapshot));
+    assertSetEquals(expectedDocsMap.values(), querySnapshotToValues(snapshot));
 
     // With objects.
     expectedDocsMap = Maps.newHashMap(allDocs);
@@ -524,16 +522,14 @@ public class QueryTest {
     expectedDocsMap.remove("h");
     expectedDocsMap.remove("i");
     snapshot = waitFor(collection.whereNotEqualTo("zip", map("code", 500)).get());
-    assertArrayEquals(
-        Lists.newArrayList(expectedDocsMap.values()), querySnapshotToValues(snapshot));
+    assertSetEquals(expectedDocsMap.values(), querySnapshotToValues(snapshot));
 
     // With Null.
     expectedDocsMap = Maps.newHashMap(allDocs);
     expectedDocsMap.remove("h");
     expectedDocsMap.remove("i");
     snapshot = waitFor(collection.whereNotEqualTo("zip", null).get());
-    assertArrayEquals(
-        Lists.newArrayList(expectedDocsMap.values()), querySnapshotToValues(snapshot));
+    assertSetEquals(expectedDocsMap.values(), querySnapshotToValues(snapshot));
 
     // With NaN.
     expectedDocsMap = Maps.newHashMap(allDocs);
@@ -541,8 +537,7 @@ public class QueryTest {
     expectedDocsMap.remove("i");
     expectedDocsMap.remove("j");
     snapshot = waitFor(collection.whereNotEqualTo("zip", Double.NaN).get());
-    assertArrayEquals(
-        Lists.newArrayList(expectedDocsMap.values()), querySnapshotToValues(snapshot));
+    assertSetEquals(expectedDocsMap.values(), querySnapshotToValues(snapshot));
   }
 
   // TODO(ne-queries): Re-enable once emulator support is added to CI.
@@ -652,14 +647,14 @@ public class QueryTest {
 
     QuerySnapshot snapshot =
         waitFor(collection.whereNotIn("zip", asList(98101L, 98103L, asList(98101L, 98102L))).get());
-    assertEquals(Lists.newArrayList(expectedDocsMap.values()), querySnapshotToValues(snapshot));
+    assertSetEquals(expectedDocsMap.values(), querySnapshotToValues(snapshot));
 
     // With objects.
     expectedDocsMap = Maps.newHashMap(allDocs);
     expectedDocsMap.remove("f");
     expectedDocsMap.remove("h");
     snapshot = waitFor(collection.whereNotIn("zip", asList(map("code", 500L))).get());
-    assertEquals(Lists.newArrayList(expectedDocsMap.values()), querySnapshotToValues(snapshot));
+    assertSetEquals(expectedDocsMap.values(), querySnapshotToValues(snapshot));
 
     // With Null.
     List<Object> nullArray = new ArrayList<>();
@@ -672,7 +667,7 @@ public class QueryTest {
     expectedDocsMap.remove("h");
     expectedDocsMap.remove("j");
     snapshot = waitFor(collection.whereNotIn("zip", asList(Double.NaN)).get());
-    assertEquals(Lists.newArrayList(expectedDocsMap.values()), querySnapshotToValues(snapshot));
+    assertSetEquals(expectedDocsMap.values(), querySnapshotToValues(snapshot));
 
     // With NaN and a number.
     expectedDocsMap = Maps.newHashMap(allDocs);
@@ -680,7 +675,7 @@ public class QueryTest {
     expectedDocsMap.remove("h");
     expectedDocsMap.remove("j");
     snapshot = waitFor(collection.whereNotIn("zip", asList(Float.NaN, 98101L)).get());
-    assertEquals(Lists.newArrayList(expectedDocsMap.values()), querySnapshotToValues(snapshot));
+    assertSetEquals(expectedDocsMap.values(), querySnapshotToValues(snapshot));
   }
 
   // TODO(ne-queries): Re-enable once emulator support is added to CI.
