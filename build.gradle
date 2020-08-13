@@ -76,6 +76,9 @@ configure(subprojects) {
         google()
         jcenter()
         mavenLocal()
+        maven {
+            url 'https://storage.googleapis.com/android-ci/mvn/'
+        }
     }
 
     apply plugin: 'com.github.sherter.google-java-format'
