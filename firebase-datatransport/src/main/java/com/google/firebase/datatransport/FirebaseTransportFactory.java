@@ -44,8 +44,10 @@ final class FirebaseTransportFactory implements TransportFactory {
       Class<T> payloadType,
       Encoding payloadEncoding,
       Transformer<T, byte[]> payloadTransformer) {
-    // transportFactory.getTransport(PLATFORM_LOGGING_SOURCE_NAME, FirebasePlatformInfo.class,
-    // FirebasePlatformInfo::toByteArray);
+    //    transportFactory.getTransport(
+    //        PLATFORM_LOGGING_SOURCE_NAME,
+    //        FirebasePlatformInfo.class,
+    //        FirebasePlatformInfo::toByteArray);
     return transportFactory.getTransport(name, payloadType, payloadEncoding, payloadTransformer);
   }
 }
