@@ -76,7 +76,6 @@ dependencies {
     implementation project(':transport:transport-api')
     implementation project(':transport:transport-runtime')
     implementation project(':transport:transport-backend-cct')
-    implementation project(':protolite-well-known-types')
     implementation 'androidx.annotation:annotation:1.1.0'
     implementation "com.google.protobuf:protobuf-javalite:$javaliteVersion"
 

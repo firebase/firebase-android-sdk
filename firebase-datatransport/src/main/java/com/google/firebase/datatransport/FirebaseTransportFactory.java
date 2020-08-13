@@ -32,9 +32,11 @@ final class FirebaseTransportFactory implements TransportFactory {
   private HeartBeatInfo heartBeatInfo;
   private UserAgentPublisher userAgentPublisher;
 
-  FirebaseTransportFactory(Context context, HeartBeatInfo heartBeatInfo, UserAgentPublisher userAgentPublisher) {
+  FirebaseTransportFactory(
+      Context context, HeartBeatInfo heartBeatInfo, UserAgentPublisher userAgentPublisher) {
     TransportRuntime.initialize(context);
-    this.transportFactory = TransportRuntime.getInstance().newFactory(CCTDestination.LEGACY_INSTANCE);
+    this.transportFactory =
+        TransportRuntime.getInstance().newFactory(CCTDestination.LEGACY_INSTANCE);
     this.heartBeatInfo = heartBeatInfo;
     this.userAgentPublisher = userAgentPublisher;
   }
@@ -51,8 +53,8 @@ final class FirebaseTransportFactory implements TransportFactory {
       Class<T> payloadType,
       Encoding payloadEncoding,
       Transformer<T, byte[]> payloadTransformer) {
-    transportFactory.getTransport(
-        PLATFORM_LOGGING_SOURCE_NAME, FirebasePlatformInfo.class, FirebasePlatformInfo::getPlatformInfo());
+    //    transportFactory.getTransport(
+    //        PLATFORM_LOGGING_SOURCE_NAME, FirebasePlatformInfo.class,);
     return transportFactory.getTransport(name, payloadType, payloadEncoding, payloadTransformer);
   }
 }
