@@ -21,16 +21,22 @@ import com.google.android.datatransport.Transport;
 import com.google.android.datatransport.TransportFactory;
 import com.google.android.datatransport.cct.CCTDestination;
 import com.google.android.datatransport.runtime.TransportRuntime;
+import com.google.firebase.heartbeatinfo.HeartBeatInfo;
 import com.google.firebase.logging.FirebasePlatformInfo;
+import com.google.firebase.platforminfo.UserAgentPublisher;
 
 final class FirebaseTransportFactory implements TransportFactory {
 
   private static final String PLATFORM_LOGGING_SOURCE_NAME = "PLATFORM_LOGGING";
   private TransportFactory transportFactory;
+  private HeartBeatInfo heartBeatInfo;
+  private UserAgentPublisher userAgentPublisher;
 
-  FirebaseTransportFactory(Context context) {
+  FirebaseTransportFactory(Context context, HeartBeatInfo heartBeatInfo, UserAgentPublisher userAgentPublisher) {
     TransportRuntime.initialize(context);
-    transportFactory = TransportRuntime.getInstance().newFactory(CCTDestination.LEGACY_INSTANCE);
+    this.transportFactory = TransportRuntime.getInstance().newFactory(CCTDestination.LEGACY_INSTANCE);
+    this.heartBeatInfo = heartBeatInfo;
+    this.userAgentPublisher = userAgentPublisher;
   }
 
   @Override
