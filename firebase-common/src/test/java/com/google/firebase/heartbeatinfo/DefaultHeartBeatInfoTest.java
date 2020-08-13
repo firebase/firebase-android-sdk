@@ -37,17 +37,15 @@ public class DefaultHeartBeatInfoTest {
 
   @Test
   public void getHeartBeatCode_noHeartBeat() {
-    when(storage.shouldSendSdkHeartBeat(anyString(), anyLong(), anyBoolean()))
-        .thenReturn(Boolean.FALSE);
+    when(storage.shouldSendSdkHeartBeat(anyString(), anyLong())).thenReturn(Boolean.FALSE);
     heartBeatInfo.getHeartBeatCode(testSdk);
     assertThat(heartBeatInfo.getHeartBeatCode(testSdk).getCode()).isEqualTo(0);
   }
 
   @Test
   public void storeHeartBeatCode_noHeartBeat() {
-    when(storage.shouldSendSdkHeartBeat(anyString(), anyLong(), anyBoolean()))
-        .thenReturn(Boolean.FALSE);
-    when(storage.shouldSendGlobalHeartBeat(anyLong(), anyBoolean())).thenReturn(Boolean.FALSE);
+    when(storage.shouldSendSdkHeartBeat(anyString(), anyLong())).thenReturn(Boolean.FALSE);
+    when(storage.shouldSendGlobalHeartBeat(anyLong())).thenReturn(Boolean.FALSE);
     heartBeatInfo.storeHeartBeatInfo(testSdk);
     List<HeartBeatResult> result = heartBeatInfo.getAndClearStoredHeartBeatInfo();
     assertThat(result.size()).isEqualTo(0);
@@ -57,9 +55,8 @@ public class DefaultHeartBeatInfoTest {
   public void storeHeartBeatCode_sdkButNoGlobalHeartBeat() {
     ArrayList<SdkHeartBeatResult> returnResults = new ArrayList<>();
     returnResults.add(SdkHeartBeatResult.create(testSdk, 1000000001));
-    when(storage.shouldSendSdkHeartBeat(anyString(), anyLong(), anyBoolean()))
-        .thenReturn(Boolean.TRUE);
-    when(storage.shouldSendGlobalHeartBeat(anyLong(), anyBoolean())).thenReturn(Boolean.FALSE);
+    when(storage.shouldSendSdkHeartBeat(anyString(), anyLong())).thenReturn(Boolean.TRUE);
+    when(storage.shouldSendGlobalHeartBeat(anyLong())).thenReturn(Boolean.FALSE);
     when(storage.getLastGlobalHeartBeat()).thenReturn((long) 1000000000);
     when(storage.getStoredHeartBeats(anyBoolean())).thenReturn(returnResults);
     heartBeatInfo.storeHeartBeatInfo(testSdk);
@@ -75,9 +72,8 @@ public class DefaultHeartBeatInfoTest {
   public void storeHeartBeatCode_globalAndSDKHeartBeat() {
     ArrayList<SdkHeartBeatResult> returnResults = new ArrayList<>();
     returnResults.add(SdkHeartBeatResult.create(testSdk, 100000000));
-    when(storage.shouldSendSdkHeartBeat(anyString(), anyLong(), anyBoolean()))
-        .thenReturn(Boolean.TRUE);
-    when(storage.shouldSendGlobalHeartBeat(anyLong(), anyBoolean())).thenReturn(Boolean.TRUE);
+    when(storage.shouldSendSdkHeartBeat(anyString(), anyLong())).thenReturn(Boolean.TRUE);
+    when(storage.shouldSendGlobalHeartBeat(anyLong())).thenReturn(Boolean.TRUE);
     when(storage.getLastGlobalHeartBeat()).thenReturn((long) 0);
     when(storage.getStoredHeartBeats(anyBoolean())).thenReturn(returnResults);
     when(storage.isValidHeartBeat(0, 100000000)).thenReturn(true);
@@ -96,9 +92,8 @@ public class DefaultHeartBeatInfoTest {
     returnResults.add(SdkHeartBeatResult.create(testSdk, 100000000));
     returnResults.add(SdkHeartBeatResult.create(testSdk, 200000000));
     returnResults.add(SdkHeartBeatResult.create(testSdk, 200002000));
-    when(storage.shouldSendSdkHeartBeat(anyString(), anyLong(), anyBoolean()))
-        .thenReturn(Boolean.TRUE);
-    when(storage.shouldSendGlobalHeartBeat(anyLong(), anyBoolean())).thenReturn(Boolean.TRUE);
+    when(storage.shouldSendSdkHeartBeat(anyString(), anyLong())).thenReturn(Boolean.TRUE);
+    when(storage.shouldSendGlobalHeartBeat(anyLong())).thenReturn(Boolean.TRUE);
     when(storage.getLastGlobalHeartBeat()).thenReturn((long) 0);
     when(storage.getStoredHeartBeats(anyBoolean())).thenReturn(returnResults);
     when(storage.isValidHeartBeat(0, 100000000)).thenReturn(true);
@@ -120,27 +115,24 @@ public class DefaultHeartBeatInfoTest {
 
   @Test
   public void getHeartBeatCode_sdkHeartBeat() {
-    when(storage.shouldSendSdkHeartBeat(anyString(), anyLong(), anyBoolean()))
-        .thenReturn(Boolean.TRUE);
-    when(storage.shouldSendGlobalHeartBeat(anyLong(), anyBoolean())).thenReturn(Boolean.FALSE);
+    when(storage.shouldSendSdkHeartBeat(anyString(), anyLong())).thenReturn(Boolean.TRUE);
+    when(storage.shouldSendGlobalHeartBeat(anyLong())).thenReturn(Boolean.FALSE);
     heartBeatInfo.getHeartBeatCode(testSdk);
     assertThat(heartBeatInfo.getHeartBeatCode(testSdk).getCode()).isEqualTo(1);
   }
 
   @Test
   public void getHeartBeatCode_globalHeartBeat() {
-    when(storage.shouldSendSdkHeartBeat(anyString(), anyLong(), anyBoolean()))
-        .thenReturn(Boolean.FALSE);
-    when(storage.shouldSendGlobalHeartBeat(anyLong(), anyBoolean())).thenReturn(Boolean.TRUE);
+    when(storage.shouldSendSdkHeartBeat(anyString(), anyLong())).thenReturn(Boolean.FALSE);
+    when(storage.shouldSendGlobalHeartBeat(anyLong())).thenReturn(Boolean.TRUE);
     heartBeatInfo.getHeartBeatCode(testSdk);
     assertThat(heartBeatInfo.getHeartBeatCode(testSdk).getCode()).isEqualTo(2);
   }
 
   @Test
   public void getHeartBeatCode_combinedHeartBeat() {
-    when(storage.shouldSendSdkHeartBeat(anyString(), anyLong(), anyBoolean()))
-        .thenReturn(Boolean.TRUE);
-    when(storage.shouldSendGlobalHeartBeat(anyLong(), anyBoolean())).thenReturn(Boolean.TRUE);
+    when(storage.shouldSendSdkHeartBeat(anyString(), anyLong())).thenReturn(Boolean.TRUE);
+    when(storage.shouldSendGlobalHeartBeat(anyLong())).thenReturn(Boolean.TRUE);
     heartBeatInfo.getHeartBeatCode(testSdk);
     assertThat(heartBeatInfo.getHeartBeatCode(testSdk).getCode()).isEqualTo(3);
   }

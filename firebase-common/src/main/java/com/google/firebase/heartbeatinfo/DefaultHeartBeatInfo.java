@@ -41,8 +41,8 @@ public class DefaultHeartBeatInfo implements HeartBeatInfo {
   @Override
   public @NonNull HeartBeat getHeartBeatCode(@NonNull String heartBeatTag) {
     long presentTime = System.currentTimeMillis();
-    boolean shouldSendSdkHB = storage.shouldSendSdkHeartBeat(heartBeatTag, presentTime, true);
-    boolean shouldSendGlobalHB = storage.shouldSendGlobalHeartBeat(presentTime, true);
+    boolean shouldSendSdkHB = storage.shouldSendSdkHeartBeat(heartBeatTag, presentTime);
+    boolean shouldSendGlobalHB = storage.shouldSendGlobalHeartBeat(presentTime);
     if (shouldSendSdkHB && shouldSendGlobalHB) {
       return HeartBeat.COMBINED;
     } else if (shouldSendGlobalHB) {
@@ -85,7 +85,7 @@ public class DefaultHeartBeatInfo implements HeartBeatInfo {
   @Override
   public void storeHeartBeatInfo(@NonNull String heartBeatTag) {
     long presentTime = System.currentTimeMillis();
-    boolean shouldSendSdkHB = storage.shouldSendSdkHeartBeat(heartBeatTag, presentTime, true);
+    boolean shouldSendSdkHB = storage.shouldSendSdkHeartBeat(heartBeatTag, presentTime);
     if (shouldSendSdkHB) {
       storage.storeHeartBeatInformation(heartBeatTag, presentTime);
     }

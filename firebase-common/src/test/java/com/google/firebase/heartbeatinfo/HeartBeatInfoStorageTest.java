@@ -46,22 +46,22 @@ public class HeartBeatInfoStorageTest {
   @Test
   public void shouldSendSdkHeartBeat_answerIsNo() {
     sharedPreferences.edit().putLong(testSdk, 1).apply();
-    assertThat(heartBeatInfoStorage.shouldSendSdkHeartBeat(testSdk, 1, true)).isFalse();
+    assertThat(heartBeatInfoStorage.shouldSendSdkHeartBeat(testSdk, 1)).isFalse();
   }
 
   @Test
   public void shouldSendSdkHeartBeat_answerIsYes() {
     long currentTime = System.currentTimeMillis();
-    assertThat(heartBeatInfoStorage.shouldSendSdkHeartBeat(testSdk, 1, true)).isTrue();
+    assertThat(heartBeatInfoStorage.shouldSendSdkHeartBeat(testSdk, 1)).isTrue();
     assertThat(sharedPreferences.getLong(testSdk, -1)).isEqualTo(1);
-    assertThat(heartBeatInfoStorage.shouldSendSdkHeartBeat(testSdk, currentTime, true)).isTrue();
+    assertThat(heartBeatInfoStorage.shouldSendSdkHeartBeat(testSdk, currentTime)).isTrue();
     assertThat(sharedPreferences.getLong(testSdk, -1)).isEqualTo(currentTime);
   }
 
   @Test
   public void shouldSendGlobalHeartBeat_answerIsNo() {
     sharedPreferences.edit().putLong(GLOBAL, 1).apply();
-    assertThat(heartBeatInfoStorage.shouldSendGlobalHeartBeat(1, true)).isFalse();
+    assertThat(heartBeatInfoStorage.shouldSendGlobalHeartBeat(1)).isFalse();
   }
 
   @Test
@@ -114,9 +114,9 @@ public class HeartBeatInfoStorageTest {
   @Test
   public void shouldSendGlobalHeartBeat_answerIsYes() {
     long currentTime = System.currentTimeMillis();
-    assertThat(heartBeatInfoStorage.shouldSendGlobalHeartBeat(1, true)).isTrue();
+    assertThat(heartBeatInfoStorage.shouldSendGlobalHeartBeat(1)).isTrue();
     assertThat(sharedPreferences.getLong(GLOBAL, -1)).isEqualTo(1);
-    assertThat(heartBeatInfoStorage.shouldSendGlobalHeartBeat(currentTime, true)).isTrue();
+    assertThat(heartBeatInfoStorage.shouldSendGlobalHeartBeat(currentTime)).isTrue();
     assertThat(sharedPreferences.getLong(GLOBAL, -1)).isEqualTo(currentTime);
   }
 }

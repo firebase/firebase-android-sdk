@@ -100,19 +100,15 @@ class HeartBeatInfoStorage {
    A sdk heartbeat is sent either when there is no heartbeat sent ever for the sdk or
    when the last heartbeat send for the sdk was later than a day before.
   */
-  synchronized boolean shouldSendSdkHeartBeat(String heartBeatTag, long millis, boolean update) {
+  synchronized boolean shouldSendSdkHeartBeat(String heartBeatTag, long millis) {
     if (sharedPreferences.contains(heartBeatTag)) {
       if (isValidHeartBeat(sharedPreferences.getLong(heartBeatTag, -1), millis)) {
-        if (update) {
-          sharedPreferences.edit().putLong(heartBeatTag, millis).apply();
-        }
+        sharedPreferences.edit().putLong(heartBeatTag, millis).apply();
         return true;
       }
       return false;
     } else {
-      if (update) {
-        sharedPreferences.edit().putLong(heartBeatTag, millis).apply();
-      }
+      sharedPreferences.edit().putLong(heartBeatTag, millis).apply();
       return true;
     }
   }
@@ -121,7 +117,7 @@ class HeartBeatInfoStorage {
    Indicates whether or not we have to send a global heartbeat.
    A global heartbeat is set only once per day.
   */
-  synchronized boolean shouldSendGlobalHeartBeat(long millis, boolean update) {
-    return shouldSendSdkHeartBeat(GLOBAL, millis, update);
+  synchronized boolean shouldSendGlobalHeartBeat(long millis) {
+    return shouldSendSdkHeartBeat(GLOBAL, millis);
   }
 }
