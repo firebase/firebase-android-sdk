@@ -37,7 +37,6 @@ import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
 import com.google.firebase.remoteconfig.internal.ConfigMetadataClient;
 import com.google.firebase.remoteconfig.internal.DefaultsXmlParser;
 import com.google.firebase.remoteconfig.internal.PerformanceTracer;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -163,17 +162,18 @@ public class FirebaseRemoteConfig {
    * @hide
    */
   FirebaseRemoteConfig(
-          ConfigGetParameterHandler getHandler, Context context,
-          FirebaseApp firebaseApp,
-          FirebaseInstallationsApi firebaseInstallations,
-          @Nullable FirebaseABTesting firebaseAbt,
-          Executor executor,
-          ConfigCacheClient fetchedConfigsCache,
-          ConfigCacheClient activatedConfigsCache,
-          ConfigCacheClient defaultConfigsCache,
-          ConfigFetchHandler fetchHandler,
-          ConfigMetadataClient frcMetadata,
-          PerformanceTracer performanceTracer) {
+      ConfigGetParameterHandler getHandler,
+      Context context,
+      FirebaseApp firebaseApp,
+      FirebaseInstallationsApi firebaseInstallations,
+      @Nullable FirebaseABTesting firebaseAbt,
+      Executor executor,
+      ConfigCacheClient fetchedConfigsCache,
+      ConfigCacheClient activatedConfigsCache,
+      ConfigCacheClient defaultConfigsCache,
+      ConfigFetchHandler fetchHandler,
+      ConfigMetadataClient frcMetadata,
+      PerformanceTracer performanceTracer) {
     this.context = context;
     this.firebaseApp = firebaseApp;
     this.firebaseInstallations = firebaseInstallations;
@@ -273,6 +273,7 @@ public class FirebaseRemoteConfig {
    */
   @NonNull
   public Task<Boolean> activate() {
+
     Task<ConfigContainer> fetchedConfigsTask = fetchedConfigsCache.get();
     Task<ConfigContainer> activatedConfigsTask = activatedConfigsCache.get();
 
@@ -345,6 +346,7 @@ public class FirebaseRemoteConfig {
    */
   @NonNull
   public Task<Void> fetch(long minimumFetchIntervalInSeconds) {
+
     Trace trace = performanceTracer.startTrace("remote_config_fetch");
     trace.putAttribute("remote_config_sdk_version", BuildConfig.VERSION_NAME);
     Task<FetchResponse> fetchTask =

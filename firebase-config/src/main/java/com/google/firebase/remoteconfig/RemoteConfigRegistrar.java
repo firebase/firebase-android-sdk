@@ -47,6 +47,11 @@ public class RemoteConfigRegistrar implements ComponentRegistrar {
             .add(Dependency.required(FirebaseInstallationsApi.class))
             .add(Dependency.required(AbtComponent.class))
             .add(Dependency.optional(AnalyticsConnector.class))
+            // For EAP we are modelling this as a strict dependency
+            // This currently throws DependencyCycleException, although we need only a lazy
+            // instance.
+            // We instead inject our own provider implementatation to minimize plumbing once these
+            // are ironed out.
             .add(Dependency.optionalProvider(FirebasePerformance.class))
             .factory(
                 container ->
@@ -56,6 +61,7 @@ public class RemoteConfigRegistrar implements ComponentRegistrar {
                         container.get(FirebaseInstallationsApi.class),
                         container.get(AbtComponent.class).get(OriginService.REMOTE_CONFIG),
                         container.get(AnalyticsConnector.class),
+                        // We mimic a provider from components
                         container.getProvider(FirebasePerformance.class)))
             .eagerInDefaultApp()
             .build(),

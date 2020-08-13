@@ -37,8 +37,6 @@ import com.google.firebase.remoteconfig.internal.ConfigMetadataClient;
 import com.google.firebase.remoteconfig.internal.ConfigStorageClient;
 import com.google.firebase.remoteconfig.internal.LegacyConfigsHandler;
 import com.google.firebase.remoteconfig.internal.PerformanceTraceClient;
-import com.google.firebase.remoteconfig.internal.PerformanceTracer;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -193,7 +191,8 @@ public class RemoteConfigComponent {
     if (!frcNamespaceInstances.containsKey(namespace)) {
       FirebaseRemoteConfig in =
           new FirebaseRemoteConfig(
-                  getHandler, context,
+              getHandler,
+              context,
               firebaseApp,
               firebaseInstallations,
               isAbtSupported(firebaseApp, namespace) ? firebaseAbt : null,

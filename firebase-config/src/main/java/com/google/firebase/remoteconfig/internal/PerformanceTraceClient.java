@@ -23,7 +23,8 @@ public class PerformanceTraceClient implements PerformanceTracer {
   private static PerformanceTraceClient instance;
   private final Provider<FirebasePerformance> firebasePerformance;
 
-  public static PerformanceTraceClient getInstance(Provider<FirebasePerformance> firebasePerformance) {
+  public static PerformanceTraceClient getInstance(
+      Provider<FirebasePerformance> firebasePerformance) {
     PerformanceTraceClient localRef = instance;
     if (localRef == null) {
       synchronized (PerformanceTracer.class) {
@@ -57,7 +58,7 @@ public class PerformanceTraceClient implements PerformanceTracer {
     return new Stopwatch();
   }
 
-  static class Stopwatch implements Timer {
+  public static class Stopwatch implements Timer {
     private long end;
     private long start;
 

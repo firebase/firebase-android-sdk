@@ -99,7 +99,8 @@ public class FirebaseRemoteConfigIntegrationTest {
 
     frc =
         new FirebaseRemoteConfig(
-                mockGetHandler, context,
+            mockGetHandler,
+            context,
             firebaseApp,
             mockFirebaseInstallations,
             mockFirebaseAbt,
@@ -108,7 +109,8 @@ public class FirebaseRemoteConfigIntegrationTest {
             mockActivatedCache,
             mockDefaultsCache,
             mockFetchHandler,
-                metadataClient, performanceTracer);
+            metadataClient,
+            performanceTracer);
   }
 
   @Test

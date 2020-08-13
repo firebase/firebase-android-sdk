@@ -116,16 +116,6 @@ public class ConfigFetchHandler {
   }
 
   /**
-   * ConfigMetadataClient#getMinimumFetchIntervalInSeconds()}.
-   *
-   * @param trace
-   * @param performanceTracer
-   */
-  public Task<FetchResponse> fetch(Trace trace, PerformanceTracer performanceTracer) {
-    return fetch(frcMetadata.getMinimumFetchIntervalInSeconds(), trace, performanceTracer);
-  }
-
-  /**
    * Starts fetching configs from the Firebase Remote Config server.
    *
    * <p>Guarantees consistency between memory and disk; fetched configs are saved to memory only
@@ -160,6 +150,7 @@ public class ConfigFetchHandler {
     trace.putMetric("minimum_fetch_interval_hours", HOURS.convert(fetchIntervalInSeconds, SECONDS));
     Timer cacheReadTimer = performanceTracer.newTimer();
     cacheReadTimer.start();
+
     return fetchedConfigsCache
         .get()
         .addOnCompleteListener(

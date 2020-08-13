@@ -182,7 +182,8 @@ public class RemoteConfigComponentTest {
         mockFirebaseAbt,
         mockAnalyticsConnector,
         mockLegacyConfigsHandler,
-        /* loadGetDefault= */ true);
+        /* loadGetDefault= */ true,
+        null);
   }
 
   private RemoteConfigComponent getNewFrcComponentWithoutLoadingDefault() {
@@ -194,7 +195,8 @@ public class RemoteConfigComponentTest {
         mockFirebaseAbt,
         mockAnalyticsConnector,
         mockLegacyConfigsHandler,
-        /* loadGetDefault= */ false);
+        /* loadGetDefault= */ false,
+        null);
   }
 
   private FirebaseRemoteConfig getFrcInstanceFromComponent(
@@ -219,8 +221,8 @@ public class RemoteConfigComponentTest {
             .withAbtExperiments(createAbtExperiments(createAbtExperiment("exp1")))
             .build();
 
-    when(mockFetchedCache.get(trace)).thenReturn(Tasks.forResult(containerWithAbtExperiments));
-    when(mockActivatedCache.get(trace)).thenReturn(Tasks.forResult(null));
+    when(mockFetchedCache.get()).thenReturn(Tasks.forResult(containerWithAbtExperiments));
+    when(mockActivatedCache.get()).thenReturn(Tasks.forResult(null));
 
     when(mockActivatedCache.put(containerWithAbtExperiments))
         .thenReturn(Tasks.forResult(containerWithAbtExperiments));
