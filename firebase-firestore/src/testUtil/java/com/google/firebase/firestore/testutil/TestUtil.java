@@ -611,12 +611,6 @@ public class TestUtil {
     assertEquals(expectedSet, actual);
   }
 
-  public static <T> void assertSetEquals(Iterable<T> expected, Iterable<T> actual) {
-    Set<T> expectedSet = Sets.newHashSet(expected);
-    Set<T> actualSet = Sets.newHashSet(actual);
-    assertEquals(expectedSet, actualSet);
-  }
-
   /** Asserts that the given runnable block fails with an internal error. */
   public static void assertFails(Runnable block) {
     try {

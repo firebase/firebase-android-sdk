@@ -524,13 +524,16 @@ public class Query {
    * Given an operator, returns the set of operators that cannot be used with it.
    *
    * <p>Operators in a query must adhere to the following set of rules:
-   * <li>Only one array operator is allowed.
-   * <li>Only one disjunctive operator is allowed.
-   * <li>NOT_EQUAL cannot be used with another NOT_EQUAL operator.
-   * <li>NOT_IN cannot be used with array, disjunctive, or NOT_EQUAL operators.
    *
-   *     <p>Array operators: ARRAY_CONTAINS, ARRAY_CONTAINS_ANY Disjunctive operators: IN,
-   *     ARRAY_CONTAINS_ANY, NOT_IN
+   * <ol>
+   *   <li>Only one array operator is allowed.
+   *   <li>Only one disjunctive operator is allowed.
+   *   <li>NOT_EQUAL cannot be used with another NOT_EQUAL operator.
+   *   <li>NOT_IN cannot be used with array, disjunctive, or NOT_EQUAL operators.
+   * </ol>
+   *
+   * <p>Array operators: ARRAY_CONTAINS, ARRAY_CONTAINS_ANY Disjunctive operators: IN,
+   * ARRAY_CONTAINS_ANY, NOT_IN
    */
   private List<Operator> conflictingOps(Operator op) {
     switch (op) {
