@@ -26,8 +26,10 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+import com.google.android.datatransport.Encoding;
 import com.google.android.datatransport.Event;
 import com.google.android.datatransport.Transport;
+import com.google.android.datatransport.TransportFactory;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.encoders.DataEncoder;
@@ -81,11 +83,27 @@ public class MessagingAnalytics {
           .build();
 
   /** Log that a notification was received by the client app. */
-  public static void logNotificationReceived(Intent intent, @Nullable Transport<String> transport) {
-    logToScion(ScionAnalytics.EVENT_NOTIFICATION_RECEIVE, intent);
+  public static void logNotificationReceived(Intent intent) {
 
-    if (transport != null) {
-      logToFirelog(EventType.MESSAGE_DELIVERED, intent, transport);
+    if (MessagingAnalytics.shouldUploadScionMetrics(intent)) {
+      logToScion(ScionAnalytics.EVENT_NOTIFICATION_RECEIVE, intent);
+    }
+
+    if (MessagingAnalytics.shouldUploadFirelogAnalytics(intent)) {
+      TransportFactory transportFactory = FirebaseMessaging.getTransportFactory();
+
+      if (transportFactory != null) {
+        Transport<String> transport =
+            transportFactory.getTransport(
+                FirelogAnalytics.FCM_LOG_SOURCE,
+                String.class,
+                Encoding.of("json"),
+                String::getBytes);
+        logToFirelog(EventType.MESSAGE_DELIVERED, intent, transport);
+      } else {
+        Log.e(
+            TAG, "TransportFactory is null. Skip exporting message delivery metrics to Big Query");
+      }
     }
   }
 

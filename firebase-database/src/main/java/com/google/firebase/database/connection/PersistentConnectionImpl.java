@@ -1010,8 +1010,9 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
   }
 
   private void sendPut(final long putId) {
-    assert canSendWrites()
-        : "sendPut called when we can't send writes (we're disconnected or writes are paused).";
+    hardAssert(
+        canSendWrites(),
+        "sendPut called when we can't send writes (we're disconnected or writes are paused).");
     final OutstandingPut put = outstandingPuts.get(putId);
     final RequestResultCallback onComplete = put.getOnComplete();
     final String action = put.getAction();

@@ -4,6 +4,8 @@ package com.google.firebase.inappmessaging {
   public class FirebaseInAppMessaging {
     method public void addClickListener(@NonNull com.google.firebase.inappmessaging.FirebaseInAppMessagingClickListener);
     method public void addClickListener(@NonNull com.google.firebase.inappmessaging.FirebaseInAppMessagingClickListener, @NonNull java.util.concurrent.Executor);
+    method public void addDismissListener(@NonNull com.google.firebase.inappmessaging.FirebaseInAppMessagingDismissListener);
+    method public void addDismissListener(@NonNull com.google.firebase.inappmessaging.FirebaseInAppMessagingDismissListener, @NonNull java.util.concurrent.Executor);
     method public void addDisplayErrorListener(@NonNull com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayErrorListener);
     method public void addDisplayErrorListener(@NonNull com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayErrorListener, @NonNull java.util.concurrent.Executor);
     method public void addImpressionListener(@NonNull com.google.firebase.inappmessaging.FirebaseInAppMessagingImpressionListener);
@@ -28,6 +30,10 @@ package com.google.firebase.inappmessaging {
   public class FirebaseInAppMessagingContextualTrigger {
     ctor public FirebaseInAppMessagingContextualTrigger(@NonNull String);
     method @NonNull public String getTriggerName();
+  }
+
+  public interface FirebaseInAppMessagingDismissListener {
+    method public void messageDismissed(@NonNull com.google.firebase.inappmessaging.model.InAppMessage);
   }
 
   @Keep public interface FirebaseInAppMessagingDisplay {

@@ -19,6 +19,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.FirebaseApp;
@@ -37,7 +38,9 @@ public class DataCollectionArbiter {
   TaskCompletionSource<Void> dataCollectionEnabledTask = new TaskCompletionSource<>();
   boolean taskResolved = false;
 
-  private Boolean crashlyticsDataCollectionEnabled;
+  private boolean setInManifest = false;
+
+  @Nullable private Boolean crashlyticsDataCollectionEnabled;
 
   /**
    * A Task that will be resolved when explicit data collection permission is granted by calling
@@ -52,7 +55,7 @@ public class DataCollectionArbiter {
     firebaseApp = app;
     sharedPreferences = CommonUtils.getSharedPrefs(applicationContext);
 
-    Boolean dataCollectionEnabled = getDataCollectionValueFromSharedPreferences(sharedPreferences);
+    Boolean dataCollectionEnabled = getDataCollectionValueFromSharedPreferences();
     if (dataCollectionEnabled == null) {
       dataCollectionEnabled = getDataCollectionValueFromManifest(applicationContext);
     }
@@ -68,12 +71,15 @@ public class DataCollectionArbiter {
   }
 
   public synchronized boolean isAutomaticDataCollectionEnabled() {
-    return crashlyticsDataCollectionEnabled != null
-        ? crashlyticsDataCollectionEnabled
-        : firebaseApp.isDataCollectionDefaultEnabled();
+    final boolean dataCollectionEnabled =
+        crashlyticsDataCollectionEnabled != null
+            ? crashlyticsDataCollectionEnabled
+            : firebaseApp.isDataCollectionDefaultEnabled();
+    logDataCollectionState(dataCollectionEnabled);
+    return dataCollectionEnabled;
   }
 
-  public synchronized void setCrashlyticsDataCollectionEnabled(Boolean enabled) {
+  public synchronized void setCrashlyticsDataCollectionEnabled(@Nullable Boolean enabled) {
     crashlyticsDataCollectionEnabled =
         (enabled != null)
             ? enabled
@@ -125,35 +131,40 @@ public class DataCollectionArbiter {
     dataCollectionExplicitlyApproved.trySetResult(null);
   }
 
-  @SuppressLint({"ApplySharedPref"})
-  private static void storeDataCollectionValueInSharedPreferences(
-      SharedPreferences sharedPreferences, Boolean enabled) {
-    final SharedPreferences.Editor prefsEditor = sharedPreferences.edit();
-    if (enabled != null) {
-      prefsEditor.putBoolean(FIREBASE_CRASHLYTICS_COLLECTION_ENABLED, enabled);
-    } else {
-      prefsEditor.remove(FIREBASE_CRASHLYTICS_COLLECTION_ENABLED);
-    }
-    prefsEditor.commit();
+  private void logDataCollectionState(boolean dataCollectionEnabled) {
+    final String stateString = dataCollectionEnabled ? "ENABLED" : "DISABLED";
+    final String fromString =
+        crashlyticsDataCollectionEnabled == null
+            ? "global Firebase setting"
+            : setInManifest ? FIREBASE_CRASHLYTICS_COLLECTION_ENABLED + " manifest flag" : "API";
+    Logger.getLogger()
+        .d(
+            String.format(
+                "Crashlytics automatic data collection %s by %s.", stateString, fromString));
   }
 
-  private static Boolean getDataCollectionValueFromSharedPreferences(
-      SharedPreferences sharedPreferences) {
+  @Nullable
+  private Boolean getDataCollectionValueFromSharedPreferences() {
     if (sharedPreferences.contains(FIREBASE_CRASHLYTICS_COLLECTION_ENABLED)) {
+      setInManifest = false;
       return sharedPreferences.getBoolean(FIREBASE_CRASHLYTICS_COLLECTION_ENABLED, true);
     }
     return null;
   }
 
-  private static Boolean getDataCollectionValueFromManifest(Context applicationContext) {
+  @Nullable
+  private Boolean getDataCollectionValueFromManifest(Context applicationContext) {
     final Boolean manifestSetting =
         readCrashlyticsDataCollectionEnabledFromManifest(applicationContext);
     if (manifestSetting == null) {
+      setInManifest = false;
       return null;
     }
+    setInManifest = true;
     return Boolean.TRUE.equals(manifestSetting);
   }
 
+  @Nullable
   private static Boolean readCrashlyticsDataCollectionEnabledFromManifest(
       Context applicationContext) {
     try {
@@ -174,5 +185,17 @@ public class DataCollectionArbiter {
       Logger.getLogger().d("Unable to get PackageManager. Falling through", e);
     }
     return null;
+  }
+
+  @SuppressLint({"ApplySharedPref"})
+  private static void storeDataCollectionValueInSharedPreferences(
+      SharedPreferences sharedPreferences, Boolean enabled) {
+    final SharedPreferences.Editor prefsEditor = sharedPreferences.edit();
+    if (enabled != null) {
+      prefsEditor.putBoolean(FIREBASE_CRASHLYTICS_COLLECTION_ENABLED, enabled);
+    } else {
+      prefsEditor.remove(FIREBASE_CRASHLYTICS_COLLECTION_ENABLED);
+    }
+    prefsEditor.commit();
   }
 }

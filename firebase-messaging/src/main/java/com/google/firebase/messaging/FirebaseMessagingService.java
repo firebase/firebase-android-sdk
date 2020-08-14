@@ -24,14 +24,10 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
-import com.google.android.datatransport.Encoding;
-import com.google.android.datatransport.Transport;
-import com.google.android.datatransport.TransportFactory;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.iid.MessengerIpcClient;
 import com.google.firebase.iid.ServiceStarter;
-import com.google.firebase.messaging.Constants.FirelogAnalytics;
 import com.google.firebase.messaging.Constants.IntentActionKeys;
 import com.google.firebase.messaging.Constants.IntentKeys;
 import com.google.firebase.messaging.Constants.MessagePayloadKeys;
@@ -249,26 +245,7 @@ public class FirebaseMessagingService extends EnhancedIntentService {
     switch (messageType) {
       case MessageTypes.MESSAGE:
         if (MessagingAnalytics.shouldUploadScionMetrics(intent)) {
-          MessagingAnalytics.logNotificationReceived(intent, /* transport= */ null);
-        }
-
-        if (MessagingAnalytics.shouldUploadFirelogAnalytics(intent)) {
-          TransportFactory transportFactory = FirebaseMessaging.getTransportFactory();
-
-          if (transportFactory != null) {
-            Transport<String> transport =
-                transportFactory.getTransport(
-                    FirelogAnalytics.FCM_LOG_SOURCE,
-                    String.class,
-                    Encoding.of("json"),
-                    String::getBytes);
-
-            MessagingAnalytics.logNotificationReceived(intent, transport);
-          } else {
-            Log.e(
-                TAG,
-                "TransportFactory is null. Skip exporting message delivery metrics to Big Query");
-          }
+          MessagingAnalytics.logNotificationReceived(intent);
         }
 
         dispatchMessage(intent);
