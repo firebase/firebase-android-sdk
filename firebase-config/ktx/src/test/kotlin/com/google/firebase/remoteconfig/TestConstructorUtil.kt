@@ -22,6 +22,7 @@ import com.google.firebase.remoteconfig.internal.ConfigCacheClient
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler
 import com.google.firebase.remoteconfig.internal.ConfigMetadataClient
+import com.google.firebase.remoteconfig.internal.PerformanceTraceClient
 import java.util.concurrent.Executor
 
 // This method is a workaround for testing. It enable us to create a FirebaseRemoteConfig object
@@ -37,7 +38,8 @@ fun createRemoteConfig(
     defaultConfigsCache: ConfigCacheClient,
     fetchHandler: ConfigFetchHandler,
     getHandler: ConfigGetParameterHandler,
-    frcMetadata: ConfigMetadataClient
+    frcMetadata: ConfigMetadataClient,
+    performanceTracer: PerformanceTraceClient
 ): FirebaseRemoteConfig {
         return FirebaseRemoteConfig(
                 getHandler,
