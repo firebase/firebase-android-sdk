@@ -20,6 +20,7 @@ import android.text.TextUtils;
 import androidx.annotation.NonNull;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
+import com.google.firebase.database.annotations.Nullable;
 import com.google.firebase.database.core.DatabaseConfig;
 import com.google.firebase.database.core.Path;
 import com.google.firebase.database.core.Repo;
@@ -28,6 +29,7 @@ import com.google.firebase.database.core.RepoManager;
 import com.google.firebase.database.core.utilities.ParsedUrl;
 import com.google.firebase.database.core.utilities.Utilities;
 import com.google.firebase.database.core.utilities.Validation;
+import com.google.firebase.emulators.EmulatedServiceSettings;
 
 /**
  * The entry point for accessing a Firebase Database. You can get an instance by calling {@link
@@ -41,6 +43,7 @@ public class FirebaseDatabase {
   private final FirebaseApp app;
   private final RepoInfo repoInfo;
   private final DatabaseConfig config;
+  @Nullable private EmulatedServiceSettings emulatorSettings;
   private Repo repo; // Usage must be guarded by a call to ensureRepo().
 
   /**
@@ -99,6 +102,10 @@ public class FirebaseDatabase {
               + "FirebaseApp or from your getInstance() call.");
     }
 
+    checkNotNull(app, "Provided FirebaseApp must not be null.");
+    FirebaseDatabaseComponent component = app.get(FirebaseDatabaseComponent.class);
+    checkNotNull(component, "Firebase Database component is not present.");
+
     ParsedUrl parsedUrl = Utilities.parseUrl(url);
     if (!parsedUrl.path.isEmpty()) {
       throw new DatabaseException(
@@ -109,9 +116,6 @@ public class FirebaseDatabase {
               + parsedUrl.path.toString());
     }
 
-    checkNotNull(app, "Provided FirebaseApp must not be null.");
-    FirebaseDatabaseComponent component = app.get(FirebaseDatabaseComponent.class);
-    checkNotNull(component, "Firebase Database component is not present.");
     return component.get(parsedUrl.repoInfo);
   }
 
@@ -123,7 +127,8 @@ public class FirebaseDatabase {
     return db;
   }
 
-  FirebaseDatabase(FirebaseApp app, RepoInfo repoInfo, DatabaseConfig config) {
+  FirebaseDatabase(
+      @NonNull FirebaseApp app, @NonNull RepoInfo repoInfo, @NonNull DatabaseConfig config) {
     this.app = app;
     this.repoInfo = repoInfo;
     this.config = config;
@@ -189,6 +194,8 @@ public class FirebaseDatabase {
     }
 
     ParsedUrl parsedUrl = Utilities.parseUrl(url);
+    parsedUrl.repoInfo.applyEmulatorSettings(this.emulatorSettings);
+
     if (!parsedUrl.repoInfo.host.equals(this.repo.getRepoInfo().host)) {
       throw new DatabaseException(
           "Invalid URL ("
@@ -288,6 +295,23 @@ public class FirebaseDatabase {
     this.config.setPersistenceCacheSizeBytes(cacheSizeInBytes);
   }
 
+  /**
+   * Modify this FirebaseDatabase instance to communicate with the Realtime Database emulator.
+   *
+   * <p>Note: this must be called before this instance has been used to do any database operations.
+   *
+   * @param host the emulator host (ex: 10.0.2.2)
+   * @param port the emulator port (ex: 9000)
+   */
+  public void useEmulator(@NonNull String host, int port) {
+    if (this.repo != null) {
+      throw new IllegalStateException(
+          "Cannot call useEmulator() after instance has already been initialized.");
+    }
+
+    this.emulatorSettings = new EmulatedServiceSettings(host, port);
+  }
+
   /** @return The semver version for this build of the Firebase Database client */
   @NonNull
   public static String getSdkVersion() {
@@ -306,6 +330,7 @@ public class FirebaseDatabase {
 
   private synchronized void ensureRepo() {
     if (this.repo == null) {
+      this.repoInfo.applyEmulatorSettings(this.emulatorSettings);
       repo = RepoManager.createRepo(this.config, this.repoInfo, this);
     }
   }

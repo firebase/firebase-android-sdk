@@ -14,6 +14,8 @@
 
 package com.google.firebase.database.core;
 
+import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
+
 import com.google.firebase.database.annotations.NotNull;
 import com.google.firebase.database.core.view.QuerySpec;
 import java.util.ArrayList;
@@ -89,7 +91,7 @@ public class ZombieEventManager implements EventRegistrationZombieListener {
           globalEventRegistrations.remove(zombiedRegistration);
         }
       }
-      assert (found || !zombiedRegistration.isUserInitiated());
+      hardAssert(found || !zombiedRegistration.isUserInitiated());
 
       // If the registration was recorded twice, we need to remove its second
       // record.

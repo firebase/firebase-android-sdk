@@ -45,8 +45,6 @@ import com.google.firebase.inappmessaging.internal.InstallationIdResult;
 import com.google.firebase.inappmessaging.internal.ProgramaticContextualTriggers;
 import com.google.firebase.inappmessaging.internal.RateLimiterClient;
 import com.google.firebase.inappmessaging.internal.Schedulers;
-import com.google.firebase.inappmessaging.model.Action;
-import com.google.firebase.inappmessaging.model.InAppMessage;
 import com.google.firebase.inappmessaging.model.TriggeredInAppMessage;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
@@ -151,7 +149,7 @@ public class FirebaseInAppMessagingTest {
   @Mock private DisplayCallbacksFactory displayCallbacksFactory;
   @Mock private FirebaseInAppMessagingDisplayCallbacks displayCallbacks;
   @Mock private ProgramaticContextualTriggers programaticContextualTriggers;
-  @Mock DeveloperListenerManager listenerScheduler = new DeveloperListenerManager();
+  @Mock DeveloperListenerManager developerListenerManager = new DeveloperListenerManager();
   FirebaseApp firebaseApp1;
   FirebaseOptions options;
 
@@ -209,11 +207,11 @@ public class FirebaseInAppMessagingTest {
             dataCollectionHelper,
             firebaseInstallations,
             displayCallbacksFactory,
-            listenerScheduler);
+            developerListenerManager);
   }
 
   @Test
-  public void addListener_addsListener() {
+  public void setDisplayComponent_setsComponent() {
     when(dataCollectionHelper.isAutomaticDataCollectionEnabled()).thenReturn(true);
     when(displayCallbacksFactory.generateDisplayCallback(
             BANNER_MESSAGE_MODEL, ON_FOREGROUND.name()))
@@ -226,7 +224,7 @@ public class FirebaseInAppMessagingTest {
   }
 
   @Test
-  public void removeListener_removesListener() {
+  public void clearDisplayListener_removesListener() {
     when(dataCollectionHelper.isAutomaticDataCollectionEnabled()).thenReturn(true);
     firebaseInAppMessaging.setMessageDisplayComponent(firebaseInAppMessagingDisplay);
     firebaseInAppMessaging.clearDisplayListener();
@@ -273,14 +271,26 @@ public class FirebaseInAppMessagingTest {
   }
 
   @Test
-  public void forwardsEventListenerRequestsToListenerScheduler() {
-    firebaseInAppMessaging.addClickListener(
-        new FirebaseInAppMessagingClickListener() {
-          @Override
-          public void messageClicked(InAppMessage inAppMessage, Action action) {
-            // Nothing
-          }
-        });
-    verify(listenerScheduler, times(1)).addClickListener(any());
+  public void addClickListener_forwardsEventListenerRequestsToDeveloperListenerManager() {
+    firebaseInAppMessaging.addClickListener((inAppMessage, action) -> {});
+    verify(developerListenerManager, times(1)).addClickListener(any());
+  }
+
+  @Test
+  public void addDismissListener_forwardsEventListenerRequestsToDeveloperListenerManager() {
+    firebaseInAppMessaging.addDismissListener(inAppMessage -> {});
+    verify(developerListenerManager, times(1)).addDismissListener(any());
+  }
+
+  @Test
+  public void addImpressionListener_forwardsEventListenerRequestsToDeveloperListenerManager() {
+    firebaseInAppMessaging.addImpressionListener(inAppMessage -> {});
+    verify(developerListenerManager, times(1)).addImpressionListener(any());
+  }
+
+  @Test
+  public void addDisplayErrorListener_forwardsEventListenerRequestsToDeveloperListenerManager() {
+    firebaseInAppMessaging.addDisplayErrorListener((inAppMessage, error) -> {});
+    verify(developerListenerManager, times(1)).addDisplayErrorListener(any());
   }
 }

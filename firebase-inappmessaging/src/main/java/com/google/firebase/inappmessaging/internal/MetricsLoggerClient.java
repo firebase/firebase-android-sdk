@@ -161,6 +161,8 @@ public class MetricsLoggerClient {
       // For dismiss log to analytics as well
       logEventAsync(message, AnalyticsConstants.ANALYTICS_DISMISS_EVENT, false);
     }
+    // No matter what, always trigger developer callbacks
+    developerListenerManager.messageDismissed(message);
   }
 
   private CampaignAnalytics createEventEntry(

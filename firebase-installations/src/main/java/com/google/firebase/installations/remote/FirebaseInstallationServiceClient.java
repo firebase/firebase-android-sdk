@@ -134,7 +134,7 @@ public class FirebaseInstallationServiceClient {
   @NonNull
   public InstallationResponse createFirebaseInstallation(
       @NonNull String apiKey,
-      @NonNull String fid,
+      @Nullable String fid,
       @NonNull String projectID,
       @NonNull String appId,
       @Nullable String iidToken)
@@ -186,7 +186,7 @@ public class FirebaseInstallationServiceClient {
   }
 
   private void writeFIDCreateRequestBodyToOutputStream(
-      HttpURLConnection httpURLConnection, @NonNull String fid, @NonNull String appId)
+      HttpURLConnection httpURLConnection, @Nullable String fid, @NonNull String appId)
       throws IOException {
     writeRequestBodyToOutputStream(
         httpURLConnection, getJsonBytes(buildCreateFirebaseInstallationRequestBody(fid, appId)));
@@ -231,7 +231,8 @@ public class FirebaseInstallationServiceClient {
    * @throws IllegalStateException If {@link JSONException} is thrown due to non-null names while
    *     {@link JSONObject} creation.
    */
-  private static JSONObject buildCreateFirebaseInstallationRequestBody(String fid, String appId) {
+  private static JSONObject buildCreateFirebaseInstallationRequestBody(
+      @Nullable String fid, @NonNull String appId) {
     try {
       JSONObject firebaseInstallationData = new JSONObject();
       firebaseInstallationData.put("fid", fid);

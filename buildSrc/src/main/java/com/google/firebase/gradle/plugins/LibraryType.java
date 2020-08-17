@@ -27,4 +27,8 @@ public enum LibraryType {
   public String getFormat() {
     return format;
   }
+
+  public String getComponentName() {
+    return name().toLowerCase();
+  }
 }

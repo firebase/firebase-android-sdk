@@ -14,8 +14,10 @@
 
 package com.google.firebase.gradle.plugins;
 
+import com.android.build.gradle.LibraryExtension;
 import com.google.common.collect.ImmutableSet;
 import com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabExtension;
+import java.io.File;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Optional;
@@ -27,6 +29,7 @@ import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.UnknownDomainObjectException;
 import org.gradle.api.internal.provider.DefaultProvider;
+import org.gradle.api.plugins.JavaPluginConvention;
 import org.gradle.api.provider.Property;
 import org.gradle.api.publish.maven.MavenPom;
 
@@ -178,6 +181,36 @@ public class FirebaseLibraryExtension {
 
   public String getPath() {
     return project.getPath();
+  }
+
+  public Set<File> getSrcDirs() {
+    switch (type) {
+      case ANDROID:
+        return project
+            .getExtensions()
+            .getByType(LibraryExtension.class)
+            .getSourceSets()
+            .getByName("main")
+            .getJava()
+            .getSrcDirs();
+      case JAVA:
+        return project
+            .getConvention()
+            .getPlugin(JavaPluginConvention.class)
+            .getSourceSets()
+            .getByName("main")
+            .getJava()
+            .getSrcDirs();
+      default:
+        throw new IllegalStateException("Unsupported project type: " + type);
+    }
+  }
+
+  public String getRuntimeClasspath() {
+    if (type.equals(LibraryType.ANDROID)) {
+      return "releaseRuntimeClasspath";
+    }
+    return "runtimeClasspath";
   }
 
   @Override

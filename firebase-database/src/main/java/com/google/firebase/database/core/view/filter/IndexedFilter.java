@@ -14,6 +14,8 @@
 
 package com.google.firebase.database.core.view.filter;
 
+import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
+
 import com.google.firebase.database.core.Path;
 import com.google.firebase.database.core.view.Change;
 import com.google.firebase.database.snapshot.ChildKey;
@@ -38,7 +40,7 @@ public class IndexedFilter implements NodeFilter {
       Path affectedPath,
       CompleteChildSource source,
       ChildChangeAccumulator optChangeAccumulator) {
-    assert indexedNode.hasIndex(this.index) : "The index must match the filter";
+    hardAssert(indexedNode.hasIndex(this.index), "The index must match the filter");
     Node snap = indexedNode.getNode();
     Node oldChild = snap.getImmediateChild(key);
     // Check if anything actually changed.
@@ -60,8 +62,9 @@ public class IndexedFilter implements NodeFilter {
         if (snap.hasChild(key)) {
           optChangeAccumulator.trackChildChange(Change.childRemovedChange(key, oldChild));
         } else {
-          assert snap.isLeafNode()
-              : "A child remove without an old child only makes sense on a leaf node";
+          hardAssert(
+              snap.isLeafNode(),
+              "A child remove without an old child only makes sense on a leaf node");
         }
       } else if (oldChild.isEmpty()) {
         optChangeAccumulator.trackChildChange(Change.childAddedChange(key, newChild));
@@ -80,7 +83,8 @@ public class IndexedFilter implements NodeFilter {
   @Override
   public IndexedNode updateFullNode(
       IndexedNode oldSnap, IndexedNode newSnap, ChildChangeAccumulator optChangeAccumulator) {
-    assert newSnap.hasIndex(this.index) : "Can't use IndexedNode that doesn't have filter's index";
+    hardAssert(
+        newSnap.hasIndex(this.index), "Can't use IndexedNode that doesn't have filter's index");
     if (optChangeAccumulator != null) {
       for (NamedNode child : oldSnap.getNode()) {
         if (!newSnap.getNode().hasChild(child.getName())) {

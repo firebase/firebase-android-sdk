@@ -57,7 +57,7 @@ def binary_size(pull_request, log, metrics_service_url, access_token):
   artifacts = affected_artifacts if pull_request else all_artifacts
   sdks = ','.join(artifacts)
 
-  gradle.run('assemble', '-p', 'apk-size', '--continue', gradle.P('sdks', sdks), check=False)
+  gradle.run('assemble', '--continue', gradle.P('sdks', sdks), workdir='apk-size', check=False)
 
   test_results = _measure_aar_sizes(artifacts) + _measure_apk_sizes(artifacts)
   test_report = {'metric': 'BinarySize', 'results': test_results, 'log': log}

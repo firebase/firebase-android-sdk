@@ -211,6 +211,9 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
         (NetworkStatus networkStatus) -> {
           workerQueue.enqueueAndForget(
               () -> {
+                // Porting Note: Unlike iOS, `restartNetwork()` is called even when the network
+                // becomes unreachable as we don't have any other way to tear down our streams.
+
                 // If the network has been explicitly disabled, make sure we don't accidentally
                 // re-enable it.
                 if (canUseNetwork()) {
@@ -277,6 +280,8 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
     networkEnabled = false;
     disableNetworkInternal();
     onlineStateTracker.updateState(OnlineState.UNKNOWN);
+    writeStream.inhibitBackoff();
+    watchStream.inhibitBackoff();
     enableNetwork();
   }
 

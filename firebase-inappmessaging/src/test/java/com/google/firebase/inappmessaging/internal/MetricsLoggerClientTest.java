@@ -418,6 +418,13 @@ public class MetricsLoggerClientTest {
   }
 
   @Test
+  public void logDismiss_notifiesListeners() {
+    metricsLoggerClient.logDismiss(BANNER_MESSAGE_MODEL, InAppMessagingDismissType.CLICK);
+
+    verify(developerListenerManager, times(1)).messageDismissed(BANNER_MESSAGE_MODEL);
+  }
+
+  @Test
   public void logDismiss_setsCampaignId() throws InvalidProtocolBufferException {
     metricsLoggerClient.logDismiss(
         BANNER_MESSAGE_MODEL, InAppMessagingDismissType.UNKNOWN_DISMISS_TYPE);

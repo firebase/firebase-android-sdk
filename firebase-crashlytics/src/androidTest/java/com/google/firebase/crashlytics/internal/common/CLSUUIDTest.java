@@ -15,9 +15,11 @@
 package com.google.firebase.crashlytics.internal.common;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
-import com.google.firebase.iid.internal.FirebaseInstanceIdInternal;
+import com.google.firebase.installations.FirebaseInstallationsApi;
 
 public class CLSUUIDTest extends CrashlyticsTestCase {
 
@@ -26,8 +28,9 @@ public class CLSUUIDTest extends CrashlyticsTestCase {
 
   protected void setUp() throws Exception {
     super.setUp();
-    FirebaseInstanceIdInternal instanceIdMock = mock(FirebaseInstanceIdInternal.class);
-    idManager = new IdManager(getContext(), getContext().getPackageName(), instanceIdMock);
+    FirebaseInstallationsApi installationsApiMock = mock(FirebaseInstallationsApi.class);
+    when(installationsApiMock.getId()).thenReturn(Tasks.forResult("instanceId"));
+    idManager = new IdManager(getContext(), getContext().getPackageName(), installationsApiMock);
     uuid = new CLSUUID(idManager);
   }
 

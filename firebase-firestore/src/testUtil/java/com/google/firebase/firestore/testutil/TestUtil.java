@@ -238,6 +238,8 @@ public class TestUtil {
       return Operator.LESS_THAN_OR_EQUAL;
     } else if (s.equals("==")) {
       return Operator.EQUAL;
+    } else if (s.equals("!=")) {
+      return Operator.NOT_EQUAL;
     } else if (s.equals(">")) {
       return Operator.GREATER_THAN;
     } else if (s.equals(">=")) {
@@ -246,6 +248,8 @@ public class TestUtil {
       return Operator.ARRAY_CONTAINS;
     } else if (s.equals("in")) {
       return Operator.IN;
+    } else if (s.equals("not-in")) {
+      return Operator.NOT_IN;
     } else if (s.equals("array-contains-any")) {
       return Operator.ARRAY_CONTAINS_ANY;
     } else {

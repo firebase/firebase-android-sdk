@@ -23,11 +23,13 @@ public abstract class Filter {
     LESS_THAN("<"),
     LESS_THAN_OR_EQUAL("<="),
     EQUAL("=="),
+    NOT_EQUAL("!="),
     GREATER_THAN(">"),
     GREATER_THAN_OR_EQUAL(">="),
     ARRAY_CONTAINS("array_contains"),
     ARRAY_CONTAINS_ANY("array_contains_any"),
-    IN("in");
+    IN("in"),
+    NOT_IN("not_in");
 
     private final String text;
 

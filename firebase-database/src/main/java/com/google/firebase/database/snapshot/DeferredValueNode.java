@@ -14,6 +14,8 @@
 
 package com.google.firebase.database.snapshot;
 
+import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
+
 import java.util.Map;
 
 public class DeferredValueNode extends LeafNode<DeferredValueNode> {
@@ -37,7 +39,7 @@ public class DeferredValueNode extends LeafNode<DeferredValueNode> {
 
   @Override
   public DeferredValueNode updatePriority(Node priority) {
-    assert PriorityUtilities.isValidPriority(priority);
+    hardAssert(PriorityUtilities.isValidPriority(priority));
     return new DeferredValueNode(value, priority);
   }
 

@@ -30,7 +30,7 @@ import com.google.common.util.concurrent.MoreExecutors;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.abt.FirebaseABTesting;
-import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.remoteconfig.internal.ConfigCacheClient;
 import com.google.firebase.remoteconfig.internal.ConfigContainer;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler;
@@ -50,8 +50,9 @@ import org.skyscreamer.jsonassert.JSONAssert;
 
 @RunWith(AndroidJUnit4.class)
 public class FirebaseRemoteConfigIntegrationTest {
-  private static final String API_KEY = "api_key";
+  private static final String API_KEY = "AIzaSyabcdefghijklmnopqrstuvwxyz1234567";
   private static final String APP_ID = "1:14368190084:android:09cb977358c6f241";
+  private static final String PROJECT_ID = "fake-frc-test-id";
 
   @Mock private ConfigCacheClient mockFetchedCache;
   @Mock private ConfigCacheClient mockActivatedCache;
@@ -64,7 +65,7 @@ public class FirebaseRemoteConfigIntegrationTest {
   @Mock private ConfigCacheClient mockFireperfActivatedCache;
 
   @Mock private FirebaseABTesting mockFirebaseAbt;
-  @Mock private FirebaseInstanceId mockFirebaseInstanceId;
+  @Mock private FirebaseInstallationsApi mockFirebaseInstallations;
   private FirebaseRemoteConfig frc;
 
   // We use a HashMap so that Mocking is easier.
@@ -84,7 +85,11 @@ public class FirebaseRemoteConfigIntegrationTest {
     FirebaseApp firebaseApp =
         FirebaseApp.initializeApp(
             context,
-            new FirebaseOptions.Builder().setApiKey(API_KEY).setApplicationId(APP_ID).build());
+            new FirebaseOptions.Builder()
+                .setApiKey(API_KEY)
+                .setApplicationId(APP_ID)
+                .setProjectId(PROJECT_ID)
+                .build());
 
     // Catch all to avoid NPEs (the getters should never return null).
     when(mockFetchedCache.get()).thenReturn(Tasks.forResult(null));
@@ -96,7 +101,7 @@ public class FirebaseRemoteConfigIntegrationTest {
         new FirebaseRemoteConfig(
             context,
             firebaseApp,
-            mockFirebaseInstanceId,
+            mockFirebaseInstallations,
             mockFirebaseAbt,
             directExecutor,
             mockFetchedCache,

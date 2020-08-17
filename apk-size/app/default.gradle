@@ -51,6 +51,18 @@ android {
             signingConfig signingConfigs.debug
             matchingFallbacks = ['release']
         }
+        release {
+            debuggable false
+            minifyEnabled false
+            shrinkResources false
+        }
+    }
+
+    variantFilter { variant ->
+        def buildTypeName = variant.buildType*.name
+        if (buildTypeName.contains('debug')) {
+            setIgnore(true)
+        }
     }
 }
 

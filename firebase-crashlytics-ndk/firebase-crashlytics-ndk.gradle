@@ -27,6 +27,7 @@ android {
     }
 
     compileSdkVersion project.targetSdkVersion
+    ndkVersion "17.2.4988734"	// NDK r17c
     defaultConfig {
         minSdkVersion 16
         targetSdkVersion project.targetSdkVersion
@@ -70,5 +71,5 @@ dependencies {
     androidTestImplementation 'org.mockito:mockito-core:2.25.0'
     androidTestImplementation 'com.linkedin.dexmaker:dexmaker:2.25.0'
     androidTestImplementation 'com.linkedin.dexmaker:dexmaker-mockito:2.25.0'
-    androidTestImplementation 'com.google.protobuf:protobuf-java:3.6.1'
+    androidTestImplementation "com.google.protobuf:protobuf-javalite:$javaliteVersion"
 }

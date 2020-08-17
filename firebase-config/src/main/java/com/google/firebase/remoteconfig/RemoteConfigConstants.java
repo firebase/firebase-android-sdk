@@ -31,6 +31,10 @@ public final class RemoteConfigConstants {
   /**
    * Keys of fields in the Fetch request body that the client sends to the Firebase Remote Config
    * server.
+   *
+   * <p>{@code INSTANCE_ID} and {@code INSTANCE_ID_TOKEN} are legacy names for the fields that used
+   * to be populated by the IID SDK. The fields have been replaced by the installation ID and
+   * installation auth token, respectively, which are fetched from the FIS SDK.
    */
   @StringDef({
     RequestFieldKey.INSTANCE_ID,

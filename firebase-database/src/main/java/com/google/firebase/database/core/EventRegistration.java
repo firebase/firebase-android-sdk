@@ -14,6 +14,8 @@
 
 package com.google.firebase.database.core;
 
+import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
+
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.annotations.NotNull;
 import com.google.firebase.database.core.view.Change;
@@ -56,8 +58,8 @@ public abstract class EventRegistration {
   }
 
   public void setOnZombied(EventRegistrationZombieListener listener) {
-    assert !isZombied();
-    assert this.listener == null;
+    hardAssert(!isZombied());
+    hardAssert(this.listener == null);
     this.listener = listener;
   }
 

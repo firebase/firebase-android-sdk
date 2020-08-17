@@ -21,6 +21,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import com.google.firebase.inappmessaging.FirebaseInAppMessagingClickListener;
+import com.google.firebase.inappmessaging.FirebaseInAppMessagingDismissListener;
 import com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks;
 import com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayErrorListener;
 import com.google.firebase.inappmessaging.FirebaseInAppMessagingImpressionListener;
@@ -37,8 +38,13 @@ import org.robolectric.annotation.Config;
 @Config(manifest = Config.NONE)
 public class DeveloperListenerManagerTest {
   @Mock FirebaseInAppMessagingClickListener clickListener;
-  @Mock FirebaseInAppMessagingImpressionListener inAppMessagingImpressionListener;
+  @Mock FirebaseInAppMessagingClickListener secondClickListener;
+  @Mock FirebaseInAppMessagingDismissListener dismissListener;
+  @Mock FirebaseInAppMessagingDismissListener secondDismissListener;
+  @Mock FirebaseInAppMessagingImpressionListener impressionListener;
+  @Mock FirebaseInAppMessagingImpressionListener secondImpressionListener;
   @Mock FirebaseInAppMessagingDisplayErrorListener errorListener;
+  @Mock FirebaseInAppMessagingDisplayErrorListener secondErrorListener;
   @Mock Executor devExecutor;
   DeveloperListenerManager developerListenerManager;
 
@@ -50,11 +56,10 @@ public class DeveloperListenerManagerTest {
 
   @Test
   public void notifies_ImpressionListenersOnImpression() {
-    developerListenerManager.addImpressionListener(inAppMessagingImpressionListener);
+    developerListenerManager.addImpressionListener(impressionListener);
     developerListenerManager.impressionDetected(BANNER_MESSAGE_MODEL);
 
-    verify(inAppMessagingImpressionListener, timeout(1000).times(1))
-        .impressionDetected(BANNER_MESSAGE_MODEL);
+    verify(impressionListener, timeout(1000).times(1)).impressionDetected(BANNER_MESSAGE_MODEL);
   }
 
   @Test
@@ -64,6 +69,14 @@ public class DeveloperListenerManagerTest {
 
     verify(clickListener, timeout(1000).times(1))
         .messageClicked(BANNER_MESSAGE_MODEL, BANNER_MESSAGE_MODEL.getAction());
+  }
+
+  @Test
+  public void notifies_DismissListenersOnDismiss() {
+    developerListenerManager.addDismissListener(dismissListener);
+    developerListenerManager.messageDismissed(BANNER_MESSAGE_MODEL);
+
+    verify(dismissListener, timeout(1000).times(1)).messageDismissed(BANNER_MESSAGE_MODEL);
   }
 
   @Test
@@ -83,7 +96,7 @@ public class DeveloperListenerManagerTest {
   @Test
   public void notifies_ImpressionListenersOnImpression_onOwnExecutor() {
 
-    developerListenerManager.addImpressionListener(inAppMessagingImpressionListener, devExecutor);
+    developerListenerManager.addImpressionListener(impressionListener, devExecutor);
     developerListenerManager.impressionDetected(BANNER_MESSAGE_MODEL);
 
     verify(devExecutor, times(1)).execute(any());
@@ -93,6 +106,14 @@ public class DeveloperListenerManagerTest {
   public void notifies_ClickListenersOnClick_onOwnExecutor() {
     developerListenerManager.addClickListener(clickListener, devExecutor);
     developerListenerManager.messageClicked(BANNER_MESSAGE_MODEL, BANNER_MESSAGE_MODEL.getAction());
+
+    verify(devExecutor, times(1)).execute(any());
+  }
+
+  @Test
+  public void notifies_DismissListenersOnDismiss_onOwnExecutor() {
+    developerListenerManager.addDismissListener(dismissListener, devExecutor);
+    developerListenerManager.messageDismissed(BANNER_MESSAGE_MODEL);
 
     verify(devExecutor, times(1)).execute(any());
   }
@@ -109,10 +130,54 @@ public class DeveloperListenerManagerTest {
 
   @Test
   public void notifies_multipleImpressionListenersOnImpression() {
-    developerListenerManager.addImpressionListener(inAppMessagingImpressionListener);
+    developerListenerManager.addImpressionListener(impressionListener);
+    developerListenerManager.addImpressionListener(secondImpressionListener);
     developerListenerManager.impressionDetected(BANNER_MESSAGE_MODEL);
 
-    verify(inAppMessagingImpressionListener, timeout(1000).times(1))
+    verify(impressionListener, timeout(1000).times(1)).impressionDetected(BANNER_MESSAGE_MODEL);
+    verify(secondImpressionListener, timeout(1000).times(1))
         .impressionDetected(BANNER_MESSAGE_MODEL);
+  }
+
+  @Test
+  public void notifies_multipleClickListenersOnClick() {
+    developerListenerManager.addClickListener(clickListener);
+    developerListenerManager.addClickListener(secondClickListener);
+    developerListenerManager.messageClicked(BANNER_MESSAGE_MODEL, BANNER_MESSAGE_MODEL.getAction());
+
+    verify(clickListener, timeout(1000).times(1))
+        .messageClicked(BANNER_MESSAGE_MODEL, BANNER_MESSAGE_MODEL.getAction());
+    verify(secondClickListener, timeout(1000).times(1))
+        .messageClicked(BANNER_MESSAGE_MODEL, BANNER_MESSAGE_MODEL.getAction());
+  }
+
+  @Test
+  public void notifies_multipleDismissListenersOnDismiss() {
+    developerListenerManager.addDismissListener(dismissListener);
+    developerListenerManager.addDismissListener(secondDismissListener);
+    developerListenerManager.messageDismissed(BANNER_MESSAGE_MODEL);
+
+    verify(dismissListener, timeout(1000).times(1)).messageDismissed(BANNER_MESSAGE_MODEL);
+    verify(secondDismissListener, timeout(1000).times(1)).messageDismissed(BANNER_MESSAGE_MODEL);
+  }
+
+  @Test
+  public void notifies_MultipleErrorListenersOnError() {
+    developerListenerManager.addDisplayErrorListener(errorListener);
+    developerListenerManager.addDisplayErrorListener(secondErrorListener);
+    developerListenerManager.displayErrorEncountered(
+        BANNER_MESSAGE_MODEL,
+        FirebaseInAppMessagingDisplayCallbacks.InAppMessagingErrorReason.UNSPECIFIED_RENDER_ERROR);
+
+    verify(errorListener, timeout(1000).times(1))
+        .displayErrorEncountered(
+            BANNER_MESSAGE_MODEL,
+            FirebaseInAppMessagingDisplayCallbacks.InAppMessagingErrorReason
+                .UNSPECIFIED_RENDER_ERROR);
+    verify(secondErrorListener, timeout(1000).times(1))
+        .displayErrorEncountered(
+            BANNER_MESSAGE_MODEL,
+            FirebaseInAppMessagingDisplayCallbacks.InAppMessagingErrorReason
+                .UNSPECIFIED_RENDER_ERROR);
   }
 }

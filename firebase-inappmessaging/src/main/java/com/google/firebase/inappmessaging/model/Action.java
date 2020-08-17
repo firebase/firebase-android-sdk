@@ -67,7 +67,7 @@ public class Action {
     this.button = button;
   }
 
-  /** Gets URL for action */
+  /** Gets the URL associated with this action */
   @Nullable
   public String getActionUrl() {
     return actionUrl;

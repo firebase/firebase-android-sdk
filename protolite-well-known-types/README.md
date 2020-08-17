@@ -29,26 +29,22 @@ A typical grpc and protobuf-lite configuration should look like
 ```groovy
 protobuf {
   protoc {
-    artifact = 'com.google.protobuf:protoc:3.4.0'
+    artifact = "com.google.protobuf:protoc:$protocVersion"
   }
   plugins {
     grpc {
       artifact = "io.grpc:protoc-gen-grpc-java:$grpcVersion"
     }
-    javalite {
-      artifact = 'com.google.protobuf:protoc-gen-javalite:3.0.0'
-    }
   }
   generateProtoTasks {
     all().each { task ->
       task.builtins {
-        remove java
+        java { option 'lite' }
       }
       task.plugins {
         grpc {
           option 'lite'
         }
-        javalite { }
       }
     }
   }

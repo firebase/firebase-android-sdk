@@ -48,9 +48,11 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -268,6 +270,9 @@ final class CctTransportBackend implements TransportBackend {
       // JsonWriter often writes one character at a time.
       dataEncoder.encode(
           request.requestBody, new BufferedWriter(new OutputStreamWriter(outputStream)));
+    } catch (ConnectException | UnknownHostException e) {
+      Logging.e(LOG_TAG, "Couldn't open connection, returning with 500", e);
+      return new HttpResponse(500, null, 0);
     } catch (EncodingException | IOException e) {
       Logging.e(LOG_TAG, "Couldn't encode request, returning with 400", e);
       return new HttpResponse(400, null, 0);

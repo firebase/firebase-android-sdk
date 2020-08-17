@@ -65,6 +65,43 @@ public class FirebaseDatabaseTest {
   }
 
   @Test
+  public void getInstanceForAppWithEmulator() {
+    FirebaseApp app =
+        appForDatabaseUrl(IntegrationTestValues.getAltNamespace(), "getInstanceForAppWithEmulator");
+
+    FirebaseDatabase db = FirebaseDatabase.getInstance(app);
+    db.useEmulator("10.0.2.2", 9000);
+
+    DatabaseReference rootRef = db.getReference();
+    assertEquals(rootRef.toString(), "http://10.0.2.2:9000");
+
+    DatabaseReference urlReference = db.getReferenceFromUrl("https://otherns.firebaseio.com");
+    assertEquals(urlReference.toString(), "http://10.0.2.2:9000");
+
+    DatabaseReference urlReferenceWithPath =
+        db.getReferenceFromUrl("https://otherns.firebaseio.com/foo");
+    assertEquals(urlReferenceWithPath.toString(), "http://10.0.2.2:9000/foo");
+  }
+
+  @Test
+  public void getInstanceForAppWithEmulator_throwsIfSetLate() {
+    FirebaseApp app =
+        appForDatabaseUrl(
+            IntegrationTestValues.getAltNamespace(),
+            "getInstanceForAppWithEmulator_throwsIfSetLate");
+
+    FirebaseDatabase db = FirebaseDatabase.getInstance(app);
+    DatabaseReference rootRef = db.getReference();
+
+    try {
+      db.useEmulator("10.0.2.2", 9000);
+      fail("Expected to throw");
+    } catch (IllegalStateException e) {
+      // Expected to throw
+    }
+  }
+
+  @Test
   public void getInstanceForAppWithUrl() {
     FirebaseApp app =
         appForDatabaseUrl(IntegrationTestValues.getAltNamespace(), "getInstanceForAppWithUrl");

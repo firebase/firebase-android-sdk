@@ -16,14 +16,13 @@ package com.google.firebase.remoteconfig.ktx
 
 import androidx.annotation.Keep
 import com.google.firebase.FirebaseApp
-import com.google.firebase.remoteconfig.FirebaseRemoteConfig
-import com.google.firebase.remoteconfig.FirebaseRemoteConfigValue
 import com.google.firebase.components.Component
 import com.google.firebase.components.ComponentRegistrar
-
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.platforminfo.LibraryVersionComponent
+import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings
+import com.google.firebase.remoteconfig.FirebaseRemoteConfigValue
 
 /** Returns the [FirebaseRemoteConfig] instance of the default [FirebaseApp]. */
 val Firebase.remoteConfig: FirebaseRemoteConfig

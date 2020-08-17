@@ -36,7 +36,7 @@ import com.google.firebase.crashlytics.internal.persistence.FileStoreImpl;
 import com.google.firebase.crashlytics.internal.settings.SettingsController;
 import com.google.firebase.crashlytics.internal.settings.TestSettingsData;
 import com.google.firebase.crashlytics.internal.settings.model.SettingsData;
-import com.google.firebase.iid.internal.FirebaseInstanceIdInternal;
+import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
@@ -94,8 +94,9 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
       when(app.getApplicationContext()).thenReturn(context);
       when(app.getOptions()).thenReturn(firebaseOptions);
 
-      FirebaseInstanceIdInternal instanceIdMock = mock(FirebaseInstanceIdInternal.class);
-      idManager = new IdManager(context, context.getPackageName(), instanceIdMock);
+      FirebaseInstallationsApi installationsApiMock = mock(FirebaseInstallationsApi.class);
+      when(installationsApiMock.getId()).thenReturn(Tasks.forResult("instanceId"));
+      idManager = new IdManager(context, context.getPackageName(), installationsApiMock);
 
       nativeComponent = new MissingNativeComponent();
 

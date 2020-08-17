@@ -67,8 +67,8 @@ inline void make_suppliment_path_from(const char* path, const char* suffix, char
 void finalize()
 {
     DEBUG_OUT("Finalizing");
-    detail::breakpad_context* context = reinterpret_cast<detail::breakpad_context *>(detail::instance.load());
-    delete context;
+    breakpad_context* context = reinterpret_cast<breakpad_context *>(instance.load());
+    crashlytics::detail::memory::release_storage<breakpad_context>(context);
 }
 
 } // namespace detail
@@ -111,7 +111,7 @@ bool detail::breakpad_context::callback(const google_breakpad::MinidumpDescripto
 {
     const detail::context& handler_context = *reinterpret_cast<detail::context *>(context);
 
-    DEBUG_OUT("Path is: %s %s", descriptor.path(), succeeded ? "succeeded" : "failed");
+    DEBUG_OUT("Path is: %s; generating minidump %s", descriptor.path(), succeeded ? "succeeded" : "failed");
 
     detail::write_supplimentary_file(handler_context, descriptor.path(), ".device_info", [](const detail::context& handler_context, int fd) {
         google::crashlytics::handler::write_device_info(handler_context, fd);

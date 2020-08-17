@@ -17,11 +17,11 @@ package com.google.firebase.database.ktx
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
+import com.google.firebase.database.Exclude
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.IgnoreExtraProperties
 import com.google.firebase.database.createDataSnapshot
 import com.google.firebase.database.createMutableData
-import com.google.firebase.database.IgnoreExtraProperties
-import com.google.firebase.database.Exclude
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.app
 import com.google.firebase.ktx.initialize

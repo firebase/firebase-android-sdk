@@ -14,6 +14,8 @@
 
 package com.google.firebase.database.core;
 
+import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
+
 import com.google.firebase.database.core.utilities.ImmutableTree;
 import com.google.firebase.database.snapshot.ChildKey;
 import com.google.firebase.database.snapshot.NamedNode;
@@ -227,7 +229,7 @@ public final class CompoundWrite implements Iterable<Map.Entry<Path, Node>> {
         if (childKey.isPriorityChildName()) {
           // Apply priorities at the end so we don't update priorities for either empty nodes or
           // forget to apply priorities to empty nodes that are later filled
-          assert childTree.getValue() != null : "Priority writes must always be leaf nodes";
+          hardAssert(childTree.getValue() != null, "Priority writes must always be leaf nodes");
           priorityWrite = childTree.getValue();
         } else {
           node = applySubtreeWrite(relativePath.child(childKey), childTree, node);

@@ -84,6 +84,7 @@ public class CallTest {
     // Override the normal token provider to simulate FirebaseAuth being logged in.
     FirebaseFunctions functions =
         new FirebaseFunctions(
+            app,
             app.getApplicationContext(),
             app.getOptions().getProjectId(),
             "us-central1",
@@ -104,6 +105,7 @@ public class CallTest {
     // Override the normal token provider to simulate FirebaseAuth being logged in.
     FirebaseFunctions functions =
         new FirebaseFunctions(
+            app,
             app.getApplicationContext(),
             app.getOptions().getProjectId(),
             "us-central1",

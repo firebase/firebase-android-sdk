@@ -36,10 +36,20 @@ android {
         main.java.srcDirs += 'src/main/kotlin'
         test.java {
             srcDir 'src/test/kotlin'
+            srcDir '../src/testUtil/java'
         }
         androidTest.java.srcDirs += 'src/androidTest/kotlin'
     }
     testOptions.unitTests.includeAndroidResources = true
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
 }
 
 dependencies {
@@ -59,4 +69,5 @@ dependencies {
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation 'junit:junit:4.12'
     testImplementation "com.google.truth:truth:$googleTruthVersion"
+    testImplementation 'org.mockito:mockito-core:3.3.3'
 }

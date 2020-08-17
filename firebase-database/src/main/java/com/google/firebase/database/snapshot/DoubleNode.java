@@ -14,6 +14,8 @@
 
 package com.google.firebase.database.snapshot;
 
+import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
+
 import com.google.firebase.database.core.utilities.Utilities;
 
 public class DoubleNode extends LeafNode<DoubleNode> {
@@ -40,7 +42,7 @@ public class DoubleNode extends LeafNode<DoubleNode> {
 
   @Override
   public DoubleNode updatePriority(Node priority) {
-    assert PriorityUtilities.isValidPriority(priority);
+    hardAssert(PriorityUtilities.isValidPriority(priority));
     return new DoubleNode(value, priority);
   }
 

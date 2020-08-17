@@ -109,6 +109,40 @@ public class Query {
 
   /**
    * Creates and returns a new {@code Query} with the additional filter that documents must contain
+   * the specified field and the value does not equal the specified value.
+   *
+   * <p>A {@code Query} can have only one {@code whereNotEqualTo()} filter, and it cannot be
+   * combined with {@code whereNotIn()}.
+   *
+   * @param field The name of the field to compare
+   * @param value The value for comparison
+   * @return The created {@code Query}.
+   */
+  @NonNull
+  // TODO(ne-queries): Make method public once backend is ready.
+  Query whereNotEqualTo(@NonNull String field, @Nullable Object value) {
+    return whereHelper(FieldPath.fromDotSeparatedPath(field), Operator.NOT_EQUAL, value);
+  }
+
+  /**
+   * Creates and returns a new {@code Query} with the additional filter that documents must contain
+   * the specified field and the value does not equal the specified value.
+   *
+   * <p>A {@code Query} can have only one {@code whereNotEqualTo()} filter, and it cannot be
+   * combined with {@code whereNotIn()}.
+   *
+   * @param fieldPath The path of the field to compare
+   * @param value The value for comparison
+   * @return The created {@code Query}.
+   */
+  @NonNull
+  // TODO(ne-queries): Make method public once backend is ready.
+  Query whereNotEqualTo(@NonNull FieldPath fieldPath, @Nullable Object value) {
+    return whereHelper(fieldPath, Operator.NOT_EQUAL, value);
+  }
+
+  /**
+   * Creates and returns a new {@code Query} with the additional filter that documents must contain
    * the specified field and the value should be less than the specified value.
    *
    * @param field The name of the field to compare
@@ -316,6 +350,42 @@ public class Query {
 
   /**
    * Creates and returns a new {@code Query} with the additional filter that documents must contain
+   * the specified field and the value does not equal any of the values from the provided list.
+   *
+   * <p>A {@code Query} can have only one {@code whereNotIn()} filter, and it cannot be combined
+   * with {@code whereArrayContains()}, {@code whereArrayContainsAny()}, {@code whereIn()}, or
+   * {@code whereNotEqualTo()}.
+   *
+   * @param field The name of the field to search.
+   * @param values The list that contains the values to match.
+   * @return The created {@code Query}.
+   */
+  @NonNull
+  // TODO(ne-queries): Make method public once backend is ready.
+  Query whereNotIn(@NonNull String field, @NonNull List<? extends Object> values) {
+    return whereHelper(FieldPath.fromDotSeparatedPath(field), Operator.NOT_IN, values);
+  }
+
+  /**
+   * Creates and returns a new {@code Query} with the additional filter that documents must contain
+   * the specified field and the value does not equal any of the values from the provided list.
+   *
+   * <p>A {@code Query} can have only one {@code whereNotIn()} filter, and it cannot be combined
+   * with {@code whereArrayContains()}, {@code whereArrayContainsAny()}, {@code whereIn()}, or
+   * {@code whereNotEqualTo()}.
+   *
+   * @param fieldPath The path of the field to search.
+   * @param values The list that contains the values to match.
+   * @return The created {@code Query}.
+   */
+  @NonNull
+  // TODO(ne-queries): Make method public once backend is ready.
+  Query whereNotIn(@NonNull FieldPath fieldPath, @NonNull List<? extends Object> values) {
+    return whereHelper(fieldPath, Operator.NOT_IN, values);
+  }
+
+  /**
+   * Creates and returns a new {@code Query} with the additional filter that documents must contain
    * the specified field and the value should satisfy the relation constraint provided.
    *
    * @param fieldPath The field to compare
@@ -334,7 +404,7 @@ public class Query {
             "Invalid query. You can't perform '"
                 + op.toString()
                 + "' queries on FieldPath.documentId().");
-      } else if (op == Operator.IN) {
+      } else if (op == Operator.IN || op == Operator.NOT_IN) {
         validateDisjunctiveFilterElements(value, op);
         ArrayValue.Builder referenceList = ArrayValue.newBuilder();
         for (Object arrayValue : (List) value) {
@@ -345,10 +415,13 @@ public class Query {
         fieldValue = parseDocumentIdValue(value);
       }
     } else {
-      if (op == Operator.IN || op == Operator.ARRAY_CONTAINS_ANY) {
+      if (op == Operator.IN || op == Operator.NOT_IN || op == Operator.ARRAY_CONTAINS_ANY) {
         validateDisjunctiveFilterElements(value, op);
       }
-      fieldValue = firestore.getUserDataReader().parseQueryValue(value, op == Operator.IN);
+      fieldValue =
+          firestore
+              .getUserDataReader()
+              .parseQueryValue(value, op == Operator.IN || op == Operator.NOT_IN);
     }
     Filter filter = FieldFilter.create(fieldPath.getInternalPath(), op, fieldValue);
     validateNewFilter(filter);
@@ -416,17 +489,19 @@ public class Query {
               + op.toString()
               + "' filters support a maximum of 10 elements in the value array.");
     }
-    if (((List) value).contains(null)) {
-      throw new IllegalArgumentException(
-          "Invalid Query. '"
-              + op.toString()
-              + "' filters cannot contain 'null' in the value array.");
-    }
-    if (((List) value).contains(Double.NaN) || ((List) value).contains(Float.NaN)) {
-      throw new IllegalArgumentException(
-          "Invalid Query. '"
-              + op.toString()
-              + "' filters cannot contain 'NaN' in the value array.");
+    if (op == Operator.IN || op == Operator.ARRAY_CONTAINS_ANY) {
+      if (((List) value).contains(null)) {
+        throw new IllegalArgumentException(
+            "Invalid Query. '"
+                + op.toString()
+                + "' filters cannot contain 'null' in the value array.");
+      }
+      if (((List) value).contains(Double.NaN) || ((List) value).contains(Float.NaN)) {
+        throw new IllegalArgumentException(
+            "Invalid Query. '"
+                + op.toString()
+                + "' filters cannot contain 'NaN' in the value array.");
+      }
     }
   }
 
@@ -445,15 +520,48 @@ public class Query {
     }
   }
 
+  /**
+   * Given an operator, returns the set of operators that cannot be used with it.
+   *
+   * <p>Operators in a query must adhere to the following set of rules:
+   *
+   * <ol>
+   *   <li>Only one array operator is allowed.
+   *   <li>Only one disjunctive operator is allowed.
+   *   <li>NOT_EQUAL cannot be used with another NOT_EQUAL operator.
+   *   <li>NOT_IN cannot be used with array, disjunctive, or NOT_EQUAL operators.
+   * </ol>
+   *
+   * <p>Array operators: ARRAY_CONTAINS, ARRAY_CONTAINS_ANY Disjunctive operators: IN,
+   * ARRAY_CONTAINS_ANY, NOT_IN
+   */
+  private List<Operator> conflictingOps(Operator op) {
+    switch (op) {
+      case NOT_EQUAL:
+        return Arrays.asList(Operator.NOT_EQUAL, Operator.NOT_IN);
+      case ARRAY_CONTAINS:
+        return Arrays.asList(Operator.ARRAY_CONTAINS, Operator.ARRAY_CONTAINS_ANY, Operator.NOT_IN);
+      case IN:
+        return Arrays.asList(Operator.ARRAY_CONTAINS_ANY, Operator.IN, Operator.NOT_IN);
+      case ARRAY_CONTAINS_ANY:
+        return Arrays.asList(
+            Operator.ARRAY_CONTAINS, Operator.ARRAY_CONTAINS_ANY, Operator.IN, Operator.NOT_IN);
+      case NOT_IN:
+        return Arrays.asList(
+            Operator.ARRAY_CONTAINS,
+            Operator.ARRAY_CONTAINS_ANY,
+            Operator.IN,
+            Operator.NOT_IN,
+            Operator.NOT_EQUAL);
+      default:
+        return new ArrayList<>();
+    }
+  }
+
   private void validateNewFilter(Filter filter) {
     if (filter instanceof FieldFilter) {
       FieldFilter fieldFilter = (FieldFilter) filter;
       Operator filterOp = fieldFilter.getOperator();
-      List<Operator> arrayOps = Arrays.asList(Operator.ARRAY_CONTAINS, Operator.ARRAY_CONTAINS_ANY);
-      List<Operator> disjunctiveOps = Arrays.asList(Operator.ARRAY_CONTAINS_ANY, Operator.IN);
-      boolean isArrayOp = arrayOps.contains(filterOp);
-      boolean isDisjunctiveOp = disjunctiveOps.contains(filterOp);
-
       if (fieldFilter.isInequality()) {
         com.google.firebase.firestore.model.FieldPath existingInequality = query.inequalityField();
         com.google.firebase.firestore.model.FieldPath newInequality = filter.getField();
@@ -470,31 +578,20 @@ public class Query {
         if (firstOrderByField != null) {
           validateOrderByFieldMatchesInequality(firstOrderByField, newInequality);
         }
-      } else if (isDisjunctiveOp || isArrayOp) {
-        // You can have at most 1 disjunctive filter and 1 array filter. Check if the new filter
-        // conflicts with an existing one.
-        Operator conflictingOp = null;
-        if (isDisjunctiveOp) {
-          conflictingOp = this.query.findFilterOperator(disjunctiveOps);
-        }
-        if (conflictingOp == null && isArrayOp) {
-          conflictingOp = this.query.findFilterOperator(arrayOps);
-        }
-        if (conflictingOp != null) {
-          // We special case when it's a duplicate op to give a slightly clearer error message.
-          if (conflictingOp == filterOp) {
-            throw new IllegalArgumentException(
-                "Invalid Query. You cannot use more than one '"
-                    + filterOp.toString()
-                    + "' filter.");
-          } else {
-            throw new IllegalArgumentException(
-                "Invalid Query. You cannot use '"
-                    + filterOp.toString()
-                    + "' filters with '"
-                    + conflictingOp.toString()
-                    + "' filters.");
-          }
+      }
+      Operator conflictingOp = query.findFilterOperator(conflictingOps(filterOp));
+      if (conflictingOp != null) {
+        // We special case when it's a duplicate op to give a slightly clearer error message.
+        if (conflictingOp == filterOp) {
+          throw new IllegalArgumentException(
+              "Invalid Query. You cannot use more than one '" + filterOp.toString() + "' filter.");
+        } else {
+          throw new IllegalArgumentException(
+              "Invalid Query. You cannot use '"
+                  + filterOp.toString()
+                  + "' filters with '"
+                  + conflictingOp.toString()
+                  + "' filters.");
         }
       }
     }

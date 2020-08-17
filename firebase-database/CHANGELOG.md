@@ -1,6 +1,8 @@
 # Unreleased
 
 - [changed] Added internal HTTP header to the WebChannel connection.
+- [feature] Realtime Database now supports connecting to a local emulator via
+ `FirebaseDatabase#useEmulator()`
 
 # 19.3.0
 - [feature] Added ServerValue.increment() to support atomic field value increments

@@ -1,0 +1,27 @@
+// Signature format: 2.0
+package com.google.firebase.messaging.directboot.threads {
+
+  public interface ExecutorFactory {
+    method public void executeOneOff(String, String, com.google.firebase.messaging.directboot.threads.ThreadPriority, Runnable);
+    method public java.util.concurrent.ScheduledExecutorService newScheduledThreadPool(int, com.google.firebase.messaging.directboot.threads.ThreadPriority);
+    method public java.util.concurrent.ScheduledExecutorService newScheduledThreadPool(int, java.util.concurrent.ThreadFactory, com.google.firebase.messaging.directboot.threads.ThreadPriority);
+    method public java.util.concurrent.ExecutorService newSingleThreadExecutor(com.google.firebase.messaging.directboot.threads.ThreadPriority);
+    method public java.util.concurrent.ExecutorService newSingleThreadExecutor(java.util.concurrent.ThreadFactory, com.google.firebase.messaging.directboot.threads.ThreadPriority);
+    method public java.util.concurrent.ExecutorService newThreadPool(com.google.firebase.messaging.directboot.threads.ThreadPriority);
+    method public java.util.concurrent.ExecutorService newThreadPool(java.util.concurrent.ThreadFactory, com.google.firebase.messaging.directboot.threads.ThreadPriority);
+    method public java.util.concurrent.ExecutorService newThreadPool(int, com.google.firebase.messaging.directboot.threads.ThreadPriority);
+    method public java.util.concurrent.ExecutorService newThreadPool(int, java.util.concurrent.ThreadFactory, com.google.firebase.messaging.directboot.threads.ThreadPriority);
+    method public java.util.concurrent.Future<?> submitOneOff(String, String, com.google.firebase.messaging.directboot.threads.ThreadPriority, Runnable);
+  }
+
+  public class PoolableExecutors {
+    method public static com.google.firebase.messaging.directboot.threads.ExecutorFactory factory();
+  }
+
+  public enum ThreadPriority {
+    enum_constant public static final com.google.firebase.messaging.directboot.threads.ThreadPriority HIGH_SPEED;
+    enum_constant public static final com.google.firebase.messaging.directboot.threads.ThreadPriority LOW_POWER;
+  }
+
+}
+

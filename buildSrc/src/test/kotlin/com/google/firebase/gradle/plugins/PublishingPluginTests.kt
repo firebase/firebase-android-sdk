@@ -79,6 +79,49 @@ licenses {
     }
 
     @Test
+    fun `Publishing dependent projects one of which is a jar succeeds`() {
+        val project1 = Project(name = "childProject1", version = "1.0", libraryType = LibraryType.JAVA)
+        val project2 = Project(
+                name = "childProject2",
+                version = "0.9",
+                projectDependencies = setOf(project1),
+                customizePom = """
+licenses {
+  license {
+    name = 'Hello'
+  }
+}
+""")
+        subprojectsDefined(project1, project2)
+        val result = publish(Mode.RELEASE, project1, project2)
+        assertThat(result.task(":firebasePublish")?.outcome).isEqualTo(TaskOutcome.SUCCESS)
+
+        val pomOrNull1 = project1.getPublishedPom("${testProjectDir.root}/build/m2repository")
+        val pomOrNull2 = project2.getPublishedPom("${testProjectDir.root}/build/m2repository")
+        assertThat(pomOrNull1).isNotNull()
+        assertThat(pomOrNull2).isNotNull()
+        val pom1 = pomOrNull1!!
+        val pom2 = pomOrNull2!!
+
+        assertThat(pom1.artifact.version).isEqualTo(project1.version)
+        assertThat(pom2.artifact.version).isEqualTo(project2.version)
+        assertThat(pom1.license).isEqualTo(License(
+                "The Apache Software License, Version 2.0",
+                "http://www.apache.org/licenses/LICENSE-2.0.txt"))
+        assertThat(pom2.license).isEqualTo(License(
+                "Hello",
+                ""))
+
+        assertThat(pom2.dependencies).isEqualTo(
+                listOf(Artifact(
+                        groupId = project1.group,
+                        artifactId = project1.name,
+                        version = project1.version,
+                        type = Type.JAR,
+                        scope = "compile")))
+    }
+
+    @Test
     fun `Publish with unreleased dependency`() {
         val project1 = Project(name = "childProject1", version = "1.0")
         val project2 = Project(
@@ -300,6 +343,16 @@ licenses {
         }
         plugins {
             id 'PublishingPlugin'
+        }
+
+        configure(subprojects) {
+          repositories {
+              google()
+              jcenter()
+              maven {
+                  url 'https://storage.googleapis.com/android-ci/mvn/'
+              }
+          }
         }
         """
         private const val MANIFEST = """<?xml version="1.0" encoding="utf-8"?>

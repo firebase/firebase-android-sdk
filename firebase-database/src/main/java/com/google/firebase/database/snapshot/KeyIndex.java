@@ -14,6 +14,8 @@
 
 package com.google.firebase.database.snapshot;
 
+import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
+
 public class KeyIndex extends Index {
 
   private static final KeyIndex INSTANCE = new KeyIndex();
@@ -33,7 +35,7 @@ public class KeyIndex extends Index {
 
   @Override
   public NamedNode makePost(ChildKey name, Node value) {
-    assert value instanceof StringNode;
+    hardAssert(value instanceof StringNode);
     // We just use empty node, but it'll never be compared, since our comparator only looks at name
     return new NamedNode(ChildKey.fromString((String) value.getValue()), EmptyNode.Empty());
   }

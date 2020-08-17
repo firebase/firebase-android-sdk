@@ -151,6 +151,7 @@ package com.google.firebase.firestore {
     method public void setFirestoreSettings(@NonNull com.google.firebase.firestore.FirebaseFirestoreSettings);
     method public static void setLoggingEnabled(boolean);
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> terminate();
+    method public void useEmulator(@NonNull String, int);
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> waitForPendingWrites();
   }
 

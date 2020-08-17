@@ -203,6 +203,62 @@ public class QueryTest {
   }
 
   @Test
+  public void testNotInFilters() {
+    Query query =
+        Query.atPath(ResourcePath.fromString("collection"))
+            .filter(filter("zip", "not-in", asList(12345)));
+
+    // No match.
+    Document document = doc("collection/1", 0, map("zip", 23456));
+    assertTrue(query.matches(document));
+
+    // Value matches in array.
+    document = doc("collection/1", 0, map("zip", asList(12345)));
+    assertTrue(query.matches(document));
+
+    // Non-type match.
+    document = doc("collection/1", 0, map("zip", "12345"));
+    assertTrue(query.matches(document));
+
+    // Nested match.
+    document = doc("collection/1", 0, map("zip", asList("12345", map("zip", 12345))));
+    assertTrue(query.matches(document));
+
+    // Null match.
+    document = doc("collection/1", 0, map("zip", null));
+    assertTrue(query.matches(document));
+
+    // NaN match.
+    document = doc("collection/1", 0, map("zip", Double.NaN));
+    assertTrue(query.matches(document));
+    document = doc("collection/1", 0, map("zip", Float.NaN));
+    assertTrue(query.matches(document));
+
+    // Direct match
+    document = doc("collection/1", 0, map("zip", 12345));
+    assertFalse(query.matches(document));
+
+    // Direct match
+    document = doc("collection/1", 0, map("chip", 23456));
+    assertFalse(query.matches(document));
+  }
+
+  @Test
+  public void testNotInFiltersWithObjectValues() {
+    Query query =
+        Query.atPath(ResourcePath.fromString("collection"))
+            .filter(filter("zip", "not-in", asList(map("a", asList(42)))));
+
+    // Containing object in array.
+    Document document = doc("collection/1", 0, map("zip", asList(map("a", asList(42)))));
+    assertTrue(query.matches(document));
+
+    // Containing object.
+    document = doc("collection/1", 0, map("zip", map("a", asList(42))));
+    assertFalse(query.matches(document));
+  }
+
+  @Test
   public void testArrayContainsAnyFilters() {
     Query query =
         Query.atPath(ResourcePath.fromString("collection"))
@@ -249,12 +305,24 @@ public class QueryTest {
     Document doc3 = doc("collection/3", 0, map("sort", 3.1));
     Document doc4 = doc("collection/4", 0, map("sort", false));
     Document doc5 = doc("collection/5", 0, map("sort", "string"));
+    Document doc6 = doc("collection/6", 0, map("sort", null));
 
     assertTrue(query.matches(doc1));
     assertFalse(query.matches(doc2));
     assertFalse(query.matches(doc3));
     assertFalse(query.matches(doc4));
     assertFalse(query.matches(doc5));
+    assertFalse(query.matches(doc6));
+
+    query =
+        Query.atPath(ResourcePath.fromString("collection"))
+            .filter(filter("sort", "!=", Double.NaN));
+    assertFalse(query.matches(doc1));
+    assertTrue(query.matches(doc2));
+    assertTrue(query.matches(doc3));
+    assertTrue(query.matches(doc4));
+    assertTrue(query.matches(doc5));
+    assertTrue(query.matches(doc6));
   }
 
   @Test
@@ -266,12 +334,22 @@ public class QueryTest {
     Document doc3 = doc("collection/3", 0, map("sort", 3.1));
     Document doc4 = doc("collection/4", 0, map("sort", false));
     Document doc5 = doc("collection/5", 0, map("sort", "string"));
+    Document doc6 = doc("collection/6", 0, map("sort", Double.NaN));
 
     assertTrue(query.matches(doc1));
     assertFalse(query.matches(doc2));
     assertFalse(query.matches(doc3));
     assertFalse(query.matches(doc4));
     assertFalse(query.matches(doc5));
+    assertFalse(query.matches(doc6));
+
+    query = Query.atPath(ResourcePath.fromString("collection")).filter(filter("sort", "!=", null));
+    assertFalse(query.matches(doc1));
+    assertTrue(query.matches(doc2));
+    assertTrue(query.matches(doc3));
+    assertTrue(query.matches(doc4));
+    assertTrue(query.matches(doc5));
+    assertTrue(query.matches(doc6));
   }
 
   @Test
@@ -582,6 +660,9 @@ public class QueryTest {
         baseQuery.filter(filter("a", "==", Arrays.asList(1, 2, 3))),
         "collection|f:a==[1,2,3]|ob:__name__asc");
     assertCanonicalId(
+        baseQuery.filter(filter("a", "!=", Arrays.asList(1, 2, 3))),
+        "collection|f:a!=[1,2,3]|ob:aasc__name__asc");
+    assertCanonicalId(
         baseQuery.filter(filter("a", "==", Double.NaN)), "collection|f:a==NaN|ob:__name__asc");
     assertCanonicalId(
         baseQuery.filter(filter("__name__", "==", ref("collection/id"))),
@@ -592,6 +673,9 @@ public class QueryTest {
     assertCanonicalId(
         baseQuery.filter(filter("a", "in", Arrays.asList(1, 2, 3))),
         "collection|f:ain[1,2,3]|ob:__name__asc");
+    assertCanonicalId(
+        baseQuery.filter(filter("a", "not-in", Arrays.asList(1, 2, 3))),
+        "collection|f:anot_in[1,2,3]|ob:__name__asc");
     assertCanonicalId(
         baseQuery.filter(filter("a", "array-contains-any", Arrays.asList(1, 2, 3))),
         "collection|f:aarray_contains_any[1,2,3]|ob:__name__asc");

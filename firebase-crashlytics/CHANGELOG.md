@@ -1,3 +1,32 @@
+# 17.1.0
+
+- [fixed] Updated Crashlytics integration with Firebase Analytics to
+  include native crashes in crash-free users counts.
+
+- [fixed] Removed a harmless, yet unexpected `FileNotFoundException` log
+  output that printed when an optional file is unavailable.
+  ([Github Issue #1559](//github.com/firebase/firebase-android-sdk/issues/1559#issuecomment-638387614))
+
+# 17.0.1
+
+- [fixed] Fixed an issue causing a `SQLiteException` when changing versions
+  of Crashlytics.
+  ([Github Issue #1531](https://github.com/firebase/firebase-android-sdk/issues/1531))
+
+- [fixed] Improved reliability of sending reports at crash time on Android API
+  level 28+.
+
+# 17.0.0
+
+- [changed] The Firebase Crashlytics SDK is now generally available.
+
+- [fixed] Fixed an issue that could cause apps to crash if a crash report
+  payload is too large (rare).
+
+- [changed] Updated dependency on the Firebase Instance ID library to v20.1.5,
+  which is a step towards a direct dependency on the Firebase Installations
+  service in a future release.
+
 # 17.0.0-beta04
 
 - [changed] Imposed a limit on the maximum crash report payload size.

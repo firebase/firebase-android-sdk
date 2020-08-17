@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -171,12 +172,9 @@ public final class Utils {
 
     task.continueWith(
         TASK_CONTINUATION_EXECUTOR_SERVICE,
-        new Continuation<T, Object>() {
-          @Override
-          public Object then(@NonNull Task<T> task) throws Exception {
-            latch.countDown();
-            return null;
-          }
+        unusedTask -> {
+          latch.countDown();
+          return null;
         });
 
     if (Looper.getMainLooper() == Looper.myLooper()) {
@@ -185,8 +183,12 @@ public final class Utils {
       latch.await();
     }
 
-    if (task.isComplete()) {
+    if (task.isSuccessful()) {
       return task.getResult();
+    } else if (task.isCanceled()) {
+      throw new CancellationException("Task is already canceled");
+    } else if (task.isComplete()) {
+      throw new IllegalStateException(task.getException());
     } else {
       throw new TimeoutException();
     }

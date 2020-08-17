@@ -33,7 +33,10 @@ import android.widget.ToggleButton;
 import androidx.annotation.IdRes;
 import androidx.fragment.app.Fragment;
 import com.google.android.gms.tasks.Task;
-import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.installations.FirebaseInstallationsApi;
+import com.google.firebase.installations.InstallationTokenResult;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
 
@@ -46,12 +49,15 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
 public class ApiFragment extends Fragment {
 
   private FirebaseRemoteConfig frc;
+  private FirebaseInstallationsApi firebaseInstallations;
   private View rootView;
   private EditText minimumFetchIntervalText;
   private EditText parameterKeyText;
   private TextView parameterValueText;
   private TextView apiCallProgressText;
   private TextView apiCallResultsText;
+
+  private static final String TAG = "Bandwagoner";
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
@@ -60,6 +66,8 @@ public class ApiFragment extends Fragment {
     frc = FirebaseRemoteConfig.getInstance();
     frc.setConfigSettings(
         new FirebaseRemoteConfigSettings.Builder().setDeveloperModeEnabled(true).build());
+
+    firebaseInstallations = FirebaseApp.getInstance().get(FirebaseInstallationsApi.class);
   }
 
   @Override
@@ -87,9 +95,29 @@ public class ApiFragment extends Fragment {
     TextView sdkVersionText = rootView.findViewById(R.id.sdk_version_text);
 
     TextView iidText = rootView.findViewById(R.id.iid_text);
-    iidText.setText("IID: " + FirebaseInstanceId.getInstance().getId());
 
-    apiCallResultsText.setText(FirebaseInstanceId.getInstance().getToken());
+    Task<String> installationIdTask = firebaseInstallations.getId();
+    Task<InstallationTokenResult> installationAuthTokenTask = firebaseInstallations.getToken(false);
+
+    Tasks.whenAllComplete(installationIdTask, installationAuthTokenTask)
+        .addOnCompleteListener(
+            unusedCompletedTasks -> {
+              if (installationIdTask.isSuccessful()) {
+                iidText.setText(
+                    String.format("Installation ID: %s", installationIdTask.getResult()));
+              } else {
+                Log.e(TAG, "Error getting installation ID", installationIdTask.getException());
+              }
+
+              if (installationAuthTokenTask.isSuccessful()) {
+                apiCallResultsText.setText(installationAuthTokenTask.getResult().getToken());
+              } else {
+                Log.e(
+                    TAG,
+                    "Error getting installation authentication token",
+                    installationAuthTokenTask.getException());
+              }
+            });
 
     return rootView;
   }

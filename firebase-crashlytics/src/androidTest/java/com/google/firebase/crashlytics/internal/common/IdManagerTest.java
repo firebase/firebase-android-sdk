@@ -18,8 +18,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import android.content.SharedPreferences;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
-import com.google.firebase.iid.internal.FirebaseInstanceIdInternal;
+import com.google.firebase.installations.FirebaseInstallationsApi;
+import java.util.concurrent.TimeoutException;
 
 public class IdManagerTest extends CrashlyticsTestCase {
 
@@ -56,8 +58,8 @@ public class IdManagerTest extends CrashlyticsTestCase {
   }
 
   private IdManager createIdManager(String instanceId) {
-    FirebaseInstanceIdInternal iid = mock(FirebaseInstanceIdInternal.class);
-    when(iid.getId()).thenReturn(instanceId);
+    FirebaseInstallationsApi iid = mock(FirebaseInstallationsApi.class);
+    when(iid.getId()).thenReturn(Tasks.forResult(instanceId));
     return new IdManager(getContext(), getContext().getPackageName(), iid);
   }
 
@@ -73,6 +75,23 @@ public class IdManagerTest extends CrashlyticsTestCase {
 
     // subsequent calls should return the same id
     assertEquals(installId, idManager.getCrashlyticsInstallId());
+  }
+
+  public void testGetIdExceptionalCase_doesNotRotateInstallId() {
+    FirebaseInstallationsApi fis = mock(FirebaseInstallationsApi.class);
+    final String expectedInstallId = "expectedInstallId";
+    when(fis.getId())
+        .thenReturn(Tasks.forException(new TimeoutException("Fetching id timed out.")));
+    prefs
+        .edit()
+        .putString(IdManager.PREFKEY_INSTALLATION_UUID, expectedInstallId)
+        .putString(IdManager.PREFKEY_FIREBASE_IID, "firebase-iid")
+        .apply();
+
+    final IdManager idManager = new IdManager(getContext(), getContext().getPackageName(), fis);
+    final String actualInstallId = idManager.getCrashlyticsInstallId();
+    assertNotNull(actualInstallId);
+    assertEquals(expectedInstallId, actualInstallId);
   }
 
   public void testInstanceIdChanges() {

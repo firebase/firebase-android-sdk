@@ -14,6 +14,8 @@
 
 package com.google.firebase.database.core.view.filter;
 
+import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
+
 import com.google.firebase.database.core.Path;
 import com.google.firebase.database.core.view.Change;
 import com.google.firebase.database.core.view.QueryParams;
@@ -73,7 +75,7 @@ public class LimitedFilter implements NodeFilter {
       CompleteChildSource source,
       ChildChangeAccumulator optChangeAccumulator) {
     // TODO: rename all cache stuff etc to general snap terminology
-    assert oldIndexed.getNode().getChildCount() == this.limit;
+    hardAssert(oldIndexed.getNode().getChildCount() == this.limit);
     NamedNode newChildNamedNode = new NamedNode(childKey, childSnap);
     NamedNode windowBoundary =
         this.reverse ? oldIndexed.getFirstChild() : oldIndexed.getLastChild();

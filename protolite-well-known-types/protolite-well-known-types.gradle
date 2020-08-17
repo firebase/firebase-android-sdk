@@ -17,23 +17,23 @@ plugins {
     id 'com.google.protobuf'
 }
 
+firebaseLibrary {
+    publishJavadoc = false
+}
 
 protobuf {
     protoc {
-        artifact = 'com.google.protobuf:protoc:3.4.0'
-    }
-    plugins {
-        javalite {
-            artifact = 'com.google.protobuf:protoc-gen-javalite:3.0.0'
-        }
+        artifact = "com.google.protobuf:protoc:$protocVersion"
     }
     generateProtoTasks {
         all().each { task ->
+
+	    task.addIncludeDir(files('fix-javalite/proto'))
+
             task.builtins {
-                remove java
-            }
-            task.plugins {
-                javalite {}
+                java {
+                    option "lite"
+                }
             }
         }
     }
@@ -45,6 +45,7 @@ android {
         minSdkVersion project.minSdkVersion
         versionCode 1
         versionName '1.0'
+        consumerProguardFiles 'proguard-rules.pro'
     }
 
     buildTypes {
@@ -54,12 +55,14 @@ android {
         }
     }
 
-    sourceSets.main.resources.srcDirs = ['build/extracted-protos/main/']
-    sourceSets.main.resources.includes = ['**/*.proto']
+    sourceSets.main.resources.srcDirs = ['build/extracted-protos/main/', 'src/main/proto']
 }
 
+
 dependencies {
-    implementation 'com.google.protobuf:protobuf-lite:3.0.1'
-    protobuf 'com.google.protobuf:protobuf-java:3.6.1'
-    protobuf 'com.google.api.grpc:proto-google-common-protos:1.12.0'
+    implementation "com.google.protobuf:protobuf-javalite:$javaliteVersion"
+
+    protobuf("com.google.api.grpc:proto-google-common-protos:1.18.0"){
+        exclude group: "com.google.protobuf", module: "protobuf-java"
+    }
 }
