@@ -14,6 +14,7 @@
 
 package com.google.firebase.storage.ktx
 
+import android.net.Uri
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
@@ -21,12 +22,20 @@ import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.app
 import com.google.firebase.ktx.initialize
 import com.google.firebase.platforminfo.UserAgentPublisher
+import com.google.firebase.storage.FileDownloadTask
 import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.KtxTestUtil
 import com.google.firebase.storage.StorageMetadata
+import com.google.firebase.storage.StorageReference
+import com.google.firebase.storage.StreamDownloadTask
+import com.google.firebase.storage.UploadTask
+import java.io.ByteArrayInputStream
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.Mockito
+import org.mockito.Mockito.`when`
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 
@@ -104,6 +113,61 @@ class StorageTests : BaseTestCase() {
 
         assertThat(metadata.getContentType()).isEqualTo("text/html")
         assertThat(metadata.getCacheControl()).isEqualTo("no-cache")
+    }
+
+    @Test
+    fun `ListResult destructuring declarations work`() {
+        val mockListResult = KtxTestUtil.listResult(listOf<StorageReference>(), listOf<StorageReference>(), null)
+
+        val (items, prefixes, pageToken) = mockListResult
+        assertThat(items).isSameInstanceAs(mockListResult.items)
+        assertThat(prefixes).isSameInstanceAs(mockListResult.prefixes)
+        assertThat(pageToken).isSameInstanceAs(mockListResult.pageToken)
+    }
+
+    @Test
+    fun `UploadTask#TaskSnapshot destructuring declarations work`() {
+        val mockTaskSnapshot = Mockito.mock(UploadTask.TaskSnapshot::class.java)
+        `when`(mockTaskSnapshot.bytesTransferred).thenReturn(50)
+        `when`(mockTaskSnapshot.totalByteCount).thenReturn(100)
+        `when`(mockTaskSnapshot.metadata).thenReturn(storageMetadata {
+            contentType = "image/png"
+            contentEncoding = "utf-8"
+        })
+        `when`(mockTaskSnapshot.uploadSessionUri).thenReturn(Uri.parse("https://test.com"))
+
+        val (bytesTransferred, totalByteCount, metadata, sessionUri) = mockTaskSnapshot
+
+        assertThat(bytesTransferred).isSameInstanceAs(mockTaskSnapshot.bytesTransferred)
+        assertThat(totalByteCount).isSameInstanceAs(mockTaskSnapshot.totalByteCount)
+        assertThat(metadata).isSameInstanceAs(mockTaskSnapshot.metadata)
+        assertThat(sessionUri).isSameInstanceAs(mockTaskSnapshot.uploadSessionUri)
+    }
+
+    @Test
+    fun `StreamDownloadTask#TaskSnapshot destructuring declarations work`() {
+        val mockTaskSnapshot = Mockito.mock(StreamDownloadTask.TaskSnapshot::class.java)
+        `when`(mockTaskSnapshot.bytesTransferred).thenReturn(50)
+        `when`(mockTaskSnapshot.totalByteCount).thenReturn(100)
+        `when`(mockTaskSnapshot.stream).thenReturn(ByteArrayInputStream("test".toByteArray()))
+
+        val (bytesTransferred, totalByteCount, stream) = mockTaskSnapshot
+
+        assertThat(bytesTransferred).isSameInstanceAs(mockTaskSnapshot.bytesTransferred)
+        assertThat(totalByteCount).isSameInstanceAs(mockTaskSnapshot.totalByteCount)
+        assertThat(stream).isSameInstanceAs(mockTaskSnapshot.stream)
+    }
+
+    @Test
+    fun `FileDownloadTask#TaskSnapshot destructuring declarations work`() {
+        val mockTaskSnapshot = Mockito.mock(FileDownloadTask.TaskSnapshot::class.java)
+        `when`(mockTaskSnapshot.bytesTransferred).thenReturn(50)
+        `when`(mockTaskSnapshot.totalByteCount).thenReturn(100)
+
+        val (bytesTransferred, totalByteCount) = mockTaskSnapshot
+
+        assertThat(bytesTransferred).isSameInstanceAs(mockTaskSnapshot.bytesTransferred)
+        assertThat(totalByteCount).isSameInstanceAs(mockTaskSnapshot.totalByteCount)
     }
 }
 
