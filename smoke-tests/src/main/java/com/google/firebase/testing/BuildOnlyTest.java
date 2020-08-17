@@ -21,7 +21,7 @@ import com.google.firebase.inappmessaging.FirebaseInAppMessaging;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.ml.naturallanguage.FirebaseNaturalLanguage;
 // import com.google.firebase.perf.FirebasePerformance;
-import com.google.firebase.ml.vision.FirebaseVision;
+// import com.google.firebase.ml.vision.FirebaseVision;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -56,8 +56,9 @@ public final class BuildOnlyTest {
     assertThat(FirebaseNaturalLanguage.getInstance()).isNotNull();
   }
 
-  @Test
-  public void vision_IsNotNull() {
-    assertThat(FirebaseVision.getInstance()).isNotNull();
-  }
+  // TODO(yifany): uncomment after b/164175567 is resolved
+  //  @Test
+  //  public void vision_IsNotNull() {
+  //    assertThat(FirebaseVision.getInstance()).isNotNull();
+  //  }
 }

@@ -78,7 +78,8 @@ dependencies {
   implementation "com.google.firebase:firebase-messaging"
   implementation "com.google.firebase:firebase-ml-natural-language"
   implementation "com.google.firebase:firebase-ml-natural-language-smart-reply-model"
-  implementation "com.google.firebase:firebase-ml-vision"
+  // TODO(yifany): uncomment after b/164175567 is resolved
+  // implementation "com.google.firebase:firebase-ml-vision"
   implementation "com.google.firebase:firebase-storage"
 
   // Common utilities (application side)
