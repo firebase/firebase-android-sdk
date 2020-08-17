@@ -36,6 +36,7 @@ import com.google.firebase.remoteconfig.internal.ConfigContainer;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler;
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
 import com.google.firebase.remoteconfig.internal.ConfigMetadataClient;
+import com.google.firebase.remoteconfig.internal.PerformanceTracer;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -66,6 +67,8 @@ public class FirebaseRemoteConfigIntegrationTest {
 
   @Mock private FirebaseABTesting mockFirebaseAbt;
   @Mock private FirebaseInstallationsApi mockFirebaseInstallations;
+  @Mock private PerformanceTracer performanceTracer;
+
   private FirebaseRemoteConfig frc;
 
   // We use a HashMap so that Mocking is easier.
@@ -92,10 +95,10 @@ public class FirebaseRemoteConfigIntegrationTest {
                 .build());
 
     // Catch all to avoid NPEs (the getters should never return null).
-    when(mockFetchedCache.get(trace)).thenReturn(Tasks.forResult(null));
-    when(mockActivatedCache.get(trace)).thenReturn(Tasks.forResult(null));
-    when(mockFireperfFetchedCache.get(trace)).thenReturn(Tasks.forResult(null));
-    when(mockFireperfActivatedCache.get(trace)).thenReturn(Tasks.forResult(null));
+    when(mockFetchedCache.get()).thenReturn(Tasks.forResult(null));
+    when(mockActivatedCache.get()).thenReturn(Tasks.forResult(null));
+    when(mockFireperfFetchedCache.get()).thenReturn(Tasks.forResult(null));
+    when(mockFireperfActivatedCache.get()).thenReturn(Tasks.forResult(null));
 
     frc =
         new FirebaseRemoteConfig(
