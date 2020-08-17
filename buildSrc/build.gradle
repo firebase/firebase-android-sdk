@@ -40,7 +40,7 @@ sourceSets {
 dependencies {
     implementation 'org.jsoup:jsoup:1.11.2'
     implementation 'digital.wup:android-maven-publish:3.6.2'
-    implementation 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.3.72'
+    implementation 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.3.40'
     implementation 'org.json:json:20180813'
     implementation 'io.opencensus:opencensus-api:0.18.0'
     implementation 'io.opencensus:opencensus-exporter-stats-stackdriver:0.18.0'
