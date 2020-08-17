@@ -28,7 +28,6 @@ import android.util.Log;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.auto.value.AutoValue;
-import com.google.firebase.remoteconfig.BiConsumer;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigValue;
 import java.nio.charset.Charset;

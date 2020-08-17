@@ -33,7 +33,6 @@ import android.os.Bundle;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
 import java.util.ArrayList;
 import java.util.List;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
@@ -63,9 +62,7 @@ public class PersonalizationTest {
     CONFIG_CONTAINER.put(FETCH_TIME_KEY, 1);
     CONFIG_CONTAINER.put(
         PERSONALIZATION_METADATA_KEY,
-        new JSONArray(
-            "[{parameterKey: 'key1', personalizationId: 'id1'}, "
-                + "{parameterKey: 'key2', personalizationId: 'id2'}]"));
+        new JSONObject("{key1: {personalizationId: 'id1'}, key2: {personalizationId: 'id2'}}"));
 
     doAnswer(invocation -> FAKE_LOGS.add(invocation.getArgument(2)))
         .when(mockAnalyticsConnector)

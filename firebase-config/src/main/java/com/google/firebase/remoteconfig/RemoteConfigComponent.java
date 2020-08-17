@@ -276,6 +276,7 @@ public class RemoteConfigComponent {
     return new ConfigMetadataClient(preferences);
   }
 
+  @Nullable
   private static Personalization getPersonalization(
       FirebaseApp firebaseApp, String namespace, @Nullable AnalyticsConnector analyticsConnector) {
     if (isPrimaryApp(firebaseApp)
