@@ -132,7 +132,7 @@ public class TrackedQueryManager {
   public void removeTrackedQuery(QuerySpec query) {
     query = normalizeQuery(query);
     TrackedQuery trackedQuery = findTrackedQuery(query);
-    assert trackedQuery != null : "Query must exist to be removed.";
+    hardAssert(trackedQuery != null, "Query must exist to be removed.");
 
     this.storageLayer.deleteTrackedQuery(trackedQuery.id);
     Map<QueryParams, TrackedQuery> trackedQueries = this.trackedQueryTree.get(query.getPath());
@@ -159,7 +159,8 @@ public class TrackedQueryManager {
     if (trackedQuery != null) {
       trackedQuery = trackedQuery.updateLastUse(lastUse).setActiveState(isActive);
     } else {
-      assert isActive : "If we're setting the query to inactive, we should already be tracking it!";
+      hardAssert(
+          isActive, "If we're setting the query to inactive, we should already be tracking it!");
       trackedQuery =
           new TrackedQuery(this.currentQueryId++, query, lastUse, /*complete=*/ false, isActive);
     }
@@ -275,7 +276,8 @@ public class TrackedQueryManager {
    * @return Set of complete ChildKeys
    */
   public Set<ChildKey> getKnownCompleteChildren(Path path) {
-    assert !this.isQueryComplete(QuerySpec.defaultQueryAtPath(path)) : "Path is fully complete.";
+    hardAssert(
+        !this.isQueryComplete(QuerySpec.defaultQueryAtPath(path)), "Path is fully complete.");
 
     Set<ChildKey> completeChildren = new HashSet<ChildKey>();
     // First, get complete children from any queries at this location.
@@ -314,7 +316,7 @@ public class TrackedQueryManager {
                 /*complete=*/ true,
                 /*active=*/ false);
       } else {
-        assert !trackedQuery.complete : "This should have been handled above!";
+        hardAssert(!trackedQuery.complete, "This should have been handled above!");
         trackedQuery = trackedQuery.setComplete();
       }
       saveTrackedQuery(trackedQuery);

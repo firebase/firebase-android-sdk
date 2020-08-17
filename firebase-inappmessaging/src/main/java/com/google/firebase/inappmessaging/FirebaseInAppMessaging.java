@@ -37,7 +37,7 @@ import javax.inject.Inject;
  *
  * <p>Firebase In-App Messaging will automatically initialize, and start listening for events.
  *
- * <p>This feature uses a Firebase Instance ID token to:
+ * <p>This feature uses a Firebase Installation ID token to:
  *
  * <ul>
  *   <li>identify the app instance
@@ -45,7 +45,7 @@ import javax.inject.Inject;
  *   <li>send usage metrics to the Firebase backend.
  * </ul>
  *
- * <p>To delete the Instance ID and the data associated with it, see {@link
+ * <p>To delete the Installation ID and the data associated with it, see {@link
  * FirebaseInstallationsApi#delete()}.
  */
 @FirebaseAppScope
@@ -238,6 +238,15 @@ public class FirebaseInAppMessaging {
   }
 
   /**
+   * Registers a dismiss listener with FIAM, which will be notified on every FIAM dismiss
+   *
+   * @param dismissListener
+   */
+  public void addDismissListener(@NonNull FirebaseInAppMessagingDismissListener dismissListener) {
+    developerListenerManager.addDismissListener(dismissListener);
+  }
+
+  /**
    * Registers a display error listener with FIAM, which will be notified on every FIAM display
    * error
    *
@@ -273,6 +282,18 @@ public class FirebaseInAppMessaging {
   public void addClickListener(
       @NonNull FirebaseInAppMessagingClickListener clickListener, @NonNull Executor executor) {
     developerListenerManager.addClickListener(clickListener, executor);
+  }
+
+  /**
+   * Registers a dismiss listener with FIAM, which will be notified on every FIAM dismiss, and
+   * triggered on the provided executor
+   *
+   * @param dismissListener
+   * @param executor
+   */
+  public void addDismissListener(
+      @NonNull FirebaseInAppMessagingDismissListener dismissListener, @NonNull Executor executor) {
+    developerListenerManager.addDismissListener(dismissListener, executor);
   }
 
   /**

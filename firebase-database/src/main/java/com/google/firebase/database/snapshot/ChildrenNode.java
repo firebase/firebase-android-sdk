@@ -14,6 +14,8 @@
 
 package com.google.firebase.database.snapshot;
 
+import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
+
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.LLRBNode;
 import com.google.firebase.database.core.Path;
@@ -288,7 +290,7 @@ public class ChildrenNode implements Node {
     if (front == null) {
       return newChildNode;
     } else if (front.isPriorityChildName()) {
-      assert PriorityUtilities.isValidPriority(newChildNode);
+      hardAssert(PriorityUtilities.isValidPriority(newChildNode));
       return updatePriority(newChildNode);
     } else {
       Node newImmediateChild = getImmediateChild(front).updateChild(path.popFront(), newChildNode);

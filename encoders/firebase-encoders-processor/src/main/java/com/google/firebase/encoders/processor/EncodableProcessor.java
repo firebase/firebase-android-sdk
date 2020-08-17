@@ -106,7 +106,6 @@ public class EncodableProcessor extends AbstractProcessor {
     // before and after 9. See https://github.com/google/dagger/pull/882
     TypeSpec.Builder encoderBuilder =
         TypeSpec.classBuilder(className)
-            .addJavadoc("@hide")
             .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
             .addSuperinterface(configurator)
             .addField(

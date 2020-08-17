@@ -10,6 +10,7 @@ package com.google.firebase.crashlytics {
     method public void recordException(@NonNull Throwable);
     method public void sendUnsentReports();
     method public void setCrashlyticsCollectionEnabled(boolean);
+    method public void setCrashlyticsCollectionEnabled(@Nullable Boolean);
     method public void setCustomKey(@NonNull String, boolean);
     method public void setCustomKey(@NonNull String, double);
     method public void setCustomKey(@NonNull String, float);

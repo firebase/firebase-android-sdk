@@ -94,6 +94,26 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
         }
       };
 
+  private static final String API_KEY_VALIDATION_MSG =
+      "Please set a valid API key. A Firebase API key is required to communicate with "
+          + "Firebase server APIs: It authenticates your project with Google."
+          + "Please refer to https://firebase.google.com/support/privacy/init-options.";
+
+  private static final String APP_ID_VALIDATION_MSG =
+      "Please set your Application ID. A valid Firebase App ID is required to communicate "
+          + "with Firebase server APIs: It identifies your application with Firebase."
+          + "Please refer to https://firebase.google.com/support/privacy/init-options.";
+
+  private static final String PROJECT_ID_VALIDATION_MSG =
+      "Please set your Project ID. A valid Firebase Project ID is required to communicate "
+          + "with Firebase server APIs: It identifies your application with Firebase."
+          + "Please refer to https://firebase.google.com/support/privacy/init-options.";
+
+  private static final String AUTH_ERROR_MSG =
+      "Installation ID could not be validated with the Firebase servers (maybe it was deleted). "
+          + "Firebase Installations will need to create a new Installation ID and auth token. "
+          + "Please retry your last request.";
+
   /** package private constructor. */
   FirebaseInstallations(
       FirebaseApp firebaseApp,
@@ -147,19 +167,12 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
    * or empty.
    */
   private void preConditionChecks() {
-    Preconditions.checkNotEmpty(getApplicationId());
-    Preconditions.checkNotEmpty(getProjectIdentifier());
-    Preconditions.checkNotEmpty(getApiKey());
+    Preconditions.checkNotEmpty(getApplicationId(), APP_ID_VALIDATION_MSG);
+    Preconditions.checkNotEmpty(getProjectIdentifier(), PROJECT_ID_VALIDATION_MSG);
+    Preconditions.checkNotEmpty(getApiKey(), API_KEY_VALIDATION_MSG);
     Preconditions.checkArgument(
-        Utils.isValidAppIdFormat(getApplicationId()),
-        "Please set your Application ID. A valid Firebase App ID is required to communicate "
-            + "with Firebase server APIs: It identifies your application with Firebase."
-            + "Please refer to https://firebase.google.com/support/privacy/init-options.");
-    Preconditions.checkArgument(
-        Utils.isValidApiKeyFormat(getApiKey()),
-        "Please set a valid API key. A Firebase API key is required to communicate with "
-            + "Firebase server APIs: It authenticates your project with Google."
-            + "Please refer to https://firebase.google.com/support/privacy/init-options.");
+        Utils.isValidAppIdFormat(getApplicationId()), APP_ID_VALIDATION_MSG);
+    Preconditions.checkArgument(Utils.isValidApiKeyFormat(getApiKey()), API_KEY_VALIDATION_MSG);
   }
 
   /** Returns the Project Id or Project Number for the Firebase Project. */
@@ -217,7 +230,16 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   @Override
   public Task<String> getId() {
     preConditionChecks();
-    return Tasks.forResult(doGetId());
+
+    // Return cached fid if available.
+    String fid = getCacheFid();
+    if (fid != null) {
+      return Tasks.forResult(fid);
+    }
+
+    Task<String> task = addGetIdListener();
+    backgroundExecutor.execute(() -> doRegistrationOrRefresh(false));
+    return task;
   }
 
   /**
@@ -233,7 +255,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   public Task<InstallationTokenResult> getToken(boolean forceRefresh) {
     preConditionChecks();
     Task<InstallationTokenResult> task = addGetAuthTokenListener();
-    backgroundExecutor.execute(() -> doGetAuthToken(forceRefresh));
+    backgroundExecutor.execute(() -> doRegistrationOrRefresh(forceRefresh));
     return task;
   }
 
@@ -248,14 +270,25 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     return Tasks.call(backgroundExecutor, this::deleteFirebaseInstallationId);
   }
 
+  private Task<String> addGetIdListener() {
+    TaskCompletionSource<String> taskCompletionSource = new TaskCompletionSource<>();
+    StateListener l = new GetIdListener(taskCompletionSource);
+    addStateListeners(l);
+    return taskCompletionSource.getTask();
+  }
+
   private Task<InstallationTokenResult> addGetAuthTokenListener() {
     TaskCompletionSource<InstallationTokenResult> taskCompletionSource =
         new TaskCompletionSource<>();
     StateListener l = new GetAuthTokenListener(utils, taskCompletionSource);
+    addStateListeners(l);
+    return taskCompletionSource.getTask();
+  }
+
+  private void addStateListeners(StateListener l) {
     synchronized (lock) {
       listeners.add(l);
     }
-    return taskCompletionSource.getTask();
   }
 
   private void triggerOnStateReached(PersistedInstallationEntry persistedInstallationEntry) {
@@ -292,19 +325,6 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     return cachedFid;
   }
 
-  private String doGetId() {
-
-    String fid = getCacheFid();
-    if (fid != null) {
-      return fid;
-    }
-    PersistedInstallationEntry prefs = getPrefsWithGeneratedIdMultiProcessSafe();
-    // Execute network calls (CreateInstallations) to the FIS Servers on a separate executor
-    // i.e networkExecutor
-    networkExecutor.execute(() -> doNetworkCallIfNecessary(false));
-    return prefs.getFirebaseInstallationId();
-  }
-
   /**
    * Logic for handling get id and the two forms of get auth token. This handles all the work,
    * including creating a new FID if one hasn't been generated yet and making the network calls to
@@ -314,7 +334,8 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
    * @param forceRefresh true if this is for a getAuthToken call and if the caller wants to fetch a
    *     new auth token from the server even if an unexpired auth token exists on the client.
    */
-  private void doGetAuthToken(boolean forceRefresh) {
+  private final void doRegistrationOrRefresh(boolean forceRefresh) {
+
     PersistedInstallationEntry prefs = getPrefsWithGeneratedIdMultiProcessSafe();
 
     // Since the caller wants to force an authtoken refresh remove the authtoken from the
@@ -362,7 +383,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     } else if (prefs.isNotGenerated()) {
       // If there is no fid it means the call failed with an auth error. Simulate an
       // IOException so that the caller knows to try again.
-      triggerOnException(prefs, new IOException("cleared fid due to auth error"));
+      triggerOnException(prefs, new IOException(AUTH_ERROR_MSG));
     } else {
       triggerOnStateReached(prefs);
     }
@@ -457,7 +478,8 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     // Note: Default value of instanceIdMigrationAuth: null
     String iidToken = null;
 
-    if (prefs.getFirebaseInstallationId().length() == 11) {
+    if (prefs.getFirebaseInstallationId() != null
+        && prefs.getFirebaseInstallationId().length() == 11) {
       // For a default firebase installation, read the stored star scoped iid token. This token
       // will be used for authenticating Instance-ID when migrating to FIS.
       iidToken = iidStore.readToken();

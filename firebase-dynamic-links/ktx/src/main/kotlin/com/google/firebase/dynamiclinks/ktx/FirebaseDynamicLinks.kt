@@ -17,12 +17,12 @@ package com.google.firebase.dynamiclinks.ktx
 import androidx.annotation.Keep
 import com.google.android.gms.tasks.Task
 import com.google.firebase.FirebaseApp
-import com.google.firebase.dynamiclinks.FirebaseDynamicLinks
 import com.google.firebase.components.Component
 import com.google.firebase.components.ComponentRegistrar
 import com.google.firebase.dynamiclinks.DynamicLink
+import com.google.firebase.dynamiclinks.FirebaseDynamicLinks
+import com.google.firebase.dynamiclinks.PendingDynamicLinkData
 import com.google.firebase.dynamiclinks.ShortDynamicLink
-
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.platforminfo.LibraryVersionComponent
 
@@ -117,6 +117,24 @@ fun FirebaseDynamicLinks.shortLinkAsync(suffix: Int, init: DynamicLink.Builder.(
     builder.init()
     return builder.buildShortDynamicLink(suffix)
 }
+
+/** Destructuring declaration for [ShortDynamicLink] to provide shortLink. */
+operator fun ShortDynamicLink.component1() = shortLink
+
+/** Destructuring declaration for [ShortDynamicLink] to provide previewLink. */
+operator fun ShortDynamicLink.component2() = previewLink
+
+/** Destructuring declaration for [ShortDynamicLink] to provide warnings. */
+operator fun ShortDynamicLink.component3(): List<ShortDynamicLink.Warning> = warnings
+
+/** Destructuring declaration for [PendingDynamicLinkData] to provide link. */
+operator fun PendingDynamicLinkData.component1() = link
+
+/** Destructuring declaration for [PendingDynamicLinkData] to provide minimumAppVersion. */
+operator fun PendingDynamicLinkData.component2() = minimumAppVersion
+
+/** Destructuring declaration for [PendingDynamicLinkData] to provide clickTimestamp. */
+operator fun PendingDynamicLinkData.component3() = clickTimestamp
 
 internal const val LIBRARY_NAME: String = "fire-dl-ktx"
 
