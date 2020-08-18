@@ -94,7 +94,6 @@ class JarJarTransformer(
         project.javaexec {
             main = "org.pantsbuild.jarjar.Main"
             classpath = project.files(jarJarProvider())
-            // jvmArgs = listOf("-Xdebug", "-Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=5005")
             args = listOf("process", rulesFile.absolutePath, inputJar.absolutePath, outputJar.absolutePath)
             systemProperties = mapOf("verbose" to "true", "misplacedClassStrategy" to "FATAL")
         }.assertNormalExitValue()
@@ -126,7 +125,7 @@ class VendorTransform(
 
     override fun transform(transformInvocation: TransformInvocation) {
         if (configuration.resolve().isEmpty()) {
-            logger.info("Nothing to vendor. " +
+            logger.warn("Nothing to vendor. " +
                     "If you don't need vendor functionality please disable 'firebase-vendor' plugin. " +
                     "Otherwise use the 'vendor' configuration to add dependencies you want vendored in.")
             for (input in transformInvocation.inputs) {
