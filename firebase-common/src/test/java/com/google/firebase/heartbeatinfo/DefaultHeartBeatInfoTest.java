@@ -24,11 +24,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -37,9 +35,12 @@ import org.junit.runners.JUnit4;
 public class DefaultHeartBeatInfoTest {
   private String testSdk = "fire-test";
   private HeartBeatInfoStorage storage = mock(HeartBeatInfoStorage.class);
-  private Set<HeartBeatLogSource> logSources =  new HashSet<HeartBeatLogSource>(){{
-    add(HeartBeatLogSource.create("firebase-datatransport"));
-  }};
+  private Set<HeartBeatLogSource> logSources =
+      new HashSet<HeartBeatLogSource>() {
+        {
+          add(HeartBeatLogSource.create("firebase-datatransport"));
+        }
+      };
   private DefaultHeartBeatInfo heartBeatInfo = new DefaultHeartBeatInfo(storage, logSources);
 
   @Test

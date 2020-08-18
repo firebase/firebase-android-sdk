@@ -71,6 +71,16 @@ public class HeartBeatInfoStorageTest {
   }
 
   @Test
+  public void whenHeartBeatStorageExcess_cleanUpHeartBeat() {
+    for (int i = 0; i < 202; i++) {
+      heartBeatInfoStorage.storeHeartBeatInformation(testSdk, i + 1);
+    }
+    // HeartBeat size went to 201 halved and then 1 more was added.
+    assertThat(heartBeatInfoStorage.getHeartBeatCount()).isEqualTo(101);
+    assertThat(heartBeatSharedPreferences.getAll().entrySet().size()).isEqualTo(101);
+  }
+
+  @Test
   public void isValidHeartBeat_returnsCorrectly() {
     assertThat(heartBeatInfoStorage.isValidHeartBeat(0, 1000000000)).isTrue();
     assertThat(heartBeatInfoStorage.isValidHeartBeat(0, 0)).isFalse();
