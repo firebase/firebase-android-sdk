@@ -14,14 +14,5 @@
 
 package com.google.firebase.heartbeatinfo;
 
-import com.google.firebase.components.Component;
-
-/** Factory to create a component that publishes the version of an SDK */
-public class HeartBeatLogSourceComponent {
-  private HeartBeatLogSourceComponent() {}
-
-  /** Creates a component that publishes SDK versions */
-  public static Component<?> create(String logSourceName) {
-    return Component.intoSet(HeartBeatLogSource.create(logSourceName), HeartBeatLogSource.class);
-  }
-}
+/** The class represents the interface which would consume the heartbeats */
+public interface HeartBeatConsumer {}

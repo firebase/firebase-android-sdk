@@ -29,18 +29,18 @@ public class DefaultHeartBeatInfo implements HeartBeatInfo {
 
   private HeartBeatInfoStorage storage;
 
-  private boolean doesSourceExist;
+  private Set<HeartBeatConsumer> consumers;
 
-  private DefaultHeartBeatInfo(Context context, Set<HeartBeatLogSource> logSources) {
+  private DefaultHeartBeatInfo(Context context, Set<HeartBeatConsumer> consumers) {
     storage = HeartBeatInfoStorage.getInstance(context);
-    doesSourceExist = (logSources.size() > 0);
+    this.consumers = consumers;
   }
 
   @VisibleForTesting
   @RestrictTo(RestrictTo.Scope.TESTS)
-  DefaultHeartBeatInfo(HeartBeatInfoStorage testStorage, Set<HeartBeatLogSource> logSources) {
+  DefaultHeartBeatInfo(HeartBeatInfoStorage testStorage, Set<HeartBeatConsumer> consumers) {
     storage = testStorage;
-    doesSourceExist = (logSources.size() > 0);
+    this.consumers = consumers;
   }
 
   @Override
@@ -89,7 +89,7 @@ public class DefaultHeartBeatInfo implements HeartBeatInfo {
 
   @Override
   public void storeHeartBeatInfo(@NonNull String heartBeatTag) {
-    if (!doesSourceExist) return;
+    if (consumers.size() <= 0) return;
     long presentTime = System.currentTimeMillis();
     boolean shouldSendSdkHB = storage.shouldSendSdkHeartBeat(heartBeatTag, presentTime);
     if (shouldSendSdkHB) {
@@ -100,9 +100,9 @@ public class DefaultHeartBeatInfo implements HeartBeatInfo {
   public static @NonNull Component<HeartBeatInfo> component() {
     return Component.builder(HeartBeatInfo.class)
         .add(Dependency.required(Context.class))
-        .add(Dependency.setOf(HeartBeatLogSource.class))
+        .add(Dependency.setOf(HeartBeatConsumer.class))
         .factory(
-            c -> new DefaultHeartBeatInfo(c.get(Context.class), c.setOf(HeartBeatLogSource.class)))
+            c -> new DefaultHeartBeatInfo(c.get(Context.class), c.setOf(HeartBeatConsumer.class)))
         .build();
   }
 }

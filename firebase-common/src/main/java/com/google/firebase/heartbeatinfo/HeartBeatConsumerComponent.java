@@ -14,16 +14,14 @@
 
 package com.google.firebase.heartbeatinfo;
 
-import com.google.auto.value.AutoValue;
-import javax.annotation.Nonnull;
+import com.google.firebase.components.Component;
 
-/** The class is not public to ensure other components cannot depend on it. */
-@AutoValue
-abstract class HeartBeatLogSource {
-  static HeartBeatLogSource create(String name) {
-    return new AutoValue_HeartBeatLogSource(name);
+/** Factory to create a component that publishes the HeartBeat consumers */
+public class HeartBeatConsumerComponent {
+  private HeartBeatConsumerComponent() {}
+
+  /** Creates a component that publishes HeartBeat consumers */
+  public static Component<?> create() {
+    return Component.intoSet(new HeartBeatConsumer() {}, HeartBeatConsumer.class);
   }
-
-  @Nonnull
-  public abstract String getLogSourceName();
 }

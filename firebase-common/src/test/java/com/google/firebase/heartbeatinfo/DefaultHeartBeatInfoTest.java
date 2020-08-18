@@ -35,10 +35,10 @@ import org.junit.runners.JUnit4;
 public class DefaultHeartBeatInfoTest {
   private String testSdk = "fire-test";
   private HeartBeatInfoStorage storage = mock(HeartBeatInfoStorage.class);
-  private Set<HeartBeatLogSource> logSources =
-      new HashSet<HeartBeatLogSource>() {
+  private Set<HeartBeatConsumer> logSources =
+      new HashSet<HeartBeatConsumer>() {
         {
-          add(HeartBeatLogSource.create("firebase-datatransport"));
+          add(new HeartBeatConsumer() {});
         }
       };
   private DefaultHeartBeatInfo heartBeatInfo = new DefaultHeartBeatInfo(storage, logSources);
