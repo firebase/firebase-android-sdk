@@ -45,9 +45,6 @@ import com.google.firebase.components.InitTracker;
 import com.google.firebase.components.TestComponentOne;
 import com.google.firebase.components.TestComponentTwo;
 import com.google.firebase.components.TestUserAgentDependentComponent;
-import com.google.firebase.emulators.EmulatedServiceSettings;
-import com.google.firebase.emulators.EmulatorSettings;
-import com.google.firebase.emulators.FirebaseEmulator;
 import com.google.firebase.platforminfo.UserAgentPublisher;
 import com.google.firebase.testing.FirebaseAppRule;
 import java.lang.reflect.InvocationTargetException;
@@ -418,43 +415,6 @@ public class FirebaseAppTest {
     // Because default is true.
     firebaseApp.setDataCollectionDefaultEnabled(null);
     assertTrue(firebaseApp.isDataCollectionDefaultEnabled());
-  }
-
-  @Test
-  public void testEnableEmulators_shouldAllowDoubleSetBeforeAccess() {
-    Context mockContext = createForwardingMockContext();
-    FirebaseApp firebaseApp = FirebaseApp.initializeApp(mockContext);
-
-    // A developer would call FirebaseDatabase.EMULATOR but we can't introduce that
-    // dependency for this test.
-    FirebaseEmulator emulator = FirebaseEmulator.forName("database");
-
-    EmulatedServiceSettings databaseSettings = new EmulatedServiceSettings("10.0.2.2", 9000);
-    EmulatorSettings emulatorSettings =
-        new EmulatorSettings.Builder().addEmulatedService(emulator, databaseSettings).build();
-
-    // Set twice
-    firebaseApp.enableEmulators(emulatorSettings);
-    firebaseApp.enableEmulators(emulatorSettings);
-  }
-
-  @Test
-  public void testEnableEmulators_shouldThrowIfSetAfterAccess() {
-    Context mockContext = createForwardingMockContext();
-    FirebaseApp firebaseApp = FirebaseApp.initializeApp(mockContext);
-
-    FirebaseEmulator emulator = FirebaseEmulator.forName("database");
-
-    EmulatedServiceSettings databaseSettings = new EmulatedServiceSettings("10.0.2.2", 9000);
-    EmulatorSettings emulatorSettings =
-        new EmulatorSettings.Builder().addEmulatedService(emulator, databaseSettings).build();
-    firebaseApp.enableEmulators(emulatorSettings);
-
-    // Access (as if from the Database SDK)
-    firebaseApp.getEmulatorSettings().getServiceSettings(emulator);
-
-    // Try to set again
-    assertThrows(IllegalStateException.class, () -> firebaseApp.enableEmulators(emulatorSettings));
   }
 
   /** Returns mock context that forwards calls to targetContext and localBroadcastManager. */

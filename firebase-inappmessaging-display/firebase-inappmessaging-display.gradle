@@ -68,7 +68,7 @@ dependencies {
         exclude group: 'com.google.firebase', module: 'firebase-common'
     }
 
-    implementation 'com.google.android.gms:play-services-tasks:17.0.2'
+    implementation 'com.google.android.gms:play-services-tasks:17.1.0'
     implementation 'androidx.appcompat:appcompat:1.1.0'
     implementation 'androidx.cardview:cardview:1.0.0'
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
@@ -88,6 +88,7 @@ dependencies {
     testImplementation "junit:junit:4.12"
     testImplementation "org.mockito:mockito-core:2.25.0"
     testImplementation "com.google.truth:truth:1.0"
+    testImplementation 'androidx.test:core:1.2.0'
     testImplementation 'com.google.guava:guava:27.1-android'
 
     androidTestImplementation "org.mockito:mockito-core:2.25.0"

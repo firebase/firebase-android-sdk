@@ -828,6 +828,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
 
     // Use a real DataCollectionArbiter to test its switching behavior.
     DataCollectionArbiter arbiter = new DataCollectionArbiter(app);
+    assertFalse(arbiter.isAutomaticDataCollectionEnabled());
 
     final ControllerBuilder builder = builder();
     builder.setDataCollectionArbiter(arbiter);
@@ -838,6 +839,21 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
     Task<Void> task = controller.submitAllReports(1.0f, testSettingsDataProvider.getAppSettings());
 
     arbiter.setCrashlyticsDataCollectionEnabled(true);
+    assertTrue(arbiter.isAutomaticDataCollectionEnabled());
+
+    when(mockEditor.putBoolean(PREFS_KEY, false)).thenReturn(mockEditor);
+    when(mockPrefs.getBoolean(PREFS_KEY, true)).thenReturn(false);
+    arbiter.setCrashlyticsDataCollectionEnabled(false);
+    assertFalse(arbiter.isAutomaticDataCollectionEnabled());
+
+    when(mockPrefs.contains(PREFS_KEY)).thenReturn(false);
+    when(mockEditor.remove(PREFS_KEY)).thenReturn(mockEditor);
+    arbiter.setCrashlyticsDataCollectionEnabled(null);
+    when(app.isDataCollectionDefaultEnabled()).thenReturn(true);
+    assertTrue(arbiter.isAutomaticDataCollectionEnabled());
+    when(app.isDataCollectionDefaultEnabled()).thenReturn(false);
+    assertFalse(arbiter.isAutomaticDataCollectionEnabled());
+
     await(task);
     verify(mockReportManager).areReportsAvailable();
     verify(mockReportManager).findReports();

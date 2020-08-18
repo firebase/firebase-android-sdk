@@ -20,8 +20,6 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-import com.google.firebase.emulators.EmulatedServiceSettings;
-import com.google.firebase.emulators.EmulatorSettings;
 import java.net.URL;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -46,37 +44,45 @@ public class FirebaseFunctionsTest {
   public void testGetUrl_withEmulator() {
     FirebaseApp app = getApp("testGetUrl_withEmulator");
 
-    app.enableEmulators(
-        new EmulatorSettings.Builder()
-            .addEmulatedService(
-                FirebaseFunctions.EMULATOR, new EmulatedServiceSettings("10.0.2.2", 5001))
-            .build());
+    FirebaseFunctions functions = FirebaseFunctions.getInstance(app);
+    functions.useEmulator("10.0.2.2", 5001);
 
-    URL withRegion = FirebaseFunctions.getInstance(app, "my-region").getURL("my-endpoint");
-    assertEquals("http://10.0.2.2:5001/my-project/my-region/my-endpoint", withRegion.toString());
-
-    URL withoutRegion = FirebaseFunctions.getInstance(app).getURL("my-endpoint");
+    FirebaseFunctions functionsWithoutRegion = FirebaseFunctions.getInstance(app);
+    URL withoutRegion = functionsWithoutRegion.getURL("my-endpoint");
     assertEquals(
         "http://10.0.2.2:5001/my-project/us-central1/my-endpoint", withoutRegion.toString());
+
+    FirebaseFunctions functionsWithRegion = FirebaseFunctions.getInstance(app, "my-region");
+    functionsWithRegion.useEmulator("10.0.2.2", 5001);
+
+    URL withRegion = functionsWithRegion.getURL("my-endpoint");
+    assertEquals("http://10.0.2.2:5001/my-project/my-region/my-endpoint", withRegion.toString());
   }
 
   @Test
   public void testGetUrl_withEmulator_matchesOldImpl() {
     FirebaseApp app = getApp("testGetUrl_withEmulator_matchesOldImpl");
 
-    app.enableEmulators(
-        new EmulatorSettings.Builder()
-            .addEmulatedService(
-                FirebaseFunctions.EMULATOR, new EmulatedServiceSettings("10.0.2.2", 5001))
-            .build());
-
     FirebaseFunctions functions = FirebaseFunctions.getInstance(app);
+    functions.useEmulator("10.0.2.2", 5001);
     URL newImplUrl = functions.getURL("my-endpoint");
 
     functions.useFunctionsEmulator("http://10.0.2.2:5001");
     URL oldImplUrl = functions.getURL("my-endpoint");
 
     assertEquals(newImplUrl.toString(), oldImplUrl.toString());
+  }
+
+  @Test
+  public void testEmulatorSettings() {
+    FirebaseApp app = getApp("testEmulatorSettings");
+
+    FirebaseFunctions functions1 = FirebaseFunctions.getInstance(app);
+    functions1.useEmulator("10.0.2.2", 5001);
+
+    FirebaseFunctions functions2 = FirebaseFunctions.getInstance(app);
+
+    assertEquals(functions1.getURL("foo").toString(), functions2.getURL("foo").toString());
   }
 
   private FirebaseApp getApp(String name) {

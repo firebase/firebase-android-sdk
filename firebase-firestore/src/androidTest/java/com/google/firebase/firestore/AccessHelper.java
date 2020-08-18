@@ -41,7 +41,6 @@ public final class AccessHelper {
         asyncQueue,
         firebaseApp,
         instanceRegistry,
-        null,
         null);
   }
 

@@ -153,7 +153,7 @@ public final class QueryParams {
   }
 
   public QueryParams startAt(Node indexStartValue, ChildKey indexStartName) {
-    assert indexStartValue.isLeafNode() || indexStartValue.isEmpty();
+    hardAssert(indexStartValue.isLeafNode() || indexStartValue.isEmpty());
     // We can't tolerate longs as query endpoints.  See comment in normalizeValue();
     hardAssert(!(indexStartValue instanceof LongNode));
     QueryParams copy = copy();
@@ -163,7 +163,7 @@ public final class QueryParams {
   }
 
   public QueryParams endAt(Node indexEndValue, ChildKey indexEndName) {
-    assert indexEndValue.isLeafNode() || indexEndValue.isEmpty();
+    hardAssert(indexEndValue.isLeafNode() || indexEndValue.isEmpty());
     // We can't tolerate longs as query endpoints.  See comment in normalizeValue();
     hardAssert(!(indexEndValue instanceof LongNode));
     QueryParams copy = copy();

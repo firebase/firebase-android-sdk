@@ -19,6 +19,7 @@ import androidx.annotation.RestrictTo;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -164,7 +165,7 @@ public class DatabaseError {
    */
   @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
   public static DatabaseError fromStatus(String status, String reason, String details) {
-    Integer code = errorCodes.get(status.toLowerCase());
+    Integer code = errorCodes.get(status.toLowerCase(Locale.US));
     if (code == null) {
       code = UNKNOWN_ERROR;
     }
