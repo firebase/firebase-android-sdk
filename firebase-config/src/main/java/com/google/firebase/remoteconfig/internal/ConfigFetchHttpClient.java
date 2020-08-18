@@ -401,9 +401,9 @@ public class ConfigFetchHttpClient {
         containerBuilder.withAbtExperiments(experimentDescriptions);
       }
 
-      JSONArray personalizationMetadata = null;
+      JSONObject personalizationMetadata = null;
       try {
-        personalizationMetadata = fetchResponse.getJSONArray(PERSONALIZATION_METADATA);
+        personalizationMetadata = fetchResponse.getJSONObject(PERSONALIZATION_METADATA);
       } catch (JSONException e) {
         // Do nothing if personalizationMetadata does not exist.
       }

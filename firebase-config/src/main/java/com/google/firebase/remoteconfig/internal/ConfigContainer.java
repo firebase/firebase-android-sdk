@@ -53,7 +53,7 @@ public class ConfigContainer {
 
   private JSONArray abtExperiments;
 
-  private JSONArray personalizationMetadata;
+  private JSONObject personalizationMetadata;
 
   /**
    * Creates a new container with the specified configs and fetch time.
@@ -64,7 +64,7 @@ public class ConfigContainer {
       JSONObject configsJson,
       Date fetchTime,
       JSONArray abtExperiments,
-      JSONArray personalizationMetadata)
+      JSONObject personalizationMetadata)
       throws JSONException {
     JSONObject containerJson = new JSONObject();
     containerJson.put(CONFIGS_KEY, configsJson);
@@ -90,7 +90,7 @@ public class ConfigContainer {
         containerJson.getJSONObject(CONFIGS_KEY),
         new Date(containerJson.getLong(FETCH_TIME_KEY)),
         containerJson.getJSONArray(ABT_EXPERIMENTS_KEY),
-        containerJson.getJSONArray(PERSONALIZATION_METADATA_KEY));
+        containerJson.getJSONObject(PERSONALIZATION_METADATA_KEY));
   }
 
   JSONObject getContainer() {
@@ -118,7 +118,7 @@ public class ConfigContainer {
     return abtExperiments;
   }
 
-  public JSONArray getPersonalizationMetadata() {
+  public JSONObject getPersonalizationMetadata() {
     return personalizationMetadata;
   }
 
@@ -150,13 +150,13 @@ public class ConfigContainer {
     private JSONObject builderConfigsJson;
     private Date builderFetchTime;
     private JSONArray builderAbtExperiments;
-    private JSONArray builderPersonalizationMetadata;
+    private JSONObject builderPersonalizationMetadata;
 
     private Builder() {
       builderConfigsJson = new JSONObject();
       builderFetchTime = DEFAULTS_FETCH_TIME;
       builderAbtExperiments = new JSONArray();
-      builderPersonalizationMetadata = new JSONArray();
+      builderPersonalizationMetadata = new JSONObject();
     }
 
     public Builder(ConfigContainer otherContainer) {
@@ -200,11 +200,11 @@ public class ConfigContainer {
       return this;
     }
 
-    public Builder withPersonalizationMetadata(JSONArray personalizationMetadata) {
+    public Builder withPersonalizationMetadata(JSONObject personalizationMetadata) {
       try {
-        this.builderPersonalizationMetadata = new JSONArray(personalizationMetadata.toString());
+        this.builderPersonalizationMetadata = new JSONObject(personalizationMetadata.toString());
       } catch (JSONException e) {
-        // We serialize and deserialize the JSONArray to guarantee that it cannot be mutated after
+        // We serialize and deserialize the JSONObject to guarantee that it cannot be mutated after
         // being set in the builder.
         // A JSONException should never occur because the JSON that is being deserialized is
         // guaranteed to be valid.
