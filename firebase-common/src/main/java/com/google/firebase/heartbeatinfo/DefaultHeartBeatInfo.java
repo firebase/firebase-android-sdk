@@ -22,20 +22,25 @@ import com.google.firebase.components.Component;
 import com.google.firebase.components.Dependency;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /** Provides information as whether to send heart beat or not. */
 public class DefaultHeartBeatInfo implements HeartBeatInfo {
 
   private HeartBeatInfoStorage storage;
 
-  private DefaultHeartBeatInfo(Context context) {
+  private boolean doesSourceExist;
+
+  private DefaultHeartBeatInfo(Context context, Set<HeartBeatLogSource> logSources) {
     storage = HeartBeatInfoStorage.getInstance(context);
+    doesSourceExist = (logSources.size() > 0);
   }
 
   @VisibleForTesting
   @RestrictTo(RestrictTo.Scope.TESTS)
-  DefaultHeartBeatInfo(HeartBeatInfoStorage testStorage) {
+  DefaultHeartBeatInfo(HeartBeatInfoStorage testStorage, Set<HeartBeatLogSource> logSources) {
     storage = testStorage;
+    doesSourceExist = (logSources.size() > 0);
   }
 
   @Override
@@ -84,6 +89,7 @@ public class DefaultHeartBeatInfo implements HeartBeatInfo {
 
   @Override
   public void storeHeartBeatInfo(@NonNull String heartBeatTag) {
+    if (!doesSourceExist) return;
     long presentTime = System.currentTimeMillis();
     boolean shouldSendSdkHB = storage.shouldSendSdkHeartBeat(heartBeatTag, presentTime);
     if (shouldSendSdkHB) {
@@ -94,7 +100,9 @@ public class DefaultHeartBeatInfo implements HeartBeatInfo {
   public static @NonNull Component<HeartBeatInfo> component() {
     return Component.builder(HeartBeatInfo.class)
         .add(Dependency.required(Context.class))
-        .factory(c -> new DefaultHeartBeatInfo(c.get(Context.class)))
+        .add(Dependency.setOf(HeartBeatLogSource.class))
+        .factory(
+            c -> new DefaultHeartBeatInfo(c.get(Context.class), c.setOf(HeartBeatLogSource.class)))
         .build();
   }
 }

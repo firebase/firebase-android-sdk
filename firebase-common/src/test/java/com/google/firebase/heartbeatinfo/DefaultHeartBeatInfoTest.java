@@ -24,7 +24,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -33,13 +37,23 @@ import org.junit.runners.JUnit4;
 public class DefaultHeartBeatInfoTest {
   private String testSdk = "fire-test";
   private HeartBeatInfoStorage storage = mock(HeartBeatInfoStorage.class);
-  private DefaultHeartBeatInfo heartBeatInfo = new DefaultHeartBeatInfo(storage);
+  private Set<HeartBeatLogSource> logSources =  new HashSet<HeartBeatLogSource>(){{
+    add(HeartBeatLogSource.create("firebase-datatransport"));
+  }};
+  private DefaultHeartBeatInfo heartBeatInfo = new DefaultHeartBeatInfo(storage, logSources);
 
   @Test
   public void getHeartBeatCode_noHeartBeat() {
     when(storage.shouldSendSdkHeartBeat(anyString(), anyLong())).thenReturn(Boolean.FALSE);
     heartBeatInfo.getHeartBeatCode(testSdk);
     assertThat(heartBeatInfo.getHeartBeatCode(testSdk).getCode()).isEqualTo(0);
+  }
+
+  @Test
+  public void whenNoSource_dontStoreHeartBeat() {
+    DefaultHeartBeatInfo info = new DefaultHeartBeatInfo(storage, new HashSet<>());
+    info.storeHeartBeatInfo(testSdk);
+    verify(storage, times(0)).storeHeartBeatInformation(anyString(), anyLong());
   }
 
   @Test
