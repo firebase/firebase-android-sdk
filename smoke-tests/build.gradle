@@ -96,6 +96,7 @@ dependencies {
   // https://firebase.google.com/support/release-notes/android#mlkit-self-serve-fixes
   implementation "com.google.android.gms:play-services-vision:20.1.1"
   implementation "com.google.android.gms:play-services-vision-common:19.1.1"
+  implementation "com.google.android.gms:play-services-vision-image-label:18.0.5"
 }
 
 clean.doLast {
