@@ -58,6 +58,10 @@ android {
     }
 }
 
+thirdPartyLicenses {
+    add 'Dagger', "file://${rootDir}/third_party/licenses/apache-2.0.txt"
+}
+
 dependencies {
     implementation project(':transport:transport-api')
     implementation 'androidx.annotation:annotation:1.1.0'
