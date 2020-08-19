@@ -18,19 +18,16 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
-class ThirdPartyLicensesExtension {
+public class ThirdPartyLicensesExtension {
     private final ArrayList<CustomLicense> customLicenses = new ArrayList<>();
 
-    public ThirdPartyLicensesExtension() {
-    }
-
     /** Add a library with its licenses in passed-in files(relative to rootDir). Only file URIs are supported*/
-    void add(String name, String... licenseUris) {
+    public void add(String name, String... licenseUris) {
         customLicenses.add(new CustomLicense(name, licenseUris));
     }
 
-    public static class CustomLicense implements Serializable {
-        public final String name;
+    static class CustomLicense implements Serializable {
+        final String name;
         final List<URI> licenseUris = new ArrayList<>();
 
         CustomLicense(String name, String[] licenseUris) {
