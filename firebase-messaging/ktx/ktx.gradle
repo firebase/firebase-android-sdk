@@ -21,7 +21,6 @@ firebaseLibrary {
     releaseWith project(':firebase-messaging')
     publishJavadoc = true
     publishSources = true
-    testLab.enabled = true
 }
 
 android {
