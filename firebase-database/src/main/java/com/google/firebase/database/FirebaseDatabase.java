@@ -83,7 +83,16 @@ public class FirebaseDatabase {
    */
   @NonNull
   public static FirebaseDatabase getInstance(@NonNull FirebaseApp app) {
-    return getInstance(app, app.getOptions().getDatabaseUrl());
+    String databaseUrl = app.getOptions().getDatabaseUrl();
+    if (databaseUrl == null) {
+      if (app.getOptions().getProjectId() == null) {
+        throw new DatabaseException(
+            "Failed to get FirebaseDatabase instance: Can't determine Firebase Database URL. "
+                + "Be sure to include a Project ID in your configuration.");
+      }
+      databaseUrl = "https://" + app.getOptions().getProjectId() + "-default-rtdb.firebaseio.com";
+    }
+    return getInstance(app, databaseUrl);
   }
 
   /**
