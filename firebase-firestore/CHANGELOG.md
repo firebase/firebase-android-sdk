@@ -1,11 +1,17 @@
-# Unreleased
+# 21.6.0
 - [fixed] Removed a delay that may have prevented Firestore from immediately
   reestablishing a network connection if a connectivity change occurred while
   the app was in the background.
 - [fixed] Fixed an issue that may have prevented the client from connecting
   to the backend immediately after a user signed in.
-- [feature] Cloud Firestore now supports connecting to a local emulator via
- `FirebaseFirestore#useEmulator()`
+- [feature] Added support for connecting to a local emulator via
+  `FirebaseFirestore#useEmulator()`
+
+# 21.5.0
+- [changed] Updated the protocol buffer dependency to the newer
+  `protobuf-javalite` artifact. The new artifact is incompatible with the old
+  one, so this library needed to be upgraded to avoid conflicts.
+  No developer action is necessary.
 
 # 21.4.3
 - [changed] Firestore now limits the number of concurrent document lookups it
