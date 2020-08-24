@@ -394,6 +394,7 @@ public class FirebaseInstallationServiceClient {
         logBadConfigError();
 
         return TokenResult.builder().setResponseCode(TokenResult.ResponseCode.BAD_CONFIG).build();
+        // TODO(b/166168291): Remove code duplication and clean up this class.
       } catch (AssertionError | IOException ignored) {
         retryCount++;
       } finally {
