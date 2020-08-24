@@ -126,6 +126,13 @@ dependencies {
     implementation 'com.google.android.gms:play-services-tasks:17.0.0'
     implementation 'com.google.android.gms:play-services-base:17.0.0'
 
+    implementation ('com.google.firebase:firebase-perf:19.0.8') {
+        exclude group: 'com.google.firebase', module: 'firebase-common'
+        exclude group: 'com.google.firebase', module: 'firebase-installations'
+        exclude group: 'com.google.firebase', module: 'firebase-installations-interop'
+        exclude group: 'com.google.firebase', module: 'firebase-components'
+        exclude group: 'com.google.firebase', module: 'firebase-config'
+    }
     implementation 'com.squareup.okhttp:okhttp:2.7.5'
     implementation('com.google.firebase:firebase-auth-interop:18.0.0') {
         exclude group: "com.google.firebase", module: "firebase-common"
