@@ -30,21 +30,21 @@ public final class Coverage {
 
   public static void apply(FirebaseLibraryExtension firebaseLibrary) {
     Project project = firebaseLibrary.project;
-    project.apply(ImmutableMap.of("plugin", "jacoco"));
+//    project.apply(ImmutableMap.of("plugin", "jacoco"));
     File reportsDir = new File(project.getBuildDir(), "/reports/jacoco");
-    JacocoPluginExtension jacoco = project.getExtensions().getByType(JacocoPluginExtension.class);
+//    JacocoPluginExtension jacoco = project.getExtensions().getByType(JacocoPluginExtension.class);
 
-    jacoco.setToolVersion("0.8.5");
-    jacoco.setReportsDir(reportsDir);
+//    jacoco.setToolVersion("0.8.5");
+//    jacoco.setReportsDir(reportsDir);
     project
         .getTasks()
         .withType(
             Test.class,
             test -> {
-              JacocoTaskExtension testJacoco =
-                  test.getExtensions().getByType(JacocoTaskExtension.class);
-              testJacoco.setExcludeClassLoaders(ImmutableList.of("jdk.internal.*"));
-              testJacoco.setIncludeNoLocationClasses(true);
+//              JacocoTaskExtension testJacoco =
+//                  test.getExtensions().getByType(JacocoTaskExtension.class);
+//              testJacoco.setExcludeClassLoaders(ImmutableList.of("jdk.internal.*"));
+//              testJacoco.setIncludeNoLocationClasses(true);
             });
 
     project

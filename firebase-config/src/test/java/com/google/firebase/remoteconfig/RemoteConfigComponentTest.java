@@ -182,7 +182,8 @@ public class RemoteConfigComponentTest {
         mockFirebaseAbt,
         mockAnalyticsConnector,
         mockLegacyConfigsHandler,
-        /* loadGetDefault= */ true);
+        /* loadGetDefault= */ true,
+        null);
   }
 
   private RemoteConfigComponent getNewFrcComponentWithoutLoadingDefault() {
@@ -194,7 +195,8 @@ public class RemoteConfigComponentTest {
         mockFirebaseAbt,
         mockAnalyticsConnector,
         mockLegacyConfigsHandler,
-        /* loadGetDefault= */ false);
+        /* loadGetDefault= */ false,
+        null);
   }
 
   private FirebaseRemoteConfig getFrcInstanceFromComponent(

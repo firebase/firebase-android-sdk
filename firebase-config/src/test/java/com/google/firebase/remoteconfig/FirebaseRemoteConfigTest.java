@@ -24,7 +24,9 @@ import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.DEFAULT_VALU
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.DEFAULT_VALUE_FOR_STRING;
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.LAST_FETCH_STATUS_THROTTLED;
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.toExperimentInfoMaps;
+import static com.google.firebase.remoteconfig.internal.ConfigFetchHandler.DEFAULT_MINIMUM_FETCH_INTERVAL_IN_SECONDS;
 import static com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler.FRC_BYTE_ARRAY_ENCODING;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
@@ -47,12 +49,15 @@ import com.google.firebase.abt.AbtException;
 import com.google.firebase.abt.FirebaseABTesting;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
+import com.google.firebase.perf.metrics.Trace;
 import com.google.firebase.remoteconfig.internal.ConfigCacheClient;
 import com.google.firebase.remoteconfig.internal.ConfigContainer;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler.FetchResponse;
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
 import com.google.firebase.remoteconfig.internal.ConfigMetadataClient;
+import com.google.firebase.remoteconfig.internal.PerformanceTraceClient;
+import com.google.firebase.remoteconfig.internal.PerformanceTracer;
 import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
@@ -128,6 +133,8 @@ public final class FirebaseRemoteConfigTest {
 
   @Mock private FirebaseABTesting mockFirebaseAbt;
   @Mock private FirebaseInstallationsApi mockFirebaseInstallations;
+  @Mock private Trace mockTrace;
+  @Mock private PerformanceTracer mockPerformanceTracer;
 
   private FirebaseRemoteConfig frc;
   private FirebaseRemoteConfig fireperfFrc;
@@ -160,8 +167,16 @@ public final class FirebaseRemoteConfigTest {
     when(mockFireperfFetchedCache.get()).thenReturn(Tasks.forResult(null));
     when(mockFireperfActivatedCache.get()).thenReturn(Tasks.forResult(null));
 
+    when(mockPerformanceTracer.newTimer()).thenReturn(new PerformanceTraceClient.Stopwatch());
+    when(mockPerformanceTracer.newTrace(anyString())).thenReturn(mockTrace);
+    when(mockPerformanceTracer.startTrace(anyString())).thenReturn(mockTrace);
+
+    when(metadataClient.getMinimumFetchIntervalInSeconds())
+        .thenReturn(DEFAULT_MINIMUM_FETCH_INTERVAL_IN_SECONDS);
+
     frc =
         new FirebaseRemoteConfig(
+            mockGetHandler,
             context,
             firebaseApp,
             mockFirebaseInstallations,
@@ -171,25 +186,24 @@ public final class FirebaseRemoteConfigTest {
             mockActivatedCache,
             mockDefaultsCache,
             mockFetchHandler,
-            mockGetHandler,
-            metadataClient);
+            metadataClient,
+            mockPerformanceTracer);
 
     // Set up an FRC instance for the Fireperf namespace that uses mocked clients.
     fireperfFrc =
-        FirebaseApp.getInstance()
-            .get(RemoteConfigComponent.class)
-            .get(
-                firebaseApp,
-                FIREPERF_NAMESPACE,
-                mockFirebaseInstallations,
-                /*firebaseAbt=*/ null,
-                directExecutor,
-                mockFireperfFetchedCache,
-                mockFireperfActivatedCache,
-                mockFireperfDefaultsCache,
-                mockFireperfFetchHandler,
-                mockFireperfGetHandler,
-                RemoteConfigComponent.getMetadataClient(context, APP_ID, FIREPERF_NAMESPACE));
+        new FirebaseRemoteConfig(
+            mockFireperfGetHandler,
+            context,
+            firebaseApp,
+            mockFirebaseInstallations,
+            null,
+            directExecutor,
+            mockFireperfFetchedCache,
+            mockFireperfActivatedCache,
+            mockFireperfDefaultsCache,
+            mockFireperfFetchHandler,
+            RemoteConfigComponent.getMetadataClient(context, APP_ID, FIREPERF_NAMESPACE),
+            mockPerformanceTracer);
 
     firstFetchedContainer =
         ConfigContainer.newBuilder()
@@ -238,7 +252,8 @@ public final class FirebaseRemoteConfigTest {
 
   @Test
   public void fetchAndActivate_hasNetworkError_taskReturnsException() {
-    when(mockFetchHandler.fetch())
+    when(mockFetchHandler.fetch(
+            DEFAULT_MINIMUM_FETCH_INTERVAL_IN_SECONDS, mockTrace, mockPerformanceTracer))
         .thenReturn(Tasks.forException(new IOException("Network call failed.")));
 
     Task<Boolean> task = frc.fetchAndActivate();
@@ -834,7 +849,9 @@ public final class FirebaseRemoteConfigTest {
 
   @Test
   public void fetch_hasNoErrors_taskReturnsSuccess() {
-    when(mockFetchHandler.fetch()).thenReturn(Tasks.forResult(firstFetchedContainerResponse));
+    when(mockFetchHandler.fetch(
+            DEFAULT_MINIMUM_FETCH_INTERVAL_IN_SECONDS, mockTrace, mockPerformanceTracer))
+        .thenReturn(Tasks.forResult(firstFetchedContainerResponse));
 
     Task<Void> fetchTask = frc.fetch();
 
@@ -843,7 +860,8 @@ public final class FirebaseRemoteConfigTest {
 
   @Test
   public void fetch_hasNetworkError_taskReturnsException() {
-    when(mockFetchHandler.fetch())
+    when(mockFetchHandler.fetch(
+            DEFAULT_MINIMUM_FETCH_INTERVAL_IN_SECONDS, mockTrace, mockPerformanceTracer))
         .thenReturn(
             Tasks.forException(new FirebaseRemoteConfigClientException("Network call failed.")));
 
@@ -857,7 +875,7 @@ public final class FirebaseRemoteConfigTest {
   @Test
   public void fetchWithInterval_hasNoErrors_taskReturnsSuccess() {
     long minimumFetchIntervalInSeconds = 600L;
-    when(mockFetchHandler.fetch(minimumFetchIntervalInSeconds))
+    when(mockFetchHandler.fetch(minimumFetchIntervalInSeconds, mockTrace, mockPerformanceTracer))
         .thenReturn(Tasks.forResult(firstFetchedContainerResponse));
 
     Task<Void> fetchTask = frc.fetch(minimumFetchIntervalInSeconds);
@@ -868,7 +886,7 @@ public final class FirebaseRemoteConfigTest {
   @Test
   public void fetchWithInterval_hasNetworkError_taskReturnsException() {
     long minimumFetchIntervalInSeconds = 600L;
-    when(mockFetchHandler.fetch(minimumFetchIntervalInSeconds))
+    when(mockFetchHandler.fetch(minimumFetchIntervalInSeconds, mockTrace, mockPerformanceTracer))
         .thenReturn(
             Tasks.forException(new FirebaseRemoteConfigClientException("Network call failed.")));
 
@@ -1176,11 +1194,14 @@ public final class FirebaseRemoteConfigTest {
   }
 
   private void loadFetchHandlerWithResponse() {
-    when(mockFetchHandler.fetch()).thenReturn(Tasks.forResult(firstFetchedContainerResponse));
+    when(mockFetchHandler.fetch(
+            DEFAULT_MINIMUM_FETCH_INTERVAL_IN_SECONDS, mockTrace, mockPerformanceTracer))
+        .thenReturn(Tasks.forResult(firstFetchedContainerResponse));
   }
 
   private void load2pFetchHandlerWithResponse() {
-    when(mockFireperfFetchHandler.fetch())
+    when(mockFireperfFetchHandler.fetch(
+            DEFAULT_MINIMUM_FETCH_INTERVAL_IN_SECONDS, mockTrace, mockPerformanceTracer))
         .thenReturn(Tasks.forResult(firstFetchedContainerResponse));
   }
 

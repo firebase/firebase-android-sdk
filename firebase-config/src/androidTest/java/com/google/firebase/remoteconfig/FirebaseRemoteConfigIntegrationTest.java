@@ -36,6 +36,7 @@ import com.google.firebase.remoteconfig.internal.ConfigContainer;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler;
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
 import com.google.firebase.remoteconfig.internal.ConfigMetadataClient;
+import com.google.firebase.remoteconfig.internal.PerformanceTracer;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -66,6 +67,8 @@ public class FirebaseRemoteConfigIntegrationTest {
 
   @Mock private FirebaseABTesting mockFirebaseAbt;
   @Mock private FirebaseInstallationsApi mockFirebaseInstallations;
+  @Mock private PerformanceTracer performanceTracer;
+
   private FirebaseRemoteConfig frc;
 
   // We use a HashMap so that Mocking is easier.
@@ -99,6 +102,7 @@ public class FirebaseRemoteConfigIntegrationTest {
 
     frc =
         new FirebaseRemoteConfig(
+            mockGetHandler,
             context,
             firebaseApp,
             mockFirebaseInstallations,
@@ -108,8 +112,8 @@ public class FirebaseRemoteConfigIntegrationTest {
             mockActivatedCache,
             mockDefaultsCache,
             mockFetchHandler,
-            mockGetHandler,
-            metadataClient);
+            metadataClient,
+            performanceTracer);
   }
 
   @Test
