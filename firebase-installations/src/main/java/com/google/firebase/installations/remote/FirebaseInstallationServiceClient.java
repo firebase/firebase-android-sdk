@@ -173,7 +173,7 @@ public class FirebaseInstallationServiceClient {
 
         // Return empty installation response with BAD_CONFIG response code after max retries
         return InstallationResponse.builder().setResponseCode(ResponseCode.BAD_CONFIG).build();
-      } catch (IOException ignored) {
+      } catch (AssertionError | IOException ignored) {
         retryCount++;
       } finally {
         httpURLConnection.disconnect();
@@ -394,7 +394,8 @@ public class FirebaseInstallationServiceClient {
         logBadConfigError();
 
         return TokenResult.builder().setResponseCode(TokenResult.ResponseCode.BAD_CONFIG).build();
-      } catch (IOException ignored) {
+        // TODO(b/166168291): Remove code duplication and clean up this class.
+      } catch (AssertionError | IOException ignored) {
         retryCount++;
       } finally {
         httpURLConnection.disconnect();
@@ -446,11 +447,14 @@ public class FirebaseInstallationServiceClient {
   }
 
   // Read the response from the createFirebaseInstallation API.
-  private InstallationResponse readCreateResponse(HttpURLConnection conn) throws IOException {
+  private InstallationResponse readCreateResponse(HttpURLConnection conn)
+      throws AssertionError, IOException {
     InputStream inputStream = conn.getInputStream();
     JsonReader reader = new JsonReader(new InputStreamReader(inputStream, UTF_8));
     TokenResult.Builder tokenResult = TokenResult.builder();
     InstallationResponse.Builder builder = InstallationResponse.builder();
+    // JsonReader.peek will sometimes throw AssertionErrors in Android 8.0 and above. See
+    // https://b.corp.google.com/issues/79920590 for details.
     reader.beginObject();
     while (reader.hasNext()) {
       String name = reader.nextName();
@@ -486,10 +490,13 @@ public class FirebaseInstallationServiceClient {
   }
 
   // Read the response from the generateAuthToken FirebaseInstallation API.
-  private TokenResult readGenerateAuthTokenResponse(HttpURLConnection conn) throws IOException {
+  private TokenResult readGenerateAuthTokenResponse(HttpURLConnection conn)
+      throws AssertionError, IOException {
     InputStream inputStream = conn.getInputStream();
     JsonReader reader = new JsonReader(new InputStreamReader(inputStream, UTF_8));
     TokenResult.Builder builder = TokenResult.builder();
+    // JsonReader.peek will sometimes throw AssertionErrors in Android 8.0 and above. See
+    // https://b.corp.google.com/issues/79920590 for details.
     reader.beginObject();
     while (reader.hasNext()) {
       String name = reader.nextName();
