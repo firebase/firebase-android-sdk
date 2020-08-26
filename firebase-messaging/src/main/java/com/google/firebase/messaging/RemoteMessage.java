@@ -346,6 +346,12 @@ public final class RemoteMessage extends AbstractSafeParcelable {
       return this;
     }
 
+    /** @hide */
+    @NonNull
+    public Map<String, String> getData() {
+      return this.data;
+    }
+
     /** Clears the message data. */
     @NonNull
     public Builder clearData() {
@@ -373,11 +379,23 @@ public final class RemoteMessage extends AbstractSafeParcelable {
       return this;
     }
 
+    /** @hide */
+    @NonNull
+    public String getMessageId() {
+      return bundle.getString(MessagePayloadKeys.MSGID, "");
+    }
+
     /** Sets the type of message. */
     @NonNull
     public Builder setMessageType(@Nullable String messageType) {
       bundle.putString(MessagePayloadKeys.MESSAGE_TYPE, messageType);
       return this;
+    }
+
+    /** @hide */
+    @Nullable
+    public String getMessageType() {
+      return bundle.getString(MessagePayloadKeys.MESSAGE_TYPE);
     }
 
     /**
@@ -392,6 +410,12 @@ public final class RemoteMessage extends AbstractSafeParcelable {
       return this;
     }
 
+    /** @hide */
+    @IntRange(from = 0, to = 86400)
+    public int getTtl() {
+      return Integer.parseInt(bundle.getString(MessagePayloadKeys.MESSAGE_TYPE, "0"));
+    }
+
     /**
      * Sets the collapse key of the message.
      *
@@ -402,6 +426,12 @@ public final class RemoteMessage extends AbstractSafeParcelable {
     public Builder setCollapseKey(@Nullable String collapseKey) {
       bundle.putString(MessagePayloadKeys.COLLAPSE_KEY, collapseKey);
       return this;
+    }
+
+    /** @hide */
+    @Nullable
+    public String getCollapseKey() {
+      return bundle.getString(MessagePayloadKeys.MESSAGE_TYPE);
     }
   }
 
