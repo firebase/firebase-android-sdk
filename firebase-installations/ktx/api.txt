@@ -1,0 +1,11 @@
+// Signature format: 2.0
+package com.google.firebase.installations.ktx {
+
+  public final class InstallationsKt {
+    ctor public InstallationsKt();
+    method @NonNull public static com.google.firebase.installations.FirebaseInstallations getInstallations(@NonNull com.google.firebase.ktx.Firebase);
+    method @NonNull public static com.google.firebase.installations.FirebaseInstallations installations(@NonNull com.google.firebase.ktx.Firebase, @NonNull com.google.firebase.FirebaseApp app);
+  }
+
+}
+
