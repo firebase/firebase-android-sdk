@@ -204,12 +204,12 @@ public class FirebaseFirestore {
   }
 
   /**
-   * Modify this FirebaseDatabase instance to communicate with the Cloud Firestore emulator.
+   * Modifies this FirebaseDatabase instance to communicate with the Cloud Firestore emulator.
    *
-   * <p>Note: this must be called before this instance has been used to do any operations.
+   * <p>Note: Call this method before using the instance to do any database operations.
    *
-   * @param host the emulator host (ex: 10.0.2.2)
-   * @param port the emulator port (ex: 8080)
+   * @param host the emulator host (for example, 10.0.2.2)
+   * @param port the emulator port (for example, 8080)
    */
   public void useEmulator(@NonNull String host, int port) {
     if (this.client != null) {
