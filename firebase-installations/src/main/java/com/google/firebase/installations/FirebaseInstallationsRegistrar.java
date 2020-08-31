@@ -34,14 +34,14 @@ public class FirebaseInstallationsRegistrar implements ComponentRegistrar {
     return Arrays.asList(
         Component.builder(FirebaseInstallationsApi.class)
             .add(Dependency.required(FirebaseApp.class))
-            .add(Dependency.required(HeartBeatInfo.class))
-            .add(Dependency.required(UserAgentPublisher.class))
+            .add(Dependency.optionalProvider(HeartBeatInfo.class))
+            .add(Dependency.optionalProvider(UserAgentPublisher.class))
             .factory(
                 c ->
                     new FirebaseInstallations(
                         c.get(FirebaseApp.class),
-                        c.get(UserAgentPublisher.class),
-                        c.get(HeartBeatInfo.class)))
+                        c.getProvider(UserAgentPublisher.class),
+                        c.getProvider(HeartBeatInfo.class)))
             .build(),
         LibraryVersionComponent.create("fire-installations", BuildConfig.VERSION_NAME));
   }
