@@ -179,7 +179,7 @@ final class SchemaManager extends SQLiteOpenHelper {
   }
 
   private void upgrade(SQLiteDatabase db, int fromVersion, int toVersion) {
-    Logging.i("Upgrading SQLiteDatabase from " + fromVersion + " to " + toVersion);
+    Logging.i(LOG_TAG, "Upgrading SQLiteDatabase from " + fromVersion + " to " + toVersion);
     if (toVersion > INCREMENTAL_MIGRATIONS.size()) {
       throw new IllegalArgumentException(
           "Migration from "
