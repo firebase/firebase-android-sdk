@@ -17,12 +17,16 @@ import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.os.Build;
+import com.google.android.datatransport.runtime.logging.Logging;
 import java.util.Arrays;
 import java.util.List;
 import javax.inject.Inject;
 import javax.inject.Named;
 
 final class SchemaManager extends SQLiteOpenHelper {
+
+  private static final String LOG_TAG = "SchemaManager ";
+
   // TODO: when we do schema upgrades in the future we need to make sure both downgrades and
   // upgrades work as expected, e.g. `up+down+up` is equivalent to `up`.
   static final String DB_NAME = "com.google.android.datatransport.events";
@@ -175,6 +179,7 @@ final class SchemaManager extends SQLiteOpenHelper {
   }
 
   private void upgrade(SQLiteDatabase db, int fromVersion, int toVersion) {
+    Logging.i("Upgrading SQLiteDatabase from " + fromVersion + " to " + toVersion);
     if (toVersion > INCREMENTAL_MIGRATIONS.size()) {
       throw new IllegalArgumentException(
           "Migration from "
