@@ -435,9 +435,11 @@ public class FirebaseInstallationServiceClient {
     httpURLConnection.addRequestProperty(CACHE_CONTROL_HEADER_KEY, CACHE_CONTROL_DIRECTIVE);
     httpURLConnection.addRequestProperty(X_ANDROID_PACKAGE_HEADER_KEY, context.getPackageName());
     if ((heartbeatInfo.get() != null) && (userAgentPublisher.get() != null)) {
-      HeartBeat heartbeat = heartbeatInfo.get().getHeartBeatCode(FIREBASE_INSTALLATIONS_ID_HEARTBEAT_TAG);
+      HeartBeat heartbeat =
+          heartbeatInfo.get().getHeartBeatCode(FIREBASE_INSTALLATIONS_ID_HEARTBEAT_TAG);
       if (heartbeat != HeartBeat.NONE) {
-        httpURLConnection.addRequestProperty(USER_AGENT_HEADER, userAgentPublisher.get().getUserAgent());
+        httpURLConnection.addRequestProperty(
+            USER_AGENT_HEADER, userAgentPublisher.get().getUserAgent());
         httpURLConnection.addRequestProperty(
             HEART_BEAT_HEADER, Integer.toString(heartbeat.getCode()));
       }
