@@ -30,6 +30,7 @@ import com.google.android.gms.common.util.Hex;
 import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.firebase.heartbeatinfo.HeartBeatInfo;
 import com.google.firebase.heartbeatinfo.HeartBeatInfo.HeartBeat;
+import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsException;
 import com.google.firebase.installations.FirebaseInstallationsException.Status;
 import com.google.firebase.installations.remote.InstallationResponse.ResponseCode;
@@ -101,13 +102,13 @@ public class FirebaseInstallationServiceClient {
   static final String PARSING_EXPIRATION_TIME_ERROR_MESSAGE = "Invalid Expiration Timestamp.";
 
   private final Context context;
-  private final UserAgentPublisher userAgentPublisher;
-  private final HeartBeatInfo heartbeatInfo;
+  private final Provider<UserAgentPublisher> userAgentPublisher;
+  private final Provider<HeartBeatInfo> heartbeatInfo;
 
   public FirebaseInstallationServiceClient(
       @NonNull Context context,
-      @Nullable UserAgentPublisher publisher,
-      @Nullable HeartBeatInfo heartbeatInfo) {
+      @NonNull Provider<UserAgentPublisher> publisher,
+      @NonNull Provider<HeartBeatInfo> heartbeatInfo) {
     this.context = context;
     this.userAgentPublisher = publisher;
     this.heartbeatInfo = heartbeatInfo;
@@ -433,10 +434,10 @@ public class FirebaseInstallationServiceClient {
     httpURLConnection.addRequestProperty(CONTENT_ENCODING_HEADER_KEY, GZIP_CONTENT_ENCODING);
     httpURLConnection.addRequestProperty(CACHE_CONTROL_HEADER_KEY, CACHE_CONTROL_DIRECTIVE);
     httpURLConnection.addRequestProperty(X_ANDROID_PACKAGE_HEADER_KEY, context.getPackageName());
-    if (heartbeatInfo != null && userAgentPublisher != null) {
-      HeartBeat heartbeat = heartbeatInfo.getHeartBeatCode(FIREBASE_INSTALLATIONS_ID_HEARTBEAT_TAG);
+    if ((heartbeatInfo.get() != null) && (userAgentPublisher.get() != null)) {
+      HeartBeat heartbeat = heartbeatInfo.get().getHeartBeatCode(FIREBASE_INSTALLATIONS_ID_HEARTBEAT_TAG);
       if (heartbeat != HeartBeat.NONE) {
-        httpURLConnection.addRequestProperty(USER_AGENT_HEADER, userAgentPublisher.getUserAgent());
+        httpURLConnection.addRequestProperty(USER_AGENT_HEADER, userAgentPublisher.get().getUserAgent());
         httpURLConnection.addRequestProperty(
             HEART_BEAT_HEADER, Integer.toString(heartbeat.getCode()));
       }
