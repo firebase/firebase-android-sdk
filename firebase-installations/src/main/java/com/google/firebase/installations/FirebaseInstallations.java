@@ -26,6 +26,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.heartbeatinfo.HeartBeatInfo;
+import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsException.Status;
 import com.google.firebase.installations.local.IidStore;
 import com.google.firebase.installations.local.PersistedInstallation;
@@ -109,11 +110,16 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
           + "with Firebase server APIs: It identifies your application with Firebase."
           + "Please refer to https://firebase.google.com/support/privacy/init-options.";
 
+  private static final String AUTH_ERROR_MSG =
+      "Installation ID could not be validated with the Firebase servers (maybe it was deleted). "
+          + "Firebase Installations will need to create a new Installation ID and auth token. "
+          + "Please retry your last request.";
+
   /** package private constructor. */
   FirebaseInstallations(
       FirebaseApp firebaseApp,
-      @Nullable UserAgentPublisher publisher,
-      @Nullable HeartBeatInfo heartbeatInfo) {
+      @NonNull Provider<UserAgentPublisher> publisher,
+      @NonNull Provider<HeartBeatInfo> heartbeatInfo) {
     this(
         new ThreadPoolExecutor(
             CORE_POOL_SIZE,
@@ -378,7 +384,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     } else if (prefs.isNotGenerated()) {
       // If there is no fid it means the call failed with an auth error. Simulate an
       // IOException so that the caller knows to try again.
-      triggerOnException(prefs, new IOException("cleared fid due to auth error"));
+      triggerOnException(prefs, new IOException(AUTH_ERROR_MSG));
     } else {
       triggerOnStateReached(prefs);
     }

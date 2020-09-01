@@ -14,6 +14,8 @@
 
 package com.google.firebase.database.core.view.filter;
 
+import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
+
 import com.google.firebase.database.core.view.Change;
 import com.google.firebase.database.core.view.Event;
 import com.google.firebase.database.snapshot.ChildKey;
@@ -33,11 +35,12 @@ public class ChildChangeAccumulator {
   public void trackChildChange(Change change) {
     Event.EventType type = change.getEventType();
     ChildKey childKey = change.getChildKey();
-    assert type == Event.EventType.CHILD_ADDED
+    hardAssert(
+        type == Event.EventType.CHILD_ADDED
             || type == Event.EventType.CHILD_CHANGED
-            || type == Event.EventType.CHILD_REMOVED
-        : "Only child changes supported for tracking";
-    assert !change.getChildKey().isPriorityChildName();
+            || type == Event.EventType.CHILD_REMOVED,
+        "Only child changes supported for tracking");
+    hardAssert(!change.getChildKey().isPriorityChildName());
     if (changeMap.containsKey(childKey)) {
       Change oldChange = changeMap.get(childKey);
       Event.EventType oldType = oldChange.getEventType();

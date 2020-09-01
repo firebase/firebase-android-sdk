@@ -356,7 +356,8 @@ public class FirebaseRemoteConfig {
    *
    * <ol>
    *   <li>The activated value, if the last successful {@link #activate()} contained the key.
-   *   <li>The default value, if the key was set with {@link #setDefaultsAsync}.
+   *   <li>The default value, if the key was set with {@link #setDefaultsAsync(Map)
+   *       setDefaultsAsync}.
    *   <li>{@link #DEFAULT_VALUE_FOR_STRING}.
    * </ol>
    *
@@ -377,8 +378,8 @@ public class FirebaseRemoteConfig {
    * <ol>
    *   <li>The activated value, if the last successful {@link #activate()} contained the key, and
    *       the value can be converted into a {@code boolean}.
-   *   <li>The default value, if the key was set with {@link #setDefaultsAsync}, and the value can
-   *       be converted into a {@code boolean}.
+   *   <li>The default value, if the key was set with {@link #setDefaultsAsync(Map)
+   *       setDefaultsAsync}, and the value can be converted into a {@code boolean}.
    *   <li>{@link #DEFAULT_VALUE_FOR_BOOLEAN}.
    * </ol>
    *
@@ -401,7 +402,8 @@ public class FirebaseRemoteConfig {
    *
    * <ol>
    *   <li>The activated value, if the last successful {@link #activate()} contained the key.
-   *   <li>The default value, if the key was set with {@link #setDefaultsAsync}.
+   *   <li>The default value, if the key was set with {@link #setDefaultsAsync(Map)
+   *       setDefaultsAsync}.
    *   <li>{@link #DEFAULT_VALUE_FOR_BYTE_ARRAY}.
    * </ol>
    *
@@ -424,8 +426,8 @@ public class FirebaseRemoteConfig {
    * <ol>
    *   <li>The activated value, if the last successful {@link #activate()} contained the key, and
    *       the value can be converted into a {@code double}.
-   *   <li>The default value, if the key was set with {@link #setDefaultsAsync}, and the value can
-   *       be converted into a {@code double}.
+   *   <li>The default value, if the key was set with {@link #setDefaultsAsync(Map)
+   *       setDefaultsAsync}, and the value can be converted into a {@code double}.
    *   <li>{@link #DEFAULT_VALUE_FOR_DOUBLE}.
    * </ol>
    *
@@ -445,8 +447,8 @@ public class FirebaseRemoteConfig {
    * <ol>
    *   <li>The activated value, if the last successful {@link #activate()} contained the key, and
    *       the value can be converted into a {@code long}.
-   *   <li>The default value, if the key was set with {@link #setDefaultsAsync}, and the value can
-   *       be converted into a {@code long}.
+   *   <li>The default value, if the key was set with {@link #setDefaultsAsync(Map)
+   *       setDefaultsAsync}, and the value can be converted into a {@code long}.
    *   <li>{@link #DEFAULT_VALUE_FOR_LONG}.
    * </ol>
    *
@@ -465,7 +467,8 @@ public class FirebaseRemoteConfig {
    *
    * <ol>
    *   <li>The activated value, if the last successful {@link #activate()} contained the key.
-   *   <li>The default value, if the key was set with {@link #setDefaultsAsync}.
+   *   <li>The default value, if the key was set with {@link #setDefaultsAsync(Map)
+   *       setDefaultsAsync}.
    *   <li>A {@link FirebaseRemoteConfigValue} that returns the static value for each type.
    * </ol>
    *
@@ -496,7 +499,8 @@ public class FirebaseRemoteConfig {
    *
    * <ol>
    *   <li>The activated value, if the last successful {@link #activate()} contained the key.
-   *   <li>The default value, if the key was set with {@link #setDefaultsAsync}.
+   *   <li>The default value, if the key was set with {@link #setDefaultsAsync(Map)
+   *       setDefaultsAsync}.
    * </ol>
    */
   @NonNull
@@ -556,7 +560,7 @@ public class FirebaseRemoteConfig {
    *
    * @param defaults Map of key value pairs representing Firebase Remote Config parameter keys and
    *     values.
-   * @deprecated Use {@link #setDefaultsAsync} instead.
+   * @deprecated Use {@link #setDefaultsAsync(Map) setDefaultsAsync} instead.
    */
   @Deprecated
   public void setDefaults(@NonNull Map<String, Object> defaults) {
@@ -611,7 +615,7 @@ public class FirebaseRemoteConfig {
    *
    * @param resourceId Id for the XML resource, which should be in your application's {@code
    *     res/xml} folder.
-   * @deprecated Use {@link #setDefaultsAsync} instead.
+   * @deprecated Use {@link #setDefaultsAsync(int) setDefaultsAsync} instead.
    */
   @Deprecated
   public void setDefaults(@XmlRes int resourceId) {

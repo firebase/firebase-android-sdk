@@ -25,22 +25,16 @@ import com.google.firebase.database.DatabaseException;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.core.Path;
 import com.google.firebase.database.core.RepoInfo;
-import com.google.firebase.emulators.EmulatedServiceSettings;
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Locale;
 import java.util.Map;
 
 public class Utilities {
   private static final char[] HEX_CHARACTERS = "0123456789abcdef".toCharArray();
 
-  public static ParsedUrl parseUrl(@NonNull String url) {
-    return Utilities.parseUrl(url, null);
-  }
-
-  public static ParsedUrl parseUrl(
-      @NonNull String url, @Nullable EmulatedServiceSettings emulatorSettings)
-      throws DatabaseException {
+  public static ParsedUrl parseUrl(@NonNull String url) throws DatabaseException {
     try {
       Uri uri = Uri.parse(url);
 
@@ -57,22 +51,17 @@ public class Utilities {
       String namespace = uri.getQueryParameter("ns");
       if (namespace == null) {
         String[] parts = host.split("\\.", -1);
-        namespace = parts[0].toLowerCase();
+        namespace = parts[0].toLowerCase(Locale.US);
       }
 
       RepoInfo repoInfo = new RepoInfo();
-      if (emulatorSettings != null) {
-        repoInfo.host = emulatorSettings.getHost() + ":" + emulatorSettings.getPort();
-        repoInfo.secure = false;
+      repoInfo.host = host.toLowerCase(Locale.US);
+      int port = uri.getPort();
+      if (port != -1) {
+        repoInfo.secure = scheme.equals("https") || scheme.equals("wss");
+        repoInfo.host += ":" + port;
       } else {
-        repoInfo.host = host.toLowerCase();
-        int port = uri.getPort();
-        if (port != -1) {
-          repoInfo.secure = scheme.equals("https") || scheme.equals("wss");
-          repoInfo.host += ":" + port;
-        } else {
-          repoInfo.secure = true;
-        }
+        repoInfo.secure = true;
       }
 
       repoInfo.internalHost = repoInfo.host;

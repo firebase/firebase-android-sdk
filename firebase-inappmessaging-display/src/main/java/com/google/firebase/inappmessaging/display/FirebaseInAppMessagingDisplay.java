@@ -19,6 +19,8 @@ import static com.google.firebase.inappmessaging.display.internal.FiamAnimator.P
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Application;
+import android.content.Intent;
+import android.content.pm.ResolveInfo;
 import android.content.res.Configuration;
 import android.net.Uri;
 import android.text.TextUtils;
@@ -305,25 +307,20 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
         };
 
     Map<Action, View.OnClickListener> actionListeners = new HashMap<>();
-    // If the message has an action, but not an action url, we dismiss when the action
-    // button is clicked
     for (Action action : extractActions(inAppMessage)) {
-
       final View.OnClickListener actionListener;
-
       // TODO: need an onclick listener per action
+      // If the message has an action and an action url, set up an intent to handle the url
       if (action != null && !TextUtils.isEmpty(action.getActionUrl())) {
         actionListener =
             new View.OnClickListener() {
               @Override
               public void onClick(View v) {
                 if (callbacks != null) {
+                  Logging.logi("Calling callback for click action");
                   callbacks.messageClicked(action);
                 }
-                final CustomTabsIntent i =
-                    new CustomTabsIntent.Builder().setShowTitle(true).build();
-
-                i.launchUrl(activity, Uri.parse(action.getActionUrl()));
+                launchUriIntent(activity, Uri.parse(action.getActionUrl()));
                 notifyFiamClick();
                 // Ensure that we remove the displayed FIAM, and ensure that on re-load, the message
                 // isn't re-displayed
@@ -333,7 +330,7 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
               }
             };
       } else {
-        Logging.loge("No action url found for action.");
+        Logging.logi("No action url found for action. Treating as dismiss.");
         actionListener = dismissListener;
       }
       actionListeners.put(action, actionListener);
@@ -534,5 +531,36 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
     if (fiamListener != null) {
       fiamListener.onFiamDismiss();
     }
+  }
+
+  private void launchUriIntent(Activity activity, Uri uri) {
+    if (supportsCustomTabs(activity)) {
+      // If we can launch a chrome view, try that.
+      CustomTabsIntent customTabsIntent = new CustomTabsIntent.Builder().build();
+      Intent intent = customTabsIntent.intent;
+      intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
+      intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+      customTabsIntent.launchUrl(activity, uri);
+    } else {
+      // If we can't launch a chrome view try to launch anything that can handle a URL.
+      Intent browserIntent = new Intent(Intent.ACTION_VIEW, uri);
+      ResolveInfo info = activity.getPackageManager().resolveActivity(browserIntent, 0);
+      browserIntent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
+      browserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+      if (info != null) {
+        activity.startActivity(browserIntent);
+      } else {
+        // If the device can't resolve a url then log, but don't crash.
+        Logging.loge("Device cannot resolve intent for: " + Intent.ACTION_VIEW);
+      }
+    }
+  }
+
+  private boolean supportsCustomTabs(Activity activity) {
+    Intent customTabIntent = new Intent("android.support.customtabs.action.CustomTabsService");
+    customTabIntent.setPackage("com.android.chrome");
+    List<ResolveInfo> resolveInfos =
+        activity.getPackageManager().queryIntentServices(customTabIntent, 0);
+    return !resolveInfos.isEmpty();
   }
 }

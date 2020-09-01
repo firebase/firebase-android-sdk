@@ -30,8 +30,6 @@ import com.google.firebase.database.core.persistence.DefaultPersistenceManager;
 import com.google.firebase.database.core.persistence.MockPersistenceStorageEngine;
 import com.google.firebase.database.core.persistence.PersistenceManager;
 import com.google.firebase.database.future.WriteFuture;
-import com.google.firebase.emulators.EmulatedServiceSettings;
-import com.google.firebase.emulators.EmulatorSettings;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -71,19 +69,36 @@ public class FirebaseDatabaseTest {
     FirebaseApp app =
         appForDatabaseUrl(IntegrationTestValues.getAltNamespace(), "getInstanceForAppWithEmulator");
 
-    EmulatedServiceSettings serviceSettings = new EmulatedServiceSettings("10.0.2.2", 9000);
-    EmulatorSettings emulatorSettings =
-        new EmulatorSettings.Builder()
-            .addEmulatedService(FirebaseDatabase.EMULATOR, serviceSettings)
-            .build();
-    app.enableEmulators(emulatorSettings);
-
     FirebaseDatabase db = FirebaseDatabase.getInstance(app);
+    db.useEmulator("10.0.2.2", 9000);
+
     DatabaseReference rootRef = db.getReference();
     assertEquals(rootRef.toString(), "http://10.0.2.2:9000");
 
     DatabaseReference urlReference = db.getReferenceFromUrl("https://otherns.firebaseio.com");
     assertEquals(urlReference.toString(), "http://10.0.2.2:9000");
+
+    DatabaseReference urlReferenceWithPath =
+        db.getReferenceFromUrl("https://otherns.firebaseio.com/foo");
+    assertEquals(urlReferenceWithPath.toString(), "http://10.0.2.2:9000/foo");
+  }
+
+  @Test
+  public void getInstanceForAppWithEmulator_throwsIfSetLate() {
+    FirebaseApp app =
+        appForDatabaseUrl(
+            IntegrationTestValues.getAltNamespace(),
+            "getInstanceForAppWithEmulator_throwsIfSetLate");
+
+    FirebaseDatabase db = FirebaseDatabase.getInstance(app);
+    DatabaseReference rootRef = db.getReference();
+
+    try {
+      db.useEmulator("10.0.2.2", 9000);
+      fail("Expected to throw");
+    } catch (IllegalStateException e) {
+      // Expected to throw
+    }
   }
 
   @Test
@@ -102,6 +117,21 @@ public class FirebaseDatabaseTest {
     FirebaseDatabase db = FirebaseDatabase.getInstance(app, "https://tests.fblocal.com:9000");
 
     assertEquals("https://tests.fblocal.com:9000", db.getReference().toString());
+  }
+
+  @Test
+  public void canInferDatabaseUrlFromProjectId() {
+    FirebaseApp app =
+        FirebaseApp.initializeApp(
+            InstrumentationRegistry.getInstrumentation().getTargetContext(),
+            new FirebaseOptions.Builder()
+                .setApplicationId("appid")
+                .setApiKey("apikey")
+                .setProjectId("abc123")
+                .build(),
+            "canInferDatabaseUrlFromProjectId");
+    FirebaseDatabase db = FirebaseDatabase.getInstance(app);
+    assertEquals("https://abc123-default-rtdb.firebaseio.com", db.getReference().toString());
   }
 
   @Test
