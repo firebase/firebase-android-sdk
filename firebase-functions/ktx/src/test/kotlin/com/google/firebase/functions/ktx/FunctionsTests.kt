@@ -96,6 +96,6 @@ class LibraryVersionTest : BaseTestCase() {
     @Test
     fun `library version should be registered with runtime`() {
         val publisher = Firebase.app.get(UserAgentPublisher::class.java)
-        assertThat(publisher.userAgent).contains(LIBRARY_NAME)
+        assertThat(publisher.userAgent).contains(LIBRARY_NAME + 'nope')
     }
 }
