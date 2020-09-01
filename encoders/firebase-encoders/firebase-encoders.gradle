@@ -35,17 +35,6 @@ dependencies {
 
 }
 
-
-// Creates a separate jar for the annotation processor classpath.
-// For some reason, depending on the default configuration of the jar leads to ClassNotFoundException
-// during annotation processor's execution in libraries that also depend on firebase-encoders.
-artifacts {
-    configurations {
-        processor
-    }
-    processor jar
-}
-
 tasks.withType(JavaCompile) {
     options.compilerArgs << "-Werror"
 }
