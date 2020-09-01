@@ -13,9 +13,38 @@
 // limitations under the License.
 
 plugins {
-    id 'java-library'
+    id 'firebase-java-library'
 }
+
+firebaseLibrary {
+    publishSources = true
+    publishJavadoc = false
+}
+
+java {
+    sourceCompatibility JavaVersion.VERSION_1_8
+    targetCompatibility JavaVersion.VERSION_1_8
+}
+
 
 dependencies {
     implementation 'androidx.annotation:annotation:1.1.0'
+
+    testImplementation 'junit:junit:4.13'
+    testImplementation "com.google.truth:truth:$googleTruthVersion"
+
+}
+
+
+// Creates a separate jar for the annotation processor classpath.
+// This is needed
+artifacts {
+    configurations {
+        processor
+    }
+    processor jar
+}
+
+tasks.withType(JavaCompile) {
+    options.compilerArgs << "-Werror"
 }
