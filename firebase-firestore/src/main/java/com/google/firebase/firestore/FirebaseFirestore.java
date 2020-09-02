@@ -39,6 +39,7 @@ import com.google.firebase.firestore.core.FirestoreClient;
 import com.google.firebase.firestore.local.SQLitePersistence;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.ResourcePath;
+import com.google.firebase.firestore.remote.FirestoreChannel;
 import com.google.firebase.firestore.remote.GrpcMetadataProvider;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.Executors;
@@ -634,5 +635,9 @@ public class FirebaseFirestore {
       throw new IllegalArgumentException(
           "Provided document reference is from a different Cloud Firestore instance.");
     }
+  }
+
+  void setClientLanguage(String language) {
+    FirestoreChannel.setClientLanguage(language);
   }
 }
