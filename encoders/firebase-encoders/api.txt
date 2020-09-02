@@ -1,0 +1,86 @@
+// Signature format: 2.0
+package com.google.firebase.encoders {
+
+  public interface DataEncoder {
+    method public void encode(@NonNull Object, @NonNull Writer);
+    method @NonNull public String encode(@NonNull Object);
+  }
+
+  public final class EncodingException {
+    ctor public EncodingException(@NonNull String);
+    ctor public EncodingException(@NonNull String, @NonNull Exception);
+  }
+
+  public final class FieldDescriptor {
+    method @NonNull public static com.google.firebase.encoders.FieldDescriptor.Builder builder(@NonNull String);
+    method public boolean equals(Object);
+    method @NonNull public String getName();
+    method @Nullable public <T extends Annotation> T getProperty(@NonNull Class<T>);
+    method public int hashCode();
+    method @NonNull public String toString();
+  }
+
+  public static final class FieldDescriptor.Builder {
+    method @NonNull public com.google.firebase.encoders.FieldDescriptor build();
+    method @NonNull public <T extends Annotation> com.google.firebase.encoders.FieldDescriptor.Builder withProperty(@NonNull T);
+  }
+
+  public interface ObjectEncoder<T> {
+  }
+
+  public interface ObjectEncoderContext {
+    method @NonNull public com.google.firebase.encoders.ObjectEncoderContext add(@NonNull String, @Nullable Object);
+    method @NonNull public com.google.firebase.encoders.ObjectEncoderContext add(@NonNull String, double);
+    method @NonNull public com.google.firebase.encoders.ObjectEncoderContext add(@NonNull String, int);
+    method @NonNull public com.google.firebase.encoders.ObjectEncoderContext add(@NonNull String, long);
+    method @NonNull public com.google.firebase.encoders.ObjectEncoderContext add(@NonNull String, boolean);
+    method @NonNull public com.google.firebase.encoders.ObjectEncoderContext inline(@Nullable Object);
+    method @NonNull public com.google.firebase.encoders.ObjectEncoderContext nested(@NonNull String);
+  }
+
+  public interface ValueEncoder<T> {
+  }
+
+  public interface ValueEncoderContext {
+    method @NonNull public com.google.firebase.encoders.ValueEncoderContext add(@Nullable String);
+    method @NonNull public com.google.firebase.encoders.ValueEncoderContext add(double);
+    method @NonNull public com.google.firebase.encoders.ValueEncoderContext add(int);
+    method @NonNull public com.google.firebase.encoders.ValueEncoderContext add(long);
+    method @NonNull public com.google.firebase.encoders.ValueEncoderContext add(boolean);
+    method @NonNull public com.google.firebase.encoders.ValueEncoderContext add(@NonNull byte[]);
+  }
+
+}
+
+package com.google.firebase.encoders.annotations {
+
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) public @interface Encodable {
+  }
+
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) public static @interface Encodable.Field {
+    method public abstract boolean inline() default false;
+    method public abstract String name() default "";
+  }
+
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) public static @interface Encodable.Ignore {
+  }
+
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) public @interface ExtraProperty {
+    method public abstract Class<?>[] allowedTypes() default {};
+  }
+
+}
+
+package com.google.firebase.encoders.config {
+
+  public interface Configurator {
+    method public void configure(@NonNull com.google.firebase.encoders.config.EncoderConfig<?>);
+  }
+
+  public interface EncoderConfig<T extends com.google.firebase.encoders.config.EncoderConfig<T>> {
+    method @NonNull public <U> T registerEncoder(@NonNull Class<U>, @NonNull com.google.firebase.encoders.ObjectEncoder<? super U>);
+    method @NonNull public <U> T registerEncoder(@NonNull Class<U>, @NonNull com.google.firebase.encoders.ValueEncoder<? super U>);
+  }
+
+}
+

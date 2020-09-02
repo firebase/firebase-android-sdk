@@ -53,6 +53,7 @@ dependencies {
     implementation project(':transport:transport-api')
     implementation project(':transport:transport-runtime')
     implementation project(':transport:transport-backend-cct')
+    implementation project(':encoders:firebase-encoders')
     implementation project(':encoders:firebase-encoders-json')
 
     implementation 'androidx.annotation:annotation:1.1.0'

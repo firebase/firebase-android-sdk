@@ -56,10 +56,12 @@ final class Dokka {
       FirebaseLibraryExtension firebaseLibrary) {
 
     Configuration javadocClasspath = project.getConfigurations().create("javadocClasspath");
-    javadocClasspath
-        .getAttributes()
-        .attribute(
-            BuildTypeAttr.ATTRIBUTE, project.getObjects().named(BuildTypeAttr.class, "release"));
+    if (android != null) {
+      javadocClasspath
+          .getAttributes()
+          .attribute(
+              BuildTypeAttr.ATTRIBUTE, project.getObjects().named(BuildTypeAttr.class, "release"));
+    }
 
     project.afterEvaluate(
         p -> {
