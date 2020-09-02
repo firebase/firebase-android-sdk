@@ -38,19 +38,19 @@ public final class PerformanceMonitoringTest {
 
   @Test
   public void networkRequest() {
-    HttpMetric perfNetworkRequest =
+    HttpMetric networkRequest =
         FirebasePerformance.getInstance()
             .newHttpMetric("https://www.google.com", FirebasePerformance.HttpMethod.GET);
-    perfNetworkRequest.start();
+    networkRequest.start();
 
-    perfNetworkRequest.setRequestPayloadSize(128);
-    perfNetworkRequest.setResponsePayloadSize(1024);
-    perfNetworkRequest.setHttpResponseCode(200);
-    perfNetworkRequest.setResponseContentType("text/html");
-    perfNetworkRequest.putAttribute("is_test", "true");
+    networkRequest.setRequestPayloadSize(128);
+    networkRequest.setResponsePayloadSize(1024);
+    networkRequest.setHttpResponseCode(200);
+    networkRequest.setResponseContentType("text/html");
+    networkRequest.putAttribute("is_test", "true");
 
-    perfNetworkRequest.stop();
+    networkRequest.stop();
 
-    assertThat(perfNetworkRequest.getAttribute("is_test")).isEqualTo("true");
+    assertThat(networkRequest.getAttribute("is_test")).isEqualTo("true");
   }
 }
