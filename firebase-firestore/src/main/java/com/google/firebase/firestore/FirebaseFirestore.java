@@ -644,7 +644,7 @@ public class FirebaseFirestore {
    * Note: this method is package-private because it is expected to only be called via JNI (which
    * ignores access modifiers).
    */
-  void setClientLanguage(String language_token) {
-    FirestoreChannel.setClientLanguage(language_token);
+  void setClientLanguage(String languageToken) {
+    FirestoreChannel.setClientLanguage(languageToken);
   }
 }

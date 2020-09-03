@@ -279,8 +279,8 @@ public class FirestoreChannel {
     credentialsProvider.invalidateToken();
   }
 
-  public static void setClientLanguage(String language_token) {
-    clientLanguage = language_token;
+  public static void setClientLanguage(String languageToken) {
+    clientLanguage = languageToken;
   }
 
   private static String getDefaultClientLanguage() {
