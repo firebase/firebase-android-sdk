@@ -33,7 +33,6 @@ import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
 import io.grpc.Status;
 import io.grpc.internal.GrpcUtil;
-import io.grpc.internal.GrpcUtil.GrpcBuildVersion;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -41,7 +40,7 @@ import java.util.List;
  * Wrapper class around io.grpc.Channel that adds headers, exception handling and simplifies
  * invoking RPCs.
  */
-class FirestoreChannel {
+public class FirestoreChannel {
 
   private static final Metadata.Key<String> X_GOOG_API_CLIENT_HEADER =
       Metadata.Key.of("x-goog-api-client", Metadata.ASCII_STRING_MARSHALLER);
@@ -279,17 +278,20 @@ class FirestoreChannel {
     credentialsProvider.invalidateToken();
   }
 
-  public void setClientLanguage(String language) {
+  public static void setClientLanguage(String language) {
     clientLanguage = language;
   }
 
-  private String getDefaultClientLanguage() {
-    return "gl-java/" + System.getProperty("java.version");
+  private static String getDefaultClientLanguage() {
+    // Note: there is no good way to get the Java language version on Android
+    // (System.getProperty("java.version") returns "0", for example).
+    return "gl-java/";
   }
 
-  private String getGoogApiClientValue() {
-    String grpcVersion = GrpcUtil.getGrpcBuildVersion().toString();
-    String result = String.format("%s fire/%s grpc/%s", clientLanguage, BuildConfig.VERSION_NAME, grpcVersion);
+  private static String getGoogApiClientValue() {
+    String grpcVersion = GrpcUtil.getGrpcBuildVersion().getImplementationVersion();
+    String result =
+        String.format("%s fire/%s grpc/%s", clientLanguage, BuildConfig.VERSION_NAME, grpcVersion);
     System.out.println("OBC " + result);
     return result;
   }
