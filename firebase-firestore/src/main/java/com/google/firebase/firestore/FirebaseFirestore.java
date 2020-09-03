@@ -637,7 +637,11 @@ public class FirebaseFirestore {
     }
   }
 
-  void setClientLanguage(String language) {
-    FirestoreChannel.setClientLanguage(language);
+  /**
+   * Sets the language of the public API in the format of "gl-<language>/<version>" where version
+   * might be blank, e.g. `gl-cpp/`. The provided string is used as is.
+   */
+  void setClientLanguage(String language_token) {
+    FirestoreChannel.setClientLanguage(language_token);
   }
 }

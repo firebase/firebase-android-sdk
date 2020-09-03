@@ -48,6 +48,7 @@ public class FirestoreChannel {
   private static final Metadata.Key<String> RESOURCE_PREFIX_HEADER =
       Metadata.Key.of("google-cloud-resource-prefix", Metadata.ASCII_STRING_MARSHALLER);
 
+  /** The client language reported via the X_GOOG_API_CLIENT_HEADER. */
   private static String clientLanguage = getDefaultClientLanguage();
 
   /** The async worker queue that is used to dispatch events. */
@@ -278,8 +279,8 @@ public class FirestoreChannel {
     credentialsProvider.invalidateToken();
   }
 
-  public static void setClientLanguage(String language) {
-    clientLanguage = language;
+  public static void setClientLanguage(String language_token) {
+    clientLanguage = language_token;
   }
 
   private static String getDefaultClientLanguage() {
