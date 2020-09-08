@@ -659,7 +659,7 @@ public class QueryTest {
     // With Null.
     List<Object> nullArray = new ArrayList<>();
     nullArray.add(null);
-    snapshot = waitFor(collection.whereNotIn("key", nullArray).get());
+    snapshot = waitFor(collection.whereNotIn("zip", nullArray).get());
     assertEquals(new ArrayList<>(), querySnapshotToValues(snapshot));
 
     // With NaN.
