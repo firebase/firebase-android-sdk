@@ -80,6 +80,10 @@ public class DataCollectionArbiter {
   }
 
   public synchronized void setCrashlyticsDataCollectionEnabled(@Nullable Boolean enabled) {
+    if (enabled != null) {
+      setInManifest = false;
+    }
+
     crashlyticsDataCollectionEnabled =
         (enabled != null)
             ? enabled
