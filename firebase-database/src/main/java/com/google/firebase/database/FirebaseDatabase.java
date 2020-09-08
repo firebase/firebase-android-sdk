@@ -57,7 +57,7 @@ public class FirebaseDatabase {
     if (instance == null) {
       throw new DatabaseException("You must call FirebaseApp.initialize() first.");
     }
-    return getInstance(instance, instance.getOptions().getDatabaseUrl());
+    return getInstance(instance);
   }
 
   /**
