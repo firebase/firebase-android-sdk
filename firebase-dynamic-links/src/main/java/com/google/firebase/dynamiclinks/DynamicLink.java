@@ -383,7 +383,7 @@ public final class DynamicLink {
         return this;
       }
 
-      /** @return the iPad parameters ID of the app. */
+      /** @return the iPad bundle ID of the app. */
       @NonNull
       public Uri getFallbackUrl() {
         Uri fallbackUrl = parameters.getParcelable(KEY_ANDROID_FALLBACK_LINK);
@@ -453,7 +453,7 @@ public final class DynamicLink {
       /**
        * Create iOS parameters builder.
        *
-       * @param bundleId The parameters ID of the iOS app to use to open the link. The app must be
+       * @param bundleId The bundle ID of the iOS app to use to open the link. The app must be
        *     connected to your project from the Overview page of the Firebase console.
        */
       public Builder(@NonNull String bundleId) {
@@ -476,7 +476,7 @@ public final class DynamicLink {
 
       /**
        * Sets the app's custom URL scheme, if defined to be something other than your app's
-       * parameters ID.
+       * bundle ID.
        *
        * @param customScheme The app's custom URL scheme.
        */
@@ -521,10 +521,10 @@ public final class DynamicLink {
       }
 
       /**
-       * Sets the parameters ID of the iOS app to use on iPads to open the link. The app must be
+       * Sets the bundle ID of the iOS app to use on iPads to open the link. The app must be
        * connected to your project from the Overview page of the Firebase console.
        *
-       * @param bundleId The iPad parameters ID of the app.
+       * @param bundleId The iPad bundle ID of the app.
        */
       @NonNull
       public IosParameters.Builder setIpadBundleId(@NonNull String bundleId) {
@@ -532,7 +532,7 @@ public final class DynamicLink {
         return this;
       }
 
-      /** @return the iPad parameters ID of the app. */
+      /** @return the iPad bundle ID of the app. */
       @NonNull
       public String getIpadBundleId() {
         String bundleId = parameters.getString(KEY_IPAD_BUNDLE_ID);
