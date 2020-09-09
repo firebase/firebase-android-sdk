@@ -15,13 +15,18 @@
 package com.google.firebase.installations;
 
 import android.text.TextUtils;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.installations.local.PersistedInstallationEntry;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
-/** Util methods used for {@link FirebaseInstallations} */
-class Utils {
+/**
+ * Util methods used for {@link FirebaseInstallations}.
+ *
+ * @hide
+ */
+public class Utils {
   public static final long AUTH_TOKEN_EXPIRATION_BUFFER_IN_SECS = TimeUnit.HOURS.toSeconds(1);
   private static final String APP_ID_IDENTIFICATION_SUBSTRING = ":";
   private static final Pattern API_KEY_FORMAT = Pattern.compile("\\AA[\\w-]{38}\\z");
@@ -30,7 +35,7 @@ class Utils {
    * Checks if the FIS Auth token is expired or going to expire in next 1 hour {@link
    * #AUTH_TOKEN_EXPIRATION_BUFFER_IN_SECS}.
    */
-  public boolean isAuthTokenExpired(PersistedInstallationEntry entry) {
+  public boolean isAuthTokenExpired(@NonNull PersistedInstallationEntry entry) {
     if (TextUtils.isEmpty(entry.getAuthToken())) {
       return true;
     }
@@ -43,7 +48,12 @@ class Utils {
 
   /** Returns current time in seconds. */
   public long currentTimeInSecs() {
-    return TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis());
+    return TimeUnit.MILLISECONDS.toSeconds(currentTimeInMillis());
+  }
+
+  /** Returns current time in milliseconds. */
+  public long currentTimeInMillis() {
+    return System.currentTimeMillis();
   }
 
   static boolean isValidAppIdFormat(@Nullable String appId) {
@@ -52,5 +62,9 @@ class Utils {
 
   static boolean isValidApiKeyFormat(@Nullable String apiKey) {
     return API_KEY_FORMAT.matcher(apiKey).matches();
+  }
+
+  public long getRandomMillis() {
+    return (long) (Math.random() * 1000);
   }
 }
