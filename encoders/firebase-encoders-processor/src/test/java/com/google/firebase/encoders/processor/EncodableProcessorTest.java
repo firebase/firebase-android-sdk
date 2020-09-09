@@ -254,13 +254,21 @@ public class EncodableProcessorTest {
                     "package com.example;",
                     "import com.google.firebase.encoders.annotations.Encodable;",
                     "@Encodable public class Foo {",
-                    "public com.example.sub.Member getField() { return null; }",
+                    "public com.example.sub.Member getMember() { return null; }",
+                    "public com.example.sub.AnotherMember getAnotherMember() { return null; }",
                     "}"),
                 JavaFileObjects.forSourceLines(
                     "com.example.sub.Member",
                     "package com.example.sub;",
                     "import com.google.auto.value.AutoValue;",
                     "@AutoValue public abstract class Member {",
+                    "public abstract String getField();",
+                    "}"),
+                JavaFileObjects.forSourceLines(
+                    "com.example.sub.AnotherMember",
+                    "package com.example.sub;",
+                    "import com.google.auto.value.AutoValue;",
+                    "@AutoValue public abstract class AnotherMember {",
                     "public abstract String getField();",
                     "}"));
 
@@ -272,10 +280,22 @@ public class EncodableProcessorTest {
             "cfg.registerEncoder("
                 + "com.example.sub.EncodableComExampleFooMemberAutoValueSupport.TYPE,"
                 + " MemberEncoder.INSTANCE)");
+    assertThat(result).succeededWithoutWarnings();
+    assertThat(result)
+        .generatedSourceFile("com/example/AutoFooEncoder")
+        .contentsAsUtf8String()
+        .contains(
+            "cfg.registerEncoder("
+                + "com.example.sub.EncodableComExampleFooAnotherMemberAutoValueSupport.TYPE,"
+                + " AnotherMemberEncoder.INSTANCE)");
     assertThat(result)
         .generatedSourceFile("com/example/sub/EncodableComExampleFooMemberAutoValueSupport")
         .contentsAsUtf8String()
         .contains("Class<? extends Member> TYPE = AutoValue_Member.class");
+    assertThat(result)
+        .generatedSourceFile("com/example/sub/EncodableComExampleFooAnotherMemberAutoValueSupport")
+        .contentsAsUtf8String()
+        .contains("Class<? extends AnotherMember> TYPE = AutoValue_AnotherMember.class");
   }
 
   @Test

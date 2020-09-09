@@ -17,6 +17,8 @@ package com.google.firebase.encoders.processor;
 import androidx.annotation.VisibleForTesting;
 import com.google.auto.service.AutoService;
 import com.google.auto.value.AutoValue;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
 import com.google.firebase.encoders.annotations.Encodable;
 import com.google.firebase.encoders.processor.getters.Getter;
 import com.google.firebase.encoders.processor.getters.GetterFactory;
@@ -30,7 +32,6 @@ import com.squareup.javapoet.TypeSpec;
 import com.squareup.javapoet.WildcardTypeName;
 import java.io.IOException;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -127,7 +128,7 @@ public class EncodableProcessor extends AbstractProcessor {
             .addModifiers(Modifier.PUBLIC)
             .addAnnotation(Override.class);
 
-    Map<String, TypeSpec> autoValueSupportClasses = new HashMap<>();
+    Multimap<String, TypeSpec> autoValueSupportClasses = ArrayListMultimap.create();
 
     for (Encoder encoder : encoders) {
       encoderBuilder.addType(encoder.code());
@@ -153,7 +154,7 @@ public class EncodableProcessor extends AbstractProcessor {
 
     try {
       file.writeTo(processingEnv.getFiler());
-      for (Map.Entry<String, TypeSpec> autoValue : autoValueSupportClasses.entrySet()) {
+      for (Map.Entry<String, TypeSpec> autoValue : autoValueSupportClasses.entries()) {
         JavaFile.builder(autoValue.getKey(), autoValue.getValue())
             .build()
             .writeTo(processingEnv.getFiler());
