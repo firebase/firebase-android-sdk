@@ -32,6 +32,8 @@ import io.grpc.ForwardingClientCall;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
 import io.grpc.Status;
+import io.grpc.internal.GrpcUtil;
+import io.grpc.internal.GrpcUtil.GrpcBuildVersion;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -47,11 +49,7 @@ class FirestoreChannel {
   private static final Metadata.Key<String> RESOURCE_PREFIX_HEADER =
       Metadata.Key.of("google-cloud-resource-prefix", Metadata.ASCII_STRING_MARSHALLER);
 
-  // TODO: The gRPC version is determined using a package manifest, which is not available
-  // to us at build time or runtime (it's empty when building in google3). So for now we omit the
-  // version of grpc.
-  private static final String X_GOOG_API_CLIENT_VALUE =
-      "gl-java/ fire/" + BuildConfig.VERSION_NAME + " grpc/";
+  private static String clientLanguage = getDefaultClientLanguage();
 
   /** The async worker queue that is used to dispatch events. */
   private final AsyncQueue asyncQueue;
@@ -281,10 +279,25 @@ class FirestoreChannel {
     credentialsProvider.invalidateToken();
   }
 
+  public void setClientLanguage(String language) {
+    clientLanguage = language;
+  }
+
+  private String getDefaultClientLanguage() {
+    return "gl-java/" + System.getProperty("java.version");
+  }
+
+  private String getGoogApiClientValue() {
+    String grpcVersion = GrpcUtil.getGrpcBuildVersion().toString();
+    String result = String.format("%s fire/%s grpc/%s", clientLanguage, BuildConfig.VERSION_NAME, grpcVersion);
+    System.out.println("OBC " + result);
+    return result;
+  }
+
   /** Returns the default headers for requests to the backend. */
   private Metadata requestHeaders() {
     Metadata headers = new Metadata();
-    headers.put(X_GOOG_API_CLIENT_HEADER, X_GOOG_API_CLIENT_VALUE);
+    headers.put(X_GOOG_API_CLIENT_HEADER, getGoogApiClientValue());
     // This header is used to improve routing and project isolation by the backend.
     headers.put(RESOURCE_PREFIX_HEADER, this.resourcePrefixValue);
     if (metadataProvider != null) {
