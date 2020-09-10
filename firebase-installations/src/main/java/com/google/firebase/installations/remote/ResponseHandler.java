@@ -74,8 +74,7 @@ class ResponseHandler {
 
   public boolean isRequestAllowed() {
     long currentTime = utils.currentTimeInMillis();
-    boolean isRequestAllowed =
-        attemptCount == 0 || currentTime > nextAllowedRequestTime;
+    boolean isRequestAllowed = attemptCount == 0 || currentTime > nextAllowedRequestTime;
 
     if (currentTime > nextAllowedRequestTime) {
       synchronized (this) {
