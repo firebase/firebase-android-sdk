@@ -27,11 +27,12 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 
-/** Tests for {@link ResponseHandler}. */
+/** Tests for {@link RequestLimiter}. */
 @RunWith(RobolectricTestRunner.class)
-public class ResponseHandlerTest {
-  private static final int NON_RETRYABLE_RESPONSE_CODE = 403;
-  private static final int RETRYABLE_RESPONSE_CODE = 500;
+public class RequestLimiterTest {
+  private static final int NON_RETRYABLE_RESPONSE_CODE_EXAMPLE = 403;
+  private static final int RETRYABLE_RESPONSE_CODE_EXAMPLE = 500;
+  private static final int OK_RESPONSE_CODE_EXAMPLE = 200;
   private static final long CURRENT_TIME_IN_MILLIS = 100000L;
   private static final long NEXT_REQUEST_TIME_IN_MILLIS_LESSER_THAN_24H =
       CURRENT_TIME_IN_MILLIS + TimeUnit.HOURS.toMillis(2);
@@ -39,28 +40,28 @@ public class ResponseHandlerTest {
       CURRENT_TIME_IN_MILLIS + TimeUnit.HOURS.toMillis(25);
 
   @Mock private Utils mockUtils;
-  private ResponseHandler responseHandler;
+  private RequestLimiter requestLimiter;
 
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
-    responseHandler = new ResponseHandler(mockUtils);
+    requestLimiter = new RequestLimiter(mockUtils);
   }
 
   @Test
   public void nonRetryableError_lessThan24Hr_doesNotRetry() {
     when(mockUtils.currentTimeInMillis())
         .thenReturn(CURRENT_TIME_IN_MILLIS, NEXT_REQUEST_TIME_IN_MILLIS_LESSER_THAN_24H);
-    responseHandler.setNextAllowedRequestTime(NON_RETRYABLE_RESPONSE_CODE);
-    assertFalse(responseHandler.isRequestAllowed());
+    requestLimiter.setNextRequestTime(NON_RETRYABLE_RESPONSE_CODE_EXAMPLE);
+    assertFalse(requestLimiter.isRequestAllowed());
   }
 
   @Test
   public void nonRetryableError_greaterThan24Hr_retries() {
     when(mockUtils.currentTimeInMillis())
         .thenReturn(CURRENT_TIME_IN_MILLIS, NEXT_REQUEST_TIME_IN_MILLIS_GREATER_THAN_24H);
-    responseHandler.setNextAllowedRequestTime(NON_RETRYABLE_RESPONSE_CODE);
-    assertTrue(responseHandler.isRequestAllowed());
+    requestLimiter.setNextRequestTime(NON_RETRYABLE_RESPONSE_CODE_EXAMPLE);
+    assertTrue(requestLimiter.isRequestAllowed());
   }
 
   @Test
@@ -68,8 +69,8 @@ public class ResponseHandlerTest {
     when(mockUtils.getRandomMillis()).thenReturn(TimeUnit.MINUTES.toMillis(2));
     when(mockUtils.currentTimeInMillis())
         .thenReturn(CURRENT_TIME_IN_MILLIS, addMinutesToCurrentTime(5));
-    responseHandler.setNextAllowedRequestTime(RETRYABLE_RESPONSE_CODE);
-    assertTrue(responseHandler.isRequestAllowed());
+    requestLimiter.setNextRequestTime(RETRYABLE_RESPONSE_CODE_EXAMPLE);
+    assertTrue(requestLimiter.isRequestAllowed());
   }
 
   @Test
@@ -77,8 +78,8 @@ public class ResponseHandlerTest {
     when(mockUtils.getRandomMillis()).thenReturn(TimeUnit.MINUTES.toMillis(6));
     when(mockUtils.currentTimeInMillis())
         .thenReturn(CURRENT_TIME_IN_MILLIS, addMinutesToCurrentTime(5));
-    responseHandler.setNextAllowedRequestTime(RETRYABLE_RESPONSE_CODE);
-    assertFalse(responseHandler.isRequestAllowed());
+    requestLimiter.setNextRequestTime(RETRYABLE_RESPONSE_CODE_EXAMPLE);
+    assertFalse(requestLimiter.isRequestAllowed());
   }
 
   @Test
@@ -90,10 +91,19 @@ public class ResponseHandlerTest {
             addMinutesToCurrentTime(5),
             addMinutesToCurrentTime(6),
             addMinutesToCurrentTime(12));
-    responseHandler.setNextAllowedRequestTime(RETRYABLE_RESPONSE_CODE);
-    assertFalse(responseHandler.isRequestAllowed());
-    responseHandler.setNextAllowedRequestTime(RETRYABLE_RESPONSE_CODE);
-    assertTrue(responseHandler.isRequestAllowed());
+    requestLimiter.setNextRequestTime(RETRYABLE_RESPONSE_CODE_EXAMPLE);
+    assertFalse(requestLimiter.isRequestAllowed());
+    requestLimiter.setNextRequestTime(RETRYABLE_RESPONSE_CODE_EXAMPLE);
+    assertTrue(requestLimiter.isRequestAllowed());
+  }
+
+  @Test
+  public void nonRetryableError_followedBySuccess_resetsRequestTime() {
+    when(mockUtils.currentTimeInMillis()).thenReturn(CURRENT_TIME_IN_MILLIS);
+    requestLimiter.setNextRequestTime(NON_RETRYABLE_RESPONSE_CODE_EXAMPLE);
+    assertFalse(requestLimiter.isRequestAllowed());
+    requestLimiter.setNextRequestTime(OK_RESPONSE_CODE_EXAMPLE);
+    assertTrue(requestLimiter.isRequestAllowed());
   }
 
   // Adds specified minutes to the CURRENT_TIME_IN_MILLIS.

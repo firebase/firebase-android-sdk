@@ -19,44 +19,44 @@ import com.google.firebase.installations.Utils;
 import java.util.concurrent.TimeUnit;
 
 /**
- * The {@link ResponseHandler} class calculates the next allowed request time. Also, decides whether
+ * The {@link RequestLimiter} class calculates the next allowed request time. Also, decides whether
  * a network request to FIS servers is allowed to execute.
  *
  * @hide
  */
-class ResponseHandler {
+class RequestLimiter {
   private static final long BACKOFF_TIME_24H_IN_MILLIS = TimeUnit.HOURS.toMillis(24);
   private static final long BACKOFF_TIME_30_MINS_IN_MILLIS = TimeUnit.MINUTES.toMillis(30);
   private final Utils utils;
 
   @GuardedBy("this")
-  private long nextAllowedRequestTime = Long.MAX_VALUE;
+  private long nextRequestTime = Long.MAX_VALUE;
 
   @GuardedBy("this")
   private int attemptCount = 0;
 
-  ResponseHandler(Utils utils) {
+  RequestLimiter(Utils utils) {
     this.utils = utils;
   }
 
-  public synchronized void setNextAllowedRequestTime(int responseCode) {
-    if (responseCode == 200) {
-      resetAllowedRequestTime();
+  public synchronized void setNextRequestTime(int responseCode) {
+    if (isSuccessful(responseCode)) {
+      resetRequestTime();
       return;
     }
     attemptCount++;
-    long backOffTime = getBackoffTime(responseCode);
-    nextAllowedRequestTime = utils.currentTimeInMillis() + backOffTime;
+    long backOffTime = getBackoffDuration(responseCode);
+    nextRequestTime = utils.currentTimeInMillis() + backOffTime;
   }
 
-  private synchronized void resetAllowedRequestTime() {
-    nextAllowedRequestTime = Long.MAX_VALUE;
+  private synchronized void resetRequestTime() {
+    nextRequestTime = Long.MAX_VALUE;
     attemptCount = 0;
   }
 
-  private synchronized long getBackoffTime(int responseCode) {
+  private synchronized long getBackoffDuration(int responseCode) {
     // Fixed 24 hours silence period for non-retryable errors. Read more: b/160751425.
-    if (isNonRetryableError(responseCode)) {
+    if (!isRetryableError(responseCode)) {
       return BACKOFF_TIME_24H_IN_MILLIS;
     }
     // Quickly increasing dynamically configured back-off strategy for Retryable errors. Read more:
@@ -66,19 +66,25 @@ class ResponseHandler {
             Math.pow(2, attemptCount) + utils.getRandomMillis(), BACKOFF_TIME_30_MINS_IN_MILLIS);
   }
 
-  // Response codes classified as non-retryable for FIS API, all other response codes will be
-  // treated as retryable-errors. Read more: go/fis-api-error-code-classification.
-  private static boolean isNonRetryableError(int responseCode) {
-    return responseCode == 400 || responseCode == 403;
+  // Response codes classified as retryable for FIS API. Read more on FIS response codes:
+  // go/fis-api-error-code-classification.
+  private static boolean isRetryableError(int responseCode) {
+    return responseCode == 429 || (responseCode >= 500 && responseCode < 600);
+  }
+
+  // Response codes classified as success for FIS API. Read more on FIS response codes:
+  // go/fis-api-error-code-classification.
+  private static boolean isSuccessful(int responseCode) {
+    return responseCode >= 200 && responseCode < 300;
   }
 
   public boolean isRequestAllowed() {
     long currentTime = utils.currentTimeInMillis();
-    boolean isRequestAllowed = attemptCount == 0 || currentTime > nextAllowedRequestTime;
+    boolean isRequestAllowed = attemptCount == 0 || currentTime > nextRequestTime;
 
-    if (currentTime > nextAllowedRequestTime) {
+    if (currentTime > nextRequestTime) {
       synchronized (this) {
-        nextAllowedRequestTime = Long.MAX_VALUE;
+        nextRequestTime = Long.MAX_VALUE;
       }
     }
     return isRequestAllowed;

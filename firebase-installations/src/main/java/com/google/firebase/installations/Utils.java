@@ -26,7 +26,7 @@ import java.util.regex.Pattern;
  *
  * @hide
  */
-public class Utils {
+public final class Utils {
   public static final long AUTH_TOKEN_EXPIRATION_BUFFER_IN_SECS = TimeUnit.HOURS.toSeconds(1);
   private static final String APP_ID_IDENTIFICATION_SUBSTRING = ":";
   private static final Pattern API_KEY_FORMAT = Pattern.compile("\\AA[\\w-]{38}\\z");
@@ -64,6 +64,10 @@ public class Utils {
     return API_KEY_FORMAT.matcher(apiKey).matches();
   }
 
+  /* Returns a random number of milliseconds less than or equal to 1000. This helps to avoid cases
+   where many clients get synchronized by some situation and all retry at once, sending requests
+   in synchronized waves. The value of random_number_milliseconds is recalculated after each retry
+  request.*/
   public long getRandomMillis() {
     return (long) (Math.random() * 1000);
   }
