@@ -350,7 +350,7 @@ public class Query {
    * Creates and returns a new {@code Query} with the additional filter that documents must contain
    * the specified field and the value does not equal any of the values from the provided list.
    *
-   * <p>Passing in a {@code null} value into the values array will result in no document matches. To
+   * <p>Passing in a {@code null} value into the values array results in no document matches. To
    * query for documents where a field is not {@code null}, use {@code whereNotEqualTo()}.
    *
    * <p>A {@code Query} can have only one {@code whereNotIn()} filter, and it cannot be combined
@@ -370,7 +370,7 @@ public class Query {
    * Creates and returns a new {@code Query} with the additional filter that documents must contain
    * the specified field and the value does not equal any of the values from the provided list.
    *
-   * <p>Passing in a {@code null} value into the values array will result in no document matches. To
+   * <p>Passing in a {@code null} value into the values array results in no document matches. To
    * query for documents where a field is not {@code null}, use {@code whereNotEqualTo()}.
    *
    * <p>A {@code Query} can have only one {@code whereNotIn()} filter, and it cannot be combined
@@ -571,8 +571,9 @@ public class Query {
         if (existingInequality != null && !existingInequality.equals(newInequality)) {
           throw new IllegalArgumentException(
               String.format(
-                  "All where filters other than whereEqualTo() must be on the same field. But you "
-                      + "have filters on '%s' and '%s'",
+                  "All where filters with an inequality (notEqualTo, notIn, lessThan, "
+                      + "lessThanOrEqualTo, greaterThan, or greaterThanOrEqualTo) must be on the "
+                      + "same field. But you have filters on '%s' and '%s'",
                   existingInequality.canonicalString(), newInequality.canonicalString()));
         }
         com.google.firebase.firestore.model.FieldPath firstOrderByField =
