@@ -30,10 +30,10 @@ class RequestLimiter {
   private final Utils utils;
 
   @GuardedBy("this")
-  private long nextRequestTime = Long.MAX_VALUE;
+  private long nextRequestTime;
 
   @GuardedBy("this")
-  private int attemptCount = 0;
+  private int attemptCount;
 
   RequestLimiter(Utils utils) {
     this.utils = utils;
@@ -41,7 +41,7 @@ class RequestLimiter {
 
   public synchronized void setNextRequestTime(int responseCode) {
     if (isSuccessful(responseCode)) {
-      resetRequestTime();
+      resetAttemptCount();
       return;
     }
     attemptCount++;
@@ -49,8 +49,7 @@ class RequestLimiter {
     nextRequestTime = utils.currentTimeInMillis() + backOffTime;
   }
 
-  private synchronized void resetRequestTime() {
-    nextRequestTime = Long.MAX_VALUE;
+  private synchronized void resetAttemptCount() {
     attemptCount = 0;
   }
 
@@ -79,14 +78,8 @@ class RequestLimiter {
   }
 
   public boolean isRequestAllowed() {
-    long currentTime = utils.currentTimeInMillis();
-    boolean isRequestAllowed = attemptCount == 0 || currentTime > nextRequestTime;
-
-    if (currentTime > nextRequestTime) {
-      synchronized (this) {
-        nextRequestTime = Long.MAX_VALUE;
-      }
-    }
-    return isRequestAllowed;
+    // NOTE: If the end-users changes the System time, requests to FIS servers will not be allowed.
+    // This problem can be fixed by restarting the app or the end-users changing System time.
+    return attemptCount == 0 || utils.currentTimeInMillis() > nextRequestTime;
   }
 }
