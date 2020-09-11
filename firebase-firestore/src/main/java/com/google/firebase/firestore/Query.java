@@ -119,8 +119,7 @@ public class Query {
    * @return The created {@code Query}.
    */
   @NonNull
-  // TODO(ne-queries): Make method public once backend is ready.
-  Query whereNotEqualTo(@NonNull String field, @Nullable Object value) {
+  public Query whereNotEqualTo(@NonNull String field, @Nullable Object value) {
     return whereHelper(FieldPath.fromDotSeparatedPath(field), Operator.NOT_EQUAL, value);
   }
 
@@ -136,8 +135,7 @@ public class Query {
    * @return The created {@code Query}.
    */
   @NonNull
-  // TODO(ne-queries): Make method public once backend is ready.
-  Query whereNotEqualTo(@NonNull FieldPath fieldPath, @Nullable Object value) {
+  public Query whereNotEqualTo(@NonNull FieldPath fieldPath, @Nullable Object value) {
     return whereHelper(fieldPath, Operator.NOT_EQUAL, value);
   }
 
@@ -352,6 +350,9 @@ public class Query {
    * Creates and returns a new {@code Query} with the additional filter that documents must contain
    * the specified field and the value does not equal any of the values from the provided list.
    *
+   * <p>Passing in a {@code null} value into the values array will result in no document matches. To
+   * query for documents where a field is not {@code null}, use {@code whereNotEqualTo()}.
+   *
    * <p>A {@code Query} can have only one {@code whereNotIn()} filter, and it cannot be combined
    * with {@code whereArrayContains()}, {@code whereArrayContainsAny()}, {@code whereIn()}, or
    * {@code whereNotEqualTo()}.
@@ -361,14 +362,16 @@ public class Query {
    * @return The created {@code Query}.
    */
   @NonNull
-  // TODO(ne-queries): Make method public once backend is ready.
-  Query whereNotIn(@NonNull String field, @NonNull List<? extends Object> values) {
+  public Query whereNotIn(@NonNull String field, @NonNull List<? extends Object> values) {
     return whereHelper(FieldPath.fromDotSeparatedPath(field), Operator.NOT_IN, values);
   }
 
   /**
    * Creates and returns a new {@code Query} with the additional filter that documents must contain
    * the specified field and the value does not equal any of the values from the provided list.
+   *
+   * <p>Passing in a {@code null} value into the values array will result in no document matches. To
+   * query for documents where a field is not {@code null}, use {@code whereNotEqualTo()}.
    *
    * <p>A {@code Query} can have only one {@code whereNotIn()} filter, and it cannot be combined
    * with {@code whereArrayContains()}, {@code whereArrayContainsAny()}, {@code whereIn()}, or
@@ -379,8 +382,7 @@ public class Query {
    * @return The created {@code Query}.
    */
   @NonNull
-  // TODO(ne-queries): Make method public once backend is ready.
-  Query whereNotIn(@NonNull FieldPath fieldPath, @NonNull List<? extends Object> values) {
+  public Query whereNotIn(@NonNull FieldPath fieldPath, @NonNull List<? extends Object> values) {
     return whereHelper(fieldPath, Operator.NOT_IN, values);
   }
 
