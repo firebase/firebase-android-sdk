@@ -38,8 +38,9 @@ import java.util.List;
 /**
  * Wrapper class around io.grpc.Channel that adds headers, exception handling and simplifies
  * invoking RPCs.
+ *
+ * @hide
  */
-@hide
 public class FirestoreChannel {
 
   private static final Metadata.Key<String> X_GOOG_API_CLIENT_HEADER =
@@ -293,7 +294,6 @@ public class FirestoreChannel {
   private Metadata requestHeaders() {
     Metadata headers = new Metadata();
     headers.put(X_GOOG_API_CLIENT_HEADER, getGoogApiClientValue());
-    System.out.println("OBC " + getGoogApiClientValue());
     // This header is used to improve routing and project isolation by the backend.
     headers.put(RESOURCE_PREFIX_HEADER, this.resourcePrefixValue);
     if (metadataProvider != null) {

@@ -642,7 +642,7 @@ public class FirebaseFirestore {
    * Sets the language of the public API in the format of "gl-<language>/<version>" where version
    * might be blank, e.g. `gl-cpp/`. The provided string is used as is.
    *
-   * Note: this method is package-private because it is expected to only be called via JNI (which
+   * <p>Note: this method is package-private because it is expected to only be called via JNI (which
    * ignores access modifiers).
    */
   @Keep
