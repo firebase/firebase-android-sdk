@@ -19,6 +19,7 @@ import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 
 import android.app.Activity;
 import android.content.Context;
+import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -644,7 +645,8 @@ public class FirebaseFirestore {
    * Note: this method is package-private because it is expected to only be called via JNI (which
    * ignores access modifiers).
    */
-  static void setClientLanguage(String languageToken) {
+  @Keep
+  static void setClientLanguage(@NonNull String languageToken) {
     FirestoreChannel.setClientLanguage(languageToken);
   }
 }

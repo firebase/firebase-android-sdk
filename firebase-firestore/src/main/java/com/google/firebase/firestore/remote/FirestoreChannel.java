@@ -39,6 +39,7 @@ import java.util.List;
  * Wrapper class around io.grpc.Channel that adds headers, exception handling and simplifies
  * invoking RPCs.
  */
+@hide
 public class FirestoreChannel {
 
   private static final Metadata.Key<String> X_GOOG_API_CLIENT_HEADER =
@@ -48,7 +49,9 @@ public class FirestoreChannel {
       Metadata.Key.of("google-cloud-resource-prefix", Metadata.ASCII_STRING_MARSHALLER);
 
   /** The client language reported via the X_GOOG_API_CLIENT_HEADER. */
-  private static String clientLanguage = getDefaultClientLanguage();
+  // Note: there is no good way to get the Java language version on Android
+  // (System.getProperty("java.version") returns "0", for example).
+  private static volatile String clientLanguage = "gl-java/";
 
   /** The async worker queue that is used to dispatch events. */
   private final AsyncQueue asyncQueue;
@@ -282,12 +285,6 @@ public class FirestoreChannel {
     clientLanguage = languageToken;
   }
 
-  private static String getDefaultClientLanguage() {
-    // Note: there is no good way to get the Java language version on Android
-    // (System.getProperty("java.version") returns "0", for example).
-    return "gl-java/";
-  }
-
   private String getGoogApiClientValue() {
     return String.format("%s fire/%s grpc/", clientLanguage, BuildConfig.VERSION_NAME);
   }
@@ -296,6 +293,7 @@ public class FirestoreChannel {
   private Metadata requestHeaders() {
     Metadata headers = new Metadata();
     headers.put(X_GOOG_API_CLIENT_HEADER, getGoogApiClientValue());
+    System.out.println("OBC " + getGoogApiClientValue());
     // This header is used to improve routing and project isolation by the backend.
     headers.put(RESOURCE_PREFIX_HEADER, this.resourcePrefixValue);
     if (metadataProvider != null) {
