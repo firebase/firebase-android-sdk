@@ -394,12 +394,6 @@ public class FirebaseFirestore {
     return batch.commit();
   }
 
-  Task<Void> terminateInternal() {
-    // The client must be initialized to ensure that all subsequent API usage throws an exception.
-    this.ensureClientConfigured();
-    return client.terminate();
-  }
-
   /**
    * Terminates this {@code FirebaseFirestore} instance.
    *
@@ -423,7 +417,10 @@ public class FirebaseFirestore {
   @NonNull
   public Task<Void> terminate() {
     instanceRegistry.remove(this.getDatabaseId().getDatabaseId());
-    return terminateInternal();
+
+    // The client must be initialized to ensure that all subsequent API usage throws an exception.
+    this.ensureClientConfigured();
+    return client.terminate();
   }
 
   /**
