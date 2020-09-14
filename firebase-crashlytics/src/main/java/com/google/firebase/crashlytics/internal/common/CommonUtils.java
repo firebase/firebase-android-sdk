@@ -725,13 +725,18 @@ public class CommonUtils {
     if (iconId > 0) {
       try {
         resourcePackageName = context.getResources().getResourcePackageName(iconId);
+        // Apps using built-in icons will end up with the "android" resource package,
+        // which is definitely not what we want. Default to context.getPackageName().
+        if ("android".equals(resourcePackageName)) {
+          resourcePackageName = context.getPackageName();
+        }
       } catch (Resources.NotFoundException e) {
         // If we get here, the app has a valid icon, but it isn't in the resources for this
         // context. This can happen if the app uses a default system icon, for example.
         // In this case, we'll hope that context.getPackageName() is accurate.
         // (See b/122825635 for a note about whether or not this check makes sense for
         // future versions of the SDK, or if we should just use context.getPackageName()
-        // in all cases. Logging info or a warning here would be nice, but this method is
+        // in all cases.) Logging info or a warning here would be nice, but this method is
         // invoked many times throughout application startup.
         resourcePackageName = context.getPackageName();
       }
