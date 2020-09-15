@@ -27,6 +27,12 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -34,6 +40,9 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class DefaultHeartBeatInfoTest {
   private String testSdk = "fire-test";
+  private ExecutorService executor;
+  private TestOnCompleteListener<Boolean> storeOnCompleteListener;
+  private TestOnCompleteListener<List<HeartBeatResult>> getOnCompleteListener;
   private HeartBeatInfoStorage storage = mock(HeartBeatInfoStorage.class);
   private Set<HeartBeatConsumer> logSources =
       new HashSet<HeartBeatConsumer>() {
@@ -43,6 +52,13 @@ public class DefaultHeartBeatInfoTest {
       };
   private DefaultHeartBeatInfo heartBeatInfo = new DefaultHeartBeatInfo(storage, logSources);
 
+  @Before
+  public void setUp() {
+    executor = new ThreadPoolExecutor(0, 1, 30L, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
+    storeOnCompleteListener = new TestOnCompleteListener<>();
+    getOnCompleteListener = new TestOnCompleteListener<>();
+  }
+
   @Test
   public void getHeartBeatCode_noHeartBeat() {
     when(storage.shouldSendSdkHeartBeat(anyString(), anyLong())).thenReturn(Boolean.FALSE);
@@ -51,31 +67,46 @@ public class DefaultHeartBeatInfoTest {
   }
 
   @Test
-  public void whenNoSource_dontStoreHeartBeat() {
+  public void whenNoSource_dontStoreHeartBeat() throws ExecutionException, InterruptedException {
+
     DefaultHeartBeatInfo info = new DefaultHeartBeatInfo(storage, new HashSet<>());
-    info.storeHeartBeatInfo(testSdk);
+    info.storeHeartBeatInfo(testSdk).addOnCompleteListener(executor, storeOnCompleteListener);
+    storeOnCompleteListener.await();
     verify(storage, times(0)).storeHeartBeatInformation(anyString(), anyLong());
   }
 
   @Test
-  public void storeHeartBeatCode_noHeartBeat() {
+  public void storeHeartBeatCode_noHeartBeat() throws ExecutionException, InterruptedException {
     when(storage.shouldSendSdkHeartBeat(anyString(), anyLong())).thenReturn(Boolean.FALSE);
     when(storage.shouldSendGlobalHeartBeat(anyLong())).thenReturn(Boolean.FALSE);
-    heartBeatInfo.storeHeartBeatInfo(testSdk);
-    List<HeartBeatResult> result = heartBeatInfo.getAndClearStoredHeartBeatInfo();
+    heartBeatInfo
+        .storeHeartBeatInfo(testSdk)
+        .addOnCompleteListener(executor, storeOnCompleteListener);
+    storeOnCompleteListener.await();
+    heartBeatInfo
+        .getAndClearStoredHeartBeatInfo()
+        .addOnCompleteListener(executor, getOnCompleteListener);
+    List<HeartBeatResult> result = getOnCompleteListener.await();
     assertThat(result.size()).isEqualTo(0);
   }
 
   @Test
-  public void storeHeartBeatCode_sdkButNoGlobalHeartBeat() {
+  public void storeHeartBeatCode_sdkButNoGlobalHeartBeat()
+      throws ExecutionException, InterruptedException {
     ArrayList<SdkHeartBeatResult> returnResults = new ArrayList<>();
     returnResults.add(SdkHeartBeatResult.create(testSdk, 1000000001));
     when(storage.shouldSendSdkHeartBeat(anyString(), anyLong())).thenReturn(Boolean.TRUE);
     when(storage.shouldSendGlobalHeartBeat(anyLong())).thenReturn(Boolean.FALSE);
     when(storage.getLastGlobalHeartBeat()).thenReturn((long) 1000000000);
     when(storage.getStoredHeartBeats(anyBoolean())).thenReturn(returnResults);
-    heartBeatInfo.storeHeartBeatInfo(testSdk);
-    List<HeartBeatResult> results = heartBeatInfo.getAndClearStoredHeartBeatInfo();
+    heartBeatInfo
+        .storeHeartBeatInfo(testSdk)
+        .addOnCompleteListener(executor, storeOnCompleteListener);
+    storeOnCompleteListener.await();
+    heartBeatInfo
+        .getAndClearStoredHeartBeatInfo()
+        .addOnCompleteListener(executor, getOnCompleteListener);
+    List<HeartBeatResult> results = getOnCompleteListener.await();
     verify(storage, times(1)).storeHeartBeatInformation(anyString(), anyLong());
     assertThat(results.size()).isEqualTo(1);
     assertThat(results.get(0))
@@ -84,7 +115,8 @@ public class DefaultHeartBeatInfoTest {
   }
 
   @Test
-  public void storeHeartBeatCode_globalAndSDKHeartBeat() {
+  public void storeHeartBeatCode_globalAndSDKHeartBeat()
+      throws ExecutionException, InterruptedException {
     ArrayList<SdkHeartBeatResult> returnResults = new ArrayList<>();
     returnResults.add(SdkHeartBeatResult.create(testSdk, 100000000));
     when(storage.shouldSendSdkHeartBeat(anyString(), anyLong())).thenReturn(Boolean.TRUE);
@@ -92,8 +124,14 @@ public class DefaultHeartBeatInfoTest {
     when(storage.getLastGlobalHeartBeat()).thenReturn((long) 0);
     when(storage.getStoredHeartBeats(anyBoolean())).thenReturn(returnResults);
     when(storage.isValidHeartBeat(0, 100000000)).thenReturn(true);
-    heartBeatInfo.storeHeartBeatInfo(testSdk);
-    List<HeartBeatResult> results = heartBeatInfo.getAndClearStoredHeartBeatInfo();
+    heartBeatInfo
+        .storeHeartBeatInfo(testSdk)
+        .addOnCompleteListener(executor, storeOnCompleteListener);
+    storeOnCompleteListener.await();
+    heartBeatInfo
+        .getAndClearStoredHeartBeatInfo()
+        .addOnCompleteListener(executor, getOnCompleteListener);
+    List<HeartBeatResult> results = getOnCompleteListener.await();
     verify(storage, times(1)).storeHeartBeatInformation(anyString(), anyLong());
     assertThat(results.size()).isEqualTo(1);
     assertThat(results.get(0))
@@ -102,7 +140,7 @@ public class DefaultHeartBeatInfoTest {
   }
 
   @Test
-  public void storeHeartBeatCode_ThreeHeartBeats() {
+  public void storeHeartBeatCode_ThreeHeartBeats() throws ExecutionException, InterruptedException {
     ArrayList<SdkHeartBeatResult> returnResults = new ArrayList<>();
     returnResults.add(SdkHeartBeatResult.create(testSdk, 100000000));
     returnResults.add(SdkHeartBeatResult.create(testSdk, 200000000));
@@ -115,8 +153,14 @@ public class DefaultHeartBeatInfoTest {
     when(storage.isValidHeartBeat(100000000, 200000000)).thenReturn(true);
     when(storage.isValidHeartBeat(200000000, 200002000)).thenReturn(false);
 
-    heartBeatInfo.storeHeartBeatInfo(testSdk);
-    List<HeartBeatResult> results = heartBeatInfo.getAndClearStoredHeartBeatInfo();
+    heartBeatInfo
+        .storeHeartBeatInfo(testSdk)
+        .addOnCompleteListener(executor, storeOnCompleteListener);
+    storeOnCompleteListener.await();
+    heartBeatInfo
+        .getAndClearStoredHeartBeatInfo()
+        .addOnCompleteListener(executor, getOnCompleteListener);
+    List<HeartBeatResult> results = getOnCompleteListener.await();
     verify(storage, times(1)).storeHeartBeatInformation(anyString(), anyLong());
     assertThat(results.size()).isEqualTo(3);
     assertThat(results.get(0))

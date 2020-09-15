@@ -18,6 +18,8 @@ import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.Dependency;
 import java.util.ArrayList;
@@ -59,7 +61,8 @@ public class DefaultHeartBeatInfo implements HeartBeatInfo {
   }
 
   @Override
-  public List<HeartBeatResult> getAndClearStoredHeartBeatInfo() {
+  public Task<List<HeartBeatResult>> getAndClearStoredHeartBeatInfo() {
+    TaskCompletionSource<List<HeartBeatResult>> taskCompletionSource = new TaskCompletionSource<>();
     List<SdkHeartBeatResult> sdkHeartBeatResults = storage.getStoredHeartBeats(true);
     ArrayList<HeartBeatResult> heartBeatResults = new ArrayList<>();
     long lastGlobalHeartBeat = storage.getLastGlobalHeartBeat();
@@ -84,17 +87,24 @@ public class DefaultHeartBeatInfo implements HeartBeatInfo {
     if (lastGlobalHeartBeat > 0) {
       storage.updateGlobalHeartBeat(lastGlobalHeartBeat);
     }
-    return heartBeatResults;
+    taskCompletionSource.setResult(heartBeatResults);
+    return taskCompletionSource.getTask();
   }
 
   @Override
-  public void storeHeartBeatInfo(@NonNull String heartBeatTag) {
-    if (consumers.size() <= 0) return;
+  public Task storeHeartBeatInfo(@NonNull String heartBeatTag) {
+    TaskCompletionSource<Boolean> taskCompletionSource = new TaskCompletionSource<>();
+    if (consumers.size() <= 0) {
+      taskCompletionSource.setResult(true);
+      return taskCompletionSource.getTask();
+    }
     long presentTime = System.currentTimeMillis();
     boolean shouldSendSdkHB = storage.shouldSendSdkHeartBeat(heartBeatTag, presentTime);
     if (shouldSendSdkHB) {
       storage.storeHeartBeatInformation(heartBeatTag, presentTime);
     }
+    taskCompletionSource.setResult(true);
+    return taskCompletionSource.getTask();
   }
 
   public static @NonNull Component<HeartBeatInfo> component() {

@@ -15,6 +15,7 @@
 package com.google.firebase.heartbeatinfo;
 
 import androidx.annotation.NonNull;
+import com.google.android.gms.tasks.Task;
 import java.util.List;
 
 /**
@@ -50,8 +51,8 @@ public interface HeartBeatInfo {
   HeartBeat getHeartBeatCode(@NonNull String heartBeatTag);
 
   @NonNull
-  void storeHeartBeatInfo(@NonNull String heartBeatTag);
+  Task storeHeartBeatInfo(@NonNull String heartBeatTag);
 
   @NonNull
-  List<HeartBeatResult> getAndClearStoredHeartBeatInfo();
+  Task<List<HeartBeatResult>> getAndClearStoredHeartBeatInfo();
 }
