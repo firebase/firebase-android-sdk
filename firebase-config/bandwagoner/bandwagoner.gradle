@@ -15,6 +15,7 @@
  */
 
 apply plugin: 'com.android.application'
+apply plugin: 'jacoco'
 apply plugin: com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabPlugin
 
 android {
@@ -44,6 +45,7 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             signingConfig debug.signingConfig
+            testCoverageEnabled true
         }
     }
 
@@ -84,6 +86,7 @@ dependencies {
     annotationProcessor 'com.google.auto.value:auto-value:1.6.2'
     implementation 'androidx.test.espresso:espresso-idling-resource:3.2.0'
 
+    androidTestUtil 'androidx.test:orchestrator:1.1.1'
     androidTestImplementation 'androidx.test.espresso:espresso-idling-resource:3.2.0'
     androidTestImplementation 'androidx.test:rules:1.2.0'
     androidTestImplementation 'androidx.test:runner:1.2.0'

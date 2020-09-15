@@ -65,6 +65,9 @@ public class FirebaseTestServer extends TestServer {
         "--no-auto-google-login",
         "--no-record-video",
         "--no-performance-metrics",
+        "--environment-variables",
+        "coverage=true,coverageFile=\"/sdcard/coverage.ec\"",
+        "--directories-to-pull=/sdcard",
         "-q",
         "--results-history-name=" + project.getPath());
     args.addAll(
