@@ -50,13 +50,14 @@ public class DefaultHeartBeatInfoTest {
           add(new HeartBeatConsumer() {});
         }
       };
-  private DefaultHeartBeatInfo heartBeatInfo = new DefaultHeartBeatInfo(storage, logSources);
+  private DefaultHeartBeatInfo heartBeatInfo;
 
   @Before
   public void setUp() {
     executor = new ThreadPoolExecutor(0, 1, 30L, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
     storeOnCompleteListener = new TestOnCompleteListener<>();
     getOnCompleteListener = new TestOnCompleteListener<>();
+    heartBeatInfo = new DefaultHeartBeatInfo(storage, logSources, executor);
   }
 
   @Test
@@ -69,7 +70,7 @@ public class DefaultHeartBeatInfoTest {
   @Test
   public void whenNoSource_dontStoreHeartBeat() throws ExecutionException, InterruptedException {
 
-    DefaultHeartBeatInfo info = new DefaultHeartBeatInfo(storage, new HashSet<>());
+    DefaultHeartBeatInfo info = new DefaultHeartBeatInfo(storage, new HashSet<>(), executor);
     info.storeHeartBeatInfo(testSdk).addOnCompleteListener(executor, storeOnCompleteListener);
     storeOnCompleteListener.await();
     verify(storage, times(0)).storeHeartBeatInformation(anyString(), anyLong());

@@ -25,6 +25,12 @@ import com.google.firebase.components.Dependency;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /** Provides information as whether to send heart beat or not. */
 public class DefaultHeartBeatInfo implements HeartBeatInfo {
@@ -33,16 +39,36 @@ public class DefaultHeartBeatInfo implements HeartBeatInfo {
 
   private Set<HeartBeatConsumer> consumers;
 
+  private ExecutorService backgroundExecutor;
+
+  private static final ThreadFactory THREAD_FACTORY =
+      new ThreadFactory() {
+        private final AtomicInteger mCount = new AtomicInteger(1);
+
+        @Override
+        public Thread newThread(Runnable r) {
+          return new Thread(
+              r, String.format("heartbeat-information-executor-%d", mCount.getAndIncrement()));
+        }
+      };
+
   private DefaultHeartBeatInfo(Context context, Set<HeartBeatConsumer> consumers) {
     storage = HeartBeatInfoStorage.getInstance(context);
     this.consumers = consumers;
+    this.backgroundExecutor =
+        new ThreadPoolExecutor(
+            0, 1, 30, TimeUnit.SECONDS, new LinkedBlockingQueue<>(), THREAD_FACTORY);
   }
 
   @VisibleForTesting
   @RestrictTo(RestrictTo.Scope.TESTS)
-  DefaultHeartBeatInfo(HeartBeatInfoStorage testStorage, Set<HeartBeatConsumer> consumers) {
+  DefaultHeartBeatInfo(
+      HeartBeatInfoStorage testStorage,
+      Set<HeartBeatConsumer> consumers,
+      ExecutorService executor) {
     storage = testStorage;
     this.consumers = consumers;
+    this.backgroundExecutor = executor;
   }
 
   @Override
@@ -63,31 +89,34 @@ public class DefaultHeartBeatInfo implements HeartBeatInfo {
   @Override
   public Task<List<HeartBeatResult>> getAndClearStoredHeartBeatInfo() {
     TaskCompletionSource<List<HeartBeatResult>> taskCompletionSource = new TaskCompletionSource<>();
-    List<SdkHeartBeatResult> sdkHeartBeatResults = storage.getStoredHeartBeats(true);
-    ArrayList<HeartBeatResult> heartBeatResults = new ArrayList<>();
-    long lastGlobalHeartBeat = storage.getLastGlobalHeartBeat();
-    boolean shouldSendGlobalHeartBeat = false;
-    for (int i = 0; i < sdkHeartBeatResults.size(); i++) {
-      SdkHeartBeatResult sdkHeartBeatResult = sdkHeartBeatResults.get(i);
-      HeartBeat heartBeat;
-      shouldSendGlobalHeartBeat =
-          storage.isValidHeartBeat(lastGlobalHeartBeat, sdkHeartBeatResult.getMillis());
-      if (shouldSendGlobalHeartBeat) {
-        heartBeat = HeartBeat.COMBINED;
-      } else {
-        heartBeat = HeartBeat.SDK;
-      }
-      if (shouldSendGlobalHeartBeat) {
-        lastGlobalHeartBeat = sdkHeartBeatResult.getMillis();
-      }
-      heartBeatResults.add(
-          HeartBeatResult.create(
-              sdkHeartBeatResult.getSdkName(), sdkHeartBeatResult.getMillis(), heartBeat));
-    }
-    if (lastGlobalHeartBeat > 0) {
-      storage.updateGlobalHeartBeat(lastGlobalHeartBeat);
-    }
-    taskCompletionSource.setResult(heartBeatResults);
+    this.backgroundExecutor.execute(
+        () -> {
+          ArrayList<HeartBeatResult> heartBeatResults = new ArrayList<>();
+          boolean shouldSendGlobalHeartBeat = false;
+          List<SdkHeartBeatResult> sdkHeartBeatResults = storage.getStoredHeartBeats(true);
+          long lastGlobalHeartBeat = storage.getLastGlobalHeartBeat();
+          for (int i = 0; i < sdkHeartBeatResults.size(); i++) {
+            SdkHeartBeatResult sdkHeartBeatResult = sdkHeartBeatResults.get(i);
+            HeartBeat heartBeat;
+            shouldSendGlobalHeartBeat =
+                storage.isValidHeartBeat(lastGlobalHeartBeat, sdkHeartBeatResult.getMillis());
+            if (shouldSendGlobalHeartBeat) {
+              heartBeat = HeartBeat.COMBINED;
+            } else {
+              heartBeat = HeartBeat.SDK;
+            }
+            if (shouldSendGlobalHeartBeat) {
+              lastGlobalHeartBeat = sdkHeartBeatResult.getMillis();
+            }
+            heartBeatResults.add(
+                HeartBeatResult.create(
+                    sdkHeartBeatResult.getSdkName(), sdkHeartBeatResult.getMillis(), heartBeat));
+          }
+          if (lastGlobalHeartBeat > 0) {
+            storage.updateGlobalHeartBeat(lastGlobalHeartBeat);
+          }
+          taskCompletionSource.setResult(heartBeatResults);
+        });
     return taskCompletionSource.getTask();
   }
 
@@ -98,12 +127,19 @@ public class DefaultHeartBeatInfo implements HeartBeatInfo {
       taskCompletionSource.setResult(true);
       return taskCompletionSource.getTask();
     }
-    long presentTime = System.currentTimeMillis();
-    boolean shouldSendSdkHB = storage.shouldSendSdkHeartBeat(heartBeatTag, presentTime);
-    if (shouldSendSdkHB) {
-      storage.storeHeartBeatInformation(heartBeatTag, presentTime);
-    }
-    taskCompletionSource.setResult(true);
+    backgroundExecutor.execute(
+        () -> {
+          long presentTime = System.currentTimeMillis();
+          boolean shouldSendSdkHB = storage.shouldSendSdkHeartBeat(heartBeatTag, presentTime);
+          if (shouldSendSdkHB) {
+            backgroundExecutor.execute(
+                () -> {
+                  storage.storeHeartBeatInformation(heartBeatTag, presentTime);
+                });
+          }
+          taskCompletionSource.setResult(true);
+        });
+
     return taskCompletionSource.getTask();
   }
 
