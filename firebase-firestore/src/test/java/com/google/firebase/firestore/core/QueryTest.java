@@ -675,7 +675,7 @@ public class QueryTest {
         "collection|f:ain[1,2,3]|ob:__name__asc");
     assertCanonicalId(
         baseQuery.filter(filter("a", "not-in", Arrays.asList(1, 2, 3))),
-        "collection|f:anot_in[1,2,3]|ob:aasc__name__asc");
+        "collection|f:anot_in[1,2,3]|ob:__name__asc");
     assertCanonicalId(
         baseQuery.filter(filter("a", "array-contains-any", Arrays.asList(1, 2, 3))),
         "collection|f:aarray_contains_any[1,2,3]|ob:__name__asc");

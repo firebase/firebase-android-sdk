@@ -270,10 +270,6 @@ package com.google.firebase.firestore {
     method @NonNull public com.google.firebase.firestore.Query whereLessThan(@NonNull com.google.firebase.firestore.FieldPath, @NonNull Object);
     method @NonNull public com.google.firebase.firestore.Query whereLessThanOrEqualTo(@NonNull String, @NonNull Object);
     method @NonNull public com.google.firebase.firestore.Query whereLessThanOrEqualTo(@NonNull com.google.firebase.firestore.FieldPath, @NonNull Object);
-    method @NonNull public com.google.firebase.firestore.Query whereNotEqualTo(@NonNull String, @Nullable Object);
-    method @NonNull public com.google.firebase.firestore.Query whereNotEqualTo(@NonNull com.google.firebase.firestore.FieldPath, @Nullable Object);
-    method @NonNull public com.google.firebase.firestore.Query whereNotIn(@NonNull String, @NonNull java.util.List<?>);
-    method @NonNull public com.google.firebase.firestore.Query whereNotIn(@NonNull com.google.firebase.firestore.FieldPath, @NonNull java.util.List<?>);
   }
 
   public enum Query.Direction {
