@@ -48,7 +48,4 @@ interface CrashlyticsLifecycleEvents {
    * @param userId
    */
   void onUserId(String userId);
-
-  /** Called when the current session should be closed */
-  void onEndSession();
 }
