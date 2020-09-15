@@ -1,4 +1,12 @@
 # Unreleased
+- [feature] Added `Query.whereNotIn()` and `Query.whereNotEqualTo()` query
+  operators. `Query.whereNotIn()` finds documents where a specified field’s
+  value is not in a specified array. `Query.whereNotEqualTo()` finds
+  documents where a specified field's value does not equal the specified value.
+  Neither query operator will match documents where the specified field is not
+  present.
+
+# 21.6.0
 - [fixed] Removed a delay that may have prevented Firestore from immediately
   reestablishing a network connection if a connectivity change occurred while
   the app was in the background.
