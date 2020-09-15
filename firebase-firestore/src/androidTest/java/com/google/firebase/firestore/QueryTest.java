@@ -487,8 +487,8 @@ public class QueryTest {
 
   @Test
   public void testQueriesCanUseNotEqualFilters() {
-    // These documents are ordered by value in "zip" since notEquals filter is an inequality, which
-    // results in documents being sorted by value.
+    // These documents are ordered by value in "zip" since the notEquals filter is an inequality,
+    // which results in documents being sorted by value.
     Map<String, Object> docA = map("zip", Double.NaN);
     Map<String, Object> docB = map("zip", 91102L);
     Map<String, Object> docC = map("zip", 98101L);
@@ -616,9 +616,8 @@ public class QueryTest {
 
   @Test
   public void testQueriesCanUseNotInFilters() {
-
-    // These documents are ordered by value in "zip" since notEquals filter is an inequality, which
-    // results in documents being sorted by value.
+    // These documents are ordered by value in "zip" since the notEquals filter is an inequality,
+    // which results in documents being sorted by value.
     Map<String, Object> docA = map("zip", Double.NaN);
     Map<String, Object> docB = map("zip", 91102L);
     Map<String, Object> docC = map("zip", 98101L);
@@ -648,7 +647,7 @@ public class QueryTest {
         waitFor(collection.whereNotIn("zip", asList(98101L, 98103L, asList(98101L, 98102L))).get());
     assertEquals(Lists.newArrayList(expectedDocsMap.values()), querySnapshotToValues(snapshot));
 
-    //  With objects.
+    // With objects.
     expectedDocsMap = Maps.newHashMap(allDocs);
     expectedDocsMap.remove("h");
     expectedDocsMap.remove("i");
