@@ -31,6 +31,8 @@ import static org.junit.Assert.assertTrue;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.firebase.firestore.Query.Direction;
 import com.google.firebase.firestore.testutil.EventAccumulator;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
@@ -39,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Semaphore;
 import org.junit.After;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -483,6 +486,79 @@ public class QueryTest {
     listener.remove();
   }
 
+  // TODO(ne-queries): Re-enable once emulator support is added to CI.
+  @Ignore
+  @Test
+  public void testQueriesCanUseNotEqualFilters() {
+    Map<String, Object> docA = map("zip", 98101L);
+    Map<String, Object> docB = map("zip", 91102L);
+    Map<String, Object> docC = map("zip", "98101");
+    Map<String, Object> docD = map("zip", asList(98101L));
+    Map<String, Object> docE = map("zip", asList("98101", map("zip", 98101L)));
+    Map<String, Object> docF = map("zip", map("code", 500L));
+    Map<String, Object> docG = map("zip", asList(98101L, 98102L));
+    Map<String, Object> docH = map("code", 500L);
+    Map<String, Object> docI = map("zip", null);
+    Map<String, Object> docJ = map("zip", Double.NaN);
+
+    Map<String, Map<String, Object>> allDocs =
+        map(
+            "a", docA, "b", docB, "c", docC, "d", docD, "e", docE, "f", docF, "g", docG, "h", docH,
+            "i", docI, "j", docJ);
+    CollectionReference collection = testCollectionWithDocs(allDocs);
+
+    // Search for zips not matching 98101.
+    Map<String, Map<String, Object>> expectedDocsMap = Maps.newHashMap(allDocs);
+    expectedDocsMap.remove("a");
+    expectedDocsMap.remove("h");
+    expectedDocsMap.remove("i");
+
+    QuerySnapshot snapshot = waitFor(collection.whereNotEqualTo("zip", 98101L).get());
+    assertEquals(Lists.newArrayList(expectedDocsMap.values()), querySnapshotToValues(snapshot));
+
+    // With objects.
+    expectedDocsMap = Maps.newHashMap(allDocs);
+    expectedDocsMap.remove("f");
+    expectedDocsMap.remove("h");
+    expectedDocsMap.remove("i");
+    snapshot = waitFor(collection.whereNotEqualTo("zip", map("code", 500)).get());
+    assertEquals(Lists.newArrayList(expectedDocsMap.values()), querySnapshotToValues(snapshot));
+
+    // With Null.
+    expectedDocsMap = Maps.newHashMap(allDocs);
+    expectedDocsMap.remove("h");
+    expectedDocsMap.remove("i");
+    snapshot = waitFor(collection.whereNotEqualTo("zip", null).get());
+    assertEquals(Lists.newArrayList(expectedDocsMap.values()), querySnapshotToValues(snapshot));
+
+    // With NaN.
+    expectedDocsMap = Maps.newHashMap(allDocs);
+    expectedDocsMap.remove("h");
+    expectedDocsMap.remove("i");
+    expectedDocsMap.remove("j");
+    snapshot = waitFor(collection.whereNotEqualTo("zip", Double.NaN).get());
+    assertEquals(Lists.newArrayList(expectedDocsMap.values()), querySnapshotToValues(snapshot));
+  }
+
+  // TODO(ne-queries): Re-enable once emulator support is added to CI.
+  @Ignore
+  @Test
+  public void testQueriesCanUseNotEqualFiltersWithDocIds() {
+    Map<String, String> docA = map("key", "aa");
+    Map<String, String> docB = map("key", "ab");
+    Map<String, String> docC = map("key", "ba");
+    Map<String, String> docD = map("key", "bb");
+    Map<String, Map<String, Object>> testDocs =
+        map(
+            "aa", docA,
+            "ab", docB,
+            "ba", docC,
+            "bb", docD);
+    CollectionReference collection = testCollectionWithDocs(testDocs);
+    QuerySnapshot docs = waitFor(collection.whereNotEqualTo(FieldPath.documentId(), "aa").get());
+    assertEquals(asList(docB, docC, docD), querySnapshotToValues(docs));
+  }
+
   @Test
   public void testQueriesCanUseArrayContainsFilters() {
     Map<String, Object> docA = map("array", asList(42L));
@@ -539,6 +615,87 @@ public class QueryTest {
     QuerySnapshot docs =
         waitFor(collection.whereIn(FieldPath.documentId(), asList("aa", "ab")).get());
     assertEquals(asList(docA, docB), querySnapshotToValues(docs));
+  }
+
+  // TODO(ne-queries): Re-enable once emulator support is added to CI.
+  @Ignore
+  @Test
+  public void testQueriesCanUseNotInFilters() {
+    Map<String, Object> docA = map("zip", 98101L);
+    Map<String, Object> docB = map("zip", 91102L);
+    Map<String, Object> docC = map("zip", 98103L);
+    Map<String, Object> docD = map("zip", asList(98101L));
+    Map<String, Object> docE = map("zip", asList("98101", map("zip", 98101L)));
+    Map<String, Object> docF = map("zip", map("code", 500L));
+    Map<String, Object> docG = map("zip", asList(98101L, 98102L));
+    Map<String, Object> docH = map("code", 500L);
+    Map<String, Object> docI = map("zip", null);
+    Map<String, Object> docJ = map("zip", Double.NaN);
+
+    Map<String, Map<String, Object>> allDocs =
+        map(
+            "a", docA, "b", docB, "c", docC, "d", docD, "e", docE, "f", docF, "g", docG, "h", docH,
+            "i", docI, "j", docJ);
+    CollectionReference collection = testCollectionWithDocs(allDocs);
+
+    // Search for zips not matching 98101, 98103, or [98101, 98102].
+    Map<String, Map<String, Object>> expectedDocsMap = Maps.newHashMap(allDocs);
+    expectedDocsMap.remove("a");
+    expectedDocsMap.remove("c");
+    expectedDocsMap.remove("g");
+    expectedDocsMap.remove("h");
+
+    QuerySnapshot snapshot =
+        waitFor(collection.whereNotIn("zip", asList(98101L, 98103L, asList(98101L, 98102L))).get());
+    assertEquals(Lists.newArrayList(expectedDocsMap.values()), querySnapshotToValues(snapshot));
+
+    // With objects.
+    expectedDocsMap = Maps.newHashMap(allDocs);
+    expectedDocsMap.remove("f");
+    expectedDocsMap.remove("h");
+    snapshot = waitFor(collection.whereNotIn("zip", asList(map("code", 500L))).get());
+    assertEquals(Lists.newArrayList(expectedDocsMap.values()), querySnapshotToValues(snapshot));
+
+    // With Null.
+    List<Object> nullArray = new ArrayList<>();
+    nullArray.add(null);
+    snapshot = waitFor(collection.whereNotIn("zip", nullArray).get());
+    assertEquals(new ArrayList<>(), querySnapshotToValues(snapshot));
+
+    // With NaN.
+    expectedDocsMap = Maps.newHashMap(allDocs);
+    expectedDocsMap.remove("h");
+    expectedDocsMap.remove("j");
+    snapshot = waitFor(collection.whereNotIn("zip", asList(Double.NaN)).get());
+    assertEquals(Lists.newArrayList(expectedDocsMap.values()), querySnapshotToValues(snapshot));
+
+    // With NaN and a number.
+    expectedDocsMap = Maps.newHashMap(allDocs);
+    expectedDocsMap.remove("a");
+    expectedDocsMap.remove("h");
+    expectedDocsMap.remove("j");
+    snapshot = waitFor(collection.whereNotIn("zip", asList(Float.NaN, 98101L)).get());
+    assertEquals(Lists.newArrayList(expectedDocsMap.values()), querySnapshotToValues(snapshot));
+  }
+
+  // TODO(ne-queries): Re-enable once emulator support is added to CI.
+  @Ignore
+  @Test
+  public void testQueriesCanUseNotInFiltersWithDocIds() {
+    Map<String, String> docA = map("key", "aa");
+    Map<String, String> docB = map("key", "ab");
+    Map<String, String> docC = map("key", "ba");
+    Map<String, String> docD = map("key", "bb");
+    Map<String, Map<String, Object>> testDocs =
+        map(
+            "aa", docA,
+            "ab", docB,
+            "ba", docC,
+            "bb", docD);
+    CollectionReference collection = testCollectionWithDocs(testDocs);
+    QuerySnapshot docs =
+        waitFor(collection.whereNotIn(FieldPath.documentId(), asList("aa", "ab")).get());
+    assertEquals(asList(docC, docD), querySnapshotToValues(docs));
   }
 
   @Test

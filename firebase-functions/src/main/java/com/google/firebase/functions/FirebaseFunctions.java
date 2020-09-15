@@ -209,19 +209,19 @@ public class FirebaseFunctions {
     }
   }
 
-  /** @deprecated see {@link #useEmulator(String, int)} */
+  /** @deprecated Use {@link #useEmulator(String, int)} to connect to the emulator. */
   public void useFunctionsEmulator(@NonNull String origin) {
     Preconditions.checkNotNull(origin, "origin cannot be null");
     urlFormat = origin + "/%2$s/%1$s/%3$s";
   }
 
   /**
-   * Modify this FirebaseFunctions instance to communicate with the Cloud Functions emulator.
+   * Modifies this FirebaseFunctions instance to communicate with the Cloud Functions emulator.
    *
-   * <p>Note: this must be called before this instance has been used to do any operations.
+   * <p>Note: Call this method before using the instance to do any functions operations.
    *
-   * @param host the emulator host (ex: 10.0.2.2)
-   * @param port the emulator port (ex: 5001)
+   * @param host the emulator host (for example, 10.0.2.2)
+   * @param port the emulator port (for example, 5001)
    */
   public void useEmulator(@NonNull String host, int port) {
     this.emulatorSettings = new EmulatedServiceSettings(host, port);

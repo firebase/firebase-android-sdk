@@ -57,7 +57,7 @@ public class FirebaseDatabase {
     if (instance == null) {
       throw new DatabaseException("You must call FirebaseApp.initialize() first.");
     }
-    return getInstance(instance, instance.getOptions().getDatabaseUrl());
+    return getInstance(instance);
   }
 
   /**
@@ -83,7 +83,16 @@ public class FirebaseDatabase {
    */
   @NonNull
   public static FirebaseDatabase getInstance(@NonNull FirebaseApp app) {
-    return getInstance(app, app.getOptions().getDatabaseUrl());
+    String databaseUrl = app.getOptions().getDatabaseUrl();
+    if (databaseUrl == null) {
+      if (app.getOptions().getProjectId() == null) {
+        throw new DatabaseException(
+            "Failed to get FirebaseDatabase instance: Can't determine Firebase Database URL. "
+                + "Be sure to include a Project ID in your configuration.");
+      }
+      databaseUrl = "https://" + app.getOptions().getProjectId() + "-default-rtdb.firebaseio.com";
+    }
+    return getInstance(app, databaseUrl);
   }
 
   /**
@@ -296,12 +305,12 @@ public class FirebaseDatabase {
   }
 
   /**
-   * Modify this FirebaseDatabase instance to communicate with the Realtime Database emulator.
+   * Modifies this FirebaseDatabase instance to communicate with the Realtime Database emulator.
    *
-   * <p>Note: this must be called before this instance has been used to do any database operations.
+   * <p>Note: Call this method before using the instance to do any database operations.
    *
-   * @param host the emulator host (ex: 10.0.2.2)
-   * @param port the emulator port (ex: 9000)
+   * @param host the emulator host (for example, 10.0.2.2)
+   * @param port the emulator port (for example, 9000)
    */
   public void useEmulator(@NonNull String host, int port) {
     if (this.repo != null) {

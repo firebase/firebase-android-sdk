@@ -162,9 +162,19 @@ public class FirebaseMessaging {
    * Determines whether Firebase Cloud Messaging exports message delivery metrics to BigQuery.
    *
    * @return true if Firebase Cloud Messaging exports message delivery metrics to BigQuery.
+   * @deprecated Use {@link #isDeliveryMetricsExportToBigQueryEnabled()} instead.
    */
-  @NonNull
+  @Deprecated
   public boolean deliveryMetricsExportToBigQueryEnabled() {
+    return isDeliveryMetricsExportToBigQueryEnabled();
+  }
+
+  /**
+   * Determines whether Firebase Cloud Messaging exports message delivery metrics to BigQuery.
+   *
+   * @return true if Firebase Cloud Messaging exports message delivery metrics to BigQuery.
+   */
+  public boolean isDeliveryMetricsExportToBigQueryEnabled() {
     return MessagingAnalytics.deliveryMetricsExportToBigQueryEnabled();
   }
 

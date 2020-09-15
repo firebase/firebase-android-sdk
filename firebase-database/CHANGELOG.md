@@ -1,5 +1,6 @@
 # Unreleased
-
+- [changed] The SDK can now infer a default database URL if none is provided in
+  the config.
 - [changed] Added internal HTTP header to the WebChannel connection.
 - [feature] Realtime Database now supports connecting to a local emulator via
  `FirebaseDatabase#useEmulator()`

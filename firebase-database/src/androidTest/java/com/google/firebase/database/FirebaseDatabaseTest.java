@@ -120,6 +120,21 @@ public class FirebaseDatabaseTest {
   }
 
   @Test
+  public void canInferDatabaseUrlFromProjectId() {
+    FirebaseApp app =
+        FirebaseApp.initializeApp(
+            InstrumentationRegistry.getInstrumentation().getTargetContext(),
+            new FirebaseOptions.Builder()
+                .setApplicationId("appid")
+                .setApiKey("apikey")
+                .setProjectId("abc123")
+                .build(),
+            "canInferDatabaseUrlFromProjectId");
+    FirebaseDatabase db = FirebaseDatabase.getInstance(app);
+    assertEquals("https://abc123-default-rtdb.firebaseio.com", db.getReference().toString());
+  }
+
+  @Test
   public void getDifferentInstanceForAppWithUrl() {
     FirebaseApp app =
         appForDatabaseUrl(

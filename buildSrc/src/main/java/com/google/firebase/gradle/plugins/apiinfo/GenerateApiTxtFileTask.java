@@ -15,7 +15,7 @@
 package com.google.firebase.gradle.plugins.apiinfo;
 
 import com.android.build.gradle.api.AndroidSourceSet;
-import com.google.firebase.gradle.plugins.SdkUtil;
+import com.google.firebase.gradle.plugins.SdkUtilKt;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -88,7 +88,7 @@ public abstract class GenerateApiTxtFileTask extends DefaultTask {
             .map(File::getAbsolutePath)
             .collect(Collectors.joining(":"));
 
-    File androidJar = SdkUtil.getAndroidJar(getProject());
+    File androidJar = SdkUtilKt.getAndroidJar(getProject());
     if (androidJar != null) {
       classPath += ":" + androidJar.getAbsolutePath();
     }
