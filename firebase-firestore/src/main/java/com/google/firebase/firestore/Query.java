@@ -350,8 +350,9 @@ public class Query {
    * Creates and returns a new {@code Query} with the additional filter that documents must contain
    * the specified field and the value does not equal any of the values from the provided list.
    *
-   * <p>Passing in a {@code null} value into the values array results in no document matches. To
-   * query for documents where a field is not {@code null}, use {@code whereNotEqualTo()}.
+   * <p>One special case is that {@coce whereNotIn} cannot match {@code null} values. To query for
+   * documents where a field exists and is {@code null}, use {@code whereNotEqualTo}, which can
+   * handle this special case.
    *
    * <p>A {@code Query} can have only one {@code whereNotIn()} filter, and it cannot be combined
    * with {@code whereArrayContains()}, {@code whereArrayContainsAny()}, {@code whereIn()}, or
@@ -370,8 +371,9 @@ public class Query {
    * Creates and returns a new {@code Query} with the additional filter that documents must contain
    * the specified field and the value does not equal any of the values from the provided list.
    *
-   * <p>Passing in a {@code null} value into the values array results in no document matches. To
-   * query for documents where a field is not {@code null}, use {@code whereNotEqualTo()}.
+   * <p>One special case is that {@coce whereNotIn} cannot match {@code null} values. To query for
+   * documents where a field exists and is {@code null}, use {@code whereNotEqualTo}, which can
+   * handle this special case.
    *
    * <p>A {@code Query} can have only one {@code whereNotIn()} filter, and it cannot be combined
    * with {@code whereArrayContains()}, {@code whereArrayContainsAny()}, {@code whereIn()}, or
