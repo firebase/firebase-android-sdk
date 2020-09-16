@@ -123,7 +123,7 @@ class HeartBeatInfoStorage {
   boolean isValidHeartBeat(long base, long target) {
     Date baseDate = new Date(base);
     Date targetDate = new Date(target);
-    SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
+    SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy z");
     return !(formatter.format(baseDate).equals(formatter.format(targetDate)));
   }
 
