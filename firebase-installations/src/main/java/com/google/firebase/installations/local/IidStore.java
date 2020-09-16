@@ -167,6 +167,13 @@ public class IidStore {
     }
   }
 
+  /**
+   * FirebaseInstallations SDK uses the SHA1 hash for backwards compatibility with the legacy
+   * InstanceID SDK. The SHA1 hash is used to access Instance IDs stored on the device and not for
+   * any security relevant process. This is a one-time step that allows migration of old client
+   * identifiers. Cryptographic security is not needed here so potential hash collisions are not a
+   * problem.
+   */
   @Nullable
   private static String getIdFromPublicKey(@NonNull PublicKey publicKey) {
     // The ID is the sha of the public key truncated to 60 bit, with first 4 bits switched to
