@@ -14,6 +14,8 @@
 
 package com.google.firebase.firestore;
 
+import static com.google.firebase.firestore.util.Assert.hardAssert;
+
 import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -85,10 +87,10 @@ class FirestoreMultiDbComponent
     // the `instances` map directly.
     for (Map.Entry<String, FirebaseFirestore> entry : new ArrayList<>(instances.entrySet())) {
       entry.getValue().terminate();
-      if (instances.containsKey(entry.getKey())) {
-        throw new IllegalStateException(
-            "terminate() should have removed its entry from instances for key: " + entry.getKey());
-      }
+      hardAssert(
+        !instances.containsKey(entry.getKey()),
+        "terminate() should have removed its entry from `instances` for key: %s",
+        entry.getKey());
     }
   }
 }
