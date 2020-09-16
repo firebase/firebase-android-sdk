@@ -48,11 +48,13 @@ public final class Utils {
 
   /** Returns current time in seconds. */
   public long currentTimeInSecs() {
+    // Mockito doesn't allow to mock static methods. As a result this util method is not static.
     return TimeUnit.MILLISECONDS.toSeconds(currentTimeInMillis());
   }
 
   /** Returns current time in milliseconds. */
   public long currentTimeInMillis() {
+    // Mockito doesn't allow to mock static methods. As a result this util method is not static.
     return System.currentTimeMillis();
   }
 
@@ -69,6 +71,7 @@ public final class Utils {
    in synchronized waves. The value of random_number_milliseconds is recalculated after each retry
   request.*/
   public long getRandomMillis() {
+    // Mockito doesn't allow to mock static methods. As a result this util method is not static.
     return (long) (Math.random() * 1000);
   }
 }
