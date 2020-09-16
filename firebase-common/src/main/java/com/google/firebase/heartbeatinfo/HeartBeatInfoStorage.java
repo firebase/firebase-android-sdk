@@ -18,6 +18,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -120,7 +121,10 @@ class HeartBeatInfoStorage {
   }
 
   boolean isValidHeartBeat(long base, long target) {
-    return !((new Date(base).getDate()) == (new Date(target).getDate()));
+    Date baseDate = new Date(base);
+    Date targetDate = new Date(target);
+    SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
+    return !(formatter.format(baseDate).equals(formatter.format(targetDate)));
   }
 
   /*

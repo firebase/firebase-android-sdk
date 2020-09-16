@@ -25,32 +25,24 @@ import com.google.firebase.components.Dependency;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /** Provides information as whether to send heart beat or not. */
 public class DefaultHeartBeatInfo implements HeartBeatInfo {
 
-  private HeartBeatInfoStorage storage;
+  private final HeartBeatInfoStorage storage;
 
   private Set<HeartBeatConsumer> consumers;
 
-  private ExecutorService backgroundExecutor;
+  private Executor backgroundExecutor;
 
   private static final ThreadFactory THREAD_FACTORY =
-      new ThreadFactory() {
-        private final AtomicInteger mCount = new AtomicInteger(1);
-
-        @Override
-        public Thread newThread(Runnable r) {
-          return new Thread(
-              r, String.format("heartbeat-information-executor-%d", mCount.getAndIncrement()));
-        }
-      };
+      r -> new Thread(r, "heartbeat-information-executor");
 
   private DefaultHeartBeatInfo(Context context, Set<HeartBeatConsumer> consumers) {
     storage = HeartBeatInfoStorage.getInstance(context);
@@ -95,9 +87,8 @@ public class DefaultHeartBeatInfo implements HeartBeatInfo {
           boolean shouldSendGlobalHeartBeat = false;
           List<SdkHeartBeatResult> sdkHeartBeatResults = storage.getStoredHeartBeats(true);
           long lastGlobalHeartBeat = storage.getLastGlobalHeartBeat();
-          for (int i = 0; i < sdkHeartBeatResults.size(); i++) {
-            SdkHeartBeatResult sdkHeartBeatResult = sdkHeartBeatResults.get(i);
-            HeartBeat heartBeat;
+          HeartBeat heartBeat;
+          for (SdkHeartBeatResult sdkHeartBeatResult : sdkHeartBeatResults) {
             shouldSendGlobalHeartBeat =
                 storage.isValidHeartBeat(lastGlobalHeartBeat, sdkHeartBeatResult.getMillis());
             if (shouldSendGlobalHeartBeat) {
