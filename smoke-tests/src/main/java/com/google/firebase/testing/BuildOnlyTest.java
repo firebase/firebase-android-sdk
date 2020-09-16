@@ -20,7 +20,7 @@ import com.google.firebase.appindexing.FirebaseAppIndex;
 import com.google.firebase.inappmessaging.FirebaseInAppMessaging;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.ml.naturallanguage.FirebaseNaturalLanguage;
-// import com.google.firebase.perf.FirebasePerformance;
+import com.google.firebase.perf.FirebasePerformance;
 import com.google.firebase.ml.vision.FirebaseVision;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -45,11 +45,10 @@ public final class BuildOnlyTest {
     assertThat(FirebaseMessaging.getInstance()).isNotNull();
   }
 
-//  TODO(allisonbm92): Find out why perf isn't playing nicely with the rest of the suite.
-//  @Test
-//  public void performance_IsNotNull() {
-//    assertThat(FirebasePerformance.getInstance()).isNotNull();
-//  }
+  @Test
+  public void performance_IsNotNull() {
+    assertThat(FirebasePerformance.getInstance()).isNotNull();
+  }
 
   @Test
   public void naturalLanguage_IsNotNull() {

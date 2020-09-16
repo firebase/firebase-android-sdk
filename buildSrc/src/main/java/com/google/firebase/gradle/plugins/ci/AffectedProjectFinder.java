@@ -69,10 +69,14 @@ public class AffectedProjectFinder {
   private static Set<String> changedPaths(File workDir) {
     try {
       Process process =
-          Runtime.getRuntime().exec("git diff --name-only --submodule=diff HEAD@{0} HEAD@{1}", null, workDir);
-      process.waitFor();
-      return ImmutableSet.copyOf(
-          CharStreams.readLines(new InputStreamReader(process.getInputStream())));
+          Runtime.getRuntime()
+              .exec("git diff --name-only --submodule=diff HEAD@{0} HEAD@{1}", null, workDir);
+      try {
+        return ImmutableSet.copyOf(
+            CharStreams.readLines(new InputStreamReader(process.getInputStream())));
+      } finally {
+        process.waitFor();
+      }
     } catch (IOException e) {
       throw new GradleException("Could not determine changed files", e);
     } catch (InterruptedException e) {
