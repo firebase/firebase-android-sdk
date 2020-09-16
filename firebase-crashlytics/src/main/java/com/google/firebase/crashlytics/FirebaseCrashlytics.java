@@ -409,7 +409,7 @@ public class FirebaseCrashlytics {
    * and this always returns false. If automatic data collection is disabled, this method can be
    * used to check whether the user opts-in to send crash reports from their device.
    *
-   * @returns a Task that is resolved with the result.
+   * @return a Task that is resolved with the result.
    */
   @NonNull
   public Task<Boolean> checkForUnsentReports() {
@@ -437,7 +437,7 @@ public class FirebaseCrashlytics {
   /**
    * Checks whether the app crashed on its previous run.
    *
-   * @returns true if a crash was recorded during the previous run of the app.
+   * @return true if a crash was recorded during the previous run of the app.
    */
   public boolean didCrashOnPreviousExecution() {
     return core.didCrashOnPreviousExecution();
