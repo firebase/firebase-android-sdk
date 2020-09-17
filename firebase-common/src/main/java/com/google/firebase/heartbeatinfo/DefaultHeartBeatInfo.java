@@ -19,7 +19,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.Dependency;
 import java.util.ArrayList;
@@ -80,8 +80,8 @@ public class DefaultHeartBeatInfo implements HeartBeatInfo {
 
   @Override
   public Task<List<HeartBeatResult>> getAndClearStoredHeartBeatInfo() {
-    TaskCompletionSource<List<HeartBeatResult>> taskCompletionSource = new TaskCompletionSource<>();
-    this.backgroundExecutor.execute(
+    return Tasks.call(
+        backgroundExecutor,
         () -> {
           ArrayList<HeartBeatResult> heartBeatResults = new ArrayList<>();
           boolean shouldSendGlobalHeartBeat = false;
@@ -106,19 +106,17 @@ public class DefaultHeartBeatInfo implements HeartBeatInfo {
           if (lastGlobalHeartBeat > 0) {
             storage.updateGlobalHeartBeat(lastGlobalHeartBeat);
           }
-          taskCompletionSource.setResult(heartBeatResults);
+          return heartBeatResults;
         });
-    return taskCompletionSource.getTask();
   }
 
   @Override
   public Task storeHeartBeatInfo(@NonNull String heartBeatTag) {
-    TaskCompletionSource<Boolean> taskCompletionSource = new TaskCompletionSource<>();
     if (consumers.size() <= 0) {
-      taskCompletionSource.setResult(true);
-      return taskCompletionSource.getTask();
+      return Tasks.forResult(true);
     }
-    backgroundExecutor.execute(
+    return Tasks.call(
+        backgroundExecutor,
         () -> {
           long presentTime = System.currentTimeMillis();
           boolean shouldSendSdkHB = storage.shouldSendSdkHeartBeat(heartBeatTag, presentTime);
@@ -128,10 +126,8 @@ public class DefaultHeartBeatInfo implements HeartBeatInfo {
                   storage.storeHeartBeatInformation(heartBeatTag, presentTime);
                 });
           }
-          taskCompletionSource.setResult(true);
+          return true;
         });
-
-    return taskCompletionSource.getTask();
   }
 
   public static @NonNull Component<HeartBeatInfo> component() {
