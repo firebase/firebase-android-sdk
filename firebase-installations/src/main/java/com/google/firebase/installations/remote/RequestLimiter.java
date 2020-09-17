@@ -84,7 +84,7 @@ class RequestLimiter {
   }
 
   // Decides whether a network request to FIS servers is allowed to execute.
-  public boolean isRequestAllowed() {
+  public synchronized boolean isRequestAllowed() {
     // NOTE: If the end-users changes the System time, requests to FIS servers will not be allowed.
     // This problem can be fixed by restarting the app or the end-users changing System time.
     return attemptCount == 0 || utils.currentTimeInMillis() > nextRequestTime;
