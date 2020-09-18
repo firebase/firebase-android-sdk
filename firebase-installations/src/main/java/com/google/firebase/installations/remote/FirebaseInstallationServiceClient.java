@@ -372,6 +372,7 @@ public class FirebaseInstallationServiceClient {
       try {
         httpURLConnection.setRequestMethod("POST");
         httpURLConnection.addRequestProperty("Authorization", "FIS_v2 " + refreshToken);
+        httpURLConnection.setDoOutput(true);
 
         writeGenerateAuthTokenRequestBodyToOutputStream(httpURLConnection);
 
