@@ -78,6 +78,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -96,7 +97,7 @@ public class TestUtil {
 
   @SuppressWarnings("unchecked")
   public static <T> Map<String, T> map(Object... entries) {
-    Map<String, T> res = new HashMap<>();
+    Map<String, T> res = new LinkedHashMap<>();
     for (int i = 0; i < entries.length; i += 2) {
       res.put((String) entries[i], (T) entries[i + 1]);
     }
