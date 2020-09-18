@@ -32,11 +32,11 @@ import static org.junit.Assert.assertTrue;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.google.firebase.firestore.Query.Direction;
 import com.google.firebase.firestore.testutil.EventAccumulator;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Semaphore;
@@ -507,7 +507,7 @@ public class QueryTest {
     CollectionReference collection = testCollectionWithDocs(allDocs);
 
     // Search for zips not matching 98101.
-    Map<String, Map<String, Object>> expectedDocsMap = Maps.newHashMap(allDocs);
+    Map<String, Map<String, Object>> expectedDocsMap = new LinkedHashMap<>(allDocs);
     expectedDocsMap.remove("c");
     expectedDocsMap.remove("i");
     expectedDocsMap.remove("j");
@@ -516,7 +516,7 @@ public class QueryTest {
     assertEquals(Lists.newArrayList(expectedDocsMap.values()), querySnapshotToValues(snapshot));
 
     // With objects.
-    expectedDocsMap = Maps.newHashMap(allDocs);
+    expectedDocsMap = new LinkedHashMap<>(allDocs);
     expectedDocsMap.remove("h");
     expectedDocsMap.remove("i");
     expectedDocsMap.remove("j");
@@ -524,14 +524,14 @@ public class QueryTest {
     assertEquals(Lists.newArrayList(expectedDocsMap.values()), querySnapshotToValues(snapshot));
 
     // With Null.
-    expectedDocsMap = Maps.newHashMap(allDocs);
+    expectedDocsMap = new LinkedHashMap<>(allDocs);
     expectedDocsMap.remove("i");
     expectedDocsMap.remove("j");
     snapshot = waitFor(collection.whereNotEqualTo("zip", null).get());
     assertEquals(Lists.newArrayList(expectedDocsMap.values()), querySnapshotToValues(snapshot));
 
     // With NaN.
-    expectedDocsMap = Maps.newHashMap(allDocs);
+    expectedDocsMap = new LinkedHashMap<>(allDocs);
     expectedDocsMap.remove("a");
     expectedDocsMap.remove("i");
     expectedDocsMap.remove("j");
@@ -636,7 +636,7 @@ public class QueryTest {
     CollectionReference collection = testCollectionWithDocs(allDocs);
 
     // Search for zips not matching 98101, 98103, or [98101, 98102].
-    Map<String, Map<String, Object>> expectedDocsMap = Maps.newHashMap(allDocs);
+    Map<String, Map<String, Object>> expectedDocsMap = new LinkedHashMap<>(allDocs);
     expectedDocsMap.remove("c");
     expectedDocsMap.remove("d");
     expectedDocsMap.remove("f");
@@ -648,7 +648,7 @@ public class QueryTest {
     assertEquals(Lists.newArrayList(expectedDocsMap.values()), querySnapshotToValues(snapshot));
 
     // With objects.
-    expectedDocsMap = Maps.newHashMap(allDocs);
+    expectedDocsMap = new LinkedHashMap<>(allDocs);
     expectedDocsMap.remove("h");
     expectedDocsMap.remove("i");
     expectedDocsMap.remove("j");
@@ -662,7 +662,7 @@ public class QueryTest {
     assertEquals(new ArrayList<>(), querySnapshotToValues(snapshot));
 
     // With NaN.
-    expectedDocsMap = Maps.newHashMap(allDocs);
+    expectedDocsMap = new LinkedHashMap<>(allDocs);
     expectedDocsMap.remove("a");
     expectedDocsMap.remove("i");
     expectedDocsMap.remove("j");
@@ -670,7 +670,7 @@ public class QueryTest {
     assertEquals(Lists.newArrayList(expectedDocsMap.values()), querySnapshotToValues(snapshot));
 
     // With NaN and a number.
-    expectedDocsMap = Maps.newHashMap(allDocs);
+    expectedDocsMap = new LinkedHashMap<>(allDocs);
     expectedDocsMap.remove("a");
     expectedDocsMap.remove("c");
     expectedDocsMap.remove("i");
