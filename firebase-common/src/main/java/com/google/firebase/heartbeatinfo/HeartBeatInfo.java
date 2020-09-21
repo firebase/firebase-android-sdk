@@ -51,7 +51,7 @@ public interface HeartBeatInfo {
   HeartBeat getHeartBeatCode(@NonNull String heartBeatTag);
 
   @NonNull
-  Task storeHeartBeatInfo(@NonNull String heartBeatTag);
+  Task<Void> storeHeartBeatInfo(@NonNull String heartBeatTag);
 
   @NonNull
   Task<List<HeartBeatResult>> getAndClearStoredHeartBeatInfo();

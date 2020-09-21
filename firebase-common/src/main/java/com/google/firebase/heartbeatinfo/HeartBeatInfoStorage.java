@@ -39,6 +39,8 @@ class HeartBeatInfoStorage {
   // As soon as you hit the limit of heartbeats. The number of stored heartbeats is halved.
   private static final int HEART_BEAT_COUNT_LIMIT = 200;
 
+  private static final SimpleDateFormat FORMATTER = new SimpleDateFormat("dd/MM/yyyy z");
+
   // Stores a key value mapping from timestamp to the sdkName and heartBeat code.
   private static final String storagePreferencesName = "FirebaseAppHeartBeatStorage";
 
@@ -120,11 +122,10 @@ class HeartBeatInfoStorage {
     heartBeatSharedPreferences.edit().clear().apply();
   }
 
-  boolean isValidHeartBeat(long base, long target) {
+  static boolean isSameDateUtc(long base, long target) {
     Date baseDate = new Date(base);
     Date targetDate = new Date(target);
-    SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy z");
-    return !(formatter.format(baseDate).equals(formatter.format(targetDate)));
+    return !(FORMATTER.format(baseDate).equals(FORMATTER.format(targetDate)));
   }
 
   /*
@@ -134,7 +135,7 @@ class HeartBeatInfoStorage {
   */
   synchronized boolean shouldSendSdkHeartBeat(String heartBeatTag, long millis) {
     if (sharedPreferences.contains(heartBeatTag)) {
-      if (isValidHeartBeat(sharedPreferences.getLong(heartBeatTag, -1), millis)) {
+      if (isSameDateUtc(sharedPreferences.getLong(heartBeatTag, -1), millis)) {
         sharedPreferences.edit().putLong(heartBeatTag, millis).apply();
         return true;
       }

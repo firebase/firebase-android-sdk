@@ -16,7 +16,6 @@ package com.google.firebase.heartbeatinfo;
 
 import android.content.Context;
 import androidx.annotation.NonNull;
-import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
@@ -26,7 +25,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -39,25 +37,24 @@ public class DefaultHeartBeatInfo implements HeartBeatInfo {
 
   private Set<HeartBeatConsumer> consumers;
 
-  private Executor backgroundExecutor;
+  private final Executor backgroundExecutor;
 
   private static final ThreadFactory THREAD_FACTORY =
       r -> new Thread(r, "heartbeat-information-executor");
 
   private DefaultHeartBeatInfo(Context context, Set<HeartBeatConsumer> consumers) {
-    storage = HeartBeatInfoStorage.getInstance(context);
-    this.consumers = consumers;
-    this.backgroundExecutor =
+    // It is very important the executor is single threaded as otherwise it would lead to
+    // race conditions.
+    this(
+        HeartBeatInfoStorage.getInstance(context),
+        consumers,
         new ThreadPoolExecutor(
-            0, 1, 30, TimeUnit.SECONDS, new LinkedBlockingQueue<>(), THREAD_FACTORY);
+            0, 1, 30, TimeUnit.SECONDS, new LinkedBlockingQueue<>(), THREAD_FACTORY));
   }
 
   @VisibleForTesting
-  @RestrictTo(RestrictTo.Scope.TESTS)
   DefaultHeartBeatInfo(
-      HeartBeatInfoStorage testStorage,
-      Set<HeartBeatConsumer> consumers,
-      ExecutorService executor) {
+      HeartBeatInfoStorage testStorage, Set<HeartBeatConsumer> consumers, Executor executor) {
     storage = testStorage;
     this.consumers = consumers;
     this.backgroundExecutor = executor;
@@ -90,7 +87,8 @@ public class DefaultHeartBeatInfo implements HeartBeatInfo {
           HeartBeat heartBeat;
           for (SdkHeartBeatResult sdkHeartBeatResult : sdkHeartBeatResults) {
             shouldSendGlobalHeartBeat =
-                storage.isValidHeartBeat(lastGlobalHeartBeat, sdkHeartBeatResult.getMillis());
+                HeartBeatInfoStorage.isSameDateUtc(
+                    lastGlobalHeartBeat, sdkHeartBeatResult.getMillis());
             if (shouldSendGlobalHeartBeat) {
               heartBeat = HeartBeat.COMBINED;
             } else {

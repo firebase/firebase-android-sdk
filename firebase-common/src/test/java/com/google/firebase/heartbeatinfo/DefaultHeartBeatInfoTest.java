@@ -124,7 +124,6 @@ public class DefaultHeartBeatInfoTest {
     when(storage.shouldSendGlobalHeartBeat(anyLong())).thenReturn(Boolean.TRUE);
     when(storage.getLastGlobalHeartBeat()).thenReturn((long) 0);
     when(storage.getStoredHeartBeats(anyBoolean())).thenReturn(returnResults);
-    when(storage.isValidHeartBeat(0, 100000000)).thenReturn(true);
     heartBeatInfo
         .storeHeartBeatInfo(testSdk)
         .addOnCompleteListener(executor, storeOnCompleteListener);
@@ -150,9 +149,6 @@ public class DefaultHeartBeatInfoTest {
     when(storage.shouldSendGlobalHeartBeat(anyLong())).thenReturn(Boolean.TRUE);
     when(storage.getLastGlobalHeartBeat()).thenReturn((long) 0);
     when(storage.getStoredHeartBeats(anyBoolean())).thenReturn(returnResults);
-    when(storage.isValidHeartBeat(0, 100000000)).thenReturn(true);
-    when(storage.isValidHeartBeat(100000000, 200000000)).thenReturn(true);
-    when(storage.isValidHeartBeat(200000000, 200002000)).thenReturn(false);
 
     heartBeatInfo
         .storeHeartBeatInfo(testSdk)
