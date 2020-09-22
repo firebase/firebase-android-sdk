@@ -33,6 +33,7 @@ import com.google.firebase.heartbeatinfo.HeartBeatInfo.HeartBeat;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsException;
 import com.google.firebase.installations.FirebaseInstallationsException.Status;
+import com.google.firebase.installations.Utils;
 import com.google.firebase.installations.remote.InstallationResponse.ResponseCode;
 import com.google.firebase.platforminfo.UserAgentPublisher;
 import java.io.BufferedReader;
@@ -97,6 +98,7 @@ public class FirebaseInstallationServiceClient {
   private static final String SDK_VERSION_PREFIX = "a:";
 
   private static final String FIS_TAG = "Firebase-Installations";
+  private boolean shouldServerErrorRetry;
 
   @VisibleForTesting
   static final String PARSING_EXPIRATION_TIME_ERROR_MESSAGE = "Invalid Expiration Timestamp.";
@@ -104,6 +106,7 @@ public class FirebaseInstallationServiceClient {
   private final Context context;
   private final Provider<UserAgentPublisher> userAgentPublisher;
   private final Provider<HeartBeatInfo> heartbeatInfo;
+  private final RequestLimiter requestLimiter;
 
   public FirebaseInstallationServiceClient(
       @NonNull Context context,
@@ -112,6 +115,7 @@ public class FirebaseInstallationServiceClient {
     this.context = context;
     this.userAgentPublisher = publisher;
     this.heartbeatInfo = heartbeatInfo;
+    this.requestLimiter = new RequestLimiter(Utils.getInstance());
   }
 
   /**
@@ -143,7 +147,7 @@ public class FirebaseInstallationServiceClient {
     String resourceName = String.format(CREATE_REQUEST_RESOURCE_NAME_FORMAT, projectID);
     int retryCount = 0;
     URL url = getFullyQualifiedRequestUri(resourceName);
-    while (retryCount <= MAX_RETRIES) {
+    while (requestLimiter.isRequestAllowed() || shouldServerErrorRetry) {
       HttpURLConnection httpURLConnection = openHttpURLConnection(url, apiKey);
 
       try {
@@ -158,6 +162,7 @@ public class FirebaseInstallationServiceClient {
         writeFIDCreateRequestBodyToOutputStream(httpURLConnection, fid, appId);
 
         int httpResponseCode = httpURLConnection.getResponseCode();
+        requestLimiter.setNextRequestTime(httpResponseCode);
 
         if (httpResponseCode == 200) {
           return readCreateResponse(httpURLConnection);
@@ -165,8 +170,9 @@ public class FirebaseInstallationServiceClient {
 
         logFisCommunicationError(httpURLConnection, appId, apiKey, projectID);
 
-        if (httpResponseCode == 429 || (httpResponseCode >= 500 && httpResponseCode < 600)) {
+        if (httpResponseCode >= 500 && httpResponseCode < 600) {
           retryCount++;
+          shouldServerErrorRetry = retryCount <= MAX_RETRIES;
           continue;
         }
 
@@ -367,7 +373,7 @@ public class FirebaseInstallationServiceClient {
         String.format(GENERATE_AUTH_TOKEN_REQUEST_RESOURCE_NAME_FORMAT, projectID, fid);
     int retryCount = 0;
     URL url = getFullyQualifiedRequestUri(resourceName);
-    while (retryCount <= MAX_RETRIES) {
+    while (requestLimiter.isRequestAllowed() || shouldServerErrorRetry) {
       HttpURLConnection httpURLConnection = openHttpURLConnection(url, apiKey);
       try {
         httpURLConnection.setRequestMethod("POST");
@@ -377,6 +383,7 @@ public class FirebaseInstallationServiceClient {
         writeGenerateAuthTokenRequestBodyToOutputStream(httpURLConnection);
 
         int httpResponseCode = httpURLConnection.getResponseCode();
+        requestLimiter.setNextRequestTime(httpResponseCode);
 
         if (httpResponseCode == 200) {
           return readGenerateAuthTokenResponse(httpURLConnection);
@@ -388,8 +395,9 @@ public class FirebaseInstallationServiceClient {
           return TokenResult.builder().setResponseCode(TokenResult.ResponseCode.AUTH_ERROR).build();
         }
 
-        if (httpResponseCode == 429 || (httpResponseCode >= 500 && httpResponseCode < 600)) {
+        if (httpResponseCode >= 500 && httpResponseCode < 600) {
           retryCount++;
+          shouldServerErrorRetry = retryCount <= MAX_RETRIES;
           continue;
         }
 

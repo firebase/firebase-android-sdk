@@ -30,6 +30,16 @@ public final class Utils {
   public static final long AUTH_TOKEN_EXPIRATION_BUFFER_IN_SECS = TimeUnit.HOURS.toSeconds(1);
   private static final String APP_ID_IDENTIFICATION_SUBSTRING = ":";
   private static final Pattern API_KEY_FORMAT = Pattern.compile("\\AA[\\w-]{38}\\z");
+  private static Utils utils;
+
+  private Utils() {}
+
+  public static Utils getInstance() {
+    if (utils == null) {
+      utils = new Utils();
+    }
+    return utils;
+  }
 
   /**
    * Checks if the FIS Auth token is expired or going to expire in next 1 hour {@link

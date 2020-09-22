@@ -150,7 +150,7 @@ public class FirebaseInstallationsTest {
     persistedInstallation = new PersistedInstallation(firebaseApp);
     persistedInstallation.clearForTesting();
 
-    utils = new Utils();
+    utils = Utils.getInstance();
     firebaseInstallations =
         new FirebaseInstallations(
             executor,
