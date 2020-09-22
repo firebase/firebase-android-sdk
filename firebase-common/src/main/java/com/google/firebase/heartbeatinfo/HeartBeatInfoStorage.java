@@ -34,7 +34,7 @@ class HeartBeatInfoStorage {
   private static HeartBeatInfoStorage instance = null;
   private static final String GLOBAL = "fire-global";
 
-  private static final String preferencesName = "FirebaseAppHeartBeat";
+  private static final String PREFERENCES_NAME = "FirebaseAppHeartBeat";
 
   // As soon as you hit the limit of heartbeats. The number of stored heartbeats is halved.
   private static final int HEART_BEAT_COUNT_LIMIT = 200;
@@ -42,7 +42,7 @@ class HeartBeatInfoStorage {
   private static final SimpleDateFormat FORMATTER = new SimpleDateFormat("dd/MM/yyyy z");
 
   // Stores a key value mapping from timestamp to the sdkName and heartBeat code.
-  private static final String storagePreferencesName = "FirebaseAppHeartBeatStorage";
+  private static final String STORAGE_PREFERENCES_NAME = "FirebaseAppHeartBeatStorage";
 
   private final SharedPreferences sharedPreferences;
   private final SharedPreferences heartBeatSharedPreferences;
@@ -50,9 +50,9 @@ class HeartBeatInfoStorage {
 
   private HeartBeatInfoStorage(Context applicationContext) {
     this.sharedPreferences =
-        applicationContext.getSharedPreferences(preferencesName, Context.MODE_PRIVATE);
+        applicationContext.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
     this.heartBeatSharedPreferences =
-        applicationContext.getSharedPreferences(preferencesName, Context.MODE_PRIVATE);
+        applicationContext.getSharedPreferences(STORAGE_PREFERENCES_NAME, Context.MODE_PRIVATE);
     this.heartBeatCount = 0;
   }
 
