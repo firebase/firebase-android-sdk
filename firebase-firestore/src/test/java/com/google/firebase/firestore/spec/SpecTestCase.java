@@ -213,6 +213,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
       Collections.synchronizedList(new ArrayList<>());
   private final List<DocumentKey> rejectedDocs = Collections.synchronizedList(new ArrayList<>());
   private List<EventListener<Void>> snapshotsInSyncListeners;
+  private int waitForPendingWriteEvents = 0;
   private int snapshotsInSyncEvents = 0;
 
   /** An executor to use for test callbacks. */
@@ -534,6 +535,14 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     doMutation(deleteMutation(key));
   }
 
+  private void doWaitForPendingWrites() {
+    final TaskCompletionSource<Void> source = new TaskCompletionSource<>();
+    source
+        .getTask()
+        .addOnSuccessListener(backgroundExecutor, result -> waitForPendingWriteEvents += 1);
+    syncEngine.registerPendingWritesTask(source);
+  }
+
   private void doAddSnapshotsInSyncListener() {
     EventListener<Void> eventListener =
         (Void v, FirebaseFirestoreException error) -> snapshotsInSyncEvents += 1;
@@ -813,6 +822,8 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
       doWriteAck(step.getJSONObject("writeAck"));
     } else if (step.has("failWrite")) {
       doFailWrite(step.getJSONObject("failWrite"));
+    } else if (step.has("waitForPendingWrites")) {
+      doWaitForPendingWrites();
     } else if (step.has("runTimer")) {
       doRunTimer(step.getString("runTimer"));
     } else if (step.has("enableNetwork")) {
@@ -986,6 +997,11 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     snapshotsInSyncEvents = 0;
   }
 
+  private void validateWaitForPendingWritesEvents(int expectedCount) {
+    assertEquals(expectedCount, waitForPendingWriteEvents);
+    waitForPendingWriteEvents = 0;
+  }
+
   private void validateUserCallbacks(@Nullable JSONObject expected) throws JSONException {
     if (expected != null && expected.has("userCallbacks")) {
       JSONObject userCallbacks = expected.getJSONObject("userCallbacks");
@@ -1116,6 +1132,8 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
         step.remove("expectedState");
         int expectedSnapshotsInSyncEvents = step.optInt("expectedSnapshotsInSyncEvents");
         step.remove("expectedSnapshotsInSyncEvents");
+        int expectedWaitForPendingWritesEvents = step.optInt("expectedWaitForPendingWritesEvents");
+        step.remove("expectedWaitForPendingWritesEvents");
 
         log("    Doing step " + step);
         doStep(step);
@@ -1133,6 +1151,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
         }
         validateExpectedState(expectedState);
         validateSnapshotsInSyncEvents(expectedSnapshotsInSyncEvents);
+        validateWaitForPendingWritesEvents(expectedWaitForPendingWritesEvents);
         events.clear();
         acknowledgedDocs.clear();
         rejectedDocs.clear();
