@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit;
 class RequestLimiter {
   private static final long MAXIMUM_BACKOFF_DURATION_FOR_CONFIGURATION_ERRORS =
       TimeUnit.HOURS.toMillis(24);
-  private static final long MAXIMUM_BACKOFF_INTERVAL_FOR_SERVER_ERRORS =
+  private static final long MAXIMUM_BACKOFF_DURATION_FOR_SERVER_ERRORS =
       TimeUnit.MINUTES.toMillis(30);
   private final Utils utils;
 
@@ -68,7 +68,7 @@ class RequestLimiter {
     return (long)
         Math.min(
             Math.pow(2, attemptCount) + utils.getRandomMillis(),
-            MAXIMUM_BACKOFF_INTERVAL_FOR_SERVER_ERRORS);
+            MAXIMUM_BACKOFF_DURATION_FOR_SERVER_ERRORS);
   }
 
   // Response codes classified as retryable for FIS API. 5xx: Server errors and 429:
