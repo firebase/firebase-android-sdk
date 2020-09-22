@@ -19,6 +19,8 @@
 #include <android/configuration.h>
 #include <android/sensor.h>
 
+#include <jni.h>
+
 namespace google { namespace crashlytics { namespace handler { namespace detail {
 
 struct context {
@@ -27,6 +29,9 @@ struct context {
     AAssetManager*     asset_manager;
     ASensorManager*    sensor_manager;
     AConfiguration*    configuration;
+    JNIEnv*            env;
+    const char*        classpath;
+    const char*        lib_path;
 };
 
 }}}}

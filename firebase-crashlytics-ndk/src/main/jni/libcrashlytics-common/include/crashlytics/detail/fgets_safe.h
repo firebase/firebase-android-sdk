@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef __CRASHLYTICS_HANDLER_DETAIL_FGETS_SAFE_H__
-#define __CRASHLYTICS_HANDLER_DETAIL_FGETS_SAFE_H__
+#ifndef __CRASHLYTICS_DETAIL_FGETS_SAFE_H__
+#define __CRASHLYTICS_DETAIL_FGETS_SAFE_H__
 
 #include <algorithm>
 #include <cstring>
@@ -22,9 +22,9 @@
 #include <sys/types.h>
 
 #include "crashlytics/config.h"
-#include "crashlytics/handler/detail/recover_from_interrupt.h"
+#include "crashlytics/detail/recover_from_interrupt.h"
 
-namespace google { namespace crashlytics { namespace handler { namespace detail {
+namespace google { namespace crashlytics { namespace detail {
 
 inline std::size_t find_line_break(const char* line) __attribute__((always_inline));
 inline std::size_t find_line_break(const char* line)
@@ -89,6 +89,6 @@ inline ssize_t read(int fd, char (&buffer)[N])
     );
 }
 
-}}}}
+}}} // namespace google::crashlytics::detail
 
-#endif // __CRASHLYTICS_HANDLER_DETAIL_FGETS_SAGE_H__
+#endif // __CRASHLYTICS_DETAIL_FGETS_SAFE_H__

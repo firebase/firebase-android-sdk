@@ -22,8 +22,9 @@
 //  the purpose of being able to dynamically link with host JNI libraries.
 #define CRASHLYTICS_INCLUDE_JNI_ENTRY
 
+#include <system/log.h>
+
 #if defined (CRASHLYTICS_DEBUG)
-#    include <system/log.h>
 #    define DEBUG_OUT(...) LOGD(__VA_ARGS__)
 #    define DEBUG_OUT_IF(cond, ...) { if ((cond)) { DEBUG_OUT(__VA_ARGS__); } }
 #else

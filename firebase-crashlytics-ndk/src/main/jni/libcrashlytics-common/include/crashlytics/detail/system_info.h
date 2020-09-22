@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef __CRASHLYTICS_HANDLER_DETAIL_UNWIND_HELPERS_H__
-#define __CRASHLYTICS_HANDLER_DETAIL_UNWIND_HELPERS_H__
+#ifndef __CRASHLYTICS_DETAIL_SYSTEM_INFO_H__
+#define __CRASHLYTICS_DETAIL_SYSTEM_INFO_H__
 
 #include <tuple>
 #include <dirent.h>
@@ -22,13 +22,11 @@
 #include <sys/statfs.h>
 
 #include "crashlytics/config.h"
-#include "crashlytics/handler/detail/fgets_safe.h"
-#include "crashlytics/handler/detail/managed_node_open.h"
+#include "crashlytics/detail/fgets_safe.h"
+#include "crashlytics/detail/managed_node_open.h"
 #include "crashlytics/detail/lexical_cast.h"
 
-namespace google { namespace crashlytics { namespace handler { namespace detail {
-
-constexpr std::size_t default_maps_buffer_size() { return 1024u; } // 1KB
+namespace google { namespace crashlytics { namespace detail {
 
 template<typename T>
 inline std::size_t extract(const char* entry, T& n)
@@ -37,48 +35,6 @@ inline std::size_t extract(const char* entry, T& n)
     // The assumption here is that strtol is async safe. If, at some point,
     // we determine otherwise, it should be trivial to write this ourselves.
     return (n = std::strtol(entry, &end, 10)) != 0;
-}
-
-template<typename Entry>
-inline void hydrate_maps_entry(Entry& entry)
-{
-    char address[8 + 1];
-
-    const char* s = entry.line;
-    const char* e = std::strchr(entry.line, '-');
-
-    if (e == NULL || std::distance(s, e) != 8) {
-        return;
-    }
-
-    std::memset(address, 0, sizeof address);
-    std::memcpy(address, s, std::distance(s, e));
-
-    entry.start = strtoull(address, NULL, 16);
-
-    s = e + 1;
-    e = std::strchr(s, ' ');
-
-    if (e == NULL || std::distance(s, e) != 8) {
-        return;
-    }
-
-    std::memset(address, 0, sizeof address);
-    std::memcpy(address, s, std::distance(s, e));
-
-    entry.end = strtoull(address, NULL, 16);
-    entry.name = std::strchr(e + 1, '/');
-    entry.name = entry.name == NULL ? std::strchr(e + 1, '[') : entry.name;
-}
-
-template<typename Function>
-inline void read_maps_list(int fd, Function func)
-{
-    char buffer[default_maps_buffer_size()] = { 0 };
-
-    while (read(fd, buffer) > 0) {
-        func(buffer, sizeof buffer);
-    }
 }
 
 inline std::size_t read_battery_capacity(int fd)
@@ -145,16 +101,6 @@ inline std::pair<uint64_t, uint64_t> memory_statistics_from_proc(int fd)
     );
 }
 
-//! Gets the list of maps via the /proc/<pid>/maps file.
-template<typename Function>
-inline void maps_entries(pid_t pid, Function func)
-{
-    filesystem::managed_node_file managed("/proc/", pid, "/maps");
-    if (managed) {
-        read_maps_list(managed.fd(), func);
-    }
-}
-
 //! Returns { total-physical-memory, available-physical-memory }
 inline std::pair<uint64_t, uint64_t> memory_statistics()
 {
@@ -183,6 +129,6 @@ inline std::size_t battery_capacity()
     return managed ? read_battery_capacity(managed.fd()) : 0u;
 }
 
-}}}}
+}}} // namespace google::crashlytics::detail
 
-#endif // __CRASHLYTICS_HANDLER_DETAIL_UNWIND_HELPERS_H__
+#endif // __CRASHLYTICS_DETAIL_SYSTEM_INFO_H__

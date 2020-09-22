@@ -87,6 +87,6 @@ inline typename std::enable_if<std::is_integral<T>::value, T>::type lexical_cast
     return integral_converter<sizeof (T)>::convert(p);
 }
 
-}}}
+}}} // namespace google::crashlytics::detail
 
 #endif // __CRASHLYTICS_DETAIL_LEXICAL_CAST_H__

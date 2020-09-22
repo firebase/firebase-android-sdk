@@ -12,10 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef __CRASHLYTICS_VERSION_H__
-#define __CRASHLYTICS_VERSION_H__
+#ifndef __CRASHLYTICS_CRASHPAD_HANDLER_MAIN_H__
+#define __CRASHLYTICS_CRASHPAD_HANDLER_MAIN_H__
 
-//! Authoritative libcrashlytics version string.
-#define VERSION "2.0.5"
+extern "C" {
 
-#endif // __CRASHLYTICS_VERSION_H__
+jint JNI_OnLoad(JavaVM* vm, void* reserved);
+jint JNI_Init(JNIEnv* env, jobject obj, jobjectArray file);
+int  CrashpadHandlerMain(int argc, char* argv[]);
+
+}
+
+#endif // __CRASHLYTICS_CRASHPAD_HANDLER_MAIN_H__

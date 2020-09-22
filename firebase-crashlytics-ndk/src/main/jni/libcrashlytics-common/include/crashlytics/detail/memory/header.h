@@ -62,6 +62,6 @@ inline void* unmarked(void* marked)
     return reinterpret_cast<char *>(marked) - sizeof (header);
 }
 
-}}}}}
+}}}}} // namespace google::crashlytics::detail::memory::detail
 
 #endif // __CRASHLYTICS_DETAIL_MEMORY_HEADER_H__

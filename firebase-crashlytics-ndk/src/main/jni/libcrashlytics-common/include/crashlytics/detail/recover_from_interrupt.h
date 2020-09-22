@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef __CRASHLYTICS_HANDLER_DETAIL_RECOVER_FROM_INTERRUPT_H__
-#define __CRASHLYTICS_HANDLER_DETAIL_RECOVER_FROM_INTERRUPT_H__
+#ifndef __CRASHLYTICS_DETAIL_RECOVER_FROM_INTERRUPT_H__
+#define __CRASHLYTICS_DETAIL_RECOVER_FROM_INTERRUPT_H__
 
 #include <cerrno>
 
-namespace google { namespace crashlytics { namespace handler { namespace detail {
+namespace google { namespace crashlytics { namespace detail {
 
 //! Wrap system calls to ensure they are restarted if interrupted by a signal.
 #define RECOVER_FROM_INTERRUPT(f)                                   \
@@ -28,6 +28,6 @@ namespace google { namespace crashlytics { namespace handler { namespace detail 
         return result;                                              \
     }()
 
-}}}}
+}}} // namespace google::crashlytics::detail
 
-#endif // __CRASHLYTICS_HANDLER_DETAIL_RECOVER_FROM_INTERRUPT
+#endif // __CRASHLYTICS_DETAIL_RECOVER_FROM_INTERRUPT

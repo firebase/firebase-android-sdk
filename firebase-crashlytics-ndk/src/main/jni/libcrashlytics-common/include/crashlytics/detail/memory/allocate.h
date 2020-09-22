@@ -27,7 +27,7 @@
 
 namespace google { namespace crashlytics { namespace detail { namespace memory {
 
-      //! Since the handler is serial, we can reuse already allocated static duration storage.
+//! Since the handler is serial, we can reuse already allocated static duration storage.
 template<typename T>
 inline void* make_function_scoped_static_byte_array()
 {
@@ -91,6 +91,6 @@ inline void release_storage(T* storage)
     }
 }
 
-}}}}
+}}}} // namespace google::crashlytics::detail::memory
 
 #endif // __CRASHLYTICS_DETAIL_MEMORY_ALLOCATE_H__

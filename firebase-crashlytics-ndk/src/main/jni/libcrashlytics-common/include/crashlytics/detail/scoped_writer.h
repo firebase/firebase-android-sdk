@@ -16,6 +16,7 @@
 #define __CRASHLYTICS_DETAIL_SCOPED_WRITER_H__
 
 #include <cstdint>
+#include <cstddef>
 
 namespace google { namespace crashlytics { namespace detail {
 namespace impl {
@@ -58,7 +59,7 @@ private:
 
 int open(const char* filename);
 
-}}}
+}}} // namespace google::crashlytics::detail
 
 //! implementation
 
@@ -92,7 +93,6 @@ inline void google::crashlytics::detail::scoped_writer::write(const char* key, T
         break;
     }
 }
-
 
 template<typename Iterator, typename Func>
 inline void google::crashlytics::detail::scoped_writer::write_array(const char* key, Iterator first, Iterator last, Func func, Delimiter delimiter)

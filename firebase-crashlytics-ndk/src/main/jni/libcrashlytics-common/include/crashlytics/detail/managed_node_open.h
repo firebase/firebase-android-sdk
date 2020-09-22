@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef __CRASHLYTICS_HANDLER_DETAIL_MANAGED_NODE_OPEN_H__
-#define __CRASHLYTICS_HANDLER_DETAIL_MANAGED_NODE_OPEN_H__
+#ifndef __CRASHLYTICS_DETAIL_MANAGED_NODE_OPEN_H__
+#define __CRASHLYTICS_DETAIL_MANAGED_NODE_OPEN_H__
 
 #include <algorithm>
 #include <memory>
@@ -25,14 +25,14 @@
 #include <fcntl.h>
 
 #include "crashlytics/config.h"
-#include "crashlytics/handler/detail/recover_from_interrupt.h"
+#include "crashlytics/detail/recover_from_interrupt.h"
 #include "crashlytics/detail/lexical_cast.h"
 
 //! Provides a way to build buffers to the /proc pseudo-filesystem. Specifically,
 //  we need to have an async-safe way of generating paths that will be passed in
 //  to ::open() or ::opendir_r().
 
-namespace google { namespace crashlytics { namespace handler { namespace detail {
+namespace google { namespace crashlytics { namespace detail {
 
 //! max number of digits in PID_MAX (2^22)
 constexpr std::size_t max_digits_in_pid_t() { return 7; }
@@ -135,12 +135,12 @@ private:
 
 } // namespace filesystem
 
-}}}}
+}}} // namespace google::crashlytics::detail
 
 //! implementation
 
 template<std::size_t R, std::size_t N>
-inline google::crashlytics::handler::detail::filesystem::managed_node_file::managed_node_file(const char (&root)[R], pid_t pid, const char (&node)[N])
+inline google::crashlytics::detail::filesystem::managed_node_file::managed_node_file(const char (&root)[R], pid_t pid, const char (&node)[N])
     : fd_(-1)
 {
     auto open_for_read = [](const char* filename) {
@@ -153,7 +153,7 @@ inline google::crashlytics::handler::detail::filesystem::managed_node_file::mana
 }
 
 template<std::size_t R, std::size_t M, std::size_t N>
-inline google::crashlytics::handler::detail::filesystem::managed_node_file::managed_node_file(const char (&root)[R], pid_t pid, const char (&node)[M], pid_t tid, const char (&subnode)[N])
+inline google::crashlytics::detail::filesystem::managed_node_file::managed_node_file(const char (&root)[R], pid_t pid, const char (&node)[M], pid_t tid, const char (&subnode)[N])
     : fd_(-1)
 {
     auto open_for_read = [](const char* filename) {
@@ -166,7 +166,7 @@ inline google::crashlytics::handler::detail::filesystem::managed_node_file::mana
 }
 
 template<std::size_t M>
-inline google::crashlytics::handler::detail::filesystem::managed_node_file::managed_node_file(const char (&path)[M])
+inline google::crashlytics::detail::filesystem::managed_node_file::managed_node_file(const char (&path)[M])
     : fd_(-1)
 {
     if ((fd_ = RECOVER_FROM_INTERRUPT(::open(path, O_RDONLY))) == -1) {
@@ -174,41 +174,41 @@ inline google::crashlytics::handler::detail::filesystem::managed_node_file::mana
     }
 }
 
-inline google::crashlytics::handler::detail::filesystem::managed_node_file::~managed_node_file()
+inline google::crashlytics::detail::filesystem::managed_node_file::~managed_node_file()
 {
     if (fd_ != -1 && ::close(fd_) == -1) {
         DEBUG_OUT("::close returned -1 for fd %d, (%d) %s", fd_, errno, strerror(errno));
     }
 }
 
-inline int google::crashlytics::handler::detail::filesystem::managed_node_file::fd() const
+inline int google::crashlytics::detail::filesystem::managed_node_file::fd() const
 {
     return fd_;
 }
 
-inline google::crashlytics::handler::detail::filesystem::managed_node_file::operator bool() const
+inline google::crashlytics::detail::filesystem::managed_node_file::operator bool() const
 {
     return fd_ != -1;
 }
 
 template<std::size_t R, std::size_t N>
-inline google::crashlytics::handler::detail::filesystem::managed_node_dir::managed_node_dir(const char (&root)[R], pid_t pid, const char (&node)[N])
+inline google::crashlytics::detail::filesystem::managed_node_dir::managed_node_dir(const char (&root)[R], pid_t pid, const char (&node)[N])
     : dir_(apply_to(root, pid, node, ::opendir), ::closedir)
 {
 }
 
-inline google::crashlytics::handler::detail::filesystem::managed_node_dir::~managed_node_dir()
+inline google::crashlytics::detail::filesystem::managed_node_dir::~managed_node_dir()
 {
 }
 
-inline DIR* google::crashlytics::handler::detail::filesystem::managed_node_dir::dir() const
+inline DIR* google::crashlytics::detail::filesystem::managed_node_dir::dir() const
 {
     return dir_.get();
 }
 
-inline google::crashlytics::handler::detail::filesystem::managed_node_dir::operator bool() const
+inline google::crashlytics::detail::filesystem::managed_node_dir::operator bool() const
 {
     return !!dir_;
 }
 
-#endif // __CRASHLYTICS_HANDLER_DETAIL_MANAGED_NODE_OPEN_H__
+#endif // __CRASHLYTICS_DETAIL_MANAGED_NODE_OPEN_H__

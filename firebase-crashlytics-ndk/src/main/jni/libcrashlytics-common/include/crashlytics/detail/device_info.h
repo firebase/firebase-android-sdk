@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef __CRASHLYTICS_HANDLER_DEVICE_INFO_H__
-#define __CRASHLYTICS_HANDLER_DEVICE_INFO_H__
+#ifndef __CRASHLYTICS_DEVICE_INFO_H__
+#define __CRASHLYTICS_DEVICE_INFO_H__
 
-#include "crashlytics/handler/detail/context.h"
+#include <sys/types.h>
 
-namespace google { namespace crashlytics { namespace handler {
+namespace google { namespace crashlytics {
 
-void write_device_info(const detail::context& handler_context, int fd);
-void write_binary_libs(const detail::context& handler_context, int fd);
+void write_device_info(int fd);
+void write_binary_libs(pid_t pid, int fd);
 
-}}}
+}} // namespace google::crashlytics
 
-#endif // __CRASHLYTICS_HANDLER_DEVICE_INFO_H__
+#endif // __CRASHLYTICS_DEVICE_INFO_H__

@@ -80,7 +80,7 @@ private:
     std::size_t page_offset_;
 };
 
-}}}}
+}}}} // namespace google::crashlytics::detail::memory
 
 //! Implementation
 

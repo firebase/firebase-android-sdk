@@ -1,0 +1,91 @@
+#include <jni.h>
+#include <unistd.h>
+#include <cerrno>
+
+#include <string>
+
+#include "handler/handler_main.h"
+
+#include "crashlytics/config.h"
+#include "crashlytics/detail/supplementary_file.h"
+#include "crashlytics/handler/detail/context.h"
+#include "crashlytics/crashpad_handler_main.h"
+
+namespace google { namespace crashlytics { namespace jni {
+
+const JNINativeMethod methods[] = {
+    { "crashpadMain", "([Ljava/lang/String;)V", reinterpret_cast<void *>(JNI_Init) }
+};
+
+JNIEnv* get_environment(JavaVM* jvm)
+{
+    JNIEnv* env;
+
+    switch (jvm->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6)) {
+    case JNI_EDETACHED:
+        LOGE("Failed to get the JVM environment; EDETACHED");
+        break;
+    case JNI_EVERSION:
+        LOGE("Failed to get the JVM environment; EVERSION");
+        break;
+    case JNI_OK:
+        return env;
+    }
+
+    return nullptr;
+}
+
+jclass find_class(JNIEnv* env, const char* path)
+{
+    return env->FindClass(path);
+}
+
+bool register_natives(const jclass& crashlytics_class, JNIEnv* env, const JNINativeMethod* methods, std::size_t methods_length)
+{
+    return env->RegisterNatives(crashlytics_class, methods, methods_length) == 0;
+}
+
+constexpr const char* ndk_path()
+{
+    return "com/google/firebase/crashlytics/ndk/CrashpadMain";
+}
+
+bool register_natives(JavaVM* jvm)
+{
+    if (JNIEnv* env = get_environment(jvm)) {
+        if (jclass crashlytics_class = find_class(env, ndk_path())) {
+            return register_natives(crashlytics_class, env, methods, sizeof methods / sizeof (methods[0]));
+        }
+    }
+
+    DEBUG_OUT("Couldn't find %s and its necessary methods", ndk_path());
+    return false;
+}
+
+}}} // namespace google::crashlytics::jni
+
+jint JNI_OnLoad(JavaVM* vm, void* reserved)
+{
+    return google::crashlytics::jni::register_natives(vm) ? JNI_VERSION_1_6 : -1;
+}
+
+jint JNI_Init(JNIEnv* env, jobject obj, jobjectArray pathsArray)
+{
+    std::vector<char *> argv;
+
+    jsize incoming_length = env->GetArrayLength(pathsArray);
+    for (auto i = 0; i < incoming_length; ++i) {
+      jstring element =
+        static_cast<jstring>(env->GetObjectArrayElement(pathsArray, i));
+      argv.push_back(const_cast<char *>(env->GetStringUTFChars(element, 0)));
+    }
+
+    return crashpad::CrashpadHandlerMain(argv.size(), argv.data());
+}
+
+#include "crashlytics/crashpad_handler_main_impl.inc"
+
+int main(int argc, char* argv[])
+{
+  return crashpad::CrashpadHandlerMain(argc, argv);
+}
