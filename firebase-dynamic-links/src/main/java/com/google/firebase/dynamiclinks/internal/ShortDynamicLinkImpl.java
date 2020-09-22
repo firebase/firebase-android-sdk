@@ -97,10 +97,5 @@ public final class ShortDynamicLinkImpl extends AbstractSafeParcelable implement
     public void writeToParcel(Parcel dest, int flags) {
       WarningImplCreator.writeToParcel(this, dest, flags);
     }
-
-    @Override
-    public String toString() {
-      return message;
-    }
   }
 }
