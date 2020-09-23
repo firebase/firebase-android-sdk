@@ -517,7 +517,7 @@ public class FirebaseInstallationsTest {
   }
 
   @Test
-  public void testGetId_expiredAuthTokenUncheckedException_statusUpdated() throws Exception {
+  public void testGetId_expiredAuthTokenThrowsException_statusUpdated() throws Exception {
     // Start with a registered FID
     persistedInstallation.insertOrUpdatePersistedInstallationEntry(
         PersistedInstallationEntry.INSTANCE.withRegisteredFid(
@@ -528,11 +528,12 @@ public class FirebaseInstallationsTest {
             TEST_TOKEN_EXPIRATION_TIMESTAMP));
 
     // Move the time forward by the token expiration time.
-    fakeClock.advanceTimeBySeconds(TEST_TOKEN_EXPIRATION_TIMESTAMP);
+    fakeClock.advanceTimeBySeconds(
+        TEST_TOKEN_EXPIRATION_TIMESTAMP - TimeUnit.MINUTES.toSeconds(30));
 
-    // Mocking unchecked exception on FIS generateAuthToken
+    // Mocking an exception on FIS generateAuthToken
     when(mockBackend.generateAuthToken(anyString(), anyString(), anyString(), anyString()))
-        .thenThrow(new IOException());
+        .thenThrow(new FirebaseInstallationsException(Status.UNAVAILABLE));
 
     TestOnCompleteListener<String> onCompleteListener = new TestOnCompleteListener<>();
     Task<String> getIdTask = firebaseInstallations.getId();
@@ -570,7 +571,8 @@ public class FirebaseInstallationsTest {
         .thenReturn(TEST_TOKEN_RESULT);
 
     // Move the time forward by the token expiration time.
-    fakeClock.advanceTimeBySeconds(TEST_TOKEN_EXPIRATION_TIMESTAMP);
+    fakeClock.advanceTimeBySeconds(
+        TEST_TOKEN_EXPIRATION_TIMESTAMP - TimeUnit.MINUTES.toSeconds(30));
 
     // Get the ID, which should cause the SDK to realize that the auth token is expired and
     // kick off a refresh of the token.
@@ -787,7 +789,8 @@ public class FirebaseInstallationsTest {
         .thenReturn(TEST_TOKEN_RESULT);
 
     // expire the authtoken by advancing the clock
-    fakeClock.advanceTimeBySeconds(TEST_TOKEN_EXPIRATION_TIMESTAMP);
+    fakeClock.advanceTimeBySeconds(
+        TEST_TOKEN_EXPIRATION_TIMESTAMP - TimeUnit.MINUTES.toSeconds(30));
 
     // Call getToken multiple times with DO_NOT_FORCE_REFRESH option
     Task<InstallationTokenResult> task1 = firebaseInstallations.getToken(false);

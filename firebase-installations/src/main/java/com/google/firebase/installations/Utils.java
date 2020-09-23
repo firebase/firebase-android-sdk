@@ -33,7 +33,6 @@ public final class Utils {
   private static final Pattern API_KEY_FORMAT = Pattern.compile("\\AA[\\w-]{38}\\z");
   private final Clock clock;
 
-
   Utils(Clock clock) {
     this.clock = clock;
   }
@@ -61,7 +60,7 @@ public final class Utils {
   /** Returns current time in milliseconds. */
   public long currentTimeInMillis() {
     // Mockito doesn't allow to mock static methods. As a result this util method is not static.
-    return clock.now();
+    return clock.millis(); // Returns current time in milliseconds.
   }
 
   static boolean isValidAppIdFormat(@Nullable String appId) {

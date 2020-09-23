@@ -15,11 +15,13 @@
 package com.google.firebase.installations.time;
 
 /**
- * Provides the current value of "now" to allow injecting time as a dependency for testing.
+ * Interface simulating https://developer.android.com/reference/java/time/Clock offered by Android
+ * in API 26. It provides the current value of "now" to allow injecting time as a dependency for
+ * testing.
  *
  * @hide
  */
 public interface Clock {
   /** Returns the current time in milliseconds since EPOCH in UTC. */
-  long now();
+  long millis();
 }

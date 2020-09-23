@@ -14,10 +14,16 @@
 
 package com.google.firebase.installations.time;
 
-/** @hide */
+/**
+ * Implementation that uses System.currentTimeMillis() to implement {@link Clock#millis()}.
+ *
+ * @hide
+ */
 public class SystemClock implements Clock {
   @Override
-  public long now() {
+  public long millis() {
+    // Returns current system time in millis as per
+    // https://docs.oracle.com/javase/7/docs/api/java/lang/System.html#currentTimeMillis().
     return System.currentTimeMillis();
   }
 }
