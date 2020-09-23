@@ -25,6 +25,7 @@ import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event.Application.Execution.Thread.Frame;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.User;
 import com.google.firebase.crashlytics.internal.model.ImmutableList;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.Before;
@@ -40,7 +41,7 @@ public class CrashlyticsReportJsonTransformTest {
   }
 
   @Test
-  public void testReportToJsonAndBack_equals() {
+  public void testReportToJsonAndBack_equals() throws IOException {
     final CrashlyticsReport testReport = makeTestReport();
     final String testReportJson = transform.reportToJson(testReport);
     final CrashlyticsReport reifiedReport = transform.reportFromJson(testReportJson);
@@ -49,7 +50,7 @@ public class CrashlyticsReportJsonTransformTest {
   }
 
   @Test
-  public void testEventToJsonAndBack_equals() {
+  public void testEventToJsonAndBack_equals() throws IOException {
     final CrashlyticsReport.Session.Event testEvent = makeTestEvent();
     final String testEventJson = transform.eventToJson(testEvent);
     final CrashlyticsReport.Session.Event reifiedEvent = transform.eventFromJson(testEventJson);
@@ -73,9 +74,12 @@ public class CrashlyticsReportJsonTransformTest {
     return Session.builder()
         .setGenerator("generator")
         .setIdentifier("identifier")
-        .setStartedAt(0)
+        .setStartedAt(1L)
+        .setEndedAt(1L)
+        .setCrashed(true)
         .setApp(makeTestApplication())
         .setUser(User.builder().setIdentifier("user").build())
+        .setGeneratorType(3)
         .build();
   }
 

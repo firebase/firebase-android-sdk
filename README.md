@@ -8,6 +8,7 @@ dependencies:
   * `firebase-common`
   * `firebase-common-ktx`
   * `firebase-crashlytics`
+  * `firebase-crashlytics-ktx`
   * `firebase-crashlytics-ndk`
   * `firebase-database`
   * `firebase-database-ktx`
@@ -52,9 +53,12 @@ https://firebase.google.com.
 ## Getting Started
 
 * Install the latest Android Studio (should be 3.0.1 or later)
-* Clone the repo (`git clone git@github.com:firebase/firebase-android-sdk.git`)
+* Clone the repo (`git clone --recurse-submodules git@github.com:firebase/firebase-android-sdk.git`)
+    * When cloning the repo, it is important to get the submodules as well. If
+    you have already cloned the repo without the submodules, you can update the
+    submodules by running `git submodule update --init --recursive`.
 * Import the firebase-android-sdk gradle project into Android Studio using the
-  **Import project(Gradle, Eclipse ADT, etc.** option.
+  **Import project(Gradle, Eclipse ADT, etc.)** option.
 
 ## Testing
 
@@ -62,6 +66,12 @@ Firebase Android libraries exercise all three types of tests recommended by the
 [Android Testing Pyramid](https://developer.android.com/training/testing/fundamentals#testing-pyramid).
 Depending on the requirements of the specific project, some or all of these
 tests may be used to support changes.
+
+> :warning: **Running tests with errorprone**
+>
+> To run with errorprone add `withErrorProne` to the command line, e.g.
+>
+> `./gradlew :<firebase-project>:check withErrorProne`.
 
 ### Unit Testing
 

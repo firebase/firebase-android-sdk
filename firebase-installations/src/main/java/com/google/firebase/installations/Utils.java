@@ -15,14 +15,24 @@
 package com.google.firebase.installations;
 
 import android.text.TextUtils;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.firebase.installations.local.PersistedInstallationEntry;
 import com.google.firebase.installations.time.Clock;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
-/** Util methods used for {@link FirebaseInstallations} */
-class Utils {
+/**
+ * Util methods used for {@link FirebaseInstallations}.
+ *
+ * @hide
+ */
+public final class Utils {
   public static final long AUTH_TOKEN_EXPIRATION_BUFFER_IN_SECS = TimeUnit.HOURS.toSeconds(1);
+  private static final String APP_ID_IDENTIFICATION_SUBSTRING = ":";
+  private static final Pattern API_KEY_FORMAT = Pattern.compile("\\AA[\\w-]{38}\\z");
   private final Clock clock;
+
 
   Utils(Clock clock) {
     this.clock = clock;
@@ -31,7 +41,7 @@ class Utils {
    * Checks if the FIS Auth token is expired or going to expire in next 1 hour {@link
    * #AUTH_TOKEN_EXPIRATION_BUFFER_IN_SECS}.
    */
-  public boolean isAuthTokenExpired(PersistedInstallationEntry entry) {
+  public boolean isAuthTokenExpired(@NonNull PersistedInstallationEntry entry) {
     if (TextUtils.isEmpty(entry.getAuthToken())) {
       return true;
     }
@@ -44,6 +54,30 @@ class Utils {
 
   /** Returns current time in seconds. */
   public long currentTimeInSecs() {
-    return TimeUnit.MILLISECONDS.toSeconds(clock.now());
+    // Mockito doesn't allow to mock static methods. As a result this util method is not static.
+    return TimeUnit.MILLISECONDS.toSeconds(currentTimeInMillis());
+  }
+
+  /** Returns current time in milliseconds. */
+  public long currentTimeInMillis() {
+    // Mockito doesn't allow to mock static methods. As a result this util method is not static.
+    return clock.now();
+  }
+
+  static boolean isValidAppIdFormat(@Nullable String appId) {
+    return appId.contains(APP_ID_IDENTIFICATION_SUBSTRING);
+  }
+
+  static boolean isValidApiKeyFormat(@Nullable String apiKey) {
+    return API_KEY_FORMAT.matcher(apiKey).matches();
+  }
+
+  /* Returns a random number of milliseconds less than or equal to 1000. This helps to avoid cases
+   where many clients get synchronized by some situation and all retry at once, sending requests
+   in synchronized waves. The value of random_number_milliseconds is recalculated after each retry
+  request.*/
+  public long getRandomMillis() {
+    // Mockito doesn't allow to mock static methods. As a result this util method is not static.
+    return (long) (Math.random() * 1000);
   }
 }

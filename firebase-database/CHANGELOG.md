@@ -1,3 +1,14 @@
+# Unreleased
+- [changed] The SDK can now infer a default database URL if none is provided in
+  the config.
+- [changed] Added internal HTTP header to the WebChannel connection.
+- [feature] Realtime Database now supports connecting to a local emulator via
+ `FirebaseDatabase#useEmulator()`
+
+# 19.3.0
+- [feature] Added ServerValue.increment() to support atomic field value increments
+  without transactions.
+
 # 19.2.0
 - [changed] Added support for type wildcards in GenericTypeIndicator, expanding
   our custom class serialization to include classes with wildcard generics

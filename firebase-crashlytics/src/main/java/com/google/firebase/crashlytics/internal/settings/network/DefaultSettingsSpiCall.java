@@ -14,10 +14,10 @@
 
 package com.google.firebase.crashlytics.internal.settings.network;
 
-import com.google.firebase.crashlytics.core.CrashlyticsCore;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.common.AbstractSpiCall;
 import com.google.firebase.crashlytics.internal.common.CommonUtils;
+import com.google.firebase.crashlytics.internal.common.CrashlyticsCore;
 import com.google.firebase.crashlytics.internal.network.HttpMethod;
 import com.google.firebase.crashlytics.internal.network.HttpRequest;
 import com.google.firebase.crashlytics.internal.network.HttpRequestFactory;

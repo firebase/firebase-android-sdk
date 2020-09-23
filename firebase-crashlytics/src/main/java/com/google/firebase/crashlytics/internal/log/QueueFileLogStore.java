@@ -16,7 +16,6 @@ package com.google.firebase.crashlytics.internal.log;
 
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.common.CommonUtils;
-import com.google.firebase.crashlytics.internal.common.QueueFile;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;

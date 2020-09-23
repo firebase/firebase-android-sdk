@@ -96,6 +96,7 @@ package com.google.firebase.database {
     method public void setLogLevel(@NonNull com.google.firebase.database.Logger.Level);
     method public void setPersistenceCacheSizeBytes(long);
     method public void setPersistenceEnabled(boolean);
+    method public void useEmulator(@NonNull String, int);
   }
 
   public abstract class GenericTypeIndicator<T> {
@@ -187,6 +188,8 @@ package com.google.firebase.database {
 
   public class ServerValue {
     ctor public ServerValue();
+    method @NonNull public static final Object increment(long);
+    method @NonNull public static final Object increment(double);
     field @NonNull public static final java.util.Map<java.lang.String,java.lang.String> TIMESTAMP;
   }
 

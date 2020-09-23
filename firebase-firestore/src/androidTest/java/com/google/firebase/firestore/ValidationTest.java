@@ -414,23 +414,30 @@ public class ValidationTest {
     CollectionReference collection = testCollection();
     expectError(
         () -> collection.whereGreaterThan("a", null),
-        "Invalid Query. Null supports only equality comparisons (via whereEqualTo()).");
+        "Invalid Query. Null only supports comparisons via "
+            + "whereEqualTo() and whereNotEqualTo().");
     expectError(
         () -> collection.whereArrayContains("a", null),
-        "Invalid Query. Null supports only equality comparisons (via whereEqualTo()).");
+        "Invalid Query. Null only supports comparisons via "
+            + "whereEqualTo() and whereNotEqualTo().");
     expectError(
         () -> collection.whereArrayContainsAny("a", null),
         "Invalid Query. A non-empty array is required for 'array_contains_any' filters.");
     expectError(
         () -> collection.whereIn("a", null),
         "Invalid Query. A non-empty array is required for 'in' filters.");
+    expectError(
+        () -> collection.whereNotIn("a", null),
+        "Invalid Query. A non-empty array is required for 'not_in' filters.");
 
     expectError(
         () -> collection.whereGreaterThan("a", Double.NaN),
-        "Invalid Query. NaN supports only equality comparisons (via whereEqualTo()).");
+        "Invalid Query. NaN only supports comparisons via "
+            + "whereEqualTo() and whereNotEqualTo().");
     expectError(
         () -> collection.whereArrayContains("a", Double.NaN),
-        "Invalid Query. NaN supports only equality comparisons (via whereEqualTo()).");
+        "Invalid Query. NaN only supports comparisons via "
+            + "whereEqualTo() and whereNotEqualTo().");
   }
 
   @Test
@@ -541,8 +548,9 @@ public class ValidationTest {
   public void queriesWithDifferentInequalityFieldsFail() {
     expectError(
         () -> testCollection().whereGreaterThan("x", 32).whereLessThan("y", "cat"),
-        "All where filters other than whereEqualTo() must be on the same field. But you "
-            + "have filters on 'x' and 'y'");
+        "All where filters with an inequality (notEqualTo, notIn, lessThan, "
+            + "lessThanOrEqualTo, greaterThan, or greaterThanOrEqualTo) must be on the "
+            + "same field. But you have filters on 'x' and 'y'");
   }
 
   @Test
@@ -557,6 +565,20 @@ public class ValidationTest {
     expectError(() -> collection.orderBy("y").whereGreaterThan("x", 32), reason);
     expectError(() -> collection.whereGreaterThan("x", 32).orderBy("y").orderBy("x"), reason);
     expectError(() -> collection.orderBy("y").orderBy("x").whereGreaterThan("x", 32), reason);
+    expectError(() -> collection.orderBy("y").orderBy("x").whereNotEqualTo("x", 32), reason);
+  }
+
+  @Test
+  public void queriesWithMultipleNotEqualAndInequalitiesFail() {
+    expectError(
+        () -> testCollection().whereNotEqualTo("x", 32).whereNotEqualTo("x", 33),
+        "Invalid Query. You cannot use more than one '!=' filter.");
+
+    expectError(
+        () -> testCollection().whereNotEqualTo("x", 32).whereGreaterThan("y", 33),
+        "All where filters with an inequality (notEqualTo, notIn, lessThan, "
+            + "lessThanOrEqualTo, greaterThan, or greaterThanOrEqualTo) must be on the "
+            + "same field. But you have filters on 'x' and 'y'");
   }
 
   @Test
@@ -578,6 +600,21 @@ public class ValidationTest {
                 .whereArrayContainsAny("foo", asList(1, 2))
                 .whereArrayContains("foo", 1),
         "Invalid Query. You cannot use 'array_contains' filters with 'array_contains_any' filters.");
+
+    expectError(
+        () -> testCollection().whereNotIn("foo", asList(1, 2)).whereArrayContains("foo", 1),
+        "Invalid Query. You cannot use 'array_contains' filters with 'not_in' filters.");
+  }
+
+  @Test
+  public void queriesWithNotEqualAndNotInFiltersFail() {
+    expectError(
+        () -> testCollection().whereNotIn("foo", asList(1, 2)).whereNotEqualTo("foo", 1),
+        "Invalid Query. You cannot use '!=' filters with 'not_in' filters.");
+
+    expectError(
+        () -> testCollection().whereNotEqualTo("foo", 1).whereNotIn("foo", asList(1, 2)),
+        "Invalid Query. You cannot use 'not_in' filters with '!=' filters.");
   }
 
   @Test
@@ -585,6 +622,12 @@ public class ValidationTest {
     expectError(
         () -> testCollection().whereIn("foo", asList(1, 2)).whereIn("bar", asList(1, 2)),
         "Invalid Query. You cannot use more than one 'in' filter.");
+
+    expectError(
+        () -> testCollection().whereNotIn("foo", asList(1, 2)).whereNotIn("bar", asList(1, 2)),
+        "All where filters with an inequality (notEqualTo, notIn, lessThan, "
+            + "lessThanOrEqualTo, greaterThan, or greaterThanOrEqualTo) must be on the "
+            + "same field. But you have filters on 'foo' and 'bar'");
 
     expectError(
         () ->
@@ -607,6 +650,28 @@ public class ValidationTest {
                 .whereArrayContainsAny("foo", asList(1, 2)),
         "Invalid Query. You cannot use 'array_contains_any' filters with 'in' filters.");
 
+    expectError(
+        () ->
+            testCollection()
+                .whereArrayContainsAny("foo", asList(1, 2))
+                .whereNotIn("bar", asList(1, 2)),
+        "Invalid Query. You cannot use 'not_in' filters with 'array_contains_any' filters.");
+
+    expectError(
+        () ->
+            testCollection()
+                .whereNotIn("bar", asList(1, 2))
+                .whereArrayContainsAny("foo", asList(1, 2)),
+        "Invalid Query. You cannot use 'array_contains_any' filters with 'not_in' filters.");
+
+    expectError(
+        () -> testCollection().whereNotIn("bar", asList(1, 2)).whereIn("foo", asList(1, 2)),
+        "Invalid Query. You cannot use 'in' filters with 'not_in' filters.");
+
+    expectError(
+        () -> testCollection().whereIn("bar", asList(1, 2)).whereNotIn("foo", asList(1, 2)),
+        "Invalid Query. You cannot use 'not_in' filters with 'in' filters.");
+
     // This is redundant with the above tests, but makes sure our validation doesn't get confused.
     expectError(
         () ->
@@ -622,7 +687,23 @@ public class ValidationTest {
                 .whereArrayContains("foo", 1)
                 .whereIn("bar", asList(1, 2))
                 .whereArrayContainsAny("foo", asList(1, 2)),
-        "Invalid Query. You cannot use 'array_contains_any' filters with 'in' filters.");
+        "Invalid Query. You cannot use 'array_contains_any' filters with 'array_contains' filters.");
+
+    expectError(
+        () ->
+            testCollection()
+                .whereNotIn("bar", asList(1, 2))
+                .whereArrayContains("foo", 1)
+                .whereArrayContainsAny("foo", asList(1, 2)),
+        "Invalid Query. You cannot use 'array_contains' filters with 'not_in' filters.");
+
+    expectError(
+        () ->
+            testCollection()
+                .whereArrayContains("foo", 1)
+                .whereIn("foo", asList(1, 2))
+                .whereNotIn("bar", asList(1, 2)),
+        "Invalid Query. You cannot use 'not_in' filters with 'array_contains' filters.");
   }
 
   @Test
@@ -654,6 +735,10 @@ public class ValidationTest {
         "Invalid Query. A non-empty array is required for 'in' filters.");
 
     expectError(
+        () -> testCollection().whereNotIn("bar", asList()),
+        "Invalid Query. A non-empty array is required for 'not_in' filters.");
+
+    expectError(
         () -> testCollection().whereArrayContainsAny("bar", asList()),
         "Invalid Query. A non-empty array is required for 'array_contains_any' filters.");
 
@@ -661,6 +746,11 @@ public class ValidationTest {
         // The 10 element max includes duplicates.
         () -> testCollection().whereIn("bar", asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 9)),
         "Invalid Query. 'in' filters support a maximum of 10 elements in the value array.");
+
+    expectError(
+        // The 10 element max includes duplicates.
+        () -> testCollection().whereNotIn("bar", asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 9)),
+        "Invalid Query. 'not_in' filters support a maximum of 10 elements in the value array.");
 
     expectError(
         // The 10 element max includes duplicates.
@@ -777,16 +867,6 @@ public class ValidationTest {
   /** Performs a write using each write API and makes sure it succeeds. */
   private static void expectWriteSuccess(Object data) {
     expectWriteSuccess(data, /*includeSets=*/ true, /*includeUpdates=*/ true);
-  }
-
-  /** Performs a write using each update API and makes sure it succeeds. */
-  private static void expectUpdateSuccess(Map<String, Object> data) {
-    expectWriteSuccess(data, /*includeSets=*/ false, /*includeUpdates=*/ true);
-  }
-
-  /** Performs a write using each set API and makes sure it succeeds. */
-  private static void expectSetSuccess(Object data) {
-    expectWriteSuccess(data, /*includeSets=*/ true, /*includeUpdates=*/ false);
   }
 
   /**

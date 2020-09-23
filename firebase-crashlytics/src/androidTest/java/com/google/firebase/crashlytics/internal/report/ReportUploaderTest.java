@@ -22,9 +22,10 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
-import com.google.firebase.crashlytics.core.TestNativeReportFilesProvider;
-import com.google.firebase.crashlytics.core.TestReportFilesProvider;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
+import com.google.firebase.crashlytics.internal.common.DataTransportState;
+import com.google.firebase.crashlytics.internal.common.TestNativeReportFilesProvider;
+import com.google.firebase.crashlytics.internal.common.TestReportFilesProvider;
 import com.google.firebase.crashlytics.internal.report.model.CreateReportRequest;
 import com.google.firebase.crashlytics.internal.report.model.Report;
 import com.google.firebase.crashlytics.internal.report.network.CreateReportSpiCall;
@@ -57,7 +58,7 @@ public class ReportUploaderTest extends CrashlyticsTestCase {
         new ReportUploader(
             "testOrganizationId",
             "testGoogleAppId",
-            true,
+            DataTransportState.NONE,
             reportManager,
             mockCall,
             mockHandlingExceptionCheck);
@@ -113,13 +114,12 @@ public class ReportUploaderTest extends CrashlyticsTestCase {
     verifyZeroInteractions(mockCall);
   }
 
-  public void testSendReport_deletesWithoutSendingWhenNotUsingReportsEndpoint() throws Exception {
-    final boolean isUsingReportsEndpoint = false;
+  public void testSendReport_deletesWithoutSendingWhenDataTransportAll() throws Exception {
     reportUploader =
         new ReportUploader(
             "testOrganizationId",
             "testGoogleAppId",
-            isUsingReportsEndpoint,
+            DataTransportState.ALL,
             reportManager,
             mockCall,
             mockHandlingExceptionCheck);
@@ -133,17 +133,16 @@ public class ReportUploaderTest extends CrashlyticsTestCase {
     verifyZeroInteractions(mockCall);
   }
 
-  public void testSendReport_sendsNativeCrashesRegardlessOfEndpointFlag() throws Exception {
+  public void testSendReport_sendsNativeCrashesWhenDataTransportJavaOnly() throws Exception {
     final TestNativeReportFilesProvider nativeReportFilesProvider =
         new TestNativeReportFilesProvider(getContext());
     reportManager = new ReportManager(nativeReportFilesProvider);
 
-    final boolean isUsingReportsEndpoint = false;
     reportUploader =
         new ReportUploader(
             "testOrganizationId",
             "testGoogleAppId",
-            isUsingReportsEndpoint,
+            DataTransportState.JAVA_ONLY,
             reportManager,
             mockCall,
             mockHandlingExceptionCheck);

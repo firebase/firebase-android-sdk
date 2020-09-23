@@ -57,11 +57,27 @@ public abstract class CrashlyticsReport {
     int UNKNOWN = 7;
   }
 
+  public enum Type {
+    INCOMPLETE,
+    JAVA,
+    NATIVE
+  }
+
   private static final Charset UTF_8 = Charset.forName("UTF-8");
 
   @NonNull
   public static Builder builder() {
     return new AutoValue_CrashlyticsReport.Builder();
+  }
+
+  @Ignore
+  public Type getType() {
+    if (getSession() != null) {
+      return Type.JAVA;
+    } else if (getNdkPayload() != null) {
+      return Type.NATIVE;
+    }
+    return Type.INCOMPLETE;
   }
 
   @NonNull
@@ -81,12 +97,11 @@ public abstract class CrashlyticsReport {
   @NonNull
   public abstract String getDisplayVersion();
 
-  @NonNull
+  @Nullable
   public abstract Session getSession();
 
-  // TODO: Add back once NDK data is ready to be serialized
-  // @Nullable
-  // public abstract byte[] getNdkPayload();
+  @Nullable
+  public abstract FilesPayload getNdkPayload();
 
   @NonNull
   protected abstract Builder toBuilder();
@@ -98,6 +113,10 @@ public abstract class CrashlyticsReport {
    */
   @NonNull
   public CrashlyticsReport withEvents(@NonNull ImmutableList<Event> events) {
+    if (getSession() == null) {
+      throw new IllegalStateException("Reports without sessions cannot have events added to them.");
+    }
+
     return toBuilder().setSession(getSession().withEvents(events)).build();
   }
 
@@ -109,18 +128,101 @@ public abstract class CrashlyticsReport {
    */
   @NonNull
   public CrashlyticsReport withOrganizationId(@NonNull String organizationId) {
-    return toBuilder().setSession(getSession().withOrganizationId(organizationId)).build();
+    CrashlyticsReport.Builder builder = toBuilder();
+
+    FilesPayload ndkPayload = getNdkPayload();
+    if (ndkPayload != null) {
+      builder.setNdkPayload(ndkPayload.toBuilder().setOrgId(organizationId).build());
+    }
+
+    Session session = getSession();
+    if (session != null) {
+      builder.setSession(session.withOrganizationId(organizationId));
+    }
+
+    return builder.build();
   }
 
   /**
-   * Augment an existing {@link CrashlyticsReport} with a given user ID.
+   * Augment an existing {@link CrashlyticsReport} with an NdkPayload
    *
-   * @return a new {@link CrashlyticsReport} with its Session.User object containing the given user
-   *     ID.
+   * @return a new {@link CrashlyticsReport} with Ndk data inside of it.
    */
   @NonNull
-  public CrashlyticsReport withUserId(@NonNull String userId) {
-    return toBuilder().setSession(getSession().withUserId(userId)).build();
+  public CrashlyticsReport withNdkPayload(@NonNull FilesPayload filesPayload) {
+    return toBuilder().setSession(null).setNdkPayload(filesPayload).build();
+  }
+
+  /**
+   * Augment an existing {@link CrashlyticsReport} with fields set at session end.
+   *
+   * @param endedAt Session end time, by device clock, in posix seconds since epoch, UTC
+   * @param isCrashed whether the session ended unexpectedly
+   * @param userId the currently set user ID, if any, or null
+   * @return a new {@link CrashlyticsReport} with appropriate fields set
+   */
+  @NonNull
+  public CrashlyticsReport withSessionEndFields(
+      long endedAt, boolean isCrashed, @Nullable String userId) {
+    final Builder builder = toBuilder();
+    if (getSession() != null) {
+      builder.setSession(getSession().withSessionEndFields(endedAt, isCrashed, userId));
+    }
+    return builder.build();
+  }
+
+  @AutoValue
+  public abstract static class FilesPayload {
+
+    @NonNull
+    public static Builder builder() {
+      return new AutoValue_CrashlyticsReport_FilesPayload.Builder();
+    }
+
+    @NonNull
+    public abstract ImmutableList<File> getFiles();
+
+    @Nullable
+    public abstract String getOrgId();
+
+    abstract Builder toBuilder();
+
+    @AutoValue
+    public abstract static class File {
+
+      @NonNull
+      public static Builder builder() {
+        return new AutoValue_CrashlyticsReport_FilesPayload_File.Builder();
+      }
+
+      @NonNull
+      public abstract String getFilename();
+
+      @NonNull
+      public abstract byte[] getContents();
+
+      /** Builder for {@link File}. */
+      @AutoValue.Builder
+      public abstract static class Builder {
+
+        public abstract Builder setFilename(String value);
+
+        public abstract Builder setContents(byte[] value);
+
+        public abstract File build();
+      }
+    }
+
+    /** Builder for {@link FilesPayload}. */
+    @AutoValue.Builder
+    public abstract static class Builder {
+
+      public abstract Builder setFiles(ImmutableList<File> value);
+
+      public abstract Builder setOrgId(String value);
+
+      public abstract FilesPayload build();
+    }
   }
 
   @AutoValue
@@ -157,7 +259,7 @@ public abstract class CrashlyticsReport {
 
     @NonNull
     public static Builder builder() {
-      return new AutoValue_CrashlyticsReport_Session.Builder();
+      return new AutoValue_CrashlyticsReport_Session.Builder().setCrashed(false);
     }
 
     @NonNull
@@ -175,6 +277,11 @@ public abstract class CrashlyticsReport {
 
     public abstract long getStartedAt();
 
+    @Nullable
+    public abstract Long getEndedAt();
+
+    public abstract boolean isCrashed();
+
     @NonNull
     public abstract Application getApp();
 
@@ -190,8 +297,10 @@ public abstract class CrashlyticsReport {
     @Nullable
     public abstract ImmutableList<Event> getEvents();
 
+    public abstract int getGeneratorType();
+
     @NonNull
-    protected abstract Builder toBuilder();
+    public abstract Builder toBuilder();
 
     @NonNull
     Session withEvents(@NonNull ImmutableList<Event> events) {
@@ -205,8 +314,14 @@ public abstract class CrashlyticsReport {
     }
 
     @NonNull
-    Session withUserId(@NonNull String userId) {
-      return toBuilder().setUser(User.builder().setIdentifier(userId).build()).build();
+    Session withSessionEndFields(long timestamp, boolean isCrashed, @Nullable String userId) {
+      final Builder builder = toBuilder();
+      builder.setEndedAt(timestamp);
+      builder.setCrashed(isCrashed);
+      if (userId != null) {
+        builder.setUser(User.builder().setIdentifier(userId).build()).build();
+      }
+      return builder.build();
     }
 
     /** Builder for {@link Session}. */
@@ -228,6 +343,12 @@ public abstract class CrashlyticsReport {
       public abstract Builder setStartedAt(long startedAt);
 
       @NonNull
+      public abstract Builder setEndedAt(@NonNull Long endedAt);
+
+      @NonNull
+      public abstract Builder setCrashed(boolean crashed);
+
+      @NonNull
       public abstract Builder setUser(@NonNull User value);
 
       @NonNull
@@ -241,6 +362,9 @@ public abstract class CrashlyticsReport {
 
       @NonNull
       public abstract Builder setEvents(@NonNull ImmutableList<Event> value);
+
+      @NonNull
+      public abstract Builder setGeneratorType(int generatorType);
 
       @NonNull
       public abstract Session build();
@@ -905,6 +1029,9 @@ public abstract class CrashlyticsReport {
 
     @NonNull
     public abstract Builder setSession(@NonNull Session value);
+
+    @NonNull
+    public abstract Builder setNdkPayload(FilesPayload value);
 
     @NonNull
     public abstract CrashlyticsReport build();

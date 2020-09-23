@@ -1,0 +1,784 @@
+// Copyright 2020 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+package com.google.firebase.messaging;
+
+import static com.google.firebase.messaging.Constants.TAG;
+
+import android.content.Intent;
+import android.net.Uri;
+import android.os.Bundle;
+import android.os.Parcel;
+import android.os.Parcelable;
+import android.text.TextUtils;
+import android.util.Log;
+import androidx.annotation.IntDef;
+import androidx.annotation.IntRange;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.collection.ArrayMap;
+import com.google.android.gms.common.annotation.KeepForSdk;
+import com.google.android.gms.common.internal.ShowFirstParty;
+import com.google.android.gms.common.internal.safeparcel.AbstractSafeParcelable;
+import com.google.android.gms.common.internal.safeparcel.SafeParcelable;
+import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.messaging.Constants.MessageNotificationKeys;
+import com.google.firebase.messaging.Constants.MessagePayloadKeys;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.util.Map;
+
+/**
+ * A remote Firebase Message.
+ *
+ * <p>Messages will be received via {@link
+ * FirebaseMessagingService#onMessageReceived(RemoteMessage)} and can be sent via {@link
+ * FirebaseMessaging#send(RemoteMessage)}.
+ *
+ * <p>Messages may have a {@link Notification} instance if they are received while the application
+ * is in the foreground, otherwise they will be automatically posted to the notification tray.
+ *
+ * <p>Use the {@link Builder} class for building message instances to send via {@link
+ * FirebaseMessaging#send(RemoteMessage)}.
+ */
+@SafeParcelable.Reserved({1 /* version field removed by bot go/versionless-safeparcelable */})
+@SafeParcelable.Class(creator = "RemoteMessageCreator")
+public final class RemoteMessage extends AbstractSafeParcelable {
+
+  /** Priority of the message */
+  @IntDef({PRIORITY_UNKNOWN, PRIORITY_HIGH, PRIORITY_NORMAL})
+  @Retention(RetentionPolicy.SOURCE)
+  public @interface MessagePriority {}
+
+  public static final int PRIORITY_UNKNOWN = 0;
+  public static final int PRIORITY_HIGH = 1;
+  public static final int PRIORITY_NORMAL = 2;
+
+  /** @hide */
+  public static final Parcelable.Creator<RemoteMessage> CREATOR = new RemoteMessageCreator();
+
+  @Field(id = 2)
+  Bundle bundle;
+
+  // Cache of the data that is lazily created in getData()
+  private Map<String, String> data;
+
+  // Cache of the notification object that is lazily created in getNotification()
+  private Notification notification;
+
+  /** @hide */
+  @Constructor
+  public RemoteMessage(@Param(id = 2) Bundle bundle) {
+    this.bundle = bundle;
+  }
+
+  void populateSendMessageIntent(Intent intent) {
+    intent.putExtras(bundle);
+  }
+
+  @Override
+  public void writeToParcel(@NonNull Parcel out, int flags) {
+    RemoteMessageCreator.writeToParcel(this, out, flags);
+  }
+
+  /**
+   * Gets the Sender ID for the sender of this message.
+   *
+   * @return the message Sender ID
+   */
+  @Nullable
+  public String getSenderId() {
+    return bundle.getString(MessagePayloadKeys.SENDER_ID);
+  }
+
+  /**
+   * Get the sender of this message.
+   *
+   * <p>This will be the sender ID or the topic for topic messages.
+   *
+   * @return The message sender
+   */
+  @Nullable
+  public String getFrom() {
+    return bundle.getString(MessagePayloadKeys.FROM);
+  }
+
+  /**
+   * Gets the message destination.
+   *
+   * <ul>
+   *   <li>For upstream messages, this will be of the form {@code SENDER_ID@gcm.googleapis.com}.
+   *   <li>For downstream messages, this will be the Firebase installations ID (FID).
+   * </ul>
+   */
+  @Nullable
+  public String getTo() {
+    return bundle.getString(MessagePayloadKeys.TO);
+  }
+
+  /**
+   * Gets the message payload data.
+   *
+   * @return A map of the message payload.
+   */
+  @NonNull
+  public Map<String, String> getData() {
+    if (data == null) {
+      data = MessagePayloadKeys.extractDeveloperDefinedPayload(bundle);
+    }
+    return data;
+  }
+
+  /** @hide */
+  @ShowFirstParty
+  @Nullable
+  public byte[] getRawData() {
+    return bundle.getByteArray(MessagePayloadKeys.RAW_DATA);
+  }
+
+  /**
+   * Gets the collapse key of the message.
+   *
+   * @return The collapse key
+   */
+  @Nullable
+  public String getCollapseKey() {
+    return bundle.getString(MessagePayloadKeys.COLLAPSE_KEY);
+  }
+
+  /**
+   * Gets the message's ID.
+   *
+   * <p>This will be the message ID set when sending the message or automatically generated by the
+   * server.
+   *
+   * @return The message ID
+   */
+  @Nullable
+  public String getMessageId() {
+    String messageId = bundle.getString(MessagePayloadKeys.MSGID);
+    if (messageId == null) {
+      messageId = bundle.getString(MessagePayloadKeys.MSGID_SERVER);
+    }
+    return messageId;
+  }
+
+  /**
+   * Gets the type of message.
+   *
+   * @return The message type
+   */
+  @Nullable
+  public String getMessageType() {
+    return bundle.getString(MessagePayloadKeys.MESSAGE_TYPE);
+  }
+
+  /**
+   * Gets the time in milliseconds from the Epoch that the message was sent.
+   *
+   * @return The time that the message was sent
+   */
+  public long getSentTime() {
+    Object sentTime = bundle.get(MessagePayloadKeys.SENT_TIME);
+    if (sentTime instanceof Long) {
+      return (long) sentTime;
+    } else if (sentTime instanceof String) {
+      try {
+        return Long.parseLong((String) sentTime);
+      } catch (NumberFormatException e) {
+        Log.w(TAG, "Invalid sent time: " + sentTime);
+        // Fall through to default case
+      }
+    }
+    return 0; // Default if left unset or an error
+  }
+
+  /**
+   * Gets the message time to live (TTL) in seconds.
+   *
+   * @return The message TTL
+   */
+  public int getTtl() {
+    Object ttl = bundle.get(MessagePayloadKeys.TTL);
+    if (ttl instanceof Integer) {
+      return (int) ttl;
+    } else if (ttl instanceof String) {
+      try {
+        return Integer.parseInt((String) ttl);
+      } catch (NumberFormatException e) {
+        Log.w(TAG, "Invalid TTL: " + ttl);
+        // Fall through to default case
+      }
+    }
+    return 0; // Default if unset or an error
+  }
+
+  /**
+   * Gets the original priority of message.
+   *
+   * @return The original message priority
+   */
+  public @MessagePriority int getOriginalPriority() {
+    String originalPriority = bundle.getString(MessagePayloadKeys.ORIGINAL_PRIORITY);
+    if (originalPriority == null) {
+      originalPriority = bundle.getString(MessagePayloadKeys.PRIORITY_V19);
+    }
+    return getMessagePriority(originalPriority);
+  }
+
+  /**
+   * Gets the priority of message as delivered. This may be lower than the priority originally
+   * requested.
+   *
+   * @return The message priority as delivered
+   */
+  public @MessagePriority int getPriority() {
+    String priority = bundle.getString(MessagePayloadKeys.DELIVERED_PRIORITY);
+    if (priority == null) {
+      if ("1".equals(bundle.getString(MessagePayloadKeys.PRIORITY_REDUCED_V19))) {
+        return PRIORITY_NORMAL;
+      }
+      priority = bundle.getString(MessagePayloadKeys.PRIORITY_V19);
+    }
+    return getMessagePriority(priority);
+  }
+
+  /** Change String to MessagePriority */
+  private @MessagePriority int getMessagePriority(String priority) {
+    if ("high".equals(priority)) {
+      return PRIORITY_HIGH;
+    } else if ("normal".equals(priority)) {
+      return PRIORITY_NORMAL;
+    } else {
+      return PRIORITY_UNKNOWN;
+    }
+  }
+
+  /**
+   * Gets the notification data from the message if set.
+   *
+   * <p>This field will be non-null if a notification message is received while the application is
+   * in the foreground.
+   *
+   * @return The message notification or null.
+   */
+  @Nullable
+  public Notification getNotification() {
+    if (notification == null && NotificationParams.isNotification(bundle)) {
+      notification = new Notification(new NotificationParams(bundle));
+    }
+    return notification;
+  }
+
+  /** @hide */
+  @KeepForSdk
+  public Intent toIntent() {
+    Intent intent = new Intent();
+    intent.putExtras(this.bundle);
+    return intent;
+  }
+
+  /** Builder object for constructing {@link RemoteMessage} instances. */
+  public static class Builder {
+    // Keep data separate from the main bundle until build to ensure data doesn't clobber
+    // parameters in the bundle.
+    private final Bundle bundle = new Bundle();
+    private final Map<String, String> data = new ArrayMap<>();
+
+    /**
+     * Sets the destination of the message.
+     *
+     * @param to The destination of the message in the format of {@code
+     *     SENDER_ID@gcm.googleapis.com}. The {@code SENDER_ID} should be one of the sender IDs used
+     *     when calling {@link FirebaseInstanceId#getToken(String, String)}.
+     */
+    public Builder(@NonNull String to) {
+      if (TextUtils.isEmpty(to)) {
+        throw new IllegalArgumentException("Invalid to: " + to);
+      }
+      bundle.putString(MessagePayloadKeys.TO, to);
+    }
+
+    /** Build a RemoteMessage instance. */
+    @NonNull
+    public RemoteMessage build() {
+      Bundle bundle = new Bundle();
+      // Put data first so bundle parameters take priority
+      for (Map.Entry<String, String> entry : data.entrySet()) {
+        bundle.putString(entry.getKey(), entry.getValue());
+      }
+      bundle.putAll(this.bundle);
+      // Remove any from that the client may have set
+      this.bundle.remove(MessagePayloadKeys.FROM);
+      return new RemoteMessage(bundle);
+    }
+
+    /**
+     * Adds a data key value pair to the message.
+     *
+     * <p>An existing value with the same key will be replaced by the new value.
+     */
+    @NonNull
+    public Builder addData(@NonNull String key, @Nullable String value) {
+      data.put(key, value);
+      return this;
+    }
+
+    /**
+     * Sets the message data to the contents of {@code data}.
+     *
+     * <p>Any existing data will be removed.
+     */
+    @NonNull
+    public Builder setData(@NonNull Map<String, String> data) {
+      this.data.clear();
+      this.data.putAll(data);
+      return this;
+    }
+
+    /** @hide */
+    @NonNull
+    public Map<String, String> getData() {
+      return this.data;
+    }
+
+    /** Clears the message data. */
+    @NonNull
+    public Builder clearData() {
+      data.clear();
+      return this;
+    }
+
+    /** @hide */
+    @ShowFirstParty
+    @NonNull
+    public Builder setRawData(byte[] data) {
+      bundle.putByteArray(MessagePayloadKeys.RAW_DATA, data);
+      return this;
+    }
+
+    /**
+     * Sets the messages ID.
+     *
+     * @param messageId ID of the message. This is generated by the application. It must be unique
+     *     for each message. This allows error callbacks and debugging.
+     */
+    @NonNull
+    public Builder setMessageId(@NonNull String messageId) {
+      bundle.putString(MessagePayloadKeys.MSGID, messageId);
+      return this;
+    }
+
+    /** @hide */
+    @NonNull
+    public String getMessageId() {
+      return bundle.getString(MessagePayloadKeys.MSGID, "");
+    }
+
+    /** Sets the type of message. */
+    @NonNull
+    public Builder setMessageType(@Nullable String messageType) {
+      bundle.putString(MessagePayloadKeys.MESSAGE_TYPE, messageType);
+      return this;
+    }
+
+    /** @hide */
+    @Nullable
+    public String getMessageType() {
+      return bundle.getString(MessagePayloadKeys.MESSAGE_TYPE);
+    }
+
+    /**
+     * Sets the message time to live in seconds.
+     *
+     * <p>If 0, the message send will be attempted immediately and will be dropped if the device is
+     * not connected. Otherwise, the message will be queued.
+     */
+    @NonNull
+    public Builder setTtl(@IntRange(from = 0, to = 86400) int ttl) {
+      bundle.putString(MessagePayloadKeys.TTL, String.valueOf(ttl));
+      return this;
+    }
+
+    /** @hide */
+    @IntRange(from = 0, to = 86400)
+    public int getTtl() {
+      return Integer.parseInt(bundle.getString(MessagePayloadKeys.MESSAGE_TYPE, "0"));
+    }
+
+    /**
+     * Sets the collapse key of the message.
+     *
+     * <p>A pending message will be replaced by a new message with the same collapse key if it is
+     * currently unable to be delivered to the recipient.
+     */
+    @NonNull
+    public Builder setCollapseKey(@Nullable String collapseKey) {
+      bundle.putString(MessagePayloadKeys.COLLAPSE_KEY, collapseKey);
+      return this;
+    }
+
+    /** @hide */
+    @Nullable
+    public String getCollapseKey() {
+      return bundle.getString(MessagePayloadKeys.MESSAGE_TYPE);
+    }
+  }
+
+  /**
+   * Remote Firebase notification details.
+   *
+   * <p>This class maps to the fields of a notification message.
+   */
+  public static class Notification {
+
+    private final String title;
+    private final String titleLocKey;
+    // Using an array for args as the android API takes an array
+    private final String[] titleLocArgs;
+    private final String body;
+    private final String bodyLocKey;
+    private final String[] bodyLocArgs;
+    private final String icon;
+    private final String imageUrl;
+    private final String sound;
+    private final String tag;
+    private final String color;
+    private final String clickAction;
+    private final String channelId;
+    private final Uri link;
+    private final String ticker;
+    private final Integer notificationPriority;
+    private final Integer visibility;
+    private final Integer notificationCount;
+    private final int[] lightSettings;
+    private final Long eventTime;
+    private final boolean sticky;
+    private final boolean localOnly;
+    private final boolean defaultSound;
+    private final boolean defaultVibrateTimings;
+    private final boolean defaultLightSettings;
+    private final long[] vibrateTimings;
+
+    private Notification(NotificationParams params) {
+      title = params.getString(MessageNotificationKeys.TITLE);
+      titleLocKey = params.getLocalizationResourceForKey(MessageNotificationKeys.TITLE);
+      titleLocArgs = getLocalizationArgs(params, MessageNotificationKeys.TITLE);
+      body = params.getString(MessageNotificationKeys.BODY);
+      bodyLocKey = params.getLocalizationResourceForKey(MessageNotificationKeys.BODY);
+      bodyLocArgs = getLocalizationArgs(params, MessageNotificationKeys.BODY);
+      icon = params.getString(MessageNotificationKeys.ICON);
+      sound = params.getSoundResourceName();
+      tag = params.getString(MessageNotificationKeys.TAG);
+      color = params.getString(MessageNotificationKeys.COLOR);
+      clickAction = params.getString(MessageNotificationKeys.CLICK_ACTION);
+      channelId = params.getString(MessageNotificationKeys.CHANNEL);
+      link = params.getLink();
+      imageUrl = params.getString(MessageNotificationKeys.IMAGE_URL);
+      ticker = params.getString(MessageNotificationKeys.TICKER);
+      notificationPriority = params.getInteger(MessageNotificationKeys.NOTIFICATION_PRIORITY);
+      visibility = params.getInteger(MessageNotificationKeys.VISIBILITY);
+      notificationCount = params.getInteger(MessageNotificationKeys.NOTIFICATION_COUNT);
+      sticky = params.getBoolean(MessageNotificationKeys.STICKY);
+      localOnly = params.getBoolean(MessageNotificationKeys.LOCAL_ONLY);
+      defaultSound = params.getBoolean(MessageNotificationKeys.DEFAULT_SOUND);
+      defaultVibrateTimings = params.getBoolean(MessageNotificationKeys.DEFAULT_VIBRATE_TIMINGS);
+      defaultLightSettings = params.getBoolean(MessageNotificationKeys.DEFAULT_LIGHT_SETTINGS);
+      eventTime = params.getLong(MessageNotificationKeys.EVENT_TIME);
+      lightSettings = params.getLightSettings();
+      vibrateTimings = params.getVibrateTimings();
+    }
+
+    private static String[] getLocalizationArgs(NotificationParams params, String key) {
+      Object[] args = params.getLocalizationArgsForKey(key);
+      if (args == null) {
+        return null;
+      }
+      String[] stringArgs = new String[args.length];
+      for (int i = 0; i < args.length; i++) {
+        stringArgs[i] = String.valueOf(args[i]);
+      }
+      return stringArgs;
+    }
+
+    /** Gets the title of the notification, or null if not set. */
+    @Nullable
+    public String getTitle() {
+      return title;
+    }
+
+    /**
+     * Gets the string resource name to use to localize the title of the notification, or null if
+     * not set.
+     */
+    @Nullable
+    public String getTitleLocalizationKey() {
+      return titleLocKey;
+    }
+
+    /**
+     * Gets the variable string values to be used as format specifiers in the title localization
+     * key, or null if not set.
+     *
+     * @see #getTitleLocalizationKey()
+     */
+    @Nullable
+    public String[] getTitleLocalizationArgs() {
+      return titleLocArgs;
+    }
+
+    /** Gets the body of the notification, or null if not set. */
+    @Nullable
+    public String getBody() {
+      return body;
+    }
+
+    /**
+     * Gets the string resource name to use to localize the body of the notification, or null if not
+     * set.
+     */
+    @Nullable
+    public String getBodyLocalizationKey() {
+      return bodyLocKey;
+    }
+
+    /**
+     * Gets the variable string values to be used as format specifiers in the body localization key,
+     * or null if not set.
+     *
+     * @see #getBodyLocalizationKey()
+     */
+    @Nullable
+    public String[] getBodyLocalizationArgs() {
+      return bodyLocArgs;
+    }
+
+    /** Gets the image resource name of the icon of the notification, or null if not set. */
+    @Nullable
+    public String getIcon() {
+      return icon;
+    }
+
+    /**
+     * Gets the image URL from the notification.
+     *
+     * @return The image URL if it was set, null otherwise.
+     */
+    @Nullable
+    public Uri getImageUrl() {
+      return imageUrl != null ? Uri.parse(imageUrl) : null;
+    }
+
+    /**
+     * Gets the sound to be played when the notification is shown, or null if not set.
+     *
+     * <p>This will be either a raw resource name, or "default" for the user's default notification
+     * sound.
+     */
+    @Nullable
+    public String getSound() {
+      return sound;
+    }
+
+    /** Gets the tag of the notification, or null if not set. */
+    @Nullable
+    public String getTag() {
+      return tag;
+    }
+
+    /**
+     * Gets the color of the notification, or null if not set.
+     *
+     * <p>Color is expressed in #rrggbb format.
+     */
+    @Nullable
+    public String getColor() {
+      return color;
+    }
+
+    /**
+     * Gets the action to be performed on the user opening the notification, or null if not set.
+     *
+     * <p>The action is to open an <a
+     * href="https://developer.android.com/reference/android/app/Activity">Activity</a> with
+     * matching intent filter.
+     */
+    @Nullable
+    public String getClickAction() {
+      return clickAction;
+    }
+
+    /**
+     * Gets the channel id from the notification, or null if not set.
+     *
+     * <p>Note that this method does not perform verification on the existence of a channel, nor
+     * does it fallback to the manifest defined default or the default Firebase Cloud Messaging
+     * channel.
+     */
+    @Nullable
+    public String getChannelId() {
+      return channelId;
+    }
+
+    /** Gets the deep link from the notification, or null if not set. */
+    @Nullable
+    public Uri getLink() {
+      return link;
+    }
+
+    /** Gets the ticker text from the notification. */
+    @Nullable
+    public String getTicker() {
+      return ticker;
+    }
+
+    /**
+     * Gets whether or not the notification is considered sticky.
+     *
+     * <p>See details about {@code sticky} in <a
+     * href="https://firebase.google.com/docs/reference/fcm/rest/v1/projects.messages#androidnotification">Firebase
+     * Cloud Messaging Reference: HTTP v1 API</a>.
+     *
+     * @return {@code true} if it is set to {@code true}; Otherwise {@code false}.
+     */
+    public boolean getSticky() {
+      return sticky;
+    }
+
+    /**
+     * Gets whether or not this notification is only relevant to the current device.
+     *
+     * <p>See details about {@code localOnly} in <a
+     * href="https://firebase.google.com/docs/reference/fcm/rest/v1/projects.messages#androidnotification">Firebase
+     * Cloud Messaging Reference: HTTP v1 API</a>.
+     *
+     * @return {@code true} if it is set to {@code true}; Otherwise {@code false}.
+     */
+    public boolean getLocalOnly() {
+      return localOnly;
+    }
+
+    /**
+     * Gets whether or not the notification uses the default sound.
+     *
+     * <p>See details about {@code defaultSound} in <a
+     * href="https://firebase.google.com/docs/reference/fcm/rest/v1/projects.messages#androidnotification">Firebase
+     * Cloud Messaging Reference: HTTP v1 API</a>.
+     *
+     * @return {@code true} if it is set to {@code true}; Otherwise {@code false}.
+     */
+    public boolean getDefaultSound() {
+      return defaultSound;
+    }
+
+    /**
+     * Gets whether or not the notification uses the default vibrate pattern.
+     *
+     * <p>See details about {@code defaultVibrateTimings} in <a
+     * href="https://firebase.google.com/docs/reference/fcm/rest/v1/projects.messages#androidnotification">Firebase
+     * Cloud Messaging Reference: HTTP v1 API</a>.
+     *
+     * @return {@code true} if it is set to {@code true}; Otherwise {@code false}.
+     */
+    public boolean getDefaultVibrateSettings() {
+      return defaultVibrateTimings;
+    }
+
+    /**
+     * Gets whether or not the notification uses the default notification light settings.
+     *
+     * <p>See details about {@code defaultLightSettings} in <a
+     * href="https://firebase.google.com/docs/reference/fcm/rest/v1/projects.messages#androidnotification">Firebase
+     * Cloud Messaging Reference: HTTP v1 API</a>.
+     *
+     * @return {@code true} if it is set to {@code true}; Otherwise {@code false}.
+     */
+    public boolean getDefaultLightSettings() {
+      return defaultLightSettings;
+    }
+
+    /**
+     * Gets the {@code notificationPriority} from the notification.
+     *
+     * <p>See details about {@code notificationPriority} in <a
+     * href="https://firebase.google.com/docs/reference/fcm/rest/v1/projects.messages#androidnotification">Firebase
+     * Cloud Messaging Reference: HTTP v1 API</a>.
+     */
+    @Nullable
+    public Integer getNotificationPriority() {
+      return notificationPriority;
+    }
+
+    /**
+     * Gets the {@code visibility} from the notification.
+     *
+     * <p>See details about {@code visibility} in <a
+     * href="https://firebase.google.com/docs/reference/fcm/rest/v1/projects.messages#androidnotification">Firebase
+     * Cloud Messaging Reference: HTTP v1 API</a>.
+     */
+    @Nullable
+    public Integer getVisibility() {
+      return visibility;
+    }
+
+    /**
+     * Gets the {@code notificationCount} from the notification.
+     *
+     * <p>See details about {@code notificationCount} in <a
+     * href="https://firebase.google.com/docs/reference/fcm/rest/v1/projects.messages#androidnotification">Firebase
+     * Cloud Messaging Reference: HTTP v1 API</a>.
+     */
+    @Nullable
+    public Integer getNotificationCount() {
+      return notificationCount;
+    }
+
+    /**
+     * Gets the {@code eventTime} from the notification.
+     *
+     * <p>See details about {@code eventTime} in <a
+     * href="https://firebase.google.com/docs/reference/fcm/rest/v1/projects.messages#androidnotification">Firebase
+     * Cloud Messaging Reference: HTTP v1 API</a>.
+     */
+    @Nullable
+    public Long getEventTime() {
+      return eventTime;
+    }
+
+    /**
+     * Gets the {@code lightSettings} from the notification. {@code lightSettings} is an primitive
+     * integer array of size three that includes {@code color}, {@code lightOnDuration} and {@code
+     * lightOffDuration} respectively.
+     *
+     * <p>See details about {@code lightSettings} in <a
+     * href="https://firebase.google.com/docs/reference/fcm/rest/v1/projects.messages#androidnotification">Firebase
+     * Cloud Messaging Reference: HTTP v1 API</a>.
+     */
+    @Nullable
+    public int[] getLightSettings() {
+      return lightSettings;
+    }
+
+    /**
+     * Gets the {@code vibrateTimings} from the notification.
+     *
+     * <p>See details about {@code vibrateTimings} in <a
+     * href="https://firebase.google.com/docs/reference/fcm/rest/v1/projects.messages#androidnotification">Firebase
+     * Cloud Messaging Reference: HTTP v1 API</a>.
+     */
+    @Nullable
+    public long[] getVibrateTimings() {
+      return vibrateTimings;
+    }
+  }
+}

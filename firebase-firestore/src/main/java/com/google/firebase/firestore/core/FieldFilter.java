@@ -64,6 +64,8 @@ public class FieldFilter extends Filter {
     if (path.isKeyField()) {
       if (operator == Operator.IN) {
         return new KeyFieldInFilter(path, value);
+      } else if (operator == Operator.NOT_IN) {
+        return new KeyFieldNotInFilter(path, value);
       } else {
         hardAssert(
             operator != Operator.ARRAY_CONTAINS && operator != Operator.ARRAY_CONTAINS_ANY,
@@ -71,15 +73,17 @@ public class FieldFilter extends Filter {
         return new KeyFieldFilter(path, operator, value);
       }
     } else if (Values.isNullValue(value)) {
-      if (operator != Filter.Operator.EQUAL) {
+      if (operator != Operator.EQUAL && operator != Operator.NOT_EQUAL) {
         throw new IllegalArgumentException(
-            "Invalid Query. Null supports only equality comparisons (via whereEqualTo()).");
+            "Invalid Query. Null only supports comparisons via "
+                + "whereEqualTo() and whereNotEqualTo().");
       }
       return new FieldFilter(path, operator, value);
     } else if (Values.isNanValue(value)) {
-      if (operator != Filter.Operator.EQUAL) {
+      if (operator != Operator.EQUAL && operator != Operator.NOT_EQUAL) {
         throw new IllegalArgumentException(
-            "Invalid Query. NaN supports only equality comparisons (via whereEqualTo()).");
+            "Invalid Query. NaN only supports comparisons via "
+                + "whereEqualTo() and whereNotEqualTo().");
       }
       return new FieldFilter(path, operator, value);
     } else if (operator == Operator.ARRAY_CONTAINS) {
@@ -88,6 +92,8 @@ public class FieldFilter extends Filter {
       return new InFilter(path, value);
     } else if (operator == Operator.ARRAY_CONTAINS_ANY) {
       return new ArrayContainsAnyFilter(path, value);
+    } else if (operator == Operator.NOT_IN) {
+      return new NotInFilter(path, value);
     } else {
       return new FieldFilter(path, operator, value);
     }
@@ -96,6 +102,10 @@ public class FieldFilter extends Filter {
   @Override
   public boolean matches(Document doc) {
     Value other = doc.getField(field);
+    // Types do not have to match in NOT_EQUAL filters.
+    if (operator == Operator.NOT_EQUAL) {
+      return other != null && this.matchesComparison(Values.compare(other, value));
+    }
     // Only compare types with matching backend order (such as double and int).
     return other != null
         && Values.typeOrder(other) == Values.typeOrder(value)
@@ -110,6 +120,8 @@ public class FieldFilter extends Filter {
         return comp <= 0;
       case EQUAL:
         return comp == 0;
+      case NOT_EQUAL:
+        return comp != 0;
       case GREATER_THAN:
         return comp > 0;
       case GREATER_THAN_OR_EQUAL:
@@ -124,7 +136,9 @@ public class FieldFilter extends Filter {
             Operator.LESS_THAN,
             Operator.LESS_THAN_OR_EQUAL,
             Operator.GREATER_THAN,
-            Operator.GREATER_THAN_OR_EQUAL)
+            Operator.GREATER_THAN_OR_EQUAL,
+            Operator.NOT_EQUAL,
+            Operator.NOT_IN)
         .contains(operator);
   }
 

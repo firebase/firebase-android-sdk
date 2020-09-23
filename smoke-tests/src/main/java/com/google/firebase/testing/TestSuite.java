@@ -29,6 +29,7 @@ import org.junit.runners.Suite;
   DynamicLinksTest.class,
   FirestoreTest.class,
   FunctionsTest.class,
+  PerformanceMonitoringTest.class,
   RemoteConfigTest.class,
   SmartReplyTest.class,
   StorageTest.class,

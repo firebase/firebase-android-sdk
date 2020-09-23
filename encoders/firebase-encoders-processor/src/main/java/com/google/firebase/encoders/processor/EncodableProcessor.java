@@ -17,10 +17,11 @@ package com.google.firebase.encoders.processor;
 import androidx.annotation.VisibleForTesting;
 import com.google.auto.service.AutoService;
 import com.google.auto.value.AutoValue;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
 import com.google.firebase.encoders.annotations.Encodable;
 import com.google.firebase.encoders.processor.getters.Getter;
 import com.google.firebase.encoders.processor.getters.GetterFactory;
-import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.JavaFile;
@@ -31,7 +32,6 @@ import com.squareup.javapoet.TypeSpec;
 import com.squareup.javapoet.WildcardTypeName;
 import java.io.IOException;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -64,6 +64,11 @@ public class EncodableProcessor extends AbstractProcessor {
   private GetterFactory getterFactory;
 
   @Override
+  public SourceVersion getSupportedSourceVersion() {
+    return SourceVersion.latestSupported();
+  }
+
+  @Override
   public synchronized void init(ProcessingEnvironment processingEnvironment) {
     super.init(processingEnvironment);
     elements = processingEnvironment.getElementUtils();
@@ -88,15 +93,13 @@ public class EncodableProcessor extends AbstractProcessor {
     ClassName className =
         ClassName.bestGuess("Auto" + Names.generatedClassName(element) + "Encoder");
     ClassName configurator = ClassName.get("com.google.firebase.encoders.config", "Configurator");
+
+    // TODO(vkryachko): add @Generated annotation in a way that is compatible with Java versions
+    // before and after 9. See https://github.com/google/dagger/pull/882
     TypeSpec.Builder encoderBuilder =
         TypeSpec.classBuilder(className)
-            .addJavadoc("@hide")
             .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
             .addSuperinterface(configurator)
-            .addAnnotation(
-                AnnotationSpec.builder(ClassName.get("javax.annotation", "Generated"))
-                    .addMember("value", "$S", getClass().getName())
-                    .build())
             .addField(
                 FieldSpec.builder(
                         TypeName.INT,
@@ -125,7 +128,7 @@ public class EncodableProcessor extends AbstractProcessor {
             .addModifiers(Modifier.PUBLIC)
             .addAnnotation(Override.class);
 
-    Map<String, TypeSpec> autoValueSupportClasses = new HashMap<>();
+    Multimap<String, TypeSpec> autoValueSupportClasses = ArrayListMultimap.create();
 
     for (Encoder encoder : encoders) {
       encoderBuilder.addType(encoder.code());
@@ -151,7 +154,7 @@ public class EncodableProcessor extends AbstractProcessor {
 
     try {
       file.writeTo(processingEnv.getFiler());
-      for (Map.Entry<String, TypeSpec> autoValue : autoValueSupportClasses.entrySet()) {
+      for (Map.Entry<String, TypeSpec> autoValue : autoValueSupportClasses.entries()) {
         JavaFile.builder(autoValue.getKey(), autoValue.getValue())
             .build()
             .writeTo(processingEnv.getFiler());

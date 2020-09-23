@@ -19,7 +19,7 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 
 /** Carries static information about the app. */
-public class AppData {
+class AppData {
   public final String googleAppId;
   public final String buildId;
 

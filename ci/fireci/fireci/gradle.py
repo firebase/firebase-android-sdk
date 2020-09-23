@@ -30,7 +30,7 @@ def P(name, value):
 
 
 @stats.measure_call('gradle')
-def run(*args, gradle_opts='', workdir=None):
+def run(*args, gradle_opts='', workdir=None, check=True):
   """Invokes gradle with specified args and gradle_opts."""
   new_env = dict(os.environ)
   if gradle_opts:
@@ -42,8 +42,9 @@ def run(*args, gradle_opts='', workdir=None):
   command = ['./gradlew'] + list(args)
   _logger.info('Executing gradle command: "%s" in directory: "%s"',
                " ".join(command), workdir if workdir else '.')
-  return subprocess.check_call(
+  return subprocess.run(
       command,
       cwd=workdir,
       env=new_env,
+      check=check,
   )

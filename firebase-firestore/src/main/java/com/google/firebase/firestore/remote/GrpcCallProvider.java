@@ -125,7 +125,7 @@ public class GrpcCallProvider {
     // Wrap the ManagedChannelBuilder in an AndroidChannelBuilder. This allows the channel to
     // respond more gracefully to network change events (such as switching from cell to wifi).
     AndroidChannelBuilder androidChannelBuilder =
-        AndroidChannelBuilder.fromBuilder(channelBuilder).context(context);
+        AndroidChannelBuilder.usingBuilder(channelBuilder).context(context);
 
     return androidChannelBuilder.build();
   }
@@ -254,7 +254,7 @@ public class GrpcCallProvider {
             Executors.BACKGROUND_EXECUTOR,
             () -> {
               ManagedChannel channel = initChannel(context, databaseInfo);
-              onConnectivityStateChange(channel);
+              asyncQueue.enqueueAndForget(() -> onConnectivityStateChange(channel));
               FirestoreGrpc.FirestoreStub firestoreStub =
                   FirestoreGrpc.newStub(channel)
                       .withCallCredentials(firestoreHeaders)

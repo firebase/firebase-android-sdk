@@ -14,6 +14,8 @@
 
 package com.google.firebase.database.core.view;
 
+import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
+
 import com.google.firebase.database.core.EventRegistration;
 import com.google.firebase.database.snapshot.ChildKey;
 import com.google.firebase.database.snapshot.Index;
@@ -102,7 +104,7 @@ public class EventGenerator {
       @Override
       public int compare(Change a, Change b) {
         // should only be comparing child_* events
-        assert a.getChildKey() != null && b.getChildKey() != null;
+        hardAssert(a.getChildKey() != null && b.getChildKey() != null);
         NamedNode namedNodeA = new NamedNode(a.getChildKey(), a.getIndexedNode().getNode());
         NamedNode namedNodeB = new NamedNode(b.getChildKey(), b.getIndexedNode().getNode());
         return index.compare(namedNodeA, namedNodeB);

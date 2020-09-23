@@ -24,6 +24,7 @@ public class ConnectionContext {
   private final boolean persistenceEnabled;
   private final String clientSdkVersion;
   private final String userAgent;
+  private final String applicationId;
   private final String sslCacheDirectory;
 
   public ConnectionContext(
@@ -33,6 +34,7 @@ public class ConnectionContext {
       boolean persistenceEnabled,
       String clientSdkVersion,
       String userAgent,
+      String applicationId,
       String sslCacheDirectory) {
     this.logger = logger;
     this.authTokenProvider = authTokenProvider;
@@ -40,6 +42,7 @@ public class ConnectionContext {
     this.persistenceEnabled = persistenceEnabled;
     this.clientSdkVersion = clientSdkVersion;
     this.userAgent = userAgent;
+    this.applicationId = applicationId;
     this.sslCacheDirectory = sslCacheDirectory;
   }
 
@@ -69,5 +72,9 @@ public class ConnectionContext {
 
   public String getSslCacheDirectory() {
     return sslCacheDirectory;
+  }
+
+  public String getApplicationId() {
+    return applicationId;
   }
 }

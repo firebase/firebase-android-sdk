@@ -227,14 +227,14 @@ public class Repo implements PersistentConnection.Delegate {
       }
       lastWriteId = write.getWriteId();
       nextWriteId = write.getWriteId() + 1;
-      Node existing = serverSyncTree.calcCompleteEventCache(write.getPath(), new ArrayList<>());
       if (write.isOverwrite()) {
         if (operationLogger.logsDebug()) {
           operationLogger.debug("Restoring overwrite with id " + write.getWriteId());
         }
         connection.put(write.getPath().asList(), write.getOverwrite().getValue(true), onComplete);
         Node resolved =
-            ServerValues.resolveDeferredValueSnapshot(write.getOverwrite(), existing, serverValues);
+            ServerValues.resolveDeferredValueSnapshot(
+                write.getOverwrite(), serverSyncTree, write.getPath(), serverValues);
         serverSyncTree.applyUserOverwrite(
             write.getPath(),
             write.getOverwrite(),
@@ -248,7 +248,8 @@ public class Repo implements PersistentConnection.Delegate {
         }
         connection.merge(write.getPath().asList(), write.getMerge().getValue(true), onComplete);
         CompoundWrite resolved =
-            ServerValues.resolveDeferredValueMerge(write.getMerge(), existing, serverValues);
+            ServerValues.resolveDeferredValueMerge(
+                write.getMerge(), serverSyncTree, write.getPath(), serverValues);
         serverSyncTree.applyUserMerge(
             write.getPath(), write.getMerge(), resolved, write.getWriteId(), /*persist=*/ false);
       }
@@ -483,9 +484,8 @@ public class Repo implements PersistentConnection.Delegate {
 
     // Start with our existing data and merge each child into it.
     Map<String, Object> serverValues = ServerValues.generateServerValues(serverClock);
-    Node existing = serverSyncTree.calcCompleteEventCache(path, new ArrayList<>());
     CompoundWrite resolved =
-        ServerValues.resolveDeferredValueMerge(updates, existing, serverValues);
+        ServerValues.resolveDeferredValueMerge(updates, serverSyncTree, path, serverValues);
 
     final long writeId = this.getNextWriteId();
     List<? extends Event> events =
@@ -642,7 +642,7 @@ public class Repo implements PersistentConnection.Delegate {
   }
 
   public void keepSynced(QuerySpec query, boolean keep) {
-    assert query.getPath().isEmpty() || !query.getPath().getFront().equals(Constants.DOT_INFO);
+    hardAssert(query.getPath().isEmpty() || !query.getPath().getFront().equals(Constants.DOT_INFO));
 
     serverSyncTree.keepSynced(query, keep);
   }
@@ -920,7 +920,7 @@ public class Repo implements PersistentConnection.Delegate {
     List<TransactionData> queue = node.getValue();
     if (queue != null) {
       queue = buildTransactionQueue(node);
-      assert queue.size() > 0; // Sending zero length transaction queue
+      hardAssert(queue.size() > 0); // Sending zero length transaction queue
 
       Boolean allRun = true;
       for (TransactionData transaction : queue) {
@@ -959,8 +959,9 @@ public class Repo implements PersistentConnection.Delegate {
     }
 
     for (TransactionData txn : queue) {
-      assert txn.status
-          == TransactionStatus.RUN; // sendTransactionQueue: items in queue should all be run.'
+      hardAssert(
+          txn.status
+              == TransactionStatus.RUN); // sendTransactionQueue: items in queue should all be run.'
       txn.status = TransactionStatus.SENT;
       txn.retryCount++;
       Path relativePath = Path.getRelative(path, txn.path);
@@ -1116,7 +1117,7 @@ public class Repo implements PersistentConnection.Delegate {
       DatabaseError abortReason = null;
       List<Event> events = new ArrayList<Event>();
 
-      assert relativePath != null; // rerunTransactionQueue: relativePath should not be null.
+      hardAssert(relativePath != null); // rerunTransactionQueue: relativePath should not be null.
 
       if (transaction.status == TransactionStatus.NEEDS_ABORT) {
         abortTransaction = true;
@@ -1321,14 +1322,15 @@ public class Repo implements PersistentConnection.Delegate {
         if (transaction.status == TransactionStatus.SENT_NEEDS_ABORT) {
           // No-op. Already marked
         } else if (transaction.status == TransactionStatus.SENT) {
-          assert lastSent == i - 1; // All SENT items should be at beginning of queue.
+          hardAssert(lastSent == i - 1); // All SENT items should be at beginning of queue.
           lastSent = i;
           // Mark transaction for abort when it comes back.
           transaction.status = TransactionStatus.SENT_NEEDS_ABORT;
           transaction.abortReason = abortError;
         } else {
-          assert transaction.status
-              == TransactionStatus.RUN; // Unexpected transaction status in abort
+          hardAssert(
+              transaction.status
+                  == TransactionStatus.RUN); // Unexpected transaction status in abort
           // We can abort this immediately.
           removeEventCallback(
               new ValueEventRegistration(

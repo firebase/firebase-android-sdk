@@ -17,13 +17,14 @@ package com.google.firebase.firestore.auth;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.GetTokenResult;
 import com.google.firebase.auth.internal.IdTokenListener;
 import com.google.firebase.auth.internal.InternalAuthProvider;
-import com.google.firebase.firestore.FirebaseFirestoreException;
-import com.google.firebase.firestore.FirebaseFirestoreException.Code;
+import com.google.firebase.firestore.util.Executors;
 import com.google.firebase.firestore.util.Listener;
+import com.google.firebase.firestore.util.Logger;
 
 /**
  * FirebaseAuthCredentialsProvider uses Firebase Auth via {@link FirebaseApp} to get an auth token.
@@ -36,6 +37,8 @@ import com.google.firebase.firestore.util.Listener;
  * callbacks and user change notifications will be executed on arbitrary different threads.
  */
 public final class FirebaseAuthCredentialsProvider extends CredentialsProvider {
+
+  private static final String LOG_TAG = "FirebaseAuthCredentialsProvider";
 
   private final InternalAuthProvider authProvider;
 
@@ -85,19 +88,21 @@ public final class FirebaseAuthCredentialsProvider extends CredentialsProvider {
     // Take note of the current value of the tokenCounter so that this method can fail (with a
     // FirebaseFirestoreException) if there is a token change while the request is outstanding.
     final int savedCounter = tokenCounter;
-    return res.continueWith(
+    return res.continueWithTask(
+        Executors.DIRECT_EXECUTOR,
         task -> {
           synchronized (this) {
             // Cancel the request since the token changed while the request was outstanding so the
             // response is potentially for a previous user (which user, we can't be sure).
             if (savedCounter != tokenCounter) {
-              throw new FirebaseFirestoreException(
-                  "getToken aborted due to token change", Code.ABORTED);
+              Logger.debug(LOG_TAG, "getToken aborted due to token change");
+              return getToken();
             }
-            if (!task.isSuccessful()) {
-              throw task.getException();
+
+            if (task.isSuccessful()) {
+              return Tasks.forResult(task.getResult().getToken());
             } else {
-              return task.getResult().getToken();
+              return Tasks.forException(task.getException());
             }
           }
         });

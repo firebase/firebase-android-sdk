@@ -1,3 +1,34 @@
+# 17.1.0
+
+- [changed] Updated `firebase-crashlytics` dependency to v17.1.0.
+
+# 17.0.1
+
+- [changed] Updated `firebase-crashlytics` dependency to v17.0.1.
+
+# 17.0.0
+
+- [changed] The Firebase Crashlytics SDK for NDK is now generally
+  available.
+
+- [changed] Updated `firebase-crashlytics` dependency to v17.0.0.
+
+# 17.0.0-beta04
+
+- [changed] Updated `firebase-crashlytics` dependency to v17.0.0-beta-04.
+
+# 17.0.0-beta03
+
+- [fixed] Updated package name in `AndroidManifest.xml` to reflect new
+  Firebase Crashlytics NDK package name.
+
+- [changed] Improved debug logging.
+
+- [changed] Released new `crashlytics.h` with updated C++ APIs.
+
+- [changed] Added ProGuard rules files to avoid obfuscating public APIs called
+  from C++.
+
 # 17.0.0-beta01
 
 This release includes the initial beta release of the Firebase Crashlytics

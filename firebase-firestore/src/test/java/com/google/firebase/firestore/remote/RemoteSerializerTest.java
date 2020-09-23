@@ -41,6 +41,7 @@ import com.google.firebase.firestore.core.Bound;
 import com.google.firebase.firestore.core.FieldFilter;
 import com.google.firebase.firestore.core.InFilter;
 import com.google.firebase.firestore.core.KeyFieldFilter;
+import com.google.firebase.firestore.core.NotInFilter;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.local.QueryPurpose;
 import com.google.firebase.firestore.local.TargetData;
@@ -83,9 +84,11 @@ import com.google.firestore.v1.Value;
 import com.google.firestore.v1.Write;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Int32Value;
+import com.google.protobuf.NullValue;
 import com.google.protobuf.Timestamp;
 import com.google.type.LatLng;
 import io.grpc.Status;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -663,6 +666,74 @@ public final class RemoteSerializerTest {
   }
 
   @Test
+  public void testNotEqualSerialization() {
+    FieldFilter inputFilter = filter("field", "!=", 42);
+    StructuredQuery.Filter apiFilter = serializer.encodeUnaryOrFieldFilter(inputFilter);
+
+    StructuredQuery.Filter expectedFilter =
+        Filter.newBuilder()
+            .setFieldFilter(
+                StructuredQuery.FieldFilter.newBuilder()
+                    .setField(FieldReference.newBuilder().setFieldPath("field"))
+                    .setOp(Operator.NOT_EQUAL)
+                    .setValue(Value.newBuilder().setIntegerValue(42))
+                    .build())
+            .build();
+
+    assertEquals(expectedFilter, apiFilter);
+    FieldFilter roundTripped = serializer.decodeFieldFilter(apiFilter.getFieldFilter());
+    assertEquals(roundTripped, inputFilter);
+  }
+
+  @Test
+  public void testNotInSerialization() {
+    FieldFilter inputFilter = filter("field", "not-in", asList(42));
+    StructuredQuery.Filter apiFilter = serializer.encodeUnaryOrFieldFilter(inputFilter);
+
+    ArrayValue.Builder notInFilterValue =
+        ArrayValue.newBuilder().addValues(Value.newBuilder().setIntegerValue(42));
+    StructuredQuery.Filter expectedFilter =
+        Filter.newBuilder()
+            .setFieldFilter(
+                StructuredQuery.FieldFilter.newBuilder()
+                    .setField(FieldReference.newBuilder().setFieldPath("field"))
+                    .setOp(Operator.NOT_IN)
+                    .setValue(Value.newBuilder().setArrayValue(notInFilterValue))
+                    .build())
+            .build();
+
+    assertEquals(expectedFilter, apiFilter);
+    FieldFilter roundTripped = serializer.decodeFieldFilter(apiFilter.getFieldFilter());
+    assertEquals(roundTripped, inputFilter);
+    assertTrue(roundTripped instanceof NotInFilter);
+  }
+
+  @Test
+  public void testNotInWithNullSerialization() {
+    List<Object> nullArray = new ArrayList<>();
+    nullArray.add(null);
+    FieldFilter inputFilter = filter("field", "not-in", nullArray);
+    StructuredQuery.Filter apiFilter = serializer.encodeUnaryOrFieldFilter(inputFilter);
+
+    ArrayValue.Builder notInFilterValue =
+        ArrayValue.newBuilder().addValues(Value.newBuilder().setNullValue(NullValue.NULL_VALUE));
+    StructuredQuery.Filter expectedFilter =
+        Filter.newBuilder()
+            .setFieldFilter(
+                StructuredQuery.FieldFilter.newBuilder()
+                    .setField(FieldReference.newBuilder().setFieldPath("field"))
+                    .setOp(Operator.NOT_IN)
+                    .setValue(Value.newBuilder().setArrayValue(notInFilterValue))
+                    .build())
+            .build();
+
+    assertEquals(expectedFilter, apiFilter);
+    FieldFilter roundTripped = serializer.decodeFieldFilter(apiFilter.getFieldFilter());
+    assertEquals(roundTripped, inputFilter);
+    assertTrue(roundTripped instanceof NotInFilter);
+  }
+
+  @Test
   public void testArrayContainsAnySerialization() {
     FieldFilter inputFilter = filter("field", "array-contains-any", asList(42));
     StructuredQuery.Filter apiFilter = serializer.encodeUnaryOrFieldFilter(inputFilter);
@@ -715,17 +786,28 @@ public final class RemoteSerializerTest {
 
   @Test
   public void testEncodesNullFilter() {
-    unaryFilterTest(null, UnaryFilter.Operator.IS_NULL);
+    unaryFilterTest("==", null, UnaryFilter.Operator.IS_NULL);
   }
 
   @Test
   public void testEncodesNaNFilter() {
-    unaryFilterTest(Double.NaN, UnaryFilter.Operator.IS_NAN);
+    unaryFilterTest("==", Double.NaN, UnaryFilter.Operator.IS_NAN);
   }
 
-  private void unaryFilterTest(Object equalityValue, UnaryFilter.Operator unaryOperator) {
+  @Test
+  public void testEncodesNotNaNFilter() {
+    unaryFilterTest("!=", Double.NaN, UnaryFilter.Operator.IS_NOT_NAN);
+  }
+
+  @Test
+  public void testEncodesNotNullFilter() {
+    unaryFilterTest("!=", null, UnaryFilter.Operator.IS_NOT_NULL);
+  }
+
+  private void unaryFilterTest(
+      String op, Object equalityValue, UnaryFilter.Operator unaryOperator) {
     Query q =
-        Query.atPath(ResourcePath.fromString("docs")).filter(filter("prop", "==", equalityValue));
+        Query.atPath(ResourcePath.fromString("docs")).filter(filter("prop", op, equalityValue));
     Target actual = serializer.encodeTarget(wrapTargetData(q));
 
     StructuredQuery.Builder structuredQueryBuilder =
@@ -736,8 +818,17 @@ public final class RemoteSerializerTest {
                     .setUnaryFilter(
                         UnaryFilter.newBuilder()
                             .setField(FieldReference.newBuilder().setFieldPath("prop"))
-                            .setOp(unaryOperator)))
-            .addOrderBy(defaultKeyOrder());
+                            .setOp(unaryOperator)));
+
+    // Add extra ORDER_BY field for '!=' since it is an inequality.
+    if (op.equals("!=")) {
+      structuredQueryBuilder.addOrderBy(
+          Order.newBuilder()
+              .setDirection(Direction.ASCENDING)
+              .setField(FieldReference.newBuilder().setFieldPath("prop")));
+    }
+    structuredQueryBuilder.addOrderBy(defaultKeyOrder());
+
     QueryTarget.Builder queryBuilder =
         QueryTarget.newBuilder()
             .setParent("projects/p/databases/d/documents")

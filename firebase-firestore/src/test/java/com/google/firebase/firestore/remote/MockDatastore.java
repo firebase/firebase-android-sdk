@@ -20,7 +20,6 @@ import android.content.Context;
 import com.google.firebase.firestore.auth.EmptyCredentialsProvider;
 import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.local.TargetData;
-import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationResult;
@@ -214,14 +213,8 @@ public class MockDatastore extends Datastore {
   private int writeStreamRequestCount;
   private int watchStreamRequestCount;
 
-  public MockDatastore(AsyncQueue workerQueue, Context context) {
-    super(
-        new DatabaseInfo(
-            DatabaseId.forDatabase("project", "database"), "persistenceKey", "host", false),
-        workerQueue,
-        new EmptyCredentialsProvider(),
-        context,
-        null);
+  public MockDatastore(DatabaseInfo databaseInfo, AsyncQueue workerQueue, Context context) {
+    super(databaseInfo, workerQueue, new EmptyCredentialsProvider(), context, null);
     this.serializer = new RemoteSerializer(getDatabaseInfo().getDatabaseId());
   }
 

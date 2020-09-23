@@ -60,16 +60,47 @@ public class CrashlyticsReportTest {
   }
 
   @Test
-  public void testWithUserId_returnsNewReportWithUserId() {
+  public void testWithSessionEndFields_returnsNewReportWithSessionEndFields() {
     final CrashlyticsReport testReport = makeTestReport();
 
+    assertNull(testReport.getSession().getEndedAt());
+    assertFalse(testReport.getSession().isCrashed());
     assertNull(testReport.getSession().getUser());
 
-    final CrashlyticsReport withUserIdReport = testReport.withUserId("userId");
+    final long endedAt = System.currentTimeMillis();
+    final boolean isCrashed = true;
+    final String userId = "userId";
 
-    assertNotEquals(testReport, withUserIdReport);
-    assertNotNull(withUserIdReport.getSession().getUser());
-    assertEquals("userId", withUserIdReport.getSession().getUser().getIdentifier());
+    final CrashlyticsReport withSessionEndFieldsReport =
+        testReport.withSessionEndFields(endedAt, isCrashed, userId);
+
+    assertNotEquals(testReport, withSessionEndFieldsReport);
+    assertNotNull(withSessionEndFieldsReport.getSession().getUser());
+    assertNotNull(withSessionEndFieldsReport.getSession().getEndedAt());
+    assertEquals(endedAt, withSessionEndFieldsReport.getSession().getEndedAt().longValue());
+    assertEquals(isCrashed, withSessionEndFieldsReport.getSession().isCrashed());
+    assertEquals(userId, withSessionEndFieldsReport.getSession().getUser().getIdentifier());
+  }
+
+  @Test
+  public void testWithSessionEndFieldsNullUser_returnsNewReportWithSessionEndFieldsNullUser() {
+    final CrashlyticsReport testReport = makeTestReport();
+
+    assertNull(testReport.getSession().getEndedAt());
+    assertFalse(testReport.getSession().isCrashed());
+    assertNull(testReport.getSession().getUser());
+
+    final long endedAt = System.currentTimeMillis();
+    final boolean isCrashed = true;
+
+    final CrashlyticsReport withSessionEndFieldsReport =
+        testReport.withSessionEndFields(endedAt, isCrashed, null);
+
+    assertNotEquals(testReport, withSessionEndFieldsReport);
+    assertNotNull(withSessionEndFieldsReport.getSession().getEndedAt());
+    assertEquals(endedAt, withSessionEndFieldsReport.getSession().getEndedAt().longValue());
+    assertEquals(isCrashed, withSessionEndFieldsReport.getSession().isCrashed());
+    assertNull(withSessionEndFieldsReport.getSession().getUser());
   }
 
   @Test
@@ -158,6 +189,7 @@ public class CrashlyticsReportTest {
         .setIdentifier("identifier")
         .setStartedAt(0)
         .setApp(makeTestApplication())
+        .setGeneratorType(3)
         .build();
   }
 

@@ -19,6 +19,7 @@ import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 
 import android.app.Activity;
 import android.content.Context;
+import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -27,6 +28,7 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.internal.InternalAuthProvider;
+import com.google.firebase.emulators.EmulatedServiceSettings;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.auth.EmptyCredentialsProvider;
@@ -38,6 +40,7 @@ import com.google.firebase.firestore.core.FirestoreClient;
 import com.google.firebase.firestore.local.SQLitePersistence;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.ResourcePath;
+import com.google.firebase.firestore.remote.FirestoreChannel;
 import com.google.firebase.firestore.remote.GrpcMetadataProvider;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.Executors;
@@ -78,6 +81,7 @@ public class FirebaseFirestore {
   // When user requests to terminate, use this to notify `FirestoreMultiDbComponent` to deregister
   // this instance.
   private final InstanceRegistry instanceRegistry;
+  @Nullable private EmulatedServiceSettings emulatorSettings;
   private FirebaseFirestoreSettings settings;
   private volatile FirestoreClient client;
   private final GrpcMetadataProvider metadataProvider;
@@ -169,7 +173,7 @@ public class FirebaseFirestore {
     this.instanceRegistry = instanceRegistry;
     this.metadataProvider = metadataProvider;
 
-    settings = new FirebaseFirestoreSettings.Builder().build();
+    this.settings = new FirebaseFirestoreSettings.Builder().build();
   }
 
   /** Returns the settings used by this {@code FirebaseFirestore} object. */
@@ -183,8 +187,11 @@ public class FirebaseFirestore {
    * can only be called before calling any other methods on this object.
    */
   public void setFirestoreSettings(@NonNull FirebaseFirestoreSettings settings) {
+    settings = mergeEmulatorSettings(settings, this.emulatorSettings);
+
     synchronized (databaseId) {
       checkNotNull(settings, "Provided settings must not be null.");
+
       // As a special exception, don't throw if the same settings are passed repeatedly. This
       // should make it simpler to get a Firestore instance in an activity.
       if (client != null && !this.settings.equals(settings)) {
@@ -193,8 +200,27 @@ public class FirebaseFirestore {
                 + "You can only call setFirestoreSettings() before calling any other methods on a "
                 + "FirebaseFirestore object.");
       }
+
       this.settings = settings;
     }
+  }
+
+  /**
+   * Modifies this FirebaseDatabase instance to communicate with the Cloud Firestore emulator.
+   *
+   * <p>Note: Call this method before using the instance to do any database operations.
+   *
+   * @param host the emulator host (for example, 10.0.2.2)
+   * @param port the emulator port (for example, 8080)
+   */
+  public void useEmulator(@NonNull String host, int port) {
+    if (this.client != null) {
+      throw new IllegalStateException(
+          "Cannot call useEmulator() after instance has already been initialized.");
+    }
+
+    this.emulatorSettings = new EmulatedServiceSettings(host, port);
+    this.settings = mergeEmulatorSettings(this.settings, this.emulatorSettings);
   }
 
   private void ensureClientConfigured() {
@@ -213,6 +239,25 @@ public class FirebaseFirestore {
           new FirestoreClient(
               context, databaseInfo, settings, credentialsProvider, asyncQueue, metadataProvider);
     }
+  }
+
+  private FirebaseFirestoreSettings mergeEmulatorSettings(
+      @NonNull FirebaseFirestoreSettings settings,
+      @Nullable EmulatedServiceSettings emulatorSettings) {
+    if (emulatorSettings == null) {
+      return settings;
+    }
+
+    if (!FirebaseFirestoreSettings.DEFAULT_HOST.equals(settings.getHost())) {
+      Logger.warn(
+          TAG,
+          "Host has been set in FirebaseFirestoreSettings and useEmulator, emulator host will be used.");
+    }
+
+    return new FirebaseFirestoreSettings.Builder(settings)
+        .setHost(emulatorSettings.getHost() + ":" + emulatorSettings.getPort())
+        .setSslEnabled(false)
+        .build();
   }
 
   /** Returns the FirebaseApp instance to which this {@code FirebaseFirestore} belongs. */
@@ -591,5 +636,17 @@ public class FirebaseFirestore {
       throw new IllegalArgumentException(
           "Provided document reference is from a different Cloud Firestore instance.");
     }
+  }
+
+  /**
+   * Sets the language of the public API in the format of "gl-<language>/<version>" where version
+   * might be blank, e.g. `gl-cpp/`. The provided string is used as is.
+   *
+   * <p>Note: this method is package-private because it is expected to only be called via JNI (which
+   * ignores access modifiers).
+   */
+  @Keep
+  static void setClientLanguage(@NonNull String languageToken) {
+    FirestoreChannel.setClientLanguage(languageToken);
   }
 }

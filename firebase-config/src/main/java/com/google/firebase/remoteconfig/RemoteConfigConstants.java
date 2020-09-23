@@ -14,23 +14,6 @@
 
 package com.google.firebase.remoteconfig;
 
-import static com.google.firebase.remoteconfig.RemoteConfigConstants.ExperimentDescriptionFieldKey.EXPERIMENT_ID;
-import static com.google.firebase.remoteconfig.RemoteConfigConstants.ExperimentDescriptionFieldKey.VARIANT_ID;
-import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.ANALYTICS_USER_PROPERTIES;
-import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.APP_ID;
-import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.APP_VERSION;
-import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.COUNTRY_CODE;
-import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.INSTANCE_ID;
-import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.INSTANCE_ID_TOKEN;
-import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.LANGUAGE_CODE;
-import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.PACKAGE_NAME;
-import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.PLATFORM_VERSION;
-import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.SDK_VERSION;
-import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.TIME_ZONE;
-import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFieldKey.ENTRIES;
-import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFieldKey.EXPERIMENT_DESCRIPTIONS;
-import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFieldKey.STATE;
-
 import androidx.annotation.StringDef;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -41,26 +24,30 @@ import java.lang.annotation.RetentionPolicy;
  * @author Lucas Png
  * @hide
  */
-public class RemoteConfigConstants {
+public final class RemoteConfigConstants {
   public static final String FETCH_REGEX_URL =
       "https://firebaseremoteconfig.googleapis.com/v1/projects/%s/namespaces/%s:fetch";
 
   /**
    * Keys of fields in the Fetch request body that the client sends to the Firebase Remote Config
    * server.
+   *
+   * <p>{@code INSTANCE_ID} and {@code INSTANCE_ID_TOKEN} are legacy names for the fields that used
+   * to be populated by the IID SDK. The fields have been replaced by the installation ID and
+   * installation auth token, respectively, which are fetched from the FIS SDK.
    */
   @StringDef({
-    INSTANCE_ID,
-    INSTANCE_ID_TOKEN,
-    APP_ID,
-    COUNTRY_CODE,
-    LANGUAGE_CODE,
-    PLATFORM_VERSION,
-    TIME_ZONE,
-    APP_VERSION,
-    PACKAGE_NAME,
-    SDK_VERSION,
-    ANALYTICS_USER_PROPERTIES
+    RequestFieldKey.INSTANCE_ID,
+    RequestFieldKey.INSTANCE_ID_TOKEN,
+    RequestFieldKey.APP_ID,
+    RequestFieldKey.COUNTRY_CODE,
+    RequestFieldKey.LANGUAGE_CODE,
+    RequestFieldKey.PLATFORM_VERSION,
+    RequestFieldKey.TIME_ZONE,
+    RequestFieldKey.APP_VERSION,
+    RequestFieldKey.PACKAGE_NAME,
+    RequestFieldKey.SDK_VERSION,
+    RequestFieldKey.ANALYTICS_USER_PROPERTIES
   })
   @Retention(RetentionPolicy.SOURCE)
   public @interface RequestFieldKey {
@@ -78,7 +65,11 @@ public class RemoteConfigConstants {
   }
 
   /** Keys of fields in the Fetch response body from the Firebase Remote Config server. */
-  @StringDef({ENTRIES, EXPERIMENT_DESCRIPTIONS, STATE})
+  @StringDef({
+    ResponseFieldKey.ENTRIES,
+    ResponseFieldKey.EXPERIMENT_DESCRIPTIONS,
+    ResponseFieldKey.STATE
+  })
   @Retention(RetentionPolicy.SOURCE)
   public @interface ResponseFieldKey {
     String ENTRIES = "entries";
@@ -90,7 +81,10 @@ public class RemoteConfigConstants {
    * Select keys of fields in the experiment descriptions returned from the Firebase Remote Config
    * server.
    */
-  @StringDef({EXPERIMENT_ID, VARIANT_ID})
+  @StringDef({
+    ExperimentDescriptionFieldKey.EXPERIMENT_ID,
+    ExperimentDescriptionFieldKey.VARIANT_ID
+  })
   @Retention(RetentionPolicy.SOURCE)
   public @interface ExperimentDescriptionFieldKey {
     String EXPERIMENT_ID = "experimentId";
