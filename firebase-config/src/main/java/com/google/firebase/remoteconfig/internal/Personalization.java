@@ -45,7 +45,7 @@ public class Personalization {
    * @param key Remote Config parameter
    * @param configContainer JSON of {@link ConfigContainer}
    */
-  public void logArmActive(@NonNull String key, JSONObject configContainer) {
+  public void logArmActive(@NonNull String key, @NonNull JSONObject configContainer) {
     JSONObject ids = configContainer.optJSONObject(PERSONALIZATION_METADATA_KEY);
     if (ids == null) {
       Log.w(TAG, "Missing Personalization metadata");

@@ -358,6 +358,10 @@ public class ConfigGetParameterHandler {
    * @param container the container the key was retrieved from
    */
   private void callListeners(String key, ConfigContainer container) {
+    if (container == null) {
+      return;
+    }
+
     JSONObject configs = container.getContainer();
 
     synchronized (listeners) {
