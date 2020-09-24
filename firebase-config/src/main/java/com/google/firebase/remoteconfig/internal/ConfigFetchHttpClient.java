@@ -406,6 +406,7 @@ public class ConfigFetchHttpClient {
         personalizationMetadata = fetchResponse.getJSONObject(PERSONALIZATION_METADATA);
       } catch (JSONException e) {
         // Do nothing if personalizationMetadata does not exist.
+        Log.i(TAG, "No Personalization metadata");
       }
       if (personalizationMetadata != null) {
         containerBuilder.withPersonalizationMetadata(personalizationMetadata);
