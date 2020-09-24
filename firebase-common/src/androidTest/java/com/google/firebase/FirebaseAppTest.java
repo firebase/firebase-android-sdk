@@ -17,6 +17,8 @@ package com.google.firebase;
 import static com.google.android.gms.common.util.Base64Utils.decodeUrlSafeNoPadding;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.common.testutil.Assert.assertThrows;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -389,6 +391,30 @@ public class FirebaseAppTest {
 
     assertThat(sdkVerifier.isAuthInitialized()).isTrue();
     assertThat(sdkVerifier.isAnalyticsInitialized()).isTrue();
+  }
+
+  @Test
+  public void testDirectBoot_shouldPreserveDataCollectionAfterUnlock() {
+    Context mockContext = createForwardingMockContext();
+
+    isUserUnlocked.set(false);
+    FirebaseApp firebaseApp = FirebaseApp.initializeApp(mockContext);
+    assert (firebaseApp != null);
+    firebaseApp.setDataCollectionDefaultEnabled(false);
+    assertFalse(firebaseApp.isDataCollectionDefaultEnabled());
+    // User unlocks the device.
+    isUserUnlocked.set(true);
+    Intent userUnlockBroadcast = new Intent(Intent.ACTION_USER_UNLOCKED);
+    localBroadcastManager.sendBroadcastSync(userUnlockBroadcast);
+
+    assertFalse(firebaseApp.isDataCollectionDefaultEnabled());
+    firebaseApp.setDataCollectionDefaultEnabled(true);
+    assertTrue(firebaseApp.isDataCollectionDefaultEnabled());
+    firebaseApp.setDataCollectionDefaultEnabled(false);
+    assertFalse(firebaseApp.isDataCollectionDefaultEnabled());
+    // Because default is true.
+    firebaseApp.setDataCollectionDefaultEnabled(null);
+    assertTrue(firebaseApp.isDataCollectionDefaultEnabled());
   }
 
   /** Returns mock context that forwards calls to targetContext and localBroadcastManager. */

@@ -20,7 +20,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.fail;
 
-import androidx.annotation.NonNull;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.android.gms.common.internal.Preconditions;
@@ -79,6 +78,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -97,7 +97,7 @@ public class TestUtil {
 
   @SuppressWarnings("unchecked")
   public static <T> Map<String, T> map(Object... entries) {
-    Map<String, T> res = new HashMap<>();
+    Map<String, T> res = new LinkedHashMap<>();
     for (int i = 0; i < entries.length; i += 2) {
       res.put((String) entries[i], (T) entries[i + 1]);
     }
@@ -239,6 +239,8 @@ public class TestUtil {
       return Operator.LESS_THAN_OR_EQUAL;
     } else if (s.equals("==")) {
       return Operator.EQUAL;
+    } else if (s.equals("!=")) {
+      return Operator.NOT_EQUAL;
     } else if (s.equals(">")) {
       return Operator.GREATER_THAN;
     } else if (s.equals(">=")) {
@@ -247,6 +249,8 @@ public class TestUtil {
       return Operator.ARRAY_CONTAINS;
     } else if (s.equals("in")) {
       return Operator.IN;
+    } else if (s.equals("not-in")) {
+      return Operator.NOT_IN;
     } else if (s.equals("array-contains-any")) {
       return Operator.ARRAY_CONTAINS_ANY;
     } else {
@@ -554,15 +558,6 @@ public class TestUtil {
 
     String snapshotString = "snapshot-" + snapshotVersion;
     return ByteString.copyFrom(snapshotString, Charsets.UTF_8);
-  }
-
-  @NonNull
-  private static ByteString resumeToken(SnapshotVersion snapshotVersion) {
-    if (snapshotVersion.equals(SnapshotVersion.NONE)) {
-      return ByteString.EMPTY;
-    } else {
-      return ByteString.copyFromUtf8(snapshotVersion.toString());
-    }
   }
 
   public static ByteString streamToken(String contents) {

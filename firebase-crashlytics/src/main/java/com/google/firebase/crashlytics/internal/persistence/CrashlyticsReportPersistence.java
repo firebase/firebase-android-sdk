@@ -194,6 +194,7 @@ public class CrashlyticsReportPersistence {
   public void finalizeReports(@Nullable String currentSessionId, long sessionEndTime) {
     final List<File> sessionDirectories = capAndGetOpenSessions(currentSessionId);
     for (File sessionDirectory : sessionDirectories) {
+      Logger.getLogger().d("Finalizing report for session " + sessionDirectory.getName());
       synthesizeReport(sessionDirectory, sessionEndTime);
       recursiveDelete(sessionDirectory);
     }
@@ -288,6 +289,7 @@ public class CrashlyticsReportPersistence {
 
     // Only process the session if it has associated events
     if (eventFiles.isEmpty()) {
+      Logger.getLogger().d("Session " + sessionDirectory.getName() + " has no events.");
       return;
     }
 
@@ -305,10 +307,13 @@ public class CrashlyticsReportPersistence {
     }
 
     String userId = null;
-    try {
-      userId = readTextFile(new File(sessionDirectory, USER_FILE_NAME));
-    } catch (IOException e) {
-      Logger.getLogger().d("Could not read user ID file in " + sessionDirectory.getName(), e);
+    final File userIdFile = new File(sessionDirectory, USER_FILE_NAME);
+    if (userIdFile.isFile()) {
+      try {
+        userId = readTextFile(userIdFile);
+      } catch (IOException e) {
+        Logger.getLogger().d("Could not read user ID file in " + sessionDirectory.getName(), e);
+      }
     }
 
     final File reportFile = new File(sessionDirectory, REPORT_FILE_NAME);

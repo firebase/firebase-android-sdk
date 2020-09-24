@@ -27,6 +27,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.emulators.EmulatedServiceSettings;
 import com.google.firebase.functions.FirebaseFunctionsException.Code;
 import java.io.IOException;
 import java.io.InterruptedIOException;
@@ -56,6 +57,9 @@ public class FirebaseFunctions {
    */
   private static boolean providerInstallStarted = false;
 
+  // The FirebaseApp instance
+  private final FirebaseApp app;
+
   // The network client to use for HTTPS requests.
   private final OkHttpClient client;
 
@@ -74,8 +78,16 @@ public class FirebaseFunctions {
   // The format to use for constructing urls from region, projectId, and name.
   private String urlFormat = "https://%1$s-%2$s.cloudfunctions.net/%3$s";
 
+  // Emulator settings
+  @Nullable private EmulatedServiceSettings emulatorSettings;
+
   FirebaseFunctions(
-      Context context, String projectId, String region, ContextProvider contextProvider) {
+      FirebaseApp app,
+      Context context,
+      String projectId,
+      String region,
+      ContextProvider contextProvider) {
+    this.app = app;
     this.client = new OkHttpClient();
     this.serializer = new Serializer();
     this.contextProvider = Preconditions.checkNotNull(contextProvider);
@@ -179,6 +191,16 @@ public class FirebaseFunctions {
    */
   @VisibleForTesting
   URL getURL(String function) {
+    EmulatedServiceSettings emulatorSettings = this.emulatorSettings;
+    if (emulatorSettings != null) {
+      urlFormat =
+          "http://"
+              + emulatorSettings.getHost()
+              + ":"
+              + emulatorSettings.getPort()
+              + "/%2$s/%1$s/%3$s";
+    }
+
     String str = String.format(urlFormat, region, projectId, function);
     try {
       return new URL(str);
@@ -187,15 +209,22 @@ public class FirebaseFunctions {
     }
   }
 
-  /**
-   * Changes this instance to point to a Cloud Functions emulator running locally. See
-   * https://firebase.google.com/docs/functions/local-emulator
-   *
-   * @param origin The origin of the local emulator, such as "http://10.0.2.2:5005".
-   */
+  /** @deprecated Use {@link #useEmulator(String, int)} to connect to the emulator. */
   public void useFunctionsEmulator(@NonNull String origin) {
     Preconditions.checkNotNull(origin, "origin cannot be null");
     urlFormat = origin + "/%2$s/%1$s/%3$s";
+  }
+
+  /**
+   * Modifies this FirebaseFunctions instance to communicate with the Cloud Functions emulator.
+   *
+   * <p>Note: Call this method before using the instance to do any functions operations.
+   *
+   * @param host the emulator host (for example, 10.0.2.2)
+   * @param port the emulator port (for example, 5001)
+   */
+  public void useEmulator(@NonNull String host, int port) {
+    this.emulatorSettings = new EmulatedServiceSettings(host, port);
   }
 
   /**

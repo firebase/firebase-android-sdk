@@ -1,0 +1,134 @@
+// Signature format: 2.0
+package com.google.firebase.messaging {
+
+  public class FirebaseMessaging {
+    method @Deprecated public boolean deliveryMetricsExportToBigQueryEnabled();
+    method @NonNull public static com.google.firebase.messaging.FirebaseMessaging getInstance();
+    method public boolean isAutoInitEnabled();
+    method public boolean isDeliveryMetricsExportToBigQueryEnabled();
+    method public void send(@NonNull com.google.firebase.messaging.RemoteMessage);
+    method public void setAutoInitEnabled(boolean);
+    method public void setDeliveryMetricsExportToBigQuery(boolean);
+    method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> subscribeToTopic(@NonNull String);
+    method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> unsubscribeFromTopic(@NonNull String);
+    field public static final String INSTANCE_ID_SCOPE = "FCM";
+  }
+
+  public class FirebaseMessagingService extends android.app.Service {
+    ctor public FirebaseMessagingService();
+    method public final android.os.IBinder onBind(android.content.Intent);
+    method @WorkerThread public void onDeletedMessages();
+    method @WorkerThread public void onMessageReceived(@NonNull com.google.firebase.messaging.RemoteMessage);
+    method @WorkerThread public void onMessageSent(@NonNull String);
+    method @WorkerThread public void onNewToken(@NonNull String);
+    method @WorkerThread public void onSendError(@NonNull String, @NonNull Exception);
+    method public final int onStartCommand(android.content.Intent, int, int);
+  }
+
+  @com.google.android.gms.common.internal.safeparcel.SafeParcelable.Reserved({1}) @com.google.android.gms.common.internal.safeparcel.SafeParcelable.Class(creator="RemoteMessageCreator") public final class RemoteMessage extends com.google.android.gms.common.internal.safeparcel.AbstractSafeParcelable {
+    method @Nullable public String getCollapseKey();
+    method @NonNull public java.util.Map<java.lang.String,java.lang.String> getData();
+    method @Nullable public String getFrom();
+    method @Nullable public String getMessageId();
+    method @Nullable public String getMessageType();
+    method @Nullable public com.google.firebase.messaging.RemoteMessage.Notification getNotification();
+    method @com.google.firebase.messaging.RemoteMessage.MessagePriority public int getOriginalPriority();
+    method @com.google.firebase.messaging.RemoteMessage.MessagePriority public int getPriority();
+    method @Nullable public String getSenderId();
+    method public long getSentTime();
+    method @Nullable public String getTo();
+    method public int getTtl();
+    method public void writeToParcel(@NonNull android.os.Parcel, int);
+    field public static final int PRIORITY_HIGH = 1; // 0x1
+    field public static final int PRIORITY_NORMAL = 2; // 0x2
+    field public static final int PRIORITY_UNKNOWN = 0; // 0x0
+  }
+
+  public static class RemoteMessage.Builder {
+    ctor public RemoteMessage.Builder(@NonNull String);
+    method @NonNull public com.google.firebase.messaging.RemoteMessage.Builder addData(@NonNull String, @Nullable String);
+    method @NonNull public com.google.firebase.messaging.RemoteMessage build();
+    method @NonNull public com.google.firebase.messaging.RemoteMessage.Builder clearData();
+    method @NonNull public com.google.firebase.messaging.RemoteMessage.Builder setCollapseKey(@Nullable String);
+    method @NonNull public com.google.firebase.messaging.RemoteMessage.Builder setData(@NonNull java.util.Map<java.lang.String,java.lang.String>);
+    method @NonNull public com.google.firebase.messaging.RemoteMessage.Builder setMessageId(@NonNull String);
+    method @NonNull public com.google.firebase.messaging.RemoteMessage.Builder setMessageType(@Nullable String);
+    method @NonNull public com.google.firebase.messaging.RemoteMessage.Builder setTtl(@IntRange(from=0, to=86400) int);
+  }
+
+  @IntDef({com.google.firebase.messaging.RemoteMessage.PRIORITY_UNKNOWN, com.google.firebase.messaging.RemoteMessage.PRIORITY_HIGH, com.google.firebase.messaging.RemoteMessage.PRIORITY_NORMAL}) @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.SOURCE) public static @interface RemoteMessage.MessagePriority {
+  }
+
+  public static class RemoteMessage.Notification {
+    method @Nullable public String getBody();
+    method @Nullable public String[] getBodyLocalizationArgs();
+    method @Nullable public String getBodyLocalizationKey();
+    method @Nullable public String getChannelId();
+    method @Nullable public String getClickAction();
+    method @Nullable public String getColor();
+    method public boolean getDefaultLightSettings();
+    method public boolean getDefaultSound();
+    method public boolean getDefaultVibrateSettings();
+    method @Nullable public Long getEventTime();
+    method @Nullable public String getIcon();
+    method @Nullable public android.net.Uri getImageUrl();
+    method @Nullable public int[] getLightSettings();
+    method @Nullable public android.net.Uri getLink();
+    method public boolean getLocalOnly();
+    method @Nullable public Integer getNotificationCount();
+    method @Nullable public Integer getNotificationPriority();
+    method @Nullable public String getSound();
+    method public boolean getSticky();
+    method @Nullable public String getTag();
+    method @Nullable public String getTicker();
+    method @Nullable public String getTitle();
+    method @Nullable public String[] getTitleLocalizationArgs();
+    method @Nullable public String getTitleLocalizationKey();
+    method @Nullable public long[] getVibrateTimings();
+    method @Nullable public Integer getVisibility();
+  }
+
+  public class RemoteMessageCreator implements android.os.Parcelable.Creator<com.google.firebase.messaging.RemoteMessage> {
+    ctor public RemoteMessageCreator();
+    method @Nullable public com.google.firebase.messaging.RemoteMessage createFromParcel(android.os.Parcel);
+    method @Nullable public com.google.firebase.messaging.RemoteMessage[] newArray(int);
+    field public static final int CONTENT_DESCRIPTION = 0; // 0x0
+  }
+
+  public final class SendException extends java.lang.Exception {
+    method public int getErrorCode();
+    field public static final int ERROR_INVALID_PARAMETERS = 1; // 0x1
+    field public static final int ERROR_SIZE = 2; // 0x2
+    field public static final int ERROR_TOO_MANY_MESSAGES = 4; // 0x4
+    field public static final int ERROR_TTL_EXCEEDED = 3; // 0x3
+    field public static final int ERROR_UNKNOWN = 0; // 0x0
+  }
+
+}
+
+package com.google.firebase.messaging.threads {
+
+  public interface ExecutorFactory {
+    method public void executeOneOff(String, String, com.google.firebase.messaging.threads.ThreadPriority, Runnable);
+    method public java.util.concurrent.ScheduledExecutorService newScheduledThreadPool(int, com.google.firebase.messaging.threads.ThreadPriority);
+    method public java.util.concurrent.ScheduledExecutorService newScheduledThreadPool(int, java.util.concurrent.ThreadFactory, com.google.firebase.messaging.threads.ThreadPriority);
+    method public java.util.concurrent.ExecutorService newSingleThreadExecutor(com.google.firebase.messaging.threads.ThreadPriority);
+    method public java.util.concurrent.ExecutorService newSingleThreadExecutor(java.util.concurrent.ThreadFactory, com.google.firebase.messaging.threads.ThreadPriority);
+    method public java.util.concurrent.ExecutorService newThreadPool(com.google.firebase.messaging.threads.ThreadPriority);
+    method public java.util.concurrent.ExecutorService newThreadPool(java.util.concurrent.ThreadFactory, com.google.firebase.messaging.threads.ThreadPriority);
+    method public java.util.concurrent.ExecutorService newThreadPool(int, com.google.firebase.messaging.threads.ThreadPriority);
+    method public java.util.concurrent.ExecutorService newThreadPool(int, java.util.concurrent.ThreadFactory, com.google.firebase.messaging.threads.ThreadPriority);
+    method public java.util.concurrent.Future<?> submitOneOff(String, String, com.google.firebase.messaging.threads.ThreadPriority, Runnable);
+  }
+
+  public class PoolableExecutors {
+    method public static com.google.firebase.messaging.threads.ExecutorFactory factory();
+  }
+
+  public enum ThreadPriority {
+    enum_constant public static final com.google.firebase.messaging.threads.ThreadPriority HIGH_SPEED;
+    enum_constant public static final com.google.firebase.messaging.threads.ThreadPriority LOW_POWER;
+  }
+
+}
+

@@ -32,7 +32,7 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.abt.FirebaseABTesting;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
-import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.remoteconfig.internal.ConfigCacheClient;
 import com.google.firebase.remoteconfig.internal.ConfigContainer;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler;
@@ -58,12 +58,13 @@ import org.robolectric.annotation.Config;
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
 public class RemoteConfigComponentTest {
-  private static final String API_KEY = "api_key";
+  private static final String API_KEY = "AIzaSyabcdefghijklmnopqrstuvwxyz1234567";
   private static final String APP_ID = "1:14368190084:android:09cb977358c6f241";
   private static final String DUMMY_API_KEY = "api_key";
+  private static final String PROJECT_ID = "fake-frc-test-id";
 
   @Mock private FirebaseApp mockFirebaseApp;
-  @Mock private FirebaseInstanceId mockFirebaseIid;
+  @Mock private FirebaseInstallationsApi mockFirebaseInstallations;
   @Mock private FirebaseABTesting mockFirebaseAbt;
   @Mock private AnalyticsConnector mockAnalyticsConnector;
   @Mock private LegacyConfigsHandler mockLegacyConfigsHandler;
@@ -177,7 +178,7 @@ public class RemoteConfigComponentTest {
         context,
         directExecutor,
         mockFirebaseApp,
-        mockFirebaseIid,
+        mockFirebaseInstallations,
         mockFirebaseAbt,
         mockAnalyticsConnector,
         mockLegacyConfigsHandler,
@@ -189,7 +190,7 @@ public class RemoteConfigComponentTest {
         context,
         directExecutor,
         mockFirebaseApp,
-        mockFirebaseIid,
+        mockFirebaseInstallations,
         mockFirebaseAbt,
         mockAnalyticsConnector,
         mockLegacyConfigsHandler,
@@ -201,7 +202,7 @@ public class RemoteConfigComponentTest {
     return frcComponent.get(
         mockFirebaseApp,
         namespace,
-        mockFirebaseIid,
+        mockFirebaseInstallations,
         mockFirebaseAbt,
         directExecutor,
         mockFetchedCache,
@@ -237,6 +238,11 @@ public class RemoteConfigComponentTest {
     FirebaseApp.clearInstancesForTest();
 
     return FirebaseApp.initializeApp(
-        context, new FirebaseOptions.Builder().setApiKey(API_KEY).setApplicationId(APP_ID).build());
+        context,
+        new FirebaseOptions.Builder()
+            .setApiKey(API_KEY)
+            .setApplicationId(APP_ID)
+            .setProjectId(PROJECT_ID)
+            .build());
   }
 }

@@ -27,7 +27,6 @@ import com.google.android.datatransport.backend.cct.BuildConfig;
 import com.google.android.datatransport.cct.internal.AndroidClientInfo;
 import com.google.android.datatransport.cct.internal.BatchedLogRequest;
 import com.google.android.datatransport.cct.internal.ClientInfo;
-import com.google.android.datatransport.cct.internal.JsonBatchedLogRequestEncoder;
 import com.google.android.datatransport.cct.internal.LogEvent;
 import com.google.android.datatransport.cct.internal.LogRequest;
 import com.google.android.datatransport.cct.internal.LogResponse;
@@ -49,9 +48,11 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -88,7 +89,7 @@ final class CctTransportBackend implements TransportBackend {
   private static final String KEY_FINGERPRINT = "fingerprint";
   private static final String KEY_TIMEZONE_OFFSET = "tz-offset";
 
-  private final DataEncoder dataEncoder = JsonBatchedLogRequestEncoder.createJsonEncoder();
+  private final DataEncoder dataEncoder = BatchedLogRequest.createDataEncoder();
 
   private final ConnectivityManager connectivityManager;
   final URL endPoint;
@@ -197,7 +198,7 @@ final class CctTransportBackend implements TransportBackend {
 
       // set log source to either its numeric value or its name.
       try {
-        requestBuilder.setSource(Integer.valueOf(entry.getKey()));
+        requestBuilder.setSource(Integer.parseInt(entry.getKey()));
       } catch (NumberFormatException ex) {
         requestBuilder.setSource(entry.getKey());
       }
@@ -269,6 +270,9 @@ final class CctTransportBackend implements TransportBackend {
       // JsonWriter often writes one character at a time.
       dataEncoder.encode(
           request.requestBody, new BufferedWriter(new OutputStreamWriter(outputStream)));
+    } catch (ConnectException | UnknownHostException e) {
+      Logging.e(LOG_TAG, "Couldn't open connection, returning with 500", e);
+      return new HttpResponse(500, null, 0);
     } catch (EncodingException | IOException e) {
       Logging.e(LOG_TAG, "Couldn't encode request, returning with 400", e);
       return new HttpResponse(400, null, 0);

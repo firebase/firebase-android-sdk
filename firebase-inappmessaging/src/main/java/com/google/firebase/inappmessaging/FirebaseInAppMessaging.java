@@ -14,12 +14,10 @@
 
 package com.google.firebase.inappmessaging;
 
-import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
-import com.google.android.gms.common.annotation.KeepForSdk;
+import androidx.annotation.Nullable;
 import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.inappmessaging.internal.DataCollectionHelper;
 import com.google.firebase.inappmessaging.internal.DeveloperListenerManager;
 import com.google.firebase.inappmessaging.internal.DisplayCallbacksFactory;
@@ -29,6 +27,7 @@ import com.google.firebase.inappmessaging.internal.ProgramaticContextualTriggers
 import com.google.firebase.inappmessaging.internal.injection.qualifiers.ProgrammaticTrigger;
 import com.google.firebase.inappmessaging.internal.injection.scopes.FirebaseAppScope;
 import com.google.firebase.inappmessaging.model.TriggeredInAppMessage;
+import com.google.firebase.installations.FirebaseInstallationsApi;
 import io.reactivex.disposables.Disposable;
 import java.util.concurrent.Executor;
 import javax.inject.Inject;
@@ -38,7 +37,7 @@ import javax.inject.Inject;
  *
  * <p>Firebase In-App Messaging will automatically initialize, and start listening for events.
  *
- * <p>This feature uses a Firebase Instance ID token to:
+ * <p>This feature uses a Firebase Installation ID token to:
  *
  * <ul>
  *   <li>identify the app instance
@@ -46,8 +45,8 @@ import javax.inject.Inject;
  *   <li>send usage metrics to the Firebase backend.
  * </ul>
  *
- * <p>To delete the Instance ID and the data associated with it, see {@link
- * com.google.firebase.iid.FirebaseInstanceId#deleteInstanceId}.
+ * <p>To delete the Installation ID and the data associated with it, see {@link
+ * FirebaseInstallationsApi#delete()}.
  */
 @FirebaseAppScope
 public class FirebaseInAppMessaging {
@@ -57,6 +56,7 @@ public class FirebaseInAppMessaging {
   private final DisplayCallbacksFactory displayCallbacksFactory;
   private final DeveloperListenerManager developerListenerManager;
   private final ProgramaticContextualTriggers programaticContextualTriggers;
+  private final FirebaseInstallationsApi firebaseInstallations;
 
   private boolean areMessagesSuppressed;
   private FirebaseInAppMessagingDisplay fiamDisplay;
@@ -67,18 +67,21 @@ public class FirebaseInAppMessaging {
       InAppMessageStreamManager inAppMessageStreamManager,
       @ProgrammaticTrigger ProgramaticContextualTriggers programaticContextualTriggers,
       DataCollectionHelper dataCollectionHelper,
+      FirebaseInstallationsApi firebaseInstallations,
       DisplayCallbacksFactory displayCallbacksFactory,
       DeveloperListenerManager developerListenerManager) {
     this.inAppMessageStreamManager = inAppMessageStreamManager;
     this.programaticContextualTriggers = programaticContextualTriggers;
     this.dataCollectionHelper = dataCollectionHelper;
+    this.firebaseInstallations = firebaseInstallations;
     this.areMessagesSuppressed = false;
     this.displayCallbacksFactory = displayCallbacksFactory;
     this.developerListenerManager = developerListenerManager;
 
-    Logging.logi(
-        "Starting InAppMessaging runtime with Instance ID "
-            + FirebaseInstanceId.getInstance().getId());
+    firebaseInstallations
+        .getId()
+        .addOnSuccessListener(
+            id -> Logging.logi("Starting InAppMessaging runtime with Installation ID " + id));
 
     Disposable unused =
         inAppMessageStreamManager
@@ -94,7 +97,6 @@ public class FirebaseInAppMessaging {
    * @return
    */
   @NonNull
-  @Keep
   public static FirebaseInAppMessaging getInstance() {
     return FirebaseApp.getInstance().get(FirebaseInAppMessaging.class);
   }
@@ -104,9 +106,43 @@ public class FirebaseInAppMessaging {
    *
    * @return true if auto initialization is required
    */
-  @Keep
   public boolean isAutomaticDataCollectionEnabled() {
     return dataCollectionHelper.isAutomaticDataCollectionEnabled();
+  }
+
+  /**
+   * Enable, disable or clear automatic data collection for Firebase In-App Messaging.
+   *
+   * <p>When enabled, generates a registration token on app startup if there is no valid one and
+   * generates a new token when it is deleted (which prevents {@link
+   * FirebaseInstallationsApi#delete} from stopping the periodic sending of data). This setting is
+   * persisted across app restarts and overrides the setting specified in your manifest.
+   *
+   * <p>When null, the enablement of the auto-initialization depends on the manifest and then on the
+   * global enablement setting in this order. If none of these settings are present then it is
+   * enabled by default.
+   *
+   * <p>If you need to change the default, (for example, because you want to prompt the user before
+   * generates/refreshes a registration token on app startup), add the following to your
+   * application’s manifest:
+   *
+   * <pre>{@code
+   * <meta-data android:name="firebase_inapp_messaging_auto_init_enabled" android:value="false" />
+   * }</pre>
+   *
+   * <p>Note, this will require you to manually initialize Firebase In-App Messaging, via:
+   *
+   * <pre>{@code FirebaseInAppMessaging.getInstance().setAutomaticDataCollectionEnabled(true)}</pre>
+   *
+   * <p>Manual initialization will also be required in order to clear these settings and fall back
+   * on other settings, via:
+   *
+   * <pre>{@code FirebaseInAppMessaging.getInstance().setAutomaticDataCollectionEnabled(null)}</pre>
+   *
+   * @param isAutomaticCollectionEnabled Whether isEnabled
+   */
+  public void setAutomaticDataCollectionEnabled(@Nullable Boolean isAutomaticCollectionEnabled) {
+    dataCollectionHelper.setAutomaticDataCollectionEnabled(isAutomaticCollectionEnabled);
   }
 
   /**
@@ -114,9 +150,8 @@ public class FirebaseInAppMessaging {
    *
    * <p>When enabled, generates a registration token on app startup if there is no valid one and
    * generates a new token when it is deleted (which prevents {@link
-   * com.google.firebase.iid.FirebaseInstanceId#deleteInstanceId} from stopping the periodic sending
-   * of data). This setting is persisted across app restarts and overrides the setting specified in
-   * your manifest.
+   * FirebaseInstallationsApi#delete} from stopping the periodic sending of data). This setting is
+   * persisted across app restarts and overrides the setting specified in your manifest.
    *
    * <p>By default, auto-initialization is enabled. If you need to change the default, (for example,
    * because you want to prompt the user before generates/refreshes a registration token on app
@@ -132,7 +167,6 @@ public class FirebaseInAppMessaging {
    *
    * @param isAutomaticCollectionEnabled Whether isEnabled
    */
-  @Keep
   public void setAutomaticDataCollectionEnabled(boolean isAutomaticCollectionEnabled) {
     dataCollectionHelper.setAutomaticDataCollectionEnabled(isAutomaticCollectionEnabled);
   }
@@ -147,7 +181,6 @@ public class FirebaseInAppMessaging {
    *
    * @param areMessagesSuppressed Whether messages should be suppressed
    */
-  @Keep
   public void setMessagesSuppressed(@NonNull Boolean areMessagesSuppressed) {
     this.areMessagesSuppressed = areMessagesSuppressed;
   }
@@ -158,17 +191,14 @@ public class FirebaseInAppMessaging {
    *
    * @return true if messages should be suppressed
    */
-  @Keep
   public boolean areMessagesSuppressed() {
     return areMessagesSuppressed;
   }
 
-  /*
-   * Called to set a new message display component for FIAM SDK. This is the method used
-   * by both the default FIAM display SDK or any app wanting to customize the message
-   * display.
+  /**
+   * Called to set a new message display component for FIAM SDK. This is the method used by both the
+   * default FIAM display SDK or any app wanting to customize the message display.
    */
-  @Keep
   public void setMessageDisplayComponent(@NonNull FirebaseInAppMessagingDisplay messageDisplay) {
     Logging.logi("Setting display event component");
     this.fiamDisplay = messageDisplay;
@@ -179,8 +209,6 @@ public class FirebaseInAppMessaging {
    *
    * @hide
    */
-  @Keep
-  @KeepForSdk
   public void clearDisplayListener() {
     Logging.logi("Removing display event component");
     this.fiamDisplay = null;
@@ -207,6 +235,15 @@ public class FirebaseInAppMessaging {
    */
   public void addClickListener(@NonNull FirebaseInAppMessagingClickListener clickListener) {
     developerListenerManager.addClickListener(clickListener);
+  }
+
+  /**
+   * Registers a dismiss listener with FIAM, which will be notified on every FIAM dismiss
+   *
+   * @param dismissListener
+   */
+  public void addDismissListener(@NonNull FirebaseInAppMessagingDismissListener dismissListener) {
+    developerListenerManager.addDismissListener(dismissListener);
   }
 
   /**
@@ -245,6 +282,18 @@ public class FirebaseInAppMessaging {
   public void addClickListener(
       @NonNull FirebaseInAppMessagingClickListener clickListener, @NonNull Executor executor) {
     developerListenerManager.addClickListener(clickListener, executor);
+  }
+
+  /**
+   * Registers a dismiss listener with FIAM, which will be notified on every FIAM dismiss, and
+   * triggered on the provided executor
+   *
+   * @param dismissListener
+   * @param executor
+   */
+  public void addDismissListener(
+      @NonNull FirebaseInAppMessagingDismissListener dismissListener, @NonNull Executor executor) {
+    developerListenerManager.addDismissListener(dismissListener, executor);
   }
 
   /**
@@ -292,18 +341,27 @@ public class FirebaseInAppMessaging {
   }
 
   /**
+   * Removes all registered listeners.
+   *
+   * @hide
+   */
+  public void removeAllListeners() {
+    developerListenerManager.removeAllListeners();
+  }
+
+  /**
    * Programmatically trigger a contextual trigger. This will display any eligible in-app messages
    * that are triggered by this event
    *
    * @param eventName
-   * @hide // hiding until api is finalized
    */
-  public void triggerEvent(String eventName) {
+  public void triggerEvent(@NonNull String eventName) {
     programaticContextualTriggers.triggerEvent(eventName);
   }
 
   private void triggerInAppMessage(TriggeredInAppMessage inAppMessage) {
     if (this.fiamDisplay != null) {
+      // The APIs that control the UI are going to be called on the main thread. Yay!
       fiamDisplay.displayMessage(
           inAppMessage.getInAppMessage(),
           displayCallbacksFactory.generateDisplayCallback(

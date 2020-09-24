@@ -18,6 +18,7 @@ import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.log.LogFileManager;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
@@ -73,8 +74,6 @@ class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
   private final LogFileManager logFileManager;
   private final UserMetadata reportMetadata;
 
-  @Nullable private String currentSessionId;
-
   SessionReportingCoordinator(
       CrashlyticsReportDataCapture dataCapture,
       CrashlyticsReportPersistence reportPersistence,
@@ -90,8 +89,6 @@ class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
 
   @Override
   public void onBeginSession(@NonNull String sessionId, long timestamp) {
-    currentSessionId = sessionId;
-
     final CrashlyticsReport capturedReport = dataCapture.captureReportData(sessionId, timestamp);
 
     reportPersistence.persistReport(capturedReport);
@@ -112,18 +109,16 @@ class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
     reportMetadata.setUserId(userId);
   }
 
-  @Override
-  public void onEndSession() {
-    currentSessionId = null;
-  }
-
-  public void persistFatalEvent(@NonNull Throwable event, @NonNull Thread thread, long timestamp) {
-    persistEvent(event, thread, EVENT_TYPE_CRASH, timestamp, true);
+  public void persistFatalEvent(
+      @NonNull Throwable event, @NonNull Thread thread, @NonNull String sessionId, long timestamp) {
+    Logger.getLogger().d("Persisting fatal event for session " + sessionId);
+    persistEvent(event, thread, sessionId, EVENT_TYPE_CRASH, timestamp, true);
   }
 
   public void persistNonFatalEvent(
-      @NonNull Throwable event, @NonNull Thread thread, long timestamp) {
-    persistEvent(event, thread, EVENT_TYPE_LOGGED, timestamp, false);
+      @NonNull Throwable event, @NonNull Thread thread, @NonNull String sessionId, long timestamp) {
+    Logger.getLogger().d("Persisting non-fatal event for session " + sessionId);
+    persistEvent(event, thread, sessionId, EVENT_TYPE_LOGGED, timestamp, false);
   }
 
   public void finalizeSessionWithNativeEvent(
@@ -140,12 +135,7 @@ class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
         sessionId, FilesPayload.builder().setFiles(ImmutableList.from(nativeFiles)).build());
   }
 
-  public void persistUserId() {
-    final String sessionId = currentSessionId;
-    if (sessionId == null) {
-      Logger.getLogger().d("Could not persist user ID; no current session");
-      return;
-    }
+  public void persistUserId(@NonNull String sessionId) {
     final String userId = reportMetadata.getUserId();
     if (userId == null) {
       Logger.getLogger().d("Could not persist user ID; no user ID available");
@@ -154,8 +144,11 @@ class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
     reportPersistence.persistUserIdForSession(userId, sessionId);
   }
 
-  /** Creates finalized reports for all sessions besides the current session. */
-  public void finalizeSessions(long timestamp) {
+  /**
+   * Creates finalized reports for all sessions besides the given session. If the given session is
+   * null, all sessions will be finalized.
+   */
+  public void finalizeSessions(long timestamp, @Nullable String currentSessionId) {
     reportPersistence.finalizeReports(currentSessionId, timestamp);
   }
 
@@ -170,16 +163,17 @@ class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
    *     sent.
    * @param dataTransportState used to determine whether to send the report before cleaning it up.
    */
-  public void sendReports(
+  Task<Void> sendReports(
       @NonNull Executor reportSendCompleteExecutor,
       @NonNull DataTransportState dataTransportState) {
     if (dataTransportState == DataTransportState.NONE) {
       Logger.getLogger().d("Send via DataTransport disabled. Removing DataTransport reports.");
       reportPersistence.deleteAllReports();
-      return;
+      return Tasks.forResult(null);
     }
     final List<CrashlyticsReportWithSessionId> reportsToSend =
         reportPersistence.loadFinalizedReports();
+    final List<Task<Boolean>> sendTasks = new ArrayList<>();
     for (CrashlyticsReportWithSessionId reportToSend : reportsToSend) {
       if (reportToSend.getReport().getType() == CrashlyticsReport.Type.NATIVE
           && dataTransportState != DataTransportState.ALL) {
@@ -189,24 +183,21 @@ class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
         continue;
       }
 
-      reportsSender
-          .sendReport(reportToSend)
-          .continueWith(reportSendCompleteExecutor, this::onReportSendComplete);
+      sendTasks.add(
+          reportsSender
+              .sendReport(reportToSend)
+              .continueWith(reportSendCompleteExecutor, this::onReportSendComplete));
     }
+    return Tasks.whenAll(sendTasks);
   }
 
   private void persistEvent(
       @NonNull Throwable event,
       @NonNull Thread thread,
+      @NonNull String sessionId,
       @NonNull String eventType,
       long timestamp,
       boolean includeAllThreads) {
-    final String sessionId = currentSessionId;
-
-    if (sessionId == null) {
-      Logger.getLogger().d("Cannot persist event, no currently open session");
-      return;
-    }
 
     final boolean isHighPriority = eventType.equals(EVENT_TYPE_CRASH);
 

@@ -22,7 +22,7 @@ import com.google.firebase.components.ComponentRegistrar
 import com.google.firebase.platforminfo.LibraryVersionComponent
 
 /**
- * Single access point to all firebase sdks from Kotlin.
+ * Single access point to all firebase SDKs from Kotlin.
  *
  * <p>Acts as a target for extension methods provided by sdks.
  */

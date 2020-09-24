@@ -26,16 +26,17 @@ import android.content.res.Resources;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
 import com.google.firebase.crashlytics.internal.MissingNativeComponent;
+import com.google.firebase.crashlytics.internal.analytics.UnavailableAnalyticsEventLogger;
+import com.google.firebase.crashlytics.internal.breadcrumbs.DisabledBreadcrumbSource;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.persistence.FileStoreImpl;
 import com.google.firebase.crashlytics.internal.settings.SettingsController;
 import com.google.firebase.crashlytics.internal.settings.TestSettingsData;
 import com.google.firebase.crashlytics.internal.settings.model.SettingsData;
-import com.google.firebase.iid.internal.FirebaseInstanceIdInternal;
+import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
@@ -86,7 +87,6 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
     private IdManager idManager;
     private CrashlyticsNativeComponent nativeComponent;
     private DataCollectionArbiter arbiter;
-    private AnalyticsConnector analyticsConnector;
     private ExecutorService crashHandlerExecutor;
 
     public CoreBuilder(Context context, FirebaseOptions firebaseOptions) {
@@ -94,15 +94,14 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
       when(app.getApplicationContext()).thenReturn(context);
       when(app.getOptions()).thenReturn(firebaseOptions);
 
-      FirebaseInstanceIdInternal instanceIdMock = mock(FirebaseInstanceIdInternal.class);
-      idManager = new IdManager(context, context.getPackageName(), instanceIdMock);
+      FirebaseInstallationsApi installationsApiMock = mock(FirebaseInstallationsApi.class);
+      when(installationsApiMock.getId()).thenReturn(Tasks.forResult("instanceId"));
+      idManager = new IdManager(context, context.getPackageName(), installationsApiMock);
 
       nativeComponent = new MissingNativeComponent();
 
       arbiter = mock(DataCollectionArbiter.class);
       when(arbiter.isAutomaticDataCollectionEnabled()).thenReturn(true);
-
-      analyticsConnector = null;
 
       crashHandlerExecutor = new SameThreadExecutorService();
     }
@@ -114,7 +113,13 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
 
     public CrashlyticsCore build() {
       return new CrashlyticsCore(
-          app, idManager, nativeComponent, arbiter, analyticsConnector, crashHandlerExecutor);
+          app,
+          idManager,
+          nativeComponent,
+          arbiter,
+          new DisabledBreadcrumbSource(),
+          new UnavailableAnalyticsEventLogger(),
+          crashHandlerExecutor);
     }
   }
 

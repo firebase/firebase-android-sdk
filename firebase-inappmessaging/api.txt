@@ -4,19 +4,23 @@ package com.google.firebase.inappmessaging {
   public class FirebaseInAppMessaging {
     method public void addClickListener(@NonNull com.google.firebase.inappmessaging.FirebaseInAppMessagingClickListener);
     method public void addClickListener(@NonNull com.google.firebase.inappmessaging.FirebaseInAppMessagingClickListener, @NonNull java.util.concurrent.Executor);
+    method public void addDismissListener(@NonNull com.google.firebase.inappmessaging.FirebaseInAppMessagingDismissListener);
+    method public void addDismissListener(@NonNull com.google.firebase.inappmessaging.FirebaseInAppMessagingDismissListener, @NonNull java.util.concurrent.Executor);
     method public void addDisplayErrorListener(@NonNull com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayErrorListener);
     method public void addDisplayErrorListener(@NonNull com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayErrorListener, @NonNull java.util.concurrent.Executor);
     method public void addImpressionListener(@NonNull com.google.firebase.inappmessaging.FirebaseInAppMessagingImpressionListener);
     method public void addImpressionListener(@NonNull com.google.firebase.inappmessaging.FirebaseInAppMessagingImpressionListener, @NonNull java.util.concurrent.Executor);
-    method @Keep public boolean areMessagesSuppressed();
-    method @NonNull @Keep public static com.google.firebase.inappmessaging.FirebaseInAppMessaging getInstance();
-    method @Keep public boolean isAutomaticDataCollectionEnabled();
+    method public boolean areMessagesSuppressed();
+    method @NonNull public static com.google.firebase.inappmessaging.FirebaseInAppMessaging getInstance();
+    method public boolean isAutomaticDataCollectionEnabled();
     method public void removeClickListener(@NonNull com.google.firebase.inappmessaging.FirebaseInAppMessagingClickListener);
     method public void removeDisplayErrorListener(@NonNull com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayErrorListener);
     method public void removeImpressionListener(@NonNull com.google.firebase.inappmessaging.FirebaseInAppMessagingImpressionListener);
-    method @Keep public void setAutomaticDataCollectionEnabled(boolean);
-    method @Keep public void setMessageDisplayComponent(@NonNull com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplay);
-    method @Keep public void setMessagesSuppressed(@NonNull Boolean);
+    method public void setAutomaticDataCollectionEnabled(@Nullable Boolean);
+    method public void setAutomaticDataCollectionEnabled(boolean);
+    method public void setMessageDisplayComponent(@NonNull com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplay);
+    method public void setMessagesSuppressed(@NonNull Boolean);
+    method public void triggerEvent(@NonNull String);
   }
 
   public interface FirebaseInAppMessagingClickListener {
@@ -26,6 +30,10 @@ package com.google.firebase.inappmessaging {
   public class FirebaseInAppMessagingContextualTrigger {
     ctor public FirebaseInAppMessagingContextualTrigger(@NonNull String);
     method @NonNull public String getTriggerName();
+  }
+
+  public interface FirebaseInAppMessagingDismissListener {
+    method public void messageDismissed(@NonNull com.google.firebase.inappmessaging.model.InAppMessage);
   }
 
   @Keep public interface FirebaseInAppMessagingDisplay {

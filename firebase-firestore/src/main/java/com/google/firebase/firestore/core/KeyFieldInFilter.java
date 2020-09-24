@@ -30,17 +30,28 @@ public class KeyFieldInFilter extends FieldFilter {
   KeyFieldInFilter(FieldPath field, Value value) {
     super(field, Operator.IN, value);
 
-    hardAssert(Values.isArray(value), "KeyFieldInFilter expects an ArrayValue");
-    for (Value element : value.getArrayValue().getValuesList()) {
-      hardAssert(
-          Values.isReferenceValue(element),
-          "Comparing on key with IN, but an array value was not a ReferenceValue");
-      keys.add(DocumentKey.fromName(element.getReferenceValue()));
-    }
+    keys.addAll(extractDocumentKeysFromArrayValue(Operator.IN, value));
   }
 
   @Override
   public boolean matches(Document doc) {
     return keys.contains(doc.getKey());
+  }
+
+  static List<DocumentKey> extractDocumentKeysFromArrayValue(Operator operator, Value value) {
+    hardAssert(
+        operator == Operator.IN || operator == Operator.NOT_IN,
+        "extractDocumentKeysFromArrayValue requires IN or NOT_IN operators");
+    hardAssert(Values.isArray(value), "KeyFieldInFilter/KeyFieldNotInFilter expects an ArrayValue");
+    List<DocumentKey> keys = new ArrayList<>();
+    for (Value element : value.getArrayValue().getValuesList()) {
+      hardAssert(
+          Values.isReferenceValue(element),
+          "Comparing on key with "
+              + operator.toString()
+              + ", but an array value was not a ReferenceValue");
+      keys.add(DocumentKey.fromName(element.getReferenceValue()));
+    }
+    return keys;
   }
 }

@@ -5,7 +5,7 @@
     <!--<uses-sdk android:minSdkVersion="16"/>-->
     <application>
         <service android:name="com.google.firebase.components.ComponentDiscoveryService" android:exported="false">
-            <meta-data android:name="com.google.firebase.components:com.google.firebase.remoteconfig.ktx.FirebaseConfigKtxRegistrar"
+            <meta-data android:name="com.google.firebase.components:com.google.firebase.remoteconfig.ktx.FirebaseRemoteConfigKtxRegistrar"
                 android:value="com.google.firebase.components.ComponentRegistrar" />
         </service>
     </application>

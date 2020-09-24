@@ -39,14 +39,13 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.crashlytics.device.session.Crashlytics;
 import com.google.firebase.crashlytics.device.session.Crashlytics.Session;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
 import com.google.firebase.crashlytics.internal.MissingNativeComponent;
 import com.google.firebase.crashlytics.internal.NativeSessionFileProvider;
-import com.google.firebase.crashlytics.internal.analytics.AnalyticsReceiver;
+import com.google.firebase.crashlytics.internal.analytics.AnalyticsEventLogger;
 import com.google.firebase.crashlytics.internal.network.HttpRequestFactory;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.report.ReportManager;
@@ -59,7 +58,7 @@ import com.google.firebase.crashlytics.internal.settings.model.FeaturesSettingsD
 import com.google.firebase.crashlytics.internal.settings.model.SessionSettingsData;
 import com.google.firebase.crashlytics.internal.settings.model.SettingsData;
 import com.google.firebase.crashlytics.internal.unity.UnityVersionProvider;
-import com.google.firebase.iid.internal.FirebaseInstanceIdInternal;
+import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
@@ -91,7 +90,6 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
   private SettingsDataProvider testSettingsDataProvider;
   private FileStore mockFileStore;
   private File testFilesDirectory;
-  private AnalyticsReceiver mockAnalyticsReceiver;
   private AppSettingsData appSettingsData;
   private SessionSettingsData sessionSettingsData;
 
@@ -101,12 +99,11 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
 
     testContext = getContext();
 
-    FirebaseInstanceIdInternal instanceIdMock = mock(FirebaseInstanceIdInternal.class);
-    idManager = new IdManager(testContext, testContext.getPackageName(), instanceIdMock);
+    FirebaseInstallationsApi installationsApiMock = mock(FirebaseInstallationsApi.class);
+    when(installationsApiMock.getId()).thenReturn(Tasks.forResult("instanceId"));
+    idManager = new IdManager(testContext, testContext.getPackageName(), installationsApiMock);
 
     BatteryIntentProvider.returnNull = false;
-
-    mockAnalyticsReceiver = mock(AnalyticsReceiver.class);
 
     // For each test case, create a new, random subdirectory to guarantee a clean slate for file
     // manipulation.
@@ -152,7 +149,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
     private ReportUploader.Provider reportUploaderProvider;
     private CrashlyticsNativeComponent nativeComponent;
     private UnityVersionProvider unityVersionProvider;
-    private AnalyticsConnector analyticsConnector;
+    private AnalyticsEventLogger analyticsEventLogger;
 
     ControllerBuilder() {
       dataCollectionArbiter = mock(DataCollectionArbiter.class);
@@ -163,7 +160,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
       unityVersionProvider = mock(UnityVersionProvider.class);
       when(unityVersionProvider.getUnityVersion()).thenReturn(null);
 
-      analyticsConnector = mock(AnalyticsConnector.class);
+      analyticsEventLogger = mock(AnalyticsEventLogger.class);
 
       reportManager = null;
     }
@@ -203,8 +200,8 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
       return this;
     }
 
-    public ControllerBuilder setAnalyticsConnector(AnalyticsConnector connector) {
-      analyticsConnector = connector;
+    public ControllerBuilder setAnalyticsEventLogger(AnalyticsEventLogger logger) {
+      analyticsEventLogger = logger;
       return this;
     }
 
@@ -237,8 +234,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
               reportUploaderProvider,
               nativeComponent,
               unityVersionProvider,
-              mockAnalyticsReceiver,
-              analyticsConnector,
+              analyticsEventLogger,
               testSettingsDataProvider);
       return controller;
     }
@@ -832,6 +828,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
 
     // Use a real DataCollectionArbiter to test its switching behavior.
     DataCollectionArbiter arbiter = new DataCollectionArbiter(app);
+    assertFalse(arbiter.isAutomaticDataCollectionEnabled());
 
     final ControllerBuilder builder = builder();
     builder.setDataCollectionArbiter(arbiter);
@@ -842,9 +839,22 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
     Task<Void> task = controller.submitAllReports(1.0f, testSettingsDataProvider.getAppSettings());
 
     arbiter.setCrashlyticsDataCollectionEnabled(true);
+    assertTrue(arbiter.isAutomaticDataCollectionEnabled());
+
+    when(mockEditor.putBoolean(PREFS_KEY, false)).thenReturn(mockEditor);
+    when(mockPrefs.getBoolean(PREFS_KEY, true)).thenReturn(false);
+    arbiter.setCrashlyticsDataCollectionEnabled(false);
+    assertFalse(arbiter.isAutomaticDataCollectionEnabled());
+
+    when(mockPrefs.contains(PREFS_KEY)).thenReturn(false);
+    when(mockEditor.remove(PREFS_KEY)).thenReturn(mockEditor);
+    arbiter.setCrashlyticsDataCollectionEnabled(null);
+    when(app.isDataCollectionDefaultEnabled()).thenReturn(true);
+    assertTrue(arbiter.isAutomaticDataCollectionEnabled());
+    when(app.isDataCollectionDefaultEnabled()).thenReturn(false);
+    assertFalse(arbiter.isAutomaticDataCollectionEnabled());
 
     await(task);
-
     verify(mockReportManager).areReportsAvailable();
     verify(mockReportManager).findReports();
     verifyNoMoreInteractions(mockReportManager);
@@ -981,9 +991,9 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
   }
 
   public void testFirebaseAnalyticsEventIsSent_whenSettingFalseClientFlagTrue() throws Exception {
-    final AnalyticsConnector mockFirebaseAnalyticsLogger = mock(AnalyticsConnector.class);
+    final AnalyticsEventLogger mockFirebaseAnalyticsLogger = mock(AnalyticsEventLogger.class);
     final CrashlyticsController controller =
-        builder().setAnalyticsConnector(mockFirebaseAnalyticsLogger).build();
+        builder().setAnalyticsEventLogger(mockFirebaseAnalyticsLogger).build();
     controller.openSession();
     controller.handleUncaughtException(
         firebaseCrashlyticsSettingsProvider(),
@@ -995,9 +1005,9 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
   }
 
   public void testFirebaseAnalyticsEventIsSent_whenSettingTrueClientFlagFalse() throws Exception {
-    final AnalyticsConnector mockFirebaseAnalyticsLogger = mock(AnalyticsConnector.class);
+    final AnalyticsEventLogger mockFirebaseAnalyticsLogger = mock(AnalyticsEventLogger.class);
     final CrashlyticsController controller =
-        builder().setAnalyticsConnector(mockFirebaseAnalyticsLogger).build();
+        builder().setAnalyticsEventLogger(mockFirebaseAnalyticsLogger).build();
     controller.openSession();
     controller.handleUncaughtException(
         firebaseCrashlyticsSettingsProvider(),
@@ -1009,9 +1019,9 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
   }
 
   public void testFirebaseAnalyticsEventIsSent_whenSettingTrueClientFlagTrue() throws Exception {
-    final AnalyticsConnector mockFirebaseAnalyticsLogger = mock(AnalyticsConnector.class);
+    final AnalyticsEventLogger mockFirebaseAnalyticsLogger = mock(AnalyticsEventLogger.class);
     final CrashlyticsController controller =
-        builder().setAnalyticsConnector(mockFirebaseAnalyticsLogger).build();
+        builder().setAnalyticsEventLogger(mockFirebaseAnalyticsLogger).build();
     controller.openSession();
     controller.handleUncaughtException(
         firebaseCrashlyticsSettingsProvider(),
@@ -1020,13 +1030,6 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
     controller.finalizeSessions(sessionSettingsData.maxCustomExceptionEvents);
 
     assertFirebaseAnalyticsCrashEvent(mockFirebaseAnalyticsLogger);
-  }
-
-  public void testAnalyticsEventListenerIsRegistered() throws Exception {
-    final CrashlyticsController controller = builder().build();
-    controller.registerAnalyticsListener();
-
-    Mockito.verify(mockAnalyticsReceiver, Mockito.times(1)).register();
   }
 
   public void testGeneratorAndAnalyzerVersion() throws Exception {
@@ -1114,14 +1117,12 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
     return settingsProvider;
   }
 
-  private void assertFirebaseAnalyticsCrashEvent(AnalyticsConnector mockFirebaseAnalyticsLogger) {
+  private void assertFirebaseAnalyticsCrashEvent(AnalyticsEventLogger mockFirebaseAnalyticsLogger) {
     final ArgumentCaptor<Bundle> captor = ArgumentCaptor.forClass(Bundle.class);
 
     Mockito.verify(mockFirebaseAnalyticsLogger, Mockito.times(1))
         .logEvent(
-            Mockito.eq(CrashlyticsController.FIREBASE_ANALYTICS_ORIGIN_CRASHLYTICS),
-            Mockito.eq(CrashlyticsController.FIREBASE_APPLICATION_EXCEPTION),
-            captor.capture());
+            Mockito.eq(CrashlyticsController.FIREBASE_APPLICATION_EXCEPTION), captor.capture());
     assertEquals(
         CrashlyticsController.FIREBASE_CRASH_TYPE_FATAL,
         captor.getValue().getInt(CrashlyticsController.FIREBASE_CRASH_TYPE));
