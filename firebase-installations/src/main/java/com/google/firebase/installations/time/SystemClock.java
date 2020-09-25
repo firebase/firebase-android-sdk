@@ -15,13 +15,30 @@
 package com.google.firebase.installations.time;
 
 /**
- * Implementation that uses System.currentTimeMillis() to implement {@link Clock#millis()}.
+ * Implementation that uses System.currentTimeMillis() to implement {@link
+ * Clock#currentTimeMillis()}.
+ *
+ * <p>Note: Using JodaTime would require us to a add a dependency on joda-time:joda-time library
+ * which will lead to increase in FIS aar size just to fetch system time. Hence, decided to use
+ * Java's inbuilt current system time.
  *
  * @hide
  */
 public class SystemClock implements Clock {
+  private static SystemClock singleton;
+
+  private SystemClock() {}
+
+  /** Factory method that always returns the same {@link SystemClock} instance. */
+  public static SystemClock getInstance() {
+    if (singleton == null) {
+      singleton = new SystemClock();
+    }
+    return singleton;
+  }
+
   @Override
-  public long millis() {
+  public long currentTimeMillis() {
     // Returns current system time in millis as per
     // https://docs.oracle.com/javase/7/docs/api/java/lang/System.html#currentTimeMillis().
     return System.currentTimeMillis();

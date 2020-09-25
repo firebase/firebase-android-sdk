@@ -23,5 +23,5 @@ package com.google.firebase.installations.time;
  */
 public interface Clock {
   /** Returns the current time in milliseconds since EPOCH in UTC. */
-  long millis();
+  long currentTimeMillis();
 }

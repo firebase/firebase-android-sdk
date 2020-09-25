@@ -60,7 +60,7 @@ public final class Utils {
   /** Returns current time in milliseconds. */
   public long currentTimeInMillis() {
     // Mockito doesn't allow to mock static methods. As a result this util method is not static.
-    return clock.millis(); // Returns current time in milliseconds.
+    return clock.currentTimeMillis();
   }
 
   static boolean isValidAppIdFormat(@Nullable String appId) {

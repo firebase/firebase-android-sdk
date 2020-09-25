@@ -25,7 +25,7 @@ public class FakeClock implements Clock {
   }
 
   @Override
-  public long millis() {
+  public long currentTimeMillis() {
     return currentTimeMillis;
   }
 
