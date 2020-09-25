@@ -34,11 +34,12 @@ public class FirebaseClientGrpcMetadataProviderTest {
   private Provider<HeartBeatInfo> mockHeartBeatProvider = mock(Provider.class);
   private UserAgentPublisher mockUserAgent = mock(UserAgentPublisher.class);
   private HeartBeatInfo mockHeartBeat = mock(HeartBeatInfo.class);
-  private FirebaseOptions options = new FirebaseOptions.Builder()
-            .setApplicationId("app_id")
-            .setApiKey("apikey")
-            .setProjectId("projectid")
-            .build();
+  private FirebaseOptions options =
+      new FirebaseOptions.Builder()
+          .setApplicationId("app_id")
+          .setApiKey("apikey")
+          .setProjectId("projectid")
+          .build();
 
   private static final Metadata.Key<String> HEART_BEAT_HEADER =
       Metadata.Key.of("x-firebase-client-log-type", Metadata.ASCII_STRING_MARSHALLER);
