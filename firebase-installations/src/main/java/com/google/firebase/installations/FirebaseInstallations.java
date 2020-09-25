@@ -34,6 +34,7 @@ import com.google.firebase.installations.local.PersistedInstallationEntry;
 import com.google.firebase.installations.remote.FirebaseInstallationServiceClient;
 import com.google.firebase.installations.remote.InstallationResponse;
 import com.google.firebase.installations.remote.TokenResult;
+import com.google.firebase.installations.time.SystemClock;
 import com.google.firebase.platforminfo.UserAgentPublisher;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -132,7 +133,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
         new FirebaseInstallationServiceClient(
             firebaseApp.getApplicationContext(), publisher, heartbeatInfo),
         new PersistedInstallation(firebaseApp),
-        new Utils(),
+        new Utils(SystemClock.getInstance()),
         new IidStore(firebaseApp),
         new RandomFidGenerator());
   }
