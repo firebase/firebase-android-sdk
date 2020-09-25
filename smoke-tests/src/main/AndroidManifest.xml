@@ -13,5 +13,12 @@
 
     <meta-data android:name="com.google.firebase.testing.classes"
       android:value="com.google.firebase.testing.TestSuite" />
+
+    <provider
+      android:name="com.google.firebase.testing.StrictModeInitProvider"
+      android:authorities="${applicationId}.hello"
+      android:directBootAware="true"
+      android:exported="false"
+      android:initOrder="200" />
   </application>
 </manifest>
