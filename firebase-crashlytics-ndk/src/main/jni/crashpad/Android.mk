@@ -31,12 +31,6 @@ LOCAL_SRC_FILES := \
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
-LOCAL_MODULE := crashpad-compat
-LOCAL_SRC_FILES := \
-	$(LOCAL_PATH)/../../../third_party/crashpad/crashpad/out/$(TARGET_ARCH_ABI)/out/Release/obj/compat/libcrashpad_compat.a
-include $(PREBUILT_STATIC_LIBRARY)
-
-include $(CLEAR_VARS)
 LOCAL_MODULE := crashpad-tool-support
 LOCAL_SRC_FILES := \
 	$(LOCAL_PATH)/../../../third_party/crashpad/crashpad/out/$(TARGET_ARCH_ABI)/out/Release/obj/tools/libcrashpad_tool_support.a

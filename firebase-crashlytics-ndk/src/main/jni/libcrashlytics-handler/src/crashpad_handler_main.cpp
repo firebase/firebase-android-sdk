@@ -1,15 +1,18 @@
 #include <jni.h>
 #include <unistd.h>
 #include <cerrno>
+#include <vector>
 
 #include <string>
 
-#include "handler/handler_main.h"
-
 #include "crashlytics/config.h"
-#include "crashlytics/detail/supplementary_file.h"
-#include "crashlytics/handler/detail/context.h"
 #include "crashlytics/crashpad_handler_main.h"
+
+extern "C" {
+
+extern int CrashpadHandlerMain(int argc, char* argv[]);
+
+}
 
 namespace google { namespace crashlytics { namespace jni {
 
@@ -80,12 +83,10 @@ jint JNI_Init(JNIEnv* env, jobject obj, jobjectArray pathsArray)
       argv.push_back(const_cast<char *>(env->GetStringUTFChars(element, 0)));
     }
 
-    return crashpad::CrashpadHandlerMain(argv.size(), argv.data());
+    return CrashpadHandlerMain(argv.size(), argv.data());
 }
-
-#include "crashlytics/crashpad_handler_main_impl.inc"
 
 int main(int argc, char* argv[])
 {
-  return crashpad::CrashpadHandlerMain(argc, argv);
+  return CrashpadHandlerMain(argc, argv);
 }

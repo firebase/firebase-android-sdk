@@ -38,6 +38,12 @@
 #include <android/configuration.h>
 #include <android/sensor.h>
 
+extern "C" {
+
+extern int CrashpadHandlerMain(int argc, char* argv[]);
+
+}
+
 namespace google { namespace crashlytics { namespace entry {
 
 #if defined (CRASHLYTICS_INCLUDE_JNI_ENTRY)
@@ -167,5 +173,3 @@ jboolean JNI_Init(JNIEnv* env, jobject obj, jobjectArray pathsArray, jobject ass
 }
 
 #endif // CRASHLYTICS_INCLUDE_JNI_ENTRY
-
-#include "crashlytics/crashpad_handler_main_impl.inc"

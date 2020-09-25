@@ -27,7 +27,6 @@ extern "C" {
 
 jint       JNI_OnLoad(JavaVM* vm, void* reserved);
 jboolean   JNI_Init(JNIEnv* env, jobject obj, jobjectArray file, jobject asset_manager);
-int        CrashpadHandlerMain(int argc, char* argv[]);
 
 #endif // CRASHLYTICS_INCLUDE_JNI_ENTRY
 

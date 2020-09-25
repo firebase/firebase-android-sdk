@@ -1,3 +1,9 @@
+#include <string>
+
+#include "handler/handler_main.h"
+#include "crashlytics/detail/supplementary_file.h"
+
+extern "C"
 int CrashpadHandlerMain(int argc, char* argv[])
 {
     int status = crashpad::HandlerMain(argc, argv, nullptr);

@@ -5,9 +5,10 @@ include $(CLEAR_VARS)
 ifdef CRASHLYTICS_DEBUG
     LOCAL_CFLAGS += -DCRASHLYTICS_DEBUG
 endif
-LOCAL_CPPFLAGS := -std=c++11 -frtti -Wall -fdata-sections -ffunction-sections -Os
+LOCAL_CPPFLAGS := -std=c++11 -frtti -Wall -fdata-sections -ffunction-sections -Os -flto
+LOCAL_LDFLAGS := -flto
 LOCAL_MODULE := crashlytics
-LOCAL_LDLIBS := -llog -landroid -ldl -lz -Wl,--gc-sections
+LOCAL_LDLIBS := -llog -landroid
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/include $(LOCAL_PATH)/../libcrashlytics-common/include
 LOCAL_ALLOW_UNDEFINED_SYMBOLS := true
 
@@ -18,13 +19,9 @@ SRC_FILE_LIST := $(call rwildcard, $(LOCAL_PATH)/src/, *.cpp)
 
 LOCAL_SRC_FILES := $(SRC_FILE_LIST:$(LOCAL_PATH)/%=%)
 LOCAL_STATIC_LIBRARIES := \
-    crashpad-handler \
 	crashpad-client \
-	crashpad-minidump \
-	crashpad-snapshot \
 	crashpad-util \
-	base \
-	crashpad-tool-support
+	base
 
 LOCAL_SHARED_LIBRARIES := crashlytics-common
 

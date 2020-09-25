@@ -15,11 +15,12 @@
 #ifndef __CRASHLYTICS_CRASHPAD_HANDLER_MAIN_H__
 #define __CRASHLYTICS_CRASHPAD_HANDLER_MAIN_H__
 
+#include <jni.h>
+
 extern "C" {
 
 jint JNI_OnLoad(JavaVM* vm, void* reserved);
 jint JNI_Init(JNIEnv* env, jobject obj, jobjectArray file);
-int  CrashpadHandlerMain(int argc, char* argv[]);
 
 }
 

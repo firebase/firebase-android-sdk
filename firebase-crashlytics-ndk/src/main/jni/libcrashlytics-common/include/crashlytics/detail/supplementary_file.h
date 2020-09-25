@@ -16,6 +16,7 @@
 #define __CRASHLYTICS_DETAIL_SUPPLEMENTARY_FILE_H__
 
 #include <cstring>
+#include <cerrno>
 
 #include "crashlytics/config.h"
 #include "crashlytics/detail/scoped_writer.h"
