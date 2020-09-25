@@ -71,12 +71,16 @@ public final class Utils {
     return API_KEY_FORMAT.matcher(apiKey).matches();
   }
 
-  /* Returns a random number of milliseconds less than or equal to 1000. This helps to avoid cases
-   where many clients get synchronized by some situation and all retry at once, sending requests
-   in synchronized waves. The value of random_number_milliseconds is recalculated after each retry
-  request.*/
-  public long getRandomMillis() {
+  /**
+   * Returns a random number of milliseconds less than or equal to 1000. This helps to avoid cases
+   * where many clients get synchronized by some situation and all retry at once, sending requests
+   * in synchronized waves. The value of random_number_milliseconds is recalculated after each retry
+   * request.
+   */
+  public long getRandomDelayForSyncPrevention() {
     // Mockito doesn't allow to mock static methods. As a result this util method is not static.
+    // TODO: separate random delay generation into a separate class that can be injected for easy
+    // testing.
     return (long) (Math.random() * 1000);
   }
 }
