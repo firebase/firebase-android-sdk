@@ -67,7 +67,7 @@ class RequestLimiter {
     // https://cloud.google.com/storage/docs/exponential-backoff.
     return (long)
         Math.min(
-            Math.pow(2, attemptCount) + utils.getRandomMillis(),
+            Math.pow(2, attemptCount) + utils.getRandomDelayForSyncPrevention(),
             MAXIMUM_BACKOFF_DURATION_FOR_SERVER_ERRORS);
   }
 

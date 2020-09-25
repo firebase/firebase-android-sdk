@@ -66,7 +66,7 @@ public class RequestLimiterTest {
 
   @Test
   public void retryableError_greaterThanNextRequestTime_retries() {
-    when(mockUtils.getRandomMillis()).thenReturn(TimeUnit.MINUTES.toMillis(2));
+    when(mockUtils.getRandomDelayForSyncPrevention()).thenReturn(TimeUnit.MINUTES.toMillis(2));
     when(mockUtils.currentTimeInMillis())
         .thenReturn(CURRENT_TIME_IN_MILLIS, addMinutesToCurrentTime(5));
     requestLimiter.setNextRequestTime(RETRYABLE_RESPONSE_CODE_EXAMPLE);
@@ -75,7 +75,7 @@ public class RequestLimiterTest {
 
   @Test
   public void retryableError_lesserThanNextRequestTime_doesNotRetry() {
-    when(mockUtils.getRandomMillis()).thenReturn(TimeUnit.MINUTES.toMillis(6));
+    when(mockUtils.getRandomDelayForSyncPrevention()).thenReturn(TimeUnit.MINUTES.toMillis(6));
     when(mockUtils.currentTimeInMillis())
         .thenReturn(CURRENT_TIME_IN_MILLIS, addMinutesToCurrentTime(5));
     requestLimiter.setNextRequestTime(RETRYABLE_RESPONSE_CODE_EXAMPLE);
@@ -84,7 +84,7 @@ public class RequestLimiterTest {
 
   @Test
   public void retryableError_exponentialBackoff_retries() {
-    when(mockUtils.getRandomMillis()).thenReturn(TimeUnit.MINUTES.toMillis(5));
+    when(mockUtils.getRandomDelayForSyncPrevention()).thenReturn(TimeUnit.MINUTES.toMillis(5));
     when(mockUtils.currentTimeInMillis())
         .thenReturn(
             CURRENT_TIME_IN_MILLIS,

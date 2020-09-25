@@ -77,8 +77,10 @@ public final class Utils {
    * in synchronized waves. The value of random_number_milliseconds is recalculated after each retry
    * request.
    */
-  public long getRandomMillis() {
+  public long getRandomDelayForSyncPrevention() {
     // Mockito doesn't allow to mock static methods. As a result this util method is not static.
+    // TODO: separate random delay generation into a separate class that can be injected for easy
+    // testing.
     return (long) (Math.random() * 1000);
   }
 }
