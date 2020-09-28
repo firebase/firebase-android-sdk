@@ -144,10 +144,16 @@ public class FirebaseInstallationServiceClient {
       @NonNull String appId,
       @Nullable String iidToken)
       throws FirebaseInstallationsException {
+    if (!requestLimiter.isRequestAllowed()) {
+      throw new FirebaseInstallationsException(
+          "Firebase Installations Service is unavailable. Please try again later.",
+          Status.UNAVAILABLE);
+    }
+
     String resourceName = String.format(CREATE_REQUEST_RESOURCE_NAME_FORMAT, projectID);
-    int retryCount = 0;
     URL url = getFullyQualifiedRequestUri(resourceName);
-    while (requestLimiter.isRequestAllowed() || shouldServerErrorRetry) {
+    for (int retryCount = 0; retryCount <= MAX_RETRIES; retryCount++) {
+
       HttpURLConnection httpURLConnection = openHttpURLConnection(url, apiKey);
 
       try {
@@ -164,15 +170,20 @@ public class FirebaseInstallationServiceClient {
         int httpResponseCode = httpURLConnection.getResponseCode();
         requestLimiter.setNextRequestTime(httpResponseCode);
 
-        if (httpResponseCode == 200) {
+        if (isSuccessfulResponseCode(httpResponseCode)) {
           return readCreateResponse(httpURLConnection);
         }
 
         logFisCommunicationError(httpURLConnection, appId, apiKey, projectID);
 
+        if (httpResponseCode == 429) {
+          throw new FirebaseInstallationsException(
+              "Firebase servers have received too many requests from this client in a short "
+                  + "period of time. Please try again later.",
+              Status.TOO_MANY_REQUESTS);
+        }
+
         if (httpResponseCode >= 500 && httpResponseCode < 600) {
-          retryCount++;
-          shouldServerErrorRetry = retryCount <= MAX_RETRIES;
           continue;
         }
 
@@ -181,7 +192,7 @@ public class FirebaseInstallationServiceClient {
         // Return empty installation response with BAD_CONFIG response code after max retries
         return InstallationResponse.builder().setResponseCode(ResponseCode.BAD_CONFIG).build();
       } catch (AssertionError | IOException ignored) {
-        retryCount++;
+        continue;
       } finally {
         httpURLConnection.disconnect();
       }
@@ -369,11 +380,17 @@ public class FirebaseInstallationServiceClient {
       @NonNull String projectID,
       @NonNull String refreshToken)
       throws FirebaseInstallationsException {
+    if (!requestLimiter.isRequestAllowed()) {
+      throw new FirebaseInstallationsException(
+          "Firebase Installations Service is unavailable. Please try again later.",
+          Status.UNAVAILABLE);
+    }
+
     String resourceName =
         String.format(GENERATE_AUTH_TOKEN_REQUEST_RESOURCE_NAME_FORMAT, projectID, fid);
-    int retryCount = 0;
     URL url = getFullyQualifiedRequestUri(resourceName);
-    while (requestLimiter.isRequestAllowed() || shouldServerErrorRetry) {
+    for (int retryCount = 0; retryCount <= MAX_RETRIES; retryCount++) {
+
       HttpURLConnection httpURLConnection = openHttpURLConnection(url, apiKey);
       try {
         httpURLConnection.setRequestMethod("POST");
@@ -385,7 +402,7 @@ public class FirebaseInstallationServiceClient {
         int httpResponseCode = httpURLConnection.getResponseCode();
         requestLimiter.setNextRequestTime(httpResponseCode);
 
-        if (httpResponseCode == 200) {
+        if (isSuccessfulResponseCode(httpResponseCode)) {
           return readGenerateAuthTokenResponse(httpURLConnection);
         }
 
@@ -395,9 +412,14 @@ public class FirebaseInstallationServiceClient {
           return TokenResult.builder().setResponseCode(TokenResult.ResponseCode.AUTH_ERROR).build();
         }
 
+        if (httpResponseCode == 429) {
+          throw new FirebaseInstallationsException(
+              "Firebase servers have received too many requests from this client in a short "
+                  + "period of time. Please try again later.",
+              Status.TOO_MANY_REQUESTS);
+        }
+
         if (httpResponseCode >= 500 && httpResponseCode < 600) {
-          retryCount++;
-          shouldServerErrorRetry = retryCount <= MAX_RETRIES;
           continue;
         }
 
@@ -406,7 +428,7 @@ public class FirebaseInstallationServiceClient {
         return TokenResult.builder().setResponseCode(TokenResult.ResponseCode.BAD_CONFIG).build();
         // TODO(b/166168291): Remove code duplication and clean up this class.
       } catch (AssertionError | IOException ignored) {
-        retryCount++;
+        continue;
       } finally {
         httpURLConnection.disconnect();
       }
@@ -414,6 +436,10 @@ public class FirebaseInstallationServiceClient {
     throw new FirebaseInstallationsException(
         "Firebase Installations Service is unavailable. Please try again later.",
         Status.UNAVAILABLE);
+  }
+
+  private static boolean isSuccessfulResponseCode(int responseCode) {
+    return responseCode >= 200 && responseCode < 300;
   }
 
   private static void logBadConfigError() {

@@ -45,7 +45,7 @@ class RequestLimiter {
   // Based on the response code, calculates the next request time to communicate with the FIS
   // servers.
   public synchronized void setNextRequestTime(int responseCode) {
-    if (isSuccessfulOrRequiresNewFIDCreation(responseCode)) {
+    if (isSuccessfulOrRequiresNewFidCreation(responseCode)) {
       resetBackoffStrategy();
       return;
     }
@@ -81,7 +81,7 @@ class RequestLimiter {
   // responds with 401 & 404 for auth config errors which requires clients to follow up with a
   // request to create a new FID. So, we don't limit the next requests for 401 & 404 response codes
   // as well. Read more on FIS response codes: go/fis-api-error-code-classification.
-  private static boolean isSuccessfulOrRequiresNewFIDCreation(int responseCode) {
+  private static boolean isSuccessfulOrRequiresNewFidCreation(int responseCode) {
     return ((responseCode >= 200 && responseCode < 300)
         || responseCode == 401
         || responseCode == 404);

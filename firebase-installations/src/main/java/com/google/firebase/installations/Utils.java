@@ -32,25 +32,26 @@ public final class Utils {
   public static final long AUTH_TOKEN_EXPIRATION_BUFFER_IN_SECS = TimeUnit.HOURS.toSeconds(1);
   private static final String APP_ID_IDENTIFICATION_SUBSTRING = ":";
   private static final Pattern API_KEY_FORMAT = Pattern.compile("\\AA[\\w-]{38}\\z");
-  private static Utils utils;
+  private static Utils singleton;
   private final Clock clock;
 
   private Utils(Clock clock) {
     this.clock = clock;
   }
 
+  // Factory method that always returns the same Utils instance.
   public static Utils getInstance() {
-    if (utils == null) {
-      utils = new Utils(SystemClock.getInstance());
+    if (singleton == null) {
+      singleton = new Utils(SystemClock.getInstance());
     }
-    return utils;
+    return singleton;
   }
 
   public static Utils getTestInstance(Clock clock) {
-    if (utils == null) {
-      utils = new Utils(clock);
+    if (singleton == null) {
+      singleton = new Utils(clock);
     }
-    return utils;
+    return singleton;
   }
 
   /**
