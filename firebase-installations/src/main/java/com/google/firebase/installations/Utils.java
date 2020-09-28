@@ -18,6 +18,8 @@ import android.text.TextUtils;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.installations.local.PersistedInstallationEntry;
+import com.google.firebase.installations.time.Clock;
+import com.google.firebase.installations.time.SystemClock;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
@@ -31,12 +33,22 @@ public final class Utils {
   private static final String APP_ID_IDENTIFICATION_SUBSTRING = ":";
   private static final Pattern API_KEY_FORMAT = Pattern.compile("\\AA[\\w-]{38}\\z");
   private static Utils utils;
+  private final Clock clock;
 
-  private Utils() {}
+  private Utils(Clock clock) {
+    this.clock = clock;
+  }
 
   public static Utils getInstance() {
     if (utils == null) {
-      utils = new Utils();
+      utils = new Utils(SystemClock.getInstance());
+    }
+    return utils;
+  }
+
+  public static Utils getTestInstance(Clock clock) {
+    if (utils == null) {
+      utils = new Utils(clock);
     }
     return utils;
   }
@@ -65,7 +77,7 @@ public final class Utils {
   /** Returns current time in milliseconds. */
   public long currentTimeInMillis() {
     // Mockito doesn't allow to mock static methods. As a result this util method is not static.
-    return System.currentTimeMillis();
+    return clock.currentTimeMillis();
   }
 
   static boolean isValidAppIdFormat(@Nullable String appId) {
@@ -76,12 +88,16 @@ public final class Utils {
     return API_KEY_FORMAT.matcher(apiKey).matches();
   }
 
-  /* Returns a random number of milliseconds less than or equal to 1000. This helps to avoid cases
-   where many clients get synchronized by some situation and all retry at once, sending requests
-   in synchronized waves. The value of random_number_milliseconds is recalculated after each retry
-  request.*/
-  public long getRandomMillis() {
+  /**
+   * Returns a random number of milliseconds less than or equal to 1000. This helps to avoid cases
+   * where many clients get synchronized by some situation and all retry at once, sending requests
+   * in synchronized waves. The value of random_number_milliseconds is recalculated after each retry
+   * request.
+   */
+  public long getRandomDelayForSyncPrevention() {
     // Mockito doesn't allow to mock static methods. As a result this util method is not static.
+    // TODO: separate random delay generation into a separate class that can be injected for easy
+    // testing.
     return (long) (Math.random() * 1000);
   }
 }
