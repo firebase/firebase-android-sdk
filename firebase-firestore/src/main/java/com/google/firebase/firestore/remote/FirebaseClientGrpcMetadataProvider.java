@@ -46,7 +46,7 @@ public class FirebaseClientGrpcMetadataProvider implements GrpcMetadataProvider 
   public FirebaseClientGrpcMetadataProvider(
       @NonNull Provider<UserAgentPublisher> userAgentPublisherProvider,
       @NonNull Provider<HeartBeatInfo> heartBeatInfoProvider,
-      FirebaseOptions firebaseOptions) {
+      @Nullable FirebaseOptions firebaseOptions) {
     this.userAgentPublisherProvider = userAgentPublisherProvider;
     this.heartBeatInfoProvider = heartBeatInfoProvider;
     this.firebaseOptions = firebaseOptions;
