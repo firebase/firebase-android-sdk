@@ -60,12 +60,13 @@ public class FirebaseClientGrpcMetadataProvider implements GrpcMetadataProvider 
     }
 
     int heartBeatCode = heartBeatInfoProvider.get().getHeartBeatCode(HEART_BEAT_TAG).getCode();
-    // Non-zero values indicate some kind of heartbeat should be sent
+    // Non-zero values indicate some kind of heartbeat should be sent.
     if (heartBeatCode != 0) {
       metadata.put(HEART_BEAT_HEADER, Integer.toString(heartBeatCode));
-      metadata.put(USER_AGENT_HEADER, userAgentPublisherProvider.get().getUserAgent());
-      maybeAddGmpAppId(metadata);
     }
+
+    metadata.put(USER_AGENT_HEADER, userAgentPublisherProvider.get().getUserAgent());
+    maybeAddGmpAppId(metadata);
   }
 
   private void maybeAddGmpAppId(@NonNull Metadata metadata) {
