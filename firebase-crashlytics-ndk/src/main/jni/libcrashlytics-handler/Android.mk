@@ -5,20 +5,24 @@ include $(CLEAR_VARS)
 ifdef CRASHLYTICS_DEBUG
     LOCAL_CFLAGS += -DCRASHLYTICS_DEBUG
 endif
-LOCAL_CPPFLAGS := -std=c++11 -fno-rtti -Wall -Os -flto
-LOCAL_LDFLAGS := -flto
+
 LOCAL_MODULE := crashlytics-handler
+
+LOCAL_C_INCLUDES := $(LOCAL_PATH)/include
+
+LOCAL_CPPFLAGS := -std=c++11 -fno-rtti -Wall -Os -flto
+
+LOCAL_LDFLAGS := -flto
+
 LOCAL_LDLIBS := -llog
-LOCAL_C_INCLUDES := \
-	$(LOCAL_PATH)/include \
-	$(LOCAL_PATH)/../libcrashlytics-common/include \
-	$(LOCAL_PATH)/../libcrashlytics/include
 
 # Include all .cpp files in /src
 rwildcard=$(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2) $(filter $(subst *,%,$2),$d))
 
 SRC_FILE_LIST := $(call rwildcard, $(LOCAL_PATH)/src/, *.cpp)
+
 LOCAL_SRC_FILES := $(SRC_FILE_LIST:$(LOCAL_PATH)/%=%)
+
 LOCAL_SHARED_LIBRARIES := crashlytics-common
 
 include $(BUILD_SHARED_LIBRARY)

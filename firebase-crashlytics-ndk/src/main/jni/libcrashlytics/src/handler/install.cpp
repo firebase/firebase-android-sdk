@@ -23,7 +23,7 @@
 #include <dlfcn.h>
 #include <sys/system_properties.h>
 
-#include "third_party/crashpad/crashpad/client/crashpad_client.h"
+#include "client/crashpad_client.h"
 
 #include "crashlytics/config.h"
 #include "crashlytics/handler/install.h"

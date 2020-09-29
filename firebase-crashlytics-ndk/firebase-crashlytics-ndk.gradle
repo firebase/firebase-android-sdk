@@ -27,11 +27,16 @@ android {
     }
 
     compileSdkVersion project.targetSdkVersion
-    ndkVersion "17.2.4988734"	// NDK r17c
     defaultConfig {
         minSdkVersion 16
         targetSdkVersion project.targetSdkVersion
         versionName version
+
+        externalNativeBuild {
+            ndkBuild {
+                arguments '-j4'
+            }
+        }
 
         consumerProguardFiles 'firebase-crashlytics-ndk-proguard.txt'
         multiDexEnabled true
