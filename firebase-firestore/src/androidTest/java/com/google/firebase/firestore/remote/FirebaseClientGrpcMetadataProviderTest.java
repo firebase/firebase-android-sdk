@@ -152,7 +152,7 @@ public class FirebaseClientGrpcMetadataProviderTest {
   }
 
   @Test
-  public void noGmpAppIdWhenOptionsAreZero() {
+  public void noGmpAppIdWhenOptionsAreNull() {
     Metadata metadata = new Metadata();
     when(mockUserAgentProvider.get()).thenReturn(mockUserAgent);
     when(mockHeartBeatProvider.get()).thenReturn(mockHeartBeat);
