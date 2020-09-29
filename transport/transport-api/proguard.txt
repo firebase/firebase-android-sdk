@@ -1,2 +1,5 @@
 -dontwarn com.google.auto.value.AutoValue
 -dontwarn com.google.auto.value.AutoValue$Builder
+-keepclassmembers enum com.google.android.datatransport.Priority {
+     *;
+ }
