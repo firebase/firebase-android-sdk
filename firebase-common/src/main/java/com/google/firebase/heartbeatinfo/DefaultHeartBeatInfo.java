@@ -16,31 +16,31 @@ package com.google.firebase.heartbeatinfo;
 
 import android.content.Context;
 import androidx.annotation.NonNull;
-import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.Dependency;
+import com.google.firebase.components.Lazy;
+import com.google.firebase.inject.Provider;
 
 /** Provides information as whether to send heart beat or not. */
 public class DefaultHeartBeatInfo implements HeartBeatInfo {
 
-  private HeartBeatInfoStorage storage;
+  private Provider<HeartBeatInfoStorage> storage;
 
   private DefaultHeartBeatInfo(Context context) {
-    storage = HeartBeatInfoStorage.getInstance(context);
+    this(new Lazy<>(() -> HeartBeatInfoStorage.getInstance(context)));
   }
 
   @VisibleForTesting
-  @RestrictTo(RestrictTo.Scope.TESTS)
-  DefaultHeartBeatInfo(HeartBeatInfoStorage testStorage) {
+  DefaultHeartBeatInfo(Provider<HeartBeatInfoStorage> testStorage) {
     storage = testStorage;
   }
 
   @Override
   public @NonNull HeartBeat getHeartBeatCode(@NonNull String heartBeatTag) {
     long presentTime = System.currentTimeMillis();
-    boolean shouldSendSdkHB = storage.shouldSendSdkHeartBeat(heartBeatTag, presentTime);
-    boolean shouldSendGlobalHB = storage.shouldSendGlobalHeartBeat(presentTime);
+    boolean shouldSendSdkHB = storage.get().shouldSendSdkHeartBeat(heartBeatTag, presentTime);
+    boolean shouldSendGlobalHB = storage.get().shouldSendGlobalHeartBeat(presentTime);
     if (shouldSendSdkHB && shouldSendGlobalHB) {
       return HeartBeat.COMBINED;
     } else if (shouldSendGlobalHB) {

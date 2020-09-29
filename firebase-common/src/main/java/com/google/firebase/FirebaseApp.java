@@ -29,6 +29,8 @@ import android.text.TextUtils;
 import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RestrictTo;
+import androidx.annotation.RestrictTo.Scope;
 import androidx.annotation.VisibleForTesting;
 import androidx.collection.ArrayMap;
 import androidx.core.os.UserManagerCompat;
@@ -450,6 +452,13 @@ public class FirebaseApp {
   @VisibleForTesting
   public boolean isDefaultApp() {
     return DEFAULT_APP_NAME.equals(getName());
+  }
+
+  /** @hide */
+  @VisibleForTesting
+  @RestrictTo(Scope.TESTS)
+  void initializeAllComponents() {
+    componentRuntime.initializeAllComponentsForTests();
   }
 
   private void notifyBackgroundStateChangeListeners(boolean background) {

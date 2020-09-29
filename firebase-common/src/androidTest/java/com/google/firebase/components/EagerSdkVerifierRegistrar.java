@@ -14,23 +14,35 @@
 
 package com.google.firebase.components;
 
-import com.google.firebase.analytics.connector.AnalyticsConnector;
-import com.google.firebase.auth.FirebaseAuth;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
 
 public class EagerSdkVerifierRegistrar implements ComponentRegistrar {
   @Override
   public List<Component<?>> getComponents() {
-    return Collections.singletonList(
-        Component.builder(EagerSdkVerifier.class)
-            .add(Dependency.requiredProvider(FirebaseAuth.class))
-            .add(Dependency.requiredProvider(AnalyticsConnector.class))
+    return Arrays.asList(
+        Component.builder(InitializationTracker.class)
+            .factory(container -> new InitializationTracker())
+            .build(),
+        Component.builder(EagerComponent.class)
+            .add(Dependency.required(InitializationTracker.class))
+            .factory(container -> new EagerComponent(container.get(InitializationTracker.class)))
+            .alwaysEager()
+            .build(),
+        Component.builder(EagerInDefaultAppComponent.class)
+            .add(Dependency.required(InitializationTracker.class))
             .factory(
                 container ->
-                    new EagerSdkVerifier(
-                        container.getProvider(FirebaseAuth.class),
-                        container.getProvider(AnalyticsConnector.class)))
+                    new EagerInDefaultAppComponent(container.get(InitializationTracker.class)))
+            .eagerInDefaultApp()
+            .build(),
+        Component.builder(LazyComponent.class)
+            .add(Dependency.required(InitializationTracker.class))
+            .factory(container -> new LazyComponent(container.get(InitializationTracker.class)))
+            .build(),
+        Component.builder(EagerSdkVerifier.class)
+            .add(Dependency.required(InitializationTracker.class))
+            .factory(container -> new EagerSdkVerifier(container.get(InitializationTracker.class)))
             .build());
   }
 }

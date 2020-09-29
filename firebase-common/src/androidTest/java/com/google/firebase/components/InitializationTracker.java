@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2020 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,22 +14,17 @@
 
 package com.google.firebase.components;
 
-public class EagerSdkVerifier {
-  private final InitializationTracker initializationTracker;
+import java.util.HashSet;
+import java.util.Set;
 
-  public EagerSdkVerifier(InitializationTracker initializationTracker) {
-    this.initializationTracker = initializationTracker;
+public class InitializationTracker {
+  private final Set<Class<? extends InitializingComponent>> initialized = new HashSet<>();
+
+  synchronized void initialize(Class<? extends InitializingComponent> component) {
+    initialized.add(component);
   }
 
-  public boolean isLazyInitialized() {
-    return initializationTracker.isInitialized(LazyComponent.class);
-  }
-
-  public boolean isEagerInitialized() {
-    return initializationTracker.isInitialized(EagerComponent.class);
-  }
-
-  public boolean isEagerInDefaultAppInitialized() {
-    return initializationTracker.isInitialized(EagerInDefaultAppComponent.class);
+  synchronized boolean isInitialized(Class<? extends InitializingComponent> component) {
+    return initialized.contains(component);
   }
 }
