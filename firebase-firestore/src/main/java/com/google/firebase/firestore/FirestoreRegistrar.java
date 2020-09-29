@@ -18,6 +18,7 @@ import android.content.Context;
 import androidx.annotation.Keep;
 import androidx.annotation.RestrictTo;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.FirebaseOptions;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
@@ -47,6 +48,7 @@ public class FirestoreRegistrar implements ComponentRegistrar {
             .add(Dependency.optionalProvider(HeartBeatInfo.class))
             .add(Dependency.optionalProvider(UserAgentPublisher.class))
             .add(Dependency.optional(InternalAuthProvider.class))
+            .add(Dependency.optional(FirebaseOptions.class))
             .factory(
                 c ->
                     new FirestoreMultiDbComponent(
@@ -55,7 +57,8 @@ public class FirestoreRegistrar implements ComponentRegistrar {
                         c.get(InternalAuthProvider.class),
                         new FirebaseClientGrpcMetadataProvider(
                             c.getProvider(UserAgentPublisher.class),
-                            c.getProvider(HeartBeatInfo.class))))
+                            c.getProvider(HeartBeatInfo.class),
+                            c.get(FirebaseOptions.class))))
             .build(),
         LibraryVersionComponent.create("fire-fst", BuildConfig.VERSION_NAME));
   }
