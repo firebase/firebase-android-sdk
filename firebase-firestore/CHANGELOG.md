@@ -5,6 +5,7 @@
   documents where a specified field's value does not equal the specified value.
   Neither query operator will match documents where the specified field is not
   present.
+- [changed] Added new internal HTTP headers to the gRPC connection.
 
 # 21.6.0
 - [fixed] Removed a delay that may have prevented Firestore from immediately
