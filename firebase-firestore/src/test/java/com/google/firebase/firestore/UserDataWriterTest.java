@@ -48,8 +48,7 @@ import org.robolectric.annotation.Config;
 public class UserDataWriterTest {
 
   private final UserDataWriter writer =
-      new UserDataWriter(
-          TestUtil.firestore(), true, DocumentSnapshot.ServerTimestampBehavior.DEFAULT);
+      new UserDataWriter(TestUtil.firestore(), DocumentSnapshot.ServerTimestampBehavior.DEFAULT);
 
   @Test
   public void testConvertsNullValue() {
@@ -156,10 +155,7 @@ public class UserDataWriterTest {
   @Test
   public void testConvertsDateValue() {
     UserDataWriter dateWriter =
-        new UserDataWriter(
-            TestUtil.firestore(),
-            /* timestampsInSnapshots= */ false,
-            DocumentSnapshot.ServerTimestampBehavior.DEFAULT);
+        new UserDataWriter(TestUtil.firestore(), DocumentSnapshot.ServerTimestampBehavior.DEFAULT);
     List<Date> testCases = asList(new Date(0), new Date(1356048000000L));
     for (Date d : testCases) {
       Value value = wrap(d);
