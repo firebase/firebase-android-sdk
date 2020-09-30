@@ -129,6 +129,7 @@ public class StrictModeRule implements TestRule {
         } finally {
           InstrumentationRegistry.getInstrumentation()
               .runOnMainSync(() -> StrictMode.setThreadPolicy(originalThreadPolicy.get()));
+          // Make sure GC happens, so that the VM policy can detect unclosed resources.
           runGc();
           StrictMode.setVmPolicy(originalVmPolicy);
         }
