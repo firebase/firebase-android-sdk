@@ -14,38 +14,21 @@
 
 package com.google.firebase;
 
-import android.os.StrictMode;
-import android.os.StrictMode.ThreadPolicy;
-import android.os.StrictMode.VmPolicy;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.FirebaseOptions.Builder;
+import com.google.firebase.testing.integ.StrictModeRule;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @RunWith(androidx.test.ext.junit.runners.AndroidJUnit4.class)
 public class StrictModeTest {
 
-  interface Fn<E extends Throwable> {
-    void call() throws E;
-  }
-
-  static <E extends Throwable> void withStrictMode(Fn<E> fn) throws E {
-    ThreadPolicy threadPolicy = StrictMode.getThreadPolicy();
-    VmPolicy vmPolicy = StrictMode.getVmPolicy();
-
-    StrictMode.setThreadPolicy(new ThreadPolicy.Builder().detectAll().penaltyDeath().build());
-    StrictMode.setVmPolicy(new VmPolicy.Builder().detectAll().penaltyDeath().build());
-    try {
-      fn.call();
-    } finally {
-      StrictMode.setThreadPolicy(threadPolicy);
-      StrictMode.setVmPolicy(vmPolicy);
-    }
-  }
+  @Rule public StrictModeRule strictMode = new StrictModeRule();
 
   @Test
   public void initializingFirebaseApp_shouldNotViolateStrictMode() {
-    withStrictMode(
+    strictMode.runOnMainThread(
         () -> {
           FirebaseApp app =
               FirebaseApp.initializeApp(
@@ -56,7 +39,6 @@ public class StrictModeTest {
                       .setApplicationId("appId")
                       .build(),
                   "hello");
-
           app.initializeAllComponents();
         });
   }
