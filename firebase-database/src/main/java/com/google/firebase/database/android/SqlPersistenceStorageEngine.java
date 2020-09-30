@@ -51,6 +51,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -223,7 +224,7 @@ public class SqlPersistenceStorageEngine implements PersistenceStorageEngine {
     saveWrite(path, writeId, WRITE_TYPE_OVERWRITE, serializedNode);
     long duration = System.currentTimeMillis() - start;
     if (logger.logsDebug()) {
-      logger.debug(String.format("Persisted user overwrite in %dms", duration));
+      logger.debug(String.format(Locale.US, "Persisted user overwrite in %dms", duration));
     }
   }
 
@@ -235,7 +236,7 @@ public class SqlPersistenceStorageEngine implements PersistenceStorageEngine {
     saveWrite(path, writeId, WRITE_TYPE_MERGE, serializedNode);
     long duration = System.currentTimeMillis() - start;
     if (logger.logsDebug()) {
-      logger.debug(String.format("Persisted user merge in %dms", duration));
+      logger.debug(String.format(Locale.US, "Persisted user merge in %dms", duration));
     }
   }
 
@@ -247,7 +248,8 @@ public class SqlPersistenceStorageEngine implements PersistenceStorageEngine {
     long duration = System.currentTimeMillis() - start;
     if (logger.logsDebug()) {
       logger.debug(
-          String.format("Deleted %d write(s) with writeId %d in %dms", count, writeId, duration));
+          String.format(
+              Locale.US, "Deleted %d write(s) with writeId %d in %dms", count, writeId, duration));
     }
   }
 
@@ -309,7 +311,7 @@ public class SqlPersistenceStorageEngine implements PersistenceStorageEngine {
       }
       long duration = System.currentTimeMillis() - start;
       if (logger.logsDebug()) {
-        logger.debug(String.format("Loaded %d writes in %dms", writes.size(), duration));
+        logger.debug(String.format(Locale.US, "Loaded %d writes in %dms", writes.size(), duration));
       }
       return writes;
     } catch (IOException e) {
@@ -381,8 +383,12 @@ public class SqlPersistenceStorageEngine implements PersistenceStorageEngine {
     if (logger.logsDebug()) {
       logger.debug(
           String.format(
+              Locale.US,
               "Persisted a total of %d rows and deleted %d rows for a set at %s in %dms",
-              savedRows, removedRows, path.toString(), duration));
+              savedRows,
+              removedRows,
+              path.toString(),
+              duration));
     }
   }
 
@@ -400,8 +406,12 @@ public class SqlPersistenceStorageEngine implements PersistenceStorageEngine {
     if (logger.logsDebug()) {
       logger.debug(
           String.format(
+              Locale.US,
               "Persisted a total of %d rows and deleted %d rows for a merge at %s in %dms",
-              savedRows, removedRows, path.toString(), duration));
+              savedRows,
+              removedRows,
+              path.toString(),
+              duration));
     }
   }
 
@@ -438,7 +448,7 @@ public class SqlPersistenceStorageEngine implements PersistenceStorageEngine {
         TRACKED_QUERY_TABLE, null, values, SQLiteDatabase.CONFLICT_REPLACE);
     long duration = System.currentTimeMillis() - start;
     if (logger.logsDebug()) {
-      logger.debug(String.format("Saved new tracked query in %dms", duration));
+      logger.debug(String.format(Locale.US, "Saved new tracked query in %dms", duration));
     }
   }
 
@@ -496,7 +506,9 @@ public class SqlPersistenceStorageEngine implements PersistenceStorageEngine {
       }
       long duration = System.currentTimeMillis() - start;
       if (logger.logsDebug()) {
-        logger.debug(String.format("Loaded %d tracked queries in %dms", queries.size(), duration));
+        logger.debug(
+            String.format(
+                Locale.US, "Loaded %d tracked queries in %dms", queries.size(), duration));
       }
       return queries;
     } finally {
@@ -519,7 +531,7 @@ public class SqlPersistenceStorageEngine implements PersistenceStorageEngine {
         TRACKED_QUERY_TABLE, values, whereClause, new String[] {}, SQLiteDatabase.CONFLICT_REPLACE);
     long duration = System.currentTimeMillis() - start;
     if (logger.logsDebug()) {
-      logger.debug(String.format("Reset active tracked queries in %dms", duration));
+      logger.debug(String.format(Locale.US, "Reset active tracked queries in %dms", duration));
     }
   }
 
@@ -544,8 +556,11 @@ public class SqlPersistenceStorageEngine implements PersistenceStorageEngine {
     if (logger.logsDebug()) {
       logger.debug(
           String.format(
+              Locale.US,
               "Set %d tracked query keys for tracked query %d in %dms",
-              keys.size(), trackedQueryId, duration));
+              keys.size(),
+              trackedQueryId,
+              duration));
     }
   }
 
@@ -572,8 +587,12 @@ public class SqlPersistenceStorageEngine implements PersistenceStorageEngine {
     if (logger.logsDebug()) {
       logger.debug(
           String.format(
+              Locale.US,
               "Updated tracked query keys (%d added, %d removed) for tracked query id %d in %dms",
-              added.size(), removed.size(), trackedQueryId, duration));
+              added.size(),
+              removed.size(),
+              trackedQueryId,
+              duration));
     }
   }
 
@@ -610,8 +629,11 @@ public class SqlPersistenceStorageEngine implements PersistenceStorageEngine {
       if (logger.logsDebug()) {
         logger.debug(
             String.format(
+                Locale.US,
                 "Loaded %d tracked queries keys for tracked queries %s in %dms",
-                keys.size(), trackedQueryIds.toString(), duration));
+                keys.size(),
+                trackedQueryIds.toString(),
+                duration));
       }
       return keys;
     } finally {
@@ -681,7 +703,11 @@ public class SqlPersistenceStorageEngine implements PersistenceStorageEngine {
     if (logger.logsDebug()) {
       logger.debug(
           String.format(
-              "Pruned %d rows with %d nodes resaved in %dms", prunedCount, resavedCount, duration));
+              Locale.US,
+              "Pruned %d rows with %d nodes resaved in %dms",
+              prunedCount,
+              resavedCount,
+              duration));
     }
   }
 
@@ -709,7 +735,11 @@ public class SqlPersistenceStorageEngine implements PersistenceStorageEngine {
         Path absolutePath = pruneRoot.child(relativePath);
         if (logger.logsDebug()) {
           logger.debug(
-              String.format("Need to rewrite %d nodes below path %s", nodesToResave, absolutePath));
+              String.format(
+                  Locale.US,
+                  "Need to rewrite %d nodes below path %s",
+                  nodesToResave,
+                  absolutePath));
         }
         final Node currentNode = loadNested(absolutePath);
         pruneForest.foldKeptNodes(
@@ -750,7 +780,7 @@ public class SqlPersistenceStorageEngine implements PersistenceStorageEngine {
     int count = database.delete(WRITES_TABLE, null, null);
     long duration = System.currentTimeMillis() - start;
     if (logger.logsDebug()) {
-      logger.debug(String.format("Deleted %d (all) write(s) in %dms", count, duration));
+      logger.debug(String.format(Locale.US, "Deleted %d (all) write(s) in %dms", count, duration));
     }
   }
 
@@ -781,7 +811,7 @@ public class SqlPersistenceStorageEngine implements PersistenceStorageEngine {
     insideTransaction = false;
     long elapsed = System.currentTimeMillis() - transactionStart;
     if (logger.logsDebug()) {
-      logger.debug(String.format("Transaction completed. Elapsed: %dms", elapsed));
+      logger.debug(String.format(Locale.US, "Transaction completed. Elapsed: %dms", elapsed));
     }
   }
 
@@ -854,9 +884,12 @@ public class SqlPersistenceStorageEngine implements PersistenceStorageEngine {
       if (logger.logsDebug()) {
         logger.debug(
             String.format(
+                Locale.US,
                 "Node estimated serialized size at path %s of %d bytes exceeds limit of %d bytes. "
                     + "Splitting up.",
-                path, estimatedSize, CHILDREN_NODE_SPLIT_SIZE_THRESHOLD));
+                path,
+                estimatedSize,
+                CHILDREN_NODE_SPLIT_SIZE_THRESHOLD));
       }
       // split up the children node into multiple nodes
       int sum = 0;
@@ -881,7 +914,7 @@ public class SqlPersistenceStorageEngine implements PersistenceStorageEngine {
   }
 
   private String partKey(Path path, int i) {
-    return pathToKey(path) + String.format(PART_KEY_FORMAT, i);
+    return pathToKey(path) + String.format(Locale.US, PART_KEY_FORMAT, i);
   }
 
   private void saveNode(Path path, Node node) {
@@ -984,6 +1017,7 @@ public class SqlPersistenceStorageEngine implements PersistenceStorageEngine {
     if (logger.logsDebug()) {
       logger.debug(
           String.format(
+              Locale.US,
               "Loaded a total of %d rows for a total of %d nodes at %s in %dms "
                   + "(Query: %dms, Loading: %dms, Serializing: %dms)",
               payloads.size(),
