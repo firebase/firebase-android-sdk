@@ -1,0 +1,23 @@
+
+plugins {
+    id 'com.android.library'
+}
+
+android {
+    compileSdkVersion project.targetSdkVersion
+    defaultConfig {
+        minSdkVersion project.minSdkVersion
+        targetSdkVersion project.targetSdkVersion
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+
+dependencies {
+    implementation 'junit:junit:4.13'
+    implementation 'androidx.test:runner:1.3.0'
+
+}
