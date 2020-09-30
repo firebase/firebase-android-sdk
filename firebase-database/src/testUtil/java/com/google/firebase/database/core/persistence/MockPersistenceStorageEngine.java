@@ -140,12 +140,12 @@ public class MockPersistenceStorageEngine implements PersistenceStorageEngine {
     verifyInsideTransaction();
     // Sanity check: If we're using the same id, it should be the same query.
     TrackedQuery existing = trackedQueries.get(trackedQuery.id);
-    assert existing == null || existing.querySpec.equals(trackedQuery.querySpec);
+    hardAssert(existing == null || existing.querySpec.equals(trackedQuery.querySpec));
 
     // Sanity check: If this queryspec already exists, it should be the same id.
     for (TrackedQuery query : trackedQueries.values()) {
       if (query.querySpec.equals(trackedQuery.querySpec)) {
-        assert query.id == trackedQuery.id;
+        hardAssert(query.id == trackedQuery.id);
       }
     }
 
@@ -188,8 +188,9 @@ public class MockPersistenceStorageEngine implements PersistenceStorageEngine {
   @Override
   public void saveTrackedQueryKeys(long trackedQueryId, Set<ChildKey> keys) {
     verifyInsideTransaction();
-    assert (this.trackedQueries.containsKey(trackedQueryId))
-        : "Can't track keys for an untracked query.";
+    hardAssert(
+        this.trackedQueries.containsKey(trackedQueryId),
+        "Can't track keys for an untracked query.");
     this.trackedQueryKeys.put(trackedQueryId, new HashSet<ChildKey>(keys));
   }
 
@@ -197,16 +198,17 @@ public class MockPersistenceStorageEngine implements PersistenceStorageEngine {
   public void updateTrackedQueryKeys(
       long trackedQueryId, Set<ChildKey> added, Set<ChildKey> removed) {
     verifyInsideTransaction();
-    assert (this.trackedQueries.containsKey(trackedQueryId))
-        : "Can't track keys for an untracked query.";
+    hardAssert(
+        this.trackedQueries.containsKey(trackedQueryId),
+        "Can't track keys for an untracked query.");
     Set<ChildKey> trackedKeys = this.trackedQueryKeys.get(trackedQueryId);
-    assert trackedKeys != null || removed.isEmpty() : "Can't remove keys that don't exist.";
+    hardAssert(trackedKeys != null || removed.isEmpty(), "Can't remove keys that don't exist.");
     if (trackedKeys == null) {
       trackedKeys = new HashSet<ChildKey>();
       this.trackedQueryKeys.put(trackedQueryId, trackedKeys);
     }
 
-    assert trackedKeys.containsAll(removed) : "Can't remove keys that don't exist.";
+    hardAssert(trackedKeys.containsAll(removed), "Can't remove keys that don't exist.");
 
     trackedKeys.removeAll(removed);
     trackedKeys.addAll(added);
@@ -214,8 +216,9 @@ public class MockPersistenceStorageEngine implements PersistenceStorageEngine {
 
   @Override
   public Set<ChildKey> loadTrackedQueryKeys(long trackedQueryId) {
-    assert (this.trackedQueries.containsKey(trackedQueryId))
-        : "Can't track keys for an untracked query.";
+    hardAssert(
+        this.trackedQueries.containsKey(trackedQueryId),
+        "Can't track keys for an untracked query.");
     Set<ChildKey> trackedKeys = this.trackedQueryKeys.get(trackedQueryId);
     return trackedKeys != null
         ? new HashSet<ChildKey>(trackedKeys)
@@ -226,7 +229,7 @@ public class MockPersistenceStorageEngine implements PersistenceStorageEngine {
   public Set<ChildKey> loadTrackedQueryKeys(Set<Long> trackedQueryIds) {
     HashSet<ChildKey> keys = new HashSet<ChildKey>();
     for (Long id : trackedQueryIds) {
-      assert (this.trackedQueries.containsKey(id)) : "Can't track keys for an untracked query.";
+      hardAssert(this.trackedQueries.containsKey(id), "Can't track keys for an untracked query.");
       keys.addAll(loadTrackedQueryKeys(id));
     }
     return keys;
