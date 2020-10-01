@@ -14,6 +14,7 @@
 
 plugins {
     id 'firebase-library'
+    id 'LicenseResolverPlugin'
 }
 
 firebaseLibrary {
@@ -103,6 +104,10 @@ def fixTrampolineFilenames(variantBaseName) {
             Files.copy(initial.toPath(), renamed.toPath())
         }
     }
+}
+
+thirdPartyLicenses {
+    add 'Crashpad', "file://${rootDir}/third_party/licenses/apache-2.0.txt"
 }
 
 dependencies {
