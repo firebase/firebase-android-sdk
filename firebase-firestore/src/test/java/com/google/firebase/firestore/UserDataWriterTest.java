@@ -162,7 +162,7 @@ public class UserDataWriterTest {
       assertValueType(Value.ValueTypeCase.TIMESTAMP_VALUE, value);
       Object convertedValue = dateWriter.convertValue(value);
       assertTrue(convertedValue instanceof Timestamp);
-      assertEquals(d, ((Timestamp)convertedValue).toDate());
+      assertEquals(d, ((Timestamp) convertedValue).toDate());
     }
   }
 
