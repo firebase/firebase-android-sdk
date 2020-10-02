@@ -82,6 +82,7 @@ dependencies {
     implementation 'com.google.firebase:firebase-measurement-connector:18.0.0'
     implementation 'com.google.android.gms:play-services-tasks:17.0.2'
 
+    compileOnly "com.google.protobuf:protobuf-javalite:$javaliteVersion"
     compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
 
     testImplementation 'org.mockito:mockito-core:2.25.0'
