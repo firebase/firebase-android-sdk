@@ -152,7 +152,7 @@ public class FirebaseInstallationsTest {
     persistedInstallation.clearForTesting();
 
     fakeClock = new FakeClock(5000000L);
-    utils = Utils.getTestInstance(fakeClock);
+    utils = Utils.getInstance(fakeClock);
     firebaseInstallations =
         new FirebaseInstallations(
             executor,

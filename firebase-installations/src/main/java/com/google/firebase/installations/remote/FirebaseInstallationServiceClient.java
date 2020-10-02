@@ -33,7 +33,6 @@ import com.google.firebase.heartbeatinfo.HeartBeatInfo.HeartBeat;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsException;
 import com.google.firebase.installations.FirebaseInstallationsException.Status;
-import com.google.firebase.installations.Utils;
 import com.google.firebase.installations.remote.InstallationResponse.ResponseCode;
 import com.google.firebase.platforminfo.UserAgentPublisher;
 import java.io.BufferedReader;
@@ -115,7 +114,7 @@ public class FirebaseInstallationServiceClient {
     this.context = context;
     this.userAgentPublisher = publisher;
     this.heartbeatInfo = heartbeatInfo;
-    this.requestLimiter = new RequestLimiter(Utils.getInstance());
+    this.requestLimiter = new RequestLimiter();
   }
 
   /**

@@ -42,6 +42,11 @@ class RequestLimiter {
     this.utils = utils;
   }
 
+  RequestLimiter() {
+    // Util class is injected to ease mocking & testing the system time.
+    this.utils = Utils.getInstance();
+  }
+
   // Based on the response code, calculates the next request time to communicate with the FIS
   // servers.
   public synchronized void setNextRequestTime(int responseCode) {

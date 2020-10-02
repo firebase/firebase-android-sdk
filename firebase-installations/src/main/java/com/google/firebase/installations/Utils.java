@@ -41,13 +41,15 @@ public final class Utils {
 
   // Factory method that always returns the same Utils instance.
   public static Utils getInstance() {
-    if (singleton == null) {
-      singleton = new Utils(SystemClock.getInstance());
-    }
-    return singleton;
+    return getInstance(SystemClock.getInstance());
   }
 
-  public static Utils getTestInstance(Clock clock) {
+  /**
+   * Returns an Utils instance. {@link Utils#getInstance()} defines the clock used. NOTE: If a Utils
+   * instance has already been initialized, the parameter will be ignored and the existing instance
+   * will be returned.
+   */
+  public static Utils getInstance(Clock clock) {
     if (singleton == null) {
       singleton = new Utils(clock);
     }
