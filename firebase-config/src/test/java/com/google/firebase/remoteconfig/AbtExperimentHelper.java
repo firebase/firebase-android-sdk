@@ -14,8 +14,6 @@
 
 package com.google.firebase.remoteconfig;
 
-import androidx.annotation.VisibleForTesting;
-
 import java.sql.Date;
 import org.json.JSONArray;
 import org.json.JSONException;
