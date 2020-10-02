@@ -17,11 +17,11 @@ package com.google.android.datatransport.runtime.util;
 import android.util.SparseArray;
 import androidx.annotation.NonNull;
 import com.google.android.datatransport.Priority;
-import java.util.EnumMap;
+import java.util.HashMap;
 
 public final class PriorityMapping {
   private static SparseArray<Priority> PRIORITY_MAP = new SparseArray<>();
-  private static EnumMap<Priority, Integer> PRIORITY_INT_MAP = new EnumMap<>(Priority.class);
+  private static HashMap<Priority, Integer> PRIORITY_INT_MAP = new HashMap<>();
 
   static {
     PRIORITY_INT_MAP.put(Priority.DEFAULT, 0);

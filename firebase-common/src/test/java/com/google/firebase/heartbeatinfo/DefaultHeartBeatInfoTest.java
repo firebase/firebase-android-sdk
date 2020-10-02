@@ -28,7 +28,7 @@ import org.junit.runners.JUnit4;
 public class DefaultHeartBeatInfoTest {
   private String testSdk = "fire-test";
   private HeartBeatInfoStorage storage = mock(HeartBeatInfoStorage.class);
-  private DefaultHeartBeatInfo heartBeatInfo = new DefaultHeartBeatInfo(storage);
+  private DefaultHeartBeatInfo heartBeatInfo = new DefaultHeartBeatInfo(() -> storage);
 
   @Test
   public void getHeartBeatCode_noHeartBeat() {
