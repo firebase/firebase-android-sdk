@@ -63,52 +63,33 @@ inline fun <reified T> MutableData.getValue(): T? {
     return getValue(object : GenericTypeIndicator<T>() {})
 }
 
+/**
+ * Add a listener for changes in the data at this location. Each time time the data changes, your
+ * listener will be called with an non-null snapshot of the data.
+ */
 inline fun DatabaseReference.addValueEventListener(
-        crossinline onDataChange: (snapshot: DataSnapshot) -> Unit,
-        crossinline onCancelled: (error: DatabaseError) -> Unit
+        crossinline onValue: (snapshot: DataSnapshot?, error: DatabaseError?) -> Unit
 ): ValueEventListener {
     val listener = object : ValueEventListener {
-        override fun onDataChange(snapshot: DataSnapshot) = onDataChange(snapshot)
-        override fun onCancelled(error: DatabaseError) = onCancelled(error)
+        override fun onDataChange(snapshot: DataSnapshot) = onValue(snapshot, null)
+        override fun onCancelled(error: DatabaseError) = onValue(null, error)
     }
     addValueEventListener(listener)
     return listener
 }
 
+/**
+ * Add a listener for a single change in the data at this location. This listener will be
+ * triggered once with the value of the data at the location.
+ */
 inline fun DatabaseReference.addListenerForSingleValueEvent(
-        crossinline onDataChange: (snapshot: DataSnapshot) -> Unit,
-        crossinline onCancelled: (error: DatabaseError) -> Unit
+        crossinline onceValue: (snapshot: DataSnapshot?, error: DatabaseError?) -> Unit
 ): ValueEventListener {
     val listener = object : ValueEventListener {
-        override fun onDataChange(snapshot: DataSnapshot) = onDataChange(snapshot)
-        override fun onCancelled(error: DatabaseError) = onCancelled(error)
+        override fun onDataChange(snapshot: DataSnapshot) = onceValue(snapshot, null)
+        override fun onCancelled(error: DatabaseError) = onceValue(null, error)
     }
     addListenerForSingleValueEvent(listener)
-    return listener
-}
-
-inline fun DatabaseReference.addChildEventListener(
-        crossinline onChildAdded: (snapshot: DataSnapshot, previousChildName: String?) -> Unit,
-        crossinline onChildChanged: (snapshot: DataSnapshot, previousChildName: String?) -> Unit,
-        crossinline onChildRemoved: (snapshot: DataSnapshot) -> Unit,
-        crossinline onChildMoved: (snapshot: DataSnapshot, previousChildName: String?) -> Unit,
-        crossinline onCancelled: (error: DatabaseError) -> Unit
-): ChildEventListener {
-    val listener = object : ChildEventListener {
-        override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) =
-                onChildAdded(snapshot, previousChildName)
-
-        override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) =
-                onChildChanged(snapshot, previousChildName)
-
-        override fun onChildRemoved(snapshot: DataSnapshot) = onChildRemoved(snapshot)
-
-        override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) =
-                onChildMoved(snapshot, previousChildName)
-
-        override fun onCancelled(error: DatabaseError) = onCancelled(error)
-    }
-    addChildEventListener(listener)
     return listener
 }
 
