@@ -152,8 +152,7 @@ public class FirebaseInstallationsTest {
     persistedInstallation.clearForTesting();
 
     fakeClock = new FakeClock(5000000L);
-    utils = new Utils(fakeClock);
-
+    utils = Utils.getInstance(fakeClock);
     firebaseInstallations =
         new FirebaseInstallations(
             executor,
@@ -523,7 +522,9 @@ public class FirebaseInstallationsTest {
         PersistedInstallationEntry.INSTANCE.withRegisteredFid(
             TEST_FID_1,
             TEST_REFRESH_TOKEN,
-            utils.currentTimeInSecs(),
+            utils.currentTimeInSecs()
+                - TEST_TOKEN_EXPIRATION_TIMESTAMP
+                + TimeUnit.MINUTES.toSeconds(30),
             TEST_AUTH_TOKEN,
             TEST_TOKEN_EXPIRATION_TIMESTAMP));
 
@@ -562,7 +563,10 @@ public class FirebaseInstallationsTest {
         PersistedInstallationEntry.INSTANCE.withRegisteredFid(
             TEST_FID_1,
             TEST_REFRESH_TOKEN,
-            utils.currentTimeInSecs(),
+            // Set expiration time to 30 minutes from now (within refresh period)
+            utils.currentTimeInSecs()
+                - TEST_TOKEN_EXPIRATION_TIMESTAMP
+                + TimeUnit.MINUTES.toSeconds(30),
             TEST_AUTH_TOKEN,
             TEST_TOKEN_EXPIRATION_TIMESTAMP));
 
@@ -581,9 +585,6 @@ public class FirebaseInstallationsTest {
     getIdTask.addOnCompleteListener(executor, onCompleteListener);
     String fid = onCompleteListener.await();
     assertWithMessage("getId Task failed").that(fid).isEqualTo(TEST_FID_1);
-
-    // Waiting for Task that registers FID on the FIS Servers
-    executor.awaitTermination(500, TimeUnit.MILLISECONDS);
 
     TestOnCompleteListener<InstallationTokenResult> onCompleteListener2 =
         new TestOnCompleteListener<>();
@@ -749,7 +750,10 @@ public class FirebaseInstallationsTest {
         PersistedInstallationEntry.INSTANCE.withRegisteredFid(
             TEST_FID_1,
             TEST_REFRESH_TOKEN,
-            utils.currentTimeInSecs(),
+            // Set expiration time to 30 minutes from now (within refresh period)
+            utils.currentTimeInSecs()
+                - TEST_TOKEN_EXPIRATION_TIMESTAMP
+                + TimeUnit.MINUTES.toSeconds(30),
             TEST_AUTH_TOKEN,
             TEST_TOKEN_EXPIRATION_TIMESTAMP));
 
@@ -780,7 +784,10 @@ public class FirebaseInstallationsTest {
         PersistedInstallationEntry.INSTANCE.withRegisteredFid(
             TEST_FID_1,
             TEST_REFRESH_TOKEN,
-            utils.currentTimeInSecs(),
+            // Set expiration time to 30 minutes from now (within refresh period)
+            utils.currentTimeInSecs()
+                - TEST_TOKEN_EXPIRATION_TIMESTAMP
+                + TimeUnit.MINUTES.toSeconds(30),
             TEST_AUTH_TOKEN,
             TEST_TOKEN_EXPIRATION_TIMESTAMP));
 
