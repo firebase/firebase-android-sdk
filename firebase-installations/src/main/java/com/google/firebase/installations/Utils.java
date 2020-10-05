@@ -19,6 +19,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.installations.local.PersistedInstallationEntry;
 import com.google.firebase.installations.time.Clock;
+import com.google.firebase.installations.time.SystemClock;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
@@ -31,11 +32,30 @@ public final class Utils {
   public static final long AUTH_TOKEN_EXPIRATION_BUFFER_IN_SECS = TimeUnit.HOURS.toSeconds(1);
   private static final String APP_ID_IDENTIFICATION_SUBSTRING = ":";
   private static final Pattern API_KEY_FORMAT = Pattern.compile("\\AA[\\w-]{38}\\z");
+  private static Utils singleton;
   private final Clock clock;
 
-  Utils(Clock clock) {
+  private Utils(Clock clock) {
     this.clock = clock;
   }
+
+  // Factory method that always returns the same Utils instance.
+  public static Utils getInstance() {
+    return getInstance(SystemClock.getInstance());
+  }
+
+  /**
+   * Returns an Utils instance. {@link Utils#getInstance()} defines the clock used. NOTE: If a Utils
+   * instance has already been initialized, the parameter will be ignored and the existing instance
+   * will be returned.
+   */
+  public static Utils getInstance(Clock clock) {
+    if (singleton == null) {
+      singleton = new Utils(clock);
+    }
+    return singleton;
+  }
+
   /**
    * Checks if the FIS Auth token is expired or going to expire in next 1 hour {@link
    * #AUTH_TOKEN_EXPIRATION_BUFFER_IN_SECS}.
