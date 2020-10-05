@@ -138,7 +138,7 @@ public class FirebaseClientGrpcMetadataProviderTest {
   }
 
   @Test
-  public void noUpdateHeaderWhenHBCodeisZero() {
+  public void headerIsUpdatedEvenWhenHeartBeatIsZero() {
     Metadata metadata = new Metadata();
     when(mockUserAgentProvider.get()).thenReturn(mockUserAgent);
     when(mockHeartBeatProvider.get()).thenReturn(mockHeartBeat);
@@ -148,7 +148,9 @@ public class FirebaseClientGrpcMetadataProviderTest {
         new FirebaseClientGrpcMetadataProvider(
             mockUserAgentProvider, mockHeartBeatProvider, options);
     metadataProvider.updateMetadata(metadata);
-    assertThat(metadata.keys().size()).isEqualTo(0);
+    assertThat(metadata.keys().size()).isEqualTo(2);
+    assertThat(metadata.get(USER_AGENT_HEADER)).isEqualTo("foo:1.2.1");
+    assertThat(metadata.get(GMP_APP_ID_HEADER)).isEqualTo("app_id");
   }
 
   @Test
