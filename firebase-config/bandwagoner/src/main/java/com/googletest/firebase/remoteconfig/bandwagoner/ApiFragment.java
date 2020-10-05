@@ -110,7 +110,11 @@ public class ApiFragment extends Fragment {
               }
 
               if (installationAuthTokenTask.isSuccessful()) {
-                apiCallResultsText.setText(installationAuthTokenTask.getResult().getToken());
+                Log.i(
+                    TAG,
+                    String.format(
+                        "Installation authentication token: %s",
+                        installationAuthTokenTask.getResult().getToken()));
               } else {
                 Log.e(
                     TAG,
