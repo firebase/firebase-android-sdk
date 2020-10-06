@@ -15,12 +15,12 @@
 package com.google.firebase.remoteconfig.internal;
 
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.TAG;
-import static com.google.firebase.remoteconfig.internal.ConfigContainer.CONFIGS_KEY;
 import static com.google.firebase.remoteconfig.internal.ConfigContainer.PERSONALIZATION_METADATA_KEY;
 
 import android.os.Bundle;
 import android.util.Log;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
 import org.json.JSONObject;
 
@@ -38,34 +38,34 @@ public class Personalization {
   public Personalization(@NonNull AnalyticsConnector analyticsConnector) {
     this.analyticsConnector = analyticsConnector;
   }
+
   /**
    * Called when an arm is pulled, and uses Google Analytics for Firebase to log it if it's a
    * Personalization parameter.
    *
-   * @param key Remote Config parameter
-   * @param configContainer JSON of {@link ConfigContainer}
+   * @param value Remote Config parameter value
+   * @param metadata JSON of Personalization metadata
    */
-  public void logArmActive(@NonNull String key, @NonNull JSONObject configContainer) {
-    JSONObject ids = configContainer.optJSONObject(PERSONALIZATION_METADATA_KEY);
-    if (ids == null) {
-      Log.w(TAG, "Missing Personalization metadata");
-      return;
-    }
-
-    JSONObject values = configContainer.optJSONObject(CONFIGS_KEY);
-    if (values == null) {
-      Log.w(TAG, "Missing config");
-      return;
-    }
-
-    JSONObject item = ids.optJSONObject(key);
-    if (item == null) {
+  public void logArmActive(@NonNull String value, JSONObject metadata) {
+    if (metadata == null) {
       return;
     }
 
     Bundle params = new Bundle();
-    params.putString(ARM_KEY, item.optString(PERSONALIZATION_ID));
-    params.putString(ARM_VALUE, values.optString(key));
+    params.putString(ARM_KEY, metadata.optString(PERSONALIZATION_ID));
+    params.putString(ARM_VALUE, value);
     analyticsConnector.logEvent(ANALYTICS_ORIGIN_PERSONALIZATION, ANALYTICS_PULL_EVENT, params);
+  }
+
+  /**
+   * Gets the Personalization metadata associated with {@code key}.
+   *
+   * @param key Remote Config parameter
+   * @param configContainer cache of {@link ConfigContainer}
+   */
+  @Nullable
+  public static JSONObject getMetadata(
+      @NonNull String key, @NonNull ConfigContainer configContainer) {
+    return configContainer.getPersonalizationMetadata().optJSONObject(key);
   }
 }

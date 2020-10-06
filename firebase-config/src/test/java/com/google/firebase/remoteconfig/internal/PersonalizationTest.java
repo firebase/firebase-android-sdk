@@ -15,9 +15,6 @@
 package com.google.firebase.remoteconfig.internal;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.firebase.remoteconfig.internal.ConfigContainer.CONFIGS_KEY;
-import static com.google.firebase.remoteconfig.internal.ConfigContainer.FETCH_TIME_KEY;
-import static com.google.firebase.remoteconfig.internal.ConfigContainer.PERSONALIZATION_METADATA_KEY;
 import static com.google.firebase.remoteconfig.internal.Personalization.ANALYTICS_ORIGIN_PERSONALIZATION;
 import static com.google.firebase.remoteconfig.internal.Personalization.ANALYTICS_PULL_EVENT;
 import static com.google.firebase.remoteconfig.internal.Personalization.ARM_KEY;
@@ -32,7 +29,9 @@ import static org.mockito.MockitoAnnotations.initMocks;
 import android.os.Bundle;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
@@ -45,7 +44,23 @@ import org.robolectric.annotation.Config;
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
 public class PersonalizationTest {
-  private static final JSONObject CONFIG_CONTAINER = new JSONObject();
+  private static final ConfigContainer CONFIG_CONTAINER;
+
+  static {
+    try {
+      CONFIG_CONTAINER =
+          ConfigContainer.newBuilder()
+              .replaceConfigsWith(
+                  new JSONObject("{key1: 'value1', key2: 'value2', key3: 'value3'}"))
+              .withFetchTime(new Date(1))
+              .withPersonalizationMetadata(
+                  new JSONObject(
+                      "{key1: {personalizationId: 'id1'}, key2: {personalizationId: 'id2'}}"))
+              .build();
+    } catch (JSONException e) {
+      throw new RuntimeException(e);
+    }
+  }
 
   private static final List<Bundle> FAKE_LOGS = new ArrayList<>();
 
@@ -54,15 +69,8 @@ public class PersonalizationTest {
   @Mock private AnalyticsConnector mockAnalyticsConnector;
 
   @Before
-  public void setUp() throws Exception {
+  public void setUp() {
     initMocks(this);
-
-    CONFIG_CONTAINER.put(
-        CONFIGS_KEY, new JSONObject("{key1: 'value1', key2: 'value2', key3: 'value3'}"));
-    CONFIG_CONTAINER.put(FETCH_TIME_KEY, 1);
-    CONFIG_CONTAINER.put(
-        PERSONALIZATION_METADATA_KEY,
-        new JSONObject("{key1: {personalizationId: 'id1'}, key2: {personalizationId: 'id2'}}"));
 
     doAnswer(invocation -> FAKE_LOGS.add(invocation.getArgument(2)))
         .when(mockAnalyticsConnector)
@@ -73,10 +81,10 @@ public class PersonalizationTest {
   }
 
   @Test
-  public void logArmActive_nonPersonalizationKey_notLogged() throws Exception {
+  public void logArmActive_nonPersonalizationKey_notLogged() {
     FAKE_LOGS.clear();
 
-    personalization.logArmActive("key3", CONFIG_CONTAINER);
+    personalization.logArmActive("value3", null);
 
     verify(mockAnalyticsConnector, times(0))
         .logEvent(
@@ -85,10 +93,11 @@ public class PersonalizationTest {
   }
 
   @Test
-  public void logArmActive_singlePersonalizationKey_loggedOnce() throws Exception {
+  public void logArmActive_singlePersonalizationKey_loggedOnce() {
     FAKE_LOGS.clear();
 
-    personalization.logArmActive("key1", CONFIG_CONTAINER);
+    personalization.logArmActive(
+        "value1", CONFIG_CONTAINER.getPersonalizationMetadata().optJSONObject("key1"));
 
     verify(mockAnalyticsConnector, times(1))
         .logEvent(
@@ -102,11 +111,13 @@ public class PersonalizationTest {
   }
 
   @Test
-  public void logArmActive_multiplePersonalizationKeys_loggedMultiple() throws Exception {
+  public void logArmActive_multiplePersonalizationKeys_loggedMultiple() {
     FAKE_LOGS.clear();
 
-    personalization.logArmActive("key1", CONFIG_CONTAINER);
-    personalization.logArmActive("key2", CONFIG_CONTAINER);
+    personalization.logArmActive(
+        "value1", CONFIG_CONTAINER.getPersonalizationMetadata().optJSONObject("key1"));
+    personalization.logArmActive(
+        "value2", CONFIG_CONTAINER.getPersonalizationMetadata().optJSONObject("key2"));
 
     verify(mockAnalyticsConnector, times(2))
         .logEvent(
@@ -122,5 +133,20 @@ public class PersonalizationTest {
     params2.putString(ARM_KEY, "id2");
     params2.putString(ARM_VALUE, "value2");
     assertThat(FAKE_LOGS.get(1).toString()).isEqualTo(params2.toString());
+  }
+
+  @Test
+  public void getMetadata_emptyConfig_null() {
+    JSONObject actual = Personalization.getMetadata("key3", CONFIG_CONTAINER);
+
+    assertThat(actual).isNull();
+  }
+
+  @Test
+  public void getMetadata_filledConfig_notNull() throws Exception {
+    JSONObject actual = Personalization.getMetadata("key1", CONFIG_CONTAINER);
+
+    JSONObject expected = new JSONObject("{personalizationId: 'id1'}");
+    assertThat(actual.toString()).isEqualTo(expected.toString());
   }
 }
