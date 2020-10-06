@@ -113,19 +113,6 @@ public class FirebaseRemoteConfigIntegrationTest {
   }
 
   @Test
-  public void setDefaults_goodXml_setsDefaults() throws Exception {
-    ConfigContainer goodDefaultsXmlContainer = newDefaultsContainer(DEFAULTS_MAP);
-
-    frc.setDefaults(getResourceId("frc_good_defaults"));
-
-    ArgumentCaptor<ConfigContainer> captor = ArgumentCaptor.forClass(ConfigContainer.class);
-    verify(mockDefaultsCache).putWithoutWaitingForDiskWrite(captor.capture());
-
-    JSONAssert.assertEquals(
-        captor.getValue().toString(), goodDefaultsXmlContainer.toString(), false);
-  }
-
-  @Test
   public void setDefaultsAsync_goodXml_setsDefaults() throws Exception {
     ConfigContainer goodDefaultsXmlContainer = newDefaultsContainer(DEFAULTS_MAP);
     cachePutReturnsConfig(mockDefaultsCache, goodDefaultsXmlContainer);
@@ -140,27 +127,27 @@ public class FirebaseRemoteConfigIntegrationTest {
   }
 
   @Test
-  public void setDefaults_emptyXml_setsEmptyDefaults() throws Exception {
+  public void setDefaultsAsync_emptyXml_setsEmptyDefaults() throws Exception {
     ConfigContainer emptyDefaultsXmlContainer = newDefaultsContainer(ImmutableMap.of());
 
-    frc.setDefaults(getResourceId("frc_empty_defaults"));
+    Task<Void> task = frc.setDefaultsAsync(getResourceId("frc_empty_defaults"));
+    Tasks.await(task);
 
     ArgumentCaptor<ConfigContainer> captor = ArgumentCaptor.forClass(ConfigContainer.class);
-    verify(mockDefaultsCache).putWithoutWaitingForDiskWrite(captor.capture());
-
+    verify(mockDefaultsCache).put(captor.capture());
     assertThat(captor.getValue()).isEqualTo(emptyDefaultsXmlContainer);
   }
 
   @Test
-  public void setDefaults_badXml_ignoresBadEntries() throws Exception {
+  public void setDefaultsAsync_badXml_ignoresBadEntries() throws Exception {
     ConfigContainer badDefaultsXmlContainer =
         newDefaultsContainer(ImmutableMap.of("second_default_key", "second_default_value"));
 
-    frc.setDefaults(getResourceId("frc_bad_defaults"));
+    Task<Void> task = frc.setDefaultsAsync(getResourceId("frc_bad_defaults"));
+    Tasks.await(task);
 
     ArgumentCaptor<ConfigContainer> captor = ArgumentCaptor.forClass(ConfigContainer.class);
-    verify(mockDefaultsCache).putWithoutWaitingForDiskWrite(captor.capture());
-
+    verify(mockDefaultsCache).put(captor.capture());
     assertThat(captor.getValue()).isEqualTo(badDefaultsXmlContainer);
   }
 
