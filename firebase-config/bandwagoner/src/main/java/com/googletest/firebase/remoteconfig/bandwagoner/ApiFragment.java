@@ -64,8 +64,8 @@ public class ApiFragment extends Fragment {
     super.onCreate(savedInstanceState);
 
     frc = FirebaseRemoteConfig.getInstance();
-    frc.setConfigSettings(
-        new FirebaseRemoteConfigSettings.Builder().setDeveloperModeEnabled(true).build());
+    frc.setConfigSettingsAsync(
+        new FirebaseRemoteConfigSettings.Builder().setFetchTimeoutInSeconds(0L).build());
 
     firebaseInstallations = FirebaseApp.getInstance().get(FirebaseInstallationsApi.class);
   }
@@ -133,11 +133,14 @@ public class ApiFragment extends Fragment {
 
   /** Sets the version of the FRC server the SDK fetches from. */
   @SuppressWarnings("FirebaseUseExplicitDependencies")
-  private void onDevModeToggle(boolean isChecked) {
+  private Task<Void> onDevModeToggle(boolean isChecked) {
     hideSoftKeyboard();
 
-    frc.setConfigSettings(
-        new FirebaseRemoteConfigSettings.Builder().setDeveloperModeEnabled(isChecked).build());
+    String minimumFetchIntervalString = minimumFetchIntervalText.getText().toString();
+    long fetchTimeout = isChecked ? 0L : Integer.valueOf(minimumFetchIntervalString);
+
+    return frc.setConfigSettingsAsync(
+        new FirebaseRemoteConfigSettings.Builder().setFetchTimeoutInSeconds(fetchTimeout).build());
   }
 
   /**
@@ -196,11 +199,20 @@ public class ApiFragment extends Fragment {
   private void onActivateFetched(View unusedView) {
     hideSoftKeyboard();
 
-    boolean activated = frc.activateFetched();
-    apiCallResultsText.setText(
-        String.format(
-            "%s - activateFetched %s!",
-            getCurrentTimeString(), activated ? "was successful" : "returned false"));
+    frc.activate()
+        .addOnCompleteListener(
+            activateTask -> {
+              if (activateTask.isSuccessful()) {
+                apiCallResultsText.setText(
+                    String.format(
+                        "%s - activate %s!",
+                        getCurrentTimeString(),
+                        activateTask.getResult() ? "was successful" : "returned false"));
+              } else {
+                apiCallResultsText.setText(
+                    String.format("%s - activate failed!", getCurrentTimeString()));
+              }
+            });
   }
 
   /**
