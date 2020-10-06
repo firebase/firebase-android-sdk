@@ -740,6 +740,7 @@ public final class FirebaseRemoteConfigTest {
     assertThat(frc.getString(STRING_KEY)).isEqualTo(remoteValue);
   }
 
+  @SuppressWarnings("deprecation")
   @Test
   public void getString_fireperfNamespace_keyDoesNotExist_returnsDefaultValue() {
     when(mockFireperfGetHandler.getString(STRING_KEY)).thenReturn(DEFAULT_VALUE_FOR_STRING);
