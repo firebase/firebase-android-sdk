@@ -202,11 +202,6 @@ public class RemoteConfigComponent {
   }
 
   private ConfigCacheClient getCacheClient(String namespace, String configStoreType) {
-    return getCacheClient(context, appId, namespace, configStoreType);
-  }
-
-  private ConfigCacheClient getCacheClient(
-      Context context, String appId, String namespace, String configStoreType) {
     String fileName =
         String.format(
             "%s_%s_%s_%s.json",
