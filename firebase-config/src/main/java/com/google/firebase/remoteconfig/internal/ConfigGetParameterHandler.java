@@ -23,7 +23,6 @@ import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.TAG;
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.VALUE_SOURCE_DEFAULT;
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.VALUE_SOURCE_REMOTE;
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.VALUE_SOURCE_STATIC;
-import static com.google.firebase.remoteconfig.internal.Personalization.getMetadata;
 
 import android.util.Log;
 import androidx.annotation.Nullable;
@@ -103,7 +102,9 @@ public class ConfigGetParameterHandler {
   public String getString(String key) {
     String activatedString = getStringFromCache(activatedConfigsCache, key);
     if (activatedString != null) {
-      callListeners(activatedString, getMetadata(key, getConfigsFromCache(activatedConfigsCache)));
+      callListeners(
+          activatedString,
+          Personalization.getMetadata(key, getConfigsFromCache(activatedConfigsCache)));
       return activatedString;
     }
 
@@ -136,11 +137,13 @@ public class ConfigGetParameterHandler {
     if (activatedString != null) {
       if (TRUE_REGEX.matcher(activatedString).matches()) {
         callListeners(
-            activatedString, getMetadata(key, getConfigsFromCache(activatedConfigsCache)));
+            activatedString,
+            Personalization.getMetadata(key, getConfigsFromCache(activatedConfigsCache)));
         return true;
       } else if (FALSE_REGEX.matcher(activatedString).matches()) {
         callListeners(
-            activatedString, getMetadata(key, getConfigsFromCache(activatedConfigsCache)));
+            activatedString,
+            Personalization.getMetadata(key, getConfigsFromCache(activatedConfigsCache)));
         return false;
       }
     }
@@ -174,7 +177,9 @@ public class ConfigGetParameterHandler {
   public byte[] getByteArray(String key) {
     String activatedString = getStringFromCache(activatedConfigsCache, key);
     if (activatedString != null) {
-      callListeners(activatedString, getMetadata(key, getConfigsFromCache(activatedConfigsCache)));
+      callListeners(
+          activatedString,
+          Personalization.getMetadata(key, getConfigsFromCache(activatedConfigsCache)));
       return activatedString.getBytes(FRC_BYTE_ARRAY_ENCODING);
     }
 
@@ -207,7 +212,7 @@ public class ConfigGetParameterHandler {
     if (activatedDouble != null) {
       callListeners(
           getStringFromCache(activatedConfigsCache, key),
-          getMetadata(key, getConfigsFromCache(activatedConfigsCache)));
+          Personalization.getMetadata(key, getConfigsFromCache(activatedConfigsCache)));
       return activatedDouble;
     }
 
@@ -240,7 +245,7 @@ public class ConfigGetParameterHandler {
     if (activatedLong != null) {
       callListeners(
           getStringFromCache(activatedConfigsCache, key),
-          getMetadata(key, getConfigsFromCache(activatedConfigsCache)));
+          Personalization.getMetadata(key, getConfigsFromCache(activatedConfigsCache)));
       return activatedLong;
     }
 
@@ -269,7 +274,9 @@ public class ConfigGetParameterHandler {
   public FirebaseRemoteConfigValue getValue(String key) {
     String activatedString = getStringFromCache(activatedConfigsCache, key);
     if (activatedString != null) {
-      callListeners(activatedString, getMetadata(key, getConfigsFromCache(activatedConfigsCache)));
+      callListeners(
+          activatedString,
+          Personalization.getMetadata(key, getConfigsFromCache(activatedConfigsCache)));
       return new FirebaseRemoteConfigValueImpl(activatedString, VALUE_SOURCE_REMOTE);
     }
 
@@ -361,8 +368,8 @@ public class ConfigGetParameterHandler {
   /**
    * Calls all listeners in {@link #listeners}.
    *
-   * @param value parameter value that was retrieved
-   * @param metadata Personalization metadata that was retrieved
+   * @param value Remote Config parameter value
+   * @param metadata Personalization metadata associated with {@code value}
    */
   private void callListeners(String value, JSONObject metadata) {
     synchronized (listeners) {
