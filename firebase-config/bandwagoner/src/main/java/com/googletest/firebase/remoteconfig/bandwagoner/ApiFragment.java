@@ -65,7 +65,7 @@ public class ApiFragment extends Fragment {
 
     frc = FirebaseRemoteConfig.getInstance();
     frc.setConfigSettingsAsync(
-        new FirebaseRemoteConfigSettings.Builder().setFetchTimeoutInSeconds(0L).build());
+        new FirebaseRemoteConfigSettings.Builder().setMinimumFetchIntervalInSeconds(0L).build());
 
     firebaseInstallations = FirebaseApp.getInstance().get(FirebaseInstallationsApi.class);
   }
