@@ -46,7 +46,6 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.skyscreamer.jsonassert.JSONAssert;
 
 @RunWith(AndroidJUnit4.class)
 public class FirebaseRemoteConfigIntegrationTest {
