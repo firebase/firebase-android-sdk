@@ -128,6 +128,7 @@ public class FirebaseRemoteConfigIntegrationTest {
   @Test
   public void setDefaultsAsync_emptyXml_setsEmptyDefaults() throws Exception {
     ConfigContainer emptyDefaultsXmlContainer = newDefaultsContainer(ImmutableMap.of());
+    cachePutReturnsConfig(mockDefaultsCache, emptyDefaultsXmlContainer);
 
     Task<Void> task = frc.setDefaultsAsync(getResourceId("frc_empty_defaults"));
     Tasks.await(task);
@@ -141,6 +142,7 @@ public class FirebaseRemoteConfigIntegrationTest {
   public void setDefaultsAsync_badXml_ignoresBadEntries() throws Exception {
     ConfigContainer badDefaultsXmlContainer =
         newDefaultsContainer(ImmutableMap.of("second_default_key", "second_default_value"));
+    cachePutReturnsConfig(mockDefaultsCache, badDefaultsXmlContainer);
 
     Task<Void> task = frc.setDefaultsAsync(getResourceId("frc_bad_defaults"));
     Tasks.await(task);

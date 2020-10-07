@@ -16,11 +16,11 @@
 
 package com.googletest.firebase.remoteconfig.bandwagoner;
 
-import static com.googletest.firebase.remoteconfig.bandwagoner.Constants.TAG;
 import static com.googletest.firebase.remoteconfig.bandwagoner.TimeFormatHelper.getCurrentTimeString;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -132,15 +132,21 @@ public class ApiFragment extends Fragment {
   }
 
   /** Sets the version of the FRC server the SDK fetches from. */
-  @SuppressWarnings("FirebaseUseExplicitDependencies")
-  private Task<Void> onDevModeToggle(boolean isChecked) {
+  private void onDevModeToggle(boolean isChecked) {
     hideSoftKeyboard();
 
+    FirebaseRemoteConfigSettings.Builder settingsBuilder =
+        new FirebaseRemoteConfigSettings.Builder();
     String minimumFetchIntervalString = minimumFetchIntervalText.getText().toString();
-    long fetchTimeout = isChecked ? 0L : Integer.valueOf(minimumFetchIntervalString);
 
-    return frc.setConfigSettingsAsync(
-        new FirebaseRemoteConfigSettings.Builder().setFetchTimeoutInSeconds(fetchTimeout).build());
+    if (isChecked || TextUtils.isEmpty(minimumFetchIntervalString)) {
+      settingsBuilder.setMinimumFetchIntervalInSeconds(0L);
+    } else {
+      settingsBuilder.setMinimumFetchIntervalInSeconds(
+          Integer.parseInt(minimumFetchIntervalString));
+    }
+
+    frc.setConfigSettingsAsync(settingsBuilder.build());
   }
 
   /**
