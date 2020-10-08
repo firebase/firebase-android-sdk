@@ -21,7 +21,7 @@ option java_outer_classname = "CampaignProto";
 
 import "firebase/inappmessaging/proto/messages.proto";
 import "firebase/inappmessaging/proto/common_types.proto";
-import "developers/mobile/abt/proto/experiment_payload.proto";
+import "developers/mobile/abt/experiment_payload.proto";
 
 // User-specified properties for rolling out an experimental campaign into a new
 // standard campaign.
