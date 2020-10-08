@@ -81,12 +81,12 @@ class BreakpadController implements NativeComponentController {
     final File sessionFileDirectory = filesManager.getSessionFileDirectory(sessionId);
     final File sessionFileDirectoryForMinidump = new File(sessionFileDirectory, "pending");
 
-    Logger.getLogger().i("Minidump directory: " +
+    Logger.getLogger().d("Minidump directory: " +
         sessionFileDirectoryForMinidump.getAbsolutePath());
 
     File minidump = getSingleFileWithExtension(sessionFileDirectoryForMinidump, ".dmp");
 
-    Logger.getLogger().i("Minidump " + (minidump != null && minidump.exists()
+    Logger.getLogger().d("Minidump " + (minidump != null && minidump.exists()
         ? "exists"
         : "does not exist"));
 

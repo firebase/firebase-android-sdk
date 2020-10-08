@@ -27,7 +27,7 @@ void google::crashlytics::write_device_info(int fd)
 
     // It is unsafe to fetch the orientation of the device at crash time via the
     // native API. Doing so causes some apps to hang indeffinitely. At this time
-    // we will set the orientation to ne unknown.
+    // we will set the orientation to be unknown.
     auto orientation = static_cast<uint64_t>(/*ACONFIGURATION_ORIENTATION_ANY=*/ 0);
     auto battery     = static_cast<uint64_t>(detail::battery_capacity());
 

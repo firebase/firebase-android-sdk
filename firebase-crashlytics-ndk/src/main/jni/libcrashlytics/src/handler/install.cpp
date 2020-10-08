@@ -12,15 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <array>
-#include <utility>
-#include <cerrno>
-#include <cstring>
-#include <map>
 #include <string>
 #include <vector>
 
 #include <dlfcn.h>
+
 #include <sys/system_properties.h>
 
 #include "client/crashpad_client.h"
