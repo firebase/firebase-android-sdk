@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Executor;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -301,7 +302,8 @@ public final class ComponentRuntimeTest {
             Component.intoSet(1, Integer.class),
             Component.intoSet(2, Integer.class));
 
-    assertThat(runtime.setOf(Integer.class)).containsExactly(1, 2);
+    Set<Integer> integers = runtime.setOf(Integer.class);
+    assertThat(integers).containsExactly(1, 2);
   }
 
   @Test
