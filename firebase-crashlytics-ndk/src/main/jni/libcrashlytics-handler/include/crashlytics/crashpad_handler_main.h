@@ -19,8 +19,8 @@
 
 extern "C" {
 
-jint JNI_OnLoad(JavaVM* vm, void* reserved);
-jint JNI_Init(JNIEnv* env, jobject obj, jobjectArray file);
+JNIEXPORT jint JNI_OnLoad(JavaVM* vm, void* reserved);
+JNIEXPORT jint JNI_Init(JNIEnv* env, jobject obj, jobjectArray file);
 
 }
 

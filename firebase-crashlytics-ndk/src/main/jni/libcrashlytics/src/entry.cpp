@@ -33,11 +33,6 @@
 #include "crashlytics/detail/supplementary_file.h"
 #include "system/log.h"
 
-#include <android/asset_manager.h>
-#include <android/asset_manager_jni.h>
-#include <android/configuration.h>
-#include <android/sensor.h>
-
 extern "C" {
 
 extern int CrashpadHandlerMain(int argc, char* argv[]);
@@ -97,21 +92,6 @@ const char* data_path(JNIEnv* env, jstring path)
     return env->GetStringUTFChars(path, NULL);
 }
 
-AAssetManager* asset_manager_from(JNIEnv* env, jobject asset_manager)
-{
-    return AAssetManager_fromJava(env, asset_manager);
-}
-
-ASensorManager* sensor_manager()
-{
-    return ASensorManager_getInstance();
-}
-
-AConfiguration* configuration()
-{
-    return AConfiguration_new();
-}
-
 constexpr const char* ndk_path()
 {
     return "com/google/firebase/crashlytics/ndk/JniNativeApi";
@@ -160,9 +140,6 @@ jboolean JNI_Init(JNIEnv* env, jobject obj, jobjectArray pathsArray, jobject ass
     bool installed = google::crashlytics::handler::install_handlers({
             google::crashlytics::entry::jni::this_pid(),
             google::crashlytics::entry::jni::data_path(env, path),
-            google::crashlytics::entry::jni::asset_manager_from(env, asset_manager),
-            google::crashlytics::entry::jni::sensor_manager(),
-            google::crashlytics::entry::jni::configuration(),
             env,
             env->GetStringUTFChars(classpath, 0),
             env->GetStringUTFChars(lib_path, 0)

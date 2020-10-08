@@ -1,9 +1,5 @@
 #include <jni.h>
 #include <unistd.h>
-#include <cerrno>
-#include <vector>
-
-#include <string>
 
 #include "crashlytics/config.h"
 #include "crashlytics/crashpad_handler_main.h"
@@ -43,7 +39,7 @@ jclass find_class(JNIEnv* env, const char* path)
     return env->FindClass(path);
 }
 
-bool register_natives(const jclass& crashlytics_class, JNIEnv* env, const JNINativeMethod* methods, std::size_t methods_length)
+bool register_natives(const jclass& crashlytics_class, JNIEnv* env, const JNINativeMethod* methods, size_t methods_length)
 {
     return env->RegisterNatives(crashlytics_class, methods, methods_length) == 0;
 }
@@ -65,6 +61,20 @@ bool register_natives(JavaVM* jvm)
     return false;
 }
 
+namespace detail {
+
+struct scoped_array_delete {
+    scoped_array_delete(char** arr) : arr_(arr) {}
+   ~scoped_array_delete() {
+        delete [] arr_;
+    }
+
+private:
+    char** arr_;
+};
+
+} // namespace detail
+
 }}} // namespace google::crashlytics::jni
 
 jint JNI_OnLoad(JavaVM* vm, void* reserved)
@@ -74,19 +84,22 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved)
 
 jint JNI_Init(JNIEnv* env, jobject obj, jobjectArray pathsArray)
 {
-    std::vector<char *> argv;
-
     jsize incoming_length = env->GetArrayLength(pathsArray);
+
+    char** argv = new char*[incoming_length];
+
     for (auto i = 0; i < incoming_length; ++i) {
       jstring element =
         static_cast<jstring>(env->GetObjectArrayElement(pathsArray, i));
-      argv.push_back(const_cast<char *>(env->GetStringUTFChars(element, 0)));
+
+      argv[i] = const_cast<char *>(env->GetStringUTFChars(element, 0));
     }
 
-    return CrashpadHandlerMain(argv.size(), argv.data());
+    google::crashlytics::jni::detail::scoped_array_delete deletor{ argv };
+    return CrashpadHandlerMain(incoming_length, argv);
 }
 
 int main(int argc, char* argv[])
 {
-  return CrashpadHandlerMain(argc, argv);
+    return CrashpadHandlerMain(argc, argv);
 }

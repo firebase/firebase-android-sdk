@@ -7,13 +7,16 @@ ifdef CRASHLYTICS_DEBUG
 endif
 
 LOCAL_MODULE := crashlytics-handler
-
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/include
+LOCAL_CPPFLAGS := \
+    -std=c++17 \
+    -Wall \
+    -Os \
+    -s \
+    -fvisibility=hidden \
+    -nostdlib++ \
 
-LOCAL_CPPFLAGS := -std=c++11 -fno-rtti -Wall -Os -flto
-
-LOCAL_LDFLAGS := -flto
-
+LOCAL_LDFLAGS := -Wl,--gc-sections -Wl,-z,norelro
 LOCAL_LDLIBS := -llog
 
 # Include all .cpp files in /src

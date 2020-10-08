@@ -28,7 +28,5 @@ int main(int argc, char* argv[])
     return EXIT_FAILURE;
   }
 
-  __android_log_print(ANDROID_LOG_INFO, kTag, "Invoking CrashpadHandlerMain()");
-
   return crashpad_main(argc - 1, argv + 1);
 }

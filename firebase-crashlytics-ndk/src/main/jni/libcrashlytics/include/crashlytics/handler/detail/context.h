@@ -15,10 +15,6 @@
 #ifndef __CRASHLYTICS_HANDLER_DETAIL_CONTEXT_H__
 #define __CRASHLYTICS_HANDLER_DETAIL_CONTEXT_H__
 
-#include <android/asset_manager.h>
-#include <android/configuration.h>
-#include <android/sensor.h>
-
 #include <jni.h>
 
 namespace google { namespace crashlytics { namespace handler { namespace detail {
@@ -26,9 +22,6 @@ namespace google { namespace crashlytics { namespace handler { namespace detail 
 struct context {
     pid_t              pid;
     const char*        filename;
-    AAssetManager*     asset_manager;
-    ASensorManager*    sensor_manager;
-    AConfiguration*    configuration;
     JNIEnv*            env;
     const char*        classpath;
     const char*        lib_path;

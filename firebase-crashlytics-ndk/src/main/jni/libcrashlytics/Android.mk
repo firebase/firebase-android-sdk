@@ -9,15 +9,33 @@ ifdef CRASHLYTICS_DEBUG
 endif
 
 LOCAL_MODULE := crashlytics
+LOCAL_C_INCLUDES := \
+    $(LOCAL_PATH)/include \
+    $(LOCAL_PATH)/$(THIRD_PARTY_PATH)/crashpad \
 
-LOCAL_C_INCLUDES := $(LOCAL_PATH)/include \
-                    $(LOCAL_PATH)/$(THIRD_PARTY_PATH)/crashpad
+LOCAL_CPPFLAGS := \
+    -std=c++17 \
+    -Wall \
+    -Os \
+    -s \
+    -fvisibility=hidden \
+    -ffunction-sections \
+    -fdata-sections \
+    -fno-stack-protector \
+    -fomit-frame-pointer \
+    -fno-unwind-tables \
+    -fno-asynchronous-unwind-tables \
+    -fno-unroll-loops \
+    -fno-ident \
+    -fno-exceptions \
+    -fno-rtti \
+    -fno-math-errno \
+    -fmerge-all-constants \
+    -fsingle-precision-constant \
+    -ffast-math \
 
-LOCAL_CPPFLAGS := -std=c++11 -frtti -Wall -fdata-sections -ffunction-sections -Os -flto
-
-LOCAL_LDFLAGS := -flto
-
-LOCAL_LDLIBS := -llog -landroid
+LOCAL_LDFLAGS := -flto -Wl,--gc-sections, -Wl,--exclude-libs,ALL -Wl,-z,norelro
+LOCAL_LDLIBS := -llog
 
 # Include all .cpp files in /src
 rwildcard=$(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2) $(filter $(subst *,%,$2),$d))
@@ -25,9 +43,6 @@ rwildcard=$(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2) $(filter $(subst 
 SRC_FILE_LIST := $(call rwildcard, $(LOCAL_PATH)/src/, *.cpp)
 
 LOCAL_SRC_FILES := $(SRC_FILE_LIST:$(LOCAL_PATH)/%=%)
-
-LOCAL_STATIC_LIBRARIES := crashpad_client \
-                          mini_chromium_base
 
 LOCAL_SHARED_LIBRARIES := crashlytics-common
 

@@ -7,12 +7,24 @@ ifdef CRASHLYTICS_DEBUG
 endif
 
 LOCAL_MODULE := crashlytics-trampoline
-
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/include
+LOCAL_CPPFLAGS := \
+    -std=c++17 \
+    -Wall \
+    -Os \
+    -s \
+    -fvisibility=hidden \
+    -ffunction-sections \
+    -fdata-sections \
+    -fno-stack-protector \
+    -fomit-frame-pointer \
+    -fno-unwind-tables \
+    -fno-asynchronous-unwind-tables \
+    -fno-unroll-loops \
+    -fno-ident \
 
-LOCAL_CPPFLAGS := -std=c++11 -frtti -Wall
-
-LOCAL_LDLIBS := -llog -landroid
+LOCAL_LDFLAGS := -Wl,--gc-sections -Wl,-z,norelro
+LOCAL_LDLIBS := -llog
 
 LOCAL_SRC_FILES := $(LOCAL_PATH)/src/handler_trampoline.cpp
 
