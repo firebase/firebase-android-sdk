@@ -78,13 +78,13 @@ public class PersonalizationTest {
             eq(ANALYTICS_ORIGIN_PERSONALIZATION), eq(ANALYTICS_PULL_EVENT), any(Bundle.class));
 
     personalization = new Personalization(mockAnalyticsConnector);
+
+    FAKE_LOGS.clear();
   }
 
   @Test
   public void logArmActive_nonPersonalizationKey_notLogged() {
-    FAKE_LOGS.clear();
-
-    personalization.logArmActive("value3", null);
+    personalization.logArmActive("key3", CONFIG_CONTAINER.getContainer());
 
     verify(mockAnalyticsConnector, times(0))
         .logEvent(
@@ -94,10 +94,7 @@ public class PersonalizationTest {
 
   @Test
   public void logArmActive_singlePersonalizationKey_loggedOnce() {
-    FAKE_LOGS.clear();
-
-    personalization.logArmActive(
-        "value1", CONFIG_CONTAINER.getPersonalizationMetadata().optJSONObject("key1"));
+    personalization.logArmActive("key1", CONFIG_CONTAINER.getContainer());
 
     verify(mockAnalyticsConnector, times(1))
         .logEvent(
@@ -112,12 +109,8 @@ public class PersonalizationTest {
 
   @Test
   public void logArmActive_multiplePersonalizationKeys_loggedMultiple() {
-    FAKE_LOGS.clear();
-
-    personalization.logArmActive(
-        "value1", CONFIG_CONTAINER.getPersonalizationMetadata().optJSONObject("key1"));
-    personalization.logArmActive(
-        "value2", CONFIG_CONTAINER.getPersonalizationMetadata().optJSONObject("key2"));
+    personalization.logArmActive("key1", CONFIG_CONTAINER.getContainer());
+    personalization.logArmActive("key2", CONFIG_CONTAINER.getContainer());
 
     verify(mockAnalyticsConnector, times(2))
         .logEvent(
@@ -133,20 +126,5 @@ public class PersonalizationTest {
     params2.putString(ARM_KEY, "id2");
     params2.putString(ARM_VALUE, "value2");
     assertThat(FAKE_LOGS.get(1).toString()).isEqualTo(params2.toString());
-  }
-
-  @Test
-  public void getMetadata_emptyConfig_null() {
-    JSONObject actual = Personalization.getMetadata("key3", CONFIG_CONTAINER);
-
-    assertThat(actual).isNull();
-  }
-
-  @Test
-  public void getMetadata_filledConfig_notNull() throws Exception {
-    JSONObject actual = Personalization.getMetadata("key1", CONFIG_CONTAINER);
-
-    JSONObject expected = new JSONObject("{personalizationId: 'id1'}");
-    assertThat(actual.toString()).isEqualTo(expected.toString());
   }
 }

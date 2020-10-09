@@ -93,6 +93,10 @@ public class ConfigContainer {
         containerJson.getJSONObject(PERSONALIZATION_METADATA_KEY));
   }
 
+  JSONObject getContainer() {
+    return containerJson;
+  }
+
   /**
    * Returns the FRC configs.
    *

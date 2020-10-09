@@ -102,9 +102,7 @@ public class ConfigGetParameterHandler {
   public String getString(String key) {
     String activatedString = getStringFromCache(activatedConfigsCache, key);
     if (activatedString != null) {
-      callListeners(
-          activatedString,
-          Personalization.getMetadata(key, getConfigsFromCache(activatedConfigsCache)));
+      callListeners(activatedString, getConfigsFromCache(activatedConfigsCache));
       return activatedString;
     }
 
@@ -136,14 +134,10 @@ public class ConfigGetParameterHandler {
     String activatedString = getStringFromCache(activatedConfigsCache, key);
     if (activatedString != null) {
       if (TRUE_REGEX.matcher(activatedString).matches()) {
-        callListeners(
-            activatedString,
-            Personalization.getMetadata(key, getConfigsFromCache(activatedConfigsCache)));
+        callListeners(activatedString, getConfigsFromCache(activatedConfigsCache));
         return true;
       } else if (FALSE_REGEX.matcher(activatedString).matches()) {
-        callListeners(
-            activatedString,
-            Personalization.getMetadata(key, getConfigsFromCache(activatedConfigsCache)));
+        callListeners(activatedString, getConfigsFromCache(activatedConfigsCache));
         return false;
       }
     }
@@ -177,9 +171,7 @@ public class ConfigGetParameterHandler {
   public byte[] getByteArray(String key) {
     String activatedString = getStringFromCache(activatedConfigsCache, key);
     if (activatedString != null) {
-      callListeners(
-          activatedString,
-          Personalization.getMetadata(key, getConfigsFromCache(activatedConfigsCache)));
+      callListeners(activatedString, getConfigsFromCache(activatedConfigsCache));
       return activatedString.getBytes(FRC_BYTE_ARRAY_ENCODING);
     }
 
@@ -212,7 +204,7 @@ public class ConfigGetParameterHandler {
     if (activatedDouble != null) {
       callListeners(
           getStringFromCache(activatedConfigsCache, key),
-          Personalization.getMetadata(key, getConfigsFromCache(activatedConfigsCache)));
+          getConfigsFromCache(activatedConfigsCache));
       return activatedDouble;
     }
 
@@ -245,7 +237,7 @@ public class ConfigGetParameterHandler {
     if (activatedLong != null) {
       callListeners(
           getStringFromCache(activatedConfigsCache, key),
-          Personalization.getMetadata(key, getConfigsFromCache(activatedConfigsCache)));
+          getConfigsFromCache(activatedConfigsCache));
       return activatedLong;
     }
 
@@ -274,9 +266,7 @@ public class ConfigGetParameterHandler {
   public FirebaseRemoteConfigValue getValue(String key) {
     String activatedString = getStringFromCache(activatedConfigsCache, key);
     if (activatedString != null) {
-      callListeners(
-          activatedString,
-          Personalization.getMetadata(key, getConfigsFromCache(activatedConfigsCache)));
+      callListeners(activatedString, getConfigsFromCache(activatedConfigsCache));
       return new FirebaseRemoteConfigValueImpl(activatedString, VALUE_SOURCE_REMOTE);
     }
 
@@ -357,7 +347,7 @@ public class ConfigGetParameterHandler {
   /**
    * Adds a listener that will be called whenever one of the get methods is called.
    *
-   * @param listener function that takes in the parameter value and Personalization metadata
+   * @param listener function that takes in the parameter key and the {@link ConfigContainer} JSON
    */
   public void addListener(BiConsumer<String, JSONObject> listener) {
     synchronized (listeners) {
@@ -368,13 +358,19 @@ public class ConfigGetParameterHandler {
   /**
    * Calls all listeners in {@link #listeners}.
    *
-   * @param value Remote Config parameter value
-   * @param metadata Personalization metadata associated with {@code value}
+   * @param key Remote Config parameter key
+   * @param container cache of {@link ConfigContainer}
    */
-  private void callListeners(String value, JSONObject metadata) {
+  private void callListeners(String key, ConfigContainer container) {
+    if (container == null) {
+      return;
+    }
+
+    JSONObject configs = container.getContainer();
+
     synchronized (listeners) {
       for (BiConsumer<String, JSONObject> listener : listeners) {
-        executor.execute(() -> listener.accept(value, metadata));
+        executor.execute(() -> listener.accept(key, configs));
       }
     }
   }
