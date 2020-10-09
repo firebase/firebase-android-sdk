@@ -18,13 +18,11 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static com.google.firebase.remoteconfig.AbtExperimentHelper.createAbtExperiment;
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.DEFAULT_VALUE_FOR_BOOLEAN;
-import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.DEFAULT_VALUE_FOR_BYTE_ARRAY;
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.DEFAULT_VALUE_FOR_DOUBLE;
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.DEFAULT_VALUE_FOR_LONG;
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.DEFAULT_VALUE_FOR_STRING;
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.LAST_FETCH_STATUS_THROTTLED;
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.toExperimentInfoMaps;
-import static com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler.FRC_BYTE_ARRAY_ENCODING;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
@@ -369,22 +367,6 @@ public final class FirebaseRemoteConfigTest {
   }
 
   @Test
-  public void fetchAndActivate_hasNoAbtExperiments_sendsEmptyListToAbt() throws Exception {
-    loadFetchHandlerWithResponse();
-    ConfigContainer containerWithNoAbtExperiments =
-        ConfigContainer.newBuilder().withFetchTime(new Date(1000L)).build();
-
-    loadCacheWithConfig(mockFetchedCache, containerWithNoAbtExperiments);
-    cachePutReturnsConfig(mockActivatedCache, containerWithNoAbtExperiments);
-
-    Task<Boolean> task = frc.fetchAndActivate();
-
-    assertWithMessage("fetchAndActivate() failed!").that(getTaskResult(task)).isTrue();
-
-    verify(mockFirebaseAbt).replaceAllExperiments(ImmutableList.of());
-  }
-
-  @Test
   public void fetchAndActivate_callToAbtFails_activateStillSucceeds() throws Exception {
     loadFetchHandlerWithResponse();
     ConfigContainer containerWithAbtExperiments =
@@ -452,187 +434,6 @@ public final class FirebaseRemoteConfigTest {
     Task<Boolean> task = fireperfFrc.fetchAndActivate();
 
     assertWithMessage("2p fetchAndActivate() failed!").that(getTaskResult(task)).isTrue();
-
-    verify(mockFirebaseAbt, never()).replaceAllExperiments(any());
-  }
-
-  @SuppressWarnings("deprecation")
-  @Test
-  public void activateFetched_noFetchedConfigs_returnsFalse() {
-    loadCacheWithConfig(mockFetchedCache, /*container=*/ null);
-    loadCacheWithConfig(mockActivatedCache, /*container=*/ null);
-
-    assertWithMessage("activateFetched() succeeded with no fetched values!")
-        .that(frc.activateFetched())
-        .isFalse();
-
-    verify(mockActivatedCache, never()).put(any());
-    verify(mockFetchedCache, never()).clear();
-  }
-
-  @SuppressWarnings("deprecation")
-  @Test
-  public void activateFetched_staleFetchedConfigs_returnsFalse() {
-    loadCacheWithConfig(mockFetchedCache, firstFetchedContainer);
-    loadCacheWithConfig(mockActivatedCache, firstFetchedContainer);
-
-    assertWithMessage("activateFetched() succeeded with stale fetched values!")
-        .that(frc.activateFetched())
-        .isFalse();
-
-    verify(mockActivatedCache, never()).put(any());
-    verify(mockFetchedCache, never()).clear();
-  }
-
-  @SuppressWarnings("deprecation")
-  @Test
-  public void activateFetched_freshFetchedConfigs_activatesAndClearsFetched() {
-    loadCacheWithConfig(mockFetchedCache, secondFetchedContainer);
-    loadCacheWithConfig(mockActivatedCache, firstFetchedContainer);
-    // When the fetched values are activated, they should be put into the activated cache.
-    when(mockActivatedCache.putWithoutWaitingForDiskWrite(secondFetchedContainer))
-        .thenReturn(Tasks.forResult(secondFetchedContainer));
-
-    assertWithMessage("activateFetched() failed!").that(frc.activateFetched()).isTrue();
-
-    verify(mockActivatedCache).putWithoutWaitingForDiskWrite(secondFetchedContainer);
-    verify(mockFetchedCache).clear();
-  }
-
-  @SuppressWarnings("deprecation")
-  @Test
-  public void activateFetched_fileWriteFails_doesNotClearFetchedAndReturnsTrue() {
-    loadCacheWithConfig(mockFetchedCache, secondFetchedContainer);
-    loadCacheWithConfig(mockActivatedCache, firstFetchedContainer);
-    when(mockActivatedCache.putWithoutWaitingForDiskWrite(secondFetchedContainer))
-        .thenReturn(Tasks.forException(new IOException("Should have handled disk error.")));
-
-    assertWithMessage("activateFetched() failed!").that(frc.activateFetched()).isTrue();
-
-    verify(mockActivatedCache).putWithoutWaitingForDiskWrite(secondFetchedContainer);
-    verify(mockFetchedCache, never()).clear();
-  }
-
-  @SuppressWarnings("deprecation")
-  @Test
-  public void activateFetched_hasNoAbtExperiments_sendsEmptyListToAbt() throws Exception {
-    ConfigContainer containerWithNoAbtExperiments =
-        ConfigContainer.newBuilder().withFetchTime(new Date(1000L)).build();
-    loadCacheWithConfig(mockFetchedCache, containerWithNoAbtExperiments);
-
-    // When the fetched values are activated, they should be put into the activated cache.
-    when(mockActivatedCache.putWithoutWaitingForDiskWrite(containerWithNoAbtExperiments))
-        .thenReturn(Tasks.forResult(containerWithNoAbtExperiments));
-
-    assertWithMessage("activateFetched() failed!").that(frc.activateFetched()).isTrue();
-
-    verify(mockFirebaseAbt).replaceAllExperiments(ImmutableList.of());
-  }
-
-  @SuppressWarnings("deprecation")
-  @Test
-  public void activateFetched_callToAbtFails_activateStillSucceeds() throws Exception {
-    ConfigContainer containerWithAbtExperiments =
-        ConfigContainer.newBuilder(firstFetchedContainer)
-            .withAbtExperiments(generateAbtExperiments())
-            .build();
-    loadCacheWithConfig(mockFetchedCache, containerWithAbtExperiments);
-    loadCacheWithConfig(mockActivatedCache, /*container=*/ null);
-
-    // When the fetched values are activated, they should be put into the activated cache.
-    when(mockActivatedCache.putWithoutWaitingForDiskWrite(containerWithAbtExperiments))
-        .thenReturn(Tasks.forResult(containerWithAbtExperiments));
-
-    doThrow(new AbtException("Abt failure!")).when(mockFirebaseAbt).replaceAllExperiments(any());
-
-    assertWithMessage("activateFetched() failed!").that(frc.activateFetched()).isTrue();
-  }
-
-  @SuppressWarnings("deprecation")
-  @Test
-  public void activateFetched_hasAbtExperiments_sendsExperimentsToAbt() throws Exception {
-    ConfigContainer containerWithAbtExperiments =
-        ConfigContainer.newBuilder(firstFetchedContainer)
-            .withAbtExperiments(generateAbtExperiments())
-            .build();
-    loadCacheWithConfig(mockFetchedCache, containerWithAbtExperiments);
-
-    // When the fetched values are activated, they should be put into the activated cache.
-    when(mockActivatedCache.putWithoutWaitingForDiskWrite(containerWithAbtExperiments))
-        .thenReturn(Tasks.forResult(containerWithAbtExperiments));
-
-    assertWithMessage("activateFetched() failed!").that(frc.activateFetched()).isTrue();
-
-    List<Map<String, String>> expectedExperimentInfoMaps =
-        toExperimentInfoMaps(containerWithAbtExperiments.getAbtExperiments());
-    verify(mockFirebaseAbt).replaceAllExperiments(expectedExperimentInfoMaps);
-  }
-
-  @SuppressWarnings("deprecation")
-  @Test
-  public void activateFetched_fireperfNamespace_noFetchedConfigs_returnsFalse() {
-    loadCacheWithConfig(mockFireperfFetchedCache, /*container=*/ null);
-    loadCacheWithConfig(mockFireperfActivatedCache, /*container=*/ null);
-
-    assertWithMessage("activateFetched(fireperf) succeeded with no fetched values!")
-        .that(fireperfFrc.activateFetched())
-        .isFalse();
-
-    verify(mockFireperfActivatedCache, never()).put(any());
-    verify(mockFireperfFetchedCache, never()).clear();
-  }
-
-  @SuppressWarnings("deprecation")
-  @Test
-  public void activateFetched_fireperfNamespace_freshFetchedConfigs_activatesAndClearsFetched() {
-    loadCacheWithConfig(mockFireperfFetchedCache, secondFetchedContainer);
-    loadCacheWithConfig(mockFireperfActivatedCache, firstFetchedContainer);
-    // When the fetched values are activated, they should be put into the activated cache.
-    when(mockFireperfActivatedCache.putWithoutWaitingForDiskWrite(secondFetchedContainer))
-        .thenReturn(Tasks.forResult(secondFetchedContainer));
-
-    assertWithMessage("activateFetched(fireperf) failed!")
-        .that(fireperfFrc.activateFetched())
-        .isTrue();
-
-    verify(mockFireperfActivatedCache).putWithoutWaitingForDiskWrite(secondFetchedContainer);
-    verify(mockFireperfFetchedCache).clear();
-  }
-
-  @SuppressWarnings("deprecation")
-  @Test
-  public void activateFetched2p_hasNoAbtExperiments_doesNotCallAbt() throws Exception {
-    ConfigContainer containerWithNoAbtExperiments =
-        ConfigContainer.newBuilder().withFetchTime(new Date(1000L)).build();
-    loadCacheWithConfig(mockFireperfFetchedCache, containerWithNoAbtExperiments);
-
-    // When the fetched values are activated, they should be put into the activated cache.
-    when(mockFireperfActivatedCache.putWithoutWaitingForDiskWrite(containerWithNoAbtExperiments))
-        .thenReturn(Tasks.forResult(containerWithNoAbtExperiments));
-
-    assertWithMessage("activateFetched(fireperf) failed!")
-        .that(fireperfFrc.activateFetched())
-        .isTrue();
-
-    verify(mockFirebaseAbt, never()).replaceAllExperiments(any());
-  }
-
-  @SuppressWarnings("deprecation")
-  @Test
-  public void activateFetched2p_hasAbtExperiments_doesNotCallAbt() throws Exception {
-    ConfigContainer containerWithAbtExperiments =
-        ConfigContainer.newBuilder(firstFetchedContainer)
-            .withAbtExperiments(generateAbtExperiments())
-            .build();
-    loadCacheWithConfig(mockFireperfFetchedCache, containerWithAbtExperiments);
-
-    // When the fetched values are activated, they should be put into the activated cache.
-    when(mockFireperfActivatedCache.putWithoutWaitingForDiskWrite(containerWithAbtExperiments))
-        .thenReturn(Tasks.forResult(containerWithAbtExperiments));
-
-    assertWithMessage("activateFetched(fireperf) failed!")
-        .that(fireperfFrc.activateFetched())
-        .isTrue();
 
     verify(mockFirebaseAbt, never()).replaceAllExperiments(any());
   }
@@ -833,6 +634,36 @@ public final class FirebaseRemoteConfigTest {
   }
 
   @Test
+  public void activate_fireperfNamespace_noFetchedConfigs_returnsFalse() {
+    loadCacheWithConfig(mockFireperfFetchedCache, /*container=*/ null);
+    loadCacheWithConfig(mockFireperfActivatedCache, /*container=*/ null);
+
+    Task<Boolean> activateTask = fireperfFrc.activate();
+
+    assertWithMessage("activate(fireperf) succeeded with no fetched values!")
+        .that(activateTask.getResult())
+        .isFalse();
+
+    verify(mockFireperfActivatedCache, never()).put(any());
+    verify(mockFireperfFetchedCache, never()).clear();
+  }
+
+  @Test
+  public void activate_fireperfNamespace_freshFetchedConfigs_activatesAndClearsFetched() {
+    loadCacheWithConfig(mockFireperfFetchedCache, secondFetchedContainer);
+    loadCacheWithConfig(mockFireperfActivatedCache, firstFetchedContainer);
+    // When the fetched values are activated, they should be put into the activated cache.
+    cachePutReturnsConfig(mockFireperfActivatedCache, secondFetchedContainer);
+
+    Task<Boolean> activateTask = fireperfFrc.activate();
+
+    assertWithMessage("activate(fireperf) failed!").that(activateTask.getResult()).isTrue();
+
+    verify(mockFireperfActivatedCache).put(secondFetchedContainer);
+    verify(mockFireperfFetchedCache).clear();
+  }
+
+  @Test
   public void fetch_hasNoErrors_taskReturnsSuccess() {
     when(mockFetchHandler.fetch()).thenReturn(Tasks.forResult(firstFetchedContainerResponse));
 
@@ -956,41 +787,6 @@ public final class FirebaseRemoteConfigTest {
     assertThat(fireperfFrc.getBoolean(BOOLEAN_KEY)).isTrue();
   }
 
-  @SuppressWarnings("deprecation")
-  @Test
-  public void getByteArray_keyDoesNotExist_returnsDefaultValue() {
-    when(mockGetHandler.getByteArray(BYTE_ARRAY_KEY)).thenReturn(DEFAULT_VALUE_FOR_BYTE_ARRAY);
-
-    assertThat(frc.getByteArray(BYTE_ARRAY_KEY)).isEqualTo(DEFAULT_VALUE_FOR_BYTE_ARRAY);
-  }
-
-  @SuppressWarnings("deprecation")
-  @Test
-  public void getByteArray_keyExists_returnsRemoteValue() {
-    byte[] remoteValue = "remote value".getBytes(FRC_BYTE_ARRAY_ENCODING);
-    when(mockGetHandler.getByteArray(BYTE_ARRAY_KEY)).thenReturn(remoteValue);
-
-    assertThat(frc.getByteArray(BYTE_ARRAY_KEY)).isEqualTo(remoteValue);
-  }
-
-  @SuppressWarnings("deprecation")
-  @Test
-  public void getByteArray_fireperfNamespace_keyDoesNotExist_returnsDefaultValue() {
-    when(mockFireperfGetHandler.getByteArray(BYTE_ARRAY_KEY))
-        .thenReturn(DEFAULT_VALUE_FOR_BYTE_ARRAY);
-
-    assertThat(fireperfFrc.getByteArray(BYTE_ARRAY_KEY)).isEqualTo(DEFAULT_VALUE_FOR_BYTE_ARRAY);
-  }
-
-  @SuppressWarnings("deprecation")
-  @Test
-  public void getByteArray_fireperfNamespace_keyExists_returnsRemoteValue() {
-    byte[] remoteValue = "remote value".getBytes(FRC_BYTE_ARRAY_ENCODING);
-    when(mockFireperfGetHandler.getByteArray(BYTE_ARRAY_KEY)).thenReturn(remoteValue);
-
-    assertThat(fireperfFrc.getByteArray(BYTE_ARRAY_KEY)).isEqualTo(remoteValue);
-  }
-
   @Test
   public void getDouble_keyDoesNotExist_returnsDefaultValue() {
     when(mockGetHandler.getDouble(DOUBLE_KEY)).thenReturn(DEFAULT_VALUE_FOR_DOUBLE);
@@ -1068,7 +864,6 @@ public final class FirebaseRemoteConfigTest {
     when(mockFrcInfo.getConfigSettings())
         .thenReturn(
             new FirebaseRemoteConfigSettings.Builder()
-                .setDeveloperModeEnabled(true)
                 .setFetchTimeoutInSeconds(fetchTimeoutInSeconds)
                 .setMinimumFetchIntervalInSeconds(minimumFetchIntervalInSeconds)
                 .build());
@@ -1077,22 +872,10 @@ public final class FirebaseRemoteConfigTest {
 
     assertThat(info.getFetchTimeMillis()).isEqualTo(fetchTimeInMillis);
     assertThat(info.getLastFetchStatus()).isEqualTo(lastFetchStatus);
-    assertThat(info.getConfigSettings().isDeveloperModeEnabled()).isEqualTo(true);
     assertThat(info.getConfigSettings().getFetchTimeoutInSeconds())
         .isEqualTo(fetchTimeoutInSeconds);
     assertThat(info.getConfigSettings().getMinimumFetchIntervalInSeconds())
         .isEqualTo(minimumFetchIntervalInSeconds);
-  }
-
-  @Test
-  public void setDefaults_withMap_setsDefaults() throws Exception {
-    frc.setDefaults(ImmutableMap.copyOf(DEFAULTS_MAP));
-
-    ConfigContainer defaultsContainer = newDefaultsContainer(DEFAULTS_STRING_MAP);
-    ArgumentCaptor<ConfigContainer> captor = ArgumentCaptor.forClass(ConfigContainer.class);
-
-    verify(mockDefaultsCache).putWithoutWaitingForDiskWrite(captor.capture());
-    JSONAssert.assertEquals(defaultsContainer.toString(), captor.getValue().toString(), false);
   }
 
   @Test
@@ -1121,28 +904,11 @@ public final class FirebaseRemoteConfigTest {
   }
 
   @Test
-  public void setConfigSettings_updatesMetadata() {
-    long fetchTimeout = 13L;
-    long minimumFetchInterval = 666L;
-    FirebaseRemoteConfigSettings frcSettings =
-        new FirebaseRemoteConfigSettings.Builder()
-            .setDeveloperModeEnabled(true)
-            .setFetchTimeoutInSeconds(fetchTimeout)
-            .setMinimumFetchIntervalInSeconds(minimumFetchInterval)
-            .build();
-
-    frc.setConfigSettings(frcSettings);
-
-    verify(metadataClient).setConfigSettingsWithoutWaitingOnDiskWrite(frcSettings);
-  }
-
-  @Test
   public void setConfigSettingsAsync_updatesMetadata() {
     long fetchTimeout = 13L;
     long minimumFetchInterval = 666L;
     FirebaseRemoteConfigSettings frcSettings =
         new FirebaseRemoteConfigSettings.Builder()
-            .setDeveloperModeEnabled(true)
             .setFetchTimeoutInSeconds(fetchTimeout)
             .setMinimumFetchIntervalInSeconds(minimumFetchInterval)
             .build();

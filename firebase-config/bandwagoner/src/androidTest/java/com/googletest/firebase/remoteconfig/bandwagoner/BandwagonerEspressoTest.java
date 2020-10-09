@@ -74,8 +74,7 @@ public class BandwagonerEspressoTest {
 
     onView(withId(R.id.activate_fetched_button)).perform(click());
     onView(withId(R.id.api_call_results))
-        .check(
-            matches(withText(allOf(containsString("activateFetched"), containsString("false!")))));
+        .check(matches(withText(allOf(containsString("activate"), containsString("false!")))));
   }
 
   @Test
@@ -86,14 +85,11 @@ public class BandwagonerEspressoTest {
 
     onView(withId(R.id.activate_fetched_button)).perform(click());
     onView(withId(R.id.api_call_results))
-        .check(
-            matches(
-                withText(allOf(containsString("activateFetched"), containsString("successful!")))));
+        .check(matches(withText(allOf(containsString("activate"), containsString("successful!")))));
 
     onView(withId(R.id.activate_fetched_button)).perform(click());
     onView(withId(R.id.api_call_results))
-        .check(
-            matches(withText(allOf(containsString("activateFetched"), containsString("false!")))));
+        .check(matches(withText(allOf(containsString("activate"), containsString("false!")))));
   }
 
   @Test
