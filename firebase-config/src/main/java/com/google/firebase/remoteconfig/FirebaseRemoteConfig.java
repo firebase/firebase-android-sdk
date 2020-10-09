@@ -19,7 +19,6 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
-import androidx.annotation.WorkerThread;
 import androidx.annotation.XmlRes;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
@@ -225,40 +224,6 @@ public class FirebaseRemoteConfig {
   }
 
   /**
-   * Activates the most recently fetched configs, so that the fetched key value pairs take effect.
-   *
-   * @return True if the current call activated the fetched configs; false if the fetched configs
-   *     were already activated by a previous call.
-   * @deprecated Use {@link #activate()} instead.
-   */
-  @Deprecated
-  @WorkerThread
-  public boolean activateFetched() {
-    @Nullable ConfigContainer fetchedContainer = fetchedConfigsCache.getBlocking();
-    if (fetchedContainer == null) {
-      return false;
-    }
-
-    // If the activated configs exist, verify that the fetched configs are fresher.
-    @Nullable ConfigContainer activatedContainer = activatedConfigsCache.getBlocking();
-    if (!isFetchedFresh(fetchedContainer, activatedContainer)) {
-      return false;
-    }
-
-    // Write the newly activated configs to disk, and then clear the fetched configs from disk.
-    // Fire and forget call, so consistency between disk and memory is not guaranteed.
-    activatedConfigsCache
-        .putWithoutWaitingForDiskWrite(fetchedContainer)
-        .addOnSuccessListener(
-            executor,
-            newlyActivatedContainer -> {
-              fetchedConfigsCache.clear();
-              updateAbtWithActivatedExperiments(newlyActivatedContainer.getAbtExperiments());
-            });
-    return true;
-  }
-
-  /**
    * Asynchronously activates the most recently fetched configs, so that the fetched key value pairs
    * take effect.
    *
@@ -396,29 +361,6 @@ public class FirebaseRemoteConfig {
   }
 
   /**
-   * Returns the parameter value for the given key as a {@code byte[]}.
-   *
-   * <p>Evaluates the value of the parameter in the following order:
-   *
-   * <ol>
-   *   <li>The activated value, if the last successful {@link #activate()} contained the key.
-   *   <li>The default value, if the key was set with {@link #setDefaultsAsync(Map)
-   *       setDefaultsAsync}.
-   *   <li>{@link #DEFAULT_VALUE_FOR_BYTE_ARRAY}.
-   * </ol>
-   *
-   * @param key A Firebase Remote Config parameter key.
-   * @return {@code byte[]} representing the value of the Firebase Remote Config parameter with the
-   *     given key.
-   * @deprecated please use {@link #getString(String)} instead
-   */
-  @NonNull
-  @Deprecated
-  public byte[] getByteArray(@NonNull String key) {
-    return getHandler.getByteArray(key);
-  }
-
-  /**
    * Returns the parameter value for the given key as a {@code double}.
    *
    * <p>Evaluates the value of the parameter in the following order:
@@ -518,17 +460,6 @@ public class FirebaseRemoteConfig {
   }
 
   /**
-   * Changes the settings for this {@link FirebaseRemoteConfig} instance.
-   *
-   * @param settings The new settings to be applied.
-   * @deprecated Use {@link #setConfigSettingsAsync(FirebaseRemoteConfigSettings)} instead.
-   */
-  @Deprecated
-  public void setConfigSettings(@NonNull FirebaseRemoteConfigSettings settings) {
-    frcMetadata.setConfigSettingsWithoutWaitingOnDiskWrite(settings);
-  }
-
-  /**
    * Asynchronously changes the settings for this {@link FirebaseRemoteConfig} instance.
    *
    * @param settings The new settings to be applied.
@@ -543,39 +474,6 @@ public class FirebaseRemoteConfig {
           // Return value required; return null for Void.
           return null;
         });
-  }
-
-  /**
-   * Sets default configs using the given {@link Map}.
-   *
-   * <p>The values in {@code defaults} must be one of the following types:
-   *
-   * <ul>
-   *   <li><code>Long</code>
-   *   <li><code>String</code>
-   *   <li><code>Double</code>
-   *   <li><code>byte[]</code>
-   *   <li><code>Boolean</code>
-   * </ul>
-   *
-   * @param defaults Map of key value pairs representing Firebase Remote Config parameter keys and
-   *     values.
-   * @deprecated Use {@link #setDefaultsAsync(Map) setDefaultsAsync} instead.
-   */
-  @Deprecated
-  public void setDefaults(@NonNull Map<String, Object> defaults) {
-    // Fetch values from the server are in the Map<String, String> format, so match that here.
-    Map<String, String> defaultsStringMap = new HashMap<>();
-    for (Map.Entry<String, Object> defaultsEntry : defaults.entrySet()) {
-      Object value = defaultsEntry.getValue();
-      if (value instanceof byte[]) {
-        defaultsStringMap.put(defaultsEntry.getKey(), new String((byte[]) value));
-      } else {
-        defaultsStringMap.put(defaultsEntry.getKey(), value.toString());
-      }
-    }
-
-    setDefaultsWithStringsMap(defaultsStringMap);
   }
 
   /**
@@ -608,19 +506,6 @@ public class FirebaseRemoteConfig {
     }
 
     return setDefaultsWithStringsMapAsync(defaultsStringMap);
-  }
-
-  /**
-   * Sets default configs using an XML resource.
-   *
-   * @param resourceId Id for the XML resource, which should be in your application's {@code
-   *     res/xml} folder.
-   * @deprecated Use {@link #setDefaultsAsync(int) setDefaultsAsync} instead.
-   */
-  @Deprecated
-  public void setDefaults(@XmlRes int resourceId) {
-    Map<String, String> xmlDefaults = DefaultsXmlParser.getDefaultsFromXml(context, resourceId);
-    setDefaultsWithStringsMap(xmlDefaults);
   }
 
   /**
@@ -691,20 +576,6 @@ public class FirebaseRemoteConfig {
       return true;
     }
     return false;
-  }
-
-  /**
-   * Asynchronously sets the defaults cache to the given default values, and persists the values to
-   * disk.
-   */
-  private void setDefaultsWithStringsMap(Map<String, String> defaultsStringMap) {
-    try {
-      ConfigContainer defaultConfigs =
-          ConfigContainer.newBuilder().replaceConfigsWith(defaultsStringMap).build();
-      defaultConfigsCache.putWithoutWaitingForDiskWrite(defaultConfigs);
-    } catch (JSONException e) {
-      Log.e(TAG, "The provided defaults map could not be processed.", e);
-    }
   }
 
   /**
