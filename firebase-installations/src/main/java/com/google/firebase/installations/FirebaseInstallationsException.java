@@ -35,6 +35,10 @@ public class FirebaseInstallationsException extends FirebaseException {
      * may be corrected by retrying. We recommend exponential backoff when retrying requests.
      */
     UNAVAILABLE,
+    /**
+     * Firebase servers have received too many requests in a short period of time from the client.
+     */
+    TOO_MANY_REQUESTS,
   }
 
   @NonNull private final Status status;
