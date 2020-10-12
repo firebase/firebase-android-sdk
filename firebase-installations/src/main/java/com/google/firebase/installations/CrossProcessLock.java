@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
+import java.nio.channels.OverlappingFileLockException;
 
 /** Use file locking to acquire a lock that will also block other processes. */
 class CrossProcessLock {
@@ -51,11 +52,13 @@ class CrossProcessLock {
       // This method blocks until it can retrieve the lock.
       lock = channel.lock();
       return new CrossProcessLock(channel, lock);
-    } catch (IOException | Error e) {
+    } catch (IOException | Error | OverlappingFileLockException e) {
       // Certain conditions can cause file locking to fail, such as out of disk or bad permissions.
       // In any case, the acquire will fail and return null instead of a held lock.
       // NOTE: In Java 7 & 8, FileKey creation failure might wrap IOException into Error. See
       // https://bugs.openjdk.java.net/browse/JDK-8025619 for details.
+      // Sometimes, an attempt to acquire the lock might throw an OverlappingFileLockException if a
+      // lock already exists on Android 7 & 8.
       Log.e(TAG, "encountered error while creating and acquiring the lock, ignoring", e);
 
       // Clean up any dangling resources
