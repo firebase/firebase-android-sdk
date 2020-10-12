@@ -1,4 +1,7 @@
-# Unreleased
+# Unreleased (22.0.0)
+- [changed] Removed the deprecated `timestampsInSnapshotsEnabled` setting.
+  Any timestamps in Firestore documents are now returned as `Timestamps`. To
+  convert `Timestamp` classed to `java.util.Date`, use `Timestamp.toDate()`.
 
 # 21.6.1
 - [changed] Added new internal HTTP headers to the gRPC connection.
