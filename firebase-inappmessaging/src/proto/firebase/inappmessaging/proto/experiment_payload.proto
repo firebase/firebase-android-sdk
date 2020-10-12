@@ -13,9 +13,11 @@
 // limitations under the License.
 
 syntax = "proto3";
-package developers.mobile.abt;
 
-option java_outer_classname = "FirebaseAbt";
+package firebase.inappmessaging;
+
+option java_package = "com.google.firebase.inappmessaging";
+option java_outer_classname = "ExperimentPayloadProto";
 
 // A lighter version of ExperimentPayload that describes an experiment
 // by only its experimentId. To be used when we don't need

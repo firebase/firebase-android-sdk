@@ -14,7 +14,6 @@
 
 plugins {
     id 'firebase-library'
-    id 'com.google.protobuf'
 }
 
 firebaseLibrary {
@@ -22,35 +21,10 @@ firebaseLibrary {
     publishSources = true
 }
 
-// TODO(issue/568): Remove this once legacy logic is removed from Remote Config.
-protobuf {
-    protoc {
-        artifact = "com.google.protobuf:protoc:$protocVersion"
-    }
-    generateProtoTasks {
-        all().each { task ->
-            task.builtins {
-                java { option 'lite' }
-            }
-        }
-    }
-}
-
 android {
 
     lintOptions {
         abortOnError false
-    }
-    sourceSets {
-        main {
-            proto {
-                srcDir 'src/proto'
-            }
-
-	    resources {
-	        srcDir 'src/proto/com/google/protos'
-	    }
-        }
     }
 
     compileSdkVersion project.targetSdkVersion
@@ -78,7 +52,6 @@ dependencies {
         exclude group: "com.google.firebase", module: "firebase-common"
     }
     implementation 'com.google.android.gms:play-services-basement:17.0.0'
-    implementation "com.google.protobuf:protobuf-javalite:$javaliteVersion"
     testImplementation 'org.mockito:mockito-core:2.25.0'
     testImplementation 'com.google.truth:truth:0.44'
     testImplementation 'junit:junit:4.13-beta-2'
@@ -86,5 +59,4 @@ dependencies {
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation 'io.grpc:grpc-testing:1.12.0'
     testImplementation 'androidx.test.espresso:espresso-core:3.2.0'
-
 }
