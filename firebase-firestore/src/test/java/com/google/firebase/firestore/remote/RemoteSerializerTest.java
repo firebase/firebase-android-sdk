@@ -84,9 +84,11 @@ import com.google.firestore.v1.Value;
 import com.google.firestore.v1.Write;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Int32Value;
+import com.google.protobuf.NullValue;
 import com.google.protobuf.Timestamp;
 import com.google.type.LatLng;
 import io.grpc.Status;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -690,6 +692,31 @@ public final class RemoteSerializerTest {
 
     ArrayValue.Builder notInFilterValue =
         ArrayValue.newBuilder().addValues(Value.newBuilder().setIntegerValue(42));
+    StructuredQuery.Filter expectedFilter =
+        Filter.newBuilder()
+            .setFieldFilter(
+                StructuredQuery.FieldFilter.newBuilder()
+                    .setField(FieldReference.newBuilder().setFieldPath("field"))
+                    .setOp(Operator.NOT_IN)
+                    .setValue(Value.newBuilder().setArrayValue(notInFilterValue))
+                    .build())
+            .build();
+
+    assertEquals(expectedFilter, apiFilter);
+    FieldFilter roundTripped = serializer.decodeFieldFilter(apiFilter.getFieldFilter());
+    assertEquals(roundTripped, inputFilter);
+    assertTrue(roundTripped instanceof NotInFilter);
+  }
+
+  @Test
+  public void testNotInWithNullSerialization() {
+    List<Object> nullArray = new ArrayList<>();
+    nullArray.add(null);
+    FieldFilter inputFilter = filter("field", "not-in", nullArray);
+    StructuredQuery.Filter apiFilter = serializer.encodeUnaryOrFieldFilter(inputFilter);
+
+    ArrayValue.Builder notInFilterValue =
+        ArrayValue.newBuilder().addValues(Value.newBuilder().setNullValue(NullValue.NULL_VALUE));
     StructuredQuery.Filter expectedFilter =
         Filter.newBuilder()
             .setFieldFilter(

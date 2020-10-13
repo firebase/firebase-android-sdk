@@ -65,20 +65,6 @@ public class ConfigMetadataClientTest {
   }
 
   @Test
-  public void getIsDeveloperModeEnabled_isNotSet_returnsFalse() {
-    assertThat(metadataClient.isDeveloperModeEnabled()).isFalse();
-  }
-
-  @Test
-  public void getIsDeveloperModeEnabled_isSetToTrue_returnsTrue() {
-    metadataClient.setConfigSettings(settingsBuilder.setDeveloperModeEnabled(true).build());
-
-    boolean isDeveloperModeEnabled = metadataClient.isDeveloperModeEnabled();
-
-    assertThat(isDeveloperModeEnabled).isTrue();
-  }
-
-  @Test
   public void getFetchTimeoutInSeconds_isNotSet_returnsDefault() {
     assertThat(metadataClient.getFetchTimeoutInSeconds()).isEqualTo(CONNECTION_TIMEOUT_IN_SECONDS);
   }
@@ -196,7 +182,6 @@ public class ConfigMetadataClientTest {
 
     assertThat(info.getFetchTimeMillis()).isEqualTo(LAST_FETCH_TIME_IN_MILLIS_NO_FETCH_YET);
     assertThat(info.getLastFetchStatus()).isEqualTo(LAST_FETCH_STATUS_NO_FETCH_YET);
-    assertThat(info.getConfigSettings().isDeveloperModeEnabled()).isFalse();
     assertThat(info.getConfigSettings().getFetchTimeoutInSeconds())
         .isEqualTo(CONNECTION_TIMEOUT_IN_SECONDS);
     assertThat(info.getConfigSettings().getMinimumFetchIntervalInSeconds())
@@ -213,7 +198,6 @@ public class ConfigMetadataClientTest {
     long minimumFetchInterval = 666L;
     metadataClient.setConfigSettings(
         new FirebaseRemoteConfigSettings.Builder()
-            .setDeveloperModeEnabled(true)
             .setFetchTimeoutInSeconds(fetchTimeout)
             .setMinimumFetchIntervalInSeconds(minimumFetchInterval)
             .build());
@@ -222,7 +206,6 @@ public class ConfigMetadataClientTest {
 
     assertThat(info.getFetchTimeMillis()).isEqualTo(lastSuccessfulFetchTime.getTime());
     assertThat(info.getLastFetchStatus()).isEqualTo(LAST_FETCH_STATUS_FAILURE);
-    assertThat(info.getConfigSettings().isDeveloperModeEnabled()).isTrue();
     assertThat(info.getConfigSettings().getFetchTimeoutInSeconds()).isEqualTo(fetchTimeout);
     assertThat(info.getConfigSettings().getMinimumFetchIntervalInSeconds())
         .isEqualTo(minimumFetchInterval);
@@ -298,7 +281,6 @@ public class ConfigMetadataClientTest {
     long minimumFetchInterval = 666L;
     metadataClient.setConfigSettings(
         new FirebaseRemoteConfigSettings.Builder()
-            .setDeveloperModeEnabled(true)
             .setFetchTimeoutInSeconds(fetchTimeout)
             .setMinimumFetchIntervalInSeconds(minimumFetchInterval)
             .build());
@@ -308,7 +290,6 @@ public class ConfigMetadataClientTest {
     FirebaseRemoteConfigInfo info = metadataClient.getInfo();
     assertThat(info.getFetchTimeMillis()).isEqualTo(LAST_FETCH_TIME_IN_MILLIS_NO_FETCH_YET);
     assertThat(info.getLastFetchStatus()).isEqualTo(LAST_FETCH_STATUS_NO_FETCH_YET);
-    assertThat(info.getConfigSettings().isDeveloperModeEnabled()).isFalse();
     assertThat(info.getConfigSettings().getFetchTimeoutInSeconds())
         .isEqualTo(CONNECTION_TIMEOUT_IN_SECONDS);
     assertThat(info.getConfigSettings().getMinimumFetchIntervalInSeconds())

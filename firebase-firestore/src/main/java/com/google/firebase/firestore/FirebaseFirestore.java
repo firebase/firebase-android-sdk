@@ -19,6 +19,7 @@ import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 
 import android.app.Activity;
 import android.content.Context;
+import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -39,6 +40,7 @@ import com.google.firebase.firestore.core.FirestoreClient;
 import com.google.firebase.firestore.local.SQLitePersistence;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.ResourcePath;
+import com.google.firebase.firestore.remote.FirestoreChannel;
 import com.google.firebase.firestore.remote.GrpcMetadataProvider;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.Executors;
@@ -204,12 +206,12 @@ public class FirebaseFirestore {
   }
 
   /**
-   * Modify this FirebaseDatabase instance to communicate with the Cloud Firestore emulator.
+   * Modifies this FirebaseDatabase instance to communicate with the Cloud Firestore emulator.
    *
-   * <p>Note: this must be called before this instance has been used to do any operations.
+   * <p>Note: Call this method before using the instance to do any database operations.
    *
-   * @param host the emulator host (ex: 10.0.2.2)
-   * @param port the emulator port (ex: 8080)
+   * @param host the emulator host (for example, 10.0.2.2)
+   * @param port the emulator port (for example, 8080)
    */
   public void useEmulator(@NonNull String host, int port) {
     if (this.client != null) {
@@ -634,5 +636,17 @@ public class FirebaseFirestore {
       throw new IllegalArgumentException(
           "Provided document reference is from a different Cloud Firestore instance.");
     }
+  }
+
+  /**
+   * Sets the language of the public API in the format of "gl-<language>/<version>" where version
+   * might be blank, e.g. `gl-cpp/`. The provided string is used as is.
+   *
+   * <p>Note: this method is package-private because it is expected to only be called via JNI (which
+   * ignores access modifiers).
+   */
+  @Keep
+  static void setClientLanguage(@NonNull String languageToken) {
+    FirestoreChannel.setClientLanguage(languageToken);
   }
 }

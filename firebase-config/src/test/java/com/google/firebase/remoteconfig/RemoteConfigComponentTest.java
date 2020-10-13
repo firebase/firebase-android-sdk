@@ -39,7 +39,6 @@ import com.google.firebase.remoteconfig.internal.ConfigFetchHandler;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHttpClient;
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
 import com.google.firebase.remoteconfig.internal.ConfigMetadataClient;
-import com.google.firebase.remoteconfig.internal.LegacyConfigsHandler;
 import java.util.concurrent.ExecutorService;
 import org.junit.Before;
 import org.junit.Test;
@@ -67,7 +66,6 @@ public class RemoteConfigComponentTest {
   @Mock private FirebaseInstallationsApi mockFirebaseInstallations;
   @Mock private FirebaseABTesting mockFirebaseAbt;
   @Mock private AnalyticsConnector mockAnalyticsConnector;
-  @Mock private LegacyConfigsHandler mockLegacyConfigsHandler;
   @Mock private ConfigCacheClient mockFetchedCache;
   @Mock private ConfigCacheClient mockActivatedCache;
   @Mock private ConfigCacheClient mockDefaultsCache;
@@ -91,12 +89,6 @@ public class RemoteConfigComponentTest {
     when(mockFirebaseApp.getOptions())
         .thenReturn(new FirebaseOptions.Builder().setApplicationId(APP_ID).build());
     when(mockFirebaseApp.getName()).thenReturn(FirebaseApp.DEFAULT_APP_NAME);
-  }
-
-  @Test
-  public void constructor_callsLegacyConfigHandler() {
-    getNewFrcComponent();
-    verify(mockLegacyConfigsHandler).saveLegacyConfigsIfNecessary();
   }
 
   @Test
@@ -181,7 +173,6 @@ public class RemoteConfigComponentTest {
         mockFirebaseInstallations,
         mockFirebaseAbt,
         mockAnalyticsConnector,
-        mockLegacyConfigsHandler,
         /* loadGetDefault= */ true);
   }
 
@@ -193,7 +184,6 @@ public class RemoteConfigComponentTest {
         mockFirebaseInstallations,
         mockFirebaseAbt,
         mockAnalyticsConnector,
-        mockLegacyConfigsHandler,
         /* loadGetDefault= */ false);
   }
 

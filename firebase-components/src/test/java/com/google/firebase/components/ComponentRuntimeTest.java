@@ -66,31 +66,53 @@ public final class ComponentRuntimeTest {
     }
   }
 
+  enum Eagerness {
+    ALWAYS,
+    DEFAULT_ONLY
+  }
+
   private static class ComponentRegistrarImpl implements ComponentRegistrar {
+
+    private final Eagerness eagerness;
+
+    private ComponentRegistrarImpl(Eagerness eagerness) {
+      this.eagerness = eagerness;
+    }
+
     @Override
     public List<Component<?>> getComponents() {
+      Component.Builder<ComponentOne> cmpOne =
+          Component.builder(ComponentOne.class)
+              .add(Dependency.required(InitTracker.class))
+              .factory(container -> new ComponentOneImpl(container.get(InitTracker.class)));
+      switch (eagerness) {
+        case ALWAYS:
+          cmpOne.alwaysEager();
+          break;
+        case DEFAULT_ONLY:
+          cmpOne.eagerInDefaultApp();
+          break;
+        default:
+          throw new IllegalStateException("Unsupported eagerness specified " + eagerness);
+      }
       return Arrays.asList(
           Component.builder(ComponentTwo.class)
               .add(Dependency.required(ComponentOne.class))
               .factory(container -> new ComponentTwoImpl(container.get(ComponentOne.class)))
               .build(),
-          Component.builder(ComponentOne.class)
-              .add(Dependency.required(InitTracker.class))
-              .alwaysEager()
-              .factory(container -> new ComponentOneImpl(container.get(InitTracker.class)))
-              .build());
+          cmpOne.build());
     }
   }
 
   @Test
   public void
-      container_withValidDependencyGraph_shouldInitializeEagerComponentsAndTheirDependencies() {
+      container_withValidDependencyGraph_withDefaultApp_shouldInitializeEagerComponentsAndTheirDependencies() {
     InitTracker initTracker = new InitTracker();
 
     ComponentRuntime runtime =
         new ComponentRuntime(
             EXECUTOR,
-            Collections.singletonList(new ComponentRegistrarImpl()),
+            Collections.singletonList(new ComponentRegistrarImpl(Eagerness.ALWAYS)),
             Component.of(initTracker, InitTracker.class));
 
     assertThat(initTracker.isInitialized()).isFalse();
@@ -101,13 +123,48 @@ public final class ComponentRuntimeTest {
   }
 
   @Test
+  public void
+      container_withValidDependencyGraph_withDefaultApp_shouldInitializeDefaultAppEagerComponentsAndTheirDependencies() {
+    InitTracker initTracker = new InitTracker();
+
+    ComponentRuntime runtime =
+        new ComponentRuntime(
+            EXECUTOR,
+            Collections.singletonList(new ComponentRegistrarImpl(Eagerness.DEFAULT_ONLY)),
+            Component.of(initTracker, InitTracker.class));
+
+    assertThat(initTracker.isInitialized()).isFalse();
+
+    runtime.initializeEagerComponents(true);
+
+    assertThat(initTracker.isInitialized()).isTrue();
+  }
+
+  @Test
+  public void container_withValidDependencyGraph_shouldNotInitializeNonDefaultAppEagerComponents() {
+    InitTracker initTracker = new InitTracker();
+
+    ComponentRuntime runtime =
+        new ComponentRuntime(
+            EXECUTOR,
+            Collections.singletonList(new ComponentRegistrarImpl(Eagerness.DEFAULT_ONLY)),
+            Component.of(initTracker, InitTracker.class));
+
+    assertThat(initTracker.isInitialized()).isFalse();
+
+    runtime.initializeEagerComponents(false);
+
+    assertThat(initTracker.isInitialized()).isFalse();
+  }
+
+  @Test
   public void container_withValidDependencyGraph_shouldProperlyInjectComponents() {
     InitTracker initTracker = new InitTracker();
 
     ComponentRuntime runtime =
         new ComponentRuntime(
             EXECUTOR,
-            Collections.singletonList(new ComponentRegistrarImpl()),
+            Collections.singletonList(new ComponentRegistrarImpl(Eagerness.ALWAYS)),
             Component.of(initTracker, InitTracker.class));
 
     assertThat(initTracker.isInitialized()).isFalse();
@@ -124,7 +181,7 @@ public final class ComponentRuntimeTest {
     try {
       new ComponentRuntime(
           EXECUTOR,
-          Collections.singletonList(new ComponentRegistrarImpl()),
+          Collections.singletonList(new ComponentRegistrarImpl(Eagerness.ALWAYS)),
           Component.builder(InitTracker.class)
               .add(Dependency.required(ComponentTwo.class))
               .factory(container -> null)
@@ -140,7 +197,7 @@ public final class ComponentRuntimeTest {
     try {
       new ComponentRuntime(
           EXECUTOR,
-          Collections.singletonList(new ComponentRegistrarImpl()),
+          Collections.singletonList(new ComponentRegistrarImpl(Eagerness.ALWAYS)),
           Component.builder(ComponentOne.class).factory(container -> null).build());
       fail("Expected exception not thrown.");
     } catch (IllegalArgumentException ex) {
@@ -151,7 +208,8 @@ public final class ComponentRuntimeTest {
   @Test
   public void container_withMissingDependencies_shouldThrow() {
     try {
-      new ComponentRuntime(EXECUTOR, Collections.singletonList(new ComponentRegistrarImpl()));
+      new ComponentRuntime(
+          EXECUTOR, Collections.singletonList(new ComponentRegistrarImpl(Eagerness.ALWAYS)));
       fail("Expected exception not thrown.");
     } catch (MissingDependencyException ex) {
       // success.

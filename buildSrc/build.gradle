@@ -29,14 +29,6 @@ repositories {
     }
 }
 
-sourceSets {
-    main {
-        java {
-            srcDir '../third_party/jsoup/src/main/java'
-        }
-    }
-}
-
 dependencies {
     implementation 'org.jsoup:jsoup:1.11.2'
     implementation 'digital.wup:android-maven-publish:3.6.2'
@@ -74,6 +66,11 @@ gradlePlugin {
         firebaseJavaLibraryPlugin {
             id = "firebase-java-library"
             implementationClass = 'com.google.firebase.gradle.plugins.FirebaseJavaLibraryPlugin'
+        }
+
+        firebaseVendorPlugin {
+            id = "firebase-vendor"
+            implementationClass = 'com.google.firebase.gradle.plugins.VendorPlugin'
         }
     }
 }

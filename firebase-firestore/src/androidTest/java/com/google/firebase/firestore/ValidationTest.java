@@ -414,10 +414,12 @@ public class ValidationTest {
     CollectionReference collection = testCollection();
     expectError(
         () -> collection.whereGreaterThan("a", null),
-        "Invalid Query. Null supports only equality comparisons (via whereEqualTo()).");
+        "Invalid Query. Null only supports comparisons via "
+            + "whereEqualTo() and whereNotEqualTo().");
     expectError(
         () -> collection.whereArrayContains("a", null),
-        "Invalid Query. Null supports only equality comparisons (via whereEqualTo()).");
+        "Invalid Query. Null only supports comparisons via "
+            + "whereEqualTo() and whereNotEqualTo().");
     expectError(
         () -> collection.whereArrayContainsAny("a", null),
         "Invalid Query. A non-empty array is required for 'array_contains_any' filters.");
@@ -430,10 +432,12 @@ public class ValidationTest {
 
     expectError(
         () -> collection.whereGreaterThan("a", Double.NaN),
-        "Invalid Query. NaN supports only equality comparisons (via whereEqualTo()).");
+        "Invalid Query. NaN only supports comparisons via "
+            + "whereEqualTo() and whereNotEqualTo().");
     expectError(
         () -> collection.whereArrayContains("a", Double.NaN),
-        "Invalid Query. NaN supports only equality comparisons (via whereEqualTo()).");
+        "Invalid Query. NaN only supports comparisons via "
+            + "whereEqualTo() and whereNotEqualTo().");
   }
 
   @Test
@@ -544,8 +548,9 @@ public class ValidationTest {
   public void queriesWithDifferentInequalityFieldsFail() {
     expectError(
         () -> testCollection().whereGreaterThan("x", 32).whereLessThan("y", "cat"),
-        "All where filters other than whereEqualTo() must be on the same field. But you "
-            + "have filters on 'x' and 'y'");
+        "All where filters with an inequality (notEqualTo, notIn, lessThan, "
+            + "lessThanOrEqualTo, greaterThan, or greaterThanOrEqualTo) must be on the "
+            + "same field. But you have filters on 'x' and 'y'");
   }
 
   @Test
@@ -571,8 +576,9 @@ public class ValidationTest {
 
     expectError(
         () -> testCollection().whereNotEqualTo("x", 32).whereGreaterThan("y", 33),
-        "All where filters other than whereEqualTo() must be on the same field. But you "
-            + "have filters on 'x' and 'y'");
+        "All where filters with an inequality (notEqualTo, notIn, lessThan, "
+            + "lessThanOrEqualTo, greaterThan, or greaterThanOrEqualTo) must be on the "
+            + "same field. But you have filters on 'x' and 'y'");
   }
 
   @Test
@@ -619,7 +625,9 @@ public class ValidationTest {
 
     expectError(
         () -> testCollection().whereNotIn("foo", asList(1, 2)).whereNotIn("bar", asList(1, 2)),
-        "Invalid Query. You cannot use more than one 'not_in' filter.");
+        "All where filters with an inequality (notEqualTo, notIn, lessThan, "
+            + "lessThanOrEqualTo, greaterThan, or greaterThanOrEqualTo) must be on the "
+            + "same field. But you have filters on 'foo' and 'bar'");
 
     expectError(
         () ->

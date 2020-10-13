@@ -73,17 +73,17 @@ public class FieldFilter extends Filter {
         return new KeyFieldFilter(path, operator, value);
       }
     } else if (Values.isNullValue(value)) {
-      // TODO(ne-queries): Update error message to include != operator.
       if (operator != Operator.EQUAL && operator != Operator.NOT_EQUAL) {
         throw new IllegalArgumentException(
-            "Invalid Query. Null supports only equality comparisons (via whereEqualTo()).");
+            "Invalid Query. Null only supports comparisons via "
+                + "whereEqualTo() and whereNotEqualTo().");
       }
       return new FieldFilter(path, operator, value);
     } else if (Values.isNanValue(value)) {
-      // TODO(ne-queries): Update error message to include != operator.
       if (operator != Operator.EQUAL && operator != Operator.NOT_EQUAL) {
         throw new IllegalArgumentException(
-            "Invalid Query. NaN supports only equality comparisons (via whereEqualTo()).");
+            "Invalid Query. NaN only supports comparisons via "
+                + "whereEqualTo() and whereNotEqualTo().");
       }
       return new FieldFilter(path, operator, value);
     } else if (operator == Operator.ARRAY_CONTAINS) {
@@ -137,7 +137,8 @@ public class FieldFilter extends Filter {
             Operator.LESS_THAN_OR_EQUAL,
             Operator.GREATER_THAN,
             Operator.GREATER_THAN_OR_EQUAL,
-            Operator.NOT_EQUAL)
+            Operator.NOT_EQUAL,
+            Operator.NOT_IN)
         .contains(operator);
   }
 

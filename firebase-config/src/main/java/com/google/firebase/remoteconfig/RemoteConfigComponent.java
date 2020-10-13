@@ -33,7 +33,6 @@ import com.google.firebase.remoteconfig.internal.ConfigFetchHttpClient;
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
 import com.google.firebase.remoteconfig.internal.ConfigMetadataClient;
 import com.google.firebase.remoteconfig.internal.ConfigStorageClient;
-import com.google.firebase.remoteconfig.internal.LegacyConfigsHandler;
 import com.google.firebase.remoteconfig.internal.Personalization;
 import java.util.HashMap;
 import java.util.Map;
@@ -100,7 +99,6 @@ public class RemoteConfigComponent {
         firebaseInstallations,
         firebaseAbt,
         analyticsConnector,
-        new LegacyConfigsHandler(context, firebaseApp.getOptions().getApplicationId()),
         /* loadGetDefault= */ true);
   }
 
@@ -113,7 +111,6 @@ public class RemoteConfigComponent {
       FirebaseInstallationsApi firebaseInstallations,
       FirebaseABTesting firebaseAbt,
       @Nullable AnalyticsConnector analyticsConnector,
-      LegacyConfigsHandler legacyConfigsHandler,
       boolean loadGetDefault) {
     this.context = context;
     this.executorService = executorService;
@@ -130,7 +127,6 @@ public class RemoteConfigComponent {
     if (loadGetDefault) {
       // Loads the default namespace's configs from disk on App startup.
       Tasks.call(executorService, this::getDefault);
-      Tasks.call(executorService, legacyConfigsHandler::saveLegacyConfigsIfNecessary);
     }
   }
 
@@ -215,15 +211,6 @@ public class RemoteConfigComponent {
   }
 
   private ConfigCacheClient getCacheClient(String namespace, String configStoreType) {
-    return getCacheClient(context, appId, namespace, configStoreType);
-  }
-
-  /**
-   * The {@link LegacyConfigsHandler} needs access to multiple cache clients, and the simplest way
-   * to provide it access is to keep this method public and static.
-   */
-  public static ConfigCacheClient getCacheClient(
-      Context context, String appId, String namespace, String configStoreType) {
     String fileName =
         String.format(
             "%s_%s_%s_%s.json",

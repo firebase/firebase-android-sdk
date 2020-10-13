@@ -2,9 +2,10 @@
 package com.google.firebase.messaging {
 
   public class FirebaseMessaging {
-    method @NonNull public boolean deliveryMetricsExportToBigQueryEnabled();
+    method @Deprecated public boolean deliveryMetricsExportToBigQueryEnabled();
     method @NonNull public static com.google.firebase.messaging.FirebaseMessaging getInstance();
     method public boolean isAutoInitEnabled();
+    method public boolean isDeliveryMetricsExportToBigQueryEnabled();
     method public void send(@NonNull com.google.firebase.messaging.RemoteMessage);
     method public void setAutoInitEnabled(boolean);
     method public void setDeliveryMetricsExportToBigQuery(boolean);

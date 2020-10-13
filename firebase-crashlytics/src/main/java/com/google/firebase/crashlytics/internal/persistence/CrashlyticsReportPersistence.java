@@ -194,6 +194,7 @@ public class CrashlyticsReportPersistence {
   public void finalizeReports(@Nullable String currentSessionId, long sessionEndTime) {
     final List<File> sessionDirectories = capAndGetOpenSessions(currentSessionId);
     for (File sessionDirectory : sessionDirectories) {
+      Logger.getLogger().d("Finalizing report for session " + sessionDirectory.getName());
       synthesizeReport(sessionDirectory, sessionEndTime);
       recursiveDelete(sessionDirectory);
     }
@@ -288,6 +289,7 @@ public class CrashlyticsReportPersistence {
 
     // Only process the session if it has associated events
     if (eventFiles.isEmpty()) {
+      Logger.getLogger().d("Session " + sessionDirectory.getName() + " has no events.");
       return;
     }
 
@@ -302,6 +304,12 @@ public class CrashlyticsReportPersistence {
       } catch (IOException e) {
         Logger.getLogger().d("Could not add event to report for " + eventFile, e);
       }
+    }
+
+    // b/168902195
+    if (events.isEmpty()) {
+      Logger.getLogger().d("Could not parse event files for session " + sessionDirectory.getName());
+      return;
     }
 
     String userId = null;

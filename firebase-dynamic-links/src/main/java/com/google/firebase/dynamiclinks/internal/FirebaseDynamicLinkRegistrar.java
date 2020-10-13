@@ -21,7 +21,7 @@ import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
 import com.google.firebase.dynamiclinks.FirebaseDynamicLinks;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -47,6 +47,6 @@ public final class FirebaseDynamicLinkRegistrar implements ComponentRegistrar {
                         container.get(FirebaseApp.class), container.get(AnalyticsConnector.class)))
             .build(); // no need for eager init for the Internal component.
 
-    return Collections.singletonList(firebaseDynamicLinks);
+    return Arrays.asList(firebaseDynamicLinks);
   }
 }
