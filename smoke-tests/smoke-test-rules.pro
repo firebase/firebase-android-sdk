@@ -19,5 +19,9 @@
   public <methods>;
 }
 
+-keepclasseswithmembernames interface * {
+    @retrofit.http.* <methods>;
+}
+
 -dontwarn android.**
 -dontwarn okio.**
