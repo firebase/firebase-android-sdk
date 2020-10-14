@@ -58,6 +58,13 @@ public abstract class AndroidClientInfo {
   @Nullable
   public abstract String getFingerprint();
 
+  /**
+   * The chosen locale from the client. e.g., "en_US", "ko_KR", "en_GB".
+   * NB: Often set as just locale-derived language; e.g., "en", "ko"..
+   */
+  @Nullable
+  public abstract String getLocale();
+
   /** Locale-derived country, chosen by the user; e.g., "US", "KR", "JP". */
   @Nullable
   public abstract String getCountry();
@@ -100,6 +107,9 @@ public abstract class AndroidClientInfo {
 
     @NonNull
     public abstract Builder setCountry(@Nullable String value);
+
+    @NonNull
+    public abstract Builder setLocale(@Nullable String value);
 
     @NonNull
     public abstract Builder setMccMnc(@Nullable String value);

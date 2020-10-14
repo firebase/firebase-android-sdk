@@ -89,6 +89,7 @@ final class CctTransportBackend implements TransportBackend {
   private static final String KEY_OS_BUILD = "os-uild";
   private static final String KEY_MANUFACTURER = "manufacturer";
   private static final String KEY_FINGERPRINT = "fingerprint";
+  private static final String KEY_LOCALE = "locale";
   private static final String KEY_COUNTRY = "country";
   private static final String KEY_MCC_MNC = "mcc_mnc";
   private static final String KEY_TIMEZONE_OFFSET = "tz-offset";
@@ -147,6 +148,7 @@ final class CctTransportBackend implements TransportBackend {
         .addMetadata(KEY_NETWORK_TYPE, getNetTypeValue(networkInfo))
         .addMetadata(KEY_MOBILE_SUBTYPE, getNetSubtypeValue(networkInfo))
         .addMetadata(KEY_COUNTRY, Locale.getDefault().getCountry())
+        .addMetadata(KEY_LOCALE, Locale.getDefault().getLanguage())
         .addMetadata(KEY_MCC_MNC, getTelephonyManager(applicationContext).getSimOperator())
         .build();
   }
@@ -206,6 +208,7 @@ final class CctTransportBackend implements TransportBackend {
                               .setManufacturer(firstEvent.get(KEY_MANUFACTURER))
                               .setFingerprint(firstEvent.get(KEY_FINGERPRINT))
                               .setCountry(firstEvent.get(KEY_COUNTRY))
+                              .setLocale(firstEvent.get(KEY_LOCALE))
                               .setMccMnc(firstEvent.get(KEY_MCC_MNC))
                               .build())
                       .build());
