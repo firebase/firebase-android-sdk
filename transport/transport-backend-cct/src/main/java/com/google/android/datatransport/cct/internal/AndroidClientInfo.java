@@ -58,6 +58,14 @@ public abstract class AndroidClientInfo {
   @Nullable
   public abstract String getFingerprint();
 
+  /** Locale-derived country, chosen by the user; e.g., "US", "KR", "JP". */
+  @Nullable
+  public abstract String getCountry();
+
+  /** The mobile country code / mobile network code (MCC/MNC). */
+  @Nullable
+  public abstract String getMccMnc();
+
   @NonNull
   public static Builder builder() {
     return new AutoValue_AndroidClientInfo.Builder();
@@ -89,6 +97,12 @@ public abstract class AndroidClientInfo {
 
     @NonNull
     public abstract Builder setFingerprint(@Nullable String value);
+
+    @NonNull
+    public abstract Builder setCountry(@Nullable String value);
+
+    @NonNull
+    public abstract Builder setMccMnc(@Nullable String value);
 
     @NonNull
     public abstract AndroidClientInfo build();
