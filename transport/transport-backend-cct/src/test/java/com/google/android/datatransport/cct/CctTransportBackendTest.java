@@ -34,6 +34,7 @@ import android.net.NetworkInfo;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.google.android.datatransport.Encoding;
 import com.google.android.datatransport.backend.cct.BuildConfig;
+import com.google.android.datatransport.cct.internal.ClientInfo;
 import com.google.android.datatransport.cct.internal.NetworkConnectionInfo;
 import com.google.android.datatransport.runtime.EncodedPayload;
 import com.google.android.datatransport.runtime.EventInternal;
@@ -46,6 +47,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.zip.GZIPOutputStream;
 import org.junit.Rule;
 import org.junit.Test;
@@ -186,6 +188,57 @@ public class CctTransportBackendTest {
                     String.format(
                         "$[?(@.logRequest[0].logEvent[1].sourceExtensionJsonProto3 == \"%s\")]",
                         JSON_PAYLOAD_ESCAPED))));
+
+    assertEquals(BackendResponse.ok(3), response);
+  }
+
+  @Test
+  public void testCCTContainsRightAndroidClientInfo() {
+    stubFor(
+        post(urlEqualTo("/api"))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", "application/json;charset=UTF8;hello=world")
+                    .withBody("{\"nextRequestWaitMillis\":3}")));
+    BackendRequest backendRequest = getCCTBackendRequest();
+    wallClock.tick();
+    uptimeClock.tick();
+
+    BackendResponse response = BACKEND.send(backendRequest);
+
+    ConnectivityManager connectivityManager =
+        (ConnectivityManager)
+            RuntimeEnvironment.application.getSystemService(Context.CONNECTIVITY_SERVICE);
+    NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+
+    verify(
+        postRequestedFor(urlEqualTo("/api"))
+            .withHeader(
+                "User-Agent",
+                equalTo(String.format("datatransport/%s android/", BuildConfig.VERSION_NAME)))
+            .withHeader("Content-Type", equalTo("application/json"))
+            .withRequestBody(matchingJsonPath("$[?(@.logRequest.size() == 1)]"))
+            .withRequestBody(
+                matchingJsonPath(
+                    String.format(
+                        "$[?(@.logRequest[0].clientInfo.clientType == \"%s\")]",
+                        ClientInfo.ClientType.ANDROID_FIREBASE)))
+            .withRequestBody(
+                matchingJsonPath(
+                    String.format(
+                        "$[?(@.logRequest[0].clientInfo.androidClientInfo.locale == \"%s\")]",
+                        Locale.getDefault().getLanguage())))
+            .withRequestBody(
+                matchingJsonPath(
+                    String.format(
+                        "$[?(@.logRequest[0].clientInfo.androidClientInfo.country == \"%s\")]",
+                        Locale.getDefault().getCountry())))
+            // MCC/MNC is empty in roboelectric
+            .withRequestBody(
+                matchingJsonPath(
+                    String.format(
+                        "$[?(@.logRequest[0].clientInfo.androidClientInfo.mccMnc == \"\")]"))));
 
     assertEquals(BackendResponse.ok(3), response);
   }
