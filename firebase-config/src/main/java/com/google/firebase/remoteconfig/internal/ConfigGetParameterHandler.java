@@ -71,7 +71,7 @@ public class ConfigGetParameterHandler {
   static final Pattern FALSE_REGEX =
       Pattern.compile("^(0|false|f|no|n|off|)$", Pattern.CASE_INSENSITIVE);
 
-  private final Set<BiConsumer<String, JSONObject>> listeners = new HashSet<>();
+  private final Set<BiConsumer<String, ConfigContainer>> listeners = new HashSet<>();
 
   private final Executor executor;
   private final ConfigCacheClient activatedConfigsCache;
@@ -349,7 +349,7 @@ public class ConfigGetParameterHandler {
    *
    * @param listener function that takes in the parameter key and the {@link ConfigContainer} JSON
    */
-  public void addListener(BiConsumer<String, JSONObject> listener) {
+  public void addListener(BiConsumer<String, ConfigContainer> listener) {
     synchronized (listeners) {
       listeners.add(listener);
     }
@@ -366,11 +366,9 @@ public class ConfigGetParameterHandler {
       return;
     }
 
-    JSONObject configs = container.getContainer();
-
     synchronized (listeners) {
-      for (BiConsumer<String, JSONObject> listener : listeners) {
-        executor.execute(() -> listener.accept(key, configs));
+      for (BiConsumer<String, ConfigContainer> listener : listeners) {
+        executor.execute(() -> listener.accept(key, container));
       }
     }
   }

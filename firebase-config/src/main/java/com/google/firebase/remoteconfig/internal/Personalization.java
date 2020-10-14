@@ -15,8 +15,6 @@
 package com.google.firebase.remoteconfig.internal;
 
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.TAG;
-import static com.google.firebase.remoteconfig.internal.ConfigContainer.CONFIGS_KEY;
-import static com.google.firebase.remoteconfig.internal.ConfigContainer.PERSONALIZATION_METADATA_KEY;
 
 import android.os.Bundle;
 import android.util.Log;
@@ -44,17 +42,17 @@ public class Personalization {
    * Personalization parameter.
    *
    * @param key Remote Config parameter
-   * @param configContainer JSON of {@link ConfigContainer}
+   * @param configContainer cache of {@link ConfigContainer}
    */
-  public void logArmActive(@NonNull String key, @NonNull JSONObject configContainer) {
-    JSONObject ids = configContainer.optJSONObject(PERSONALIZATION_METADATA_KEY);
-    if (ids == null) {
+  public void logArmActive(@NonNull String key, @NonNull ConfigContainer configContainer) {
+    JSONObject ids = configContainer.getPersonalizationMetadata();
+    if (ids.length() < 1) {
       Log.w(TAG, "Missing Personalization metadata");
       return;
     }
 
-    JSONObject values = configContainer.optJSONObject(CONFIGS_KEY);
-    if (values == null) {
+    JSONObject values = configContainer.getConfigs();
+    if (values.length() < 1) {
       Log.w(TAG, "Missing config");
       return;
     }

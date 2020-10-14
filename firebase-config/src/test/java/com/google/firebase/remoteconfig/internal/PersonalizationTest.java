@@ -84,7 +84,7 @@ public class PersonalizationTest {
 
   @Test
   public void logArmActive_nonPersonalizationKey_notLogged() {
-    personalization.logArmActive("key3", CONFIG_CONTAINER.getContainer());
+    personalization.logArmActive("key3", CONFIG_CONTAINER);
 
     verify(mockAnalyticsConnector, times(0))
         .logEvent(
@@ -94,7 +94,7 @@ public class PersonalizationTest {
 
   @Test
   public void logArmActive_singlePersonalizationKey_loggedOnce() {
-    personalization.logArmActive("key1", CONFIG_CONTAINER.getContainer());
+    personalization.logArmActive("key1", CONFIG_CONTAINER);
 
     verify(mockAnalyticsConnector, times(1))
         .logEvent(
@@ -109,8 +109,8 @@ public class PersonalizationTest {
 
   @Test
   public void logArmActive_multiplePersonalizationKeys_loggedMultiple() {
-    personalization.logArmActive("key1", CONFIG_CONTAINER.getContainer());
-    personalization.logArmActive("key2", CONFIG_CONTAINER.getContainer());
+    personalization.logArmActive("key1", CONFIG_CONTAINER);
+    personalization.logArmActive("key2", CONFIG_CONTAINER);
 
     verify(mockAnalyticsConnector, times(2))
         .logEvent(
