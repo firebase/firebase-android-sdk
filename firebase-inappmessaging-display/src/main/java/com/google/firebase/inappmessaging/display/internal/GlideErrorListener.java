@@ -20,23 +20,26 @@ package com.google.firebase.inappmessaging.display.internal;
 // mutable state so that the error from picasso can be translated to a logError on
 // fiam headless, with the in app message as a parameter
 
-import android.net.Uri;
+import androidx.annotation.Nullable;
+
+import com.bumptech.glide.load.DataSource;
+import com.bumptech.glide.load.engine.GlideException;
+import com.bumptech.glide.request.RequestListener;
+import com.bumptech.glide.request.target.Target;
 import com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks;
-import com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks.InAppMessagingErrorReason;
 import com.google.firebase.inappmessaging.display.internal.injection.scopes.FirebaseAppScope;
 import com.google.firebase.inappmessaging.model.InAppMessage;
-import com.squareup.picasso.Picasso;
-import java.io.IOException;
+
 import javax.inject.Inject;
 
 /** @hide */
 @FirebaseAppScope
-public class PicassoErrorListener implements Picasso.Listener {
+public class GlideErrorListener implements RequestListener<Object> {
   private InAppMessage inAppMessage;
   private FirebaseInAppMessagingDisplayCallbacks displayCallbacks;
 
   @Inject
-  PicassoErrorListener() {}
+  GlideErrorListener() {}
 
   public void setInAppMessage(
       InAppMessage inAppMessage, FirebaseInAppMessagingDisplayCallbacks displayCallbacks) {
@@ -44,17 +47,29 @@ public class PicassoErrorListener implements Picasso.Listener {
     this.displayCallbacks = displayCallbacks;
   }
 
+
   @Override
-  public void onImageLoadFailed(Picasso picasso, Uri uri, Exception exception) {
+  public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Object> target,
+                              boolean isFirstResource) {
+    Logging.logd("Image Downloading  Error : " + e.getMessage() + ":" + e.getCause());
+
     if (inAppMessage != null && displayCallbacks != null) {
-      if (exception instanceof IOException
-          && exception.getLocalizedMessage().contains("Failed to decode")) {
+      if ( e.getLocalizedMessage().contains("Failed to decode")) {
         displayCallbacks.displayErrorEncountered(
-            InAppMessagingErrorReason.IMAGE_UNSUPPORTED_FORMAT);
+                FirebaseInAppMessagingDisplayCallbacks.InAppMessagingErrorReason.IMAGE_UNSUPPORTED_FORMAT);
       } else {
         displayCallbacks.displayErrorEncountered(
-            InAppMessagingErrorReason.UNSPECIFIED_RENDER_ERROR);
+                FirebaseInAppMessagingDisplayCallbacks.InAppMessagingErrorReason.UNSPECIFIED_RENDER_ERROR);
       }
     }
+
+    return false;
+  }
+
+  @Override
+  public boolean onResourceReady(Object resource, Object model, Target<Object> target,
+                                 DataSource dataSource, boolean isFirstResource) {
+    Logging.logd("Image Downloading  Success : " + resource);
+    return false;
   }
 }
