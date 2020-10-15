@@ -17,7 +17,7 @@ plugins {
 }
 
 firebaseLibrary {
-    testLab.enabled = true
+    testLab.enabled = false
     publishJavadoc = false
 }
 

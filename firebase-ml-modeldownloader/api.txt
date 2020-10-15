@@ -1,9 +1,10 @@
 // Signature format: 2.0
 package com.google.firebase.ml.modeldownloader {
 
-  public class ModelDownloader {
+  public class FirebaseMlModelDownloader {
     method @NonNull public static com.google.firebase.ml.modeldownloader.FirebaseMlModelDownloader getInstance();
     method @NonNull public static com.google.firebase.ml.modeldownloader.FirebaseMlModelDownloader getInstance(@NonNull com.google.firebase.FirebaseApp);
   }
 
 }
+
