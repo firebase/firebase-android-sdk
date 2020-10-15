@@ -1,10 +1,18 @@
 // Signature format: 2.0
 package com.google.firebase.ml.modeldownloader {
 
-  public class ModelDownloader {
+  public class CustomModel {
+    method public long getDownloadId();
+    method @Nullable public java.io.File getFile();
+    method @NonNull public String getModelHash();
+    method @NonNull public String getName();
+    method public long getSize();
+  }
+
+  public class FirebaseMlModelDownloader {
     method @NonNull public static com.google.firebase.ml.modeldownloader.FirebaseMlModelDownloader getInstance();
     method @NonNull public static com.google.firebase.ml.modeldownloader.FirebaseMlModelDownloader getInstance(@NonNull com.google.firebase.FirebaseApp);
-    field public static final String TAG = "FirebaseMlModelDownloader";
   }
 
 }
+
