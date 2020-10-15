@@ -17,41 +17,42 @@ import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.FirebaseOptions;
 
-public class ModelDownloader {
+public class FirebaseMlModelDownloader {
 
-  private final FirebaseApp firebaseApp;
+  private final FirebaseOptions firebaseOptions;
 
-  ModelDownloader(FirebaseApp firebaseApp) {
-    this.firebaseApp = firebaseApp;
+  FirebaseMlModelDownloader(FirebaseOptions firebaseOptions) {
+    this.firebaseOptions = firebaseOptions;
   }
 
   /**
-   * Returns the {@link ModelDownloader} initialized with the default {@link FirebaseApp}.
+   * Returns the {@link FirebaseMlModelDownloader} initialized with the default {@link FirebaseApp}.
    *
-   * @return a {@link ModelDownloader} instance
+   * @return a {@link FirebaseMlModelDownloader} instance
    */
   @NonNull
-  public static ModelDownloader getInstance() {
+  public static FirebaseMlModelDownloader getInstance() {
     FirebaseApp defaultFirebaseApp = FirebaseApp.getInstance();
     return getInstance(defaultFirebaseApp);
   }
 
   /**
-   * Returns the {@link ModelDownloader} initialized with a custom {@link FirebaseApp}.
+   * Returns the {@link FirebaseMlModelDownloader} initialized with a custom {@link FirebaseApp}.
    *
    * @param app a custom {@link FirebaseApp}
-   * @return a {@link ModelDownloader} instance
+   * @return a {@link FirebaseMlModelDownloader} instance
    */
   @NonNull
-  public static ModelDownloader getInstance(@NonNull FirebaseApp app) {
+  public static FirebaseMlModelDownloader getInstance(@NonNull FirebaseApp app) {
     Preconditions.checkArgument(app != null, "Null is not a valid value of FirebaseApp.");
-    return app.get(ModelDownloader.class);
+    return app.get(FirebaseMlModelDownloader.class);
   }
 
-  /** Returns the nick name of the {@link FirebaseApp} of this {@link ModelDownloader} */
+  /** Returns the nick name of the {@link FirebaseApp} of this {@link FirebaseMlModelDownloader} */
   @VisibleForTesting
   String getApplicationId() {
-    return firebaseApp.getOptions().getApplicationId();
+    return firebaseOptions.getApplicationId();
   }
 }

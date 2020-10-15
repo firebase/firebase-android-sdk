@@ -26,7 +26,7 @@ import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 
 @RunWith(RobolectricTestRunner.class)
-public class ModelDownloaderRegistrarTest {
+public class FirebaseMlModelDownloaderRegistrarTest {
 
   public static final String TEST_PROJECT_ID = "777777777777";
 
@@ -54,10 +54,10 @@ public class ModelDownloaderRegistrarTest {
                 .build(),
             "firebase_app_1");
 
-    ModelDownloader defaultDownloader = ModelDownloader.getInstance();
+    FirebaseMlModelDownloader defaultDownloader = FirebaseMlModelDownloader.getInstance();
     assertNotNull(defaultDownloader);
 
-    ModelDownloader anotherDownloader = ModelDownloader.getInstance(anotherApp);
+    FirebaseMlModelDownloader anotherDownloader = FirebaseMlModelDownloader.getInstance(anotherApp);
     assertNotNull(anotherDownloader);
 
     assertNotEquals(defaultDownloader.getApplicationId(), anotherDownloader.getApplicationId());

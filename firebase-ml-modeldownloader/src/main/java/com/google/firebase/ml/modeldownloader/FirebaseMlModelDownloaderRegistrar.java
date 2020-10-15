@@ -15,7 +15,7 @@
 package com.google.firebase.ml.modeldownloader;
 
 import androidx.annotation.NonNull;
-import com.google.firebase.FirebaseApp;
+import com.google.firebase.FirebaseOptions;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
@@ -23,15 +23,21 @@ import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.util.Arrays;
 import java.util.List;
 
-public class ModelDownloaderRegistrar implements ComponentRegistrar {
+/**
+ * Registrar for setting up Firebase ML Model Downloader's dependency injections in Firebase Android
+ * Components.
+ *
+ * @hide
+ */
+public class FirebaseMlModelDownloaderRegistrar implements ComponentRegistrar {
 
   @Override
   @NonNull
   public List<Component<?>> getComponents() {
     return Arrays.asList(
-        Component.builder(ModelDownloader.class)
-            .add(Dependency.required(FirebaseApp.class))
-            .factory(c -> new ModelDownloader(c.get(FirebaseApp.class)))
+        Component.builder(FirebaseMlModelDownloader.class)
+            .add(Dependency.required(FirebaseOptions.class))
+            .factory(c -> new FirebaseMlModelDownloader(c.get(FirebaseOptions.class)))
             .build(),
         LibraryVersionComponent.create("firebase-ml-modeldownloader", BuildConfig.VERSION_NAME));
   }
