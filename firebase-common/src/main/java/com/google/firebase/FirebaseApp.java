@@ -48,6 +48,7 @@ import com.google.firebase.components.ComponentRuntime;
 import com.google.firebase.components.Lazy;
 import com.google.firebase.events.Publisher;
 import com.google.firebase.heartbeatinfo.DefaultHeartBeatInfo;
+import com.google.firebase.inject.Provider;
 import com.google.firebase.internal.DataCollectionConfigStorage;
 import com.google.firebase.platforminfo.DefaultUserAgentPublisher;
 import com.google.firebase.platforminfo.KotlinDetector;
@@ -416,13 +417,13 @@ public class FirebaseApp {
     this.name = Preconditions.checkNotEmpty(name);
     this.options = Preconditions.checkNotNull(options);
 
-    List<ComponentRegistrar> registrars =
+    List<Provider<ComponentRegistrar>> registrars =
         ComponentDiscovery.forContext(applicationContext, ComponentDiscoveryService.class)
-            .discover();
+            .discoverLazy();
 
     String kotlinVersion = KotlinDetector.detectVersion();
     componentRuntime =
-        new ComponentRuntime(
+        ComponentRuntime.create(
             UI_EXECUTOR,
             registrars,
             Component.of(applicationContext, Context.class),

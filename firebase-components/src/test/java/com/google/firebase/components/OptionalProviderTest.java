@@ -21,16 +21,16 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
-public class DeferredTest {
+public class OptionalProviderTest {
   private static final String DEFERRED_VALUE = "hello";
 
   @Test
   public void test() {
-    Deferred<String> deferred = new Deferred<>();
-    assertThat(deferred.get()).isNull();
+    OptionalProvider<String> optional = new OptionalProvider<>();
+    assertThat(optional.get()).isNull();
 
-    deferred.set(() -> DEFERRED_VALUE);
+    optional.set(() -> DEFERRED_VALUE);
 
-    assertThat(deferred.get()).isEqualTo(DEFERRED_VALUE);
+    assertThat(optional.get()).isEqualTo(DEFERRED_VALUE);
   }
 }

@@ -38,12 +38,10 @@ class LazySet<T> implements Provider<Set<T>> {
     this.providers.addAll(providers);
   }
 
-  static Provider<Set<?>> fromCollection(Collection<Provider<?>> providers) {
+  static LazySet<?> fromCollection(Collection<Provider<?>> providers) {
     @SuppressWarnings("unchecked")
-    Provider<Set<?>> result =
-        (Provider<Set<?>>)
-            (Provider<?>) new LazySet<>((Collection<Provider<Object>>) (Set<?>) providers);
-    return result;
+    Collection<Provider<Object>> casted = (Collection<Provider<Object>>) (Set<?>) providers;
+    return new LazySet<>(casted);
   }
 
   @Override
