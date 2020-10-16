@@ -67,12 +67,12 @@ final class RestrictedComponentContainer extends AbstractComponentContainer {
   /**
    * Returns an instance of the requested class if it is allowed.
    *
-   * @throws IllegalArgumentException otherwise.
+   * @throws DependencyException otherwise.
    */
   @Override
   public <T> T get(Class<T> anInterface) {
     if (!allowedDirectInterfaces.contains(anInterface)) {
-      throw new IllegalArgumentException(
+      throw new DependencyException(
           String.format("Attempting to request an undeclared dependency %s.", anInterface));
     }
 
@@ -93,12 +93,12 @@ final class RestrictedComponentContainer extends AbstractComponentContainer {
   /**
    * Returns an instance of the provider for the requested class if it is allowed.
    *
-   * @throws IllegalArgumentException otherwise.
+   * @throws DependencyException otherwise.
    */
   @Override
   public <T> Provider<T> getProvider(Class<T> anInterface) {
     if (!allowedProviderInterfaces.contains(anInterface)) {
-      throw new IllegalArgumentException(
+      throw new DependencyException(
           String.format(
               "Attempting to request an undeclared dependency Provider<%s>.", anInterface));
     }
@@ -108,12 +108,12 @@ final class RestrictedComponentContainer extends AbstractComponentContainer {
   /**
    * Returns an instance of the provider for the set of requested classes if it is allowed.
    *
-   * @throws IllegalArgumentException otherwise.
+   * @throws DependencyException otherwise.
    */
   @Override
   public <T> Provider<Set<T>> setOfProvider(Class<T> anInterface) {
     if (!allowedSetProviderInterfaces.contains(anInterface)) {
-      throw new IllegalArgumentException(
+      throw new DependencyException(
           String.format(
               "Attempting to request an undeclared dependency Provider<Set<%s>>.", anInterface));
     }
@@ -123,12 +123,12 @@ final class RestrictedComponentContainer extends AbstractComponentContainer {
   /**
    * Returns a set of requested classes if it is allowed.
    *
-   * @throws IllegalArgumentException otherwise.
+   * @throws DependencyException otherwise.
    */
   @Override
   public <T> Set<T> setOf(Class<T> anInterface) {
     if (!allowedSetDirectInterfaces.contains(anInterface)) {
-      throw new IllegalArgumentException(
+      throw new DependencyException(
           String.format("Attempting to request an undeclared dependency Set<%s>.", anInterface));
     }
     return delegateContainer.setOf(anInterface);
@@ -150,7 +150,7 @@ final class RestrictedComponentContainer extends AbstractComponentContainer {
     @Override
     public void publish(Event<?> event) {
       if (!allowedPublishedEvents.contains(event.getType())) {
-        throw new IllegalArgumentException(
+        throw new DependencyException(
             String.format("Attempting to publish an undeclared event %s.", event));
       }
       delegate.publish(event);

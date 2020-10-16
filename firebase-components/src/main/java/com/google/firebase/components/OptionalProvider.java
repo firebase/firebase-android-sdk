@@ -24,7 +24,7 @@ import com.google.firebase.inject.Provider;
  * <p>The intent of this class is to be used in place of missing {@link Component} dependencies so
  * that they can be updated if dependencies are loaded later.
  */
-class Deferred<T> implements Provider<T> {
+class OptionalProvider<T> implements Provider<T> {
   private static final Provider<Object> EMPTY_PROVIDER = () -> null;
 
   @SuppressWarnings("unchecked")

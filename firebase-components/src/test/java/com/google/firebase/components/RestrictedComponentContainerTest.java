@@ -66,7 +66,7 @@ public final class RestrictedComponentContainerTest {
     try {
       container.get(List.class);
       fail("Expected exception not thrown.");
-    } catch (IllegalArgumentException ex) {
+    } catch (DependencyException ex) {
       assertThat(ex.getMessage()).contains("java.util.List");
     }
   }
@@ -76,7 +76,7 @@ public final class RestrictedComponentContainerTest {
     try {
       container.get(Double.class);
       fail("Expected exception not thrown.");
-    } catch (IllegalArgumentException ex) {
+    } catch (DependencyException ex) {
       assertThat(ex.getMessage()).contains("java.lang.Double");
     }
   }
@@ -86,7 +86,7 @@ public final class RestrictedComponentContainerTest {
     try {
       container.get(Publisher.class);
       fail("Expected exception not thrown.");
-    } catch (IllegalArgumentException ex) {
+    } catch (DependencyException ex) {
       assertThat(ex.getMessage()).contains("events.Publisher");
     }
   }
@@ -105,7 +105,7 @@ public final class RestrictedComponentContainerTest {
     try {
       container.getProvider(List.class);
       fail("Expected exception not thrown.");
-    } catch (IllegalArgumentException ex) {
+    } catch (DependencyException ex) {
       assertThat(ex.getMessage()).contains("java.util.List");
     }
   }
@@ -115,7 +115,7 @@ public final class RestrictedComponentContainerTest {
     try {
       container.getProvider(Float.class);
       fail("Expected exception not thrown.");
-    } catch (IllegalArgumentException ex) {
+    } catch (DependencyException ex) {
       assertThat(ex.getMessage()).contains("java.lang.Float");
     }
   }
@@ -134,7 +134,7 @@ public final class RestrictedComponentContainerTest {
     try {
       container.setOf(List.class);
       fail("Expected exception not thrown.");
-    } catch (IllegalArgumentException ex) {
+    } catch (DependencyException ex) {
       assertThat(ex.getMessage()).contains("java.util.List");
     }
   }
@@ -153,7 +153,7 @@ public final class RestrictedComponentContainerTest {
     try {
       container.setOf(List.class);
       fail("Expected exception not thrown.");
-    } catch (IllegalArgumentException ex) {
+    } catch (DependencyException ex) {
       assertThat(ex.getMessage()).contains("java.util.List");
     }
   }
@@ -179,7 +179,7 @@ public final class RestrictedComponentContainerTest {
     try {
       publisher.publish(event);
       fail("Expected exception not thrown.");
-    } catch (IllegalArgumentException ex) {
+    } catch (DependencyException ex) {
       assertThat(ex.getMessage()).contains("java.lang.Double");
     }
 

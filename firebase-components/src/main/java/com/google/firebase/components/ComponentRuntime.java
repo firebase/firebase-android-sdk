@@ -14,9 +14,11 @@
 
 package com.google.firebase.components;
 
+import android.util.Log;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.annotation.VisibleForTesting;
+import com.google.firebase.dynamicloading.ComponentLoader;
 import com.google.firebase.events.Publisher;
 import com.google.firebase.events.Subscriber;
 import com.google.firebase.inject.Provider;
@@ -24,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -35,35 +38,86 @@ import java.util.concurrent.Executor;
  * <p>Does {@link Component} dependency resolution and provides access to resolved {@link
  * Component}s via {@link #get(Class)} method.
  */
-public class ComponentRuntime extends AbstractComponentContainer {
+public class ComponentRuntime extends AbstractComponentContainer implements ComponentLoader {
   private static final Provider<Set<Object>> EMPTY_PROVIDER = Collections::emptySet;
   private final Map<Component<?>, Provider<?>> components = new HashMap<>();
   private final Map<Class<?>, Provider<?>> lazyInstanceMap = new HashMap<>();
-  private final Map<Class<?>, Provider<Set<?>>> lazySetMap = new HashMap<>();
+  private final Map<Class<?>, LazySet<?>> lazySetMap = new HashMap<>();
+  private final List<Provider<ComponentRegistrar>> unprocessedRegistrarProviders;
   private final EventBus eventBus;
+  private Boolean eagerComponentsInitializedWith = null;
+
+  /**
+   * Creates an instance of {@link ComponentRuntime} for the provided {@link ComponentRegistrar}s
+   * and any additional components.
+   *
+   * @deprecated Use {@link #create(Executor, Iterable, Component[])} instead.
+   */
+  @Deprecated
+  public ComponentRuntime(
+      Executor defaultEventExecutor,
+      Iterable<ComponentRegistrar> registrars,
+      Component<?>... additionalComponents) {
+    this(defaultEventExecutor, toProviders(registrars), true, additionalComponents);
+  }
 
   /**
    * Creates an instance of {@link ComponentRuntime} for the provided {@link ComponentRegistrar}s
    * and any additional components.
    */
-  public ComponentRuntime(
+  public static ComponentRuntime create(
       Executor defaultEventExecutor,
-      Iterable<ComponentRegistrar> registrars,
+      Iterable<Provider<ComponentRegistrar>> registrars,
+      Component<?>... additionalComponents) {
+    return new ComponentRuntime(defaultEventExecutor, registrars, true, additionalComponents);
+  }
+
+  private ComponentRuntime(
+      Executor defaultEventExecutor,
+      Iterable<Provider<ComponentRegistrar>> registrars,
+      boolean disambiguateConstructorOverload,
       Component<?>... additionalComponents) {
     eventBus = new EventBus(defaultEventExecutor);
-    List<Component<?>> componentsToAdd = new ArrayList<>();
-    componentsToAdd.add(Component.of(eventBus, EventBus.class, Subscriber.class, Publisher.class));
 
-    for (ComponentRegistrar registrar : registrars) {
-      componentsToAdd.addAll(registrar.getComponents());
-    }
+    List<Component<?>> componentsToAdd = new ArrayList<>();
+
+    componentsToAdd.add(Component.of(eventBus, EventBus.class, Subscriber.class, Publisher.class));
+    componentsToAdd.add(Component.of(this, ComponentLoader.class));
     for (Component<?> additionalComponent : additionalComponents) {
       if (additionalComponent != null) {
         componentsToAdd.add(additionalComponent);
       }
     }
 
-    CycleDetector.detect(componentsToAdd);
+    unprocessedRegistrarProviders = iterableToList(registrars);
+
+    discoverComponents(componentsToAdd);
+  }
+
+  private synchronized void discoverComponents(List<Component<?>> componentsToAdd) {
+
+    Iterator<Provider<ComponentRegistrar>> iterator = unprocessedRegistrarProviders.iterator();
+    while (iterator.hasNext()) {
+      Provider<ComponentRegistrar> provider = iterator.next();
+      try {
+        ComponentRegistrar registrar = provider.get();
+        if (registrar != null) {
+          componentsToAdd.addAll(registrar.getComponents());
+          iterator.remove();
+        }
+      } catch (InvalidRegistrarException ex) {
+        iterator.remove();
+        Log.w(ComponentDiscovery.TAG, "Invalid component registrar.", ex);
+      }
+    }
+
+    if (components.isEmpty()) {
+      CycleDetector.detect(componentsToAdd);
+    } else {
+      ArrayList<Component<?>> allComponents = new ArrayList<>(this.components.keySet());
+      allComponents.addAll(componentsToAdd);
+      CycleDetector.detect(allComponents);
+    }
 
     for (Component<?> component : componentsToAdd) {
       Lazy<?> lazy =
@@ -73,21 +127,54 @@ public class ComponentRuntime extends AbstractComponentContainer {
 
       components.put(component, lazy);
     }
-    processInstanceComponents();
+
+    processInstanceComponents(componentsToAdd);
     processSetComponents();
     processDependencies();
+    maybeInitializeEagerComponents();
   }
 
-  private void processInstanceComponents() {
-    for (Map.Entry<Component<?>, Provider<?>> entry : components.entrySet()) {
-      Component<?> component = entry.getKey();
+  private void maybeInitializeEagerComponents() {
+    if (eagerComponentsInitializedWith != null) {
+      doInitializeEagerComponents(eagerComponentsInitializedWith);
+    }
+  }
+
+  private static Iterable<Provider<ComponentRegistrar>> toProviders(
+      Iterable<ComponentRegistrar> registrars) {
+    List<Provider<ComponentRegistrar>> result = new ArrayList<>();
+    for (ComponentRegistrar registrar : registrars) {
+      result.add(() -> registrar);
+    }
+    return result;
+  }
+
+  private static <T> List<T> iterableToList(Iterable<T> iterable) {
+    ArrayList<T> result = new ArrayList<>();
+    for (T item : iterable) {
+      result.add(item);
+    }
+    return result;
+  }
+
+  private void processInstanceComponents(List<Component<?>> componentsToProcess) {
+    for (Component<?> component : componentsToProcess) {
       if (!component.isValue()) {
         continue;
       }
 
-      Provider<?> provider = entry.getValue();
+      Provider<?> provider = components.get(component);
       for (Class<?> anInterface : component.getProvidedInterfaces()) {
-        lazyInstanceMap.put(anInterface, provider);
+        if (!lazyInstanceMap.containsKey(anInterface)) {
+          lazyInstanceMap.put(anInterface, provider);
+        } else {
+          Provider<?> existingProvider = lazyInstanceMap.get(anInterface);
+          @SuppressWarnings("unchecked")
+          OptionalProvider<Object> deferred = (OptionalProvider<Object>) existingProvider;
+          @SuppressWarnings("unchecked")
+          Provider<Object> castedProvider = (Provider<Object>) provider;
+          deferred.set(castedProvider);
+        }
       }
     }
   }
@@ -114,21 +201,28 @@ public class ComponentRuntime extends AbstractComponentContainer {
     }
 
     for (Map.Entry<Class<?>, Set<Provider<?>>> entry : setIndex.entrySet()) {
-      lazySetMap.put(entry.getKey(), LazySet.fromCollection(entry.getValue()));
+      if (!lazySetMap.containsKey(entry.getKey())) {
+        lazySetMap.put(entry.getKey(), LazySet.fromCollection(entry.getValue()));
+      } else {
+        LazySet<Object> existingSet = (LazySet<Object>) lazySetMap.get(entry.getKey());
+        for (Provider<?> provider : entry.getValue()) {
+          existingSet.add((Provider<Object>) provider);
+        }
+      }
     }
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public <T> Provider<T> getProvider(Class<T> anInterface) {
+  public synchronized <T> Provider<T> getProvider(Class<T> anInterface) {
     Preconditions.checkNotNull(anInterface, "Null interface requested.");
     return (Provider<T>) lazyInstanceMap.get(anInterface);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public <T> Provider<Set<T>> setOfProvider(Class<T> anInterface) {
-    Provider<Set<?>> provider = lazySetMap.get(anInterface);
+  public synchronized <T> Provider<Set<T>> setOfProvider(Class<T> anInterface) {
+    LazySet<?> provider = lazySetMap.get(anInterface);
     if (provider != null) {
       return (Provider<Set<T>>) (Provider<?>) provider;
     }
@@ -142,7 +236,15 @@ public class ComponentRuntime extends AbstractComponentContainer {
    *
    * <p>Note: the method is idempotent.
    */
-  public void initializeEagerComponents(boolean isDefaultApp) {
+  public synchronized void initializeEagerComponents(boolean isDefaultApp) {
+    if (eagerComponentsInitializedWith != null) {
+      return;
+    }
+    eagerComponentsInitializedWith = isDefaultApp;
+    doInitializeEagerComponents(isDefaultApp);
+  }
+
+  private void doInitializeEagerComponents(boolean isDefaultApp) {
     for (Map.Entry<Component<?>, Provider<?>> entry : components.entrySet()) {
       Component<?> component = entry.getKey();
       Provider<?> provider = entry.getValue();
@@ -153,6 +255,14 @@ public class ComponentRuntime extends AbstractComponentContainer {
     }
 
     eventBus.enablePublishingAndFlushPending();
+  }
+
+  @Override
+  public synchronized void discoverComponents() {
+    if (unprocessedRegistrarProviders.isEmpty()) {
+      return;
+    }
+    discoverComponents(new ArrayList<>());
   }
 
   @VisibleForTesting
@@ -175,7 +285,7 @@ public class ComponentRuntime extends AbstractComponentContainer {
                     "Unsatisfied dependency for component %s: %s",
                     component, dependency.getInterface()));
           } else if (!dependency.isSet()) {
-            lazyInstanceMap.put(dependency.getInterface(), new Deferred<>());
+            lazyInstanceMap.put(dependency.getInterface(), new OptionalProvider<>());
           }
         }
       }
