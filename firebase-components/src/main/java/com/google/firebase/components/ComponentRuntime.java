@@ -150,9 +150,6 @@ public class ComponentRuntime extends AbstractComponentContainer implements Comp
   }
 
   private static <T> List<T> iterableToList(Iterable<T> iterable) {
-    if (iterable instanceof List) {
-      return (List<T>) iterable;
-    }
     ArrayList<T> result = new ArrayList<>();
     for (T item : iterable) {
       result.add(item);
