@@ -91,6 +91,21 @@ public final class ComponentDiscovery<T> {
     return result;
   }
 
+  /**
+   * Returns a list of candidate {@link ComponentRegistrar} {@link Provider}s.
+   *
+   * <p>The returned list contains lazy providers that are based on <strong>all</strong> discovered
+   * registrar names. However, when called the providers behave in the following way:
+   *
+   * <ul>
+   *   <li>If the registrar class is not found, it will return {@code null}. It's possible that this
+   *       provider will return valid registrar at a later time.
+   *   <li>If the registrar does not implement {@link ComponentRegistrar}, will throw {@link
+   *       InvalidRegistrarException}.
+   *   <li>If the registrar is a private class, will throw {@link InvalidRegistrarException}.
+   *   <li>If the registrar has a private constructor, will throw {@link InvalidRegistrarException}.
+   *   <li>If the registrar's constructor fails, will throw {@link InvalidRegistrarException}.
+   */
   public List<Provider<ComponentRegistrar>> discoverLazy() {
     List<Provider<ComponentRegistrar>> result = new ArrayList<>();
     for (String registrarName : retriever.retrieve(context)) {
