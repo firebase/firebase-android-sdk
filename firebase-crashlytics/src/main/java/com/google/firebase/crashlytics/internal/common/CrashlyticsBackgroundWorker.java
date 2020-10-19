@@ -49,13 +49,14 @@ class CrashlyticsBackgroundWorker {
     this.executorService = executorService;
     // Queue up the first job as one that marks the thread so we can check it later.
     @SuppressWarnings("FutureReturnValueIgnored")
-    Future<?> submit = executorService.submit(
-        new Runnable() {
-          @Override
-          public void run() {
-            isExecutorThread.set(true);
-          }
-        });
+    Future<?> submit =
+        executorService.submit(
+            new Runnable() {
+              @Override
+              public void run() {
+                isExecutorThread.set(true);
+              }
+            });
   }
 
   /** Returns the executor used by this background worker. */
