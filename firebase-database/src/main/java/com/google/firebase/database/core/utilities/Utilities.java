@@ -16,10 +16,12 @@ package com.google.firebase.database.core.utilities;
 
 import android.net.Uri;
 import android.util.Base64;
+import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.firebase.database.BuildConfig;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseException;
 import com.google.firebase.database.DatabaseReference;
@@ -231,7 +233,11 @@ public class Utilities {
 
   public static void hardAssert(boolean condition, String message) {
     if (!condition) {
-      throw new AssertionError("hardAssert failed: " + message);
+      if (BuildConfig.DEBUG) {
+        throw new AssertionError("hardAssert failed: " + message);
+      } else {
+        Log.w("FirebaseDatabase", "Assertion failed: " + message);
+      }
     }
   }
 
