@@ -3,6 +3,7 @@
           package="com.google.firebase.crashlytics" >
 
     <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-sdk android:minSdkVersion="16"/>
 
     <application>
         <service android:name="com.google.firebase.components.ComponentDiscoveryService" android:exported="false">
