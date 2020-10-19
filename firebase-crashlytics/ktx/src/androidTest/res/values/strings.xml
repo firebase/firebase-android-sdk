@@ -6,6 +6,11 @@
 <resources
     xmlns:tools="http://schemas.android.com/tools">
 
-    <string name="com.crashlytics.RequireBuildId" tools:ignore="UnusedResources">false</string>
+    <string
+        name="com.crashlytics.RequireBuildId"
+        tools:ignore="UnusedResources"
+        translatable="false">
+        false
+    </string>
 
 </resources>
