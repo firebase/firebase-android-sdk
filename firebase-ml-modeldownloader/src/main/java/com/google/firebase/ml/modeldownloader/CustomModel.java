@@ -20,36 +20,58 @@ import java.io.File;
 
 /**
  * Used to store information about custom models that are being downloaded or are already downloaded
- * on a device.
+ * on a device. The model file associated with this model can be updated, once the new model file is
+ * fully uploaded, the original model file will be removed as soon as it is safe to do so.
  */
 public class CustomModel {
-  private String name;
+  private final String name;
   private long downloadId;
   private long fileSize;
   private String modelHash;
   private String localFilePath = "";
 
-  public @NonNull String getName() {
+  @NonNull
+  public String getName() {
     return name;
   }
 
-  public @Nullable File getFile() {
+  /**
+   * The local model file. If null is returned, use the download Id to check the download status.
+   *
+   * @return the local file associated with the model, if the original file download is still in
+   *     progress, returns null, if file update is in progress returns last fully uploaded model.
+   */
+  @Nullable
+  public File getFile() {
     if (localFilePath.isEmpty()) {
       return null;
     }
     throw new UnsupportedOperationException("Not implemented, file retrieval coming soon.");
   }
 
+  /**
+   * The size of the file currently associated with this model. If a download is in progress, this
+   * will be the size of the current model, not the new model currently being uploaded.
+   *
+   * @return the local model size
+   */
   public long getSize() {
     return fileSize;
   }
 
-  public @NonNull String getModelHash() {
+  /** @return the model hash */
+  @NonNull
+  public String getModelHash() {
     return modelHash;
   }
 
-  // If download in progress, return the download id, otherwise return 0
-  // Can be used with AndroidDownloadManager to query progress information
+  /**
+   * The download id (returns 0 if no download in progress), which can be used with the
+   * AndroidDownloadManager to query download progress. The retrieved progress information can be
+   * used to populate a progress bar, monitor when an updated model is available, etc.
+   *
+   * @return the download id (if download in progress), otherwise returns 0
+   */
   public long getDownloadId() {
     return downloadId;
   }
