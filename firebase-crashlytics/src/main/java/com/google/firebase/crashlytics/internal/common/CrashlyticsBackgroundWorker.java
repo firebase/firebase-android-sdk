@@ -44,6 +44,7 @@ class CrashlyticsBackgroundWorker {
   // A thread local to keep track of which thread belongs to this executor.
   private ThreadLocal<Boolean> isExecutorThread = new ThreadLocal<>();
 
+  @SuppressWarnings("FutureReturnValueIgnored")
   public CrashlyticsBackgroundWorker(ExecutorService executorService) {
     this.executorService = executorService;
     // Queue up the first job as one that marks the thread so we can check it later.
