@@ -21,6 +21,7 @@ import com.google.android.gms.tasks.Tasks;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 /**
  * Helper for executing tasks on the Crashlytics background executor service.
@@ -44,11 +45,11 @@ class CrashlyticsBackgroundWorker {
   // A thread local to keep track of which thread belongs to this executor.
   private ThreadLocal<Boolean> isExecutorThread = new ThreadLocal<>();
 
-  @SuppressWarnings("FutureReturnValueIgnored")
   public CrashlyticsBackgroundWorker(ExecutorService executorService) {
     this.executorService = executorService;
     // Queue up the first job as one that marks the thread so we can check it later.
-    executorService.submit(
+    @SuppressWarnings("FutureReturnValueIgnored")
+    Future<?> submit = executorService.submit(
         new Runnable() {
           @Override
           public void run() {
