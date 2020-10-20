@@ -19,38 +19,38 @@ import com.google.android.gms.common.internal.Preconditions;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 
-public class FirebaseMlModelDownloader {
+public class FirebaseModelDownloader {
 
   private final FirebaseOptions firebaseOptions;
 
-  FirebaseMlModelDownloader(FirebaseOptions firebaseOptions) {
+  FirebaseModelDownloader(FirebaseOptions firebaseOptions) {
     this.firebaseOptions = firebaseOptions;
   }
 
   /**
-   * Returns the {@link FirebaseMlModelDownloader} initialized with the default {@link FirebaseApp}.
+   * Returns the {@link FirebaseModelDownloader} initialized with the default {@link FirebaseApp}.
    *
-   * @return a {@link FirebaseMlModelDownloader} instance
+   * @return a {@link FirebaseModelDownloader} instance
    */
   @NonNull
-  public static FirebaseMlModelDownloader getInstance() {
+  public static FirebaseModelDownloader getInstance() {
     FirebaseApp defaultFirebaseApp = FirebaseApp.getInstance();
     return getInstance(defaultFirebaseApp);
   }
 
   /**
-   * Returns the {@link FirebaseMlModelDownloader} initialized with a custom {@link FirebaseApp}.
+   * Returns the {@link FirebaseModelDownloader} initialized with a custom {@link FirebaseApp}.
    *
    * @param app a custom {@link FirebaseApp}
-   * @return a {@link FirebaseMlModelDownloader} instance
+   * @return a {@link FirebaseModelDownloader} instance
    */
   @NonNull
-  public static FirebaseMlModelDownloader getInstance(@NonNull FirebaseApp app) {
+  public static FirebaseModelDownloader getInstance(@NonNull FirebaseApp app) {
     Preconditions.checkArgument(app != null, "Null is not a valid value of FirebaseApp.");
-    return app.get(FirebaseMlModelDownloader.class);
+    return app.get(FirebaseModelDownloader.class);
   }
 
-  /** Returns the nick name of the {@link FirebaseApp} of this {@link FirebaseMlModelDownloader} */
+  /** Returns the nick name of the {@link FirebaseApp} of this {@link FirebaseModelDownloader} */
   @VisibleForTesting
   String getApplicationId() {
     return firebaseOptions.getApplicationId();
