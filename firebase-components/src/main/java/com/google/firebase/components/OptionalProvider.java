@@ -14,6 +14,8 @@
 
 package com.google.firebase.components;
 
+import androidx.annotation.NonNull;
+import com.google.firebase.inject.Deferred;
 import com.google.firebase.inject.Provider;
 
 /**
@@ -24,18 +26,68 @@ import com.google.firebase.inject.Provider;
  * <p>The intent of this class is to be used in place of missing {@link Component} dependencies so
  * that they can be updated if dependencies are loaded later.
  */
-class OptionalProvider<T> implements Provider<T> {
+class OptionalProvider<T> implements Provider<T>, Deferred<T> {
+  private static final DeferredHandler<Object> NOOP_HANDLER = p -> {};
   private static final Provider<Object> EMPTY_PROVIDER = () -> null;
 
+  private DeferredHandler<T> handler;
+  private volatile Provider<T> delegate;
+
+  private OptionalProvider(DeferredHandler<T> handler, Provider<T> provider) {
+    this.handler = handler;
+    this.delegate = provider;
+  }
+
   @SuppressWarnings("unchecked")
-  private volatile Provider<T> delegate = (Provider<T>) EMPTY_PROVIDER;
+  static <T> OptionalProvider<T> empty() {
+    return new OptionalProvider<>((DeferredHandler<T>) NOOP_HANDLER, (Provider<T>) EMPTY_PROVIDER);
+  }
+
+  static <T> OptionalProvider<T> of(Provider<T> provider) {
+    return new OptionalProvider<>(null, provider);
+  }
 
   @Override
   public T get() {
     return delegate.get();
   }
 
-  void set(Provider<T> newProvider) {
-    delegate = newProvider;
+  void set(Provider<T> provider) {
+    if (this.delegate != EMPTY_PROVIDER) {
+      throw new IllegalStateException("provide() can be called only once.");
+    }
+    DeferredHandler<T> localHandler;
+    synchronized (this) {
+      localHandler = handler;
+      handler = null;
+      this.delegate = provider;
+    }
+    localHandler.handle(provider);
+  }
+
+  @Override
+  public void whenAvailable(@NonNull DeferredHandler<T> handler) {
+    Provider<T> provider = this.delegate;
+    if (provider != EMPTY_PROVIDER) {
+      handler.handle(provider);
+      return;
+    }
+    Provider<T> toRun = null;
+    synchronized (this) {
+      provider = this.delegate;
+      if (provider != EMPTY_PROVIDER) {
+        toRun = provider;
+      } else {
+        DeferredHandler<T> existingHandler = this.handler;
+        this.handler =
+            p -> {
+              existingHandler.handle(p);
+              handler.handle(p);
+            };
+      }
+    }
+    if (toRun != null) {
+      handler.handle(provider);
+    }
   }
 }

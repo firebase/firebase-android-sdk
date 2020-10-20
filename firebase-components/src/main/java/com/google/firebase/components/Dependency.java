@@ -29,11 +29,12 @@ public final class Dependency {
     int SET = 2;
   }
 
-  @IntDef({Injection.DIRECT, Injection.PROVIDER})
+  @IntDef({Injection.DIRECT, Injection.PROVIDER, Injection.DEFERRED})
   @Retention(RetentionPolicy.SOURCE)
   private @interface Injection {
     int DIRECT = 0;
     int PROVIDER = 1;
+    int DEFERRED = 2;
   }
 
   private final Class<?> anInterface;
@@ -48,6 +49,10 @@ public final class Dependency {
 
   public static Dependency optional(Class<?> anInterface) {
     return new Dependency(anInterface, Type.OPTIONAL, Injection.DIRECT);
+  }
+
+  public static Dependency deferred(Class<?> anInterface) {
+    return new Dependency(anInterface, Type.OPTIONAL, Injection.DEFERRED);
   }
 
   public static Dependency required(Class<?> anInterface) {
@@ -86,6 +91,10 @@ public final class Dependency {
     return injection == Injection.DIRECT;
   }
 
+  public boolean isDeferred() {
+    return injection == Injection.DEFERRED;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (o instanceof Dependency) {
@@ -113,9 +122,22 @@ public final class Dependency {
             .append(anInterface)
             .append(", type=")
             .append(type == Type.REQUIRED ? "required" : type == Type.OPTIONAL ? "optional" : "set")
-            .append(", direct=")
-            .append(injection == Injection.DIRECT)
+            .append(", injection=")
+            .append(describeInjection(injection))
             .append("}");
     return sb.toString();
+  }
+
+  private static String describeInjection(@Injection int injection) {
+    switch (injection) {
+      case Injection.DIRECT:
+        return "direct";
+      case Injection.PROVIDER:
+        return "provider";
+      case Injection.DEFERRED:
+        return "deferred";
+      default:
+        throw new AssertionError("Unsupported injection: " + injection);
+    }
   }
 }

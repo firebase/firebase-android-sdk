@@ -26,6 +26,7 @@ import com.google.firebase.events.Publisher;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -39,6 +40,7 @@ public final class RestrictedComponentContainerTest {
           Component.builder(String.class)
               .add(Dependency.required(Float.class))
               .add(Dependency.requiredProvider(Double.class))
+              .add(Dependency.deferred(Integer.class))
               .add(Dependency.setOf(Long.class))
               .add(Dependency.setOfProvider(Boolean.class))
               .factory(c -> null)
@@ -117,6 +119,47 @@ public final class RestrictedComponentContainerTest {
       fail("Expected exception not thrown.");
     } catch (DependencyException ex) {
       assertThat(ex.getMessage()).contains("java.lang.Float");
+    }
+  }
+
+  @Test
+  public void getDeferred_withAllowedClass_shouldReturnAnInstanceOfThatClass() {
+    Integer value = 3;
+    when(delegate.getDeferred(Integer.class)).thenReturn(OptionalProvider.of(() -> value));
+
+    AtomicReference<Integer> returned = new AtomicReference<>();
+    container.getDeferred(Integer.class).whenAvailable(d -> returned.set(d.get()));
+    assertThat(returned.get()).isSameInstanceAs(value);
+    verify(delegate).getDeferred(Integer.class);
+  }
+
+  @Test
+  public void getDeferred_withNotAllowedClass_shouldThrow() {
+    try {
+      container.getDeferred(List.class);
+      fail("Expected exception not thrown.");
+    } catch (DependencyException ex) {
+      assertThat(ex.getMessage()).contains("java.util.List");
+    }
+  }
+
+  @Test
+  public void getDeferred_withDirectClass_shouldThrow() {
+    try {
+      container.getDeferred(Float.class);
+      fail("Expected exception not thrown.");
+    } catch (DependencyException ex) {
+      assertThat(ex.getMessage()).contains("java.lang.Float");
+    }
+  }
+
+  @Test
+  public void getDeferred_withProviderClass_shouldThrow() {
+    try {
+      container.getDeferred(Double.class);
+      fail("Expected exception not thrown.");
+    } catch (DependencyException ex) {
+      assertThat(ex.getMessage()).contains("java.lang.Double");
     }
   }
 
