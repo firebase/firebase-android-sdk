@@ -15,6 +15,7 @@
 package com.google.firebase.inject;
 
 import androidx.annotation.NonNull;
+import com.google.firebase.components.annotations.DeferredApi;
 
 /**
  * Represents a continuation-style dependency.
@@ -39,6 +40,7 @@ import androidx.annotation.NonNull;
 public interface Deferred<T> {
   /** Used by dependers to register their callbacks. */
   interface DeferredHandler<T> {
+    @DeferredApi
     void handle(Provider<T> provider);
   }
 

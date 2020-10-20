@@ -52,6 +52,7 @@ class OptionalProvider<T> implements Provider<T>, Deferred<T> {
     return delegate.get();
   }
 
+  @SuppressWarnings("InvalidDeferredApiUse")
   void set(Provider<T> provider) {
     if (this.delegate != EMPTY_PROVIDER) {
       throw new IllegalStateException("provide() can be called only once.");
@@ -66,6 +67,7 @@ class OptionalProvider<T> implements Provider<T>, Deferred<T> {
   }
 
   @Override
+  @SuppressWarnings("InvalidDeferredApiUse")
   public void whenAvailable(@NonNull DeferredHandler<T> handler) {
     Provider<T> provider = this.delegate;
     if (provider != EMPTY_PROVIDER) {
