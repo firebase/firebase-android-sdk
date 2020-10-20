@@ -77,7 +77,7 @@ public final class CustomModel {
   }
 
   /**
-   * Use to create in custom model while initial download is in progress.
+   * Use when creating a custom model while the initial download is still in progress.
    *
    * @param name - model name
    * @param downloadId - Android Download Manger - download id
