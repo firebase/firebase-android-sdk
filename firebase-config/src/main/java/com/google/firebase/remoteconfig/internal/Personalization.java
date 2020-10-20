@@ -38,11 +38,12 @@ public class Personalization {
   }
 
   /**
-   * Called when an arm is pulled, and uses Google Analytics for Firebase to log it if it's a
-   * Personalization parameter.
+   * Called when a Personalization parameter value (an arm) is retrieved, and uses Google Analytics
+   * for Firebase to log metadata if it's a Personalization parameter.
    *
    * @param key Remote Config parameter
-   * @param configContainer cache of {@link ConfigContainer}
+   * @param configContainer {@link ConfigContainer} containing Personalization metadata for {@code
+   *     key}
    */
   public void logArmActive(@NonNull String key, @NonNull ConfigContainer configContainer) {
     JSONObject ids = configContainer.getPersonalizationMetadata();

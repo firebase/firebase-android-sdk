@@ -157,7 +157,8 @@ public class FirebaseRemoteConfig {
    *
    * @hide
    */
-  FirebaseRemoteConfig(
+  @VisibleForTesting
+  public FirebaseRemoteConfig(
       Context context,
       FirebaseApp firebaseApp,
       FirebaseInstallationsApi firebaseInstallations,

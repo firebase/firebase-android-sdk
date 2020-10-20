@@ -102,7 +102,7 @@ public class ConfigGetParameterHandler {
   public String getString(String key) {
     String activatedString = getStringFromCache(activatedConfigsCache, key);
     if (activatedString != null) {
-      callListeners(activatedString, getConfigsFromCache(activatedConfigsCache));
+      callListeners(key, getConfigsFromCache(activatedConfigsCache));
       return activatedString;
     }
 
@@ -134,10 +134,10 @@ public class ConfigGetParameterHandler {
     String activatedString = getStringFromCache(activatedConfigsCache, key);
     if (activatedString != null) {
       if (TRUE_REGEX.matcher(activatedString).matches()) {
-        callListeners(activatedString, getConfigsFromCache(activatedConfigsCache));
+        callListeners(key, getConfigsFromCache(activatedConfigsCache));
         return true;
       } else if (FALSE_REGEX.matcher(activatedString).matches()) {
-        callListeners(activatedString, getConfigsFromCache(activatedConfigsCache));
+        callListeners(key, getConfigsFromCache(activatedConfigsCache));
         return false;
       }
     }
@@ -171,7 +171,7 @@ public class ConfigGetParameterHandler {
   public byte[] getByteArray(String key) {
     String activatedString = getStringFromCache(activatedConfigsCache, key);
     if (activatedString != null) {
-      callListeners(activatedString, getConfigsFromCache(activatedConfigsCache));
+      callListeners(key, getConfigsFromCache(activatedConfigsCache));
       return activatedString.getBytes(FRC_BYTE_ARRAY_ENCODING);
     }
 
@@ -202,9 +202,7 @@ public class ConfigGetParameterHandler {
   public double getDouble(String key) {
     Double activatedDouble = getDoubleFromCache(activatedConfigsCache, key);
     if (activatedDouble != null) {
-      callListeners(
-          getStringFromCache(activatedConfigsCache, key),
-          getConfigsFromCache(activatedConfigsCache));
+      callListeners(key, getConfigsFromCache(activatedConfigsCache));
       return activatedDouble;
     }
 
@@ -235,9 +233,7 @@ public class ConfigGetParameterHandler {
   public long getLong(String key) {
     Long activatedLong = getLongFromCache(activatedConfigsCache, key);
     if (activatedLong != null) {
-      callListeners(
-          getStringFromCache(activatedConfigsCache, key),
-          getConfigsFromCache(activatedConfigsCache));
+      callListeners(key, getConfigsFromCache(activatedConfigsCache));
       return activatedLong;
     }
 
@@ -266,7 +262,7 @@ public class ConfigGetParameterHandler {
   public FirebaseRemoteConfigValue getValue(String key) {
     String activatedString = getStringFromCache(activatedConfigsCache, key);
     if (activatedString != null) {
-      callListeners(activatedString, getConfigsFromCache(activatedConfigsCache));
+      callListeners(key, getConfigsFromCache(activatedConfigsCache));
       return new FirebaseRemoteConfigValueImpl(activatedString, VALUE_SOURCE_REMOTE);
     }
 
@@ -345,9 +341,10 @@ public class ConfigGetParameterHandler {
   }
 
   /**
-   * Adds a listener that will be called whenever one of the get methods is called.
+   * Adds a listener that will be called whenever one of the get methods is called, passing in the
+   * retrieved key from a get*() call and the config containing the key.
    *
-   * @param listener function that takes in the parameter key and the {@link ConfigContainer} JSON
+   * @param listener function that takes in the parameter key and the {@link ConfigContainer}
    */
   public void addListener(BiConsumer<String, ConfigContainer> listener) {
     synchronized (listeners) {
@@ -356,10 +353,11 @@ public class ConfigGetParameterHandler {
   }
 
   /**
-   * Calls all listeners in {@link #listeners}.
+   * Calls all listeners added to {@link #listeners} with the retrieved key from a get*() call and
+   * the config containing the key.
    *
    * @param key Remote Config parameter key
-   * @param container cache of {@link ConfigContainer}
+   * @param container {@link ConfigContainer} containing {@code key}
    */
   private void callListeners(String key, ConfigContainer container) {
     if (container == null) {
