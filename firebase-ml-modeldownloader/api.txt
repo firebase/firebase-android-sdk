@@ -1,7 +1,7 @@
 // Signature format: 2.0
 package com.google.firebase.ml.modeldownloader {
 
-  public class CustomModel {
+  public final class CustomModel {
     method public long getDownloadId();
     method @Nullable public java.io.File getFile();
     method @NonNull public String getModelHash();

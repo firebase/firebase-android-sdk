@@ -23,12 +23,12 @@ import java.io.File;
  * on a device. The model file associated with this model can be updated, once the new model file is
  * fully uploaded, the original model file will be removed as soon as it is safe to do so.
  */
-public class CustomModel {
+public final class CustomModel {
   private final String name;
-  private long downloadId;
-  private long fileSize;
-  private String modelHash;
-  private String localFilePath = "";
+  private final long downloadId;
+  private final long fileSize;
+  private final String modelHash;
+  private final String localFilePath = "";
 
   @NonNull
   public String getName() {
@@ -76,6 +76,14 @@ public class CustomModel {
     return downloadId;
   }
 
+  /**
+   * Use to create in custom model while initial download is in progress.
+   *
+   * @param name - model name
+   * @param downloadId - Android Download Manger - download id
+   * @param fileSize - model file size
+   * @param modelHash - model hash size
+   */
   CustomModel(String name, long downloadId, long fileSize, String modelHash) {
     this.modelHash = modelHash;
     this.name = name;
