@@ -21,6 +21,7 @@ import androidx.annotation.VisibleForTesting;
 import com.google.firebase.dynamicloading.ComponentLoader;
 import com.google.firebase.events.Publisher;
 import com.google.firebase.events.Subscriber;
+import com.google.firebase.inject.Deferred;
 import com.google.firebase.inject.Provider;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -220,6 +221,18 @@ public class ComponentRuntime extends AbstractComponentContainer implements Comp
   }
 
   @Override
+  public <T> Deferred<T> getDeferred(Class<T> anInterface) {
+    Provider<T> provider = getProvider(anInterface);
+    if (provider == null) {
+      return OptionalProvider.empty();
+    }
+    if (provider instanceof OptionalProvider) {
+      return (OptionalProvider<T>) provider;
+    }
+    return OptionalProvider.of(provider);
+  }
+
+  @Override
   @SuppressWarnings("unchecked")
   public synchronized <T> Provider<Set<T>> setOfProvider(Class<T> anInterface) {
     LazySet<?> provider = lazySetMap.get(anInterface);
@@ -285,7 +298,7 @@ public class ComponentRuntime extends AbstractComponentContainer implements Comp
                     "Unsatisfied dependency for component %s: %s",
                     component, dependency.getInterface()));
           } else if (!dependency.isSet()) {
-            lazyInstanceMap.put(dependency.getInterface(), new OptionalProvider<>());
+            lazyInstanceMap.put(dependency.getInterface(), OptionalProvider.empty());
           }
         }
       }

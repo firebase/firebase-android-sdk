@@ -19,6 +19,7 @@ import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.fail;
 
 import com.google.firebase.dynamicloading.ComponentLoader;
+import com.google.firebase.inject.Deferred;
 import com.google.firebase.inject.Provider;
 import java.util.Arrays;
 import java.util.Collections;
@@ -357,7 +358,7 @@ public final class ComponentRuntimeTest {
 
   @Test
   public void newlyDiscoveredComponent_shouldBecomeAvailableThroughItsProvider() {
-    OptionalProvider<ComponentRegistrar> missingRegistrar = new OptionalProvider<>();
+    OptionalProvider<ComponentRegistrar> missingRegistrar = OptionalProvider.empty();
     ComponentRuntime runtime =
         ComponentRuntime.create(
             EXECUTOR,
@@ -388,7 +389,7 @@ public final class ComponentRuntimeTest {
 
   @Test
   public void newlyDiscoveredSetComponent_shouldBecomeAvailableThroughItsSet() {
-    OptionalProvider<ComponentRegistrar> missingRegistrar = new OptionalProvider<>();
+    OptionalProvider<ComponentRegistrar> missingRegistrar = OptionalProvider.empty();
     ComponentRuntime runtime =
         ComponentRuntime.create(
             EXECUTOR,
@@ -410,7 +411,7 @@ public final class ComponentRuntimeTest {
 
   @Test
   public void newlyDiscoveredComponents_whenNewComponentConflictsWithExisting_shouldThrow() {
-    OptionalProvider<ComponentRegistrar> missingRegistrar = new OptionalProvider<>();
+    OptionalProvider<ComponentRegistrar> missingRegistrar = OptionalProvider.empty();
     ComponentRuntime runtime =
         ComponentRuntime.create(
             EXECUTOR,
@@ -424,7 +425,7 @@ public final class ComponentRuntimeTest {
   @Test
   public void
       newlyDiscoveredEagerComponents_whenExistingEagerComponentsAreInitialized_shouldInitializeUponDiscovery() {
-    OptionalProvider<ComponentRegistrar> missingRegistrar = new OptionalProvider<>();
+    OptionalProvider<ComponentRegistrar> missingRegistrar = OptionalProvider.empty();
     InitTracker initTracker = new InitTracker();
     ComponentRuntime runtime =
         ComponentRuntime.create(
@@ -449,7 +450,7 @@ public final class ComponentRuntimeTest {
   @Test
   public void
       newlyDiscoveredEagerComponents_whenExistingEagerComponentsAreInitializedInNonDefaultApp_shouldNotInitializeUponDiscovery() {
-    OptionalProvider<ComponentRegistrar> missingRegistrar = new OptionalProvider<>();
+    OptionalProvider<ComponentRegistrar> missingRegistrar = OptionalProvider.empty();
     InitTracker initTracker = new InitTracker();
     ComponentRuntime runtime =
         ComponentRuntime.create(
@@ -474,7 +475,7 @@ public final class ComponentRuntimeTest {
   @Test
   public void
       newlyDiscoveredEagerDefaultComponents_whenExistingEagerComponentsAreInitialized_shouldNotInitializeUponDiscovery() {
-    OptionalProvider<ComponentRegistrar> missingRegistrar = new OptionalProvider<>();
+    OptionalProvider<ComponentRegistrar> missingRegistrar = OptionalProvider.empty();
     InitTracker initTracker = new InitTracker();
     ComponentRuntime runtime =
         ComponentRuntime.create(
@@ -499,7 +500,7 @@ public final class ComponentRuntimeTest {
   @Test
   public void
       newlyDiscoveredEagerComponents_whenExistingEagerComponentsAreNotInitialized_shouldNotInitializeUponDiscovery() {
-    OptionalProvider<ComponentRegistrar> missingRegistrar = new OptionalProvider<>();
+    OptionalProvider<ComponentRegistrar> missingRegistrar = OptionalProvider.empty();
     InitTracker initTracker = new InitTracker();
     ComponentRuntime runtime =
         ComponentRuntime.create(
@@ -526,7 +527,7 @@ public final class ComponentRuntimeTest {
 
   @Test
   public void undeclaredDep_withDeferredLoading_shouldThrow() {
-    OptionalProvider<ComponentRegistrar> missingRegistrar = new OptionalProvider<>();
+    OptionalProvider<ComponentRegistrar> missingRegistrar = OptionalProvider.empty();
     InitTracker initTracker = new InitTracker();
     ComponentRuntime runtime =
         ComponentRuntime.create(
@@ -545,5 +546,36 @@ public final class ComponentRuntimeTest {
     DependencyException thrown =
         assertThrows(DependencyException.class, runtime::discoverComponents);
     assertThat(thrown).hasMessageThat().contains("undeclared dependency");
+  }
+
+  private static class DependsOnDeferredString {
+
+    private String value;
+
+    DependsOnDeferredString(Deferred<String> dep) {
+      dep.whenAvailable(p -> value = p.get());
+    }
+  }
+
+  @Test
+  public void newlyDiscoveredComponent_shouldBecomeAvailableThroughItsDeferred() {
+    OptionalProvider<ComponentRegistrar> missingRegistrar = OptionalProvider.empty();
+    ComponentRuntime runtime =
+        ComponentRuntime.create(
+            EXECUTOR,
+            Collections.singleton(missingRegistrar),
+            Component.builder(DependsOnDeferredString.class)
+                .add(Dependency.deferred(String.class))
+                .factory(c -> new DependsOnDeferredString(c.getDeferred(String.class)))
+                .build());
+    ComponentLoader componentLoader = runtime.get(ComponentLoader.class);
+
+    DependsOnDeferredString dependsOnDeferredString = runtime.get(DependsOnDeferredString.class);
+    assertThat(dependsOnDeferredString.value).isNull();
+    missingRegistrar.set(
+        () -> () -> Collections.singletonList(Component.of("hello", String.class)));
+    assertThat(dependsOnDeferredString.value).isNull();
+    componentLoader.discoverComponents();
+    assertThat(dependsOnDeferredString.value).isEqualTo("hello");
   }
 }
