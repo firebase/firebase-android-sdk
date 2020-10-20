@@ -16,6 +16,10 @@ package com.google.firebase.database.core;
 
 import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
 
+import androidx.annotation.NonNull;
+import com.google.android.gms.tasks.Continuation;
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseException;
@@ -23,6 +27,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.InternalHelpers;
 import com.google.firebase.database.MutableData;
+import com.google.firebase.database.Query;
 import com.google.firebase.database.Transaction;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.database.annotations.NotNull;
@@ -460,6 +465,37 @@ public class Repo implements PersistentConnection.Delegate {
 
     Path affectedPath = abortTransactions(path, DatabaseError.OVERRIDDEN_BY_SET);
     this.rerunTransactions(affectedPath);
+  }
+
+  public Task<DataSnapshot> getValue(Query query) {
+    return connection
+        .get(query.getPath().asList(), query.getSpec().getParams().getWireProtocolParams())
+        .continueWithTask(
+            new Continuation<Object, Task<DataSnapshot>>() {
+              @Override
+              public Task<DataSnapshot> then(@NonNull Task<Object> task) throws Exception {
+                TaskCompletionSource<DataSnapshot> source = new TaskCompletionSource<>();
+                if (!task.isSuccessful()) {
+                  Node cached =
+                      serverSyncTree.calcCompleteEventCache(query.getPath(), new ArrayList<>());
+                  if (cached.isEmpty()) {
+                    source.setException(new Exception("Client offline with empty cache!"));
+                  } else {
+                    source.setResult(
+                        InternalHelpers.createDataSnapshot(
+                            query.getRef(), IndexedNode.from(cached, query.getSpec().getIndex())));
+                  }
+                } else {
+                  Node serverNode = NodeUtilities.NodeFromJSON(task.getResult());
+                  postEvents(serverSyncTree.applyServerOverwrite(query.getPath(), serverNode));
+                  source.setResult(
+                      InternalHelpers.createDataSnapshot(
+                          query.getRef(),
+                          IndexedNode.from(serverNode, query.getSpec().getIndex())));
+                }
+                return source.getTask();
+              }
+            });
   }
 
   public void updateChildren(

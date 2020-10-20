@@ -16,6 +16,8 @@ package com.google.firebase.database.connection;
 
 import static com.google.firebase.database.connection.ConnectionUtils.hardAssert;
 
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.database.connection.util.RetryHelper;
 import com.google.firebase.database.logging.LogWrapper;
 import com.google.firebase.database.util.GAuthToken;
@@ -37,11 +39,11 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
     void onResponse(Map<String, Object> response);
   }
 
-  private static class ListenQuerySpec {
+  private static class QuerySpec {
     private final List<String> path;
     private final Map<String, Object> queryParams;
 
-    public ListenQuerySpec(List<String> path, Map<String, Object> queryParams) {
+    public QuerySpec(List<String> path, Map<String, Object> queryParams) {
       this.path = path;
       this.queryParams = queryParams;
     }
@@ -49,11 +51,11 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
     @Override
     public boolean equals(Object o) {
       if (this == o) return true;
-      if (!(o instanceof ListenQuerySpec)) {
+      if (!(o instanceof QuerySpec)) {
         return false;
       }
 
-      ListenQuerySpec that = (ListenQuerySpec) o;
+      QuerySpec that = (QuerySpec) o;
 
       if (!path.equals(that.path)) {
         return false;
@@ -76,13 +78,13 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
 
   private static class OutstandingListen {
     private final RequestResultCallback resultCallback;
-    private final ListenQuerySpec query;
+    private final QuerySpec query;
     private final ListenHashProvider hashFunction;
     private final Long tag;
 
     private OutstandingListen(
         RequestResultCallback callback,
-        ListenQuerySpec query,
+        QuerySpec query,
         Long tag,
         ListenHashProvider hashFunction) {
       this.resultCallback = callback;
@@ -91,7 +93,7 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
       this.tag = tag;
     }
 
-    public ListenQuerySpec getQuery() {
+    public QuerySpec getQuery() {
       return query;
     }
 
@@ -256,7 +258,7 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
   private List<OutstandingDisconnect> onDisconnectRequestQueue;
   private Map<Long, OutstandingPut> outstandingPuts;
 
-  private Map<ListenQuerySpec, OutstandingListen> listens;
+  private Map<QuerySpec, OutstandingListen> listens;
   private String authToken;
   private boolean forceAuthTokenRefresh;
   private final ConnectionContext context;
@@ -281,7 +283,7 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
     this.executorService = context.getExecutorService();
     this.authTokenProvider = context.getAuthTokenProvider();
     this.hostInfo = info;
-    this.listens = new HashMap<ListenQuerySpec, OutstandingListen>();
+    this.listens = new HashMap<QuerySpec, OutstandingListen>();
     this.requestCBHash = new HashMap<Long, ConnectionRequestCallback>();
     this.outstandingPuts = new HashMap<Long, OutstandingPut>();
     this.onDisconnectRequestQueue = new ArrayList<OutstandingDisconnect>();
@@ -328,7 +330,7 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
       ListenHashProvider currentHashFn,
       Long tag,
       RequestResultCallback listener) {
-    ListenQuerySpec query = new ListenQuerySpec(path, queryParams);
+    QuerySpec query = new QuerySpec(path, queryParams);
     if (logger.logsDebug()) logger.debug("Listening on " + query);
     // TODO: Fix this somehow?
     // hardAssert(query.isDefault() || !query.loadsAllData(), "listen() called for non-default but
@@ -342,6 +344,21 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
       sendListen(outstandingListen);
     }
     doIdleCheck();
+  }
+
+  @Override
+  public Task<Object> get(List<String> path, Map<String, Object> queryParams) {
+    QuerySpec query = new QuerySpec(path, queryParams);
+    TaskCompletionSource<Object> source = new TaskCompletionSource<>();
+    Task<Object> task;
+    if (connected()) {
+      task = sendGet(query, source);
+    } else {
+      source.setException(new Exception("Client offline!"));
+      task = source.getTask();
+    }
+    doIdleCheck();
+    return task;
   }
 
   @Override
@@ -456,7 +473,7 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
 
   @Override
   public void unlisten(List<String> path, Map<String, Object> queryParams) {
-    ListenQuerySpec query = new ListenQuerySpec(path, queryParams);
+    QuerySpec query = new QuerySpec(path, queryParams);
     if (logger.logsDebug()) logger.debug("unlistening on " + query);
 
     // TODO: fix this by understanding query params?
@@ -731,7 +748,7 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
     sendAction(REQUEST_ACTION_QUERY_UNLISTEN, request, null);
   }
 
-  private OutstandingListen removeListen(ListenQuerySpec query) {
+  private OutstandingListen removeListen(QuerySpec query) {
     if (logger.logsDebug()) logger.debug("removing query " + query);
     if (!listens.containsKey(query)) {
       if (logger.logsDebug())
@@ -749,8 +766,8 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
   private Collection<OutstandingListen> removeListens(List<String> path) {
     if (logger.logsDebug()) logger.debug("removing all listens at path " + path);
     List<OutstandingListen> removedListens = new ArrayList<OutstandingListen>();
-    for (Map.Entry<ListenQuerySpec, OutstandingListen> entry : listens.entrySet()) {
-      ListenQuerySpec query = entry.getKey();
+    for (Map.Entry<QuerySpec, OutstandingListen> entry : listens.entrySet()) {
+      QuerySpec query = entry.getKey();
       OutstandingListen listen = entry.getValue();
       if (query.path.equals(path)) {
         removedListens.add(listen);
@@ -1049,6 +1066,32 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
         });
   }
 
+  private Task<Object> sendGet(final QuerySpec query, TaskCompletionSource<Object> source) {
+    Map<String, Object> request = new HashMap<String, Object>();
+    request.put(REQUEST_PATH, ConnectionUtils.pathToString(query.path));
+    request.put(REQUEST_QUERIES, query.queryParams);
+    sendAction(
+        REQUEST_ACTION_QUERY,
+        request,
+        new ConnectionRequestCallback() {
+          @Override
+          public void onResponse(Map<String, Object> response) {
+            String status = (String) response.get(REQUEST_STATUS);
+            if (status.equals("ok")) {
+              String pathString = (String) response.get(SERVER_DATA_UPDATE_PATH);
+              List<String> path = ConnectionUtils.stringToPath(pathString);
+              Object body = response.get(SERVER_DATA_UPDATE_BODY);
+              Long tagNumber = ConnectionUtils.longFromObject(response.get(SERVER_DATA_TAG));
+              delegate.onDataUpdate(path, body, /*isMerge=*/ false, /*tagNumber=*/ tagNumber);
+              source.setResult(body);
+            } else {
+              source.setException(new Exception((String) response.get(SERVER_DATA_UPDATE_BODY)));
+            }
+          }
+        });
+    return source.getTask();
+  }
+
   private void sendListen(final OutstandingListen listen) {
     Map<String, Object> request = new HashMap<String, Object>();
     request.put(REQUEST_PATH, ConnectionUtils.pathToString(listen.getQuery().path));
@@ -1136,7 +1179,7 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
   }
 
   @SuppressWarnings("unchecked")
-  private void warnOnListenerWarnings(List<String> warnings, ListenQuerySpec query) {
+  private void warnOnListenerWarnings(List<String> warnings, QuerySpec query) {
     if (warnings.contains("no_index")) {
       String indexSpec = "\".indexOn\": \"" + query.queryParams.get("i") + '\"';
       logger.warn(

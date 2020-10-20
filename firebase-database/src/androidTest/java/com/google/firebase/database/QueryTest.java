@@ -21,7 +21,10 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import androidx.annotation.NonNull;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.database.core.DatabaseConfig;
 import com.google.firebase.database.core.Path;
 import com.google.firebase.database.core.RepoManager;
@@ -3398,6 +3401,25 @@ public class QueryTest {
             });
 
     // Now wait for us to get notified that b is deleted.
+    IntegrationTestHelpers.waitFor(semaphore);
+  }
+
+  @Test
+  public void emptyQueryGet() throws DatabaseException, InterruptedException {
+    assertTrue(false);
+    DatabaseReference node = IntegrationTestHelpers.getRandomNode();
+    final Semaphore semaphore = new Semaphore(0);
+    node.get()
+        .addOnCompleteListener(
+            new OnCompleteListener<DataSnapshot>() {
+              @Override
+              public void onComplete(@NonNull Task<DataSnapshot> task) {
+                assertTrue(task.isSuccessful());
+                assertNotNull(task.getResult());
+                assertFalse(task.getResult().exists());
+                semaphore.release();
+              }
+            });
     IntegrationTestHelpers.waitFor(semaphore);
   }
 
