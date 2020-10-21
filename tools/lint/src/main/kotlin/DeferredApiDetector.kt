@@ -28,6 +28,7 @@ import com.intellij.psi.PsiClassType
 import com.intellij.psi.PsiMethod
 import org.jetbrains.uast.UAnnotation
 import org.jetbrains.uast.UAnonymousClass
+import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UElement
 import org.jetbrains.uast.ULambdaExpression
 import org.jetbrains.uast.UMethod
@@ -51,77 +52,79 @@ class DeferredApiDetector : Detector(), SourceCodeScanner {
         allPackageAnnotations: List<UAnnotation>
     ) {
         if (method != null && type == AnnotationUsageType.METHOD_CALL) {
-            check(context, usage, method)
+            check(context, usage as UCallExpression, method)
         }
     }
 
-    private fun check(context: JavaContext, usage: UElement, method: PsiMethod) {
-        val usageHasAnnotation = hasAnnotation(context, usage)
-        val methodHasAnnotation = hasAnnotation(context, method)
+    private fun check(context: JavaContext, usage: UCallExpression, method: PsiMethod) {
+        val usageHasAnnotation = hasDeferredApiAnnotation(context, usage)
+        val methodHasAnnotation = hasDeferredApiAnnotation(context, method)
 
         if ((!usageHasAnnotation && methodHasAnnotation) || (usageHasAnnotation && !methodHasAnnotation))
             context.report(
                     INVALID_DEFERRED_API_USE,
                     usage,
-                    context.getLocation(usage),
+                    context.getCallLocation(
+                            usage,
+                            includeReceiver = false,
+                            includeArguments = true),
                     "${method.name} is only safe to call in the context of a Deferred<T> dependency.")
     }
-    private fun hasAnnotation(context: JavaContext, methodCall: UElement): Boolean {
+    private fun hasDeferredApiAnnotation(context: JavaContext, methodCall: UElement): Boolean {
         lambdaMethod(methodCall)?.let {
-            return hasAnnotation(context, it)
+            return hasDeferredApiAnnotation(context, it)
         }
 
         val method = methodCall.getParentOfType<UElement>(
                 UMethod::class.java, true,
                 UAnonymousClass::class.java, ULambdaExpression::class.java
         ) as? PsiMethod
-        return hasAnnotation(context, method)
+        return hasDeferredApiAnnotation(context, method)
     }
 
     private fun lambdaMethod(element: UElement): PsiMethod? {
         val lambda = element.getParentOfType<ULambdaExpression>(
                 ULambdaExpression::class.java, true, UMethod::class.java, UAnonymousClass::class.java)
-        if (lambda != null) {
-            val type = lambda.functionalInterfaceType
-            if (type is PsiClassType) {
-                val resolved = type.resolve()
-                if (resolved != null) {
-                    return resolved.allMethods.firstOrNull { it.hasModifier(JvmModifier.ABSTRACT) }
-                }
+                ?: return null
+
+        val type = lambda.functionalInterfaceType
+        if (type is PsiClassType) {
+            val resolved = type.resolve()
+            if (resolved != null) {
+                return resolved.allMethods.firstOrNull { it.hasModifier(JvmModifier.ABSTRACT) }
             }
         }
         return null
     }
 
-    private fun hasAnnotation(context: JavaContext, calledMethod: PsiMethod?): Boolean {
-        var method = calledMethod
-        if (method != null) {
-            var cls = method.containingClass
+    private fun hasDeferredApiAnnotation(context: JavaContext, calledMethod: PsiMethod?): Boolean {
+        var method = calledMethod ?: return false
 
-            while (method != null) {
-                for (annotation in method.modifierList.annotations) {
+        while (true) {
+            for (annotation in method.modifierList.annotations) {
+                annotation.qualifiedName?.let {
+                    if (it == ANNOTATION) {
+                        return@hasDeferredApiAnnotation true
+                    }
+                }
+            }
+            method = context.evaluator.getSuperMethod(method) ?: break
+        }
+
+        var cls = method.containingClass ?: return false
+
+        while (true) {
+            val modifierList = cls.modifierList
+            if (modifierList != null) {
+                for (annotation in modifierList.annotations) {
                     annotation.qualifiedName?.let {
                         if (it == ANNOTATION) {
-                            return@hasAnnotation true
+                            return@hasDeferredApiAnnotation true
                         }
                     }
                 }
-                method = context.evaluator.getSuperMethod(method)
             }
-
-            while (cls != null) {
-                val modifierList = cls.modifierList
-                if (modifierList != null) {
-                    for (annotation in modifierList.annotations) {
-                        annotation.qualifiedName?.let {
-                            if (it == ANNOTATION) {
-                                return@hasAnnotation true
-                            }
-                        }
-                    }
-                }
-                cls = cls.superClass
-            }
+            cls = cls.superClass ?: break
         }
         return false
     }
