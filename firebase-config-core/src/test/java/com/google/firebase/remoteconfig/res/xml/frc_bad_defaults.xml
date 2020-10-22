@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright 2018 Google LLC
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~
+  ~ You may obtain a copy of the License at
+  ~      http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<!-- START xml_defaults -->
+<defaultsMap>
+  <bad_entry>
+    <key>first_default_key</key>
+    <value>first_default_value</value>
+  </bad_entry>
+  <entry>
+    <key>second_default_key</key>
+    <value>second_default_value</value>
+  </entry>
+  <entry>
+    <bad_key>third_default_key</bad_key>
+    <value>third_default_value</value>
+  </entry>
+  <entry>
+    <key>fourth_default_key</key>
+    <bad_value>fourth_default_value</bad_value>
+  </entry>
+  <entry>
+    <key>
+      <value>fifth_default_value</value>
+      fifth_default_key
+    </key>
+  </entry>
+</defaultsMap>
+    <!-- END xml_defaults -->

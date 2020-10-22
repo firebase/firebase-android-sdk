@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright 2018 Google LLC
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~      http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin">
+
+  <LinearLayout
+      android:id="@+id/analytics_actions_layout"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/analytics_disclaimer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:gravity="center"
+        android:scrollbars="vertical"
+        android:text="This tab does not work in 3P (AnalyticsConnector is not documented)"
+        android:textAlignment="center"
+        android:textAppearance="?android:attr/textAppearanceLarge"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="10dp">
+      <EditText
+          android:id="@+id/get_user_property_key"
+          android:layout_width="150dp"
+          android:layout_height="wrap_content"
+          android:layout_gravity="center"
+          android:gravity="center"
+          android:hint="User property key"
+          android:inputType="textAutoComplete"
+          android:textAlignment="center"/>
+
+      <Space
+          android:layout_width="50dp"
+          android:layout_height="match_parent"/>
+
+      <Button
+          android:id="@+id/get_user_property_button"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_gravity="center"
+          android:enabled="false"
+          android:text="Get User Property"/>
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/get_user_property_result"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="20dp"
+        android:gravity="center"
+        android:text=""
+        android:textAlignment="center"
+        android:textAppearance="?android:attr/textAppearanceLarge"/>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginBottom="10dp"
+        android:background="@android:color/darker_gray"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="10dp">
+      <LinearLayout
+          android:layout_width="150dp"
+          android:layout_height="wrap_content"
+          android:orientation="vertical">
+        <EditText
+            android:id="@+id/set_user_property_key"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:hint="User property key"
+            android:inputType="textAutoComplete"
+            android:textAlignment="center"/>
+        <EditText
+            android:id="@+id/set_user_property_value"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:hint="User property value"
+            android:inputType="textAutoComplete"
+            android:textAlignment="center"/>
+      </LinearLayout>
+
+      <Space
+          android:layout_width="50dp"
+          android:layout_height="match_parent"/>
+
+      <Button
+          android:id="@+id/set_user_property_button"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_gravity="center"
+          android:enabled="false"
+          android:text="Set User Property"
+          android:textAlignment="center"/>
+    </LinearLayout>
+
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginBottom="10dp"
+        android:background="@android:color/darker_gray"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="10dp">
+
+      <TextView
+          android:id="@+id/conditional_user_properties"
+          android:layout_width="100dp"
+          android:layout_height="wrap_content"
+          android:layout_gravity="center"
+          android:gravity="center"
+          android:scrollbars="vertical"
+          android:textAlignment="center"
+          android:textAppearance="?android:attr/textAppearanceMedium"/>
+
+      <Space
+          android:layout_width="50dp"
+          android:layout_height="match_parent"/>
+
+      <TextView
+          android:id="@+id/conditional_user_properties_title"
+          android:layout_width="50dp"
+          android:layout_height="wrap_content"
+          android:layout_gravity="center"
+          android:gravity="center"
+          android:scrollbars="vertical"
+          android:text="Conditional User Properties"
+          android:textAlignment="center"
+          android:textAppearance="?android:attr/textAppearanceSmall"/>
+
+      <LinearLayout
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:orientation="vertical">
+
+        <Button
+            android:id="@+id/get_conditional_user_properties_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:enabled="true"
+            android:text="Get"/>
+
+        <Button
+            android:id="@+id/clear_conditional_user_properties_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:enabled="true"
+            android:text="Clear"/>
+      </LinearLayout>
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginBottom="10dp"
+        android:background="@android:color/darker_gray"/>
+
+    <TextView
+        android:id="@+id/analytics_call_progress"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:textAlignment="center"
+        android:textAppearance="?android:attr/textAppearanceMedium"/>
+  </LinearLayout>
+
+  <TextView
+      android:id="@+id/analytics_results"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_below="@+id/analytics_actions_layout"
+      android:layout_centerHorizontal="true"
+      android:gravity="center"
+      android:scrollbars="vertical"
+      android:textAlignment="center"
+      android:textAppearance="?android:attr/textAppearanceLarge"/>
+</RelativeLayout>
