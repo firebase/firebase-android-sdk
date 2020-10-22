@@ -45,7 +45,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -58,7 +57,6 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.MoreExecutors;
-import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
 import com.google.firebase.remoteconfig.core.FirebaseRemoteConfigClientException;
@@ -150,7 +148,7 @@ public class ConfigFetchHandlerTest {
     when(mockFetchedCache.get()).thenReturn(Tasks.forResult(null));
 
     // Assume there is no analytics SDK for most of the tests.
-    fetchHandler = getNewFetchHandler(/*analyticsConnector=*/ null);
+    fetchHandler = getNewFetchHandler();
 
     firstFetchedContainer =
         ConfigContainer.newBuilder()
@@ -628,24 +626,6 @@ public class ConfigFetchHandlerTest {
   }
 
   @Test
-  public void fetch_hasAnalyticsSdk_sendsUserProperties() throws Exception {
-    // Provide the mock Analytics SDK.
-    AnalyticsConnector mockAnalyticsConnector = mock(AnalyticsConnector.class);
-    fetchHandler = getNewFetchHandler(mockAnalyticsConnector);
-
-    Map<String, String> userProperties =
-        ImmutableMap.of("up_key1", "up_val1", "up_key2", "up_val2");
-    when(mockAnalyticsConnector.getUserProperties(/*includeInternal=*/ false))
-        .thenReturn(ImmutableMap.copyOf(userProperties));
-
-    fetchCallToHttpClientUpdatesClockAndReturnsConfig(firstFetchedContainer);
-
-    assertWithMessage("Fetch() failed!").that(fetchHandler.fetch().isSuccessful()).isTrue();
-
-    verifyBackendIsCalled(userProperties);
-  }
-
-  @Test
   public void fetch_firstAndOnlyFetchFails_metadataFailStatusAndNoFetchYetTime() throws Exception {
     fetchCallToBackendThrowsException(HTTP_NOT_FOUND);
 
@@ -709,12 +689,11 @@ public class ConfigFetchHandlerTest {
         .isEqualTo(firstFetchedContainer.getFetchTime());
   }
 
-  private ConfigFetchHandler getNewFetchHandler(AnalyticsConnector analyticsConnector) {
+  private ConfigFetchHandler getNewFetchHandler() {
     ConfigFetchHandler fetchHandler =
         spy(
             new ConfigFetchHandler(
                 mockFirebaseInstallations,
-                analyticsConnector,
                 directExecutor,
                 mockClock,
                 mockRandom,

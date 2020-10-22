@@ -16,15 +16,12 @@ package com.google.firebase.remoteconfig.core;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
-import static com.google.firebase.remoteconfig.core.AbtExperimentHelper.createAbtExperiment;
 import static com.google.firebase.remoteconfig.core.FirebaseRemoteConfig.DEFAULT_VALUE_FOR_BOOLEAN;
 import static com.google.firebase.remoteconfig.core.FirebaseRemoteConfig.DEFAULT_VALUE_FOR_DOUBLE;
 import static com.google.firebase.remoteconfig.core.FirebaseRemoteConfig.DEFAULT_VALUE_FOR_LONG;
 import static com.google.firebase.remoteconfig.core.FirebaseRemoteConfig.DEFAULT_VALUE_FOR_STRING;
 import static com.google.firebase.remoteconfig.core.FirebaseRemoteConfig.LAST_FETCH_STATUS_THROTTLED;
-import static com.google.firebase.remoteconfig.core.FirebaseRemoteConfig.toExperimentInfoMaps;
 import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -35,14 +32,11 @@ import com.google.android.gms.shadows.common.internal.ShadowPreconditions;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-import com.google.firebase.abt.AbtException;
-import com.google.firebase.abt.FirebaseABTesting;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
 import com.google.firebase.remoteconfig.core.internal.ConfigCacheClient;
@@ -54,12 +48,9 @@ import com.google.firebase.remoteconfig.core.internal.ConfigMetadataClient;
 import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
-import org.json.JSONArray;
-import org.json.JSONException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -124,7 +115,6 @@ public final class FirebaseRemoteConfigTest {
 
   @Mock private FirebaseRemoteConfigInfo mockFrcInfo;
 
-  @Mock private FirebaseABTesting mockFirebaseAbt;
   @Mock private FirebaseInstallationsApi mockFirebaseInstallations;
 
   private FirebaseRemoteConfig frc;
@@ -163,7 +153,6 @@ public final class FirebaseRemoteConfigTest {
             context,
             firebaseApp,
             mockFirebaseInstallations,
-            mockFirebaseAbt,
             directExecutor,
             mockFetchedCache,
             mockActivatedCache,
@@ -180,7 +169,6 @@ public final class FirebaseRemoteConfigTest {
                 firebaseApp,
                 FIREPERF_NAMESPACE,
                 mockFirebaseInstallations,
-                /*firebaseAbt=*/ null,
                 directExecutor,
                 mockFireperfFetchedCache,
                 mockFireperfActivatedCache,
@@ -367,78 +355,6 @@ public final class FirebaseRemoteConfigTest {
   }
 
   @Test
-  public void fetchAndActivate_callToAbtFails_activateStillSucceeds() throws Exception {
-    loadFetchHandlerWithResponse();
-    ConfigContainer containerWithAbtExperiments =
-        ConfigContainer.newBuilder(firstFetchedContainer)
-            .withAbtExperiments(generateAbtExperiments())
-            .build();
-
-    loadCacheWithConfig(mockFetchedCache, containerWithAbtExperiments);
-    cachePutReturnsConfig(mockActivatedCache, containerWithAbtExperiments);
-
-    doThrow(new AbtException("Abt failure!")).when(mockFirebaseAbt).replaceAllExperiments(any());
-
-    Task<Boolean> task = frc.fetchAndActivate();
-
-    assertWithMessage("fetchAndActivate() failed!").that(getTaskResult(task)).isTrue();
-  }
-
-  @Test
-  public void fetchAndActivate_hasAbtExperiments_sendsExperimentsToAbt() throws Exception {
-    loadFetchHandlerWithResponse();
-    ConfigContainer containerWithAbtExperiments =
-        ConfigContainer.newBuilder(firstFetchedContainer)
-            .withAbtExperiments(generateAbtExperiments())
-            .build();
-
-    loadCacheWithConfig(mockFetchedCache, containerWithAbtExperiments);
-    cachePutReturnsConfig(mockActivatedCache, containerWithAbtExperiments);
-
-    Task<Boolean> task = frc.fetchAndActivate();
-
-    assertWithMessage("fetchAndActivate() failed!").that(getTaskResult(task)).isTrue();
-
-    List<Map<String, String>> expectedExperimentInfoMaps =
-        toExperimentInfoMaps(containerWithAbtExperiments.getAbtExperiments());
-    verify(mockFirebaseAbt).replaceAllExperiments(expectedExperimentInfoMaps);
-  }
-
-  @Test
-  public void fetchAndActivate2p_hasNoAbtExperiments_doesNotCallAbt() throws Exception {
-    load2pFetchHandlerWithResponse();
-    ConfigContainer containerWithNoAbtExperiments =
-        ConfigContainer.newBuilder().withFetchTime(new Date(1000L)).build();
-
-    loadCacheWithConfig(mockFireperfFetchedCache, containerWithNoAbtExperiments);
-    cachePutReturnsConfig(mockFireperfActivatedCache, containerWithNoAbtExperiments);
-
-    Task<Boolean> task = fireperfFrc.fetchAndActivate();
-
-    assertWithMessage("2p fetchAndActivate() failed!").that(getTaskResult(task)).isTrue();
-
-    verify(mockFirebaseAbt, never()).replaceAllExperiments(any());
-  }
-
-  @Test
-  public void fetchAndActivate2p_hasAbtExperiments_doesNotCallAbt() throws Exception {
-    load2pFetchHandlerWithResponse();
-    ConfigContainer containerWithAbtExperiments =
-        ConfigContainer.newBuilder(firstFetchedContainer)
-            .withAbtExperiments(generateAbtExperiments())
-            .build();
-
-    loadCacheWithConfig(mockFireperfFetchedCache, containerWithAbtExperiments);
-    cachePutReturnsConfig(mockFireperfActivatedCache, containerWithAbtExperiments);
-
-    Task<Boolean> task = fireperfFrc.fetchAndActivate();
-
-    assertWithMessage("2p fetchAndActivate() failed!").that(getTaskResult(task)).isTrue();
-
-    verify(mockFirebaseAbt, never()).replaceAllExperiments(any());
-  }
-
-  @Test
   public void activate_getFetchedFailed_returnsFalse() {
     loadCacheWithIoException(mockFetchedCache);
     loadCacheWithConfig(mockActivatedCache, null);
@@ -548,89 +464,6 @@ public final class FirebaseRemoteConfigTest {
 
     verify(mockActivatedCache).put(secondFetchedContainer);
     verify(mockFetchedCache, never()).clear();
-  }
-
-  @Test
-  public void activate_hasNoAbtExperiments_sendsEmptyListToAbt() throws Exception {
-    ConfigContainer containerWithNoAbtExperiments =
-        ConfigContainer.newBuilder().withFetchTime(new Date(1000L)).build();
-
-    loadCacheWithConfig(mockFetchedCache, containerWithNoAbtExperiments);
-    cachePutReturnsConfig(mockActivatedCache, containerWithNoAbtExperiments);
-
-    Task<Boolean> activateTask = frc.activate();
-
-    assertWithMessage("activate() failed!").that(activateTask.getResult()).isTrue();
-
-    verify(mockFirebaseAbt).replaceAllExperiments(ImmutableList.of());
-  }
-
-  @Test
-  public void activate_callToAbtFails_activateStillSucceeds() throws Exception {
-    ConfigContainer containerWithAbtExperiments =
-        ConfigContainer.newBuilder(firstFetchedContainer)
-            .withAbtExperiments(generateAbtExperiments())
-            .build();
-
-    loadCacheWithConfig(mockFetchedCache, containerWithAbtExperiments);
-    cachePutReturnsConfig(mockActivatedCache, containerWithAbtExperiments);
-
-    doThrow(new AbtException("Abt failure!")).when(mockFirebaseAbt).replaceAllExperiments(any());
-
-    Task<Boolean> activateTask = frc.activate();
-
-    assertWithMessage("activate() failed!").that(activateTask.getResult()).isTrue();
-  }
-
-  @Test
-  public void activate_hasAbtExperiments_sendsExperimentsToAbt() throws Exception {
-    ConfigContainer containerWithAbtExperiments =
-        ConfigContainer.newBuilder(firstFetchedContainer)
-            .withAbtExperiments(generateAbtExperiments())
-            .build();
-
-    loadCacheWithConfig(mockFetchedCache, containerWithAbtExperiments);
-    cachePutReturnsConfig(mockActivatedCache, containerWithAbtExperiments);
-
-    Task<Boolean> activateTask = frc.activate();
-
-    assertWithMessage("activate() failed!").that(activateTask.getResult()).isTrue();
-
-    List<Map<String, String>> expectedExperimentInfoMaps =
-        toExperimentInfoMaps(containerWithAbtExperiments.getAbtExperiments());
-    verify(mockFirebaseAbt).replaceAllExperiments(expectedExperimentInfoMaps);
-  }
-
-  @Test
-  public void activate2p_hasNoAbtExperiments_doesNotCallAbt() throws Exception {
-    ConfigContainer containerWithNoAbtExperiments =
-        ConfigContainer.newBuilder().withFetchTime(new Date(1000L)).build();
-
-    loadCacheWithConfig(mockFireperfFetchedCache, containerWithNoAbtExperiments);
-    cachePutReturnsConfig(mockFireperfActivatedCache, containerWithNoAbtExperiments);
-
-    Task<Boolean> activateTask = fireperfFrc.activate();
-
-    assertWithMessage("Fireperf activate() failed!").that(activateTask.getResult()).isTrue();
-
-    verify(mockFirebaseAbt, never()).replaceAllExperiments(any());
-  }
-
-  @Test
-  public void activate2p_hasAbtExperiments_doesNotCallAbt() throws Exception {
-    ConfigContainer containerWithAbtExperiments =
-        ConfigContainer.newBuilder(firstFetchedContainer)
-            .withAbtExperiments(generateAbtExperiments())
-            .build();
-
-    loadCacheWithConfig(mockFireperfFetchedCache, containerWithAbtExperiments);
-    cachePutReturnsConfig(mockFireperfActivatedCache, containerWithAbtExperiments);
-
-    Task<Boolean> activateTask = fireperfFrc.activate();
-
-    assertWithMessage("Fireperf activate() failed!").that(activateTask.getResult()).isTrue();
-
-    verify(mockFirebaseAbt, never()).replaceAllExperiments(any());
   }
 
   @Test
@@ -973,14 +806,6 @@ public final class FirebaseRemoteConfigTest {
     assertThat(task.isComplete()).isTrue();
     assertThat(task.getResult()).isNotNull();
     return task.getResult();
-  }
-
-  private static JSONArray generateAbtExperiments() throws JSONException {
-    JSONArray experiments = new JSONArray();
-    for (int experimentNum = 1; experimentNum <= 5; experimentNum++) {
-      experiments.put(createAbtExperiment("exp" + experimentNum));
-    }
-    return experiments;
   }
 
   private static FirebaseApp initializeFirebaseApp(Context context) {

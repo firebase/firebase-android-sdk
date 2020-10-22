@@ -23,8 +23,6 @@ import androidx.annotation.XmlRes;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.abt.AbtException;
-import com.google.firebase.abt.FirebaseABTesting;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
 import com.google.firebase.remoteconfig.core.internal.ConfigCacheClient;
@@ -137,11 +135,6 @@ public class FirebaseRemoteConfig {
 
   private final Context context;
   private final FirebaseApp firebaseApp;
-  /**
-   * Firebase A/B Testing (ABT) is only valid for the 3P namespace, so the ABT variable will be null
-   * if the current instance of Firebase Remote Config is using a non-3P namespace.
-   */
-  @Nullable private final FirebaseABTesting firebaseAbt;
 
   private final Executor executor;
   private final ConfigCacheClient fetchedConfigsCache;
@@ -161,7 +154,6 @@ public class FirebaseRemoteConfig {
       Context context,
       FirebaseApp firebaseApp,
       FirebaseInstallationsApi firebaseInstallations,
-      @Nullable FirebaseABTesting firebaseAbt,
       Executor executor,
       ConfigCacheClient fetchedConfigsCache,
       ConfigCacheClient activatedConfigsCache,
@@ -172,7 +164,6 @@ public class FirebaseRemoteConfig {
     this.context = context;
     this.firebaseApp = firebaseApp;
     this.firebaseInstallations = firebaseInstallations;
-    this.firebaseAbt = firebaseAbt;
     this.executor = executor;
     this.fetchedConfigsCache = fetchedConfigsCache;
     this.activatedConfigsCache = activatedConfigsCache;
@@ -568,7 +559,7 @@ public class FirebaseRemoteConfig {
       // then put into the activated cache. So, if the put is called and succeeds, then the returned
       // values from the put task must be non-null.
       if (putTask.getResult() != null) {
-        updateAbtWithActivatedExperiments(putTask.getResult().getAbtExperiments());
+        // updateAbtWithActivatedExperiments(putTask.getResult().getAbtExperiments());
       } else {
         // Should never happen.
         Log.e(TAG, "Activated configs written to disk are null.");
@@ -596,34 +587,6 @@ public class FirebaseRemoteConfig {
     Task<ConfigContainer> putTask = defaultConfigsCache.put(defaultConfigs);
     // Convert Task type to Void.
     return putTask.onSuccessTask((unusedContainer) -> Tasks.forResult(null));
-  }
-
-  /**
-   * Notifies the Firebase A/B Testing SDK about activated experiments.
-   *
-   * @hide
-   */
-  // TODO(issues/255): Find a cleaner way to test ABT component dependency without
-  // having to make this method visible.
-  @VisibleForTesting
-  void updateAbtWithActivatedExperiments(@NonNull JSONArray abtExperiments) {
-    if (firebaseAbt == null) {
-      // If there is no firebaseAbt instance, then this FRC is either in a non-3P namespace or
-      // in a non-main FirebaseApp, so there is no reason to call ABT.
-      // For more info: RemoteConfigComponent#isAbtSupported.
-      return;
-    }
-
-    try {
-      List<Map<String, String>> experimentInfoMaps = toExperimentInfoMaps(abtExperiments);
-      firebaseAbt.replaceAllExperiments(experimentInfoMaps);
-    } catch (JSONException e) {
-      Log.e(TAG, "Could not parse ABT experiments from the JSON response.", e);
-    } catch (AbtException e) {
-      // TODO(issues/256): Find a way to log errors for all non-Analytics related exceptions
-      // without coupling the FRC and ABT SDKs.
-      Log.w(TAG, "Could not update ABT experiments.", e);
-    }
   }
 
   /**

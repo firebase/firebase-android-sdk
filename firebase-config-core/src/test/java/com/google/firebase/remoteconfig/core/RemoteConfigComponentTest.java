@@ -15,14 +15,10 @@
 package com.google.firebase.remoteconfig.core;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.common.truth.Truth.assertWithMessage;
 import static com.google.firebase.remoteconfig.core.AbtExperimentHelper.createAbtExperiment;
 import static com.google.firebase.remoteconfig.core.AbtExperimentHelper.createAbtExperiments;
 import static com.google.firebase.remoteconfig.core.RemoteConfigComponent.CONNECTION_TIMEOUT_IN_SECONDS;
 import static com.google.firebase.remoteconfig.core.RemoteConfigComponent.DEFAULT_NAMESPACE;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.content.Context;
@@ -30,8 +26,6 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-import com.google.firebase.abt.FirebaseABTesting;
-import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.remoteconfig.core.internal.ConfigCacheClient;
 import com.google.firebase.remoteconfig.core.internal.ConfigContainer;
@@ -64,8 +58,6 @@ public class RemoteConfigComponentTest {
 
   @Mock private FirebaseApp mockFirebaseApp;
   @Mock private FirebaseInstallationsApi mockFirebaseInstallations;
-  @Mock private FirebaseABTesting mockFirebaseAbt;
-  @Mock private AnalyticsConnector mockAnalyticsConnector;
   @Mock private ConfigCacheClient mockFetchedCache;
   @Mock private ConfigCacheClient mockActivatedCache;
   @Mock private ConfigCacheClient mockDefaultsCache;
@@ -89,45 +81,6 @@ public class RemoteConfigComponentTest {
     when(mockFirebaseApp.getOptions())
         .thenReturn(new FirebaseOptions.Builder().setApplicationId(APP_ID).build());
     when(mockFirebaseApp.getName()).thenReturn(FirebaseApp.DEFAULT_APP_NAME);
-  }
-
-  @Test
-  public void frc2p_doesNotCallAbt() throws Exception {
-
-    FirebaseRemoteConfig fireperfFrc =
-        getFrcInstanceFromComponent(getNewFrcComponent(), /* namespace= */ "fireperf");
-    loadConfigsWithExperimentsForActivate();
-
-    assertWithMessage("Fireperf fetch and activate failed!")
-        .that(fireperfFrc.activate().getResult())
-        .isTrue();
-
-    verify(mockFirebaseAbt, never()).replaceAllExperiments(any());
-  }
-
-  @Test
-  public void frcNonMainFirebaseApp_doesNotCallAbt() throws Exception {
-
-    when(mockFirebaseApp.getName()).thenReturn("secondary");
-    FirebaseRemoteConfig frc =
-        getFrcInstanceFromComponent(getNewFrcComponentWithoutLoadingDefault(), DEFAULT_NAMESPACE);
-    loadConfigsWithExperimentsForActivate();
-
-    assertWithMessage("Fetch and activate failed!").that(frc.activate().getResult()).isTrue();
-
-    verify(mockFirebaseAbt, never()).replaceAllExperiments(any());
-  }
-
-  @Test
-  public void getFetchHandler_nonMainFirebaseApp_doesNotUseAnalytics() {
-
-    when(mockFirebaseApp.getName()).thenReturn("secondary");
-
-    ConfigFetchHandler fetchHandler =
-        getNewFrcComponent()
-            .getFetchHandler(DEFAULT_NAMESPACE, mockFetchedCache, mockMetadataClient);
-
-    assertThat(fetchHandler.getAnalyticsConnector()).isNull();
   }
 
   @Test
@@ -171,8 +124,6 @@ public class RemoteConfigComponentTest {
         directExecutor,
         mockFirebaseApp,
         mockFirebaseInstallations,
-        mockFirebaseAbt,
-        mockAnalyticsConnector,
         /* loadGetDefault= */ true);
   }
 
@@ -182,8 +133,6 @@ public class RemoteConfigComponentTest {
         directExecutor,
         mockFirebaseApp,
         mockFirebaseInstallations,
-        mockFirebaseAbt,
-        mockAnalyticsConnector,
         /* loadGetDefault= */ false);
   }
 
@@ -193,7 +142,6 @@ public class RemoteConfigComponentTest {
         mockFirebaseApp,
         namespace,
         mockFirebaseInstallations,
-        mockFirebaseAbt,
         directExecutor,
         mockFetchedCache,
         mockActivatedCache,

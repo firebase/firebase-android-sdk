@@ -17,15 +17,12 @@ package com.google.firebase.remoteconfig.core;
 import android.content.Context;
 import android.content.SharedPreferences;
 import androidx.annotation.GuardedBy;
-import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.annotation.KeepForSdk;
 import com.google.android.gms.common.util.Clock;
 import com.google.android.gms.common.util.DefaultClock;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.abt.FirebaseABTesting;
-import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.remoteconfig.core.internal.ConfigCacheClient;
 import com.google.firebase.remoteconfig.core.internal.ConfigFetchHandler;
@@ -76,8 +73,6 @@ public class RemoteConfigComponent {
   private final ExecutorService executorService;
   private final FirebaseApp firebaseApp;
   private final FirebaseInstallationsApi firebaseInstallations;
-  private final FirebaseABTesting firebaseAbt;
-  @Nullable private final AnalyticsConnector analyticsConnector;
 
   private final String appId;
 
@@ -86,18 +81,12 @@ public class RemoteConfigComponent {
 
   /** Firebase Remote Config Component constructor. */
   RemoteConfigComponent(
-      Context context,
-      FirebaseApp firebaseApp,
-      FirebaseInstallationsApi firebaseInstallations,
-      FirebaseABTesting firebaseAbt,
-      @Nullable AnalyticsConnector analyticsConnector) {
+      Context context, FirebaseApp firebaseApp, FirebaseInstallationsApi firebaseInstallations) {
     this(
         context,
         Executors.newCachedThreadPool(),
         firebaseApp,
         firebaseInstallations,
-        firebaseAbt,
-        analyticsConnector,
         /* loadGetDefault= */ true);
   }
 
@@ -108,15 +97,11 @@ public class RemoteConfigComponent {
       ExecutorService executorService,
       FirebaseApp firebaseApp,
       FirebaseInstallationsApi firebaseInstallations,
-      FirebaseABTesting firebaseAbt,
-      @Nullable AnalyticsConnector analyticsConnector,
       boolean loadGetDefault) {
     this.context = context;
     this.executorService = executorService;
     this.firebaseApp = firebaseApp;
     this.firebaseInstallations = firebaseInstallations;
-    this.firebaseAbt = firebaseAbt;
-    this.analyticsConnector = analyticsConnector;
 
     this.appId = firebaseApp.getOptions().getApplicationId();
 
@@ -153,7 +138,6 @@ public class RemoteConfigComponent {
         firebaseApp,
         namespace,
         firebaseInstallations,
-        firebaseAbt,
         executorService,
         fetchedCacheClient,
         activatedCacheClient,
@@ -168,7 +152,6 @@ public class RemoteConfigComponent {
       FirebaseApp firebaseApp,
       String namespace,
       FirebaseInstallationsApi firebaseInstallations,
-      FirebaseABTesting firebaseAbt,
       Executor executor,
       ConfigCacheClient fetchedClient,
       ConfigCacheClient activatedClient,
@@ -182,7 +165,6 @@ public class RemoteConfigComponent {
               context,
               firebaseApp,
               firebaseInstallations,
-              isAbtSupported(firebaseApp, namespace) ? firebaseAbt : null,
               executor,
               fetchedClient,
               activatedClient,
@@ -228,7 +210,6 @@ public class RemoteConfigComponent {
       String namespace, ConfigCacheClient fetchedCacheClient, ConfigMetadataClient metadataClient) {
     return new ConfigFetchHandler(
         firebaseInstallations,
-        isPrimaryApp(firebaseApp) ? analyticsConnector : null,
         executorService,
         DEFAULT_CLOCK,
         DEFAULT_RANDOM,
