@@ -16,6 +16,7 @@ package com.google.firebase.ml.modeldownloader;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import com.google.android.gms.common.internal.Objects;
 import java.io.File;
 
 /**
@@ -24,11 +25,53 @@ import java.io.File;
  * fully uploaded, the original model file will be removed as soon as it is safe to do so.
  */
 public final class CustomModel {
+
   private final String name;
   private final long downloadId;
   private final long fileSize;
   private final String modelHash;
   private final String localFilePath;
+
+  /**
+   * Use when creating a custom model while the initial download is still in progress.
+   *
+   * @param name - model name
+   * @param downloadId - Android Download Manger - download id
+   * @param fileSize - model file size
+   * @param modelHash - model hash size
+   * @hide
+   */
+  public CustomModel(
+      @NonNull String name, long downloadId, long fileSize, @NonNull String modelHash) {
+    this.modelHash = modelHash;
+    this.name = name;
+    this.fileSize = fileSize;
+    this.downloadId = downloadId;
+    this.localFilePath = "";
+  }
+
+  /**
+   * Use when creating a custom model while the initial download is still in progress.
+   *
+   * @param name - model name
+   * @param downloadId - Android Download Manger - download id
+   * @param fileSize - model file size
+   * @param modelHash - model hash size
+   * @param localFilePath - location of the current file
+   * @hide
+   */
+  public CustomModel(
+      @NonNull String name,
+      long downloadId,
+      long fileSize,
+      @NonNull String modelHash,
+      @NonNull String localFilePath) {
+    this.modelHash = modelHash;
+    this.name = name;
+    this.fileSize = fileSize;
+    this.downloadId = downloadId;
+    this.localFilePath = localFilePath;
+  }
 
   @NonNull
   public String getName() {
@@ -76,35 +119,31 @@ public final class CustomModel {
     return downloadId;
   }
 
-  /**
-   * Use when creating a custom model while the initial download is still in progress.
-   *
-   * @param name - model name
-   * @param downloadId - Android Download Manger - download id
-   * @param fileSize - model file size
-   * @param modelHash - model hash size
-   */
-  protected CustomModel(@NonNull String name, long downloadId, long fileSize, @NonNull String modelHash) {
-    this.modelHash = modelHash;
-    this.name = name;
-    this.fileSize = fileSize;
-    this.downloadId = downloadId;
-    this.localFilePath = "";
+  @Override
+  public boolean equals(Object o) {
+    if (o == this) {
+      return true;
+    }
+
+    if (!(o instanceof CustomModel)) {
+      return false;
+    }
+
+    CustomModel other = (CustomModel) o;
+
+    return Objects.equal(name, other.name)
+        && Objects.equal(modelHash, other.modelHash)
+        && Objects.equal(fileSize, other.fileSize)
+        && Objects.equal(localFilePath, other.localFilePath)
+        && Objects.equal(downloadId, other.downloadId);
   }
 
   /**
-   * Use when creating a custom model while the initial download is still in progress.
-   *
-   * @param name - model name
-   * @param downloadId - Android Download Manger - download id
-   * @param fileSize - model file size
-   * @param modelHash - model hash size
+   * @return the model file path
+   * @hide
    */
-  protected CustomModel(@NonNull String name, long downloadId, long fileSize, @NonNull String modelHash, @NonNull String localFilePath) {
-    this.modelHash = modelHash;
-    this.name = name;
-    this.fileSize = fileSize;
-    this.downloadId = downloadId;
-    this.localFilePath = localFilePath;
+  @NonNull
+  public String getLocalFilePath() {
+    return localFilePath;
   }
 }
