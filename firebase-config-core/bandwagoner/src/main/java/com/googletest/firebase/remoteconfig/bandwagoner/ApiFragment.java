@@ -37,8 +37,8 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
-import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
-import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
+import com.google.firebase.remoteconfig.core.FirebaseRemoteConfig;
+import com.google.firebase.remoteconfig.core.FirebaseRemoteConfigSettings;
 
 /**
  * The main layout and logic for running Firebase Remote Config (FRC) API calls and displaying their
