@@ -27,7 +27,7 @@ private fun annotationSource(): String {
 
 private fun deferredSource(): String {
     return """
-        package com.google.firebase.components.inject;
+        package com.google.firebase.inject;
         import com.google.firebase.components.annotations.DeferredApi;
 
         public interface Deferred<T> {
@@ -106,7 +106,7 @@ class DeferredApiDetectorTests : LintDetectorTest() {
                 java(providerSource()),
                 java(annotatedInterface()),
                 java("""
-                     import com.google.firebase.components.inject.Deferred;
+                     import com.google.firebase.inject.Deferred;
                      class UseOfMyApi {
                        private final Deferred<MyApi> api;
                        UseOfMyApi(Deferred<MyApi> api) {
@@ -129,8 +129,8 @@ class DeferredApiDetectorTests : LintDetectorTest() {
                 java(providerSource()),
                 java(annotatedInterface()),
                 java("""
-                     import com.google.firebase.components.inject.Deferred;
-                     import com.google.firebase.components.inject.Provider;
+                     import com.google.firebase.inject.Deferred;
+                     import com.google.firebase.inject.Provider;
                      class UseOfMyApi {
                        private final Deferred<MyApi> api;
                        UseOfMyApi(Deferred<MyApi> api) {
@@ -156,7 +156,7 @@ class DeferredApiDetectorTests : LintDetectorTest() {
                 java(providerSource()),
                 java(annotatedInterface()),
                 java("""
-                     import com.google.firebase.components.inject.Deferred;
+                     import com.google.firebase.inject.Deferred;
                      class UseOfMyApi {
                        UseOfMyApi(Deferred<MyApi> api) {
                          api.whenAvailable(apiProvider -> 
@@ -176,7 +176,7 @@ class DeferredApiDetectorTests : LintDetectorTest() {
                 java(annotatedInterface()),
                 java("""
                      import com.google.firebase.components.annotations.DeferredApi;
-                     import com.google.firebase.components.inject.Deferred;
+                     import com.google.firebase.inject.Deferred;
                      class UseOfMyApi {
                        UseOfMyApi(Deferred<MyApi> api) {
                          api.whenAvailable(apiProvider -> {
@@ -202,7 +202,7 @@ class DeferredApiDetectorTests : LintDetectorTest() {
                 java(annotatedInterface()),
                 java("""
                      import com.google.firebase.components.annotations.DeferredApi;
-                     import com.google.firebase.components.inject.Deferred;
+                     import com.google.firebase.inject.Deferred;
                      class UseOfMyApi {
                        UseOfMyApi(Deferred<MyApi> api) {
                          api.whenAvailable(apiProvider -> {
