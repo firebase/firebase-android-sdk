@@ -28,7 +28,7 @@ public final class CustomModel {
   private final long downloadId;
   private final long fileSize;
   private final String modelHash;
-  private final String localFilePath = "";
+  private final String localFilePath;
 
   @NonNull
   public String getName() {
@@ -84,10 +84,27 @@ public final class CustomModel {
    * @param fileSize - model file size
    * @param modelHash - model hash size
    */
-  CustomModel(String name, long downloadId, long fileSize, String modelHash) {
+  protected CustomModel(@NonNull String name, long downloadId, long fileSize, @NonNull String modelHash) {
     this.modelHash = modelHash;
     this.name = name;
     this.fileSize = fileSize;
     this.downloadId = downloadId;
+    this.localFilePath = "";
+  }
+
+  /**
+   * Use when creating a custom model while the initial download is still in progress.
+   *
+   * @param name - model name
+   * @param downloadId - Android Download Manger - download id
+   * @param fileSize - model file size
+   * @param modelHash - model hash size
+   */
+  protected CustomModel(@NonNull String name, long downloadId, long fileSize, @NonNull String modelHash, @NonNull String localFilePath) {
+    this.modelHash = modelHash;
+    this.name = name;
+    this.fileSize = fileSize;
+    this.downloadId = downloadId;
+    this.localFilePath = localFilePath;
   }
 }
