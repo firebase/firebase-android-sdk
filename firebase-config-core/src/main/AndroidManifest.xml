@@ -15,7 +15,7 @@
   -->
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.google.firebase.remoteconfig">
+    package="com.google.firebase.remoteconfig.core">
 
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.INTERNET" />
@@ -27,7 +27,7 @@
             android:name="com.google.firebase.components.ComponentDiscoveryService"
             android:exported="false">
             <meta-data
-                android:name="com.google.firebase.components:com.google.firebase.remoteconfig.RemoteConfigRegistrar"
+                android:name="com.google.firebase.components:com.google.firebase.remoteconfig.core.RemoteConfigRegistrar"
                 android:value="com.google.firebase.components.ComponentRegistrar" />
         </service>
     </application>
