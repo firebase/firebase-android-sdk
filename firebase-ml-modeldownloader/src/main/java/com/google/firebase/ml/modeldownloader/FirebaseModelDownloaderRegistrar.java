@@ -29,15 +29,15 @@ import java.util.List;
  *
  * @hide
  */
-public class FirebaseMlModelDownloaderRegistrar implements ComponentRegistrar {
+public class FirebaseModelDownloaderRegistrar implements ComponentRegistrar {
 
   @Override
   @NonNull
   public List<Component<?>> getComponents() {
     return Arrays.asList(
-        Component.builder(FirebaseMlModelDownloader.class)
+        Component.builder(FirebaseModelDownloader.class)
             .add(Dependency.required(FirebaseOptions.class))
-            .factory(c -> new FirebaseMlModelDownloader(c.get(FirebaseOptions.class)))
+            .factory(c -> new FirebaseModelDownloader(c.get(FirebaseOptions.class)))
             .build(),
         LibraryVersionComponent.create("firebase-ml-modeldownloader", BuildConfig.VERSION_NAME));
   }
