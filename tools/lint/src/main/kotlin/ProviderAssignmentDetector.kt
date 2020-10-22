@@ -56,9 +56,10 @@ class ProviderAssignmentDetector : Detector(), SourceCodeScanner {
         if (!method.parameterList.isEmpty) {
             return false
         }
-        return (method.parent as? PsiClass)?.let {
+        (method.parent as? PsiClass)?.let {
             return it.qualifiedName == PROVIDER
-        } ?: false
+        }
+        return false
     }
 
     companion object {
