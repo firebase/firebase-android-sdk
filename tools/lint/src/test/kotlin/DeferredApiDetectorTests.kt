@@ -41,9 +41,9 @@ private fun deferredSource(): String {
     """.trimIndent()
 }
 
-private fun providerSource(): String {
+fun providerSource(): String {
     return """
-        package com.google.firebase.components.inject;
+        package com.google.firebase.inject;
 
         public interface Provider<T> {
           T get();
