@@ -42,10 +42,15 @@ class RequestLimiter {
     this.utils = utils;
   }
 
+  RequestLimiter() {
+    // Util class is injected to ease mocking & testing the system time.
+    this.utils = Utils.getInstance();
+  }
+
   // Based on the response code, calculates the next request time to communicate with the FIS
   // servers.
   public synchronized void setNextRequestTime(int responseCode) {
-    if (isSuccessful(responseCode)) {
+    if (isSuccessfulOrRequiresNewFidCreation(responseCode)) {
       resetBackoffStrategy();
       return;
     }
@@ -77,10 +82,14 @@ class RequestLimiter {
     return responseCode == 429 || (responseCode >= 500 && responseCode < 600);
   }
 
-  // Response codes classified as success for FIS API. Read more on FIS response codes:
-  // go/fis-api-error-code-classification.
-  private static boolean isSuccessful(int responseCode) {
-    return responseCode >= 200 && responseCode < 300;
+  // 2xx Response codes are classified as success for FIS API. Also, FIS GenerateAuthToken endpoint
+  // responds with 401 & 404 for auth config errors which requires clients to follow up with a
+  // request to create a new FID. So, we don't limit the next requests for 401 & 404 response codes
+  // as well. Read more on FIS response codes: go/fis-api-error-code-classification.
+  private static boolean isSuccessfulOrRequiresNewFidCreation(int responseCode) {
+    return ((responseCode >= 200 && responseCode < 300)
+        || responseCode == 401
+        || responseCode == 404);
   }
 
   // Decides whether a network request to FIS servers is allowed to execute.

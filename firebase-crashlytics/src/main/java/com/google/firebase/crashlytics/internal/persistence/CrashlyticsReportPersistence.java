@@ -306,6 +306,12 @@ public class CrashlyticsReportPersistence {
       }
     }
 
+    // b/168902195
+    if (events.isEmpty()) {
+      Logger.getLogger().d("Could not parse event files for session " + sessionDirectory.getName());
+      return;
+    }
+
     String userId = null;
     final File userIdFile = new File(sessionDirectory, USER_FILE_NAME);
     if (userIdFile.isFile()) {

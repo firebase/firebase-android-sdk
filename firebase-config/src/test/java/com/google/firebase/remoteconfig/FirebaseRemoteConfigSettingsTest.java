@@ -30,12 +30,12 @@ public final class FirebaseRemoteConfigSettingsTest {
   @Test
   public void toBuilder_withFieldsSet_buildsObjectWithFieldsSet() {
     FirebaseRemoteConfigSettings.Builder expectedBuilder =
-        new FirebaseRemoteConfigSettings.Builder().setDeveloperModeEnabled(true);
+        new FirebaseRemoteConfigSettings.Builder().setFetchTimeoutInSeconds(0L);
     FirebaseRemoteConfigSettings settings = expectedBuilder.build();
 
     FirebaseRemoteConfigSettings.Builder actualBuilder = settings.toBuilder();
 
-    assertThat(actualBuilder.build().isDeveloperModeEnabled())
-        .isEqualTo(settings.isDeveloperModeEnabled());
+    assertThat(actualBuilder.build().getFetchTimeoutInSeconds())
+        .isEqualTo(settings.getFetchTimeoutInSeconds());
   }
 }
