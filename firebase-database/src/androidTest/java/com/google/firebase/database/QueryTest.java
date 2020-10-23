@@ -21,9 +21,9 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
-
 import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -3409,6 +3409,7 @@ public class QueryTest {
   @Test
   public void emptyQueryGet() throws DatabaseException, InterruptedException {
     DatabaseReference node = IntegrationTestHelpers.getRandomNode();
+    DatabaseConfig cfg = IntegrationTestHelpers.newTestConfig();
     final Semaphore semaphore = new Semaphore(0);
     node.get()
         .addOnCompleteListener(
@@ -3416,8 +3417,8 @@ public class QueryTest {
               @Override
               public void onComplete(@NonNull Task<DataSnapshot> task) {
                 assertTrue(task.isSuccessful());
-                assertNotNull(task.getResult());
-                assertFalse(task.getResult().exists());
+                assertNotNull(task.getException());
+                assertEquals(task.getException().getMessage(), "Client offline with empty cache!");
                 semaphore.release();
               }
             });
@@ -3430,43 +3431,48 @@ public class QueryTest {
     IntegrationTestHelpers.goOffline(cfg);
     DatabaseReference node = IntegrationTestHelpers.getRandomNode();
     node.get()
-      .addOnCompleteListener(new OnCompleteListener<DataSnapshot>() {
-        @Override
-        public void onComplete(@NonNull Task<DataSnapshot> task) {
-          assertFalse(task.isSuccessful());
-          assertTrue(task.isCanceled());
-          assertNotNull(task.getException());
-          assertEquals(task.getException().getMessage(), "Client offline with empty cache!");
-        }
-      });
+        .addOnCompleteListener(
+            new OnCompleteListener<DataSnapshot>() {
+              @Override
+              public void onComplete(@NonNull Task<DataSnapshot> task) {
+                Log.d("QueryTest", "offlineQueryGet onCompleteListener running.");
+                assertFalse(task.isSuccessful());
+                assertNotNull(task.getException());
+                assertEquals(task.getException().getMessage(), "Client offline with empty cache!");
+              }
+            });
   }
 
   @Test
   public void getQueryBasic() throws DatabaseException, InterruptedException {
     DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
     final Semaphore semaphore = new Semaphore(0);
-    ref.setValue(42).continueWithTask(new Continuation<Void, Task<DataSnapshot>>() {
-      @Override
-      public Task<DataSnapshot> then(@NonNull Task<Void> task) throws Exception {
-        assertTrue(task.isSuccessful());
-        return ref.get()
-          .addOnCompleteListener(new OnCompleteListener<DataSnapshot>() {
-            @Override
-            public void onComplete(@NonNull Task<DataSnapshot> task) {
-              assertTrue(task.isSuccessful());
-              DataSnapshot snap = task.getResult();
-              assertNotNull(snap);
-              assertEquals(42, snap.getValue());
-              semaphore.release();
-            }
-          });
-      }
-    });
+    ref.setValue(42)
+        .continueWithTask(
+            new Continuation<Void, Task<DataSnapshot>>() {
+              @Override
+              public Task<DataSnapshot> then(@NonNull Task<Void> task) throws Exception {
+                assertTrue(task.isSuccessful());
+                return ref.get()
+                    .addOnCompleteListener(
+                        new OnCompleteListener<DataSnapshot>() {
+                          @Override
+                          public void onComplete(@NonNull Task<DataSnapshot> task) {
+                            assertTrue(task.isSuccessful());
+                            DataSnapshot snap = task.getResult();
+                            assertNotNull(snap);
+                            assertEquals(42, snap.getValue());
+                            semaphore.release();
+                          }
+                        });
+              }
+            });
     IntegrationTestHelpers.waitFor(semaphore);
   }
 
   @Test
-  public void getQueryCached() throws DatabaseException, InterruptedException, TimeoutException, TestFailure {
+  public void getQueryCached()
+      throws DatabaseException, InterruptedException, TimeoutException, TestFailure {
     DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
     DatabaseConfig cfg = IntegrationTestHelpers.newTestConfig();
     ReadFuture future = ReadFuture.untilNonNull(ref);
@@ -3474,16 +3480,18 @@ public class QueryTest {
     assertEquals(42, future.waitForLastValue());
     IntegrationTestHelpers.goOffline(cfg);
     final Semaphore semaphore = new Semaphore(0);
-    ref.get().addOnCompleteListener(new OnCompleteListener<DataSnapshot>() {
-      @Override
-      public void onComplete(@NonNull Task<DataSnapshot> task) {
-        assertTrue(task.isSuccessful());
-        DataSnapshot snapshot = task.getResult();
-        assertNotNull(snapshot);
-        assertEquals(42, snapshot.getValue());
-        semaphore.release();
-      }
-    });
+    ref.get()
+        .addOnCompleteListener(
+            new OnCompleteListener<DataSnapshot>() {
+              @Override
+              public void onComplete(@NonNull Task<DataSnapshot> task) {
+                assertTrue(task.isSuccessful());
+                DataSnapshot snapshot = task.getResult();
+                assertNotNull(snapshot);
+                assertEquals(42, snapshot.getValue());
+                semaphore.release();
+              }
+            });
     IntegrationTestHelpers.waitFor(semaphore);
   }
 
