@@ -42,6 +42,8 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+
+import org.apache.commons.validator.routines.UrlValidator;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -73,10 +75,16 @@ public class FirebaseFunctions {
   private final String projectId;
 
   // The region to use for all function references.
-  private final String region;
+  @Nullable private final String region;
+
+  // A custom domain for the http trigger, such as "https://mydomain.com"
+  @Nullable private final String customDomain;
 
   // The format to use for constructing urls from region, projectId, and name.
   private String urlFormat = "https://%1$s-%2$s.cloudfunctions.net/%3$s";
+
+  // Allowed custom domain protocols.
+  private String[] customDomainSchemes = {"http", "https"};
 
   // Emulator settings
   @Nullable private EmulatedServiceSettings emulatorSettings;
@@ -85,14 +93,22 @@ public class FirebaseFunctions {
       FirebaseApp app,
       Context context,
       String projectId,
-      String region,
+      String regionOrCustomDomain,
       ContextProvider contextProvider) {
     this.app = app;
     this.client = new OkHttpClient();
     this.serializer = new Serializer();
     this.contextProvider = Preconditions.checkNotNull(contextProvider);
     this.projectId = Preconditions.checkNotNull(projectId);
-    this.region = Preconditions.checkNotNull(region);
+
+    UrlValidator validator = new UrlValidator(customDomainSchemes);
+    if (validator.isValid(regionOrCustomDomain)) {
+      this.region = null;
+      this.customDomain = regionOrCustomDomain;
+    } else {
+      this.region = regionOrCustomDomain;
+      this.customDomain = null;
+    }
 
     maybeInstallProviders(context);
   }
@@ -135,20 +151,21 @@ public class FirebaseFunctions {
   }
 
   /**
-   * Creates a Cloud Functions client with the given app and region.
+   * Creates a Cloud Functions client with the given app and region or  custom domain.
    *
    * @param app The app for the Firebase project.
-   * @param region The region for the HTTPS trigger, such as "us-central1".
+   * @param regionOrCustomDomain The region or custom domain for the HTTPS trigger,
+   *                             such as "us-central1" or "https://mydomain.com".
    */
   @NonNull
-  public static FirebaseFunctions getInstance(@NonNull FirebaseApp app, @NonNull String region) {
+  public static FirebaseFunctions getInstance(@NonNull FirebaseApp app, @NonNull String regionOrCustomDomain) {
     Preconditions.checkNotNull(app, "You must call FirebaseApp.initializeApp first.");
-    Preconditions.checkNotNull(region);
+    Preconditions.checkNotNull(regionOrCustomDomain);
 
     FunctionsMultiResourceComponent component = app.get(FunctionsMultiResourceComponent.class);
     Preconditions.checkNotNull(component, "Functions component does not exist.");
 
-    return component.get(region);
+    return component.get(regionOrCustomDomain);
   }
 
   /**
@@ -162,13 +179,14 @@ public class FirebaseFunctions {
   }
 
   /**
-   * Creates a Cloud Functions client with the default app and given region.
+   * Creates a Cloud Functions client with the default app and given region or custom domain.
    *
-   * @param region The region for the HTTPS trigger, such as "us-central1".
+   * @param regionOrCustomDomain The regionOrCustomDomain for the HTTPS trigger,
+   *                             such as "us-central1" or "https://mydomain.com".
    */
   @NonNull
-  public static FirebaseFunctions getInstance(@NonNull String region) {
-    return getInstance(FirebaseApp.getInstance(), region);
+  public static FirebaseFunctions getInstance(@NonNull String regionOrCustomDomain) {
+    return getInstance(FirebaseApp.getInstance(), regionOrCustomDomain);
   }
 
   /** Creates a Cloud Functions client with the default app. */
@@ -191,17 +209,21 @@ public class FirebaseFunctions {
    */
   @VisibleForTesting
   URL getURL(String function) {
-    EmulatedServiceSettings emulatorSettings = this.emulatorSettings;
-    if (emulatorSettings != null) {
-      urlFormat =
-          "http://"
-              + emulatorSettings.getHost()
-              + ":"
-              + emulatorSettings.getPort()
-              + "/%2$s/%1$s/%3$s";
+    String str;
+    if (customDomain != null) {
+      str = customDomain + "/" + function;
+    } else {
+      EmulatedServiceSettings emulatorSettings = this.emulatorSettings;
+      if (emulatorSettings != null) {
+        urlFormat =
+            "http://"
+                + emulatorSettings.getHost()
+                + ":"
+                + emulatorSettings.getPort()
+                + "/%2$s/%1$s/%3$s";
+      }
+      str = String.format(urlFormat, region, projectId, function);
     }
-
-    String str = String.format(urlFormat, region, projectId, function);
     try {
       return new URL(str);
     } catch (MalformedURLException mfe) {
