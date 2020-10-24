@@ -47,7 +47,8 @@ class FunctionsMultiResourceComponent {
 
     if (functions == null) {
       functions =
-          new FirebaseFunctions(app, applicationContext, projectId, regionOrCustomDomain, contextProvider);
+          new FirebaseFunctions(
+              app, applicationContext, projectId, regionOrCustomDomain, contextProvider);
       instances.put(regionOrCustomDomain, functions);
     }
     return functions;

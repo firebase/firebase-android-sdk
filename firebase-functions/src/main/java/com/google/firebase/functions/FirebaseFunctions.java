@@ -42,7 +42,6 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
-
 import org.apache.commons.validator.routines.UrlValidator;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -151,14 +150,15 @@ public class FirebaseFunctions {
   }
 
   /**
-   * Creates a Cloud Functions client with the given app and region or  custom domain.
+   * Creates a Cloud Functions client with the given app and region or custom domain.
    *
    * @param app The app for the Firebase project.
-   * @param regionOrCustomDomain The region or custom domain for the HTTPS trigger,
-   *                             such as "us-central1" or "https://mydomain.com".
+   * @param regionOrCustomDomain The region or custom domain for the HTTPS trigger, such as
+   *     "us-central1" or "https://mydomain.com".
    */
   @NonNull
-  public static FirebaseFunctions getInstance(@NonNull FirebaseApp app, @NonNull String regionOrCustomDomain) {
+  public static FirebaseFunctions getInstance(
+      @NonNull FirebaseApp app, @NonNull String regionOrCustomDomain) {
     Preconditions.checkNotNull(app, "You must call FirebaseApp.initializeApp first.");
     Preconditions.checkNotNull(regionOrCustomDomain);
 
@@ -181,8 +181,8 @@ public class FirebaseFunctions {
   /**
    * Creates a Cloud Functions client with the default app and given region or custom domain.
    *
-   * @param regionOrCustomDomain The regionOrCustomDomain for the HTTPS trigger,
-   *                             such as "us-central1" or "https://mydomain.com".
+   * @param regionOrCustomDomain The regionOrCustomDomain for the HTTPS trigger, such as
+   *     "us-central1" or "https://mydomain.com".
    */
   @NonNull
   public static FirebaseFunctions getInstance(@NonNull String regionOrCustomDomain) {
