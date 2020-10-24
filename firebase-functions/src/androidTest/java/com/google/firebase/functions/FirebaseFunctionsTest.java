@@ -42,6 +42,10 @@ public class FirebaseFunctionsTest {
     functions = FirebaseFunctions.getInstance(app, "https://mydomain.com");
     url = functions.getURL("my-endpoint");
     assertEquals("https://mydomain.com/my-endpoint", url.toString());
+
+    functions = FirebaseFunctions.getInstance(app, "https://mydomain.com/foo");
+    url = functions.getURL("my-endpoint");
+    assertEquals("https://mydomain.com/foo/my-endpoint", url.toString());
   }
 
   @Test
