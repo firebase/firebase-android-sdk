@@ -23,8 +23,6 @@ import androidx.annotation.XmlRes;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.abt.AbtException;
-import com.google.firebase.abt.FirebaseABTesting;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
 import com.google.firebase.remoteconfig.core.internal.ConfigCacheClient;
@@ -141,7 +139,7 @@ public class FirebaseRemoteConfig {
    * Firebase A/B Testing (ABT) is only valid for the 3P namespace, so the ABT variable will be null
    * if the current instance of Firebase Remote Config is using a non-3P namespace.
    */
-  @Nullable private final FirebaseABTesting firebaseAbt;
+  @Nullable private final FirebaseRemoteConfigABTListener firebaseRemoteConfigAbtListener;
 
   private final Executor executor;
   private final ConfigCacheClient fetchedConfigsCache;
@@ -161,7 +159,7 @@ public class FirebaseRemoteConfig {
       Context context,
       FirebaseApp firebaseApp,
       FirebaseInstallationsApi firebaseInstallations,
-      @Nullable FirebaseABTesting firebaseAbt,
+      @Nullable FirebaseRemoteConfigABTListener firebaseRemoteConfigAbtListener,
       Executor executor,
       ConfigCacheClient fetchedConfigsCache,
       ConfigCacheClient activatedConfigsCache,
@@ -172,7 +170,7 @@ public class FirebaseRemoteConfig {
     this.context = context;
     this.firebaseApp = firebaseApp;
     this.firebaseInstallations = firebaseInstallations;
-    this.firebaseAbt = firebaseAbt;
+    this.firebaseRemoteConfigAbtListener = firebaseRemoteConfigAbtListener;
     this.executor = executor;
     this.fetchedConfigsCache = fetchedConfigsCache;
     this.activatedConfigsCache = activatedConfigsCache;
@@ -607,7 +605,7 @@ public class FirebaseRemoteConfig {
   // having to make this method visible.
   @VisibleForTesting
   void updateAbtWithActivatedExperiments(@NonNull JSONArray abtExperiments) {
-    if (firebaseAbt == null) {
+    if (firebaseRemoteConfigAbtListener == null) {
       // If there is no firebaseAbt instance, then this FRC is either in a non-3P namespace or
       // in a non-main FirebaseApp, so there is no reason to call ABT.
       // For more info: RemoteConfigComponent#isAbtSupported.
@@ -616,13 +614,9 @@ public class FirebaseRemoteConfig {
 
     try {
       List<Map<String, String>> experimentInfoMaps = toExperimentInfoMaps(abtExperiments);
-      firebaseAbt.replaceAllExperiments(experimentInfoMaps);
+      firebaseRemoteConfigAbtListener.onExperimentsActivated(experimentInfoMaps);
     } catch (JSONException e) {
       Log.e(TAG, "Could not parse ABT experiments from the JSON response.", e);
-    } catch (AbtException e) {
-      // TODO(issues/256): Find a way to log errors for all non-Analytics related exceptions
-      // without coupling the FRC and ABT SDKs.
-      Log.w(TAG, "Could not update ABT experiments.", e);
     }
   }
 

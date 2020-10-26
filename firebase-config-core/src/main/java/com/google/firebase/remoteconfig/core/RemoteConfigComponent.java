@@ -24,7 +24,6 @@ import com.google.android.gms.common.util.Clock;
 import com.google.android.gms.common.util.DefaultClock;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.abt.FirebaseABTesting;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.remoteconfig.core.internal.ConfigCacheClient;
@@ -76,7 +75,6 @@ public class RemoteConfigComponent {
   private final ExecutorService executorService;
   private final FirebaseApp firebaseApp;
   private final FirebaseInstallationsApi firebaseInstallations;
-  private final FirebaseABTesting firebaseAbt;
   @Nullable private final AnalyticsConnector analyticsConnector;
 
   private final String appId;
@@ -89,14 +87,12 @@ public class RemoteConfigComponent {
       Context context,
       FirebaseApp firebaseApp,
       FirebaseInstallationsApi firebaseInstallations,
-      FirebaseABTesting firebaseAbt,
       @Nullable AnalyticsConnector analyticsConnector) {
     this(
         context,
         Executors.newCachedThreadPool(),
         firebaseApp,
         firebaseInstallations,
-        firebaseAbt,
         analyticsConnector,
         /* loadGetDefault= */ true);
   }
@@ -108,14 +104,12 @@ public class RemoteConfigComponent {
       ExecutorService executorService,
       FirebaseApp firebaseApp,
       FirebaseInstallationsApi firebaseInstallations,
-      FirebaseABTesting firebaseAbt,
       @Nullable AnalyticsConnector analyticsConnector,
       boolean loadGetDefault) {
     this.context = context;
     this.executorService = executorService;
     this.firebaseApp = firebaseApp;
     this.firebaseInstallations = firebaseInstallations;
-    this.firebaseAbt = firebaseAbt;
     this.analyticsConnector = analyticsConnector;
 
     this.appId = firebaseApp.getOptions().getApplicationId();
@@ -145,6 +139,19 @@ public class RemoteConfigComponent {
   @VisibleForTesting
   @KeepForSdk
   public synchronized FirebaseRemoteConfig get(String namespace) {
+    return get(namespace, null);
+  }
+
+  /**
+   * Returns the Firebase Remote Config instance associated with the given {@code namespace} and
+   * this component's {@link FirebaseApp}.
+   *
+   * @param namespace a 2P's namespace, or, for the 3P App, the default namespace.
+   */
+  @VisibleForTesting
+  @KeepForSdk
+  public synchronized FirebaseRemoteConfig get(
+      String namespace, FirebaseRemoteConfigABTListener abtListener) {
     ConfigCacheClient fetchedCacheClient = getCacheClient(namespace, FETCH_FILE_NAME);
     ConfigCacheClient activatedCacheClient = getCacheClient(namespace, ACTIVATE_FILE_NAME);
     ConfigCacheClient defaultsCacheClient = getCacheClient(namespace, DEFAULTS_FILE_NAME);
@@ -153,7 +160,7 @@ public class RemoteConfigComponent {
         firebaseApp,
         namespace,
         firebaseInstallations,
-        firebaseAbt,
+        abtListener,
         executorService,
         fetchedCacheClient,
         activatedCacheClient,
@@ -168,7 +175,7 @@ public class RemoteConfigComponent {
       FirebaseApp firebaseApp,
       String namespace,
       FirebaseInstallationsApi firebaseInstallations,
-      FirebaseABTesting firebaseAbt,
+      FirebaseRemoteConfigABTListener firebaseRemoteConfigAbtListener,
       Executor executor,
       ConfigCacheClient fetchedClient,
       ConfigCacheClient activatedClient,
@@ -182,7 +189,7 @@ public class RemoteConfigComponent {
               context,
               firebaseApp,
               firebaseInstallations,
-              isAbtSupported(firebaseApp, namespace) ? firebaseAbt : null,
+              isAbtSupported(firebaseApp, namespace) ? firebaseRemoteConfigAbtListener : null,
               executor,
               fetchedClient,
               activatedClient,

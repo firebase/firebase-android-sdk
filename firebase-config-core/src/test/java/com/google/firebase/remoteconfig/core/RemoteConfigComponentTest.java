@@ -30,7 +30,6 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-import com.google.firebase.abt.FirebaseABTesting;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.remoteconfig.core.internal.ConfigCacheClient;
@@ -64,7 +63,7 @@ public class RemoteConfigComponentTest {
 
   @Mock private FirebaseApp mockFirebaseApp;
   @Mock private FirebaseInstallationsApi mockFirebaseInstallations;
-  @Mock private FirebaseABTesting mockFirebaseAbt;
+  @Mock private FirebaseRemoteConfigABTListener mockFirebaseRemoteConfigAbtListener;
   @Mock private AnalyticsConnector mockAnalyticsConnector;
   @Mock private ConfigCacheClient mockFetchedCache;
   @Mock private ConfigCacheClient mockActivatedCache;
@@ -102,7 +101,7 @@ public class RemoteConfigComponentTest {
         .that(fireperfFrc.activate().getResult())
         .isTrue();
 
-    verify(mockFirebaseAbt, never()).replaceAllExperiments(any());
+    verify(mockFirebaseRemoteConfigAbtListener, never()).onExperimentsActivated(any());
   }
 
   @Test
@@ -115,7 +114,7 @@ public class RemoteConfigComponentTest {
 
     assertWithMessage("Fetch and activate failed!").that(frc.activate().getResult()).isTrue();
 
-    verify(mockFirebaseAbt, never()).replaceAllExperiments(any());
+    verify(mockFirebaseRemoteConfigAbtListener, never()).onExperimentsActivated(any());
   }
 
   @Test
@@ -171,7 +170,6 @@ public class RemoteConfigComponentTest {
         directExecutor,
         mockFirebaseApp,
         mockFirebaseInstallations,
-        mockFirebaseAbt,
         mockAnalyticsConnector,
         /* loadGetDefault= */ true);
   }
@@ -182,7 +180,6 @@ public class RemoteConfigComponentTest {
         directExecutor,
         mockFirebaseApp,
         mockFirebaseInstallations,
-        mockFirebaseAbt,
         mockAnalyticsConnector,
         /* loadGetDefault= */ false);
   }
@@ -193,7 +190,7 @@ public class RemoteConfigComponentTest {
         mockFirebaseApp,
         namespace,
         mockFirebaseInstallations,
-        mockFirebaseAbt,
+        mockFirebaseRemoteConfigAbtListener,
         directExecutor,
         mockFetchedCache,
         mockActivatedCache,

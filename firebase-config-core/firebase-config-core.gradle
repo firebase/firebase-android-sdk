@@ -50,7 +50,6 @@ android {
 
 dependencies {
     implementation project(':firebase-common')
-    implementation project(':firebase-abt')
     implementation project(':firebase-components')
     implementation project(':firebase-installations-interop')
     runtimeOnly project(':firebase-installations')

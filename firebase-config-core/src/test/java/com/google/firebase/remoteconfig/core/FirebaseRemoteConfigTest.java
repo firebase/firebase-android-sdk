@@ -24,7 +24,6 @@ import static com.google.firebase.remoteconfig.core.FirebaseRemoteConfig.DEFAULT
 import static com.google.firebase.remoteconfig.core.FirebaseRemoteConfig.LAST_FETCH_STATUS_THROTTLED;
 import static com.google.firebase.remoteconfig.core.FirebaseRemoteConfig.toExperimentInfoMaps;
 import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -41,8 +40,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-import com.google.firebase.abt.AbtException;
-import com.google.firebase.abt.FirebaseABTesting;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
 import com.google.firebase.remoteconfig.core.internal.ConfigCacheClient;
@@ -124,7 +121,7 @@ public final class FirebaseRemoteConfigTest {
 
   @Mock private FirebaseRemoteConfigInfo mockFrcInfo;
 
-  @Mock private FirebaseABTesting mockFirebaseAbt;
+  @Mock private FirebaseRemoteConfigABTListener mockFirebaseRemoteConfigAbtListener;
   @Mock private FirebaseInstallationsApi mockFirebaseInstallations;
 
   private FirebaseRemoteConfig frc;
@@ -163,7 +160,7 @@ public final class FirebaseRemoteConfigTest {
             context,
             firebaseApp,
             mockFirebaseInstallations,
-            mockFirebaseAbt,
+            mockFirebaseRemoteConfigAbtListener,
             directExecutor,
             mockFetchedCache,
             mockActivatedCache,
@@ -367,24 +364,6 @@ public final class FirebaseRemoteConfigTest {
   }
 
   @Test
-  public void fetchAndActivate_callToAbtFails_activateStillSucceeds() throws Exception {
-    loadFetchHandlerWithResponse();
-    ConfigContainer containerWithAbtExperiments =
-        ConfigContainer.newBuilder(firstFetchedContainer)
-            .withAbtExperiments(generateAbtExperiments())
-            .build();
-
-    loadCacheWithConfig(mockFetchedCache, containerWithAbtExperiments);
-    cachePutReturnsConfig(mockActivatedCache, containerWithAbtExperiments);
-
-    doThrow(new AbtException("Abt failure!")).when(mockFirebaseAbt).replaceAllExperiments(any());
-
-    Task<Boolean> task = frc.fetchAndActivate();
-
-    assertWithMessage("fetchAndActivate() failed!").that(getTaskResult(task)).isTrue();
-  }
-
-  @Test
   public void fetchAndActivate_hasAbtExperiments_sendsExperimentsToAbt() throws Exception {
     loadFetchHandlerWithResponse();
     ConfigContainer containerWithAbtExperiments =
@@ -401,7 +380,7 @@ public final class FirebaseRemoteConfigTest {
 
     List<Map<String, String>> expectedExperimentInfoMaps =
         toExperimentInfoMaps(containerWithAbtExperiments.getAbtExperiments());
-    verify(mockFirebaseAbt).replaceAllExperiments(expectedExperimentInfoMaps);
+    verify(mockFirebaseRemoteConfigAbtListener).onExperimentsActivated(expectedExperimentInfoMaps);
   }
 
   @Test
@@ -417,7 +396,7 @@ public final class FirebaseRemoteConfigTest {
 
     assertWithMessage("2p fetchAndActivate() failed!").that(getTaskResult(task)).isTrue();
 
-    verify(mockFirebaseAbt, never()).replaceAllExperiments(any());
+    verify(mockFirebaseRemoteConfigAbtListener, never()).onExperimentsActivated(any());
   }
 
   @Test
@@ -435,7 +414,7 @@ public final class FirebaseRemoteConfigTest {
 
     assertWithMessage("2p fetchAndActivate() failed!").that(getTaskResult(task)).isTrue();
 
-    verify(mockFirebaseAbt, never()).replaceAllExperiments(any());
+    verify(mockFirebaseRemoteConfigAbtListener, never()).onExperimentsActivated(any());
   }
 
   @Test
@@ -562,24 +541,7 @@ public final class FirebaseRemoteConfigTest {
 
     assertWithMessage("activate() failed!").that(activateTask.getResult()).isTrue();
 
-    verify(mockFirebaseAbt).replaceAllExperiments(ImmutableList.of());
-  }
-
-  @Test
-  public void activate_callToAbtFails_activateStillSucceeds() throws Exception {
-    ConfigContainer containerWithAbtExperiments =
-        ConfigContainer.newBuilder(firstFetchedContainer)
-            .withAbtExperiments(generateAbtExperiments())
-            .build();
-
-    loadCacheWithConfig(mockFetchedCache, containerWithAbtExperiments);
-    cachePutReturnsConfig(mockActivatedCache, containerWithAbtExperiments);
-
-    doThrow(new AbtException("Abt failure!")).when(mockFirebaseAbt).replaceAllExperiments(any());
-
-    Task<Boolean> activateTask = frc.activate();
-
-    assertWithMessage("activate() failed!").that(activateTask.getResult()).isTrue();
+    verify(mockFirebaseRemoteConfigAbtListener).onExperimentsActivated(ImmutableList.of());
   }
 
   @Test
@@ -598,7 +560,7 @@ public final class FirebaseRemoteConfigTest {
 
     List<Map<String, String>> expectedExperimentInfoMaps =
         toExperimentInfoMaps(containerWithAbtExperiments.getAbtExperiments());
-    verify(mockFirebaseAbt).replaceAllExperiments(expectedExperimentInfoMaps);
+    verify(mockFirebaseRemoteConfigAbtListener).onExperimentsActivated(expectedExperimentInfoMaps);
   }
 
   @Test
@@ -613,7 +575,7 @@ public final class FirebaseRemoteConfigTest {
 
     assertWithMessage("Fireperf activate() failed!").that(activateTask.getResult()).isTrue();
 
-    verify(mockFirebaseAbt, never()).replaceAllExperiments(any());
+    verify(mockFirebaseRemoteConfigAbtListener, never()).onExperimentsActivated(any());
   }
 
   @Test
@@ -630,7 +592,7 @@ public final class FirebaseRemoteConfigTest {
 
     assertWithMessage("Fireperf activate() failed!").that(activateTask.getResult()).isTrue();
 
-    verify(mockFirebaseAbt, never()).replaceAllExperiments(any());
+    verify(mockFirebaseRemoteConfigAbtListener, never()).onExperimentsActivated(any());
   }
 
   @Test
