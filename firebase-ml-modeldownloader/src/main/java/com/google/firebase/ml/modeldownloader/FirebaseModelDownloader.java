@@ -55,7 +55,7 @@ public class FirebaseModelDownloader {
 
   /**
    * Get the downloaded model file based on download type and conditions. DownloadType behaviours:
-   * <ui>
+   * <ul>
    * <li>{@link DownloadType#LOCAL_MODEL}: returns the current model if present, otherwise triggers
    *     new download (or finds one in progress) and only completes when download is finished
    * <li>{@link DownloadType#LOCAL_MODEL_UPDATE_IN_BACKGROUND}: returns the current model if present
@@ -63,7 +63,7 @@ public class FirebaseModelDownloader {
    *     present triggers a new download (or finds one in progress) and only completes when download
    *     is finished.
    * <li>{@link DownloadType#LATEST_MODEL}: check for latest model, if different from local model,
-   *     trigger new download, task only completes when download finishes </ui>
+   *     trigger new download, task only completes when download finishes </ul>
    *
    * @param modelName - model name
    * @param downloadType - download type
