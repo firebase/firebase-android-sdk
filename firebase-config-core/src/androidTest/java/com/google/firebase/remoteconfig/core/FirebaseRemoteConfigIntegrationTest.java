@@ -29,7 +29,6 @@ import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-import com.google.firebase.abt.FirebaseABTesting;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.remoteconfig.core.internal.ConfigCacheClient;
 import com.google.firebase.remoteconfig.core.internal.ConfigContainer;
@@ -63,7 +62,7 @@ public class FirebaseRemoteConfigIntegrationTest {
   @Mock private ConfigCacheClient mockFireperfFetchedCache;
   @Mock private ConfigCacheClient mockFireperfActivatedCache;
 
-  @Mock private FirebaseABTesting mockFirebaseAbt;
+  @Mock private FirebaseRemoteConfigABTListener mockFirebaseAbtListener;
   @Mock private FirebaseInstallationsApi mockFirebaseInstallations;
   private FirebaseRemoteConfig frc;
 
@@ -101,7 +100,7 @@ public class FirebaseRemoteConfigIntegrationTest {
             context,
             firebaseApp,
             mockFirebaseInstallations,
-            mockFirebaseAbt,
+            mockFirebaseAbtListener,
             directExecutor,
             mockFetchedCache,
             mockActivatedCache,
