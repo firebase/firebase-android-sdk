@@ -14,12 +14,12 @@
 package com.google.firebase.ml.modeldownloader;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-import androidx.annotation.Nullable;
 import java.util.Set;
 
 public class FirebaseModelDownloader {

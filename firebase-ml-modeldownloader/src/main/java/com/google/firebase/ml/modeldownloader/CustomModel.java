@@ -24,7 +24,6 @@ import java.io.File;
  * on a device. The model file associated with this model can be updated, once the new model file is
  * fully uploaded, the original model file will be removed as soon as it is safe to do so.
  */
-
 public class CustomModel {
   private final String name;
   private final long downloadId;
