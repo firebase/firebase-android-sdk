@@ -63,6 +63,8 @@ public abstract class CrashlyticsReport {
     NATIVE
   }
 
+  public static final String DEVELOPMENT_PLATFORM_UNITY = "Unity";
+
   private static final Charset UTF_8 = Charset.forName("UTF-8");
 
   @NonNull
@@ -416,6 +418,12 @@ public abstract class CrashlyticsReport {
       @Nullable
       public abstract String getInstallationUuid();
 
+      @Nullable
+      public abstract String getDevelopmentPlatform();
+
+      @Nullable
+      public abstract String getDevelopmentPlatformVersion();
+
       @NonNull
       protected abstract Builder toBuilder();
 
@@ -445,6 +453,13 @@ public abstract class CrashlyticsReport {
 
         @NonNull
         public abstract Builder setInstallationUuid(@NonNull String installationUuid);
+
+        @NonNull
+        public abstract Builder setDevelopmentPlatform(@Nullable String developmentPlatform);
+
+        @NonNull
+        public abstract Builder setDevelopmentPlatformVersion(
+            @Nullable String developmentPlatformVersion);
 
         @NonNull
         public abstract Application build();
