@@ -137,7 +137,7 @@ public class CrashlyticsReportDataCapture {
   }
 
   private CrashlyticsReport.Session.Application populateSessionApplicationData() {
-    CrashlyticsReport.Session.Application.Builder builder =
+    final CrashlyticsReport.Session.Application.Builder builder =
         CrashlyticsReport.Session.Application.builder()
             .setIdentifier(idManager.getAppIdentifier())
             .setVersion(appData.versionCode)
