@@ -47,9 +47,7 @@ import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.ComponentRuntime;
 import com.google.firebase.components.Lazy;
 import com.google.firebase.events.Publisher;
-import com.google.firebase.heartbeatinfo.DefaultHeartBeatInfo;
 import com.google.firebase.internal.DataCollectionConfigStorage;
-import com.google.firebase.platforminfo.DefaultUserAgentPublisher;
 import com.google.firebase.platforminfo.KotlinDetector;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.nio.charset.Charset;
@@ -419,6 +417,7 @@ public class FirebaseApp {
     List<ComponentRegistrar> registrars =
         ComponentDiscovery.forContext(applicationContext, ComponentDiscoveryService.class)
             .discover();
+    registrars.add(new FirebaseCommonRegistrar());
 
     String kotlinVersion = KotlinDetector.detectVersion();
     componentRuntime =
@@ -428,11 +427,7 @@ public class FirebaseApp {
             Component.of(applicationContext, Context.class),
             Component.of(this, FirebaseApp.class),
             Component.of(options, FirebaseOptions.class),
-            LibraryVersionComponent.create(FIREBASE_ANDROID, ""),
-            LibraryVersionComponent.create(FIREBASE_COMMON, BuildConfig.VERSION_NAME),
-            kotlinVersion != null ? LibraryVersionComponent.create(KOTLIN, kotlinVersion) : null,
-            DefaultUserAgentPublisher.component(),
-            DefaultHeartBeatInfo.component());
+            kotlinVersion != null ? LibraryVersionComponent.create(KOTLIN, kotlinVersion) : null);
 
     dataCollectionConfigStorage =
         new Lazy<>(
