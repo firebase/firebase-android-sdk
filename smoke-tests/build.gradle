@@ -50,12 +50,6 @@ android {
     }
   }
 
-  // As required by Firebase Android Smart Reply doc:
-  // https://firebase.google.com/docs/ml-kit/android/generate-smart-replies#before-you-begin
-  aaptOptions {
-    noCompress "tflite"
-  }
-
   if (project.hasProperty("testBuildType")) {
     testBuildType project.getProperty("testBuildType")
   }
@@ -75,9 +69,8 @@ dependencies {
   implementation "com.google.firebase:firebase-firestore"
   implementation "com.google.firebase:firebase-functions"
   implementation "com.google.firebase:firebase-inappmessaging"
-  implementation "com.google.firebase:firebase-messaging"
-  implementation "com.google.firebase:firebase-ml-natural-language"
-  implementation "com.google.firebase:firebase-ml-natural-language-smart-reply-model"
+  // TODO(yifany): Remove version after messaging is up to date
+  implementation "com.google.firebase:firebase-messaging:21.0.0"
   implementation "com.google.firebase:firebase-ml-vision"
   implementation "com.google.firebase:firebase-perf"
   implementation "com.google.firebase:firebase-storage"
