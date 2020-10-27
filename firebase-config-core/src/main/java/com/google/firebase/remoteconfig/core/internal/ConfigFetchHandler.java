@@ -34,13 +34,13 @@ import androidx.annotation.WorkerThread;
 import com.google.android.gms.common.util.Clock;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
 import com.google.firebase.remoteconfig.core.FirebaseRemoteConfigClientException;
 import com.google.firebase.remoteconfig.core.FirebaseRemoteConfigException;
 import com.google.firebase.remoteconfig.core.FirebaseRemoteConfigFetchThrottledException;
 import com.google.firebase.remoteconfig.core.FirebaseRemoteConfigServerException;
+import com.google.firebase.remoteconfig.core.FirebaseRemoteConfigUserPropertiesProvider;
 import com.google.firebase.remoteconfig.core.internal.ConfigFetchHandler.FetchResponse.Status;
 import com.google.firebase.remoteconfig.core.internal.ConfigMetadataClient.BackoffMetadata;
 import java.lang.annotation.Retention;
@@ -79,7 +79,6 @@ public class ConfigFetchHandler {
   @VisibleForTesting static final int HTTP_TOO_MANY_REQUESTS = 429;
 
   private final FirebaseInstallationsApi firebaseInstallations;
-  @Nullable private final AnalyticsConnector analyticsConnector;
 
   private final Executor executor;
   private final Clock clock;
@@ -87,28 +86,29 @@ public class ConfigFetchHandler {
   private final ConfigCacheClient fetchedConfigsCache;
   private final ConfigFetchHttpClient frcBackendApiClient;
   private final ConfigMetadataClient frcMetadata;
+  private final FirebaseRemoteConfigUserPropertiesProvider userPropertiesProvider;
 
   private final Map<String, String> customHttpHeaders;
 
   /** FRC Fetch Handler constructor. */
   public ConfigFetchHandler(
       FirebaseInstallationsApi firebaseInstallations,
-      @Nullable AnalyticsConnector analyticsConnector,
       Executor executor,
       Clock clock,
       Random randomGenerator,
       ConfigCacheClient fetchedConfigsCache,
       ConfigFetchHttpClient frcBackendApiClient,
       ConfigMetadataClient frcMetadata,
+      @Nullable FirebaseRemoteConfigUserPropertiesProvider userPropertiesProvider,
       Map<String, String> customHttpHeaders) {
     this.firebaseInstallations = firebaseInstallations;
-    this.analyticsConnector = analyticsConnector;
     this.executor = executor;
     this.clock = clock;
     this.randomGenerator = randomGenerator;
     this.fetchedConfigsCache = fetchedConfigsCache;
     this.frcBackendApiClient = frcBackendApiClient;
     this.frcMetadata = frcMetadata;
+    this.userPropertiesProvider = userPropertiesProvider;
 
     this.customHttpHeaders = customHttpHeaders;
   }
@@ -497,12 +497,12 @@ public class ConfigFetchHandler {
   @WorkerThread
   private Map<String, String> getUserProperties() {
     Map<String, String> userPropertiesMap = new HashMap<>();
-    if (analyticsConnector == null) {
+    if (userPropertiesProvider == null) {
       return userPropertiesMap;
     }
 
     for (Map.Entry<String, Object> userPropertyEntry :
-        analyticsConnector.getUserProperties(/*includeInternal=*/ false).entrySet()) {
+        userPropertiesProvider.getUserProperties().entrySet()) {
       userPropertiesMap.put(userPropertyEntry.getKey(), userPropertyEntry.getValue().toString());
     }
     return userPropertiesMap;
@@ -511,8 +511,8 @@ public class ConfigFetchHandler {
   /** Used to verify that the fetch handler is getting Analytics as expected. */
   @VisibleForTesting
   @Nullable
-  public AnalyticsConnector getAnalyticsConnector() {
-    return analyticsConnector;
+  public FirebaseRemoteConfigUserPropertiesProvider getUserPropertiesProvider() {
+    return userPropertiesProvider;
   }
 
   /**

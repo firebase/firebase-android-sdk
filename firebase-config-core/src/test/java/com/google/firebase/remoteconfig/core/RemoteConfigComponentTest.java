@@ -30,7 +30,6 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.remoteconfig.core.internal.ConfigCacheClient;
 import com.google.firebase.remoteconfig.core.internal.ConfigContainer;
@@ -64,7 +63,7 @@ public class RemoteConfigComponentTest {
   @Mock private FirebaseApp mockFirebaseApp;
   @Mock private FirebaseInstallationsApi mockFirebaseInstallations;
   @Mock private FirebaseRemoteConfigABTListener mockFirebaseRemoteConfigAbtListener;
-  @Mock private AnalyticsConnector mockAnalyticsConnector;
+  @Mock private FirebaseRemoteConfigUserPropertiesProvider mockUserPropertiesProvider;
   @Mock private ConfigCacheClient mockFetchedCache;
   @Mock private ConfigCacheClient mockActivatedCache;
   @Mock private ConfigCacheClient mockDefaultsCache;
@@ -124,9 +123,9 @@ public class RemoteConfigComponentTest {
 
     ConfigFetchHandler fetchHandler =
         getNewFrcComponent()
-            .getFetchHandler(DEFAULT_NAMESPACE, mockFetchedCache, mockMetadataClient);
+            .getFetchHandler(DEFAULT_NAMESPACE, mockFetchedCache, mockMetadataClient, null);
 
-    assertThat(fetchHandler.getAnalyticsConnector()).isNull();
+    assertThat(fetchHandler.getUserPropertiesProvider()).isNull();
   }
 
   @Test
@@ -170,7 +169,6 @@ public class RemoteConfigComponentTest {
         directExecutor,
         mockFirebaseApp,
         mockFirebaseInstallations,
-        mockAnalyticsConnector,
         /* loadGetDefault= */ true);
   }
 
@@ -180,7 +178,6 @@ public class RemoteConfigComponentTest {
         directExecutor,
         mockFirebaseApp,
         mockFirebaseInstallations,
-        mockAnalyticsConnector,
         /* loadGetDefault= */ false);
   }
 

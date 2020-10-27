@@ -17,7 +17,6 @@ package com.google.firebase.remoteconfig.core;
 import android.content.Context;
 import androidx.annotation.Keep;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
@@ -42,14 +41,12 @@ public class RemoteConfigRegistrar implements ComponentRegistrar {
             .add(Dependency.required(Context.class))
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.required(FirebaseInstallationsApi.class))
-            .add(Dependency.optional(AnalyticsConnector.class))
             .factory(
                 container ->
                     new RemoteConfigComponent(
                         container.get(Context.class),
                         container.get(FirebaseApp.class),
-                        container.get(FirebaseInstallationsApi.class),
-                        container.get(AnalyticsConnector.class)))
+                        container.get(FirebaseInstallationsApi.class)))
             .eagerInDefaultApp()
             .build(),
         LibraryVersionComponent.create("fire-rc", BuildConfig.VERSION_NAME));

@@ -58,13 +58,13 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.MoreExecutors;
-import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
 import com.google.firebase.remoteconfig.core.FirebaseRemoteConfigClientException;
 import com.google.firebase.remoteconfig.core.FirebaseRemoteConfigFetchThrottledException;
 import com.google.firebase.remoteconfig.core.FirebaseRemoteConfigServerException;
 import com.google.firebase.remoteconfig.core.FirebaseRemoteConfigSettings;
+import com.google.firebase.remoteconfig.core.FirebaseRemoteConfigUserPropertiesProvider;
 import com.google.firebase.remoteconfig.core.internal.ConfigFetchHandler.FetchResponse;
 import com.google.firebase.remoteconfig.core.internal.ConfigMetadataClient.BackoffMetadata;
 import java.io.IOException;
@@ -630,12 +630,13 @@ public class ConfigFetchHandlerTest {
   @Test
   public void fetch_hasAnalyticsSdk_sendsUserProperties() throws Exception {
     // Provide the mock Analytics SDK.
-    AnalyticsConnector mockAnalyticsConnector = mock(AnalyticsConnector.class);
-    fetchHandler = getNewFetchHandler(mockAnalyticsConnector);
+    FirebaseRemoteConfigUserPropertiesProvider mockUserPropertiesProvider =
+        mock(FirebaseRemoteConfigUserPropertiesProvider.class);
+    fetchHandler = getNewFetchHandler(mockUserPropertiesProvider);
 
     Map<String, String> userProperties =
         ImmutableMap.of("up_key1", "up_val1", "up_key2", "up_val2");
-    when(mockAnalyticsConnector.getUserProperties(/*includeInternal=*/ false))
+    when(mockUserPropertiesProvider.getUserProperties())
         .thenReturn(ImmutableMap.copyOf(userProperties));
 
     fetchCallToHttpClientUpdatesClockAndReturnsConfig(firstFetchedContainer);
@@ -709,18 +710,19 @@ public class ConfigFetchHandlerTest {
         .isEqualTo(firstFetchedContainer.getFetchTime());
   }
 
-  private ConfigFetchHandler getNewFetchHandler(AnalyticsConnector analyticsConnector) {
+  private ConfigFetchHandler getNewFetchHandler(
+      FirebaseRemoteConfigUserPropertiesProvider userPropertiesProvider) {
     ConfigFetchHandler fetchHandler =
         spy(
             new ConfigFetchHandler(
                 mockFirebaseInstallations,
-                analyticsConnector,
                 directExecutor,
                 mockClock,
                 mockRandom,
                 mockFetchedCache,
                 mockBackendFetchApiClient,
                 metadataClient,
+                userPropertiesProvider,
                 /* customHttpHeaders= */ ImmutableMap.of()));
     return fetchHandler;
   }

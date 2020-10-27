@@ -17,14 +17,12 @@ package com.google.firebase.remoteconfig.core;
 import android.content.Context;
 import android.content.SharedPreferences;
 import androidx.annotation.GuardedBy;
-import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.annotation.KeepForSdk;
 import com.google.android.gms.common.util.Clock;
 import com.google.android.gms.common.util.DefaultClock;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.remoteconfig.core.internal.ConfigCacheClient;
 import com.google.firebase.remoteconfig.core.internal.ConfigFetchHandler;
@@ -75,7 +73,6 @@ public class RemoteConfigComponent {
   private final ExecutorService executorService;
   private final FirebaseApp firebaseApp;
   private final FirebaseInstallationsApi firebaseInstallations;
-  @Nullable private final AnalyticsConnector analyticsConnector;
 
   private final String appId;
 
@@ -84,16 +81,12 @@ public class RemoteConfigComponent {
 
   /** Firebase Remote Config Component constructor. */
   RemoteConfigComponent(
-      Context context,
-      FirebaseApp firebaseApp,
-      FirebaseInstallationsApi firebaseInstallations,
-      @Nullable AnalyticsConnector analyticsConnector) {
+      Context context, FirebaseApp firebaseApp, FirebaseInstallationsApi firebaseInstallations) {
     this(
         context,
         Executors.newCachedThreadPool(),
         firebaseApp,
         firebaseInstallations,
-        analyticsConnector,
         /* loadGetDefault= */ true);
   }
 
@@ -104,14 +97,11 @@ public class RemoteConfigComponent {
       ExecutorService executorService,
       FirebaseApp firebaseApp,
       FirebaseInstallationsApi firebaseInstallations,
-      @Nullable AnalyticsConnector analyticsConnector,
       boolean loadGetDefault) {
     this.context = context;
     this.executorService = executorService;
     this.firebaseApp = firebaseApp;
     this.firebaseInstallations = firebaseInstallations;
-    this.analyticsConnector = analyticsConnector;
-
     this.appId = firebaseApp.getOptions().getApplicationId();
 
     // When the component is first loaded, it will use a cached executor.
@@ -139,7 +129,7 @@ public class RemoteConfigComponent {
   @VisibleForTesting
   @KeepForSdk
   public synchronized FirebaseRemoteConfig get(String namespace) {
-    return get(namespace, null);
+    return get(namespace, null, null);
   }
 
   /**
@@ -151,7 +141,9 @@ public class RemoteConfigComponent {
   @VisibleForTesting
   @KeepForSdk
   public synchronized FirebaseRemoteConfig get(
-      String namespace, FirebaseRemoteConfigABTListener abtListener) {
+      String namespace,
+      FirebaseRemoteConfigABTListener abtListener,
+      FirebaseRemoteConfigUserPropertiesProvider userPropertiesProvider) {
     ConfigCacheClient fetchedCacheClient = getCacheClient(namespace, FETCH_FILE_NAME);
     ConfigCacheClient activatedCacheClient = getCacheClient(namespace, ACTIVATE_FILE_NAME);
     ConfigCacheClient defaultsCacheClient = getCacheClient(namespace, DEFAULTS_FILE_NAME);
@@ -165,7 +157,7 @@ public class RemoteConfigComponent {
         fetchedCacheClient,
         activatedCacheClient,
         defaultsCacheClient,
-        getFetchHandler(namespace, fetchedCacheClient, metadataClient),
+        getFetchHandler(namespace, fetchedCacheClient, metadataClient, userPropertiesProvider),
         getGetHandler(activatedCacheClient, defaultsCacheClient),
         metadataClient);
   }
@@ -232,16 +224,19 @@ public class RemoteConfigComponent {
 
   @VisibleForTesting
   synchronized ConfigFetchHandler getFetchHandler(
-      String namespace, ConfigCacheClient fetchedCacheClient, ConfigMetadataClient metadataClient) {
+      String namespace,
+      ConfigCacheClient fetchedCacheClient,
+      ConfigMetadataClient metadataClient,
+      FirebaseRemoteConfigUserPropertiesProvider userPropertiesProvider) {
     return new ConfigFetchHandler(
         firebaseInstallations,
-        isPrimaryApp(firebaseApp) ? analyticsConnector : null,
         executorService,
         DEFAULT_CLOCK,
         DEFAULT_RANDOM,
         fetchedCacheClient,
         getFrcBackendApiClient(firebaseApp.getOptions().getApiKey(), namespace, metadataClient),
         metadataClient,
+        userPropertiesProvider,
         this.customHeaders);
   }
 
