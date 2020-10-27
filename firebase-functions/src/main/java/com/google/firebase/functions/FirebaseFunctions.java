@@ -42,7 +42,6 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
-import org.apache.commons.validator.routines.UrlValidator;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -74,16 +73,13 @@ public class FirebaseFunctions {
   private final String projectId;
 
   // The region to use for all function references.
-  @Nullable private final String region;
+  private final String region;
 
   // A custom domain for the http trigger, such as "https://mydomain.com"
   @Nullable private final String customDomain;
 
   // The format to use for constructing urls from region, projectId, and name.
   private String urlFormat = "https://%1$s-%2$s.cloudfunctions.net/%3$s";
-
-  // Allowed custom domain protocols.
-  private String[] customDomainSchemes = {"http", "https"};
 
   // Emulator settings
   @Nullable private EmulatedServiceSettings emulatorSettings;
@@ -100,13 +96,20 @@ public class FirebaseFunctions {
     this.contextProvider = Preconditions.checkNotNull(contextProvider);
     this.projectId = Preconditions.checkNotNull(projectId);
 
-    UrlValidator validator = new UrlValidator(customDomainSchemes);
-    if (validator.isValid(regionOrCustomDomain)) {
-      this.region = null;
-      this.customDomain = regionOrCustomDomain;
-    } else {
+    boolean isRegion;
+    try {
+      new URL(regionOrCustomDomain);
+      isRegion = false;
+    } catch (MalformedURLException malformedURLException) {
+      isRegion = true;
+    }
+
+    if (isRegion) {
       this.region = regionOrCustomDomain;
       this.customDomain = null;
+    } else {
+      this.region = "us-central1";
+      this.customDomain = regionOrCustomDomain;
     }
 
     maybeInstallProviders(context);
@@ -209,21 +212,22 @@ public class FirebaseFunctions {
    */
   @VisibleForTesting
   URL getURL(String function) {
-    String str;
-    if (customDomain != null) {
-      str = customDomain + "/" + function;
-    } else {
-      EmulatedServiceSettings emulatorSettings = this.emulatorSettings;
-      if (emulatorSettings != null) {
-        urlFormat =
-            "http://"
-                + emulatorSettings.getHost()
-                + ":"
-                + emulatorSettings.getPort()
-                + "/%2$s/%1$s/%3$s";
-      }
-      str = String.format(urlFormat, region, projectId, function);
+    EmulatedServiceSettings emulatorSettings = this.emulatorSettings;
+    if (emulatorSettings != null) {
+      urlFormat =
+          "http://"
+              + emulatorSettings.getHost()
+              + ":"
+              + emulatorSettings.getPort()
+              + "/%2$s/%1$s/%3$s";
     }
+
+    String str = String.format(urlFormat, region, projectId, function);
+
+    if (customDomain != null && emulatorSettings == null) {
+      str = customDomain + "/" + function;
+    }
+
     try {
       return new URL(str);
     } catch (MalformedURLException mfe) {

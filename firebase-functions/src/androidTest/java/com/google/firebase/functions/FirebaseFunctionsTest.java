@@ -65,6 +65,14 @@ public class FirebaseFunctionsTest {
 
     URL withRegion = functionsWithRegion.getURL("my-endpoint");
     assertEquals("http://10.0.2.2:5001/my-project/my-region/my-endpoint", withRegion.toString());
+
+    FirebaseFunctions functionsWithCustomDomain =
+        FirebaseFunctions.getInstance(app, "https://mydomain.com");
+    functionsWithCustomDomain.useEmulator("10.0.2.2", 5001);
+
+    URL withCustomDOmain = functionsWithCustomDomain.getURL("my-endpoint");
+    assertEquals(
+        "http://10.0.2.2:5001/my-project/us-central1/my-endpoint", withCustomDOmain.toString());
   }
 
   @Test
