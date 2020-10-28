@@ -16,6 +16,7 @@ package com.google.firebase.ml.modeldownloader.internal;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
 import android.os.SystemClock;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -51,8 +52,8 @@ public class SharedPreferencesUtil {
    * Returns the Custom Model details currently associated with this model. If a fully downloaded
    * model is present - this returns the details of that model, including local file path. If an
    * update of an existing model is in progress, the local model plus the download id for the new
-   * upload is returned. To get only details related to the downloading model use
-   * getDownloadingCustomModelDetails. If this is the initial download of a local file - the
+   * upload is returned. To get only details related to the downloading model use {@link
+   * #getDownloadingCustomModelDetails}. If this is the initial download of a local file - the
    * downloading model details are returned.
    *
    * @param modelName - name of the model
@@ -138,7 +139,7 @@ public class SharedPreferencesUtil {
         .putLong(
             String.format(DOWNLOAD_BEGIN_TIME_MS_PATTERN, persistenceKey, modelName),
             SystemClock.elapsedRealtime())
-        .apply();
+        .commit();
   }
 
   /**
@@ -154,35 +155,19 @@ public class SharedPreferencesUtil {
     if (!id.equals(0L)) {
       throw new IllegalArgumentException("Only call when Custom model has completed download.");
     }
+    Editor editor = getSharedPreferences().edit();
+    clearDownloadingModelDetails(editor, customModel.getName());
 
     String modelName = customModel.getName();
     String hash = customModel.getModelHash();
     long size = customModel.getSize();
     String filePath = customModel.getLocalFilePath();
-    getSharedPreferences()
-        .edit()
+    editor
         .putString(String.format(LOCAL_MODEL_HASH_PATTERN, persistenceKey, modelName), hash)
         .putLong(String.format(LOCAL_MODEL_FILE_SIZE_PATTERN, persistenceKey, modelName), size)
         .putString(
             String.format(LOCAL_MODEL_FILE_PATH_PATTERN, persistenceKey, modelName), filePath)
-        .apply();
-
-    clearDownloadingModelDetails(customModel.getName());
-  }
-
-  /**
-   * Clears all stored data related to a custom model download.
-   *
-   * @param modelName - name of model
-   */
-  public synchronized void clearDownloadingModelDetails(@NonNull String modelName) {
-    getSharedPreferences()
-        .edit()
-        .remove(String.format(DOWNLOADING_MODEL_ID_PATTERN, persistenceKey, modelName))
-        .remove(String.format(DOWNLOADING_MODEL_HASH_PATTERN, persistenceKey, modelName))
-        .remove(String.format(DOWNLOADING_MODEL_SIZE_PATTERN, persistenceKey, modelName))
-        .remove(String.format(DOWNLOAD_BEGIN_TIME_MS_PATTERN, persistenceKey, modelName))
-        .apply();
+        .commit();
   }
 
   /**
@@ -194,18 +179,34 @@ public class SharedPreferencesUtil {
     if (cleanUpModelFile) {
       // TODO(annz) - add code to remove model files from device
     }
+    Editor editor = getSharedPreferences().edit();
 
-    clearDownloadingModelDetails(modelName);
+    clearDownloadingModelDetails(editor, modelName);
 
-    getSharedPreferences()
-        .edit()
+    editor
         .remove(String.format(LOCAL_MODEL_FILE_PATH_PATTERN, persistenceKey, modelName))
         .remove(String.format(LOCAL_MODEL_FILE_SIZE_PATTERN, persistenceKey, modelName))
         .remove(String.format(LOCAL_MODEL_HASH_PATTERN, persistenceKey, modelName))
+        .commit();
+  }
+
+  /**
+   * Clears all stored data related to a custom model download.
+   *
+   * @param modelName - name of model
+   */
+  @VisibleForTesting
+  synchronized void clearDownloadingModelDetails(Editor editor, @NonNull String modelName) {
+    editor
+        .remove(String.format(DOWNLOADING_MODEL_ID_PATTERN, persistenceKey, modelName))
+        .remove(String.format(DOWNLOADING_MODEL_HASH_PATTERN, persistenceKey, modelName))
+        .remove(String.format(DOWNLOADING_MODEL_SIZE_PATTERN, persistenceKey, modelName))
+        .remove(String.format(DOWNLOAD_BEGIN_TIME_MS_PATTERN, persistenceKey, modelName))
         .apply();
   }
 
-  private SharedPreferences getSharedPreferences() {
+  @VisibleForTesting
+  SharedPreferences getSharedPreferences() {
     return firebaseApp
         .getApplicationContext()
         .getSharedPreferences(PREFERENCES_PACKAGE_NAME, Context.MODE_PRIVATE);

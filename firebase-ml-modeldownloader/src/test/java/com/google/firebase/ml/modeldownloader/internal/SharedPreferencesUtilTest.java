@@ -44,13 +44,6 @@ public class SharedPreferencesUtilTest {
   private static final CustomModel CUSTOM_MODEL_DOWNLOADING =
       new CustomModel(MODEL_NAME, 986, 100, MODEL_HASH);
 
-  //  private static final FirebaseApp FIREBASE_APP = FirebaseApp.initializeApp(
-  //      ApplicationProvider.getApplicationContext(),
-  //      new FirebaseOptions.Builder()
-  //          .setApplicationId("1:123456789:android:abcdef")
-  //          .setProjectId(TEST_PROJECT_ID)
-  //          .build());
-
   private SharedPreferencesUtil sharedPreferencesUtil;
 
   @Before
@@ -119,7 +112,9 @@ public class SharedPreferencesUtilTest {
     sharedPreferencesUtil.setDownloadingCustomModelDetails(CUSTOM_MODEL_DOWNLOADING);
     CustomModel retrievedModel = sharedPreferencesUtil.getCustomModelDetails(MODEL_NAME);
     assertEquals(retrievedModel, CUSTOM_MODEL_UPDATE_IN_BACKGROUND);
-    sharedPreferencesUtil.clearDownloadingModelDetails(CUSTOM_MODEL_DOWNLOAD_COMPLETE.getName());
+    sharedPreferencesUtil.clearDownloadingModelDetails(
+        sharedPreferencesUtil.getSharedPreferences().edit(),
+        CUSTOM_MODEL_DOWNLOAD_COMPLETE.getName());
     retrievedModel = sharedPreferencesUtil.getCustomModelDetails(MODEL_NAME);
     assertEquals(retrievedModel, CUSTOM_MODEL_DOWNLOAD_COMPLETE);
   }

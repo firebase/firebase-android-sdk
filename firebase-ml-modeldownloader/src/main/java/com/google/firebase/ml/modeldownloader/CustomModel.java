@@ -42,11 +42,7 @@ public class CustomModel {
    */
   public CustomModel(
       @NonNull String name, long downloadId, long fileSize, @NonNull String modelHash) {
-    this.modelHash = modelHash;
-    this.name = name;
-    this.fileSize = fileSize;
-    this.downloadId = downloadId;
-    this.localFilePath = "";
+    this(name, downloadId, fileSize, modelHash, "");
   }
 
   /**
@@ -135,6 +131,11 @@ public class CustomModel {
         && Objects.equal(fileSize, other.fileSize)
         && Objects.equal(localFilePath, other.localFilePath)
         && Objects.equal(downloadId, other.downloadId);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(name, modelHash, fileSize, localFilePath, downloadId);
   }
 
   /**
