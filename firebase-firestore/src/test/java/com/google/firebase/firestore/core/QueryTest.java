@@ -15,7 +15,6 @@
 package com.google.firebase.firestore.core;
 
 import static com.google.firebase.firestore.model.DocumentKey.KEY_FIELD_NAME;
-import static com.google.firebase.firestore.testutil.Assert.assertThrows;
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
 import static com.google.firebase.firestore.testutil.TestUtil.filter;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
@@ -350,15 +349,6 @@ public class QueryTest {
     assertTrue(query.matches(doc4));
     assertTrue(query.matches(doc5));
     assertTrue(query.matches(doc6));
-  }
-
-  @Test
-  public void testOnlySupportsEqualsForNull() {
-    List<String> invalidOps = asList("<", "<=", ">", ">=");
-    Query query = Query.atPath(ResourcePath.fromString("collection"));
-    for (String op : invalidOps) {
-      assertThrows(IllegalArgumentException.class, () -> query.filter(filter("sort", op, null)));
-    }
   }
 
   @Test
