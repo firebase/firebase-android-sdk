@@ -74,20 +74,12 @@ public class FirebaseMessagingRegistrar implements ComponentRegistrar {
     // in 1p context there is no dependency on firebase-datatransport, so the factory may be
     // missing. Note that it is possible for it to be present if another SDK(e.g. fiam) is used in
     // the 1p app.
-    if (realFactory == null || !isFirelogJsonAvailable()) {
-      return new DevNullTransportFactory();
-    }
-
-    return realFactory;
-  }
-
-  static boolean isFirelogJsonAvailable() {
     try {
-      Class<?> clazz = Class.forName("com.google.android.datatransport.cct.CCTDestination");
-      Set<Encoding> encodingSet = (Set<Encoding>) clazz.getField("SUPPORTED_ENCODINGS").get(null);
-      return encodingSet.contains(Encoding.of("json"));
-    } catch (Exception e) {
-      return false;
+      // TODO: make sure this statement does not get proguarded away.
+      realFactory.getTransport("test", String.class, Encoding.of("json"), String::getBytes);
+      return realFactory;
+    } catch (IllegalArgumentException | NullPointerException e) {
+      return new DevNullTransportFactory();
     }
   }
 

@@ -40,7 +40,6 @@ public final class CCTDestination implements EncodedDestination {
   private static final String EXTRAS_VERSION_MARKER = "1$";
   private static final String EXTRAS_DELIMITER = "\\";
 
-  // This is private, but is used by reflection in firebase messaging, so changing it will break it.
   private static final Set<Encoding> SUPPORTED_ENCODINGS =
       Collections.unmodifiableSet(
           new HashSet<>(Arrays.asList(Encoding.of("proto"), Encoding.of("json"))));
