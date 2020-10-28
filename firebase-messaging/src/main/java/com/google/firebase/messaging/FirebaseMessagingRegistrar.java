@@ -21,7 +21,6 @@ import com.google.android.datatransport.Transformer;
 import com.google.android.datatransport.Transport;
 import com.google.android.datatransport.TransportFactory;
 import com.google.android.datatransport.TransportScheduleCallback;
-import com.google.android.datatransport.cct.CCTDestination;
 import com.google.android.gms.common.annotation.KeepForSdk;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.components.Component;
@@ -34,6 +33,7 @@ import com.google.firebase.platforminfo.LibraryVersionComponent;
 import com.google.firebase.platforminfo.UserAgentPublisher;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 
 /**
  * {@link ComponentRegistrar} for FirebaseMessaging - see
@@ -74,12 +74,21 @@ public class FirebaseMessagingRegistrar implements ComponentRegistrar {
     // in 1p context there is no dependency on firebase-datatransport, so the factory may be
     // missing. Note that it is possible for it to be present if another SDK(e.g. fiam) is used in
     // the 1p app.
-    if (realFactory == null
-        || !CCTDestination.LEGACY_INSTANCE.getSupportedEncodings().contains(Encoding.of("json"))) {
+    if (realFactory == null || !isFirelogJsonAvailable()) {
       return new DevNullTransportFactory();
     }
 
     return realFactory;
+  }
+
+  static boolean isFirelogJsonAvailable() {
+    try {
+      Class<?> clazz = Class.forName("com.google.android.datatransport.cct.CCTDestination");
+      Set<Encoding> encodingSet = (Set<Encoding>) clazz.getField("SUPPORTED_ENCODINGS").get(null);
+      return encodingSet.contains(Encoding.of("json"));
+    } catch (Exception e) {
+      return false;
+    }
   }
 
   /** Produces Transports that don't send events anywhere. */
