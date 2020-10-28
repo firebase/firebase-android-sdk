@@ -33,7 +33,6 @@ import com.google.firebase.platforminfo.LibraryVersionComponent;
 import com.google.firebase.platforminfo.UserAgentPublisher;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 
 /**
  * {@link ComponentRegistrar} for FirebaseMessaging - see
