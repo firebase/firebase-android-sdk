@@ -47,6 +47,7 @@ dependencies {
     implementation project(':firebase-components')
 
     implementation 'com.google.android.gms:play-services-tasks:17.2.0'
+    implementation 'javax.inject:javax.inject:1'
 
     compileOnly "com.google.auto.value:auto-value-annotations:1.6.6"
     annotationProcessor "com.google.auto.value:auto-value:1.6.5"
