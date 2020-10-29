@@ -72,20 +72,6 @@ public class FieldFilter extends Filter {
             operator.toString() + "queries don't make sense on document keys");
         return new KeyFieldFilter(path, operator, value);
       }
-    } else if (Values.isNullValue(value)) {
-      if (operator != Operator.EQUAL && operator != Operator.NOT_EQUAL) {
-        throw new IllegalArgumentException(
-            "Invalid Query. Null only supports comparisons via "
-                + "whereEqualTo() and whereNotEqualTo().");
-      }
-      return new FieldFilter(path, operator, value);
-    } else if (Values.isNanValue(value)) {
-      if (operator != Operator.EQUAL && operator != Operator.NOT_EQUAL) {
-        throw new IllegalArgumentException(
-            "Invalid Query. NaN only supports comparisons via "
-                + "whereEqualTo() and whereNotEqualTo().");
-      }
-      return new FieldFilter(path, operator, value);
     } else if (operator == Operator.ARRAY_CONTAINS) {
       return new ArrayContainsFilter(path, value);
     } else if (operator == Operator.IN) {
