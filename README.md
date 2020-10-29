@@ -193,7 +193,7 @@ to be honored during the app's proguarding phase.
 As a best practice, these explicit rules should be scoped to only libraries
 whose source code is outside the firebase-android-sdk codebase making annotation
 based approaches insufficient. The combination of keep rules resulting from the
-annotations, the proguard.txt, and the proguard.txt collectively determine the
+annotations and the proguard.txt collectively determine the
 APIs that are preserved at **runtime**.
 
 ## Publishing
