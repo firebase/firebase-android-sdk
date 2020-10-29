@@ -445,4 +445,10 @@ public class IntegrationTestUtil {
   public static void testChangeUserTo(User user) {
     MockCredentialsProvider.instance().changeUserTo(user);
   }
+
+  public static List<Object> nullList() {
+    List<Object> nullArray = new ArrayList<>();
+    nullArray.add(null);
+    return nullArray;
+  }
 }
