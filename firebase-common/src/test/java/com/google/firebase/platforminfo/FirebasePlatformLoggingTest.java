@@ -160,8 +160,8 @@ public class FirebasePlatformLoggingTest {
   @Test
   public void test_installerPackage_withInstallerSet() {
 
-    String installer = "com.example store";
-    String safeInstaller = "com.example_store";
+    String installer = "com/example store";
+    String safeInstaller = "com_example_store";
     ApplicationProvider.getApplicationContext()
         .getPackageManager()
         .setInstallerPackageName(
