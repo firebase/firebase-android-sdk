@@ -48,8 +48,6 @@ import com.google.firebase.components.ComponentRuntime;
 import com.google.firebase.components.Lazy;
 import com.google.firebase.events.Publisher;
 import com.google.firebase.internal.DataCollectionConfigStorage;
-import com.google.firebase.platforminfo.KotlinDetector;
-import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -419,15 +417,13 @@ public class FirebaseApp {
             .discover();
     registrars.add(new FirebaseCommonRegistrar());
 
-    String kotlinVersion = KotlinDetector.detectVersion();
     componentRuntime =
         new ComponentRuntime(
             UI_EXECUTOR,
             registrars,
             Component.of(applicationContext, Context.class),
             Component.of(this, FirebaseApp.class),
-            Component.of(options, FirebaseOptions.class),
-            kotlinVersion != null ? LibraryVersionComponent.create(KOTLIN, kotlinVersion) : null);
+            Component.of(options, FirebaseOptions.class));
 
     dataCollectionConfigStorage =
         new Lazy<>(

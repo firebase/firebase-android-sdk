@@ -21,8 +21,9 @@ import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.heartbeatinfo.DefaultHeartBeatInfo;
 import com.google.firebase.platforminfo.DefaultUserAgentPublisher;
+import com.google.firebase.platforminfo.KotlinDetector;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 
 /** @hide */
@@ -36,15 +37,20 @@ public class FirebaseCommonRegistrar implements ComponentRegistrar {
   private static final String MIN_SDK = "android-min-sdk";
   private static final String ANDROID_PLATFORM = "android-platform";
   private static final String ANDROID_INSTALLER = "android-installer";
+  private static final String KOTLIN = "kotlin";
 
   @Override
   public List<Component<?>> getComponents() {
-    return Arrays.asList(
-        LibraryVersionComponent.create(FIREBASE_ANDROID, String.valueOf(Build.VERSION.SDK_INT)),
-        LibraryVersionComponent.create(FIREBASE_COMMON, BuildConfig.VERSION_NAME),
-        LibraryVersionComponent.create(DEVICE_NAME, Build.PRODUCT),
-        LibraryVersionComponent.create(DEVICE_MODEL, Build.DEVICE),
-        LibraryVersionComponent.create(DEVICE_BRAND, Build.BRAND),
+    List<Component<?>> result = new ArrayList<>();
+    result.add(DefaultUserAgentPublisher.component());
+    result.add(DefaultHeartBeatInfo.component());
+    result.add(
+        LibraryVersionComponent.create(FIREBASE_ANDROID, String.valueOf(Build.VERSION.SDK_INT)));
+    result.add(LibraryVersionComponent.create(FIREBASE_COMMON, BuildConfig.VERSION_NAME));
+    result.add(LibraryVersionComponent.create(DEVICE_NAME, Build.PRODUCT));
+    result.add(LibraryVersionComponent.create(DEVICE_MODEL, Build.DEVICE));
+    result.add(LibraryVersionComponent.create(DEVICE_BRAND, Build.BRAND));
+    result.add(
         LibraryVersionComponent.fromContext(
             TARGET_SDK,
             ctx -> {
@@ -53,7 +59,8 @@ public class FirebaseCommonRegistrar implements ComponentRegistrar {
                 return String.valueOf(info.targetSdkVersion);
               }
               return "";
-            }),
+            }));
+    result.add(
         LibraryVersionComponent.fromContext(
             MIN_SDK,
             ctx -> {
@@ -62,7 +69,8 @@ public class FirebaseCommonRegistrar implements ComponentRegistrar {
                 return String.valueOf(info.minSdkVersion);
               }
               return "";
-            }),
+            }));
+    result.add(
         LibraryVersionComponent.fromContext(
             ANDROID_PLATFORM,
             ctx -> {
@@ -83,15 +91,20 @@ public class FirebaseCommonRegistrar implements ComponentRegistrar {
                 return "embedded";
               }
               return "";
-            }),
+            }));
+    result.add(
         LibraryVersionComponent.fromContext(
             ANDROID_INSTALLER,
             ctx -> {
               String installer =
                   ctx.getPackageManager().getInstallerPackageName(ctx.getPackageName());
               return (installer != null) ? installer : "";
-            }),
-        DefaultUserAgentPublisher.component(),
-        DefaultHeartBeatInfo.component());
+            }));
+
+    String kotlinVersion = KotlinDetector.detectVersion();
+    if (kotlinVersion != null) {
+      result.add(LibraryVersionComponent.create(KOTLIN, kotlinVersion));
+    }
+    return result;
   }
 }
