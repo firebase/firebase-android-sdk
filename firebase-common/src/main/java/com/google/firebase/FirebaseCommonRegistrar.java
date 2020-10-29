@@ -47,9 +47,9 @@ public class FirebaseCommonRegistrar implements ComponentRegistrar {
     result.add(
         LibraryVersionComponent.create(FIREBASE_ANDROID, String.valueOf(Build.VERSION.SDK_INT)));
     result.add(LibraryVersionComponent.create(FIREBASE_COMMON, BuildConfig.VERSION_NAME));
-    result.add(LibraryVersionComponent.create(DEVICE_NAME, Build.PRODUCT));
-    result.add(LibraryVersionComponent.create(DEVICE_MODEL, Build.DEVICE));
-    result.add(LibraryVersionComponent.create(DEVICE_BRAND, Build.BRAND));
+    result.add(LibraryVersionComponent.create(DEVICE_NAME, removeSpaces(Build.PRODUCT)));
+    result.add(LibraryVersionComponent.create(DEVICE_MODEL, removeSpaces(Build.DEVICE)));
+    result.add(LibraryVersionComponent.create(DEVICE_BRAND, removeSpaces(Build.BRAND)));
     result.add(
         LibraryVersionComponent.fromContext(
             TARGET_SDK,
@@ -98,7 +98,7 @@ public class FirebaseCommonRegistrar implements ComponentRegistrar {
             ctx -> {
               String installer =
                   ctx.getPackageManager().getInstallerPackageName(ctx.getPackageName());
-              return (installer != null) ? installer : "";
+              return (installer != null) ? removeSpaces(installer) : "";
             }));
 
     String kotlinVersion = KotlinDetector.detectVersion();
@@ -106,5 +106,9 @@ public class FirebaseCommonRegistrar implements ComponentRegistrar {
       result.add(LibraryVersionComponent.create(KOTLIN, kotlinVersion));
     }
     return result;
+  }
+
+  private static String removeSpaces(String value) {
+    return value.replace(' ', '_');
   }
 }

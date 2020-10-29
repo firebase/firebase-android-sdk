@@ -160,7 +160,8 @@ public class FirebasePlatformLoggingTest {
   @Test
   public void test_installerPackage_withInstallerSet() {
 
-    String installer = "com.example.store";
+    String installer = "com.example store";
+    String safeInstaller = "com.example_store";
     ApplicationProvider.getApplicationContext()
         .getPackageManager()
         .setInstallerPackageName(
@@ -171,7 +172,7 @@ public class FirebasePlatformLoggingTest {
         app -> {
           UserAgentPublisher ua = app.get(UserAgentPublisher.class);
 
-          assertThat(ua.getUserAgent()).contains("android-installer/" + installer);
+          assertThat(ua.getUserAgent()).contains("android-installer/" + safeInstaller);
         });
   }
 }
