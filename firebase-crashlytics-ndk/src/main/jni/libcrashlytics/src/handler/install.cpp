@@ -197,5 +197,6 @@ bool install_handlers(detail::context handler_context)
 #if defined (CRASHLYTICS_DEBUG)
 //! When building in debug, we can search for this symbol in the output of readelf or objdump, to verify
 //  that a particular artifact has been compiled with this macro defined.
-extern "C" void debug_mode_is_enabled() {}
+extern "C" void debug_mode_is_enabled() __attribute__((visibility ("default")));
+void debug_mode_is_enabled() {}
 #endif
