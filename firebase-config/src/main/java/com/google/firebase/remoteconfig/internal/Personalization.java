@@ -23,10 +23,10 @@ import com.google.firebase.analytics.connector.AnalyticsConnector;
 import org.json.JSONObject;
 
 public class Personalization {
-  static final String ANALYTICS_ORIGIN_PERSONALIZATION = "fp";
-  static final String ANALYTICS_PULL_EVENT = "_fpc";
-  static final String ARM_KEY = "_fpid";
-  static final String ARM_VALUE = "_fpct";
+  public static final String ANALYTICS_ORIGIN_PERSONALIZATION = "fp";
+  public static final String ANALYTICS_PULL_EVENT = "_fpc";
+  public static final String ARM_KEY = "_fpid";
+  public static final String ARM_VALUE = "_fpct";
   static final String PERSONALIZATION_ID = "personalizationId";
 
   /** The app's Firebase Analytics client. */
