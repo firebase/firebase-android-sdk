@@ -202,6 +202,7 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
   private static final String REQUEST_ACTION = "a";
   private static final String REQUEST_ACTION_STATS = "s";
   private static final String REQUEST_ACTION_QUERY = "q";
+  private static final String REQUEST_ACTION_GET = "g";
   private static final String REQUEST_ACTION_PUT = "p";
   private static final String REQUEST_ACTION_MERGE = "m";
   private static final String REQUEST_ACTION_QUERY_UNLISTEN = "n";
@@ -354,7 +355,7 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
     if (connected()) {
       task = sendGet(query, source);
     } else {
-      source.setException(new Exception("Client offline!"));
+      source.setException(new Exception("Client is offline"));
       task = source.getTask();
     }
     doIdleCheck();
@@ -1071,18 +1072,15 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
     request.put(REQUEST_PATH, ConnectionUtils.pathToString(query.path));
     request.put(REQUEST_QUERIES, query.queryParams);
     sendAction(
-        REQUEST_ACTION_QUERY,
+        REQUEST_ACTION_GET,
         request,
         new ConnectionRequestCallback() {
           @Override
           public void onResponse(Map<String, Object> response) {
             String status = (String) response.get(REQUEST_STATUS);
             if (status.equals("ok")) {
-              String pathString = (String) response.get(SERVER_DATA_UPDATE_PATH);
-              List<String> path = ConnectionUtils.stringToPath(pathString);
               Object body = response.get(SERVER_DATA_UPDATE_BODY);
-              Long tagNumber = ConnectionUtils.longFromObject(response.get(SERVER_DATA_TAG));
-              delegate.onDataUpdate(path, body, /*isMerge=*/ false, /*tagNumber=*/ tagNumber);
+              delegate.onDataUpdate(query.path, body, /*isMerge=*/ false, /*tagNumber=*/ null);
               source.setResult(body);
             } else {
               source.setException(new Exception((String) response.get(SERVER_DATA_UPDATE_BODY)));

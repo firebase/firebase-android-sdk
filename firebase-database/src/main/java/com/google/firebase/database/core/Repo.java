@@ -17,7 +17,7 @@ package com.google.firebase.database.core;
 import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
 
 import androidx.annotation.NonNull;
-import com.google.android.gms.tasks.Continuation;
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.database.DataSnapshot;
@@ -468,34 +468,48 @@ public class Repo implements PersistentConnection.Delegate {
   }
 
   public Task<DataSnapshot> getValue(Query query) {
-    return connection
-        .get(query.getPath().asList(), query.getSpec().getParams().getWireProtocolParams())
-        .continueWithTask(
-            new Continuation<Object, Task<DataSnapshot>>() {
-              @Override
-              public Task<DataSnapshot> then(@NonNull Task<Object> task) throws Exception {
-                TaskCompletionSource<DataSnapshot> source = new TaskCompletionSource<>();
-                if (!task.isSuccessful()) {
-                  Node cached =
-                      serverSyncTree.calcCompleteEventCache(query.getPath(), new ArrayList<>());
-                  if (cached.isEmpty()) {
-                    source.setException(new Exception("Client offline with empty cache!"));
-                  } else {
-                    source.setResult(
-                        InternalHelpers.createDataSnapshot(
-                            query.getRef(), IndexedNode.from(cached, query.getSpec().getIndex())));
-                  }
-                } else {
-                  Node serverNode = NodeUtilities.NodeFromJSON(task.getResult());
-                  postEvents(serverSyncTree.applyServerOverwrite(query.getPath(), serverNode));
-                  source.setResult(
-                      InternalHelpers.createDataSnapshot(
-                          query.getRef(),
-                          IndexedNode.from(serverNode, query.getSpec().getIndex())));
-                }
-                return source.getTask();
-              }
-            });
+    TaskCompletionSource<DataSnapshot> source = new TaskCompletionSource<>();
+    this.scheduleNow(
+        new Runnable() {
+          @Override
+          public void run() {
+            connection
+                .get(query.getPath().asList(), query.getSpec().getParams().getWireProtocolParams())
+                .addOnCompleteListener(
+                    new OnCompleteListener<Object>() {
+                      @Override
+                      public void onComplete(@NonNull Task<Object> task) {
+                        if (!task.isSuccessful()) {
+                          operationLogger.info(
+                              "get for query "
+                                  + query.getPath()
+                                  + " falling back to cache after error: "
+                                  + task.getException().getMessage());
+                          Node cached =
+                              serverSyncTree.calcCompleteEventCache(
+                                  query.getPath(), new ArrayList<>());
+                          if (cached.isEmpty()) {
+                            source.setException(task.getException());
+                          } else {
+                            source.setResult(
+                                InternalHelpers.createDataSnapshot(
+                                    query.getRef(),
+                                    IndexedNode.from(cached, query.getSpec().getIndex())));
+                          }
+                          return;
+                        }
+                        Node serverNode = NodeUtilities.NodeFromJSON(task.getResult());
+                        postEvents(
+                            serverSyncTree.applyServerOverwrite(query.getPath(), serverNode));
+                        source.setResult(
+                            InternalHelpers.createDataSnapshot(
+                                query.getRef(),
+                                IndexedNode.from(serverNode, query.getSpec().getIndex())));
+                      }
+                    });
+          }
+        });
+    return source.getTask();
   }
 
   public void updateChildren(
