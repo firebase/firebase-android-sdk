@@ -105,13 +105,10 @@ public class ReportUploader {
       boolean shouldDeleteReport = true;
 
       if (dataTransportState == DataTransportState.ALL) {
-        Logger.getLogger()
-            .d("Report configured to be sent via DataTransport.");
+        Logger.getLogger().d("Report configured to be sent via DataTransport.");
       } else if (dataTransportState == DataTransportState.JAVA_ONLY
           && report.getType() == Report.Type.JAVA) {
-        Logger.getLogger()
-            .d(
-                "Report configured to be sent via DataTransport.");
+        Logger.getLogger().d("Report configured to be sent via DataTransport.");
       } else {
         final boolean sent = createReportCall.invoke(requestData, dataCollectionToken);
         Logger.getLogger()
