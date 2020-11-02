@@ -3581,7 +3581,6 @@ public class QueryTest {
     List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference writer = refs.get(0);
     DatabaseReference reader = refs.get(1);
-
     final Semaphore semaphore = new Semaphore(0);
 
     final Map list =
