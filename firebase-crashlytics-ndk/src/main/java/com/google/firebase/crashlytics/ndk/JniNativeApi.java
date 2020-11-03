@@ -14,7 +14,9 @@
 
 package com.google.firebase.crashlytics.ndk;
 
+import android.annotation.TargetApi;
 import android.content.Context;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
@@ -60,6 +62,17 @@ class JniNativeApi implements NativeApi {
     this.context = context;
   }
 
+  public static boolean isAtLeastLollipop() {
+    return android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP;
+  }
+
+  @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+  public static void addSplitSourceDirs(List<String> zipPaths, ApplicationInfo applicationInfo) {
+    if (applicationInfo.splitSourceDirs != null) {
+      Collections.addAll(zipPaths, applicationInfo.splitSourceDirs);
+    }
+  }
+
   public String[] makePackagePaths(String arch) {
     try {
       PackageManager pm = context.getPackageManager();
@@ -70,8 +83,9 @@ class JniNativeApi implements NativeApi {
 
       List<String> zipPaths = new ArrayList<>(10);
       zipPaths.add(pi.applicationInfo.sourceDir);
-      if (pi.applicationInfo.splitSourceDirs != null) {
-        Collections.addAll(zipPaths, pi.applicationInfo.splitSourceDirs);
+
+      if (isAtLeastLollipop()) {
+        addSplitSourceDirs(zipPaths, pi.applicationInfo);
       }
 
       if (pi.applicationInfo.sharedLibraryFiles != null) {
