@@ -133,7 +133,7 @@ final class CctTransportBackend implements TransportBackend {
     return (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
   }
 
-  private static int getVersionCode(Context context) {
+  private static int getPackageVersionCode(Context context) {
     try {
       int packageVersionCode =
           context
@@ -142,7 +142,7 @@ final class CctTransportBackend implements TransportBackend {
               .versionCode;
       return packageVersionCode;
     } catch (PackageManager.NameNotFoundException e) {
-      Logging.e(LOG_TAG, "Couldn't find version code", e);
+      Logging.e(LOG_TAG, "Unable to find version code for package", e);
     }
     return INVALID_VERSION_CODE;
   }
@@ -167,7 +167,8 @@ final class CctTransportBackend implements TransportBackend {
         .addMetadata(KEY_COUNTRY, Locale.getDefault().getCountry())
         .addMetadata(KEY_LOCALE, Locale.getDefault().getLanguage())
         .addMetadata(KEY_MCC_MNC, getTelephonyManager(applicationContext).getSimOperator())
-        .addMetadata(KEY_APPLICATION_BUILD, Integer.toString(getVersionCode(applicationContext)))
+        .addMetadata(
+            KEY_APPLICATION_BUILD, Integer.toString(getPackageVersionCode(applicationContext)))
         .build();
   }
 
