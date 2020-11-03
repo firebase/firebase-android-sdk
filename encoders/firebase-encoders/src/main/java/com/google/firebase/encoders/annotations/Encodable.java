@@ -27,7 +27,7 @@ import java.lang.annotation.Target;
  *
  * Using the generated encoder:
  * <pre>{@code
- * @Encodable
+ * {@literal @}Encodable
  * public class MyType {
  *   public String getField() { return "hello"; }
  *   public boolean isConditional() { return false; }

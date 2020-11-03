@@ -27,7 +27,10 @@ if (isErrorProneRequested) {
         }
         tasks.withType(JavaCompile) {
             options.errorprone.excludedPaths = '.*/build/generated/.*'
-            options.errorprone.disable('MissingSummary', 'AnnotateFormatMethod', 'InvalidBlockTag')
+            options.errorprone.disable(
+                    'JdkObsolete',
+                    'ProtoTimestampGetSecondsGetNano',
+            )
         }
     }
 }
