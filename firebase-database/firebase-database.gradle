@@ -108,7 +108,8 @@ dependencies {
 
 gradle.projectsEvaluated {
     tasks.withType(JavaCompile) {
-        options.compilerArgs << "-Xlint:deprecation" << "-Werror"
+        // TODO: Re-enable error on warnings once errorprone issues are fixed.
+        options.compilerArgs << "-Xlint:deprecation" // << "-Werror"
     }
 }
 
