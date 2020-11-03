@@ -42,8 +42,7 @@ class GetIdListener implements StateListener {
   }
 
   @Override
-  public boolean onException(
-      PersistedInstallationEntry persistedInstallationEntry, Exception exception) {
+  public boolean onException(Exception exception) {
     return false;
   }
 }

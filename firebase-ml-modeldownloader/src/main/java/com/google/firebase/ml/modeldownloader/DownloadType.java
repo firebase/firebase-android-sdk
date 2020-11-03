@@ -1,4 +1,4 @@
-// Copyright 2019 Google LLC
+// Copyright 2020 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,20 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.installations;
+package com.google.firebase.ml.modeldownloader;
 
-import com.google.firebase.installations.local.PersistedInstallationEntry;
-
-interface StateListener {
+public enum DownloadType {
+  /** Use local model when present, otherwise download and return latest model */
+  LOCAL_MODEL,
   /**
-   * Returns {@code true} if the defined {@link PersistedInstallationEntry} state is reached, {@code
-   * false} otherwise.
+   * When local model present: Use local model and download latest model in background. Otherwise,
+   * download and return latest model.
    */
-  boolean onStateReached(PersistedInstallationEntry persistedInstallationEntry);
-
+  LOCAL_MODEL_UPDATE_IN_BACKGROUND,
   /**
-   * Returns {@code true} if an exception is thrown while registering a Firebase Installation,
-   * {@code false} otherwise.
+   * Always return latest model, check for latest model and download new model (when needed) before
+   * returning.
    */
-  boolean onException(Exception exception);
+  LATEST_MODEL
 }

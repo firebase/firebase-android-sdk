@@ -305,12 +305,12 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     }
   }
 
-  private void triggerOnException(PersistedInstallationEntry prefs, Exception exception) {
+  private void triggerOnException(Exception exception) {
     synchronized (lock) {
       Iterator<StateListener> it = listeners.iterator();
       while (it.hasNext()) {
         StateListener l = it.next();
-        boolean doneListening = l.onException(prefs, exception);
+        boolean doneListening = l.onException(exception);
         if (doneListening) {
           it.remove();
         }
@@ -366,7 +366,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
         return;
       }
     } catch (FirebaseInstallationsException e) {
-      triggerOnException(prefs, e);
+      triggerOnException(e);
       return;
     }
 
@@ -380,11 +380,11 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
     // Let the caller know about the result.
     if (prefs.isErrored()) {
-      triggerOnException(prefs, new FirebaseInstallationsException(Status.BAD_CONFIG));
+      triggerOnException(new FirebaseInstallationsException(Status.BAD_CONFIG));
     } else if (prefs.isNotGenerated()) {
       // If there is no fid it means the call failed with an auth error. Simulate an
       // IOException so that the caller knows to try again.
-      triggerOnException(prefs, new IOException(AUTH_ERROR_MSG));
+      triggerOnException(new IOException(AUTH_ERROR_MSG));
     } else {
       triggerOnStateReached(prefs);
     }

@@ -137,12 +137,20 @@ public class CrashlyticsReportDataCapture {
   }
 
   private CrashlyticsReport.Session.Application populateSessionApplicationData() {
-    return CrashlyticsReport.Session.Application.builder()
-        .setIdentifier(idManager.getAppIdentifier())
-        .setVersion(appData.versionCode)
-        .setDisplayVersion(appData.versionName)
-        .setInstallationUuid(idManager.getCrashlyticsInstallId())
-        .build();
+    final CrashlyticsReport.Session.Application.Builder builder =
+        CrashlyticsReport.Session.Application.builder()
+            .setIdentifier(idManager.getAppIdentifier())
+            .setVersion(appData.versionCode)
+            .setDisplayVersion(appData.versionName)
+            .setInstallationUuid(idManager.getCrashlyticsInstallId());
+
+    final String unityVersion = appData.unityVersionProvider.getUnityVersion();
+    if (unityVersion != null) {
+      builder
+          .setDevelopmentPlatform(CrashlyticsReport.DEVELOPMENT_PLATFORM_UNITY)
+          .setDevelopmentPlatformVersion(unityVersion);
+    }
+    return builder.build();
   }
 
   private CrashlyticsReport.Session.OperatingSystem populateSessionOperatingSystemData() {
