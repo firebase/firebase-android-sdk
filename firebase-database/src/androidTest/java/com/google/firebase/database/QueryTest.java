@@ -36,7 +36,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Semaphore;
@@ -3422,50 +3421,48 @@ public class QueryTest {
   @Test
   public void emptyQueryGet() throws DatabaseException, InterruptedException {
     FirebaseApp app =
-        appForDatabaseUrl(IntegrationTestValues.getAltNamespace(), UUID.randomUUID().toString());
+        appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
     FirebaseDatabase db = FirebaseDatabase.getInstance(app);
-    db.useEmulator("10.0.2.2", 9000);
-    DatabaseReference node = db.getReference();
     try {
-      Tasks.await(node.get());
+      Tasks.await(db.getReference("dummy/").setValue(42L));
+      assertNull(Tasks.await(db.getReference("null/").get()).getValue());
     } catch (ExecutionException e) {
-      assertEquals(e.getCause().getMessage(), "Client is offline");
-      return;
+      fail(e.getMessage());
     }
-    fail();
   }
 
   @Test
   public void offlineQueryGet() throws DatabaseException, InterruptedException {
     FirebaseApp app =
-        appForDatabaseUrl(IntegrationTestValues.getAltNamespace(), UUID.randomUUID().toString());
+        appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
     FirebaseDatabase db = FirebaseDatabase.getInstance(app);
-    db.useEmulator("10.0.2.2", 9000);
     DatabaseReference node = db.getReference();
-    DatabaseConfig cfg = IntegrationTestHelpers.newTestConfig();
-    IntegrationTestHelpers.goOffline(cfg);
+    try {
+      Tasks.await(node.setValue(42L));
+    } catch (ExecutionException e) {
+      fail();
+    }
+    db.goOffline();
     try {
       Tasks.await(node.get());
     } catch (ExecutionException e) {
       assertEquals(e.getCause().getMessage(), "Client is offline");
       return;
     }
-    fail();
+    fail("Client get succeeded even though offline.");
   }
 
   @Test
   public void getQueryBasic() throws DatabaseException, InterruptedException {
     FirebaseApp app =
-        appForDatabaseUrl(IntegrationTestValues.getAltNamespace(), UUID.randomUUID().toString());
+        appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
     FirebaseDatabase db = FirebaseDatabase.getInstance(app);
-    db.useEmulator("10.0.2.2", 9000);
     DatabaseReference node = db.getReference();
-    final Semaphore semaphore = new Semaphore(0);
     try {
       Tasks.await(node.setValue(42));
       assertEquals(42L, Tasks.await(node.get()).getValue());
     } catch (ExecutionException e) {
-      fail();
+      fail(e.getMessage());
     }
   }
 
@@ -3475,57 +3472,31 @@ public class QueryTest {
     FirebaseApp app =
         appForDatabaseUrl(IntegrationTestValues.getAltNamespace(), UUID.randomUUID().toString());
     FirebaseDatabase db = FirebaseDatabase.getInstance(app);
-    db.useEmulator("10.0.2.2", 9000);
     DatabaseReference ref = db.getReference();
-    DatabaseConfig cfg = IntegrationTestHelpers.newTestConfig();
-    ReadFuture future = ReadFuture.untilNonNull(ref);
-    ref.setValue(42);
-    assertEquals(42L, future.waitForLastValue());
-    IntegrationTestHelpers.goOffline(cfg);
-    try {
-      assertEquals(42L, Tasks.await(ref.get()).getValue());
-    } catch (ExecutionException e) {
-      fail();
-    }
-  }
-
-  @Test
-  public void getQueryHitsCacheWhenOffline()
-      throws InterruptedException, ExecutionException, TimeoutException, TestFailure {
-    FirebaseApp readerApp =
-        appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
-    FirebaseApp writerApp =
-        appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
-    FirebaseDatabase readerDb = FirebaseDatabase.getInstance(readerApp);
-    FirebaseDatabase writerDb = FirebaseDatabase.getInstance(writerApp);
-    readerDb.useEmulator("10.0.2.2", 9000);
-    writerDb.useEmulator("10.0.2.2", 9000);
-    DatabaseReference reader = readerDb.getReference("/foo");
-    DatabaseReference writer = writerDb.getReference("/foo");
-
-    WriteFuture write = new WriteFuture(writer, 42L);
-    assertNull(write.timedGet());
-
     final Semaphore semaphore = new Semaphore(0);
-    reader.addValueEventListener(
+    ValueEventListener listener =
         new ValueEventListener() {
           @Override
           public void onDataChange(@NonNull DataSnapshot snapshot) {
-            if (Objects.requireNonNull(snapshot.getValue()).equals(42L)) {
+            if (snapshot.getValue() != null && snapshot.getValue().equals(42L)) {
               semaphore.release();
             }
           }
 
           @Override
           public void onCancelled(@NonNull DatabaseError error) {}
-        });
+        };
+    ref.addValueEventListener(listener);
+    ref.setValue(42L);
     IntegrationTestHelpers.waitFor(semaphore);
-    reader.getDatabase().goOffline();
+    db.goOffline();
     try {
-      DataSnapshot snapshot = Tasks.await(reader.get());
-      assertEquals(42L, snapshot.getValue());
+      // Since we still have a listener on `ref`, the 42L should be cached here.
+      assertEquals(42L, Tasks.await(ref.get()).getValue());
     } catch (ExecutionException e) {
-      fail();
+      fail(e.getMessage());
+    } finally {
+      ref.removeEventListener(listener);
     }
   }
 
@@ -3539,15 +3510,18 @@ public class QueryTest {
         appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
     FirebaseDatabase readerDb = FirebaseDatabase.getInstance(readerApp);
     FirebaseDatabase writerDb = FirebaseDatabase.getInstance(writerApp);
-    readerDb.useEmulator("10.0.2.2", 9000);
-    writerDb.useEmulator("10.0.2.2", 9000);
     DatabaseReference reader = readerDb.getReference();
     DatabaseReference writer = writerDb.getReference();
 
+    final Semaphore semaphore = new Semaphore(0);
     reader.addValueEventListener(
         new ValueEventListener() {
           @Override
-          public void onDataChange(@NonNull DataSnapshot snapshot) {}
+          public void onDataChange(@NonNull DataSnapshot snapshot) {
+            if (snapshot.getValue() != null && snapshot.getValue().equals(42L)) {
+              semaphore.release();
+            }
+          }
 
           @Override
           public void onCancelled(@NonNull DatabaseError error) {}
@@ -3555,14 +3529,7 @@ public class QueryTest {
 
     WriteFuture write = new WriteFuture(writer, 42L);
     assertNull(write.timedGet());
-
-    final Semaphore semaphore = new Semaphore(0);
-
-    try {
-      assertEquals(42L, Tasks.await(reader.get()).getValue());
-    } catch (ExecutionException e) {
-      fail();
-    }
+    IntegrationTestHelpers.waitFor(semaphore);
 
     write = new WriteFuture(writer, 43L);
     assertNull(write.timedGet());
@@ -3570,7 +3537,7 @@ public class QueryTest {
     try {
       assertEquals(43L, Tasks.await(reader.get()).getValue());
     } catch (ExecutionException e) {
-      fail();
+      fail(e.getMessage());
     }
   }
 
