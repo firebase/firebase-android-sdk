@@ -54,7 +54,6 @@ import com.google.firebase.crashlytics.internal.stacktrace.MiddleOutFallbackStra
 import com.google.firebase.crashlytics.internal.stacktrace.RemoveRepeatsStrategy;
 import com.google.firebase.crashlytics.internal.stacktrace.StackTraceTrimmingStrategy;
 import com.google.firebase.crashlytics.internal.stacktrace.TrimmedThrowableData;
-import com.google.firebase.crashlytics.internal.unity.UnityVersionProvider;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -293,7 +292,6 @@ class CrashlyticsController {
       ReportManager reportManager,
       ReportUploader.Provider reportUploaderProvider,
       CrashlyticsNativeComponent nativeComponent,
-      UnityVersionProvider unityVersionProvider,
       AnalyticsEventLogger analyticsEventLogger,
       SettingsDataProvider settingsDataProvider) {
     this.context = context;
@@ -311,7 +309,7 @@ class CrashlyticsController {
       this.reportUploaderProvider = defaultReportUploader();
     }
     this.nativeComponent = nativeComponent;
-    this.unityVersion = unityVersionProvider.getUnityVersion();
+    this.unityVersion = appData.unityVersionProvider.getUnityVersion();
     this.analyticsEventLogger = analyticsEventLogger;
 
     this.userMetadata = new UserMetadata();

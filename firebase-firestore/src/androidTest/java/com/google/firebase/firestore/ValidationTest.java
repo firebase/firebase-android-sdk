@@ -410,37 +410,6 @@ public class ValidationTest {
   }
 
   @Test
-  public void queriesWithNullOrNaNFiltersOtherThanEqualityFail() {
-    CollectionReference collection = testCollection();
-    expectError(
-        () -> collection.whereGreaterThan("a", null),
-        "Invalid Query. Null only supports comparisons via "
-            + "whereEqualTo() and whereNotEqualTo().");
-    expectError(
-        () -> collection.whereArrayContains("a", null),
-        "Invalid Query. Null only supports comparisons via "
-            + "whereEqualTo() and whereNotEqualTo().");
-    expectError(
-        () -> collection.whereArrayContainsAny("a", null),
-        "Invalid Query. A non-empty array is required for 'array_contains_any' filters.");
-    expectError(
-        () -> collection.whereIn("a", null),
-        "Invalid Query. A non-empty array is required for 'in' filters.");
-    expectError(
-        () -> collection.whereNotIn("a", null),
-        "Invalid Query. A non-empty array is required for 'not_in' filters.");
-
-    expectError(
-        () -> collection.whereGreaterThan("a", Double.NaN),
-        "Invalid Query. NaN only supports comparisons via "
-            + "whereEqualTo() and whereNotEqualTo().");
-    expectError(
-        () -> collection.whereArrayContains("a", Double.NaN),
-        "Invalid Query. NaN only supports comparisons via "
-            + "whereEqualTo() and whereNotEqualTo().");
-  }
-
-  @Test
   public void queriesCannotBeCreatedFromDocumentsMissingSortValues() {
     CollectionReference collection = testCollectionWithDocs(map("f", map("k", "f", "nosort", 1.0)));
 
@@ -757,22 +726,6 @@ public class ValidationTest {
         () ->
             testCollection().whereArrayContainsAny("bar", asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 9)),
         "Invalid Query. 'array_contains_any' filters support a maximum of 10 elements in the value array.");
-
-    expectError(
-        () -> testCollection().whereIn("bar", asList("foo", null)),
-        "Invalid Query. 'in' filters cannot contain 'null' in the value array.");
-
-    expectError(
-        () -> testCollection().whereArrayContainsAny("bar", asList("foo", null)),
-        "Invalid Query. 'array_contains_any' filters cannot contain 'null' in the value array.");
-
-    expectError(
-        () -> testCollection().whereIn("bar", asList("foo", Double.NaN)),
-        "Invalid Query. 'in' filters cannot contain 'NaN' in the value array.");
-
-    expectError(
-        () -> testCollection().whereArrayContainsAny("bar", asList("foo", Float.NaN)),
-        "Invalid Query. 'array_contains_any' filters cannot contain 'NaN' in the value array.");
   }
 
   @Test

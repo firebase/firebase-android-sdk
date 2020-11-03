@@ -20,6 +20,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import com.google.firebase.FirebaseOptions;
 import com.google.firebase.heartbeatinfo.HeartBeatInfo;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.platforminfo.UserAgentPublisher;
@@ -33,11 +34,21 @@ public class FirebaseClientGrpcMetadataProviderTest {
   private Provider<HeartBeatInfo> mockHeartBeatProvider = mock(Provider.class);
   private UserAgentPublisher mockUserAgent = mock(UserAgentPublisher.class);
   private HeartBeatInfo mockHeartBeat = mock(HeartBeatInfo.class);
+  private FirebaseOptions options =
+      new FirebaseOptions.Builder()
+          .setApplicationId("app_id")
+          .setApiKey("apikey")
+          .setProjectId("projectid")
+          .build();
+
   private static final Metadata.Key<String> HEART_BEAT_HEADER =
       Metadata.Key.of("x-firebase-client-log-type", Metadata.ASCII_STRING_MARSHALLER);
 
   private static final Metadata.Key<String> USER_AGENT_HEADER =
       Metadata.Key.of("x-firebase-client", Metadata.ASCII_STRING_MARSHALLER);
+
+  private static final Metadata.Key<String> GMP_APP_ID_HEADER =
+      Metadata.Key.of("x-firebase-gmpid", Metadata.ASCII_STRING_MARSHALLER);
 
   @Test
   public void noUpdateWhenBothNullProvider() {
@@ -45,7 +56,8 @@ public class FirebaseClientGrpcMetadataProviderTest {
     when(mockUserAgentProvider.get()).thenReturn(null);
     when(mockHeartBeatProvider.get()).thenReturn(null);
     GrpcMetadataProvider metadataProvider =
-        new FirebaseClientGrpcMetadataProvider(mockUserAgentProvider, mockHeartBeatProvider);
+        new FirebaseClientGrpcMetadataProvider(
+            mockUserAgentProvider, mockHeartBeatProvider, options);
     metadataProvider.updateMetadata(metadata);
     assertThat(metadata.keys().size()).isEqualTo(0);
   }
@@ -56,7 +68,8 @@ public class FirebaseClientGrpcMetadataProviderTest {
     when(mockUserAgentProvider.get()).thenReturn(mockUserAgent);
     when(mockHeartBeatProvider.get()).thenReturn(null);
     GrpcMetadataProvider metadataProvider =
-        new FirebaseClientGrpcMetadataProvider(mockUserAgentProvider, mockHeartBeatProvider);
+        new FirebaseClientGrpcMetadataProvider(
+            mockUserAgentProvider, mockHeartBeatProvider, options);
     metadataProvider.updateMetadata(metadata);
     assertThat(metadata.keys().size()).isEqualTo(0);
   }
@@ -67,7 +80,8 @@ public class FirebaseClientGrpcMetadataProviderTest {
     when(mockUserAgentProvider.get()).thenReturn(null);
     when(mockHeartBeatProvider.get()).thenReturn(mockHeartBeat);
     GrpcMetadataProvider metadataProvider =
-        new FirebaseClientGrpcMetadataProvider(mockUserAgentProvider, mockHeartBeatProvider);
+        new FirebaseClientGrpcMetadataProvider(
+            mockUserAgentProvider, mockHeartBeatProvider, options);
     metadataProvider.updateMetadata(metadata);
     assertThat(metadata.keys().size()).isEqualTo(0);
   }
@@ -80,11 +94,13 @@ public class FirebaseClientGrpcMetadataProviderTest {
     when(mockHeartBeat.getHeartBeatCode(any())).thenReturn(HeartBeatInfo.HeartBeat.GLOBAL);
     when(mockUserAgent.getUserAgent()).thenReturn("foo:1.2.1");
     GrpcMetadataProvider metadataProvider =
-        new FirebaseClientGrpcMetadataProvider(mockUserAgentProvider, mockHeartBeatProvider);
+        new FirebaseClientGrpcMetadataProvider(
+            mockUserAgentProvider, mockHeartBeatProvider, options);
     metadataProvider.updateMetadata(metadata);
-    assertThat(metadata.keys().size()).isEqualTo(2);
+    assertThat(metadata.keys().size()).isEqualTo(3);
     assertThat(metadata.get(HEART_BEAT_HEADER)).isEqualTo("2");
     assertThat(metadata.get(USER_AGENT_HEADER)).isEqualTo("foo:1.2.1");
+    assertThat(metadata.get(GMP_APP_ID_HEADER)).isEqualTo("app_id");
   }
 
   @Test
@@ -95,11 +111,13 @@ public class FirebaseClientGrpcMetadataProviderTest {
     when(mockHeartBeat.getHeartBeatCode(any())).thenReturn(HeartBeatInfo.HeartBeat.SDK);
     when(mockUserAgent.getUserAgent()).thenReturn("foo:1.2.1");
     GrpcMetadataProvider metadataProvider =
-        new FirebaseClientGrpcMetadataProvider(mockUserAgentProvider, mockHeartBeatProvider);
+        new FirebaseClientGrpcMetadataProvider(
+            mockUserAgentProvider, mockHeartBeatProvider, options);
     metadataProvider.updateMetadata(metadata);
-    assertThat(metadata.keys().size()).isEqualTo(2);
+    assertThat(metadata.keys().size()).isEqualTo(3);
     assertThat(metadata.get(HEART_BEAT_HEADER)).isEqualTo("1");
     assertThat(metadata.get(USER_AGENT_HEADER)).isEqualTo("foo:1.2.1");
+    assertThat(metadata.get(GMP_APP_ID_HEADER)).isEqualTo("app_id");
   }
 
   @Test
@@ -110,23 +128,43 @@ public class FirebaseClientGrpcMetadataProviderTest {
     when(mockHeartBeat.getHeartBeatCode(any())).thenReturn(HeartBeatInfo.HeartBeat.COMBINED);
     when(mockUserAgent.getUserAgent()).thenReturn("foo:1.2.1");
     GrpcMetadataProvider metadataProvider =
-        new FirebaseClientGrpcMetadataProvider(mockUserAgentProvider, mockHeartBeatProvider);
+        new FirebaseClientGrpcMetadataProvider(
+            mockUserAgentProvider, mockHeartBeatProvider, options);
     metadataProvider.updateMetadata(metadata);
-    assertThat(metadata.keys().size()).isEqualTo(2);
+    assertThat(metadata.keys().size()).isEqualTo(3);
     assertThat(metadata.get(HEART_BEAT_HEADER)).isEqualTo("3");
     assertThat(metadata.get(USER_AGENT_HEADER)).isEqualTo("foo:1.2.1");
+    assertThat(metadata.get(GMP_APP_ID_HEADER)).isEqualTo("app_id");
   }
 
   @Test
-  public void noUpdateHeaderWhenHBCodeisZero() {
+  public void headerIsUpdatedEvenWhenHeartBeatIsZero() {
     Metadata metadata = new Metadata();
     when(mockUserAgentProvider.get()).thenReturn(mockUserAgent);
     when(mockHeartBeatProvider.get()).thenReturn(mockHeartBeat);
     when(mockHeartBeat.getHeartBeatCode(any())).thenReturn(HeartBeatInfo.HeartBeat.NONE);
     when(mockUserAgent.getUserAgent()).thenReturn("foo:1.2.1");
     GrpcMetadataProvider metadataProvider =
-        new FirebaseClientGrpcMetadataProvider(mockUserAgentProvider, mockHeartBeatProvider);
+        new FirebaseClientGrpcMetadataProvider(
+            mockUserAgentProvider, mockHeartBeatProvider, options);
     metadataProvider.updateMetadata(metadata);
-    assertThat(metadata.keys().size()).isEqualTo(0);
+    assertThat(metadata.keys().size()).isEqualTo(2);
+    assertThat(metadata.get(USER_AGENT_HEADER)).isEqualTo("foo:1.2.1");
+    assertThat(metadata.get(GMP_APP_ID_HEADER)).isEqualTo("app_id");
+  }
+
+  @Test
+  public void noGmpAppIdWhenOptionsAreNull() {
+    Metadata metadata = new Metadata();
+    when(mockUserAgentProvider.get()).thenReturn(mockUserAgent);
+    when(mockHeartBeatProvider.get()).thenReturn(mockHeartBeat);
+    when(mockHeartBeat.getHeartBeatCode(any())).thenReturn(HeartBeatInfo.HeartBeat.SDK);
+    when(mockUserAgent.getUserAgent()).thenReturn("foo:1.2.1");
+    GrpcMetadataProvider metadataProvider =
+        new FirebaseClientGrpcMetadataProvider(mockUserAgentProvider, mockHeartBeatProvider, null);
+    metadataProvider.updateMetadata(metadata);
+    assertThat(metadata.keys().size()).isEqualTo(2);
+    assertThat(metadata.get(HEART_BEAT_HEADER)).isEqualTo("1");
+    assertThat(metadata.get(USER_AGENT_HEADER)).isEqualTo("foo:1.2.1");
   }
 }

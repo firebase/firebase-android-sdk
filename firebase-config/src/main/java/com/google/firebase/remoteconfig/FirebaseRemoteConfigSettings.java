@@ -25,25 +25,12 @@ import androidx.annotation.NonNull;
  * @author Lucas Png
  */
 public class FirebaseRemoteConfigSettings {
-  private final boolean enableDeveloperMode;
   private final long fetchTimeoutInSeconds;
   private final long minimumFetchInterval;
 
   private FirebaseRemoteConfigSettings(Builder builder) {
-    enableDeveloperMode = builder.enableDeveloperMode;
     fetchTimeoutInSeconds = builder.fetchTimeoutInSeconds;
     minimumFetchInterval = builder.minimumFetchInterval;
-  }
-
-  /**
-   * Indicates the status of the developer mode setting.
-   *
-   * @return <code>true</code> if the developer mode is enabled, <code>false</code> otherwise.
-   * @deprecated Use {@link #getMinimumFetchIntervalInSeconds()} instead.
-   */
-  @Deprecated
-  public boolean isDeveloperModeEnabled() {
-    return enableDeveloperMode;
   }
 
   /**
@@ -65,7 +52,6 @@ public class FirebaseRemoteConfigSettings {
   @NonNull
   public FirebaseRemoteConfigSettings.Builder toBuilder() {
     FirebaseRemoteConfigSettings.Builder frcBuilder = new FirebaseRemoteConfigSettings.Builder();
-    frcBuilder.setDeveloperModeEnabled(this.isDeveloperModeEnabled());
     frcBuilder.setFetchTimeoutInSeconds(this.getFetchTimeoutInSeconds());
     frcBuilder.setMinimumFetchIntervalInSeconds(this.getMinimumFetchIntervalInSeconds());
     return frcBuilder;
@@ -73,24 +59,9 @@ public class FirebaseRemoteConfigSettings {
 
   /** Builder for a {@link FirebaseRemoteConfigSettings}. */
   public static class Builder {
-    private boolean enableDeveloperMode = false;
     // TODO(issues/257): Move constants to Constants file.
     private long fetchTimeoutInSeconds = CONNECTION_TIMEOUT_IN_SECONDS;
     private long minimumFetchInterval = DEFAULT_MINIMUM_FETCH_INTERVAL_IN_SECONDS;
-
-    /**
-     * Turns the developer mode setting on or off.
-     *
-     * @param enabled Should be <code>true</code> to enable, or <code>false</code> to disable this
-     *     setting.
-     * @deprecated Use {@link #setMinimumFetchIntervalInSeconds(long)} instead.
-     */
-    @NonNull
-    @Deprecated
-    public Builder setDeveloperModeEnabled(boolean enabled) {
-      enableDeveloperMode = enabled;
-      return this;
-    }
 
     /**
      * Sets the connection and read timeouts for fetch requests to the Firebase Remote Config

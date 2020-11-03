@@ -139,12 +139,6 @@ public class IntegrationTestUtil {
   }
 
   public static FirebaseFirestoreSettings newTestSettings() {
-    return newTestSettingsWithSnapshotTimestampsEnabled(true);
-  }
-
-  @SuppressWarnings("deprecation") // for setTimestampsInSnapshotsEnabled()
-  public static FirebaseFirestoreSettings newTestSettingsWithSnapshotTimestampsEnabled(
-      boolean enabled) {
     FirebaseFirestoreSettings.Builder settings = new FirebaseFirestoreSettings.Builder();
 
     if (CONNECT_TO_EMULATOR) {
@@ -155,7 +149,6 @@ public class IntegrationTestUtil {
     }
 
     settings.setPersistenceEnabled(true);
-    settings.setTimestampsInSnapshotsEnabled(enabled);
 
     return settings.build();
   }
@@ -451,5 +444,11 @@ public class IntegrationTestUtil {
 
   public static void testChangeUserTo(User user) {
     MockCredentialsProvider.instance().changeUserTo(user);
+  }
+
+  public static List<Object> nullList() {
+    List<Object> nullArray = new ArrayList<>();
+    nullArray.add(null);
+    return nullArray;
   }
 }

@@ -1,0 +1,41 @@
+// Signature format: 2.0
+package com.google.firebase.ml.modeldownloader {
+
+  public class CustomModel {
+    method public long getDownloadId();
+    method @Nullable public java.io.File getFile();
+    method @NonNull public String getModelHash();
+    method @NonNull public String getName();
+    method public long getSize();
+  }
+
+  public class CustomModelDownloadConditions {
+    method public boolean isChargingRequired();
+    method public boolean isDeviceIdleRequired();
+    method public boolean isWifiRequired();
+  }
+
+  public static class CustomModelDownloadConditions.Builder {
+    ctor public CustomModelDownloadConditions.Builder();
+    method @NonNull public com.google.firebase.ml.modeldownloader.CustomModelDownloadConditions build();
+    method @NonNull @RequiresApi(android.os.Build.VERSION_CODES.N) public com.google.firebase.ml.modeldownloader.CustomModelDownloadConditions.Builder requireCharging();
+    method @NonNull @RequiresApi(android.os.Build.VERSION_CODES.N) public com.google.firebase.ml.modeldownloader.CustomModelDownloadConditions.Builder requireDeviceIdle();
+    method @NonNull public com.google.firebase.ml.modeldownloader.CustomModelDownloadConditions.Builder requireWifi();
+  }
+
+  public enum DownloadType {
+    enum_constant public static final com.google.firebase.ml.modeldownloader.DownloadType LATEST_MODEL;
+    enum_constant public static final com.google.firebase.ml.modeldownloader.DownloadType LOCAL_MODEL;
+    enum_constant public static final com.google.firebase.ml.modeldownloader.DownloadType LOCAL_MODEL_UPDATE_IN_BACKGROUND;
+  }
+
+  public class FirebaseModelDownloader {
+    method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> deleteDownloadedModel(@NonNull String);
+    method @NonNull public static com.google.firebase.ml.modeldownloader.FirebaseModelDownloader getInstance();
+    method @NonNull public static com.google.firebase.ml.modeldownloader.FirebaseModelDownloader getInstance(@NonNull com.google.firebase.FirebaseApp);
+    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.ml.modeldownloader.CustomModel> getModel(@NonNull String, @NonNull com.google.firebase.ml.modeldownloader.DownloadType, @Nullable com.google.firebase.ml.modeldownloader.CustomModelDownloadConditions);
+    method @NonNull public com.google.android.gms.tasks.Task<java.util.Set<com.google.firebase.ml.modeldownloader.CustomModel>> listDownloadedModels();
+  }
+
+}
+

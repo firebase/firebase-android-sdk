@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit;
 class RequestLimiter {
   private static final long MAXIMUM_BACKOFF_DURATION_FOR_CONFIGURATION_ERRORS =
       TimeUnit.HOURS.toMillis(24);
-  private static final long MAXIMUM_BACKOFF_INTERVAL_FOR_SERVER_ERRORS =
+  private static final long MAXIMUM_BACKOFF_DURATION_FOR_SERVER_ERRORS =
       TimeUnit.MINUTES.toMillis(30);
   private final Utils utils;
 
@@ -42,10 +42,15 @@ class RequestLimiter {
     this.utils = utils;
   }
 
+  RequestLimiter() {
+    // Util class is injected to ease mocking & testing the system time.
+    this.utils = Utils.getInstance();
+  }
+
   // Based on the response code, calculates the next request time to communicate with the FIS
   // servers.
   public synchronized void setNextRequestTime(int responseCode) {
-    if (isSuccessful(responseCode)) {
+    if (isSuccessfulOrRequiresNewFidCreation(responseCode)) {
       resetBackoffStrategy();
       return;
     }
@@ -67,8 +72,8 @@ class RequestLimiter {
     // https://cloud.google.com/storage/docs/exponential-backoff.
     return (long)
         Math.min(
-            Math.pow(2, attemptCount) + utils.getRandomMillis(),
-            MAXIMUM_BACKOFF_INTERVAL_FOR_SERVER_ERRORS);
+            Math.pow(2, attemptCount) + utils.getRandomDelayForSyncPrevention(),
+            MAXIMUM_BACKOFF_DURATION_FOR_SERVER_ERRORS);
   }
 
   // Response codes classified as retryable for FIS API. 5xx: Server errors and 429:
@@ -77,10 +82,14 @@ class RequestLimiter {
     return responseCode == 429 || (responseCode >= 500 && responseCode < 600);
   }
 
-  // Response codes classified as success for FIS API. Read more on FIS response codes:
-  // go/fis-api-error-code-classification.
-  private static boolean isSuccessful(int responseCode) {
-    return responseCode >= 200 && responseCode < 300;
+  // 2xx Response codes are classified as success for FIS API. Also, FIS GenerateAuthToken endpoint
+  // responds with 401 & 404 for auth config errors which requires clients to follow up with a
+  // request to create a new FID. So, we don't limit the next requests for 401 & 404 response codes
+  // as well. Read more on FIS response codes: go/fis-api-error-code-classification.
+  private static boolean isSuccessfulOrRequiresNewFidCreation(int responseCode) {
+    return ((responseCode >= 200 && responseCode < 300)
+        || responseCode == 401
+        || responseCode == 404);
   }
 
   // Decides whether a network request to FIS servers is allowed to execute.

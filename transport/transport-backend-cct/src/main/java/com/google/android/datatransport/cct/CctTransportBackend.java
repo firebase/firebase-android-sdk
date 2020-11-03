@@ -17,9 +17,11 @@ package com.google.android.datatransport.cct;
 import static com.google.android.datatransport.runtime.retries.Retries.retry;
 
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Build;
+import android.telephony.TelephonyManager;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.datatransport.Encoding;
@@ -58,6 +60,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.zip.GZIPInputStream;
@@ -69,6 +72,7 @@ final class CctTransportBackend implements TransportBackend {
 
   private static final int CONNECTION_TIME_OUT = 30000;
   private static final int READ_TIME_OUT = 40000;
+  private static final int INVALID_VERSION_CODE = -1;
   private static final String ACCEPT_ENCODING_HEADER_KEY = "Accept-Encoding";
   private static final String CONTENT_ENCODING_HEADER_KEY = "Content-Encoding";
   private static final String GZIP_CONTENT_ENCODING = "gzip";
@@ -87,11 +91,16 @@ final class CctTransportBackend implements TransportBackend {
   private static final String KEY_OS_BUILD = "os-uild";
   private static final String KEY_MANUFACTURER = "manufacturer";
   private static final String KEY_FINGERPRINT = "fingerprint";
+  private static final String KEY_LOCALE = "locale";
+  private static final String KEY_COUNTRY = "country";
+  private static final String KEY_MCC_MNC = "mcc_mnc";
   private static final String KEY_TIMEZONE_OFFSET = "tz-offset";
+  private static final String KEY_APPLICATION_BUILD = "application_build";
 
   private final DataEncoder dataEncoder = BatchedLogRequest.createDataEncoder();
 
   private final ConnectivityManager connectivityManager;
+  private final Context applicationContext;
   final URL endPoint;
   private final Clock uptimeClock;
   private final Clock wallTimeClock;
@@ -107,6 +116,7 @@ final class CctTransportBackend implements TransportBackend {
 
   CctTransportBackend(
       Context applicationContext, Clock wallTimeClock, Clock uptimeClock, int readTimeout) {
+    this.applicationContext = applicationContext;
     this.connectivityManager =
         (ConnectivityManager) applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE);
     this.endPoint = parseUrlOrThrow(CCTDestination.DEFAULT_END_POINT);
@@ -117,6 +127,24 @@ final class CctTransportBackend implements TransportBackend {
 
   CctTransportBackend(Context applicationContext, Clock wallTimeClock, Clock uptimeClock) {
     this(applicationContext, wallTimeClock, uptimeClock, READ_TIME_OUT);
+  }
+
+  private static TelephonyManager getTelephonyManager(Context context) {
+    return (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
+  }
+
+  private static int getPackageVersionCode(Context context) {
+    try {
+      int packageVersionCode =
+          context
+              .getPackageManager()
+              .getPackageInfo(context.getPackageName(), /* flags= */ 0)
+              .versionCode;
+      return packageVersionCode;
+    } catch (PackageManager.NameNotFoundException e) {
+      Logging.e(LOG_TAG, "Unable to find version code for package", e);
+    }
+    return INVALID_VERSION_CODE;
   }
 
   @Override
@@ -136,6 +164,11 @@ final class CctTransportBackend implements TransportBackend {
         .addMetadata(KEY_TIMEZONE_OFFSET, getTzOffset())
         .addMetadata(KEY_NETWORK_TYPE, getNetTypeValue(networkInfo))
         .addMetadata(KEY_MOBILE_SUBTYPE, getNetSubtypeValue(networkInfo))
+        .addMetadata(KEY_COUNTRY, Locale.getDefault().getCountry())
+        .addMetadata(KEY_LOCALE, Locale.getDefault().getLanguage())
+        .addMetadata(KEY_MCC_MNC, getTelephonyManager(applicationContext).getSimOperator())
+        .addMetadata(
+            KEY_APPLICATION_BUILD, Integer.toString(getPackageVersionCode(applicationContext)))
         .build();
   }
 
@@ -193,6 +226,10 @@ final class CctTransportBackend implements TransportBackend {
                               .setOsBuild(firstEvent.get(KEY_OS_BUILD))
                               .setManufacturer(firstEvent.get(KEY_MANUFACTURER))
                               .setFingerprint(firstEvent.get(KEY_FINGERPRINT))
+                              .setCountry(firstEvent.get(KEY_COUNTRY))
+                              .setLocale(firstEvent.get(KEY_LOCALE))
+                              .setMccMnc(firstEvent.get(KEY_MCC_MNC))
+                              .setApplicationBuild(firstEvent.get(KEY_APPLICATION_BUILD))
                               .build())
                       .build());
 
