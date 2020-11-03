@@ -20,6 +20,7 @@ import com.google.firebase.FirebaseOptions;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
+import com.google.firebase.ml.modeldownloader.internal.SharedPreferencesUtil;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.util.Arrays;
 import java.util.List;
@@ -40,6 +41,10 @@ public class FirebaseModelDownloaderRegistrar implements ComponentRegistrar {
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.required(FirebaseOptions.class))
             .factory(c -> new FirebaseModelDownloader(c.get(FirebaseOptions.class)))
+            .build(),
+        Component.builder(SharedPreferencesUtil.class)
+            .add(Dependency.required(FirebaseApp.class))
+            .factory(c -> new SharedPreferencesUtil(c.get(FirebaseApp.class)))
             .build(),
         LibraryVersionComponent.create("firebase-ml-modeldownloader", BuildConfig.VERSION_NAME));
   }
