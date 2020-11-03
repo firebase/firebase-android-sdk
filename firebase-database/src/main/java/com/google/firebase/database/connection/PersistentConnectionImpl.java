@@ -29,9 +29,11 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class PersistentConnectionImpl implements Connection.Delegate, PersistentConnection {
 
@@ -108,6 +110,41 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
     @Override
     public String toString() {
       return query.toString() + " (Tag: " + this.tag + ")";
+    }
+  }
+
+  private static class OutstandingGet {
+    private Map<String, Object> request;
+    private ConnectionRequestCallback onComplete;
+    private String action;
+    private AtomicBoolean sent;
+
+    private OutstandingGet(
+        String action, Map<String, Object> request, ConnectionRequestCallback onComplete) {
+      this.action = action;
+      this.request = request;
+      this.onComplete = onComplete;
+      this.sent = new AtomicBoolean(false);
+    }
+
+    private String getAction() {
+      return action;
+    }
+
+    private ConnectionRequestCallback getOnComplete() {
+      return onComplete;
+    }
+
+    private Map<String, Object> getRequest() {
+      return request;
+    }
+
+    private boolean markSent() {
+      return sent.compareAndSet(false, true);
+    }
+
+    private boolean wasSent() {
+      return sent.get();
     }
   }
 
@@ -234,6 +271,7 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
   private static final long SUCCESSFUL_CONNECTION_ESTABLISHED_DELAY = 30 * 1000;
 
   private static final long IDLE_TIMEOUT = 60 * 1000;
+  private static final long GET_CONNECT_TIMEOUT = 3 * 1000;
 
   /** If auth fails repeatedly, we'll assume something is wrong and log a warning / back off. */
   private static final long INVALID_AUTH_TOKEN_THRESHOLD = 3;
@@ -253,11 +291,13 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
   private Connection realtime;
   private ConnectionState connectionState = ConnectionState.Disconnected;
   private long writeCounter = 0;
+  private long readCounter = 0;
   private long requestCounter = 0;
   private Map<Long, ConnectionRequestCallback> requestCBHash;
 
   private List<OutstandingDisconnect> onDisconnectRequestQueue;
   private Map<Long, OutstandingPut> outstandingPuts;
+  private Map<Long, OutstandingGet> outstandingGets;
 
   private Map<QuerySpec, OutstandingListen> listens;
   private String authToken;
@@ -287,6 +327,7 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
     this.listens = new HashMap<QuerySpec, OutstandingListen>();
     this.requestCBHash = new HashMap<Long, ConnectionRequestCallback>();
     this.outstandingPuts = new HashMap<Long, OutstandingPut>();
+    this.outstandingGets = new ConcurrentHashMap<Long, OutstandingGet>();
     this.onDisconnectRequestQueue = new ArrayList<OutstandingDisconnect>();
     this.retryHelper =
         new RetryHelper.Builder(this.executorService, context.getLogger(), "ConnectionRetryHelper")
@@ -351,15 +392,58 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
   public Task<Object> get(List<String> path, Map<String, Object> queryParams) {
     QuerySpec query = new QuerySpec(path, queryParams);
     TaskCompletionSource<Object> source = new TaskCompletionSource<>();
-    Task<Object> task;
-    if (connected()) {
-      task = sendGet(query, source);
-    } else {
-      source.setException(new Exception("Client is offline"));
-      task = source.getTask();
+
+    long readId = this.readCounter++;
+
+    Map<String, Object> request = new HashMap<String, Object>();
+    request.put(REQUEST_PATH, ConnectionUtils.pathToString(query.path));
+    request.put(REQUEST_QUERIES, query.queryParams);
+
+    outstandingGets.put(
+        readId,
+        new OutstandingGet(
+            REQUEST_ACTION_GET,
+            request,
+            new ConnectionRequestCallback() {
+              @Override
+              public void onResponse(Map<String, Object> response) {
+                String status = (String) response.get(REQUEST_STATUS);
+                if (status.equals("ok")) {
+                  Object body = response.get(SERVER_DATA_UPDATE_BODY);
+                  delegate.onDataUpdate(query.path, body, /*isMerge=*/ false, /*tagNumber=*/ null);
+                  source.setResult(body);
+                } else {
+                  source.setException(
+                      new Exception((String) response.get(SERVER_DATA_UPDATE_BODY)));
+                }
+              }
+            }));
+
+    if (!connected()) {
+      executorService.schedule(
+          new Runnable() {
+            @Override
+            public void run() {
+              OutstandingGet get = outstandingGets.get(readId);
+              if (get == null || !get.markSent()) {
+                return;
+              }
+              if (logger.logsDebug()) {
+                logger.debug("get " + readId + " timed out waiting for connection");
+              }
+              outstandingGets.remove(readId);
+              source.setException(new Exception("Client is offline"));
+            }
+          },
+          GET_CONNECT_TIMEOUT,
+          TimeUnit.MILLISECONDS);
+    }
+
+    if (canSendReads()) {
+      sendGet(readId);
     }
     doIdleCheck();
-    return task;
+    return source.getTask();
   }
 
   @Override
@@ -505,6 +589,10 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
   }
 
   private boolean canSendWrites() {
+    return connectionState == ConnectionState.Connected;
+  }
+
+  private boolean canSendReads() {
     return connectionState == ConnectionState.Connected;
   }
 
@@ -979,6 +1067,13 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
       sendPut(put);
     }
 
+    if (logger.logsDebug()) logger.debug("Restoring reads.");
+    ArrayList<Long> outstandingGetKeys = new ArrayList<Long>(outstandingGets.keySet());
+    Collections.sort(outstandingGetKeys);
+    for (Long getId : outstandingGetKeys) {
+      sendGet(getId);
+    }
+
     // Restore disconnect operations
     for (OutstandingDisconnect disconnect : onDisconnectRequestQueue) {
       sendOnDisconnect(
@@ -1067,27 +1162,32 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
         });
   }
 
-  private Task<Object> sendGet(final QuerySpec query, TaskCompletionSource<Object> source) {
-    Map<String, Object> request = new HashMap<String, Object>();
-    request.put(REQUEST_PATH, ConnectionUtils.pathToString(query.path));
-    request.put(REQUEST_QUERIES, query.queryParams);
+  private void sendGet(final Long readId) {
+    hardAssert(canSendReads(), "sendGet called when we can't send gets");
+    OutstandingGet get = outstandingGets.get(readId);
+    if (!get.markSent()) {
+      if (logger.logsDebug()) {
+        logger.debug("get" + readId + " already sent or cancelled, ignoring.");
+        return;
+      }
+    }
     sendAction(
-        REQUEST_ACTION_GET,
-        request,
+        get.getAction(),
+        get.getRequest(),
         new ConnectionRequestCallback() {
           @Override
           public void onResponse(Map<String, Object> response) {
-            String status = (String) response.get(REQUEST_STATUS);
-            if (status.equals("ok")) {
-              Object body = response.get(SERVER_DATA_UPDATE_BODY);
-              delegate.onDataUpdate(query.path, body, /*isMerge=*/ false, /*tagNumber=*/ null);
-              source.setResult(body);
+            OutstandingGet currentGet = outstandingGets.get(readId);
+            if (currentGet == get) {
+              outstandingGets.remove(readId);
+              get.getOnComplete().onResponse(response);
             } else {
-              source.setException(new Exception((String) response.get(SERVER_DATA_UPDATE_BODY)));
+              if (logger.logsDebug())
+                logger.debug(
+                    "Ignoring on complete for get " + readId + " because it was removed already.");
             }
           }
         });
-    return source.getTask();
   }
 
   private void sendListen(final OutstandingListen listen) {

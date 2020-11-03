@@ -17,6 +17,7 @@ package com.google.firebase.database.core;
 import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
 
 import androidx.annotation.NonNull;
+import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -473,6 +474,7 @@ public class Repo implements PersistentConnection.Delegate {
         new Runnable() {
           @Override
           public void run() {
+            serverSyncTree.setQueryActive(query.getSpec());
             connection
                 .get(query.getPath().asList(), query.getSpec().getParams().getWireProtocolParams())
                 .addOnCompleteListener(
@@ -496,20 +498,29 @@ public class Repo implements PersistentConnection.Delegate {
                                     query.getRef(),
                                     IndexedNode.from(cached, query.getSpec().getIndex())));
                           }
-                          return;
+                        } else {
+                          Node serverNode = NodeUtilities.NodeFromJSON(task.getResult());
+                          postEvents(
+                              serverSyncTree.applyServerOverwrite(query.getPath(), serverNode));
+                          source.setResult(
+                              InternalHelpers.createDataSnapshot(
+                                  query.getRef(),
+                                  IndexedNode.from(serverNode, query.getSpec().getIndex())));
                         }
-                        Node serverNode = NodeUtilities.NodeFromJSON(task.getResult());
-                        postEvents(
-                            serverSyncTree.applyServerOverwrite(query.getPath(), serverNode));
-                        source.setResult(
-                            InternalHelpers.createDataSnapshot(
-                                query.getRef(),
-                                IndexedNode.from(serverNode, query.getSpec().getIndex())));
                       }
                     });
           }
         });
-    return source.getTask();
+    return source
+        .getTask()
+        .continueWithTask(
+            new Continuation<DataSnapshot, Task<DataSnapshot>>() {
+              @Override
+              public Task<DataSnapshot> then(@NonNull Task<DataSnapshot> task) throws Exception {
+                serverSyncTree.setQueryInactive(query.getSpec());
+                return task;
+              }
+            });
   }
 
   public void updateChildren(

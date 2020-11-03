@@ -3424,8 +3424,7 @@ public class QueryTest {
         appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
     FirebaseDatabase db = FirebaseDatabase.getInstance(app);
     try {
-      Tasks.await(db.getReference("dummy/").setValue(42L));
-      assertNull(Tasks.await(db.getReference("null/").get()).getValue());
+      assertNull(Tasks.await(db.getReference(UUID.randomUUID().toString()).get()).getValue());
     } catch (ExecutionException e) {
       fail(e.getMessage());
     }
@@ -3436,12 +3435,8 @@ public class QueryTest {
     FirebaseApp app =
         appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
     FirebaseDatabase db = FirebaseDatabase.getInstance(app);
+    db.setLogLevel(Logger.Level.DEBUG);
     DatabaseReference node = db.getReference();
-    try {
-      Tasks.await(node.setValue(42L));
-    } catch (ExecutionException e) {
-      fail();
-    }
     db.goOffline();
     try {
       Tasks.await(node.get());
@@ -3453,22 +3448,19 @@ public class QueryTest {
   }
 
   @Test
-  public void getQueryBasic() throws DatabaseException, InterruptedException {
+  public void getQueryBasic() throws DatabaseException, InterruptedException, ExecutionException {
     FirebaseApp app =
         appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
     FirebaseDatabase db = FirebaseDatabase.getInstance(app);
     DatabaseReference node = db.getReference();
-    try {
-      Tasks.await(node.setValue(42));
-      assertEquals(42L, Tasks.await(node.get()).getValue());
-    } catch (ExecutionException e) {
-      fail(e.getMessage());
-    }
+    Tasks.await(node.setValue(42));
+    assertEquals(42L, Tasks.await(node.get()).getValue());
   }
 
   @Test
   public void getQueryCached()
-      throws DatabaseException, InterruptedException, TimeoutException, TestFailure {
+      throws DatabaseException, InterruptedException, TimeoutException, TestFailure,
+          ExecutionException {
     FirebaseApp app =
         appForDatabaseUrl(IntegrationTestValues.getAltNamespace(), UUID.randomUUID().toString());
     FirebaseDatabase db = FirebaseDatabase.getInstance(app);
@@ -3493,15 +3485,13 @@ public class QueryTest {
     try {
       // Since we still have a listener on `ref`, the 42L should be cached here.
       assertEquals(42L, Tasks.await(ref.get()).getValue());
-    } catch (ExecutionException e) {
-      fail(e.getMessage());
     } finally {
       ref.removeEventListener(listener);
     }
   }
 
   @Test
-  public void getQuerySkipsCacheWhenOnline()
+  public void getRetrievesLatestServerValue()
       throws DatabaseException, InterruptedException, ExecutionException, TestFailure,
           TimeoutException {
     FirebaseApp readerApp =
@@ -3513,8 +3503,55 @@ public class QueryTest {
     DatabaseReference reader = readerDb.getReference();
     DatabaseReference writer = writerDb.getReference();
 
-    final Semaphore semaphore = new Semaphore(0);
+    final Semaphore readerSemaphore = new Semaphore(0);
     reader.addValueEventListener(
+        new ValueEventListener() {
+          @Override
+          public void onDataChange(@NonNull DataSnapshot snapshot) {
+            if (snapshot.getValue() != null && snapshot.getValue().equals(42L)) {
+              readerSemaphore.release();
+            }
+          }
+
+          @Override
+          public void onCancelled(@NonNull DatabaseError error) {}
+        });
+
+    WriteFuture write = new WriteFuture(writer, 42L);
+    assertNull(write.timedGet());
+    IntegrationTestHelpers.waitFor(readerSemaphore);
+
+    write = new WriteFuture(writer, 43L);
+    assertNull(write.timedGet());
+
+    try {
+      assertEquals(43L, Tasks.await(reader.get()).getValue());
+    } catch (ExecutionException e) {
+      fail(e.getMessage());
+    }
+  }
+
+  @Test
+  public void getUpdatesPersistenceCacheWhenEnabled()
+      throws DatabaseException, InterruptedException, ExecutionException, TestFailure,
+          TimeoutException {
+    FirebaseApp readerApp =
+        appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
+    FirebaseApp writerApp =
+        appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
+    FirebaseDatabase readerDb = FirebaseDatabase.getInstance(readerApp);
+    readerDb.setPersistenceEnabled(true);
+    FirebaseDatabase writerDb = FirebaseDatabase.getInstance(writerApp);
+    DatabaseReference reader = readerDb.getReference();
+    DatabaseReference writer = writerDb.getReference();
+
+    assertNull(new WriteFuture(writer, 42L).timedGet());
+    assertEquals(42L, Tasks.await(reader.get()).getValue());
+
+    readerDb.goOffline();
+
+    Semaphore semaphore = new Semaphore(0);
+    reader.addListenerForSingleValueEvent(
         new ValueEventListener() {
           @Override
           public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -3526,19 +3563,7 @@ public class QueryTest {
           @Override
           public void onCancelled(@NonNull DatabaseError error) {}
         });
-
-    WriteFuture write = new WriteFuture(writer, 42L);
-    assertNull(write.timedGet());
     IntegrationTestHelpers.waitFor(semaphore);
-
-    write = new WriteFuture(writer, 43L);
-    assertNull(write.timedGet());
-
-    try {
-      assertEquals(43L, Tasks.await(reader.get()).getValue());
-    } catch (ExecutionException e) {
-      fail(e.getMessage());
-    }
   }
 
   @Test
