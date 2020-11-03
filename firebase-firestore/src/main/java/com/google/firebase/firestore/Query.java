@@ -493,20 +493,6 @@ public class Query {
               + op.toString()
               + "' filters support a maximum of 10 elements in the value array.");
     }
-    if (op == Operator.IN || op == Operator.ARRAY_CONTAINS_ANY) {
-      if (((List) value).contains(null)) {
-        throw new IllegalArgumentException(
-            "Invalid Query. '"
-                + op.toString()
-                + "' filters cannot contain 'null' in the value array.");
-      }
-      if (((List) value).contains(Double.NaN) || ((List) value).contains(Float.NaN)) {
-        throw new IllegalArgumentException(
-            "Invalid Query. '"
-                + op.toString()
-                + "' filters cannot contain 'NaN' in the value array.");
-      }
-    }
   }
 
   private void validateOrderByFieldMatchesInequality(

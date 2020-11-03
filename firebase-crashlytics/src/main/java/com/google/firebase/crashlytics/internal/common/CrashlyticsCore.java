@@ -134,8 +134,9 @@ public class CrashlyticsCore {
 
       final HttpRequestFactory httpRequestFactory = new HttpRequestFactory();
 
-      final AppData appData = AppData.create(context, idManager, googleAppId, mappingFileId);
       final UnityVersionProvider unityVersionProvider = new ResourceUnityVersionProvider(context);
+      final AppData appData =
+          AppData.create(context, idManager, googleAppId, mappingFileId, unityVersionProvider);
 
       Logger.getLogger().d("Installer package name is: " + appData.installerPackageName);
 
@@ -152,7 +153,6 @@ public class CrashlyticsCore {
               null,
               null,
               nativeComponent,
-              unityVersionProvider,
               analyticsEventLogger,
               settingsProvider);
 

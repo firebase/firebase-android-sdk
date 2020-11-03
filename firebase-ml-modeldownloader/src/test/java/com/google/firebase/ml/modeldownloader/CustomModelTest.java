@@ -15,7 +15,10 @@
 package com.google.firebase.ml.modeldownloader;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -51,5 +54,22 @@ public class CustomModelTest {
   @Test
   public void customModel_getFile_downloadIncomplete() {
     assertNull(CUSTOM_MODEL.getFile());
+  }
+
+  @Test
+  public void customModel_equals() {
+    assertTrue(CUSTOM_MODEL.equals(new CustomModel(MODEL_NAME, 0, 100, MODEL_HASH)));
+    assertFalse(CUSTOM_MODEL.equals(new CustomModel(MODEL_NAME, 0, 101, MODEL_HASH)));
+    assertFalse(CUSTOM_MODEL.equals(new CustomModel(MODEL_NAME, 101, 100, MODEL_HASH)));
+  }
+
+  @Test
+  public void customModel_hashCode() {
+    assertEquals(
+        CUSTOM_MODEL.hashCode(), new CustomModel(MODEL_NAME, 0, 100, MODEL_HASH).hashCode());
+    assertNotEquals(
+        CUSTOM_MODEL.hashCode(), new CustomModel(MODEL_NAME, 0, 101, MODEL_HASH).hashCode());
+    assertNotEquals(
+        CUSTOM_MODEL.hashCode(), new CustomModel(MODEL_NAME, 101, 100, MODEL_HASH).hashCode());
   }
 }

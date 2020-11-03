@@ -17,6 +17,7 @@ package com.google.android.datatransport.cct;
 import static com.google.android.datatransport.runtime.retries.Retries.retry;
 
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Build;
@@ -71,6 +72,7 @@ final class CctTransportBackend implements TransportBackend {
 
   private static final int CONNECTION_TIME_OUT = 30000;
   private static final int READ_TIME_OUT = 40000;
+  private static final int INVALID_VERSION_CODE = -1;
   private static final String ACCEPT_ENCODING_HEADER_KEY = "Accept-Encoding";
   private static final String CONTENT_ENCODING_HEADER_KEY = "Content-Encoding";
   private static final String GZIP_CONTENT_ENCODING = "gzip";
@@ -93,6 +95,7 @@ final class CctTransportBackend implements TransportBackend {
   private static final String KEY_COUNTRY = "country";
   private static final String KEY_MCC_MNC = "mcc_mnc";
   private static final String KEY_TIMEZONE_OFFSET = "tz-offset";
+  private static final String KEY_APPLICATION_BUILD = "application_build";
 
   private final DataEncoder dataEncoder = BatchedLogRequest.createDataEncoder();
 
@@ -130,6 +133,20 @@ final class CctTransportBackend implements TransportBackend {
     return (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
   }
 
+  private static int getPackageVersionCode(Context context) {
+    try {
+      int packageVersionCode =
+          context
+              .getPackageManager()
+              .getPackageInfo(context.getPackageName(), /* flags= */ 0)
+              .versionCode;
+      return packageVersionCode;
+    } catch (PackageManager.NameNotFoundException e) {
+      Logging.e(LOG_TAG, "Unable to find version code for package", e);
+    }
+    return INVALID_VERSION_CODE;
+  }
+
   @Override
   public EventInternal decorate(EventInternal eventInternal) {
     NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
@@ -150,6 +167,8 @@ final class CctTransportBackend implements TransportBackend {
         .addMetadata(KEY_COUNTRY, Locale.getDefault().getCountry())
         .addMetadata(KEY_LOCALE, Locale.getDefault().getLanguage())
         .addMetadata(KEY_MCC_MNC, getTelephonyManager(applicationContext).getSimOperator())
+        .addMetadata(
+            KEY_APPLICATION_BUILD, Integer.toString(getPackageVersionCode(applicationContext)))
         .build();
   }
 
@@ -210,6 +229,7 @@ final class CctTransportBackend implements TransportBackend {
                               .setCountry(firstEvent.get(KEY_COUNTRY))
                               .setLocale(firstEvent.get(KEY_LOCALE))
                               .setMccMnc(firstEvent.get(KEY_MCC_MNC))
+                              .setApplicationBuild(firstEvent.get(KEY_APPLICATION_BUILD))
                               .build())
                       .build());
 

@@ -218,7 +218,8 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
               "installerPackageName",
               "packageName",
               "versionCode",
-              "versionName");
+              "versionName",
+              unityVersionProvider);
 
       final CrashlyticsController controller =
           new CrashlyticsController(
@@ -233,7 +234,6 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
               reportManager,
               reportUploaderProvider,
               nativeComponent,
-              unityVersionProvider,
               analyticsEventLogger,
               testSettingsDataProvider);
       return controller;

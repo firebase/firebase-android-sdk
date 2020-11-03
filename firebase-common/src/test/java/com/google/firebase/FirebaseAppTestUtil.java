@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2020 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,25 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.testing;
+package com.google.firebase;
 
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
+import androidx.test.core.app.ApplicationProvider;
+import java.util.function.Consumer;
 
-/**
- * A test suite combining the individual tests.
- *
- * <p>Note, tests *must* be added to this suite in order to run.
- */
-@RunWith(Suite.class)
-@Suite.SuiteClasses({
-  BuildOnlyTest.class,
-  DatabaseTest.class,
-  DynamicLinksTest.class,
-  FirestoreTest.class,
-  FunctionsTest.class,
-  PerformanceMonitoringTest.class,
-  RemoteConfigTest.class,
-  StorageTest.class,
-})
-public final class TestSuite {}
+public final class FirebaseAppTestUtil {
+  private FirebaseAppTestUtil() {}
+
+  public static void withApp(String name, FirebaseOptions options, Consumer<FirebaseApp> callable) {
+    FirebaseApp app =
+        FirebaseApp.initializeApp(ApplicationProvider.getApplicationContext(), options, name);
+    try {
+      callable.accept(app);
+    } finally {
+      app.delete();
+    }
+  }
+}
