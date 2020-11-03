@@ -14,16 +14,14 @@
 
 package com.google.firebase.crashlytics.ndk;
 
-import android.content.res.AssetManager;
+import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
-import android.content.Context;
-
+import android.content.res.AssetManager;
 import android.os.Build;
 import android.text.TextUtils;
 import com.google.firebase.crashlytics.internal.Logger;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -65,8 +63,10 @@ class JniNativeApi implements NativeApi {
   public String[] makePackagePaths(String arch) {
     try {
       PackageManager pm = context.getPackageManager();
-      PackageInfo pi = pm.getPackageInfo(context.getPackageName(),
-          PackageManager.GET_SHARED_LIBRARY_FILES | PackageManager.MATCH_UNINSTALLED_PACKAGES);
+      PackageInfo pi =
+          pm.getPackageInfo(
+              context.getPackageName(),
+              PackageManager.GET_SHARED_LIBRARY_FILES | PackageManager.MATCH_UNINSTALLED_PACKAGES);
 
       List<String> zipPaths = new ArrayList<>(10);
       zipPaths.add(pi.applicationInfo.sourceDir);
@@ -103,8 +103,7 @@ class JniNativeApi implements NativeApi {
       libPaths.add(pi.applicationInfo.nativeLibraryDir);
 
       return new String[] {
-          TextUtils.join(File.pathSeparator, zipPaths),
-          TextUtils.join(File.pathSeparator, libPaths)
+        TextUtils.join(File.pathSeparator, zipPaths), TextUtils.join(File.pathSeparator, libPaths)
       };
     } catch (NameNotFoundException e) {
       Logger.getLogger().e("Unable to compose package paths", e);
@@ -123,11 +122,8 @@ class JniNativeApi implements NativeApi {
     String classpath = paths[0];
     String libspath = paths[1];
 
-    return LIB_CRASHLYTICS_LOADED && nativeInit(new String[] {
-        classpath,
-        libspath,
-        dataPath
-    }, assetManager);
+    return LIB_CRASHLYTICS_LOADED
+        && nativeInit(new String[] {classpath, libspath, dataPath}, assetManager);
   }
 
   private native boolean nativeInit(String[] paths, Object assetManager);
