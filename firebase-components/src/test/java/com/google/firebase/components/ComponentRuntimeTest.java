@@ -113,10 +113,10 @@ public final class ComponentRuntimeTest {
     InitTracker initTracker = new InitTracker();
 
     ComponentRuntime runtime =
-        ComponentRuntime.create(
-            EXECUTOR,
-            Collections.singletonList(() -> new ComponentRegistrarImpl(Eagerness.ALWAYS)),
-            Component.of(initTracker, InitTracker.class));
+        ComponentRuntime.builder(EXECUTOR)
+            .addComponentRegistrar(new ComponentRegistrarImpl(Eagerness.ALWAYS))
+            .addComponent(Component.of(initTracker, InitTracker.class))
+            .build();
 
     assertThat(initTracker.isInitialized()).isFalse();
 
@@ -131,10 +131,10 @@ public final class ComponentRuntimeTest {
     InitTracker initTracker = new InitTracker();
 
     ComponentRuntime runtime =
-        ComponentRuntime.create(
-            EXECUTOR,
-            Collections.singletonList(() -> new ComponentRegistrarImpl(Eagerness.DEFAULT_ONLY)),
-            Component.of(initTracker, InitTracker.class));
+        ComponentRuntime.builder(EXECUTOR)
+            .addComponentRegistrar(new ComponentRegistrarImpl(Eagerness.DEFAULT_ONLY))
+            .addComponent(Component.of(initTracker, InitTracker.class))
+            .build();
 
     assertThat(initTracker.isInitialized()).isFalse();
 
@@ -148,10 +148,10 @@ public final class ComponentRuntimeTest {
     InitTracker initTracker = new InitTracker();
 
     ComponentRuntime runtime =
-        ComponentRuntime.create(
-            EXECUTOR,
-            Collections.singletonList(() -> new ComponentRegistrarImpl(Eagerness.DEFAULT_ONLY)),
-            Component.of(initTracker, InitTracker.class));
+        ComponentRuntime.builder(EXECUTOR)
+            .addComponentRegistrar(new ComponentRegistrarImpl(Eagerness.DEFAULT_ONLY))
+            .addComponent(Component.of(initTracker, InitTracker.class))
+            .build();
 
     assertThat(initTracker.isInitialized()).isFalse();
 
@@ -165,10 +165,10 @@ public final class ComponentRuntimeTest {
     InitTracker initTracker = new InitTracker();
 
     ComponentRuntime runtime =
-        ComponentRuntime.create(
-            EXECUTOR,
-            Collections.singletonList(() -> new ComponentRegistrarImpl(Eagerness.ALWAYS)),
-            Component.of(initTracker, InitTracker.class));
+        ComponentRuntime.builder(EXECUTOR)
+            .addComponentRegistrar(new ComponentRegistrarImpl(Eagerness.ALWAYS))
+            .addComponent(Component.of(initTracker, InitTracker.class))
+            .build();
 
     assertThat(initTracker.isInitialized()).isFalse();
 
@@ -182,13 +182,14 @@ public final class ComponentRuntimeTest {
   @Test
   public void container_withCyclicDependencyGraph_shouldThrow() {
     try {
-      ComponentRuntime.create(
-          EXECUTOR,
-          Collections.singletonList(() -> new ComponentRegistrarImpl(Eagerness.ALWAYS)),
-          Component.builder(InitTracker.class)
-              .add(Dependency.required(ComponentTwo.class))
-              .factory(container -> null)
-              .build());
+      ComponentRuntime.builder(EXECUTOR)
+          .addComponentRegistrar(new ComponentRegistrarImpl(Eagerness.ALWAYS))
+          .addComponent(
+              Component.builder(InitTracker.class)
+                  .add(Dependency.required(ComponentTwo.class))
+                  .factory(container -> null)
+                  .build())
+          .build();
       fail("Expected exception not thrown.");
     } catch (DependencyCycleException ex) {
       // success.
@@ -198,10 +199,10 @@ public final class ComponentRuntimeTest {
   @Test
   public void container_withMultipleComponentsRegisteredForSameInterface_shouldThrow() {
     try {
-      ComponentRuntime.create(
-          EXECUTOR,
-          Collections.singletonList(() -> new ComponentRegistrarImpl(Eagerness.ALWAYS)),
-          Component.builder(ComponentOne.class).factory(container -> null).build());
+      ComponentRuntime.builder(EXECUTOR)
+          .addComponentRegistrar(new ComponentRegistrarImpl(Eagerness.ALWAYS))
+          .addComponent(Component.builder(ComponentOne.class).factory(container -> null).build())
+          .build();
       fail("Expected exception not thrown.");
     } catch (IllegalArgumentException ex) {
       // success.
@@ -211,8 +212,9 @@ public final class ComponentRuntimeTest {
   @Test
   public void container_withMissingDependencies_shouldThrow() {
     try {
-      ComponentRuntime.create(
-          EXECUTOR, Collections.singletonList(() -> new ComponentRegistrarImpl(Eagerness.ALWAYS)));
+      ComponentRuntime.builder(EXECUTOR)
+          .addComponentRegistrar(new ComponentRegistrarImpl(Eagerness.ALWAYS))
+          .build();
       fail("Expected exception not thrown.");
     } catch (MissingDependencyException ex) {
       // success.
@@ -238,17 +240,18 @@ public final class ComponentRuntimeTest {
   @Test
   public void container_withCyclicProviderDependency_shouldProperlyInitialize() {
     ComponentRuntime runtime =
-        ComponentRuntime.create(
-            EXECUTOR,
-            Collections.emptyList(),
-            Component.builder(CyclicOne.class)
-                .add(Dependency.required(CyclicTwo.class))
-                .factory(container -> new CyclicOne(container.get(CyclicTwo.class)))
-                .build(),
-            Component.builder(CyclicTwo.class)
-                .add(Dependency.requiredProvider(CyclicOne.class))
-                .factory(container -> new CyclicTwo(container.getProvider(CyclicOne.class)))
-                .build());
+        ComponentRuntime.builder(EXECUTOR)
+            .addComponent(
+                Component.builder(CyclicOne.class)
+                    .add(Dependency.required(CyclicTwo.class))
+                    .factory(container -> new CyclicOne(container.get(CyclicTwo.class)))
+                    .build())
+            .addComponent(
+                Component.builder(CyclicTwo.class)
+                    .add(Dependency.requiredProvider(CyclicOne.class))
+                    .factory(container -> new CyclicTwo(container.getProvider(CyclicOne.class)))
+                    .build())
+            .build();
     CyclicOne one = runtime.get(CyclicOne.class);
 
     assertThat(one.cyclicTwo).isNotNull();
@@ -259,7 +262,7 @@ public final class ComponentRuntimeTest {
 
   @Test
   public void get_withNullInterface_shouldThrow() {
-    ComponentRuntime runtime = ComponentRuntime.create(EXECUTOR, Collections.emptyList());
+    ComponentRuntime runtime = ComponentRuntime.builder(EXECUTOR).build();
     try {
       runtime.get(null);
       fail("Expected exception not thrown.");
@@ -270,7 +273,7 @@ public final class ComponentRuntimeTest {
 
   @Test
   public void get_withMissingInterface_shouldReturnNull() {
-    ComponentRuntime runtime = ComponentRuntime.create(EXECUTOR, Collections.emptyList());
+    ComponentRuntime runtime = ComponentRuntime.builder(EXECUTOR).build();
     assertThat(runtime.get(List.class)).isNull();
   }
 
@@ -281,10 +284,10 @@ public final class ComponentRuntimeTest {
   @Test
   public void container_shouldExposeAllProvidedInterfacesOfAComponent() {
     ComponentRuntime runtime =
-        ComponentRuntime.create(
-            EXECUTOR,
-            Collections.emptyList(),
-            Component.builder(Child.class, Parent.class).factory(c -> new Child()).build());
+        ComponentRuntime.builder(EXECUTOR)
+            .addComponent(
+                Component.builder(Child.class, Parent.class).factory(c -> new Child()).build())
+            .build();
 
     Provider<Child> child = runtime.getProvider(Child.class);
     assertThat(child).isNotNull();
@@ -298,11 +301,10 @@ public final class ComponentRuntimeTest {
   @Test
   public void container_shouldExposeAllRegisteredSetValues() {
     ComponentRuntime runtime =
-        ComponentRuntime.create(
-            EXECUTOR,
-            Collections.emptyList(),
-            Component.intoSet(1, Integer.class),
-            Component.intoSet(2, Integer.class));
+        ComponentRuntime.builder(EXECUTOR)
+            .addComponent(Component.intoSet(1, Integer.class))
+            .addComponent(Component.intoSet(2, Integer.class))
+            .build();
 
     Set<Integer> integers = runtime.setOf(Integer.class);
     assertThat(integers).containsExactly(1, 2);
@@ -311,18 +313,19 @@ public final class ComponentRuntimeTest {
   @Test
   public void setComponents_shouldParticipateInCycleDetection() {
     try {
-      ComponentRuntime.create(
-          EXECUTOR,
-          Collections.emptyList(),
-          Component.builder(ComponentOne.class)
-              .add(Dependency.setOf(Integer.class))
-              .factory(c -> null)
-              .build(),
-          Component.intoSet(1, Integer.class),
-          Component.intoSetBuilder(Integer.class)
-              .add(Dependency.required(ComponentOne.class))
-              .factory(c -> 2)
-              .build());
+      ComponentRuntime.builder(EXECUTOR)
+          .addComponent(
+              Component.builder(ComponentOne.class)
+                  .add(Dependency.setOf(Integer.class))
+                  .factory(c -> null)
+                  .build())
+          .addComponent(Component.intoSet(1, Integer.class))
+          .addComponent(
+              Component.intoSetBuilder(Integer.class)
+                  .add(Dependency.required(ComponentOne.class))
+                  .factory(c -> 2)
+                  .build())
+          .build();
       fail("Expected exception not thrown.");
     } catch (DependencyCycleException ex) {
       // success.
@@ -332,15 +335,14 @@ public final class ComponentRuntimeTest {
   @Test
   public void setComponents_shouldNotPreventValueComponentsFromBeingRegistered() {
     ComponentRuntime runtime =
-        ComponentRuntime.create(
-            EXECUTOR,
-            Collections.emptySet(),
-            Component.intoSet(1, Integer.class),
-            Component.intoSet(2, Integer.class),
-            Component.of(2f, Float.class),
-            Component.intoSet(3, Integer.class),
-            Component.intoSet(4, Integer.class),
-            Component.of(4d, Double.class));
+        ComponentRuntime.builder(EXECUTOR)
+            .addComponent(Component.intoSet(1, Integer.class))
+            .addComponent(Component.intoSet(2, Integer.class))
+            .addComponent(Component.of(2f, Float.class))
+            .addComponent(Component.intoSet(3, Integer.class))
+            .addComponent(Component.intoSet(4, Integer.class))
+            .addComponent(Component.of(4d, Double.class))
+            .build();
 
     assertThat(runtime.setOf(Integer.class)).containsExactly(1, 2, 3, 4);
     assertThat(runtime.get(Float.class)).isEqualTo(2f);
@@ -360,13 +362,14 @@ public final class ComponentRuntimeTest {
   public void newlyDiscoveredComponent_shouldBecomeAvailableThroughItsProvider() {
     OptionalProvider<ComponentRegistrar> missingRegistrar = OptionalProvider.empty();
     ComponentRuntime runtime =
-        ComponentRuntime.create(
-            EXECUTOR,
-            Collections.singleton(missingRegistrar),
-            Component.builder(DependsOnString.class)
-                .add(Dependency.optionalProvider(String.class))
-                .factory(c -> new DependsOnString(c.getProvider(String.class)))
-                .build());
+        ComponentRuntime.builder(EXECUTOR)
+            .addLazyComponentRegistrars(Collections.singleton(missingRegistrar))
+            .addComponent(
+                Component.builder(DependsOnString.class)
+                    .add(Dependency.optionalProvider(String.class))
+                    .factory(c -> new DependsOnString(c.getProvider(String.class)))
+                    .build())
+            .build();
     ComponentLoader componentLoader = runtime.get(ComponentLoader.class);
 
     DependsOnString dependsOnString = runtime.get(DependsOnString.class);
@@ -391,13 +394,14 @@ public final class ComponentRuntimeTest {
   public void newlyDiscoveredSetComponent_shouldBecomeAvailableThroughItsSet() {
     OptionalProvider<ComponentRegistrar> missingRegistrar = OptionalProvider.empty();
     ComponentRuntime runtime =
-        ComponentRuntime.create(
-            EXECUTOR,
-            Collections.singleton(missingRegistrar),
-            Component.builder(DependsOnSet.class)
-                .add(Dependency.setOf(String.class))
-                .factory(c -> new DependsOnSet(c.setOf(String.class)))
-                .build());
+        ComponentRuntime.builder(EXECUTOR)
+            .addLazyComponentRegistrars(Collections.singleton(missingRegistrar))
+            .addComponent(
+                Component.builder(DependsOnSet.class)
+                    .add(Dependency.setOf(String.class))
+                    .factory(c -> new DependsOnSet(c.setOf(String.class)))
+                    .build())
+            .build();
     ComponentLoader componentLoader = runtime.get(ComponentLoader.class);
 
     DependsOnSet component = runtime.get(DependsOnSet.class);
@@ -413,10 +417,10 @@ public final class ComponentRuntimeTest {
   public void newlyDiscoveredComponents_whenNewComponentConflictsWithExisting_shouldThrow() {
     OptionalProvider<ComponentRegistrar> missingRegistrar = OptionalProvider.empty();
     ComponentRuntime runtime =
-        ComponentRuntime.create(
-            EXECUTOR,
-            Collections.singleton(missingRegistrar),
-            Component.of("string", String.class));
+        ComponentRuntime.builder(EXECUTOR)
+            .addLazyComponentRegistrars(Collections.singleton(missingRegistrar))
+            .addComponent(Component.of("string", String.class))
+            .build();
     missingRegistrar.set(
         () -> () -> Collections.singletonList(Component.of("hello", String.class)));
     assertThrows(IllegalArgumentException.class, runtime::discoverComponents);
@@ -428,10 +432,10 @@ public final class ComponentRuntimeTest {
     OptionalProvider<ComponentRegistrar> missingRegistrar = OptionalProvider.empty();
     InitTracker initTracker = new InitTracker();
     ComponentRuntime runtime =
-        ComponentRuntime.create(
-            EXECUTOR,
-            Collections.singleton(missingRegistrar),
-            Component.of(initTracker, InitTracker.class));
+        ComponentRuntime.builder(EXECUTOR)
+            .addLazyComponentRegistrars(Collections.singleton(missingRegistrar))
+            .addComponent(Component.of(initTracker, InitTracker.class))
+            .build();
     runtime.initializeEagerComponents(true);
     assertThat(initTracker.isInitialized()).isFalse();
     missingRegistrar.set(
@@ -453,10 +457,10 @@ public final class ComponentRuntimeTest {
     OptionalProvider<ComponentRegistrar> missingRegistrar = OptionalProvider.empty();
     InitTracker initTracker = new InitTracker();
     ComponentRuntime runtime =
-        ComponentRuntime.create(
-            EXECUTOR,
-            Collections.singleton(missingRegistrar),
-            Component.of(initTracker, InitTracker.class));
+        ComponentRuntime.builder(EXECUTOR)
+            .addLazyComponentRegistrars(Collections.singleton(missingRegistrar))
+            .addComponent(Component.of(initTracker, InitTracker.class))
+            .build();
     runtime.initializeEagerComponents(false);
     assertThat(initTracker.isInitialized()).isFalse();
     missingRegistrar.set(
@@ -478,10 +482,10 @@ public final class ComponentRuntimeTest {
     OptionalProvider<ComponentRegistrar> missingRegistrar = OptionalProvider.empty();
     InitTracker initTracker = new InitTracker();
     ComponentRuntime runtime =
-        ComponentRuntime.create(
-            EXECUTOR,
-            Collections.singleton(missingRegistrar),
-            Component.of(initTracker, InitTracker.class));
+        ComponentRuntime.builder(EXECUTOR)
+            .addLazyComponentRegistrars(Collections.singleton(missingRegistrar))
+            .addComponent(Component.of(initTracker, InitTracker.class))
+            .build();
     runtime.initializeEagerComponents(false);
     assertThat(initTracker.isInitialized()).isFalse();
     missingRegistrar.set(
@@ -503,10 +507,10 @@ public final class ComponentRuntimeTest {
     OptionalProvider<ComponentRegistrar> missingRegistrar = OptionalProvider.empty();
     InitTracker initTracker = new InitTracker();
     ComponentRuntime runtime =
-        ComponentRuntime.create(
-            EXECUTOR,
-            Collections.singleton(missingRegistrar),
-            Component.of(initTracker, InitTracker.class));
+        ComponentRuntime.builder(EXECUTOR)
+            .addLazyComponentRegistrars(Collections.singleton(missingRegistrar))
+            .addComponent(Component.of(initTracker, InitTracker.class))
+            .build();
     assertThat(initTracker.isInitialized()).isFalse();
     missingRegistrar.set(
         () ->
@@ -530,10 +534,10 @@ public final class ComponentRuntimeTest {
     OptionalProvider<ComponentRegistrar> missingRegistrar = OptionalProvider.empty();
     InitTracker initTracker = new InitTracker();
     ComponentRuntime runtime =
-        ComponentRuntime.create(
-            EXECUTOR,
-            Collections.singleton(missingRegistrar),
-            Component.of(initTracker, InitTracker.class));
+        ComponentRuntime.builder(EXECUTOR)
+            .addLazyComponentRegistrars(Collections.singleton(missingRegistrar))
+            .addComponent(Component.of(initTracker, InitTracker.class))
+            .build();
     runtime.initializeEagerComponents(true);
     missingRegistrar.set(
         () ->
@@ -561,13 +565,14 @@ public final class ComponentRuntimeTest {
   public void newlyDiscoveredComponent_shouldBecomeAvailableThroughItsDeferred() {
     OptionalProvider<ComponentRegistrar> missingRegistrar = OptionalProvider.empty();
     ComponentRuntime runtime =
-        ComponentRuntime.create(
-            EXECUTOR,
-            Collections.singleton(missingRegistrar),
-            Component.builder(DependsOnDeferredString.class)
-                .add(Dependency.deferred(String.class))
-                .factory(c -> new DependsOnDeferredString(c.getDeferred(String.class)))
-                .build());
+        ComponentRuntime.builder(EXECUTOR)
+            .addLazyComponentRegistrars(Collections.singleton(missingRegistrar))
+            .addComponent(
+                Component.builder(DependsOnDeferredString.class)
+                    .add(Dependency.deferred(String.class))
+                    .factory(c -> new DependsOnDeferredString(c.getDeferred(String.class)))
+                    .build())
+            .build();
     ComponentLoader componentLoader = runtime.get(ComponentLoader.class);
 
     DependsOnDeferredString dependsOnDeferredString = runtime.get(DependsOnDeferredString.class);

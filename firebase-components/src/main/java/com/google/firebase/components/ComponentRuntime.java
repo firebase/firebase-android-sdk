@@ -24,6 +24,8 @@ import com.google.firebase.events.Subscriber;
 import com.google.firebase.inject.Deferred;
 import com.google.firebase.inject.Provider;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -52,32 +54,25 @@ public class ComponentRuntime extends AbstractComponentContainer implements Comp
    * Creates an instance of {@link ComponentRuntime} for the provided {@link ComponentRegistrar}s
    * and any additional components.
    *
-   * @deprecated Use {@link #create(Executor, Iterable, Component[])} instead.
+   * @deprecated Use {@link #builder(Executor)} instead.
    */
   @Deprecated
   public ComponentRuntime(
       Executor defaultEventExecutor,
       Iterable<ComponentRegistrar> registrars,
       Component<?>... additionalComponents) {
-    this(defaultEventExecutor, toProviders(registrars), true, additionalComponents);
+    this(defaultEventExecutor, toProviders(registrars), Arrays.asList(additionalComponents));
   }
 
-  /**
-   * Creates an instance of {@link ComponentRuntime} for the provided {@link ComponentRegistrar}s
-   * and any additional components.
-   */
-  public static ComponentRuntime create(
-      Executor defaultEventExecutor,
-      Iterable<Provider<ComponentRegistrar>> registrars,
-      Component<?>... additionalComponents) {
-    return new ComponentRuntime(defaultEventExecutor, registrars, true, additionalComponents);
+  /** A builder for creating {@link ComponentRuntime} instances. */
+  public static Builder builder(Executor defaultEventExecutor) {
+    return new Builder(defaultEventExecutor);
   }
 
   private ComponentRuntime(
       Executor defaultEventExecutor,
       Iterable<Provider<ComponentRegistrar>> registrars,
-      boolean disambiguateConstructorOverload,
-      Component<?>... additionalComponents) {
+      Collection<Component<?>> additionalComponents) {
     eventBus = new EventBus(defaultEventExecutor);
 
     List<Component<?>> componentsToAdd = new ArrayList<>();
@@ -302,6 +297,35 @@ public class ComponentRuntime extends AbstractComponentContainer implements Comp
           }
         }
       }
+    }
+  }
+
+  public static final class Builder {
+    private final Executor defaultExecutor;
+    private final List<Provider<ComponentRegistrar>> lazyRegistrars = new ArrayList<>();
+    private final List<Component<?>> additionalComponents = new ArrayList<>();
+
+    Builder(Executor defaultExecutor) {
+      this.defaultExecutor = defaultExecutor;
+    }
+
+    public Builder addLazyComponentRegistrars(Collection<Provider<ComponentRegistrar>> registrars) {
+      this.lazyRegistrars.addAll(registrars);
+      return this;
+    }
+
+    public Builder addComponentRegistrar(ComponentRegistrar registrar) {
+      this.lazyRegistrars.add(() -> registrar);
+      return this;
+    }
+
+    public Builder addComponent(Component<?> component) {
+      this.additionalComponents.add(component);
+      return this;
+    }
+
+    public ComponentRuntime build() {
+      return new ComponentRuntime(defaultExecutor, lazyRegistrars, additionalComponents);
     }
   }
 }

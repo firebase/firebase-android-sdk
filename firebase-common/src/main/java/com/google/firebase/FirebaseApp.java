@@ -423,17 +423,20 @@ public class FirebaseApp {
 
     String kotlinVersion = KotlinDetector.detectVersion();
     componentRuntime =
-        ComponentRuntime.create(
-            UI_EXECUTOR,
-            registrars,
-            Component.of(applicationContext, Context.class),
-            Component.of(this, FirebaseApp.class),
-            Component.of(options, FirebaseOptions.class),
-            LibraryVersionComponent.create(FIREBASE_ANDROID, ""),
-            LibraryVersionComponent.create(FIREBASE_COMMON, BuildConfig.VERSION_NAME),
-            kotlinVersion != null ? LibraryVersionComponent.create(KOTLIN, kotlinVersion) : null,
-            DefaultUserAgentPublisher.component(),
-            DefaultHeartBeatInfo.component());
+        ComponentRuntime.builder(UI_EXECUTOR)
+            .addLazyComponentRegistrars(registrars)
+            .addComponent(Component.of(applicationContext, Context.class))
+            .addComponent(Component.of(this, FirebaseApp.class))
+            .addComponent(Component.of(options, FirebaseOptions.class))
+            .addComponent(LibraryVersionComponent.create(FIREBASE_ANDROID, ""))
+            .addComponent(LibraryVersionComponent.create(FIREBASE_COMMON, BuildConfig.VERSION_NAME))
+            .addComponent(
+                kotlinVersion != null
+                    ? LibraryVersionComponent.create(KOTLIN, kotlinVersion)
+                    : null)
+            .addComponent(DefaultUserAgentPublisher.component())
+            .addComponent(DefaultHeartBeatInfo.component())
+            .build();
 
     dataCollectionConfigStorage =
         new Lazy<>(
