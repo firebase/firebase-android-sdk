@@ -14,6 +14,7 @@
 
 package com.google.firebase.components;
 
+import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import com.google.firebase.inject.Deferred;
 import com.google.firebase.inject.Provider;
@@ -30,7 +31,9 @@ class OptionalProvider<T> implements Provider<T>, Deferred<T> {
   private static final DeferredHandler<Object> NOOP_HANDLER = p -> {};
   private static final Provider<Object> EMPTY_PROVIDER = () -> null;
 
+  @GuardedBy("this")
   private DeferredHandler<T> handler;
+
   private volatile Provider<T> delegate;
 
   private OptionalProvider(DeferredHandler<T> handler, Provider<T> provider) {
