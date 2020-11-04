@@ -14,10 +14,7 @@
 
 package com.google.firebase.remoteconfig.internal;
 
-import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.TAG;
-
 import android.os.Bundle;
-import android.util.Log;
 import androidx.annotation.NonNull;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
 import org.json.JSONObject;
