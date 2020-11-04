@@ -48,13 +48,11 @@ public class Personalization {
   public void logArmActive(@NonNull String key, @NonNull ConfigContainer configContainer) {
     JSONObject ids = configContainer.getPersonalizationMetadata();
     if (ids.length() < 1) {
-      Log.w(TAG, "Missing Personalization metadata");
       return;
     }
 
     JSONObject values = configContainer.getConfigs();
     if (values.length() < 1) {
-      Log.w(TAG, "Missing config");
       return;
     }
 
