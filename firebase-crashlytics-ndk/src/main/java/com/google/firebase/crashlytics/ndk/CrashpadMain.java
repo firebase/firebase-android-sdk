@@ -1,4 +1,4 @@
-// Copyright 2019 Google LLC
+// Copyright 2020 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,26 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef __CRASHLYTICS_ENTRY_H__
-#define __CRASHLYTICS_ENTRY_H__
+package com.google.firebase.crashlytics.ndk;
 
-#if defined (CRASHLYTICS_INCLUDE_JNI_ENTRY)
-#    include <jni.h>
-#endif
+public class CrashpadMain {
+  public static void main(String[] args) {
+    try {
+      System.loadLibrary("crashlytics-handler");
+    } catch (UnsatisfiedLinkError e) {
+      throw new RuntimeException(e);
+    }
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+    crashpadMain(args);
+  }
 
-#if defined (CRASHLYTICS_INCLUDE_JNI_ENTRY)
-
-JNIEXPORT jint       JNI_OnLoad(JavaVM* vm, void* reserved);
-JNIEXPORT jboolean   JNI_Init(JNIEnv* env, jobject obj, jobjectArray file, jobject asset_manager);
-
-#endif // CRASHLYTICS_INCLUDE_JNI_ENTRY
-
-#ifdef __cplusplus
+  public static native void crashpadMain(String[] args);
 }
-#endif
-
-#endif // __CRASHLYTICS_ENTRY_H__

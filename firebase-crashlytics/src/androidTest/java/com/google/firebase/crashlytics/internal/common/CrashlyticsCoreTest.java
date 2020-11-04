@@ -363,7 +363,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     final File[] sessionIdDirectories =
         nativeSessionsDir.listFiles(ANY_SESSION_ID_DIRECTORY_FILTER);
     assertEquals(1, sessionIdDirectories.length);
-    assertEquals(7, sessionIdDirectories[0].listFiles().length);
+    assertEquals(6, sessionIdDirectories[0].listFiles().length);
   }
 
   public void testNativeCrashWithMetadata() throws Exception {
@@ -399,7 +399,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     final File[] sessionIdDirectories =
         nativeSessionsDir.listFiles(ANY_SESSION_ID_DIRECTORY_FILTER);
     assertEquals(1, sessionIdDirectories.length);
-    assertEquals(10, sessionIdDirectories[0].listFiles().length);
+    assertEquals(9, sessionIdDirectories[0].listFiles().length);
   }
 
   public void testMultipleNativeCrashes() throws Exception {
@@ -434,7 +434,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     // We expect a single native crash report, because the current implementation does not
     // handle finalizing multiple native sessions.
     assertEquals(1, sessionIdDirectories.length);
-    assertEquals(7, sessionIdDirectories[0].listFiles().length);
+    assertEquals(6, sessionIdDirectories[0].listFiles().length);
   }
 
   public void testInterleavedJavaAndNativeCrashes() throws Exception {
@@ -494,7 +494,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     assertTrue(nativeSessionsDir.isDirectory());
     File[] nativeSessionsDirectories = nativeSessionsDir.listFiles(ANY_SESSION_ID_DIRECTORY_FILTER);
     assertEquals(1, nativeSessionsDirectories.length);
-    assertEquals(7, nativeSessionsDirectories[0].listFiles().length);
+    assertEquals(6, nativeSessionsDirectories[0].listFiles().length);
 
     when(mocknativeComponent.hasCrashDataForSession(anyString())).thenReturn(false);
     when(mocknativeComponent.getSessionFileProvider(anyString())).thenReturn(emptyNdkData);
@@ -514,7 +514,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     assertTrue(nativeSessionsDir.isDirectory());
     nativeSessionsDirectories = nativeSessionsDir.listFiles(ANY_SESSION_ID_DIRECTORY_FILTER);
     assertEquals(1, nativeSessionsDirectories.length);
-    assertEquals(7, nativeSessionsDirectories[0].listFiles().length);
+    assertEquals(6, nativeSessionsDirectories[0].listFiles().length);
   }
 
   public void testOnPreExecute_nativeDidCrashOnPreviousExecution() throws Exception {

@@ -12,26 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef __CRASHLYTICS_ENTRY_H__
-#define __CRASHLYTICS_ENTRY_H__
+#ifndef __CRASHLYTICS_VERSION_H__
+#define __CRASHLYTICS_VERSION_H__
 
-#if defined (CRASHLYTICS_INCLUDE_JNI_ENTRY)
-#    include <jni.h>
-#endif
+//! Authoritative libcrashlytics version string.
+#define VERSION "3.0.0"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#if defined (CRASHLYTICS_INCLUDE_JNI_ENTRY)
-
-JNIEXPORT jint       JNI_OnLoad(JavaVM* vm, void* reserved);
-JNIEXPORT jboolean   JNI_Init(JNIEnv* env, jobject obj, jobjectArray file, jobject asset_manager);
-
-#endif // CRASHLYTICS_INCLUDE_JNI_ENTRY
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif // __CRASHLYTICS_ENTRY_H__
+#endif // __CRASHLYTICS_VERSION_H__
