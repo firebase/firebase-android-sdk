@@ -34,7 +34,6 @@ import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.NativeSessionFileProvider;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsEventLogger;
 import com.google.firebase.crashlytics.internal.log.LogFileManager;
-import com.google.firebase.crashlytics.internal.ndk.NativeFileUtils;
 import com.google.firebase.crashlytics.internal.network.HttpRequestFactory;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.proto.ClsFileOutputStream;
@@ -1856,18 +1855,8 @@ class CrashlyticsController {
     final File userFile = metaDataStore.getUserDataFileForSession(previousSessionId);
     final File keysFile = metaDataStore.getKeysFileForSession(previousSessionId);
 
-    byte[] binaryImageBytes = null;
-    try {
-      binaryImageBytes =
-          NativeFileUtils.binaryImagesJsonFromMapsFile(fileProvider.getBinaryImagesFile(), context);
-    } catch (Exception e) {
-      // Keep processing, we'll add an empty binaryImages object.
-    }
-
     List<NativeSessionFile> nativeSessionFiles = new ArrayList<>();
     nativeSessionFiles.add(new BytesBackedNativeSessionFile("logs_file", "logs", logBytes));
-    nativeSessionFiles.add(
-        new BytesBackedNativeSessionFile("binary_images_file", "binaryImages", binaryImageBytes));
     nativeSessionFiles.add(
         new FileBackedNativeSessionFile(
             "crash_meta_file", "metadata", fileProvider.getMetadataFile()));

@@ -109,11 +109,19 @@ google::crashlytics::api::detail::jvm_context::jvm_context(
 {
 }
 
-extern "C" google::crashlytics::api::detail::jvm_context* external_api_initialize();
-extern "C" void external_api_dispose            (google::crashlytics::api::detail::jvm_context* context);
-extern "C" void external_api_set                (google::crashlytics::api::detail::jvm_context* context, const char* key, const char* value);
-extern "C" void external_api_log                (google::crashlytics::api::detail::jvm_context* context, const char* message);
-extern "C" void external_api_set_user_id(google::crashlytics::api::detail::jvm_context* context, const char* identifier);
+extern "C" {
+
+google::crashlytics::api::detail::jvm_context* external_api_initialize()                        __attribute__((visibility ("default")));
+void external_api_dispose(
+    google::crashlytics::api::detail::jvm_context* context)                                     __attribute__((visibility ("default")));
+void external_api_set(
+    google::crashlytics::api::detail::jvm_context* context, const char* key, const char* value) __attribute__((visibility ("default")));
+void external_api_log(
+    google::crashlytics::api::detail::jvm_context* context, const char* message)                __attribute__((visibility ("default")));
+void external_api_set_user_id(
+    google::crashlytics::api::detail::jvm_context* context, const char* identifier)             __attribute__((visibility ("default")));
+
+}
 
 google::crashlytics::api::detail::jvm_context* external_api_initialize()
 {

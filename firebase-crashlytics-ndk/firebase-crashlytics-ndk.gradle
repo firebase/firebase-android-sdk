@@ -14,6 +14,7 @@
 
 plugins {
     id 'firebase-library'
+    id 'LicenseResolverPlugin'
 }
 
 firebaseLibrary {
@@ -27,11 +28,16 @@ android {
     }
 
     compileSdkVersion project.targetSdkVersion
-    ndkVersion "17.2.4988734"	// NDK r17c
     defaultConfig {
         minSdkVersion 16
         targetSdkVersion project.targetSdkVersion
         versionName version
+
+        externalNativeBuild {
+            ndkBuild {
+                arguments '-j4'
+            }
+        }
 
         consumerProguardFiles 'firebase-crashlytics-ndk-proguard.txt'
         multiDexEnabled true
@@ -48,11 +54,59 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
 
+    packagingOptions {
+        exclude './src/third_party/**'
+    }
+
     externalNativeBuild {
         ndkBuild {
             path "./src/main/jni/Android.mk"
         }
     }
+
+    libraryVariants.all { variant ->
+        variant.outputs.each { output ->
+            def func = fixTrampolineFilenames(variant.baseName)
+
+            tasks.findAll {
+                it.name.startsWith("bundleReleaseAar")
+            }.each {
+                it.dependsOn func
+            }
+
+            tasks.findAll {
+                it.name.startsWith("externalNativeBuild")
+            }.each {
+                func.dependsOn it
+            }
+        }
+    }
+}
+
+import java.nio.file.Files
+
+// There is not any normal way to package native executables in an Android APK.
+// It is normal to package native code as a loadable module but Android's APK
+// installer will ignore files not named like a shared object, so give the
+// handler executable an acceptable name
+def fixTrampolineFilenames(variantBaseName) {
+    project.task("fixTrampolineFilenames${variantBaseName}").configure({
+    }).doFirst {
+        ["x86", "x86_64", "armeabi-v7a", "arm64-v8a"].each { arch ->
+            def initial = new File(
+                    "${buildDir}/intermediates/ndkBuild/${variantBaseName}/obj/local/${arch}/crashlytics-trampoline")
+            def renamed = new File(
+                    "${buildDir}/intermediates/ndkBuild/${variantBaseName}/obj/local/${arch}/libcrashlytics-trampoline.so")
+
+            // There is no need to delete the original file, it will not be
+            // packaged into the APK
+            Files.copy(initial.toPath(), renamed.toPath())
+        }
+    }
+}
+
+thirdPartyLicenses {
+    add 'Crashpad', "file://${rootDir}/third_party/licenses/apache-2.0.txt"
 }
 
 dependencies {

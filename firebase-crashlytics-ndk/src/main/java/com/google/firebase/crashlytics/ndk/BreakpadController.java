@@ -79,11 +79,22 @@ class BreakpadController implements NativeComponentController {
   @NonNull
   public SessionFiles getFilesForSession(String sessionId) {
     final File sessionFileDirectory = filesManager.getSessionFileDirectory(sessionId);
+    final File sessionFileDirectoryForMinidump = new File(sessionFileDirectory, "pending");
+
+    Logger.getLogger()
+        .d("Minidump directory: " + sessionFileDirectoryForMinidump.getAbsolutePath());
+
+    File minidump = getSingleFileWithExtension(sessionFileDirectoryForMinidump, ".dmp");
+
+    Logger.getLogger()
+        .d("Minidump " + (minidump != null && minidump.exists() ? "exists" : "does not exist"));
+
     final SessionFiles.Builder builder = new SessionFiles.Builder();
-    if (sessionFileDirectory != null && sessionFileDirectory.exists()) {
+    if (sessionFileDirectory != null
+        && sessionFileDirectory.exists()
+        && sessionFileDirectoryForMinidump.exists()) {
       builder
-          .minidumpFile(getSingleFileWithExtension(sessionFileDirectory, ".dmp"))
-          .binaryImagesFile(getSingleFileWithExtension(sessionFileDirectory, ".maps"))
+          .minidumpFile(getSingleFileWithExtension(sessionFileDirectoryForMinidump, ".dmp"))
           .metadataFile(getSingleFileWithExtension(sessionFileDirectory, ".device_info"))
           .sessionFile(new File(sessionFileDirectory, SESSION_METADATA_FILE))
           .appFile(new File(sessionFileDirectory, APP_METADATA_FILE))
@@ -171,7 +182,13 @@ class BreakpadController implements NativeComponentController {
   /** Returns a single file matching the given extension from the given directory. */
   @Nullable
   private static File getSingleFileWithExtension(File directory, String extension) {
-    for (File file : directory.listFiles()) {
+    File[] files = directory.listFiles();
+
+    if (files == null) {
+      return null;
+    }
+
+    for (File file : files) {
       if (file.getName().endsWith(extension)) {
         return file;
       }
