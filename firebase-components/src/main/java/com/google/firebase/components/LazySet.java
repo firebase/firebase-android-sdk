@@ -57,13 +57,9 @@ class LazySet<T> implements Provider<Set<T>> {
     return Collections.unmodifiableSet(actualSet);
   }
 
-  void add(Provider<T> newProvider) {
+  synchronized void add(Provider<T> newProvider) {
     if (actualSet == null) {
-      synchronized (this) {
-        if (actualSet == null) {
-          providers.add(newProvider);
-        }
-      }
+      providers.add(newProvider);
     } else {
       actualSet.add(newProvider.get());
     }
