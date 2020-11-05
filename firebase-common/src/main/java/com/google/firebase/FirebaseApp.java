@@ -416,15 +416,15 @@ public class FirebaseApp {
     List<Provider<ComponentRegistrar>> registrars =
         ComponentDiscovery.forContext(applicationContext, ComponentDiscoveryService.class)
             .discoverLazy();
-    registrars.add(FirebaseCommonRegistrar::new);
 
     componentRuntime =
-        ComponentRuntime.create(
-            UI_EXECUTOR,
-            registrars,
-            Component.of(applicationContext, Context.class),
-            Component.of(this, FirebaseApp.class),
-            Component.of(options, FirebaseOptions.class));
+        ComponentRuntime.builder(UI_EXECUTOR)
+            .addLazyComponentRegistrars(registrars)
+            .addComponentRegistrar(new FirebaseCommonRegistrar())
+            .addComponent(Component.of(applicationContext, Context.class))
+            .addComponent(Component.of(this, FirebaseApp.class))
+            .addComponent(Component.of(options, FirebaseOptions.class))
+            .build();
 
     dataCollectionConfigStorage =
         new Lazy<>(
