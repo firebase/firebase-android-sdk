@@ -31,7 +31,6 @@ import org.junit.runners.Suite;
   FunctionsTest.class,
   PerformanceMonitoringTest.class,
   RemoteConfigTest.class,
-  SmartReplyTest.class,
   StorageTest.class,
 })
 public final class TestSuite {}

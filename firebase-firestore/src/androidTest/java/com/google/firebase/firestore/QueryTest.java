@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore;
 
+import static com.google.firebase.firestore.testutil.IntegrationTestUtil.nullList;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.querySnapshotToIds;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.querySnapshotToValues;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollection;
@@ -562,15 +563,20 @@ public class QueryTest {
     Map<String, Object> docB = map("array", asList("a", 42L, "c"));
     Map<String, Object> docC = map("array", asList(41.999, "42", map("a", asList(42))));
     Map<String, Object> docD = map("array", asList(42L), "array2", asList("bingo"));
+    Map<String, Object> docE = map("array", nullList());
+    Map<String, Object> docF = map("array", asList(Double.NaN));
     CollectionReference collection =
-        testCollectionWithDocs(map("a", docA, "b", docB, "c", docC, "d", docD));
+        testCollectionWithDocs(
+            map("a", docA, "b", docB, "c", docC, "d", docD, "e", docE, "f", docF));
 
     // Search for "array" to contain 42
     QuerySnapshot snapshot = waitFor(collection.whereArrayContains("array", 42L).get());
     assertEquals(asList(docA, docB, docD), querySnapshotToValues(snapshot));
 
-    // NOTE: The backend doesn't currently support null, NaN, objects, or arrays, so there isn't
-    // much of anything else interesting to test.
+    // Note: whereArrayContains() requires a non-null value parameter, so no null test is needed.
+    // With NaN.
+    snapshot = waitFor(collection.whereArrayContains("array", Double.NaN).get());
+    assertEquals(new ArrayList<>(), querySnapshotToValues(snapshot));
   }
 
   @Test
@@ -582,9 +588,14 @@ public class QueryTest {
     Map<String, Object> docE = map("zip", asList("98101", map("zip", 98101L)));
     Map<String, Object> docF = map("zip", map("code", 500L));
     Map<String, Object> docG = map("zip", asList(98101L, 98102L));
+    Map<String, Object> docH = map("zip", null);
+    Map<String, Object> docI = map("zip", Double.NaN);
+
     CollectionReference collection =
         testCollectionWithDocs(
-            map("a", docA, "b", docB, "c", docC, "d", docD, "e", docE, "f", docF, "g", docG));
+            map(
+                "a", docA, "b", docB, "c", docC, "d", docD, "e", docE, "f", docF, "g", docG, "h",
+                docH, "i", docI));
 
     // Search for zips matching 98101, 98103, or [98101, 98102].
     QuerySnapshot snapshot =
@@ -594,6 +605,24 @@ public class QueryTest {
     // With objects.
     snapshot = waitFor(collection.whereIn("zip", asList(map("code", 500L))).get());
     assertEquals(asList(docF), querySnapshotToValues(snapshot));
+
+    // With null.
+    snapshot = waitFor(collection.whereIn("zip", nullList()).get());
+    assertEquals(new ArrayList<>(), querySnapshotToValues(snapshot));
+
+    // With null and a value.
+    List<Object> inputList = nullList();
+    inputList.add(98101L);
+    snapshot = waitFor(collection.whereIn("zip", inputList).get());
+    assertEquals(asList(docA), querySnapshotToValues(snapshot));
+
+    // With NaN.
+    snapshot = waitFor(collection.whereIn("zip", asList(Double.NaN)).get());
+    assertEquals(new ArrayList<>(), querySnapshotToValues(snapshot));
+
+    // With NaN and a value.
+    snapshot = waitFor(collection.whereIn("zip", asList(Double.NaN, 98101L)).get());
+    assertEquals(asList(docA), querySnapshotToValues(snapshot));
   }
 
   @Test
@@ -656,9 +685,7 @@ public class QueryTest {
     assertEquals(Lists.newArrayList(expectedDocsMap.values()), querySnapshotToValues(snapshot));
 
     // With Null.
-    List<Object> nullArray = new ArrayList<>();
-    nullArray.add(null);
-    snapshot = waitFor(collection.whereNotIn("zip", nullArray).get());
+    snapshot = waitFor(collection.whereNotIn("zip", nullList()).get());
     assertEquals(new ArrayList<>(), querySnapshotToValues(snapshot));
 
     // With NaN.
@@ -706,10 +733,14 @@ public class QueryTest {
     Map<String, Object> docE = map("array", asList(43L));
     Map<String, Object> docF = map("array", asList(map("a", 42L)));
     Map<String, Object> docG = map("array", 42L);
+    Map<String, Object> docH = map("array", nullList());
+    Map<String, Object> docI = map("array", asList(Double.NaN));
 
     CollectionReference collection =
         testCollectionWithDocs(
-            map("a", docA, "b", docB, "c", docC, "d", docD, "e", docE, "f", docF, "g", docG));
+            map(
+                "a", docA, "b", docB, "c", docC, "d", docD, "e", docE, "f", docF, "g", docG, "h",
+                docH, "i", docI));
 
     // Search for "array" to contain [42, 43].
     QuerySnapshot snapshot =
@@ -719,6 +750,24 @@ public class QueryTest {
     // With objects.
     snapshot = waitFor(collection.whereArrayContainsAny("array", asList(map("a", 42L))).get());
     assertEquals(asList(docF), querySnapshotToValues(snapshot));
+
+    // With null.
+    snapshot = waitFor(collection.whereArrayContainsAny("array", nullList()).get());
+    assertEquals(new ArrayList<>(), querySnapshotToValues(snapshot));
+
+    // With null and a value.
+    List<Object> inputList = nullList();
+    inputList.add(43L);
+    snapshot = waitFor(collection.whereArrayContainsAny("array", inputList).get());
+    assertEquals(asList(docE), querySnapshotToValues(snapshot));
+
+    // With NaN.
+    snapshot = waitFor(collection.whereArrayContainsAny("array", asList(Double.NaN)).get());
+    assertEquals(new ArrayList<>(), querySnapshotToValues(snapshot));
+
+    // With NaN and a value.
+    snapshot = waitFor(collection.whereArrayContainsAny("array", asList(Double.NaN, 43L)).get());
+    assertEquals(asList(docE), querySnapshotToValues(snapshot));
   }
 
   @Test

@@ -22,7 +22,7 @@
         android:name="com.google.firebase.components.ComponentDiscoveryService"
         android:exported="false">
       <meta-data
-          android:name="com.google.firebase.components:com.google.firebase.ml.modeldownloader.FirebaseMlModelDownloaderRegistrar"
+          android:name="com.google.firebase.components:com.google.firebase.ml.modeldownloader.FirebaseModelDownloaderRegistrar"
           android:value="com.google.firebase.components.ComponentRegistrar" />
     </service>
   </application>
