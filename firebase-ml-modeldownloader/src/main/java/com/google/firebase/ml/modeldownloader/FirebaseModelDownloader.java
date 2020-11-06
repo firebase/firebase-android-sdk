@@ -18,18 +18,28 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
+import com.google.firebase.ml.modeldownloader.internal.SharedPreferencesUtil;
 import java.util.Set;
 
 public class FirebaseModelDownloader {
 
   private final FirebaseOptions firebaseOptions;
+  private final SharedPreferencesUtil sharedPreferencesUtil;
 
-  FirebaseModelDownloader(FirebaseOptions firebaseOptions) {
-    this.firebaseOptions = firebaseOptions;
+  FirebaseModelDownloader(FirebaseApp firebaseApp) {
+    this.firebaseOptions = firebaseApp.getOptions();
+    this.sharedPreferencesUtil = new SharedPreferencesUtil(firebaseApp);
   }
 
+  @VisibleForTesting
+  FirebaseModelDownloader(
+      FirebaseOptions firebaseOptions, SharedPreferencesUtil sharedPreferencesUtil) {
+    this.firebaseOptions = firebaseOptions;
+    this.sharedPreferencesUtil = sharedPreferencesUtil;
+  }
   /**
    * Returns the {@link FirebaseModelDownloader} initialized with the default {@link FirebaseApp}.
    *
@@ -84,7 +94,7 @@ public class FirebaseModelDownloader {
   /** @return The set of all models that are downloaded to this device. */
   @NonNull
   public Task<Set<CustomModel>> listDownloadedModels() {
-    throw new UnsupportedOperationException("Not yet implemented.");
+    return Tasks.forResult(sharedPreferencesUtil.listDownloadedModels());
   }
 
   /*
