@@ -18,28 +18,36 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.Tasks;
+import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.ml.modeldownloader.internal.SharedPreferencesUtil;
 import java.util.Set;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 public class FirebaseModelDownloader {
 
   private final FirebaseOptions firebaseOptions;
   private final SharedPreferencesUtil sharedPreferencesUtil;
+  private final Executor executor;
 
   FirebaseModelDownloader(FirebaseApp firebaseApp) {
     this.firebaseOptions = firebaseApp.getOptions();
     this.sharedPreferencesUtil = new SharedPreferencesUtil(firebaseApp);
+    this.executor = Executors.newCachedThreadPool();
   }
 
   @VisibleForTesting
   FirebaseModelDownloader(
-      FirebaseOptions firebaseOptions, SharedPreferencesUtil sharedPreferencesUtil) {
+      FirebaseOptions firebaseOptions,
+      SharedPreferencesUtil sharedPreferencesUtil,
+      Executor executor) {
     this.firebaseOptions = firebaseOptions;
     this.sharedPreferencesUtil = sharedPreferencesUtil;
+    this.executor = executor;
   }
+
   /**
    * Returns the {@link FirebaseModelDownloader} initialized with the default {@link FirebaseApp}.
    *
@@ -94,7 +102,10 @@ public class FirebaseModelDownloader {
   /** @return The set of all models that are downloaded to this device. */
   @NonNull
   public Task<Set<CustomModel>> listDownloadedModels() {
-    return Tasks.forResult(sharedPreferencesUtil.listDownloadedModels());
+    TaskCompletionSource<Set<CustomModel>> taskCompletionSource = new TaskCompletionSource<>();
+    executor.execute(
+        () -> taskCompletionSource.setResult(sharedPreferencesUtil.listDownloadedModels()));
+    return taskCompletionSource.getTask();
   }
 
   /*

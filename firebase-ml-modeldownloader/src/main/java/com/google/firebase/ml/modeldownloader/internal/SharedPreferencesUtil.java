@@ -209,9 +209,26 @@ public class SharedPreferencesUtil {
         if (extractModel != null) {
           customModels.add(extractModel);
         }
+      } else {
+        matcher = Pattern.compile(DOWNLOADING_MODEL_ID_PATTERN).matcher(key);
+        if (matcher.find()) {
+          String modelName = matcher.group(matcher.groupCount());
+          CustomModel extractModel = isDownloadCompleted(modelName);
+          if (extractModel != null) {
+            customModels.add(extractModel);
+          }
+        }
       }
     }
     return customModels;
+  }
+
+  synchronized CustomModel isDownloadCompleted(String modelName) {
+    CustomModel downloadModel = getCustomModelDetails(modelName);
+    // TODO(annz) check here if download currently in progress have completed.
+    // if yes, then complete file relocation and return the updated model, otherwise return null
+
+    return null;
   }
 
   /**
