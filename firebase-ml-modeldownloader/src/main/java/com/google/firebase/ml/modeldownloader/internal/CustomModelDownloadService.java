@@ -63,26 +63,33 @@ final class CustomModelDownloadService {
   @VisibleForTesting
   static final String INSTALLATIONS_AUTH_TOKEN_HEADER = "X-Goog-Firebase-Installations-Auth";
 
+  @VisibleForTesting static final String API_KEY_HEADER = "x-goog-api-key";
+
   @VisibleForTesting
   static final String DOWNLOAD_MODEL_REGEX =
-      "https://firebaseml.googleapis.com/Model/v1beta2/projects/%s/models/%s:download";
+      "https://firebaseml.googleapis.com/v1beta2/projects/%s/models/%s:download";
 
   private FirebaseInstallationsApi firebaseInstallations;
+  private String apiKey;
 
   @VisibleForTesting
   static final String PARSING_EXPIRATION_TIME_ERROR_MESSAGE = "Invalid Expiration Timestamp.";
 
   CustomModelDownloadService() {
     firebaseInstallations = FirebaseApp.getInstance().get(FirebaseInstallationsApi.class);
+    apiKey = FirebaseApp.getInstance().getOptions().getApiKey();
     // what should this be?
     executorService = Executors.newCachedThreadPool();
   }
 
   @VisibleForTesting
   CustomModelDownloadService(
-      FirebaseInstallationsApi firebaseInstallations, ExecutorService executorService) {
+      FirebaseInstallationsApi firebaseInstallations,
+      ExecutorService executorService,
+      String apiKey) {
     this.firebaseInstallations = firebaseInstallations;
     this.executorService = executorService;
+    this.apiKey = apiKey;
   }
 
   @Nullable
@@ -113,6 +120,7 @@ final class CustomModelDownloadService {
       HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
       connection.setConnectTimeout(CONNECTION_TIME_OUT_MS);
       if (modelHash != null && !modelHash.isEmpty()) {
+        System.out.println("Set if none ");
         connection.setRequestProperty("If-None-Match", modelHash);
       }
 
@@ -128,8 +136,11 @@ final class CustomModelDownloadService {
                       "Firebase Installations failed to get installation auth token for fetch.",
                       installationAuthTokenTask.getException()));
             }
+
+            System.out.println("Set token " + installationAuthTokenTask.getResult().getToken());
             connection.setRequestProperty(
                 INSTALLATIONS_AUTH_TOKEN_HEADER, installationAuthTokenTask.getResult().getToken());
+            connection.setRequestProperty(API_KEY_HEADER, apiKey);
 
             return fetchDownloadDetails(modelName, connection);
           });
@@ -143,15 +154,20 @@ final class CustomModelDownloadService {
 
   private Task<CustomModel> fetchDownloadDetails(String modelName, HttpsURLConnection connection)
       throws Exception {
-    System.out.println("connection details: " + connection.getRequestMethod());
-    System.out.println("connection details: " + connection.getContent());
+    System.out.println("connection details type: " + connection.getRequestMethod());
 
     connection.connect();
+
+    System.out.println("connection applied: " + connection.toString());
     int httpResponseCode = connection.getResponseCode();
+
+    System.out.println("connection response: " + httpResponseCode);
 
     if ((httpResponseCode != HttpURLConnection.HTTP_OK)
         && (httpResponseCode != HttpURLConnection.HTTP_NOT_MODIFIED)) {
       String errorMessage = getErrorStream(connection);
+
+      System.out.println("connection response error: " + errorMessage);
       throw new Exception(
           String.format(
               Locale.getDefault(),
@@ -182,6 +198,7 @@ final class CustomModelDownloadService {
     reader.beginObject();
     while (reader.hasNext()) {
       String name = reader.nextName();
+      System.out.println("reader :" + name);
       if (name.equals("downloadUri")) {
         downloadUrl = reader.nextString();
       } else if (name.equals("expireTime")) {

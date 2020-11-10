@@ -14,14 +14,13 @@
 
 package com.google.firebase.ml.modeldownloader.internal;
 
-// import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-// import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
-// import static com.github.tomakehurst.wiremock.client.WireMock.get;
-// import static com.github.tomakehurst.wiremock.client.WireMock.post;
-// import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
-// import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
-// import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
-// import static com.github.tomakehurst.wiremock.client.WireMock.verify;
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.mock;
@@ -47,10 +46,11 @@ public class CustomModelDownloadServiceTest {
   private final String TEST_EXPIRATION_TIMESTAMP = "2020-11-04T17:56:34.215Z";
   private final long TEST_EXPIRATION_IN_MS = 1604530594215L;
   private final String INCORRECT_EXPIRATION_TIMESTAMP = "2345";
-  private final String PROJECT_ID = "fake-firebase-ml-team";
-  private final String MODEL_NAME = "MyModel";
+  private final String PROJECT_ID = "md-androidtest";
+  private final String MODEL_NAME = "ModelDownloaderTest";
+  private final String API_KEY = "replace_with_real";
 
-  private static final String INSTALLATION_TOKEN = "instance_token";
+  private static final String INSTALLATION_TOKEN = "installation_token";
   private static final InstallationTokenResult INSTALLATION_TOKEN_RESULT =
       new InstallationTokenResult() {
         @NonNull
@@ -106,43 +106,40 @@ public class CustomModelDownloadServiceTest {
     assertWithMessage("Invalid times should return 0.").that(actual).isEqualTo(0);
   }
 
-  // TODO(annz) add url testing using wiremock
-  //
-  //  @Test
-  //  public void testDownloadService_noHashSuccess() throws Exception {
-  //    String downloadPath = String
-  //        .format(CustomModelDownloadService.DOWNLOAD_MODEL_REGEX, PROJECT_ID, MODEL_NAME);
-  //    // this is copied from CctTranspostBackendTest.java
-  //    // it fails with j
-  //    // java.lang.NoSuchMethodError: 'java.lang.CharSequence
-  // org.apache.http.util.Args.containsNoBlanks
-  //    // actually want the get call below.
-  //    stubFor(
-  //        post(urlEqualTo("/api"))
-  //            .willReturn(
-  //                aResponse()
-  //                    .withStatus(200)
-  //                    .withHeader("Content-Type", "application/json;charset=UTF8;hello=world")
-  //                    .withBody("{\"nextRequestWaitMillis\":3}")));
-  //
-  //    stubFor(
-  //        get(urlEqualTo(downloadPath))
-  //            .withHeader(CustomModelDownloadService.INSTALLATIONS_AUTH_TOKEN_HEADER,
-  //                equalTo(INSTALLATION_TOKEN))
-  //            .willReturn(
-  //                aResponse()
-  //                    .withStatus(200)
-  //                    .withHeader("Content-Type", "application/json;charset=UTF8;hello=world")
-  //                    .withBody("Hello world")));
-  //
-  //    CustomModelDownloadService service = new CustomModelDownloadService(installationsApiMock,
-  //        directExecutor);
-  //
-  //    service.getNewDownloadUrlWithExpiry(PROJECT_ID, MODEL_NAME);
-  //
-  //    verify(
-  //        postRequestedFor(urlEqualTo(downloadPath))
-  //            .withHeader(CustomModelDownloadService.INSTALLATIONS_AUTH_TOKEN_HEADER,
-  //                equalTo(INSTALLATION_TOKEN)));
-  //  }
+  @Test
+  public void testDownloadService_noHashSuccess() throws Exception {
+    String downloadPath =
+        String.format(CustomModelDownloadService.DOWNLOAD_MODEL_REGEX, PROJECT_ID, MODEL_NAME);
+
+    System.out.println("url stub: " + urlEqualTo(downloadPath));
+
+    System.out.println(
+        "stubfor: "
+            + get(urlEqualTo(downloadPath))
+                .withHeader(
+                    CustomModelDownloadService.INSTALLATIONS_AUTH_TOKEN_HEADER,
+                    equalTo(INSTALLATION_TOKEN)));
+
+    stubFor(
+        get(urlEqualTo(downloadPath))
+            .withHeader(
+                CustomModelDownloadService.INSTALLATIONS_AUTH_TOKEN_HEADER,
+                equalTo(INSTALLATION_TOKEN))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", "application/json;charset=UTF8;hello=world")
+                    .withBody("Hello world")));
+
+    CustomModelDownloadService service =
+        new CustomModelDownloadService(installationsApiMock, directExecutor, API_KEY);
+
+    service.getNewDownloadUrlWithExpiry(PROJECT_ID, MODEL_NAME);
+
+    verify(
+        postRequestedFor(urlEqualTo(downloadPath))
+            .withHeader(
+                CustomModelDownloadService.INSTALLATIONS_AUTH_TOKEN_HEADER,
+                equalTo(INSTALLATION_TOKEN)));
+  }
 }

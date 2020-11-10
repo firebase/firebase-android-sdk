@@ -56,7 +56,7 @@ dependencies {
     annotationProcessor "com.google.auto.value:auto-value:1.6.5"
 
     testImplementation 'androidx.test:core:1.3.0'
-    testImplementation 'com.github.tomakehurst:wiremock:2.26.3'
+    testImplementation 'com.github.tomakehurst:wiremock-standalone:2.26.3'
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation 'junit:junit:4.13'
     //Android compatible version of Apache httpclient.
