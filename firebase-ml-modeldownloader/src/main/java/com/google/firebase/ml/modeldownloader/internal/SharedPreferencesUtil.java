@@ -213,7 +213,7 @@ public class SharedPreferencesUtil {
         matcher = Pattern.compile(DOWNLOADING_MODEL_ID_PATTERN).matcher(key);
         if (matcher.find()) {
           String modelName = matcher.group(matcher.groupCount());
-          CustomModel extractModel = isDownloadCompleted(modelName);
+          CustomModel extractModel = maybeGetUpdatedModel(modelName);
           if (extractModel != null) {
             customModels.add(extractModel);
           }
@@ -223,7 +223,7 @@ public class SharedPreferencesUtil {
     return customModels;
   }
 
-  synchronized CustomModel isDownloadCompleted(String modelName) {
+  synchronized CustomModel maybeGetUpdatedModel(String modelName) {
     CustomModel downloadModel = getCustomModelDetails(modelName);
     // TODO(annz) check here if download currently in progress have completed.
     // if yes, then complete file relocation and return the updated model, otherwise return null
