@@ -30,8 +30,6 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -72,15 +70,6 @@ public class FirebaseModelDownloaderTest {
     firebaseModelDownloader = new FirebaseModelDownloader(FIREBASE_OPTIONS, mockPrefs, executor);
   }
 
-  @After
-  public void cleanUp() {
-    try {
-      executor.awaitTermination(250, TimeUnit.MILLISECONDS);
-    } catch (InterruptedException e) {
-      // do nothing.
-    }
-  }
-
   @Test
   public void getModel_unimplemented() {
     assertThrows(
@@ -115,8 +104,6 @@ public class FirebaseModelDownloaderTest {
 
     assertThat(task.isComplete()).isTrue();
     assertEquals(customModelSet, Collections.singleton(CUSTOM_MODEL));
-
-    executor.awaitTermination(500, TimeUnit.MILLISECONDS);
   }
 
   @Test
