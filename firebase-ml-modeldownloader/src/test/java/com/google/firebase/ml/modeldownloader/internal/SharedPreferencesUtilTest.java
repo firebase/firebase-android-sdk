@@ -17,11 +17,13 @@ package com.google.firebase.ml.modeldownloader.internal;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.ml.modeldownloader.CustomModel;
+import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -117,5 +119,44 @@ public class SharedPreferencesUtilTest {
         CUSTOM_MODEL_DOWNLOAD_COMPLETE.getName());
     retrievedModel = sharedPreferencesUtil.getCustomModelDetails(MODEL_NAME);
     assertEquals(retrievedModel, CUSTOM_MODEL_DOWNLOAD_COMPLETE);
+  }
+
+  @Test
+  public void listDownloadedModels_localModelFound() throws IllegalArgumentException {
+    sharedPreferencesUtil.setUploadedCustomModelDetails(CUSTOM_MODEL_DOWNLOAD_COMPLETE);
+    Set<CustomModel> retrievedModel = sharedPreferencesUtil.listDownloadedModels();
+    assertEquals(retrievedModel.size(), 1);
+    assertEquals(retrievedModel.iterator().next(), CUSTOM_MODEL_DOWNLOAD_COMPLETE);
+  }
+
+  @Test
+  public void listDownloadedModels_downloadingModelNotFound() throws IllegalArgumentException {
+    sharedPreferencesUtil.setDownloadingCustomModelDetails(CUSTOM_MODEL_DOWNLOADING);
+    assertEquals(sharedPreferencesUtil.listDownloadedModels().size(), 0);
+  }
+
+  @Test
+  public void listDownloadedModels_noModels() throws IllegalArgumentException {
+    assertEquals(sharedPreferencesUtil.listDownloadedModels().size(), 0);
+  }
+
+  @Test
+  public void listDownloadedModels_multipleModels() throws IllegalArgumentException {
+    sharedPreferencesUtil.setUploadedCustomModelDetails(CUSTOM_MODEL_DOWNLOAD_COMPLETE);
+
+    CustomModel model2 =
+        new CustomModel(MODEL_NAME + "2", 0, 102, MODEL_HASH + "2", "file/path/store/ModelName2/1");
+    sharedPreferencesUtil.setUploadedCustomModelDetails(model2);
+
+    CustomModel model3 =
+        new CustomModel(MODEL_NAME + "3", 0, 103, MODEL_HASH + "3", "file/path/store/ModelName3/1");
+
+    sharedPreferencesUtil.setUploadedCustomModelDetails(model3);
+
+    Set<CustomModel> retrievedModel = sharedPreferencesUtil.listDownloadedModels();
+    assertEquals(retrievedModel.size(), 3);
+    assertTrue(retrievedModel.contains(CUSTOM_MODEL_DOWNLOAD_COMPLETE));
+    assertTrue(retrievedModel.contains(model2));
+    assertTrue(retrievedModel.contains(model3));
   }
 }
