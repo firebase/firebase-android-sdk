@@ -33,7 +33,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class PersistentConnectionImpl implements Connection.Delegate, PersistentConnection {
 
@@ -114,17 +113,17 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
   }
 
   private static class OutstandingGet {
-    private Map<String, Object> request;
-    private ConnectionRequestCallback onComplete;
-    private String action;
-    private AtomicBoolean sent;
+    private final Map<String, Object> request;
+    private final ConnectionRequestCallback onComplete;
+    private final String action;
+    private boolean sent;
 
     private OutstandingGet(
         String action, Map<String, Object> request, ConnectionRequestCallback onComplete) {
       this.action = action;
       this.request = request;
       this.onComplete = onComplete;
-      this.sent = new AtomicBoolean(false);
+      this.sent = false;
     }
 
     private String getAction() {
@@ -140,11 +139,12 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
     }
 
     private boolean markSent() {
-      return sent.compareAndSet(false, true);
-    }
-
-    private boolean wasSent() {
-      return sent.get();
+      boolean prev = sent;
+      if (prev) {
+        return false;
+      }
+      this.sent = true;
+      return true;
     }
   }
 
@@ -399,8 +399,7 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
     request.put(REQUEST_PATH, ConnectionUtils.pathToString(query.path));
     request.put(REQUEST_QUERIES, query.queryParams);
 
-    outstandingGets.put(
-        readId,
+    OutstandingGet outstandingGet =
         new OutstandingGet(
             REQUEST_ACTION_GET,
             request,
@@ -417,7 +416,8 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
                       new Exception((String) response.get(SERVER_DATA_UPDATE_BODY)));
                 }
               }
-            }));
+            });
+    outstandingGets.put(readId, outstandingGet);
 
     if (!connected()) {
       executorService.schedule(
@@ -425,7 +425,7 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
             @Override
             public void run() {
               OutstandingGet get = outstandingGets.get(readId);
-              if (get == null || !get.markSent()) {
+              if (get == null || get != outstandingGet || !get.markSent()) {
                 return;
               }
               if (logger.logsDebug()) {
@@ -1067,13 +1067,6 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
       sendPut(put);
     }
 
-    if (logger.logsDebug()) logger.debug("Restoring reads.");
-    ArrayList<Long> outstandingGetKeys = new ArrayList<Long>(outstandingGets.keySet());
-    Collections.sort(outstandingGetKeys);
-    for (Long getId : outstandingGetKeys) {
-      sendGet(getId);
-    }
-
     // Restore disconnect operations
     for (OutstandingDisconnect disconnect : onDisconnectRequestQueue) {
       sendOnDisconnect(
@@ -1083,6 +1076,13 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
           disconnect.getOnComplete());
     }
     onDisconnectRequestQueue.clear();
+
+    if (logger.logsDebug()) logger.debug("Restoring reads.");
+    ArrayList<Long> outstandingGetKeys = new ArrayList<Long>(outstandingGets.keySet());
+    Collections.sort(outstandingGetKeys);
+    for (Long getId : outstandingGetKeys) {
+      sendGet(getId);
+    }
   }
 
   private void handleTimestamp(long timestamp) {
@@ -1167,7 +1167,7 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
     OutstandingGet get = outstandingGets.get(readId);
     if (!get.markSent()) {
       if (logger.logsDebug()) {
-        logger.debug("get" + readId + " already sent or cancelled, ignoring.");
+        logger.debug("get" + readId + " cancelled, ignoring.");
         return;
       }
     }
@@ -1181,10 +1181,9 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
             if (currentGet == get) {
               outstandingGets.remove(readId);
               get.getOnComplete().onResponse(response);
-            } else {
-              if (logger.logsDebug())
-                logger.debug(
-                    "Ignoring on complete for get " + readId + " because it was removed already.");
+            } else if (logger.logsDebug()) {
+              logger.debug(
+                  "Ignoring on complete for get " + readId + " because it was removed already.");
             }
           }
         });

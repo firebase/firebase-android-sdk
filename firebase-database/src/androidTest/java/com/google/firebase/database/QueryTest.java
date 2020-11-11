@@ -3419,15 +3419,11 @@ public class QueryTest {
   }
 
   @Test
-  public void emptyQueryGet() throws DatabaseException, InterruptedException {
+  public void emptyQueryGet() throws DatabaseException, InterruptedException, ExecutionException {
     FirebaseApp app =
         appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
     FirebaseDatabase db = FirebaseDatabase.getInstance(app);
-    try {
-      assertNull(Tasks.await(db.getReference(UUID.randomUUID().toString()).get()).getValue());
-    } catch (ExecutionException e) {
-      fail(e.getMessage());
-    }
+    assertNull(Tasks.await(db.getReference(UUID.randomUUID().toString()).get()).getValue());
   }
 
   @Test
@@ -3524,11 +3520,7 @@ public class QueryTest {
     write = new WriteFuture(writer, 43L);
     assertNull(write.timedGet());
 
-    try {
-      assertEquals(43L, Tasks.await(reader.get()).getValue());
-    } catch (ExecutionException e) {
-      fail(e.getMessage());
-    }
+    assertEquals(43L, Tasks.await(reader.get()).getValue());
   }
 
   @Test
@@ -3551,19 +3543,7 @@ public class QueryTest {
     readerDb.goOffline();
 
     Semaphore semaphore = new Semaphore(0);
-    reader.addListenerForSingleValueEvent(
-        new ValueEventListener() {
-          @Override
-          public void onDataChange(@NonNull DataSnapshot snapshot) {
-            if (snapshot.getValue() != null && snapshot.getValue().equals(42L)) {
-              semaphore.release();
-            }
-          }
-
-          @Override
-          public void onCancelled(@NonNull DatabaseError error) {}
-        });
-    IntegrationTestHelpers.waitFor(semaphore);
+    assertNotNull(ReadFuture.untilEquals(reader, 42L).timedGet());
   }
 
   @Test

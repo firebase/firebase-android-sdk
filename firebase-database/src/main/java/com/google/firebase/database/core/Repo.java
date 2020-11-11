@@ -17,7 +17,6 @@ package com.google.firebase.database.core;
 import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
 
 import androidx.annotation.NonNull;
-import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -513,12 +512,11 @@ public class Repo implements PersistentConnection.Delegate {
         });
     return source
         .getTask()
-        .continueWithTask(
-            new Continuation<DataSnapshot, Task<DataSnapshot>>() {
+        .addOnCompleteListener(
+            new OnCompleteListener<DataSnapshot>() {
               @Override
-              public Task<DataSnapshot> then(@NonNull Task<DataSnapshot> task) throws Exception {
+              public void onComplete(@NonNull Task<DataSnapshot> task) {
                 serverSyncTree.setQueryInactive(query.getSpec());
-                return task;
               }
             });
   }
