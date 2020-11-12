@@ -140,6 +140,7 @@ public class LogRequestTest {
                         .setCountry("CA")
                         .setLocale("en")
                         .setMccMnc("310260")
+                        .setApplicationBuild("1")
                         .build())
                 .build())
         .isInstanceOf(ClientInfo.class);

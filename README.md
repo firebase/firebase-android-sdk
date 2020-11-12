@@ -241,11 +241,6 @@ projects may be published as follows.
     publishProjectsToMavenLocal
 ```
 
-**Note:** Firebase Crashlytics NDK requires NDK version r17c to build. Please
-see the [README](firebase-crashlytics-ndk/README.md) for setup instructions.
-Alternatively, if you do not need to build this project, you can safely disable
-it by commenting out its reference in [subprojects.cfg](subprojects.cfg).
-
 ### Code Formatting
 
 Code in this repo is formatted with the google-java-format tool. You can enable

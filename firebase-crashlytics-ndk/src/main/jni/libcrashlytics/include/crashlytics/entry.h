@@ -25,8 +25,8 @@ extern "C" {
 
 #if defined (CRASHLYTICS_INCLUDE_JNI_ENTRY)
 
-jint       JNI_OnLoad(JavaVM* vm, void* reserved);
-jboolean   JNI_Init(JNIEnv* env, jobject obj, jstring file, jobject asset_manager);
+JNIEXPORT jint       JNI_OnLoad(JavaVM* vm, void* reserved);
+JNIEXPORT jboolean   JNI_Init(JNIEnv* env, jobject obj, jobjectArray file, jobject asset_manager);
 
 #endif // CRASHLYTICS_INCLUDE_JNI_ENTRY
 

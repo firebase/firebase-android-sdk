@@ -437,7 +437,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
     final File[] processedFiles = nativeDirectories[0].listFiles();
     assertEquals(
         "Unexpected number of files found: " + Arrays.toString(processedFiles),
-        7,
+        6,
         processedFiles.length);
   }
 

@@ -23,6 +23,10 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.ml.modeldownloader.CustomModel;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /** @hide */
 public class SharedPreferencesUtil {
@@ -33,6 +37,8 @@ public class SharedPreferencesUtil {
   // local model details
   private static final String LOCAL_MODEL_HASH_PATTERN = "current_model_hash_%s_%s";
   private static final String LOCAL_MODEL_FILE_PATH_PATTERN = "current_model_path_%s_%s";
+  private static final String LOCAL_MODEL_FILE_PATH_MATCHER = "current_model_path_(.*?)_([^/]+)/?";
+
   private static final String LOCAL_MODEL_FILE_SIZE_PATTERN = "current_model_size_%s_%s";
   // details about model during download.
   private static final String DOWNLOADING_MODEL_HASH_PATTERN = "downloading_model_hash_%s_%s";
@@ -188,6 +194,41 @@ public class SharedPreferencesUtil {
         .remove(String.format(LOCAL_MODEL_FILE_SIZE_PATTERN, persistenceKey, modelName))
         .remove(String.format(LOCAL_MODEL_HASH_PATTERN, persistenceKey, modelName))
         .commit();
+  }
+
+  public synchronized Set<CustomModel> listDownloadedModels() {
+    Set<CustomModel> customModels = new HashSet<>();
+    Set<String> keySet = getSharedPreferences().getAll().keySet();
+
+    for (String key : keySet) {
+      // if a local file path is present - get model details.
+      Matcher matcher = Pattern.compile(LOCAL_MODEL_FILE_PATH_MATCHER).matcher(key);
+      if (matcher.find()) {
+        String modelName = matcher.group(matcher.groupCount());
+        CustomModel extractModel = getCustomModelDetails(modelName);
+        if (extractModel != null) {
+          customModels.add(extractModel);
+        }
+      } else {
+        matcher = Pattern.compile(DOWNLOADING_MODEL_ID_PATTERN).matcher(key);
+        if (matcher.find()) {
+          String modelName = matcher.group(matcher.groupCount());
+          CustomModel extractModel = maybeGetUpdatedModel(modelName);
+          if (extractModel != null) {
+            customModels.add(extractModel);
+          }
+        }
+      }
+    }
+    return customModels;
+  }
+
+  synchronized CustomModel maybeGetUpdatedModel(String modelName) {
+    CustomModel downloadModel = getCustomModelDetails(modelName);
+    // TODO(annz) check here if download currently in progress have completed.
+    // if yes, then complete file relocation and return the updated model, otherwise return null
+
+    return null;
   }
 
   /**
