@@ -115,19 +115,13 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
   private static class OutstandingGet {
     private final Map<String, Object> request;
     private final ConnectionRequestCallback onComplete;
-    private final String action;
     private boolean sent;
 
     private OutstandingGet(
         String action, Map<String, Object> request, ConnectionRequestCallback onComplete) {
-      this.action = action;
       this.request = request;
       this.onComplete = onComplete;
       this.sent = false;
-    }
-
-    private String getAction() {
-      return action;
     }
 
     private ConnectionRequestCallback getOnComplete() {
@@ -1172,7 +1166,7 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
       }
     }
     sendAction(
-        get.getAction(),
+        REQUEST_ACTION_GET,
         get.getRequest(),
         new ConnectionRequestCallback() {
           @Override
