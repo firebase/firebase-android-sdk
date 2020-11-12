@@ -40,7 +40,7 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import javax.net.ssl.HttpsURLConnection;
+import java.util.zip.GZIPInputStream;
 
 /**
  * Calls the Download Service API and returns the information related to the current status of a
@@ -58,7 +58,14 @@ final class CustomModelDownloadService {
   private static final int CONNECTION_TIME_OUT_MS = 2000; // 2 seconds.
   private static final Charset UTF_8 = StandardCharsets.UTF_8;
 
-  private static final String ETAG_HEADER = "ETag";
+  private static final String ETAG_HEADER = "etag";
+
+  private static final String ACCEPT_ENCODING_HEADER_KEY = "Accept-Encoding";
+  private static final String CONTENT_ENCODING_HEADER_KEY = "Content-Encoding";
+  private static final String GZIP_CONTENT_ENCODING = "gzip";
+  private static final String FIREBASE_DOWNLOAD_HOST = "https://firebaseml.googleapis.com";
+  private static final String CONTENT_TYPE = "Content-Type";
+  private static final String APPLICATION_JSON = "application/json; charset=UTF-8";
 
   @VisibleForTesting
   static final String INSTALLATIONS_AUTH_TOKEN_HEADER = "X-Goog-Firebase-Installations-Auth";
@@ -66,11 +73,11 @@ final class CustomModelDownloadService {
   @VisibleForTesting static final String API_KEY_HEADER = "x-goog-api-key";
 
   @VisibleForTesting
-  static final String DOWNLOAD_MODEL_REGEX =
-      "https://firebaseml.googleapis.com/v1beta2/projects/%s/models/%s:download";
+  static final String DOWNLOAD_MODEL_REGEX = "%s/v1beta2/projects/%s/models/%s:download";
 
   private FirebaseInstallationsApi firebaseInstallations;
   private String apiKey;
+  private String downloadHost = FIREBASE_DOWNLOAD_HOST;
 
   @VisibleForTesting
   static final String PARSING_EXPIRATION_TIME_ERROR_MESSAGE = "Invalid Expiration Timestamp.";
@@ -86,10 +93,12 @@ final class CustomModelDownloadService {
   CustomModelDownloadService(
       FirebaseInstallationsApi firebaseInstallations,
       ExecutorService executorService,
-      String apiKey) {
+      String apiKey,
+      String downloadHost) {
     this.firebaseInstallations = firebaseInstallations;
     this.executorService = executorService;
     this.apiKey = apiKey;
+    this.downloadHost = downloadHost;
   }
 
   @Nullable
@@ -114,11 +123,14 @@ final class CustomModelDownloadService {
   public Task<CustomModel> getCustomModelDetails(
       String projectNumber, String modelName, String modelHash) throws Exception {
     try {
-      URL url = new URL(String.format(DOWNLOAD_MODEL_REGEX, projectNumber, modelName));
+      URL url =
+          new URL(String.format(DOWNLOAD_MODEL_REGEX, downloadHost, projectNumber, modelName));
       System.out.println("Set this url : " + url);
 
-      HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
+      HttpURLConnection connection = (HttpURLConnection) url.openConnection();
       connection.setConnectTimeout(CONNECTION_TIME_OUT_MS);
+      connection.setRequestProperty(ACCEPT_ENCODING_HEADER_KEY, GZIP_CONTENT_ENCODING);
+      connection.setRequestProperty(CONTENT_TYPE, APPLICATION_JSON);
       if (modelHash != null && !modelHash.isEmpty()) {
         System.out.println("Set if none ");
         connection.setRequestProperty("If-None-Match", modelHash);
@@ -126,7 +138,7 @@ final class CustomModelDownloadService {
 
       Task<InstallationTokenResult> installationAuthTokenTask =
           firebaseInstallations.getToken(false);
-      installationAuthTokenTask.continueWithTask(
+      return installationAuthTokenTask.continueWithTask(
           executorService,
           (CustomModelTask) -> {
             if (!installationAuthTokenTask.isSuccessful()) {
@@ -147,17 +159,19 @@ final class CustomModelDownloadService {
 
     } catch (Exception e) {
       // TODO(annz) update to better error handling (use FirebaseMLExceptions)
-      throw new Exception("Error reading custom model from download service: ", e);
+      throw new Exception("Error reading custom model from download service: " + e.getMessage(), e);
     }
-    throw new Exception("FAILED");
   }
 
-  private Task<CustomModel> fetchDownloadDetails(String modelName, HttpsURLConnection connection)
+  private Task<CustomModel> fetchDownloadDetails(String modelName, HttpURLConnection connection)
       throws Exception {
     System.out.println("connection details type: " + connection.getRequestMethod());
 
-    connection.connect();
-
+    try {
+      connection.connect();
+    } catch (Exception e) {
+      System.out.println("connection failed: " + e.toString());
+    }
     System.out.println("connection applied: " + connection.toString());
     int httpResponseCode = connection.getResponseCode();
 
@@ -183,40 +197,82 @@ final class CustomModelDownloadService {
   }
 
   private CustomModel readCustomModelResponse(
-      @NonNull String modelName, HttpsURLConnection connection) throws IOException {
-    InputStream inputStream = connection.getInputStream();
+      @NonNull String modelName, HttpURLConnection connection) throws IOException {
+
+    String encodingKey = connection.getHeaderField(CONTENT_ENCODING_HEADER_KEY);
+    InputStream inputStream = maybeUnGzip(connection.getInputStream(), encodingKey);
     JsonReader reader = new JsonReader(new InputStreamReader(inputStream, UTF_8));
     long fileSize = 0L;
     String downloadUrl = "";
     long expireTime = 0L;
 
-    // get model hash from header
-    String modelHash = connection.getHeaderField(ETAG_HEADER);
+    String modelHash = maybeUnGzipHeader(connection.getHeaderField(ETAG_HEADER), encodingKey);
+    System.out.println("connection headers: " + connection.getHeaderFields());
+
+    if (modelHash == null || modelHash.isEmpty()) {
+      // todo(annz) replace this...
+      modelHash = connection.getResponseMessage();
+    }
 
     // JsonReader.peek will sometimes throw AssertionErrors in Android 8.0 and above. See
     // https://b.corp.google.com/issues/79920590 for details.
     reader.beginObject();
     while (reader.hasNext()) {
       String name = reader.nextName();
-      System.out.println("reader :" + name);
+      System.out.println("Ann reader :" + name);
       if (name.equals("downloadUri")) {
+
+        System.out.println("reading uris is:");
         downloadUrl = reader.nextString();
+        System.out.println("uris is:" + downloadUrl);
       } else if (name.equals("expireTime")) {
         expireTime = parseTokenExpirationTimestamp(reader.nextString());
       } else if (name.equals("sizeBytes")) {
         fileSize = reader.nextLong();
+        System.out.println(fileSize);
       } else {
+        System.out.println("skipping is:" + name);
         reader.skipValue();
       }
     }
+    System.out.println("closing reader");
     reader.endObject();
     reader.close();
     inputStream.close();
 
+    System.out.println(
+        "reader results :"
+            + modelName
+            + " , "
+            + modelHash
+            + " , "
+            + fileSize
+            + " , "
+            + downloadUrl
+            + " , "
+            + expireTime);
     if (!downloadUrl.isEmpty() && expireTime > 0L) {
-      return new CustomModel(modelName, modelHash, fileSize, downloadUrl, expireTime);
+      CustomModel model = new CustomModel(modelName, modelHash, fileSize, downloadUrl, expireTime);
+      System.out.println("model : " + model.getName() + " " + model.getModelHash());
+      return model;
     }
     return null;
+  }
+
+  private static InputStream maybeUnGzip(InputStream input, String contentEncoding)
+      throws IOException {
+    if (GZIP_CONTENT_ENCODING.equals(contentEncoding)) {
+      return new GZIPInputStream(input);
+    }
+    return input;
+  }
+
+  private static String maybeUnGzipHeader(String header, String contentEncoding) {
+    // fix to remove --gzip when content header is gzip for mockwire
+    if (GZIP_CONTENT_ENCODING.equals(contentEncoding) && header.endsWith("--gzip")) {
+      return header.substring(0, header.lastIndexOf("--gzip"));
+    }
+    return header;
   }
 
   /**
@@ -241,7 +297,7 @@ final class CustomModelDownloadService {
     }
   }
 
-  private String getErrorStream(HttpsURLConnection connection) {
+  private String getErrorStream(HttpURLConnection connection) {
     InputStream errorStream = connection.getErrorStream();
     if (errorStream == null) {
       return null;

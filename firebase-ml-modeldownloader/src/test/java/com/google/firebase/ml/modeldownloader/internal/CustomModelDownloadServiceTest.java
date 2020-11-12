@@ -17,7 +17,7 @@ package com.google.firebase.ml.modeldownloader.internal;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
@@ -28,10 +28,12 @@ import static org.mockito.Mockito.when;
 
 import androidx.annotation.NonNull;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
+import com.google.firebase.ml.modeldownloader.CustomModel;
 import java.util.concurrent.ExecutorService;
 import org.junit.Before;
 import org.junit.Rule;
@@ -48,9 +50,13 @@ public class CustomModelDownloadServiceTest {
   private final String INCORRECT_EXPIRATION_TIMESTAMP = "2345";
   private final String PROJECT_ID = "md-androidtest";
   private final String MODEL_NAME = "ModelDownloaderTest";
-  private final String API_KEY = "replace_with_real";
+  private final String API_KEY = "my_firebase_project_api_key";
+  private final String MODEL_HASH = "ModelHash_392043";
 
-  private static final String INSTALLATION_TOKEN = "installation_token";
+  private static final String TEST_ENDPOINT = "http://localhost:8979";
+
+  private static final String INSTALLATION_TOKEN =
+      "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJmaWQiOiJkU092c0o5b1NRd2tXQlAzZHNRRDJaIiwicHJvamVjdE51bWJlciI6NjcxNDE2OTU3MzU0LCJleHAiOjE2MDU2NTA2MjAsImFwcElkIjoiMTo2NzE0MTY5NTczNTQ6YW5kcm9pZDpiMTg5MTA3Yjg3NDEyMDRiYjdkM2QzIn0.AB2LPV8wRAIgB4FKJcou6uaC2QtFucgyWFzaiTgS235gvJ8drsAzDyACIC6AyAi6s9Zw9HoV9pG3Mp1Rq-lgn4qvn-ORBShD2yhR";
   private static final InstallationTokenResult INSTALLATION_TOKEN_RESULT =
       new InstallationTokenResult() {
         @NonNull
@@ -75,7 +81,7 @@ public class CustomModelDownloadServiceTest {
         }
       };
 
-  @Rule public WireMockRule wireMockRule = new WireMockRule(8999);
+  @Rule public WireMockRule wireMockRule = new WireMockRule(8979);
 
   private ExecutorService directExecutor;
   private FirebaseInstallationsApi installationsApiMock;
@@ -109,7 +115,7 @@ public class CustomModelDownloadServiceTest {
   @Test
   public void testDownloadService_noHashSuccess() throws Exception {
     String downloadPath =
-        String.format(CustomModelDownloadService.DOWNLOAD_MODEL_REGEX, PROJECT_ID, MODEL_NAME);
+        String.format(CustomModelDownloadService.DOWNLOAD_MODEL_REGEX, "", PROJECT_ID, MODEL_NAME);
 
     System.out.println("url stub: " + urlEqualTo(downloadPath));
 
@@ -125,19 +131,29 @@ public class CustomModelDownloadServiceTest {
             .withHeader(
                 CustomModelDownloadService.INSTALLATIONS_AUTH_TOKEN_HEADER,
                 equalTo(INSTALLATION_TOKEN))
+            .withHeader("Content-Type", equalTo("application/json; charset=UTF-8"))
             .willReturn(
                 aResponse()
                     .withStatus(200)
-                    .withHeader("Content-Type", "application/json;charset=UTF8;hello=world")
-                    .withBody("Hello world")));
+                    .withHeader("etag", MODEL_HASH)
+                    .withBody(
+                        "{ \"expireTime\" : \"2020-11-11T19:15:59.813Z\","
+                            + "\"sizeBytes\": \"562336\","
+                            + "\"modelFormat\": \"TFLITE\","
+                            + "\"downloadUri\": \"https://storage.google.com/myproject/modelfile.tflite\""
+                            + "}")));
 
     CustomModelDownloadService service =
-        new CustomModelDownloadService(installationsApiMock, directExecutor, API_KEY);
+        new CustomModelDownloadService(
+            installationsApiMock, directExecutor, API_KEY, TEST_ENDPOINT);
 
-    service.getNewDownloadUrlWithExpiry(PROJECT_ID, MODEL_NAME);
+    Task<CustomModel> modelTask = service.getNewDownloadUrlWithExpiry(PROJECT_ID, MODEL_NAME);
+
+    // assertEquals(    modelTask.getResult(), new CustomModel(MODEL_NAME, MODEL_HASH, 562336,
+    // "url", "1605140159813"));
 
     verify(
-        postRequestedFor(urlEqualTo(downloadPath))
+        getRequestedFor(urlEqualTo(downloadPath))
             .withHeader(
                 CustomModelDownloadService.INSTALLATIONS_AUTH_TOKEN_HEADER,
                 equalTo(INSTALLATION_TOKEN)));
