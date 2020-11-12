@@ -16,6 +16,7 @@ package com.google.firebase.ml.modeldownloader.internal;
 
 import android.os.Build.VERSION_CODES;
 import android.util.JsonReader;
+import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
@@ -58,14 +59,15 @@ final class CustomModelDownloadService {
   private static final int CONNECTION_TIME_OUT_MS = 2000; // 2 seconds.
   private static final Charset UTF_8 = StandardCharsets.UTF_8;
 
-  private static final String ETAG_HEADER = "etag";
+  @VisibleForTesting static final String ETAG_HEADER = "etag";
 
   private static final String ACCEPT_ENCODING_HEADER_KEY = "Accept-Encoding";
   private static final String CONTENT_ENCODING_HEADER_KEY = "Content-Encoding";
   private static final String GZIP_CONTENT_ENCODING = "gzip";
   private static final String FIREBASE_DOWNLOAD_HOST = "https://firebaseml.googleapis.com";
-  private static final String CONTENT_TYPE = "Content-Type";
-  private static final String APPLICATION_JSON = "application/json; charset=UTF-8";
+  @VisibleForTesting static final String CONTENT_TYPE = "Content-Type";
+  @VisibleForTesting static final String APPLICATION_JSON = "application/json; charset=UTF-8";
+  @VisibleForTesting static final String IF_NONE_MATCH_HEADER_KEY = "If-None-Match";
 
   @VisibleForTesting
   static final String INSTALLATIONS_AUTH_TOKEN_HEADER = "X-Goog-Firebase-Installations-Auth";
@@ -79,13 +81,10 @@ final class CustomModelDownloadService {
   private String apiKey;
   private String downloadHost = FIREBASE_DOWNLOAD_HOST;
 
-  @VisibleForTesting
-  static final String PARSING_EXPIRATION_TIME_ERROR_MESSAGE = "Invalid Expiration Timestamp.";
-
   CustomModelDownloadService() {
     firebaseInstallations = FirebaseApp.getInstance().get(FirebaseInstallationsApi.class);
     apiKey = FirebaseApp.getInstance().getOptions().getApiKey();
-    // what should this be?
+    // is this an appropriate executor?
     executorService = Executors.newCachedThreadPool();
   }
 
@@ -102,6 +101,15 @@ final class CustomModelDownloadService {
   }
 
   @Nullable
+  /**
+   * Calls the Firebase ML Download Service to retrieve the download url for the modelName. Use when
+   * a download attempt fails due to an expired timestamp.
+   *
+   * @param projectNumber - firebase project number
+   * @param modelName - model name
+   * @return - updated model with new download url and expiry time
+   * @throws Exception - errors when Firebase ML Download Service call fails.
+   */
   public Task<CustomModel> getNewDownloadUrlWithExpiry(String projectNumber, String modelName)
       throws Exception {
     return getCustomModelDetails(projectNumber, modelName, "");
@@ -125,15 +133,13 @@ final class CustomModelDownloadService {
     try {
       URL url =
           new URL(String.format(DOWNLOAD_MODEL_REGEX, downloadHost, projectNumber, modelName));
-      System.out.println("Set this url : " + url);
 
       HttpURLConnection connection = (HttpURLConnection) url.openConnection();
       connection.setConnectTimeout(CONNECTION_TIME_OUT_MS);
       connection.setRequestProperty(ACCEPT_ENCODING_HEADER_KEY, GZIP_CONTENT_ENCODING);
       connection.setRequestProperty(CONTENT_TYPE, APPLICATION_JSON);
       if (modelHash != null && !modelHash.isEmpty()) {
-        System.out.println("Set if none ");
-        connection.setRequestProperty("If-None-Match", modelHash);
+        connection.setRequestProperty(IF_NONE_MATCH_HEADER_KEY, modelHash);
       }
 
       Task<InstallationTokenResult> installationAuthTokenTask =
@@ -149,7 +155,6 @@ final class CustomModelDownloadService {
                       installationAuthTokenTask.getException()));
             }
 
-            System.out.println("Set token " + installationAuthTokenTask.getResult().getToken());
             connection.setRequestProperty(
                 INSTALLATIONS_AUTH_TOKEN_HEADER, installationAuthTokenTask.getResult().getToken());
             connection.setRequestProperty(API_KEY_HEADER, apiKey);
@@ -163,25 +168,34 @@ final class CustomModelDownloadService {
     }
   }
 
-  private Task<CustomModel> fetchDownloadDetails(String modelName, HttpURLConnection connection)
-      throws Exception {
-    System.out.println("connection details type: " + connection.getRequestMethod());
+  @VisibleForTesting
+  static long parseTokenExpirationTimestamp(String expiresIn) {
+    if (expiresIn == null || expiresIn.length() == 0) {
+      return 0;
+    }
 
     try {
-      connection.connect();
-    } catch (Exception e) {
-      System.out.println("connection failed: " + e.toString());
+      String isoDatePattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
+      SimpleDateFormat iso8601Format = new SimpleDateFormat(isoDatePattern, Locale.getDefault());
+      Date date = iso8601Format.parse(expiresIn);
+      return date.getTime();
+    } catch (ParseException pe) {
+      // log error and maybe throw an error
+      Log.w(TAG, "unable to parse datetime:" + expiresIn, pe);
+      return 0;
     }
-    System.out.println("connection applied: " + connection.toString());
-    int httpResponseCode = connection.getResponseCode();
+  }
 
-    System.out.println("connection response: " + httpResponseCode);
+  private Task<CustomModel> fetchDownloadDetails(String modelName, HttpURLConnection connection)
+      throws Exception {
+
+    connection.connect();
+    int httpResponseCode = connection.getResponseCode();
 
     if ((httpResponseCode != HttpURLConnection.HTTP_OK)
         && (httpResponseCode != HttpURLConnection.HTTP_NOT_MODIFIED)) {
       String errorMessage = getErrorStream(connection);
 
-      System.out.println("connection response error: " + errorMessage);
       throw new Exception(
           String.format(
               Locale.getDefault(),
@@ -207,7 +221,6 @@ final class CustomModelDownloadService {
     long expireTime = 0L;
 
     String modelHash = maybeUnGzipHeader(connection.getHeaderField(ETAG_HEADER), encodingKey);
-    System.out.println("connection headers: " + connection.getHeaderFields());
 
     if (modelHash == null || modelHash.isEmpty()) {
       // todo(annz) replace this...
@@ -219,42 +232,22 @@ final class CustomModelDownloadService {
     reader.beginObject();
     while (reader.hasNext()) {
       String name = reader.nextName();
-      System.out.println("Ann reader :" + name);
       if (name.equals("downloadUri")) {
-
-        System.out.println("reading uris is:");
         downloadUrl = reader.nextString();
-        System.out.println("uris is:" + downloadUrl);
       } else if (name.equals("expireTime")) {
         expireTime = parseTokenExpirationTimestamp(reader.nextString());
       } else if (name.equals("sizeBytes")) {
         fileSize = reader.nextLong();
-        System.out.println(fileSize);
       } else {
-        System.out.println("skipping is:" + name);
         reader.skipValue();
       }
     }
-    System.out.println("closing reader");
     reader.endObject();
     reader.close();
     inputStream.close();
 
-    System.out.println(
-        "reader results :"
-            + modelName
-            + " , "
-            + modelHash
-            + " , "
-            + fileSize
-            + " , "
-            + downloadUrl
-            + " , "
-            + expireTime);
     if (!downloadUrl.isEmpty() && expireTime > 0L) {
-      CustomModel model = new CustomModel(modelName, modelHash, fileSize, downloadUrl, expireTime);
-      System.out.println("model : " + model.getName() + " " + model.getModelHash());
-      return model;
+      return new CustomModel(modelName, modelHash, fileSize, downloadUrl, expireTime);
     }
     return null;
   }
@@ -273,28 +266,6 @@ final class CustomModelDownloadService {
       return header.substring(0, header.lastIndexOf("--gzip"));
     }
     return header;
-  }
-
-  /**
-   * Returns parsed token expiration timestamp in seconds.
-   *
-   * @param expiresIn is expiration timestamp in String format: 604800s
-   */
-  @VisibleForTesting
-  static long parseTokenExpirationTimestamp(String expiresIn) {
-    if (expiresIn == null || expiresIn.length() == 0) {
-      return 0;
-    }
-
-    try {
-      String isoDatePattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
-      SimpleDateFormat iso8601Format = new SimpleDateFormat(isoDatePattern);
-      Date date = iso8601Format.parse(expiresIn);
-      return date.getTime();
-    } catch (ParseException pe) {
-      // log error and maybe throw an error
-      return 0;
-    }
   }
 
   private String getErrorStream(HttpURLConnection connection) {

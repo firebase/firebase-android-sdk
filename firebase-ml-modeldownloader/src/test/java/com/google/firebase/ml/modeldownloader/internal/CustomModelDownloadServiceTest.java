@@ -35,6 +35,7 @@ import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
 import com.google.firebase.ml.modeldownloader.CustomModel;
 import java.util.concurrent.ExecutorService;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -45,18 +46,16 @@ import org.robolectric.RobolectricTestRunner;
 @RunWith(RobolectricTestRunner.class)
 public class CustomModelDownloadServiceTest {
 
-  private final String TEST_EXPIRATION_TIMESTAMP = "2020-11-04T17:56:34.215Z";
-  private final long TEST_EXPIRATION_IN_MS = 1604530594215L;
-  private final String INCORRECT_EXPIRATION_TIMESTAMP = "2345";
-  private final String PROJECT_ID = "md-androidtest";
-  private final String MODEL_NAME = "ModelDownloaderTest";
-  private final String API_KEY = "my_firebase_project_api_key";
-  private final String MODEL_HASH = "ModelHash_392043";
+  private static final long TEST_EXPIRATION_IN_MS = 1604530594215L;
+  private static final String TEST_EXPIRATION_TIMESTAMP = "2020-11-04T17:56:34.215Z";
+  private static final String INCORRECT_EXPIRATION_TIMESTAMP = "2345";
+  private static final String PROJECT_ID = "md-androidtest";
+  private static final String MODEL_NAME = "ModelDownloaderTest";
+  private static final String API_KEY = "my_firebase_project_api_key";
+  private static final String MODEL_HASH = "ModelHash_392043";
 
   private static final String TEST_ENDPOINT = "http://localhost:8979";
-
-  private static final String INSTALLATION_TOKEN =
-      "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJmaWQiOiJkU092c0o5b1NRd2tXQlAzZHNRRDJaIiwicHJvamVjdE51bWJlciI6NjcxNDE2OTU3MzU0LCJleHAiOjE2MDU2NTA2MjAsImFwcElkIjoiMTo2NzE0MTY5NTczNTQ6YW5kcm9pZDpiMTg5MTA3Yjg3NDEyMDRiYjdkM2QzIn0.AB2LPV8wRAIgB4FKJcou6uaC2QtFucgyWFzaiTgS235gvJ8drsAzDyACIC6AyAi6s9Zw9HoV9pG3Mp1Rq-lgn4qvn-ORBShD2yhR";
+  private static final String INSTALLATION_TOKEN = "installation_token-ORBShD2yhR";
   private static final InstallationTokenResult INSTALLATION_TOKEN_RESULT =
       new InstallationTokenResult() {
         @NonNull
@@ -81,13 +80,20 @@ public class CustomModelDownloadServiceTest {
         }
       };
 
+  private static final String RESPONSE_BODY =
+      "{ \"expireTime\" : \"2020-11-11T19:15:59.813Z\","
+          + "\"sizeBytes\": \"562336\","
+          + "\"modelFormat\": \"TFLITE\","
+          + "\"downloadUri\": \"https://storage.google.com/myproject/modelfile.tflite\""
+          + "}";
+
   @Rule public WireMockRule wireMockRule = new WireMockRule(8979);
 
   private ExecutorService directExecutor;
   private FirebaseInstallationsApi installationsApiMock;
 
   @Before
-  public void setUp() throws Exception {
+  public void setUp() {
     directExecutor = MoreExecutors.newDirectExecutorService();
     installationsApiMock = mock(FirebaseInstallationsApi.class);
     when(installationsApiMock.getToken(anyBoolean()))
@@ -116,32 +122,19 @@ public class CustomModelDownloadServiceTest {
   public void testDownloadService_noHashSuccess() throws Exception {
     String downloadPath =
         String.format(CustomModelDownloadService.DOWNLOAD_MODEL_REGEX, "", PROJECT_ID, MODEL_NAME);
-
-    System.out.println("url stub: " + urlEqualTo(downloadPath));
-
-    System.out.println(
-        "stubfor: "
-            + get(urlEqualTo(downloadPath))
-                .withHeader(
-                    CustomModelDownloadService.INSTALLATIONS_AUTH_TOKEN_HEADER,
-                    equalTo(INSTALLATION_TOKEN)));
-
     stubFor(
         get(urlEqualTo(downloadPath))
             .withHeader(
                 CustomModelDownloadService.INSTALLATIONS_AUTH_TOKEN_HEADER,
                 equalTo(INSTALLATION_TOKEN))
-            .withHeader("Content-Type", equalTo("application/json; charset=UTF-8"))
+            .withHeader(
+                CustomModelDownloadService.CONTENT_TYPE,
+                equalTo(CustomModelDownloadService.APPLICATION_JSON))
             .willReturn(
                 aResponse()
                     .withStatus(200)
-                    .withHeader("etag", MODEL_HASH)
-                    .withBody(
-                        "{ \"expireTime\" : \"2020-11-11T19:15:59.813Z\","
-                            + "\"sizeBytes\": \"562336\","
-                            + "\"modelFormat\": \"TFLITE\","
-                            + "\"downloadUri\": \"https://storage.google.com/myproject/modelfile.tflite\""
-                            + "}")));
+                    .withHeader(CustomModelDownloadService.ETAG_HEADER, MODEL_HASH)
+                    .withBody(RESPONSE_BODY)));
 
     CustomModelDownloadService service =
         new CustomModelDownloadService(
@@ -149,8 +142,14 @@ public class CustomModelDownloadServiceTest {
 
     Task<CustomModel> modelTask = service.getNewDownloadUrlWithExpiry(PROJECT_ID, MODEL_NAME);
 
-    // assertEquals(    modelTask.getResult(), new CustomModel(MODEL_NAME, MODEL_HASH, 562336,
-    // "url", "1605140159813"));
+    Assert.assertEquals(
+        modelTask.getResult(),
+        new CustomModel(
+            MODEL_NAME,
+            MODEL_HASH,
+            562336L,
+            "https://storage.google.com/myproject/modelfile.tflite",
+            1605140159813L));
 
     verify(
         getRequestedFor(urlEqualTo(downloadPath))
@@ -158,4 +157,129 @@ public class CustomModelDownloadServiceTest {
                 CustomModelDownloadService.INSTALLATIONS_AUTH_TOKEN_HEADER,
                 equalTo(INSTALLATION_TOKEN)));
   }
+
+  public void testDownloadService_withHashSuccess_noMatch() throws Exception {
+    String downloadPath =
+        String.format(
+            CustomModelDownloadService.DOWNLOAD_MODEL_REGEX, MODEL_HASH, PROJECT_ID, MODEL_NAME);
+    stubFor(
+        get(urlEqualTo(downloadPath))
+            .withHeader(
+                CustomModelDownloadService.INSTALLATIONS_AUTH_TOKEN_HEADER,
+                equalTo(INSTALLATION_TOKEN))
+            .withHeader(
+                CustomModelDownloadService.CONTENT_TYPE,
+                equalTo(CustomModelDownloadService.APPLICATION_JSON))
+            .withHeader(CustomModelDownloadService.ETAG_HEADER, equalTo(MODEL_HASH))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withHeader(CustomModelDownloadService.ETAG_HEADER, MODEL_HASH)
+                    .withBody(RESPONSE_BODY)));
+
+    CustomModelDownloadService service =
+        new CustomModelDownloadService(
+            installationsApiMock, directExecutor, API_KEY, TEST_ENDPOINT);
+
+    Task<CustomModel> modelTask = service.getNewDownloadUrlWithExpiry(PROJECT_ID, MODEL_NAME);
+
+    Assert.assertEquals(
+        modelTask.getResult(),
+        new CustomModel(
+            MODEL_NAME,
+            MODEL_HASH,
+            562336L,
+            "https://storage.google.com/myproject/modelfile.tflite",
+            1605140159813L));
+
+    verify(
+        getRequestedFor(urlEqualTo(downloadPath))
+            .withHeader(
+                CustomModelDownloadService.INSTALLATIONS_AUTH_TOKEN_HEADER,
+                equalTo(INSTALLATION_TOKEN)));
+  }
+
+  public void testDownloadService_withHashSuccess_match() throws Exception {
+    String downloadPath =
+        String.format(
+            CustomModelDownloadService.DOWNLOAD_MODEL_REGEX, MODEL_HASH, PROJECT_ID, MODEL_NAME);
+    stubFor(
+        get(urlEqualTo(downloadPath))
+            .withHeader(
+                CustomModelDownloadService.INSTALLATIONS_AUTH_TOKEN_HEADER,
+                equalTo(INSTALLATION_TOKEN))
+            .withHeader(
+                CustomModelDownloadService.CONTENT_TYPE,
+                equalTo(CustomModelDownloadService.APPLICATION_JSON))
+            .withHeader(CustomModelDownloadService.ETAG_HEADER, equalTo(MODEL_HASH))
+            .withHeader(CustomModelDownloadService.IF_NONE_MATCH_HEADER_KEY, equalTo(MODEL_HASH))
+            .willReturn(
+                aResponse()
+                    .withStatus(304)
+                    .withHeader(CustomModelDownloadService.ETAG_HEADER, MODEL_HASH)));
+
+    CustomModelDownloadService service =
+        new CustomModelDownloadService(
+            installationsApiMock, directExecutor, API_KEY, TEST_ENDPOINT);
+
+    Task<CustomModel> modelTask = service.getNewDownloadUrlWithExpiry(PROJECT_ID, MODEL_NAME);
+
+    Assert.assertEquals(
+        modelTask.getResult(),
+        new CustomModel(
+            MODEL_NAME,
+            MODEL_HASH,
+            562336L,
+            "https://storage.google.com/myproject/modelfile.tflite",
+            1605140159813L));
+
+    verify(
+        getRequestedFor(urlEqualTo(downloadPath))
+            .withHeader(
+                CustomModelDownloadService.INSTALLATIONS_AUTH_TOKEN_HEADER,
+                equalTo(INSTALLATION_TOKEN)));
+  }
+
+  public void testDownloadService_modelNotFound() throws Exception {
+    String downloadPath =
+        String.format(
+            CustomModelDownloadService.DOWNLOAD_MODEL_REGEX, MODEL_HASH, PROJECT_ID, MODEL_NAME);
+    stubFor(
+        get(urlEqualTo(downloadPath))
+            .withHeader(
+                CustomModelDownloadService.INSTALLATIONS_AUTH_TOKEN_HEADER,
+                equalTo(INSTALLATION_TOKEN))
+            .withHeader(
+                CustomModelDownloadService.CONTENT_TYPE,
+                equalTo(CustomModelDownloadService.APPLICATION_JSON))
+            .withHeader(CustomModelDownloadService.IF_NONE_MATCH_HEADER_KEY, equalTo(MODEL_HASH))
+            .willReturn(
+                aResponse()
+                    .withStatus(404)
+                    .withBody(
+                        "{\"status\":\"NOT_FOUND\",\"message\":\"Requested entity was not found\"}")));
+
+    CustomModelDownloadService service =
+        new CustomModelDownloadService(
+            installationsApiMock, directExecutor, API_KEY, TEST_ENDPOINT);
+
+    Task<CustomModel> modelTask = service.getNewDownloadUrlWithExpiry(PROJECT_ID, MODEL_NAME);
+
+    Assert.assertEquals(
+        modelTask.getResult(),
+        new CustomModel(
+            MODEL_NAME,
+            MODEL_HASH,
+            562336L,
+            "https://storage.google.com/myproject/modelfile.tflite",
+            1605140159813L));
+
+    verify(
+        getRequestedFor(urlEqualTo(downloadPath))
+            .withHeader(
+                CustomModelDownloadService.INSTALLATIONS_AUTH_TOKEN_HEADER,
+                equalTo(INSTALLATION_TOKEN)));
+  }
+
+  // TODO(annz) add test matching bad token response when BE is ready.
 }
