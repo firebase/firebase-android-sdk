@@ -102,8 +102,8 @@ public final class CustomModelDownloadService {
   }
 
   /**
-   * Calls the Firebase ML Download Service to retrieve the download url for the modelName.
-   * Use when a download attempt fails due to an expired timestamp.
+   * Calls the Firebase ML Download Service to retrieve the download url for the modelName. Use when
+   * a download attempt fails due to an expired timestamp.
    *
    * @param projectNumber - firebase project number
    * @param modelName - model name
