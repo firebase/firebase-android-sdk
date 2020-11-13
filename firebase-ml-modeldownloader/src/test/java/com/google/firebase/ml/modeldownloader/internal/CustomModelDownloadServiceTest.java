@@ -105,9 +105,7 @@ public class CustomModelDownloadServiceTest {
     long actual =
         CustomModelDownloadService.parseTokenExpirationTimestamp(TEST_EXPIRATION_TIMESTAMP);
 
-    assertWithMessage("Expected time to be properly formatted.")
-        .that(actual)
-        .isEqualTo(TEST_EXPIRATION_IN_MS);
+    Assert.assertEquals(actual, TEST_EXPIRATION_IN_MS);
   }
 
   @Test
@@ -142,14 +140,14 @@ public class CustomModelDownloadServiceTest {
 
     Task<CustomModel> modelTask = service.getNewDownloadUrlWithExpiry(PROJECT_ID, MODEL_NAME);
 
-    Assert.assertEquals(
-        modelTask.getResult(),
+    Assert.assertTrue(
         new CustomModel(
-            MODEL_NAME,
-            MODEL_HASH,
-            562336L,
-            "https://storage.google.com/myproject/modelfile.tflite",
-            1605140159813L));
+                MODEL_NAME,
+                MODEL_HASH,
+                562336L,
+                "https://storage.google.com/myproject/modelfile.tflite",
+                1605140159813L)
+            .equals(modelTask.getResult()));
 
     verify(
         getRequestedFor(urlEqualTo(downloadPath))
@@ -182,14 +180,14 @@ public class CustomModelDownloadServiceTest {
 
     Task<CustomModel> modelTask = service.getCustomModelDetails(PROJECT_ID, MODEL_NAME, MODEL_HASH);
 
-    Assert.assertEquals(
-        modelTask.getResult(),
+    Assert.assertTrue(
         new CustomModel(
-            MODEL_NAME,
-            MODEL_HASH,
-            562336L,
-            "https://storage.google.com/myproject/modelfile.tflite",
-            1605140159813L));
+                MODEL_NAME,
+                MODEL_HASH,
+                562336L,
+                "https://storage.google.com/myproject/modelfile.tflite",
+                1605140159813L)
+            .equals(modelTask.getResult()));
 
     verify(
         getRequestedFor(urlEqualTo(downloadPath))
