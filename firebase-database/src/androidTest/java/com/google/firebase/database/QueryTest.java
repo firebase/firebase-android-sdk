@@ -3431,7 +3431,6 @@ public class QueryTest {
     FirebaseApp app =
         appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
     FirebaseDatabase db = FirebaseDatabase.getInstance(app);
-    db.setLogLevel(Logger.Level.DEBUG);
     DatabaseReference node = db.getReference();
     db.goOffline();
     try {

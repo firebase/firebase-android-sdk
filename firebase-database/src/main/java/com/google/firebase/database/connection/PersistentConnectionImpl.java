@@ -132,12 +132,16 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
       return request;
     }
 
+    /**
+     * Mark this OutstandingGet as sent. Essentially compare-and-set on the `sent` member.
+     *
+     * @return true if the OustandingGet wasn't already sent, false if it was.
+     */
     private boolean markSent() {
-      boolean prev = sent;
-      if (prev) {
+      if (sent) {
         return false;
       }
-      this.sent = true;
+      sent = true;
       return true;
     }
   }
@@ -418,8 +422,7 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
           new Runnable() {
             @Override
             public void run() {
-              OutstandingGet get = outstandingGets.get(readId);
-              if (get == null || get != outstandingGet || !get.markSent()) {
+              if (!outstandingGet.markSent()) {
                 return;
               }
               if (logger.logsDebug()) {
