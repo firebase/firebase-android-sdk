@@ -46,7 +46,7 @@ import org.robolectric.RobolectricTestRunner;
 @RunWith(RobolectricTestRunner.class)
 public class CustomModelDownloadServiceTest {
 
-  private static final long TEST_EXPIRATION_IN_MS = 1604530594215L;
+  private static final long TEST_EXPIRATION_IN_MS = 1604512594215L;
   private static final String TEST_EXPIRATION_TIMESTAMP = "2020-11-04T17:56:34.215Z";
   private static final String INCORRECT_EXPIRATION_TIMESTAMP = "2345";
   private static final String PROJECT_ID = "md-androidtest";
@@ -80,11 +80,22 @@ public class CustomModelDownloadServiceTest {
         }
       };
 
+  private static final String DOWNLOAD_URI =
+      "https://storage.google.com/myproject/modelfile.tflite";
+
+  private static final Long FILE_SIZE = 562336L;
+
   private static final String RESPONSE_BODY =
-      "{ \"expireTime\" : \"2020-11-11T19:15:59.813Z\","
-          + "\"sizeBytes\": \"562336\","
+      "{ \"expireTime\" : \" "
+          + TEST_EXPIRATION_TIMESTAMP
+          + "\","
+          + "\"sizeBytes\": \""
+          + FILE_SIZE
+          + "\","
           + "\"modelFormat\": \"TFLITE\","
-          + "\"downloadUri\": \"https://storage.google.com/myproject/modelfile.tflite\""
+          + "\"downloadUri\": \""
+          + DOWNLOAD_URI
+          + "\""
           + "}";
 
   @Rule public WireMockRule wireMockRule = new WireMockRule(8979);
@@ -105,7 +116,9 @@ public class CustomModelDownloadServiceTest {
     long actual =
         CustomModelDownloadService.parseTokenExpirationTimestamp(TEST_EXPIRATION_TIMESTAMP);
 
-    Assert.assertEquals(actual, TEST_EXPIRATION_IN_MS);
+    assertWithMessage("Expected time to be properly formatted.")
+        .that(actual)
+        .isEqualTo(TEST_EXPIRATION_IN_MS);
   }
 
   @Test
@@ -140,14 +153,9 @@ public class CustomModelDownloadServiceTest {
 
     Task<CustomModel> modelTask = service.getNewDownloadUrlWithExpiry(PROJECT_ID, MODEL_NAME);
 
-    Assert.assertTrue(
-        new CustomModel(
-                MODEL_NAME,
-                MODEL_HASH,
-                562336L,
-                "https://storage.google.com/myproject/modelfile.tflite",
-                1605140159813L)
-            .equals(modelTask.getResult()));
+    Assert.assertEquals(
+        modelTask.getResult(),
+        new CustomModel(MODEL_NAME, MODEL_HASH, FILE_SIZE, DOWNLOAD_URI, TEST_EXPIRATION_IN_MS));
 
     verify(
         getRequestedFor(urlEqualTo(downloadPath))
@@ -180,14 +188,9 @@ public class CustomModelDownloadServiceTest {
 
     Task<CustomModel> modelTask = service.getCustomModelDetails(PROJECT_ID, MODEL_NAME, MODEL_HASH);
 
-    Assert.assertTrue(
-        new CustomModel(
-                MODEL_NAME,
-                MODEL_HASH,
-                562336L,
-                "https://storage.google.com/myproject/modelfile.tflite",
-                1605140159813L)
-            .equals(modelTask.getResult()));
+    Assert.assertEquals(
+        modelTask.getResult(),
+        new CustomModel(MODEL_NAME, MODEL_HASH, FILE_SIZE, DOWNLOAD_URI, TEST_EXPIRATION_IN_MS));
 
     verify(
         getRequestedFor(urlEqualTo(downloadPath))
@@ -211,7 +214,7 @@ public class CustomModelDownloadServiceTest {
             .withHeader(CustomModelDownloadService.IF_NONE_MATCH_HEADER_KEY, equalTo(MODEL_HASH))
             .willReturn(
                 aResponse()
-                    .withStatus(304)
+                    .withStatus(304) // match found
                     .withHeader(CustomModelDownloadService.ETAG_HEADER, MODEL_HASH)));
 
     CustomModelDownloadService service =
@@ -244,7 +247,7 @@ public class CustomModelDownloadServiceTest {
             .withHeader(CustomModelDownloadService.IF_NONE_MATCH_HEADER_KEY, equalTo(MODEL_HASH))
             .willReturn(
                 aResponse()
-                    .withStatus(404)
+                    .withStatus(404) // not found
                     .withBody(
                         "{\"status\":\"NOT_FOUND\",\"message\":\"Requested entity was not found\"}")));
 

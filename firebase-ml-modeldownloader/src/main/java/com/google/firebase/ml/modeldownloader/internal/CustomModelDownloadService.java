@@ -39,6 +39,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.TimeZone;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.zip.GZIPInputStream;
@@ -177,7 +178,8 @@ public final class CustomModelDownloadService {
 
     try {
       String isoDatePattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
-      SimpleDateFormat iso8601Format = new SimpleDateFormat(isoDatePattern, Locale.getDefault());
+      SimpleDateFormat iso8601Format = new SimpleDateFormat(isoDatePattern, Locale.US);
+      iso8601Format.setTimeZone(TimeZone.getTimeZone("UTC"));
       Date date = iso8601Format.parse(expiresIn);
       return date.getTime();
     } catch (ParseException pe) {
