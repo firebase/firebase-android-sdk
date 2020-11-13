@@ -18,7 +18,6 @@ import android.os.Build.VERSION_CODES;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.FirebaseOptions;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
@@ -44,8 +43,7 @@ public class FirebaseModelDownloaderRegistrar implements ComponentRegistrar {
     return Arrays.asList(
         Component.builder(FirebaseModelDownloader.class)
             .add(Dependency.required(FirebaseApp.class))
-            .add(Dependency.required(FirebaseOptions.class))
-            .factory(c -> new FirebaseModelDownloader(c.get(FirebaseOptions.class)))
+            .factory(c -> new FirebaseModelDownloader(c.get(FirebaseApp.class)))
             .build(),
         Component.builder(SharedPreferencesUtil.class)
             .add(Dependency.required(FirebaseApp.class))

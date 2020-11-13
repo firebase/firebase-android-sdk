@@ -26,15 +26,16 @@ import com.google.firebase.platforminfo.LibraryVersionComponent
 val Firebase.functions: FirebaseFunctions
     get() = FirebaseFunctions.getInstance()
 
-/** Returns the [FirebaseFunctions] instance of a given [region]. */
-fun Firebase.functions(region: String): FirebaseFunctions = FirebaseFunctions.getInstance(region)
+/** Returns the [FirebaseFunctions] instance of a given [regionOrCustomDomain]. */
+fun Firebase.functions(regionOrCustomDomain: String): FirebaseFunctions =
+        FirebaseFunctions.getInstance(regionOrCustomDomain)
 
 /** Returns the [FirebaseFunctions] instance of a given [FirebaseApp]. */
 fun Firebase.functions(app: FirebaseApp): FirebaseFunctions = FirebaseFunctions.getInstance(app)
 
-/** Returns the [FirebaseFunctions] instance of a given [FirebaseApp] and [region]. */
-fun Firebase.functions(app: FirebaseApp, region: String): FirebaseFunctions =
-        FirebaseFunctions.getInstance(app, region)
+/** Returns the [FirebaseFunctions] instance of a given [FirebaseApp] and [regionOrCustomDomain]. */
+fun Firebase.functions(app: FirebaseApp, regionOrCustomDomain: String): FirebaseFunctions =
+        FirebaseFunctions.getInstance(app, regionOrCustomDomain)
 
 internal const val LIBRARY_NAME: String = "fire-fun-ktx"
 

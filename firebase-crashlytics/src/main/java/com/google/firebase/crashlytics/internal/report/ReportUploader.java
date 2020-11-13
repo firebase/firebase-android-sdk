@@ -105,13 +105,10 @@ public class ReportUploader {
       boolean shouldDeleteReport = true;
 
       if (dataTransportState == DataTransportState.ALL) {
-        Logger.getLogger()
-            .d("Send to Reports Endpoint disabled. Removing Reports Endpoint report.");
+        Logger.getLogger().d("Report configured to be sent via DataTransport.");
       } else if (dataTransportState == DataTransportState.JAVA_ONLY
           && report.getType() == Report.Type.JAVA) {
-        Logger.getLogger()
-            .d(
-                "Send to Reports Endpoint for non-native reports disabled. Removing Reports Uploader report.");
+        Logger.getLogger().d("Report configured to be sent via DataTransport.");
       } else {
         final boolean sent = createReportCall.invoke(requestData, dataCollectionToken);
         Logger.getLogger()

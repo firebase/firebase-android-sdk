@@ -20,8 +20,6 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
 
 /**
  * Helper for executing tasks on the Crashlytics background executor service.
@@ -36,7 +34,7 @@ import java.util.concurrent.Future;
  * own worker.
  */
 class CrashlyticsBackgroundWorker {
-  private final ExecutorService executorService;
+  private final Executor executor;
 
   private Task<Void> tail = Tasks.forResult(null);
 
@@ -45,23 +43,21 @@ class CrashlyticsBackgroundWorker {
   // A thread local to keep track of which thread belongs to this executor.
   private ThreadLocal<Boolean> isExecutorThread = new ThreadLocal<>();
 
-  public CrashlyticsBackgroundWorker(ExecutorService executorService) {
-    this.executorService = executorService;
+  public CrashlyticsBackgroundWorker(Executor executor) {
+    this.executor = executor;
     // Queue up the first job as one that marks the thread so we can check it later.
-    @SuppressWarnings("FutureReturnValueIgnored")
-    Future<?> submit =
-        executorService.submit(
-            new Runnable() {
-              @Override
-              public void run() {
-                isExecutorThread.set(true);
-              }
-            });
+    executor.execute(
+        new Runnable() {
+          @Override
+          public void run() {
+            isExecutorThread.set(true);
+          }
+        });
   }
 
   /** Returns the executor used by this background worker. */
   public Executor getExecutor() {
-    return executorService;
+    return executor;
   }
 
   /** Returns true if called on the thread owned by this background worker. */
@@ -114,7 +110,7 @@ class CrashlyticsBackgroundWorker {
   /** Convenience method that tasks a Task<T> and convert it to a Task<Void>. */
   private <T> Task<Void> ignoreResult(Task<T> task) {
     return task.continueWith(
-        executorService,
+        executor,
         new Continuation<T, Void>() {
           @Override
           public Void then(@NonNull Task<T> task) throws Exception {
@@ -135,7 +131,7 @@ class CrashlyticsBackgroundWorker {
   public <T> Task<T> submit(final Callable<T> callable) {
     synchronized (tailLock) {
       // Chain the new callable onto the queue's tail.
-      Task<T> toReturn = tail.continueWith(executorService, newContinuation(callable));
+      Task<T> toReturn = tail.continueWith(executor, newContinuation(callable));
 
       // Add a new tail that swallows errors from the callable when it finishes.
       tail = ignoreResult(toReturn);
@@ -156,7 +152,7 @@ class CrashlyticsBackgroundWorker {
   public <T> Task<T> submitTask(final Callable<Task<T>> callable) {
     synchronized (tailLock) {
       // Chain the new callable onto the queue's tail.
-      Task<T> toReturn = tail.continueWithTask(executorService, newContinuation(callable));
+      Task<T> toReturn = tail.continueWithTask(executor, newContinuation(callable));
 
       // Add a new tail that swallows errors from the callable when it finishes.
       tail = ignoreResult(toReturn);

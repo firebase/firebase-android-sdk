@@ -14,6 +14,7 @@
 
 package com.google.android.datatransport.cct;
 
+import static android.content.pm.PackageManager.NameNotFoundException;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.absent;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
@@ -31,6 +32,7 @@ import static org.junit.Assert.assertEquals;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import androidx.test.core.app.ApplicationProvider;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.google.android.datatransport.Encoding;
 import com.google.android.datatransport.backend.cct.BuildConfig;
@@ -207,11 +209,6 @@ public class CctTransportBackendTest {
 
     BackendResponse response = BACKEND.send(backendRequest);
 
-    ConnectivityManager connectivityManager =
-        (ConnectivityManager)
-            RuntimeEnvironment.application.getSystemService(Context.CONNECTIVITY_SERVICE);
-    NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
-
     verify(
         postRequestedFor(urlEqualTo("/api"))
             .withHeader(
@@ -240,6 +237,40 @@ public class CctTransportBackendTest {
                     String.format(
                         "$[?(@.logRequest[0].clientInfo.androidClientInfo.mccMnc == \"\")]"))));
 
+    assertEquals(BackendResponse.ok(3), response);
+  }
+
+  @Test
+  public void testCCTContainsRightApplicationBuild() throws NameNotFoundException {
+    stubFor(
+        post(urlEqualTo("/api"))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", "application/json;charset=UTF8;hello=world")
+                    .withBody("{\"nextRequestWaitMillis\":3}")));
+    BackendRequest backendRequest = getCCTBackendRequest();
+    wallClock.tick();
+    uptimeClock.tick();
+
+    BackendResponse response = BACKEND.send(backendRequest);
+
+    verify(
+        postRequestedFor(urlEqualTo("/api"))
+            .withHeader(
+                "User-Agent",
+                equalTo(String.format("datatransport/%s android/", BuildConfig.VERSION_NAME)))
+            .withHeader("Content-Type", equalTo("application/json"))
+            .withRequestBody(
+                matchingJsonPath(
+                    String.format(
+                        "$[?(@.logRequest[0].clientInfo.androidClientInfo.applicationBuild == \"%s\")]",
+                        ApplicationProvider.getApplicationContext()
+                            .getPackageManager()
+                            .getPackageInfo(
+                                ApplicationProvider.getApplicationContext().getPackageName(),
+                                /* flags= */ 0)
+                            .versionCode))));
     assertEquals(BackendResponse.ok(3), response);
   }
 
