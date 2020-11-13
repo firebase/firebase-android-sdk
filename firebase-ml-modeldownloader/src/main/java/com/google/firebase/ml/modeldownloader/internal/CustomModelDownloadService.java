@@ -197,15 +197,17 @@ public final class CustomModelDownloadService {
         && (httpResponseCode != HttpURLConnection.HTTP_NOT_MODIFIED)) {
       String errorMessage = getErrorStream(connection);
 
-      throw new Exception(
-          String.format(
-              Locale.getDefault(),
-              "Failed to connect to Firebase ML download server with HTTP status code: %d"
-                  + " and error message: %s",
-              connection.getResponseCode(),
-              errorMessage));
+      // todo(annz) add more specific error handling. NOT_FOUND, etc.
+      return Tasks.forException(
+          new Exception(
+              String.format(
+                  Locale.getDefault(),
+                  "Failed to connect to Firebase ML download server with HTTP status code: %d"
+                      + " and error message: %s",
+                  connection.getResponseCode(),
+                  errorMessage)));
     } else if (httpResponseCode == HttpURLConnection.HTTP_NOT_MODIFIED) {
-      return null;
+      return Tasks.forResult(null);
     }
 
     return Tasks.forResult(readCustomModelResponse(modelName, connection));

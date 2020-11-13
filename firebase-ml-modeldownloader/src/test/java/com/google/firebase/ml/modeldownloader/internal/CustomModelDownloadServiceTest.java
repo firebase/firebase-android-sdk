@@ -158,10 +158,10 @@ public class CustomModelDownloadServiceTest {
                 equalTo(INSTALLATION_TOKEN)));
   }
 
+  @Test
   public void testDownloadService_withHashSuccess_noMatch() throws Exception {
     String downloadPath =
-        String.format(
-            CustomModelDownloadService.DOWNLOAD_MODEL_REGEX, MODEL_HASH, PROJECT_ID, MODEL_NAME);
+        String.format(CustomModelDownloadService.DOWNLOAD_MODEL_REGEX, "", PROJECT_ID, MODEL_NAME);
     stubFor(
         get(urlEqualTo(downloadPath))
             .withHeader(
@@ -170,7 +170,6 @@ public class CustomModelDownloadServiceTest {
             .withHeader(
                 CustomModelDownloadService.CONTENT_TYPE,
                 equalTo(CustomModelDownloadService.APPLICATION_JSON))
-            .withHeader(CustomModelDownloadService.ETAG_HEADER, equalTo(MODEL_HASH))
             .willReturn(
                 aResponse()
                     .withStatus(200)
@@ -181,7 +180,7 @@ public class CustomModelDownloadServiceTest {
         new CustomModelDownloadService(
             installationsApiMock, directExecutor, API_KEY, TEST_ENDPOINT);
 
-    Task<CustomModel> modelTask = service.getNewDownloadUrlWithExpiry(PROJECT_ID, MODEL_NAME);
+    Task<CustomModel> modelTask = service.getCustomModelDetails(PROJECT_ID, MODEL_NAME, MODEL_HASH);
 
     Assert.assertEquals(
         modelTask.getResult(),
@@ -199,10 +198,10 @@ public class CustomModelDownloadServiceTest {
                 equalTo(INSTALLATION_TOKEN)));
   }
 
+  @Test
   public void testDownloadService_withHashSuccess_match() throws Exception {
     String downloadPath =
-        String.format(
-            CustomModelDownloadService.DOWNLOAD_MODEL_REGEX, MODEL_HASH, PROJECT_ID, MODEL_NAME);
+        String.format(CustomModelDownloadService.DOWNLOAD_MODEL_REGEX, "", PROJECT_ID, MODEL_NAME);
     stubFor(
         get(urlEqualTo(downloadPath))
             .withHeader(
@@ -211,7 +210,6 @@ public class CustomModelDownloadServiceTest {
             .withHeader(
                 CustomModelDownloadService.CONTENT_TYPE,
                 equalTo(CustomModelDownloadService.APPLICATION_JSON))
-            .withHeader(CustomModelDownloadService.ETAG_HEADER, equalTo(MODEL_HASH))
             .withHeader(CustomModelDownloadService.IF_NONE_MATCH_HEADER_KEY, equalTo(MODEL_HASH))
             .willReturn(
                 aResponse()
@@ -222,16 +220,9 @@ public class CustomModelDownloadServiceTest {
         new CustomModelDownloadService(
             installationsApiMock, directExecutor, API_KEY, TEST_ENDPOINT);
 
-    Task<CustomModel> modelTask = service.getNewDownloadUrlWithExpiry(PROJECT_ID, MODEL_NAME);
+    Task<CustomModel> modelTask = service.getCustomModelDetails(PROJECT_ID, MODEL_NAME, MODEL_HASH);
 
-    Assert.assertEquals(
-        modelTask.getResult(),
-        new CustomModel(
-            MODEL_NAME,
-            MODEL_HASH,
-            562336L,
-            "https://storage.google.com/myproject/modelfile.tflite",
-            1605140159813L));
+    Assert.assertNull(modelTask.getResult());
 
     verify(
         getRequestedFor(urlEqualTo(downloadPath))
@@ -240,10 +231,10 @@ public class CustomModelDownloadServiceTest {
                 equalTo(INSTALLATION_TOKEN)));
   }
 
+  @Test
   public void testDownloadService_modelNotFound() throws Exception {
     String downloadPath =
-        String.format(
-            CustomModelDownloadService.DOWNLOAD_MODEL_REGEX, MODEL_HASH, PROJECT_ID, MODEL_NAME);
+        String.format(CustomModelDownloadService.DOWNLOAD_MODEL_REGEX, "", PROJECT_ID, MODEL_NAME);
     stubFor(
         get(urlEqualTo(downloadPath))
             .withHeader(
@@ -263,16 +254,9 @@ public class CustomModelDownloadServiceTest {
         new CustomModelDownloadService(
             installationsApiMock, directExecutor, API_KEY, TEST_ENDPOINT);
 
-    Task<CustomModel> modelTask = service.getNewDownloadUrlWithExpiry(PROJECT_ID, MODEL_NAME);
+    Task<CustomModel> modelTask = service.getCustomModelDetails(PROJECT_ID, MODEL_NAME, MODEL_HASH);
 
-    Assert.assertEquals(
-        modelTask.getResult(),
-        new CustomModel(
-            MODEL_NAME,
-            MODEL_HASH,
-            562336L,
-            "https://storage.google.com/myproject/modelfile.tflite",
-            1605140159813L));
+    Assert.assertTrue(modelTask.getException().getMessage().contains("404"));
 
     verify(
         getRequestedFor(urlEqualTo(downloadPath))
