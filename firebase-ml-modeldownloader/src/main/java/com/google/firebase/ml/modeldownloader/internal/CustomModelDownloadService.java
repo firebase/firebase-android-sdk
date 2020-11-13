@@ -23,7 +23,7 @@ import androidx.annotation.RequiresApi;
 import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.FirebaseApp;
+import com.google.firebase.FirebaseOptions;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
 import com.google.firebase.ml.modeldownloader.CustomModel;
@@ -51,7 +51,7 @@ import java.util.zip.GZIPInputStream;
  * @hide
  */
 @RequiresApi(api = VERSION_CODES.KITKAT)
-final class CustomModelDownloadService {
+public final class CustomModelDownloadService {
 
   private static final String TAG = "CustomModelDownloadSer";
   private final ExecutorService executorService;
@@ -81,9 +81,10 @@ final class CustomModelDownloadService {
   private String apiKey;
   private String downloadHost = FIREBASE_DOWNLOAD_HOST;
 
-  CustomModelDownloadService() {
-    firebaseInstallations = FirebaseApp.getInstance().get(FirebaseInstallationsApi.class);
-    apiKey = FirebaseApp.getInstance().getOptions().getApiKey();
+  public CustomModelDownloadService(
+      FirebaseOptions firebaseOptions, FirebaseInstallationsApi installationsApi) {
+    firebaseInstallations = installationsApi;
+    apiKey = firebaseOptions.getApiKey();
     // is this an appropriate executor?
     executorService = Executors.newCachedThreadPool();
   }
@@ -100,7 +101,6 @@ final class CustomModelDownloadService {
     this.downloadHost = downloadHost;
   }
 
-  @Nullable
   /**
    * Calls the Firebase ML Download Service to retrieve the download url for the modelName. Use when
    * a download attempt fails due to an expired timestamp.
@@ -110,6 +110,7 @@ final class CustomModelDownloadService {
    * @return - updated model with new download url and expiry time
    * @throws Exception - errors when Firebase ML Download Service call fails.
    */
+  @Nullable
   public Task<CustomModel> getNewDownloadUrlWithExpiry(String projectNumber, String modelName)
       throws Exception {
     return getCustomModelDetails(projectNumber, modelName, "");
