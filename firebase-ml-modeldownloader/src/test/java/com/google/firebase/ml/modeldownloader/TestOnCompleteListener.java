@@ -30,14 +30,12 @@ import java.util.concurrent.TimeUnit;
 public class TestOnCompleteListener<TResult> implements OnCompleteListener<TResult> {
   private static final long TIMEOUT_MS = 5000;
   private final CountDownLatch latch = new CountDownLatch(1);
-  private Task<TResult> task;
   private volatile TResult result;
   private volatile Exception exception;
   private volatile boolean successful;
 
   @Override
   public void onComplete(@NonNull Task<TResult> task) {
-    this.task = task;
     successful = task.isSuccessful();
     if (successful) {
       result = task.getResult();

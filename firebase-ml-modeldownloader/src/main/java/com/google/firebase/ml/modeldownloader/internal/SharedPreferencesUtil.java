@@ -89,7 +89,7 @@ public class SharedPreferencesUtil {
         getSharedPreferences()
             .getLong(String.format(DOWNLOADING_MODEL_ID_PATTERN, persistenceKey, modelName), 0);
 
-    return new CustomModel(modelName, id, fileSize, modelHash, filePath);
+    return new CustomModel(modelName, modelHash, fileSize, id, filePath);
   }
 
   /**
@@ -120,7 +120,7 @@ public class SharedPreferencesUtil {
         getSharedPreferences()
             .getLong(String.format(DOWNLOADING_MODEL_ID_PATTERN, persistenceKey, modelName), 0);
 
-    return new CustomModel(modelName, id, fileSize, modelHash);
+    return new CustomModel(modelName, modelHash, fileSize, id);
   }
 
   /**
