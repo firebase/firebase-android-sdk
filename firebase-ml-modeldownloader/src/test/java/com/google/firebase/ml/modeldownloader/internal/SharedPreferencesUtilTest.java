@@ -38,13 +38,13 @@ public class SharedPreferencesUtilTest {
   private static final String MODEL_NAME = "ModelName";
   private static final String MODEL_HASH = "dsf324";
   private static final CustomModel CUSTOM_MODEL_DOWNLOAD_COMPLETE =
-      new CustomModel(MODEL_NAME, 0, 100, MODEL_HASH, "file/path/store/ModelName/1");
+      new CustomModel(MODEL_NAME, MODEL_HASH, 100, 0, "file/path/store/ModelName/1");
 
   private static final CustomModel CUSTOM_MODEL_UPDATE_IN_BACKGROUND =
-      new CustomModel(MODEL_NAME, 986, 100, MODEL_HASH, "file/path/store/ModelName/1");
+      new CustomModel(MODEL_NAME, MODEL_HASH, 100, 986, "file/path/store/ModelName/1");
 
   private static final CustomModel CUSTOM_MODEL_DOWNLOADING =
-      new CustomModel(MODEL_NAME, 986, 100, MODEL_HASH);
+      new CustomModel(MODEL_NAME, MODEL_HASH, 100, 986);
 
   private SharedPreferencesUtil sharedPreferencesUtil;
 
@@ -145,11 +145,11 @@ public class SharedPreferencesUtilTest {
     sharedPreferencesUtil.setUploadedCustomModelDetails(CUSTOM_MODEL_DOWNLOAD_COMPLETE);
 
     CustomModel model2 =
-        new CustomModel(MODEL_NAME + "2", 0, 102, MODEL_HASH + "2", "file/path/store/ModelName2/1");
+        new CustomModel(MODEL_NAME + "2", MODEL_HASH + "2", 102, 0, "file/path/store/ModelName2/1");
     sharedPreferencesUtil.setUploadedCustomModelDetails(model2);
 
     CustomModel model3 =
-        new CustomModel(MODEL_NAME + "3", 0, 103, MODEL_HASH + "3", "file/path/store/ModelName3/1");
+        new CustomModel(MODEL_NAME + "3", MODEL_HASH + "3", 103, 0, "file/path/store/ModelName3/1");
 
     sharedPreferencesUtil.setUploadedCustomModelDetails(model3);
 

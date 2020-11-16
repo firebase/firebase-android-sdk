@@ -21,7 +21,6 @@ firebaseLibrary {
     publishJavadoc = false
 }
 
-
 android {
     compileSdkVersion project.targetSdkVersion
 
@@ -64,6 +63,5 @@ dependencies {
     testImplementation 'org.apache.httpcomponents:httpclient-android:4.3.5.1'
     testImplementation 'org.mockito:mockito-core:3.3.3'
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
-
     testImplementation 'com.google.truth.extensions:truth-proto-extension:1.0'
 }

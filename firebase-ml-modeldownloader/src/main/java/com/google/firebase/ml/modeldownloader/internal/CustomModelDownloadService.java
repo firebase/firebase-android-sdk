@@ -55,17 +55,14 @@ import java.util.zip.GZIPInputStream;
 public final class CustomModelDownloadService {
 
   private static final String TAG = "CustomModelDownloadSer";
-  private final ExecutorService executorService;
-
   private static final int CONNECTION_TIME_OUT_MS = 2000; // 2 seconds.
   private static final Charset UTF_8 = StandardCharsets.UTF_8;
-
-  @VisibleForTesting static final String ETAG_HEADER = "etag";
-
+  private static final String ISO_DATE_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
   private static final String ACCEPT_ENCODING_HEADER_KEY = "Accept-Encoding";
   private static final String CONTENT_ENCODING_HEADER_KEY = "Content-Encoding";
   private static final String GZIP_CONTENT_ENCODING = "gzip";
   private static final String FIREBASE_DOWNLOAD_HOST = "https://firebaseml.googleapis.com";
+  @VisibleForTesting static final String ETAG_HEADER = "etag";
   @VisibleForTesting static final String CONTENT_TYPE = "Content-Type";
   @VisibleForTesting static final String APPLICATION_JSON = "application/json; charset=UTF-8";
   @VisibleForTesting static final String IF_NONE_MATCH_HEADER_KEY = "If-None-Match";
@@ -78,6 +75,7 @@ public final class CustomModelDownloadService {
   @VisibleForTesting
   static final String DOWNLOAD_MODEL_REGEX = "%s/v1beta2/projects/%s/models/%s:download";
 
+  private final ExecutorService executorService;
   private FirebaseInstallationsApi firebaseInstallations;
   private String apiKey;
   private String downloadHost = FIREBASE_DOWNLOAD_HOST;
@@ -86,7 +84,6 @@ public final class CustomModelDownloadService {
       FirebaseOptions firebaseOptions, FirebaseInstallationsApi installationsApi) {
     firebaseInstallations = installationsApi;
     apiKey = firebaseOptions.getApiKey();
-    // is this an appropriate executor?
     executorService = Executors.newCachedThreadPool();
   }
 
@@ -177,8 +174,7 @@ public final class CustomModelDownloadService {
     }
 
     try {
-      String isoDatePattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
-      SimpleDateFormat iso8601Format = new SimpleDateFormat(isoDatePattern, Locale.US);
+      SimpleDateFormat iso8601Format = new SimpleDateFormat(ISO_DATE_PATTERN, Locale.US);
       iso8601Format.setTimeZone(TimeZone.getTimeZone("UTC"));
       Date date = iso8601Format.parse(expiresIn);
       return date.getTime();
@@ -191,28 +187,26 @@ public final class CustomModelDownloadService {
 
   private Task<CustomModel> fetchDownloadDetails(String modelName, HttpURLConnection connection)
       throws Exception {
-
     connection.connect();
     int httpResponseCode = connection.getResponseCode();
 
-    if ((httpResponseCode != HttpURLConnection.HTTP_OK)
-        && (httpResponseCode != HttpURLConnection.HTTP_NOT_MODIFIED)) {
-      String errorMessage = getErrorStream(connection);
-
-      // todo(annz) add more specific error handling. NOT_FOUND, etc.
-      return Tasks.forException(
-          new Exception(
-              String.format(
-                  Locale.getDefault(),
-                  "Failed to connect to Firebase ML download server with HTTP status code: %d"
-                      + " and error message: %s",
-                  connection.getResponseCode(),
-                  errorMessage)));
-    } else if (httpResponseCode == HttpURLConnection.HTTP_NOT_MODIFIED) {
+    if (httpResponseCode == HttpURLConnection.HTTP_NOT_MODIFIED) {
       return Tasks.forResult(null);
+    } else if (httpResponseCode == HttpURLConnection.HTTP_OK) {
+      return Tasks.forResult(readCustomModelResponse(modelName, connection));
     }
 
-    return Tasks.forResult(readCustomModelResponse(modelName, connection));
+    String errorMessage = getErrorStream(connection);
+
+    // todo(annz) add more specific error handling. NOT_FOUND, etc.
+    return Tasks.forException(
+        new Exception(
+            String.format(
+                Locale.getDefault(),
+                "Failed to connect to Firebase ML download server with HTTP status code: %d"
+                    + " and error message: %s",
+                connection.getResponseCode(),
+                errorMessage)));
   }
 
   private CustomModel readCustomModelResponse(
@@ -233,7 +227,7 @@ public final class CustomModelDownloadService {
     }
 
     // JsonReader.peek will sometimes throw AssertionErrors in Android 8.0 and above. See
-    // https://b.corp.google.com/issues/79920590 for details.
+    // b/79920590 for details.
     reader.beginObject();
     while (reader.hasNext()) {
       String name = reader.nextName();

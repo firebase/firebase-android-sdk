@@ -52,7 +52,7 @@ public class FirebaseModelDownloaderTest {
 
   public static final String MODEL_HASH = "dsf324";
   // TODO replace with uploaded model.
-  CustomModel CUSTOM_MODEL = new CustomModel(MODEL_NAME, 0, 100, MODEL_HASH);
+  CustomModel CUSTOM_MODEL = new CustomModel(MODEL_NAME, MODEL_HASH, 100, 0);
 
   FirebaseModelDownloader firebaseModelDownloader;
   @Mock SharedPreferencesUtil mockPrefs;

@@ -30,7 +30,7 @@ public class CustomModelTest {
 
   public static final String MODEL_URL = "https://project.firebase.com/modelName/23424.jpg";
   private static final long URL_EXPIRATION = 604800L;
-  CustomModel CUSTOM_MODEL = new CustomModel(MODEL_NAME, 0, 100, MODEL_HASH);
+  CustomModel CUSTOM_MODEL = new CustomModel(MODEL_NAME, MODEL_HASH, 100, 0);
 
   CustomModel CUSTOM_MODEL_URL =
       new CustomModel(MODEL_NAME, MODEL_HASH, 100, MODEL_URL, URL_EXPIRATION);
@@ -73,9 +73,9 @@ public class CustomModelTest {
   @Test
   public void customModel_equals() {
     // downloading models
-    assertEquals(CUSTOM_MODEL, new CustomModel(MODEL_NAME, 0, 100, MODEL_HASH));
-    assertNotEquals(CUSTOM_MODEL, new CustomModel(MODEL_NAME, 0, 101, MODEL_HASH));
-    assertNotEquals(CUSTOM_MODEL, new CustomModel(MODEL_NAME, 101, 100, MODEL_HASH));
+    assertEquals(CUSTOM_MODEL, new CustomModel(MODEL_NAME, MODEL_HASH, 100, 0));
+    assertNotEquals(CUSTOM_MODEL, new CustomModel(MODEL_NAME, MODEL_HASH, 101, 0));
+    assertNotEquals(CUSTOM_MODEL, new CustomModel(MODEL_NAME, MODEL_HASH, 100, 101));
     // get model details models
     assertEquals(
         CUSTOM_MODEL_URL, new CustomModel(MODEL_NAME, MODEL_HASH, 100, MODEL_URL, URL_EXPIRATION));
@@ -89,11 +89,11 @@ public class CustomModelTest {
   @Test
   public void customModel_hashCode() {
     assertEquals(
-        CUSTOM_MODEL.hashCode(), new CustomModel(MODEL_NAME, 0, 100, MODEL_HASH).hashCode());
+        CUSTOM_MODEL.hashCode(), new CustomModel(MODEL_NAME, MODEL_HASH, 100, 0).hashCode());
     assertNotEquals(
-        CUSTOM_MODEL.hashCode(), new CustomModel(MODEL_NAME, 0, 101, MODEL_HASH).hashCode());
+        CUSTOM_MODEL.hashCode(), new CustomModel(MODEL_NAME, MODEL_HASH, 101, 0).hashCode());
     assertNotEquals(
-        CUSTOM_MODEL.hashCode(), new CustomModel(MODEL_NAME, 101, 100, MODEL_HASH).hashCode());
+        CUSTOM_MODEL.hashCode(), new CustomModel(MODEL_NAME, MODEL_HASH, 100, 101).hashCode());
 
     assertEquals(
         CUSTOM_MODEL_URL.hashCode(),

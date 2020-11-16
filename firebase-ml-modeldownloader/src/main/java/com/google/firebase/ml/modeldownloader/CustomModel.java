@@ -37,32 +37,32 @@ public class CustomModel {
    * Use when creating a custom model while the initial download is still in progress.
    *
    * @param name - model name
-   * @param downloadId - Android Download Manger - download id
-   * @param fileSize - model file size
    * @param modelHash - model hash size
+   * @param fileSize - model file size
+   * @param downloadId - Android Download Manger - download id
    * @hide
    */
   public CustomModel(
-      @NonNull String name, long downloadId, long fileSize, @NonNull String modelHash) {
-    this(name, downloadId, fileSize, modelHash, "", "", 0);
+      @NonNull String name, @NonNull String modelHash, long fileSize, long downloadId) {
+    this(name, modelHash, fileSize, downloadId, "", "", 0);
   }
 
   /**
    * Use when creating a custom model from a stored model with a new download is the background.
    *
    * @param name - model name
-   * @param downloadId - Android Download Manger - download id
-   * @param fileSize - model file size
    * @param modelHash - model hash size
+   * @param fileSize - model file size
+   * @param downloadId - Android Download Manger - download id
    * @hide
    */
   public CustomModel(
       @NonNull String name,
-      long downloadId,
-      long fileSize,
       @NonNull String modelHash,
+      long fileSize,
+      long downloadId,
       String localFilePath) {
-    this(name, downloadId, fileSize, modelHash, localFilePath, "", 0);
+    this(name, modelHash, fileSize, downloadId, localFilePath, "", 0);
   }
 
   /**
@@ -83,16 +83,16 @@ public class CustomModel {
       long fileSize,
       String downloadUrl,
       long downloadUrlExpiry) {
-    this(name, 0, fileSize, modelHash, "", downloadUrl, downloadUrlExpiry);
+    this(name, modelHash, fileSize, 0, "", downloadUrl, downloadUrlExpiry);
   }
 
   /**
    * Use when creating a custom model while the initial download is still in progress.
    *
    * @param name - model name
-   * @param downloadId - Android Download Manger - download id
-   * @param fileSize - model file size
    * @param modelHash - model hash size
+   * @param fileSize - model file size
+   * @param downloadId - Android Download Manger - download id
    * @param localFilePath - location of the current file
    * @param downloadUrl - download url path returned from download service
    * @param downloadUrlExpiry - expiry time of download url link
@@ -100,9 +100,9 @@ public class CustomModel {
    */
   private CustomModel(
       @NonNull String name,
-      long downloadId,
-      long fileSize,
       @NonNull String modelHash,
+      long fileSize,
+      long downloadId,
       @Nullable String localFilePath,
       @Nullable String downloadUrl,
       long downloadUrlExpiry) {
