@@ -30,42 +30,89 @@ public class CustomModel {
   private final long fileSize;
   private final String modelHash;
   private final String localFilePath;
+  private final String downloadUrl;
+  private final long downloadUrlExpiry;
 
   /**
    * Use when creating a custom model while the initial download is still in progress.
    *
    * @param name - model name
-   * @param downloadId - Android Download Manger - download id
+   * @param modelHash - model hash
    * @param fileSize - model file size
-   * @param modelHash - model hash size
+   * @param downloadId - Android Download Manger - download id
    * @hide
    */
   public CustomModel(
-      @NonNull String name, long downloadId, long fileSize, @NonNull String modelHash) {
-    this(name, downloadId, fileSize, modelHash, "");
+      @NonNull String name, @NonNull String modelHash, long fileSize, long downloadId) {
+    this(name, modelHash, fileSize, downloadId, "", "", 0);
+  }
+
+  /**
+   * Use when creating a custom model from a stored model with a new download in the background.
+   *
+   * @param name - model name
+   * @param modelHash - model hash
+   * @param fileSize - model file size
+   * @param downloadId - Android Download Manger - download id
+   * @hide
+   */
+  public CustomModel(
+      @NonNull String name,
+      @NonNull String modelHash,
+      long fileSize,
+      long downloadId,
+      String localFilePath) {
+    this(name, modelHash, fileSize, downloadId, localFilePath, "", 0);
+  }
+
+  /**
+   * Use when creating a custom model from a download service response. Download url and download
+   * url expiry should go together. These will not be stored in user preferences as this is a
+   * temporary step towards setting the actual download id.
+   *
+   * @param name - model name
+   * @param modelHash - model hash
+   * @param fileSize - model file size
+   * @param downloadUrl - download url path
+   * @param downloadUrlExpiry - time download url path expires
+   * @hide
+   */
+  public CustomModel(
+      @NonNull String name,
+      @NonNull String modelHash,
+      long fileSize,
+      String downloadUrl,
+      long downloadUrlExpiry) {
+    this(name, modelHash, fileSize, 0, "", downloadUrl, downloadUrlExpiry);
   }
 
   /**
    * Use when creating a custom model while the initial download is still in progress.
    *
    * @param name - model name
-   * @param downloadId - Android Download Manger - download id
+   * @param modelHash - model hash
    * @param fileSize - model file size
-   * @param modelHash - model hash size
+   * @param downloadId - Android Download Manger - download id
    * @param localFilePath - location of the current file
+   * @param downloadUrl - download url path returned from download service
+   * @param downloadUrlExpiry - expiry time of download url link
    * @hide
    */
-  public CustomModel(
+  private CustomModel(
       @NonNull String name,
-      long downloadId,
-      long fileSize,
       @NonNull String modelHash,
-      @NonNull String localFilePath) {
+      long fileSize,
+      long downloadId,
+      @Nullable String localFilePath,
+      @Nullable String downloadUrl,
+      long downloadUrlExpiry) {
     this.modelHash = modelHash;
     this.name = name;
     this.fileSize = fileSize;
     this.downloadId = downloadId;
     this.localFilePath = localFilePath;
+    this.downloadUrl = downloadUrl;
+    this.downloadUrlExpiry = downloadUrlExpiry;
   }
 
   @NonNull
@@ -81,7 +128,7 @@ public class CustomModel {
    */
   @Nullable
   public File getFile() {
-    if (localFilePath.isEmpty()) {
+    if (localFilePath == null || localFilePath.isEmpty()) {
       return null;
     }
     throw new UnsupportedOperationException("Not implemented, file retrieval coming soon.");
@@ -130,19 +177,43 @@ public class CustomModel {
         && Objects.equal(modelHash, other.modelHash)
         && Objects.equal(fileSize, other.fileSize)
         && Objects.equal(localFilePath, other.localFilePath)
-        && Objects.equal(downloadId, other.downloadId);
+        && Objects.equal(downloadId, other.downloadId)
+        && Objects.equal(downloadUrl, other.downloadUrl)
+        && Objects.equal(downloadUrlExpiry, other.downloadUrlExpiry);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hashCode(name, modelHash, fileSize, localFilePath, downloadId);
+    return Objects.hashCode(
+        name, modelHash, fileSize, localFilePath, downloadId, downloadUrl, downloadUrlExpiry);
+  }
+
+  /**
+   * The expiry time for the current download url.
+   *
+   * <p>Internal use only.
+   *
+   * @hide
+   */
+  public long getDownloadUrlExpiry() {
+    return downloadUrlExpiry;
+  }
+
+  /**
+   * @return the model download url
+   *     <p>Internal use only
+   * @hide
+   */
+  @Nullable
+  public String getDownloadUrl() {
+    return downloadUrl;
   }
 
   /**
    * @return the model file path
    * @hide
    */
-  @NonNull
+  @Nullable
   public String getLocalFilePath() {
     return localFilePath;
   }
