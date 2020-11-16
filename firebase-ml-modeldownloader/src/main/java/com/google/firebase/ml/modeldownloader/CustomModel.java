@@ -37,7 +37,7 @@ public class CustomModel {
    * Use when creating a custom model while the initial download is still in progress.
    *
    * @param name - model name
-   * @param modelHash - model hash size
+   * @param modelHash - model hash
    * @param fileSize - model file size
    * @param downloadId - Android Download Manger - download id
    * @hide
@@ -51,7 +51,7 @@ public class CustomModel {
    * Use when creating a custom model from a stored model with a new download in the background.
    *
    * @param name - model name
-   * @param modelHash - model hash size
+   * @param modelHash - model hash
    * @param fileSize - model file size
    * @param downloadId - Android Download Manger - download id
    * @hide
@@ -71,7 +71,7 @@ public class CustomModel {
    * temporary step towards setting the actual download id.
    *
    * @param name - model name
-   * @param modelHash - model hash size
+   * @param modelHash - model hash
    * @param fileSize - model file size
    * @param downloadUrl - download url path
    * @param downloadUrlExpiry - time download url path expires
@@ -90,7 +90,7 @@ public class CustomModel {
    * Use when creating a custom model while the initial download is still in progress.
    *
    * @param name - model name
-   * @param modelHash - model hash size
+   * @param modelHash - model hash
    * @param fileSize - model file size
    * @param downloadId - Android Download Manger - download id
    * @param localFilePath - location of the current file
