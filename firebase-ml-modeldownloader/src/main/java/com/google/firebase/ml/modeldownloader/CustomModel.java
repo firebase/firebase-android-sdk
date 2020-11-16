@@ -48,7 +48,7 @@ public class CustomModel {
   }
 
   /**
-   * Use when creating a custom model from a stored model with a new download is the background.
+   * Use when creating a custom model from a stored model with a new download in the background.
    *
    * @param name - model name
    * @param modelHash - model hash size
