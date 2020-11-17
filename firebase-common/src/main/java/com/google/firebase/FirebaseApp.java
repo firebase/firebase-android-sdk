@@ -47,6 +47,7 @@ import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.ComponentRuntime;
 import com.google.firebase.components.Lazy;
 import com.google.firebase.events.Publisher;
+import com.google.firebase.inject.Provider;
 import com.google.firebase.internal.DataCollectionConfigStorage;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -412,18 +413,18 @@ public class FirebaseApp {
     this.name = Preconditions.checkNotEmpty(name);
     this.options = Preconditions.checkNotNull(options);
 
-    List<ComponentRegistrar> registrars =
+    List<Provider<ComponentRegistrar>> registrars =
         ComponentDiscovery.forContext(applicationContext, ComponentDiscoveryService.class)
-            .discover();
-    registrars.add(new FirebaseCommonRegistrar());
+            .discoverLazy();
 
     componentRuntime =
-        new ComponentRuntime(
-            UI_EXECUTOR,
-            registrars,
-            Component.of(applicationContext, Context.class),
-            Component.of(this, FirebaseApp.class),
-            Component.of(options, FirebaseOptions.class));
+        ComponentRuntime.builder(UI_EXECUTOR)
+            .addLazyComponentRegistrars(registrars)
+            .addComponentRegistrar(new FirebaseCommonRegistrar())
+            .addComponent(Component.of(applicationContext, Context.class))
+            .addComponent(Component.of(this, FirebaseApp.class))
+            .addComponent(Component.of(options, FirebaseOptions.class))
+            .build();
 
     dataCollectionConfigStorage =
         new Lazy<>(
