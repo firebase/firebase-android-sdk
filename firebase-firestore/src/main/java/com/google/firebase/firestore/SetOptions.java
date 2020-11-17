@@ -26,10 +26,10 @@ import java.util.Set;
 
 /**
  * An options object that configures the behavior of {@code set()} calls. By providing one of the
- * SetOptions objects returned by {@link #merge}, {@link #mergeFields} and {@link #mergeFieldPaths},
- * the {@code set()} calls in {@link DocumentReference}, {@link WriteBatch} and {@link Transaction}
- * can be configured to perform granular merges instead of overwriting the target documents in their
- * entirety.
+ * SetOptions objects returned by {@link #merge()}, {@link #mergeFields(List)} and {@link
+ * #mergeFieldPaths(List)}, the {@code set()} calls in {@link DocumentReference}, {@link WriteBatch}
+ * and {@link Transaction} can be configured to perform granular merges instead of overwriting the
+ * target documents in their entirety.
  */
 public final class SetOptions {
 

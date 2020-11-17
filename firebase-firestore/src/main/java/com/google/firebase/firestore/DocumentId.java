@@ -22,7 +22,7 @@ import java.lang.annotation.Target;
 /**
  * Annotation used to mark a POJO property to be automatically populated with the document's ID when
  * the POJO is created from a Cloud Firestore document (for example, via {@link
- * DocumentSnapshot#toObject}).
+ * DocumentSnapshot#toObject(Class)}).
  *
  * <ul>
  *   Any of the following will throw a runtime exception:
@@ -33,14 +33,15 @@ import java.lang.annotation.Target;
  *   <li>This annotation is applied to a property with a name that conflicts with a read document
  *       field. For example, if a POJO has a field `firstName` annotated by {@code @DocumentId}, and
  *       there is a property from the document named `firstName` as well, an exception is thrown
- *       when you try to read the document into the POJO via {@link DocumentSnapshot#toObject} or
- *       {@link DocumentReference#get}.
+ *       when you try to read the document into the POJO via {@link
+ *       DocumentSnapshot#toObject(Class)} or {@link DocumentReference#get()}.
  *   <li>
  * </ul>
  *
- * <p>When using a POJO to write to a document (via {@link DocumentReference#set} or @{@link
- * WriteBatch#set}), the property annotated by {@code @DocumentId} is ignored, which allows writing
- * the POJO back to any document, even if it's not the origin of the POJO.
+ * <p>When using a POJO to write to a document (via {@link DocumentReference#set(Object)} or @{@link
+ * WriteBatch#set(DocumentReference, Object)}), the property annotated by {@code @DocumentId} is
+ * ignored, which allows writing the POJO back to any document, even if it's not the origin of the
+ * POJO.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.FIELD, ElementType.METHOD})

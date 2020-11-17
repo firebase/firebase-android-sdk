@@ -16,6 +16,10 @@ package com.google.firebase.database.core;
 
 import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
 
+import androidx.annotation.NonNull;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseException;
@@ -23,6 +27,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.InternalHelpers;
 import com.google.firebase.database.MutableData;
+import com.google.firebase.database.Query;
 import com.google.firebase.database.Transaction;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.database.annotations.NotNull;
@@ -460,6 +465,83 @@ public class Repo implements PersistentConnection.Delegate {
 
     Path affectedPath = abortTransactions(path, DatabaseError.OVERRIDDEN_BY_SET);
     this.rerunTransactions(affectedPath);
+  }
+
+  /**
+   * The purpose of `getValue` is to return the latest known value satisfying `query`.
+   *
+   * <p>If the client is connected, this method will send a request to the server. If the client is
+   * not connected, then either:
+   *
+   * <p>1. The client was once connected, but not anymore. 2. The client has never connected, this
+   * is the first operation this repo is handling.
+   *
+   * <p>In case (1), it's possible that the client still has an active listener, with cached data.
+   * Since this is the latest known value satisfying the query, that's what getValue will return. If
+   * there is no cached data, `getValue` surfaces an "offline" error.
+   *
+   * <p>In case (2), `getValue` will trigger a time-limited connection attempt. If the client is
+   * unable to connect to the server, the will surface an "offline" error because there cannot be
+   * any cached data. On the other hand, if the client is able to connect, `getValue` will return
+   * the server's value for the query, if one exists.
+   *
+   * <p>`getValue` updates the client's persistence cache whenever it's able to retrieve a new
+   * server value. It does this by installing a short-lived tracked query.
+   *
+   * @param query - The query to surface a value for.
+   */
+  public Task<DataSnapshot> getValue(Query query) {
+    TaskCompletionSource<DataSnapshot> source = new TaskCompletionSource<>();
+    this.scheduleNow(
+        new Runnable() {
+          @Override
+          public void run() {
+            serverSyncTree.setQueryActive(query.getSpec());
+            connection
+                .get(query.getPath().asList(), query.getSpec().getParams().getWireProtocolParams())
+                .addOnCompleteListener(
+                    new OnCompleteListener<Object>() {
+                      @Override
+                      public void onComplete(@NonNull Task<Object> task) {
+                        if (!task.isSuccessful()) {
+                          operationLogger.info(
+                              "get for query "
+                                  + query.getPath()
+                                  + " falling back to cache after error: "
+                                  + task.getException().getMessage());
+                          Node cached =
+                              serverSyncTree.calcCompleteEventCache(
+                                  query.getPath(), new ArrayList<>());
+                          if (cached.isEmpty()) {
+                            source.setException(task.getException());
+                          } else {
+                            source.setResult(
+                                InternalHelpers.createDataSnapshot(
+                                    query.getRef(),
+                                    IndexedNode.from(cached, query.getSpec().getIndex())));
+                          }
+                        } else {
+                          Node serverNode = NodeUtilities.NodeFromJSON(task.getResult());
+                          postEvents(
+                              serverSyncTree.applyServerOverwrite(query.getPath(), serverNode));
+                          source.setResult(
+                              InternalHelpers.createDataSnapshot(
+                                  query.getRef(),
+                                  IndexedNode.from(serverNode, query.getSpec().getIndex())));
+                        }
+                      }
+                    });
+          }
+        });
+    return source
+        .getTask()
+        .addOnCompleteListener(
+            new OnCompleteListener<DataSnapshot>() {
+              @Override
+              public void onComplete(@NonNull Task<DataSnapshot> task) {
+                serverSyncTree.setQueryInactive(query.getSpec());
+              }
+            });
   }
 
   public void updateChildren(

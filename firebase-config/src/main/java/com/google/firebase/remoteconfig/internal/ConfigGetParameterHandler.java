@@ -27,6 +27,7 @@ import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.VALUE_SOURCE
 import android.util.Log;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+import com.google.android.gms.common.util.BiConsumer;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigValue;
 import java.nio.charset.Charset;
@@ -36,6 +37,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.Executor;
 import java.util.regex.Pattern;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -69,11 +71,17 @@ public class ConfigGetParameterHandler {
   static final Pattern FALSE_REGEX =
       Pattern.compile("^(0|false|f|no|n|off|)$", Pattern.CASE_INSENSITIVE);
 
+  private final Set<BiConsumer<String, ConfigContainer>> listeners = new HashSet<>();
+
+  private final Executor executor;
   private final ConfigCacheClient activatedConfigsCache;
   private final ConfigCacheClient defaultConfigsCache;
 
   public ConfigGetParameterHandler(
-      ConfigCacheClient activatedConfigsCache, ConfigCacheClient defaultConfigsCache) {
+      Executor executor,
+      ConfigCacheClient activatedConfigsCache,
+      ConfigCacheClient defaultConfigsCache) {
+    this.executor = executor;
     this.activatedConfigsCache = activatedConfigsCache;
     this.defaultConfigsCache = defaultConfigsCache;
   }
@@ -94,6 +102,7 @@ public class ConfigGetParameterHandler {
   public String getString(String key) {
     String activatedString = getStringFromCache(activatedConfigsCache, key);
     if (activatedString != null) {
+      callListeners(key, getConfigsFromCache(activatedConfigsCache));
       return activatedString;
     }
 
@@ -125,8 +134,10 @@ public class ConfigGetParameterHandler {
     String activatedString = getStringFromCache(activatedConfigsCache, key);
     if (activatedString != null) {
       if (TRUE_REGEX.matcher(activatedString).matches()) {
+        callListeners(key, getConfigsFromCache(activatedConfigsCache));
         return true;
       } else if (FALSE_REGEX.matcher(activatedString).matches()) {
+        callListeners(key, getConfigsFromCache(activatedConfigsCache));
         return false;
       }
     }
@@ -160,6 +171,7 @@ public class ConfigGetParameterHandler {
   public byte[] getByteArray(String key) {
     String activatedString = getStringFromCache(activatedConfigsCache, key);
     if (activatedString != null) {
+      callListeners(key, getConfigsFromCache(activatedConfigsCache));
       return activatedString.getBytes(FRC_BYTE_ARRAY_ENCODING);
     }
 
@@ -190,6 +202,7 @@ public class ConfigGetParameterHandler {
   public double getDouble(String key) {
     Double activatedDouble = getDoubleFromCache(activatedConfigsCache, key);
     if (activatedDouble != null) {
+      callListeners(key, getConfigsFromCache(activatedConfigsCache));
       return activatedDouble;
     }
 
@@ -220,6 +233,7 @@ public class ConfigGetParameterHandler {
   public long getLong(String key) {
     Long activatedLong = getLongFromCache(activatedConfigsCache, key);
     if (activatedLong != null) {
+      callListeners(key, getConfigsFromCache(activatedConfigsCache));
       return activatedLong;
     }
 
@@ -248,6 +262,7 @@ public class ConfigGetParameterHandler {
   public FirebaseRemoteConfigValue getValue(String key) {
     String activatedString = getStringFromCache(activatedConfigsCache, key);
     if (activatedString != null) {
+      callListeners(key, getConfigsFromCache(activatedConfigsCache));
       return new FirebaseRemoteConfigValueImpl(activatedString, VALUE_SOURCE_REMOTE);
     }
 
@@ -323,6 +338,37 @@ public class ConfigGetParameterHandler {
       allConfigs.put(key, getValue(key));
     }
     return allConfigs;
+  }
+
+  /**
+   * Adds a listener that will be called whenever one of the get methods is called, passing in the
+   * retrieved key from a get*() call and the config containing the key.
+   *
+   * @param listener function that takes in the parameter key and the {@link ConfigContainer}
+   */
+  public void addListener(BiConsumer<String, ConfigContainer> listener) {
+    synchronized (listeners) {
+      listeners.add(listener);
+    }
+  }
+
+  /**
+   * Calls all listeners added to {@link #listeners} with the retrieved key from a get*() call and
+   * the config containing the key.
+   *
+   * @param key Remote Config parameter key
+   * @param container {@link ConfigContainer} containing {@code key}
+   */
+  private void callListeners(String key, ConfigContainer container) {
+    if (container == null) {
+      return;
+    }
+
+    synchronized (listeners) {
+      for (BiConsumer<String, ConfigContainer> listener : listeners) {
+        executor.execute(() -> listener.accept(key, container));
+      }
+    }
   }
 
   /**
