@@ -34,7 +34,7 @@ import org.jetbrains.uast.ULambdaExpression
 import org.jetbrains.uast.UMethod
 import org.jetbrains.uast.getParentOfType
 
-internal const val ANNOTATION = "com.google.firebase.components.annotations.DeferredApi"
+internal const val ANNOTATION = "com.google.firebase.annotations.DeferredApi"
 
 class DeferredApiDetector : Detector(), SourceCodeScanner {
     override fun applicableAnnotations(): List<String> = listOf(ANNOTATION)

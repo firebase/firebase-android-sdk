@@ -15,7 +15,7 @@
 package com.google.firebase.inject;
 
 import androidx.annotation.NonNull;
-import com.google.firebase.components.annotations.DeferredApi;
+import com.google.firebase.annotations.DeferredApi;
 
 /**
  * Represents a continuation-style dependency.
