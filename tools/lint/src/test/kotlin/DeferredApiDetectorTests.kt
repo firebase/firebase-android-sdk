@@ -18,7 +18,7 @@ import com.android.tools.lint.checks.infrastructure.LintDetectorTest
 
 private fun annotationSource(): String {
     return """
-        package com.google.firebase.components.annotations;
+        package com.google.firebase.annotations;
 
         @Inherited
         public @interface DeferredApi {}
@@ -28,7 +28,7 @@ private fun annotationSource(): String {
 private fun deferredSource(): String {
     return """
         package com.google.firebase.inject;
-        import com.google.firebase.components.annotations.DeferredApi;
+        import com.google.firebase.annotations.DeferredApi;
 
         public interface Deferred<T> {
         interface DeferredHandler<T> {
@@ -52,7 +52,7 @@ fun providerSource(): String {
 }
 
 private fun annotatedInterface() = """
-            import com.google.firebase.components.annotations.DeferredApi;
+            import com.google.firebase.annotations.DeferredApi;
             
             interface MyApi {
               @DeferredApi void myMethod();
@@ -175,7 +175,7 @@ class DeferredApiDetectorTests : LintDetectorTest() {
                 java(providerSource()),
                 java(annotatedInterface()),
                 java("""
-                     import com.google.firebase.components.annotations.DeferredApi;
+                     import com.google.firebase.annotations.DeferredApi;
                      import com.google.firebase.inject.Deferred;
                      class UseOfMyApi {
                        UseOfMyApi(Deferred<MyApi> api) {
@@ -201,7 +201,7 @@ class DeferredApiDetectorTests : LintDetectorTest() {
                 java(providerSource()),
                 java(annotatedInterface()),
                 java("""
-                     import com.google.firebase.components.annotations.DeferredApi;
+                     import com.google.firebase.annotations.DeferredApi;
                      import com.google.firebase.inject.Deferred;
                      class UseOfMyApi {
                        UseOfMyApi(Deferred<MyApi> api) {
