@@ -41,7 +41,7 @@ import java.util.concurrent.Executor;
  * This class handles Crashlytics lifecycle events and coordinates session data capture and
  * persistence, as well as sending of reports to Firebase Crashlytics.
  */
-class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
+public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
 
   private static final String EVENT_TYPE_CRASH = "crash";
   private static final String EVENT_TYPE_LOGGED = "error";
@@ -152,6 +152,10 @@ class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
     reportPersistence.finalizeReports(currentSessionId, timestamp);
   }
 
+  public boolean hasReportsToSend() {
+    return reportPersistence.hasFinalizedReports();
+  }
+
   public void removeAllReports() {
     reportPersistence.deleteAllReports();
   }
@@ -163,7 +167,7 @@ class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
    *     sent.
    * @param dataTransportState used to determine whether to send the report before cleaning it up.
    */
-  Task<Void> sendReports(
+  public Task<Void> sendReports(
       @NonNull Executor reportSendCompleteExecutor,
       @NonNull DataTransportState dataTransportState) {
     if (dataTransportState == DataTransportState.NONE) {

@@ -152,6 +152,7 @@ public class CrashlyticsCore {
               appData,
               null,
               null,
+              null,
               nativeComponent,
               analyticsEventLogger,
               settingsProvider);

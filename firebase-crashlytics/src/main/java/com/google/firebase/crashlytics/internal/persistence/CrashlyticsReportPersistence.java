@@ -166,6 +166,10 @@ public class CrashlyticsReportPersistence {
     }
   }
 
+  public boolean hasFinalizedReports() {
+    return !getAllFinalizedReportFiles().isEmpty();
+  }
+
   public void deleteAllReports() {
     for (File reportFile : getAllFinalizedReportFiles()) {
       reportFile.delete();

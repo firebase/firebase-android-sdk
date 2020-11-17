@@ -291,6 +291,7 @@ class CrashlyticsController {
       AppData appData,
       ReportManager reportManager,
       ReportUploader.Provider reportUploaderProvider,
+      SessionReportingCoordinator sessionReportingCoordinator,
       CrashlyticsNativeComponent nativeComponent,
       AnalyticsEventLogger analyticsEventLogger,
       SettingsDataProvider settingsDataProvider) {
@@ -324,16 +325,21 @@ class CrashlyticsController {
     stackTraceTrimmingStrategy =
         new MiddleOutFallbackStrategy(
             MAX_STACK_SIZE, new RemoveRepeatsStrategy(NUM_STACK_REPETITIONS_ALLOWED));
-    reportingCoordinator =
-        SessionReportingCoordinator.create(
-            context,
-            idManager,
-            fileStore,
-            appData,
-            logFileManager,
-            userMetadata,
-            stackTraceTrimmingStrategy,
-            settingsDataProvider);
+
+    if (sessionReportingCoordinator != null) {
+      reportingCoordinator = sessionReportingCoordinator;
+    } else {
+      reportingCoordinator =
+          SessionReportingCoordinator.create(
+              context,
+              idManager,
+              fileStore,
+              appData,
+              logFileManager,
+              userMetadata,
+              stackTraceTrimmingStrategy,
+              settingsDataProvider);
+    }
   }
 
   private Context getContext() {
@@ -531,7 +537,7 @@ class CrashlyticsController {
   }
 
   Task<Void> submitAllReports(float delay, Task<AppSettingsData> appSettingsDataTask) {
-    if (!reportManager.areReportsAvailable()) {
+    if (!reportingCoordinator.hasReportsToSend()) {
       // Just notify the user that there are no reports and stop.
       Logger.getLogger().d("No reports are available.");
       unsentReportsAvailable.trySetResult(false);

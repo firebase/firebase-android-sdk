@@ -72,6 +72,27 @@ public class CrashlyticsReportPersistenceTest {
   }
 
   @Test
+  public void testHasFinalizedReports() {
+    final String sessionId = "testSession";
+    final CrashlyticsReport testReport = makeTestReport(sessionId);
+    final CrashlyticsReport.Session.Event testEvent = makeTestEvent();
+
+    reportPersistence.persistReport(testReport);
+    reportPersistence.persistEvent(testEvent, sessionId);
+
+    final long endedAt = System.currentTimeMillis();
+
+    reportPersistence.finalizeReports("skippedSession", endedAt);
+
+    assertTrue(reportPersistence.hasFinalizedReports());
+  }
+
+  @Test
+  public void testHasFinalizedReports_noReports() {
+    assertFalse(reportPersistence.hasFinalizedReports());
+  }
+
+  @Test
   public void testLoadFinalizeReports_noReports_returnsNothing() {
     assertTrue(reportPersistence.loadFinalizedReports().isEmpty());
   }

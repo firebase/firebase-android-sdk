@@ -16,6 +16,8 @@ package com.google.firebase.crashlytics.internal.common;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -63,13 +65,13 @@ public class SessionReportingCoordinatorTest {
   @Mock private Exception mockException;
   @Mock private Thread mockThread;
 
-  private SessionReportingCoordinator reportManager;
+  private SessionReportingCoordinator reportingCoordinator;
 
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
 
-    reportManager =
+    reportingCoordinator =
         new SessionReportingCoordinator(
             dataCapture, reportPersistence, reportSender, logFileManager, reportMetadata);
   }
@@ -80,7 +82,7 @@ public class SessionReportingCoordinatorTest {
     final long timestamp = System.currentTimeMillis();
     when(dataCapture.captureReportData(anyString(), anyLong())).thenReturn(mockReport);
 
-    reportManager.onBeginSession(sessionId, timestamp);
+    reportingCoordinator.onBeginSession(sessionId, timestamp);
 
     verify(dataCapture).captureReportData(sessionId, timestamp);
     verify(reportPersistence).persistReport(mockReport);
@@ -94,8 +96,8 @@ public class SessionReportingCoordinatorTest {
 
     mockEventInteractions();
 
-    reportManager.onBeginSession(sessionId, timestamp);
-    reportManager.persistFatalEvent(mockException, mockThread, sessionId, timestamp);
+    reportingCoordinator.onBeginSession(sessionId, timestamp);
+    reportingCoordinator.persistFatalEvent(mockException, mockThread, sessionId, timestamp);
 
     verify(dataCapture)
         .captureEventData(mockException, mockThread, eventType, timestamp, 4, 8, true);
@@ -110,8 +112,8 @@ public class SessionReportingCoordinatorTest {
 
     mockEventInteractions();
 
-    reportManager.onBeginSession(sessionId, timestamp);
-    reportManager.persistNonFatalEvent(mockException, mockThread, sessionId, timestamp);
+    reportingCoordinator.onBeginSession(sessionId, timestamp);
+    reportingCoordinator.persistNonFatalEvent(mockException, mockThread, sessionId, timestamp);
 
     verify(dataCapture)
         .captureEventData(mockException, mockThread, eventType, timestamp, 4, 8, false);
@@ -129,8 +131,8 @@ public class SessionReportingCoordinatorTest {
 
     when(logFileManager.getLogString()).thenReturn(testLog);
 
-    reportManager.onBeginSession(sessionId, timestamp);
-    reportManager.persistNonFatalEvent(mockException, mockThread, sessionId, timestamp);
+    reportingCoordinator.onBeginSession(sessionId, timestamp);
+    reportingCoordinator.persistNonFatalEvent(mockException, mockThread, sessionId, timestamp);
 
     verify(mockEventBuilder)
         .setLog(CrashlyticsReport.Session.Event.Log.builder().setContent(testLog).build());
@@ -148,8 +150,8 @@ public class SessionReportingCoordinatorTest {
 
     when(logFileManager.getLogString()).thenReturn(null);
 
-    reportManager.onBeginSession(sessionId, timestamp);
-    reportManager.persistNonFatalEvent(mockException, mockThread, sessionId, timestamp);
+    reportingCoordinator.onBeginSession(sessionId, timestamp);
+    reportingCoordinator.persistNonFatalEvent(mockException, mockThread, sessionId, timestamp);
 
     verify(mockEventBuilder, never()).setLog(any(CrashlyticsReport.Session.Event.Log.class));
     verify(mockEventBuilder).build();
@@ -167,8 +169,8 @@ public class SessionReportingCoordinatorTest {
 
     when(logFileManager.getLogString()).thenReturn(testLog);
 
-    reportManager.onBeginSession(sessionId, timestamp);
-    reportManager.persistFatalEvent(mockException, mockThread, sessionId, timestamp);
+    reportingCoordinator.onBeginSession(sessionId, timestamp);
+    reportingCoordinator.persistFatalEvent(mockException, mockThread, sessionId, timestamp);
 
     verify(mockEventBuilder)
         .setLog(CrashlyticsReport.Session.Event.Log.builder().setContent(testLog).build());
@@ -186,8 +188,8 @@ public class SessionReportingCoordinatorTest {
 
     when(logFileManager.getLogString()).thenReturn(null);
 
-    reportManager.onBeginSession(sessionId, timestamp);
-    reportManager.persistFatalEvent(mockException, mockThread, sessionId, timestamp);
+    reportingCoordinator.onBeginSession(sessionId, timestamp);
+    reportingCoordinator.persistFatalEvent(mockException, mockThread, sessionId, timestamp);
 
     verify(mockEventBuilder, never()).setLog(any(CrashlyticsReport.Session.Event.Log.class));
     verify(mockEventBuilder).build();
@@ -221,8 +223,8 @@ public class SessionReportingCoordinatorTest {
 
     when(reportMetadata.getCustomKeys()).thenReturn(attributes);
 
-    reportManager.onBeginSession(sessionId, timestamp);
-    reportManager.persistNonFatalEvent(mockException, mockThread, sessionId, timestamp);
+    reportingCoordinator.onBeginSession(sessionId, timestamp);
+    reportingCoordinator.persistNonFatalEvent(mockException, mockThread, sessionId, timestamp);
 
     verify(mockEventAppBuilder).setCustomAttributes(expectedCustomAttributes);
     verify(mockEventAppBuilder).build();
@@ -243,8 +245,8 @@ public class SessionReportingCoordinatorTest {
 
     when(reportMetadata.getCustomKeys()).thenReturn(attributes);
 
-    reportManager.onBeginSession(sessionId, timestamp);
-    reportManager.persistNonFatalEvent(mockException, mockThread, sessionId, timestamp);
+    reportingCoordinator.onBeginSession(sessionId, timestamp);
+    reportingCoordinator.persistNonFatalEvent(mockException, mockThread, sessionId, timestamp);
 
     verify(mockEventAppBuilder, never()).setCustomAttributes(any());
     verify(mockEventAppBuilder, never()).build();
@@ -280,8 +282,8 @@ public class SessionReportingCoordinatorTest {
 
     when(reportMetadata.getCustomKeys()).thenReturn(attributes);
 
-    reportManager.onBeginSession(sessionId, timestamp);
-    reportManager.persistFatalEvent(mockException, mockThread, sessionId, timestamp);
+    reportingCoordinator.onBeginSession(sessionId, timestamp);
+    reportingCoordinator.persistFatalEvent(mockException, mockThread, sessionId, timestamp);
 
     verify(mockEventAppBuilder).setCustomAttributes(expectedCustomAttributes);
     verify(mockEventAppBuilder).build();
@@ -302,8 +304,8 @@ public class SessionReportingCoordinatorTest {
 
     when(reportMetadata.getCustomKeys()).thenReturn(attributes);
 
-    reportManager.onBeginSession(sessionId, timestamp);
-    reportManager.persistFatalEvent(mockException, mockThread, sessionId, timestamp);
+    reportingCoordinator.onBeginSession(sessionId, timestamp);
+    reportingCoordinator.persistFatalEvent(mockException, mockThread, sessionId, timestamp);
 
     verify(mockEventAppBuilder, never()).setCustomAttributes(any());
     verify(mockEventAppBuilder, never()).build();
@@ -317,7 +319,7 @@ public class SessionReportingCoordinatorTest {
     long timestamp = System.currentTimeMillis();
     String log = "this is a log";
 
-    reportManager.onLog(timestamp, log);
+    reportingCoordinator.onLog(timestamp, log);
 
     verify(logFileManager).writeToLog(timestamp, log);
   }
@@ -327,7 +329,7 @@ public class SessionReportingCoordinatorTest {
     final String key = "key";
     final String value = "value";
 
-    reportManager.onCustomKey(key, value);
+    reportingCoordinator.onCustomKey(key, value);
 
     verify(reportMetadata).setCustomKey(key, value);
   }
@@ -336,7 +338,7 @@ public class SessionReportingCoordinatorTest {
   public void onUserId_writesUserToReportMetadata() {
     final String userId = "testUser";
 
-    reportManager.onUserId(userId);
+    reportingCoordinator.onUserId(userId);
 
     verify(reportMetadata).setUserId(userId);
   }
@@ -347,7 +349,7 @@ public class SessionReportingCoordinatorTest {
     String byteBackedSessionName = "byte";
     BytesBackedNativeSessionFile byteSession =
         new BytesBackedNativeSessionFile(byteBackedSessionName, "not_applicable", testBytes);
-    reportManager.finalizeSessionWithNativeEvent("id", Arrays.asList(byteSession));
+    reportingCoordinator.finalizeSessionWithNativeEvent("id", Arrays.asList(byteSession));
 
     ArgumentCaptor<CrashlyticsReport.FilesPayload> filesPayload =
         ArgumentCaptor.forClass(CrashlyticsReport.FilesPayload.class);
@@ -364,9 +366,9 @@ public class SessionReportingCoordinatorTest {
   @Test
   public void onSessionsFinalize_finalizesReports() {
     final String sessionId = "testSessionId";
-    reportManager.onBeginSession(sessionId, System.currentTimeMillis());
+    reportingCoordinator.onBeginSession(sessionId, System.currentTimeMillis());
     final long endedAt = System.currentTimeMillis();
-    reportManager.finalizeSessions(endedAt, sessionId);
+    reportingCoordinator.finalizeSessions(endedAt, sessionId);
 
     verify(reportPersistence).finalizeReports(sessionId, endedAt);
   }
@@ -392,7 +394,7 @@ public class SessionReportingCoordinatorTest {
     when(reportSender.sendReport(mockReport1)).thenReturn(successfulTask);
     when(reportSender.sendReport(mockReport2)).thenReturn(failedTask);
 
-    reportManager.sendReports(Runnable::run, DataTransportState.ALL);
+    reportingCoordinator.sendReports(Runnable::run, DataTransportState.ALL);
 
     verify(reportSender).sendReport(mockReport1);
     verify(reportSender).sendReport(mockReport2);
@@ -403,7 +405,7 @@ public class SessionReportingCoordinatorTest {
 
   @Test
   public void onReportSend_reportsAreDeletedWithoutBeingSent_whenDataTransportStateNone() {
-    reportManager.sendReports(Runnable::run, DataTransportState.NONE);
+    reportingCoordinator.sendReports(Runnable::run, DataTransportState.NONE);
 
     verify(reportPersistence).deleteAllReports();
     verify(reportPersistence, never()).loadFinalizedReports();
@@ -431,7 +433,7 @@ public class SessionReportingCoordinatorTest {
 
     when(reportSender.sendReport(mockReportJava)).thenReturn(Tasks.forResult(mockReportJava));
 
-    reportManager.sendReports(Runnable::run, DataTransportState.JAVA_ONLY);
+    reportingCoordinator.sendReports(Runnable::run, DataTransportState.JAVA_ONLY);
 
     verify(reportSender).sendReport(mockReportJava);
     verify(reportSender, never()).sendReport(mockReportNative);
@@ -448,15 +450,27 @@ public class SessionReportingCoordinatorTest {
     when(dataCapture.captureReportData(anyString(), anyLong())).thenReturn(mockReport);
     when(reportMetadata.getUserId()).thenReturn(userId);
 
-    reportManager.onBeginSession(currentSessionId, timestamp);
-    reportManager.persistUserId(currentSessionId);
+    reportingCoordinator.onBeginSession(currentSessionId, timestamp);
+    reportingCoordinator.persistUserId(currentSessionId);
 
     verify(reportPersistence).persistUserIdForSession(userId, currentSessionId);
   }
 
   @Test
+  public void testHasReportsToSend() {
+    when(reportPersistence.hasFinalizedReports()).thenReturn(true);
+    assertTrue(reportingCoordinator.hasReportsToSend());
+  }
+
+  @Test
+  public void testHasReportsToSend_noReports() {
+    when(reportPersistence.hasFinalizedReports()).thenReturn(false);
+    assertFalse(reportingCoordinator.hasReportsToSend());
+  }
+
+  @Test
   public void testRemoveAllReports_deletesPersistedReports() {
-    reportManager.removeAllReports();
+    reportingCoordinator.removeAllReports();
 
     verify(reportPersistence).deleteAllReports();
   }

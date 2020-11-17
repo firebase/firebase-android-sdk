@@ -66,6 +66,7 @@ import java.io.FilenameFilter;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
@@ -150,6 +151,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
     private CrashlyticsNativeComponent nativeComponent;
     private UnityVersionProvider unityVersionProvider;
     private AnalyticsEventLogger analyticsEventLogger;
+    private SessionReportingCoordinator sessionReportingCoordinator;
 
     ControllerBuilder() {
       dataCollectionArbiter = mock(DataCollectionArbiter.class);
@@ -175,8 +177,14 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
       return this;
     }
 
-    public ControllerBuilder setReportManager(ReportManager reportManager) {
+    ControllerBuilder setReportManager(ReportManager reportManager) {
       this.reportManager = reportManager;
+      return this;
+    }
+
+    ControllerBuilder setSessionReportingCoordinator(
+        SessionReportingCoordinator sessionReportingCoordinator) {
+      this.sessionReportingCoordinator = sessionReportingCoordinator;
       return this;
     }
 
@@ -233,6 +241,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
               appData,
               reportManager,
               reportUploaderProvider,
+              sessionReportingCoordinator,
               nativeComponent,
               analyticsEventLogger,
               testSettingsDataProvider);
@@ -673,36 +682,14 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
   }
 
   public void testUploadWithNoReports() throws Exception {
-    ReportManager mockReportManager = mock(ReportManager.class);
-    when(mockReportManager.areReportsAvailable()).thenReturn(false);
-    ReportUploader uploader = mock(ReportUploader.class);
+    final SessionReportingCoordinator mockSessionReportingCoordinator =
+        mock(SessionReportingCoordinator.class);
+    when(mockSessionReportingCoordinator.hasReportsToSend()).thenReturn(false);
+    final ReportUploader mockUploader = mock(ReportUploader.class);
+    final ReportManager mockReportManager = mock(ReportManager.class);
 
     final ControllerBuilder builder = builder();
-    builder.setReportManager(mockReportManager);
-    builder.setReportUploader(uploader);
-    final CrashlyticsController controller = builder.build();
-
-    Task<Void> task = controller.submitAllReports(1.0f, testSettingsDataProvider.getAppSettings());
-
-    await(task);
-
-    verify(mockReportManager).areReportsAvailable();
-    verifyNoMoreInteractions(mockReportManager);
-    verifyZeroInteractions(uploader);
-  }
-
-  public void testUploadWithDataCollectionAlwaysEnabled() throws Exception {
-    final File reportFile = new File(testFilesDirectory, "reportFile.cls");
-    Report mockReport = mock(Report.class);
-    List<Report> mockReportList = Arrays.asList(mockReport);
-    ReportManager mockReportManager = mock(ReportManager.class);
-    when(mockReport.getType()).thenReturn(Report.Type.JAVA);
-    when(mockReport.getFile()).thenReturn(reportFile);
-    when(mockReportManager.areReportsAvailable()).thenReturn(true);
-    when(mockReportManager.findReports()).thenReturn(mockReportList);
-    ReportUploader mockUploader = mock(ReportUploader.class);
-
-    final ControllerBuilder builder = builder();
+    builder.setSessionReportingCoordinator(mockSessionReportingCoordinator);
     builder.setReportManager(mockReportManager);
     builder.setReportUploader(mockUploader);
     final CrashlyticsController controller = builder.build();
@@ -711,7 +698,39 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
 
     await(task);
 
-    verify(mockReportManager).areReportsAvailable();
+    verify(mockSessionReportingCoordinator).hasReportsToSend();
+    verifyZeroInteractions(mockReportManager);
+    verifyZeroInteractions(mockUploader);
+  }
+
+  public void testUploadWithDataCollectionAlwaysEnabled() throws Exception {
+    final File reportFile = new File(testFilesDirectory, "reportFile.cls");
+    final Report mockReport = mock(Report.class);
+    final List<Report> mockReportList = Arrays.asList(mockReport);
+    final SessionReportingCoordinator mockSessionReportingCoordinator =
+        mock(SessionReportingCoordinator.class);
+    when(mockSessionReportingCoordinator.hasReportsToSend()).thenReturn(true);
+    when(mockSessionReportingCoordinator.sendReports(
+            any(Executor.class), eq(DataTransportState.ALL)))
+        .thenReturn(Tasks.forResult(null));
+    final ReportManager mockReportManager = mock(ReportManager.class);
+    when(mockReport.getType()).thenReturn(Report.Type.JAVA);
+    when(mockReport.getFile()).thenReturn(reportFile);
+    when(mockReportManager.findReports()).thenReturn(mockReportList);
+    final ReportUploader mockUploader = mock(ReportUploader.class);
+
+    final ControllerBuilder builder = builder();
+    builder.setReportManager(mockReportManager);
+    builder.setReportUploader(mockUploader);
+    builder.setSessionReportingCoordinator(mockSessionReportingCoordinator);
+    final CrashlyticsController controller = builder.build();
+
+    final Task<Void> task =
+        controller.submitAllReports(1.0f, testSettingsDataProvider.getAppSettings());
+
+    await(task);
+
+    verify(mockSessionReportingCoordinator).hasReportsToSend();
     verify(mockReportManager).findReports();
     verifyNoMoreInteractions(mockReportManager);
     verify(mockUploader).uploadReportsAsync(mockReportList, true, 1.0f);
@@ -723,35 +742,42 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
 
   public void testUploadDisabledThenOptIn() throws Exception {
     final File reportFile = new File(testFilesDirectory, "reportFile.cls");
-    Report mockReport = mock(Report.class);
-    List<Report> mockReportList = Arrays.asList(mockReport);
-    ReportManager mockReportManager = mock(ReportManager.class);
+    final Report mockReport = mock(Report.class);
+    final List<Report> mockReportList = Arrays.asList(mockReport);
+    final SessionReportingCoordinator mockSessionReportingCoordinator =
+        mock(SessionReportingCoordinator.class);
+    when(mockSessionReportingCoordinator.hasReportsToSend()).thenReturn(true);
+    when(mockSessionReportingCoordinator.sendReports(
+            any(Executor.class), eq(DataTransportState.ALL)))
+        .thenReturn(Tasks.forResult(null));
+    final ReportManager mockReportManager = mock(ReportManager.class);
     when(mockReport.getType()).thenReturn(Report.Type.JAVA);
     when(mockReport.getFile()).thenReturn(reportFile);
-    when(mockReportManager.areReportsAvailable()).thenReturn(true);
     when(mockReportManager.findReports()).thenReturn(mockReportList);
 
-    DataCollectionArbiter arbiter = mock(DataCollectionArbiter.class);
+    final DataCollectionArbiter arbiter = mock(DataCollectionArbiter.class);
     when(arbiter.isAutomaticDataCollectionEnabled()).thenReturn(false);
     when(arbiter.waitForDataCollectionPermission())
         .thenReturn(new TaskCompletionSource<Void>().getTask());
     when(arbiter.waitForAutomaticDataCollectionEnabled())
         .thenReturn(new TaskCompletionSource<Void>().getTask());
 
-    ReportUploader mockUploader = mock(ReportUploader.class);
+    final ReportUploader mockUploader = mock(ReportUploader.class);
 
     final ControllerBuilder builder = builder();
     builder.setDataCollectionArbiter(arbiter);
     builder.setReportManager(mockReportManager);
     builder.setReportUploader(mockUploader);
+    builder.setSessionReportingCoordinator(mockSessionReportingCoordinator);
     final CrashlyticsController controller = builder.build();
 
-    Task<Void> task = controller.submitAllReports(1.0f, testSettingsDataProvider.getAppSettings());
+    final Task<Void> task =
+        controller.submitAllReports(1.0f, testSettingsDataProvider.getAppSettings());
 
     await(controller.sendUnsentReports());
     await(task);
 
-    verify(mockReportManager).areReportsAvailable();
+    verify(mockSessionReportingCoordinator).hasReportsToSend();
     verify(mockReportManager).findReports();
     verifyNoMoreInteractions(mockReportManager);
     verify(mockUploader).uploadReportsAsync(mockReportList, true, 1.0f);
@@ -763,13 +789,18 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
 
   public void testUploadDisabledThenOptOut() throws Exception {
     final File reportFile = new File(testFilesDirectory, "reportFile.cls");
-    Report mockReport = mock(Report.class);
+    final Report mockReport = mock(Report.class);
     List<Report> mockReportList = Arrays.asList(mockReport);
-    ReportManager mockReportManager = mock(ReportManager.class);
+    final ReportManager mockReportManager = mock(ReportManager.class);
     when(mockReport.getType()).thenReturn(Report.Type.JAVA);
     when(mockReport.getFile()).thenReturn(reportFile);
-    when(mockReportManager.areReportsAvailable()).thenReturn(true);
     when(mockReportManager.findReports()).thenReturn(mockReportList);
+    final SessionReportingCoordinator mockSessionReportingCoordinator =
+        mock(SessionReportingCoordinator.class);
+    when(mockSessionReportingCoordinator.hasReportsToSend()).thenReturn(true);
+    when(mockSessionReportingCoordinator.sendReports(
+            any(Executor.class), eq(DataTransportState.ALL)))
+        .thenReturn(Tasks.forResult(null));
 
     ReportUploader mockUploader = mock(ReportUploader.class);
 
@@ -782,15 +813,17 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
     builder.setDataCollectionArbiter(arbiter);
     builder.setReportManager(mockReportManager);
     builder.setReportUploader(mockUploader);
+    builder.setSessionReportingCoordinator(mockSessionReportingCoordinator);
     final CrashlyticsController controller = builder.build();
 
-    Task<Void> task = controller.submitAllReports(1.0f, testSettingsDataProvider.getAppSettings());
+    final Task<Void> task =
+        controller.submitAllReports(1.0f, testSettingsDataProvider.getAppSettings());
 
     await(controller.deleteUnsentReports());
 
     await(task);
 
-    verify(mockReportManager).areReportsAvailable();
+    verify(mockSessionReportingCoordinator).hasReportsToSend();
     verify(mockReportManager).findReports();
     verify(mockReportManager).deleteReports(mockReportList);
     verifyNoMoreInteractions(mockReportManager);
@@ -801,42 +834,49 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
   public void testUploadDisabledThenEnabled() throws Exception {
     final File reportFile = new File(testFilesDirectory, "reportFile.cls");
     reportFile.createNewFile();
-    Report mockReport = mock(Report.class);
-    List<Report> mockReportList = Arrays.asList(mockReport);
-    ReportManager mockReportManager = mock(ReportManager.class);
+    final Report mockReport = mock(Report.class);
+    final List<Report> mockReportList = Arrays.asList(mockReport);
+    final ReportManager mockReportManager = mock(ReportManager.class);
     when(mockReport.getType()).thenReturn(Report.Type.JAVA);
     when(mockReport.getFile()).thenReturn(reportFile);
-    when(mockReportManager.areReportsAvailable()).thenReturn(true);
     when(mockReportManager.findReports()).thenReturn(mockReportList);
+    final SessionReportingCoordinator mockSessionReportingCoordinator =
+        mock(SessionReportingCoordinator.class);
+    when(mockSessionReportingCoordinator.hasReportsToSend()).thenReturn(true);
+    when(mockSessionReportingCoordinator.sendReports(
+            any(Executor.class), eq(DataTransportState.ALL)))
+        .thenReturn(Tasks.forResult(null));
 
-    ReportUploader mockUploader = mock(ReportUploader.class);
+    final ReportUploader mockUploader = mock(ReportUploader.class);
 
     // Mock the DataCollectionArbiter dependencies.
     final String PREFS_NAME = CommonUtils.SHARED_PREFS_NAME;
     final String PREFS_KEY = "firebase_crashlytics_collection_enabled";
-    SharedPreferences.Editor mockEditor = mock(SharedPreferences.Editor.class);
+    final SharedPreferences.Editor mockEditor = mock(SharedPreferences.Editor.class);
     when(mockEditor.putBoolean(PREFS_KEY, true)).thenReturn(mockEditor);
     when(mockEditor.commit()).thenReturn(true);
-    SharedPreferences mockPrefs = mock(SharedPreferences.class);
+    final SharedPreferences mockPrefs = mock(SharedPreferences.class);
     when(mockPrefs.contains(PREFS_KEY)).thenReturn(true);
     when(mockPrefs.getBoolean(PREFS_KEY, true)).thenReturn(false);
     when(mockPrefs.edit()).thenReturn(mockEditor);
-    Context mockContext = mock(Context.class);
+    final Context mockContext = mock(Context.class);
     when(mockContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)).thenReturn(mockPrefs);
-    FirebaseApp app = mock(FirebaseApp.class);
+    final FirebaseApp app = mock(FirebaseApp.class);
     when(app.getApplicationContext()).thenReturn(mockContext);
 
     // Use a real DataCollectionArbiter to test its switching behavior.
-    DataCollectionArbiter arbiter = new DataCollectionArbiter(app);
+    final DataCollectionArbiter arbiter = new DataCollectionArbiter(app);
     assertFalse(arbiter.isAutomaticDataCollectionEnabled());
 
     final ControllerBuilder builder = builder();
     builder.setDataCollectionArbiter(arbiter);
     builder.setReportManager(mockReportManager);
     builder.setReportUploader(mockUploader);
+    builder.setSessionReportingCoordinator(mockSessionReportingCoordinator);
     final CrashlyticsController controller = builder.build();
 
-    Task<Void> task = controller.submitAllReports(1.0f, testSettingsDataProvider.getAppSettings());
+    final Task<Void> task =
+        controller.submitAllReports(1.0f, testSettingsDataProvider.getAppSettings());
 
     arbiter.setCrashlyticsDataCollectionEnabled(true);
     assertTrue(arbiter.isAutomaticDataCollectionEnabled());
@@ -855,7 +895,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
     assertFalse(arbiter.isAutomaticDataCollectionEnabled());
 
     await(task);
-    verify(mockReportManager).areReportsAvailable();
+    verify(mockSessionReportingCoordinator).hasReportsToSend();
     verify(mockReportManager).findReports();
     verifyNoMoreInteractions(mockReportManager);
     verify(mockUploader).uploadReportsAsync(mockReportList, true, 1.0f);
@@ -892,7 +932,6 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
   public void testStartupUploadAddsOrganizationId() throws Exception {
     Report mockReport = mock(Report.class);
     ReportManager mockReportManager = mock(ReportManager.class);
-    when(mockReportManager.areReportsAvailable()).thenReturn(true);
     ReportUploader mockUploader = mock(ReportUploader.class);
 
     final ControllerBuilder builder = builder();
