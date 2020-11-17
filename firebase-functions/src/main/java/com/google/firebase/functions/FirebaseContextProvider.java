@@ -37,7 +37,7 @@ class FirebaseContextProvider implements ContextProvider {
   @Override
   public Task<HttpsCallableContext> getContext() {
 
-    if (tokenProvider == null) {
+    if (tokenProvider == null || tokenProvider.get() == null) {
       TaskCompletionSource<HttpsCallableContext> tcs = new TaskCompletionSource<>();
       tcs.setResult(new HttpsCallableContext(null, instanceId.get().getToken()));
       return tcs.getTask();

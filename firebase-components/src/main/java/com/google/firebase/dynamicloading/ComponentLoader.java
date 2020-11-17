@@ -1,4 +1,4 @@
-// Copyright 2019 Google LLC
+// Copyright 2020 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,11 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+package com.google.firebase.dynamicloading;
 
-package com.google.firebase.inject;
-
-/** Provides instances of T. */
-public interface Provider<T> {
-  /** Provides a fully constructed instance of T. */
-  T get();
+/** Provides ability to discover newly loaded components. */
+public interface ComponentLoader {
+  void discoverComponents();
 }

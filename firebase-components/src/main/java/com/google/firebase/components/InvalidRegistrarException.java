@@ -1,4 +1,4 @@
-// Copyright 2019 Google LLC
+// Copyright 2020 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,19 +14,22 @@
 
 package com.google.firebase.components;
 
-import com.google.firebase.inject.Deferred;
-import com.google.firebase.inject.Provider;
-import java.util.Set;
+/**
+ * Exception thrown when a {@link ComponentRegistrar} is invalid.
+ *
+ * <p>This can happen for the following reasons:
+ *
+ * <ul>
+ *   <li>Class does not implement {@link ComponentRegistrar}
+ *   <li>Class is private or has a private constructor
+ *   <li>Class's constructor throws an exception
+ */
+public class InvalidRegistrarException extends RuntimeException {
+  public InvalidRegistrarException(String message) {
+    super(message);
+  }
 
-/** Provides a means to retrieve instances of requested classes/interfaces. */
-public interface ComponentContainer {
-  <T> T get(Class<T> anInterface);
-
-  <T> Provider<T> getProvider(Class<T> anInterface);
-
-  <T> Deferred<T> getDeferred(Class<T> anInterface);
-
-  <T> Set<T> setOf(Class<T> anInterface);
-
-  <T> Provider<Set<T>> setOfProvider(Class<T> anInterface);
+  public InvalidRegistrarException(String message, Throwable cause) {
+    super(message, cause);
+  }
 }
