@@ -105,6 +105,7 @@ public class HeartBeatInfoStorageTest {
     assertThat(result.get(2)).isEqualTo(SdkHeartBeatResult.create(testSdk, 200));
     result = heartBeatInfoStorage.getStoredHeartBeats(false);
     assertThat(result.size()).isEqualTo(3);
+    assertThat(heartBeatInfoStorage.getHeartBeatCount()).isEqualTo(3);
   }
 
   @Test
@@ -119,6 +120,7 @@ public class HeartBeatInfoStorageTest {
     assertThat(result.get(2)).isEqualTo(SdkHeartBeatResult.create(testSdk, 200));
     result = heartBeatInfoStorage.getStoredHeartBeats(false);
     assertThat(result.size()).isEqualTo(0);
+    assertThat(heartBeatInfoStorage.getHeartBeatCount()).isEqualTo(0);
   }
 
   @Test

@@ -21,6 +21,8 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.Dependency;
+import com.google.firebase.components.Lazy;
+import com.google.firebase.inject.Provider;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -29,15 +31,13 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import com.google.firebase.components.Lazy;
-import com.google.firebase.inject.Provider;
 
 /** Provides information as whether to send heart beat or not. */
 public class DefaultHeartBeatInfo implements HeartBeatInfo {
 
   private Provider<HeartBeatInfoStorage> storageProvider;
 
-  private Set<HeartBeatConsumer> consumers;
+  private final Set<HeartBeatConsumer> consumers;
 
   private final Executor backgroundExecutor;
 
@@ -55,7 +55,10 @@ public class DefaultHeartBeatInfo implements HeartBeatInfo {
   }
 
   @VisibleForTesting
-  DefaultHeartBeatInfo(Provider<HeartBeatInfoStorage> testStorage, Set<HeartBeatConsumer> consumers, Executor executor) {
+  DefaultHeartBeatInfo(
+      Provider<HeartBeatInfoStorage> testStorage,
+      Set<HeartBeatConsumer> consumers,
+      Executor executor) {
     storageProvider = testStorage;
     this.consumers = consumers;
     this.backgroundExecutor = executor;
@@ -64,7 +67,8 @@ public class DefaultHeartBeatInfo implements HeartBeatInfo {
   @Override
   public @NonNull HeartBeat getHeartBeatCode(@NonNull String heartBeatTag) {
     long presentTime = System.currentTimeMillis();
-    boolean shouldSendSdkHB = storageProvider.get().shouldSendSdkHeartBeat(heartBeatTag, presentTime);
+    boolean shouldSendSdkHB =
+        storageProvider.get().shouldSendSdkHeartBeat(heartBeatTag, presentTime);
     boolean shouldSendGlobalHB = storageProvider.get().shouldSendGlobalHeartBeat(presentTime);
     if (shouldSendSdkHB && shouldSendGlobalHB) {
       return HeartBeat.COMBINED;
@@ -119,7 +123,8 @@ public class DefaultHeartBeatInfo implements HeartBeatInfo {
         backgroundExecutor,
         () -> {
           long presentTime = System.currentTimeMillis();
-          boolean shouldSendSdkHB = storageProvider.get().shouldSendSdkHeartBeat(heartBeatTag, presentTime);
+          boolean shouldSendSdkHB =
+              storageProvider.get().shouldSendSdkHeartBeat(heartBeatTag, presentTime);
           if (shouldSendSdkHB) {
             backgroundExecutor.execute(
                 () -> {

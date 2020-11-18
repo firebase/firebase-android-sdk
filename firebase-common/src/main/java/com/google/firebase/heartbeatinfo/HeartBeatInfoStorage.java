@@ -67,7 +67,7 @@ class HeartBeatInfoStorage {
   @VisibleForTesting
   @RestrictTo(RestrictTo.Scope.TESTS)
   int getHeartBeatCount() {
-    return (int)this.sharedPreferences.getLong(HEART_BEAT_COUNT_TAG, 0);
+    return (int) this.sharedPreferences.getLong(HEART_BEAT_COUNT_TAG, 0);
   }
 
   static synchronized HeartBeatInfoStorage getInstance(Context applicationContext) {
@@ -80,7 +80,7 @@ class HeartBeatInfoStorage {
   synchronized void storeHeartBeatInformation(String heartBeatTag, long millis) {
     long heartBeatCount = this.sharedPreferences.getLong(HEART_BEAT_COUNT_TAG, 0);
     this.heartBeatSharedPreferences.edit().putString(String.valueOf(millis), heartBeatTag).apply();
-    this.sharedPreferences.edit().putLong(HEART_BEAT_COUNT_TAG, heartBeatCount+1).apply();
+    this.sharedPreferences.edit().putLong(HEART_BEAT_COUNT_TAG, heartBeatCount + 1).apply();
     heartBeatCount += 1;
     if (heartBeatCount > HEART_BEAT_COUNT_LIMIT) {
       this.cleanUpStoredHeartBeats();
@@ -96,7 +96,7 @@ class HeartBeatInfoStorage {
     Collections.sort(timestampList);
     for (Long millis : timestampList) {
       this.heartBeatSharedPreferences.edit().remove(String.valueOf(millis)).apply();
-      this.sharedPreferences.edit().putLong(HEART_BEAT_COUNT_TAG, heartBeatCount-1).apply();
+      this.sharedPreferences.edit().putLong(HEART_BEAT_COUNT_TAG, heartBeatCount - 1).apply();
       heartBeatCount -= 1;
       if (heartBeatCount <= (HEART_BEAT_COUNT_LIMIT / 2)) return;
     }
@@ -122,8 +122,9 @@ class HeartBeatInfoStorage {
     return sdkHeartBeatResults;
   }
 
-  void clearStoredHeartBeats() {
+  synchronized void clearStoredHeartBeats() {
     heartBeatSharedPreferences.edit().clear().apply();
+    sharedPreferences.edit().remove(HEART_BEAT_COUNT_TAG).apply();
   }
 
   static boolean isSameDateUtc(long base, long target) {
