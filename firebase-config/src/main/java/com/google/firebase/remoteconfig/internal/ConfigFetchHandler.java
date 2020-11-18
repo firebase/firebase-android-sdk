@@ -150,15 +150,13 @@ public class ConfigFetchHandler {
    *     updates, the {@link FetchResponse}'s configs will be {@code null}.
    */
   public Task<FetchResponse> fetch(long minimumFetchIntervalInSeconds) {
-    long fetchIntervalInSeconds =
-        frcMetadata.isDeveloperModeEnabled() ? 0L : minimumFetchIntervalInSeconds;
-
     return fetchedConfigsCache
         .get()
         .continueWithTask(
             executor,
             (cachedFetchConfigsTask) ->
-                fetchIfCacheExpiredAndNotThrottled(cachedFetchConfigsTask, fetchIntervalInSeconds));
+                fetchIfCacheExpiredAndNotThrottled(
+                    cachedFetchConfigsTask, minimumFetchIntervalInSeconds));
   }
 
   /**

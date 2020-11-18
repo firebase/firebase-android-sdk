@@ -29,11 +29,13 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import com.google.firebase.components.Lazy;
+import com.google.firebase.inject.Provider;
 
 /** Provides information as whether to send heart beat or not. */
 public class DefaultHeartBeatInfo implements HeartBeatInfo {
 
-  private final HeartBeatInfoStorage storage;
+  private Provider<HeartBeatInfoStorage> storageProvider;
 
   private Set<HeartBeatConsumer> consumers;
 
@@ -46,16 +48,15 @@ public class DefaultHeartBeatInfo implements HeartBeatInfo {
     // It is very important the executor is single threaded as otherwise it would lead to
     // race conditions.
     this(
-        HeartBeatInfoStorage.getInstance(context),
+        new Lazy<>(() -> HeartBeatInfoStorage.getInstance(context)),
         consumers,
         new ThreadPoolExecutor(
             0, 1, 30, TimeUnit.SECONDS, new LinkedBlockingQueue<>(), THREAD_FACTORY));
   }
 
   @VisibleForTesting
-  DefaultHeartBeatInfo(
-      HeartBeatInfoStorage testStorage, Set<HeartBeatConsumer> consumers, Executor executor) {
-    storage = testStorage;
+  DefaultHeartBeatInfo(Provider<HeartBeatInfoStorage> testStorage, Set<HeartBeatConsumer> consumers, Executor executor) {
+    storageProvider = testStorage;
     this.consumers = consumers;
     this.backgroundExecutor = executor;
   }
@@ -63,8 +64,8 @@ public class DefaultHeartBeatInfo implements HeartBeatInfo {
   @Override
   public @NonNull HeartBeat getHeartBeatCode(@NonNull String heartBeatTag) {
     long presentTime = System.currentTimeMillis();
-    boolean shouldSendSdkHB = storage.shouldSendSdkHeartBeat(heartBeatTag, presentTime);
-    boolean shouldSendGlobalHB = storage.shouldSendGlobalHeartBeat(presentTime);
+    boolean shouldSendSdkHB = storageProvider.get().shouldSendSdkHeartBeat(heartBeatTag, presentTime);
+    boolean shouldSendGlobalHB = storageProvider.get().shouldSendGlobalHeartBeat(presentTime);
     if (shouldSendSdkHB && shouldSendGlobalHB) {
       return HeartBeat.COMBINED;
     } else if (shouldSendGlobalHB) {
@@ -82,6 +83,7 @@ public class DefaultHeartBeatInfo implements HeartBeatInfo {
         () -> {
           ArrayList<HeartBeatResult> heartBeatResults = new ArrayList<>();
           boolean shouldSendGlobalHeartBeat = false;
+          HeartBeatInfoStorage storage = storageProvider.get();
           List<SdkHeartBeatResult> sdkHeartBeatResults = storage.getStoredHeartBeats(true);
           long lastGlobalHeartBeat = storage.getLastGlobalHeartBeat();
           HeartBeat heartBeat;
@@ -117,11 +119,11 @@ public class DefaultHeartBeatInfo implements HeartBeatInfo {
         backgroundExecutor,
         () -> {
           long presentTime = System.currentTimeMillis();
-          boolean shouldSendSdkHB = storage.shouldSendSdkHeartBeat(heartBeatTag, presentTime);
+          boolean shouldSendSdkHB = storageProvider.get().shouldSendSdkHeartBeat(heartBeatTag, presentTime);
           if (shouldSendSdkHB) {
             backgroundExecutor.execute(
                 () -> {
-                  storage.storeHeartBeatInformation(heartBeatTag, presentTime);
+                  storageProvider.get().storeHeartBeatInformation(heartBeatTag, presentTime);
                 });
           }
           return true;

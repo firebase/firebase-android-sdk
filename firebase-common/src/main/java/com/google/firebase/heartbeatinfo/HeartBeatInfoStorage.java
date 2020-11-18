@@ -36,6 +36,8 @@ class HeartBeatInfoStorage {
 
   private static final String PREFERENCES_NAME = "FirebaseAppHeartBeat";
 
+  private static final String HEART_BEAT_COUNT_TAG = "fire-count";
+
   // As soon as you hit the limit of heartbeats. The number of stored heartbeats is halved.
   private static final int HEART_BEAT_COUNT_LIMIT = 200;
 
@@ -46,14 +48,12 @@ class HeartBeatInfoStorage {
 
   private final SharedPreferences sharedPreferences;
   private final SharedPreferences heartBeatSharedPreferences;
-  private int heartBeatCount;
 
   private HeartBeatInfoStorage(Context applicationContext) {
     this.sharedPreferences =
         applicationContext.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
     this.heartBeatSharedPreferences =
         applicationContext.getSharedPreferences(STORAGE_PREFERENCES_NAME, Context.MODE_PRIVATE);
-    this.heartBeatCount = 0;
   }
 
   @VisibleForTesting
@@ -67,7 +67,7 @@ class HeartBeatInfoStorage {
   @VisibleForTesting
   @RestrictTo(RestrictTo.Scope.TESTS)
   int getHeartBeatCount() {
-    return this.heartBeatCount;
+    return (int)this.sharedPreferences.getLong(HEART_BEAT_COUNT_TAG, 0);
   }
 
   static synchronized HeartBeatInfoStorage getInstance(Context applicationContext) {
@@ -78,14 +78,17 @@ class HeartBeatInfoStorage {
   }
 
   synchronized void storeHeartBeatInformation(String heartBeatTag, long millis) {
+    long heartBeatCount = this.sharedPreferences.getLong(HEART_BEAT_COUNT_TAG, 0);
     this.heartBeatSharedPreferences.edit().putString(String.valueOf(millis), heartBeatTag).apply();
-    this.heartBeatCount += 1;
-    if (this.heartBeatCount > HEART_BEAT_COUNT_LIMIT) {
+    this.sharedPreferences.edit().putLong(HEART_BEAT_COUNT_TAG, heartBeatCount+1).apply();
+    heartBeatCount += 1;
+    if (heartBeatCount > HEART_BEAT_COUNT_LIMIT) {
       this.cleanUpStoredHeartBeats();
     }
   }
 
   private synchronized void cleanUpStoredHeartBeats() {
+    long heartBeatCount = this.sharedPreferences.getLong(HEART_BEAT_COUNT_TAG, 0);
     ArrayList<Long> timestampList = new ArrayList<>();
     for (Map.Entry<String, ?> entry : heartBeatSharedPreferences.getAll().entrySet()) {
       timestampList.add(Long.parseLong(entry.getKey()));
@@ -93,8 +96,9 @@ class HeartBeatInfoStorage {
     Collections.sort(timestampList);
     for (Long millis : timestampList) {
       this.heartBeatSharedPreferences.edit().remove(String.valueOf(millis)).apply();
-      this.heartBeatCount -= 1;
-      if (this.heartBeatCount <= (HEART_BEAT_COUNT_LIMIT / 2)) return;
+      this.sharedPreferences.edit().putLong(HEART_BEAT_COUNT_TAG, heartBeatCount-1).apply();
+      heartBeatCount -= 1;
+      if (heartBeatCount <= (HEART_BEAT_COUNT_LIMIT / 2)) return;
     }
   }
 

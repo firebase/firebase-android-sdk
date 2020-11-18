@@ -14,6 +14,9 @@
 
 package com.google.firebase.components;
 
+import androidx.annotation.RestrictTo;
+import androidx.annotation.RestrictTo.Scope;
+import androidx.annotation.VisibleForTesting;
 import com.google.firebase.events.Publisher;
 import com.google.firebase.events.Subscriber;
 import com.google.firebase.inject.Provider;
@@ -160,6 +163,14 @@ public class ComponentRuntime extends AbstractComponentContainer {
     }
 
     eventBus.enablePublishingAndFlushPending();
+  }
+
+  @VisibleForTesting
+  @RestrictTo(Scope.TESTS)
+  public void initializeAllComponentsForTests() {
+    for (Lazy<?> component : components.values()) {
+      component.get();
+    }
   }
 
   private void validateDependencies() {

@@ -388,13 +388,22 @@ class CrashlyticsController {
             new Callable<Task<Void>>() {
               @Override
               public Task<Void> call() throws Exception {
+                final long timestampSeconds = getTimestampSeconds(time);
+
+                final String currentSessionId = getCurrentSessionId();
+                if (currentSessionId == null) {
+                  Logger.getLogger()
+                      .e("Tried to write a fatal exception while no session was open.");
+                  return Tasks.forResult(null);
+                }
+
                 // We've fatally crashed, so write the marker file that indicates a crash occurred.
                 crashMarker.create();
 
-                long timestampSeconds = getTimestampSeconds(time);
-                reportingCoordinator.persistFatalEvent(ex, thread, timestampSeconds);
-                writeFatal(thread, ex, timestampSeconds);
-                writeAppExceptionMarker(time.getTime());
+                reportingCoordinator.persistFatalEvent(
+                    ex, thread, makeFirebaseSessionIdentifier(currentSessionId), timestampSeconds);
+                doWriteFatal(thread, ex, currentSessionId, timestampSeconds);
+                doWriteAppExceptionMarker(time.getTime());
 
                 Settings settings = settingsDataProvider.getSettings();
                 int maxCustomExceptionEvents = settings.getSessionData().maxCustomExceptionEvents;
@@ -652,8 +661,15 @@ class CrashlyticsController {
           public void run() {
             if (!isHandlingException()) {
               long timestampSeconds = getTimestampSeconds(time);
-              reportingCoordinator.persistNonFatalEvent(ex, thread, timestampSeconds);
-              doWriteNonFatal(thread, ex, timestampSeconds);
+              final String currentSessionId = getCurrentSessionId();
+              if (currentSessionId == null) {
+                Logger.getLogger()
+                    .d("Tried to write a non-fatal exception while no session was open.");
+                return;
+              }
+              reportingCoordinator.persistNonFatalEvent(
+                  ex, thread, makeFirebaseSessionIdentifier(currentSessionId), timestampSeconds);
+              doWriteNonFatal(thread, ex, currentSessionId, timestampSeconds);
             }
           }
         });
@@ -690,8 +706,12 @@ class CrashlyticsController {
         new Callable<Void>() {
           @Override
           public Void call() throws Exception {
-            reportingCoordinator.persistUserId();
             final String currentSessionId = getCurrentSessionId();
+            if (currentSessionId == null) {
+              Logger.getLogger().d("Tried to cache user data while no session was open.");
+              return null;
+            }
+            reportingCoordinator.persistUserId(makeFirebaseSessionIdentifier(currentSessionId));
             new MetaDataStore(getFilesDir()).writeUserData(currentSessionId, userMetaData);
             return null;
           }
@@ -739,18 +759,11 @@ class CrashlyticsController {
    *
    * <p>May return <code>null</code> if no session begin file is present.
    */
+  @Nullable
   private String getCurrentSessionId() {
     final File[] sessionBeginFiles = listSortedSessionBeginFiles();
     return (sessionBeginFiles.length > 0)
         ? getSessionIdFromSessionFile(sessionBeginFiles[0])
-        : null;
-  }
-
-  /** @return */
-  private String getPreviousSessionId() {
-    final File[] sessionBeginFiles = listSortedSessionBeginFiles();
-    return (sessionBeginFiles.length > 1)
-        ? getSessionIdFromSessionFile(sessionBeginFiles[1])
         : null;
   }
 
@@ -790,7 +803,7 @@ class CrashlyticsController {
 
     Logger.getLogger().d("Finalizing previously open sessions.");
     try {
-      doCloseSessions(maxCustomExceptionEvents, false);
+      doCloseSessions(maxCustomExceptionEvents, true);
     } catch (Exception e) {
       Logger.getLogger().e("Unable to finalize previously open sessions.", e);
       return false;
@@ -823,16 +836,16 @@ class CrashlyticsController {
   }
 
   void doCloseSessions(int maxCustomExceptionEvents) throws Exception {
-    doCloseSessions(maxCustomExceptionEvents, true);
+    doCloseSessions(maxCustomExceptionEvents, false);
   }
 
   /**
    * Not synchronized/locked. Must be executed from the single thread executor service used by this
    * class.
    */
-  private void doCloseSessions(int maxCustomExceptionEvents, boolean includeCurrent)
+  private void doCloseSessions(int maxCustomExceptionEvents, boolean skipCurrentSession)
       throws Exception {
-    final int offset = includeCurrent ? 0 : 1;
+    final int offset = skipCurrentSession ? 1 : 0;
 
     trimOpenSessions(MAX_OPEN_SESSIONS + offset);
 
@@ -850,9 +863,7 @@ class CrashlyticsController {
     // maximum chance that the user code that sets this information has been run.
     writeSessionUser(mostRecentSessionIdToClose);
 
-    if (includeCurrent) {
-      reportingCoordinator.onEndSession();
-    } else if (nativeComponent.hasCrashDataForSession(mostRecentSessionIdToClose)) {
+    if (nativeComponent.hasCrashDataForSession(mostRecentSessionIdToClose)) {
       // We only finalize the current session if it's a Java crash, so only finalize native crash
       // data when we aren't including current.
       finalizePreviousNativeSession(mostRecentSessionIdToClose);
@@ -863,7 +874,13 @@ class CrashlyticsController {
 
     closeOpenSessions(sessionBeginFiles, offset, maxCustomExceptionEvents);
 
-    reportingCoordinator.finalizeSessions(getCurrentTimestampSeconds());
+    String currentSessionId = null;
+    if (skipCurrentSession) {
+      currentSessionId =
+          makeFirebaseSessionIdentifier(getSessionIdFromSessionFile(sessionBeginFiles[0]));
+    }
+
+    reportingCoordinator.finalizeSessions(getCurrentTimestampSeconds(), currentSessionId);
   }
 
   /**
@@ -942,11 +959,11 @@ class CrashlyticsController {
     return listFilesMatching(getFilesDir(), filter);
   }
 
-  private File[] listFilesMatching(File directory, FilenameFilter filter) {
+  private static File[] listFilesMatching(File directory, FilenameFilter filter) {
     return ensureFileArrayNotNull(directory.listFiles(filter));
   }
 
-  private File[] ensureFileArrayNotNull(File[] files) {
+  private static File[] ensureFileArrayNotNull(File[] files) {
     return (files == null) ? new File[] {} : files;
   }
 
@@ -1117,7 +1134,7 @@ class CrashlyticsController {
       return;
     }
 
-    writeAppExceptionMarker(eventTime);
+    doWriteAppExceptionMarker(eventTime);
     List<NativeSessionFile> nativeSessionFiles =
         getNativeSessionFiles(
             nativeSessionFileProvider,
@@ -1151,17 +1168,14 @@ class CrashlyticsController {
    * Not synchronized/locked. Must be executed from the single thread executor service used by this
    * class.
    */
-  private void writeFatal(Thread thread, Throwable ex, long eventTime) {
+  private void doWriteFatal(
+      @NonNull Thread thread,
+      @NonNull Throwable ex,
+      @NonNull String currentSessionId,
+      long eventTime) {
     ClsFileOutputStream fos = null;
     CodedOutputStream cos = null;
     try {
-      final String currentSessionId = getCurrentSessionId();
-
-      if (currentSessionId == null) {
-        Logger.getLogger().e("Tried to write a fatal exception while no session was open.");
-        return;
-      }
-
       fos = new ClsFileOutputStream(getFilesDir(), currentSessionId + SESSION_FATAL_TAG);
       cos = CodedOutputStream.newInstance(fos);
       writeSessionEvent(cos, thread, ex, eventTime, EVENT_TYPE_CRASH, true);
@@ -1173,7 +1187,7 @@ class CrashlyticsController {
     }
   }
 
-  private void writeAppExceptionMarker(long eventTime) {
+  private void doWriteAppExceptionMarker(long eventTime) {
     try {
       new File(getFilesDir(), APP_EXCEPTION_MARKER_PREFIX + eventTime).createNewFile();
     } catch (IOException e) {
@@ -1185,14 +1199,11 @@ class CrashlyticsController {
    * Not synchronized/locked. Must be executed from the single thread executor service used by this
    * class.
    */
-  private void doWriteNonFatal(@NonNull Thread thread, @NonNull Throwable ex, long eventTime) {
-    final String currentSessionId = getCurrentSessionId();
-
-    if (currentSessionId == null) {
-      Logger.getLogger().d("Tried to write a non-fatal exception while no session was open.");
-      return;
-    }
-
+  private void doWriteNonFatal(
+      @NonNull Thread thread,
+      @NonNull Throwable ex,
+      @NonNull String currentSessionId,
+      long eventTime) {
     ClsFileOutputStream fos = null;
     CodedOutputStream cos = null;
     try {

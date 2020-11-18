@@ -15,8 +15,7 @@
 package com.google.firebase.remoteconfig;
 
 /** An exception thrown when a {@link FirebaseRemoteConfig#fetch()} call is throttled. */
-public class FirebaseRemoteConfigFetchThrottledException
-    extends FirebaseRemoteConfigFetchException {
+public class FirebaseRemoteConfigFetchThrottledException extends FirebaseRemoteConfigException {
   private final long throttleEndTimeMillis;
 
   /**
