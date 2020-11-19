@@ -764,8 +764,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
   }
 
   private static class AnySessionIdDirectoryFilter extends SessionDirectoriesOnlyFilter {
-    private static String ANY_SESSION_ID_REGEX =
-        "[A-Z0-9]{12}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{12}";
+    private static String ANY_SESSION_ID_REGEX = "[A-Z0-9]{12}[A-Z0-9]{4}[A-Z0-9]{4}[A-Z0-9]{12}";
 
     @Override
     public boolean accept(File file) {

@@ -167,14 +167,12 @@ class CrashlyticsController {
   static final FilenameFilter APP_EXCEPTION_MARKER_FILTER =
       (directory, filename) -> filename.startsWith(APP_EXCEPTION_MARKER_PREFIX);
 
-  /**
-   * Matches *.cls filenames with exactly 39 character names (32 UUID + 3 dashes + dot + extension).
-   */
+  /** Matches *.cls filenames with exactly 36 character names (32 UUID + dot + extension). */
   static final FilenameFilter SESSION_FILE_FILTER =
       new FilenameFilter() {
         @Override
         public boolean accept(File dir, String filename) {
-          return (filename.length() == (35 + SESSION_FILE_EXTENSION.length()))
+          return (filename.length() == (SESSION_ID_LENGTH + SESSION_FILE_EXTENSION.length()))
               && filename.endsWith(SESSION_FILE_EXTENSION);
         }
       };
@@ -226,7 +224,7 @@ class CrashlyticsController {
   private static final String EVENT_TYPE_CRASH = "crash";
   private static final String EVENT_TYPE_LOGGED = "error";
 
-  private static final int SESSION_ID_LENGTH = 35;
+  private static final int SESSION_ID_LENGTH = 32;
 
   private static final int ANALYZER_VERSION = 1;
 
@@ -404,7 +402,7 @@ class CrashlyticsController {
                 crashMarker.create();
 
                 reportingCoordinator.persistFatalEvent(
-                    ex, thread, makeFirebaseSessionIdentifier(currentSessionId), timestampSeconds);
+                    ex, thread, currentSessionId, timestampSeconds);
                 doWriteFatal(thread, ex, currentSessionId, timestampSeconds);
                 doWriteAppExceptionMarker(time.getTime());
 
@@ -671,7 +669,7 @@ class CrashlyticsController {
                 return;
               }
               reportingCoordinator.persistNonFatalEvent(
-                  ex, thread, makeFirebaseSessionIdentifier(currentSessionId), timestampSeconds);
+                  ex, thread, currentSessionId, timestampSeconds);
               doWriteNonFatal(thread, ex, currentSessionId, timestampSeconds);
             }
           }
@@ -714,7 +712,7 @@ class CrashlyticsController {
               Logger.getLogger().d("Tried to cache user data while no session was open.");
               return null;
             }
-            reportingCoordinator.persistUserId(makeFirebaseSessionIdentifier(currentSessionId));
+            reportingCoordinator.persistUserId(currentSessionId);
             new MetaDataStore(getFilesDir()).writeUserData(currentSessionId, userMetaData);
             return null;
           }
@@ -765,17 +763,7 @@ class CrashlyticsController {
   @Nullable
   private String getCurrentSessionId() {
     final List<String> sortedOpenSessions = reportingCoordinator.listSortedOpenSessionIds();
-    return (!sortedOpenSessions.isEmpty()) ? makeLegacySessionId(sortedOpenSessions.get(0)) : null;
-  }
-
-  // Restores legacy session ID formatting, to keep tests happy.
-  // This will be removed in subsequent iterations.
-  private static String makeLegacySessionId(String id) {
-    final StringBuilder sb = new StringBuilder(id);
-    sb.insert(20, '-');
-    sb.insert(16, '-');
-    sb.insert(12, '-');
-    return sb.toString();
+    return (!sortedOpenSessions.isEmpty()) ? sortedOpenSessions.get(0) : null;
   }
 
   /**
@@ -842,8 +830,7 @@ class CrashlyticsController {
     writeSessionDevice(sessionIdentifier);
     logFileManager.setCurrentSession(sessionIdentifier);
 
-    reportingCoordinator.onBeginSession(
-        makeFirebaseSessionIdentifier(sessionIdentifier), startedAtSeconds);
+    reportingCoordinator.onBeginSession(sessionIdentifier, startedAtSeconds);
   }
 
   void doCloseSessions(int maxCustomExceptionEvents) throws Exception {
@@ -867,7 +854,7 @@ class CrashlyticsController {
       return;
     }
 
-    final String mostRecentSessionIdToClose = makeLegacySessionId(sortedOpenSessions.get(offset));
+    final String mostRecentSessionIdToClose = sortedOpenSessions.get(offset);
 
     // We delay writing the user information until session close time so that there's the
     // maximum chance that the user code that sets this information has been run.
@@ -1152,8 +1139,7 @@ class CrashlyticsController {
             getFilesDir(),
             previousSessionLogManager.getBytesForLog());
     NativeSessionFileGzipper.processNativeSessions(nativeSessionDirectory, nativeSessionFiles);
-    reportingCoordinator.finalizeSessionWithNativeEvent(
-        makeFirebaseSessionIdentifier(previousSessionId), nativeSessionFiles);
+    reportingCoordinator.finalizeSessionWithNativeEvent(previousSessionId, nativeSessionFiles);
     previousSessionLogManager.clearLog();
   }
 
@@ -1163,12 +1149,6 @@ class CrashlyticsController {
 
   private static long getTimestampSeconds(Date date) {
     return date.getTime() / 1000;
-  }
-
-  /** Removes dashes in the Crashlytics session identifier to conform to Firebase constraints. */
-  @NonNull
-  private static String makeFirebaseSessionIdentifier(@NonNull String sessionIdentifier) {
-    return sessionIdentifier.replaceAll("-", "");
   }
 
   // region Serialization to protobuf
