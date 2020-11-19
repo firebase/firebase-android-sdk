@@ -457,6 +457,19 @@ public class SessionReportingCoordinatorTest {
   }
 
   @Test
+  public void testListSortedOpenSessionIds() {
+    String[] sortedSessionIds = new String[] {"3", "2", "1"};
+    when(reportPersistence.listSortedOpenSessionIds()).thenReturn(Arrays.asList(sortedSessionIds));
+    assertArrayEquals(sortedSessionIds, reportingCoordinator.listSortedOpenSessionIds().toArray());
+  }
+
+  @Test
+  public void testListSortedOpenSessionIds_noOpenSessions() {
+    when(reportPersistence.listSortedOpenSessionIds()).thenReturn(Collections.emptyList());
+    assertTrue(reportingCoordinator.listSortedOpenSessionIds().isEmpty());
+  }
+
+  @Test
   public void testHasReportsToSend() {
     when(reportPersistence.hasFinalizedReports()).thenReturn(true);
     assertTrue(reportingCoordinator.hasReportsToSend());

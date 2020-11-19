@@ -760,14 +760,22 @@ class CrashlyticsController {
    * Not synchronized/locked. Must be executed from the single thread executor service used by this
    * class.
    *
-   * <p>May return <code>null</code> if no session begin file is present.
+   * <p>May return <code>null</code> if there is no open session.
    */
   @Nullable
   private String getCurrentSessionId() {
-    final File[] sessionBeginFiles = listSortedSessionBeginFiles();
-    return (sessionBeginFiles.length > 0)
-        ? getSessionIdFromSessionFile(sessionBeginFiles[0])
-        : null;
+    final List<String> sortedOpenSessions = reportingCoordinator.listSortedOpenSessionIds();
+    return (!sortedOpenSessions.isEmpty()) ? makeLegacySessionId(sortedOpenSessions.get(0)) : null;
+  }
+
+  // Restores legacy session ID formatting, to keep tests happy.
+  // This will be removed in subsequent iterations.
+  private static String makeLegacySessionId(String id) {
+    final StringBuilder sb = new StringBuilder(id);
+    sb.insert(20, '-');
+    sb.insert(16, '-');
+    sb.insert(12, '-');
+    return sb.toString();
   }
 
   /**
@@ -852,15 +860,14 @@ class CrashlyticsController {
 
     trimOpenSessions(MAX_OPEN_SESSIONS + offset);
 
-    final File[] sessionBeginFiles = listSortedSessionBeginFiles();
+    List<String> sortedOpenSessions = reportingCoordinator.listSortedOpenSessionIds();
 
-    if (sessionBeginFiles.length <= offset) {
+    if (sortedOpenSessions.size() <= offset) {
       Logger.getLogger().d("No open sessions to be closed.");
       return;
     }
 
-    final String mostRecentSessionIdToClose =
-        getSessionIdFromSessionFile(sessionBeginFiles[offset]);
+    final String mostRecentSessionIdToClose = makeLegacySessionId(sortedOpenSessions.get(offset));
 
     // We delay writing the user information until session close time so that there's the
     // maximum chance that the user code that sets this information has been run.
@@ -875,12 +882,11 @@ class CrashlyticsController {
       }
     }
 
-    closeOpenSessions(sessionBeginFiles, offset, maxCustomExceptionEvents);
+    closeOpenSessions(listSortedSessionBeginFiles(), offset, maxCustomExceptionEvents);
 
     String currentSessionId = null;
     if (skipCurrentSession) {
-      currentSessionId =
-          makeFirebaseSessionIdentifier(getSessionIdFromSessionFile(sessionBeginFiles[0]));
+      currentSessionId = sortedOpenSessions.get(0);
     }
 
     reportingCoordinator.finalizeSessions(getCurrentTimestampSeconds(), currentSessionId);

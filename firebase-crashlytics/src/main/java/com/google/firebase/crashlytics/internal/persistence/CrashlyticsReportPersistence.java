@@ -166,6 +166,17 @@ public class CrashlyticsReportPersistence {
     }
   }
 
+  @NonNull
+  public List<String> listSortedOpenSessionIds() {
+    List<File> openSessionDirectories = getAllFilesInDirectory(openSessionsDirectory);
+    Collections.sort(openSessionDirectories, LATEST_SESSION_ID_FIRST_COMPARATOR);
+    final List<String> openSessionIds = new ArrayList<>();
+    for (File f : openSessionDirectories) {
+      openSessionIds.add(f.getName());
+    }
+    return openSessionIds;
+  }
+
   public boolean hasFinalizedReports() {
     return !getAllFinalizedReportFiles().isEmpty();
   }

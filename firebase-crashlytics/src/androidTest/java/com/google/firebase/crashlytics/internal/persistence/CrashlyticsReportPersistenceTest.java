@@ -72,6 +72,25 @@ public class CrashlyticsReportPersistenceTest {
   }
 
   @Test
+  public void testListSortedOpenSessionIds() {
+    final String[] expectedIds = new String[] {"sessionId3", "sessionId2", "sessionId1"};
+
+    reportPersistence.persistReport(makeTestReport(expectedIds[1]));
+    reportPersistence.persistReport(makeTestReport(expectedIds[0]));
+    reportPersistence.persistReport(makeTestReport(expectedIds[2]));
+
+    final List<String> openSessionIds = reportPersistence.listSortedOpenSessionIds();
+
+    assertArrayEquals(expectedIds, openSessionIds.toArray());
+  }
+
+  @Test
+  public void testListSortedOpenSessionIds_noOpenSessions() {
+    final List<String> openSessionIds = reportPersistence.listSortedOpenSessionIds();
+    assertTrue(openSessionIds.isEmpty());
+  }
+
+  @Test
   public void testHasFinalizedReports() {
     final String sessionId = "testSession";
     final CrashlyticsReport testReport = makeTestReport(sessionId);

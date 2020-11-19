@@ -152,6 +152,11 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
     reportPersistence.finalizeReports(currentSessionId, timestamp);
   }
 
+  @NonNull
+  public List<String> listSortedOpenSessionIds() {
+    return reportPersistence.listSortedOpenSessionIds();
+  }
+
   public boolean hasReportsToSend() {
     return reportPersistence.hasFinalizedReports();
   }
