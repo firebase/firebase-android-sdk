@@ -47,8 +47,6 @@ public class FirestoreMultiDbComponentTest {
 
     assertNotSame(firebaseFirestore1, component.get("db1"));
     assertNotSame(firebaseFirestore2, component.get("db2"));
-    // Clean up the instances registered by the calls above.
-    component.onDeleted(firebaseApp.getName(), firebaseApp.getOptions());
   }
 
   private static FirebaseApp createApp(String appName) {
