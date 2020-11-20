@@ -14,23 +14,20 @@
 
 package com.google.firebase.firestore;
 
+import static org.junit.Assert.assertNotSame;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import android.content.Context;
-
 import androidx.test.platform.app.InstrumentationRegistry;
-
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.firestore.remote.GrpcMetadataProvider;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static org.junit.Assert.assertNotSame;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
@@ -50,10 +47,8 @@ public class FirestoreMultiDbComponentTest {
   }
 
   private static FirebaseApp createApp(String appName) {
-    FirebaseOptions firebaseOptions = new FirebaseOptions.Builder()
-            .setProjectId("project-id")
-            .setApplicationId("app-id")
-            .build();
+    FirebaseOptions firebaseOptions =
+        new FirebaseOptions.Builder().setProjectId("project-id").setApplicationId("app-id").build();
     FirebaseApp app = mock(FirebaseApp.class);
     when(app.getOptions()).thenReturn(firebaseOptions);
     when(app.getName()).thenReturn(appName);
@@ -66,5 +61,4 @@ public class FirestoreMultiDbComponentTest {
     GrpcMetadataProvider metadataProvider = mock(GrpcMetadataProvider.class);
     return new FirestoreMultiDbComponent(context, firebaseApp, authProvider, metadataProvider);
   }
-
 }

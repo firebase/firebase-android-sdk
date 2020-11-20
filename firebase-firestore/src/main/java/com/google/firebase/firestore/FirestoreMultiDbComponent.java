@@ -88,9 +88,9 @@ class FirestoreMultiDbComponent
     for (Map.Entry<String, FirebaseFirestore> entry : new ArrayList<>(instances.entrySet())) {
       entry.getValue().terminate();
       hardAssert(
-        !instances.containsKey(entry.getKey()),
-        "terminate() should have removed its entry from `instances` for key: %s",
-        entry.getKey());
+          !instances.containsKey(entry.getKey()),
+          "terminate() should have removed its entry from `instances` for key: %s",
+          entry.getKey());
     }
   }
 }
