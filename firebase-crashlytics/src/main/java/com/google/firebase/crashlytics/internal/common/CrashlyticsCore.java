@@ -26,13 +26,17 @@ import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsEventLogger;
 import com.google.firebase.crashlytics.internal.breadcrumbs.BreadcrumbSource;
-import com.google.firebase.crashlytics.internal.network.HttpRequestFactory;
+import com.google.firebase.crashlytics.internal.log.LogFileManager;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.persistence.FileStoreImpl;
 import com.google.firebase.crashlytics.internal.settings.SettingsDataProvider;
 import com.google.firebase.crashlytics.internal.settings.model.Settings;
+import com.google.firebase.crashlytics.internal.stacktrace.MiddleOutFallbackStrategy;
+import com.google.firebase.crashlytics.internal.stacktrace.RemoveRepeatsStrategy;
+import com.google.firebase.crashlytics.internal.stacktrace.StackTraceTrimmingStrategy;
 import com.google.firebase.crashlytics.internal.unity.ResourceUnityVersionProvider;
 import com.google.firebase.crashlytics.internal.unity.UnityVersionProvider;
+import java.io.File;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -49,6 +53,9 @@ public class CrashlyticsCore {
           + "Crashlytics account.";
 
   private static final float CLS_DEFAULT_PROCESS_DELAY = 1.0f;
+
+  static final int MAX_STACK_SIZE = 1024;
+  static final int NUM_STACK_REPETITIONS_ALLOWED = 10;
 
   // Build ID related constants
   static final String CRASHLYTICS_REQUIRE_BUILD_ID = "com.crashlytics.RequireBuildId";
@@ -132,30 +139,47 @@ public class CrashlyticsCore {
       crashMarker = new CrashlyticsFileMarker(CRASH_MARKER_FILE_NAME, fileStore);
       initializationMarker = new CrashlyticsFileMarker(INITIALIZATION_MARKER_FILE_NAME, fileStore);
 
-      final HttpRequestFactory httpRequestFactory = new HttpRequestFactory();
-
       final UnityVersionProvider unityVersionProvider = new ResourceUnityVersionProvider(context);
       final AppData appData =
           AppData.create(context, idManager, googleAppId, mappingFileId, unityVersionProvider);
 
       Logger.getLogger().d("Installer package name is: " + appData.installerPackageName);
 
+      final UserMetadata userMetadata = new UserMetadata();
+
+      final LogFileDirectoryProvider logFileDirectoryProvider =
+          new LogFileDirectoryProvider(fileStore);
+      final LogFileManager logFileManager = new LogFileManager(context, logFileDirectoryProvider);
+      final StackTraceTrimmingStrategy stackTraceTrimmingStrategy =
+          new MiddleOutFallbackStrategy(
+              MAX_STACK_SIZE, new RemoveRepeatsStrategy(NUM_STACK_REPETITIONS_ALLOWED));
+
+      final SessionReportingCoordinator sessionReportingCoordinator =
+          SessionReportingCoordinator.create(
+              context,
+              idManager,
+              fileStore,
+              appData,
+              logFileManager,
+              userMetadata,
+              stackTraceTrimmingStrategy,
+              settingsProvider);
+
       controller =
           new CrashlyticsController(
               context,
               backgroundWorker,
-              httpRequestFactory,
               idManager,
               dataCollectionArbiter,
               fileStore,
               crashMarker,
               appData,
-              null,
-              null,
-              null,
+              userMetadata,
+              logFileManager,
+              logFileDirectoryProvider,
+              sessionReportingCoordinator,
               nativeComponent,
-              analyticsEventLogger,
-              settingsProvider);
+              analyticsEventLogger);
 
       // If the file is present at this point, then the previous run's initialization
       // did not complete, and we want to perform initialization synchronously this time.
@@ -206,8 +230,6 @@ public class CrashlyticsCore {
     // create the marker for this run
     markInitializationStarted();
 
-    controller.cleanInvalidTempFiles();
-
     try {
       breadcrumbSource.registerBreadcrumbHandler(this::log);
 
@@ -221,7 +243,7 @@ public class CrashlyticsCore {
             new RuntimeException("Collection of crash reports disabled in Crashlytics settings."));
       }
 
-      if (!controller.finalizeSessions(settingsData.getSessionData().maxCustomExceptionEvents)) {
+      if (!controller.finalizeSessions()) {
         Logger.getLogger().d("Could not finalize previous sessions.");
       }
 
@@ -468,4 +490,23 @@ public class CrashlyticsCore {
 
   // endregion
 
+  private static final class LogFileDirectoryProvider implements LogFileManager.DirectoryProvider {
+
+    private static final String LOG_FILES_DIR = "log-files";
+
+    private final FileStore rootFileStore;
+
+    public LogFileDirectoryProvider(FileStore rootFileStore) {
+      this.rootFileStore = rootFileStore;
+    }
+
+    @Override
+    public File getLogFileDir() {
+      final File logFileDir = new File(rootFileStore.getFilesDir(), LOG_FILES_DIR);
+      if (!logFileDir.exists()) {
+        logFileDir.mkdirs();
+      }
+      return logFileDir;
+    }
+  }
 }
