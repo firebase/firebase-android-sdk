@@ -410,33 +410,6 @@ public class ValidationTest {
   }
 
   @Test
-  public void queriesWithNullOrNaNFiltersOtherThanEqualityFail() {
-    CollectionReference collection = testCollection();
-    expectError(
-        () -> collection.whereGreaterThan("a", null),
-        "Invalid Query. Null supports only equality comparisons (via whereEqualTo()).");
-    expectError(
-        () -> collection.whereArrayContains("a", null),
-        "Invalid Query. Null supports only equality comparisons (via whereEqualTo()).");
-    expectError(
-        () -> collection.whereArrayContainsAny("a", null),
-        "Invalid Query. A non-empty array is required for 'array_contains_any' filters.");
-    expectError(
-        () -> collection.whereIn("a", null),
-        "Invalid Query. A non-empty array is required for 'in' filters.");
-    expectError(
-        () -> collection.whereNotIn("a", null),
-        "Invalid Query. A non-empty array is required for 'not_in' filters.");
-
-    expectError(
-        () -> collection.whereGreaterThan("a", Double.NaN),
-        "Invalid Query. NaN supports only equality comparisons (via whereEqualTo()).");
-    expectError(
-        () -> collection.whereArrayContains("a", Double.NaN),
-        "Invalid Query. NaN supports only equality comparisons (via whereEqualTo()).");
-  }
-
-  @Test
   public void queriesCannotBeCreatedFromDocumentsMissingSortValues() {
     CollectionReference collection = testCollectionWithDocs(map("f", map("k", "f", "nosort", 1.0)));
 
@@ -544,8 +517,9 @@ public class ValidationTest {
   public void queriesWithDifferentInequalityFieldsFail() {
     expectError(
         () -> testCollection().whereGreaterThan("x", 32).whereLessThan("y", "cat"),
-        "All where filters other than whereEqualTo() must be on the same field. But you "
-            + "have filters on 'x' and 'y'");
+        "All where filters with an inequality (notEqualTo, notIn, lessThan, "
+            + "lessThanOrEqualTo, greaterThan, or greaterThanOrEqualTo) must be on the "
+            + "same field. But you have filters on 'x' and 'y'");
   }
 
   @Test
@@ -571,8 +545,9 @@ public class ValidationTest {
 
     expectError(
         () -> testCollection().whereNotEqualTo("x", 32).whereGreaterThan("y", 33),
-        "All where filters other than whereEqualTo() must be on the same field. But you "
-            + "have filters on 'x' and 'y'");
+        "All where filters with an inequality (notEqualTo, notIn, lessThan, "
+            + "lessThanOrEqualTo, greaterThan, or greaterThanOrEqualTo) must be on the "
+            + "same field. But you have filters on 'x' and 'y'");
   }
 
   @Test
@@ -619,7 +594,9 @@ public class ValidationTest {
 
     expectError(
         () -> testCollection().whereNotIn("foo", asList(1, 2)).whereNotIn("bar", asList(1, 2)),
-        "Invalid Query. You cannot use more than one 'not_in' filter.");
+        "All where filters with an inequality (notEqualTo, notIn, lessThan, "
+            + "lessThanOrEqualTo, greaterThan, or greaterThanOrEqualTo) must be on the "
+            + "same field. But you have filters on 'foo' and 'bar'");
 
     expectError(
         () ->
@@ -749,22 +726,6 @@ public class ValidationTest {
         () ->
             testCollection().whereArrayContainsAny("bar", asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 9)),
         "Invalid Query. 'array_contains_any' filters support a maximum of 10 elements in the value array.");
-
-    expectError(
-        () -> testCollection().whereIn("bar", asList("foo", null)),
-        "Invalid Query. 'in' filters cannot contain 'null' in the value array.");
-
-    expectError(
-        () -> testCollection().whereArrayContainsAny("bar", asList("foo", null)),
-        "Invalid Query. 'array_contains_any' filters cannot contain 'null' in the value array.");
-
-    expectError(
-        () -> testCollection().whereIn("bar", asList("foo", Double.NaN)),
-        "Invalid Query. 'in' filters cannot contain 'NaN' in the value array.");
-
-    expectError(
-        () -> testCollection().whereArrayContainsAny("bar", asList("foo", Float.NaN)),
-        "Invalid Query. 'array_contains_any' filters cannot contain 'NaN' in the value array.");
   }
 
   @Test

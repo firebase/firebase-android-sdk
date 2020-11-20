@@ -29,6 +29,7 @@ import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFiel
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.TIME_ZONE;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFieldKey.ENTRIES;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFieldKey.EXPERIMENT_DESCRIPTIONS;
+import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFieldKey.PERSONALIZATION_METADATA;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFieldKey.STATE;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -398,6 +399,16 @@ public class ConfigFetchHttpClient {
       }
       if (experimentDescriptions != null) {
         containerBuilder.withAbtExperiments(experimentDescriptions);
+      }
+
+      JSONObject personalizationMetadata = null;
+      try {
+        personalizationMetadata = fetchResponse.getJSONObject(PERSONALIZATION_METADATA);
+      } catch (JSONException e) {
+        // Do nothing if personalizationMetadata does not exist.
+      }
+      if (personalizationMetadata != null) {
+        containerBuilder.withPersonalizationMetadata(personalizationMetadata);
       }
 
       return containerBuilder.build();

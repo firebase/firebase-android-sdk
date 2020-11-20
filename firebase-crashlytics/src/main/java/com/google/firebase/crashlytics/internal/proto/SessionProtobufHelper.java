@@ -16,6 +16,7 @@ package com.google.firebase.crashlytics.internal.proto;
 
 import android.app.ActivityManager;
 import com.google.firebase.crashlytics.internal.Logger;
+import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.stacktrace.TrimmedThrowableData;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +31,8 @@ public class SessionProtobufHelper {
   private static final ByteString SIGNAL_DEFAULT_BYTE_STRING =
       ByteString.copyFromUtf8(SIGNAL_DEFAULT);
 
-  private static final ByteString UNITY_PLATFORM_BYTE_STRING = ByteString.copyFromUtf8("Unity");
+  private static final ByteString UNITY_PLATFORM_BYTE_STRING =
+      ByteString.copyFromUtf8(CrashlyticsReport.DEVELOPMENT_PLATFORM_UNITY);
 
   private SessionProtobufHelper() {}
 

@@ -254,6 +254,12 @@ public class CrashlyticsReportJsonTransform {
         case "installationUuid":
           builder.setInstallationUuid(jsonReader.nextString());
           break;
+        case "developmentPlatform":
+          builder.setDevelopmentPlatform(jsonReader.nextString());
+          break;
+        case "developmentPlatformVersion":
+          builder.setDevelopmentPlatformVersion(jsonReader.nextString());
+          break;
         default:
           jsonReader.skipValue();
           break;

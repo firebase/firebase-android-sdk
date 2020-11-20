@@ -15,3 +15,5 @@
 # Prevent FirebaseCrashlytics from being obfuscated, because the Crashlytics
 # native libraries call FirebaseCrashlytics public methods dynamically via JNI.
 -keep public class com.google.firebase.crashlytics.FirebaseCrashlytics { public *; }
+-keep public class com.google.firebase.crashlytics.ndk.CrashpadMain { public *; }
+-keep public class com.google.firebase.crashlytics.ndk.JniNativeApi { native <methods>; }

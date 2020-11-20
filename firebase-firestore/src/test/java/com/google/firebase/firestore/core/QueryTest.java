@@ -15,7 +15,6 @@
 package com.google.firebase.firestore.core;
 
 import static com.google.firebase.firestore.model.DocumentKey.KEY_FIELD_NAME;
-import static com.google.firebase.firestore.testutil.Assert.assertThrows;
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
 import static com.google.firebase.firestore.testutil.TestUtil.filter;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
@@ -353,15 +352,6 @@ public class QueryTest {
   }
 
   @Test
-  public void testOnlySupportsEqualsForNull() {
-    List<String> invalidOps = asList("<", "<=", ">", ">=");
-    Query query = Query.atPath(ResourcePath.fromString("collection"));
-    for (String op : invalidOps) {
-      assertThrows(IllegalArgumentException.class, () -> query.filter(filter("sort", op, null)));
-    }
-  }
-
-  @Test
   public void testComplexObjectFilters() {
     Query query1 =
         Query.atPath(ResourcePath.fromString("collection")).filter(filter("sort", "<=", 2));
@@ -675,7 +665,7 @@ public class QueryTest {
         "collection|f:ain[1,2,3]|ob:__name__asc");
     assertCanonicalId(
         baseQuery.filter(filter("a", "not-in", Arrays.asList(1, 2, 3))),
-        "collection|f:anot_in[1,2,3]|ob:__name__asc");
+        "collection|f:anot_in[1,2,3]|ob:aasc__name__asc");
     assertCanonicalId(
         baseQuery.filter(filter("a", "array-contains-any", Arrays.asList(1, 2, 3))),
         "collection|f:aarray_contains_any[1,2,3]|ob:__name__asc");

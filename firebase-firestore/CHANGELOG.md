@@ -1,4 +1,18 @@
 # Unreleased
+- [fixed] Removed excess validation of null and NaN values in query filters.
+  This more closely aligns the SDK with the Firestore backend, which has always
+  accepted null and NaN for all operators, even though this isn't necessarily
+  useful.
+
+# (22.0.0)
+- [changed] Removed the deprecated `timestampsInSnapshotsEnabled` setting.
+  Any timestamps in Firestore documents are now returned as `Timestamps`. To
+  convert `Timestamp` classed to `java.util.Date`, use `Timestamp.toDate()`.
+
+# 21.6.1
+- [changed] Added new internal HTTP headers to the gRPC connection.
+
+# 21.6.0
 - [fixed] Removed a delay that may have prevented Firestore from immediately
   reestablishing a network connection if a connectivity change occurred while
   the app was in the background.
@@ -6,6 +20,12 @@
   to the backend immediately after a user signed in.
 - [feature] Cloud Firestore now supports connecting to a local emulator via
  `FirebaseFirestore#useEmulator()`
+- [feature] Added `Query.whereNotIn()` and `Query.whereNotEqualTo()` query
+  operators. `Query.whereNotIn()` finds documents where a specified field’s
+  value is not in a specified array. `Query.whereNotEqualTo()` finds
+  documents where a specified field's value does not equal the specified value.
+  Neither query operator will match documents where the specified field is not
+  present.
 
 # 21.4.3
 - [changed] Firestore now limits the number of concurrent document lookups it

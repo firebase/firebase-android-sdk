@@ -19,6 +19,7 @@ import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 
 import android.app.Activity;
 import android.content.Context;
+import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -39,6 +40,7 @@ import com.google.firebase.firestore.core.FirestoreClient;
 import com.google.firebase.firestore.local.SQLitePersistence;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.ResourcePath;
+import com.google.firebase.firestore.remote.FirestoreChannel;
 import com.google.firebase.firestore.remote.GrpcMetadataProvider;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.Executors;
@@ -631,5 +633,17 @@ public class FirebaseFirestore {
       throw new IllegalArgumentException(
           "Provided document reference is from a different Cloud Firestore instance.");
     }
+  }
+
+  /**
+   * Sets the language of the public API in the format of "gl-<language>/<version>" where version
+   * might be blank, e.g. `gl-cpp/`. The provided string is used as is.
+   *
+   * <p>Note: this method is package-private because it is expected to only be called via JNI (which
+   * ignores access modifiers).
+   */
+  @Keep
+  static void setClientLanguage(@NonNull String languageToken) {
+    FirestoreChannel.setClientLanguage(languageToken);
   }
 }

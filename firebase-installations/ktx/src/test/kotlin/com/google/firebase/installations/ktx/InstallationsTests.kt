@@ -64,14 +64,14 @@ abstract class BaseTestCase {
 }
 
 @RunWith(RobolectricTestRunner::class)
-class FunctionsTests : BaseTestCase() {
+class InstallationsTests : BaseTestCase() {
     @Test
-    fun `installations should delegate to FirebaseFunctions#getInstance()`() {
+    fun `installations should delegate to FirebaseInstallations#getInstance()`() {
         Truth.assertThat(Firebase.installations).isSameInstanceAs(FirebaseInstallations.getInstance())
     }
 
     @Test
-    fun `functions(app) should delegate to FirebaseFunctions#getInstance(FirebaseApp)`() {
+    fun `installations(app) should delegate to FirebaseInstallations#getInstance(FirebaseApp)`() {
         val app = Firebase.app(EXISTING_APP)
         Truth.assertThat(Firebase.installations(app)).isSameInstanceAs(FirebaseInstallations.getInstance(app))
     }

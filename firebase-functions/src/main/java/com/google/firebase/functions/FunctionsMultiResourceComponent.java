@@ -41,14 +41,15 @@ class FunctionsMultiResourceComponent {
     this.app = app;
   }
 
-  synchronized FirebaseFunctions get(String region) {
-    FirebaseFunctions functions = instances.get(region);
+  synchronized FirebaseFunctions get(String regionOrCustomDomain) {
+    FirebaseFunctions functions = instances.get(regionOrCustomDomain);
     String projectId = app.getOptions().getProjectId();
 
     if (functions == null) {
       functions =
-          new FirebaseFunctions(app, applicationContext, projectId, region, contextProvider);
-      instances.put(region, functions);
+          new FirebaseFunctions(
+              app, applicationContext, projectId, regionOrCustomDomain, contextProvider);
+      instances.put(regionOrCustomDomain, functions);
     }
     return functions;
   }

@@ -70,7 +70,9 @@ public class BreakpadControllerTest extends TestCase {
 
   public void testHasCrashDataForSession() throws IOException {
     assertTrue(setupTestFilesDirectory());
-    assertTrue(new File(testFilesDirectory, "crash.dmp").createNewFile());
+    final File pendingDirectory = new File(testFilesDirectory, "pending");
+    assertTrue(pendingDirectory.mkdir());
+    assertTrue(new File(pendingDirectory, "crash.dmp").createNewFile());
     final String sessionId = "test";
     when(mockFilesManager.hasSessionFileDirectory(sessionId)).thenReturn(true);
     when(mockFilesManager.getSessionFileDirectory(sessionId)).thenReturn(testFilesDirectory);

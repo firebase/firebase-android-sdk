@@ -50,15 +50,12 @@ import java.util.Map;
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class UserDataWriter {
   private final FirebaseFirestore firestore;
-  private final boolean timestampsInSnapshots;
   private final DocumentSnapshot.ServerTimestampBehavior serverTimestampBehavior;
 
   UserDataWriter(
       FirebaseFirestore firestore,
-      boolean timestampsInSnapshots,
       DocumentSnapshot.ServerTimestampBehavior serverTimestampBehavior) {
     this.firestore = firestore;
-    this.timestampsInSnapshots = timestampsInSnapshots;
     this.serverTimestampBehavior = serverTimestampBehavior;
   }
 
@@ -118,12 +115,7 @@ public class UserDataWriter {
   }
 
   private Object convertTimestamp(com.google.protobuf.Timestamp value) {
-    Timestamp timestamp = new Timestamp(value.getSeconds(), value.getNanos());
-    if (timestampsInSnapshots) {
-      return timestamp;
-    } else {
-      return timestamp.toDate();
-    }
+    return new Timestamp(value.getSeconds(), value.getNanos());
   }
 
   private List<Object> convertArray(ArrayValue arrayValue) {

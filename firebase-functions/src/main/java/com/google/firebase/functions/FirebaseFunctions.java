@@ -75,6 +75,9 @@ public class FirebaseFunctions {
   // The region to use for all function references.
   private final String region;
 
+  // A custom domain for the http trigger, such as "https://mydomain.com"
+  @Nullable private final String customDomain;
+
   // The format to use for constructing urls from region, projectId, and name.
   private String urlFormat = "https://%1$s-%2$s.cloudfunctions.net/%3$s";
 
@@ -85,14 +88,29 @@ public class FirebaseFunctions {
       FirebaseApp app,
       Context context,
       String projectId,
-      String region,
+      String regionOrCustomDomain,
       ContextProvider contextProvider) {
     this.app = app;
     this.client = new OkHttpClient();
     this.serializer = new Serializer();
     this.contextProvider = Preconditions.checkNotNull(contextProvider);
     this.projectId = Preconditions.checkNotNull(projectId);
-    this.region = Preconditions.checkNotNull(region);
+
+    boolean isRegion;
+    try {
+      new URL(regionOrCustomDomain);
+      isRegion = false;
+    } catch (MalformedURLException malformedURLException) {
+      isRegion = true;
+    }
+
+    if (isRegion) {
+      this.region = regionOrCustomDomain;
+      this.customDomain = null;
+    } else {
+      this.region = "us-central1";
+      this.customDomain = regionOrCustomDomain;
+    }
 
     maybeInstallProviders(context);
   }
@@ -135,20 +153,22 @@ public class FirebaseFunctions {
   }
 
   /**
-   * Creates a Cloud Functions client with the given app and region.
+   * Creates a Cloud Functions client with the given app and region or custom domain.
    *
    * @param app The app for the Firebase project.
-   * @param region The region for the HTTPS trigger, such as "us-central1".
+   * @param regionOrCustomDomain The region or custom domain for the HTTPS trigger, such as
+   *     "us-central1" or "https://mydomain.com".
    */
   @NonNull
-  public static FirebaseFunctions getInstance(@NonNull FirebaseApp app, @NonNull String region) {
+  public static FirebaseFunctions getInstance(
+      @NonNull FirebaseApp app, @NonNull String regionOrCustomDomain) {
     Preconditions.checkNotNull(app, "You must call FirebaseApp.initializeApp first.");
-    Preconditions.checkNotNull(region);
+    Preconditions.checkNotNull(regionOrCustomDomain);
 
     FunctionsMultiResourceComponent component = app.get(FunctionsMultiResourceComponent.class);
     Preconditions.checkNotNull(component, "Functions component does not exist.");
 
-    return component.get(region);
+    return component.get(regionOrCustomDomain);
   }
 
   /**
@@ -162,13 +182,14 @@ public class FirebaseFunctions {
   }
 
   /**
-   * Creates a Cloud Functions client with the default app and given region.
+   * Creates a Cloud Functions client with the default app and given region or custom domain.
    *
-   * @param region The region for the HTTPS trigger, such as "us-central1".
+   * @param regionOrCustomDomain The regionOrCustomDomain for the HTTPS trigger, such as
+   *     "us-central1" or "https://mydomain.com".
    */
   @NonNull
-  public static FirebaseFunctions getInstance(@NonNull String region) {
-    return getInstance(FirebaseApp.getInstance(), region);
+  public static FirebaseFunctions getInstance(@NonNull String regionOrCustomDomain) {
+    return getInstance(FirebaseApp.getInstance(), regionOrCustomDomain);
   }
 
   /** Creates a Cloud Functions client with the default app. */
@@ -202,6 +223,11 @@ public class FirebaseFunctions {
     }
 
     String str = String.format(urlFormat, region, projectId, function);
+
+    if (customDomain != null && emulatorSettings == null) {
+      str = customDomain + "/" + function;
+    }
+
     try {
       return new URL(str);
     } catch (MalformedURLException mfe) {

@@ -21,7 +21,9 @@ import android.content.pm.PackageManager;
 import android.content.pm.ServiceInfo;
 import android.os.Bundle;
 import android.util.Log;
+import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+import com.google.firebase.inject.Provider;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -49,7 +51,7 @@ public final class ComponentDiscovery<T> {
     List<String> retrieve(T ctx);
   }
 
-  private static final String TAG = "ComponentDiscovery";
+  static final String TAG = "ComponentDiscovery";
   private static final String COMPONENT_SENTINEL_VALUE =
       "com.google.firebase.components.ComponentRegistrar";
   private static final String COMPONENT_KEY_PREFIX = "com.google.firebase.components:";
@@ -68,37 +70,77 @@ public final class ComponentDiscovery<T> {
     this.retriever = retriever;
   }
 
-  /** Returns the discovered {@link ComponentRegistrar}s. */
+  /**
+   * Returns the discovered {@link ComponentRegistrar}s.
+   *
+   * @deprecated Use {@link #discoverLazy()} instead.
+   */
+  @Deprecated
   public List<ComponentRegistrar> discover() {
-    return instantiate(retriever.retrieve(context));
-  }
-
-  private static List<ComponentRegistrar> instantiate(List<String> registrarNames) {
-    List<ComponentRegistrar> registrars = new ArrayList<>();
-    for (String name : registrarNames) {
+    List<ComponentRegistrar> result = new ArrayList<>();
+    for (String registrarName : retriever.retrieve(context)) {
       try {
-        Class<?> loadedClass = Class.forName(name);
-        if (!ComponentRegistrar.class.isAssignableFrom(loadedClass)) {
-          Log.w(
-              TAG,
-              String.format("Class %s is not an instance of %s", name, COMPONENT_SENTINEL_VALUE));
-          continue;
+        ComponentRegistrar registrar = instantiate(registrarName);
+        if (registrar != null) {
+          result.add(registrar);
         }
-        registrars.add((ComponentRegistrar) loadedClass.getDeclaredConstructor().newInstance());
-      } catch (ClassNotFoundException e) {
-        Log.w(TAG, String.format("Class %s is not an found.", name), e);
-      } catch (IllegalAccessException e) {
-        Log.w(TAG, String.format("Could not instantiate %s.", name), e);
-      } catch (InstantiationException e) {
-        Log.w(TAG, String.format("Could not instantiate %s.", name), e);
-      } catch (NoSuchMethodException e) {
-        Log.w(TAG, String.format("Could not instantiate %s", name), e);
-      } catch (InvocationTargetException e) {
-        Log.w(TAG, String.format("Could not instantiate %s", name), e);
+      } catch (InvalidRegistrarException ex) {
+        Log.w(TAG, "Invalid component registrar.", ex);
       }
     }
+    return result;
+  }
 
-    return registrars;
+  /**
+   * Returns a list of candidate {@link ComponentRegistrar} {@link Provider}s.
+   *
+   * <p>The returned list contains lazy providers that are based on <strong>all</strong> discovered
+   * registrar names. However, when called the providers behave in the following way:
+   *
+   * <ul>
+   *   <li>If the registrar class is not found, it will return {@code null}. It's possible that this
+   *       provider will return valid registrar at a later time.
+   *   <li>If the registrar does not implement {@link ComponentRegistrar}, will throw {@link
+   *       InvalidRegistrarException}.
+   *   <li>If the registrar is a private class, will throw {@link InvalidRegistrarException}.
+   *   <li>If the registrar has a private constructor, will throw {@link InvalidRegistrarException}.
+   *   <li>If the registrar's constructor fails, will throw {@link InvalidRegistrarException}.
+   */
+  public List<Provider<ComponentRegistrar>> discoverLazy() {
+    List<Provider<ComponentRegistrar>> result = new ArrayList<>();
+    for (String registrarName : retriever.retrieve(context)) {
+      result.add(() -> instantiate(registrarName));
+    }
+    return result;
+  }
+
+  @Nullable
+  private static ComponentRegistrar instantiate(String registrarName) {
+    try {
+      Class<?> loadedClass = Class.forName(registrarName);
+      if (!ComponentRegistrar.class.isAssignableFrom(loadedClass)) {
+        throw new InvalidRegistrarException(
+            String.format(
+                "Class %s is not an instance of %s", registrarName, COMPONENT_SENTINEL_VALUE));
+      }
+      return (ComponentRegistrar) loadedClass.getDeclaredConstructor().newInstance();
+    } catch (ClassNotFoundException e) {
+      Log.w(TAG, String.format("Class %s is not an found.", registrarName), e);
+      return null;
+    } catch (IllegalAccessException e) {
+      throw new InvalidRegistrarException(
+          String.format("Could not instantiate %s.", registrarName), e);
+
+    } catch (InstantiationException e) {
+      throw new InvalidRegistrarException(
+          String.format("Could not instantiate %s.", registrarName), e);
+    } catch (NoSuchMethodException e) {
+      throw new InvalidRegistrarException(
+          String.format("Could not instantiate %s", registrarName), e);
+    } catch (InvocationTargetException e) {
+      throw new InvalidRegistrarException(
+          String.format("Could not instantiate %s", registrarName), e);
+    }
   }
 
   private static class MetadataRegistrarNameRetriever implements RegistrarNameRetriever<Context> {
