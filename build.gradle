@@ -55,7 +55,6 @@ ext {
 apply plugin: com.google.firebase.gradle.plugins.publish.PublishingPlugin
 apply plugin: com.google.firebase.gradle.plugins.ci.ContinuousIntegrationPlugin
 apply plugin: com.google.firebase.gradle.plugins.ci.SmokeTestsPlugin
-apply plugin: com.google.firebase.gradle.plugins.ci.metrics.MetricsPlugin
 
 firebaseContinuousIntegration {
     ignorePaths = [
