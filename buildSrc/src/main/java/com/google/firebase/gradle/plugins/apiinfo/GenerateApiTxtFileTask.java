@@ -33,21 +33,21 @@ import org.gradle.api.tasks.TaskAction;
 public abstract class GenerateApiTxtFileTask extends DefaultTask {
 
   @Input
-  abstract String getMetalavaJarPath();
+  public abstract String getMetalavaJarPath();
 
   @OutputFile
-  abstract File getApiTxt();
+  public abstract File getApiTxt();
 
-  abstract Object getSourceSet();
+  public abstract Object getSourceSet();
 
   @InputFiles
   public abstract FileCollection getClassPath();
 
   @OutputFile
-  abstract File getBaselineFile();
+  public abstract File getBaselineFile();
 
   @Input
-  abstract boolean getUpdateBaseline();
+  public abstract boolean getUpdateBaseline();
 
   public abstract void setSourceSet(Object value);
 

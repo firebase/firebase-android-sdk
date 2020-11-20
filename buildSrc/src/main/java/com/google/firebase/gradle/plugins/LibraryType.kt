@@ -11,24 +11,13 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+package com.google.firebase.gradle.plugins
 
-package com.google.firebase.gradle.plugins;
+import java.util.Locale
 
-public enum LibraryType {
-  ANDROID("aar"),
-  JAVA("jar");
+enum class LibraryType(val format: String) {
+    ANDROID("aar"), JAVA("jar");
 
-  private final String format;
-
-  LibraryType(String format) {
-    this.format = format;
-  }
-
-  public String getFormat() {
-    return format;
-  }
-
-  public String getComponentName() {
-    return name().toLowerCase();
-  }
+    val componentName: String
+        get() = name.toLowerCase(Locale.getDefault())
 }

@@ -1,4 +1,4 @@
-// Copyright 2019 Google LLC
+// Copyright 2018 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,17 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.gradle.plugins;
-
-import java.util.Set;
-
-public class FirebaseStaticAnalysis {
-  public Set<String> errorproneCheckProjects;
-  public Set<String> androidLintCheckProjects;
-
-  public FirebaseStaticAnalysis(
-      Set<String> errorproneCheckProjects, Set<String> androidLintCheckProjects) {
-    this.errorproneCheckProjects = errorproneCheckProjects;
-    this.androidLintCheckProjects = androidLintCheckProjects;
-  }
-}
+apply(from = File(settingsDir, "../gradle/buildCache.gradle"))

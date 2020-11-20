@@ -28,7 +28,7 @@ import org.gradle.api.tasks.TaskAction;
 public abstract class GetMetalavaJarTask extends DefaultTask {
 
   @OutputFile
-  abstract File getOutputFile();
+  public abstract File getOutputFile();
 
   public abstract void setOutputFile(File outputFile);
 
