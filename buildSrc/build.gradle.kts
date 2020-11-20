@@ -73,8 +73,8 @@ tasks.test {
     // in Gradle output.
     testLogging.showStandardStreams = true
 
-    val enablePluginTests: Boolean? by project
-    enabled = enablePluginTests ?: false
+    val enablePluginTests: String? by project
+    enabled = enablePluginTests?.toBoolean() ?: false
 }
 
 tasks.validatePlugins {
