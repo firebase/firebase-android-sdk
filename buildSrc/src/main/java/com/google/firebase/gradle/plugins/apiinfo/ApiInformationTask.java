@@ -41,27 +41,27 @@ import org.gradle.api.tasks.TaskAction;
 public abstract class ApiInformationTask extends DefaultTask {
 
   @Input
-  abstract String getMetalavaJarPath();
+  public abstract String getMetalavaJarPath();
 
   @InputFile
-  abstract File getApiTxt();
+  public abstract File getApiTxt();
 
-  abstract Object getSourceSet();
+  public abstract Object getSourceSet();
 
   @InputFiles
-  abstract FileCollection getClassPath();
+  public abstract FileCollection getClassPath();
 
   @OutputFile
-  abstract File getBaselineFile();
+  public abstract File getBaselineFile();
 
   @OutputFile
-  abstract File getOutputApiFile();
+  public abstract File getOutputApiFile();
 
   @Input
-  abstract boolean getUpdateBaseline();
+  public abstract boolean getUpdateBaseline();
 
   @OutputFile
-  abstract File getOutputFile();
+  public abstract File getOutputFile();
 
   public abstract void setSourceSet(Object value);
 

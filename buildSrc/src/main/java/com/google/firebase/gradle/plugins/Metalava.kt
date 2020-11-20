@@ -50,7 +50,7 @@ fun Project.runMetalavaWithArgs(
 
 abstract class GenerateStubsTask : DefaultTask() {
     /** Source files against which API signatures will be validated. */
-    lateinit var sourceSet: Object
+    lateinit var sourceSet: Any
 
     @get:InputFiles
     lateinit var classPath: FileCollection

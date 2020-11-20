@@ -11,24 +11,17 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+package com.google.firebase.gradle.plugins
 
-package com.google.firebase.gradle.plugins;
+import groovy.lang.Closure
 
-import groovy.lang.Closure;
-import java.util.function.Consumer;
+private val FAKE_THIS = Any()
 
-public final class ClosureUtil {
-
-  private static final Object FAKE_THIS = new Object();
-
-  private ClosureUtil() {}
-
-  /** Create a groovy closure backed by a lambda. */
-  public static <T> Closure<T> closureOf(Consumer<T> action) {
-    return new Closure<T>(FAKE_THIS) {
-      void doCall(T t) {
-        action.accept(t);
-      }
-    };
-  }
+/** Create a groovy closure backed by a lambda.  */
+fun <T> closureOf(action: T.() -> Unit): Closure<T> {
+    return object : Closure<T>(FAKE_THIS) {
+        fun doCall(t: T) {
+            t.action()
+        }
+    }
 }
