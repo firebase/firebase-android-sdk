@@ -49,9 +49,6 @@ dependencies {
     compileOnly "com.google.auto.value:auto-value-annotations:1.6.5"
     annotationProcessor "com.google.auto.value:auto-value:1.6.2"
 
-    // ship the check within the SDK
-    lintPublish project(':firebase-installations:customer-lint-checks')
-
     testImplementation 'androidx.test:core:1.2.0'
     testImplementation 'junit:junit:4.12'
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
