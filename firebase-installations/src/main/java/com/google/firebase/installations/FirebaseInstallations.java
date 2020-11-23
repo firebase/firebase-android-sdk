@@ -28,6 +28,7 @@ import com.google.firebase.FirebaseOptions;
 import com.google.firebase.heartbeatinfo.HeartBeatInfo;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsException.Status;
+import com.google.firebase.installations.internal.FidListener;
 import com.google.firebase.installations.local.IidStore;
 import com.google.firebase.installations.local.PersistedInstallation;
 import com.google.firebase.installations.local.PersistedInstallationEntry;
@@ -71,6 +72,9 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   persisting the FID locally. NOTE: cachedFid resets if FID is deleted.*/
   @GuardedBy("this")
   private String cachedFid;
+
+  @GuardedBy("this")
+  private FidListener fidListener;
 
   @GuardedBy("lock")
   private final List<StateListener> listeners = new ArrayList<>();
@@ -271,6 +275,14 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     return Tasks.call(backgroundExecutor, this::deleteFirebaseInstallationId);
   }
 
+  /** Register a callback {@link FidListener} to receive fid changes. */
+  @Override
+  public void registerFidListener(@Nullable FidListener listener) {
+    synchronized (this) {
+      this.fidListener = listener;
+    }
+  }
+
   private Task<String> addGetIdListener() {
     TaskCompletionSource<String> taskCompletionSource = new TaskCompletionSource<>();
     StateListener l = new GetIdListener(taskCompletionSource);
@@ -356,11 +368,12 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     // There are two possible cleanup steps to perform at this stage: the FID may need to
     // be registered with the server or the FID is registered but we need a fresh authtoken.
     // Registering will also result in a fresh authtoken. Do the appropriate step here.
+    PersistedInstallationEntry updatedPrefs;
     try {
       if (prefs.isErrored() || prefs.isUnregistered()) {
-        prefs = registerFidWithServer(prefs);
+        updatedPrefs = registerFidWithServer(prefs);
       } else if (forceRefresh || utils.isAuthTokenExpired(prefs)) {
-        prefs = fetchAuthTokenFromServer(prefs);
+        updatedPrefs = fetchAuthTokenFromServer(prefs);
       } else {
         // nothing more to do, get out now
         return;
@@ -371,7 +384,12 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     }
 
     // Store the prefs to persist the result of the previous step.
-    insertOrUpdatePrefs(prefs);
+    insertOrUpdatePrefs(updatedPrefs);
+
+    // Update FidListener if a fid has changed.
+    updateFidListener(prefs, updatedPrefs);
+
+    prefs = updatedPrefs;
 
     // Update cachedFID, if FID is successfully REGISTERED and persisted.
     if (prefs.isRegistered()) {
@@ -387,6 +405,14 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
       triggerOnException(new IOException(AUTH_ERROR_MSG));
     } else {
       triggerOnStateReached(prefs);
+    }
+  }
+
+  private synchronized void updateFidListener(
+      PersistedInstallationEntry prefs, PersistedInstallationEntry updatedPrefs) {
+    if (fidListener != null
+        && !prefs.getFirebaseInstallationId().equals(updatedPrefs.getFirebaseInstallationId())) {
+      fidListener.onFidChanged(updatedPrefs.getFirebaseInstallationId());
     }
   }
 

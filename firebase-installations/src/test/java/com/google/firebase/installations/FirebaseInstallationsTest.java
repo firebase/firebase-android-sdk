@@ -74,6 +74,7 @@ public class FirebaseInstallationsTest {
   @Mock private RandomFidGenerator mockFidGenerator;
 
   public static final String TEST_FID_1 = "cccccccccccccccccccccc";
+  public static final String TEST_FID_2 = "dccccccccccccccccccccd";
 
   public static final String TEST_PROJECT_ID = "777777777777";
 
@@ -451,6 +452,40 @@ public class FirebaseInstallationsTest {
 
     IidStore iidStore = new IidStore(prefs, "123");
     assertThat(iidStore.readToken(), equalTo("thetoken"));
+  }
+
+  @Test
+  public void testFidListener_fidChanged_successful() throws Exception {
+    when(mockIidStore.readIid()).thenReturn(null);
+    when(mockIidStore.readToken()).thenReturn(null);
+    when(mockBackend.createFirebaseInstallation(
+            anyString(), anyString(), anyString(), anyString(), any()))
+        .thenReturn(
+            TEST_INSTALLATION_RESPONSE
+                .toBuilder()
+                .setUri("/projects/" + TEST_PROJECT_ID + "/installations/" + TEST_FID_2)
+                .setFid(TEST_FID_2)
+                .build());
+
+    FakeFidListener fidListener = new FakeFidListener();
+    // Register the FidListener
+    firebaseInstallations.registerFidListener(fidListener);
+
+    // Do the actual getId() call under test.
+    // Confirm both that it returns the expected ID, as does reading the prefs from storage.
+    TestOnCompleteListener<String> onCompleteListener = new TestOnCompleteListener<>();
+    Task<String> task = firebaseInstallations.getId();
+    task.addOnCompleteListener(executor, onCompleteListener);
+    String fid = onCompleteListener.await();
+    assertWithMessage("getId Task failed.").that(fid).isEqualTo(TEST_FID_1);
+
+    // Waiting for Task that registers FID on the FIS Servers
+    executor.awaitTermination(500, TimeUnit.MILLISECONDS);
+    PersistedInstallationEntry entry = persistedInstallation.readPersistedInstallationEntryValue();
+    assertThat(entry.getFirebaseInstallationId(), equalTo(TEST_FID_2));
+
+    // Verify FidListener receives fid changes.
+    assertThat(fidListener.getLatestFid(), equalTo(TEST_FID_2));
   }
 
   @Test
