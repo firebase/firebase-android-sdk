@@ -41,7 +41,7 @@ import org.junit.runners.JUnit4;
 public class DefaultHeartBeatInfoTest {
   private String testSdk = "fire-test";
   private ExecutorService executor;
-  private TestOnCompleteListener<Boolean> storeOnCompleteListener;
+  private TestOnCompleteListener<Void> storeOnCompleteListener;
   private TestOnCompleteListener<List<HeartBeatResult>> getOnCompleteListener;
   private HeartBeatInfoStorage storage = mock(HeartBeatInfoStorage.class);
   private final Set<HeartBeatConsumer> logSources =

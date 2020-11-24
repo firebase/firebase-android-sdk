@@ -115,9 +115,9 @@ public class DefaultHeartBeatInfo implements HeartBeatInfo {
   }
 
   @Override
-  public Task storeHeartBeatInfo(@NonNull String heartBeatTag) {
+  public Task<Void> storeHeartBeatInfo(@NonNull String heartBeatTag) {
     if (consumers.size() <= 0) {
-      return Tasks.forResult(true);
+      return Tasks.forResult(null);
     }
     return Tasks.call(
         backgroundExecutor,
@@ -126,9 +126,9 @@ public class DefaultHeartBeatInfo implements HeartBeatInfo {
           boolean shouldSendSdkHB =
               storageProvider.get().shouldSendSdkHeartBeat(heartBeatTag, presentTime);
           if (shouldSendSdkHB) {
-              storageProvider.get().storeHeartBeatInformation(heartBeatTag, presentTime);
+            storageProvider.get().storeHeartBeatInformation(heartBeatTag, presentTime);
           }
-          return true;
+          return null;
         });
   }
 
