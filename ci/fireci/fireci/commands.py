@@ -72,12 +72,7 @@ def smoke_tests(app_build_variant, test_apps_dir):
 def api_information(auth_token, repo_name, issue_number):
   """Comments the api information on the pr"""
 
-  try:
-  	gradle.run('apiInformation')
-  except:
-  	# apiInformation task fails when there is a diff in api surface.
-  	# Even if this fails we would need to comment information on github PR
-  	pass
+  gradle.run('apiInformation', '--continue', check=False)
 
   dir_suffix = 'build/apiinfo'
   comment_string = ""
