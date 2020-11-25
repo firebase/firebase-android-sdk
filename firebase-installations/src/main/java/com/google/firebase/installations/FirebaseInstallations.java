@@ -29,6 +29,7 @@ import com.google.firebase.heartbeatinfo.HeartBeatInfo;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsException.Status;
 import com.google.firebase.installations.internal.FidListener;
+import com.google.firebase.installations.internal.HandleFidListener;
 import com.google.firebase.installations.local.IidStore;
 import com.google.firebase.installations.local.PersistedInstallation;
 import com.google.firebase.installations.local.PersistedInstallationEntry;
@@ -38,8 +39,10 @@ import com.google.firebase.installations.remote.TokenResult;
 import com.google.firebase.platforminfo.UserAgentPublisher;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
@@ -74,7 +77,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   private String cachedFid;
 
   @GuardedBy("this")
-  private List<FidListener> fidListeners = new ArrayList<>();
+  private Set<FidListener> fidListeners = new HashSet<>();
 
   @GuardedBy("lock")
   private final List<StateListener> listeners = new ArrayList<>();
@@ -276,9 +279,18 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   }
 
   /** Register a callback {@link FidListener} to receive fid changes. */
+  @NonNull
   @Override
-  public synchronized void registerFidListener(@NonNull FidListener listener) {
+  public synchronized HandleFidListener registerFidListener(@NonNull FidListener listener) {
     this.fidListeners.add(listener);
+    return new HandleFidListener() {
+      @Override
+      public void unregister(FidListener fidListener) {
+        if (fidListeners.contains(fidListener)) {
+          fidListeners.remove(fidListener);
+        }
+      }
+    };
   }
 
   private Task<String> addGetIdListener() {
