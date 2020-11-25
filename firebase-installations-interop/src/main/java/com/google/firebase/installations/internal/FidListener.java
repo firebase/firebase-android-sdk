@@ -17,17 +17,13 @@ package com.google.firebase.installations.internal;
 import androidx.annotation.NonNull;
 
 /**
- * <aside class="warning"><strong>Provides an inter-operational interface only</strong>; instead,
- * use {@link FidListener} to call a listener when a Fid changes.</aside>
+ * Provides a call-back interface {@link FidListener} that updates on Fid changes.
  *
  * @hide
  */
 public interface FidListener {
   /**
-   * <aside class="warning">Provides an inter-operational interface only; instead use {@link
-   * FidListener}.</aside>
-   *
-   * <p>This method gets invoked when a Fid changes.
+   * This method gets invoked when a Fid changes.
    *
    * @param fid represents the newly generated installation id.
    */

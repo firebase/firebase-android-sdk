@@ -16,6 +16,7 @@ package com.google.firebase.installations;
 
 import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.annotations.DeferredApi;
 import com.google.firebase.installations.internal.FidListener;
 
 /**
@@ -59,5 +60,6 @@ public interface FirebaseInstallationsApi {
    * @param listener implementation of the {@code FidListener} to handle fid changes.
    * @hide
    */
-  void registerFidListener(FidListener listener);
+  @DeferredApi
+  void registerFidListener(@NonNull FidListener listener);
 }

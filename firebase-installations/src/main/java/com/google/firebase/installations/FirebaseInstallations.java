@@ -74,7 +74,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   private String cachedFid;
 
   @GuardedBy("this")
-  private FidListener fidListener;
+  private List<FidListener> fidListeners = new ArrayList<>();
 
   @GuardedBy("lock")
   private final List<StateListener> listeners = new ArrayList<>();
@@ -277,10 +277,8 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
   /** Register a callback {@link FidListener} to receive fid changes. */
   @Override
-  public void registerFidListener(@Nullable FidListener listener) {
-    synchronized (this) {
-      this.fidListener = listener;
-    }
+  public synchronized void registerFidListener(@NonNull FidListener listener) {
+    this.fidListeners.add(listener);
   }
 
   private Task<String> addGetIdListener() {
@@ -410,9 +408,12 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
   private synchronized void updateFidListener(
       PersistedInstallationEntry prefs, PersistedInstallationEntry updatedPrefs) {
-    if (fidListener != null
+    if (fidListeners.size() != 0
         && !prefs.getFirebaseInstallationId().equals(updatedPrefs.getFirebaseInstallationId())) {
-      fidListener.onFidChanged(updatedPrefs.getFirebaseInstallationId());
+      // Update all the registered FidListener about fid changes.
+      for (FidListener listener : fidListeners) {
+        listener.onFidChanged(updatedPrefs.getFirebaseInstallationId());
+      }
     }
   }
 
