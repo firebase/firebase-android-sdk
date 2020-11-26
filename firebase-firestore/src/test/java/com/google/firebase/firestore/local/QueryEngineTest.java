@@ -126,7 +126,7 @@ public class QueryEngineTest {
         });
   }
 
-  private <T> T expectOptimizedCollectionQuery(Callable<T> c) throws Exception {
+  private <T> T expectOptimizedCollectionScan(Callable<T> c) throws Exception {
     try {
       expectFullCollectionScan = false;
       return c.call();
@@ -135,7 +135,7 @@ public class QueryEngineTest {
     }
   }
 
-  private <T> T expectFullCollectionQuery(Callable<T> c) throws Exception {
+  private <T> T expectFullCollectionScan(Callable<T> c) throws Exception {
     try {
       expectFullCollectionScan = true;
       return c.call();
@@ -167,7 +167,7 @@ public class QueryEngineTest {
     persistQueryMapping(MATCHING_DOC_A.getKey(), MATCHING_DOC_B.getKey());
 
     DocumentSet docs =
-        expectOptimizedCollectionQuery(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
+        expectOptimizedCollectionScan(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
     assertEquals(docSet(query.comparator(), MATCHING_DOC_A, MATCHING_DOC_B), docs);
   }
 
@@ -182,7 +182,7 @@ public class QueryEngineTest {
     addDocument(PENDING_NON_MATCHING_DOC_A);
 
     DocumentSet docs =
-        expectOptimizedCollectionQuery(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
+        expectOptimizedCollectionScan(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
     assertEquals(docSet(query.comparator(), MATCHING_DOC_B), docs);
   }
 
@@ -194,12 +194,12 @@ public class QueryEngineTest {
     persistQueryMapping(MATCHING_DOC_A.getKey(), MATCHING_DOC_B.getKey());
 
     DocumentSet docs =
-        expectOptimizedCollectionQuery(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
+        expectOptimizedCollectionScan(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
     assertEquals(docSet(query.comparator(), MATCHING_DOC_A, MATCHING_DOC_B), docs);
 
     addDocument(UPDATED_MATCHING_DOC_B);
 
-    docs = expectOptimizedCollectionQuery(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
+    docs = expectOptimizedCollectionScan(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
     assertEquals(docSet(query.comparator(), MATCHING_DOC_A, UPDATED_MATCHING_DOC_B), docs);
   }
 
@@ -207,14 +207,14 @@ public class QueryEngineTest {
   public void doesNotUseInitialResultsWithoutLimboFreeSnapshotVersion() throws Exception {
     Query query = query("coll").filter(filter("matches", "==", true));
     DocumentSet docs =
-        expectFullCollectionQuery(() -> runQuery(query, MISSING_LAST_LIMBO_FREE_SNAPSHOT));
+        expectFullCollectionScan(() -> runQuery(query, MISSING_LAST_LIMBO_FREE_SNAPSHOT));
     assertEquals(docSet(query.comparator()), docs);
   }
 
   @Test
   public void doesNotUseInitialResultsForUnfilteredCollectionQuery() throws Exception {
     Query query = query("coll");
-    DocumentSet docs = expectFullCollectionQuery(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
+    DocumentSet docs = expectFullCollectionScan(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
     assertEquals(docSet(query.comparator()), docs);
   }
 
@@ -229,7 +229,7 @@ public class QueryEngineTest {
 
     addDocument(MATCHING_DOC_B);
 
-    DocumentSet docs = expectFullCollectionQuery(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
+    DocumentSet docs = expectFullCollectionScan(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
     assertEquals(docSet(query.comparator(), MATCHING_DOC_B), docs);
   }
 
@@ -248,7 +248,7 @@ public class QueryEngineTest {
 
     addDocument(MATCHING_DOC_B);
 
-    DocumentSet docs = expectFullCollectionQuery(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
+    DocumentSet docs = expectFullCollectionScan(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
     assertEquals(docSet(query.comparator(), MATCHING_DOC_B), docs);
   }
 
@@ -268,7 +268,7 @@ public class QueryEngineTest {
 
     addDocument(MATCHING_DOC_B);
 
-    DocumentSet docs = expectFullCollectionQuery(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
+    DocumentSet docs = expectFullCollectionScan(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
     assertEquals(docSet(query.comparator(), MATCHING_DOC_B), docs);
   }
 
@@ -288,7 +288,7 @@ public class QueryEngineTest {
 
     addDocument(MATCHING_DOC_B);
 
-    DocumentSet docs = expectFullCollectionQuery(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
+    DocumentSet docs = expectFullCollectionScan(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
     assertEquals(docSet(query.comparator(), MATCHING_DOC_B), docs);
   }
 
@@ -308,7 +308,7 @@ public class QueryEngineTest {
 
     addDocument(MATCHING_DOC_B);
 
-    DocumentSet docs = expectFullCollectionQuery(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
+    DocumentSet docs = expectFullCollectionScan(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
     assertEquals(docSet(query.comparator(), MATCHING_DOC_B), docs);
   }
 
@@ -328,7 +328,7 @@ public class QueryEngineTest {
 
     addDocument(MATCHING_DOC_B);
 
-    DocumentSet docs = expectFullCollectionQuery(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
+    DocumentSet docs = expectFullCollectionScan(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
     assertEquals(docSet(query.comparator(), MATCHING_DOC_B), docs);
   }
 
@@ -347,7 +347,7 @@ public class QueryEngineTest {
     // written prior to query execution still sort after "coll/b"), we should use an Index-Free
     // query.
     DocumentSet docs =
-        expectOptimizedCollectionQuery(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
+        expectOptimizedCollectionScan(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
     assertEquals(
         docSet(
             query.comparator(),
