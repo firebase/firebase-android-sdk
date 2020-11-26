@@ -1,0 +1,39 @@
+syntax = "proto3";
+package encoders.proto.tests;
+
+option java_package = "com.google.firebase.encoders.proto.tests";
+option java_multiple_files = true;
+
+message SimpleProto {
+  int32 i32 = 1;
+  int64 i64 = 2;
+  float float = 3;
+  double double = 4;
+
+  uint32 ui32 = 5;
+  uint64 ui64 = 6;
+
+  sint32 si32 = 7;
+  sint64 si64 = 8;
+}
+
+message FixedProto {
+  fixed32 f32 = 1;
+  sfixed32 sf32 = 2;
+
+  fixed64 f64 = 3;
+  sfixed64 sf64 = 4;
+}
+
+message OtherTypesProto {
+  string str = 1;
+  bytes bts = 2;
+  bool bl = 3;
+}
+
+message WithCollectionsProto {
+  string value = 1;
+  map<string, FixedProto> my_map = 2;
+
+  repeated OtherTypesProto other_types = 3;
+}
