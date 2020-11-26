@@ -45,7 +45,7 @@ import org.robolectric.annotation.Config;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
-public class IndexFreeQueryEngineTest {
+public class QueryEngineTest {
 
   private static final int TEST_TARGET_ID = 1;
 
@@ -72,15 +72,15 @@ public class IndexFreeQueryEngineTest {
   private TargetCache targetCache;
   private QueryEngine queryEngine;
 
-  private @Nullable Boolean expectIndexFreeExecution;
+  private @Nullable Boolean expectFullCollectionScan;
 
   @Before
   public void setUp() {
-    expectIndexFreeExecution = null;
+    expectFullCollectionScan = null;
 
     persistence = MemoryPersistence.createEagerGcMemoryPersistence();
     targetCache = new MemoryTargetCache(persistence);
-    queryEngine = new IndexFreeQueryEngine();
+    queryEngine = new DefaultQueryEngine();
 
     remoteDocumentCache = persistence.getRemoteDocumentCache();
 
@@ -94,8 +94,8 @@ public class IndexFreeQueryEngineTest {
               Query query, SnapshotVersion sinceReadTime) {
             assertEquals(
                 "Observed query execution mode did not match expectation",
-                expectIndexFreeExecution,
-                !SnapshotVersion.NONE.equals(sinceReadTime));
+                expectFullCollectionScan,
+                SnapshotVersion.NONE.equals(sinceReadTime));
             return super.getDocumentsMatchingQuery(query, sinceReadTime);
           }
         };
@@ -126,28 +126,28 @@ public class IndexFreeQueryEngineTest {
         });
   }
 
-  private <T> T expectIndexFreeQuery(Callable<T> c) throws Exception {
+  private <T> T expectOptimizedCollectionScan(Callable<T> c) throws Exception {
     try {
-      expectIndexFreeExecution = true;
+      expectFullCollectionScan = false;
       return c.call();
     } finally {
-      expectIndexFreeExecution = null;
+      expectFullCollectionScan = null;
     }
   }
 
-  private <T> T expectFullCollectionQuery(Callable<T> c) throws Exception {
+  private <T> T expectFullCollectionScan(Callable<T> c) throws Exception {
     try {
-      expectIndexFreeExecution = false;
+      expectFullCollectionScan = true;
       return c.call();
     } finally {
-      expectIndexFreeExecution = null;
+      expectFullCollectionScan = null;
     }
   }
 
   private DocumentSet runQuery(Query query, SnapshotVersion lastLimboFreeSnapshotVersion) {
     Preconditions.checkNotNull(
-        expectIndexFreeExecution,
-        "Encountered runQuery() call not wrapped in expectIndexFreeQuery()/expectFullCollectionQuery()");
+        expectFullCollectionScan,
+        "Encountered runQuery() call not wrapped in expectOptimizedCollectionQuery()/expectFullCollectionQuery()");
     ImmutableSortedMap<DocumentKey, Document> docs =
         queryEngine.getDocumentsMatchingQuery(
             query,
@@ -166,7 +166,8 @@ public class IndexFreeQueryEngineTest {
     addDocument(MATCHING_DOC_A, MATCHING_DOC_B);
     persistQueryMapping(MATCHING_DOC_A.getKey(), MATCHING_DOC_B.getKey());
 
-    DocumentSet docs = expectIndexFreeQuery(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
+    DocumentSet docs =
+        expectOptimizedCollectionScan(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
     assertEquals(docSet(query.comparator(), MATCHING_DOC_A, MATCHING_DOC_B), docs);
   }
 
@@ -180,7 +181,8 @@ public class IndexFreeQueryEngineTest {
     // Add a mutated document that is not yet part of query's set of remote keys.
     addDocument(PENDING_NON_MATCHING_DOC_A);
 
-    DocumentSet docs = expectIndexFreeQuery(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
+    DocumentSet docs =
+        expectOptimizedCollectionScan(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
     assertEquals(docSet(query.comparator(), MATCHING_DOC_B), docs);
   }
 
@@ -191,12 +193,13 @@ public class IndexFreeQueryEngineTest {
     addDocument(MATCHING_DOC_A, MATCHING_DOC_B);
     persistQueryMapping(MATCHING_DOC_A.getKey(), MATCHING_DOC_B.getKey());
 
-    DocumentSet docs = expectIndexFreeQuery(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
+    DocumentSet docs =
+        expectOptimizedCollectionScan(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
     assertEquals(docSet(query.comparator(), MATCHING_DOC_A, MATCHING_DOC_B), docs);
 
     addDocument(UPDATED_MATCHING_DOC_B);
 
-    docs = expectIndexFreeQuery(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
+    docs = expectOptimizedCollectionScan(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
     assertEquals(docSet(query.comparator(), MATCHING_DOC_A, UPDATED_MATCHING_DOC_B), docs);
   }
 
@@ -204,14 +207,14 @@ public class IndexFreeQueryEngineTest {
   public void doesNotUseInitialResultsWithoutLimboFreeSnapshotVersion() throws Exception {
     Query query = query("coll").filter(filter("matches", "==", true));
     DocumentSet docs =
-        expectFullCollectionQuery(() -> runQuery(query, MISSING_LAST_LIMBO_FREE_SNAPSHOT));
+        expectFullCollectionScan(() -> runQuery(query, MISSING_LAST_LIMBO_FREE_SNAPSHOT));
     assertEquals(docSet(query.comparator()), docs);
   }
 
   @Test
   public void doesNotUseInitialResultsForUnfilteredCollectionQuery() throws Exception {
     Query query = query("coll");
-    DocumentSet docs = expectFullCollectionQuery(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
+    DocumentSet docs = expectFullCollectionScan(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
     assertEquals(docSet(query.comparator()), docs);
   }
 
@@ -226,7 +229,7 @@ public class IndexFreeQueryEngineTest {
 
     addDocument(MATCHING_DOC_B);
 
-    DocumentSet docs = expectFullCollectionQuery(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
+    DocumentSet docs = expectFullCollectionScan(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
     assertEquals(docSet(query.comparator(), MATCHING_DOC_B), docs);
   }
 
@@ -245,7 +248,7 @@ public class IndexFreeQueryEngineTest {
 
     addDocument(MATCHING_DOC_B);
 
-    DocumentSet docs = expectFullCollectionQuery(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
+    DocumentSet docs = expectFullCollectionScan(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
     assertEquals(docSet(query.comparator(), MATCHING_DOC_B), docs);
   }
 
@@ -265,7 +268,7 @@ public class IndexFreeQueryEngineTest {
 
     addDocument(MATCHING_DOC_B);
 
-    DocumentSet docs = expectFullCollectionQuery(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
+    DocumentSet docs = expectFullCollectionScan(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
     assertEquals(docSet(query.comparator(), MATCHING_DOC_B), docs);
   }
 
@@ -285,7 +288,7 @@ public class IndexFreeQueryEngineTest {
 
     addDocument(MATCHING_DOC_B);
 
-    DocumentSet docs = expectFullCollectionQuery(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
+    DocumentSet docs = expectFullCollectionScan(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
     assertEquals(docSet(query.comparator(), MATCHING_DOC_B), docs);
   }
 
@@ -305,7 +308,7 @@ public class IndexFreeQueryEngineTest {
 
     addDocument(MATCHING_DOC_B);
 
-    DocumentSet docs = expectFullCollectionQuery(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
+    DocumentSet docs = expectFullCollectionScan(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
     assertEquals(docSet(query.comparator(), MATCHING_DOC_B), docs);
   }
 
@@ -325,7 +328,7 @@ public class IndexFreeQueryEngineTest {
 
     addDocument(MATCHING_DOC_B);
 
-    DocumentSet docs = expectFullCollectionQuery(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
+    DocumentSet docs = expectFullCollectionScan(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
     assertEquals(docSet(query.comparator(), MATCHING_DOC_B), docs);
   }
 
@@ -343,7 +346,8 @@ public class IndexFreeQueryEngineTest {
     // Since the last document in the limit didn't change (and hence we know that all documents
     // written prior to query execution still sort after "coll/b"), we should use an Index-Free
     // query.
-    DocumentSet docs = expectIndexFreeQuery(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
+    DocumentSet docs =
+        expectOptimizedCollectionScan(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
     assertEquals(
         docSet(
             query.comparator(),
