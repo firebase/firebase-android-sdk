@@ -219,7 +219,7 @@ public class EncodableProcessorTest {
     assertThat(result)
         .generatedSourceFile("AutoWithOptionalEncoder")
         .contentsAsUtf8String()
-        .contains("\"hello\", value.getOptional().orElse(null)");
+        .contains("HELLO_DESCRIPTOR, value.getOptional().orElse(null)");
   }
 
   @Test
@@ -465,6 +465,38 @@ public class EncodableProcessorTest {
         .generatedSourceFile("AutoOuterTypeEncoder")
         .contentsAsUtf8String()
         .contains("ctx.inline(value.getMember());");
+  }
+
+  @Test
+  public void compile_withExtraProperty_annotation_shouldIncludeThePropertyInFieldDescriptor() {
+    Compilation result =
+        javac()
+            .withProcessors(new EncodableProcessor(), new ExtraPropertyProcessor())
+            .compile(
+                JavaFileObjects.forSourceLines(
+                    "com.example.MyAnnotation",
+                    "package com.example;",
+                    "import com.google.firebase.encoders.annotations.ExtraProperty;",
+                    "@ExtraProperty",
+                    "@java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME)",
+                    "public @interface MyAnnotation {",
+                    "  int value();",
+                    "  boolean myBool() default true;",
+                    "}"),
+                JavaFileObjects.forSourceLines(
+                    "MyClass",
+                    "import com.google.firebase.encoders.annotations.Encodable;",
+                    "@Encodable",
+                    "class MyClass {",
+                    "@com.example.MyAnnotation(42)",
+                    "public String getHello() { return null; }",
+                    "}"));
+
+    assertThat(result).succeededWithoutWarnings();
+    assertThat(result)
+        .generatedSourceFile("AutoMyClassEncoder")
+        .hasSourceEquivalentTo(
+            JavaFileObjects.forResource("ExpectedMyClassEncoderWithExtraProperty.java"));
   }
 
   @Test
