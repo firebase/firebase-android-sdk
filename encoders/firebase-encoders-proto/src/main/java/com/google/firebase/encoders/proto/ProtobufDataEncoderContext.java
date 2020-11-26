@@ -28,7 +28,6 @@ import java.nio.ByteOrder;
 import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.Map;
-import java.util.Map.Entry;
 
 final class ProtobufDataEncoderContext implements ObjectEncoderContext {
   private static final Charset UTF_8 = Charset.forName("UTF-8");
@@ -124,7 +123,7 @@ final class ProtobufDataEncoderContext implements ObjectEncoderContext {
     if (obj instanceof Map) {
       @SuppressWarnings("unchecked")
       Map<Object, Object> map = (Map<Object, Object>) obj;
-      for (Entry<Object, Object> entry : map.entrySet()) {
+      for (Map.Entry<Object, Object> entry : map.entrySet()) {
         doEncode(DEFAULT_MAP_ENCODER, field, entry);
       }
       return this;
