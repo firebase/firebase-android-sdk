@@ -49,6 +49,14 @@ class ProtobufValueEncoderContext implements ValueEncoderContext {
 
   @NonNull
   @Override
+  public ValueEncoderContext add(float value) throws IOException {
+    checkNotUsed();
+    objEncoderCtx.add(field, value);
+    return this;
+  }
+
+  @NonNull
+  @Override
   public ValueEncoderContext add(double value) throws IOException {
     checkNotUsed();
     objEncoderCtx.add(field, value);
