@@ -173,6 +173,14 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
 
   @NonNull
   @Override
+  public JsonValueObjectEncoderContext add(float value) throws IOException {
+    maybeUnNest();
+    jsonWriter.value(value);
+    return this;
+  }
+
+  @NonNull
+  @Override
   public JsonValueObjectEncoderContext add(double value) throws IOException {
     maybeUnNest();
     jsonWriter.value(value);

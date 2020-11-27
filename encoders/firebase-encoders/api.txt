@@ -51,6 +51,7 @@ package com.google.firebase.encoders {
 
   public interface ValueEncoderContext {
     method @NonNull public com.google.firebase.encoders.ValueEncoderContext add(@Nullable String);
+    method @NonNull public com.google.firebase.encoders.ValueEncoderContext add(float);
     method @NonNull public com.google.firebase.encoders.ValueEncoderContext add(double);
     method @NonNull public com.google.firebase.encoders.ValueEncoderContext add(int);
     method @NonNull public com.google.firebase.encoders.ValueEncoderContext add(long);
