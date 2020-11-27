@@ -78,7 +78,7 @@ tests may be used to support changes.
 These are tests that run on your machine's local Java Virtual Machine (JVM). At
 runtime, these tests are executed against a modified version of android.jar
 where all final modifiers have been stripped off. This lets us sandbox behaviors
-at desired places and uses popular mocking libraries.
+at desired places and use popular mocking libraries.
 
 Unit tests can be executed on the command line by running
 ```bash
@@ -167,7 +167,7 @@ they can't be proguarded.
 
 APIs that are intended to be used by Firebase SDKs should be annotated with
 `@KeepForSdk`. The key benefit here is that the annotation is *blessed* to throw
-linter errors on Android Studio when used by the developer from a non-firebase
+linter errors on Android Studio if used by the developer from a non-firebase
 package, thereby providing a valuable guard rail.
 
 
@@ -192,9 +192,8 @@ to be honored during the app's proguarding phase.
 
 As a best practice, these explicit rules should be scoped to only libraries
 whose source code is outside the firebase-android-sdk codebase making annotation
-based approaches insufficient. The combination of keep rules resulting from the
-annotations and the proguard.txt collectively determine the
-APIs that are preserved at **runtime**.
+based approaches insufficient.The combination of keep rules resulting from the annotations, 
+the preguard.txt and the proguard.txt collectively determine the APIs that are preserved at **runtime**.
 
 ## Publishing
 
@@ -247,7 +246,7 @@ it by commenting out its reference in [subprojects.cfg](subprojects.cfg).
 
 ### Code Formatting
 
-The Code in this repo is formatted with the google-java-format tool. You can enable
+Code in this repo is formatted with the google-java-format tool. You can enable
 this formatting in Android Studio by downloading and installing the
 [google-java-format plugin](https://github.com/google/google-java-format).
 The plugin is disabled by default, but the repo contains configuration information
