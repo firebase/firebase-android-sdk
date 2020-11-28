@@ -14,6 +14,7 @@ dependencies:
   * `firebase-database-ktx`
   * `firebase-database-collection`
   * `firebase-datatransport`
+  * `firebase-dynamic-links`
   * `firebase-firestore`
   * `firebase-firestore-ktx`
   * `firebase-functions`
