@@ -18,7 +18,7 @@ import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.annotations.DeferredApi;
 import com.google.firebase.installations.internal.FidListener;
-import com.google.firebase.installations.internal.HandleFidListener;
+import com.google.firebase.installations.internal.FidListenerHandle;
 
 /**
  * This is an interface of {@code FirebaseInstallations} that is only exposed to 2p via component
@@ -62,5 +62,5 @@ public interface FirebaseInstallationsApi {
    * @hide
    */
   @DeferredApi
-  HandleFidListener registerFidListener(@NonNull FidListener listener);
+  FidListenerHandle registerFidListener(@NonNull FidListener listener);
 }

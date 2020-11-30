@@ -15,16 +15,17 @@
 package com.google.firebase.installations.internal;
 
 /**
- * Interface for un-registering a previously registered listener.
+ * Interface for un-registering a previously registered listener {@link FidListener}.
  *
  * @hide
  */
-public interface HandleFidListener {
+public interface FidListenerHandle {
 
   /**
-   * Unregisters a previously registered {@link FidListener}.
+   * Unregisters a previously registered {@link FidListener} being tracked by this {@code
+   * FidListenerHandle}. After the initial call, subsequent calls have no effect.
    *
    * @hide
    */
-  void unregister(FidListener fidListener);
+  void unregister();
 }

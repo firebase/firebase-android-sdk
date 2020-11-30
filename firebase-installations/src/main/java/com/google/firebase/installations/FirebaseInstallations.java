@@ -29,7 +29,7 @@ import com.google.firebase.heartbeatinfo.HeartBeatInfo;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsException.Status;
 import com.google.firebase.installations.internal.FidListener;
-import com.google.firebase.installations.internal.HandleFidListener;
+import com.google.firebase.installations.internal.FidListenerHandle;
 import com.google.firebase.installations.local.IidStore;
 import com.google.firebase.installations.local.PersistedInstallation;
 import com.google.firebase.installations.local.PersistedInstallationEntry;
@@ -281,13 +281,13 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   /** Register a callback {@link FidListener} to receive fid changes. */
   @NonNull
   @Override
-  public synchronized HandleFidListener registerFidListener(@NonNull FidListener listener) {
+  public synchronized FidListenerHandle registerFidListener(@NonNull FidListener listener) {
     this.fidListeners.add(listener);
-    return new HandleFidListener() {
+    return new FidListenerHandle() {
       @Override
-      public void unregister(FidListener fidListener) {
-        if (fidListeners.contains(fidListener)) {
-          fidListeners.remove(fidListener);
+      public synchronized void unregister() {
+        if (fidListeners.contains(listener)) {
+          fidListeners.remove(listener);
         }
       }
     };
