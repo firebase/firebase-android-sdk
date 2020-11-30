@@ -32,7 +32,6 @@ import com.google.firebase.crashlytics.internal.log.LogFileManager;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.settings.SettingsDataProvider;
 import com.google.firebase.crashlytics.internal.settings.TestSettingsData;
-import com.google.firebase.crashlytics.internal.settings.model.AppSettingsData;
 import com.google.firebase.crashlytics.internal.settings.model.SettingsData;
 import com.google.firebase.crashlytics.internal.unity.UnityVersionProvider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
@@ -52,7 +51,6 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
   private SettingsDataProvider testSettingsDataProvider;
   private FileStore mockFileStore;
   private File testFilesDirectory;
-  private AppSettingsData appSettingsData;
   private SessionReportingCoordinator mockSessionReportingCoordinator;
   private DataCollectionArbiter mockDataCollectionArbiter;
 
@@ -79,7 +77,6 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
             3,
             DataTransportState.REPORT_UPLOAD_VARIANT_LEGACY,
             DataTransportState.REPORT_UPLOAD_VARIANT_LEGACY);
-    appSettingsData = testSettingsData.appData;
 
     mockSessionReportingCoordinator = mock(SessionReportingCoordinator.class);
 

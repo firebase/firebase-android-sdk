@@ -54,15 +54,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @SuppressWarnings("PMD")
 class CrashlyticsController {
 
-  static final String SESSION_USER_TAG = "SessionUser";
-  static final String SESSION_NON_FATAL_TAG = "SessionEvent";
-  static final String SESSION_FATAL_TAG = "SessionCrash";
-  static final String SESSION_APP_TAG = "SessionApp";
-  static final String SESSION_OS_TAG = "SessionOS";
-  static final String SESSION_DEVICE_TAG = "SessionDevice";
-  static final String SESSION_BEGIN_TAG = "BeginSession";
-  static final String SESSION_EVENT_MISSING_BINARY_IMGS_TAG = "SessionMissingBinaryImages";
-
   static final String FIREBASE_CRASH_TYPE = "fatal";
   static final String FIREBASE_TIMESTAMP = "timestamp";
   static final String FIREBASE_APPLICATION_EXCEPTION = "_ae";
@@ -83,14 +74,6 @@ class CrashlyticsController {
         }
       };
 
-  static final Comparator<File> LARGEST_FILE_NAME_FIRST =
-      new Comparator<File>() {
-        @Override
-        public int compare(File file1, File file2) {
-          return file2.getName().compareTo(file1.getName());
-        }
-      };
-
   static final Comparator<File> SMALLEST_FILE_NAME_FIRST =
       new Comparator<File>() {
         @Override
@@ -101,8 +84,6 @@ class CrashlyticsController {
 
   // endregion
 
-  static final String NONFATAL_SESSION_DIR = "nonfatal-sessions";
-  static final String FATAL_SESSION_DIR = "fatal-sessions";
   static final String NATIVE_SESSION_DIR = "native-sessions";
 
   static final int FIREBASE_CRASH_TYPE_FATAL = 1;
