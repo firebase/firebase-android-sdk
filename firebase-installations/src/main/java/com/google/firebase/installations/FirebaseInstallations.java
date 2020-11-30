@@ -278,7 +278,11 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     return Tasks.call(backgroundExecutor, this::deleteFirebaseInstallationId);
   }
 
-  /** Register a callback {@link FidListener} to receive fid changes. */
+  /**
+   * Register a callback {@link FidListener} to receive fid changes.
+   *
+   * @hide
+   */
   @NonNull
   @Override
   public synchronized FidListenerHandle registerFidListener(@NonNull FidListener listener) {
