@@ -72,11 +72,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
     when(mockFileStore.getFilesDir()).thenReturn(testFilesDirectory);
     when(mockFileStore.getFilesDirPath()).thenReturn(testFilesDirectory.getPath());
 
-    final SettingsData testSettingsData =
-        new TestSettingsData(
-            3,
-            DataTransportState.REPORT_UPLOAD_VARIANT_LEGACY,
-            DataTransportState.REPORT_UPLOAD_VARIANT_LEGACY);
+    final SettingsData testSettingsData = new TestSettingsData(3);
 
     mockSessionReportingCoordinator = mock(SessionReportingCoordinator.class);
 
@@ -382,8 +378,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
 
   public void testUploadWithDataCollectionAlwaysEnabled() throws Exception {
     when(mockSessionReportingCoordinator.hasReportsToSend()).thenReturn(true);
-    when(mockSessionReportingCoordinator.sendReports(
-            any(Executor.class), any(DataTransportState.class)))
+    when(mockSessionReportingCoordinator.sendReports(any(Executor.class)))
         .thenReturn(Tasks.forResult(null));
 
     final CrashlyticsController controller = createController();
@@ -395,15 +390,13 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
 
     verify(mockSessionReportingCoordinator).hasReportsToSend();
     verify(mockDataCollectionArbiter).isAutomaticDataCollectionEnabled();
-    verify(mockSessionReportingCoordinator)
-        .sendReports(any(Executor.class), eq(DataTransportState.NONE));
+    verify(mockSessionReportingCoordinator).sendReports(any(Executor.class));
     verifyNoMoreInteractions(mockSessionReportingCoordinator);
   }
 
   public void testUploadDisabledThenOptIn() throws Exception {
     when(mockSessionReportingCoordinator.hasReportsToSend()).thenReturn(true);
-    when(mockSessionReportingCoordinator.sendReports(
-            any(Executor.class), any(DataTransportState.class)))
+    when(mockSessionReportingCoordinator.sendReports(any(Executor.class)))
         .thenReturn(Tasks.forResult(null));
 
     final DataCollectionArbiter arbiter = mock(DataCollectionArbiter.class);
@@ -422,21 +415,18 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
 
     verify(arbiter).isAutomaticDataCollectionEnabled();
     verify(mockSessionReportingCoordinator).hasReportsToSend();
-    verify(mockSessionReportingCoordinator, never())
-        .sendReports(any(Executor.class), any(DataTransportState.class));
+    verify(mockSessionReportingCoordinator, never()).sendReports(any(Executor.class));
 
     await(controller.sendUnsentReports());
     await(task);
 
-    verify(mockSessionReportingCoordinator)
-        .sendReports(any(Executor.class), eq(DataTransportState.NONE));
+    verify(mockSessionReportingCoordinator).sendReports(any(Executor.class));
     verifyNoMoreInteractions(mockSessionReportingCoordinator);
   }
 
   public void testUploadDisabledThenOptOut() throws Exception {
     when(mockSessionReportingCoordinator.hasReportsToSend()).thenReturn(true);
-    when(mockSessionReportingCoordinator.sendReports(
-            any(Executor.class), any(DataTransportState.class)))
+    when(mockSessionReportingCoordinator.sendReports(any(Executor.class)))
         .thenReturn(Tasks.forResult(null));
 
     DataCollectionArbiter arbiter = mock(DataCollectionArbiter.class);
@@ -464,8 +454,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
 
   public void testUploadDisabledThenEnabled() throws Exception {
     when(mockSessionReportingCoordinator.hasReportsToSend()).thenReturn(true);
-    when(mockSessionReportingCoordinator.sendReports(
-            any(Executor.class), any(DataTransportState.class)))
+    when(mockSessionReportingCoordinator.sendReports(any(Executor.class)))
         .thenReturn(Tasks.forResult(null));
 
     // Mock the DataCollectionArbiter dependencies.
@@ -495,8 +484,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
         controller.submitAllReports(1.0f, testSettingsDataProvider.getAppSettings());
 
     verify(mockSessionReportingCoordinator).hasReportsToSend();
-    verify(mockSessionReportingCoordinator, never())
-        .sendReports(any(Executor.class), any(DataTransportState.class));
+    verify(mockSessionReportingCoordinator, never()).sendReports(any(Executor.class));
 
     arbiter.setCrashlyticsDataCollectionEnabled(true);
     assertTrue(arbiter.isAutomaticDataCollectionEnabled());
@@ -517,8 +505,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
 
     await(task);
 
-    verify(mockSessionReportingCoordinator)
-        .sendReports(any(Executor.class), any(DataTransportState.class));
+    verify(mockSessionReportingCoordinator).sendReports(any(Executor.class));
     verifyNoMoreInteractions(mockSessionReportingCoordinator);
   }
 

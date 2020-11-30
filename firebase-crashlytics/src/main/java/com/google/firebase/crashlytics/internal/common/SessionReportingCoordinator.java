@@ -170,28 +170,12 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
    *
    * @param reportSendCompleteExecutor executor on which to run report cleanup after each report is
    *     sent.
-   * @param dataTransportState used to determine whether to send the report before cleaning it up.
    */
-  public Task<Void> sendReports(
-      @NonNull Executor reportSendCompleteExecutor,
-      @NonNull DataTransportState dataTransportState) {
-    if (dataTransportState == DataTransportState.NONE) {
-      Logger.getLogger().d("Send via DataTransport disabled. Removing DataTransport reports.");
-      reportPersistence.deleteAllReports();
-      return Tasks.forResult(null);
-    }
+  public Task<Void> sendReports(@NonNull Executor reportSendCompleteExecutor) {
     final List<CrashlyticsReportWithSessionId> reportsToSend =
         reportPersistence.loadFinalizedReports();
     final List<Task<Boolean>> sendTasks = new ArrayList<>();
     for (CrashlyticsReportWithSessionId reportToSend : reportsToSend) {
-      if (reportToSend.getReport().getType() == CrashlyticsReport.Type.NATIVE
-          && dataTransportState != DataTransportState.ALL) {
-        Logger.getLogger()
-            .d("Send native reports via DataTransport disabled. Removing DataTransport reports.");
-        reportPersistence.deleteFinalizedReport(reportToSend.getSessionId());
-        continue;
-      }
-
       sendTasks.add(
           reportsSender
               .sendReport(reportToSend)

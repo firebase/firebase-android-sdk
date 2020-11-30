@@ -27,7 +27,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 import com.google.android.gms.tasks.Task;
@@ -402,52 +401,13 @@ public class SessionReportingCoordinatorTest {
     when(reportSender.sendReport(mockReport1)).thenReturn(successfulTask);
     when(reportSender.sendReport(mockReport2)).thenReturn(failedTask);
 
-    reportingCoordinator.sendReports(Runnable::run, DataTransportState.ALL);
+    reportingCoordinator.sendReports(Runnable::run);
 
     verify(reportSender).sendReport(mockReport1);
     verify(reportSender).sendReport(mockReport2);
 
     verify(reportPersistence).deleteFinalizedReport(sessionId1);
     verify(reportPersistence, never()).deleteFinalizedReport(sessionId2);
-  }
-
-  @Test
-  public void onReportSend_reportsAreDeletedWithoutBeingSent_whenDataTransportStateNone() {
-    reportingCoordinator.sendReports(Runnable::run, DataTransportState.NONE);
-
-    verify(reportPersistence).deleteAllReports();
-    verify(reportPersistence, never()).loadFinalizedReports();
-    verify(reportPersistence, never()).deleteFinalizedReport(anyString());
-    verifyZeroInteractions(reportSender);
-  }
-
-  @Test
-  public void
-      onReportSend_javaReportsAreSentNativeReportsDeletedWithoutBeingSent_whenDataTransportStateJavaOnly() {
-    final String sessionIdJava = "sessionIdJava";
-    final String sessionIdNative = "sessionIdNative";
-
-    final List<CrashlyticsReportWithSessionId> finalizedReports = new ArrayList<>();
-    final CrashlyticsReportWithSessionId mockReportJava = mockReportWithSessionId(sessionIdJava);
-    final CrashlyticsReportWithSessionId mockReportNative =
-        mockReportWithSessionId(sessionIdNative);
-    finalizedReports.add(mockReportJava);
-    finalizedReports.add(mockReportNative);
-
-    when(mockReportJava.getReport().getType()).thenReturn(CrashlyticsReport.Type.JAVA);
-    when(mockReportNative.getReport().getType()).thenReturn(CrashlyticsReport.Type.NATIVE);
-
-    when(reportPersistence.loadFinalizedReports()).thenReturn(finalizedReports);
-
-    when(reportSender.sendReport(mockReportJava)).thenReturn(Tasks.forResult(mockReportJava));
-
-    reportingCoordinator.sendReports(Runnable::run, DataTransportState.JAVA_ONLY);
-
-    verify(reportSender).sendReport(mockReportJava);
-    verify(reportSender, never()).sendReport(mockReportNative);
-
-    verify(reportPersistence).deleteFinalizedReport(sessionIdJava);
-    verify(reportPersistence).deleteFinalizedReport(sessionIdNative);
   }
 
   @Test

@@ -229,8 +229,7 @@ class CrashlyticsController {
                             boolean dataCollectionToken = true;
                             return Tasks.whenAll(
                                 logAnalyticsAppExceptionEvents(),
-                                reportingCoordinator.sendReports(
-                                    executor, DataTransportState.getState(appSettingsData)));
+                                reportingCoordinator.sendReports(executor));
                           }
                         });
               }
@@ -374,8 +373,7 @@ class CrashlyticsController {
                                   return Tasks.forResult(null);
                                 }
                                 logAnalyticsAppExceptionEvents();
-                                reportingCoordinator.sendReports(
-                                    executor, DataTransportState.getState(appSettingsData));
+                                reportingCoordinator.sendReports(executor);
                                 unsentReportsHandled.trySetResult(null);
 
                                 return Tasks.forResult(null);
