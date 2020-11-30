@@ -16,7 +16,9 @@ package com.google.firebase.ml.modeldownloader;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.internal.Objects;
+import com.google.firebase.ml.modeldownloader.internal.ModelFileDownloadService;
 import java.io.File;
 
 /**
@@ -127,11 +129,29 @@ public class CustomModel {
    *     progress, returns null, if file update is in progress returns last fully uploaded model.
    */
   @Nullable
-  public File getFile() {
+  public File getFile() throws Exception {
+    return getFile(ModelFileDownloadService.getInstance());
+  }
+
+  /**
+   * The local model file. If null is returned, use the download Id to check the download status.
+   *
+   * @return the local file associated with the model, if the original file download is still in
+   *     progress, returns null, if file update is in progress returns last fully uploaded model.
+   */
+  @Nullable
+  @VisibleForTesting
+  File getFile(ModelFileDownloadService fileDownloadService) throws Exception {
+    // check for completed download
+    File newDownloadFile = fileDownloadService.loadNewlyDownloadedModelFile(this);
+    if (newDownloadFile != null) {
+      return newDownloadFile;
+    }
+    // return local file, if present
     if (localFilePath == null || localFilePath.isEmpty()) {
       return null;
     }
-    throw new UnsupportedOperationException("Not implemented, file retrieval coming soon.");
+    return new File(localFilePath);
   }
 
   /**

@@ -177,6 +177,19 @@ public class SharedPreferencesUtil {
   }
 
   /**
+   * The information about a failed custom model download. Updates the local model information and
+   * clears the download details associated with this model. Does not update the local file model.
+   *
+   * @param customModelName custom model details to be stored.
+   * @hide
+   */
+  public synchronized void setFailedUploadedCustomModelDetails(@NonNull String customModelName)
+      throws IllegalArgumentException {
+    Editor editor = getSharedPreferences().edit();
+    clearDownloadingModelDetails(editor, customModelName);
+  }
+
+  /**
    * Clears all stored data related to a local custom model, including download details.
    *
    * @param modelName - name of model

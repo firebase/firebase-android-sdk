@@ -24,6 +24,8 @@ import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.ml.modeldownloader.internal.CustomModelDownloadService;
+import com.google.firebase.ml.modeldownloader.internal.ModelFileDownloadService;
+import com.google.firebase.ml.modeldownloader.internal.ModelFileManager;
 import com.google.firebase.ml.modeldownloader.internal.SharedPreferencesUtil;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.util.Arrays;
@@ -49,6 +51,14 @@ public class FirebaseModelDownloaderRegistrar implements ComponentRegistrar {
         Component.builder(SharedPreferencesUtil.class)
             .add(Dependency.required(FirebaseApp.class))
             .factory(c -> new SharedPreferencesUtil(c.get(FirebaseApp.class)))
+            .build(),
+        Component.builder(ModelFileManager.class)
+            .add(Dependency.required(FirebaseApp.class))
+            .factory(c -> new ModelFileManager(c.get(FirebaseApp.class)))
+            .build(),
+        Component.builder(ModelFileDownloadService.class)
+            .add(Dependency.required(FirebaseApp.class))
+            .factory(c -> new ModelFileDownloadService(c.get(FirebaseApp.class)))
             .build(),
         Component.builder(CustomModelDownloadService.class)
             .add(Dependency.required(FirebaseOptions.class))

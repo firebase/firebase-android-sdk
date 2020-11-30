@@ -14,12 +14,10 @@
 
 package com.google.firebase.ml.modeldownloader.internal;
 
-import android.os.Build.VERSION_CODES;
 import android.util.JsonReader;
 import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
@@ -34,7 +32,6 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -51,12 +48,10 @@ import java.util.zip.GZIPInputStream;
  *
  * @hide
  */
-@RequiresApi(api = VERSION_CODES.KITKAT)
-public final class CustomModelDownloadService {
-
+public class CustomModelDownloadService {
   private static final String TAG = "CustomModelDownloadSer";
   private static final int CONNECTION_TIME_OUT_MS = 2000; // 2 seconds.
-  private static final Charset UTF_8 = StandardCharsets.UTF_8;
+  private static final Charset UTF_8 = Charset.forName("UTF-8");
   private static final String ISO_DATE_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
   private static final String ACCEPT_ENCODING_HEADER_KEY = "Accept-Encoding";
   private static final String CONTENT_ENCODING_HEADER_KEY = "Content-Encoding";
@@ -76,8 +71,8 @@ public final class CustomModelDownloadService {
   static final String DOWNLOAD_MODEL_REGEX = "%s/v1beta2/projects/%s/models/%s:download";
 
   private final ExecutorService executorService;
-  private FirebaseInstallationsApi firebaseInstallations;
-  private String apiKey;
+  private final FirebaseInstallationsApi firebaseInstallations;
+  private final String apiKey;
   private String downloadHost = FIREBASE_DOWNLOAD_HOST;
 
   public CustomModelDownloadService(
