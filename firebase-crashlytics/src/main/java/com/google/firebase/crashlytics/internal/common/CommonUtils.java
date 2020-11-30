@@ -45,13 +45,11 @@ import java.io.FileReader;
 import java.io.Flushable;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -610,20 +608,6 @@ public class CommonUtils {
   }
 
   /**
-   * Compares the file lastModified date - ascending (oldest first) used in capFileCount when
-   * finding oldest files to remove
-   */
-  public static final Comparator<File> FILE_MODIFIED_COMPARATOR =
-      new Comparator<File>() {
-
-        @Override
-        public int compare(File file0, File file1) {
-          // sort oldest first
-          return (int) (file0.lastModified() - file1.lastModified());
-        }
-      };
-
-  /**
    * Gets values for string properties in the strings.xml file by its name. If a key is not present,
    * an empty String is returned.
    *
@@ -746,17 +730,6 @@ public class CommonUtils {
       resourcePackageName = context.getPackageName();
     }
     return resourcePackageName;
-  }
-
-  /**
-   * Copies all available data from the {@link InputStream} into the {@link OutputStream}, using the
-   * provided <code>buffer</code>. Neither stream is closed during this call.
-   */
-  public static void copyStream(InputStream is, OutputStream os, byte[] buffer) throws IOException {
-    int count;
-    while ((count = is.read(buffer)) != -1) {
-      os.write(buffer, 0, count);
-    }
   }
 
   public static String logPriorityToString(int priority) {

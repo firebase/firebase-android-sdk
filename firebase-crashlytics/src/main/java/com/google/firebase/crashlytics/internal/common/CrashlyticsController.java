@@ -13,8 +13,6 @@
 // limitations under the License.
 package com.google.firebase.crashlytics.internal.common;
 
-import static com.google.firebase.crashlytics.internal.proto.ClsFileOutputStream.SESSION_FILE_EXTENSION;
-
 import android.content.Context;
 import android.os.Build;
 import android.os.Build.VERSION;
@@ -40,7 +38,6 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -59,38 +56,14 @@ class CrashlyticsController {
   static final String FIREBASE_APPLICATION_EXCEPTION = "_ae";
   static final String APP_EXCEPTION_MARKER_PREFIX = ".ae";
 
-  // region CLS File filters for retrieving specific sets of files.
-
   static final FilenameFilter APP_EXCEPTION_MARKER_FILTER =
       (directory, filename) -> filename.startsWith(APP_EXCEPTION_MARKER_PREFIX);
-
-  /** Matches *.cls filenames with exactly 36 character names (32 UUID + dot + extension). */
-  static final FilenameFilter SESSION_FILE_FILTER =
-      new FilenameFilter() {
-        @Override
-        public boolean accept(File dir, String filename) {
-          return (filename.length() == (SESSION_ID_LENGTH + SESSION_FILE_EXTENSION.length()))
-              && filename.endsWith(SESSION_FILE_EXTENSION);
-        }
-      };
-
-  static final Comparator<File> SMALLEST_FILE_NAME_FIRST =
-      new Comparator<File>() {
-        @Override
-        public int compare(File file1, File file2) {
-          return file1.getName().compareTo(file2.getName());
-        }
-      };
-
-  // endregion
 
   static final String NATIVE_SESSION_DIR = "native-sessions";
 
   static final int FIREBASE_CRASH_TYPE_FATAL = 1;
 
   private static final String GENERATOR_FORMAT = "Crashlytics Android SDK/%s";
-
-  private static final int SESSION_ID_LENGTH = 32;
 
   private final Context context;
   private final DataCollectionArbiter dataCollectionArbiter;
