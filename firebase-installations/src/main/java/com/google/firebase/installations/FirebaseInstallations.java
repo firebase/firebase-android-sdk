@@ -76,7 +76,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   @GuardedBy("this")
   private String cachedFid;
 
-  @GuardedBy("this")
+  @GuardedBy("FirebaseInstallations.this")
   private Set<FidListener> fidListeners = new HashSet<>();
 
   @GuardedBy("lock")
@@ -286,12 +286,14 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   @NonNull
   @Override
   public synchronized FidListenerHandle registerFidListener(@NonNull FidListener listener) {
-    this.fidListeners.add(listener);
+    fidListeners.add(listener);
     return new FidListenerHandle() {
       @Override
-      public synchronized void unregister() {
-        if (FirebaseInstallations.this.fidListeners.contains(listener)) {
-          FirebaseInstallations.this.fidListeners.remove(listener);
+      public void unregister() {
+        synchronized (FirebaseInstallations.this) {
+          if (fidListeners.contains(listener)) {
+            fidListeners.remove(listener);
+          }
         }
       }
     };
