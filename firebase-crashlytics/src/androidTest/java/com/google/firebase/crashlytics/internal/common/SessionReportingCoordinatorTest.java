@@ -89,7 +89,7 @@ public class SessionReportingCoordinatorTest {
   }
 
   @Test
-  public void testFatalEvent_persistsHighPriorityEventForSessionId() {
+  public void testFatalEvent_persistsHighPriorityEventWithAllThreadsForSessionId() {
     final String eventType = "crash";
     final String sessionId = "testSessionId";
     final long timestamp = System.currentTimeMillis();
@@ -99,13 +99,17 @@ public class SessionReportingCoordinatorTest {
     reportingCoordinator.onBeginSession(sessionId, timestamp);
     reportingCoordinator.persistFatalEvent(mockException, mockThread, sessionId, timestamp);
 
+    final boolean expectedAllThreads = true;
+    final boolean expectedHighPriority = true;
+
     verify(dataCapture)
-        .captureEventData(mockException, mockThread, eventType, timestamp, 4, 8, true);
-    verify(reportPersistence).persistEvent(mockEvent, sessionId, true);
+        .captureEventData(
+            mockException, mockThread, eventType, timestamp, 4, 8, expectedAllThreads);
+    verify(reportPersistence).persistEvent(mockEvent, sessionId, expectedHighPriority);
   }
 
   @Test
-  public void testNonFatalEvent_persistsNormalPriorityEventForSessionId() {
+  public void testNonFatalEvent_persistsNormalPriorityEventWithoutAllThreadsForSessionId() {
     final String eventType = "error";
     final String sessionId = "testSessionId";
     final long timestamp = System.currentTimeMillis();
@@ -115,9 +119,13 @@ public class SessionReportingCoordinatorTest {
     reportingCoordinator.onBeginSession(sessionId, timestamp);
     reportingCoordinator.persistNonFatalEvent(mockException, mockThread, sessionId, timestamp);
 
+    final boolean expectedAllThreads = false;
+    final boolean expectedHighPriority = false;
+
     verify(dataCapture)
-        .captureEventData(mockException, mockThread, eventType, timestamp, 4, 8, false);
-    verify(reportPersistence).persistEvent(mockEvent, sessionId, false);
+        .captureEventData(
+            mockException, mockThread, eventType, timestamp, 4, 8, expectedAllThreads);
+    verify(reportPersistence).persistEvent(mockEvent, sessionId, expectedHighPriority);
   }
 
   @Test

@@ -21,6 +21,7 @@ import android.os.Build.VERSION;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.StatFs;
+import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.SuccessContinuation;
@@ -39,10 +40,8 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -286,6 +285,7 @@ class CrashlyticsController {
     try {
       Utils.awaitEvenIfOnMainThread(handleUncaughtExceptionTask);
     } catch (Exception e) {
+      Log.e("WILLIS", "ERROR", e);
       // Nothing to do in this case.
     }
   }
@@ -654,16 +654,6 @@ class CrashlyticsController {
 
   // region File management
 
-  File[] listCompleteSessionFiles() {
-    final List<File> completeSessionFiles = new LinkedList<>();
-    Collections.addAll(
-        completeSessionFiles, listFilesMatching(getFatalSessionFilesDir(), SESSION_FILE_FILTER));
-    Collections.addAll(
-        completeSessionFiles, listFilesMatching(getNonFatalSessionFilesDir(), SESSION_FILE_FILTER));
-    Collections.addAll(completeSessionFiles, listFilesMatching(getFilesDir(), SESSION_FILE_FILTER));
-    return completeSessionFiles.toArray(new File[completeSessionFiles.size()]);
-  }
-
   File[] listNativeSessionFileDirectories() {
     return ensureFileArrayNotNull(getNativeSessionFilesDir().listFiles());
   }
@@ -682,28 +672,6 @@ class CrashlyticsController {
 
   private static File[] ensureFileArrayNotNull(File[] files) {
     return (files == null) ? new File[] {} : files;
-  }
-
-  /**
-   * Not synchronized/locked. Must be executed from the single thread executor service used by this
-   * class.
-   *
-   * <p>If there are more than maxCompleteSessionsCount session files, delete files (oldest-first)
-   * until we are at the max.
-   */
-  void trimSessionFiles(int maxCompleteSessionsCount) {
-    int remaining = maxCompleteSessionsCount;
-    remaining =
-        remaining
-            - Utils.capSessionCount(
-                getNativeSessionFilesDir(),
-                getFatalSessionFilesDir(),
-                remaining,
-                SMALLEST_FILE_NAME_FIRST);
-    remaining =
-        remaining
-            - Utils.capFileCount(getNonFatalSessionFilesDir(), remaining, SMALLEST_FILE_NAME_FIRST);
-    Utils.capFileCount(getFilesDir(), SESSION_FILE_FILTER, remaining, SMALLEST_FILE_NAME_FIRST);
   }
 
   // endregion
@@ -838,14 +806,6 @@ class CrashlyticsController {
 
   File getNativeSessionFilesDir() {
     return new File(getFilesDir(), NATIVE_SESSION_DIR);
-  }
-
-  File getFatalSessionFilesDir() {
-    return new File(getFilesDir(), FATAL_SESSION_DIR);
-  }
-
-  File getNonFatalSessionFilesDir() {
-    return new File(getFilesDir(), NONFATAL_SESSION_DIR);
   }
 
   /**
