@@ -18,18 +18,29 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.ml.modeldownloader.CustomModel;
+import java.io.File;
+import java.io.IOException;
 import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 
-/** Tests for {@link SharedPreferencesUtil}. */
+/**
+ * Tests for {@link SharedPreferencesUtil}.
+ */
 @RunWith(RobolectricTestRunner.class)
 public class SharedPreferencesUtilTest {
 
@@ -45,11 +56,15 @@ public class SharedPreferencesUtilTest {
 
   private static final CustomModel CUSTOM_MODEL_DOWNLOADING =
       new CustomModel(MODEL_NAME, MODEL_HASH, 100, 986);
-
   private SharedPreferencesUtil sharedPreferencesUtil;
 
+  public static final File TEST_MODEL_FILE = new File("fakeFile.tflite");
+
+  @Mock ModelFileDownloadService mockFileDownloadService;
+
   @Before
-  public void setUp() {
+  public void setUp() throws IOException {
+    MockitoAnnotations.initMocks(this);
     FirebaseApp.clearInstancesForTest();
     FirebaseApp app =
         FirebaseApp.initializeApp(
@@ -60,7 +75,7 @@ public class SharedPreferencesUtilTest {
                 .build());
 
     // default sharedPreferenceUtil
-    sharedPreferencesUtil = new SharedPreferencesUtil(app);
+    sharedPreferencesUtil = new SharedPreferencesUtil(app, mockFileDownloadService);
     assertNotNull(sharedPreferencesUtil);
   }
 
@@ -122,7 +137,7 @@ public class SharedPreferencesUtilTest {
   }
 
   @Test
-  public void listDownloadedModels_localModelFound() throws IllegalArgumentException {
+  public void listDownloadedModels_localModelFound() throws Exception {
     sharedPreferencesUtil.setUploadedCustomModelDetails(CUSTOM_MODEL_DOWNLOAD_COMPLETE);
     Set<CustomModel> retrievedModel = sharedPreferencesUtil.listDownloadedModels();
     assertEquals(retrievedModel.size(), 1);
@@ -130,18 +145,36 @@ public class SharedPreferencesUtilTest {
   }
 
   @Test
-  public void listDownloadedModels_downloadingModelNotFound() throws IllegalArgumentException {
+  public void listDownloadedModels_downloadingModelNotFound() throws Exception {
+
+    System.out.println("listDownloadedModels_downloadingModelNotFound");
+
+    sharedPreferencesUtil.setUploadedCustomModelDetails(CUSTOM_MODEL_DOWNLOAD_COMPLETE);
+    System.out.println("listDownloadedModels_downloadingModelNotFound 2");
     sharedPreferencesUtil.setDownloadingCustomModelDetails(CUSTOM_MODEL_DOWNLOADING);
+    System.out.println("listDownloadedModels_downloadingModelNotFound 3");
+    when(mockFileDownloadService.loadNewlyDownloadedModelFile(any(CustomModel.class))).thenReturn(null);
+
+    System.out.println("listDownloadedModels_downloadingModelNotFound 4");
     assertEquals(sharedPreferencesUtil.listDownloadedModels().size(), 0);
   }
 
   @Test
-  public void listDownloadedModels_noModels() throws IllegalArgumentException {
+  public void listDownloadedModels_downloadingModelFound() throws Exception {
+    System.out.println("listDownloadedModels_downloadingModelFound");
+    sharedPreferencesUtil.setDownloadingCustomModelDetails(CUSTOM_MODEL_DOWNLOADING);
+    when(mockFileDownloadService.loadNewlyDownloadedModelFile(any(CustomModel.class)))
+        .thenReturn(TEST_MODEL_FILE);
+    assertEquals(sharedPreferencesUtil.listDownloadedModels().size(), 1);
+  }
+
+  @Test
+  public void listDownloadedModels_noModels() throws Exception {
     assertEquals(sharedPreferencesUtil.listDownloadedModels().size(), 0);
   }
 
   @Test
-  public void listDownloadedModels_multipleModels() throws IllegalArgumentException {
+  public void listDownloadedModels_multipleModels() throws Exception {
     sharedPreferencesUtil.setUploadedCustomModelDetails(CUSTOM_MODEL_DOWNLOAD_COMPLETE);
 
     CustomModel model2 =

@@ -43,8 +43,8 @@ public class FirebaseModelDownloader {
   @RequiresApi(api = VERSION_CODES.KITKAT)
   FirebaseModelDownloader(FirebaseApp firebaseApp) {
     this.firebaseOptions = firebaseApp.getOptions();
-    this.sharedPreferencesUtil = new SharedPreferencesUtil(firebaseApp);
     this.fileDownloadService = new ModelFileDownloadService(firebaseApp);
+    this.sharedPreferencesUtil = new SharedPreferencesUtil(firebaseApp);
     this.modelDownloadService =
         new CustomModelDownloadService(
             firebaseOptions, FirebaseApp.getInstance().get(FirebaseInstallationsApi.class));

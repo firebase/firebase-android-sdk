@@ -44,14 +44,25 @@ public class SharedPreferencesUtil {
   private static final String DOWNLOADING_MODEL_HASH_PATTERN = "downloading_model_hash_%s_%s";
   private static final String DOWNLOADING_MODEL_SIZE_PATTERN = "downloading_model_size_%s_%s";
   private static final String DOWNLOADING_MODEL_ID_PATTERN = "downloading_model_id_%s_%s";
+  private static final String DOWNLOADING_MODEL_ID_MATCHER =
+      "downloading_model_path_(.*?)_([^/]+)/?";
   private static final String DOWNLOAD_BEGIN_TIME_MS_PATTERN = "downloading_begin_time_%s_%s";
 
   private final String persistenceKey;
   private final FirebaseApp firebaseApp;
+  private final ModelFileDownloadService fileDownloadService;
 
   public SharedPreferencesUtil(FirebaseApp firebaseApp) {
     this.firebaseApp = firebaseApp;
     this.persistenceKey = firebaseApp.getPersistenceKey();
+    this.fileDownloadService = new ModelFileDownloadService(firebaseApp);
+  }
+
+@VisibleForTesting
+  SharedPreferencesUtil(FirebaseApp firebaseApp, ModelFileDownloadService fileDownloadService) {
+    this.firebaseApp = firebaseApp;
+    this.persistenceKey = firebaseApp.getPersistenceKey();
+    this.fileDownloadService = fileDownloadService;
   }
 
   /**
@@ -210,22 +221,27 @@ public class SharedPreferencesUtil {
   }
 
   public synchronized Set<CustomModel> listDownloadedModels() {
+    System.out.println("list ");
     Set<CustomModel> customModels = new HashSet<>();
     Set<String> keySet = getSharedPreferences().getAll().keySet();
 
     for (String key : keySet) {
+      System.out.println("key " + key);
       // if a local file path is present - get model details.
       Matcher matcher = Pattern.compile(LOCAL_MODEL_FILE_PATH_MATCHER).matcher(key);
       if (matcher.find()) {
+        System.out.println("list local match");
         String modelName = matcher.group(matcher.groupCount());
         CustomModel extractModel = getCustomModelDetails(modelName);
         if (extractModel != null) {
           customModels.add(extractModel);
         }
       } else {
-        matcher = Pattern.compile(DOWNLOADING_MODEL_ID_PATTERN).matcher(key);
+        matcher = Pattern.compile(DOWNLOADING_MODEL_ID_MATCHER).matcher(key);
         if (matcher.find()) {
+          System.out.println("list download match.");
           String modelName = matcher.group(matcher.groupCount());
+          System.out.println("list match modelname " + modelName);
           CustomModel extractModel = maybeGetUpdatedModel(modelName);
           if (extractModel != null) {
             customModels.add(extractModel);
@@ -233,15 +249,24 @@ public class SharedPreferencesUtil {
         }
       }
     }
+    System.out.println("return hash set" + customModels);
     return customModels;
   }
 
-  synchronized CustomModel maybeGetUpdatedModel(String modelName) {
+  synchronized CustomModel maybeGetUpdatedModel(String modelName)  {
     CustomModel downloadModel = getCustomModelDetails(modelName);
-    // TODO(annz) check here if download currently in progress have completed.
-    // if yes, then complete file relocation and return the updated model, otherwise return null
-
-    return null;
+    System.out.println("maybe model " + downloadModel);
+    // if model is currently being downloaded - check for completion.
+    if (downloadModel.getDownloadId() == 0L) {
+      return null;
+    }
+    System.out.println("getupdatedModel:" + modelName);
+//    if (fileDownloadService.loadNewlyDownloadedModelFile(downloadModel) != null) {
+//      System.out.println("load not empty:" + modelName);
+//      // file download completed - re-fetch the model details, these should have been updated.
+//      return getCustomModelDetails(modelName);
+//    }
+    return downloadModel;
   }
 
   /**
