@@ -290,8 +290,8 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     return new FidListenerHandle() {
       @Override
       public synchronized void unregister() {
-        if (fidListeners.contains(listener)) {
-          fidListeners.remove(listener);
+        if (FirebaseInstallations.this.fidListeners.contains(listener)) {
+          FirebaseInstallations.this.fidListeners.remove(listener);
         }
       }
     };
