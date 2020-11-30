@@ -27,26 +27,25 @@ import com.google.firebase.firestore.util.Logger;
 import java.util.Collections;
 import java.util.Map;
 
-// TOOD(b/140938512): Drop SimpleQueryEngine and rename IndexFreeQueryEngine.
-
 /**
- * A query engine that takes advantage of the target document mapping in the TargetCache. The
- * IndexFreeQueryEngine optimizes query execution by only reading the documents that previously
- * matched a query plus any documents that were edited after the query was last listened to.
+ * A query engine that takes advantage of the target document mapping in the TargetCache. Query
+ * execution is optimized by only reading the documents that previously matched a query plus any
+ * documents that were edited after the query was last listened to.
  *
- * <p>There are some cases where Index-Free queries are not guaranteed to produce the same results
- * as full collection scans. In these cases, the IndexFreeQueryEngine falls back to full query
- * processing. These cases are:
+ * <p>There are some cases where this optimization is not guaranteed to produce the same results as
+ * full collection scans. In these cases, query processing falls back to full scans. These cases
+ * are:
  *
  * <ol>
- *   <il>Limit queries where a document that matched the query previously no longer matches the
- *   query. <il> Limit queries where a document edit may cause the document to sort below another
- *   document that is in the local cache. <il>Queries that have never been CURRENT or free of Limbo
- *   documents.
+ *   <li>Limit queries where a document that matched the query previously no longer matches the
+ *       query.
+ *   <li>Limit queries where a document edit may cause the document to sort below another document
+ *       that is in the local cache.
+ *   <li>Queries that have never been CURRENT or free of limbo documents.
  * </ol>
  */
-public class IndexFreeQueryEngine implements QueryEngine {
-  private static final String LOG_TAG = "IndexFreeQueryEngine";
+public class DefaultQueryEngine implements QueryEngine {
+  private static final String LOG_TAG = "DefaultQueryEngine";
 
   private LocalDocumentsView localDocumentsView;
 
@@ -62,7 +61,7 @@ public class IndexFreeQueryEngine implements QueryEngine {
       ImmutableSortedSet<DocumentKey> remoteKeys) {
     hardAssert(localDocumentsView != null, "setLocalDocumentsView() not called");
 
-    // Queries that match all documents don't benefit from using IndexFreeQueries. It is more
+    // Queries that match all documents don't benefit from using key-based lookups. It is more
     // efficient to scan all documents in a collection, rather than to perform individual lookups.
     if (query.matchesAllDocuments()) {
       return executeFullCollectionScan(query);

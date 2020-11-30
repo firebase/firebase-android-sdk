@@ -99,8 +99,6 @@ public abstract class LocalStoreTestCase {
   private @Nullable QueryResult lastQueryResult;
   private int lastTargetId;
 
-  abstract QueryEngine getQueryEngine();
-
   abstract Persistence getPersistence();
 
   abstract boolean garbageCollectorIsEager();
@@ -113,7 +111,7 @@ public abstract class LocalStoreTestCase {
     lastTargetId = 0;
 
     localStorePersistence = getPersistence();
-    queryEngine = new CountingQueryEngine(getQueryEngine());
+    queryEngine = new CountingQueryEngine(new DefaultQueryEngine());
     localStore = new LocalStore(localStorePersistence, queryEngine, User.UNAUTHENTICATED);
     localStore.start();
   }
@@ -1023,7 +1021,7 @@ public abstract class LocalStoreTestCase {
   @Test
   public void testUsesTargetMappingToExecuteQueries() {
     assumeFalse(garbageCollectorIsEager());
-    assumeTrue(queryEngine.getSubject() instanceof IndexFreeQueryEngine);
+    assumeTrue(queryEngine.getSubject() instanceof DefaultQueryEngine);
 
     // This test verifies that once a target mapping has been written, only documents that match
     // the query are read from the RemoteDocumentCache.

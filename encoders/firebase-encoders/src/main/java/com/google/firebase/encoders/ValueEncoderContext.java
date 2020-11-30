@@ -32,6 +32,10 @@ public interface ValueEncoderContext {
 
   /** Adds {@code value} as a primitive encoded value. */
   @NonNull
+  ValueEncoderContext add(float value) throws IOException;
+
+  /** Adds {@code value} as a primitive encoded value. */
+  @NonNull
   ValueEncoderContext add(double value) throws IOException;
 
   /** Adds {@code value} as a primitive encoded value. */
