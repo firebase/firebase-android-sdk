@@ -39,6 +39,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.installations.FirebaseInstallationsException.Status;
+import com.google.firebase.installations.internal.FidListenerHandle;
 import com.google.firebase.installations.local.IidStore;
 import com.google.firebase.installations.local.PersistedInstallation;
 import com.google.firebase.installations.local.PersistedInstallation.RegistrationStatus;
@@ -468,13 +469,20 @@ public class FirebaseInstallationsTest {
                 .build());
 
     FakeFidListener fidListener = new FakeFidListener();
-    // Register the FidListener
+    FakeFidListener fidListener2 = new FakeFidListener();
+
+    // Register the FidListeners
     firebaseInstallations.registerFidListener(fidListener);
+    FidListenerHandle listenerHandle = firebaseInstallations.registerFidListener(fidListener2);
 
     // Do the actual getId() call under test.
     // Confirm both that it returns the expected ID, as does reading the prefs from storage.
     TestOnCompleteListener<String> onCompleteListener = new TestOnCompleteListener<>();
     Task<String> task = firebaseInstallations.getId();
+
+    // Unregister FidListener2
+    listenerHandle.unregister();
+
     task.addOnCompleteListener(executor, onCompleteListener);
     String fid = onCompleteListener.await();
     assertWithMessage("getId Task failed.").that(fid).isEqualTo(TEST_FID_1);
@@ -486,6 +494,7 @@ public class FirebaseInstallationsTest {
 
     // Verify FidListener receives fid changes.
     assertThat(fidListener.getLatestFid(), equalTo(TEST_FID_2));
+    assertNull(fidListener2.getLatestFid());
   }
 
   @Test
