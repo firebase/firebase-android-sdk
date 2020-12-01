@@ -16,6 +16,9 @@ package com.google.firebase.installations;
 
 import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.annotations.DeferredApi;
+import com.google.firebase.installations.internal.FidListener;
+import com.google.firebase.installations.internal.FidListenerHandle;
 
 /**
  * This is an interface of {@code FirebaseInstallations} that is only exposed to 2p via component
@@ -51,4 +54,13 @@ public interface FirebaseInstallationsApi {
    */
   @NonNull
   Task<Void> delete();
+
+  /**
+   * Register a listener to receive fid changes.
+   *
+   * @param listener implementation of the {@code FidListener} to handle fid changes.
+   * @hide
+   */
+  @DeferredApi
+  FidListenerHandle registerFidListener(@NonNull FidListener listener);
 }
