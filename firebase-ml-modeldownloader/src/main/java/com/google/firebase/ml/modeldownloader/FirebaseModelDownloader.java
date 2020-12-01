@@ -159,7 +159,8 @@ public class FirebaseModelDownloader {
   }
 
   /**
-   * @return The set of all models that are downloaded to this device, triggers completion of file
+   * Triggers the move to permanent storage of successful model downloads and list all models downloaded to device.
+   *  @return The set of all models that are downloaded to this device, triggers completion of file
    *     moves for completed model downloads.
    */
   @NonNull
@@ -177,7 +178,7 @@ public class FirebaseModelDownloader {
     return taskCompletionSource.getTask();
   }
 
-  /*
+  /**
    * Delete old local models, when no longer in use.
    * @param modelName - name of the model
    */
