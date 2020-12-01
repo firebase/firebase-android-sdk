@@ -291,9 +291,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
       @Override
       public void unregister() {
         synchronized (FirebaseInstallations.this) {
-          if (fidListeners.contains(listener)) {
-            fidListeners.remove(listener);
-          }
+          fidListeners.remove(listener);
         }
       }
     };
