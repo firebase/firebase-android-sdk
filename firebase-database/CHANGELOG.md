@@ -1,4 +1,8 @@
-# 19.5.1 (Unreleased)
+# Unreleased
+- [fixed] Fixed a crash on some Pixel devices that occurred when closing the
+  network connection.
+
+# 19.5.1
 - [fixed] Fixes a regression in v19.4 that may cause assertion failures,
   especially when persistence is enabled.
 
