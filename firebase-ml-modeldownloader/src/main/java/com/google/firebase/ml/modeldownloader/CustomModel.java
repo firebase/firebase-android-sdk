@@ -166,7 +166,9 @@ public class CustomModel {
 
   /**
    * Retrieves the model Hash.
-   *  @return the model hash */
+   *
+   * @return the model hash
+   */
   @NonNull
   public String getModelHash() {
     return modelHash;
@@ -248,6 +250,7 @@ public class CustomModel {
 
   /**
    * Returns the model download url, usually only present when download is about to occur.
+   *
    * @return the model download url
    *     <p>Internal use only
    * @hide

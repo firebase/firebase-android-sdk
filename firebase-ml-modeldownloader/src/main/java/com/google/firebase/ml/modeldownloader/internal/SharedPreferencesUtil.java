@@ -210,9 +210,9 @@ public class SharedPreferencesUtil {
         .commit();
   }
 
-
   /**
    * Set of all keys associated with this firebase app.
+   *
    * @return
    */
   public Set<String> getSharedPreferenceKeySet() {

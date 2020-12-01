@@ -40,7 +40,6 @@ import com.google.firebase.ml.modeldownloader.CustomModel;
 import com.google.firebase.ml.modeldownloader.CustomModelDownloadConditions;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
