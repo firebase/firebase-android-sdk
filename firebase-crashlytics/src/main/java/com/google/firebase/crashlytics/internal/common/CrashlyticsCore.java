@@ -15,6 +15,7 @@
 package com.google.firebase.crashlytics.internal.common;
 
 import android.content.Context;
+import android.text.TextUtils;
 import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -52,8 +53,6 @@ public class CrashlyticsCore {
           + "Please review Crashlytics onboarding instructions and ensure you have a valid "
           + "Crashlytics account.";
 
-  private static final float CLS_DEFAULT_PROCESS_DELAY = 1.0f;
-
   static final int MAX_STACK_SIZE = 1024;
   static final int NUM_STACK_REPETITIONS_ALLOWED = 10;
 
@@ -82,10 +81,10 @@ public class CrashlyticsCore {
   private final IdManager idManager;
   private final BreadcrumbSource breadcrumbSource;
   private final AnalyticsEventLogger analyticsEventLogger;
-  private ExecutorService crashHandlerExecutor;
-  private CrashlyticsBackgroundWorker backgroundWorker;
+  private final ExecutorService crashHandlerExecutor;
+  private final CrashlyticsBackgroundWorker backgroundWorker;
 
-  private CrashlyticsNativeComponent nativeComponent;
+  private final CrashlyticsNativeComponent nativeComponent;
 
   // region Constructors
 
@@ -250,8 +249,7 @@ public class CrashlyticsCore {
       // TODO: Move this call out of this method, so that the return value merely indicates
       // initialization is complete. Callers that want to know when report sending is complete can
       // handle that as a separate call.
-      return controller.submitAllReports(
-          CLS_DEFAULT_PROCESS_DELAY, settingsProvider.getAppSettings());
+      return controller.submitAllReports(settingsProvider.getAppSettings());
     } catch (Exception e) {
       Logger.getLogger()
           .e("Crashlytics encountered a problem during asynchronous initialization.", e);
@@ -461,7 +459,7 @@ public class CrashlyticsCore {
       return true;
     }
 
-    if (!CommonUtils.isNullOrEmpty(buildId)) {
+    if (!TextUtils.isEmpty(buildId)) {
       return true;
     }
 

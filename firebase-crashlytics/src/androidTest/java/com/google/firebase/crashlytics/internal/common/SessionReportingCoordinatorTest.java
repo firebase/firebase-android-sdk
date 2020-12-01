@@ -381,7 +381,6 @@ public class SessionReportingCoordinatorTest {
   }
 
   @Test
-  @SuppressWarnings("unchecked")
   public void onReportSend_successfulReportsAreDeleted() {
     final String sessionId1 = "sessionId1";
     final String sessionId2 = "sessionId2";

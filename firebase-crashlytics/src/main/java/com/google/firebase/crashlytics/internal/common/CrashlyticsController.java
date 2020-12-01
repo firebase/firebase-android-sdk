@@ -48,7 +48,6 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-@SuppressWarnings("PMD")
 class CrashlyticsController {
 
   static final String FIREBASE_CRASH_TYPE = "fatal";
@@ -88,19 +87,19 @@ class CrashlyticsController {
 
   // A promise that will be resolved when unsent reports are found on the device, and
   // send/deleteUnsentReports can be called to decide how to deal with them.
-  TaskCompletionSource<Boolean> unsentReportsAvailable = new TaskCompletionSource<>();
+  final TaskCompletionSource<Boolean> unsentReportsAvailable = new TaskCompletionSource<>();
 
   // A promise that will be resolved when the user has provided an action that they want to perform
   // for all the unsent reports.
-  TaskCompletionSource<Boolean> reportActionProvided = new TaskCompletionSource<>();
+  final TaskCompletionSource<Boolean> reportActionProvided = new TaskCompletionSource<>();
 
   // A promise that will be resolved when all unsent reports have been "handled". They won't
   // necessarily have been uploaded, but we will know whether they should be sent or deleted, and
   // the initial work to make that happen will have been processed on the work queue.
-  TaskCompletionSource<Void> unsentReportsHandled = new TaskCompletionSource<>();
+  final TaskCompletionSource<Void> unsentReportsHandled = new TaskCompletionSource<>();
 
   // A token to make sure that checkForUnsentReports only gets called once.
-  AtomicBoolean checkForUnsentReportsCalled = new AtomicBoolean(false);
+  final AtomicBoolean checkForUnsentReportsCalled = new AtomicBoolean(false);
 
   CrashlyticsController(
       final Context context,
@@ -226,7 +225,6 @@ class CrashlyticsController {
                               return Tasks.forResult(null);
                             }
                             // Data collection is enabled, so it's safe to send the report.
-                            boolean dataCollectionToken = true;
                             return Tasks.whenAll(
                                 logAnalyticsAppExceptionEvents(),
                                 reportingCoordinator.sendReports(executor));
@@ -320,7 +318,7 @@ class CrashlyticsController {
     return unsentReportsHandled.getTask();
   }
 
-  Task<Void> submitAllReports(float delay, Task<AppSettingsData> appSettingsDataTask) {
+  Task<Void> submitAllReports(Task<AppSettingsData> appSettingsDataTask) {
     if (!reportingCoordinator.hasReportsToSend()) {
       // Just notify the user that there are no reports and stop.
       Logger.getLogger().d("No reports are available.");
@@ -712,7 +710,6 @@ class CrashlyticsController {
     nativeComponent.writeSessionOs(sessionId, osRelease, osCodeName, isRooted);
   }
 
-  @SuppressWarnings("deprecation")
   private void writeSessionDevice(String sessionId) {
     final Context context = getContext();
     final StatFs statFs = new StatFs(Environment.getDataDirectory().getPath());

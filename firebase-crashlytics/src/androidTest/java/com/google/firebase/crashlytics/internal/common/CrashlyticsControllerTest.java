@@ -368,7 +368,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
 
     final CrashlyticsController controller = createController();
 
-    Task<Void> task = controller.submitAllReports(1.0f, testSettingsDataProvider.getAppSettings());
+    Task<Void> task = controller.submitAllReports(testSettingsDataProvider.getAppSettings());
 
     await(task);
 
@@ -383,8 +383,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
 
     final CrashlyticsController controller = createController();
 
-    final Task<Void> task =
-        controller.submitAllReports(1.0f, testSettingsDataProvider.getAppSettings());
+    final Task<Void> task = controller.submitAllReports(testSettingsDataProvider.getAppSettings());
 
     await(task);
 
@@ -410,8 +409,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
     builder.setDataCollectionArbiter(arbiter);
     final CrashlyticsController controller = builder.build();
 
-    final Task<Void> task =
-        controller.submitAllReports(1.0f, testSettingsDataProvider.getAppSettings());
+    final Task<Void> task = controller.submitAllReports(testSettingsDataProvider.getAppSettings());
 
     verify(arbiter).isAutomaticDataCollectionEnabled();
     verify(mockSessionReportingCoordinator).hasReportsToSend();
@@ -438,8 +436,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
     builder.setDataCollectionArbiter(arbiter);
     final CrashlyticsController controller = builder.build();
 
-    final Task<Void> task =
-        controller.submitAllReports(1.0f, testSettingsDataProvider.getAppSettings());
+    final Task<Void> task = controller.submitAllReports(testSettingsDataProvider.getAppSettings());
 
     verify(arbiter).isAutomaticDataCollectionEnabled();
     verify(mockSessionReportingCoordinator).hasReportsToSend();
@@ -480,8 +477,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
     builder.setDataCollectionArbiter(arbiter);
     final CrashlyticsController controller = builder.build();
 
-    final Task<Void> task =
-        controller.submitAllReports(1.0f, testSettingsDataProvider.getAppSettings());
+    final Task<Void> task = controller.submitAllReports(testSettingsDataProvider.getAppSettings());
 
     verify(mockSessionReportingCoordinator).hasReportsToSend();
     verify(mockSessionReportingCoordinator, never()).sendReports(any(Executor.class));
