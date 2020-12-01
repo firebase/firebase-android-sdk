@@ -158,9 +158,19 @@ public class FirebaseModelDownloader {
     throw new UnsupportedOperationException("Not yet implemented.");
   }
 
-  /** @return The set of all models that are downloaded to this device. */
+  /**
+   * @return The set of all models that are downloaded to this device, triggers completion of file
+   *     moves for completed model downloads.
+   */
   @NonNull
   public Task<Set<CustomModel>> listDownloadedModels() {
+    // trigger completion of file moves for download files.
+    try {
+      fileDownloadService.maybeCheckDownloadingComplete();
+    } catch (Exception ex) {
+      System.out.println("Error checking for in progress downloads: " + ex.getMessage());
+    }
+
     TaskCompletionSource<Set<CustomModel>> taskCompletionSource = new TaskCompletionSource<>();
     executor.execute(
         () -> taskCompletionSource.setResult(sharedPreferencesUtil.listDownloadedModels()));

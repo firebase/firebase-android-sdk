@@ -51,10 +51,10 @@ public class CustomModelTest {
           .setProjectId(TEST_PROJECT_ID)
           .build();
   private static final long URL_EXPIRATION = 604800L;
-  CustomModel CUSTOM_MODEL = new CustomModel(MODEL_NAME, MODEL_HASH, 100, 0);
-  CustomModel CUSTOM_MODEL_URL =
+  final CustomModel CUSTOM_MODEL = new CustomModel(MODEL_NAME, MODEL_HASH, 100, 0);
+  final CustomModel CUSTOM_MODEL_URL =
       new CustomModel(MODEL_NAME, MODEL_HASH, 100, MODEL_URL, URL_EXPIRATION);
-  CustomModel CUSTOM_MODEL_FILE =
+  final CustomModel CUSTOM_MODEL_FILE =
       new CustomModel(MODEL_NAME, MODEL_HASH, 100, 0, TEST_MODEL_FILE.getPath());
   @Mock ModelFileDownloadService fileDownloadService;
 

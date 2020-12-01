@@ -181,6 +181,31 @@ public class CustomModel {
     return downloadId;
   }
 
+  @NonNull
+  @Override
+  public String toString() {
+    Objects.ToStringHelper stringHelper =
+        Objects.toStringHelper(this)
+            .add("name", name)
+            .add("modelHash", modelHash)
+            .add("fileSize", fileSize);
+
+    if (localFilePath != null && !localFilePath.isEmpty()) {
+      stringHelper.add("localFilePath", localFilePath);
+    }
+    if (downloadId != 0L) {
+      stringHelper.add("downloadId", downloadId);
+    }
+    if (downloadUrl != null && !downloadUrl.isEmpty()) {
+      stringHelper.add("downloadUrl", downloadUrl);
+    }
+    if (downloadUrlExpiry != 0L && !localFilePath.isEmpty()) {
+      stringHelper.add("downloadUrlExpiry", downloadUrlExpiry);
+    }
+
+    return stringHelper.toString();
+  }
+
   @Override
   public boolean equals(Object o) {
     if (o == this) {

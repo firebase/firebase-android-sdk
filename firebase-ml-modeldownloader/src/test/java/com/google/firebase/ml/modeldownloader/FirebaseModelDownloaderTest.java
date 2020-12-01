@@ -19,6 +19,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -61,7 +62,7 @@ public class FirebaseModelDownloaderTest {
       new CustomModelDownloadConditions.Builder().requireWifi().build();
 
   // TODO replace with uploaded model.
-  CustomModel CUSTOM_MODEL = new CustomModel(MODEL_NAME, MODEL_HASH, 100, 0);
+  final CustomModel CUSTOM_MODEL = new CustomModel(MODEL_NAME, MODEL_HASH, 100, 0);
 
   FirebaseModelDownloader firebaseModelDownloader;
   @Mock SharedPreferencesUtil mockPrefs;
@@ -157,6 +158,8 @@ public class FirebaseModelDownloaderTest {
   @Test
   public void listDownloadedModels_returnsEmptyModelList() throws Exception {
     when(mockPrefs.listDownloadedModels()).thenReturn(Collections.emptySet());
+    doNothing().when(mockFileDownloadService).maybeCheckDownloadingComplete();
+
     TestOnCompleteListener<Set<CustomModel>> onCompleteListener = new TestOnCompleteListener<>();
     Task<Set<CustomModel>> task = firebaseModelDownloader.listDownloadedModels();
     task.addOnCompleteListener(executor, onCompleteListener);
@@ -169,6 +172,7 @@ public class FirebaseModelDownloaderTest {
   @Test
   public void listDownloadedModels_returnsModelList() throws Exception {
     when(mockPrefs.listDownloadedModels()).thenReturn(Collections.singleton(CUSTOM_MODEL));
+    doNothing().when(mockFileDownloadService).maybeCheckDownloadingComplete();
 
     TestOnCompleteListener<Set<CustomModel>> onCompleteListener = new TestOnCompleteListener<>();
     Task<Set<CustomModel>> task = firebaseModelDownloader.listDownloadedModels();

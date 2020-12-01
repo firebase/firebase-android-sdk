@@ -49,7 +49,7 @@ public class CustomModelDownloadConditionsTest {
   }
 
   @Test
-  public void testTwoConfigedConditionsSame() {
+  public void testTwoConfiguredConditionsSame() {
     CustomModelDownloadConditions conditions1 =
         new CustomModelDownloadConditions.Builder().requireDeviceIdle().requireCharging().build();
     CustomModelDownloadConditions conditions2 =
@@ -58,7 +58,7 @@ public class CustomModelDownloadConditionsTest {
   }
 
   @Test
-  public void testTwoConfigedConditionsDifferent() {
+  public void testTwoConfiguredConditionsDifferent() {
     CustomModelDownloadConditions conditions1 =
         new CustomModelDownloadConditions.Builder().requireCharging().build();
     CustomModelDownloadConditions conditions2 =

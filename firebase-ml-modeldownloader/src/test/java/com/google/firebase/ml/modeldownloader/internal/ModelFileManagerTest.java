@@ -25,8 +25,6 @@ import com.google.firebase.FirebaseOptions.Builder;
 import com.google.firebase.ml.modeldownloader.CustomModel;
 import java.io.File;
 import java.io.IOException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -47,11 +45,10 @@ public class ModelFileManagerTest {
   public static final String MODEL_NAME = "MODEL_NAME_1";
   public static final String MODEL_HASH = "dsf324";
 
-  CustomModel CUSTOM_MODEL_NO_FILE = new CustomModel(MODEL_NAME, MODEL_HASH, 100, 0);
+  final CustomModel CUSTOM_MODEL_NO_FILE = new CustomModel(MODEL_NAME, MODEL_HASH, 100, 0);
 
   private File testModelFile;
 
-  ExecutorService executor;
   ModelFileManager fileManager;
   String expectedDestinationFolder;
 
@@ -62,12 +59,8 @@ public class ModelFileManagerTest {
     FirebaseApp app =
         FirebaseApp.initializeApp(
             ApplicationProvider.getApplicationContext(),
-            new FirebaseOptions.Builder()
-                .setApplicationId("1:123456789:android:abcdef")
-                .setProjectId(TEST_PROJECT_ID)
-                .build());
+            FIREBASE_OPTIONS);
 
-    executor = Executors.newSingleThreadExecutor();
     fileManager = new ModelFileManager(app);
 
     setUpTestingFiles(app);
