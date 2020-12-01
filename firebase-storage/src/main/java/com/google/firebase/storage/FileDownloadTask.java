@@ -130,8 +130,7 @@ public class FileDownloadTask extends StorageTask<FileDownloadTask.TaskSnapshot>
       File outputFile = new File(mDestinationFile.getPath());
       if (!outputFile.exists()) {
         if (mResumeOffset > 0) {
-          Log.e(TAG, "The file downloading to has been deleted:" + outputFile.getAbsolutePath());
-          throw new IllegalStateException("expected a file to resume from.");
+          throw new IOException("The file to download to has been deleted.");
         }
         boolean created = outputFile.createNewFile();
         if (!created) {
