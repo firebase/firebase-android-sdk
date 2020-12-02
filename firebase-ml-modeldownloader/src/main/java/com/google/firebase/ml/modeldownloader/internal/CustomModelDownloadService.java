@@ -232,6 +232,12 @@ public class CustomModelDownloadService {
         expireTime = parseTokenExpirationTimestamp(reader.nextString());
       } else if (name.equals("sizeBytes")) {
         fileSize = reader.nextLong();
+      } else if (name.equals("modelFormat")) {
+        String modelFormat = reader.nextString();
+        if (modelFormat.equals("MODEL_FORMAT_UNSPECIFIED")) {
+          // log error but continue... this shouldn't happen
+          System.out.println("Unexpected model type: " + modelFormat);
+        }
       } else {
         reader.skipValue();
       }

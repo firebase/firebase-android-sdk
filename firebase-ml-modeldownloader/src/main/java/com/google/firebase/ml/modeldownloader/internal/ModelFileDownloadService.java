@@ -38,9 +38,9 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.ml.modeldownloader.CustomModel;
 import com.google.firebase.ml.modeldownloader.CustomModelDownloadConditions;
+import com.google.firebase.ml.modeldownloader.FirebaseMlException;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -164,6 +164,7 @@ public class ModelFileDownloadService {
     if (customModel.getDownloadUrl() == null || customModel.getDownloadUrl().isEmpty()) {
       return null;
     }
+
     // todo handle expired url here and figure out what to do about delayed downloads too..
 
     // Schedule a new downloading
@@ -311,6 +312,28 @@ public class ModelFileDownloadService {
     return null;
   }
 
+  private FirebaseMlException getExceptionAccordingToDownloadManager(Long downloadId) {
+    int errorCode = FirebaseMlException.INTERNAL;
+    String errorMessage = "Model downloading failed";
+    Cursor cursor =
+        (downloadManager == null || downloadId == null)
+            ? null
+            : downloadManager.query(new Query().setFilterById(downloadId));
+    if (cursor != null && cursor.moveToFirst()) {
+      int reason = cursor.getInt(cursor.getColumnIndex(DownloadManager.COLUMN_REASON));
+      if (reason == DownloadManager.ERROR_INSUFFICIENT_SPACE) {
+        errorMessage = "Model downloading failed due to insufficient space on the device.";
+        errorCode = FirebaseMlException.NOT_ENOUGH_SPACE;
+      } else {
+        errorMessage =
+            "Model downloading failed due to error code: "
+                + reason
+                + " from Android DownloadManager";
+      }
+    }
+    return new FirebaseMlException(errorMessage, errorCode);
+  }
+
   // This class runs totally on worker thread because we registered the receiver with a worker
   // thread handler.
   @WorkerThread
@@ -354,7 +377,7 @@ public class ModelFileDownloadService {
         if (statusCode == DownloadManager.STATUS_FAILED) {
           // todo add failure reason and logging
           System.out.println("Download Failed for id: " + id);
-          taskCompletionSource.setException(new Exception("Failed"));
+          taskCompletionSource.setException(getExceptionAccordingToDownloadManager(id));
           return;
         }
 

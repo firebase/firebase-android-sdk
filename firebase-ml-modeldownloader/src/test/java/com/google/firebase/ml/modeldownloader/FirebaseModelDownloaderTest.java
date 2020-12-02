@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.times;
@@ -188,5 +189,15 @@ public class FirebaseModelDownloaderTest {
     assertThrows(
         UnsupportedOperationException.class,
         () -> FirebaseModelDownloader.getInstance().deleteDownloadedModel(MODEL_NAME));
+  }
+
+  @Test
+  public void setStatsCollectionEnabled() {
+    doNothing().when(mockPrefs).setCustomModelStatsCollectionEnabled(anyBoolean());
+    firebaseModelDownloader.setStatsCollectionEnabled(true);
+    verify(mockPrefs, times(1)).setCustomModelStatsCollectionEnabled(eq(true));
+
+    firebaseModelDownloader.setStatsCollectionEnabled(false);
+    verify(mockPrefs, times(1)).setCustomModelStatsCollectionEnabled(eq(false));
   }
 }

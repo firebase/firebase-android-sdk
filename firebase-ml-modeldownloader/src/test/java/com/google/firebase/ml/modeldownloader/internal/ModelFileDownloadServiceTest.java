@@ -41,6 +41,7 @@ import com.google.firebase.FirebaseOptions;
 import com.google.firebase.FirebaseOptions.Builder;
 import com.google.firebase.ml.modeldownloader.CustomModel;
 import com.google.firebase.ml.modeldownloader.CustomModelDownloadConditions;
+import com.google.firebase.ml.modeldownloader.FirebaseMlException;
 import com.google.firebase.ml.modeldownloader.TestOnCompleteListener;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -256,7 +257,11 @@ public class ModelFileDownloadServiceTest {
   @Test
   public void ensureModelDownloaded_downloadFailed() {
     when(mockDownloadManager.enqueue(any())).thenReturn(DOWNLOAD_ID);
-    matrixCursor.addRow(new Integer[] {DownloadManager.STATUS_FAILED});
+    matrixCursor =
+        new MatrixCursor(
+            new String[] {DownloadManager.COLUMN_STATUS, DownloadManager.COLUMN_REASON});
+    matrixCursor.addRow(
+        new Integer[] {DownloadManager.STATUS_FAILED, DownloadManager.ERROR_INSUFFICIENT_SPACE});
     when(mockDownloadManager.query(any())).thenReturn(matrixCursor);
 
     TestOnCompleteListener<Void> onCompleteListener = new TestOnCompleteListener<>();
@@ -270,13 +275,17 @@ public class ModelFileDownloadServiceTest {
 
       task.addOnCompleteListener(executor, onCompleteListener);
       onCompleteListener.await();
+    } catch (FirebaseMlException ex) {
+      System.out.println("Firebase ml Error: " + ex.getMessage());
+      assertEquals(ex.getCode(), FirebaseMlException.NOT_ENOUGH_SPACE);
     } catch (Exception ex) {
+      System.out.println("Error: " + ex.getMessage());
       assertTrue(ex.getMessage().contains("Failed"));
     }
 
     assertTrue(task.isComplete());
     assertFalse(task.isSuccessful());
-    assertTrue(task.getException().getMessage().contains("Failed"));
+    assertTrue(task.getException() instanceof FirebaseMlException);
     assertEquals(
         sharedPreferencesUtil.getDownloadingCustomModelDetails(MODEL_NAME),
         CUSTOM_MODEL_DOWNLOADING);

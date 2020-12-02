@@ -46,6 +46,8 @@ android {
 }
 
 dependencies {
+    implementation project(':encoders:firebase-encoders')
+    implementation project(':encoders:firebase-encoders-json')
     implementation project(':firebase-common')
     implementation project(':firebase-components')
     implementation project(':firebase-installations-interop')
@@ -53,8 +55,6 @@ dependencies {
     implementation project(':transport:transport-api')
     implementation project(':transport:transport-runtime')
     implementation project(':transport:transport-backend-cct')
-    implementation project(':encoders:firebase-encoders')
-    implementation project(':encoders:firebase-encoders-json')
 
     implementation 'androidx.annotation:annotation:1.1.0'
     implementation "com.google.android.gms:play-services-tasks:17.0.2"

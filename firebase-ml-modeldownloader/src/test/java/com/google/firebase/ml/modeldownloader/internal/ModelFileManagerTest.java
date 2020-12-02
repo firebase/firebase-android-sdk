@@ -57,9 +57,7 @@ public class ModelFileManagerTest {
     MockitoAnnotations.initMocks(this);
     FirebaseApp.clearInstancesForTest();
     FirebaseApp app =
-        FirebaseApp.initializeApp(
-            ApplicationProvider.getApplicationContext(),
-            FIREBASE_OPTIONS);
+        FirebaseApp.initializeApp(ApplicationProvider.getApplicationContext(), FIREBASE_OPTIONS);
 
     fileManager = new ModelFileManager(app);
 

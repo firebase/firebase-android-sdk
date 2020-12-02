@@ -47,6 +47,10 @@ public class SharedPreferencesUtil {
   private static final String DOWNLOADING_MODEL_ID_PATTERN = "downloading_model_id_%s_%s";
   private static final String DOWNLOAD_BEGIN_TIME_MS_PATTERN = "downloading_begin_time_%s_%s";
 
+  // logging keys
+  private static final String STATS_LOGGING_ENABLED_PATTERN = "logging_%s_%s";
+  private static final String CUSTOM_MODEL_LIB = "custom_model";
+
   private final String persistenceKey;
   private final FirebaseApp firebaseApp;
 
@@ -210,9 +214,9 @@ public class SharedPreferencesUtil {
         .commit();
   }
 
-
   /**
    * Set of all keys associated with this firebase app.
+   *
    * @return
    */
   public Set<String> getSharedPreferenceKeySet() {
@@ -242,6 +246,30 @@ public class SharedPreferencesUtil {
       }
     }
     return customModels;
+  }
+
+  /**
+   * Should Firelog logging be enabled.
+   *
+   * @return whether or not firelog events should be logged. Default to true.
+   */
+  public synchronized boolean getCustomModelStatsCollectionFlag() {
+    return getSharedPreferences()
+        .getBoolean(
+            String.format(STATS_LOGGING_ENABLED_PATTERN, CUSTOM_MODEL_LIB, persistenceKey), true);
+  }
+
+  /**
+   * Set whether firelog logging should be enabled. When not explicitly set, the default is true.
+   *
+   * @param enable - False to turn off logging. True to turn on logging.
+   */
+  public synchronized void setCustomModelStatsCollectionEnabled(boolean enable) {
+    getSharedPreferences()
+        .edit()
+        .putBoolean(
+            String.format(STATS_LOGGING_ENABLED_PATTERN, CUSTOM_MODEL_LIB, persistenceKey), enable)
+        .apply();
   }
 
   /**

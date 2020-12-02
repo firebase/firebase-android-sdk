@@ -18,6 +18,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
+import com.google.android.datatransport.TransportFactory;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -39,9 +40,10 @@ public class FirebaseModelDownloader {
   private final ModelFileDownloadService fileDownloadService;
   private final CustomModelDownloadService modelDownloadService;
   private final Executor executor;
+  private final TransportFactory transportFactory;
 
   @RequiresApi(api = VERSION_CODES.KITKAT)
-  FirebaseModelDownloader(FirebaseApp firebaseApp) {
+  FirebaseModelDownloader(FirebaseApp firebaseApp, TransportFactory transportFactory) {
     this.firebaseOptions = firebaseApp.getOptions();
     this.fileDownloadService = new ModelFileDownloadService(firebaseApp);
     this.sharedPreferencesUtil = new SharedPreferencesUtil(firebaseApp);
@@ -49,6 +51,7 @@ public class FirebaseModelDownloader {
         new CustomModelDownloadService(
             firebaseOptions, FirebaseApp.getInstance().get(FirebaseInstallationsApi.class));
     this.executor = Executors.newCachedThreadPool();
+    this.transportFactory = transportFactory;
   }
 
   @VisibleForTesting
@@ -63,6 +66,8 @@ public class FirebaseModelDownloader {
     this.fileDownloadService = fileDownloadService;
     this.modelDownloadService = modelDownloadService;
     this.executor = executor;
+    // todo update for testing...
+    this.transportFactory = null;
   }
 
   /**
@@ -184,6 +189,15 @@ public class FirebaseModelDownloader {
   @NonNull
   public Task<Void> deleteDownloadedModel(@NonNull String modelName) {
     throw new UnsupportedOperationException("Not yet implemented.");
+  }
+
+  /**
+   * Update the settings which allow logging to firelog.
+   *
+   * @param enabled
+   */
+  public void setStatsCollectionEnabled(boolean enabled) {
+    sharedPreferencesUtil.setCustomModelStatsCollectionEnabled(enabled);
   }
 
   /** Returns the nick name of the {@link FirebaseApp} of this {@link FirebaseModelDownloader} */
