@@ -41,13 +41,13 @@ public class FirebaseModelDownloader {
   private final Executor executor;
 
   @RequiresApi(api = VERSION_CODES.KITKAT)
-  FirebaseModelDownloader(FirebaseApp firebaseApp) {
+  FirebaseModelDownloader(
+      FirebaseApp firebaseApp, FirebaseInstallationsApi firebaseInstallationsApi) {
     this.firebaseOptions = firebaseApp.getOptions();
     this.fileDownloadService = new ModelFileDownloadService(firebaseApp);
     this.sharedPreferencesUtil = new SharedPreferencesUtil(firebaseApp);
     this.modelDownloadService =
-        new CustomModelDownloadService(
-            firebaseOptions, FirebaseApp.getInstance().get(FirebaseInstallationsApi.class));
+        new CustomModelDownloadService(firebaseOptions, firebaseInstallationsApi);
     this.executor = Executors.newCachedThreadPool();
   }
 
