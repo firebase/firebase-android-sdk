@@ -136,8 +136,8 @@ public class CustomModel {
   /**
    * The local model file. If null is returned, use the download Id to check the download status.
    *
-   * @return the local file associated with the model, if the original file download is still in
-   *     progress, returns null, if file update is in progress returns last fully uploaded model.
+   * @return the local file associated with the model. If the original file download is still in
+   *     progress, returns null. If file update is in progress, returns the last fully uploaded model.
    */
   @Nullable
   @VisibleForTesting
