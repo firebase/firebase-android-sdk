@@ -60,7 +60,7 @@ public class ModelFileManager {
    * directory specified does exist. If you need to ensure its existence, you should call
    * getDirImpl.
    */
-  private @Nullable File getModelDirUnsafe(@NonNull String modelName) {
+  @Nullable private File getModelDirUnsafe(@NonNull String modelName) {
     String modelTypeSpecificRoot = CUSTOM_MODEL_ROOT_PATH;
     File root;
     if (VERSION.SDK_INT >= VERSION_CODES.LOLLIPOP) {
