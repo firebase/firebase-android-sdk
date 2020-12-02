@@ -261,7 +261,7 @@ public class WebSocket {
     if (socket != null) {
       try {
         socket.close();
-      } catch (Throwable e) {
+      } catch (Exception e) {
         eventHandler.onError(new WebSocketException("Failed to close", e));
       }
     }
