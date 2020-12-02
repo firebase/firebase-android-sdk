@@ -36,6 +36,7 @@ public abstract class FirebaseMlStat {
   @NonNull
   public abstract int getEventName();
 
+  @NonNull
   public byte[] getBytes() {
     return String.valueOf(getEventName()).getBytes();
   }
