@@ -159,7 +159,7 @@ public class FirebaseModelDownloader {
   }
 
   /**
-   * Triggers the move to permanent storage of successful model downloads and list all models
+   * Triggers the move to permanent storage of successful model downloads and lists all models
    * downloaded to device.
    *
    * @return The set of all models that are downloaded to this device, triggers completion of file
