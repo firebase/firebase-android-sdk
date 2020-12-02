@@ -86,11 +86,18 @@ public class ConfigContainer {
    * <p>The {@code containerJson} must not be modified.
    */
   static ConfigContainer copyOf(JSONObject containerJson) throws JSONException {
+    // Personalization metadata may not have been written yet.
+    JSONObject personalizationMetadataJSON =
+        containerJson.optJSONObject(PERSONALIZATION_METADATA_KEY);
+    if (personalizationMetadataJSON == null) {
+      personalizationMetadataJSON = new JSONObject();
+    }
+
     return new ConfigContainer(
         containerJson.getJSONObject(CONFIGS_KEY),
         new Date(containerJson.getLong(FETCH_TIME_KEY)),
         containerJson.getJSONArray(ABT_EXPERIMENTS_KEY),
-        containerJson.getJSONObject(PERSONALIZATION_METADATA_KEY));
+        personalizationMetadataJSON);
   }
 
   /**

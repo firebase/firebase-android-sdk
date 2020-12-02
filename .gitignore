@@ -8,3 +8,4 @@ google-services.json
 _artifacts
 .DS_Store
 firebase-crashlytics-ndk/.externalNativeBuild/
+firebase-crashlytics-ndk/.cxx/

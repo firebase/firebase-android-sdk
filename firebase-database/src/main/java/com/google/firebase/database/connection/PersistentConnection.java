@@ -14,6 +14,7 @@
 
 package com.google.firebase.database.connection;
 
+import com.google.android.gms.tasks.Task;
 import java.util.List;
 import java.util.Map;
 
@@ -55,6 +56,10 @@ public interface PersistentConnection {
       RequestResultCallback onComplete);
 
   void unlisten(List<String> path, Map<String, Object> queryParams);
+
+  // Get
+
+  Task<Object> get(List<String> path, Map<String, Object> queryParams);
 
   // Writes
 

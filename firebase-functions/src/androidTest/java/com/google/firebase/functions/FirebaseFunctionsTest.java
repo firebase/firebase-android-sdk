@@ -38,6 +38,14 @@ public class FirebaseFunctionsTest {
     functions = FirebaseFunctions.getInstance(app);
     url = functions.getURL("my-endpoint");
     assertEquals("https://us-central1-my-project.cloudfunctions.net/my-endpoint", url.toString());
+
+    functions = FirebaseFunctions.getInstance(app, "https://mydomain.com");
+    url = functions.getURL("my-endpoint");
+    assertEquals("https://mydomain.com/my-endpoint", url.toString());
+
+    functions = FirebaseFunctions.getInstance(app, "https://mydomain.com/foo");
+    url = functions.getURL("my-endpoint");
+    assertEquals("https://mydomain.com/foo/my-endpoint", url.toString());
   }
 
   @Test
@@ -57,6 +65,14 @@ public class FirebaseFunctionsTest {
 
     URL withRegion = functionsWithRegion.getURL("my-endpoint");
     assertEquals("http://10.0.2.2:5001/my-project/my-region/my-endpoint", withRegion.toString());
+
+    FirebaseFunctions functionsWithCustomDomain =
+        FirebaseFunctions.getInstance(app, "https://mydomain.com");
+    functionsWithCustomDomain.useEmulator("10.0.2.2", 5001);
+
+    URL withCustomDOmain = functionsWithCustomDomain.getURL("my-endpoint");
+    assertEquals(
+        "http://10.0.2.2:5001/my-project/us-central1/my-endpoint", withCustomDOmain.toString());
   }
 
   @Test

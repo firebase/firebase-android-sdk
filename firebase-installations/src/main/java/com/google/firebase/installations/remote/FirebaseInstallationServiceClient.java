@@ -491,7 +491,7 @@ public class FirebaseInstallationServiceClient {
     TokenResult.Builder tokenResult = TokenResult.builder();
     InstallationResponse.Builder builder = InstallationResponse.builder();
     // JsonReader.peek will sometimes throw AssertionErrors in Android 8.0 and above. See
-    // https://b.corp.google.com/issues/79920590 for details.
+    // b/79920590 for details.
     reader.beginObject();
     while (reader.hasNext()) {
       String name = reader.nextName();
@@ -533,7 +533,7 @@ public class FirebaseInstallationServiceClient {
     JsonReader reader = new JsonReader(new InputStreamReader(inputStream, UTF_8));
     TokenResult.Builder builder = TokenResult.builder();
     // JsonReader.peek will sometimes throw AssertionErrors in Android 8.0 and above. See
-    // https://b.corp.google.com/issues/79920590 for details.
+    // b/79920590 for details.
     reader.beginObject();
     while (reader.hasNext()) {
       String name = reader.nextName();

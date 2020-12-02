@@ -15,10 +15,8 @@
 package com.google.firebase.ml.modeldownloader;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -29,7 +27,13 @@ public class CustomModelTest {
 
   public static final String MODEL_NAME = "ModelName";
   public static final String MODEL_HASH = "dsf324";
-  CustomModel CUSTOM_MODEL = new CustomModel(MODEL_NAME, 0, 100, MODEL_HASH);
+
+  public static final String MODEL_URL = "https://project.firebase.com/modelName/23424.jpg";
+  private static final long URL_EXPIRATION = 604800L;
+  CustomModel CUSTOM_MODEL = new CustomModel(MODEL_NAME, MODEL_HASH, 100, 0);
+
+  CustomModel CUSTOM_MODEL_URL =
+      new CustomModel(MODEL_NAME, MODEL_HASH, 100, MODEL_URL, URL_EXPIRATION);
 
   @Test
   public void customModel_getName() {
@@ -57,19 +61,48 @@ public class CustomModelTest {
   }
 
   @Test
+  public void customModel_getDownloadUrl() {
+    assertEquals(CUSTOM_MODEL_URL.getDownloadUrl(), MODEL_URL);
+  }
+
+  @Test
+  public void customModel_getDownloadUrlExpiry() {
+    assertEquals(CUSTOM_MODEL_URL.getDownloadUrlExpiry(), URL_EXPIRATION);
+  }
+
+  @Test
   public void customModel_equals() {
-    assertTrue(CUSTOM_MODEL.equals(new CustomModel(MODEL_NAME, 0, 100, MODEL_HASH)));
-    assertFalse(CUSTOM_MODEL.equals(new CustomModel(MODEL_NAME, 0, 101, MODEL_HASH)));
-    assertFalse(CUSTOM_MODEL.equals(new CustomModel(MODEL_NAME, 101, 100, MODEL_HASH)));
+    // downloading models
+    assertEquals(CUSTOM_MODEL, new CustomModel(MODEL_NAME, MODEL_HASH, 100, 0));
+    assertNotEquals(CUSTOM_MODEL, new CustomModel(MODEL_NAME, MODEL_HASH, 101, 0));
+    assertNotEquals(CUSTOM_MODEL, new CustomModel(MODEL_NAME, MODEL_HASH, 100, 101));
+    // get model details models
+    assertEquals(
+        CUSTOM_MODEL_URL, new CustomModel(MODEL_NAME, MODEL_HASH, 100, MODEL_URL, URL_EXPIRATION));
+    assertNotEquals(
+        CUSTOM_MODEL_URL, new CustomModel(MODEL_NAME, MODEL_HASH, 101, MODEL_URL, URL_EXPIRATION));
+    assertNotEquals(
+        CUSTOM_MODEL_URL,
+        new CustomModel(MODEL_NAME, MODEL_HASH, 100, MODEL_URL, URL_EXPIRATION + 10L));
   }
 
   @Test
   public void customModel_hashCode() {
     assertEquals(
-        CUSTOM_MODEL.hashCode(), new CustomModel(MODEL_NAME, 0, 100, MODEL_HASH).hashCode());
+        CUSTOM_MODEL.hashCode(), new CustomModel(MODEL_NAME, MODEL_HASH, 100, 0).hashCode());
     assertNotEquals(
-        CUSTOM_MODEL.hashCode(), new CustomModel(MODEL_NAME, 0, 101, MODEL_HASH).hashCode());
+        CUSTOM_MODEL.hashCode(), new CustomModel(MODEL_NAME, MODEL_HASH, 101, 0).hashCode());
     assertNotEquals(
-        CUSTOM_MODEL.hashCode(), new CustomModel(MODEL_NAME, 101, 100, MODEL_HASH).hashCode());
+        CUSTOM_MODEL.hashCode(), new CustomModel(MODEL_NAME, MODEL_HASH, 100, 101).hashCode());
+
+    assertEquals(
+        CUSTOM_MODEL_URL.hashCode(),
+        new CustomModel(MODEL_NAME, MODEL_HASH, 100, MODEL_URL, URL_EXPIRATION).hashCode());
+    assertNotEquals(
+        CUSTOM_MODEL_URL.hashCode(),
+        new CustomModel(MODEL_NAME, MODEL_HASH, 101, MODEL_URL, URL_EXPIRATION).hashCode());
+    assertNotEquals(
+        CUSTOM_MODEL_URL.hashCode(),
+        new CustomModel(MODEL_NAME, MODEL_HASH, 100, MODEL_URL, URL_EXPIRATION + 10L).hashCode());
   }
 }
