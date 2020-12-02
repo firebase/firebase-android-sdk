@@ -16,22 +16,41 @@ package com.google.firebase.remoteconfig.internal;
 
 import android.os.Bundle;
 import androidx.annotation.NonNull;
+import com.google.common.base.CaseFormat;
+import com.google.common.base.Converter;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import org.json.JSONObject;
 
 public class Personalization {
   public static final String ANALYTICS_ORIGIN_PERSONALIZATION = "fp";
-  public static final String ANALYTICS_PULL_EVENT = "_fpc";
-  public static final String ARM_KEY = "_fpid";
-  public static final String ARM_VALUE = "_fpct";
-  static final String PERSONALIZATION_ID = "personalizationId";
+
+  public static final String ANALYTICS_PULL_EVENT = "personalization_choice";
+  public static final String ARM_KEY = "arm_key";
+  public static final String ARM_VALUE = "arm_value";
+  public static final String PERSONALIZATION_ID = "personalization_id";
+  public static final String ARM_INDEX = "arm_index";
+  public static final String GROUP = "group";
+
+  public static final String ANALYTICS_PULL_EVENT_INTERNAL = "_fpc";
+  public static final String CHOICE_ID = "choiceId";
+  public static final String CHOICE_ID_KEY = "_fpid";
+
+  private static final Converter<String, String> CONVERTER =
+      CaseFormat.LOWER_UNDERSCORE.converterTo(CaseFormat.LOWER_CAMEL);
 
   /** The app's Firebase Analytics client. */
   private final AnalyticsConnector analyticsConnector;
 
+  /** A map of Remote Config parameter key to Personalization ID. */
+  private final Map<String, String> armsCache;
+
   /** Creates an instance of {@code Personalization}. */
   public Personalization(@NonNull AnalyticsConnector analyticsConnector) {
     this.analyticsConnector = analyticsConnector;
+    armsCache = Collections.synchronizedMap(new HashMap<String, String>());
   }
 
   /**
@@ -58,9 +77,29 @@ public class Personalization {
       return;
     }
 
+    String personalizationId = metadata.optString(CONVERTER.convert(PERSONALIZATION_ID));
+    if (personalizationId.isEmpty()) {
+      return;
+    }
+
+    synchronized (armsCache) {
+      if (armsCache.get(key) == personalizationId) {
+        return;
+      }
+      armsCache.put(key, personalizationId);
+    }
+
     Bundle params = new Bundle();
-    params.putString(ARM_KEY, metadata.optString(PERSONALIZATION_ID));
+    params.putString(ARM_KEY, key);
     params.putString(ARM_VALUE, values.optString(key));
+    params.putString(PERSONALIZATION_ID, personalizationId);
+    params.putInt(ARM_INDEX, metadata.optInt(CONVERTER.convert(ARM_INDEX), -1));
+    params.putString(GROUP, metadata.optString(CONVERTER.convert(GROUP)));
     analyticsConnector.logEvent(ANALYTICS_ORIGIN_PERSONALIZATION, ANALYTICS_PULL_EVENT, params);
+
+    Bundle paramsInternal = new Bundle();
+    paramsInternal.putString(CHOICE_ID_KEY, metadata.optString(CHOICE_ID));
+    analyticsConnector.logEvent(
+        ANALYTICS_ORIGIN_PERSONALIZATION, ANALYTICS_PULL_EVENT_INTERNAL, paramsInternal);
   }
 }
