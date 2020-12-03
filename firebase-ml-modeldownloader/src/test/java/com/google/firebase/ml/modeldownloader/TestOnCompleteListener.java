@@ -46,7 +46,7 @@ public class TestOnCompleteListener<TResult> implements OnCompleteListener<TResu
   }
 
   /** Blocks until the {@link #onComplete} is called. */
-  public TResult await() throws InterruptedException, ExecutionException {
+  public TResult await() throws Exception {
     if (!latch.await(TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
       throw new InterruptedException("timed out waiting for result");
     }
@@ -56,9 +56,12 @@ public class TestOnCompleteListener<TResult> implements OnCompleteListener<TResu
       if (exception instanceof InterruptedException) {
         throw (InterruptedException) exception;
       }
-      // todo(annz) add firebase ml exception handling here.
       if (exception instanceof IOException) {
         throw new ExecutionException(exception);
+      }
+      // TODO(annz) replace with firebase ml exception handling.
+      if (exception instanceof Exception) {
+        throw exception;
       }
       throw new IllegalStateException("got an unexpected exception type", exception);
     }

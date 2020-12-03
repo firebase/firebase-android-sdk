@@ -13,14 +13,20 @@
 // limitations under the License.
 package com.google.firebase.ml.modeldownloader;
 
+import android.os.Build.VERSION_CODES;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
+import com.google.firebase.installations.FirebaseInstallationsApi;
+import com.google.firebase.ml.modeldownloader.internal.CustomModelDownloadService;
+import com.google.firebase.ml.modeldownloader.internal.ModelFileDownloadService;
 import com.google.firebase.ml.modeldownloader.internal.SharedPreferencesUtil;
 import java.util.Set;
 import java.util.concurrent.Executor;
@@ -30,11 +36,18 @@ public class FirebaseModelDownloader {
 
   private final FirebaseOptions firebaseOptions;
   private final SharedPreferencesUtil sharedPreferencesUtil;
+  private final ModelFileDownloadService fileDownloadService;
+  private final CustomModelDownloadService modelDownloadService;
   private final Executor executor;
 
-  FirebaseModelDownloader(FirebaseApp firebaseApp) {
+  @RequiresApi(api = VERSION_CODES.KITKAT)
+  FirebaseModelDownloader(
+      FirebaseApp firebaseApp, FirebaseInstallationsApi firebaseInstallationsApi) {
     this.firebaseOptions = firebaseApp.getOptions();
+    this.fileDownloadService = new ModelFileDownloadService(firebaseApp);
     this.sharedPreferencesUtil = new SharedPreferencesUtil(firebaseApp);
+    this.modelDownloadService =
+        new CustomModelDownloadService(firebaseOptions, firebaseInstallationsApi);
     this.executor = Executors.newCachedThreadPool();
   }
 
@@ -42,9 +55,13 @@ public class FirebaseModelDownloader {
   FirebaseModelDownloader(
       FirebaseOptions firebaseOptions,
       SharedPreferencesUtil sharedPreferencesUtil,
+      ModelFileDownloadService fileDownloadService,
+      CustomModelDownloadService modelDownloadService,
       Executor executor) {
     this.firebaseOptions = firebaseOptions;
     this.sharedPreferencesUtil = sharedPreferencesUtil;
+    this.fileDownloadService = fileDownloadService;
+    this.modelDownloadService = modelDownloadService;
     this.executor = executor;
   }
 
@@ -95,21 +112,77 @@ public class FirebaseModelDownloader {
   public Task<CustomModel> getModel(
       @NonNull String modelName,
       @NonNull DownloadType downloadType,
-      @Nullable CustomModelDownloadConditions conditions) {
+      @Nullable CustomModelDownloadConditions conditions)
+      throws Exception {
+    CustomModel localModel = sharedPreferencesUtil.getCustomModelDetails(modelName);
+    switch (downloadType) {
+      case LOCAL_MODEL:
+        if (localModel != null) {
+          return Tasks.forResult(localModel);
+        }
+        Task<CustomModel> modelDetails =
+            modelDownloadService.getCustomModelDetails(
+                firebaseOptions.getProjectId(), modelName, null);
+
+        // no local model - start download.
+        return modelDetails.continueWithTask(
+            executor,
+            modelDetailTask -> {
+              if (modelDetailTask.isSuccessful()) {
+                // start download
+                return fileDownloadService
+                    .download(modelDetailTask.getResult(), conditions)
+                    .continueWithTask(
+                        executor,
+                        downloadTask -> {
+                          if (downloadTask.isSuccessful()) {
+                            // read the updated model
+                            CustomModel downloadedModel =
+                                sharedPreferencesUtil.getCustomModelDetails(modelName);
+                            // TODO(annz) trigger file move here as well... right now it's temp
+                            // call loadNewlyDownloadedModelFile
+                            return Tasks.forResult(downloadedModel);
+                          }
+                          return Tasks.forException(new Exception("File download failed."));
+                        });
+              }
+              return Tasks.forException(modelDetailTask.getException());
+            });
+      case LATEST_MODEL:
+        // check for latest model and download newest
+        break;
+      case LOCAL_MODEL_UPDATE_IN_BACKGROUND:
+        // start download in back ground return current model if not null.
+        break;
+    }
     throw new UnsupportedOperationException("Not yet implemented.");
   }
 
-  /** @return The set of all models that are downloaded to this device. */
+  /**
+   * Triggers the move to permanent storage of successful model downloads and lists all models
+   * downloaded to device.
+   *
+   * @return The set of all models that are downloaded to this device, triggers completion of file
+   *     moves for completed model downloads.
+   */
   @NonNull
   public Task<Set<CustomModel>> listDownloadedModels() {
+    // trigger completion of file moves for download files.
+    try {
+      fileDownloadService.maybeCheckDownloadingComplete();
+    } catch (Exception ex) {
+      System.out.println("Error checking for in progress downloads: " + ex.getMessage());
+    }
+
     TaskCompletionSource<Set<CustomModel>> taskCompletionSource = new TaskCompletionSource<>();
     executor.execute(
         () -> taskCompletionSource.setResult(sharedPreferencesUtil.listDownloadedModels()));
     return taskCompletionSource.getTask();
   }
 
-  /*
+  /**
    * Delete old local models, when no longer in use.
+   *
    * @param modelName - name of the model
    */
   @NonNull
