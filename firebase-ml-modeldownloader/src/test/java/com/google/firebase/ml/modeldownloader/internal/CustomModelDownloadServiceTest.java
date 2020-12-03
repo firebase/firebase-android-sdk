@@ -130,7 +130,7 @@ public class CustomModelDownloadServiceTest {
   }
 
   @Test
-  public void testDownloadService_noHashSuccess() throws Exception {
+  public void downloadService_noHashSuccess() throws Exception {
     String downloadPath =
         String.format(CustomModelDownloadService.DOWNLOAD_MODEL_REGEX, "", PROJECT_ID, MODEL_NAME);
     stubFor(
@@ -165,7 +165,7 @@ public class CustomModelDownloadServiceTest {
   }
 
   @Test
-  public void testDownloadService_withHashSuccess_noMatch() throws Exception {
+  public void downloadService_withHashSuccess_noMatch() throws Exception {
     String downloadPath =
         String.format(CustomModelDownloadService.DOWNLOAD_MODEL_REGEX, "", PROJECT_ID, MODEL_NAME);
     stubFor(
@@ -200,7 +200,7 @@ public class CustomModelDownloadServiceTest {
   }
 
   @Test
-  public void testDownloadService_withHashSuccess_match() throws Exception {
+  public void downloadService_withHashSuccess_match() throws Exception {
     String downloadPath =
         String.format(CustomModelDownloadService.DOWNLOAD_MODEL_REGEX, "", PROJECT_ID, MODEL_NAME);
     stubFor(
@@ -233,7 +233,7 @@ public class CustomModelDownloadServiceTest {
   }
 
   @Test
-  public void testDownloadService_modelNotFound() throws Exception {
+  public void downloadService_modelNotFound() throws Exception {
     String downloadPath =
         String.format(CustomModelDownloadService.DOWNLOAD_MODEL_REGEX, "", PROJECT_ID, MODEL_NAME);
     stubFor(

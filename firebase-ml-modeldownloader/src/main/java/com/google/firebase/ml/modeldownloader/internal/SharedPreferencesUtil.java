@@ -31,6 +31,8 @@ import java.util.regex.Pattern;
 /** @hide */
 public class SharedPreferencesUtil {
 
+  public static final String DOWNLOADING_MODEL_ID_MATCHER = "downloading_model_id_(.*?)_([^/]+)/?";
+
   @VisibleForTesting
   static final String PREFERENCES_PACKAGE_NAME = "com.google.firebase.ml.modelDownloader";
 
@@ -38,7 +40,6 @@ public class SharedPreferencesUtil {
   private static final String LOCAL_MODEL_HASH_PATTERN = "current_model_hash_%s_%s";
   private static final String LOCAL_MODEL_FILE_PATH_PATTERN = "current_model_path_%s_%s";
   private static final String LOCAL_MODEL_FILE_PATH_MATCHER = "current_model_path_(.*?)_([^/]+)/?";
-
   private static final String LOCAL_MODEL_FILE_SIZE_PATTERN = "current_model_size_%s_%s";
   // details about model during download.
   private static final String DOWNLOADING_MODEL_HASH_PATTERN = "downloading_model_hash_%s_%s";
@@ -177,6 +178,19 @@ public class SharedPreferencesUtil {
   }
 
   /**
+   * The information about a failed custom model download. Updates the local model information and
+   * clears the download details associated with this model. Does not update the local file model.
+   *
+   * @param customModelName custom model details to be stored.
+   * @hide
+   */
+  public synchronized void setFailedUploadedCustomModelDetails(@NonNull String customModelName)
+      throws IllegalArgumentException {
+    Editor editor = getSharedPreferences().edit();
+    clearDownloadingModelDetails(editor, customModelName);
+  }
+
+  /**
    * Clears all stored data related to a local custom model, including download details.
    *
    * @param modelName - name of model
@@ -196,6 +210,22 @@ public class SharedPreferencesUtil {
         .commit();
   }
 
+  /**
+   * Set of all keys associated with this firebase app.
+   *
+   * @return
+   */
+  public Set<String> getSharedPreferenceKeySet() {
+    return getSharedPreferences().getAll().keySet();
+  }
+
+  /**
+   * Lists the current set of downloaded model, does not include downloads in progress. Call
+   * ModelFileManager.maybeGetUpdatedModels() before calling this to trigger successful download
+   * completions.
+   *
+   * @return list of Custom Models.
+   */
   public synchronized Set<CustomModel> listDownloadedModels() {
     Set<CustomModel> customModels = new HashSet<>();
     Set<String> keySet = getSharedPreferences().getAll().keySet();
@@ -209,26 +239,9 @@ public class SharedPreferencesUtil {
         if (extractModel != null) {
           customModels.add(extractModel);
         }
-      } else {
-        matcher = Pattern.compile(DOWNLOADING_MODEL_ID_PATTERN).matcher(key);
-        if (matcher.find()) {
-          String modelName = matcher.group(matcher.groupCount());
-          CustomModel extractModel = maybeGetUpdatedModel(modelName);
-          if (extractModel != null) {
-            customModels.add(extractModel);
-          }
-        }
       }
     }
     return customModels;
-  }
-
-  synchronized CustomModel maybeGetUpdatedModel(String modelName) {
-    CustomModel downloadModel = getCustomModelDetails(modelName);
-    // TODO(annz) check here if download currently in progress have completed.
-    // if yes, then complete file relocation and return the updated model, otherwise return null
-
-    return null;
   }
 
   /**

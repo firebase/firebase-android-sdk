@@ -27,6 +27,7 @@ import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 
 /** Tests for {@link SharedPreferencesUtil}. */
@@ -34,22 +35,19 @@ import org.robolectric.RobolectricTestRunner;
 public class SharedPreferencesUtilTest {
 
   private static final String TEST_PROJECT_ID = "777777777777";
-
   private static final String MODEL_NAME = "ModelName";
   private static final String MODEL_HASH = "dsf324";
   private static final CustomModel CUSTOM_MODEL_DOWNLOAD_COMPLETE =
       new CustomModel(MODEL_NAME, MODEL_HASH, 100, 0, "file/path/store/ModelName/1");
-
   private static final CustomModel CUSTOM_MODEL_UPDATE_IN_BACKGROUND =
       new CustomModel(MODEL_NAME, MODEL_HASH, 100, 986, "file/path/store/ModelName/1");
-
   private static final CustomModel CUSTOM_MODEL_DOWNLOADING =
       new CustomModel(MODEL_NAME, MODEL_HASH, 100, 986);
-
   private SharedPreferencesUtil sharedPreferencesUtil;
 
   @Before
   public void setUp() {
+    MockitoAnnotations.initMocks(this);
     FirebaseApp.clearInstancesForTest();
     FirebaseApp app =
         FirebaseApp.initializeApp(
@@ -122,7 +120,7 @@ public class SharedPreferencesUtilTest {
   }
 
   @Test
-  public void listDownloadedModels_localModelFound() throws IllegalArgumentException {
+  public void listDownloadedModels_localModelFound() {
     sharedPreferencesUtil.setUploadedCustomModelDetails(CUSTOM_MODEL_DOWNLOAD_COMPLETE);
     Set<CustomModel> retrievedModel = sharedPreferencesUtil.listDownloadedModels();
     assertEquals(retrievedModel.size(), 1);
@@ -130,18 +128,18 @@ public class SharedPreferencesUtilTest {
   }
 
   @Test
-  public void listDownloadedModels_downloadingModelNotFound() throws IllegalArgumentException {
+  public void listDownloadedModels_downloadingModelNotFound() {
     sharedPreferencesUtil.setDownloadingCustomModelDetails(CUSTOM_MODEL_DOWNLOADING);
     assertEquals(sharedPreferencesUtil.listDownloadedModels().size(), 0);
   }
 
   @Test
-  public void listDownloadedModels_noModels() throws IllegalArgumentException {
+  public void listDownloadedModels_noModels() {
     assertEquals(sharedPreferencesUtil.listDownloadedModels().size(), 0);
   }
 
   @Test
-  public void listDownloadedModels_multipleModels() throws IllegalArgumentException {
+  public void listDownloadedModels_multipleModels() {
     sharedPreferencesUtil.setUploadedCustomModelDetails(CUSTOM_MODEL_DOWNLOAD_COMPLETE);
 
     CustomModel model2 =

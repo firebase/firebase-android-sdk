@@ -17,9 +17,22 @@ package com.google.firebase.ml.modeldownloader;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
+import androidx.test.core.app.ApplicationProvider;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.FirebaseOptions;
+import com.google.firebase.FirebaseOptions.Builder;
+import com.google.firebase.ml.modeldownloader.internal.ModelFileDownloadService;
+import java.io.File;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 
 @RunWith(RobolectricTestRunner.class)
@@ -27,13 +40,31 @@ public class CustomModelTest {
 
   public static final String MODEL_NAME = "ModelName";
   public static final String MODEL_HASH = "dsf324";
+  public static final File TEST_MODEL_FILE = new File("fakeFile.tflite");
+  public static final File TEST_MODEL_FILE_UPDATED = new File("fakeUpdateFile.tflite");
 
   public static final String MODEL_URL = "https://project.firebase.com/modelName/23424.jpg";
+  public static final String TEST_PROJECT_ID = "777777777777";
+  public static final FirebaseOptions FIREBASE_OPTIONS =
+      new Builder()
+          .setApplicationId("1:123456789:android:abcdef")
+          .setProjectId(TEST_PROJECT_ID)
+          .build();
   private static final long URL_EXPIRATION = 604800L;
-  CustomModel CUSTOM_MODEL = new CustomModel(MODEL_NAME, MODEL_HASH, 100, 0);
-
-  CustomModel CUSTOM_MODEL_URL =
+  final CustomModel CUSTOM_MODEL = new CustomModel(MODEL_NAME, MODEL_HASH, 100, 0);
+  final CustomModel CUSTOM_MODEL_URL =
       new CustomModel(MODEL_NAME, MODEL_HASH, 100, MODEL_URL, URL_EXPIRATION);
+  final CustomModel CUSTOM_MODEL_FILE =
+      new CustomModel(MODEL_NAME, MODEL_HASH, 100, 0, TEST_MODEL_FILE.getPath());
+  @Mock ModelFileDownloadService fileDownloadService;
+
+  @Before
+  public void setUp() {
+    MockitoAnnotations.initMocks(this);
+    FirebaseApp.clearInstancesForTest();
+    // default app
+    FirebaseApp.initializeApp(ApplicationProvider.getApplicationContext(), FIREBASE_OPTIONS);
+  }
 
   @Test
   public void customModel_getName() {
@@ -56,8 +87,32 @@ public class CustomModelTest {
   }
 
   @Test
-  public void customModel_getFile_downloadIncomplete() {
-    assertNull(CUSTOM_MODEL.getFile());
+  public void customModel_getFile_noLocalNoDownloadIncomplete() throws Exception {
+    when(fileDownloadService.loadNewlyDownloadedModelFile(any(CustomModel.class))).thenReturn(null);
+    assertNull(CUSTOM_MODEL.getFile(fileDownloadService));
+    verify(fileDownloadService, times(1)).loadNewlyDownloadedModelFile(any());
+  }
+
+  @Test
+  public void customModel_getFile_localModelNoDownload() throws Exception {
+    when(fileDownloadService.loadNewlyDownloadedModelFile(any(CustomModel.class))).thenReturn(null);
+    assertEquals(CUSTOM_MODEL_FILE.getFile(fileDownloadService), TEST_MODEL_FILE);
+    verify(fileDownloadService, times(1)).loadNewlyDownloadedModelFile(any());
+  }
+
+  @Test
+  public void customModel_getFile_localModelDownloadComplete() throws Exception {
+    when(fileDownloadService.loadNewlyDownloadedModelFile(any(CustomModel.class)))
+        .thenReturn(TEST_MODEL_FILE_UPDATED);
+    assertEquals(CUSTOM_MODEL_FILE.getFile(fileDownloadService), TEST_MODEL_FILE_UPDATED);
+    verify(fileDownloadService, times(1)).loadNewlyDownloadedModelFile(any());
+  }
+
+  @Test
+  public void customModel_getFile_noLocalDownloadComplete() throws Exception {
+    when(fileDownloadService.loadNewlyDownloadedModelFile(any())).thenReturn(TEST_MODEL_FILE);
+    assertEquals(CUSTOM_MODEL.getFile(fileDownloadService), TEST_MODEL_FILE);
+    verify(fileDownloadService, times(1)).loadNewlyDownloadedModelFile(any());
   }
 
   @Test

@@ -16,7 +16,9 @@ package com.google.firebase.ml.modeldownloader;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.internal.Objects;
+import com.google.firebase.ml.modeldownloader.internal.ModelFileDownloadService;
 import java.io.File;
 
 /**
@@ -127,11 +129,30 @@ public class CustomModel {
    *     progress, returns null, if file update is in progress returns last fully uploaded model.
    */
   @Nullable
-  public File getFile() {
+  public File getFile() throws Exception {
+    return getFile(ModelFileDownloadService.getInstance());
+  }
+
+  /**
+   * The local model file. If null is returned, use the download Id to check the download status.
+   *
+   * @return the local file associated with the model. If the original file download is still in
+   *     progress, returns null. If file update is in progress, returns the last fully uploaded
+   *     model.
+   */
+  @Nullable
+  @VisibleForTesting
+  File getFile(ModelFileDownloadService fileDownloadService) throws Exception {
+    // check for completed download
+    File newDownloadFile = fileDownloadService.loadNewlyDownloadedModelFile(this);
+    if (newDownloadFile != null) {
+      return newDownloadFile;
+    }
+    // return local file, if present
     if (localFilePath == null || localFilePath.isEmpty()) {
       return null;
     }
-    throw new UnsupportedOperationException("Not implemented, file retrieval coming soon.");
+    return new File(localFilePath);
   }
 
   /**
@@ -144,7 +165,11 @@ public class CustomModel {
     return fileSize;
   }
 
-  /** @return the model hash */
+  /**
+   * Retrieves the model Hash.
+   *
+   * @return the model hash
+   */
   @NonNull
   public String getModelHash() {
     return modelHash;
@@ -159,6 +184,31 @@ public class CustomModel {
    */
   public long getDownloadId() {
     return downloadId;
+  }
+
+  @NonNull
+  @Override
+  public String toString() {
+    Objects.ToStringHelper stringHelper =
+        Objects.toStringHelper(this)
+            .add("name", name)
+            .add("modelHash", modelHash)
+            .add("fileSize", fileSize);
+
+    if (localFilePath != null && !localFilePath.isEmpty()) {
+      stringHelper.add("localFilePath", localFilePath);
+    }
+    if (downloadId != 0L) {
+      stringHelper.add("downloadId", downloadId);
+    }
+    if (downloadUrl != null && !downloadUrl.isEmpty()) {
+      stringHelper.add("downloadUrl", downloadUrl);
+    }
+    if (downloadUrlExpiry != 0L && !localFilePath.isEmpty()) {
+      stringHelper.add("downloadUrlExpiry", downloadUrlExpiry);
+    }
+
+    return stringHelper.toString();
   }
 
   @Override
@@ -200,6 +250,8 @@ public class CustomModel {
   }
 
   /**
+   * Returns the model download url, usually only present when download is about to occur.
+   *
    * @return the model download url
    *     <p>Internal use only
    * @hide
