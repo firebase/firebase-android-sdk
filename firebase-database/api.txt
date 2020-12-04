@@ -154,6 +154,7 @@ package com.google.firebase.database {
 
   public class Query {
     method @NonNull public com.google.firebase.database.ChildEventListener addChildEventListener(@NonNull com.google.firebase.database.ChildEventListener);
+    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.database.DataSnapshot> get();
     method public void addListenerForSingleValueEvent(@NonNull com.google.firebase.database.ValueEventListener);
     method @NonNull public com.google.firebase.database.ValueEventListener addValueEventListener(@NonNull com.google.firebase.database.ValueEventListener);
     method @NonNull public com.google.firebase.database.Query endAt(@Nullable String);
