@@ -141,14 +141,6 @@ public class ModelFileDownloadService {
       receiver =
           new DownloadBroadcastReceiver(
               downloadId, modelName, getTaskCompletionSourceInstance(downloadId));
-    return registerReceiverForDownloadId(newDownloadId);
-  }
-
-  private synchronized DownloadBroadcastReceiver getReceiverInstance(long downloadId) {
-    DownloadBroadcastReceiver receiver = receiverMaps.get(downloadId);
-    if (receiver == null) {
-      receiver =
-          new DownloadBroadcastReceiver(downloadId, getTaskCompletionSourceInstance(downloadId));
       receiverMaps.put(downloadId, receiver);
     }
     return receiver;
@@ -184,7 +176,6 @@ public class ModelFileDownloadService {
     if (customModel.getDownloadUrl() == null || customModel.getDownloadUrl().isEmpty()) {
       return null;
     }
-
     // todo handle expired url here and figure out what to do about delayed downloads too..
 
     // Schedule a new downloading
@@ -373,7 +364,7 @@ public class ModelFileDownloadService {
     return failureReason;
   }
 
-    // This class runs totally on worker thread because we registered the receiver with a worker
+  // This class runs totally on worker thread because we registered the receiver with a worker
   // thread handler.
   @WorkerThread
   private class DownloadBroadcastReceiver extends BroadcastReceiver {

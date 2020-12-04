@@ -26,6 +26,7 @@ import com.google.firebase.ml.modeldownloader.internal.FirebaseMlStat.ModelDownl
 import com.google.firebase.ml.modeldownloader.internal.FirebaseMlStat.ModelDownloadLogEvent.ModelOptions;
 import com.google.firebase.ml.modeldownloader.internal.FirebaseMlStat.ModelDownloadLogEvent.ModelOptions.ModelInfo;
 
+/** @hide */
 @WorkerThread
 public class FirebaseMlLogger {
   private static final String TAG = "FirebaseMlLogger";

@@ -43,9 +43,10 @@ public class FirebaseModelDownloader {
   private final TransportFactory transportFactory;
 
   @RequiresApi(api = VERSION_CODES.KITKAT)
-  FirebaseModelDownloader(FirebaseApp firebaseApp, {
   FirebaseModelDownloader(
-      FirebaseApp firebaseApp, FirebaseInstallationsApi firebaseInstallationsApi, TransportFactory transportFactory) {
+      FirebaseApp firebaseApp,
+      FirebaseInstallationsApi firebaseInstallationsApi,
+      TransportFactory transportFactory) {
     this.firebaseOptions = firebaseApp.getOptions();
     this.fileDownloadService = new ModelFileDownloadService(firebaseApp);
     this.sharedPreferencesUtil = new SharedPreferencesUtil(firebaseApp);
