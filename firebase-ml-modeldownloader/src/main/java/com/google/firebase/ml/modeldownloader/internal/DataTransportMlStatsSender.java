@@ -23,13 +23,11 @@ import com.google.android.datatransport.cct.CCTDestination;
 import com.google.android.datatransport.runtime.TransportRuntime;
 
 /**
- * This class is responsible for sending FirebaseMl Stats and log objects to Firebase through Google
- * DataTransport.
+ * This class is responsible for sending FirebaseMl Stats to Firebase through Google DataTransport.
  *
  * <p>These will be equivalent to FirebaseMlLogEvent.proto internally.
  */
 public class DataTransportMlStatsSender {
-  public static final String TAG = "FirebaseMlDownloader";
   private static final String FIREBASE_ML_STATS_NAME = "FIREBASE_ML_STATS";
   private final Transport<FirebaseMlStat> transport;
 
@@ -43,7 +41,7 @@ public class DataTransportMlStatsSender {
                 FIREBASE_ML_STATS_NAME,
                 FirebaseMlStat.class,
                 Encoding.of("json"),
-                FirebaseMlStat::getBytes);
+                FirebaseMlStat.getFirebaseMlJsonTransformer());
     return new DataTransportMlStatsSender(transport);
   }
 
@@ -51,8 +49,9 @@ public class DataTransportMlStatsSender {
     this.transport = transport;
   }
 
-  @NonNull
   public void sendStats(@NonNull FirebaseMlStat stat) {
+    // Thoughts? Use .send or .schedule - which gives back task of logging progress? Not sure how
+    // strongly we feel about tracking these?
     transport.send(Event.ofData(stat));
   }
 }

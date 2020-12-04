@@ -39,6 +39,8 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.ml.modeldownloader.CustomModel;
 import com.google.firebase.ml.modeldownloader.CustomModelDownloadConditions;
 import com.google.firebase.ml.modeldownloader.FirebaseMlException;
+import com.google.firebase.ml.modeldownloader.internal.FirebaseMlStat.ModelDownloadLogEvent.DownloadStatus;
+import com.google.firebase.ml.modeldownloader.internal.FirebaseMlStat.ModelDownloadLogEvent.ErrorCode;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.regex.Matcher;
@@ -57,6 +59,8 @@ public class ModelFileDownloadService {
   private final Context context;
   private final ModelFileManager fileManager;
   private final SharedPreferencesUtil sharedPreferencesUtil;
+  private final FirebaseMlLogger eventLogger;
+  private final DataTransportMlStatsSender statsSender;
 
   @GuardedBy("this")
   // Mapping from download id to broadcast receiver. Because models can update, we cannot just keep
@@ -77,6 +81,8 @@ public class ModelFileDownloadService {
     downloadManager = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
     this.fileManager = ModelFileManager.getInstance();
     this.sharedPreferencesUtil = new SharedPreferencesUtil(firebaseApp);
+    this.statsSender = DataTransportMlStatsSender.create(firebaseApp.getApplicationContext());
+    this.eventLogger = new FirebaseMlLogger(sharedPreferencesUtil, statsSender);
   }
 
   @VisibleForTesting
@@ -84,11 +90,15 @@ public class ModelFileDownloadService {
       @NonNull FirebaseApp firebaseApp,
       DownloadManager downloadManager,
       ModelFileManager fileManager,
-      SharedPreferencesUtil sharedPreferencesUtil) {
+      SharedPreferencesUtil sharedPreferencesUtil,
+      DataTransportMlStatsSender statsSender,
+      FirebaseMlLogger eventLogger) {
     this.context = firebaseApp.getApplicationContext();
     this.downloadManager = downloadManager;
     this.fileManager = fileManager;
     this.sharedPreferencesUtil = sharedPreferencesUtil;
+    this.eventLogger = eventLogger;
+    this.statsSender = statsSender;
   }
 
   /**
@@ -121,21 +131,23 @@ public class ModelFileDownloadService {
       return Tasks.forException(new Exception("Failed to schedule the download task"));
     }
 
-    return registerReceiverForDownloadId(newDownloadId);
+    return registerReceiverForDownloadId(newDownloadId, customModel.getName());
   }
 
-  private synchronized DownloadBroadcastReceiver getReceiverInstance(long downloadId) {
+  private synchronized DownloadBroadcastReceiver getReceiverInstance(
+      long downloadId, String modelName) {
     DownloadBroadcastReceiver receiver = receiverMaps.get(downloadId);
     if (receiver == null) {
       receiver =
-          new DownloadBroadcastReceiver(downloadId, getTaskCompletionSourceInstance(downloadId));
+          new DownloadBroadcastReceiver(
+              downloadId, modelName, getTaskCompletionSourceInstance(downloadId));
       receiverMaps.put(downloadId, receiver);
     }
     return receiver;
   }
 
-  private Task<Void> registerReceiverForDownloadId(long downloadId) {
-    BroadcastReceiver broadcastReceiver = getReceiverInstance(downloadId);
+  private Task<Void> registerReceiverForDownloadId(long downloadId, String modelName) {
+    BroadcastReceiver broadcastReceiver = getReceiverInstance(downloadId, modelName);
     // It is okay to always register here. Since the broadcast receiver is the same via the lookup
     // for the same download id, the same broadcast receiver will be notified only once.
     context.registerReceiver(
@@ -334,6 +346,25 @@ public class ModelFileDownloadService {
     return new FirebaseMlException(errorMessage, errorCode);
   }
 
+  /**
+   * Gets the failure reason for the {@code downloadId}. Returns 0 if there isn't a record for the
+   * specified {@code downloadId}.
+   */
+  int getFailureReason(Long downloadId) {
+    int failureReason = FirebaseMlStat.NO_INT_VALUE;
+    Cursor cursor =
+        (downloadManager == null || downloadId == null)
+            ? null
+            : downloadManager.query(new Query().setFilterById(downloadId));
+    if (cursor != null && cursor.moveToFirst()) {
+      int index = cursor.getColumnIndex(DownloadManager.COLUMN_REASON);
+      if (index != -1) {
+        failureReason = cursor.getInt(index);
+      }
+    }
+    return failureReason;
+  }
+
   // This class runs totally on worker thread because we registered the receiver with a worker
   // thread handler.
   @WorkerThread
@@ -342,11 +373,13 @@ public class ModelFileDownloadService {
     // Download Id is captured inside this class in memory. So there is no concern of inconsistency
     // with the persisted download id in shared preferences.
     private final long downloadId;
+    private final String modelName;
     private final TaskCompletionSource<Void> taskCompletionSource;
 
     private DownloadBroadcastReceiver(
-        long downloadId, TaskCompletionSource<Void> taskCompletionSource) {
+        long downloadId, String modelName, TaskCompletionSource<Void> taskCompletionSource) {
       this.downloadId = downloadId;
+      this.modelName = modelName;
       this.taskCompletionSource = taskCompletionSource;
     }
 
@@ -375,14 +408,19 @@ public class ModelFileDownloadService {
 
       if (statusCode != null) {
         if (statusCode == DownloadManager.STATUS_FAILED) {
-          // todo add failure reason and logging
-          System.out.println("Download Failed for id: " + id);
+          eventLogger.logDownloadFailureWithReason(
+              sharedPreferencesUtil.getDownloadingCustomModelDetails(modelName),
+              false,
+              getFailureReason(id));
           taskCompletionSource.setException(getExceptionAccordingToDownloadManager(id));
           return;
         }
 
         if (statusCode == DownloadManager.STATUS_SUCCESSFUL) {
-          System.out.println("Download Succeeded for id: " + id);
+          eventLogger.logDownloadEventWithExactDownloadTime(
+              sharedPreferencesUtil.getDownloadingCustomModelDetails(modelName),
+              ErrorCode.NO_ERROR,
+              DownloadStatus.SUCCEEDED);
           taskCompletionSource.setResult(null);
           return;
         }
