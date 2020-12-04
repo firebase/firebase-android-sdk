@@ -15,7 +15,7 @@
 package com.google.firebase.dynamicloading;
 
 import android.content.Context;
-import com.google.android.play.core.splitinstall.SplitInstallManagerFactory;
+import com.google.android.play.core.splitinstall.InternalFrameworkListenerExtensions;
 import com.google.android.play.core.splitinstall.SplitInstallSessionState;
 import com.google.android.play.core.splitinstall.SplitInstallStateUpdatedListener;
 import com.google.android.play.core.splitinstall.model.SplitInstallSessionStatus;
@@ -26,9 +26,7 @@ class DynamicLoadingSupport implements SplitInstallStateUpdatedListener {
 
   DynamicLoadingSupport(Context applicationContext, ComponentLoader loader) {
     this.loader = loader;
-    // TODO(vkryachko): make sure this listener runs before any developers' listeners.
-    // TODO(vkryachko): we should probably postpone this via Handler#post(Runnable).
-    SplitInstallManagerFactory.create(applicationContext).registerListener(this);
+    InternalFrameworkListenerExtensions.registerFrameworkListener(applicationContext, this);
   }
 
   @Override
