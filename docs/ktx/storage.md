@@ -60,3 +60,55 @@ val metadata = storageMetadata {
     setCustomMetadata("location", "Maputo, MOZ")
 }
 ```
+
+### Monitor Upload or Download Progress
+
+**Kotlin**
+```kotlin
+uploadTask.addOnProgressListener { taskSnapshot ->
+    val bytesTransferred = taskSnapshot.bytesTransferred
+    val totalByteCount = taskSnapshot.totalByteCount
+    val progress = (100.0 * bytesTransferred) / totalByteCount
+    Log.i(TAG, "Upload is $progress% done")
+}
+```
+
+**Kotlin + KTX**
+```kotlin
+uploadTask.addOnProgressListener { (bytesTransferred, totalByteCount) ->
+    val progress = (100.0 * bytesTransferred) / totalByteCount
+    Log.i(TAG, "Upload is $progress% done")
+}
+```
+
+### List all files
+
+**Kotlin**
+```kotlin
+storageRef.listAll().addOnSuccessListener { listResult ->
+    listResult.items.forEach { item ->
+        // process each item
+    }
+    listResult.prefixes.forEach { prefix ->
+        // process each prefix
+    }
+    listResult.pageToken?.let {
+        // handle pagination
+    }
+}
+```
+
+**Kotlin + KTX**
+```kotlin
+storageRef.listAll().addOnSuccessListener { (items, prefixes, pageToken) ->
+    items.forEach { item ->
+        // process each item
+    }
+    prefixes.forEach { prefix ->
+        // process each prefix
+    }
+    pageToken?.let {
+        // handle pagination
+    }
+}
+```
