@@ -167,7 +167,7 @@ public class Query {
    * connected, fall back to a locally-cached value.
    */
   @NonNull
-  Task<DataSnapshot> get() {
+  public Task<DataSnapshot> get() {
     return repo.getValue(this);
   }
 
