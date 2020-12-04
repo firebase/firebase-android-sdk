@@ -261,8 +261,8 @@ public class WebSocket {
     if (socket != null) {
       try {
         socket.close();
-      } catch (IOException e) {
-        throw new RuntimeException(e);
+      } catch (Exception e) {
+        eventHandler.onError(new WebSocketException("Failed to close", e));
       }
     }
     state = State.DISCONNECTED;

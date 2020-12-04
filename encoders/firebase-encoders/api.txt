@@ -17,6 +17,7 @@ package com.google.firebase.encoders {
     method @NonNull public String getName();
     method @Nullable public <T extends Annotation> T getProperty(@NonNull Class<T>);
     method public int hashCode();
+    method @NonNull public static com.google.firebase.encoders.FieldDescriptor of(@NonNull String);
     method @NonNull public String toString();
   }
 
@@ -29,13 +30,20 @@ package com.google.firebase.encoders {
   }
 
   public interface ObjectEncoderContext {
-    method @NonNull public com.google.firebase.encoders.ObjectEncoderContext add(@NonNull String, @Nullable Object);
-    method @NonNull public com.google.firebase.encoders.ObjectEncoderContext add(@NonNull String, double);
-    method @NonNull public com.google.firebase.encoders.ObjectEncoderContext add(@NonNull String, int);
-    method @NonNull public com.google.firebase.encoders.ObjectEncoderContext add(@NonNull String, long);
-    method @NonNull public com.google.firebase.encoders.ObjectEncoderContext add(@NonNull String, boolean);
+    method @Deprecated @NonNull public com.google.firebase.encoders.ObjectEncoderContext add(@NonNull String, @Nullable Object);
+    method @Deprecated @NonNull public com.google.firebase.encoders.ObjectEncoderContext add(@NonNull String, double);
+    method @Deprecated @NonNull public com.google.firebase.encoders.ObjectEncoderContext add(@NonNull String, int);
+    method @Deprecated @NonNull public com.google.firebase.encoders.ObjectEncoderContext add(@NonNull String, long);
+    method @Deprecated @NonNull public com.google.firebase.encoders.ObjectEncoderContext add(@NonNull String, boolean);
+    method @NonNull public com.google.firebase.encoders.ObjectEncoderContext add(@NonNull com.google.firebase.encoders.FieldDescriptor, @Nullable Object);
+    method @NonNull public com.google.firebase.encoders.ObjectEncoderContext add(@NonNull com.google.firebase.encoders.FieldDescriptor, float);
+    method @NonNull public com.google.firebase.encoders.ObjectEncoderContext add(@NonNull com.google.firebase.encoders.FieldDescriptor, double);
+    method @NonNull public com.google.firebase.encoders.ObjectEncoderContext add(@NonNull com.google.firebase.encoders.FieldDescriptor, int);
+    method @NonNull public com.google.firebase.encoders.ObjectEncoderContext add(@NonNull com.google.firebase.encoders.FieldDescriptor, long);
+    method @NonNull public com.google.firebase.encoders.ObjectEncoderContext add(@NonNull com.google.firebase.encoders.FieldDescriptor, boolean);
     method @NonNull public com.google.firebase.encoders.ObjectEncoderContext inline(@Nullable Object);
     method @NonNull public com.google.firebase.encoders.ObjectEncoderContext nested(@NonNull String);
+    method @NonNull public com.google.firebase.encoders.ObjectEncoderContext nested(@NonNull com.google.firebase.encoders.FieldDescriptor);
   }
 
   public interface ValueEncoder<T> {
@@ -43,6 +51,7 @@ package com.google.firebase.encoders {
 
   public interface ValueEncoderContext {
     method @NonNull public com.google.firebase.encoders.ValueEncoderContext add(@Nullable String);
+    method @NonNull public com.google.firebase.encoders.ValueEncoderContext add(float);
     method @NonNull public com.google.firebase.encoders.ValueEncoderContext add(double);
     method @NonNull public com.google.firebase.encoders.ValueEncoderContext add(int);
     method @NonNull public com.google.firebase.encoders.ValueEncoderContext add(long);

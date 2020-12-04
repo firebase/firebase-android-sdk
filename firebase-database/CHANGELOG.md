@@ -1,4 +1,11 @@
-# 19.5.1 (Unreleased)
+# Unreleased
+- [fixed] Fixed a crash on some Pixel devices that occurred when closing the
+  network connection.
+- [added] Added `Query.get()`, which allows users to receive a single data
+  snapshot. `Query.get()` returns the latest value even if an older value
+  already exists in cache.
+
+# 19.5.1
 - [fixed] Fixes a regression in v19.4 that may cause assertion failures,
   especially when persistence is enabled.
 

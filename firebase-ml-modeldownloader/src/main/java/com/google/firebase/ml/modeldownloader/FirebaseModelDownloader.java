@@ -43,13 +43,14 @@ public class FirebaseModelDownloader {
   private final TransportFactory transportFactory;
 
   @RequiresApi(api = VERSION_CODES.KITKAT)
-  FirebaseModelDownloader(FirebaseApp firebaseApp, TransportFactory transportFactory) {
+  FirebaseModelDownloader(FirebaseApp firebaseApp, {
+  FirebaseModelDownloader(
+      FirebaseApp firebaseApp, FirebaseInstallationsApi firebaseInstallationsApi, TransportFactory transportFactory) {
     this.firebaseOptions = firebaseApp.getOptions();
     this.fileDownloadService = new ModelFileDownloadService(firebaseApp);
     this.sharedPreferencesUtil = new SharedPreferencesUtil(firebaseApp);
     this.modelDownloadService =
-        new CustomModelDownloadService(
-            firebaseOptions, FirebaseApp.getInstance().get(FirebaseInstallationsApi.class));
+        new CustomModelDownloadService(firebaseOptions, firebaseInstallationsApi);
     this.executor = Executors.newCachedThreadPool();
     this.transportFactory = transportFactory;
   }
@@ -164,6 +165,9 @@ public class FirebaseModelDownloader {
   }
 
   /**
+   * Triggers the move to permanent storage of successful model downloads and lists all models
+   * downloaded to device.
+   *
    * @return The set of all models that are downloaded to this device, triggers completion of file
    *     moves for completed model downloads.
    */
@@ -182,8 +186,9 @@ public class FirebaseModelDownloader {
     return taskCompletionSource.getTask();
   }
 
-  /*
+  /**
    * Delete old local models, when no longer in use.
+   *
    * @param modelName - name of the model
    */
   @NonNull

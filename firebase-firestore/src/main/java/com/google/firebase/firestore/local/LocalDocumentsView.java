@@ -142,9 +142,9 @@ class LocalDocumentsView {
     return results;
   }
 
-  // TODO: The Querying implementation here should move 100% to SimpleQueryEngine.
+  // TODO: The Querying implementation here should move 100% to the query engines.
   // Instead, we should just provide a getCollectionDocuments() method here that return all the
-  // documents in a given collection so that SimpleQueryEngine can do that and then filter in
+  // documents in a given collection so that query engine can do that and then filter in
   // memory.
 
   /**

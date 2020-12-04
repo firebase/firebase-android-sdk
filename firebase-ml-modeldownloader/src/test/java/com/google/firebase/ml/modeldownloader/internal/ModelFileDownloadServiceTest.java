@@ -46,6 +46,7 @@ import com.google.firebase.ml.modeldownloader.FirebaseMlException;
 import com.google.firebase.ml.modeldownloader.TestOnCompleteListener;
 import com.google.firebase.ml.modeldownloader.internal.FirebaseMlStat.ModelDownloadLogEvent.DownloadStatus;
 import com.google.firebase.ml.modeldownloader.internal.FirebaseMlStat.ModelDownloadLogEvent.ErrorCode;
+import com.google.firebase.ml.modeldownloader.TestOnCompleteListener;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -238,7 +239,6 @@ public class ModelFileDownloadServiceTest {
     assertFalse(task.isSuccessful());
 
     assertNull(sharedPreferencesUtil.getDownloadingCustomModelDetails(MODEL_NAME));
-
     verify(mockDownloadManager, never()).enqueue(any());
     verify(mockDownloadManager, never()).query(any());
   }
@@ -300,8 +300,6 @@ public class ModelFileDownloadServiceTest {
       assertEquals(ex.getCode(), FirebaseMlException.NOT_ENOUGH_SPACE);
     } catch (Exception ex) {
       System.out.println("Error: " + ex.getMessage());
-      assertTrue(ex.getMessage().contains("Failed"));
-    }
 
     assertTrue(task.isComplete());
     assertFalse(task.isSuccessful());
@@ -376,7 +374,6 @@ public class ModelFileDownloadServiceTest {
 
     assertEquals(
         sharedPreferencesUtil.getCustomModelDetails(MODEL_NAME), customModelDownloadComplete);
-
     verify(mockDownloadManager, times(3)).query(any());
   }
 

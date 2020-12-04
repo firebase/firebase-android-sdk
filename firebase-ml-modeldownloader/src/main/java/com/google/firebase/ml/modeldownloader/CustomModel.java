@@ -136,8 +136,9 @@ public class CustomModel {
   /**
    * The local model file. If null is returned, use the download Id to check the download status.
    *
-   * @return the local file associated with the model, if the original file download is still in
-   *     progress, returns null, if file update is in progress returns last fully uploaded model.
+   * @return the local file associated with the model. If the original file download is still in
+   *     progress, returns null. If file update is in progress, returns the last fully uploaded
+   *     model.
    */
   @Nullable
   @VisibleForTesting
@@ -164,7 +165,11 @@ public class CustomModel {
     return fileSize;
   }
 
-  /** @return the model hash */
+  /**
+   * Retrieves the model Hash.
+   *
+   * @return the model hash
+   */
   @NonNull
   public String getModelHash() {
     return modelHash;
@@ -245,6 +250,8 @@ public class CustomModel {
   }
 
   /**
+   * Returns the model download url, usually only present when download is about to occur.
+   *
    * @return the model download url
    *     <p>Internal use only
    * @hide

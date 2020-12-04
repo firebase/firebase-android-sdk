@@ -35,12 +35,74 @@ public interface ObjectEncoderContext {
    *
    * <p>{@code obj} can be an array. If the elements of the array are primitive types, they will be
    * directly encoded. Otherwise, the matching {@code Encoder} registered for the type will be used.
-   * In this case, the value of the entry will be an encoded array obtained by sequencially applying
+   * In this case, the value of the entry will be an encoded array obtained by sequentially applying
    * the encoder to each element of the array. Nested arrays are supported.
    *
    * <p>{@code obj} can be a {@link java.util.Collection}. The matching {@code Encoder} registered
    * for the type contained within the collection will be used. In this case, the value of the entry
-   * will be an encoded array obtained by sequencially applying the encoder to each element of the
+   * will be an encoded array obtained by sequentially applying the encoder to each element of the
+   * array. Nested collections are supported.
+   *
+   * <p>If {@code obj} does not match any of the criteria above, or if there's no matching {@code
+   * Encoder} for the type, an {@code EncodingException} will be thrown. Also, any exceptions thrown
+   * by the encoders will be propagated.
+   *
+   * @deprecated Use {@link #add(FieldDescriptor, Object)} instead.
+   */
+  @Deprecated
+  @NonNull
+  ObjectEncoderContext add(@NonNull String name, @Nullable Object obj) throws IOException;
+
+  /**
+   * Add an entry with {@code name} mapped to the encoded primitive type of {@code value}.
+   *
+   * @deprecated Use {@link #add(FieldDescriptor, double)} instead.
+   */
+  @Deprecated
+  @NonNull
+  ObjectEncoderContext add(@NonNull String name, double value) throws IOException;
+
+  /**
+   * Add an entry with {@code name} mapped to the encoded primitive type of {@code value}.
+   *
+   * @deprecated Use {@link #add(FieldDescriptor, double)} instead.
+   */
+  @Deprecated
+  @NonNull
+  ObjectEncoderContext add(@NonNull String name, int value) throws IOException;
+
+  /**
+   * Add an entry with {@code name} mapped to the encoded primitive type of {@code value}.
+   *
+   * @deprecated Use {@link #add(FieldDescriptor, double)} instead.
+   */
+  @Deprecated
+  @NonNull
+  ObjectEncoderContext add(@NonNull String name, long value) throws IOException;
+
+  /**
+   * Add an entry with {@code name} mapped to the encoded primitive type of {@code value}.
+   *
+   * @deprecated Use {@link #add(FieldDescriptor, double)} instead.
+   */
+  @Deprecated
+  @NonNull
+  ObjectEncoderContext add(@NonNull String name, boolean value) throws IOException;
+
+  /**
+   * Add an entry with {@code field} mapped to the encoded version of {@code obj}.
+   *
+   * <p>{@code obj} can be a regular type with a matching {@code Encoder} registered. In this case,
+   * the value of the entry will be the encoded version of {@code obj}.
+   *
+   * <p>{@code obj} can be an array. If the elements of the array are primitive types, they will be
+   * directly encoded. Otherwise, the matching {@code Encoder} registered for the type will be used.
+   * In this case, the value of the entry will be an encoded array obtained by sequentially applying
+   * the encoder to each element of the array. Nested arrays are supported.
+   *
+   * <p>{@code obj} can be a {@link java.util.Collection}. The matching {@code Encoder} registered
+   * for the type contained within the collection will be used. In this case, the value of the entry
+   * will be an encoded array obtained by sequentially applying the encoder to each element of the
    * array. Nested collections are supported.
    *
    * <p>If {@code obj} does not match any of the criteria above, or if there's no matching {@code
@@ -48,23 +110,27 @@ public interface ObjectEncoderContext {
    * by the encoders will be propagated.
    */
   @NonNull
-  ObjectEncoderContext add(@NonNull String name, @Nullable Object obj) throws IOException;
+  ObjectEncoderContext add(@NonNull FieldDescriptor field, @Nullable Object obj) throws IOException;
 
-  /** Add an entry with {@code name} mapped to the encoded primitive type of {@code value}. */
+  /** Add an entry with {@code field} mapped to the encoded primitive type of {@code value}. */
   @NonNull
-  ObjectEncoderContext add(@NonNull String name, double value) throws IOException;
+  ObjectEncoderContext add(@NonNull FieldDescriptor field, float value) throws IOException;
 
-  /** Add an entry with {@code name} mapped to the encoded primitive type of {@code value}. */
+  /** Add an entry with {@code field} mapped to the encoded primitive type of {@code value}. */
   @NonNull
-  ObjectEncoderContext add(@NonNull String name, int value) throws IOException;
+  ObjectEncoderContext add(@NonNull FieldDescriptor field, double value) throws IOException;
 
-  /** Add an entry with {@code name} mapped to the encoded primitive type of {@code value}. */
+  /** Add an entry with {@code field} mapped to the encoded primitive type of {@code value}. */
   @NonNull
-  ObjectEncoderContext add(@NonNull String name, long value) throws IOException;
+  ObjectEncoderContext add(@NonNull FieldDescriptor field, int value) throws IOException;
 
-  /** Add an entry with {@code name} mapped to the encoded primitive type of {@code value}. */
+  /** Add an entry with {@code field} mapped to the encoded primitive type of {@code value}. */
   @NonNull
-  ObjectEncoderContext add(@NonNull String name, boolean value) throws IOException;
+  ObjectEncoderContext add(@NonNull FieldDescriptor field, long value) throws IOException;
+
+  /** Add an entry with {@code field} mapped to the encoded primitive type of {@code value}. */
+  @NonNull
+  ObjectEncoderContext add(@NonNull FieldDescriptor field, boolean value) throws IOException;
 
   /**
    * Encodes a given object inline in current context.
@@ -109,4 +175,28 @@ public interface ObjectEncoderContext {
    */
   @NonNull
   ObjectEncoderContext nested(@NonNull String name) throws IOException;
+
+  /**
+   * Begin a nested JSON object.
+   *
+   * <p>Unlike {@code add()} methods, this method returns a new "child" context that's used to
+   * populate the nested JSON object. This context can only be used until the parent context is
+   * mutated by calls to {@code add()} or {@code nested()}, violating this will result in a {@link
+   * IllegalStateException}.
+   *
+   * <p>Nesting can be arbitrarily deep.
+   *
+   * <p>Example:
+   *
+   * <pre>{@code
+   * ctx.add("key", "value");
+   * ObjectEncoderContext nested = ctx.nested("nested");
+   * nested.add("key", "value");
+   *
+   * // After this call the above nested context is invalid.
+   * ctx.add("anotherKey", 1);
+   * }</pre>
+   */
+  @NonNull
+  ObjectEncoderContext nested(@NonNull FieldDescriptor field) throws IOException;
 }
