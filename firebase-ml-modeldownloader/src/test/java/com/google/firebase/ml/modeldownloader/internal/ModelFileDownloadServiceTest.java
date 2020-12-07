@@ -103,7 +103,7 @@ public class ModelFileDownloadServiceTest {
 
     executor = Executors.newSingleThreadExecutor();
     sharedPreferencesUtil = new SharedPreferencesUtil(app);
-    sharedPreferencesUtil.clearModelDetails(MODEL_NAME, false);
+    sharedPreferencesUtil.clearModelDetails(MODEL_NAME);
 
     modelFileDownloadService =
         new ModelFileDownloadService(
