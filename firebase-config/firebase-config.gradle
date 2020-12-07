@@ -16,27 +16,11 @@
 
 plugins {
     id 'firebase-library'
-    id 'com.google.protobuf'
 }
 
 firebaseLibrary {
     testLab.enabled = true
     publishSources = true
-}
-
-protobuf {
-    // Configure the protoc executable
-    protoc {
-        // Download from repositories
-        artifact = "com.google.protobuf:protoc:$protocVersion"
-    }
-    generateProtoTasks {
-        all().each { task ->
-            task.builtins {
-                java { option 'lite' }
-            }
-        }
-    }
 }
 
 android {
@@ -50,12 +34,6 @@ android {
     }
 
     sourceSets {
-        main {
-            proto {
-                srcDir 'src/proto'
-            }
-        }
-
         androidTest.resources.srcDirs += ['src/androidTest/res']
     }
     compileOptions {
@@ -78,7 +56,6 @@ dependencies {
     runtimeOnly project(':firebase-installations')
 
     implementation 'com.google.firebase:firebase-measurement-connector:18.0.0'
-    implementation "com.google.protobuf:protobuf-javalite:$javaliteVersion"
     implementation 'com.google.android.gms:play-services-tasks:17.0.2'
 
     compileOnly 'com.google.code.findbugs:jsr305:3.0.2'

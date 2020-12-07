@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import com.google.firebase.encoders.FieldDescriptor;
 import com.google.firebase.encoders.ObjectEncoder;
 import com.google.firebase.encoders.ObjectEncoderContext;
 import com.google.firebase.encoders.config.Configurator;
@@ -22,7 +23,7 @@ import java.lang.Override;
 /**
  * @hide */
 public final class AutoGenericClassEncoder implements Configurator {
-    public static final int CODEGEN_VERSION = 1;
+    public static final int CODEGEN_VERSION = 2;
 
     public static final Configurator CONFIG = new AutoGenericClassEncoder();
 
@@ -37,10 +38,14 @@ public final class AutoGenericClassEncoder implements Configurator {
     private static final class GenericClassEncoder implements ObjectEncoder<GenericClass> {
         static final GenericClassEncoder INSTANCE = new GenericClassEncoder();
 
+        private static final FieldDescriptor T_DESCRIPTOR = FieldDescriptor.of("t");
+
+        private static final FieldDescriptor U_DESCRIPTOR = FieldDescriptor.of("u");
+
         @Override
         public void encode(GenericClass value, ObjectEncoderContext ctx) throws IOException {
-            ctx.add("t", value.getT());
-            ctx.add("u", value.getU());
+            ctx.add(T_DESCRIPTOR, value.getT());
+            ctx.add(U_DESCRIPTOR, value.getU());
         }
     }
 }

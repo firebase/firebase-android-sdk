@@ -1,0 +1,67 @@
+// Copyright 2020 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+plugins {
+    id 'firebase-library'
+}
+
+firebaseLibrary {
+    testLab.enabled = false
+    publishJavadoc = false
+}
+
+android {
+    compileSdkVersion project.targetSdkVersion
+
+    defaultConfig {
+        minSdkVersion 16
+        targetSdkVersion project.targetSdkVersion
+        multiDexEnabled true
+        versionName version
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    testOptions {
+        unitTests {
+            includeAndroidResources = true
+        }
+    }
+}
+
+dependencies {
+    implementation project(':firebase-common')
+    implementation project(':firebase-components')
+    implementation project(':firebase-installations-interop')
+    runtimeOnly project(':firebase-installations')
+
+    implementation 'com.google.android.gms:play-services-tasks:17.2.0'
+    implementation 'com.google.auto.service:auto-service-annotations:1.0-rc6'
+    implementation 'javax.inject:javax.inject:1'
+
+    compileOnly "com.google.auto.value:auto-value-annotations:1.6.6"
+    annotationProcessor "com.google.auto.value:auto-value:1.6.5"
+
+    testImplementation 'androidx.test:core:1.3.0'
+    testImplementation 'com.github.tomakehurst:wiremock-standalone:2.26.3'
+    testImplementation "com.google.truth:truth:$googleTruthVersion"
+    testImplementation 'junit:junit:4.13.1'
+    //Android compatible version of Apache httpclient.
+    testImplementation 'org.apache.httpcomponents:httpclient-android:4.3.5.1'
+    testImplementation 'org.mockito:mockito-core:3.3.3'
+    testImplementation "org.robolectric:robolectric:$robolectricVersion"
+    testImplementation 'com.google.truth.extensions:truth-proto-extension:1.0'
+}

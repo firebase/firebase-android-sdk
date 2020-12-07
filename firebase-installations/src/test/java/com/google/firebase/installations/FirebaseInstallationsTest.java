@@ -39,6 +39,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.installations.FirebaseInstallationsException.Status;
+import com.google.firebase.installations.internal.FidListenerHandle;
 import com.google.firebase.installations.local.IidStore;
 import com.google.firebase.installations.local.PersistedInstallation;
 import com.google.firebase.installations.local.PersistedInstallation.RegistrationStatus;
@@ -74,6 +75,7 @@ public class FirebaseInstallationsTest {
   @Mock private RandomFidGenerator mockFidGenerator;
 
   public static final String TEST_FID_1 = "cccccccccccccccccccccc";
+  public static final String TEST_FID_2 = "dccccccccccccccccccccd";
 
   public static final String TEST_PROJECT_ID = "777777777777";
 
@@ -132,6 +134,7 @@ public class FirebaseInstallationsTest {
 
   private FirebaseInstallations firebaseInstallations;
   private Utils utils;
+  private FakeClock fakeClock;
 
   @Before
   public void setUp() {
@@ -150,7 +153,8 @@ public class FirebaseInstallationsTest {
     persistedInstallation = new PersistedInstallation(firebaseApp);
     persistedInstallation.clearForTesting();
 
-    utils = new Utils();
+    fakeClock = new FakeClock(5000000L);
+    utils = Utils.getInstance(fakeClock);
     firebaseInstallations =
         new FirebaseInstallations(
             executor,
@@ -452,6 +456,48 @@ public class FirebaseInstallationsTest {
   }
 
   @Test
+  public void testFidListener_fidChanged_successful() throws Exception {
+    when(mockIidStore.readIid()).thenReturn(null);
+    when(mockIidStore.readToken()).thenReturn(null);
+    when(mockBackend.createFirebaseInstallation(
+            anyString(), anyString(), anyString(), anyString(), any()))
+        .thenReturn(
+            TEST_INSTALLATION_RESPONSE
+                .toBuilder()
+                .setUri("/projects/" + TEST_PROJECT_ID + "/installations/" + TEST_FID_2)
+                .setFid(TEST_FID_2)
+                .build());
+
+    FakeFidListener fidListener = new FakeFidListener();
+    FakeFidListener fidListener2 = new FakeFidListener();
+
+    // Register the FidListeners
+    firebaseInstallations.registerFidListener(fidListener);
+    FidListenerHandle listenerHandle = firebaseInstallations.registerFidListener(fidListener2);
+
+    // Do the actual getId() call under test.
+    // Confirm both that it returns the expected ID, as does reading the prefs from storage.
+    TestOnCompleteListener<String> onCompleteListener = new TestOnCompleteListener<>();
+    Task<String> task = firebaseInstallations.getId();
+
+    // Unregister FidListener2
+    listenerHandle.unregister();
+
+    task.addOnCompleteListener(executor, onCompleteListener);
+    String fid = onCompleteListener.await();
+    assertWithMessage("getId Task failed.").that(fid).isEqualTo(TEST_FID_1);
+
+    // Waiting for Task that registers FID on the FIS Servers
+    executor.awaitTermination(500, TimeUnit.MILLISECONDS);
+    PersistedInstallationEntry entry = persistedInstallation.readPersistedInstallationEntryValue();
+    assertThat(entry.getFirebaseInstallationId(), equalTo(TEST_FID_2));
+
+    // Verify FidListener receives fid changes.
+    assertThat(fidListener.getLatestFid(), equalTo(TEST_FID_2));
+    assertNull(fidListener2.getLatestFid());
+  }
+
+  @Test
   public void testGetId_migrateIid_successful() throws Exception {
     when(mockIidStore.readIid()).thenReturn(TEST_INSTANCE_ID_1);
     when(mockIidStore.readToken()).thenReturn(TEST_INSTANCE_ID_TOKEN_1);
@@ -511,6 +557,94 @@ public class FirebaseInstallationsTest {
     PersistedInstallationEntry entry = persistedInstallation.readPersistedInstallationEntryValue();
     assertThat(entry.getFirebaseInstallationId(), equalTo(TEST_FID_1));
     assertTrue("the entry isn't doesn't have a registered fid: " + entry, entry.isRegistered());
+  }
+
+  @Test
+  public void testGetId_expiredAuthTokenThrowsException_statusUpdated() throws Exception {
+    // Start with a registered FID
+    persistedInstallation.insertOrUpdatePersistedInstallationEntry(
+        PersistedInstallationEntry.INSTANCE.withRegisteredFid(
+            TEST_FID_1,
+            TEST_REFRESH_TOKEN,
+            utils.currentTimeInSecs()
+                - TEST_TOKEN_EXPIRATION_TIMESTAMP
+                + TimeUnit.MINUTES.toSeconds(30),
+            TEST_AUTH_TOKEN,
+            TEST_TOKEN_EXPIRATION_TIMESTAMP));
+
+    // Move the time forward by the token expiration time.
+    fakeClock.advanceTimeBySeconds(
+        TEST_TOKEN_EXPIRATION_TIMESTAMP - TimeUnit.MINUTES.toSeconds(30));
+
+    // Mocking an exception on FIS generateAuthToken
+    when(mockBackend.generateAuthToken(anyString(), anyString(), anyString(), anyString()))
+        .thenThrow(new FirebaseInstallationsException(Status.UNAVAILABLE));
+
+    TestOnCompleteListener<String> onCompleteListener = new TestOnCompleteListener<>();
+    Task<String> getIdTask = firebaseInstallations.getId();
+    getIdTask.addOnCompleteListener(executor, onCompleteListener);
+    String fid = onCompleteListener.await();
+
+    assertWithMessage("getId Task failed").that(fid).isEqualTo(TEST_FID_1);
+
+    // Waiting for Task that generates auth token with the FIS Servers
+    executor.awaitTermination(500, TimeUnit.MILLISECONDS);
+
+    // Validate that registration status is still REGISTER
+    PersistedInstallationEntry entry = persistedInstallation.readPersistedInstallationEntryValue();
+    assertThat(entry.getFirebaseInstallationId(), equalTo(TEST_FID_1));
+    assertTrue("the entry doesn't have a registered fid: " + entry, entry.isRegistered());
+  }
+
+  /**
+   * The FID is successfully registered but the token is expired. A getId will cause the token to be
+   * refreshed in the background.
+   */
+  @Test
+  public void testGetId_expiredAuthToken_refreshesAuthToken() throws Exception {
+    // Start with a registered FID
+    persistedInstallation.insertOrUpdatePersistedInstallationEntry(
+        PersistedInstallationEntry.INSTANCE.withRegisteredFid(
+            TEST_FID_1,
+            TEST_REFRESH_TOKEN,
+            // Set expiration time to 30 minutes from now (within refresh period)
+            utils.currentTimeInSecs()
+                - TEST_TOKEN_EXPIRATION_TIMESTAMP
+                + TimeUnit.MINUTES.toSeconds(30),
+            TEST_AUTH_TOKEN,
+            TEST_TOKEN_EXPIRATION_TIMESTAMP));
+
+    // Make the server generateAuthToken() call return a refreshed token
+    when(mockBackend.generateAuthToken(anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(TEST_TOKEN_RESULT);
+
+    // Move the time forward by the token expiration time.
+    fakeClock.advanceTimeBySeconds(
+        TEST_TOKEN_EXPIRATION_TIMESTAMP - TimeUnit.MINUTES.toSeconds(30));
+
+    // Get the ID, which should cause the SDK to realize that the auth token is expired and
+    // kick off a refresh of the token.
+    TestOnCompleteListener<String> onCompleteListener = new TestOnCompleteListener<>();
+    Task<String> getIdTask = firebaseInstallations.getId();
+    getIdTask.addOnCompleteListener(executor, onCompleteListener);
+    String fid = onCompleteListener.await();
+    assertWithMessage("getId Task failed").that(fid).isEqualTo(TEST_FID_1);
+
+    TestOnCompleteListener<InstallationTokenResult> onCompleteListener2 =
+        new TestOnCompleteListener<>();
+    Task<InstallationTokenResult> task = firebaseInstallations.getToken(false);
+    task.addOnCompleteListener(executor, onCompleteListener2);
+    InstallationTokenResult installationTokenResult = onCompleteListener2.await();
+
+    // Check that the token has been refreshed
+    assertWithMessage("auth token is not what is expected after the refresh")
+        .that(installationTokenResult.getToken())
+        .isEqualTo(TEST_AUTH_TOKEN_2);
+
+    verify(mockBackend, never())
+        .createFirebaseInstallation(TEST_API_KEY, TEST_FID_1, TEST_PROJECT_ID, TEST_APP_ID_1, null);
+    verify(mockBackend, times(1))
+        .generateAuthToken(TEST_API_KEY, TEST_FID_1, TEST_PROJECT_ID, TEST_REFRESH_TOKEN);
   }
 
   /**
@@ -579,8 +713,10 @@ public class FirebaseInstallationsTest {
     // There is nothing more we can do.
     PersistedInstallationEntry updatedInstallationEntry =
         persistedInstallation.readPersistedInstallationEntryValue();
-    // //assertThat(TEST_FID_1, eq(updatedInstallationEntry.getFirebaseInstallationId()));
-    // //assertThat(updatedInstallationEntry).hasRegistrationStatus(RegistrationStatus.REGISTER_ERROR);
+    assertThat(updatedInstallationEntry.getFirebaseInstallationId(), equalTo(TEST_FID_1));
+    assertTrue(
+        "the entry doesn't have an error fid: " + updatedInstallationEntry,
+        updatedInstallationEntry.isErrored());
   }
 
   /** A registration that fails will not cause the FID to be put into the error state. */
@@ -665,6 +801,10 @@ public class FirebaseInstallationsTest {
             TEST_AUTH_TOKEN,
             TEST_TOKEN_EXPIRATION_TIMESTAMP));
 
+    // Move the time forward by the token expiration time.
+    fakeClock.advanceTimeBySeconds(
+        TEST_TOKEN_EXPIRATION_TIMESTAMP - TimeUnit.MINUTES.toSeconds(30));
+
     // have the server respond with a new token
     when(mockBackend.generateAuthToken(anyString(), anyString(), anyString(), anyString()))
         .thenReturn(TEST_TOKEN_RESULT);
@@ -678,6 +818,51 @@ public class FirebaseInstallationsTest {
     assertWithMessage("Persisted Auth Token doesn't match")
         .that(installationTokenResult.getToken())
         .isEqualTo(TEST_AUTH_TOKEN_2);
+  }
+
+  @Test
+  public void testGetAuthToken_multipleCallsDoNotForceRefresh_fetchedNewTokenOnce()
+      throws Exception {
+    // start with a valid fid and authtoken
+    persistedInstallation.insertOrUpdatePersistedInstallationEntry(
+        PersistedInstallationEntry.INSTANCE.withRegisteredFid(
+            TEST_FID_1,
+            TEST_REFRESH_TOKEN,
+            // Set expiration time to 30 minutes from now (within refresh period)
+            utils.currentTimeInSecs()
+                - TEST_TOKEN_EXPIRATION_TIMESTAMP
+                + TimeUnit.MINUTES.toSeconds(30),
+            TEST_AUTH_TOKEN,
+            TEST_TOKEN_EXPIRATION_TIMESTAMP));
+
+    // Make the server generateAuthToken() call return a refreshed token
+    when(mockBackend.generateAuthToken(anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(TEST_TOKEN_RESULT);
+
+    // expire the authtoken by advancing the clock
+    fakeClock.advanceTimeBySeconds(
+        TEST_TOKEN_EXPIRATION_TIMESTAMP - TimeUnit.MINUTES.toSeconds(30));
+
+    // Call getToken multiple times with DO_NOT_FORCE_REFRESH option
+    Task<InstallationTokenResult> task1 = firebaseInstallations.getToken(false);
+    Task<InstallationTokenResult> task2 = firebaseInstallations.getToken(false);
+    TestOnCompleteListener<InstallationTokenResult> onCompleteListener1 =
+        new TestOnCompleteListener<>();
+    task1.addOnCompleteListener(executor, onCompleteListener1);
+    TestOnCompleteListener<InstallationTokenResult> onCompleteListener2 =
+        new TestOnCompleteListener<>();
+    task2.addOnCompleteListener(executor, onCompleteListener2);
+    onCompleteListener1.await();
+    onCompleteListener2.await();
+
+    assertWithMessage("Persisted Auth Token doesn't match")
+        .that(task1.getResult().getToken())
+        .isEqualTo(TEST_AUTH_TOKEN_2);
+    assertWithMessage("Persisted Auth Token doesn't match")
+        .that(task2.getResult().getToken())
+        .isEqualTo(TEST_AUTH_TOKEN_2);
+    verify(mockBackend, times(1))
+        .generateAuthToken(TEST_API_KEY, TEST_FID_1, TEST_PROJECT_ID, TEST_REFRESH_TOKEN);
   }
 
   @Test
@@ -734,10 +919,9 @@ public class FirebaseInstallationsTest {
     assertTrue(persistedInstallation.readPersistedInstallationEntryValue().isNotGenerated());
   }
 
-  // /**
-  //  * Check that a call to generateAuthToken(FORCE_REFRESH) fails if the backend client call
-  //  * fails.
-  //  */
+  /**
+   * Check that a call to generateAuthToken(FORCE_REFRESH) fails if the backend client call fails.
+   */
   @Test
   public void testGetAuthToken_serverError_failure() throws Exception {
     // start the test with a registered FID

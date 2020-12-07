@@ -15,6 +15,7 @@
 plugins {
     id 'firebase-library'
     id 'com.google.protobuf'
+    id 'firebase-vendor'
 }
 
 firebaseLibrary {
@@ -102,6 +103,11 @@ configurations.all {
     }
 }
 
+
+thirdPartyLicenses {
+    add 'Dagger', "file://${rootDir}/third_party/licenses/apache-2.0.txt"
+}
+
 dependencies {
     implementation project(':firebase-abt')
     implementation project(':firebase-common')
@@ -111,6 +117,7 @@ dependencies {
     implementation project(':firebase-datatransport')
     implementation project(':firebase-installations-interop')
     runtimeOnly project(':firebase-installations')
+    implementation 'javax.inject:javax.inject:1'
 
     //To provide @Generated annotations
     compileOnly 'javax.annotation:jsr250-api:1.0'
@@ -119,7 +126,6 @@ dependencies {
     implementation "io.grpc:grpc-stub:$grpcVersion"
     implementation "io.grpc:grpc-protobuf-lite:$grpcVersion"
     implementation "io.grpc:grpc-okhttp:$grpcVersion"
-    implementation 'com.google.dagger:dagger:2.24'
     implementation 'io.reactivex.rxjava2:rxjava:2.1.14'
     implementation 'io.reactivex.rxjava2:rxandroid:2.0.2'
     implementation 'com.google.auto.value:auto-value-annotations:1.6.6'
@@ -128,7 +134,11 @@ dependencies {
         exclude group: 'com.google.firebase', module: 'firebase-common'
     }
 
-    annotationProcessor 'com.google.dagger:dagger-compiler:2.24'
+    vendor ('com.google.dagger:dagger:2.27') {
+        exclude group: "javax.inject", module: "javax.inject"
+    }
+
+    annotationProcessor 'com.google.dagger:dagger-compiler:2.27'
     annotationProcessor 'com.google.auto.value:auto-value:1.6.5'
     annotationProcessor 'com.ryanharter.auto.value:auto-value-parcel:0.2.6'
 
@@ -151,5 +161,5 @@ dependencies {
     androidTestImplementation 'com.linkedin.dexmaker:dexmaker:2.25.0'
     androidTestImplementation 'com.linkedin.dexmaker:dexmaker-mockito:2.25.0'
 
-    androidTestAnnotationProcessor 'com.google.dagger:dagger-compiler:2.24'
+    androidTestAnnotationProcessor 'com.google.dagger:dagger-compiler:2.27'
 }

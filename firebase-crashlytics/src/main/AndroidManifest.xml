@@ -3,6 +3,8 @@
           package="com.google.firebase.crashlytics" >
 
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!--Although the *SdkVersion is captured in gradle build files, this is required for non gradle builds-->
+    <!--<uses-sdk android:minSdkVersion="16"/>-->
 
     <application>
         <service android:name="com.google.firebase.components.ComponentDiscoveryService" android:exported="false">

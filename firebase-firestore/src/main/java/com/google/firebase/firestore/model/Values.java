@@ -120,7 +120,7 @@ public class Values {
   private static boolean numberEquals(Value left, Value right) {
     if (left.getValueTypeCase() == Value.ValueTypeCase.INTEGER_VALUE
         && right.getValueTypeCase() == Value.ValueTypeCase.INTEGER_VALUE) {
-      return left.equals(right);
+      return left.getIntegerValue() == right.getIntegerValue();
     } else if (left.getValueTypeCase() == Value.ValueTypeCase.DOUBLE_VALUE
         && right.getValueTypeCase() == Value.ValueTypeCase.DOUBLE_VALUE) {
       return Double.doubleToLongBits(left.getDoubleValue())
@@ -157,7 +157,7 @@ public class Values {
 
     for (Map.Entry<String, Value> entry : leftMap.getFieldsMap().entrySet()) {
       Value otherEntry = rightMap.getFieldsMap().get(entry.getKey());
-      if (!entry.getValue().equals(otherEntry)) {
+      if (!equals(entry.getValue(), otherEntry)) {
         return false;
       }
     }

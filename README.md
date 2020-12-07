@@ -53,9 +53,12 @@ https://firebase.google.com.
 ## Getting Started
 
 * Install the latest Android Studio (should be 3.0.1 or later)
-* Clone the repo (`git clone git@github.com:firebase/firebase-android-sdk.git`)
+* Clone the repo (`git clone --recurse-submodules git@github.com:firebase/firebase-android-sdk.git`)
+    * When cloning the repo, it is important to get the submodules as well. If
+    you have already cloned the repo without the submodules, you can update the
+    submodules by running `git submodule update --init --recursive`.
 * Import the firebase-android-sdk gradle project into Android Studio using the
-  **Import project(Gradle, Eclipse ADT, etc.** option.
+  **Import project(Gradle, Eclipse ADT, etc.)** option.
 
 ## Testing
 
@@ -237,11 +240,6 @@ projects may be published as follows.
 ./gradlew -PprojectsToPublish=":firebase-firestore,:firebase-functions" \
     publishProjectsToMavenLocal
 ```
-
-**Note:** Firebase Crashlytics NDK requires NDK version r17c to build. Please
-see the [README](firebase-crashlytics-ndk/README.md) for setup instructions.
-Alternatively, if you do not need to build this project, you can safely disable
-it by commenting out its reference in [subprojects.cfg](subprojects.cfg).
 
 ### Code Formatting
 

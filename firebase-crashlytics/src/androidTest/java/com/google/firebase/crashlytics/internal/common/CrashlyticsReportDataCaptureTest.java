@@ -25,6 +25,8 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event.Application.Execution;
 import com.google.firebase.crashlytics.internal.stacktrace.StackTraceTrimmingStrategy;
+import com.google.firebase.crashlytics.internal.unity.ResourceUnityVersionProvider;
+import com.google.firebase.crashlytics.internal.unity.UnityVersionProvider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.util.List;
 import org.junit.Before;
@@ -55,7 +57,9 @@ public class CrashlyticsReportDataCaptureTest {
     final Context context = ApplicationProvider.getApplicationContext();
     final IdManager idManager =
         new IdManager(context, context.getPackageName(), installationsApiMock);
-    final AppData appData = AppData.create(context, idManager, "googleAppId", "buildId");
+    final UnityVersionProvider unityVersionProvider = new ResourceUnityVersionProvider(context);
+    final AppData appData =
+        AppData.create(context, idManager, "googleAppId", "buildId", unityVersionProvider);
     dataCapture =
         new CrashlyticsReportDataCapture(context, idManager, appData, stackTraceTrimmingStrategy);
     timestamp = System.currentTimeMillis();

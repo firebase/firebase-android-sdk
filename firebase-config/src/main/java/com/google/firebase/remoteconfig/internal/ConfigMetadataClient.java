@@ -57,7 +57,6 @@ public class ConfigMetadataClient {
   private static final long NO_BACKOFF_TIME_IN_MILLIS = -1L;
   @VisibleForTesting static final Date NO_BACKOFF_TIME = new Date(NO_BACKOFF_TIME_IN_MILLIS);
 
-  private static final String DEVELOPER_MODE_KEY = "is_developer_mode_enabled";
   private static final String FETCH_TIMEOUT_IN_SECONDS_KEY = "fetch_timeout_in_seconds";
   private static final String MINIMUM_FETCH_INTERVAL_IN_SECONDS_KEY =
       "minimum_fetch_interval_in_seconds";
@@ -77,10 +76,6 @@ public class ConfigMetadataClient {
     this.frcMetadata = frcMetadata;
     this.frcInfoLock = new Object();
     this.backoffMetadataLock = new Object();
-  }
-
-  public boolean isDeveloperModeEnabled() {
-    return frcMetadata.getBoolean(DEVELOPER_MODE_KEY, false);
   }
 
   public long getFetchTimeoutInSeconds() {
@@ -121,7 +116,6 @@ public class ConfigMetadataClient {
 
       FirebaseRemoteConfigSettings settings =
           new FirebaseRemoteConfigSettings.Builder()
-              .setDeveloperModeEnabled(frcMetadata.getBoolean(DEVELOPER_MODE_KEY, false))
               .setFetchTimeoutInSeconds(
                   frcMetadata.getLong(FETCH_TIMEOUT_IN_SECONDS_KEY, CONNECTION_TIMEOUT_IN_SECONDS))
               .setMinimumFetchIntervalInSeconds(
@@ -161,7 +155,6 @@ public class ConfigMetadataClient {
     synchronized (frcInfoLock) {
       frcMetadata
           .edit()
-          .putBoolean(DEVELOPER_MODE_KEY, settings.isDeveloperModeEnabled())
           .putLong(FETCH_TIMEOUT_IN_SECONDS_KEY, settings.getFetchTimeoutInSeconds())
           .putLong(
               MINIMUM_FETCH_INTERVAL_IN_SECONDS_KEY, settings.getMinimumFetchIntervalInSeconds())
@@ -179,7 +172,6 @@ public class ConfigMetadataClient {
     synchronized (frcInfoLock) {
       frcMetadata
           .edit()
-          .putBoolean(DEVELOPER_MODE_KEY, settings.isDeveloperModeEnabled())
           .putLong(FETCH_TIMEOUT_IN_SECONDS_KEY, settings.getFetchTimeoutInSeconds())
           .putLong(
               MINIMUM_FETCH_INTERVAL_IN_SECONDS_KEY, settings.getMinimumFetchIntervalInSeconds())

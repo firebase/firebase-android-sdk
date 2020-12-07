@@ -37,6 +37,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.inappmessaging.CommonTypesProto.Event;
 import com.google.firebase.inappmessaging.CommonTypesProto.Priority;
 import com.google.firebase.inappmessaging.CommonTypesProto.TriggeringCondition;
+import com.google.firebase.inappmessaging.ExperimentPayloadProto;
 import com.google.firebase.inappmessaging.internal.time.FakeClock;
 import com.google.firebase.inappmessaging.model.RateLimit;
 import com.google.firebase.inappmessaging.model.TriggeredInAppMessage;
@@ -48,7 +49,6 @@ import com.google.internal.firebase.inappmessaging.v1.CampaignProto.VanillaCampa
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.CampaignImpression;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.CampaignImpressionList;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.FetchEligibleCampaignsResponse;
-import developers.mobile.abt.FirebaseAbt;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.reactivex.Completable;
@@ -99,7 +99,7 @@ public class InAppMessageStreamManagerTest {
           .setCampaignName(CAMPAIGN_NAME_STRING)
           .setCampaignStartTimeMillis(PAST)
           .setCampaignEndTimeMillis(FUTURE)
-          .setExperimentPayload(FirebaseAbt.ExperimentPayload.getDefaultInstance());
+          .setExperimentPayload(ExperimentPayloadProto.ExperimentPayload.getDefaultInstance());
   private static final ThickContent.Builder thickContentBuilder =
       ThickContent.newBuilder()
           .setPriority(priorityTwo)
@@ -481,7 +481,8 @@ public class InAppMessageStreamManagerTest {
                 CampaignProto.ExperimentalCampaignPayload.newBuilder()
                     .setCampaignStartTimeMillis(PAST)
                     .setCampaignEndTimeMillis(FUTURE)
-                    .setExperimentPayload(FirebaseAbt.ExperimentPayload.getDefaultInstance()))
+                    .setExperimentPayload(
+                        ExperimentPayloadProto.ExperimentPayload.getDefaultInstance()))
             .build();
 
     FetchEligibleCampaignsResponse r =
@@ -511,7 +512,8 @@ public class InAppMessageStreamManagerTest {
                 CampaignProto.ExperimentalCampaignPayload.newBuilder()
                     .setCampaignStartTimeMillis(PAST)
                     .setCampaignEndTimeMillis(FUTURE)
-                    .setExperimentPayload(FirebaseAbt.ExperimentPayload.getDefaultInstance()))
+                    .setExperimentPayload(
+                        ExperimentPayloadProto.ExperimentPayload.getDefaultInstance()))
             .build();
 
     FetchEligibleCampaignsResponse r =
@@ -541,7 +543,8 @@ public class InAppMessageStreamManagerTest {
                 CampaignProto.ExperimentalCampaignPayload.newBuilder()
                     .setCampaignStartTimeMillis(PAST)
                     .setCampaignEndTimeMillis(NOW)
-                    .setExperimentPayload(FirebaseAbt.ExperimentPayload.getDefaultInstance()))
+                    .setExperimentPayload(
+                        ExperimentPayloadProto.ExperimentPayload.getDefaultInstance()))
             .build();
     FetchEligibleCampaignsResponse r =
         FetchEligibleCampaignsResponse.newBuilder()
@@ -569,7 +572,8 @@ public class InAppMessageStreamManagerTest {
                 CampaignProto.ExperimentalCampaignPayload.newBuilder()
                     .setCampaignStartTimeMillis(FUTURE)
                     .setCampaignEndTimeMillis(FUTURE)
-                    .setExperimentPayload(FirebaseAbt.ExperimentPayload.getDefaultInstance()))
+                    .setExperimentPayload(
+                        ExperimentPayloadProto.ExperimentPayload.getDefaultInstance()))
             .build();
     FetchEligibleCampaignsResponse r =
         FetchEligibleCampaignsResponse.newBuilder()

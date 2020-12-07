@@ -12,22 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <array>
-#include <utility>
-#include <atomic>
-#include <cerrno>
-#include <cstring>
+#include <string>
+#include <vector>
 
-#include "crashlytics/handler/device_info.h"
+#include <dlfcn.h>
+
+#include <sys/system_properties.h>
+
+#include "client/crashpad_client.h"
+
+#include "crashlytics/config.h"
 #include "crashlytics/handler/install.h"
 #include "crashlytics/handler/detail/context.h"
-#include "crashlytics/detail/memory/allocate.h"
 #include "crashlytics/version.h"
-
-#include "client/linux/handler/exception_handler.h"
-#include "client/linux/handler/minidump_descriptor.h"
-
-#include "system/log.h"
 
 namespace google { namespace crashlytics { namespace detail {
 
@@ -36,103 +33,152 @@ extern int open(const char* filename);
 }}}
 
 namespace google { namespace crashlytics { namespace handler {
-namespace detail { std::atomic<void *> instance(nullptr); }
 namespace detail {
 
-struct breakpad_context {
-    static bool defer_to_next_handler;
-    static bool callback(const google_breakpad::MinidumpDescriptor& descriptor, void* context, bool succeeded);
-
-    explicit breakpad_context(const detail::context& handler_context);
-   ~breakpad_context();
-
-private:
-    detail::context handler_context_;
-
-    google_breakpad::MinidumpDescriptor descriptor_;
-    google_breakpad::ExceptionHandler   handler_;
-};
-
-template<std::size_t N>
-inline void make_suppliment_path_from(const char* path, const char* suffix, char (&buffer)[N])
-{
-    const char* extension            = std::strrchr(path, '.');
-    std::size_t extensionless_length = std::distance(path, extension);
-    std::size_t suffix_length        = std::strlen(suffix);
-
-    std::memcpy(buffer, path, extensionless_length);
-    std::memcpy(buffer + extensionless_length, suffix, suffix_length);
+crashpad::CrashpadClient* GetCrashpadClient() {
+    static crashpad::CrashpadClient* client = new crashpad::CrashpadClient();
+    return client;
 }
 
 void finalize()
 {
     DEBUG_OUT("Finalizing");
-    breakpad_context* context = reinterpret_cast<breakpad_context *>(instance.load());
-    crashlytics::detail::memory::release_storage<breakpad_context>(context);
+    delete GetCrashpadClient();
 }
 
 } // namespace detail
 
-bool detail::breakpad_context::defer_to_next_handler = false;
+#if defined(__arm__) && defined(__ARM_ARCH_7A__)
+#define CURRENT_ABI "armeabi-v7a"
+#elif defined(__arm__)
+#define CURRENT_ABI "armeabi"
+#elif defined(__i386__)
+#define CURRENT_ABI "x86"
+#elif defined(__mips__)
+#define CURRENT_ABI "mips"
+#elif defined(__x86_64__)
+#define CURRENT_ABI "x86_64"
+#elif defined(__aarch64__)
+#define CURRENT_ABI "arm64-v8a"
+#else
+#error "Unsupported target abi"
+#endif
 
-detail::breakpad_context::breakpad_context(const detail::context& handler_context)
-    : handler_context_(handler_context),
-      descriptor_(handler_context.filename),
-      handler_(descriptor_, NULL, callback, reinterpret_cast<void *>(&handler_context_), true, -1)
+#if defined(ARCH_CPU_64_BITS)
+  static constexpr bool kUse64Bit = true;
+#else
+  static constexpr bool kUse64Bit = false;
+#endif
+
+bool is_at_least_q()
 {
-}
-
-detail::breakpad_context::~breakpad_context()
-{
-}
-
-namespace detail {
-
-template<typename WriteFunction, std::size_t BufferSize = 256u>
-inline void write_supplimentary_file(const detail::context& handler_context, const char* minidump_path, const char* suffix, WriteFunction function)
-{
-    char supplimentary_path[BufferSize] = { 0 };
-    make_suppliment_path_from(minidump_path, suffix, supplimentary_path);
-
-    DEBUG_OUT("Supplementary file with suffix '%s' is at: %s", suffix, supplimentary_path);
-
-    int fd;
-    if ((fd = google::crashlytics::detail::open(supplimentary_path)) == -1) {
-        DEBUG_OUT("Couldn't open supplementary file '%s'; %s", supplimentary_path, std::strerror(errno));
-        return;
+    char api_level[PROP_VALUE_MAX] = {};
+    if (__system_property_get("ro.build.version.sdk", api_level) && atoi(api_level) >= 29) {
+        DEBUG_OUT("API level is Q+; %s", api_level);
+        return true;
     }
 
-    function(handler_context, fd);
+    DEBUG_OUT("API level is pre-Q; %s", api_level);
+    return false;
 }
 
-} // namespace detail
-
-bool detail::breakpad_context::callback(const google_breakpad::MinidumpDescriptor& descriptor, void* context, bool succeeded)
+// Constructs paths to a handler trampoline executable and a library exporting
+// the symbol `CrashpadHandlerMain()`. This requires this function to be built
+// into the same object exporting this symbol and the handler trampoline is
+// adjacent to it.
+bool get_handler_trampoline(std::string& handler_trampoline, std::string& handler_library)
 {
-    const detail::context& handler_context = *reinterpret_cast<detail::context *>(context);
+    // The linker doesn't support loading executables passed on its command
+    // line until Q.
+    if (!is_at_least_q()) {
+        return false;
+    }
 
-    DEBUG_OUT("Path is: %s; generating minidump %s", descriptor.path(), succeeded ? "succeeded" : "failed");
+    Dl_info info;
+    if (dladdr(reinterpret_cast<void*>(&get_handler_trampoline), &info) == 0 ||
+        dlsym(dlopen(info.dli_fname, RTLD_NOLOAD | RTLD_LAZY),
+                "CrashpadHandlerMain") == nullptr) {
 
-    detail::write_supplimentary_file(handler_context, descriptor.path(), ".device_info", [](const detail::context& handler_context, int fd) {
-        google::crashlytics::handler::write_device_info(handler_context, fd);
-    });
+        DEBUG_OUT("Unable to find CrashpadHandlerMain; %s", info.dli_fname);
+        return false;
+    }
 
-    detail::write_supplimentary_file(handler_context, descriptor.path(), ".maps", [](const detail::context& handler_context, int fd) {
-        google::crashlytics::handler::write_binary_libs(handler_context, fd);
-    });
+    DEBUG_OUT("Path for libcrashlytics.so is %s", info.dli_fname);
 
-    return defer_to_next_handler;
+    std::string local_handler_library { info.dli_fname };
+
+    size_t libdir_end = local_handler_library.rfind('/');
+    if (libdir_end == std::string::npos) {
+        DEBUG_OUT("Unable to find '/' in %s", local_handler_library.c_str());
+        return false;
+    }
+
+    std::string local_handler_trampoline(local_handler_library, 0, libdir_end + 1);
+    local_handler_trampoline += "libcrashlytics-trampoline.so";
+
+    handler_trampoline.swap(local_handler_trampoline);
+    handler_library.swap(local_handler_library);
+    return true;
+}
+
+bool install_signal_handler_linker(
+    const std::vector<std::string>* env,
+    const detail::context& handler_context,
+    const std::string& handler_trampoline,
+    const std::string& handler_library)
+{   
+    base::FilePath database { handler_context.filename };
+    base::FilePath metrics_dir;
+    
+    std::string url;
+    std::map<std::string, std::string> annotations;
+    std::vector<std::string> arguments;
+
+    DEBUG_OUT("Installing Crashpad handler via trampoline");
+
+    return detail::GetCrashpadClient()->StartHandlerWithLinkerAtCrash(
+        handler_trampoline, handler_library, 
+        kUse64Bit, env, database, metrics_dir, url, annotations, arguments
+    );
+}
+
+bool install_signal_handler_java(
+    const std::vector<std::string>* env,
+    const detail::context& handler_context)
+{
+    std::string class_name = "com/google/firebase/crashlytics/ndk/CrashpadMain";
+    
+    base::FilePath database(handler_context.filename);
+    base::FilePath metrics_dir;
+    
+    std::string url;
+    std::map<std::string, std::string> annotations;
+    std::vector<std::string> arguments;
+
+    DEBUG_OUT("Installing Java Crashpad handler");
+
+    return detail::GetCrashpadClient()->StartJavaHandlerAtCrash(
+        class_name, env, database, metrics_dir, url, annotations, arguments);
 }
 
 bool install_signal_handler(const detail::context& handler_context)
 {
-    if (detail::instance.load() == nullptr) {
-        detail::instance.store(reinterpret_cast<void *>(
-            crashlytics::detail::memory::allocate_storage<detail::breakpad_context>(handler_context)
-        ));
-    }
+    std::string handler_trampoline;
+    std::string handler_library;
+    std::string classpath = handler_context.classpath;
+    std::string lib_path = handler_context.lib_path;
 
-    return detail::instance.load() != nullptr;
+    std::vector<std::string> *env = new std::vector<std::string>;
+
+    env->push_back("CLASSPATH=" + classpath);
+    env->push_back("LD_LIBRARY_PATH=" + lib_path);
+    env->push_back("ANDROID_DATA=/data");
+
+    bool use_java_handler = !get_handler_trampoline(handler_trampoline, handler_library);
+
+    return use_java_handler
+        ? install_signal_handler_java(env, handler_context)
+        : install_signal_handler_linker(env, handler_context, handler_trampoline, handler_library);
 }
 
 bool install_handlers(detail::context handler_context)
@@ -151,5 +197,6 @@ bool install_handlers(detail::context handler_context)
 #if defined (CRASHLYTICS_DEBUG)
 //! When building in debug, we can search for this symbol in the output of readelf or objdump, to verify
 //  that a particular artifact has been compiled with this macro defined.
-extern "C" void debug_mode_is_enabled() {}
+extern "C" void debug_mode_is_enabled() __attribute__((visibility ("default")));
+void debug_mode_is_enabled() {}
 #endif
