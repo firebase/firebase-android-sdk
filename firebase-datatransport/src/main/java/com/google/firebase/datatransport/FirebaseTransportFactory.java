@@ -22,7 +22,6 @@ import com.google.android.datatransport.TransportFactory;
 import com.google.android.datatransport.cct.CCTDestination;
 import com.google.android.datatransport.runtime.TransportRuntime;
 import com.google.firebase.heartbeatinfo.HeartBeatInfo;
-import com.google.firebase.logging.FirebasePlatformInfo;
 import com.google.firebase.platforminfo.UserAgentPublisher;
 
 final class FirebaseTransportFactory implements TransportFactory {
