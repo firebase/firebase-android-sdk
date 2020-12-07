@@ -33,8 +33,9 @@ import java.io.IOException;
 
 /**
  * Model File Manager is used to move the downloaded file to the appropriate locations.
+ *
  * @hide
- **/
+ */
 public class ModelFileManager {
 
   private static final String TAG = "FirebaseModelFileManage";
