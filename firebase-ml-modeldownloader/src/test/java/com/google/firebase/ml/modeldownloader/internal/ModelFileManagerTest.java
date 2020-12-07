@@ -119,6 +119,7 @@ public class ModelFileManagerTest {
     assertEquals(
         fileManager.moveModelToDestinationFolder(CUSTOM_MODEL_NO_FILE, fd),
         new File(expectedDestinationFolder + "/0"));
+    // clean up files
     new File(expectedDestinationFolder + "/0").delete();
   }
 
@@ -137,12 +138,13 @@ public class ModelFileManagerTest {
     assertEquals(
         fileManager.moveModelToDestinationFolder(CUSTOM_MODEL_NO_FILE, fd2),
         new File(expectedDestinationFolder + "/1"));
+    // clean up files.
     new File(expectedDestinationFolder + "/0").delete();
     new File(expectedDestinationFolder + "/1").delete();
   }
 
   @Test
-  public void deleteAllModels_singleModel() throws Exception {
+  public void deleteAllModels_deleteSingleModel() throws Exception {
     ParcelFileDescriptor fd =
         ParcelFileDescriptor.open(testModelFile, ParcelFileDescriptor.MODE_READ_ONLY);
     assertEquals(
@@ -156,7 +158,7 @@ public class ModelFileManagerTest {
   }
 
   @Test
-  public void deleteAllModels_multipleModel() throws Exception {
+  public void deleteAllModels_deleteMultipleModel() throws Exception {
     ParcelFileDescriptor fd =
         ParcelFileDescriptor.open(testModelFile, ParcelFileDescriptor.MODE_READ_ONLY);
     assertEquals(
