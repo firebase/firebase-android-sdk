@@ -29,7 +29,11 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
-/** Model File Manager is used to move the downloaded file to the appropriate locations. */
+/**
+ * Model File Manager is used to move the downloaded file to the appropriate locations.
+ *
+ * @hide
+ */
 public class ModelFileManager {
 
   @VisibleForTesting

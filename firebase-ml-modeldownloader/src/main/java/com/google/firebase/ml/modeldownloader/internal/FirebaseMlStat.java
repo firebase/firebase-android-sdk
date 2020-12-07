@@ -30,7 +30,12 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.nio.charset.Charset;
 
-/** All values should match internal FirebaseMlLogEvent for numbering and naming. */
+/**
+ * Class used to log firebase ml log statistics. All values should match internal FirebaseMlLogEvent
+ * for numbering and naming.
+ *
+ * @hide
+ */
 @AutoValue
 @Encodable
 public abstract class FirebaseMlStat {

@@ -26,7 +26,11 @@ import com.google.firebase.ml.modeldownloader.internal.FirebaseMlStat.ModelDownl
 import com.google.firebase.ml.modeldownloader.internal.FirebaseMlStat.ModelDownloadLogEvent.ModelOptions;
 import com.google.firebase.ml.modeldownloader.internal.FirebaseMlStat.ModelDownloadLogEvent.ModelOptions.ModelInfo;
 
-/** @hide */
+/**
+ * Logging class for Firebase Ml Stats logging.
+ *
+ * @hide
+ */
 @WorkerThread
 public class FirebaseMlLogger {
   private static final String TAG = "FirebaseMlLogger";
@@ -113,19 +117,15 @@ public class FirebaseMlLogger {
     }
     if (shouldLogExactDownloadTime) {
       long downloadBeginTimeMs = sharedPreferencesUtil.getModelDownloadBeginTimeMs(customModel);
-      System.out.println("begin " + downloadBeginTimeMs);
       if (downloadBeginTimeMs == 0L) {
         Log.w(TAG, "Model downloaded without its beginning time recorded.");
       } else {
         // set the actual download completion time.
         long modelDownloadCompleteTime = SystemClock.elapsedRealtime();
-        System.out.println("clock " + modelDownloadCompleteTime);
         sharedPreferencesUtil.setModelDownloadCompleteTimeMs(
             customModel, modelDownloadCompleteTime);
 
         long downloadTimeMs = modelDownloadCompleteTime - downloadBeginTimeMs;
-
-        System.out.println("duration " + downloadTimeMs);
         downloadLogEvent.setExactDownloadDurationMs(downloadTimeMs);
       }
     }

@@ -26,9 +26,11 @@ import com.google.android.datatransport.runtime.TransportRuntime;
  * This class is responsible for sending FirebaseMl Stats to Firebase through Google DataTransport.
  *
  * <p>These will be equivalent to FirebaseMlLogEvent.proto internally.
+ *
+ * @hide
  */
 public class DataTransportMlStatsSender {
-  private static final String FIREBASE_ML_STATS_NAME = "FIREBASE_ML_STATS";
+  private static final String FIREBASE_ML_STATS_NAME = "FIREBASE_ML_LOG_SDK";
   private final Transport<FirebaseMlStat> transport;
 
   @NonNull
