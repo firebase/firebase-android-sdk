@@ -92,6 +92,12 @@ public class ComponentRuntime extends AbstractComponentContainer implements Comp
   }
 
   private void discoverComponents(List<Component<?>> componentsToAdd) {
+    // During discovery many things need to happen, of which "Deferred resolution" and "Set binding
+    // updates" are of most interest. During these phases we execute "client" code(i.e. the code of
+    // SDKs participating in Components DI), this code can indirectly end up calling back into the
+    // ComponentRuntime which, without proper care, can result in a deadlock. For this reason,
+    // instead of executing such code in the synchronized block below, we store it in a list and
+    // execute right after the synchronized section.
     List<Runnable> runAfterDiscovery = new ArrayList<>();
     synchronized (this) {
       Iterator<Provider<ComponentRegistrar>> iterator = unprocessedRegistrarProviders.iterator();
