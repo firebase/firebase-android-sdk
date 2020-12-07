@@ -46,8 +46,8 @@ public class FirebaseModelDownloaderRegistrar implements ComponentRegistrar {
   public List<Component<?>> getComponents() {
     return Arrays.asList(
         Component.builder(FirebaseModelDownloader.class)
+            .add(Dependency.required(TransportFactory.class))
             .add(Dependency.required(FirebaseApp.class))
-            .add(Dependency.optional(TransportFactory.class))
             .add(Dependency.required(FirebaseInstallationsApi.class))
             .factory(
                 c ->
@@ -66,7 +66,7 @@ public class FirebaseModelDownloaderRegistrar implements ComponentRegistrar {
             .build(),
         Component.builder(ModelFileDownloadService.class)
             .add(Dependency.required(FirebaseApp.class))
-            .add(Dependency.optional(TransportFactory.class))
+            .add(Dependency.required(TransportFactory.class))
             .factory(
                 c ->
                     new ModelFileDownloadService(

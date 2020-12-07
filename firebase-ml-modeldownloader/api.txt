@@ -40,7 +40,6 @@ package com.google.firebase.ml.modeldownloader {
     field public static final int INVALID_ARGUMENT = 3; // 0x3
     field public static final int NOT_ENOUGH_SPACE = 101; // 0x65
     field public static final int NOT_FOUND = 5; // 0x5
-    field public static final int OK = 0; // 0x0
     field public static final int OUT_OF_RANGE = 11; // 0xb
     field public static final int PERMISSION_DENIED = 7; // 0x7
     field public static final int RESOURCE_EXHAUSTED = 8; // 0x8
@@ -50,7 +49,7 @@ package com.google.firebase.ml.modeldownloader {
     field public static final int UNKNOWN = 2; // 0x2
   }
 
-  @IntDef({com.google.firebase.ml.modeldownloader.FirebaseMlException.OK, com.google.firebase.ml.modeldownloader.FirebaseMlException.CANCELLED, com.google.firebase.ml.modeldownloader.FirebaseMlException.UNKNOWN, com.google.firebase.ml.modeldownloader.FirebaseMlException.INVALID_ARGUMENT, com.google.firebase.ml.modeldownloader.FirebaseMlException.DEADLINE_EXCEEDED, com.google.firebase.ml.modeldownloader.FirebaseMlException.NOT_FOUND, com.google.firebase.ml.modeldownloader.FirebaseMlException.ALREADY_EXISTS, com.google.firebase.ml.modeldownloader.FirebaseMlException.PERMISSION_DENIED, com.google.firebase.ml.modeldownloader.FirebaseMlException.RESOURCE_EXHAUSTED, com.google.firebase.ml.modeldownloader.FirebaseMlException.FAILED_PRECONDITION, com.google.firebase.ml.modeldownloader.FirebaseMlException.ABORTED, com.google.firebase.ml.modeldownloader.FirebaseMlException.OUT_OF_RANGE, com.google.firebase.ml.modeldownloader.FirebaseMlException.UNIMPLEMENTED, com.google.firebase.ml.modeldownloader.FirebaseMlException.INTERNAL, com.google.firebase.ml.modeldownloader.FirebaseMlException.UNAVAILABLE, com.google.firebase.ml.modeldownloader.FirebaseMlException.UNAUTHENTICATED, com.google.firebase.ml.modeldownloader.FirebaseMlException.NOT_ENOUGH_SPACE}) @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) public static @interface FirebaseMlException.Code {
+  @IntDef({com.google.firebase.ml.modeldownloader.FirebaseMlException.CANCELLED, com.google.firebase.ml.modeldownloader.FirebaseMlException.UNKNOWN, com.google.firebase.ml.modeldownloader.FirebaseMlException.INVALID_ARGUMENT, com.google.firebase.ml.modeldownloader.FirebaseMlException.DEADLINE_EXCEEDED, com.google.firebase.ml.modeldownloader.FirebaseMlException.NOT_FOUND, com.google.firebase.ml.modeldownloader.FirebaseMlException.ALREADY_EXISTS, com.google.firebase.ml.modeldownloader.FirebaseMlException.PERMISSION_DENIED, com.google.firebase.ml.modeldownloader.FirebaseMlException.RESOURCE_EXHAUSTED, com.google.firebase.ml.modeldownloader.FirebaseMlException.FAILED_PRECONDITION, com.google.firebase.ml.modeldownloader.FirebaseMlException.ABORTED, com.google.firebase.ml.modeldownloader.FirebaseMlException.OUT_OF_RANGE, com.google.firebase.ml.modeldownloader.FirebaseMlException.UNIMPLEMENTED, com.google.firebase.ml.modeldownloader.FirebaseMlException.INTERNAL, com.google.firebase.ml.modeldownloader.FirebaseMlException.UNAVAILABLE, com.google.firebase.ml.modeldownloader.FirebaseMlException.UNAUTHENTICATED, com.google.firebase.ml.modeldownloader.FirebaseMlException.NOT_ENOUGH_SPACE}) @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) public static @interface FirebaseMlException.Code {
   }
 
   public class FirebaseModelDownloader {
