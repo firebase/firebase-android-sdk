@@ -32,6 +32,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
+import com.google.android.datatransport.TransportFactory;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
@@ -60,6 +61,7 @@ public class ModelFileDownloadService {
   private final ModelFileManager fileManager;
   private final SharedPreferencesUtil sharedPreferencesUtil;
   private final FirebaseMlLogger eventLogger;
+
   private final DataTransportMlStatsSender statsSender;
 
   @GuardedBy("this")
@@ -76,12 +78,13 @@ public class ModelFileDownloadService {
   private CustomModelDownloadConditions downloadConditions =
       new CustomModelDownloadConditions.Builder().build();
 
-  public ModelFileDownloadService(@NonNull FirebaseApp firebaseApp) {
+  public ModelFileDownloadService(
+      @NonNull FirebaseApp firebaseApp, TransportFactory transportFactory) {
     this.context = firebaseApp.getApplicationContext();
     downloadManager = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
     this.fileManager = ModelFileManager.getInstance();
     this.sharedPreferencesUtil = new SharedPreferencesUtil(firebaseApp);
-    this.statsSender = DataTransportMlStatsSender.create(firebaseApp.getApplicationContext());
+    this.statsSender = DataTransportMlStatsSender.create(transportFactory);
     this.eventLogger = new FirebaseMlLogger(sharedPreferencesUtil, statsSender);
   }
 

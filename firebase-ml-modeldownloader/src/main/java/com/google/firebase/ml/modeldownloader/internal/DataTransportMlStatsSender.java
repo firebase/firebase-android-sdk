@@ -14,13 +14,11 @@
 
 package com.google.firebase.ml.modeldownloader.internal;
 
-import android.content.Context;
 import androidx.annotation.NonNull;
 import com.google.android.datatransport.Encoding;
 import com.google.android.datatransport.Event;
 import com.google.android.datatransport.Transport;
-import com.google.android.datatransport.cct.CCTDestination;
-import com.google.android.datatransport.runtime.TransportRuntime;
+import com.google.android.datatransport.TransportFactory;
 
 /**
  * This class is responsible for sending FirebaseMl Stats to Firebase through Google DataTransport.
@@ -34,16 +32,13 @@ public class DataTransportMlStatsSender {
   private final Transport<FirebaseMlStat> transport;
 
   @NonNull
-  public static DataTransportMlStatsSender create(@NonNull Context context) {
-    TransportRuntime.initialize(context);
+  public static DataTransportMlStatsSender create(TransportFactory transportFactory) {
     final Transport<FirebaseMlStat> transport =
-        TransportRuntime.getInstance()
-            .newFactory(CCTDestination.LEGACY_INSTANCE)
-            .getTransport(
-                FIREBASE_ML_STATS_NAME,
-                FirebaseMlStat.class,
-                Encoding.of("json"),
-                FirebaseMlStat.getFirebaseMlJsonTransformer());
+        transportFactory.getTransport(
+            FIREBASE_ML_STATS_NAME,
+            FirebaseMlStat.class,
+            Encoding.of("json"),
+            FirebaseMlStat.getFirebaseMlJsonTransformer());
     return new DataTransportMlStatsSender(transport);
   }
 

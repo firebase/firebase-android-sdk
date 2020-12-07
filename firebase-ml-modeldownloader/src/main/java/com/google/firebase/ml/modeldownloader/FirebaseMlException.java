@@ -27,9 +27,6 @@ import java.lang.annotation.RetentionPolicy;
  * mappings should remain consistent with the original firebase_ml_sdk whenever possible.
  */
 public class FirebaseMlException extends FirebaseException {
-  /** The operation completed successfully. FirebaseMLException will never have a status of OK. */
-  public static final int OK = 0;
-
   /** The operation was cancelled (typically by the caller). */
   public static final int CANCELLED = 1;
 
@@ -113,7 +110,6 @@ public class FirebaseMlException extends FirebaseException {
    * error codes for Google APIs</a>
    */
   @IntDef({
-    OK,
     CANCELLED,
     UNKNOWN,
     INVALID_ARGUMENT,
@@ -139,7 +135,6 @@ public class FirebaseMlException extends FirebaseException {
   /** @hide */
   public FirebaseMlException(@NonNull String detailMessage, @Code int code) {
     super(Preconditions.checkNotEmpty(detailMessage, "Provided message must not be empty."));
-    Preconditions.checkArgument(code != OK, "A FirebaseMLException should never be thrown for OK");
     this.code = code;
   }
 
@@ -147,7 +142,6 @@ public class FirebaseMlException extends FirebaseException {
   public FirebaseMlException(
       @NonNull String detailMessage, @Code int code, @Nullable Throwable cause) {
     super(Preconditions.checkNotEmpty(detailMessage, "Provided message must not be empty."), cause);
-    Preconditions.checkArgument(code != OK, "A FirebaseMLException should never be thrown for OK");
     this.code = code;
   }
 

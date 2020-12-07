@@ -40,7 +40,6 @@ public class FirebaseModelDownloader {
   private final ModelFileDownloadService fileDownloadService;
   private final CustomModelDownloadService modelDownloadService;
   private final Executor executor;
-  private final TransportFactory transportFactory;
 
   @RequiresApi(api = VERSION_CODES.KITKAT)
   FirebaseModelDownloader(
@@ -48,12 +47,11 @@ public class FirebaseModelDownloader {
       FirebaseInstallationsApi firebaseInstallationsApi,
       TransportFactory transportFactory) {
     this.firebaseOptions = firebaseApp.getOptions();
-    this.fileDownloadService = new ModelFileDownloadService(firebaseApp);
+    this.fileDownloadService = new ModelFileDownloadService(firebaseApp, transportFactory);
     this.sharedPreferencesUtil = new SharedPreferencesUtil(firebaseApp);
     this.modelDownloadService =
         new CustomModelDownloadService(firebaseOptions, firebaseInstallationsApi);
     this.executor = Executors.newCachedThreadPool();
-    this.transportFactory = transportFactory;
   }
 
   @VisibleForTesting
@@ -68,8 +66,6 @@ public class FirebaseModelDownloader {
     this.fileDownloadService = fileDownloadService;
     this.modelDownloadService = modelDownloadService;
     this.executor = executor;
-    // todo update for testing...
-    this.transportFactory = null;
   }
 
   /**
