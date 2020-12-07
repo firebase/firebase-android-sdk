@@ -25,16 +25,18 @@ public class OtherTypes {
 
   private final String str;
   private final byte[] bytes;
-  private final boolean bl;
+  private final boolean bool;
+  private final Boolean wrappedBool;
 
-  public OtherTypes(String str, byte[] bytes, boolean bl) {
+  public OtherTypes(String str, byte[] bytes, boolean bool, Boolean wrappedBool) {
     this.str = str;
     this.bytes = bytes;
-    this.bl = bl;
+    this.bool = bool;
+    this.wrappedBool = wrappedBool;
   }
 
   public OtherTypes() {
-    this("", new byte[0], false);
+    this("", new byte[0], false, null);
   }
 
   @Protobuf(tag = 1)
@@ -48,8 +50,13 @@ public class OtherTypes {
   }
 
   @Protobuf(tag = 3)
-  public boolean isBl() {
-    return bl;
+  public boolean isBool() {
+    return bool;
+  }
+
+  @Protobuf(tag = 4)
+  public Boolean getWrappedBool() {
+    return wrappedBool;
   }
 
   public byte[] encode() {
