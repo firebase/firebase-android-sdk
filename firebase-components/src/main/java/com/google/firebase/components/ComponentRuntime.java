@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Main entry point to the component system.
@@ -48,7 +49,7 @@ public class ComponentRuntime extends AbstractComponentContainer implements Comp
   private final Map<Class<?>, LazySet<?>> lazySetMap = new HashMap<>();
   private final List<Provider<ComponentRegistrar>> unprocessedRegistrarProviders;
   private final EventBus eventBus;
-  private Boolean eagerComponentsInitializedWith = null;
+  private final AtomicReference<Boolean> eagerComponentsInitializedWith = new AtomicReference<>();
 
   /**
    * Creates an instance of {@link ComponentRuntime} for the provided {@link ComponentRegistrar}s
@@ -90,49 +91,63 @@ public class ComponentRuntime extends AbstractComponentContainer implements Comp
     discoverComponents(componentsToAdd);
   }
 
-  private synchronized void discoverComponents(List<Component<?>> componentsToAdd) {
-
-    Iterator<Provider<ComponentRegistrar>> iterator = unprocessedRegistrarProviders.iterator();
-    while (iterator.hasNext()) {
-      Provider<ComponentRegistrar> provider = iterator.next();
-      try {
-        ComponentRegistrar registrar = provider.get();
-        if (registrar != null) {
-          componentsToAdd.addAll(registrar.getComponents());
+  private void discoverComponents(List<Component<?>> componentsToAdd) {
+    // During discovery many things need to happen, of which "Deferred resolution" and "Set binding
+    // updates" are of most interest. During these phases we execute "client" code(i.e. the code of
+    // SDKs participating in Components DI), this code can indirectly end up calling back into the
+    // ComponentRuntime which, without proper care, can result in a deadlock. For this reason,
+    // instead of executing such code in the synchronized block below, we store it in a list and
+    // execute right after the synchronized section.
+    List<Runnable> runAfterDiscovery = new ArrayList<>();
+    synchronized (this) {
+      Iterator<Provider<ComponentRegistrar>> iterator = unprocessedRegistrarProviders.iterator();
+      while (iterator.hasNext()) {
+        Provider<ComponentRegistrar> provider = iterator.next();
+        try {
+          ComponentRegistrar registrar = provider.get();
+          if (registrar != null) {
+            componentsToAdd.addAll(registrar.getComponents());
+            iterator.remove();
+          }
+        } catch (InvalidRegistrarException ex) {
           iterator.remove();
+          Log.w(ComponentDiscovery.TAG, "Invalid component registrar.", ex);
         }
-      } catch (InvalidRegistrarException ex) {
-        iterator.remove();
-        Log.w(ComponentDiscovery.TAG, "Invalid component registrar.", ex);
       }
+
+      if (components.isEmpty()) {
+        CycleDetector.detect(componentsToAdd);
+      } else {
+        ArrayList<Component<?>> allComponents = new ArrayList<>(this.components.keySet());
+        allComponents.addAll(componentsToAdd);
+        CycleDetector.detect(allComponents);
+      }
+
+      for (Component<?> component : componentsToAdd) {
+        Lazy<?> lazy =
+            new Lazy<>(
+                () ->
+                    component
+                        .getFactory()
+                        .create(new RestrictedComponentContainer(component, this)));
+
+        components.put(component, lazy);
+      }
+
+      runAfterDiscovery.addAll(processInstanceComponents(componentsToAdd));
+      runAfterDiscovery.addAll(processSetComponents());
+      processDependencies();
     }
-
-    if (components.isEmpty()) {
-      CycleDetector.detect(componentsToAdd);
-    } else {
-      ArrayList<Component<?>> allComponents = new ArrayList<>(this.components.keySet());
-      allComponents.addAll(componentsToAdd);
-      CycleDetector.detect(allComponents);
+    for (Runnable runnable : runAfterDiscovery) {
+      runnable.run();
     }
-
-    for (Component<?> component : componentsToAdd) {
-      Lazy<?> lazy =
-          new Lazy<>(
-              () ->
-                  component.getFactory().create(new RestrictedComponentContainer(component, this)));
-
-      components.put(component, lazy);
-    }
-
-    processInstanceComponents(componentsToAdd);
-    processSetComponents();
-    processDependencies();
     maybeInitializeEagerComponents();
   }
 
   private void maybeInitializeEagerComponents() {
-    if (eagerComponentsInitializedWith != null) {
-      doInitializeEagerComponents(eagerComponentsInitializedWith);
+    Boolean isDefaultApp = eagerComponentsInitializedWith.get();
+    if (isDefaultApp != null) {
+      doInitializeEagerComponents(components, isDefaultApp);
     }
   }
 
@@ -153,7 +168,8 @@ public class ComponentRuntime extends AbstractComponentContainer implements Comp
     return result;
   }
 
-  private void processInstanceComponents(List<Component<?>> componentsToProcess) {
+  private List<Runnable> processInstanceComponents(List<Component<?>> componentsToProcess) {
+    ArrayList<Runnable> runnables = new ArrayList<>();
     for (Component<?> component : componentsToProcess) {
       if (!component.isValue()) {
         continue;
@@ -169,14 +185,16 @@ public class ComponentRuntime extends AbstractComponentContainer implements Comp
           OptionalProvider<Object> deferred = (OptionalProvider<Object>) existingProvider;
           @SuppressWarnings("unchecked")
           Provider<Object> castedProvider = (Provider<Object>) provider;
-          deferred.set(castedProvider);
+          runnables.add(() -> deferred.set(castedProvider));
         }
       }
     }
+    return runnables;
   }
 
   /** Populates lazySetMap to make set components available for consumption via set dependencies. */
-  private void processSetComponents() {
+  private List<Runnable> processSetComponents() {
+    ArrayList<Runnable> runnables = new ArrayList<>();
     Map<Class<?>, Set<Provider<?>>> setIndex = new HashMap<>();
     for (Map.Entry<Component<?>, Provider<?>> entry : components.entrySet()) {
       Component<?> component = entry.getKey();
@@ -202,10 +220,11 @@ public class ComponentRuntime extends AbstractComponentContainer implements Comp
       } else {
         LazySet<Object> existingSet = (LazySet<Object>) lazySetMap.get(entry.getKey());
         for (Provider<?> provider : entry.getValue()) {
-          existingSet.add((Provider<Object>) provider);
+          runnables.add(() -> existingSet.add((Provider<Object>) provider));
         }
       }
     }
+    return runnables;
   }
 
   @Override
@@ -243,17 +262,28 @@ public class ComponentRuntime extends AbstractComponentContainer implements Comp
    * <p>Should be called at an appropriate time in the owner's lifecycle.
    *
    * <p>Note: the method is idempotent.
+   *
+   * <p>Warning: it's important that this method is not synchronized as it could cause a deadlock if
+   * another SDK is initializing in another thread.
    */
-  public synchronized void initializeEagerComponents(boolean isDefaultApp) {
-    if (eagerComponentsInitializedWith != null) {
+  public void initializeEagerComponents(boolean isDefaultApp) {
+    if (!eagerComponentsInitializedWith.compareAndSet(null, isDefaultApp)) {
       return;
     }
-    eagerComponentsInitializedWith = isDefaultApp;
-    doInitializeEagerComponents(isDefaultApp);
+
+    // we copy the map under a lock to avoid a race condition.
+    // Note that we cannot use a ConcurrentHashMap as it is broken on older Android versions, see:
+    // https://issuetracker.google.com/issues/37042460
+    HashMap<Component<?>, Provider<?>> componentsCopy;
+    synchronized (this) {
+      componentsCopy = new HashMap<>(components);
+    }
+    doInitializeEagerComponents(componentsCopy, isDefaultApp);
   }
 
-  private void doInitializeEagerComponents(boolean isDefaultApp) {
-    for (Map.Entry<Component<?>, Provider<?>> entry : components.entrySet()) {
+  private void doInitializeEagerComponents(
+      Map<Component<?>, Provider<?>> componentsToInitialize, boolean isDefaultApp) {
+    for (Map.Entry<Component<?>, Provider<?>> entry : componentsToInitialize.entrySet()) {
       Component<?> component = entry.getKey();
       Provider<?> provider = entry.getValue();
 
@@ -266,9 +296,11 @@ public class ComponentRuntime extends AbstractComponentContainer implements Comp
   }
 
   @Override
-  public synchronized void discoverComponents() {
-    if (unprocessedRegistrarProviders.isEmpty()) {
-      return;
+  public void discoverComponents() {
+    synchronized (this) {
+      if (unprocessedRegistrarProviders.isEmpty()) {
+        return;
+      }
     }
     discoverComponents(new ArrayList<>());
   }
