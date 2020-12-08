@@ -71,7 +71,7 @@ dependencies {
   implementation "com.google.firebase:firebase-inappmessaging"
   // implementation "com.google.firebase:firebase-messaging"
   implementation "com.google.firebase:firebase-ml-vision"
-  implementation "com.google.firebase:firebase-perf"
+  // implementation "com.google.firebase:firebase-perf"
   implementation "com.google.firebase:firebase-storage"
 
   // Common utilities (application side)
