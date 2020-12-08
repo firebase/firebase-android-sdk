@@ -29,14 +29,14 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class OtherTypesEncodingTests {
   @Test
-  public void test() {
+  public void encode_withDefaults() {
     assertThat(new OtherTypes().encode()).isEmpty();
   }
 
   @Test
-  public void test2() throws InvalidProtocolBufferException {
+  public void encode_withNonDefaultValues() throws InvalidProtocolBufferException {
     byte[] result =
-        new OtherTypes("hello", "world".getBytes(Charset.forName("UTF-8")), true).encode();
+        new OtherTypes("hello", "world".getBytes(Charset.forName("UTF-8")), true, true).encode();
     OtherTypesProto parsed = OtherTypesProto.parseFrom(result);
     assertThat(parsed)
         .isEqualTo(
@@ -44,6 +44,7 @@ public class OtherTypesEncodingTests {
                 .setStr("hello")
                 .setBts(ByteString.copyFrom("world", Charset.forName("UTF-8")))
                 .setBl(true)
+                .setWrappedBool(true)
                 .build());
   }
 }

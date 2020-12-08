@@ -141,6 +141,10 @@ final class ProtobufDataEncoderContext implements ObjectEncoderContext {
       return add(field, ((Number) obj).longValue());
     }
 
+    if (obj instanceof Boolean) {
+      return add(field, (boolean) obj);
+    }
+
     if (obj instanceof byte[]) {
       byte[] bytes = (byte[]) obj;
       if (bytes.length == 0) {
