@@ -60,6 +60,7 @@ apply from: "configure.gradle"
 dependencies {
   // Firebase
   implementation "com.google.firebase:firebase-analytics"
+  implementation "com.google.firebase:firebase-annotations"
   implementation "com.google.firebase:firebase-appindexing"
   implementation "com.google.firebase:firebase-auth"
   implementation "com.google.firebase:firebase-common"
@@ -69,10 +70,11 @@ dependencies {
   implementation "com.google.firebase:firebase-firestore"
   implementation "com.google.firebase:firebase-functions"
   implementation "com.google.firebase:firebase-inappmessaging"
-  // TODO(yifany): Remove version after messaging is up to date
-  implementation "com.google.firebase:firebase-messaging:21.0.0"
+  // TODO(yifany): Restore after messaging in github is up to date
+  // implementation "com.google.firebase:firebase-messaging"
   implementation "com.google.firebase:firebase-ml-vision"
-  implementation "com.google.firebase:firebase-perf"
+  // TODO(b/174858514): Restore after M85 release is live
+  // implementation "com.google.firebase:firebase-perf"
   implementation "com.google.firebase:firebase-storage"
 
   // Common utilities (application side)
