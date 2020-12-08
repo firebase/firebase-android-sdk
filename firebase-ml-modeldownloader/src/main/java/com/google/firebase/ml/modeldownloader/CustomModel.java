@@ -152,7 +152,12 @@ public class CustomModel {
     if (localFilePath == null || localFilePath.isEmpty()) {
       return null;
     }
-    return new File(localFilePath);
+    File modelFile = new File(localFilePath);
+
+    if (!modelFile.exists()) {
+      return null;
+    }
+    return modelFile;
   }
 
   /**
