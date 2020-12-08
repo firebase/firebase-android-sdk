@@ -22,6 +22,8 @@ import com.google.auto.value.AutoValue;
 import com.google.firebase.encoders.DataEncoder;
 import com.google.firebase.encoders.annotations.Encodable;
 import com.google.firebase.encoders.json.JsonDataEncoderBuilder;
+import com.google.firebase.ml.modeldownloader.internal.FirebaseMlStat.EventName;
+import com.google.firebase.ml.modeldownloader.internal.FirebaseMlStat.ModelDownloadLogEvent.Builder;
 import com.google.firebase.ml.modeldownloader.internal.FirebaseMlStat.ModelDownloadLogEvent.DownloadStatus;
 import com.google.firebase.ml.modeldownloader.internal.FirebaseMlStat.ModelDownloadLogEvent.ErrorCode;
 import com.google.firebase.ml.modeldownloader.internal.FirebaseMlStat.ModelDownloadLogEvent.ModelOptions;
@@ -147,8 +149,9 @@ public abstract class FirebaseMlStat {
 
         @NonNull
         public static Builder builder() {
-          return new AutoValue_FirebaseMlStat_ModelDownloadLogEvent_ModelOptions_ModelInfo
-              .Builder();
+          return new AutoValue_FirebaseMlStat_ModelDownloadLogEvent_ModelOptions_ModelInfo.Builder()
+              // This is the only acceptable option but required by backend.
+              .setModelType(ModelType.CUSTOM);
         }
 
         @NonNull
@@ -156,6 +159,16 @@ public abstract class FirebaseMlStat {
 
         @NonNull
         public abstract String getHash();
+
+        @NonNull
+        @IntDef({ModelType.CUSTOM})
+        @Retention(RetentionPolicy.SOURCE)
+        public @interface ModelType {
+          int CUSTOM = 1;
+        }
+
+        @ModelType
+        public abstract int getModelType();
 
         /** Builder for {@link ModelInfo}. */
         @AutoValue.Builder
@@ -166,6 +179,9 @@ public abstract class FirebaseMlStat {
 
           @NonNull
           public abstract Builder setHash(@NonNull String value);
+
+          @NonNull
+          public abstract Builder setModelType(@ModelType int value);
 
           @NonNull
           public abstract ModelInfo build();
