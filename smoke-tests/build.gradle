@@ -69,7 +69,7 @@ dependencies {
   implementation "com.google.firebase:firebase-firestore"
   implementation "com.google.firebase:firebase-functions"
   implementation "com.google.firebase:firebase-inappmessaging"
-  implementation "com.google.firebase:firebase-messaging"
+  // implementation "com.google.firebase:firebase-messaging"
   implementation "com.google.firebase:firebase-ml-vision"
   implementation "com.google.firebase:firebase-perf"
   implementation "com.google.firebase:firebase-storage"
