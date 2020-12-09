@@ -50,7 +50,7 @@ public class SharedPreferencesUtil {
       "downloading_complete_time_%s_%s";
 
   // logging keys
-  private static final String STATS_LOGGING_ENABLED_PATTERN = "logging_%s_%s";
+  private static final String EVENT_LOGGING_ENABLED_PATTERN = "logging_%s_%s";
   private static final String CUSTOM_MODEL_LIB = "custom_model";
 
   private final String persistenceKey;
@@ -258,7 +258,7 @@ public class SharedPreferencesUtil {
   public synchronized boolean getCustomModelStatsCollectionFlag() {
     return getSharedPreferences()
         .getBoolean(
-            String.format(STATS_LOGGING_ENABLED_PATTERN, CUSTOM_MODEL_LIB, persistenceKey), true);
+            String.format(EVENT_LOGGING_ENABLED_PATTERN, CUSTOM_MODEL_LIB, persistenceKey), true);
   }
 
   /**
@@ -270,7 +270,7 @@ public class SharedPreferencesUtil {
     getSharedPreferences()
         .edit()
         .putBoolean(
-            String.format(STATS_LOGGING_ENABLED_PATTERN, CUSTOM_MODEL_LIB, persistenceKey), enable)
+            String.format(EVENT_LOGGING_ENABLED_PATTERN, CUSTOM_MODEL_LIB, persistenceKey), enable)
         .apply();
   }
 

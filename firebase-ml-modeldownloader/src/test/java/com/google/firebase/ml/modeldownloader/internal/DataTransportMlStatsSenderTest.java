@@ -20,7 +20,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import com.google.android.datatransport.Transport;
-import com.google.firebase.ml.modeldownloader.internal.FirebaseMlStat.EventName;
+import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.EventName;
+import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.SystemInfo;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -31,27 +32,41 @@ import org.robolectric.RobolectricTestRunner;
 @RunWith(RobolectricTestRunner.class)
 public class DataTransportMlStatsSenderTest {
 
-  @Mock private Transport<FirebaseMlStat> mockTransport;
+  @Mock private Transport<FirebaseMlLogEvent> mockTransport;
 
-  private DataTransportMlStatsSender statsSender;
+  private DataTransportMlEventSender statsSender;
+
+  private static final SystemInfo SYSTEM_INFO =
+      SystemInfo.builder()
+          .setAppId("FakeAppId6578")
+          .setAppVersion("0.1.0")
+          .setApiKey("fakeKey5645")
+          .setFirebaseProjectId("FakeFirebaseId")
+          .build();
 
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
-    statsSender = new DataTransportMlStatsSender(mockTransport);
+    statsSender = new DataTransportMlEventSender(mockTransport);
   }
 
   @Test
   public void testSendStatsSuccessful() {
     doNothing().when(mockTransport).send(any());
 
-    final FirebaseMlStat stat1 =
-        FirebaseMlStat.builder().setEventName(EventName.MODEL_UPDATE).build();
-    final FirebaseMlStat stat2 =
-        FirebaseMlStat.builder().setEventName(EventName.MODEL_DOWNLOAD).build();
+    final FirebaseMlLogEvent stat1 =
+        FirebaseMlLogEvent.builder()
+            .setSystemInfo(SYSTEM_INFO)
+            .setEventName(EventName.MODEL_UPDATE)
+            .build();
+    final FirebaseMlLogEvent stat2 =
+        FirebaseMlLogEvent.builder()
+            .setSystemInfo(SYSTEM_INFO)
+            .setEventName(EventName.MODEL_DOWNLOAD)
+            .build();
 
-    statsSender.sendStats(stat1);
-    statsSender.sendStats(stat2);
+    statsSender.sendEvent(stat1);
+    statsSender.sendEvent(stat2);
 
     verify(mockTransport, times(2)).send(any());
   }

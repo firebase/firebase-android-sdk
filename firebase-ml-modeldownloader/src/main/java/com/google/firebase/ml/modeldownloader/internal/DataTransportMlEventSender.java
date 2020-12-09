@@ -14,6 +14,7 @@
 
 package com.google.firebase.ml.modeldownloader.internal;
 
+import android.util.Log;
 import androidx.annotation.NonNull;
 import com.google.android.datatransport.Encoding;
 import com.google.android.datatransport.Event;
@@ -21,34 +22,38 @@ import com.google.android.datatransport.Transport;
 import com.google.android.datatransport.TransportFactory;
 
 /**
- * This class is responsible for sending FirebaseMl Stats to Firebase through Google DataTransport.
+ * This class is responsible for sending Firebase Ml Log Events to Firebase through Google
+ * DataTransport.
  *
  * <p>These will be equivalent to FirebaseMlLogEvent.proto internally.
  *
  * @hide
  */
-public class DataTransportMlStatsSender {
-  private static final String FIREBASE_ML_STATS_NAME = "FIREBASE_ML_LOG_SDK";
-  private final Transport<FirebaseMlStat> transport;
+public class DataTransportMlEventSender {
+  private static final String FIREBASE_ML_LOG_SDK_NAME = "FIREBASE_ML_LOG_SDK";
+  private final Transport<FirebaseMlLogEvent> transport;
 
   @NonNull
-  public static DataTransportMlStatsSender create(TransportFactory transportFactory) {
-    final Transport<FirebaseMlStat> transport =
+  public static DataTransportMlEventSender create(TransportFactory transportFactory) {
+    final Transport<FirebaseMlLogEvent> transport =
         transportFactory.getTransport(
-            FIREBASE_ML_STATS_NAME,
-            FirebaseMlStat.class,
+            FIREBASE_ML_LOG_SDK_NAME,
+            FirebaseMlLogEvent.class,
             Encoding.of("json"),
-            FirebaseMlStat.getFirebaseMlJsonTransformer());
-    return new DataTransportMlStatsSender(transport);
+            FirebaseMlLogEvent.getFirebaseMlJsonTransformer());
+    return new DataTransportMlEventSender(transport);
   }
 
-  DataTransportMlStatsSender(Transport<FirebaseMlStat> transport) {
+  DataTransportMlEventSender(Transport<FirebaseMlLogEvent> transport) {
     this.transport = transport;
   }
 
-  public void sendStats(@NonNull FirebaseMlStat stat) {
+  public void sendEvent(@NonNull FirebaseMlLogEvent logEvent) {
     // Thoughts? Use .send or .schedule - which gives back task of logging progress? Not sure how
     // strongly we feel about tracking these?
-    transport.send(Event.ofData(stat));
+    Log.e("ANNZ", "stats: " + logEvent);
+    transport.send(Event.ofData(logEvent));
+
+    Log.e("ANNZ", "stats: " + Event.ofData(logEvent));
   }
 }

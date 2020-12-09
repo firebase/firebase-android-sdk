@@ -14,20 +14,24 @@
 
 package com.google.firebase.ml.modeldownloader.internal;
 
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager.NameNotFoundException;
 import android.os.SystemClock;
 import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.WorkerThread;
+import com.google.firebase.FirebaseApp;
 import com.google.firebase.ml.modeldownloader.CustomModel;
-import com.google.firebase.ml.modeldownloader.internal.FirebaseMlStat.EventName;
-import com.google.firebase.ml.modeldownloader.internal.FirebaseMlStat.ModelDownloadLogEvent;
-import com.google.firebase.ml.modeldownloader.internal.FirebaseMlStat.ModelDownloadLogEvent.DownloadStatus;
-import com.google.firebase.ml.modeldownloader.internal.FirebaseMlStat.ModelDownloadLogEvent.ErrorCode;
-import com.google.firebase.ml.modeldownloader.internal.FirebaseMlStat.ModelDownloadLogEvent.ModelOptions;
-import com.google.firebase.ml.modeldownloader.internal.FirebaseMlStat.ModelDownloadLogEvent.ModelOptions.ModelInfo;
+import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.EventName;
+import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent;
+import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent.DownloadStatus;
+import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent.ErrorCode;
+import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent.ModelOptions;
+import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent.ModelOptions.ModelInfo;
+import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.SystemInfo;
 
 /**
- * Logging class for Firebase Ml Stats logging.
+ * Logging class for Firebase Ml Event logging.
  *
  * @hide
  */
@@ -35,13 +39,26 @@ import com.google.firebase.ml.modeldownloader.internal.FirebaseMlStat.ModelDownl
 public class FirebaseMlLogger {
   private static final String TAG = "FirebaseMlLogger";
   private final SharedPreferencesUtil sharedPreferencesUtil;
-  private final DataTransportMlStatsSender statsSender;
+  private final DataTransportMlEventSender eventSender;
+  private final FirebaseApp firebaseApp;
+
+  private final String appPackageName;
+  private final String appVersion;
+  private final String firebaseProjectId;
+  private final String apiKey;
 
   public FirebaseMlLogger(
+      @NonNull FirebaseApp firebaseApp,
       @NonNull SharedPreferencesUtil sharedPreferencesUtil,
-      @NonNull DataTransportMlStatsSender statsSender) {
+      @NonNull DataTransportMlEventSender eventSender) {
+    this.firebaseApp = firebaseApp;
     this.sharedPreferencesUtil = sharedPreferencesUtil;
-    this.statsSender = statsSender;
+    this.eventSender = eventSender;
+
+    this.firebaseProjectId = getProjectId();
+    this.apiKey = getApiKey();
+    this.appPackageName = firebaseApp.getApplicationContext().getPackageName();
+    this.appVersion = getAppVersion();
   }
 
   public void logDownloadEventWithExactDownloadTime(
@@ -52,7 +69,7 @@ public class FirebaseMlLogger {
         /* shouldLogRoughDownloadTime= */ false,
         /* shouldLogExactDownloadTime= */ true,
         status,
-        FirebaseMlStat.NO_INT_VALUE);
+        FirebaseMlLogEvent.NO_INT_VALUE);
   }
 
   public void logDownloadFailureWithReason(
@@ -130,14 +147,58 @@ public class FirebaseMlLogger {
       }
     }
     try {
-      statsSender.sendStats(
-          FirebaseMlStat.builder()
+      eventSender.sendEvent(
+          FirebaseMlLogEvent.builder()
               .setEventName(EventName.MODEL_DOWNLOAD)
               .setModelDownloadLogEvent(downloadLogEvent.build())
+              .setSystemInfo(getSystemInfo())
               .build());
     } catch (RuntimeException e) {
       // Swallow the exception since logging should not break the SDK usage
       Log.e(TAG, "Exception thrown from the logging side", e);
     }
+  }
+
+  private SystemInfo getSystemInfo() {
+    return SystemInfo.builder()
+        .setFirebaseProjectId(firebaseProjectId)
+        .setAppId(appPackageName)
+        .setAppVersion(appVersion)
+        .setApiKey(apiKey)
+        .build();
+  }
+
+  private String getAppVersion() {
+    String version = "";
+    try {
+      PackageInfo packageInfo =
+          firebaseApp
+              .getApplicationContext()
+              .getPackageManager()
+              .getPackageInfo(firebaseApp.getApplicationContext().getPackageName(), 0);
+      version = String.valueOf(packageInfo.versionCode);
+    } catch (NameNotFoundException e) {
+      Log.e(TAG, "Exception thrown when trying to get app version " + e);
+    }
+    return version;
+  }
+
+  private String getProjectId() {
+    if (firebaseApp == null) {
+      return "";
+    }
+    String projectId = firebaseApp.getOptions().getProjectId();
+    if (projectId == null) {
+      return "";
+    }
+    return projectId;
+  }
+
+  private String getApiKey() {
+    if (firebaseApp == null) {
+      return "";
+    }
+    String key = firebaseApp.getOptions().getApiKey();
+    return key == null ? "" : key;
   }
 }

@@ -22,12 +22,12 @@ import com.google.auto.value.AutoValue;
 import com.google.firebase.encoders.DataEncoder;
 import com.google.firebase.encoders.annotations.Encodable;
 import com.google.firebase.encoders.json.JsonDataEncoderBuilder;
-import com.google.firebase.ml.modeldownloader.internal.FirebaseMlStat.EventName;
-import com.google.firebase.ml.modeldownloader.internal.FirebaseMlStat.ModelDownloadLogEvent.Builder;
-import com.google.firebase.ml.modeldownloader.internal.FirebaseMlStat.ModelDownloadLogEvent.DownloadStatus;
-import com.google.firebase.ml.modeldownloader.internal.FirebaseMlStat.ModelDownloadLogEvent.ErrorCode;
-import com.google.firebase.ml.modeldownloader.internal.FirebaseMlStat.ModelDownloadLogEvent.ModelOptions;
-import com.google.firebase.ml.modeldownloader.internal.FirebaseMlStat.ModelDownloadLogEvent.ModelOptions.ModelInfo;
+import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.EventName;
+import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent.Builder;
+import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent.DownloadStatus;
+import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent.ErrorCode;
+import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent.ModelOptions;
+import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent.ModelOptions.ModelInfo;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.nio.charset.Charset;
@@ -40,24 +40,24 @@ import java.nio.charset.Charset;
  */
 @AutoValue
 @Encodable
-public abstract class FirebaseMlStat {
+public abstract class FirebaseMlLogEvent {
 
   static final int NO_INT_VALUE = 0;
 
   private static final DataEncoder FIREBASE_ML_JSON_ENCODER =
       new JsonDataEncoderBuilder()
-          .configureWith(AutoFirebaseMlStatEncoder.CONFIG)
+          .configureWith(AutoFirebaseMlLogEventEncoder.CONFIG)
           .ignoreNullValues(true)
           .build();
 
   @NonNull
-  public static Transformer<FirebaseMlStat, byte[]> getFirebaseMlJsonTransformer() {
+  public static Transformer<FirebaseMlLogEvent, byte[]> getFirebaseMlJsonTransformer() {
     return (r) -> FIREBASE_ML_JSON_ENCODER.encode(r).getBytes(Charset.forName("UTF-8"));
   }
 
   @NonNull
   public static Builder builder() {
-    return new AutoValue_FirebaseMlStat.Builder();
+    return new AutoValue_FirebaseMlLogEvent.Builder();
   }
 
   @NonNull
@@ -73,6 +73,45 @@ public abstract class FirebaseMlStat {
   public abstract int getEventName();
 
   @Nullable
+  public abstract SystemInfo getSystemInfo();
+
+  @AutoValue
+  public abstract static class SystemInfo {
+
+    @NonNull
+    public static Builder builder() {
+      return new AutoValue_FirebaseMlLogEvent_SystemInfo.Builder();
+    }
+
+    public abstract String getAppId();
+
+    public abstract String getAppVersion();
+
+    public abstract String getApiKey();
+
+    public abstract String getFirebaseProjectId();
+
+    /** Builder for {@link SystemInfo}. */
+    @AutoValue.Builder
+    public abstract static class Builder {
+      @NonNull
+      public abstract Builder setAppId(String value);
+
+      @NonNull
+      public abstract Builder setAppVersion(String value);
+
+      @NonNull
+      public abstract Builder setApiKey(String value);
+
+      @NonNull
+      public abstract Builder setFirebaseProjectId(String value);
+
+      @NonNull
+      public abstract SystemInfo build();
+    }
+  }
+
+  @Nullable
   public abstract ModelDownloadLogEvent getModelDownloadLogEvent();
 
   @NonNull
@@ -82,7 +121,7 @@ public abstract class FirebaseMlStat {
   public abstract static class ModelDownloadLogEvent {
     @NonNull
     public static Builder builder() {
-      return new AutoValue_FirebaseMlStat_ModelDownloadLogEvent.Builder()
+      return new AutoValue_FirebaseMlLogEvent_ModelDownloadLogEvent.Builder()
           .setDownloadFailureStatus(NO_INT_VALUE)
           .setDownloadStatus(NO_INT_VALUE)
           .setExactDownloadDurationMs(0L)
@@ -141,7 +180,7 @@ public abstract class FirebaseMlStat {
 
       @NonNull
       public static Builder builder() {
-        return new AutoValue_FirebaseMlStat_ModelDownloadLogEvent_ModelOptions.Builder();
+        return new AutoValue_FirebaseMlLogEvent_ModelDownloadLogEvent_ModelOptions.Builder();
       }
 
       @AutoValue
@@ -149,7 +188,8 @@ public abstract class FirebaseMlStat {
 
         @NonNull
         public static Builder builder() {
-          return new AutoValue_FirebaseMlStat_ModelDownloadLogEvent_ModelOptions_ModelInfo.Builder()
+          return new AutoValue_FirebaseMlLogEvent_ModelDownloadLogEvent_ModelOptions_ModelInfo
+                  .Builder()
               // This is the only acceptable option but required by backend.
               .setModelType(ModelType.CUSTOM);
         }
@@ -238,10 +278,13 @@ public abstract class FirebaseMlStat {
     @NonNull
     public abstract Builder setEventName(@EventName int value);
 
+    @NonNull
+    public abstract Builder setSystemInfo(@NonNull SystemInfo value);
+
     @Nullable
     public abstract Builder setModelDownloadLogEvent(@Nullable ModelDownloadLogEvent value);
 
     @NonNull
-    public abstract FirebaseMlStat build();
+    public abstract FirebaseMlLogEvent build();
   }
 }

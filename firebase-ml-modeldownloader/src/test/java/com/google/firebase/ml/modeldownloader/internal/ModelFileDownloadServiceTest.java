@@ -44,8 +44,8 @@ import com.google.firebase.ml.modeldownloader.CustomModel;
 import com.google.firebase.ml.modeldownloader.CustomModelDownloadConditions;
 import com.google.firebase.ml.modeldownloader.FirebaseMlException;
 import com.google.firebase.ml.modeldownloader.TestOnCompleteListener;
-import com.google.firebase.ml.modeldownloader.internal.FirebaseMlStat.ModelDownloadLogEvent.DownloadStatus;
-import com.google.firebase.ml.modeldownloader.internal.FirebaseMlStat.ModelDownloadLogEvent.ErrorCode;
+import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent.DownloadStatus;
+import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent.ErrorCode;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -95,7 +95,7 @@ public class ModelFileDownloadServiceTest {
   @Mock DownloadManager mockDownloadManager;
   @Mock ModelFileManager mockFileManager;
   @Mock FirebaseMlLogger mockStatsLogger;
-  @Mock DataTransportMlStatsSender mockStatsSender;
+  @Mock DataTransportMlEventSender mockStatsSender;
 
   ExecutorService executor;
   private MatrixCursor matrixCursor;

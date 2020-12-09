@@ -40,8 +40,8 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.ml.modeldownloader.CustomModel;
 import com.google.firebase.ml.modeldownloader.CustomModelDownloadConditions;
 import com.google.firebase.ml.modeldownloader.FirebaseMlException;
-import com.google.firebase.ml.modeldownloader.internal.FirebaseMlStat.ModelDownloadLogEvent.DownloadStatus;
-import com.google.firebase.ml.modeldownloader.internal.FirebaseMlStat.ModelDownloadLogEvent.ErrorCode;
+import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent.DownloadStatus;
+import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent.ErrorCode;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.regex.Matcher;
@@ -62,7 +62,7 @@ public class ModelFileDownloadService {
   private final SharedPreferencesUtil sharedPreferencesUtil;
   private final FirebaseMlLogger eventLogger;
 
-  private final DataTransportMlStatsSender statsSender;
+  private final DataTransportMlEventSender statsSender;
 
   @GuardedBy("this")
   // Mapping from download id to broadcast receiver. Because models can update, we cannot just keep
@@ -84,8 +84,8 @@ public class ModelFileDownloadService {
     downloadManager = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
     this.fileManager = ModelFileManager.getInstance();
     this.sharedPreferencesUtil = new SharedPreferencesUtil(firebaseApp);
-    this.statsSender = DataTransportMlStatsSender.create(transportFactory);
-    this.eventLogger = new FirebaseMlLogger(sharedPreferencesUtil, statsSender);
+    this.statsSender = DataTransportMlEventSender.create(transportFactory);
+    this.eventLogger = new FirebaseMlLogger(firebaseApp, sharedPreferencesUtil, statsSender);
   }
 
   @VisibleForTesting
@@ -94,7 +94,7 @@ public class ModelFileDownloadService {
       DownloadManager downloadManager,
       ModelFileManager fileManager,
       SharedPreferencesUtil sharedPreferencesUtil,
-      DataTransportMlStatsSender statsSender,
+      DataTransportMlEventSender statsSender,
       FirebaseMlLogger eventLogger) {
     this.context = firebaseApp.getApplicationContext();
     this.downloadManager = downloadManager;
@@ -353,7 +353,7 @@ public class ModelFileDownloadService {
    * specified {@code downloadId}.
    */
   int getFailureReason(Long downloadId) {
-    int failureReason = FirebaseMlStat.NO_INT_VALUE;
+    int failureReason = FirebaseMlLogEvent.NO_INT_VALUE;
     Cursor cursor =
         (downloadManager == null || downloadId == null)
             ? null
