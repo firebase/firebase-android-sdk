@@ -75,7 +75,7 @@ public class ModelFileManagerTest {
       }
     }
 
-    testModelFile = File.createTempFile("modelFile", "tflite");
+    testModelFile = File.createTempFile("modelFile", ".tflite");
     expectedDestinationFolder =
         new File(
                     app.getApplicationContext().getNoBackupFilesDir(),

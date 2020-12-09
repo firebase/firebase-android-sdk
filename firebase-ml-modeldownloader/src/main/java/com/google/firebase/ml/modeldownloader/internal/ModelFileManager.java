@@ -32,8 +32,7 @@ import java.io.IOException;
 /** Model File Manager is used to move the downloaded file to the appropriate locations. */
 public class ModelFileManager {
 
-  @VisibleForTesting
-  static final String CUSTOM_MODEL_ROOT_PATH = "com.google.firebase.ml.custom.models";
+  public static final String CUSTOM_MODEL_ROOT_PATH = "com.google.firebase.ml.custom.models";
 
   private static final int INVALID_INDEX = -1;
   private final Context context;
