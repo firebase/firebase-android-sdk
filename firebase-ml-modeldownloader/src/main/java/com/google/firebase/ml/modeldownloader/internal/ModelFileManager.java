@@ -134,11 +134,9 @@ public class ModelFileManager {
         //            "Failed to create model folder: " + modelDir, FirebaseMLException.INTERNAL);
       }
     } else if (!destFolder.isDirectory()) {
-      System.out.println("Failed to create model folder - is file." + destFolder);
-      //      throw new FirebaseMLException(
-      //          "Can not create model folder, since an existing file has the same name: " +
-      // modelDir,
-      //          FirebaseMLException.ALREADY_EXISTS);
+      // TODO(annz) change to FirebaseMLException when logging complete. Add test at same time.
+      throw new Exception(
+          "Can not create model folder, since an existing file has the same name: " + destFolder);
     }
 
     int index = getLatestCachedModelVersion(destFolder);
