@@ -21,6 +21,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import com.google.android.gms.common.internal.Objects;
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.database.core.ChildEventRegistration;
 import com.google.firebase.database.core.EventRegistration;
 import com.google.firebase.database.core.Path;
@@ -168,7 +169,13 @@ public class Query {
    */
   @NonNull
   Task<DataSnapshot> get() {
-    return repo.getValue(this);
+    TaskCompletionSource<DataSnapshot> source = new TaskCompletionSource<>();
+    repo.scheduleNow(
+        () ->
+            repo.getValue(Query.this)
+                .addOnSuccessListener(source::setResult)
+                .addOnFailureListener(source::setException));
+    return source.getTask();
   }
 
   /**

@@ -16,10 +16,7 @@ package com.google.firebase.database.core;
 
 import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
 
-import androidx.annotation.NonNull;
-import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseException;
@@ -491,57 +488,35 @@ public class Repo implements PersistentConnection.Delegate {
    * @param query - The query to surface a value for.
    */
   public Task<DataSnapshot> getValue(Query query) {
-    TaskCompletionSource<DataSnapshot> source = new TaskCompletionSource<>();
-    this.scheduleNow(
-        new Runnable() {
-          @Override
-          public void run() {
-            serverSyncTree.setQueryActive(query.getSpec());
-            connection
-                .get(query.getPath().asList(), query.getSpec().getParams().getWireProtocolParams())
-                .addOnCompleteListener(
-                    new OnCompleteListener<Object>() {
-                      @Override
-                      public void onComplete(@NonNull Task<Object> task) {
-                        if (!task.isSuccessful()) {
-                          operationLogger.info(
-                              "get for query "
-                                  + query.getPath()
-                                  + " falling back to cache after error: "
-                                  + task.getException().getMessage());
-                          Node cached =
-                              serverSyncTree.calcCompleteEventCache(
-                                  query.getPath(), new ArrayList<>());
-                          if (cached.isEmpty()) {
-                            source.setException(task.getException());
-                          } else {
-                            source.setResult(
-                                InternalHelpers.createDataSnapshot(
-                                    query.getRef(),
-                                    IndexedNode.from(cached, query.getSpec().getIndex())));
-                          }
-                        } else {
-                          Node serverNode = NodeUtilities.NodeFromJSON(task.getResult());
-                          postEvents(
-                              serverSyncTree.applyServerOverwrite(query.getPath(), serverNode));
-                          source.setResult(
-                              InternalHelpers.createDataSnapshot(
-                                  query.getRef(),
-                                  IndexedNode.from(serverNode, query.getSpec().getIndex())));
-                        }
-                      }
-                    });
+    serverSyncTree.setQueryActive(query.getSpec());
+    Task<Object> getTask =
+        connection.get(
+            query.getPath().asList(), query.getSpec().getParams().getWireProtocolParams());
+
+    return getTask.continueWith(
+        task -> {
+          serverSyncTree.setQueryInactive(query.getSpec());
+
+          if (!task.isSuccessful()) {
+            operationLogger.info(
+                "get for query "
+                    + query.getPath()
+                    + " falling back to cache after error: "
+                    + task.getException().getMessage());
+            Node cached = serverSyncTree.calcCompleteEventCache(query.getPath(), new ArrayList<>());
+            if (cached.isEmpty()) {
+              throw task.getException();
+            } else {
+              return InternalHelpers.createDataSnapshot(
+                  query.getRef(), IndexedNode.from(cached, query.getSpec().getIndex()));
+            }
+          } else {
+            Node serverNode = NodeUtilities.NodeFromJSON(task.getResult());
+            postEvents(serverSyncTree.applyServerOverwrite(query.getPath(), serverNode));
+            return InternalHelpers.createDataSnapshot(
+                query.getRef(), IndexedNode.from(serverNode, query.getSpec().getIndex()));
           }
         });
-    return source
-        .getTask()
-        .addOnCompleteListener(
-            new OnCompleteListener<DataSnapshot>() {
-              @Override
-              public void onComplete(@NonNull Task<DataSnapshot> task) {
-                serverSyncTree.setQueryInactive(query.getSpec());
-              }
-            });
   }
 
   public void updateChildren(
