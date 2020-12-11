@@ -116,7 +116,7 @@ public class ModelFileManager {
       try {
         index = Math.max(index, Integer.parseInt(modelFile.getName()));
       } catch (NumberFormatException e) {
-        System.out.println("Contains non-integer file name " + modelFile.getName());
+        Log.d(TAG, String.format("Contains non-integer file name %s", modelFile.getName()));
       }
     }
     return index;
@@ -129,12 +129,12 @@ public class ModelFileManager {
     if (!destFolder.exists()) {
       Log.d(TAG, "model folder does not exist, creating one: " + destFolder.getAbsolutePath());
       if (!destFolder.mkdirs()) {
-        System.out.println("Failed to create model folder" + destFolder);
-        //        throw new FirebaseMLException(
-        //            "Failed to create model folder: " + modelDir, FirebaseMLException.INTERNAL);
+        // TODO(annzimmer) change to FirebaseMLException when logging complete. Add test at same
+        // time.
+        throw new Exception("Failed to create model folder: " + destFolder);
       }
     } else if (!destFolder.isDirectory()) {
-      // TODO(annz) change to FirebaseMLException when logging complete. Add test at same time.
+      // TODO(annzimmer) change to FirebaseMLException when logging complete. Add test at same time.
       throw new Exception(
           "Can not create model folder, since an existing file has the same name: " + destFolder);
     }
