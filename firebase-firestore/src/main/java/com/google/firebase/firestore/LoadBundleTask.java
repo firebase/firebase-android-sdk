@@ -26,7 +26,7 @@ import com.google.android.gms.tasks.SuccessContinuation;
 import com.google.android.gms.tasks.Task;
 import java.util.concurrent.Executor;
 
-public class LoadBundleTask extends Task<LoadBundleTaskProgress> {
+/* package */ class LoadBundleTask extends Task<LoadBundleTaskProgress> {
   @Override
   public boolean isComplete() {
     return false;

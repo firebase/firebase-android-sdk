@@ -14,6 +14,8 @@
 
 package com.google.firebase.firestore;
 
+import static org.junit.Assert.fail;
+
 import com.google.android.gms.tasks.Task;
 import java.lang.reflect.Method;
 import org.junit.Test;
@@ -25,9 +27,15 @@ import org.robolectric.annotation.Config;
 @Config(manifest = Config.NONE)
 public class LoadBundleTaskTest {
   @Test
-  public void testImplementsAllTaskInterface() throws NoSuchMethodException {
+  public void testImplementsAllTaskInterface() {
     for (Method method : Task.class.getDeclaredMethods()) {
-      LoadBundleTask.class.getDeclaredMethod(method.getName(), method.getParameterTypes());
+      try {
+        LoadBundleTask.class.getDeclaredMethod(method.getName(), method.getParameterTypes());
+      } catch (NoSuchMethodException e) {
+        fail(
+            "'LoadBundleTask' is expected to override all methods in 'Task', but it is missing "
+                + method.toGenericString());
+      }
     }
   }
 }

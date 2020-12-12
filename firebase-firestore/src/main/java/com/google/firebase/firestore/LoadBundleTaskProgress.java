@@ -15,9 +15,8 @@
 package com.google.firebase.firestore;
 
 import androidx.annotation.NonNull;
-import javax.annotation.Nonnull;
 
-public final class LoadBundleTaskProgress {
+/* package */ final class LoadBundleTaskProgress {
   public enum TaskState {
     ERROR,
     RUNNING,
@@ -35,7 +34,7 @@ public final class LoadBundleTaskProgress {
       int totalDocuments,
       long bytesLoaded,
       long totalBytes,
-      @Nonnull TaskState taskState) {
+      @NonNull TaskState taskState) {
     this.documentsLoaded = documentsLoaded;
     this.totalDocuments = totalDocuments;
     this.bytesLoaded = bytesLoaded;
