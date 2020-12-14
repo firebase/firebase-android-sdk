@@ -87,6 +87,7 @@ dependencies {
     testImplementation 'org.mockito:mockito-core:3.3.3'
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation 'com.google.truth.extensions:truth-proto-extension:1.0'
+    // I think these 2 might be conflicting and causing the error in FirebaseMlLogEventTest
     testImplementation 'com.google.protobuf:protobuf-java-util:3.11.0'
     testImplementation "com.google.protobuf:protobuf-javalite:$javaliteVersion"
     testImplementation 'junit:junit:4.13-beta-2'

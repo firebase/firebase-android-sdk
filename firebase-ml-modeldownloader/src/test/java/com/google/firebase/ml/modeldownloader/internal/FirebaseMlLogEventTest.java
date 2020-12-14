@@ -37,7 +37,7 @@ public class FirebaseMlLogEventTest {
   private static byte[] EMPTY_BYTE_ARRAY = new byte[] {};
 
   @Test
-  public void testLogRequest_jsontToProto() throws InvalidProtocolBufferException {
+  public void testLogRequest_jsonToProto() throws InvalidProtocolBufferException {
 
     com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent request =
         com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.builder()
@@ -118,6 +118,11 @@ public class FirebaseMlLogEventTest {
 
     FirebaseMlLogEvent.Builder protoLogEventBuilder = FirebaseMlLogEvent.newBuilder();
 
+    // this line dies with a
+    // java.lang.NoSuchMethodError:
+    // 'com.google.protobuf.Descriptors$Descriptor com.google.protobuf.Any.getDescriptor()'
+    // I suspect it's a protobut-java-util and protobuf-javalite conflict but JsonFormat needs the
+    // first and the proto needs the second?
     JsonFormat.parser().merge(json, protoLogEventBuilder);
     FirebaseMlLogEvent parsedProtoFirebaseMlLogEvent = protoLogEventBuilder.build();
     //
