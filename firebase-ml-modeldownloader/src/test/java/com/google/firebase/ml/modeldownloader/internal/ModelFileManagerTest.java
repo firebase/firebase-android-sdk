@@ -15,6 +15,7 @@
 package com.google.firebase.ml.modeldownloader.internal;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import android.os.ParcelFileDescriptor;
@@ -48,6 +49,7 @@ public class ModelFileManagerTest {
   final CustomModel CUSTOM_MODEL_NO_FILE = new CustomModel(MODEL_NAME, MODEL_HASH, 100, 0);
 
   private File testModelFile;
+  private File testModelFile2;
 
   ModelFileManager fileManager;
   String expectedDestinationFolder;
@@ -76,6 +78,10 @@ public class ModelFileManagerTest {
     }
 
     testModelFile = File.createTempFile("modelFile", "tflite");
+    testModelFile2 = File.createTempFile("modelFile2", "tflite");
+
+    assertTrue(testModelFile.exists());
+    assertTrue(testModelFile2.exists());
     expectedDestinationFolder =
         new File(
                     app.getApplicationContext().getNoBackupFilesDir(),
@@ -90,6 +96,7 @@ public class ModelFileManagerTest {
   @After
   public void teardown() {
     testModelFile.deleteOnExit();
+    testModelFile2.deleteOnExit();
   }
 
   @Test
@@ -112,6 +119,63 @@ public class ModelFileManagerTest {
     assertEquals(
         fileManager.moveModelToDestinationFolder(CUSTOM_MODEL_NO_FILE, fd),
         new File(expectedDestinationFolder + "/0"));
+    // clean up files
     new File(expectedDestinationFolder + "/0").delete();
+  }
+
+  @Test
+  public void moveModelToDestinationFolder_update() throws Exception {
+    ParcelFileDescriptor fd =
+        ParcelFileDescriptor.open(testModelFile, ParcelFileDescriptor.MODE_READ_ONLY);
+
+    assertEquals(
+        fileManager.moveModelToDestinationFolder(CUSTOM_MODEL_NO_FILE, fd),
+        new File(expectedDestinationFolder + "/0"));
+
+    ParcelFileDescriptor fd2 =
+        ParcelFileDescriptor.open(testModelFile2, ParcelFileDescriptor.MODE_READ_ONLY);
+
+    assertEquals(
+        fileManager.moveModelToDestinationFolder(CUSTOM_MODEL_NO_FILE, fd2),
+        new File(expectedDestinationFolder + "/1"));
+    // clean up files.
+    new File(expectedDestinationFolder + "/0").delete();
+    new File(expectedDestinationFolder + "/1").delete();
+  }
+
+  @Test
+  public void deleteAllModels_deleteSingleModel() throws Exception {
+    ParcelFileDescriptor fd =
+        ParcelFileDescriptor.open(testModelFile, ParcelFileDescriptor.MODE_READ_ONLY);
+    assertEquals(
+        fileManager.moveModelToDestinationFolder(CUSTOM_MODEL_NO_FILE, fd),
+        new File(expectedDestinationFolder + "/0"));
+    assertTrue(new File(expectedDestinationFolder + "/0").exists());
+
+    fileManager.deleteAllModels(MODEL_NAME);
+
+    assertFalse(new File(expectedDestinationFolder + "/0").exists());
+  }
+
+  @Test
+  public void deleteAllModels_deleteMultipleModel() throws Exception {
+    ParcelFileDescriptor fd =
+        ParcelFileDescriptor.open(testModelFile, ParcelFileDescriptor.MODE_READ_ONLY);
+    assertEquals(
+        fileManager.moveModelToDestinationFolder(CUSTOM_MODEL_NO_FILE, fd),
+        new File(expectedDestinationFolder + "/0"));
+    assertTrue(new File(expectedDestinationFolder + "/0").exists());
+
+    ParcelFileDescriptor fd2 =
+        ParcelFileDescriptor.open(testModelFile2, ParcelFileDescriptor.MODE_READ_ONLY);
+
+    assertEquals(
+        fileManager.moveModelToDestinationFolder(CUSTOM_MODEL_NO_FILE, fd2),
+        new File(expectedDestinationFolder + "/1"));
+
+    fileManager.deleteAllModels(MODEL_NAME);
+
+    assertFalse(new File(expectedDestinationFolder + "/0").exists());
+    assertFalse(new File(expectedDestinationFolder + "/1").exists());
   }
 }
