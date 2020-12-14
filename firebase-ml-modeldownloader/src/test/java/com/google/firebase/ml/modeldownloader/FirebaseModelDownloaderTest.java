@@ -32,6 +32,7 @@ import com.google.firebase.FirebaseOptions;
 import com.google.firebase.FirebaseOptions.Builder;
 import com.google.firebase.ml.modeldownloader.internal.CustomModelDownloadService;
 import com.google.firebase.ml.modeldownloader.internal.ModelFileDownloadService;
+import com.google.firebase.ml.modeldownloader.internal.ModelFileManager;
 import com.google.firebase.ml.modeldownloader.internal.SharedPreferencesUtil;
 import java.util.Collections;
 import java.util.Set;
@@ -67,6 +68,7 @@ public class FirebaseModelDownloaderTest {
   FirebaseModelDownloader firebaseModelDownloader;
   @Mock SharedPreferencesUtil mockPrefs;
   @Mock ModelFileDownloadService mockFileDownloadService;
+  @Mock ModelFileManager mockFileManager;
   @Mock CustomModelDownloadService mockModelDownloadService;
   ExecutorService executor;
 
@@ -84,6 +86,7 @@ public class FirebaseModelDownloaderTest {
             mockPrefs,
             mockFileDownloadService,
             mockModelDownloadService,
+            mockFileManager,
             executor);
   }
 
@@ -184,9 +187,17 @@ public class FirebaseModelDownloaderTest {
   }
 
   @Test
-  public void deleteDownloadedModel_unimplemented() {
-    assertThrows(
-        UnsupportedOperationException.class,
-        () -> FirebaseModelDownloader.getInstance().deleteDownloadedModel(MODEL_NAME));
+  public void deleteDownloadedModel() throws Exception {
+    doNothing().when(mockPrefs).clearModelDetails(eq(MODEL_NAME));
+    doNothing().when(mockFileManager).deleteAllModels(eq(MODEL_NAME));
+
+    TestOnCompleteListener<Void> onCompleteListener = new TestOnCompleteListener<>();
+    Task<Void> task = firebaseModelDownloader.deleteDownloadedModel(MODEL_NAME);
+    task.addOnCompleteListener(executor, onCompleteListener);
+    onCompleteListener.await();
+
+    assertThat(task.isComplete()).isTrue();
+    verify(mockPrefs, times(1)).clearModelDetails(eq(MODEL_NAME));
+    verify(mockFileManager, times(1)).deleteAllModels(eq(MODEL_NAME));
   }
 }

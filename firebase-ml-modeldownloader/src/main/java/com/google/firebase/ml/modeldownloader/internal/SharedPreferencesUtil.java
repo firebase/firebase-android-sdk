@@ -193,12 +193,12 @@ public class SharedPreferencesUtil {
   /**
    * Clears all stored data related to a local custom model, including download details.
    *
+   * <p>Call ModelFileManager.deleteAllModels() before calling this to trigger successful clean up
+   * of downloaded files.
+   *
    * @param modelName - name of model
    */
-  public synchronized void clearModelDetails(@NonNull String modelName, boolean cleanUpModelFile) {
-    if (cleanUpModelFile) {
-      // TODO(annz) - add code to remove model files from device
-    }
+  public synchronized void clearModelDetails(@NonNull String modelName) {
     Editor editor = getSharedPreferences().edit();
 
     clearDownloadingModelDetails(editor, modelName);

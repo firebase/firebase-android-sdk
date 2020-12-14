@@ -101,7 +101,7 @@ public class SharedPreferencesUtilTest {
     sharedPreferencesUtil.setDownloadingCustomModelDetails(CUSTOM_MODEL_DOWNLOADING);
     CustomModel retrievedModel = sharedPreferencesUtil.getCustomModelDetails(MODEL_NAME);
     assertEquals(retrievedModel, CUSTOM_MODEL_UPDATE_IN_BACKGROUND);
-    sharedPreferencesUtil.clearModelDetails(CUSTOM_MODEL_DOWNLOAD_COMPLETE.getName(), false);
+    sharedPreferencesUtil.clearModelDetails(CUSTOM_MODEL_DOWNLOAD_COMPLETE.getName());
     retrievedModel = sharedPreferencesUtil.getCustomModelDetails(MODEL_NAME);
     assertNull(retrievedModel);
   }
