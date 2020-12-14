@@ -18,10 +18,12 @@ import android.os.Build.VERSION;
 import android.os.Build.VERSION_CODES;
 import android.os.ParcelFileDescriptor;
 import android.os.ParcelFileDescriptor.AutoCloseInputStream;
+import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
+import com.google.android.gms.common.internal.Preconditions;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.ml.modeldownloader.CustomModel;
 import java.io.File;
@@ -37,7 +39,7 @@ import java.io.IOException;
 public class ModelFileManager {
 
   public static final String CUSTOM_MODEL_ROOT_PATH = "com.google.firebase.ml.custom.models";
-
+  private static final String TAG = "FirebaseModelFileManage";
   private static final int INVALID_INDEX = -1;
   private final Context context;
   private final FirebaseApp firebaseApp;
@@ -111,7 +113,7 @@ public class ModelFileManager {
       try {
         index = Math.max(index, Integer.parseInt(modelFile.getName()));
       } catch (NumberFormatException e) {
-        System.out.println("Contains non-integer file name " + modelFile.getName());
+        Log.d(TAG, String.format("Contains non-integer file name %s", modelFile.getName()));
       }
     }
     return index;
@@ -121,6 +123,19 @@ public class ModelFileManager {
   @Nullable
   File getModelFileDestination(@NonNull CustomModel model) throws Exception {
     File destFolder = getDirImpl(model.getName());
+    if (!destFolder.exists()) {
+      Log.d(TAG, "model folder does not exist, creating one: " + destFolder.getAbsolutePath());
+      if (!destFolder.mkdirs()) {
+        // TODO(annzimmer) change to FirebaseMLException when logging complete. Add test at same
+        // time.
+        throw new Exception("Failed to create model folder: " + destFolder);
+      }
+    } else if (!destFolder.isDirectory()) {
+      // TODO(annzimmer) change to FirebaseMLException when logging complete. Add test at same time.
+      throw new Exception(
+          "Can not create model folder, since an existing file has the same name: " + destFolder);
+    }
+
     int index = getLatestCachedModelVersion(destFolder);
     return new File(destFolder, String.valueOf(index + 1));
   }
@@ -144,6 +159,11 @@ public class ModelFileManager {
       @NonNull CustomModel customModel, @NonNull ParcelFileDescriptor modelFileDescriptor)
       throws Exception {
     File modelFileDestination = getModelFileDestination(customModel);
+    // why would this ever be true?
+    File modelFolder = modelFileDestination.getParentFile();
+    if (!modelFolder.exists()) {
+      modelFolder.mkdirs();
+    }
 
     // Moves to the final destination file in app private folder to avoid the downloaded file from
     // being changed by
@@ -159,11 +179,44 @@ public class ModelFileManager {
       fos.getFD().sync();
     } catch (IOException e) {
       // Failed to copy to destination - clean up.
-      System.out.println("Failed to copy downloaded model file to destination folder: " + e);
+      Log.d(TAG, "Failed to copy downloaded model file to destination folder: " + e.toString());
       modelFileDestination.delete();
       return null;
     }
 
     return modelFileDestination;
+  }
+
+  /**
+   * Deletes all previously cached Model File(s) and the model root folder.
+   *
+   * <p>All model and model support files are stored in temp folder until the model gets fully
+   * downloaded, validated and hash-checked. We delete both temp files and files in the final
+   * destination for a model in this method.
+   */
+  @WorkerThread
+  public synchronized void deleteAllModels(@NonNull String modelName) {
+    File modelFolder = getModelDirUnsafe(modelName);
+    deleteRecursively(modelFolder);
+  }
+
+  /**
+   * Deletes all files under the {@code root}. If @{code root} is a file, just itself will be
+   * deleted. If it is a folder, all files and subfolders will be deleted, including {@code root}
+   * itself.
+   */
+  boolean deleteRecursively(@Nullable File root) {
+    if (root == null) {
+      return false;
+    }
+
+    boolean ret = true;
+    if (root.isDirectory()) {
+      for (File f : Preconditions.checkNotNull(root.listFiles())) {
+        ret = ret && deleteRecursively(f);
+      }
+    }
+
+    return ret && root.delete();
   }
 }

@@ -27,6 +27,7 @@ import com.google.firebase.FirebaseOptions;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.ml.modeldownloader.internal.CustomModelDownloadService;
 import com.google.firebase.ml.modeldownloader.internal.ModelFileDownloadService;
+import com.google.firebase.ml.modeldownloader.internal.ModelFileManager;
 import com.google.firebase.ml.modeldownloader.internal.SharedPreferencesUtil;
 import java.util.Set;
 import java.util.concurrent.Executor;
@@ -37,6 +38,7 @@ public class FirebaseModelDownloader {
   private final FirebaseOptions firebaseOptions;
   private final SharedPreferencesUtil sharedPreferencesUtil;
   private final ModelFileDownloadService fileDownloadService;
+  private final ModelFileManager fileManager;
   private final CustomModelDownloadService modelDownloadService;
   private final Executor executor;
 
@@ -48,7 +50,8 @@ public class FirebaseModelDownloader {
     this.sharedPreferencesUtil = new SharedPreferencesUtil(firebaseApp);
     this.modelDownloadService =
         new CustomModelDownloadService(firebaseOptions, firebaseInstallationsApi);
-    this.executor = Executors.newCachedThreadPool();
+    this.executor = Executors.newSingleThreadExecutor();
+    fileManager = ModelFileManager.getInstance();
   }
 
   @VisibleForTesting
@@ -57,11 +60,13 @@ public class FirebaseModelDownloader {
       SharedPreferencesUtil sharedPreferencesUtil,
       ModelFileDownloadService fileDownloadService,
       CustomModelDownloadService modelDownloadService,
+      ModelFileManager fileManager,
       Executor executor) {
     this.firebaseOptions = firebaseOptions;
     this.sharedPreferencesUtil = sharedPreferencesUtil;
     this.fileDownloadService = fileDownloadService;
     this.modelDownloadService = modelDownloadService;
+    this.fileManager = fileManager;
     this.executor = executor;
   }
 
@@ -227,7 +232,16 @@ public class FirebaseModelDownloader {
    */
   @NonNull
   public Task<Void> deleteDownloadedModel(@NonNull String modelName) {
-    throw new UnsupportedOperationException("Not yet implemented.");
+
+    TaskCompletionSource<Void> taskCompletionSource = new TaskCompletionSource<>();
+    executor.execute(
+        () -> {
+          // remove all files associated with this model and then clean up model references.
+          fileManager.deleteAllModels(modelName);
+          sharedPreferencesUtil.clearModelDetails(modelName);
+          taskCompletionSource.setResult(null);
+        });
+    return taskCompletionSource.getTask();
   }
 
   /** Returns the nick name of the {@link FirebaseApp} of this {@link FirebaseModelDownloader} */
