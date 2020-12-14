@@ -19,12 +19,9 @@ package com.google.firebase.ml.modeldownloader;
 option java_package = "com.google.firebase.ml.modeldownloader.proto";
 option java_multiple_files = true;
 
-// This proto file is structured as follows:
-// 1. Messages about component information: systems, events, models.
-// 2. Log events for APIs: cloudML inference, etc. The
-// options passed to each API call is defined next to the API log events.
-// Within the API log events, APIs of the similar nature are grouped together.
-// For example, cloud inference log events are grouped together.
+// This is a slimmed down version of our internal logging proto used only for
+// testing, to valid that the incoming json will convert as expected!
+// All numbers and naming should be kept consistent with the internal proto.
 
 // Information about various parts of the system: app, Firebase, SDK, TFLite.
 message SystemInfo {
@@ -70,30 +67,21 @@ message ModelInfo {
   ModelType model_type = 6;
 }
 
-// For this enum, we allocate tags in blocks of 10,
-// with a different block for each different API's events.
-// The next available block of tags is 311-320.
 enum EventName {
   UNKNOWN_EVENT = 0;
-  // ==============================================
-  // The following is for internally driven events.
-  // ==============================================
   MODEL_DOWNLOAD = 100;
   MODEL_UPDATE = 101;
 
 }
 
-// A list of error codes for various components of the system. For model
-// inference, the range of error codes is 1 to 99.  For model downloading, the
+// A list of error codes for various components of the system. For model downloading, the
 // range of error codes is 100 to 199.
 enum ErrorCode {
   // No error at all.
   NO_ERROR = 0;
 
-
   // The download started on a valid condition but didn't finish successfully.
   DOWNLOAD_FAILED = 104;
-
 
   // An unknown error has occurred. This is for conditions that should never
   // happen. But we log them anyways.  If there is a surge in UNKNOWN error
@@ -104,7 +92,6 @@ enum ErrorCode {
 // Detailed information about a model.
 // The message used to be named "CustomModelOptions".
 message ModelOptions {
-
   // Inherent properties about the model: name, version, URI, source.
   ModelInfo model_info = 1;
 
@@ -173,23 +160,10 @@ message FirebaseMlLogEvent {
   // Information about various parts of the system: app, Firebase, SDK, TFLite.
   SystemInfo system_info = 1;
 
-  // The event name. It can be an API call, or an internally driven event like
-  // model download. If it is an API call, then one of the XXXXLogEvents will be
-  // populated. For example, if EventName is CLOUD_FACE_DETECT, then
-  // CloudFaceDetectionLogEvent will be populated.  If it is DOWNLOAD, then
-  // CustomModelDownloadLogEvent will be populated.
+  // The event name.
   EventName event_name = 2;
 
-  // Below are the log events that will be populated depending on event_name.
-  // These log events are about API calls or internal events like model
-  // download.
-  // ==========================================================================
-
-  // Model downloading logs.
+    // Model downloading logs.
   // ==========================
-
-  // Information about model download.
-  // This field used to be of type "CustomModelDownloadLogEvent" with field name
-  // "custom_model_download_log_event".
   ModelDownloadLogEvent model_download_log_event = 3;
 }

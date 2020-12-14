@@ -14,8 +14,8 @@
 
 package com.google.firebase.ml.modeldownloader.internal;
 
+import static com.google.common.truth.extensions.proto.ProtoTruth.assertThat;
 import static com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.FIREBASE_ML_JSON_ENCODER;
-import static org.junit.Assert.assertTrue;
 
 import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent.DownloadStatus;
 import com.google.firebase.ml.modeldownloader.proto.ErrorCode;
@@ -37,9 +37,10 @@ public class FirebaseMlLogEventTest {
   private static byte[] EMPTY_BYTE_ARRAY = new byte[] {};
 
   @Test
+  // This verifies the incoming json matches the expected proto.
   public void testLogRequest_jsonToProto() throws InvalidProtocolBufferException {
 
-    com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent request =
+    com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent logEventJson =
         com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.builder()
             .setEventName(
                 com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.EventName
@@ -78,7 +79,7 @@ public class FirebaseMlLogEventTest {
                     .build())
             .build();
 
-    assertTrue(!request.equals(null));
+    // Create matching proto
     SystemInfo systemInfo =
         SystemInfo.newBuilder()
             .setAppId("appId")
@@ -104,67 +105,20 @@ public class FirebaseMlLogEventTest {
                     .build())
             .build();
 
-    FirebaseMlLogEvent logEvent =
+    FirebaseMlLogEvent logEventProto =
         FirebaseMlLogEvent.newBuilder()
             .setEventName(EventName.MODEL_DOWNLOAD)
             .setSystemInfo(systemInfo)
             .setModelDownloadLogEvent(modelDownloadLogEvent)
             .build();
 
-    String json = FIREBASE_ML_JSON_ENCODER.encode(request);
-
-    System.out.println("Json version: " + json);
-    System.out.println("Proto version:" + logEvent);
+    String json = FIREBASE_ML_JSON_ENCODER.encode(logEventJson);
 
     FirebaseMlLogEvent.Builder protoLogEventBuilder = FirebaseMlLogEvent.newBuilder();
 
-    // this line dies with a
-    // java.lang.NoSuchMethodError:
-    // 'com.google.protobuf.Descriptors$Descriptor com.google.protobuf.Any.getDescriptor()'
-    // I suspect it's a protobut-java-util and protobuf-javalite conflict but JsonFormat needs the
-    // first and the proto needs the second?
     JsonFormat.parser().merge(json, protoLogEventBuilder);
     FirebaseMlLogEvent parsedProtoFirebaseMlLogEvent = protoLogEventBuilder.build();
-    //
-    //    FirebaseMlLogEvent expectedProto =
-    //        FirebaseMlLogEvent.newBuilder()
-    //            .addLogRequest(
-    //                com.google.android.datatransport.cct.proto.LogRequest.newBuilder()
-    //                    .setRequestUptimeMs(1000L)
-    //                    .setRequestTimeMs(4300L)
-    //                    .setLogSourceName("logSource")
-    //                    .setClientInfo(
-    //                        com.google.android.datatransport.cct.proto.ClientInfo.newBuilder()
-    //                            .setClientType(
-    //
-    // com.google.android.datatransport.cct.proto.ClientInfo.ClientType
-    //                                    .ANDROID_FIREBASE)
-    //                            .setAndroidClientInfo(
-    //                                com.google.android.datatransport.cct.proto.AndroidClientInfo
-    //                                    .newBuilder()
-    //                                    .setDevice("device")
-    //                                    .build())
-    //                            .build())
-    //                    .addLogEvent(
-    //                        com.google.android.datatransport.cct.proto.LogEvent.newBuilder()
-    //                            .setSourceExtension(ByteString.EMPTY)
-    //                            .setEventUptimeMs(4000L)
-    //                            .setEventTimeMs(100L)
-    //                            .setTimezoneOffsetSeconds(123L)
-    //                            .setNetworkConnectionInfo(
-    //
-    // com.google.android.datatransport.cct.proto.NetworkConnectionInfo
-    //                                    .newBuilder()
-    //                                    .setMobileSubtype(
-    //                                        com.google.android.datatransport.cct.proto
-    //                                            .NetworkConnectionInfo.MobileSubtype.EDGE)
-    //                                    .setNetworkType(
-    //                                        com.google.android.datatransport.cct.proto
-    //                                            .NetworkConnectionInfo.NetworkType.BLUETOOTH)
-    //                                    .build())
-    //                            .build())
-    //                    .build())
-    //            .build();
-    //    assertThat(parsedProtoFirebaseMlLogEvent).isEqualTo(expectedProto);
+
+    assertThat(parsedProtoFirebaseMlLogEvent).isEqualTo(logEventProto);
   }
 }

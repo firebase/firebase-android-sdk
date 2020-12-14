@@ -272,6 +272,7 @@ public abstract class FirebaseMlLogEvent {
     }
 
     @NonNull
+    @Encodable.Field(name = "options")
     public abstract ModelOptions getModelOptions();
 
     /** Builder for {@link ModelDownloadLogEvent}. */
