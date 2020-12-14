@@ -14,6 +14,7 @@
 
 package com.google.firebase.ml.modeldownloader.internal;
 
+import android.util.SparseArray;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -22,6 +23,7 @@ import com.google.auto.value.AutoValue;
 import com.google.firebase.encoders.DataEncoder;
 import com.google.firebase.encoders.annotations.Encodable;
 import com.google.firebase.encoders.json.JsonDataEncoderBuilder;
+import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.EventName;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.nio.charset.Charset;
@@ -54,17 +56,30 @@ public abstract class FirebaseMlLogEvent {
     return new AutoValue_FirebaseMlLogEvent.Builder();
   }
 
-  @NonNull
-  @IntDef({EventName.MODEL_DOWNLOAD, EventName.MODEL_UPDATE, EventName.UNKNOWN_EVENT})
-  @Retention(RetentionPolicy.SOURCE)
-  public @interface EventName {
-    int UNKNOWN_EVENT = 0;
-    int MODEL_DOWNLOAD = 100;
-    int MODEL_UPDATE = 101;
+  public enum EventName {
+    UNKNOWN_EVENT(0),
+    MODEL_DOWNLOAD(100),
+    MODEL_UPDATE(101);
+    private static final SparseArray<EventName> valueMap = new SparseArray<>();
+
+    private final int value;
+
+    static {
+      valueMap.put(0, UNKNOWN_EVENT);
+      valueMap.put(100, MODEL_DOWNLOAD);
+      valueMap.put(101, MODEL_UPDATE);
+    }
+
+    EventName(int value) {
+      this.value = value;
+    }
+
+    public int getValue() {
+      return value;
+    }
   }
 
-  @EventName
-  public abstract int getEventName();
+  public abstract EventName getEventName();
 
   @Nullable
   public abstract SystemInfo getSystemInfo();
@@ -117,7 +132,7 @@ public abstract class FirebaseMlLogEvent {
     public static Builder builder() {
       return new AutoValue_FirebaseMlLogEvent_ModelDownloadLogEvent.Builder()
           .setDownloadFailureStatus(NO_INT_VALUE)
-          .setDownloadStatus(NO_INT_VALUE)
+          .setDownloadStatus(DownloadStatus.UNKNOWN_STATUS)
           .setExactDownloadDurationMs(0L)
           .setRoughDownloadDurationMs(0L)
           .setErrorCode(ErrorCode.UNKNOWN_ERROR);
@@ -126,22 +141,30 @@ public abstract class FirebaseMlLogEvent {
     // A list of error codes for various components of the system. For model
     // inference, the range of error codes is 1 to 99.  For model downloading, the
     // range of error codes is 100 to 199.
-    @IntDef({ErrorCode.NO_ERROR, ErrorCode.DOWNLOAD_FAILED, ErrorCode.UNKNOWN_ERROR})
-    public @interface ErrorCode {
-      // No error at all.
-      int NO_ERROR = 0;
+    public enum ErrorCode {
+      NO_ERROR(0),
+      DOWNLOAD_FAILED(104),
+      UNKNOWN_ERROR(9999);
+      private static final SparseArray<ErrorCode> valueMap = new SparseArray<>();
 
-      // The download started on a valid condition but didn't finish successfully.
-      int DOWNLOAD_FAILED = 104;
+      private final int value;
 
-      // An unknown error has occurred. This is for conditions that should never
-      // happen. But we log them anyways.  If there is a surge in UNKNOWN error
-      // codes, we need to check our code.
-      int UNKNOWN_ERROR = 9999;
+      static {
+        valueMap.put(0, NO_ERROR);
+        valueMap.put(104, DOWNLOAD_FAILED);
+        valueMap.put(9999, UNKNOWN_ERROR);
+      }
+
+      ErrorCode(int value) {
+        this.value = value;
+      }
+
+      public int getValue() {
+        return value;
+      }
     }
 
-    @ErrorCode
-    public abstract int getErrorCode();
+    public abstract ErrorCode getErrorCode();
 
     // The download status. The model download is made up of two major stages: the
     // retrieval of the model info in Firebase backend, and then the download of
@@ -149,19 +172,30 @@ public abstract class FirebaseMlLogEvent {
     // or explicitly does not affect the later stages of the download. As a
     // result, later stages (i.e. enum tag 3+) do not distinguish between explicit
     // and implicit triggering.
-    @IntDef({DownloadStatus.UNKNOWN_STATUS, DownloadStatus.SUCCEEDED, DownloadStatus.FAILED})
-    public @interface DownloadStatus {
-      int UNKNOWN_STATUS = 0;
+    public enum DownloadStatus {
+      UNKNOWN_STATUS(0),
+      SUCCEEDED(7),
+      FAILED(8);
+      private static final SparseArray<DownloadStatus> valueMap = new SparseArray<>();
 
-      // The download of the model file succeeded.
-      int SUCCEEDED = 7;
+      private final int value;
 
-      // The download of the model file failed.
-      int FAILED = 8;
+      static {
+        valueMap.put(0, UNKNOWN_STATUS);
+        valueMap.put(7, SUCCEEDED);
+        valueMap.put(8, FAILED);
+      }
+
+      DownloadStatus(int value) {
+        this.value = value;
+      }
+
+      public int getValue() {
+        return value;
+      }
     }
 
-    @DownloadStatus
-    public abstract int getDownloadStatus();
+    public abstract DownloadStatus getDownloadStatus();
 
     public abstract int getDownloadFailureStatus();
 
@@ -244,10 +278,10 @@ public abstract class FirebaseMlLogEvent {
     @AutoValue.Builder
     public abstract static class Builder {
       @NonNull
-      public abstract Builder setErrorCode(@ErrorCode int value);
+      public abstract Builder setErrorCode(@Nullable ErrorCode value);
 
       @NonNull
-      public abstract Builder setDownloadStatus(@DownloadStatus int value);
+      public abstract Builder setDownloadStatus(@Nullable DownloadStatus value);
 
       @NonNull
       public abstract Builder setDownloadFailureStatus(int value);
@@ -270,7 +304,7 @@ public abstract class FirebaseMlLogEvent {
   public abstract static class Builder {
 
     @NonNull
-    public abstract Builder setEventName(@EventName int value);
+    public abstract Builder setEventName(@NonNull EventName value);
 
     @NonNull
     public abstract Builder setSystemInfo(@NonNull SystemInfo value);

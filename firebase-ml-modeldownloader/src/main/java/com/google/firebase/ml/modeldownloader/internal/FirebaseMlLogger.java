@@ -62,7 +62,7 @@ public class FirebaseMlLogger {
   }
 
   public void logDownloadEventWithExactDownloadTime(
-      @NonNull CustomModel customModel, @ErrorCode int errorCode, @DownloadStatus int status) {
+      @NonNull CustomModel customModel, ErrorCode errorCode, DownloadStatus status) {
     logDownloadEvent(
         customModel,
         errorCode,
@@ -91,10 +91,10 @@ public class FirebaseMlLogger {
 
   private void logDownloadEvent(
       CustomModel customModel,
-      @ErrorCode int errorCode,
+      ErrorCode errorCode,
       boolean shouldLogRoughDownloadTime,
       boolean shouldLogExactDownloadTime,
-      @DownloadStatus int status,
+      DownloadStatus status,
       int failureStatusCode) {
     if (!isStatsLoggingEnabled()) {
       return;
