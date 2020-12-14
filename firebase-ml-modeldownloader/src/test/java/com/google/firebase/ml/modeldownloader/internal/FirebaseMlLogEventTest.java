@@ -14,15 +14,18 @@
 
 package com.google.firebase.ml.modeldownloader.internal;
 
-// import com.google.firebase.ml.modeldownloader.proto.FirebaseMlLogEvent;
-import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.EventName;
-import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent;
-import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent.ErrorCode;
-import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent.ModelOptions;
-import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent.ModelOptions.ModelInfo;
-import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent.ModelOptions.ModelInfo.ModelType;
-import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.SystemInfo;
+import static com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.FIREBASE_ML_JSON_ENCODER;
+import static org.junit.Assert.assertTrue;
+
+import com.google.firebase.ml.modeldownloader.proto.ErrorCode;
+import com.google.firebase.ml.modeldownloader.proto.EventName;
+import com.google.firebase.ml.modeldownloader.proto.FirebaseMlLogEvent;
+import com.google.firebase.ml.modeldownloader.proto.ModelDownloadLogEvent;
+import com.google.firebase.ml.modeldownloader.proto.ModelInfo;
+import com.google.firebase.ml.modeldownloader.proto.ModelOptions;
+import com.google.firebase.ml.modeldownloader.proto.SystemInfo;
 import com.google.protobuf.InvalidProtocolBufferException;
+import com.google.protobuf.util.JsonFormat;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -35,47 +38,86 @@ public class FirebaseMlLogEventTest {
   @Test
   public void testLogRequest_jsontToProto() throws InvalidProtocolBufferException {
 
-    FirebaseMlLogEvent request =
-        FirebaseMlLogEvent.builder()
-            .setSystemInfo(
-                SystemInfo.builder()
-                    .setAppId("appId")
-                    .setAppVersion("AppVersion")
-                    .setFirebaseProjectId("FakeProjectId")
-                    .setApiKey("ApiKey")
-                    .build())
-            .setEventName(EventName.MODEL_DOWNLOAD)
-            .setModelDownloadLogEvent(
-                ModelDownloadLogEvent.builder()
-                    .setDownloadFailureStatus(1)
-                    .setDownloadStatus(2)
-                    .setErrorCode(ErrorCode.DOWNLOAD_FAILED)
-                    .setRoughDownloadDurationMs(100)
-                    .setModelOptions(
-                        ModelOptions.builder()
-                            .setModelInfo(
-                                ModelInfo.builder()
-                                    .setHash("hash123")
-                                    .setModelType(ModelType.CUSTOM)
-                                    .setName("fakeModelName")
-                                    .build())
+    com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent request =
+        com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.builder()
+            .setEventName(
+                com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.EventName
+                    .MODEL_DOWNLOAD)
+            //            .setSystemInfo(
+            //                LogEvent.SystemInfo.builder()
+            //                    .setAppId("appId")
+            //                    .setAppVersion("AppVersion")
+            //                    .setFirebaseProjectId("FakeProjectId")
+            //                    .setApiKey("ApiKey")
+            //                    .build())
+            //            .setModelDownloadLogEvent(
+            //                LogEvent.ModelDownloadLogEvent.builder()
+            //                    .setDownloadFailureStatus(1)
+            //                    .setDownloadStatus(7)
+            //
+            // .setErrorCode(LogEvent.ModelDownloadLogEvent.ErrorCode.DOWNLOAD_FAILED)
+            //                    .setRoughDownloadDurationMs(100)
+            //                    .setModelOptions(
+            //                        LogEvent.ModelDownloadLogEvent.ModelOptions.builder()
+            //                            .setModelInfo(
+            //
+            // LogEvent.ModelDownloadLogEvent.ModelOptions.ModelInfo.builder()
+            //                                    .setHash("hash123")
+            //                                    .setModelType(
+            //
+            // LogEvent.ModelDownloadLogEvent.ModelOptions.ModelInfo
+            //                                            .ModelType.CUSTOM)
+            //                                    .setName("fakeModelName")
+            //                                    .build())
+            //                            .build())
+            //                    .build())
+            .build();
+
+    assertTrue(!request.equals(null));
+    SystemInfo systemInfo =
+        SystemInfo.newBuilder()
+            .setAppId("appId")
+            .setAppVersion("AppVersion")
+            .setFirebaseProjectId("FakeProjectId")
+            .setApiKey("ApiKey")
+            .build();
+
+    ModelDownloadLogEvent modelDownloadLogEvent =
+        ModelDownloadLogEvent.newBuilder()
+            .setDownloadFailureStatus(1)
+            .setDownloadStatus(ModelDownloadLogEvent.DownloadStatus.SUCCEEDED)
+            .setErrorCode(ErrorCode.DOWNLOAD_FAILED)
+            .setRoughDownloadDurationMs(100)
+            .setOptions(
+                ModelOptions.newBuilder()
+                    .setModelInfo(
+                        ModelInfo.newBuilder()
+                            .setHash("hash123")
+                            .setModelType(ModelInfo.ModelType.CUSTOM)
+                            .setName("fakeModelName")
                             .build())
                     .build())
             .build();
 
-    //    com.google.firebase.ml.modeldownloader.proto.FirebaseMlLogEvent proto =
-    //        com.google.firebase.ml.modeldownloader.proto.FirebaseMlLogEvent.newBuilder().build();
+    FirebaseMlLogEvent logEvent =
+        FirebaseMlLogEvent.newBuilder()
+            .setEventName(EventName.MODEL_DOWNLOAD)
+            //            .setSystemInfo(systemInfo)
+            //            .setModelDownloadLogEvent(modelDownloadLogEvent)
+            .build();
+
+    String json = FIREBASE_ML_JSON_ENCODER.encode(request);
+
+    System.out.println("Json version: " + json);
+    System.out.println("Proto version:" + logEvent);
+
+    FirebaseMlLogEvent.Builder protoLogEventBuilder = FirebaseMlLogEvent.newBuilder();
+
+    JsonFormat.parser().merge(json, protoLogEventBuilder);
+    FirebaseMlLogEvent parsedProtoFirebaseMlLogEvent = protoLogEventBuilder.build();
     //
-    //
-    //
-    //    String json = FirebaseMlLogEvent.getFirebaseMlJsonTransformer().encode(request);
-    //
-    //    BatchedLogRequest.Builder protoLogRequestBuilder = BatchedLogRequest.newBuilder();
-    //    JsonFormat.parser().merge(json, protoLogRequestBuilder);
-    //    BatchedLogRequest parsedProtoBatchedLogRequest = protoLogRequestBuilder.build();
-    //
-    //    BatchedLogRequest expectedProto =
-    //        BatchedLogRequest.newBuilder()
+    //    FirebaseMlLogEvent expectedProto =
+    //        FirebaseMlLogEvent.newBuilder()
     //            .addLogRequest(
     //                com.google.android.datatransport.cct.proto.LogRequest.newBuilder()
     //                    .setRequestUptimeMs(1000L)
@@ -113,6 +155,6 @@ public class FirebaseMlLogEventTest {
     //                            .build())
     //                    .build())
     //            .build();
-    //    assertThat(parsedProtoBatchedLogRequest).isEqualTo(expectedProto);
+    //    assertThat(parsedProtoFirebaseMlLogEvent).isEqualTo(expectedProto);
   }
 }

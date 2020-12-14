@@ -22,19 +22,13 @@ import com.google.auto.value.AutoValue;
 import com.google.firebase.encoders.DataEncoder;
 import com.google.firebase.encoders.annotations.Encodable;
 import com.google.firebase.encoders.json.JsonDataEncoderBuilder;
-import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.EventName;
-import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent.Builder;
-import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent.DownloadStatus;
-import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent.ErrorCode;
-import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent.ModelOptions;
-import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent.ModelOptions.ModelInfo;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.nio.charset.Charset;
 
 /**
- * Class used to log firebase ml log statistics. All values should match internal FirebaseMlLogEvent
- * for numbering and naming.
+ * Class used to log firebase ml log statistics. All values should match internal LogEvent for
+ * numbering and naming.
  *
  * @hide
  */
@@ -44,7 +38,7 @@ public abstract class FirebaseMlLogEvent {
 
   static final int NO_INT_VALUE = 0;
 
-  private static final DataEncoder FIREBASE_ML_JSON_ENCODER =
+  public static final DataEncoder FIREBASE_ML_JSON_ENCODER =
       new JsonDataEncoderBuilder()
           .configureWith(AutoFirebaseMlLogEventEncoder.CONFIG)
           .ignoreNullValues(true)

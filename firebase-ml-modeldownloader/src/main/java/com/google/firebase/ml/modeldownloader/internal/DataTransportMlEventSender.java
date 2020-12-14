@@ -25,7 +25,7 @@ import com.google.android.datatransport.TransportFactory;
  * This class is responsible for sending Firebase Ml Log Events to Firebase through Google
  * DataTransport.
  *
- * <p>These will be equivalent to FirebaseMlLogEvent.proto internally.
+ * <p>These will be equivalent to LogEvent.proto internally.
  *
  * @hide
  */
@@ -48,12 +48,12 @@ public class DataTransportMlEventSender {
     this.transport = transport;
   }
 
-  public void sendEvent(@NonNull FirebaseMlLogEvent logEvent) {
+  public void sendEvent(@NonNull FirebaseMlLogEvent firebaseMlLogEvent) {
     // Thoughts? Use .send or .schedule - which gives back task of logging progress? Not sure how
     // strongly we feel about tracking these?
-    Log.e("ANNZ", "stats: " + logEvent);
-    transport.send(Event.ofData(logEvent));
+    Log.e("ANNZ", "stats: " + firebaseMlLogEvent);
+    transport.send(Event.ofData(firebaseMlLogEvent));
 
-    Log.e("ANNZ", "stats: " + Event.ofData(logEvent));
+    Log.e("ANNZ", "stats: " + Event.ofData(firebaseMlLogEvent));
   }
 }
