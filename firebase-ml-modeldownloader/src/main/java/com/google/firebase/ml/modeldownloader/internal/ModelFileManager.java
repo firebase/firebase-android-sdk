@@ -29,7 +29,11 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
-/** Model File Manager is used to move the downloaded file to the appropriate locations. */
+/**
+ * Model File Manager is used to move the downloaded file to the appropriate locations.
+ *
+ * @hide
+ */
 public class ModelFileManager {
 
   public static final String CUSTOM_MODEL_ROOT_PATH = "com.google.firebase.ml.custom.models";
