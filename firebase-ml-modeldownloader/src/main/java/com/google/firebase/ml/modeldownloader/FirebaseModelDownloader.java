@@ -115,27 +115,25 @@ public class FirebaseModelDownloader {
       @Nullable CustomModelDownloadConditions conditions)
       throws Exception {
     CustomModel localModel = sharedPreferencesUtil.getCustomModelDetails(modelName);
+    if (localModel == null) {
+      // no local model - get latest.
+      return getCustomModelTask(modelName, conditions);
+    }
+
     switch (downloadType) {
       case LOCAL_MODEL:
-        if (localModel != null) {
-          return Tasks.forResult(localModel);
-        }
-        return getCustomModelTask(modelName, conditions);
+        return Tasks.forResult(localModel);
       case LATEST_MODEL:
-        // check for latest model, wait for latest if needed download newest
-        return getCustomModelTask(modelName, conditions, localModel.getModelHash());
-      case LOCAL_MODEL_UPDATE_IN_BACKGROUND:
-        // start download in back ground return current model if not null.
-        if (localModel != null) {
-          // trigger update in background as needed - ignoring response.
-          getCustomModelTask(modelName, conditions, localModel.getModelHash());
-          // return local model
-          return Tasks.forResult(localModel);
-        }
-        // no local model - get latest.
+        // check for latest model, wait for download if newer model exists
         return getCustomModelTask(modelName, conditions);
+      case LOCAL_MODEL_UPDATE_IN_BACKGROUND:
+        // start download in back ground, return current model
+        getCustomModelTask(modelName, conditions, localModel.getModelHash());
+        // return local model
+        return Tasks.forResult(localModel);
     }
-    throw new UnsupportedOperationException("Not yet implemented.");
+    throw new IllegalArgumentException(
+        "Unsupported downloadType, please chose LOCAL_MODEL, LATEST_MODEL, or LOCAL_MODEL_UPDATE_IN_BACKGROUND");
   }
 
   // This version of getCustomModelTask will always call the modelDownloadService and upon
@@ -151,7 +149,7 @@ public class FirebaseModelDownloader {
   private Task<CustomModel> getCustomModelTask(
       @NonNull String modelName,
       @Nullable CustomModelDownloadConditions conditions,
-      String modelHash)
+      @Nullable String modelHash)
       throws Exception {
     Task<CustomModel> incomingModelDetails =
         modelDownloadService.getCustomModelDetails(
@@ -161,18 +159,22 @@ public class FirebaseModelDownloader {
         executor,
         incomingModelDetailTask -> {
           if (incomingModelDetailTask.isSuccessful()) {
-            // null means we have the latest model
             CustomModel currentModel = sharedPreferencesUtil.getCustomModelDetails(modelName);
+            // null means we have the latest model
             if (incomingModelDetails.getResult() == null) {
               return Tasks.forResult(currentModel);
             }
 
             // if modelHash matches current local model just return local model.
-            if (currentModel.getModelHash().equals(incomingModelDetails.getResult().getModelHash())) {
+            if (currentModel
+                .getModelHash()
+                .equals(incomingModelDetails.getResult().getModelHash())) {
               if (!currentModel.getLocalFilePath().isEmpty()) {
                 return Tasks.forResult(currentModel);
               }
-              // todo(annzimmer) wait for download? continue?
+              // todo(annzimmer) this shouldn't happen unless they are calling the sdk with multiple
+              // sets of download types/conditions.
+              //  this should be a download in progress - add appropriate handling.
             }
 
             // start download
@@ -184,9 +186,9 @@ public class FirebaseModelDownloader {
                       if (downloadTask.isSuccessful()) {
                         // read the updated model
                         CustomModel downloadedModel =
-                            currentModel;
-                        // TODO(annz) trigger file move here as well... right now it's temp
-                        // call loadNewlyDownloadedModelFile
+                            sharedPreferencesUtil.getCustomModelDetails(modelName);
+                        // trigger the file to be moved to permanent location.
+                        fileDownloadService.loadNewlyDownloadedModelFile(downloadedModel);
                         return Tasks.forResult(downloadedModel);
                       }
                       return Tasks.forException(new Exception("File download failed."));

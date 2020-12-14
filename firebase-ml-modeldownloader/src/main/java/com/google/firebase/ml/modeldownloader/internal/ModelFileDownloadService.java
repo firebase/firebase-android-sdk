@@ -299,7 +299,7 @@ public class ModelFileDownloadService {
           new CustomModel(
               model.getName(), model.getModelHash(), model.getSize(), 0, newModelFile.getPath()));
 
-      // Cleans up the old files if it is the initial creation.
+      // todo(annzimmer) Cleans up the old files if it is the initial creation.
       return newModelFile;
     } else if (statusCode == DownloadManager.STATUS_FAILED) {
       // reset original model - removing download id.
