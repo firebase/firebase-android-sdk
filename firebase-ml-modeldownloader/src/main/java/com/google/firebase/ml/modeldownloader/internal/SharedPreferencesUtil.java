@@ -46,6 +46,12 @@ public class SharedPreferencesUtil {
   private static final String DOWNLOADING_MODEL_SIZE_PATTERN = "downloading_model_size_%s_%s";
   private static final String DOWNLOADING_MODEL_ID_PATTERN = "downloading_model_id_%s_%s";
   private static final String DOWNLOAD_BEGIN_TIME_MS_PATTERN = "downloading_begin_time_%s_%s";
+  private static final String DOWNLOADING_COMPLETE_TIME_MS_PATTERN =
+      "downloading_complete_time_%s_%s";
+
+  // logging keys
+  private static final String EVENT_LOGGING_ENABLED_PATTERN = "logging_%s_%s";
+  private static final String CUSTOM_MODEL_LIB = "custom_model";
 
   private final String persistenceKey;
   private final FirebaseApp firebaseApp;
@@ -213,7 +219,7 @@ public class SharedPreferencesUtil {
   /**
    * Set of all keys associated with this firebase app.
    *
-   * @return
+   * @return all shared preference keys for this app
    */
   public Set<String> getSharedPreferenceKeySet() {
     return getSharedPreferences().getAll().keySet();
@@ -245,6 +251,68 @@ public class SharedPreferencesUtil {
   }
 
   /**
+   * Should Firelog logging be enabled.
+   *
+   * @return whether or not firelog events should be logged. Default to true.
+   */
+  public synchronized boolean getCustomModelStatsCollectionFlag() {
+    return getSharedPreferences()
+        .getBoolean(
+            String.format(EVENT_LOGGING_ENABLED_PATTERN, CUSTOM_MODEL_LIB, persistenceKey), true);
+  }
+
+  /**
+   * Set whether firelog logging should be enabled. When not explicitly set, the default is true.
+   *
+   * @param enable - False to turn off logging. True to turn on logging.
+   */
+  public synchronized void setCustomModelStatsCollectionEnabled(boolean enable) {
+    getSharedPreferences()
+        .edit()
+        .putBoolean(
+            String.format(EVENT_LOGGING_ENABLED_PATTERN, CUSTOM_MODEL_LIB, persistenceKey), enable)
+        .apply();
+  }
+
+  public synchronized long getModelDownloadBeginTimeMs(@NonNull CustomModel customModel) {
+    return getSharedPreferences()
+        .getLong(
+            String.format(DOWNLOAD_BEGIN_TIME_MS_PATTERN, persistenceKey, customModel.getName()),
+            0L);
+  }
+
+  /**
+   * Gets the estimated completion time of successful or failed download attempts.
+   *
+   * @param customModel - model
+   * @return time in ms
+   */
+  public synchronized long getModelDownloadCompleteTimeMs(@NonNull CustomModel customModel) {
+    return getSharedPreferences()
+        .getLong(
+            String.format(
+                DOWNLOADING_COMPLETE_TIME_MS_PATTERN, persistenceKey, customModel.getName()),
+            0L);
+  }
+
+  /**
+   * Sets the estimated completion time of successful or failed download attempts.
+   *
+   * @param customModel - model
+   * @param completionTimeInMs - time in ms
+   */
+  public synchronized void setModelDownloadCompleteTimeMs(
+      @NonNull CustomModel customModel, long completionTimeInMs) {
+    getSharedPreferences()
+        .edit()
+        .putLong(
+            String.format(
+                DOWNLOADING_COMPLETE_TIME_MS_PATTERN, persistenceKey, customModel.getName()),
+            completionTimeInMs)
+        .apply();
+  }
+
+  /**
    * Clears all stored data related to a custom model download.
    *
    * @param modelName - name of model
@@ -256,6 +324,7 @@ public class SharedPreferencesUtil {
         .remove(String.format(DOWNLOADING_MODEL_HASH_PATTERN, persistenceKey, modelName))
         .remove(String.format(DOWNLOADING_MODEL_SIZE_PATTERN, persistenceKey, modelName))
         .remove(String.format(DOWNLOAD_BEGIN_TIME_MS_PATTERN, persistenceKey, modelName))
+        .remove(String.format(DOWNLOADING_COMPLETE_TIME_MS_PATTERN, persistenceKey, modelName))
         .apply();
   }
 

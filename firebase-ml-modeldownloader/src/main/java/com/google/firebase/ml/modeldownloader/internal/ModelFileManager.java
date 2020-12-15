@@ -26,6 +26,7 @@ import androidx.annotation.WorkerThread;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.ml.modeldownloader.CustomModel;
+import com.google.firebase.ml.modeldownloader.FirebaseMlException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -87,15 +88,17 @@ public class ModelFileManager {
    */
   @VisibleForTesting
   @WorkerThread
-  File getDirImpl(@NonNull String modelName) throws Exception {
+  File getDirImpl(@NonNull String modelName) throws FirebaseMlException {
     File modelDir = getModelDirUnsafe(modelName);
     if (!modelDir.exists()) {
       if (!modelDir.mkdirs()) {
-        throw new Exception("Failed to create model folder: " + modelDir);
+        throw new FirebaseMlException(
+            "Failed to create model folder: " + modelDir, FirebaseMlException.INTERNAL);
       }
     } else if (!modelDir.isDirectory()) {
-      throw new Exception(
-          "Can not create model folder, since an existing file has the same name: " + modelDir);
+      throw new FirebaseMlException(
+          "Can not create model folder, since an existing file has the same name: " + modelDir,
+          FirebaseMlException.ALREADY_EXISTS);
     }
     return modelDir;
   }
@@ -124,20 +127,8 @@ public class ModelFileManager {
 
   @VisibleForTesting
   @Nullable
-  File getModelFileDestination(@NonNull CustomModel model) throws Exception {
+  File getModelFileDestination(@NonNull CustomModel model) throws FirebaseMlException {
     File destFolder = getDirImpl(model.getName());
-    if (!destFolder.exists()) {
-      Log.d(TAG, "model folder does not exist, creating one: " + destFolder.getAbsolutePath());
-      if (!destFolder.mkdirs()) {
-        // TODO(annzimmer) change to FirebaseMLException when logging complete. Add test at same
-        // time.
-        throw new Exception("Failed to create model folder: " + destFolder);
-      }
-    } else if (!destFolder.isDirectory()) {
-      // TODO(annzimmer) change to FirebaseMLException when logging complete. Add test at same time.
-      throw new Exception(
-          "Can not create model folder, since an existing file has the same name: " + destFolder);
-    }
 
     int index = getLatestCachedModelVersion(destFolder);
     return new File(destFolder, String.valueOf(index + 1));
@@ -160,7 +151,7 @@ public class ModelFileManager {
   @WorkerThread
   public synchronized File moveModelToDestinationFolder(
       @NonNull CustomModel customModel, @NonNull ParcelFileDescriptor modelFileDescriptor)
-      throws Exception {
+      throws FirebaseMlException {
     File modelFileDestination = getModelFileDestination(customModel);
     // why would this ever be true?
     File modelFolder = modelFileDestination.getParentFile();
