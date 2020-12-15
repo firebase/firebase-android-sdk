@@ -62,7 +62,7 @@ dependencies {
   implementation "com.google.firebase:firebase-analytics"
   implementation "com.google.firebase:firebase-annotations"
   implementation "com.google.firebase:firebase-appindexing"
-  implementation "com.google.firebase:firebase-auth"
+  // implementation "com.google.firebase:firebase-auth"
   implementation "com.google.firebase:firebase-common"
   implementation "com.google.firebase:firebase-config"
   implementation "com.google.firebase:firebase-database"
