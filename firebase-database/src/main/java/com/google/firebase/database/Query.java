@@ -163,8 +163,8 @@ public class Query {
   }
 
   /**
-   * Gets the server values for this query. Updates the cache and raises events if successful. If not
-   * connected, falls back to a locally-cached value.
+   * Gets the server values for this query. Updates the cache and raises events if successful. If
+   * not connected, falls back to a locally-cached value.
    */
   @NonNull
   public Task<DataSnapshot> get() {
