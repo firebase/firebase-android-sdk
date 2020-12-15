@@ -125,7 +125,7 @@ public final class ComponentDiscovery<T> {
       }
       return (ComponentRegistrar) loadedClass.getDeclaredConstructor().newInstance();
     } catch (ClassNotFoundException e) {
-      Log.w(TAG, String.format("Class %s is not an found.", registrarName), e);
+      Log.w(TAG, String.format("Class %s is not an found.", registrarName));
       return null;
     } catch (IllegalAccessException e) {
       throw new InvalidRegistrarException(
