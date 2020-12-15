@@ -26,6 +26,7 @@ import android.net.Uri;
 import android.os.Build.VERSION;
 import android.os.Build.VERSION_CODES;
 import android.os.ParcelFileDescriptor;
+import android.util.Log;
 import android.util.LongSparseArray;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
@@ -40,6 +41,7 @@ import com.google.firebase.ml.modeldownloader.CustomModel;
 import com.google.firebase.ml.modeldownloader.CustomModelDownloadConditions;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.Date;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -52,10 +54,12 @@ import java.util.regex.Pattern;
  */
 public class ModelFileDownloadService {
 
+  private static final String TAG = "ModelFileDownloadSer";
   private final DownloadManager downloadManager;
   private final Context context;
   private final ModelFileManager fileManager;
   private final SharedPreferencesUtil sharedPreferencesUtil;
+  private static final int COMPLETION_BUFFER_IN_MS = 60 * 5 * 1000;
 
   @GuardedBy("this")
   // Mapping from download id to broadcast receiver. Because models can update, we cannot just keep
@@ -104,15 +108,34 @@ public class ModelFileDownloadService {
   public Task<Void> download(
       CustomModel customModel, CustomModelDownloadConditions downloadConditions) {
     this.downloadConditions = downloadConditions;
-    // todo add url tests here
     return ensureModelDownloaded(customModel);
   }
 
   @VisibleForTesting
   Task<Void> ensureModelDownloaded(CustomModel customModel) {
-    // todo check model not already in progress of being downloaded
+    // todo add logging for explicitly requested
+    CustomModel downloadingModel =
+        sharedPreferencesUtil.getDownloadingCustomModelDetails(customModel.getName());
+    if (downloadingModel != null && downloadingModel.getDownloadId() != 0) {
+      Integer statusCode = getDownloadingModelStatusCode(downloadingModel.getDownloadId());
+      Date now = new Date();
 
-    // todo remove any failed download attempts
+      // check if download has completed or still has time to finish.
+      // Give a buffer above url expiry to continue if in progress.
+      if (statusCode != null
+          && (statusCode == DownloadManager.STATUS_SUCCESSFUL
+              || statusCode == DownloadManager.STATUS_FAILED
+              || (customModel.getDownloadUrlExpiry()
+                  > (now.getTime() - COMPLETION_BUFFER_IN_MS)))) {
+        // download in progress for this hash already - return this result.
+        return registerReceiverForDownloadId(downloadingModel.getDownloadId());
+      }
+    }
+
+    if (downloadingModel != null) {
+      // remove failed download attempts
+      removeOrCancelDownload(downloadingModel.getName(), downloadingModel.getDownloadId());
+    }
 
     // schedule new download of model file
     Long newDownloadId = scheduleModelDownload(customModel);
@@ -121,6 +144,17 @@ public class ModelFileDownloadService {
     }
 
     return registerReceiverForDownloadId(newDownloadId);
+  }
+
+  /** Removes or cancels the downloading model if exists. */
+  synchronized void removeOrCancelDownload(String modelName, Long downloadId) {
+    if (downloadManager == null || downloadId == 0) {
+      return;
+    }
+    if (downloadManager.remove(downloadId) > 0
+        || getDownloadingModelStatusCode(downloadId) == null) {
+      sharedPreferencesUtil.setFailedUploadedCustomModelDetails(modelName);
+    }
   }
 
   private synchronized DownloadBroadcastReceiver getReceiverInstance(long downloadId) {
@@ -205,7 +239,6 @@ public class ModelFileDownloadService {
     Integer statusCode = null;
 
     try (Cursor cursor = downloadManager.query(new Query().setFilterById(downloadingId))) {
-
       if (cursor != null && cursor.moveToFirst()) {
         statusCode = cursor.getInt(cursor.getColumnIndex(DownloadManager.COLUMN_STATUS));
       }
@@ -236,7 +269,7 @@ public class ModelFileDownloadService {
     try {
       fileDescriptor = downloadManager.openDownloadedFile(downloadingId);
     } catch (FileNotFoundException e) {
-      System.out.println("Downloaded file is not found");
+      Log.d(TAG, "Downloaded file is not found" + e);
     }
     return fileDescriptor;
   }
@@ -265,12 +298,17 @@ public class ModelFileDownloadService {
     String downloadingModelHash = model.getModelHash();
 
     if (downloadingId == null || downloadingModelHash == null) {
-      // no downloading model file or incomplete info.
+      // Clear the downloading info completely.
+      // It handles the case: developer clear the app cache but downloaded model file in
+      // DownloadManager's cache would not be cleared.
+      removeOrCancelDownload(model.getName(), model.getDownloadId());
       return null;
     }
 
     Integer statusCode = getDownloadingModelStatusCode(downloadingId);
     if (statusCode == null) {
+      // No status code, it may mean no such download or no download manager.
+      removeOrCancelDownload(model.getName(), model.getDownloadId());
       return null;
     }
 
@@ -280,16 +318,19 @@ public class ModelFileDownloadService {
       if (fileDescriptor == null) {
         // reset original model - removing download id.
         sharedPreferencesUtil.setFailedUploadedCustomModelDetails(model.getName());
-        // todo call the download register?
+        removeOrCancelDownload(model.getName(), model.getDownloadId());
         return null;
       }
 
       // Try to move it to destination folder.
-      File newModelFile = fileManager.moveModelToDestinationFolder(model, fileDescriptor);
+      File newModelFile = null;
+      try {
+        newModelFile = fileManager.moveModelToDestinationFolder(model, fileDescriptor);
+      } finally {
+        removeOrCancelDownload(model.getName(), model.getDownloadId());
+      }
 
       if (newModelFile == null) {
-        // reset original model - removing download id.
-        // todo call the download register?
         sharedPreferencesUtil.setFailedUploadedCustomModelDetails(model.getName());
         return null;
       }
@@ -302,9 +343,9 @@ public class ModelFileDownloadService {
       // Cleans up the old files if it is the initial creation.
       return newModelFile;
     } else if (statusCode == DownloadManager.STATUS_FAILED) {
-      // reset original model - removing download id.
+      // reset original model - removing downloading details.
       sharedPreferencesUtil.setFailedUploadedCustomModelDetails(model.getName());
-      // todo - determine if the temp files need to be clean up? Does one exist?
+      removeOrCancelDownload(model.getName(), model.getDownloadId());
     }
     // Other cases, return as null and wait for download finish.
     return null;
@@ -314,7 +355,6 @@ public class ModelFileDownloadService {
   // thread handler.
   @WorkerThread
   private class DownloadBroadcastReceiver extends BroadcastReceiver {
-
     // Download Id is captured inside this class in memory. So there is no concern of inconsistency
     // with the persisted download id in shared preferences.
     private final long downloadId;
@@ -334,6 +374,13 @@ public class ModelFileDownloadService {
       }
 
       Integer statusCode = getDownloadingModelStatusCode(downloadId);
+      // check to prevent DuplicateTaskCompletionException - this was already updated and removed.
+      // Just return.
+      if (taskCompletionSourceMaps.get(downloadId) == null) {
+        receiverMaps.remove(downloadId);
+        return;
+      }
+
       synchronized (ModelFileDownloadService.this) {
         try {
           context.getApplicationContext().unregisterReceiver(this);
