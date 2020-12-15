@@ -3,7 +3,7 @@ package com.google.firebase.ml.modeldownloader {
 
   public class CustomModel {
     method public long getDownloadId();
-    method @Nullable public java.io.File getFile() throws java.lang.Exception;
+    method @Nullable public java.io.File getFile() throws com.google.firebase.ml.modeldownloader.FirebaseMlException;
     method @NonNull public String getModelHash();
     method @NonNull public String getName();
     method public long getSize();

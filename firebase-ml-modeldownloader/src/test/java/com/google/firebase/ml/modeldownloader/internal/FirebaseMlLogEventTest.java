@@ -34,6 +34,13 @@ import org.robolectric.RobolectricTestRunner;
 @RunWith(RobolectricTestRunner.class)
 public class FirebaseMlLogEventTest {
 
+  private static final String APP_ID = "appId";
+  private static final String APP_VERSION = "AppVersion";
+  private static final String PROJECT_ID = "FakeProjectId";
+  private static final String API_KEY = "ApiKey";
+  private static final String MODEL_HASH = "hash123";
+  private static final String MODEL_NAME = "fakeModelName";
+
   @Test
   // This verifies the incoming json matches the expected proto.
   public void testLogRequest_jsonToProto() throws InvalidProtocolBufferException {
@@ -46,10 +53,10 @@ public class FirebaseMlLogEventTest {
             .setSystemInfo(
                 com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.SystemInfo
                     .builder()
-                    .setAppId("appId")
-                    .setAppVersion("AppVersion")
-                    .setFirebaseProjectId("FakeProjectId")
-                    .setApiKey("ApiKey")
+                    .setAppId(APP_ID)
+                    .setAppVersion(APP_VERSION)
+                    .setFirebaseProjectId(PROJECT_ID)
+                    .setApiKey(API_KEY)
                     .build())
             .setModelDownloadLogEvent(
                 com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent
@@ -66,12 +73,12 @@ public class FirebaseMlLogEventTest {
                             .setModelInfo(
                                 com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent
                                     .ModelDownloadLogEvent.ModelOptions.ModelInfo.builder()
-                                    .setHash("hash123")
+                                    .setHash(MODEL_HASH)
                                     .setModelType(
                                         com.google.firebase.ml.modeldownloader.internal
                                             .FirebaseMlLogEvent.ModelDownloadLogEvent.ModelOptions
                                             .ModelInfo.ModelType.CUSTOM)
-                                    .setName("fakeModelName")
+                                    .setName(MODEL_NAME)
                                     .build())
                             .build())
                     .build())
@@ -80,10 +87,10 @@ public class FirebaseMlLogEventTest {
     // Create matching proto
     SystemInfo systemInfo =
         SystemInfo.newBuilder()
-            .setAppId("appId")
-            .setAppVersion("AppVersion")
-            .setFirebaseProjectId("FakeProjectId")
-            .setApiKey("ApiKey")
+            .setAppId(APP_ID)
+            .setAppVersion(APP_VERSION)
+            .setFirebaseProjectId(PROJECT_ID)
+            .setApiKey(API_KEY)
             .build();
 
     ModelDownloadLogEvent modelDownloadLogEvent =
@@ -96,9 +103,9 @@ public class FirebaseMlLogEventTest {
                 ModelOptions.newBuilder()
                     .setModelInfo(
                         ModelInfo.newBuilder()
-                            .setHash("hash123")
+                            .setHash(MODEL_HASH)
                             .setModelType(ModelInfo.ModelType.CUSTOM)
-                            .setName("fakeModelName")
+                            .setName(MODEL_NAME)
                             .build())
                     .build())
             .build();
