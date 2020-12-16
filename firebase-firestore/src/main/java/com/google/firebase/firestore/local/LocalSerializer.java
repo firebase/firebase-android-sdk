@@ -29,6 +29,9 @@ import com.google.firebase.firestore.model.UnknownDocument;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
 import com.google.firebase.firestore.remote.RemoteSerializer;
+import com.google.firestore.v1.DocumentTransform.FieldTransform;
+import com.google.firestore.v1.Write;
+import com.google.firestore.v1.Write.Builder;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.List;
@@ -171,6 +174,35 @@ public final class LocalSerializer {
     for (int i = 0; i < baseMutationsCount; i++) {
       baseMutations.add(rpcSerializer.decodeMutation(batch.getBaseWrites(i)));
     }
+
+    // Squash old transform mutations into existing patch or set mutations. The replacement of
+    // representing `transforms` with `update_transforms` on the SDK means that old `transform`
+    // mutations stored in IndexedDB need to be updated to `update_transforms`.
+    // TODO(b/174608374): Remove this code once we perform a schema migration.
+    for (int i = batch.getWritesCount() - 1; i >= 0; --i) {
+      Write mutation = batch.getWrites(i);
+      if (mutation.getTransform().getFieldTransformsCount() != 0) {
+        hardAssert(
+            i >= 1
+                && batch.getWrites(i - 1).getTransform().getFieldTransformsCount() == 0
+                && batch.getWrites(i - 1).getUpdate().getFieldsCount() != 0,
+            "TransformMutation should be preceded by a patch or set mutation");
+        Write mutationToJoin = batch.getWrites(i - 1);
+        Builder newMutationBuilder = Write.newBuilder(mutationToJoin);
+        for (FieldTransform fieldTransform : mutation.getTransform().getFieldTransformsList()) {
+          newMutationBuilder.addUpdateTransforms(fieldTransform);
+        }
+
+        batch =
+            com.google.firebase.firestore.proto.WriteBatch.newBuilder(batch)
+                .removeWrites(i)
+                .removeWrites(i - 1)
+                .addWrites(i - 1, newMutationBuilder.build())
+                .build();
+        --i;
+      }
+    }
+
     int mutationsCount = batch.getWritesCount();
     List<Mutation> mutations = new ArrayList<>(mutationsCount);
     for (int i = 0; i < mutationsCount; i++) {

@@ -18,7 +18,7 @@ import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
 import com.google.firestore.v1.Value;
 
-/** A transform within a TransformMutation. */
+/** Used to represent a field transform on a mutation. */
 public interface TransformOperation {
   /**
    * Computes the local transform result against the provided previousValue, optionally using the
