@@ -35,6 +35,7 @@ import com.google.firestore.v1.Write;
 import com.google.firestore.v1.Write.Builder;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /** Serializer for values stored in the LocalStore. */
@@ -176,6 +177,9 @@ public final class LocalSerializer {
       baseMutations.add(rpcSerializer.decodeMutation(batch.getBaseWrites(i)));
     }
 
+    int mutationsCount = batch.getWritesCount();
+    List<Mutation> mutations = new ArrayList<>(mutationsCount);
+
     // Squash old transform mutations into existing patch or set mutations. The replacement of
     // representing `transforms` with `update_transforms` on the SDK means that old `transform`
     // mutations stored in IndexedDB need to be updated to `update_transforms`.
@@ -190,23 +194,16 @@ public final class LocalSerializer {
         Write mutationToJoin = batch.getWrites(i - 1);
         Builder newMutationBuilder = Write.newBuilder(mutationToJoin);
         for (FieldTransform fieldTransform : mutation.getTransform().getFieldTransformsList()) {
+
           newMutationBuilder.addUpdateTransforms(fieldTransform);
         }
-        squashedBatchBuilder.addWrites(0, newMutationBuilder.build());
-
+        mutations.add(rpcSerializer.decodeMutation(newMutationBuilder.build()));
         --i;
       } else {
-        squashedBatchBuilder.addWrites(0, mutation);
+        mutations.add(rpcSerializer.decodeMutation(mutation));
       }
     }
-
-    batch = squashedBatchBuilder.build();
-
-    int mutationsCount = batch.getWritesCount();
-    List<Mutation> mutations = new ArrayList<>(mutationsCount);
-    for (int i = 0; i < mutationsCount; i++) {
-      mutations.add(rpcSerializer.decodeMutation(batch.getWrites(i)));
-    }
+    Collections.reverse(mutations);
     return new MutationBatch(batchId, localWriteTime, baseMutations, mutations);
   }
 
