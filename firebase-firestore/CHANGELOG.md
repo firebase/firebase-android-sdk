@@ -3,6 +3,10 @@
   This more closely aligns the SDK with the Firestore backend, which has always
   accepted null and NaN for all operators, even though this isn't necessarily
   useful.
+- [changed] A write to a document that contains FieldValue transforms is no
+  longer split up into two separate operations. This reduces the number of
+  writes the backend performs and allows each WriteBatch to hold 500 writes
+  regardless of how many FieldValue transformations are attached.
 
 # (22.0.0)
 - [changed] Removed the deprecated `timestampsInSnapshotsEnabled` setting.

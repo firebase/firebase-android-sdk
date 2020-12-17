@@ -208,7 +208,7 @@ public final class UserDataReader {
   }
 
   /** Converts a POJO to native types and then parses it into model types. */
-  private Value convertAndParseFieldData(Object input, ParseContext context) {
+  public Value convertAndParseFieldData(Object input, ParseContext context) {
     Object converted = CustomClassMapper.convertToPlainJavaTypes(input);
     return parseData(converted, context);
   }
