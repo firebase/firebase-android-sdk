@@ -21,6 +21,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.firebase.components.Preconditions;
 import com.google.firebase.database.BuildConfig;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseException;
@@ -186,6 +187,36 @@ public class Utilities {
     }
   }
 
+  protected static char MIN_PRINTABLE_CHAR = (char) 0x20;
+  protected static char MAX_PRINTABLE_CHAR = (char) 0x7e;
+
+  private static boolean isPrintableString(String string) {
+    for (char c : string.toCharArray()) {
+      if (c < MIN_PRINTABLE_CHAR || c > MAX_PRINTABLE_CHAR) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  public static String lexicographicallyNext(String string) {
+    Preconditions.checkArgument(
+        isPrintableString(string),
+        "Received non-printable string of length "
+            + string.length()
+            + " in lexicographicallyNext.");
+    int index = string.length() - 1;
+    while (index >= 0 && string.charAt(index) == MAX_PRINTABLE_CHAR) {
+      index--;
+    }
+    if (index == -1) {
+      return string + MIN_PRINTABLE_CHAR;
+    }
+    char[] charArray = string.toCharArray();
+    charArray[index]++;
+    return new String(charArray);
+  }
+
   public static int compareInts(int i, int j) {
     if (i < j) {
       return -1;
@@ -272,5 +303,9 @@ public class Utilities {
       return false;
     }
     return left.equals(right);
+  }
+
+  public static String next(@Nullable String value) {
+    return "";
   }
 }

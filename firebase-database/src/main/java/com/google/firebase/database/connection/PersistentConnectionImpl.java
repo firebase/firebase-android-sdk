@@ -1112,6 +1112,8 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
     long writeId = this.writeCounter++;
 
     outstandingPuts.put(writeId, new OutstandingPut(action, request, onComplete));
+    logger.info("Can send writes = " + canSendWrites());
+    logger.info("Trying to send puts = " + outstandingPuts.get(writeId).getRequest());
     if (canSendWrites()) {
       sendPut(writeId);
     }

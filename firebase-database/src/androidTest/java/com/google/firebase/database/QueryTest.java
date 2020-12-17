@@ -64,11 +64,16 @@ public class QueryTest {
 
     ref.limitToLast(10);
     ref.startAt("199").limitToLast(10);
+    ref.startAfter("199").limitToLast(10);
     ref.startAt("199", "test").limitToLast(10);
+    ref.startAfter("199", "test").limitToLast(10);
     ref.endAt(199).limitToLast(1);
     ref.startAt(50, "test").endAt(100, "tree");
+    ref.startAfter(50, "test").endAt(100, "tree");
     ref.startAt(4).endAt(10);
+    ref.startAfter(4).endAt(10);
     ref.startAt(null).endAt(10);
+    ref.startAfter(null).endAt(10);
     ref.orderByChild("child");
     ref.orderByChild("child/deep/path");
     ref.orderByValue();
@@ -172,7 +177,19 @@ public class QueryTest {
     } catch (IllegalArgumentException e) { // ignore
     }
     try {
+      ref.orderByKey().startAfter(1);
+      fail("Should throw");
+    } catch (DatabaseException e) { // ignore
+    } catch (IllegalArgumentException e) { // ignore
+    }
+    try {
       ref.orderByKey().startAt(null);
+      fail("Should throw");
+    } catch (DatabaseException e) { // ignore
+    } catch (IllegalArgumentException e) { // ignore
+    }
+    try {
+      ref.orderByKey().startAfter(null);
       fail("Should throw");
     } catch (DatabaseException e) { // ignore
     } catch (IllegalArgumentException e) { // ignore
@@ -191,6 +208,12 @@ public class QueryTest {
     }
     try {
       ref.orderByKey().startAt("test", "test");
+      fail("Should throw");
+    } catch (DatabaseException e) { // ignore
+    } catch (IllegalArgumentException e) { // ignore
+    }
+    try {
+      ref.orderByKey().startAfter("test", "test");
       fail("Should throw");
     } catch (DatabaseException e) { // ignore
     } catch (IllegalArgumentException e) { // ignore
@@ -264,6 +287,12 @@ public class QueryTest {
     } catch (IllegalArgumentException e) { // ignore
     }
     try {
+      ref.equalTo(true).startAfter("test", "test");
+      fail("Should throw");
+    } catch (DatabaseException e) { // ignore
+    } catch (IllegalArgumentException e) { // ignore
+    }
+    try {
       ref.equalTo(true).equalTo("test", "test");
       fail("Should throw");
     } catch (DatabaseException e) { // ignore
@@ -294,7 +323,19 @@ public class QueryTest {
     } catch (IllegalArgumentException e) { // ignore
     }
     try {
+      ref.startAfter(5).equalTo(10);
+      fail("Should throw");
+    } catch (DatabaseException e) { // ignore
+    } catch (IllegalArgumentException e) { // ignore
+    }
+    try {
       ref.orderByPriority().startAt(false);
+      fail("Should throw");
+    } catch (DatabaseException e) { // ignore
+    } catch (IllegalArgumentException e) { // ignore
+    }
+    try {
+      ref.orderByPriority().startAfter(false);
       fail("Should throw");
     } catch (DatabaseException e) { // ignore
     } catch (IllegalArgumentException e) { // ignore
@@ -334,6 +375,24 @@ public class QueryTest {
       } catch (DatabaseException e) { // ignore
 
       }
+    }
+  }
+
+  @Test
+  public void passingInvalidKeysToStartAfterThrows() throws DatabaseException {
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
+
+    List<String> badKeys =
+        Arrays.asList(
+            ".test", "test.", "fo$o", "[what", "ever]", "ha#sh", "/thing", "th/ing", "thing/");
+    for (String key : badKeys) {
+      try {
+        ref.startAfter(null, key);
+        fail("Should throw");
+      } catch (DatabaseException e) { // ignore
+
+      }
+      // TODO(wyszynsk): endBefore
     }
   }
 
@@ -480,6 +539,28 @@ public class QueryTest {
   }
 
   @Test
+  public void setVariousLimitsWithStartAfterName() throws DatabaseException, InterruptedException {
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
+
+    ValueExpectationHelper expectations = new ValueExpectationHelper();
+    expectations.add(ref.startAfter(null).limitToFirst(1), new MapBuilder().put("a", 1L).build());
+    expectations.add(
+        ref.startAfter(null, "c").limitToFirst(1), new MapBuilder().put("d", 4L).build());
+    expectations.add(
+        ref.startAfter(null, "b").limitToFirst(1), new MapBuilder().put("c", 3L).build());
+    expectations.add(
+        ref.startAfter(null, "b").limitToFirst(2),
+        new MapBuilder().put("c", 3L).put("d", 4L).build());
+    expectations.add(
+        ref.startAfter(null, "b").limitToFirst(3),
+        new MapBuilder().put("c", 3L).put("d", 4L).build());
+
+    ref.setValue(new MapBuilder().put("a", 1).put("b", 2).put("c", 3).put("d", 4).build());
+
+    expectations.waitForEvents();
+  }
+
+  @Test
   public void setVariousLimitsWithStartAtNameWithServerData()
       throws DatabaseException, InterruptedException, TestFailure, ExecutionException,
           TimeoutException {
@@ -490,7 +571,8 @@ public class QueryTest {
     // state, but it's still kinda weird. Consider having ValueExpectationHelper deal with initial
     // state.
 
-    new WriteFuture(ref, new MapBuilder().put("a", 1).put("b", 2).put("c", 3).build()).timedGet();
+    new WriteFuture(ref, new MapBuilder().put("a", 1).put("b", 2).put("c", 3).put("d", 4).build())
+        .timedGet();
 
     ValueExpectationHelper expectations = new ValueExpectationHelper();
     expectations.add(ref.startAt(null).limitToFirst(1), new MapBuilder().put("a", 1L).build());
@@ -500,6 +582,37 @@ public class QueryTest {
         ref.startAt(null, "b").limitToFirst(2), new MapBuilder().put("b", 2L).put("c", 3L).build());
     expectations.add(
         ref.startAt(null, "b").limitToFirst(3), new MapBuilder().put("b", 2L).put("c", 3L).build());
+
+    expectations.waitForEvents();
+  }
+
+  @Test
+  public void setVariousLimitsWithStartAfterNameWithServerData()
+      throws DatabaseException, InterruptedException, TestFailure, ExecutionException,
+          TimeoutException {
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
+
+    // TODO: this test kinda has race conditions. The listens are added sequentially, so we get a
+    // lot of partial data back from the server. This all correct, and we end up in the correct
+    // state, but it's still kinda weird. Consider having ValueExpectationHelper deal with initial
+    // state.
+
+    new WriteFuture(ref, new MapBuilder().put("a", 1).put("b", 2).put("c", 3).put("d", 4L).build())
+        .timedGet();
+
+    ValueExpectationHelper expectations = new ValueExpectationHelper();
+
+    expectations.add(ref.startAfter(null).limitToFirst(1), new MapBuilder().put("a", 1L).build());
+    expectations.add(
+        ref.startAfter(null, "c").limitToFirst(1), new MapBuilder().put("d", 4L).build());
+    expectations.add(
+        ref.startAfter(null, "b").limitToFirst(1), new MapBuilder().put("c", 2L).build());
+    expectations.add(
+        ref.startAfter(null, "b").limitToFirst(2),
+        new MapBuilder().put("c", 3L).put("d", 4L).build());
+    expectations.add(
+        ref.startAfter(null, "b").limitToFirst(3),
+        new MapBuilder().put("c", 3L).put("d", 4L).build());
 
     expectations.waitForEvents();
   }

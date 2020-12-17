@@ -44,6 +44,17 @@ public class UtilitiesTest {
   }
 
   @Test
+  public void lexicographicallyNext() {
+    Assert.assertEquals(Utilities.lexicographicallyNext(""), String.valueOf(new char[] {0x20}));
+    Assert.assertEquals("~", Utilities.lexicographicallyNext("}"));
+    Assert.assertEquals("!", Utilities.lexicographicallyNext(" "));
+    Assert.assertEquals("~ ", Utilities.lexicographicallyNext("~"));
+    Assert.assertEquals("kez~", Utilities.lexicographicallyNext("key~"));
+    Assert.assertEquals("~~~~", Utilities.lexicographicallyNext("}~~~"));
+    Assert.assertEquals("~~~~ ", Utilities.lexicographicallyNext("~~~~"));
+  }
+
+  @Test
   public void defaultCacheSizeIs10MB() {
     assertEquals(10 * 1024 * 1024, new DatabaseConfig().getPersistenceCacheSizeBytes());
   }

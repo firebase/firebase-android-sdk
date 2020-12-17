@@ -27,6 +27,7 @@ import com.google.firebase.database.core.Path;
 import com.google.firebase.database.core.Repo;
 import com.google.firebase.database.core.ValueEventRegistration;
 import com.google.firebase.database.core.ZombieEventManager;
+import com.google.firebase.database.core.utilities.Utilities;
 import com.google.firebase.database.core.utilities.Validation;
 import com.google.firebase.database.core.view.QueryParams;
 import com.google.firebase.database.core.view.QuerySpec;
@@ -163,8 +164,8 @@ public class Query {
   }
 
   /**
-   * Gets the server values for this query. Updates the cache and raises events if successful. If not
-   * connected, falls back to a locally-cached value.
+   * Gets the server values for this query. Updates the cache and raises events if successful. If
+   * not connected, falls back to a locally-cached value.
    */
   @NonNull
   public Task<DataSnapshot> get() {
@@ -279,6 +280,98 @@ public class Query {
   }*/
 
   /**
+   * Create a query constrained to only return child nodes with a value greater than the given
+   * value, using the given orderBy directive or priority as default.
+   *
+   * @param value The value to start at, inclusive
+   * @return A Query with the new constraint
+   */
+  @NonNull
+  public Query startAfter(@Nullable String value) {
+    return startAt(value, ChildKey.getMaxName().asString());
+  }
+
+  /**
+   * Create a query constrained to only return child nodes with a value greater than the given
+   * value, using the given orderBy directive or priority as default.
+   *
+   * @param value The value to start at, inclusive
+   * @return A Query with the new constraint
+   */
+  @NonNull
+  public Query startAfter(double value) {
+    return startAt(value, ChildKey.getMaxName().asString());
+  }
+
+  /**
+   * Create a query constrained to only return child nodes with a value greater than the given
+   * value, using the given orderBy directive or priority as default.
+   *
+   * @param value The value to start at, inclusive
+   * @return A Query with the new constraint
+   * @since 2.0
+   */
+  @NonNull
+  public Query startAfter(boolean value) {
+    return startAt(value, ChildKey.getMaxName().asString());
+  }
+
+  /**
+   * Create a query constrained to only return child nodes with a value greater than the given
+   * value, using the given orderBy directive or priority as default, and additionally only child
+   * nodes with a key greater than or equal to the given key.
+   *
+   * @param value The priority to start at, inclusive
+   * @param key The key to start at, inclusive
+   * @return A Query with the new constraint
+   */
+  @NonNull
+  public Query startAfter(@Nullable String value, @Nullable String key) {
+    Node node =
+        value != null ? new StringNode(value, PriorityUtilities.NullPriority()) : EmptyNode.Empty();
+    return startAfter(node, key);
+  }
+
+  /**
+   * Create a query constrained to only return child nodes with a value greater than the given
+   * value, using the given orderBy directive or priority as default, and additionally only child
+   * nodes with a key greater than or equal to the given key.
+   *
+   * @param value The priority to start at, inclusive
+   * @param key The key name to start at, inclusive
+   * @return A Query with the new constraint
+   */
+  @NonNull
+  public Query startAfter(double value, @Nullable String key) {
+    return startAfter(new DoubleNode(value, PriorityUtilities.NullPriority()), key);
+  }
+
+  /**
+   * Create a query constrained to only return child nodes with a value greater than the given
+   * value, using the given orderBy directive or priority as default, and additionally only child
+   * nodes with a key greater than or equal to the given key.
+   *
+   * @param value The priority to start at, inclusive
+   * @param key The key to start at, inclusive
+   * @return A Query with the new constraint
+   * @since 2.0
+   */
+  @NonNull
+  public Query startAfter(boolean value, @Nullable String key) {
+    return startAfter(new BooleanNode(value, PriorityUtilities.NullPriority()), key);
+  }
+
+  private Query startAfter(Node node, String key) {
+    ChildKey childKey = ChildKey.fromString(key);
+    if (childKey.isInt()) {
+      childKey = ChildKey.fromString(String.valueOf(childKey.intValue() + 1));
+    } else {
+      childKey = ChildKey.fromString(Utilities.lexicographicallyNext(childKey.asString()));
+    }
+    return startAt(node, childKey.asString());
+  }
+
+  /**
    * Create a query constrained to only return child nodes with a value greater than or equal to the
    * given value, using the given orderBy directive or priority as default.
    *
@@ -363,10 +456,12 @@ public class Query {
   private Query startAt(Node node, String key) {
     Validation.validateNullableKey(key);
     if (!(node.isLeafNode() || node.isEmpty())) {
-      throw new IllegalArgumentException("Can only use simple values for startAt()");
+      throw new IllegalArgumentException(
+          "Can only use simple values for startAt() and startAfter()");
     }
     if (params.hasStart()) {
-      throw new IllegalArgumentException("Can't call startAt() or equalTo() multiple times");
+      throw new IllegalArgumentException(
+          "Can't call startAt(), startAfter(), or equalTo() multiple times");
     }
     ChildKey childKey = key != null ? ChildKey.fromString(key) : null;
     QueryParams newParams = params.startAt(node, childKey);
