@@ -171,7 +171,7 @@ public class FirebaseModelDownloaderTest {
   public void getModel_latestModel_localExists_noUpdate() throws Exception {
     when(mockPrefs.getCustomModelDetails(eq(MODEL_NAME))).thenReturn(customModelLoaded);
     when(mockModelDownloadService.getCustomModelDetails(
-            eq(TEST_PROJECT_ID), eq(MODEL_NAME), eq(null)))
+            eq(TEST_PROJECT_ID), eq(MODEL_NAME), eq(MODEL_HASH)))
         .thenReturn(Tasks.forResult(CUSTOM_MODEL)); // no change found
 
     TestOnCompleteListener<CustomModel> onCompleteListener = new TestOnCompleteListener<>();
@@ -187,10 +187,40 @@ public class FirebaseModelDownloaderTest {
   }
 
   @Test
+  public void getModel_latestModel_localExists_noUpdate_MissingFile() throws Exception {
+    // model with missing file.
+    CustomModel missingFileModel =
+        new CustomModel(MODEL_NAME, UPDATE_MODEL_HASH, 100, 0, expectedDestinationFolder + "/4");
+    when(mockPrefs.getCustomModelDetails(eq(MODEL_NAME)))
+        .thenReturn(missingFileModel)
+        .thenReturn(missingFileModel)
+        .thenReturn(customModelUploaded);
+
+    when(mockModelDownloadService.getCustomModelDetails(
+            eq(TEST_PROJECT_ID), eq(MODEL_NAME), eq(UPDATE_MODEL_HASH)))
+        .thenReturn(Tasks.forResult(UPDATE_CUSTOM_MODEL_URL));
+    when(mockFileDownloadService.download(any(), eq(DEFAULT_DOWNLOAD_CONDITIONS)))
+        .thenReturn(Tasks.forResult(null));
+    when(mockFileDownloadService.loadNewlyDownloadedModelFile(eq(customModelUploaded)))
+        .thenReturn(secondDeviceModelFile);
+
+    TestOnCompleteListener<CustomModel> onCompleteListener = new TestOnCompleteListener<>();
+    Task<CustomModel> task =
+        firebaseModelDownloader.getModel(
+            MODEL_NAME, DownloadType.LATEST_MODEL, DEFAULT_DOWNLOAD_CONDITIONS);
+    task.addOnCompleteListener(executor, onCompleteListener);
+    CustomModel customModel = onCompleteListener.await();
+
+    verify(mockPrefs, times(3)).getCustomModelDetails(eq(MODEL_NAME));
+    assertThat(task.isComplete()).isTrue();
+    assertEquals(customModel, customModelUploaded);
+  }
+
+  @Test
   public void getModel_latestModel_localExists_sameHash() throws Exception {
     when(mockPrefs.getCustomModelDetails(eq(MODEL_NAME))).thenReturn(customModelLoaded);
     when(mockModelDownloadService.getCustomModelDetails(
-            eq(TEST_PROJECT_ID), eq(MODEL_NAME), eq(null)))
+            eq(TEST_PROJECT_ID), eq(MODEL_NAME), eq(MODEL_HASH)))
         .thenReturn(Tasks.forResult(CUSTOM_MODEL)); // no change found
 
     TestOnCompleteListener<CustomModel> onCompleteListener = new TestOnCompleteListener<>();
@@ -211,8 +241,9 @@ public class FirebaseModelDownloaderTest {
         .thenReturn(customModelLoaded)
         .thenReturn(customModelLoaded)
         .thenReturn(customModelUploaded);
+
     when(mockModelDownloadService.getCustomModelDetails(
-            eq(TEST_PROJECT_ID), eq(MODEL_NAME), eq(null)))
+            eq(TEST_PROJECT_ID), eq(MODEL_NAME), eq(MODEL_HASH)))
         .thenReturn(Tasks.forResult(UPDATE_CUSTOM_MODEL_URL));
     when(mockFileDownloadService.download(any(), eq(DEFAULT_DOWNLOAD_CONDITIONS)))
         .thenReturn(Tasks.forResult(null));
@@ -233,7 +264,10 @@ public class FirebaseModelDownloaderTest {
 
   @Test
   public void getModel_latestModel_noLocalModel() throws Exception {
-    when(mockPrefs.getCustomModelDetails(eq(MODEL_NAME))).thenReturn(null).thenReturn(CUSTOM_MODEL);
+    when(mockPrefs.getCustomModelDetails(eq(MODEL_NAME)))
+        .thenReturn(null)
+        .thenReturn(null)
+        .thenReturn(CUSTOM_MODEL);
     when(mockModelDownloadService.getCustomModelDetails(
             eq(TEST_PROJECT_ID), eq(MODEL_NAME), eq(null)))
         .thenReturn(Tasks.forResult(CUSTOM_MODEL));
@@ -255,7 +289,10 @@ public class FirebaseModelDownloaderTest {
 
   @Test
   public void getModel_latestModel_noLocalModel_error() throws Exception {
-    when(mockPrefs.getCustomModelDetails(eq(MODEL_NAME))).thenReturn(null).thenReturn(CUSTOM_MODEL);
+    when(mockPrefs.getCustomModelDetails(eq(MODEL_NAME)))
+        .thenReturn(null)
+        .thenReturn(null)
+        .thenReturn(CUSTOM_MODEL);
     when(mockModelDownloadService.getCustomModelDetails(
             eq(TEST_PROJECT_ID), eq(MODEL_NAME), eq(null)))
         .thenReturn(Tasks.forResult(CUSTOM_MODEL));
@@ -360,7 +397,10 @@ public class FirebaseModelDownloaderTest {
 
   @Test
   public void getModel_updateBackground_noLocalModel_error() throws Exception {
-    when(mockPrefs.getCustomModelDetails(eq(MODEL_NAME))).thenReturn(null).thenReturn(CUSTOM_MODEL);
+    when(mockPrefs.getCustomModelDetails(eq(MODEL_NAME)))
+        .thenReturn(null)
+        .thenReturn(null)
+        .thenReturn(CUSTOM_MODEL);
     when(mockModelDownloadService.getCustomModelDetails(
             eq(TEST_PROJECT_ID), eq(MODEL_NAME), eq(null)))
         .thenReturn(Tasks.forResult(CUSTOM_MODEL));
@@ -421,7 +461,10 @@ public class FirebaseModelDownloaderTest {
 
   @Test
   public void getModel_local_noLocalModel_error() throws Exception {
-    when(mockPrefs.getCustomModelDetails(eq(MODEL_NAME))).thenReturn(null).thenReturn(CUSTOM_MODEL);
+    when(mockPrefs.getCustomModelDetails(eq(MODEL_NAME)))
+        .thenReturn(null)
+        .thenReturn(null)
+        .thenReturn(CUSTOM_MODEL);
     when(mockModelDownloadService.getCustomModelDetails(
             eq(TEST_PROJECT_ID), eq(MODEL_NAME), eq(null)))
         .thenReturn(Tasks.forResult(CUSTOM_MODEL));

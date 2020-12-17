@@ -29,6 +29,7 @@ import com.google.firebase.ml.modeldownloader.internal.CustomModelDownloadServic
 import com.google.firebase.ml.modeldownloader.internal.ModelFileDownloadService;
 import com.google.firebase.ml.modeldownloader.internal.ModelFileManager;
 import com.google.firebase.ml.modeldownloader.internal.SharedPreferencesUtil;
+import java.io.File;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -130,11 +131,10 @@ public class FirebaseModelDownloader {
         return Tasks.forResult(localModel);
       case LATEST_MODEL:
         // check for latest model, wait for download if newer model exists
-        return getCustomModelTask(modelName, conditions);
+        return getCustomModelTask(modelName, conditions, localModel.getModelHash());
       case LOCAL_MODEL_UPDATE_IN_BACKGROUND:
-        // start download in back ground, return current model
+        // start download in back ground, return local model
         getCustomModelTask(modelName, conditions, localModel.getModelHash());
-        // return local model
         return Tasks.forResult(localModel);
     }
     throw new IllegalArgumentException(
@@ -166,15 +166,18 @@ public class FirebaseModelDownloader {
           if (incomingModelDetailTask.isSuccessful()) {
             CustomModel currentModel = sharedPreferencesUtil.getCustomModelDetails(modelName);
             // null means we have the latest model
-            if (incomingModelDetails.getResult() == null) {
+            if (incomingModelDetailTask.getResult() == null) {
               return Tasks.forResult(currentModel);
             }
 
             // if modelHash matches current local model just return local model.
-            if (currentModel
-                .getModelHash()
-                .equals(incomingModelDetails.getResult().getModelHash())) {
-              if (!currentModel.getLocalFilePath().isEmpty()) {
+            // Should be handled by above case but just in case.
+            if (currentModel != null
+                && currentModel
+                    .getModelHash()
+                    .equals(incomingModelDetails.getResult().getModelHash())) {
+              if (!currentModel.getLocalFilePath().isEmpty()
+                  && new File(currentModel.getLocalFilePath()).exists()) {
                 return Tasks.forResult(currentModel);
               }
               // todo(annzimmer) this shouldn't happen unless they are calling the sdk with multiple
