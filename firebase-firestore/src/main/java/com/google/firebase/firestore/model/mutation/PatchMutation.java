@@ -14,8 +14,6 @@
 
 package com.google.firebase.firestore.model.mutation;
 
-import static com.google.firebase.firestore.util.Assert.hardAssert;
-
 import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.model.Document;
@@ -26,6 +24,8 @@ import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.UnknownDocument;
 import com.google.firestore.v1.Value;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * A mutation that modifies fields of the document at the given key with the given values. The
@@ -45,7 +45,16 @@ public final class PatchMutation extends Mutation {
 
   public PatchMutation(
       DocumentKey key, ObjectValue value, FieldMask mask, Precondition precondition) {
-    super(key, precondition);
+    this(key, value, mask, precondition, new ArrayList<>());
+  }
+
+  public PatchMutation(
+      DocumentKey key,
+      ObjectValue value,
+      FieldMask mask,
+      Precondition precondition,
+      List<FieldTransform> fieldTransforms) {
+    super(key, precondition, fieldTransforms);
     this.value = value;
     this.mask = mask;
   }
@@ -60,7 +69,9 @@ public final class PatchMutation extends Mutation {
     }
 
     PatchMutation that = (PatchMutation) o;
-    return hasSameKeyAndPrecondition(that) && value.equals(that.value);
+    return hasSameKeyAndPrecondition(that)
+        && value.equals(that.value)
+        && getFieldTransforms().equals(that.getFieldTransforms());
   }
 
   @Override
@@ -99,10 +110,6 @@ public final class PatchMutation extends Mutation {
       @Nullable MaybeDocument maybeDoc, MutationResult mutationResult) {
     verifyKeyMatches(maybeDoc);
 
-    hardAssert(
-        mutationResult.getTransformResults() == null,
-        "Transform results received by PatchMutation.");
-
     if (!this.getPrecondition().isValidFor(maybeDoc)) {
       // Since the mutation was not rejected, we know that the precondition matched on the backend.
       // We therefore must not have the expected version of the document in our cache and return an
@@ -110,8 +117,13 @@ public final class PatchMutation extends Mutation {
       return new UnknownDocument(this.getKey(), mutationResult.getVersion());
     }
 
+    List<Value> transformResults =
+        mutationResult.getTransformResults() != null
+            ? serverTransformResults(maybeDoc, mutationResult.getTransformResults())
+            : new ArrayList<>();
+
     SnapshotVersion version = mutationResult.getVersion();
-    ObjectValue newData = patchDocument(maybeDoc);
+    ObjectValue newData = patchDocument(maybeDoc, transformResults);
     return new Document(getKey(), version, newData, Document.DocumentState.COMMITTED_MUTATIONS);
   }
 
@@ -125,29 +137,27 @@ public final class PatchMutation extends Mutation {
       return maybeDoc;
     }
 
+    List<Value> transformResults = localTransformResults(localWriteTime, maybeDoc, baseDoc);
     SnapshotVersion version = getPostMutationVersion(maybeDoc);
-    ObjectValue newData = patchDocument(maybeDoc);
+    ObjectValue newData = patchDocument(maybeDoc, transformResults);
     return new Document(getKey(), version, newData, Document.DocumentState.LOCAL_MUTATIONS);
-  }
-
-  @Nullable
-  @Override
-  public ObjectValue extractBaseValue(@Nullable MaybeDocument maybeDoc) {
-    return null;
   }
 
   /**
    * Patches the data of document if available or creates a new document. Note that this does not
    * check whether or not the precondition of this patch holds.
    */
-  private ObjectValue patchDocument(@Nullable MaybeDocument maybeDoc) {
+  private ObjectValue patchDocument(
+      @Nullable MaybeDocument maybeDoc, List<Value> transformResults) {
     ObjectValue data;
     if (maybeDoc instanceof Document) {
       data = ((Document) maybeDoc).getData();
     } else {
       data = ObjectValue.emptyObject();
     }
-    return patchObject(data);
+    data = patchObject(data);
+    data = transformObject(data, transformResults);
+    return data;
   }
 
   private ObjectValue patchObject(ObjectValue obj) {
