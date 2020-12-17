@@ -28,7 +28,6 @@ import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.UnknownDocument;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
-import com.google.firebase.firestore.proto.WriteBatch;
 import com.google.firebase.firestore.remote.RemoteSerializer;
 import com.google.firestore.v1.DocumentTransform.FieldTransform;
 import com.google.firestore.v1.Write;
@@ -177,14 +176,12 @@ public final class LocalSerializer {
       baseMutations.add(rpcSerializer.decodeMutation(batch.getBaseWrites(i)));
     }
 
-    int mutationsCount = batch.getWritesCount();
-    List<Mutation> mutations = new ArrayList<>(mutationsCount);
+    List<Mutation> mutations = new ArrayList<>(batch.getWritesCount());
 
     // Squash old transform mutations into existing patch or set mutations. The replacement of
     // representing `transforms` with `update_transforms` on the SDK means that old `transform`
     // mutations stored in IndexedDB need to be updated to `update_transforms`.
     // TODO(b/174608374): Remove this code once we perform a schema migration.
-    WriteBatch.Builder squashedBatchBuilder = WriteBatch.newBuilder();
     for (int i = batch.getWritesCount() - 1; i >= 0; --i) {
       Write mutation = batch.getWrites(i);
       if (mutation.hasTransform()) {
@@ -194,7 +191,6 @@ public final class LocalSerializer {
         Write mutationToJoin = batch.getWrites(i - 1);
         Builder newMutationBuilder = Write.newBuilder(mutationToJoin);
         for (FieldTransform fieldTransform : mutation.getTransform().getFieldTransformsList()) {
-
           newMutationBuilder.addUpdateTransforms(fieldTransform);
         }
         mutations.add(rpcSerializer.decodeMutation(newMutationBuilder.build()));
@@ -203,6 +199,10 @@ public final class LocalSerializer {
         mutations.add(rpcSerializer.decodeMutation(mutation));
       }
     }
+
+    // Reverse the mutations to preserve the original ordering since the above for-loop iterates in
+    // reverse order. We use reverse() instead of prepending the elements into the mutations array
+    // since prepending to a List is O(n).
     Collections.reverse(mutations);
     return new MutationBatch(batchId, localWriteTime, baseMutations, mutations);
   }
