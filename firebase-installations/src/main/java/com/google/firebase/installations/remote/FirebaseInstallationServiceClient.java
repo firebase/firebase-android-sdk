@@ -1,4 +1,4 @@
-// Copyright 2019 Google LLC
+// Copyright 2019-2020 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import static com.google.firebase.installations.BuildConfig.VERSION_NAME;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.net.TrafficStats;
 import android.text.TextUtils;
 import android.util.JsonReader;
 import android.util.Log;
@@ -56,6 +57,9 @@ import org.json.JSONObject;
  * @hide
  */
 public class FirebaseInstallationServiceClient {
+
+  public static final int CREATE_INSTALLATION_TRAFFIC_STATS_TAG = 0x00008000;
+
   private static final String FIREBASE_INSTALLATIONS_API_DOMAIN =
       "firebaseinstallations.googleapis.com";
   private static final String CREATE_REQUEST_RESOURCE_NAME_FORMAT = "projects/%s/installations";
@@ -153,6 +157,7 @@ public class FirebaseInstallationServiceClient {
     URL url = getFullyQualifiedRequestUri(resourceName);
     for (int retryCount = 0; retryCount <= MAX_RETRIES; retryCount++) {
 
+      TrafficStats.setThreadStatsTag(CREATE_INSTALLATION_TRAFFIC_STATS_TAG);
       HttpURLConnection httpURLConnection = openHttpURLConnection(url, apiKey);
 
       try {
@@ -193,6 +198,7 @@ public class FirebaseInstallationServiceClient {
       } catch (AssertionError | IOException ignored) {
         continue;
       } finally {
+        TrafficStats.clearThreadStatsTag();
         httpURLConnection.disconnect();
       }
     }
