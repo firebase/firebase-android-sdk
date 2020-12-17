@@ -1,5 +1,5 @@
 ---
-name: "\U0001F4A1 Feature Request"
+name: 💡 Feature Request
 about: Have a feature you'd like to see in the Android SDK? Request it here.
 ---
 
