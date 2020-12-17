@@ -28,6 +28,7 @@ import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.UnknownDocument;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
+import com.google.firebase.firestore.proto.WriteBatch;
 import com.google.firebase.firestore.remote.RemoteSerializer;
 import com.google.firestore.v1.DocumentTransform.FieldTransform;
 import com.google.firestore.v1.Write;
@@ -179,29 +180,27 @@ public final class LocalSerializer {
     // representing `transforms` with `update_transforms` on the SDK means that old `transform`
     // mutations stored in IndexedDB need to be updated to `update_transforms`.
     // TODO(b/174608374): Remove this code once we perform a schema migration.
+    WriteBatch.Builder squashedBatchBuilder = WriteBatch.newBuilder();
     for (int i = batch.getWritesCount() - 1; i >= 0; --i) {
       Write mutation = batch.getWrites(i);
-      if (mutation.getTransform().getFieldTransformsCount() != 0) {
+      if (mutation.hasTransform()) {
         hardAssert(
-            i >= 1
-                && batch.getWrites(i - 1).getTransform().getFieldTransformsCount() == 0
-                && batch.getWrites(i - 1).getUpdate().getFieldsCount() != 0,
+            i >= 1 && !batch.getWrites(i - 1).hasTransform() && batch.getWrites(i - 1).hasUpdate(),
             "TransformMutation should be preceded by a patch or set mutation");
         Write mutationToJoin = batch.getWrites(i - 1);
         Builder newMutationBuilder = Write.newBuilder(mutationToJoin);
         for (FieldTransform fieldTransform : mutation.getTransform().getFieldTransformsList()) {
           newMutationBuilder.addUpdateTransforms(fieldTransform);
         }
+        squashedBatchBuilder.addWrites(0, newMutationBuilder.build());
 
-        batch =
-            com.google.firebase.firestore.proto.WriteBatch.newBuilder(batch)
-                .removeWrites(i)
-                .removeWrites(i - 1)
-                .addWrites(i - 1, newMutationBuilder.build())
-                .build();
         --i;
+      } else {
+        squashedBatchBuilder.addWrites(0, mutation);
       }
     }
+
+    batch = squashedBatchBuilder.build();
 
     int mutationsCount = batch.getWritesCount();
     List<Mutation> mutations = new ArrayList<>(mutationsCount);

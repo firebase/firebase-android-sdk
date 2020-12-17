@@ -101,9 +101,8 @@ public final class SetMutation extends Mutation {
       return maybeDoc;
     }
 
-    ObjectValue newData = value;
     List<Value> transformResults = localTransformResults(localWriteTime, maybeDoc, baseDoc);
-    newData = transformObject(newData, transformResults);
+    ObjectValue newData = transformObject(value, transformResults);
 
     SnapshotVersion version = getPostMutationVersion(maybeDoc);
     return new Document(getKey(), version, newData, Document.DocumentState.LOCAL_MUTATIONS);

@@ -60,7 +60,7 @@ import java.util.List;
  * return an `UnknownDocument` and rely on Watch to send us the updated version.
  *
  * <p>Field transforms are used only with Patch and Set Mutations. We use the `updateTransforms`
- * field to store transforms, rather than the `transforms` field.
+ * field to store transforms, rather than the `transforms` message.
  */
 public abstract class Mutation {
   private final DocumentKey key;
@@ -123,25 +123,6 @@ public abstract class Mutation {
   public abstract MaybeDocument applyToLocalView(
       @Nullable MaybeDocument maybeDoc, @Nullable MaybeDocument baseDoc, Timestamp localWriteTime);
 
-  /**
-   * If applicable, returns the base value to persist with this mutation. If a base value is
-   * provided, the mutation is always applied to this base value, even if document has already been
-   * updated.
-   *
-   * <p>The base value is a sparse object that consists of only the document fields for which this
-   * mutation contains a non-idempotent transformation (e.g. a numeric increment). The provided
-   * value guarantees consistent behavior for non-idempotent transforms and allow us to return the
-   * same latency-compensated value even if the backend has already applied the mutation. The base
-   * value is null for idempotent mutations, as they can be re-played even if the backend has
-   * already applied them.
-   *
-   * @return a base value to store along with the mutation, or null for idempotent mutations.
-   */
-  @Nullable
-  public ObjectValue extractBaseValue(@Nullable MaybeDocument maybeDoc) {
-    return extractTransformBaseValue(maybeDoc);
-  }
-
   /** Helper for derived classes to implement .equals(). */
   boolean hasSameKeyAndPrecondition(Mutation other) {
     return key.equals(other.key) && precondition.equals(other.precondition);
@@ -187,7 +168,7 @@ public abstract class Mutation {
    * @param serverTransformResults The transform results received by the server.
    * @return The transform results list.
    */
-  List<Value> serverTransformResults(
+  protected List<Value> serverTransformResults(
       @Nullable MaybeDocument baseDoc, List<Value> serverTransformResults) {
     ArrayList<Value> transformResults = new ArrayList<>(fieldTransforms.size());
     hardAssert(
@@ -220,7 +201,7 @@ public abstract class Mutation {
    * @param baseDoc The document prior to applying this mutation batch.
    * @return The transform results list.
    */
-  List<Value> localTransformResults(
+  protected List<Value> localTransformResults(
       Timestamp localWriteTime, @Nullable MaybeDocument maybeDoc, @Nullable MaybeDocument baseDoc) {
     ArrayList<Value> transformResults = new ArrayList<>(fieldTransforms.size());
     for (FieldTransform fieldTransform : fieldTransforms) {

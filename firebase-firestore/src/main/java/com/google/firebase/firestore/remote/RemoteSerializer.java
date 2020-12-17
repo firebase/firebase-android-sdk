@@ -274,10 +274,8 @@ public final class RemoteSerializer {
       throw fail("unknown mutation type %s", mutation.getClass());
     }
 
-    if (mutation.getFieldTransforms().size() > 0) {
-      for (FieldTransform fieldTransform : mutation.getFieldTransforms()) {
-        builder.addUpdateTransforms(encodeFieldTransform(fieldTransform));
-      }
+    for (FieldTransform fieldTransform : mutation.getFieldTransforms()) {
+      builder.addUpdateTransforms(encodeFieldTransform(fieldTransform));
     }
 
     if (!mutation.getPrecondition().isNone()) {

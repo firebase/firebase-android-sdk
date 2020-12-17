@@ -68,7 +68,7 @@ public final class LocalSerializerTest {
   private LocalSerializer serializer;
 
   private Timestamp writeTime = Timestamp.now();
-  com.google.protobuf.Timestamp writeTimeProto =
+  private com.google.protobuf.Timestamp writeTimeProto =
       com.google.protobuf.Timestamp.newBuilder()
           .setSeconds(writeTime.getSeconds())
           .setNanos(writeTime.getNanoseconds())
@@ -167,9 +167,9 @@ public final class LocalSerializerTest {
     MutationBatch decoded = serializer.decodeMutationBatch(batchProto);
     assertEquals(1, decoded.getMutations().size());
     assertTrue(decoded.getMutations().get(0) instanceof SetMutation);
-    Write serialized = remoteSerializer.encodeMutation(decoded.getMutations().get(0));
+    Write encoded = remoteSerializer.encodeMutation(decoded.getMutations().get(0));
     Write expected = new TestWriteBuilder().addSet().addUpdateTransforms().build();
-    assertEquals(expected, serialized);
+    assertEquals(expected, encoded);
   }
 
   // TODO(b/174608374): Remove these tests once we perform a schema migration.
@@ -185,9 +185,9 @@ public final class LocalSerializerTest {
     MutationBatch decoded = serializer.decodeMutationBatch(batchProto);
     assertEquals(1, decoded.getMutations().size());
     assertTrue(decoded.getMutations().get(0) instanceof PatchMutation);
-    Write serialized = remoteSerializer.encodeMutation(decoded.getMutations().get(0));
+    Write encoded = remoteSerializer.encodeMutation(decoded.getMutations().get(0));
     Write expected = new TestWriteBuilder().addPatch().addUpdateTransforms().build();
-    assertEquals(expected, serialized);
+    assertEquals(expected, encoded);
   }
 
   // TODO(b/174608374): Remove these tests once we perform a schema migration.
@@ -260,8 +260,8 @@ public final class LocalSerializerTest {
             new TestWriteBuilder().addPatch().build());
     for (int i = 0; i < decoded.getMutations().size(); i++) {
       Mutation mutation = decoded.getMutations().get(i);
-      Write serialized = remoteSerializer.encodeMutation(mutation);
-      assertEquals(allExpected.get(i), serialized);
+      Write encoded = remoteSerializer.encodeMutation(mutation);
+      assertEquals(allExpected.get(i), encoded);
     }
   }
 

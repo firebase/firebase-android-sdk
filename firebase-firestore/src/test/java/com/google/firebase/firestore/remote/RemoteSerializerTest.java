@@ -380,30 +380,6 @@ public final class RemoteSerializerTest {
   @Test
   public void testEncodesServerTimestampMutation() {
     Mutation mutation =
-        patchMutation(
-            "docs/1",
-            map(
-                "a",
-                com.google.firebase.firestore.FieldValue.serverTimestamp(),
-                "bar.baz",
-                com.google.firebase.firestore.FieldValue.serverTimestamp()));
-    Write expected =
-        Write.newBuilder()
-            .setUpdate(Document.newBuilder().setName("projects/p/databases/d/documents/docs/1"))
-            .setUpdateMask(DocumentMask.newBuilder().build())
-            .addUpdateTransforms(
-                FieldTransform.newBuilder()
-                    .setFieldPath("a")
-                    .setSetToServerValue(ServerValue.REQUEST_TIME))
-            .addUpdateTransforms(
-                FieldTransform.newBuilder()
-                    .setFieldPath("bar.baz")
-                    .setSetToServerValue(ServerValue.REQUEST_TIME))
-            .setCurrentDocument(Precondition.newBuilder().setExists(true))
-            .build();
-    assertRoundTripForMutation(mutation, expected);
-
-    mutation =
         setMutation(
             "docs/1",
             map(
@@ -411,7 +387,7 @@ public final class RemoteSerializerTest {
                 com.google.firebase.firestore.FieldValue.serverTimestamp(),
                 "bar",
                 com.google.firebase.firestore.FieldValue.serverTimestamp()));
-    expected =
+    Write expected =
         Write.newBuilder()
             .setUpdate(Document.newBuilder().setName("projects/p/databases/d/documents/docs/1"))
             .addUpdateTransforms(
@@ -424,17 +400,62 @@ public final class RemoteSerializerTest {
                     .setSetToServerValue(ServerValue.REQUEST_TIME))
             .build();
     assertRoundTripForMutation(mutation, expected);
+
+    mutation =
+        patchMutation(
+            "docs/1",
+            map(
+                "a",
+                com.google.firebase.firestore.FieldValue.serverTimestamp(),
+                "bar.baz",
+                com.google.firebase.firestore.FieldValue.serverTimestamp()));
+    expected =
+        Write.newBuilder()
+            .setUpdate(Document.newBuilder().setName("projects/p/databases/d/documents/docs/1"))
+            .setUpdateMask(DocumentMask.newBuilder().build())
+            .addUpdateTransforms(
+                FieldTransform.newBuilder()
+                    .setFieldPath("a")
+                    .setSetToServerValue(ServerValue.REQUEST_TIME))
+            .addUpdateTransforms(
+                FieldTransform.newBuilder()
+                    .setFieldPath("bar.baz")
+                    .setSetToServerValue(ServerValue.REQUEST_TIME))
+            .setCurrentDocument(Precondition.newBuilder().setExists(true))
+            .build();
+    assertRoundTripForMutation(mutation, expected);
   }
 
   @Test
   public void testEncodesArrayMutations() {
     Mutation mutation =
+        setMutation(
+            "docs/1",
+            map(
+                "a", com.google.firebase.firestore.FieldValue.arrayUnion("a", 2),
+                "bar", com.google.firebase.firestore.FieldValue.arrayRemove(map("x", 1))));
+    Write expected =
+        Write.newBuilder()
+            .setUpdate(Document.newBuilder().setName("projects/p/databases/d/documents/docs/1"))
+            .addUpdateTransforms(
+                FieldTransform.newBuilder()
+                    .setFieldPath("a")
+                    .setAppendMissingElements(
+                        ArrayValue.newBuilder().addValues(wrap("a")).addValues(wrap(2))))
+            .addUpdateTransforms(
+                FieldTransform.newBuilder()
+                    .setFieldPath("bar")
+                    .setRemoveAllFromArray(ArrayValue.newBuilder().addValues(wrap(map("x", 1)))))
+            .build();
+    assertRoundTripForMutation(mutation, expected);
+
+    mutation =
         patchMutation(
             "docs/1",
             map(
                 "a", com.google.firebase.firestore.FieldValue.arrayUnion("a", 2),
                 "bar.baz", com.google.firebase.firestore.FieldValue.arrayRemove(map("x", 1))));
-    Write expected =
+    expected =
         Write.newBuilder()
             .setUpdate(Document.newBuilder().setName("projects/p/databases/d/documents/docs/1"))
             .setUpdateMask(DocumentMask.newBuilder().build())
@@ -448,27 +469,6 @@ public final class RemoteSerializerTest {
                     .setFieldPath("bar.baz")
                     .setRemoveAllFromArray(ArrayValue.newBuilder().addValues(wrap(map("x", 1)))))
             .setCurrentDocument(Precondition.newBuilder().setExists(true))
-            .build();
-    assertRoundTripForMutation(mutation, expected);
-
-    mutation =
-        setMutation(
-            "docs/1",
-            map(
-                "a", com.google.firebase.firestore.FieldValue.arrayUnion("a", 2),
-                "bar", com.google.firebase.firestore.FieldValue.arrayRemove(map("x", 1))));
-    expected =
-        Write.newBuilder()
-            .setUpdate(Document.newBuilder().setName("projects/p/databases/d/documents/docs/1"))
-            .addUpdateTransforms(
-                FieldTransform.newBuilder()
-                    .setFieldPath("a")
-                    .setAppendMissingElements(
-                        ArrayValue.newBuilder().addValues(wrap("a")).addValues(wrap(2))))
-            .addUpdateTransforms(
-                FieldTransform.newBuilder()
-                    .setFieldPath("bar")
-                    .setRemoveAllFromArray(ArrayValue.newBuilder().addValues(wrap(map("x", 1)))))
             .build();
     assertRoundTripForMutation(mutation, expected);
   }

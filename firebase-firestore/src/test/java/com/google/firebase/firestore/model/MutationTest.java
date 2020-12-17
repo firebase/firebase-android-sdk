@@ -618,13 +618,13 @@ public class MutationTest {
     Document baseDoc = doc("collection/key", 0, data);
 
     Mutation set = setMutation("collection/key", map("foo", "bar"));
-    assertNull(set.extractBaseValue(baseDoc));
+    assertNull(set.extractTransformBaseValue(baseDoc));
 
     Mutation patch = patchMutation("collection/key", map("foo", "bar"));
-    assertNull(patch.extractBaseValue(baseDoc));
+    assertNull(patch.extractTransformBaseValue(baseDoc));
 
     Mutation delete = deleteMutation("collection/key");
-    assertNull(delete.extractBaseValue(baseDoc));
+    assertNull(delete.extractTransformBaseValue(baseDoc));
   }
 
   @Test
@@ -638,7 +638,7 @@ public class MutationTest {
 
     // Server timestamps are idempotent and don't have base values.
     Mutation mutation = patchMutation("collection/key", allTransforms);
-    assertNull(mutation.extractBaseValue(baseDoc));
+    assertNull(mutation.extractTransformBaseValue(baseDoc));
   }
 
   @Test
@@ -663,7 +663,7 @@ public class MutationTest {
     allTransforms.put("nested", new HashMap<>(allTransforms));
 
     Mutation mutation = patchMutation("collection/key", allTransforms);
-    ObjectValue baseValue = mutation.extractBaseValue(baseDoc);
+    ObjectValue baseValue = mutation.extractTransformBaseValue(baseDoc);
 
     Value expected =
         wrap(
