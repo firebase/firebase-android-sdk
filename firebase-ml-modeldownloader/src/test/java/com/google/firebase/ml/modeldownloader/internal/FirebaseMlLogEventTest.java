@@ -67,7 +67,7 @@ public class FirebaseMlLogEventTest {
                         com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent
                             .ModelDownloadLogEvent.ErrorCode.DOWNLOAD_FAILED)
                     .setRoughDownloadDurationMs(100)
-                    .setModelOptions(
+                    .setOptions(
                         com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent
                             .ModelDownloadLogEvent.ModelOptions.builder()
                             .setModelInfo(

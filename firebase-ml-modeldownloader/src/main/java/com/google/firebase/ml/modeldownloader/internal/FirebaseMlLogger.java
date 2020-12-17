@@ -114,7 +114,7 @@ public class FirebaseMlLogger {
             .setErrorCode(errorCode)
             .setDownloadStatus(status)
             .setDownloadFailureStatus(failureStatusCode)
-            .setModelOptions(optionsProto);
+            .setOptions(optionsProto);
     if (shouldLogRoughDownloadTime) {
       long downloadBeginTimeMs = sharedPreferencesUtil.getModelDownloadBeginTimeMs(customModel);
       if (downloadBeginTimeMs == 0L) {

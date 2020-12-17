@@ -272,8 +272,7 @@ public abstract class FirebaseMlLogEvent {
     }
 
     @NonNull
-    @Encodable.Field(name = "options")
-    public abstract ModelOptions getModelOptions();
+    public abstract ModelOptions getOptions();
 
     /** Builder for {@link ModelDownloadLogEvent}. */
     @AutoValue.Builder
@@ -294,7 +293,7 @@ public abstract class FirebaseMlLogEvent {
       public abstract Builder setExactDownloadDurationMs(long value);
 
       @NonNull
-      public abstract Builder setModelOptions(@NonNull ModelOptions value);
+      public abstract Builder setOptions(@NonNull ModelOptions value);
 
       @NonNull
       public abstract ModelDownloadLogEvent build();

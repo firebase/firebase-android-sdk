@@ -124,7 +124,7 @@ public class FirebaseMlLoggerTest {
                     .setEventName(EventName.MODEL_DOWNLOAD)
                     .setModelDownloadLogEvent(
                         ModelDownloadLogEvent.builder()
-                            .setModelOptions(MODEL_OPTIONS)
+                            .setOptions(MODEL_OPTIONS)
                             .setRoughDownloadDurationMs(1000L)
                             .setErrorCode(ErrorCode.DOWNLOAD_FAILED)
                             .setDownloadStatus(DownloadStatus.FAILED)
@@ -149,7 +149,7 @@ public class FirebaseMlLoggerTest {
                     .setEventName(EventName.MODEL_DOWNLOAD)
                     .setModelDownloadLogEvent(
                         ModelDownloadLogEvent.builder()
-                            .setModelOptions(MODEL_OPTIONS)
+                            .setOptions(MODEL_OPTIONS)
                             .setErrorCode(ErrorCode.DOWNLOAD_FAILED)
                             .setDownloadStatus(DownloadStatus.FAILED)
                             .setDownloadFailureStatus(405)
@@ -172,7 +172,7 @@ public class FirebaseMlLoggerTest {
                     .setEventName(EventName.MODEL_DOWNLOAD)
                     .setModelDownloadLogEvent(
                         ModelDownloadLogEvent.builder()
-                            .setModelOptions(MODEL_OPTIONS)
+                            .setOptions(MODEL_OPTIONS)
                             .setExactDownloadDurationMs(1500L)
                             .setErrorCode(ErrorCode.NO_ERROR)
                             .setDownloadStatus(DownloadStatus.SUCCEEDED)
@@ -198,7 +198,7 @@ public class FirebaseMlLoggerTest {
                     .setEventName(EventName.MODEL_DOWNLOAD)
                     .setModelDownloadLogEvent(
                         ModelDownloadLogEvent.builder()
-                            .setModelOptions(MODEL_OPTIONS)
+                            .setOptions(MODEL_OPTIONS)
                             .setErrorCode(ErrorCode.NO_ERROR)
                             .setDownloadStatus(DownloadStatus.SUCCEEDED)
                             .build())

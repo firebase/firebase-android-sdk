@@ -14,7 +14,6 @@
 
 package com.google.firebase.ml.modeldownloader.internal;
 
-import android.util.Log;
 import androidx.annotation.NonNull;
 import com.google.android.datatransport.Encoding;
 import com.google.android.datatransport.Event;
@@ -49,11 +48,8 @@ public class DataTransportMlEventSender {
   }
 
   public void sendEvent(@NonNull FirebaseMlLogEvent firebaseMlLogEvent) {
-    // Thoughts? Use .send or .schedule - which gives back task of logging progress? Not sure how
-    // strongly we feel about tracking these?
-    Log.e("ANNZ", "stats: " + firebaseMlLogEvent);
+    // TODO Use .send or .schedule - which gives back task of logging progress?
+    //  Not sure how strongly we feel about tracking these? I'm happy to use plain send.
     transport.send(Event.ofData(firebaseMlLogEvent));
-
-    Log.e("ANNZ", "stats: " + Event.ofData(firebaseMlLogEvent));
   }
 }
