@@ -9,6 +9,7 @@ template_path=.github/ISSUE_TEMPLATE/bug.md
 -->
 
 ### [READ] Step 1: Are you in the right place?
+**Thank you for submitting your issue. We are operating at reduced capacity from Dec 18 2020 to Jan 4 2021. Please expect delayed responses. For more urgent requests please reach us via our support channels https://firebase.google.com/support**
 
 Issues filed here should be about bugs in __the code in this repository__. 
 If you have a general question, need help debugging, or fall into some
