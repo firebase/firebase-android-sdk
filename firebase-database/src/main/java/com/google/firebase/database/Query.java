@@ -137,7 +137,7 @@ public class Query {
   }
 
   /**
-   * Add a listener for changes in the data at this location. Each time time the data changes, your
+   * Add a listener for changes in the data at this location. Each time the data changes, your
    * listener will be called with an immutable snapshot of the data.
    *
    * @param listener The listener to be called with changes
@@ -416,7 +416,7 @@ public class Query {
   /**
    * Create a query constrained to only return child nodes with a value less than or equal to the
    * given value, using the given orderBy directive or priority as default, and additionally only
-   * child nodes with a key key less than or equal to the given key.
+   * child nodes with a key less than or equal to the given key.
    *
    * @param value The value to end at, inclusive
    * @param key The key to end at, inclusive
