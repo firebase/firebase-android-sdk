@@ -38,11 +38,8 @@ import java.io.IOException;
  */
 public class ModelFileManager {
 
+  public static final String CUSTOM_MODEL_ROOT_PATH = "com.google.firebase.ml.custom.models";
   private static final String TAG = "FirebaseModelFileManage";
-
-  @VisibleForTesting
-  static final String CUSTOM_MODEL_ROOT_PATH = "com.google.firebase.ml.custom.models";
-
   private static final int INVALID_INDEX = -1;
   private final Context context;
   private final FirebaseApp firebaseApp;
