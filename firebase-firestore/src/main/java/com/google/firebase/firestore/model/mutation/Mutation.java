@@ -20,9 +20,13 @@ import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.SnapshotVersion;
+import com.google.firestore.v1.Value;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Represents a Mutation of a document. Different subclasses of Mutation will perform different
@@ -30,8 +34,8 @@ import com.google.firebase.firestore.model.SnapshotVersion;
  * and a DeleteMutation deletes a document.
  *
  * <p>In addition to the value of the document mutations also operate on the version. For local
- * mutations (mutations that haven't been committed yet), we preserve the existing version for Set,
- * Patch, and Transform mutations. For local deletes, we reset the version to 0.
+ * mutations (mutations that haven't been committed yet), we preserve the existing version for Set
+ * and Patch mutations. For local deletes, we reset the version to 0.
  *
  * <p>Here's the expected transition table.
  *
@@ -43,26 +47,20 @@ import com.google.firebase.firestore.model.SnapshotVersion;
  * <tr><td>PatchMutation</td><td>Document(v3)</td><td>Document(v3)</td></tr>
  * <tr><td>PatchMutation</td><td>NoDocument(v3)</td><td>NoDocument(v3)</td></tr>
  * <tr><td>PatchMutation</td><td>null</td><td>null</td></tr>
- * <tr><td>TransformMutation</td><td>Document(v3)</td><td>Document(v3)</td></tr>
- * <tr><td>TransformMutation</td><td>NoDocument(v3)</td><td>NoDocument(v3)</td></tr>
- * <tr><td>TransformMutation</td><td>null</td><td>null</td></tr>
  * <tr><td>DeleteMutation</td><td>Document(v3)</td><td>NoDocument(v0)</td></tr>
  * <tr><td>DeleteMutation</td><td>NoDocument(v3)</td><td>NoDocument(v0)</td></tr>
  * <tr><td>DeleteMutation</td><td>null</td><td>NoDocument(v0)</td></tr>
  * </table>
  *
  * For acknowledged mutations, we use the updateTime of the WriteResponse as the resulting version
- * for Set, Patch, and Transform mutations. As deletes have no explicit update time, we use the
- * commitTime of the WriteResponse for acknowledged deletes.
+ * for Set and Patch mutations. As deletes have no explicit update time, we use the commitTime of
+ * the WriteResponse for acknowledged deletes.
  *
  * <p>If a mutation is acknowledged by the backend but fails the precondition check locally, we
  * return an `UnknownDocument` and rely on Watch to send us the updated version.
  *
- * <p>Note that TransformMutations don't create Documents (in the case of being applied to a
- * NoDocument), even though they would on the backend. This is because the client always combines
- * the TransformMutation with a SetMutation or PatchMutation and we only want to apply the transform
- * if the prior mutation resulted in a Document (always true for a SetMutation, but not necessarily
- * for an PatchMutation).
+ * <p>Field transforms are used only with Patch and Set Mutations. We use the `updateTransforms`
+ * field to store transforms, rather than the `transforms` message.
  */
 public abstract class Mutation {
   private final DocumentKey key;
@@ -70,9 +68,16 @@ public abstract class Mutation {
   /** The precondition for the mutation. */
   private final Precondition precondition;
 
+  private final List<FieldTransform> fieldTransforms;
+
   Mutation(DocumentKey key, Precondition precondition) {
+    this(key, precondition, new ArrayList<>());
+  }
+
+  Mutation(DocumentKey key, Precondition precondition, List<FieldTransform> fieldTransforms) {
     this.key = key;
     this.precondition = precondition;
+    this.fieldTransforms = fieldTransforms;
   }
 
   public DocumentKey getKey() {
@@ -81,6 +86,10 @@ public abstract class Mutation {
 
   public Precondition getPrecondition() {
     return precondition;
+  }
+
+  public List<FieldTransform> getFieldTransforms() {
+    return fieldTransforms;
   }
 
   /**
@@ -113,23 +122,6 @@ public abstract class Mutation {
   @Nullable
   public abstract MaybeDocument applyToLocalView(
       @Nullable MaybeDocument maybeDoc, @Nullable MaybeDocument baseDoc, Timestamp localWriteTime);
-
-  /**
-   * If applicable, returns the base value to persist with this mutation. If a base value is
-   * provided, the mutation is always applied to this base value, even if document has already been
-   * updated.
-   *
-   * <p>The base value is a sparse object that consists of only the document fields for which this
-   * mutation contains a non-idempotent transformation (e.g. a numeric increment). The provided
-   * value guarantees consistent behavior for non-idempotent transforms and allow us to return the
-   * same latency-compensated value even if the backend has already applied the mutation. The base
-   * value is null for idempotent mutations, as they can be re-played even if the backend has
-   * already applied them.
-   *
-   * @return a base value to store along with the mutation, or null for idempotent mutations.
-   */
-  @Nullable
-  public abstract ObjectValue extractBaseValue(@Nullable MaybeDocument maybeDoc);
 
   /** Helper for derived classes to implement .equals(). */
   boolean hasSameKeyAndPrecondition(Mutation other) {
@@ -165,5 +157,97 @@ public abstract class Mutation {
     } else {
       return SnapshotVersion.NONE;
     }
+  }
+
+  /**
+   * Creates a list of "transform results" (a transform result is a field value representing the
+   * result of applying a transform) for use after a mutation containing transforms has been
+   * acknowledged by the server.
+   *
+   * @param baseDoc The document prior to applying this mutation batch.
+   * @param serverTransformResults The transform results received by the server.
+   * @return The transform results list.
+   */
+  protected List<Value> serverTransformResults(
+      @Nullable MaybeDocument baseDoc, List<Value> serverTransformResults) {
+    ArrayList<Value> transformResults = new ArrayList<>(fieldTransforms.size());
+    hardAssert(
+        fieldTransforms.size() == serverTransformResults.size(),
+        "server transform count (%d) should match field transform count (%d)",
+        serverTransformResults.size(),
+        fieldTransforms.size());
+
+    for (int i = 0; i < serverTransformResults.size(); i++) {
+      FieldTransform fieldTransform = fieldTransforms.get(i);
+      TransformOperation transform = fieldTransform.getOperation();
+
+      Value previousValue = null;
+      if (baseDoc instanceof Document) {
+        previousValue = ((Document) baseDoc).getField(fieldTransform.getFieldPath());
+      }
+
+      transformResults.add(
+          transform.applyToRemoteDocument(previousValue, serverTransformResults.get(i)));
+    }
+    return transformResults;
+  }
+
+  /**
+   * Creates a list of "transform results" (a transform result is a field value representing the
+   * result of applying a transform) for use when applying a transform locally.
+   *
+   * @param localWriteTime The local time of the mutation (used to generate ServerTimestampValues).
+   * @param maybeDoc The current state of the document after applying all previous mutations.
+   * @param baseDoc The document prior to applying this mutation batch.
+   * @return The transform results list.
+   */
+  protected List<Value> localTransformResults(
+      Timestamp localWriteTime, @Nullable MaybeDocument maybeDoc, @Nullable MaybeDocument baseDoc) {
+    ArrayList<Value> transformResults = new ArrayList<>(fieldTransforms.size());
+    for (FieldTransform fieldTransform : fieldTransforms) {
+      TransformOperation transform = fieldTransform.getOperation();
+
+      Value previousValue = null;
+      if (maybeDoc instanceof Document) {
+        previousValue = ((Document) maybeDoc).getField(fieldTransform.getFieldPath());
+      }
+
+      transformResults.add(transform.applyToLocalView(previousValue, localWriteTime));
+    }
+    return transformResults;
+  }
+
+  ObjectValue transformObject(ObjectValue objectValue, List<Value> transformResults) {
+    hardAssert(
+        transformResults.size() == fieldTransforms.size(), "Transform results length mismatch.");
+
+    ObjectValue.Builder builder = objectValue.toBuilder();
+    for (int i = 0; i < fieldTransforms.size(); i++) {
+      FieldTransform fieldTransform = fieldTransforms.get(i);
+      FieldPath fieldPath = fieldTransform.getFieldPath();
+      builder.set(fieldPath, transformResults.get(i));
+    }
+    return builder.build();
+  }
+
+  public ObjectValue extractTransformBaseValue(@Nullable MaybeDocument maybeDoc) {
+    ObjectValue.Builder baseObject = null;
+
+    for (FieldTransform transform : fieldTransforms) {
+      Value existingValue = null;
+      if (maybeDoc instanceof Document) {
+        existingValue = ((Document) maybeDoc).getField(transform.getFieldPath());
+      }
+
+      Value coercedValue = transform.getOperation().computeBaseValue(existingValue);
+      if (coercedValue != null) {
+        if (baseObject == null) {
+          baseObject = ObjectValue.newBuilder();
+        }
+        baseObject.set(transform.getFieldPath(), coercedValue);
+      }
+    }
+
+    return baseObject != null ? baseObject.build() : null;
   }
 }

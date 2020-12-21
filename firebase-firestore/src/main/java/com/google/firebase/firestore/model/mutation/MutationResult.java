@@ -55,10 +55,10 @@ public final class MutationResult {
   }
 
   /**
-   * The resulting fields returned from the backend after a TransformMutation has been committed.
-   * Contains one Value for each FieldTransform that was in the mutation.
+   * The resulting fields returned from the backend after a mutation containing field transforms has
+   * been committed. Contains one Value for each FieldTransform that was in the mutation.
    *
-   * <p>Will be null if the mutation was not a TransformMutation.
+   * <p>Will be null if the mutation did not contain any field transforms.
    */
   @Nullable
   public List<Value> getTransformResults() {
