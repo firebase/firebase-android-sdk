@@ -27,7 +27,7 @@ import com.google.firebase.database.core.Path;
 import com.google.firebase.database.core.Repo;
 import com.google.firebase.database.core.ValueEventRegistration;
 import com.google.firebase.database.core.ZombieEventManager;
-import com.google.firebase.database.core.utilities.Utilities;
+import com.google.firebase.database.core.utilities.PushIdGenerator;
 import com.google.firebase.database.core.utilities.Validation;
 import com.google.firebase.database.core.view.QueryParams;
 import com.google.firebase.database.core.view.QuerySpec;
@@ -362,17 +362,7 @@ public class Query {
   }
 
   private Query startAfter(Node node, String key) {
-    // This is called in `startAt`, which we call below, but this API is supposed
-    // to throw a DatabaseException if the key is invalid. `ChildKey.fromString`
-    // asserts validity -- it does not throw.
-    Validation.validateNullableKey(key);
-    ChildKey childKey = ChildKey.fromString(key);
-    if (childKey.isInt()) {
-      childKey = ChildKey.fromString(String.valueOf(childKey.intValue() + 1));
-    } else {
-      childKey = ChildKey.fromString(Utilities.lexicographicallyNext(childKey.asString()));
-    }
-    return startAt(node, childKey.asString());
+    return startAt(node, PushIdGenerator.nextAfter(key));
   }
 
   /**

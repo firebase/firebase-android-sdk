@@ -571,8 +571,7 @@ public class QueryTest {
     // state, but it's still kinda weird. Consider having ValueExpectationHelper deal with initial
     // state.
 
-    new WriteFuture(ref, new MapBuilder().put("a", 1).put("b", 2).put("c", 3).put("d", 4).build())
-        .timedGet();
+    new WriteFuture(ref, new MapBuilder().put("a", 1).put("b", 2).put("c", 3).build()).timedGet();
 
     ValueExpectationHelper expectations = new ValueExpectationHelper();
     expectations.add(ref.startAt(null).limitToFirst(1), new MapBuilder().put("a", 1L).build());
@@ -2490,7 +2489,7 @@ public class QueryTest {
       assertEquals(expected.get(i), child.getKey());
       i++;
     }
-    assertEquals(2, i);
+    assertEquals(1, i);
   }
 
   @Test

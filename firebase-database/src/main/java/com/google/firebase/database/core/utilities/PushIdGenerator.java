@@ -15,6 +15,7 @@
 package com.google.firebase.database.core.utilities;
 
 import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
+import static com.google.firebase.database.core.utilities.Utilities.tryParseInt;
 
 import java.util.Random;
 
@@ -55,6 +56,33 @@ public class PushIdGenerator {
     }
     hardAssert(result.length() == 20);
     return result.toString();
+  }
+
+  public static String nextAfter(String key) {
+    Validation.validateNullableKey(key);
+    Integer num = tryParseInt(key);
+    if (num != null) {
+      return String.valueOf(num + 1);
+    }
+    StringBuilder next = new StringBuilder(key.length());
+    for (int i = 0; i < key.length(); i++) {
+      next.append((char) 0);
+    }
+    int i;
+    for (i = key.length() - 1;
+        i >= 0 && key.charAt(i) == PUSH_CHARS.charAt(PUSH_CHARS.length() - 1);
+        i--) {
+      next.setCharAt(i, PUSH_CHARS.charAt(0));
+    }
+    if (i == -1) {
+      next.append(PUSH_CHARS.charAt(0));
+    } else {
+      next.setCharAt(i, PUSH_CHARS.charAt(PUSH_CHARS.indexOf(key.charAt(i)) + 1));
+    }
+    while (--i >= 0) {
+      next.setCharAt(i, key.charAt(i));
+    }
+    return next.toString();
   }
 
   private static void incrementArray() {
