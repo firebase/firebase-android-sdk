@@ -362,6 +362,10 @@ public class Query {
   }
 
   private Query startAfter(Node node, String key) {
+    // This is called in `startAt`, which we call below, but this API is supposed
+    // to throw a DatabaseException if the key is invalid. `ChildKey.fromString`
+    // asserts validity -- it does not throw.
+    Validation.validateNullableKey(key);
     ChildKey childKey = ChildKey.fromString(key);
     if (childKey.isInt()) {
       childKey = ChildKey.fromString(String.valueOf(childKey.intValue() + 1));

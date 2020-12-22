@@ -597,7 +597,7 @@ public class QueryTest {
     // state, but it's still kinda weird. Consider having ValueExpectationHelper deal with initial
     // state.
 
-    new WriteFuture(ref, new MapBuilder().put("a", 1).put("b", 2).put("c", 3).put("d", 4L).build())
+    new WriteFuture(ref, new MapBuilder().put("a", 1).put("b", 2).put("c", 3).put("d", 4).build())
         .timedGet();
 
     ValueExpectationHelper expectations = new ValueExpectationHelper();
@@ -606,7 +606,7 @@ public class QueryTest {
     expectations.add(
         ref.startAfter(null, "c").limitToFirst(1), new MapBuilder().put("d", 4L).build());
     expectations.add(
-        ref.startAfter(null, "b").limitToFirst(1), new MapBuilder().put("c", 2L).build());
+        ref.startAfter(null, "b").limitToFirst(1), new MapBuilder().put("c", 3L).build());
     expectations.add(
         ref.startAfter(null, "b").limitToFirst(2),
         new MapBuilder().put("c", 3L).put("d", 4L).build());
@@ -1280,8 +1280,10 @@ public class QueryTest {
     DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     ValueExpectationHelper helper = new ValueExpectationHelper();
-    helper.add(ref.startAfter("w").endAt("y"), new MapBuilder().put("b", 2L).put("c", 3L).build());
-    helper.add(ref.startAfter("w").endAt("x"), new MapBuilder().put("c", 3L).build());
+    helper.add(
+        ref.startAfter("w").endAt("y"),
+        new MapBuilder().put("d", 4L).put("b", 2L).put("c", 3L).build());
+    helper.add(ref.startAfter("w").endAt("x"), new MapBuilder().put("d", 4L).put("c", 3L).build());
     helper.add(ref.startAfter("a").endAt("c"), null);
 
     ref.setValue(
@@ -1333,8 +1335,10 @@ public class QueryTest {
             .build());
 
     ValueExpectationHelper helper = new ValueExpectationHelper();
-    helper.add(ref.startAfter("w").endAt("y"), new MapBuilder().put("b", 2L).put("c", 3L).build());
-    helper.add(ref.startAt("w").endAt("x"), new MapBuilder().put("c", 3L).build());
+    helper.add(
+        ref.startAfter("w").endAt("y"),
+        new MapBuilder().put("b", 2L).put("c", 3L).put("d", 4L).build());
+    helper.add(ref.startAt("w").endAt("x"), new MapBuilder().put("c", 3L).put("d", 4L).build());
     helper.add(ref.startAt("a").endAt("c"), null);
 
     helper.waitForEvents();
