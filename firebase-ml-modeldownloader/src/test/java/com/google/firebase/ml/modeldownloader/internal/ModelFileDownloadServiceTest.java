@@ -199,6 +199,23 @@ public class ModelFileDownloadServiceTest {
   }
 
   @Test
+  public void getCustomModelDownloadingTask_matchingTask() {
+    Task<Void> downloadTask =
+        modelFileDownloadService.getTaskCompletionSourceInstance(99).getTask();
+    assertEquals(modelFileDownloadService.getCustomModelDownloadingTask(99), downloadTask);
+  }
+
+  @Test
+  public void getCustomModelDownloadingTask_noMatchingTask() {
+    assertNull(modelFileDownloadService.getCustomModelDownloadingTask(77));
+  }
+
+  @Test
+  public void getCustomModelDownloadingTask_noDownloadId() {
+    assertNull(modelFileDownloadService.getCustomModelDownloadingTask(0));
+  }
+
+  @Test
   public void ensureModelDownloaded_noUrl() {
     when(mockDownloadManager.enqueue(any())).thenReturn(DOWNLOAD_ID);
     matrixCursor.addRow(new Integer[] {DownloadManager.STATUS_SUCCESSFUL});

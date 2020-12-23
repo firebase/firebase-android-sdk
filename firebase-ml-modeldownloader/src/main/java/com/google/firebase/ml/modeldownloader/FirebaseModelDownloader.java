@@ -29,7 +29,6 @@ import com.google.firebase.ml.modeldownloader.internal.CustomModelDownloadServic
 import com.google.firebase.ml.modeldownloader.internal.ModelFileDownloadService;
 import com.google.firebase.ml.modeldownloader.internal.ModelFileManager;
 import com.google.firebase.ml.modeldownloader.internal.SharedPreferencesUtil;
-import java.io.File;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -120,25 +119,87 @@ public class FirebaseModelDownloader {
       @NonNull DownloadType downloadType,
       @Nullable CustomModelDownloadConditions conditions)
       throws Exception {
-    CustomModel localModel = sharedPreferencesUtil.getCustomModelDetails(modelName);
-    if (localModel == null) {
-      // no local model - get latest.
+    CustomModel localModelDetails = getLocalModelDetails(modelName);
+    if (localModelDetails == null) {
+      // no associated model - download latest.
       return getCustomModelTask(modelName, conditions);
     }
 
     switch (downloadType) {
       case LOCAL_MODEL:
-        return Tasks.forResult(localModel);
+        return getCompletedLocalModel(localModelDetails);
       case LATEST_MODEL:
         // check for latest model, wait for download if newer model exists
-        return getCustomModelTask(modelName, conditions, localModel.getModelHash());
+        return getCustomModelTask(modelName, conditions, localModelDetails.getModelHash());
       case LOCAL_MODEL_UPDATE_IN_BACKGROUND:
-        // start download in back ground, return local model
-        getCustomModelTask(modelName, conditions, localModel.getModelHash());
-        return Tasks.forResult(localModel);
+        // start upload in background, if newer model exists
+        getCustomModelTask(modelName, conditions, localModelDetails.getModelHash());
+        return getCompletedLocalModel(localModelDetails);
     }
     throw new IllegalArgumentException(
         "Unsupported downloadType, please chose LOCAL_MODEL, LATEST_MODEL, or LOCAL_MODEL_UPDATE_IN_BACKGROUND");
+  }
+
+  /**
+   * Checks the local model, if a completed download exists - returns this model. Else if a download
+   * is in progress returns the downloading model version. Otherwise, this model is in a bad state -
+   * clears the model and return null
+   *
+   * @param modelName - name of the model
+   * @return the local model with file downloaded details or null if no local model.
+   */
+  @Nullable
+  private CustomModel getLocalModelDetails(@NonNull String modelName) {
+    CustomModel localModel = sharedPreferencesUtil.getCustomModelDetails(modelName);
+    if (localModel == null) {
+      return null;
+    }
+
+    // valid model file exists when local file path is set
+    if (localModel.getLocalFilePath() != null && localModel.isModelFilePresent()) {
+      return localModel;
+    }
+
+    // download is in progress - return downloading model details
+    if (localModel.getDownloadId() != 0) {
+      return sharedPreferencesUtil.getDownloadingCustomModelDetails(modelName);
+    }
+
+    // bad model state - delete all existing details and return null
+    deleteModelDetails(localModel.getName());
+    return null;
+  }
+
+  // Given a model, the the local file path is present, return. Else if there is a file download is
+  // in progress, returns the download completion task for tracking.
+  // Otherwise reset model and return null
+  private Task<CustomModel> getCompletedLocalModel(@NonNull CustomModel model) {
+    // model file exists - use this
+    if (model.isModelFilePresent()) {
+      return Tasks.forResult(model);
+    }
+
+    // no download in progress - return this model.
+    if (model.getDownloadId() == 0) {
+      return Tasks.forResult(model);
+    }
+
+    // download in progress - find existing download task and wait for it to complete.
+    Task<Void> downloadInProgressTask =
+        fileDownloadService.getCustomModelDownloadingTask(model.getDownloadId());
+
+    if (downloadInProgressTask != null) {
+      return downloadInProgressTask.continueWithTask(
+          executor, downloadTask -> finishModelDownload(model.getName(), downloadTask));
+    }
+    // maybe download just completed - fetch latest model to check.
+    CustomModel latestModel = sharedPreferencesUtil.getCustomModelDetails(model.getName());
+    if (latestModel != null && latestModel.isModelFilePresent()) {
+      return Tasks.forResult(latestModel);
+    }
+    // bad model state - delete all existing details and return null
+    return deleteDownloadedModel(model.getName())
+        .continueWithTask(executor, deletionTask -> Tasks.forResult(null));
   }
 
   // This version of getCustomModelTask will always call the modelDownloadService and upon
@@ -150,24 +211,36 @@ public class FirebaseModelDownloader {
   }
 
   // This version of getCustomModelTask will call the modelDownloadService and upon
-  // success will only trigger file download, if there is a new model hash value.
+  // success will only trigger file download, if the new model hash value doesn't match.
   private Task<CustomModel> getCustomModelTask(
       @NonNull String modelName,
       @Nullable CustomModelDownloadConditions conditions,
       @Nullable String modelHash)
       throws Exception {
+    CustomModel currentModel = sharedPreferencesUtil.getCustomModelDetails(modelName);
+    if (currentModel == null && modelHash != null) {
+      // todo(annzimmer) log something about mismatched state and use hash = null
+      modelHash = null;
+    }
     Task<CustomModel> incomingModelDetails =
         modelDownloadService.getCustomModelDetails(
             firebaseOptions.getProjectId(), modelName, modelHash);
+    if (incomingModelDetails == null) {
+      return Tasks.forException(
+          new Exception("Error connecting with model download service, no model available."));
+    }
 
     return incomingModelDetails.continueWithTask(
         executor,
         incomingModelDetailTask -> {
           if (incomingModelDetailTask.isSuccessful()) {
-            CustomModel currentModel = sharedPreferencesUtil.getCustomModelDetails(modelName);
-            // null means we have the latest model
+
+            // null means we have the latest model - return completed version.
             if (incomingModelDetailTask.getResult() == null) {
-              return Tasks.forResult(currentModel);
+              if (currentModel != null) {
+                return getCompletedLocalModel(currentModel);
+              }
+              return Tasks.forException(new Exception("Model Download Service failed to connect."));
             }
 
             // if modelHash matches current local model just return local model.
@@ -176,10 +249,7 @@ public class FirebaseModelDownloader {
                 && currentModel
                     .getModelHash()
                     .equals(incomingModelDetails.getResult().getModelHash())) {
-              if (!currentModel.getLocalFilePath().isEmpty()
-                  && new File(currentModel.getLocalFilePath()).exists()) {
-                return Tasks.forResult(currentModel);
-              }
+              return getCompletedLocalModel(currentModel);
               // todo(annzimmer) this shouldn't happen unless they are calling the sdk with multiple
               // sets of download types/conditions.
               //  this should be a download in progress - add appropriate handling.
@@ -189,21 +259,32 @@ public class FirebaseModelDownloader {
             return fileDownloadService
                 .download(incomingModelDetailTask.getResult(), conditions)
                 .continueWithTask(
-                    executor,
-                    downloadTask -> {
-                      if (downloadTask.isSuccessful()) {
-                        // read the updated model
-                        CustomModel downloadedModel =
-                            sharedPreferencesUtil.getCustomModelDetails(modelName);
-                        // trigger the file to be moved to permanent location.
-                        fileDownloadService.loadNewlyDownloadedModelFile(downloadedModel);
-                        return Tasks.forResult(downloadedModel);
-                      }
-                      return Tasks.forException(new Exception("File download failed."));
-                    });
+                    executor, downloadTask -> finishModelDownload(modelName, downloadTask));
           }
           return Tasks.forException(incomingModelDetailTask.getException());
         });
+  }
+
+  private Task<CustomModel> finishModelDownload(@NonNull String modelName, Task<Void> downloadTask)
+      throws Exception {
+    if (downloadTask.isSuccessful()) {
+      // read the updated model
+      CustomModel downloadedModel =
+          sharedPreferencesUtil.getDownloadingCustomModelDetails(modelName);
+      if (downloadedModel == null) {
+        // check if latest download completed - if so use current.
+        downloadedModel = sharedPreferencesUtil.getCustomModelDetails(modelName);
+        if (downloadedModel == null) {
+          throw new Exception(
+              "Model (" + modelName + ") expected and not found during download completion.");
+        }
+      }
+      // trigger the file to be moved to permanent location.
+      fileDownloadService.loadNewlyDownloadedModelFile(downloadedModel);
+      downloadedModel = sharedPreferencesUtil.getCustomModelDetails(modelName);
+      return Tasks.forResult(downloadedModel);
+    }
+    return Tasks.forException(new Exception("File download failed."));
   }
 
   /**
@@ -240,11 +321,15 @@ public class FirebaseModelDownloader {
     executor.execute(
         () -> {
           // remove all files associated with this model and then clean up model references.
-          fileManager.deleteAllModels(modelName);
-          sharedPreferencesUtil.clearModelDetails(modelName);
+          deleteModelDetails(modelName);
           taskCompletionSource.setResult(null);
         });
     return taskCompletionSource.getTask();
+  }
+
+  private void deleteModelDetails(@NonNull String modelName) {
+    fileManager.deleteAllModels(modelName);
+    sharedPreferencesUtil.clearModelDetails(modelName);
   }
 
   /** Returns the nick name of the {@link FirebaseApp} of this {@link FirebaseModelDownloader} */
