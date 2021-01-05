@@ -274,6 +274,12 @@ public class SharedPreferencesUtil {
         .apply();
   }
 
+  /**
+   * Gets the start time (in ms) of the model download attempt.
+   *
+   * @param customModel model
+   * @return time in ms
+   */
   public synchronized long getModelDownloadBeginTimeMs(@NonNull CustomModel customModel) {
     return getSharedPreferences()
         .getLong(
