@@ -635,4 +635,23 @@ public class FirebaseModelDownloaderTest {
     verify(mockPrefs, times(1)).clearModelDetails(eq(MODEL_NAME));
     verify(mockFileManager, times(1)).deleteAllModels(eq(MODEL_NAME));
   }
+
+  @Test
+  public void getModelDownloadId_noDownload() throws Exception {
+    when(mockPrefs.getDownloadingCustomModelDetails(eq(MODEL_NAME))).thenReturn(customModelLoaded);
+    assertEquals(firebaseModelDownloader.getModelDownloadId(MODEL_NAME), 0);
+  }
+
+  @Test
+  public void getModelDownloadId_noNamedModel() throws Exception {
+    when(mockPrefs.getDownloadingCustomModelDetails(eq(MODEL_NAME))).thenReturn(null);
+    assertEquals(firebaseModelDownloader.getModelDownloadId(MODEL_NAME), 0);
+  }
+
+  @Test
+  public void getModelDownloadId_download() throws Exception {
+    when(mockPrefs.getDownloadingCustomModelDetails(eq(MODEL_NAME)))
+        .thenReturn(UPDATE_IN_PROGRESS_CUSTOM_MODEL);
+    assertEquals(firebaseModelDownloader.getModelDownloadId(MODEL_NAME), DOWNLOAD_ID);
+  }
 }
