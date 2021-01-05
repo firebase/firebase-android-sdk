@@ -89,9 +89,4 @@ dependencies {
     //Android compatible version of Apache httpclient.
     testImplementation 'org.apache.httpcomponents:httpclient-android:4.3.5.1'
     testImplementation 'org.mockito:mockito-core:3.3.3'
-
-    androidTestImplementation project(':encoders:firebase-encoders-json')
-    androidTestImplementation 'androidx.test:runner:1.3.0'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
-
 }
