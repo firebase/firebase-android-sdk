@@ -62,7 +62,7 @@ apply plugin: com.google.firebase.gradle.plugins.ci.metrics.MetricsPlugin
 firebaseContinuousIntegration {
     ignorePaths = [
             /.*\.gitignore$/,
-            /.*.md$/,
+            /.*\/.*.md$/,
     ]
 }
 
