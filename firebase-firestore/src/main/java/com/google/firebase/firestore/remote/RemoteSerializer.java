@@ -49,7 +49,6 @@ import com.google.firebase.firestore.model.mutation.PatchMutation;
 import com.google.firebase.firestore.model.mutation.Precondition;
 import com.google.firebase.firestore.model.mutation.ServerTimestampOperation;
 import com.google.firebase.firestore.model.mutation.SetMutation;
-import com.google.firebase.firestore.model.mutation.TransformMutation;
 import com.google.firebase.firestore.model.mutation.TransformOperation;
 import com.google.firebase.firestore.model.mutation.VerifyMutation;
 import com.google.firebase.firestore.remote.WatchChange.ExistenceFilterWatchChange;
@@ -267,20 +266,16 @@ public final class RemoteSerializer {
     } else if (mutation instanceof PatchMutation) {
       builder.setUpdate(encodeDocument(mutation.getKey(), ((PatchMutation) mutation).getValue()));
       builder.setUpdateMask(encodeDocumentMask(((PatchMutation) mutation).getMask()));
-    } else if (mutation instanceof TransformMutation) {
-      TransformMutation transform = (TransformMutation) mutation;
-      DocumentTransform.Builder transformBuilder = DocumentTransform.newBuilder();
-      transformBuilder.setDocument(encodeKey(transform.getKey()));
-      for (FieldTransform fieldTransform : transform.getFieldTransforms()) {
-        transformBuilder.addFieldTransforms(encodeFieldTransform(fieldTransform));
-      }
-      builder.setTransform(transformBuilder);
     } else if (mutation instanceof DeleteMutation) {
       builder.setDelete(encodeKey(mutation.getKey()));
     } else if (mutation instanceof VerifyMutation) {
       builder.setVerify(encodeKey(mutation.getKey()));
     } else {
       throw fail("unknown mutation type %s", mutation.getClass());
+    }
+
+    for (FieldTransform fieldTransform : mutation.getFieldTransforms()) {
+      builder.addUpdateTransforms(encodeFieldTransform(fieldTransform));
     }
 
     if (!mutation.getPrecondition().isNone()) {
@@ -295,6 +290,11 @@ public final class RemoteSerializer {
             ? decodePrecondition(mutation.getCurrentDocument())
             : Precondition.NONE;
 
+    List<FieldTransform> fieldTransforms = new ArrayList<>();
+    for (DocumentTransform.FieldTransform fieldTransform : mutation.getUpdateTransformsList()) {
+      fieldTransforms.add(decodeFieldTransform(fieldTransform));
+    }
+
     switch (mutation.getOperationCase()) {
       case UPDATE:
         if (mutation.hasUpdateMask()) {
@@ -302,28 +302,18 @@ public final class RemoteSerializer {
               decodeKey(mutation.getUpdate().getName()),
               ObjectValue.fromMap(mutation.getUpdate().getFieldsMap()),
               decodeDocumentMask(mutation.getUpdateMask()),
-              precondition);
+              precondition,
+              fieldTransforms);
         } else {
           return new SetMutation(
               decodeKey(mutation.getUpdate().getName()),
               ObjectValue.fromMap(mutation.getUpdate().getFieldsMap()),
-              precondition);
+              precondition,
+              fieldTransforms);
         }
 
       case DELETE:
         return new DeleteMutation(decodeKey(mutation.getDelete()), precondition);
-
-      case TRANSFORM:
-        ArrayList<FieldTransform> fieldTransforms = new ArrayList<>();
-        for (DocumentTransform.FieldTransform fieldTransform :
-            mutation.getTransform().getFieldTransformsList()) {
-          fieldTransforms.add(decodeFieldTransform(fieldTransform));
-        }
-        Boolean exists = precondition.getExists();
-        hardAssert(
-            exists != null && exists, "Transforms only support precondition \"exists == true\"");
-        return new TransformMutation(
-            decodeKey(mutation.getTransform().getDocument()), fieldTransforms);
 
       case VERIFY:
         return new VerifyMutation(decodeKey(mutation.getVerify()), precondition);

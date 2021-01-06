@@ -14,8 +14,6 @@
 
 package com.google.firebase.firestore.model.mutation;
 
-import static com.google.firebase.firestore.util.Assert.hardAssert;
-
 import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.model.Document;
@@ -23,6 +21,9 @@ import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.SnapshotVersion;
+import com.google.firestore.v1.Value;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * A mutation that creates or replaces the document at the given key with the object value contents.
@@ -31,7 +32,15 @@ public final class SetMutation extends Mutation {
   private final ObjectValue value;
 
   public SetMutation(DocumentKey key, ObjectValue value, Precondition precondition) {
-    super(key, precondition);
+    this(key, value, precondition, new ArrayList<>());
+  }
+
+  public SetMutation(
+      DocumentKey key,
+      ObjectValue value,
+      Precondition precondition,
+      List<FieldTransform> fieldTransforms) {
+    super(key, precondition, fieldTransforms);
     this.value = value;
   }
 
@@ -45,7 +54,9 @@ public final class SetMutation extends Mutation {
     }
 
     SetMutation that = (SetMutation) o;
-    return hasSameKeyAndPrecondition(that) && value.equals(that.value);
+    return hasSameKeyAndPrecondition(that)
+        && value.equals(that.value)
+        && getFieldTransforms().equals(that.getFieldTransforms());
   }
 
   @Override
@@ -65,14 +76,19 @@ public final class SetMutation extends Mutation {
       @Nullable MaybeDocument maybeDoc, MutationResult mutationResult) {
     verifyKeyMatches(maybeDoc);
 
-    hardAssert(
-        mutationResult.getTransformResults() == null, "Transform results received by SetMutation.");
-
     // Unlike applyToLocalView, if we're applying a mutation to a remote document the server has
     // accepted the mutation so the precondition must have held.
 
     SnapshotVersion version = mutationResult.getVersion();
-    return new Document(getKey(), version, value, Document.DocumentState.COMMITTED_MUTATIONS);
+
+    ObjectValue newData = value;
+    if (mutationResult.getTransformResults() != null) {
+      List<Value> transformResults =
+          serverTransformResults(maybeDoc, mutationResult.getTransformResults());
+      newData = transformObject(newData, transformResults);
+    }
+
+    return new Document(getKey(), version, newData, Document.DocumentState.COMMITTED_MUTATIONS);
   }
 
   @Nullable
@@ -85,18 +101,15 @@ public final class SetMutation extends Mutation {
       return maybeDoc;
     }
 
+    List<Value> transformResults = localTransformResults(localWriteTime, maybeDoc, baseDoc);
+    ObjectValue newData = transformObject(value, transformResults);
+
     SnapshotVersion version = getPostMutationVersion(maybeDoc);
-    return new Document(getKey(), version, value, Document.DocumentState.LOCAL_MUTATIONS);
+    return new Document(getKey(), version, newData, Document.DocumentState.LOCAL_MUTATIONS);
   }
 
   /** Returns the object value to use when setting the document. */
   public ObjectValue getValue() {
     return value;
-  }
-
-  @Nullable
-  @Override
-  public ObjectValue extractBaseValue(@Nullable MaybeDocument maybeDoc) {
-    return null;
   }
 }

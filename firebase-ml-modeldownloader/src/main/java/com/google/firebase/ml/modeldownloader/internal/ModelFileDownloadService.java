@@ -44,6 +44,7 @@ import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelD
 import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent.ErrorCode;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.Date;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -266,10 +267,13 @@ public class ModelFileDownloadService {
       if (matcher.find()) {
         String modelName = matcher.group(matcher.groupCount());
         CustomModel downloadingModel = sharedPreferencesUtil.getCustomModelDetails(modelName);
-        Integer statusCode = getDownloadingModelStatusCode(downloadingModel.getDownloadId());
-        if (statusCode == DownloadManager.STATUS_SUCCESSFUL
-            || statusCode == DownloadManager.STATUS_FAILED) {
-          loadNewlyDownloadedModelFile(downloadingModel);
+        if (downloadingModel != null) {
+          Integer statusCode = getDownloadingModelStatusCode(downloadingModel.getDownloadId());
+          if (statusCode != null
+              && (statusCode == DownloadManager.STATUS_SUCCESSFUL
+                  || statusCode == DownloadManager.STATUS_FAILED)) {
+            loadNewlyDownloadedModelFile(downloadingModel);
+          }
         }
       }
     }
@@ -281,7 +285,7 @@ public class ModelFileDownloadService {
     Long downloadingId = model.getDownloadId();
     String downloadingModelHash = model.getModelHash();
 
-    if (downloadingId == null || downloadingModelHash == null) {
+    if (downloadingId == 0 || downloadingModelHash.isEmpty()) {
       // no downloading model file or incomplete info.
       return null;
     }
@@ -316,7 +320,7 @@ public class ModelFileDownloadService {
           new CustomModel(
               model.getName(), model.getModelHash(), model.getSize(), 0, newModelFile.getPath()));
 
-      // Cleans up the old files if it is the initial creation.
+      // todo(annzimmer) Cleans up the old files if it is the initial creation.
       return newModelFile;
     } else if (statusCode == DownloadManager.STATUS_FAILED) {
       // reset original model - removing download id.
@@ -415,6 +419,12 @@ public class ModelFileDownloadService {
               sharedPreferencesUtil.getDownloadingCustomModelDetails(modelName),
               false,
               getFailureReason(id));
+          if (checkErrorCausedByExpiry(id, modelName)) {
+            // retry as a new download
+            // todo change to FirebaseMlException retry error.
+            taskCompletionSource.setException(new Exception("Retry: Expired URL"));
+            return;
+          }
           taskCompletionSource.setException(getExceptionAccordingToDownloadManager(id));
           return;
         }
@@ -431,6 +441,29 @@ public class ModelFileDownloadService {
 
       // Status code is null or not one of success or fail.
       taskCompletionSource.setException(new Exception("Model downloading failed"));
+    }
+
+    private boolean checkErrorCausedByExpiry(Long downloadId, String modelName) {
+      CustomModel model = sharedPreferencesUtil.getCustomModelDetails(modelName);
+
+      if (model == null) {
+        return false;
+      }
+
+      final Date time = new Date();
+
+      if (model.getDownloadUrlExpiry() < time.getTime()) {
+        Cursor cursor =
+            (downloadManager == null || downloadId == null)
+                ? null
+                : downloadManager.query(new Query().setFilterById(downloadId));
+        if (cursor != null && cursor.moveToFirst()) {
+          int reason = cursor.getInt(cursor.getColumnIndex(DownloadManager.COLUMN_REASON));
+          // 400 implies possibility of url expiry
+          return (reason == 400);
+        }
+      }
+      return false;
     }
   }
 }
