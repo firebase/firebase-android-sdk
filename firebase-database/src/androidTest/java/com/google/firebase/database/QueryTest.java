@@ -1872,7 +1872,7 @@ public class QueryTest {
   }
 
   @Test
-  public void nullPrioritiesIncludedInStartAt2() throws DatabaseException, InterruptedException {
+  public void nullPrioritiesIncludedInStartAt() throws DatabaseException, InterruptedException {
     DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     ref.setValue(
@@ -1891,7 +1891,7 @@ public class QueryTest {
   }
 
   @Test
-  public void nullPrioritiesIncludedInStartAfter2() throws DatabaseException, InterruptedException {
+  public void nullPrioritiesIncludedInStartAfter() throws DatabaseException, InterruptedException {
     DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     ref.setValue(
@@ -2562,7 +2562,7 @@ public class QueryTest {
   }
 
   @Test
-  public void startAfterWithTwoArgumentsWorksCase1169()
+  public void startAfterWithTwoArgumentsWorks()
       throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
           InterruptedException {
     DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
@@ -3441,7 +3441,7 @@ public class QueryTest {
 
   // TODO(wyszynski): endBefore
   @Test
-  public void case2003CorrectlyGetEventsForStartAfterEndAtQueriesWhenPriorityChanges()
+  public void correctlyGetEventsForStartAfterEndAtQueriesWhenPriorityChanges()
       throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
           InterruptedException {
     DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
