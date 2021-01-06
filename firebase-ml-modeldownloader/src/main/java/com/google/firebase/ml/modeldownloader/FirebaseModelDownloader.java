@@ -172,13 +172,26 @@ public class FirebaseModelDownloader {
 
             // if modelHash matches current local model just return local model.
             // Should be handled by above case but just in case.
-            if (currentModel != null
-                && currentModel
-                    .getModelHash()
-                    .equals(incomingModelDetails.getResult().getModelHash())) {
-              if (!currentModel.getLocalFilePath().isEmpty()
+            if (currentModel != null) {
+              // is this the same model?
+              if (currentModel
+                      .getModelHash()
+                      .equals(incomingModelDetails.getResult().getModelHash())
+                  && currentModel.getLocalFilePath() != null
+                  && !currentModel.getLocalFilePath().isEmpty()
                   && new File(currentModel.getLocalFilePath()).exists()) {
                 return Tasks.forResult(currentModel);
+              }
+
+              // is download already in progress for this hash?
+              if (currentModel.getDownloadId() != 0) {
+                CustomModel downloadingModel =
+                    sharedPreferencesUtil.getDownloadingCustomModelDetails(modelName);
+                if (downloadingModel != null
+                    && downloadingModel
+                        .getModelHash()
+                        .equals(incomingModelDetails.getResult().getModelHash()))
+                  return Tasks.forResult(downloadingModel);
               }
               // todo(annzimmer) this shouldn't happen unless they are calling the sdk with multiple
               // sets of download types/conditions.
@@ -193,17 +206,75 @@ public class FirebaseModelDownloader {
                     downloadTask -> {
                       if (downloadTask.isSuccessful()) {
                         // read the updated model
-                        CustomModel downloadedModel =
-                            sharedPreferencesUtil.getCustomModelDetails(modelName);
-                        // trigger the file to be moved to permanent location.
-                        fileDownloadService.loadNewlyDownloadedModelFile(downloadedModel);
-                        return Tasks.forResult(downloadedModel);
+                        CustomModel updatedModel =
+                            sharedPreferencesUtil.getDownloadingCustomModelDetails(modelName);
+                        if (updatedModel == null) {
+                          // either download failed or it completed really fast.
+                          return Tasks.forResult(
+                              sharedPreferencesUtil.getCustomModelDetails(modelName));
+                        }
+                        // trigger the file to be moved to permanent location
+                        // This handles immediate download and completion.
+                        fileDownloadService.loadNewlyDownloadedModelFile(updatedModel);
+                        updatedModel =
+                            sharedPreferencesUtil.getDownloadingCustomModelDetails(modelName);
+                        // download complete - get current model.
+                        if (updatedModel == null) {
+                          updatedModel = sharedPreferencesUtil.getCustomModelDetails(modelName);
+                        }
+                        return Tasks.forResult(updatedModel);
+                      } else {
+                        return retryExpiredUrlDownload(modelName, conditions, downloadTask, 2);
                       }
-                      return Tasks.forException(new Exception("File download failed."));
                     });
           }
           return Tasks.forException(incomingModelDetailTask.getException());
         });
+  }
+
+  private Task<CustomModel> retryExpiredUrlDownload(
+      @NonNull String modelName,
+      @Nullable CustomModelDownloadConditions conditions,
+      Task<Void> downloadTask,
+      int retryCounter)
+      throws Exception {
+    if (downloadTask.getException().getMessage().contains("Retry: Expired URL")) {
+      // this is likely an expired url - retry once.
+      Task<CustomModel> retryModelDetails =
+          modelDownloadService.getCustomModelDetails(
+              firebaseOptions.getProjectId(), modelName, null);
+      // no local model - start download.
+      return retryModelDetails.continueWithTask(
+          executor,
+          retryModelDetailTask -> {
+            if (retryModelDetailTask.isSuccessful()) {
+              // start download
+              return fileDownloadService
+                  .download(retryModelDetailTask.getResult(), conditions)
+                  .continueWithTask(
+                      executor,
+                      retryDownloadTask -> {
+                        if (retryDownloadTask.isSuccessful()) {
+                          // read the updated model
+                          CustomModel downloadedModel =
+                              sharedPreferencesUtil.getCustomModelDetails(modelName);
+                          // TODO(annz) trigger file move here as well... right
+                          // now it's temp
+                          // call loadNewlyDownloadedModelFile
+                          return Tasks.forResult(downloadedModel);
+                        }
+                        if (retryCounter > 1) {
+                          return retryExpiredUrlDownload(
+                              modelName, conditions, downloadTask, retryCounter - 1);
+                        }
+                        return Tasks.forException(
+                            new Exception("File download failed. Too many attempts."));
+                      });
+            }
+            return Tasks.forException(retryModelDetailTask.getException());
+          });
+    }
+    return Tasks.forException(new Exception("File download failed."));
   }
 
   /**

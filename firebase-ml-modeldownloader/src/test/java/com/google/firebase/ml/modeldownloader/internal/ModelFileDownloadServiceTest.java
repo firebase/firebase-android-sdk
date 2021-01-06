@@ -256,7 +256,11 @@ public class ModelFileDownloadServiceTest {
   @Test
   public void ensureModelDownloaded_downloadFailed() {
     when(mockDownloadManager.enqueue(any())).thenReturn(DOWNLOAD_ID);
-    matrixCursor.addRow(new Integer[] {DownloadManager.STATUS_FAILED});
+    matrixCursor =
+        new MatrixCursor(
+            new String[] {DownloadManager.COLUMN_STATUS, DownloadManager.COLUMN_REASON});
+    matrixCursor.addRow(
+        new Integer[] {DownloadManager.STATUS_FAILED, DownloadManager.ERROR_INSUFFICIENT_SPACE});
     when(mockDownloadManager.query(any())).thenReturn(matrixCursor);
 
     TestOnCompleteListener<Void> onCompleteListener = new TestOnCompleteListener<>();
@@ -277,6 +281,42 @@ public class ModelFileDownloadServiceTest {
     assertTrue(task.isComplete());
     assertFalse(task.isSuccessful());
     assertTrue(task.getException().getMessage().contains("Failed"));
+    assertEquals(
+        sharedPreferencesUtil.getDownloadingCustomModelDetails(MODEL_NAME),
+        CUSTOM_MODEL_DOWNLOADING);
+
+    verify(mockDownloadManager, times(1)).enqueue(any());
+    verify(mockDownloadManager, atLeastOnce()).query(any());
+  }
+
+  @Test
+  public void ensureModelDownloaded_downloadFailed_urlExpiry() {
+    when(mockDownloadManager.enqueue(any())).thenReturn(DOWNLOAD_ID);
+    matrixCursor =
+        new MatrixCursor(
+            new String[] {DownloadManager.COLUMN_STATUS, DownloadManager.COLUMN_REASON});
+    matrixCursor.addRow(new Integer[] {DownloadManager.STATUS_FAILED, 400});
+    when(mockDownloadManager.query(any())).thenReturn(matrixCursor);
+
+    TestOnCompleteListener<Void> onCompleteListener = new TestOnCompleteListener<>();
+    Task<Void> task = modelFileDownloadService.ensureModelDownloaded(CUSTOM_MODEL_URL);
+
+    try {
+      // Complete the download
+      Intent downloadCompleteIntent = new Intent(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
+      downloadCompleteIntent.putExtra(DownloadManager.EXTRA_DOWNLOAD_ID, DOWNLOAD_ID);
+      app.getApplicationContext().sendBroadcast(downloadCompleteIntent);
+
+      task.addOnCompleteListener(executor, onCompleteListener);
+      onCompleteListener.await();
+    } catch (Exception ex) {
+      System.out.println("error: " + ex.getMessage());
+      assertTrue(ex.getMessage().contains("Retry: Expired URL"));
+    }
+
+    assertTrue(task.isComplete());
+    assertFalse(task.isSuccessful());
+    assertTrue(task.getException().getMessage().contains("Retry: Expired URL"));
     assertEquals(
         sharedPreferencesUtil.getDownloadingCustomModelDetails(MODEL_NAME),
         CUSTOM_MODEL_DOWNLOADING);
