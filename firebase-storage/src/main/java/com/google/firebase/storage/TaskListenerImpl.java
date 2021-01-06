@@ -19,7 +19,7 @@ import android.os.Build;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.android.gms.common.internal.Preconditions;
-import com.google.firebase.storage.internal.ActivityLifecycleListener;
+import com.google.firebase.internal.ActivityLifecycleListener;
 import com.google.firebase.storage.internal.SmartHandler;
 import java.util.HashMap;
 import java.util.Queue;

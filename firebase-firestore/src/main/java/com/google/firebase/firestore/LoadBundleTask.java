@@ -15,6 +15,7 @@
 package com.google.firebase.firestore;
 
 import android.app.Activity;
+import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Continuation;
@@ -22,176 +23,539 @@ import com.google.android.gms.tasks.OnCanceledListener;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.RuntimeExecutionException;
 import com.google.android.gms.tasks.SuccessContinuation;
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.android.gms.tasks.TaskExecutors;
+import com.google.firebase.internal.ActivityLifecycleListener;
+import java.util.ArrayDeque;
+import java.util.Queue;
 import java.util.concurrent.Executor;
 
+/**
+ * Represents the task of loading a Firestore bundle. It provides progress of bundle loading, as
+ * well as task completion and error events.
+ */
 /* package */ class LoadBundleTask extends Task<LoadBundleTaskProgress> {
+  private final Object lock = new Object();
+
+  /** The last progress update. Null if not yet available. */
+  @GuardedBy("lock")
+  @Nullable
+  private LoadBundleTaskProgress snapshot;
+
+  /**
+   * A TaskCompletionSource that is used to deliver all standard Task API events (e.g.
+   * `onComplete`).
+   */
+  private final TaskCompletionSource<LoadBundleTaskProgress> completionSource;
+
+  /**
+   * A delegate task derived from `completionSource`. All APIs events that don't involve progress
+   * updates are handled by this delegate
+   */
+  private final Task<LoadBundleTaskProgress> delegate;
+
+  /** A queue of active progress listeners. */
+  @GuardedBy("lock")
+  private final Queue<ManagedListener> progressListenerQueue;
+
+  public LoadBundleTask() {
+    completionSource = new TaskCompletionSource<>();
+    delegate = completionSource.getTask();
+    progressListenerQueue = new ArrayDeque<>();
+  }
+
+  /** Returns {@code true} if the Task is complete; {@code false} otherwise. */
   @Override
   public boolean isComplete() {
-    return false;
+    return delegate.isComplete();
   }
 
+  /** Returns {@code true} if the Task has completed successfully; {@code false} otherwise. */
   @Override
   public boolean isSuccessful() {
-    return false;
+    return delegate.isSuccessful();
   }
 
+  /** Returns {@code true} if the task has been canceled. */
   @Override
   public boolean isCanceled() {
-    return false;
+    return delegate.isCanceled();
   }
 
-  @Nullable
+  /**
+   * Gets the result of the Task, if it has already completed.
+   *
+   * @throws IllegalStateException if the Task is not yet complete
+   * @throws RuntimeExecutionException if the Task failed with an exception
+   */
+  @NonNull
   @Override
   public LoadBundleTaskProgress getResult() {
-    return null;
+    return delegate.getResult();
   }
 
-  @Nullable
+  /**
+   * Gets the result of the Task, if it has already completed.
+   *
+   * @throws IllegalStateException if the Task is not yet complete
+   * @throws X if the Task failed with an exception of type X
+   * @throws RuntimeExecutionException if the Task failed with an exception that was not of type X
+   */
+  @NonNull
   @Override
-  public <X extends Throwable> LoadBundleTaskProgress getResult(@NonNull Class<X> aClass) throws X {
-    return null;
+  public <X extends Throwable> LoadBundleTaskProgress getResult(@NonNull Class<X> exceptionType)
+      throws X {
+    return delegate.getResult(exceptionType);
   }
 
+  /**
+   * Returns the exception that caused the Task to fail. Returns {@code null} if the Task is not yet
+   * complete, or completed successfully.
+   */
   @Nullable
   @Override
   public Exception getException() {
-    return null;
+    return delegate.getException();
   }
 
+  /**
+   * Adds a listener that is called if the Task completes successfully. The listener will be called
+   * on the main application thread. If the task has already completed successfully, a call to the
+   * listener will be immediately scheduled. If multiple listeners are added, they will be called in
+   * the order in which they were added.
+   *
+   * @return this Task
+   */
   @NonNull
   @Override
   public Task<LoadBundleTaskProgress> addOnSuccessListener(
       @NonNull OnSuccessListener<? super LoadBundleTaskProgress> onSuccessListener) {
-    return null;
+    return delegate.addOnSuccessListener(onSuccessListener);
   }
 
+  /**
+   * Adds a listener that is called if the Task completes successfully.
+   *
+   * <p>If multiple listeners are added, they will be called in the order in which they were added.
+   * If the task has already completed successfully, a call to the listener will be immediately
+   * scheduled.
+   *
+   * @param executor the executor to use to call the listener
+   * @return this Task
+   */
   @NonNull
   @Override
   public Task<LoadBundleTaskProgress> addOnSuccessListener(
       @NonNull Executor executor,
       @NonNull OnSuccessListener<? super LoadBundleTaskProgress> onSuccessListener) {
-    return null;
+    return delegate.addOnSuccessListener(executor, onSuccessListener);
   }
 
+  /**
+   * Adds a listener that is called if the Task completes successfully.
+   *
+   * <p>If multiple listeners are added, they will be called in the order in which they were added.
+   * If the task has already completed successfully, a call to the listener will be immediately
+   * scheduled.
+   *
+   * @param activity When the supplied {@link Activity} stops, this listener will automatically be
+   *     removed.
+   * @return this Task
+   */
   @NonNull
   @Override
   public Task<LoadBundleTaskProgress> addOnSuccessListener(
       @NonNull Activity activity,
       @NonNull OnSuccessListener<? super LoadBundleTaskProgress> onSuccessListener) {
-    return null;
+    return delegate.addOnSuccessListener(activity, onSuccessListener);
   }
 
+  /**
+   * Adds a listener that is called if the Task fails.
+   *
+   * <p>The listener will be called on main application thread. If the task has already failed, a
+   * call to the listener will be immediately scheduled. If multiple listeners are added, they will
+   * be called in the order in which they were added.
+   *
+   * @return this Task
+   */
   @NonNull
   @Override
   public Task<LoadBundleTaskProgress> addOnFailureListener(
       @NonNull OnFailureListener onFailureListener) {
-    return null;
+    return delegate.addOnFailureListener(onFailureListener);
   }
 
+  /**
+   * Adds a listener that is called if the Task fails.
+   *
+   * <p>If the task has already failed, a call to the listener will be immediately scheduled. If
+   * multiple listeners are added, they will be called in the order in which they were added.
+   *
+   * @param executor the executor to use to call the listener
+   * @return this Task
+   */
   @NonNull
   @Override
   public Task<LoadBundleTaskProgress> addOnFailureListener(
       @NonNull Executor executor, @NonNull OnFailureListener onFailureListener) {
-    return null;
+    return delegate.addOnFailureListener(executor, onFailureListener);
   }
 
+  /**
+   * Adds a listener that is called if the Task fails.
+   *
+   * <p>If the task has already failed, a call to the listener will be immediately scheduled. If
+   * multiple listeners are added, they will be called in the order in which they were added.
+   *
+   * @param activity When the supplied {@link Activity} stops, this listener will automatically be
+   *     removed.
+   * @return this Task
+   */
   @NonNull
   @Override
   public Task<LoadBundleTaskProgress> addOnFailureListener(
       @NonNull Activity activity, @NonNull OnFailureListener onFailureListener) {
-    return null;
+    return delegate.addOnFailureListener(activity, onFailureListener);
   }
 
+  /**
+   * Adds a listener that is called when the Task succeeds or fails.
+   *
+   * <p>The listener will be called on main application thread. If the task has already failed, a
+   * call to the listener will be immediately scheduled. If multiple listeners are added, they will
+   * be called in the order in which they were added.
+   *
+   * @return this Task
+   */
   @NonNull
   @Override
   public Task<LoadBundleTaskProgress> addOnCompleteListener(
       @NonNull OnCompleteListener<LoadBundleTaskProgress> onCompleteListener) {
-    return super.addOnCompleteListener(onCompleteListener);
+    return delegate.addOnCompleteListener(onCompleteListener);
   }
 
+  /**
+   * Adds a listener that is called when the Task succeeds or fails.
+   *
+   * <p>If the task has already failed, a call to the listener will be immediately scheduled. If
+   * multiple listeners are added, they will be called in the order in which they were added.
+   *
+   * @param executor the executor to use to call the listener
+   * @return this Task
+   */
   @NonNull
   @Override
   public Task<LoadBundleTaskProgress> addOnCompleteListener(
       @NonNull Executor executor,
       @NonNull OnCompleteListener<LoadBundleTaskProgress> onCompleteListener) {
-    return super.addOnCompleteListener(executor, onCompleteListener);
+    return delegate.addOnCompleteListener(executor, onCompleteListener);
   }
 
+  /**
+   * Adds a listener that is called when the Task succeeds or fails.
+   *
+   * <p>If the task has already failed, a call to the listener will be immediately scheduled. If
+   * multiple listeners are added, they will be called in the order in which they were added.
+   *
+   * @param activity When the supplied {@link Activity} stops, this listener will automatically be
+   *     removed.
+   * @return this Task
+   */
   @NonNull
   @Override
   public Task<LoadBundleTaskProgress> addOnCompleteListener(
       @NonNull Activity activity,
       @NonNull OnCompleteListener<LoadBundleTaskProgress> onCompleteListener) {
-    return super.addOnCompleteListener(activity, onCompleteListener);
+    return delegate.addOnCompleteListener(activity, onCompleteListener);
   }
 
+  /**
+   * Adds a listener that is called if the Task is canceled.
+   *
+   * <p>The listener will be called on main application thread. If the Task has already been
+   * canceled, a call to the listener will be immediately scheduled. If multiple listeners are
+   * added, they will be called in the order in which they were added.
+   *
+   * @return this Task
+   */
   @NonNull
   @Override
   public Task<LoadBundleTaskProgress> addOnCanceledListener(
       @NonNull OnCanceledListener onCanceledListener) {
-    return super.addOnCanceledListener(onCanceledListener);
+    return delegate.addOnCanceledListener(onCanceledListener);
   }
 
+  /**
+   * Adds a listener that is called if the Task is canceled.
+   *
+   * <p>If the Task has already been canceled, a call to the listener will be immediately scheduled.
+   * If multiple listeners are added, they will be called in the order in which they were added.
+   *
+   * @param executor the executor to use to call the listener
+   * @return this Task
+   */
   @NonNull
   @Override
   public Task<LoadBundleTaskProgress> addOnCanceledListener(
       @NonNull Executor executor, @NonNull OnCanceledListener onCanceledListener) {
-    return super.addOnCanceledListener(executor, onCanceledListener);
+    return delegate.addOnCanceledListener(executor, onCanceledListener);
   }
 
+  /**
+   * Adds an Activity-scoped listener that is called if the Task is canceled.
+   *
+   * <p>The listener will be called on main application thread. If the Task has already been
+   * canceled, a call to the listener will be immediately scheduled. If multiple listeners are
+   * added, they will be called in the order in which they were added.
+   *
+   * <p>The listener will be automatically removed during {@link Activity#onStop}.
+   *
+   * @return this Task
+   */
   @NonNull
   @Override
   public Task<LoadBundleTaskProgress> addOnCanceledListener(
       @NonNull Activity activity, @NonNull OnCanceledListener onCanceledListener) {
-    return super.addOnCanceledListener(activity, onCanceledListener);
+    return delegate.addOnCanceledListener(activity, onCanceledListener);
   }
 
+  /**
+   * Returns a new Task that will be completed with the result of applying the specified
+   * Continuation to this Task.
+   *
+   * <p>The Continuation will be called on the main application thread.
+   *
+   * @see Continuation#then(Task)
+   */
   @NonNull
   @Override
   public <TContinuationResult> Task<TContinuationResult> continueWith(
       @NonNull Continuation<LoadBundleTaskProgress, TContinuationResult> continuation) {
-    return super.continueWith(continuation);
+    return delegate.continueWith(continuation);
   }
 
+  /**
+   * Returns a new Task that will be completed with the result of applying the specified
+   * Continuation to this Task.
+   *
+   * @param executor the executor to use to call the Continuation
+   * @see Continuation#then(Task)
+   */
   @NonNull
   @Override
   public <TContinuationResult> Task<TContinuationResult> continueWith(
       @NonNull Executor executor,
       @NonNull Continuation<LoadBundleTaskProgress, TContinuationResult> continuation) {
-    return super.continueWith(executor, continuation);
+    return delegate.continueWith(executor, continuation);
   }
 
+  /**
+   * Returns a new Task that will be completed with the result of applying the specified
+   * Continuation to this Task.
+   *
+   * <p>The Continuation will be called on the main application thread.
+   *
+   * @see Continuation#then(Task)
+   */
   @NonNull
   @Override
   public <TContinuationResult> Task<TContinuationResult> continueWithTask(
       @NonNull Continuation<LoadBundleTaskProgress, Task<TContinuationResult>> continuation) {
-    return super.continueWithTask(continuation);
+    return delegate.continueWithTask(continuation);
   }
 
+  /**
+   * Returns a new Task that will be completed with the result of applying the specified
+   * Continuation to this Task.
+   *
+   * @param executor the executor to use to call the Continuation
+   * @see Continuation#then(Task)
+   */
   @NonNull
   @Override
   public <TContinuationResult> Task<TContinuationResult> continueWithTask(
       @NonNull Executor executor,
       @NonNull Continuation<LoadBundleTaskProgress, Task<TContinuationResult>> continuation) {
-    return super.continueWithTask(executor, continuation);
+    return delegate.continueWithTask(executor, continuation);
   }
 
+  /**
+   * Returns a new Task that will be completed with the result of applying the specified
+   * SuccessContinuation to this Task when this Task completes successfully. If the previous Task
+   * fails, the onSuccessTask completion will be skipped and failure listeners will be invoked.
+   *
+   * <p>The SuccessContinuation will be called on the main application thread.
+   *
+   * <p>If the previous Task is canceled, the returned Task will also be canceled and the
+   * SuccessContinuation would not execute.
+   *
+   * @see SuccessContinuation#then(ResultT)
+   */
   @NonNull
   @Override
   public <TContinuationResult> Task<TContinuationResult> onSuccessTask(
       @NonNull
           SuccessContinuation<LoadBundleTaskProgress, TContinuationResult> successContinuation) {
-    return super.onSuccessTask(successContinuation);
+    return delegate.onSuccessTask(successContinuation);
   }
 
+  /**
+   * Returns a new Task that will be completed with the result of applying the specified
+   * SuccessContinuation to this Task when this Task completes successfully. If the previous Task
+   * fails, the onSuccessTask completion will be skipped and failure listeners will be invoked.
+   *
+   * <p>If the previous Task is canceled, the returned Task will also be canceled and the
+   * SuccessContinuation would not execute.
+   *
+   * @param executor the executor to use to call the SuccessContinuation
+   * @see SuccessContinuation#then(ResultT)
+   */
   @NonNull
   @Override
   public <TContinuationResult> Task<TContinuationResult> onSuccessTask(
       @NonNull Executor executor,
       @NonNull
           SuccessContinuation<LoadBundleTaskProgress, TContinuationResult> successContinuation) {
-    return super.onSuccessTask(executor, successContinuation);
+    return delegate.onSuccessTask(executor, successContinuation);
+  }
+
+  /**
+   * Adds a listener that is called periodically while the LoadBundleTask executes.
+   *
+   * @return this Task
+   */
+  @NonNull
+  public LoadBundleTask addOnProgressListener(
+      @NonNull OnProgressListener<LoadBundleTaskProgress> listener) {
+    ManagedListener managedListener = new ManagedListener(/* executor= */ null, listener);
+    synchronized (lock) {
+      progressListenerQueue.add(managedListener);
+      managedListener.maybeRun(snapshot);
+    }
+    return this;
+  }
+
+  /**
+   * Adds a listener that is called periodically while the LoadBundleTask executes.
+   *
+   * @param executor the executor to use to call the listener
+   * @return this Task
+   */
+  @NonNull
+  public LoadBundleTask addOnProgressListener(
+      @NonNull Executor executor, @NonNull OnProgressListener<LoadBundleTaskProgress> listener) {
+    ManagedListener managedListener = new ManagedListener(executor, listener);
+    synchronized (lock) {
+      progressListenerQueue.add(managedListener);
+      managedListener.maybeRun(snapshot);
+    }
+    return this;
+  }
+
+  /**
+   * Adds a listener that is called periodically while the LoadBundleTask executes.
+   *
+   * @param activity When the supplied {@link Activity} stops, this listener will automatically be
+   *     removed.
+   * @return this Task
+   */
+  @NonNull
+  public LoadBundleTask addOnProgressListener(
+      @NonNull Activity activity, @NonNull OnProgressListener<LoadBundleTaskProgress> listener) {
+    ManagedListener managedListener = new ManagedListener(/* executor= */ null, listener);
+    synchronized (lock) {
+      progressListenerQueue.add(managedListener);
+      managedListener.maybeRun(snapshot);
+    }
+    ActivityLifecycleListener.getInstance()
+        .runOnActivityStopped(activity, listener, () -> removeOnProgressListener(listener));
+    return this;
+  }
+
+  /**
+   * Removes a listener.
+   *
+   * <p>To match the Android Task API and its usage across Firestore, this method is private.
+   */
+  private void removeOnProgressListener(
+      @NonNull OnProgressListener<LoadBundleTaskProgress> listener) {
+    synchronized (lock) {
+      progressListenerQueue.remove(new ManagedListener(/* executor= */ null, listener));
+    }
+  }
+
+  void setResult(@Nullable LoadBundleTaskProgress result) {
+    completionSource.setResult(result);
+    updateProgress(result);
+    progressListenerQueue.clear();
+  }
+
+  void setException(@NonNull Exception exception) {
+    LoadBundleTaskProgress lastSnapshot;
+    synchronized (lock) {
+      lastSnapshot = snapshot != null ? snapshot : LoadBundleTaskProgress.INITIAL;
+    }
+    updateProgress(
+        new LoadBundleTaskProgress(
+            lastSnapshot.getDocumentsLoaded(),
+            lastSnapshot.getTotalDocuments(),
+            lastSnapshot.getBytesLoaded(),
+            lastSnapshot.getTotalBytes(),
+            exception,
+            LoadBundleTaskProgress.TaskState.ERROR));
+    completionSource.setException(exception);
+  }
+
+  void updateProgress(LoadBundleTaskProgress snapshot) {
+    synchronized (lock) {
+      this.snapshot = snapshot;
+      for (ManagedListener progressListener : progressListenerQueue) {
+        progressListener.maybeRun(snapshot);
+      }
+    }
+  }
+
+  /** Wraps a listener and its corresponding executor. */
+  private static class ManagedListener {
+    Executor executor;
+    OnProgressListener<LoadBundleTaskProgress> listener;
+
+    ManagedListener(
+        @Nullable Executor executor, OnProgressListener<LoadBundleTaskProgress> listener) {
+      this.executor = executor != null ? executor : TaskExecutors.MAIN_THREAD;
+      this.listener = listener;
+    }
+
+    /**
+     * If the provided snapshot is non-null, executes the listener on the provided executor. If no
+     * executor was specified, uses the main thread.
+     */
+    public void maybeRun(@Nullable LoadBundleTaskProgress snapshot) {
+      if (snapshot != null) {
+        executor.execute(() -> listener.onProgress(snapshot));
+      }
+    }
+
+    /**
+     * Equality implementation that only compares the listener for equality. This allows listeners
+     * to detached regardless of whether they were registered with an activity or an executor.
+     */
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+
+      ManagedListener that = (ManagedListener) o;
+      return listener.equals(that.listener);
+    }
+
+    @Override
+    public int hashCode() {
+      return listener.hashCode();
+    }
   }
 }
