@@ -33,12 +33,16 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
+import com.google.android.datatransport.TransportFactory;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.ml.modeldownloader.CustomModel;
 import com.google.firebase.ml.modeldownloader.CustomModelDownloadConditions;
+import com.google.firebase.ml.modeldownloader.FirebaseMlException;
+import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent.DownloadStatus;
+import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent.ErrorCode;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.Date;
@@ -60,6 +64,9 @@ public class ModelFileDownloadService {
   private final ModelFileManager fileManager;
   private final SharedPreferencesUtil sharedPreferencesUtil;
   private static final int COMPLETION_BUFFER_IN_MS = 60 * 5 * 1000;
+  private final FirebaseMlLogger eventLogger;
+
+  private final DataTransportMlEventSender statsSender;
 
   @GuardedBy("this")
   // Mapping from download id to broadcast receiver. Because models can update, we cannot just keep
@@ -75,11 +82,14 @@ public class ModelFileDownloadService {
   private CustomModelDownloadConditions downloadConditions =
       new CustomModelDownloadConditions.Builder().build();
 
-  public ModelFileDownloadService(@NonNull FirebaseApp firebaseApp) {
+  public ModelFileDownloadService(
+      @NonNull FirebaseApp firebaseApp, TransportFactory transportFactory) {
     this.context = firebaseApp.getApplicationContext();
     downloadManager = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
     this.fileManager = ModelFileManager.getInstance();
     this.sharedPreferencesUtil = new SharedPreferencesUtil(firebaseApp);
+    this.statsSender = DataTransportMlEventSender.create(transportFactory);
+    this.eventLogger = new FirebaseMlLogger(firebaseApp, sharedPreferencesUtil, statsSender);
   }
 
   @VisibleForTesting
@@ -87,11 +97,15 @@ public class ModelFileDownloadService {
       @NonNull FirebaseApp firebaseApp,
       DownloadManager downloadManager,
       ModelFileManager fileManager,
-      SharedPreferencesUtil sharedPreferencesUtil) {
+      SharedPreferencesUtil sharedPreferencesUtil,
+      DataTransportMlEventSender statsSender,
+      FirebaseMlLogger eventLogger) {
     this.context = firebaseApp.getApplicationContext();
     this.downloadManager = downloadManager;
     this.fileManager = fileManager;
     this.sharedPreferencesUtil = sharedPreferencesUtil;
+    this.eventLogger = eventLogger;
+    this.statsSender = statsSender;
   }
 
   /**
@@ -299,7 +313,7 @@ public class ModelFileDownloadService {
 
   @Nullable
   @WorkerThread
-  public File loadNewlyDownloadedModelFile(CustomModel model) throws Exception {
+  public File loadNewlyDownloadedModelFile(CustomModel model) throws FirebaseMlException {
     Long downloadingId = model.getDownloadId();
     String downloadingModelHash = model.getModelHash();
 
@@ -357,6 +371,47 @@ public class ModelFileDownloadService {
     return null;
   }
 
+  private FirebaseMlException getExceptionAccordingToDownloadManager(Long downloadId) {
+    int errorCode = FirebaseMlException.INTERNAL;
+    String errorMessage = "Model downloading failed";
+    Cursor cursor =
+        (downloadManager == null || downloadId == null)
+            ? null
+            : downloadManager.query(new Query().setFilterById(downloadId));
+    if (cursor != null && cursor.moveToFirst()) {
+      int reason = cursor.getInt(cursor.getColumnIndex(DownloadManager.COLUMN_REASON));
+      if (reason == DownloadManager.ERROR_INSUFFICIENT_SPACE) {
+        errorMessage = "Model downloading failed due to insufficient space on the device.";
+        errorCode = FirebaseMlException.NOT_ENOUGH_SPACE;
+      } else {
+        errorMessage =
+            "Model downloading failed due to error code: "
+                + reason
+                + " from Android DownloadManager";
+      }
+    }
+    return new FirebaseMlException(errorMessage, errorCode);
+  }
+
+  /**
+   * Gets the failure reason for the {@code downloadId}. Returns 0 if there isn't a record for the
+   * specified {@code downloadId}.
+   */
+  int getFailureReason(Long downloadId) {
+    int failureReason = FirebaseMlLogEvent.NO_INT_VALUE;
+    Cursor cursor =
+        (downloadManager == null || downloadId == null)
+            ? null
+            : downloadManager.query(new Query().setFilterById(downloadId));
+    if (cursor != null && cursor.moveToFirst()) {
+      int index = cursor.getColumnIndex(DownloadManager.COLUMN_REASON);
+      if (index != -1) {
+        failureReason = cursor.getInt(index);
+      }
+    }
+    return failureReason;
+  }
+
   // This class runs totally on worker thread because we registered the receiver with a worker
   // thread handler.
   @WorkerThread
@@ -407,20 +462,25 @@ public class ModelFileDownloadService {
 
       if (statusCode != null) {
         if (statusCode == DownloadManager.STATUS_FAILED) {
+          eventLogger.logDownloadFailureWithReason(
+              sharedPreferencesUtil.getDownloadingCustomModelDetails(modelName),
+              false,
+              getFailureReason(id));
           if (checkErrorCausedByExpiry(id, modelName)) {
             // retry as a new download
             // todo change to FirebaseMlException retry error.
             taskCompletionSource.setException(new Exception("Retry: Expired URL"));
             return;
           }
-          // todo add failure reason and logging
-          Log.d(TAG, "Download Failed for id: " + id);
-          taskCompletionSource.setException(new Exception("Failed"));
+          taskCompletionSource.setException(getExceptionAccordingToDownloadManager(id));
           return;
         }
 
         if (statusCode == DownloadManager.STATUS_SUCCESSFUL) {
-          Log.d(TAG, "Download Succeeded for id: " + id);
+          eventLogger.logDownloadEventWithExactDownloadTime(
+              sharedPreferencesUtil.getDownloadingCustomModelDetails(modelName),
+              ErrorCode.NO_ERROR,
+              DownloadStatus.SUCCEEDED);
           taskCompletionSource.setResult(null);
           return;
         }

@@ -17,6 +17,7 @@ package com.google.firebase.ml.modeldownloader;
 import android.os.Build.VERSION_CODES;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+import com.google.android.datatransport.TransportFactory;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.components.Component;
@@ -46,11 +47,14 @@ public class FirebaseModelDownloaderRegistrar implements ComponentRegistrar {
     return Arrays.asList(
         Component.builder(FirebaseModelDownloader.class)
             .add(Dependency.required(FirebaseApp.class))
+            .add(Dependency.required(TransportFactory.class))
             .add(Dependency.required(FirebaseInstallationsApi.class))
             .factory(
                 c ->
                     new FirebaseModelDownloader(
-                        c.get(FirebaseApp.class), c.get(FirebaseInstallationsApi.class)))
+                        c.get(FirebaseApp.class),
+                        c.get(FirebaseInstallationsApi.class),
+                        c.get(TransportFactory.class)))
             .build(),
         Component.builder(SharedPreferencesUtil.class)
             .add(Dependency.required(FirebaseApp.class))
@@ -62,7 +66,11 @@ public class FirebaseModelDownloaderRegistrar implements ComponentRegistrar {
             .build(),
         Component.builder(ModelFileDownloadService.class)
             .add(Dependency.required(FirebaseApp.class))
-            .factory(c -> new ModelFileDownloadService(c.get(FirebaseApp.class)))
+            .add(Dependency.required(TransportFactory.class))
+            .factory(
+                c ->
+                    new ModelFileDownloadService(
+                        c.get(FirebaseApp.class), c.get(TransportFactory.class)))
             .build(),
         Component.builder(CustomModelDownloadService.class)
             .add(Dependency.required(FirebaseOptions.class))
