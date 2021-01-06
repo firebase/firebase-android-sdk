@@ -283,8 +283,9 @@ public class Query {
    * Create a query constrained to only return child nodes with a value greater than the given
    * value, using the given orderBy directive or priority as default.
    *
-   * @param value The value to start at, inclusive
+   * @param value The value to start at, exclusive
    * @return A Query with the new constraint
+   * @since 19.6
    */
   @NonNull
   public Query startAfter(@Nullable String value) {
@@ -295,8 +296,9 @@ public class Query {
    * Create a query constrained to only return child nodes with a value greater than the given
    * value, using the given orderBy directive or priority as default.
    *
-   * @param value The value to start at, inclusive
+   * @param value The value to start at, exclusive
    * @return A Query with the new constraint
+   * @since 19.6
    */
   @NonNull
   public Query startAfter(double value) {
@@ -307,9 +309,9 @@ public class Query {
    * Create a query constrained to only return child nodes with a value greater than the given
    * value, using the given orderBy directive or priority as default.
    *
-   * @param value The value to start at, inclusive
+   * @param value The value to start at, exclusive
    * @return A Query with the new constraint
-   * @since 2.0
+   * @since 19.6
    */
   @NonNull
   public Query startAfter(boolean value) {
@@ -321,9 +323,10 @@ public class Query {
    * value, using the given orderBy directive or priority as default, and additionally only child
    * nodes with a key greater than or equal to the given key.
    *
-   * @param value The priority to start at, inclusive
-   * @param key The key to start at, inclusive
+   * @param value The priority to start at
+   * @param key The key to start at, exclusive
    * @return A Query with the new constraint
+   * @since 19.6
    */
   @NonNull
   public Query startAfter(@Nullable String value, @Nullable String key) {
@@ -337,9 +340,10 @@ public class Query {
    * value, using the given orderBy directive or priority as default, and additionally only child
    * nodes with a key greater than or equal to the given key.
    *
-   * @param value The priority to start at, inclusive
-   * @param key The key name to start at, inclusive
+   * @param value The priority to start at
+   * @param key The key name to start at, exclusive
    * @return A Query with the new constraint
+   * @since 19.6
    */
   @NonNull
   public Query startAfter(double value, @Nullable String key) {
@@ -351,10 +355,10 @@ public class Query {
    * value, using the given orderBy directive or priority as default, and additionally only child
    * nodes with a key greater than or equal to the given key.
    *
-   * @param value The priority to start at, inclusive
-   * @param key The key to start at, inclusive
+   * @param value The priority to start at
+   * @param key The key to start at, exclusive
    * @return A Query with the new constraint
-   * @since 2.0
+   * @since 19.6
    */
   @NonNull
   public Query startAfter(boolean value, @Nullable String key) {

@@ -17,12 +17,19 @@ package com.google.firebase.database.core.utilities;
 import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
 import static com.google.firebase.database.core.utilities.Utilities.tryParseInt;
 
+import com.google.firebase.database.snapshot.ChildKey;
 import java.util.Random;
 
 public class PushIdGenerator {
 
   private static final String PUSH_CHARS =
       "-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz";
+
+  private static final char MAX_PUSH_CHAR = 'z';
+
+  private static final char MIN_PUSH_CHAR = '-';
+
+  private static final int MAX_KEY_LEN = 786;
 
   private static final Random randGen = new Random();
 
@@ -58,30 +65,35 @@ public class PushIdGenerator {
     return result.toString();
   }
 
-  public static String nextAfter(String key) {
+  public static final String nextAfter(String key) {
     Validation.validateNullableKey(key);
     Integer num = tryParseInt(key);
     if (num != null) {
       return String.valueOf(num + 1);
     }
-    StringBuilder next = new StringBuilder(key.length());
-    for (int i = 0; i < key.length(); i++) {
-      next.append((char) 0);
+    StringBuilder next = new StringBuilder(key);
+
+    if (next.length() < MAX_KEY_LEN) {
+      next.append(MIN_PUSH_CHAR);
+      return next.toString();
     }
-    int i;
-    for (i = key.length() - 1;
-        i >= 0 && key.charAt(i) == PUSH_CHARS.charAt(PUSH_CHARS.length() - 1);
-        i--) {
-      next.setCharAt(i, PUSH_CHARS.charAt(0));
+
+    int i = next.length() - 1;
+
+    while (i >= 0 && next.charAt(i) == MAX_PUSH_CHAR) {
+      i--;
     }
+
+    // `nextAfter` was called on the largest possible key, so return the
+    // maxName, which sorts larger than all keys.
     if (i == -1) {
-      next.append(PUSH_CHARS.charAt(0));
-    } else {
-      next.setCharAt(i, PUSH_CHARS.charAt(PUSH_CHARS.indexOf(key.charAt(i)) + 1));
+      return ChildKey.getMaxName().toString();
     }
-    while (--i >= 0) {
-      next.setCharAt(i, key.charAt(i));
-    }
+
+    char source = next.charAt(i);
+    char sourcePlusOne = PUSH_CHARS.charAt(PUSH_CHARS.indexOf(source) + 1);
+    next.replace(i, i + 1, String.valueOf(sourcePlusOne));
+
     return next.toString();
   }
 
