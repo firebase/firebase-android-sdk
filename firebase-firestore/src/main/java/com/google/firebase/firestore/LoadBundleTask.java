@@ -489,24 +489,33 @@ import java.util.concurrent.Executor;
   }
 
   void setResult(@Nullable LoadBundleTaskProgress result) {
+    synchronized (lock) {
+      snapshot = result;
+      for (ManagedListener progressListener : progressListenerQueue) {
+        progressListener.maybeRun(result);
+      }
+      progressListenerQueue.clear();
+    }
     completionSource.setResult(result);
-    updateProgress(result);
-    progressListenerQueue.clear();
   }
 
   void setException(@NonNull Exception exception) {
-    LoadBundleTaskProgress lastSnapshot;
     synchronized (lock) {
-      lastSnapshot = snapshot != null ? snapshot : LoadBundleTaskProgress.INITIAL;
+      LoadBundleTaskProgress lastSnapshot =
+          snapshot != null ? snapshot : LoadBundleTaskProgress.INITIAL;
+      snapshot =
+          new LoadBundleTaskProgress(
+              lastSnapshot.getDocumentsLoaded(),
+              lastSnapshot.getTotalDocuments(),
+              lastSnapshot.getBytesLoaded(),
+              lastSnapshot.getTotalBytes(),
+              exception,
+              LoadBundleTaskProgress.TaskState.ERROR);
+      for (ManagedListener progressListener : progressListenerQueue) {
+        progressListener.maybeRun(this.snapshot);
+      }
+      progressListenerQueue.clear();
     }
-    updateProgress(
-        new LoadBundleTaskProgress(
-            lastSnapshot.getDocumentsLoaded(),
-            lastSnapshot.getTotalDocuments(),
-            lastSnapshot.getBytesLoaded(),
-            lastSnapshot.getTotalBytes(),
-            exception,
-            LoadBundleTaskProgress.TaskState.ERROR));
     completionSource.setException(exception);
   }
 
