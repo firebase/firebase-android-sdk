@@ -18,6 +18,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
+import com.google.android.datatransport.TransportFactory;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -45,9 +46,11 @@ public class FirebaseModelDownloader {
 
   @RequiresApi(api = VERSION_CODES.KITKAT)
   FirebaseModelDownloader(
-      FirebaseApp firebaseApp, FirebaseInstallationsApi firebaseInstallationsApi) {
+      FirebaseApp firebaseApp,
+      FirebaseInstallationsApi firebaseInstallationsApi,
+      TransportFactory transportFactory) {
     this.firebaseOptions = firebaseApp.getOptions();
-    this.fileDownloadService = new ModelFileDownloadService(firebaseApp);
+    this.fileDownloadService = new ModelFileDownloadService(firebaseApp, transportFactory);
     this.sharedPreferencesUtil = new SharedPreferencesUtil(firebaseApp);
     this.modelDownloadService =
         new CustomModelDownloadService(firebaseOptions, firebaseInstallationsApi);
@@ -316,6 +319,15 @@ public class FirebaseModelDownloader {
           taskCompletionSource.setResult(null);
         });
     return taskCompletionSource.getTask();
+  }
+
+  /**
+   * Update the settings which allow logging to firelog.
+   *
+   * @param enabled - is statistics logging enabled
+   */
+  public void setStatsCollectionEnabled(boolean enabled) {
+    sharedPreferencesUtil.setCustomModelStatsCollectionEnabled(enabled);
   }
 
   /** Returns the nick name of the {@link FirebaseApp} of this {@link FirebaseModelDownloader} */

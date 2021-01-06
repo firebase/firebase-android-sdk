@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.never;
@@ -607,5 +608,15 @@ public class FirebaseModelDownloaderTest {
     assertThat(task.isComplete()).isTrue();
     verify(mockPrefs, times(1)).clearModelDetails(eq(MODEL_NAME));
     verify(mockFileManager, times(1)).deleteAllModels(eq(MODEL_NAME));
+  }
+
+  @Test
+  public void setStatsCollectionEnabled() {
+    doNothing().when(mockPrefs).setCustomModelStatsCollectionEnabled(anyBoolean());
+    firebaseModelDownloader.setStatsCollectionEnabled(true);
+    verify(mockPrefs, times(1)).setCustomModelStatsCollectionEnabled(eq(true));
+
+    firebaseModelDownloader.setStatsCollectionEnabled(false);
+    verify(mockPrefs, times(1)).setCustomModelStatsCollectionEnabled(eq(false));
   }
 }

@@ -120,28 +120,28 @@ public class CustomModelTest {
   }
 
   @Test
-  public void customModel_getFile_noLocalNoDownloadIncomplete() throws Exception {
+  public void customModel_getFile_noLocalNoDownloadIncomplete() throws FirebaseMlException {
     when(fileDownloadService.loadNewlyDownloadedModelFile(any(CustomModel.class))).thenReturn(null);
     assertNull(CUSTOM_MODEL.getFile(fileDownloadService));
     verify(fileDownloadService, times(1)).loadNewlyDownloadedModelFile(any());
   }
 
   @Test
-  public void customModel_getFile_localModelNoDownload() throws Exception {
+  public void customModel_getFile_localModelNoDownload() throws FirebaseMlException {
     when(fileDownloadService.loadNewlyDownloadedModelFile(any(CustomModel.class))).thenReturn(null);
     assertEquals(customModelWithFile.getFile(fileDownloadService), testModelFile);
     verify(fileDownloadService, times(1)).loadNewlyDownloadedModelFile(any());
   }
 
   @Test
-  public void customModel_getFile_localModelNoDownload_BadFile() throws Exception {
+  public void customModel_getFile_localModelNoDownload_BadFile() throws FirebaseMlException {
     when(fileDownloadService.loadNewlyDownloadedModelFile(any(CustomModel.class))).thenReturn(null);
     assertNull(CUSTOM_MODEL_BADFILE.getFile(fileDownloadService));
     verify(fileDownloadService, times(1)).loadNewlyDownloadedModelFile(any());
   }
 
   @Test
-  public void customModel_getFile_localModelDownloadComplete() throws Exception {
+  public void customModel_getFile_localModelDownloadComplete() throws FirebaseMlException {
     when(fileDownloadService.loadNewlyDownloadedModelFile(any(CustomModel.class)))
         .thenReturn(testModelFile2);
     assertEquals(customModelWithFile.getFile(fileDownloadService), testModelFile2);
@@ -149,7 +149,7 @@ public class CustomModelTest {
   }
 
   @Test
-  public void customModel_getFile_noLocalDownloadComplete() throws Exception {
+  public void customModel_getFile_noLocalDownloadComplete() throws FirebaseMlException {
     when(fileDownloadService.loadNewlyDownloadedModelFile(any())).thenReturn(testModelFile);
     assertEquals(CUSTOM_MODEL.getFile(fileDownloadService), testModelFile);
     verify(fileDownloadService, times(1)).loadNewlyDownloadedModelFile(any());

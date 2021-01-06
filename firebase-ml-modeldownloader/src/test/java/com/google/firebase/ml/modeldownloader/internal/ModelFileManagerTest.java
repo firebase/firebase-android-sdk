@@ -24,7 +24,9 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.FirebaseOptions.Builder;
 import com.google.firebase.ml.modeldownloader.CustomModel;
+import com.google.firebase.ml.modeldownloader.FirebaseMlException;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import org.junit.After;
 import org.junit.Before;
@@ -106,13 +108,13 @@ public class ModelFileManagerTest {
   }
 
   @Test
-  public void getModelFileDestination_noExistingFiles() throws Exception {
+  public void getModelFileDestination_noExistingFiles() throws FirebaseMlException {
     File firstFile = fileManager.getModelFileDestination(CUSTOM_MODEL_NO_FILE);
     assertTrue(firstFile.getAbsolutePath().endsWith(String.format("%s/0", MODEL_NAME)));
   }
 
   @Test
-  public void moveModelToDestinationFolder() throws Exception {
+  public void moveModelToDestinationFolder() throws FirebaseMlException, FileNotFoundException {
     ParcelFileDescriptor fd =
         ParcelFileDescriptor.open(testModelFile, ParcelFileDescriptor.MODE_READ_ONLY);
 
@@ -124,7 +126,8 @@ public class ModelFileManagerTest {
   }
 
   @Test
-  public void moveModelToDestinationFolder_update() throws Exception {
+  public void moveModelToDestinationFolder_update()
+      throws FirebaseMlException, FileNotFoundException {
     ParcelFileDescriptor fd =
         ParcelFileDescriptor.open(testModelFile, ParcelFileDescriptor.MODE_READ_ONLY);
 
@@ -144,7 +147,8 @@ public class ModelFileManagerTest {
   }
 
   @Test
-  public void deleteAllModels_deleteSingleModel() throws Exception {
+  public void deleteAllModels_deleteSingleModel()
+      throws FirebaseMlException, FileNotFoundException {
     ParcelFileDescriptor fd =
         ParcelFileDescriptor.open(testModelFile, ParcelFileDescriptor.MODE_READ_ONLY);
     assertEquals(
@@ -158,7 +162,8 @@ public class ModelFileManagerTest {
   }
 
   @Test
-  public void deleteAllModels_deleteMultipleModel() throws Exception {
+  public void deleteAllModels_deleteMultipleModel()
+      throws FirebaseMlException, FileNotFoundException {
     ParcelFileDescriptor fd =
         ParcelFileDescriptor.open(testModelFile, ParcelFileDescriptor.MODE_READ_ONLY);
     assertEquals(
