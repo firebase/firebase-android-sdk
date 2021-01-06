@@ -157,7 +157,7 @@ public class FirebaseFunctions {
    *
    * @param app The app for the Firebase project.
    * @param regionOrCustomDomain The region or custom domain for the HTTPS trigger, such as
-   *     <code>"us-central1"</code> or <code>"https://mydomain.com"</code>.
+   *     {@code "us-central1"} or {@code "https://mydomain.com"}.
    */
   @NonNull
   public static FirebaseFunctions getInstance(
