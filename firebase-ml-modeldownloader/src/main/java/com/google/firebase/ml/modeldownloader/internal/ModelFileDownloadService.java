@@ -172,14 +172,18 @@ public class ModelFileDownloadService {
 
   private synchronized DownloadBroadcastReceiver getReceiverInstance(
       long downloadId, String modelName) {
-    DownloadBroadcastReceiver receiver = receiverMaps.get(downloadId);
+    DownloadBroadcastReceiver receiver = this.receiverMaps.get(downloadId);
     if (receiver == null) {
       receiver =
           new DownloadBroadcastReceiver(
               downloadId, modelName, getTaskCompletionSourceInstance(downloadId));
-      receiverMaps.put(downloadId, receiver);
+      this.receiverMaps.put(downloadId, receiver);
     }
     return receiver;
+  }
+
+  private synchronized void removeReceiverInstance(long downloadId) {
+    this.receiverMaps.remove(downloadId);
   }
 
   private Task<Void> registerReceiverForDownloadId(long downloadId, String modelName) {
@@ -194,13 +198,23 @@ public class ModelFileDownloadService {
 
   @VisibleForTesting
   synchronized TaskCompletionSource<Void> getTaskCompletionSourceInstance(long downloadId) {
-    TaskCompletionSource<Void> taskCompletionSource = taskCompletionSourceMaps.get(downloadId);
+    TaskCompletionSource<Void> taskCompletionSource = this.taskCompletionSourceMaps.get(downloadId);
     if (taskCompletionSource == null) {
       taskCompletionSource = new TaskCompletionSource<>();
-      taskCompletionSourceMaps.put(downloadId, taskCompletionSource);
+      this.taskCompletionSourceMaps.put(downloadId, taskCompletionSource);
     }
 
     return taskCompletionSource;
+  }
+
+  @VisibleForTesting
+  synchronized boolean existTaskCompletionSourceInstance(long downloadId) {
+    TaskCompletionSource<Void> taskCompletionSource = this.taskCompletionSourceMaps.get(downloadId);
+    return (taskCompletionSource != null);
+  }
+
+  private synchronized void removeTaskCompletionSourceInstance(long downloadId) {
+    this.taskCompletionSourceMaps.remove(downloadId);
   }
 
   @VisibleForTesting
@@ -441,8 +455,8 @@ public class ModelFileDownloadService {
       Integer statusCode = getDownloadingModelStatusCode(downloadId);
       // check to prevent DuplicateTaskCompletionException - this was already updated and removed.
       // Just return.
-      if (taskCompletionSourceMaps.get(downloadId) == null) {
-        receiverMaps.remove(downloadId);
+      if (!existTaskCompletionSourceInstance(downloadId)) {
+        removeReceiverInstance(downloadId);
         return;
       }
 
@@ -457,8 +471,8 @@ public class ModelFileDownloadService {
           // move on.
         }
 
-        receiverMaps.remove(downloadId);
-        taskCompletionSourceMaps.remove(downloadId);
+        removeReceiverInstance(downloadId);
+        removeTaskCompletionSourceInstance(downloadId);
       }
 
       if (statusCode != null) {
