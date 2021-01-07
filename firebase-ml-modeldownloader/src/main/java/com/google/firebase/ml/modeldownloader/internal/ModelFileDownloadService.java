@@ -300,7 +300,7 @@ public class ModelFileDownloadService {
       fileDescriptor = downloadManager.openDownloadedFile(downloadingId);
     } catch (FileNotFoundException e) {
       // todo replace with FirebaseMlException
-      Log.d(TAG, "Downloaded file is not found" + e);
+      Log.d(TAG, "Downloaded file is not found: " + e);
     }
     return fileDescriptor;
   }
@@ -341,6 +341,7 @@ public class ModelFileDownloadService {
 
     Integer statusCode = getDownloadingModelStatusCode(downloadingId);
     if (statusCode == null) {
+      Log.d(TAG, "Download failed - no download status available.");
       // No status code, it may mean no such download or no download manager.
       removeOrCancelDownload(model.getName(), model.getDownloadId());
       return null;
@@ -360,6 +361,7 @@ public class ModelFileDownloadService {
       // Try to move it to destination folder.
       File newModelFile;
       try {
+        // TODO add logging
         newModelFile = fileManager.moveModelToDestinationFolder(model, fileDescriptor);
       } finally {
         removeOrCancelDownload(model.getName(), model.getDownloadId());
