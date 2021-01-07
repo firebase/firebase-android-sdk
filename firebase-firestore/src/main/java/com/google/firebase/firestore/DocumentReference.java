@@ -42,6 +42,7 @@ import com.google.firebase.firestore.model.mutation.Precondition;
 import com.google.firebase.firestore.util.Assert;
 import com.google.firebase.firestore.util.Executors;
 import com.google.firebase.firestore.util.Util;
+import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -166,7 +167,7 @@ public class DocumentReference {
             : firestore.getUserDataReader().parseSetData(data);
     return firestore
         .getClient()
-        .write(parsed.toMutationList(key, Precondition.NONE))
+        .write(Collections.singletonList(parsed.toMutation(key, Precondition.NONE)))
         .continueWith(Executors.DIRECT_EXECUTOR, voidErrorTransformer());
   }
 
@@ -230,7 +231,7 @@ public class DocumentReference {
   private Task<Void> update(@NonNull ParsedUpdateData parsedData) {
     return firestore
         .getClient()
-        .write(parsedData.toMutationList(key, Precondition.exists(true)))
+        .write(Collections.singletonList(parsedData.toMutation(key, Precondition.exists(true))))
         .continueWith(Executors.DIRECT_EXECUTOR, voidErrorTransformer());
   }
 

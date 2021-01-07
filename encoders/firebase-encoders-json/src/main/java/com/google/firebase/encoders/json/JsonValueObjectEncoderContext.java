@@ -19,6 +19,7 @@ import android.util.JsonWriter;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.encoders.EncodingException;
+import com.google.firebase.encoders.FieldDescriptor;
 import com.google.firebase.encoders.ObjectEncoder;
 import com.google.firebase.encoders.ObjectEncoderContext;
 import com.google.firebase.encoders.ValueEncoder;
@@ -104,6 +105,44 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
 
   @NonNull
   @Override
+  public ObjectEncoderContext add(@NonNull FieldDescriptor field, @Nullable Object obj)
+      throws IOException {
+    return add(field.getName(), obj);
+  }
+
+  @NonNull
+  @Override
+  public ObjectEncoderContext add(@NonNull FieldDescriptor field, float value) throws IOException {
+    return add(field.getName(), value);
+  }
+
+  @NonNull
+  @Override
+  public ObjectEncoderContext add(@NonNull FieldDescriptor field, double value) throws IOException {
+    return add(field.getName(), value);
+  }
+
+  @NonNull
+  @Override
+  public ObjectEncoderContext add(@NonNull FieldDescriptor field, int value) throws IOException {
+    return add(field.getName(), value);
+  }
+
+  @NonNull
+  @Override
+  public ObjectEncoderContext add(@NonNull FieldDescriptor field, long value) throws IOException {
+    return add(field.getName(), value);
+  }
+
+  @NonNull
+  @Override
+  public ObjectEncoderContext add(@NonNull FieldDescriptor field, boolean value)
+      throws IOException {
+    return add(field.getName(), value);
+  }
+
+  @NonNull
+  @Override
   public ObjectEncoderContext inline(@Nullable Object value) throws IOException {
     return add(value, true);
   }
@@ -120,7 +159,21 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
 
   @NonNull
   @Override
+  public ObjectEncoderContext nested(@NonNull FieldDescriptor field) throws IOException {
+    return nested(field.getName());
+  }
+
+  @NonNull
+  @Override
   public JsonValueObjectEncoderContext add(@Nullable String value) throws IOException {
+    maybeUnNest();
+    jsonWriter.value(value);
+    return this;
+  }
+
+  @NonNull
+  @Override
+  public JsonValueObjectEncoderContext add(float value) throws IOException {
     maybeUnNest();
     jsonWriter.value(value);
     return this;

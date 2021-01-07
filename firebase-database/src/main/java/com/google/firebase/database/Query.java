@@ -20,6 +20,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import com.google.android.gms.common.internal.Objects;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.database.core.ChildEventRegistration;
 import com.google.firebase.database.core.EventRegistration;
 import com.google.firebase.database.core.Path;
@@ -159,6 +160,15 @@ public class Query {
   public ChildEventListener addChildEventListener(@NonNull ChildEventListener listener) {
     addEventRegistration(new ChildEventRegistration(repo, listener, getSpec()));
     return listener;
+  }
+
+  /**
+   * Gets the server values for this query. Updates the cache and raises events if successful. If
+   * not connected, falls back to a locally-cached value.
+   */
+  @NonNull
+  public Task<DataSnapshot> get() {
+    return repo.getValue(this);
   }
 
   /**

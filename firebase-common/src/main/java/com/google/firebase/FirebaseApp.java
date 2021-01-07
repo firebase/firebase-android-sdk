@@ -47,11 +47,8 @@ import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.ComponentRuntime;
 import com.google.firebase.components.Lazy;
 import com.google.firebase.events.Publisher;
-import com.google.firebase.heartbeatinfo.DefaultHeartBeatInfo;
+import com.google.firebase.inject.Provider;
 import com.google.firebase.internal.DataCollectionConfigStorage;
-import com.google.firebase.platforminfo.DefaultUserAgentPublisher;
-import com.google.firebase.platforminfo.KotlinDetector;
-import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -416,23 +413,18 @@ public class FirebaseApp {
     this.name = Preconditions.checkNotEmpty(name);
     this.options = Preconditions.checkNotNull(options);
 
-    List<ComponentRegistrar> registrars =
+    List<Provider<ComponentRegistrar>> registrars =
         ComponentDiscovery.forContext(applicationContext, ComponentDiscoveryService.class)
-            .discover();
+            .discoverLazy();
 
-    String kotlinVersion = KotlinDetector.detectVersion();
     componentRuntime =
-        new ComponentRuntime(
-            UI_EXECUTOR,
-            registrars,
-            Component.of(applicationContext, Context.class),
-            Component.of(this, FirebaseApp.class),
-            Component.of(options, FirebaseOptions.class),
-            LibraryVersionComponent.create(FIREBASE_ANDROID, ""),
-            LibraryVersionComponent.create(FIREBASE_COMMON, BuildConfig.VERSION_NAME),
-            kotlinVersion != null ? LibraryVersionComponent.create(KOTLIN, kotlinVersion) : null,
-            DefaultUserAgentPublisher.component(),
-            DefaultHeartBeatInfo.component());
+        ComponentRuntime.builder(UI_EXECUTOR)
+            .addLazyComponentRegistrars(registrars)
+            .addComponentRegistrar(new FirebaseCommonRegistrar())
+            .addComponent(Component.of(applicationContext, Context.class))
+            .addComponent(Component.of(this, FirebaseApp.class))
+            .addComponent(Component.of(options, FirebaseOptions.class))
+            .build();
 
     dataCollectionConfigStorage =
         new Lazy<>(

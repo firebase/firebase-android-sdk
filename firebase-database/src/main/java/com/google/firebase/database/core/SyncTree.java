@@ -454,6 +454,28 @@ public class SyncTree {
         });
   }
 
+  public void setQueryActive(QuerySpec query) {
+    persistenceManager.runInTransaction(
+        new Callable<Void>() {
+          @Override
+          public Void call() {
+            persistenceManager.setQueryActive(query);
+            return null;
+          }
+        });
+  }
+
+  public void setQueryInactive(QuerySpec query) {
+    persistenceManager.runInTransaction(
+        new Callable<Void>() {
+          @Override
+          public Void call() {
+            persistenceManager.setQueryInactive(query);
+            return null;
+          }
+        });
+  }
+
   /** Add an event callback for the specified query. */
   public List<? extends Event> addEventRegistration(
       @NotNull final EventRegistration eventRegistration) {

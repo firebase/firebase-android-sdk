@@ -34,10 +34,10 @@ import java.util.Map;
  * <p>For example the following field could have the {@link FieldDescriptor} equivalent to:
  *
  * <pre>{@code
- * @MyAnnotation(key="value")
+ * {@literal @}MyAnnotation(key="value")
  * String getFoo();
  *
- * FieldDescriptor(name="foo", properties=[@MyAnnotation(key="value")])
+ * FieldDescriptor(name="foo", properties=[{@literal @}MyAnnotation(key="value")])
  * }</pre>
  */
 public final class FieldDescriptor {
@@ -65,6 +65,11 @@ public final class FieldDescriptor {
   @SuppressWarnings("unchecked")
   public <T extends Annotation> T getProperty(@NonNull Class<T> type) {
     return (T) properties.get(type);
+  }
+
+  @NonNull
+  public static FieldDescriptor of(@NonNull String name) {
+    return new FieldDescriptor(name, Collections.emptyMap());
   }
 
   @NonNull

@@ -72,7 +72,8 @@ def smoke_tests(app_build_variant, test_apps_dir):
 def api_information(auth_token, repo_name, issue_number):
   """Comments the api information on the pr"""
 
-  gradle.run('apiInformation')
+  gradle.run('apiInformation', '--continue', check=False)
+
   dir_suffix = 'build/apiinfo'
   comment_string = ""
   for filename in os.listdir(dir_suffix):
@@ -85,7 +86,7 @@ def api_information(auth_token, repo_name, issue_number):
           formatted_output_lines.append(line[line.find('error:'):])
         elif 'warning' in line:
           formatted_output_lines.append(line[line.find('warning:'):])
-          
+    
     if formatted_output_lines:
       comment_string += 'The public api surface has changed for the subproject {}:\n'.format(subproject)
       comment_string += ''.join(formatted_output_lines)

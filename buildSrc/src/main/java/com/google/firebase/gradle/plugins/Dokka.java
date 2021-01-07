@@ -62,6 +62,10 @@ final class Dokka {
           .attribute(
               BuildTypeAttr.ATTRIBUTE, project.getObjects().named(BuildTypeAttr.class, "release"));
     }
+    Configuration runtimeOnly = project.getConfigurations().findByName("runtimeOnly");
+    if(runtimeOnly != null) {
+      javadocClasspath.extendsFrom(runtimeOnly);
+    }
 
     project.afterEvaluate(
         p -> {

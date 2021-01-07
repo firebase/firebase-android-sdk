@@ -31,7 +31,8 @@ class FirebaseCrashlyticsNdk implements CrashlyticsNativeComponent {
     final File rootDir = new File(context.getFilesDir(), FILES_PATH);
 
     final NativeComponentController controller =
-        new BreakpadController(context, new JniNativeApi(), new NdkCrashFilesManager(rootDir));
+        new BreakpadController(
+            context, new JniNativeApi(context), new NdkCrashFilesManager(rootDir));
     return new FirebaseCrashlyticsNdk(controller);
   }
 
