@@ -30,6 +30,7 @@ import com.google.firebase.ml.modeldownloader.internal.CustomModelDownloadServic
 import com.google.firebase.ml.modeldownloader.internal.ModelFileDownloadService;
 import com.google.firebase.ml.modeldownloader.internal.ModelFileManager;
 import com.google.firebase.ml.modeldownloader.internal.SharedPreferencesUtil;
+import java.io.File;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -294,7 +295,7 @@ public class FirebaseModelDownloader {
                         .equals(incomingModelDetails.getResult().getModelHash()))
                   return Tasks.forResult(downloadingModel);
               }
-              
+
               // todo(annzimmer) this shouldn't happen unless they are calling the sdk with multiple
               // sets of download types/conditions.
               //  this should be a download in progress - add appropriate handling.
@@ -331,7 +332,7 @@ public class FirebaseModelDownloader {
     }
     return Tasks.forException(new Exception("File download failed."));
   }
-  
+
   private Task<CustomModel> retryExpiredUrlDownload(
       @NonNull String modelName,
       @Nullable CustomModelDownloadConditions conditions,
@@ -420,9 +421,8 @@ public class FirebaseModelDownloader {
   private void deleteModelDetails(@NonNull String modelName) {
     fileManager.deleteAllModels(modelName);
     sharedPreferencesUtil.clearModelDetails(modelName);
-
   }
-  
+
   /**
    * Update the settings which allow logging to firelog.
    *

@@ -732,7 +732,7 @@ public class FirebaseModelDownloaderTest {
         .thenReturn(UPDATE_IN_PROGRESS_CUSTOM_MODEL);
     assertEquals(firebaseModelDownloader.getModelDownloadId(MODEL_NAME), DOWNLOAD_ID);
   }
-  
+
   @Test
   public void setStatsCollectionEnabled() {
     doNothing().when(mockPrefs).setCustomModelStatsCollectionEnabled(anyBoolean());

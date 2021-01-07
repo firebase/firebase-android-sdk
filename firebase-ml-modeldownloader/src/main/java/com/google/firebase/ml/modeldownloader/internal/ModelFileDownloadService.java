@@ -217,7 +217,7 @@ public class ModelFileDownloadService {
         new CustomModel(
             customModel.getName(),
             customModel.getModelHash(),
-            customModel.getSize(),https://github.com/firebase/firebase-android-sdk/pull/2300/conflict?name=firebase-ml-modeldownloader%252Fsrc%252Fmain%252Fjava%252Fcom%252Fgoogle%252Ffirebase%252Fml%252Fmodeldownloader%252Finternal%252FModelFileDownloadService.java&ancestor_oid=83549e77aeb12ff69973e33b28e71caf67651b68&base_oid=ca55de1c3150d2184e0964d984cd6197e18a3305&head_oid=c6a82e3068228067198c04b5d5db4ecf3f1fb670
+            customModel.getSize(),
             id,
             customModel.getLocalFilePath()));
     return id;
