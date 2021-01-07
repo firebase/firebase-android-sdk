@@ -33,17 +33,29 @@ public class CustomModelDownloadConditions {
     this.isDeviceIdleRequired = isDeviceIdleRequired;
   }
 
-  /** @return true if charging is required for download. */
+  /**
+   * Gets the download condition setting for is charging required.
+   *
+   * @return true if charging is required for download.
+   */
   public boolean isChargingRequired() {
     return isChargingRequired;
   }
 
-  /** @return true if wifi is required for download. */
+  /**
+   * Gets the download condition setting for is wifi required.
+   *
+   * @return true if wifi is required for download.
+   */
   public boolean isWifiRequired() {
     return isWifiRequired;
   }
 
-  /** @return true if device idle is required for download. */
+  /**
+   * Gets the download condition setting for is device idle required.
+   *
+   * @return true if device idle is required for download.
+   */
   public boolean isDeviceIdleRequired() {
     return isDeviceIdleRequired;
   }
@@ -54,7 +66,7 @@ public class CustomModelDownloadConditions {
     private boolean isWifiRequired = false;
     private boolean isDeviceIdleRequired = false;
 
-    /** Sets whether charging is required. Only works on Android N and above. */
+    /** Sets charging is required. Only works on Android N and above. */
     @NonNull
     @RequiresApi(VERSION_CODES.N)
     @TargetApi(VERSION_CODES.N)
@@ -63,7 +75,7 @@ public class CustomModelDownloadConditions {
       return this;
     }
 
-    /** Sets whether wifi is required. */
+    /** Sets wifi is required. */
     @NonNull
     public Builder requireWifi() {
       this.isWifiRequired = true;
@@ -71,7 +83,7 @@ public class CustomModelDownloadConditions {
     }
 
     /**
-     * Sets whether device idle is required.
+     * Sets device idle is required.
      *
      * <p>Idle mode is a loose definition provided by the system, which means that the device is not
      * in use, and has not been in use for some time.

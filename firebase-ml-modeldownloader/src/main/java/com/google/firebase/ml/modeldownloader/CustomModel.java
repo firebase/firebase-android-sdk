@@ -160,6 +160,14 @@ public class CustomModel {
     return modelFile;
   }
 
+  boolean isModelFilePresent() {
+    try {
+      return getFile() != null;
+    } catch (Exception ex) {
+      return false;
+    }
+  }
+
   /**
    * The size of the file currently associated with this model. If a download is in progress, this
    * will be the size of the current model, not the new model currently being uploaded.
@@ -209,7 +217,7 @@ public class CustomModel {
     if (downloadUrl != null && !downloadUrl.isEmpty()) {
       stringHelper.add("downloadUrl", downloadUrl);
     }
-    if (downloadUrlExpiry != 0L && !localFilePath.isEmpty()) {
+    if (downloadUrlExpiry != 0L) {
       stringHelper.add("downloadUrlExpiry", downloadUrlExpiry);
     }
 

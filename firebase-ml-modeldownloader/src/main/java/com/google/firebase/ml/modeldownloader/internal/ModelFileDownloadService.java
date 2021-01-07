@@ -123,10 +123,21 @@ public class ModelFileDownloadService {
     return ensureModelDownloaded(customModel);
   }
 
+  /** If a download task exists for this id, return it otherwise return null. */
+  public Task<Void> getCustomModelDownloadingTask(long downloadId) {
+    if (downloadId != 0 && taskCompletionSourceMaps.get(downloadId) != null) {
+      return taskCompletionSourceMaps.get(downloadId).getTask();
+    }
+    return null;
+  }
+
   @VisibleForTesting
   Task<Void> ensureModelDownloaded(CustomModel customModel) {
-    // todo check model not already in progress of being downloaded
-
+    // Return tracking task if download already in progress.
+    Task<Void> downloadingTask = getCustomModelDownloadingTask(customModel.getDownloadId());
+    if (downloadingTask != null) {
+      return downloadingTask;
+    }
     // todo remove any failed download attempts
 
     // schedule new download of model file
@@ -267,13 +278,14 @@ public class ModelFileDownloadService {
       if (matcher.find()) {
         String modelName = matcher.group(matcher.groupCount());
         CustomModel downloadingModel = sharedPreferencesUtil.getCustomModelDetails(modelName);
-        if (downloadingModel != null) {
-          Integer statusCode = getDownloadingModelStatusCode(downloadingModel.getDownloadId());
-          if (statusCode != null
-              && (statusCode == DownloadManager.STATUS_SUCCESSFUL
-                  || statusCode == DownloadManager.STATUS_FAILED)) {
-            loadNewlyDownloadedModelFile(downloadingModel);
-          }
+        if (downloadingModel == null) {
+          return;
+        }
+        Integer statusCode = getDownloadingModelStatusCode(downloadingModel.getDownloadId());
+        if (statusCode != null
+            && (statusCode == DownloadManager.STATUS_SUCCESSFUL
+                || statusCode == DownloadManager.STATUS_FAILED)) {
+          loadNewlyDownloadedModelFile(downloadingModel);
         }
       }
     }
@@ -282,10 +294,14 @@ public class ModelFileDownloadService {
   @Nullable
   @WorkerThread
   public File loadNewlyDownloadedModelFile(CustomModel model) throws FirebaseMlException {
+    if (model == null) {
+      return null;
+    }
+
     Long downloadingId = model.getDownloadId();
     String downloadingModelHash = model.getModelHash();
 
-    if (downloadingId == 0 || downloadingModelHash.isEmpty()) {
+    if (downloadingId == 0L || downloadingModelHash.isEmpty()) {
       // no downloading model file or incomplete info.
       return null;
     }
