@@ -34,10 +34,10 @@ import androidx.annotation.Nullable;
     SUCCESS
   }
 
-  private int documentsLoaded;
-  private int totalDocuments;
-  private long bytesLoaded;
-  private long totalBytes;
+  private final int documentsLoaded;
+  private final int totalDocuments;
+  private final long bytesLoaded;
+  private final long totalBytes;
   @NonNull private final TaskState taskState;
   @Nullable private final Exception exception;
 
@@ -86,7 +86,7 @@ import androidx.annotation.Nullable;
 
   /** If the task failed, returns the exception. Otherwise, returns null. */
   @Nullable
-  public Exception getError() {
+  public Exception getException() {
     return exception;
   }
 
@@ -101,7 +101,8 @@ import androidx.annotation.Nullable;
     if (totalDocuments != that.totalDocuments) return false;
     if (bytesLoaded != that.bytesLoaded) return false;
     if (totalBytes != that.totalBytes) return false;
-    return taskState == that.taskState;
+    if (taskState != that.taskState) return false;
+    return exception != null ? exception.equals(that.exception) : that.exception == null;
   }
 
   @Override
@@ -111,6 +112,7 @@ import androidx.annotation.Nullable;
     result = 31 * result + (int) (bytesLoaded ^ (bytesLoaded >>> 32));
     result = 31 * result + (int) (totalBytes ^ (totalBytes >>> 32));
     result = 31 * result + taskState.hashCode();
+    result = 31 * result + (exception != null ? exception.hashCode() : 0);
     return result;
   }
 }

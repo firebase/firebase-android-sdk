@@ -16,10 +16,12 @@ package com.google.firebase.firestore;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import android.app.Activity;
+import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
 import java.lang.reflect.Method;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -27,6 +29,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
@@ -40,8 +43,15 @@ public class LoadBundleTaskTest {
   static final LoadBundleTaskProgress SUCCESS_RESULT =
       new LoadBundleTaskProgress(0, 0, 0, 0, null, LoadBundleTaskProgress.TaskState.SUCCESS);
   static final Exception TEST_EXCEPTION = new Exception("Test Exception");
+  static final String TEST_THREAD_NAME = "test-thread";
 
-  Executor testExecutor = Executors.newSingleThreadExecutor();
+  Executor testExecutor =
+      Executors.newSingleThreadExecutor(
+              r -> {
+                Thread t = new Thread(r);
+                t.setName(TEST_THREAD_NAME);
+                return t;
+              });
   ActivityController<Activity> activityController =
       Robolectric.buildActivity(Activity.class).create();
   Activity activity = activityController.get();
@@ -113,6 +123,64 @@ public class LoadBundleTaskTest {
     task.updateProgress(SUCCESS_RESULT);
 
     latch.await();
+  }
+
+  @Test
+  public void testProgressListenerFiresInOrder() throws InterruptedException {
+    BlockingQueue<Integer> blockingQueue = new ArrayBlockingQueue<>(2);
+
+    LoadBundleTask task = new LoadBundleTask();
+    task.addOnProgressListener(testExecutor, progress -> blockingQueue.add(1));
+    task.addOnProgressListener(testExecutor, progress -> blockingQueue.add(2));
+
+    task.updateProgress(SUCCESS_RESULT);
+
+    assertEquals(1, (long) blockingQueue.take());
+    assertEquals(2, (long) blockingQueue.take());
+  }
+
+  @Test
+  public void testProgressListenerFireOnSpecifiedExecutor() throws InterruptedException {
+    CountDownLatch latch = new CountDownLatch(2);
+
+    LoadBundleTask task = new LoadBundleTask();
+    task.addOnProgressListener(
+        p -> {
+          assertNotEquals(TEST_THREAD_NAME, Thread.currentThread().getName());
+          latch.countDown();
+        });
+    task.addOnProgressListener(
+        testExecutor,
+        p -> {
+          assertEquals(TEST_THREAD_NAME, Thread.currentThread().getName());
+          latch.countDown();
+        });
+
+    task.updateProgress(SUCCESS_RESULT);
+
+    latch.await();
+  }
+
+  @Test
+  public void testProgressListenerCanAddProgressListener() throws InterruptedException {
+    BlockingQueue<Integer> blockingQueue = new ArrayBlockingQueue<>(3);
+
+    LoadBundleTask task = new LoadBundleTask();
+    task.addOnProgressListener(
+        p1 -> {
+          blockingQueue.add(1);
+          task.addOnProgressListener(
+              p2 -> {
+                blockingQueue.add(2);
+              });
+        });
+
+    task.updateProgress(SUCCESS_RESULT);
+    assertEquals(1, (long) blockingQueue.take());
+
+    task.updateProgress(SUCCESS_RESULT);
+    assertEquals(1, (long) blockingQueue.take());
+    assertEquals(2, (long) blockingQueue.take());
   }
 
   @Test

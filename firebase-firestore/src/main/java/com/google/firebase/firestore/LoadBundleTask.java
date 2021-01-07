@@ -40,9 +40,8 @@ import java.util.concurrent.Executor;
 /* package */ class LoadBundleTask extends Task<LoadBundleTaskProgress> {
   private final Object lock = new Object();
 
-  /** The last progress update. Null if not yet available. */
+  /** The last progress update, or {@code null} if not yet available. */
   @GuardedBy("lock")
-  @Nullable
   private LoadBundleTaskProgress snapshot;
 
   /**
@@ -52,19 +51,20 @@ import java.util.concurrent.Executor;
   private final TaskCompletionSource<LoadBundleTaskProgress> completionSource;
 
   /**
-   * A delegate task derived from `completionSource`. All APIs events that don't involve progress
-   * updates are handled by this delegate
+   * A delegate task derived from {@code completionSource}. All API events that don't involve
+   * progress updates are handled by this delegate
    */
   private final Task<LoadBundleTaskProgress> delegate;
 
   /** A queue of active progress listeners. */
   @GuardedBy("lock")
-  private final Queue<ManagedListener> progressListenerQueue;
+  private final Queue<ManagedListener> progressListeners;
 
   public LoadBundleTask() {
+    snapshot = LoadBundleTaskProgress.INITIAL;
     completionSource = new TaskCompletionSource<>();
     delegate = completionSource.getTask();
-    progressListenerQueue = new ArrayDeque<>();
+    progressListeners = new ArrayDeque<>();
   }
 
   /** Returns {@code true} if the Task is complete; {@code false} otherwise. */
@@ -426,6 +426,11 @@ import java.util.concurrent.Executor;
   /**
    * Adds a listener that is called periodically while the LoadBundleTask executes.
    *
+   * <p>The listener will be called on main application thread. If multiple listeners are added,
+   * they will be called in the order in which they were added.
+   *
+   * <p>The listener will be automatically removed during {@link Activity#onStop}.
+   *
    * @return this Task
    */
   @NonNull
@@ -433,14 +438,15 @@ import java.util.concurrent.Executor;
       @NonNull OnProgressListener<LoadBundleTaskProgress> listener) {
     ManagedListener managedListener = new ManagedListener(/* executor= */ null, listener);
     synchronized (lock) {
-      progressListenerQueue.add(managedListener);
-      managedListener.maybeRun(snapshot);
+      progressListeners.add(managedListener);
     }
     return this;
   }
 
   /**
    * Adds a listener that is called periodically while the LoadBundleTask executes.
+   *
+   * <p>If multiple listeners are added, they will be called in the order in which they were added.
    *
    * @param executor the executor to use to call the listener
    * @return this Task
@@ -450,14 +456,18 @@ import java.util.concurrent.Executor;
       @NonNull Executor executor, @NonNull OnProgressListener<LoadBundleTaskProgress> listener) {
     ManagedListener managedListener = new ManagedListener(executor, listener);
     synchronized (lock) {
-      progressListenerQueue.add(managedListener);
-      managedListener.maybeRun(snapshot);
+      progressListeners.add(managedListener);
     }
     return this;
   }
 
   /**
    * Adds a listener that is called periodically while the LoadBundleTask executes.
+   *
+   * <p>The listener will be called on main application thread. If multiple listeners are added,
+   * they will be called in the order in which they were added.
+   *
+   * <p>The listener will be automatically removed during {@link Activity#onStop}.
    *
    * @param activity When the supplied {@link Activity} stops, this listener will automatically be
    *     removed.
@@ -468,8 +478,7 @@ import java.util.concurrent.Executor;
       @NonNull Activity activity, @NonNull OnProgressListener<LoadBundleTaskProgress> listener) {
     ManagedListener managedListener = new ManagedListener(/* executor= */ null, listener);
     synchronized (lock) {
-      progressListenerQueue.add(managedListener);
-      managedListener.maybeRun(snapshot);
+      progressListeners.add(managedListener);
     }
     ActivityLifecycleListener.getInstance()
         .runOnActivityStopped(activity, listener, () -> removeOnProgressListener(listener));
@@ -484,47 +493,54 @@ import java.util.concurrent.Executor;
   private void removeOnProgressListener(
       @NonNull OnProgressListener<LoadBundleTaskProgress> listener) {
     synchronized (lock) {
-      progressListenerQueue.remove(new ManagedListener(/* executor= */ null, listener));
+      progressListeners.remove(new ManagedListener(/* executor= */ null, listener));
     }
   }
 
   void setResult(@Nullable LoadBundleTaskProgress result) {
+    Queue<ManagedListener> currentListeners;
     synchronized (lock) {
       snapshot = result;
-      for (ManagedListener progressListener : progressListenerQueue) {
-        progressListener.maybeRun(result);
-      }
-      progressListenerQueue.clear();
+      currentListeners = new ArrayDeque<>(progressListeners);
+      progressListeners.clear();
     }
+    invokeListeners(currentListeners, result);
     completionSource.setResult(result);
   }
 
   void setException(@NonNull Exception exception) {
+    Queue<ManagedListener> currentListeners;
+    LoadBundleTaskProgress snapshot;
     synchronized (lock) {
-      LoadBundleTaskProgress lastSnapshot =
-          snapshot != null ? snapshot : LoadBundleTaskProgress.INITIAL;
       snapshot =
           new LoadBundleTaskProgress(
-              lastSnapshot.getDocumentsLoaded(),
-              lastSnapshot.getTotalDocuments(),
-              lastSnapshot.getBytesLoaded(),
-              lastSnapshot.getTotalBytes(),
+              this.snapshot.getDocumentsLoaded(),
+              this.snapshot.getTotalDocuments(),
+              this.snapshot.getBytesLoaded(),
+              this.snapshot.getTotalBytes(),
               exception,
               LoadBundleTaskProgress.TaskState.ERROR);
-      for (ManagedListener progressListener : progressListenerQueue) {
-        progressListener.maybeRun(this.snapshot);
-      }
-      progressListenerQueue.clear();
+      this.snapshot = snapshot;
+
+      currentListeners = new ArrayDeque<>(progressListeners);
+      progressListeners.clear();
     }
+    invokeListeners(currentListeners, snapshot);
     completionSource.setException(exception);
   }
 
-  void updateProgress(LoadBundleTaskProgress snapshot) {
+  void updateProgress(LoadBundleTaskProgress progressUpdate) {
+    Queue<ManagedListener> currentListeners;
     synchronized (lock) {
-      this.snapshot = snapshot;
-      for (ManagedListener progressListener : progressListenerQueue) {
-        progressListener.maybeRun(snapshot);
-      }
+      snapshot = progressUpdate;
+      currentListeners = new ArrayDeque<>(progressListeners);
+    }
+    invokeListeners(currentListeners, progressUpdate);
+  }
+
+  private void invokeListeners(Queue<ManagedListener> listeners, LoadBundleTaskProgress snapshot) {
+    for (ManagedListener listener : listeners) {
+      listener.invoke(snapshot);
     }
   }
 
@@ -543,10 +559,8 @@ import java.util.concurrent.Executor;
      * If the provided snapshot is non-null, executes the listener on the provided executor. If no
      * executor was specified, uses the main thread.
      */
-    public void maybeRun(@Nullable LoadBundleTaskProgress snapshot) {
-      if (snapshot != null) {
-        executor.execute(() -> listener.onProgress(snapshot));
-      }
+    public void invoke(LoadBundleTaskProgress snapshot) {
+      executor.execute(() -> listener.onProgress(snapshot));
     }
 
     /**
