@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.never;
@@ -61,7 +62,7 @@ public class FirebaseModelDownloaderTest {
   private static final String MODEL_NAME = "MODEL_NAME_1";
   private static final String MODEL_URL = "https://project.firebase.com/modelName/23424.jpg";
   private static final long URL_EXPIRATION = 604800L;
-  private static final long DOWNLOAD_ID = 100;
+  private static final long DOWNLOAD_ID = 99;
 
   private static final CustomModelDownloadConditions DEFAULT_DOWNLOAD_CONDITIONS =
       new CustomModelDownloadConditions.Builder().build();
@@ -340,6 +341,31 @@ public class FirebaseModelDownloaderTest {
   }
 
   @Test
+  public void getModel_latestModel_localExists_DownloadInProgress() throws Exception {
+    CustomModel customModelLoadedWithDownload =
+        new CustomModel(MODEL_NAME, MODEL_HASH, 100, 99, expectedDestinationFolder + "/0");
+
+    when(mockPrefs.getCustomModelDetails(eq(MODEL_NAME))).thenReturn(customModelLoadedWithDownload);
+    when(mockPrefs.getDownloadingCustomModelDetails(eq(MODEL_NAME)))
+        .thenReturn(UPDATE_IN_PROGRESS_CUSTOM_MODEL);
+
+    when(mockModelDownloadService.getCustomModelDetails(
+            eq(TEST_PROJECT_ID), eq(MODEL_NAME), eq(MODEL_HASH)))
+        .thenReturn(Tasks.forResult(UPDATE_CUSTOM_MODEL_URL));
+
+    TestOnCompleteListener<CustomModel> onCompleteListener = new TestOnCompleteListener<>();
+    Task<CustomModel> task =
+        firebaseModelDownloader.getModel(
+            MODEL_NAME, DownloadType.LATEST_MODEL, DEFAULT_DOWNLOAD_CONDITIONS);
+    task.addOnCompleteListener(executor, onCompleteListener);
+    CustomModel customModel = onCompleteListener.await();
+
+    verify(mockPrefs, times(2)).getCustomModelDetails(eq(MODEL_NAME));
+    assertThat(task.isComplete()).isTrue();
+    assertEquals(customModel, UPDATE_IN_PROGRESS_CUSTOM_MODEL);
+  }
+
+  @Test
   public void getModel_latestModel_noLocalModel() throws Exception {
     when(mockPrefs.getCustomModelDetails(eq(MODEL_NAME)))
         .thenReturn(null) // getLocalModelDetails 1
@@ -567,6 +593,58 @@ public class FirebaseModelDownloaderTest {
   }
 
   @Test
+  public void getModel_local_noLocalModel_urlRetry() throws Exception {
+    when(mockPrefs.getCustomModelDetails(eq(MODEL_NAME))).thenReturn(null).thenReturn(CUSTOM_MODEL);
+    when(mockModelDownloadService.getCustomModelDetails(
+            eq(TEST_PROJECT_ID), eq(MODEL_NAME), eq(null)))
+        .thenReturn(Tasks.forResult(CUSTOM_MODEL));
+    when(mockFileDownloadService.download(any(), eq(DOWNLOAD_CONDITIONS)))
+        .thenReturn(Tasks.forException(new Exception("Retry: Expired URL")))
+        .thenReturn(Tasks.forResult(null));
+    when(mockFileDownloadService.loadNewlyDownloadedModelFile(eq(customModelUploaded)))
+        .thenReturn(firstDeviceModelFile);
+    TestOnCompleteListener<CustomModel> onCompleteListener = new TestOnCompleteListener<>();
+    Task<CustomModel> task =
+        firebaseModelDownloader.getModel(MODEL_NAME, DownloadType.LOCAL_MODEL, DOWNLOAD_CONDITIONS);
+    task.addOnCompleteListener(executor, onCompleteListener);
+    CustomModel customModel = onCompleteListener.await();
+
+    verify(mockPrefs, times(3)).getCustomModelDetails(eq(MODEL_NAME));
+    verify(mockFileDownloadService, times(2)).download(any(), eq(DOWNLOAD_CONDITIONS));
+    assertThat(task.isComplete()).isTrue();
+    assertEquals(customModel, CUSTOM_MODEL);
+  }
+
+  @Test
+  public void getModel_local_noLocalModel_urlRetry_maxTries() throws Exception {
+    when(mockPrefs.getCustomModelDetails(eq(MODEL_NAME)))
+        .thenReturn(null)
+        .thenReturn(null)
+        .thenReturn(CUSTOM_MODEL);
+    when(mockModelDownloadService.getCustomModelDetails(
+            eq(TEST_PROJECT_ID), eq(MODEL_NAME), eq(null)))
+        .thenReturn(Tasks.forResult(CUSTOM_MODEL));
+    when(mockFileDownloadService.download(any(), eq(DOWNLOAD_CONDITIONS)))
+        .thenReturn(Tasks.forException(new Exception("Retry: Expired URL")));
+    TestOnCompleteListener<CustomModel> onCompleteListener = new TestOnCompleteListener<>();
+    Task<CustomModel> task =
+        firebaseModelDownloader.getModel(MODEL_NAME, DownloadType.LOCAL_MODEL, DOWNLOAD_CONDITIONS);
+    task.addOnCompleteListener(executor, onCompleteListener);
+    try {
+      onCompleteListener.await();
+    } catch (Exception ex) {
+      assertThat(ex.getMessage().contains("download failed")).isTrue();
+      assertThat(ex.getMessage().contains("Too many attempts")).isTrue();
+    }
+
+    verify(mockPrefs, times(2)).getCustomModelDetails(eq(MODEL_NAME));
+    verify(mockFileDownloadService, times(3)).download(any(), eq(DOWNLOAD_CONDITIONS));
+    verify(mockFileDownloadService, never()).loadNewlyDownloadedModelFile(any());
+    assertThat(task.isComplete()).isTrue();
+    assertThat(task.isSuccessful()).isFalse();
+  }
+
+  @Test
   public void getModel_local_noLocalModel_error() throws Exception {
     when(mockPrefs.getCustomModelDetails(eq(MODEL_NAME)))
         .thenReturn(null)
@@ -653,5 +731,15 @@ public class FirebaseModelDownloaderTest {
     when(mockPrefs.getDownloadingCustomModelDetails(eq(MODEL_NAME)))
         .thenReturn(UPDATE_IN_PROGRESS_CUSTOM_MODEL);
     assertEquals(firebaseModelDownloader.getModelDownloadId(MODEL_NAME), DOWNLOAD_ID);
+  }
+  
+  @Test
+  public void setStatsCollectionEnabled() {
+    doNothing().when(mockPrefs).setCustomModelStatsCollectionEnabled(anyBoolean());
+    firebaseModelDownloader.setStatsCollectionEnabled(true);
+    verify(mockPrefs, times(1)).setCustomModelStatsCollectionEnabled(eq(true));
+
+    firebaseModelDownloader.setStatsCollectionEnabled(false);
+    verify(mockPrefs, times(1)).setCustomModelStatsCollectionEnabled(eq(false));
   }
 }

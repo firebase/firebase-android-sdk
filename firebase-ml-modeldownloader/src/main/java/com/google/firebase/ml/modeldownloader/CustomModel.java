@@ -129,7 +129,7 @@ public class CustomModel {
    *     progress, returns null, if file update is in progress returns last fully uploaded model.
    */
   @Nullable
-  public File getFile() throws Exception {
+  public File getFile() throws FirebaseMlException {
     return getFile(ModelFileDownloadService.getInstance());
   }
 
@@ -142,7 +142,7 @@ public class CustomModel {
    */
   @Nullable
   @VisibleForTesting
-  File getFile(ModelFileDownloadService fileDownloadService) throws Exception {
+  File getFile(ModelFileDownloadService fileDownloadService) throws FirebaseMlException {
     // check for completed download
     File newDownloadFile = fileDownloadService.loadNewlyDownloadedModelFile(this);
     if (newDownloadFile != null) {
