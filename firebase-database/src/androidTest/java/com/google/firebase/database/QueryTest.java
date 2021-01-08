@@ -3696,6 +3696,44 @@ public class QueryTest {
   }
 
   @Test
+  public void integerKeysBehaveNumericallyStartAfterWithOverflow()
+      throws InterruptedException, TestFailure, TimeoutException {
+    final DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
+    final Semaphore done = new Semaphore(0);
+    ref.setValue(
+        new MapBuilder()
+            .put(String.valueOf(Integer.MAX_VALUE), true)
+            .put("80", true)
+            .put("1", true)
+            .put("50", true)
+            .put("550", true)
+            .put("6", true)
+            .put("600", true)
+            .put("70", true)
+            .put("8", true)
+            .build(),
+        new DatabaseReference.CompletionListener() {
+          @Override
+          public void onComplete(DatabaseError error, DatabaseReference ref) {
+            ref.startAfter(null, String.valueOf(Integer.MAX_VALUE))
+                .addListenerForSingleValueEvent(
+                    new ValueEventListener() {
+                      @Override
+                      public void onDataChange(DataSnapshot snapshot) {
+                        DeepEquals.assertEquals(null, snapshot.getValue());
+                        done.release();
+                      }
+
+                      @Override
+                      public void onCancelled(DatabaseError error) {}
+                    });
+          }
+        });
+
+    IntegrationTestHelpers.waitFor(done);
+  }
+
+  @Test
   public void integerKeysBehaveNumerically2()
       throws InterruptedException, TestFailure, TimeoutException {
     final DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
