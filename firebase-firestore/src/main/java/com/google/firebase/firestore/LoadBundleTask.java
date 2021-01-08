@@ -498,18 +498,17 @@ import java.util.concurrent.Executor;
   }
 
   void setResult(@Nullable LoadBundleTaskProgress result) {
-    Queue<ManagedListener> currentListeners;
     synchronized (lock) {
       snapshot = result;
-      currentListeners = new ArrayDeque<>(progressListeners);
+      for (ManagedListener listener : progressListeners) {
+        listener.invokeAsync(snapshot);
+      }
       progressListeners.clear();
     }
-    invokeListeners(currentListeners, result);
     completionSource.setResult(result);
   }
 
   void setException(@NonNull Exception exception) {
-    Queue<ManagedListener> currentListeners;
     LoadBundleTaskProgress snapshot;
     synchronized (lock) {
       snapshot =
@@ -521,26 +520,21 @@ import java.util.concurrent.Executor;
               exception,
               LoadBundleTaskProgress.TaskState.ERROR);
       this.snapshot = snapshot;
-
-      currentListeners = new ArrayDeque<>(progressListeners);
+      for (ManagedListener listener : progressListeners) {
+        listener.invokeAsync(snapshot);
+      }
       progressListeners.clear();
     }
-    invokeListeners(currentListeners, snapshot);
+
     completionSource.setException(exception);
   }
 
   void updateProgress(LoadBundleTaskProgress progressUpdate) {
-    Queue<ManagedListener> currentListeners;
     synchronized (lock) {
       snapshot = progressUpdate;
-      currentListeners = new ArrayDeque<>(progressListeners);
-    }
-    invokeListeners(currentListeners, progressUpdate);
-  }
-
-  private void invokeListeners(Queue<ManagedListener> listeners, LoadBundleTaskProgress snapshot) {
-    for (ManagedListener listener : listeners) {
-      listener.invoke(snapshot);
+      for (ManagedListener listener : progressListeners) {
+        listener.invokeAsync(progressUpdate);
+      }
     }
   }
 
@@ -559,7 +553,7 @@ import java.util.concurrent.Executor;
      * If the provided snapshot is non-null, executes the listener on the provided executor. If no
      * executor was specified, uses the main thread.
      */
-    public void invoke(LoadBundleTaskProgress snapshot) {
+    public void invokeAsync(LoadBundleTaskProgress snapshot) {
       executor.execute(() -> listener.onProgress(snapshot));
     }
 

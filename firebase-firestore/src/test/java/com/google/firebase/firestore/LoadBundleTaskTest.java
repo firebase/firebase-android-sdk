@@ -28,6 +28,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
@@ -141,22 +142,36 @@ public class LoadBundleTaskTest {
   public void testProgressListenerFireOnSpecifiedExecutor() throws InterruptedException {
     CountDownLatch latch = new CountDownLatch(2);
 
+    // JUnit assertion failures on other threads don't fail the main test run. We use this helper
+    // to ensure that the test fails if any exceptions occurred. The exceptions themselves are still
+    // logged to the console.
+    AtomicInteger threadsValidated = new AtomicInteger();
+
     LoadBundleTask task = new LoadBundleTask();
     task.addOnProgressListener(
         p -> {
-          assertNotEquals(TEST_THREAD_NAME, Thread.currentThread().getName());
-          latch.countDown();
+          try {
+            assertNotEquals(TEST_THREAD_NAME, Thread.currentThread().getName());
+            threadsValidated.incrementAndGet();
+          } finally {
+            latch.countDown();
+          }
         });
     task.addOnProgressListener(
         testExecutor,
         p -> {
-          assertEquals(TEST_THREAD_NAME, Thread.currentThread().getName());
-          latch.countDown();
+          try {
+            assertEquals(TEST_THREAD_NAME, Thread.currentThread().getName());
+            threadsValidated.incrementAndGet();
+          } finally {
+            latch.countDown();
+          }
         });
 
     task.updateProgress(SUCCESS_RESULT);
 
     latch.await();
+    assertEquals(2, threadsValidated.get());
   }
 
   @Test
