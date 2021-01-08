@@ -73,6 +73,13 @@ public abstract class AndroidClientInfo {
   @Nullable
   public abstract String getMccMnc();
 
+  /**
+   * The client application version. The java int version in the android package converted to
+   * string.
+   */
+  @Nullable
+  public abstract String getApplicationBuild();
+
   @NonNull
   public static Builder builder() {
     return new AutoValue_AndroidClientInfo.Builder();
@@ -113,6 +120,9 @@ public abstract class AndroidClientInfo {
 
     @NonNull
     public abstract Builder setMccMnc(@Nullable String value);
+
+    @NonNull
+    public abstract Builder setApplicationBuild(@Nullable String value);
 
     @NonNull
     public abstract AndroidClientInfo build();

@@ -102,6 +102,11 @@ FirebaseDynamicLinks.getInstance().createDynamicLink()
             // Short link created
             val shortLink = result.shortLink
             val flowchartLink = result.previewLink
+            val warnings = result.warnings
+
+            // do something with the links and warnings
+            showLinks(shortLink, flowchartLink)
+            displayWarnings(warnings)
         }
         .addOnFailureListener {
             // Error
@@ -114,10 +119,10 @@ FirebaseDynamicLinks.getInstance().createDynamicLink()
 Firebase.dynamicLinks.shortLinkAsync {
     longLink = Uri.parse("https://example.page.link/?link=" +
         "https://www.example.com/&apn=com.example.android&ibn=com.example.ios")
-}.addOnSuccessListener { result ->
-    // Short link created
-    val shortLink = result.shortLink
-    val flowchartLink = result.previewLink
+}.addOnSuccessListener { (shortLink, flowchartLink, warnings) ->
+    // do something with the links and warnings
+    showLinks(shortLink, flowchartLink)
+    displayWarnings(warnings)
 }.addOnFailureListener {
     // Error
     // ...
@@ -138,4 +143,28 @@ val shortLinkTask = FirebaseDynamicLinks.getInstance().createDynamicLink()
 val shortLinkTask = Firebase.dynamicLinks.shortLinkAsync(ShortDynamicLink.Suffix.SHORT) {
     // ...
 }
+```
+
+### Receive deep links
+
+**Kotlin**
+```kotlin
+Firebase.dynamicLinks
+        .getDynamicLink(intent)
+        .addOnSuccessListener(this) { pendingDynamicLinkData ->
+            val deepLink = pendingDynamicLinkData.link
+            val minAppVersion = pendingDynamicLinkData.minimumAppVersion
+            val clickTimestamp = pendingDynamicLinkData.clickTimestamp
+
+            // TODO(developer): handle the deepLink
+        }.addOnFailureListener { /* ... */ }
+```
+
+**Kotlin + KTX**
+```kotlin
+Firebase.dynamicLinks
+        .getDynamicLink(intent)
+        .addOnSuccessListener(this) { (deepLink, minAppVersion, clickTimestamp) ->
+            // TODO(developer): handle the deepLink
+        }.addOnFailureListener { /* ... */ }
 ```

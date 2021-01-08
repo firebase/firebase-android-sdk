@@ -93,7 +93,7 @@ public class ConfigCacheClient {
   @Nullable
   ConfigContainer getBlocking(long diskReadTimeoutInSeconds) {
     synchronized (this) {
-      if (cachedContainerTask != null && cachedContainerTask.isSuccessful()) {
+      if (null != cachedContainerTask && cachedContainerTask.isSuccessful()) {
         return cachedContainerTask.getResult();
       }
     }

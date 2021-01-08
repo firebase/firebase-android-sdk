@@ -121,11 +121,11 @@ public class FirebaseLibraryExtension {
       this.project.setVersion(releaseWithProject.getVersion());
 
       String latestRelease = "latestReleasedVersion";
-      if (releaseWithProject.getExtensions().getExtraProperties().has(latestRelease)) {
+      if (releaseWithProject.hasProperty(latestRelease)) {
         this.project
             .getExtensions()
             .getExtraProperties()
-            .set(latestRelease, releaseWithProject.getProperties().get(latestRelease));
+            .set(latestRelease, releaseWithProject.property(latestRelease));
       }
 
     } catch (UnknownDomainObjectException ex) {
@@ -169,8 +169,7 @@ public class FirebaseLibraryExtension {
 
   public Optional<String> getLatestReleasedVersion() {
     if (project.hasProperty("latestReleasedVersion")) {
-      return Optional.of(
-          project.getExtensions().getExtraProperties().get("latestReleasedVersion").toString());
+      return Optional.of(project.property("latestReleasedVersion").toString());
     }
     return Optional.empty();
   }

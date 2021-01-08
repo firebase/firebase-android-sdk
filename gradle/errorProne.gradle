@@ -14,7 +14,7 @@
 
 def isErrorProneRequested = getGradle().getStartParameter().getTaskNames().contains("withErrorProne")
 
-def errorproneVersion = '2.3.2'
+def errorproneVersion = '2.4.0'
 def errorproneJavacVersion = '9+181-r4173-1'
 
 if (isErrorProneRequested) {
@@ -27,6 +27,10 @@ if (isErrorProneRequested) {
         }
         tasks.withType(JavaCompile) {
             options.errorprone.excludedPaths = '.*/build/generated/.*'
+            options.errorprone.disable(
+                    'JdkObsolete',
+                    'ProtoTimestampGetSecondsGetNano',
+            )
         }
     }
 }

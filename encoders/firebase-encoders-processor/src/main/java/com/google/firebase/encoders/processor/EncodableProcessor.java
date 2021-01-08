@@ -20,9 +20,12 @@ import com.google.auto.value.AutoValue;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import com.google.firebase.encoders.annotations.Encodable;
+import com.google.firebase.encoders.processor.getters.AnnotationDescriptor;
+import com.google.firebase.encoders.processor.getters.AnnotationProperty;
 import com.google.firebase.encoders.processor.getters.Getter;
 import com.google.firebase.encoders.processor.getters.GetterFactory;
 import com.squareup.javapoet.ClassName;
+import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
@@ -58,6 +61,7 @@ import javax.lang.model.util.Types;
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 public class EncodableProcessor extends AbstractProcessor {
 
+  private static final String CODEGEN_VERSION = "2";
   static final String ENCODABLE_ANNOTATION = "com.google.firebase.encoders.annotations.Encodable";
   private Elements elements;
   private Types types;
@@ -85,6 +89,11 @@ public class EncodableProcessor extends AbstractProcessor {
   }
 
   private void processClass(Element element) {
+    if (types.isAssignable(
+        element.asType(), elements.getTypeElement("java.lang.annotation.Annotation").asType())) {
+      return;
+    }
+
     // generates class of the following shape:
     //
     // public class AutoFooEncoder implements Configurator {
@@ -107,7 +116,7 @@ public class EncodableProcessor extends AbstractProcessor {
                         Modifier.PUBLIC,
                         Modifier.STATIC,
                         Modifier.FINAL)
-                    .initializer("1")
+                    .initializer(CODEGEN_VERSION)
                     .build())
             .addField(
                 FieldSpec.builder(
@@ -259,12 +268,47 @@ public class EncodableProcessor extends AbstractProcessor {
               .addAnnotation(Override.class);
 
       Set<TypeMirror> result = new LinkedHashSet<>();
+      Set<FieldSpec> descriptorFields = new LinkedHashSet<>();
+      ClassName fieldDescriptor = ClassName.get("com.google.firebase.encoders", "FieldDescriptor");
       for (Getter getter : getterFactory.allGetters((DeclaredType) type)) {
         result.addAll(getTypesToVisit(getter.getUnderlyingType()));
         if (getter.inline()) {
           methodBuilder.addCode("ctx.inline(value.$L);\n", getter.expression());
         } else {
-          methodBuilder.addCode("ctx.add($S, value.$L);\n", getter.name(), getter.expression());
+          CodeBlock.Builder codeBuilder;
+          if (getter.annotationDescriptors().isEmpty()) {
+            codeBuilder = CodeBlock.builder().add("$T.of($S)", fieldDescriptor, getter.name());
+          } else {
+            codeBuilder =
+                CodeBlock.builder()
+                    .add("$T.builder($S)\n", fieldDescriptor, getter.name())
+                    .indent()
+                    .indent();
+            for (AnnotationDescriptor desc : getter.annotationDescriptors()) {
+              ClassName annotationBuilder =
+                  builderName(
+                      ClassName.get((TypeElement) desc.type().getAnnotationType().asElement()));
+              codeBuilder.add(".withProperty($T.builder()\n", annotationBuilder);
+              for (AnnotationProperty property : desc.properties()) {
+                codeBuilder.add("$>.$L($L)\n$<", property.name(), property.value());
+              }
+              codeBuilder.add("$>.build())\n$<");
+            }
+            codeBuilder.add(".build()").unindent().unindent();
+          }
+          descriptorFields.add(
+              FieldSpec.builder(
+                      fieldDescriptor,
+                      getter.name().toUpperCase() + "_DESCRIPTOR",
+                      Modifier.PRIVATE,
+                      Modifier.FINAL,
+                      Modifier.STATIC)
+                  .initializer(codeBuilder.build())
+                  .build());
+          methodBuilder.addCode(
+              "ctx.add($L_DESCRIPTOR, value.$L);\n",
+              getter.name().toUpperCase(),
+              getter.expression());
         }
       }
 
@@ -281,10 +325,23 @@ public class EncodableProcessor extends AbstractProcessor {
                   FieldSpec.builder(className, "INSTANCE", Modifier.FINAL, Modifier.STATIC)
                       .initializer("new $T()", className)
                       .build())
+              .addFields(descriptorFields)
               .addMethod(methodBuilder.build())
               .build();
       encoded.put(types.erasure(type), encoder);
       return VisitResult.of(result, Encoder.create(types.erasure(type), encoder));
+    }
+
+    private ClassName builderName(ClassName annotation) {
+      return ClassName.get(annotation.packageName(), compositeName(annotation));
+    }
+
+    private String compositeName(ClassName annotation) {
+      ClassName parentName = annotation.enclosingClassName();
+      if (parentName == null) {
+        return "At" + annotation.simpleName();
+      }
+      return compositeName(parentName) + annotation.simpleName();
     }
 
     private Set<TypeMirror> getTypesToVisit(TypeMirror type) {

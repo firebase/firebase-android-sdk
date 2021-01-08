@@ -218,7 +218,8 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
               "installerPackageName",
               "packageName",
               "versionCode",
-              "versionName");
+              "versionName",
+              unityVersionProvider);
 
       final CrashlyticsController controller =
           new CrashlyticsController(
@@ -233,7 +234,6 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
               reportManager,
               reportUploaderProvider,
               nativeComponent,
-              unityVersionProvider,
               analyticsEventLogger,
               testSettingsDataProvider);
       return controller;
@@ -437,7 +437,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
     final File[] processedFiles = nativeDirectories[0].listFiles();
     assertEquals(
         "Unexpected number of files found: " + Arrays.toString(processedFiles),
-        7,
+        6,
         processedFiles.length);
   }
 
