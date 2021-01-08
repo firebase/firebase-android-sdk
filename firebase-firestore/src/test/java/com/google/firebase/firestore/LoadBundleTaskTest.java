@@ -150,7 +150,7 @@ public class LoadBundleTaskTest {
     task.addOnProgressListener(
         p -> {
           try {
-            collector.checkThat(TEST_THREAD_NAME, not(equalTo(Thread.currentThread().getName())));
+            collector.checkThat(Thread.currentThread().getName(), not(equalTo(TEST_THREAD_NAME)));
           } finally {
             latch.countDown();
           }
@@ -159,7 +159,7 @@ public class LoadBundleTaskTest {
         testExecutor,
         p -> {
           try {
-            collector.checkThat(TEST_THREAD_NAME, equalTo(Thread.currentThread().getName()));
+            collector.checkThat(Thread.currentThread().getName(), equalTo(TEST_THREAD_NAME));
           } finally {
             latch.countDown();
           }
