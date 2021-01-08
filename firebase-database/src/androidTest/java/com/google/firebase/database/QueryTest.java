@@ -3696,7 +3696,7 @@ public class QueryTest {
   }
 
   @Test
-  public void integerKeysBehaveNumericallyStartAfterWithOverflow()
+  public void integerKeysBehaveNumericallyWithStartAfterOverflow()
       throws InterruptedException, TestFailure, TimeoutException {
     final DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
     final Semaphore done = new Semaphore(0);
@@ -3822,7 +3822,7 @@ public class QueryTest {
   }
 
   @Test
-  public void integerKeysBehaveNumerically3StartAfter()
+  public void integerKeysBehaveNumericallyWithStartAfter()
       throws InterruptedException, TestFailure, TimeoutException {
     final DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
     final Semaphore done = new Semaphore(0);
@@ -4241,28 +4241,28 @@ public class QueryTest {
     assertEquals(43L, Tasks.await(reader.get()).getValue());
   }
 
-  //  @Test
-  //  public void getUpdatesPersistenceCacheWhenEnabled()
-  //      throws DatabaseException, InterruptedException, ExecutionException, TestFailure,
-  //          TimeoutException {
-  //    FirebaseApp readerApp =
-  //        appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
-  //    FirebaseApp writerApp =
-  //        appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
-  //    FirebaseDatabase readerDb = FirebaseDatabase.getInstance(readerApp);
-  //    readerDb.setPersistenceEnabled(true);
-  //    FirebaseDatabase writerDb = FirebaseDatabase.getInstance(writerApp);
-  //    DatabaseReference reader = readerDb.getReference();
-  //    DatabaseReference writer = writerDb.getReference();
-  //
-  //    assertNull(new WriteFuture(writer, 42L).timedGet());
-  //    assertEquals(42L, Tasks.await(reader.get()).getValue());
-  //
-  //    readerDb.goOffline();
-  //
-  //    Semaphore semaphore = new Semaphore(0);
-  //    assertNotNull(ReadFuture.untilEquals(reader, 42L).timedGet());
-  //  }
+  @Test
+  public void getUpdatesPersistenceCacheWhenEnabled()
+      throws DatabaseException, InterruptedException, ExecutionException, TestFailure,
+          TimeoutException {
+    FirebaseApp readerApp =
+        appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
+    FirebaseApp writerApp =
+        appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
+    FirebaseDatabase readerDb = FirebaseDatabase.getInstance(readerApp);
+    readerDb.setPersistenceEnabled(true);
+    FirebaseDatabase writerDb = FirebaseDatabase.getInstance(writerApp);
+    DatabaseReference reader = readerDb.getReference();
+    DatabaseReference writer = writerDb.getReference();
+
+    assertNull(new WriteFuture(writer, 42L).timedGet());
+    assertEquals(42L, Tasks.await(reader.get()).getValue());
+
+    readerDb.goOffline();
+
+    Semaphore semaphore = new Semaphore(0);
+    assertNotNull(ReadFuture.untilEquals(reader, 42L).timedGet());
+  }
 
   @Test
   public void querySnapshotChildrenRespectDefaultOrdering()
