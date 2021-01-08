@@ -102,10 +102,6 @@ public class Repo implements PersistentConnection.Delegate {
         });
   }
 
-  public LogWrapper getLogger(String name) {
-    return this.ctx.getLogger(name);
-  }
-
   /**
    * Defers any initialization that is potentially expensive (e.g. disk access) and must be run on
    * the run loop

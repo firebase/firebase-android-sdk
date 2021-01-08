@@ -26,9 +26,9 @@ public class PushIdGenerator {
   private static final String PUSH_CHARS =
       "-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz";
 
-  private static final char MAX_PUSH_CHAR = 'z';
-
   private static final char MIN_PUSH_CHAR = '-';
+
+  private static final char MAX_PUSH_CHAR = 'z';
 
   private static final int MAX_KEY_LEN = 786;
 
@@ -93,10 +93,15 @@ public class PushIdGenerator {
     return next.append(Collections.nCopies(MAX_PUSH_CHAR, MAX_KEY_LEN - next.length())).toString();
   };
 
-  public static final String nextAfter(String key) {
+  public static final String successor(String key) {
     Validation.validateNullableKey(key);
     Integer num = tryParseInt(key);
     if (num != null) {
+      if (Long.valueOf(num) + 1L > Integer.MAX_VALUE) {
+        // Consult for the rationale behind this.
+        // https://firebase.google.com/docs/database/web/lists-of-data#data-order
+        return String.valueOf(MIN_PUSH_CHAR);
+      }
       return String.valueOf(num + 1);
     }
     StringBuilder next = new StringBuilder(key);

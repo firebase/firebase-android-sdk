@@ -59,11 +59,11 @@ public class ChildKey implements Comparable<ChildKey> {
     return this.equals(PRIORITY_CHILD_KEY);
   }
 
-  public boolean isInt() {
+  protected boolean isInt() {
     return false;
   }
 
-  public int intValue() {
+  protected int intValue() {
     return 0;
   }
 
@@ -132,12 +132,12 @@ public class ChildKey implements Comparable<ChildKey> {
     }
 
     @Override
-    public boolean isInt() {
+    protected boolean isInt() {
       return true;
     }
 
     @Override
-    public int intValue() {
+    protected int intValue() {
       return this.intValue;
     }
 

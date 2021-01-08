@@ -273,8 +273,4 @@ public class Utilities {
     }
     return left.equals(right);
   }
-
-  public static String next(@Nullable String value) {
-    return "";
-  }
 }
