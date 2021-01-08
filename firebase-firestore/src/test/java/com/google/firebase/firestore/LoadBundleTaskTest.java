@@ -21,7 +21,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import android.app.Activity;
-import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
 import java.lang.reflect.Method;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -29,7 +28,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
@@ -47,11 +45,11 @@ public class LoadBundleTaskTest {
 
   Executor testExecutor =
       Executors.newSingleThreadExecutor(
-              r -> {
-                Thread t = new Thread(r);
-                t.setName(TEST_THREAD_NAME);
-                return t;
-              });
+          r -> {
+            Thread t = new Thread(r);
+            t.setName(TEST_THREAD_NAME);
+            return t;
+          });
   ActivityController<Activity> activityController =
       Robolectric.buildActivity(Activity.class).create();
   Activity activity = activityController.get();
