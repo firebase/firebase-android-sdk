@@ -14,9 +14,10 @@
 
 package com.google.firebase.firestore;
 
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -28,8 +29,9 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ErrorCollector;
 import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
@@ -43,6 +45,8 @@ public class LoadBundleTaskTest {
       new LoadBundleTaskProgress(0, 0, 0, 0, null, LoadBundleTaskProgress.TaskState.SUCCESS);
   static final Exception TEST_EXCEPTION = new Exception("Test Exception");
   static final String TEST_THREAD_NAME = "test-thread";
+
+  @Rule public ErrorCollector collector = new ErrorCollector();
 
   Executor testExecutor =
       Executors.newSingleThreadExecutor(
@@ -142,17 +146,11 @@ public class LoadBundleTaskTest {
   public void testProgressListenerFireOnSpecifiedExecutor() throws InterruptedException {
     CountDownLatch latch = new CountDownLatch(2);
 
-    // JUnit assertion failures on other threads don't fail the main test run. We use this helper
-    // to ensure that the test fails if any exceptions occurred. The exceptions themselves are still
-    // logged to the console.
-    AtomicInteger threadsValidated = new AtomicInteger();
-
     LoadBundleTask task = new LoadBundleTask();
     task.addOnProgressListener(
         p -> {
           try {
-            assertNotEquals(TEST_THREAD_NAME, Thread.currentThread().getName());
-            threadsValidated.incrementAndGet();
+            collector.checkThat(TEST_THREAD_NAME, not(equalTo(Thread.currentThread().getName())));
           } finally {
             latch.countDown();
           }
@@ -161,8 +159,7 @@ public class LoadBundleTaskTest {
         testExecutor,
         p -> {
           try {
-            assertEquals(TEST_THREAD_NAME, Thread.currentThread().getName());
-            threadsValidated.incrementAndGet();
+            collector.checkThat(TEST_THREAD_NAME, equalTo(Thread.currentThread().getName()));
           } finally {
             latch.countDown();
           }
@@ -171,7 +168,6 @@ public class LoadBundleTaskTest {
     task.updateProgress(SUCCESS_RESULT);
 
     latch.await();
-    assertEquals(2, threadsValidated.get());
   }
 
   @Test
