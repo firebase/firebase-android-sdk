@@ -486,12 +486,20 @@ public class TestUtil {
   }
 
   public static PatchMutation patchMutation(String path, Map<String, Object> values) {
-    return patchMutation(path, values, null);
+    return patchMutationHelper(path, values, Precondition.exists(true), null);
   }
 
-  public static PatchMutation patchMutation(
-      String path, Map<String, Object> values, @Nullable List<FieldPath> updateMask) {
-    // Replace '<DELETE>' from JSON with FieldValue
+  public static PatchMutation mergeMutation(
+      String path, Map<String, Object> values, List<FieldPath> updateMask) {
+    return patchMutationHelper(path, values, Precondition.NONE, updateMask);
+  }
+
+  private static PatchMutation patchMutationHelper(
+      String path,
+      Map<String, Object> values,
+      Precondition precondition,
+      @Nullable List<FieldPath> updateMask) {
+    // Replace '<DELETE>' from JSON
     for (Entry<String, Object> entry : values.entrySet()) {
       if (entry.getValue().equals(DELETE_SENTINEL)) {
         values.put(entry.getKey(), FieldValue.delete());
@@ -500,13 +508,15 @@ public class TestUtil {
 
     UserDataReader dataReader = new UserDataReader(DatabaseId.forProject("project"));
     ParsedUpdateData parsed = dataReader.parseUpdateData(values);
-    boolean merge = updateMask != null;
+
+    // `mergeMutation()` provides an update mask for the merged fields, whereas `patchMutation()`
+    // requires the update mask to be parsed from the values.
+    Collection<FieldPath> mask = updateMask != null ? updateMask : parsed.getFieldMask().getMask();
 
     // We sort the fieldMaskPaths to make the order deterministic in tests. (Otherwise, when we
     // flatten a Set to a proto repeated field, we'll end up comparing in iterator order and
     // possibly consider {foo,bar} != {bar,foo}.)
-    SortedSet<FieldPath> fieldMaskPaths =
-        new TreeSet<>(merge ? updateMask : parsed.getFieldMask().getMask());
+    SortedSet<FieldPath> fieldMaskPaths = new TreeSet<>(mask);
 
     // The order of the transforms doesn't matter, but we sort them so tests can assume a particular
     // order.
@@ -518,7 +528,7 @@ public class TestUtil {
         key(path),
         parsed.getData(),
         FieldMask.fromSet(fieldMaskPaths),
-        merge ? Precondition.NONE : Precondition.exists(true),
+        precondition,
         fieldTransforms);
   }
 

@@ -21,6 +21,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.field;
 import static com.google.firebase.firestore.testutil.TestUtil.filter;
 import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
+import static com.google.firebase.firestore.testutil.TestUtil.mergeMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.orderBy;
 import static com.google.firebase.firestore.testutil.TestUtil.patchMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.query;
@@ -362,7 +363,7 @@ public final class RemoteSerializerTest {
   @Test
   public void testEncodesPatchMutationWithFieldMask() {
     Mutation mutation =
-        patchMutation("docs/1", map("key", "value", "key2", true), asList(field("key")));
+        mergeMutation("docs/1", map("key", "value", "key2", true), asList(field("key")));
 
     Write expected =
         Write.newBuilder()
