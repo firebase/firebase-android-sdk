@@ -79,9 +79,7 @@ public class PushIdGenerator {
     StringBuilder next = new StringBuilder(key);
     if (next.charAt(next.length() - 1) == MIN_PUSH_CHAR) {
       if (next.length() == 1) {
-        // Empty keys are not allowed, but `getMinName()` sorts
-        // lower than any other key.
-        return ChildKey.getMinName().toString();
+        return String.valueOf(Integer.MAX_VALUE);
       }
       // If the last character is the smallest possible character, then the next
       // smallest string is the prefix of `key` without it.
