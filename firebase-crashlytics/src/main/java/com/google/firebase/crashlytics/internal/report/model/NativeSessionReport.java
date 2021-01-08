@@ -27,6 +27,7 @@ public class NativeSessionReport implements Report {
   }
 
   @Override
+  @SuppressWarnings("all") // result of .delete is ignored
   public void remove() {
     for (File file : getFiles()) {
       Logger.getLogger().d("Removing native report file at " + file.getPath());

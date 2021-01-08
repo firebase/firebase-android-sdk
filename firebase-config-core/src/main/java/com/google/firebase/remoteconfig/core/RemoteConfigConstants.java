@@ -68,12 +68,14 @@ public final class RemoteConfigConstants {
   @StringDef({
     ResponseFieldKey.ENTRIES,
     ResponseFieldKey.EXPERIMENT_DESCRIPTIONS,
+    ResponseFieldKey.PERSONALIZATION_METADATA,
     ResponseFieldKey.STATE
   })
   @Retention(RetentionPolicy.SOURCE)
   public @interface ResponseFieldKey {
     String ENTRIES = "entries";
     String EXPERIMENT_DESCRIPTIONS = "experimentDescriptions";
+    String PERSONALIZATION_METADATA = "personalizationMetadata";
     String STATE = "state";
   }
 

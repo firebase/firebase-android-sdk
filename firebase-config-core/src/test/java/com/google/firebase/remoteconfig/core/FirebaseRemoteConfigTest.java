@@ -23,13 +23,18 @@ import static com.google.firebase.remoteconfig.core.FirebaseRemoteConfig.DEFAULT
 import static com.google.firebase.remoteconfig.core.FirebaseRemoteConfig.DEFAULT_VALUE_FOR_STRING;
 import static com.google.firebase.remoteconfig.core.FirebaseRemoteConfig.LAST_FETCH_STATUS_THROTTLED;
 import static com.google.firebase.remoteconfig.core.FirebaseRemoteConfig.toExperimentInfoMaps;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.content.Context;
 import android.content.res.Resources;
+import android.os.Bundle;
 import com.google.android.gms.shadows.common.internal.ShadowPreconditions;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -48,7 +53,9 @@ import com.google.firebase.remoteconfig.core.internal.ConfigFetchHandler;
 import com.google.firebase.remoteconfig.core.internal.ConfigFetchHandler.FetchResponse;
 import com.google.firebase.remoteconfig.core.internal.ConfigGetParameterHandler;
 import com.google.firebase.remoteconfig.core.internal.ConfigMetadataClient;
+import com.google.firebase.remoteconfig.core.internal.Personalization;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -57,6 +64,7 @@ import java.util.Set;
 import java.util.concurrent.Executor;
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -106,6 +114,8 @@ public final class FirebaseRemoteConfigTest {
   private static final HashMap<String, Object> DEFAULTS_MAP = new HashMap<>();
   private static final HashMap<String, String> DEFAULTS_STRING_MAP = new HashMap<>();
 
+  @Mock private AnalyticsConnector mockAnalyticsConnector;
+
   @Mock private ConfigCacheClient mockFetchedCache;
   @Mock private ConfigCacheClient mockActivatedCache;
   @Mock private ConfigCacheClient mockDefaultsCache;
@@ -126,6 +136,7 @@ public final class FirebaseRemoteConfigTest {
 
   private FirebaseRemoteConfig frc;
   private FirebaseRemoteConfig fireperfFrc;
+  private FirebaseRemoteConfig personalizationFrc;
   private ConfigContainer firstFetchedContainer;
   private ConfigContainer secondFetchedContainer;
 
@@ -148,6 +159,11 @@ public final class FirebaseRemoteConfigTest {
     Executor directExecutor = MoreExecutors.directExecutor();
     Context context = RuntimeEnvironment.application;
     FirebaseApp firebaseApp = initializeFirebaseApp(context);
+
+    Personalization personalization = new Personalization(mockAnalyticsConnector);
+    ConfigGetParameterHandler parameterHandler =
+        new ConfigGetParameterHandler(directExecutor, mockActivatedCache, mockDefaultsCache);
+    parameterHandler.addListener(personalization::logArmActive);
 
     // Catch all to avoid NPEs (the getters should never return null).
     when(mockFetchedCache.get()).thenReturn(Tasks.forResult(null));
@@ -185,6 +201,22 @@ public final class FirebaseRemoteConfigTest {
                 mockFireperfFetchHandler,
                 mockFireperfGetHandler,
                 RemoteConfigComponent.getMetadataClient(context, APP_ID, FIREPERF_NAMESPACE));
+
+    personalizationFrc =
+        FirebaseApp.getInstance()
+            .get(RemoteConfigComponent.class)
+            .get(
+                firebaseApp,
+                RemoteConfigComponent.DEFAULT_NAMESPACE,
+                mockFirebaseInstallations,
+                /*firebaseAbt=*/ null,
+                directExecutor,
+                mockFetchedCache,
+                mockActivatedCache,
+                mockDefaultsCache,
+                mockFetchHandler,
+                parameterHandler,
+                metadataClient);
 
     firstFetchedContainer =
         ConfigContainer.newBuilder()
@@ -879,6 +911,57 @@ public final class FirebaseRemoteConfigTest {
 
     assertThat(setterTask.isSuccessful()).isTrue();
     verify(metadataClient).setConfigSettings(frcSettings);
+  }
+
+  @Test
+  public void personalization_hasMetadata_successful() throws Exception {
+    List<Bundle> fakeLogs = new ArrayList<>();
+    doAnswer(invocation -> fakeLogs.add(invocation.getArgument(2)))
+        .when(mockAnalyticsConnector)
+        .logEvent(
+            eq(Personalization.ANALYTICS_ORIGIN_PERSONALIZATION),
+            eq(Personalization.ANALYTICS_PULL_EVENT),
+            any(Bundle.class));
+
+    ConfigContainer configContainer =
+        ConfigContainer.newBuilder()
+            .replaceConfigsWith(new JSONObject("{key1: 'value1', key2: 'value2', key3: 'value3'}"))
+            .withFetchTime(new Date(1))
+            .withPersonalizationMetadata(
+                new JSONObject(
+                    "{key1: {personalizationId: 'id1'}, key2: {personalizationId: 'id2'}}"))
+            .build();
+
+    when(mockFetchHandler.fetch())
+        .thenReturn(
+            Tasks.forResult(FetchResponse.forBackendUpdatesFetched(configContainer, "Etag")));
+
+    when(mockActivatedCache.getBlocking()).thenReturn(configContainer);
+
+    personalizationFrc
+        .fetchAndActivate()
+        .addOnCompleteListener(
+            success -> {
+              personalizationFrc.getString("key1");
+              personalizationFrc.getString("key2");
+
+              verify(mockAnalyticsConnector, times(2))
+                  .logEvent(
+                      eq(Personalization.ANALYTICS_ORIGIN_PERSONALIZATION),
+                      eq(Personalization.ANALYTICS_PULL_EVENT),
+                      any(Bundle.class));
+              assertThat(fakeLogs).hasSize(2);
+
+              Bundle params1 = new Bundle();
+              params1.putString(Personalization.ARM_KEY, "id1");
+              params1.putString(Personalization.ARM_VALUE, "value1");
+              assertThat(fakeLogs.get(0).toString()).isEqualTo(params1.toString());
+
+              Bundle params2 = new Bundle();
+              params2.putString(Personalization.ARM_KEY, "id2");
+              params2.putString(Personalization.ARM_VALUE, "value2");
+              assertThat(fakeLogs.get(1).toString()).isEqualTo(params2.toString());
+            });
   }
 
   private static void loadCacheWithConfig(

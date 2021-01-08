@@ -50,12 +50,6 @@ android {
     }
   }
 
-  // As required by Firebase Android Smart Reply doc:
-  // https://firebase.google.com/docs/ml-kit/android/generate-smart-replies#before-you-begin
-  aaptOptions {
-    noCompress "tflite"
-  }
-
   if (project.hasProperty("testBuildType")) {
     testBuildType project.getProperty("testBuildType")
   }
@@ -66,6 +60,7 @@ apply from: "configure.gradle"
 dependencies {
   // Firebase
   implementation "com.google.firebase:firebase-analytics"
+  implementation "com.google.firebase:firebase-annotations"
   implementation "com.google.firebase:firebase-appindexing"
   implementation "com.google.firebase:firebase-auth"
   implementation "com.google.firebase:firebase-common"
@@ -75,11 +70,11 @@ dependencies {
   implementation "com.google.firebase:firebase-firestore"
   implementation "com.google.firebase:firebase-functions"
   implementation "com.google.firebase:firebase-inappmessaging"
-  implementation "com.google.firebase:firebase-messaging"
-  implementation "com.google.firebase:firebase-ml-natural-language"
-  implementation "com.google.firebase:firebase-ml-natural-language-smart-reply-model"
+  // TODO(yifany): Restore after messaging in github is up to date
+  // implementation "com.google.firebase:firebase-messaging"
   implementation "com.google.firebase:firebase-ml-vision"
-  implementation "com.google.firebase:firebase-perf"
+  // TODO(b/174858514): Restore after M85 release is live
+  // implementation "com.google.firebase:firebase-perf"
   implementation "com.google.firebase:firebase-storage"
 
   // Common utilities (application side)

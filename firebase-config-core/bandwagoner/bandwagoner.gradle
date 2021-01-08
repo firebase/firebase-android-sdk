@@ -55,7 +55,7 @@ android {
 }
 
 firebaseTestLab {
-    device 'model=walleye,version=26,locale=en,orientation=portrait'
+    device 'model=Pixel2,version=28,locale=en,orientation=portrait'
 }
 
 dependencies {

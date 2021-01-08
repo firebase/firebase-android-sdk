@@ -17,6 +17,7 @@ package com.google.firebase.crashlytics.internal.common;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import com.google.firebase.crashlytics.internal.unity.UnityVersionProvider;
 
 /** Carries static information about the app. */
 class AppData {
@@ -29,8 +30,14 @@ class AppData {
   public final String versionCode;
   public final String versionName;
 
+  public final UnityVersionProvider unityVersionProvider;
+
   public static AppData create(
-      Context context, IdManager idManager, String googleAppId, String buildId)
+      Context context,
+      IdManager idManager,
+      String googleAppId,
+      String buildId,
+      UnityVersionProvider unityVersionProvider)
       throws PackageManager.NameNotFoundException {
     final String packageName = context.getPackageName();
     final String installerPackageName = idManager.getInstallerPackageName();
@@ -41,7 +48,13 @@ class AppData {
         packageInfo.versionName == null ? IdManager.DEFAULT_VERSION_NAME : packageInfo.versionName;
 
     return new AppData(
-        googleAppId, buildId, installerPackageName, packageName, versionCode, versionName);
+        googleAppId,
+        buildId,
+        installerPackageName,
+        packageName,
+        versionCode,
+        versionName,
+        unityVersionProvider);
   }
 
   public AppData(
@@ -50,12 +63,14 @@ class AppData {
       String installerPackageName,
       String packageName,
       String versionCode,
-      String versionName) {
+      String versionName,
+      UnityVersionProvider unityVersionProvider) {
     this.googleAppId = googleAppId;
     this.buildId = buildId;
     this.installerPackageName = installerPackageName;
     this.packageName = packageName;
     this.versionCode = versionCode;
     this.versionName = versionName;
+    this.unityVersionProvider = unityVersionProvider;
   }
 }

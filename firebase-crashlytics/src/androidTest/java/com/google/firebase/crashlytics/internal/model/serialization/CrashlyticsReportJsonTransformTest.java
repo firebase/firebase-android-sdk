@@ -42,7 +42,16 @@ public class CrashlyticsReportJsonTransformTest {
 
   @Test
   public void testReportToJsonAndBack_equals() throws IOException {
-    final CrashlyticsReport testReport = makeTestReport();
+    final CrashlyticsReport testReport = makeTestReport(false);
+    final String testReportJson = transform.reportToJson(testReport);
+    final CrashlyticsReport reifiedReport = transform.reportFromJson(testReportJson);
+    assertNotSame(reifiedReport, testReport);
+    assertEquals(reifiedReport, testReport);
+  }
+
+  @Test
+  public void testReportToJsonAndBack_with_developmentPlatform_equals() throws IOException {
+    final CrashlyticsReport testReport = makeTestReport(true);
     final String testReportJson = transform.reportToJson(testReport);
     final CrashlyticsReport reifiedReport = transform.reportFromJson(testReportJson);
     assertNotSame(reifiedReport, testReport);
@@ -58,7 +67,7 @@ public class CrashlyticsReportJsonTransformTest {
     assertEquals(reifiedEvent, testEvent);
   }
 
-  private static CrashlyticsReport makeTestReport() {
+  private static CrashlyticsReport makeTestReport(boolean useDevelopmentPlatform) {
     return CrashlyticsReport.builder()
         .setSdkVersion("sdkVersion")
         .setGmpAppId("gmpAppId")
@@ -66,29 +75,35 @@ public class CrashlyticsReportJsonTransformTest {
         .setInstallationUuid("installationId")
         .setBuildVersion("1")
         .setDisplayVersion("1.0.0")
-        .setSession(makeTestSession())
+        .setSession(makeTestSession(useDevelopmentPlatform))
         .build();
   }
 
-  private static CrashlyticsReport.Session makeTestSession() {
+  private static CrashlyticsReport.Session makeTestSession(boolean useDevelopmentPlatform) {
     return Session.builder()
         .setGenerator("generator")
         .setIdentifier("identifier")
         .setStartedAt(1L)
         .setEndedAt(1L)
         .setCrashed(true)
-        .setApp(makeTestApplication())
+        .setApp(makeTestApplication(useDevelopmentPlatform))
         .setUser(User.builder().setIdentifier("user").build())
         .setGeneratorType(3)
         .build();
   }
 
-  private static Application makeTestApplication() {
-    return Application.builder()
-        .setIdentifier("applicationId")
-        .setVersion("version")
-        .setDisplayVersion("displayVersion")
-        .build();
+  private static Application makeTestApplication(boolean useDevelopmentPlatform) {
+    final Application.Builder builder =
+        Application.builder()
+            .setIdentifier("applicationId")
+            .setVersion("version")
+            .setDisplayVersion("displayVersion");
+    if (useDevelopmentPlatform) {
+      builder
+          .setDevelopmentPlatform("developmentPlatform")
+          .setDevelopmentPlatformVersion("developmentPlatformVersion");
+    }
+    return builder.build();
   }
 
   private static ImmutableList<Event> makeTestEvents(int numEvents) {

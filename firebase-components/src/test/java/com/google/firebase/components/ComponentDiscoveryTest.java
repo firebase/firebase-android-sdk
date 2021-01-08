@@ -15,10 +15,12 @@
 package com.google.firebase.components;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.google.firebase.components.ComponentDiscovery.RegistrarNameRetriever;
+import com.google.firebase.inject.Provider;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -117,5 +119,32 @@ public class ComponentDiscoveryTest {
         .thenReturn(Collections.singletonList(NoDefaultCtorRegistrar.class.getName()));
 
     assertThat(discovery.discover()).isEmpty();
+  }
+
+  @Test
+  public void discoverLazy_whenRegistrarClassDoesNotExist_shouldReturnProviderThatReturnsNull() {
+    when(retriever.retrieve(context))
+        .thenReturn(Collections.singletonList("com.example.DoesNotExistClass"));
+
+    List<Provider<ComponentRegistrar>> result = discovery.discoverLazy();
+    assertThat(result).hasSize(1);
+    Provider<ComponentRegistrar> provider = result.get(0);
+    assertThat(provider.get()).isNull();
+  }
+
+  @Test
+  public void discoverLazy_whenRegistrarClassesAreInvalid_shouldReturnThrowingProviders() {
+    when(retriever.retrieve(context))
+        .thenReturn(
+            Arrays.asList(
+                InvalidRegistrar.class.getName(),
+                PrivateTestRegistrar.class.getName(),
+                NoDefaultCtorRegistrar.class.getName()));
+
+    List<Provider<ComponentRegistrar>> result = discovery.discoverLazy();
+    assertThat(result).hasSize(3);
+    for (Provider<ComponentRegistrar> provider : result) {
+      assertThrows(InvalidRegistrarException.class, provider::get);
+    }
   }
 }

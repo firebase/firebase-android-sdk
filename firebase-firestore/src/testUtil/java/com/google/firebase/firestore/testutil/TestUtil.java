@@ -31,6 +31,7 @@ import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.Blob;
 import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.TestAccessHelper;
 import com.google.firebase.firestore.UserDataReader;
 import com.google.firebase.firestore.core.FieldFilter;
@@ -38,6 +39,7 @@ import com.google.firebase.firestore.core.Filter.Operator;
 import com.google.firebase.firestore.core.OrderBy;
 import com.google.firebase.firestore.core.OrderBy.Direction;
 import com.google.firebase.firestore.core.Query;
+import com.google.firebase.firestore.core.UserData.ParsedSetData;
 import com.google.firebase.firestore.core.UserData.ParsedUpdateData;
 import com.google.firebase.firestore.local.LocalViewChanges;
 import com.google.firebase.firestore.local.QueryPurpose;
@@ -61,7 +63,6 @@ import com.google.firebase.firestore.model.mutation.MutationResult;
 import com.google.firebase.firestore.model.mutation.PatchMutation;
 import com.google.firebase.firestore.model.mutation.Precondition;
 import com.google.firebase.firestore.model.mutation.SetMutation;
-import com.google.firebase.firestore.model.mutation.TransformMutation;
 import com.google.firebase.firestore.model.mutation.VerifyMutation;
 import com.google.firebase.firestore.remote.RemoteEvent;
 import com.google.firebase.firestore.remote.TargetChange;
@@ -472,7 +473,16 @@ public class TestUtil {
   }
 
   public static SetMutation setMutation(String path, Map<String, Object> values) {
-    return new SetMutation(key(path), wrapObject(values), Precondition.NONE);
+    UserDataReader dataReader = new UserDataReader(DatabaseId.forProject("project"));
+    ParsedSetData parsed = dataReader.parseSetData(values);
+
+    // The order of the transforms doesn't matter, but we sort them so tests can assume a particular
+    // order.
+    ArrayList<FieldTransform> fieldTransforms = new ArrayList<>(parsed.getFieldTransforms());
+    Collections.sort(
+        fieldTransforms, (ft1, ft2) -> ft1.getFieldPath().compareTo(ft2.getFieldPath()));
+
+    return new SetMutation(key(path), parsed.getData(), Precondition.NONE, fieldTransforms);
   }
 
   public static PatchMutation patchMutation(String path, Map<String, Object> values) {
@@ -481,29 +491,35 @@ public class TestUtil {
 
   public static PatchMutation patchMutation(
       String path, Map<String, Object> values, @Nullable List<FieldPath> updateMask) {
-    ObjectValue.Builder objectValue = ObjectValue.newBuilder();
-    ArrayList<FieldPath> objectMask = new ArrayList<>();
+    // Replace '<DELETE>' from JSON with FieldValue
     for (Entry<String, Object> entry : values.entrySet()) {
-      FieldPath fieldPath = field(entry.getKey());
-      objectMask.add(fieldPath);
-      if (!entry.getValue().equals(DELETE_SENTINEL)) {
-        Value parsedValue = wrap(entry.getValue());
-        objectValue.set(fieldPath, parsedValue);
+      if (entry.getValue().equals(DELETE_SENTINEL)) {
+        values.put(entry.getKey(), FieldValue.delete());
       }
     }
 
+    UserDataReader dataReader = new UserDataReader(DatabaseId.forProject("project"));
+    ParsedUpdateData parsed = dataReader.parseUpdateData(values);
     boolean merge = updateMask != null;
 
     // We sort the fieldMaskPaths to make the order deterministic in tests. (Otherwise, when we
     // flatten a Set to a proto repeated field, we'll end up comparing in iterator order and
     // possibly consider {foo,bar} != {bar,foo}.)
-    SortedSet<FieldPath> fieldMaskPaths = new TreeSet<>(merge ? updateMask : objectMask);
+    SortedSet<FieldPath> fieldMaskPaths =
+        new TreeSet<>(merge ? updateMask : parsed.getFieldMask().getMask());
+
+    // The order of the transforms doesn't matter, but we sort them so tests can assume a particular
+    // order.
+    ArrayList<FieldTransform> fieldTransforms = new ArrayList<>(parsed.getFieldTransforms());
+    Collections.sort(
+        fieldTransforms, (ft1, ft2) -> ft1.getFieldPath().compareTo(ft2.getFieldPath()));
 
     return new PatchMutation(
         key(path),
-        objectValue.build(),
+        parsed.getData(),
         FieldMask.fromSet(fieldMaskPaths),
-        merge ? Precondition.NONE : Precondition.exists(true));
+        merge ? Precondition.NONE : Precondition.exists(true),
+        fieldTransforms);
   }
 
   public static DeleteMutation deleteMutation(String path) {
@@ -512,24 +528,6 @@ public class TestUtil {
 
   public static VerifyMutation verifyMutation(String path, int micros) {
     return new VerifyMutation(key(path), Precondition.updateTime(version(micros)));
-  }
-
-  /**
-   * Creates a TransformMutation by parsing any FieldValue sentinels in the provided data. The data
-   * is expected to use dotted-notation for nested fields (i.e. { "foo.bar": FieldValue.foo() } and
-   * must not contain any non-sentinel data.
-   */
-  public static TransformMutation transformMutation(String path, Map<String, Object> data) {
-    UserDataReader dataReader = new UserDataReader(DatabaseId.forProject("project"));
-    ParsedUpdateData result = dataReader.parseUpdateData(data);
-
-    // The order of the transforms doesn't matter, but we sort them so tests can assume a particular
-    // order.
-    ArrayList<FieldTransform> fieldTransforms = new ArrayList<>(result.getFieldTransforms());
-    Collections.sort(
-        fieldTransforms, (ft1, ft2) -> ft1.getFieldPath().compareTo(ft2.getFieldPath()));
-
-    return new TransformMutation(key(path), fieldTransforms);
   }
 
   public static MutationResult mutationResult(long version) {

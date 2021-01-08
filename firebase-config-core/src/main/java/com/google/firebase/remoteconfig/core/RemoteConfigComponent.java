@@ -30,6 +30,7 @@ import com.google.firebase.remoteconfig.core.internal.ConfigFetchHttpClient;
 import com.google.firebase.remoteconfig.core.internal.ConfigGetParameterHandler;
 import com.google.firebase.remoteconfig.core.internal.ConfigMetadataClient;
 import com.google.firebase.remoteconfig.core.internal.ConfigStorageClient;
+import com.google.firebase.remoteconfig.core.internal.Personalization;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -148,6 +149,14 @@ public class RemoteConfigComponent {
     ConfigCacheClient activatedCacheClient = getCacheClient(namespace, ACTIVATE_FILE_NAME);
     ConfigCacheClient defaultsCacheClient = getCacheClient(namespace, DEFAULTS_FILE_NAME);
     ConfigMetadataClient metadataClient = getMetadataClient(context, appId, namespace);
+
+    ConfigGetParameterHandler getHandler = getGetHandler(activatedCacheClient, defaultsCacheClient);
+    Personalization personalization =
+        getPersonalization(firebaseApp, namespace, analyticsConnector);
+    if (personalization != null) {
+      getHandler.addListener(personalization::logArmActive);
+    }
+
     return get(
         firebaseApp,
         namespace,
@@ -158,7 +167,7 @@ public class RemoteConfigComponent {
         activatedCacheClient,
         defaultsCacheClient,
         getFetchHandler(namespace, fetchedCacheClient, metadataClient, userPropertiesProvider),
-        getGetHandler(activatedCacheClient, defaultsCacheClient),
+        getHandler,
         metadataClient);
   }
 
@@ -242,7 +251,8 @@ public class RemoteConfigComponent {
 
   private ConfigGetParameterHandler getGetHandler(
       ConfigCacheClient activatedCacheClient, ConfigCacheClient defaultsCacheClient) {
-    return new ConfigGetParameterHandler(activatedCacheClient, defaultsCacheClient);
+    return new ConfigGetParameterHandler(
+        executorService, activatedCacheClient, defaultsCacheClient);
   }
 
   @VisibleForTesting
@@ -253,6 +263,17 @@ public class RemoteConfigComponent {
             FIREBASE_REMOTE_CONFIG_FILE_NAME_PREFIX, appId, namespace, PREFERENCES_FILE_NAME);
     SharedPreferences preferences = context.getSharedPreferences(fileName, Context.MODE_PRIVATE);
     return new ConfigMetadataClient(preferences);
+  }
+
+  @Nullable
+  private static Personalization getPersonalization(
+      FirebaseApp firebaseApp, String namespace, @Nullable AnalyticsConnector analyticsConnector) {
+    if (isPrimaryApp(firebaseApp)
+        && namespace.equals(DEFAULT_NAMESPACE)
+        && analyticsConnector != null) {
+      return new Personalization(analyticsConnector);
+    }
+    return null;
   }
 
   /**

@@ -18,9 +18,8 @@ import static com.google.common.truth.Truth.assertThat;
 
 import com.google.firebase.appindexing.FirebaseAppIndex;
 import com.google.firebase.inappmessaging.FirebaseInAppMessaging;
-import com.google.firebase.messaging.FirebaseMessaging;
-import com.google.firebase.ml.naturallanguage.FirebaseNaturalLanguage;
-import com.google.firebase.perf.FirebasePerformance;
+// import com.google.firebase.messaging.FirebaseMessaging;
+// import com.google.firebase.perf.FirebasePerformance;
 import com.google.firebase.ml.vision.FirebaseVision;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -40,20 +39,15 @@ public final class BuildOnlyTest {
     assertThat(FirebaseInAppMessaging.getInstance()).isNotNull();
   }
 
-  @Test
-  public void messaging_IsNotNull() {
-    assertThat(FirebaseMessaging.getInstance()).isNotNull();
-  }
+//  @Test
+//  public void messaging_IsNotNull() {
+//    assertThat(FirebaseMessaging.getInstance()).isNotNull();
+//  }
 
-  @Test
-  public void performance_IsNotNull() {
-    assertThat(FirebasePerformance.getInstance()).isNotNull();
-  }
-
-  @Test
-  public void naturalLanguage_IsNotNull() {
-    assertThat(FirebaseNaturalLanguage.getInstance()).isNotNull();
-  }
+//  @Test
+//  public void performance_IsNotNull() {
+//    assertThat(FirebasePerformance.getInstance()).isNotNull();
+//  }
 
   @Test
   public void vision_IsNotNull() {

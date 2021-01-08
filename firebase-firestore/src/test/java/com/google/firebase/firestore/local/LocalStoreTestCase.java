@@ -27,7 +27,6 @@ import static com.google.firebase.firestore.testutil.TestUtil.patchMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.query;
 import static com.google.firebase.firestore.testutil.TestUtil.resumeToken;
 import static com.google.firebase.firestore.testutil.TestUtil.setMutation;
-import static com.google.firebase.firestore.testutil.TestUtil.transformMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.unknownDoc;
 import static com.google.firebase.firestore.testutil.TestUtil.updateRemoteEvent;
 import static com.google.firebase.firestore.testutil.TestUtil.values;
@@ -99,8 +98,6 @@ public abstract class LocalStoreTestCase {
   private @Nullable QueryResult lastQueryResult;
   private int lastTargetId;
 
-  abstract QueryEngine getQueryEngine();
-
   abstract Persistence getPersistence();
 
   abstract boolean garbageCollectorIsEager();
@@ -113,7 +110,7 @@ public abstract class LocalStoreTestCase {
     lastTargetId = 0;
 
     localStorePersistence = getPersistence();
-    queryEngine = new CountingQueryEngine(getQueryEngine());
+    queryEngine = new CountingQueryEngine(new DefaultQueryEngine());
     localStore = new LocalStore(localStorePersistence, queryEngine, User.UNAUTHENTICATED);
     localStore.start();
   }
@@ -978,22 +975,22 @@ public abstract class LocalStoreTestCase {
   // better implemented as spec tests but currently they don't support transforms.
 
   @Test
-  public void testHandlesSetMutationThenTransformMutationThenTransformMutation() {
+  public void testHandlesSetMutationThenTransformThenTransform() {
     writeMutation(setMutation("foo/bar", map("sum", 0)));
     assertContains(doc("foo/bar", 0, map("sum", 0), Document.DocumentState.LOCAL_MUTATIONS));
     assertChanged(doc("foo/bar", 0, map("sum", 0), Document.DocumentState.LOCAL_MUTATIONS));
 
-    writeMutation(transformMutation("foo/bar", map("sum", FieldValue.increment(1))));
+    writeMutation(patchMutation("foo/bar", map("sum", FieldValue.increment(1))));
     assertContains(doc("foo/bar", 0, map("sum", 1), Document.DocumentState.LOCAL_MUTATIONS));
     assertChanged(doc("foo/bar", 0, map("sum", 1), Document.DocumentState.LOCAL_MUTATIONS));
 
-    writeMutation(transformMutation("foo/bar", map("sum", FieldValue.increment(2))));
+    writeMutation(patchMutation("foo/bar", map("sum", FieldValue.increment(2))));
     assertContains(doc("foo/bar", 0, map("sum", 3), Document.DocumentState.LOCAL_MUTATIONS));
     assertChanged(doc("foo/bar", 0, map("sum", 3), Document.DocumentState.LOCAL_MUTATIONS));
   }
 
   @Test
-  public void testHandlesSetMutationThenAckThenTransformMutationThenAckThenTransformMutation() {
+  public void testHandlesSetMutationThenAckThenTransformThenAckThenTransform() {
     // Since this test doesn't start a listen, Eager GC removes the documents from the cache as
     // soon as the mutation is applied. This creates a lot of special casing in this unit test but
     // does not expand its test coverage.
@@ -1007,7 +1004,7 @@ public abstract class LocalStoreTestCase {
     assertChanged(doc("foo/bar", 1, map("sum", 0), Document.DocumentState.COMMITTED_MUTATIONS));
     assertContains(doc("foo/bar", 1, map("sum", 0), Document.DocumentState.COMMITTED_MUTATIONS));
 
-    writeMutation(transformMutation("foo/bar", map("sum", FieldValue.increment(1))));
+    writeMutation(patchMutation("foo/bar", map("sum", FieldValue.increment(1))));
     assertContains(doc("foo/bar", 1, map("sum", 1), Document.DocumentState.LOCAL_MUTATIONS));
     assertChanged(doc("foo/bar", 1, map("sum", 1), Document.DocumentState.LOCAL_MUTATIONS));
 
@@ -1015,7 +1012,7 @@ public abstract class LocalStoreTestCase {
     assertChanged(doc("foo/bar", 2, map("sum", 1), Document.DocumentState.COMMITTED_MUTATIONS));
     assertContains(doc("foo/bar", 2, map("sum", 1), Document.DocumentState.COMMITTED_MUTATIONS));
 
-    writeMutation(transformMutation("foo/bar", map("sum", FieldValue.increment(2))));
+    writeMutation(patchMutation("foo/bar", map("sum", FieldValue.increment(2))));
     assertContains(doc("foo/bar", 2, map("sum", 3), Document.DocumentState.LOCAL_MUTATIONS));
     assertChanged(doc("foo/bar", 2, map("sum", 3), Document.DocumentState.LOCAL_MUTATIONS));
   }
@@ -1023,7 +1020,7 @@ public abstract class LocalStoreTestCase {
   @Test
   public void testUsesTargetMappingToExecuteQueries() {
     assumeFalse(garbageCollectorIsEager());
-    assumeTrue(queryEngine.getSubject() instanceof IndexFreeQueryEngine);
+    assumeTrue(queryEngine.getSubject() instanceof DefaultQueryEngine);
 
     // This test verifies that once a target mapping has been written, only documents that match
     // the query are read from the RemoteDocumentCache.
@@ -1197,7 +1194,7 @@ public abstract class LocalStoreTestCase {
   }
 
   @Test
-  public void testHandlesSetMutationThenTransformMutationThenRemoteEventThenTransformMutation() {
+  public void testHandlesSetMutationThenTransformThenRemoteEventThenTransform() {
     Query query = Query.atPath(ResourcePath.fromString("foo"));
     allocateQuery(query);
     assertTargetId(2);
@@ -1211,7 +1208,7 @@ public abstract class LocalStoreTestCase {
     assertChanged(doc("foo/bar", 1, map("sum", 0), Document.DocumentState.SYNCED));
     assertContains(doc("foo/bar", 1, map("sum", 0), Document.DocumentState.SYNCED));
 
-    writeMutation(transformMutation("foo/bar", map("sum", FieldValue.increment(1))));
+    writeMutation(patchMutation("foo/bar", map("sum", FieldValue.increment(1))));
     assertChanged(doc("foo/bar", 1, map("sum", 1), Document.DocumentState.LOCAL_MUTATIONS));
     assertContains(doc("foo/bar", 1, map("sum", 1), Document.DocumentState.LOCAL_MUTATIONS));
 
@@ -1221,7 +1218,7 @@ public abstract class LocalStoreTestCase {
     assertContains(doc("foo/bar", 2, map("sum", 1), Document.DocumentState.LOCAL_MUTATIONS));
 
     // Add another increment. Note that we still compute the increment based on the local value.
-    writeMutation(transformMutation("foo/bar", map("sum", FieldValue.increment(2))));
+    writeMutation(patchMutation("foo/bar", map("sum", FieldValue.increment(2))));
     assertChanged(doc("foo/bar", 2, map("sum", 3), Document.DocumentState.LOCAL_MUTATIONS));
     assertContains(doc("foo/bar", 2, map("sum", 3), Document.DocumentState.LOCAL_MUTATIONS));
 
@@ -1270,8 +1267,8 @@ public abstract class LocalStoreTestCase {
 
     writeMutations(
         Arrays.asList(
-            transformMutation("foo/bar", map("sum", FieldValue.increment(1))),
-            transformMutation("foo/bar", map("array_union", FieldValue.arrayUnion("foo")))));
+            patchMutation("foo/bar", map("sum", FieldValue.increment(1))),
+            patchMutation("foo/bar", map("array_union", FieldValue.arrayUnion("foo")))));
     assertChanged(
         doc(
             "foo/bar",
@@ -1300,10 +1297,8 @@ public abstract class LocalStoreTestCase {
     allocateQuery(query);
     assertTargetId(2);
 
-    writeMutations(
-        asList(
-            patchMutation("foo/bar", map(), Collections.emptyList()),
-            transformMutation("foo/bar", map("sum", FieldValue.increment(1)))));
+    writeMutation(
+        patchMutation("foo/bar", map("sum", FieldValue.increment(1)), Collections.EMPTY_LIST));
     assertChanged(doc("foo/bar", 0, map("sum", 1), Document.DocumentState.LOCAL_MUTATIONS));
     assertContains(doc("foo/bar", 0, map("sum", 1), Document.DocumentState.LOCAL_MUTATIONS));
 
@@ -1318,10 +1313,7 @@ public abstract class LocalStoreTestCase {
     allocateQuery(query);
     assertTargetId(2);
 
-    writeMutations(
-        asList(
-            patchMutation("foo/bar", map()),
-            transformMutation("foo/bar", map("sum", FieldValue.increment(1)))));
+    writeMutation(patchMutation("foo/bar", map("sum", FieldValue.increment(1))));
     assertChanged(deletedDoc("foo/bar", 0));
     assertNotContains("foo/bar");
 

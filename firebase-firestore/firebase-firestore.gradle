@@ -158,7 +158,8 @@ gradle.projectsEvaluated {
     tasks.withType(JavaCompile) {
         // TODO(wuandy): Also add "-Xlint:unchecked". But currently that
         // enables 100+ warnings due to our generated source code.
-        options.compilerArgs << "-Xlint:deprecation" << "-Werror"
+        // TODO(wuandy): Re-enable error on warnings once errorprone issues are fixed.
+        options.compilerArgs << "-Xlint:deprecation" // << "-Werror"
     }
 }
 

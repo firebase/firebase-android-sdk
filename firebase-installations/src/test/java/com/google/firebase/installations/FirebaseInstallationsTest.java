@@ -39,6 +39,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.installations.FirebaseInstallationsException.Status;
+import com.google.firebase.installations.internal.FidListenerHandle;
 import com.google.firebase.installations.local.IidStore;
 import com.google.firebase.installations.local.PersistedInstallation;
 import com.google.firebase.installations.local.PersistedInstallation.RegistrationStatus;
@@ -74,6 +75,7 @@ public class FirebaseInstallationsTest {
   @Mock private RandomFidGenerator mockFidGenerator;
 
   public static final String TEST_FID_1 = "cccccccccccccccccccccc";
+  public static final String TEST_FID_2 = "dccccccccccccccccccccd";
 
   public static final String TEST_PROJECT_ID = "777777777777";
 
@@ -451,6 +453,48 @@ public class FirebaseInstallationsTest {
 
     IidStore iidStore = new IidStore(prefs, "123");
     assertThat(iidStore.readToken(), equalTo("thetoken"));
+  }
+
+  @Test
+  public void testFidListener_fidChanged_successful() throws Exception {
+    when(mockIidStore.readIid()).thenReturn(null);
+    when(mockIidStore.readToken()).thenReturn(null);
+    when(mockBackend.createFirebaseInstallation(
+            anyString(), anyString(), anyString(), anyString(), any()))
+        .thenReturn(
+            TEST_INSTALLATION_RESPONSE
+                .toBuilder()
+                .setUri("/projects/" + TEST_PROJECT_ID + "/installations/" + TEST_FID_2)
+                .setFid(TEST_FID_2)
+                .build());
+
+    FakeFidListener fidListener = new FakeFidListener();
+    FakeFidListener fidListener2 = new FakeFidListener();
+
+    // Register the FidListeners
+    firebaseInstallations.registerFidListener(fidListener);
+    FidListenerHandle listenerHandle = firebaseInstallations.registerFidListener(fidListener2);
+
+    // Do the actual getId() call under test.
+    // Confirm both that it returns the expected ID, as does reading the prefs from storage.
+    TestOnCompleteListener<String> onCompleteListener = new TestOnCompleteListener<>();
+    Task<String> task = firebaseInstallations.getId();
+
+    // Unregister FidListener2
+    listenerHandle.unregister();
+
+    task.addOnCompleteListener(executor, onCompleteListener);
+    String fid = onCompleteListener.await();
+    assertWithMessage("getId Task failed.").that(fid).isEqualTo(TEST_FID_1);
+
+    // Waiting for Task that registers FID on the FIS Servers
+    executor.awaitTermination(500, TimeUnit.MILLISECONDS);
+    PersistedInstallationEntry entry = persistedInstallation.readPersistedInstallationEntryValue();
+    assertThat(entry.getFirebaseInstallationId(), equalTo(TEST_FID_2));
+
+    // Verify FidListener receives fid changes.
+    assertThat(fidListener.getLatestFid(), equalTo(TEST_FID_2));
+    assertNull(fidListener2.getLatestFid());
   }
 
   @Test

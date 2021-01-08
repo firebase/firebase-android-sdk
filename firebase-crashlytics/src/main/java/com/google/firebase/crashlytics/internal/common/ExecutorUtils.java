@@ -20,8 +20,11 @@ import com.google.firebase.crashlytics.internal.Logger;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -32,7 +35,8 @@ public final class ExecutorUtils {
 
   public static ExecutorService buildSingleThreadExecutorService(String name) {
     final ThreadFactory threadFactory = ExecutorUtils.getNamedThreadFactory(name);
-    final ExecutorService executor = Executors.newSingleThreadExecutor(threadFactory);
+    final ExecutorService executor =
+        newSingleThreadExecutor(threadFactory, new ThreadPoolExecutor.DiscardPolicy());
     ExecutorUtils.addDelayedShutdownHook(name, executor);
     return executor;
   }
@@ -66,12 +70,25 @@ public final class ExecutorUtils {
     };
   }
 
-  private static final void addDelayedShutdownHook(String serviceName, ExecutorService service) {
+  private static ExecutorService newSingleThreadExecutor(
+      ThreadFactory threadFactory, RejectedExecutionHandler rejectedExecutionHandler) {
+    return Executors.unconfigurableExecutorService(
+        new ThreadPoolExecutor(
+            1,
+            1,
+            0L,
+            TimeUnit.MILLISECONDS,
+            new LinkedBlockingQueue<Runnable>(),
+            threadFactory,
+            rejectedExecutionHandler));
+  }
+
+  private static void addDelayedShutdownHook(String serviceName, ExecutorService service) {
     ExecutorUtils.addDelayedShutdownHook(
         serviceName, service, DEFAULT_TERMINATION_TIMEOUT, SECONDS);
   }
 
-  public static final void addDelayedShutdownHook(
+  private static void addDelayedShutdownHook(
       final String serviceName,
       final ExecutorService service,
       final long terminationTimeout,

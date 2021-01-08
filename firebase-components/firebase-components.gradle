@@ -41,12 +41,13 @@ android {
 }
 
 dependencies {
+    implementation project(':firebase-annotations')
     implementation 'androidx.annotation:annotation:1.1.0'
 
     testImplementation 'androidx.test:runner:1.2.0'
     testImplementation 'androidx.test.ext:junit:1.1.1'
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
-    testImplementation 'junit:junit:4.12'
+    testImplementation 'junit:junit:4.13'
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation 'org.mockito:mockito-core:2.25.0'
 
