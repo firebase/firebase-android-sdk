@@ -55,4 +55,12 @@ import com.google.firebase.firestore.model.SnapshotVersion;
     if (!query.equals(that.query)) return false;
     return readTime.equals(that.readTime);
   }
+
+  @Override
+  public int hashCode() {
+    int result = name.hashCode();
+    result = 31 * result + query.hashCode();
+    result = 31 * result + readTime.hashCode();
+    return result;
+  }
 }
