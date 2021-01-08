@@ -323,7 +323,7 @@ public class Query {
    * value, using the given orderBy directive or priority as default, and additionally only child
    * nodes with a key greater than or equal to the given key.
    *
-   * @param value The priority to start at
+   * @param value The value to start at
    * @param key The key to start at, exclusive
    * @return A Query with the new constraint
    * @since 19.6
@@ -340,7 +340,7 @@ public class Query {
    * value, using the given orderBy directive or priority as default, and additionally only child
    * nodes with a key greater than or equal to the given key.
    *
-   * @param value The priority to start at
+   * @param value The value to start at
    * @param key The key name to start at, exclusive
    * @return A Query with the new constraint
    * @since 19.6
@@ -351,11 +351,11 @@ public class Query {
   }
 
   /**
-   * Create a query constrained to only return child nodes with a value greater than the given
-   * value, using the given orderBy directive or priority as default, and additionally only child
-   * nodes with a key greater than or equal to the given key.
+   * Create a query constrained to only return child nodes with a value greater than or equal to the
+   * given value, using the given orderBy directive or priority as default, and additionally only
+   * child nodes with a key greater than to the given key.
    *
-   * @param value The priority to start at
+   * @param value The value to start at
    * @param key The key to start at, exclusive
    * @return A Query with the new constraint
    * @since 19.6
@@ -366,7 +366,7 @@ public class Query {
   }
 
   private Query startAfter(Node node, String key) {
-    return startAt(node, PushIdGenerator.nextAfter(key));
+    return startAt(node, PushIdGenerator.successor(key));
   }
 
   /**

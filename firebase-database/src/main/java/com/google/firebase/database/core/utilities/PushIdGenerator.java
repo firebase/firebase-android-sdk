@@ -25,9 +25,9 @@ public class PushIdGenerator {
   private static final String PUSH_CHARS =
       "-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz";
 
-  private static final char MAX_PUSH_CHAR = 'z';
-
   private static final char MIN_PUSH_CHAR = '-';
+
+  private static final char MAX_PUSH_CHAR = 'z';
 
   private static final int MAX_KEY_LEN = 786;
 
@@ -65,7 +65,7 @@ public class PushIdGenerator {
     return result.toString();
   }
 
-  public static final String nextAfter(String key) {
+  public static final String successor(String key) {
     Validation.validateNullableKey(key);
     Integer num = tryParseInt(key);
     if (num != null) {
