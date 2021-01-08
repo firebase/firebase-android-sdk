@@ -408,4 +408,22 @@ public final class LocalSerializerTest {
     TargetData decoded = serializer.decodeTargetData(expected);
     assertEquals(targetData, decoded);
   }
+
+  @Test
+  public void testEncodesQuery() {
+    Query query = TestUtil.query("room");
+    com.google.firestore.proto.BundledQuery encodedQuery = serializer.encodeQuery(query);
+    Query decodedQuery = serializer.decodeQuery(encodedQuery);
+
+    assertEquals(query, decodedQuery);
+  }
+
+  @Test
+  public void testEncodesLimitToLastQuery() {
+    Query query = TestUtil.query("room").limitToLast(1);
+    com.google.firestore.proto.BundledQuery encodedQuery = serializer.encodeQuery(query);
+    Query decodedQuery = serializer.decodeQuery(encodedQuery);
+
+    assertEquals(query, decodedQuery);
+  }
 }

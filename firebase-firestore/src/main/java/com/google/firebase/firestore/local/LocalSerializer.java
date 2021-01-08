@@ -18,6 +18,8 @@ import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.core.Query;
+import com.google.firebase.firestore.core.Query.LimitType;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -29,6 +31,7 @@ import com.google.firebase.firestore.model.UnknownDocument;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
 import com.google.firebase.firestore.remote.RemoteSerializer;
+import com.google.firestore.proto.BundledQuery;
 import com.google.firestore.v1.DocumentTransform.FieldTransform;
 import com.google.firestore.v1.Write;
 import com.google.firestore.v1.Write.Builder;
@@ -265,5 +268,33 @@ public final class LocalSerializer {
         version,
         lastLimboFreeSnapshotVersion,
         resumeToken);
+  }
+
+  public com.google.firestore.proto.BundledQuery encodeQuery(Query query) {
+    // We store LimitToLast as metadata information below. We remove it from the query itself as
+    // `toTarget()` flips the order by constraints otherwise.
+    Query queryWithoutLimitToLast =
+        query.hasLimitToLast() ? query.limitToFirst(query.getLimitToLast()) : query;
+    com.google.firestore.v1.Target.QueryTarget queryTarget =
+        rpcSerializer.encodeQueryTarget(queryWithoutLimitToLast.toTarget());
+
+    com.google.firestore.proto.BundledQuery.Builder result =
+        com.google.firestore.proto.BundledQuery.newBuilder();
+    result.setLimitType(
+        query.hasLimitToLast() ? BundledQuery.LimitType.LAST : BundledQuery.LimitType.FIRST);
+    result.setParent(queryTarget.getParent());
+    result.setStructuredQuery(queryTarget.getStructuredQuery());
+
+    return result.build();
+  }
+
+  public Query decodeQuery(com.google.firestore.proto.BundledQuery bundledQuery) {
+    LimitType limitType =
+        bundledQuery.getLimitType().equals(BundledQuery.LimitType.FIRST)
+            ? LimitType.LIMIT_TO_FIRST
+            : LimitType.LIMIT_TO_LAST;
+
+    return rpcSerializer.decodeQuery(
+        bundledQuery.getParent(), bundledQuery.getStructuredQuery(), limitType);
   }
 }
