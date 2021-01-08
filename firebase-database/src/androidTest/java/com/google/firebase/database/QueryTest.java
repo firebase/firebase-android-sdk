@@ -1564,29 +1564,6 @@ public class QueryTest {
   }
 
   @Test
-  public void startAfterEndAtWithPriorityAndNameWorks2()
-      throws DatabaseException, InterruptedException {
-    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
-
-    ValueExpectationHelper helper = new ValueExpectationHelper();
-    helper.add(
-        ref.startAfter(1, "c").endAt(2, "b"),
-        new MapBuilder().put("a", 1L).put("b", 2L).put("d", 4L).build());
-    helper.add(ref.startAfter(1, "d").endAt(2, "a"), new MapBuilder().put("a", 1L).build());
-    helper.add(ref.startAfter(1, "e").endAt(2), new MapBuilder().put("a", 1L).put("b", 2L).build());
-
-    ref.setValue(
-        new MapBuilder()
-            .put("c", new MapBuilder().put(".value", 3).put(".priority", 1).build())
-            .put("d", new MapBuilder().put(".value", 4).put(".priority", 1).build())
-            .put("a", new MapBuilder().put(".value", 1).put(".priority", 2).build())
-            .put("b", new MapBuilder().put(".value", 2).put(".priority", 2).build())
-            .build());
-
-    helper.waitForEvents();
-  }
-
-  @Test
   public void startAtEndAtWithPriorityAndNameWorksWithServerData2()
       throws DatabaseException, InterruptedException {
     DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
@@ -1606,29 +1583,6 @@ public class QueryTest {
     helper.add(
         ref.startAt(1, "d").endAt(2, "a"), new MapBuilder().put("d", 4L).put("a", 1L).build());
     helper.add(ref.startAt(1, "e").endAt(2), new MapBuilder().put("a", 1L).put("b", 2L).build());
-
-    helper.waitForEvents();
-  }
-
-  @Test
-  public void startAfterEndAtWithPriorityAndNameWorksWithServerData2()
-      throws DatabaseException, InterruptedException {
-    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
-
-    ref.setValue(
-        new MapBuilder()
-            .put("c", new MapBuilder().put(".value", 3).put(".priority", 1).build())
-            .put("d", new MapBuilder().put(".value", 4).put(".priority", 1).build())
-            .put("a", new MapBuilder().put(".value", 1).put(".priority", 2).build())
-            .put("b", new MapBuilder().put(".value", 2).put(".priority", 2).build())
-            .build());
-
-    ValueExpectationHelper helper = new ValueExpectationHelper();
-    helper.add(
-        ref.startAfter(1, "c").endAt(2, "b"),
-        new MapBuilder().put("a", 1L).put("b", 2L).put("d", 4L).build());
-    helper.add(ref.startAfter(1, "d").endAt(2, "a"), new MapBuilder().put("a", 1L).build());
-    helper.add(ref.startAfter(1, "e").endAt(2), new MapBuilder().put("a", 1L).put("b", 2L).build());
 
     helper.waitForEvents();
   }
@@ -3657,7 +3611,7 @@ public class QueryTest {
   }
 
   @Test
-  public void integerKeysBehaveNumericallyStartAfter1()
+  public void integerKeysBehaveNumericallyStartAfter()
       throws InterruptedException, TestFailure, TimeoutException {
     final DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
     final Semaphore done = new Semaphore(0);
@@ -3822,7 +3776,7 @@ public class QueryTest {
   }
 
   @Test
-  public void integerKeysBehaveNumericallyWithStartAfter()
+  public void integerKeysBehaveNumericallyWithStartAfterEndAt()
       throws InterruptedException, TestFailure, TimeoutException {
     final DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
     final Semaphore done = new Semaphore(0);
