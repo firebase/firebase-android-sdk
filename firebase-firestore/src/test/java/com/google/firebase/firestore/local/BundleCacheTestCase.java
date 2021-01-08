@@ -98,8 +98,8 @@ public abstract class BundleCacheTestCase {
   @Test
   public void testReturnsSavedLimitToFirstQueries() {
     NamedQuery expectedQuery =
-            new NamedQuery(
-                    "query-1", query("collection").limitToFirst(1), new SnapshotVersion(Timestamp.now()));
+        new NamedQuery(
+            "query-1", query("collection").limitToFirst(1), new SnapshotVersion(Timestamp.now()));
     bundleCache.saveNamedQuery(expectedQuery);
 
     NamedQuery actualQuery = bundleCache.getNamedQuery("query-1");

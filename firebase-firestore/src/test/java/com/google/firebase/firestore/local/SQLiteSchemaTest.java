@@ -577,8 +577,8 @@ public class SQLiteSchemaTest {
     assertNoResultsForQuery("SELECT * FROM bundles", NO_ARGS);
 
     db.execSQL(
-        "INSERT INTO bundles (bundle_id, create_time_seconds, create_time_nanos, schema_version) " +
-                "VALUES ('foo', 1, 2, 3)");
+        "INSERT INTO bundles (bundle_id, create_time_seconds, create_time_nanos, schema_version) "
+            + "VALUES ('foo', 1, 2, 3)");
 
     Cursor cursor =
         db.rawQuery(
@@ -601,8 +601,8 @@ public class SQLiteSchemaTest {
     assertNoResultsForQuery("SELECT * FROM named_queries", NO_ARGS);
 
     db.execSQL(
-        "INSERT INTO named_queries (name, read_time_seconds, read_time_nanos, bundled_query_proto) " +
-                "VALUES ('foo', 1, 2, ?)",
+        "INSERT INTO named_queries (name, read_time_seconds, read_time_nanos, bundled_query_proto) "
+            + "VALUES ('foo', 1, 2, ?)",
         new Object[] {new byte[] {}});
 
     Cursor cursor =

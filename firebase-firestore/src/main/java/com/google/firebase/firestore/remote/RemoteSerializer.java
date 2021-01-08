@@ -613,7 +613,7 @@ public final class RemoteSerializer {
   public com.google.firebase.firestore.core.Target decodeQueryTarget(QueryTarget target) {
     return decodeQuery(
             target.getParent(), target.getStructuredQuery(), Query.LimitType.LIMIT_TO_FIRST)
-            .toTarget();
+        .toTarget();
   }
 
   // Filters
