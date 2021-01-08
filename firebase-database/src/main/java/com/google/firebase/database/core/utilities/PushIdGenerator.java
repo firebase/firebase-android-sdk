@@ -71,7 +71,7 @@ public class PushIdGenerator {
     Validation.validateNullableKey(key);
     Integer num = tryParseInt(key);
     if (num != null) {
-      return String.valueOf(num + 1);
+      return String.valueOf(num - 1);
     }
     StringBuilder next = new StringBuilder(key);
 
