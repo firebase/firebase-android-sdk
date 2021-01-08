@@ -552,7 +552,7 @@ public class QueryTest {
     ValueExpectationHelper expectations = new ValueExpectationHelper();
     expectations.add(ref.limitToLast(1), new MapBuilder().put("c", 3L).build());
     expectations.add(ref.endAt(null).limitToLast(1), new MapBuilder().put("c", 3L).build());
-    //    expectations.add(ref.endBefore(null).limitToLast(1), null);
+    expectations.add(ref.endBefore(null).limitToLast(1), null);
     expectations.add(ref.limitToLast(2), new MapBuilder().put("b", 2L).put("c", 3L).build());
     expectations.add(
         ref.limitToLast(3), new MapBuilder().put("a", 1L).put("b", 2L).put("c", 3L).build());
@@ -1422,7 +1422,6 @@ public class QueryTest {
     helper.waitForEvents();
   }
 
-  // TODO(wyszynski): endBefore
   @Test
   public void startAfterEndAtWithPriorityWorks() throws DatabaseException, InterruptedException {
     DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
@@ -1471,8 +1470,8 @@ public class QueryTest {
     ValueExpectationHelper helper = new ValueExpectationHelper();
     helper.add(
         ref.startAfter("w").endBefore("z"), new MapBuilder().put("c", 3L).put("b", 2L).build());
-    //    helper.add(ref.startAfter("w").endBefore("w"), null);
-    //    helper.add(ref.startAfter("a").endBefore("c"), null);
+    helper.add(ref.startAfter("w").endBefore("w"), null);
+    helper.add(ref.startAfter("a").endBefore("c"), null);
     Semaphore semaphore = new Semaphore(0);
     ref.setValue(
             new MapBuilder()
@@ -1515,7 +1514,6 @@ public class QueryTest {
     helper.waitForEvents();
   }
 
-  // TODO(wyszynski): endBefore
   @Test
   public void startAfterEndAtWithPriorityWorksWithServerData()
       throws DatabaseException, InterruptedException {
@@ -1533,6 +1531,48 @@ public class QueryTest {
     helper.add(ref.startAfter("w").endAt("y"), new MapBuilder().put("b", 2L).put("c", 3L).build());
     helper.add(ref.startAfter("w").endAt("x"), new MapBuilder().put("c", 3L).build());
     helper.add(ref.startAfter("a").endAt("c"), null);
+
+    helper.waitForEvents();
+  }
+
+  @Test
+  public void startAtEndBeforeWithPriorityWorksWithServerData()
+      throws DatabaseException, InterruptedException {
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
+
+    ref.setValue(
+        new MapBuilder()
+            .put("a", new MapBuilder().put(".value", 1).put(".priority", "z").build())
+            .put("b", new MapBuilder().put(".value", 2).put(".priority", "y").build())
+            .put("c", new MapBuilder().put(".value", 3).put(".priority", "x").build())
+            .put("d", new MapBuilder().put(".value", 4).put(".priority", "w").build())
+            .build());
+
+    ValueExpectationHelper helper = new ValueExpectationHelper();
+    helper.add(ref.startAt("w").endBefore("y"), new MapBuilder().put("d", 4L).put("c", 3L).build());
+    helper.add(ref.startAt("w").endBefore("x"), new MapBuilder().put("d", 4L).build());
+    helper.add(ref.startAt("a").endBefore("c"), null);
+
+    helper.waitForEvents();
+  }
+
+  @Test
+  public void startAfterEndBeforeWithPriorityWorksWithServerData()
+      throws DatabaseException, InterruptedException {
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
+
+    ref.setValue(
+        new MapBuilder()
+            .put("a", new MapBuilder().put(".value", 1).put(".priority", "z").build())
+            .put("b", new MapBuilder().put(".value", 2).put(".priority", "y").build())
+            .put("c", new MapBuilder().put(".value", 3).put(".priority", "x").build())
+            .put("d", new MapBuilder().put(".value", 4).put(".priority", "w").build())
+            .build());
+
+    ValueExpectationHelper helper = new ValueExpectationHelper();
+    helper.add(ref.startAfter("w").endBefore("y"), new MapBuilder().put("c", 3L).build());
+    helper.add(ref.startAfter("w").endBefore("x"), null);
+    helper.add(ref.startAfter("a").endBefore("c"), null);
 
     helper.waitForEvents();
   }
@@ -3481,7 +3521,6 @@ public class QueryTest {
     assertEquals("a", removedSecond.get(0));
   }
 
-  // TODO(wyszynski): endBefore
   @Test
   public void correctlyGetEventsForStartAfterEndAtQueriesWhenPriorityChanges()
       throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
@@ -3552,6 +3591,93 @@ public class QueryTest {
     ref.child("a").setValue("a", 5);
     ref.child("a").setValue("a", 15);
     ref.child("a").setValue("a", 10);
+    new WriteFuture(ref.child("a"), "a", 5).timedGet();
+
+    assertEquals(2, addedFirst.size());
+    assertEquals("a", addedFirst.get(0));
+    assertEquals("a", addedFirst.get(1));
+
+    assertEquals(1, removedFirst.size());
+    assertEquals("a", removedFirst.get(0));
+
+    assertEquals(1, addedSecond.size());
+    assertEquals("a", addedSecond.get(0));
+
+    assertEquals(1, removedSecond.size());
+    assertEquals("a", removedSecond.get(0));
+  }
+
+  @Test
+  public void correctlyGetEventsForStartAtEndBeforeQueriesWhenPriorityChanges()
+      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+          InterruptedException {
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
+
+    final List<String> addedFirst = new ArrayList<String>();
+    final List<String> removedFirst = new ArrayList<String>();
+    final List<String> addedSecond = new ArrayList<String>();
+    final List<String> removedSecond = new ArrayList<String>();
+
+    ref.startAt(0)
+        .endBefore(10)
+        .addChildEventListener(
+            new ChildEventListener() {
+              @Override
+              public void onChildAdded(DataSnapshot snapshot, String previousChildName) {
+                addedFirst.add(snapshot.getKey());
+              }
+
+              @Override
+              public void onChildChanged(DataSnapshot snapshot, String previousChildName) {
+                // No-op
+              }
+
+              @Override
+              public void onChildRemoved(DataSnapshot snapshot) {
+                removedFirst.add(snapshot.getKey());
+              }
+
+              @Override
+              public void onChildMoved(DataSnapshot snapshot, String previousChildName) {
+                // No-op
+              }
+
+              @Override
+              public void onCancelled(DatabaseError error) {}
+            });
+
+    ref.startAt(10)
+        .endBefore(20)
+        .addChildEventListener(
+            new ChildEventListener() {
+              @Override
+              public void onChildAdded(DataSnapshot snapshot, String previousChildName) {
+                addedSecond.add(snapshot.getKey());
+              }
+
+              @Override
+              public void onChildChanged(DataSnapshot snapshot, String previousChildName) {
+                // No-op
+              }
+
+              @Override
+              public void onChildRemoved(DataSnapshot snapshot) {
+                removedSecond.add(snapshot.getKey());
+              }
+
+              @Override
+              public void onChildMoved(DataSnapshot snapshot, String previousChildName) {
+                // No-op
+              }
+
+              @Override
+              public void onCancelled(DatabaseError error) {}
+            });
+
+    ref.child("a").setValue("a", 5);
+    ref.child("a").setValue("a", 15);
+    ref.child("a").setValue("a", 10);
+    ref.child("a").setValue("a", 20);
     new WriteFuture(ref.child("a"), "a", 5).timedGet();
 
     assertEquals(2, addedFirst.size());
@@ -3742,6 +3868,45 @@ public class QueryTest {
   }
 
   @Test
+  public void integerKeysBehaveNumericallyEndBefore()
+      throws InterruptedException, TestFailure, TimeoutException {
+    final DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
+    final Semaphore done = new Semaphore(0);
+    ref.setValue(
+        new MapBuilder()
+            .put("1", true)
+            .put("50", true)
+            .put("550", true)
+            .put("6", true)
+            .put("600", true)
+            .put("70", true)
+            .put("8", true)
+            .put("80", true)
+            .build(),
+        new DatabaseReference.CompletionListener() {
+          @Override
+          public void onComplete(DatabaseError error, DatabaseReference ref) {
+            ref.endBefore(null, "10")
+                .addListenerForSingleValueEvent(
+                    new ValueEventListener() {
+                      @Override
+                      public void onDataChange(DataSnapshot snapshot) {
+                        Map<String, Object> expected =
+                            new MapBuilder().put("1", true).put("6", true).put("8", true).build();
+                        DeepEquals.assertEquals(expected, snapshot.getValue());
+                        done.release();
+                      }
+
+                      @Override
+                      public void onCancelled(DatabaseError error) {}
+                    });
+          }
+        });
+
+    IntegrationTestHelpers.waitFor(done);
+  }
+
+  @Test
   public void integerKeysBehaveNumericallyWithStartAfterOverflow()
       throws InterruptedException, TestFailure, TimeoutException {
     final DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
@@ -3767,6 +3932,95 @@ public class QueryTest {
                       @Override
                       public void onDataChange(DataSnapshot snapshot) {
                         DeepEquals.assertEquals(null, snapshot.getValue());
+                        done.release();
+                      }
+
+                      @Override
+                      public void onCancelled(DatabaseError error) {}
+                    });
+          }
+        });
+
+    IntegrationTestHelpers.waitFor(done);
+  }
+
+  @Test
+  public void integerKeysBehaveNumericallyWithEndBeforeUnderflow()
+      throws InterruptedException, TestFailure, TimeoutException {
+    final DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
+    final Semaphore done = new Semaphore(0);
+    ref.setValue(
+        new MapBuilder()
+            .put(String.valueOf(Integer.MIN_VALUE), true)
+            .put("80", true)
+            .put("1", true)
+            .put("50", true)
+            .put("550", true)
+            .put("6", true)
+            .put("600", true)
+            .put("70", true)
+            .put("8", true)
+            .build(),
+        new DatabaseReference.CompletionListener() {
+          @Override
+          public void onComplete(DatabaseError error, DatabaseReference ref) {
+            ref.endBefore(null, String.valueOf(Integer.MIN_VALUE))
+                .addListenerForSingleValueEvent(
+                    new ValueEventListener() {
+                      @Override
+                      public void onDataChange(DataSnapshot snapshot) {
+                        DeepEquals.assertEquals(null, snapshot.getValue());
+                        done.release();
+                      }
+
+                      @Override
+                      public void onCancelled(DatabaseError error) {}
+                    });
+          }
+        });
+
+    IntegrationTestHelpers.waitFor(done);
+  }
+
+  @Test
+  public void integerKeysBehaveNumericallyWithEndBeforeMinLex()
+      throws InterruptedException, TestFailure, TimeoutException {
+    final DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
+    final Semaphore done = new Semaphore(0);
+    ref.setValue(
+        new MapBuilder()
+            .put(String.valueOf(Integer.MAX_VALUE), true)
+            .put("80", true)
+            .put("1", true)
+            .put("50", true)
+            .put("550", true)
+            .put("6", true)
+            .put("600", true)
+            .put("70", true)
+            .put("8", true)
+            .put("a", true)
+            .build(),
+        new DatabaseReference.CompletionListener() {
+          @Override
+          public void onComplete(DatabaseError error, DatabaseReference ref) {
+            ref.endBefore(null, String.valueOf(/* MIN_PUSH_CHAR = */ '-'))
+                .addListenerForSingleValueEvent(
+                    new ValueEventListener() {
+                      @Override
+                      public void onDataChange(DataSnapshot snapshot) {
+                        DeepEquals.assertEquals(
+                            snapshot.getValue(),
+                            new MapBuilder()
+                                .put(String.valueOf(Integer.MAX_VALUE), true)
+                                .put("80", true)
+                                .put("1", true)
+                                .put("50", true)
+                                .put("550", true)
+                                .put("6", true)
+                                .put("600", true)
+                                .put("70", true)
+                                .put("8", true)
+                                .build());
                         done.release();
                       }
 

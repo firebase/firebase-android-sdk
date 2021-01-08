@@ -531,7 +531,7 @@ public class Query {
   public Query endBefore(@Nullable String value, @Nullable String key) {
     Node node =
         value != null ? new StringNode(value, PriorityUtilities.NullPriority()) : EmptyNode.Empty();
-    return endAt(node, key);
+    return endBefore(node, key);
   }
 
   /**
