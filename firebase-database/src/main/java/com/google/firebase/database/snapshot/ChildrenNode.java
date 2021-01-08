@@ -131,7 +131,7 @@ public class ChildrenNode implements Node {
         if (key.length() > 1 && key.charAt(0) == '0') {
           allIntegerKeys = false;
         } else {
-          Integer keyAsInt = Utilities.tryParseLong(key);
+          Integer keyAsInt = Utilities.tryParseInt(key);
           if (keyAsInt != null && keyAsInt >= 0) {
             if (keyAsInt > maxKey) {
               maxKey = keyAsInt;

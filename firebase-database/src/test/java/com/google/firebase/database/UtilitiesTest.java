@@ -29,18 +29,18 @@ public class UtilitiesTest {
   @Test
   public void tryParseInt() {
     Assert.assertEquals(
-        Utilities.tryParseLong("" + Integer.MAX_VALUE), Integer.valueOf(Integer.MAX_VALUE));
+        Utilities.tryParseInt("" + Integer.MAX_VALUE), Integer.valueOf(Integer.MAX_VALUE));
     Assert.assertEquals(
-        Utilities.tryParseLong("" + Integer.MIN_VALUE), Integer.valueOf(Integer.MIN_VALUE));
-    Assert.assertEquals(Utilities.tryParseLong("0"), Integer.valueOf(0));
-    Assert.assertEquals(Utilities.tryParseLong("-0"), Integer.valueOf(0));
-    Assert.assertEquals(Utilities.tryParseLong("-1"), Integer.valueOf(-1));
-    Assert.assertEquals(Utilities.tryParseLong("1"), Integer.valueOf(1));
-    Assert.assertNull(Utilities.tryParseLong("a"));
-    Assert.assertNull(Utilities.tryParseLong("-0a"));
-    Assert.assertNull(Utilities.tryParseLong("-"));
-    Assert.assertNull(Utilities.tryParseLong("" + (Integer.MAX_VALUE + 1L)));
-    Assert.assertNull(Utilities.tryParseLong("" + (Integer.MIN_VALUE - 1L)));
+        Utilities.tryParseInt("" + Integer.MIN_VALUE), Integer.valueOf(Integer.MIN_VALUE));
+    Assert.assertEquals(Utilities.tryParseInt("0"), Integer.valueOf(0));
+    Assert.assertEquals(Utilities.tryParseInt("-0"), Integer.valueOf(0));
+    Assert.assertEquals(Utilities.tryParseInt("-1"), Integer.valueOf(-1));
+    Assert.assertEquals(Utilities.tryParseInt("1"), Integer.valueOf(1));
+    Assert.assertNull(Utilities.tryParseInt("a"));
+    Assert.assertNull(Utilities.tryParseInt("-0a"));
+    Assert.assertNull(Utilities.tryParseInt("-"));
+    Assert.assertNull(Utilities.tryParseInt("" + (Integer.MAX_VALUE + 1L)));
+    Assert.assertNull(Utilities.tryParseInt("" + (Integer.MIN_VALUE - 1L)));
   }
 
   @Test
