@@ -74,18 +74,23 @@ public class PushIdGenerator {
       return String.valueOf(num - 1);
     }
     StringBuilder next = new StringBuilder(key);
-
-    int pivot;
     if (next.charAt(next.length() - 1) == MIN_PUSH_CHAR) {
-      pivot = next.length() - 1;
-    } else {
-      next.setCharAt(
-          next.length() - 1,
-          PUSH_CHARS.charAt(PUSH_CHARS.indexOf(next.charAt(next.length() - 1) - 1)));
-      pivot = next.length();
+      if (next.length() == 1) {
+        // Empty keys are not allowed, but `getMinName()` sorts
+        // lower than any other key.
+        return ChildKey.getMinName().toString();
+      }
+      // If the last character is the smallest possible character, then the next
+      // smallest string is the prefix of `key` without it.
+      return next.substring(0, next.length() - 1);
     }
-    next.append(Collections.nCopies(MAX_PUSH_CHAR, MAX_KEY_LEN - pivot));
-    return next.toString();
+    // Replace the last character with it's immediate predecessor, and fill the
+    // suffix of the key with MAX_PUSH_CHAR. This is the lexicographically largest
+    // possible key smaller than `key`.
+    next.setCharAt(
+        next.length() - 1,
+        PUSH_CHARS.charAt(PUSH_CHARS.indexOf(next.charAt(next.length() - 1)) - 1));
+    return next.append(Collections.nCopies(MAX_PUSH_CHAR, MAX_KEY_LEN - next.length())).toString();
   };
 
   public static final String nextAfter(String key) {
