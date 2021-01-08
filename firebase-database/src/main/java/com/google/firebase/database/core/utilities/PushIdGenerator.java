@@ -15,7 +15,7 @@
 package com.google.firebase.database.core.utilities;
 
 import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
-import static com.google.firebase.database.core.utilities.Utilities.tryParseInt;
+import static com.google.firebase.database.core.utilities.Utilities.tryParseLong;
 
 import com.google.firebase.database.snapshot.ChildKey;
 import java.util.Random;
@@ -67,7 +67,7 @@ public class PushIdGenerator {
 
   public static final String successor(String key) {
     Validation.validateNullableKey(key);
-    Integer num = tryParseInt(key);
+    Long num = tryParseLong(key);
     if (num != null) {
       if (Long.valueOf(num) + 1L > Integer.MAX_VALUE) {
         // Consult for the rationale behind this.

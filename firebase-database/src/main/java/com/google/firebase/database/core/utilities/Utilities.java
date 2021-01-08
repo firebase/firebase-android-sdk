@@ -149,7 +149,7 @@ public class Utilities {
 
   // NOTE: We could use Ints.tryParse from guava, but I don't feel like pulling in guava (~2mb) for
   // that small purpose.
-  public static Integer tryParseInt(String num) {
+  public static Long tryParseLong(String num) {
     if (num.length() > 11 || num.length() == 0) {
       return null;
     }
@@ -176,13 +176,13 @@ public class Utilities {
       if (-number < Integer.MIN_VALUE) {
         return null;
       } else {
-        return (int) -number;
+        return -number;
       }
     } else {
       if (number > Integer.MAX_VALUE) {
         return null;
       }
-      return (int) number;
+      return number;
     }
   }
 
