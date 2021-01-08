@@ -459,7 +459,7 @@ public class Query {
     }
     if (params.hasStart()) {
       throw new IllegalArgumentException(
-          "Can't call startAt(), startAfter(), or equalTo() multiple times");
+          "Can't call startAt(), startAfte(), or equalTo() multiple times");
     }
     ChildKey childKey = key != null ? ChildKey.fromString(key) : null;
     QueryParams newParams = params.startAt(node, childKey);
@@ -467,6 +467,96 @@ public class Query {
     validateQueryEndpoints(newParams);
     hardAssert(newParams.isValid());
     return new Query(repo, path, newParams, orderByCalled);
+  }
+
+  /**
+   * Create a query constrained to only return child nodes with a value greater than the given
+   * value, using the given orderBy directive or priority as default.
+   *
+   * @param value The value to start at, exclusive
+   * @return A Query with the new constraint
+   * @since 19.6
+   */
+  @NonNull
+  public Query endBefore(@Nullable String value) {
+    return endAt(value, ChildKey.getMinName().asString());
+  }
+
+  /**
+   * Create a query constrained to only return child nodes with a value greater than the given
+   * value, using the given orderBy directive or priority as default.
+   *
+   * @param value The value to start at, exclusive
+   * @return A Query with the new constraint
+   * @since 19.6
+   */
+  @NonNull
+  public Query endBefore(double value) {
+    return endAt(value, ChildKey.getMinName().asString());
+  }
+
+  /**
+   * Create a query constrained to only return child nodes with a value greater than the given
+   * value, using the given orderBy directive or priority as default.
+   *
+   * @param value The value to start at, exclusive
+   * @return A Query with the new constraint
+   * @since 19.6
+   */
+  @NonNull
+  public Query endBefore(boolean value) {
+    return endAt(value, ChildKey.getMinName().asString());
+  }
+
+  /**
+   * Create a query constrained to only return child nodes with a value greater than the given
+   * value, using the given orderBy directive or priority as default, and additionally only child
+   * nodes with a key greater than or equal to the given key.
+   *
+   * @param value The priority to start at
+   * @param key The key to start at, exclusive
+   * @return A Query with the new constraint
+   * @since 19.6
+   */
+  @NonNull
+  public Query endBefore(@Nullable String value, @Nullable String key) {
+    Node node =
+        value != null ? new StringNode(value, PriorityUtilities.NullPriority()) : EmptyNode.Empty();
+    return endAt(node, key);
+  }
+
+  /**
+   * Create a query constrained to only return child nodes with a value greater than the given
+   * value, using the given orderBy directive or priority as default, and additionally only child
+   * nodes with a key greater than or equal to the given key.
+   *
+   * @param value The priority to start at
+   * @param key The key name to start at, exclusive
+   * @return A Query with the new constraint
+   * @since 19.6
+   */
+  @NonNull
+  public Query endBefore(double value, @Nullable String key) {
+    return endBefore(new DoubleNode(value, PriorityUtilities.NullPriority()), key);
+  }
+
+  /**
+   * Create a query constrained to only return child nodes with a value greater than the given
+   * value, using the given orderBy directive or priority as default, and additionally only child
+   * nodes with a key greater than or equal to the given key.
+   *
+   * @param value The priority to start at
+   * @param key The key to start at, exclusive
+   * @return A Query with the new constraint
+   * @since 19.6
+   */
+  @NonNull
+  public Query endBefore(boolean value, @Nullable String key) {
+    return endBefore(new BooleanNode(value, PriorityUtilities.NullPriority()), key);
+  }
+
+  private Query endBefore(Node node, String key) {
+    return endAt(node, PushIdGenerator.prevBefore(key));
   }
 
   /**

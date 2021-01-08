@@ -18,6 +18,7 @@ import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
 import static com.google.firebase.database.core.utilities.Utilities.tryParseInt;
 
 import com.google.firebase.database.snapshot.ChildKey;
+import java.util.Collections;
 import java.util.Random;
 
 public class PushIdGenerator {
@@ -64,6 +65,28 @@ public class PushIdGenerator {
     hardAssert(result.length() == 20);
     return result.toString();
   }
+
+  // `key` is assumed to be non-empty.
+  public static final String prevBefore(String key) {
+    Validation.validateNullableKey(key);
+    Integer num = tryParseInt(key);
+    if (num != null) {
+      return String.valueOf(num + 1);
+    }
+    StringBuilder next = new StringBuilder(key);
+
+    int pivot;
+    if (next.charAt(next.length() - 1) == MIN_PUSH_CHAR) {
+      pivot = next.length() - 1;
+    } else {
+      next.setCharAt(
+          next.length() - 1,
+          PUSH_CHARS.charAt(PUSH_CHARS.indexOf(next.charAt(next.length() - 1) - 1)));
+      pivot = next.length();
+    }
+    next.append(Collections.nCopies(MAX_PUSH_CHAR, MAX_KEY_LEN - pivot));
+    return next.toString();
+  };
 
   public static final String nextAfter(String key) {
     Validation.validateNullableKey(key);

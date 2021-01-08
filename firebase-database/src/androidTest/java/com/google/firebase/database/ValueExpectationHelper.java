@@ -16,9 +16,11 @@ package com.google.firebase.database;
 
 import static org.junit.Assert.fail;
 
+import android.util.Log;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Semaphore;
 
 public class ValueExpectationHelper {
@@ -44,8 +46,13 @@ public class ValueExpectationHelper {
             new ValueEventListener() {
               @Override
               public void onDataChange(DataSnapshot snapshot) {
+                Map<String, Long> map = snapshot.getValue(Map.class);
+                for (Map.Entry<String, Long> entry : map.entrySet()) {
+                  Log.d("DEBUGGING THIS", entry.getKey() + ", " + entry.getValue());
+                }
                 Object result = snapshot.getValue();
                 // Hack to handle race condition in initial data
+                Log.d("DEBUGGING THIS", "expected = " + expected + " result = " + result);
                 if (DeepEquals.deepEquals(expected, result)) {
                   // We may pass through intermediate states, but we should end up with the correct
                   // state
