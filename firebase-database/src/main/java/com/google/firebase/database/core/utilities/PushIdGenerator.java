@@ -67,10 +67,13 @@ public class PushIdGenerator {
   }
 
   // `key` is assumed to be non-empty.
-  public static final String prevBefore(String key) {
+  public static final String predecessor(String key) {
     Validation.validateNullableKey(key);
     Integer num = tryParseInt(key);
     if (num != null) {
+      if (Long.valueOf(num) - 1 < Integer.MIN_VALUE) {
+        return ChildKey.MIN_KEY_NAME;
+      }
       return String.valueOf(num - 1);
     }
     StringBuilder next = new StringBuilder(key);

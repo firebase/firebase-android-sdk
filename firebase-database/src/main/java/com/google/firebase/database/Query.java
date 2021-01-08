@@ -565,7 +565,7 @@ public class Query {
   }
 
   private Query endBefore(Node node, String key) {
-    return endAt(node, PushIdGenerator.prevBefore(key));
+    return endAt(node, PushIdGenerator.predecessor(key));
   }
 
   /**
