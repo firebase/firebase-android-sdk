@@ -461,7 +461,16 @@ public class Query {
       throw new IllegalArgumentException(
           "Can't call startAt(), startAfter(), or equalTo() multiple times");
     }
-    ChildKey childKey = key != null ? ChildKey.fromString(key) : null;
+    ChildKey childKey = null;
+    if (key != null) {
+      if (key.equals(ChildKey.MIN_KEY_NAME)) {
+        childKey = ChildKey.getMinName();
+      } else if (key.equals(ChildKey.MAX_KEY_NAME)) {
+        childKey = ChildKey.getMaxName();
+      } else {
+        childKey = ChildKey.fromString(key);
+      }
+    }
     QueryParams newParams = params.startAt(node, childKey);
     validateLimit(newParams);
     validateQueryEndpoints(newParams);

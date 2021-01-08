@@ -74,6 +74,9 @@ public class PushIdGenerator {
     StringBuilder next = new StringBuilder(key);
 
     if (next.length() < MAX_KEY_LEN) {
+      // If this key doesn't have all possible character slots filled,
+      // the lexicographical successor is the same string with the smallest
+      // possible character appended to the end.
       next.append(MIN_PUSH_CHAR);
       return next.toString();
     }
@@ -90,11 +93,15 @@ public class PushIdGenerator {
       return ChildKey.getMaxName().toString();
     }
 
+    // `i` now points to the last character in `key` that is < MAX_PUSH_CHAR,
+    // where all characters in `key.substring(i + 1, key.length)` are MAX_PUSH_CHAR.
+    // The lexicographical successor is attained by increment this character, and
+    // returning the prefix of `key` up to and including it.
     char source = next.charAt(i);
     char sourcePlusOne = PUSH_CHARS.charAt(PUSH_CHARS.indexOf(source) + 1);
     next.replace(i, i + 1, String.valueOf(sourcePlusOne));
 
-    return next.toString();
+    return next.substring(0, i + 1);
   }
 
   private static void incrementArray() {

@@ -543,7 +543,7 @@ public class QueryTest {
     DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     ValueExpectationHelper expectations = new ValueExpectationHelper();
-    expectations.add(ref.startAfter(null).limitToFirst(1), new MapBuilder().put("a", 1L).build());
+    expectations.add(ref.startAfter(null).limitToFirst(1), null);
     expectations.add(
         ref.startAfter(null, "c").limitToFirst(1), new MapBuilder().put("d", 4L).build());
     expectations.add(
@@ -601,7 +601,7 @@ public class QueryTest {
 
     ValueExpectationHelper expectations = new ValueExpectationHelper();
 
-    expectations.add(ref.startAfter(null).limitToFirst(1), new MapBuilder().put("a", 1L).build());
+    expectations.add(ref.startAfter(null).limitToFirst(1), null);
     expectations.add(
         ref.startAfter(null, "c").limitToFirst(1), new MapBuilder().put("d", 4L).build());
     expectations.add(
@@ -1381,14 +1381,12 @@ public class QueryTest {
 
   // TODO(wyszynski): endBefore
   @Test
-  public void startAfterWithPriorityWorks() throws DatabaseException, InterruptedException {
+  public void startAfterEndAtWithPriorityWorks() throws DatabaseException, InterruptedException {
     DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     ValueExpectationHelper helper = new ValueExpectationHelper();
-    helper.add(
-        ref.startAfter("w").endAt("y"),
-        new MapBuilder().put("d", 4L).put("b", 2L).put("c", 3L).build());
-    helper.add(ref.startAfter("w").endAt("x"), new MapBuilder().put("d", 4L).put("c", 3L).build());
+    helper.add(ref.startAfter("w").endAt("y"), new MapBuilder().put("b", 2L).put("c", 3L).build());
+    helper.add(ref.startAfter("w").endAt("x"), new MapBuilder().put("c", 3L).build());
     helper.add(ref.startAfter("a").endAt("c"), null);
 
     ref.setValue(
@@ -1440,11 +1438,9 @@ public class QueryTest {
             .build());
 
     ValueExpectationHelper helper = new ValueExpectationHelper();
-    helper.add(
-        ref.startAfter("w").endAt("y"),
-        new MapBuilder().put("b", 2L).put("c", 3L).put("d", 4L).build());
-    helper.add(ref.startAt("w").endAt("x"), new MapBuilder().put("c", 3L).put("d", 4L).build());
-    helper.add(ref.startAt("a").endAt("c"), null);
+    helper.add(ref.startAfter("w").endAt("y"), new MapBuilder().put("b", 2L).put("c", 3L).build());
+    helper.add(ref.startAfter("w").endAt("x"), new MapBuilder().put("c", 3L).build());
+    helper.add(ref.startAfter("a").endAt("c"), null);
 
     helper.waitForEvents();
   }
@@ -1904,7 +1900,7 @@ public class QueryTest {
             .build());
 
     DataSnapshot snap = IntegrationTestHelpers.getSnap(ref.startAfter(2));
-    Map<String, Object> expected = new MapBuilder().put("c", 2L).put("d", 3L).put("e", 4L).build();
+    Map<String, Object> expected = new MapBuilder().put("d", 3L).put("e", 4L).build();
     Object result = snap.getValue();
     DeepEquals.assertEquals(expected, result);
   }
@@ -3495,12 +3491,12 @@ public class QueryTest {
 
               @Override
               public void onChildRemoved(DataSnapshot snapshot) {
-                // No-op
+                removedSecond.add(snapshot.getKey());
               }
 
               @Override
               public void onChildMoved(DataSnapshot snapshot, String previousChildName) {
-                removedSecond.add(snapshot.getKey());
+                // No-op
               }
 
               @Override
@@ -3510,7 +3506,6 @@ public class QueryTest {
     ref.child("a").setValue("a", 5);
     ref.child("a").setValue("a", 15);
     ref.child("a").setValue("a", 10);
-    ref.child("a").setValue("a", 0);
     new WriteFuture(ref.child("a"), "a", 5).timedGet();
 
     assertEquals(2, addedFirst.size());
