@@ -805,7 +805,7 @@ public final class RemoteSerializer {
       default:
         throw fail("Unrecognized direction %d", proto.getDirection());
     }
-    return OrderBy.getInstance(direction, fieldPath);
+    return new OrderBy(direction, fieldPath);
   }
 
   // Bounds

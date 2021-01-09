@@ -52,9 +52,9 @@ public final class Query {
   }
 
   private static final OrderBy KEY_ORDERING_ASC =
-      OrderBy.getInstance(OrderBy.Direction.ASCENDING, FieldPath.KEY_PATH);
+      new OrderBy(Direction.ASCENDING, FieldPath.KEY_PATH);
   private static final OrderBy KEY_ORDERING_DESC =
-      OrderBy.getInstance(Direction.DESCENDING, FieldPath.KEY_PATH);
+      new OrderBy(Direction.DESCENDING, FieldPath.KEY_PATH);
 
   private final List<OrderBy> explicitSortOrder;
 
@@ -383,8 +383,7 @@ public final class Query {
           this.memoizedOrderBy = Collections.singletonList(KEY_ORDERING_ASC);
         } else {
           memoizedOrderBy =
-              Arrays.asList(
-                  OrderBy.getInstance(Direction.ASCENDING, inequalityField), KEY_ORDERING_ASC);
+              Arrays.asList(new OrderBy(Direction.ASCENDING, inequalityField), KEY_ORDERING_ASC);
         }
       } else {
         List<OrderBy> res = new ArrayList<>();
@@ -514,7 +513,7 @@ public final class Query {
               orderBy.getDirection() == Direction.DESCENDING
                   ? Direction.ASCENDING
                   : Direction.DESCENDING;
-          newOrderBy.add(OrderBy.getInstance(dir, orderBy.getField()));
+          newOrderBy.add(new OrderBy(dir, orderBy.getField()));
         }
 
         // We need to swap the cursors to match the now-flipped query ordering.

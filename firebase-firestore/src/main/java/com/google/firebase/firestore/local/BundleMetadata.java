@@ -18,35 +18,41 @@ import com.google.firebase.firestore.model.SnapshotVersion;
 
 /** Represents a Firestore bundle saved by the SDK in its local storage. */
 /* package */ class BundleMetadata {
-  private final String bundleId;
-  private final int schemaVersion;
-  private final SnapshotVersion createTime;
-
-  public BundleMetadata(String bundleId, int schemaVersion, SnapshotVersion createTime) {
-    this.bundleId = bundleId;
-    this.schemaVersion = schemaVersion;
-    this.createTime = createTime;
-  }
+  private String bundleId;
+  private int version;
+  private SnapshotVersion createTime;
+  private int totalDocuments;
+  private int totalBytes;
 
   /**
-   * @return Id of the bundle. It is used together with `createTime` to determine if a bundle has
-   *     been loaded by the SDK.
+   * Returns the d of the bundle. It is used together with `createTime` to determine if a bundle has
+   * been loaded by the SDK.
    */
   public String getBundleId() {
     return bundleId;
   }
 
-  /** @return Schema version of the bundle. */
-  public int getSchemaVersion() {
-    return schemaVersion;
+  /** Returns the chema version of the bundle. */
+  public int getVersion() {
+    return version;
   }
 
   /**
-   * @return Snapshot version of the bundle if created by the Server SDKs, or else
-   *     SnapshotVersion.MIN.
+   * Returns the snapshot version of the bundle if created by the Server SDKs, or else
+   * SnapshotVersion.MIN.
    */
   public SnapshotVersion getCreateTime() {
     return createTime;
+  }
+
+  /** Returns the number of documents in the bundle. */
+  public int getTotalDocuments() {
+    return totalDocuments;
+  }
+
+  /** The size of the bundle in bytes, excluding this BundleMetadata. */
+  public int getTotalBytes() {
+    return totalBytes;
   }
 
   @Override
@@ -56,7 +62,9 @@ import com.google.firebase.firestore.model.SnapshotVersion;
 
     BundleMetadata that = (BundleMetadata) o;
 
-    if (schemaVersion != that.schemaVersion) return false;
+    if (version != that.version) return false;
+    if (totalDocuments != that.totalDocuments) return false;
+    if (totalBytes != that.totalBytes) return false;
     if (!bundleId.equals(that.bundleId)) return false;
     return createTime.equals(that.createTime);
   }
@@ -64,8 +72,10 @@ import com.google.firebase.firestore.model.SnapshotVersion;
   @Override
   public int hashCode() {
     int result = bundleId.hashCode();
-    result = 31 * result + schemaVersion;
+    result = 31 * result + version;
     result = 31 * result + createTime.hashCode();
+    result = 31 * result + totalDocuments;
+    result = 31 * result + totalBytes;
     return result;
   }
 }

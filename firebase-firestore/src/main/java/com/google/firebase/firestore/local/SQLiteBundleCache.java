@@ -55,7 +55,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
             + "(bundle_id, schema_version, create_time_seconds, create_time_nanos) "
             + "VALUES (?, ?, ?, ?)",
         metadata.getBundleId(),
-        metadata.getSchemaVersion(),
+        metadata.getVersion(),
         metadata.getCreateTime().getTimestamp().getSeconds(),
         metadata.getCreateTime().getTimestamp().getNanoseconds());
   }

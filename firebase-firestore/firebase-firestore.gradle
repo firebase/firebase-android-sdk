@@ -131,6 +131,8 @@ dependencies {
         exclude group: "com.google.firebase", module: "firebase-common"
     }
 
+    implementation 'com.google.code.gson:gson:2.8.6'
+
     testImplementation 'junit:junit:4.12'
     testImplementation 'androidx.test:core:1.2.0'
     testImplementation 'org.mockito:mockito-core:2.25.0'

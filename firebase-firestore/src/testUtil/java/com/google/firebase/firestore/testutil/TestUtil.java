@@ -272,7 +272,7 @@ public class TestUtil {
     } else {
       throw new IllegalArgumentException("Unknown direction: " + dir);
     }
-    return OrderBy.getInstance(direction, field(key));
+    return new OrderBy(direction, field(key));
   }
 
   public static void testEquality(List<List<Integer>> equalityGroups) {

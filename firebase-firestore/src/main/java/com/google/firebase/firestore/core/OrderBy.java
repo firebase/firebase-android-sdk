@@ -38,8 +38,9 @@ public class OrderBy {
     }
   }
 
-  public static OrderBy getInstance(Direction direction, FieldPath path) {
-    return new OrderBy(direction, path);
+  public OrderBy(Direction direction, FieldPath field) {
+    this.direction = direction;
+    this.field = field;
   }
 
   public Direction getDirection() {
@@ -52,11 +53,6 @@ public class OrderBy {
 
   private final Direction direction;
   final FieldPath field;
-
-  private OrderBy(Direction direction, FieldPath field) {
-    this.direction = direction;
-    this.field = field;
-  }
 
   int compare(Document d1, Document d2) {
     if (field.equals(FieldPath.KEY_PATH)) {

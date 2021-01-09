@@ -657,7 +657,7 @@ public class Query {
         direction == Direction.ASCENDING
             ? OrderBy.Direction.ASCENDING
             : OrderBy.Direction.DESCENDING;
-    return new Query(query.orderBy(OrderBy.getInstance(dir, fieldPath)), firestore);
+    return new Query(query.orderBy(new OrderBy(dir, fieldPath)), firestore);
   }
 
   /**
