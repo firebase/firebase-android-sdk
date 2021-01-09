@@ -21,8 +21,10 @@ import static com.google.firebase.inappmessaging.testutil.TestData.BANNER_MESSAG
 import static com.google.firebase.inappmessaging.testutil.TestData.CARD_MESSAGE_MODEL;
 import static com.google.firebase.inappmessaging.testutil.TestData.IMAGE_MESSAGE_MODEL;
 import static com.google.firebase.inappmessaging.testutil.TestData.IMAGE_MESSAGE_MODEL_WITHOUT_ACTION;
+import static com.google.firebase.inappmessaging.testutil.TestData.IMAGE_MESSAGE_WEB_ACTION_MODEL;
 import static com.google.firebase.inappmessaging.testutil.TestData.IMAGE_URL_STRING;
 import static com.google.firebase.inappmessaging.testutil.TestData.MODAL_MESSAGE_MODEL;
+import static com.google.firebase.inappmessaging.testutil.TestData.WEB_ACTION_URL_STRING;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
@@ -589,12 +591,15 @@ public class FirebaseInAppMessagingDisplayTest {
     customTabIntent.setPackage("com.android.chrome");
     shadowPackageManager.addResolveInfoForIntent(customTabIntent, resolveInfo);
     resumeActivity(activity);
-    listener.displayMessage(IMAGE_MESSAGE_MODEL, callbacks);
+    listener.displayMessage(IMAGE_MESSAGE_WEB_ACTION_MODEL, callbacks);
     verify(imageBindingWrapper)
         .inflate(onClickListenerArgCaptor.capture(), any(OnClickListener.class));
-    onClickListenerArgCaptor.getValue().get(IMAGE_MESSAGE_MODEL.getAction()).onClick(null);
+    onClickListenerArgCaptor
+        .getValue()
+        .get(IMAGE_MESSAGE_WEB_ACTION_MODEL.getAction())
+        .onClick(null);
     assertThat(shadowActivity.getNextStartedActivity().getData())
-        .isEqualTo(Uri.parse(ACTION_URL_STRING));
+        .isEqualTo(Uri.parse(WEB_ACTION_URL_STRING));
   }
 
   @Test
