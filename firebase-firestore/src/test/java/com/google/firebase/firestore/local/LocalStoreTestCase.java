@@ -22,6 +22,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.doc;
 import static com.google.firebase.firestore.testutil.TestUtil.filter;
 import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
+import static com.google.firebase.firestore.testutil.TestUtil.mergeMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.noChangeEvent;
 import static com.google.firebase.firestore.testutil.TestUtil.patchMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.query;
@@ -1298,7 +1299,7 @@ public abstract class LocalStoreTestCase {
     assertTargetId(2);
 
     writeMutation(
-        patchMutation("foo/bar", map("sum", FieldValue.increment(1)), Collections.EMPTY_LIST));
+        mergeMutation("foo/bar", map("sum", FieldValue.increment(1)), Collections.EMPTY_LIST));
     assertChanged(doc("foo/bar", 0, map("sum", 1), Document.DocumentState.LOCAL_MUTATIONS));
     assertContains(doc("foo/bar", 0, map("sum", 1), Document.DocumentState.LOCAL_MUTATIONS));
 

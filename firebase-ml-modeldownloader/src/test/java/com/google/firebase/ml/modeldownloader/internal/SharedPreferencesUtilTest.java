@@ -15,10 +15,12 @@
 package com.google.firebase.ml.modeldownloader.internal;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import android.os.SystemClock;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
@@ -156,5 +158,59 @@ public class SharedPreferencesUtilTest {
     assertTrue(retrievedModel.contains(CUSTOM_MODEL_DOWNLOAD_COMPLETE));
     assertTrue(retrievedModel.contains(model2));
     assertTrue(retrievedModel.contains(model3));
+  }
+
+  @Test
+  public void getCustomModelStatsCollectionFlag_defaultTrue() {
+    assertTrue(sharedPreferencesUtil.getCustomModelStatsCollectionFlag());
+  }
+
+  @Test
+  public void setCustomModelStatsCollectionFlag_updates() {
+    sharedPreferencesUtil.setCustomModelStatsCollectionEnabled(false);
+    assertFalse(sharedPreferencesUtil.getCustomModelStatsCollectionFlag());
+    sharedPreferencesUtil.setCustomModelStatsCollectionEnabled(true);
+    assertTrue(sharedPreferencesUtil.getCustomModelStatsCollectionFlag());
+  }
+
+  @Test
+  public void getModelDownloadBeginTimeMs_default0() {
+    assertEquals(sharedPreferencesUtil.getModelDownloadBeginTimeMs(CUSTOM_MODEL_DOWNLOADING), 0L);
+  }
+
+  @Test
+  public void setModelDownloadBeginTimeMs_updates() {
+    SystemClock.setCurrentTimeMillis(100L);
+    sharedPreferencesUtil.setDownloadingCustomModelDetails(CUSTOM_MODEL_DOWNLOADING);
+    assertEquals(sharedPreferencesUtil.getModelDownloadBeginTimeMs(CUSTOM_MODEL_DOWNLOADING), 100L);
+
+    // Completing the download clears the begin time.
+    SystemClock.setCurrentTimeMillis(200L);
+    sharedPreferencesUtil.setUploadedCustomModelDetails(CUSTOM_MODEL_DOWNLOAD_COMPLETE);
+    assertEquals(sharedPreferencesUtil.getModelDownloadBeginTimeMs(CUSTOM_MODEL_DOWNLOADING), 0L);
+  }
+
+  @Test
+  public void getModelDownloadCompleteTimeMs_default0() {
+    assertEquals(
+        sharedPreferencesUtil.getModelDownloadCompleteTimeMs(CUSTOM_MODEL_DOWNLOADING), 0L);
+  }
+
+  @Test
+  public void setModelDownloadCompleteTimeMs_updates() {
+    sharedPreferencesUtil.setModelDownloadCompleteTimeMs(CUSTOM_MODEL_DOWNLOADING, 100L);
+    assertEquals(
+        sharedPreferencesUtil.getModelDownloadCompleteTimeMs(CUSTOM_MODEL_DOWNLOADING), 100L);
+
+    // Completing the download clears the completion time.
+    sharedPreferencesUtil.setModelDownloadCompleteTimeMs(CUSTOM_MODEL_DOWNLOADING, 250L);
+    assertEquals(
+        sharedPreferencesUtil.getModelDownloadCompleteTimeMs(CUSTOM_MODEL_DOWNLOADING), 250L);
+
+    // Completing the download clears the begin time.
+    SystemClock.setCurrentTimeMillis(300L);
+    sharedPreferencesUtil.setUploadedCustomModelDetails(CUSTOM_MODEL_DOWNLOAD_COMPLETE);
+    assertEquals(
+        sharedPreferencesUtil.getModelDownloadCompleteTimeMs(CUSTOM_MODEL_DOWNLOADING), 0L);
   }
 }
