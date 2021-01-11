@@ -59,10 +59,13 @@ import org.json.JSONObject;
 public class FirebaseInstallationServiceClient {
 
   // TrafficStats tags must be kept in sync with java/com/google/android/gms/libs/punchclock
-  private static final int TRAFFIC_STATS_TAG = 0x00008000;
-  private static final int CREATE_INSTALLATION_TRAFFIC_STATS_TAG = TRAFFIC_STATS_TAG | 0x1;
-  private static final int DELETE_INSTALLATION_TRAFFIC_STATS_TAG = TRAFFIC_STATS_TAG | 0x2;
-  private static final int GENERATE_AUTH_TOKEN_TRAFFIC_STATS_TAG = TRAFFIC_STATS_TAG | 0x3;
+  private static final int TRAFFIC_STATS_FIREBASE_INSTALLATIONS_TAG = 0x00008000;
+  private static final int TRAFFIC_STATS_CREATE_INSTALLATION_TAG =
+      TRAFFIC_STATS_FIREBASE_INSTALLATIONS_TAG | 0x1;
+  private static final int TRAFFIC_STATS_DELETE_INSTALLATION_TAG =
+      TRAFFIC_STATS_FIREBASE_INSTALLATIONS_TAG | 0x2;
+  private static final int TRAFFIC_STATS_GENERATE_AUTH_TOKEN_TAG =
+      TRAFFIC_STATS_FIREBASE_INSTALLATIONS_TAG | 0x3;
 
   private static final String FIREBASE_INSTALLATIONS_API_DOMAIN =
       "firebaseinstallations.googleapis.com";
@@ -161,7 +164,7 @@ public class FirebaseInstallationServiceClient {
     URL url = getFullyQualifiedRequestUri(resourceName);
     for (int retryCount = 0; retryCount <= MAX_RETRIES; retryCount++) {
 
-      TrafficStats.setThreadStatsTag(CREATE_INSTALLATION_TRAFFIC_STATS_TAG);
+      TrafficStats.setThreadStatsTag(TRAFFIC_STATS_CREATE_INSTALLATION_TAG);
       HttpURLConnection httpURLConnection = openHttpURLConnection(url, apiKey);
 
       try {
@@ -319,7 +322,7 @@ public class FirebaseInstallationServiceClient {
 
     int retryCount = 0;
     while (retryCount <= MAX_RETRIES) {
-      TrafficStats.setThreadStatsTag(DELETE_INSTALLATION_TRAFFIC_STATS_TAG);
+      TrafficStats.setThreadStatsTag(TRAFFIC_STATS_DELETE_INSTALLATION_TAG);
       HttpURLConnection httpURLConnection = openHttpURLConnection(url, apiKey);
       try {
         httpURLConnection.setRequestMethod("DELETE");
@@ -402,7 +405,7 @@ public class FirebaseInstallationServiceClient {
     URL url = getFullyQualifiedRequestUri(resourceName);
     for (int retryCount = 0; retryCount <= MAX_RETRIES; retryCount++) {
 
-      TrafficStats.setThreadStatsTag(GENERATE_AUTH_TOKEN_TRAFFIC_STATS_TAG);
+      TrafficStats.setThreadStatsTag(TRAFFIC_STATS_GENERATE_AUTH_TOKEN_TAG);
       HttpURLConnection httpURLConnection = openHttpURLConnection(url, apiKey);
       try {
         httpURLConnection.setRequestMethod("POST");
@@ -633,7 +636,8 @@ public class FirebaseInstallationServiceClient {
         response.append(input).append('\n');
       }
       return String.format(
-          "Error when communicating with the Firebase Installations server API. HTTP response: [%d %s: %s]",
+          "Error when communicating with the Firebase Installations server API. HTTP response: [%d"
+              + " %s: %s]",
           conn.getResponseCode(), conn.getResponseMessage(), response);
     } catch (IOException ignored) {
       return null;
