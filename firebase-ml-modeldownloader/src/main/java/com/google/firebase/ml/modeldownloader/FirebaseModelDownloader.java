@@ -121,8 +121,7 @@ public class FirebaseModelDownloader {
   public Task<CustomModel> getModel(
       @NonNull String modelName,
       @NonNull DownloadType downloadType,
-      @Nullable CustomModelDownloadConditions conditions)
-      throws Exception {
+      @Nullable CustomModelDownloadConditions conditions) {
     CustomModel localModelDetails = getLocalModelDetails(modelName);
     if (localModelDetails == null) {
       // no local model - get latest.
@@ -140,9 +139,10 @@ public class FirebaseModelDownloader {
         getCustomModelTask(modelName, conditions, localModelDetails.getModelHash());
         return getCompletedLocalCustomModelTask(localModelDetails);
     }
-    throw new FirebaseMlException(
-        "Unsupported downloadType, please chose LOCAL_MODEL, LATEST_MODEL, or LOCAL_MODEL_UPDATE_IN_BACKGROUND",
-        FirebaseMlException.INVALID_ARGUMENT);
+    return Tasks.forException(
+        new FirebaseMlException(
+            "Unsupported downloadType, please chose LOCAL_MODEL, LATEST_MODEL, or LOCAL_MODEL_UPDATE_IN_BACKGROUND",
+            FirebaseMlException.INVALID_ARGUMENT));
   }
 
   /**
@@ -228,8 +228,7 @@ public class FirebaseModelDownloader {
   // This version of getCustomModelTask will always call the modelDownloadService and upon
   // success will then trigger file download.
   private Task<CustomModel> getCustomModelTask(
-      @NonNull String modelName, @Nullable CustomModelDownloadConditions conditions)
-      throws Exception {
+      @NonNull String modelName, @Nullable CustomModelDownloadConditions conditions) {
     return getCustomModelTask(modelName, conditions, null);
   }
 
@@ -238,8 +237,7 @@ public class FirebaseModelDownloader {
   private Task<CustomModel> getCustomModelTask(
       @NonNull String modelName,
       @Nullable CustomModelDownloadConditions conditions,
-      @Nullable String modelHash)
-      throws Exception {
+      @Nullable String modelHash) {
     CustomModel currentModel = sharedPreferencesUtil.getCustomModelDetails(modelName);
     if (currentModel == null && modelHash != null) {
       // todo(annzimmer) log something about mismatched state and use hash = null
@@ -322,8 +320,7 @@ public class FirebaseModelDownloader {
       @NonNull String modelName,
       @Nullable CustomModelDownloadConditions conditions,
       Task<Void> downloadTask,
-      int retryCounter)
-      throws Exception {
+      int retryCounter) {
     if (downloadTask.getException().getMessage().contains("Retry: Expired URL")) {
       // this is likely an expired url - retry.
       Task<CustomModel> retryModelDetails =
@@ -357,7 +354,7 @@ public class FirebaseModelDownloader {
     return Tasks.forException(new Exception("File download failed."));
   }
 
-  private Task<CustomModel> finishModelDownload(@NonNull String modelName) throws Exception {
+  private Task<CustomModel> finishModelDownload(@NonNull String modelName) {
     // read the updated model
     CustomModel downloadedModel = sharedPreferencesUtil.getDownloadingCustomModelDetails(modelName);
     if (downloadedModel == null) {
@@ -385,11 +382,7 @@ public class FirebaseModelDownloader {
   @NonNull
   public Task<Set<CustomModel>> listDownloadedModels() {
     // trigger completion of file moves for download files.
-    try {
-      fileDownloadService.maybeCheckDownloadingComplete();
-    } catch (Exception ex) {
-      System.out.println("Error checking for in progress downloads: " + ex.getMessage());
-    }
+    fileDownloadService.maybeCheckDownloadingComplete();
 
     TaskCompletionSource<Set<CustomModel>> taskCompletionSource = new TaskCompletionSource<>();
     executor.execute(

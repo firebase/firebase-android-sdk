@@ -100,11 +100,9 @@ public class CustomModelDownloadService {
    * @param projectNumber - firebase project number
    * @param modelName - model name
    * @return - updated model with new download url and expiry time
-   * @throws Exception - errors when Firebase ML Download Service call fails.
    */
   @NonNull
-  public Task<CustomModel> getNewDownloadUrlWithExpiry(String projectNumber, String modelName)
-      throws Exception {
+  public Task<CustomModel> getNewDownloadUrlWithExpiry(String projectNumber, String modelName) {
     return getCustomModelDetails(projectNumber, modelName, null);
   }
 
@@ -118,11 +116,10 @@ public class CustomModelDownloadService {
    *     force retrieval of a new download url
    * @return The download details for the model or null if the current model hash matches the latest
    *     model.
-   * @throws Exception -errors when call to API fails.
    */
   @NonNull
   public Task<CustomModel> getCustomModelDetails(
-      String projectNumber, String modelName, String modelHash) throws Exception {
+      String projectNumber, String modelName, String modelHash) {
     try {
       URL url =
           new URL(String.format(DOWNLOAD_MODEL_REGEX, downloadHost, projectNumber, modelName));

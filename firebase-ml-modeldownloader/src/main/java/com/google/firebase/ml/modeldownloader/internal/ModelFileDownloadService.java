@@ -319,7 +319,7 @@ public class ModelFileDownloadService {
     return fileDescriptor;
   }
 
-  public void maybeCheckDownloadingComplete() throws Exception {
+  public void maybeCheckDownloadingComplete() {
     for (String key : sharedPreferencesUtil.getSharedPreferenceKeySet()) {
       // if a local file path is present - get model details.
       Matcher matcher =
@@ -341,7 +341,7 @@ public class ModelFileDownloadService {
 
   @Nullable
   @WorkerThread
-  public File loadNewlyDownloadedModelFile(CustomModel model) throws FirebaseMlException {
+  public File loadNewlyDownloadedModelFile(CustomModel model) {
     if (model == null) {
       return null;
     }
@@ -380,6 +380,9 @@ public class ModelFileDownloadService {
       try {
         // TODO add logging
         newModelFile = fileManager.moveModelToDestinationFolder(model, fileDescriptor);
+      } catch (FirebaseMlException ex) {
+        // add logging for this error
+        newModelFile = null;
       } finally {
         removeOrCancelDownloadModel(model.getName(), model.getDownloadId());
       }
