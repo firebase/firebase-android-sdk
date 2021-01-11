@@ -17,7 +17,6 @@ package com.google.firebase.ml.modeldownloader.internal;
 import android.util.JsonReader;
 import android.util.Log;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
@@ -103,15 +102,15 @@ public class CustomModelDownloadService {
    * @return - updated model with new download url and expiry time
    * @throws Exception - errors when Firebase ML Download Service call fails.
    */
-  @Nullable
+  @NonNull
   public Task<CustomModel> getNewDownloadUrlWithExpiry(String projectNumber, String modelName)
       throws Exception {
-    return getCustomModelDetails(projectNumber, modelName, "");
+    return getCustomModelDetails(projectNumber, modelName, null);
   }
 
   /**
-   * Gets the download details for the custom model, returns null if the current model is the
-   * latest.
+   * Gets the download details for the custom model, returns task with null result if the current
+   * model is the latest.
    *
    * @param projectNumber - firebase project number
    * @param modelName - model name
@@ -121,7 +120,7 @@ public class CustomModelDownloadService {
    *     model.
    * @throws Exception -errors when call to API fails.
    */
-  @Nullable
+  @NonNull
   public Task<CustomModel> getCustomModelDetails(
       String projectNumber, String modelName, String modelHash) throws Exception {
     try {
@@ -158,7 +157,8 @@ public class CustomModelDownloadService {
 
     } catch (Exception e) {
       // TODO(annz) update to better error handling (use FirebaseMLExceptions)
-      throw new Exception("Error reading custom model from download service: " + e.getMessage(), e);
+      return Tasks.forException(
+          new Exception("Error reading custom model from download service: " + e.getMessage(), e));
     }
   }
 

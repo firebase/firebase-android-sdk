@@ -122,6 +122,17 @@ public class SharedPreferencesUtilTest {
   }
 
   @Test
+  public void clearDownloadCustomModelDetails_keepsLocalModel() throws IllegalArgumentException {
+    sharedPreferencesUtil.setUploadedCustomModelDetails(CUSTOM_MODEL_DOWNLOAD_COMPLETE);
+    sharedPreferencesUtil.setDownloadingCustomModelDetails(CUSTOM_MODEL_DOWNLOADING);
+    CustomModel retrievedModel = sharedPreferencesUtil.getCustomModelDetails(MODEL_NAME);
+    assertEquals(retrievedModel, CUSTOM_MODEL_UPDATE_IN_BACKGROUND);
+    sharedPreferencesUtil.clearDownloadCustomModelDetails(CUSTOM_MODEL_DOWNLOAD_COMPLETE.getName());
+    retrievedModel = sharedPreferencesUtil.getCustomModelDetails(MODEL_NAME);
+    assertEquals(retrievedModel, CUSTOM_MODEL_DOWNLOAD_COMPLETE);
+  }
+
+  @Test
   public void listDownloadedModels_localModelFound() {
     sharedPreferencesUtil.setUploadedCustomModelDetails(CUSTOM_MODEL_DOWNLOAD_COMPLETE);
     Set<CustomModel> retrievedModel = sharedPreferencesUtil.listDownloadedModels();
