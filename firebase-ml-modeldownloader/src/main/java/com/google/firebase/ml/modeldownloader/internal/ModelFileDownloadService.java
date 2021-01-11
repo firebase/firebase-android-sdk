@@ -482,7 +482,7 @@ public class ModelFileDownloadService {
       // check to prevent DuplicateTaskCompletionException - this was already updated and removed.
       // Just return.
       if (!existTaskCompletionSourceInstance(downloadId)) {
-        removeReceiverInstance(downloadId);
+        removeDownloadTaskInstance(downloadId);
         return;
       }
 
