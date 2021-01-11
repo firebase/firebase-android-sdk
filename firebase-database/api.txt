@@ -154,7 +154,6 @@ package com.google.firebase.database {
 
   public class Query {
     method @NonNull public com.google.firebase.database.ChildEventListener addChildEventListener(@NonNull com.google.firebase.database.ChildEventListener);
-    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.database.DataSnapshot> get();
     method public void addListenerForSingleValueEvent(@NonNull com.google.firebase.database.ValueEventListener);
     method @NonNull public com.google.firebase.database.ValueEventListener addValueEventListener(@NonNull com.google.firebase.database.ValueEventListener);
     method @NonNull public com.google.firebase.database.Query endAt(@Nullable String);
@@ -169,6 +168,7 @@ package com.google.firebase.database {
     method @NonNull public com.google.firebase.database.Query equalTo(@Nullable String, @Nullable String);
     method @NonNull public com.google.firebase.database.Query equalTo(double, @Nullable String);
     method @NonNull public com.google.firebase.database.Query equalTo(boolean, @Nullable String);
+    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.database.DataSnapshot> get();
     method @NonNull public com.google.firebase.database.DatabaseReference getRef();
     method public void keepSynced(boolean);
     method @NonNull public com.google.firebase.database.Query limitToFirst(int);
@@ -179,6 +179,12 @@ package com.google.firebase.database {
     method @NonNull public com.google.firebase.database.Query orderByValue();
     method public void removeEventListener(@NonNull com.google.firebase.database.ValueEventListener);
     method public void removeEventListener(@NonNull com.google.firebase.database.ChildEventListener);
+    method @NonNull public com.google.firebase.database.Query startAfter(@Nullable String);
+    method @NonNull public com.google.firebase.database.Query startAfter(double);
+    method @NonNull public com.google.firebase.database.Query startAfter(boolean);
+    method @NonNull public com.google.firebase.database.Query startAfter(@Nullable String, @Nullable String);
+    method @NonNull public com.google.firebase.database.Query startAfter(double, @Nullable String);
+    method @NonNull public com.google.firebase.database.Query startAfter(boolean, @Nullable String);
     method @NonNull public com.google.firebase.database.Query startAt(@Nullable String);
     method @NonNull public com.google.firebase.database.Query startAt(double);
     method @NonNull public com.google.firebase.database.Query startAt(boolean);
