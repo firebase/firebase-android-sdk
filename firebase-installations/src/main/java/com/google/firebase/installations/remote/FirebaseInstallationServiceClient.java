@@ -58,7 +58,11 @@ import org.json.JSONObject;
  */
 public class FirebaseInstallationServiceClient {
 
-  public static final int CREATE_INSTALLATION_TRAFFIC_STATS_TAG = 0x00008000;
+  // TrafficStats tags must be kept in sync with java/com/google/android/gms/libs/punchclock
+  private static final int TRAFFIC_STATS_TAG = 0x00008000;
+  private static final int CREATE_INSTALLATION_TRAFFIC_STATS_TAG = TRAFFIC_STATS_TAG | 0x1;
+  private static final int DELETE_INSTALLATION_TRAFFIC_STATS_TAG = TRAFFIC_STATS_TAG | 0x2;
+  private static final int GENERATE_AUTH_TOKEN_TRAFFIC_STATS_TAG = TRAFFIC_STATS_TAG | 0x3;
 
   private static final String FIREBASE_INSTALLATIONS_API_DOMAIN =
       "firebaseinstallations.googleapis.com";
@@ -198,8 +202,8 @@ public class FirebaseInstallationServiceClient {
       } catch (AssertionError | IOException ignored) {
         continue;
       } finally {
-        TrafficStats.clearThreadStatsTag();
         httpURLConnection.disconnect();
+        TrafficStats.clearThreadStatsTag();
       }
     }
 
@@ -315,6 +319,7 @@ public class FirebaseInstallationServiceClient {
 
     int retryCount = 0;
     while (retryCount <= MAX_RETRIES) {
+      TrafficStats.setThreadStatsTag(DELETE_INSTALLATION_TRAFFIC_STATS_TAG);
       HttpURLConnection httpURLConnection = openHttpURLConnection(url, apiKey);
       try {
         httpURLConnection.setRequestMethod("DELETE");
@@ -341,6 +346,7 @@ public class FirebaseInstallationServiceClient {
         retryCount++;
       } finally {
         httpURLConnection.disconnect();
+        TrafficStats.clearThreadStatsTag();
       }
     }
 
@@ -396,6 +402,7 @@ public class FirebaseInstallationServiceClient {
     URL url = getFullyQualifiedRequestUri(resourceName);
     for (int retryCount = 0; retryCount <= MAX_RETRIES; retryCount++) {
 
+      TrafficStats.setThreadStatsTag(GENERATE_AUTH_TOKEN_TRAFFIC_STATS_TAG);
       HttpURLConnection httpURLConnection = openHttpURLConnection(url, apiKey);
       try {
         httpURLConnection.setRequestMethod("POST");
@@ -436,6 +443,7 @@ public class FirebaseInstallationServiceClient {
         continue;
       } finally {
         httpURLConnection.disconnect();
+        TrafficStats.clearThreadStatsTag();
       }
     }
     throw new FirebaseInstallationsException(
