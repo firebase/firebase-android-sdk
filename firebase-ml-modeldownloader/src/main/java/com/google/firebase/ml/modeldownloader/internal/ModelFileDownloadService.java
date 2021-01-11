@@ -228,7 +228,6 @@ public class ModelFileDownloadService {
   @VisibleForTesting
   synchronized boolean existTaskCompletionSourceInstance(long downloadId) {
     TaskCompletionSource<Void> taskCompletionSource = this.taskCompletionSourceMaps.get(downloadId);
-    System.out.println("exists task: " + taskCompletionSource);
     return (taskCompletionSource != null);
   }
 
@@ -480,6 +479,13 @@ public class ModelFileDownloadService {
       }
 
       Integer statusCode = getDownloadingModelStatusCode(downloadId);
+      // check to prevent DuplicateTaskCompletionException - this was already updated and removed.
+      // Just return.
+      if (!existTaskCompletionSourceInstance(downloadId)) {
+        removeReceiverInstance(downloadId);
+        return;
+      }
+
       synchronized (ModelFileDownloadService.this) {
         try {
           context.getApplicationContext().unregisterReceiver(this);
@@ -540,7 +546,6 @@ public class ModelFileDownloadService {
 
     private boolean checkErrorCausedByExpiry(long downloadUrlExpiry, int failureReason) {
       final Date time = new Date();
-
       return (failureReason == 400 && downloadUrlExpiry < time.getTime());
     }
   }
