@@ -216,6 +216,23 @@ public class ModelFileDownloadServiceTest {
   }
 
   @Test
+  public void getExistingDownloadTask_matchingTask() {
+    Task<Void> downloadTask =
+        modelFileDownloadService.getTaskCompletionSourceInstance(99).getTask();
+    assertEquals(modelFileDownloadService.getExistingDownloadTask(99), downloadTask);
+  }
+
+  @Test
+  public void getExistingDownloadTask_noMatchingTask() {
+    assertNull(modelFileDownloadService.getExistingDownloadTask(77));
+  }
+
+  @Test
+  public void getExistingDownloadTask_noDownloadId() {
+    assertNull(modelFileDownloadService.getExistingDownloadTask(0));
+  }
+
+  @Test
   public void ensureModelDownloaded_noUrl() {
     when(mockDownloadManager.enqueue(any())).thenReturn(DOWNLOAD_ID);
     matrixCursor.addRow(new Integer[] {DownloadManager.STATUS_SUCCESSFUL});
@@ -378,7 +395,7 @@ public class ModelFileDownloadServiceTest {
   }
 
   @Test
-  public void ensureModelDownloaded_alreadyInProgess_Completed() throws Exception {
+  public void ensureModelDownloaded_alreadyInProgess_completed() throws Exception {
     when(mockDownloadManager.enqueue(any())).thenReturn(DOWNLOAD_ID);
     matrixCursor.addRow(new Integer[] {DownloadManager.STATUS_SUCCESSFUL});
     when(mockDownloadManager.query(any())).thenReturn(matrixCursor);
@@ -579,7 +596,7 @@ public class ModelFileDownloadServiceTest {
 
   @Test
   public void maybeCheckDownloadingComplete_secondDownloadFailed() throws Exception {
-    sharedPreferencesUtil.setUploadedCustomModelDetails(CUSTOM_MODEL_PREVIOUS_LOADED);
+    sharedPreferencesUtil.setLoadedCustomModelDetails(CUSTOM_MODEL_PREVIOUS_LOADED);
     sharedPreferencesUtil.setDownloadingCustomModelDetails(CUSTOM_MODEL_DOWNLOADING);
     assertNull(modelFileDownloadService.getDownloadingModelStatusCode(0L));
     matrixCursor.addRow(new Integer[] {DownloadManager.STATUS_FAILED});

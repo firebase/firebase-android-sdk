@@ -56,7 +56,7 @@ package com.google.firebase.ml.modeldownloader {
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> deleteDownloadedModel(@NonNull String);
     method @NonNull public static com.google.firebase.ml.modeldownloader.FirebaseModelDownloader getInstance();
     method @NonNull public static com.google.firebase.ml.modeldownloader.FirebaseModelDownloader getInstance(@NonNull com.google.firebase.FirebaseApp);
-    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.ml.modeldownloader.CustomModel> getModel(@NonNull String, @NonNull com.google.firebase.ml.modeldownloader.DownloadType, @Nullable com.google.firebase.ml.modeldownloader.CustomModelDownloadConditions) throws java.lang.Exception;
+    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.ml.modeldownloader.CustomModel> getModel(@NonNull String, @NonNull com.google.firebase.ml.modeldownloader.DownloadType, @Nullable com.google.firebase.ml.modeldownloader.CustomModelDownloadConditions);
     method @NonNull public com.google.android.gms.tasks.Task<java.util.Set<com.google.firebase.ml.modeldownloader.CustomModel>> listDownloadedModels();
     method public void setStatsCollectionEnabled(boolean);
   }
