@@ -22,7 +22,7 @@ import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firestore.proto.BundledQuery;
 import com.google.protobuf.InvalidProtocolBufferException;
 
-/* package= */ class SQLiteBundleCache implements BundleCache {
+class SQLiteBundleCache implements BundleCache {
   private final SQLitePersistence db;
   private final LocalSerializer serializer;
 

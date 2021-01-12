@@ -50,6 +50,9 @@ import org.robolectric.annotation.Config;
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
 public class BundleSerializerTest {
+  // Note: This tests uses single-quoted JSON strings, which are accepted by org.json.JSONObject.
+  // While they are invalid JSON, they allow us to no use non-escaped quotes in the test file.
+
   private static String TEST_PROJECT = "projects/project/databases/(default)/documents";
   private static String TEST_DOCUMENT = TEST_PROJECT + "/coll/doc";
 
@@ -62,7 +65,7 @@ public class BundleSerializerTest {
   public void testDecodesNullValue() throws JSONException {
     String json = "{ nullValue: null }";
     Value proto = Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build();
-    assertValueRoundTrip(json, proto);
+    assertDecodesValue(json, proto);
   }
 
   @Test
@@ -71,7 +74,7 @@ public class BundleSerializerTest {
     for (Boolean test : tests) {
       String json = "{ booleanValue: " + test + " }";
       Value proto = Value.newBuilder().setBooleanValue(test).build();
-      assertValueRoundTrip(json, proto);
+      assertDecodesValue(json, proto);
     }
   }
 
@@ -79,9 +82,19 @@ public class BundleSerializerTest {
   public void testDecodesIntegerValues() throws JSONException {
     List<Long> tests = asList(Long.MIN_VALUE, -100L, -1L, 0L, 1L, 100L, Long.MAX_VALUE);
     for (Long test : tests) {
+      String json = "{ integerValue: " + test + " }";
+      Value proto = Value.newBuilder().setIntegerValue(test).build();
+      assertDecodesValue(json, proto);
+    }
+  }
+
+  @Test
+  public void testDecodesStringEncodedIntegerValues() throws JSONException {
+    List<Long> tests = asList(Long.MIN_VALUE, -100L, -1L, 0L, 1L, 100L, Long.MAX_VALUE);
+    for (Long test : tests) {
       String json = "{ integerValue: '" + test + "' }";
       Value proto = Value.newBuilder().setIntegerValue(test).build();
-      assertValueRoundTrip(json, proto);
+      assertDecodesValue(json, proto);
     }
   }
 
@@ -107,7 +120,7 @@ public class BundleSerializerTest {
     for (Double test : tests) {
       String json = "{ doubleValue: " + test + " }";
       Value proto = Value.newBuilder().setDoubleValue(test).build();
-      assertValueRoundTrip(json, proto);
+      assertDecodesValue(json, proto);
     }
   }
 
@@ -117,7 +130,7 @@ public class BundleSerializerTest {
     for (Double test : tests) {
       String json = "{ doubleValue: '" + test + "' }";
       Value proto = Value.newBuilder().setDoubleValue(test).build();
-      assertValueRoundTrip(json, proto);
+      assertDecodesValue(json, proto);
     }
   }
 
@@ -127,7 +140,7 @@ public class BundleSerializerTest {
     for (String test : tests) {
       String json = "{ stringValue: '" + test + "' }";
       Value proto = Value.newBuilder().setStringValue(test).build();
-      assertValueRoundTrip(json, proto);
+      assertDecodesValue(json, proto);
     }
   }
 
@@ -153,7 +166,7 @@ public class BundleSerializerTest {
             Value.newBuilder().setTimestampValue(ts2).build());
 
     for (int i = 0; i < json.size(); i++) {
-      assertValueRoundTrip(json.get(i), proto.get(i));
+      assertDecodesValue(json.get(i), proto.get(i));
     }
   }
 
@@ -163,7 +176,7 @@ public class BundleSerializerTest {
     Value.Builder proto = Value.newBuilder();
     proto.setGeoPointValue(LatLng.newBuilder().setLatitude(1.23).setLongitude(4.56));
 
-    assertValueRoundTrip(json, proto.build());
+    assertDecodesValue(json, proto.build());
   }
 
   @Test
@@ -172,7 +185,7 @@ public class BundleSerializerTest {
     Value.Builder proto = Value.newBuilder();
     proto.setBytesValue(TestUtil.byteString(0, 1, 2, 3));
 
-    assertValueRoundTrip(json, proto.build());
+    assertDecodesValue(json, proto.build());
   }
 
   @Test
@@ -181,7 +194,7 @@ public class BundleSerializerTest {
     Value.Builder proto = Value.newBuilder();
     proto.setReferenceValue(TEST_DOCUMENT);
 
-    assertValueRoundTrip(json, proto.build());
+    assertDecodesValue(json, proto.build());
   }
 
   @Test
@@ -199,7 +212,7 @@ public class BundleSerializerTest {
 
     Value.Builder proto = Value.newBuilder();
     proto.setArrayValue(builder);
-    assertValueRoundTrip(json, proto.build());
+    assertDecodesValue(json, proto.build());
   }
 
   @Test
@@ -267,7 +280,7 @@ public class BundleSerializerTest {
             .putFields("o", Value.newBuilder().setMapValue(middle).build());
 
     Value proto = Value.newBuilder().setMapValue(obj).build();
-    assertValueRoundTrip(json, proto);
+    assertDecodesValue(json, proto);
   }
 
   // Query decoding tests
@@ -276,14 +289,14 @@ public class BundleSerializerTest {
   public void testDecodesCollectionQuery() throws JSONException {
     String json = "{ from: [ { collectionId: 'coll' } ] }";
     Query query = TestUtil.query("coll");
-    assertNamedQueryRoundTrip(json, query);
+    asserDecodesNameQuery(json, query);
   }
 
   @Test
   public void testDecodesCollectionGroupQuery() throws JSONException {
     String json = "{ from: [ { collectionId: 'coll', allDescendants: true } ] }";
     Query query = new Query(ResourcePath.EMPTY, "coll");
-    assertNamedQueryRoundTrip(json, query);
+    asserDecodesNameQuery(json, query);
   }
 
   @Test
@@ -294,7 +307,7 @@ public class BundleSerializerTest {
             + "where: { unaryFilter: { op: 'IS_NULL', field: { fieldPath: 'f1' } } }\n"
             + "}";
     Query query = TestUtil.query("coll").filter(filter("f1", "==", null));
-    assertNamedQueryRoundTrip(json, query);
+    asserDecodesNameQuery(json, query);
   }
 
   @Test
@@ -305,7 +318,7 @@ public class BundleSerializerTest {
             + "where: { unaryFilter: { op: 'IS_NOT_NULL', field: { fieldPath: 'f1' } } }\n"
             + "}";
     Query query = TestUtil.query("coll").filter(filter("f1", "!=", null));
-    assertNamedQueryRoundTrip(json, query);
+    asserDecodesNameQuery(json, query);
   }
 
   @Test
@@ -316,7 +329,7 @@ public class BundleSerializerTest {
             + "where: { unaryFilter: { op: 'IS_NAN', field: { fieldPath: 'f1' } } }\n"
             + "}";
     Query query = TestUtil.query("coll").filter(filter("f1", "==", Double.NaN));
-    assertNamedQueryRoundTrip(json, query);
+    asserDecodesNameQuery(json, query);
   }
 
   @Test
@@ -327,7 +340,7 @@ public class BundleSerializerTest {
             + "where: { unaryFilter: { op: 'IS_NOT_NAN', field: { fieldPath: 'f1' } } }\n"
             + "}";
     Query query = TestUtil.query("coll").filter(filter("f1", "!=", Double.NaN));
-    assertNamedQueryRoundTrip(json, query);
+    asserDecodesNameQuery(json, query);
   }
 
   @Test
@@ -342,7 +355,7 @@ public class BundleSerializerTest {
             + "}"
             + "}";
     Query query = TestUtil.query("coll").filter(filter("f1", "<", "foo"));
-    assertNamedQueryRoundTrip(json, query);
+    asserDecodesNameQuery(json, query);
   }
 
   @Test
@@ -358,7 +371,7 @@ public class BundleSerializerTest {
             + "  }\n"
             + "} }";
     Query query = TestUtil.query("coll").filter(filter("f1", "<=", "foo"));
-    assertNamedQueryRoundTrip(json, query);
+    asserDecodesNameQuery(json, query);
   }
 
   @Test
@@ -372,7 +385,7 @@ public class BundleSerializerTest {
             + "  }\n"
             + "} }";
     Query query = TestUtil.query("coll").filter(filter("f1", ">", "foo"));
-    assertNamedQueryRoundTrip(json, query);
+    asserDecodesNameQuery(json, query);
   }
 
   @Test
@@ -388,7 +401,7 @@ public class BundleSerializerTest {
             + "  }\n"
             + "} }";
     Query query = TestUtil.query("coll").filter(filter("f1", ">=", "foo"));
-    assertNamedQueryRoundTrip(json, query);
+    asserDecodesNameQuery(json, query);
   }
 
   @Test
@@ -402,7 +415,7 @@ public class BundleSerializerTest {
             + "  }\n"
             + "} }";
     Query query = TestUtil.query("coll").filter(filter("f1", "==", "foo"));
-    assertNamedQueryRoundTrip(json, query);
+    asserDecodesNameQuery(json, query);
   }
 
   @Test
@@ -416,7 +429,7 @@ public class BundleSerializerTest {
             + " }\n"
             + "} }";
     Query query = TestUtil.query("coll").filter(filter("f1", "!=", "foo"));
-    assertNamedQueryRoundTrip(json, query);
+    asserDecodesNameQuery(json, query);
   }
 
   @Test
@@ -432,7 +445,7 @@ public class BundleSerializerTest {
             + "  }\n"
             + "} }";
     Query query = TestUtil.query("coll").filter(filter("f1", "array-contains", "foo"));
-    assertNamedQueryRoundTrip(json, query);
+    asserDecodesNameQuery(json, query);
   }
 
   @Test
@@ -449,7 +462,7 @@ public class BundleSerializerTest {
             + "} }";
     Query query =
         TestUtil.query("coll").filter(filter("f1", "in", Collections.singletonList("foo")));
-    assertNamedQueryRoundTrip(json, query);
+    asserDecodesNameQuery(json, query);
   }
 
   @Test
@@ -467,7 +480,7 @@ public class BundleSerializerTest {
     Query query =
         TestUtil.query("coll")
             .filter(filter("f1", "array-contains-any", Collections.singletonList("foo")));
-    assertNamedQueryRoundTrip(json, query);
+    asserDecodesNameQuery(json, query);
   }
 
   @Test
@@ -484,7 +497,7 @@ public class BundleSerializerTest {
             + "} }";
     Query query =
         TestUtil.query("coll").filter(filter("f1", "not-in", Collections.singletonList("foo")));
-    assertNamedQueryRoundTrip(json, query);
+    asserDecodesNameQuery(json, query);
   }
 
   @Test
@@ -502,7 +515,7 @@ public class BundleSerializerTest {
             + "]}}}";
     Query query =
         TestUtil.query("coll").filter(filter("f1", "==", "foo")).filter(filter("f2", "==", "bar"));
-    assertNamedQueryRoundTrip(json, query);
+    asserDecodesNameQuery(json, query);
   }
 
   @Test
@@ -520,21 +533,21 @@ public class BundleSerializerTest {
             .orderBy(orderBy("f1"))
             .orderBy(orderBy("f2", "asc"))
             .orderBy(orderBy("f3", "desc"));
-    assertNamedQueryRoundTrip(json, query);
+    asserDecodesNameQuery(json, query);
   }
 
   @Test
   public void testDecodesLimitQuery() throws JSONException {
     String json = "{ from: [ { collectionId: 'coll' } ], limit: 5 }";
     Query query = TestUtil.query("coll").limitToFirst(5);
-    assertNamedQueryRoundTrip(json, query);
+    asserDecodesNameQuery(json, query);
   }
 
   @Test
   public void testDecodesLimitToLastQuery() throws JSONException {
     String json = "{ from: [ { collectionId: 'coll' } ], limit: 5 }";
     Query query = TestUtil.query("coll").limitToLast(5);
-    assertNamedQueryRoundTrip(json, query, "LAST");
+    asserDecodesNameQuery(json, query, "LAST");
   }
 
   @Test
@@ -551,7 +564,7 @@ public class BundleSerializerTest {
                 new Bound(
                     Collections.singletonList(Value.newBuilder().setStringValue("bar").build()),
                     false));
-    assertNamedQueryRoundTrip(json, query);
+    asserDecodesNameQuery(json, query);
   }
 
   @Test
@@ -568,35 +581,35 @@ public class BundleSerializerTest {
                 new Bound(
                     Collections.singletonList(Value.newBuilder().setStringValue("bar").build()),
                     true));
-    assertNamedQueryRoundTrip(json, query);
+    asserDecodesNameQuery(json, query);
   }
 
   @Test(expected = IllegalArgumentException.class)
   public void testDoesNotDecodeOffset() throws JSONException {
     String json = "{ from: [ { collectionId: 'coll' } ], offset: 5 }";
     Query query = TestUtil.query("coll");
-    assertNamedQueryRoundTrip(json, query);
+    asserDecodesNameQuery(json, query);
   }
 
   @Test(expected = IllegalArgumentException.class)
   public void testDoesNotDecodeSelect() throws JSONException {
     String json = "{ from: [ { collectionId: 'coll' } ], select: [] }";
     Query query = TestUtil.query("coll");
-    assertNamedQueryRoundTrip(json, query);
+    asserDecodesNameQuery(json, query);
   }
 
   @Test(expected = IllegalArgumentException.class)
   public void testDoesNotDecodeMissingCollection() throws JSONException {
     String json = "{ from: [ ] }";
     Query query = TestUtil.query("coll");
-    assertNamedQueryRoundTrip(json, query);
+    asserDecodesNameQuery(json, query);
   }
 
   @Test(expected = IllegalArgumentException.class)
   public void testDoesNotDecodeMultipleCollections() throws JSONException {
     String json = "{ from: [ { collectionId: 'c1' }, { collectionId: 'c2' } ] }";
     Query query = TestUtil.query("coll");
-    assertNamedQueryRoundTrip(json, query);
+    asserDecodesNameQuery(json, query);
   }
 
   // BundleMetadata tests
@@ -614,7 +627,7 @@ public class BundleSerializerTest {
     BundleMetadata expectedMetadata =
         new BundleMetadata(
             "bundle-1", 1, new SnapshotVersion(new com.google.firebase.Timestamp(2, 3)), 4, 5);
-    BundleMetadata actualMetadata = serializer.fromBundleMetadata(json);
+    BundleMetadata actualMetadata = serializer.decodeBundleMetadata(json);
     assertEquals(expectedMetadata, actualMetadata);
   }
 
@@ -637,11 +650,11 @@ public class BundleSerializerTest {
             new SnapshotVersion(new com.google.firebase.Timestamp(1, 2)),
             true,
             Arrays.asList("query-1", "query-2"));
-    BundledDocumentMetadata actualMetadata = serializer.fromBundledDocumentMetadata(json);
+    BundledDocumentMetadata actualMetadata = serializer.decodeBundledDocumentMetadata(json);
     assertEquals(expectedMetadata, actualMetadata);
   }
 
-  private void assertValueRoundTrip(String json, Value proto) throws JSONException {
+  private void assertDecodesValue(String json, Value proto) throws JSONException {
     String documentJson =
         "{\n"
             + "  name: '"
@@ -655,7 +668,7 @@ public class BundleSerializerTest {
             + "  crateTime: { seconds: 1, nanos: 2 },\n"
             + "  updateTime: { seconds: 3, nanos: 4 }\n"
             + "}";
-    Document actualDocument = serializer.fromDocument(documentJson);
+    Document actualDocument = serializer.decodeDocument(documentJson);
     Document expectedDocument =
         new Document(
             DocumentKey.fromName(TEST_DOCUMENT),
@@ -669,7 +682,7 @@ public class BundleSerializerTest {
     assertEquals(expectedDocument, actualDocument);
   }
 
-  private void assertNamedQueryRoundTrip(String json, Query query, String limitType)
+  private void asserDecodesNameQuery(String json, Query query, String limitType)
       throws JSONException {
     String queryJson =
         "{\n"
@@ -687,7 +700,7 @@ public class BundleSerializerTest {
             + "   },\n"
             + " readTime: { seconds: 1, nanos: 2 }\n"
             + "}";
-    NamedQuery actualNamedQuery = serializer.fromNamedQuery(queryJson);
+    NamedQuery actualNamedQuery = serializer.decodeNamedQuery(queryJson);
     NamedQuery expectedNamedQuery =
         new NamedQuery(
             "query-1", query, new SnapshotVersion(new com.google.firebase.Timestamp(1, 2)));
@@ -695,7 +708,7 @@ public class BundleSerializerTest {
     assertEquals(expectedNamedQuery, actualNamedQuery);
   }
 
-  private void assertNamedQueryRoundTrip(String json, Query query) throws JSONException {
-    assertNamedQueryRoundTrip(json, query, "FIRST");
+  private void asserDecodesNameQuery(String json, Query query) throws JSONException {
+    asserDecodesNameQuery(json, query, "FIRST");
   }
 }

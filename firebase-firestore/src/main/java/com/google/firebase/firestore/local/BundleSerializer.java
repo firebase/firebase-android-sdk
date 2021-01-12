@@ -17,7 +17,6 @@ package com.google.firebase.firestore.local;
 import android.util.Base64;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
-
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.core.Bound;
 import com.google.firebase.firestore.core.FieldFilter;
@@ -46,7 +45,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 /** A JSON serializer to deserialize Firestore Bundles. */
-/* package= */ class BundleSerializer {
+class BundleSerializer {
 
   private final RemoteSerializer remoteSerializer;
 
@@ -54,31 +53,47 @@ import org.json.JSONObject;
     this.remoteSerializer = remoteSerializer;
   }
 
-  public NamedQuery fromNamedQuery(String json) throws JSONException {
+  public NamedQuery decodeNamedQuery(String json) throws JSONException {
     JSONObject JSONObject = new JSONObject(json);
-    String name = JSONObject.getString("name");
-    Query query = decodeQuery(JSONObject.getJSONObject("bundledQuery"));
-    SnapshotVersion readTime = decodeSnapshotVersion(JSONObject.getJSONObject("readTime"));
+    return decodeNamedQuery(JSONObject);
+  }
+
+  public NamedQuery decodeNamedQuery(JSONObject namedQuery) throws JSONException {
+    String name = namedQuery.getString("name");
+    Query query = decodeQuery(namedQuery.getJSONObject("bundledQuery"));
+    SnapshotVersion readTime = decodeSnapshotVersion(namedQuery.getJSONObject("readTime"));
     return new NamedQuery(name, query, readTime);
   }
 
-  public BundleMetadata fromBundleMetadata(String json) throws JSONException {
-    JSONObject jsonObject = new JSONObject(json);
-    String bundleId = jsonObject.getString("id");
-    int version = jsonObject.getInt("version");
-    SnapshotVersion createTime = decodeSnapshotVersion(jsonObject.getJSONObject("createTime"));
-    int totalDocuments = jsonObject.getInt("totalDocuments");
-    long totalBytes = jsonObject.getLong("totalBytes");
+  public BundleMetadata decodeBundleMetadata(String json) throws JSONException {
+    JSONObject object = new JSONObject(json);
+    return decodeBundleMetadata(object);
+  }
+
+  public BundleMetadata decodeBundleMetadata(JSONObject bundleMetadata) throws JSONException {
+    String bundleId = bundleMetadata.getString("id");
+    int version = bundleMetadata.getInt("version");
+    SnapshotVersion createTime = decodeSnapshotVersion(bundleMetadata.getJSONObject("createTime"));
+    int totalDocuments = bundleMetadata.getInt("totalDocuments");
+    long totalBytes = bundleMetadata.getLong("totalBytes");
     return new BundleMetadata(bundleId, version, createTime, totalDocuments, totalBytes);
   }
 
-  public BundledDocumentMetadata fromBundledDocumentMetadata(String json) throws JSONException {
-    JSONObject jsonObject = new JSONObject(json);
-    DocumentKey key = DocumentKey.fromName(jsonObject.getString("name"));
-    SnapshotVersion readTime = decodeSnapshotVersion(jsonObject.getJSONObject("readTime"));
-    boolean exists = jsonObject.optBoolean("exists", false);
-    JSONArray queriesJson = jsonObject.optJSONArray("queries");
+  public BundledDocumentMetadata decodeBundledDocumentMetadata(String json) throws JSONException {
+    JSONObject object = new JSONObject(json);
+    return decodeBundledDocumentMetadata(object);
+  }
+
+  public BundledDocumentMetadata decodeBundledDocumentMetadata(JSONObject bundledDocumentMetadata)
+      throws JSONException {
+    DocumentKey key = DocumentKey.fromPath(decodeName(bundledDocumentMetadata.getString("name")));
+    SnapshotVersion readTime =
+        decodeSnapshotVersion(bundledDocumentMetadata.getJSONObject("readTime"));
+    boolean exists = bundledDocumentMetadata.optBoolean("exists", false);
+    JSONArray queriesJson = bundledDocumentMetadata.optJSONArray("queries");
     List<String> queries = new ArrayList<>();
+    // Technically, the queries array should never be missing, but we treat a missing and empty
+    // array the same to avoid crashing during data import.
     if (queriesJson != null) {
       for (int i = 0; i < queriesJson.length(); ++i) {
         queries.add(queriesJson.getString(i));
@@ -88,14 +103,18 @@ import org.json.JSONObject;
   }
 
   @VisibleForTesting
-  Document fromDocument(String json) throws JSONException {
-    JSONObject jsonDocument = new JSONObject(json);
-    String name = jsonDocument.getString("name");
-    DocumentKey key = DocumentKey.fromName(name);
-    SnapshotVersion updateTime = decodeSnapshotVersion(jsonDocument.getJSONObject("updateTime"));
+  Document decodeDocument(String json) throws JSONException {
+    JSONObject object = new JSONObject(json);
+    return decodeDocument(object);
+  }
+
+  Document decodeDocument(JSONObject document) throws JSONException {
+    String name = document.getString("name");
+    DocumentKey key = DocumentKey.fromPath(decodeName(name));
+    SnapshotVersion updateTime = decodeSnapshotVersion(document.getJSONObject("updateTime"));
 
     Value.Builder value = Value.newBuilder();
-    decodeMapValue(value, jsonDocument.getJSONObject("fields"));
+    decodeMapValue(value, document.getJSONObject("fields"));
 
     return new Document(
         key,
@@ -104,16 +123,25 @@ import org.json.JSONObject;
         Document.DocumentState.SYNCED);
   }
 
-  private SnapshotVersion decodeSnapshotVersion(JSONObject json) {
-    long seconds = json.optLong("seconds", 0);
-    int nanos = json.optInt("nanos", 0);
+  private ResourcePath decodeName(String name) {
+    ResourcePath resourcePath = ResourcePath.fromString(name);
+    if (!remoteSerializer.isLocalResourceName(resourcePath)) {
+      throw new IllegalArgumentException(
+          "Resource name is not valid for current instance: " + name);
+    }
+    return resourcePath.popFirst(5);
+  }
+
+  private SnapshotVersion decodeSnapshotVersion(JSONObject timestamp) {
+    long seconds = timestamp.optLong("seconds", 0);
+    int nanos = timestamp.optInt("nanos", 0);
     return new SnapshotVersion(new Timestamp(seconds, nanos));
   }
 
-  private Query decodeQuery(JSONObject bundledQueryJson) throws JSONException {
-    JSONObject structuredQuery = bundledQueryJson.getJSONObject("structuredQuery");
+  private Query decodeQuery(JSONObject bundledQuery) throws JSONException {
+    JSONObject structuredQuery = bundledQuery.getJSONObject("structuredQuery");
 
-    ResourcePath parent = decodeParent(bundledQueryJson.getString("parent"));
+    ResourcePath parent = decodeName(bundledQuery.getString("parent"));
     verifyNoSelect(structuredQuery);
 
     JSONArray from = structuredQuery.getJSONArray("from");
@@ -134,7 +162,7 @@ import org.json.JSONObject;
 
     verifyNoOffset(structuredQuery);
     int limit = decodeLimit(structuredQuery);
-    Query.LimitType limitType = decodeLimitType(bundledQueryJson);
+    Query.LimitType limitType = decodeLimitType(bundledQuery);
 
     return new Query(parent, collectionGroup, filters, orderBys, limit, limitType, startAt, endAt);
   }
@@ -200,6 +228,11 @@ import org.json.JSONObject;
 
   private void decodeCompositeFilter(List<Filter> result, JSONObject compositeFilter)
       throws JSONException {
+    if (!compositeFilter.getString("op").equals("AND")) {
+      throw new IllegalArgumentException(
+          "The Android SDK only supports composite filters of type 'AND'");
+    }
+
     JSONArray filters = compositeFilter.optJSONArray("filters");
     if (filters != null) {
       for (int i = 0; i < filters.length(); ++i) {
@@ -316,15 +349,15 @@ import org.json.JSONObject;
     return FieldPath.fromServerFormat(fieldReference.getString("fieldPath"));
   }
 
-  private Query.LimitType decodeLimitType(JSONObject bundledQueryJson) {
-    String limitType = bundledQueryJson.optString("limitType", "FIRST");
-    return limitType.equals("FIRST")
-        ? Query.LimitType.LIMIT_TO_FIRST
-        : Query.LimitType.LIMIT_TO_LAST;
-  }
-
-  private ResourcePath decodeParent(String parent) {
-    return remoteSerializer.decodeQueryPath(parent);
+  private Query.LimitType decodeLimitType(JSONObject bundledQuery) {
+    String limitType = bundledQuery.optString("limitType", "FIRST");
+    if (limitType.equals("FIRST")) {
+      return Query.LimitType.LIMIT_TO_FIRST;
+    } else if (limitType.equals("LAST")) {
+      return Query.LimitType.LIMIT_TO_LAST;
+    } else {
+      throw new IllegalArgumentException("Invalid limit type for bundle query: " + limitType);
+    }
   }
 
   private void verifyCollectionSelector(JSONArray from) {

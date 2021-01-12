@@ -149,7 +149,7 @@ public final class RemoteSerializer {
     return encodeResourceName(databaseId, path);
   }
 
-  public ResourcePath decodeQueryPath(String name) {
+  private ResourcePath decodeQueryPath(String name) {
     ResourcePath resource = decodeResourceName(name);
     if (resource.length() == 4) {
       // In v1beta1 queries for collections at the root did not have a trailing "/documents". In v1
@@ -207,6 +207,13 @@ public final class RemoteSerializer {
     return path.length() >= 4
         && path.getSegment(0).equals("projects")
         && path.getSegment(2).equals("databases");
+  }
+
+  /** Validates that a path has a prefix that belongs to the current database. */
+  public boolean isLocalResourceName(ResourcePath path) {
+    return isValidResourceName(path)
+        && path.getSegment(1).equals(databaseId.getProjectId())
+        && path.getSegment(3).equals(databaseId.getDatabaseId());
   }
 
   public String databaseName() {
