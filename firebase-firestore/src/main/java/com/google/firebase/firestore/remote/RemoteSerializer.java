@@ -149,7 +149,7 @@ public final class RemoteSerializer {
     return encodeResourceName(databaseId, path);
   }
 
-  private ResourcePath decodeQueryPath(String name) {
+  public ResourcePath decodeQueryPath(String name) {
     ResourcePath resource = decodeResourceName(name);
     if (resource.length() == 4) {
       // In v1beta1 queries for collections at the root did not have a trailing "/documents". In v1
