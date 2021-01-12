@@ -24,7 +24,7 @@ import java.io.File;
 /**
  * Used to store information about custom models that are being downloaded or are already downloaded
  * on a device. The model file associated with this model can be updated, once the new model file is
- * fully uploaded, the original model file will be removed as soon as it is safe to do so.
+ * fully downloaded, the original model file will be removed as soon as it is safe to do so.
  */
 public class CustomModel {
   private final String name;
@@ -126,7 +126,7 @@ public class CustomModel {
    * The local model file. If null is returned, use the download Id to check the download status.
    *
    * @return the local file associated with the model, if the original file download is still in
-   *     progress, returns null, if file update is in progress returns last fully uploaded model.
+   *     progress, returns null, if file update is in progress returns last fully downloaded model.
    */
   @Nullable
   public File getFile() throws FirebaseMlException {
@@ -137,7 +137,7 @@ public class CustomModel {
    * The local model file. If null is returned, use the download Id to check the download status.
    *
    * @return the local file associated with the model. If the original file download is still in
-   *     progress, returns null. If file update is in progress, returns the last fully uploaded
+   *     progress, returns null. If file update is in progress, returns the last fully downloaded
    *     model.
    */
   @Nullable
@@ -170,7 +170,7 @@ public class CustomModel {
 
   /**
    * The size of the file currently associated with this model. If a download is in progress, this
-   * will be the size of the current model, not the new model currently being uploaded.
+   * will be the size of the current model, not the new model currently being downloaded.
    *
    * @return the local model size
    */

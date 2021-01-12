@@ -392,7 +392,7 @@ public class ModelFileDownloadService {
       }
 
       // Successfully moved,  update share preferences
-      sharedPreferencesUtil.setUploadedCustomModelDetails(
+      sharedPreferencesUtil.setLoadedCustomModelDetails(
           new CustomModel(
               model.getName(), model.getModelHash(), model.getSize(), 0, newModelFile.getPath()));
 

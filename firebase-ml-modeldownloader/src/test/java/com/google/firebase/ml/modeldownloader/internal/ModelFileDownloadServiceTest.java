@@ -596,7 +596,7 @@ public class ModelFileDownloadServiceTest {
 
   @Test
   public void maybeCheckDownloadingComplete_secondDownloadFailed() throws Exception {
-    sharedPreferencesUtil.setUploadedCustomModelDetails(CUSTOM_MODEL_PREVIOUS_LOADED);
+    sharedPreferencesUtil.setLoadedCustomModelDetails(CUSTOM_MODEL_PREVIOUS_LOADED);
     sharedPreferencesUtil.setDownloadingCustomModelDetails(CUSTOM_MODEL_DOWNLOADING);
     assertNull(modelFileDownloadService.getDownloadingModelStatusCode(0L));
     matrixCursor.addRow(new Integer[] {DownloadManager.STATUS_FAILED});

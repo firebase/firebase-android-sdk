@@ -135,7 +135,7 @@ public class FirebaseModelDownloader {
         // check for latest model, wait for download if newer model exists
         return getCustomModelTask(modelName, conditions, localModelDetails.getModelHash());
       case LOCAL_MODEL_UPDATE_IN_BACKGROUND:
-        // start upload in background, if newer model exists
+        // start download in background, if newer model exists
         getCustomModelTask(modelName, conditions, localModelDetails.getModelHash());
         return getCompletedLocalCustomModelTask(localModelDetails);
     }
