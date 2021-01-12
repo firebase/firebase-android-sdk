@@ -422,6 +422,31 @@ public class FirebaseModelDownloader {
     sharedPreferencesUtil.setCustomModelStatsCollectionEnabled(enabled);
   }
 
+  /**
+   * Get the current models' download id (returns background download id when applicable). This id
+   * can be used to create a progress bar to track file download progress.
+   *
+   * <p>If no model exists or there is no download in progress, return 0.
+   *
+   * <p>If 0 is returned immediately after starting a download via getModel, then
+   *
+   * <ul>
+   *   <li>the enqueuing wasn't needed: the getModel task already completed and/or no background
+   *       update.
+   *   <li>the enqueuing hasn't completed: the download id hasn't generated yet - try again.
+   * </ul>
+   *
+   * @param modelName - model name
+   * @return id associated with Android Download Manager.
+   */
+  public long getModelDownloadId(@NonNull String modelName) {
+    CustomModel localModel = sharedPreferencesUtil.getDownloadingCustomModelDetails(modelName);
+    if (localModel != null) {
+      return localModel.getDownloadId();
+    }
+    return 0;
+  }
+
   /** Returns the nick name of the {@link FirebaseApp} of this {@link FirebaseModelDownloader} */
   @VisibleForTesting
   String getApplicationId() {
