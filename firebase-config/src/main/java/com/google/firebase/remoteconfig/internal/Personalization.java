@@ -16,8 +16,6 @@ package com.google.firebase.remoteconfig.internal;
 
 import android.os.Bundle;
 import androidx.annotation.NonNull;
-import com.google.common.base.CaseFormat;
-import com.google.common.base.Converter;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
 import java.util.Collections;
 import java.util.HashMap;
@@ -27,19 +25,18 @@ import org.json.JSONObject;
 public class Personalization {
   public static final String ANALYTICS_ORIGIN_PERSONALIZATION = "fp";
 
-  public static final String ANALYTICS_PULL_EVENT = "personalization_choice";
+  public static final String ANALYTICS_PULL_EVENT = "personalization_assignment";
   public static final String ARM_KEY = "arm_key";
   public static final String ARM_VALUE = "arm_value";
-  public static final String PERSONALIZATION_ID = "personalization_id";
-  public static final String ARM_INDEX = "arm_index";
+  public static final String PERSONALIZATION_ID = "personalizationId";
+  public static final String PERSONALIZATION_ID_KEY = "personalization_id";
+  public static final String ARM_INDEX = "armIndex";
+  public static final String ARM_INDEX_KEY = "arm_index";
   public static final String GROUP = "group";
 
   public static final String ANALYTICS_PULL_EVENT_INTERNAL = "_fpc";
   public static final String CHOICE_ID = "choiceId";
   public static final String CHOICE_ID_KEY = "_fpid";
-
-  private static final Converter<String, String> CONVERTER =
-      CaseFormat.LOWER_UNDERSCORE.converterTo(CaseFormat.LOWER_CAMEL);
 
   /** The app's Firebase Analytics client. */
   private final AnalyticsConnector analyticsConnector;
@@ -77,7 +74,7 @@ public class Personalization {
       return;
     }
 
-    String personalizationId = metadata.optString(CONVERTER.convert(PERSONALIZATION_ID));
+    String personalizationId = metadata.optString(PERSONALIZATION_ID);
     if (personalizationId.isEmpty()) {
       return;
     }
@@ -92,9 +89,9 @@ public class Personalization {
     Bundle params = new Bundle();
     params.putString(ARM_KEY, key);
     params.putString(ARM_VALUE, values.optString(key));
-    params.putString(PERSONALIZATION_ID, personalizationId);
-    params.putInt(ARM_INDEX, metadata.optInt(CONVERTER.convert(ARM_INDEX), -1));
-    params.putString(GROUP, metadata.optString(CONVERTER.convert(GROUP)));
+    params.putString(PERSONALIZATION_ID_KEY, personalizationId);
+    params.putInt(ARM_INDEX_KEY, metadata.optInt(ARM_INDEX, -1));
+    params.putString(GROUP, metadata.optString(GROUP));
     analyticsConnector.logEvent(ANALYTICS_ORIGIN_PERSONALIZATION, ANALYTICS_PULL_EVENT, params);
 
     Bundle paramsInternal = new Bundle();
