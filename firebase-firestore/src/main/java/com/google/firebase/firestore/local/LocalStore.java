@@ -219,7 +219,7 @@ public final class LocalStore {
           List<Mutation> baseMutations = new ArrayList<>();
           for (Mutation mutation : mutations) {
             ObjectValue baseValue =
-                mutation.extractBaseValue(existingDocuments.get(mutation.getKey()));
+                mutation.extractTransformBaseValue(existingDocuments.get(mutation.getKey()));
             if (baseValue != null) {
               // NOTE: The base state should only be applied if there's some existing
               // document to override, so use a Precondition of exists=true

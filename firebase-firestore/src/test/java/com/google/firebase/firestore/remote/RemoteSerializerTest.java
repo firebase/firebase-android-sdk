@@ -21,12 +21,12 @@ import static com.google.firebase.firestore.testutil.TestUtil.field;
 import static com.google.firebase.firestore.testutil.TestUtil.filter;
 import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
+import static com.google.firebase.firestore.testutil.TestUtil.mergeMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.orderBy;
 import static com.google.firebase.firestore.testutil.TestUtil.patchMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.query;
 import static com.google.firebase.firestore.testutil.TestUtil.ref;
 import static com.google.firebase.firestore.testutil.TestUtil.setMutation;
-import static com.google.firebase.firestore.testutil.TestUtil.transformMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.verifyMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.wrap;
 import static java.util.Arrays.asList;
@@ -62,7 +62,8 @@ import com.google.firestore.v1.DocumentChange;
 import com.google.firestore.v1.DocumentDelete;
 import com.google.firestore.v1.DocumentMask;
 import com.google.firestore.v1.DocumentRemove;
-import com.google.firestore.v1.DocumentTransform;
+import com.google.firestore.v1.DocumentTransform.FieldTransform;
+import com.google.firestore.v1.DocumentTransform.FieldTransform.ServerValue;
 import com.google.firestore.v1.ListenResponse;
 import com.google.firestore.v1.MapValue;
 import com.google.firestore.v1.Precondition;
@@ -362,7 +363,7 @@ public final class RemoteSerializerTest {
   @Test
   public void testEncodesPatchMutationWithFieldMask() {
     Mutation mutation =
-        patchMutation("docs/1", map("key", "value", "key2", true), asList(field("key")));
+        mergeMutation("docs/1", map("key", "value", "key2", true), asList(field("key")));
 
     Write expected =
         Write.newBuilder()
@@ -378,64 +379,98 @@ public final class RemoteSerializerTest {
   }
 
   @Test
-  public void testEncodesServerTimestampTransformMutation() {
+  public void testEncodesServerTimestampMutation() {
     Mutation mutation =
-        transformMutation(
+        setMutation(
+            "docs/1",
+            map(
+                "a",
+                com.google.firebase.firestore.FieldValue.serverTimestamp(),
+                "bar",
+                com.google.firebase.firestore.FieldValue.serverTimestamp()));
+    Write expected =
+        Write.newBuilder()
+            .setUpdate(Document.newBuilder().setName("projects/p/databases/d/documents/docs/1"))
+            .addUpdateTransforms(
+                FieldTransform.newBuilder()
+                    .setFieldPath("a")
+                    .setSetToServerValue(ServerValue.REQUEST_TIME))
+            .addUpdateTransforms(
+                FieldTransform.newBuilder()
+                    .setFieldPath("bar")
+                    .setSetToServerValue(ServerValue.REQUEST_TIME))
+            .build();
+    assertRoundTripForMutation(mutation, expected);
+
+    mutation =
+        patchMutation(
             "docs/1",
             map(
                 "a",
                 com.google.firebase.firestore.FieldValue.serverTimestamp(),
                 "bar.baz",
                 com.google.firebase.firestore.FieldValue.serverTimestamp()));
-
-    Write expected =
+    expected =
         Write.newBuilder()
-            .setTransform(
-                DocumentTransform.newBuilder()
-                    .setDocument("projects/p/databases/d/documents/docs/1")
-                    .addFieldTransforms(
-                        DocumentTransform.FieldTransform.newBuilder()
-                            .setFieldPath("a")
-                            .setSetToServerValue(
-                                DocumentTransform.FieldTransform.ServerValue.REQUEST_TIME))
-                    .addFieldTransforms(
-                        DocumentTransform.FieldTransform.newBuilder()
-                            .setFieldPath("bar.baz")
-                            .setSetToServerValue(
-                                DocumentTransform.FieldTransform.ServerValue.REQUEST_TIME)))
+            .setUpdate(Document.newBuilder().setName("projects/p/databases/d/documents/docs/1"))
+            .setUpdateMask(DocumentMask.newBuilder().build())
+            .addUpdateTransforms(
+                FieldTransform.newBuilder()
+                    .setFieldPath("a")
+                    .setSetToServerValue(ServerValue.REQUEST_TIME))
+            .addUpdateTransforms(
+                FieldTransform.newBuilder()
+                    .setFieldPath("bar.baz")
+                    .setSetToServerValue(ServerValue.REQUEST_TIME))
             .setCurrentDocument(Precondition.newBuilder().setExists(true))
             .build();
-
     assertRoundTripForMutation(mutation, expected);
   }
 
   @Test
-  public void testEncodesArrayTransformMutations() {
+  public void testEncodesArrayMutations() {
     Mutation mutation =
-        transformMutation(
+        setMutation(
+            "docs/1",
+            map(
+                "a", com.google.firebase.firestore.FieldValue.arrayUnion("a", 2),
+                "bar", com.google.firebase.firestore.FieldValue.arrayRemove(map("x", 1))));
+    Write expected =
+        Write.newBuilder()
+            .setUpdate(Document.newBuilder().setName("projects/p/databases/d/documents/docs/1"))
+            .addUpdateTransforms(
+                FieldTransform.newBuilder()
+                    .setFieldPath("a")
+                    .setAppendMissingElements(
+                        ArrayValue.newBuilder().addValues(wrap("a")).addValues(wrap(2))))
+            .addUpdateTransforms(
+                FieldTransform.newBuilder()
+                    .setFieldPath("bar")
+                    .setRemoveAllFromArray(ArrayValue.newBuilder().addValues(wrap(map("x", 1)))))
+            .build();
+    assertRoundTripForMutation(mutation, expected);
+
+    mutation =
+        patchMutation(
             "docs/1",
             map(
                 "a", com.google.firebase.firestore.FieldValue.arrayUnion("a", 2),
                 "bar.baz", com.google.firebase.firestore.FieldValue.arrayRemove(map("x", 1))));
-
-    Write expected =
+    expected =
         Write.newBuilder()
-            .setTransform(
-                DocumentTransform.newBuilder()
-                    .setDocument("projects/p/databases/d/documents/docs/1")
-                    .addFieldTransforms(
-                        DocumentTransform.FieldTransform.newBuilder()
-                            .setFieldPath("a")
-                            .setAppendMissingElements(
-                                ArrayValue.newBuilder().addValues(wrap("a")).addValues(wrap(2))))
-                    .addFieldTransforms(
-                        DocumentTransform.FieldTransform.newBuilder()
-                            .setFieldPath("bar.baz")
-                            .setRemoveAllFromArray(
-                                ArrayValue.newBuilder().addValues(wrap(map("x", 1))))))
+            .setUpdate(Document.newBuilder().setName("projects/p/databases/d/documents/docs/1"))
+            .setUpdateMask(DocumentMask.newBuilder().build())
+            .addUpdateTransforms(
+                FieldTransform.newBuilder()
+                    .setFieldPath("a")
+                    .setAppendMissingElements(
+                        ArrayValue.newBuilder().addValues(wrap("a")).addValues(wrap(2))))
+            .addUpdateTransforms(
+                FieldTransform.newBuilder()
+                    .setFieldPath("bar.baz")
+                    .setRemoveAllFromArray(ArrayValue.newBuilder().addValues(wrap(map("x", 1)))))
             .setCurrentDocument(Precondition.newBuilder().setExists(true))
             .build();
-
     assertRoundTripForMutation(mutation, expected);
   }
 

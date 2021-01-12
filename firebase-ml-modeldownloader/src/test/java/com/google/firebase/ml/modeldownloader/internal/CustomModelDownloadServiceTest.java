@@ -130,7 +130,7 @@ public class CustomModelDownloadServiceTest {
   }
 
   @Test
-  public void testDownloadService_noHashSuccess() throws Exception {
+  public void downloadService_noHashSuccess() throws Exception {
     String downloadPath =
         String.format(CustomModelDownloadService.DOWNLOAD_MODEL_REGEX, "", PROJECT_ID, MODEL_NAME);
     stubFor(
@@ -165,7 +165,7 @@ public class CustomModelDownloadServiceTest {
   }
 
   @Test
-  public void testDownloadService_withHashSuccess_noMatch() throws Exception {
+  public void downloadService_withHashSuccess_noMatch() throws Exception {
     String downloadPath =
         String.format(CustomModelDownloadService.DOWNLOAD_MODEL_REGEX, "", PROJECT_ID, MODEL_NAME);
     stubFor(
@@ -200,7 +200,7 @@ public class CustomModelDownloadServiceTest {
   }
 
   @Test
-  public void testDownloadService_withHashSuccess_match() throws Exception {
+  public void downloadService_withHashSuccess_match() throws Exception {
     String downloadPath =
         String.format(CustomModelDownloadService.DOWNLOAD_MODEL_REGEX, "", PROJECT_ID, MODEL_NAME);
     stubFor(
@@ -233,7 +233,7 @@ public class CustomModelDownloadServiceTest {
   }
 
   @Test
-  public void testDownloadService_modelNotFound() throws Exception {
+  public void downloadService_modelNotFound() throws Exception {
     String downloadPath =
         String.format(CustomModelDownloadService.DOWNLOAD_MODEL_REGEX, "", PROJECT_ID, MODEL_NAME);
     stubFor(
@@ -266,5 +266,37 @@ public class CustomModelDownloadServiceTest {
                 equalTo(INSTALLATION_TOKEN)));
   }
 
-  // TODO(annz) add test matching bad token response when BE is ready.
+  @Test
+  public void downloadService_unauthenticatedToken() throws Exception {
+    String downloadPath =
+        String.format(CustomModelDownloadService.DOWNLOAD_MODEL_REGEX, "", PROJECT_ID, MODEL_NAME);
+    stubFor(
+        get(urlEqualTo(downloadPath))
+            .withHeader(
+                CustomModelDownloadService.INSTALLATIONS_AUTH_TOKEN_HEADER,
+                equalTo(INSTALLATION_TOKEN))
+            .withHeader(
+                CustomModelDownloadService.CONTENT_TYPE,
+                equalTo(CustomModelDownloadService.APPLICATION_JSON))
+            .withHeader(CustomModelDownloadService.IF_NONE_MATCH_HEADER_KEY, equalTo(MODEL_HASH))
+            .willReturn(
+                aResponse()
+                    .withStatus(401) // not found
+                    .withBody(
+                        "{\"status\":\"UNAUTHENTICATED\",\"message\":\"Request is missing required authentication credential.\"}")));
+
+    CustomModelDownloadService service =
+        new CustomModelDownloadService(
+            installationsApiMock, directExecutor, API_KEY, TEST_ENDPOINT);
+
+    Task<CustomModel> modelTask = service.getCustomModelDetails(PROJECT_ID, MODEL_NAME, MODEL_HASH);
+
+    Assert.assertTrue(modelTask.getException().getMessage().contains("401"));
+
+    verify(
+        getRequestedFor(urlEqualTo(downloadPath))
+            .withHeader(
+                CustomModelDownloadService.INSTALLATIONS_AUTH_TOKEN_HEADER,
+                equalTo(INSTALLATION_TOKEN)));
+  }
 }

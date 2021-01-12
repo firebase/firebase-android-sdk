@@ -163,11 +163,11 @@ public class Query {
   }
 
   /**
-   * Get the server value for this query, updating cache and raising events if successful. If not
-   * connected, fall back to a locally-cached value.
+   * Gets the server values for this query. Updates the cache and raises events if successful. If
+   * not connected, falls back to a locally-cached value.
    */
   @NonNull
-  Task<DataSnapshot> get() {
+  public Task<DataSnapshot> get() {
     return repo.getValue(this);
   }
 

@@ -31,6 +31,8 @@ import java.util.regex.Pattern;
 /** @hide */
 public class SharedPreferencesUtil {
 
+  public static final String DOWNLOADING_MODEL_ID_MATCHER = "downloading_model_id_(.*?)_([^/]+)/?";
+
   @VisibleForTesting
   static final String PREFERENCES_PACKAGE_NAME = "com.google.firebase.ml.modelDownloader";
 
@@ -38,13 +40,18 @@ public class SharedPreferencesUtil {
   private static final String LOCAL_MODEL_HASH_PATTERN = "current_model_hash_%s_%s";
   private static final String LOCAL_MODEL_FILE_PATH_PATTERN = "current_model_path_%s_%s";
   private static final String LOCAL_MODEL_FILE_PATH_MATCHER = "current_model_path_(.*?)_([^/]+)/?";
-
   private static final String LOCAL_MODEL_FILE_SIZE_PATTERN = "current_model_size_%s_%s";
   // details about model during download.
   private static final String DOWNLOADING_MODEL_HASH_PATTERN = "downloading_model_hash_%s_%s";
   private static final String DOWNLOADING_MODEL_SIZE_PATTERN = "downloading_model_size_%s_%s";
   private static final String DOWNLOADING_MODEL_ID_PATTERN = "downloading_model_id_%s_%s";
   private static final String DOWNLOAD_BEGIN_TIME_MS_PATTERN = "downloading_begin_time_%s_%s";
+  private static final String DOWNLOADING_COMPLETE_TIME_MS_PATTERN =
+      "downloading_complete_time_%s_%s";
+
+  // logging keys
+  private static final String EVENT_LOGGING_ENABLED_PATTERN = "logging_%s_%s";
+  private static final String CUSTOM_MODEL_LIB = "custom_model";
 
   private final String persistenceKey;
   private final FirebaseApp firebaseApp;
@@ -58,7 +65,7 @@ public class SharedPreferencesUtil {
    * Returns the Custom Model details currently associated with this model. If a fully downloaded
    * model is present - this returns the details of that model, including local file path. If an
    * update of an existing model is in progress, the local model plus the download id for the new
-   * upload is returned. To get only details related to the downloading model use {@link
+   * download is returned. To get only details related to the downloading model use {@link
    * #getDownloadingCustomModelDetails}. If this is the initial download of a local file - the
    * downloading model details are returned.
    *
@@ -154,7 +161,7 @@ public class SharedPreferencesUtil {
    *
    * @param customModel custom model details to be stored.
    */
-  public synchronized void setUploadedCustomModelDetails(@NonNull CustomModel customModel)
+  public synchronized void setLoadedCustomModelDetails(@NonNull CustomModel customModel)
       throws IllegalArgumentException {
     Long id = customModel.getDownloadId();
     // only call when download is completed and download id is reset to 0;
@@ -177,14 +184,28 @@ public class SharedPreferencesUtil {
   }
 
   /**
+   * Clears the download details associated with this model. Does not update the local file model.
+   *
+   * <p>Usually used during clean up of a completed model download.
+   *
+   * @param customModelName custom model details to be stored.
+   * @hide
+   */
+  public synchronized void clearDownloadCustomModelDetails(@NonNull String customModelName)
+      throws IllegalArgumentException {
+    Editor editor = getSharedPreferences().edit();
+    clearDownloadingModelDetails(editor, customModelName);
+  }
+
+  /**
    * Clears all stored data related to a local custom model, including download details.
+   *
+   * <p>Call ModelFileManager.deleteAllModels() before calling this to trigger successful clean up
+   * of downloaded files.
    *
    * @param modelName - name of model
    */
-  public synchronized void clearModelDetails(@NonNull String modelName, boolean cleanUpModelFile) {
-    if (cleanUpModelFile) {
-      // TODO(annz) - add code to remove model files from device
-    }
+  public synchronized void clearModelDetails(@NonNull String modelName) {
     Editor editor = getSharedPreferences().edit();
 
     clearDownloadingModelDetails(editor, modelName);
@@ -196,6 +217,22 @@ public class SharedPreferencesUtil {
         .commit();
   }
 
+  /**
+   * Set of all keys associated with this firebase app.
+   *
+   * @return all shared preference keys for this app
+   */
+  public Set<String> getSharedPreferenceKeySet() {
+    return getSharedPreferences().getAll().keySet();
+  }
+
+  /**
+   * Lists the current set of downloaded model, does not include downloads in progress. Call
+   * ModelFileManager.maybeGetUpdatedModels() before calling this to trigger successful download
+   * completions.
+   *
+   * @return list of Custom Models.
+   */
   public synchronized Set<CustomModel> listDownloadedModels() {
     Set<CustomModel> customModels = new HashSet<>();
     Set<String> keySet = getSharedPreferences().getAll().keySet();
@@ -209,26 +246,77 @@ public class SharedPreferencesUtil {
         if (extractModel != null) {
           customModels.add(extractModel);
         }
-      } else {
-        matcher = Pattern.compile(DOWNLOADING_MODEL_ID_PATTERN).matcher(key);
-        if (matcher.find()) {
-          String modelName = matcher.group(matcher.groupCount());
-          CustomModel extractModel = maybeGetUpdatedModel(modelName);
-          if (extractModel != null) {
-            customModels.add(extractModel);
-          }
-        }
       }
     }
     return customModels;
   }
 
-  synchronized CustomModel maybeGetUpdatedModel(String modelName) {
-    CustomModel downloadModel = getCustomModelDetails(modelName);
-    // TODO(annz) check here if download currently in progress have completed.
-    // if yes, then complete file relocation and return the updated model, otherwise return null
+  /**
+   * Should Firelog logging be enabled.
+   *
+   * @return whether or not firelog events should be logged. Default to true.
+   */
+  public synchronized boolean getCustomModelStatsCollectionFlag() {
+    return getSharedPreferences()
+        .getBoolean(
+            String.format(EVENT_LOGGING_ENABLED_PATTERN, CUSTOM_MODEL_LIB, persistenceKey), true);
+  }
 
-    return null;
+  /**
+   * Set whether firelog logging should be enabled. When not explicitly set, the default is true.
+   *
+   * @param enable - False to turn off logging. True to turn on logging.
+   */
+  public synchronized void setCustomModelStatsCollectionEnabled(boolean enable) {
+    getSharedPreferences()
+        .edit()
+        .putBoolean(
+            String.format(EVENT_LOGGING_ENABLED_PATTERN, CUSTOM_MODEL_LIB, persistenceKey), enable)
+        .apply();
+  }
+
+  /**
+   * Gets the start time (in ms) of the model download attempt.
+   *
+   * @param customModel model
+   * @return time in ms
+   */
+  public synchronized long getModelDownloadBeginTimeMs(@NonNull CustomModel customModel) {
+    return getSharedPreferences()
+        .getLong(
+            String.format(DOWNLOAD_BEGIN_TIME_MS_PATTERN, persistenceKey, customModel.getName()),
+            0L);
+  }
+
+  /**
+   * Gets the estimated completion time of successful or failed download attempts.
+   *
+   * @param customModel - model
+   * @return time in ms
+   */
+  public synchronized long getModelDownloadCompleteTimeMs(@NonNull CustomModel customModel) {
+    return getSharedPreferences()
+        .getLong(
+            String.format(
+                DOWNLOADING_COMPLETE_TIME_MS_PATTERN, persistenceKey, customModel.getName()),
+            0L);
+  }
+
+  /**
+   * Sets the estimated completion time of successful or failed download attempts.
+   *
+   * @param customModel - model
+   * @param completionTimeInMs - time in ms
+   */
+  public synchronized void setModelDownloadCompleteTimeMs(
+      @NonNull CustomModel customModel, long completionTimeInMs) {
+    getSharedPreferences()
+        .edit()
+        .putLong(
+            String.format(
+                DOWNLOADING_COMPLETE_TIME_MS_PATTERN, persistenceKey, customModel.getName()),
+            completionTimeInMs)
+        .apply();
   }
 
   /**
@@ -243,6 +331,7 @@ public class SharedPreferencesUtil {
         .remove(String.format(DOWNLOADING_MODEL_HASH_PATTERN, persistenceKey, modelName))
         .remove(String.format(DOWNLOADING_MODEL_SIZE_PATTERN, persistenceKey, modelName))
         .remove(String.format(DOWNLOAD_BEGIN_TIME_MS_PATTERN, persistenceKey, modelName))
+        .remove(String.format(DOWNLOADING_COMPLETE_TIME_MS_PATTERN, persistenceKey, modelName))
         .apply();
   }
 

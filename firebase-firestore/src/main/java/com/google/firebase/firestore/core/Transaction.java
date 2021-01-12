@@ -103,7 +103,7 @@ public class Transaction {
 
   /** Stores a set mutation for the given key and value, to be committed when commit() is called. */
   public void set(DocumentKey key, ParsedSetData data) {
-    write(data.toMutationList(key, precondition(key)));
+    write(Collections.singletonList(data.toMutation(key, precondition(key))));
     writtenDocs.add(key);
   }
 
@@ -113,7 +113,7 @@ public class Transaction {
    */
   public void update(DocumentKey key, ParsedUpdateData data) {
     try {
-      write(data.toMutationList(key, preconditionForUpdate(key)));
+      write(Collections.singletonList(data.toMutation(key, preconditionForUpdate(key))));
     } catch (FirebaseFirestoreException e) {
       lastWriteError = e;
     }

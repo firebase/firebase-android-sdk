@@ -88,7 +88,7 @@ public class WriteBatch {
         options.isMerge()
             ? firestore.getUserDataReader().parseMergeData(data, options.getFieldMask())
             : firestore.getUserDataReader().parseSetData(data);
-    mutations.addAll(parsed.toMutationList(documentRef.getKey(), Precondition.NONE));
+    mutations.add(parsed.toMutation(documentRef.getKey(), Precondition.NONE));
     return this;
   }
 
@@ -163,7 +163,7 @@ public class WriteBatch {
       @NonNull DocumentReference documentRef, @NonNull ParsedUpdateData updateData) {
     firestore.validateReference(documentRef);
     verifyNotCommitted();
-    mutations.addAll(updateData.toMutationList(documentRef.getKey(), Precondition.exists(true)));
+    mutations.add(updateData.toMutation(documentRef.getKey(), Precondition.exists(true)));
     return this;
   }
 

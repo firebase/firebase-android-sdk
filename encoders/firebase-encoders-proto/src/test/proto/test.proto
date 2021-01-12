@@ -43,6 +43,7 @@ message OtherTypesProto {
   string str = 1;
   bytes bts = 2;
   bool bl = 3;
+  bool wrappedBool = 4;
 }
 
 message WithCollectionsProto {

@@ -16,13 +16,15 @@ package com.google.firebase.ml.modeldownloader;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.internal.Objects;
+import com.google.firebase.ml.modeldownloader.internal.ModelFileDownloadService;
 import java.io.File;
 
 /**
  * Used to store information about custom models that are being downloaded or are already downloaded
  * on a device. The model file associated with this model can be updated, once the new model file is
- * fully uploaded, the original model file will be removed as soon as it is safe to do so.
+ * fully downloaded, the original model file will be removed as soon as it is safe to do so.
  */
 public class CustomModel {
   private final String name;
@@ -124,19 +126,51 @@ public class CustomModel {
    * The local model file. If null is returned, use the download Id to check the download status.
    *
    * @return the local file associated with the model, if the original file download is still in
-   *     progress, returns null, if file update is in progress returns last fully uploaded model.
+   *     progress, returns null, if file update is in progress returns last fully downloaded model.
    */
   @Nullable
-  public File getFile() {
+  public File getFile() throws FirebaseMlException {
+    return getFile(ModelFileDownloadService.getInstance());
+  }
+
+  /**
+   * The local model file. If null is returned, use the download Id to check the download status.
+   *
+   * @return the local file associated with the model. If the original file download is still in
+   *     progress, returns null. If file update is in progress, returns the last fully downloaded
+   *     model.
+   */
+  @Nullable
+  @VisibleForTesting
+  File getFile(ModelFileDownloadService fileDownloadService) throws FirebaseMlException {
+    // check for completed download
+    File newDownloadFile = fileDownloadService.loadNewlyDownloadedModelFile(this);
+    if (newDownloadFile != null) {
+      return newDownloadFile;
+    }
+    // return local file, if present
     if (localFilePath == null || localFilePath.isEmpty()) {
       return null;
     }
-    throw new UnsupportedOperationException("Not implemented, file retrieval coming soon.");
+    File modelFile = new File(localFilePath);
+
+    if (!modelFile.exists()) {
+      return null;
+    }
+    return modelFile;
+  }
+
+  boolean isModelFilePresent() {
+    try {
+      return getFile() != null;
+    } catch (Exception ex) {
+      return false;
+    }
   }
 
   /**
    * The size of the file currently associated with this model. If a download is in progress, this
-   * will be the size of the current model, not the new model currently being uploaded.
+   * will be the size of the current model, not the new model currently being downloaded.
    *
    * @return the local model size
    */
@@ -144,7 +178,11 @@ public class CustomModel {
     return fileSize;
   }
 
-  /** @return the model hash */
+  /**
+   * Retrieves the model Hash.
+   *
+   * @return the model hash
+   */
   @NonNull
   public String getModelHash() {
     return modelHash;
@@ -159,6 +197,31 @@ public class CustomModel {
    */
   public long getDownloadId() {
     return downloadId;
+  }
+
+  @NonNull
+  @Override
+  public String toString() {
+    Objects.ToStringHelper stringHelper =
+        Objects.toStringHelper(this)
+            .add("name", name)
+            .add("modelHash", modelHash)
+            .add("fileSize", fileSize);
+
+    if (localFilePath != null && !localFilePath.isEmpty()) {
+      stringHelper.add("localFilePath", localFilePath);
+    }
+    if (downloadId != 0L) {
+      stringHelper.add("downloadId", downloadId);
+    }
+    if (downloadUrl != null && !downloadUrl.isEmpty()) {
+      stringHelper.add("downloadUrl", downloadUrl);
+    }
+    if (downloadUrlExpiry != 0L) {
+      stringHelper.add("downloadUrlExpiry", downloadUrlExpiry);
+    }
+
+    return stringHelper.toString();
   }
 
   @Override
@@ -200,6 +263,8 @@ public class CustomModel {
   }
 
   /**
+   * Returns the model download url, usually only present when download is about to occur.
+   *
    * @return the model download url
    *     <p>Internal use only
    * @hide
