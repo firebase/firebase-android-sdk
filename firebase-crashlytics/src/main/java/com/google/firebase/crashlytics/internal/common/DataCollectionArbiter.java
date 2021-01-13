@@ -46,7 +46,7 @@ public class DataCollectionArbiter {
    * A Task that will be resolved when explicit data collection permission is granted by calling
    * grantDataCollectionPermission.
    */
-  private TaskCompletionSource<Void> dataCollectionExplicitlyApproved =
+  private final TaskCompletionSource<Void> dataCollectionExplicitlyApproved =
       new TaskCompletionSource<>();
 
   public DataCollectionArbiter(FirebaseApp app) {
