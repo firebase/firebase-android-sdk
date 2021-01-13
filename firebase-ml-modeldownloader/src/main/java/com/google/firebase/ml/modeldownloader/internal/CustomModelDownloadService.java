@@ -270,7 +270,9 @@ public class CustomModelDownloadService {
     if (errorStream == null) {
       return null;
     }
-    try (BufferedReader reader = new BufferedReader(new InputStreamReader(errorStream, UTF_8))) {
+    String encodingKey = connection.getHeaderField(CONTENT_ENCODING_HEADER_KEY);
+    try (BufferedReader reader =
+        new BufferedReader(new InputStreamReader(maybeUnGzip(errorStream, encodingKey), UTF_8))) {
       StringBuilder response = new StringBuilder();
       for (String input = reader.readLine(); input != null; input = reader.readLine()) {
         response.append(input).append('\n');
