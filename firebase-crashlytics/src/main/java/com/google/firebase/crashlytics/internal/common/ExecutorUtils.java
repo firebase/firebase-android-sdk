@@ -49,7 +49,7 @@ public final class ExecutorUtils {
     return executor;
   }
 
-  public static final ThreadFactory getNamedThreadFactory(final String threadNameTemplate) {
+  public static ThreadFactory getNamedThreadFactory(final String threadNameTemplate) {
     final AtomicLong count = new AtomicLong(1);
 
     return new ThreadFactory() {
