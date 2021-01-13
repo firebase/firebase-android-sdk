@@ -14,6 +14,7 @@
 
 package com.google.firebase.crashlytics.internal.common;
 
+import android.text.TextUtils;
 import com.google.firebase.crashlytics.FirebaseCrashlytics;
 import com.google.firebase.crashlytics.internal.network.HttpMethod;
 import com.google.firebase.crashlytics.internal.network.HttpRequest;
@@ -30,7 +31,6 @@ public abstract class AbstractSpiCall {
 
   public static final String HEADER_ORG_ID = "X-CRASHLYTICS-ORG-ID";
   public static final String HEADER_GOOGLE_APP_ID = "X-CRASHLYTICS-GOOGLE-APP-ID";
-  public static final String HEADER_DEVELOPER_TOKEN = "X-CRASHLYTICS-DEVELOPER-TOKEN";
   public static final String HEADER_CLIENT_TYPE = "X-CRASHLYTICS-API-CLIENT-TYPE";
   public static final String HEADER_CLIENT_VERSION = "X-CRASHLYTICS-API-CLIENT-VERSION";
   public static final String HEADER_REQUEST_ID = "X-REQUEST-ID";
@@ -129,7 +129,7 @@ public abstract class AbstractSpiCall {
   private String overrideProtocolAndHost(String url) {
     String toReturn = url;
 
-    if (!CommonUtils.isNullOrEmpty(protocolAndHostOverride)) {
+    if (!TextUtils.isEmpty(protocolAndHostOverride)) {
       toReturn = PROTOCOL_AND_HOST_PATTERN.matcher(url).replaceFirst(protocolAndHostOverride);
     }
 

@@ -41,7 +41,7 @@ class CrashlyticsBackgroundWorker {
   private final Object tailLock = new Object();
 
   // A thread local to keep track of which thread belongs to this executor.
-  private ThreadLocal<Boolean> isExecutorThread = new ThreadLocal<>();
+  private final ThreadLocal<Boolean> isExecutorThread = new ThreadLocal<>();
 
   public CrashlyticsBackgroundWorker(Executor executor) {
     this.executor = executor;
