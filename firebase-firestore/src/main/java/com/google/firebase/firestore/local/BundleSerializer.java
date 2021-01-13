@@ -54,8 +54,7 @@ class BundleSerializer {
   }
 
   public NamedQuery decodeNamedQuery(String json) throws JSONException {
-    JSONObject JSONObject = new JSONObject(json);
-    return decodeNamedQuery(JSONObject);
+    return decodeNamedQuery(new JSONObject(json));
   }
 
   public NamedQuery decodeNamedQuery(JSONObject namedQuery) throws JSONException {
@@ -66,8 +65,7 @@ class BundleSerializer {
   }
 
   public BundleMetadata decodeBundleMetadata(String json) throws JSONException {
-    JSONObject object = new JSONObject(json);
-    return decodeBundleMetadata(object);
+    return decodeBundleMetadata(new JSONObject(json));
   }
 
   public BundleMetadata decodeBundleMetadata(JSONObject bundleMetadata) throws JSONException {
@@ -80,8 +78,7 @@ class BundleSerializer {
   }
 
   public BundledDocumentMetadata decodeBundledDocumentMetadata(String json) throws JSONException {
-    JSONObject object = new JSONObject(json);
-    return decodeBundledDocumentMetadata(object);
+    return decodeBundledDocumentMetadata(new JSONObject(json));
   }
 
   public BundledDocumentMetadata decodeBundledDocumentMetadata(JSONObject bundledDocumentMetadata)
@@ -104,8 +101,7 @@ class BundleSerializer {
 
   @VisibleForTesting
   Document decodeDocument(String json) throws JSONException {
-    JSONObject object = new JSONObject(json);
-    return decodeDocument(object);
+    return decodeDocument(new JSONObject(json));
   }
 
   Document decodeDocument(JSONObject document) throws JSONException {
@@ -140,10 +136,9 @@ class BundleSerializer {
 
   private Query decodeQuery(JSONObject bundledQuery) throws JSONException {
     JSONObject structuredQuery = bundledQuery.getJSONObject("structuredQuery");
-
-    ResourcePath parent = decodeName(bundledQuery.getString("parent"));
     verifyNoSelect(structuredQuery);
 
+    ResourcePath parent = decodeName(bundledQuery.getString("parent"));
     JSONArray from = structuredQuery.getJSONArray("from");
     verifyCollectionSelector(from);
     JSONObject collectionSelector = from.getJSONObject(0);
