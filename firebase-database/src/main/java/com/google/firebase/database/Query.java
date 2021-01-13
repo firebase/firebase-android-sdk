@@ -479,10 +479,10 @@ public class Query {
   }
 
   /**
-   * Create a query constrained to only return child nodes with a value greater than the given
-   * value, using the given orderBy directive or priority as default.
+   * Create a query constrained to only return child nodes with a value less than the given value,
+   * using the given orderBy directive or priority as default.
    *
-   * @param value The value to start at, exclusive
+   * @param value The value to end at, exclusive
    * @return A Query with the new constraint
    * @since 19.6
    */
@@ -492,10 +492,10 @@ public class Query {
   }
 
   /**
-   * Create a query constrained to only return child nodes with a value greater than the given
-   * value, using the given orderBy directive or priority as default.
+   * Create a query constrained to only return child nodes with a value less than the given value,
+   * using the given orderBy directive or priority as default.
    *
-   * @param value The value to start at, exclusive
+   * @param value The value to end at, exclusive
    * @return A Query with the new constraint
    * @since 19.6
    */
@@ -505,10 +505,10 @@ public class Query {
   }
 
   /**
-   * Create a query constrained to only return child nodes with a value greater than the given
-   * value, using the given orderBy directive or priority as default.
+   * Create a query constrained to only return child nodes with a value less than the given value,
+   * using the given orderBy directive or priority as default.
    *
-   * @param value The value to start at, exclusive
+   * @param value The value to end at, exclusive
    * @return A Query with the new constraint
    * @since 19.6
    */
@@ -518,12 +518,12 @@ public class Query {
   }
 
   /**
-   * Create a query constrained to only return child nodes with a value greater than the given
-   * value, using the given orderBy directive or priority as default, and additionally only child
-   * nodes with a key greater than or equal to the given key.
+   * Create a query constrained to only return child nodes with a value less than or equal to the
+   * given value, using the given orderBy directive or priority as default, and additionally only
+   * child nodes with a key less than the given key.
    *
-   * @param value The priority to start at
-   * @param key The key to start at, exclusive
+   * @param value The value to end at
+   * @param key The key to end at, exclusive
    * @return A Query with the new constraint
    * @since 19.6
    */
@@ -535,12 +535,12 @@ public class Query {
   }
 
   /**
-   * Create a query constrained to only return child nodes with a value greater than the given
-   * value, using the given orderBy directive or priority as default, and additionally only child
-   * nodes with a key greater than or equal to the given key.
+   * Create a query constrained to only return child nodes with a value less than or equal to the
+   * given value, using the given orderBy directive or priority as default, and additionally only
+   * child nodes with a key less than the given key.
    *
-   * @param value The priority to start at
-   * @param key The key name to start at, exclusive
+   * @param value The value to end at
+   * @param key The key to end at, exclusive
    * @return A Query with the new constraint
    * @since 19.6
    */
@@ -550,12 +550,12 @@ public class Query {
   }
 
   /**
-   * Create a query constrained to only return child nodes with a value greater than the given
-   * value, using the given orderBy directive or priority as default, and additionally only child
-   * nodes with a key greater than or equal to the given key.
+   * Create a query constrained to only return child nodes with a value less than or equal to the
+   * given value, using the given orderBy directive or priority as default, and additionally only
+   * child nodes with a key less than the given key.
    *
-   * @param value The priority to start at
-   * @param key The key to start at, exclusive
+   * @param value The value to end at
+   * @param key The key to end at, exclusive
    * @return A Query with the new constraint
    * @since 19.6
    */

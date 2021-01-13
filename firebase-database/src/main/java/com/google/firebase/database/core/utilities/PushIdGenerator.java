@@ -18,7 +18,6 @@ import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
 import static com.google.firebase.database.core.utilities.Utilities.tryParseInt;
 
 import com.google.firebase.database.snapshot.ChildKey;
-import java.util.Collections;
 import java.util.Random;
 
 public class PushIdGenerator {
@@ -91,7 +90,9 @@ public class PushIdGenerator {
     next.setCharAt(
         next.length() - 1,
         PUSH_CHARS.charAt(PUSH_CHARS.indexOf(next.charAt(next.length() - 1)) - 1));
-    return next.append(Collections.nCopies(MAX_PUSH_CHAR, MAX_KEY_LEN - next.length())).toString();
+    return next.append(
+            new String(new char[MAX_KEY_LEN - next.length()]).replace("\0", "" + MAX_PUSH_CHAR))
+        .toString();
   };
 
   public static final String successor(String key) {

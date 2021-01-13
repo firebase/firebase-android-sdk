@@ -61,17 +61,16 @@ public class PushIdGeneratorTest {
   @Test
   public void testPredecessorSpecialValue() {
     assertEquals(
-        PushIdGenerator.predecessor(String.valueOf(MIN_PUSH_CHAR)),
-        String.valueOf(Integer.MAX_VALUE));
-    assertEquals(PushIdGenerator.predecessor(String.valueOf(Integer.MIN_VALUE)), MIN_KEY_NAME);
+        String.valueOf(Integer.MAX_VALUE),
+        PushIdGenerator.predecessor(String.valueOf(MIN_PUSH_CHAR)));
+    assertEquals(MIN_KEY_NAME, PushIdGenerator.predecessor(String.valueOf(Integer.MIN_VALUE)));
   }
 
   @Test
   public void testPredecessorBasicValue() {
     assertEquals(
-        PushIdGenerator.predecessor("abc"),
-        "abb"
-            + StringUtils.repeat(Character.toString(MAX_PUSH_CHAR), MAX_KEY_LEN - "abc".length()));
-    assertEquals(PushIdGenerator.predecessor("abc" + MIN_PUSH_CHAR), "abc");
+        "abb" + StringUtils.repeat(Character.toString(MAX_PUSH_CHAR), MAX_KEY_LEN - "abc".length()),
+        PushIdGenerator.predecessor("abc"));
+    assertEquals("abc", PushIdGenerator.predecessor("abc" + MIN_PUSH_CHAR));
   }
 }
