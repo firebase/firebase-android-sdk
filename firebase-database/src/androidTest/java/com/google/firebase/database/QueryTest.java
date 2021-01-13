@@ -771,7 +771,7 @@ public class QueryTest {
   }
 
   @Test
-  public void setLimitEnsureChildRemovedAndChildAddedHitWhenLimitIsHitFromFrontWithStartAfter()
+  public void setLimitEnsureChildRemovedAndChildAddedHitWhenDataEntersLimitWithStartAfter()
       throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
           InterruptedException {
     DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
