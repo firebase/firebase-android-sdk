@@ -814,7 +814,7 @@ public class QueryTest {
   }
 
   @Test
-  public void setLimitEnsureChildRemovedAndChildAddedHitWhenLimitIsHitFromFrontWithStartAfter()
+  public void setLimitEnsureChildRemovedAndChildAddedHitWhenDataEntersLimitWithStartAfter()
       throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
           InterruptedException {
     DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
@@ -3922,6 +3922,7 @@ public class QueryTest {
             .put("600", true)
             .put("70", true)
             .put("8", true)
+            .put("a", true)
             .build(),
         new DatabaseReference.CompletionListener() {
           @Override
@@ -3931,7 +3932,8 @@ public class QueryTest {
                     new ValueEventListener() {
                       @Override
                       public void onDataChange(DataSnapshot snapshot) {
-                        DeepEquals.assertEquals(null, snapshot.getValue());
+                        DeepEquals.assertEquals(
+                            new MapBuilder().put("a", true).build(), snapshot.getValue());
                         done.release();
                       }
 

@@ -98,9 +98,8 @@ public class PushIdGenerator {
     Validation.validateNullableKey(key);
     Integer num = tryParseInt(key);
     if (num != null) {
-      if (Long.valueOf(num) + 1L > Integer.MAX_VALUE) {
-        // Consult for the rationale behind this.
-        // https://firebase.google.com/docs/database/web/lists-of-data#data-order
+      if (num + 1L > Integer.MAX_VALUE) {
+        // See https://firebase.google.com/docs/database/web/lists-of-data#data-order
         return String.valueOf(MIN_PUSH_CHAR);
       }
       return String.valueOf(num + 1);
@@ -116,15 +115,14 @@ public class PushIdGenerator {
     }
 
     int i = next.length() - 1;
-
     while (i >= 0 && next.charAt(i) == MAX_PUSH_CHAR) {
       i--;
     }
 
-    // `nextAfter` was called on the largest possible key, so return the
+    // `successor` was called on the lexicographically largest possible key, so return the
     // maxName, which sorts larger than all keys.
     if (i == -1) {
-      return ChildKey.getMaxName().toString();
+      return ChildKey.MAX_KEY_NAME;
     }
 
     // `i` now points to the last character in `key` that is < MAX_PUSH_CHAR,
