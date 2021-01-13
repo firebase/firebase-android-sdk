@@ -37,25 +37,25 @@ public class PushIdGeneratorTest {
   @Test
   public void testSuccessorSpecialValue() {
     assertEquals(
-        PushIdGenerator.successor(String.valueOf(Integer.MAX_VALUE)),
-        Character.toString(MIN_PUSH_CHAR));
+        Character.toString(MIN_PUSH_CHAR),
+        PushIdGenerator.successor(String.valueOf(Integer.MAX_VALUE)));
     assertEquals(
+        MAX_KEY_NAME,
         PushIdGenerator.successor(
-            StringUtils.repeat(Character.toString(MAX_PUSH_CHAR), MAX_KEY_LEN)),
-        MAX_KEY_NAME);
+            StringUtils.repeat(Character.toString(MAX_PUSH_CHAR), MAX_KEY_LEN)));
   }
 
   @Test
   public void testSuccessorBasic() {
-    assertEquals(PushIdGenerator.successor("abc"), "abc" + MIN_PUSH_CHAR);
+    assertEquals("abc" + MIN_PUSH_CHAR, PushIdGenerator.successor("abc"));
     assertEquals(
+        "abd",
         PushIdGenerator.successor(
             "abc"
                 + StringUtils.repeat(
-                    Character.toString(MAX_PUSH_CHAR), MAX_KEY_LEN - "abc".length())),
-        "abd");
+                    Character.toString(MAX_PUSH_CHAR), MAX_KEY_LEN - "abc".length())));
     assertEquals(
-        PushIdGenerator.successor("abc" + MIN_PUSH_CHAR), "abc" + MIN_PUSH_CHAR + MIN_PUSH_CHAR);
+        "abc" + MIN_PUSH_CHAR + MIN_PUSH_CHAR, PushIdGenerator.successor("abc" + MIN_PUSH_CHAR));
   }
 
   @Test
