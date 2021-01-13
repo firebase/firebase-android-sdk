@@ -19,16 +19,14 @@ import androidx.annotation.Nullable;
 /** Provides methods to save and read Firestore bundles. */
 public interface BundleCache {
   /**
-   * Gets the saved BundleMetadata for a given bundle id. Returns {@code null} if no bundles are
-   * found under the given id.
+   * Gets the saved metadata for a given bundle id. Returns {@code null} if no bundles are found
+   * under the given id.
    */
   @Nullable
-  BundleMetadata getBundleMetadata(String bundleId);
+  Bundle getBundleMetadata(String bundleId);
 
-  /**
-   * Saves the BundleMetadata from a bundle into local storage, using its id as the persistent key.
-   */
-  void saveBundleMetadata(BundleMetadata metadata);
+  /** Saves the metadata from a bundle into local storage, using its id as the persistent key. */
+  void saveBundleMetadata(Bundle metadata);
 
   /**
    * Gets a saved NamedQuery for the given query name. Returns {@code null} if no queries are found

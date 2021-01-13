@@ -33,35 +33,31 @@ import com.google.protobuf.InvalidProtocolBufferException;
 
   @Nullable
   @Override
-  public BundleMetadata getBundleMetadata(String bundleId) {
+  public Bundle getBundleMetadata(String bundleId) {
     return db.query(
-            "SELECT schema_version, create_time_seconds, create_time_nanos, total_documents, total_bytes "
+            "SELECT schema_version, create_time_seconds, create_time_nanos "
                 + "FROM bundles WHERE bundle_id = ?")
         .binding(bundleId)
         .firstValue(
             row ->
                 row == null
                     ? null
-                    : new BundleMetadata(
+                    : new Bundle(
                         bundleId,
                         row.getInt(0),
-                        new SnapshotVersion(new Timestamp(row.getLong(1), row.getInt(2))),
-                        row.getInt(3),
-                        row.getLong(4)));
+                        new SnapshotVersion(new Timestamp(row.getLong(1), row.getInt(2)))));
   }
 
   @Override
-  public void saveBundleMetadata(BundleMetadata metadata) {
+  public void saveBundleMetadata(Bundle metadata) {
     db.execute(
         "INSERT OR REPLACE INTO bundles "
-            + "(bundle_id, schema_version, create_time_seconds, create_time_nanos, total_documents, total_bytes) "
-            + "VALUES (?, ?, ?, ?, ?, ?)",
+            + "(bundle_id, schema_version, create_time_seconds, create_time_nanos) "
+            + "VALUES (?, ?, ?, ?)",
         metadata.getBundleId(),
         metadata.getVersion(),
         metadata.getCreateTime().getTimestamp().getSeconds(),
-        metadata.getCreateTime().getTimestamp().getNanoseconds(),
-        metadata.getTotalDocuments(),
-        metadata.getTotalBytes());
+        metadata.getCreateTime().getTimestamp().getNanoseconds());
   }
 
   @Override

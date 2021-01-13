@@ -569,9 +569,7 @@ class SQLiteSchema {
                   + "bundle_id TEXT PRIMARY KEY, "
                   + "create_time_seconds INTEGER, "
                   + "create_time_nanos INTEGER, "
-                  + "schema_version INTEGER, "
-                  + "total_documents INTEGER, "
-                  + "total_bytes INTEGER)");
+                  + "schema_version INTEGER)");
 
           db.execSQL(
               "CREATE TABLE named_queries ("

@@ -20,17 +20,17 @@ import java.util.Map;
 
 /** A memory-backed implementation of the bundle cache. */
 /* package */ class MemoryBundleCache implements BundleCache {
-  private final Map<String, BundleMetadata> bundles = new HashMap<>();
+  private final Map<String, Bundle> bundles = new HashMap<>();
   private final Map<String, NamedQuery> namedQueries = new HashMap<>();
 
   @Nullable
   @Override
-  public BundleMetadata getBundleMetadata(String bundleId) {
+  public Bundle getBundleMetadata(String bundleId) {
     return bundles.get(bundleId);
   }
 
   @Override
-  public void saveBundleMetadata(BundleMetadata metadata) {
+  public void saveBundleMetadata(Bundle metadata) {
     bundles.put(metadata.getBundleId(), metadata);
   }
 

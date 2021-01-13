@@ -18,6 +18,8 @@ import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import java.util.List;
 
+// TODO(bundles): Figure out whether we need this class (it is not needed in Web).
+
 /** Metadata describing a Firestore document saved in the bundle. */
 public class BundledDocumentMetadata {
   private final DocumentKey key;

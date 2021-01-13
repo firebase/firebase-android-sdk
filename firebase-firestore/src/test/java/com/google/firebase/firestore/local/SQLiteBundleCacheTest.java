@@ -20,7 +20,7 @@ import org.robolectric.annotation.Config;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
-public class SQLBundleCacheTest extends BundleCacheTestCase {
+public class SQLiteBundleCacheTest extends BundleCacheTestCase {
   @Override
   Persistence getPersistence() {
     return PersistenceTestHelpers.createSQLitePersistence();

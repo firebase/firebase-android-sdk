@@ -17,24 +17,15 @@ package com.google.firebase.firestore.local;
 import com.google.firebase.firestore.model.SnapshotVersion;
 
 /** Represents a Firestore bundle saved by the SDK in its local storage. */
-/* package */ class BundleMetadata {
+/* package */ class Bundle {
   private final String bundleId;
   private final int version;
   private final SnapshotVersion createTime;
-  private final int totalDocuments;
-  private final long totalBytes;
 
-  public BundleMetadata(
-      String bundleId,
-      int version,
-      SnapshotVersion createTime,
-      int totalDocuments,
-      long totalBytes) {
+  public Bundle(String bundleId, int version, SnapshotVersion createTime) {
     this.bundleId = bundleId;
     this.version = version;
     this.createTime = createTime;
-    this.totalDocuments = totalDocuments;
-    this.totalBytes = totalBytes;
   }
 
   /**
@@ -58,26 +49,14 @@ import com.google.firebase.firestore.model.SnapshotVersion;
     return createTime;
   }
 
-  /** Returns the number of documents in the bundle. */
-  public int getTotalDocuments() {
-    return totalDocuments;
-  }
-
-  /** Returns the size of the bundle in bytes, excluding this BundleMetadata. */
-  public long getTotalBytes() {
-    return totalBytes;
-  }
-
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
 
-    BundleMetadata that = (BundleMetadata) o;
+    Bundle that = (Bundle) o;
 
     if (version != that.version) return false;
-    if (totalDocuments != that.totalDocuments) return false;
-    if (totalBytes != that.totalBytes) return false;
     if (!bundleId.equals(that.bundleId)) return false;
     return createTime.equals(that.createTime);
   }
@@ -87,8 +66,6 @@ import com.google.firebase.firestore.model.SnapshotVersion;
     int result = bundleId.hashCode();
     result = 31 * result + version;
     result = 31 * result + createTime.hashCode();
-    result = 31 * result + totalDocuments;
-    result = 31 * result + (int) (totalBytes ^ (totalBytes >>> 32));
     return result;
   }
 }
