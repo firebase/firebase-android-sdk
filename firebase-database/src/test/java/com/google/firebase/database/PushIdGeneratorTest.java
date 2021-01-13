@@ -15,6 +15,7 @@
 package com.google.firebase.database;
 
 import static com.google.firebase.database.snapshot.ChildKey.MAX_KEY_NAME;
+import static com.google.firebase.database.snapshot.ChildKey.MIN_KEY_NAME;
 import static org.junit.Assert.assertEquals;
 
 import com.google.firebase.database.core.utilities.PushIdGenerator;
@@ -55,5 +56,22 @@ public class PushIdGeneratorTest {
         "abd");
     assertEquals(
         PushIdGenerator.successor("abc" + MIN_PUSH_CHAR), "abc" + MIN_PUSH_CHAR + MIN_PUSH_CHAR);
+  }
+
+  @Test
+  public void testPredecessorSpecialValue() {
+    assertEquals(
+        PushIdGenerator.predecessor(String.valueOf(MIN_PUSH_CHAR)),
+        String.valueOf(Integer.MAX_VALUE));
+    assertEquals(PushIdGenerator.predecessor(String.valueOf(Integer.MIN_VALUE)), MIN_KEY_NAME);
+  }
+
+  @Test
+  public void testPredecessorBasicValue() {
+    assertEquals(
+        PushIdGenerator.predecessor("abc"),
+        "abb"
+            + StringUtils.repeat(Character.toString(MAX_PUSH_CHAR), MAX_KEY_LEN - "abc".length()));
+    assertEquals(PushIdGenerator.predecessor("abc" + MIN_PUSH_CHAR), "abc");
   }
 }
