@@ -14,9 +14,9 @@
 
 package com.google.firebase.crashlytics.internal.settings.network;
 
+import android.text.TextUtils;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.common.AbstractSpiCall;
-import com.google.firebase.crashlytics.internal.common.CommonUtils;
 import com.google.firebase.crashlytics.internal.common.CrashlyticsCore;
 import com.google.firebase.crashlytics.internal.network.HttpMethod;
 import com.google.firebase.crashlytics.internal.network.HttpRequest;
@@ -41,7 +41,7 @@ public class DefaultSettingsSpiCall extends AbstractSpiCall implements SettingsS
   static final String HEADER_OS_DISPLAY_VERSION = "X-CRASHLYTICS-OS-DISPLAY-VERSION";
   static final String HEADER_INSTALLATION_ID = "X-CRASHLYTICS-INSTALLATION-ID";
 
-  private Logger logger;
+  private final Logger logger;
 
   /**
    * Create a new GET call on the provided <code>url</code>. That <code>url</code> {@link String}
@@ -139,7 +139,7 @@ public class DefaultSettingsSpiCall extends AbstractSpiCall implements SettingsS
     queryParams.put(SOURCE_PARAM, Integer.toString(requestData.source));
 
     final String instanceId = requestData.instanceId;
-    if (!CommonUtils.isNullOrEmpty(instanceId)) {
+    if (!TextUtils.isEmpty(instanceId)) {
       queryParams.put(INSTANCE_PARAM, instanceId);
     }
 

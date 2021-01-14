@@ -21,8 +21,11 @@ import com.google.firebase.database.core.utilities.Utilities;
 public class ChildKey implements Comparable<ChildKey> {
   private final String key;
 
-  private static final ChildKey MIN_KEY = new ChildKey("[MIN_KEY]");
-  private static final ChildKey MAX_KEY = new ChildKey("[MAX_KEY]");
+  public static final String MAX_KEY_NAME = "[MAX_KEY]";
+  public static final String MIN_KEY_NAME = "[MIN_NAME]";
+
+  private static final ChildKey MIN_KEY = new ChildKey(MIN_KEY_NAME);
+  private static final ChildKey MAX_KEY = new ChildKey(MAX_KEY_NAME);
 
   // Singleton for priority child keys
   private static final ChildKey PRIORITY_CHILD_KEY = new ChildKey(".priority");

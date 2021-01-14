@@ -88,7 +88,6 @@ public class IdManager implements InstallIdProvider {
    * then cached in memory for the duration of the app execution. If the FID has been reset after
    * this method is called, the App Install Identifier will be reset on the subsequent launch.
    */
-  @SuppressWarnings("JavadocReference")
   @Override
   @NonNull
   public synchronized String getCrashlyticsInstallId() {
