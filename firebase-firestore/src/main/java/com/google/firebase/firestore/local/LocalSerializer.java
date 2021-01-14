@@ -271,12 +271,25 @@ public final class LocalSerializer {
   }
 
   public com.google.firestore.proto.BundledQuery encodeQuery(Query query) {
-    // We store LimitToLast as metadata information below. We remove it from the query itself as
-    // `toTarget()` flips the order by constraints otherwise.
-    Query queryWithoutLimitToLast =
-        query.hasLimitToLast() ? query.limitToFirst(query.getLimitToLast()) : query;
+    // We don't use query.toTarget() here as we want to save the original query, and not the flipped
+    // query that we may send to the backend (if limitToLast() is used). This allows us to
+    // deserialize named queries again without inverting the order by constraints on read.
+    long limit =
+        query.hasLimitToFirst()
+            ? query.getLimitToFirst()
+            : (query.hasLimitToLast() ? query.getLimitToLast() : Target.NO_LIMIT);
+    Target target =
+        new Target(
+            query.getPath(),
+            query.getCollectionGroup(),
+            query.getFilters(),
+            query.getOrderBy(),
+            limit,
+            query.getStartAt(),
+            query.getEndAt());
+
     com.google.firestore.v1.Target.QueryTarget queryTarget =
-        rpcSerializer.encodeQueryTarget(queryWithoutLimitToLast.toTarget());
+        rpcSerializer.encodeQueryTarget(target);
 
     com.google.firestore.proto.BundledQuery.Builder result =
         com.google.firestore.proto.BundledQuery.newBuilder();
