@@ -68,7 +68,10 @@ public class Validation {
   }
 
   private static boolean isValidKey(String key) {
-    return key.equals(".info") || !INVALID_KEY_REGEX.matcher(key).find();
+    return key.equals(".info")
+        || !INVALID_KEY_REGEX.matcher(key).find()
+        || key.equals(ChildKey.getMaxName().asString())
+        || key.equals(ChildKey.getMinName().asString());
   }
 
   public static void validateNullableKey(String key) throws DatabaseException {
