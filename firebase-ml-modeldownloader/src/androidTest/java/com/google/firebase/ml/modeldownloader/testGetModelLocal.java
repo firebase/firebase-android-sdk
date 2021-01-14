@@ -1,5 +1,3 @@
-package com.google.firebase.ml.modeldownloader;
-
 // Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,6 +11,8 @@ package com.google.firebase.ml.modeldownloader;
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+package com.google.firebase.ml.modeldownloader;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -21,7 +21,7 @@ import static org.junit.Assert.fail;
 import android.content.Context;
 import android.content.SharedPreferences;
 import androidx.test.core.app.ApplicationProvider;
-import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.runner.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
@@ -34,7 +34,7 @@ import org.junit.runner.RunWith;
 
 /** Integration tests for Get Model, download type LOCAL_MODEL. */
 @RunWith(AndroidJUnit4.class)
-class testGetModelLocal {
+public class testGetModelLocal {
   private FirebaseModelDownloader firebaseModelDownloader;
   private static final String MODEL_NAME_LOCAL = "getLocalModel";
 
