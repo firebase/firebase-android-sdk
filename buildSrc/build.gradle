@@ -39,7 +39,7 @@ dependencies {
     runtime 'io.opencensus:opencensus-impl:0.18.0'
     implementation group: 'com.google.code.gson', name: 'gson', version: '2.8.6'
     implementation 'org.jetbrains.dokka:dokka-android-gradle-plugin:0.9.17-g013-9b8280a'
-    implementation 'com.android.tools.build:gradle:3.4.2'
+    implementation 'com.android.tools.build:gradle:3.4.3'
 
     testImplementation 'junit:junit:4.13-rc-1'
     testImplementation group: 'com.google.code.gson', name: 'gson', version: '2.8.6'
