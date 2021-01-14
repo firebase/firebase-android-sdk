@@ -497,6 +497,14 @@ public class Repo implements PersistentConnection.Delegate {
           @Override
           public void run() {
             serverSyncTree.setQueryActive(query.getSpec());
+            Node cached =
+                serverSyncTree.calcCompleteEventCacheFromRoot(query.getPath(), new ArrayList<>());
+            if (!cached.isEmpty()) {
+              source.setResult(
+                  InternalHelpers.createDataSnapshot(
+                      query.getRef(), IndexedNode.from(cached, query.getSpec().getIndex())));
+              return;
+            }
             connection
                 .get(query.getPath().asList(), query.getSpec().getParams().getWireProtocolParams())
                 .addOnCompleteListener(
@@ -507,18 +515,13 @@ public class Repo implements PersistentConnection.Delegate {
                           operationLogger.info(
                               "get for query "
                                   + query.getPath()
-                                  + " falling back to cache after error: "
+                                  + " falling back to disk cache after error: "
                                   + task.getException().getMessage());
-                          Node cached =
-                              serverSyncTree.calcCompleteEventCache(
-                                  query.getPath(), new ArrayList<>());
-                          if (cached.isEmpty()) {
+                          DataSnapshot cached = serverSyncTree.persistenceServerCache(query);
+                          if (!cached.exists()) {
                             source.setException(task.getException());
                           } else {
-                            source.setResult(
-                                InternalHelpers.createDataSnapshot(
-                                    query.getRef(),
-                                    IndexedNode.from(cached, query.getSpec().getIndex())));
+                            source.setResult(cached);
                           }
                         } else {
                           Node serverNode = NodeUtilities.NodeFromJSON(task.getResult());
