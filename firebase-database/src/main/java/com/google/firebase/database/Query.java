@@ -459,7 +459,7 @@ public class Query {
     }
     if (params.hasStart()) {
       throw new IllegalArgumentException(
-          "Can't call startAt(), startAfter(), or equalTo() multiple times");
+          "Can't call startAt(), startAfte(), or equalTo() multiple times");
     }
     ChildKey childKey = null;
     if (key != null) {
@@ -476,6 +476,96 @@ public class Query {
     validateQueryEndpoints(newParams);
     hardAssert(newParams.isValid());
     return new Query(repo, path, newParams, orderByCalled);
+  }
+
+  /**
+   * Create a query constrained to only return child nodes with a value less than the given value,
+   * using the given orderBy directive or priority as default.
+   *
+   * @param value The value to end at, exclusive
+   * @return A Query with the new constraint
+   * @since 19.6
+   */
+  @NonNull
+  public Query endBefore(@Nullable String value) {
+    return endAt(value, ChildKey.getMinName().asString());
+  }
+
+  /**
+   * Create a query constrained to only return child nodes with a value less than the given value,
+   * using the given orderBy directive or priority as default.
+   *
+   * @param value The value to end at, exclusive
+   * @return A Query with the new constraint
+   * @since 19.6
+   */
+  @NonNull
+  public Query endBefore(double value) {
+    return endAt(value, ChildKey.getMinName().asString());
+  }
+
+  /**
+   * Create a query constrained to only return child nodes with a value less than the given value,
+   * using the given orderBy directive or priority as default.
+   *
+   * @param value The value to end at, exclusive
+   * @return A Query with the new constraint
+   * @since 19.6
+   */
+  @NonNull
+  public Query endBefore(boolean value) {
+    return endAt(value, ChildKey.getMinName().asString());
+  }
+
+  /**
+   * Create a query constrained to only return child nodes with a value less than or equal to the
+   * given value, using the given orderBy directive or priority as default, and additionally only
+   * child nodes with a key less than the given key.
+   *
+   * @param value The value to end at
+   * @param key The key to end at, exclusive
+   * @return A Query with the new constraint
+   * @since 19.6
+   */
+  @NonNull
+  public Query endBefore(@Nullable String value, @Nullable String key) {
+    Node node =
+        value != null ? new StringNode(value, PriorityUtilities.NullPriority()) : EmptyNode.Empty();
+    return endBefore(node, key);
+  }
+
+  /**
+   * Create a query constrained to only return child nodes with a value less than or equal to the
+   * given value, using the given orderBy directive or priority as default, and additionally only
+   * child nodes with a key less than the given key.
+   *
+   * @param value The value to end at
+   * @param key The key to end at, exclusive
+   * @return A Query with the new constraint
+   * @since 19.6
+   */
+  @NonNull
+  public Query endBefore(double value, @Nullable String key) {
+    return endBefore(new DoubleNode(value, PriorityUtilities.NullPriority()), key);
+  }
+
+  /**
+   * Create a query constrained to only return child nodes with a value less than or equal to the
+   * given value, using the given orderBy directive or priority as default, and additionally only
+   * child nodes with a key less than the given key.
+   *
+   * @param value The value to end at
+   * @param key The key to end at, exclusive
+   * @return A Query with the new constraint
+   * @since 19.6
+   */
+  @NonNull
+  public Query endBefore(boolean value, @Nullable String key) {
+    return endBefore(new BooleanNode(value, PriorityUtilities.NullPriority()), key);
+  }
+
+  private Query endBefore(Node node, String key) {
+    return endAt(node, PushIdGenerator.predecessor(key));
   }
 
   /**

@@ -162,6 +162,12 @@ package com.google.firebase.database {
     method @NonNull public com.google.firebase.database.Query endAt(@Nullable String, @Nullable String);
     method @NonNull public com.google.firebase.database.Query endAt(double, @Nullable String);
     method @NonNull public com.google.firebase.database.Query endAt(boolean, @Nullable String);
+    method @NonNull public com.google.firebase.database.Query endBefore(@Nullable String);
+    method @NonNull public com.google.firebase.database.Query endBefore(double);
+    method @NonNull public com.google.firebase.database.Query endBefore(boolean);
+    method @NonNull public com.google.firebase.database.Query endBefore(@Nullable String, @Nullable String);
+    method @NonNull public com.google.firebase.database.Query endBefore(double, @Nullable String);
+    method @NonNull public com.google.firebase.database.Query endBefore(boolean, @Nullable String);
     method @NonNull public com.google.firebase.database.Query equalTo(@Nullable String);
     method @NonNull public com.google.firebase.database.Query equalTo(double);
     method @NonNull public com.google.firebase.database.Query equalTo(boolean);

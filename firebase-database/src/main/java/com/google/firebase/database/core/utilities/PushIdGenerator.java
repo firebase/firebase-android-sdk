@@ -65,11 +65,41 @@ public class PushIdGenerator {
     return result.toString();
   }
 
+  // `key` is assumed to be non-empty.
+  public static final String predecessor(String key) {
+    Validation.validateNullableKey(key);
+    Integer num = tryParseInt(key);
+    if (num != null) {
+      if (num == Integer.MIN_VALUE) {
+        return ChildKey.MIN_KEY_NAME;
+      }
+      return String.valueOf(num - 1);
+    }
+    StringBuilder next = new StringBuilder(key);
+    if (next.charAt(next.length() - 1) == MIN_PUSH_CHAR) {
+      if (next.length() == 1) {
+        return String.valueOf(Integer.MAX_VALUE);
+      }
+      // If the last character is the smallest possible character, then the next
+      // smallest string is the prefix of `key` without it.
+      return next.substring(0, next.length() - 1);
+    }
+    // Replace the last character with it's immediate predecessor, and fill the
+    // suffix of the key with MAX_PUSH_CHAR. This is the lexicographically largest
+    // possible key smaller than `key`.
+    next.setCharAt(
+        next.length() - 1,
+        PUSH_CHARS.charAt(PUSH_CHARS.indexOf(next.charAt(next.length() - 1)) - 1));
+    return next.append(
+            new String(new char[MAX_KEY_LEN - next.length()]).replace("\0", "" + MAX_PUSH_CHAR))
+        .toString();
+  };
+
   public static final String successor(String key) {
     Validation.validateNullableKey(key);
     Integer num = tryParseInt(key);
     if (num != null) {
-      if (num + 1L > Integer.MAX_VALUE) {
+      if (num == Integer.MAX_VALUE) {
         // See https://firebase.google.com/docs/database/web/lists-of-data#data-order
         return String.valueOf(MIN_PUSH_CHAR);
       }
