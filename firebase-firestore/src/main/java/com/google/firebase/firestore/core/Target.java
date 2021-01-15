@@ -49,10 +49,11 @@ public final class Target {
    * Initializes a Target with a path and additional query constraints. Path must currently be empty
    * if this is a collection group query.
    *
-   * <p>NOTE: you should always construct Target from {@code Query.toTarget} instead of using this
-   * constructor, because Query provides an implicit {@code orderBy} property.
+   * <p>NOTE: In general, you should prefer to construct Target from {@code Query.toTarget} instead
+   * of using this constructor, because Query provides an implicit {@code orderBy} property and
+   * flips the orderBy constraints for limitToLast() queries.
    */
-  Target(
+  public Target(
       ResourcePath path,
       @Nullable String collectionGroup,
       List<Filter> filters,

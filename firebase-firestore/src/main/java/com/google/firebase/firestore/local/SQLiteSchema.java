@@ -49,7 +49,7 @@ class SQLiteSchema {
    * The version of the schema. Increase this by one for each migration added to runMigrations
    * below.
    */
-  static final int VERSION = 11;
+  static final int VERSION = 12;
 
   // Remove this constant and increment VERSION to enable indexing support
   static final int INDEXING_SUPPORT_VERSION = VERSION + 1;
@@ -158,6 +158,9 @@ class SQLiteSchema {
       rewriteCanonicalIds();
     }
 
+    if (fromVersion < 12 && toVersion >= 12) {
+      createBundleCache();
+    }
     /*
      * Adding a new migration? READ THIS FIRST!
      *
@@ -556,6 +559,26 @@ class SQLiteSchema {
               }
             });
   };
+
+  private void createBundleCache() {
+    ifTablesDontExist(
+        new String[] {"bundles", "named_queries"},
+        () -> {
+          db.execSQL(
+              "CREATE TABLE bundles ("
+                  + "bundle_id TEXT PRIMARY KEY, "
+                  + "create_time_seconds INTEGER, "
+                  + "create_time_nanos INTEGER, "
+                  + "schema_version INTEGER)");
+
+          db.execSQL(
+              "CREATE TABLE named_queries ("
+                  + "name TEXT PRIMARY KEY, "
+                  + "read_time_seconds INTEGER, "
+                  + "read_time_nanos INTEGER, "
+                  + "bundled_query_proto BLOB)");
+        });
+  }
 
   private boolean tableExists(String table) {
     return !new SQLitePersistence.Query(db, "SELECT 1=1 FROM sqlite_master WHERE tbl_name = ?")
