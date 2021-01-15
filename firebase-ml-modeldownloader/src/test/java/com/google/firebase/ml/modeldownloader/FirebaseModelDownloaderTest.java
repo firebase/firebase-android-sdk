@@ -725,4 +725,23 @@ public class FirebaseModelDownloaderTest {
     firebaseModelDownloader.setStatsCollectionEnabled(false);
     verify(mockPrefs, times(1)).setCustomModelStatsCollectionEnabled(eq(false));
   }
+
+  @Test
+  public void getModelDownloadId_noDownload() {
+    when(mockPrefs.getDownloadingCustomModelDetails(eq(MODEL_NAME))).thenReturn(customModelLoaded);
+    assertEquals(firebaseModelDownloader.getModelDownloadId(MODEL_NAME), 0);
+  }
+
+  @Test
+  public void getModelDownloadId_noNamedModel() {
+    when(mockPrefs.getDownloadingCustomModelDetails(eq(MODEL_NAME))).thenReturn(null);
+    assertEquals(firebaseModelDownloader.getModelDownloadId(MODEL_NAME), 0);
+  }
+
+  @Test
+  public void getModelDownloadId_download() {
+    when(mockPrefs.getDownloadingCustomModelDetails(eq(MODEL_NAME)))
+        .thenReturn(UPDATE_IN_PROGRESS_CUSTOM_MODEL);
+    assertEquals(firebaseModelDownloader.getModelDownloadId(MODEL_NAME), DOWNLOAD_ID);
+  }
 }
