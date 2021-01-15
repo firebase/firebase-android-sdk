@@ -427,7 +427,7 @@ public final class LocalSerializerTest {
         serializer.encodeBundledQuery(bundledQuery);
     BundledQuery decodedBundledQuery = serializer.decodeBundledQuery(encodedBundledQuery);
 
-    assertEquals(encodedBundledQuery, decodedBundledQuery);
+    assertEquals(bundledQuery, decodedBundledQuery);
   }
 
   @Test
@@ -446,6 +446,6 @@ public final class LocalSerializerTest {
         serializer.encodeBundledQuery(bundledQuery);
     BundledQuery decodedBundledQuery = serializer.decodeBundledQuery(encodedBundledQuery);
 
-    assertEquals(encodedBundledQuery, decodedBundledQuery);
+    assertEquals(bundledQuery, decodedBundledQuery);
   }
 }

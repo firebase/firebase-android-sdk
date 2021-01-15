@@ -209,6 +209,13 @@ public final class RemoteSerializer {
         && path.getSegment(2).equals("databases");
   }
 
+  /** Validates that a path has a prefix that belongs to the current database. */
+  public boolean isLocalResourceName(ResourcePath path) {
+    return isValidResourceName(path)
+        && path.getSegment(1).equals(databaseId.getProjectId())
+        && path.getSegment(3).equals(databaseId.getDatabaseId());
+  }
+
   public String databaseName() {
     return databaseName;
   }

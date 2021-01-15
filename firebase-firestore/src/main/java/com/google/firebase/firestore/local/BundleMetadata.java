@@ -17,12 +17,12 @@ package com.google.firebase.firestore.local;
 import com.google.firebase.firestore.model.SnapshotVersion;
 
 /** Represents a Firestore bundle saved by the SDK in its local storage. */
-/* package */ class Bundle {
+/* package */ class BundleMetadata {
   private final String bundleId;
   private final int version;
   private final SnapshotVersion createTime;
 
-  public Bundle(String bundleId, int version, SnapshotVersion createTime) {
+  public BundleMetadata(String bundleId, int version, SnapshotVersion createTime) {
     this.bundleId = bundleId;
     this.version = version;
     this.createTime = createTime;
@@ -54,7 +54,7 @@ import com.google.firebase.firestore.model.SnapshotVersion;
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
 
-    Bundle that = (Bundle) o;
+    BundleMetadata that = (BundleMetadata) o;
 
     if (version != that.version) return false;
     if (!bundleId.equals(that.bundleId)) return false;
