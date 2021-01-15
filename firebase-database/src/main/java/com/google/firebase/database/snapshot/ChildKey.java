@@ -71,9 +71,9 @@ public class ChildKey implements Comparable<ChildKey> {
   public int compareTo(ChildKey other) {
     if (this == other) {
       return 0;
-    } else if (this == MIN_KEY || other == MAX_KEY) {
+    } else if (this.key.equals(MIN_KEY_NAME) || other.key.equals(MAX_KEY_NAME)) {
       return -1;
-    } else if (other == MIN_KEY || this == MAX_KEY) {
+    } else if (other.key.equals(MIN_KEY_NAME) || this.key.equals(MAX_KEY_NAME)) {
       return 1;
     } else if (this.isInt()) {
       if (other.isInt()) {
@@ -113,12 +113,6 @@ public class ChildKey implements Comparable<ChildKey> {
 
   public static ChildKey fromString(String key) {
     Integer intValue = Utilities.tryParseInt(key);
-    if (key.equals(MIN_KEY_NAME)) {
-      return MIN_KEY;
-    }
-    if (key.equals(MAX_KEY_NAME)) {
-      return MAX_KEY;
-    }
     if (intValue != null) {
       return new IntegerChildKey(key, intValue);
     } else if (key.equals(".priority")) {
