@@ -22,6 +22,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.field;
 import static com.google.firebase.firestore.testutil.TestUtil.fieldMask;
 import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
+import static com.google.firebase.firestore.testutil.TestUtil.path;
 import static com.google.firebase.firestore.testutil.TestUtil.setMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.unknownDoc;
 import static java.util.Arrays.asList;
@@ -30,6 +31,7 @@ import static org.junit.Assert.assertTrue;
 
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.core.Query;
+import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.MaybeDocument;
@@ -411,19 +413,39 @@ public final class LocalSerializerTest {
 
   @Test
   public void testEncodesQuery() {
-    Query query = TestUtil.query("room");
-    com.google.firestore.proto.BundledQuery encodedQuery = serializer.encodeQuery(query);
-    Query decodedQuery = serializer.decodeQuery(encodedQuery);
+    Target target =
+        new Target(
+            path("room"),
+            /* collectionGroup= */ null,
+            Collections.emptyList(),
+            Collections.emptyList(),
+            Target.NO_LIMIT,
+            /* startAt= */ null,
+            /* endAt= */ null);
+    BundledQuery bundledQuery = new BundledQuery(target, Query.LimitType.LIMIT_TO_FIRST);
+    com.google.firestore.proto.BundledQuery encodedBundledQuery =
+        serializer.encodeBundledQuery(bundledQuery);
+    BundledQuery decodedBundledQuery = serializer.decodeBundledQuery(encodedBundledQuery);
 
-    assertEquals(query, decodedQuery);
+    assertEquals(encodedBundledQuery, decodedBundledQuery);
   }
 
   @Test
   public void testEncodesLimitToLastQuery() {
-    Query query = TestUtil.query("room").limitToLast(1);
-    com.google.firestore.proto.BundledQuery encodedQuery = serializer.encodeQuery(query);
-    Query decodedQuery = serializer.decodeQuery(encodedQuery);
+    Target target =
+        new Target(
+            path("room"),
+            /* collectionGroup= */ null,
+            Collections.emptyList(),
+            Collections.emptyList(),
+            /* limit=*/ 42,
+            /* startAt= */ null,
+            /* endAt= */ null);
+    BundledQuery bundledQuery = new BundledQuery(target, Query.LimitType.LIMIT_TO_LAST);
+    com.google.firestore.proto.BundledQuery encodedBundledQuery =
+        serializer.encodeBundledQuery(bundledQuery);
+    BundledQuery decodedBundledQuery = serializer.decodeBundledQuery(encodedBundledQuery);
 
-    assertEquals(query, decodedQuery);
+    assertEquals(encodedBundledQuery, decodedBundledQuery);
   }
 }

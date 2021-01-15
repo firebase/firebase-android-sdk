@@ -74,7 +74,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
                   BundledQuery bundledQuery = BundledQuery.parseFrom(row.getBlob(2));
                   return new NamedQuery(
                       queryName,
-                      serializer.decodeQuery(bundledQuery),
+                      serializer.decodeBundledQuery(bundledQuery),
                       new SnapshotVersion(new Timestamp(row.getLong(0), row.getInt(1))));
                 } catch (InvalidProtocolBufferException e) {
                   throw fail("NamedQuery failed to parse: %s", e);
@@ -87,7 +87,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 
   @Override
   public void saveNamedQuery(NamedQuery query) {
-    BundledQuery bundledQuery = serializer.encodeQuery(query.getQuery());
+    BundledQuery bundledQuery = serializer.encodeBundledQuery(query.getBundledQuery());
 
     db.execute(
         "INSERT OR REPLACE INTO named_queries "

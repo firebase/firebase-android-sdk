@@ -14,14 +14,16 @@
 
 package com.google.firebase.firestore.local;
 
-import static com.google.firebase.firestore.testutil.TestUtil.query;
+import static com.google.firebase.firestore.testutil.TestUtil.path;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.core.Query;
+import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
+import java.util.Collections;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -85,8 +87,18 @@ public abstract class BundleCacheTestCase {
 
   @Test
   public void testReturnsSavedCollectionQueries() {
+    Target target =
+        new Target(
+            path("room"),
+            /* collectionGroup= */ null,
+            Collections.emptyList(),
+            Collections.emptyList(),
+            Target.NO_LIMIT,
+            /* startAt= */ null,
+            /* endAt= */ null);
+    BundledQuery bundledQuery = new BundledQuery(target, Query.LimitType.LIMIT_TO_FIRST);
     NamedQuery expectedQuery =
-        new NamedQuery("query-1", query("collection"), new SnapshotVersion(Timestamp.now()));
+        new NamedQuery("query-1", bundledQuery, new SnapshotVersion(Timestamp.now()));
     bundleCache.saveNamedQuery(expectedQuery);
 
     NamedQuery actualQuery = bundleCache.getNamedQuery("query-1");
@@ -95,9 +107,18 @@ public abstract class BundleCacheTestCase {
 
   @Test
   public void testReturnsSavedLimitToFirstQueries() {
+    Target target =
+        new Target(
+            path("room"),
+            /* collectionGroup= */ null,
+            Collections.emptyList(),
+            Collections.emptyList(),
+            /* limit= */ 1,
+            /* startAt= */ null,
+            /* endAt= */ null);
+    BundledQuery bundledQuery = new BundledQuery(target, Query.LimitType.LIMIT_TO_FIRST);
     NamedQuery expectedQuery =
-        new NamedQuery(
-            "query-1", query("collection").limitToFirst(1), new SnapshotVersion(Timestamp.now()));
+        new NamedQuery("query-1", bundledQuery, new SnapshotVersion(Timestamp.now()));
     bundleCache.saveNamedQuery(expectedQuery);
 
     NamedQuery actualQuery = bundleCache.getNamedQuery("query-1");
@@ -106,9 +127,18 @@ public abstract class BundleCacheTestCase {
 
   @Test
   public void testReturnsSavedLimitToLastQueries() {
+    Target target =
+        new Target(
+            path("room"),
+            /* collectionGroup= */ null,
+            Collections.emptyList(),
+            Collections.emptyList(),
+            /* limit= */ 1,
+            /* startAt= */ null,
+            /* endAt= */ null);
+    BundledQuery bundledQuery = new BundledQuery(target, Query.LimitType.LIMIT_TO_LAST);
     NamedQuery expectedQuery =
-        new NamedQuery(
-            "query-1", query("collection").limitToLast(1), new SnapshotVersion(Timestamp.now()));
+        new NamedQuery("query-1", bundledQuery, new SnapshotVersion(Timestamp.now()));
     bundleCache.saveNamedQuery(expectedQuery);
 
     NamedQuery actualQuery = bundleCache.getNamedQuery("query-1");
@@ -117,9 +147,18 @@ public abstract class BundleCacheTestCase {
 
   @Test
   public void testReturnsSavedCollectionGroupQueries() {
-    Query collectionGroupQuery = new Query(ResourcePath.EMPTY, "collection");
+    Target target =
+        new Target(
+            ResourcePath.EMPTY,
+            /* collectionGroup= */ "collectionGroup",
+            Collections.emptyList(),
+            Collections.emptyList(),
+            /* limit= */ 1,
+            /* startAt= */ null,
+            /* endAt= */ null);
+    BundledQuery bundledQuery = new BundledQuery(target, Query.LimitType.LIMIT_TO_FIRST);
     NamedQuery expectedQuery =
-        new NamedQuery("query-1", collectionGroupQuery, new SnapshotVersion(Timestamp.now()));
+        new NamedQuery("query-1", bundledQuery, new SnapshotVersion(Timestamp.now()));
     bundleCache.saveNamedQuery(expectedQuery);
 
     NamedQuery actualQuery = bundleCache.getNamedQuery("query-1");

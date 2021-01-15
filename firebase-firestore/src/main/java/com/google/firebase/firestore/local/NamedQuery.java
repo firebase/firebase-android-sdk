@@ -14,29 +14,28 @@
 
 package com.google.firebase.firestore.local;
 
-import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.SnapshotVersion;
 
 /** Represents a named query saved by the SDK in its local storage. */
 /* package */ class NamedQuery {
   private final String name;
-  private final Query query;
+  private final BundledQuery bundledQuery;
   private final SnapshotVersion readTime;
 
-  public NamedQuery(String name, Query query, SnapshotVersion readTime) {
+  public NamedQuery(String name, BundledQuery bundledQuery, SnapshotVersion readTime) {
     this.name = name;
-    this.query = query;
+    this.bundledQuery = bundledQuery;
     this.readTime = readTime;
   }
 
-  /** @return The name of the query. */
+  /** Returns the name of the query. */
   public String getName() {
     return name;
   }
 
-  /** @return The underlying query associated with the given name. */
-  public Query getQuery() {
-    return query;
+  /** Returns the underlying bundled query for this named query. */
+  public BundledQuery getBundledQuery() {
+    return bundledQuery;
   }
 
   /** @return The time at which the results for this query were read. */
@@ -52,14 +51,14 @@ import com.google.firebase.firestore.model.SnapshotVersion;
     NamedQuery that = (NamedQuery) o;
 
     if (!name.equals(that.name)) return false;
-    if (!query.equals(that.query)) return false;
+    if (!bundledQuery.equals(that.bundledQuery)) return false;
     return readTime.equals(that.readTime);
   }
 
   @Override
   public int hashCode() {
     int result = name.hashCode();
-    result = 31 * result + query.hashCode();
+    result = 31 * result + bundledQuery.hashCode();
     result = 31 * result + readTime.hashCode();
     return result;
   }
