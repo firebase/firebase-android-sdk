@@ -113,6 +113,12 @@ public class ChildKey implements Comparable<ChildKey> {
 
   public static ChildKey fromString(String key) {
     Integer intValue = Utilities.tryParseInt(key);
+    if (key.equals(MIN_KEY_NAME)) {
+      return MIN_KEY;
+    }
+    if (key.equals(MAX_KEY_NAME)) {
+      return MAX_KEY;
+    }
     if (intValue != null) {
       return new IntegerChildKey(key, intValue);
     } else if (key.equals(".priority")) {
