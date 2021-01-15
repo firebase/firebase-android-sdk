@@ -269,13 +269,13 @@ public final class LocalSerializer {
         resumeToken);
   }
 
-  public com.google.firestore.proto.BundledQuery encodeBundledQuery(
-      com.google.firebase.firestore.local.BundledQuery bundledQuery) {
+  public BundledQuery encodeBundledQuery(
+      com.google.firebase.firestore.bundle.BundledQuery bundledQuery) {
     com.google.firestore.v1.Target.QueryTarget queryTarget =
         rpcSerializer.encodeQueryTarget(bundledQuery.getTarget());
 
-    com.google.firestore.proto.BundledQuery.Builder result =
-        com.google.firestore.proto.BundledQuery.newBuilder();
+    BundledQuery.Builder result =
+        BundledQuery.newBuilder();
     result.setLimitType(
         bundledQuery.getLimitType().equals(LimitType.LIMIT_TO_FIRST)
             ? BundledQuery.LimitType.FIRST
@@ -286,8 +286,8 @@ public final class LocalSerializer {
     return result.build();
   }
 
-  public com.google.firebase.firestore.local.BundledQuery decodeBundledQuery(
-      com.google.firestore.proto.BundledQuery bundledQuery) {
+  public com.google.firebase.firestore.bundle.BundledQuery decodeBundledQuery(
+      BundledQuery bundledQuery) {
     LimitType limitType =
         bundledQuery.getLimitType().equals(BundledQuery.LimitType.FIRST)
             ? LimitType.LIMIT_TO_FIRST
@@ -296,6 +296,6 @@ public final class LocalSerializer {
         rpcSerializer.decodeQueryTarget(
             bundledQuery.getParent(), bundledQuery.getStructuredQuery());
 
-    return new com.google.firebase.firestore.local.BundledQuery(target, limitType);
+    return new com.google.firebase.firestore.bundle.BundledQuery(target, limitType);
   }
 }
