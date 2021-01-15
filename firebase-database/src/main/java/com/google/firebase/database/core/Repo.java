@@ -497,54 +497,51 @@ public class Repo implements PersistentConnection.Delegate {
           @Override
           public void run() {
             serverSyncTree.setQueryActive(query.getSpec());
-            Node cached =
-                serverSyncTree.calcCompleteEventCacheFromRoot(query.getPath(), new ArrayList<>());
-            if (!cached.isEmpty()) {
-              source.setResult(
-                  InternalHelpers.createDataSnapshot(
-                      query.getRef(), IndexedNode.from(cached, query.getSpec().getIndex())));
-              return;
-            }
-            connection
-                .get(query.getPath().asList(), query.getSpec().getParams().getWireProtocolParams())
-                .addOnCompleteListener(
-                    new OnCompleteListener<Object>() {
-                      @Override
-                      public void onComplete(@NonNull Task<Object> task) {
-                        if (!task.isSuccessful()) {
-                          operationLogger.info(
-                              "get for query "
-                                  + query.getPath()
-                                  + " falling back to disk cache after error: "
-                                  + task.getException().getMessage());
-                          DataSnapshot cached = serverSyncTree.persistenceServerCache(query);
-                          if (!cached.exists()) {
-                            source.setException(task.getException());
+            try {
+              Node cached =
+                  serverSyncTree.calcCompleteEventCacheFromRoot(query.getPath(), new ArrayList<>());
+              if (!cached.isEmpty()) {
+                source.setResult(
+                    InternalHelpers.createDataSnapshot(
+                        query.getRef(), IndexedNode.from(cached, query.getSpec().getIndex())));
+                return;
+              }
+              connection
+                  .get(
+                      query.getPath().asList(), query.getSpec().getParams().getWireProtocolParams())
+                  .addOnCompleteListener(
+                      new OnCompleteListener<Object>() {
+                        @Override
+                        public void onComplete(@NonNull Task<Object> task) {
+                          if (!task.isSuccessful()) {
+                            operationLogger.info(
+                                "get for query "
+                                    + query.getPath()
+                                    + " falling back to disk cache after error: "
+                                    + task.getException().getMessage());
+                            DataSnapshot cached = serverSyncTree.persistenceServerCache(query);
+                            if (!cached.exists()) {
+                              source.setException(task.getException());
+                            } else {
+                              source.setResult(cached);
+                            }
                           } else {
-                            source.setResult(cached);
+                            Node serverNode = NodeUtilities.NodeFromJSON(task.getResult());
+                            postEvents(
+                                serverSyncTree.applyServerOverwrite(query.getPath(), serverNode));
+                            source.setResult(
+                                InternalHelpers.createDataSnapshot(
+                                    query.getRef(),
+                                    IndexedNode.from(serverNode, query.getSpec().getIndex())));
                           }
-                        } else {
-                          Node serverNode = NodeUtilities.NodeFromJSON(task.getResult());
-                          postEvents(
-                              serverSyncTree.applyServerOverwrite(query.getPath(), serverNode));
-                          source.setResult(
-                              InternalHelpers.createDataSnapshot(
-                                  query.getRef(),
-                                  IndexedNode.from(serverNode, query.getSpec().getIndex())));
                         }
-                      }
-                    });
+                      });
+            } finally {
+              serverSyncTree.setQueryInactive(query.getSpec());
+            }
           }
         });
-    return source
-        .getTask()
-        .addOnCompleteListener(
-            new OnCompleteListener<DataSnapshot>() {
-              @Override
-              public void onComplete(@NonNull Task<DataSnapshot> task) {
-                serverSyncTree.setQueryInactive(query.getSpec());
-              }
-            });
+    return source.getTask();
   }
 
   public void updateChildren(
