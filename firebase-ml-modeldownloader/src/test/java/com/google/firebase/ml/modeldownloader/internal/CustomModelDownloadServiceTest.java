@@ -22,7 +22,10 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static com.google.common.truth.Truth.assertWithMessage;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -102,6 +105,7 @@ public class CustomModelDownloadServiceTest {
 
   private ExecutorService directExecutor;
   private FirebaseInstallationsApi installationsApiMock;
+  private FirebaseMlLogger mockEventLogger;
 
   @Before
   public void setUp() {
@@ -109,6 +113,10 @@ public class CustomModelDownloadServiceTest {
     installationsApiMock = mock(FirebaseInstallationsApi.class);
     when(installationsApiMock.getToken(anyBoolean()))
         .thenReturn(Tasks.forResult(INSTALLATION_TOKEN_RESULT));
+    // ignore logging
+    mockEventLogger = mock(FirebaseMlLogger.class);
+    doNothing().when(mockEventLogger).logDownloadEventWithExactDownloadTime(any(), any(), any());
+    doNothing().when(mockEventLogger).logDownloadFailureWithReason(any(), anyBoolean(), anyInt());
   }
 
   @Test
@@ -149,7 +157,7 @@ public class CustomModelDownloadServiceTest {
 
     CustomModelDownloadService service =
         new CustomModelDownloadService(
-            installationsApiMock, directExecutor, API_KEY, TEST_ENDPOINT);
+            installationsApiMock, directExecutor, API_KEY, TEST_ENDPOINT, mockEventLogger);
 
     Task<CustomModel> modelTask = service.getNewDownloadUrlWithExpiry(PROJECT_ID, MODEL_NAME);
 
@@ -184,7 +192,7 @@ public class CustomModelDownloadServiceTest {
 
     CustomModelDownloadService service =
         new CustomModelDownloadService(
-            installationsApiMock, directExecutor, API_KEY, TEST_ENDPOINT);
+            installationsApiMock, directExecutor, API_KEY, TEST_ENDPOINT, mockEventLogger);
 
     Task<CustomModel> modelTask = service.getCustomModelDetails(PROJECT_ID, MODEL_NAME, MODEL_HASH);
 
@@ -219,7 +227,7 @@ public class CustomModelDownloadServiceTest {
 
     CustomModelDownloadService service =
         new CustomModelDownloadService(
-            installationsApiMock, directExecutor, API_KEY, TEST_ENDPOINT);
+            installationsApiMock, directExecutor, API_KEY, TEST_ENDPOINT, mockEventLogger);
 
     Task<CustomModel> modelTask = service.getCustomModelDetails(PROJECT_ID, MODEL_NAME, MODEL_HASH);
 
@@ -253,7 +261,7 @@ public class CustomModelDownloadServiceTest {
 
     CustomModelDownloadService service =
         new CustomModelDownloadService(
-            installationsApiMock, directExecutor, API_KEY, TEST_ENDPOINT);
+            installationsApiMock, directExecutor, API_KEY, TEST_ENDPOINT, mockEventLogger);
 
     Task<CustomModel> modelTask = service.getCustomModelDetails(PROJECT_ID, MODEL_NAME, MODEL_HASH);
 
@@ -287,7 +295,7 @@ public class CustomModelDownloadServiceTest {
 
     CustomModelDownloadService service =
         new CustomModelDownloadService(
-            installationsApiMock, directExecutor, API_KEY, TEST_ENDPOINT);
+            installationsApiMock, directExecutor, API_KEY, TEST_ENDPOINT, mockEventLogger);
 
     Task<CustomModel> modelTask = service.getCustomModelDetails(PROJECT_ID, MODEL_NAME, MODEL_HASH);
 

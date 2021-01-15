@@ -144,19 +144,29 @@ public class CustomModel {
   @VisibleForTesting
   File getFile(ModelFileDownloadService fileDownloadService) throws FirebaseMlException {
     // check for completed download
+    System.out.println(" Getfile 1");
     File newDownloadFile = fileDownloadService.loadNewlyDownloadedModelFile(this);
     if (newDownloadFile != null) {
+      System.out.println(" Getfile 2");
       return newDownloadFile;
     }
     // return local file, if present
     if (localFilePath == null || localFilePath.isEmpty()) {
+      System.out.println(" Getfile 2");
+
       return null;
     }
+    System.out.println(" Getfile 3");
+
     File modelFile = new File(localFilePath);
 
     if (!modelFile.exists()) {
+      System.out.println(" Getfile 4");
+
       return null;
     }
+    System.out.println(" Getfile 5");
+
     return modelFile;
   }
 
@@ -164,6 +174,8 @@ public class CustomModel {
     try {
       return getFile() != null;
     } catch (Exception ex) {
+
+      System.out.println(" isModelFilePresent ex" + ex);
       return false;
     }
   }

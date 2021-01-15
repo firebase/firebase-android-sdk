@@ -19,7 +19,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import com.google.android.datatransport.TransportFactory;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.FirebaseOptions;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
@@ -73,12 +72,15 @@ public class FirebaseModelDownloaderRegistrar implements ComponentRegistrar {
                         c.get(FirebaseApp.class), c.get(TransportFactory.class)))
             .build(),
         Component.builder(CustomModelDownloadService.class)
-            .add(Dependency.required(FirebaseOptions.class))
+            .add(Dependency.required(FirebaseApp.class))
+            .add(Dependency.required(TransportFactory.class))
             .add(Dependency.required(FirebaseInstallationsApi.class))
             .factory(
                 c ->
                     new CustomModelDownloadService(
-                        c.get(FirebaseOptions.class), c.get(FirebaseInstallationsApi.class)))
+                        c.get(FirebaseApp.class),
+                        c.get(FirebaseInstallationsApi.class),
+                        c.get(TransportFactory.class)))
             .build(),
         LibraryVersionComponent.create("firebase-ml-modeldownloader", BuildConfig.VERSION_NAME));
   }

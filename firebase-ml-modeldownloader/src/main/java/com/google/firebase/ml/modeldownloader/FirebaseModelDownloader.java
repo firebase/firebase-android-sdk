@@ -27,6 +27,8 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.ml.modeldownloader.internal.CustomModelDownloadService;
+import com.google.firebase.ml.modeldownloader.internal.DataTransportMlEventSender;
+import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogger;
 import com.google.firebase.ml.modeldownloader.internal.ModelFileDownloadService;
 import com.google.firebase.ml.modeldownloader.internal.ModelFileManager;
 import com.google.firebase.ml.modeldownloader.internal.SharedPreferencesUtil;
@@ -44,16 +46,21 @@ public class FirebaseModelDownloader {
   private final CustomModelDownloadService modelDownloadService;
   private final Executor executor;
 
+  private final FirebaseMlLogger eventLogger;
+
   @RequiresApi(api = VERSION_CODES.KITKAT)
   FirebaseModelDownloader(
       FirebaseApp firebaseApp,
       FirebaseInstallationsApi firebaseInstallationsApi,
       TransportFactory transportFactory) {
     this.firebaseOptions = firebaseApp.getOptions();
-    this.fileDownloadService = new ModelFileDownloadService(firebaseApp, transportFactory);
     this.sharedPreferencesUtil = new SharedPreferencesUtil(firebaseApp);
+    DataTransportMlEventSender statsSender = DataTransportMlEventSender.create(transportFactory);
+    this.eventLogger = new FirebaseMlLogger(firebaseApp, sharedPreferencesUtil, statsSender);
+    this.fileDownloadService = new ModelFileDownloadService(firebaseApp, transportFactory);
     this.modelDownloadService =
-        new CustomModelDownloadService(firebaseOptions, firebaseInstallationsApi);
+        new CustomModelDownloadService(firebaseApp, firebaseInstallationsApi, transportFactory);
+
     this.executor = Executors.newSingleThreadExecutor();
     fileManager = ModelFileManager.getInstance();
   }
@@ -65,12 +72,15 @@ public class FirebaseModelDownloader {
       ModelFileDownloadService fileDownloadService,
       CustomModelDownloadService modelDownloadService,
       ModelFileManager fileManager,
+      FirebaseMlLogger eventLogger,
       Executor executor) {
     this.firebaseOptions = firebaseOptions;
     this.sharedPreferencesUtil = sharedPreferencesUtil;
     this.fileDownloadService = fileDownloadService;
+    System.out.println("Test modelDownloadService: " + modelDownloadService);
     this.modelDownloadService = modelDownloadService;
     this.fileManager = fileManager;
+    this.eventLogger = eventLogger;
     this.executor = executor;
   }
 
@@ -123,6 +133,7 @@ public class FirebaseModelDownloader {
       @NonNull DownloadType downloadType,
       @Nullable CustomModelDownloadConditions conditions) {
     CustomModel localModelDetails = getLocalModelDetails(modelName);
+    System.out.println("Local model " + localModelDetails);
     if (localModelDetails == null) {
       // no local model - get latest.
       return getCustomModelTask(modelName, conditions);
@@ -160,6 +171,8 @@ public class FirebaseModelDownloader {
       return null;
     }
 
+    System.out.println(
+        "File present: " + localModel.getLocalFilePath() + " " + localModel.isModelFilePresent());
     // valid model file exists when local file path is set
     if (localModel.getLocalFilePath() != null && localModel.isModelFilePresent()) {
       return localModel;
@@ -239,14 +252,19 @@ public class FirebaseModelDownloader {
       @Nullable CustomModelDownloadConditions conditions,
       @Nullable String modelHash) {
     CustomModel currentModel = sharedPreferencesUtil.getCustomModelDetails(modelName);
+
+    System.out.println("Real get preferences:" + modelName + " " + currentModel);
     if (currentModel == null && modelHash != null) {
       // todo(annzimmer) log something about mismatched state and use hash = null
       modelHash = null;
     }
+    System.out.println(
+        "Real get details:" + firebaseOptions.getProjectId() + " " + modelName + " " + modelHash);
     Task<CustomModel> incomingModelDetails =
         modelDownloadService.getCustomModelDetails(
             firebaseOptions.getProjectId(), modelName, modelHash);
 
+    System.out.println("incoming details: " + incomingModelDetails);
     return incomingModelDetails.continueWithTask(
         executor,
         incomingModelDetailTask -> {

@@ -19,8 +19,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -34,6 +36,7 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.FirebaseOptions.Builder;
 import com.google.firebase.ml.modeldownloader.internal.CustomModelDownloadService;
+import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogger;
 import com.google.firebase.ml.modeldownloader.internal.ModelFileDownloadService;
 import com.google.firebase.ml.modeldownloader.internal.ModelFileManager;
 import com.google.firebase.ml.modeldownloader.internal.SharedPreferencesUtil;
@@ -86,6 +89,7 @@ public class FirebaseModelDownloaderTest {
   private @Mock ModelFileDownloadService mockFileDownloadService;
   private @Mock CustomModelDownloadService mockModelDownloadService;
   private @Mock ModelFileManager mockFileManager;
+  private @Mock FirebaseMlLogger mockEventLogger;
 
   private FirebaseModelDownloader firebaseModelDownloader;
   private ExecutorService executor;
@@ -112,8 +116,13 @@ public class FirebaseModelDownloaderTest {
             mockFileDownloadService,
             mockModelDownloadService,
             mockFileManager,
+            mockEventLogger,
             executor);
     setUpTestingFiles(app);
+
+    mockEventLogger = mock(FirebaseMlLogger.class);
+    doNothing().when(mockEventLogger).logDownloadEventWithExactDownloadTime(any(), any(), any());
+    doNothing().when(mockEventLogger).logDownloadFailureWithReason(any(), anyBoolean(), anyInt());
   }
 
   private void setUpTestingFiles(FirebaseApp app) throws Exception {
@@ -146,6 +155,8 @@ public class FirebaseModelDownloaderTest {
 
     firstDeviceModelFile = fileManager.moveModelToDestinationFolder(CUSTOM_MODEL, fd);
     assertEquals(firstDeviceModelFile, new File(expectedDestinationFolder + "/0"));
+    System.out.println(
+        "file name:" + firstDeviceModelFile.getAbsolutePath() + firstDeviceModelFile.getPath());
     assertTrue(firstDeviceModelFile.exists());
     fd.close();
 
@@ -344,10 +355,12 @@ public class FirebaseModelDownloaderTest {
     CustomModel customModelLoadedWithDownload =
         new CustomModel(MODEL_NAME, MODEL_HASH, 100, 99, expectedDestinationFolder + "/0");
 
+    System.out.println("Real get preferences:" + MODEL_NAME + " " + customModelLoadedWithDownload);
     when(mockPrefs.getCustomModelDetails(eq(MODEL_NAME))).thenReturn(customModelLoadedWithDownload);
     when(mockPrefs.getDownloadingCustomModelDetails(eq(MODEL_NAME)))
         .thenReturn(UPDATE_IN_PROGRESS_CUSTOM_MODEL);
 
+    System.out.println("Mock get details:" + TEST_PROJECT_ID + " " + MODEL_NAME + " " + MODEL_HASH);
     when(mockModelDownloadService.getCustomModelDetails(
             eq(TEST_PROJECT_ID), eq(MODEL_NAME), eq(MODEL_HASH)))
         .thenReturn(Tasks.forResult(UPDATE_CUSTOM_MODEL_URL));

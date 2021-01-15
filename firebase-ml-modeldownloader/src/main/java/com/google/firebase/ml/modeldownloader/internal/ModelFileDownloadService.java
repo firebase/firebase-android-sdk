@@ -67,8 +67,6 @@ public class ModelFileDownloadService {
   private final SharedPreferencesUtil sharedPreferencesUtil;
   private final FirebaseMlLogger eventLogger;
 
-  private final DataTransportMlEventSender statsSender;
-
   @GuardedBy("this")
   // Mapping from download id to broadcast receiver. Because models can update, we cannot just keep
   // one instance of DownloadBroadcastReceiver per RemoteModelDownloadManager object.
@@ -89,8 +87,11 @@ public class ModelFileDownloadService {
     downloadManager = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
     this.fileManager = ModelFileManager.getInstance();
     this.sharedPreferencesUtil = new SharedPreferencesUtil(firebaseApp);
-    this.statsSender = DataTransportMlEventSender.create(transportFactory);
-    this.eventLogger = new FirebaseMlLogger(firebaseApp, sharedPreferencesUtil, statsSender);
+    this.eventLogger =
+        new FirebaseMlLogger(
+            firebaseApp,
+            new SharedPreferencesUtil(firebaseApp),
+            DataTransportMlEventSender.create(transportFactory));
   }
 
   @VisibleForTesting
@@ -99,14 +100,12 @@ public class ModelFileDownloadService {
       DownloadManager downloadManager,
       ModelFileManager fileManager,
       SharedPreferencesUtil sharedPreferencesUtil,
-      DataTransportMlEventSender statsSender,
       FirebaseMlLogger eventLogger) {
     this.context = firebaseApp.getApplicationContext();
     this.downloadManager = downloadManager;
     this.fileManager = fileManager;
     this.sharedPreferencesUtil = sharedPreferencesUtil;
     this.eventLogger = eventLogger;
-    this.statsSender = statsSender;
   }
 
   /**

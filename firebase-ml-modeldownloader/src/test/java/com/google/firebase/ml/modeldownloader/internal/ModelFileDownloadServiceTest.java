@@ -98,7 +98,6 @@ public class ModelFileDownloadServiceTest {
   @Mock DownloadManager mockDownloadManager;
   @Mock ModelFileManager mockFileManager;
   @Mock FirebaseMlLogger mockStatsLogger;
-  @Mock DataTransportMlEventSender mockStatsSender;
 
   ExecutorService executor;
   private MatrixCursor matrixCursor;
@@ -116,12 +115,7 @@ public class ModelFileDownloadServiceTest {
 
     modelFileDownloadService =
         new ModelFileDownloadService(
-            app,
-            mockDownloadManager,
-            mockFileManager,
-            sharedPreferencesUtil,
-            mockStatsSender,
-            mockStatsLogger);
+            app, mockDownloadManager, mockFileManager, sharedPreferencesUtil, mockStatsLogger);
 
     matrixCursor = new MatrixCursor(new String[] {DownloadManager.COLUMN_STATUS});
     testTempModelFile = File.createTempFile("fakeTempFile", ".tflite");
