@@ -22,6 +22,7 @@ import static org.junit.Assert.assertEquals;
 
 import com.google.firebase.firestore.core.Bound;
 import com.google.firebase.firestore.core.Query;
+import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -289,14 +290,14 @@ public class BundleSerializerTest {
   public void testDecodesCollectionQuery() throws JSONException {
     String json = "{ from: [ { collectionId: 'coll' } ] }";
     Query query = TestUtil.query("coll");
-    asserDecodesNameQuery(json, query);
+    assertDecodesNamedQuery(json, query);
   }
 
   @Test
   public void testDecodesCollectionGroupQuery() throws JSONException {
     String json = "{ from: [ { collectionId: 'coll', allDescendants: true } ] }";
     Query query = new Query(ResourcePath.EMPTY, "coll");
-    asserDecodesNameQuery(json, query);
+    assertDecodesNamedQuery(json, query);
   }
 
   @Test
@@ -307,7 +308,7 @@ public class BundleSerializerTest {
             + "where: { unaryFilter: { op: 'IS_NULL', field: { fieldPath: 'f1' } } }\n"
             + "}";
     Query query = TestUtil.query("coll").filter(filter("f1", "==", null));
-    asserDecodesNameQuery(json, query);
+    assertDecodesNamedQuery(json, query);
   }
 
   @Test
@@ -318,7 +319,7 @@ public class BundleSerializerTest {
             + "where: { unaryFilter: { op: 'IS_NOT_NULL', field: { fieldPath: 'f1' } } }\n"
             + "}";
     Query query = TestUtil.query("coll").filter(filter("f1", "!=", null));
-    asserDecodesNameQuery(json, query);
+    assertDecodesNamedQuery(json, query);
   }
 
   @Test
@@ -329,7 +330,7 @@ public class BundleSerializerTest {
             + "where: { unaryFilter: { op: 'IS_NAN', field: { fieldPath: 'f1' } } }\n"
             + "}";
     Query query = TestUtil.query("coll").filter(filter("f1", "==", Double.NaN));
-    asserDecodesNameQuery(json, query);
+    assertDecodesNamedQuery(json, query);
   }
 
   @Test
@@ -340,7 +341,7 @@ public class BundleSerializerTest {
             + "where: { unaryFilter: { op: 'IS_NOT_NAN', field: { fieldPath: 'f1' } } }\n"
             + "}";
     Query query = TestUtil.query("coll").filter(filter("f1", "!=", Double.NaN));
-    asserDecodesNameQuery(json, query);
+    assertDecodesNamedQuery(json, query);
   }
 
   @Test
@@ -355,7 +356,7 @@ public class BundleSerializerTest {
             + "}"
             + "}";
     Query query = TestUtil.query("coll").filter(filter("f1", "<", "foo"));
-    asserDecodesNameQuery(json, query);
+    assertDecodesNamedQuery(json, query);
   }
 
   @Test
@@ -371,7 +372,7 @@ public class BundleSerializerTest {
             + "  }\n"
             + "} }";
     Query query = TestUtil.query("coll").filter(filter("f1", "<=", "foo"));
-    asserDecodesNameQuery(json, query);
+    assertDecodesNamedQuery(json, query);
   }
 
   @Test
@@ -385,7 +386,7 @@ public class BundleSerializerTest {
             + "  }\n"
             + "} }";
     Query query = TestUtil.query("coll").filter(filter("f1", ">", "foo"));
-    asserDecodesNameQuery(json, query);
+    assertDecodesNamedQuery(json, query);
   }
 
   @Test
@@ -401,7 +402,7 @@ public class BundleSerializerTest {
             + "  }\n"
             + "} }";
     Query query = TestUtil.query("coll").filter(filter("f1", ">=", "foo"));
-    asserDecodesNameQuery(json, query);
+    assertDecodesNamedQuery(json, query);
   }
 
   @Test
@@ -415,7 +416,7 @@ public class BundleSerializerTest {
             + "  }\n"
             + "} }";
     Query query = TestUtil.query("coll").filter(filter("f1", "==", "foo"));
-    asserDecodesNameQuery(json, query);
+    assertDecodesNamedQuery(json, query);
   }
 
   @Test
@@ -429,7 +430,7 @@ public class BundleSerializerTest {
             + " }\n"
             + "} }";
     Query query = TestUtil.query("coll").filter(filter("f1", "!=", "foo"));
-    asserDecodesNameQuery(json, query);
+    assertDecodesNamedQuery(json, query);
   }
 
   @Test
@@ -445,7 +446,7 @@ public class BundleSerializerTest {
             + "  }\n"
             + "} }";
     Query query = TestUtil.query("coll").filter(filter("f1", "array-contains", "foo"));
-    asserDecodesNameQuery(json, query);
+    assertDecodesNamedQuery(json, query);
   }
 
   @Test
@@ -462,7 +463,7 @@ public class BundleSerializerTest {
             + "} }";
     Query query =
         TestUtil.query("coll").filter(filter("f1", "in", Collections.singletonList("foo")));
-    asserDecodesNameQuery(json, query);
+    assertDecodesNamedQuery(json, query);
   }
 
   @Test
@@ -480,7 +481,7 @@ public class BundleSerializerTest {
     Query query =
         TestUtil.query("coll")
             .filter(filter("f1", "array-contains-any", Collections.singletonList("foo")));
-    asserDecodesNameQuery(json, query);
+    assertDecodesNamedQuery(json, query);
   }
 
   @Test
@@ -497,7 +498,7 @@ public class BundleSerializerTest {
             + "} }";
     Query query =
         TestUtil.query("coll").filter(filter("f1", "not-in", Collections.singletonList("foo")));
-    asserDecodesNameQuery(json, query);
+    assertDecodesNamedQuery(json, query);
   }
 
   @Test
@@ -515,7 +516,7 @@ public class BundleSerializerTest {
             + "]}}}";
     Query query =
         TestUtil.query("coll").filter(filter("f1", "==", "foo")).filter(filter("f2", "==", "bar"));
-    asserDecodesNameQuery(json, query);
+    assertDecodesNamedQuery(json, query);
   }
 
   @Test
@@ -533,21 +534,21 @@ public class BundleSerializerTest {
             .orderBy(orderBy("f1"))
             .orderBy(orderBy("f2", "asc"))
             .orderBy(orderBy("f3", "desc"));
-    asserDecodesNameQuery(json, query);
+    assertDecodesNamedQuery(json, query);
   }
 
   @Test
   public void testDecodesLimitQuery() throws JSONException {
     String json = "{ from: [ { collectionId: 'coll' } ], limit: 5 }";
     Query query = TestUtil.query("coll").limitToFirst(5);
-    asserDecodesNameQuery(json, query);
+    assertDecodesNamedQuery(json, query);
   }
 
   @Test
   public void testDecodesLimitToLastQuery() throws JSONException {
     String json = "{ from: [ { collectionId: 'coll' } ], limit: 5 }";
     Query query = TestUtil.query("coll").limitToLast(5);
-    asserDecodesNameQuery(json, query, "LAST");
+    assertDecodesNamedQuery(json, query);
   }
 
   @Test
@@ -564,7 +565,7 @@ public class BundleSerializerTest {
                 new Bound(
                     Collections.singletonList(Value.newBuilder().setStringValue("bar").build()),
                     false));
-    asserDecodesNameQuery(json, query);
+    assertDecodesNamedQuery(json, query);
   }
 
   @Test
@@ -581,35 +582,35 @@ public class BundleSerializerTest {
                 new Bound(
                     Collections.singletonList(Value.newBuilder().setStringValue("bar").build()),
                     true));
-    asserDecodesNameQuery(json, query);
+    assertDecodesNamedQuery(json, query);
   }
 
   @Test(expected = IllegalArgumentException.class)
   public void testDoesNotDecodeOffset() throws JSONException {
     String json = "{ from: [ { collectionId: 'coll' } ], offset: 5 }";
     Query query = TestUtil.query("coll");
-    asserDecodesNameQuery(json, query);
+    assertDecodesNamedQuery(json, query);
   }
 
   @Test(expected = IllegalArgumentException.class)
   public void testDoesNotDecodeSelect() throws JSONException {
     String json = "{ from: [ { collectionId: 'coll' } ], select: [] }";
     Query query = TestUtil.query("coll");
-    asserDecodesNameQuery(json, query);
+    assertDecodesNamedQuery(json, query);
   }
 
   @Test(expected = IllegalArgumentException.class)
   public void testDoesNotDecodeMissingCollection() throws JSONException {
     String json = "{ from: [ ] }";
     Query query = TestUtil.query("coll");
-    asserDecodesNameQuery(json, query);
+    assertDecodesNamedQuery(json, query);
   }
 
   @Test(expected = IllegalArgumentException.class)
   public void testDoesNotDecodeMultipleCollections() throws JSONException {
     String json = "{ from: [ { collectionId: 'c1' }, { collectionId: 'c2' } ] }";
     Query query = TestUtil.query("coll");
-    asserDecodesNameQuery(json, query);
+    assertDecodesNamedQuery(json, query);
   }
 
   // BundleMetadata tests
@@ -620,13 +621,11 @@ public class BundleSerializerTest {
         "{\n"
             + "id: 'bundle-1',\n"
             + "version: 1,\n"
-            + "createTime: { seconds: 2, nanos: 3 },\n"
-            + "totalDocuments: 4,\n"
-            + "totalBytes: 5\n"
+            + "createTime: { seconds: 2, nanos: 3 }\n"
             + "}";
     BundleMetadata expectedMetadata =
         new BundleMetadata(
-            "bundle-1", 1, new SnapshotVersion(new com.google.firebase.Timestamp(2, 3)), 4, 5);
+            "bundle-1", 1, new SnapshotVersion(new com.google.firebase.Timestamp(2, 3)));
     BundleMetadata actualMetadata = serializer.decodeBundleMetadata(json);
     assertEquals(expectedMetadata, actualMetadata);
   }
@@ -682,8 +681,7 @@ public class BundleSerializerTest {
     assertEquals(expectedDocument, actualDocument);
   }
 
-  private void asserDecodesNameQuery(String json, Query query, String limitType)
-      throws JSONException {
+  private void assertDecodesNamedQuery(String json, Query query) throws JSONException {
     String queryJson =
         "{\n"
             + "  name: 'query-1',\n"
@@ -695,20 +693,31 @@ public class BundleSerializerTest {
             + json
             + ",\n"
             + "    limitType: '"
-            + limitType
+            + (query.hasLimitToLast() ? "LAST" : "FIRST")
             + "'\n"
             + "   },\n"
             + " readTime: { seconds: 1, nanos: 2 }\n"
             + "}";
     NamedQuery actualNamedQuery = serializer.decodeNamedQuery(queryJson);
+
+    long limit =
+        query.hasLimitToFirst()
+            ? query.getLimitToFirst()
+            : (query.hasLimitToLast() ? query.getLimitToLast() : Target.NO_LIMIT);
+    Target target =
+        new Target(
+            query.getPath(),
+            query.getCollectionGroup(),
+            query.getFilters(),
+            query.getExplicitOrderBy(),
+            limit,
+            query.getStartAt(),
+            query.getEndAt());
+    BundledQuery bundledQuery = new BundledQuery(target, query.hasLimitToLast() ? Query.LimitType.LIMIT_TO_LAST : Query.LimitType.LIMIT_TO_FIRST);
     NamedQuery expectedNamedQuery =
         new NamedQuery(
-            "query-1", query, new SnapshotVersion(new com.google.firebase.Timestamp(1, 2)));
+            "query-1", bundledQuery, new SnapshotVersion(new com.google.firebase.Timestamp(1, 2)));
 
     assertEquals(expectedNamedQuery, actualNamedQuery);
-  }
-
-  private void asserDecodesNameQuery(String json, Query query) throws JSONException {
-    asserDecodesNameQuery(json, query, "FIRST");
   }
 }

@@ -23,6 +23,7 @@ import com.google.firebase.firestore.core.FieldFilter;
 import com.google.firebase.firestore.core.Filter;
 import com.google.firebase.firestore.core.OrderBy;
 import com.google.firebase.firestore.core.Query;
+import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
@@ -59,9 +60,9 @@ class BundleSerializer {
 
   public NamedQuery decodeNamedQuery(JSONObject namedQuery) throws JSONException {
     String name = namedQuery.getString("name");
-    Query query = decodeQuery(namedQuery.getJSONObject("bundledQuery"));
+    BundledQuery bundledQuery = decodeBundledQuery(namedQuery.getJSONObject("bundledQuery"));
     SnapshotVersion readTime = decodeSnapshotVersion(namedQuery.getJSONObject("readTime"));
-    return new NamedQuery(name, query, readTime);
+    return new NamedQuery(name, bundledQuery, readTime);
   }
 
   public BundleMetadata decodeBundleMetadata(String json) throws JSONException {
@@ -72,9 +73,7 @@ class BundleSerializer {
     String bundleId = bundleMetadata.getString("id");
     int version = bundleMetadata.getInt("version");
     SnapshotVersion createTime = decodeSnapshotVersion(bundleMetadata.getJSONObject("createTime"));
-    int totalDocuments = bundleMetadata.getInt("totalDocuments");
-    long totalBytes = bundleMetadata.getLong("totalBytes");
-    return new BundleMetadata(bundleId, version, createTime, totalDocuments, totalBytes);
+    return new BundleMetadata(bundleId, version, createTime);
   }
 
   public BundledDocumentMetadata decodeBundledDocumentMetadata(String json) throws JSONException {
@@ -134,7 +133,7 @@ class BundleSerializer {
     return new SnapshotVersion(new Timestamp(seconds, nanos));
   }
 
-  private Query decodeQuery(JSONObject bundledQuery) throws JSONException {
+  private BundledQuery decodeBundledQuery(JSONObject bundledQuery) throws JSONException {
     JSONObject structuredQuery = bundledQuery.getJSONObject("structuredQuery");
     verifyNoSelect(structuredQuery);
 
@@ -159,7 +158,8 @@ class BundleSerializer {
     int limit = decodeLimit(structuredQuery);
     Query.LimitType limitType = decodeLimitType(bundledQuery);
 
-    return new Query(parent, collectionGroup, filters, orderBys, limit, limitType, startAt, endAt);
+    return new BundledQuery(
+        new Target(parent, collectionGroup, filters, orderBys, limit, startAt, endAt), limitType);
   }
 
   private int decodeLimit(JSONObject structuredQuery) {
