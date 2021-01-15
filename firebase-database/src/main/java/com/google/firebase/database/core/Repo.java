@@ -470,23 +470,21 @@ public class Repo implements PersistentConnection.Delegate {
   /**
    * The purpose of `getValue` is to return the latest known value satisfying `query`.
    *
-   * <p>If the client is connected, this method will send a request to the server. If the client is
-   * not connected, then either:
+   * <p>If the client is connected, this method will probe for in-memory cached values (active
+   * listeners). If none are found, the client will reach out to the server and ask for the most
+   * up-to-date value.
    *
-   * <p>1. The client was once connected, but not anymore. 2. The client has never connected, this
-   * is the first operation this repo is handling.
+   * <p>If the client is not connected, this method will check for in-memory cached values (active
+   * listeners). If none are found, the client will initiate a time-limited connection attempt to
+   * the server so that it can ask for the latest value. If the client is unable to connect, it will
+   * fall-back to the persistence cache value.
    *
-   * <p>In case (1), it's possible that the client still has an active listener, with cached data.
-   * Since this is the latest known value satisfying the query, that's what getValue will return. If
-   * there is no cached data, `getValue` surfaces an "offline" error.
+   * <p>If, after exhausting all possible options (active-listener cache, server request,
+   * persistence cache), the client is unable to provide a guess for the latest value for a query,
+   * it will surface an "offline" error.
    *
-   * <p>In case (2), `getValue` will trigger a time-limited connection attempt. If the client is
-   * unable to connect to the server, the will surface an "offline" error because there cannot be
-   * any cached data. On the other hand, if the client is able to connect, `getValue` will return
-   * the server's value for the query, if one exists.
-   *
-   * <p>`getValue` updates the client's persistence cache whenever it's able to retrieve a new
-   * server value. It does this by installing a short-lived tracked query.
+   * <p>Note that `getValue` updates the client's persistence cache whenever it's able to retrieve a
+   * new server value. It does this by installing a short-lived tracked query.
    *
    * @param query - The query to surface a value for.
    */
@@ -496,49 +494,51 @@ public class Repo implements PersistentConnection.Delegate {
         new Runnable() {
           @Override
           public void run() {
-            serverSyncTree.setQueryActive(query.getSpec());
-            try {
-              Node cached =
-                  serverSyncTree.calcCompleteEventCacheFromRoot(query.getPath(), new ArrayList<>());
-              if (!cached.isEmpty()) {
-                source.setResult(
-                    InternalHelpers.createDataSnapshot(
-                        query.getRef(), IndexedNode.from(cached, query.getSpec().getIndex())));
-                return;
-              }
-              connection
-                  .get(
-                      query.getPath().asList(), query.getSpec().getParams().getWireProtocolParams())
-                  .addOnCompleteListener(
-                      new OnCompleteListener<Object>() {
-                        @Override
-                        public void onComplete(@NonNull Task<Object> task) {
-                          if (!task.isSuccessful()) {
-                            operationLogger.info(
-                                "get for query "
-                                    + query.getPath()
-                                    + " falling back to disk cache after error: "
-                                    + task.getException().getMessage());
-                            DataSnapshot cached = serverSyncTree.persistenceServerCache(query);
-                            if (!cached.exists()) {
-                              source.setException(task.getException());
-                            } else {
-                              source.setResult(cached);
-                            }
-                          } else {
-                            Node serverNode = NodeUtilities.NodeFromJSON(task.getResult());
-                            postEvents(
-                                serverSyncTree.applyServerOverwrite(query.getPath(), serverNode));
-                            source.setResult(
-                                InternalHelpers.createDataSnapshot(
-                                    query.getRef(),
-                                    IndexedNode.from(serverNode, query.getSpec().getIndex())));
-                          }
-                        }
-                      });
-            } finally {
-              serverSyncTree.setQueryInactive(query.getSpec());
+            Node cached =
+                serverSyncTree.calcCompleteEventCacheFromRoot(query.getPath(), new ArrayList<>());
+            if (!cached.isEmpty()) {
+              source.setResult(
+                  InternalHelpers.createDataSnapshot(
+                      query.getRef(), IndexedNode.from(cached, query.getSpec().getIndex())));
+              return;
             }
+            serverSyncTree.setQueryActive(query.getSpec());
+            connection
+                .get(query.getPath().asList(), query.getSpec().getParams().getWireProtocolParams())
+                .addOnCompleteListener(
+                    new OnCompleteListener<Object>() {
+                      @Override
+                      public void onComplete(@NonNull Task<Object> task) {
+                        if (!task.isSuccessful()) {
+                          operationLogger.info(
+                              "get for query "
+                                  + query.getPath()
+                                  + " falling back to disk cache after error: "
+                                  + task.getException().getMessage());
+                          DataSnapshot cached = serverSyncTree.persistenceServerCache(query);
+                          if (!cached.exists()) {
+                            source.setException(task.getException());
+                          } else {
+                            source.setResult(cached);
+                          }
+                        } else {
+                          Node serverNode = NodeUtilities.NodeFromJSON(task.getResult());
+                          postEvents(
+                              serverSyncTree.applyServerOverwrite(query.getPath(), serverNode));
+                          source.setResult(
+                              InternalHelpers.createDataSnapshot(
+                                  query.getRef(),
+                                  IndexedNode.from(serverNode, query.getSpec().getIndex())));
+                        }
+                        scheduleNow(
+                            new Runnable() {
+                              @Override
+                              public void run() {
+                                serverSyncTree.setQueryInactive(query.getSpec());
+                              }
+                            });
+                      }
+                    });
           }
         });
     return source.getTask();

@@ -4479,51 +4479,6 @@ public class QueryTest {
   }
 
   @Test
-  public void testGetProbesInMemoryCacheForActiveListenerWhenOnline()
-      throws DatabaseException, InterruptedException, ExecutionException, TestFailure,
-          TimeoutException {
-    FirebaseApp readerApp =
-        appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
-    FirebaseApp writerApp =
-        appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
-    FirebaseDatabase readerDb = FirebaseDatabase.getInstance(readerApp);
-    FirebaseDatabase writerDb = FirebaseDatabase.getInstance(writerApp);
-
-    DatabaseReference reader = readerDb.getReference();
-    DatabaseReference writer = writerDb.getReference();
-    String key = reader.push().getKey();
-    reader = reader.child(key);
-    writer = writer.child(key);
-
-    final Semaphore semaphore = new Semaphore(0);
-    final Semaphore otherSemaphore = new Semaphore(0);
-    reader.addValueEventListener(
-        new ValueEventListener() {
-          @Override
-          public void onDataChange(@NonNull DataSnapshot snapshot) {
-            if (snapshot.getValue() != null) {
-              if (snapshot.getValue().equals(42L)) {
-                semaphore.release();
-              }
-              if (snapshot.getValue().equals(43L)) {
-                otherSemaphore.release();
-              }
-            }
-          }
-
-          @Override
-          public void onCancelled(@NonNull DatabaseError error) {}
-        });
-
-    assertNull(new WriteFuture(writer, 42L).timedGet());
-    IntegrationTestHelpers.waitFor(semaphore);
-
-    assertNull(new WriteFuture(writer, 43L).timedGet());
-    IntegrationTestHelpers.waitFor(otherSemaphore);
-    assertEquals(43L, Tasks.await(reader.get()).getValue());
-  }
-
-  @Test
   public void testGetProbesInMemoryCacheForActiveListenerWhenOffline()
       throws DatabaseException, InterruptedException, ExecutionException, TestFailure,
           TimeoutException {
@@ -4571,27 +4526,6 @@ public class QueryTest {
   }
 
   @Test
-  public void testGetSendsServerGetWhenNoActiveListener()
-      throws DatabaseException, InterruptedException, ExecutionException, TestFailure,
-          TimeoutException {
-    FirebaseApp readerApp =
-        appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
-    FirebaseApp writerApp =
-        appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
-    FirebaseDatabase readerDb = FirebaseDatabase.getInstance(readerApp);
-    FirebaseDatabase writerDb = FirebaseDatabase.getInstance(writerApp);
-
-    DatabaseReference reader = readerDb.getReference();
-    DatabaseReference writer = writerDb.getReference();
-    String key = reader.push().getKey();
-    reader = reader.child(key);
-    writer = writer.child(key);
-
-    new WriteFuture(writer, 42L).timedGet();
-    assertEquals(Tasks.await(reader.get()).getValue(), 42L);
-  }
-
-  @Test
   public void testGetSendsServerProbesPersistenceCacheWhenOfflineWithNoListener()
       throws DatabaseException, InterruptedException, ExecutionException, TestFailure,
           TimeoutException {
@@ -4631,52 +4565,6 @@ public class QueryTest {
     try {
       reader.removeEventListener(listener);
       assertEquals(Tasks.await(reader.get()).getValue(), 42L);
-    } finally {
-      readerDb.goOffline();
-    }
-  }
-
-  @Test
-  public void testGetSendsServerDoesntGetPersistenceCachedValueWhenDisabled()
-      throws DatabaseException, InterruptedException, ExecutionException, TestFailure,
-          TimeoutException {
-    FirebaseApp readerApp =
-        appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
-    FirebaseApp writerApp =
-        appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
-    FirebaseDatabase readerDb = FirebaseDatabase.getInstance(readerApp);
-    FirebaseDatabase writerDb = FirebaseDatabase.getInstance(writerApp);
-
-    DatabaseReference reader = readerDb.getReference();
-    DatabaseReference writer = writerDb.getReference();
-    String key = reader.push().getKey();
-    reader = reader.child(key);
-    writer = writer.child(key);
-
-    new WriteFuture(writer, 42L).timedGet();
-
-    Semaphore semaphore = new Semaphore(0);
-    ValueEventListener listener =
-        new ValueEventListener() {
-          @Override
-          public void onDataChange(@NonNull DataSnapshot snapshot) {
-            if (snapshot.getValue().equals(42L)) {
-              semaphore.release();
-            }
-          }
-
-          @Override
-          public void onCancelled(@NonNull DatabaseError error) {}
-        };
-    reader.addValueEventListener(listener);
-    IntegrationTestHelpers.waitFor(semaphore);
-
-    readerDb.goOffline();
-    try {
-      reader.removeEventListener(listener);
-      Tasks.await(reader.get());
-    } catch (ExecutionException e) {
-      assertEquals(e.getCause().getMessage(), "Client is offline");
     } finally {
       readerDb.goOffline();
     }
