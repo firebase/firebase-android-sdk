@@ -15,6 +15,8 @@
 package com.google.firebase.firestore.local;
 
 import androidx.annotation.Nullable;
+import com.google.firebase.firestore.bundle.BundleMetadata;
+import com.google.firebase.firestore.bundle.NamedQuery;
 
 /** Provides methods to save and read Firestore bundles. */
 public interface BundleCache {

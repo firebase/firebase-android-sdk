@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.firestore.local;
+package com.google.firebase.firestore.bundle;
 
 import com.google.firebase.firestore.model.SnapshotVersion;
 
 /** Represents a named query saved by the SDK in its local storage. */
-/* package */ class NamedQuery {
+/* package */ public class NamedQuery {
   private final String name;
   private final BundledQuery bundledQuery;
   private final SnapshotVersion readTime;
