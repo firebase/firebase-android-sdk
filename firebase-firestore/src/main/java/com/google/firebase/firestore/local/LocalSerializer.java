@@ -274,8 +274,7 @@ public final class LocalSerializer {
     com.google.firestore.v1.Target.QueryTarget queryTarget =
         rpcSerializer.encodeQueryTarget(bundledQuery.getTarget());
 
-    BundledQuery.Builder result =
-        BundledQuery.newBuilder();
+    BundledQuery.Builder result = BundledQuery.newBuilder();
     result.setLimitType(
         bundledQuery.getLimitType().equals(LimitType.LIMIT_TO_FIRST)
             ? BundledQuery.LimitType.FIRST
