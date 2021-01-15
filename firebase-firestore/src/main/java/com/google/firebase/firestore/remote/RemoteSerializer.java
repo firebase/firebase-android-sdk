@@ -563,8 +563,8 @@ public final class RemoteSerializer {
     return builder.build();
   }
 
-  public com.google.firebase.firestore.core.Query decodeQuery(
-      String parent, StructuredQuery query, Query.LimitType limitType) {
+  public com.google.firebase.firestore.core.Target decodeQueryTarget(
+      String parent, StructuredQuery query) {
     ResourcePath path = decodeQueryPath(parent);
 
     String collectionGroup = null;
@@ -614,13 +614,12 @@ public final class RemoteSerializer {
       endAt = decodeBound(query.getEndAt());
     }
 
-    return new Query(path, collectionGroup, filterBy, orderBy, limit, limitType, startAt, endAt);
+    return new com.google.firebase.firestore.core.Target(
+        path, collectionGroup, filterBy, orderBy, limit, startAt, endAt);
   }
 
   public com.google.firebase.firestore.core.Target decodeQueryTarget(QueryTarget target) {
-    return decodeQuery(
-            target.getParent(), target.getStructuredQuery(), Query.LimitType.LIMIT_TO_FIRST)
-        .toTarget();
+    return decodeQueryTarget(target.getParent(), target.getStructuredQuery());
   }
 
   // Filters
