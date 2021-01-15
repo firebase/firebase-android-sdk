@@ -23,10 +23,10 @@ public interface BundleCache {
    * under the given id.
    */
   @Nullable
-  Bundle getBundleMetadata(String bundleId);
+  BundleMetadata getBundleMetadata(String bundleId);
 
   /** Saves the metadata from a bundle into local storage, using its id as the persistent key. */
-  void saveBundleMetadata(Bundle metadata);
+  void saveBundleMetadata(BundleMetadata metadata);
 
   /**
    * Gets a saved NamedQuery for the given query name. Returns {@code null} if no queries are found

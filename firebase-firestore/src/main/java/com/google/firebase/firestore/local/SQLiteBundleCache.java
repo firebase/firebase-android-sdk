@@ -22,7 +22,7 @@ import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firestore.proto.BundledQuery;
 import com.google.protobuf.InvalidProtocolBufferException;
 
-/* package= */ class SQLiteBundleCache implements BundleCache {
+class SQLiteBundleCache implements BundleCache {
   private final SQLitePersistence db;
   private final LocalSerializer serializer;
 
@@ -33,7 +33,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 
   @Nullable
   @Override
-  public Bundle getBundleMetadata(String bundleId) {
+  public BundleMetadata getBundleMetadata(String bundleId) {
     return db.query(
             "SELECT schema_version, create_time_seconds, create_time_nanos "
                 + "FROM bundles WHERE bundle_id = ?")
@@ -42,14 +42,14 @@ import com.google.protobuf.InvalidProtocolBufferException;
             row ->
                 row == null
                     ? null
-                    : new Bundle(
+                    : new BundleMetadata(
                         bundleId,
                         row.getInt(0),
                         new SnapshotVersion(new Timestamp(row.getLong(1), row.getInt(2)))));
   }
 
   @Override
-  public void saveBundleMetadata(Bundle metadata) {
+  public void saveBundleMetadata(BundleMetadata metadata) {
     db.execute(
         "INSERT OR REPLACE INTO bundles "
             + "(bundle_id, schema_version, create_time_seconds, create_time_nanos) "
