@@ -18,9 +18,14 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.remoteconfig.internal.Personalization.ANALYTICS_ORIGIN_PERSONALIZATION;
 import static com.google.firebase.remoteconfig.internal.Personalization.ANALYTICS_PULL_EVENT;
 import static com.google.firebase.remoteconfig.internal.Personalization.ANALYTICS_PULL_EVENT_INTERNAL;
-import static com.google.firebase.remoteconfig.internal.Personalization.CHOICE_ID_KEY;
+import static com.google.firebase.remoteconfig.internal.Personalization.ARM_INDEX_LOG_KEY;
+import static com.google.firebase.remoteconfig.internal.Personalization.ARM_KEY;
+import static com.google.firebase.remoteconfig.internal.Personalization.ARM_VALUE;
+import static com.google.firebase.remoteconfig.internal.Personalization.CHOICE_ID_LOG_KEY;
+import static com.google.firebase.remoteconfig.internal.Personalization.GROUP;
+import static com.google.firebase.remoteconfig.internal.Personalization.PERSONALIZATION_ID_LOG_KEY;
+import static org.mockito.AdditionalMatchers.or;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.times;
@@ -82,7 +87,10 @@ public class PersonalizationTest {
 
     doAnswer(invocation -> FAKE_LOGS.add(invocation.getArgument(2)))
         .when(mockAnalyticsConnector)
-        .logEvent(eq(ANALYTICS_ORIGIN_PERSONALIZATION), anyString(), any(Bundle.class));
+        .logEvent(
+            eq(ANALYTICS_ORIGIN_PERSONALIZATION),
+            or(eq(ANALYTICS_PULL_EVENT), eq(ANALYTICS_PULL_EVENT_INTERNAL)),
+            any(Bundle.class));
 
     personalization = new Personalization(mockAnalyticsConnector);
 
@@ -94,12 +102,15 @@ public class PersonalizationTest {
     personalization.logArmActive("key3", CONFIG_CONTAINER);
 
     verify(mockAnalyticsConnector, times(0))
-        .logEvent(eq(ANALYTICS_ORIGIN_PERSONALIZATION), anyString(), any(Bundle.class));
+        .logEvent(
+            eq(ANALYTICS_ORIGIN_PERSONALIZATION),
+            or(eq(ANALYTICS_PULL_EVENT), eq(ANALYTICS_PULL_EVENT_INTERNAL)),
+            any(Bundle.class));
     assertThat(FAKE_LOGS).isEmpty();
   }
 
   @Test
-  public void logArmActive_singlePersonalizationKey_loggedOnce() {
+  public void logArmActive_singlePersonalizationKey_loggedInternallyAndExternally() {
     personalization.logArmActive("key1", CONFIG_CONTAINER);
 
     verify(mockAnalyticsConnector, times(1))
@@ -112,15 +123,24 @@ public class PersonalizationTest {
             any(Bundle.class));
     assertThat(FAKE_LOGS).hasSize(2);
 
-    Bundle params = new Bundle();
-    params.putString(CHOICE_ID_KEY, "id1");
-    assertThat(FAKE_LOGS).comparingElementsUsing(TO_STRING).contains(params.toString());
+    Bundle logParams = new Bundle();
+    logParams.putString(ARM_KEY, "key1");
+    logParams.putString(ARM_VALUE, "value1");
+    logParams.putString(PERSONALIZATION_ID_LOG_KEY, "p13n1");
+    logParams.putInt(ARM_INDEX_LOG_KEY, 0);
+    logParams.putString(GROUP, "BASELINE");
+    Bundle internalLogParams = new Bundle();
+    internalLogParams.putString(CHOICE_ID_LOG_KEY, "id1");
+    assertThat(FAKE_LOGS)
+        .comparingElementsUsing(TO_STRING)
+        .containsExactly(logParams.toString(), internalLogParams.toString());
   }
 
   @Test
   public void logArmActive_multiplePersonalizationKeys_loggedMultiple() {
     personalization.logArmActive("key1", CONFIG_CONTAINER);
     personalization.logArmActive("key2", CONFIG_CONTAINER);
+    personalization.logArmActive("key1", CONFIG_CONTAINER);
 
     verify(mockAnalyticsConnector, times(2))
         .logEvent(
@@ -132,13 +152,30 @@ public class PersonalizationTest {
             any(Bundle.class));
     assertThat(FAKE_LOGS).hasSize(4);
 
-    Bundle params1 = new Bundle();
-    params1.putString(CHOICE_ID_KEY, "id1");
-    Bundle params2 = new Bundle();
-    params2.putString(CHOICE_ID_KEY, "id2");
+    Bundle logParams1 = new Bundle();
+    logParams1.putString(ARM_KEY, "key1");
+    logParams1.putString(ARM_VALUE, "value1");
+    logParams1.putString(PERSONALIZATION_ID_LOG_KEY, "p13n1");
+    logParams1.putInt(ARM_INDEX_LOG_KEY, 0);
+    logParams1.putString(GROUP, "BASELINE");
+    Bundle logParams2 = new Bundle();
+    logParams2.putString(ARM_KEY, "key2");
+    logParams2.putString(ARM_VALUE, "value2");
+    logParams2.putString(PERSONALIZATION_ID_LOG_KEY, "p13n2");
+    logParams2.putInt(ARM_INDEX_LOG_KEY, 1);
+    logParams2.putString(GROUP, "P13N");
     assertThat(FAKE_LOGS)
         .comparingElementsUsing(TO_STRING)
-        .containsAtLeast(params1.toString(), params2.toString())
+        .containsAtLeast(logParams1.toString(), logParams2.toString())
+        .inOrder();
+
+    Bundle internalLogParams1 = new Bundle();
+    internalLogParams1.putString(CHOICE_ID_LOG_KEY, "id1");
+    Bundle internalLogParams2 = new Bundle();
+    internalLogParams2.putString(CHOICE_ID_LOG_KEY, "id2");
+    assertThat(FAKE_LOGS)
+        .comparingElementsUsing(TO_STRING)
+        .containsAtLeast(internalLogParams1.toString(), internalLogParams2.toString())
         .inOrder();
   }
 }
