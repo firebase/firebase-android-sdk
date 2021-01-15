@@ -713,7 +713,12 @@ public class BundleSerializerTest {
             limit,
             query.getStartAt(),
             query.getEndAt());
-    BundledQuery bundledQuery = new BundledQuery(target, query.hasLimitToLast() ? Query.LimitType.LIMIT_TO_LAST : Query.LimitType.LIMIT_TO_FIRST);
+    BundledQuery bundledQuery =
+        new BundledQuery(
+            target,
+            query.hasLimitToLast()
+                ? Query.LimitType.LIMIT_TO_LAST
+                : Query.LimitType.LIMIT_TO_FIRST);
     NamedQuery expectedNamedQuery =
         new NamedQuery(
             "query-1", bundledQuery, new SnapshotVersion(new com.google.firebase.Timestamp(1, 2)));
