@@ -17,7 +17,7 @@ package com.google.firebase.firestore.bundle;
 import com.google.firebase.firestore.model.SnapshotVersion;
 
 /** Represents a named query saved by the SDK in its local storage. */
-/* package */ public class NamedQuery {
+public class NamedQuery {
   private final String name;
   private final BundledQuery bundledQuery;
   private final SnapshotVersion readTime;

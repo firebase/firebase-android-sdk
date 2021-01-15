@@ -17,7 +17,7 @@ package com.google.firebase.firestore.bundle;
 import com.google.firebase.firestore.model.SnapshotVersion;
 
 /** Represents a Firestore bundle saved by the SDK in its local storage. */
-/* package */ public class BundleMetadata {
+public class BundleMetadata {
   private final String bundleId;
   private final int version;
   private final SnapshotVersion createTime;
