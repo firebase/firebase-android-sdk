@@ -91,7 +91,8 @@ public class ConfigStorageClientTest {
         ConfigContainer.newBuilder(configContainer)
             .withPersonalizationMetadata(
                 new JSONObject(
-                    ImmutableMap.of(Personalization.EXTERNAL_ARM_VALUE_PARAM, "arm_value")))
+                    "{long_param: {personalizationId: 'id1'}, "
+                        + "string_param: {personalizationId: 'id2'}}"))
             .build();
     storageClient.write(configWithPersonalization);
     Preconditions.checkArgument(getFileAsString().equals(configWithPersonalization.toString()));
