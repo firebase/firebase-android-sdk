@@ -25,26 +25,27 @@ import org.json.JSONObject;
 public class Personalization {
   public static final String ANALYTICS_ORIGIN_PERSONALIZATION = "fp";
 
-  // Constants with LOG_KEY suffix are how the corresponding ones without it are identified on
+  // Constants with PARAM suffix are how the corresponding ones without it are identified on
   // Google Analytics.
-  public static final String ANALYTICS_PULL_EVENT = "personalization_assignment";
-  public static final String ARM_KEY = "arm_key";
-  public static final String ARM_VALUE = "arm_value";
+  public static final String EXTERNAL_EVENT = "personalization_assignment";
+  public static final String EXTERNAL_RC_PARAMETER_PARAM = "arm_key";
+  public static final String EXTERNAL_ARM_VALUE_PARAM = "arm_value";
   public static final String PERSONALIZATION_ID = "personalizationId";
-  public static final String PERSONALIZATION_ID_LOG_KEY = "personalization_id";
+  public static final String EXTERNAL_PERSONALIZATION_ID_PARAM = "personalization_id";
   public static final String ARM_INDEX = "armIndex";
-  public static final String ARM_INDEX_LOG_KEY = "arm_index";
+  public static final String EXTERNAL_ARM_INDEX_PARAM = "arm_index";
   public static final String GROUP = "group";
+  public static final String EXTERNAL_GROUP_PARAM = "group";
 
-  public static final String ANALYTICS_PULL_EVENT_INTERNAL = "_fpc";
+  public static final String INTERNAL_EVENT = "_fpc";
   public static final String CHOICE_ID = "choiceId";
-  public static final String CHOICE_ID_LOG_KEY = "_fpid";
+  public static final String INTERNAL_CHOICE_ID_PARAM = "_fpid";
 
   /** The app's Firebase Analytics client. */
   private final AnalyticsConnector analyticsConnector;
 
   /** A map of Remote Config parameter key to choice ID. */
-  private final Map<String, String> armsCache =
+  private final Map<String, String> loggedChoiceIds =
       Collections.synchronizedMap(new HashMap<String, String>());
 
   /** Creates an instance of {@code Personalization}. */
@@ -56,11 +57,11 @@ public class Personalization {
    * Called when a Personalization parameter value (an arm) is retrieved, and uses Google Analytics
    * for Firebase to log metadata if it's a Personalization parameter.
    *
-   * @param key Remote Config parameter
+   * @param rcParameter Remote Config parameter
    * @param configContainer {@link ConfigContainer} containing Personalization metadata for {@code
    *     key}
    */
-  public void logArmActive(@NonNull String key, @NonNull ConfigContainer configContainer) {
+  public void logArmActive(@NonNull String rcParameter, @NonNull ConfigContainer configContainer) {
     JSONObject ids = configContainer.getPersonalizationMetadata();
     if (ids.length() < 1) {
       return;
@@ -71,7 +72,7 @@ public class Personalization {
       return;
     }
 
-    JSONObject metadata = ids.optJSONObject(key);
+    JSONObject metadata = ids.optJSONObject(rcParameter);
     if (metadata == null) {
       return;
     }
@@ -81,24 +82,26 @@ public class Personalization {
       return;
     }
 
-    synchronized (armsCache) {
-      if (choiceId.equals(armsCache.get(key))) {
+    // We only to need to log each choice ID once, so this attempts to prevent too much unnecessary
+    // logging.
+    synchronized (loggedChoiceIds) {
+      if (choiceId.equals(loggedChoiceIds.get(rcParameter))) {
         return;
       }
-      armsCache.put(key, choiceId);
+      loggedChoiceIds.put(rcParameter, choiceId);
     }
 
     Bundle logParams = new Bundle();
-    logParams.putString(ARM_KEY, key);
-    logParams.putString(ARM_VALUE, values.optString(key));
-    logParams.putString(PERSONALIZATION_ID_LOG_KEY, metadata.optString(PERSONALIZATION_ID));
-    logParams.putInt(ARM_INDEX_LOG_KEY, metadata.optInt(ARM_INDEX, -1));
-    logParams.putString(GROUP, metadata.optString(GROUP));
-    analyticsConnector.logEvent(ANALYTICS_ORIGIN_PERSONALIZATION, ANALYTICS_PULL_EVENT, logParams);
+    logParams.putString(EXTERNAL_RC_PARAMETER_PARAM, rcParameter);
+    logParams.putString(EXTERNAL_ARM_VALUE_PARAM, values.optString(rcParameter));
+    logParams.putString(EXTERNAL_PERSONALIZATION_ID_PARAM, metadata.optString(PERSONALIZATION_ID));
+    logParams.putInt(EXTERNAL_ARM_INDEX_PARAM, metadata.optInt(ARM_INDEX, -1));
+    logParams.putString(EXTERNAL_GROUP_PARAM, metadata.optString(GROUP));
+    analyticsConnector.logEvent(ANALYTICS_ORIGIN_PERSONALIZATION, EXTERNAL_EVENT, logParams);
 
     Bundle internalLogParams = new Bundle();
-    internalLogParams.putString(CHOICE_ID_LOG_KEY, choiceId);
+    internalLogParams.putString(INTERNAL_CHOICE_ID_PARAM, choiceId);
     analyticsConnector.logEvent(
-        ANALYTICS_ORIGIN_PERSONALIZATION, ANALYTICS_PULL_EVENT_INTERNAL, internalLogParams);
+        ANALYTICS_ORIGIN_PERSONALIZATION, INTERNAL_EVENT, internalLogParams);
   }
 }
