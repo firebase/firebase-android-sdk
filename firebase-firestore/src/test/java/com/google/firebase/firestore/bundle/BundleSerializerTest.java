@@ -43,6 +43,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.TimeZone;
 import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -539,14 +540,14 @@ public class BundleSerializerTest {
 
   @Test
   public void testDecodesLimitQuery() throws JSONException {
-    String json = "{ from: [ { collectionId: 'coll' } ], limit: 5 }";
+    String json = "{ from: [ { collectionId: 'coll' } ], limit: { value: 5 } }";
     Query query = TestUtil.query("coll").limitToFirst(5);
     assertDecodesNamedQuery(json, query);
   }
 
   @Test
   public void testDecodesLimitToLastQuery() throws JSONException {
-    String json = "{ from: [ { collectionId: 'coll' } ], limit: 5 }";
+    String json = "{ from: [ { collectionId: 'coll' } ], limit: {value: 5 } }";
     Query query = TestUtil.query("coll").limitToLast(5);
     assertDecodesNamedQuery(json, query);
   }
@@ -626,7 +627,7 @@ public class BundleSerializerTest {
     BundleMetadata expectedMetadata =
         new BundleMetadata(
             "bundle-1", 1, new SnapshotVersion(new com.google.firebase.Timestamp(2, 3)));
-    BundleMetadata actualMetadata = serializer.decodeBundleMetadata(json);
+    BundleMetadata actualMetadata = serializer.decodeBundleMetadata(new JSONObject(json));
     assertEquals(expectedMetadata, actualMetadata);
   }
 
@@ -649,7 +650,8 @@ public class BundleSerializerTest {
             new SnapshotVersion(new com.google.firebase.Timestamp(1, 2)),
             true,
             Arrays.asList("query-1", "query-2"));
-    BundledDocumentMetadata actualMetadata = serializer.decodeBundledDocumentMetadata(json);
+    BundledDocumentMetadata actualMetadata =
+        serializer.decodeBundledDocumentMetadata(new JSONObject(json));
     assertEquals(expectedMetadata, actualMetadata);
   }
 
@@ -667,16 +669,17 @@ public class BundleSerializerTest {
             + "  crateTime: { seconds: 1, nanos: 2 },\n"
             + "  updateTime: { seconds: 3, nanos: 4 }\n"
             + "}";
-    Document actualDocument = serializer.decodeDocument(documentJson);
-    Document expectedDocument =
-        new Document(
-            DocumentKey.fromName(TEST_DOCUMENT),
-            new SnapshotVersion(new com.google.firebase.Timestamp(3, 4)),
-            new ObjectValue(
-                Value.newBuilder()
-                    .setMapValue(MapValue.newBuilder().putFields("foo", proto))
-                    .build()),
-            Document.DocumentState.SYNCED);
+    BundleDocument actualDocument = serializer.decodeDocument(new JSONObject(documentJson));
+    BundleDocument expectedDocument =
+        new BundleDocument(
+            new Document(
+                DocumentKey.fromName(TEST_DOCUMENT),
+                new SnapshotVersion(new com.google.firebase.Timestamp(3, 4)),
+                new ObjectValue(
+                    Value.newBuilder()
+                        .setMapValue(MapValue.newBuilder().putFields("foo", proto))
+                        .build()),
+                Document.DocumentState.SYNCED));
 
     assertEquals(expectedDocument, actualDocument);
   }
@@ -698,7 +701,7 @@ public class BundleSerializerTest {
             + "   },\n"
             + " readTime: { seconds: 1, nanos: 2 }\n"
             + "}";
-    NamedQuery actualNamedQuery = serializer.decodeNamedQuery(queryJson);
+    NamedQuery actualNamedQuery = serializer.decodeNamedQuery(new JSONObject(queryJson));
 
     long limit =
         query.hasLimitToFirst()

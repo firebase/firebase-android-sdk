@@ -18,7 +18,7 @@ import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.core.Target;
 
 /** A bundled query represents a query target and its limit. */
-public class BundledQuery {
+public class BundledQuery extends BundleElement {
   private final Target target;
   private final Query.LimitType limitType;
 
