@@ -64,8 +64,8 @@ public final class Dependency {
   /**
    * Declares a deferred dependency.
    *
-   * <p>Such dependencies are optional and may not be present be default. But they can become
-   * available if a dynamic module is installed that they are contained in.
+   * <p>Such dependencies are optional and may not be present by default. But they can become
+   * available if a dynamic module that contains them is installed.
    */
   public static Dependency deferred(Class<?> anInterface) {
     return new Dependency(anInterface, Type.OPTIONAL, Injection.DEFERRED);
