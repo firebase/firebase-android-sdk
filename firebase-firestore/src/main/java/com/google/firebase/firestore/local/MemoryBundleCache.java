@@ -15,6 +15,8 @@
 package com.google.firebase.firestore.local;
 
 import androidx.annotation.Nullable;
+import com.google.firebase.firestore.bundle.BundleMetadata;
+import com.google.firebase.firestore.bundle.NamedQuery;
 import java.util.HashMap;
 import java.util.Map;
 

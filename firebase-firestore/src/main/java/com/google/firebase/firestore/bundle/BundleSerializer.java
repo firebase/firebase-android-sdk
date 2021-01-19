@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.firestore.local;
+package com.google.firebase.firestore.bundle;
 
 import android.util.Base64;
 import androidx.annotation.Nullable;

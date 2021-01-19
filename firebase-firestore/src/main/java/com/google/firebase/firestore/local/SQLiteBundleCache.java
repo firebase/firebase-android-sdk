@@ -18,6 +18,8 @@ import static com.google.firebase.firestore.util.Assert.fail;
 
 import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.bundle.BundleMetadata;
+import com.google.firebase.firestore.bundle.NamedQuery;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firestore.proto.BundledQuery;
 import com.google.protobuf.InvalidProtocolBufferException;

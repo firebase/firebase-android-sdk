@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.firestore.local;
+package com.google.firebase.firestore.bundle;
 
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.SnapshotVersion;
