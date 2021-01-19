@@ -39,6 +39,8 @@ import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.System
  */
 @WorkerThread
 public class FirebaseMlLogger {
+
+  public static final int NO_FAILURE_VALUE = 0;
   private static final String TAG = "FirebaseMlLogger";
   private final SharedPreferencesUtil sharedPreferencesUtil;
   private final DataTransportMlEventSender eventSender;
@@ -111,6 +113,20 @@ public class FirebaseMlLogger {
         /* shouldLogExactDownloadTime= */ false,
         DownloadStatus.FAILED,
         downloadFailureReason);
+  }
+
+  public void logDownloadEventWithErrorCode(
+      @NonNull CustomModel customModel,
+      boolean shouldLogRoughDownloadTime,
+      DownloadStatus status,
+      ErrorCode errorCode) {
+    logDownloadEvent(
+        customModel,
+        errorCode,
+        shouldLogRoughDownloadTime,
+        /* shouldLogExactDownloadTime= */ false,
+        status,
+        NO_FAILURE_VALUE);
   }
 
   private boolean isStatsLoggingEnabled() {

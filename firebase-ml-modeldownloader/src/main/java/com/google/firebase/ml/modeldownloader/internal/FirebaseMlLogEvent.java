@@ -178,6 +178,8 @@ public abstract class FirebaseMlLogEvent {
     // and implicit triggering.
     public enum DownloadStatus {
       UNKNOWN_STATUS(0),
+      SCHEDULED(5),
+      DOWNLOADING(6),
       SUCCEEDED(7),
       FAILED(8);
       private static final SparseArray<DownloadStatus> valueMap = new SparseArray<>();
@@ -186,6 +188,8 @@ public abstract class FirebaseMlLogEvent {
 
       static {
         valueMap.put(0, UNKNOWN_STATUS);
+        valueMap.put(5, SCHEDULED);
+        valueMap.put(6, DOWNLOADING);
         valueMap.put(7, SUCCEEDED);
         valueMap.put(8, FAILED);
       }

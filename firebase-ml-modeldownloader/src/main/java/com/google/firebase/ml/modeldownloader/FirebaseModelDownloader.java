@@ -378,8 +378,11 @@ public class FirebaseModelDownloader {
       downloadedModel = sharedPreferencesUtil.getCustomModelDetails(modelName);
       if (downloadedModel == null) {
         return Tasks.forException(
-            new Exception(
-                "Model (" + modelName + ") expected and not found during download completion."));
+            new FirebaseMlException(
+                "File for model, "
+                    + modelName
+                    + ", expected and not found during download completion.",
+                FirebaseMlException.INTERNAL));
       }
     }
     // trigger the file to be moved to permanent location.

@@ -140,6 +140,7 @@ public class SharedPreferencesUtil {
     String modelHash = customModel.getModelHash();
     long downloadId = customModel.getDownloadId();
     long modelSize = customModel.getSize();
+    System.out.println("Updating download id: " + customModel.getDownloadId());
     getSharedPreferences()
         .edit()
         .putString(
