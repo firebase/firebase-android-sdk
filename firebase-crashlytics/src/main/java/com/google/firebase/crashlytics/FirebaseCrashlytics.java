@@ -15,8 +15,11 @@
 package com.google.firebase.crashlytics;
 
 import android.content.Context;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
@@ -25,7 +28,6 @@ import com.google.firebase.analytics.connector.AnalyticsConnector.AnalyticsConne
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.MissingNativeComponent;
-import com.google.firebase.crashlytics.internal.Onboarding;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsEventLogger;
 import com.google.firebase.crashlytics.internal.analytics.BlockingAnalyticsEventLogger;
 import com.google.firebase.crashlytics.internal.analytics.BreadcrumbAnalyticsEventReceiver;
@@ -33,10 +35,12 @@ import com.google.firebase.crashlytics.internal.analytics.CrashlyticsOriginAnaly
 import com.google.firebase.crashlytics.internal.analytics.UnavailableAnalyticsEventLogger;
 import com.google.firebase.crashlytics.internal.breadcrumbs.BreadcrumbSource;
 import com.google.firebase.crashlytics.internal.breadcrumbs.DisabledBreadcrumbSource;
+import com.google.firebase.crashlytics.internal.common.CommonUtils;
 import com.google.firebase.crashlytics.internal.common.CrashlyticsCore;
 import com.google.firebase.crashlytics.internal.common.DataCollectionArbiter;
 import com.google.firebase.crashlytics.internal.common.ExecutorUtils;
 import com.google.firebase.crashlytics.internal.common.IdManager;
+import com.google.firebase.crashlytics.internal.network.HttpRequestFactory;
 import com.google.firebase.crashlytics.internal.settings.SettingsController;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.util.concurrent.Callable;
@@ -58,6 +62,8 @@ public class FirebaseCrashlytics {
   private static final String LEGACY_CRASH_ANALYTICS_ORIGIN = "crash";
   private static final int APP_EXCEPTION_CALLBACK_TIMEOUT_MS = 500;
 
+  static final String CRASHLYTICS_API_ENDPOINT = "com.crashlytics.ApiEndpoint";
+
   static @Nullable FirebaseCrashlytics init(
       @NonNull FirebaseApp app,
       @NonNull FirebaseInstallationsApi firebaseInstallationsApi,
@@ -73,8 +79,6 @@ public class FirebaseCrashlytics {
     if (nativeComponent == null) {
       nativeComponent = new MissingNativeComponent();
     }
-
-    final Onboarding onboarding = new Onboarding(app, context, idManager, arbiter);
 
     // Integration with Firebase Analytics
 
@@ -152,15 +156,58 @@ public class FirebaseCrashlytics {
             analyticsEventLogger,
             crashHandlerExecutor);
 
-    if (!onboarding.onPreExecute()) {
-      Logger.getLogger().e("Unable to start Crashlytics.");
+    // TODO: This is duplicated in AppData.create - try to consolidate
+    String versionCode;
+    String versionName;
+
+    try {
+      final PackageManager packageManager = context.getPackageManager();
+      final PackageInfo packageInfo = packageManager.getPackageInfo(appIdentifier, 0);
+      versionCode = Integer.toString(packageInfo.versionCode);
+      versionName =
+          packageInfo.versionName == null
+              ? IdManager.DEFAULT_VERSION_NAME
+              : packageInfo.versionName;
+    } catch (PackageManager.NameNotFoundException e) {
       return null;
     }
 
     final ExecutorService threadPoolExecutor =
         ExecutorUtils.buildSingleThreadExecutorService("com.google.firebase.crashlytics.startup");
+
+    final String googleAppId = app.getOptions().getApplicationId();
+    // TODO: Remove this override
+    final String overriddenSpiEndpoint =
+        CommonUtils.getStringsFileValue(context, CRASHLYTICS_API_ENDPOINT);
+
+    // TODO: Is this used anywhere else at this point?
+    final HttpRequestFactory requestFactory = new HttpRequestFactory();
+
     final SettingsController settingsController =
-        onboarding.retrieveSettingsData(context, app, threadPoolExecutor);
+        SettingsController.create(
+            context,
+            googleAppId,
+            idManager,
+            requestFactory,
+            versionCode,
+            versionName,
+            overriddenSpiEndpoint,
+            arbiter);
+
+    // Kick off actually fetching the settings.
+    settingsController
+        .loadSettingsData(threadPoolExecutor)
+        .continueWith(
+            threadPoolExecutor,
+            new Continuation<Void, Object>() {
+              @Override
+              public Object then(@NonNull Task<Void> task) throws Exception {
+                if (!task.isSuccessful()) {
+                  Logger.getLogger().e("Error fetching settings.", task.getException());
+                }
+                return null;
+              }
+            });
 
     final boolean finishCoreInBackground = core.onPreExecute(settingsController);
 
@@ -169,7 +216,6 @@ public class FirebaseCrashlytics {
         new Callable<Void>() {
           @Override
           public Void call() throws Exception {
-            onboarding.doOnboarding(threadPoolExecutor, settingsController);
             if (finishCoreInBackground) {
               core.doBackgroundInitializationAsync(settingsController);
             }
