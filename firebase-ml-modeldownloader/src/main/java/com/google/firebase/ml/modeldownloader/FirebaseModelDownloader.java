@@ -27,7 +27,6 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.ml.modeldownloader.internal.CustomModelDownloadService;
-import com.google.firebase.ml.modeldownloader.internal.DataTransportMlEventSender;
 import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogger;
 import com.google.firebase.ml.modeldownloader.internal.ModelFileDownloadService;
 import com.google.firebase.ml.modeldownloader.internal.ModelFileManager;
@@ -55,8 +54,7 @@ public class FirebaseModelDownloader {
       TransportFactory transportFactory) {
     this.firebaseOptions = firebaseApp.getOptions();
     this.sharedPreferencesUtil = new SharedPreferencesUtil(firebaseApp);
-    DataTransportMlEventSender statsSender = DataTransportMlEventSender.create(transportFactory);
-    this.eventLogger = new FirebaseMlLogger(firebaseApp, sharedPreferencesUtil, statsSender);
+    this.eventLogger = FirebaseMlLogger.getInstance();
     this.fileDownloadService = new ModelFileDownloadService(firebaseApp, transportFactory);
     this.modelDownloadService =
         new CustomModelDownloadService(firebaseApp, firebaseInstallationsApi, transportFactory);

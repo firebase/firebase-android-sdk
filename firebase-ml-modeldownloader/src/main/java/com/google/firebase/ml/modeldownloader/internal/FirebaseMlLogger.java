@@ -19,7 +19,9 @@ import android.content.pm.PackageManager.NameNotFoundException;
 import android.os.SystemClock;
 import android.util.Log;
 import androidx.annotation.NonNull;
+import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
+import com.google.android.datatransport.TransportFactory;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.ml.modeldownloader.CustomModel;
 import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.EventName;
@@ -50,6 +52,21 @@ public class FirebaseMlLogger {
   public FirebaseMlLogger(
       @NonNull FirebaseApp firebaseApp,
       @NonNull SharedPreferencesUtil sharedPreferencesUtil,
+      @NonNull TransportFactory transportFactory) {
+    this.firebaseApp = firebaseApp;
+    this.sharedPreferencesUtil = sharedPreferencesUtil;
+    this.eventSender = DataTransportMlEventSender.create(transportFactory);
+
+    this.firebaseProjectId = getProjectId();
+    this.apiKey = getApiKey();
+    this.appPackageName = firebaseApp.getApplicationContext().getPackageName();
+    this.appVersion = getAppVersion();
+  }
+
+  @VisibleForTesting
+  FirebaseMlLogger(
+      @NonNull FirebaseApp firebaseApp,
+      @NonNull SharedPreferencesUtil sharedPreferencesUtil,
       @NonNull DataTransportMlEventSender eventSender) {
     this.firebaseApp = firebaseApp;
     this.sharedPreferencesUtil = sharedPreferencesUtil;
@@ -59,6 +76,17 @@ public class FirebaseMlLogger {
     this.apiKey = getApiKey();
     this.appPackageName = firebaseApp.getApplicationContext().getPackageName();
     this.appVersion = getAppVersion();
+  }
+
+  /**
+   * Get FirebaseMlLogger instance using the firebase app returned by {@link
+   * FirebaseApp#getInstance()}
+   *
+   * @return FirebaseMlLogger
+   */
+  @NonNull
+  public static FirebaseMlLogger getInstance() {
+    return FirebaseApp.getInstance().get(FirebaseMlLogger.class);
   }
 
   public void logDownloadEventWithExactDownloadTime(
@@ -147,6 +175,13 @@ public class FirebaseMlLogger {
       }
     }
     try {
+      System.out.println(
+          "annz: sending event log message: "
+              + FirebaseMlLogEvent.builder()
+                  .setEventName(EventName.MODEL_DOWNLOAD)
+                  .setModelDownloadLogEvent(downloadLogEvent.build())
+                  .setSystemInfo(getSystemInfo())
+                  .build());
       eventSender.sendEvent(
           FirebaseMlLogEvent.builder()
               .setEventName(EventName.MODEL_DOWNLOAD)

@@ -87,11 +87,7 @@ public class ModelFileDownloadService {
     downloadManager = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
     this.fileManager = ModelFileManager.getInstance();
     this.sharedPreferencesUtil = new SharedPreferencesUtil(firebaseApp);
-    this.eventLogger =
-        new FirebaseMlLogger(
-            firebaseApp,
-            new SharedPreferencesUtil(firebaseApp),
-            DataTransportMlEventSender.create(transportFactory));
+    this.eventLogger = FirebaseMlLogger.getInstance();
   }
 
   @VisibleForTesting

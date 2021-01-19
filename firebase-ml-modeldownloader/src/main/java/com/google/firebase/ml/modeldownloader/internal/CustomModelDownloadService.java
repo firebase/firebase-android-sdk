@@ -86,11 +86,7 @@ public class CustomModelDownloadService {
     firebaseInstallations = installationsApi;
     apiKey = firebaseApp.getOptions().getApiKey();
     executorService = Executors.newCachedThreadPool();
-    this.eventLogger =
-        new FirebaseMlLogger(
-            firebaseApp,
-            new SharedPreferencesUtil(firebaseApp),
-            DataTransportMlEventSender.create(transportFactory));
+    this.eventLogger = FirebaseMlLogger.getInstance();
   }
 
   @VisibleForTesting
