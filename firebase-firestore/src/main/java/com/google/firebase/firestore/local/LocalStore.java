@@ -412,7 +412,7 @@ public final class LocalStore {
    * Populates the remote document cache with documents from backend or a bundle. Returns the
    * document changes resulting from applying those documents.
    *
-   * Note: this function will use `documentVersions` if it is defined. When it is not defined, it
+   * <p>Note: this function will use `documentVersions` if it is defined. When it is not defined, it
    * resorts to `globalVersion`.
    *
    * @param documents Documents to be applied.
@@ -613,13 +613,14 @@ public final class LocalStore {
    * newer than the currently loading bundle.
    */
   public boolean hasNewerBundle(BundleMetadata bundleMetadata) {
-return persistence.runTransaction(
-            "Has newer bundle", () -> {
-              BundleMetadata existingMetadata = bundleCache.getBundleMetadata(bundleMetadata.getBundleId());
-              return existingMetadata != null
-                      && existingMetadata.getCreateTime().compareTo(bundleMetadata.getCreateTime()) > 0;
-                });
-
+    return persistence.runTransaction(
+        "Has newer bundle",
+        () -> {
+          BundleMetadata existingMetadata =
+              bundleCache.getBundleMetadata(bundleMetadata.getBundleId());
+          return existingMetadata != null
+              && existingMetadata.getCreateTime().compareTo(bundleMetadata.getCreateTime()) > 0;
+        });
   }
 
   /** Saves the given BundleMetadata to local persistence. */
@@ -664,7 +665,7 @@ return persistence.runTransaction(
           targetCache.addMatchingKeys(documentKeys, umbrellaTargetData.getTargetId());
 
           Map<DocumentKey, MaybeDocument> changedDocs =
-                  populateDocumentChanges(documentMap, versionMap, SnapshotVersion.NONE);
+              populateDocumentChanges(documentMap, versionMap, SnapshotVersion.NONE);
           return localDocuments.getLocalViewOfDocuments(changedDocs);
         });
   }
@@ -700,8 +701,7 @@ return persistence.runTransaction(
   /** Returns the NameQuery associated with queryName or null if not found. */
   public @Nullable NamedQuery getNamedQuery(String queryName) {
     return persistence.runTransaction(
-        "Get named query",
-        () -> bundleCache.getNamedQuery(queryName));
+        "Get named query", () -> bundleCache.getNamedQuery(queryName));
   }
 
   /** Mutable state for the transaction in allocateQuery. */

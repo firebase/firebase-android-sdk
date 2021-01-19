@@ -275,8 +275,8 @@ public abstract class LocalStoreTestCase {
 
   private void assertNoNewerBundle(String bundleId, int createTime) {
     boolean hasNewerBundle =
-            localStore.hasNewerBundle(
-                    new BundleMetadata(bundleId, /* version= */ 1, version(createTime)));
+        localStore.hasNewerBundle(
+            new BundleMetadata(bundleId, /* version= */ 1, version(createTime)));
     assertFalse(hasNewerBundle);
   }
 
