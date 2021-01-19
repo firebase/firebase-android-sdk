@@ -71,8 +71,13 @@ public class testGetModelLocal {
 
   @After
   public void teardown() {
-    firstLoadTempModelFile.deleteOnExit();
+    if (firstLoadTempModelFile != null) {
+      firstLoadTempModelFile.deleteOnExit();
+    }
+    if (firstDeviceModelFile != null)
+  {
     firstDeviceModelFile.deleteOnExit();
+  }
   }
 
   private void setUpLoadedLocalModelWithFile() throws Exception {
@@ -250,7 +255,7 @@ public class testGetModelLocal {
   private void fakePreloadedCustomModel(String modelName, String hash, long size, String filePath) {
     SharedPreferencesUtil sharedPreferencesUtil = new SharedPreferencesUtil(app);
     sharedPreferencesUtil.setLoadedCustomModelDetails(
-        new CustomModel(modelName, hash, size, 99L, filePath));
+        new CustomModel(modelName, hash, size, 0L, filePath));
   }
 
   private Set<CustomModel> getDownloadedModelList()
