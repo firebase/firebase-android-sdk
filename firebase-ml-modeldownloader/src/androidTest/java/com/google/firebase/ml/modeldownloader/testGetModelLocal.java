@@ -74,10 +74,9 @@ public class testGetModelLocal {
     if (firstLoadTempModelFile != null) {
       firstLoadTempModelFile.deleteOnExit();
     }
-    if (firstDeviceModelFile != null)
-  {
-    firstDeviceModelFile.deleteOnExit();
-  }
+    if (firstDeviceModelFile != null) {
+      firstDeviceModelFile.deleteOnExit();
+    }
   }
 
   private void setUpLoadedLocalModelWithFile() throws Exception {
