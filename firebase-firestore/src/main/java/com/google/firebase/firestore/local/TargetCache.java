@@ -108,6 +108,9 @@ interface TargetCache {
   /** Removes the given document keys from the cached query results of the given target ID. */
   void removeMatchingKeys(ImmutableSortedSet<DocumentKey> keys, int targetId);
 
+  /** Removes all the keys in the query results of the given target ID. */
+  void removeMatchingKeysForTargetId(int targetId);
+
   ImmutableSortedSet<DocumentKey> getMatchingKeysForTargetId(int targetId);
 
   /** @return True if the document is part of any target */
