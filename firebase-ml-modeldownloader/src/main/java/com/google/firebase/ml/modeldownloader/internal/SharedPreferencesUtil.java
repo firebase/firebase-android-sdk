@@ -36,10 +36,10 @@ public class SharedPreferencesUtil {
   public static final String PREFERENCES_PACKAGE_NAME = "com.google.firebase.ml.modelDownloader";
 
   // local model details
-  public static final String LOCAL_MODEL_HASH_PATTERN = "current_model_hash_%s_%s";
-  public static final String LOCAL_MODEL_FILE_PATH_PATTERN = "current_model_path_%s_%s";
+  private static final String LOCAL_MODEL_HASH_PATTERN = "current_model_hash_%s_%s";
+  private static final String LOCAL_MODEL_FILE_PATH_PATTERN = "current_model_path_%s_%s";
   private static final String LOCAL_MODEL_FILE_PATH_MATCHER = "current_model_path_(.*?)_([^/]+)/?";
-  public static final String LOCAL_MODEL_FILE_SIZE_PATTERN = "current_model_size_%s_%s";
+  private static final String LOCAL_MODEL_FILE_SIZE_PATTERN = "current_model_size_%s_%s";
   // details about model during download.
   private static final String DOWNLOADING_MODEL_HASH_PATTERN = "downloading_model_hash_%s_%s";
   private static final String DOWNLOADING_MODEL_SIZE_PATTERN = "downloading_model_size_%s_%s";

@@ -19,8 +19,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import android.content.Context;
-import android.content.SharedPreferences;
 import android.os.ParcelFileDescriptor;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.runner.AndroidJUnit4;
@@ -32,45 +30,49 @@ import com.google.firebase.ml.modeldownloader.internal.SharedPreferencesUtil;
 import java.io.File;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-/** Integration tests for Get Model, download type LOCAL_MODEL. */
+/**
+ * Integration tests for Get Model, download type LOCAL_MODEL. Only use getLocalModel* models for
+ * this test.
+ */
 @RunWith(AndroidJUnit4.class)
 public class testGetModelLocal {
   private FirebaseModelDownloader firebaseModelDownloader;
   private static final String MODEL_NAME_LOCAL = "getLocalModel";
-  private static final String MODEL_NAME_UPDATED = "getUpdatedModel";
+  private static final String MODEL_NAME_LOCAL_2 = "getLocalModel2";
   private static final String MODEL_HASH = "origHash324";
   private final CustomModel SETUP_LOADED_LOCAL_MODEL =
       new CustomModel(MODEL_NAME_LOCAL, MODEL_HASH, 100, 0);
 
   private FirebaseApp app;
-
-  private String persistenceKey;
+  private File firstDeviceModelFile;
+  private File firstLoadTempModelFile;
+  private SharedPreferencesUtil sharedPreferencesUtil;
 
   @Before
   public void before() throws ExecutionException, InterruptedException {
     if (firebaseModelDownloader == null) {
       app = FirebaseApp.initializeApp(ApplicationProvider.getApplicationContext());
-      this.persistenceKey = app.getPersistenceKey();
       firebaseModelDownloader = FirebaseModelDownloader.getInstance(app);
     }
-    // reset shared preferences and downloads
-    Set<CustomModel> downloadedModels = getDownloadedModelList();
-    if (downloadedModels != null) {
-      for (CustomModel model : downloadedModels) {
-        firebaseModelDownloader.deleteDownloadedModel(model.getName());
-      }
-    }
-    SharedPreferences.Editor preferencesEditor =
-        ApplicationProvider.getApplicationContext()
-            .getSharedPreferences(
-                SharedPreferencesUtil.PREFERENCES_PACKAGE_NAME, Context.MODE_PRIVATE)
-            .edit();
-    preferencesEditor.clear();
-    preferencesEditor.apply();
+    sharedPreferencesUtil = new SharedPreferencesUtil(app);
+    // reset shared preferences and downloads for models used by this test.
+    firebaseModelDownloader.deleteDownloadedModel(MODEL_NAME_LOCAL);
+    firebaseModelDownloader.deleteDownloadedModel(MODEL_NAME_LOCAL_2);
+
+    // Equivalent to clearing the cache for the models used by this test.
+    sharedPreferencesUtil.clearModelDetails(MODEL_NAME_LOCAL);
+    sharedPreferencesUtil.clearModelDetails(MODEL_NAME_LOCAL_2);
+  }
+
+  @After
+  public void teardown() {
+    firstLoadTempModelFile.deleteOnExit();
+    firstDeviceModelFile.deleteOnExit();
   }
 
   private void setUpLoadedLocalModelWithFile() throws Exception {
@@ -85,7 +87,7 @@ public class testGetModelLocal {
       }
     }
 
-    File firstLoadTempModelFile = File.createTempFile("modelFile", ".tflite");
+    firstLoadTempModelFile = File.createTempFile("modelFile", ".tflite");
 
     String expectedDestinationFolder =
         new File(
@@ -100,13 +102,12 @@ public class testGetModelLocal {
     ParcelFileDescriptor fd =
         ParcelFileDescriptor.open(firstLoadTempModelFile, ParcelFileDescriptor.MODE_READ_ONLY);
 
-    File firstDeviceModelFile =
-        fileManager.moveModelToDestinationFolder(SETUP_LOADED_LOCAL_MODEL, fd);
+    firstDeviceModelFile = fileManager.moveModelToDestinationFolder(SETUP_LOADED_LOCAL_MODEL, fd);
     assertEquals(firstDeviceModelFile, new File(expectedDestinationFolder + "/0"));
     assertTrue(firstDeviceModelFile.exists());
     fd.close();
 
-    fakeLoadedCustomModel(
+    fakePreloadedCustomModel(
         MODEL_NAME_LOCAL,
         SETUP_LOADED_LOCAL_MODEL.getModelHash(),
         99,
@@ -137,7 +138,7 @@ public class testGetModelLocal {
     Task<CustomModel> modelUpdatedTask =
         FirebaseModelDownloader.getInstance()
             .getModel(
-                MODEL_NAME_UPDATED,
+                MODEL_NAME_LOCAL_2,
                 DownloadType.LOCAL_MODEL,
                 new CustomModelDownloadConditions.Builder().build());
     Tasks.await(modelUpdatedTask);
@@ -164,7 +165,7 @@ public class testGetModelLocal {
   }
 
   @Test
-  public void localUpdateBackgroundModel_missingFile_successTestPath()
+  public void localModel_fetchDueToMissingFile()
       throws ExecutionException, InterruptedException, FirebaseMlException {
     // no models to start
     Task<Set<CustomModel>> listModelTask =
@@ -173,7 +174,7 @@ public class testGetModelLocal {
     assertTrue(listModelTask.isSuccessful());
     assertEquals(listModelTask.getResult().size(), 0);
 
-    fakeLoadedCustomModel(MODEL_NAME_UPDATED, MODEL_HASH, 123L, "fake/path/model/0");
+    fakePreloadedCustomModel(MODEL_NAME_LOCAL_2, MODEL_HASH, 123L, "fake/path/model/0");
     listModelTask = FirebaseModelDownloader.getInstance().listDownloadedModels();
     Tasks.await(listModelTask);
     assertTrue(listModelTask.isSuccessful());
@@ -188,7 +189,7 @@ public class testGetModelLocal {
     Task<CustomModel> modelTask =
         FirebaseModelDownloader.getInstance()
             .getModel(
-                MODEL_NAME_UPDATED,
+                MODEL_NAME_LOCAL_2,
                 DownloadType.LOCAL_MODEL,
                 new CustomModelDownloadConditions.Builder().build());
     Tasks.await(modelTask);
@@ -206,7 +207,7 @@ public class testGetModelLocal {
   }
 
   @Test
-  public void localUpdateBackgroundModel_doNotFetch() throws Exception {
+  public void localModel_preloadedDoNotFetchUpdate() throws Exception {
     // no models to start
     Task<Set<CustomModel>> listModelTask =
         FirebaseModelDownloader.getInstance().listDownloadedModels();
@@ -246,27 +247,10 @@ public class testGetModelLocal {
     assertEquals(model.getModelHash(), MODEL_HASH);
   }
 
-  private void fakeLoadedCustomModel(String modelName, String hash, long size, String filePath) {
-    SharedPreferences.Editor preferencesEditor =
-        ApplicationProvider.getApplicationContext()
-            .getSharedPreferences(
-                SharedPreferencesUtil.PREFERENCES_PACKAGE_NAME, Context.MODE_PRIVATE)
-            .edit();
-    preferencesEditor.clear();
-    preferencesEditor
-        .putString(
-            String.format(
-                SharedPreferencesUtil.LOCAL_MODEL_HASH_PATTERN, persistenceKey, modelName),
-            hash)
-        .putLong(
-            String.format(
-                SharedPreferencesUtil.LOCAL_MODEL_FILE_SIZE_PATTERN, persistenceKey, modelName),
-            size)
-        .putString(
-            String.format(
-                SharedPreferencesUtil.LOCAL_MODEL_FILE_PATH_PATTERN, persistenceKey, modelName),
-            filePath)
-        .commit();
+  private void fakePreloadedCustomModel(String modelName, String hash, long size, String filePath) {
+    SharedPreferencesUtil sharedPreferencesUtil = new SharedPreferencesUtil(app);
+    sharedPreferencesUtil.setLoadedCustomModelDetails(
+        new CustomModel(modelName, hash, size, 99L, filePath));
   }
 
   private Set<CustomModel> getDownloadedModelList()
