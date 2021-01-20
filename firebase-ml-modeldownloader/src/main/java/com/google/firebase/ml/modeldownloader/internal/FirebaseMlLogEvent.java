@@ -179,6 +179,7 @@ public abstract class FirebaseMlLogEvent {
     public enum DownloadStatus {
       UNKNOWN_STATUS(0),
       EXPLICITLY_REQUESTED(1),
+      MODEL_INFO_RETRIEVAL_FAILED(4),
       SCHEDULED(5),
       DOWNLOADING(6),
       SUCCEEDED(7),
@@ -191,6 +192,7 @@ public abstract class FirebaseMlLogEvent {
       static {
         valueMap.put(0, UNKNOWN_STATUS);
         valueMap.put(1, EXPLICITLY_REQUESTED);
+        valueMap.put(4, MODEL_INFO_RETRIEVAL_FAILED);
         valueMap.put(5, SCHEDULED);
         valueMap.put(6, DOWNLOADING);
         valueMap.put(7, SUCCEEDED);

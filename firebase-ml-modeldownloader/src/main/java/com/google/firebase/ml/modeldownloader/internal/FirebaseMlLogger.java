@@ -191,13 +191,6 @@ public class FirebaseMlLogger {
       }
     }
     try {
-      System.out.println(
-          "annz: sending event log message: "
-              + FirebaseMlLogEvent.builder()
-                  .setEventName(EventName.MODEL_DOWNLOAD)
-                  .setModelDownloadLogEvent(downloadLogEvent.build())
-                  .setSystemInfo(getSystemInfo())
-                  .build());
       eventSender.sendEvent(
           FirebaseMlLogEvent.builder()
               .setEventName(EventName.MODEL_DOWNLOAD)

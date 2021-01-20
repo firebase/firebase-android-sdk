@@ -100,7 +100,6 @@ public class CustomModelDownloadService {
     this.executorService = executorService;
     this.apiKey = apiKey;
     this.downloadHost = downloadHost;
-    System.out.println("Test event logger: " + eventLogger);
     this.eventLogger = eventLogger;
   }
 
@@ -149,19 +148,18 @@ public class CustomModelDownloadService {
           executorService,
           (CustomModelTask) -> {
             if (!installationAuthTokenTask.isSuccessful()) {
-              System.out.println("Installation error:");
               ErrorCode errorCode = ErrorCode.MODEL_INFO_DOWNLOAD_CONNECTION_FAILED;
-              String errorMessage = "Failed to get model URL";
+              String errorMessage = "Failed to get model due to authentication error";
               if (installationAuthTokenTask.getException() != null
-                  && installationAuthTokenTask.getException().getCause()
-                      instanceof UnknownHostException) {
+                  && (installationAuthTokenTask.getException() instanceof UnknownHostException
+                      || installationAuthTokenTask.getException().getCause()
+                          instanceof UnknownHostException)) {
                 errorCode = ErrorCode.NO_NETWORK_CONNECTION;
                 errorMessage = "Failed to retrieve model info due to no internet connection.";
               }
-              //              eventLogger.logDownloadEventWithErrorCode(
-              //                  errorCode, false, ModelType.UNKNOWN,
-              // DownloadStatus.MODEL_INFO_RETRIEVAL_FAILED);
-              // TODO(annz) update to better error handling (use FirebaseMLExceptions)
+
+              eventLogger.logDownloadFailureWithReason(
+                  new CustomModel(modelName, modelHash, 0, 0L), false, errorCode.getValue());
               return Tasks.forException(
                   new FirebaseMlException(errorMessage, FirebaseMlException.INTERNAL));
             }
@@ -200,6 +198,7 @@ public class CustomModelDownloadService {
 
   private Task<CustomModel> fetchDownloadDetails(String modelName, HttpURLConnection connection)
       throws Exception {
+    // todo(annz) add try catch for IOException specific errors.
     connection.connect();
     int httpResponseCode = connection.getResponseCode();
 
