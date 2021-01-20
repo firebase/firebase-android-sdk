@@ -494,6 +494,8 @@ public class Repo implements PersistentConnection.Delegate {
         new Runnable() {
           @Override
           public void run() {
+            // Always check active-listener in-memory caches first. These are always at least as
+            // up to date as the persistence cache.
             Node cached =
                 serverSyncTree.calcCompleteEventCacheFromRoot(query.getPath(), new ArrayList<>());
             if (!cached.isEmpty()) {
@@ -541,7 +543,17 @@ public class Repo implements PersistentConnection.Delegate {
                     });
           }
         });
-    return source.getTask();
+
+    return source
+        .getTask()
+        .addOnCompleteListener(
+            new OnCompleteListener<DataSnapshot>() {
+              @Override
+              public void onComplete(@NonNull Task<DataSnapshot> task) {
+                serverSyncTree.setQueryInactive(query.getSpec());
+              }
+            });
+    //    return source.getTask();
   }
 
   public void updateChildren(

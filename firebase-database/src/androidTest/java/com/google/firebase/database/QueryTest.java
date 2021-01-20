@@ -4496,13 +4496,14 @@ public class QueryTest {
     reader = reader.child(key);
     writer = writer.child(key);
 
+    ValueEventListener listener = null;
     try {
       new WriteFuture(writer, 42L).timedGet();
 
       assertEquals(Tasks.await(reader.get()).getValue(), 42L);
 
       Semaphore semaphore = new Semaphore(0);
-      reader.addValueEventListener(
+      listener =
           new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -4511,16 +4512,16 @@ public class QueryTest {
             }
 
             @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-              fail(error.getMessage());
-            }
-          });
+            public void onCancelled(@NonNull DatabaseError error) {}
+          };
+      reader.addValueEventListener(listener);
       IntegrationTestHelpers.waitFor(semaphore);
-
       readerDb.goOffline();
-
       assertEquals(Tasks.await(reader.get()).getValue(), 42L);
     } finally {
+      if (listener != null) {
+        reader.removeEventListener(listener);
+      }
       readerDb.goOnline();
     }
   }
@@ -4566,7 +4567,7 @@ public class QueryTest {
       reader.removeEventListener(listener);
       assertEquals(Tasks.await(reader.get()).getValue(), 42L);
     } finally {
-      readerDb.goOffline();
+      readerDb.goOnline();
     }
   }
 
@@ -4597,6 +4598,47 @@ public class QueryTest {
     } finally {
       readerDb.goOnline();
     }
+  }
+
+  @Test
+  public void testGetSkipsPersistenceCacheWhenOnline()
+      throws InterruptedException, ExecutionException, TimeoutException, TestFailure {
+    FirebaseApp readerApp =
+        appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
+    FirebaseApp writerApp =
+        appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
+    FirebaseDatabase readerDb = FirebaseDatabase.getInstance(readerApp);
+    readerDb.setPersistenceEnabled(true);
+    FirebaseDatabase writerDb = FirebaseDatabase.getInstance(writerApp);
+
+    DatabaseReference reader = readerDb.getReference();
+    DatabaseReference writer = writerDb.getReference();
+    String key = reader.push().getKey();
+    reader = reader.child(key);
+    writer = writer.child(key);
+
+    Semaphore semaphore = new Semaphore(0);
+
+    ValueEventListener listener =
+        new ValueEventListener() {
+          @Override
+          public void onDataChange(@NonNull DataSnapshot snapshot) {
+            if (snapshot.getValue().equals(42L)) {
+              semaphore.release();
+            }
+          }
+
+          @Override
+          public void onCancelled(@NonNull DatabaseError error) {}
+        };
+
+    reader.addValueEventListener(listener);
+    assertNull(new WriteFuture(writer, 42L).timedGet());
+    IntegrationTestHelpers.waitFor(semaphore);
+    reader.removeEventListener(listener);
+
+    assertNull(new WriteFuture(writer, 43L).timedGet());
+    assertEquals(43L, Tasks.await(reader.get()).getValue());
   }
 
   @Test

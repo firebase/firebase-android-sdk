@@ -867,8 +867,7 @@ public class SyncTree {
 
   /** Similar to calcCompleteEventCache, but doesn't skip the root view cache. */
   public Node calcCompleteEventCacheFromRoot(Path path, List<Long> writeIdsToExclude) {
-    ImmutableTree<SyncPoint> tree = this.syncPointTree;
-    SyncPoint currentSyncPoint = tree.getValue();
+    SyncPoint currentSyncPoint = syncPointTree.getValue();
     Node serverCache = null;
     if (currentSyncPoint != null) {
       serverCache = currentSyncPoint.getCompleteServerCache(Path.getEmptyPath());
