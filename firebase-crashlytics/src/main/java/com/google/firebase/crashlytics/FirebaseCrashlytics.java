@@ -35,7 +35,6 @@ import com.google.firebase.crashlytics.internal.analytics.CrashlyticsOriginAnaly
 import com.google.firebase.crashlytics.internal.analytics.UnavailableAnalyticsEventLogger;
 import com.google.firebase.crashlytics.internal.breadcrumbs.BreadcrumbSource;
 import com.google.firebase.crashlytics.internal.breadcrumbs.DisabledBreadcrumbSource;
-import com.google.firebase.crashlytics.internal.common.CommonUtils;
 import com.google.firebase.crashlytics.internal.common.CrashlyticsCore;
 import com.google.firebase.crashlytics.internal.common.DataCollectionArbiter;
 import com.google.firebase.crashlytics.internal.common.ExecutorUtils;
@@ -176,22 +175,15 @@ public class FirebaseCrashlytics {
         ExecutorUtils.buildSingleThreadExecutorService("com.google.firebase.crashlytics.startup");
 
     final String googleAppId = app.getOptions().getApplicationId();
-    // TODO: Remove this override
-    final String overriddenSpiEndpoint =
-        CommonUtils.getStringsFileValue(context, CRASHLYTICS_API_ENDPOINT);
-
-    // TODO: Is this used anywhere else at this point?
-    final HttpRequestFactory requestFactory = new HttpRequestFactory();
 
     final SettingsController settingsController =
         SettingsController.create(
             context,
             googleAppId,
             idManager,
-            requestFactory,
+            new HttpRequestFactory(),
             versionCode,
             versionName,
-            overriddenSpiEndpoint,
             arbiter);
 
     // Kick off actually fetching the settings.
