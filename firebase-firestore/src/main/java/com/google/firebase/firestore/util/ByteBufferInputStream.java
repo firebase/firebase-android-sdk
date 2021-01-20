@@ -31,6 +31,9 @@ public class ByteBufferInputStream extends InputStream {
     if (!buffer.hasRemaining()) {
       return -1;
     }
+    // `& 0xFF` converts the signed byte value to an integer and then strips the first 3 bytes.
+    // This keeps the last eight bits of the value and thereby translates the original byte value to
+    // the [0, 255] range.
     return buffer.get() & 0xFF;
   }
 
