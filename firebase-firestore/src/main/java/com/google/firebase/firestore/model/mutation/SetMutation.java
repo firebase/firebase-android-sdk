@@ -94,14 +94,14 @@ public final class SetMutation extends Mutation {
   @Nullable
   @Override
   public MaybeDocument applyToLocalView(
-      @Nullable MaybeDocument maybeDoc, @Nullable MaybeDocument baseDoc, Timestamp localWriteTime) {
+      @Nullable MaybeDocument maybeDoc, Timestamp localWriteTime) {
     verifyKeyMatches(maybeDoc);
 
     if (!this.getPrecondition().isValidFor(maybeDoc)) {
       return maybeDoc;
     }
 
-    List<Value> transformResults = localTransformResults(localWriteTime, maybeDoc, baseDoc);
+    List<Value> transformResults = localTransformResults(localWriteTime, maybeDoc);
     ObjectValue newData = transformObject(value, transformResults);
 
     SnapshotVersion version = getPostMutationVersion(maybeDoc);
