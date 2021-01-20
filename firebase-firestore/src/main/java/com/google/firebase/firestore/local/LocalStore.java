@@ -24,6 +24,7 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.auth.User;
+import com.google.firebase.firestore.bundle.BundleListener;
 import com.google.firebase.firestore.bundle.BundleMetadata;
 import com.google.firebase.firestore.bundle.NamedQuery;
 import com.google.firebase.firestore.core.Query;
@@ -94,7 +95,7 @@ import java.util.concurrent.TimeUnit;
  * <p>The LocalStore must be able to efficiently execute queries against its local cache of the
  * documents, to provide the initial set of results before any remote changes have been received.
  */
-public final class LocalStore {
+public final class LocalStore implements BundleListener {
   /**
    * The maximum time to leave a resume token buffered without writing it out. This value is
    * arbitrary: it's long enough to avoid several writes (possibly indefinitely if updates come more
@@ -632,11 +633,6 @@ public final class LocalStore {
         });
   }
 
-  /**
-   * Applies the documents from a bundle to the "ground-state" (remote) documents.
-   *
-   * <p>LocalDocuments are re-calculated if there are remaining mutations in the queue.
-   */
   public ImmutableSortedMap<DocumentKey, MaybeDocument> applyBundledDocuments(
       ImmutableSortedMap<DocumentKey, MaybeDocument> documents, String bundleId) {
     // Allocates a target to hold all document keys from the bundle, such that
@@ -670,7 +666,6 @@ public final class LocalStore {
         });
   }
 
-  /** Saves the given NamedQuery to local persistence. */
   public void saveNamedQuery(NamedQuery namedQuery, ImmutableSortedSet<DocumentKey> documentKeys) {
     // Allocate a target for the named query such that it can be resumed from associated read time
     // if users use it to listen.

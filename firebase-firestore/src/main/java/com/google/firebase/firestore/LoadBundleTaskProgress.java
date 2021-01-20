@@ -18,7 +18,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 /** Represents a progress update or a final state from loading bundles. */
-/* package */ final class LoadBundleTaskProgress {
+public final class LoadBundleTaskProgress {
   static final LoadBundleTaskProgress INITIAL =
       new LoadBundleTaskProgress(0, 0, 0, 0, null, TaskState.SUCCESS);
 
