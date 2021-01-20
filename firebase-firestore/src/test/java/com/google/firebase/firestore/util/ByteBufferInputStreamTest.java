@@ -68,7 +68,7 @@ public class ByteBufferInputStreamTest {
     ByteBufferInputStream inputStream = new ByteBufferInputStream(source);
 
     int read = inputStream.read();
-    // The integer value for byte -1 is 255, as the last three bits are set for -1 in bytes.
+    // The integer value for byte -1 is 255, as the last three bits are set for -1.
     assertEquals(0xFF, read);
     assertEquals(-1, (byte) read);
   }
