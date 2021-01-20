@@ -49,7 +49,6 @@ android {
 }
 
 thirdPartyLicenses {
-    add 'Protocol Buffers', "file://${projectDir}/third_party_licenses/protocol_buffers/LICENSE"
     add 'Tape', "file://${projectDir}/third_party_licenses/tape/LICENSE"
 }
 

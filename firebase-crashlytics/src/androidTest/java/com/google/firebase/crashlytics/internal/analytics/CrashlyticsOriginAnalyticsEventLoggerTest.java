@@ -15,7 +15,6 @@
 package com.google.firebase.crashlytics.internal.analytics;
 
 import static com.google.firebase.crashlytics.internal.analytics.CrashlyticsOriginAnalyticsEventLogger.FIREBASE_ANALYTICS_ORIGIN_CRASHLYTICS;
-import static org.junit.Assert.*;
 
 import android.os.Bundle;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
