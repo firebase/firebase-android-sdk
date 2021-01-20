@@ -52,8 +52,8 @@ public class Onboarding {
   private String applicationLabel;
   private String targetAndroidSdkVersion;
 
-  private IdManager idManager;
-  private DataCollectionArbiter dataCollectionArbiter;
+  private final IdManager idManager;
+  private final DataCollectionArbiter dataCollectionArbiter;
 
   public Onboarding(
       FirebaseApp app,

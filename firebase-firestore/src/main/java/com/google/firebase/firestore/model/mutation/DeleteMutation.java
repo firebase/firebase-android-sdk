@@ -73,7 +73,7 @@ public final class DeleteMutation extends Mutation {
   @Nullable
   @Override
   public MaybeDocument applyToLocalView(
-      @Nullable MaybeDocument maybeDoc, @Nullable MaybeDocument baseDoc, Timestamp localWriteTime) {
+      @Nullable MaybeDocument maybeDoc, Timestamp localWriteTime) {
     verifyKeyMatches(maybeDoc);
 
     if (!this.getPrecondition().isValidFor(maybeDoc)) {

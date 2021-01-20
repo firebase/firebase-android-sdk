@@ -41,7 +41,7 @@ import java.util.concurrent.Executor;
  * This class handles Crashlytics lifecycle events and coordinates session data capture and
  * persistence, as well as sending of reports to Firebase Crashlytics.
  */
-class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
+public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
 
   private static final String EVENT_TYPE_CRASH = "crash";
   private static final String EVENT_TYPE_LOGGED = "error";
@@ -152,6 +152,15 @@ class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
     reportPersistence.finalizeReports(currentSessionId, timestamp);
   }
 
+  @NonNull
+  public List<String> listSortedOpenSessionIds() {
+    return reportPersistence.listSortedOpenSessionIds();
+  }
+
+  public boolean hasReportsToSend() {
+    return reportPersistence.hasFinalizedReports();
+  }
+
   public void removeAllReports() {
     reportPersistence.deleteAllReports();
   }
@@ -161,28 +170,12 @@ class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
    *
    * @param reportSendCompleteExecutor executor on which to run report cleanup after each report is
    *     sent.
-   * @param dataTransportState used to determine whether to send the report before cleaning it up.
    */
-  Task<Void> sendReports(
-      @NonNull Executor reportSendCompleteExecutor,
-      @NonNull DataTransportState dataTransportState) {
-    if (dataTransportState == DataTransportState.NONE) {
-      Logger.getLogger().d("Send via DataTransport disabled. Removing DataTransport reports.");
-      reportPersistence.deleteAllReports();
-      return Tasks.forResult(null);
-    }
+  public Task<Void> sendReports(@NonNull Executor reportSendCompleteExecutor) {
     final List<CrashlyticsReportWithSessionId> reportsToSend =
         reportPersistence.loadFinalizedReports();
     final List<Task<Boolean>> sendTasks = new ArrayList<>();
     for (CrashlyticsReportWithSessionId reportToSend : reportsToSend) {
-      if (reportToSend.getReport().getType() == CrashlyticsReport.Type.NATIVE
-          && dataTransportState != DataTransportState.ALL) {
-        Logger.getLogger()
-            .d("Send native reports via DataTransport disabled. Removing DataTransport reports.");
-        reportPersistence.deleteFinalizedReport(reportToSend.getSessionId());
-        continue;
-      }
-
       sendTasks.add(
           reportsSender
               .sendReport(reportToSend)

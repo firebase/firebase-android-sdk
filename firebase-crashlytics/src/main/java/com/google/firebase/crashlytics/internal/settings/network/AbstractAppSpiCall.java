@@ -14,9 +14,9 @@
 
 package com.google.firebase.crashlytics.internal.settings.network;
 
+import android.text.TextUtils;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.common.AbstractSpiCall;
-import com.google.firebase.crashlytics.internal.common.CommonUtils;
 import com.google.firebase.crashlytics.internal.common.ResponseParser;
 import com.google.firebase.crashlytics.internal.network.HttpMethod;
 import com.google.firebase.crashlytics.internal.network.HttpRequest;
@@ -102,7 +102,7 @@ abstract class AbstractAppSpiCall extends AbstractSpiCall implements AppSpiCall 
             .part(APP_MIN_SDK_VERSION_PARAM, requestData.minSdkVersion)
             .part(APP_BUILT_SDK_VERSION_PARAM, requestData.builtSdkVersion);
 
-    if (!CommonUtils.isNullOrEmpty(requestData.instanceIdentifier)) {
+    if (!TextUtils.isEmpty(requestData.instanceIdentifier)) {
       request.part(APP_INSTANCE_IDENTIFIER_PARAM, requestData.instanceIdentifier);
     }
 
