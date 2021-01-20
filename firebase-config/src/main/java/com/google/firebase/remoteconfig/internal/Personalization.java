@@ -25,8 +25,7 @@ import org.json.JSONObject;
 public class Personalization {
   public static final String ANALYTICS_ORIGIN_PERSONALIZATION = "fp";
 
-  // Constants with PARAM suffix are how the corresponding ones without it are identified on
-  // Google Analytics.
+  // The PARAM suffix identifies log keys sent to Google Analytics.
   public static final String EXTERNAL_EVENT = "personalization_assignment";
   public static final String EXTERNAL_RC_PARAMETER_PARAM = "arm_key";
   public static final String EXTERNAL_ARM_VALUE_PARAM = "arm_value";
@@ -44,7 +43,7 @@ public class Personalization {
   /** The app's Firebase Analytics client. */
   private final AnalyticsConnector analyticsConnector;
 
-  /** A map of Remote Config parameter key to choice ID. */
+  /** Remote Config parameter key and choice ID pairs that have already been logged to Analytics. */
   private final Map<String, String> loggedChoiceIds =
       Collections.synchronizedMap(new HashMap<String, String>());
 
@@ -82,8 +81,6 @@ public class Personalization {
       return;
     }
 
-    // We only to need to log each choice ID once, so this attempts to prevent too much unnecessary
-    // logging.
     synchronized (loggedChoiceIds) {
       if (choiceId.equals(loggedChoiceIds.get(rcParameter))) {
         return;

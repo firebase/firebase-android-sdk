@@ -16,16 +16,17 @@ package com.google.firebase.remoteconfig.internal;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.remoteconfig.internal.Personalization.ANALYTICS_ORIGIN_PERSONALIZATION;
-import static com.google.firebase.remoteconfig.internal.Personalization.EXTERNAL_EVENT;
-import static com.google.firebase.remoteconfig.internal.Personalization.INTERNAL_EVENT;
 import static com.google.firebase.remoteconfig.internal.Personalization.EXTERNAL_ARM_INDEX_PARAM;
-import static com.google.firebase.remoteconfig.internal.Personalization.EXTERNAL_RC_PARAMETER_PARAM;
 import static com.google.firebase.remoteconfig.internal.Personalization.EXTERNAL_ARM_VALUE_PARAM;
-import static com.google.firebase.remoteconfig.internal.Personalization.INTERNAL_CHOICE_ID_PARAM;
+import static com.google.firebase.remoteconfig.internal.Personalization.EXTERNAL_EVENT;
 import static com.google.firebase.remoteconfig.internal.Personalization.EXTERNAL_GROUP_PARAM;
 import static com.google.firebase.remoteconfig.internal.Personalization.EXTERNAL_PERSONALIZATION_ID_PARAM;
+import static com.google.firebase.remoteconfig.internal.Personalization.EXTERNAL_RC_PARAMETER_PARAM;
+import static com.google.firebase.remoteconfig.internal.Personalization.INTERNAL_CHOICE_ID_PARAM;
+import static com.google.firebase.remoteconfig.internal.Personalization.INTERNAL_EVENT;
 import static org.mockito.AdditionalMatchers.or;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.times;
@@ -107,10 +108,7 @@ public class PersonalizationTest {
 
     doAnswer(invocation -> FAKE_LOGS.add(invocation.getArgument(2)))
         .when(mockAnalyticsConnector)
-        .logEvent(
-            eq(ANALYTICS_ORIGIN_PERSONALIZATION),
-            or(eq(EXTERNAL_EVENT), eq(INTERNAL_EVENT)),
-            any(Bundle.class));
+        .logEvent(eq(ANALYTICS_ORIGIN_PERSONALIZATION), anyString(), any(Bundle.class));
 
     personalization = new Personalization(mockAnalyticsConnector);
 
