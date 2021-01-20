@@ -508,6 +508,7 @@ public class Repo implements PersistentConnection.Delegate {
             connection
                 .get(query.getPath().asList(), query.getSpec().getParams().getWireProtocolParams())
                 .addOnCompleteListener(
+                    ((DefaultRunLoop) ctx.getRunLoop()).getExecutorService(),
                     new OnCompleteListener<Object>() {
                       @Override
                       public void onComplete(@NonNull Task<Object> task) {
@@ -532,28 +533,12 @@ public class Repo implements PersistentConnection.Delegate {
                                   query.getRef(),
                                   IndexedNode.from(serverNode, query.getSpec().getIndex())));
                         }
-                        scheduleNow(
-                            new Runnable() {
-                              @Override
-                              public void run() {
-                                serverSyncTree.setQueryInactive(query.getSpec());
-                              }
-                            });
+                        serverSyncTree.setQueryInactive(query.getSpec());
                       }
                     });
           }
         });
-
-    return source
-        .getTask()
-        .addOnCompleteListener(
-            new OnCompleteListener<DataSnapshot>() {
-              @Override
-              public void onComplete(@NonNull Task<DataSnapshot> task) {
-                serverSyncTree.setQueryInactive(query.getSpec());
-              }
-            });
-    //    return source.getTask();
+    return source.getTask();
   }
 
   public void updateChildren(
