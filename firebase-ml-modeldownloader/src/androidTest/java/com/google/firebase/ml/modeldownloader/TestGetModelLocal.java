@@ -40,7 +40,7 @@ import org.junit.runner.RunWith;
  * this test.
  */
 @RunWith(AndroidJUnit4.class)
-public class testGetModelLocal {
+public class TestGetModelLocal {
   private FirebaseModelDownloader firebaseModelDownloader;
   private static final String MODEL_NAME_LOCAL = "getLocalModel";
   private static final String MODEL_NAME_LOCAL_2 = "getLocalModel2";
@@ -54,11 +54,10 @@ public class testGetModelLocal {
   private SharedPreferencesUtil sharedPreferencesUtil;
 
   @Before
-  public void before() throws ExecutionException, InterruptedException {
-    if (firebaseModelDownloader == null) {
-      app = FirebaseApp.initializeApp(ApplicationProvider.getApplicationContext());
-      firebaseModelDownloader = FirebaseModelDownloader.getInstance(app);
-    }
+  public void before() {
+    app = FirebaseApp.initializeApp(ApplicationProvider.getApplicationContext());
+    firebaseModelDownloader = FirebaseModelDownloader.getInstance(app);
+
     sharedPreferencesUtil = new SharedPreferencesUtil(app);
     // reset shared preferences and downloads for models used by this test.
     firebaseModelDownloader.deleteDownloadedModel(MODEL_NAME_LOCAL);
@@ -123,11 +122,8 @@ public class testGetModelLocal {
       throws ExecutionException, InterruptedException, FirebaseMlException {
 
     // no models to start
-    Task<Set<CustomModel>> listModelTask =
-        FirebaseModelDownloader.getInstance().listDownloadedModels();
-    Tasks.await(listModelTask);
-    assertTrue(listModelTask.isSuccessful());
-    assertEquals(listModelTask.getResult().size(), 0);
+    Set<CustomModel> listModelTask = getDownloadedModelList();
+    assertEquals(listModelTask.size(), 0);
 
     // download 2 models and check they are in the list.
     Task<CustomModel> modelTask =
@@ -148,21 +144,15 @@ public class testGetModelLocal {
     Tasks.await(modelUpdatedTask);
     assertTrue(modelUpdatedTask.isSuccessful());
 
-    listModelTask = FirebaseModelDownloader.getInstance().listDownloadedModels();
-    Tasks.await(listModelTask);
-    assertTrue(listModelTask.isSuccessful());
-    assertTrue(listModelTask.getResult().size() >= 2);
-
-    Set<CustomModel> downloadedModels = listModelTask.getResult();
-    assertTrue(downloadedModels.contains(modelTask.getResult()));
-    assertTrue(downloadedModels.contains(modelUpdatedTask.getResult()));
+    listModelTask = getDownloadedModelList();
+    assertTrue(listModelTask.size() >= 2);
+    assertTrue(listModelTask.contains(modelTask.getResult()));
+    assertTrue(listModelTask.contains(modelUpdatedTask.getResult()));
 
     // delete the old model
     FirebaseModelDownloader.getInstance().deleteDownloadedModel(MODEL_NAME_LOCAL);
-    listModelTask = FirebaseModelDownloader.getInstance().listDownloadedModels();
-    Tasks.await(listModelTask);
-    assertTrue(listModelTask.isSuccessful());
-    assertEquals(listModelTask.getResult().size(), 1);
+    listModelTask = getDownloadedModelList();
+    assertEquals(listModelTask.size(), 1);
 
     // verify model file was also deleted
     assertNull(modelTask.getResult().getFile());
@@ -172,20 +162,15 @@ public class testGetModelLocal {
   public void localModel_fetchDueToMissingFile()
       throws ExecutionException, InterruptedException, FirebaseMlException {
     // no models to start
-    Task<Set<CustomModel>> listModelTask =
-        FirebaseModelDownloader.getInstance().listDownloadedModels();
-    Tasks.await(listModelTask);
-    assertTrue(listModelTask.isSuccessful());
-    assertEquals(listModelTask.getResult().size(), 0);
+    Set<CustomModel> listModelTask = getDownloadedModelList();
+    assertEquals(listModelTask.size(), 0);
 
     fakePreloadedCustomModel(MODEL_NAME_LOCAL_2, MODEL_HASH, 123L, "fake/path/model/0");
-    listModelTask = FirebaseModelDownloader.getInstance().listDownloadedModels();
-    Tasks.await(listModelTask);
-    assertTrue(listModelTask.isSuccessful());
-    assertEquals(listModelTask.getResult().size(), 1);
+    listModelTask = getDownloadedModelList();
+    assertEquals(listModelTask.size(), 1);
 
     // bad path doesn't exist
-    CustomModel model = listModelTask.getResult().iterator().next();
+    CustomModel model = listModelTask.iterator().next();
     assertNull(model.getFile());
     assertEquals(model.getModelHash(), MODEL_HASH);
 
@@ -199,13 +184,11 @@ public class testGetModelLocal {
     Tasks.await(modelTask);
     assertTrue(modelTask.isSuccessful());
 
-    listModelTask = FirebaseModelDownloader.getInstance().listDownloadedModels();
-    Tasks.await(listModelTask);
-    assertTrue(listModelTask.isSuccessful());
-    assertEquals(listModelTask.getResult().size(), 1);
+    listModelTask = getDownloadedModelList();
+    assertEquals(listModelTask.size(), 1);
 
     // updated path works.
-    model = listModelTask.getResult().iterator().next();
+    model = listModelTask.iterator().next();
     assertNotNull(model.getFile());
     assertNotEquals(model.getModelHash(), MODEL_HASH);
   }
@@ -213,20 +196,15 @@ public class testGetModelLocal {
   @Test
   public void localModel_preloadedDoNotFetchUpdate() throws Exception {
     // no models to start
-    Task<Set<CustomModel>> listModelTask =
-        FirebaseModelDownloader.getInstance().listDownloadedModels();
-    Tasks.await(listModelTask);
-    assertTrue(listModelTask.isSuccessful());
-    assertEquals(listModelTask.getResult().size(), 0);
+    Set<CustomModel> listModelTask = getDownloadedModelList();
+    assertEquals(listModelTask.size(), 0);
 
     setUpLoadedLocalModelWithFile();
-    listModelTask = FirebaseModelDownloader.getInstance().listDownloadedModels();
-    Tasks.await(listModelTask);
-    assertTrue(listModelTask.isSuccessful());
-    assertEquals(listModelTask.getResult().size(), 1);
+    listModelTask = getDownloadedModelList();
+    assertEquals(listModelTask.size(), 1);
 
     // bad path doesn't exist
-    CustomModel model = listModelTask.getResult().iterator().next();
+    CustomModel model = listModelTask.iterator().next();
     assertNotNull(model.getFile());
     assertEquals(model.getModelHash(), MODEL_HASH);
 
@@ -240,13 +218,11 @@ public class testGetModelLocal {
     Tasks.await(modelTask);
     assertTrue(modelTask.isSuccessful());
 
-    listModelTask = FirebaseModelDownloader.getInstance().listDownloadedModels();
-    Tasks.await(listModelTask);
-    assertTrue(listModelTask.isSuccessful());
-    assertEquals(listModelTask.getResult().size(), 1);
+    listModelTask = getDownloadedModelList();
+    assertEquals(listModelTask.size(), 1);
 
     // updated path works.
-    model = listModelTask.getResult().iterator().next();
+    model = listModelTask.iterator().next();
     assertNotNull(model.getFile());
     assertEquals(model.getModelHash(), MODEL_HASH);
   }
