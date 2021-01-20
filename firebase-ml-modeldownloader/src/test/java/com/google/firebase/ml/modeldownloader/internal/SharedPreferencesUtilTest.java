@@ -73,25 +73,25 @@ public class SharedPreferencesUtilTest {
   }
 
   @Test
-  public void setUploadedCustomModelDetails_localModelPresent() throws IllegalArgumentException {
-    sharedPreferencesUtil.setUploadedCustomModelDetails(CUSTOM_MODEL_DOWNLOAD_COMPLETE);
+  public void setLoadedCustomModelDetails_localModelPresent() throws IllegalArgumentException {
+    sharedPreferencesUtil.setLoadedCustomModelDetails(CUSTOM_MODEL_DOWNLOAD_COMPLETE);
     CustomModel retrievedModel = sharedPreferencesUtil.getCustomModelDetails(MODEL_NAME);
     assertEquals(retrievedModel, CUSTOM_MODEL_DOWNLOAD_COMPLETE);
   }
 
   @Test
-  public void setUploadedCustomModelDetails_initialDownloadStartedAndCompleted()
+  public void setLoadedCustomModelDetails_initialDownloadStartedAndCompleted()
       throws IllegalArgumentException {
     sharedPreferencesUtil.setDownloadingCustomModelDetails(CUSTOM_MODEL_DOWNLOADING);
-    sharedPreferencesUtil.setUploadedCustomModelDetails(CUSTOM_MODEL_DOWNLOAD_COMPLETE);
+    sharedPreferencesUtil.setLoadedCustomModelDetails(CUSTOM_MODEL_DOWNLOAD_COMPLETE);
     CustomModel retrievedModel = sharedPreferencesUtil.getCustomModelDetails(MODEL_NAME);
     assertEquals(retrievedModel, CUSTOM_MODEL_DOWNLOAD_COMPLETE);
   }
 
   @Test
-  public void setUploadedCustomModelDetails_localModelWithUploadInBackGround()
+  public void setLoadedCustomModelDetails_localModelWithDownloadInBackGround()
       throws IllegalArgumentException {
-    sharedPreferencesUtil.setUploadedCustomModelDetails(CUSTOM_MODEL_DOWNLOAD_COMPLETE);
+    sharedPreferencesUtil.setLoadedCustomModelDetails(CUSTOM_MODEL_DOWNLOAD_COMPLETE);
     sharedPreferencesUtil.setDownloadingCustomModelDetails(CUSTOM_MODEL_DOWNLOADING);
     CustomModel retrievedModel = sharedPreferencesUtil.getCustomModelDetails(MODEL_NAME);
     assertEquals(retrievedModel, CUSTOM_MODEL_UPDATE_IN_BACKGROUND);
@@ -99,7 +99,7 @@ public class SharedPreferencesUtilTest {
 
   @Test
   public void clearModelDetails_clearLocalAndDownloadingInfo() throws IllegalArgumentException {
-    sharedPreferencesUtil.setUploadedCustomModelDetails(CUSTOM_MODEL_DOWNLOAD_COMPLETE);
+    sharedPreferencesUtil.setLoadedCustomModelDetails(CUSTOM_MODEL_DOWNLOAD_COMPLETE);
     sharedPreferencesUtil.setDownloadingCustomModelDetails(CUSTOM_MODEL_DOWNLOADING);
     CustomModel retrievedModel = sharedPreferencesUtil.getCustomModelDetails(MODEL_NAME);
     assertEquals(retrievedModel, CUSTOM_MODEL_UPDATE_IN_BACKGROUND);
@@ -110,7 +110,7 @@ public class SharedPreferencesUtilTest {
 
   @Test
   public void clearDownloadingModelDetails_keepsLocalModel() throws IllegalArgumentException {
-    sharedPreferencesUtil.setUploadedCustomModelDetails(CUSTOM_MODEL_DOWNLOAD_COMPLETE);
+    sharedPreferencesUtil.setLoadedCustomModelDetails(CUSTOM_MODEL_DOWNLOAD_COMPLETE);
     sharedPreferencesUtil.setDownloadingCustomModelDetails(CUSTOM_MODEL_DOWNLOADING);
     CustomModel retrievedModel = sharedPreferencesUtil.getCustomModelDetails(MODEL_NAME);
     assertEquals(retrievedModel, CUSTOM_MODEL_UPDATE_IN_BACKGROUND);
@@ -122,8 +122,19 @@ public class SharedPreferencesUtilTest {
   }
 
   @Test
+  public void clearDownloadCustomModelDetails_keepsLocalModel() throws IllegalArgumentException {
+    sharedPreferencesUtil.setLoadedCustomModelDetails(CUSTOM_MODEL_DOWNLOAD_COMPLETE);
+    sharedPreferencesUtil.setDownloadingCustomModelDetails(CUSTOM_MODEL_DOWNLOADING);
+    CustomModel retrievedModel = sharedPreferencesUtil.getCustomModelDetails(MODEL_NAME);
+    assertEquals(retrievedModel, CUSTOM_MODEL_UPDATE_IN_BACKGROUND);
+    sharedPreferencesUtil.clearDownloadCustomModelDetails(CUSTOM_MODEL_DOWNLOAD_COMPLETE.getName());
+    retrievedModel = sharedPreferencesUtil.getCustomModelDetails(MODEL_NAME);
+    assertEquals(retrievedModel, CUSTOM_MODEL_DOWNLOAD_COMPLETE);
+  }
+
+  @Test
   public void listDownloadedModels_localModelFound() {
-    sharedPreferencesUtil.setUploadedCustomModelDetails(CUSTOM_MODEL_DOWNLOAD_COMPLETE);
+    sharedPreferencesUtil.setLoadedCustomModelDetails(CUSTOM_MODEL_DOWNLOAD_COMPLETE);
     Set<CustomModel> retrievedModel = sharedPreferencesUtil.listDownloadedModels();
     assertEquals(retrievedModel.size(), 1);
     assertEquals(retrievedModel.iterator().next(), CUSTOM_MODEL_DOWNLOAD_COMPLETE);
@@ -142,16 +153,16 @@ public class SharedPreferencesUtilTest {
 
   @Test
   public void listDownloadedModels_multipleModels() {
-    sharedPreferencesUtil.setUploadedCustomModelDetails(CUSTOM_MODEL_DOWNLOAD_COMPLETE);
+    sharedPreferencesUtil.setLoadedCustomModelDetails(CUSTOM_MODEL_DOWNLOAD_COMPLETE);
 
     CustomModel model2 =
         new CustomModel(MODEL_NAME + "2", MODEL_HASH + "2", 102, 0, "file/path/store/ModelName2/1");
-    sharedPreferencesUtil.setUploadedCustomModelDetails(model2);
+    sharedPreferencesUtil.setLoadedCustomModelDetails(model2);
 
     CustomModel model3 =
         new CustomModel(MODEL_NAME + "3", MODEL_HASH + "3", 103, 0, "file/path/store/ModelName3/1");
 
-    sharedPreferencesUtil.setUploadedCustomModelDetails(model3);
+    sharedPreferencesUtil.setLoadedCustomModelDetails(model3);
 
     Set<CustomModel> retrievedModel = sharedPreferencesUtil.listDownloadedModels();
     assertEquals(retrievedModel.size(), 3);
@@ -186,7 +197,7 @@ public class SharedPreferencesUtilTest {
 
     // Completing the download clears the begin time.
     SystemClock.setCurrentTimeMillis(200L);
-    sharedPreferencesUtil.setUploadedCustomModelDetails(CUSTOM_MODEL_DOWNLOAD_COMPLETE);
+    sharedPreferencesUtil.setLoadedCustomModelDetails(CUSTOM_MODEL_DOWNLOAD_COMPLETE);
     assertEquals(sharedPreferencesUtil.getModelDownloadBeginTimeMs(CUSTOM_MODEL_DOWNLOADING), 0L);
   }
 
@@ -209,7 +220,7 @@ public class SharedPreferencesUtilTest {
 
     // Completing the download clears the begin time.
     SystemClock.setCurrentTimeMillis(300L);
-    sharedPreferencesUtil.setUploadedCustomModelDetails(CUSTOM_MODEL_DOWNLOAD_COMPLETE);
+    sharedPreferencesUtil.setLoadedCustomModelDetails(CUSTOM_MODEL_DOWNLOAD_COMPLETE);
     assertEquals(
         sharedPreferencesUtil.getModelDownloadCompleteTimeMs(CUSTOM_MODEL_DOWNLOADING), 0L);
   }

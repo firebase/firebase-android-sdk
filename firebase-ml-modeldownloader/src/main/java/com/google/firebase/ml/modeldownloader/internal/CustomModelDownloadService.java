@@ -17,7 +17,6 @@ package com.google.firebase.ml.modeldownloader.internal;
 import android.util.JsonReader;
 import android.util.Log;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
@@ -101,17 +100,15 @@ public class CustomModelDownloadService {
    * @param projectNumber - firebase project number
    * @param modelName - model name
    * @return - updated model with new download url and expiry time
-   * @throws Exception - errors when Firebase ML Download Service call fails.
    */
-  @Nullable
-  public Task<CustomModel> getNewDownloadUrlWithExpiry(String projectNumber, String modelName)
-      throws Exception {
-    return getCustomModelDetails(projectNumber, modelName, "");
+  @NonNull
+  public Task<CustomModel> getNewDownloadUrlWithExpiry(String projectNumber, String modelName) {
+    return getCustomModelDetails(projectNumber, modelName, null);
   }
 
   /**
-   * Gets the download details for the custom model, returns null if the current model is the
-   * latest.
+   * Gets the download details for the custom model, returns task with null result if the current
+   * model is the latest.
    *
    * @param projectNumber - firebase project number
    * @param modelName - model name
@@ -119,11 +116,10 @@ public class CustomModelDownloadService {
    *     force retrieval of a new download url
    * @return The download details for the model or null if the current model hash matches the latest
    *     model.
-   * @throws Exception -errors when call to API fails.
    */
-  @Nullable
+  @NonNull
   public Task<CustomModel> getCustomModelDetails(
-      String projectNumber, String modelName, String modelHash) throws Exception {
+      String projectNumber, String modelName, String modelHash) {
     try {
       URL url =
           new URL(String.format(DOWNLOAD_MODEL_REGEX, downloadHost, projectNumber, modelName));
@@ -158,7 +154,8 @@ public class CustomModelDownloadService {
 
     } catch (Exception e) {
       // TODO(annz) update to better error handling (use FirebaseMLExceptions)
-      throw new Exception("Error reading custom model from download service: " + e.getMessage(), e);
+      return Tasks.forException(
+          new Exception("Error reading custom model from download service: " + e.getMessage(), e));
     }
   }
 
@@ -273,7 +270,9 @@ public class CustomModelDownloadService {
     if (errorStream == null) {
       return null;
     }
-    try (BufferedReader reader = new BufferedReader(new InputStreamReader(errorStream, UTF_8))) {
+    String encodingKey = connection.getHeaderField(CONTENT_ENCODING_HEADER_KEY);
+    try (BufferedReader reader =
+        new BufferedReader(new InputStreamReader(maybeUnGzip(errorStream, encodingKey), UTF_8))) {
       StringBuilder response = new StringBuilder();
       for (String input = reader.readLine(); input != null; input = reader.readLine()) {
         response.append(input).append('\n');

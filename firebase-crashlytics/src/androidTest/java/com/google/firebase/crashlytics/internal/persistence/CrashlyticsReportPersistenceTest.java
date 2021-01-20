@@ -72,6 +72,46 @@ public class CrashlyticsReportPersistenceTest {
   }
 
   @Test
+  public void testListSortedOpenSessionIds() {
+    final String[] expectedIds = new String[] {"sessionId3", "sessionId2", "sessionId1"};
+
+    reportPersistence.persistReport(makeTestReport(expectedIds[1]));
+    reportPersistence.persistReport(makeTestReport(expectedIds[0]));
+    reportPersistence.persistReport(makeTestReport(expectedIds[2]));
+
+    final List<String> openSessionIds = reportPersistence.listSortedOpenSessionIds();
+
+    assertArrayEquals(expectedIds, openSessionIds.toArray());
+  }
+
+  @Test
+  public void testListSortedOpenSessionIds_noOpenSessions() {
+    final List<String> openSessionIds = reportPersistence.listSortedOpenSessionIds();
+    assertTrue(openSessionIds.isEmpty());
+  }
+
+  @Test
+  public void testHasFinalizedReports() {
+    final String sessionId = "testSession";
+    final CrashlyticsReport testReport = makeTestReport(sessionId);
+    final CrashlyticsReport.Session.Event testEvent = makeTestEvent();
+
+    reportPersistence.persistReport(testReport);
+    reportPersistence.persistEvent(testEvent, sessionId);
+
+    final long endedAt = System.currentTimeMillis();
+
+    reportPersistence.finalizeReports("skippedSession", endedAt);
+
+    assertTrue(reportPersistence.hasFinalizedReports());
+  }
+
+  @Test
+  public void testHasFinalizedReports_noReports() {
+    assertFalse(reportPersistence.hasFinalizedReports());
+  }
+
+  @Test
   public void testLoadFinalizeReports_noReports_returnsNothing() {
     assertTrue(reportPersistence.loadFinalizedReports().isEmpty());
   }

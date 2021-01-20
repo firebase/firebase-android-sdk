@@ -5,7 +5,7 @@
     "url": "http://localhost:3000/spi/v1/platform/android/apps",
     "reports_url": "http://localhost:3000/spi/v1/platform/android/apps/com.crashlytics.android/reports",
     "ndk_reports_url": "http://localhost:3000/spi/v1/platform/android/apps/com.crashlytics.android/minidumps",
-    "update_required": false
+    "update_required": false,
     "icon": {}
   },
   "settings": {
