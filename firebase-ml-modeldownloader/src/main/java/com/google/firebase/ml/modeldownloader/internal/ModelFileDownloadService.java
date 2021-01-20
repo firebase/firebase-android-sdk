@@ -124,7 +124,8 @@ public class ModelFileDownloadService {
 
   @VisibleForTesting
   Task<Void> ensureModelDownloaded(CustomModel customModel) {
-    // todo add logging for explicitly requested
+    eventLogger.logDownloadEventWithErrorCode(
+        customModel, false, DownloadStatus.EXPLICITLY_REQUESTED, ErrorCode.NO_ERROR);
     // check model download already in progress
     CustomModel downloadingModel =
         sharedPreferencesUtil.getDownloadingCustomModelDetails(customModel.getName());
@@ -149,12 +150,10 @@ public class ModelFileDownloadService {
         }
       }
 
-      System.out.println("removing old " + downloadingModel.getDownloadId());
       // remove previous failed download attempts
       removeOrCancelDownloadModel(downloadingModel.getName(), downloadingModel.getDownloadId());
     }
 
-    System.out.println("starting new schedule");
     // schedule new download of model file
     Long newDownloadId = scheduleModelDownload(customModel);
     if (newDownloadId == null) {
@@ -233,6 +232,7 @@ public class ModelFileDownloadService {
     return (taskCompletionSource != null);
   }
 
+  // Scheduled downloading of this model - does not check for existing downloads.
   @VisibleForTesting
   synchronized Long scheduleModelDownload(@NonNull CustomModel customModel) {
     if (downloadManager == null) {
@@ -271,7 +271,6 @@ public class ModelFileDownloadService {
             customModel.getSize(),
             id,
             customModel.getLocalFilePath());
-    System.out.println("set download info: " + id);
     sharedPreferencesUtil.setDownloadingCustomModelDetails(model);
     eventLogger.logDownloadEventWithErrorCode(
         model, false, DownloadStatus.SCHEDULED, ErrorCode.NO_ERROR);
@@ -372,6 +371,9 @@ public class ModelFileDownloadService {
     }
 
     if (statusCode == DownloadManager.STATUS_SUCCESSFUL) {
+      Log.d(TAG, "Model downloaded successfully");
+      eventLogger.logDownloadEventWithErrorCode(
+          model, true, DownloadStatus.SUCCEEDED, ErrorCode.NO_ERROR);
       // Get downloaded file.
       ParcelFileDescriptor fileDescriptor = getDownloadedFile(downloadingId);
       if (fileDescriptor == null) {
@@ -405,6 +407,10 @@ public class ModelFileDownloadService {
       // todo(annzimmer) Cleans up the old files if it is the initial creation.
       return newModelFile;
     } else if (statusCode == DownloadManager.STATUS_FAILED) {
+      Log.d(TAG, "Model downloaded failed.");
+      eventLogger.logDownloadFailureWithReason(
+          model, false, getFailureReason(model.getDownloadId()));
+
       // reset original model - removing downloading details.
       removeOrCancelDownloadModel(model.getName(), model.getDownloadId());
     }
@@ -474,7 +480,6 @@ public class ModelFileDownloadService {
     @Override
     public void onReceive(Context context, Intent intent) {
       long id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1);
-      System.out.println("Incoming intent: " + intent + " for: " + id);
       if (id != downloadId) {
         return;
       }
@@ -482,7 +487,6 @@ public class ModelFileDownloadService {
       // check to prevent DuplicateTaskCompletionException - this was already updated and removed.
       // Just return.
       if (!existTaskCompletionSourceInstance(downloadId)) {
-        System.out.println("Duplicate removed");
         removeDownloadTaskInstance(downloadId);
         return;
       }
@@ -516,7 +520,6 @@ public class ModelFileDownloadService {
         if (statusCode == DownloadManager.STATUS_FAILED) {
           int failureReason = getFailureReason(id);
           if (downloadingModel != null) {
-            System.out.println("failure reason: " + downloadingModel.getDownloadId());
             eventLogger.logDownloadFailureWithReason(downloadingModel, false, failureReason);
             if (checkErrorCausedByExpiry(downloadingModel.getDownloadUrlExpiry(), failureReason)) {
               // retry as a new download

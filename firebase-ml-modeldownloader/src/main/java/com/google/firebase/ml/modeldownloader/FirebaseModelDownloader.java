@@ -27,6 +27,8 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.ml.modeldownloader.internal.CustomModelDownloadService;
+import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent.DownloadStatus;
+import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent.ErrorCode;
 import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogger;
 import com.google.firebase.ml.modeldownloader.internal.ModelFileDownloadService;
 import com.google.firebase.ml.modeldownloader.internal.ModelFileManager;
@@ -75,7 +77,6 @@ public class FirebaseModelDownloader {
     this.firebaseOptions = firebaseOptions;
     this.sharedPreferencesUtil = sharedPreferencesUtil;
     this.fileDownloadService = fileDownloadService;
-    System.out.println("Test modelDownloadService: " + modelDownloadService);
     this.modelDownloadService = modelDownloadService;
     this.fileManager = fileManager;
     this.eventLogger = eventLogger;
@@ -131,7 +132,6 @@ public class FirebaseModelDownloader {
       @NonNull DownloadType downloadType,
       @Nullable CustomModelDownloadConditions conditions) {
     CustomModel localModelDetails = getLocalModelDetails(modelName);
-    System.out.println("Local model " + localModelDetails);
     if (localModelDetails == null) {
       // no local model - get latest.
       return getCustomModelTask(modelName, conditions);
@@ -169,8 +169,6 @@ public class FirebaseModelDownloader {
       return null;
     }
 
-    System.out.println(
-        "File present: " + localModel.getLocalFilePath() + " " + localModel.isModelFilePresent());
     // valid model file exists when local file path is set
     if (localModel.getLocalFilePath() != null && localModel.isModelFilePresent()) {
       return localModel;
@@ -251,18 +249,15 @@ public class FirebaseModelDownloader {
       @Nullable String modelHash) {
     CustomModel currentModel = sharedPreferencesUtil.getCustomModelDetails(modelName);
 
-    System.out.println("Real get preferences:" + modelName + " " + currentModel);
     if (currentModel == null && modelHash != null) {
       // todo(annzimmer) log something about mismatched state and use hash = null
       modelHash = null;
     }
-    System.out.println(
-        "Real get details:" + firebaseOptions.getProjectId() + " " + modelName + " " + modelHash);
+
     Task<CustomModel> incomingModelDetails =
         modelDownloadService.getCustomModelDetails(
             firebaseOptions.getProjectId(), modelName, modelHash);
 
-    System.out.println("incoming details: " + incomingModelDetails);
     return incomingModelDetails.continueWithTask(
         executor,
         incomingModelDetailTask -> {
@@ -296,6 +291,17 @@ public class FirebaseModelDownloader {
                   && !currentModel.getLocalFilePath().isEmpty()
                   && new File(currentModel.getLocalFilePath()).exists()) {
                 return getCompletedLocalCustomModelTask(currentModel);
+              }
+
+              // update is available
+              if (!currentModel
+                  .getModelHash()
+                  .equals(incomingModelDetails.getResult().getModelHash())) {
+                eventLogger.logDownloadEventWithErrorCode(
+                    incomingModelDetails.getResult(),
+                    false,
+                    DownloadStatus.UPDATE_AVAILABLE,
+                    ErrorCode.NO_ERROR);
               }
 
               // is download already in progress for this hash?
