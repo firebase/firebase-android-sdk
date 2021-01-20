@@ -958,7 +958,7 @@ public final class FirebaseRemoteConfigTest {
         .when(mockAnalyticsConnector)
         .logEvent(
             eq(Personalization.ANALYTICS_ORIGIN_PERSONALIZATION),
-            eq(Personalization.ANALYTICS_PULL_EVENT),
+            eq(Personalization.EXTERNAL_EVENT),
             any(Bundle.class));
 
     ConfigContainer configContainer =
@@ -986,18 +986,18 @@ public final class FirebaseRemoteConfigTest {
               verify(mockAnalyticsConnector, times(2))
                   .logEvent(
                       eq(Personalization.ANALYTICS_ORIGIN_PERSONALIZATION),
-                      eq(Personalization.ANALYTICS_PULL_EVENT),
+                      eq(Personalization.EXTERNAL_EVENT),
                       any(Bundle.class));
               assertThat(fakeLogs).hasSize(2);
 
               Bundle params1 = new Bundle();
-              params1.putString(Personalization.ARM_KEY, "id1");
-              params1.putString(Personalization.ARM_VALUE, "value1");
+              params1.putString(Personalization.EXTERNAL_RC_PARAMETER_PARAM, "id1");
+              params1.putString(Personalization.EXTERNAL_ARM_VALUE_PARAM, "value1");
               assertThat(fakeLogs.get(0).toString()).isEqualTo(params1.toString());
 
               Bundle params2 = new Bundle();
-              params2.putString(Personalization.ARM_KEY, "id2");
-              params2.putString(Personalization.ARM_VALUE, "value2");
+              params2.putString(Personalization.EXTERNAL_RC_PARAMETER_PARAM, "id2");
+              params2.putString(Personalization.EXTERNAL_ARM_VALUE_PARAM, "value2");
               assertThat(fakeLogs.get(1).toString()).isEqualTo(params2.toString());
             });
   }
