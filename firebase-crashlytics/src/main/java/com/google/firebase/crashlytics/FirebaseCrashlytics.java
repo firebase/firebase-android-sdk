@@ -15,7 +15,6 @@
 package com.google.firebase.crashlytics;
 
 import android.content.Context;
-import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -35,12 +34,16 @@ import com.google.firebase.crashlytics.internal.analytics.CrashlyticsOriginAnaly
 import com.google.firebase.crashlytics.internal.analytics.UnavailableAnalyticsEventLogger;
 import com.google.firebase.crashlytics.internal.breadcrumbs.BreadcrumbSource;
 import com.google.firebase.crashlytics.internal.breadcrumbs.DisabledBreadcrumbSource;
+import com.google.firebase.crashlytics.internal.common.AppData;
+import com.google.firebase.crashlytics.internal.common.CommonUtils;
 import com.google.firebase.crashlytics.internal.common.CrashlyticsCore;
 import com.google.firebase.crashlytics.internal.common.DataCollectionArbiter;
 import com.google.firebase.crashlytics.internal.common.ExecutorUtils;
 import com.google.firebase.crashlytics.internal.common.IdManager;
 import com.google.firebase.crashlytics.internal.network.HttpRequestFactory;
 import com.google.firebase.crashlytics.internal.settings.SettingsController;
+import com.google.firebase.crashlytics.internal.unity.ResourceUnityVersionProvider;
+import com.google.firebase.crashlytics.internal.unity.UnityVersionProvider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -68,6 +71,7 @@ public class FirebaseCrashlytics {
       @NonNull FirebaseInstallationsApi firebaseInstallationsApi,
       @Nullable CrashlyticsNativeComponent nativeComponent,
       @Nullable AnalyticsConnector analyticsConnector) {
+    Logger.getLogger().i("Initializing Firebase Crashlytics " + CrashlyticsCore.getVersion());
     Context context = app.getApplicationContext();
     // Set up the IdManager.
     final String appIdentifier = context.getPackageName();
@@ -155,26 +159,25 @@ public class FirebaseCrashlytics {
             analyticsEventLogger,
             crashHandlerExecutor);
 
-    // TODO: This is duplicated in AppData.create - try to consolidate
-    String versionCode;
-    String versionName;
+    final String googleAppId = app.getOptions().getApplicationId();
+    final String mappingFileId = CommonUtils.getMappingFileId(context);
+    Logger.getLogger().d("Mapping file ID is: " + mappingFileId);
 
+    final UnityVersionProvider unityVersionProvider = new ResourceUnityVersionProvider(context);
+
+    AppData appData;
     try {
-      final PackageManager packageManager = context.getPackageManager();
-      final PackageInfo packageInfo = packageManager.getPackageInfo(appIdentifier, 0);
-      versionCode = Integer.toString(packageInfo.versionCode);
-      versionName =
-          packageInfo.versionName == null
-              ? IdManager.DEFAULT_VERSION_NAME
-              : packageInfo.versionName;
+      appData =
+          AppData.create(context, idManager, googleAppId, mappingFileId, unityVersionProvider);
     } catch (PackageManager.NameNotFoundException e) {
+      Logger.getLogger().e("Could not retrieve app info, initialization failed.", e);
       return null;
     }
 
+    Logger.getLogger().d("Installer package name is: " + appData.installerPackageName);
+
     final ExecutorService threadPoolExecutor =
         ExecutorUtils.buildSingleThreadExecutorService("com.google.firebase.crashlytics.startup");
-
-    final String googleAppId = app.getOptions().getApplicationId();
 
     final SettingsController settingsController =
         SettingsController.create(
@@ -182,8 +185,8 @@ public class FirebaseCrashlytics {
             googleAppId,
             idManager,
             new HttpRequestFactory(),
-            versionCode,
-            versionName,
+            appData.versionCode,
+            appData.versionName,
             arbiter);
 
     // Kick off actually fetching the settings.
@@ -201,7 +204,7 @@ public class FirebaseCrashlytics {
               }
             });
 
-    final boolean finishCoreInBackground = core.onPreExecute(settingsController);
+    final boolean finishCoreInBackground = core.onPreExecute(appData, settingsController);
 
     Tasks.call(
         threadPoolExecutor,

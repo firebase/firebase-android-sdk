@@ -35,8 +35,6 @@ import com.google.firebase.crashlytics.internal.settings.model.Settings;
 import com.google.firebase.crashlytics.internal.stacktrace.MiddleOutFallbackStrategy;
 import com.google.firebase.crashlytics.internal.stacktrace.RemoveRepeatsStrategy;
 import com.google.firebase.crashlytics.internal.stacktrace.StackTraceTrimmingStrategy;
-import com.google.firebase.crashlytics.internal.unity.ResourceUnityVersionProvider;
-import com.google.firebase.crashlytics.internal.unity.UnityVersionProvider;
 import java.io.File;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -113,36 +111,23 @@ public class CrashlyticsCore {
 
   // region Initialization
 
-  public boolean onPreExecute(SettingsDataProvider settingsProvider) {
+  public boolean onPreExecute(AppData appData, SettingsDataProvider settingsProvider) {
     // before starting the crash detector make sure that this was built with our build
     // tools.
-    final String mappingFileId = CommonUtils.getMappingFileId(context);
-    Logger.getLogger().d("Mapping file ID is: " + mappingFileId);
-
     // Throw an exception and halt the app if the build ID is required and not present.
     // TODO: This flag is no longer supported and should be removed, as part of a larger refactor
     //  now that the buildId is now only used for mapping file association.
     final boolean requiresBuildId =
         CommonUtils.getBooleanResourceValue(
             context, CRASHLYTICS_REQUIRE_BUILD_ID, CRASHLYTICS_REQUIRE_BUILD_ID_DEFAULT);
-    if (!isBuildIdValid(mappingFileId, requiresBuildId)) {
+    if (!isBuildIdValid(appData.buildId, requiresBuildId)) {
       throw new IllegalStateException(MISSING_BUILD_ID_MSG);
     }
 
-    final String googleAppId = app.getOptions().getApplicationId();
-
     try {
-      Logger.getLogger().i("Initializing Crashlytics " + getVersion());
-
       final FileStore fileStore = new FileStoreImpl(context);
       crashMarker = new CrashlyticsFileMarker(CRASH_MARKER_FILE_NAME, fileStore);
       initializationMarker = new CrashlyticsFileMarker(INITIALIZATION_MARKER_FILE_NAME, fileStore);
-
-      final UnityVersionProvider unityVersionProvider = new ResourceUnityVersionProvider(context);
-      final AppData appData =
-          AppData.create(context, idManager, googleAppId, mappingFileId, unityVersionProvider);
-
-      Logger.getLogger().d("Installer package name is: " + appData.installerPackageName);
 
       final UserMetadata userMetadata = new UserMetadata();
 

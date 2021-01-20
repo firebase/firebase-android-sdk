@@ -20,7 +20,7 @@ import android.content.pm.PackageManager;
 import com.google.firebase.crashlytics.internal.unity.UnityVersionProvider;
 
 /** Carries static information about the app. */
-class AppData {
+public class AppData {
   public final String googleAppId;
   public final String buildId;
 
