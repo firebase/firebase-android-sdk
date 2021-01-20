@@ -219,8 +219,7 @@ class LocalDocumentsView {
 
         DocumentKey key = mutation.getKey();
         MaybeDocument baseDoc = results.get(key);
-        MaybeDocument mutatedDoc =
-            mutation.applyToLocalView(baseDoc, baseDoc, batch.getLocalWriteTime());
+        MaybeDocument mutatedDoc = mutation.applyToLocalView(baseDoc, batch.getLocalWriteTime());
         if (mutatedDoc instanceof Document) {
           results = results.insert(key, (Document) mutatedDoc);
         } else {
