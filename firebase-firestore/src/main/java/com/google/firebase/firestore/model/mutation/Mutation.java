@@ -112,8 +112,6 @@ public abstract class Mutation {
    *
    * @param maybeDoc The document to mutate. The input document can be null if the client has no
    *     knowledge of the pre-mutation state of the document.
-   * @param baseDoc The state of the document prior to this mutation batch. The input document can
-   *     be null if the client has no knowledge of the pre-mutation state of the document.
    * @param localWriteTime A timestamp indicating the local write time of the batch this mutation is
    *     a part of.
    * @return The mutated document. The returned document may be null, but only if maybeDoc was null
@@ -121,7 +119,7 @@ public abstract class Mutation {
    */
   @Nullable
   public abstract MaybeDocument applyToLocalView(
-      @Nullable MaybeDocument maybeDoc, @Nullable MaybeDocument baseDoc, Timestamp localWriteTime);
+      @Nullable MaybeDocument maybeDoc, Timestamp localWriteTime);
 
   /** Helper for derived classes to implement .equals(). */
   boolean hasSameKeyAndPrecondition(Mutation other) {
@@ -164,12 +162,12 @@ public abstract class Mutation {
    * result of applying a transform) for use after a mutation containing transforms has been
    * acknowledged by the server.
    *
-   * @param baseDoc The document prior to applying this mutation batch.
+   * @param maybeDoc The current state of the document after applying all previous mutations.
    * @param serverTransformResults The transform results received by the server.
    * @return The transform results list.
    */
   protected List<Value> serverTransformResults(
-      @Nullable MaybeDocument baseDoc, List<Value> serverTransformResults) {
+      @Nullable MaybeDocument maybeDoc, List<Value> serverTransformResults) {
     ArrayList<Value> transformResults = new ArrayList<>(fieldTransforms.size());
     hardAssert(
         fieldTransforms.size() == serverTransformResults.size(),
@@ -182,8 +180,8 @@ public abstract class Mutation {
       TransformOperation transform = fieldTransform.getOperation();
 
       Value previousValue = null;
-      if (baseDoc instanceof Document) {
-        previousValue = ((Document) baseDoc).getField(fieldTransform.getFieldPath());
+      if (maybeDoc instanceof Document) {
+        previousValue = ((Document) maybeDoc).getField(fieldTransform.getFieldPath());
       }
 
       transformResults.add(
@@ -198,11 +196,10 @@ public abstract class Mutation {
    *
    * @param localWriteTime The local time of the mutation (used to generate ServerTimestampValues).
    * @param maybeDoc The current state of the document after applying all previous mutations.
-   * @param baseDoc The document prior to applying this mutation batch.
    * @return The transform results list.
    */
   protected List<Value> localTransformResults(
-      Timestamp localWriteTime, @Nullable MaybeDocument maybeDoc, @Nullable MaybeDocument baseDoc) {
+      Timestamp localWriteTime, @Nullable MaybeDocument maybeDoc) {
     ArrayList<Value> transformResults = new ArrayList<>(fieldTransforms.size());
     for (FieldTransform fieldTransform : fieldTransforms) {
       TransformOperation transform = fieldTransform.getOperation();

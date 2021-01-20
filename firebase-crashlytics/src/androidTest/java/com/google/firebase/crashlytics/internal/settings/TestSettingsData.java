@@ -22,7 +22,11 @@ import com.google.firebase.crashlytics.internal.settings.model.SettingsData;
 public class TestSettingsData extends SettingsData {
 
   public TestSettingsData() {
-    this(2, 0, 0);
+    this(2);
+  }
+
+  public TestSettingsData(int settingsVersion) {
+    this(settingsVersion, 0, 0);
   }
 
   public TestSettingsData(

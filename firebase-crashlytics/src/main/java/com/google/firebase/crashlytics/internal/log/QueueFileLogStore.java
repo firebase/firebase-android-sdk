@@ -32,7 +32,7 @@ class QueueFileLogStore implements FileLogStore {
 
   private QueueFile logFile;
 
-  private class LogBytes {
+  private static class LogBytes {
     public final byte[] bytes;
     public final int offset;
 

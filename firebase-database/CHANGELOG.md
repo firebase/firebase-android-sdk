@@ -4,6 +4,7 @@
 - [added] Added `Query.get()`, which allows users to receive a single data
   snapshot. `Query.get()` returns the latest value even if an older value
   already exists in cache.
+- [added] Added `Query.startAfter()` filter for paginating RTDB queries.
 
 # 19.5.1
 - [fixed] Fixes a regression in v19.4 that may cause assertion failures,
