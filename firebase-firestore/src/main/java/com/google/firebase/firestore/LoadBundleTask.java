@@ -18,6 +18,7 @@ import android.app.Activity;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import com.google.android.gms.common.api.internal.ActivityLifecycleObserver;
 import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.OnCanceledListener;
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -28,7 +29,6 @@ import com.google.android.gms.tasks.SuccessContinuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.TaskExecutors;
-import com.google.firebase.internal.ActivityLifecycleListener;
 import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.concurrent.Executor;
@@ -480,8 +480,7 @@ import java.util.concurrent.Executor;
     synchronized (lock) {
       progressListeners.add(managedListener);
     }
-    ActivityLifecycleListener.getInstance()
-        .runOnActivityStopped(activity, listener, () -> removeOnProgressListener(listener));
+    ActivityLifecycleObserver.of(activity).onStopCallOnce(() -> removeOnProgressListener(listener));
     return this;
   }
 
