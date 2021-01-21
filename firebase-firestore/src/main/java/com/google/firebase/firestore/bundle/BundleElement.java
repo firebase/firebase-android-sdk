@@ -14,9 +14,4 @@
 
 package com.google.firebase.firestore.bundle;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
-public interface BundleElement {
-
-}
+public interface BundleElement {}
