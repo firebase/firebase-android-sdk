@@ -18,18 +18,23 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.encoders.EncodingException;
 import com.google.firebase.encoders.FieldDescriptor;
-import com.google.firebase.encoders.ObjectEncoderContext;
 import com.google.firebase.encoders.ValueEncoderContext;
 import java.io.IOException;
 
 class ProtobufValueEncoderContext implements ValueEncoderContext {
   private boolean encoded = false;
-  private final FieldDescriptor field;
-  private final ObjectEncoderContext objEncoderCtx;
+  private boolean skipDefault = false;
+  private FieldDescriptor field;
+  private final ProtobufDataEncoderContext objEncoderCtx;
 
-  ProtobufValueEncoderContext(FieldDescriptor field, ObjectEncoderContext objEncoderCtx) {
-    this.field = field;
+  ProtobufValueEncoderContext(ProtobufDataEncoderContext objEncoderCtx) {
     this.objEncoderCtx = objEncoderCtx;
+  }
+
+  void resetContext(FieldDescriptor field, boolean skipDefault) {
+    this.encoded = false;
+    this.field = field;
+    this.skipDefault = skipDefault;
   }
 
   private void checkNotUsed() {
@@ -43,7 +48,7 @@ class ProtobufValueEncoderContext implements ValueEncoderContext {
   @Override
   public ValueEncoderContext add(@Nullable String value) throws IOException {
     checkNotUsed();
-    objEncoderCtx.add(field, value);
+    objEncoderCtx.add(field, value, skipDefault);
     return this;
   }
 
@@ -51,7 +56,7 @@ class ProtobufValueEncoderContext implements ValueEncoderContext {
   @Override
   public ValueEncoderContext add(float value) throws IOException {
     checkNotUsed();
-    objEncoderCtx.add(field, value);
+    objEncoderCtx.add(field, value, skipDefault);
     return this;
   }
 
@@ -59,7 +64,7 @@ class ProtobufValueEncoderContext implements ValueEncoderContext {
   @Override
   public ValueEncoderContext add(double value) throws IOException {
     checkNotUsed();
-    objEncoderCtx.add(field, value);
+    objEncoderCtx.add(field, value, skipDefault);
     return this;
   }
 
@@ -67,7 +72,7 @@ class ProtobufValueEncoderContext implements ValueEncoderContext {
   @Override
   public ValueEncoderContext add(int value) throws IOException {
     checkNotUsed();
-    objEncoderCtx.add(field, value);
+    objEncoderCtx.add(field, value, skipDefault);
     return this;
   }
 
@@ -75,7 +80,7 @@ class ProtobufValueEncoderContext implements ValueEncoderContext {
   @Override
   public ValueEncoderContext add(long value) throws IOException {
     checkNotUsed();
-    objEncoderCtx.add(field, value);
+    objEncoderCtx.add(field, value, skipDefault);
     return this;
   }
 
@@ -83,7 +88,7 @@ class ProtobufValueEncoderContext implements ValueEncoderContext {
   @Override
   public ValueEncoderContext add(boolean value) throws IOException {
     checkNotUsed();
-    objEncoderCtx.add(field, value);
+    objEncoderCtx.add(field, value, skipDefault);
     return this;
   }
 
@@ -91,7 +96,7 @@ class ProtobufValueEncoderContext implements ValueEncoderContext {
   @Override
   public ValueEncoderContext add(@NonNull byte[] bytes) throws IOException {
     checkNotUsed();
-    objEncoderCtx.add(field, bytes);
+    objEncoderCtx.add(field, bytes, skipDefault);
     return this;
   }
 }
