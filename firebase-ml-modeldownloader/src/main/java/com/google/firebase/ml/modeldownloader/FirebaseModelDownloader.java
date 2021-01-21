@@ -27,6 +27,9 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.ml.modeldownloader.internal.CustomModelDownloadService;
+import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent.DownloadStatus;
+import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent.ErrorCode;
+import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogger;
 import com.google.firebase.ml.modeldownloader.internal.ModelFileDownloadService;
 import com.google.firebase.ml.modeldownloader.internal.ModelFileManager;
 import com.google.firebase.ml.modeldownloader.internal.SharedPreferencesUtil;
@@ -44,16 +47,20 @@ public class FirebaseModelDownloader {
   private final CustomModelDownloadService modelDownloadService;
   private final Executor executor;
 
+  private final FirebaseMlLogger eventLogger;
+
   @RequiresApi(api = VERSION_CODES.KITKAT)
   FirebaseModelDownloader(
       FirebaseApp firebaseApp,
       FirebaseInstallationsApi firebaseInstallationsApi,
       TransportFactory transportFactory) {
     this.firebaseOptions = firebaseApp.getOptions();
-    this.fileDownloadService = new ModelFileDownloadService(firebaseApp, transportFactory);
     this.sharedPreferencesUtil = new SharedPreferencesUtil(firebaseApp);
+    this.eventLogger = FirebaseMlLogger.getInstance();
+    this.fileDownloadService = new ModelFileDownloadService(firebaseApp, transportFactory);
     this.modelDownloadService =
-        new CustomModelDownloadService(firebaseOptions, firebaseInstallationsApi);
+        new CustomModelDownloadService(firebaseApp, firebaseInstallationsApi, transportFactory);
+
     this.executor = Executors.newSingleThreadExecutor();
     fileManager = ModelFileManager.getInstance();
   }
@@ -65,12 +72,14 @@ public class FirebaseModelDownloader {
       ModelFileDownloadService fileDownloadService,
       CustomModelDownloadService modelDownloadService,
       ModelFileManager fileManager,
+      FirebaseMlLogger eventLogger,
       Executor executor) {
     this.firebaseOptions = firebaseOptions;
     this.sharedPreferencesUtil = sharedPreferencesUtil;
     this.fileDownloadService = fileDownloadService;
     this.modelDownloadService = modelDownloadService;
     this.fileManager = fileManager;
+    this.eventLogger = eventLogger;
     this.executor = executor;
   }
 
@@ -239,10 +248,12 @@ public class FirebaseModelDownloader {
       @Nullable CustomModelDownloadConditions conditions,
       @Nullable String modelHash) {
     CustomModel currentModel = sharedPreferencesUtil.getCustomModelDetails(modelName);
+
     if (currentModel == null && modelHash != null) {
       // todo(annzimmer) log something about mismatched state and use hash = null
       modelHash = null;
     }
+
     Task<CustomModel> incomingModelDetails =
         modelDownloadService.getCustomModelDetails(
             firebaseOptions.getProjectId(), modelName, modelHash);
@@ -280,6 +291,17 @@ public class FirebaseModelDownloader {
                   && !currentModel.getLocalFilePath().isEmpty()
                   && new File(currentModel.getLocalFilePath()).exists()) {
                 return getCompletedLocalCustomModelTask(currentModel);
+              }
+
+              // update is available
+              if (!currentModel
+                  .getModelHash()
+                  .equals(incomingModelDetails.getResult().getModelHash())) {
+                eventLogger.logDownloadEventWithErrorCode(
+                    incomingModelDetails.getResult(),
+                    false,
+                    DownloadStatus.UPDATE_AVAILABLE,
+                    ErrorCode.NO_ERROR);
               }
 
               // is download already in progress for this hash?
@@ -362,8 +384,11 @@ public class FirebaseModelDownloader {
       downloadedModel = sharedPreferencesUtil.getCustomModelDetails(modelName);
       if (downloadedModel == null) {
         return Tasks.forException(
-            new Exception(
-                "Model (" + modelName + ") expected and not found during download completion."));
+            new FirebaseMlException(
+                "File for model, "
+                    + modelName
+                    + ", expected and not found during download completion.",
+                FirebaseMlException.INTERNAL));
       }
     }
     // trigger the file to be moved to permanent location.
