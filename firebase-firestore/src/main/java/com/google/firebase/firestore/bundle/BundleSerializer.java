@@ -387,7 +387,7 @@ class BundleSerializer {
             .setNanos(decoded.getNanoseconds()));
   }
 
-  private static int parseNanos(String value) throws IllegalArgumentException {
+  private static int parseNanos(String value) {
     int result = 0;
     for (int i = 0; i < 9; ++i) {
       result = result * 10;
@@ -401,10 +401,10 @@ class BundleSerializer {
     return result;
   }
 
-  private static long decodeTimezoneOffset(String value) throws ParseException {
+  private static long decodeTimezoneOffset(String value) {
     int pos = value.indexOf(':');
     if (pos == -1) {
-      throw new ParseException("Invalid offset value: " + value, 0);
+      throw new IllegalArgumentException("Invalid offset value: " + value);
     }
     String hours = value.substring(0, pos);
     String minutes = value.substring(pos + 1);
