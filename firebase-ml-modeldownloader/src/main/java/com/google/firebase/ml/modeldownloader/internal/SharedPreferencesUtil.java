@@ -33,8 +33,7 @@ public class SharedPreferencesUtil {
 
   public static final String DOWNLOADING_MODEL_ID_MATCHER = "downloading_model_id_(.*?)_([^/]+)/?";
 
-  @VisibleForTesting
-  static final String PREFERENCES_PACKAGE_NAME = "com.google.firebase.ml.modelDownloader";
+  public static final String PREFERENCES_PACKAGE_NAME = "com.google.firebase.ml.modelDownloader";
 
   // local model details
   private static final String LOCAL_MODEL_HASH_PATTERN = "current_model_hash_%s_%s";
