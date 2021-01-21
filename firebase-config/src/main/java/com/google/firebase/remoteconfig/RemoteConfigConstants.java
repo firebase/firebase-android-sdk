@@ -45,6 +45,7 @@ public final class RemoteConfigConstants {
     RequestFieldKey.PLATFORM_VERSION,
     RequestFieldKey.TIME_ZONE,
     RequestFieldKey.APP_VERSION,
+    RequestFieldKey.APP_VERSION,
     RequestFieldKey.PACKAGE_NAME,
     RequestFieldKey.SDK_VERSION,
     RequestFieldKey.ANALYTICS_USER_PROPERTIES
@@ -59,6 +60,7 @@ public final class RemoteConfigConstants {
     String PLATFORM_VERSION = "platformVersion";
     String TIME_ZONE = "timeZone";
     String APP_VERSION = "appVersion";
+    String APP_BUILD = "appBuild";
     String PACKAGE_NAME = "packageName";
     String SDK_VERSION = "sdkVersion";
     String ANALYTICS_USER_PROPERTIES = "analyticsUserProperties";
