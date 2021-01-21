@@ -124,17 +124,15 @@ public final class MutationBatch {
     for (int i = 0; i < baseMutations.size(); i++) {
       Mutation mutation = baseMutations.get(i);
       if (mutation.getKey().equals(documentKey)) {
-        maybeDoc = mutation.applyToLocalView(maybeDoc, maybeDoc, localWriteTime);
+        maybeDoc = mutation.applyToLocalView(maybeDoc, localWriteTime);
       }
     }
-
-    MaybeDocument baseDoc = maybeDoc;
 
     // Second, apply all user-provided mutations.
     for (int i = 0; i < mutations.size(); i++) {
       Mutation mutation = mutations.get(i);
       if (mutation.getKey().equals(documentKey)) {
-        maybeDoc = mutation.applyToLocalView(maybeDoc, baseDoc, localWriteTime);
+        maybeDoc = mutation.applyToLocalView(maybeDoc, localWriteTime);
       }
     }
     return maybeDoc;

@@ -130,14 +130,14 @@ public final class PatchMutation extends Mutation {
   @Nullable
   @Override
   public MaybeDocument applyToLocalView(
-      @Nullable MaybeDocument maybeDoc, @Nullable MaybeDocument baseDoc, Timestamp localWriteTime) {
+      @Nullable MaybeDocument maybeDoc, Timestamp localWriteTime) {
     verifyKeyMatches(maybeDoc);
 
     if (!getPrecondition().isValidFor(maybeDoc)) {
       return maybeDoc;
     }
 
-    List<Value> transformResults = localTransformResults(localWriteTime, maybeDoc, baseDoc);
+    List<Value> transformResults = localTransformResults(localWriteTime, maybeDoc);
     SnapshotVersion version = getPostMutationVersion(maybeDoc);
     ObjectValue newData = patchDocument(maybeDoc, transformResults);
     return new Document(getKey(), version, newData, Document.DocumentState.LOCAL_MUTATIONS);
