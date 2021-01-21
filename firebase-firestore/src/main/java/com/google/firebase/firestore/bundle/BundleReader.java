@@ -21,6 +21,7 @@ import java.io.InputStreamReader;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * Reads the length-prefixed JSON stream for Bundles.
@@ -101,7 +102,7 @@ public class BundleReader {
 
     String json = readJsonString(Integer.parseInt(lengthPrefix));
     bytesRead += lengthPrefix.length() + json.length();
-    return BundleElement.fromJson(serializer, json);
+    return decodeBundleElement(json);
   }
 
   /**
@@ -188,6 +189,23 @@ public class BundleReader {
       buffer.flip();
     }
     return buffer.remaining() > 0;
+  }
+
+  /** Converts a JSON-encoded bundle element into its model class. */
+  private BundleElement decodeBundleElement(String json) throws JSONException {
+    JSONObject object = new JSONObject(json);
+
+    if (object.has("metadata")) {
+      return serializer.decodeBundleMetadata(object.getJSONObject("metadata"));
+    } else if (object.has("namedQuery")) {
+      return serializer.decodeNamedQuery(object.getJSONObject("namedQuery"));
+    } else if (object.has("documentMetadata")) {
+      return serializer.decodeBundledDocumentMetadata(object.getJSONObject("documentMetadata"));
+    } else if (object.has("document")) {
+      return serializer.decodeDocument(object.getJSONObject("document"));
+    } else {
+      throw new IllegalArgumentException("Cannot decode unknown Bundle element: " + json);
+    }
   }
 
   /** Closes the underlying stream and raises an IllegalArgumentException. */

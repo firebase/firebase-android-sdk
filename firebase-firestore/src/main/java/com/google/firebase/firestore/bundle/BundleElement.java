@@ -19,19 +19,4 @@ import org.json.JSONObject;
 
 public interface BundleElement {
 
-  static BundleElement fromJson(BundleSerializer serializer, String json) throws JSONException {
-    JSONObject object = new JSONObject(json);
-
-    if (object.has("metadata")) {
-      return serializer.decodeBundleMetadata(object.getJSONObject("metadata"));
-    } else if (object.has("namedQuery")) {
-      return serializer.decodeNamedQuery(object.getJSONObject("namedQuery"));
-    } else if (object.has("documentMetadata")) {
-      return serializer.decodeBundledDocumentMetadata(object.getJSONObject("documentMetadata"));
-    } else if (object.has("document")) {
-      return serializer.decodeDocument(object.getJSONObject("document"));
-    } else {
-      throw new IllegalArgumentException("Cannot decode unknown Bundle element: " + json);
-    }
-  }
 }
