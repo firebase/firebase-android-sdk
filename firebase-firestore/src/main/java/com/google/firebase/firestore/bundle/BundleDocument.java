@@ -18,7 +18,7 @@ import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 
 /** A document that was saved to a bundle. */
-public class BundleDocument extends BundleElement {
+public class BundleDocument implements BundleElement {
   private Document document;
 
   public BundleDocument(Document document) {

@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.CharBuffer;
+import java.nio.charset.Charset;
 import org.json.JSONException;
 
 /**
@@ -27,7 +28,7 @@ import org.json.JSONException;
  * <p>The class takes a bundle stream and presents abstractions to read bundled elements out of the
  * underlying content.
  */
-public class BundleReader extends BundleElement {
+public class BundleReader {
   /** The capacity for the internal char buffer. */
   protected static final int BUFFER_CAPACITY = 1024;
 
@@ -40,8 +41,10 @@ public class BundleReader extends BundleElement {
 
   public BundleReader(BundleSerializer serializer, InputStream data) {
     this.serializer = serializer;
-    dataReader = new InputStreamReader(data);
+    dataReader = new InputStreamReader(data, Charset.forName("UTF-8"));
     buffer = CharBuffer.allocate(BUFFER_CAPACITY);
+
+    buffer.flip(); // Start the buffer in "reading mode"
   }
 
   /** Returns the metadata element from the bundle. */
@@ -91,13 +94,13 @@ public class BundleReader extends BundleElement {
    */
   @Nullable
   private BundleElement readNextElement() throws IOException, JSONException {
-    int length = readLength();
-    if (length == -1) {
+    String lengthPrefix = readLengthPrefix();
+    if (lengthPrefix == null) {
       return null;
     }
 
-    String json = readJsonString(length);
-    bytesRead += (int) (Math.log10(length) + 1) + length;
+    String json = readJsonString(Integer.parseInt(lengthPrefix));
+    bytesRead += lengthPrefix.length() + json.length();
     return BundleElement.fromJson(serializer, json);
   }
 
@@ -105,9 +108,9 @@ public class BundleReader extends BundleElement {
    * Reads the length prefix from the beginning of the internal buffer until the first '{'. Returns
    * the integer-decoded length.
    *
-   * <p>If it reached the end of the stream, returns -1.
+   * <p>If it reached the end of the stream, returns null.
    */
-  private int readLength() throws IOException {
+  private @Nullable String readLengthPrefix() throws IOException {
     int nextOpenBracket;
 
     while ((nextOpenBracket = indexOfOpenBracket()) == -1) {
@@ -119,7 +122,7 @@ public class BundleReader extends BundleElement {
     // We broke out of the loop because underlying stream is closed, and there happens to be no
     // more data to process.
     if (buffer.remaining() == 0) {
-      return -1;
+      return null;
     }
 
     // We broke out of the loop because underlying stream is closed, but still cannot find an
@@ -130,14 +133,14 @@ public class BundleReader extends BundleElement {
 
     char[] c = new char[nextOpenBracket];
     buffer.get(c);
-    return Integer.parseInt(new String(c));
+    return new String(c);
   }
 
   /** Returns the index of the first open bracket, or -1 if none is found. */
   private int indexOfOpenBracket() {
     buffer.mark();
     try {
-      for (int i = 0; i < buffer.limit(); ++i) {
+      for (int i = 0; i < buffer.remaining(); ++i) {
         if (buffer.get() == '{') {
           return i;
         }
@@ -155,20 +158,22 @@ public class BundleReader extends BundleElement {
    * <p>Returns a string decoded from the read bytes.
    */
   private String readJsonString(int length) throws IOException {
-    char[] c = new char[length];
+    StringBuilder json = new StringBuilder();
 
-    int read = Math.min(length, buffer.remaining());
-    buffer.get(c, 0, read);
-
-    while (read < length) {
+    int remaining = length;
+    while (remaining > 0) {
       if (!pullMoreData()) {
         raiseError("Reached the end of bundle when more data was expected.");
       }
-      int toRead = Math.min(length, buffer.remaining());
-      buffer.get(c, read, toRead);
-      read += toRead;
+
+      int read = Math.min(remaining, buffer.remaining());
+      json.append(buffer, 0, read);
+      buffer.position(buffer.position() + read);
+
+      remaining -= read;
     }
-    return new String(c);
+
+    return json.toString();
   }
 
   /**
@@ -179,14 +184,9 @@ public class BundleReader extends BundleElement {
   private boolean pullMoreData() throws IOException {
     if (buffer.remaining() == 0) {
       buffer.compact();
+      dataReader.read(buffer);
+      buffer.flip();
     }
-
-    int read;
-    do {
-      read = dataReader.read(buffer);
-    } while (read > 0);
-    buffer.flip();
-
     return buffer.remaining() > 0;
   }
 

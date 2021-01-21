@@ -17,10 +17,9 @@ package com.google.firebase.firestore.bundle;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public abstract class BundleElement {
+public interface BundleElement {
 
-  public static BundleElement fromJson(BundleSerializer serializer, String json)
-      throws JSONException {
+  static BundleElement fromJson(BundleSerializer serializer, String json) throws JSONException {
     JSONObject object = new JSONObject(json);
 
     if (object.has("metadata")) {
@@ -35,6 +34,4 @@ public abstract class BundleElement {
       throw new IllegalArgumentException("Cannot decode unknown Bundle element: " + json);
     }
   }
-
-  protected BundleElement() {}
 }
