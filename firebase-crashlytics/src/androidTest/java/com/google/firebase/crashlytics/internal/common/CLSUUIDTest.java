@@ -43,7 +43,7 @@ public class CLSUUIDTest extends CrashlyticsTestCase {
   public void testToString() {
     final String s = uuid.toString();
     assertNotNull("The uuid string value should not be null", s);
-    assertEquals("The uuid string value should be 35 chars long", 35, s.length());
+    assertEquals("The uuid string value should be 32 chars long", 32, s.length());
   }
 
   /** Test that we don't get duplicate CLSUUID string values in a set of 100 uuid generated. */

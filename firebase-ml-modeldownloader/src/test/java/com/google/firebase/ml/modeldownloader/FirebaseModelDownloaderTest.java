@@ -19,6 +19,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.never;
@@ -34,6 +35,9 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.FirebaseOptions.Builder;
 import com.google.firebase.ml.modeldownloader.internal.CustomModelDownloadService;
+import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent.DownloadStatus;
+import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent.ErrorCode;
+import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogger;
 import com.google.firebase.ml.modeldownloader.internal.ModelFileDownloadService;
 import com.google.firebase.ml.modeldownloader.internal.ModelFileManager;
 import com.google.firebase.ml.modeldownloader.internal.SharedPreferencesUtil;
@@ -67,23 +71,26 @@ public class FirebaseModelDownloaderTest {
   private static final CustomModelDownloadConditions DEFAULT_DOWNLOAD_CONDITIONS =
       new CustomModelDownloadConditions.Builder().build();
 
-  private static final String MODEL_HASH = "dsf324";
-  private static final String UPDATE_MODEL_HASH = "fgh564";
+  private static final String MODEL_HASH = "origHash324";
+  private static final String UPDATE_MODEL_HASH = "upHash564";
   private static final CustomModelDownloadConditions DOWNLOAD_CONDITIONS =
       new CustomModelDownloadConditions.Builder().requireWifi().build();
 
   private final CustomModel CUSTOM_MODEL = new CustomModel(MODEL_NAME, MODEL_HASH, 100, 0);
+  private final CustomModel ORIG_CUSTOM_MODEL_URL =
+      new CustomModel(MODEL_NAME, MODEL_HASH, 100, MODEL_URL, URL_EXPIRATION + 10L);
   private final CustomModel UPDATE_CUSTOM_MODEL_URL =
       new CustomModel(MODEL_NAME, UPDATE_MODEL_HASH, 100, MODEL_URL, URL_EXPIRATION + 10L);
-  private final CustomModel UPDATE_CUSTOM_MODEL_DOWNLOADING =
+  private final CustomModel UPDATE_IN_PROGRESS_CUSTOM_MODEL =
       new CustomModel(MODEL_NAME, UPDATE_MODEL_HASH, 100, DOWNLOAD_ID);
-  private CustomModel customModelUploaded;
+  private CustomModel customModelUpdateLoaded;
   private CustomModel customModelLoaded;
 
   private @Mock SharedPreferencesUtil mockPrefs;
   private @Mock ModelFileDownloadService mockFileDownloadService;
   private @Mock CustomModelDownloadService mockModelDownloadService;
   private @Mock ModelFileManager mockFileManager;
+  private @Mock FirebaseMlLogger mockEventLogger;
 
   private FirebaseModelDownloader firebaseModelDownloader;
   private ExecutorService executor;
@@ -110,8 +117,15 @@ public class FirebaseModelDownloaderTest {
             mockFileDownloadService,
             mockModelDownloadService,
             mockFileManager,
+            mockEventLogger,
             executor);
     setUpTestingFiles(app);
+
+    doNothing().when(mockEventLogger).logDownloadEventWithExactDownloadTime(any(), any(), any());
+    doNothing().when(mockEventLogger).logDownloadFailureWithReason(any(), anyBoolean(), anyInt());
+    doNothing()
+        .when(mockEventLogger)
+        .logDownloadEventWithErrorCode(any(), anyBoolean(), any(), any());
   }
 
   private void setUpTestingFiles(FirebaseApp app) throws Exception {
@@ -157,7 +171,7 @@ public class FirebaseModelDownloaderTest {
 
     customModelLoaded =
         new CustomModel(MODEL_NAME, MODEL_HASH, 100, 0, expectedDestinationFolder + "/0");
-    customModelUploaded =
+    customModelUpdateLoaded =
         new CustomModel(MODEL_NAME, MODEL_HASH, 100, 0, expectedDestinationFolder + "/1");
   }
 
@@ -176,7 +190,7 @@ public class FirebaseModelDownloaderTest {
     when(mockPrefs.getCustomModelDetails(eq(MODEL_NAME))).thenReturn(customModelLoaded);
     when(mockModelDownloadService.getCustomModelDetails(
             eq(TEST_PROJECT_ID), eq(MODEL_NAME), eq(MODEL_HASH)))
-        .thenReturn(Tasks.forResult(CUSTOM_MODEL)); // no change found
+        .thenReturn(Tasks.forResult(null)); // no change found
 
     TestOnCompleteListener<CustomModel> onCompleteListener = new TestOnCompleteListener<>();
     Task<CustomModel> task =
@@ -197,15 +211,49 @@ public class FirebaseModelDownloaderTest {
         new CustomModel(MODEL_NAME, UPDATE_MODEL_HASH, 100, 0, expectedDestinationFolder + "/4");
     when(mockPrefs.getCustomModelDetails(eq(MODEL_NAME)))
         .thenReturn(missingFileModel)
-        .thenReturn(missingFileModel)
-        .thenReturn(customModelUploaded);
-
+        .thenReturn(customModelUpdateLoaded);
     when(mockModelDownloadService.getCustomModelDetails(
-            eq(TEST_PROJECT_ID), eq(MODEL_NAME), eq(UPDATE_MODEL_HASH)))
+            eq(TEST_PROJECT_ID), eq(MODEL_NAME), eq(null)))
         .thenReturn(Tasks.forResult(UPDATE_CUSTOM_MODEL_URL));
+
     when(mockFileDownloadService.download(any(), eq(DEFAULT_DOWNLOAD_CONDITIONS)))
         .thenReturn(Tasks.forResult(null));
-    when(mockFileDownloadService.loadNewlyDownloadedModelFile(eq(customModelUploaded)))
+    when(mockFileDownloadService.getExistingDownloadTask(0)).thenReturn(null);
+    when(mockFileDownloadService.loadNewlyDownloadedModelFile(eq(customModelUpdateLoaded)))
+        .thenReturn(secondDeviceModelFile);
+
+    TestOnCompleteListener<CustomModel> onCompleteListener = new TestOnCompleteListener<>();
+    Task<CustomModel> task =
+        firebaseModelDownloader.getModel(
+            MODEL_NAME, DownloadType.LATEST_MODEL, DEFAULT_DOWNLOAD_CONDITIONS);
+    task.addOnCompleteListener(executor, onCompleteListener);
+    CustomModel customModel = onCompleteListener.await();
+
+    verify(mockPrefs, times(4)).getCustomModelDetails(eq(MODEL_NAME));
+    verify(mockPrefs, times(1)).clearModelDetails(eq(MODEL_NAME));
+    verify(mockFileManager, times(1)).deleteAllModels(eq(MODEL_NAME));
+    assertThat(task.isComplete()).isTrue();
+    assertEquals(customModel, customModelUpdateLoaded);
+  }
+
+  @Test
+  public void getModel_latestModel_localExists_noUpdate_MissingDownloadId() throws Exception {
+    CustomModel badLocalModel = new CustomModel(MODEL_NAME, UPDATE_MODEL_HASH, 100, 0);
+    when(mockPrefs.getCustomModelDetails(eq(MODEL_NAME)))
+        .thenReturn(badLocalModel) // getlocalModelDetails 1
+        .thenReturn(null) // getCustomModelTask 1
+        .thenReturn(customModelUpdateLoaded); // finishModelDownload
+    when(mockPrefs.getDownloadingCustomModelDetails(eq(MODEL_NAME)))
+        .thenReturn(UPDATE_IN_PROGRESS_CUSTOM_MODEL); // getLocalModelDetails 2, finishModelDownload
+
+    when(mockModelDownloadService.getCustomModelDetails(
+            eq(TEST_PROJECT_ID), eq(MODEL_NAME), eq(null)))
+        .thenReturn(Tasks.forResult(UPDATE_CUSTOM_MODEL_URL));
+
+    when(mockFileDownloadService.download(any(), eq(DEFAULT_DOWNLOAD_CONDITIONS)))
+        .thenReturn(Tasks.forResult(null));
+    when(mockFileDownloadService.getExistingDownloadTask(0)).thenReturn(null);
+    when(mockFileDownloadService.loadNewlyDownloadedModelFile(eq(customModelUpdateLoaded)))
         .thenReturn(secondDeviceModelFile);
 
     TestOnCompleteListener<CustomModel> onCompleteListener = new TestOnCompleteListener<>();
@@ -216,8 +264,45 @@ public class FirebaseModelDownloaderTest {
     CustomModel customModel = onCompleteListener.await();
 
     verify(mockPrefs, times(3)).getCustomModelDetails(eq(MODEL_NAME));
+    verify(mockPrefs, times(1)).clearModelDetails(eq(MODEL_NAME));
+    verify(mockFileManager, times(1)).deleteAllModels(eq(MODEL_NAME));
     assertThat(task.isComplete()).isTrue();
-    assertEquals(customModel, customModelUploaded);
+    assertEquals(customModel, customModelUpdateLoaded);
+  }
+
+  @Test
+  public void getModel_latestModel_localExists_noUpdate_inProgress() throws Exception {
+    // model with no file yet.
+    CustomModel inProgressLocalModel = new CustomModel(MODEL_NAME, UPDATE_MODEL_HASH, 100, 88);
+    when(mockPrefs.getCustomModelDetails(eq(MODEL_NAME)))
+        .thenReturn(inProgressLocalModel) // getlocalModelDetails 1
+        .thenReturn(inProgressLocalModel) // getCustomModelTask 1
+        .thenReturn(customModelUpdateLoaded); // finishModelDownload
+    when(mockPrefs.getDownloadingCustomModelDetails(eq(MODEL_NAME)))
+        .thenReturn(inProgressLocalModel); // getLocalModelDetails 2, finishModelDownload
+
+    when(mockModelDownloadService.getCustomModelDetails(
+            eq(TEST_PROJECT_ID), eq(MODEL_NAME), eq(UPDATE_MODEL_HASH)))
+        .thenReturn(Tasks.forResult(null));
+    when(mockFileDownloadService.getExistingDownloadTask(88)).thenReturn(Tasks.forResult(null));
+    when(mockFileDownloadService.download(any(), eq(DEFAULT_DOWNLOAD_CONDITIONS)))
+        .thenReturn(Tasks.forResult(null));
+    when(mockFileDownloadService.loadNewlyDownloadedModelFile(eq(customModelUpdateLoaded)))
+        .thenReturn(secondDeviceModelFile);
+
+    TestOnCompleteListener<CustomModel> onCompleteListener = new TestOnCompleteListener<>();
+    Task<CustomModel> task =
+        firebaseModelDownloader.getModel(
+            MODEL_NAME, DownloadType.LATEST_MODEL, DEFAULT_DOWNLOAD_CONDITIONS);
+    task.addOnCompleteListener(executor, onCompleteListener);
+    CustomModel customModel = onCompleteListener.await();
+
+    verify(mockPrefs, times(3)).getCustomModelDetails(eq(MODEL_NAME));
+    verify(mockPrefs, never()).clearModelDetails(eq(MODEL_NAME));
+    verify(mockFileManager, never()).deleteAllModels(eq(MODEL_NAME));
+    verify(mockFileDownloadService, times(1)).getExistingDownloadTask(eq(88L));
+    assertThat(task.isComplete()).isTrue();
+    assertEquals(customModel, customModelUpdateLoaded);
   }
 
   @Test
@@ -225,7 +310,7 @@ public class FirebaseModelDownloaderTest {
     when(mockPrefs.getCustomModelDetails(eq(MODEL_NAME))).thenReturn(customModelLoaded);
     when(mockModelDownloadService.getCustomModelDetails(
             eq(TEST_PROJECT_ID), eq(MODEL_NAME), eq(MODEL_HASH)))
-        .thenReturn(Tasks.forResult(CUSTOM_MODEL)); // no change found
+        .thenReturn(Tasks.forResult(ORIG_CUSTOM_MODEL_URL)); // would normally return null
 
     TestOnCompleteListener<CustomModel> onCompleteListener = new TestOnCompleteListener<>();
     Task<CustomModel> task =
@@ -244,14 +329,14 @@ public class FirebaseModelDownloaderTest {
     when(mockPrefs.getCustomModelDetails(eq(MODEL_NAME)))
         .thenReturn(customModelLoaded)
         .thenReturn(customModelLoaded)
-        .thenReturn(customModelUploaded);
+        .thenReturn(customModelUpdateLoaded);
 
     when(mockModelDownloadService.getCustomModelDetails(
             eq(TEST_PROJECT_ID), eq(MODEL_NAME), eq(MODEL_HASH)))
         .thenReturn(Tasks.forResult(UPDATE_CUSTOM_MODEL_URL));
     when(mockFileDownloadService.download(any(), eq(DEFAULT_DOWNLOAD_CONDITIONS)))
         .thenReturn(Tasks.forResult(null));
-    when(mockFileDownloadService.loadNewlyDownloadedModelFile(eq(customModelUploaded)))
+    when(mockFileDownloadService.loadNewlyDownloadedModelFile(eq(customModelUpdateLoaded)))
         .thenReturn(secondDeviceModelFile);
 
     TestOnCompleteListener<CustomModel> onCompleteListener = new TestOnCompleteListener<>();
@@ -261,9 +346,9 @@ public class FirebaseModelDownloaderTest {
     task.addOnCompleteListener(executor, onCompleteListener);
     CustomModel customModel = onCompleteListener.await();
 
-    verify(mockPrefs, times(3)).getCustomModelDetails(eq(MODEL_NAME));
+    verify(mockPrefs, times(4)).getCustomModelDetails(eq(MODEL_NAME));
     assertThat(task.isComplete()).isTrue();
-    assertEquals(customModel, customModelUploaded);
+    assertEquals(customModel, customModelUpdateLoaded);
   }
 
   @Test
@@ -273,7 +358,7 @@ public class FirebaseModelDownloaderTest {
 
     when(mockPrefs.getCustomModelDetails(eq(MODEL_NAME))).thenReturn(customModelLoadedWithDownload);
     when(mockPrefs.getDownloadingCustomModelDetails(eq(MODEL_NAME)))
-        .thenReturn(UPDATE_CUSTOM_MODEL_DOWNLOADING);
+        .thenReturn(UPDATE_IN_PROGRESS_CUSTOM_MODEL);
 
     when(mockModelDownloadService.getCustomModelDetails(
             eq(TEST_PROJECT_ID), eq(MODEL_NAME), eq(MODEL_HASH)))
@@ -288,21 +373,20 @@ public class FirebaseModelDownloaderTest {
 
     verify(mockPrefs, times(2)).getCustomModelDetails(eq(MODEL_NAME));
     assertThat(task.isComplete()).isTrue();
-    assertEquals(customModel, UPDATE_CUSTOM_MODEL_DOWNLOADING);
+    assertEquals(customModel, UPDATE_IN_PROGRESS_CUSTOM_MODEL);
   }
 
   @Test
   public void getModel_latestModel_noLocalModel() throws Exception {
     when(mockPrefs.getCustomModelDetails(eq(MODEL_NAME)))
-        .thenReturn(null)
-        .thenReturn(null)
+        .thenReturn(null) // getLocalModelDetails - original call
         .thenReturn(CUSTOM_MODEL);
     when(mockModelDownloadService.getCustomModelDetails(
             eq(TEST_PROJECT_ID), eq(MODEL_NAME), eq(null)))
-        .thenReturn(Tasks.forResult(CUSTOM_MODEL));
+        .thenReturn(Tasks.forResult(ORIG_CUSTOM_MODEL_URL));
     when(mockFileDownloadService.download(any(), eq(DEFAULT_DOWNLOAD_CONDITIONS)))
         .thenReturn(Tasks.forResult(null));
-    when(mockFileDownloadService.loadNewlyDownloadedModelFile(eq(customModelUploaded)))
+    when(mockFileDownloadService.loadNewlyDownloadedModelFile(eq(customModelUpdateLoaded)))
         .thenReturn(firstDeviceModelFile);
     TestOnCompleteListener<CustomModel> onCompleteListener = new TestOnCompleteListener<>();
     Task<CustomModel> task =
@@ -311,9 +395,36 @@ public class FirebaseModelDownloaderTest {
     task.addOnCompleteListener(executor, onCompleteListener);
     CustomModel customModel = onCompleteListener.await();
 
-    verify(mockPrefs, times(3)).getCustomModelDetails(eq(MODEL_NAME));
+    verify(mockPrefs, times(4)).getCustomModelDetails(eq(MODEL_NAME));
     assertThat(task.isComplete()).isTrue();
     assertEquals(customModel, CUSTOM_MODEL);
+  }
+
+  @Test
+  public void getModel_latestModel_noLocalModel_modelDownloadServiceFails() throws Exception {
+    when(mockPrefs.getCustomModelDetails(eq(MODEL_NAME)))
+        .thenReturn(null) // getLocalModelDetails 1
+        .thenReturn(ORIG_CUSTOM_MODEL_URL);
+
+    when(mockModelDownloadService.getCustomModelDetails(
+            eq(TEST_PROJECT_ID), eq(MODEL_NAME), eq(null)))
+        .thenReturn(Tasks.forResult(null));
+    TestOnCompleteListener<CustomModel> onCompleteListener = new TestOnCompleteListener<>();
+    Task<CustomModel> task =
+        firebaseModelDownloader.getModel(
+            MODEL_NAME, DownloadType.LATEST_MODEL, DEFAULT_DOWNLOAD_CONDITIONS);
+    task.addOnCompleteListener(executor, onCompleteListener);
+    try {
+      onCompleteListener.await();
+    } catch (FirebaseMlException ex) {
+      assertEquals(ex.getCode(), FirebaseMlException.INTERNAL);
+    }
+
+    verify(mockPrefs, times(2)).getCustomModelDetails(eq(MODEL_NAME));
+    verify(mockFileDownloadService, never()).loadNewlyDownloadedModelFile(any());
+    assertThat(task.isComplete()).isTrue();
+    assertThat(task.isSuccessful()).isFalse();
+    assertTrue(task.getException().getMessage().contains("bad state"));
   }
 
   @Test
@@ -369,7 +480,7 @@ public class FirebaseModelDownloaderTest {
     when(mockPrefs.getCustomModelDetails(eq(MODEL_NAME))).thenReturn(customModelLoaded);
     when(mockModelDownloadService.getCustomModelDetails(
             eq(TEST_PROJECT_ID), eq(MODEL_NAME), eq(MODEL_HASH)))
-        .thenReturn(Tasks.forResult(CUSTOM_MODEL)); // no change found
+        .thenReturn(Tasks.forResult(ORIG_CUSTOM_MODEL_URL)); // no change found
 
     TestOnCompleteListener<CustomModel> onCompleteListener = new TestOnCompleteListener<>();
     Task<CustomModel> task =
@@ -400,6 +511,9 @@ public class FirebaseModelDownloaderTest {
     verify(mockPrefs, times(2)).getCustomModelDetails(eq(MODEL_NAME));
     assertThat(task.isComplete()).isTrue();
     assertEquals(customModel, customModelLoaded);
+    verify(mockEventLogger)
+        .logDownloadEventWithErrorCode(
+            UPDATE_CUSTOM_MODEL_URL, false, DownloadStatus.UPDATE_AVAILABLE, ErrorCode.NO_ERROR);
   }
 
   @Test
@@ -407,10 +521,10 @@ public class FirebaseModelDownloaderTest {
     when(mockPrefs.getCustomModelDetails(eq(MODEL_NAME))).thenReturn(null).thenReturn(CUSTOM_MODEL);
     when(mockModelDownloadService.getCustomModelDetails(
             eq(TEST_PROJECT_ID), eq(MODEL_NAME), eq(null)))
-        .thenReturn(Tasks.forResult(CUSTOM_MODEL));
+        .thenReturn(Tasks.forResult(ORIG_CUSTOM_MODEL_URL));
     when(mockFileDownloadService.download(any(), eq(DOWNLOAD_CONDITIONS)))
         .thenReturn(Tasks.forResult(null));
-    when(mockFileDownloadService.loadNewlyDownloadedModelFile(eq(customModelUploaded)))
+    when(mockFileDownloadService.loadNewlyDownloadedModelFile(eq(customModelUpdateLoaded)))
         .thenReturn(firstDeviceModelFile);
     TestOnCompleteListener<CustomModel> onCompleteListener = new TestOnCompleteListener<>();
     Task<CustomModel> task =
@@ -419,7 +533,7 @@ public class FirebaseModelDownloaderTest {
     task.addOnCompleteListener(executor, onCompleteListener);
     CustomModel customModel = onCompleteListener.await();
 
-    verify(mockPrefs, times(3)).getCustomModelDetails(eq(MODEL_NAME));
+    verify(mockPrefs, times(4)).getCustomModelDetails(eq(MODEL_NAME));
     assertThat(task.isComplete()).isTrue();
     assertEquals(customModel, CUSTOM_MODEL);
   }
@@ -432,7 +546,7 @@ public class FirebaseModelDownloaderTest {
         .thenReturn(CUSTOM_MODEL);
     when(mockModelDownloadService.getCustomModelDetails(
             eq(TEST_PROJECT_ID), eq(MODEL_NAME), eq(null)))
-        .thenReturn(Tasks.forResult(CUSTOM_MODEL));
+        .thenReturn(Tasks.forResult(ORIG_CUSTOM_MODEL_URL));
     when(mockFileDownloadService.download(any(), eq(DOWNLOAD_CONDITIONS)))
         .thenReturn(Tasks.forException(new Exception("bad download")));
     TestOnCompleteListener<CustomModel> onCompleteListener = new TestOnCompleteListener<>();
@@ -454,7 +568,7 @@ public class FirebaseModelDownloaderTest {
   }
 
   @Test
-  public void getModel_Local_localExists() throws Exception {
+  public void getModel_local_localExists() throws Exception {
     when(mockPrefs.getCustomModelDetails(eq(MODEL_NAME))).thenReturn(customModelLoaded);
     TestOnCompleteListener<CustomModel> onCompleteListener = new TestOnCompleteListener<>();
     Task<CustomModel> task =
@@ -472,10 +586,12 @@ public class FirebaseModelDownloaderTest {
     when(mockPrefs.getCustomModelDetails(eq(MODEL_NAME))).thenReturn(null).thenReturn(CUSTOM_MODEL);
     when(mockModelDownloadService.getCustomModelDetails(
             eq(TEST_PROJECT_ID), eq(MODEL_NAME), eq(null)))
-        .thenReturn(Tasks.forResult(CUSTOM_MODEL));
+        .thenReturn(Tasks.forResult(ORIG_CUSTOM_MODEL_URL));
+    when(mockPrefs.getDownloadingCustomModelDetails(eq(MODEL_NAME)))
+        .thenReturn(UPDATE_IN_PROGRESS_CUSTOM_MODEL); // getLocalModelDetails
     when(mockFileDownloadService.download(any(), eq(DOWNLOAD_CONDITIONS)))
         .thenReturn(Tasks.forResult(null));
-    when(mockFileDownloadService.loadNewlyDownloadedModelFile(eq(customModelUploaded)))
+    when(mockFileDownloadService.loadNewlyDownloadedModelFile(eq(customModelUpdateLoaded)))
         .thenReturn(firstDeviceModelFile);
     TestOnCompleteListener<CustomModel> onCompleteListener = new TestOnCompleteListener<>();
     Task<CustomModel> task =
@@ -493,11 +609,13 @@ public class FirebaseModelDownloaderTest {
     when(mockPrefs.getCustomModelDetails(eq(MODEL_NAME))).thenReturn(null).thenReturn(CUSTOM_MODEL);
     when(mockModelDownloadService.getCustomModelDetails(
             eq(TEST_PROJECT_ID), eq(MODEL_NAME), eq(null)))
-        .thenReturn(Tasks.forResult(CUSTOM_MODEL));
+        .thenReturn(Tasks.forResult(ORIG_CUSTOM_MODEL_URL));
+    when(mockModelDownloadService.getNewDownloadUrlWithExpiry(eq(TEST_PROJECT_ID), eq(MODEL_NAME)))
+        .thenReturn(Tasks.forResult(ORIG_CUSTOM_MODEL_URL));
     when(mockFileDownloadService.download(any(), eq(DOWNLOAD_CONDITIONS)))
         .thenReturn(Tasks.forException(new Exception("Retry: Expired URL")))
         .thenReturn(Tasks.forResult(null));
-    when(mockFileDownloadService.loadNewlyDownloadedModelFile(eq(customModelUploaded)))
+    when(mockFileDownloadService.loadNewlyDownloadedModelFile(eq(customModelUpdateLoaded)))
         .thenReturn(firstDeviceModelFile);
     TestOnCompleteListener<CustomModel> onCompleteListener = new TestOnCompleteListener<>();
     Task<CustomModel> task =
@@ -505,7 +623,7 @@ public class FirebaseModelDownloaderTest {
     task.addOnCompleteListener(executor, onCompleteListener);
     CustomModel customModel = onCompleteListener.await();
 
-    verify(mockPrefs, times(3)).getCustomModelDetails(eq(MODEL_NAME));
+    verify(mockPrefs, times(4)).getCustomModelDetails(eq(MODEL_NAME));
     verify(mockFileDownloadService, times(2)).download(any(), eq(DOWNLOAD_CONDITIONS));
     assertThat(task.isComplete()).isTrue();
     assertEquals(customModel, CUSTOM_MODEL);
@@ -517,9 +635,11 @@ public class FirebaseModelDownloaderTest {
         .thenReturn(null)
         .thenReturn(null)
         .thenReturn(CUSTOM_MODEL);
+    when(mockModelDownloadService.getNewDownloadUrlWithExpiry(eq(TEST_PROJECT_ID), eq(MODEL_NAME)))
+        .thenReturn(Tasks.forResult(ORIG_CUSTOM_MODEL_URL));
     when(mockModelDownloadService.getCustomModelDetails(
             eq(TEST_PROJECT_ID), eq(MODEL_NAME), eq(null)))
-        .thenReturn(Tasks.forResult(CUSTOM_MODEL));
+        .thenReturn(Tasks.forResult(ORIG_CUSTOM_MODEL_URL));
     when(mockFileDownloadService.download(any(), eq(DOWNLOAD_CONDITIONS)))
         .thenReturn(Tasks.forException(new Exception("Retry: Expired URL")));
     TestOnCompleteListener<CustomModel> onCompleteListener = new TestOnCompleteListener<>();
@@ -548,7 +668,7 @@ public class FirebaseModelDownloaderTest {
         .thenReturn(CUSTOM_MODEL);
     when(mockModelDownloadService.getCustomModelDetails(
             eq(TEST_PROJECT_ID), eq(MODEL_NAME), eq(null)))
-        .thenReturn(Tasks.forResult(CUSTOM_MODEL));
+        .thenReturn(Tasks.forResult(ORIG_CUSTOM_MODEL_URL));
     when(mockFileDownloadService.download(any(), eq(DOWNLOAD_CONDITIONS)))
         .thenReturn(Tasks.forException(new Exception("bad download")));
     TestOnCompleteListener<CustomModel> onCompleteListener = new TestOnCompleteListener<>();
@@ -618,5 +738,24 @@ public class FirebaseModelDownloaderTest {
 
     firebaseModelDownloader.setStatsCollectionEnabled(false);
     verify(mockPrefs, times(1)).setCustomModelStatsCollectionEnabled(eq(false));
+  }
+
+  @Test
+  public void getModelDownloadId_noDownload() {
+    when(mockPrefs.getDownloadingCustomModelDetails(eq(MODEL_NAME))).thenReturn(customModelLoaded);
+    assertEquals(firebaseModelDownloader.getModelDownloadId(MODEL_NAME), 0);
+  }
+
+  @Test
+  public void getModelDownloadId_noNamedModel() {
+    when(mockPrefs.getDownloadingCustomModelDetails(eq(MODEL_NAME))).thenReturn(null);
+    assertEquals(firebaseModelDownloader.getModelDownloadId(MODEL_NAME), 0);
+  }
+
+  @Test
+  public void getModelDownloadId_download() {
+    when(mockPrefs.getDownloadingCustomModelDetails(eq(MODEL_NAME)))
+        .thenReturn(UPDATE_IN_PROGRESS_CUSTOM_MODEL);
+    assertEquals(firebaseModelDownloader.getModelDownloadId(MODEL_NAME), DOWNLOAD_ID);
   }
 }

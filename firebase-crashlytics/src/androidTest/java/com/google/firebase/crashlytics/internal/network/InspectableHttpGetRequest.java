@@ -14,16 +14,12 @@
 
 package com.google.firebase.crashlytics.internal.network;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import okhttp3.Headers;
 
-public class InspectableHttpRequest extends HttpRequest {
-  private final Map<String, Object> _partsToValues = new HashMap<String, Object>();
-  private final Map<String, String> _partsToContentTypes = new HashMap<String, String>();
+public class InspectableHttpGetRequest extends HttpGetRequest {
   private final Map<String, String> _headers = new HashMap<String, String>();
   private Map<?, ?> _queryParams;
   private String _url;
@@ -31,7 +27,7 @@ public class InspectableHttpRequest extends HttpRequest {
 
   private class InspectableHttpResponse extends HttpResponse {
     InspectableHttpResponse() {
-      super(0, null, Headers.of());
+      super(0, null);
     }
 
     @Override
@@ -49,36 +45,14 @@ public class InspectableHttpRequest extends HttpRequest {
     }
   }
 
-  public InspectableHttpRequest() {
-    super(HttpMethod.GET, "http://test.com", Collections.emptyMap());
+  public InspectableHttpGetRequest() {
+    super("http://test.com", Collections.emptyMap());
   }
 
   @Override
-  public HttpRequest header(String name, String value) {
+  public HttpGetRequest header(String name, String value) {
     _headers.put(name, value);
     return this;
-  }
-
-  @Override
-  public HttpRequest part(String name, String part) {
-    _partsToValues.put(name, part);
-    _partsToContentTypes.put(name, null);
-    return this;
-  }
-
-  @Override
-  public HttpRequest part(String name, String filename, String contentType, File part) {
-    _partsToValues.put(name, part);
-    _partsToContentTypes.put(name, contentType);
-    return this;
-  }
-
-  public Map<String, Object> getMultipartValues() {
-    return _partsToValues;
-  }
-
-  public Map<String, String> getMultipartContentTypes() {
-    return _partsToContentTypes;
   }
 
   public Map<String, String> getHeaders() {
@@ -99,10 +73,6 @@ public class InspectableHttpRequest extends HttpRequest {
 
   public Map<?, ?> getQueryParams() {
     return _queryParams;
-  }
-
-  public void setCode(int code) {
-    _code = code;
   }
 
   @Override

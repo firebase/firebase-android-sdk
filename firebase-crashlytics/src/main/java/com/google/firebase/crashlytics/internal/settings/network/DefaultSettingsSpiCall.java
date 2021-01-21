@@ -14,12 +14,10 @@
 
 package com.google.firebase.crashlytics.internal.settings.network;
 
+import android.text.TextUtils;
 import com.google.firebase.crashlytics.internal.Logger;
-import com.google.firebase.crashlytics.internal.common.AbstractSpiCall;
-import com.google.firebase.crashlytics.internal.common.CommonUtils;
 import com.google.firebase.crashlytics.internal.common.CrashlyticsCore;
-import com.google.firebase.crashlytics.internal.network.HttpMethod;
-import com.google.firebase.crashlytics.internal.network.HttpRequest;
+import com.google.firebase.crashlytics.internal.network.HttpGetRequest;
 import com.google.firebase.crashlytics.internal.network.HttpRequestFactory;
 import com.google.firebase.crashlytics.internal.network.HttpResponse;
 import com.google.firebase.crashlytics.internal.settings.model.SettingsRequest;
@@ -30,7 +28,19 @@ import java.util.Map;
 import org.json.JSONObject;
 
 /** Default implementation of the {@link SettingsSpiCall} */
-public class DefaultSettingsSpiCall extends AbstractSpiCall implements SettingsSpiCall {
+public class DefaultSettingsSpiCall implements SettingsSpiCall {
+
+  static final String HEADER_GOOGLE_APP_ID = "X-CRASHLYTICS-GOOGLE-APP-ID";
+  static final String HEADER_CLIENT_TYPE = "X-CRASHLYTICS-API-CLIENT-TYPE";
+  static final String HEADER_CLIENT_VERSION = "X-CRASHLYTICS-API-CLIENT-VERSION";
+
+  static final String HEADER_USER_AGENT = "User-Agent";
+  static final String HEADER_ACCEPT = "Accept";
+  static final String CRASHLYTICS_USER_AGENT = "Crashlytics Android SDK/";
+  static final String ACCEPT_JSON_VALUE = "application/json";
+
+  static final String ANDROID_CLIENT_TYPE = "android";
+
   static final String BUILD_VERSION_PARAM = "build_version";
   static final String DISPLAY_VERSION_PARAM = "display_version";
   static final String INSTANCE_PARAM = "instance";
@@ -41,31 +51,48 @@ public class DefaultSettingsSpiCall extends AbstractSpiCall implements SettingsS
   static final String HEADER_OS_DISPLAY_VERSION = "X-CRASHLYTICS-OS-DISPLAY-VERSION";
   static final String HEADER_INSTALLATION_ID = "X-CRASHLYTICS-INSTALLATION-ID";
 
-  private Logger logger;
+  private final String url;
+  private final HttpRequestFactory requestFactory;
+
+  private final Logger logger;
 
   /**
    * Create a new GET call on the provided <code>url</code>. That <code>url</code> {@link String}
    * should not include query parameters. Those will be applied automatically from the {@link
-   * SettingsRequest} passed to {@link #invoke(SettingsRequest)}
+   * SettingsRequest} passed to {@link #invoke(SettingsRequest, boolean)}
    *
-   * @param protocolAndHostOverride {@link String} to use in place of whatever protocol and host are
-   *     present in the provide <code>url</code>.
    * @param url {@link String} to use as the endpoint.
+   * @param requestFactory {@link HttpRequestFactory} to use in building the {@link HttpGetRequest}.
    */
-  public DefaultSettingsSpiCall(
-      String protocolAndHostOverride, String url, HttpRequestFactory requestFactory) {
-    this(protocolAndHostOverride, url, requestFactory, HttpMethod.GET, Logger.getLogger());
+  public DefaultSettingsSpiCall(String url, HttpRequestFactory requestFactory) {
+    this(url, requestFactory, Logger.getLogger());
   }
 
   /** Meant for use in testing. Prefer DefaultSettingsSpiCall(String) for normal use. */
-  DefaultSettingsSpiCall(
-      String protocolAndHostOverride,
-      String url,
-      HttpRequestFactory requestFactory,
-      HttpMethod method,
-      Logger logger) {
-    super(protocolAndHostOverride, url, requestFactory, method);
+  DefaultSettingsSpiCall(String url, HttpRequestFactory requestFactory, Logger logger) {
+    if (url == null) {
+      throw new IllegalArgumentException("url must not be null.");
+    }
+
     this.logger = logger;
+    this.requestFactory = requestFactory;
+    this.url = url;
+  }
+
+  /**
+   * Returns a {@link HttpGetRequest} for this call. This method takes the provided {@link
+   * java.util.Map} of query params, URL escapes them, and applies them to the end of the url {@link
+   * String} provided to the constructor.
+   *
+   * @param queryParams {@link java.util.Map} of key-value pairs to be used as query params and
+   *     appended to the end of the url {@link String} provided to the constructor.
+   * @return {@link HttpGetRequest} to be used in further building the HTTP request.
+   */
+  protected HttpGetRequest createHttpGetRequest(Map<String, String> queryParams) {
+    final HttpGetRequest httpRequest = requestFactory.buildHttpGetRequest(url, queryParams);
+    return httpRequest
+        .header(HEADER_USER_AGENT, CRASHLYTICS_USER_AGENT + CrashlyticsCore.getVersion())
+        .header("X-CRASHLYTICS-DEVELOPER-TOKEN", "470fa2b4ae81cd56ecbcda9735803434cec591fa");
   }
 
   @Override
@@ -77,21 +104,18 @@ public class DefaultSettingsSpiCall extends AbstractSpiCall implements SettingsS
 
     try {
       final Map<String, String> queryParams = getQueryParamsFor(requestData);
-      HttpRequest httpRequest = getHttpRequest(queryParams);
+      HttpGetRequest httpRequest = createHttpGetRequest(queryParams);
       httpRequest = applyHeadersTo(httpRequest, requestData);
 
-      logger.d("Requesting settings from " + getUrl());
+      logger.d("Requesting settings from " + url);
       logger.d("Settings query params were: " + queryParams);
 
       final HttpResponse httpResponse = httpRequest.execute();
-      logger.d("Settings request ID: " + httpResponse.header(AbstractSpiCall.HEADER_REQUEST_ID));
-
       toReturn = handleResponse(httpResponse);
     } catch (IOException e) {
       logger.e("Settings request failed.", e);
       toReturn = null;
     }
-
     return toReturn;
   }
 
@@ -104,7 +128,7 @@ public class DefaultSettingsSpiCall extends AbstractSpiCall implements SettingsS
     if (requestWasSuccessful(statusCode)) {
       toReturn = getJsonObjectFrom(httpResponse.body());
     } else {
-      logger.e("Failed to retrieve settings from " + getUrl());
+      logger.e("Failed to retrieve settings from " + url);
       toReturn = null;
     }
     return toReturn;
@@ -126,7 +150,7 @@ public class DefaultSettingsSpiCall extends AbstractSpiCall implements SettingsS
     try {
       return new JSONObject(httpRequestBody);
     } catch (Exception e) {
-      logger.d("Failed to parse settings JSON from " + getUrl(), e);
+      logger.d("Failed to parse settings JSON from " + url, e);
       logger.d("Settings response " + httpRequestBody);
       return null;
     }
@@ -139,22 +163,20 @@ public class DefaultSettingsSpiCall extends AbstractSpiCall implements SettingsS
     queryParams.put(SOURCE_PARAM, Integer.toString(requestData.source));
 
     final String instanceId = requestData.instanceId;
-    if (!CommonUtils.isNullOrEmpty(instanceId)) {
+    if (!TextUtils.isEmpty(instanceId)) {
       queryParams.put(INSTANCE_PARAM, instanceId);
     }
 
     return queryParams;
   }
 
-  private HttpRequest applyHeadersTo(HttpRequest request, SettingsRequest requestData) {
+  private HttpGetRequest applyHeadersTo(HttpGetRequest request, SettingsRequest requestData) {
     // We have to avoid setting a header with a null value because low Android API levels
     // (e.g. 8) turn this into an invalid HTTP request, while higher API levels do not.
-    applyNonNullHeader(request, AbstractSpiCall.HEADER_GOOGLE_APP_ID, requestData.googleAppId);
-    applyNonNullHeader(
-        request, AbstractSpiCall.HEADER_CLIENT_TYPE, AbstractSpiCall.ANDROID_CLIENT_TYPE);
-    applyNonNullHeader(
-        request, AbstractSpiCall.HEADER_CLIENT_VERSION, CrashlyticsCore.getVersion());
-    applyNonNullHeader(request, AbstractSpiCall.HEADER_ACCEPT, AbstractSpiCall.ACCEPT_JSON_VALUE);
+    applyNonNullHeader(request, HEADER_GOOGLE_APP_ID, requestData.googleAppId);
+    applyNonNullHeader(request, HEADER_CLIENT_TYPE, ANDROID_CLIENT_TYPE);
+    applyNonNullHeader(request, HEADER_CLIENT_VERSION, CrashlyticsCore.getVersion());
+    applyNonNullHeader(request, HEADER_ACCEPT, ACCEPT_JSON_VALUE);
     applyNonNullHeader(request, HEADER_DEVICE_MODEL, requestData.deviceModel);
     applyNonNullHeader(request, HEADER_OS_BUILD_VERSION, requestData.osBuildVersion);
     applyNonNullHeader(request, HEADER_OS_DISPLAY_VERSION, requestData.osDisplayVersion);
@@ -164,7 +186,7 @@ public class DefaultSettingsSpiCall extends AbstractSpiCall implements SettingsS
     return request;
   }
 
-  private void applyNonNullHeader(HttpRequest request, String key, String value) {
+  private void applyNonNullHeader(HttpGetRequest request, String key, String value) {
     if (value != null) {
       request.header(key, value);
     }

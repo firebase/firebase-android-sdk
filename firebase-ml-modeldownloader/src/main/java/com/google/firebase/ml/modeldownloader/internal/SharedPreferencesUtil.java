@@ -33,8 +33,7 @@ public class SharedPreferencesUtil {
 
   public static final String DOWNLOADING_MODEL_ID_MATCHER = "downloading_model_id_(.*?)_([^/]+)/?";
 
-  @VisibleForTesting
-  static final String PREFERENCES_PACKAGE_NAME = "com.google.firebase.ml.modelDownloader";
+  public static final String PREFERENCES_PACKAGE_NAME = "com.google.firebase.ml.modelDownloader";
 
   // local model details
   private static final String LOCAL_MODEL_HASH_PATTERN = "current_model_hash_%s_%s";
@@ -65,7 +64,7 @@ public class SharedPreferencesUtil {
    * Returns the Custom Model details currently associated with this model. If a fully downloaded
    * model is present - this returns the details of that model, including local file path. If an
    * update of an existing model is in progress, the local model plus the download id for the new
-   * upload is returned. To get only details related to the downloading model use {@link
+   * download is returned. To get only details related to the downloading model use {@link
    * #getDownloadingCustomModelDetails}. If this is the initial download of a local file - the
    * downloading model details are returned.
    *
@@ -161,7 +160,7 @@ public class SharedPreferencesUtil {
    *
    * @param customModel custom model details to be stored.
    */
-  public synchronized void setUploadedCustomModelDetails(@NonNull CustomModel customModel)
+  public synchronized void setLoadedCustomModelDetails(@NonNull CustomModel customModel)
       throws IllegalArgumentException {
     Long id = customModel.getDownloadId();
     // only call when download is completed and download id is reset to 0;
@@ -184,13 +183,14 @@ public class SharedPreferencesUtil {
   }
 
   /**
-   * The information about a failed custom model download. Updates the local model information and
-   * clears the download details associated with this model. Does not update the local file model.
+   * Clears the download details associated with this model. Does not update the local file model.
+   *
+   * <p>Usually used during clean up of a completed model download.
    *
    * @param customModelName custom model details to be stored.
    * @hide
    */
-  public synchronized void setFailedUploadedCustomModelDetails(@NonNull String customModelName)
+  public synchronized void clearDownloadCustomModelDetails(@NonNull String customModelName)
       throws IllegalArgumentException {
     Editor editor = getSharedPreferences().edit();
     clearDownloadingModelDetails(editor, customModelName);

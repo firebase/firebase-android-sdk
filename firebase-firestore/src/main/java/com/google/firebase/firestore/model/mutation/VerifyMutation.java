@@ -65,7 +65,7 @@ public final class VerifyMutation extends Mutation {
   @Nullable
   @Override
   public MaybeDocument applyToLocalView(
-      @Nullable MaybeDocument maybeDoc, @Nullable MaybeDocument baseDoc, Timestamp localWriteTime) {
+      @Nullable MaybeDocument maybeDoc, Timestamp localWriteTime) {
     throw Assert.fail("VerifyMutation should only be used in Transactions.");
   }
 }

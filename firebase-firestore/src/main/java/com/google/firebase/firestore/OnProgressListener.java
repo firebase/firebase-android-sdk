@@ -1,4 +1,4 @@
-// Copyright 2019 Google LLC
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,5 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/** @hide */
-package com.google.firebase.crashlytics.internal.report.network;
+package com.google.firebase.firestore;
+
+import androidx.annotation.NonNull;
+
+/** A listener that is called periodically during execution of a {@link LoadBundleTask}. */
+/* package */ interface OnProgressListener<ProgressT> {
+  void onProgress(@NonNull ProgressT snapshot);
+}
