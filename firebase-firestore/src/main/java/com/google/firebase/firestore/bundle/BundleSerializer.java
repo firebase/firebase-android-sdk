@@ -38,15 +38,34 @@ import com.google.firestore.v1.Value;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.NullValue;
 import com.google.type.LatLng;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
+import java.util.TimeZone;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 /** A JSON serializer to deserialize Firestore Bundles. */
 class BundleSerializer {
+
+  private static final long MILLIS_PER_SECOND = 1000;
+
+  private static final SimpleDateFormat timestampFormat;
+
+  static {
+    timestampFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.ENGLISH);
+    GregorianCalendar calendar = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
+    // We use Proleptic Gregorian Calendar (i.e., Gregorian calendar extends backwards to year one)
+    // for timestamp formatting.
+    calendar.setGregorianChange(new Date(Long.MIN_VALUE));
+    timestampFormat.setCalendar(calendar);
+  }
 
   private final RemoteSerializer remoteSerializer;
 
@@ -61,7 +80,7 @@ class BundleSerializer {
   public NamedQuery decodeNamedQuery(JSONObject namedQuery) throws JSONException {
     String name = namedQuery.getString("name");
     BundledQuery bundledQuery = decodeBundledQuery(namedQuery.getJSONObject("bundledQuery"));
-    SnapshotVersion readTime = decodeSnapshotVersion(namedQuery.getJSONObject("readTime"));
+    SnapshotVersion readTime = decodeSnapshotVersion(namedQuery.getString("readTime"));
     return new NamedQuery(name, bundledQuery, readTime);
   }
 
@@ -72,7 +91,7 @@ class BundleSerializer {
   public BundleMetadata decodeBundleMetadata(JSONObject bundleMetadata) throws JSONException {
     String bundleId = bundleMetadata.getString("id");
     int version = bundleMetadata.getInt("version");
-    SnapshotVersion createTime = decodeSnapshotVersion(bundleMetadata.getJSONObject("createTime"));
+    SnapshotVersion createTime = decodeSnapshotVersion(bundleMetadata.getString("createTime"));
     return new BundleMetadata(bundleId, version, createTime);
   }
 
@@ -83,8 +102,7 @@ class BundleSerializer {
   public BundledDocumentMetadata decodeBundledDocumentMetadata(JSONObject bundledDocumentMetadata)
       throws JSONException {
     DocumentKey key = DocumentKey.fromPath(decodeName(bundledDocumentMetadata.getString("name")));
-    SnapshotVersion readTime =
-        decodeSnapshotVersion(bundledDocumentMetadata.getJSONObject("readTime"));
+    SnapshotVersion readTime = decodeSnapshotVersion(bundledDocumentMetadata.getString("readTime"));
     boolean exists = bundledDocumentMetadata.optBoolean("exists", false);
     JSONArray queriesJson = bundledDocumentMetadata.optJSONArray("queries");
     List<String> queries = new ArrayList<>();
@@ -106,7 +124,7 @@ class BundleSerializer {
   Document decodeDocument(JSONObject document) throws JSONException {
     String name = document.getString("name");
     DocumentKey key = DocumentKey.fromPath(decodeName(name));
-    SnapshotVersion updateTime = decodeSnapshotVersion(document.getJSONObject("updateTime"));
+    SnapshotVersion updateTime = decodeSnapshotVersion(document.getString("updateTime"));
 
     Value.Builder value = Value.newBuilder();
     decodeMapValue(value, document.getJSONObject("fields"));
@@ -127,10 +145,8 @@ class BundleSerializer {
     return resourcePath.popFirst(5);
   }
 
-  private SnapshotVersion decodeSnapshotVersion(JSONObject timestamp) {
-    long seconds = timestamp.optLong("seconds", 0);
-    int nanos = timestamp.optInt("nanos", 0);
-    return new SnapshotVersion(new Timestamp(seconds, nanos));
+  private SnapshotVersion decodeSnapshotVersion(String timestamp) {
+    return new SnapshotVersion(decodeTimestamp(timestamp));
   }
 
   private BundledQuery decodeBundledQuery(JSONObject bundledQuery) throws JSONException {
@@ -256,7 +272,7 @@ class BundleSerializer {
     } else if (value.has("doubleValue")) {
       builder.setDoubleValue(value.optDouble("doubleValue", 0.0));
     } else if (value.has("timestampValue")) {
-      decodeTimestamp(builder, value.getJSONObject("timestampValue"));
+      decodeTimestamp(builder, value.getString("timestampValue"));
     } else if (value.has("stringValue")) {
       builder.setStringValue(value.optString("stringValue", ""));
     } else if (value.has("bytesValue")) {
@@ -307,11 +323,92 @@ class BundleSerializer {
             .setLongitude(geoPoint.optDouble("longitude", 0.0)));
   }
 
-  private void decodeTimestamp(Value.Builder builder, JSONObject timestamp) {
+  private Timestamp decodeTimestamp(String timestamp) {
+    // This method is copied from com.google.protobuf.util.Timestamps. See:
+    // https://chromium.googlesource.com/external/github.com/google/protobuf/+/HEAD/java/util/src/main/java/com/google/protobuf/util/Timestamps.java?autodive=0%2F#232
+
+    try {
+      int dayOffset = timestamp.indexOf('T');
+      if (dayOffset == -1) {
+        throw new IllegalArgumentException(
+            "Failed to parse timestamp: invalid timestamp \"" + timestamp + "\"");
+      }
+      int timezoneOffsetPosition = timestamp.indexOf('Z', dayOffset);
+      if (timezoneOffsetPosition == -1) {
+        timezoneOffsetPosition = timestamp.indexOf('+', dayOffset);
+      }
+      if (timezoneOffsetPosition == -1) {
+        timezoneOffsetPosition = timestamp.indexOf('-', dayOffset);
+      }
+      if (timezoneOffsetPosition == -1) {
+        throw new IllegalArgumentException(
+            "Failed to parse timestamp: missing valid timezone offset.");
+      }
+      // Parse seconds and nanos.
+      String timeValue = timestamp.substring(0, timezoneOffsetPosition);
+      String secondValue = timeValue;
+      String nanoValue = "";
+      int pointPosition = timeValue.indexOf('.');
+      if (pointPosition != -1) {
+        secondValue = timeValue.substring(0, pointPosition);
+        nanoValue = timeValue.substring(pointPosition + 1);
+      }
+      Date date = timestampFormat.parse(secondValue);
+      long seconds = date.getTime() / MILLIS_PER_SECOND;
+      int nanos = nanoValue.isEmpty() ? 0 : parseNanos(nanoValue);
+      // Parse timezone offsets.
+      if (timestamp.charAt(timezoneOffsetPosition) == 'Z') {
+        if (timestamp.length() != timezoneOffsetPosition + 1) {
+          throw new IllegalArgumentException(
+              "Failed to parse timestamp: invalid trailing data \""
+                  + timestamp.substring(timezoneOffsetPosition)
+                  + "\"");
+        }
+      } else {
+        String offsetValue = timestamp.substring(timezoneOffsetPosition + 1);
+        long offset = decodeTimezoneOffset(offsetValue);
+        if (timestamp.charAt(timezoneOffsetPosition) == '+') {
+          seconds -= offset;
+        } else {
+          seconds += offset;
+        }
+      }
+      return new Timestamp(seconds, nanos);
+    } catch (ParseException e) {
+      throw new IllegalArgumentException("Failed to parse timestamp", e);
+    }
+  }
+
+  private void decodeTimestamp(Value.Builder builder, String timestamp) {
+    Timestamp decoded = decodeTimestamp(timestamp);
     builder.setTimestampValue(
         com.google.protobuf.Timestamp.newBuilder()
-            .setSeconds(timestamp.optLong("seconds", 0))
-            .setNanos(timestamp.optInt("nanos", 0)));
+            .setSeconds(decoded.getSeconds())
+            .setNanos(decoded.getNanoseconds()));
+  }
+
+  private static int parseNanos(String value) throws IllegalArgumentException {
+    int result = 0;
+    for (int i = 0; i < 9; ++i) {
+      result = result * 10;
+      if (i < value.length()) {
+        if (value.charAt(i) < '0' || value.charAt(i) > '9') {
+          throw new IllegalArgumentException("Invalid nanoseconds: " + value);
+        }
+        result += value.charAt(i) - '0';
+      }
+    }
+    return result;
+  }
+
+  private static long decodeTimezoneOffset(String value) throws ParseException {
+    int pos = value.indexOf(':');
+    if (pos == -1) {
+      throw new ParseException("Invalid offset value: " + value, 0);
+    }
+    String hours = value.substring(0, pos);
+    String minutes = value.substring(pos + 1);
+    return (Long.parseLong(hours) * 60 + Long.parseLong(minutes)) * 60;
   }
 
   private FieldFilter.Operator decodeFieldFilterOperator(String operator) {
