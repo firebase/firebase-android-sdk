@@ -159,7 +159,7 @@ public class BundleReader {
    * <p>Returns a string decoded from the read bytes.
    */
   private String readJsonString(int length) throws IOException {
-    StringBuilder json = new StringBuilder();
+    StringBuilder json = new StringBuilder(length);
 
     int remaining = length;
     while (remaining > 0) {
