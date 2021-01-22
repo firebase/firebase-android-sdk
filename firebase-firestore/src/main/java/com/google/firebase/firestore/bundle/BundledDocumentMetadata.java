@@ -21,7 +21,7 @@ import java.util.List;
 // TODO(bundles): Figure out whether we need this class (it is not needed in Web).
 
 /** Metadata describing a Firestore document saved in the bundle. */
-public class BundledDocumentMetadata extends BundleElement {
+public class BundledDocumentMetadata implements BundleElement {
   private final DocumentKey key;
   private final SnapshotVersion readTime;
   private final boolean exists;
