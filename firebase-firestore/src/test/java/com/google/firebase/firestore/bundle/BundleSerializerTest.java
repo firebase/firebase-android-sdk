@@ -147,21 +147,24 @@ public class BundleSerializerTest {
   public void testDecodesDateValues() throws JSONException {
     String[] json =
         new String[] {
-          "2020-01-01T01:00:00.001Z",
-          "2020-01-01T01:02:00.001002Z",
-          "2020-01-01T01:02:03.001002003Z",
+          "'2020-01-01T01:00:00.001Z'", "{ seconds: 1577840400, nanos: 1000000 }",
+          "'2020-01-01T01:02:00.001002Z'", "{ seconds: '1577840520', nanos: 1002000 }",
+          "'2020-01-01T01:02:03.001002003Z'", "{ seconds: 1577840523, nanos: 1002003 }",
         };
 
     Timestamp[] timestamps =
         new Timestamp[] {
           Timestamp.newBuilder().setNanos(1000000).setSeconds(1577840400).build(),
+              Timestamp.newBuilder().setNanos(1000000).setSeconds(1577840400).build(),
           Timestamp.newBuilder().setNanos(1002000).setSeconds(1577840520).build(),
-          Timestamp.newBuilder().setNanos(1002003).setSeconds(1577840523).build()
+              Timestamp.newBuilder().setNanos(1002000).setSeconds(1577840520).build(),
+          Timestamp.newBuilder().setNanos(1002003).setSeconds(1577840523).build(),
+              Timestamp.newBuilder().setNanos(1002003).setSeconds(1577840523).build()
         };
 
     for (int i = 0; i < json.length; i++) {
       assertDecodesValue(
-          "{ timestampValue: '" + json[i] + "' }",
+          "{ timestampValue: " + json[i] + " }",
           Value.newBuilder().setTimestampValue(timestamps[i]).build());
     }
   }

@@ -80,7 +80,7 @@ class BundleSerializer {
   public NamedQuery decodeNamedQuery(JSONObject namedQuery) throws JSONException {
     String name = namedQuery.getString("name");
     BundledQuery bundledQuery = decodeBundledQuery(namedQuery.getJSONObject("bundledQuery"));
-    SnapshotVersion readTime = decodeSnapshotVersion(namedQuery.getString("readTime"));
+    SnapshotVersion readTime = decodeSnapshotVersion(namedQuery.get("readTime"));
     return new NamedQuery(name, bundledQuery, readTime);
   }
 
@@ -91,7 +91,7 @@ class BundleSerializer {
   public BundleMetadata decodeBundleMetadata(JSONObject bundleMetadata) throws JSONException {
     String bundleId = bundleMetadata.getString("id");
     int version = bundleMetadata.getInt("version");
-    SnapshotVersion createTime = decodeSnapshotVersion(bundleMetadata.getString("createTime"));
+    SnapshotVersion createTime = decodeSnapshotVersion(bundleMetadata.get("createTime"));
     return new BundleMetadata(bundleId, version, createTime);
   }
 
@@ -102,7 +102,7 @@ class BundleSerializer {
   public BundledDocumentMetadata decodeBundledDocumentMetadata(JSONObject bundledDocumentMetadata)
       throws JSONException {
     DocumentKey key = DocumentKey.fromPath(decodeName(bundledDocumentMetadata.getString("name")));
-    SnapshotVersion readTime = decodeSnapshotVersion(bundledDocumentMetadata.getString("readTime"));
+    SnapshotVersion readTime = decodeSnapshotVersion(bundledDocumentMetadata.get("readTime"));
     boolean exists = bundledDocumentMetadata.optBoolean("exists", false);
     JSONArray queriesJson = bundledDocumentMetadata.optJSONArray("queries");
     List<String> queries = new ArrayList<>();
@@ -124,7 +124,7 @@ class BundleSerializer {
   Document decodeDocument(JSONObject document) throws JSONException {
     String name = document.getString("name");
     DocumentKey key = DocumentKey.fromPath(decodeName(name));
-    SnapshotVersion updateTime = decodeSnapshotVersion(document.getString("updateTime"));
+    SnapshotVersion updateTime = decodeSnapshotVersion(document.get("updateTime"));
 
     Value.Builder value = Value.newBuilder();
     decodeMapValue(value, document.getJSONObject("fields"));
@@ -145,7 +145,7 @@ class BundleSerializer {
     return resourcePath.popFirst(5);
   }
 
-  private SnapshotVersion decodeSnapshotVersion(String timestamp) {
+  private SnapshotVersion decodeSnapshotVersion(Object timestamp) throws JSONException {
     return new SnapshotVersion(decodeTimestamp(timestamp));
   }
 
@@ -272,7 +272,7 @@ class BundleSerializer {
     } else if (value.has("doubleValue")) {
       builder.setDoubleValue(value.optDouble("doubleValue", 0.0));
     } else if (value.has("timestampValue")) {
-      decodeTimestamp(builder, value.getString("timestampValue"));
+      decodeTimestamp(builder, value.get("timestampValue"));
     } else if (value.has("stringValue")) {
       builder.setStringValue(value.optString("stringValue", ""));
     } else if (value.has("bytesValue")) {
@@ -323,6 +323,10 @@ class BundleSerializer {
             .setLongitude(geoPoint.optDouble("longitude", 0.0)));
   }
 
+  private Timestamp decodeTimestamp(JSONObject timestamp) throws JSONException {
+    return new Timestamp(timestamp.getLong("seconds"), timestamp.getInt("nanos"));
+  }
+
   private Timestamp decodeTimestamp(String timestamp) {
     // This method is copied from com.google.protobuf.util.Timestamps. See:
     // https://chromium.googlesource.com/external/github.com/google/protobuf/+/HEAD/java/util/src/main/java/com/google/protobuf/util/Timestamps.java?autodive=0%2F#232
@@ -330,8 +334,7 @@ class BundleSerializer {
     try {
       int dayOffset = timestamp.indexOf('T');
       if (dayOffset == -1) {
-        throw new IllegalArgumentException(
-            "Failed to parse timestamp: invalid timestamp \"" + timestamp + "\"");
+        throw new IllegalArgumentException("Invalid timestamp: " + timestamp);
       }
       int timezoneOffsetPosition = timestamp.indexOf('Z', dayOffset);
       if (timezoneOffsetPosition == -1) {
@@ -342,7 +345,7 @@ class BundleSerializer {
       }
       if (timezoneOffsetPosition == -1) {
         throw new IllegalArgumentException(
-            "Failed to parse timestamp: missing valid timezone offset.");
+            "Invalid timestamp: Missing valid timezone offset: " + timestamp);
       }
       // Parse seconds and nanos.
       String timeValue = timestamp.substring(0, timezoneOffsetPosition);
@@ -360,7 +363,7 @@ class BundleSerializer {
       if (timestamp.charAt(timezoneOffsetPosition) == 'Z') {
         if (timestamp.length() != timezoneOffsetPosition + 1) {
           throw new IllegalArgumentException(
-              "Failed to parse timestamp: invalid trailing data \""
+              "Invalid timestamp: Invalid trailing data \""
                   + timestamp.substring(timezoneOffsetPosition)
                   + "\"");
         }
@@ -379,7 +382,19 @@ class BundleSerializer {
     }
   }
 
-  private void decodeTimestamp(Value.Builder builder, String timestamp) {
+  private Timestamp decodeTimestamp(Object timestamp) throws JSONException {
+    if (timestamp instanceof String) {
+      return decodeTimestamp((String) timestamp);
+    } else {
+      if (!(timestamp instanceof JSONObject)) {
+        throw new IllegalArgumentException(
+            "Timestamps must be either ISO 8601-formatted strings or JSON objects");
+      }
+      return decodeTimestamp((JSONObject) timestamp);
+    }
+  }
+
+  private void decodeTimestamp(Value.Builder builder, Object timestamp) throws JSONException {
     Timestamp decoded = decodeTimestamp(timestamp);
     builder.setTimestampValue(
         com.google.protobuf.Timestamp.newBuilder()
