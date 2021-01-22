@@ -4623,7 +4623,7 @@ public class QueryTest {
         new ValueEventListener() {
           @Override
           public void onDataChange(@NonNull DataSnapshot snapshot) {
-            if (snapshot.getValue().equals(42L)) {
+            if (snapshot.getValue() != null && snapshot.getValue().equals(42L)) {
               semaphore.release();
             }
           }
