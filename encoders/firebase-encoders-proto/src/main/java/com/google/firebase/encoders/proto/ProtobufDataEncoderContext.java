@@ -36,6 +36,8 @@ final class ProtobufDataEncoderContext implements ObjectEncoderContext {
   private final Map<Class<?>, ObjectEncoder<?>> objectEncoders;
   private final Map<Class<?>, ValueEncoder<?>> valueEncoders;
   private final ObjectEncoder<Object> fallbackEncoder;
+  private final ProtobufValueEncoderContext valueEncoderContext =
+      new ProtobufValueEncoderContext(this);
 
   private static final FieldDescriptor MAP_KEY_DESC =
       FieldDescriptor.builder("key").withProperty(AtProtobuf.builder().tag(1).build()).build();
@@ -95,12 +97,18 @@ final class ProtobufDataEncoderContext implements ObjectEncoderContext {
   @Override
   public ObjectEncoderContext add(@NonNull FieldDescriptor field, @Nullable Object obj)
       throws IOException {
+    return add(field, obj, true);
+  }
+
+  ObjectEncoderContext add(
+      @NonNull FieldDescriptor field, @Nullable Object obj, boolean skipDefault)
+      throws IOException {
     if (obj == null) {
       return this;
     }
     if (obj instanceof CharSequence) {
       CharSequence seq = (CharSequence) obj;
-      if (seq.length() == 0) {
+      if (skipDefault && seq.length() == 0) {
         return this;
       }
       int tag = getTag(field);
@@ -115,7 +123,10 @@ final class ProtobufDataEncoderContext implements ObjectEncoderContext {
       @SuppressWarnings("unchecked")
       Collection<Object> collection = (Collection<Object>) obj;
       for (Object value : collection) {
-        add(field, value);
+        // It's important not to skip "default" values in repeated fields as there is a difference
+        // between having an empty list and a list of "default" items,
+        // e.g. encoding ["", ""] should not result in an empty list when encoded.
+        add(field, value, false);
       }
       return this;
     }
@@ -124,30 +135,33 @@ final class ProtobufDataEncoderContext implements ObjectEncoderContext {
       @SuppressWarnings("unchecked")
       Map<Object, Object> map = (Map<Object, Object>) obj;
       for (Map.Entry<Object, Object> entry : map.entrySet()) {
-        doEncode(DEFAULT_MAP_ENCODER, field, entry);
+        // It's important not to skip "default" values in map fields as there is a difference
+        // between having an empty map and a map of 2 "default" items,
+        // e.g. encoding {"": 0] should not result in an empty map when encoded.
+        doEncode(DEFAULT_MAP_ENCODER, field, entry, false);
       }
       return this;
     }
 
     if (obj instanceof Double) {
-      return add(field, (double) obj);
+      return add(field, (double) obj, skipDefault);
     }
 
     if (obj instanceof Float) {
-      return add(field, (float) obj);
+      return add(field, (float) obj, skipDefault);
     }
 
     if (obj instanceof Number) {
-      return add(field, ((Number) obj).longValue());
+      return add(field, ((Number) obj).longValue(), skipDefault);
     }
 
     if (obj instanceof Boolean) {
-      return add(field, (boolean) obj);
+      return add(field, (boolean) obj, skipDefault);
     }
 
     if (obj instanceof byte[]) {
       byte[] bytes = (byte[]) obj;
-      if (bytes.length == 0) {
+      if (skipDefault && bytes.length == 0) {
         return this;
       }
       int tag = getTag(field);
@@ -163,12 +177,12 @@ final class ProtobufDataEncoderContext implements ObjectEncoderContext {
         (ObjectEncoder<Object>) objectEncoders.get(obj.getClass());
 
     if (objectEncoder != null) {
-      return doEncode(objectEncoder, field, obj);
+      return doEncode(objectEncoder, field, obj, skipDefault);
     }
     @SuppressWarnings("unchecked")
     ValueEncoder<Object> valueEncoder = (ValueEncoder<Object>) valueEncoders.get(obj.getClass());
     if (valueEncoder != null) {
-      return doEncode(valueEncoder, field, obj);
+      return doEncode(valueEncoder, field, obj, skipDefault);
     }
 
     if (obj instanceof ProtoEnum) {
@@ -177,13 +191,18 @@ final class ProtobufDataEncoderContext implements ObjectEncoderContext {
     if (obj instanceof Enum) {
       return add(field, ((Enum<?>) obj).ordinal());
     }
-    return doEncode(fallbackEncoder, field, obj);
+    return doEncode(fallbackEncoder, field, obj, skipDefault);
   }
 
   @NonNull
   @Override
   public ObjectEncoderContext add(@NonNull FieldDescriptor field, double value) throws IOException {
-    if (value == 0) {
+    return add(field, value, true);
+  }
+
+  ObjectEncoderContext add(@NonNull FieldDescriptor field, double value, boolean skipDefault)
+      throws IOException {
+    if (skipDefault && value == 0) {
       return this;
     }
     int tag = getTag(field);
@@ -196,7 +215,13 @@ final class ProtobufDataEncoderContext implements ObjectEncoderContext {
   @NonNull
   @Override
   public ObjectEncoderContext add(@NonNull FieldDescriptor field, float value) throws IOException {
-    if (value == 0) {
+
+    return add(field, value, true);
+  }
+
+  ObjectEncoderContext add(@NonNull FieldDescriptor field, float value, boolean skipDefault)
+      throws IOException {
+    if (skipDefault && value == 0) {
       return this;
     }
     int tag = getTag(field);
@@ -210,7 +235,12 @@ final class ProtobufDataEncoderContext implements ObjectEncoderContext {
   @Override
   public ProtobufDataEncoderContext add(@NonNull FieldDescriptor field, int value)
       throws IOException {
-    if (value == 0) {
+    return add(field, value, true);
+  }
+
+  ProtobufDataEncoderContext add(@NonNull FieldDescriptor field, int value, boolean skipDefault)
+      throws IOException {
+    if (skipDefault && value == 0) {
       return this;
     }
     Protobuf protobuf = getProtobuf(field);
@@ -235,7 +265,12 @@ final class ProtobufDataEncoderContext implements ObjectEncoderContext {
   @Override
   public ProtobufDataEncoderContext add(@NonNull FieldDescriptor field, long value)
       throws IOException {
-    if (value == 0) {
+    return add(field, value, true);
+  }
+
+  ProtobufDataEncoderContext add(@NonNull FieldDescriptor field, long value, boolean skipDefault)
+      throws IOException {
+    if (skipDefault && value == 0) {
       return this;
     }
     Protobuf protobuf = getProtobuf(field);
@@ -260,10 +295,12 @@ final class ProtobufDataEncoderContext implements ObjectEncoderContext {
   @Override
   public ProtobufDataEncoderContext add(@NonNull FieldDescriptor field, boolean value)
       throws IOException {
-    if (!value) {
-      return this;
-    }
-    return add(field, 1);
+    return add(field, value, true);
+  }
+
+  ProtobufDataEncoderContext add(@NonNull FieldDescriptor field, boolean value, boolean skipDefault)
+      throws IOException {
+    return add(field, value ? 1 : 0, skipDefault);
   }
 
   @NonNull
@@ -299,10 +336,11 @@ final class ProtobufDataEncoderContext implements ObjectEncoderContext {
   }
 
   private <T> ProtobufDataEncoderContext doEncode(
-      ObjectEncoder<T> encoder, FieldDescriptor field, T obj) throws IOException {
+      ObjectEncoder<T> encoder, FieldDescriptor field, T obj, boolean skipDefault)
+      throws IOException {
 
     long size = determineSize(encoder, obj);
-    if (size == 0) {
+    if (skipDefault && size == 0) {
       return this;
     }
 
@@ -330,9 +368,10 @@ final class ProtobufDataEncoderContext implements ObjectEncoderContext {
   }
 
   private <T> ProtobufDataEncoderContext doEncode(
-      ValueEncoder<T> encoder, FieldDescriptor field, T obj) throws IOException {
-    // TODO(vkryachko): consider reusing value encoder contexts to avoid allocations.
-    encoder.encode(obj, new ProtobufValueEncoderContext(field, this));
+      ValueEncoder<T> encoder, FieldDescriptor field, T obj, boolean skipDefault)
+      throws IOException {
+    valueEncoderContext.resetContext(field, skipDefault);
+    encoder.encode(obj, valueEncoderContext);
     return this;
   }
 
