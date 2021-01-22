@@ -94,6 +94,8 @@ public class ModelFileDownloadServiceTest {
   File testAppModelFile;
 
   private ModelFileDownloadService modelFileDownloadService;
+
+  private ModelFileDownloadService modelFileDownloadServiceInitialLoad;
   private SharedPreferencesUtil sharedPreferencesUtil;
   @Mock DownloadManager mockDownloadManager;
   @Mock ModelFileManager mockFileManager;
@@ -121,7 +123,18 @@ public class ModelFileDownloadServiceTest {
             mockFileManager,
             sharedPreferencesUtil,
             mockStatsSender,
-            mockStatsLogger);
+            mockStatsLogger,
+            false);
+
+    modelFileDownloadServiceInitialLoad =
+        new ModelFileDownloadService(
+            app,
+            mockDownloadManager,
+            mockFileManager,
+            sharedPreferencesUtil,
+            mockStatsSender,
+            mockStatsLogger,
+            true);
 
     matrixCursor = new MatrixCursor(new String[] {DownloadManager.COLUMN_STATUS});
     testTempModelFile = File.createTempFile("fakeTempFile", ".tflite");
@@ -310,7 +323,6 @@ public class ModelFileDownloadServiceTest {
       task.addOnCompleteListener(executor, onCompleteListener);
       onCompleteListener.await();
     } catch (FirebaseMlException ex) {
-      System.out.println("error: " + ex.getMessage());
       assertEquals(ex.getCode(), FirebaseMlException.INVALID_ARGUMENT);
     }
     assertTrue(task.isComplete());
@@ -379,7 +391,6 @@ public class ModelFileDownloadServiceTest {
       task.addOnCompleteListener(executor, onCompleteListener);
       onCompleteListener.await();
     } catch (Exception ex) {
-      System.out.println("error: " + ex.getMessage());
       assertTrue(ex.getMessage().contains("Retry: Expired URL"));
     }
 
@@ -483,7 +494,6 @@ public class ModelFileDownloadServiceTest {
       app.getApplicationContext().sendBroadcast(downloadCompleteIntent);
       onCompleteListener.await();
     } catch (Exception ex) {
-      System.out.println("Failure message: " + ex);
       assertTrue(ex.getMessage().contains("Retry: Expired URL"));
     }
     assertTrue(task.isComplete());
@@ -617,7 +627,7 @@ public class ModelFileDownloadServiceTest {
   }
 
   @Test
-  public void maybeCheckDownloadingComplete_downloadInprogress() throws Exception {
+  public void maybeCheckDownloadingComplete_downloadInprogress() {
     sharedPreferencesUtil.setDownloadingCustomModelDetails(CUSTOM_MODEL_DOWNLOADING);
     assertNull(modelFileDownloadService.getDownloadingModelStatusCode(0L));
     matrixCursor.addRow(new Integer[] {DownloadManager.STATUS_RUNNING});
@@ -659,7 +669,7 @@ public class ModelFileDownloadServiceTest {
   }
 
   @Test
-  public void maybeCheckDownloadingComplete_noDownloadsInProgress() throws Exception {
+  public void maybeCheckDownloadingComplete_noDownloadsInProgress() {
     modelFileDownloadService.maybeCheckDownloadingComplete();
     verify(mockDownloadManager, never()).query(any());
     verify(mockDownloadManager, never()).remove(anyLong());
@@ -686,6 +696,7 @@ public class ModelFileDownloadServiceTest {
     CustomModel retrievedModel = sharedPreferencesUtil.getCustomModelDetails(MODEL_NAME);
     assertEquals(retrievedModel, customModelDownloadComplete);
     verify(mockDownloadManager, times(1)).remove(anyLong());
+    verify(mockFileManager, never()).deleteNonLatestCustomModels();
   }
 
   @Test
@@ -703,6 +714,7 @@ public class ModelFileDownloadServiceTest {
     assertNull(modelFileDownloadService.loadNewlyDownloadedModelFile(CUSTOM_MODEL_DOWNLOADING));
     assertNull(sharedPreferencesUtil.getDownloadingCustomModelDetails(MODEL_NAME));
     verify(mockDownloadManager, times(1)).remove(anyLong());
+    verify(mockFileManager, never()).deleteNonLatestCustomModels();
   }
 
   @Test
@@ -714,6 +726,7 @@ public class ModelFileDownloadServiceTest {
     assertNull(modelFileDownloadService.loadNewlyDownloadedModelFile(CUSTOM_MODEL_DOWNLOADING));
     assertNull(sharedPreferencesUtil.getCustomModelDetails(MODEL_NAME));
     verify(mockDownloadManager, never()).remove(anyLong());
+    verify(mockFileManager, never()).deleteNonLatestCustomModels();
   }
 
   @Test
@@ -727,5 +740,35 @@ public class ModelFileDownloadServiceTest {
     assertNull(modelFileDownloadService.loadNewlyDownloadedModelFile(CUSTOM_MODEL_DOWNLOADING));
     assertNull(sharedPreferencesUtil.getCustomModelDetails(MODEL_NAME));
     verify(mockDownloadManager, times(1)).remove(anyLong());
+    verify(mockFileManager, never()).deleteNonLatestCustomModels();
+  }
+
+  @Test
+  public void loadNewlyDownloadedModelFile_initialLoad_successFilePresent()
+      throws FirebaseMlException, FileNotFoundException {
+    // Not found
+    assertNull(modelFileDownloadServiceInitialLoad.getDownloadingModelStatusCode(0L));
+    matrixCursor.addRow(new Integer[] {DownloadManager.STATUS_SUCCESSFUL});
+    when(mockDownloadManager.query(any())).thenReturn(matrixCursor);
+    when(mockDownloadManager.openDownloadedFile(anyLong()))
+        .thenReturn(
+            ParcelFileDescriptor.open(testTempModelFile, ParcelFileDescriptor.MODE_READ_ONLY));
+    when(mockDownloadManager.remove(anyLong())).thenReturn(1);
+
+    when(mockFileManager.moveModelToDestinationFolder(any(), any())).thenReturn(testAppModelFile);
+
+    assertEquals(
+        modelFileDownloadServiceInitialLoad.loadNewlyDownloadedModelFile(CUSTOM_MODEL_DOWNLOADING),
+        testAppModelFile);
+
+    // second attempt should not call deleteNonLatestCustomModels a second time.
+    assertEquals(
+        modelFileDownloadServiceInitialLoad.loadNewlyDownloadedModelFile(CUSTOM_MODEL_DOWNLOADING),
+        testAppModelFile);
+
+    CustomModel retrievedModel = sharedPreferencesUtil.getCustomModelDetails(MODEL_NAME);
+    assertEquals(retrievedModel, customModelDownloadComplete);
+    verify(mockDownloadManager, times(2)).remove(anyLong());
+    verify(mockFileManager, times(1)).deleteNonLatestCustomModels();
   }
 }

@@ -44,10 +44,12 @@ public class ModelFileManager {
   private static final int INVALID_INDEX = -1;
   private final Context context;
   private final FirebaseApp firebaseApp;
+  private final SharedPreferencesUtil sharedPreferencesUtil;
 
   public ModelFileManager(@NonNull FirebaseApp firebaseApp) {
     this.context = firebaseApp.getApplicationContext();
     this.firebaseApp = firebaseApp;
+    this.sharedPreferencesUtil = new SharedPreferencesUtil(firebaseApp);
   }
 
   /**
@@ -59,6 +61,24 @@ public class ModelFileManager {
   @NonNull
   public static ModelFileManager getInstance() {
     return FirebaseApp.getInstance().get(ModelFileManager.class);
+  }
+
+  void deleteNonLatestCustomModels() throws FirebaseMlException {
+    File root = getDirImpl("");
+    // for each custom model sub directory
+
+    boolean ret = true;
+    if (root.isDirectory()) {
+      for (File f : Preconditions.checkNotNull(root.listFiles())) {
+        // extract customModelName
+        String modelName = f.getName();
+
+        CustomModel model = sharedPreferencesUtil.getCustomModelDetails(modelName);
+        if (model != null) {
+          deleteOldModels(modelName, model.getLocalFilePath());
+        }
+      }
+    }
   }
 
   /**
@@ -176,6 +196,33 @@ public class ModelFileManager {
     }
 
     return modelFileDestination;
+  }
+
+  /**
+   * Deletes old models in the custom model directory, except the {@code latestModelFilePath}. This
+   * should only be called when no files are in use or more specifically when the first
+   * initialization, otherwise it may remove a model that is in use.
+   *
+   * @param latestModelFilePath The file path to the latest custom model.
+   */
+  @WorkerThread
+  public synchronized boolean deleteOldModels(
+      @NonNull String modelName, @NonNull String latestModelFilePath) {
+    File modelFolder = getModelDirUnsafe(modelName);
+    if (!modelFolder.exists()) {
+      return false;
+    }
+
+    File[] modelFiles = modelFolder.listFiles();
+
+    boolean isAllDeleted = true;
+    for (File modelFile : modelFiles) {
+      if (!modelFile.getPath().equals(latestModelFilePath) && !deleteRecursively(modelFile)) {
+        isAllDeleted = false;
+      }
+    }
+    // Only return true if all old models are deleted.
+    return isAllDeleted;
   }
 
   /**

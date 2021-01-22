@@ -68,6 +68,7 @@ public class ModelFileDownloadService {
   private final FirebaseMlLogger eventLogger;
 
   private final DataTransportMlEventSender statsSender;
+  private boolean isInitialLoad;
 
   @GuardedBy("this")
   // Mapping from download id to broadcast receiver. Because models can update, we cannot just keep
@@ -91,6 +92,7 @@ public class ModelFileDownloadService {
     this.sharedPreferencesUtil = new SharedPreferencesUtil(firebaseApp);
     this.statsSender = DataTransportMlEventSender.create(transportFactory);
     this.eventLogger = new FirebaseMlLogger(firebaseApp, sharedPreferencesUtil, statsSender);
+    this.isInitialLoad = true;
   }
 
   @VisibleForTesting
@@ -100,13 +102,15 @@ public class ModelFileDownloadService {
       ModelFileManager fileManager,
       SharedPreferencesUtil sharedPreferencesUtil,
       DataTransportMlEventSender statsSender,
-      FirebaseMlLogger eventLogger) {
+      FirebaseMlLogger eventLogger,
+      boolean isInitialLoad) {
     this.context = firebaseApp.getApplicationContext();
     this.downloadManager = downloadManager;
     this.fileManager = fileManager;
     this.sharedPreferencesUtil = sharedPreferencesUtil;
     this.eventLogger = eventLogger;
     this.statsSender = statsSender;
+    this.isInitialLoad = isInitialLoad;
   }
 
   /**
@@ -396,7 +400,12 @@ public class ModelFileDownloadService {
           new CustomModel(
               model.getName(), model.getModelHash(), model.getSize(), 0, newModelFile.getPath()));
 
-      // todo(annzimmer) Cleans up the old files if it is the initial creation.
+      try {
+        maybeCleanUpOldModels();
+      } catch (FirebaseMlException fex) {
+        Log.d(TAG, "Failed to clean up old models.");
+      }
+
       return newModelFile;
     } else if (statusCode == DownloadManager.STATUS_FAILED) {
       // reset original model - removing downloading details.
@@ -404,6 +413,19 @@ public class ModelFileDownloadService {
     }
     // Other cases, return as null and wait for download finish.
     return null;
+  }
+
+  private void maybeCleanUpOldModels() throws FirebaseMlException {
+    if (!isInitialLoad) {
+      return;
+    }
+
+    // only do once per initialization
+    isInitialLoad = false;
+
+    // for each custom model directory, find out the latest model and delete the other files.
+    // If no corresponding model, clean up the full direcorty.
+    fileManager.deleteNonLatestCustomModels();
   }
 
   private FirebaseMlException getExceptionAccordingToDownloadManager(Long downloadId) {
