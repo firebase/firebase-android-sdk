@@ -786,7 +786,8 @@ public class ModelFileDownloadServiceTest {
   }
 
   @Test
-  public void loadNewlyDownloadedModelFile_successNoFile() throws FileNotFoundException {
+  public void loadNewlyDownloadedModelFile_successNoFile()
+      throws FileNotFoundException, FirebaseMlException {
     // Not found
     assertNull(modelFileDownloadService.getDownloadingModelStatusCode(0L));
     matrixCursor.addRow(new Integer[] {DownloadManager.STATUS_SUCCESSFUL});
@@ -809,7 +810,7 @@ public class ModelFileDownloadServiceTest {
   }
 
   @Test
-  public void loadNewlyDownloadedModelFile_Running() {
+  public void loadNewlyDownloadedModelFile_Running() throws FirebaseMlException {
     // Not found
     assertNull(modelFileDownloadService.getDownloadingModelStatusCode(0L));
     matrixCursor.addRow(new Integer[] {DownloadManager.STATUS_RUNNING});
@@ -823,7 +824,7 @@ public class ModelFileDownloadServiceTest {
   }
 
   @Test
-  public void loadNewlyDownloadedModelFile_Failed() {
+  public void loadNewlyDownloadedModelFile_Failed() throws FirebaseMlException {
     // Not found
     assertNull(modelFileDownloadService.getDownloadingModelStatusCode(0L));
     matrixCursor =
@@ -871,10 +872,7 @@ public class ModelFileDownloadServiceTest {
     assertEquals(retrievedModel, customModelDownloadComplete);
     verify(mockDownloadManager, times(2)).remove(anyLong());
     verify(mockFileManager, times(1)).deleteNonLatestCustomModels();
-
-    verify(mockStatsLogger, never())
-        .logDownloadEventWithErrorCode(any(), anyBoolean(), any(), any());
-   verify(mockStatsLogger, times(1))
+    verify(mockStatsLogger, times(2))
         .logDownloadEventWithErrorCode(
             eq(CUSTOM_MODEL_DOWNLOADING),
             eq(true),
