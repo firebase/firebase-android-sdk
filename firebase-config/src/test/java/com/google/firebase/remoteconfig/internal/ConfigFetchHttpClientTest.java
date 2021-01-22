@@ -20,7 +20,9 @@ import static com.google.firebase.remoteconfig.RemoteConfigConstants.ExperimentD
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.ExperimentDescriptionFieldKey.VARIANT_ID;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.FETCH_REGEX_URL;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.ANALYTICS_USER_PROPERTIES;
+import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.APP_BUILD;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.APP_ID;
+import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.APP_VERSION;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.COUNTRY_CODE;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.INSTANCE_ID;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.INSTANCE_ID_TOKEN;
@@ -36,6 +38,7 @@ import static com.google.firebase.remoteconfig.testutil.Assert.assertThrows;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import android.content.Context;
+import android.content.pm.PackageInfo;
 import android.os.Build;
 import com.google.android.gms.common.util.MockClock;
 import com.google.common.base.Charsets;
@@ -205,6 +208,11 @@ public class ConfigFetchHttpClientTest {
     assertThat(requestBody.get(LANGUAGE_CODE)).isEqualTo(locale.toLanguageTag());
     assertThat(requestBody.getInt(PLATFORM_VERSION)).isEqualTo(android.os.Build.VERSION.SDK_INT);
     assertThat(requestBody.get(TIME_ZONE)).isEqualTo(TimeZone.getDefault().getID());
+    PackageInfo packageInfo =
+        context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
+    assertThat(requestBody.get(APP_VERSION)).isEqualTo(packageInfo.versionName);
+    assertThat(requestBody.get(APP_BUILD))
+        .isEqualTo(Long.toString(packageInfo.getLongVersionCode()));
     assertThat(requestBody.get(PACKAGE_NAME)).isEqualTo(context.getPackageName());
     assertThat(requestBody.get(SDK_VERSION)).isEqualTo(BuildConfig.VERSION_NAME);
     assertThat(requestBody.getJSONObject(ANALYTICS_USER_PROPERTIES).toString())
