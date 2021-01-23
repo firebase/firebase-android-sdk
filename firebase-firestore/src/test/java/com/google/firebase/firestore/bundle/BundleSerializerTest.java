@@ -637,7 +637,7 @@ public class BundleSerializerTest {
             + "name: '"
             + TEST_DOCUMENT
             + "',\n"
-            + "readTime: '2020-01-01T00:00:01.0000000001Z',\n"
+            + "readTime: '2020-01-01T00:00:01.000000001Z',\n"
             + "exists: true,\n"
             + "queries: [ 'query-1', 'query-2' ]\n"
             + "}";
