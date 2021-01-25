@@ -24,9 +24,9 @@ import java.io.IOException;
 import java.util.UUID;
 import junit.framework.TestCase;
 
-public class BreakpadControllerTest extends TestCase {
+public class CrashpadControllerTest extends TestCase {
 
-  private BreakpadController controller;
+  private CrashpadController controller;
 
   private Context context;
   private NativeApi mockNativeApi;
@@ -40,7 +40,7 @@ public class BreakpadControllerTest extends TestCase {
     context = ApplicationProvider.getApplicationContext();
     mockNativeApi = mock(NativeApi.class);
     mockFilesManager = mock(CrashFilesManager.class);
-    controller = new BreakpadController(context, mockNativeApi, mockFilesManager);
+    controller = new CrashpadController(context, mockNativeApi, mockFilesManager);
   }
 
   @Override
