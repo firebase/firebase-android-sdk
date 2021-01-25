@@ -55,7 +55,7 @@ class CrashpadController implements NativeComponentController {
         initSuccess = nativeApi.initialize(crashReportPath, context.getAssets());
       }
     } catch (IOException e) {
-      Logger.getLogger().e("Error initializing CrashlyticsNdk", e);
+      Logger.getLogger().e("Error initializing Crashlytics NDK", e);
     }
     return initSuccess;
   }
@@ -82,12 +82,14 @@ class CrashpadController implements NativeComponentController {
     final File sessionFileDirectoryForMinidump = new File(sessionFileDirectory, "pending");
 
     Logger.getLogger()
-        .d("Minidump directory: " + sessionFileDirectoryForMinidump.getAbsolutePath());
+        .v("Minidump directory: " + sessionFileDirectoryForMinidump.getAbsolutePath());
 
     File minidump = getSingleFileWithExtension(sessionFileDirectoryForMinidump, ".dmp");
 
     Logger.getLogger()
-        .d("Minidump " + (minidump != null && minidump.exists() ? "exists" : "does not exist"));
+        .v(
+            "Minidump file "
+                + (minidump != null && minidump.exists() ? "exists" : "does not exist"));
 
     final SessionFiles.Builder builder = new SessionFiles.Builder();
     if (sessionFileDirectory != null

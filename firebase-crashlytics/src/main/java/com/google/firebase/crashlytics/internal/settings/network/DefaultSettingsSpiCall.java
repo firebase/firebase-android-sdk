@@ -108,7 +108,7 @@ public class DefaultSettingsSpiCall implements SettingsSpiCall {
       httpRequest = applyHeadersTo(httpRequest, requestData);
 
       logger.d("Requesting settings from " + url);
-      logger.d("Settings query params were: " + queryParams);
+      logger.v("Settings query params were: " + queryParams);
 
       final HttpResponse httpResponse = httpRequest.execute();
       toReturn = handleResponse(httpResponse);
@@ -122,7 +122,7 @@ public class DefaultSettingsSpiCall implements SettingsSpiCall {
   /** package private for testing */
   JSONObject handleResponse(HttpResponse httpResponse) {
     final int statusCode = httpResponse.code();
-    logger.d("Settings result was: " + statusCode);
+    logger.v("Settings response code was: " + statusCode);
 
     final JSONObject toReturn;
     if (requestWasSuccessful(statusCode)) {
@@ -150,8 +150,8 @@ public class DefaultSettingsSpiCall implements SettingsSpiCall {
     try {
       return new JSONObject(httpRequestBody);
     } catch (Exception e) {
-      logger.d("Failed to parse settings JSON from " + url, e);
-      logger.d("Settings response " + httpRequestBody);
+      logger.w("Failed to parse settings JSON from " + url, e);
+      logger.w("Settings response " + httpRequestBody);
       return null;
     }
   }

@@ -50,8 +50,9 @@ class FirebaseCrashlyticsNdk implements CrashlyticsNativeComponent {
   @Override
   public boolean openSession(String sessionId) {
     final boolean initSuccess = controller.initialize(sessionId);
-    Logger.getLogger()
-        .i("Crashlytics NDK initialization " + (initSuccess ? "successful" : "FAILED"));
+    if (!initSuccess) {
+      Logger.getLogger().w("Failed to initialize Crashlytics NDK for session " + sessionId);
+    }
     return initSuccess;
   }
 
