@@ -343,7 +343,9 @@ public class FirebaseModelDownloader {
       @Nullable CustomModelDownloadConditions conditions,
       Task<Void> downloadTask,
       int retryCounter) {
-    if (downloadTask.getException().getMessage().contains("Retry: Expired URL")) {
+    if (downloadTask.getException() instanceof FirebaseMlException
+        && ((FirebaseMlException) downloadTask.getException()).getCode()
+            == FirebaseMlException.DOWNLOAD_URL_EXPIRED) {
       // this is likely an expired url - retry.
       Task<CustomModel> retryModelDetails =
           modelDownloadService.getNewDownloadUrlWithExpiry(

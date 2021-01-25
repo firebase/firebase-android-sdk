@@ -526,7 +526,9 @@ public class ModelFileDownloadService {
               // todo change to FirebaseMlException retry error - or whatever we decide is
               // appropriate.
               taskCompletionSource.setException(
-                  new Exception("Retry: Expired URL for id: " + downloadingModel.getDownloadId()));
+                  new FirebaseMlException(
+                      "Retry: Expired URL for id: " + downloadingModel.getDownloadId(),
+                      FirebaseMlException.DOWNLOAD_URL_EXPIRED));
               return;
             }
           }
@@ -555,8 +557,10 @@ public class ModelFileDownloadService {
       }
 
       // Status code is null or not one of success or fail.
-      eventLogger.logDownloadFailureWithReason(
-          downloadingModel, false, FirebaseMlLogger.NO_FAILURE_VALUE);
+      if (downloadingModel != null) {
+        eventLogger.logDownloadFailureWithReason(
+            downloadingModel, false, FirebaseMlLogger.NO_FAILURE_VALUE);
+      }
       taskCompletionSource.setException(new Exception("Model downloading failed"));
     }
 

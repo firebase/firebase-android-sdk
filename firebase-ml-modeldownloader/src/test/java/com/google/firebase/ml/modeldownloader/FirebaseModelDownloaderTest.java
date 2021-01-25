@@ -613,7 +613,10 @@ public class FirebaseModelDownloaderTest {
     when(mockModelDownloadService.getNewDownloadUrlWithExpiry(eq(TEST_PROJECT_ID), eq(MODEL_NAME)))
         .thenReturn(Tasks.forResult(ORIG_CUSTOM_MODEL_URL));
     when(mockFileDownloadService.download(any(), eq(DOWNLOAD_CONDITIONS)))
-        .thenReturn(Tasks.forException(new Exception("Retry: Expired URL")))
+        .thenReturn(
+            Tasks.forException(
+                new FirebaseMlException(
+                    "Retry: Expired URL", FirebaseMlException.DOWNLOAD_URL_EXPIRED)))
         .thenReturn(Tasks.forResult(null));
     when(mockFileDownloadService.loadNewlyDownloadedModelFile(eq(customModelUpdateLoaded)))
         .thenReturn(firstDeviceModelFile);
@@ -630,7 +633,7 @@ public class FirebaseModelDownloaderTest {
   }
 
   @Test
-  public void getModel_local_noLocalModel_urlRetry_maxTries() throws Exception {
+  public void getModel_local_noLocalModel_urlRetry_maxTries() {
     when(mockPrefs.getCustomModelDetails(eq(MODEL_NAME)))
         .thenReturn(null)
         .thenReturn(null)
@@ -641,7 +644,10 @@ public class FirebaseModelDownloaderTest {
             eq(TEST_PROJECT_ID), eq(MODEL_NAME), eq(null)))
         .thenReturn(Tasks.forResult(ORIG_CUSTOM_MODEL_URL));
     when(mockFileDownloadService.download(any(), eq(DOWNLOAD_CONDITIONS)))
-        .thenReturn(Tasks.forException(new Exception("Retry: Expired URL")));
+        .thenReturn(
+            Tasks.forException(
+                new FirebaseMlException(
+                    "Retry: Expired URL", FirebaseMlException.DOWNLOAD_URL_EXPIRED)));
     TestOnCompleteListener<CustomModel> onCompleteListener = new TestOnCompleteListener<>();
     Task<CustomModel> task =
         firebaseModelDownloader.getModel(MODEL_NAME, DownloadType.LOCAL_MODEL, DOWNLOAD_CONDITIONS);

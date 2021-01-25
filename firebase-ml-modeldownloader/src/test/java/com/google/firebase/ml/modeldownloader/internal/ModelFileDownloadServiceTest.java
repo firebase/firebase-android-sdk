@@ -399,8 +399,10 @@ public class ModelFileDownloadServiceTest {
 
       task.addOnCompleteListener(executor, onCompleteListener);
       onCompleteListener.await();
+    } catch (FirebaseMlException ex) {
+      assertEquals(ex.getCode(), FirebaseMlException.DOWNLOAD_URL_EXPIRED);
     } catch (Exception ex) {
-      assertTrue(ex.getMessage().contains("Retry: Expired URL"));
+      fail("Unexpected error message: " + ex.getMessage());
     }
 
     assertTrue(task.isComplete());
