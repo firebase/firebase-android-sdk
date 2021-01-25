@@ -204,23 +204,30 @@ public class ModelFileManager {
    * @param latestModelFilePath The file path to the latest custom model.
    */
   @WorkerThread
-  public synchronized boolean deleteOldModels(
+  public synchronized void deleteOldModels(
       @NonNull String modelName, @NonNull String latestModelFilePath) {
     File modelFolder = getModelDirUnsafe(modelName);
     if (!modelFolder.exists()) {
-      return false;
+      return;
     }
 
+    File latestFile = new File(latestModelFilePath);
+    int latestIndex = Integer.parseInt(latestFile.getName());
     File[] modelFiles = modelFolder.listFiles();
 
     boolean isAllDeleted = true;
+    int fileInt;
     for (File modelFile : modelFiles) {
-      if (!modelFile.getPath().equals(latestModelFilePath) && !deleteRecursively(modelFile)) {
-        isAllDeleted = false;
+      try {
+        fileInt = Integer.parseInt(modelFile.getName());
+      } catch (NumberFormatException ex) {
+        // unexpected file - ignore
+        fileInt = Integer.MAX_VALUE;
+      }
+      if (fileInt < latestIndex) {
+        isAllDeleted = isAllDeleted && modelFile.delete();
       }
     }
-    // Only return true if all old models are deleted.
-    return isAllDeleted;
   }
 
   /**

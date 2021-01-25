@@ -239,6 +239,18 @@ public class ModelFileManagerTest {
   }
 
   @Test
+  public void deleteOldModels_deleteModel_keepNewer()
+      throws FirebaseMlException, FileNotFoundException {
+    MoveFileToDestination(modelDestinationFolder, testModelFile, CUSTOM_MODEL_NO_FILE, 0);
+    MoveFileToDestination(modelDestinationFolder, testModelFile2, CUSTOM_MODEL_NO_FILE, 1);
+
+    fileManager.deleteOldModels(MODEL_NAME, modelDestinationFolder + "/0");
+
+    assertTrue(new File(modelDestinationFolder + "/0").exists());
+    assertTrue(new File(modelDestinationFolder + "/1").exists());
+  }
+
+  @Test
   public void deleteOldModels_noModelsToDelete() throws FirebaseMlException, FileNotFoundException {
     MoveFileToDestination(modelDestinationFolder, testModelFile, CUSTOM_MODEL_NO_FILE, 0);
 

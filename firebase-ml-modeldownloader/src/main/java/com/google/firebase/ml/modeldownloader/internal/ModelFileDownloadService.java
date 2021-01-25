@@ -409,11 +409,7 @@ public class ModelFileDownloadService {
           new CustomModel(
               model.getName(), model.getModelHash(), model.getSize(), 0, newModelFile.getPath()));
 
-      try {
-        maybeCleanUpOldModels();
-      } catch (FirebaseMlException fex) {
-        Log.d(TAG, "Failed to clean up old models.");
-      }
+      maybeCleanUpOldModels();
 
       return newModelFile;
     } else if (statusCode == DownloadManager.STATUS_FAILED) {
@@ -428,17 +424,22 @@ public class ModelFileDownloadService {
     return null;
   }
 
-  private void maybeCleanUpOldModels() throws FirebaseMlException {
+  private Task<Void> maybeCleanUpOldModels() {
     if (!isInitialLoad) {
-      return;
+      return Tasks.forResult(null);
     }
 
-    // only do once per initialization
+    // only do once per initialization.
     isInitialLoad = false;
 
     // for each custom model directory, find out the latest model and delete the other files.
-    // If no corresponding model, clean up the full direcorty.
-    fileManager.deleteNonLatestCustomModels();
+    // If no corresponding model, clean up the full directory.
+    try {
+      fileManager.deleteNonLatestCustomModels();
+    } catch (FirebaseMlException fex) {
+      Log.d(TAG, "Failed to clean up old models.");
+    }
+    return Tasks.forResult(null);
   }
 
   private FirebaseMlException getExceptionAccordingToDownloadManager(Long downloadId) {
