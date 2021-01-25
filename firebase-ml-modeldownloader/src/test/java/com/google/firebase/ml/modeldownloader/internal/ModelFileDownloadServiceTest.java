@@ -424,6 +424,47 @@ public class ModelFileDownloadServiceTest {
   }
 
   @Test
+  public void ensureModelDownloaded_downloadFailed_noUrl() {
+    when(mockDownloadManager.enqueue(any())).thenReturn(DOWNLOAD_ID);
+    matrixCursor =
+        new MatrixCursor(
+            new String[] {DownloadManager.COLUMN_STATUS, DownloadManager.COLUMN_REASON});
+    matrixCursor.addRow(new Integer[] {DownloadManager.STATUS_FAILED, 400});
+    when(mockDownloadManager.query(any())).thenReturn(matrixCursor);
+
+    TestOnCompleteListener<Void> onCompleteListener = new TestOnCompleteListener<>();
+    Task<Void> task = modelFileDownloadService.ensureModelDownloaded(CUSTOM_MODEL_NO_URL);
+
+    try {
+      // Complete the download
+      Intent downloadCompleteIntent = new Intent(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
+      downloadCompleteIntent.putExtra(DownloadManager.EXTRA_DOWNLOAD_ID, DOWNLOAD_ID);
+      app.getApplicationContext().sendBroadcast(downloadCompleteIntent);
+
+      task.addOnCompleteListener(executor, onCompleteListener);
+      onCompleteListener.await();
+    } catch (FirebaseMlException ex) {
+      assertEquals(ex.getCode(), FirebaseMlException.INTERNAL);
+    } catch (Exception ex) {
+      fail("Unexpected error message: " + ex.getMessage());
+    }
+
+    assertTrue(task.isComplete());
+    assertFalse(task.isSuccessful());
+    assertTrue(task.getException().getMessage().contains("Failed to schedule"));
+    assertEquals(sharedPreferencesUtil.getDownloadingCustomModelDetails(MODEL_NAME), null);
+
+    verify(mockDownloadManager, never()).enqueue(any());
+
+    verify(mockStatsLogger, times(1))
+        .logDownloadEventWithErrorCode(
+            eq(CUSTOM_MODEL_NO_URL),
+            eq(false),
+            eq(DownloadStatus.EXPLICITLY_REQUESTED),
+            eq(ErrorCode.NO_ERROR));
+  }
+
+  @Test
   public void ensureModelDownloaded_alreadyInProgess_completed() throws Exception {
     when(mockDownloadManager.enqueue(any())).thenReturn(DOWNLOAD_ID);
     matrixCursor.addRow(new Integer[] {DownloadManager.STATUS_SUCCESSFUL});

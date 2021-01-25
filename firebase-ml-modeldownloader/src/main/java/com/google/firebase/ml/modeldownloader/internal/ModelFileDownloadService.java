@@ -157,7 +157,9 @@ public class ModelFileDownloadService {
     // schedule new download of model file
     Long newDownloadId = scheduleModelDownload(customModel);
     if (newDownloadId == null) {
-      return Tasks.forException(new Exception("Failed to schedule the download task"));
+      return Tasks.forException(
+          new FirebaseMlException(
+              "Failed to schedule the download task", FirebaseMlException.INTERNAL));
     }
 
     return registerReceiverForDownloadId(newDownloadId, customModel.getName());
