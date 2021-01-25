@@ -45,7 +45,7 @@ public final class RemoteConfigConstants {
     RequestFieldKey.PLATFORM_VERSION,
     RequestFieldKey.TIME_ZONE,
     RequestFieldKey.APP_VERSION,
-    RequestFieldKey.APP_VERSION,
+    RequestFieldKey.APP_BUILD,
     RequestFieldKey.PACKAGE_NAME,
     RequestFieldKey.SDK_VERSION,
     RequestFieldKey.ANALYTICS_USER_PROPERTIES
