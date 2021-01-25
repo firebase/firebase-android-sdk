@@ -65,12 +65,11 @@ public class ModelFileManager {
 
   void deleteNonLatestCustomModels() throws FirebaseMlException {
     File root = getDirImpl("");
-    // for each custom model sub directory
 
     boolean ret = true;
     if (root.isDirectory()) {
-      for (File f : Preconditions.checkNotNull(root.listFiles())) {
-        // extract customModelName
+      for (File f : root.listFiles()) {
+        // for each custom model sub directory - extract customModelName and clean up old models.
         String modelName = f.getName();
 
         CustomModel model = sharedPreferencesUtil.getCustomModelDetails(modelName);
@@ -250,7 +249,7 @@ public class ModelFileManager {
 
     boolean ret = true;
     if (root.isDirectory()) {
-      for (File f : Preconditions.checkNotNull(root.listFiles())) {
+      for (File f : root.listFiles()) {
         ret = ret && deleteRecursively(f);
       }
     }
