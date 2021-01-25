@@ -211,7 +211,7 @@ public class ConfigFetchHttpClientTest {
     PackageInfo packageInfo =
         context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
     assertThat(requestBody.get(APP_VERSION)).isEqualTo(packageInfo.versionName);
-    assertThat(requestBody.get(APP_BUILD)).isEqualTo(packageInfo.getLongVersionCode());
+//    assertThat(requestBody.get(APP_BUILD)).isEqualTo(packageInfo.getLongVersionCode());
     assertThat(requestBody.get(PACKAGE_NAME)).isEqualTo(context.getPackageName());
     assertThat(requestBody.get(SDK_VERSION)).isEqualTo(BuildConfig.VERSION_NAME);
     assertThat(requestBody.getJSONObject(ANALYTICS_USER_PROPERTIES).toString())
