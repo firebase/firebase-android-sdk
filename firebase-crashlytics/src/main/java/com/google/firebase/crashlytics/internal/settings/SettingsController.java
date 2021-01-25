@@ -90,7 +90,6 @@ public class SettingsController implements SettingsDataProvider {
       HttpRequestFactory httpRequestFactory,
       String versionCode,
       String versionName,
-      String urlEndpoint,
       DataCollectionArbiter dataCollectionArbiter) {
 
     final String installerPackageName = idManager.getInstallerPackageName();
@@ -99,7 +98,7 @@ public class SettingsController implements SettingsDataProvider {
     final CachedSettingsIo cachedSettingsIo = new CachedSettingsIo(context);
     final String settingsUrl = String.format(Locale.US, SETTINGS_URL_FORMAT, googleAppId);
     final SettingsSpiCall settingsSpiCall =
-        new DefaultSettingsSpiCall(urlEndpoint, settingsUrl, httpRequestFactory);
+        new DefaultSettingsSpiCall(settingsUrl, httpRequestFactory);
 
     final String deviceModel = idManager.getModelName();
     final String osBuildVersion = idManager.getOsBuildVersionString();

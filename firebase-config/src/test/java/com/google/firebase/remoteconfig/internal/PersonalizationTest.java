@@ -16,10 +16,17 @@ package com.google.firebase.remoteconfig.internal;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.remoteconfig.internal.Personalization.ANALYTICS_ORIGIN_PERSONALIZATION;
-import static com.google.firebase.remoteconfig.internal.Personalization.ANALYTICS_PULL_EVENT;
-import static com.google.firebase.remoteconfig.internal.Personalization.ARM_KEY;
-import static com.google.firebase.remoteconfig.internal.Personalization.ARM_VALUE;
+import static com.google.firebase.remoteconfig.internal.Personalization.EXTERNAL_ARM_INDEX_PARAM;
+import static com.google.firebase.remoteconfig.internal.Personalization.EXTERNAL_ARM_VALUE_PARAM;
+import static com.google.firebase.remoteconfig.internal.Personalization.EXTERNAL_EVENT;
+import static com.google.firebase.remoteconfig.internal.Personalization.EXTERNAL_GROUP_PARAM;
+import static com.google.firebase.remoteconfig.internal.Personalization.EXTERNAL_PERSONALIZATION_ID_PARAM;
+import static com.google.firebase.remoteconfig.internal.Personalization.EXTERNAL_RC_PARAMETER_PARAM;
+import static com.google.firebase.remoteconfig.internal.Personalization.INTERNAL_CHOICE_ID_PARAM;
+import static com.google.firebase.remoteconfig.internal.Personalization.INTERNAL_EVENT;
+import static org.mockito.AdditionalMatchers.or;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.times;
@@ -27,6 +34,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import android.os.Bundle;
+import com.google.common.truth.Correspondence;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
 import java.util.ArrayList;
 import java.util.Date;
@@ -45,6 +53,10 @@ import org.robolectric.annotation.Config;
 @Config(manifest = Config.NONE)
 public class PersonalizationTest {
   private static final ConfigContainer CONFIG_CONTAINER;
+  private static final Bundle LOG_PARAMS_1 = new Bundle();
+  private static final Bundle LOG_PARAMS_2 = new Bundle();
+  private static final Bundle INTERNAL_LOG_PARAMS_1 = new Bundle();
+  private static final Bundle INTERNAL_LOG_PARAMS_2 = new Bundle();
 
   static {
     try {
@@ -55,14 +67,36 @@ public class PersonalizationTest {
               .withFetchTime(new Date(1))
               .withPersonalizationMetadata(
                   new JSONObject(
-                      "{key1: {personalizationId: 'id1'}, key2: {personalizationId: 'id2'}}"))
+                      "{key1: {personalizationId: 'p13n1', armIndex: 0,"
+                          + " choiceId: 'id1', group: 'BASELINE'},"
+                          + " key2: {personalizationId: 'p13n2', armIndex: 1,"
+                          + " choiceId: 'id2', group: 'P13N'}}"))
               .build();
     } catch (JSONException e) {
       throw new RuntimeException(e);
     }
+
+    LOG_PARAMS_1.putString(EXTERNAL_RC_PARAMETER_PARAM, "key1");
+    LOG_PARAMS_1.putString(EXTERNAL_ARM_VALUE_PARAM, "value1");
+    LOG_PARAMS_1.putString(EXTERNAL_PERSONALIZATION_ID_PARAM, "p13n1");
+    LOG_PARAMS_1.putInt(EXTERNAL_ARM_INDEX_PARAM, 0);
+    LOG_PARAMS_1.putString(EXTERNAL_GROUP_PARAM, "BASELINE");
+
+    LOG_PARAMS_2.putString(EXTERNAL_RC_PARAMETER_PARAM, "key2");
+    LOG_PARAMS_2.putString(EXTERNAL_ARM_VALUE_PARAM, "value2");
+    LOG_PARAMS_2.putString(EXTERNAL_PERSONALIZATION_ID_PARAM, "p13n2");
+    LOG_PARAMS_2.putInt(EXTERNAL_ARM_INDEX_PARAM, 1);
+    LOG_PARAMS_2.putString(EXTERNAL_GROUP_PARAM, "P13N");
+
+    INTERNAL_LOG_PARAMS_1.putString(INTERNAL_CHOICE_ID_PARAM, "id1");
+
+    INTERNAL_LOG_PARAMS_2.putString(INTERNAL_CHOICE_ID_PARAM, "id2");
   }
 
   private static final List<Bundle> FAKE_LOGS = new ArrayList<>();
+
+  private static final Correspondence<Bundle, String> TO_STRING =
+      Correspondence.transforming(Bundle::toString, "as String is");
 
   private Personalization personalization;
 
@@ -74,8 +108,7 @@ public class PersonalizationTest {
 
     doAnswer(invocation -> FAKE_LOGS.add(invocation.getArgument(2)))
         .when(mockAnalyticsConnector)
-        .logEvent(
-            eq(ANALYTICS_ORIGIN_PERSONALIZATION), eq(ANALYTICS_PULL_EVENT), any(Bundle.class));
+        .logEvent(eq(ANALYTICS_ORIGIN_PERSONALIZATION), anyString(), any(Bundle.class));
 
     personalization = new Personalization(mockAnalyticsConnector);
 
@@ -88,43 +121,46 @@ public class PersonalizationTest {
 
     verify(mockAnalyticsConnector, times(0))
         .logEvent(
-            eq(ANALYTICS_ORIGIN_PERSONALIZATION), eq(ANALYTICS_PULL_EVENT), any(Bundle.class));
+            eq(ANALYTICS_ORIGIN_PERSONALIZATION),
+            or(eq(EXTERNAL_EVENT), eq(INTERNAL_EVENT)),
+            any(Bundle.class));
     assertThat(FAKE_LOGS).isEmpty();
   }
 
   @Test
-  public void logArmActive_singlePersonalizationKey_loggedOnce() {
+  public void logArmActive_singlePersonalizationKey_loggedInternallyAndExternally() {
     personalization.logArmActive("key1", CONFIG_CONTAINER);
 
     verify(mockAnalyticsConnector, times(1))
-        .logEvent(
-            eq(ANALYTICS_ORIGIN_PERSONALIZATION), eq(ANALYTICS_PULL_EVENT), any(Bundle.class));
-    assertThat(FAKE_LOGS).hasSize(1);
+        .logEvent(eq(ANALYTICS_ORIGIN_PERSONALIZATION), eq(EXTERNAL_EVENT), any(Bundle.class));
+    verify(mockAnalyticsConnector, times(1))
+        .logEvent(eq(ANALYTICS_ORIGIN_PERSONALIZATION), eq(INTERNAL_EVENT), any(Bundle.class));
+    assertThat(FAKE_LOGS).hasSize(2);
 
-    Bundle params = new Bundle();
-    params.putString(ARM_KEY, "id1");
-    params.putString(ARM_VALUE, "value1");
-    assertThat(FAKE_LOGS.get(0).toString()).isEqualTo(params.toString());
+    assertThat(FAKE_LOGS)
+        .comparingElementsUsing(TO_STRING)
+        .containsExactly(LOG_PARAMS_1.toString(), INTERNAL_LOG_PARAMS_1.toString());
   }
 
   @Test
-  public void logArmActive_multiplePersonalizationKeys_loggedMultiple() {
+  public void logArmActive_multiplePersonalizationKeys_loggedInternallyAndExternally() {
     personalization.logArmActive("key1", CONFIG_CONTAINER);
     personalization.logArmActive("key2", CONFIG_CONTAINER);
+    personalization.logArmActive("key1", CONFIG_CONTAINER);
 
     verify(mockAnalyticsConnector, times(2))
-        .logEvent(
-            eq(ANALYTICS_ORIGIN_PERSONALIZATION), eq(ANALYTICS_PULL_EVENT), any(Bundle.class));
-    assertThat(FAKE_LOGS).hasSize(2);
+        .logEvent(eq(ANALYTICS_ORIGIN_PERSONALIZATION), eq(EXTERNAL_EVENT), any(Bundle.class));
+    verify(mockAnalyticsConnector, times(2))
+        .logEvent(eq(ANALYTICS_ORIGIN_PERSONALIZATION), eq(INTERNAL_EVENT), any(Bundle.class));
+    assertThat(FAKE_LOGS).hasSize(4);
 
-    Bundle params1 = new Bundle();
-    params1.putString(ARM_KEY, "id1");
-    params1.putString(ARM_VALUE, "value1");
-    assertThat(FAKE_LOGS.get(0).toString()).isEqualTo(params1.toString());
-
-    Bundle params2 = new Bundle();
-    params2.putString(ARM_KEY, "id2");
-    params2.putString(ARM_VALUE, "value2");
-    assertThat(FAKE_LOGS.get(1).toString()).isEqualTo(params2.toString());
+    assertThat(FAKE_LOGS)
+        .comparingElementsUsing(TO_STRING)
+        .containsAtLeast(LOG_PARAMS_1.toString(), LOG_PARAMS_2.toString())
+        .inOrder();
+    assertThat(FAKE_LOGS)
+        .comparingElementsUsing(TO_STRING)
+        .containsAtLeast(INTERNAL_LOG_PARAMS_1.toString(), INTERNAL_LOG_PARAMS_2.toString())
+        .inOrder();
   }
 }
