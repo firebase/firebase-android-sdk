@@ -209,7 +209,7 @@ public class ConfigFetchHttpClientTest {
     assertThat(requestBody.getInt(PLATFORM_VERSION)).isEqualTo(android.os.Build.VERSION.SDK_INT);
     assertThat(requestBody.get(TIME_ZONE)).isEqualTo(TimeZone.getDefault().getID());
     PackageInfo packageInfo =
-            context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
+        context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
     assertThat(requestBody.get(APP_VERSION)).isEqualTo(packageInfo.versionName);
     assertThat(requestBody.get(APP_BUILD)).isEqualTo(packageInfo.getLongVersionCode());
     assertThat(requestBody.get(PACKAGE_NAME)).isEqualTo(context.getPackageName());
