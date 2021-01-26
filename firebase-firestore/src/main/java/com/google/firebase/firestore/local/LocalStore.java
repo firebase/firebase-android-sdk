@@ -624,7 +624,7 @@ public final class LocalStore implements BundleListener {
         });
   }
 
-  /** Saves the given BundleMetadata to local persistence. */
+  @Override
   public void saveBundle(BundleMetadata bundleMetadata) {
     persistence.runTransaction(
         "Save bundle",
@@ -633,6 +633,7 @@ public final class LocalStore implements BundleListener {
         });
   }
 
+  @Override
   public ImmutableSortedMap<DocumentKey, MaybeDocument> applyBundledDocuments(
       ImmutableSortedMap<DocumentKey, MaybeDocument> documents, String bundleId) {
     // Allocates a target to hold all document keys from the bundle, such that
@@ -666,6 +667,7 @@ public final class LocalStore implements BundleListener {
         });
   }
 
+  @Override
   public void saveNamedQuery(NamedQuery namedQuery, ImmutableSortedSet<DocumentKey> documentKeys) {
     // Allocate a target for the named query such that it can be resumed from associated read time
     // if users use it to listen.
