@@ -12,6 +12,7 @@ This repository includes the following Firebase SDKs for Android:
   * `firebase-firestore`
   * `firebase-functions`
   * `firebase-inappmessaging-display`
+  * `firebase-perf`
   * `firebase-storage`
 
 For more information on building the SDKs from source or contributing,
@@ -30,6 +31,7 @@ in your app:
   * [`firebase-functions`](ktx/functions.md)
   * [`firebase-inappmessaging`](ktx/inappmessaging.md)
   * [`firebase-inappmessaging-display`](ktx/inappmessaging-display.md)
+  * [`firebase-perf`](ktx/perf.md)
   * [`firebase-remote-config`](ktx/remote-config.md)
   * [`firebase-storage`](ktx/storage.md)
   * [`firebase-database`](ktx/database.md)
