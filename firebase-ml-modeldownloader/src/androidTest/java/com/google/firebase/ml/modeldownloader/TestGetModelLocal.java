@@ -41,7 +41,7 @@ import org.junit.runner.RunWith;
  */
 @RunWith(AndroidJUnit4.class)
 public class TestGetModelLocal {
-  private FirebaseModelDownloader firebaseModelDownloader;
+
   private static final String MODEL_NAME_LOCAL = "getLocalModel";
   private static final String MODEL_NAME_LOCAL_2 = "getLocalModel2";
   private static final String MODEL_HASH = "origHash324";
@@ -51,14 +51,13 @@ public class TestGetModelLocal {
   private FirebaseApp app;
   private File firstDeviceModelFile;
   private File firstLoadTempModelFile;
-  private SharedPreferencesUtil sharedPreferencesUtil;
 
   @Before
   public void before() {
     app = FirebaseApp.initializeApp(ApplicationProvider.getApplicationContext());
-    firebaseModelDownloader = FirebaseModelDownloader.getInstance(app);
+    FirebaseModelDownloader firebaseModelDownloader = FirebaseModelDownloader.getInstance(app);
 
-    sharedPreferencesUtil = new SharedPreferencesUtil(app);
+    SharedPreferencesUtil sharedPreferencesUtil = new SharedPreferencesUtil(app);
     // reset shared preferences and downloads for models used by this test.
     firebaseModelDownloader.deleteDownloadedModel(MODEL_NAME_LOCAL);
     firebaseModelDownloader.deleteDownloadedModel(MODEL_NAME_LOCAL_2);

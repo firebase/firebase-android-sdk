@@ -220,7 +220,6 @@ public class CustomModelDownloadService {
           return setAndLogException(
               modelName,
               httpResponseCode,
-              errorMessage,
               String.format(
                   Locale.getDefault(),
                   "Bad http request for model (%s); error message: %s",
@@ -231,14 +230,12 @@ public class CustomModelDownloadService {
           return setAndLogException(
               modelName,
               httpResponseCode,
-              errorMessage,
               "Too many requests to server please wait before trying again.",
               FirebaseMlException.INVALID_ARGUMENT);
         case HttpURLConnection.HTTP_SERVER_ERROR:
           return setAndLogException(
               modelName,
               httpResponseCode,
-              errorMessage,
               String.format(
                   Locale.getDefault(),
                   "Server issue while fetching model (%s); error message: %s",
@@ -249,7 +246,6 @@ public class CustomModelDownloadService {
           return setAndLogException(
               modelName,
               httpResponseCode,
-              errorMessage,
               String.format(
                   Locale.getDefault(),
                   "Failed to connect to Firebase ML download server with HTTP status code: %d"
@@ -272,11 +268,7 @@ public class CustomModelDownloadService {
   }
 
   private Task<CustomModel> setAndLogException(
-      String modelName,
-      int httpResponseCode,
-      String errorMessage,
-      String s,
-      @Code int invalidArgument) {
+      String modelName, int httpResponseCode, String errorMessage, @Code int invalidArgument) {
     eventLogger.logModelInfoRetrieverFailure(
         new CustomModel(modelName, "", 0, 0),
         ErrorCode.MODEL_INFO_DOWNLOAD_UNSUCCESSFUL_HTTP_STATUS,

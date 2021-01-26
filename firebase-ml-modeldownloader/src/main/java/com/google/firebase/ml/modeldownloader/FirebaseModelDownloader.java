@@ -18,7 +18,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
-import com.google.android.datatransport.TransportFactory;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -51,13 +50,11 @@ public class FirebaseModelDownloader {
 
   @RequiresApi(api = VERSION_CODES.KITKAT)
   FirebaseModelDownloader(
-      FirebaseApp firebaseApp,
-      FirebaseInstallationsApi firebaseInstallationsApi,
-      TransportFactory transportFactory) {
+      FirebaseApp firebaseApp, FirebaseInstallationsApi firebaseInstallationsApi) {
     this.firebaseOptions = firebaseApp.getOptions();
     this.sharedPreferencesUtil = new SharedPreferencesUtil(firebaseApp);
     this.eventLogger = FirebaseMlLogger.getInstance();
-    this.fileDownloadService = new ModelFileDownloadService(firebaseApp, transportFactory);
+    this.fileDownloadService = new ModelFileDownloadService(firebaseApp);
     this.modelDownloadService =
         new CustomModelDownloadService(firebaseApp, firebaseInstallationsApi);
 

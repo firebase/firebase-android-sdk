@@ -429,7 +429,7 @@ public class FirebaseModelDownloaderTest {
   }
 
   @Test
-  public void getModel_latestModel_noLocalModel_error() throws Exception {
+  public void getModel_latestModel_noLocalModel_error() {
     when(mockPrefs.getCustomModelDetails(eq(MODEL_NAME)))
         .thenReturn(null)
         .thenReturn(null)

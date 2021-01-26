@@ -33,7 +33,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
-import com.google.android.datatransport.TransportFactory;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
@@ -81,8 +80,7 @@ public class ModelFileDownloadService {
   private CustomModelDownloadConditions downloadConditions =
       new CustomModelDownloadConditions.Builder().build();
 
-  public ModelFileDownloadService(
-      @NonNull FirebaseApp firebaseApp, TransportFactory transportFactory) {
+  public ModelFileDownloadService(@NonNull FirebaseApp firebaseApp) {
     this.context = firebaseApp.getApplicationContext();
     downloadManager = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
     this.fileManager = ModelFileManager.getInstance();
