@@ -113,6 +113,17 @@ public class BundleReaderTest {
                       "bar",
                       Value.newBuilder().setIntegerValue(42).build())),
               Document.DocumentState.SYNCED));
+  public static final BundledDocumentMetadata DOC3_METADATA =
+      new BundledDocumentMetadata(
+          key("coll/doc3"), version(5600002L), /* exists= */ true, Collections.emptyList());
+  public static final BundleDocument DOC3 =
+      new BundleDocument(
+          new Document(
+              key("coll/doc3"),
+              version(30004002L),
+              ObjectValue.fromMap(
+                  map("unicodeValue", Value.newBuilder().setStringValue("\uD83D\uDE0A").build())),
+              Document.DocumentState.SYNCED));
 
   @Test
   public void testReadsQueryAndDocument() throws IOException, JSONException {
@@ -311,18 +322,20 @@ public class BundleReaderTest {
   @Test
   public void testReadsUnicodeData() throws IOException, JSONException {
     TestBundleBuilder bundleBuilder = new TestBundleBuilder(TEST_PROJECT);
+    String docMetadata = addDoc3Metadata(bundleBuilder);
+    String doc = addDoc3(bundleBuilder); // DOC3 contains Unicode data
     String json =
-        bundleBuilder.build(
-            "bundle-\uD83D\uDE0A", /* createTimeMicros= */ 6000000L, /* version= */ 1);
+        bundleBuilder.build("bundle-1", /* createTimeMicros= */ 6000000L, /* version= */ 1);
 
     BundleReader bundleReader =
         new BundleReader(
             SERIALIZER, new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)));
 
-    BundleMetadata expectedMetadata =
-        new BundleMetadata("bundle-\uD83D\uDE0A", 1, version(6000000L));
-    BundleMetadata actualMetadata = bundleReader.getBundleMetadata();
-    assertEquals(expectedMetadata, actualMetadata);
+    List<BundleElement> bundleElements = verifyAllElements(bundleReader, docMetadata, doc);
+
+    assertEquals(BUNDLE_METADATA, bundleElements.get(0));
+    assertEquals(DOC3_METADATA, bundleElements.get(1));
+    assertEquals(DOC3, bundleElements.get(2));
   }
 
   private String addDeletedDocMetadata(TestBundleBuilder bundleBuilder) {
@@ -349,6 +362,19 @@ public class BundleReaderTest {
         /* createTimeMicros= */ 1200001L,
         /* updateTimeMicros= */ 30004001L,
         "{ foo: { stringValue: 'value2' }, bar: { integerValue: 42 } }");
+  }
+
+  private String addDoc3Metadata(TestBundleBuilder bundleBuilder) {
+    return bundleBuilder.addDocumentMetadata(
+        "coll/doc3", /* readTimeMicros= */ 5600002L, /* exists= */ true);
+  }
+
+  private String addDoc3(TestBundleBuilder bundleBuilder) {
+    return bundleBuilder.addDocument(
+        "coll/doc3",
+        /* createTimeMicros= */ 1200002L,
+        /* updateTimeMicros= */ 30004002L,
+        "{ unicodeValue: { stringValue: '\uD83D\uDE0A' } }");
   }
 
   private String addDoc2Metadata(TestBundleBuilder bundleBuilder) {
