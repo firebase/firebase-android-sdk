@@ -128,7 +128,7 @@ public class DefaultSettingsSpiCall implements SettingsSpiCall {
     if (requestWasSuccessful(statusCode)) {
       toReturn = getJsonObjectFrom(httpResponse.body());
     } else {
-      logger.e("Failed to retrieve settings from " + url);
+      logger.e("Settings request failed; (status: " + statusCode + ") from " + url);
       toReturn = null;
     }
     return toReturn;

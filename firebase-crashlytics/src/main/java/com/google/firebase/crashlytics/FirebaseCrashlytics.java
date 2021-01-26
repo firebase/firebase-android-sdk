@@ -161,7 +161,7 @@ public class FirebaseCrashlytics {
 
     final String googleAppId = app.getOptions().getApplicationId();
     final String mappingFileId = CommonUtils.getMappingFileId(context);
-    Logger.getLogger().v("Mapping file ID is: " + mappingFileId);
+    Logger.getLogger().d("Mapping file ID is: " + mappingFileId);
 
     final UnityVersionProvider unityVersionProvider = new ResourceUnityVersionProvider(context);
 
@@ -282,7 +282,7 @@ public class FirebaseCrashlytics {
    */
   public void recordException(@NonNull Throwable throwable) {
     if (throwable == null) { // Users could call this with null despite the annotation.
-      Logger.getLogger().v("A null value was passed to recordException. Ignoring.");
+      Logger.getLogger().w("A null value was passed to recordException. Ignoring.");
       return;
     }
     core.logException(throwable);

@@ -142,7 +142,7 @@ public class DataCollectionArbiter {
             ? "global Firebase setting"
             : setInManifest ? FIREBASE_CRASHLYTICS_COLLECTION_ENABLED + " manifest flag" : "API";
     Logger.getLogger()
-        .v(
+        .d(
             String.format(
                 "Crashlytics automatic data collection %s by %s.", stateString, fromString));
   }
