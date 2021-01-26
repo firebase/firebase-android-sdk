@@ -563,7 +563,8 @@ public class ModelFileDownloadService {
         eventLogger.logDownloadFailureWithReason(
             downloadingModel, false, FirebaseMlLogger.NO_FAILURE_VALUE);
       }
-      taskCompletionSource.setException(new Exception("Model downloading failed"));
+      taskCompletionSource.setException(
+          new FirebaseMlException("Model downloading failed", FirebaseMlException.INTERNAL));
     }
 
     private boolean checkErrorCausedByExpiry(long downloadUrlExpiry, int failureReason) {

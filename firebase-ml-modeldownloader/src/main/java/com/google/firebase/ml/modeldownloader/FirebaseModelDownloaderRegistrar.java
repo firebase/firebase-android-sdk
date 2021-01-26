@@ -85,14 +85,11 @@ public class FirebaseModelDownloaderRegistrar implements ComponentRegistrar {
             .build(),
         Component.builder(CustomModelDownloadService.class)
             .add(Dependency.required(FirebaseApp.class))
-            .add(Dependency.required(TransportFactory.class))
             .add(Dependency.required(FirebaseInstallationsApi.class))
             .factory(
                 c ->
                     new CustomModelDownloadService(
-                        c.get(FirebaseApp.class),
-                        c.get(FirebaseInstallationsApi.class),
-                        c.get(TransportFactory.class)))
+                        c.get(FirebaseApp.class), c.get(FirebaseInstallationsApi.class)))
             .build(),
         LibraryVersionComponent.create("firebase-ml-modeldownloader", BuildConfig.VERSION_NAME));
   }

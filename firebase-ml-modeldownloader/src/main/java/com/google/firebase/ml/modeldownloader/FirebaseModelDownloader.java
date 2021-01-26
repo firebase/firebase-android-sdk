@@ -59,7 +59,7 @@ public class FirebaseModelDownloader {
     this.eventLogger = FirebaseMlLogger.getInstance();
     this.fileDownloadService = new ModelFileDownloadService(firebaseApp, transportFactory);
     this.modelDownloadService =
-        new CustomModelDownloadService(firebaseApp, firebaseInstallationsApi, transportFactory);
+        new CustomModelDownloadService(firebaseApp, firebaseInstallationsApi);
 
     this.executor = Executors.newSingleThreadExecutor();
     fileManager = ModelFileManager.getInstance();
@@ -273,7 +273,7 @@ public class FirebaseModelDownloader {
                 return getCompletedLocalCustomModelTask(updatedModel);
               }
               // clean up model internally
-              deleteModelDetails(currentModel.getName());
+              deleteModelDetails(modelName);
               return Tasks.forException(
                   new FirebaseMlException(
                       "Possible caching issues: no model associated with " + modelName + ".",
@@ -369,13 +369,18 @@ public class FirebaseModelDownloader {
                               modelName, conditions, downloadTask, retryCounter - 1);
                         }
                         return Tasks.forException(
-                            new Exception("File download failed. Too many attempts."));
+                            new FirebaseMlException(
+                                "File download failed after multiple attempts, possible expired url.",
+                                FirebaseMlException.DOWNLOAD_URL_EXPIRED));
                       });
             }
             return Tasks.forException(retryModelDetailTask.getException());
           });
+    } else if (downloadTask.getException() instanceof FirebaseMlException) {
+      return Tasks.forException(downloadTask.getException());
     }
-    return Tasks.forException(new Exception("File download failed."));
+    return Tasks.forException(
+        new FirebaseMlException("File download failed.", FirebaseMlException.INTERNAL));
   }
 
   private Task<CustomModel> finishModelDownload(@NonNull String modelName) {

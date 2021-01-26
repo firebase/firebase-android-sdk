@@ -18,6 +18,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -30,6 +31,7 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.FirebaseOptions.Builder;
 import com.google.firebase.ml.modeldownloader.CustomModel;
+import com.google.firebase.ml.modeldownloader.FirebaseMlException;
 import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.EventName;
 import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent;
 import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent.DownloadStatus;
@@ -205,6 +207,57 @@ public class FirebaseMlLoggerTest {
                     .setSystemInfo(SYSTEM_INFO)
                     .build()));
     verify(mockSharedPreferencesUtil, timeout(1)).getModelDownloadBeginTimeMs(any());
+    verify(mockSharedPreferencesUtil, times(1)).getCustomModelStatsCollectionFlag();
+  }
+
+  @Test
+  public void logModelInfoRetrieverFailure_noHttpError() {
+    mlLogger.logModelInfoRetrieverFailure(
+        CUSTOM_MODEL_DOWNLOADING, ErrorCode.MODEL_INFO_DOWNLOAD_UNSUCCESSFUL_HTTP_STATUS);
+
+    verify(mockStatsSender, Mockito.times(1))
+        .sendEvent(
+            eq(
+                FirebaseMlLogEvent.builder()
+                    .setEventName(EventName.MODEL_DOWNLOAD)
+                    .setModelDownloadLogEvent(
+                        ModelDownloadLogEvent.builder()
+                            .setOptions(MODEL_OPTIONS)
+                            .setErrorCode(ErrorCode.MODEL_INFO_DOWNLOAD_UNSUCCESSFUL_HTTP_STATUS)
+                            .setDownloadStatus(DownloadStatus.MODEL_INFO_RETRIEVAL_FAILED)
+                            .build())
+                    .setSystemInfo(SYSTEM_INFO)
+                    .build()));
+    verify(mockStatsSender, Mockito.times(1)).sendEvent(any());
+    verify(mockSharedPreferencesUtil, never()).setModelDownloadCompleteTimeMs(any(), eq(2500L));
+    verify(mockSharedPreferencesUtil, never()).getModelDownloadBeginTimeMs(any());
+    verify(mockSharedPreferencesUtil, times(1)).getCustomModelStatsCollectionFlag();
+  }
+
+  @Test
+  public void logModelInfoRetrieverFailure_withHttpError() {
+    mlLogger.logModelInfoRetrieverFailure(
+        CUSTOM_MODEL_DOWNLOADING,
+        ErrorCode.MODEL_INFO_DOWNLOAD_UNSUCCESSFUL_HTTP_STATUS,
+        FirebaseMlException.INVALID_ARGUMENT);
+
+    verify(mockStatsSender, Mockito.times(1))
+        .sendEvent(
+            eq(
+                FirebaseMlLogEvent.builder()
+                    .setEventName(EventName.MODEL_DOWNLOAD)
+                    .setModelDownloadLogEvent(
+                        ModelDownloadLogEvent.builder()
+                            .setOptions(MODEL_OPTIONS)
+                            .setErrorCode(ErrorCode.MODEL_INFO_DOWNLOAD_UNSUCCESSFUL_HTTP_STATUS)
+                            .setDownloadStatus(DownloadStatus.MODEL_INFO_RETRIEVAL_FAILED)
+                            .setDownloadFailureStatus(FirebaseMlException.INVALID_ARGUMENT)
+                            .build())
+                    .setSystemInfo(SYSTEM_INFO)
+                    .build()));
+    verify(mockStatsSender, Mockito.times(1)).sendEvent(any());
+    verify(mockSharedPreferencesUtil, never()).setModelDownloadCompleteTimeMs(any(), eq(2500L));
+    verify(mockSharedPreferencesUtil, never()).getModelDownloadBeginTimeMs(any());
     verify(mockSharedPreferencesUtil, times(1)).getCustomModelStatsCollectionFlag();
   }
 }
