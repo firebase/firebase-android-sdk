@@ -324,7 +324,7 @@ public class ConfigFetchHttpClient {
           context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
       if (packageInfo != null) {
         requestBodyMap.put(APP_VERSION, packageInfo.versionName);
-//        requestBodyMap.put(APP_BUILD, PackageInfoCompat.getLongVersionCode(packageInfo));
+        requestBodyMap.put(APP_BUILD, PackageInfoCompat.getLongVersionCode(packageInfo));
       }
     } catch (NameNotFoundException e) {
       // Leave app version and build number blank if package cannot be found.
