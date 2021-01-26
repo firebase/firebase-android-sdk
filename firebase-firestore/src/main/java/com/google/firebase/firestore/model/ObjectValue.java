@@ -134,6 +134,11 @@ public class ObjectValue {
     return new ObjectValue.Builder(this);
   }
 
+  @Override
+  public String toString() {
+    return "ObjectValue{" + internalValue + "}";
+  }
+
   /**
    * An ObjectValue.Builder provides APIs to set and delete fields from an ObjectValue. All
    * operations mutate the existing instance.
