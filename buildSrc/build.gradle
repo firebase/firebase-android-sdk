@@ -18,6 +18,7 @@ plugins {
 }
 
 repositories {
+    mavenLocal()
     maven {
         url 'https://maven.google.com/'
     }
@@ -29,7 +30,17 @@ repositories {
     }
 }
 
+// Refer latest "perf-plugin" released version on https://maven.google.com/web/index.html?q=perf-plugin#com.google.firebase:perf-plugin
+// The System property allows us to integrate with an unreleased version from https://bityl.co/3oYt.
+// Refer go/fireperf-plugin-test-on-head for more details.
+def perfPluginVersion = System.getenv("FIREBASE_PERF_PLUGIN_VERSION") ?: "1.3.4"
+
 dependencies {
+    // Firebase performance plugin, it should be added here because of how gradle dependency
+    // resolution works, otherwise it breaks Fireperf Test Apps.
+    // See https://github.com/gradle/gradle/issues/12286
+    implementation "com.google.firebase:perf-plugin:$perfPluginVersion"
+
     implementation 'org.jsoup:jsoup:1.11.2'
     implementation 'digital.wup:android-maven-publish:3.6.2'
     implementation 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.3.72'
