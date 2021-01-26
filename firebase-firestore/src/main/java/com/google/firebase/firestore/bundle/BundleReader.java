@@ -35,6 +35,7 @@ public class BundleReader {
 
   private final BundleSerializer serializer;
   private final InputStreamReader dataReader;
+  private final Charset charset = Charset.forName("UTF-8");
 
   @Nullable BundleMetadata metadata;
   private CharBuffer buffer;
@@ -42,7 +43,7 @@ public class BundleReader {
 
   public BundleReader(BundleSerializer serializer, InputStream data) {
     this.serializer = serializer;
-    dataReader = new InputStreamReader(data, Charset.forName("UTF-8"));
+    dataReader = new InputStreamReader(data, charset);
     buffer = CharBuffer.allocate(BUFFER_CAPACITY);
 
     buffer.flip(); // Start the buffer in "reading mode"
@@ -101,7 +102,7 @@ public class BundleReader {
     }
 
     String json = readJsonString(Integer.parseInt(lengthPrefix));
-    bytesRead += lengthPrefix.length() + json.length();
+    bytesRead += lengthPrefix.length() + json.getBytes(charset).length;
     return decodeBundleElement(json);
   }
 
@@ -159,7 +160,7 @@ public class BundleReader {
    * <p>Returns a string decoded from the read bytes.
    */
   private String readJsonString(int length) throws IOException {
-    StringBuilder json = new StringBuilder();
+    StringBuilder json = new StringBuilder(length);
 
     int remaining = length;
     while (remaining > 0) {
