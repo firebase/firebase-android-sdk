@@ -38,6 +38,10 @@ message SystemInfo {
   // a valid Firebase Project ID.
   string firebase_project_id = 3;
 
+  // Firebase ML SDK version. This is the library version of
+  // //java/com/google/android/gmscore/integ/client/firebase_ml/common/library.bzl
+  string ml_sdk_version = 4;
+
   // The API key of the firebase project.
   string api_key = 7 ;
 
