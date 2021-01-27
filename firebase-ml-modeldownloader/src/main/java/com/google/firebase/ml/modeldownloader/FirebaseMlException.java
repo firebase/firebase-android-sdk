@@ -101,6 +101,9 @@ public class FirebaseMlException extends FirebaseException {
   /** There is not enough space left on the device. */
   public static final int NOT_ENOUGH_SPACE = 101;
 
+  /** The downloaded model's hash doesn't match the expected value. */
+  public static final int MODEL_HASH_MISMATCH = 102;
+
   /**
    * These download url expired before download could complete. Usually, multiple download attempt
    * will be performed before this is returned.
@@ -129,6 +132,7 @@ public class FirebaseMlException extends FirebaseException {
     UNAVAILABLE,
     UNAUTHENTICATED,
     NOT_ENOUGH_SPACE,
+    MODEL_HASH_MISMATCH,
     DOWNLOAD_URL_EXPIRED
   })
   @Retention(RetentionPolicy.CLASS)

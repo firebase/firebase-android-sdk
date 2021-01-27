@@ -14,6 +14,7 @@
 package com.google.firebase.ml.modeldownloader;
 
 import android.os.Build.VERSION_CODES;
+import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
@@ -39,6 +40,7 @@ import java.util.concurrent.Executors;
 
 public class FirebaseModelDownloader {
 
+  private static final String TAG = "FirebaseModelDownld";
   private final FirebaseOptions firebaseOptions;
   private final SharedPreferencesUtil sharedPreferencesUtil;
   private final ModelFileDownloadService fileDownloadService;
@@ -247,7 +249,7 @@ public class FirebaseModelDownloader {
     CustomModel currentModel = sharedPreferencesUtil.getCustomModelDetails(modelName);
 
     if (currentModel == null && modelHash != null) {
-      // todo(annzimmer) log something about mismatched state and use hash = null
+      Log.d(TAG, "Model hash provided but no current model; triggering fresh download.");
       modelHash = null;
     }
 
@@ -305,16 +307,34 @@ public class FirebaseModelDownloader {
               if (currentModel.getDownloadId() != 0) {
                 CustomModel downloadingModel =
                     sharedPreferencesUtil.getDownloadingCustomModelDetails(modelName);
-                if (downloadingModel != null
-                    && downloadingModel
-                        .getModelHash()
-                        .equals(incomingModelDetails.getResult().getModelHash())) {
-                  return Tasks.forResult(downloadingModel);
+                if (downloadingModel != null) {
+                  if (downloadingModel
+                      .getModelHash()
+                      .equals(incomingModelDetails.getResult().getModelHash())) {
+                    return Tasks.forResult(downloadingModel);
+                  }
+                  Log.d(
+                      TAG, "Hash does not match with expected: " + downloadingModel.getModelHash());
+                  // Note we log "DownloadStatus.SUCCEEDED" because the model file's download itself
+                  // succeeded. Just the hash validation failed.
+                  eventLogger.logDownloadEventWithErrorCode(
+                      downloadingModel,
+                      true,
+                      DownloadStatus.SUCCEEDED,
+                      ErrorCode.MODEL_HASH_MISMATCH);
+                  return Tasks.forException(
+                      new FirebaseMlException(
+                          "Hash does not match with expected",
+                          FirebaseMlException.MODEL_HASH_MISMATCH));
                 }
-                // todo(annzimmer) this shouldn't happen unless they are calling the sdk with
-                // multiple
-                // sets of download types/conditions.
-                // this should be a download in progress - add appropriate handling.
+                Log.d(TAG, "Download details missing for model");
+                // Note we log "DownloadStatus.SUCCEEDED" because the model file's download itself
+                // succeeded. Just the file copy failed.
+                eventLogger.logDownloadEventWithErrorCode(
+                    downloadingModel, true, DownloadStatus.SUCCEEDED, ErrorCode.DOWNLOAD_FAILED);
+                return Tasks.forException(
+                    new FirebaseMlException(
+                        "Download details missing for model", FirebaseMlException.INTERNAL));
               }
             }
 

@@ -148,6 +148,7 @@ public abstract class FirebaseMlLogEvent {
       DOWNLOAD_FAILED(104),
       MODEL_INFO_DOWNLOAD_UNSUCCESSFUL_HTTP_STATUS(105),
       MODEL_INFO_DOWNLOAD_CONNECTION_FAILED(107),
+      MODEL_HASH_MISMATCH(116),
       UNKNOWN_ERROR(9999);
       private static final SparseArray<ErrorCode> valueMap = new SparseArray<>();
 
@@ -160,6 +161,7 @@ public abstract class FirebaseMlLogEvent {
         valueMap.put(104, DOWNLOAD_FAILED);
         valueMap.put(105, MODEL_INFO_DOWNLOAD_UNSUCCESSFUL_HTTP_STATUS);
         valueMap.put(107, MODEL_INFO_DOWNLOAD_CONNECTION_FAILED);
+        valueMap.put(116, MODEL_HASH_MISMATCH);
         valueMap.put(9999, UNKNOWN_ERROR);
       }
 
