@@ -22,6 +22,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.testutil.TestUtil.query;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
 
 import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedMap;
@@ -220,13 +221,12 @@ public class BundleLoaderTest {
     BundleLoader bundleLoader =
         new BundleLoader(
             bundleListener, BUNDLE_METADATA, /* totalDocuments= */ 1, /* totalBytes= */ 5);
-
-    LoadBundleTaskProgress progress =
-        bundleLoader.addElement(new BundleDocument(doc("coll/doc1", 1, map())), /* byteSize= */ 5);
-    assertEquals(progress.getTaskState(), LoadBundleTaskProgress.TaskState.ERROR);
-    assertEquals(
-        progress.getException().getMessage(),
-        "The document being added does not match the stored metadata.");
+    try {
+      bundleLoader.addElement(new BundleDocument(doc("coll/doc1", 1, map())), /* byteSize= */ 5);
+      fail();
+    } catch (IllegalArgumentException e) {
+      assertEquals("The document being added does not match the stored metadata.", e.getMessage());
+    }
   }
 
   @Test
@@ -242,13 +242,13 @@ public class BundleLoaderTest {
             /* exists= */ true,
             Collections.emptyList()),
         1);
-    LoadBundleTaskProgress progress =
-        bundleLoader.addElement(new BundleDocument(doc("coll/do2", 1, map())), /* byteSize= */ 4);
 
-    assertEquals(progress.getTaskState(), LoadBundleTaskProgress.TaskState.ERROR);
-    assertEquals(
-        progress.getException().getMessage(),
-        "The document being added does not match the stored metadata.");
+    try {
+      bundleLoader.addElement(new BundleDocument(doc("coll/do2", 1, map())), /* byteSize= */ 4);
+      fail();
+    } catch (IllegalArgumentException e) {
+      assertEquals("The document being added does not match the stored metadata.", e.getMessage());
+    }
   }
 
   @Test
@@ -257,19 +257,22 @@ public class BundleLoaderTest {
         new BundleLoader(
             bundleListener, BUNDLE_METADATA, /* totalDocuments= */ 0, /* totalBytes= */ 10);
 
-    LoadBundleTaskProgress progress =
-        bundleLoader.addElement(
-            new BundledDocumentMetadata(
-                key("coll/doc1"),
-                new SnapshotVersion(Timestamp.now()),
-                /* exists= */ true,
-                Collections.emptyList()),
-            10);
+    bundleLoader.addElement(
+        new BundledDocumentMetadata(
+            key("coll/doc1"),
+            new SnapshotVersion(Timestamp.now()),
+            /* exists= */ true,
+            Collections.emptyList()),
+        10);
 
-    assertEquals(progress.getTaskState(), LoadBundleTaskProgress.TaskState.ERROR);
-    assertEquals(
-        progress.getException().getMessage(),
-        "Bundled documents end with a document metadata element instead of a document.");
+    try {
+      bundleLoader.applyChanges();
+      fail();
+    } catch (IllegalArgumentException e) {
+      assertEquals(
+          "Bundled documents end with a document metadata element instead of a document.",
+          e.getMessage());
+    }
   }
 
   @Test
@@ -278,17 +281,20 @@ public class BundleLoaderTest {
         new BundleLoader(
             bundleListener, BUNDLE_METADATA, /* totalDocuments= */ 2, /* totalBytes= */ 10);
 
-    LoadBundleTaskProgress progress =
-        bundleLoader.addElement(
-            new BundledDocumentMetadata(
-                key("coll/doc1"),
-                new SnapshotVersion(Timestamp.now()),
-                /* exists= */ false,
-                Collections.emptyList()),
-            10);
+    bundleLoader.addElement(
+        new BundledDocumentMetadata(
+            key("coll/doc1"),
+            new SnapshotVersion(Timestamp.now()),
+            /* exists= */ false,
+            Collections.emptyList()),
+        10);
 
-    assertEquals(progress.getTaskState(), LoadBundleTaskProgress.TaskState.ERROR);
-    assertEquals(progress.getException().getMessage(), "Expected 2 documents, but loaded 1.");
+    try {
+      bundleLoader.applyChanges();
+      fail();
+    } catch (IllegalArgumentException e) {
+      assertEquals("Expected 2 documents, but loaded 1.", e.getMessage());
+    }
   }
 
   private void assertProgress(
