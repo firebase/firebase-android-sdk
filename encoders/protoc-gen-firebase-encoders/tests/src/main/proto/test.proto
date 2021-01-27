@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package com.firebase.testing;
+
+message TestMessage {
+  int32 foo = 1;
+}
