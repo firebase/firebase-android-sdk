@@ -96,6 +96,7 @@ public class IdManager implements InstallIdProvider {
       // this method.
       return crashlyticsInstallId;
     }
+    Logger.getLogger().v("Determining Crashlytics installation ID...");
     final SharedPreferences prefs = CommonUtils.getSharedPrefs(appContext);
 
     // Crashlytics rotates the Crashlytics-specific IID if the Firebase IID ("FID") is reset.
@@ -107,7 +108,7 @@ public class IdManager implements InstallIdProvider {
     try {
       currentFid = Utils.awaitEvenIfOnMainThread(currentFidTask);
     } catch (Exception e) {
-      Logger.getLogger().d("Failed to retrieve installation id", e);
+      Logger.getLogger().w("Failed to retrieve Firebase Installations ID.", e);
 
       // this avoids rotating the identifier in the case that there was an exception which is likely
       // to succeed in a future invocation
@@ -117,42 +118,47 @@ public class IdManager implements InstallIdProvider {
     }
 
     if (cachedFid == null) {
+      Logger.getLogger().v("No cached Firebase Installations ID found.");
       // This must be either 1) a new installation or 2) an upgrade from the legacy
       // Crashlytics SDK.
       // If it is a legacy upgrade, we'll migrate the legacy ID to the new pref store.
       final SharedPreferences legacyPrefs = CommonUtils.getLegacySharedPrefs(appContext);
       final String legacyId = legacyPrefs.getString(PREFKEY_LEGACY_INSTALLATION_UUID, null);
-      Logger.getLogger().d("No cached FID; legacy id is " + legacyId);
 
       if (legacyId == null) {
+        Logger.getLogger().v("No legacy Crashlytics installation ID found, creating new ID.");
         // if there's no legacy ID, this must be a new Crashlytics install.
         crashlyticsInstallId = createAndStoreIid(currentFid, prefs);
       } else { // must be a legacy upgrade
+        Logger.getLogger().v("A legacy Crashlytics installation ID was found. Upgrading.");
         crashlyticsInstallId = legacyId;
         migrateLegacyId(legacyId, currentFid, prefs, legacyPrefs);
       }
-      return crashlyticsInstallId;
     } else {
       // we have a cached FID, so check if it has been changed since previous launch
       if (cachedFid.equals(currentFid)) {
         crashlyticsInstallId = prefs.getString(PREFKEY_INSTALLATION_UUID, null);
-        Logger.getLogger().d("Found matching FID, using Crashlytics IID: " + crashlyticsInstallId);
+
+        Logger.getLogger().v("Firebase Installations ID is unchanged from previous startup.");
         // Since we've cached an FID previously, the IID should always exist at this point.
         // But check just in case:
         if (crashlyticsInstallId == null) {
+          Logger.getLogger().v("Crashlytics installation ID was null, creating new ID.");
           crashlyticsInstallId = createAndStoreIid(currentFid, prefs);
         }
       } else {
         // the FID has changed, so we need to update our IID and cache the new FID value.
         crashlyticsInstallId = createAndStoreIid(currentFid, prefs);
       }
-      return crashlyticsInstallId;
     }
+
+    Logger.getLogger().v("Crashlytics installation ID is " + crashlyticsInstallId);
+    return crashlyticsInstallId;
   }
 
   private synchronized void migrateLegacyId(
       String legacyId, String fidToCache, SharedPreferences prefs, SharedPreferences legacyPrefs) {
-    Logger.getLogger().d("Migrating legacy Crashlytics IID: " + legacyId);
+    Logger.getLogger().v("Migrating legacy Crashlytics installation ID: " + legacyId);
     prefs
         .edit()
         .putString(PREFKEY_INSTALLATION_UUID, legacyId)
@@ -167,7 +173,7 @@ public class IdManager implements InstallIdProvider {
 
   private synchronized String createAndStoreIid(String fidToCache, SharedPreferences prefs) {
     final String iid = formatId(UUID.randomUUID().toString());
-    Logger.getLogger().d("Created new Crashlytics IID: " + iid);
+    Logger.getLogger().v("Created new Crashlytics installation ID: " + iid);
     prefs
         .edit()
         .putString(PREFKEY_INSTALLATION_UUID, iid)

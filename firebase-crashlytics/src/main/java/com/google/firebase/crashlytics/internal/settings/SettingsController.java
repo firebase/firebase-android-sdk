@@ -243,9 +243,9 @@ public class SettingsController implements SettingsDataProvider {
             if (SettingsCacheBehavior.IGNORE_CACHE_EXPIRATION.equals(cacheBehavior)
                 || !settingsData.isExpired(currentTimeMillis)) {
               toReturn = settingsData;
-              Logger.getLogger().d("Returning cached settings.");
+              Logger.getLogger().v("Returning cached settings.");
             } else {
-              Logger.getLogger().d("Cached settings have expired.");
+              Logger.getLogger().v("Cached settings have expired.");
             }
           } else {
             Logger.getLogger().e("Failed to parse cached settings data.", null);

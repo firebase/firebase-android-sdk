@@ -151,7 +151,7 @@ public class CrashlyticsReportPersistence {
     try {
       writeTextFile(new File(sessionDirectory, fileName), json);
     } catch (IOException e) {
-      Logger.getLogger().d("Could not persist event for session " + sessionId, e);
+      Logger.getLogger().w("Could not persist event for session " + sessionId, e);
     }
     trimEvents(sessionDirectory, maxEventsToKeep);
   }
@@ -162,7 +162,7 @@ public class CrashlyticsReportPersistence {
       writeTextFile(new File(sessionDirectory, USER_FILE_NAME), userId);
     } catch (IOException e) {
       // Session directory is not guaranteed to exist
-      Logger.getLogger().d("Could not persist user ID for session " + sessionId, e);
+      Logger.getLogger().w("Could not persist user ID for session " + sessionId, e);
     }
   }
 
@@ -209,7 +209,7 @@ public class CrashlyticsReportPersistence {
   public void finalizeReports(@Nullable String currentSessionId, long sessionEndTime) {
     final List<File> sessionDirectories = capAndGetOpenSessions(currentSessionId);
     for (File sessionDirectory : sessionDirectories) {
-      Logger.getLogger().d("Finalizing report for session " + sessionDirectory.getName());
+      Logger.getLogger().v("Finalizing report for session " + sessionDirectory.getName());
       synthesizeReport(sessionDirectory, sessionEndTime);
       recursiveDelete(sessionDirectory);
     }
@@ -237,7 +237,7 @@ public class CrashlyticsReportPersistence {
         CrashlyticsReport jsonReport = TRANSFORM.reportFromJson(readTextFile(reportFile));
         allReports.add(CrashlyticsReportWithSessionId.create(jsonReport, reportFile.getName()));
       } catch (IOException e) {
-        Logger.getLogger().d("Could not load report file " + reportFile + "; deleting", e);
+        Logger.getLogger().w("Could not load report file " + reportFile + "; deleting", e);
         reportFile.delete();
       }
     }
@@ -304,7 +304,7 @@ public class CrashlyticsReportPersistence {
 
     // Only process the session if it has associated events
     if (eventFiles.isEmpty()) {
-      Logger.getLogger().d("Session " + sessionDirectory.getName() + " has no events.");
+      Logger.getLogger().v("Session " + sessionDirectory.getName() + " has no events.");
       return;
     }
 
@@ -317,13 +317,13 @@ public class CrashlyticsReportPersistence {
         events.add(TRANSFORM.eventFromJson(readTextFile(eventFile)));
         isHighPriorityReport = isHighPriorityReport || isHighPriorityEventFile(eventFile.getName());
       } catch (IOException e) {
-        Logger.getLogger().d("Could not add event to report for " + eventFile, e);
+        Logger.getLogger().w("Could not add event to report for " + eventFile, e);
       }
     }
 
     // b/168902195
     if (events.isEmpty()) {
-      Logger.getLogger().d("Could not parse event files for session " + sessionDirectory.getName());
+      Logger.getLogger().w("Could not parse event files for session " + sessionDirectory.getName());
       return;
     }
 
@@ -333,7 +333,7 @@ public class CrashlyticsReportPersistence {
       try {
         userId = readTextFile(userIdFile);
       } catch (IOException e) {
-        Logger.getLogger().d("Could not read user ID file in " + sessionDirectory.getName(), e);
+        Logger.getLogger().w("Could not read user ID file in " + sessionDirectory.getName(), e);
       }
     }
 
@@ -356,7 +356,7 @@ public class CrashlyticsReportPersistence {
           new File(prepareDirectory(outputDirectory), previousSessionId),
           TRANSFORM.reportToJson(report));
     } catch (IOException e) {
-      Logger.getLogger().d("Could not synthesize final native report file for " + reportFile, e);
+      Logger.getLogger().w("Could not synthesize final native report file for " + reportFile, e);
     }
   }
 
@@ -385,7 +385,7 @@ public class CrashlyticsReportPersistence {
           new File(prepareDirectory(outputDirectory), session.getIdentifier()),
           TRANSFORM.reportToJson(report));
     } catch (IOException e) {
-      Logger.getLogger().d("Could not synthesize final report file for " + reportFile, e);
+      Logger.getLogger().w("Could not synthesize final report file for " + reportFile, e);
     }
   }
 
