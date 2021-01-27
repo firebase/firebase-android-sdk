@@ -36,6 +36,7 @@ import com.google.firebase.crashlytics.internal.breadcrumbs.DisabledBreadcrumbSo
 import com.google.firebase.crashlytics.internal.settings.SettingsController;
 import com.google.firebase.crashlytics.internal.settings.TestSettingsData;
 import com.google.firebase.crashlytics.internal.settings.model.SettingsData;
+import com.google.firebase.crashlytics.internal.unity.UnityVersionProvider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.util.concurrent.TimeUnit;
 import org.mockito.Mockito;
@@ -201,7 +202,20 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     when(mockSettingsController.getSettings()).thenReturn(settings);
     when(mockSettingsController.getAppSettings()).thenReturn(Tasks.forResult(settings.appData));
 
-    crashlyticsCore.onPreExecute(mockSettingsController);
+    final UnityVersionProvider unityVersionProvider = mock(UnityVersionProvider.class);
+    when(unityVersionProvider.getUnityVersion()).thenReturn("1.0");
+
+    AppData appData =
+        new AppData(
+            GOOGLE_APP_ID,
+            "buildId",
+            "installerPackageName",
+            "packageName",
+            "versionCode",
+            "versionName",
+            unityVersionProvider);
+
+    crashlyticsCore.onPreExecute(appData, mockSettingsController);
 
     return crashlyticsCore
         .doBackgroundInitializationAsync(mockSettingsController)
