@@ -36,8 +36,6 @@ import java.util.Map;
 public class BundleLoader {
   private final BundleListener bundleListener;
   private final BundleMetadata bundleMetadata;
-  private final int totalDocuments;
-  private final long totalBytes;
   private final List<NamedQuery> queries;
   private final Map<DocumentKey, BundledDocumentMetadata> documentsMetadata;
 
@@ -45,15 +43,9 @@ public class BundleLoader {
   private long bytesLoaded;
   @Nullable private DocumentKey currentDocument;
 
-  public BundleLoader(
-      BundleListener bundleListener,
-      BundleMetadata bundleMetadata,
-      int totalDocuments,
-      long totalBytes) {
+  public BundleLoader(BundleListener bundleListener, BundleMetadata bundleMetadata) {
     this.bundleListener = bundleListener;
     this.bundleMetadata = bundleMetadata;
-    this.totalDocuments = totalDocuments;
-    this.totalBytes = totalBytes;
     this.queries = new ArrayList<>();
     this.documents = emptyMaybeDocumentMap();
     this.documentsMetadata = new HashMap<>();
@@ -104,9 +96,9 @@ public class BundleLoader {
     return updateProgress
         ? new LoadBundleTaskProgress(
             documents.size(),
-            totalDocuments,
+            bundleMetadata.getTotalDocuments(),
             bytesLoaded,
-            totalBytes,
+            bundleMetadata.getTotalBytes(),
             null,
             LoadBundleTaskProgress.TaskState.RUNNING)
         : null;
@@ -119,9 +111,9 @@ public class BundleLoader {
         "Bundled documents end with a document metadata element instead of a document.");
     Preconditions.checkArgument(bundleMetadata.getBundleId() != null, "Bundle ID must be set");
     Preconditions.checkArgument(
-        documents.size() == totalDocuments,
+        documents.size() == bundleMetadata.getTotalDocuments(),
         "Expected %s documents, but loaded %s.",
-        totalDocuments,
+        bundleMetadata.getTotalDocuments(),
         documents.size());
 
     ImmutableSortedMap<DocumentKey, MaybeDocument> changes =

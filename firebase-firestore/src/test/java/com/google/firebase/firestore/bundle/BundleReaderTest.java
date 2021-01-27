@@ -32,7 +32,6 @@ import com.google.firebase.firestore.remote.RemoteSerializer;
 import com.google.firestore.v1.Value;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.nio.BufferUnderflowException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -51,7 +50,8 @@ public class BundleReaderTest {
   private static final BundleSerializer SERIALIZER =
       new BundleSerializer(new RemoteSerializer(TEST_PROJECT));
   public static final BundleMetadata BUNDLE_METADATA =
-      new BundleMetadata("bundle-1", 1, version(6000000L));
+      new BundleMetadata(
+          "bundle-1", 1, version(6000000L), /* totalDocuments= */ 1, /* totalBytes= */ 1);
   public static final NamedQuery LIMIT_QUERY =
       new NamedQuery(
           "limitQuery",
@@ -142,11 +142,10 @@ public class BundleReaderTest {
     List<BundleElement> bundleElements =
         verifyAllElements(bundleReader, limitQuery, limitToLastQuery, documentMetadata, document);
 
-    assertEquals(BUNDLE_METADATA, bundleElements.get(0));
-    assertEquals(LIMIT_QUERY, bundleElements.get(1));
-    assertEquals(LIMIT_TO_LAST_QUERY, bundleElements.get(2));
-    assertEquals(DOC1_METADATA, bundleElements.get(3));
-    assertEquals(DOC1, bundleElements.get(4));
+    assertEquals(LIMIT_QUERY, bundleElements.get(0));
+    assertEquals(LIMIT_TO_LAST_QUERY, bundleElements.get(1));
+    assertEquals(DOC1_METADATA, bundleElements.get(2));
+    assertEquals(DOC1, bundleElements.get(3));
   }
 
   @Test
@@ -167,12 +166,11 @@ public class BundleReaderTest {
     List<BundleElement> bundleElements =
         verifyAllElements(bundleReader, doc1Metadata, doc1, limitQuery, doc2Metadata, doc2);
 
-    assertEquals(BUNDLE_METADATA, bundleElements.get(0));
-    assertEquals(DOC1_METADATA, bundleElements.get(1));
-    assertEquals(DOC1, bundleElements.get(2));
-    assertEquals(LIMIT_QUERY, bundleElements.get(3));
-    assertEquals(DOC2_METADATA, bundleElements.get(4));
-    assertEquals(DOC2, bundleElements.get(5));
+    assertEquals(DOC1_METADATA, bundleElements.get(0));
+    assertEquals(DOC1, bundleElements.get(1));
+    assertEquals(LIMIT_QUERY, bundleElements.get(2));
+    assertEquals(DOC2_METADATA, bundleElements.get(3));
+    assertEquals(DOC2, bundleElements.get(4));
   }
 
   @Test
@@ -190,9 +188,8 @@ public class BundleReaderTest {
     List<BundleElement> bundleElements =
         verifyAllElements(bundleReader, documentMetadata, document);
 
-    assertEquals(BUNDLE_METADATA, bundleElements.get(0));
-    assertEquals(DOC1_METADATA, bundleElements.get(1));
-    assertEquals(DOC1, bundleElements.get(2));
+    assertEquals(DOC1_METADATA, bundleElements.get(0));
+    assertEquals(DOC1, bundleElements.get(1));
   }
 
   @Test
@@ -211,10 +208,9 @@ public class BundleReaderTest {
     List<BundleElement> bundleElements =
         verifyAllElements(bundleReader, deletedDocumentMetadata, documentMetadata, document);
 
-    assertEquals(BUNDLE_METADATA, bundleElements.get(0));
-    assertEquals(DELETED_DOC_METADATA, bundleElements.get(1));
-    assertEquals(DOC1_METADATA, bundleElements.get(2));
-    assertEquals(DOC1, bundleElements.get(3));
+    assertEquals(DELETED_DOC_METADATA, bundleElements.get(0));
+    assertEquals(DOC1_METADATA, bundleElements.get(1));
+    assertEquals(DOC1, bundleElements.get(2));
   }
 
   @Test
@@ -227,8 +223,7 @@ public class BundleReaderTest {
         new BundleReader(
             SERIALIZER, new ByteArrayInputStream(bundle.getBytes(StandardCharsets.UTF_8)));
 
-    List<BundleElement> bundleElements = verifyAllElements(bundleReader);
-    assertEquals(BUNDLE_METADATA, bundleElements.get(0));
+    verifyAllElements(bundleReader);
   }
 
   @Test(expected = IllegalArgumentException.class)
@@ -243,18 +238,27 @@ public class BundleReaderTest {
   }
 
   @Test(expected = IllegalArgumentException.class)
-  public void testThrowsWithInvalidJSON() throws IOException, JSONException {
+  public void testThrowsWithMissingBrackets() throws IOException, JSONException {
     String bundle = "3abc";
 
     BundleReader bundleReader =
         new BundleReader(
             SERIALIZER, new ByteArrayInputStream(bundle.getBytes(StandardCharsets.UTF_8)));
-
     bundleReader.getBundleMetadata();
   }
 
-  @Test(expected = BufferUnderflowException.class)
-  public void testWhenSecondElementIsMissingLength() throws IOException, JSONException {
+  @Test(expected = JSONException.class)
+  public void testThrowsWithInvalidJSON() throws IOException, JSONException {
+    String bundle = "3{abc}";
+
+    BundleReader bundleReader =
+        new BundleReader(
+            SERIALIZER, new ByteArrayInputStream(bundle.getBytes(StandardCharsets.UTF_8)));
+    bundleReader.getBundleMetadata();
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testThrowsWhenSecondElementIsMissing() throws IOException, JSONException {
     TestBundleBuilder bundleBuilder = new TestBundleBuilder(TEST_PROJECT);
     String bundle =
         bundleBuilder.build("bundle-1", /* createTimeMicros= */ 6000000L, /* version= */ 1) + "foo";
@@ -262,18 +266,16 @@ public class BundleReaderTest {
     BundleReader bundleReader =
         new BundleReader(
             SERIALIZER, new ByteArrayInputStream(bundle.getBytes(StandardCharsets.UTF_8)));
-
     bundleReader.getNextElement();
   }
 
   @Test(expected = IllegalArgumentException.class)
-  public void testWhenBundleDoesNotContainEnoughData() throws IOException, JSONException {
+  public void testThrowsWhenBundleDoesNotContainEnoughData() throws IOException, JSONException {
     String bundle = "3{}";
 
     BundleReader bundleReader =
         new BundleReader(
             SERIALIZER, new ByteArrayInputStream(bundle.getBytes(StandardCharsets.UTF_8)));
-
     bundleReader.getBundleMetadata();
   }
 
@@ -299,7 +301,7 @@ public class BundleReaderTest {
 
   @Test
   public void testCombinesMultipleBufferReads() throws IOException, JSONException {
-    // Create a BundleMetadata elment that exceeds the length of the internal buffer.
+    // Create a BundleMetadata element that exceeds the length of the internal buffer.
     StringBuilder longString = new StringBuilder();
     for (int i = 0; i < BundleReader.BUFFER_CAPACITY; ++i) {
       longString.append('a');
@@ -314,7 +316,7 @@ public class BundleReaderTest {
             SERIALIZER, new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)));
 
     BundleMetadata expectedMetadata =
-        new BundleMetadata("bundle-" + longString, 1, version(6000000L));
+        new BundleMetadata("bundle-" + longString, 1, version(6000000L), 0, 0);
     BundleMetadata actualMetadata = bundleReader.getBundleMetadata();
     assertEquals(expectedMetadata, actualMetadata);
   }
@@ -333,9 +335,8 @@ public class BundleReaderTest {
 
     List<BundleElement> bundleElements = verifyAllElements(bundleReader, docMetadata, doc);
 
-    assertEquals(BUNDLE_METADATA, bundleElements.get(0));
-    assertEquals(DOC3_METADATA, bundleElements.get(1));
-    assertEquals(DOC3, bundleElements.get(2));
+    assertEquals(DOC3_METADATA, bundleElements.get(0));
+    assertEquals(DOC3, bundleElements.get(1));
   }
 
   private String addDeletedDocMetadata(TestBundleBuilder bundleBuilder) {
@@ -412,22 +413,35 @@ public class BundleReaderTest {
     List<BundleElement> elements = new ArrayList<>();
 
     BundleMetadata bundleMetadata = bundleReader.getBundleMetadata();
-    elements.add(bundleMetadata);
+    assertEquals(BUNDLE_METADATA.getBundleId(), bundleMetadata.getBundleId());
+    assertEquals(BUNDLE_METADATA.getSchemaVersion(), bundleMetadata.getSchemaVersion());
+    assertEquals(BUNDLE_METADATA.getCreateTime(), bundleMetadata.getCreateTime());
+
     // The bundle metadata is not considered part of the bytes read. Instead, it encodes the
     // expected size of all elements.
     assertEquals(0, bundleReader.getBytesRead());
 
-    long expectedBytesRead = 0;
+    long actualBytesRead = 0;
+    long actualDocumentsRead = 0;
 
     for (String expectedElement : expectedElements) {
       BundleElement nextElement = bundleReader.getNextElement();
       assertNotNull(nextElement);
+
+      if (nextElement instanceof BundleDocument
+          || (nextElement instanceof BundledDocumentMetadata
+              && !((BundledDocumentMetadata) nextElement).exists())) {
+        ++actualDocumentsRead;
+      }
       elements.add(nextElement);
 
       int elementLength = expectedElement.getBytes(StandardCharsets.UTF_8).length;
-      expectedBytesRead += (int) (Math.log10(elementLength) + 1) + elementLength;
-      assertEquals(expectedBytesRead, bundleReader.getBytesRead());
+      actualBytesRead += (int) (Math.log10(elementLength) + 1) + elementLength;
+      assertEquals(actualBytesRead, bundleReader.getBytesRead());
     }
+
+    assertEquals(actualBytesRead, bundleMetadata.getTotalBytes());
+    assertEquals(actualDocumentsRead, bundleMetadata.getTotalDocuments());
 
     return elements;
   }
@@ -458,7 +472,7 @@ public class BundleReaderTest {
               exists);
       this.elements.add(json);
       if (!exists) ++totalDocuments;
-      totalBytes += json.getBytes(StandardCharsets.UTF_8).length;
+      totalBytes += getByteLength(json);
       return json;
     }
 
@@ -482,7 +496,7 @@ public class BundleReaderTest {
               fieldsJson);
       elements.add(json);
       ++totalDocuments;
-      totalBytes += json.getBytes(StandardCharsets.UTF_8).length;
+      totalBytes += getByteLength(json);
       return json;
     }
 
@@ -509,8 +523,14 @@ public class BundleReaderTest {
               structuredQueryJson,
               limitType.equals(Query.LimitType.LIMIT_TO_FIRST) ? "FIRST" : "LAST");
       elements.add(json);
-      totalBytes += json.getBytes(StandardCharsets.UTF_8).length;
+      totalBytes += getByteLength(json);
       return json;
+    }
+
+    private int getByteLength(String json) {
+      int elementLength = json.getBytes(StandardCharsets.UTF_8).length;
+      int prefixLength = (int) (Math.log10(elementLength) + 1);
+      return prefixLength + elementLength;
     }
 
     String getMetadataElement(String id, long createTimeMicros, int version) {

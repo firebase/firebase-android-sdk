@@ -46,8 +46,8 @@ import org.robolectric.annotation.Config;
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
 public class BundleLoaderTest {
-  public static final BundleMetadata BUNDLE_METADATA =
-      new BundleMetadata("bundle-1", /* schemaVersion= */ 1, new SnapshotVersion(Timestamp.now()));
+  private static final SnapshotVersion CREATE_TIME = new SnapshotVersion(Timestamp.now());
+
   private final BundleListener bundleListener;
 
   private final Set<DocumentKey> lastDocuments;
@@ -91,17 +91,12 @@ public class BundleLoaderTest {
 
   @Test
   public void testLoadsDocuments() {
-    BundleLoader bundleLoader =
-        new BundleLoader(
-            bundleListener, BUNDLE_METADATA, /* totalDocuments= */ 2, /* totalBytes= */ 10);
+    BundleLoader bundleLoader = new BundleLoader(bundleListener, metadata(/* documents= */ 2));
 
     LoadBundleTaskProgress progress =
         bundleLoader.addElement(
             new BundledDocumentMetadata(
-                key("coll/doc1"),
-                new SnapshotVersion(Timestamp.now()),
-                /* exists= */ true,
-                Collections.emptyList()),
+                key("coll/doc1"), CREATE_TIME, /* exists= */ true, Collections.emptyList()),
             1);
     assertNull(progress);
 
@@ -117,10 +112,7 @@ public class BundleLoaderTest {
     progress =
         bundleLoader.addElement(
             new BundledDocumentMetadata(
-                key("coll/doc2"),
-                new SnapshotVersion(Timestamp.now()),
-                /* exists= */ true,
-                Collections.emptyList()),
+                key("coll/doc2"), CREATE_TIME, /* exists= */ true, Collections.emptyList()),
             1);
     assertNull(progress);
 
@@ -136,17 +128,12 @@ public class BundleLoaderTest {
 
   @Test
   public void testLoadsDeletedDocuments() {
-    BundleLoader bundleLoader =
-        new BundleLoader(
-            bundleListener, BUNDLE_METADATA, /* totalDocuments= */ 1, /* totalBytes= */ 10);
+    BundleLoader bundleLoader = new BundleLoader(bundleListener, metadata(/* documents= */ 1));
 
     LoadBundleTaskProgress progress =
         bundleLoader.addElement(
             new BundledDocumentMetadata(
-                key("coll/doc1"),
-                new SnapshotVersion(Timestamp.now()),
-                /* exists= */ false,
-                Collections.emptyList()),
+                key("coll/doc1"), CREATE_TIME, /* exists= */ false, Collections.emptyList()),
             10);
     assertProgress(
         progress,
@@ -158,57 +145,50 @@ public class BundleLoaderTest {
 
   @Test
   public void testAppliesDocumentChanges() {
-    BundleLoader bundleLoader =
-        new BundleLoader(
-            bundleListener, BUNDLE_METADATA, /* totalDocuments= */ 1, /* totalBytes= */ 5);
+    BundleLoader bundleLoader = new BundleLoader(bundleListener, metadata(/* documents= */ 1));
 
     bundleLoader.addElement(
         new BundledDocumentMetadata(
-            key("coll/doc1"),
-            new SnapshotVersion(Timestamp.now()),
-            /* exists= */ true,
-            Collections.emptyList()),
+            key("coll/doc1"), CREATE_TIME, /* exists= */ true, Collections.emptyList()),
         1);
-    bundleLoader.addElement(new BundleDocument(doc("coll/doc1", 1, map())), /* byteSize= */ 4);
+    bundleLoader.addElement(new BundleDocument(doc("coll/doc1", 1, map())), /* byteSize= */ 9);
 
     bundleLoader.applyChanges();
 
     assertEquals(lastDocuments, Collections.singleton(key("coll/doc1")));
-    assertEquals(lastBundles.get("bundle-1"), BUNDLE_METADATA);
+    assertEquals(lastBundles.get("bundle-1"), metadata(/* documents= */ 1));
   }
 
   @Test
   public void testAppliesNamedQueries() {
-    BundleLoader bundleLoader =
-        new BundleLoader(
-            bundleListener, BUNDLE_METADATA, /* totalDocuments= */ 2, /* totalBytes= */ 4);
+    BundleLoader bundleLoader = new BundleLoader(bundleListener, metadata(/* documents= */ 2));
 
     bundleLoader.addElement(
         new BundledDocumentMetadata(
             key("coll/doc1"),
-            new SnapshotVersion(Timestamp.now()),
+            CREATE_TIME,
             /* exists= */ false,
             Collections.singletonList("query-1")),
-        1);
+        2);
     bundleLoader.addElement(
         new BundledDocumentMetadata(
             key("coll/doc2"),
-            new SnapshotVersion(Timestamp.now()),
+            CREATE_TIME,
             /* exists= */ false,
             Collections.singletonList("query-2")),
-        1);
+        2);
     bundleLoader.addElement(
         new NamedQuery(
             "query-1",
             new BundledQuery(query("foo").toTarget(), Query.LimitType.LIMIT_TO_FIRST),
-            new SnapshotVersion(Timestamp.now())),
-        1);
+            CREATE_TIME),
+        2);
     bundleLoader.addElement(
         new NamedQuery(
             "query-2",
             new BundledQuery(query("foo").toTarget(), Query.LimitType.LIMIT_TO_FIRST),
-            new SnapshotVersion(Timestamp.now())),
-        1);
+            CREATE_TIME),
+        4);
 
     bundleLoader.applyChanges();
 
@@ -218,11 +198,10 @@ public class BundleLoaderTest {
 
   @Test
   public void testVerifiesBundledDocumentMetadataSent() {
-    BundleLoader bundleLoader =
-        new BundleLoader(
-            bundleListener, BUNDLE_METADATA, /* totalDocuments= */ 1, /* totalBytes= */ 5);
+    BundleLoader bundleLoader = new BundleLoader(bundleListener, metadata(/* documents= */ 1));
+
     try {
-      bundleLoader.addElement(new BundleDocument(doc("coll/doc1", 1, map())), /* byteSize= */ 5);
+      bundleLoader.addElement(new BundleDocument(doc("coll/doc1", 1, map())), /* byteSize= */ 10);
       fail();
     } catch (IllegalArgumentException e) {
       assertEquals("The document being added does not match the stored metadata.", e.getMessage());
@@ -231,20 +210,15 @@ public class BundleLoaderTest {
 
   @Test
   public void testVerifiesBundledDocumentMetadataMatches() {
-    BundleLoader bundleLoader =
-        new BundleLoader(
-            bundleListener, BUNDLE_METADATA, /* totalDocuments= */ 1, /* totalBytes= */ 5);
+    BundleLoader bundleLoader = new BundleLoader(bundleListener, metadata(/* documents= */ 1));
 
     bundleLoader.addElement(
         new BundledDocumentMetadata(
-            key("coll/doc1"),
-            new SnapshotVersion(Timestamp.now()),
-            /* exists= */ true,
-            Collections.emptyList()),
+            key("coll/doc1"), CREATE_TIME, /* exists= */ true, Collections.emptyList()),
         1);
 
     try {
-      bundleLoader.addElement(new BundleDocument(doc("coll/do2", 1, map())), /* byteSize= */ 4);
+      bundleLoader.addElement(new BundleDocument(doc("coll/do2", 1, map())), /* byteSize= */ 9);
       fail();
     } catch (IllegalArgumentException e) {
       assertEquals("The document being added does not match the stored metadata.", e.getMessage());
@@ -253,16 +227,11 @@ public class BundleLoaderTest {
 
   @Test
   public void testVerifiesDocumentFollowsMetadata() {
-    BundleLoader bundleLoader =
-        new BundleLoader(
-            bundleListener, BUNDLE_METADATA, /* totalDocuments= */ 0, /* totalBytes= */ 10);
+    BundleLoader bundleLoader = new BundleLoader(bundleListener, metadata(/* documents= */ 0));
 
     bundleLoader.addElement(
         new BundledDocumentMetadata(
-            key("coll/doc1"),
-            new SnapshotVersion(Timestamp.now()),
-            /* exists= */ true,
-            Collections.emptyList()),
+            key("coll/doc1"), CREATE_TIME, /* exists= */ true, Collections.emptyList()),
         10);
 
     try {
@@ -277,16 +246,11 @@ public class BundleLoaderTest {
 
   @Test
   public void testVerifiesDocumentCount() {
-    BundleLoader bundleLoader =
-        new BundleLoader(
-            bundleListener, BUNDLE_METADATA, /* totalDocuments= */ 2, /* totalBytes= */ 10);
+    BundleLoader bundleLoader = new BundleLoader(bundleListener, metadata(/* documents= */ 2));
 
     bundleLoader.addElement(
         new BundledDocumentMetadata(
-            key("coll/doc1"),
-            new SnapshotVersion(Timestamp.now()),
-            /* exists= */ false,
-            Collections.emptyList()),
+            key("coll/doc1"), CREATE_TIME, /* exists= */ false, Collections.emptyList()),
         10);
 
     try {
@@ -295,6 +259,11 @@ public class BundleLoaderTest {
     } catch (IllegalArgumentException e) {
       assertEquals("Expected 2 documents, but loaded 1.", e.getMessage());
     }
+  }
+
+  private BundleMetadata metadata(int documents) {
+    return new BundleMetadata(
+        "bundle-1", /* schemaVersion= */ 1, CREATE_TIME, documents, /* totalBytes= */ 10);
   }
 
   private void assertProgress(

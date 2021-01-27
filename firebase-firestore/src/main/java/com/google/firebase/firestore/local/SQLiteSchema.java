@@ -23,11 +23,11 @@ import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteStatement;
 import android.text.TextUtils;
-import android.util.Log;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.proto.Target;
 import com.google.firebase.firestore.util.Consumer;
+import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Preconditions;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.ArrayList;
@@ -207,7 +207,8 @@ class SQLiteSchema {
     if (!tablesFound) {
       fn.run();
     } else {
-      Log.d("SQLiteSchema", "Skipping migration because all of " + allTables + " already exist");
+      Logger.debug(
+          "SQLiteSchema", "Skipping migration because all of " + allTables + " already exist");
     }
   }
 
@@ -569,7 +570,9 @@ class SQLiteSchema {
                   + "bundle_id TEXT PRIMARY KEY, "
                   + "create_time_seconds INTEGER, "
                   + "create_time_nanos INTEGER, "
-                  + "schema_version INTEGER)");
+                  + "schema_version INTEGER, "
+                  + "total_documents INTEGER, "
+                  + "total_bytes INTEGER)");
 
           db.execSQL(
               "CREATE TABLE named_queries ("

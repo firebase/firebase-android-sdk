@@ -17,6 +17,7 @@ package com.google.firebase.firestore;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+import com.google.firebase.firestore.bundle.BundleMetadata;
 
 /** Represents a progress update or a final state from loading bundles. */
 public final class LoadBundleTaskProgress {
@@ -56,6 +57,36 @@ public final class LoadBundleTaskProgress {
     this.totalBytes = totalBytes;
     this.taskState = taskState;
     this.exception = exception;
+  }
+
+  /**
+   * Creates an "initial" status update from a bundle's metadata. The initial status sets all
+   * loading indicators to 0.
+   */
+  @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+  public static @NonNull LoadBundleTaskProgress forInitial(@NonNull BundleMetadata bundleMetadata) {
+    return new LoadBundleTaskProgress(
+        0,
+        bundleMetadata.getTotalDocuments(),
+        0,
+        bundleMetadata.getTotalBytes(),
+        /* exception= */ null,
+        TaskState.RUNNING);
+  }
+
+  /**
+   * Creates a "success" status update from a bundle's metadata. The initial status sets all loading
+   * indicators to their maximum values.
+   */
+  @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+  public static @NonNull LoadBundleTaskProgress forSuccess(@NonNull BundleMetadata bundleMetadata) {
+    return new LoadBundleTaskProgress(
+        bundleMetadata.getTotalDocuments(),
+        bundleMetadata.getTotalDocuments(),
+        bundleMetadata.getTotalBytes(),
+        bundleMetadata.getTotalBytes(),
+        /* exception= */ null,
+        LoadBundleTaskProgress.TaskState.SUCCESS);
   }
 
   /** Returns how many documents have been loaded. */
