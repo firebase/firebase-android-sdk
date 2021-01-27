@@ -57,7 +57,7 @@ public class BundleReader {
     }
     BundleElement element = readNextElement();
     if (!(element instanceof BundleMetadata)) {
-      raiseError("Expected first element in bundle to be a metadata object");
+      throw abort("Expected first element in bundle to be a metadata object");
     }
     metadata = (BundleMetadata) element;
     // We don't consider the metadata as part ot the bundle size, as it used to encode the size of
@@ -130,7 +130,7 @@ public class BundleReader {
     // We broke out of the loop because underlying stream is closed, but still cannot find an
     // open bracket.
     if (nextOpenBracket == -1) {
-      raiseError("Reached the end of bundle when a length string is expected.");
+      throw abort("Reached the end of bundle when a length string is expected.");
     }
 
     char[] c = new char[nextOpenBracket];
@@ -165,7 +165,7 @@ public class BundleReader {
     int remaining = length;
     while (remaining > 0) {
       if (buffer.remaining() == 0 && !pullMoreData()) {
-        raiseError("Reached the end of bundle when more data was expected.");
+        throw abort("Reached the end of bundle when more data was expected.");
       }
 
       int read = Math.min(remaining, buffer.remaining());
@@ -191,7 +191,7 @@ public class BundleReader {
   }
 
   /** Converts a JSON-encoded bundle element into its model class. */
-  private BundleElement decodeBundleElement(String json) throws JSONException {
+  private BundleElement decodeBundleElement(String json) throws JSONException, IOException {
     JSONObject object = new JSONObject(json);
 
     if (object.has("metadata")) {
@@ -212,13 +212,13 @@ public class BundleReader {
       Logger.debug("BundleElement", "Document loaded: " + document.getKey());
       return document;
     } else {
-      throw new IllegalArgumentException("Cannot decode unknown Bundle element: " + json);
+      throw abort("Cannot decode unknown Bundle element: " + json);
     }
   }
 
   /** Closes the underlying stream and raises an IllegalArgumentException. */
-  private void raiseError(String message) throws IOException {
+  private IllegalArgumentException abort(String message) throws IOException {
     close();
-    throw new IllegalArgumentException("Invalid bundle format: " + message);
+    throw new IllegalArgumentException("Invalid bundle: " + message);
   }
 }
