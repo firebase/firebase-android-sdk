@@ -63,7 +63,7 @@ public class LoadBundleTask extends Task<LoadBundleTaskProgress> {
   @GuardedBy("lock")
   private final Queue<ManagedListener> progressListeners;
 
-  /* @hide */
+  /** @hide */
   @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
   public LoadBundleTask() {
     snapshot = LoadBundleTaskProgress.INITIAL;
