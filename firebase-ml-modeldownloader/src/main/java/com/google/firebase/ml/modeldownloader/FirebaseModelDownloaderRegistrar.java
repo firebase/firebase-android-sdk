@@ -19,12 +19,12 @@ import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import com.google.android.datatransport.TransportFactory;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.FirebaseOptions;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.ml.modeldownloader.internal.CustomModelDownloadService;
+import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogger;
 import com.google.firebase.ml.modeldownloader.internal.ModelFileDownloadService;
 import com.google.firebase.ml.modeldownloader.internal.ModelFileManager;
 import com.google.firebase.ml.modeldownloader.internal.SharedPreferencesUtil;
@@ -60,6 +60,17 @@ public class FirebaseModelDownloaderRegistrar implements ComponentRegistrar {
             .add(Dependency.required(FirebaseApp.class))
             .factory(c -> new SharedPreferencesUtil(c.get(FirebaseApp.class)))
             .build(),
+        Component.builder(FirebaseMlLogger.class)
+            .add(Dependency.required(FirebaseApp.class))
+            .add(Dependency.required(TransportFactory.class))
+            .add(Dependency.required(SharedPreferencesUtil.class))
+            .factory(
+                c ->
+                    new FirebaseMlLogger(
+                        c.get(FirebaseApp.class),
+                        c.get(SharedPreferencesUtil.class),
+                        c.get(TransportFactory.class)))
+            .build(),
         Component.builder(ModelFileManager.class)
             .add(Dependency.required(FirebaseApp.class))
             .factory(c -> new ModelFileManager(c.get(FirebaseApp.class)))
@@ -73,12 +84,15 @@ public class FirebaseModelDownloaderRegistrar implements ComponentRegistrar {
                         c.get(FirebaseApp.class), c.get(TransportFactory.class)))
             .build(),
         Component.builder(CustomModelDownloadService.class)
-            .add(Dependency.required(FirebaseOptions.class))
+            .add(Dependency.required(FirebaseApp.class))
+            .add(Dependency.required(TransportFactory.class))
             .add(Dependency.required(FirebaseInstallationsApi.class))
             .factory(
                 c ->
                     new CustomModelDownloadService(
-                        c.get(FirebaseOptions.class), c.get(FirebaseInstallationsApi.class)))
+                        c.get(FirebaseApp.class),
+                        c.get(FirebaseInstallationsApi.class),
+                        c.get(TransportFactory.class)))
             .build(),
         LibraryVersionComponent.create("firebase-ml-modeldownloader", BuildConfig.VERSION_NAME));
   }

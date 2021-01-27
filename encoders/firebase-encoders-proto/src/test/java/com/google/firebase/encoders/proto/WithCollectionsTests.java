@@ -50,10 +50,12 @@ public class WithCollectionsTests {
                 ImmutableMap.<String, Fixed>builder()
                     .put("noValue", new Fixed())
                     .put("value", new Fixed(1, 2, 3, 4))
+                    .put("", new Fixed())
                     .build(),
                 ImmutableList.of(
                     new OtherTypes("hello", new byte[0], false, true),
-                    new OtherTypes("", new byte[] {42}, true, false)))
+                    new OtherTypes("", new byte[] {42}, true, false),
+                    new OtherTypes("", new byte[0], false, false)))
             .encode();
 
     WithCollectionsProto parsed = WithCollectionsProto.parseFrom(result);
@@ -66,6 +68,7 @@ public class WithCollectionsTests {
                 .putMyMap(
                     "value",
                     FixedProto.newBuilder().setF32(1).setSf32(2).setF64(3).setSf64(4).build())
+                .putMyMap("", FixedProto.getDefaultInstance())
                 .addOtherTypes(
                     OtherTypesProto.newBuilder().setStr("hello").setWrappedBool(true).build())
                 .addOtherTypes(
@@ -73,6 +76,7 @@ public class WithCollectionsTests {
                         .setBts(ByteString.copyFrom(new byte[] {42}))
                         .setBl(true)
                         .build())
+                .addOtherTypes(OtherTypesProto.getDefaultInstance())
                 .build());
   }
 }
