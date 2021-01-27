@@ -14,8 +14,6 @@
 
 package com.google.firebase.firestore.core;
 
-import static com.google.firebase.firestore.util.Assert.hardAssert;
-
 import androidx.annotation.Nullable;
 import com.google.firebase.firestore.core.OrderBy.Direction;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -90,12 +88,8 @@ public final class Target {
     return filters;
   }
 
-  /**
-   * The maximum number of results to return. If there is no limit on the query, then this will
-   * cause an assertion failure.
-   */
+  /** The maximum number of results to return. Returns -1 if there is no limit on the query. */
   public long getLimit() {
-    hardAssert(hasLimit(), "Called getLimit when no limit was set");
     return limit;
   }
 
