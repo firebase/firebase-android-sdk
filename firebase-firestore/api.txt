@@ -280,6 +280,10 @@ package com.google.firebase.firestore {
     enum_constant public static final com.google.firebase.firestore.MetadataChanges INCLUDE;
   }
 
+  public @interface OnProgressListener<ProgessT> {
+    method public abstract void onProgress(@NonNull ProgressT snapshot);
+  }
+
   @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @java.lang.annotation.Target({java.lang.annotation.ElementType.METHOD, java.lang.annotation.ElementType.FIELD}) public @interface PropertyName {
     method public abstract String value();
   }
