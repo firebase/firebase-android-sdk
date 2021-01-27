@@ -38,10 +38,8 @@ import com.google.protobuf.NullValue;
 import com.google.protobuf.Timestamp;
 import com.google.type.LatLng;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
-import java.util.TimeZone;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Test;
@@ -148,27 +146,27 @@ public class BundleSerializerTest {
 
   @Test
   public void testDecodesDateValues() throws JSONException {
-    Calendar date1 = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-    date1.set(2016, 0, 2, 10, 20, 50);
-    date1.set(Calendar.MILLISECOND, 500);
-    Timestamp ts1 = Timestamp.newBuilder().setNanos(500000000).setSeconds(1451730050).build();
-    String json1 = "{ seconds: 1451730050, nanos: 500000000 }";
+    String[] json =
+        new String[] {
+          "'2020-01-01T01:00:00.001Z'", "{ seconds: 1577840400, nanos: 1000000 }",
+          "'2020-01-01T01:02:00.001002Z'", "{ seconds: '1577840520', nanos: 1002000 }",
+          "'2020-01-01T01:02:03.001002003Z'", "{ seconds: 1577840523, nanos: 1002003 }",
+        };
 
-    Calendar date2 = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-    date2.set(2016, 5, 17, 10, 50, 15);
-    date2.set(Calendar.MILLISECOND, 0);
-    Timestamp ts2 = Timestamp.newBuilder().setNanos(0).setSeconds(1466160615).build();
-    String json2 = "{ seconds: 1466160615 }";
+    Timestamp[] timestamps =
+        new Timestamp[] {
+          Timestamp.newBuilder().setNanos(1000000).setSeconds(1577840400).build(),
+              Timestamp.newBuilder().setNanos(1000000).setSeconds(1577840400).build(),
+          Timestamp.newBuilder().setNanos(1002000).setSeconds(1577840520).build(),
+              Timestamp.newBuilder().setNanos(1002000).setSeconds(1577840520).build(),
+          Timestamp.newBuilder().setNanos(1002003).setSeconds(1577840523).build(),
+              Timestamp.newBuilder().setNanos(1002003).setSeconds(1577840523).build()
+        };
 
-    List<String> json =
-        asList("{ timestampValue: " + json1 + " }", "{ timestampValue: " + json2 + " }");
-    List<Value> proto =
-        asList(
-            Value.newBuilder().setTimestampValue(ts1).build(),
-            Value.newBuilder().setTimestampValue(ts2).build());
-
-    for (int i = 0; i < json.size(); i++) {
-      assertDecodesValue(json.get(i), proto.get(i));
+    for (int i = 0; i < json.length; i++) {
+      assertDecodesValue(
+          "{ timestampValue: " + json[i] + " }",
+          Value.newBuilder().setTimestampValue(timestamps[i]).build());
     }
   }
 
@@ -622,11 +620,11 @@ public class BundleSerializerTest {
         "{\n"
             + "id: 'bundle-1',\n"
             + "version: 1,\n"
-            + "createTime: { seconds: 2, nanos: 3 }\n"
+            + "createTime: '2020-01-01T00:00:01.000000001Z' \n"
             + "}";
     BundleMetadata expectedMetadata =
         new BundleMetadata(
-            "bundle-1", 1, new SnapshotVersion(new com.google.firebase.Timestamp(2, 3)));
+            "bundle-1", 1, new SnapshotVersion(new com.google.firebase.Timestamp(1577836801, 1)));
     BundleMetadata actualMetadata = serializer.decodeBundleMetadata(new JSONObject(json));
     assertEquals(expectedMetadata, actualMetadata);
   }
@@ -640,14 +638,14 @@ public class BundleSerializerTest {
             + "name: '"
             + TEST_DOCUMENT
             + "',\n"
-            + "readTime: { seconds: 1, nanos: 2 },\n"
+            + "readTime: '2020-01-01T00:00:01.000000001Z',\n"
             + "exists: true,\n"
             + "queries: [ 'query-1', 'query-2' ]\n"
             + "}";
     BundledDocumentMetadata expectedMetadata =
         new BundledDocumentMetadata(
             key("coll/doc"),
-            new SnapshotVersion(new com.google.firebase.Timestamp(1, 2)),
+            new SnapshotVersion(new com.google.firebase.Timestamp(1577836801, 1)),
             true,
             Arrays.asList("query-1", "query-2"));
     BundledDocumentMetadata actualMetadata =
@@ -666,15 +664,15 @@ public class BundleSerializerTest {
             + json
             + "\n"
             + "  },\n"
-            + "  crateTime: { seconds: 1, nanos: 2 },\n"
-            + "  updateTime: { seconds: 3, nanos: 4 }\n"
+            + "  crateTime: '2020-01-01T00:00:01.000000001Z',\n"
+            + "  updateTime: '2020-01-01T00:00:02.000000002Z'\n"
             + "}";
     BundleDocument actualDocument = serializer.decodeDocument(new JSONObject(documentJson));
     BundleDocument expectedDocument =
         new BundleDocument(
             new Document(
                 DocumentKey.fromName(TEST_DOCUMENT),
-                new SnapshotVersion(new com.google.firebase.Timestamp(3, 4)),
+                new SnapshotVersion(new com.google.firebase.Timestamp(1577836802, 2)),
                 new ObjectValue(
                     Value.newBuilder()
                         .setMapValue(MapValue.newBuilder().putFields("foo", proto))
@@ -699,7 +697,7 @@ public class BundleSerializerTest {
             + (query.hasLimitToLast() ? "LAST" : "FIRST")
             + "'\n"
             + "   },\n"
-            + " readTime: { seconds: 1, nanos: 2 }\n"
+            + " readTime: '2020-01-01T00:00:01.000000001Z'\n"
             + "}";
     NamedQuery actualNamedQuery = serializer.decodeNamedQuery(new JSONObject(queryJson));
 
@@ -724,7 +722,9 @@ public class BundleSerializerTest {
                 : Query.LimitType.LIMIT_TO_FIRST);
     NamedQuery expectedNamedQuery =
         new NamedQuery(
-            "query-1", bundledQuery, new SnapshotVersion(new com.google.firebase.Timestamp(1, 2)));
+            "query-1",
+            bundledQuery,
+            new SnapshotVersion(new com.google.firebase.Timestamp(1577836801, 1)));
 
     assertEquals(expectedNamedQuery, actualNamedQuery);
   }
