@@ -5,6 +5,9 @@
         "Android"
     ],
     "content": "docs/README.md",
+    "pages": {	
+        "README.md": "Development Guide"
+    },
     "related": [
         "firebase/quickstart-android"
     ],
