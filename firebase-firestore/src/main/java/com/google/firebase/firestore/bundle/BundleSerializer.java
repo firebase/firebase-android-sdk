@@ -56,21 +56,18 @@ class BundleSerializer {
 
   private static final long MILLIS_PER_SECOND = 1000;
 
-  private static final SimpleDateFormat timestampFormat;
+  private final SimpleDateFormat timestampFormat;
+  private final RemoteSerializer remoteSerializer;
 
-  static {
+  public BundleSerializer(RemoteSerializer remoteSerializer) {
+    this.remoteSerializer = remoteSerializer;
+
     timestampFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.ENGLISH);
     GregorianCalendar calendar = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
     // We use Proleptic Gregorian Calendar (i.e., Gregorian calendar extends backwards to year one)
     // for timestamp formatting.
     calendar.setGregorianChange(new Date(Long.MIN_VALUE));
     timestampFormat.setCalendar(calendar);
-  }
-
-  private final RemoteSerializer remoteSerializer;
-
-  public BundleSerializer(RemoteSerializer remoteSerializer) {
-    this.remoteSerializer = remoteSerializer;
   }
 
   public NamedQuery decodeNamedQuery(String json) throws JSONException {
