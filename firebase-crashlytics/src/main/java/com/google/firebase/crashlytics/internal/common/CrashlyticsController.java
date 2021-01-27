@@ -767,7 +767,8 @@ class CrashlyticsController {
             Long.parseLong(markerFile.getName().substring(APP_EXCEPTION_MARKER_PREFIX.length()));
         events.add(logAnalyticsAppExceptionEvent(timestamp));
       } catch (NumberFormatException nfe) {
-        Logger.getLogger().w("Could not parse timestamp from file " + markerFile.getName());
+        Logger.getLogger()
+            .w("Could not parse app exception timestamp from file " + markerFile.getName());
       }
       markerFile.delete();
     }
@@ -777,7 +778,7 @@ class CrashlyticsController {
 
   private Task<Void> logAnalyticsAppExceptionEvent(long timestamp) {
     if (firebaseCrashExists()) {
-      Logger.getLogger().v("Skipping logging Crashlytics event to Firebase, FirebaseCrash exists");
+      Logger.getLogger().d("Skipping logging Crashlytics event to Firebase, FirebaseCrash exists");
       return Tasks.forResult(null);
     }
     Logger.getLogger().d("Logging app exception event to Firebase Analytics");
