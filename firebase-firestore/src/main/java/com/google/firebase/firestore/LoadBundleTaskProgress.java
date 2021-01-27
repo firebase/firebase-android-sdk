@@ -16,6 +16,7 @@ package com.google.firebase.firestore;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RestrictTo;
 
 /** Represents a progress update or a final state from loading bundles. */
 public final class LoadBundleTaskProgress {
@@ -41,6 +42,7 @@ public final class LoadBundleTaskProgress {
   @NonNull private final TaskState taskState;
   @Nullable private final Exception exception;
 
+  @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
   public LoadBundleTaskProgress(
       int documentsLoaded,
       int totalDocuments,
