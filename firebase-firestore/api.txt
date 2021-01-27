@@ -281,7 +281,7 @@ package com.google.firebase.firestore {
   }
 
   public @interface OnProgressListener<ProgessT> {
-    method public abstract void onProgress(@NonNull ProgressT snapshot);
+    method public abstract void onProgress(@NonNull ProgressT);
   }
 
   @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @java.lang.annotation.Target({java.lang.annotation.ElementType.METHOD, java.lang.annotation.ElementType.FIELD}) public @interface PropertyName {
