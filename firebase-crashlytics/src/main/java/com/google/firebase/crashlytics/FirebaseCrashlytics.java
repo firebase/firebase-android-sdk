@@ -64,8 +64,6 @@ public class FirebaseCrashlytics {
   private static final String LEGACY_CRASH_ANALYTICS_ORIGIN = "crash";
   private static final int APP_EXCEPTION_CALLBACK_TIMEOUT_MS = 500;
 
-  static final String CRASHLYTICS_API_ENDPOINT = "com.crashlytics.ApiEndpoint";
-
   static @Nullable FirebaseCrashlytics init(
       @NonNull FirebaseApp app,
       @NonNull FirebaseInstallationsApi firebaseInstallationsApi,
@@ -151,7 +149,7 @@ public class FirebaseCrashlytics {
         ExecutorUtils.buildSingleThreadExecutorService("Crashlytics Exception Handler");
     final CrashlyticsCore core =
         new CrashlyticsCore(
-            app,
+            app.getApplicationContext(),
             idManager,
             nativeComponent,
             arbiter,

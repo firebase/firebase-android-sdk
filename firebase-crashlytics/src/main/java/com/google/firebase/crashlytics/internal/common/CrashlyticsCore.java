@@ -21,7 +21,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.FirebaseApp;
 import com.google.firebase.crashlytics.BuildConfig;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.Logger;
@@ -54,10 +53,6 @@ public class CrashlyticsCore {
   static final int MAX_STACK_SIZE = 1024;
   static final int NUM_STACK_REPETITIONS_ALLOWED = 10;
 
-  // Build ID related constants
-  static final String CRASHLYTICS_REQUIRE_BUILD_ID = "com.crashlytics.RequireBuildId";
-  static final boolean CRASHLYTICS_REQUIRE_BUILD_ID_DEFAULT = true;
-
   static final int DEFAULT_MAIN_HANDLER_TIMEOUT_SEC = 4;
 
   // If this marker sticks around, the app is crashing before we finished initializing
@@ -65,7 +60,6 @@ public class CrashlyticsCore {
   static final String CRASH_MARKER_FILE_NAME = "crash_marker";
 
   private final Context context;
-  private final FirebaseApp app;
   private final DataCollectionArbiter dataCollectionArbiter;
 
   private final long startTime;
@@ -87,16 +81,15 @@ public class CrashlyticsCore {
   // region Constructors
 
   public CrashlyticsCore(
-      FirebaseApp app,
+      Context applicationContext,
       IdManager idManager,
       CrashlyticsNativeComponent nativeComponent,
       DataCollectionArbiter dataCollectionArbiter,
       BreadcrumbSource breadcrumbSource,
       AnalyticsEventLogger analyticsEventLogger,
       ExecutorService crashHandlerExecutor) {
-    this.app = app;
     this.dataCollectionArbiter = dataCollectionArbiter;
-    this.context = app.getApplicationContext();
+    this.context = applicationContext;
     this.idManager = idManager;
     this.nativeComponent = nativeComponent;
     this.breadcrumbSource = breadcrumbSource;
@@ -114,13 +107,8 @@ public class CrashlyticsCore {
   public boolean onPreExecute(AppData appData, SettingsDataProvider settingsProvider) {
     // before starting the crash detector make sure that this was built with our build
     // tools.
-    // Throw an exception and halt the app if the build ID is required and not present.
-    // TODO: This flag is no longer supported and should be removed, as part of a larger refactor
-    //  now that the buildId is now only used for mapping file association.
-    final boolean requiresBuildId =
-        CommonUtils.getBooleanResourceValue(
-            context, CRASHLYTICS_REQUIRE_BUILD_ID, CRASHLYTICS_REQUIRE_BUILD_ID_DEFAULT);
-    if (!isBuildIdValid(appData.buildId, requiresBuildId)) {
+    // Throw an exception and halt the app if the build ID is not present.
+    if (!isBuildIdValid(appData.buildId)) {
       throw new IllegalStateException(MISSING_BUILD_ID_MSG);
     }
 
@@ -440,12 +428,7 @@ public class CrashlyticsCore {
 
   // region Static utilities
 
-  static boolean isBuildIdValid(String buildId, boolean requiresBuildId) {
-    if (!requiresBuildId) {
-      Logger.getLogger().v("Configured not to require a build ID.");
-      return true;
-    }
-
+  static boolean isBuildIdValid(String buildId) {
     if (!TextUtils.isEmpty(buildId)) {
       return true;
     }
