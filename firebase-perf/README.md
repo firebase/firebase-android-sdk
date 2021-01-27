@@ -7,7 +7,7 @@ For more information about app performance and many other cool mobile services, 
 
 ## Clone the repository
 
-Follow the instruction in the [Root README](https://github.com/firebase/firebase-android-sdk/blob/master/README.md)
+Follow the instruction in the [Root README](https://github.com/firebase/firebase-android-sdk#getting-started)
 to clone the repository.
 
 ## Local Environment Setup
