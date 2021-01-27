@@ -46,7 +46,7 @@ public class FileStoreImpl implements FileStore {
         Logger.getLogger().w("Couldn't create file");
       }
     } else {
-      Logger.getLogger().d("Null File");
+      Logger.getLogger().w("Null File");
     }
     return null;
   }

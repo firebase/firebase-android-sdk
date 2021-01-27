@@ -31,7 +31,7 @@ class FirebaseCrashlyticsNdk implements CrashlyticsNativeComponent {
     final File rootDir = new File(context.getFilesDir(), FILES_PATH);
 
     final NativeComponentController controller =
-        new BreakpadController(
+        new CrashpadController(
             context, new JniNativeApi(context), new NdkCrashFilesManager(rootDir));
     return new FirebaseCrashlyticsNdk(controller);
   }
@@ -50,8 +50,9 @@ class FirebaseCrashlyticsNdk implements CrashlyticsNativeComponent {
   @Override
   public boolean openSession(String sessionId) {
     final boolean initSuccess = controller.initialize(sessionId);
-    Logger.getLogger()
-        .i("Crashlytics NDK initialization " + (initSuccess ? "successful" : "FAILED"));
+    if (!initSuccess) {
+      Logger.getLogger().w("Failed to initialize Crashlytics NDK for session " + sessionId);
+    }
     return initSuccess;
   }
 

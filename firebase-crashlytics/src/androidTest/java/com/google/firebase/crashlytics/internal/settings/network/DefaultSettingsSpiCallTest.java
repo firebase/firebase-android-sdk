@@ -186,7 +186,13 @@ public class DefaultSettingsSpiCallTest extends CrashlyticsTestCase {
 
     assertNull(defaultSettingsSpiCall.handleResponse(mockHttpResponse));
     verify(mockHttpResponse, never()).body();
-    verify(mockLogger, times(1)).e(eq("Failed to retrieve settings from " + TEST_URL));
+    verify(mockLogger, times(1))
+        .e(
+            eq(
+                "Settings request failed; (status: "
+                    + HttpURLConnection.HTTP_INTERNAL_ERROR
+                    + ") from "
+                    + TEST_URL));
   }
 
   public void testRequestWasSuccessful_successfulStatusCodes() {

@@ -92,7 +92,6 @@ public class FirebaseCrashlytics {
 
     if (analyticsConnector != null) {
       // If FA is available, create a logger to log events from the Crashlytics origin.
-      Logger.getLogger().d("Firebase Analytics is available.");
       final CrashlyticsOriginAnalyticsEventLogger directAnalyticsEventLogger =
           new CrashlyticsOriginAnalyticsEventLogger(analyticsConnector);
 
@@ -107,7 +106,7 @@ public class FirebaseCrashlytics {
           subscribeToAnalyticsEvents(analyticsConnector, crashlyticsAnalyticsListener);
 
       if (analyticsConnectorHandle != null) {
-        Logger.getLogger().d("Firebase Analytics listener registered successfully.");
+        Logger.getLogger().d("Registered Firebase Analytics listener.");
         // Create the event receiver which will supply breadcrumb events to Crashlytics
         final BreadcrumbAnalyticsEventReceiver breadcrumbReceiver =
             new BreadcrumbAnalyticsEventReceiver();
@@ -132,7 +131,8 @@ public class FirebaseCrashlytics {
         // Set the blocking analytics event logger for Crashlytics.
         analyticsEventLogger = blockingAnalyticsEventLogger;
       } else {
-        Logger.getLogger().d("Firebase Analytics listener registration failed.");
+        Logger.getLogger()
+            .w("Could not register Firebase Analytics listener; a listener is already registered.");
         // FA is enabled, but the listener was not registered successfully.
         // We cannot listen for breadcrumbs.
         breadcrumbSource = new DisabledBreadcrumbSource();
@@ -142,7 +142,7 @@ public class FirebaseCrashlytics {
       }
     } else {
       // FA is entirely unavailable. We cannot listen for breadcrumbs or send events.
-      Logger.getLogger().d("Firebase Analytics is unavailable.");
+      Logger.getLogger().d("Firebase Analytics is not available.");
       breadcrumbSource = new DisabledBreadcrumbSource();
       analyticsEventLogger = new UnavailableAnalyticsEventLogger();
     }
@@ -170,11 +170,11 @@ public class FirebaseCrashlytics {
       appData =
           AppData.create(context, idManager, googleAppId, mappingFileId, unityVersionProvider);
     } catch (PackageManager.NameNotFoundException e) {
-      Logger.getLogger().e("Could not retrieve app info, initialization failed.", e);
+      Logger.getLogger().e("Error retrieving app package info.", e);
       return null;
     }
 
-    Logger.getLogger().d("Installer package name is: " + appData.installerPackageName);
+    Logger.getLogger().v("Installer package name is: " + appData.installerPackageName);
 
     final ExecutorService threadPoolExecutor =
         ExecutorUtils.buildSingleThreadExecutorService("com.google.firebase.crashlytics.startup");
@@ -282,7 +282,7 @@ public class FirebaseCrashlytics {
    */
   public void recordException(@NonNull Throwable throwable) {
     if (throwable == null) { // Users could call this with null despite the annotation.
-      Logger.getLogger().w("Crashlytics is ignoring a request to log a null exception.");
+      Logger.getLogger().w("A null value was passed to recordException. Ignoring.");
       return;
     }
     core.logException(throwable);

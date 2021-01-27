@@ -111,13 +111,13 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
 
   public void persistFatalEvent(
       @NonNull Throwable event, @NonNull Thread thread, @NonNull String sessionId, long timestamp) {
-    Logger.getLogger().d("Persisting fatal event for session " + sessionId);
+    Logger.getLogger().v("Persisting fatal event for session " + sessionId);
     persistEvent(event, thread, sessionId, EVENT_TYPE_CRASH, timestamp, true);
   }
 
   public void persistNonFatalEvent(
       @NonNull Throwable event, @NonNull Thread thread, @NonNull String sessionId, long timestamp) {
-    Logger.getLogger().d("Persisting non-fatal event for session " + sessionId);
+    Logger.getLogger().v("Persisting non-fatal event for session " + sessionId);
     persistEvent(event, thread, sessionId, EVENT_TYPE_LOGGED, timestamp, false);
   }
 
@@ -138,7 +138,7 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
   public void persistUserId(@NonNull String sessionId) {
     final String userId = reportMetadata.getUserId();
     if (userId == null) {
-      Logger.getLogger().d("Could not persist user ID; no user ID available");
+      Logger.getLogger().v("Could not persist user ID; no user ID available");
       return;
     }
     reportPersistence.persistUserIdForSession(userId, sessionId);
@@ -212,7 +212,7 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
       eventBuilder.setLog(
           CrashlyticsReport.Session.Event.Log.builder().setContent(content).build());
     } else {
-      Logger.getLogger().d("No log data to include with this event.");
+      Logger.getLogger().v("No log data to include with this event.");
     }
 
     // TODO: Put this back once support for reports endpoint is removed.
@@ -235,8 +235,6 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
 
   private boolean onReportSendComplete(@NonNull Task<CrashlyticsReportWithSessionId> task) {
     if (task.isSuccessful()) {
-      // TODO: Consolidate sending analytics event here, which will capture both native and
-      // non-native fatal reports
       final CrashlyticsReportWithSessionId report = task.getResult();
       Logger.getLogger()
           .d("Crashlytics report successfully enqueued to DataTransport: " + report.getSessionId());
@@ -244,7 +242,7 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
       return true;
     }
     Logger.getLogger()
-        .d("Crashlytics report could not be enqueued to DataTransport", task.getException());
+        .w("Crashlytics report could not be enqueued to DataTransport", task.getException());
     return false;
   }
 

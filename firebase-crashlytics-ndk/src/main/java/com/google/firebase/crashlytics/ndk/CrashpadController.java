@@ -27,7 +27,7 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
 
-class BreakpadController implements NativeComponentController {
+class CrashpadController implements NativeComponentController {
 
   private static final Charset UTF_8 = Charset.forName("UTF-8");
   private static final String SESSION_METADATA_FILE = "session.json";
@@ -39,7 +39,7 @@ class BreakpadController implements NativeComponentController {
   private final NativeApi nativeApi;
   private final CrashFilesManager filesManager;
 
-  BreakpadController(Context context, NativeApi nativeApi, CrashFilesManager filesManager) {
+  CrashpadController(Context context, NativeApi nativeApi, CrashFilesManager filesManager) {
     this.context = context;
     this.nativeApi = nativeApi;
     this.filesManager = filesManager;
@@ -55,7 +55,7 @@ class BreakpadController implements NativeComponentController {
         initSuccess = nativeApi.initialize(crashReportPath, context.getAssets());
       }
     } catch (IOException e) {
-      Logger.getLogger().e("Error initializing CrashlyticsNdk", e);
+      Logger.getLogger().e("Error initializing Crashlytics NDK", e);
     }
     return initSuccess;
   }
@@ -82,12 +82,14 @@ class BreakpadController implements NativeComponentController {
     final File sessionFileDirectoryForMinidump = new File(sessionFileDirectory, "pending");
 
     Logger.getLogger()
-        .d("Minidump directory: " + sessionFileDirectoryForMinidump.getAbsolutePath());
+        .v("Minidump directory: " + sessionFileDirectoryForMinidump.getAbsolutePath());
 
     File minidump = getSingleFileWithExtension(sessionFileDirectoryForMinidump, ".dmp");
 
     Logger.getLogger()
-        .d("Minidump " + (minidump != null && minidump.exists() ? "exists" : "does not exist"));
+        .v(
+            "Minidump file "
+                + (minidump != null && minidump.exists() ? "exists" : "does not exist"));
 
     final SessionFiles.Builder builder = new SessionFiles.Builder();
     if (sessionFileDirectory != null
