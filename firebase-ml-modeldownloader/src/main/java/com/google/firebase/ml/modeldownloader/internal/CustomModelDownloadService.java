@@ -17,19 +17,23 @@ package com.google.firebase.ml.modeldownloader.internal;
 import android.util.JsonReader;
 import android.util.Log;
 import androidx.annotation.NonNull;
+import com.google.android.datatransport.TransportFactory;
 import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.FirebaseOptions;
+import com.google.firebase.FirebaseApp;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
 import com.google.firebase.ml.modeldownloader.CustomModel;
+import com.google.firebase.ml.modeldownloader.FirebaseMlException;
+import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent.ErrorCode;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -71,14 +75,18 @@ public class CustomModelDownloadService {
 
   private final ExecutorService executorService;
   private final FirebaseInstallationsApi firebaseInstallations;
+  private final FirebaseMlLogger eventLogger;
   private final String apiKey;
   private String downloadHost = FIREBASE_DOWNLOAD_HOST;
 
   public CustomModelDownloadService(
-      FirebaseOptions firebaseOptions, FirebaseInstallationsApi installationsApi) {
+      FirebaseApp firebaseApp,
+      FirebaseInstallationsApi installationsApi,
+      TransportFactory transportFactory) {
     firebaseInstallations = installationsApi;
-    apiKey = firebaseOptions.getApiKey();
+    apiKey = firebaseApp.getOptions().getApiKey();
     executorService = Executors.newCachedThreadPool();
+    this.eventLogger = FirebaseMlLogger.getInstance();
   }
 
   @VisibleForTesting
@@ -86,11 +94,13 @@ public class CustomModelDownloadService {
       FirebaseInstallationsApi firebaseInstallations,
       ExecutorService executorService,
       String apiKey,
-      String downloadHost) {
+      String downloadHost,
+      FirebaseMlLogger eventLogger) {
     this.firebaseInstallations = firebaseInstallations;
     this.executorService = executorService;
     this.apiKey = apiKey;
     this.downloadHost = downloadHost;
+    this.eventLogger = eventLogger;
   }
 
   /**
@@ -138,11 +148,20 @@ public class CustomModelDownloadService {
           executorService,
           (CustomModelTask) -> {
             if (!installationAuthTokenTask.isSuccessful()) {
-              // TODO(annz) update to better error handling (use FirebaseMLExceptions)
+              ErrorCode errorCode = ErrorCode.MODEL_INFO_DOWNLOAD_CONNECTION_FAILED;
+              String errorMessage = "Failed to get model due to authentication error";
+              if (installationAuthTokenTask.getException() != null
+                  && (installationAuthTokenTask.getException() instanceof UnknownHostException
+                      || installationAuthTokenTask.getException().getCause()
+                          instanceof UnknownHostException)) {
+                errorCode = ErrorCode.NO_NETWORK_CONNECTION;
+                errorMessage = "Failed to retrieve model info due to no internet connection.";
+              }
+
+              eventLogger.logDownloadFailureWithReason(
+                  new CustomModel(modelName, modelHash, 0, 0L), false, errorCode.getValue());
               return Tasks.forException(
-                  new Exception(
-                      "Firebase Installations failed to get installation auth token for fetch.",
-                      installationAuthTokenTask.getException()));
+                  new FirebaseMlException(errorMessage, FirebaseMlException.INTERNAL));
             }
 
             connection.setRequestProperty(
@@ -179,6 +198,7 @@ public class CustomModelDownloadService {
 
   private Task<CustomModel> fetchDownloadDetails(String modelName, HttpURLConnection connection)
       throws Exception {
+    // todo(annz) add try catch for IOException specific errors.
     connection.connect();
     int httpResponseCode = connection.getResponseCode();
 

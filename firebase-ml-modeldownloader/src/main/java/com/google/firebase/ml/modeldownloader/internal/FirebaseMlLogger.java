@@ -19,7 +19,9 @@ import android.content.pm.PackageManager.NameNotFoundException;
 import android.os.SystemClock;
 import android.util.Log;
 import androidx.annotation.NonNull;
+import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
+import com.google.android.datatransport.TransportFactory;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.ml.modeldownloader.CustomModel;
 import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.EventName;
@@ -37,6 +39,8 @@ import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.System
  */
 @WorkerThread
 public class FirebaseMlLogger {
+
+  public static final int NO_FAILURE_VALUE = 0;
   private static final String TAG = "FirebaseMlLogger";
   private final SharedPreferencesUtil sharedPreferencesUtil;
   private final DataTransportMlEventSender eventSender;
@@ -50,6 +54,21 @@ public class FirebaseMlLogger {
   public FirebaseMlLogger(
       @NonNull FirebaseApp firebaseApp,
       @NonNull SharedPreferencesUtil sharedPreferencesUtil,
+      @NonNull TransportFactory transportFactory) {
+    this.firebaseApp = firebaseApp;
+    this.sharedPreferencesUtil = sharedPreferencesUtil;
+    this.eventSender = DataTransportMlEventSender.create(transportFactory);
+
+    this.firebaseProjectId = getProjectId();
+    this.apiKey = getApiKey();
+    this.appPackageName = firebaseApp.getApplicationContext().getPackageName();
+    this.appVersion = getAppVersion();
+  }
+
+  @VisibleForTesting
+  FirebaseMlLogger(
+      @NonNull FirebaseApp firebaseApp,
+      @NonNull SharedPreferencesUtil sharedPreferencesUtil,
       @NonNull DataTransportMlEventSender eventSender) {
     this.firebaseApp = firebaseApp;
     this.sharedPreferencesUtil = sharedPreferencesUtil;
@@ -59,6 +78,17 @@ public class FirebaseMlLogger {
     this.apiKey = getApiKey();
     this.appPackageName = firebaseApp.getApplicationContext().getPackageName();
     this.appVersion = getAppVersion();
+  }
+
+  /**
+   * Get FirebaseMlLogger instance using the firebase app returned by {@link
+   * FirebaseApp#getInstance()}
+   *
+   * @return FirebaseMlLogger
+   */
+  @NonNull
+  public static FirebaseMlLogger getInstance() {
+    return FirebaseApp.getInstance().get(FirebaseMlLogger.class);
   }
 
   public void logDownloadEventWithExactDownloadTime(
@@ -83,6 +113,20 @@ public class FirebaseMlLogger {
         /* shouldLogExactDownloadTime= */ false,
         DownloadStatus.FAILED,
         downloadFailureReason);
+  }
+
+  public void logDownloadEventWithErrorCode(
+      @NonNull CustomModel customModel,
+      boolean shouldLogRoughDownloadTime,
+      DownloadStatus status,
+      ErrorCode errorCode) {
+    logDownloadEvent(
+        customModel,
+        errorCode,
+        shouldLogRoughDownloadTime,
+        /* shouldLogExactDownloadTime= */ false,
+        status,
+        NO_FAILURE_VALUE);
   }
 
   private boolean isStatsLoggingEnabled() {

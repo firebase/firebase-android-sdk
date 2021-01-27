@@ -142,7 +142,7 @@ public class CustomModel {
    */
   @Nullable
   @VisibleForTesting
-  File getFile(ModelFileDownloadService fileDownloadService) throws FirebaseMlException {
+  File getFile(ModelFileDownloadService fileDownloadService) {
     // check for completed download
     File newDownloadFile = fileDownloadService.loadNewlyDownloadedModelFile(this);
     if (newDownloadFile != null) {
@@ -157,6 +157,7 @@ public class CustomModel {
     if (!modelFile.exists()) {
       return null;
     }
+
     return modelFile;
   }
 
