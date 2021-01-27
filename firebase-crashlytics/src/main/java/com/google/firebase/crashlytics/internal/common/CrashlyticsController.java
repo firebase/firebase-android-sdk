@@ -778,7 +778,7 @@ class CrashlyticsController {
 
   private Task<Void> logAnalyticsAppExceptionEvent(long timestamp) {
     if (firebaseCrashExists()) {
-      Logger.getLogger().d("Skipping logging Crashlytics event to Firebase, FirebaseCrash exists");
+      Logger.getLogger().w("Skipping logging Crashlytics event to Firebase, FirebaseCrash exists");
       return Tasks.forResult(null);
     }
     Logger.getLogger().d("Logging app exception event to Firebase Analytics");
