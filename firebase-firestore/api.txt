@@ -224,7 +224,6 @@ package com.google.firebase.firestore {
   }
 
   public class LoadBundleTask extends com.google.android.gms.tasks.Task<com.google.firebase.firestore.LoadBundleTaskProgress> {
-    ctor @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP) public LoadBundleTask();
     method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.firestore.LoadBundleTaskProgress> addOnCanceledListener(@NonNull com.google.android.gms.tasks.OnCanceledListener);
     method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.firestore.LoadBundleTaskProgress> addOnCanceledListener(@NonNull java.util.concurrent.Executor, @NonNull com.google.android.gms.tasks.OnCanceledListener);
     method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.firestore.LoadBundleTaskProgress> addOnCanceledListener(@NonNull android.app.Activity, @NonNull com.google.android.gms.tasks.OnCanceledListener);
@@ -252,15 +251,9 @@ package com.google.firebase.firestore {
     method public boolean isSuccessful();
     method @NonNull public <TContinuationResult> com.google.android.gms.tasks.Task<TContinuationResult> onSuccessTask(@NonNull com.google.android.gms.tasks.SuccessContinuation<com.google.firebase.firestore.LoadBundleTaskProgress,TContinuationResult>);
     method @NonNull public <TContinuationResult> com.google.android.gms.tasks.Task<TContinuationResult> onSuccessTask(@NonNull java.util.concurrent.Executor, @NonNull com.google.android.gms.tasks.SuccessContinuation<com.google.firebase.firestore.LoadBundleTaskProgress,TContinuationResult>);
-    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP) public void setException(@NonNull Exception);
-    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP) public void setResult(@NonNull com.google.firebase.firestore.LoadBundleTaskProgress);
-    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP) public void updateProgress(@NonNull com.google.firebase.firestore.LoadBundleTaskProgress);
   }
 
   public final class LoadBundleTaskProgress {
-    ctor @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP) public LoadBundleTaskProgress(int, int, long, long, @Nullable Exception, @NonNull com.google.firebase.firestore.LoadBundleTaskProgress.TaskState);
-    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP) @NonNull public static com.google.firebase.firestore.LoadBundleTaskProgress forInitial(@NonNull com.google.firebase.firestore.bundle.BundleMetadata);
-    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP) @NonNull public static com.google.firebase.firestore.LoadBundleTaskProgress forSuccess(@NonNull com.google.firebase.firestore.bundle.BundleMetadata);
     method public long getBytesLoaded();
     method public int getDocumentsLoaded();
     method @Nullable public Exception getException();
@@ -280,8 +273,8 @@ package com.google.firebase.firestore {
     enum_constant public static final com.google.firebase.firestore.MetadataChanges INCLUDE;
   }
 
-  public @interface OnProgressListener<ProgessT> {
-    method public abstract void onProgress(@NonNull ProgressT);
+  public interface OnProgressListener<ProgressT> {
+    method public void onProgress(@NonNull ProgressT);
   }
 
   @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @java.lang.annotation.Target({java.lang.annotation.ElementType.METHOD, java.lang.annotation.ElementType.FIELD}) public @interface PropertyName {

@@ -63,6 +63,7 @@ public class LoadBundleTask extends Task<LoadBundleTaskProgress> {
   @GuardedBy("lock")
   private final Queue<ManagedListener> progressListeners;
 
+  /* @hide */
   @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
   public LoadBundleTask() {
     snapshot = LoadBundleTaskProgress.INITIAL;
@@ -500,6 +501,7 @@ public class LoadBundleTask extends Task<LoadBundleTaskProgress> {
     }
   }
 
+  /** @hide */
   @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
   public void setResult(@NonNull LoadBundleTaskProgress result) {
     hardAssert(
@@ -516,6 +518,7 @@ public class LoadBundleTask extends Task<LoadBundleTaskProgress> {
     completionSource.setResult(result);
   }
 
+  /** @hide */
   @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
   public void setException(@NonNull Exception exception) {
     LoadBundleTaskProgress snapshot;
@@ -538,6 +541,7 @@ public class LoadBundleTask extends Task<LoadBundleTaskProgress> {
     completionSource.setException(exception);
   }
 
+  /** @hide */
   @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
   public void updateProgress(@NonNull LoadBundleTaskProgress progressUpdate) {
     synchronized (lock) {

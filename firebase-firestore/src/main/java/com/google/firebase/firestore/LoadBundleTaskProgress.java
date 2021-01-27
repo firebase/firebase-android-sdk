@@ -43,6 +43,7 @@ public final class LoadBundleTaskProgress {
   @NonNull private final TaskState taskState;
   @Nullable private final Exception exception;
 
+  /** @hide */
   @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
   public LoadBundleTaskProgress(
       int documentsLoaded,
@@ -62,6 +63,7 @@ public final class LoadBundleTaskProgress {
   /**
    * Creates an "initial" status update from a bundle's metadata. The initial status sets all
    * loading indicators to 0.
+   * @hide
    */
   @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
   public static @NonNull LoadBundleTaskProgress forInitial(@NonNull BundleMetadata bundleMetadata) {
@@ -77,6 +79,7 @@ public final class LoadBundleTaskProgress {
   /**
    * Creates a "success" status update from a bundle's metadata. The initial status sets all loading
    * indicators to their maximum values.
+   * @hide
    */
   @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
   public static @NonNull LoadBundleTaskProgress forSuccess(@NonNull BundleMetadata bundleMetadata) {
