@@ -15,7 +15,6 @@
 package com.google.firebase.firestore.bundle;
 
 import static com.google.firebase.firestore.model.DocumentCollections.emptyMaybeDocumentMap;
-import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
 import com.google.firebase.database.collection.ImmutableSortedMap;
@@ -24,6 +23,7 @@ import com.google.firebase.firestore.LoadBundleTaskProgress;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.NoDocument;
+import com.google.firebase.firestore.util.Preconditions;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -43,7 +43,6 @@ public class BundleLoader {
 
   private ImmutableSortedMap<DocumentKey, MaybeDocument> documents;
   private long bytesLoaded;
-  private LoadBundleTaskProgress.TaskState taskState;
   @Nullable private DocumentKey currentDocument;
 
   public BundleLoader(
@@ -58,7 +57,6 @@ public class BundleLoader {
     this.queries = new ArrayList<>();
     this.documents = emptyMaybeDocumentMap();
     this.documentsMetadata = new HashMap<>();
-    this.taskState = LoadBundleTaskProgress.TaskState.RUNNING;
   }
 
   /**
@@ -68,9 +66,8 @@ public class BundleLoader {
    * null.
    */
   public @Nullable LoadBundleTaskProgress addElement(BundleElement bundleElement, long byteSize) {
-    if (bundleElement instanceof BundleMetadata) {
-      return fail("Unexpected bundle metadata  element.");
-    }
+    Preconditions.checkArgument(
+        !(bundleElement instanceof BundleMetadata), "Unexpected bundle metadata element.");
 
     boolean updateProgress = false;
 
@@ -94,7 +91,8 @@ public class BundleLoader {
     } else if (bundleElement instanceof BundleDocument) {
       BundleDocument bundleDocument = (BundleDocument) bundleElement;
       if (!bundleDocument.getKey().equals(currentDocument)) {
-        return fail("The document being added does not match the stored metadata.");
+        throw new IllegalArgumentException(
+            "The document being added does not match the stored metadata.");
       }
       documents = documents.insert(bundleDocument.getKey(), bundleDocument.getDocument());
       updateProgress = true;
@@ -103,46 +101,29 @@ public class BundleLoader {
 
     bytesLoaded += byteSize;
 
-    if (bytesLoaded == totalBytes) {
-      if (documents.size() != totalDocuments) {
-        return fail(
-            String.format(
-                "Expected %s documents, but loaded %s.", totalDocuments, documents.size()));
-      }
-      if (currentDocument != null) {
-        return fail(
-            "Bundled documents end with a document metadata element instead of a document.");
-      }
-      if (bundleMetadata.getBundleId() == null) {
-        return fail("Bundle ID must be set");
-      }
-
-      taskState = LoadBundleTaskProgress.TaskState.SUCCESS;
-      updateProgress = true;
-    }
-
     return updateProgress
         ? new LoadBundleTaskProgress(
-            documents.size(), totalDocuments, bytesLoaded, totalBytes, null, taskState)
+            documents.size(),
+            totalDocuments,
+            bytesLoaded,
+            totalBytes,
+            null,
+            LoadBundleTaskProgress.TaskState.RUNNING)
         : null;
-  }
-
-  private LoadBundleTaskProgress fail(String error) {
-    taskState = LoadBundleTaskProgress.TaskState.ERROR;
-    return new LoadBundleTaskProgress(
-        documents.size(),
-        totalDocuments,
-        bytesLoaded,
-        totalBytes,
-        new IllegalArgumentException(error),
-        LoadBundleTaskProgress.TaskState.ERROR);
   }
 
   /** Applies the loaded documents and queries to local store. Returns the document view changes. */
   public ImmutableSortedMap<DocumentKey, MaybeDocument> applyChanges() {
-    hardAssert(
-        taskState.equals(LoadBundleTaskProgress.TaskState.SUCCESS),
-        "Expected successful task, but was " + taskState);
+    Preconditions.checkArgument(
+        currentDocument == null,
+        "Bundled documents end with a document metadata element instead of a document.");
+    Preconditions.checkArgument(bundleMetadata.getBundleId() != null, "Bundle ID must be set");
+    Preconditions.checkArgument(
+        documents.size() == totalDocuments,
+        "Expected %s documents, but loaded %s.",
+        totalDocuments,
+        documents.size());
+
     ImmutableSortedMap<DocumentKey, MaybeDocument> changes =
         bundleListener.applyBundledDocuments(documents, bundleMetadata.getBundleId());
 
@@ -158,12 +139,12 @@ public class BundleLoader {
 
   private Map<String, ImmutableSortedSet<DocumentKey>> getQueryDocumentMapping() {
     Map<String, ImmutableSortedSet<DocumentKey>> queryDocumentMap = new HashMap<>();
+    for (NamedQuery namedQuery : queries) {
+      queryDocumentMap.put(namedQuery.getName(), DocumentKey.emptyKeySet());
+    }
     for (BundledDocumentMetadata metadata : documentsMetadata.values()) {
       for (String query : metadata.getQueries()) {
         ImmutableSortedSet<DocumentKey> matchingKeys = queryDocumentMap.get(query);
-        if (matchingKeys == null) {
-          matchingKeys = DocumentKey.emptyKeySet();
-        }
         queryDocumentMap.put(query, matchingKeys.insert(metadata.getKey()));
       }
     }
