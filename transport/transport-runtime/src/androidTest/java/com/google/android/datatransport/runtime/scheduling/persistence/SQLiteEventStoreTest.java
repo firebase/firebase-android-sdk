@@ -14,6 +14,7 @@
 
 package com.google.android.datatransport.runtime.scheduling.persistence;
 
+import static com.google.android.datatransport.runtime.scheduling.persistence.SQLiteEventStore.tryWithCursor;
 import static com.google.android.datatransport.runtime.scheduling.persistence.SchemaManager.SCHEMA_VERSION;
 import static com.google.common.truth.Truth.assertThat;
 
@@ -31,6 +32,8 @@ import com.google.android.datatransport.runtime.time.UptimeClock;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -370,12 +373,54 @@ public class SQLiteEventStoreTest {
             .setExtras("e1".getBytes(Charset.defaultCharset()))
             .build();
 
+    // persist to ctx1 before ctx2
     store.persist(ctx1, EVENT);
     store.persist(ctx1, EVENT);
     store.persist(ctx2, EVENT);
     store.persist(ctx2, EVENT);
 
     assertThat(store.loadActiveContexts()).containsExactly(ctx1, ctx2);
+  }
+
+  @Test
+  public void loadActiveContexts_whenTwoContextsDifferInExtras_shouldReturnThem() {
+    TransportContext ctx1 =
+        TransportContext.builder().setBackendName("backend1").setExtras(null).build();
+    TransportContext ctx2 =
+        TransportContext.builder()
+            .setBackendName("backend1")
+            .setExtras("e1".getBytes(Charset.defaultCharset()))
+            .build();
+
+    // persist to ctx2 before ctx1
+    store.persist(ctx2, EVENT);
+    store.persist(ctx2, EVENT);
+    store.persist(ctx1, EVENT);
+    store.persist(ctx1, EVENT);
+
+    assertThat(store.loadActiveContexts()).containsExactly(ctx1, ctx2);
+
+    Map<Integer, Integer> eventsPerContext =
+        store.inTransaction(
+            db ->
+                tryWithCursor(
+                    db.query(
+                        "events",
+                        new String[] {"context_id", "COUNT(_id)"},
+                        null,
+                        null,
+                        "context_id",
+                        null,
+                        null),
+                    cursor -> {
+                      Map<Integer, Integer> results = new HashMap<>();
+                      while (cursor.moveToNext()) {
+                        results.put(cursor.getInt(0), cursor.getInt(1));
+                      }
+                      return results;
+                    }));
+
+    assertThat(eventsPerContext).containsExactly(1, 2, 2, 2);
   }
 
   @Test
