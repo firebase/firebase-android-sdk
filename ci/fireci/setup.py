@@ -29,6 +29,7 @@ setup(
         'opencensus==0.2.0',
         'google-cloud-monitoring==0.31.1',
         'google-auth',
+        'six',
         'PyGithub==1.43.8',
         'requests==2.23.0'
     ],
