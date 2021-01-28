@@ -228,7 +228,7 @@ public class FirebaseMlLoggerTest {
                             .setErrorCode(ErrorCode.MODEL_INFO_DOWNLOAD_UNSUCCESSFUL_HTTP_STATUS)
                             .setDownloadStatus(DownloadStatus.MODEL_INFO_RETRIEVAL_FAILED)
                             .build())
-                    .setSystemInfo(SYSTEM_INFO)
+                    .setSystemInfo(systemInfo)
                     .build()));
     verify(mockStatsSender, Mockito.times(1)).sendEvent(any());
     verify(mockSharedPreferencesUtil, never()).setModelDownloadCompleteTimeMs(any(), eq(2500L));
@@ -255,7 +255,7 @@ public class FirebaseMlLoggerTest {
                             .setDownloadStatus(DownloadStatus.MODEL_INFO_RETRIEVAL_FAILED)
                             .setDownloadFailureStatus(FirebaseMlException.INVALID_ARGUMENT)
                             .build())
-                    .setSystemInfo(SYSTEM_INFO)
+                    .setSystemInfo(systemInfo)
                     .build()));
     verify(mockStatsSender, Mockito.times(1)).sendEvent(any());
     verify(mockSharedPreferencesUtil, never()).setModelDownloadCompleteTimeMs(any(), eq(2500L));
