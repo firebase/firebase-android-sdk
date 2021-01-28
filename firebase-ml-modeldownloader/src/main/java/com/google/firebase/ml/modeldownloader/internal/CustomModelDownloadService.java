@@ -17,7 +17,6 @@ package com.google.firebase.ml.modeldownloader.internal;
 import android.util.JsonReader;
 import android.util.Log;
 import androidx.annotation.NonNull;
-import com.google.android.datatransport.TransportFactory;
 import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
@@ -26,6 +25,7 @@ import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
 import com.google.firebase.ml.modeldownloader.CustomModel;
 import com.google.firebase.ml.modeldownloader.FirebaseMlException;
+import com.google.firebase.ml.modeldownloader.FirebaseMlException.Code;
 import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent.ErrorCode;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -80,9 +80,7 @@ public class CustomModelDownloadService {
   private String downloadHost = FIREBASE_DOWNLOAD_HOST;
 
   public CustomModelDownloadService(
-      FirebaseApp firebaseApp,
-      FirebaseInstallationsApi installationsApi,
-      TransportFactory transportFactory) {
+      FirebaseApp firebaseApp, FirebaseInstallationsApi installationsApi) {
     firebaseInstallations = installationsApi;
     apiKey = firebaseApp.getOptions().getApiKey();
     executorService = Executors.newCachedThreadPool();
@@ -133,7 +131,6 @@ public class CustomModelDownloadService {
     try {
       URL url =
           new URL(String.format(DOWNLOAD_MODEL_REGEX, downloadHost, projectNumber, modelName));
-
       HttpURLConnection connection = (HttpURLConnection) url.openConnection();
       connection.setConnectTimeout(CONNECTION_TIME_OUT_MS);
       connection.setRequestProperty(ACCEPT_ENCODING_HEADER_KEY, GZIP_CONTENT_ENCODING);
@@ -171,10 +168,16 @@ public class CustomModelDownloadService {
             return fetchDownloadDetails(modelName, connection);
           });
 
-    } catch (Exception e) {
-      // TODO(annz) update to better error handling (use FirebaseMLExceptions)
+    } catch (IOException e) {
+      eventLogger.logDownloadFailureWithReason(
+          new CustomModel(modelName, modelHash, 0, 0L),
+          false,
+          ErrorCode.MODEL_INFO_DOWNLOAD_CONNECTION_FAILED.getValue());
+
       return Tasks.forException(
-          new Exception("Error reading custom model from download service: " + e.getMessage(), e));
+          new FirebaseMlException(
+              "Error reading custom model from download service: " + e.getMessage(),
+              FirebaseMlException.INVALID_ARGUMENT));
     }
   }
 
@@ -196,29 +199,81 @@ public class CustomModelDownloadService {
     }
   }
 
-  private Task<CustomModel> fetchDownloadDetails(String modelName, HttpURLConnection connection)
-      throws Exception {
-    // todo(annz) add try catch for IOException specific errors.
-    connection.connect();
-    int httpResponseCode = connection.getResponseCode();
+  private Task<CustomModel> fetchDownloadDetails(String modelName, HttpURLConnection connection) {
+    try {
+      connection.connect();
 
-    if (httpResponseCode == HttpURLConnection.HTTP_NOT_MODIFIED) {
-      return Tasks.forResult(null);
-    } else if (httpResponseCode == HttpURLConnection.HTTP_OK) {
-      return Tasks.forResult(readCustomModelResponse(modelName, connection));
+      int httpResponseCode = connection.getResponseCode();
+      String errorMessage = getErrorStream(connection);
+
+      switch (httpResponseCode) {
+        case HttpURLConnection.HTTP_OK:
+          return Tasks.forResult(readCustomModelResponse(modelName, connection));
+        case HttpURLConnection.HTTP_NOT_MODIFIED:
+          return Tasks.forResult(null);
+        case HttpURLConnection.HTTP_NOT_FOUND:
+          return Tasks.forException(
+              new FirebaseMlException(
+                  String.format(Locale.getDefault(), "No model found with name: %s", modelName),
+                  FirebaseMlException.NOT_FOUND));
+        case HttpURLConnection.HTTP_BAD_REQUEST:
+          return setAndLogException(
+              modelName,
+              httpResponseCode,
+              String.format(
+                  Locale.getDefault(),
+                  "Bad http request for model (%s); error message: %s",
+                  modelName,
+                  errorMessage),
+              FirebaseMlException.INVALID_ARGUMENT);
+        case 429: // too many requests
+          return setAndLogException(
+              modelName,
+              httpResponseCode,
+              "Too many requests to server please wait before trying again.",
+              FirebaseMlException.INVALID_ARGUMENT);
+        case HttpURLConnection.HTTP_SERVER_ERROR:
+          return setAndLogException(
+              modelName,
+              httpResponseCode,
+              String.format(
+                  Locale.getDefault(),
+                  "Server issue while fetching model (%s); error message: %s",
+                  modelName,
+                  errorMessage),
+              FirebaseMlException.INTERNAL);
+        default:
+          return setAndLogException(
+              modelName,
+              httpResponseCode,
+              String.format(
+                  Locale.getDefault(),
+                  "Failed to connect to Firebase ML download server with HTTP status code: %d"
+                      + " and error message: %s",
+                  httpResponseCode,
+                  errorMessage),
+              FirebaseMlException.INTERNAL);
+      }
+    } catch (IOException e) {
+      ErrorCode errorCode = ErrorCode.MODEL_INFO_DOWNLOAD_CONNECTION_FAILED;
+      String errorMessage = "Failed to get model URL";
+      if (e instanceof UnknownHostException) {
+        errorCode = ErrorCode.NO_NETWORK_CONNECTION;
+        errorMessage = "Failed to retrieve model info due to no internet connection.";
+      }
+      eventLogger.logModelInfoRetrieverFailure(new CustomModel(modelName, "", 0, 0), errorCode);
+      return Tasks.forException(
+          new FirebaseMlException(errorMessage, FirebaseMlException.INTERNAL));
     }
+  }
 
-    String errorMessage = getErrorStream(connection);
-
-    // todo(annz) add more specific error handling. NOT_FOUND, etc.
-    return Tasks.forException(
-        new Exception(
-            String.format(
-                Locale.getDefault(),
-                "Failed to connect to Firebase ML download server with HTTP status code: %d"
-                    + " and error message: %s",
-                connection.getResponseCode(),
-                errorMessage)));
+  private Task<CustomModel> setAndLogException(
+      String modelName, int httpResponseCode, String errorMessage, @Code int invalidArgument) {
+    eventLogger.logModelInfoRetrieverFailure(
+        new CustomModel(modelName, "", 0, 0),
+        ErrorCode.MODEL_INFO_DOWNLOAD_UNSUCCESSFUL_HTTP_STATUS,
+        httpResponseCode);
+    return Tasks.forException(new FirebaseMlException(errorMessage, invalidArgument));
   }
 
   private CustomModel readCustomModelResponse(

@@ -48,8 +48,6 @@ public class DataTransportMlEventSender {
   }
 
   public void sendEvent(@NonNull FirebaseMlLogEvent firebaseMlLogEvent) {
-    // TODO Use .send or .schedule - which gives back task of logging progress?
-    //  Not sure how strongly we feel about tracking these? I'm happy to use plain send.
     transport.send(Event.ofData(firebaseMlLogEvent));
   }
 }

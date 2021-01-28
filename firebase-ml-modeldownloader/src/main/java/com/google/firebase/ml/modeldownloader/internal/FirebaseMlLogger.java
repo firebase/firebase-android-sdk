@@ -91,6 +91,20 @@ public class FirebaseMlLogger {
     return FirebaseApp.getInstance().get(FirebaseMlLogger.class);
   }
 
+  void logModelInfoRetrieverFailure(CustomModel model, ErrorCode errorCode) {
+    logModelInfoRetrieverFailure(model, errorCode, NO_FAILURE_VALUE);
+  }
+
+  void logModelInfoRetrieverFailure(CustomModel model, ErrorCode errorCode, int httpResponseCode) {
+    logDownloadEvent(
+        model,
+        errorCode,
+        false,
+        /* shouldLogExactDownloadTime= */ false,
+        DownloadStatus.MODEL_INFO_RETRIEVAL_FAILED,
+        httpResponseCode);
+  }
+
   public void logDownloadEventWithExactDownloadTime(
       @NonNull CustomModel customModel, ErrorCode errorCode, DownloadStatus status) {
     logDownloadEvent(
