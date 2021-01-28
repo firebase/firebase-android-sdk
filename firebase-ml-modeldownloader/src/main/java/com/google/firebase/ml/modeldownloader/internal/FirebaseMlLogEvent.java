@@ -143,9 +143,12 @@ public abstract class FirebaseMlLogEvent {
     // range of error codes is 100 to 199.
     public enum ErrorCode {
       NO_ERROR(0),
+      TIME_OUT_FETCHING_MODEL_METADATA(5),
       NO_NETWORK_CONNECTION(102),
       DOWNLOAD_FAILED(104),
+      MODEL_INFO_DOWNLOAD_UNSUCCESSFUL_HTTP_STATUS(105),
       MODEL_INFO_DOWNLOAD_CONNECTION_FAILED(107),
+      MODEL_HASH_MISMATCH(116),
       UNKNOWN_ERROR(9999);
       private static final SparseArray<ErrorCode> valueMap = new SparseArray<>();
 
@@ -153,9 +156,12 @@ public abstract class FirebaseMlLogEvent {
 
       static {
         valueMap.put(0, NO_ERROR);
+        valueMap.put(5, TIME_OUT_FETCHING_MODEL_METADATA);
         valueMap.put(102, NO_NETWORK_CONNECTION);
         valueMap.put(104, DOWNLOAD_FAILED);
+        valueMap.put(105, MODEL_INFO_DOWNLOAD_UNSUCCESSFUL_HTTP_STATUS);
         valueMap.put(107, MODEL_INFO_DOWNLOAD_CONNECTION_FAILED);
+        valueMap.put(116, MODEL_HASH_MISMATCH);
         valueMap.put(9999, UNKNOWN_ERROR);
       }
 

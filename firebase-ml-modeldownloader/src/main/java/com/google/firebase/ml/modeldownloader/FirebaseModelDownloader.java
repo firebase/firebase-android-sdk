@@ -14,11 +14,11 @@
 package com.google.firebase.ml.modeldownloader;
 
 import android.os.Build.VERSION_CODES;
+import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
-import com.google.android.datatransport.TransportFactory;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -40,6 +40,7 @@ import java.util.concurrent.Executors;
 
 public class FirebaseModelDownloader {
 
+  private static final String TAG = "FirebaseModelDownld";
   private final FirebaseOptions firebaseOptions;
   private final SharedPreferencesUtil sharedPreferencesUtil;
   private final ModelFileDownloadService fileDownloadService;
@@ -51,15 +52,13 @@ public class FirebaseModelDownloader {
 
   @RequiresApi(api = VERSION_CODES.KITKAT)
   FirebaseModelDownloader(
-      FirebaseApp firebaseApp,
-      FirebaseInstallationsApi firebaseInstallationsApi,
-      TransportFactory transportFactory) {
+      FirebaseApp firebaseApp, FirebaseInstallationsApi firebaseInstallationsApi) {
     this.firebaseOptions = firebaseApp.getOptions();
     this.sharedPreferencesUtil = new SharedPreferencesUtil(firebaseApp);
     this.eventLogger = FirebaseMlLogger.getInstance();
-    this.fileDownloadService = new ModelFileDownloadService(firebaseApp, transportFactory);
+    this.fileDownloadService = new ModelFileDownloadService(firebaseApp);
     this.modelDownloadService =
-        new CustomModelDownloadService(firebaseApp, firebaseInstallationsApi, transportFactory);
+        new CustomModelDownloadService(firebaseApp, firebaseInstallationsApi);
 
     this.executor = Executors.newSingleThreadExecutor();
     fileManager = ModelFileManager.getInstance();
@@ -250,7 +249,7 @@ public class FirebaseModelDownloader {
     CustomModel currentModel = sharedPreferencesUtil.getCustomModelDetails(modelName);
 
     if (currentModel == null && modelHash != null) {
-      // todo(annzimmer) log something about mismatched state and use hash = null
+      Log.d(TAG, "Model hash provided but no current model; triggering fresh download.");
       modelHash = null;
     }
 
@@ -273,7 +272,7 @@ public class FirebaseModelDownloader {
                 return getCompletedLocalCustomModelTask(updatedModel);
               }
               // clean up model internally
-              deleteModelDetails(currentModel.getName());
+              deleteModelDetails(modelName);
               return Tasks.forException(
                   new FirebaseMlException(
                       "Possible caching issues: no model associated with " + modelName + ".",
@@ -308,16 +307,34 @@ public class FirebaseModelDownloader {
               if (currentModel.getDownloadId() != 0) {
                 CustomModel downloadingModel =
                     sharedPreferencesUtil.getDownloadingCustomModelDetails(modelName);
-                if (downloadingModel != null
-                    && downloadingModel
-                        .getModelHash()
-                        .equals(incomingModelDetails.getResult().getModelHash())) {
-                  return Tasks.forResult(downloadingModel);
+                if (downloadingModel != null) {
+                  if (downloadingModel
+                      .getModelHash()
+                      .equals(incomingModelDetails.getResult().getModelHash())) {
+                    return Tasks.forResult(downloadingModel);
+                  }
+                  Log.d(
+                      TAG, "Hash does not match with expected: " + downloadingModel.getModelHash());
+                  // Note we log "DownloadStatus.SUCCEEDED" because the model file's download itself
+                  // succeeded. Just the hash validation failed.
+                  eventLogger.logDownloadEventWithErrorCode(
+                      downloadingModel,
+                      true,
+                      DownloadStatus.SUCCEEDED,
+                      ErrorCode.MODEL_HASH_MISMATCH);
+                  return Tasks.forException(
+                      new FirebaseMlException(
+                          "Hash does not match with expected",
+                          FirebaseMlException.MODEL_HASH_MISMATCH));
                 }
-                // todo(annzimmer) this shouldn't happen unless they are calling the sdk with
-                // multiple
-                // sets of download types/conditions.
-                // this should be a download in progress - add appropriate handling.
+                Log.d(TAG, "Download details missing for model");
+                // Note we log "DownloadStatus.SUCCEEDED" because the model file's download itself
+                // succeeded. Just the file copy failed.
+                eventLogger.logDownloadEventWithErrorCode(
+                    downloadingModel, true, DownloadStatus.SUCCEEDED, ErrorCode.DOWNLOAD_FAILED);
+                return Tasks.forException(
+                    new FirebaseMlException(
+                        "Download details missing for model", FirebaseMlException.INTERNAL));
               }
             }
 
@@ -343,7 +360,9 @@ public class FirebaseModelDownloader {
       @Nullable CustomModelDownloadConditions conditions,
       Task<Void> downloadTask,
       int retryCounter) {
-    if (downloadTask.getException().getMessage().contains("Retry: Expired URL")) {
+    if (downloadTask.getException() instanceof FirebaseMlException
+        && ((FirebaseMlException) downloadTask.getException()).getCode()
+            == FirebaseMlException.DOWNLOAD_URL_EXPIRED) {
       // this is likely an expired url - retry.
       Task<CustomModel> retryModelDetails =
           modelDownloadService.getNewDownloadUrlWithExpiry(
@@ -367,13 +386,18 @@ public class FirebaseModelDownloader {
                               modelName, conditions, downloadTask, retryCounter - 1);
                         }
                         return Tasks.forException(
-                            new Exception("File download failed. Too many attempts."));
+                            new FirebaseMlException(
+                                "File download failed after multiple attempts, possible expired url.",
+                                FirebaseMlException.DOWNLOAD_URL_EXPIRED));
                       });
             }
             return Tasks.forException(retryModelDetailTask.getException());
           });
+    } else if (downloadTask.getException() instanceof FirebaseMlException) {
+      return Tasks.forException(downloadTask.getException());
     }
-    return Tasks.forException(new Exception("File download failed."));
+    return Tasks.forException(
+        new FirebaseMlException("File download failed.", FirebaseMlException.INTERNAL));
   }
 
   private Task<CustomModel> finishModelDownload(@NonNull String modelName) {
