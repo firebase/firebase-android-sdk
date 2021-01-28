@@ -46,29 +46,35 @@ public class ModelFileManagerTest {
           .build();
 
   public static final String MODEL_NAME = "MODEL_NAME_1";
-  public static final String MODEL_HASH = "dsf324";
+  public static final String MODEL_HASH = "hash1";
+
+  public static final String MODEL_NAME_2 = "MODEL_NAME_2";
+  public static final String MODEL_HASH_2 = "hash2";
 
   final CustomModel CUSTOM_MODEL_NO_FILE = new CustomModel(MODEL_NAME, MODEL_HASH, 100, 0);
+  final CustomModel CUSTOM_MODEL_NO_FILE_2 = new CustomModel(MODEL_NAME_2, MODEL_HASH_2, 101, 0);
 
   private File testModelFile;
   private File testModelFile2;
 
   ModelFileManager fileManager;
-  String expectedDestinationFolder;
+  FirebaseApp app;
+  private SharedPreferencesUtil sharedPreferencesUtil;
+  String modelDestinationFolder;
 
   @Before
   public void setUp() throws IOException {
     MockitoAnnotations.initMocks(this);
     FirebaseApp.clearInstancesForTest();
-    FirebaseApp app =
-        FirebaseApp.initializeApp(ApplicationProvider.getApplicationContext(), FIREBASE_OPTIONS);
+    app = FirebaseApp.initializeApp(ApplicationProvider.getApplicationContext(), FIREBASE_OPTIONS);
 
+    sharedPreferencesUtil = new SharedPreferencesUtil(app);
     fileManager = new ModelFileManager(app);
 
-    setUpTestingFiles(app);
+    modelDestinationFolder = setUpTestingFiles(app, MODEL_NAME);
   }
 
-  private void setUpTestingFiles(FirebaseApp app) throws IOException {
+  private String setUpTestingFiles(FirebaseApp app, String modelName) throws IOException {
     final File testDir = new File(app.getApplicationContext().getNoBackupFilesDir(), "tmpModels");
     testDir.mkdirs();
     // make sure the directory is empty. Doesn't recurse into subdirs, but that's OK since
@@ -84,21 +90,24 @@ public class ModelFileManagerTest {
 
     assertTrue(testModelFile.exists());
     assertTrue(testModelFile2.exists());
-    expectedDestinationFolder =
-        new File(
-                    app.getApplicationContext().getNoBackupFilesDir(),
-                    ModelFileManager.CUSTOM_MODEL_ROOT_PATH)
-                .getAbsolutePath()
-            + "/"
-            + app.getPersistenceKey()
-            + "/"
-            + MODEL_NAME;
+    return new File(
+                app.getApplicationContext().getNoBackupFilesDir(),
+                ModelFileManager.CUSTOM_MODEL_ROOT_PATH)
+            .getAbsolutePath()
+        + "/"
+        + app.getPersistenceKey()
+        + "/"
+        + modelName;
   }
 
   @After
   public void teardown() {
     testModelFile.deleteOnExit();
     testModelFile2.deleteOnExit();
+
+    // clean up files.
+    new File(modelDestinationFolder + "/0").deleteOnExit();
+    new File(modelDestinationFolder + "/1").deleteOnExit();
   }
 
   @Test
@@ -115,14 +124,8 @@ public class ModelFileManagerTest {
 
   @Test
   public void moveModelToDestinationFolder() throws FirebaseMlException, FileNotFoundException {
-    ParcelFileDescriptor fd =
-        ParcelFileDescriptor.open(testModelFile, ParcelFileDescriptor.MODE_READ_ONLY);
-
-    assertEquals(
-        fileManager.moveModelToDestinationFolder(CUSTOM_MODEL_NO_FILE, fd),
-        new File(expectedDestinationFolder + "/0"));
-    // clean up files
-    new File(expectedDestinationFolder + "/0").delete();
+    MoveFileToDestination(
+        modelDestinationFolder, testModelFile, CUSTOM_MODEL_NO_FILE, 0); // clean up files
   }
 
   @Test
@@ -133,54 +136,172 @@ public class ModelFileManagerTest {
 
     assertEquals(
         fileManager.moveModelToDestinationFolder(CUSTOM_MODEL_NO_FILE, fd),
-        new File(expectedDestinationFolder + "/0"));
+        new File(modelDestinationFolder + "/0"));
 
     ParcelFileDescriptor fd2 =
         ParcelFileDescriptor.open(testModelFile2, ParcelFileDescriptor.MODE_READ_ONLY);
 
     assertEquals(
         fileManager.moveModelToDestinationFolder(CUSTOM_MODEL_NO_FILE, fd2),
-        new File(expectedDestinationFolder + "/1"));
-    // clean up files.
-    new File(expectedDestinationFolder + "/0").delete();
-    new File(expectedDestinationFolder + "/1").delete();
+        new File(modelDestinationFolder + "/1"));
   }
 
   @Test
   public void deleteAllModels_deleteSingleModel()
       throws FirebaseMlException, FileNotFoundException {
-    ParcelFileDescriptor fd =
-        ParcelFileDescriptor.open(testModelFile, ParcelFileDescriptor.MODE_READ_ONLY);
-    assertEquals(
-        fileManager.moveModelToDestinationFolder(CUSTOM_MODEL_NO_FILE, fd),
-        new File(expectedDestinationFolder + "/0"));
-    assertTrue(new File(expectedDestinationFolder + "/0").exists());
+    MoveFileToDestination(modelDestinationFolder, testModelFile, CUSTOM_MODEL_NO_FILE, 0);
 
     fileManager.deleteAllModels(MODEL_NAME);
 
-    assertFalse(new File(expectedDestinationFolder + "/0").exists());
+    assertFalse(new File(modelDestinationFolder + "/0").exists());
   }
 
   @Test
   public void deleteAllModels_deleteMultipleModel()
       throws FirebaseMlException, FileNotFoundException {
-    ParcelFileDescriptor fd =
-        ParcelFileDescriptor.open(testModelFile, ParcelFileDescriptor.MODE_READ_ONLY);
-    assertEquals(
-        fileManager.moveModelToDestinationFolder(CUSTOM_MODEL_NO_FILE, fd),
-        new File(expectedDestinationFolder + "/0"));
-    assertTrue(new File(expectedDestinationFolder + "/0").exists());
+    MoveFileToDestination(modelDestinationFolder, testModelFile, CUSTOM_MODEL_NO_FILE, 0);
 
     ParcelFileDescriptor fd2 =
         ParcelFileDescriptor.open(testModelFile2, ParcelFileDescriptor.MODE_READ_ONLY);
 
     assertEquals(
         fileManager.moveModelToDestinationFolder(CUSTOM_MODEL_NO_FILE, fd2),
-        new File(expectedDestinationFolder + "/1"));
+        new File(modelDestinationFolder + "/1"));
 
     fileManager.deleteAllModels(MODEL_NAME);
 
-    assertFalse(new File(expectedDestinationFolder + "/0").exists());
-    assertFalse(new File(expectedDestinationFolder + "/1").exists());
+    assertFalse(new File(modelDestinationFolder + "/0").exists());
+    assertFalse(new File(modelDestinationFolder + "/1").exists());
+  }
+
+  @Test
+  public void deleteNonLatestCustomModels_fileToDelete()
+      throws FirebaseMlException, FileNotFoundException {
+    MoveFileToDestination(modelDestinationFolder, testModelFile, CUSTOM_MODEL_NO_FILE, 0);
+    MoveFileToDestination(modelDestinationFolder, testModelFile2, CUSTOM_MODEL_NO_FILE, 1);
+
+    sharedPreferencesUtil.setLoadedCustomModelDetails(
+        new CustomModel(MODEL_NAME, MODEL_HASH, 100, 0, modelDestinationFolder + "/1"));
+    fileManager.deleteNonLatestCustomModels();
+
+    assertFalse(new File(modelDestinationFolder + "/0").exists());
+    assertTrue(new File(modelDestinationFolder + "/1").exists());
+  }
+
+  @Test
+  public void deleteNonLatestCustomModels_noFileToDelete()
+      throws FirebaseMlException, FileNotFoundException {
+    MoveFileToDestination(modelDestinationFolder, testModelFile, CUSTOM_MODEL_NO_FILE, 0);
+
+    sharedPreferencesUtil.setLoadedCustomModelDetails(
+        new CustomModel(MODEL_NAME, MODEL_HASH, 100, 0, modelDestinationFolder + "/0"));
+    fileManager.deleteNonLatestCustomModels();
+
+    assertTrue(new File(modelDestinationFolder + "/0").exists());
+  }
+
+  @Test
+  public void deleteNonLatestCustomModels_multipleNamedModels()
+      throws FirebaseMlException, IOException {
+    MoveFileToDestination(modelDestinationFolder, testModelFile, CUSTOM_MODEL_NO_FILE, 0);
+    MoveFileToDestination(modelDestinationFolder, testModelFile2, CUSTOM_MODEL_NO_FILE, 1);
+
+    sharedPreferencesUtil.setLoadedCustomModelDetails(
+        new CustomModel(MODEL_NAME, MODEL_HASH, 100, 0, modelDestinationFolder + "/1"));
+
+    String modelDestinationFolder2 = setUpTestingFiles(app, MODEL_NAME_2);
+    MoveFileToDestination(modelDestinationFolder2, testModelFile, CUSTOM_MODEL_NO_FILE_2, 0);
+    MoveFileToDestination(modelDestinationFolder2, testModelFile2, CUSTOM_MODEL_NO_FILE_2, 1);
+
+    sharedPreferencesUtil.setLoadedCustomModelDetails(
+        new CustomModel(MODEL_NAME_2, MODEL_HASH_2, 101, 0, modelDestinationFolder2 + "/1"));
+
+    fileManager.deleteNonLatestCustomModels();
+
+    assertFalse(new File(modelDestinationFolder + "/0").exists());
+    assertTrue(new File(modelDestinationFolder + "/1").exists());
+
+    assertFalse(new File(modelDestinationFolder2 + "/0").exists());
+    assertTrue(new File(modelDestinationFolder2 + "/1").exists());
+    new File(modelDestinationFolder2 + "/0").deleteOnExit();
+    new File(modelDestinationFolder2 + "/1").deleteOnExit();
+  }
+
+  @Test
+  public void deleteOldModels_deleteModel() throws FirebaseMlException, FileNotFoundException {
+    MoveFileToDestination(modelDestinationFolder, testModelFile, CUSTOM_MODEL_NO_FILE, 0);
+    MoveFileToDestination(modelDestinationFolder, testModelFile2, CUSTOM_MODEL_NO_FILE, 1);
+
+    fileManager.deleteOldModels(MODEL_NAME, modelDestinationFolder + "/1");
+
+    assertFalse(new File(modelDestinationFolder + "/0").exists());
+    assertTrue(new File(modelDestinationFolder + "/1").exists());
+  }
+
+  @Test
+  public void deleteOldModels_deleteModel_keepNewer()
+      throws FirebaseMlException, FileNotFoundException {
+    MoveFileToDestination(modelDestinationFolder, testModelFile, CUSTOM_MODEL_NO_FILE, 0);
+    MoveFileToDestination(modelDestinationFolder, testModelFile2, CUSTOM_MODEL_NO_FILE, 1);
+
+    fileManager.deleteOldModels(MODEL_NAME, modelDestinationFolder + "/0");
+
+    assertTrue(new File(modelDestinationFolder + "/0").exists());
+    assertTrue(new File(modelDestinationFolder + "/1").exists());
+  }
+
+  @Test
+  public void deleteOldModels_noModelsToDelete() throws FirebaseMlException, FileNotFoundException {
+    MoveFileToDestination(modelDestinationFolder, testModelFile, CUSTOM_MODEL_NO_FILE, 0);
+
+    fileManager.deleteOldModels(MODEL_NAME, modelDestinationFolder + "/0");
+
+    assertTrue(new File(modelDestinationFolder + "/0").exists());
+  }
+
+  @Test
+  public void deleteOldModels_noLatestFile() throws FirebaseMlException, FileNotFoundException {
+    MoveFileToDestination(modelDestinationFolder, testModelFile, CUSTOM_MODEL_NO_FILE, 0);
+
+    fileManager.deleteOldModels(MODEL_NAME, modelDestinationFolder + "/99");
+
+    assertFalse(new File(modelDestinationFolder + "/0").exists());
+  }
+
+  @Test
+  public void deleteOldModels_multipleNamedModels() throws FirebaseMlException, IOException {
+    MoveFileToDestination(modelDestinationFolder, testModelFile, CUSTOM_MODEL_NO_FILE, 0);
+    MoveFileToDestination(modelDestinationFolder, testModelFile2, CUSTOM_MODEL_NO_FILE, 1);
+
+    sharedPreferencesUtil.setLoadedCustomModelDetails(
+        new CustomModel(MODEL_NAME, MODEL_HASH, 100, 0, modelDestinationFolder + "/1"));
+
+    String modelDestinationFolder2 = setUpTestingFiles(app, MODEL_NAME_2);
+    MoveFileToDestination(modelDestinationFolder2, testModelFile, CUSTOM_MODEL_NO_FILE_2, 0);
+    MoveFileToDestination(modelDestinationFolder2, testModelFile2, CUSTOM_MODEL_NO_FILE_2, 1);
+
+    sharedPreferencesUtil.setLoadedCustomModelDetails(
+        new CustomModel(MODEL_NAME_2, MODEL_HASH_2, 101, 0, modelDestinationFolder2 + "/1"));
+
+    fileManager.deleteOldModels(MODEL_NAME, modelDestinationFolder + "/1");
+
+    assertFalse(new File(modelDestinationFolder + "/0").exists());
+    assertTrue(new File(modelDestinationFolder + "/1").exists());
+
+    assertTrue(new File(modelDestinationFolder2 + "/0").exists());
+    assertTrue(new File(modelDestinationFolder2 + "/1").exists());
+    new File(modelDestinationFolder2 + "/0").deleteOnExit();
+    new File(modelDestinationFolder2 + "/1").deleteOnExit();
+  }
+
+  private void MoveFileToDestination(
+      String modelDestinationFolder, File testModelFile, CustomModel custom_model, int index)
+      throws FileNotFoundException, FirebaseMlException {
+    ParcelFileDescriptor fd =
+        ParcelFileDescriptor.open(testModelFile, ParcelFileDescriptor.MODE_READ_ONLY);
+    assertEquals(
+        fileManager.moveModelToDestinationFolder(custom_model, fd),
+        new File(modelDestinationFolder + "/" + index));
+    assertTrue(new File(modelDestinationFolder + "/" + index).exists());
   }
 }
