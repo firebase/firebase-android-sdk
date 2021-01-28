@@ -100,6 +100,8 @@ public abstract class FirebaseMlLogEvent {
 
     public abstract String getFirebaseProjectId();
 
+    public abstract String getMlSdkVersion();
+
     /** Builder for {@link SystemInfo}. */
     @AutoValue.Builder
     public abstract static class Builder {
@@ -114,6 +116,9 @@ public abstract class FirebaseMlLogEvent {
 
       @NonNull
       public abstract Builder setFirebaseProjectId(String value);
+
+      @NonNull
+      public abstract Builder setMlSdkVersion(String value);
 
       @NonNull
       public abstract SystemInfo build();

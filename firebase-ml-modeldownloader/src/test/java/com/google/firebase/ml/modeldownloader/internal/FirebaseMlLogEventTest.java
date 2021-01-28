@@ -17,6 +17,7 @@ package com.google.firebase.ml.modeldownloader.internal;
 import static com.google.common.truth.extensions.proto.ProtoTruth.assertThat;
 import static com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.FIREBASE_ML_JSON_ENCODER;
 
+import com.google.firebase.ml.modeldownloader.BuildConfig;
 import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent.DownloadStatus;
 import com.google.firebase.ml.modeldownloader.proto.ErrorCode;
 import com.google.firebase.ml.modeldownloader.proto.EventName;
@@ -57,6 +58,7 @@ public class FirebaseMlLogEventTest {
                     .setAppVersion(APP_VERSION)
                     .setFirebaseProjectId(PROJECT_ID)
                     .setApiKey(API_KEY)
+                    .setMlSdkVersion(BuildConfig.VERSION_NAME)
                     .build())
             .setModelDownloadLogEvent(
                 com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent
@@ -91,6 +93,7 @@ public class FirebaseMlLogEventTest {
             .setAppVersion(APP_VERSION)
             .setFirebaseProjectId(PROJECT_ID)
             .setApiKey(API_KEY)
+            .setMlSdkVersion(BuildConfig.VERSION_NAME)
             .build();
 
     ModelDownloadLogEvent modelDownloadLogEvent =
