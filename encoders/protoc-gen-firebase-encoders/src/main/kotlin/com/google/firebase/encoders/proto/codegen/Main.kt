@@ -19,7 +19,8 @@ import com.google.protobuf.compiler.PluginProtos.CodeGeneratorResponse
 import java.io.PrintWriter
 import java.io.StringWriter
 
-/** Main entry point to the executable jar.
+/**
+ * Main entry point to the executable jar.
  *
  * According to protoc plugin spec, this function is invoked with no arguments and receives a
  * serialized [CodeGeneratorRequest] via `stdin` and must return a [CodeGeneratorResponse] via
