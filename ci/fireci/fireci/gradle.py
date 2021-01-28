@@ -18,7 +18,6 @@ import subprocess
 import sys
 
 
-
 _logger = logging.getLogger('fireci.gradle')
 
 ADB_INSTALL_TIMEOUT = '5'
@@ -36,7 +35,6 @@ def run(*args, gradle_opts='', workdir=None, check=True):
     new_env['GRADLE_OPTS'] = gradle_opts
   new_env[
       'ADB_INSTALL_TIMEOUT'] = ADB_INSTALL_TIMEOUT  # 5 minutes, rather than 2 minutes
-  stats.propagate_context_into(new_env)
 
   command = ['./gradlew'] + list(args)
   _logger.info('Executing gradle command: "%s" in directory: "%s"',
