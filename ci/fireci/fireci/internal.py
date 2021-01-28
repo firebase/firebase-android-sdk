@@ -139,7 +139,7 @@ def ci_command(name=None):
     @_pass_options
     @click.pass_context
     def new_func(ctx, options, *args, **kwargs):
-      with stats.measure("cicmd:" + actual_name), _artifact_handler(
+      with _artifact_handler(
           options.artifact_target_dir,
           options.artifact_patterns), _emulator_handler(
               options.with_emulator,
