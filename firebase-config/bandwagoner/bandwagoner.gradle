@@ -23,8 +23,7 @@ android {
     lintOptions {
         abortOnError false
     }
-//    testBuildType 'release'
-    testBuildType 'debug'
+    testBuildType 'release'
 
     defaultConfig {
         applicationId "com.googletest.firebase.remoteconfig.bandwagoner"
