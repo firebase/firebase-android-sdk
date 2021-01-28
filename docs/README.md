@@ -12,6 +12,7 @@ This repository includes the following Firebase SDKs for Android:
   * `firebase-firestore`
   * `firebase-functions`
   * `firebase-inappmessaging-display`
+  * `firebase-perf`
   * `firebase-storage`
 
 For more information on building the SDKs from source or contributing,
