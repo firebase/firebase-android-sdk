@@ -34,7 +34,6 @@ import com.google.firestore.v1.Write;
 import com.google.firestore.v1.Write.Builder;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /** Serializer for values stored in the LocalStore. */
@@ -182,28 +181,27 @@ public final class LocalSerializer {
     // representing `transforms` with `update_transforms` on the SDK means that old `transform`
     // mutations stored in IndexedDB need to be updated to `update_transforms`.
     // TODO(b/174608374): Remove this code once we perform a schema migration.
-    for (int i = batch.getWritesCount() - 1; i >= 0; --i) {
-      Write mutation = batch.getWrites(i);
-      if (mutation.hasTransform()) {
+    for (int i = 0; i < batch.getWritesCount(); ++i) {
+      Write currentMutation = batch.getWrites(i);
+      boolean hasTransform =
+          i + 1 < batch.getWritesCount() && batch.getWrites(i + 1).hasTransform();
+      if (hasTransform) {
         hardAssert(
-            i >= 1 && !batch.getWrites(i - 1).hasTransform() && batch.getWrites(i - 1).hasUpdate(),
+            batch.getWrites(i).hasUpdate(),
             "TransformMutation should be preceded by a patch or set mutation");
-        Write mutationToJoin = batch.getWrites(i - 1);
-        Builder newMutationBuilder = Write.newBuilder(mutationToJoin);
-        for (FieldTransform fieldTransform : mutation.getTransform().getFieldTransformsList()) {
+        Builder newMutationBuilder = Write.newBuilder(currentMutation);
+        Write transformMutation = batch.getWrites(i + 1);
+        for (FieldTransform fieldTransform :
+            transformMutation.getTransform().getFieldTransformsList()) {
           newMutationBuilder.addUpdateTransforms(fieldTransform);
         }
         mutations.add(rpcSerializer.decodeMutation(newMutationBuilder.build()));
-        --i;
+        ++i;
       } else {
-        mutations.add(rpcSerializer.decodeMutation(mutation));
+        mutations.add(rpcSerializer.decodeMutation(currentMutation));
       }
     }
 
-    // Reverse the mutations to preserve the original ordering since the above for-loop iterates in
-    // reverse order. We use reverse() instead of prepending the elements into the mutations array
-    // since prepending to a List is O(n).
-    Collections.reverse(mutations);
     return new MutationBatch(batchId, localWriteTime, baseMutations, mutations);
   }
 

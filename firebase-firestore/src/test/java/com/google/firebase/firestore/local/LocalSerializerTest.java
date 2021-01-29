@@ -204,18 +204,6 @@ public final class LocalSerializerTest {
 
   // TODO(b/174608374): Remove these tests once we perform a schema migration.
   @Test
-  public void testOnlyTransformThrowsError() {
-    WriteBatch batchProto =
-        com.google.firebase.firestore.proto.WriteBatch.newBuilder()
-            .setBatchId(42)
-            .addAllWrites(asList(transformProto))
-            .setLocalWriteTime(writeTimeProto)
-            .build();
-    assertThrows(AssertionError.class, () -> serializer.decodeMutationBatch(batchProto));
-  }
-
-  // TODO(b/174608374): Remove these tests once we perform a schema migration.
-  @Test
   public void testDeleteAndTransformThrowError() {
     WriteBatch batchProto =
         com.google.firebase.firestore.proto.WriteBatch.newBuilder()
