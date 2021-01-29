@@ -159,7 +159,14 @@ public class ModelFileDownloadService {
 
     // schedule new download of model file
     Log.d(TAG, "Need to download a new model.");
-    Long newDownloadId = scheduleModelDownload(customModel);
+    Long newDownloadId = null;
+    try {
+      newDownloadId = scheduleModelDownload(customModel);
+    } catch (FirebaseMlException fex) {
+      if (fex.getCode() == FirebaseMlException.DOWNLOAD_URL_EXPIRED) {
+        return Tasks.forException(fex);
+      }
+    }
     if (newDownloadId == null) {
       return Tasks.forException(
           new FirebaseMlException(
@@ -240,7 +247,9 @@ public class ModelFileDownloadService {
 
   // Scheduled downloading of this model - does not check for existing downloads.
   @VisibleForTesting
-  synchronized Long scheduleModelDownload(@NonNull CustomModel customModel) {
+  synchronized Long scheduleModelDownload(@NonNull CustomModel customModel)
+      throws FirebaseMlException {
+
     if (downloadManager == null) {
       Log.d(TAG, "Download manager service is not available in the service.");
       return null;
@@ -249,7 +258,14 @@ public class ModelFileDownloadService {
     if (customModel.getDownloadUrl() == null || customModel.getDownloadUrl().isEmpty()) {
       return null;
     }
-    // todo handle expired url here and figure out what to do about delayed downloads too..
+    // check for expired download url and trigger re-fetch if necessary
+    Date now = new Date();
+    if (customModel.getDownloadUrlExpiry() < now.getTime()) {
+      eventLogger.logDownloadFailureWithReason(
+          customModel, false, FirebaseMlLogger.NO_FAILURE_VALUE);
+      throw new FirebaseMlException(
+          "Expired url, fetch new url and retry.", FirebaseMlException.DOWNLOAD_URL_EXPIRED);
+    }
 
     // Schedule a new downloading
     Request downloadRequest = new Request(Uri.parse(customModel.getDownloadUrl()));
