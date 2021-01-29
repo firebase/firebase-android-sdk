@@ -84,3 +84,10 @@ dependencies {
     androidTestImplementation 'com.linkedin.dexmaker:dexmaker-mockito:2.25.0'
     androidTestImplementation 'com.google.protobuf:protobuf-java:2.4.1'
 }
+
+// ==========================================================================
+// Copy from here down if you want to use the google-services plugin in your
+// androidTest integration tests.
+// ==========================================================================
+ext.packageName = "com.google.firebase.crashlytics"
+apply from: '../../gradle/googleServices.gradle'
