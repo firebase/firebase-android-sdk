@@ -289,6 +289,9 @@ public class Query {
    */
   @NonNull
   public Query startAfter(@Nullable String value) {
+    if (params.getIndex().equals(KeyIndex.getInstance()) && value != null) {
+      return startAt(PushIdGenerator.successor(value));
+    }
     return startAt(value, ChildKey.getMaxName().asString());
   }
 
@@ -331,7 +334,13 @@ public class Query {
   @NonNull
   public Query startAfter(@Nullable String value, @Nullable String key) {
     Node node =
-        value != null ? new StringNode(value, PriorityUtilities.NullPriority()) : EmptyNode.Empty();
+        value != null
+            ? new StringNode(
+                (params.getIndex().equals(KeyIndex.getInstance()))
+                    ? PushIdGenerator.successor(value)
+                    : value,
+                PriorityUtilities.NullPriority())
+            : EmptyNode.Empty();
     return startAfter(node, key);
   }
 
@@ -488,6 +497,9 @@ public class Query {
    */
   @NonNull
   public Query endBefore(@Nullable String value) {
+    if (params.getIndex().equals(KeyIndex.getInstance()) && value != null) {
+      return endAt(PushIdGenerator.predecessor(value));
+    }
     return endAt(value, ChildKey.getMinName().asString());
   }
 
@@ -530,7 +542,13 @@ public class Query {
   @NonNull
   public Query endBefore(@Nullable String value, @Nullable String key) {
     Node node =
-        value != null ? new StringNode(value, PriorityUtilities.NullPriority()) : EmptyNode.Empty();
+        value != null
+            ? new StringNode(
+                params.getIndex().equals(KeyIndex.getInstance())
+                    ? PushIdGenerator.predecessor(value)
+                    : value,
+                PriorityUtilities.NullPriority())
+            : EmptyNode.Empty();
     return endBefore(node, key);
   }
 
