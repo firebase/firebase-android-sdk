@@ -19,12 +19,10 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import android.util.Pair;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import java.util.HashMap;
@@ -35,7 +33,7 @@ import java.util.Map;
 final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
 
   /** Underlying cache of documents and their read times. */
-  private ImmutableSortedMap<DocumentKey, Pair<MaybeDocument, SnapshotVersion>> docs;
+  private ImmutableSortedMap<DocumentKey, Pair<Document, SnapshotVersion>> docs;
 
   private final MemoryPersistence persistence;
 
@@ -45,11 +43,11 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
   }
 
   @Override
-  public void add(MaybeDocument document, SnapshotVersion readTime) {
+  public void add(Document document, SnapshotVersion readTime) {
     hardAssert(
         !readTime.equals(SnapshotVersion.NONE),
         "Cannot add document to the RemoteDocumentCache with a read time of zero");
-    docs = docs.insert(document.getKey(), new Pair<>(document, readTime));
+    docs = docs.insert(document.getKey(), new Pair<>(document.clone(), readTime));
 
     persistence.getIndexManager().addToCollectionParentIndex(document.getKey().getPath().popLast());
   }
@@ -59,23 +57,18 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
     docs = docs.remove(key);
   }
 
-  @Nullable
   @Override
-  public MaybeDocument get(DocumentKey key) {
-    Pair<MaybeDocument, SnapshotVersion> entry = docs.get(key);
-    return entry != null ? entry.first : null;
+  public Document get(DocumentKey key) {
+    Pair<Document, SnapshotVersion> entry = docs.get(key);
+    return entry != null ? entry.first.clone() : new Document(key);
   }
 
   @Override
-  public Map<DocumentKey, MaybeDocument> getAll(Iterable<DocumentKey> keys) {
-    Map<DocumentKey, MaybeDocument> result = new HashMap<>();
-
+  public Map<DocumentKey, Document> getAll(Iterable<DocumentKey> keys) {
+    Map<DocumentKey, Document> result = new HashMap<>();
     for (DocumentKey key : keys) {
-      // Make sure each key has a corresponding entry, which is null in case the document is not
-      // found.
       result.put(key, get(key));
     }
-
     return result;
   }
 
@@ -91,43 +84,40 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
     // we need to match the query against.
     ResourcePath queryPath = query.getPath();
     DocumentKey prefix = DocumentKey.fromPath(queryPath.append(""));
-    Iterator<Map.Entry<DocumentKey, Pair<MaybeDocument, SnapshotVersion>>> iterator =
+    Iterator<Map.Entry<DocumentKey, Pair<Document, SnapshotVersion>>> iterator =
         docs.iteratorFrom(prefix);
 
     while (iterator.hasNext()) {
-      Map.Entry<DocumentKey, Pair<MaybeDocument, SnapshotVersion>> entry = iterator.next();
+      Map.Entry<DocumentKey, Pair<Document, SnapshotVersion>> entry = iterator.next();
 
       DocumentKey key = entry.getKey();
       if (!queryPath.isPrefixOf(key.getPath())) {
         break;
       }
 
-      MaybeDocument maybeDoc = entry.getValue().first;
-      if (!(maybeDoc instanceof Document)) {
-        continue;
-      }
+      Document doc = entry.getValue().first;
+      if (doc.exists()) {
+        SnapshotVersion readTime = entry.getValue().second;
+        if (readTime.compareTo(sinceReadTime) <= 0) {
+          continue;
+        }
 
-      SnapshotVersion readTime = entry.getValue().second;
-      if (readTime.compareTo(sinceReadTime) <= 0) {
-        continue;
-      }
-
-      Document doc = (Document) maybeDoc;
-      if (query.matches(doc)) {
-        result = result.insert(doc.getKey(), doc);
+        if (query.matches(doc)) {
+          result = result.insert(doc.getKey(), doc.clone());
+        }
       }
     }
 
     return result;
   }
 
-  Iterable<MaybeDocument> getDocuments() {
+  Iterable<Document> getDocuments() {
     return new DocumentIterable();
   }
 
   long getByteSize(LocalSerializer serializer) {
     long count = 0;
-    for (MaybeDocument doc : new DocumentIterable()) {
+    for (Document doc : new DocumentIterable()) {
       count += serializer.encodeMaybeDocument(doc).getSerializedSize();
     }
     return count;
@@ -136,20 +126,20 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
   /**
    * A proxy that exposes an iterator over the current set of documents in the RemoteDocumentCache.
    */
-  private class DocumentIterable implements Iterable<MaybeDocument> {
+  private class DocumentIterable implements Iterable<Document> {
     @NonNull
     @Override
-    public Iterator<MaybeDocument> iterator() {
-      Iterator<Map.Entry<DocumentKey, Pair<MaybeDocument, SnapshotVersion>>> iterator =
+    public Iterator<Document> iterator() {
+      Iterator<Map.Entry<DocumentKey, Pair<Document, SnapshotVersion>>> iterator =
           MemoryRemoteDocumentCache.this.docs.iterator();
-      return new Iterator<MaybeDocument>() {
+      return new Iterator<Document>() {
         @Override
         public boolean hasNext() {
           return iterator.hasNext();
         }
 
         @Override
-        public MaybeDocument next() {
+        public Document next() {
           return iterator.next().getValue().first;
         }
       };

@@ -88,38 +88,24 @@ public class TestUtil {
     ImmutableSortedSet<DocumentKey> mutatedKeys = DocumentKey.emptyKeySet();
     for (Map.Entry<String, ObjectValue> pair : oldDocs.entrySet()) {
       String docKey = path + "/" + pair.getKey();
-      oldDocuments =
-          oldDocuments.add(
-              doc(
-                  docKey,
-                  1L,
-                  pair.getValue(),
-                  hasPendingWrites
-                      ? Document.DocumentState.SYNCED
-                      : Document.DocumentState.LOCAL_MUTATIONS));
-
+      Document doc = doc(docKey, 1L, pair.getValue());
       if (hasPendingWrites) {
+        doc.withCommittedMutations();
         mutatedKeys = mutatedKeys.insert(key(docKey));
       }
+      oldDocuments = oldDocuments.add(doc);
     }
     DocumentSet newDocuments = docSet(Document.keyComparator());
     List<DocumentViewChange> documentChanges = new ArrayList<>();
     for (Map.Entry<String, ObjectValue> pair : docsToAdd.entrySet()) {
       String docKey = path + "/" + pair.getKey();
-      Document docToAdd =
-          doc(
-              docKey,
-              1L,
-              pair.getValue(),
-              hasPendingWrites
-                  ? Document.DocumentState.SYNCED
-                  : Document.DocumentState.LOCAL_MUTATIONS);
-      newDocuments = newDocuments.add(docToAdd);
-      documentChanges.add(DocumentViewChange.create(Type.ADDED, docToAdd));
-
+      Document docToAdd = doc(docKey, 1L, pair.getValue());
       if (hasPendingWrites) {
+        docToAdd.withCommittedMutations();
         mutatedKeys = mutatedKeys.insert(key(docKey));
       }
+      newDocuments = newDocuments.add(docToAdd);
+      documentChanges.add(DocumentViewChange.create(Type.ADDED, docToAdd));
     }
     ViewSnapshot viewSnapshot =
         new ViewSnapshot(

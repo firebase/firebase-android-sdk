@@ -29,8 +29,6 @@ import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.core.TargetIdGenerator;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.MaybeDocument;
-import com.google.firebase.firestore.model.NoDocument;
 import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
@@ -165,7 +163,7 @@ public final class LocalStore {
 
   // PORTING NOTE: no shutdown for LocalStore or persistence components on Android.
 
-  public ImmutableSortedMap<DocumentKey, MaybeDocument> handleUserChange(User user) {
+  public ImmutableSortedMap<DocumentKey, Document> handleUserChange(User user) {
     // Swap out the mutation queue, grabbing the pending mutation batches before and after.
     List<MutationBatch> oldBatches = mutationQueue.getAllMutationBatches();
 
@@ -209,7 +207,7 @@ public final class LocalStore {
         () -> {
           // Load and apply all existing mutations. This lets us compute the current base state for
           // all non-idempotent transforms before applying any additional user-provided writes.
-          ImmutableSortedMap<DocumentKey, MaybeDocument> existingDocuments =
+          ImmutableSortedMap<DocumentKey, Document> existingDocuments =
               localDocuments.getDocuments(keys);
 
           // For non-idempotent mutations (such as `FieldValue.increment()`), we record the base
@@ -234,7 +232,7 @@ public final class LocalStore {
 
           MutationBatch batch =
               mutationQueue.addMutationBatch(localWriteTime, baseMutations, mutations);
-          ImmutableSortedMap<DocumentKey, MaybeDocument> changedDocuments =
+          ImmutableSortedMap<DocumentKey, Document> changedDocuments =
               batch.applyToLocalDocumentSet(existingDocuments);
           return new LocalWriteResult(batch.getBatchId(), changedDocuments);
         });
@@ -255,7 +253,7 @@ public final class LocalStore {
    *
    * @return The resulting (modified) documents.
    */
-  public ImmutableSortedMap<DocumentKey, MaybeDocument> acknowledgeBatch(
+  public ImmutableSortedMap<DocumentKey, Document> acknowledgeBatch(
       MutationBatchResult batchResult) {
     return persistence.runTransaction(
         "Acknowledge batch",
@@ -274,7 +272,7 @@ public final class LocalStore {
    *
    * @return The resulting (modified) documents.
    */
-  public ImmutableSortedMap<DocumentKey, MaybeDocument> rejectBatch(int batchId) {
+  public ImmutableSortedMap<DocumentKey, Document> rejectBatch(int batchId) {
     // TODO: Call queryEngine.handleDocumentChange() appropriately.
 
     return persistence.runTransaction(
@@ -330,7 +328,7 @@ public final class LocalStore {
    *
    * <p>LocalDocuments are re-calculated if there are remaining mutations in the queue.
    */
-  public ImmutableSortedMap<DocumentKey, MaybeDocument> applyRemoteEvent(RemoteEvent remoteEvent) {
+  public ImmutableSortedMap<DocumentKey, Document> applyRemoteEvent(RemoteEvent remoteEvent) {
     SnapshotVersion remoteVersion = remoteEvent.getSnapshotVersion();
 
     // TODO: Call queryEngine.handleDocumentChange() appropriately.
@@ -372,31 +370,32 @@ public final class LocalStore {
             }
           }
 
-          Map<DocumentKey, MaybeDocument> changedDocs = new HashMap<>();
-          Map<DocumentKey, MaybeDocument> documentUpdates = remoteEvent.getDocumentUpdates();
+          Map<DocumentKey, Document> changedDocs = new HashMap<>();
+          Map<DocumentKey, Document> documentUpdates = remoteEvent.getDocumentUpdates();
           Set<DocumentKey> limboDocuments = remoteEvent.getResolvedLimboDocuments();
           // Each loop iteration only affects its "own" doc, so it's safe to get all the remote
           // documents in advance in a single call.
-          Map<DocumentKey, MaybeDocument> existingDocs =
+          Map<DocumentKey, Document> existingDocs =
               remoteDocuments.getAll(documentUpdates.keySet());
 
-          for (Entry<DocumentKey, MaybeDocument> entry : documentUpdates.entrySet()) {
+          for (Entry<DocumentKey, Document> entry : documentUpdates.entrySet()) {
             DocumentKey key = entry.getKey();
-            MaybeDocument doc = entry.getValue();
-            MaybeDocument existingDoc = existingDocs.get(key);
+            Document doc = entry.getValue();
+            Document existingDoc = existingDocs.get(key);
 
             // Note: The order of the steps below is important, since we want to ensure that
-            // rejected limbo resolutions (which fabricate NoDocuments with SnapshotVersion.NONE)
+            // rejected limbo resolutions (which fabricate missing docs with SnapshotVersion.NONE)
             // never add documents to cache.
-            if (doc instanceof NoDocument && doc.getVersion().equals(SnapshotVersion.NONE)) {
+            if (doc.isMissing()
+                && doc.getVersion().equals(SnapshotVersion.NONE)) {
               // NoDocuments with SnapshotVersion.NONE are used in manufactured events. We remove
               // these documents from cache since we lost access.
               remoteDocuments.remove(doc.getKey());
               changedDocs.put(key, doc);
-            } else if (existingDoc == null
+            } else if (!existingDoc.isValid()
                 || doc.getVersion().compareTo(existingDoc.getVersion()) > 0
-                || (doc.getVersion().compareTo(existingDoc.getVersion()) == 0
-                    && existingDoc.hasPendingWrites())) {
+                || doc.getVersion().compareTo(existingDoc.getVersion()) == 0
+                    && existingDoc.hasPendingWrites()) {
               hardAssert(
                   !SnapshotVersion.NONE.equals(remoteEvent.getSnapshotVersion()),
                   "Cannot add a document when the remote version is zero");
@@ -516,8 +515,7 @@ public final class LocalStore {
   }
 
   /** Returns the current value of a document with a given key, or null if not found. */
-  @Nullable
-  public MaybeDocument readDocument(DocumentKey key) {
+  public Document readDocument(DocumentKey key) {
     return localDocuments.getDocument(key);
   }
 
@@ -647,20 +645,13 @@ public final class LocalStore {
     MutationBatch batch = batchResult.getBatch();
     Set<DocumentKey> docKeys = batch.getKeys();
     for (DocumentKey docKey : docKeys) {
-      MaybeDocument remoteDoc = remoteDocuments.get(docKey);
-      MaybeDocument doc = remoteDoc;
+      Document doc = remoteDocuments.get(docKey);
       SnapshotVersion ackVersion = batchResult.getDocVersions().get(docKey);
       hardAssert(ackVersion != null, "docVersions should contain every doc in the write.");
 
-      if (doc == null || doc.getVersion().compareTo(ackVersion) < 0) {
-        doc = batch.applyToRemoteDocument(docKey, doc, batchResult);
-        if (doc == null) {
-          hardAssert(
-              remoteDoc == null,
-              "Mutation batch %s applied to document %s resulted in null.",
-              batch,
-              remoteDoc);
-        } else {
+      if (doc.getVersion().compareTo(ackVersion) < 0) {
+        batch.applyToRemoteDocument(docKey, doc, batchResult);
+        if (doc.isValid()) {
           remoteDocuments.add(doc, batchResult.getCommitVersion());
         }
       }

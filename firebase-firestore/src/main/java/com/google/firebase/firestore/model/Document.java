@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2020 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,26 +15,10 @@
 package com.google.firebase.firestore.model;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import com.google.firestore.v1.Value;
 import java.util.Comparator;
 
-/**
- * Represents a document in Firestore with a key, version, data and whether the data has local
- * mutations applied to it.
- */
-public final class Document extends MaybeDocument {
-
-  /** Describes the `hasPendingWrites` state of a document. */
-  public enum DocumentState {
-    /** Local mutations applied via the mutation queue. Document is potentially inconsistent. */
-    LOCAL_MUTATIONS,
-    /** Mutations applied based on a write acknowledgment. Document is potentially inconsistent. */
-    COMMITTED_MUTATIONS,
-    /** No mutations applied. Document was sent to us by Watch. */
-    SYNCED
-  }
-
+public class Document implements Cloneable {
   private static final Comparator<Document> KEY_COMPARATOR =
       (left, right) -> left.getKey().compareTo(right.getKey());
 
@@ -43,64 +27,165 @@ public final class Document extends MaybeDocument {
     return KEY_COMPARATOR;
   }
 
-  private final DocumentState documentState;
-  private ObjectValue objectValue;
+  private enum Type {
+    INVALID,
+    DOCUMENT,
+    NO_DOCUMENT,
+    UNKNOWN_DOCUMENT;
+  }
 
-  public Document(
+  private final DocumentKey key;
+  private Type type;
+  private SnapshotVersion version;
+  private ObjectValue value;
+  boolean hasLocalMutations;
+  boolean hasCommittedMutations;
+
+  public Document(DocumentKey key) {
+    this.key = key;
+    this.version = SnapshotVersion.NONE;
+    this.type = Type.INVALID;
+    this.value = new ObjectValue();
+  }
+
+  private Document(
       DocumentKey key,
+      Type type,
       SnapshotVersion version,
-      ObjectValue objectValue,
-      DocumentState documentState) {
-    super(key, version);
-    this.documentState = documentState;
-    this.objectValue = objectValue;
+      ObjectValue value,
+      boolean hasLocalMutations,
+      boolean hasCommittedMutations) {
+    this.key = key;
+    this.version = version;
+    this.type = type;
+    this.hasLocalMutations = hasLocalMutations;
+    this.hasCommittedMutations = hasCommittedMutations;
+    this.value = value;
   }
 
-  @NonNull
-  public ObjectValue getData() {
-    return objectValue;
+  public Document asFoundDocument(SnapshotVersion version, ObjectValue value) {
+    this.version = version;
+    this.type = Type.DOCUMENT;
+    this.value = value;
+    this.hasLocalMutations = false;
+    this.hasCommittedMutations = false;
+    return this;
   }
 
-  public @Nullable Value getField(FieldPath path) {
-    return objectValue.get(path);
+  public Document asMissingDocument(SnapshotVersion version) {
+    this.version = version;
+    this.type = Type.NO_DOCUMENT;
+    this.value = new ObjectValue();
+    this.hasLocalMutations = false;
+    this.hasCommittedMutations = false;
+    return this;
   }
 
+  public Document asUnknownDocument(SnapshotVersion version) {
+    this.version = version;
+    this.type = Type.UNKNOWN_DOCUMENT;
+    this.value = new ObjectValue();
+    this.hasLocalMutations = false;
+    this.hasCommittedMutations = true;
+    return this;
+  }
+
+  public Document withCommittedMutations() {
+    this.hasLocalMutations = false;
+    this.hasCommittedMutations = true;
+    return this;
+  }
+
+  public Document withLocalMutations() {
+    this.hasLocalMutations = true;
+    this.hasCommittedMutations = true;
+    return this;
+  }
+
+  /** The key for this document */
+  public DocumentKey getKey() {
+    return key;
+  }
+
+  /**
+   * Returns the version of this document if it exists or a version at which this document was
+   * guaranteed to not exist.
+   */
+  public SnapshotVersion getVersion() {
+    return version;
+  }
+
+  /** Returns whether local mutations were applied via the mutation queue. */
   public boolean hasLocalMutations() {
-    return documentState.equals(DocumentState.LOCAL_MUTATIONS);
+    return hasLocalMutations;
   }
 
+  /** Returns whether mutations were applied based on a write acknowledgment. */
   public boolean hasCommittedMutations() {
-    return documentState.equals(DocumentState.COMMITTED_MUTATIONS);
+    return hasCommittedMutations;
+  }
+
+  /**
+   * Whether this document has a local mutation applied that has not yet been acknowledged by Watch.
+   */
+  public boolean hasPendingWrites() {
+    return hasLocalMutations() || hasCommittedMutations();
+  }
+
+  public ObjectValue getData() {
+    return value;
+  }
+
+  public Value getField(FieldPath field) {
+    return getData().get(field);
+  }
+
+  public boolean isValid() {
+    return !type.equals(Type.INVALID);
+  }
+
+  public boolean exists() {
+    return type.equals(Type.DOCUMENT);
+  }
+
+  public boolean isMissing() {
+    return type.equals(Type.NO_DOCUMENT);
+  }
+
+  public boolean isUnknown() {
+    return type.equals(Type.UNKNOWN_DOCUMENT);
   }
 
   @Override
-  public boolean hasPendingWrites() {
-    return this.hasLocalMutations() || this.hasCommittedMutations();
+  @NonNull
+  public Document clone() {
+    return new Document(
+        key, type, version, value.clone(), hasLocalMutations, hasCommittedMutations);
   }
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (!(o instanceof Document)) {
-      return false;
-    }
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
 
     Document document = (Document) o;
 
-    return getVersion().equals(document.getVersion())
-        && getKey().equals(document.getKey())
-        && documentState.equals(document.documentState)
-        && objectValue.equals(document.objectValue);
+    if (hasLocalMutations != document.hasLocalMutations) return false;
+    if (hasCommittedMutations != document.hasCommittedMutations) return false;
+    if (!key.equals(document.key)) return false;
+    if (!version.equals(document.version)) return false;
+    if (type != document.type) return false;
+    return value.equals(document.value);
   }
 
   @Override
   public int hashCode() {
-    int result = getKey().hashCode();
-    result = 31 * result + getVersion().hashCode();
-    result = 31 * result + documentState.hashCode();
-    result = 31 * result + objectValue.hashCode();
+    int result = key.hashCode();
+    result = 31 * result + version.hashCode();
+    result = 31 * result + type.hashCode();
+    result = 31 * result + (hasLocalMutations ? 1 : 0);
+    result = 31 * result + (hasCommittedMutations ? 1 : 0);
+    result = 31 * result + value.hashCode();
     return result;
   }
 
@@ -108,13 +193,17 @@ public final class Document extends MaybeDocument {
   public String toString() {
     return "Document{"
         + "key="
-        + getKey()
-        + ", data="
-        + getData()
+        + key
         + ", version="
-        + getVersion()
-        + ", documentState="
-        + documentState.name()
+        + version
+        + ", type="
+        + type
+        + ", hasLocalMutations="
+        + hasLocalMutations
+        + ", hasCommittedMutations="
+        + hasCommittedMutations
+        + ", value="
+        + value
         + '}';
   }
 }

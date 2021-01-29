@@ -49,20 +49,17 @@ public class QueryEngineTest {
 
   private static final int TEST_TARGET_ID = 1;
 
-  private static final Document MATCHING_DOC_A =
-      doc("coll/a", 1, map("matches", true, "order", 1), Document.DocumentState.SYNCED);
+  private static final Document MATCHING_DOC_A = doc("coll/a", 1, map("matches", true, "order", 1));
   private static final Document NON_MATCHING_DOC_A =
-      doc("coll/a", 1, map("matches", false, "order", 1), Document.DocumentState.SYNCED);
+      doc("coll/a", 1, map("matches", false, "order", 1));
   private static final Document PENDING_MATCHING_DOC_A =
-      doc("coll/a", 1, map("matches", true, "order", 1), Document.DocumentState.LOCAL_MUTATIONS);
+      doc("coll/a", 1, map("matches", true, "order", 1)).withLocalMutations();
   private static final Document PENDING_NON_MATCHING_DOC_A =
-      doc("coll/a", 1, map("matches", false, "order", 1), Document.DocumentState.LOCAL_MUTATIONS);
-  private static final Document UPDATED_DOC_A =
-      doc("coll/a", 11, map("matches", true, "order", 1), Document.DocumentState.SYNCED);
-  private static final Document MATCHING_DOC_B =
-      doc("coll/b", 1, map("matches", true, "order", 2), Document.DocumentState.SYNCED);
+      doc("coll/a", 1, map("matches", false, "order", 1)).withLocalMutations();
+  private static final Document UPDATED_DOC_A = doc("coll/a", 11, map("matches", true, "order", 1));
+  private static final Document MATCHING_DOC_B = doc("coll/b", 1, map("matches", true, "order", 2));
   private static final Document UPDATED_MATCHING_DOC_B =
-      doc("coll/b", 11, map("matches", true, "order", 2), Document.DocumentState.SYNCED);
+      doc("coll/b", 11, map("matches", true, "order", 2));
 
   private SnapshotVersion LAST_LIMBO_FREE_SNAPSHOT = version(10);
   private SnapshotVersion MISSING_LAST_LIMBO_FREE_SNAPSHOT = SnapshotVersion.NONE;
@@ -341,7 +338,7 @@ public class QueryEngineTest {
     persistQueryMapping(key("coll/a"), key("coll/b"));
 
     // Update "coll/a" but make sure it still sorts before "coll/b"
-    addDocument(doc("coll/a", 1, map("order", 2), Document.DocumentState.LOCAL_MUTATIONS));
+    addDocument(doc("coll/a", 1, map("order", 2)).withLocalMutations());
 
     // Since the last document in the limit didn't change (and hence we know that all documents
     // written prior to query execution still sort after "coll/b"), we should use an Index-Free
@@ -351,7 +348,7 @@ public class QueryEngineTest {
     assertEquals(
         docSet(
             query.comparator(),
-            doc("coll/a", 1, map("order", 2), Document.DocumentState.LOCAL_MUTATIONS),
+            doc("coll/a", 1, map("order", 2)).withLocalMutations(),
             doc("coll/b", 1, map("order", 3))),
         docs);
   }

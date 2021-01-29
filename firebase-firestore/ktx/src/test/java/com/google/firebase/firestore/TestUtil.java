@@ -23,7 +23,6 @@ import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.DocumentViewChange;
 import com.google.firebase.firestore.core.DocumentViewChange.Type;
 import com.google.firebase.firestore.core.ViewSnapshot;
-import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.DocumentSet;
 import com.google.firebase.firestore.model.ObjectValue;

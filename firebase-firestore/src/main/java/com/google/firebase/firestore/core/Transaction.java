@@ -26,8 +26,6 @@ import com.google.firebase.firestore.core.UserData.ParsedSetData;
 import com.google.firebase.firestore.core.UserData.ParsedUpdateData;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.MaybeDocument;
-import com.google.firebase.firestore.model.NoDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.DeleteMutation;
 import com.google.firebase.firestore.model.mutation.Mutation;
@@ -78,7 +76,7 @@ public class Transaction {
    * Takes a set of keys and asynchronously attempts to fetch all the documents from the backend,
    * ignoring any local changes.
    */
-  public Task<List<MaybeDocument>> lookup(List<DocumentKey> keys) {
+  public Task<List<Document>> lookup(List<DocumentKey> keys) {
     ensureCommitNotCalled();
 
     if (mutations.size() != 0) {
@@ -93,7 +91,7 @@ public class Transaction {
             Executors.DIRECT_EXECUTOR,
             task -> {
               if (task.isSuccessful()) {
-                for (MaybeDocument doc : task.getResult()) {
+                for (Document doc : task.getResult()) {
                   recordVersion(doc);
                 }
               }
@@ -171,15 +169,15 @@ public class Transaction {
     return executor;
   }
 
-  private void recordVersion(MaybeDocument doc) throws FirebaseFirestoreException {
+  private void recordVersion(Document doc) throws FirebaseFirestoreException {
     SnapshotVersion docVersion;
-    if (doc instanceof Document) {
+    if (doc.exists()) {
       docVersion = doc.getVersion();
-    } else if (doc instanceof NoDocument) {
+    } else if (doc.isMissing()) {
       // For nonexistent docs, we must use precondition with version 0 when we overwrite them.
       docVersion = SnapshotVersion.NONE;
     } else {
-      throw fail("Unexpected document type in transaction: " + doc.getClass().getCanonicalName());
+      throw fail("Unexpected document type in transaction: " + doc);
     }
 
     if (readVersions.containsKey(doc.getKey())) {

@@ -22,8 +22,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.version;
 import static com.google.firebase.firestore.testutil.TestUtil.wrapObject;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 import android.util.SparseArray;
@@ -392,11 +391,11 @@ public abstract class LruGarbageCollectorTestCase {
         "verify",
         () -> {
           for (DocumentKey key : toBeRemoved) {
-            assertNull(documentCache.get(key));
+            assertFalse(documentCache.get(key).isValid());
             assertFalse(targetCache.containsKey(key));
           }
           for (DocumentKey key : expectedRetained) {
-            assertNotNull(documentCache.get(key));
+              assertTrue(documentCache.get(key).isValid());
           }
         });
   }
@@ -577,8 +576,7 @@ public abstract class LruGarbageCollectorTestCase {
         "Update a doc in the middle target",
         () -> {
           SnapshotVersion newVersion = version(3);
-          Document doc =
-              new Document(middleDocToUpdate, newVersion, testValue, Document.DocumentState.SYNCED);
+          Document doc = new Document(middleDocToUpdate).asFoundDocument(newVersion, testValue);
           documentCache.add(doc, newVersion);
           updateTargetInTransaction(middleTarget);
         });
@@ -611,11 +609,11 @@ public abstract class LruGarbageCollectorTestCase {
         "verify results",
         () -> {
           for (DocumentKey key : expectedRemoved) {
-            assertNull(documentCache.get(key));
+              assertFalse(documentCache.get(key).isValid());
             assertFalse(targetCache.containsKey(key));
           }
           for (DocumentKey key : expectedRetained) {
-            assertNotNull(documentCache.get(key));
+              assertTrue(documentCache.get(key).isValid());
           }
         });
   }

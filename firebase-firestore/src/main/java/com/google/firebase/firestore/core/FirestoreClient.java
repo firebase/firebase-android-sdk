@@ -34,8 +34,6 @@ import com.google.firebase.firestore.local.Persistence;
 import com.google.firebase.firestore.local.QueryResult;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.MaybeDocument;
-import com.google.firebase.firestore.model.NoDocument;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.remote.Datastore;
 import com.google.firebase.firestore.remote.GrpcMetadataProvider;
@@ -170,18 +168,17 @@ public final class FirestoreClient {
         .enqueue(() -> localStore.readDocument(docKey))
         .continueWith(
             (result) -> {
-              @Nullable MaybeDocument maybeDoc = result.getResult();
-
-              if (maybeDoc instanceof Document) {
-                return (Document) maybeDoc;
-              } else if (maybeDoc instanceof NoDocument) {
+              Document document = result.getResult();
+              if (document.exists()) {
+                return document;
+              } else if (document.isMissing()) {
                 return null;
               } else {
-                throw new FirebaseFirestoreException(
-                    "Failed to get document from cache. (However, this document may exist on the "
-                        + "server. Run again without setting source to CACHE to attempt "
-                        + "to retrieve the document from the server.)",
-                    Code.UNAVAILABLE);
+                  throw new FirebaseFirestoreException(
+                      "Failed to get document from cache. (However, this document may exist on the "
+                          + "server. Run again without setting source to CACHE to attempt "
+                          + "to retrieve the document from the server.)",
+                      Code.UNAVAILABLE);
               }
             });
   }

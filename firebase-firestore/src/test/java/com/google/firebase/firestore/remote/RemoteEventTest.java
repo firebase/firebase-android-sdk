@@ -35,7 +35,6 @@ import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.local.TargetData;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.NoDocument;
 import com.google.firebase.firestore.remote.WatchChange.DocumentChange;
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChange;
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChangeType;
@@ -509,7 +508,7 @@ public class RemoteEventTest {
 
     targetMetadataProvider.setSyncedKeys(targetMap.get(1), keySet(doc1.getKey(), doc2.getKey()));
 
-    NoDocument deletedDoc1 = deletedDoc("docs/1", 3);
+    Document deletedDoc1 = deletedDoc("docs/1", 3);
     DocumentChange change3 =
         new DocumentChange(asList(1), emptyList(), deletedDoc1.getKey(), deletedDoc1);
     aggregator.handleDocumentChange(change3);
@@ -611,7 +610,7 @@ public class RemoteEventTest {
     DocumentKey synthesized = key("docs/2");
     assertNull(event.getDocumentUpdates().get(synthesized));
 
-    NoDocument expected = deletedDoc("foo/doc", 3);
+    Document expected = deletedDoc("foo/doc", 3);
     assertEquals(expected, event.getDocumentUpdates().get(expected.getKey()));
     assertTrue(event.getResolvedLimboDocuments().contains(expected.getKey()));
   }
@@ -653,11 +652,11 @@ public class RemoteEventTest {
     DocumentChange existingDocChange =
         new DocumentChange(asList(1), emptyList(), existingDoc.getKey(), existingDoc);
 
-    NoDocument deletedDoc = deletedDoc("docs/deleted", 1);
+    Document deletedDoc = deletedDoc("docs/deleted", 1);
     DocumentChange deletedDocChange =
         new DocumentChange(asList(1), emptyList(), deletedDoc.getKey(), deletedDoc);
 
-    NoDocument missingDoc = deletedDoc("docs/missing  ", 1);
+    Document missingDoc = deletedDoc("docs/missing  ", 1);
     DocumentChange missingDocChange =
         new DocumentChange(asList(1), emptyList(), missingDoc.getKey(), missingDoc);
 

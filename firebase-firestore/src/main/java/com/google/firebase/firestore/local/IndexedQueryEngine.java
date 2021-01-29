@@ -29,7 +29,6 @@ import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentCollections;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
-import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.Values;
 import com.google.firebase.firestore.util.Assert;
@@ -245,7 +244,7 @@ public class IndexedQueryEngine implements QueryEngine {
   }
 
   @Override
-  public void handleDocumentChange(MaybeDocument oldDocument, MaybeDocument newDocument) {
+  public void handleDocumentChange(Document oldDocument, Document newDocument) {
     // TODO: Determine changed fields and make appropriate addEntry() / removeEntry()
     // on SQLiteCollectionIndex.
     throw new RuntimeException("Not yet implemented.");

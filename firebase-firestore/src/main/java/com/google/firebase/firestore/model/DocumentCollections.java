@@ -28,12 +28,6 @@ public class DocumentCollections {
     return (ImmutableSortedMap<DocumentKey, Document>) EMPTY_DOCUMENT_MAP;
   }
 
-  /** Returns an empty, immutable "maybe" document map */
-  @SuppressWarnings("unchecked")
-  public static ImmutableSortedMap<DocumentKey, MaybeDocument> emptyMaybeDocumentMap() {
-    return (ImmutableSortedMap<DocumentKey, MaybeDocument>) EMPTY_DOCUMENT_MAP;
-  }
-
   /** Returns an empty, immutable versions map */
   @SuppressWarnings("unchecked")
   public static ImmutableSortedMap<DocumentKey, SnapshotVersion> emptyVersionMap() {

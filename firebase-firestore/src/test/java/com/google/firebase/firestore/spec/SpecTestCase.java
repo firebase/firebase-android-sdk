@@ -57,7 +57,6 @@ import com.google.firebase.firestore.local.QueryPurpose;
 import com.google.firebase.firestore.local.TargetData;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
@@ -408,14 +407,14 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
       throws JSONException {
     long version = jsonDoc.getLong("version");
     JSONObject options = jsonDoc.getJSONObject("options");
-    Document.DocumentState documentState =
-        options.optBoolean("hasLocalMutations")
-            ? Document.DocumentState.LOCAL_MUTATIONS
-            : (options.optBoolean("hasCommittedMutations")
-                ? Document.DocumentState.COMMITTED_MUTATIONS
-                : Document.DocumentState.SYNCED);
     Map<String, Object> values = parseMap(jsonDoc.getJSONObject("value"));
-    Document doc = doc(jsonDoc.getString("key"), version, values, documentState);
+    Document doc = doc(jsonDoc.getString("key"), version, values);
+    if (options.optBoolean("hasLocalMutations")) {
+      doc.withLocalMutations();
+    }
+    if (options.optBoolean("hasCommittedMutations")) {
+      doc.withCommittedMutations();
+    }
     return DocumentViewChange.create(type, doc);
   }
 
@@ -619,7 +618,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
       Map<String, Object> value =
           !docSpec.isNull("value") ? parseMap(docSpec.getJSONObject("value")) : null;
       long version = docSpec.getLong("version");
-      MaybeDocument doc = value != null ? doc(key, version, value) : deletedDoc(key, version);
+      Document doc = value != null ? doc(key, version, value) : deletedDoc(key, version);
       List<Integer> updated = parseIntList(watchEntity.optJSONArray("targets"));
       List<Integer> removed = parseIntList(watchEntity.optJSONArray("removedTargets"));
       WatchChange change = new DocumentChange(updated, removed, doc.getKey(), doc);
@@ -693,7 +692,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     validateNextWriteSent(write.first);
 
     MutationResult mutationResult =
-        new MutationResult(version(version), /*transformResults=*/ null);
+        new MutationResult(version(version), /*transformResults=*/ Collections.emptyList());
     queue.runSync(() -> datastore.ackWrite(version(version), singletonList(mutationResult)));
   }
 

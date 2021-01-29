@@ -24,8 +24,6 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.core.UserData.ParsedSetData;
 import com.google.firebase.firestore.core.UserData.ParsedUpdateData;
 import com.google.firebase.firestore.model.Document;
-import com.google.firebase.firestore.model.MaybeDocument;
-import com.google.firebase.firestore.model.NoDocument;
 import com.google.firebase.firestore.util.Executors;
 import com.google.firebase.firestore.util.Util;
 import java.util.Collections;
@@ -195,21 +193,17 @@ public class Transaction {
               if (!task.isSuccessful()) {
                 throw task.getException();
               }
-              List<MaybeDocument> docs = task.getResult();
+              List<Document> docs = task.getResult();
               if (docs.size() != 1) {
                 throw fail("Mismatch in docs returned from document lookup.");
               }
-              MaybeDocument doc = docs.get(0);
-              if (doc instanceof Document) {
+              Document doc = docs.get(0);
+              if (doc.exists()) {
                 return DocumentSnapshot.fromDocument(
                     firestore, (Document) doc, /*fromCache=*/ false, /*hasPendingWrites=*/ false);
-              } else if (doc instanceof NoDocument) {
+              } else {
                 return DocumentSnapshot.fromNoDocument(
                     firestore, doc.getKey(), /*fromCache=*/ false, /*hasPendingWrites=*/ false);
-              } else {
-                throw fail(
-                    "BatchGetDocumentsRequest returned unexpected document type: "
-                        + doc.getClass().getCanonicalName());
               }
             });
   }

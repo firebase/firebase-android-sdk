@@ -32,10 +32,7 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.Document;
-import com.google.firebase.firestore.model.MaybeDocument;
-import com.google.firebase.firestore.model.NoDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
-import com.google.firebase.firestore.model.UnknownDocument;
 import com.google.firebase.firestore.model.mutation.FieldMask;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
@@ -312,7 +309,7 @@ public final class LocalSerializerTest {
   }
 
   @Test
-  public void testEncodesDocumentAsMaybeDocument() {
+  public void testEncodesDocument() {
     Document document = doc("some/path", 42, map("foo", "bar"));
 
     com.google.firebase.firestore.proto.MaybeDocument maybeDocProto =
@@ -326,13 +323,13 @@ public final class LocalSerializerTest {
             .build();
 
     assertEquals(maybeDocProto, serializer.encodeMaybeDocument(document));
-    MaybeDocument decoded = serializer.decodeMaybeDocument(maybeDocProto);
+    Document decoded = serializer.decodeMaybeDocument(maybeDocProto);
     assertEquals(document, decoded);
   }
 
   @Test
-  public void testEncodesDeletedDocumentAsMaybeDocument() {
-    NoDocument deletedDoc = deletedDoc("some/path", 42);
+  public void testEncodesDeletedDocument() {
+    Document deletedDoc = deletedDoc("some/path", 42);
 
     com.google.firebase.firestore.proto.MaybeDocument maybeDocProto =
         com.google.firebase.firestore.proto.MaybeDocument.newBuilder()
@@ -344,13 +341,13 @@ public final class LocalSerializerTest {
             .build();
 
     assertEquals(maybeDocProto, serializer.encodeMaybeDocument(deletedDoc));
-    MaybeDocument decoded = serializer.decodeMaybeDocument(maybeDocProto);
+    Document decoded = serializer.decodeMaybeDocument(maybeDocProto);
     assertEquals(deletedDoc, decoded);
   }
 
   @Test
-  public void testEncodesUnknownDocumentAsMaybeDocument() {
-    UnknownDocument unknownDoc = unknownDoc("some/path", 42);
+  public void testEncodesUnknownDocument() {
+    Document unknownDoc = unknownDoc("some/path", 42);
 
     com.google.firebase.firestore.proto.MaybeDocument maybeDocProto =
         com.google.firebase.firestore.proto.MaybeDocument.newBuilder()
@@ -363,7 +360,7 @@ public final class LocalSerializerTest {
             .build();
 
     assertEquals(maybeDocProto, serializer.encodeMaybeDocument(unknownDoc));
-    MaybeDocument decoded = serializer.decodeMaybeDocument(maybeDocProto);
+    Document decoded = serializer.decodeMaybeDocument(maybeDocProto);
     assertEquals(unknownDoc, decoded);
   }
 

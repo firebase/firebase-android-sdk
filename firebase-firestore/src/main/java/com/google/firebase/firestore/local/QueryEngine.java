@@ -19,7 +19,6 @@ import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
 
 /**
@@ -44,5 +43,5 @@ public interface QueryEngine {
    * <p>TODO: We can change this to just accept the changed fields (w/ old and new values) if it's
    * convenient for the caller to compute.
    */
-  void handleDocumentChange(MaybeDocument oldDocument, MaybeDocument newDocument);
+  void handleDocumentChange(Document oldDocument, Document newDocument);
 }

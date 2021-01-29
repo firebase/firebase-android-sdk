@@ -49,12 +49,9 @@ import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.DocumentSet;
 import com.google.firebase.firestore.model.FieldPath;
-import com.google.firebase.firestore.model.MaybeDocument;
-import com.google.firebase.firestore.model.NoDocument;
 import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
-import com.google.firebase.firestore.model.UnknownDocument;
 import com.google.firebase.firestore.model.Values;
 import com.google.firebase.firestore.model.mutation.DeleteMutation;
 import com.google.firebase.firestore.model.mutation.FieldMask;
@@ -183,34 +180,23 @@ public class TestUtil {
   }
 
   public static Document doc(String key, long version, Map<String, Object> data) {
-    return new Document(
-        key(key), version(version), wrapObject(data), Document.DocumentState.SYNCED);
+    return new Document(key(key)).asFoundDocument(version(version), wrapObject(data));
   }
 
   public static Document doc(DocumentKey key, long version, Map<String, Object> data) {
-    return new Document(key, version(version), wrapObject(data), Document.DocumentState.SYNCED);
+    return new Document(key).asFoundDocument(version(version), wrapObject(data));
   }
 
-  public static Document doc(
-      String key, long version, ObjectValue data, Document.DocumentState documentState) {
-    return new Document(key(key), version(version), data, documentState);
+  public static Document doc(String key, long version, ObjectValue data) {
+    return new Document(key(key)).asFoundDocument(version(version), data);
   }
 
-  public static Document doc(
-      String key, long version, Map<String, Object> data, Document.DocumentState documentState) {
-    return new Document(key(key), version(version), wrapObject(data), documentState);
+  public static Document deletedDoc(String key, long version) {
+    return new Document(key(key)).asMissingDocument(version(version));
   }
 
-  public static NoDocument deletedDoc(String key, long version) {
-    return deletedDoc(key, version, /*hasCommittedMutations=*/ false);
-  }
-
-  public static NoDocument deletedDoc(String key, long version, boolean hasCommittedMutations) {
-    return new NoDocument(key(key), version(version), hasCommittedMutations);
-  }
-
-  public static UnknownDocument unknownDoc(String key, long version) {
-    return new UnknownDocument(key(key), version(version));
+  public static Document unknownDoc(String key, long version) {
+    return new Document(key(key)).asUnknownDocument(version(version));
   }
 
   public static DocumentSet docSet(Comparator<Document> comparator, Document... documents) {
@@ -297,15 +283,6 @@ public class TestUtil {
         query(path).toTarget(), targetId, ARBITRARY_SEQUENCE_NUMBER, queryPurpose);
   }
 
-  public static ImmutableSortedMap<DocumentKey, MaybeDocument> docUpdates(MaybeDocument... docs) {
-    ImmutableSortedMap<DocumentKey, MaybeDocument> res =
-        ImmutableSortedMap.Builder.emptyMap(DocumentKey.comparator());
-    for (MaybeDocument doc : docs) {
-      res = res.insert(doc.getKey(), doc);
-    }
-    return res;
-  }
-
   public static ImmutableSortedMap<DocumentKey, Document> docUpdates(Document... docs) {
     ImmutableSortedMap<DocumentKey, Document> res =
         ImmutableSortedMap.Builder.emptyMap(DocumentKey.comparator());
@@ -320,7 +297,7 @@ public class TestUtil {
       boolean current,
       @Nullable Collection<Document> addedDocuments,
       @Nullable Collection<Document> modifiedDocuments,
-      @Nullable Collection<? extends MaybeDocument> removedDocuments) {
+      @Nullable Collection<? extends Document> removedDocuments) {
     ImmutableSortedSet<DocumentKey> addedDocumentKeys = DocumentKey.emptyKeySet();
     ImmutableSortedSet<DocumentKey> modifiedDocumentKeys = DocumentKey.emptyKeySet();
     ImmutableSortedSet<DocumentKey> removedDocumentKeys = DocumentKey.emptyKeySet();
@@ -338,7 +315,7 @@ public class TestUtil {
     }
 
     if (removedDocuments != null) {
-      for (MaybeDocument document : removedDocuments) {
+      for (Document document : removedDocuments) {
         removedDocumentKeys = removedDocumentKeys.insert(document.getKey());
       }
     }
@@ -403,12 +380,12 @@ public class TestUtil {
   }
 
   public static RemoteEvent addedRemoteEvent(
-      MaybeDocument doc, List<Integer> updatedInTargets, List<Integer> removedFromTargets) {
+      Document doc, List<Integer> updatedInTargets, List<Integer> removedFromTargets) {
     return addedRemoteEvent(Collections.singletonList(doc), updatedInTargets, removedFromTargets);
   }
 
   public static RemoteEvent addedRemoteEvent(
-      List<MaybeDocument> docs, List<Integer> updatedInTargets, List<Integer> removedFromTargets) {
+      List<Document> docs, List<Integer> updatedInTargets, List<Integer> removedFromTargets) {
     Preconditions.checkArgument(!docs.isEmpty(), "Cannot pass empty docs array");
 
     WatchChangeAggregator aggregator =
@@ -428,7 +405,7 @@ public class TestUtil {
 
     SnapshotVersion version = SnapshotVersion.NONE;
 
-    for (MaybeDocument doc : docs) {
+    for (Document doc : docs) {
       DocumentChange change =
           new DocumentChange(updatedInTargets, removedFromTargets, doc.getKey(), doc);
       aggregator.handleDocumentChange(change);
@@ -439,7 +416,7 @@ public class TestUtil {
   }
 
   public static RemoteEvent updateRemoteEvent(
-      MaybeDocument doc, List<Integer> updatedInTargets, List<Integer> removedFromTargets) {
+      Document doc, List<Integer> updatedInTargets, List<Integer> removedFromTargets) {
     List<Integer> activeTargets = new ArrayList<>();
     activeTargets.addAll(updatedInTargets);
     activeTargets.addAll(removedFromTargets);
@@ -447,7 +424,7 @@ public class TestUtil {
   }
 
   public static RemoteEvent updateRemoteEvent(
-      MaybeDocument doc,
+      Document doc,
       List<Integer> updatedInTargets,
       List<Integer> removedFromTargets,
       List<Integer> activeTargets) {
@@ -541,7 +518,7 @@ public class TestUtil {
   }
 
   public static MutationResult mutationResult(long version) {
-    return new MutationResult(version(version), null);
+    return new MutationResult(version(version), Collections.emptyList());
   }
 
   public static LocalViewChanges viewChanges(

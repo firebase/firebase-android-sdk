@@ -34,8 +34,6 @@ import com.google.firebase.firestore.core.View;
 import com.google.firebase.firestore.core.ViewSnapshot;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.MaybeDocument;
-import com.google.firebase.firestore.model.NoDocument;
 import com.google.firebase.firestore.remote.TargetChange;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
@@ -58,11 +56,11 @@ public class DocumentChangeTest {
       Collection<Document> initialDocsList,
       Collection<Document> addedList,
       Collection<Document> modifiedList,
-      Collection<NoDocument> removedList) {
-    ImmutableSortedMap<DocumentKey, MaybeDocument> initialDocs =
-        docUpdates(initialDocsList.toArray(new MaybeDocument[] {}));
+      Collection<Document> removedList) {
+    ImmutableSortedMap<DocumentKey, Document> initialDocs =
+        docUpdates(initialDocsList.toArray(new Document[] {}));
 
-    ImmutableSortedMap<DocumentKey, MaybeDocument> updates =
+    ImmutableSortedMap<DocumentKey, Document> updates =
         ImmutableSortedMap.Builder.emptyMap(DocumentKey.comparator());
     for (Document doc : addedList) {
       updates = updates.insert(doc.getKey(), doc);
@@ -70,7 +68,7 @@ public class DocumentChangeTest {
     for (Document doc : modifiedList) {
       updates = updates.insert(doc.getKey(), doc);
     }
-    for (NoDocument doc : removedList) {
+    for (Document doc : removedList) {
       updates = updates.insert(doc.getKey(), doc);
     }
 
@@ -125,7 +123,7 @@ public class DocumentChangeTest {
     Query query = Query.atPath(path("c"));
     List<Document> initialDocs =
         asList(doc("c/a", 1, map()), doc("c/b", 1, map()), doc("c/c", 1, map()));
-    List<NoDocument> deletes = asList(deletedDoc("c/a", 2), deletedDoc("c/c", 2));
+    List<Document> deletes = asList(deletedDoc("c/a", 2), deletedDoc("c/c", 2));
     validatePositions(
         query, initialDocs, Collections.emptyList(), Collections.emptyList(), deletes);
   }
@@ -159,7 +157,7 @@ public class DocumentChangeTest {
             doc("c/b", 2, map("sort", 5)),
             doc("c/e", 2, map("sort", 25)),
             doc("c/a", 2, map("sort", 35)));
-    List<NoDocument> deletes = asList(deletedDoc("c/c", 2));
+    List<Document> deletes = asList(deletedDoc("c/c", 2));
     validatePositions(query, initialDocs, adds, updates, deletes);
   }
 
@@ -170,7 +168,7 @@ public class DocumentChangeTest {
       Map<DocumentKey, Document> initialDocs = new HashMap<>();
       List<Document> adds = new ArrayList<>();
       List<Document> updates = new ArrayList<>();
-      List<NoDocument> deletes = new ArrayList<>();
+      List<Document> deletes = new ArrayList<>();
       int numDocs = 100;
       for (int i = 0; i < numDocs; i++) {
         String docKey = "c/test-doc-" + i;

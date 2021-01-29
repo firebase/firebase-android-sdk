@@ -14,12 +14,10 @@
 
 package com.google.firebase.firestore.local;
 
-import androidx.annotation.Nullable;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import java.util.Map;
 
@@ -37,10 +35,10 @@ interface RemoteDocumentCache {
    * <p>The cache key is extracted from {@code maybeDocument.key}. If there is already a cache entry
    * for the key, it will be replaced.
    *
-   * @param maybeDocument A Document or NoDocument to put in the cache.
+   * @param document A Document or NoDocument to put in the cache.
    * @param readTime The time at which the document was read or committed.
    */
-  void add(MaybeDocument maybeDocument, SnapshotVersion readTime);
+  void add(Document document, SnapshotVersion readTime);
 
   /** Removes the cached entry for the given key (no-op if no entry exists). */
   void remove(DocumentKey documentKey);
@@ -49,19 +47,18 @@ interface RemoteDocumentCache {
    * Looks up an entry in the cache.
    *
    * @param documentKey The key of the entry to look up.
-   * @return The cached Document or NoDocument entry, or null if we have nothing cached.
+   * @return The cached Document or NoDocument entry, or an InvalidDocument if nothing is cached.
    */
-  @Nullable
-  MaybeDocument get(DocumentKey documentKey);
+  Document get(DocumentKey documentKey);
 
   /**
    * Looks up a set of entries in the cache.
    *
    * @param documentKeys The keys of the entries to look up.
-   * @return The cached Document or NoDocument entries indexed by key. If an entry is not cached,
-   *     the corresponding key will be mapped to a null value.
+   * @return The cached Document or NoDocument entries indexed by key. If an entry is not cached, an
+   *     InvalidDocument is returned.
    */
-  Map<DocumentKey, MaybeDocument> getAll(Iterable<DocumentKey> documentKeys);
+  Map<DocumentKey, Document> getAll(Iterable<DocumentKey> documentKeys);
 
   /**
    * Executes a query against the cached Document entries

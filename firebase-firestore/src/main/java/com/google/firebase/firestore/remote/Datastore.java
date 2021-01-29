@@ -21,8 +21,8 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.core.DatabaseInfo;
+import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationResult;
@@ -152,7 +152,7 @@ public class Datastore {
             });
   }
 
-  public Task<List<MaybeDocument>> lookup(List<DocumentKey> keys) {
+  public Task<List<Document>> lookup(List<DocumentKey> keys) {
     BatchGetDocumentsRequest.Builder builder = BatchGetDocumentsRequest.newBuilder();
     builder.setDatabase(serializer.databaseName());
     for (DocumentKey key : keys) {
@@ -171,13 +171,13 @@ public class Datastore {
                 }
               }
 
-              Map<DocumentKey, MaybeDocument> resultMap = new HashMap<>();
+              Map<DocumentKey, Document> resultMap = new HashMap<>();
               List<BatchGetDocumentsResponse> responses = task.getResult();
               for (BatchGetDocumentsResponse response : responses) {
-                MaybeDocument doc = serializer.decodeMaybeDocument(response);
+                Document doc = serializer.decodeMaybeDocument(response);
                 resultMap.put(doc.getKey(), doc);
               }
-              List<MaybeDocument> results = new ArrayList<>();
+              List<Document> results = new ArrayList<>();
               for (DocumentKey key : keys) {
                 results.add(resultMap.get(key));
               }

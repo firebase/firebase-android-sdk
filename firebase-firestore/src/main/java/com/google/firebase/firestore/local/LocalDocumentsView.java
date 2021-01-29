@@ -15,17 +15,13 @@
 package com.google.firebase.firestore.local;
 
 import static com.google.firebase.firestore.model.DocumentCollections.emptyDocumentMap;
-import static com.google.firebase.firestore.model.DocumentCollections.emptyMaybeDocumentMap;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
-import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.MaybeDocument;
-import com.google.firebase.firestore.model.NoDocument;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
@@ -74,20 +70,19 @@ class LocalDocumentsView {
   /**
    * Returns the the local view of the document identified by {@code key}.
    *
-   * @return Local view of the document or null if we don't have any cached state for it.
+   * @return Local view of the document or an invalid document if we don't have any cached state for
+   *     it.
    */
-  @Nullable
-  MaybeDocument getDocument(DocumentKey key) {
+  Document getDocument(DocumentKey key) {
     List<MutationBatch> batches = mutationQueue.getAllMutationBatchesAffectingDocumentKey(key);
     return getDocument(key, batches);
   }
 
   // Internal version of {@code getDocument} that allows reusing batches.
-  @Nullable
-  private MaybeDocument getDocument(DocumentKey key, List<MutationBatch> inBatches) {
-    @Nullable MaybeDocument document = remoteDocumentCache.get(key);
+  private Document getDocument(DocumentKey key, List<MutationBatch> inBatches) {
+    Document document = remoteDocumentCache.get(key);
     for (MutationBatch batch : inBatches) {
-      document = batch.applyToLocalView(key, document);
+      batch.applyToLocalView(key, document);
     }
 
     return document;
@@ -95,17 +90,13 @@ class LocalDocumentsView {
 
   // Returns the view of the given {@code docs} as they would appear after applying all mutations in
   // the given {@code batches}.
-  private Map<DocumentKey, MaybeDocument> applyLocalMutationsToDocuments(
-      Map<DocumentKey, MaybeDocument> docs, List<MutationBatch> batches) {
-    for (Map.Entry<DocumentKey, MaybeDocument> base : docs.entrySet()) {
-      MaybeDocument localView = base.getValue();
+  private void applyLocalMutationsToDocuments(
+      Map<DocumentKey, Document> docs, List<MutationBatch> batches) {
+    for (Map.Entry<DocumentKey, Document> base : docs.entrySet()) {
       for (MutationBatch batch : batches) {
-        localView = batch.applyToLocalView(base.getKey(), localView);
+        batch.applyToLocalView(base.getKey(), base.getValue());
       }
-      base.setValue(localView);
     }
-
-    return docs;
   }
 
   /**
@@ -114,8 +105,8 @@ class LocalDocumentsView {
    * <p>If we don't have cached state for a document in {@code keys}, a NoDocument will be stored
    * for that key in the resulting set.
    */
-  ImmutableSortedMap<DocumentKey, MaybeDocument> getDocuments(Iterable<DocumentKey> keys) {
-    Map<DocumentKey, MaybeDocument> docs = remoteDocumentCache.getAll(keys);
+  ImmutableSortedMap<DocumentKey, Document> getDocuments(Iterable<DocumentKey> keys) {
+    Map<DocumentKey, Document> docs = remoteDocumentCache.getAll(keys);
     return getLocalViewOfDocuments(docs);
   }
 
@@ -123,21 +114,15 @@ class LocalDocumentsView {
    * Similar to {@code #getDocuments}, but creates the local view from the given {@code baseDocs}
    * without retrieving documents from the local store.
    */
-  ImmutableSortedMap<DocumentKey, MaybeDocument> getLocalViewOfDocuments(
-      Map<DocumentKey, MaybeDocument> baseDocs) {
-    ImmutableSortedMap<DocumentKey, MaybeDocument> results = emptyMaybeDocumentMap();
+  ImmutableSortedMap<DocumentKey, Document> getLocalViewOfDocuments(
+      Map<DocumentKey, Document> docs) {
+    ImmutableSortedMap<DocumentKey, Document> results = emptyDocumentMap();
 
     List<MutationBatch> batches =
-        mutationQueue.getAllMutationBatchesAffectingDocumentKeys(baseDocs.keySet());
-    Map<DocumentKey, MaybeDocument> docs = applyLocalMutationsToDocuments(baseDocs, batches);
-    for (Map.Entry<DocumentKey, MaybeDocument> entry : docs.entrySet()) {
-      DocumentKey key = entry.getKey();
-      MaybeDocument maybeDoc = entry.getValue();
-      // TODO: Don't conflate missing / deleted.
-      if (maybeDoc == null) {
-        maybeDoc = new NoDocument(key, SnapshotVersion.NONE, /*hasCommittedMutations=*/ false);
-      }
-      results = results.insert(key, maybeDoc);
+        mutationQueue.getAllMutationBatchesAffectingDocumentKeys(docs.keySet());
+    applyLocalMutationsToDocuments(docs, batches);
+    for (Map.Entry<DocumentKey, Document> entry : docs.entrySet()) {
+      results = results.insert(entry.getKey(), entry.getValue());
     }
     return results;
   }
@@ -171,9 +156,9 @@ class LocalDocumentsView {
       ResourcePath path) {
     ImmutableSortedMap<DocumentKey, Document> result = emptyDocumentMap();
     // Just do a simple document lookup.
-    MaybeDocument doc = getDocument(DocumentKey.fromPath(path));
-    if (doc instanceof Document) {
-      result = result.insert(doc.getKey(), (Document) doc);
+    Document doc = getDocument(DocumentKey.fromPath(path));
+    if (doc.exists()) {
+      result = result.insert(doc.getKey(), doc);
     }
     return result;
   }
@@ -218,12 +203,13 @@ class LocalDocumentsView {
         }
 
         DocumentKey key = mutation.getKey();
-        MaybeDocument baseDoc = results.get(key);
-        MaybeDocument mutatedDoc = mutation.applyToLocalView(baseDoc, batch.getLocalWriteTime());
-        if (mutatedDoc instanceof Document) {
-          results = results.insert(key, (Document) mutatedDoc);
-        } else {
-          results = results.remove(key);
+        Document document = results.get(key);
+        if (document == null) {
+          document = new Document(key);
+        }
+        mutation.applyToLocalView(document, batch.getLocalWriteTime());
+        if (document.isValid()) {
+          results = results.insert(key, document);
         }
       }
     }
@@ -258,10 +244,10 @@ class LocalDocumentsView {
     }
 
     ImmutableSortedMap<DocumentKey, Document> mergedDocs = existingDocs;
-    Map<DocumentKey, MaybeDocument> missingDocs = remoteDocumentCache.getAll(missingDocKeys);
-    for (Map.Entry<DocumentKey, MaybeDocument> entry : missingDocs.entrySet()) {
-      if (entry.getValue() != null && (entry.getValue() instanceof Document)) {
-        mergedDocs = mergedDocs.insert(entry.getKey(), (Document) entry.getValue());
+    Map<DocumentKey, Document> missingDocs = remoteDocumentCache.getAll(missingDocKeys);
+    for (Map.Entry<DocumentKey, Document> entry : missingDocs.entrySet()) {
+      if (entry.getValue().exists()) {
+        mergedDocs = mergedDocs.insert(entry.getKey(), entry.getValue());
       }
     }
 

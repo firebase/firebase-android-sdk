@@ -33,7 +33,6 @@ import com.google.firebase.firestore.core.View.DocumentChanges;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.DocumentSet;
-import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.remote.TargetChange;
 import com.google.firebase.firestore.util.Util;
 import io.grpc.Status;
@@ -48,7 +47,7 @@ import org.robolectric.annotation.Config;
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
 public class QueryListenerTest {
-  private static ViewSnapshot applyChanges(View view, MaybeDocument... docs) {
+  private static ViewSnapshot applyChanges(View view, Document... docs) {
     return view.applyChanges(view.computeDocChanges(docUpdates(docs))).getSnapshot();
   }
 
@@ -197,8 +196,7 @@ public class QueryListenerTest {
     List<ViewSnapshot> fullAccum = new ArrayList<>();
     Query query = Query.atPath(path("rooms"));
     Document doc1 = doc("rooms/eros", 1, map("name", "eros"));
-    Document doc1Prime =
-        doc("rooms/eros", 1, map("name", "eros"), Document.DocumentState.LOCAL_MUTATIONS);
+    Document doc1Prime = doc("rooms/eros", 1, map("name", "eros")).withLocalMutations();
     Document doc2 = doc("rooms/hades", 2, map("name", "hades"));
     Document doc3 = doc("rooms/other", 3, map("name", "other"));
 
@@ -234,10 +232,8 @@ public class QueryListenerTest {
   public void testRaisesQueryMetadataEventsOnlyWhenHasPendingWritesOnTheQueryChanges() {
     List<ViewSnapshot> fullAccum = new ArrayList<>();
     Query query = Query.atPath(path("rooms"));
-    Document doc1 =
-        doc("rooms/eros", 1, map("name", "eros"), Document.DocumentState.LOCAL_MUTATIONS);
-    Document doc2 =
-        doc("rooms/hades", 2, map("name", "hades"), Document.DocumentState.LOCAL_MUTATIONS);
+    Document doc1 = doc("rooms/eros", 1, map("name", "eros")).withLocalMutations();
+    Document doc2 = doc("rooms/hades", 2, map("name", "hades")).withLocalMutations();
     Document doc1Prime = doc("rooms/eros", 1, map("name", "eros"));
     Document doc2Prime = doc("rooms/hades", 2, map("name", "hades"));
     Document doc3 = doc("rooms/other", 3, map("name", "other"));
@@ -281,8 +277,7 @@ public class QueryListenerTest {
     List<ViewSnapshot> filteredAccum = new ArrayList<>();
     Query query = Query.atPath(path("rooms"));
     Document doc1 = doc("rooms/eros", 1, map("name", "eros"));
-    Document doc1Prime =
-        doc("rooms/eros", 1, map("name", "eros"), Document.DocumentState.LOCAL_MUTATIONS);
+    Document doc1Prime = doc("rooms/eros", 1, map("name", "eros")).withLocalMutations();
     Document doc2 = doc("rooms/hades", 2, map("name", "hades"));
     Document doc3 = doc("rooms/other", 3, map("name", "other"));
 

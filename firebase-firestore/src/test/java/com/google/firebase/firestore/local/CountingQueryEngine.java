@@ -21,7 +21,6 @@ import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
@@ -71,7 +70,7 @@ class CountingQueryEngine implements QueryEngine {
   }
 
   @Override
-  public void handleDocumentChange(MaybeDocument oldDocument, MaybeDocument newDocument) {
+  public void handleDocumentChange(Document oldDocument, Document newDocument) {
     queryEngine.handleDocumentChange(oldDocument, newDocument);
   }
 
@@ -116,8 +115,8 @@ class CountingQueryEngine implements QueryEngine {
   private RemoteDocumentCache wrapRemoteDocumentCache(RemoteDocumentCache subject) {
     return new RemoteDocumentCache() {
       @Override
-      public void add(MaybeDocument maybeDocument, SnapshotVersion readTime) {
-        subject.add(maybeDocument, readTime);
+      public void add(Document document, SnapshotVersion readTime) {
+        subject.add(document, readTime);
       }
 
       @Override
@@ -127,16 +126,18 @@ class CountingQueryEngine implements QueryEngine {
 
       @Nullable
       @Override
-      public MaybeDocument get(DocumentKey documentKey) {
-        MaybeDocument result = subject.get(documentKey);
-        documentsReadByKey[0] += result != null ? 1 : 0;
+      public Document get(DocumentKey documentKey) {
+        Document result = subject.get(documentKey);
+        documentsReadByKey[0] += result.isValid()  ?1 : 0;
         return result;
       }
 
       @Override
-      public Map<DocumentKey, MaybeDocument> getAll(Iterable<DocumentKey> documentKeys) {
-        Map<DocumentKey, MaybeDocument> result = subject.getAll(documentKeys);
-        documentsReadByKey[0] += result.size();
+      public Map<DocumentKey, Document> getAll(Iterable<DocumentKey> documentKeys) {
+        Map<DocumentKey, Document> result = subject.getAll(documentKeys);
+        for (Document document : result.values()) {
+          documentsReadByKey[0] += document.isValid()  ?1 : 0;
+        }
         return result;
       }
 

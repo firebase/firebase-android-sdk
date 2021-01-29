@@ -18,7 +18,6 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.UserDataReader;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.DatabaseId;
-import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.DocumentSet;
 import com.google.firebase.firestore.model.ObjectValue;

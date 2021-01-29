@@ -16,11 +16,11 @@ package com.google.firebase.firestore.model.mutation;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
-import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedMap;
+import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.MaybeDocument;
+import com.google.firebase.firestore.model.SnapshotVersion;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -76,19 +76,16 @@ public final class MutationBatch {
    * remote document.
    *
    * @param documentKey The key of the document to apply mutations to.
-   * @param maybeDoc The document to apply mutations to.
+   * @param document The document to apply mutations to.
    * @param batchResult The result of applying the MutationBatch to the backend.
    */
-  @Nullable
-  public MaybeDocument applyToRemoteDocument(
-      DocumentKey documentKey, @Nullable MaybeDocument maybeDoc, MutationBatchResult batchResult) {
-    if (maybeDoc != null) {
-      hardAssert(
-          maybeDoc.getKey().equals(documentKey),
-          "applyToRemoteDocument: key %s doesn't match maybeDoc key %s",
-          documentKey,
-          maybeDoc.getKey());
-    }
+  public void applyToRemoteDocument(
+      DocumentKey documentKey, Document document, MutationBatchResult batchResult) {
+    hardAssert(
+        document.getKey().equals(documentKey),
+        "applyToRemoteDocument: key %s doesn't match maybeDoc key %s",
+        documentKey,
+        document.getKey());
 
     int size = mutations.size();
     List<MutationResult> mutationResults = batchResult.getMutationResults();
@@ -102,29 +99,25 @@ public final class MutationBatch {
       Mutation mutation = mutations.get(i);
       if (mutation.getKey().equals(documentKey)) {
         MutationResult mutationResult = mutationResults.get(i);
-        maybeDoc = mutation.applyToRemoteDocument(maybeDoc, mutationResult);
+        mutation.applyToRemoteDocument(document, mutationResult);
       }
     }
-    return maybeDoc;
   }
 
   /** Computes the local view of a document given all the mutations in this batch. */
-  @Nullable
-  public MaybeDocument applyToLocalView(DocumentKey documentKey, @Nullable MaybeDocument maybeDoc) {
-    if (maybeDoc != null) {
-      hardAssert(
-          maybeDoc.getKey().equals(documentKey),
-          "applyToRemoteDocument: key %s doesn't match maybeDoc key %s",
-          documentKey,
-          maybeDoc.getKey());
-    }
+  public void applyToLocalView(DocumentKey documentKey, Document document) {
+    hardAssert(
+        document.getKey().equals(documentKey),
+        "applyToRemoteDocument: key %s doesn't match maybeDoc key %s",
+        documentKey,
+        document.getKey());
 
     // First, apply the base state. This allows us to apply non-idempotent transform against a
     // consistent set of values.
     for (int i = 0; i < baseMutations.size(); i++) {
       Mutation mutation = baseMutations.get(i);
       if (mutation.getKey().equals(documentKey)) {
-        maybeDoc = mutation.applyToLocalView(maybeDoc, localWriteTime);
+        mutation.applyToLocalView(document, localWriteTime);
       }
     }
 
@@ -132,27 +125,26 @@ public final class MutationBatch {
     for (int i = 0; i < mutations.size(); i++) {
       Mutation mutation = mutations.get(i);
       if (mutation.getKey().equals(documentKey)) {
-        maybeDoc = mutation.applyToLocalView(maybeDoc, localWriteTime);
+        mutation.applyToLocalView(document, localWriteTime);
       }
     }
-    return maybeDoc;
   }
 
   /** Computes the local view for all provided documents given the mutations in this batch. */
-  public ImmutableSortedMap<DocumentKey, MaybeDocument> applyToLocalDocumentSet(
-      ImmutableSortedMap<DocumentKey, MaybeDocument> maybeDocumentMap) {
+  public ImmutableSortedMap<DocumentKey, Document> applyToLocalDocumentSet(
+      ImmutableSortedMap<DocumentKey, Document> documentMap) {
     // TODO(mrschmidt): This implementation is O(n^2). If we iterate through the mutations first
     // (as done in `applyToLocalView(DocumentKey k, MaybeDoc d)`), we can reduce the complexity to
     // O(n).
-
-    ImmutableSortedMap<DocumentKey, MaybeDocument> mutatedDocuments = maybeDocumentMap;
     for (DocumentKey key : getKeys()) {
-      MaybeDocument mutatedDocument = applyToLocalView(key, mutatedDocuments.get(key));
-      if (mutatedDocument != null) {
-        mutatedDocuments = mutatedDocuments.insert(mutatedDocument.getKey(), mutatedDocument);
+      Document document = documentMap.get(key);
+      applyToLocalView(key, document);
+      if (!document.isValid()) {
+        document.asMissingDocument(SnapshotVersion.NONE);
       }
+      documentMap = documentMap.insert(document.getKey(), document);
     }
-    return mutatedDocuments;
+    return documentMap;
   }
 
   @Override
