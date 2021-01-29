@@ -133,4 +133,4 @@ dependencies {
 // androidTest integration tests.
 // ==========================================================================
 ext.packageName = "com.google.firebase.crashlytics.ndk"
-apply from: '../../gradle/googleServices.gradle'
+apply from: '../gradle/googleServices.gradle'
