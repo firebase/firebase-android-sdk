@@ -18,6 +18,7 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.UserDataReader;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.DatabaseId;
+import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.DocumentSet;
 import com.google.firebase.firestore.model.ObjectValue;
@@ -62,22 +63,15 @@ public class TestUtil {
   }
 
   public static Document doc(String key, long version, Map<String, Object> data) {
-    return new Document(
-        key(key), version(version), wrapObject(data), Document.DocumentState.SYNCED);
+    return new Document(key(key)).asFoundDocument(version(version), wrapObject(data));
   }
 
   public static Document doc(DocumentKey key, long version, Map<String, Object> data) {
-    return new Document(key, version(version), wrapObject(data), Document.DocumentState.SYNCED);
+    return new Document(key).asFoundDocument(version(version), wrapObject(data));
   }
 
-  public static Document doc(
-      String key, long version, ObjectValue data, Document.DocumentState documentState) {
-    return new Document(key(key), version(version), data, documentState);
-  }
-
-  public static Document doc(
-      String key, long version, Map<String, Object> data, Document.DocumentState documentState) {
-    return new Document(key(key), version(version), wrapObject(data), documentState);
+  public static Document doc(String key, long version, ObjectValue data) {
+    return new Document(key(key)).asFoundDocument(version(version), data);
   }
 
   public static DocumentSet docSet(Comparator<Document> comparator, Document... documents) {

@@ -174,11 +174,11 @@ public final class FirestoreClient {
               } else if (document.isMissing()) {
                 return null;
               } else {
-                  throw new FirebaseFirestoreException(
-                      "Failed to get document from cache. (However, this document may exist on the "
-                          + "server. Run again without setting source to CACHE to attempt "
-                          + "to retrieve the document from the server.)",
-                      Code.UNAVAILABLE);
+                throw new FirebaseFirestoreException(
+                    "Failed to get document from cache. (However, this document may exist on the "
+                        + "server. Run again without setting source to CACHE to attempt "
+                        + "to retrieve the document from the server.)",
+                    Code.UNAVAILABLE);
               }
             });
   }

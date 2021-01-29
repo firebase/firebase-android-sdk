@@ -386,8 +386,7 @@ public final class LocalStore {
             // Note: The order of the steps below is important, since we want to ensure that
             // rejected limbo resolutions (which fabricate missing docs with SnapshotVersion.NONE)
             // never add documents to cache.
-            if (doc.isMissing()
-                && doc.getVersion().equals(SnapshotVersion.NONE)) {
+            if (doc.isMissing() && doc.getVersion().equals(SnapshotVersion.NONE)) {
               // NoDocuments with SnapshotVersion.NONE are used in manufactured events. We remove
               // these documents from cache since we lost access.
               remoteDocuments.remove(doc.getKey());

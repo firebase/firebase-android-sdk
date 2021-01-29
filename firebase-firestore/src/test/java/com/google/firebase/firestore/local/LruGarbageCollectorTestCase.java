@@ -22,7 +22,6 @@ import static com.google.firebase.firestore.testutil.TestUtil.version;
 import static com.google.firebase.firestore.testutil.TestUtil.wrapObject;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 import android.util.SparseArray;
@@ -395,7 +394,7 @@ public abstract class LruGarbageCollectorTestCase {
             assertFalse(targetCache.containsKey(key));
           }
           for (DocumentKey key : expectedRetained) {
-              assertTrue(documentCache.get(key).isValid());
+            assertTrue(documentCache.get(key).isValid());
           }
         });
   }
@@ -609,11 +608,11 @@ public abstract class LruGarbageCollectorTestCase {
         "verify results",
         () -> {
           for (DocumentKey key : expectedRemoved) {
-              assertFalse(documentCache.get(key).isValid());
+            assertFalse(documentCache.get(key).isValid());
             assertFalse(targetCache.containsKey(key));
           }
           for (DocumentKey key : expectedRetained) {
-              assertTrue(documentCache.get(key).isValid());
+            assertTrue(documentCache.get(key).isValid());
           }
         });
   }

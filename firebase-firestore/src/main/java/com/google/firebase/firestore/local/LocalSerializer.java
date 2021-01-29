@@ -51,7 +51,8 @@ public final class LocalSerializer {
     if (document.exists()) {
       builder.setDocument(encodeDocument(document));
     } else if (document.isMissing()) {
-      builder.setNoDocument(encodeNoDocument(document));;
+      builder.setNoDocument(encodeNoDocument(document));
+      ;
     } else if (document.isUnknown()) {
       builder.setUnknownDocument(encodeUnknownDocument(document));
     } else {
