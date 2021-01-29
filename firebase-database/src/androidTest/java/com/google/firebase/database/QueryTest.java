@@ -2251,8 +2251,7 @@ public class QueryTest {
     DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
     final Semaphore semaphore = new Semaphore(0);
 
-    final Map<String, Object> data =
-        new MapBuilder().put("a", "blah").put(".priority", "priority").build();
+    final Map data = new MapBuilder().put("a", "blah").put(".priority", "priority").build();
 
     ref.setValue(
         data,
@@ -2264,7 +2263,7 @@ public class QueryTest {
                     new ValueEventListener() {
                       @Override
                       public void onDataChange(DataSnapshot snapshot) {
-                        Map<String, Object> expected = new MapBuilder().put("a", "blah").build();
+                        Map expected = new MapBuilder().put("a", "blah").build();
                         DeepEquals.assertEquals(expected, snapshot.getValue(true));
                         semaphore.release();
                       }
@@ -4411,8 +4410,7 @@ public class QueryTest {
     final DatabaseReference queryRef = new DatabaseReference(writerRef.toString(), ctx);
     final List<DataSnapshot> readSnaps = new ArrayList<DataSnapshot>();
     final Semaphore semaphore = new Semaphore(0);
-    final Map<String, Object> data =
-        new MapBuilder().put("a", 1L).put("b", 2L).put("c", 3L).build();
+    final Map data = new MapBuilder().put("a", 1L).put("b", 2L).put("c", 3L).build();
 
     // Write 3 children and then start our limit query.
     writerRef.setValue(
@@ -4687,7 +4685,7 @@ public class QueryTest {
     DatabaseReference reader = refs.get(1);
     final Semaphore semaphore = new Semaphore(0);
 
-    final Map<String, Object> list =
+    final Map list =
         new MapBuilder()
             .put(
                 "a",
@@ -4746,7 +4744,7 @@ public class QueryTest {
                 expectedNames.add("Rob");
 
                 // Validate that snap.child() resets order to default for child snaps
-                List<String> orderedKeys = new ArrayList<String>();
+                List orderedKeys = new ArrayList();
                 for (DataSnapshot childSnap : snapshot.child("b").getChildren()) {
                   orderedKeys.add(childSnap.getKey());
                 }
