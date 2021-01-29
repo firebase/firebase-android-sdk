@@ -83,9 +83,10 @@ public class Query {
   private void validateQueryEndpoints(QueryParams params) {
     if (params.getIndex().equals(KeyIndex.getInstance())) {
       String message =
-          "You must use startAt(String value), endAt(String value) or "
-              + "equalTo(String value) in combination with orderByKey(). Other type of values or "
-              + "using the version with 2 parameters is not supported";
+          "You must use startAt(String value), startAfter(String value), endAt(String value), "
+              + "endBefore(String value) or equalTo(String value) in combination with "
+              + "orderByKey(). Other type of values or using the version with 2 parameters is "
+              + "not supported";
       if (params.hasStart()) {
         Node startNode = params.getIndexStartValue();
         ChildKey startName = params.getIndexStartName();
@@ -105,8 +106,8 @@ public class Query {
       if ((params.hasStart() && !PriorityUtilities.isValidPriority(params.getIndexStartValue()))
           || (params.hasEnd() && !PriorityUtilities.isValidPriority(params.getIndexEndValue()))) {
         throw new IllegalArgumentException(
-            "When using orderByPriority(), values provided to startAt(), "
-                + "endAt(), or equalTo() must be valid priorities.");
+            "When using orderByPriority(), values provided to startAt(), startAfter(), "
+                + "endAt(), endBefore(), or equalTo() must be valid priorities.");
       }
     }
   }
@@ -115,7 +116,7 @@ public class Query {
   private void validateLimit(QueryParams params) {
     if (params.hasStart() && params.hasEnd() && params.hasLimit() && !params.hasAnchoredLimit()) {
       throw new IllegalArgumentException(
-          "Can't combine startAt(), endAt() and limit(). "
+          "Can't combine startAt(), startAfter(), endAt(), endBefore(), and limit(). "
               + "Use limitToFirst() or limitToLast() instead");
     }
   }
@@ -123,10 +124,12 @@ public class Query {
   /** This method validates that the equalTo call can be made */
   private void validateEqualToCall() {
     if (params.hasStart()) {
-      throw new IllegalArgumentException("Can't call equalTo() and startAt() combined");
+      throw new IllegalArgumentException(
+          "Can't call equalTo() and startAt() or startAfter() " + "combined");
     }
     if (params.hasEnd()) {
-      throw new IllegalArgumentException("Can't call equalTo() and endAt() combined");
+      throw new IllegalArgumentException(
+          "Can't call equalTo() and endAt() or startAfter() " + "combined");
     }
   }
 
@@ -289,7 +292,7 @@ public class Query {
    */
   @NonNull
   public Query startAfter(@Nullable String value) {
-    if (params.getIndex().equals(KeyIndex.getInstance()) && value != null) {
+    if (value != null && params.getIndex().equals(KeyIndex.getInstance())) {
       return startAt(PushIdGenerator.successor(value));
     }
     return startAt(value, ChildKey.getMaxName().asString());
@@ -333,14 +336,11 @@ public class Query {
    */
   @NonNull
   public Query startAfter(@Nullable String value, @Nullable String key) {
+    if (value != null && params.getIndex().equals(KeyIndex.getInstance())) {
+      value = PushIdGenerator.successor(value);
+    }
     Node node =
-        value != null
-            ? new StringNode(
-                (params.getIndex().equals(KeyIndex.getInstance()))
-                    ? PushIdGenerator.successor(value)
-                    : value,
-                PriorityUtilities.NullPriority())
-            : EmptyNode.Empty();
+        value != null ? new StringNode(value, PriorityUtilities.NullPriority()) : EmptyNode.Empty();
     return startAfter(node, key);
   }
 
@@ -497,7 +497,7 @@ public class Query {
    */
   @NonNull
   public Query endBefore(@Nullable String value) {
-    if (params.getIndex().equals(KeyIndex.getInstance()) && value != null) {
+    if (value != null && params.getIndex().equals(KeyIndex.getInstance())) {
       return endAt(PushIdGenerator.predecessor(value));
     }
     return endAt(value, ChildKey.getMinName().asString());
@@ -541,14 +541,11 @@ public class Query {
    */
   @NonNull
   public Query endBefore(@Nullable String value, @Nullable String key) {
+    if (value != null && params.getIndex().equals(KeyIndex.getInstance())) {
+      value = PushIdGenerator.predecessor(value);
+    }
     Node node =
-        value != null
-            ? new StringNode(
-                params.getIndex().equals(KeyIndex.getInstance())
-                    ? PushIdGenerator.predecessor(value)
-                    : value,
-                PriorityUtilities.NullPriority())
-            : EmptyNode.Empty();
+        value != null ? new StringNode(value, PriorityUtilities.NullPriority()) : EmptyNode.Empty();
     return endBefore(node, key);
   }
 
