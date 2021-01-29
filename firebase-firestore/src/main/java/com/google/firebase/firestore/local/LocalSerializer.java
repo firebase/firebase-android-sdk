@@ -190,8 +190,9 @@ public final class LocalSerializer {
             batch.getWrites(i).hasUpdate(),
             "TransformMutation should be preceded by a patch or set mutation");
         Builder newMutationBuilder = Write.newBuilder(currentMutation);
+        Write transformMutation = batch.getWrites(i + 1);
         for (FieldTransform fieldTransform :
-            currentMutation.getTransform().getFieldTransformsList()) {
+            transformMutation.getTransform().getFieldTransformsList()) {
           newMutationBuilder.addUpdateTransforms(fieldTransform);
         }
         mutations.add(rpcSerializer.decodeMutation(newMutationBuilder.build()));
