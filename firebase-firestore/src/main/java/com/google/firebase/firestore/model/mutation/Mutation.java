@@ -93,9 +93,9 @@ public abstract class Mutation {
   }
 
   /**
-   * Applies this mutation to the given MaybeDocument for the purposes of computing a new remote
-   * document. If the input document doesn't match the expected state (e.g. it is null or outdated),
-   * an `UnknownDocument` can be returned.
+   * Applies this mutation to the given Document for the purposes of computing a new remote document
+   * If the input document doesn't match the expected state (e.g. it is null or outdated), an
+   * `UnknownDocument` may be created
    *
    * @param document The document to mutate.
    * @param mutationResult The result of applying the mutation from the backend.
@@ -103,8 +103,8 @@ public abstract class Mutation {
   public abstract void applyToRemoteDocument(Document document, MutationResult mutationResult);
 
   /**
-   * Applies this mutation to the given MaybeDocument for the purposes of computing the new local
-   * view of a document. Both the input and returned documents can be null.
+   * Applies this mutation to the given Document for the purposes of computing the new local view
+   * of a document. Both the input and returned documents can be null.
    *
    * @param document The document to mutate.
    * @param localWriteTime A timestamp indicating the local write time of the batch this mutation is
