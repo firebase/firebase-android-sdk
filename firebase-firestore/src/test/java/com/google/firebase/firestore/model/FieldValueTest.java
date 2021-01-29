@@ -84,7 +84,6 @@ public class FieldValueTest {
   public void testAddsMultipleNewFields() {
     ObjectValue object = new ObjectValue();
     object.set(field("a"), wrap("a"));
-    object = object;
     object.set(field("b"), wrap("b"));
     object.set(field("c"), wrap("c"));
 
