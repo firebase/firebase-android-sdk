@@ -7,10 +7,9 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <string
-        name="com.crashlytics.RequireBuildId"
+        name="com.crashlytics.android.build_id"
         tools:ignore="UnusedResources"
         translatable="false">
-        false
+        00000000000000000000000000000000
     </string>
-
 </resources>
