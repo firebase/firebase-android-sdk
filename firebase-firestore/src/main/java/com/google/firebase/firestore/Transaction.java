@@ -15,6 +15,7 @@
 package com.google.firebase.firestore;
 
 import static com.google.firebase.firestore.util.Assert.fail;
+import static com.google.firebase.firestore.util.Assert.hardAssert;
 import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 
 import androidx.annotation.NonNull;
@@ -202,6 +203,9 @@ public class Transaction {
                 return DocumentSnapshot.fromDocument(
                     firestore, (Document) doc, /*fromCache=*/ false, /*hasPendingWrites=*/ false);
               } else {
+                hardAssert(
+                    doc.isMissing(),
+                    "BatchGetDocumentsRequest returned unexpected document: " + doc);
                 return DocumentSnapshot.fromNoDocument(
                     firestore, doc.getKey(), /*fromCache=*/ false, /*hasPendingWrites=*/ false);
               }
