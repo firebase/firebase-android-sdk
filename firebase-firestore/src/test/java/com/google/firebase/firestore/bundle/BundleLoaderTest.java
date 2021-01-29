@@ -48,7 +48,7 @@ import org.robolectric.annotation.Config;
 public class BundleLoaderTest {
   public static final BundleMetadata BUNDLE_METADATA =
       new BundleMetadata("bundle-1", /* schemaVersion= */ 1, new SnapshotVersion(Timestamp.now()));
-  private final BundleListener bundleListener;
+  private final BundleCallback bundleCallback;
 
   private final Set<DocumentKey> lastDocuments;
   private final Map<String, ImmutableSortedSet<DocumentKey>> lastQueries;
@@ -59,8 +59,8 @@ public class BundleLoaderTest {
     lastQueries = new HashMap<>();
     lastBundles = new HashMap<>();
 
-    bundleListener =
-        new BundleListener() {
+    bundleCallback =
+        new BundleCallback() {
 
           @Override
           public ImmutableSortedMap<DocumentKey, MaybeDocument> applyBundledDocuments(
@@ -93,7 +93,7 @@ public class BundleLoaderTest {
   public void testLoadsDocuments() {
     BundleLoader bundleLoader =
         new BundleLoader(
-            bundleListener, BUNDLE_METADATA, /* totalDocuments= */ 2, /* totalBytes= */ 10);
+            bundleCallback, BUNDLE_METADATA, /* totalDocuments= */ 2, /* totalBytes= */ 10);
 
     LoadBundleTaskProgress progress =
         bundleLoader.addElement(
@@ -138,7 +138,7 @@ public class BundleLoaderTest {
   public void testLoadsDeletedDocuments() {
     BundleLoader bundleLoader =
         new BundleLoader(
-            bundleListener, BUNDLE_METADATA, /* totalDocuments= */ 1, /* totalBytes= */ 10);
+            bundleCallback, BUNDLE_METADATA, /* totalDocuments= */ 1, /* totalBytes= */ 10);
 
     LoadBundleTaskProgress progress =
         bundleLoader.addElement(
@@ -160,7 +160,7 @@ public class BundleLoaderTest {
   public void testAppliesDocumentChanges() {
     BundleLoader bundleLoader =
         new BundleLoader(
-            bundleListener, BUNDLE_METADATA, /* totalDocuments= */ 1, /* totalBytes= */ 5);
+            bundleCallback, BUNDLE_METADATA, /* totalDocuments= */ 1, /* totalBytes= */ 5);
 
     bundleLoader.addElement(
         new BundledDocumentMetadata(
@@ -181,7 +181,7 @@ public class BundleLoaderTest {
   public void testAppliesNamedQueries() {
     BundleLoader bundleLoader =
         new BundleLoader(
-            bundleListener, BUNDLE_METADATA, /* totalDocuments= */ 2, /* totalBytes= */ 4);
+            bundleCallback, BUNDLE_METADATA, /* totalDocuments= */ 2, /* totalBytes= */ 4);
 
     bundleLoader.addElement(
         new BundledDocumentMetadata(
@@ -220,7 +220,7 @@ public class BundleLoaderTest {
   public void testVerifiesBundledDocumentMetadataSent() {
     BundleLoader bundleLoader =
         new BundleLoader(
-            bundleListener, BUNDLE_METADATA, /* totalDocuments= */ 1, /* totalBytes= */ 5);
+            bundleCallback, BUNDLE_METADATA, /* totalDocuments= */ 1, /* totalBytes= */ 5);
     try {
       bundleLoader.addElement(new BundleDocument(doc("coll/doc1", 1, map())), /* byteSize= */ 5);
       fail();
@@ -233,7 +233,7 @@ public class BundleLoaderTest {
   public void testVerifiesBundledDocumentMetadataMatches() {
     BundleLoader bundleLoader =
         new BundleLoader(
-            bundleListener, BUNDLE_METADATA, /* totalDocuments= */ 1, /* totalBytes= */ 5);
+            bundleCallback, BUNDLE_METADATA, /* totalDocuments= */ 1, /* totalBytes= */ 5);
 
     bundleLoader.addElement(
         new BundledDocumentMetadata(
@@ -255,7 +255,7 @@ public class BundleLoaderTest {
   public void testVerifiesDocumentFollowsMetadata() {
     BundleLoader bundleLoader =
         new BundleLoader(
-            bundleListener, BUNDLE_METADATA, /* totalDocuments= */ 0, /* totalBytes= */ 10);
+            bundleCallback, BUNDLE_METADATA, /* totalDocuments= */ 0, /* totalBytes= */ 10);
 
     bundleLoader.addElement(
         new BundledDocumentMetadata(
@@ -279,7 +279,7 @@ public class BundleLoaderTest {
   public void testVerifiesDocumentCount() {
     BundleLoader bundleLoader =
         new BundleLoader(
-            bundleListener, BUNDLE_METADATA, /* totalDocuments= */ 2, /* totalBytes= */ 10);
+            bundleCallback, BUNDLE_METADATA, /* totalDocuments= */ 2, /* totalBytes= */ 10);
 
     bundleLoader.addElement(
         new BundledDocumentMetadata(
