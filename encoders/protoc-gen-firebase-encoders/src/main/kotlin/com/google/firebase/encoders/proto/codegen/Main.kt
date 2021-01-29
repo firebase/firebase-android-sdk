@@ -34,8 +34,8 @@ fun main(args: Array<String>) {
         val stringWriter = StringWriter()
         it.printStackTrace(PrintWriter(stringWriter))
         CodeGeneratorResponse.newBuilder()
-                .setError(stringWriter.toString())
-                .build()
-                .writeTo(System.out)
+            .setError(stringWriter.toString())
+            .build()
+            .writeTo(System.out)
     }
 }
