@@ -103,8 +103,8 @@ public abstract class Mutation {
   public abstract void applyToRemoteDocument(Document document, MutationResult mutationResult);
 
   /**
-   * Applies this mutation to the given Document for the purposes of computing the new local view
-   * of a document. Both the input and returned documents can be null.
+   * Applies this mutation to the given Document for the purposes of computing the new local view of
+   * a document. Both the input and returned documents can be null.
    *
    * @param document The document to mutate.
    * @param localWriteTime A timestamp indicating the local write time of the batch this mutation is
