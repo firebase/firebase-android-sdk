@@ -40,7 +40,9 @@ protobuf {
             }
             task.dependsOn configurations.protobuild
             task.plugins {
-                firebaseEncoders {}
+                firebaseEncoders {
+                    option file('code-gen-cfg.txtpb').path
+                }
             }
         }
     }

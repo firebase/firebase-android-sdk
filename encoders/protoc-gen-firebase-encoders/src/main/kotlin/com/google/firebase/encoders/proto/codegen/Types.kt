@@ -67,17 +67,21 @@ sealed class UserDefined : ProtobufType() {
         get() = "${owner.javaName}${owner.scopeSeparator}$name"
 
     /** Represents a protobuf `message` type. */
-    data class Message(
+    class Message(
         override val owner: Owner,
         override val name: String,
         val fields: List<ProtoField>
     ) : UserDefined() {
         override val protobufFullName: String
             get() = "${owner.protobufFullName}.$name"
+
+        override fun toString(): String {
+            return "Message(owner=$owner,name=$name,fields=$fields)"
+        }
     }
 
     /** Represents a protobuf `enum` type. */
-    data class ProtoEnum(override val owner: Owner, override val name: String, val values: List<Value>) : UserDefined() {
+    class ProtoEnum(override val owner: Owner, override val name: String, val values: List<Value>) : UserDefined() {
         override val protobufFullName: String
             get() = "${owner.protobufFullName}.$name"
 
