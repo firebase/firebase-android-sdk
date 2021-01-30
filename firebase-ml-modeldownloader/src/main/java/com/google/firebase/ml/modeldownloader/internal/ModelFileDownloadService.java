@@ -166,6 +166,8 @@ public class ModelFileDownloadService {
       if (fex.getCode() == FirebaseMlException.DOWNLOAD_URL_EXPIRED) {
         return Tasks.forException(fex);
       }
+      eventLogger.logDownloadFailureWithReason(
+          customModel, false, ErrorCode.URI_EXPIRED.getValue());
     }
     if (newDownloadId == null) {
       return Tasks.forException(
@@ -262,7 +264,7 @@ public class ModelFileDownloadService {
     Date now = new Date();
     if (customModel.getDownloadUrlExpiry() < now.getTime()) {
       eventLogger.logDownloadFailureWithReason(
-          customModel, false, FirebaseMlLogger.NO_FAILURE_VALUE);
+          customModel, false, ErrorCode.URI_EXPIRED.getValue());
       throw new FirebaseMlException(
           "Expired url, fetch new url and retry.", FirebaseMlException.DOWNLOAD_URL_EXPIRED);
     }

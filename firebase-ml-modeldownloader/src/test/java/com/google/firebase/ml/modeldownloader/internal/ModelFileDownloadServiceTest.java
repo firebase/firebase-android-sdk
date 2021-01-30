@@ -648,7 +648,7 @@ public class ModelFileDownloadServiceTest {
             eq(ErrorCode.NO_ERROR));
     verify(mockStatsLogger, times(1))
         .logDownloadFailureWithReason(
-            eq(CUSTOM_MODEL_EXPIRED_URL), eq(false), eq(FirebaseMlLogger.NO_FAILURE_VALUE));
+            eq(CUSTOM_MODEL_EXPIRED_URL), eq(false), eq(ErrorCode.URI_EXPIRED.getValue()));
     verify(mockStatsLogger, times(1))
         .logDownloadEventWithErrorCode(
             eq(CUSTOM_MODEL_EXPIRED_URL),
