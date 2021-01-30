@@ -488,12 +488,26 @@ public class FirebaseModelDownloader {
    * @param modelName - model name
    * @return id associated with Android Download Manager.
    */
-  public long getModelDownloadId(@NonNull String modelName) {
-    CustomModel localModel = sharedPreferencesUtil.getDownloadingCustomModelDetails(modelName);
-    if (localModel != null) {
-      return localModel.getDownloadId();
+  @NonNull
+  public Task<Long> getModelDownloadId(
+      @NonNull String modelName, @Nullable Task<CustomModel> getModelTask) {
+    if (getModelTask == null) {
+      CustomModel localModel = sharedPreferencesUtil.getDownloadingCustomModelDetails(modelName);
+      if (localModel != null) {
+        return Tasks.forResult(localModel.getDownloadId());
+      }
+      return Tasks.forResult(0L);
     }
-    return 0;
+
+    long downloadId = 0;
+    while (downloadId == 0 && !getModelTask.isComplete()) {
+      CustomModel localModel = sharedPreferencesUtil.getDownloadingCustomModelDetails(modelName);
+      if (localModel != null) {
+        downloadId = localModel.getDownloadId();
+      }
+    }
+
+    return Tasks.forResult(downloadId);
   }
 
   /** Returns the nick name of the {@link FirebaseApp} of this {@link FirebaseModelDownloader} */
