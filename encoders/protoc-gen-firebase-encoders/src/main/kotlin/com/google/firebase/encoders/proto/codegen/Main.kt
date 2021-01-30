@@ -14,13 +14,18 @@
 
 package com.google.firebase.encoders.proto.codegen
 
+import com.google.firebase.encoders.proto.CodeGenConfig
+import com.google.protobuf.DescriptorProtos.FileDescriptorProto
 import com.google.protobuf.compiler.PluginProtos.CodeGeneratorRequest
 import com.google.protobuf.compiler.PluginProtos.CodeGeneratorResponse
+import dagger.BindsInstance
+import dagger.Component
 import java.io.File
 import java.io.InputStream
 import java.io.OutputStream
 import java.io.PrintWriter
 import java.io.StringWriter
+import javax.inject.Inject
 
 fun driver(input: InputStream, output: OutputStream) {
     val request = CodeGeneratorRequest.parseFrom(input)
@@ -37,7 +42,12 @@ fun driver(input: InputStream, output: OutputStream) {
         ConfigReader.read(it)
     }
 
-    CodeGenerator(config).generate(request.protoFileList).writeTo(output)
+    val component: MainComponent = DaggerMainComponent.builder()
+            .config(config)
+            .build()
+    component.plugin
+            .run(request.protoFileList)
+            .writeTo(output)
 }
 
 /**
@@ -57,5 +67,24 @@ fun main(args: Array<String>) {
             .setError(stringWriter.toString())
             .build()
             .writeTo(System.out)
+    }
+}
+
+class Plugin @Inject constructor(private val parser: DescriptorParser, private val generator: CodeGenerator) {
+    fun run(protoFiles: List<FileDescriptorProto>): CodeGeneratorResponse {
+        return generator.generate(parser.parse(protoFiles))
+    }
+}
+
+@Component(modules = [ParsingModule::class])
+interface MainComponent {
+    val plugin: Plugin
+
+    @Component.Builder
+    interface Builder {
+        @BindsInstance
+        fun config(config: CodeGenConfig): Builder
+
+        fun build(): MainComponent
     }
 }
