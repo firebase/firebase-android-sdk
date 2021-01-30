@@ -16,8 +16,29 @@ package com.google.firebase.encoders.proto.codegen
 
 import com.google.protobuf.compiler.PluginProtos.CodeGeneratorRequest
 import com.google.protobuf.compiler.PluginProtos.CodeGeneratorResponse
+import java.io.File
+import java.io.InputStream
+import java.io.OutputStream
 import java.io.PrintWriter
 import java.io.StringWriter
+
+fun driver(input: InputStream, output: OutputStream) {
+    val request = CodeGeneratorRequest.parseFrom(input)
+    if (request.parameter.isEmpty()) {
+        throw InvalidConfigException("Required plugin option is missing. " +
+                "Please specify the config file path via plugin options.")
+    }
+    val cfgFile = File(request.parameter)
+    if (!cfgFile.exists() || !cfgFile.isFile) {
+        throw InvalidConfigException("Config file '$cfgFile' does not exist or is a directory.")
+    }
+
+    val config = cfgFile.reader().use {
+        ConfigReader.read(it)
+    }
+
+    CodeGenerator(config).generate(request.protoFileList).writeTo(output)
+}
 
 /**
  * Main entry point to the executable jar.
@@ -27,9 +48,8 @@ import java.io.StringWriter
  * `stdout`.
  */
 fun main(args: Array<String>) {
-    val request = CodeGeneratorRequest.parseFrom(System.`in`)
     runCatching {
-        CodeGenerator(request).generate().writeTo(System.out)
+        driver(System.`in`, System.out)
     }.onFailure {
         val stringWriter = StringWriter()
         it.printStackTrace(PrintWriter(stringWriter))
