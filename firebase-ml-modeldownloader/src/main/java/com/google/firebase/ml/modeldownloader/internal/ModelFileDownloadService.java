@@ -167,7 +167,7 @@ public class ModelFileDownloadService {
         return Tasks.forException(fex);
       }
       eventLogger.logDownloadFailureWithReason(
-          customModel, false, ErrorCode.URI_EXPIRED.getValue());
+          customModel, false, ErrorCode.DOWNLOAD_FAILED.getValue());
     }
     if (newDownloadId == null) {
       return Tasks.forException(
