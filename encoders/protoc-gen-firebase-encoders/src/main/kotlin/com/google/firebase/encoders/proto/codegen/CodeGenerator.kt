@@ -14,11 +14,10 @@
 
 package com.google.firebase.encoders.proto.codegen
 
-import com.google.firebase.encoders.proto.CodeGenConfig
-import com.google.protobuf.DescriptorProtos
 import com.google.protobuf.compiler.PluginProtos.CodeGeneratorResponse
+import javax.inject.Inject
 
-class CodeGenerator(val config: CodeGenConfig) {
-    fun generate(files: List<DescriptorProtos.FileDescriptorProto>): CodeGeneratorResponse =
+class CodeGenerator @Inject constructor() {
+    fun generate(files: Collection<UserDefined>): CodeGeneratorResponse =
             CodeGeneratorResponse.getDefaultInstance()
 }
