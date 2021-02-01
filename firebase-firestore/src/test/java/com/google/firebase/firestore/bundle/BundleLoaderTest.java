@@ -48,7 +48,7 @@ import org.robolectric.annotation.Config;
 public class BundleLoaderTest {
   private static final SnapshotVersion CREATE_TIME = new SnapshotVersion(Timestamp.now());
 
-  private final BundleListener bundleListener;
+  private final BundleCallback bundleCallback;
 
   private final Set<DocumentKey> lastDocuments;
   private final Map<String, ImmutableSortedSet<DocumentKey>> lastQueries;
@@ -59,8 +59,8 @@ public class BundleLoaderTest {
     lastQueries = new HashMap<>();
     lastBundles = new HashMap<>();
 
-    bundleListener =
-        new BundleListener() {
+    bundleCallback =
+        new BundleCallback() {
 
           @Override
           public ImmutableSortedMap<DocumentKey, MaybeDocument> applyBundledDocuments(
@@ -92,7 +92,7 @@ public class BundleLoaderTest {
   @Test
   public void testLoadsDocuments() {
     BundleLoader bundleLoader =
-        new BundleLoader(bundleListener, createMetadata(/* documents= */ 2));
+        new BundleLoader(bundleCallback, createMetadata(/* documents= */ 2));
 
     LoadBundleTaskProgress progress =
         bundleLoader.addElement(
@@ -130,7 +130,7 @@ public class BundleLoaderTest {
   @Test
   public void testLoadsDeletedDocuments() {
     BundleLoader bundleLoader =
-        new BundleLoader(bundleListener, createMetadata(/* documents= */ 1));
+        new BundleLoader(bundleCallback, createMetadata(/* documents= */ 1));
 
     LoadBundleTaskProgress progress =
         bundleLoader.addElement(
@@ -148,7 +148,7 @@ public class BundleLoaderTest {
   @Test
   public void testAppliesDocumentChanges() {
     BundleLoader bundleLoader =
-        new BundleLoader(bundleListener, createMetadata(/* documents= */ 1));
+        new BundleLoader(bundleCallback, createMetadata(/* documents= */ 1));
 
     bundleLoader.addElement(
         new BundledDocumentMetadata(
@@ -165,7 +165,7 @@ public class BundleLoaderTest {
   @Test
   public void testAppliesNamedQueries() {
     BundleLoader bundleLoader =
-        new BundleLoader(bundleListener, createMetadata(/* documents= */ 2));
+        new BundleLoader(bundleCallback, createMetadata(/* documents= */ 2));
 
     bundleLoader.addElement(
         new BundledDocumentMetadata(
@@ -203,7 +203,7 @@ public class BundleLoaderTest {
   @Test
   public void testVerifiesBundledDocumentMetadataSent() {
     BundleLoader bundleLoader =
-        new BundleLoader(bundleListener, createMetadata(/* documents= */ 1));
+        new BundleLoader(bundleCallback, createMetadata(/* documents= */ 1));
 
     try {
       bundleLoader.addElement(new BundleDocument(doc("coll/doc1", 1, map())), /* byteSize= */ 10);
@@ -216,8 +216,7 @@ public class BundleLoaderTest {
   @Test
   public void testVerifiesBundledDocumentMetadataMatches() {
     BundleLoader bundleLoader =
-        new BundleLoader(bundleListener, createMetadata(/* documents= */ 1));
-
+        new BundleLoader(bundleCallback, createMetadata(/* documents= */ 1));
     bundleLoader.addElement(
         new BundledDocumentMetadata(
             key("coll/doc1"), CREATE_TIME, /* exists= */ true, Collections.emptyList()),
@@ -234,7 +233,7 @@ public class BundleLoaderTest {
   @Test
   public void testVerifiesDocumentFollowsMetadata() {
     BundleLoader bundleLoader =
-        new BundleLoader(bundleListener, createMetadata(/* documents= */ 0));
+        new BundleLoader(bundleCallback, createMetadata(/* documents= */ 0));
 
     bundleLoader.addElement(
         new BundledDocumentMetadata(
@@ -254,7 +253,7 @@ public class BundleLoaderTest {
   @Test
   public void testVerifiesDocumentCount() {
     BundleLoader bundleLoader =
-        new BundleLoader(bundleListener, createMetadata(/* documents= */ 2));
+        new BundleLoader(bundleCallback, createMetadata(/* documents= */ 2));
 
     bundleLoader.addElement(
         new BundledDocumentMetadata(

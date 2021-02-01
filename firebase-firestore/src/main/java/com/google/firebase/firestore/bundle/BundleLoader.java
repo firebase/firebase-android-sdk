@@ -34,7 +34,7 @@ import java.util.Map;
  * update while loading.
  */
 public class BundleLoader {
-  private final BundleListener bundleListener;
+  private final BundleCallback bundleCallback;
   private final BundleMetadata bundleMetadata;
   private final List<NamedQuery> queries;
   private final Map<DocumentKey, BundledDocumentMetadata> documentsMetadata;
@@ -43,8 +43,8 @@ public class BundleLoader {
   private long bytesLoaded;
   @Nullable private DocumentKey currentDocument;
 
-  public BundleLoader(BundleListener bundleListener, BundleMetadata bundleMetadata) {
-    this.bundleListener = bundleListener;
+  public BundleLoader(BundleCallback bundleCallback, BundleMetadata bundleMetadata) {
+    this.bundleCallback = bundleCallback;
     this.bundleMetadata = bundleMetadata;
     this.queries = new ArrayList<>();
     this.documents = emptyMaybeDocumentMap();
@@ -61,7 +61,7 @@ public class BundleLoader {
     Preconditions.checkArgument(
         !(bundleElement instanceof BundleMetadata), "Unexpected bundle metadata element.");
 
-    boolean updateProgress = false;
+    int beforeDocumentCount = documents.size();
 
     if (bundleElement instanceof NamedQuery) {
       queries.add((NamedQuery) bundleElement);
@@ -77,7 +77,6 @@ public class BundleLoader {
                     bundledDocumentMetadata.getKey(),
                     bundledDocumentMetadata.getReadTime(),
                     /* hasCommittedMutations= */ false));
-        updateProgress = true;
         currentDocument = null;
       }
     } else if (bundleElement instanceof BundleDocument) {
@@ -87,13 +86,12 @@ public class BundleLoader {
             "The document being added does not match the stored metadata.");
       }
       documents = documents.insert(bundleDocument.getKey(), bundleDocument.getDocument());
-      updateProgress = true;
       currentDocument = null;
     }
 
     bytesLoaded += byteSize;
 
-    return updateProgress
+    return beforeDocumentCount != documents.size()
         ? new LoadBundleTaskProgress(
             documents.size(),
             bundleMetadata.getTotalDocuments(),
@@ -117,14 +115,14 @@ public class BundleLoader {
         documents.size());
 
     ImmutableSortedMap<DocumentKey, MaybeDocument> changes =
-        bundleListener.applyBundledDocuments(documents, bundleMetadata.getBundleId());
+        bundleCallback.applyBundledDocuments(documents, bundleMetadata.getBundleId());
 
     Map<String, ImmutableSortedSet<DocumentKey>> queryDocumentMap = getQueryDocumentMapping();
     for (NamedQuery namedQuery : queries) {
-      bundleListener.saveNamedQuery(namedQuery, queryDocumentMap.get(namedQuery.getName()));
+      bundleCallback.saveNamedQuery(namedQuery, queryDocumentMap.get(namedQuery.getName()));
     }
 
-    bundleListener.saveBundle(bundleMetadata);
+    bundleCallback.saveBundle(bundleMetadata);
 
     return changes;
   }
