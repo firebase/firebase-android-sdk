@@ -57,7 +57,7 @@ class SQLiteBundleCache implements BundleCache {
             + "(bundle_id, schema_version, create_time_seconds, create_time_nanos) "
             + "VALUES (?, ?, ?, ?)",
         metadata.getBundleId(),
-        metadata.getVersion(),
+        metadata.getSchemaVersion(),
         metadata.getCreateTime().getTimestamp().getSeconds(),
         metadata.getCreateTime().getTimestamp().getNanoseconds());
   }

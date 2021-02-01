@@ -219,6 +219,22 @@ package com.google.firebase.firestore {
     method public void remove();
   }
 
+  public final class LoadBundleTaskProgress {
+    ctor @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP) public LoadBundleTaskProgress(int, int, long, long, @Nullable Exception, @NonNull com.google.firebase.firestore.LoadBundleTaskProgress.TaskState);
+    method public long getBytesLoaded();
+    method public int getDocumentsLoaded();
+    method @Nullable public Exception getException();
+    method @NonNull public com.google.firebase.firestore.LoadBundleTaskProgress.TaskState getTaskState();
+    method public long getTotalBytes();
+    method public int getTotalDocuments();
+  }
+
+  public enum LoadBundleTaskProgress.TaskState {
+    enum_constant public static final com.google.firebase.firestore.LoadBundleTaskProgress.TaskState ERROR;
+    enum_constant public static final com.google.firebase.firestore.LoadBundleTaskProgress.TaskState RUNNING;
+    enum_constant public static final com.google.firebase.firestore.LoadBundleTaskProgress.TaskState SUCCESS;
+  }
+
   public enum MetadataChanges {
     enum_constant public static final com.google.firebase.firestore.MetadataChanges EXCLUDE;
     enum_constant public static final com.google.firebase.firestore.MetadataChanges INCLUDE;

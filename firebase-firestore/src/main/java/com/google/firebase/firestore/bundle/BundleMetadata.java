@@ -19,12 +19,12 @@ import com.google.firebase.firestore.model.SnapshotVersion;
 /** Represents a Firestore bundle saved by the SDK in its local storage. */
 public class BundleMetadata implements BundleElement {
   private final String bundleId;
-  private final int version;
+  private final int schemaVersion;
   private final SnapshotVersion createTime;
 
-  public BundleMetadata(String bundleId, int version, SnapshotVersion createTime) {
+  public BundleMetadata(String bundleId, int schemaVersion, SnapshotVersion createTime) {
     this.bundleId = bundleId;
-    this.version = version;
+    this.schemaVersion = schemaVersion;
     this.createTime = createTime;
   }
 
@@ -37,8 +37,8 @@ public class BundleMetadata implements BundleElement {
   }
 
   /** Returns the schema version of the bundle. */
-  public int getVersion() {
-    return version;
+  public int getSchemaVersion() {
+    return schemaVersion;
   }
 
   /**
@@ -56,7 +56,7 @@ public class BundleMetadata implements BundleElement {
 
     BundleMetadata that = (BundleMetadata) o;
 
-    if (version != that.version) return false;
+    if (schemaVersion != that.schemaVersion) return false;
     if (!bundleId.equals(that.bundleId)) return false;
     return createTime.equals(that.createTime);
   }
@@ -64,7 +64,7 @@ public class BundleMetadata implements BundleElement {
   @Override
   public int hashCode() {
     int result = bundleId.hashCode();
-    result = 31 * result + version;
+    result = 31 * result + schemaVersion;
     result = 31 * result + createTime.hashCode();
     return result;
   }
