@@ -15,7 +15,7 @@
 
 syntax = "proto3";
 
-package com.firebase.testing;
+package com.google.firebase.testing;
 
 message TestMessage {
   int32 foo = 1;

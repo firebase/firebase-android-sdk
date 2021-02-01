@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package com.google.firebase.testing;
+
+import "google/protobuf/timestamp.proto";
+
+option java_multiple_files = true;
+
+message SimpleProto {
+  int32 value = 1;
+  repeated string str = 2;
+  .google.protobuf.Timestamp time = 3;
+
+  enum MyEnum {
+    DEFAULT = 0;
+    EXAMPLE = 1;
+  }
+
+  MyEnum my_enum = 4;
+}

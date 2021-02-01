@@ -18,6 +18,6 @@ import com.google.protobuf.compiler.PluginProtos.CodeGeneratorResponse
 import javax.inject.Inject
 
 class CodeGenerator @Inject constructor() {
-    fun generate(files: Collection<UserDefined>): CodeGeneratorResponse =
+    fun generate(messages: Collection<UserDefined>): CodeGeneratorResponse =
             CodeGeneratorResponse.getDefaultInstance()
 }

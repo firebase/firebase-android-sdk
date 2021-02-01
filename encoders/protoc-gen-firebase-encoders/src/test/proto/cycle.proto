@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package com.google.firebase.testing;
+
+option java_multiple_files = true;
+
+message LinkedListProto {
+  int32 value = 1;
+  LinkedListProto self = 2;
+}

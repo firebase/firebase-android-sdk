@@ -27,10 +27,10 @@ class TypeTests {
         val helloMsg = UserDefined.Message(owner = package1, name = "Hello", fields = listOf())
         val worldMsg = UserDefined.Message(Owner.MsgRef(helloMsg), "World", fields = listOf())
 
-        assertThat(helloMsg.protobufFullName).isEqualTo(".com.example.Hello")
+        assertThat(helloMsg.protobufFullName).isEqualTo("com.example.Hello")
         assertThat(helloMsg.javaName).isEqualTo("com.example.proto.Hello")
 
-        assertThat(worldMsg.protobufFullName).isEqualTo(".com.example.Hello.World")
+        assertThat(worldMsg.protobufFullName).isEqualTo("com.example.Hello.World")
         assertThat(worldMsg.javaName).isEqualTo("com.example.proto.Hello\$World")
     }
 
@@ -53,12 +53,12 @@ class TypeTests {
         val package1 = Owner.Package("com.example", "com.example.proto", "my_proto.proto")
         val worldField = ProtoField(
             name = "world",
-            type = Unresolved(".com.example.Hello.World"),
+            type = Unresolved("com.example.Hello.World"),
             number = 1
         )
         val helloField = ProtoField(
             name = "hello",
-            type = Unresolved(".com.example.Hello"),
+            type = Unresolved("com.example.Hello"),
             number = 1
         )
         val helloMsg = UserDefined.Message(
@@ -89,6 +89,6 @@ class TypeTests {
         worldField.type = worldMsg
         helloField.type = helloMsg
 
-        assertThat(helloMsg.fields[0].toString()).contains(".com.example.Hello.World")
+        assertThat(helloMsg.fields[0].toString()).contains("com.example.Hello.World")
     }
 }

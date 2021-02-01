@@ -53,7 +53,7 @@ sealed class Primitive(override val javaName: String, val defaultValue: String) 
  * Can be one of [Message] or [ProtoEnum].
  */
 sealed class UserDefined : ProtobufType() {
-    /** A fully qualified protobuf message name, i.e. `.com.example.Outer.Inner`. */
+    /** A fully qualified protobuf message name, i.e. `com.example.Outer.Inner`. */
     abstract val protobufFullName: String
 
     /** Specifies the scope that this type is defined in, i.e. a [Owner.Package] or a parent [Message]. */
@@ -78,10 +78,13 @@ sealed class UserDefined : ProtobufType() {
         override fun toString(): String {
             return "Message(owner=$owner,name=$name,fields=$fields)"
         }
+
+        fun withMoreFields(fields: Collection<ProtoField>): Message =
+                Message(owner, name, fields = this.fields.plus(fields))
     }
 
     /** Represents a protobuf `enum` type. */
-    class ProtoEnum(override val owner: Owner, override val name: String, val values: List<Value>) : UserDefined() {
+    data class ProtoEnum(override val owner: Owner, override val name: String, val values: List<Value>) : UserDefined() {
         override val protobufFullName: String
             get() = "${owner.protobufFullName}.$name"
 
@@ -127,7 +130,7 @@ sealed class Owner(val scopeSeparator: Char) {
     /** Represents a package that a protobuf type belongs to. */
     data class Package(val name: String, val javaPackage: String, override val fileName: String) : Owner('.') {
         override val protobufFullName: String
-            get() = ".$name"
+            get() = name
 
         override val javaName: String
             get() = javaPackage
