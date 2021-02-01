@@ -154,7 +154,6 @@ public class CustomModelDownloadService {
                 errorCode = ErrorCode.NO_NETWORK_CONNECTION;
                 errorMessage = "Failed to retrieve model info due to no internet connection.";
               }
-
               eventLogger.logDownloadFailureWithReason(
                   new CustomModel(modelName, modelHash, 0, 0L), false, errorCode.getValue());
               return Tasks.forException(
