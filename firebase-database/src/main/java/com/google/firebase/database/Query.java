@@ -124,12 +124,10 @@ public class Query {
   /** This method validates that the equalTo call can be made */
   private void validateEqualToCall() {
     if (params.hasStart()) {
-      throw new IllegalArgumentException(
-          "Cannot combine equalTo() with startAt() or startAfter()");
+      throw new IllegalArgumentException("Cannot combine equalTo() with startAt() or startAfter()");
     }
     if (params.hasEnd()) {
-      throw new IllegalArgumentException(
-          "Cannot combine equalTo() with endAt() or endBefore()");
+      throw new IllegalArgumentException("Cannot combine equalTo() with endAt() or endBefore()");
     }
   }
 
