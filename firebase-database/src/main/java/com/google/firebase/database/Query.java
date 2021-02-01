@@ -125,7 +125,7 @@ public class Query {
   private void validateEqualToCall() {
     if (params.hasStart()) {
       throw new IllegalArgumentException(
-          "Can't call equalTo() and startAt() or startAfter() " + "combined");
+          "Cannot combine equalTo() with startAt() or startAfter()");
     }
     if (params.hasEnd()) {
       throw new IllegalArgumentException(
