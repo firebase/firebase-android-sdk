@@ -30,6 +30,7 @@ import static org.mockito.Mockito.when;
 
 import android.os.ParcelFileDescriptor;
 import androidx.test.core.app.ApplicationProvider;
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
@@ -761,21 +762,97 @@ public class FirebaseModelDownloaderTest {
   }
 
   @Test
-  public void getModelDownloadId_noDownload() {
+  public void getModelDownloadId_noDownload_noTask() {
     when(mockPrefs.getDownloadingCustomModelDetails(eq(MODEL_NAME))).thenReturn(customModelLoaded);
-    assertEquals(firebaseModelDownloader.getModelDownloadId(MODEL_NAME), 0);
+    assertTrue(firebaseModelDownloader.getModelDownloadId(MODEL_NAME, null).getResult() == 0L);
   }
 
   @Test
-  public void getModelDownloadId_noNamedModel() {
+  public void getModelDownloadId_noNamedModel_noTask() {
     when(mockPrefs.getDownloadingCustomModelDetails(eq(MODEL_NAME))).thenReturn(null);
-    assertEquals(firebaseModelDownloader.getModelDownloadId(MODEL_NAME), 0);
+    assertTrue(firebaseModelDownloader.getModelDownloadId(MODEL_NAME, null).getResult() == 0L);
   }
 
   @Test
-  public void getModelDownloadId_download() {
+  public void getModelDownloadId_download_noTask() {
     when(mockPrefs.getDownloadingCustomModelDetails(eq(MODEL_NAME)))
         .thenReturn(UPDATE_IN_PROGRESS_CUSTOM_MODEL);
-    assertEquals(firebaseModelDownloader.getModelDownloadId(MODEL_NAME), DOWNLOAD_ID);
+    assertTrue(
+        firebaseModelDownloader.getModelDownloadId(MODEL_NAME, null).getResult() == DOWNLOAD_ID);
+  }
+
+  @Test
+  public void getModelDownloadId_noDownload_task() throws Exception {
+    Task<CustomModel> task = getModelTask();
+    when(mockPrefs.getDownloadingCustomModelDetails(eq(MODEL_NAME))).thenReturn(customModelLoaded);
+
+    firebaseModelDownloader
+        .getModelDownloadId(MODEL_NAME, task)
+        .addOnCompleteListener(
+            new OnCompleteListener<Long>() {
+              @Override
+              public void onComplete(Task<Long> idTask) {
+                assertTrue(idTask.isSuccessful());
+                assertTrue(idTask.getResult() == 0L);
+              }
+            });
+    TestOnCompleteListener<CustomModel> onCompleteListener = new TestOnCompleteListener<>();
+    task.addOnCompleteListener(executor, onCompleteListener);
+    onCompleteListener.await();
+    assertTrue(task.isComplete());
+  }
+
+  @Test
+  public void getModelDownloadId_noNamedModel_task() throws Exception {
+    Task<CustomModel> task = getModelTask();
+    when(mockPrefs.getDownloadingCustomModelDetails(eq(MODEL_NAME))).thenReturn(null);
+    firebaseModelDownloader
+        .getModelDownloadId(MODEL_NAME, task)
+        .addOnCompleteListener(
+            new OnCompleteListener<Long>() {
+              @Override
+              public void onComplete(Task<Long> idTask) {
+                assertTrue(idTask.isSuccessful());
+                assertTrue(idTask.getResult() == 0L);
+              }
+            });
+    TestOnCompleteListener<CustomModel> onCompleteListener = new TestOnCompleteListener<>();
+    task.addOnCompleteListener(executor, onCompleteListener);
+    onCompleteListener.await();
+    assertTrue(task.isComplete());
+  }
+
+  @Test
+  public void getModelDownloadId_download_task() throws Exception {
+    Task<CustomModel> task = getModelTask();
+    when(mockPrefs.getDownloadingCustomModelDetails(eq(MODEL_NAME)))
+        .thenReturn(UPDATE_IN_PROGRESS_CUSTOM_MODEL);
+    firebaseModelDownloader
+        .getModelDownloadId(MODEL_NAME, task)
+        .addOnCompleteListener(
+            new OnCompleteListener<Long>() {
+              @Override
+              public void onComplete(Task<Long> idTask) {
+                assertTrue(idTask.isSuccessful());
+                assertTrue(idTask.getResult() == DOWNLOAD_ID);
+              }
+            });
+    TestOnCompleteListener<CustomModel> onCompleteListener = new TestOnCompleteListener<>();
+    task.addOnCompleteListener(executor, onCompleteListener);
+    onCompleteListener.await();
+    assertTrue(task.isComplete());
+  }
+
+  private Task<CustomModel> getModelTask() {
+    when(mockPrefs.getCustomModelDetails(eq(MODEL_NAME))).thenReturn(null).thenReturn(CUSTOM_MODEL);
+    when(mockModelDownloadService.getCustomModelDetails(
+            eq(TEST_PROJECT_ID), eq(MODEL_NAME), eq(null)))
+        .thenReturn(Tasks.forResult(ORIG_CUSTOM_MODEL_URL));
+    when(mockFileDownloadService.download(any(), eq(DOWNLOAD_CONDITIONS)))
+        .thenReturn(Tasks.forResult(null));
+    when(mockFileDownloadService.loadNewlyDownloadedModelFile(eq(customModelUpdateLoaded)))
+        .thenReturn(firstDeviceModelFile);
+    return firebaseModelDownloader.getModel(
+        MODEL_NAME, DownloadType.LOCAL_MODEL, DOWNLOAD_CONDITIONS);
   }
 }
