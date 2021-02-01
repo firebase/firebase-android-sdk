@@ -149,6 +149,7 @@ public abstract class FirebaseMlLogEvent {
     public enum ErrorCode {
       NO_ERROR(0),
       TIME_OUT_FETCHING_MODEL_METADATA(5),
+      URI_EXPIRED(101),
       NO_NETWORK_CONNECTION(102),
       DOWNLOAD_FAILED(104),
       MODEL_INFO_DOWNLOAD_UNSUCCESSFUL_HTTP_STATUS(105),
@@ -162,6 +163,7 @@ public abstract class FirebaseMlLogEvent {
       static {
         valueMap.put(0, NO_ERROR);
         valueMap.put(5, TIME_OUT_FETCHING_MODEL_METADATA);
+        valueMap.put(101, URI_EXPIRED);
         valueMap.put(102, NO_NETWORK_CONNECTION);
         valueMap.put(104, DOWNLOAD_FAILED);
         valueMap.put(105, MODEL_INFO_DOWNLOAD_UNSUCCESSFUL_HTTP_STATUS);
