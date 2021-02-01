@@ -1,6 +1,7 @@
 # 19.7.0
 - [added] Added `Query.startAfter()` and `Query.endBefore()` filter for paginating
   RTDB queries.
+- [fixed] Fixed an issue with startAfter/endBefore when used in orderByKey queries.
 
 # 19.6.0
 - [fixed] Fixed a crash on some Pixel devices that occurred when closing the
