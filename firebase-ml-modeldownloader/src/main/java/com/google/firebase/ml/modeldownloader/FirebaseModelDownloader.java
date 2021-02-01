@@ -463,11 +463,12 @@ public class FirebaseModelDownloader {
   }
 
   /**
-   * Update the settings which allow logging to firelog.
+   * Update the settings which allow logging to firelog. When not specifically set, defaults to use
+   * the Firebase wide data collection switch.
    *
    * @param enabled - is statistics logging enabled
    */
-  public void setStatsCollectionEnabled(boolean enabled) {
+  public void setDataCollectionMlDownloaderState(boolean enabled) {
     sharedPreferencesUtil.setCustomModelStatsCollectionEnabled(enabled);
   }
 

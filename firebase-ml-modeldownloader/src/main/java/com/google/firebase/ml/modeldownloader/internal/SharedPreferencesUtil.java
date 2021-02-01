@@ -253,16 +253,21 @@ public class SharedPreferencesUtil {
   /**
    * Should Firelog logging be enabled.
    *
-   * @return whether or not firelog events should be logged. Default to true.
+   * @return whether or not firelog events should be logged. If not specifically set, defaults to fi
    */
   public synchronized boolean getCustomModelStatsCollectionFlag() {
-    return getSharedPreferences()
-        .getBoolean(
-            String.format(EVENT_LOGGING_ENABLED_PATTERN, CUSTOM_MODEL_LIB, persistenceKey), true);
+    if (getSharedPreferences()
+        .contains(String.format(EVENT_LOGGING_ENABLED_PATTERN, CUSTOM_MODEL_LIB, persistenceKey))) {
+      return getSharedPreferences()
+          .getBoolean(
+              String.format(EVENT_LOGGING_ENABLED_PATTERN, CUSTOM_MODEL_LIB, persistenceKey), true);
+    }
+    return firebaseApp.isDataCollectionDefaultEnabled();
   }
 
   /**
-   * Set whether firelog logging should be enabled. When not explicitly set, the default is true.
+   * Set whether firelog logging should be enabled. When not explicitly set, uses the Firebase wide
+   * data collection switch.
    *
    * @param enable - False to turn off logging. True to turn on logging.
    */

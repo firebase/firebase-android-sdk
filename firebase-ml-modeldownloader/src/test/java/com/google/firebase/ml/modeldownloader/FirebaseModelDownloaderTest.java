@@ -753,10 +753,10 @@ public class FirebaseModelDownloaderTest {
   @Test
   public void setStatsCollectionEnabled() {
     doNothing().when(mockPrefs).setCustomModelStatsCollectionEnabled(anyBoolean());
-    firebaseModelDownloader.setStatsCollectionEnabled(true);
+    firebaseModelDownloader.setDataCollectionMlDownloaderState(true);
     verify(mockPrefs, times(1)).setCustomModelStatsCollectionEnabled(eq(true));
 
-    firebaseModelDownloader.setStatsCollectionEnabled(false);
+    firebaseModelDownloader.setDataCollectionMlDownloaderState(false);
     verify(mockPrefs, times(1)).setCustomModelStatsCollectionEnabled(eq(false));
   }
 
