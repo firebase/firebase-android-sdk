@@ -276,7 +276,7 @@ public class SharedPreferencesUtil {
         .edit()
         .putBoolean(
             String.format(EVENT_LOGGING_ENABLED_PATTERN, CUSTOM_MODEL_LIB, persistenceKey), enable)
-        .apply();
+        .commit();
   }
 
   /**
