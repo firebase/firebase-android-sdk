@@ -77,14 +77,18 @@ public class AlarmManagerScheduler implements WorkScheduler {
     return (PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_NO_CREATE) != null);
   }
 
-  /**
+   @Override
+   public void schedule(TransportContext transportContext, int attemptNumber) {
+    schedule(transportContext, attemptNumber, false);
+   }
+   /**
    * Schedules the AlarmManager service.
    *
    * @param transportContext Contains information about the backend and the priority.
    * @param attemptNumber Number of times the AlarmManager has tried to log for this backend.
    */
   @Override
-  public void schedule(TransportContext transportContext, int attemptNumber) {
+  public void schedule(TransportContext transportContext, int attemptNumber, boolean force) {
     Uri.Builder intentDataBuilder = new Uri.Builder();
     intentDataBuilder.appendQueryParameter(BACKEND_NAME, transportContext.getBackendName());
     intentDataBuilder.appendQueryParameter(
@@ -97,7 +101,7 @@ public class AlarmManagerScheduler implements WorkScheduler {
     intent.setData(intentDataBuilder.build());
     intent.putExtra(ATTEMPT_NUMBER, attemptNumber);
 
-    if (isJobServiceOn(intent)) {
+    if (!force && isJobServiceOn(intent)) {
       Logging.d(
           LOG_TAG, "Upload for context %s is already scheduled. Returning...", transportContext);
       return;
