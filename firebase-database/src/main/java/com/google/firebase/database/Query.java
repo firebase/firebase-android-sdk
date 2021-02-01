@@ -129,7 +129,7 @@ public class Query {
     }
     if (params.hasEnd()) {
       throw new IllegalArgumentException(
-          "Can't call equalTo() and endAt() or startAfter() " + "combined");
+          "Cannot combine equalTo() with endAt() or endBefore()");
     }
   }
 
