@@ -518,7 +518,7 @@ public class SyncTree {
     }
   }
 
-  public GetServerCacheNodeResult getServerCacheNodeForQuery(QuerySpec query) {
+  public GetServerCacheNodeResult getCacheNodeForQuery(QuerySpec query) {
     Path path = query.getPath();
     Node serverCacheNode = null;
     boolean foundAncestorDefaultView = false;
@@ -569,7 +569,7 @@ public class SyncTree {
     return persistenceManager.runInTransaction(
         () -> {
           Path path = query.getPath();
-          GetServerCacheNodeResult result = getServerCacheNodeForQuery(query);
+          GetServerCacheNodeResult result = getCacheNodeForQuery(query);
           Node node = null;
           if (result.node() != null) {
             WriteTreeRef writesCache = pendingWriteTree.childWrites(path);
@@ -591,7 +591,7 @@ public class SyncTree {
           @Override
           public List<? extends Event> call() {
             final QuerySpec query = eventRegistration.getQuerySpec();
-            GetServerCacheNodeResult result = getServerCacheNodeForQuery(query);
+            GetServerCacheNodeResult result = getCacheNodeForQuery(query);
             CacheNode serverCache = result.node();
             if (serverCache == null) {
               // Hit persistence
@@ -626,8 +626,7 @@ public class SyncTree {
 
             persistenceManager.setQueryActive(query);
 
-            SyncPoint syncPoint = syncPointTree.get(query.getPath());
-            boolean viewAlreadyExists = syncPoint.viewExistsForQuery(query);
+            boolean viewAlreadyExists = result.syncPoint().viewExistsForQuery(query);
             if (!viewAlreadyExists && !query.loadsAllData()) {
               // We need to track a tag for this query
               hardAssert(
@@ -638,9 +637,11 @@ public class SyncTree {
             }
             WriteTreeRef writesCache = pendingWriteTree.childWrites(query.getPath());
             List<? extends Event> events =
-                syncPoint.addEventRegistration(eventRegistration, writesCache, serverCache);
+                result
+                    .syncPoint()
+                    .addEventRegistration(eventRegistration, writesCache, serverCache);
             if (!viewAlreadyExists && !result.foundAncestorDefaultView()) {
-              View view = syncPoint.viewForQuery(query);
+              View view = result.syncPoint().viewForQuery(query);
               setupListener(query, view);
             }
             return events;
