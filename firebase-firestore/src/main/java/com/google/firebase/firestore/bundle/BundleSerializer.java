@@ -251,9 +251,9 @@ public class BundleSerializer {
     } else if (value.has("booleanValue")) {
       builder.setBooleanValue(value.optBoolean("booleanValue", false));
     } else if (value.has("integerValue")) {
-      builder.setIntegerValue(value.optLong("integerValue", 0));
+      builder.setIntegerValue(value.optLong("integerValue"));
     } else if (value.has("doubleValue")) {
-      builder.setDoubleValue(value.optDouble("doubleValue", 0.0));
+      builder.setDoubleValue(value.optDouble("doubleValue"));
     } else if (value.has("timestampValue")) {
       decodeTimestamp(builder, value.get("timestampValue"));
     } else if (value.has("stringValue")) {
@@ -302,12 +302,12 @@ public class BundleSerializer {
   private void decodeGeoPoint(Value.Builder builder, JSONObject geoPoint) {
     builder.setGeoPointValue(
         LatLng.newBuilder()
-            .setLatitude(geoPoint.optDouble("latitude", 0.0))
-            .setLongitude(geoPoint.optDouble("longitude", 0.0)));
+            .setLatitude(geoPoint.optDouble("latitude"))
+            .setLongitude(geoPoint.optDouble("longitude")));
   }
 
-  private Timestamp decodeTimestamp(JSONObject timestamp) throws JSONException {
-    return new Timestamp(timestamp.getLong("seconds"), timestamp.getInt("nanos"));
+  private Timestamp decodeTimestamp(JSONObject timestamp) {
+    return new Timestamp(timestamp.optLong("seconds"), timestamp.optInt("nanos"));
   }
 
   private Timestamp decodeTimestamp(String timestamp) {
