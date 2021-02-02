@@ -83,15 +83,23 @@ public class JobInfoScheduler implements WorkScheduler {
     return false;
   }
 
-  @Override
-  public void schedule(TransportContext transportContext, int attemptNumber) {
-    schedule(transportContext, attemptNumber, false);
-  }
   /**
    * Schedules the JobScheduler service.
    *
    * @param transportContext Contains information about the backend and the priority.
    * @param attemptNumber Number of times the JobScheduler has tried to log for this backend.
+   */
+  @Override
+  public void schedule(TransportContext transportContext, int attemptNumber) {
+    schedule(transportContext, attemptNumber, false);
+  }
+
+  /**
+   * Schedules the JobScheduler service.
+   *
+   * @param transportContext Contains information about the backend and the priority.
+   * @param attemptNumber Number of times the JobScheduler has tried to log for this backend.
+   * @param force When set to true the scheduler is forced to schedule the job.
    */
   @Override
   public void schedule(TransportContext transportContext, int attemptNumber, boolean force) {

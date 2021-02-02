@@ -77,15 +77,16 @@ public class AlarmManagerScheduler implements WorkScheduler {
     return (PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_NO_CREATE) != null);
   }
 
-   @Override
-   public void schedule(TransportContext transportContext, int attemptNumber) {
+  @Override
+  public void schedule(TransportContext transportContext, int attemptNumber) {
     schedule(transportContext, attemptNumber, false);
-   }
-   /**
+  }
+  /**
    * Schedules the AlarmManager service.
    *
    * @param transportContext Contains information about the backend and the priority.
    * @param attemptNumber Number of times the AlarmManager has tried to log for this backend.
+   * @param force When set to true the scheduler is forced to schedule the job.
    */
   @Override
   public void schedule(TransportContext transportContext, int attemptNumber, boolean force) {
