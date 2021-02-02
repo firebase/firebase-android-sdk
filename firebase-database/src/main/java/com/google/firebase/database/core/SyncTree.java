@@ -485,14 +485,13 @@ public class SyncTree {
   }
 
   @Nullable
-  public CacheNode getServerValue(QuerySpec query) {
+  public Node getServerValue(QuerySpec query) {
     return persistenceManager.runInTransaction(
         () -> {
           Path path = query.getPath();
 
           Node serverCacheNode = null;
-
-          // TODO: Factor this internal part out
+          boolean foundAncestorDefaultView = false;
           // Any covering writes will necessarily be at the root, so really all we need to find is
           // the server cache. Consider optimizing this once there's a better understanding of
           // what actual behavior will be.
@@ -507,6 +506,8 @@ public class SyncTree {
                     serverCacheNode != null
                         ? serverCacheNode
                         : currentSyncPoint.getCompleteServerCache(currentPath);
+                foundAncestorDefaultView =
+                    foundAncestorDefaultView || currentSyncPoint.hasCompleteView();
               }
               ChildKey front =
                   currentPath.isEmpty() ? ChildKey.fromString("") : currentPath.getFront();
@@ -517,19 +518,28 @@ public class SyncTree {
 
           SyncPoint syncPoint = syncPointTree.get(path);
           if (syncPoint == null) {
-            // TODO:  I think this is never hit. Confirm and remove?
             syncPoint = new SyncPoint(persistenceManager);
             syncPointTree = syncPointTree.set(path, syncPoint);
           } else {
+            foundAncestorDefaultView = foundAncestorDefaultView || syncPoint.hasCompleteView();
             serverCacheNode =
                 serverCacheNode != null
                     ? serverCacheNode
                     : syncPoint.getCompleteServerCache(Path.getEmptyPath());
           }
 
-          return serverCacheNode != null
-              ? new CacheNode(IndexedNode.from(serverCacheNode, query.getIndex()), true, false)
-              : null;
+          // persistenceManager.setQueryActive(query);
+
+          CacheNode serverCache;
+          if (serverCacheNode != null) {
+            serverCache =
+                new CacheNode(IndexedNode.from(serverCacheNode, query.getIndex()), true, false);
+
+            WriteTreeRef writesCache = pendingWriteTree.childWrites(path);
+            View view = syncPoint.getView(query, writesCache, serverCache);
+            return view.getCompleteNode();
+          }
+          return null;
         });
   }
 

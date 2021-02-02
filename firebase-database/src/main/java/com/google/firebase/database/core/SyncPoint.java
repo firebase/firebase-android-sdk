@@ -113,6 +113,31 @@ public class SyncPoint {
   }
 
   /** Add an event callback for the specified query. */
+  public View getView(QuerySpec query, WriteTreeRef writesCache, CacheNode serverCache) {
+    // TODO: Inline with addEventRegistration
+    View view = this.views.get(query.getParams());
+    if (view == null) {
+      // TODO: make writesCache take flag for complete server node
+      Node eventCache =
+          writesCache.calcCompleteEventCache(
+              serverCache.isFullyInitialized() ? serverCache.getNode() : null);
+      boolean eventCacheComplete;
+      if (eventCache != null) {
+        eventCacheComplete = true;
+      } else {
+        eventCache = writesCache.calcCompleteEventChildren(serverCache.getNode());
+        eventCacheComplete = false;
+      }
+      IndexedNode indexed = IndexedNode.from(eventCache, query.getIndex());
+      ViewCache viewCache =
+          new ViewCache(new CacheNode(indexed, eventCacheComplete, false), serverCache);
+      return new View(query, viewCache);
+    }
+
+    return null;
+  }
+
+  /** Add an event callback for the specified query. */
   public List<DataEvent> addEventRegistration(
       @NotNull EventRegistration eventRegistration,
       WriteTreeRef writesCache,

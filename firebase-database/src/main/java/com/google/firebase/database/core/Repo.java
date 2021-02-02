@@ -41,7 +41,6 @@ import com.google.firebase.database.core.utilities.DefaultClock;
 import com.google.firebase.database.core.utilities.DefaultRunLoop;
 import com.google.firebase.database.core.utilities.OffsetClock;
 import com.google.firebase.database.core.utilities.Tree;
-import com.google.firebase.database.core.view.CacheNode;
 import com.google.firebase.database.core.view.Event;
 import com.google.firebase.database.core.view.EventRaiser;
 import com.google.firebase.database.core.view.QuerySpec;
@@ -497,10 +496,10 @@ public class Repo implements PersistentConnection.Delegate {
           public void run() {
             // Always check active-listener in-memory caches first. These are always at least as
             // up to date as the persistence cache.
-            CacheNode cached = serverSyncTree.getServerValue(query.getSpec());
+            Node cached = serverSyncTree.getServerValue(query.getSpec());
             if (cached != null) {
               source.setResult(
-                  InternalHelpers.createDataSnapshot(query.getRef(), cached.getIndexedNode()));
+                  InternalHelpers.createDataSnapshot(query.getRef(), IndexedNode.from(cached)));
               return;
             }
             serverSyncTree.setQueryActive(query.getSpec());
