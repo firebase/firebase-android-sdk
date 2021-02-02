@@ -147,17 +147,18 @@ public class CustomModelDownloadService {
             if (!installationAuthTokenTask.isSuccessful()) {
               ErrorCode errorCode = ErrorCode.MODEL_INFO_DOWNLOAD_CONNECTION_FAILED;
               String errorMessage = "Failed to get model due to authentication error";
+              int exceptionCode = FirebaseMlException.UNAUTHENTICATED;
               if (installationAuthTokenTask.getException() != null
                   && (installationAuthTokenTask.getException() instanceof UnknownHostException
                       || installationAuthTokenTask.getException().getCause()
                           instanceof UnknownHostException)) {
                 errorCode = ErrorCode.NO_NETWORK_CONNECTION;
                 errorMessage = "Failed to retrieve model info due to no internet connection.";
+                exceptionCode = FirebaseMlException.INTERNAL;
               }
               eventLogger.logDownloadFailureWithReason(
                   new CustomModel(modelName, modelHash, 0, 0L), false, errorCode.getValue());
-              return Tasks.forException(
-                  new FirebaseMlException(errorMessage, FirebaseMlException.INTERNAL));
+              return Tasks.forException(new FirebaseMlException(errorMessage, exceptionCode));
             }
 
             connection.setRequestProperty(
