@@ -591,6 +591,18 @@ public class QueryTest {
     Tasks.await(childOne.setValue(1L));
     Tasks.await(childTwo.setValue(2L));
 
+    Semaphore s = new Semaphore(0);
+    ref.addValueEventListener(
+        new ValueEventListener() {
+          @Override
+          public void onDataChange(@NonNull DataSnapshot snapshot) {
+            s.release();
+          }
+
+          @Override
+          public void onCancelled(@NonNull DatabaseError error) {}
+        });
+
     DataSnapshot snapshot = Tasks.await(ref.orderByKey().startAfter(childOne.getKey()).get());
     Map<String, Long> values = (Map<String, Long>) snapshot.getValue();
 

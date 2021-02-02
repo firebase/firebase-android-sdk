@@ -484,6 +484,55 @@ public class SyncTree {
         query.getRef(), persistenceManager.serverCache(query.getSpec()).getIndexedNode());
   }
 
+  @Nullable
+  public CacheNode getServerValue(QuerySpec query) {
+    return persistenceManager.runInTransaction(
+        () -> {
+          Path path = query.getPath();
+
+          Node serverCacheNode = null;
+
+          // TODO: Factor this internal part out
+          // Any covering writes will necessarily be at the root, so really all we need to find is
+          // the server cache. Consider optimizing this once there's a better understanding of
+          // what actual behavior will be.
+          // for (Map.Entry<QuerySpec, View> entry: views.entrySet()) {
+          {
+            ImmutableTree<SyncPoint> tree = syncPointTree;
+            Path currentPath = path;
+            while (!tree.isEmpty()) {
+              SyncPoint currentSyncPoint = tree.getValue();
+              if (currentSyncPoint != null) {
+                serverCacheNode =
+                    serverCacheNode != null
+                        ? serverCacheNode
+                        : currentSyncPoint.getCompleteServerCache(currentPath);
+              }
+              ChildKey front =
+                  currentPath.isEmpty() ? ChildKey.fromString("") : currentPath.getFront();
+              tree = tree.getChild(front);
+              currentPath = currentPath.popFront();
+            }
+          }
+
+          SyncPoint syncPoint = syncPointTree.get(path);
+          if (syncPoint == null) {
+            // TODO:  I think this is never hit. Confirm and remove?
+            syncPoint = new SyncPoint(persistenceManager);
+            syncPointTree = syncPointTree.set(path, syncPoint);
+          } else {
+            serverCacheNode =
+                serverCacheNode != null
+                    ? serverCacheNode
+                    : syncPoint.getCompleteServerCache(Path.getEmptyPath());
+          }
+
+          return serverCacheNode != null
+              ? new CacheNode(IndexedNode.from(serverCacheNode, query.getIndex()), true, false)
+              : null;
+        });
+  }
+
   /** Add an event callback for the specified query. */
   public List<? extends Event> addEventRegistration(
       @NotNull final EventRegistration eventRegistration) {
