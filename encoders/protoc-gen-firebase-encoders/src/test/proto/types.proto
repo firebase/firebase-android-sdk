@@ -17,6 +17,34 @@ syntax = "proto3";
 
 package com.google.firebase.testing;
 
-message TestMessage {
-  int32 foo = 1;
+option java_multiple_files = true;
+
+message Types32 {
+  int32 i = 1;
+  sint32 si = 2;
+  fixed32 f = 3;
+  sfixed32 sf = 4;
+  float fl = 5;
+  uint32 ui = 6;
+}
+
+message Types64 {
+  int64 i = 1;
+  sint64 si = 2;
+  fixed64 f = 3;
+  sfixed64 sf = 4;
+  double db = 5;
+  uint64 ui = 6;
+}
+
+message Other {
+  bool boolean = 1;
+  string str = 2;
+  bytes bts = 3;
+}
+
+message Types {
+  Types32 types32 = 1;
+  Types64 types64 = 2;
+  Other other = 3;
 }
