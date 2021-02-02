@@ -468,7 +468,7 @@ public class FirebaseModelDownloader {
    *
    * @param enabled - is statistics logging enabled
    */
-  public void setDataCollectionMlDownloaderState(boolean enabled) {
+  public void setMlDownloaderCollectionEnabled(boolean enabled) {
     sharedPreferencesUtil.setCustomModelStatsCollectionEnabled(enabled);
   }
 
