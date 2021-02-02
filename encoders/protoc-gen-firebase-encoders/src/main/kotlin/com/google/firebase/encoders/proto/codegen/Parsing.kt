@@ -44,24 +44,24 @@ interface DescriptorParser {
  */
 class DefaultParser @Inject constructor(private val config: CodeGenConfig) : DescriptorParser {
     override fun parse(files: List<FileDescriptorProto>): List<UserDefined> {
-        val parsedMessages = files.asSequence().flatMap { file ->
+        val parsedTypes = files.asSequence().flatMap { file ->
             val javaPackage = "${config.vendorPackage}.${file.`package`}"
 
             val parent = Owner.Package(file.`package`, javaPackage, file.name)
             parseEnums(parent, file.enumTypeList).plus(parseMessages(parent, file.messageTypeList))
-        }.toList()
+        }
 
         val extensions = discoverExtensions(files)
 
-        val messagesWithExtensions = parsedMessages.map { msg ->
-            val msgExtensions = extensions[msg.protobufFullName]
-            if (msg !is Message || msgExtensions == null) {
-                return@map msg
+        val typesWithExtensions = parsedTypes.map { type ->
+            val msgExtensions = extensions[type.protobufFullName]
+            if (type !is Message || msgExtensions == null) {
+                return@map type
             }
-            msg.withMoreFields(msgExtensions)
-        }
-        resolveReferences(messagesWithExtensions)
-        return messagesWithExtensions.filter {
+            type.withMoreFields(msgExtensions)
+        }.toList()
+        resolveReferences(typesWithExtensions)
+        return typesWithExtensions.filter {
             config.includeList.contains(it.protobufFullName)
         }
     }
