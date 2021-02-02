@@ -120,6 +120,16 @@ public class FirebaseModelDownloader {
    *       trigger new download, task only completes when download finishes
    * </ul>
    *
+   * Most common exceptions include:
+   *
+   * <ul>
+   *   <li>{@link FirebaseMlException#NOT_FOUND}: No model found with the given name.
+   *   <li>{@link FirebaseMlException#NOT_ENOUGH_SPACE}: Not enough space on device to download
+   *       model.
+   *   <li>{@link FirebaseMlException#DOWNLOAD_URL_EXPIRED}: Url used to fetch model expired before
+   *       model download completed. (Retry suggested)
+   * </ul>
+   *
    * @param modelName - model name
    * @param downloadType - download type
    * @param conditions - download conditions
@@ -422,11 +432,10 @@ public class FirebaseModelDownloader {
   }
 
   /**
-   * Triggers the move to permanent storage of successful model downloads and lists all models
-   * downloaded to device.
+   * Lists all models downloaded to device. Triggers the move to permanent storage of successful
+   * model downloads.
    *
-   * @return The set of all models that are downloaded to this device, triggers completion of file
-   *     moves for completed model downloads.
+   * @return The set of all models that are downloaded to this device.
    */
   @NonNull
   public Task<Set<CustomModel>> listDownloadedModels() {
@@ -440,7 +449,7 @@ public class FirebaseModelDownloader {
   }
 
   /**
-   * Delete old local models, when no longer in use.
+   * Delete local models. Removes any information and files associated with the model name.
    *
    * @param modelName - name of the model
    */
@@ -463,7 +472,15 @@ public class FirebaseModelDownloader {
   }
 
   /**
-   * Update the settings which allow logging to firelog.
+   * Enables stats collection in Firebase Ml ModelDownloader via Firelog. The stats include API
+   * calls counts, errors, API call durations, options, etc. No personally identifiable information
+   * is logged.
+   *
+   * <p>The setting is per FirebaseApp, and it is persistent together with app's private data. It
+   * means if the user uninstalls the app or clears all app data, the setting will be erased. The
+   * best practice is to set the flag in each initialization.
+   *
+   * <p>By default the logging matches the Firebase wide data collection switch.
    *
    * @param enabled - is statistics logging enabled
    */

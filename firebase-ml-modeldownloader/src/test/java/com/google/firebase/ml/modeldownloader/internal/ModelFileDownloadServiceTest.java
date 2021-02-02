@@ -339,7 +339,7 @@ public class ModelFileDownloadServiceTest {
       task.addOnCompleteListener(executor, onCompleteListener);
       onCompleteListener.await();
     } catch (FirebaseMlException ex) {
-      assertEquals(ex.getCode(), FirebaseMlException.INVALID_ARGUMENT);
+      assertEquals(ex.getCode(), FirebaseMlException.INTERNAL);
     }
     assertTrue(task.isComplete());
     assertFalse(task.isSuccessful());
