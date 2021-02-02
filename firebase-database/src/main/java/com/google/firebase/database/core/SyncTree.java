@@ -484,62 +484,102 @@ public class SyncTree {
         query.getRef(), persistenceManager.serverCache(query.getSpec()).getIndexedNode());
   }
 
+  private static class GetServerCacheNodeResult {
+    private CacheNode node;
+    private SyncPoint syncPoint;
+    private boolean transientSyncPoint = false;
+    private boolean foundAncestorDefaultView = false;
+
+    GetServerCacheNodeResult(
+        CacheNode node,
+        SyncPoint syncPoint,
+        boolean transientSyncPoint,
+        boolean foundAncestoreDefaultView) {
+      this.node = node;
+      this.syncPoint = syncPoint;
+      this.transientSyncPoint = transientSyncPoint;
+      this.foundAncestorDefaultView = foundAncestoreDefaultView;
+    }
+
+    public CacheNode node() {
+      return node;
+    }
+
+    public SyncPoint syncPoint() {
+      return syncPoint;
+    }
+
+    public boolean transientSyncPoint() {
+      return transientSyncPoint;
+    }
+
+    public boolean foundAncestorDefaultView() {
+      return foundAncestorDefaultView;
+    }
+  }
+
+  public GetServerCacheNodeResult getServerCacheNodeForQuery(QuerySpec query) {
+    Path path = query.getPath();
+    Node serverCacheNode = null;
+    boolean foundAncestorDefaultView = false;
+    // Any covering writes will necessarily be at the root, so really all we need to find is
+    // the server cache. Consider optimizing this once there's a better understanding of
+    // what actual behavior will be.
+    // for (Map.Entry<QuerySpec, View> entry: views.entrySet()) {
+    {
+      ImmutableTree<SyncPoint> tree = syncPointTree;
+      Path currentPath = path;
+      while (!tree.isEmpty()) {
+        SyncPoint currentSyncPoint = tree.getValue();
+        if (currentSyncPoint != null) {
+          serverCacheNode =
+              serverCacheNode != null
+                  ? serverCacheNode
+                  : currentSyncPoint.getCompleteServerCache(currentPath);
+          foundAncestorDefaultView = foundAncestorDefaultView || currentSyncPoint.hasCompleteView();
+        }
+        ChildKey front = currentPath.isEmpty() ? ChildKey.fromString("") : currentPath.getFront();
+        tree = tree.getChild(front);
+        currentPath = currentPath.popFront();
+      }
+    }
+    SyncPoint syncPoint = syncPointTree.get(path);
+    boolean createdSyncPoint = false;
+    if (syncPoint == null) {
+      syncPoint = new SyncPoint(persistenceManager);
+      syncPointTree = syncPointTree.set(path, syncPoint);
+      createdSyncPoint = true;
+    } else {
+      foundAncestorDefaultView = foundAncestorDefaultView || syncPoint.hasCompleteView();
+      serverCacheNode =
+          serverCacheNode != null
+              ? serverCacheNode
+              : syncPoint.getCompleteServerCache(Path.getEmptyPath());
+    }
+    CacheNode node = null;
+    if (serverCacheNode != null) {
+      node = new CacheNode(IndexedNode.from(serverCacheNode, query.getIndex()), true, false);
+    }
+    return new GetServerCacheNodeResult(
+        node, syncPoint, createdSyncPoint, foundAncestorDefaultView);
+  }
+
   @Nullable
   public Node getServerValue(QuerySpec query) {
     return persistenceManager.runInTransaction(
         () -> {
           Path path = query.getPath();
-
-          Node serverCacheNode = null;
-          boolean foundAncestorDefaultView = false;
-          // Any covering writes will necessarily be at the root, so really all we need to find is
-          // the server cache. Consider optimizing this once there's a better understanding of
-          // what actual behavior will be.
-          // for (Map.Entry<QuerySpec, View> entry: views.entrySet()) {
-          {
-            ImmutableTree<SyncPoint> tree = syncPointTree;
-            Path currentPath = path;
-            while (!tree.isEmpty()) {
-              SyncPoint currentSyncPoint = tree.getValue();
-              if (currentSyncPoint != null) {
-                serverCacheNode =
-                    serverCacheNode != null
-                        ? serverCacheNode
-                        : currentSyncPoint.getCompleteServerCache(currentPath);
-                foundAncestorDefaultView =
-                    foundAncestorDefaultView || currentSyncPoint.hasCompleteView();
-              }
-              ChildKey front =
-                  currentPath.isEmpty() ? ChildKey.fromString("") : currentPath.getFront();
-              tree = tree.getChild(front);
-              currentPath = currentPath.popFront();
-            }
-          }
-
-          SyncPoint syncPoint = syncPointTree.get(path);
-          if (syncPoint == null) {
-            syncPoint = new SyncPoint(persistenceManager);
-            syncPointTree = syncPointTree.set(path, syncPoint);
-          } else {
-            foundAncestorDefaultView = foundAncestorDefaultView || syncPoint.hasCompleteView();
-            serverCacheNode =
-                serverCacheNode != null
-                    ? serverCacheNode
-                    : syncPoint.getCompleteServerCache(Path.getEmptyPath());
-          }
-
-          // persistenceManager.setQueryActive(query);
-
-          CacheNode serverCache;
-          if (serverCacheNode != null) {
-            serverCache =
-                new CacheNode(IndexedNode.from(serverCacheNode, query.getIndex()), true, false);
-
+          GetServerCacheNodeResult result = getServerCacheNodeForQuery(query);
+          Node node = null;
+          if (result.node() != null) {
             WriteTreeRef writesCache = pendingWriteTree.childWrites(path);
-            View view = syncPoint.getView(query, writesCache, serverCache);
-            return view.getCompleteNode();
+            View view = result.syncPoint().getView(query, writesCache, result.node());
+            node = view.getCompleteNode();
           }
-          return null;
+          if (result.transientSyncPoint()) {
+            syncPointTree.remove(path);
+          }
+          return node;
         });
   }
 
@@ -551,60 +591,16 @@ public class SyncTree {
           @Override
           public List<? extends Event> call() {
             final QuerySpec query = eventRegistration.getQuerySpec();
-            Path path = query.getPath();
-
-            Node serverCacheNode = null;
-            boolean foundAncestorDefaultView = false;
-            // Any covering writes will necessarily be at the root, so really all we need to find is
-            // the server cache. Consider optimizing this once there's a better understanding of
-            // what actual behavior will be.
-            // for (Map.Entry<QuerySpec, View> entry: views.entrySet()) {
-            {
-              ImmutableTree<SyncPoint> tree = syncPointTree;
-              Path currentPath = path;
-              while (!tree.isEmpty()) {
-                SyncPoint currentSyncPoint = tree.getValue();
-                if (currentSyncPoint != null) {
-                  serverCacheNode =
-                      serverCacheNode != null
-                          ? serverCacheNode
-                          : currentSyncPoint.getCompleteServerCache(currentPath);
-                  foundAncestorDefaultView =
-                      foundAncestorDefaultView || currentSyncPoint.hasCompleteView();
-                }
-                ChildKey front =
-                    currentPath.isEmpty() ? ChildKey.fromString("") : currentPath.getFront();
-                tree = tree.getChild(front);
-                currentPath = currentPath.popFront();
-              }
-            }
-
-            SyncPoint syncPoint = syncPointTree.get(path);
-            if (syncPoint == null) {
-              syncPoint = new SyncPoint(persistenceManager);
-              syncPointTree = syncPointTree.set(path, syncPoint);
-            } else {
-              foundAncestorDefaultView = foundAncestorDefaultView || syncPoint.hasCompleteView();
-              serverCacheNode =
-                  serverCacheNode != null
-                      ? serverCacheNode
-                      : syncPoint.getCompleteServerCache(Path.getEmptyPath());
-            }
-
-            persistenceManager.setQueryActive(query);
-
-            CacheNode serverCache;
-            if (serverCacheNode != null) {
-              serverCache =
-                  new CacheNode(IndexedNode.from(serverCacheNode, query.getIndex()), true, false);
-            } else {
+            GetServerCacheNodeResult result = getServerCacheNodeForQuery(query);
+            CacheNode serverCache = result.node();
+            if (serverCache == null) {
               // Hit persistence
               CacheNode persistentServerCache = persistenceManager.serverCache(query);
               if (persistentServerCache.isFullyInitialized()) {
                 serverCache = persistentServerCache;
               } else {
-                serverCacheNode = EmptyNode.Empty();
-                ImmutableTree<SyncPoint> subtree = syncPointTree.subtree(path);
+                Node serverCacheNode = EmptyNode.Empty();
+                ImmutableTree<SyncPoint> subtree = syncPointTree.subtree(query.getPath());
                 for (Map.Entry<ChildKey, ImmutableTree<SyncPoint>> child : subtree.getChildren()) {
                   SyncPoint childSyncPoint = child.getValue().getValue();
                   if (childSyncPoint != null) {
@@ -628,6 +624,9 @@ public class SyncTree {
               }
             }
 
+            persistenceManager.setQueryActive(query);
+
+            SyncPoint syncPoint = syncPointTree.get(query.getPath());
             boolean viewAlreadyExists = syncPoint.viewExistsForQuery(query);
             if (!viewAlreadyExists && !query.loadsAllData()) {
               // We need to track a tag for this query
@@ -637,10 +636,10 @@ public class SyncTree {
               queryToTagMap.put(query, tag);
               tagToQueryMap.put(tag, query);
             }
-            WriteTreeRef writesCache = pendingWriteTree.childWrites(path);
+            WriteTreeRef writesCache = pendingWriteTree.childWrites(query.getPath());
             List<? extends Event> events =
                 syncPoint.addEventRegistration(eventRegistration, writesCache, serverCache);
-            if (!viewAlreadyExists && !foundAncestorDefaultView) {
+            if (!viewAlreadyExists && !result.foundAncestorDefaultView()) {
               View view = syncPoint.viewForQuery(query);
               setupListener(query, view);
             }
