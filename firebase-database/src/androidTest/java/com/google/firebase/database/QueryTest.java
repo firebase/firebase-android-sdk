@@ -591,18 +591,6 @@ public class QueryTest {
     Tasks.await(childOne.setValue(1L));
     Tasks.await(childTwo.setValue(2L));
 
-    Semaphore s = new Semaphore(0);
-    ref.addValueEventListener(
-        new ValueEventListener() {
-          @Override
-          public void onDataChange(@NonNull DataSnapshot snapshot) {
-            s.release();
-          }
-
-          @Override
-          public void onCancelled(@NonNull DatabaseError error) {}
-        });
-
     DataSnapshot snapshot = Tasks.await(ref.orderByKey().startAfter(childOne.getKey()).get());
     Map<String, Long> values = (Map<String, Long>) snapshot.getValue();
 
@@ -626,6 +614,68 @@ public class QueryTest {
     assertNotNull(values);
     assertArrayEquals(values.keySet().toArray(), new String[] {childOne.getKey()});
     assertArrayEquals(values.values().toArray(), new Long[] {values.get(childOne.getKey())});
+  }
+
+  @Test
+  public void testEndBeforeWithOrderByKeyOverlappingListener()
+      throws DatabaseException, InterruptedException, ExecutionException {
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
+    DatabaseReference childOne = ref.push();
+    DatabaseReference childTwo = ref.push();
+    Tasks.await(childOne.setValue(1L));
+    Tasks.await(childTwo.setValue(2L));
+
+    Semaphore semaphore = new Semaphore(0);
+    ref.addValueEventListener(
+        new ValueEventListener() {
+          @Override
+          public void onDataChange(@NonNull DataSnapshot snapshot) {
+            semaphore.release();
+          }
+
+          @Override
+          public void onCancelled(@NonNull DatabaseError error) {}
+        });
+
+    IntegrationTestHelpers.waitFor(semaphore);
+
+    DataSnapshot snapshot = Tasks.await(ref.orderByKey().endBefore(childTwo.getKey()).get());
+    Map<String, Long> values = (Map<String, Long>) snapshot.getValue();
+
+    assertNotNull(values);
+    assertArrayEquals(values.keySet().toArray(), new String[] {childOne.getKey()});
+    assertArrayEquals(values.values().toArray(), new Long[] {values.get(childOne.getKey())});
+  }
+
+  @Test
+  public void testStartAfterWithOrderByKeyOverlappingListener()
+      throws DatabaseException, InterruptedException, ExecutionException {
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
+    DatabaseReference childOne = ref.push();
+    DatabaseReference childTwo = ref.push();
+    Tasks.await(childOne.setValue(1L));
+    Tasks.await(childTwo.setValue(2L));
+
+    Semaphore semaphore = new Semaphore(0);
+    ref.addValueEventListener(
+        new ValueEventListener() {
+          @Override
+          public void onDataChange(@NonNull DataSnapshot snapshot) {
+            semaphore.release();
+          }
+
+          @Override
+          public void onCancelled(@NonNull DatabaseError error) {}
+        });
+
+    IntegrationTestHelpers.waitFor(semaphore);
+
+    DataSnapshot snapshot = Tasks.await(ref.orderByKey().startAfter(childOne.getKey()).get());
+    Map<String, Long> values = (Map<String, Long>) snapshot.getValue();
+
+    assertNotNull(values);
+    assertArrayEquals(values.keySet().toArray(), new String[] {childTwo.getKey()});
+    assertArrayEquals(values.values().toArray(), new Long[] {values.get(childTwo.getKey())});
   }
 
   @Test
@@ -4821,37 +4871,5 @@ public class QueryTest {
 
     ref.removeEventListener(dummyListen);
     ref.child("child").removeEventListener(dummyListen);
-  }
-
-  @Test
-  public void testEndBeforeWithOrderByKey1()
-      throws DatabaseException, InterruptedException, ExecutionException {
-    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
-    DatabaseReference childOne = ref.push();
-    DatabaseReference childTwo = ref.push();
-    Tasks.await(childOne.setValue(1L));
-    Tasks.await(childTwo.setValue(2L));
-
-    Semaphore semaphore = new Semaphore(0);
-
-    ref.addValueEventListener(
-        new ValueEventListener() {
-          @Override
-          public void onDataChange(@NonNull DataSnapshot snapshot) {
-            semaphore.release();
-          }
-
-          @Override
-          public void onCancelled(@NonNull DatabaseError error) {}
-        });
-
-    IntegrationTestHelpers.waitFor(semaphore);
-
-    DataSnapshot snapshot = Tasks.await(ref.orderByKey().endBefore(childTwo.getKey()).get());
-    Map<String, Long> values = (Map<String, Long>) snapshot.getValue();
-
-    assertNotNull(values);
-    assertArrayEquals(values.keySet().toArray(), new String[] {childOne.getKey()});
-    assertArrayEquals(values.values().toArray(), new Long[] {values.get(childOne.getKey())});
   }
 }

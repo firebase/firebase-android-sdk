@@ -134,7 +134,7 @@ public class SyncPoint {
       return new View(query, viewCache);
     }
 
-    return null;
+    return view;
   }
 
   /** Add an event callback for the specified query. */
