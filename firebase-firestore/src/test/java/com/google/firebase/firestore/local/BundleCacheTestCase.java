@@ -70,7 +70,12 @@ public abstract class BundleCacheTestCase {
   @Test
   public void testReturnsSavedBundle() {
     BundleMetadata expectedBundleMetadata =
-        new BundleMetadata("bundle-1", 1, new SnapshotVersion(Timestamp.now()));
+        new BundleMetadata(
+            "bundle-1",
+            1,
+            new SnapshotVersion(Timestamp.now()),
+            /* totalDocuments= */ 1,
+            /* totalBytes= */ 10);
     bundleCache.saveBundleMetadata(expectedBundleMetadata);
     BundleMetadata actualBundleMetadata = bundleCache.getBundleMetadata("bundle-1");
 
@@ -78,7 +83,12 @@ public abstract class BundleCacheTestCase {
 
     // Overwrite
     expectedBundleMetadata =
-        new BundleMetadata("bundle-1", 2, new SnapshotVersion(Timestamp.now()));
+        new BundleMetadata(
+            "bundle-1",
+            2,
+            new SnapshotVersion(Timestamp.now()),
+            /* totalDocuments= */ 1,
+            /* totalBytes= */ 10);
     bundleCache.saveBundleMetadata(expectedBundleMetadata);
     actualBundleMetadata = bundleCache.getBundleMetadata("bundle-1");
 

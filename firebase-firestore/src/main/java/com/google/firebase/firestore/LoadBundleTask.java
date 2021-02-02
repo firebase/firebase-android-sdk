@@ -14,10 +14,13 @@
 
 package com.google.firebase.firestore;
 
+import static com.google.firebase.firestore.util.Assert.hardAssert;
+
 import android.app.Activity;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RestrictTo;
 import com.google.android.gms.common.api.internal.ActivityLifecycleObserver;
 import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.OnCanceledListener;
@@ -37,7 +40,7 @@ import java.util.concurrent.Executor;
  * Represents the task of loading a Firestore bundle. It provides progress of bundle loading, as
  * well as task completion and error events.
  */
-/* package */ class LoadBundleTask extends Task<LoadBundleTaskProgress> {
+public class LoadBundleTask extends Task<LoadBundleTaskProgress> {
   private final Object lock = new Object();
 
   /** The last progress update, or {@code null} if not yet available. */
@@ -60,6 +63,8 @@ import java.util.concurrent.Executor;
   @GuardedBy("lock")
   private final Queue<ManagedListener> progressListeners;
 
+  /** @hide */
+  @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
   public LoadBundleTask() {
     snapshot = LoadBundleTaskProgress.INITIAL;
     completionSource = new TaskCompletionSource<>();
@@ -496,7 +501,12 @@ import java.util.concurrent.Executor;
     }
   }
 
-  void setResult(@Nullable LoadBundleTaskProgress result) {
+  /** @hide */
+  @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+  public void setResult(@NonNull LoadBundleTaskProgress result) {
+    hardAssert(
+        result.getTaskState().equals(LoadBundleTaskProgress.TaskState.SUCCESS),
+        "Expected success, but was " + result.getTaskState());
     synchronized (lock) {
       snapshot = result;
       for (ManagedListener listener : progressListeners) {
@@ -504,10 +514,13 @@ import java.util.concurrent.Executor;
       }
       progressListeners.clear();
     }
+
     completionSource.setResult(result);
   }
 
-  void setException(@NonNull Exception exception) {
+  /** @hide */
+  @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+  public void setException(@NonNull Exception exception) {
     LoadBundleTaskProgress snapshot;
     synchronized (lock) {
       snapshot =
@@ -528,7 +541,9 @@ import java.util.concurrent.Executor;
     completionSource.setException(exception);
   }
 
-  void updateProgress(LoadBundleTaskProgress progressUpdate) {
+  /** @hide */
+  @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+  public void updateProgress(@NonNull LoadBundleTaskProgress progressUpdate) {
     synchronized (lock) {
       snapshot = progressUpdate;
       for (ManagedListener listener : progressListeners) {

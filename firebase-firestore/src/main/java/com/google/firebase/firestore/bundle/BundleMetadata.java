@@ -21,11 +21,20 @@ public class BundleMetadata implements BundleElement {
   private final String bundleId;
   private final int schemaVersion;
   private final SnapshotVersion createTime;
+  private final int totalDocuments;
+  private final long totalBytes;
 
-  public BundleMetadata(String bundleId, int schemaVersion, SnapshotVersion createTime) {
+  public BundleMetadata(
+      String bundleId,
+      int schemaVersion,
+      SnapshotVersion createTime,
+      int totalDocuments,
+      long totalBytes) {
     this.bundleId = bundleId;
     this.schemaVersion = schemaVersion;
     this.createTime = createTime;
+    this.totalDocuments = totalDocuments;
+    this.totalBytes = totalBytes;
   }
 
   /**
@@ -49,6 +58,16 @@ public class BundleMetadata implements BundleElement {
     return createTime;
   }
 
+  /** Returns the number of documents in the bundle. */
+  public int getTotalDocuments() {
+    return totalDocuments;
+  }
+
+  /** Returns the size of the bundle in bytes, excluding this BundleMetadata. */
+  public long getTotalBytes() {
+    return totalBytes;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -57,6 +76,8 @@ public class BundleMetadata implements BundleElement {
     BundleMetadata that = (BundleMetadata) o;
 
     if (schemaVersion != that.schemaVersion) return false;
+    if (totalDocuments != that.totalDocuments) return false;
+    if (totalBytes != that.totalBytes) return false;
     if (!bundleId.equals(that.bundleId)) return false;
     return createTime.equals(that.createTime);
   }
@@ -65,6 +86,8 @@ public class BundleMetadata implements BundleElement {
   public int hashCode() {
     int result = bundleId.hashCode();
     result = 31 * result + schemaVersion;
+    result = 31 * result + totalDocuments;
+    result = 31 * result + (int) (totalBytes ^ (totalBytes >>> 32));
     result = 31 * result + createTime.hashCode();
     return result;
   }

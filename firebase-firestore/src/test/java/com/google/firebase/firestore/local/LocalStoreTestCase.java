@@ -192,7 +192,13 @@ public abstract class LocalStoreTestCase {
   }
 
   private void saveBundle(String bundleId, int createTime) {
-    localStore.saveBundle(new BundleMetadata(bundleId, /* version= */ 1, version(createTime)));
+    localStore.saveBundle(
+        new BundleMetadata(
+            bundleId,
+            /* version= */ 1,
+            version(createTime),
+            /* totalDocuments= */ 1,
+            /* totalBytes= */ 10));
   }
 
   private void bundleDocuments(MaybeDocument... expected) {
@@ -269,14 +275,24 @@ public abstract class LocalStoreTestCase {
   private void assertHasNewerBundle(String bundleId, int createTime) {
     boolean hasNewerBundle =
         localStore.hasNewerBundle(
-            new BundleMetadata(bundleId, /* version= */ 1, version(createTime)));
+            new BundleMetadata(
+                bundleId,
+                /* version= */ 1,
+                version(createTime),
+                /* totalDocuments= */ 1,
+                /* totalBytes= */ 10));
     assertTrue(hasNewerBundle);
   }
 
   private void assertNoNewerBundle(String bundleId, int createTime) {
     boolean hasNewerBundle =
         localStore.hasNewerBundle(
-            new BundleMetadata(bundleId, /* version= */ 1, version(createTime)));
+            new BundleMetadata(
+                bundleId,
+                /* version= */ 1,
+                version(createTime),
+                /* totalDocuments= */ 1,
+                /* totalBytes= */ 10));
     assertFalse(hasNewerBundle);
   }
 

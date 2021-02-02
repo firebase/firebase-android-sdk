@@ -495,7 +495,15 @@ public final class RemoteSerializer {
     }
 
     builder.setTargetId(targetData.getTargetId());
-    builder.setResumeToken(targetData.getResumeToken());
+
+    if (targetData.getResumeToken().isEmpty()
+        && targetData.getSnapshotVersion().compareTo(SnapshotVersion.NONE) > 0) {
+      // TODO(wuandy): Consider removing above check because it is most likely true. Right now, many
+      // tests depend on this behaviour though (leaving min() out of serialization).
+      builder.setReadTime(encodeTimestamp(targetData.getSnapshotVersion().getTimestamp()));
+    } else {
+      builder.setResumeToken(targetData.getResumeToken());
+    }
 
     return builder.build();
   }

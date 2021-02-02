@@ -611,16 +611,16 @@ public final class LocalStore implements BundleCallback {
 
   /**
    * Returns a boolean indicating if the given bundle has already been loaded and its create time is
-   * newer than the currently loading bundle.
+   * newer or equal to the currently loading bundle.
    */
   public boolean hasNewerBundle(BundleMetadata bundleMetadata) {
     return persistence.runTransaction(
         "Has newer bundle",
         () -> {
-          BundleMetadata existingMetadata =
+          BundleMetadata cachedMetadata =
               bundleCache.getBundleMetadata(bundleMetadata.getBundleId());
-          return existingMetadata != null
-              && existingMetadata.getCreateTime().compareTo(bundleMetadata.getCreateTime()) > 0;
+          return cachedMetadata != null
+              && cachedMetadata.getCreateTime().compareTo(bundleMetadata.getCreateTime()) >= 0;
         });
   }
 
