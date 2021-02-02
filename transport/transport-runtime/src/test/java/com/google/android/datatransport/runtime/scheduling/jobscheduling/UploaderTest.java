@@ -141,6 +141,6 @@ public class UploaderTest {
                 });
     Iterable<PersistedEvent> persistedEvents = store.loadBatch(TRANSPORT_CONTEXT);
     uploader.logAndUpdateState(TRANSPORT_CONTEXT, 1);
-    verify(mockScheduler, times(1)).schedule(TRANSPORT_CONTEXT, 1);
+    verify(mockScheduler, times(1)).schedule(TRANSPORT_CONTEXT, 1, true);
   }
 }
