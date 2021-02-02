@@ -55,7 +55,7 @@ public class JobInfoSchedulerTest {
   private final JobInfoScheduler scheduler = new JobInfoScheduler(context, store, config);
 
   @Test
-  public void schedule_firstAttemptThenForce() {
+  public void schedule_secondAttemptThenForce() {
     store.recordNextCallTime(TRANSPORT_CONTEXT, 5);
     scheduler.schedule(TRANSPORT_CONTEXT, 2);
     int jobId = scheduler.getJobId(TRANSPORT_CONTEXT);
