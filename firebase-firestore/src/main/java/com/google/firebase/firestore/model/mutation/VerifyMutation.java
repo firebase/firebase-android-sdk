@@ -18,7 +18,6 @@ import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
-import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.util.Assert;
 
 /**
@@ -66,13 +65,7 @@ public final class VerifyMutation extends Mutation {
   @Nullable
   @Override
   public MaybeDocument applyToLocalView(
-      @Nullable MaybeDocument maybeDoc, @Nullable MaybeDocument baseDoc, Timestamp localWriteTime) {
-    throw Assert.fail("VerifyMutation should only be used in Transactions.");
-  }
-
-  @Nullable
-  @Override
-  public ObjectValue extractBaseValue(@Nullable MaybeDocument maybeDoc) {
+      @Nullable MaybeDocument maybeDoc, Timestamp localWriteTime) {
     throw Assert.fail("VerifyMutation should only be used in Transactions.");
   }
 }

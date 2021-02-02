@@ -49,7 +49,6 @@ android {
 }
 
 thirdPartyLicenses {
-    add 'Protocol Buffers', "file://${projectDir}/third_party_licenses/protocol_buffers/LICENSE"
     add 'Tape', "file://${projectDir}/third_party_licenses/tape/LICENSE"
 }
 
@@ -67,8 +66,6 @@ dependencies {
     runtimeOnly project(':firebase-installations')
     implementation 'com.google.firebase:firebase-measurement-connector:18.0.0'
     implementation "com.google.android.gms:play-services-tasks:17.0.0"
-
-    implementation 'com.squareup.okhttp3:okhttp:3.12.1'
 
     annotationProcessor project(":encoders:firebase-encoders-processor")
     annotationProcessor 'com.google.auto.value:auto-value:1.6.5'

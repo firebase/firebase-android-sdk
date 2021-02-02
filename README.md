@@ -22,6 +22,8 @@ dependencies:
   * `firebase-inappmessaging-ktx`
   * `firebase-inappmessaging-display`
   * `firebase-inappmessaging-display-ktx`
+  * `firebase-perf`
+  * `firebase-perf-ktx`
   * `firebase-remote-config`
   * `firebase-remote-config-ktx`
   * `firebase-storage`
@@ -240,11 +242,6 @@ projects may be published as follows.
 ./gradlew -PprojectsToPublish=":firebase-firestore,:firebase-functions" \
     publishProjectsToMavenLocal
 ```
-
-**Note:** Firebase Crashlytics NDK requires NDK version r17c to build. Please
-see the [README](firebase-crashlytics-ndk/README.md) for setup instructions.
-Alternatively, if you do not need to build this project, you can safely disable
-it by commenting out its reference in [subprojects.cfg](subprojects.cfg).
 
 ### Code Formatting
 

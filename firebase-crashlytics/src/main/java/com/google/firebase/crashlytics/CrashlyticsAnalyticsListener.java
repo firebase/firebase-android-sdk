@@ -20,6 +20,7 @@ import androidx.annotation.Nullable;
 import com.google.firebase.analytics.connector.AnalyticsConnector.AnalyticsConnectorListener;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsEventReceiver;
+import java.util.Locale;
 
 /**
  * Crashlytics listener for Firebase Analytics events. Processes incoming events and passes those
@@ -46,7 +47,10 @@ class CrashlyticsAnalyticsListener implements AnalyticsConnectorListener {
 
   @Override
   public void onMessageTriggered(int id, @Nullable Bundle extras) {
-    Logger.getLogger().d("Received Analytics message: " + id + " " + extras);
+    Logger.getLogger()
+        .v(
+            String.format(
+                Locale.US, "Analytics listener received message. ID: %d, Extras: %s", id, extras));
 
     if (extras == null) {
       return;

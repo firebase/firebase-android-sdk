@@ -184,6 +184,8 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
     if (transportContext.getExtras() != null) {
       selection.append(" and extras = ?");
       selectionArgs.add(Base64.encodeToString(transportContext.getExtras(), Base64.DEFAULT));
+    } else {
+      selection.append(" and extras is null");
     }
 
     return tryWithCursor(
@@ -557,7 +559,8 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
     }
   }
 
-  private <T> T inTransaction(Function<SQLiteDatabase, T> function) {
+  @VisibleForTesting
+  <T> T inTransaction(Function<SQLiteDatabase, T> function) {
     SQLiteDatabase db = getDb();
     db.beginTransaction();
     try {
@@ -603,7 +606,8 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
     return getDb().compileStatement("PRAGMA page_count").simpleQueryForLong();
   }
 
-  private static <T> T tryWithCursor(Cursor c, Function<Cursor, T> function) {
+  @VisibleForTesting
+  static <T> T tryWithCursor(Cursor c, Function<Cursor, T> function) {
     try {
       return function.apply(c);
     } finally {

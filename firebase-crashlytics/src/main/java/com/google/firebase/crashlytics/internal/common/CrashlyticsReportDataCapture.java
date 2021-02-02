@@ -43,16 +43,6 @@ import java.util.Map;
  */
 public class CrashlyticsReportDataCapture {
 
-  private static final String GENERATOR =
-      String.format(Locale.US, "Crashlytics Android SDK/%s", BuildConfig.VERSION_NAME);
-
-  // GeneratorType ANDROID_SDK = 3;
-  private static final int GENERATOR_TYPE = 3;
-
-  private static final int REPORT_ANDROID_PLATFORM = 4;
-  private static final int SESSION_ANDROID_PLATFORM = 3;
-  private static final String SIGNAL_DEFAULT = "0";
-
   private static final Map<String, Integer> ARCHITECTURES_BY_NAME = new HashMap<>();
 
   static {
@@ -62,6 +52,16 @@ public class CrashlyticsReportDataCapture {
     ARCHITECTURES_BY_NAME.put("x86", Architecture.X86_32);
     ARCHITECTURES_BY_NAME.put("x86_64", Architecture.X86_64);
   }
+
+  static final String GENERATOR =
+      String.format(Locale.US, "Crashlytics Android SDK/%s", BuildConfig.VERSION_NAME);
+
+  // GeneratorType ANDROID_SDK = 3;
+  static final int GENERATOR_TYPE = 3;
+
+  static final int REPORT_ANDROID_PLATFORM = 4;
+  static final int SESSION_ANDROID_PLATFORM = 3;
+  static final String SIGNAL_DEFAULT = "0";
 
   private final Context context;
   private final IdManager idManager;
@@ -81,10 +81,6 @@ public class CrashlyticsReportDataCapture {
 
   public CrashlyticsReport captureReportData(String identifier, long timestamp) {
     return buildReportData().setSession(populateSessionData(identifier, timestamp)).build();
-  }
-
-  public CrashlyticsReport captureReportData() {
-    return buildReportData().build();
   }
 
   public Event captureEventData(
@@ -137,12 +133,20 @@ public class CrashlyticsReportDataCapture {
   }
 
   private CrashlyticsReport.Session.Application populateSessionApplicationData() {
-    return CrashlyticsReport.Session.Application.builder()
-        .setIdentifier(idManager.getAppIdentifier())
-        .setVersion(appData.versionCode)
-        .setDisplayVersion(appData.versionName)
-        .setInstallationUuid(idManager.getCrashlyticsInstallId())
-        .build();
+    final CrashlyticsReport.Session.Application.Builder builder =
+        CrashlyticsReport.Session.Application.builder()
+            .setIdentifier(idManager.getAppIdentifier())
+            .setVersion(appData.versionCode)
+            .setDisplayVersion(appData.versionName)
+            .setInstallationUuid(idManager.getCrashlyticsInstallId());
+
+    final String unityVersion = appData.unityVersionProvider.getUnityVersion();
+    if (unityVersion != null) {
+      builder
+          .setDevelopmentPlatform(CrashlyticsReport.DEVELOPMENT_PLATFORM_UNITY)
+          .setDevelopmentPlatformVersion(unityVersion);
+    }
+    return builder.build();
   }
 
   private CrashlyticsReport.Session.OperatingSystem populateSessionOperatingSystemData() {

@@ -560,6 +560,6 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
     customTabIntent.setPackage("com.android.chrome");
     List<ResolveInfo> resolveInfos =
         activity.getPackageManager().queryIntentServices(customTabIntent, 0);
-    return !resolveInfos.isEmpty();
+    return resolveInfos != null && !resolveInfos.isEmpty();
   }
 }

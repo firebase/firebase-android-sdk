@@ -36,6 +36,7 @@ import com.google.firebase.crashlytics.internal.persistence.FileStoreImpl;
 import com.google.firebase.crashlytics.internal.settings.SettingsController;
 import com.google.firebase.crashlytics.internal.settings.TestSettingsData;
 import com.google.firebase.crashlytics.internal.settings.model.SettingsData;
+import com.google.firebase.crashlytics.internal.unity.UnityVersionProvider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.io.File;
 import java.io.IOException;
@@ -49,7 +50,6 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
   private static final String PACKAGE_NAME = "testPackageName";
   private static final String BUILD_ID = "testBuildId";
   private static final int RES_ID_REQUIRE_BUILD_ID = 1;
-  private static final int RES_ID_BUILD_ID = 2;
   private static final String GOOGLE_APP_ID = "google:app:id";
 
   private Context mockAppContext;
@@ -57,6 +57,7 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
   private FirebaseOptions testFirebaseOptions;
   private FileStore fileStore;
   private SettingsController mockSettingsController;
+  private AppData appData;
 
   @Override
   protected void setUp() throws Exception {
@@ -179,26 +180,28 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
     }
   }
 
-  public void testOnPreExecute_openSessionExists() {
-    final CrashlyticsCore crashlyticsCore = builder().build();
-    setupBuildIdRequired("false");
-    assertTrue(crashlyticsCore.onPreExecute(mockSettingsController));
-    assertNotNull(crashlyticsCore.getController());
-    assertTrue(crashlyticsCore.getController().hasOpenSession());
-  }
+  // FIXME: Restore this test without hasOpenSession
+  //  public void testOnPreExecute_openSessionExists() {
+  //    final CrashlyticsCore crashlyticsCore = builder().build();
+  //    setupBuildIdRequired("false");
+  //    assertTrue(crashlyticsCore.onPreExecute(mockSettingsController));
+  //    assertNotNull(crashlyticsCore.getController());
+  //    assertTrue(crashlyticsCore.getController().hasOpenSession());
+  //  }
 
   public void testOnPreExecute_buildIdRequiredAndExists() {
     final CrashlyticsCore crashlyticsCore = builder().build();
     setupBuildIdRequired("true");
-    setupBuildId();
-    assertTrue(crashlyticsCore.onPreExecute(mockSettingsController));
+    setupAppData(BUILD_ID);
+    assertTrue(crashlyticsCore.onPreExecute(appData, mockSettingsController));
   }
 
   public void testOnPreExecute_buildIdRequiredAndDoesNotExist() {
     final CrashlyticsCore crashlyticsCore = builder().build();
     setupBuildIdRequired("true");
+    setupAppData(null);
     try {
-      crashlyticsCore.onPreExecute(mockSettingsController);
+      crashlyticsCore.onPreExecute(appData, mockSettingsController);
       fail();
     } catch (Exception e) {
       assertTrue(e instanceof IllegalStateException);
@@ -208,23 +211,25 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
   public void testOnPreExecute_buildIdNotRequiredAndExists() {
     final CrashlyticsCore crashlyticsCore = builder().build();
     setupBuildIdRequired("false");
-    setupBuildId();
-    assertTrue(crashlyticsCore.onPreExecute(mockSettingsController));
+    setupAppData(BUILD_ID);
+    assertTrue(crashlyticsCore.onPreExecute(appData, mockSettingsController));
   }
 
   public void testOnPreExecute_buildIdNotRequiredAndDoesNotExist() {
     setupBuildIdRequired("false");
+    setupAppData(null);
     final CrashlyticsCore crashlyticsCore = builder().build();
-    assertTrue(crashlyticsCore.onPreExecute(mockSettingsController));
+    assertTrue(crashlyticsCore.onPreExecute(appData, mockSettingsController));
   }
 
   public void testOnPreExecute_didCrashOnPreviousExecution() throws Exception {
     final CrashlyticsCore crashlyticsCore = builder().build();
     setupBuildIdRequired(String.valueOf(false));
+    setupAppData(BUILD_ID);
     setupCrashMarker();
 
     assertTrue(getCrashMarkerFile().exists());
-    assertTrue(crashlyticsCore.onPreExecute(mockSettingsController));
+    assertTrue(crashlyticsCore.onPreExecute(appData, mockSettingsController));
     assertTrue(crashlyticsCore.didCrashOnPreviousExecution());
     assertFalse(getCrashMarkerFile().exists());
   }
@@ -232,9 +237,10 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
   public void testOnPreExecute_didNotCrashOnPreviousExecution() {
     final CrashlyticsCore crashlyticsCore = builder().build();
     setupBuildIdRequired(String.valueOf(false));
+    setupAppData(BUILD_ID);
 
     assertFalse(getCrashMarkerFile().exists());
-    assertTrue(crashlyticsCore.onPreExecute(mockSettingsController));
+    assertTrue(crashlyticsCore.onPreExecute(appData, mockSettingsController));
     assertFalse(crashlyticsCore.didCrashOnPreviousExecution());
     assertFalse(getCrashMarkerFile().exists());
   }
@@ -247,11 +253,19 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
         booleanValue);
   }
 
-  private void setupBuildId() {
-    final Integer buildIdResId = RES_ID_BUILD_ID;
-    when(mockResources.getIdentifier(CRASHLYTICS_BUILD_ID, "string", PACKAGE_NAME))
-        .thenReturn(buildIdResId);
-    when(mockResources.getString(buildIdResId)).thenReturn(BUILD_ID);
+  private void setupAppData(String buildId) {
+    final UnityVersionProvider unityVersionProvider = mock(UnityVersionProvider.class);
+    when(unityVersionProvider.getUnityVersion()).thenReturn("1.0");
+
+    appData =
+        new AppData(
+            GOOGLE_APP_ID,
+            buildId,
+            "installerPackageName",
+            "packageName",
+            "versionCode",
+            "versionName",
+            unityVersionProvider);
   }
 
   private void setupResource(Integer resId, String type, String name, String value) {

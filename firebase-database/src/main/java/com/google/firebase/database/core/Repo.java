@@ -16,6 +16,10 @@ package com.google.firebase.database.core;
 
 import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
 
+import androidx.annotation.NonNull;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseException;
@@ -23,6 +27,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.InternalHelpers;
 import com.google.firebase.database.MutableData;
+import com.google.firebase.database.Query;
 import com.google.firebase.database.Transaction;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.database.annotations.NotNull;
@@ -460,6 +465,80 @@ public class Repo implements PersistentConnection.Delegate {
 
     Path affectedPath = abortTransactions(path, DatabaseError.OVERRIDDEN_BY_SET);
     this.rerunTransactions(affectedPath);
+  }
+
+  /**
+   * The purpose of `getValue` is to return the latest known value satisfying `query`.
+   *
+   * <p>If the client is connected, this method will probe for in-memory cached values (active
+   * listeners). If none are found, the client will reach out to the server and ask for the most
+   * up-to-date value.
+   *
+   * <p>If the client is not connected, this method will check for in-memory cached values (active
+   * listeners). If none are found, the client will initiate a time-limited connection attempt to
+   * the server so that it can ask for the latest value. If the client is unable to connect, it will
+   * fall-back to the persistence cache value.
+   *
+   * <p>If, after exhausting all possible options (active-listener cache, server request,
+   * persistence cache), the client is unable to provide a guess for the latest value for a query,
+   * it will surface an "offline" error.
+   *
+   * <p>Note that `getValue` updates the client's persistence cache whenever it's able to retrieve a
+   * new server value. It does this by installing a short-lived tracked query.
+   *
+   * @param query - The query to surface a value for.
+   */
+  public Task<DataSnapshot> getValue(Query query) {
+    TaskCompletionSource<DataSnapshot> source = new TaskCompletionSource<>();
+    this.scheduleNow(
+        new Runnable() {
+          @Override
+          public void run() {
+            // Always check active-listener in-memory caches first. These are always at least as
+            // up to date as the persistence cache.
+            Node cached =
+                serverSyncTree.calcCompleteEventCacheFromRoot(query.getPath(), new ArrayList<>());
+            if (!cached.isEmpty()) {
+              source.setResult(
+                  InternalHelpers.createDataSnapshot(
+                      query.getRef(), IndexedNode.from(cached, query.getSpec().getIndex())));
+              return;
+            }
+            serverSyncTree.setQueryActive(query.getSpec());
+            connection
+                .get(query.getPath().asList(), query.getSpec().getParams().getWireProtocolParams())
+                .addOnCompleteListener(
+                    ((DefaultRunLoop) ctx.getRunLoop()).getExecutorService(),
+                    new OnCompleteListener<Object>() {
+                      @Override
+                      public void onComplete(@NonNull Task<Object> task) {
+                        if (!task.isSuccessful()) {
+                          operationLogger.info(
+                              "get for query "
+                                  + query.getPath()
+                                  + " falling back to disk cache after error: "
+                                  + task.getException().getMessage());
+                          DataSnapshot cached = serverSyncTree.persistenceServerCache(query);
+                          if (!cached.exists()) {
+                            source.setException(task.getException());
+                          } else {
+                            source.setResult(cached);
+                          }
+                        } else {
+                          Node serverNode = NodeUtilities.NodeFromJSON(task.getResult());
+                          postEvents(
+                              serverSyncTree.applyServerOverwrite(query.getPath(), serverNode));
+                          source.setResult(
+                              InternalHelpers.createDataSnapshot(
+                                  query.getRef(),
+                                  IndexedNode.from(serverNode, query.getSpec().getIndex())));
+                        }
+                        serverSyncTree.setQueryInactive(query.getSpec());
+                      }
+                    });
+          }
+        });
+    return source.getTask();
   }
 
   public void updateChildren(

@@ -184,7 +184,6 @@ package com.google.firebase.firestore {
   }
 
   public final class FirebaseFirestoreSettings {
-    method public boolean areTimestampsInSnapshotsEnabled();
     method public long getCacheSizeBytes();
     method @NonNull public String getHost();
     method public boolean isPersistenceEnabled();
@@ -204,7 +203,6 @@ package com.google.firebase.firestore {
     method @NonNull public com.google.firebase.firestore.FirebaseFirestoreSettings.Builder setHost(@NonNull String);
     method @NonNull public com.google.firebase.firestore.FirebaseFirestoreSettings.Builder setPersistenceEnabled(boolean);
     method @NonNull public com.google.firebase.firestore.FirebaseFirestoreSettings.Builder setSslEnabled(boolean);
-    method @Deprecated @NonNull public com.google.firebase.firestore.FirebaseFirestoreSettings.Builder setTimestampsInSnapshotsEnabled(boolean);
   }
 
   public class GeoPoint implements java.lang.Comparable<com.google.firebase.firestore.GeoPoint> {

@@ -45,7 +45,7 @@ public class CachedSettingsIo {
    *     cached data could be found, or an error occurred.
    */
   public JSONObject readCachedSettings() {
-    Logger.getLogger().d("Reading cached settings...");
+    Logger.getLogger().d("Checking for cached settings...");
 
     FileInputStream fis = null;
     JSONObject toReturn = null;
@@ -59,7 +59,7 @@ public class CachedSettingsIo {
 
         toReturn = new JSONObject(settingsStr);
       } else {
-        Logger.getLogger().d("No cached settings found.");
+        Logger.getLogger().v("Settings file does not exist.");
       }
     } catch (Exception e) {
       Logger.getLogger().e("Failed to fetch cached settings", e);
@@ -78,7 +78,7 @@ public class CachedSettingsIo {
    * @param settingsJson JSON data to write to the cache
    */
   public void writeCachedSettings(long expiresAtMillis, JSONObject settingsJson) {
-    Logger.getLogger().d("Writing settings to cache file...");
+    Logger.getLogger().v("Writing settings to cache file...");
 
     if (settingsJson != null) {
       FileWriter writer = null;

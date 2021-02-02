@@ -14,26 +14,16 @@
 
 package com.google.firebase.crashlytics.internal.settings.network;
 
-import static com.google.firebase.crashlytics.internal.common.AbstractSpiCall.ACCEPT_JSON_VALUE;
-import static com.google.firebase.crashlytics.internal.common.AbstractSpiCall.ANDROID_CLIENT_TYPE;
-import static com.google.firebase.crashlytics.internal.common.AbstractSpiCall.HEADER_ACCEPT;
-import static com.google.firebase.crashlytics.internal.common.AbstractSpiCall.HEADER_CLIENT_TYPE;
-import static com.google.firebase.crashlytics.internal.common.AbstractSpiCall.HEADER_GOOGLE_APP_ID;
-import static com.google.firebase.crashlytics.internal.settings.network.DefaultSettingsSpiCall.HEADER_DEVICE_MODEL;
-import static com.google.firebase.crashlytics.internal.settings.network.DefaultSettingsSpiCall.HEADER_INSTALLATION_ID;
-import static com.google.firebase.crashlytics.internal.settings.network.DefaultSettingsSpiCall.HEADER_OS_BUILD_VERSION;
-import static com.google.firebase.crashlytics.internal.settings.network.DefaultSettingsSpiCall.HEADER_OS_DISPLAY_VERSION;
 import static org.mockito.Mockito.*;
 
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.common.CommonUtils;
 import com.google.firebase.crashlytics.internal.common.InstallIdProvider;
-import com.google.firebase.crashlytics.internal.network.HttpMethod;
-import com.google.firebase.crashlytics.internal.network.HttpRequest;
+import com.google.firebase.crashlytics.internal.network.HttpGetRequest;
 import com.google.firebase.crashlytics.internal.network.HttpRequestFactory;
 import com.google.firebase.crashlytics.internal.network.HttpResponse;
-import com.google.firebase.crashlytics.internal.network.InspectableHttpRequest;
+import com.google.firebase.crashlytics.internal.network.InspectableHttpGetRequest;
 import com.google.firebase.crashlytics.internal.settings.model.SettingsRequest;
 import java.io.IOException;
 import java.io.InputStream;
@@ -50,7 +40,6 @@ public class DefaultSettingsSpiCallTest extends CrashlyticsTestCase {
   private static final String OS_DISPLAY_VERSION = "4.3.2";
   private static final String INSTALLATION_ID = "d1dc3e52e16cbfe632902aeb112830491690504e";
   private static final int SOURCE = 4;
-  private static final String ICON_HASH = "fakeHash";
 
   private static final String TEST_URL = "http://test";
 
@@ -64,8 +53,7 @@ public class DefaultSettingsSpiCallTest extends CrashlyticsTestCase {
     mockLogger = mock(Logger.class);
 
     defaultSettingsSpiCall =
-        new DefaultSettingsSpiCall(
-            null, TEST_URL, mock(HttpRequestFactory.class), HttpMethod.GET, mockLogger);
+        new DefaultSettingsSpiCall(TEST_URL, mock(HttpRequestFactory.class), mockLogger);
   }
 
   @Override
@@ -80,16 +68,15 @@ public class DefaultSettingsSpiCallTest extends CrashlyticsTestCase {
     final String url =
         "http://localhost:3000/spi/v1/platforms/android/apps/com.crashlytics.test/settings";
 
-    final InspectableHttpRequest request = new InspectableHttpRequest();
+    final InspectableHttpGetRequest request = new InspectableHttpGetRequest();
 
     final DefaultSettingsSpiCall call =
         new DefaultSettingsSpiCall(
-            null,
             url,
             new HttpRequestFactory() {
               @Override
-              public HttpRequest buildHttpRequest(
-                  HttpMethod method, String url, Map<String, String> queryParams) {
+              public HttpGetRequest buildHttpGetRequest(
+                  String url, Map<String, String> queryParams) {
                 request.setUrl(url);
                 request.setQueryParams(queryParams);
                 return request;
@@ -107,13 +94,17 @@ public class DefaultSettingsSpiCallTest extends CrashlyticsTestCase {
     assertEquals(Integer.toString(SOURCE), queryParams.get(DefaultSettingsSpiCall.SOURCE_PARAM));
 
     final Map<String, String> headers = request.getHeaders();
-    assertEquals(GOOGLE_APP_ID, headers.get(HEADER_GOOGLE_APP_ID));
-    assertEquals(ANDROID_CLIENT_TYPE, headers.get(HEADER_CLIENT_TYPE));
-    assertEquals(DEVICE_MODEL, headers.get(HEADER_DEVICE_MODEL));
-    assertEquals(OS_BUILD_VERSION, headers.get(HEADER_OS_BUILD_VERSION));
-    assertEquals(OS_DISPLAY_VERSION, headers.get(HEADER_OS_DISPLAY_VERSION));
-    assertEquals(INSTALLATION_ID, headers.get(HEADER_INSTALLATION_ID));
-    assertEquals(ACCEPT_JSON_VALUE, headers.get(HEADER_ACCEPT));
+    assertEquals(GOOGLE_APP_ID, headers.get(DefaultSettingsSpiCall.HEADER_GOOGLE_APP_ID));
+    assertEquals(
+        DefaultSettingsSpiCall.ANDROID_CLIENT_TYPE,
+        headers.get(DefaultSettingsSpiCall.HEADER_CLIENT_TYPE));
+    assertEquals(DEVICE_MODEL, headers.get(DefaultSettingsSpiCall.HEADER_DEVICE_MODEL));
+    assertEquals(OS_BUILD_VERSION, headers.get(DefaultSettingsSpiCall.HEADER_OS_BUILD_VERSION));
+    assertEquals(OS_DISPLAY_VERSION, headers.get(DefaultSettingsSpiCall.HEADER_OS_DISPLAY_VERSION));
+    assertEquals(INSTALLATION_ID, headers.get(DefaultSettingsSpiCall.HEADER_INSTALLATION_ID));
+    assertEquals(
+        DefaultSettingsSpiCall.ACCEPT_JSON_VALUE,
+        headers.get(DefaultSettingsSpiCall.HEADER_ACCEPT));
   }
 
   public void testWebCallNoInstanceId() throws Exception {
@@ -122,16 +113,15 @@ public class DefaultSettingsSpiCallTest extends CrashlyticsTestCase {
     final String url =
         "http://localhost:3000/spi/v1/platforms/android/apps/com.crashlytics.test/settings";
 
-    final InspectableHttpRequest request = new InspectableHttpRequest();
+    final InspectableHttpGetRequest request = new InspectableHttpGetRequest();
 
     final DefaultSettingsSpiCall call =
         new DefaultSettingsSpiCall(
-            null,
             url,
             new HttpRequestFactory() {
               @Override
-              public HttpRequest buildHttpRequest(
-                  HttpMethod method, String url, Map<String, String> queryParams) {
+              public HttpGetRequest buildHttpGetRequest(
+                  String url, Map<String, String> queryParams) {
                 request.setUrl(url);
                 request.setQueryParams(queryParams);
                 return request;
@@ -149,13 +139,17 @@ public class DefaultSettingsSpiCallTest extends CrashlyticsTestCase {
     assertEquals(Integer.toString(SOURCE), queryParams.get(DefaultSettingsSpiCall.SOURCE_PARAM));
 
     final Map<String, String> headers = request.getHeaders();
-    assertEquals(GOOGLE_APP_ID, headers.get(HEADER_GOOGLE_APP_ID));
-    assertEquals(ANDROID_CLIENT_TYPE, headers.get(HEADER_CLIENT_TYPE));
-    assertEquals(DEVICE_MODEL, headers.get(HEADER_DEVICE_MODEL));
-    assertEquals(OS_BUILD_VERSION, headers.get(HEADER_OS_BUILD_VERSION));
-    assertEquals(OS_DISPLAY_VERSION, headers.get(HEADER_OS_DISPLAY_VERSION));
-    assertEquals(INSTALLATION_ID, headers.get(HEADER_INSTALLATION_ID));
-    assertEquals(ACCEPT_JSON_VALUE, headers.get(HEADER_ACCEPT));
+    assertEquals(GOOGLE_APP_ID, headers.get(DefaultSettingsSpiCall.HEADER_GOOGLE_APP_ID));
+    assertEquals(
+        DefaultSettingsSpiCall.ANDROID_CLIENT_TYPE,
+        headers.get(DefaultSettingsSpiCall.HEADER_CLIENT_TYPE));
+    assertEquals(DEVICE_MODEL, headers.get(DefaultSettingsSpiCall.HEADER_DEVICE_MODEL));
+    assertEquals(OS_BUILD_VERSION, headers.get(DefaultSettingsSpiCall.HEADER_OS_BUILD_VERSION));
+    assertEquals(OS_DISPLAY_VERSION, headers.get(DefaultSettingsSpiCall.HEADER_OS_DISPLAY_VERSION));
+    assertEquals(INSTALLATION_ID, headers.get(DefaultSettingsSpiCall.HEADER_INSTALLATION_ID));
+    assertEquals(
+        DefaultSettingsSpiCall.ACCEPT_JSON_VALUE,
+        headers.get(DefaultSettingsSpiCall.HEADER_ACCEPT));
   }
 
   public void testHandleResponse_requestSuccessfulValidJson() throws IOException {
@@ -192,7 +186,13 @@ public class DefaultSettingsSpiCallTest extends CrashlyticsTestCase {
 
     assertNull(defaultSettingsSpiCall.handleResponse(mockHttpResponse));
     verify(mockHttpResponse, never()).body();
-    verify(mockLogger, times(1)).e(eq("Failed to retrieve settings from " + TEST_URL));
+    verify(mockLogger, times(1))
+        .e(
+            eq(
+                "Settings request failed; (status: "
+                    + HttpURLConnection.HTTP_INTERNAL_ERROR
+                    + ") from "
+                    + TEST_URL));
   }
 
   public void testRequestWasSuccessful_successfulStatusCodes() {

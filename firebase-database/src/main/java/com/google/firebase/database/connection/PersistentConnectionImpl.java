@@ -16,6 +16,8 @@ package com.google.firebase.database.connection;
 
 import static com.google.firebase.database.connection.ConnectionUtils.hardAssert;
 
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.database.connection.util.RetryHelper;
 import com.google.firebase.database.logging.LogWrapper;
 import com.google.firebase.database.util.GAuthToken;
@@ -27,6 +29,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -37,11 +40,11 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
     void onResponse(Map<String, Object> response);
   }
 
-  private static class ListenQuerySpec {
+  private static class QuerySpec {
     private final List<String> path;
     private final Map<String, Object> queryParams;
 
-    public ListenQuerySpec(List<String> path, Map<String, Object> queryParams) {
+    public QuerySpec(List<String> path, Map<String, Object> queryParams) {
       this.path = path;
       this.queryParams = queryParams;
     }
@@ -49,11 +52,11 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
     @Override
     public boolean equals(Object o) {
       if (this == o) return true;
-      if (!(o instanceof ListenQuerySpec)) {
+      if (!(o instanceof QuerySpec)) {
         return false;
       }
 
-      ListenQuerySpec that = (ListenQuerySpec) o;
+      QuerySpec that = (QuerySpec) o;
 
       if (!path.equals(that.path)) {
         return false;
@@ -76,13 +79,13 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
 
   private static class OutstandingListen {
     private final RequestResultCallback resultCallback;
-    private final ListenQuerySpec query;
+    private final QuerySpec query;
     private final ListenHashProvider hashFunction;
     private final Long tag;
 
     private OutstandingListen(
         RequestResultCallback callback,
-        ListenQuerySpec query,
+        QuerySpec query,
         Long tag,
         ListenHashProvider hashFunction) {
       this.resultCallback = callback;
@@ -91,7 +94,7 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
       this.tag = tag;
     }
 
-    public ListenQuerySpec getQuery() {
+    public QuerySpec getQuery() {
       return query;
     }
 
@@ -106,6 +109,40 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
     @Override
     public String toString() {
       return query.toString() + " (Tag: " + this.tag + ")";
+    }
+  }
+
+  private static class OutstandingGet {
+    private final Map<String, Object> request;
+    private final ConnectionRequestCallback onComplete;
+    private boolean sent;
+
+    private OutstandingGet(
+        String action, Map<String, Object> request, ConnectionRequestCallback onComplete) {
+      this.request = request;
+      this.onComplete = onComplete;
+      this.sent = false;
+    }
+
+    private ConnectionRequestCallback getOnComplete() {
+      return onComplete;
+    }
+
+    private Map<String, Object> getRequest() {
+      return request;
+    }
+
+    /**
+     * Mark this OutstandingGet as sent. Essentially compare-and-set on the `sent` member.
+     *
+     * @return true if the OustandingGet wasn't already sent, false if it was.
+     */
+    private boolean markSent() {
+      if (sent) {
+        return false;
+      }
+      sent = true;
+      return true;
     }
   }
 
@@ -200,6 +237,7 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
   private static final String REQUEST_ACTION = "a";
   private static final String REQUEST_ACTION_STATS = "s";
   private static final String REQUEST_ACTION_QUERY = "q";
+  private static final String REQUEST_ACTION_GET = "g";
   private static final String REQUEST_ACTION_PUT = "p";
   private static final String REQUEST_ACTION_MERGE = "m";
   private static final String REQUEST_ACTION_QUERY_UNLISTEN = "n";
@@ -231,6 +269,7 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
   private static final long SUCCESSFUL_CONNECTION_ESTABLISHED_DELAY = 30 * 1000;
 
   private static final long IDLE_TIMEOUT = 60 * 1000;
+  private static final long GET_CONNECT_TIMEOUT = 3 * 1000;
 
   /** If auth fails repeatedly, we'll assume something is wrong and log a warning / back off. */
   private static final long INVALID_AUTH_TOKEN_THRESHOLD = 3;
@@ -250,13 +289,15 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
   private Connection realtime;
   private ConnectionState connectionState = ConnectionState.Disconnected;
   private long writeCounter = 0;
+  private long readCounter = 0;
   private long requestCounter = 0;
   private Map<Long, ConnectionRequestCallback> requestCBHash;
 
   private List<OutstandingDisconnect> onDisconnectRequestQueue;
   private Map<Long, OutstandingPut> outstandingPuts;
+  private Map<Long, OutstandingGet> outstandingGets;
 
-  private Map<ListenQuerySpec, OutstandingListen> listens;
+  private Map<QuerySpec, OutstandingListen> listens;
   private String authToken;
   private boolean forceAuthTokenRefresh;
   private final ConnectionContext context;
@@ -281,9 +322,10 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
     this.executorService = context.getExecutorService();
     this.authTokenProvider = context.getAuthTokenProvider();
     this.hostInfo = info;
-    this.listens = new HashMap<ListenQuerySpec, OutstandingListen>();
+    this.listens = new HashMap<QuerySpec, OutstandingListen>();
     this.requestCBHash = new HashMap<Long, ConnectionRequestCallback>();
     this.outstandingPuts = new HashMap<Long, OutstandingPut>();
+    this.outstandingGets = new ConcurrentHashMap<Long, OutstandingGet>();
     this.onDisconnectRequestQueue = new ArrayList<OutstandingDisconnect>();
     this.retryHelper =
         new RetryHelper.Builder(this.executorService, context.getLogger(), "ConnectionRetryHelper")
@@ -328,7 +370,7 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
       ListenHashProvider currentHashFn,
       Long tag,
       RequestResultCallback listener) {
-    ListenQuerySpec query = new ListenQuerySpec(path, queryParams);
+    QuerySpec query = new QuerySpec(path, queryParams);
     if (logger.logsDebug()) logger.debug("Listening on " + query);
     // TODO: Fix this somehow?
     // hardAssert(query.isDefault() || !query.loadsAllData(), "listen() called for non-default but
@@ -342,6 +384,63 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
       sendListen(outstandingListen);
     }
     doIdleCheck();
+  }
+
+  @Override
+  public Task<Object> get(List<String> path, Map<String, Object> queryParams) {
+    QuerySpec query = new QuerySpec(path, queryParams);
+    TaskCompletionSource<Object> source = new TaskCompletionSource<>();
+
+    long readId = this.readCounter++;
+
+    Map<String, Object> request = new HashMap<String, Object>();
+    request.put(REQUEST_PATH, ConnectionUtils.pathToString(query.path));
+    request.put(REQUEST_QUERIES, query.queryParams);
+
+    OutstandingGet outstandingGet =
+        new OutstandingGet(
+            REQUEST_ACTION_GET,
+            request,
+            new ConnectionRequestCallback() {
+              @Override
+              public void onResponse(Map<String, Object> response) {
+                String status = (String) response.get(REQUEST_STATUS);
+                if (status.equals("ok")) {
+                  Object body = response.get(SERVER_DATA_UPDATE_BODY);
+                  delegate.onDataUpdate(query.path, body, /*isMerge=*/ false, /*tagNumber=*/ null);
+                  source.setResult(body);
+                } else {
+                  source.setException(
+                      new Exception((String) response.get(SERVER_DATA_UPDATE_BODY)));
+                }
+              }
+            });
+    outstandingGets.put(readId, outstandingGet);
+
+    if (!connected()) {
+      executorService.schedule(
+          new Runnable() {
+            @Override
+            public void run() {
+              if (!outstandingGet.markSent()) {
+                return;
+              }
+              if (logger.logsDebug()) {
+                logger.debug("get " + readId + " timed out waiting for connection");
+              }
+              outstandingGets.remove(readId);
+              source.setException(new Exception("Client is offline"));
+            }
+          },
+          GET_CONNECT_TIMEOUT,
+          TimeUnit.MILLISECONDS);
+    }
+
+    if (canSendReads()) {
+      sendGet(readId);
+    }
+    doIdleCheck();
+    return source.getTask();
   }
 
   @Override
@@ -456,7 +555,7 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
 
   @Override
   public void unlisten(List<String> path, Map<String, Object> queryParams) {
-    ListenQuerySpec query = new ListenQuerySpec(path, queryParams);
+    QuerySpec query = new QuerySpec(path, queryParams);
     if (logger.logsDebug()) logger.debug("unlistening on " + query);
 
     // TODO: fix this by understanding query params?
@@ -487,6 +586,10 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
   }
 
   private boolean canSendWrites() {
+    return connectionState == ConnectionState.Connected;
+  }
+
+  private boolean canSendReads() {
     return connectionState == ConnectionState.Connected;
   }
 
@@ -731,7 +834,7 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
     sendAction(REQUEST_ACTION_QUERY_UNLISTEN, request, null);
   }
 
-  private OutstandingListen removeListen(ListenQuerySpec query) {
+  private OutstandingListen removeListen(QuerySpec query) {
     if (logger.logsDebug()) logger.debug("removing query " + query);
     if (!listens.containsKey(query)) {
       if (logger.logsDebug())
@@ -749,8 +852,8 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
   private Collection<OutstandingListen> removeListens(List<String> path) {
     if (logger.logsDebug()) logger.debug("removing all listens at path " + path);
     List<OutstandingListen> removedListens = new ArrayList<OutstandingListen>();
-    for (Map.Entry<ListenQuerySpec, OutstandingListen> entry : listens.entrySet()) {
-      ListenQuerySpec query = entry.getKey();
+    for (Map.Entry<QuerySpec, OutstandingListen> entry : listens.entrySet()) {
+      QuerySpec query = entry.getKey();
       OutstandingListen listen = entry.getValue();
       if (query.path.equals(path)) {
         removedListens.add(listen);
@@ -970,6 +1073,13 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
           disconnect.getOnComplete());
     }
     onDisconnectRequestQueue.clear();
+
+    if (logger.logsDebug()) logger.debug("Restoring reads.");
+    ArrayList<Long> outstandingGetKeys = new ArrayList<Long>(outstandingGets.keySet());
+    Collections.sort(outstandingGetKeys);
+    for (Long getId : outstandingGetKeys) {
+      sendGet(getId);
+    }
   }
 
   private void handleTimestamp(long timestamp) {
@@ -1045,6 +1155,33 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
                     "Ignoring on complete for put " + putId + " because it was removed already.");
             }
             doIdleCheck();
+          }
+        });
+  }
+
+  private void sendGet(final Long readId) {
+    hardAssert(canSendReads(), "sendGet called when we can't send gets");
+    OutstandingGet get = outstandingGets.get(readId);
+    if (!get.markSent()) {
+      if (logger.logsDebug()) {
+        logger.debug("get" + readId + " cancelled, ignoring.");
+        return;
+      }
+    }
+    sendAction(
+        REQUEST_ACTION_GET,
+        get.getRequest(),
+        new ConnectionRequestCallback() {
+          @Override
+          public void onResponse(Map<String, Object> response) {
+            OutstandingGet currentGet = outstandingGets.get(readId);
+            if (currentGet == get) {
+              outstandingGets.remove(readId);
+              get.getOnComplete().onResponse(response);
+            } else if (logger.logsDebug()) {
+              logger.debug(
+                  "Ignoring on complete for get " + readId + " because it was removed already.");
+            }
           }
         });
   }
@@ -1136,7 +1273,7 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
   }
 
   @SuppressWarnings("unchecked")
-  private void warnOnListenerWarnings(List<String> warnings, ListenQuerySpec query) {
+  private void warnOnListenerWarnings(List<String> warnings, QuerySpec query) {
     if (warnings.contains("no_index")) {
       String indexSpec = "\".indexOn\": \"" + query.queryParams.get("i") + '\"';
       logger.warn(

@@ -22,7 +22,6 @@ import os
 import shutil
 
 from . import emulator
-from . import stats
 
 _logger = logging.getLogger('fireci')
 
@@ -119,8 +118,6 @@ def main(options, **kwargs):
     """
   for k, v in kwargs.items():
     setattr(options, k, v)
-  if options.enable_metrics:
-    stats.configure()
 
 
 def ci_command(name=None):
@@ -142,7 +139,7 @@ def ci_command(name=None):
     @_pass_options
     @click.pass_context
     def new_func(ctx, options, *args, **kwargs):
-      with stats.measure("cicmd:" + actual_name), _artifact_handler(
+      with _artifact_handler(
           options.artifact_target_dir,
           options.artifact_patterns), _emulator_handler(
               options.with_emulator,

@@ -14,17 +14,25 @@
 
 package com.google.firebase.crashlytics.internal.common;
 
+import static com.google.firebase.crashlytics.internal.common.CrashlyticsReportDataCapture.GENERATOR;
+import static com.google.firebase.crashlytics.internal.common.CrashlyticsReportDataCapture.GENERATOR_TYPE;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.ContextWrapper;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.os.BatteryManager;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.runner.AndroidJUnit4;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event.Application.Execution;
 import com.google.firebase.crashlytics.internal.stacktrace.StackTraceTrimmingStrategy;
+import com.google.firebase.crashlytics.internal.unity.UnityVersionProvider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.util.List;
 import org.junit.Before;
@@ -42,6 +50,8 @@ public class CrashlyticsReportDataCaptureTest {
   private int eventThreadImportance;
   private int maxChainedExceptions;
 
+  @Mock private UnityVersionProvider unityVersionProvider;
+
   @Mock private StackTraceTrimmingStrategy stackTraceTrimmingStrategy;
 
   @Mock private FirebaseInstallationsApi installationsApiMock;
@@ -52,10 +62,11 @@ public class CrashlyticsReportDataCaptureTest {
     when(installationsApiMock.getId()).thenReturn(Tasks.forResult("installId"));
     when(stackTraceTrimmingStrategy.getTrimmedStackTrace(any(StackTraceElement[].class)))
         .thenAnswer(i -> i.getArguments()[0]);
-    final Context context = ApplicationProvider.getApplicationContext();
+    final Context context = getContext();
     final IdManager idManager =
         new IdManager(context, context.getPackageName(), installationsApiMock);
-    final AppData appData = AppData.create(context, idManager, "googleAppId", "buildId");
+    final AppData appData =
+        AppData.create(context, idManager, "googleAppId", "buildId", unityVersionProvider);
     dataCapture =
         new CrashlyticsReportDataCapture(context, idManager, appData, stackTraceTrimmingStrategy);
     timestamp = System.currentTimeMillis();
@@ -65,7 +76,41 @@ public class CrashlyticsReportDataCaptureTest {
   }
 
   @Test
-  public void testEventBuilderHandler_noChainedExceptionsAllThreads() {
+  public void testCaptureReport_containsUnityVersionInDeveloperPlatformFieldsWhenAvailable() {
+    final String expectedUnityVersion = "1.0.0";
+    when(unityVersionProvider.getUnityVersion()).thenReturn(expectedUnityVersion);
+
+    final CrashlyticsReport report = dataCapture.captureReportData("sessionId", 0);
+
+    assertEquals("Unity", report.getSession().getApp().getDevelopmentPlatform());
+    assertEquals(
+        expectedUnityVersion, report.getSession().getApp().getDevelopmentPlatformVersion());
+  }
+
+  @Test
+  public void testCaptureReport_containsNoDeveloperPlatformFieldsWhenUnityIsMissing() {
+    when(unityVersionProvider.getUnityVersion()).thenReturn(null);
+
+    final CrashlyticsReport report = dataCapture.captureReportData("sessionId", 0);
+
+    assertNull(report.getSession().getApp().getDevelopmentPlatform());
+    assertNull(report.getSession().getApp().getDevelopmentPlatformVersion());
+  }
+
+  @Test
+  public void testCaptureReportSessionFields() {
+    final String sessionId = "sessionId";
+    final long timestamp = System.currentTimeMillis();
+    final CrashlyticsReport report = dataCapture.captureReportData(sessionId, timestamp);
+
+    assertEquals(sessionId, report.getSession().getIdentifier());
+    assertEquals(timestamp, report.getSession().getStartedAt());
+    assertEquals(GENERATOR, report.getSession().getGenerator());
+    assertEquals(GENERATOR_TYPE, report.getSession().getGeneratorType());
+  }
+
+  @Test
+  public void testCaptureEvent_noChainedExceptionsAllThreads() {
     final RuntimeException eventException = new RuntimeException("fatal");
     final Thread eventThread = Thread.currentThread();
 
@@ -101,7 +146,7 @@ public class CrashlyticsReportDataCaptureTest {
   }
 
   @Test
-  public void testEventBuilderHandler_someChainedExceptionsAllThreads() {
+  public void testCaptureEvent_someChainedExceptionsAllThreads() {
     final IllegalStateException cause2 = new IllegalStateException("cause 2");
     final IllegalArgumentException cause = new IllegalArgumentException("cause", cause2);
     final RuntimeException eventException = new RuntimeException("fatal", cause);
@@ -148,7 +193,7 @@ public class CrashlyticsReportDataCaptureTest {
   }
 
   @Test
-  public void testEventBuilderHandler_noChainedExceptionsOneThread() {
+  public void testCaptureEvent_noChainedExceptionsOneThread() {
     final RuntimeException eventException = new RuntimeException("fatal");
     final Thread eventThread = Thread.currentThread();
 
@@ -179,7 +224,47 @@ public class CrashlyticsReportDataCaptureTest {
   }
 
   @Test
-  public void testEventBuilderHandler_overflowChainedExceptionsOneThread() {
+  public void testCaptureEventBatteryLevel() {
+    final double expectedBatteryLevel = 0.25;
+    final RuntimeException eventException = new RuntimeException("fatal");
+    final Thread eventThread = Thread.currentThread();
+
+    final CrashlyticsReport.Session.Event event =
+        dataCapture.captureEventData(
+            eventException,
+            eventThread,
+            eventType,
+            timestamp,
+            eventThreadImportance,
+            maxChainedExceptions,
+            true);
+
+    assertNotNull(event.getDevice().getBatteryLevel());
+    assertEquals(expectedBatteryLevel, event.getDevice().getBatteryLevel(), 0.1);
+  }
+
+  @Test
+  public void testCaptureEventBatteryLevel_notWrittenWhenBatteryIntentIsNull() {
+    final RuntimeException eventException = new RuntimeException("fatal");
+    final Thread eventThread = Thread.currentThread();
+
+    BatteryIntentProvider.returnNull = true;
+
+    final CrashlyticsReport.Session.Event event =
+        dataCapture.captureEventData(
+            eventException,
+            eventThread,
+            eventType,
+            timestamp,
+            eventThreadImportance,
+            maxChainedExceptions,
+            true);
+
+    assertNull(event.getDevice().getBatteryLevel());
+  }
+
+  @Test
+  public void testCaptureEvent_overflowChainedExceptionsOneThread() {
     final IllegalStateException cause2 = new IllegalStateException("cause 2");
     final IllegalArgumentException cause = new IllegalArgumentException("cause", cause2);
     final RuntimeException eventException = new RuntimeException("fatal", cause);
@@ -240,5 +325,44 @@ public class CrashlyticsReportDataCaptureTest {
     for (Execution.Thread.Frame frame : frames) {
       assertEquals(expectedImportance, frame.getImportance());
     }
+  }
+
+  private static class BatteryIntentProvider {
+    public static boolean returnNull;
+
+    public static Intent getBatteryIntent() {
+      if (returnNull) {
+        return null;
+      }
+
+      final Intent intent = new Intent();
+      // Set the battery level to 25% and charging.
+      intent.putExtra(BatteryManager.EXTRA_LEVEL, 50);
+      intent.putExtra(BatteryManager.EXTRA_SCALE, 200);
+      intent.putExtra(BatteryManager.EXTRA_STATUS, BatteryManager.BATTERY_STATUS_CHARGING);
+      return intent;
+    }
+  }
+
+  public Context getContext() {
+    // Return a context wrapper that will allow us to override the behavior of registering
+    // the receiver for battery changed events.
+    return new ContextWrapper(ApplicationProvider.getApplicationContext()) {
+      @Override
+      public Context getApplicationContext() {
+        return this;
+      }
+
+      @Override
+      public Intent registerReceiver(BroadcastReceiver receiver, IntentFilter filter) {
+        // For the BatteryIntent, use test values to avoid breaking from emulator changes.
+        if (filter.hasAction(Intent.ACTION_BATTERY_CHANGED)) {
+          // If we ever call this with a receiver, it will be broken.
+          assertNull(receiver);
+          return BatteryIntentProvider.getBatteryIntent();
+        }
+        return getBaseContext().registerReceiver(receiver, filter);
+      }
+    };
   }
 }

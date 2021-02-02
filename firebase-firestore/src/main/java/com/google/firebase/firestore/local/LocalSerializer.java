@@ -29,6 +29,9 @@ import com.google.firebase.firestore.model.UnknownDocument;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
 import com.google.firebase.firestore.remote.RemoteSerializer;
+import com.google.firestore.v1.DocumentTransform.FieldTransform;
+import com.google.firestore.v1.Write;
+import com.google.firestore.v1.Write.Builder;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.List;
@@ -171,11 +174,34 @@ public final class LocalSerializer {
     for (int i = 0; i < baseMutationsCount; i++) {
       baseMutations.add(rpcSerializer.decodeMutation(batch.getBaseWrites(i)));
     }
-    int mutationsCount = batch.getWritesCount();
-    List<Mutation> mutations = new ArrayList<>(mutationsCount);
-    for (int i = 0; i < mutationsCount; i++) {
-      mutations.add(rpcSerializer.decodeMutation(batch.getWrites(i)));
+
+    List<Mutation> mutations = new ArrayList<>(batch.getWritesCount());
+
+    // Squash old transform mutations into existing patch or set mutations. The replacement of
+    // representing `transforms` with `update_transforms` on the SDK means that old `transform`
+    // mutations stored in IndexedDB need to be updated to `update_transforms`.
+    // TODO(b/174608374): Remove this code once we perform a schema migration.
+    for (int i = 0; i < batch.getWritesCount(); ++i) {
+      Write currentMutation = batch.getWrites(i);
+      boolean hasTransform =
+          i + 1 < batch.getWritesCount() && batch.getWrites(i + 1).hasTransform();
+      if (hasTransform) {
+        hardAssert(
+            batch.getWrites(i).hasUpdate(),
+            "TransformMutation should be preceded by a patch or set mutation");
+        Builder newMutationBuilder = Write.newBuilder(currentMutation);
+        Write transformMutation = batch.getWrites(i + 1);
+        for (FieldTransform fieldTransform :
+            transformMutation.getTransform().getFieldTransformsList()) {
+          newMutationBuilder.addUpdateTransforms(fieldTransform);
+        }
+        mutations.add(rpcSerializer.decodeMutation(newMutationBuilder.build()));
+        ++i;
+      } else {
+        mutations.add(rpcSerializer.decodeMutation(currentMutation));
+      }
     }
+
     return new MutationBatch(batchId, localWriteTime, baseMutations, mutations);
   }
 

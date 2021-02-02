@@ -14,11 +14,7 @@
 
 package com.google.firebase.inject;
 
-/**
- * Provides instances of T.
- *
- * @hide
- */
+/** Provides instances of T. */
 public interface Provider<T> {
   /** Provides a fully constructed instance of T. */
   T get();

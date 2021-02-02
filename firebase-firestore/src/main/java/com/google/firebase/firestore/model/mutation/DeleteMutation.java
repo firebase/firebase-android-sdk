@@ -21,7 +21,6 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.model.NoDocument;
-import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.SnapshotVersion;
 
 /** Represents a Delete operation */
@@ -74,7 +73,7 @@ public final class DeleteMutation extends Mutation {
   @Nullable
   @Override
   public MaybeDocument applyToLocalView(
-      @Nullable MaybeDocument maybeDoc, @Nullable MaybeDocument baseDoc, Timestamp localWriteTime) {
+      @Nullable MaybeDocument maybeDoc, Timestamp localWriteTime) {
     verifyKeyMatches(maybeDoc);
 
     if (!this.getPrecondition().isValidFor(maybeDoc)) {
@@ -82,11 +81,5 @@ public final class DeleteMutation extends Mutation {
     }
 
     return new NoDocument(getKey(), SnapshotVersion.NONE, /*hasCommittedMutations=*/ false);
-  }
-
-  @Nullable
-  @Override
-  public ObjectValue extractBaseValue(@Nullable MaybeDocument maybeDoc) {
-    return null;
   }
 }

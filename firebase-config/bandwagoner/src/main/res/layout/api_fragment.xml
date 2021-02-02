@@ -98,13 +98,14 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="5dp">
+
       <Button
           android:id="@+id/reset_frc_button"
-          android:layout_width="wrap_content"
-          android:layout_height="wrap_content"
+          android:layout_width="match_parent"
+          android:layout_height="match_parent"
           android:layout_weight="1"
           android:text="Reset All"
-          android:textSize="12sp"/>
+          android:textSize="12sp" />
 
       <Space
           android:layout_width="50dp"
@@ -113,21 +114,21 @@
 
       <ToggleButton
           android:id="@+id/dev_mode_toggle_button"
-          android:layout_width="wrap_content"
-          android:layout_height="wrap_content"
+          android:layout_width="match_parent"
+          android:layout_height="match_parent"
           android:layout_weight="1"
           android:checked="false"
           android:textOff="Dev OFF"
           android:textOn="Dev ON"
-          android:textSize="12sp"/>
+          android:textSize="12sp" />
 
       <Button
           android:id="@+id/activate_fetched_button"
-          android:layout_width="wrap_content"
-          android:layout_height="wrap_content"
+          android:layout_width="match_parent"
+          android:layout_height="match_parent"
           android:layout_weight="1"
           android:text="Activate Fetched"
-          android:textSize="12sp"/>
+          android:textSize="12sp" />
     </LinearLayout>
 
     <View

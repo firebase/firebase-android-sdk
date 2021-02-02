@@ -20,6 +20,7 @@ import static com.google.firebase.installations.BuildConfig.VERSION_NAME;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.net.TrafficStats;
 import android.text.TextUtils;
 import android.util.JsonReader;
 import android.util.Log;
@@ -56,6 +57,16 @@ import org.json.JSONObject;
  * @hide
  */
 public class FirebaseInstallationServiceClient {
+
+  // TrafficStats tags must be kept in sync with java/com/google/android/gms/libs/punchclock
+  private static final int TRAFFIC_STATS_FIREBASE_INSTALLATIONS_TAG = 0x00008000;
+  private static final int TRAFFIC_STATS_CREATE_INSTALLATION_TAG =
+      TRAFFIC_STATS_FIREBASE_INSTALLATIONS_TAG | 0x1;
+  private static final int TRAFFIC_STATS_DELETE_INSTALLATION_TAG =
+      TRAFFIC_STATS_FIREBASE_INSTALLATIONS_TAG | 0x2;
+  private static final int TRAFFIC_STATS_GENERATE_AUTH_TOKEN_TAG =
+      TRAFFIC_STATS_FIREBASE_INSTALLATIONS_TAG | 0x3;
+
   private static final String FIREBASE_INSTALLATIONS_API_DOMAIN =
       "firebaseinstallations.googleapis.com";
   private static final String CREATE_REQUEST_RESOURCE_NAME_FORMAT = "projects/%s/installations";
@@ -153,6 +164,7 @@ public class FirebaseInstallationServiceClient {
     URL url = getFullyQualifiedRequestUri(resourceName);
     for (int retryCount = 0; retryCount <= MAX_RETRIES; retryCount++) {
 
+      TrafficStats.setThreadStatsTag(TRAFFIC_STATS_CREATE_INSTALLATION_TAG);
       HttpURLConnection httpURLConnection = openHttpURLConnection(url, apiKey);
 
       try {
@@ -194,6 +206,7 @@ public class FirebaseInstallationServiceClient {
         continue;
       } finally {
         httpURLConnection.disconnect();
+        TrafficStats.clearThreadStatsTag();
       }
     }
 
@@ -309,6 +322,7 @@ public class FirebaseInstallationServiceClient {
 
     int retryCount = 0;
     while (retryCount <= MAX_RETRIES) {
+      TrafficStats.setThreadStatsTag(TRAFFIC_STATS_DELETE_INSTALLATION_TAG);
       HttpURLConnection httpURLConnection = openHttpURLConnection(url, apiKey);
       try {
         httpURLConnection.setRequestMethod("DELETE");
@@ -335,6 +349,7 @@ public class FirebaseInstallationServiceClient {
         retryCount++;
       } finally {
         httpURLConnection.disconnect();
+        TrafficStats.clearThreadStatsTag();
       }
     }
 
@@ -390,6 +405,7 @@ public class FirebaseInstallationServiceClient {
     URL url = getFullyQualifiedRequestUri(resourceName);
     for (int retryCount = 0; retryCount <= MAX_RETRIES; retryCount++) {
 
+      TrafficStats.setThreadStatsTag(TRAFFIC_STATS_GENERATE_AUTH_TOKEN_TAG);
       HttpURLConnection httpURLConnection = openHttpURLConnection(url, apiKey);
       try {
         httpURLConnection.setRequestMethod("POST");
@@ -430,6 +446,7 @@ public class FirebaseInstallationServiceClient {
         continue;
       } finally {
         httpURLConnection.disconnect();
+        TrafficStats.clearThreadStatsTag();
       }
     }
     throw new FirebaseInstallationsException(
@@ -491,7 +508,7 @@ public class FirebaseInstallationServiceClient {
     TokenResult.Builder tokenResult = TokenResult.builder();
     InstallationResponse.Builder builder = InstallationResponse.builder();
     // JsonReader.peek will sometimes throw AssertionErrors in Android 8.0 and above. See
-    // https://b.corp.google.com/issues/79920590 for details.
+    // b/79920590 for details.
     reader.beginObject();
     while (reader.hasNext()) {
       String name = reader.nextName();
@@ -533,7 +550,7 @@ public class FirebaseInstallationServiceClient {
     JsonReader reader = new JsonReader(new InputStreamReader(inputStream, UTF_8));
     TokenResult.Builder builder = TokenResult.builder();
     // JsonReader.peek will sometimes throw AssertionErrors in Android 8.0 and above. See
-    // https://b.corp.google.com/issues/79920590 for details.
+    // b/79920590 for details.
     reader.beginObject();
     while (reader.hasNext()) {
       String name = reader.nextName();
@@ -619,7 +636,8 @@ public class FirebaseInstallationServiceClient {
         response.append(input).append('\n');
       }
       return String.format(
-          "Error when communicating with the Firebase Installations server API. HTTP response: [%d %s: %s]",
+          "Error when communicating with the Firebase Installations server API. HTTP response: [%d"
+              + " %s: %s]",
           conn.getResponseCode(), conn.getResponseMessage(), response);
     } catch (IOException ignored) {
       return null;

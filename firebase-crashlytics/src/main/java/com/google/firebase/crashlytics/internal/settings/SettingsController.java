@@ -90,7 +90,6 @@ public class SettingsController implements SettingsDataProvider {
       HttpRequestFactory httpRequestFactory,
       String versionCode,
       String versionName,
-      String urlEndpoint,
       DataCollectionArbiter dataCollectionArbiter) {
 
     final String installerPackageName = idManager.getInstallerPackageName();
@@ -99,7 +98,7 @@ public class SettingsController implements SettingsDataProvider {
     final CachedSettingsIo cachedSettingsIo = new CachedSettingsIo(context);
     final String settingsUrl = String.format(Locale.US, SETTINGS_URL_FORMAT, googleAppId);
     final SettingsSpiCall settingsSpiCall =
-        new DefaultSettingsSpiCall(urlEndpoint, settingsUrl, httpRequestFactory);
+        new DefaultSettingsSpiCall(settingsUrl, httpRequestFactory);
 
     final String deviceModel = idManager.getModelName();
     final String osBuildVersion = idManager.getOsBuildVersionString();
@@ -244,9 +243,9 @@ public class SettingsController implements SettingsDataProvider {
             if (SettingsCacheBehavior.IGNORE_CACHE_EXPIRATION.equals(cacheBehavior)
                 || !settingsData.isExpired(currentTimeMillis)) {
               toReturn = settingsData;
-              Logger.getLogger().d("Returning cached settings.");
+              Logger.getLogger().v("Returning cached settings.");
             } else {
-              Logger.getLogger().d("Cached settings have expired.");
+              Logger.getLogger().v("Cached settings have expired.");
             }
           } else {
             Logger.getLogger().e("Failed to parse cached settings data.", null);

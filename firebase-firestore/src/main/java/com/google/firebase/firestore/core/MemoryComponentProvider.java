@@ -16,8 +16,8 @@ package com.google.firebase.firestore.core;
 
 import androidx.annotation.Nullable;
 import com.google.firebase.database.collection.ImmutableSortedSet;
+import com.google.firebase.firestore.local.DefaultQueryEngine;
 import com.google.firebase.firestore.local.GarbageCollectionScheduler;
-import com.google.firebase.firestore.local.IndexFreeQueryEngine;
 import com.google.firebase.firestore.local.LocalStore;
 import com.google.firebase.firestore.local.MemoryPersistence;
 import com.google.firebase.firestore.local.Persistence;
@@ -49,7 +49,7 @@ public class MemoryComponentProvider extends ComponentProvider {
   @Override
   protected LocalStore createLocalStore(Configuration configuration) {
     return new LocalStore(
-        getPersistence(), new IndexFreeQueryEngine(), configuration.getInitialUser());
+        getPersistence(), new DefaultQueryEngine(), configuration.getInitialUser());
   }
 
   @Override

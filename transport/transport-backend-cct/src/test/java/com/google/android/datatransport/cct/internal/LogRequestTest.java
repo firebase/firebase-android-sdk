@@ -137,6 +137,10 @@ public class LogRequestTest {
                         .setDevice("device")
                         .setModel("model")
                         .setOsBuild("osbuild")
+                        .setCountry("CA")
+                        .setLocale("en")
+                        .setMccMnc("310260")
+                        .setApplicationBuild("1")
                         .build())
                 .build())
         .isInstanceOf(ClientInfo.class);

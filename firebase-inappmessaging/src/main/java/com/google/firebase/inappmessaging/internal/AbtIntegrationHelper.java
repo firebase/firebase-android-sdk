@@ -18,10 +18,10 @@ import androidx.annotation.VisibleForTesting;
 import com.google.firebase.abt.AbtException;
 import com.google.firebase.abt.AbtExperimentInfo;
 import com.google.firebase.abt.FirebaseABTesting;
+import com.google.firebase.inappmessaging.ExperimentPayloadProto;
 import com.google.firebase.inappmessaging.internal.injection.scopes.FirebaseAppScope;
 import com.google.internal.firebase.inappmessaging.v1.CampaignProto;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.FetchEligibleCampaignsResponse;
-import developers.mobile.abt.FirebaseAbt;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.concurrent.Executor;
@@ -54,7 +54,7 @@ public class AbtIntegrationHelper {
           && content
               .getPayloadCase()
               .equals(CampaignProto.ThickContent.PayloadCase.EXPERIMENTAL_PAYLOAD)) {
-        FirebaseAbt.ExperimentPayload payload =
+        ExperimentPayloadProto.ExperimentPayload payload =
             content.getExperimentalPayload().getExperimentPayload();
         runningExperiments.add(
             new AbtExperimentInfo(
@@ -83,13 +83,14 @@ public class AbtIntegrationHelper {
   }
 
   /**
-   * Takes a {@link FirebaseAbt.ExperimentPayload} and tells ABT to set it as an active experiment.
-   * This is meant to be called on an experimental FIAM that is getting displayed to a user, because
-   * that would indicate that the experiment is now active for that user.
+   * Takes a {@link ExperimentPayloadProto.ExperimentPayload} and tells ABT to set it as an active
+   * experiment. This is meant to be called on an experimental FIAM that is getting displayed to a
+   * user, because that would indicate that the experiment is now active for that user.
    *
-   * @param payload the {@link FirebaseAbt.ExperimentPayload} that should be set as active.
+   * @param payload the {@link ExperimentPayloadProto.ExperimentPayload} that should be set as
+   *     active.
    */
-  void setExperimentActive(FirebaseAbt.ExperimentPayload payload) {
+  void setExperimentActive(ExperimentPayloadProto.ExperimentPayload payload) {
     executor.execute(
         () -> {
           try {

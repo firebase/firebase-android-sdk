@@ -85,8 +85,7 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
     }
 
     setupApiInformationAnalysis(project, android);
-
-    android.testServer(new FirebaseTestServer(project, firebaseLibrary.testLab));
+    android.testServer(new FirebaseTestServer(project, firebaseLibrary.testLab, android));
 
     setupStaticAnalysis(project, firebaseLibrary);
 

@@ -16,11 +16,11 @@
 
 package com.googletest.firebase.remoteconfig.bandwagoner;
 
-import static com.googletest.firebase.remoteconfig.bandwagoner.Constants.TAG;
 import static com.googletest.firebase.remoteconfig.bandwagoner.TimeFormatHelper.getCurrentTimeString;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -64,8 +64,8 @@ public class ApiFragment extends Fragment {
     super.onCreate(savedInstanceState);
 
     frc = FirebaseRemoteConfig.getInstance();
-    frc.setConfigSettings(
-        new FirebaseRemoteConfigSettings.Builder().setDeveloperModeEnabled(true).build());
+    frc.setConfigSettingsAsync(
+        new FirebaseRemoteConfigSettings.Builder().setMinimumFetchIntervalInSeconds(0L).build());
 
     firebaseInstallations = FirebaseApp.getInstance().get(FirebaseInstallationsApi.class);
   }
@@ -132,12 +132,21 @@ public class ApiFragment extends Fragment {
   }
 
   /** Sets the version of the FRC server the SDK fetches from. */
-  @SuppressWarnings("FirebaseUseExplicitDependencies")
   private void onDevModeToggle(boolean isChecked) {
     hideSoftKeyboard();
 
-    frc.setConfigSettings(
-        new FirebaseRemoteConfigSettings.Builder().setDeveloperModeEnabled(isChecked).build());
+    FirebaseRemoteConfigSettings.Builder settingsBuilder =
+        new FirebaseRemoteConfigSettings.Builder();
+    String minimumFetchIntervalString = minimumFetchIntervalText.getText().toString();
+
+    if (isChecked || TextUtils.isEmpty(minimumFetchIntervalString)) {
+      settingsBuilder.setMinimumFetchIntervalInSeconds(0L);
+    } else {
+      settingsBuilder.setMinimumFetchIntervalInSeconds(
+          Integer.parseInt(minimumFetchIntervalString));
+    }
+
+    frc.setConfigSettingsAsync(settingsBuilder.build());
   }
 
   /**
@@ -196,11 +205,20 @@ public class ApiFragment extends Fragment {
   private void onActivateFetched(View unusedView) {
     hideSoftKeyboard();
 
-    boolean activated = frc.activateFetched();
-    apiCallResultsText.setText(
-        String.format(
-            "%s - activateFetched %s!",
-            getCurrentTimeString(), activated ? "was successful" : "returned false"));
+    frc.activate()
+        .addOnCompleteListener(
+            activateTask -> {
+              if (activateTask.isSuccessful()) {
+                apiCallResultsText.setText(
+                    String.format(
+                        "%s - activate %s!",
+                        getCurrentTimeString(),
+                        activateTask.getResult() ? "was successful" : "returned false"));
+              } else {
+                apiCallResultsText.setText(
+                    String.format("%s - activate failed!", getCurrentTimeString()));
+              }
+            });
   }
 
   /**
