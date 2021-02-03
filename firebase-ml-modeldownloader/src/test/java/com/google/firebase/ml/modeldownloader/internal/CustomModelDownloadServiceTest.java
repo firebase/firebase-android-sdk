@@ -473,7 +473,8 @@ public class CustomModelDownloadServiceTest {
 
     Assert.assertTrue(modelTask.getException() instanceof FirebaseMlException);
     Assert.assertEquals(
-        ((FirebaseMlException) modelTask.getException()).getCode(), FirebaseMlException.INTERNAL);
+        ((FirebaseMlException) modelTask.getException()).getCode(),
+        FirebaseMlException.NO_NETWORK_CONNECTION);
     Assert.assertTrue(modelTask.getException().getMessage().contains("no internet connection"));
 
     verify(mockEventLogger, times(1))

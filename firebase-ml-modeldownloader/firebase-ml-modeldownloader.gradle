@@ -19,7 +19,7 @@ plugins {
 
 firebaseLibrary {
     testLab.enabled = true
-    publishJavadoc = false
+    publishJavadoc = true
 }
 
 protobuf {
