@@ -154,7 +154,7 @@ public class CustomModelDownloadService {
                           instanceof UnknownHostException)) {
                 errorCode = ErrorCode.NO_NETWORK_CONNECTION;
                 errorMessage = "Failed to retrieve model info due to no internet connection.";
-                exceptionCode = FirebaseMlException.INTERNAL;
+                exceptionCode = FirebaseMlException.NO_NETWORK_CONNECTION;
               }
               eventLogger.logDownloadFailureWithReason(
                   new CustomModel(modelName, modelHash, 0, 0L), false, errorCode.getValue());
@@ -164,7 +164,6 @@ public class CustomModelDownloadService {
             connection.setRequestProperty(
                 INSTALLATIONS_AUTH_TOKEN_HEADER, installationAuthTokenTask.getResult().getToken());
             connection.setRequestProperty(API_KEY_HEADER, apiKey);
-
             return fetchDownloadDetails(modelName, connection);
           });
 
@@ -202,13 +201,12 @@ public class CustomModelDownloadService {
   private Task<CustomModel> fetchDownloadDetails(String modelName, HttpURLConnection connection) {
     try {
       connection.connect();
-
       int httpResponseCode = connection.getResponseCode();
       String errorMessage = getErrorStream(connection);
 
       switch (httpResponseCode) {
         case HttpURLConnection.HTTP_OK:
-          return Tasks.forResult(readCustomModelResponse(modelName, connection));
+          return readCustomModelResponse(modelName, connection);
         case HttpURLConnection.HTTP_NOT_MODIFIED:
           return Tasks.forResult(null);
         case HttpURLConnection.HTTP_NOT_FOUND:
@@ -257,13 +255,14 @@ public class CustomModelDownloadService {
     } catch (IOException e) {
       ErrorCode errorCode = ErrorCode.MODEL_INFO_DOWNLOAD_CONNECTION_FAILED;
       String errorMessage = "Failed to get model URL";
+      int exceptionCode = FirebaseMlException.INTERNAL;
       if (e instanceof UnknownHostException) {
         errorCode = ErrorCode.NO_NETWORK_CONNECTION;
         errorMessage = "Failed to retrieve model info due to no internet connection.";
+        exceptionCode = FirebaseMlException.NO_NETWORK_CONNECTION;
       }
       eventLogger.logModelInfoRetrieverFailure(new CustomModel(modelName, "", 0, 0), errorCode);
-      return Tasks.forException(
-          new FirebaseMlException(errorMessage, FirebaseMlException.INTERNAL));
+      return Tasks.forException(new FirebaseMlException(errorMessage, exceptionCode));
     }
   }
 
@@ -276,9 +275,8 @@ public class CustomModelDownloadService {
     return Tasks.forException(new FirebaseMlException(errorMessage, invalidArgument));
   }
 
-  private CustomModel readCustomModelResponse(
+  private Task<CustomModel> readCustomModelResponse(
       @NonNull String modelName, HttpURLConnection connection) throws IOException {
-
     String encodingKey = connection.getHeaderField(CONTENT_ENCODING_HEADER_KEY);
     InputStream inputStream = maybeUnGzip(connection.getInputStream(), encodingKey);
     JsonReader reader = new JsonReader(new InputStreamReader(inputStream, UTF_8));
@@ -289,8 +287,13 @@ public class CustomModelDownloadService {
     String modelHash = maybeUnGzipHeader(connection.getHeaderField(ETAG_HEADER), encodingKey);
 
     if (modelHash == null || modelHash.isEmpty()) {
-      // todo(annz) replace this...
-      modelHash = connection.getResponseMessage();
+      eventLogger.logDownloadFailureWithReason(
+          new CustomModel(modelName, modelHash, 0, 0L),
+          false,
+          ErrorCode.MODEL_INFO_DOWNLOAD_CONNECTION_FAILED.getValue());
+      return Tasks.forException(
+          new FirebaseMlException(
+              "Model hash not set in download response.", FirebaseMlException.INTERNAL));
     }
 
     // JsonReader.peek will sometimes throw AssertionErrors in Android 8.0 and above. See
@@ -319,9 +322,10 @@ public class CustomModelDownloadService {
     inputStream.close();
 
     if (!downloadUrl.isEmpty() && expireTime > 0L) {
-      return new CustomModel(modelName, modelHash, fileSize, downloadUrl, expireTime);
+      return Tasks.forResult(
+          new CustomModel(modelName, modelHash, fileSize, downloadUrl, expireTime));
     }
-    return null;
+    return Tasks.forResult(null);
   }
 
   private static InputStream maybeUnGzip(InputStream input, String contentEncoding)
