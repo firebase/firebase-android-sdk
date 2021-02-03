@@ -43,10 +43,14 @@ import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.remote.FirestoreChannel;
 import com.google.firebase.firestore.remote.GrpcMetadataProvider;
 import com.google.firebase.firestore.util.AsyncQueue;
+import com.google.firebase.firestore.util.ByteBufferInputStream;
 import com.google.firebase.firestore.util.Executors;
 import com.google.firebase.firestore.util.Function;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Logger.Level;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.util.concurrent.Executor;
 
 /**
@@ -579,6 +583,67 @@ public class FirebaseFirestore {
   public ListenerRegistration addSnapshotsInSyncListener(
       @NonNull Executor executor, @NonNull Runnable runnable) {
     return addSnapshotsInSyncListener(executor, null, runnable);
+  }
+
+  /**
+   * Loads a Firestore Bundle into the local cache.
+   *
+   * @param bundleData A stream representing the Bundle to be loaded.
+   * @return A {@link LoadBundleTask}, which notifies callers with progress updates, and completion
+   *     or error events.
+   */
+  @NonNull
+  public LoadBundleTask loadBundle(@NonNull InputStream bundleData) {
+    ensureClientConfigured();
+    LoadBundleTask resultTask = new LoadBundleTask();
+    client.loadBundle(bundleData, resultTask);
+    return resultTask;
+  }
+
+  /**
+   * Loads a Firestore Bundle into the local cache.
+   *
+   * @param bundleData A byte array representing the Bundle to be loaded.
+   * @return A {@link LoadBundleTask}, which notifies callers with progress updates, and completion
+   *     or error events.
+   */
+  @NonNull
+  public LoadBundleTask loadBundle(@NonNull byte[] bundleData) {
+    return loadBundle(new ByteArrayInputStream(bundleData));
+  }
+
+  /**
+   * Loads a Firestore Bundle into the local cache.
+   *
+   * @param bundleData A ByteBuffer representing the Bundle to be loaded.
+   * @return A {@link LoadBundleTask}, which notifies callers with progress updates, and completion
+   *     or error events.
+   */
+  @NonNull
+  public LoadBundleTask loadBundle(@NonNull ByteBuffer bundleData) {
+    return loadBundle(new ByteBufferInputStream(bundleData));
+  }
+
+  /**
+   * Reads a Firestore {@link Query} from local cache, identified by the given name.
+   *
+   * <p>The named queries are packaged into bundles on the server side (along with resulting
+   * documents) and loaded to local cache using {@link #loadBundle(byte[])}. Once in local cache,
+   * you can use this method to extract a query by name.
+   */
+  public @NonNull Task<Query> getNamedQuery(@NonNull String name) {
+    ensureClientConfigured();
+    return client
+        .getNamedQuery(name)
+        .continueWith(
+            task -> {
+              com.google.firebase.firestore.core.Query query = task.getResult();
+              if (query != null) {
+                return new Query(query, FirebaseFirestore.this);
+              } else {
+                return null;
+              }
+            });
   }
 
   /**

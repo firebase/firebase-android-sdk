@@ -34,6 +34,7 @@ public final class MemoryPersistence extends Persistence {
   private final Map<User, MemoryMutationQueue> mutationQueues;
   private final MemoryIndexManager indexManager;
   private final MemoryTargetCache targetCache;
+  private final MemoryBundleCache bundleCache;
   private final MemoryRemoteDocumentCache remoteDocumentCache;
   private ReferenceDelegate referenceDelegate;
 
@@ -58,6 +59,7 @@ public final class MemoryPersistence extends Persistence {
     mutationQueues = new HashMap<>();
     indexManager = new MemoryIndexManager();
     targetCache = new MemoryTargetCache(this);
+    bundleCache = new MemoryBundleCache();
     remoteDocumentCache = new MemoryRemoteDocumentCache(this);
   }
 
@@ -116,6 +118,11 @@ public final class MemoryPersistence extends Persistence {
   @Override
   IndexManager getIndexManager() {
     return indexManager;
+  }
+
+  @Override
+  BundleCache getBundleCache() {
+    return bundleCache;
   }
 
   @Override

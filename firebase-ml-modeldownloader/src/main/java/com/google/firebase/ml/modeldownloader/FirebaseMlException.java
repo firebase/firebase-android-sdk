@@ -96,6 +96,9 @@ public class FirebaseMlException extends FirebaseException {
   /** The request does not have valid authentication credentials for the operation. */
   public static final int UNAUTHENTICATED = 16;
 
+  /** There is no network connection. */
+  public static final int NO_NETWORK_CONNECTION = 17;
+
   // ===============================================================================================
   // Error codes: 100 to 149 reserved for errors during model downloading/loading.
   /** There is not enough space left on the device. */
@@ -131,6 +134,7 @@ public class FirebaseMlException extends FirebaseException {
     INTERNAL,
     UNAVAILABLE,
     UNAUTHENTICATED,
+    NO_NETWORK_CONNECTION,
     NOT_ENOUGH_SPACE,
     MODEL_HASH_MISMATCH,
     DOWNLOAD_URL_EXPIRED

@@ -17,6 +17,7 @@ plugins {
     id "java-library"
     id "com.github.johnrengelman.shadow" version "5.2.0"
     id "com.google.protobuf"
+    id "org.jetbrains.kotlin.kapt"
 }
 
 protobuf {
@@ -35,6 +36,8 @@ dependencies {
     implementation "com.google.protobuf:protobuf-java:3.14.0"
     implementation 'com.squareup:javapoet:1.13.0'
     implementation 'com.google.guava:guava:30.0-jre'
+    implementation 'com.google.dagger:dagger:2.31.2'
+    kapt 'com.google.dagger:dagger-compiler:2.31.2'
 
     testImplementation 'junit:junit:4.13.1'
     testImplementation "com.google.truth:truth:1.0.1"

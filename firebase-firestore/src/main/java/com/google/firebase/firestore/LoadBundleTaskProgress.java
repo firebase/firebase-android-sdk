@@ -16,9 +16,11 @@ package com.google.firebase.firestore;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RestrictTo;
+import com.google.firebase.firestore.bundle.BundleMetadata;
 
 /** Represents a progress update or a final state from loading bundles. */
-/* package */ final class LoadBundleTaskProgress {
+public final class LoadBundleTaskProgress {
   static final LoadBundleTaskProgress INITIAL =
       new LoadBundleTaskProgress(0, 0, 0, 0, null, TaskState.SUCCESS);
 
@@ -41,6 +43,8 @@ import androidx.annotation.Nullable;
   @NonNull private final TaskState taskState;
   @Nullable private final Exception exception;
 
+  /** @hide */
+  @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
   public LoadBundleTaskProgress(
       int documentsLoaded,
       int totalDocuments,
@@ -54,6 +58,40 @@ import androidx.annotation.Nullable;
     this.totalBytes = totalBytes;
     this.taskState = taskState;
     this.exception = exception;
+  }
+
+  /**
+   * Creates an "initial" status update from a Bundle's metadata. The initial status sets all
+   * loading indicators to 0.
+   *
+   * @hide
+   */
+  @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+  public static @NonNull LoadBundleTaskProgress forInitial(@NonNull BundleMetadata bundleMetadata) {
+    return new LoadBundleTaskProgress(
+        0,
+        bundleMetadata.getTotalDocuments(),
+        0,
+        bundleMetadata.getTotalBytes(),
+        /* exception= */ null,
+        TaskState.RUNNING);
+  }
+
+  /**
+   * Creates a "success" status update from a Bundle's metadata. The initial status sets all loading
+   * indicators to their maximum values.
+   *
+   * @hide
+   */
+  @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+  public static @NonNull LoadBundleTaskProgress forSuccess(@NonNull BundleMetadata bundleMetadata) {
+    return new LoadBundleTaskProgress(
+        bundleMetadata.getTotalDocuments(),
+        bundleMetadata.getTotalDocuments(),
+        bundleMetadata.getTotalBytes(),
+        bundleMetadata.getTotalBytes(),
+        /* exception= */ null,
+        LoadBundleTaskProgress.TaskState.SUCCESS);
   }
 
   /** Returns how many documents have been loaded. */

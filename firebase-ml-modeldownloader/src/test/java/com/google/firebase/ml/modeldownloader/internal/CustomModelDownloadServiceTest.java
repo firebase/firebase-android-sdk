@@ -428,7 +428,8 @@ public class CustomModelDownloadServiceTest {
 
     Assert.assertTrue(modelTask.getException() instanceof FirebaseMlException);
     Assert.assertEquals(
-        ((FirebaseMlException) modelTask.getException()).getCode(), FirebaseMlException.INTERNAL);
+        ((FirebaseMlException) modelTask.getException()).getCode(),
+        FirebaseMlException.UNAUTHENTICATED);
     Assert.assertTrue(modelTask.getException().getMessage().contains("authentication error"));
 
     verify(mockEventLogger, times(1))
@@ -472,7 +473,8 @@ public class CustomModelDownloadServiceTest {
 
     Assert.assertTrue(modelTask.getException() instanceof FirebaseMlException);
     Assert.assertEquals(
-        ((FirebaseMlException) modelTask.getException()).getCode(), FirebaseMlException.INTERNAL);
+        ((FirebaseMlException) modelTask.getException()).getCode(),
+        FirebaseMlException.NO_NETWORK_CONNECTION);
     Assert.assertTrue(modelTask.getException().getMessage().contains("no internet connection"));
 
     verify(mockEventLogger, times(1))

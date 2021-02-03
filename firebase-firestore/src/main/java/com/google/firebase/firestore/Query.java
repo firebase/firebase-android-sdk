@@ -350,7 +350,7 @@ public class Query {
    * Creates and returns a new {@code Query} with the additional filter that documents must contain
    * the specified field and the value does not equal any of the values from the provided list.
    *
-   * <p>One special case is that {@coce whereNotIn} cannot match {@code null} values. To query for
+   * <p>One special case is that {@code whereNotIn} cannot match {@code null} values. To query for
    * documents where a field exists and is {@code null}, use {@code whereNotEqualTo}, which can
    * handle this special case.
    *
@@ -371,7 +371,7 @@ public class Query {
    * Creates and returns a new {@code Query} with the additional filter that documents must contain
    * the specified field and the value does not equal any of the values from the provided list.
    *
-   * <p>One special case is that {@coce whereNotIn} cannot match {@code null} values. To query for
+   * <p>One special case is that {@code whereNotIn} cannot match {@code null} values. To query for
    * documents where a field exists and is {@code null}, use {@code whereNotEqualTo}, which can
    * handle this special case.
    *

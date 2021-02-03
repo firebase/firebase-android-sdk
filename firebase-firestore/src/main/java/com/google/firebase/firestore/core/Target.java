@@ -14,8 +14,6 @@
 
 package com.google.firebase.firestore.core;
 
-import static com.google.firebase.firestore.util.Assert.hardAssert;
-
 import androidx.annotation.Nullable;
 import com.google.firebase.firestore.core.OrderBy.Direction;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -49,10 +47,11 @@ public final class Target {
    * Initializes a Target with a path and additional query constraints. Path must currently be empty
    * if this is a collection group query.
    *
-   * <p>NOTE: you should always construct Target from {@code Query.toTarget} instead of using this
-   * constructor, because Query provides an implicit {@code orderBy} property.
+   * <p>NOTE: In general, you should prefer to construct Target from {@code Query.toTarget} instead
+   * of using this constructor, because Query provides an implicit {@code orderBy} property and
+   * flips the orderBy constraints for limitToLast() queries.
    */
-  Target(
+  public Target(
       ResourcePath path,
       @Nullable String collectionGroup,
       List<Filter> filters,
@@ -89,12 +88,8 @@ public final class Target {
     return filters;
   }
 
-  /**
-   * The maximum number of results to return. If there is no limit on the query, then this will
-   * cause an assertion failure.
-   */
+  /** The maximum number of results to return. Returns -1 if there is no limit on the query. */
   public long getLimit() {
-    hardAssert(hasLimit(), "Called getLimit when no limit was set");
     return limit;
   }
 

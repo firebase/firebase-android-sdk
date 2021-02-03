@@ -91,12 +91,24 @@ public class JobInfoScheduler implements WorkScheduler {
    */
   @Override
   public void schedule(TransportContext transportContext, int attemptNumber) {
+    schedule(transportContext, attemptNumber, false);
+  }
+
+  /**
+   * Schedules the JobScheduler service.
+   *
+   * @param transportContext Contains information about the backend and the priority.
+   * @param attemptNumber Number of times the JobScheduler has tried to log for this backend.
+   * @param force When set to true the scheduler is forced to schedule the job.
+   */
+  @Override
+  public void schedule(TransportContext transportContext, int attemptNumber, boolean force) {
     ComponentName serviceComponent = new ComponentName(context, JobInfoSchedulerService.class);
     JobScheduler jobScheduler =
         (JobScheduler) context.getSystemService(Context.JOB_SCHEDULER_SERVICE);
     int jobId = getJobId(transportContext);
     // Check if there exists a job scheduled for this backend name.
-    if (isJobServiceOn(jobScheduler, jobId, attemptNumber)) {
+    if (!force && isJobServiceOn(jobScheduler, jobId, attemptNumber)) {
       Logging.d(
           LOG_TAG, "Upload for context %s is already scheduled. Returning...", transportContext);
       return;
