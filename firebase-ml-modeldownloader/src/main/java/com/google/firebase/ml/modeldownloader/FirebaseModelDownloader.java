@@ -120,6 +120,17 @@ public class FirebaseModelDownloader {
    *       trigger new download, task only completes when download finishes
    * </ul>
    *
+   * Most common exceptions include:
+   *
+   * <ul>
+   *   <li>{@link FirebaseMlException#NO_NETWORK_CONNECTION}: Error connecting to the network.
+   *   <li>{@link FirebaseMlException#NOT_FOUND}: No model found with the given name.
+   *   <li>{@link FirebaseMlException#NOT_ENOUGH_SPACE}: Not enough space on device to download
+   *       model.
+   *   <li>{@link FirebaseMlException#DOWNLOAD_URL_EXPIRED}: Url used to fetch model expired before
+   *       model download completed. (Rare: these calls are retried internally before being raised.)
+   * </ul>
+   *
    * @param modelName - model name
    * @param downloadType - download type
    * @param conditions - download conditions
@@ -422,11 +433,9 @@ public class FirebaseModelDownloader {
   }
 
   /**
-   * Triggers the move to permanent storage of successful model downloads and lists all models
-   * downloaded to device.
+   * Lists all models downloaded to device.
    *
-   * @return The set of all models that are downloaded to this device, triggers completion of file
-   *     moves for completed model downloads.
+   * @return The set of all models that are downloaded to this device.
    */
   @NonNull
   public Task<Set<CustomModel>> listDownloadedModels() {
@@ -440,7 +449,7 @@ public class FirebaseModelDownloader {
   }
 
   /**
-   * Delete old local models, when no longer in use.
+   * Delete local model. Removes any information and files associated with the model name.
    *
    * @param modelName - name of the model
    */
@@ -463,7 +472,15 @@ public class FirebaseModelDownloader {
   }
 
   /**
-   * Update the settings which allow logging to firelog.
+   * Enables stats collection in Firebase Ml ModelDownloader via Firelog. The stats include API
+   * calls counts, errors, API call durations, options, etc. No personally identifiable information
+   * is logged.
+   *
+   * <p>The setting is per FirebaseApp, and it is persistent together with app's private data. It
+   * means if the user uninstalls the app or clears all app data, the setting will be erased. The
+   * best practice is to set the flag in each initialization.
+   *
+   * <p>By default the logging matches the Firebase wide data collection switch.
    *
    * @param enabled - is statistics logging enabled
    */
@@ -475,17 +492,15 @@ public class FirebaseModelDownloader {
    * Get the current models' download id (returns background download id when applicable). This id
    * can be used to create a progress bar to track file download progress.
    *
-   * <p>If no model exists or there is no download in progress, return 0.
+   * <p>[Preferred] If getModelTask is not null, then this task returns when the download id is not
+   * 0 (download has been enqueued) or when the getModelTask completes (returning 0).
    *
-   * <p>If 0 is returned immediately after starting a download via getModel, then
-   *
-   * <ul>
-   *   <li>the enqueuing wasn't needed: the getModel task already completed and/or no background
-   *       update.
-   *   <li>the enqueuing hasn't completed: the download id hasn't generated yet - try again.
-   * </ul>
+   * <p>If getModelTask is null, then immediately returns the download id of the model. This will be
+   * 0 if the model doesn't exist, the model has completed downloading, or the download hasn't been
+   * enqueued.
    *
    * @param modelName - model name
+   * @param getModelTask - use the most recent getModel task associated with the model name
    * @return id associated with Android Download Manager.
    */
   @NonNull
