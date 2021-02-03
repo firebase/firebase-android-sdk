@@ -28,6 +28,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.query;
 import static com.google.firebase.firestore.testutil.TestUtil.ref;
 import static com.google.firebase.firestore.testutil.TestUtil.setMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.verifyMutation;
+import static com.google.firebase.firestore.testutil.TestUtil.version;
 import static com.google.firebase.firestore.testutil.TestUtil.wrap;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
@@ -1033,6 +1034,35 @@ public final class RemoteSerializerTest {
             .setQuery(queryBuilder)
             .setTargetId(1)
             .setResumeToken(TestUtil.resumeToken(1000))
+            .build();
+
+    assertEquals(expected, actual);
+    assertEquals(
+        serializer.decodeQueryTarget(serializer.encodeQueryTarget(q.toTarget())), q.toTarget());
+  }
+
+  @Test
+  public void testEncodesReadTime() {
+    Query q = Query.atPath(ResourcePath.fromString("docs"));
+    TargetData targetData =
+        new TargetData(q.toTarget(), 1, 2, QueryPurpose.LISTEN)
+            .withResumeToken(ByteString.EMPTY, version(4000000));
+    Target actual = serializer.encodeTarget(targetData);
+
+    StructuredQuery.Builder structuredQueryBuilder =
+        StructuredQuery.newBuilder()
+            .addFrom(CollectionSelector.newBuilder().setCollectionId("docs"))
+            .addOrderBy(defaultKeyOrder());
+
+    QueryTarget.Builder queryBuilder =
+        QueryTarget.newBuilder()
+            .setParent("projects/p/databases/d/documents")
+            .setStructuredQuery(structuredQueryBuilder);
+    Target expected =
+        Target.newBuilder()
+            .setQuery(queryBuilder)
+            .setTargetId(1)
+            .setReadTime(Timestamp.newBuilder().setSeconds(4))
             .build();
 
     assertEquals(expected, actual);

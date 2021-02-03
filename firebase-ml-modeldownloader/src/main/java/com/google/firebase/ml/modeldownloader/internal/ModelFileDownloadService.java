@@ -592,8 +592,8 @@ public class ModelFileDownloadService {
             if (downloadingModel == null) {
               taskCompletionSource.setException(
                   new FirebaseMlException(
-                      "No model associated with name: " + modelName,
-                      FirebaseMlException.INVALID_ARGUMENT));
+                      "Possible caching issues: No model associated with name: " + modelName,
+                      FirebaseMlException.INTERNAL));
               return;
             }
           }
