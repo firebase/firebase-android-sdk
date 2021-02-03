@@ -21,6 +21,8 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.FirebaseFirestoreException;
@@ -59,9 +61,9 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
 
 /**
@@ -130,7 +132,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
    * The keys of documents that are in limbo for which we haven't yet started a limbo resolution
    * query.
    */
-  private final Queue<DocumentKey> enqueuedLimboResolutions;
+  private final LinkedHashSet<DocumentKey> enqueuedLimboResolutions;
 
   /** Keeps track of the target ID for each document that is in limbo with an active target. */
   private final Map<DocumentKey, Integer> activeLimboTargetsByKey;
@@ -169,7 +171,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     queryViewsByQuery = new HashMap<>();
     queriesByTarget = new HashMap<>();
 
-    enqueuedLimboResolutions = new ArrayDeque<>();
+    enqueuedLimboResolutions = new LinkedHashSet<>();
     activeLimboTargetsByKey = new HashMap<>();
     activeLimboResolutionsByTarget = new HashMap<>();
     limboDocumentRefs = new ReferenceSet();
@@ -603,6 +605,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
   }
 
   private void removeLimboTarget(DocumentKey key) {
+    enqueuedLimboResolutions.remove(key);
     // It's possible that the target already got removed because the query failed. In that case,
     // the key won't exist in `limboTargetsByKey`. Only do the cleanup if we still have the target.
     Integer targetId = activeLimboTargetsByKey.get(key);
@@ -676,7 +679,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
 
   private void trackLimboChange(LimboDocumentChange change) {
     DocumentKey key = change.getKey();
-    if (!activeLimboTargetsByKey.containsKey(key)) {
+    if (!activeLimboTargetsByKey.containsKey(key) && !enqueuedLimboResolutions.contains(key)) {
       Logger.debug(TAG, "New document in limbo: %s", key);
       enqueuedLimboResolutions.add(key);
       pumpEnqueuedLimboResolutions();
@@ -694,7 +697,8 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
   private void pumpEnqueuedLimboResolutions() {
     while (!enqueuedLimboResolutions.isEmpty()
         && activeLimboTargetsByKey.size() < maxConcurrentLimboResolutions) {
-      DocumentKey key = enqueuedLimboResolutions.remove();
+      DocumentKey key = enqueuedLimboResolutions.iterator().next();
+      enqueuedLimboResolutions.remove(key);
       int limboTargetId = targetIdGenerator.nextId();
       activeLimboResolutionsByTarget.put(limboTargetId, new LimboResolution(key));
       activeLimboTargetsByKey.put(key, limboTargetId);
@@ -708,15 +712,15 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
   }
 
   @VisibleForTesting
-  public Map<DocumentKey, Integer> getActiveLimboDocumentResolutions() {
+  public ImmutableMap<DocumentKey, Integer> getActiveLimboDocumentResolutions() {
     // Make a defensive copy as the Map continues to be modified.
-    return new HashMap<>(activeLimboTargetsByKey);
+    return ImmutableMap.copyOf(activeLimboTargetsByKey);
   }
 
   @VisibleForTesting
-  public Queue<DocumentKey> getEnqueuedLimboDocumentResolutions() {
-    // Make a defensive copy as the Queue continues to be modified.
-    return new ArrayDeque<>(enqueuedLimboResolutions);
+  public ImmutableSet<DocumentKey> getEnqueuedLimboDocumentResolutions() {
+    // Make a defensive copy as the LinkedHashMap continues to be modified.
+    return ImmutableSet.copyOf(enqueuedLimboResolutions);
   }
 
   public void handleCredentialChange(User user) {
