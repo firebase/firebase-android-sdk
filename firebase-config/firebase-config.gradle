@@ -60,6 +60,8 @@ dependencies {
 
     compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
 
+    javadocClasspath 'com.google.auto.value:auto-value-annotations:1.6.6'
+
     testImplementation 'org.mockito:mockito-core:2.25.0'
     testImplementation 'com.google.truth:truth:0.44'
     testImplementation 'junit:junit:4.12'
