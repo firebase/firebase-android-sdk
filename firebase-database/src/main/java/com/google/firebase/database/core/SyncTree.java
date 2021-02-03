@@ -528,8 +528,6 @@ public class SyncTree {
                     : syncPoint.getCompleteServerCache(Path.getEmptyPath());
           }
 
-          // persistenceManager.setQueryActive(query);
-
           CacheNode serverCache;
           if (serverCacheNode != null) {
             serverCache =
