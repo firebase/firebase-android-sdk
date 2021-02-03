@@ -14,50 +14,49 @@
 
 package com.google.firebase.firestore.testutil;
 
-import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
+import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
-import android.util.Log;
-import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.firestore.util.Logger;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 
 /** Event accumulator for integration test */
 public class EventAccumulator<T> {
-  private TaskCompletionSource<Void> completion;
-  private final List<T> events;
-  private int maxEvents;
+  private static final int MAX_EVENTS = 10;
+
+  private final BlockingQueue<T> events;
+  private boolean rejectAdditionalEvents;
 
   public EventAccumulator() {
-    events = new ArrayList<>();
-    maxEvents = 0;
+    events = new ArrayBlockingQueue<T>(MAX_EVENTS);
   }
 
   public EventListener<T> listener() {
     return (value, error) -> {
-      synchronized (EventAccumulator.this) {
-        hardAssert(error == null, "Unexpected error: %s", error);
-        Log.i("EventAccumulator", "Received new event: " + value);
-        events.add(value);
-        checkFulfilled();
-      }
+      hardAssert(error == null, "Unexpected error: %s", error);
+      hardAssert(
+          !rejectAdditionalEvents, "Received event after `assertNoAdditionalEvents()` was called");
+      Logger.debug("EventAccumulator", "Received new event: " + value);
+      events.offer(value);
     };
   }
 
   public List<T> await(int numEvents) {
-    synchronized (this) {
-      hardAssert(completion == null, "calling await while another await is running");
-      completion = new TaskCompletionSource<>();
-      maxEvents = maxEvents + numEvents;
-      checkFulfilled();
+    try {
+      List<T> result = new ArrayList<>(numEvents);
+      for (int i = 0; i < numEvents; ++i) {
+        result.add(events.take());
+      }
+      return result;
+    } catch (InterruptedException e) {
+      throw fail("Failed to receive " + numEvents + " events");
     }
-
-    waitFor(completion.getTask());
-    completion = null;
-    return events.subList(maxEvents - numEvents, maxEvents);
   }
 
   // Await 1 event.
@@ -83,6 +82,11 @@ public class EventAccumulator<T> {
     return event;
   }
 
+  public void assertNoAdditionalEvents() {
+    rejectAdditionalEvents = true;
+    hardAssert(events.isEmpty(), "There are %d unprocessed events.", events.size());
+  }
+
   private boolean hasPendingWrites(T event) {
     if (event instanceof DocumentSnapshot) {
       return ((DocumentSnapshot) event).getMetadata().hasPendingWrites();
@@ -90,12 +94,6 @@ public class EventAccumulator<T> {
       hardAssert(
           event instanceof QuerySnapshot, "hasPendingWrites() called on unknown event: %s", event);
       return ((QuerySnapshot) event).getMetadata().hasPendingWrites();
-    }
-  }
-
-  private void checkFulfilled() {
-    if (completion != null && events.size() >= maxEvents) {
-      completion.setResult(null);
     }
   }
 }

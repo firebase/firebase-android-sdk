@@ -209,6 +209,13 @@ public final class RemoteSerializer {
         && path.getSegment(2).equals("databases");
   }
 
+  /** Validates that a path has a prefix that belongs to the current database. */
+  public boolean isLocalResourceName(ResourcePath path) {
+    return isValidResourceName(path)
+        && path.getSegment(1).equals(databaseId.getProjectId())
+        && path.getSegment(3).equals(databaseId.getDatabaseId());
+  }
+
   public String databaseName() {
     return databaseName;
   }
@@ -488,7 +495,15 @@ public final class RemoteSerializer {
     }
 
     builder.setTargetId(targetData.getTargetId());
-    builder.setResumeToken(targetData.getResumeToken());
+
+    if (targetData.getResumeToken().isEmpty()
+        && targetData.getSnapshotVersion().compareTo(SnapshotVersion.NONE) > 0) {
+      // TODO(wuandy): Consider removing above check because it is most likely true. Right now, many
+      // tests depend on this behaviour though (leaving min() out of serialization).
+      builder.setReadTime(encodeTimestamp(targetData.getSnapshotVersion().getTimestamp()));
+    } else {
+      builder.setResumeToken(targetData.getResumeToken());
+    }
 
     return builder.build();
   }
@@ -556,10 +571,9 @@ public final class RemoteSerializer {
     return builder.build();
   }
 
-  public com.google.firebase.firestore.core.Target decodeQueryTarget(QueryTarget target) {
-    ResourcePath path = decodeQueryPath(target.getParent());
-
-    StructuredQuery query = target.getStructuredQuery();
+  public com.google.firebase.firestore.core.Target decodeQueryTarget(
+      String parent, StructuredQuery query) {
+    ResourcePath path = decodeQueryPath(parent);
 
     String collectionGroup = null;
     int fromCount = query.getFromCount();
@@ -608,16 +622,12 @@ public final class RemoteSerializer {
       endAt = decodeBound(query.getEndAt());
     }
 
-    return new Query(
-            path,
-            collectionGroup,
-            filterBy,
-            orderBy,
-            limit,
-            Query.LimitType.LIMIT_TO_FIRST,
-            startAt,
-            endAt)
-        .toTarget();
+    return new com.google.firebase.firestore.core.Target(
+        path, collectionGroup, filterBy, orderBy, limit, startAt, endAt);
+  }
+
+  public com.google.firebase.firestore.core.Target decodeQueryTarget(QueryTarget target) {
+    return decodeQueryTarget(target.getParent(), target.getStructuredQuery());
   }
 
   // Filters
