@@ -139,7 +139,7 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
   Provider<TransportFactory> transportFactoryProvider;
 
   @Inject
-  public FirebasePerformance(
+  FirebasePerformance(
       @NonNull FirebaseApp firebaseApp,
       @NonNull Provider<RemoteConfigComponent> firebaseRemoteConfigProvider,
       @NonNull FirebaseInstallationsApi firebaseInstallationsApi,

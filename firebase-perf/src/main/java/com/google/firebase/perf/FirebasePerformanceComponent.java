@@ -21,13 +21,4 @@ import dagger.Component;
 public interface FirebasePerformanceComponent {
   @NonNull
   FirebasePerformance getFirebasePerformance();
-
-  @Component.Builder
-  interface Builder {
-    @NonNull
-    Builder firebasePerformanceModule(@NonNull FirebasePerformanceModule module);
-
-    @NonNull
-    FirebasePerformanceComponent build();
-  }
 }
