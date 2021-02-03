@@ -55,7 +55,7 @@ public class FiamWindowManager {
     }
 
     if(activity.isFinishing()){
-      Logging.loge("Activity is finishing or not having valid window token. Cannot show Fiam");
+      Logging.loge("Activity is finishing or does not have valid window token. Cannot show FIAM.");
       return;
     }
 
