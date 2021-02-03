@@ -210,6 +210,19 @@ public class SharedPreferencesUtilTest {
   }
 
   @Test
+  public void setCustomModelStatsCollectionFlag_nullUpdates() {
+    sharedPreferencesUtil.setCustomModelStatsCollectionEnabled(false);
+    sharedPreferencesUtil.setCustomModelStatsCollectionEnabled(null);
+    assertEquals(
+        sharedPreferencesUtil.getCustomModelStatsCollectionFlag(),
+        app.isDataCollectionDefaultEnabled());
+    app.setDataCollectionDefaultEnabled(Boolean.FALSE);
+    assertFalse(sharedPreferencesUtil.getCustomModelStatsCollectionFlag());
+    app.setDataCollectionDefaultEnabled(Boolean.TRUE);
+    assertTrue(sharedPreferencesUtil.getCustomModelStatsCollectionFlag());
+  }
+
+  @Test
   public void getModelDownloadBeginTimeMs_default0() {
     assertEquals(sharedPreferencesUtil.getModelDownloadBeginTimeMs(CUSTOM_MODEL_DOWNLOADING), 0L);
   }

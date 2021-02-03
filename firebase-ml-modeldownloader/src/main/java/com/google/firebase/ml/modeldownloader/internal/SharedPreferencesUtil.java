@@ -271,12 +271,20 @@ public class SharedPreferencesUtil {
    *
    * @param enable - False to turn off logging. True to turn on logging.
    */
-  public synchronized void setCustomModelStatsCollectionEnabled(boolean enable) {
-    getSharedPreferences()
-        .edit()
-        .putBoolean(
-            String.format(EVENT_LOGGING_ENABLED_PATTERN, CUSTOM_MODEL_LIB, persistenceKey), enable)
-        .commit();
+  public synchronized void setCustomModelStatsCollectionEnabled(Boolean enable) {
+    if (enable == null) {
+      getSharedPreferences()
+          .edit()
+          .remove(String.format(EVENT_LOGGING_ENABLED_PATTERN, CUSTOM_MODEL_LIB, persistenceKey))
+          .commit();
+    } else {
+      getSharedPreferences()
+          .edit()
+          .putBoolean(
+              String.format(EVENT_LOGGING_ENABLED_PATTERN, CUSTOM_MODEL_LIB, persistenceKey),
+              enable)
+          .commit();
+    }
   }
 
   /**
