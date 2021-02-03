@@ -4,6 +4,9 @@
   Bundles contain pre-packaged data produced with the NodeJS Server SDK and
   can be used to populate Firestore's cache without reading documents from
   the backend.
+- [fixed] Fix a Firestore bug where local cache inconsistencies were
+  unnecessarily being resolved, resulting in the incompletion of `Task` objects
+  returned from `get()` invocations.
 
 # (22.0.2)
 - [changed] A write to a document that contains FieldValue transforms is no
