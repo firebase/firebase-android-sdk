@@ -27,13 +27,18 @@ public class ByteBufferInputStream extends InputStream {
     this.buffer = buf;
   }
 
+  @Override
   public int read() {
     if (!buffer.hasRemaining()) {
       return -1;
     }
+    // `& 0xFF` converts the signed byte value to an integer and then strips the first 3 bytes.
+    // This keeps the last eight bits of the value and thereby translates the original byte value to
+    // the [0, 255] range.r
     return buffer.get() & 0xFF;
   }
 
+  @Override
   public int read(@NonNull byte[] b, int off, int len) throws IOException {
     if (!buffer.hasRemaining()) {
       return -1;

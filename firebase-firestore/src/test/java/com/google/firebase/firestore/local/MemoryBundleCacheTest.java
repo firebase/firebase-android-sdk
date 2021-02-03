@@ -12,11 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.firestore;
+package com.google.firebase.firestore.local;
 
-import androidx.annotation.NonNull;
+import org.junit.runner.RunWith;
+import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 
-/** A listener that is called periodically during execution of a {@link LoadBundleTask}. */
-public interface OnProgressListener<ProgressT> {
-  void onProgress(@NonNull ProgressT snapshot);
+@RunWith(RobolectricTestRunner.class)
+@Config(manifest = Config.NONE)
+public class MemoryBundleCacheTest extends BundleCacheTestCase {
+
+  @Override
+  Persistence getPersistence() {
+    return PersistenceTestHelpers.createEagerGCMemoryPersistence();
+  }
 }

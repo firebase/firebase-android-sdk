@@ -12,11 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.firestore;
+/** @hide */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+package com.google.firebase.firestore.bundle;
 
-import androidx.annotation.NonNull;
-
-/** A listener that is called periodically during execution of a {@link LoadBundleTask}. */
-public interface OnProgressListener<ProgressT> {
-  void onProgress(@NonNull ProgressT snapshot);
-}
+import androidx.annotation.RestrictTo;

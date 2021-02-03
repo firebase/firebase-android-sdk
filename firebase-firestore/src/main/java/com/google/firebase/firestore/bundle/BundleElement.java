@@ -12,11 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.firestore;
+package com.google.firebase.firestore.bundle;
 
-import androidx.annotation.NonNull;
-
-/** A listener that is called periodically during execution of a {@link LoadBundleTask}. */
-public interface OnProgressListener<ProgressT> {
-  void onProgress(@NonNull ProgressT snapshot);
-}
+public interface BundleElement {}
