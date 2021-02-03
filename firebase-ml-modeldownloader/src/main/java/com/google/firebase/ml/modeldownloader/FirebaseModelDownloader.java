@@ -165,9 +165,9 @@ public class FirebaseModelDownloader {
   }
 
   /**
-   * Checks the local model, if a completed download exists - returns this model. Else if a download
-   * is in progress returns the downloading model version. Otherwise, this model is in a bad state -
-   * clears the model and return null
+   * Checks the local model, if a completed download exists - returns this model. Otherwise, if a
+   * download is in progress returns the downloading model version. Otherwise, this model is in a
+   * bad state - clears the model and return null
    *
    * @param modelName - name of the model
    * @return the local model with file downloaded details or null if no local model.
