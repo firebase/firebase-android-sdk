@@ -48,6 +48,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import javax.inject.Inject;
 
 /**
  * The Firebase Performance Monitoring API.
@@ -132,13 +133,17 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
   // to false if it's been force disabled or it is set to null if neither.
   @Nullable private Boolean mPerformanceCollectionForceEnabledState = null;
 
-  /** This constructor is invoked from {@link com.google.firebase.perf.FirebasePerfRegistrar}. */
-  FirebasePerformance(
-      FirebaseApp firebaseApp,
-      Provider<RemoteConfigComponent> firebaseRemoteConfigProvider,
-      FirebaseInstallationsApi firebaseInstallationsApi,
-      Provider<TransportFactory> transportFactoryProvider) {
+  FirebaseApp firebaseApp;
+  Provider<RemoteConfigComponent> firebaseRemoteConfigProvider;
+  FirebaseInstallationsApi firebaseInstallationsApi;
+  Provider<TransportFactory> transportFactoryProvider;
 
+  @Inject
+  public FirebasePerformance(
+      @NonNull FirebaseApp firebaseApp,
+      @NonNull Provider<RemoteConfigComponent> firebaseRemoteConfigProvider,
+      @NonNull FirebaseInstallationsApi firebaseInstallationsApi,
+      @NonNull Provider<TransportFactory> transportFactoryProvider) {
     this(
         firebaseApp,
         firebaseRemoteConfigProvider,
@@ -147,6 +152,10 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
         RemoteConfigManager.getInstance(),
         ConfigResolver.getInstance(),
         GaugeManager.getInstance());
+    this.firebaseApp = firebaseApp;
+    this.firebaseRemoteConfigProvider = firebaseRemoteConfigProvider;
+    this.firebaseInstallationsApi = firebaseInstallationsApi;
+    this.transportFactoryProvider = transportFactoryProvider;
   }
 
   /**
