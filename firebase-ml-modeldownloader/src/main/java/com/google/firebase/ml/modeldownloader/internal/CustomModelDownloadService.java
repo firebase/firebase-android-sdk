@@ -229,8 +229,8 @@ public class CustomModelDownloadService {
               modelName,
               httpResponseCode,
               "Too many requests to server please wait before trying again.",
-              FirebaseMlException.INVALID_ARGUMENT);
-        case HttpURLConnection.HTTP_SERVER_ERROR:
+              FirebaseMlException.RESOURCE_EXHAUSTED);
+        case HttpURLConnection.HTTP_INTERNAL_ERROR:
           return setAndLogException(
               modelName,
               httpResponseCode,
@@ -240,6 +240,17 @@ public class CustomModelDownloadService {
                   modelName,
                   errorMessage),
               FirebaseMlException.INTERNAL);
+        case HttpURLConnection.HTTP_UNAUTHORIZED:
+        case HttpURLConnection.HTTP_FORBIDDEN:
+          return setAndLogException(
+              modelName,
+              httpResponseCode,
+              String.format(
+                  Locale.getDefault(),
+                  "Issue while fetching model (%s); error message: %s",
+                  modelName,
+                  errorMessage),
+              FirebaseMlException.PERMISSION_DENIED);
         default:
           return setAndLogException(
               modelName,
