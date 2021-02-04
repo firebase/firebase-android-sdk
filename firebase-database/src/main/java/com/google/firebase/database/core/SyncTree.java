@@ -495,25 +495,22 @@ public class SyncTree {
           // Any covering writes will necessarily be at the root, so really all we need to find is
           // the server cache. Consider optimizing this once there's a better understanding of
           // what actual behavior will be.
-          // for (Map.Entry<QuerySpec, View> entry: views.entrySet()) {
-          {
-            ImmutableTree<SyncPoint> tree = syncPointTree;
-            Path currentPath = path;
-            while (!tree.isEmpty()) {
-              SyncPoint currentSyncPoint = tree.getValue();
-              if (currentSyncPoint != null) {
-                serverCacheNode =
-                    serverCacheNode != null
-                        ? serverCacheNode
-                        : currentSyncPoint.getCompleteServerCache(currentPath);
-                foundAncestorDefaultView =
-                    foundAncestorDefaultView || currentSyncPoint.hasCompleteView();
-              }
-              ChildKey front =
-                  currentPath.isEmpty() ? ChildKey.fromString("") : currentPath.getFront();
-              tree = tree.getChild(front);
-              currentPath = currentPath.popFront();
+          ImmutableTree<SyncPoint> tree = syncPointTree;
+          Path currentPath = path;
+          while (!tree.isEmpty()) {
+            SyncPoint currentSyncPoint = tree.getValue();
+            if (currentSyncPoint != null) {
+              serverCacheNode =
+                  serverCacheNode != null
+                      ? serverCacheNode
+                      : currentSyncPoint.getCompleteServerCache(currentPath);
+              foundAncestorDefaultView =
+                  foundAncestorDefaultView || currentSyncPoint.hasCompleteView();
             }
+            ChildKey front =
+                currentPath.isEmpty() ? ChildKey.fromString("") : currentPath.getFront();
+            tree = tree.getChild(front);
+            currentPath = currentPath.popFront();
           }
 
           SyncPoint syncPoint = syncPointTree.get(path);

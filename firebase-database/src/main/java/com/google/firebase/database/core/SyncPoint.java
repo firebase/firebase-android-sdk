@@ -114,7 +114,6 @@ public class SyncPoint {
 
   /** Add an event callback for the specified query. */
   public View getView(QuerySpec query, WriteTreeRef writesCache, CacheNode serverCache) {
-    // TODO: Inline with addEventRegistration
     View view = this.views.get(query.getParams());
     if (view == null) {
       // TODO: make writesCache take flag for complete server node

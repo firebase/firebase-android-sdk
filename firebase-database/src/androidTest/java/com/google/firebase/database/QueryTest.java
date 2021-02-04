@@ -616,6 +616,8 @@ public class QueryTest {
     assertArrayEquals(values.values().toArray(), new Long[] {values.get(childOne.getKey())});
   }
 
+  // This test checks that range filters are applied to in-memory data if our active listeners
+  // have already retrieved the data we need to satisfy the get().
   @Test
   public void testEndBeforeWithOrderByKeyOverlappingListener()
       throws DatabaseException, InterruptedException, ExecutionException {
@@ -626,7 +628,7 @@ public class QueryTest {
     Tasks.await(childTwo.setValue(2L));
 
     Semaphore semaphore = new Semaphore(0);
-    ref.addValueEventListener(
+    ValueEventListener listener =
         new ValueEventListener() {
           @Override
           public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -635,7 +637,9 @@ public class QueryTest {
 
           @Override
           public void onCancelled(@NonNull DatabaseError error) {}
-        });
+        };
+
+    ref.addValueEventListener(listener);
 
     IntegrationTestHelpers.waitFor(semaphore);
 
@@ -645,6 +649,7 @@ public class QueryTest {
     assertNotNull(values);
     assertArrayEquals(values.keySet().toArray(), new String[] {childOne.getKey()});
     assertArrayEquals(values.values().toArray(), new Long[] {values.get(childOne.getKey())});
+    ref.removeEventListener(listener);
   }
 
   @Test
