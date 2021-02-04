@@ -19,6 +19,9 @@ import com.google.android.datatransport.TransportFactory;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
+import com.google.firebase.perf.config.ConfigResolver;
+import com.google.firebase.perf.internal.GaugeManager;
+import com.google.firebase.perf.internal.RemoteConfigManager;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
 import dagger.Module;
 import dagger.Provides;
@@ -30,6 +33,10 @@ public class FirebasePerformanceModule {
   private final Provider<RemoteConfigComponent> remoteConfigComponentProvider;
   private final Provider<TransportFactory> transportFactoryProvider;
 
+  //  private final RemoteConfigManager remoteConfigManager;
+  //  private final ConfigResolver configResolver;
+  //  private final GaugeManager gaugeManager;
+
   public FirebasePerformanceModule(
       @NonNull FirebaseApp firebaseApp,
       @NonNull FirebaseInstallationsApi firebaseInstallations,
@@ -39,6 +46,10 @@ public class FirebasePerformanceModule {
     this.firebaseInstallations = firebaseInstallations;
     this.remoteConfigComponentProvider = remoteConfigComponentProvider;
     this.transportFactoryProvider = transportFactoryProvider;
+
+    //    this.remoteConfigManager = RemoteConfigManager.getInstance();
+    //    this.configResolver = ConfigResolver.getInstance();
+    //    this.gaugeManager = GaugeManager.getInstance();
   }
 
   @Provides
@@ -59,5 +70,20 @@ public class FirebasePerformanceModule {
   @Provides
   Provider<TransportFactory> providesTransportFactoryProvider() {
     return transportFactoryProvider;
+  }
+
+  @Provides
+  RemoteConfigManager providesRemoteConfigManager() {
+    return RemoteConfigManager.getInstance();
+  }
+
+  @Provides
+  ConfigResolver providesConfigResolver() {
+    return ConfigResolver.getInstance();
+  }
+
+  @Provides
+  GaugeManager providesGaugeManager() {
+    return GaugeManager.getInstance();
   }
 }

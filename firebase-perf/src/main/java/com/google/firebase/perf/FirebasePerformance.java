@@ -138,26 +138,6 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
   private FirebaseInstallationsApi firebaseInstallationsApi;
   private Provider<TransportFactory> transportFactoryProvider;
 
-  @Inject
-  FirebasePerformance(
-      @NonNull FirebaseApp firebaseApp,
-      @NonNull Provider<RemoteConfigComponent> firebaseRemoteConfigProvider,
-      @NonNull FirebaseInstallationsApi firebaseInstallationsApi,
-      @NonNull Provider<TransportFactory> transportFactoryProvider) {
-    this(
-        firebaseApp,
-        firebaseRemoteConfigProvider,
-        firebaseInstallationsApi,
-        transportFactoryProvider,
-        RemoteConfigManager.getInstance(),
-        ConfigResolver.getInstance(),
-        GaugeManager.getInstance());
-    this.firebaseApp = firebaseApp;
-    this.firebaseRemoteConfigProvider = firebaseRemoteConfigProvider;
-    this.firebaseInstallationsApi = firebaseInstallationsApi;
-    this.transportFactoryProvider = transportFactoryProvider;
-  }
-
   /**
    * Constructs the FirebasePerformance class and allows injecting dependencies.
    *
@@ -173,6 +153,7 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
    * @param gaugeManager The GaugeManager instance.
    */
   @VisibleForTesting
+  @Inject
   FirebasePerformance(
       FirebaseApp firebaseApp,
       Provider<RemoteConfigComponent> firebaseRemoteConfigProvider,
@@ -181,6 +162,11 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
       RemoteConfigManager remoteConfigManager,
       ConfigResolver configResolver,
       GaugeManager gaugeManager) {
+
+    this.firebaseApp = firebaseApp;
+    this.firebaseRemoteConfigProvider = firebaseRemoteConfigProvider;
+    this.firebaseInstallationsApi = firebaseInstallationsApi;
+    this.transportFactoryProvider = transportFactoryProvider;
 
     if (firebaseApp == null) {
       this.mPerformanceCollectionForceEnabledState = false;
