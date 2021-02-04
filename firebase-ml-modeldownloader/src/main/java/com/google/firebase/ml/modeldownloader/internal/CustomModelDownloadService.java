@@ -322,10 +322,18 @@ public class CustomModelDownloadService {
     inputStream.close();
 
     if (!downloadUrl.isEmpty() && expireTime > 0L) {
-      return Tasks.forResult(
-          new CustomModel(modelName, modelHash, fileSize, downloadUrl, expireTime));
+      CustomModel model = new CustomModel(modelName, modelHash, fileSize, downloadUrl, expireTime);
+      eventLogger.logModelInfoRetrieverSuccess(model);
+      return Tasks.forResult(model);
     }
-    return Tasks.forResult(null);
+    eventLogger.logDownloadFailureWithReason(
+        new CustomModel(modelName, modelHash, 0, 0L),
+        false,
+        ErrorCode.MODEL_INFO_DOWNLOAD_CONNECTION_FAILED.getValue());
+    return Tasks.forException(
+        new FirebaseMlException(
+            "Model info could not be extracted from download response.",
+            FirebaseMlException.INTERNAL));
   }
 
   private static InputStream maybeUnGzip(InputStream input, String contentEncoding)

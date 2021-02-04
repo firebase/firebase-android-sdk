@@ -460,15 +460,17 @@ public class FirebaseModelDownloader {
     executor.execute(
         () -> {
           // remove all files associated with this model and then clean up model references.
-          deleteModelDetails(modelName);
+          boolean isSuccessful = deleteModelDetails(modelName);
           taskCompletionSource.setResult(null);
+          eventLogger.logDeleteModel(isSuccessful);
         });
     return taskCompletionSource.getTask();
   }
 
-  private void deleteModelDetails(@NonNull String modelName) {
-    fileManager.deleteAllModels(modelName);
+  private boolean deleteModelDetails(@NonNull String modelName) {
+    boolean isSuccessful = fileManager.deleteAllModels(modelName);
     sharedPreferencesUtil.clearModelDetails(modelName);
+    return isSuccessful;
   }
 
   /**

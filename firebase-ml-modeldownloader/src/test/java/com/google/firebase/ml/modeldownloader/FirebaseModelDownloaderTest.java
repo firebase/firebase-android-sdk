@@ -749,6 +749,7 @@ public class FirebaseModelDownloaderTest {
     assertThat(task.isComplete()).isTrue();
     verify(mockPrefs, times(1)).clearModelDetails(eq(MODEL_NAME));
     verify(mockFileManager, times(1)).deleteAllModels(eq(MODEL_NAME));
+    verify(mockEventLogger, times(1)).logDeleteModel(eq(true));
   }
 
   @Test
