@@ -570,7 +570,7 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
   }
 
   /**
-   * Adds a listener that is called if the {@code Task} completes successfully. The listener will be called
+   * Adds a listener that is called if the Task completes successfully. The listener will be called
    * on the main application thread. If the task has already completed successfully, a call to the
    * listener will be immediately scheduled. If multiple listeners are added, they will be called in
    * the order in which they were added.
@@ -587,7 +587,7 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
   }
 
   /**
-   * Adds a listener that is called if the {@code Task} completes successfully.
+   * Adds a listener that is called if the Task completes successfully.
    *
    * <p>
    *
@@ -609,7 +609,7 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
   }
 
   /**
-   * Adds a listener that is called if the {@code Task} completes successfully.
+   * Adds a listener that is called if the Task completes successfully.
    *
    * <p>
    *
@@ -641,7 +641,7 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
   }
 
   /**
-   * Adds a listener that is called if the {@code Task} fails.
+   * Adds a listener that is called if the Task fails.
    *
    * <p>
    *
