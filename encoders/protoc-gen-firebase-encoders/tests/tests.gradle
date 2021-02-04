@@ -35,13 +35,11 @@ protobuf {
     }
     generateProtoTasks {
         all().each { task ->
-            task.builtins {
-                remove java
-            }
             task.dependsOn configurations.protobuild
+            task.inputs.file 'code-gen-cfg.textproto'
             task.plugins {
                 firebaseEncoders {
-                    option file('code-gen-cfg.txtpb').path
+                    option file('code-gen-cfg.textproto').path
                 }
             }
         }
@@ -49,8 +47,11 @@ protobuf {
 }
 
 dependencies {
+    testImplementation project(":encoders:firebase-encoders")
+    testImplementation project(":encoders:firebase-encoders-proto")
+    testImplementation "com.google.protobuf:protobuf-java:3.14.0"
+    testImplementation 'junit:junit:4.13.1'
+    testImplementation "com.google.truth:truth:1.0.1"
 
-    implementation project(":encoders:firebase-encoders")
-    implementation project(":encoders:firebase-encoders-proto")
-    annotationProcessor project(":encoders:firebase-encoders-processor")
+    testAnnotationProcessor project(":encoders:firebase-encoders-processor")
 }

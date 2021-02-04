@@ -13,25 +13,21 @@
 // limitations under the License.
 //
 
-syntax = "proto2";
+syntax = "proto3";
 
 package com.google.firebase.testing;
 
 import "google/protobuf/timestamp.proto";
 
-option java_multiple_files = true;
+message SimpleProto {
+  int32 value = 1;
+  repeated string str = 2;
+  .google.protobuf.Timestamp time = 3;
 
-message Extendable {
-
-  message Nested {
-    optional Extendable ext = 1;
+  enum MyEnum {
+    DEFAULT = 0;
+    EXAMPLE = 1;
   }
 
-  optional Nested nested = 1;
-
-  extensions 100 to 999;
-}
-
-extend Extendable {
-  optional string extended = 101;
+  MyEnum my_enum = 4;
 }

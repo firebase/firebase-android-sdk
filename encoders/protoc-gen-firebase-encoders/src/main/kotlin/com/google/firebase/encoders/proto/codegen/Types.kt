@@ -70,8 +70,9 @@ sealed class UserDefined : ProtobufType() {
     class Message(
         override val owner: Owner,
         override val name: String,
-        val fields: List<ProtoField>
+        fields: List<ProtoField>
     ) : UserDefined() {
+        private var mutableFields: List<ProtoField> = fields
         override val protobufFullName: String
             get() = "${owner.protobufFullName}.$name"
 
@@ -79,8 +80,12 @@ sealed class UserDefined : ProtobufType() {
             return "Message(owner=$owner,name=$name,fields=$fields)"
         }
 
-        fun withMoreFields(fields: Collection<ProtoField>): Message =
-                Message(owner, name, fields = this.fields.plus(fields))
+        val fields: List<ProtoField>
+            get() = mutableFields
+
+        fun addFields(fields: Iterable<ProtoField>) {
+            mutableFields = mutableFields + fields
+        }
     }
 
     /** Represents a protobuf `enum` type. */
@@ -149,6 +154,8 @@ sealed class Owner(val scopeSeparator: Char) {
     }
 }
 
+private val SNAKE_REGEX = "_[a-zA-Z]".toRegex()
+
 /**
  * Represents a field of a protobuf message.
  *
@@ -166,4 +173,15 @@ data class ProtoField(val name: String, var type: ProtobufType, val number: Int,
         }
     }
     })"
+
+    val lowerCamelCaseName: String
+        get() {
+            return SNAKE_REGEX.replace(name) {
+                it.value.replace("_", "")
+                        .toUpperCase()
+            }
+        }
+
+    val camelCaseName: String
+        get() = lowerCamelCaseName.capitalize()
 }
