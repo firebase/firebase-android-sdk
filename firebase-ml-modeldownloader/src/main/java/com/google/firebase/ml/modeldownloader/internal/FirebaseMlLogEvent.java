@@ -70,7 +70,7 @@ public abstract class FirebaseMlLogEvent {
       valueMap.put(0, UNKNOWN_EVENT);
       valueMap.put(100, MODEL_DOWNLOAD);
       valueMap.put(101, MODEL_UPDATE);
-      valueMap.put(101, REMOTE_MODEL_DELETE_ON_DEVICE);
+      valueMap.put(252, REMOTE_MODEL_DELETE_ON_DEVICE);
     }
 
     EventName(int value) {
