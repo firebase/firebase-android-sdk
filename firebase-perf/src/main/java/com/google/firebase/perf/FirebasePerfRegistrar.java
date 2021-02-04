@@ -48,7 +48,7 @@ public class FirebasePerfRegistrar implements ComponentRegistrar {
             .add(Dependency.requiredProvider(RemoteConfigComponent.class))
             .add(Dependency.required(FirebaseInstallationsApi.class))
             .add(Dependency.requiredProvider(TransportFactory.class))
-            .factory(this::providesFirebasePerformance)
+            .factory(FirebasePerfRegistrar::providesFirebasePerformance)
             // Since the SDK is eager(auto starts at app start), we use "lazy" dependency for some
             // components that are not required during initialization so as not to force initialize
             // them at app startup (refer
@@ -58,7 +58,7 @@ public class FirebasePerfRegistrar implements ComponentRegistrar {
         LibraryVersionComponent.create("fire-perf", BuildConfig.VERSION_NAME));
   }
 
-  public FirebasePerformance providesFirebasePerformance(ComponentContainer container) {
+  private static FirebasePerformance providesFirebasePerformance(ComponentContainer container) {
     FirebasePerformanceComponent component =
         DaggerFirebasePerformanceComponent.builder()
             .firebasePerformanceModule(

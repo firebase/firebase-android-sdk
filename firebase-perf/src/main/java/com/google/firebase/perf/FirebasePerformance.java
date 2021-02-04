@@ -133,10 +133,10 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
   // to false if it's been force disabled or it is set to null if neither.
   @Nullable private Boolean mPerformanceCollectionForceEnabledState = null;
 
-  FirebaseApp firebaseApp;
-  Provider<RemoteConfigComponent> firebaseRemoteConfigProvider;
-  FirebaseInstallationsApi firebaseInstallationsApi;
-  Provider<TransportFactory> transportFactoryProvider;
+  private FirebaseApp firebaseApp;
+  private Provider<RemoteConfigComponent> firebaseRemoteConfigProvider;
+  private FirebaseInstallationsApi firebaseInstallationsApi;
+  private Provider<TransportFactory> transportFactoryProvider;
 
   @Inject
   FirebasePerformance(

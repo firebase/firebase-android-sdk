@@ -27,8 +27,8 @@ import dagger.Provides;
 public class FirebasePerformanceModule {
   private final FirebaseApp firebaseApp;
   private final FirebaseInstallationsApi firebaseInstallations;
-  private Provider<RemoteConfigComponent> remoteConfigComponentProvider;
-  private Provider<TransportFactory> transportFactoryProvider;
+  private final Provider<RemoteConfigComponent> remoteConfigComponentProvider;
+  private final Provider<TransportFactory> transportFactoryProvider;
 
   public FirebasePerformanceModule(
       @NonNull FirebaseApp firebaseApp,
