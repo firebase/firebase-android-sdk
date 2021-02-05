@@ -229,8 +229,8 @@ public class CustomModelDownloadService {
               modelName,
               httpResponseCode,
               "Too many requests to server please wait before trying again.",
-              FirebaseMlException.INVALID_ARGUMENT);
-        case HttpURLConnection.HTTP_SERVER_ERROR:
+              FirebaseMlException.RESOURCE_EXHAUSTED);
+        case HttpURLConnection.HTTP_INTERNAL_ERROR:
           return setAndLogException(
               modelName,
               httpResponseCode,
@@ -240,6 +240,17 @@ public class CustomModelDownloadService {
                   modelName,
                   errorMessage),
               FirebaseMlException.INTERNAL);
+        case HttpURLConnection.HTTP_UNAUTHORIZED:
+        case HttpURLConnection.HTTP_FORBIDDEN:
+          return setAndLogException(
+              modelName,
+              httpResponseCode,
+              String.format(
+                  Locale.getDefault(),
+                  "Issue while fetching model (%s); error message: %s",
+                  modelName,
+                  errorMessage),
+              FirebaseMlException.PERMISSION_DENIED);
         default:
           return setAndLogException(
               modelName,
@@ -322,10 +333,18 @@ public class CustomModelDownloadService {
     inputStream.close();
 
     if (!downloadUrl.isEmpty() && expireTime > 0L) {
-      return Tasks.forResult(
-          new CustomModel(modelName, modelHash, fileSize, downloadUrl, expireTime));
+      CustomModel model = new CustomModel(modelName, modelHash, fileSize, downloadUrl, expireTime);
+      eventLogger.logModelInfoRetrieverSuccess(model);
+      return Tasks.forResult(model);
     }
-    return Tasks.forResult(null);
+    eventLogger.logDownloadFailureWithReason(
+        new CustomModel(modelName, modelHash, 0, 0L),
+        false,
+        ErrorCode.MODEL_INFO_DOWNLOAD_CONNECTION_FAILED.getValue());
+    return Tasks.forException(
+        new FirebaseMlException(
+            "Model info could not be extracted from download response.",
+            FirebaseMlException.INTERNAL));
   }
 
   private static InputStream maybeUnGzip(InputStream input, String contentEncoding)
