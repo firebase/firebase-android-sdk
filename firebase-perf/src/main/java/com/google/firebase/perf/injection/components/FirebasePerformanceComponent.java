@@ -12,11 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.perf;
+package com.google.firebase.perf.injection.components;
 
 import androidx.annotation.NonNull;
+import com.google.firebase.perf.FirebasePerformance;
+import com.google.firebase.perf.injection.modules.FirebasePerformanceModule;
 import dagger.Component;
 
+/**
+ * Dagger component to create FirebasePerformanceComponent Objects.
+ *
+ * @hide
+ */
 @Component(modules = {FirebasePerformanceModule.class})
 public interface FirebasePerformanceComponent {
   @NonNull

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.perf;
+package com.google.firebase.perf.injection.modules;
 
 import androidx.annotation.NonNull;
 import com.google.android.datatransport.TransportFactory;
@@ -26,6 +26,11 @@ import com.google.firebase.remoteconfig.RemoteConfigComponent;
 import dagger.Module;
 import dagger.Provides;
 
+/**
+ * Provider for FirebasePerformance
+ *
+ * @hide
+ */
 @Module
 public class FirebasePerformanceModule {
   private final FirebaseApp firebaseApp;
