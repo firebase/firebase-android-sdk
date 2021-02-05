@@ -154,7 +154,7 @@ sealed class Owner(val scopeSeparator: Char) {
     }
 }
 
-private val SNAKE_REGEX = "_[a-zA-Z]".toRegex()
+private val SNAKE_CASE_REGEX = "_[a-zA-Z]".toRegex()
 
 /**
  * Represents a field of a protobuf message.
@@ -176,7 +176,7 @@ data class ProtoField(val name: String, var type: ProtobufType, val number: Int,
 
     val lowerCamelCaseName: String
         get() {
-            return SNAKE_REGEX.replace(name) {
+            return SNAKE_CASE_REGEX.replace(name) {
                 it.value.replace("_", "")
                         .toUpperCase()
             }

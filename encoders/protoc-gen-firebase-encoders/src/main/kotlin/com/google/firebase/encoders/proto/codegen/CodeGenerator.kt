@@ -155,14 +155,14 @@ internal class Gen(
      *   DEFAULT(0),
      *   EXAMPLE(1);
      *
-     *   private final int number;
-     *   Foo(int number) {
-     *     this.number = number;
+     *   private final int number_;
+     *   Foo(int number_) {
+     *     this.number_ = number_;
      *   }
      *
      *   @Override
      *   public int getNumber() {
-     *     return number;
+     *     return number_;
      *   }
      * }
      * ```
