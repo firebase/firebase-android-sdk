@@ -58,6 +58,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -710,15 +711,15 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
   }
 
   @VisibleForTesting
-  public HashMap<DocumentKey, Integer> getActiveLimboDocumentResolutions() {
+  public Map<DocumentKey, Integer> getActiveLimboDocumentResolutions() {
     // Make a defensive copy as the Map continues to be modified.
-    return new HashMap(activeLimboTargetsByKey);
+    return new HashMap<>(activeLimboTargetsByKey);
   }
 
   @VisibleForTesting
-  public LinkedHashSet<DocumentKey> getEnqueuedLimboDocumentResolutions() {
+  public List<DocumentKey> getEnqueuedLimboDocumentResolutions() {
     // Make a defensive copy as the LinkedHashSet continues to be modified.
-    return new LinkedHashSet(enqueuedLimboResolutions);
+    return new ArrayList<>(enqueuedLimboResolutions);
   }
 
   public void handleCredentialChange(User user) {
