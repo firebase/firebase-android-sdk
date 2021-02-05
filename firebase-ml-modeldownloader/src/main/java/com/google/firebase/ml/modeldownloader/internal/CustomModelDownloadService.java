@@ -43,6 +43,7 @@ import java.util.TimeZone;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.zip.GZIPInputStream;
+import org.json.JSONObject;
 
 /**
  * Calls the Download Service API and returns the information related to the current status of a
@@ -60,6 +61,9 @@ public class CustomModelDownloadService {
   private static final String CONTENT_ENCODING_HEADER_KEY = "Content-Encoding";
   private static final String GZIP_CONTENT_ENCODING = "gzip";
   private static final String FIREBASE_DOWNLOAD_HOST = "https://firebaseml.googleapis.com";
+  private static final String ERROR_RESPONSE_ERROR = "error";
+  private static final String ERROR_RESPONSE_MESSAGE = "message";
+
   @VisibleForTesting static final String ETAG_HEADER = "etag";
   @VisibleForTesting static final String CONTENT_TYPE = "Content-Type";
   @VisibleForTesting static final String APPLICATION_JSON = "application/json; charset=UTF-8";
@@ -220,7 +224,7 @@ public class CustomModelDownloadService {
               httpResponseCode,
               String.format(
                   Locale.getDefault(),
-                  "Bad http request for model (%s); error message: %s",
+                  "Bad http request for model (%s): %s",
                   modelName,
                   errorMessage),
               FirebaseMlException.INVALID_ARGUMENT);
@@ -228,7 +232,10 @@ public class CustomModelDownloadService {
           return setAndLogException(
               modelName,
               httpResponseCode,
-              "Too many requests to server please wait before trying again.",
+              String.format(
+                  Locale.getDefault(),
+                  "Too many requests to server please wait before trying again: %s",
+                  errorMessage),
               FirebaseMlException.RESOURCE_EXHAUSTED);
         case HttpURLConnection.HTTP_INTERNAL_ERROR:
           return setAndLogException(
@@ -236,7 +243,7 @@ public class CustomModelDownloadService {
               httpResponseCode,
               String.format(
                   Locale.getDefault(),
-                  "Server issue while fetching model (%s); error message: %s",
+                  "Server issue while fetching model (%s): %s",
                   modelName,
                   errorMessage),
               FirebaseMlException.INTERNAL);
@@ -247,7 +254,7 @@ public class CustomModelDownloadService {
               httpResponseCode,
               String.format(
                   Locale.getDefault(),
-                  "Issue while fetching model (%s); error message: %s",
+                  "Permission error while fetching model (%s): %s",
                   modelName,
                   errorMessage),
               FirebaseMlException.PERMISSION_DENIED);
@@ -257,8 +264,7 @@ public class CustomModelDownloadService {
               httpResponseCode,
               String.format(
                   Locale.getDefault(),
-                  "Failed to connect to Firebase ML download server with HTTP status code: %d"
-                      + " and error message: %s",
+                  "Failed to connect to Firebase ML download server: %s",
                   httpResponseCode,
                   errorMessage),
               FirebaseMlException.INTERNAL);
@@ -363,7 +369,7 @@ public class CustomModelDownloadService {
     return header;
   }
 
-  private String getErrorStream(HttpURLConnection connection) {
+  private String getErrorStreamString(HttpURLConnection connection) {
     InputStream errorStream = connection.getErrorStream();
     if (errorStream == null) {
       return null;
@@ -375,14 +381,33 @@ public class CustomModelDownloadService {
       for (String input = reader.readLine(); input != null; input = reader.readLine()) {
         response.append(input).append('\n');
       }
-      return String.format(
-          Locale.ENGLISH,
-          "Error when communicating with Firebase Download Service. HTTP response: [%d %s: %s]",
-          connection.getResponseCode(),
-          connection.getResponseMessage(),
-          response);
-    } catch (IOException ignored) {
+      return response.toString();
+    } catch (IOException ex) {
+      Log.d(TAG, "Error extracting errorStream from failed connection attempt", ex);
       return null;
     }
+  }
+
+  private String getErrorStream(HttpURLConnection connection) {
+    String errorStreamString = getErrorStreamString(connection);
+    if (errorStreamString != null) {
+      try {
+        JSONObject responseData = new JSONObject(errorStreamString);
+        JSONObject responseError = responseData.getJSONObject(ERROR_RESPONSE_ERROR);
+        if (responseError != null && responseError.has(ERROR_RESPONSE_MESSAGE)) {
+          errorStreamString = responseError.getString(ERROR_RESPONSE_MESSAGE);
+
+          return String.format(
+              Locale.ENGLISH,
+              "HTTP response from Firebase Download Service: [%d - %s: %s]",
+              connection.getResponseCode(),
+              connection.getResponseMessage(),
+              errorStreamString);
+        }
+      } catch (Exception ex) {
+        Log.d(TAG, "Error extracting errorStream from failed connection attempt", ex);
+      }
+    }
+    return errorStreamString;
   }
 }
