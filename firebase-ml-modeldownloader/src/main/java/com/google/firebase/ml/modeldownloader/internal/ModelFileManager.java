@@ -238,9 +238,9 @@ public class ModelFileManager {
    * destination for a model in this method.
    */
   @WorkerThread
-  public synchronized void deleteAllModels(@NonNull String modelName) {
+  public synchronized boolean deleteAllModels(@NonNull String modelName) {
     File modelFolder = getModelDirUnsafe(modelName);
-    deleteRecursively(modelFolder);
+    return deleteRecursively(modelFolder);
   }
 
   /**
