@@ -518,7 +518,6 @@ public class SyncTree {
             syncPoint = new SyncPoint(persistenceManager);
             syncPointTree = syncPointTree.set(path, syncPoint);
           } else {
-            foundAncestorDefaultView = foundAncestorDefaultView || syncPoint.hasCompleteView();
             serverCacheNode =
                 serverCacheNode != null
                     ? serverCacheNode

@@ -662,16 +662,16 @@ public class QueryTest {
     Tasks.await(childTwo.setValue(2L));
 
     Semaphore semaphore = new Semaphore(0);
-    ref.addValueEventListener(
-        new ValueEventListener() {
-          @Override
-          public void onDataChange(@NonNull DataSnapshot snapshot) {
-            semaphore.release();
-          }
+    ValueEventListener listener =         new ValueEventListener() {
+      @Override
+      public void onDataChange(@NonNull DataSnapshot snapshot) {
+        semaphore.release();
+      }
 
-          @Override
-          public void onCancelled(@NonNull DatabaseError error) {}
-        });
+      @Override
+      public void onCancelled(@NonNull DatabaseError error) {}
+    };
+    ref.addValueEventListener(listener);
 
     IntegrationTestHelpers.waitFor(semaphore);
 
@@ -681,6 +681,7 @@ public class QueryTest {
     assertNotNull(values);
     assertArrayEquals(values.keySet().toArray(), new String[] {childTwo.getKey()});
     assertArrayEquals(values.values().toArray(), new Long[] {values.get(childTwo.getKey())});
+    ref.removeEventListener(listener);
   }
 
   @Test

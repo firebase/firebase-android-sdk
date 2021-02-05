@@ -1,6 +1,3 @@
-# 19.7.1
-- [fixed] Fixed an issue with startAfter/endBefore when used in orderByKey queries.
-
 # 19.7.0
 - [added] Added `Query.startAfter()` and `Query.endBefore()` filter for paginating
   RTDB queries.
