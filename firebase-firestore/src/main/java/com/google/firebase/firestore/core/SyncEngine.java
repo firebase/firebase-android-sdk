@@ -21,8 +21,6 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.FirebaseFirestoreException;
@@ -712,15 +710,15 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
   }
 
   @VisibleForTesting
-  public ImmutableMap<DocumentKey, Integer> getActiveLimboDocumentResolutions() {
+  public HashMap<DocumentKey, Integer> getActiveLimboDocumentResolutions() {
     // Make a defensive copy as the Map continues to be modified.
-    return ImmutableMap.copyOf(activeLimboTargetsByKey);
+    return new HashMap(activeLimboTargetsByKey);
   }
 
   @VisibleForTesting
-  public ImmutableSet<DocumentKey> getEnqueuedLimboDocumentResolutions() {
-    // Make a defensive copy as the LinkedHashMap continues to be modified.
-    return ImmutableSet.copyOf(enqueuedLimboResolutions);
+  public LinkedHashSet<DocumentKey> getEnqueuedLimboDocumentResolutions() {
+    // Make a defensive copy as the LinkedHashSet continues to be modified.
+    return new LinkedHashSet(enqueuedLimboResolutions);
   }
 
   public void handleCredentialChange(User user) {
