@@ -484,9 +484,10 @@ public class FirebaseModelDownloader {
    *
    * <p>By default the logging matches the Firebase wide data collection switch.
    *
-   * @param enabled - is statistics logging enabled
+   * @param enabled - is logging enabled, set to null to use Firebase wide data collection switch
+   *     (default)
    */
-  public void setStatsCollectionEnabled(boolean enabled) {
+  public void setModelDownloaderCollectionEnabled(@Nullable Boolean enabled) {
     sharedPreferencesUtil.setCustomModelStatsCollectionEnabled(enabled);
   }
 
