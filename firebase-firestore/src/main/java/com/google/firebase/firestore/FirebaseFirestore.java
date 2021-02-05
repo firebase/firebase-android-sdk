@@ -48,6 +48,8 @@ import com.google.firebase.firestore.util.Executors;
 import com.google.firebase.firestore.util.Function;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Logger.Level;
+import com.google.firebase.inject.Deferred;
+
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -117,7 +119,7 @@ public class FirebaseFirestore {
   static FirebaseFirestore newInstance(
       @NonNull Context context,
       @NonNull FirebaseApp app,
-      @Nullable InternalAuthProvider authProvider,
+      @Nullable Deferred<InternalAuthProvider> authProvider,
       @NonNull String database,
       @NonNull InstanceRegistry instanceRegistry,
       @Nullable GrpcMetadataProvider metadataProvider) {
