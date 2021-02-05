@@ -55,13 +55,13 @@ import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Util;
 import io.grpc.Status;
 import java.io.IOException;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
 
 /**
@@ -130,7 +130,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
    * The keys of documents that are in limbo for which we haven't yet started a limbo resolution
    * query.
    */
-  private final Queue<DocumentKey> enqueuedLimboResolutions;
+  private final LinkedHashSet<DocumentKey> enqueuedLimboResolutions;
 
   /** Keeps track of the target ID for each document that is in limbo with an active target. */
   private final Map<DocumentKey, Integer> activeLimboTargetsByKey;
@@ -169,7 +169,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     queryViewsByQuery = new HashMap<>();
     queriesByTarget = new HashMap<>();
 
-    enqueuedLimboResolutions = new ArrayDeque<>();
+    enqueuedLimboResolutions = new LinkedHashSet<>();
     activeLimboTargetsByKey = new HashMap<>();
     activeLimboResolutionsByTarget = new HashMap<>();
     limboDocumentRefs = new ReferenceSet();
@@ -603,6 +603,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
   }
 
   private void removeLimboTarget(DocumentKey key) {
+    enqueuedLimboResolutions.remove(key);
     // It's possible that the target already got removed because the query failed. In that case,
     // the key won't exist in `limboTargetsByKey`. Only do the cleanup if we still have the target.
     Integer targetId = activeLimboTargetsByKey.get(key);
@@ -676,7 +677,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
 
   private void trackLimboChange(LimboDocumentChange change) {
     DocumentKey key = change.getKey();
-    if (!activeLimboTargetsByKey.containsKey(key)) {
+    if (!activeLimboTargetsByKey.containsKey(key) && !enqueuedLimboResolutions.contains(key)) {
       Logger.debug(TAG, "New document in limbo: %s", key);
       enqueuedLimboResolutions.add(key);
       pumpEnqueuedLimboResolutions();
@@ -694,7 +695,9 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
   private void pumpEnqueuedLimboResolutions() {
     while (!enqueuedLimboResolutions.isEmpty()
         && activeLimboTargetsByKey.size() < maxConcurrentLimboResolutions) {
-      DocumentKey key = enqueuedLimboResolutions.remove();
+      Iterator<DocumentKey> it = enqueuedLimboResolutions.iterator();
+      DocumentKey key = it.next();
+      it.remove();
       int limboTargetId = targetIdGenerator.nextId();
       activeLimboResolutionsByTarget.put(limboTargetId, new LimboResolution(key));
       activeLimboTargetsByKey.put(key, limboTargetId);
@@ -714,9 +717,9 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
   }
 
   @VisibleForTesting
-  public Queue<DocumentKey> getEnqueuedLimboDocumentResolutions() {
-    // Make a defensive copy as the Queue continues to be modified.
-    return new ArrayDeque<>(enqueuedLimboResolutions);
+  public List<DocumentKey> getEnqueuedLimboDocumentResolutions() {
+    // Make a defensive copy as the LinkedHashSet continues to be modified.
+    return new ArrayList<>(enqueuedLimboResolutions);
   }
 
   public void handleCredentialChange(User user) {
