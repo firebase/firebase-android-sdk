@@ -265,7 +265,6 @@ public class CustomModelDownloadService {
               String.format(
                   Locale.getDefault(),
                   "Failed to connect to Firebase ML download server: %s",
-                  httpResponseCode,
                   errorMessage),
               FirebaseMlException.INTERNAL);
       }
