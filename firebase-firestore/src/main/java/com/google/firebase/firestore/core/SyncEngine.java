@@ -696,8 +696,9 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
   private void pumpEnqueuedLimboResolutions() {
     while (!enqueuedLimboResolutions.isEmpty()
         && activeLimboTargetsByKey.size() < maxConcurrentLimboResolutions) {
-      DocumentKey key = enqueuedLimboResolutions.iterator().next();
-      enqueuedLimboResolutions.remove(key);
+      Iterator<DocumentKey> it = enqueuedLimboResolutions.iterator();
+      DocumentKey key = it.next();
+      it.remove();
       int limboTargetId = targetIdGenerator.nextId();
       activeLimboResolutionsByTarget.put(limboTargetId, new LimboResolution(key));
       activeLimboTargetsByKey.put(key, limboTargetId);
