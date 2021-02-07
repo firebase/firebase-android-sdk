@@ -258,6 +258,11 @@ public class JavadocPlugin implements Plugin<Project> {
                   .addMultilineMultiValueOption("federationapi")
                   .setValue(federationApiFiles.build());
             }));
+    project
+        .getTasks()
+        .create(TasksKt.JAVADOC_TASK_NAME, task -> {
+          task.dependsOn(generateJavadoc);
+        });
   }
 
   private static void applyDokka(Project project) {
