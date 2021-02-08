@@ -231,7 +231,7 @@ class CrashlyticsController {
     try {
       Utils.awaitEvenIfOnMainThread(handleUncaughtExceptionTask);
     } catch (Exception e) {
-      Log.e("WILLIS", "ERROR", e);
+      Logger.getLogger().e("Error handling uncaught exception", e);
       // Nothing to do in this case.
     }
   }
