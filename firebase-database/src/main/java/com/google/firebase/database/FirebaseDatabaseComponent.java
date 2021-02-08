@@ -15,13 +15,13 @@
 package com.google.firebase.database;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.database.android.AndroidAuthTokenProvider;
 import com.google.firebase.database.core.AuthTokenProvider;
 import com.google.firebase.database.core.DatabaseConfig;
 import com.google.firebase.database.core.RepoInfo;
+import com.google.firebase.inject.Deferred;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -38,14 +38,9 @@ class FirebaseDatabaseComponent {
   private final FirebaseApp app;
   private final AuthTokenProvider authProvider;
 
-  FirebaseDatabaseComponent(@NonNull FirebaseApp app, @Nullable InternalAuthProvider authProvider) {
+  FirebaseDatabaseComponent(@NonNull FirebaseApp app, Deferred<InternalAuthProvider> authProvider) {
     this.app = app;
-
-    if (authProvider != null) {
-      this.authProvider = AndroidAuthTokenProvider.forAuthenticatedAccess(authProvider);
-    } else {
-      this.authProvider = AndroidAuthTokenProvider.forUnauthenticatedAccess();
-    }
+    this.authProvider = new AndroidAuthTokenProvider(authProvider);
   }
 
   /** Provides instances of Firebase Database for the given RepoInfo */
