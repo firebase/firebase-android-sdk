@@ -262,6 +262,7 @@ public class IntegrationTestHelpers {
     config.setRunLoop(runLoop);
     config.setFirebaseApp(FirebaseApp.getInstance());
     config.setAuthTokenProvider(AndroidAuthTokenProvider.forUnauthenticatedAccess());
+    config.setSessionPersistenceKey(UUID.randomUUID().toString());
     return config;
   }
 
