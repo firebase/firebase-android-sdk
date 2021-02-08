@@ -57,6 +57,7 @@ public class DataTest {
 
   @After
   public void tearDown() {
+    RepoManager.clear();
     IntegrationTestHelpers.failOnFirstUncaughtException();
   }
 

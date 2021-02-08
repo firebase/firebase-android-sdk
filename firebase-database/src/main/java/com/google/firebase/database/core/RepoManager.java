@@ -74,6 +74,16 @@ public class RepoManager {
 
   public RepoManager() {}
 
+  public static void clear() {
+    instance.clearRepos();
+  }
+
+  private void clearRepos() {
+    synchronized (repos) {
+      repos.clear();
+    }
+  }
+
   private Repo getLocalRepo(Context ctx, RepoInfo info) throws DatabaseException {
     ctx.freeze(); // No-op if it's already frozen
     String repoHash = "https://" + info.host + "/" + info.namespace;
