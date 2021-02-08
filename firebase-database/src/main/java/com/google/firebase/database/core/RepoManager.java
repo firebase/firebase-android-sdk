@@ -15,7 +15,6 @@
 package com.google.firebase.database.core;
 
 import androidx.annotation.VisibleForTesting;
-
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.database.DatabaseException;
 import com.google.firebase.database.FirebaseDatabase;
