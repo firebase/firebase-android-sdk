@@ -59,7 +59,7 @@ public final class DeleteMutation extends Mutation {
     verifyKeyMatches(maybeDoc);
 
     hardAssert(
-        mutationResult.getTransformResults() == null,
+        mutationResult.getTransformResults().isEmpty(),
         "Transform results received by DeleteMutation.");
 
     // Unlike applyToLocalView, if we're applying a mutation to a remote document the server has

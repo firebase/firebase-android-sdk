@@ -118,10 +118,7 @@ public final class PatchMutation extends Mutation {
     }
 
     List<Value> transformResults =
-        mutationResult.getTransformResults() != null
-            ? serverTransformResults(maybeDoc, mutationResult.getTransformResults())
-            : new ArrayList<>();
-
+        serverTransformResults(maybeDoc, mutationResult.getTransformResults());
     SnapshotVersion version = mutationResult.getVersion();
     ObjectValue newData = patchDocument(maybeDoc, transformResults);
     return new Document(getKey(), version, newData, Document.DocumentState.COMMITTED_MUTATIONS);
