@@ -55,6 +55,7 @@ public class TestGetModelLocal {
   @Before
   public void before() {
     app = FirebaseApp.initializeApp(ApplicationProvider.getApplicationContext());
+    app.setDataCollectionDefaultEnabled(Boolean.FALSE);
     FirebaseModelDownloader firebaseModelDownloader = FirebaseModelDownloader.getInstance(app);
 
     SharedPreferencesUtil sharedPreferencesUtil = new SharedPreferencesUtil(app);
