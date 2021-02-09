@@ -16,6 +16,7 @@ package com.google.firebase.crashlytics.internal.common;
 import android.content.Context;
 import android.os.Build;
 import android.os.Build.VERSION;
+import android.util.Log;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.StatFs;
@@ -230,7 +231,7 @@ class CrashlyticsController {
     try {
       Utils.awaitEvenIfOnMainThread(handleUncaughtExceptionTask);
     } catch (Exception e) {
-      Logger.getLogger().e("Error handling uncaught exception", e);
+      Log.e("WILLIS", "ERROR", e);
       // Nothing to do in this case.
     }
   }
