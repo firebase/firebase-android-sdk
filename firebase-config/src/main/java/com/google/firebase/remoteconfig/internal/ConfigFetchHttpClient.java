@@ -17,6 +17,7 @@ package com.google.firebase.remoteconfig.internal;
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.TAG;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.FETCH_REGEX_URL;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.ANALYTICS_USER_PROPERTIES;
+import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.APP_BUILD;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.APP_ID;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.APP_VERSION;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.COUNTRY_CODE;
@@ -41,6 +42,7 @@ import android.os.Build;
 import android.util.Log;
 import androidx.annotation.Keep;
 import androidx.annotation.VisibleForTesting;
+import androidx.core.content.pm.PackageInfoCompat;
 import com.google.android.gms.common.util.AndroidUtilsLight;
 import com.google.android.gms.common.util.Hex;
 import com.google.firebase.remoteconfig.BuildConfig;
@@ -322,9 +324,11 @@ public class ConfigFetchHttpClient {
           context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
       if (packageInfo != null) {
         requestBodyMap.put(APP_VERSION, packageInfo.versionName);
+        requestBodyMap.put(
+            APP_BUILD, Long.toString(PackageInfoCompat.getLongVersionCode(packageInfo)));
       }
     } catch (NameNotFoundException e) {
-      // Leave app version blank if package cannot be found.
+      // Leave app version and build number blank if package cannot be found.
     }
 
     requestBodyMap.put(PACKAGE_NAME, context.getPackageName());
