@@ -31,7 +31,6 @@ import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.emulators.EmulatedServiceSettings;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.auth.CredentialsProvider;
-import com.google.firebase.firestore.auth.EmptyCredentialsProvider;
 import com.google.firebase.firestore.auth.FirebaseAuthCredentialsProvider;
 import com.google.firebase.firestore.core.ActivityScope;
 import com.google.firebase.firestore.core.AsyncEventListener;
@@ -119,7 +118,7 @@ public class FirebaseFirestore {
   static FirebaseFirestore newInstance(
       @NonNull Context context,
       @NonNull FirebaseApp app,
-      @Nullable Deferred<InternalAuthProvider> authProvider,
+      @NonNull Deferred<InternalAuthProvider> authProvider,
       @NonNull String database,
       @NonNull InstanceRegistry instanceRegistry,
       @Nullable GrpcMetadataProvider metadataProvider) {
@@ -131,13 +130,7 @@ public class FirebaseFirestore {
 
     AsyncQueue queue = new AsyncQueue();
 
-    CredentialsProvider provider;
-    if (authProvider == null) {
-      Logger.debug(TAG, "Firebase Auth not available, falling back to unauthenticated usage.");
-      provider = new EmptyCredentialsProvider();
-    } else {
-      provider = new FirebaseAuthCredentialsProvider(authProvider);
-    }
+    CredentialsProvider provider = new FirebaseAuthCredentialsProvider(authProvider);
 
     // Firestore uses a different database for each app name. Note that we don't use
     // app.getPersistenceKey() here because it includes the application ID which is related

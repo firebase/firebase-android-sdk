@@ -18,6 +18,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.FirebaseApiNotAvailableException;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.GetTokenResult;
 import com.google.firebase.auth.internal.IdTokenListener;
@@ -76,6 +77,11 @@ public final class FirebaseAuthCredentialsProvider extends CredentialsProvider {
             }
           }
         };
+
+    // TODO(dconeybe) Get the InternalAuthProvider from the Deferred before calling getUser();
+    // otherwise, getUser() will unconditionally return UNAUTHENTICATED.
+    // TODO(vkryachko) Add a method to Deferred to get the current value and/or the Provider for
+    // the value. The Provider could return null until the component is available.
     currentUser = getUser();
     tokenCounter = 0;
 
@@ -92,7 +98,7 @@ public final class FirebaseAuthCredentialsProvider extends CredentialsProvider {
 
     InternalAuthProvider internalAuthProvider = authProvider.get();
     if (internalAuthProvider == null) {
-      return Tasks.forException(new UnsupportedOperationException("auth is not available"));
+      return Tasks.forException(new FirebaseApiNotAvailableException("auth is not available"));
     }
     Task<GetTokenResult> res = internalAuthProvider.getAccessToken(doForceRefresh);
 
@@ -144,11 +150,7 @@ public final class FirebaseAuthCredentialsProvider extends CredentialsProvider {
   /** Returns the current {@link User} as obtained from the given FirebaseApp instance. */
   private User getUser() {
     InternalAuthProvider internalAuthProvider = authProvider.get();
-    if (internalAuthProvider == null) {
-      return null;
-    }
-
-    @Nullable String uid = internalAuthProvider.getUid();
+    @Nullable String uid = (internalAuthProvider == null) ? null :internalAuthProvider.getUid();
     return uid != null ? new User(uid) : User.UNAUTHENTICATED;
   }
 }
