@@ -46,12 +46,13 @@ public class SharedPreferencesUtilTest {
   private static final CustomModel CUSTOM_MODEL_DOWNLOADING =
       new CustomModel(MODEL_NAME, MODEL_HASH, 100, 986);
   private SharedPreferencesUtil sharedPreferencesUtil;
+  private FirebaseApp app;
 
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
     FirebaseApp.clearInstancesForTest();
-    FirebaseApp app =
+    app =
         FirebaseApp.initializeApp(
             ApplicationProvider.getApplicationContext(),
             new FirebaseOptions.Builder()
@@ -59,6 +60,7 @@ public class SharedPreferencesUtilTest {
                 .setProjectId(TEST_PROJECT_ID)
                 .build());
 
+    app.setDataCollectionDefaultEnabled(Boolean.TRUE);
     // default sharedPreferenceUtil
     sharedPreferencesUtil = new SharedPreferencesUtil(app);
     assertNotNull(sharedPreferencesUtil);
@@ -172,8 +174,31 @@ public class SharedPreferencesUtilTest {
   }
 
   @Test
-  public void getCustomModelStatsCollectionFlag_defaultTrue() {
+  public void getCustomModelStatsCollectionFlag_defaultFirebaseAppTrue() {
+    assertEquals(
+        sharedPreferencesUtil.getCustomModelStatsCollectionFlag(),
+        app.isDataCollectionDefaultEnabled());
     assertTrue(sharedPreferencesUtil.getCustomModelStatsCollectionFlag());
+  }
+
+  @Test
+  public void getCustomModelStatsCollectionFlag_defaultFirebaseAppFalse() {
+    app.setDataCollectionDefaultEnabled(Boolean.FALSE);
+    // default sharedPreferenceUtil
+    SharedPreferencesUtil disableLogUtil = new SharedPreferencesUtil(app);
+    assertEquals(
+        disableLogUtil.getCustomModelStatsCollectionFlag(), app.isDataCollectionDefaultEnabled());
+    assertFalse(disableLogUtil.getCustomModelStatsCollectionFlag());
+  }
+
+  @Test
+  public void getCustomModelStatsCollectionFlag_overrideFirebaseAppFalse() {
+    app.setDataCollectionDefaultEnabled(Boolean.FALSE);
+    // default sharedPreferenceUtil
+    SharedPreferencesUtil sharedPreferencesUtil2 = new SharedPreferencesUtil(app);
+    sharedPreferencesUtil2.setCustomModelStatsCollectionEnabled(true);
+    assertEquals(sharedPreferencesUtil2.getCustomModelStatsCollectionFlag(), true);
+    assertTrue(sharedPreferencesUtil2.getCustomModelStatsCollectionFlag());
   }
 
   @Test
@@ -181,6 +206,19 @@ public class SharedPreferencesUtilTest {
     sharedPreferencesUtil.setCustomModelStatsCollectionEnabled(false);
     assertFalse(sharedPreferencesUtil.getCustomModelStatsCollectionFlag());
     sharedPreferencesUtil.setCustomModelStatsCollectionEnabled(true);
+    assertTrue(sharedPreferencesUtil.getCustomModelStatsCollectionFlag());
+  }
+
+  @Test
+  public void setCustomModelStatsCollectionFlag_nullUpdates() {
+    sharedPreferencesUtil.setCustomModelStatsCollectionEnabled(false);
+    sharedPreferencesUtil.setCustomModelStatsCollectionEnabled(null);
+    assertEquals(
+        sharedPreferencesUtil.getCustomModelStatsCollectionFlag(),
+        app.isDataCollectionDefaultEnabled());
+    app.setDataCollectionDefaultEnabled(Boolean.FALSE);
+    assertFalse(sharedPreferencesUtil.getCustomModelStatsCollectionFlag());
+    app.setDataCollectionDefaultEnabled(Boolean.TRUE);
     assertTrue(sharedPreferencesUtil.getCustomModelStatsCollectionFlag());
   }
 

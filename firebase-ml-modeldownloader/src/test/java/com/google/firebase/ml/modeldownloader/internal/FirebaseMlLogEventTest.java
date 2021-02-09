@@ -19,6 +19,7 @@ import static com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent
 
 import com.google.firebase.ml.modeldownloader.BuildConfig;
 import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent.DownloadStatus;
+import com.google.firebase.ml.modeldownloader.proto.DeleteModelLogEvent;
 import com.google.firebase.ml.modeldownloader.proto.ErrorCode;
 import com.google.firebase.ml.modeldownloader.proto.EventName;
 import com.google.firebase.ml.modeldownloader.proto.FirebaseMlLogEvent;
@@ -44,7 +45,7 @@ public class FirebaseMlLogEventTest {
 
   @Test
   // This verifies the incoming json matches the expected proto.
-  public void testLogRequest_jsonToProto() throws InvalidProtocolBufferException {
+  public void testLogRequestModelDownload_jsonToProto() throws InvalidProtocolBufferException {
 
     com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent logEventJson =
         com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.builder()
@@ -118,6 +119,67 @@ public class FirebaseMlLogEventTest {
             .setEventName(EventName.MODEL_DOWNLOAD)
             .setSystemInfo(systemInfo)
             .setModelDownloadLogEvent(modelDownloadLogEvent)
+            .build();
+
+    String json = FIREBASE_ML_JSON_ENCODER.encode(logEventJson);
+
+    FirebaseMlLogEvent.Builder protoLogEventBuilder = FirebaseMlLogEvent.newBuilder();
+
+    JsonFormat.parser().merge(json, protoLogEventBuilder);
+    FirebaseMlLogEvent parsedProtoFirebaseMlLogEvent = protoLogEventBuilder.build();
+
+    assertThat(parsedProtoFirebaseMlLogEvent).isEqualTo(logEventProto);
+  }
+
+  @Test
+  // This verifies the incoming json matches the expected proto.
+  public void testLogRequestDeleteModel_jsonToProto() throws InvalidProtocolBufferException {
+
+    com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent logEventJson =
+        com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.builder()
+            .setEventName(
+                com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.EventName
+                    .MODEL_DOWNLOAD)
+            .setSystemInfo(
+                com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.SystemInfo
+                    .builder()
+                    .setAppId(APP_ID)
+                    .setAppVersion(APP_VERSION)
+                    .setFirebaseProjectId(PROJECT_ID)
+                    .setApiKey(API_KEY)
+                    .setMlSdkVersion(BuildConfig.VERSION_NAME)
+                    .build())
+            .setDeleteModelLogEvent(
+                com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent
+                    .DeleteModelLogEvent.builder()
+                    .setModelType(
+                        com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent
+                            .ModelDownloadLogEvent.ModelOptions.ModelInfo.ModelType.CUSTOM)
+                    .setIsSuccessful(true)
+                    .build())
+            .build();
+
+    // Create matching proto
+    SystemInfo systemInfo =
+        SystemInfo.newBuilder()
+            .setAppId(APP_ID)
+            .setAppVersion(APP_VERSION)
+            .setFirebaseProjectId(PROJECT_ID)
+            .setApiKey(API_KEY)
+            .setMlSdkVersion(BuildConfig.VERSION_NAME)
+            .build();
+
+    DeleteModelLogEvent deleteModelLogEvent =
+        DeleteModelLogEvent.newBuilder()
+            .setModelType(ModelInfo.ModelType.CUSTOM)
+            .setIsSuccessful(true)
+            .build();
+
+    FirebaseMlLogEvent logEventProto =
+        FirebaseMlLogEvent.newBuilder()
+            .setEventName(EventName.MODEL_DOWNLOAD)
+            .setSystemInfo(systemInfo)
+            .setDeleteModelLogEvent(deleteModelLogEvent)
             .build();
 
     String json = FIREBASE_ML_JSON_ENCODER.encode(logEventJson);

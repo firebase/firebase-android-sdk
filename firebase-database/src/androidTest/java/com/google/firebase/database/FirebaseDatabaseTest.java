@@ -25,6 +25,7 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.database.core.DatabaseConfig;
+import com.google.firebase.database.core.RepoManager;
 import com.google.firebase.database.core.persistence.CachePolicy;
 import com.google.firebase.database.core.persistence.DefaultPersistenceManager;
 import com.google.firebase.database.core.persistence.MockPersistenceStorageEngine;
@@ -45,6 +46,7 @@ public class FirebaseDatabaseTest {
 
   @After
   public void tearDown() {
+    RepoManager.clear();
     IntegrationTestHelpers.failOnFirstUncaughtException();
   }
 

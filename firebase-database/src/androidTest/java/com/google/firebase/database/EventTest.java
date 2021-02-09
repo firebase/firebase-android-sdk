@@ -21,6 +21,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import com.google.firebase.database.core.RepoManager;
 import com.google.firebase.database.core.ZombieVerifier;
 import com.google.firebase.database.core.view.Event;
 import com.google.firebase.database.future.ReadFuture;
@@ -46,8 +47,10 @@ public class EventTest {
 
   @After
   public void tearDown() {
+    RepoManager.clear();
     IntegrationTestHelpers.failOnFirstUncaughtException();
   }
+
   // NOTE: skipping test on valid types.
 
   @Test
