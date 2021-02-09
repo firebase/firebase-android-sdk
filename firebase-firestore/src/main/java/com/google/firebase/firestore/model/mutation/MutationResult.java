@@ -16,7 +16,6 @@ package com.google.firebase.firestore.model.mutation;
 
 import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 
-import androidx.annotation.Nullable;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firestore.v1.Value;
 import java.util.List;

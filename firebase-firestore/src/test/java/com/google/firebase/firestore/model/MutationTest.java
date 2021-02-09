@@ -597,7 +597,8 @@ public class MutationTest {
         doc("collection/key", 7, map(), Document.DocumentState.COMMITTED_MUTATIONS);
     UnknownDocument docV7Unknown = unknownDoc("collection/key", 7);
 
-    MutationResult mutationResult = new MutationResult(version(7), /*transformResults=*/ Collections.emptyList());
+    MutationResult mutationResult =
+        new MutationResult(version(7), /*transformResults=*/ Collections.emptyList());
 
     assertVersionTransitions(set, docV3, mutationResult, docV7Committed);
     assertVersionTransitions(set, deletedV3, mutationResult, docV7Committed);
