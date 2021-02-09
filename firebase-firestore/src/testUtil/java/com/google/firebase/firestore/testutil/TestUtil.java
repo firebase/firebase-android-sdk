@@ -550,7 +550,7 @@ public class TestUtil {
   }
 
   public static MutationResult mutationResult(long version) {
-    return new MutationResult(version(version), null);
+    return new MutationResult(version(version), Collections.emptyList());
   }
 
   public static LocalViewChanges viewChanges(
