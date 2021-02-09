@@ -445,13 +445,10 @@ public final class RemoteSerializer {
       version = commitVersion;
     }
 
-    List<Value> transformResults = null;
     int transformResultsCount = proto.getTransformResultsCount();
-    if (transformResultsCount > 0) {
-      transformResults = new ArrayList<>(transformResultsCount);
-      for (int i = 0; i < transformResultsCount; i++) {
-        transformResults.add(proto.getTransformResults(i));
-      }
+    List<Value> transformResults = new ArrayList<>(transformResultsCount);
+    for (int i = 0; i < transformResultsCount; i++) {
+      transformResults.add(proto.getTransformResults(i));
     }
     return new MutationResult(version, transformResults);
   }

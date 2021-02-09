@@ -81,12 +81,9 @@ public final class SetMutation extends Mutation {
 
     SnapshotVersion version = mutationResult.getVersion();
 
-    ObjectValue newData = value;
-    if (mutationResult.getTransformResults() != null) {
-      List<Value> transformResults =
-          serverTransformResults(maybeDoc, mutationResult.getTransformResults());
-      newData = transformObject(newData, transformResults);
-    }
+    List<Value> transformResults =
+            serverTransformResults(maybeDoc, mutationResult.getTransformResults());
+    ObjectValue newData = transformObject(value, transformResults);
 
     return new Document(getKey(), version, newData, Document.DocumentState.COMMITTED_MUTATIONS);
   }
