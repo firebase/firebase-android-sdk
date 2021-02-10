@@ -19,7 +19,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import android.content.Context;
-
 import androidx.annotation.NonNull;
 import androidx.test.platform.app.InstrumentationRegistry;
 import com.google.firebase.FirebaseApp;
@@ -27,8 +26,6 @@ import com.google.firebase.FirebaseOptions;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.firestore.remote.GrpcMetadataProvider;
 import com.google.firebase.inject.Deferred;
-import com.google.firebase.inject.Provider;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -65,7 +62,8 @@ public class FirestoreMultiDbComponentTest {
     InternalAuthProvider authProvider = mock(InternalAuthProvider.class);
     Deferred<InternalAuthProvider> deferredAuthProvider = new ImmediateDeferredImpl<>(authProvider);
     GrpcMetadataProvider metadataProvider = mock(GrpcMetadataProvider.class);
-    return new FirestoreMultiDbComponent(context, firebaseApp, deferredAuthProvider, metadataProvider);
+    return new FirestoreMultiDbComponent(
+        context, firebaseApp, deferredAuthProvider, metadataProvider);
   }
 
   private static final class ImmediateDeferredImpl<T> implements Deferred<T> {
@@ -86,5 +84,4 @@ public class FirestoreMultiDbComponentTest {
       handler.handle(instance);
     }
   }
-
 }

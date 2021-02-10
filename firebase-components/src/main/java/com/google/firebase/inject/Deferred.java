@@ -46,5 +46,4 @@ public interface Deferred<T> extends Provider<T> {
 
   /** Register a callback that is executed once {@link T} becomes available */
   void whenAvailable(@NonNull DeferredHandler<T> handler);
-
 }

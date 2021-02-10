@@ -95,5 +95,4 @@ class OptionalProvider<T> implements Deferred<T> {
       handler.handle(get());
     }
   }
-
 }

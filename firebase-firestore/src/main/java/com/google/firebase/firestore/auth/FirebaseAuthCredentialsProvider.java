@@ -79,9 +79,10 @@ public final class FirebaseAuthCredentialsProvider extends CredentialsProvider {
     currentUser = getUser(deferredAuthProvider);
     tokenCounter = 0;
 
-    deferredAuthProvider.whenAvailable(internalAuthProvider -> {
-      internalAuthProvider.addIdTokenListener(idTokenListener);
-    });
+    deferredAuthProvider.whenAvailable(
+        internalAuthProvider -> {
+          internalAuthProvider.addIdTokenListener(idTokenListener);
+        });
   }
 
   @Override
