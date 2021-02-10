@@ -37,13 +37,14 @@ import com.google.firebase.annotations.DeferredApi;
  * }
  * }</pre>
  */
-public interface Deferred<T> {
+public interface Deferred<T> extends Provider<T> {
   /** Used by dependers to register their callbacks. */
   interface DeferredHandler<T> {
     @DeferredApi
-    void handle(Provider<T> provider);
+    void handle(T instance);
   }
 
   /** Register a callback that is executed once {@link T} becomes available */
   void whenAvailable(@NonNull DeferredHandler<T> handler);
+
 }
