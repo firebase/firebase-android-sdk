@@ -134,7 +134,7 @@ public final class FirebaseAuthCredentialsProvider extends CredentialsProvider {
   }
 
   @Override
-  public void removeChangeListener() {
+  public synchronized void removeChangeListener() {
     changeListener = null;
 
     InternalAuthProvider internalAuthProvider = deferredAuthProvider.get();
