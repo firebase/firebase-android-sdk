@@ -712,7 +712,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     validateNextWriteSent(write.first);
 
     MutationResult mutationResult =
-        new MutationResult(version(version), /*transformResults=*/ null);
+        new MutationResult(version(version), /*transformResults=*/ Collections.emptyList());
     queue.runSync(() -> datastore.ackWrite(version(version), singletonList(mutationResult)));
   }
 

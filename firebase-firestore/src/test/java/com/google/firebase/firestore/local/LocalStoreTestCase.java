@@ -159,7 +159,7 @@ public abstract class LocalStoreTestCase {
             version,
             transformResult != null
                 ? Collections.singletonList(TestUtil.wrap(transformResult))
-                : null);
+                : Collections.emptyList());
     MutationBatchResult result =
         MutationBatchResult.create(
             batch, version, singletonList(mutationResult), WriteStream.EMPTY_STREAM_TOKEN);

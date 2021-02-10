@@ -267,7 +267,9 @@ public class CustomModelDownloadServiceTest {
                 aResponse()
                     .withStatus(HttpURLConnection.HTTP_NOT_FOUND) // not found
                     .withBody(
-                        "{\"status\":\"NOT_FOUND\",\"message\":\"Requested entity was not found\"}")));
+                        "{\"error\": "
+                            + "{\"message\":\"Request entity was not found.\", "
+                            + "\"status\":\"NOT_FOUND\",\"code\":404}}")));
 
     CustomModelDownloadService service =
         new CustomModelDownloadService(
@@ -304,7 +306,9 @@ public class CustomModelDownloadServiceTest {
                 aResponse()
                     .withStatus(HttpURLConnection.HTTP_BAD_REQUEST)
                     .withBody(
-                        "{\"status\":\"NOT_FOUND\",\"message\":\"Requested entity was not found\"}")));
+                        "{\"error\": "
+                            + "{\"message\":\"Request bad.\", "
+                            + "\"status\":\"BAD_REQUEST\",\"code\":400}}")));
 
     CustomModelDownloadService service =
         new CustomModelDownloadService(
@@ -346,7 +350,9 @@ public class CustomModelDownloadServiceTest {
                 aResponse()
                     .withStatus(HttpURLConnection.HTTP_FORBIDDEN)
                     .withBody(
-                        "{\"status\":\"PERMISSION_DENIED\",\"message\":\"Request not valid\"}")));
+                        "{\"error\": "
+                            + "{\"message\":\"Request no valid.\", "
+                            + "\"status\":\"FORBIDDEN\",\"code\":403}}")));
 
     CustomModelDownloadService service =
         new CustomModelDownloadService(
@@ -388,7 +394,9 @@ public class CustomModelDownloadServiceTest {
                 aResponse()
                     .withStatus(HttpURLConnection.HTTP_INTERNAL_ERROR)
                     .withBody(
-                        "{\"status\":\"INTERNAL\",\"message\":\"Request cannot reach server\"}")));
+                        "{\"error\": "
+                            + "{\"message\":\"Request cannot reach server.\", "
+                            + "\"status\":\"INTERNAL_ERROR\",\"code\":500}}")));
 
     CustomModelDownloadService service =
         new CustomModelDownloadService(
@@ -429,7 +437,9 @@ public class CustomModelDownloadServiceTest {
                 aResponse()
                     .withStatus(429)
                     .withBody(
-                        "{\"status\":\"NOT_FOUND\",\"message\":\"Requested entity was not found\"}")));
+                        "{\"error\": "
+                            + "{\"message\":\"Request could not be process resource exhausted.\", "
+                            + "\"status\":\"RESOURCE_EXHAUSTED\",\"code\":429}}")));
 
     CustomModelDownloadService service =
         new CustomModelDownloadService(
@@ -469,7 +479,9 @@ public class CustomModelDownloadServiceTest {
                 aResponse()
                     .withStatus(HttpURLConnection.HTTP_UNAUTHORIZED) // not authorized
                     .withBody(
-                        "{\"status\":\"UNAUTHENTICATED\",\"message\":\"Request is missing required authentication credential.\"}")));
+                        "{\"error\": "
+                            + "{\"message\":\"Request is missing required authentication credential.\", "
+                            + "\"status\":\"UNAUTHORIZED\",\"code\":401}}")));
 
     CustomModelDownloadService service =
         new CustomModelDownloadService(
@@ -485,7 +497,7 @@ public class CustomModelDownloadServiceTest {
         modelTask
             .getException()
             .getMessage()
-            .contains(Integer.toString(HttpURLConnection.HTTP_UNAUTHORIZED)));
+            .contains("Request is missing required authentication credential"));
 
     WireMock.verify(
         getRequestedFor(urlEqualTo(downloadPath))
