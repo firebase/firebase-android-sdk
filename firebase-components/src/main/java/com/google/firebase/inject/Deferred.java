@@ -41,7 +41,7 @@ public interface Deferred<T> extends Provider<T> {
   /** Used by dependers to register their callbacks. */
   interface DeferredHandler<T> {
     @DeferredApi
-    void handle(T instance);
+    void handle(Deferred<T> instance);
   }
 
   /** Register a callback that is executed once {@link T} becomes available */

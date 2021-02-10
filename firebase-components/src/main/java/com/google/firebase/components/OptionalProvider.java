@@ -66,7 +66,7 @@ class OptionalProvider<T> implements Deferred<T> {
       handler = null;
       this.delegate = provider;
     }
-    localHandler.handle(get());
+    localHandler.handle(this);
   }
 
   @Override
@@ -74,7 +74,7 @@ class OptionalProvider<T> implements Deferred<T> {
   public void whenAvailable(@NonNull DeferredHandler<T> handler) {
     Provider<T> provider = this.delegate;
     if (provider != EMPTY_PROVIDER) {
-      handler.handle(get());
+      handler.handle(this);
       return;
     }
     Provider<T> toRun = null;
@@ -92,7 +92,7 @@ class OptionalProvider<T> implements Deferred<T> {
       }
     }
     if (toRun != null) {
-      handler.handle(get());
+      handler.handle(this);
     }
   }
 }

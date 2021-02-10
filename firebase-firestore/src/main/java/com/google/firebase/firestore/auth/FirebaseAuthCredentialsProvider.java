@@ -80,9 +80,7 @@ public final class FirebaseAuthCredentialsProvider extends CredentialsProvider {
     tokenCounter = 0;
 
     deferredAuthProvider.whenAvailable(
-        internalAuthProvider -> {
-          internalAuthProvider.addIdTokenListener(idTokenListener);
-        });
+        unused -> deferredAuthProvider.get().addIdTokenListener(idTokenListener));
   }
 
   @Override
