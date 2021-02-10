@@ -20,7 +20,7 @@ import org.gradle.kotlin.dsl.apply
 
 class FirebaseProprietaryLibraryPlugin : Plugin<Project> {
     override fun apply(project: Project) {
-        project.apply(plugin = "FirebaseLibraryPlugin")
+        project.apply(plugin = "firebase-library")
 
         val library = project.extensions.getByType(FirebaseLibraryExtension::class.java)
         library.publishSources = false
