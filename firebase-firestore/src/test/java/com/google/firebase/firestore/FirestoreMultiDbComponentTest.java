@@ -81,7 +81,7 @@ public class FirestoreMultiDbComponentTest {
 
     @Override
     public void whenAvailable(@NonNull DeferredHandler<T> handler) {
-      handler.handle(instance);
+      handler.handle(this);
     }
   }
 }
