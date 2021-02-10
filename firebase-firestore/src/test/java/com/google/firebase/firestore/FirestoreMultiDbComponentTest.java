@@ -70,29 +70,20 @@ public class FirestoreMultiDbComponentTest {
 
   private static final class ImmediateDeferredImpl<T> implements Deferred<T> {
 
-    private final ImmediateProviderImpl<T> provider;
-
-    ImmediateDeferredImpl(T instance) {
-      provider = new ImmediateProviderImpl<>(instance);
-    }
-
-    @Override
-    public void whenAvailable(@NonNull DeferredHandler<T> handler) {
-      handler.handle(provider);
-    }
-  }
-
-  private static final class ImmediateProviderImpl<T> implements Provider<T> {
-
     private final T instance;
 
-    ImmediateProviderImpl(T instance) {
+    ImmediateDeferredImpl(T instance) {
       this.instance = instance;
     }
 
     @Override
     public T get() {
       return instance;
+    }
+
+    @Override
+    public void whenAvailable(@NonNull DeferredHandler<T> handler) {
+      handler.handle(instance);
     }
   }
 
