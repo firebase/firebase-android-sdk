@@ -18,13 +18,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.firestore.util.Listener;
 
-// TODO(dconeybe) Delete `EmptyCredentialsProvider` since `FirebaseAuthCredentialsProvider` now has
-// to handle this anyways.
-/**
- * A Credentials Provider that always returns an empty token
- *
- * @see FirebaseAuthCredentialsProvider
- */
+/** A Credentials Provider that always returns an empty token */
 public class EmptyCredentialsProvider extends CredentialsProvider {
 
   @Override
