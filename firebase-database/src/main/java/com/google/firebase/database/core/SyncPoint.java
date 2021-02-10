@@ -31,6 +31,7 @@ import com.google.firebase.database.core.view.QuerySpec;
 import com.google.firebase.database.core.view.View;
 import com.google.firebase.database.core.view.ViewCache;
 import com.google.firebase.database.snapshot.ChildKey;
+import com.google.firebase.database.snapshot.EmptyNode;
 import com.google.firebase.database.snapshot.IndexedNode;
 import com.google.firebase.database.snapshot.NamedNode;
 import com.google.firebase.database.snapshot.Node;
@@ -124,7 +125,9 @@ public class SyncPoint {
       if (eventCache != null) {
         eventCacheComplete = true;
       } else {
-        eventCache = writesCache.calcCompleteEventChildren(serverCache.getNode());
+        eventCache =
+            writesCache.calcCompleteEventChildren(
+                serverCache.getNode() != null ? serverCache.getNode() : EmptyNode.Empty());
         eventCacheComplete = false;
       }
       IndexedNode indexed = IndexedNode.from(eventCache, query.getIndex());

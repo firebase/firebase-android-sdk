@@ -584,7 +584,8 @@ public class QueryTest {
 
   @Test
   public void testStartAfterWithOrderByKey()
-      throws DatabaseException, InterruptedException, ExecutionException {
+      throws DatabaseException, InterruptedException, ExecutionException, TimeoutException,
+          TestFailure {
     DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
     DatabaseReference childOne = ref.push();
     DatabaseReference childTwo = ref.push();
@@ -592,6 +593,7 @@ public class QueryTest {
     Tasks.await(childTwo.setValue(2L));
 
     DataSnapshot snapshot = Tasks.await(ref.orderByKey().startAfter(childOne.getKey()).get());
+
     Map<String, Long> values = (Map<String, Long>) snapshot.getValue();
 
     assertNotNull(values);
@@ -4627,6 +4629,33 @@ public class QueryTest {
         reader.removeEventListener(listener);
       }
       readerDb.goOnline();
+    }
+  }
+
+  @Test
+  public void testGetWithPendingWrites() throws ExecutionException, InterruptedException {
+    DatabaseReference node = IntegrationTestHelpers.getRandomNode();
+    node.getDatabase().goOffline();
+    try {
+      Map<String, Object> expected = new MapBuilder().put("foo", "bar").build();
+      node.setValue(expected);
+      DataSnapshot snapshot = Tasks.await(node.get());
+      assertEquals(snapshot.getValue(), expected);
+    } finally {
+      node.getDatabase().goOnline();
+    }
+  }
+
+  @Test
+  public void testGetChildOfPendingWrites() throws ExecutionException, InterruptedException {
+    DatabaseReference node = IntegrationTestHelpers.getRandomNode();
+    node.getDatabase().goOffline();
+    try {
+      node.setValue(new MapBuilder().put("foo", "bar").build());
+      DataSnapshot snapshot = Tasks.await(node.child("foo").get());
+      assertEquals(snapshot.getValue(), "bar");
+    } finally {
+      node.getDatabase().goOnline();
     }
   }
 

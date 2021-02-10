@@ -524,16 +524,17 @@ public class SyncTree {
                     : syncPoint.getCompleteServerCache(Path.getEmptyPath());
           }
 
-          CacheNode serverCache;
-          if (serverCacheNode != null) {
-            serverCache =
-                new CacheNode(IndexedNode.from(serverCacheNode, query.getIndex()), true, false);
+          CacheNode serverCache =
+              new CacheNode(
+                  IndexedNode.from(
+                      serverCacheNode != null ? serverCacheNode : EmptyNode.Empty(),
+                      query.getIndex()),
+                  serverCacheNode != null,
+                  false);
 
-            WriteTreeRef writesCache = pendingWriteTree.childWrites(path);
-            View view = syncPoint.getView(query, writesCache, serverCache);
-            return view.getCompleteNode();
-          }
-          return null;
+          WriteTreeRef writesCache = pendingWriteTree.childWrites(path);
+          View view = syncPoint.getView(query, writesCache, serverCache);
+          return view.getCompleteNode();
         });
   }
 
