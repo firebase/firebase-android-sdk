@@ -496,12 +496,11 @@ public class Repo implements PersistentConnection.Delegate {
           public void run() {
             // Always check active-listener in-memory caches first. These are always at least as
             // up to date as the persistence cache.
-            Node cached =
-                serverSyncTree.calcCompleteEventCacheFromRoot(query.getPath(), new ArrayList<>());
-            if (!cached.isEmpty()) {
+            Node serverValue = serverSyncTree.getServerValue(query.getSpec());
+            if (serverValue != null) {
               source.setResult(
                   InternalHelpers.createDataSnapshot(
-                      query.getRef(), IndexedNode.from(cached, query.getSpec().getIndex())));
+                      query.getRef(), IndexedNode.from(serverValue)));
               return;
             }
             serverSyncTree.setQueryActive(query.getSpec());
