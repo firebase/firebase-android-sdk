@@ -37,6 +37,7 @@ import com.google.firebase.crashlytics.internal.breadcrumbs.DisabledBreadcrumbSo
 import com.google.firebase.crashlytics.internal.common.AppData;
 import com.google.firebase.crashlytics.internal.common.CommonUtils;
 import com.google.firebase.crashlytics.internal.common.CrashlyticsCore;
+import com.google.firebase.crashlytics.internal.common.CustomKeysAndValues;
 import com.google.firebase.crashlytics.internal.common.DataCollectionArbiter;
 import com.google.firebase.crashlytics.internal.common.ExecutorUtils;
 import com.google.firebase.crashlytics.internal.common.IdManager;
@@ -443,8 +444,10 @@ public class FirebaseCrashlytics {
   }
 
   /**
-     * Sets custom keys and values that are associated with subsequent fatal and non-fatal
-     * reports.
+     * Sets multiple custom keys and values that are associated with subsequent
+     * fatal and non-fatal reports. This method is intended as an alternative
+     * to setCustomKey in order to reduce the computational load of writing
+     * out multiple key/value pairs at the same time.
      *
      * <p>Multiple calls to this method with the same key update the value for that key.
      *

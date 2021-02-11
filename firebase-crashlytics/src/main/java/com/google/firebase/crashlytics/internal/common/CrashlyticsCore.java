@@ -330,7 +330,10 @@ public class CrashlyticsCore {
   }
 
   /**
-   * Sets multiple values to be associated with given keys for your crash data. The key/value pairs will be
+   * Sets multiple values to be associated with given keys for your crash data.
+   * This method should be used instead of setCustomKey when many different
+   * key/value pairs are to be set at the same time in order to optimize the
+   * process of writing out the data. The key/value pairs will be
    * reported with any crash that occurs in this session. A maximum of 64 key/value pairs can be
    * stored for any type. New keys added over that limit will be ignored. Keys and values are
    * trimmed ({@link String#trim()}), and keys or values that exceed 1024 characters will be
