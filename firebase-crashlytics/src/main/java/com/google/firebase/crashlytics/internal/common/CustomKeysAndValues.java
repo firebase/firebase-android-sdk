@@ -1,4 +1,4 @@
-// Copyright 2020 Google LLC
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,6 +14,7 @@
 
 package com.google.firebase.crashlytics.internal.common;
 
+import java.util.HashMap;
 import java.util.Map;
 import androidx.annotation.NonNull;
 
@@ -23,7 +24,7 @@ import androidx.annotation.NonNull;
  */
 public class CustomKeysAndValues {
 
-  static final Map<String, String> keysAndValues;
+  public static final Map<String, String> keysAndValues;
 
   static class Builder {
 
@@ -33,22 +34,22 @@ public class CustomKeysAndValues {
     // Methods to accept keys and values and convert values to strings.
 
     Builder setValueForKey(@NonNull String key, @NonNull String value) {
-      stringValues.put(key, value);
+      keysAndValues.put(key, value);
     }
     Builder setValueForKey(@NonNull String key, boolean value) {
-      stringValues.put(key, Boolean.toString(value));
+      keysAndValues.put(key, Boolean.toString(value));
     }
     Builder setValueForKey(@NonNull String key, double value) {
-      stringValues.put(key, Double.toString(value));
+      keysAndValues.put(key, Double.toString(value));
     }
     Builder setValueForKey(@NonNull String key, float value) {
-      stringValues.put(key, Float.toString(value));
+      keysAndValues.put(key, Float.toString(value));
     }
     Builder setValueForKey(@NonNull String key, long value){
-      stringValues.put(key, Long.toString(value));
+      keysAndValues.put(key, Long.toString(value));
     }
     Builder setValueForKey(@NonNull String key, int value){
-      stringValues.put(key, Integer.toString(value));
+      keysAndValues.put(key, Integer.toString(value));
     }
 
     @NonNull
@@ -58,7 +59,6 @@ public class CustomKeysAndValues {
   }
 
   private CustomKeysAndValues(Builder builder) {
-    keysAndValues = builder.keysAndValues;
+    this.keysAndValues = builder.keysAndValues;
   }
-
 }
