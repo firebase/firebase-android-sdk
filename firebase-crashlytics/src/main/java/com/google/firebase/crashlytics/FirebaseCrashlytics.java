@@ -462,7 +462,7 @@ public class FirebaseCrashlytics {
      *
      * @param keysAndValues A dictionary of keys and the values to associate with each key
      */
-    public void setCustomKeys(CustomKeysAndValues keysAndValues) {
+    public void setCustomKeys(@NonNull CustomKeysAndValues keysAndValues) {
       core.setCustomKeys(keysAndValues.keysAndValues);
     }
 
