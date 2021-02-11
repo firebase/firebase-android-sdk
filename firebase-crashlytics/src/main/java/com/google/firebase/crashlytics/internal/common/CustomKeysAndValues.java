@@ -24,7 +24,7 @@ import androidx.annotation.NonNull;
  */
 public class CustomKeysAndValues {
 
-  public static final Map<String, String> keysAndValues;
+  public final Map<String, String> keysAndValues;
 
   static class Builder {
 
