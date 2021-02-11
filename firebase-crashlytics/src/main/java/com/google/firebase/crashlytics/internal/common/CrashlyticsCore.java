@@ -329,6 +329,19 @@ public class CrashlyticsCore {
     controller.setCustomKey(key, value);
   }
 
+  /**
+   * Sets multiple values to be associated with given keys for your crash data. The key/value pairs will be
+   * reported with any crash that occurs in this session. A maximum of 64 key/value pairs can be
+   * stored for any type. New keys added over that limit will be ignored. Keys and values are
+   * trimmed ({@link String#trim()}), and keys or values that exceed 1024 characters will be
+   * truncated.
+   *
+   * @throws NullPointerException if key is null.
+   */
+  public void setCustomKeys(Map<String, String> keysAndValues) {
+    controller.setCustomKeys(keysAndValues);
+  }
+
   // endregion
 
   // region Package-protected getters
