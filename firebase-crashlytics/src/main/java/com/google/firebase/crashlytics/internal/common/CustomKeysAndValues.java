@@ -35,21 +35,27 @@ public class CustomKeysAndValues {
 
     Builder setValueForKey(@NonNull String key, @NonNull String value) {
       keysAndValues.put(key, value);
+      return this;
     }
     Builder setValueForKey(@NonNull String key, boolean value) {
       keysAndValues.put(key, Boolean.toString(value));
+      return this;
     }
     Builder setValueForKey(@NonNull String key, double value) {
       keysAndValues.put(key, Double.toString(value));
+      return this;
     }
     Builder setValueForKey(@NonNull String key, float value) {
       keysAndValues.put(key, Float.toString(value));
+      return this;
     }
     Builder setValueForKey(@NonNull String key, long value){
       keysAndValues.put(key, Long.toString(value));
+      return this;
     }
     Builder setValueForKey(@NonNull String key, int value){
       keysAndValues.put(key, Integer.toString(value));
+      return this;
     }
 
     @NonNull
