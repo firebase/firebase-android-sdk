@@ -79,15 +79,16 @@ public final class FirebaseAuthCredentialsProvider extends CredentialsProvider {
     currentUser = getUser(deferredAuthProvider);
     tokenCounter = 0;
 
-    deferredAuthProvider.whenAvailable(unused -> {
-      synchronized (this) {
-        currentUser = getUser(deferredAuthProvider);
-        if (changeListener != null) {
-          changeListener.onValue(currentUser);
-        }
-      }
-      deferredAuthProvider.get().addIdTokenListener(idTokenListener);
-    });
+    deferredAuthProvider.whenAvailable(
+        unused -> {
+          synchronized (this) {
+            currentUser = getUser(deferredAuthProvider);
+            if (changeListener != null) {
+              changeListener.onValue(currentUser);
+            }
+          }
+          deferredAuthProvider.get().addIdTokenListener(idTokenListener);
+        });
   }
 
   @Override

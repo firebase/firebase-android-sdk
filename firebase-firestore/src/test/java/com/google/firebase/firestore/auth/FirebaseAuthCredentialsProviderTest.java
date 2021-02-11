@@ -14,8 +14,14 @@
 
 package com.google.firebase.firestore.auth;
 
-import androidx.annotation.NonNull;
+import static com.google.common.truth.Truth.assertThat;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
+import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
@@ -26,7 +32,6 @@ import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.firestore.util.Listener;
 import com.google.firebase.inject.Deferred;
 import com.google.firebase.internal.InternalTokenResult;
-
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -38,13 +43,6 @@ import org.mockito.junit.MockitoRule;
 import org.mockito.quality.Strictness;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
-
-import static com.google.common.truth.Truth.assertThat;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
@@ -61,7 +59,8 @@ public class FirebaseAuthCredentialsProviderTest {
 
   @Test
   public void setChangeListenerShouldBeCalledWithUnauthenticatedIfProviderIsNotAvailable() {
-    FirebaseAuthCredentialsProvider firebaseAuthCredentialsProvider = new FirebaseAuthCredentialsProvider(new UnavailableDeferred());
+    FirebaseAuthCredentialsProvider firebaseAuthCredentialsProvider =
+        new FirebaseAuthCredentialsProvider(new UnavailableDeferred());
 
     firebaseAuthCredentialsProvider.setChangeListener(mockUserListener);
 
@@ -71,7 +70,8 @@ public class FirebaseAuthCredentialsProviderTest {
   @Test
   public void setChangeListenerShouldBeCalledWithUnauthenticatedIfUidIsNull() {
     when(mockInternalAuthProvider.getUid()).thenReturn(null);
-    FirebaseAuthCredentialsProvider firebaseAuthCredentialsProvider = new FirebaseAuthCredentialsProvider(new ImmediateDeferred(mockInternalAuthProvider));
+    FirebaseAuthCredentialsProvider firebaseAuthCredentialsProvider =
+        new FirebaseAuthCredentialsProvider(new ImmediateDeferred(mockInternalAuthProvider));
 
     firebaseAuthCredentialsProvider.setChangeListener(mockUserListener);
 
@@ -81,7 +81,8 @@ public class FirebaseAuthCredentialsProviderTest {
   @Test
   public void setChangeListenerShouldBeCalledWithAuthenticatedUserIfUidIsNotNull() {
     when(mockInternalAuthProvider.getUid()).thenReturn("TestUID");
-    FirebaseAuthCredentialsProvider firebaseAuthCredentialsProvider = new FirebaseAuthCredentialsProvider(new ImmediateDeferred(mockInternalAuthProvider));
+    FirebaseAuthCredentialsProvider firebaseAuthCredentialsProvider =
+        new FirebaseAuthCredentialsProvider(new ImmediateDeferred(mockInternalAuthProvider));
 
     firebaseAuthCredentialsProvider.setChangeListener(mockUserListener);
 
@@ -89,9 +90,11 @@ public class FirebaseAuthCredentialsProviderTest {
   }
 
   @Test
-  public void setChangeListenerShouldBeCalledWithUnauthenticatedUserWhenProviderWithNullUidBecomesAvailable() {
+  public void
+      setChangeListenerShouldBeCalledWithUnauthenticatedUserWhenProviderWithNullUidBecomesAvailable() {
     DelayedDeferred delayedDeferredInternalAuthProvider = new DelayedDeferred();
-    FirebaseAuthCredentialsProvider firebaseAuthCredentialsProvider = new FirebaseAuthCredentialsProvider(delayedDeferredInternalAuthProvider);
+    FirebaseAuthCredentialsProvider firebaseAuthCredentialsProvider =
+        new FirebaseAuthCredentialsProvider(delayedDeferredInternalAuthProvider);
 
     firebaseAuthCredentialsProvider.setChangeListener(mockUserListener);
     verify(mockUserListener).onValue(User.UNAUTHENTICATED);
@@ -102,9 +105,11 @@ public class FirebaseAuthCredentialsProviderTest {
   }
 
   @Test
-  public void setChangeListenerShouldBeCalledWithAuthenticatedUserWhenProviderWithAuthenticatedUserBecomesAvailable() {
+  public void
+      setChangeListenerShouldBeCalledWithAuthenticatedUserWhenProviderWithAuthenticatedUserBecomesAvailable() {
     DelayedDeferred delayedDeferredInternalAuthProvider = new DelayedDeferred();
-    FirebaseAuthCredentialsProvider firebaseAuthCredentialsProvider = new FirebaseAuthCredentialsProvider(delayedDeferredInternalAuthProvider);
+    FirebaseAuthCredentialsProvider firebaseAuthCredentialsProvider =
+        new FirebaseAuthCredentialsProvider(delayedDeferredInternalAuthProvider);
 
     firebaseAuthCredentialsProvider.setChangeListener(mockUserListener);
     verify(mockUserListener).onValue(User.UNAUTHENTICATED);
@@ -117,7 +122,8 @@ public class FirebaseAuthCredentialsProviderTest {
   @Test
   public void setChangeListenerShouldBeCalledWhenIdTokenChanges() {
     when(mockInternalAuthProvider.getUid()).thenReturn("TestUID1");
-    FirebaseAuthCredentialsProvider firebaseAuthCredentialsProvider = new FirebaseAuthCredentialsProvider(new ImmediateDeferred(mockInternalAuthProvider));
+    FirebaseAuthCredentialsProvider firebaseAuthCredentialsProvider =
+        new FirebaseAuthCredentialsProvider(new ImmediateDeferred(mockInternalAuthProvider));
     verify(mockInternalAuthProvider).addIdTokenListener(idTokenListenerCaptor.capture());
 
     firebaseAuthCredentialsProvider.setChangeListener(mockUserListener);
@@ -131,7 +137,8 @@ public class FirebaseAuthCredentialsProviderTest {
   @Test
   public void removeChangeListenerShouldStopNotifyingTheListener() {
     DelayedDeferred delayedDeferredInternalAuthProvider = new DelayedDeferred();
-    FirebaseAuthCredentialsProvider firebaseAuthCredentialsProvider = new FirebaseAuthCredentialsProvider(delayedDeferredInternalAuthProvider);
+    FirebaseAuthCredentialsProvider firebaseAuthCredentialsProvider =
+        new FirebaseAuthCredentialsProvider(delayedDeferredInternalAuthProvider);
 
     firebaseAuthCredentialsProvider.setChangeListener(mockUserListener);
     verify(mockUserListener).onValue(User.UNAUTHENTICATED);
@@ -144,14 +151,16 @@ public class FirebaseAuthCredentialsProviderTest {
 
   @Test
   public void removeChangeListenerShouldNotThrowIfProviderIsNotAvailable() {
-    FirebaseAuthCredentialsProvider firebaseAuthCredentialsProvider = new FirebaseAuthCredentialsProvider(new UnavailableDeferred());
+    FirebaseAuthCredentialsProvider firebaseAuthCredentialsProvider =
+        new FirebaseAuthCredentialsProvider(new UnavailableDeferred());
 
     firebaseAuthCredentialsProvider.removeChangeListener();
   }
 
   @Test
   public void removeChangeListenerShouldUnregisterTheIdTokenListener() {
-    FirebaseAuthCredentialsProvider firebaseAuthCredentialsProvider = new FirebaseAuthCredentialsProvider(new ImmediateDeferred(mockInternalAuthProvider));
+    FirebaseAuthCredentialsProvider firebaseAuthCredentialsProvider =
+        new FirebaseAuthCredentialsProvider(new ImmediateDeferred(mockInternalAuthProvider));
     verify(mockInternalAuthProvider).addIdTokenListener(idTokenListenerCaptor.capture());
 
     firebaseAuthCredentialsProvider.removeChangeListener();
@@ -161,7 +170,8 @@ public class FirebaseAuthCredentialsProviderTest {
 
   @Test
   public void getTokenShouldReturnAFailedTaskIfProviderIsNotAvailable() {
-    FirebaseAuthCredentialsProvider firebaseAuthCredentialsProvider = new FirebaseAuthCredentialsProvider(new UnavailableDeferred());
+    FirebaseAuthCredentialsProvider firebaseAuthCredentialsProvider =
+        new FirebaseAuthCredentialsProvider(new UnavailableDeferred());
 
     Task<String> task = firebaseAuthCredentialsProvider.getToken();
 
@@ -172,9 +182,11 @@ public class FirebaseAuthCredentialsProviderTest {
 
   @Test
   public void getTokenShouldReturnAFailedTaskIfGetAccessTokenFails() {
-    FirebaseAuthCredentialsProvider firebaseAuthCredentialsProvider = new FirebaseAuthCredentialsProvider(new ImmediateDeferred(mockInternalAuthProvider));
+    FirebaseAuthCredentialsProvider firebaseAuthCredentialsProvider =
+        new FirebaseAuthCredentialsProvider(new ImmediateDeferred(mockInternalAuthProvider));
     Exception getAccessTokenException = new Exception();
-    when(mockInternalAuthProvider.getAccessToken(anyBoolean())).thenReturn(Tasks.forException(getAccessTokenException));
+    when(mockInternalAuthProvider.getAccessToken(anyBoolean()))
+        .thenReturn(Tasks.forException(getAccessTokenException));
 
     Task<String> task = firebaseAuthCredentialsProvider.getToken();
 
@@ -185,9 +197,11 @@ public class FirebaseAuthCredentialsProviderTest {
 
   @Test
   public void getTokenShouldReturnASuccessfulTaskIfGetAccessTokenSucceeds() {
-    FirebaseAuthCredentialsProvider firebaseAuthCredentialsProvider = new FirebaseAuthCredentialsProvider(new ImmediateDeferred(mockInternalAuthProvider));
+    FirebaseAuthCredentialsProvider firebaseAuthCredentialsProvider =
+        new FirebaseAuthCredentialsProvider(new ImmediateDeferred(mockInternalAuthProvider));
     when(mockGetTokenResult.getToken()).thenReturn("TestToken");
-    when(mockInternalAuthProvider.getAccessToken(anyBoolean())).thenReturn(Tasks.forResult(mockGetTokenResult));
+    when(mockInternalAuthProvider.getAccessToken(anyBoolean()))
+        .thenReturn(Tasks.forResult(mockGetTokenResult));
 
     Task<String> task = firebaseAuthCredentialsProvider.getToken();
 
@@ -198,9 +212,11 @@ public class FirebaseAuthCredentialsProviderTest {
 
   @Test
   public void getTokenShouldNotForceRefreshTheTokenIfInvalidateTokenIsNotCalled() {
-    FirebaseAuthCredentialsProvider firebaseAuthCredentialsProvider = new FirebaseAuthCredentialsProvider(new ImmediateDeferred(mockInternalAuthProvider));
+    FirebaseAuthCredentialsProvider firebaseAuthCredentialsProvider =
+        new FirebaseAuthCredentialsProvider(new ImmediateDeferred(mockInternalAuthProvider));
     when(mockGetTokenResult.getToken()).thenReturn("TestToken");
-    when(mockInternalAuthProvider.getAccessToken(anyBoolean())).thenReturn(Tasks.forResult(mockGetTokenResult));
+    when(mockInternalAuthProvider.getAccessToken(anyBoolean()))
+        .thenReturn(Tasks.forResult(mockGetTokenResult));
 
     firebaseAuthCredentialsProvider.getToken();
 
@@ -209,10 +225,12 @@ public class FirebaseAuthCredentialsProviderTest {
 
   @Test
   public void getTokenShouldRecursivelyCallItselfIfTheTokenCounterChanges() {
-    FirebaseAuthCredentialsProvider firebaseAuthCredentialsProvider = new FirebaseAuthCredentialsProvider(new ImmediateDeferred(mockInternalAuthProvider));
+    FirebaseAuthCredentialsProvider firebaseAuthCredentialsProvider =
+        new FirebaseAuthCredentialsProvider(new ImmediateDeferred(mockInternalAuthProvider));
     verify(mockInternalAuthProvider).addIdTokenListener(idTokenListenerCaptor.capture());
     when(mockGetTokenResult2.getToken()).thenReturn("TestToken2");
-    TaskCompletionSource<GetTokenResult> getAccessTokenTaskCompletionSource = new TaskCompletionSource<>();
+    TaskCompletionSource<GetTokenResult> getAccessTokenTaskCompletionSource =
+        new TaskCompletionSource<>();
 
     // This delicate dance ensures the following order of operations:
     // 1. getToken() calls internalAuthProvider.getAccessToken(), which returns an uncompleted task.
@@ -223,11 +241,13 @@ public class FirebaseAuthCredentialsProviderTest {
     // 5. The recursively-called getToken() calls calls internalAuthProvider.getAccessToken(), which
     //       returns a completed task with the token "TestToken2".
     // 6. The task returned from the original getToken() invocation completes.
-    when(mockInternalAuthProvider.getAccessToken(anyBoolean())).thenReturn(getAccessTokenTaskCompletionSource.getTask());
+    when(mockInternalAuthProvider.getAccessToken(anyBoolean()))
+        .thenReturn(getAccessTokenTaskCompletionSource.getTask());
     Task<String> task = firebaseAuthCredentialsProvider.getToken();
     verify(mockInternalAuthProvider).getAccessToken(anyBoolean());
     idTokenListenerCaptor.getValue().onIdTokenChanged(mockInternalTokenResult);
-    when(mockInternalAuthProvider.getAccessToken(anyBoolean())).thenReturn(Tasks.forResult(mockGetTokenResult2));
+    when(mockInternalAuthProvider.getAccessToken(anyBoolean()))
+        .thenReturn(Tasks.forResult(mockGetTokenResult2));
     getAccessTokenTaskCompletionSource.setResult(mockGetTokenResult);
 
     assertThat(task.isComplete()).isTrue();
@@ -237,9 +257,11 @@ public class FirebaseAuthCredentialsProviderTest {
 
   @Test
   public void invalidateTokenShouldCauseGetTokenToForceRefresh() {
-    FirebaseAuthCredentialsProvider firebaseAuthCredentialsProvider = new FirebaseAuthCredentialsProvider(new ImmediateDeferred(mockInternalAuthProvider));
+    FirebaseAuthCredentialsProvider firebaseAuthCredentialsProvider =
+        new FirebaseAuthCredentialsProvider(new ImmediateDeferred(mockInternalAuthProvider));
     when(mockGetTokenResult.getToken()).thenReturn("TestToken");
-    when(mockInternalAuthProvider.getAccessToken(anyBoolean())).thenReturn(Tasks.forResult(mockGetTokenResult));
+    when(mockInternalAuthProvider.getAccessToken(anyBoolean()))
+        .thenReturn(Tasks.forResult(mockGetTokenResult));
 
     firebaseAuthCredentialsProvider.invalidateToken();
     firebaseAuthCredentialsProvider.getToken();
@@ -249,9 +271,11 @@ public class FirebaseAuthCredentialsProviderTest {
 
   @Test
   public void invalidateTokenShouldOnlyForceRefreshOnTheImmediatelyFollowingGetTokenInvocation() {
-    FirebaseAuthCredentialsProvider firebaseAuthCredentialsProvider = new FirebaseAuthCredentialsProvider(new ImmediateDeferred(mockInternalAuthProvider));
+    FirebaseAuthCredentialsProvider firebaseAuthCredentialsProvider =
+        new FirebaseAuthCredentialsProvider(new ImmediateDeferred(mockInternalAuthProvider));
     when(mockGetTokenResult.getToken()).thenReturn("TestToken");
-    when(mockInternalAuthProvider.getAccessToken(anyBoolean())).thenReturn(Tasks.forResult(mockGetTokenResult));
+    when(mockInternalAuthProvider.getAccessToken(anyBoolean()))
+        .thenReturn(Tasks.forResult(mockGetTokenResult));
 
     firebaseAuthCredentialsProvider.invalidateToken();
     firebaseAuthCredentialsProvider.getToken();
@@ -261,14 +285,11 @@ public class FirebaseAuthCredentialsProviderTest {
     verify(mockInternalAuthProvider).getAccessToken(false);
   }
 
-  /**
-   * An implementation of {@link Deferred} whose provider never becomes available.
-   */
+  /** An implementation of {@link Deferred} whose provider never becomes available. */
   private static final class UnavailableDeferred implements Deferred<InternalAuthProvider> {
 
     @Override
-    public void whenAvailable(@NonNull DeferredHandler<InternalAuthProvider> handler) {
-    }
+    public void whenAvailable(@NonNull DeferredHandler<InternalAuthProvider> handler) {}
 
     @Override
     public InternalAuthProvider get() {
@@ -276,9 +297,7 @@ public class FirebaseAuthCredentialsProviderTest {
     }
   }
 
-  /**
-   * An implementation of {@link Deferred} whose provider is always available.
-   */
+  /** An implementation of {@link Deferred} whose provider is always available. */
   private static final class ImmediateDeferred implements Deferred<InternalAuthProvider> {
 
     private final InternalAuthProvider internalAuthProvider;
@@ -334,5 +353,4 @@ public class FirebaseAuthCredentialsProviderTest {
       handler.handle(this);
     }
   }
-
 }
