@@ -14,9 +14,12 @@
 
 package com.google.firebase.crashlytics.internal.common;
 
+import java.util.Map;
+import androidx.annotation.NonNull;
+
 /**
- * Helper class which handles the accumluation of multiple key/value pairs with
- * heterogenous value types.
+ * Helper class which handles the storage and conversion to strings of key/value
+ * pairs with heterogenous value types.
  */
 public class CustomKeysAndValues {
 
@@ -24,9 +27,10 @@ public class CustomKeysAndValues {
 
   static class Builder {
 
-    // Holds the pairs of custom keys and values to associate with the
-    // crash data while accumulating adding pairs.
+    // Holds the converted pairs of custom keys and values.
     Map<String, String> keysAndValues = new HashMap<String, String>();
+
+    // Methods to accept keys and values and convert values to strings.
 
     Builder setValueForKey(@NonNull String key, @NonNull String value) {
       stringValues.put(key, value);
