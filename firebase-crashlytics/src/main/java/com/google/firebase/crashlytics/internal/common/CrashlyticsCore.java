@@ -36,13 +36,13 @@ import com.google.firebase.crashlytics.internal.stacktrace.MiddleOutFallbackStra
 import com.google.firebase.crashlytics.internal.stacktrace.RemoveRepeatsStrategy;
 import com.google.firebase.crashlytics.internal.stacktrace.StackTraceTrimmingStrategy;
 import java.io.File;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.Map;
 
 @SuppressWarnings("PMD.NullAssignment")
 public class CrashlyticsCore {
@@ -331,10 +331,9 @@ public class CrashlyticsCore {
   }
 
   /**
-   * Sets multiple values to be associated with given keys for your crash data.
-   * This method should be used instead of setCustomKey when many different
-   * key/value pairs are to be set at the same time in order to optimize the
-   * process of writing out the data. The key/value pairs will be
+   * Sets multiple values to be associated with given keys for your crash data. This method should
+   * be used instead of setCustomKey when many different key/value pairs are to be set at the same
+   * time in order to optimize the process of writing out the data. The key/value pairs will be
    * reported with any crash that occurs in this session. A maximum of 64 key/value pairs can be
    * stored for any type. New keys added over that limit will be ignored. Keys and values are
    * trimmed ({@link String#trim()}), and keys or values that exceed 1024 characters will be

@@ -14,13 +14,13 @@
 
 package com.google.firebase.crashlytics.internal.common;
 
+import androidx.annotation.NonNull;
 import java.util.HashMap;
 import java.util.Map;
-import androidx.annotation.NonNull;
 
 /**
- * Helper class which handles the storage and conversion to strings of key/value
- * pairs with heterogenous value types.
+ * Helper class which handles the storage and conversion to strings of key/value pairs with
+ * heterogenous value types.
  */
 public class CustomKeysAndValues {
 
@@ -37,23 +37,28 @@ public class CustomKeysAndValues {
       keysAndValues.put(key, value);
       return this;
     }
+
     public Builder putBoolean(@NonNull String key, boolean value) {
       keysAndValues.put(key, Boolean.toString(value));
       return this;
     }
+
     public Builder putDouble(@NonNull String key, double value) {
       keysAndValues.put(key, Double.toString(value));
       return this;
     }
+
     public Builder putFloat(@NonNull String key, float value) {
       keysAndValues.put(key, Float.toString(value));
       return this;
     }
-    public Builder putLong(@NonNull String key, long value){
+
+    public Builder putLong(@NonNull String key, long value) {
       keysAndValues.put(key, Long.toString(value));
       return this;
     }
-    public Builder putInt(@NonNull String key, int value){
+
+    public Builder putInt(@NonNull String key, int value) {
       keysAndValues.put(key, Integer.toString(value));
       return this;
     }

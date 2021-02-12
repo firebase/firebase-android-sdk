@@ -154,17 +154,18 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     final String intKey = "int key";
     final int intValue = 4;
 
-    Map<String, String> keysAndValues = new CustomKeysAndValues.Builder()
-      .putString(stringKey, stringValue)
-      .putString(" " + trimmedKey + " ", " " + trimmedValue + " ")
-      .putString(longId, longStringValue)
-      .putString(superLongId, superLongValue)
-      .putBoolean(booleanKey, booleanValue)
-      .putDouble(doubleKey, doubleValue)
-      .putFloat(floatKey, floatValue)
-      .putLong(longKey, longValue)
-      .putInt(intKey, intValue)
-      .build();
+    Map<String, String> keysAndValues =
+        new CustomKeysAndValues.Builder()
+            .putString(stringKey, stringValue)
+            .putString(" " + trimmedKey + " ", " " + trimmedValue + " ")
+            .putString(longId, longStringValue)
+            .putString(superLongId, superLongValue)
+            .putBoolean(booleanKey, booleanValue)
+            .putDouble(doubleKey, doubleValue)
+            .putFloat(floatKey, floatValue)
+            .putLong(longKey, longValue)
+            .putInt(intKey, intValue)
+            .build();
 
     crashlyticsCore.setCustomKeys(keysAndValues.getCustomKeys());
 
@@ -208,15 +209,16 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     final long updatedLongValue = -3;
     final int updatedIntValue = -4;
 
-    Map<String, String> updatedKeysAndValues = new CustomKeysAndValues.Builder()
-      .putString(stringKey, updatedStringValue)
-      .putString(longId, null)
-      .putBoolean(booleanKey, updatedBooleanValue)
-      .putDouble(doubleKey, updatedDoubleValue)
-      .putFloat(floatKey, updatedFloatValue)
-      .putLong(longKey, updatedLongValue)
-      .putInt(intKey, updatedIntValue)
-      .build();
+    Map<String, String> updatedKeysAndValues =
+        new CustomKeysAndValues.Builder()
+            .putString(stringKey, updatedStringValue)
+            .putString(longId, null)
+            .putBoolean(booleanKey, updatedBooleanValue)
+            .putDouble(doubleKey, updatedDoubleValue)
+            .putFloat(floatKey, updatedFloatValue)
+            .putLong(longKey, updatedLongValue)
+            .putInt(intKey, updatedIntValue)
+            .build();
 
     crashlyticsCore.setCustomKeys(updatedKeysAndValues.build().getCustomKeys());
 
@@ -227,7 +229,6 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     assertEquals(updatedLongValue, metadata.getCustomKeys().get(longKey));
     assertEquals(updatedIntValue, metadata.getCustomKeys().get(intKey));
     assertEquals("", metadata.getCustomKeys().get(longId));
-
   }
 
   public void testGetVersion() {

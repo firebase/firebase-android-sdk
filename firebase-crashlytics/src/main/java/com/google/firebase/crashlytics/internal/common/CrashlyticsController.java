@@ -215,7 +215,8 @@ class CrashlyticsController {
                             if (appSettingsData == null) {
                               Logger.getLogger()
                                   .w(
-                                      "Received null app settings, cannot send reports at crash time.");
+                                      "Received null app settings, cannot send reports at crash"
+                                          + " time.");
                               return Tasks.forResult(null);
                             }
                             // Data collection is enabled, so it's safe to send the report.
@@ -361,7 +362,8 @@ class CrashlyticsController {
                                 if (appSettingsData == null) {
                                   Logger.getLogger()
                                       .w(
-                                          "Received null app settings at app startup. Cannot send cached reports");
+                                          "Received null app settings at app startup. Cannot send"
+                                              + " cached reports");
                                   return Tasks.forResult(null);
                                 }
                                 logAnalyticsAppExceptionEvents();
@@ -441,7 +443,7 @@ class CrashlyticsController {
     // Write all the key/value pairs before doing anything computationally expensive.
     for (Map.Entry<String, String> entry : keysAndValues.entrySet()) {
       try {
-      userMetadata.setCustomKey(entry.getKey(), entry.getValue());
+        userMetadata.setCustomKey(entry.getKey(), entry.getValue());
       } catch (IllegalArgumentException ex) {
         if (context != null && CommonUtils.isAppDebuggable(context)) {
           throw ex;
