@@ -462,8 +462,8 @@ public class FirebaseCrashlytics {
      *
      * @param keysAndValues A dictionary of keys and the values to associate with each key
      */
-    public void setCustomKeys(@NonNull CustomKeysAndValues keysAndValues) {
-      core.setCustomKeys(keysAndValues.keysAndValues);
+    public void setCustomKeys(@NonNull Map<String, String> keysAndValues) {
+      core.setCustomKeys(keysAndValues);
     }
 
   // region Unsent report management.

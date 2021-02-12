@@ -24,36 +24,36 @@ import androidx.annotation.NonNull;
  */
 public class CustomKeysAndValues {
 
-  public final Map<String, String> keysAndValues;
+  private final Map<String, String> keysAndValues;
 
   static class Builder {
 
     // Holds the converted pairs of custom keys and values.
-    Map<String, String> keysAndValues = new HashMap<String, String>();
+    private Map<String, String> keysAndValues = new HashMap<String, String>();
 
     // Methods to accept keys and values and convert values to strings.
 
-    Builder setValueForKey(@NonNull String key, @NonNull String value) {
+    public Builder putString(@NonNull String key, @NonNull String value) {
       keysAndValues.put(key, value);
       return this;
     }
-    Builder setValueForKey(@NonNull String key, boolean value) {
+    public Builder putBoolean(@NonNull String key, boolean value) {
       keysAndValues.put(key, Boolean.toString(value));
       return this;
     }
-    Builder setValueForKey(@NonNull String key, double value) {
+    public Builder putDouble(@NonNull String key, double value) {
       keysAndValues.put(key, Double.toString(value));
       return this;
     }
-    Builder setValueForKey(@NonNull String key, float value) {
+    public Builder putFloat(@NonNull String key, float value) {
       keysAndValues.put(key, Float.toString(value));
       return this;
     }
-    Builder setValueForKey(@NonNull String key, long value){
+    public Builder putLong(@NonNull String key, long value){
       keysAndValues.put(key, Long.toString(value));
       return this;
     }
-    Builder setValueForKey(@NonNull String key, int value){
+    public Builder putInt(@NonNull String key, int value){
       keysAndValues.put(key, Integer.toString(value));
       return this;
     }
@@ -66,5 +66,9 @@ public class CustomKeysAndValues {
 
   private CustomKeysAndValues(Builder builder) {
     this.keysAndValues = builder.keysAndValues;
+  }
+
+  public Map<String, String> getCustomValues() {
+    return keysAndValues;
   }
 }
