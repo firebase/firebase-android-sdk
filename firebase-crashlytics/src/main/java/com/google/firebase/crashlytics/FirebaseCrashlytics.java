@@ -37,7 +37,6 @@ import com.google.firebase.crashlytics.internal.breadcrumbs.DisabledBreadcrumbSo
 import com.google.firebase.crashlytics.internal.common.AppData;
 import com.google.firebase.crashlytics.internal.common.CommonUtils;
 import com.google.firebase.crashlytics.internal.common.CrashlyticsCore;
-import com.google.firebase.crashlytics.internal.common.CustomKeysAndValues;
 import com.google.firebase.crashlytics.internal.common.DataCollectionArbiter;
 import com.google.firebase.crashlytics.internal.common.ExecutorUtils;
 import com.google.firebase.crashlytics.internal.common.IdManager;
@@ -46,6 +45,7 @@ import com.google.firebase.crashlytics.internal.settings.SettingsController;
 import com.google.firebase.crashlytics.internal.unity.ResourceUnityVersionProvider;
 import com.google.firebase.crashlytics.internal.unity.UnityVersionProvider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
