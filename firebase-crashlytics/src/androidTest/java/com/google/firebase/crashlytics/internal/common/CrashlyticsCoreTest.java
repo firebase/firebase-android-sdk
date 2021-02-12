@@ -202,7 +202,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
 
     // Check updating existing keys and setting to null
     final String updatedStringValue = "string value 1";
-    final Boolean updatedBooleanValue = true;
+    final boolean updatedBooleanValue = true;
     final double updatedDoubleValue = -1.000000000000001;
     final float updatedFloatValue = -2.000002f;
     final long updatedLongValue = -3;
