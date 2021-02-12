@@ -38,7 +38,6 @@ import com.google.firebase.crashlytics.internal.settings.TestSettingsData;
 import com.google.firebase.crashlytics.internal.settings.model.SettingsData;
 import com.google.firebase.crashlytics.internal.unity.UnityVersionProvider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import org.mockito.Mockito;
 
@@ -134,6 +133,10 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     final String trimmedKey = "trimmed key";
     final String trimmedValue = "trimmed value";
 
+    final StringBuffer idBuffer = new StringBuffer(id);
+    while (idBuffer.length() < UserMetadata.MAX_ATTRIBUTE_SIZE) {
+      idBuffer.append("0");
+    }
     final String longId = idBuffer.toString();
     final String superLongId = longId + "more chars";
     final String longStringValue = longId.replaceAll("0", "x");
@@ -154,7 +157,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     final String intKey = "int key";
     final int intValue = 4;
 
-    Map<String, String> keysAndValues =
+    CustomKeysAndValues keysAndValues =
         new CustomKeysAndValues.Builder()
             .putString(stringKey, stringValue)
             .putString(" " + trimmedKey + " ", " " + trimmedValue + " ")
@@ -182,7 +185,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     assertEquals(intValue, metadata.getCustomKeys().get(intKey));
 
     // test the max number of attributes. We've already set 8.
-    Map<String, String> addlKeysAndValues = new CustomKeysAndValues.Builder();
+    CustomKeysAndValues.Builder addlKeysAndValues = new CustomKeysAndValues.Builder();
     for (int i = 9; i < UserMetadata.MAX_ATTRIBUTES + 1; ++i) {
       final String key = "key" + i;
       final String value = "value" + i;
@@ -209,7 +212,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     final long updatedLongValue = -3;
     final int updatedIntValue = -4;
 
-    Map<String, String> updatedKeysAndValues =
+    CustomKeysAndValues updatedKeysAndValues =
         new CustomKeysAndValues.Builder()
             .putString(stringKey, updatedStringValue)
             .putString(longId, null)
