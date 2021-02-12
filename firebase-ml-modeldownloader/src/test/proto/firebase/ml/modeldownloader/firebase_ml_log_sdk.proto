@@ -126,9 +126,6 @@ enum ErrorCode {
 message ModelOptions {
   // Inherent properties about the model: name, version, URI, source.
   ModelInfo model_info = 1;
-
-  // True if models can be updated.
-  bool is_model_update_enabled = 4;
 }
 
 // Information about model downloading. A single model download request may
