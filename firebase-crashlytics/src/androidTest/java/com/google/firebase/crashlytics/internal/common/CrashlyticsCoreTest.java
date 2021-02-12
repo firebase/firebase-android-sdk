@@ -38,6 +38,7 @@ import com.google.firebase.crashlytics.internal.settings.TestSettingsData;
 import com.google.firebase.crashlytics.internal.settings.model.SettingsData;
 import com.google.firebase.crashlytics.internal.unity.UnityVersionProvider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import org.mockito.Mockito;
 
@@ -135,8 +136,8 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
 
     final String longId = idBuffer.toString();
     final String superLongId = longId + "more chars";
-    final String longValue = longId.replaceAll("0", "x");
-    final String superLongValue = longValue + "some more chars";
+    final String longStringValue = longId.replaceAll("0", "x");
+    final String superLongValue = longStringValue + "some more chars";
 
     final String booleanKey = "boolean key";
     final Boolean booleanValue = true;
@@ -145,7 +146,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     final double doubleValue = 1.000000000000001;
 
     final String floatKey = "float key";
-    final float floatValue = 2.000002;
+    final float floatValue = 2.000002f;
 
     final String longKey = "long key";
     final long longValue = 3;
@@ -156,7 +157,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     Map<String, String> keysAndValues = new CustomKeysAndValues.Builder()
       .putString(stringKey, stringValue)
       .putString(" " + trimmedKey + " ", " " + trimmedValue + " ")
-      .putString(longId, longValue)
+      .putString(longId, longStringValue)
       .putString(superLongId, superLongValue)
       .putBoolean(booleanKey, booleanValue)
       .putDouble(doubleKey, doubleValue)
@@ -169,7 +170,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
 
     assertEquals(stringValue, metadata.getCustomKeys().get(stringKey));
     assertEquals(trimmedValue, metadata.getCustomKeys().get(trimmedKey));
-    assertEquals(longValue, metadata.getCustomKeys().get(longId));
+    assertEquals(longStringValue, metadata.getCustomKeys().get(longId));
     // test truncation of custom keys and attributes
     assertNull(metadata.getCustomKeys().get(superLongId));
 
@@ -203,7 +204,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     final String updatedStringValue = "string value 1";
     final Boolean updatedBooleanValue = true;
     final double updatedDoubleValue = -1.000000000000001;
-    final float updatedFloatValue = -2.000002;
+    final float updatedFloatValue = -2.000002f;
     final long updatedLongValue = -3;
     final int updatedIntValue = -4;
 
