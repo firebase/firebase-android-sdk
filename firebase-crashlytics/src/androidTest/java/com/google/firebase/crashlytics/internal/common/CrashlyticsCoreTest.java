@@ -26,6 +26,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.crashlytics.BuildConfig;
+import com.google.firebase.crashlytics.CustomKeysAndValues;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
 import com.google.firebase.crashlytics.internal.MissingNativeComponent;
@@ -133,7 +134,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     final String trimmedKey = "trimmed key";
     final String trimmedValue = "trimmed value";
 
-    final StringBuffer idBuffer = new StringBuffer(id);
+    final StringBuffer idBuffer = new StringBuffer("id012345");
     while (idBuffer.length() < UserMetadata.MAX_ATTRIBUTE_SIZE) {
       idBuffer.append("0");
     }
@@ -170,7 +171,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
             .putInt(intKey, intValue)
             .build();
 
-    crashlyticsCore.setCustomKeys(keysAndValues.getCustomKeys());
+    crashlyticsCore.setCustomKeys(keysAndValues.getCustomValues());
 
     assertEquals(stringValue, metadata.getCustomKeys().get(stringKey));
     assertEquals(trimmedValue, metadata.getCustomKeys().get(trimmedKey));
@@ -191,7 +192,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
       final String value = "value" + i;
       addlKeysAndValues.putString(key, value);
     }
-    crashlyticsCore.setCustomKeys(addlKeysAndValues.build().getCustomKeys());
+    crashlyticsCore.setCustomKeys(addlKeysAndValues.build().getCustomValues());
 
     // Make sure the first MAX_ATTRIBUTES - 8 keys were set
     for (int i = 9; i < UserMetadata.MAX_ATTRIBUTES; ++i) {
@@ -206,7 +207,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
 
     // Check updating existing keys and setting to null
     final String updatedStringValue = "string value 1";
-    final boolean updatedBooleanValue = true;
+    final boolean updatedBooleanValue = false;
     final double updatedDoubleValue = -1.000000000000001;
     final float updatedFloatValue = -2.000002f;
     final long updatedLongValue = -3;
@@ -223,7 +224,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
             .putInt(intKey, updatedIntValue)
             .build();
 
-    crashlyticsCore.setCustomKeys(updatedKeysAndValues.build().getCustomKeys());
+    crashlyticsCore.setCustomKeys(updatedKeysAndValues.getCustomValues());
 
     assertEquals(updatedStringValue, metadata.getCustomKeys().get(stringKey));
     assertEquals(updatedBooleanValue, metadata.getCustomKeys().get(booleanKey));

@@ -45,7 +45,6 @@ import com.google.firebase.crashlytics.internal.settings.SettingsController;
 import com.google.firebase.crashlytics.internal.unity.ResourceUnityVersionProvider;
 import com.google.firebase.crashlytics.internal.unity.UnityVersionProvider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
-import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -461,8 +460,8 @@ public class FirebaseCrashlytics {
    *
    * @param keysAndValues A dictionary of keys and the values to associate with each key
    */
-  public void setCustomKeys(@NonNull Map<String, String> keysAndValues) {
-    core.setCustomKeys(keysAndValues);
+  public void setCustomKeys(@NonNull CustomKeysAndValues keysAndValues) {
+    core.setCustomKeys(keysAndValues.getCustomValues());
   }
 
   // region Unsent report management.

@@ -339,7 +339,7 @@ public class CrashlyticsCore {
    * trimmed ({@link String#trim()}), and keys or values that exceed 1024 characters will be
    * truncated.
    *
-   * @throws NullPointerException if key is null.
+   * @throws NullPointerException if any key in keysAndValues is null.
    */
   public void setCustomKeys(Map<String, String> keysAndValues) {
     controller.setCustomKeys(keysAndValues);

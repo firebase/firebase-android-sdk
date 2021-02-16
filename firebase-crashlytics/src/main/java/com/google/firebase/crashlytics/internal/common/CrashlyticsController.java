@@ -449,7 +449,6 @@ class CrashlyticsController {
           throw ex;
         } else {
           Logger.getLogger().e("Attempting to set custom attribute with null key, ignoring.");
-          return;
         }
       }
     }

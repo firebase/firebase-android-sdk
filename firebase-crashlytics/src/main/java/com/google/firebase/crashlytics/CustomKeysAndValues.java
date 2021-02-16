@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.crashlytics.internal.common;
+package com.google.firebase.crashlytics;
 
 import androidx.annotation.NonNull;
 import java.util.HashMap;
@@ -26,38 +26,44 @@ public class CustomKeysAndValues {
 
   private final Map<String, String> keysAndValues;
 
-  static class Builder {
+  public static class Builder {
 
     // Holds the converted pairs of custom keys and values.
     private Map<String, String> keysAndValues = new HashMap<String, String>();
 
     // Methods to accept keys and values and convert values to strings.
 
+    @NonNull
     public Builder putString(@NonNull String key, @NonNull String value) {
       keysAndValues.put(key, value);
       return this;
     }
 
+    @NonNull
     public Builder putBoolean(@NonNull String key, boolean value) {
       keysAndValues.put(key, Boolean.toString(value));
       return this;
     }
 
+    @NonNull
     public Builder putDouble(@NonNull String key, double value) {
       keysAndValues.put(key, Double.toString(value));
       return this;
     }
 
+    @NonNull
     public Builder putFloat(@NonNull String key, float value) {
       keysAndValues.put(key, Float.toString(value));
       return this;
     }
 
+    @NonNull
     public Builder putLong(@NonNull String key, long value) {
       keysAndValues.put(key, Long.toString(value));
       return this;
     }
 
+    @NonNull
     public Builder putInt(@NonNull String key, int value) {
       keysAndValues.put(key, Integer.toString(value));
       return this;
@@ -69,10 +75,11 @@ public class CustomKeysAndValues {
     }
   }
 
-  private CustomKeysAndValues(Builder builder) {
+  protected CustomKeysAndValues(@NonNull Builder builder) {
     this.keysAndValues = builder.keysAndValues;
   }
 
+  @NonNull
   public Map<String, String> getCustomValues() {
     return keysAndValues;
   }
