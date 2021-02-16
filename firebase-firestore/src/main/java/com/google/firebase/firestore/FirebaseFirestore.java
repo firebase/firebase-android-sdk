@@ -580,9 +580,9 @@ public class FirebaseFirestore {
   }
 
   /**
-   * Loads a Firestore Bundle into the local cache.
+   * Loads a Firestore bundle into the local cache.
    *
-   * @param bundleData A stream representing the Bundle to be loaded.
+   * @param bundleData A stream representing the bundle to be loaded.
    * @return A {@link LoadBundleTask}, which notifies callers with progress updates, and completion
    *     or error events.
    */
@@ -595,9 +595,9 @@ public class FirebaseFirestore {
   }
 
   /**
-   * Loads a Firestore Bundle into the local cache.
+   * Loads a Firestore bundle into the local cache.
    *
-   * @param bundleData A byte array representing the Bundle to be loaded.
+   * @param bundleData A byte array representing the bundle to be loaded.
    * @return A {@link LoadBundleTask}, which notifies callers with progress updates, and completion
    *     or error events.
    */
@@ -607,9 +607,9 @@ public class FirebaseFirestore {
   }
 
   /**
-   * Loads a Firestore Bundle into the local cache.
+   * Loads a Firestore bundle into the local cache.
    *
-   * @param bundleData A ByteBuffer representing the Bundle to be loaded.
+   * @param bundleData A ByteBuffer representing the bundle to be loaded.
    * @return A {@link LoadBundleTask}, which notifies callers with progress updates, and completion
    *     or error events.
    */
