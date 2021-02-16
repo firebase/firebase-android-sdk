@@ -27,6 +27,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.GetTokenResult;
 import com.google.firebase.auth.internal.InternalAuthProvider;
+import com.google.firebase.emulators.EmulatedServiceSettings;
 import com.google.firebase.storage.network.NetworkRequest;
 import java.io.UnsupportedEncodingException;
 import java.text.ParseException;
@@ -70,10 +71,6 @@ public class Util {
     return Objects.equal(a, b);
   }
 
-  private static String getAuthority() throws RemoteException {
-    return NetworkRequest.getAuthority();
-  }
-
   /**
    * Normalizes a Firebase Storage uri into its "gs://" format and strips any trailing slash.
    *
@@ -91,6 +88,8 @@ public class Util {
         "Firebase Storage URLs must point to an object in your Storage Bucket. Please "
             + "obtain a URL using the Firebase Console or getDownloadUrl().";
 
+    Uri baseUrl = NetworkRequest.getBaseUrl(/* emulatorSettings= */ null);
+
     String trimmedInput = s.toLowerCase();
     String bucket;
     String encodedPath;
@@ -104,13 +103,7 @@ public class Util {
       if (scheme != null
           && (equals(scheme.toLowerCase(), "http") || equals(scheme.toLowerCase(), "https"))) {
         String lowerAuthority = uri.getAuthority().toLowerCase();
-        int indexOfAuth;
-        try {
-          indexOfAuth = lowerAuthority.indexOf(getAuthority());
-        } catch (RemoteException e) {
-          throw new UnsupportedEncodingException(
-              "Could not parse Url because the Storage network layer did not load");
-        }
+        int indexOfAuth = lowerAuthority.indexOf(baseUrl.getAuthority());
         encodedPath = Slashes.slashize(uri.getEncodedPath());
         if (indexOfAuth == 0 && encodedPath.startsWith("/")) {
           int firstBSlash = encodedPath.indexOf("/b/", 0); // /v0/b/bucket.storage

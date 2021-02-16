@@ -19,6 +19,8 @@ import android.text.TextUtils;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.emulators.EmulatedServiceSettings;
+
 import java.util.HashMap;
 import java.util.Map;
 import org.json.JSONObject;
@@ -31,9 +33,10 @@ public class ResumableUploadStartRequest extends ResumableNetworkRequest {
   public ResumableUploadStartRequest(
       @NonNull Uri gsUri,
       @NonNull FirebaseApp app,
+      @Nullable EmulatedServiceSettings emulatorSettings,
       @Nullable JSONObject metadata,
       @NonNull String contentType) {
-    super(gsUri, app);
+    super(gsUri, app, emulatorSettings);
     this.metadata = metadata;
     this.contentType = contentType;
     if (TextUtils.isEmpty(this.contentType)) {
@@ -47,7 +50,7 @@ public class ResumableUploadStartRequest extends ResumableNetworkRequest {
   @Override
   @NonNull
   protected Uri getURL() {
-    Uri.Builder uriBuilder = sNetworkRequestUrl.buildUpon();
+    Uri.Builder uriBuilder = getBaseUrl().buildUpon();
     uriBuilder.appendPath("b");
     uriBuilder.appendPath(mGsUri.getAuthority());
     uriBuilder.appendPath("o");

@@ -16,7 +16,10 @@ package com.google.firebase.storage.network;
 
 import android.net.Uri;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.emulators.EmulatedServiceSettings;
 
 /** Encapsulates a single resumable network request and response */
 abstract class ResumableNetworkRequest extends NetworkRequest {
@@ -26,7 +29,7 @@ abstract class ResumableNetworkRequest extends NetworkRequest {
   @NonNull static final String CONTENT_TYPE = "X-Goog-Upload-Header-Content-Type";
   @NonNull static final String OFFSET = "X-Goog-Upload-Offset";
 
-  ResumableNetworkRequest(@NonNull Uri gsUri, @NonNull FirebaseApp app) {
-    super(gsUri, app);
+  ResumableNetworkRequest(@NonNull Uri gsUri, @NonNull FirebaseApp app, @Nullable EmulatedServiceSettings emulatorSettings) {
+    super(gsUri, app, emulatorSettings);
   }
 }

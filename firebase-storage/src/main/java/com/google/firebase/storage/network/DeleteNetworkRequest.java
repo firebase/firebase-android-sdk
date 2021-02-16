@@ -16,12 +16,15 @@ package com.google.firebase.storage.network;
 
 import android.net.Uri;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.emulators.EmulatedServiceSettings;
 
 /** A network request that deletes a gcs object. */
 public class DeleteNetworkRequest extends NetworkRequest {
-  public DeleteNetworkRequest(@NonNull Uri gsUri, @NonNull FirebaseApp app) {
-    super(gsUri, app);
+  public DeleteNetworkRequest(@NonNull Uri gsUri, @NonNull FirebaseApp app, @Nullable EmulatedServiceSettings emulatorSettings) {
+    super(gsUri, app, emulatorSettings);
   }
 
   @Override

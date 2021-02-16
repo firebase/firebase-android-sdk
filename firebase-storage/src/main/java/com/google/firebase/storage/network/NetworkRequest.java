@@ -26,6 +26,7 @@ import androidx.annotation.Nullable;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.emulators.EmulatedServiceSettings;
 import com.google.firebase.storage.StorageException;
 import com.google.firebase.storage.network.connection.HttpURLConnectionFactory;
 import com.google.firebase.storage.network.connection.HttpURLConnectionFactoryImpl;
@@ -67,8 +68,6 @@ public abstract class NetworkRequest {
   private static final String CONTENT_LENGTH = "Content-Length";
   private static final String UTF_8 = "UTF-8";
 
-  @NonNull static Uri sNetworkRequestUrl = Uri.parse("https://firebasestorage.googleapis.com/v0");
-
   // For test purposes only.
   /*package*/ static HttpURLConnectionFactory connectionFactory =
       new HttpURLConnectionFactoryImpl();
@@ -85,18 +84,30 @@ public abstract class NetworkRequest {
   private HttpURLConnection connection;
   private Map<String, String> requestHeaders = new HashMap<>();
 
-  public NetworkRequest(@NonNull Uri gsUri, @NonNull FirebaseApp app) {
+  private final Uri networkRequestUrl;
+  private final Uri targetUrl;
+
+  public NetworkRequest(
+          @NonNull Uri gsUri,
+          @NonNull FirebaseApp app,
+          @Nullable EmulatedServiceSettings emulatorSettings) {
     Preconditions.checkNotNull(gsUri);
     Preconditions.checkNotNull(app);
     this.mGsUri = gsUri;
     this.context = app.getApplicationContext();
+    this.networkRequestUrl = getBaseUrl(emulatorSettings);
+    this.targetUrl = getDefaultURL(mGsUri, emulatorSettings);
 
     this.setCustomHeader(X_FIREBASE_GMPID, app.getOptions().getApplicationId());
   }
 
   @NonNull
-  public static String getAuthority() {
-    return sNetworkRequestUrl.getAuthority();
+  public static Uri getBaseUrl(@Nullable EmulatedServiceSettings emulatorSettings) {
+    if (emulatorSettings != null) {
+      return Uri.parse("http://" + emulatorSettings.getHost() + ":" + emulatorSettings.getPort() + "/v0");
+    } else {
+      return Uri.parse("https://firebasestorage.googleapis.com/v0");
+    }
   }
 
   /**
@@ -105,10 +116,10 @@ public abstract class NetworkRequest {
    * @return Url for the target REST call in string form.
    */
   @NonNull
-  public static Uri getDefaultURL(@NonNull Uri gsUri) {
+  public static Uri getDefaultURL(@NonNull Uri gsUri, @Nullable EmulatedServiceSettings emulatorSettings) {
     Preconditions.checkNotNull(gsUri);
     String pathWithoutBucket = getPathWithoutBucket(gsUri);
-    Uri.Builder uriBuilder = sNetworkRequestUrl.buildUpon();
+    Uri.Builder uriBuilder = getBaseUrl(emulatorSettings).buildUpon();
     uriBuilder.appendPath("b");
     uriBuilder.appendPath(gsUri.getAuthority());
     uriBuilder.appendPath("o");
@@ -149,7 +160,7 @@ public abstract class NetworkRequest {
    */
   @NonNull
   protected Uri getURL() {
-    return getDefaultURL(mGsUri);
+    return targetUrl;
   }
 
   /**
@@ -190,6 +201,11 @@ public abstract class NetworkRequest {
   @Nullable
   protected Map<String, String> getQueryParameters() {
     return null;
+  }
+
+  @NonNull
+  protected Uri getBaseUrl() {
+    return networkRequestUrl;
   }
 
   /** Resets the result of this request */

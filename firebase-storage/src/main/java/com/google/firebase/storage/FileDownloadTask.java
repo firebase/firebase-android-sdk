@@ -195,7 +195,7 @@ public class FileDownloadTask extends StorageTask<FileDownloadTask.TaskSnapshot>
       mException = null;
       mSender.reset();
       final NetworkRequest request =
-          new GetNetworkRequest(mStorageRef.getStorageUri(), mStorageRef.getApp(), mResumeOffset);
+          new GetNetworkRequest(mStorageRef.getStorageUri(), mStorageRef.getApp(), mStorageRef.getEmulatorSettings(), mResumeOffset);
 
       mSender.sendWithExponentialBackoff(request, false);
       mResultCode = request.getResultCode();

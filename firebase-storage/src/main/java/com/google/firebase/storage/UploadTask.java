@@ -262,6 +262,7 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
         new ResumableUploadStartRequest(
             mStorageRef.getStorageUri(),
             mStorageRef.getApp(),
+            mStorageRef.getEmulatorSettings(),
             mMetadata != null ? mMetadata.createJSONObject() : null,
             mimeType);
 
@@ -345,7 +346,7 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
   private boolean recoverStatus(boolean withRetry) {
     NetworkRequest queryRequest =
         new ResumableUploadQueryRequest(
-            mStorageRef.getStorageUri(), mStorageRef.getApp(), mUploadUri);
+            mStorageRef.getStorageUri(), mStorageRef.getApp(), mStorageRef.getEmulatorSettings(), mUploadUri);
 
     if (RESUMABLE_FINAL_STATUS.equals(mServerStatus)) {
       return false;
@@ -411,6 +412,7 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
           new ResumableUploadByteRequest(
               mStorageRef.getStorageUri(),
               mStorageRef.getApp(),
+              mStorageRef.getEmulatorSettings(),
               mUploadUri,
               mStreamBuffer.get(),
               mBytesUploaded.get(),
@@ -484,7 +486,7 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
     if (mUploadUri != null) {
       cancelRequest =
           new ResumableUploadCancelRequest(
-              mStorageRef.getStorageUri(), mStorageRef.getApp(), mUploadUri);
+              mStorageRef.getStorageUri(), mStorageRef.getApp(), mStorageRef.getEmulatorSettings(), mUploadUri);
     }
 
     if (cancelRequest != null) {

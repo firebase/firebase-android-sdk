@@ -19,6 +19,8 @@ import android.text.TextUtils;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.emulators.EmulatedServiceSettings;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,9 +32,10 @@ public class ListNetworkRequest extends NetworkRequest {
   public ListNetworkRequest(
       @NonNull Uri gsUri,
       @NonNull FirebaseApp app,
+      @Nullable EmulatedServiceSettings emulatorSettings,
       @Nullable Integer maxPageSize,
       @Nullable String nextPageToken) {
-    super(gsUri, app);
+    super(gsUri, app, emulatorSettings);
     this.maxPageSize = maxPageSize;
     this.nextPageToken = nextPageToken;
   }
@@ -46,7 +49,7 @@ public class ListNetworkRequest extends NetworkRequest {
   @Override
   @NonNull
   protected Uri getURL() {
-    return Uri.parse(sNetworkRequestUrl + "/b/" + mGsUri.getAuthority() + "/o");
+    return Uri.parse(getBaseUrl() + "/b/" + mGsUri.getAuthority() + "/o");
   }
 
   @Override
