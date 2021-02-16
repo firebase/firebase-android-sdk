@@ -15,7 +15,6 @@
 package com.google.firebase.storage.internal;
 
 import android.net.Uri;
-import android.os.RemoteException;
 import android.text.TextUtils;
 import android.util.Log;
 import androidx.annotation.NonNull;
@@ -27,7 +26,6 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.GetTokenResult;
 import com.google.firebase.auth.internal.InternalAuthProvider;
-import com.google.firebase.emulators.EmulatedServiceSettings;
 import com.google.firebase.storage.network.NetworkRequest;
 import java.io.UnsupportedEncodingException;
 import java.text.ParseException;

@@ -28,7 +28,10 @@ public class ResumableUploadCancelRequest extends ResumableNetworkRequest {
   private final Uri uploadURL;
 
   public ResumableUploadCancelRequest(
-          @NonNull Uri gsUri, @NonNull FirebaseApp app, @Nullable EmulatedServiceSettings emulatorSettings, @NonNull Uri uploadURL) {
+      @NonNull Uri gsUri,
+      @NonNull FirebaseApp app,
+      @Nullable EmulatedServiceSettings emulatorSettings,
+      @NonNull Uri uploadURL) {
     super(gsUri, app, emulatorSettings);
     cancelCalled = true;
     this.uploadURL = uploadURL;

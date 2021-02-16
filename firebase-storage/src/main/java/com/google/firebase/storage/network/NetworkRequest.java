@@ -88,9 +88,9 @@ public abstract class NetworkRequest {
   private final Uri targetUrl;
 
   public NetworkRequest(
-          @NonNull Uri gsUri,
-          @NonNull FirebaseApp app,
-          @Nullable EmulatedServiceSettings emulatorSettings) {
+      @NonNull Uri gsUri,
+      @NonNull FirebaseApp app,
+      @Nullable EmulatedServiceSettings emulatorSettings) {
     Preconditions.checkNotNull(gsUri);
     Preconditions.checkNotNull(app);
     this.mGsUri = gsUri;
@@ -104,7 +104,8 @@ public abstract class NetworkRequest {
   @NonNull
   public static Uri getBaseUrl(@Nullable EmulatedServiceSettings emulatorSettings) {
     if (emulatorSettings != null) {
-      return Uri.parse("http://" + emulatorSettings.getHost() + ":" + emulatorSettings.getPort() + "/v0");
+      return Uri.parse(
+          "http://" + emulatorSettings.getHost() + ":" + emulatorSettings.getPort() + "/v0");
     } else {
       return Uri.parse("https://firebasestorage.googleapis.com/v0");
     }
@@ -116,7 +117,8 @@ public abstract class NetworkRequest {
    * @return Url for the target REST call in string form.
    */
   @NonNull
-  public static Uri getDefaultURL(@NonNull Uri gsUri, @Nullable EmulatedServiceSettings emulatorSettings) {
+  public static Uri getDefaultURL(
+      @NonNull Uri gsUri, @Nullable EmulatedServiceSettings emulatorSettings) {
     Preconditions.checkNotNull(gsUri);
     String pathWithoutBucket = getPathWithoutBucket(gsUri);
     Uri.Builder uriBuilder = getBaseUrl(emulatorSettings).buildUpon();

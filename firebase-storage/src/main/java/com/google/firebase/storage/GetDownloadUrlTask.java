@@ -59,7 +59,9 @@ class GetDownloadUrlTask implements Runnable {
 
     if (!TextUtils.isEmpty(downloadTokens)) {
       String downloadToken = downloadTokens.split(",", -1)[0];
-      Uri.Builder uriBuilder = NetworkRequest.getDefaultURL(storageRef.getStorageUri(), storageRef.getEmulatorSettings()).buildUpon();
+      Uri.Builder uriBuilder =
+          NetworkRequest.getDefaultURL(storageRef.getStorageUri(), storageRef.getEmulatorSettings())
+              .buildUpon();
       uriBuilder.appendQueryParameter("alt", "media");
       uriBuilder.appendQueryParameter("token", downloadToken);
       return uriBuilder.build();
@@ -71,7 +73,8 @@ class GetDownloadUrlTask implements Runnable {
   @Override
   public void run() {
     final NetworkRequest request =
-        new GetMetadataNetworkRequest(storageRef.getStorageUri(), storageRef.getApp(), storageRef.getEmulatorSettings());
+        new GetMetadataNetworkRequest(
+            storageRef.getStorageUri(), storageRef.getApp(), storageRef.getEmulatorSettings());
 
     sender.sendWithExponentialBackoff(request);
 
