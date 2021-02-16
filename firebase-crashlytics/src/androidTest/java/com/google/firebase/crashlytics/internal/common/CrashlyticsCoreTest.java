@@ -178,15 +178,15 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     assertEquals(stringValue, metadata.getCustomKeys().get(stringKey));
     assertEquals(trimmedValue, metadata.getCustomKeys().get(trimmedKey));
     assertEquals(longStringValue, metadata.getCustomKeys().get(longId));
-    // test truncation of custom keys and attributes
+    // Test truncation of custom keys and attributes
     assertNull(metadata.getCustomKeys().get(superLongId));
-    assertTrue(metadata.getCustomKeys().get(booleanKey));
+    assertTrue(Boolean.parseBoolean(metadata.getCustomKeys().get(booleanKey)));
     assertEquals(doubleValue, Double.parseDouble(metadata.getCustomKeys().get(doubleKey)), DELTA);
     assertEquals(floatValue, Float.parseFloat(metadata.getCustomKeys().get(floatKey)), DELTA);
     assertEquals(longValue, Long.parseLong(metadata.getCustomKeys().get(longKey)), DELTA);
     assertEquals(intValue, Integer.parseInt(metadata.getCustomKeys().get(intKey)), DELTA);
 
-    // Test the max number of attributes. We've already set 9.
+    // Test the max number of attributes (already set 9)
     CustomKeysAndValues.Builder addlKeysAndValues = new CustomKeysAndValues.Builder();
     for (int i = 9; i <= UserMetadata.MAX_ATTRIBUTES + 1; ++i) {
       final String key = "key" + i;
@@ -202,7 +202,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
       assertEquals(value, metadata.getCustomKeys().get(key));
     }
 
-    // Should not have been added
+    // Should not have been added to custom keys
     final String key = "key" + UserMetadata.MAX_ATTRIBUTES;
     assertFalse(metadata.getCustomKeys().containsKey(key));
 
@@ -228,7 +228,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     crashlyticsCore.setCustomKeys(updatedKeysAndValues.getCustomValues());
 
     assertEquals(updatedStringValue, metadata.getCustomKeys().get(stringKey));
-    assertFalse(metadata.getCustomKeys().get(booleanKey));
+    assertFalse(Boolean.parseBoolean(metadata.getCustomKeys().get(booleanKey)));
     assertEquals(
         updatedDoubleValue, Double.parseDouble(metadata.getCustomKeys().get(doubleKey)), DELTA);
     assertEquals(
