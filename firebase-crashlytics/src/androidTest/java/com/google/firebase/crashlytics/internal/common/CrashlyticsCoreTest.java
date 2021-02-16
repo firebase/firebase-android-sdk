@@ -186,6 +186,8 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     assertEquals(longValue, Long.parseLong(metadata.getCustomKeys().get(longKey)), DELTA);
     assertEquals(intValue, Integer.parseInt(metadata.getCustomKeys().get(intKey)), DELTA);
 
+    crashlyticsCore.setCustomKey("key27", "value27");
+
     // Add the max number of attributes (already set 9), then attempt to add one more than MAX
     CustomKeysAndValues.Builder addlKeysAndValues = new CustomKeysAndValues.Builder();
     for (int i = 9; i <= UserMetadata.MAX_ATTRIBUTES + 1; ++i) {
@@ -204,11 +206,11 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
       final String value = "value" + i;
       if (i != 27) assertEquals(value, metadata.getCustomKeys().get(key));
     }
-    assertEquals(metadata.getCustomKeys().toString(), "");
 
     // Should not have been added to custom keys
     final String key = "key" + UserMetadata.MAX_ATTRIBUTES;
     assertFalse(metadata.getCustomKeys().containsKey(key));
+    assertEquals(metadata.getCustomKeys().toString(), "");
 
     // Check updating existing keys and setting to null
     final String updatedStringValue = "string value 1";
