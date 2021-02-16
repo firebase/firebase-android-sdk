@@ -17,6 +17,8 @@ package com.google.firebase.ml.modeldownloader.internal;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
 import android.os.SystemClock;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -31,6 +33,8 @@ import java.util.regex.Pattern;
 /** @hide */
 public class SharedPreferencesUtil {
 
+  private static final String FIREBASE_MODELDOWNLOADER_COLLECTION_ENABLED =
+      "firebase_model_downloader_collection_enabled";
   public static final String DOWNLOADING_MODEL_ID_MATCHER = "downloading_model_id_(.*?)_([^/]+)/?";
 
   public static final String PREFERENCES_PACKAGE_NAME = "com.google.firebase.ml.modelDownloader";
@@ -253,7 +257,8 @@ public class SharedPreferencesUtil {
   /**
    * Should Firelog logging be enabled.
    *
-   * @return whether or not firelog events should be logged. If not specifically set, defaults to fi
+   * @return whether or not firelog events should be logged. Checks shared preference, then
+   *     manifest, finally defaults to Firebase wide data collection switch.
    */
   public synchronized boolean getCustomModelStatsCollectionFlag() {
     if (getSharedPreferences()
@@ -262,7 +267,34 @@ public class SharedPreferencesUtil {
           .getBoolean(
               String.format(EVENT_LOGGING_ENABLED_PATTERN, CUSTOM_MODEL_LIB, persistenceKey), true);
     }
+    Boolean manifestFlag =
+        readModelDownloaderCollectionEnabledFromManifest(firebaseApp.getApplicationContext());
+    if (manifestFlag != null) {
+      return manifestFlag;
+    }
     return firebaseApp.isDataCollectionDefaultEnabled();
+  }
+
+  @Nullable
+  private static Boolean readModelDownloaderCollectionEnabledFromManifest(
+      Context applicationContext) {
+    try {
+      final PackageManager packageManager = applicationContext.getPackageManager();
+      if (packageManager != null) {
+        final ApplicationInfo applicationInfo =
+            packageManager.getApplicationInfo(
+                applicationContext.getPackageName(), PackageManager.GET_META_DATA);
+        if (applicationInfo != null
+            && applicationInfo.metaData != null
+            && applicationInfo.metaData.containsKey(FIREBASE_MODELDOWNLOADER_COLLECTION_ENABLED)) {
+          return applicationInfo.metaData.getBoolean(FIREBASE_MODELDOWNLOADER_COLLECTION_ENABLED);
+        }
+      }
+    } catch (PackageManager.NameNotFoundException e) {
+      // This shouldn't happen since it's this app's package, but fall through to default
+      // if so.
+    }
+    return null;
   }
 
   /**
