@@ -180,7 +180,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     assertEquals(longStringValue, metadata.getCustomKeys().get(longId));
     // test truncation of custom keys and attributes
     assertNull(metadata.getCustomKeys().get(superLongId));
-    assertTrue(Boolean.valueOf(metadata.getCustomKeys().get(booleanKey)), true);
+    assertTrue(metadata.getCustomKeys().get(booleanKey), true);
     assertEquals(doubleValue, Double.parseDouble(metadata.getCustomKeys().get(doubleKey)), DELTA);
     assertEquals(floatValue, Float.parseFloat(metadata.getCustomKeys().get(floatKey)), DELTA);
     assertEquals(longValue, Long.parseLong(metadata.getCustomKeys().get(longKey)), DELTA);
@@ -228,7 +228,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     crashlyticsCore.setCustomKeys(updatedKeysAndValues.getCustomValues());
 
     assertEquals(updatedStringValue, metadata.getCustomKeys().get(stringKey));
-    assertTrue(Boolean.valueOf(metadata.getCustomKeys().get(booleanKey)), false);
+    assertTrue(metadata.getCustomKeys().get(booleanKey), false);
     assertEquals(
         updatedDoubleValue, Double.parseDouble(metadata.getCustomKeys().get(doubleKey)), DELTA);
     assertEquals(
