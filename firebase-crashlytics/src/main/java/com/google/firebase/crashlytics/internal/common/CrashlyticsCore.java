@@ -36,13 +36,13 @@ import com.google.firebase.crashlytics.internal.stacktrace.MiddleOutFallbackStra
 import com.google.firebase.crashlytics.internal.stacktrace.RemoveRepeatsStrategy;
 import com.google.firebase.crashlytics.internal.stacktrace.StackTraceTrimmingStrategy;
 import java.io.File;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.Map;
 
 @SuppressWarnings("PMD.NullAssignment")
 public class CrashlyticsCore {
