@@ -204,6 +204,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
       final String value = "value" + i;
       if (i != 27) assertEquals(value, metadata.getCustomKeys().get(key));
     }
+    assertEquals(metadata.getCustomKeys().toString(), "");
 
     // Should not have been added to custom keys
     final String key = "key" + UserMetadata.MAX_ATTRIBUTES;
