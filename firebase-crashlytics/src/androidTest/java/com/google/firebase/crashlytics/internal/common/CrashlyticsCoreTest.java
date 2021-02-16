@@ -195,6 +195,8 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     }
     crashlyticsCore.setCustomKeys(addlKeysAndValues.build().getCustomValues());
 
+    assertEquals(UserMetadata.MAX_ATTRIBUTES, metadata.getCustomKeys().size(), DELTA);
+
     // Make sure the first MAX_ATTRIBUTES - 9 keys were set, then attempt to add one more than MAX
     for (int i = 9; i < UserMetadata.MAX_ATTRIBUTES; ++i) {
       final String key = "key" + i;
