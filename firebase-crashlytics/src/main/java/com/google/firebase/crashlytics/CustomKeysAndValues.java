@@ -22,7 +22,7 @@ import java.util.Map;
  * Helper class which handles the storage and conversion to strings of key/value pairs with
  * heterogenous value types.
  */
-class CustomKeysAndValues {
+public class CustomKeysAndValues {
 
   private final Map<String, String> keysAndValues;
 
