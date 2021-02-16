@@ -437,6 +437,23 @@ class CrashlyticsController {
     cacheKeyData(userMetadata.getCustomKeys());
   }
 
+  void setCustomKeys(Map<String, String> keysAndValues) {
+    // Write all the key/value pairs before doing anything computationally expensive.
+    for (Map.Entry<String, String> entry : keysAndValues.entrySet()) {
+      try {
+        userMetadata.setCustomKey(entry.getKey(), entry.getValue());
+      } catch (IllegalArgumentException ex) {
+        if (context != null && CommonUtils.isAppDebuggable(context)) {
+          throw ex;
+        } else {
+          Logger.getLogger().e("Attempting to set custom attribute with null key, ignoring.");
+        }
+      }
+    }
+    // Once all the key/value pairs are added, update the cache.
+    cacheKeyData(userMetadata.getCustomKeys());
+  }
+
   /**
    * Cache user metadata asynchronously in case of a non-graceful process exit. Can be reloaded and
    * sent with the previous crash data on app restart. NOTE: Because this is asynchronous, it is

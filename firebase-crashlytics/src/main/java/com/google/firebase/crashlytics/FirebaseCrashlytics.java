@@ -442,6 +442,28 @@ public class FirebaseCrashlytics {
     core.setCustomKey(key, value);
   }
 
+  /**
+   * Sets multiple custom keys and values that are associated with subsequent fatal and non-fatal
+   * reports. This method is intended as an alternative to setCustomKey in order to reduce the
+   * computational load of writing out multiple key/value pairs at the same time.
+   *
+   * <p>Multiple calls to this method with the same key update the value for that key.
+   *
+   * <p>The value of any key at the time of a fatal or non-fatal event is associated with that
+   * event.
+   *
+   * <p>Keys and associated values are visible in the session view on the Firebase Crashlytics
+   * console.
+   *
+   * <p>Accepts a maximum of 64 key/value pairs. New keys beyond that limit are ignored. Keys or
+   * values that exceed 1024 characters are truncated.
+   *
+   * @param keysAndValues A dictionary of keys and the values to associate with each key
+   */
+  public void setCustomKeys(@NonNull CustomKeysAndValues keysAndValues) {
+    core.setCustomKeys(keysAndValues.getCustomValues());
+  }
+
   // region Unsent report management.
 
   /**
