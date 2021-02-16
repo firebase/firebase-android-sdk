@@ -198,7 +198,6 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
 
     // Ensure all keys have been set
     assertEquals(UserMetadata.MAX_ATTRIBUTES, metadata.getCustomKeys().size(), DELTA);
-    assertEquals(metadata.getCustomKeys().toString(), "");
 
     // Make sure the first MAX_ATTRIBUTES - 9 keys were set
     for (int i = 9; i < UserMetadata.MAX_ATTRIBUTES; ++i) {
