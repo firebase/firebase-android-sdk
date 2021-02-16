@@ -127,6 +127,8 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
   }
 
   public void testBulkCustomKeys() throws Exception {
+    final double DELTA = 1e-15;
+
     UserMetadata metadata = crashlyticsCore.getController().getUserMetadata();
 
     final String stringKey = "string key";
@@ -179,10 +181,10 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     // test truncation of custom keys and attributes
     assertNull(metadata.getCustomKeys().get(superLongId));
     assertTrue(metadata.getCustomKeys().get(booleanKey), true);
-    assertEquals(doubleValue, metadata.getCustomKeys().get(doubleKey));
-    assertEquals(floatValue, metadata.getCustomKeys().get(floatKey));
-    assertEquals(longValue, metadata.getCustomKeys().get(longKey));
-    assertEquals(intValue, metadata.getCustomKeys().get(intKey));
+    assertEquals(doubleValue, metadata.getCustomKeys().get(doubleKey), DELTA);
+    assertEquals(floatValue, metadata.getCustomKeys().get(floatKey), DELTA);
+    assertEquals(longValue, metadata.getCustomKeys().get(longKey), DELTA);
+    assertEquals(intValue, metadata.getCustomKeys().get(intKey), DELTA);
 
     // test the max number of attributes. We've already set 8.
     CustomKeysAndValues.Builder addlKeysAndValues = new CustomKeysAndValues.Builder();
@@ -227,10 +229,10 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
 
     assertEquals(updatedStringValue, metadata.getCustomKeys().get(stringKey));
     assertTrue(metadata.getCustomKeys().get(booleanKey), false);
-    assertEquals(updatedDoubleValue, metadata.getCustomKeys().get(doubleKey));
-    assertEquals(updatedFloatValue, metadata.getCustomKeys().get(floatKey));
-    assertEquals(updatedLongValue, metadata.getCustomKeys().get(longKey));
-    assertEquals(updatedIntValue, metadata.getCustomKeys().get(intKey));
+    assertEquals(updatedDoubleValue, metadata.getCustomKeys().get(doubleKey), DELTA);
+    assertEquals(updatedFloatValue, metadata.getCustomKeys().get(floatKey), DELTA);
+    assertEquals(updatedLongValue, metadata.getCustomKeys().get(longKey), DELTA);
+    assertEquals(updatedIntValue, metadata.getCustomKeys().get(intKey), DELTA);
     assertEquals("", metadata.getCustomKeys().get(longId));
   }
 
