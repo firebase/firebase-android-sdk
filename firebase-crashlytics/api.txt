@@ -17,7 +17,7 @@ package com.google.firebase.crashlytics {
     method public void setCustomKey(@NonNull String, int);
     method public void setCustomKey(@NonNull String, long);
     method public void setCustomKey(@NonNull String, @NonNull String);
-    method public void setCustomKeys(@NonNull CustomKeysAndValues);
+    method public void setCustomKeys(@NonNull com.google.firebase.crashlytics.CustomKeysAndValues);
     method public void setUserId(@NonNull String);
   }
 
