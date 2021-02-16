@@ -1,4 +1,4 @@
-# 17.1.1
+# Unreleased
 - [added] Added a public API to allow bulk logging of custom keys and values.
 
 # 17.1.0
