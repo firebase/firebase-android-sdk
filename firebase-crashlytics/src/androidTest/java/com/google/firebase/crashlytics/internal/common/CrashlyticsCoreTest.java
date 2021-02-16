@@ -180,11 +180,11 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     assertEquals(longStringValue, metadata.getCustomKeys().get(longId));
     // test truncation of custom keys and attributes
     assertNull(metadata.getCustomKeys().get(superLongId));
-    assertTrue(metadata.getCustomKeys().get(booleanKey), true);
-    assertEquals(doubleValue, metadata.getCustomKeys().get(doubleKey), DELTA);
-    assertEquals(floatValue, metadata.getCustomKeys().get(floatKey), DELTA);
-    assertEquals(longValue, metadata.getCustomKeys().get(longKey), DELTA);
-    assertEquals(intValue, metadata.getCustomKeys().get(intKey), DELTA);
+    assertTrue(Boolean.parseBoolean(metadata.getCustomKeys().get(booleanKey)), true);
+    assertEquals(doubleValue, Double.parseDouble(metadata.getCustomKeys().get(doubleKey)), DELTA);
+    assertEquals(floatValue, Float.parseFloat(metadata.getCustomKeys().get(floatKey)), DELTA);
+    assertEquals(longValue, Long.parseLong(metadata.getCustomKeys().get(longKey)), DELTA);
+    assertEquals(intValue, Integer.parseInt(metadata.getCustomKeys().get(intKey)), DELTA);
 
     // test the max number of attributes. We've already set 8.
     CustomKeysAndValues.Builder addlKeysAndValues = new CustomKeysAndValues.Builder();
@@ -228,11 +228,13 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     crashlyticsCore.setCustomKeys(updatedKeysAndValues.getCustomValues());
 
     assertEquals(updatedStringValue, metadata.getCustomKeys().get(stringKey));
-    assertTrue(metadata.getCustomKeys().get(booleanKey), false);
-    assertEquals(updatedDoubleValue, metadata.getCustomKeys().get(doubleKey), DELTA);
-    assertEquals(updatedFloatValue, metadata.getCustomKeys().get(floatKey), DELTA);
-    assertEquals(updatedLongValue, metadata.getCustomKeys().get(longKey), DELTA);
-    assertEquals(updatedIntValue, metadata.getCustomKeys().get(intKey), DELTA);
+    assertTrue(Boolean.parseBoolean(metadata.getCustomKeys().get(booleanKey)), false);
+    assertEquals(
+        updatedDoubleValue, Double.parseDouble(metadata.getCustomKeys().get(doubleKey)), DELTA);
+    assertEquals(
+        updatedFloatValue, Float.parseFloat(metadata.getCustomKeys().get(floatKey)), DELTA);
+    assertEquals(updatedLongValue, Long.parseLong(metadata.getCustomKeys().get(longKey)), DELTA);
+    assertEquals(updatedIntValue, Integer.parseInt(metadata.getCustomKeys().get(intKey)), DELTA);
     assertEquals("", metadata.getCustomKeys().get(longId));
   }
 
