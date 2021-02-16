@@ -204,7 +204,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
 
     // Should not have been added
     final String key = "key" + UserMetadata.MAX_ATTRIBUTES;
-    assertFalse(metadata.getCustomKeys().containsKey(key));
+    assertTrue(metadata.getCustomKeys().containsKey(key));
 
     // Check updating existing keys and setting to null
     final String updatedStringValue = "string value 1";
@@ -228,7 +228,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     crashlyticsCore.setCustomKeys(updatedKeysAndValues.getCustomValues());
 
     assertEquals(updatedStringValue, metadata.getCustomKeys().get(stringKey));
-    assertTrue(metadata.getCustomKeys().get(booleanKey), false);
+    assertFalse(metadata.getCustomKeys().get(booleanKey));
     assertEquals(
         updatedDoubleValue, Double.parseDouble(metadata.getCustomKeys().get(doubleKey)), DELTA);
     assertEquals(
