@@ -1,12 +1,24 @@
-# Unreleased
-- [fixed] Removed excess validation of null and NaN values in query filters.
-  This more closely aligns the SDK with the Firestore backend, which has always
-  accepted null and NaN for all operators, even though this isn't necessarily
-  useful.
+# Unreleased (22.1.0)
+- [feature] Added support for Firestore Bundles via
+  `FirebaseFirestore.loadBundle()` and `FirebaseFirestore.getNamedQuery()`.
+  Bundles contain pre-packaged data produced with the NodeJS Server SDK and
+  can be used to populate Firestore's cache without reading documents from
+  the backend.
+- [fixed] Fixed a Firestore bug where local cache inconsistencies were
+  unnecessarily being resolved, causing the `Task` objects returned from `get()`
+  invocations to never complete (#2404).
+
+# (22.0.2)
 - [changed] A write to a document that contains FieldValue transforms is no
   longer split up into two separate operations. This reduces the number of
   writes the backend performs and allows each WriteBatch to hold 500 writes
   regardless of how many FieldValue transformations are attached.
+
+# (22.0.1)
+- [fixed] Removed excess validation of null and NaN values in query filters.
+  This more closely aligns the SDK with the Firestore backend, which has always
+  accepted null and NaN for all operators, even though this isn't necessarily
+  useful.
 
 # (22.0.0)
 - [changed] Removed the deprecated `timestampsInSnapshotsEnabled` setting.

@@ -109,6 +109,8 @@ dependencies {
     // 3rd Party Deps
     implementation 'com.squareup.okhttp3:okhttp:3.12.1'
     compileOnly group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.6'
+    implementation 'com.google.dagger:dagger:2.27'
+    annotationProcessor 'com.google.dagger:dagger-compiler:2.27'
 
     // Unit Test Deps
     testImplementation 'junit:junit:4.12'

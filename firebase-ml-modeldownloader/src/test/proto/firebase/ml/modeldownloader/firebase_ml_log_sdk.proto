@@ -126,9 +126,6 @@ enum ErrorCode {
 message ModelOptions {
   // Inherent properties about the model: name, version, URI, source.
   ModelInfo model_info = 1;
-
-  // True if models can be updated.
-  bool is_model_update_enabled = 4;
 }
 
 // Information about model downloading. A single model download request may
@@ -200,10 +197,16 @@ message ModelDownloadLogEvent {
   int64 download_failure_status = 6;
 }
 
+// Information about deleting a downloaded model on device.
+message DeleteModelLogEvent {
+  // The type of the downloaded model requested to be deleted.
+  ModelInfo.ModelType model_type = 1;
+  // Whether the downloaded model is deleted successfully.
+  bool is_successful = 2;
+}
 
 // Main log event for FirebaseMl, that contains individual API events, like face
 // detection.
-// NEXT ID: 44.
 message FirebaseMlLogEvent {
   // Information about various parts of the system: app, Firebase, SDK, TFLite.
   SystemInfo system_info = 1;
@@ -214,4 +217,9 @@ message FirebaseMlLogEvent {
   // Model downloading logs.
   // ==========================
   ModelDownloadLogEvent model_download_log_event = 3;
+
+  // API logs.
+  // ==========================
+  // Information about deleting a downloaded model.
+  DeleteModelLogEvent delete_model_log_event = 40;
 }

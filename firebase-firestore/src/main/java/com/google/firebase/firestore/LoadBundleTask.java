@@ -14,10 +14,13 @@
 
 package com.google.firebase.firestore;
 
+import static com.google.firebase.firestore.util.Assert.hardAssert;
+
 import android.app.Activity;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RestrictTo;
 import com.google.android.gms.common.api.internal.ActivityLifecycleObserver;
 import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.OnCanceledListener;
@@ -37,7 +40,7 @@ import java.util.concurrent.Executor;
  * Represents the task of loading a Firestore bundle. It provides progress of bundle loading, as
  * well as task completion and error events.
  */
-/* package */ class LoadBundleTask extends Task<LoadBundleTaskProgress> {
+public class LoadBundleTask extends Task<LoadBundleTaskProgress> {
   private final Object lock = new Object();
 
   /** The last progress update, or {@code null} if not yet available. */
@@ -60,6 +63,8 @@ import java.util.concurrent.Executor;
   @GuardedBy("lock")
   private final Queue<ManagedListener> progressListeners;
 
+  /** @hide */
+  @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
   public LoadBundleTask() {
     snapshot = LoadBundleTaskProgress.INITIAL;
     completionSource = new TaskCompletionSource<>();
@@ -67,13 +72,15 @@ import java.util.concurrent.Executor;
     progressListeners = new ArrayDeque<>();
   }
 
-  /** Returns {@code true} if the Task is complete; {@code false} otherwise. */
+  /** Returns {@code true} if the {@code Task} is complete; {@code false} otherwise. */
   @Override
   public boolean isComplete() {
     return delegate.isComplete();
   }
 
-  /** Returns {@code true} if the Task has completed successfully; {@code false} otherwise. */
+  /**
+   * Returns {@code true} if the {@code Task} has completed successfully; {@code false} otherwise.
+   */
   @Override
   public boolean isSuccessful() {
     return delegate.isSuccessful();
@@ -86,7 +93,7 @@ import java.util.concurrent.Executor;
   }
 
   /**
-   * Gets the result of the Task, if it has already completed.
+   * Gets the result of the {@code Task}, if it has already completed.
    *
    * @throws IllegalStateException if the Task is not yet complete
    * @throws RuntimeExecutionException if the Task failed with an exception
@@ -98,7 +105,7 @@ import java.util.concurrent.Executor;
   }
 
   /**
-   * Gets the result of the Task, if it has already completed.
+   * Gets the result of the {@code Task}, if it has already completed.
    *
    * @throws IllegalStateException if the Task is not yet complete
    * @throws X if the Task failed with an exception of type X
@@ -112,8 +119,8 @@ import java.util.concurrent.Executor;
   }
 
   /**
-   * Returns the exception that caused the Task to fail. Returns {@code null} if the Task is not yet
-   * complete, or completed successfully.
+   * Returns the exception that caused the {@code Task} to fail. Returns {@code null} if the Task is
+   * not yet complete, or completed successfully.
    */
   @Nullable
   @Override
@@ -122,12 +129,12 @@ import java.util.concurrent.Executor;
   }
 
   /**
-   * Adds a listener that is called if the Task completes successfully. The listener will be called
-   * on the main application thread. If the task has already completed successfully, a call to the
-   * listener will be immediately scheduled. If multiple listeners are added, they will be called in
-   * the order in which they were added.
+   * Adds a listener that is called if the {@code Task} completes successfully. The listener will be
+   * called on the main application thread. If the task has already completed successfully, a call
+   * to the listener will be immediately scheduled. If multiple listeners are added, they will be
+   * called in the order in which they were added.
    *
-   * @return this Task
+   * @return this {@code Task}
    */
   @NonNull
   @Override
@@ -137,14 +144,14 @@ import java.util.concurrent.Executor;
   }
 
   /**
-   * Adds a listener that is called if the Task completes successfully.
+   * Adds a listener that is called if the {@code Task} completes successfully.
    *
    * <p>If multiple listeners are added, they will be called in the order in which they were added.
    * If the task has already completed successfully, a call to the listener will be immediately
    * scheduled.
    *
    * @param executor the executor to use to call the listener
-   * @return this Task
+   * @return this {@code Task}
    */
   @NonNull
   @Override
@@ -155,7 +162,7 @@ import java.util.concurrent.Executor;
   }
 
   /**
-   * Adds a listener that is called if the Task completes successfully.
+   * Adds a listener that is called if the {@code Task} completes successfully.
    *
    * <p>If multiple listeners are added, they will be called in the order in which they were added.
    * If the task has already completed successfully, a call to the listener will be immediately
@@ -163,7 +170,7 @@ import java.util.concurrent.Executor;
    *
    * @param activity When the supplied {@link Activity} stops, this listener will automatically be
    *     removed.
-   * @return this Task
+   * @return this {@code Task}
    */
   @NonNull
   @Override
@@ -174,13 +181,13 @@ import java.util.concurrent.Executor;
   }
 
   /**
-   * Adds a listener that is called if the Task fails.
+   * Adds a listener that is called if the {@code Task} fails.
    *
    * <p>The listener will be called on main application thread. If the task has already failed, a
    * call to the listener will be immediately scheduled. If multiple listeners are added, they will
    * be called in the order in which they were added.
    *
-   * @return this Task
+   * @return this {@code Task}
    */
   @NonNull
   @Override
@@ -190,13 +197,13 @@ import java.util.concurrent.Executor;
   }
 
   /**
-   * Adds a listener that is called if the Task fails.
+   * Adds a listener that is called if the {@code Task} fails.
    *
    * <p>If the task has already failed, a call to the listener will be immediately scheduled. If
    * multiple listeners are added, they will be called in the order in which they were added.
    *
    * @param executor the executor to use to call the listener
-   * @return this Task
+   * @return this {@code Task}
    */
   @NonNull
   @Override
@@ -206,14 +213,14 @@ import java.util.concurrent.Executor;
   }
 
   /**
-   * Adds a listener that is called if the Task fails.
+   * Adds a listener that is called if the {@code Task} fails.
    *
    * <p>If the task has already failed, a call to the listener will be immediately scheduled. If
    * multiple listeners are added, they will be called in the order in which they were added.
    *
    * @param activity When the supplied {@link Activity} stops, this listener will automatically be
    *     removed.
-   * @return this Task
+   * @return this {@code Task}
    */
   @NonNull
   @Override
@@ -223,13 +230,13 @@ import java.util.concurrent.Executor;
   }
 
   /**
-   * Adds a listener that is called when the Task succeeds or fails.
+   * Adds a listener that is called when the {@code Task} succeeds or fails.
    *
    * <p>The listener will be called on main application thread. If the task has already failed, a
    * call to the listener will be immediately scheduled. If multiple listeners are added, they will
    * be called in the order in which they were added.
    *
-   * @return this Task
+   * @return this {@code Task}
    */
   @NonNull
   @Override
@@ -239,13 +246,13 @@ import java.util.concurrent.Executor;
   }
 
   /**
-   * Adds a listener that is called when the Task succeeds or fails.
+   * Adds a listener that is called when the {@code Task} succeeds or fails.
    *
    * <p>If the task has already failed, a call to the listener will be immediately scheduled. If
    * multiple listeners are added, they will be called in the order in which they were added.
    *
    * @param executor the executor to use to call the listener
-   * @return this Task
+   * @return this {@code Task}
    */
   @NonNull
   @Override
@@ -256,14 +263,14 @@ import java.util.concurrent.Executor;
   }
 
   /**
-   * Adds a listener that is called when the Task succeeds or fails.
+   * Adds a listener that is called when the {@code Task} succeeds or fails.
    *
    * <p>If the task has already failed, a call to the listener will be immediately scheduled. If
    * multiple listeners are added, they will be called in the order in which they were added.
    *
    * @param activity When the supplied {@link Activity} stops, this listener will automatically be
    *     removed.
-   * @return this Task
+   * @return this {@code Task}
    */
   @NonNull
   @Override
@@ -274,13 +281,13 @@ import java.util.concurrent.Executor;
   }
 
   /**
-   * Adds a listener that is called if the Task is canceled.
+   * Adds a listener that is called if the {@code Task} is canceled.
    *
-   * <p>The listener will be called on main application thread. If the Task has already been
+   * <p>The listener will be called on main application thread. If the {@code Task} has already been
    * canceled, a call to the listener will be immediately scheduled. If multiple listeners are
    * added, they will be called in the order in which they were added.
    *
-   * @return this Task
+   * @return this {@code Task}
    */
   @NonNull
   @Override
@@ -290,9 +297,9 @@ import java.util.concurrent.Executor;
   }
 
   /**
-   * Adds a listener that is called if the Task is canceled.
+   * Adds a listener that is called if the {@code Task} is canceled.
    *
-   * <p>If the Task has already been canceled, a call to the listener will be immediately scheduled.
+   * <p>If the task has already been canceled, a call to the listener will be immediately scheduled.
    * If multiple listeners are added, they will be called in the order in which they were added.
    *
    * @param executor the executor to use to call the listener
@@ -306,9 +313,9 @@ import java.util.concurrent.Executor;
   }
 
   /**
-   * Adds an Activity-scoped listener that is called if the Task is canceled.
+   * Adds an Activity-scoped listener that is called if the {@code Task} is canceled.
    *
-   * <p>The listener will be called on main application thread. If the Task has already been
+   * <p>The listener will be called on main application thread. If the task has already been
    * canceled, a call to the listener will be immediately scheduled. If multiple listeners are
    * added, they will be called in the order in which they were added.
    *
@@ -324,10 +331,10 @@ import java.util.concurrent.Executor;
   }
 
   /**
-   * Returns a new Task that will be completed with the result of applying the specified
+   * Returns a new {@code Task} that will be completed with the result of applying the specified
    * Continuation to this Task.
    *
-   * <p>The Continuation will be called on the main application thread.
+   * <p>The {@code Continuation} will be called on the main application thread.
    *
    * @see Continuation#then(Task)
    */
@@ -339,8 +346,8 @@ import java.util.concurrent.Executor;
   }
 
   /**
-   * Returns a new Task that will be completed with the result of applying the specified
-   * Continuation to this Task.
+   * Returns a new {@code Task} that will be completed with the result of applying the specified
+   * {@code Continuation} to this Task.
    *
    * @param executor the executor to use to call the Continuation
    * @see Continuation#then(Task)
@@ -354,8 +361,8 @@ import java.util.concurrent.Executor;
   }
 
   /**
-   * Returns a new Task that will be completed with the result of applying the specified
-   * Continuation to this Task.
+   * Returns a new {@code Task} that will be completed with the result of applying the specified
+   * {@code Continuation} to this Task.
    *
    * <p>The Continuation will be called on the main application thread.
    *
@@ -369,10 +376,10 @@ import java.util.concurrent.Executor;
   }
 
   /**
-   * Returns a new Task that will be completed with the result of applying the specified
-   * Continuation to this Task.
+   * Returns a new {@code Task} that will be completed with the result of applying the specified
+   * {@code Continuation} to this Task.
    *
-   * @param executor the executor to use to call the Continuation
+   * @param executor the executor to use to call the {@code Continuation}
    * @see Continuation#then(Task)
    */
   @NonNull
@@ -384,14 +391,15 @@ import java.util.concurrent.Executor;
   }
 
   /**
-   * Returns a new Task that will be completed with the result of applying the specified
-   * SuccessContinuation to this Task when this Task completes successfully. If the previous Task
-   * fails, the onSuccessTask completion will be skipped and failure listeners will be invoked.
+   * Returns a new {@code Task} that will be completed with the result of applying the specified
+   * {@code SuccessContinuation} to this {@code Task} when this {@code Task} completes successfully.
+   * If the previous {@code Task} fails, the {@code onSuccessTask} completion will be skipped and
+   * failure listeners will be invoked.
    *
-   * <p>The SuccessContinuation will be called on the main application thread.
+   * <p>The {@code SuccessContinuation} will be called on the main application thread.
    *
-   * <p>If the previous Task is canceled, the returned Task will also be canceled and the
-   * SuccessContinuation would not execute.
+   * <p>If the previous {@code Task} is canceled, the returned Task will also be canceled and the
+   * {@code SuccessContinuation} would not execute.
    *
    * @see SuccessContinuation#then(ResultT)
    */
@@ -404,12 +412,13 @@ import java.util.concurrent.Executor;
   }
 
   /**
-   * Returns a new Task that will be completed with the result of applying the specified
-   * SuccessContinuation to this Task when this Task completes successfully. If the previous Task
-   * fails, the onSuccessTask completion will be skipped and failure listeners will be invoked.
+   * Returns a new {@code Task} that will be completed with the result of applying the specified
+   * {@code SuccessContinuation} to this {@code Task} when this {@code Task} completes successfully.
+   * If the previous {@code Task} fails, the {@code }onSuccessTask completion will be skipped and
+   * failure listeners will be invoked.
    *
-   * <p>If the previous Task is canceled, the returned Task will also be canceled and the
-   * SuccessContinuation would not execute.
+   * <p>If the previous {@code Task} is canceled, the returned {@code Task} will also be canceled
+   * and the {@code SuccessContinuation} would not execute.
    *
    * @param executor the executor to use to call the SuccessContinuation
    * @see SuccessContinuation#then(ResultT)
@@ -424,14 +433,14 @@ import java.util.concurrent.Executor;
   }
 
   /**
-   * Adds a listener that is called periodically while the LoadBundleTask executes.
+   * Adds a listener that is called periodically while the {@code LoadBundleTask} executes.
    *
    * <p>The listener will be called on main application thread. If multiple listeners are added,
    * they will be called in the order in which they were added.
    *
    * <p>The listener will be automatically removed during {@link Activity#onStop}.
    *
-   * @return this Task
+   * @return this {@code Task}
    */
   @NonNull
   public LoadBundleTask addOnProgressListener(
@@ -444,12 +453,12 @@ import java.util.concurrent.Executor;
   }
 
   /**
-   * Adds a listener that is called periodically while the LoadBundleTask executes.
+   * Adds a listener that is called periodically while the {@code LoadBundleTask} executes.
    *
    * <p>If multiple listeners are added, they will be called in the order in which they were added.
    *
    * @param executor the executor to use to call the listener
-   * @return this Task
+   * @return this {@code Task}
    */
   @NonNull
   public LoadBundleTask addOnProgressListener(
@@ -462,7 +471,7 @@ import java.util.concurrent.Executor;
   }
 
   /**
-   * Adds a listener that is called periodically while the LoadBundleTask executes.
+   * Adds a listener that is called periodically while the {@code LoadBundleTask} executes.
    *
    * <p>The listener will be called on main application thread. If multiple listeners are added,
    * they will be called in the order in which they were added.
@@ -471,7 +480,7 @@ import java.util.concurrent.Executor;
    *
    * @param activity When the supplied {@link Activity} stops, this listener will automatically be
    *     removed.
-   * @return this Task
+   * @return this {@code Task}
    */
   @NonNull
   public LoadBundleTask addOnProgressListener(
@@ -496,7 +505,12 @@ import java.util.concurrent.Executor;
     }
   }
 
-  void setResult(@Nullable LoadBundleTaskProgress result) {
+  /** @hide */
+  @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+  public void setResult(@NonNull LoadBundleTaskProgress result) {
+    hardAssert(
+        result.getTaskState().equals(LoadBundleTaskProgress.TaskState.SUCCESS),
+        "Expected success, but was " + result.getTaskState());
     synchronized (lock) {
       snapshot = result;
       for (ManagedListener listener : progressListeners) {
@@ -504,10 +518,13 @@ import java.util.concurrent.Executor;
       }
       progressListeners.clear();
     }
+
     completionSource.setResult(result);
   }
 
-  void setException(@NonNull Exception exception) {
+  /** @hide */
+  @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+  public void setException(@NonNull Exception exception) {
     LoadBundleTaskProgress snapshot;
     synchronized (lock) {
       snapshot =
@@ -528,7 +545,9 @@ import java.util.concurrent.Executor;
     completionSource.setException(exception);
   }
 
-  void updateProgress(LoadBundleTaskProgress progressUpdate) {
+  /** @hide */
+  @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+  public void updateProgress(@NonNull LoadBundleTaskProgress progressUpdate) {
     synchronized (lock) {
       snapshot = progressUpdate;
       for (ManagedListener listener : progressListeners) {

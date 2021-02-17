@@ -157,7 +157,8 @@ final class MemoryTargetCache implements TargetCache {
     }
   }
 
-  private void removeMatchingKeysForTargetId(int targetId) {
+  @Override
+  public void removeMatchingKeysForTargetId(int targetId) {
     references.removeReferencesForId(targetId);
   }
 

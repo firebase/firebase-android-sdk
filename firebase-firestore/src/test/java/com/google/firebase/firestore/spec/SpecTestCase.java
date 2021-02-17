@@ -40,7 +40,10 @@ import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.FirebaseFirestoreSettings;
+import com.google.firebase.firestore.LoadBundleTask;
 import com.google.firebase.firestore.auth.User;
+import com.google.firebase.firestore.bundle.BundleReader;
+import com.google.firebase.firestore.bundle.BundleSerializer;
 import com.google.firebase.firestore.core.ComponentProvider;
 import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.core.DocumentViewChange;
@@ -66,6 +69,7 @@ import com.google.firebase.firestore.model.mutation.MutationResult;
 import com.google.firebase.firestore.remote.ExistenceFilter;
 import com.google.firebase.firestore.remote.MockDatastore;
 import com.google.firebase.firestore.remote.RemoteEvent;
+import com.google.firebase.firestore.remote.RemoteSerializer;
 import com.google.firebase.firestore.remote.RemoteStore;
 import com.google.firebase.firestore.remote.RemoteStore.RemoteStoreCallback;
 import com.google.firebase.firestore.remote.WatchChange;
@@ -97,6 +101,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
+import org.apache.tools.ant.filters.StringInputStream;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -501,6 +506,20 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     queue.runSync(() -> eventManager.removeQueryListener(listener));
   }
 
+  private void doLoadBundle(String json) throws Exception {
+    BundleReader bundleReader =
+        new BundleReader(
+            new BundleSerializer(new RemoteSerializer(databaseInfo.getDatabaseId())),
+            new StringInputStream(json));
+    LoadBundleTask bundleTask = new LoadBundleTask();
+    queue.runSync(
+        () -> {
+          syncEngine.loadBundle(bundleReader, bundleTask);
+          bundleTask.addOnFailureListener(e -> log("Loading bundle failed with " + e));
+        });
+    assertTrue(bundleTask.isSuccessful());
+  }
+
   private void doMutation(Mutation mutation) throws Exception {
     DocumentKey documentKey = mutation.getKey();
     TaskCompletionSource<Void> callback = new TaskCompletionSource<>();
@@ -693,7 +712,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     validateNextWriteSent(write.first);
 
     MutationResult mutationResult =
-        new MutationResult(version(version), /*transformResults=*/ null);
+        new MutationResult(version(version), /*transformResults=*/ Collections.emptyList());
     queue.runSync(() -> datastore.ackWrite(version(version), singletonList(mutationResult)));
   }
 
@@ -799,6 +818,8 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
       doRemoveSnapshotsInSyncListener();
     } else if (step.has("drainQueue")) {
       doDrainQueue();
+    } else if (step.has("loadBundle")) {
+      doLoadBundle(step.getString("loadBundle"));
     } else if (step.has("watchAck")) {
       doWatchAck(step.getJSONArray("watchAck"));
     } else if (step.has("watchCurrent")) {

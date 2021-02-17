@@ -24,7 +24,13 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.google.firebase.firestore.LoadBundleTask;
+import com.google.firebase.firestore.LoadBundleTaskProgress;
 import com.google.firebase.firestore.auth.User;
+import com.google.firebase.firestore.bundle.BundleElement;
+import com.google.firebase.firestore.bundle.BundleLoader;
+import com.google.firebase.firestore.bundle.BundleMetadata;
+import com.google.firebase.firestore.bundle.BundleReader;
 import com.google.firebase.firestore.core.ViewSnapshot.SyncState;
 import com.google.firebase.firestore.local.LocalStore;
 import com.google.firebase.firestore.local.LocalViewChanges;
@@ -48,13 +54,14 @@ import com.google.firebase.firestore.util.Function;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Util;
 import io.grpc.Status;
-import java.util.ArrayDeque;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
 
 /**
@@ -123,7 +130,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
    * The keys of documents that are in limbo for which we haven't yet started a limbo resolution
    * query.
    */
-  private final Queue<DocumentKey> enqueuedLimboResolutions;
+  private final LinkedHashSet<DocumentKey> enqueuedLimboResolutions;
 
   /** Keeps track of the target ID for each document that is in limbo with an active target. */
   private final Map<DocumentKey, Integer> activeLimboTargetsByKey;
@@ -162,7 +169,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     queryViewsByQuery = new HashMap<>();
     queriesByTarget = new HashMap<>();
 
-    enqueuedLimboResolutions = new ArrayDeque<>();
+    enqueuedLimboResolutions = new LinkedHashSet<>();
     activeLimboTargetsByKey = new HashMap<>();
     activeLimboResolutionsByTarget = new HashMap<>();
     limboDocumentRefs = new ReferenceSet();
@@ -507,6 +514,54 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     pendingWritesCallbacks.clear();
   }
 
+  public void loadBundle(BundleReader bundleReader, LoadBundleTask resultTask) {
+    try {
+      BundleMetadata bundleMetadata = bundleReader.getBundleMetadata();
+      boolean hasNewerBundle = localStore.hasNewerBundle(bundleMetadata);
+      if (hasNewerBundle) {
+        resultTask.setResult(LoadBundleTaskProgress.forSuccess(bundleMetadata));
+        return;
+      }
+
+      @Nullable LoadBundleTaskProgress progress = LoadBundleTaskProgress.forInitial(bundleMetadata);
+      resultTask.updateProgress(progress);
+
+      BundleLoader bundleLoader = new BundleLoader(localStore, bundleMetadata);
+
+      long currentBytesRead = 0;
+      BundleElement bundleElement;
+      while ((bundleElement = bundleReader.getNextElement()) != null) {
+        long oldBytesRead = currentBytesRead;
+        currentBytesRead = bundleReader.getBytesRead();
+        progress = bundleLoader.addElement(bundleElement, currentBytesRead - oldBytesRead);
+        if (progress != null) {
+          resultTask.updateProgress(progress);
+        }
+      }
+
+      ImmutableSortedMap<DocumentKey, MaybeDocument> changes = bundleLoader.applyChanges();
+
+      // TODO(b/160876443): This currently raises snapshots with `fromCache=false` if users already
+      // listen to some queries and bundles has newer version.
+      emitNewSnapsAndNotifyLocalStore(changes, /* remoteEvent= */ null);
+
+      // Save metadata, so loading the same bundle will skip.
+      localStore.saveBundle(bundleMetadata);
+      resultTask.setResult(LoadBundleTaskProgress.forSuccess(bundleMetadata));
+    } catch (Exception e) {
+      Logger.warn("Firestore", "Loading bundle failed : %s", e);
+      resultTask.setException(
+          new FirebaseFirestoreException(
+              "Bundle failed to load", FirebaseFirestoreException.Code.INVALID_ARGUMENT, e));
+    } finally {
+      try {
+        bundleReader.close();
+      } catch (IOException e) {
+        Logger.warn("SyncEngine", "Exception while closing bundle", e);
+      }
+    }
+  }
+
   /** Resolves the task corresponding to this write result. */
   private void notifyUser(int batchId, @Nullable Status status) {
     Map<Integer, TaskCompletionSource<Void>> userTasks = mutationUserCallbacks.get(currentUser);
@@ -548,6 +603,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
   }
 
   private void removeLimboTarget(DocumentKey key) {
+    enqueuedLimboResolutions.remove(key);
     // It's possible that the target already got removed because the query failed. In that case,
     // the key won't exist in `limboTargetsByKey`. Only do the cleanup if we still have the target.
     Integer targetId = activeLimboTargetsByKey.get(key);
@@ -621,7 +677,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
 
   private void trackLimboChange(LimboDocumentChange change) {
     DocumentKey key = change.getKey();
-    if (!activeLimboTargetsByKey.containsKey(key)) {
+    if (!activeLimboTargetsByKey.containsKey(key) && !enqueuedLimboResolutions.contains(key)) {
       Logger.debug(TAG, "New document in limbo: %s", key);
       enqueuedLimboResolutions.add(key);
       pumpEnqueuedLimboResolutions();
@@ -639,7 +695,9 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
   private void pumpEnqueuedLimboResolutions() {
     while (!enqueuedLimboResolutions.isEmpty()
         && activeLimboTargetsByKey.size() < maxConcurrentLimboResolutions) {
-      DocumentKey key = enqueuedLimboResolutions.remove();
+      Iterator<DocumentKey> it = enqueuedLimboResolutions.iterator();
+      DocumentKey key = it.next();
+      it.remove();
       int limboTargetId = targetIdGenerator.nextId();
       activeLimboResolutionsByTarget.put(limboTargetId, new LimboResolution(key));
       activeLimboTargetsByKey.put(key, limboTargetId);
@@ -659,9 +717,9 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
   }
 
   @VisibleForTesting
-  public Queue<DocumentKey> getEnqueuedLimboDocumentResolutions() {
-    // Make a defensive copy as the Queue continues to be modified.
-    return new ArrayDeque<>(enqueuedLimboResolutions);
+  public List<DocumentKey> getEnqueuedLimboDocumentResolutions() {
+    // Make a defensive copy as the LinkedHashSet continues to be modified.
+    return new ArrayList<>(enqueuedLimboResolutions);
   }
 
   public void handleCredentialChange(User user) {

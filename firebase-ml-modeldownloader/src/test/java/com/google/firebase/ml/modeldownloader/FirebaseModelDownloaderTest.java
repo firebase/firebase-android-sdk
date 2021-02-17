@@ -739,7 +739,7 @@ public class FirebaseModelDownloaderTest {
   @Test
   public void deleteDownloadedModel() throws Exception {
     doNothing().when(mockPrefs).clearModelDetails(eq(MODEL_NAME));
-    doNothing().when(mockFileManager).deleteAllModels(eq(MODEL_NAME));
+    when(mockFileManager.deleteAllModels(eq(MODEL_NAME))).thenReturn(true);
 
     TestOnCompleteListener<Void> onCompleteListener = new TestOnCompleteListener<>();
     Task<Void> task = firebaseModelDownloader.deleteDownloadedModel(MODEL_NAME);
@@ -749,16 +749,20 @@ public class FirebaseModelDownloaderTest {
     assertThat(task.isComplete()).isTrue();
     verify(mockPrefs, times(1)).clearModelDetails(eq(MODEL_NAME));
     verify(mockFileManager, times(1)).deleteAllModels(eq(MODEL_NAME));
+    verify(mockEventLogger, times(1)).logDeleteModel(eq(true));
   }
 
   @Test
   public void setStatsCollectionEnabled() {
     doNothing().when(mockPrefs).setCustomModelStatsCollectionEnabled(anyBoolean());
-    firebaseModelDownloader.setStatsCollectionEnabled(true);
+    firebaseModelDownloader.setModelDownloaderCollectionEnabled(true);
     verify(mockPrefs, times(1)).setCustomModelStatsCollectionEnabled(eq(true));
 
-    firebaseModelDownloader.setStatsCollectionEnabled(false);
+    firebaseModelDownloader.setModelDownloaderCollectionEnabled(false);
     verify(mockPrefs, times(1)).setCustomModelStatsCollectionEnabled(eq(false));
+
+    firebaseModelDownloader.setModelDownloaderCollectionEnabled(null);
+    verify(mockPrefs, times(1)).setCustomModelStatsCollectionEnabled(eq(null));
   }
 
   @Test
