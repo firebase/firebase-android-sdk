@@ -173,7 +173,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
             .putInt(intKey, intValue)
             .build();
 
-    crashlyticsCore.setCustomKeys(keysAndValues.getCustomValues());
+    crashlyticsCore.setCustomKeys(keysAndValues.keysAndValues);
 
     assertEquals(stringValue, metadata.getCustomKeys().get(stringKey));
     assertEquals(trimmedValue, metadata.getCustomKeys().get(trimmedKey));
@@ -193,7 +193,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
       final String value = "value" + i;
       addlKeysAndValues.putString(key, value);
     }
-    crashlyticsCore.setCustomKeys(addlKeysAndValues.build().getCustomValues());
+    crashlyticsCore.setCustomKeys(addlKeysAndValues.build().keysAndValues);
 
     // Ensure all keys have been set
     assertEquals(UserMetadata.MAX_ATTRIBUTES, metadata.getCustomKeys().size(), DELTA);
@@ -212,7 +212,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
       final String value = "value" + i;
       extraKeysAndValues.putString(key, value);
     }
-    crashlyticsCore.setCustomKeys(extraKeysAndValues.build().getCustomValues());
+    crashlyticsCore.setCustomKeys(extraKeysAndValues.build().keysAndValues);
 
     // Make sure these extra keys are not added
     for (int i = UserMetadata.MAX_ATTRIBUTES; i < UserMetadata.MAX_ATTRIBUTES + 10; ++i) {
@@ -239,7 +239,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
             .putInt(intKey, updatedIntValue)
             .build();
 
-    crashlyticsCore.setCustomKeys(updatedKeysAndValues.getCustomValues());
+    crashlyticsCore.setCustomKeys(updatedKeysAndValues.keysAndValues);
 
     assertEquals(updatedStringValue, metadata.getCustomKeys().get(stringKey));
     assertFalse(Boolean.parseBoolean(metadata.getCustomKeys().get(booleanKey)));

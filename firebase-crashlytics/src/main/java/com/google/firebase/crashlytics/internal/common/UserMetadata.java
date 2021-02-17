@@ -18,6 +18,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.crashlytics.internal.Logger;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -48,11 +49,7 @@ public class UserMetadata {
   }
 
   public void setCustomKey(String key, String value) {
-    if (key == null) {
-      throw new IllegalArgumentException("Custom attribute key must not be null.");
-    }
-
-    key = sanitizeAttribute(key);
+    key = sanitizeKey(key);
 
     if (attributes.size() >= MAX_ATTRIBUTES && !attributes.containsKey(key)) {
       Logger.getLogger().v("Exceeded maximum number of custom attributes (" + MAX_ATTRIBUTES + ")");
@@ -61,6 +58,40 @@ public class UserMetadata {
 
     value = (value == null) ? "" : sanitizeAttribute(value);
     attributes.put(key, value);
+  }
+
+  public void setCustomKeys(Map<String, String> keysAndValues) {
+    // Update any existing keys first, then add any additional keys
+    Map<String, String> currentKeys = new HashMap<String, String>();
+    Map<String, String> newKeys = new HashMap<String, String>();
+
+    // Update current keys
+    for (Map.Entry<String, String> entry : keysAndValues.entrySet()) {
+      String key = sanitizeKey(entry.getKey());
+      String value = (entry.getValue() == null) ? "" : sanitizeAttribute(entry.getValue());
+
+      if (attributes.containsKey(key)) {
+        currentKeys.put(key, value);
+      } else {
+        newKeys.put(key, value);
+      }
+    }
+    attributes.putAll(currentKeys);
+
+    // Add new keys if there is space
+    if (attributes.size() + newKeys.size() > MAX_ATTRIBUTES) {
+      Logger.getLogger().v("Exceeded maximum number of custom attributes (" + MAX_ATTRIBUTES + ")");
+      return;
+    }
+    attributes.putAll(newKeys);
+  }
+
+  /** Checks that the key is not null then sanitizes it. */
+  private static String sanitizeKey(String key) {
+    if (key == null) {
+      throw new IllegalArgumentException("Custom attribute key must not be null.");
+    }
+    return sanitizeAttribute(key);
   }
 
   /** Trims the string and truncates it to MAX_ATTRIBUTE_SIZE. */

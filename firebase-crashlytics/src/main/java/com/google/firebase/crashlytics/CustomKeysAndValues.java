@@ -24,7 +24,7 @@ import java.util.Map;
  */
 public class CustomKeysAndValues {
 
-  private final Map<String, String> keysAndValues;
+  protected final Map<String, String> keysAndValues;
 
   public static class Builder {
 
@@ -77,10 +77,5 @@ public class CustomKeysAndValues {
 
   protected CustomKeysAndValues(@NonNull Builder builder) {
     this.keysAndValues = builder.keysAndValues;
-  }
-
-  @NonNull
-  public Map<String, String> getCustomValues() {
-    return keysAndValues;
   }
 }
