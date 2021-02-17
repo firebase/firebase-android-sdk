@@ -3,7 +3,7 @@ package com.google.firebase.crashlytics {
 
   public class CustomKeysAndValues {
     ctor protected CustomKeysAndValues(@NonNull com.google.firebase.crashlytics.CustomKeysAndValues.Builder);
-    field protected final java.util.Map<java.lang.String,java.lang.String> keysAndValues;
+    field public final java.util.Map<java.lang.String,java.lang.String> keysAndValues;
   }
 
   public static class CustomKeysAndValues.Builder {
