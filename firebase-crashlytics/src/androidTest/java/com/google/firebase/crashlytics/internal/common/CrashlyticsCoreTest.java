@@ -188,13 +188,12 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
 
     // Add the max number of attributes (already set 9)
     CustomKeysAndValues.Builder addlKeysAndValues = new CustomKeysAndValues.Builder();
-    for (int i = 9; i < UserMetadata.MAX_ATTRIBUTES + 1; ++i) {
+    for (int i = 9; i < UserMetadata.MAX_ATTRIBUTES; ++i) {
       final String key = "key" + i;
       final String value = "value" + i;
       addlKeysAndValues.putString(key, value);
     }
-    java.util.Map<String, String> addKeys = addlKeysAndValues.build().getCustomValues();
-    crashlyticsCore.setCustomKeys(addKeys);
+    crashlyticsCore.setCustomKeys(addlKeysAndValues.build().getCustomValues());
 
     // Ensure all keys have been set
     assertEquals(UserMetadata.MAX_ATTRIBUTES, metadata.getCustomKeys().size(), DELTA);
@@ -203,11 +202,23 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     for (int i = 9; i < UserMetadata.MAX_ATTRIBUTES; ++i) {
       final String key = "key" + i;
       final String value = "value" + i;
+      assertEquals(value, metadata.getCustomKeys().get(key));
     }
 
-    // Should not have been added to custom keys
-    // final String key = "key" + UserMetadata.MAX_ATTRIBUTES;
-    // assertFalse(metadata.getCustomKeys().containsKey(key));
+    // Try to add more than the MAX_ATTRIBUTES number of keys
+    CustomKeysAndValues.Builder extraKeysAndValues = new CustomKeysAndValues.Builder();
+    for (int i = UserMetadata.MAX_ATTRIBUTES; i < UserMetadata.MAX_ATTRIBUTES + 10; ++i) {
+      final String key = "key" + i;
+      final String value = "value" + i;
+      extraKeysAndValues.putString(key, value);
+    }
+    crashlyticsCore.setCustomKeys(extraKeysAndValues.build().getCustomValues());
+
+    // Make sure these extra keys are not added
+    for (int i = UserMetadata.MAX_ATTRIBUTES; i < UserMetadata.MAX_ATTRIBUTES + 10; ++i) {
+      final String key = "key" + i;
+      assertFalse(metadata.getCustomKeys().containsKey(key));
+    }
 
     // Check updating existing keys and setting to null
     final String updatedStringValue = "string value 1";
