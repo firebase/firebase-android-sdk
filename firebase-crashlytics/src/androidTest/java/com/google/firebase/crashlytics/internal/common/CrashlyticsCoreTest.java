@@ -186,9 +186,9 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     assertEquals(longValue, Long.parseLong(metadata.getCustomKeys().get(longKey)), DELTA);
     assertEquals(intValue, Integer.parseInt(metadata.getCustomKeys().get(intKey)), DELTA);
 
-    // Add the max number of attributes (already set 9)
+    // Add the max number of attributes (already set 8)
     CustomKeysAndValues.Builder addlKeysAndValues = new CustomKeysAndValues.Builder();
-    for (int i = 9; i < UserMetadata.MAX_ATTRIBUTES; ++i) {
+    for (int i = 8; i < UserMetadata.MAX_ATTRIBUTES; ++i) {
       final String key = "key" + i;
       final String value = "value" + i;
       addlKeysAndValues.putString(key, value);
@@ -198,8 +198,8 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     // Ensure all keys have been set
     assertEquals(UserMetadata.MAX_ATTRIBUTES, metadata.getCustomKeys().size(), DELTA);
 
-    // Make sure the first MAX_ATTRIBUTES - 9 keys were set
-    for (int i = 9; i < UserMetadata.MAX_ATTRIBUTES; ++i) {
+    // Make sure the first MAX_ATTRIBUTES - 8 keys were set
+    for (int i = 8; i < UserMetadata.MAX_ATTRIBUTES; ++i) {
       final String key = "key" + i;
       final String value = "value" + i;
       assertEquals(value, metadata.getCustomKeys().get(key));
