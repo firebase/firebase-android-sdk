@@ -20,7 +20,6 @@ import com.google.firebase.crashlytics.internal.Logger;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /** Handles attributes set by the user. */
 public class UserMetadata {
@@ -28,7 +27,7 @@ public class UserMetadata {
   static final int MAX_ATTRIBUTE_SIZE = 1024;
 
   private String userId = null;
-  private final ConcurrentHashMap<String, String> attributes = new ConcurrentHashMap<>();
+  private final Map<String, String> attributes = new HashMap<>();
 
   public UserMetadata() {}
 
@@ -43,39 +42,42 @@ public class UserMetadata {
 
   @NonNull
   public Map<String, String> getCustomKeys() {
-    // Use of ConcurrentHashMap as the underlying attributes map guarantees safety should
-    // attributes be added after this unmodifiable view is returned.
     return Collections.unmodifiableMap(attributes);
   }
 
   public void setCustomKey(String key, String value) {
-    key = sanitizeKey(key);
-
-    if (attributes.size() >= MAX_ATTRIBUTES && !attributes.containsKey(key)) {
-      Logger.getLogger().v("Exceeded maximum number of custom attributes (" + MAX_ATTRIBUTES + ")");
-      return;
-    }
-
-    value = (value == null) ? "" : sanitizeAttribute(value);
-    attributes.put(key, value);
+    setSyncCustomKeys(
+        new HashMap<String, String>() {
+          {
+            put(sanitizeKey(key), sanitizeAttribute(value));
+          }
+        });
   }
 
   public void setCustomKeys(Map<String, String> keysAndValues) {
+    setSyncCustomKeys(keysAndValues);
+  }
+
+  /** Gatekeeper function for access to attributes */
+  private synchronized void setSyncCustomKeys(Map<String, String> keysAndValues) {
+    // We want all access to the attributes hashmap to be locked so that there is no way to create
+    // a race condition and add more than MAX_ATTRIBUTES keys.
+
     // Update any existing keys first, then add any additional keys
     Map<String, String> currentKeys = new HashMap<String, String>();
     Map<String, String> newKeys = new HashMap<String, String>();
 
-    // Update current keys
+    // Split into current and new keys
     for (Map.Entry<String, String> entry : keysAndValues.entrySet()) {
       String key = sanitizeKey(entry.getKey());
       String value = (entry.getValue() == null) ? "" : sanitizeAttribute(entry.getValue());
-
       if (attributes.containsKey(key)) {
         currentKeys.put(key, value);
       } else {
         newKeys.put(key, value);
       }
     }
+
     attributes.putAll(currentKeys);
 
     // Add new keys if there is space
