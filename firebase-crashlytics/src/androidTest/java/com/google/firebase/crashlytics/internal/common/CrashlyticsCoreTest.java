@@ -26,7 +26,6 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.crashlytics.BuildConfig;
-import com.google.firebase.crashlytics.CustomKeysAndValues;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
 import com.google.firebase.crashlytics.internal.MissingNativeComponent;
@@ -39,6 +38,8 @@ import com.google.firebase.crashlytics.internal.settings.TestSettingsData;
 import com.google.firebase.crashlytics.internal.settings.model.SettingsData;
 import com.google.firebase.crashlytics.internal.unity.UnityVersionProvider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import org.mockito.Mockito;
 
@@ -160,20 +161,18 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     final String intKey = "int key";
     final int intValue = 4;
 
-    CustomKeysAndValues keysAndValues =
-        new CustomKeysAndValues.Builder()
-            .putString(stringKey, stringValue)
-            .putString(" " + trimmedKey + " ", " " + trimmedValue + " ")
-            .putString(longId, longStringValue)
-            .putString(superLongId, superLongValue)
-            .putBoolean(booleanKey, booleanValue)
-            .putDouble(doubleKey, doubleValue)
-            .putFloat(floatKey, floatValue)
-            .putLong(longKey, longValue)
-            .putInt(intKey, intValue)
-            .build();
+    Map<String, String> keysAndValues = new HashMap<>();
+    keysAndValues.put(stringKey, stringValue);
+    keysAndValues.put(" " + trimmedKey + " ", " " + trimmedValue + " ");
+    keysAndValues.put(longId, longStringValue);
+    keysAndValues.put(superLongId, superLongValue);
+    keysAndValues.put(booleanKey, booleanValue.toString());
+    keysAndValues.put(doubleKey, String.valueOf(doubleValue));
+    keysAndValues.put(floatKey, String.valueOf(floatValue));
+    keysAndValues.put(longKey, String.valueOf(longValue));
+    keysAndValues.put(intKey, String.valueOf(intValue));
 
-    crashlyticsCore.setCustomKeys(keysAndValues.keysAndValues);
+    crashlyticsCore.setCustomKeys(keysAndValues);
 
     assertEquals(stringValue, metadata.getCustomKeys().get(stringKey));
     assertEquals(trimmedValue, metadata.getCustomKeys().get(trimmedKey));
@@ -187,13 +186,13 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     assertEquals(intValue, Integer.parseInt(metadata.getCustomKeys().get(intKey)), DELTA);
 
     // Add the max number of attributes (already set 8)
-    CustomKeysAndValues.Builder addlKeysAndValues = new CustomKeysAndValues.Builder();
+    Map<String, String> addlKeysAndValues = new HashMap<>();
     for (int i = 8; i < UserMetadata.MAX_ATTRIBUTES; ++i) {
       final String key = "key" + i;
       final String value = "value" + i;
-      addlKeysAndValues.putString(key, value);
+      addlKeysAndValues.put(key, value);
     }
-    crashlyticsCore.setCustomKeys(addlKeysAndValues.build().keysAndValues);
+    crashlyticsCore.setCustomKeys(addlKeysAndValues);
 
     // Ensure all keys have been set
     assertEquals(UserMetadata.MAX_ATTRIBUTES, metadata.getCustomKeys().size(), DELTA);
@@ -206,13 +205,13 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     }
 
     // Try to add more than the MAX_ATTRIBUTES number of keys
-    CustomKeysAndValues.Builder extraKeysAndValues = new CustomKeysAndValues.Builder();
+    Map<String, String> extraKeysAndValues = new HashMap<>();
     for (int i = UserMetadata.MAX_ATTRIBUTES; i < UserMetadata.MAX_ATTRIBUTES + 10; ++i) {
       final String key = "key" + i;
       final String value = "value" + i;
-      extraKeysAndValues.putString(key, value);
+      extraKeysAndValues.put(key, value);
     }
-    crashlyticsCore.setCustomKeys(extraKeysAndValues.build().keysAndValues);
+    crashlyticsCore.setCustomKeys(extraKeysAndValues);
 
     // Make sure these extra keys are not added
     for (int i = UserMetadata.MAX_ATTRIBUTES; i < UserMetadata.MAX_ATTRIBUTES + 10; ++i) {
@@ -228,18 +227,16 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     final long updatedLongValue = -3;
     final int updatedIntValue = -4;
 
-    CustomKeysAndValues updatedKeysAndValues =
-        new CustomKeysAndValues.Builder()
-            .putString(stringKey, updatedStringValue)
-            .putString(longId, null)
-            .putBoolean(booleanKey, updatedBooleanValue)
-            .putDouble(doubleKey, updatedDoubleValue)
-            .putFloat(floatKey, updatedFloatValue)
-            .putLong(longKey, updatedLongValue)
-            .putInt(intKey, updatedIntValue)
-            .build();
+    Map<String, String> updatedKeysAndValues = new HashMap<>();
+    updatedKeysAndValues.put(stringKey, updatedStringValue);
+    updatedKeysAndValues.put(longId, null);
+    updatedKeysAndValues.put(booleanKey, String.valueOf(updatedBooleanValue));
+    updatedKeysAndValues.put(doubleKey, String.valueOf(updatedDoubleValue));
+    updatedKeysAndValues.put(floatKey, String.valueOf(updatedFloatValue));
+    updatedKeysAndValues.put(longKey, String.valueOf(updatedLongValue));
+    updatedKeysAndValues.put(intKey, String.valueOf(updatedIntValue));
 
-    crashlyticsCore.setCustomKeys(updatedKeysAndValues.keysAndValues);
+    crashlyticsCore.setCustomKeys(updatedKeysAndValues);
 
     assertEquals(updatedStringValue, metadata.getCustomKeys().get(stringKey));
     assertFalse(Boolean.parseBoolean(metadata.getCustomKeys().get(booleanKey)));
