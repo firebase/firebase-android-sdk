@@ -47,7 +47,7 @@ public class ListNetworkRequest extends NetworkRequest {
 
   @Override
   @NonNull
-  protected Uri getURL() {
+  public Uri getURL() {
     return Uri.parse(getBaseUrl() + "/b/" + mGsUri.getAuthority() + "/o");
   }
 

@@ -47,7 +47,7 @@ public class ResumableUploadCancelRequest extends ResumableNetworkRequest {
 
   @NonNull
   @Override
-  protected Uri getURL() {
+  public Uri getURL() {
     return uploadURL;
   }
 }

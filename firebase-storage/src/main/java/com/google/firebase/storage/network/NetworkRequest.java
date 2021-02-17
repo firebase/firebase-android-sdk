@@ -23,6 +23,7 @@ import android.text.TextUtils;
 import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.FirebaseApp;
@@ -161,7 +162,8 @@ public abstract class NetworkRequest {
    * @return Url for the target REST call in string form.
    */
   @NonNull
-  protected Uri getURL() {
+  @VisibleForTesting
+  public Uri getURL() {
     return targetUrl;
   }
 

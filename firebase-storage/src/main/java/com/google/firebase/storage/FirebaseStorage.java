@@ -166,7 +166,6 @@ public class FirebaseStorage {
    * @param port the emulator port (for example, 9000)
    */
   public void useEmulator(@NonNull String host, int port) {
-    // TODO(samstern): Throw if used already?
     this.emulatorSettings = new EmulatedServiceSettings(host, port);
   }
 

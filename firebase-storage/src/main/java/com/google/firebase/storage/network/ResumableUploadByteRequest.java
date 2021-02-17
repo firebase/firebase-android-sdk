@@ -69,7 +69,7 @@ public class ResumableUploadByteRequest extends ResumableNetworkRequest {
 
   @Override
   @NonNull
-  protected Uri getURL() {
+  public Uri getURL() {
     return uploadURL;
   }
 

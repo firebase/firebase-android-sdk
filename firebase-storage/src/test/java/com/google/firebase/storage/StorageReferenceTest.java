@@ -20,6 +20,7 @@ import android.os.Build;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
+import com.google.firebase.emulators.EmulatedServiceSettings;
 import com.google.firebase.storage.internal.MockClockHelper;
 import com.google.firebase.storage.internal.RobolectricThreadFix;
 import com.google.firebase.storage.network.MockConnectionFactory;
@@ -70,6 +71,17 @@ public class StorageReferenceTest {
     instance.setMaxUploadRetryTimeMillis(1337);
     Assert.assertEquals(42, instance.getReference().getStorage().getMaxDownloadRetryTimeMillis());
     Assert.assertEquals(1337, instance.getReference().getStorage().getMaxUploadRetryTimeMillis());
+  }
+
+  @Test
+  public void retainsEmulatorProperties() {
+    FirebaseStorage storage = FirebaseStorage.getInstance(app);
+    storage.useEmulator("10.0.2.2", 9199);
+
+    StorageReference ref = storage.getReference();
+    EmulatedServiceSettings emulatorSettings = ref.getEmulatorSettings();
+    Assert.assertEquals("10.0.2.2", emulatorSettings.getHost());
+    Assert.assertEquals(9199, emulatorSettings.getPort());
   }
 
   @Test

@@ -48,7 +48,7 @@ public class ResumableUploadStartRequest extends ResumableNetworkRequest {
 
   @Override
   @NonNull
-  protected Uri getURL() {
+  public Uri getURL() {
     Uri.Builder uriBuilder = getBaseUrl().buildUpon();
     uriBuilder.appendPath("b");
     uriBuilder.appendPath(mGsUri.getAuthority());

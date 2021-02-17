@@ -44,7 +44,7 @@ public class ResumableUploadQueryRequest extends ResumableNetworkRequest {
 
   @NonNull
   @Override
-  protected Uri getURL() {
+  public Uri getURL() {
     return uploadURL;
   }
 }
