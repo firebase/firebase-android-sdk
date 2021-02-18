@@ -27,7 +27,7 @@ import com.google.firebase.inject.Provider;
  * <p>The intent of this class is to be used in place of missing {@link Component} dependencies so
  * that they can be updated if dependencies are loaded later.
  */
-class OptionalProvider<T> implements Deferred<T> {
+class OptionalProvider<T> implements Provider<T>, Deferred<T> {
   private static final DeferredHandler<Object> NOOP_HANDLER = p -> {};
   private static final Provider<Object> EMPTY_PROVIDER = () -> null;
 
@@ -66,7 +66,7 @@ class OptionalProvider<T> implements Deferred<T> {
       handler = null;
       this.delegate = provider;
     }
-    localHandler.handle(this);
+    localHandler.handle(provider);
   }
 
   @Override
@@ -74,7 +74,7 @@ class OptionalProvider<T> implements Deferred<T> {
   public void whenAvailable(@NonNull DeferredHandler<T> handler) {
     Provider<T> provider = this.delegate;
     if (provider != EMPTY_PROVIDER) {
-      handler.handle(this);
+      handler.handle(provider);
       return;
     }
     Provider<T> toRun = null;
@@ -92,7 +92,7 @@ class OptionalProvider<T> implements Deferred<T> {
       }
     }
     if (toRun != null) {
-      handler.handle(this);
+      handler.handle(provider);
     }
   }
 }
