@@ -27,6 +27,8 @@ import com.google.firebase.firestore.util.Executors;
 import com.google.firebase.firestore.util.Listener;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.inject.Deferred;
+import com.google.firebase.inject.Provider;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * FirebaseAuthCredentialsProvider uses Firebase Auth via {@link FirebaseApp} to get an auth token.
@@ -42,7 +44,7 @@ public final class FirebaseAuthCredentialsProvider extends CredentialsProvider {
 
   private static final String LOG_TAG = "FirebaseAuthCredentialsProvider";
 
-  private final Deferred<InternalAuthProvider> deferredAuthProvider;
+  private AtomicReference<Provider<InternalAuthProvider>> internalAuthProviderProviderRef;
 
   /**
    * The listener registered with FirebaseApp; used to stop receiving auth changes once
@@ -63,12 +65,10 @@ public final class FirebaseAuthCredentialsProvider extends CredentialsProvider {
 
   /** Creates a new FirebaseAuthCredentialsProvider. */
   public FirebaseAuthCredentialsProvider(Deferred<InternalAuthProvider> deferredAuthProvider) {
-    this.deferredAuthProvider = deferredAuthProvider;
-
     this.idTokenListener =
         token -> {
           synchronized (this) {
-            currentUser = getUser(deferredAuthProvider);
+            currentUser = getUser(internalAuthProviderProviderRef.get());
             tokenCounter++;
 
             if (changeListener != null) {
@@ -76,18 +76,21 @@ public final class FirebaseAuthCredentialsProvider extends CredentialsProvider {
             }
           }
         };
-    currentUser = getUser(deferredAuthProvider);
+
+    internalAuthProviderProviderRef = new AtomicReference<>(() -> null);
+    currentUser = getUser(internalAuthProviderProviderRef.get());
     tokenCounter = 0;
 
     deferredAuthProvider.whenAvailable(
-        unused -> {
+        provider -> {
           synchronized (this) {
-            currentUser = getUser(deferredAuthProvider);
+            internalAuthProviderProviderRef.set(provider);
+            currentUser = getUser(internalAuthProviderProviderRef.get());
             if (changeListener != null) {
               changeListener.onValue(currentUser);
             }
           }
-          deferredAuthProvider.get().addIdTokenListener(idTokenListener);
+          provider.get().addIdTokenListener(idTokenListener);
         });
   }
 
@@ -96,7 +99,7 @@ public final class FirebaseAuthCredentialsProvider extends CredentialsProvider {
     boolean doForceRefresh = forceRefresh;
     forceRefresh = false;
 
-    InternalAuthProvider internalAuthProvider = deferredAuthProvider.get();
+    InternalAuthProvider internalAuthProvider = internalAuthProviderProviderRef.get().get();
     if (internalAuthProvider == null) {
       return Tasks.forException(new FirebaseApiNotAvailableException("auth is not available"));
     }
@@ -143,15 +146,15 @@ public final class FirebaseAuthCredentialsProvider extends CredentialsProvider {
   public synchronized void removeChangeListener() {
     changeListener = null;
 
-    InternalAuthProvider internalAuthProvider = deferredAuthProvider.get();
+    InternalAuthProvider internalAuthProvider = internalAuthProviderProviderRef.get().get();
     if (internalAuthProvider != null) {
       internalAuthProvider.removeIdTokenListener(idTokenListener);
     }
   }
 
   /** Returns the current {@link User} as obtained from the given InternalAuthProvider. */
-  private static User getUser(Deferred<InternalAuthProvider> deferredAuthProvider) {
-    InternalAuthProvider internalAuthProvider = deferredAuthProvider.get();
+  private static User getUser(Provider<InternalAuthProvider> provider) {
+    InternalAuthProvider internalAuthProvider = provider.get();
     @Nullable String uid = (internalAuthProvider == null) ? null : internalAuthProvider.getUid();
     return uid != null ? new User(uid) : User.UNAUTHENTICATED;
   }

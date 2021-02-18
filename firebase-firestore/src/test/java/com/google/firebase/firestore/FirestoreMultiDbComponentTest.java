@@ -26,6 +26,7 @@ import com.google.firebase.FirebaseOptions;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.firestore.remote.GrpcMetadataProvider;
 import com.google.firebase.inject.Deferred;
+import com.google.firebase.inject.Provider;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -68,20 +69,15 @@ public class FirestoreMultiDbComponentTest {
 
   private static final class ImmediateDeferredImpl<T> implements Deferred<T> {
 
-    private final T instance;
+    private final Provider<T> provider;
 
     ImmediateDeferredImpl(T instance) {
-      this.instance = instance;
-    }
-
-    @Override
-    public T get() {
-      return instance;
+      provider = () -> instance;
     }
 
     @Override
     public void whenAvailable(@NonNull DeferredHandler<T> handler) {
-      handler.handle(this);
+      handler.handle(provider);
     }
   }
 }

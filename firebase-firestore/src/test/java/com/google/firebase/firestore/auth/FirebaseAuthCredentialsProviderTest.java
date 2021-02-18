@@ -31,7 +31,11 @@ import com.google.firebase.auth.internal.IdTokenListener;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.firestore.util.Listener;
 import com.google.firebase.inject.Deferred;
+import com.google.firebase.inject.Provider;
 import com.google.firebase.internal.InternalTokenResult;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -290,30 +294,20 @@ public class FirebaseAuthCredentialsProviderTest {
 
     @Override
     public void whenAvailable(@NonNull DeferredHandler<InternalAuthProvider> handler) {}
-
-    @Override
-    public InternalAuthProvider get() {
-      return null;
-    }
   }
 
   /** An implementation of {@link Deferred} whose provider is always available. */
   private static final class ImmediateDeferred implements Deferred<InternalAuthProvider> {
 
-    private final InternalAuthProvider internalAuthProvider;
+    private final Provider<InternalAuthProvider> internalAuthProviderProvider;
 
     ImmediateDeferred(InternalAuthProvider internalAuthProvider) {
-      this.internalAuthProvider = internalAuthProvider;
+      internalAuthProviderProvider = () -> internalAuthProvider;
     }
 
     @Override
     public void whenAvailable(@NonNull DeferredHandler<InternalAuthProvider> handler) {
-      handler.handle(this);
-    }
-
-    @Override
-    public InternalAuthProvider get() {
-      return internalAuthProvider;
+      handler.handle(internalAuthProviderProvider);
     }
   }
 
@@ -324,33 +318,37 @@ public class FirebaseAuthCredentialsProviderTest {
   private static final class DelayedDeferred implements Deferred<InternalAuthProvider> {
 
     private final Object lock = new Object();
-    private InternalAuthProvider internalAuthProvider;
-    private DeferredHandler<InternalAuthProvider> handler;
+    private final List<DeferredHandler<InternalAuthProvider>> handlers = new ArrayList<>();
+    private final AtomicReference<Provider<InternalAuthProvider>> internalAuthProviderProviderRef =
+        new AtomicReference<>();
 
     @Override
     public void whenAvailable(@NonNull DeferredHandler<InternalAuthProvider> handler) {
+      Provider<InternalAuthProvider> internalAuthProviderProvider;
       synchronized (lock) {
-        assertThat(internalAuthProvider).isNull();
-        this.handler = handler;
+        internalAuthProviderProvider = internalAuthProviderProviderRef.get();
+        if (internalAuthProviderProvider == null) {
+          handlers.add(handler);
+        }
+      }
+      if (internalAuthProviderProvider != null) {
+        handler.handle(internalAuthProviderProvider);
       }
     }
 
-    @Override
-    public InternalAuthProvider get() {
+    void setInstance(@NonNull InternalAuthProvider internalAuthProvider) {
+      Provider<InternalAuthProvider> internalAuthProviderProvider = () -> internalAuthProvider;
+      List<DeferredHandler<InternalAuthProvider>> handlers;
       synchronized (lock) {
-        return internalAuthProvider;
+        if (!internalAuthProviderProviderRef.compareAndSet(null, internalAuthProviderProvider)) {
+          throw new IllegalStateException("setInstance() has already been invoked");
+        }
+        handlers = new ArrayList<>(this.handlers);
+        this.handlers.clear();
       }
-    }
-
-    void setInstance(InternalAuthProvider internalAuthProvider) {
-      assertThat(internalAuthProvider).isNotNull();
-      DeferredHandler<InternalAuthProvider> handler;
-      synchronized (lock) {
-        assertThat(this.handler).isNotNull();
-        this.internalAuthProvider = internalAuthProvider;
-        handler = this.handler;
+      for (DeferredHandler<InternalAuthProvider> handler : handlers) {
+        handler.handle(internalAuthProviderProvider);
       }
-      handler.handle(this);
     }
   }
 }
