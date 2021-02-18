@@ -185,9 +185,9 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     assertEquals(longValue, Long.parseLong(metadata.getCustomKeys().get(longKey)), DELTA);
     assertEquals(intValue, Integer.parseInt(metadata.getCustomKeys().get(intKey)), DELTA);
 
-    // Add the max number of attributes (already set 8)
+    // Add the max number of attributes (already set 8), then add one more
     Map<String, String> addlKeysAndValues = new HashMap<>();
-    for (int i = 8; i < UserMetadata.MAX_ATTRIBUTES; ++i) {
+    for (int i = 8; i < UserMetadata.MAX_ATTRIBUTES + 1; ++i) {
       final String key = "key" + i;
       final String value = "value" + i;
       addlKeysAndValues.put(key, value);
@@ -198,26 +198,15 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     assertEquals(UserMetadata.MAX_ATTRIBUTES, metadata.getCustomKeys().size(), DELTA);
 
     // Make sure the first MAX_ATTRIBUTES - 8 keys were set
-    for (int i = 8; i < UserMetadata.MAX_ATTRIBUTES; ++i) {
+    for (int i = 8; i < UserMetadata.MAX_ATTRIBUTES + 1; ++i) {
       final String key = "key" + i;
       final String value = "value" + i;
-      assertEquals(value, metadata.getCustomKeys().get(key));
+      if (i != 9) assertEquals(value, metadata.getCustomKeys().get(key));
     }
 
-    // Try to add more than the MAX_ATTRIBUTES number of keys
-    Map<String, String> extraKeysAndValues = new HashMap<>();
-    for (int i = UserMetadata.MAX_ATTRIBUTES; i < UserMetadata.MAX_ATTRIBUTES + 10; ++i) {
-      final String key = "key" + i;
-      final String value = "value" + i;
-      extraKeysAndValues.put(key, value);
-    }
-    crashlyticsCore.setCustomKeys(extraKeysAndValues);
-
-    // Make sure these extra keys are not added
-    for (int i = UserMetadata.MAX_ATTRIBUTES; i < UserMetadata.MAX_ATTRIBUTES + 10; ++i) {
-      final String key = "key" + i;
-      assertFalse(metadata.getCustomKeys().containsKey(key));
-    }
+    // Make sure the extra key (last key in alphabetical order) was not added
+    final String key = "key9";
+    assertFalse(metadata.getCustomKeys().containsKey(key));
 
     // Check updating existing keys and setting to null
     final String updatedStringValue = "string value 1";
