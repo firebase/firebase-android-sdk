@@ -20,6 +20,7 @@ import com.google.firebase.appindexing.FirebaseAppIndex;
 import com.google.firebase.inappmessaging.FirebaseInAppMessaging;
 // import com.google.firebase.messaging.FirebaseMessaging;
 // import com.google.firebase.perf.FirebasePerformance;
+import com.google.firebase.ml.modeldownloader.FirebaseModelDownloader;
 import com.google.firebase.ml.vision.FirebaseVision;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -52,5 +53,10 @@ public final class BuildOnlyTest {
   @Test
   public void vision_IsNotNull() {
     assertThat(FirebaseVision.getInstance()).isNotNull();
+  }
+
+  @Test
+  public void modelDownloader_IsNotNull() {
+    assertThat(FirebaseMlModelDownloader.getInstance()).isNotNull();
   }
 }
