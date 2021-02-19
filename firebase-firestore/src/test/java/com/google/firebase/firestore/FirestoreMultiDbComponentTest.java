@@ -19,14 +19,13 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import android.content.Context;
-import androidx.annotation.NonNull;
 import androidx.test.platform.app.InstrumentationRegistry;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.firestore.remote.GrpcMetadataProvider;
+import com.google.firebase.firestore.testutil.ImmediateDeferred;
 import com.google.firebase.inject.Deferred;
-import com.google.firebase.inject.Provider;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -61,23 +60,9 @@ public class FirestoreMultiDbComponentTest {
   private static FirestoreMultiDbComponent createComponent(FirebaseApp firebaseApp) {
     Context context = InstrumentationRegistry.getInstrumentation().getContext();
     InternalAuthProvider authProvider = mock(InternalAuthProvider.class);
-    Deferred<InternalAuthProvider> deferredAuthProvider = new ImmediateDeferredImpl<>(authProvider);
+    Deferred<InternalAuthProvider> deferredAuthProvider = new ImmediateDeferred<>(authProvider);
     GrpcMetadataProvider metadataProvider = mock(GrpcMetadataProvider.class);
     return new FirestoreMultiDbComponent(
         context, firebaseApp, deferredAuthProvider, metadataProvider);
-  }
-
-  private static final class ImmediateDeferredImpl<T> implements Deferred<T> {
-
-    private final Provider<T> provider;
-
-    ImmediateDeferredImpl(T instance) {
-      provider = () -> instance;
-    }
-
-    @Override
-    public void whenAvailable(@NonNull DeferredHandler<T> handler) {
-      handler.handle(provider);
-    }
   }
 }

@@ -12,10 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.firestore.auth;
+package com.google.firebase.firestore.testutil;
 
 import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.firestore.auth.CredentialsProvider;
+import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.util.Listener;
 
 /** A Credentials Provider that always returns an empty token */
@@ -23,9 +25,7 @@ public class EmptyCredentialsProvider extends CredentialsProvider {
 
   @Override
   public Task<String> getToken() {
-    TaskCompletionSource<String> source = new TaskCompletionSource<>();
-    source.setResult(null);
-    return source.getTask();
+    return Tasks.forResult(null);
   }
 
   @Override

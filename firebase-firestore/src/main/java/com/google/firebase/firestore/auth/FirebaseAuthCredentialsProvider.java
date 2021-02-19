@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.auth;
 
+import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
@@ -28,7 +29,6 @@ import com.google.firebase.firestore.util.Listener;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.inject.Deferred;
 import com.google.firebase.inject.Provider;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * FirebaseAuthCredentialsProvider uses Firebase Auth via {@link FirebaseApp} to get an auth token.
@@ -44,53 +44,42 @@ public final class FirebaseAuthCredentialsProvider extends CredentialsProvider {
 
   private static final String LOG_TAG = "FirebaseAuthCredentialsProvider";
 
-  private AtomicReference<Provider<InternalAuthProvider>> internalAuthProviderProviderRef;
-
   /**
    * The listener registered with FirebaseApp; used to stop receiving auth changes once
    * changeListener is removed.
    */
-  private final IdTokenListener idTokenListener;
+  private final IdTokenListener idTokenListener = result -> onIdTokenChanged();
+
+  /**
+   * The {@link Provider} that gives access to the {@link InternalAuthProvider} instance; initially,
+   * its {@link Provider#get} method returns {@code null}, but will be changed to a new {@link
+   * Provider} once the "auth" module becomes available.
+   */
+  @Nullable
+  @GuardedBy("this")
+  private Provider<InternalAuthProvider> internalAuthProviderProvider = () -> null;
 
   /** The listener to be notified of credential changes (sign-in / sign-out, token changes). */
-  @Nullable private Listener<User> changeListener;
-
-  /** The current user as reported to us via our IdTokenListener. */
-  private User currentUser;
+  @Nullable
+  @GuardedBy("this")
+  private Listener<User> changeListener;
 
   /** Counter used to detect if the token changed while a getToken request was outstanding. */
+  @GuardedBy("this")
   private int tokenCounter;
 
+  @GuardedBy("this")
   private boolean forceRefresh;
 
   /** Creates a new FirebaseAuthCredentialsProvider. */
   public FirebaseAuthCredentialsProvider(Deferred<InternalAuthProvider> deferredAuthProvider) {
-    this.idTokenListener =
-        token -> {
-          synchronized (this) {
-            currentUser = getUser(internalAuthProviderProviderRef.get());
-            tokenCounter++;
-
-            if (changeListener != null) {
-              changeListener.onValue(currentUser);
-            }
-          }
-        };
-
-    internalAuthProviderProviderRef = new AtomicReference<>(() -> null);
-    currentUser = getUser(internalAuthProviderProviderRef.get());
-    tokenCounter = 0;
-
     deferredAuthProvider.whenAvailable(
         provider -> {
           synchronized (this) {
-            internalAuthProviderProviderRef.set(provider);
-            currentUser = getUser(internalAuthProviderProviderRef.get());
-            if (changeListener != null) {
-              changeListener.onValue(currentUser);
-            }
+            internalAuthProviderProvider = provider;
+            onIdTokenChanged();
+            internalAuthProviderProvider.get().addIdTokenListener(idTokenListener);
           }
-          provider.get().addIdTokenListener(idTokenListener);
         });
   }
 
@@ -99,7 +88,7 @@ public final class FirebaseAuthCredentialsProvider extends CredentialsProvider {
     boolean doForceRefresh = forceRefresh;
     forceRefresh = false;
 
-    InternalAuthProvider internalAuthProvider = internalAuthProviderProviderRef.get().get();
+    InternalAuthProvider internalAuthProvider = internalAuthProviderProvider.get();
     if (internalAuthProvider == null) {
       return Tasks.forException(new FirebaseApiNotAvailableException("auth is not available"));
     }
@@ -139,22 +128,30 @@ public final class FirebaseAuthCredentialsProvider extends CredentialsProvider {
     this.changeListener = changeListener;
 
     // Fire the initial event.
-    changeListener.onValue(currentUser);
+    changeListener.onValue(getUser());
   }
 
   @Override
   public synchronized void removeChangeListener() {
     changeListener = null;
 
-    InternalAuthProvider internalAuthProvider = internalAuthProviderProviderRef.get().get();
+    InternalAuthProvider internalAuthProvider = internalAuthProviderProvider.get();
     if (internalAuthProvider != null) {
       internalAuthProvider.removeIdTokenListener(idTokenListener);
     }
   }
 
+  /** Invoked when the auth token changes. */
+  private synchronized void onIdTokenChanged() {
+    tokenCounter++;
+    if (changeListener != null) {
+      changeListener.onValue(getUser());
+    }
+  }
+
   /** Returns the current {@link User} as obtained from the given InternalAuthProvider. */
-  private static User getUser(Provider<InternalAuthProvider> provider) {
-    InternalAuthProvider internalAuthProvider = provider.get();
+  private synchronized User getUser() {
+    InternalAuthProvider internalAuthProvider = internalAuthProviderProvider.get();
     @Nullable String uid = (internalAuthProvider == null) ? null : internalAuthProvider.getUid();
     return uid != null ? new User(uid) : User.UNAUTHENTICATED;
   }
