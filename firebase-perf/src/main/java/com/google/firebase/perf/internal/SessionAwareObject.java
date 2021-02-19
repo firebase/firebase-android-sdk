@@ -28,6 +28,7 @@ public interface SessionAwareObject {
    * Updates the SessionAwareObject with the new sessionId.
    *
    * @param session The new PerfSession.
+   * @hide
    */
   void updateSession(PerfSession session);
 }
