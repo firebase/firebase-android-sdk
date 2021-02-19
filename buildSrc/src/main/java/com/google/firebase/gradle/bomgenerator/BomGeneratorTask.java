@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package com.google.firebase.gradle.bomgenerator;
 
 import static java.util.stream.Collectors.toList;
