@@ -41,21 +41,12 @@ android {
 }
 
 dependencies {
-    implementation project(':encoders:firebase-encoders')
-    implementation project(':encoders:firebase-encoders-json')
     implementation project(':firebase-common')
-    implementation project(':firebase-components')
-    implementation project(':firebase-datatransport')
-    implementation project(':firebase-installations-interop')
-    implementation project(':transport:transport-api')
-    implementation project(':transport:transport-runtime')
     implementation project(':firebase-ml-modeldownloader')
     testImplementation 'androidx.test:runner:1.2.0'
     testImplementation 'androidx.test.ext:junit:1.1.1'
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
-    testImplementation 'com.google.auto.value:auto-value-annotations:1.6.5'
     testImplementation 'junit:junit:4.12'
     testImplementation "com.google.truth:truth:$googleTruthVersion"
-    testImplementation 'org.mockito:mockito-core:2.25.0'
     implementation 'androidx.core:core:1.2.0'
 }
