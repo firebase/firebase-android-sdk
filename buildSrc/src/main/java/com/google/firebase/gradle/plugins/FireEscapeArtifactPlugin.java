@@ -91,11 +91,14 @@ public class FireEscapeArtifactPlugin implements Plugin<Project> {
         .create(
             "fireEscapeProguardMapping",
             task -> {
-              project.getTasks().all(it -> {
-                if (it.getName().equals("assembleRelease")) {
-                  task.dependsOn(it);
-                }
-              });
+              project
+                  .getTasks()
+                  .all(
+                      it -> {
+                        if (it.getName().equals("assembleRelease")) {
+                          task.dependsOn(it);
+                        }
+                      });
               task.getOutputs()
                   .file(new File(project.getBuildDir(), "outputs/mapping/release/mapping.txt"));
             });
