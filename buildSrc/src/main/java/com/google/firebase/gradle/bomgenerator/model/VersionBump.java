@@ -14,11 +14,8 @@
 
 package com.google.firebase.gradle.bomgenerator.model;
 
-import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.eclipse.aether.version.Version;
 
 public enum VersionBump {
   MAJOR,
@@ -29,7 +26,8 @@ public enum VersionBump {
   private static final Pattern SEMVER_PATTERN = Pattern.compile("(\\d+)\\.(\\d+)\\.(\\d+).*");
 
   // Assumes list of versions passed in is sorted, newest versions last.
-  public static VersionBump getBumpBetweenVersion(String newestVersion, String secondNewestVersion) {
+  public static VersionBump getBumpBetweenVersion(
+      String newestVersion, String secondNewestVersion) {
     Matcher newestVersionMatcher = SEMVER_PATTERN.matcher(newestVersion);
     Matcher secondNewestVersionMatcher = SEMVER_PATTERN.matcher(secondNewestVersion);
     if (!(newestVersionMatcher.matches() && secondNewestVersionMatcher.matches())) {

@@ -14,17 +14,20 @@
 
 package com.google.firebase.gradle.bomgenerator;
 
+import com.google.firebase.gradle.bomgenerator.model.Dependency;
+import com.google.firebase.gradle.bomgenerator.model.VersionBump;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
@@ -49,13 +52,6 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-import com.google.firebase.gradle.bomgenerator.model.Dependency;
-import com.google.firebase.gradle.bomgenerator.model.VersionBump;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-
 public class RepositoryClient {
   private static final RemoteRepository GMAVEN =
       new RemoteRepository.Builder("central", "default", "https://maven.google.com").build();
@@ -68,15 +64,20 @@ public class RepositoryClient {
     session = newRepositorySystemSession(system);
   }
 
-  public Dependency populateDependencyVersion(Dependency firebaseDep, Map<String, String> versionsFromPreviousBomByArtifact) {
+  public Dependency populateDependencyVersion(
+      Dependency firebaseDep, Map<String, String> versionsFromPreviousBomByArtifact) {
     try {
       List<Version> rangeResult = getVersionsForDependency(firebaseDep).getVersions();
       String version = rangeResult.get(rangeResult.size() - 1).toString();
-      String versionFromPreviousBom = versionsFromPreviousBomByArtifact.get(firebaseDep.fullArtifactId());
+      String versionFromPreviousBom =
+          versionsFromPreviousBomByArtifact.get(firebaseDep.fullArtifactId());
 
-      VersionBump versionBump = versionFromPreviousBom == null ? VersionBump.MINOR : VersionBump.getBumpBetweenVersion(version, versionFromPreviousBom);
+      VersionBump versionBump =
+          versionFromPreviousBom == null
+              ? VersionBump.MINOR
+              : VersionBump.getBumpBetweenVersion(version, versionFromPreviousBom);
       return Dependency.create(
-              firebaseDep.groupId(), firebaseDep.artifactId(), version, versionBump);
+          firebaseDep.groupId(), firebaseDep.artifactId(), version, versionBump);
     } catch (VersionRangeResolutionException e) {
       throw new GradleException("Failed to resolve dependency: " + firebaseDep.toGradleString(), e);
     }
@@ -89,7 +90,9 @@ public class RepositoryClient {
   }
 
   public Set<String> getAllFirebaseArtifacts() {
-    try (InputStream index = new URL("https://dl.google.com/dl/android/maven2/com/google/firebase/group-index.xml").openStream()) {
+    try (InputStream index =
+        new URL("https://dl.google.com/dl/android/maven2/com/google/firebase/group-index.xml")
+            .openStream()) {
       DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
       factory.setValidating(true);
       factory.setIgnoringElementContentWhitespace(true);

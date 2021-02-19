@@ -14,24 +14,22 @@
 
 package com.google.firebase.gradle.bomgenerator;
 
+import com.google.firebase.gradle.bomgenerator.model.Dependency;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import javax.xml.transform.TransformerException;
 import org.eclipse.aether.resolution.VersionRangeResolutionException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-
-import com.google.firebase.gradle.bomgenerator.model.Dependency;
 
 public class PomXmlWriter {
   private static final String ARTIFACT_GROUP_ID = "com.google.firebase";

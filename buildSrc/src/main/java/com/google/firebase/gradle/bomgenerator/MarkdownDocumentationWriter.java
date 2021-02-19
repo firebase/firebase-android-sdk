@@ -14,11 +14,11 @@
 
 package com.google.firebase.gradle.bomgenerator;
 
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import com.google.firebase.gradle.bomgenerator.model.Dependency;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -30,7 +30,11 @@ public class MarkdownDocumentationWriter {
   private final String version;
   private final String previousVersion;
 
-  public MarkdownDocumentationWriter(List<Dependency> firebaseDependencies, String version, Map<String, String> previousBomVersions, String previousVersion) {
+  public MarkdownDocumentationWriter(
+      List<Dependency> firebaseDependencies,
+      String version,
+      Map<String, String> previousBomVersions,
+      String previousVersion) {
     this.firebaseDependencies = firebaseDependencies;
     this.previousBomVersions = previousBomVersions;
     this.version = version;
@@ -40,17 +44,18 @@ public class MarkdownDocumentationWriter {
   public String generateDocumentation() {
     StringBuilder docBuilder = new StringBuilder();
     docBuilder.append(generateHeader(version));
-    firebaseDependencies
-      .stream()
-      .sorted(Comparator.comparing(Dependency::toGradleString))
-      .map(this::generateListEntry)
-      .forEach(docBuilder::append);
+    firebaseDependencies.stream()
+        .sorted(Comparator.comparing(Dependency::toGradleString))
+        .map(this::generateListEntry)
+        .forEach(docBuilder::append);
     docBuilder.append(generateFooter());
     return docBuilder.toString();
   }
 
   public void writeDocumentation(String document) throws IOException {
-    Files.write(new File("bomReleaseNotes.md").toPath(), Collections.singleton(document),
+    Files.write(
+        new File("bomReleaseNotes.md").toPath(),
+        Collections.singleton(document),
         StandardCharsets.UTF_8);
   }
 
@@ -59,10 +64,17 @@ public class MarkdownDocumentationWriter {
   }
 
   private String generateHeader(String version) {
-    return "### {{firebase_bom_long}} ({{bill_of_materials}}) version " + version + " " + headingId() + "\n"
-        + "{% comment %}\n" + "These library versions must be flat-typed, do not use variables.\n"
+    return "### {{firebase_bom_long}} ({{bill_of_materials}}) version "
+        + version
+        + " "
+        + headingId()
+        + "\n"
+        + "{% comment %}\n"
+        + "These library versions must be flat-typed, do not use variables.\n"
         + "The release note for this BoM version is a library-version snapshot.\n"
-        + "{% endcomment %}\n" + "\n" + "<section class=\"expandable\">\n"
+        + "{% endcomment %}\n"
+        + "\n"
+        + "<section class=\"expandable\">\n"
         + "  <p class=\"showalways\">\n"
         + "    Firebase Android SDKs mapped to this {{bom}} version</p>\n"
         + " <p>Libraries that were versioned with this release are in highlighted rows.\n"
@@ -72,23 +84,42 @@ public class MarkdownDocumentationWriter {
         + " <table>\n"
         + "    <thead>\n"
         + "      <th>Artifact name</th>\n"
-        + "      <th>Version mapped<br>to previous {{bom}} v" + previousVersion + "</th>\n"
-        + "      <th>Version mapped<br>to this {{bom}} v" + version + "</th>\n"
+        + "      <th>Version mapped<br>to previous {{bom}} v"
+        + previousVersion
+        + "</th>\n"
+        + "      <th>Version mapped<br>to this {{bom}} v"
+        + version
+        + "</th>\n"
         + "    </thead>\n"
         + "    <tbody>\n";
   }
 
   private String generateListEntry(Dependency dep) {
-    String previousDepVersion = previousBomVersions.containsKey(dep.fullArtifactId()) ? previousBomVersions.get(dep.fullArtifactId()) : "N/A";
+    String previousDepVersion =
+        previousBomVersions.containsKey(dep.fullArtifactId())
+            ? previousBomVersions.get(dep.fullArtifactId())
+            : "N/A";
     boolean depChanged = !dep.version().equals(previousDepVersion);
     String boldOpenTag = depChanged ? "<b>" : "";
     String boldClosedTag = depChanged ? "</b>" : "";
-    String tableStyle = depChanged ? " class=\"alt\"" : ""; 
-    return "      <tr" + tableStyle + ">\n"
-         + "        <td>" + boldOpenTag + dep.fullArtifactId() + boldClosedTag + "</td>\n"
-         + "        <td>" + previousDepVersion + "</td>\n"
-         + "        <td>" + boldOpenTag + dep.version() + boldClosedTag + "</td>\n"
-         + "      </tr>\n";
+    String tableStyle = depChanged ? " class=\"alt\"" : "";
+    return "      <tr"
+        + tableStyle
+        + ">\n"
+        + "        <td>"
+        + boldOpenTag
+        + dep.fullArtifactId()
+        + boldClosedTag
+        + "</td>\n"
+        + "        <td>"
+        + previousDepVersion
+        + "</td>\n"
+        + "        <td>"
+        + boldOpenTag
+        + dep.version()
+        + boldClosedTag
+        + "</td>\n"
+        + "      </tr>\n";
   }
 
   private String generateFooter() {

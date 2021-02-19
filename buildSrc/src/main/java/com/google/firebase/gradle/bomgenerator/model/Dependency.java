@@ -15,8 +15,6 @@
 package com.google.firebase.gradle.bomgenerator.model;
 
 import com.google.auto.value.AutoValue;
-import java.util.List;
-import org.eclipse.aether.version.Version;
 
 @AutoValue
 public abstract class Dependency {
