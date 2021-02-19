@@ -86,14 +86,8 @@ public class UserMetadata {
     if (attributes.size() + newKeys.size() > MAX_ATTRIBUTES) {
       int keySlotsLeft = MAX_ATTRIBUTES - attributes.size();
       Logger.getLogger()
-          .v(
-              "Exceeded maximum number of custom attributes ("
-                  + MAX_ATTRIBUTES
-                  + "). Only the first "
-                  + keySlotsLeft
-                  + " key/value pairs (in alphabetical order) will be added.");
+          .v("Exceeded maximum number of custom attributes (" + MAX_ATTRIBUTES + ").");
       List<String> newKeyList = new ArrayList<>(newKeys.keySet());
-      Collections.sort(newKeyList);
       newKeys.keySet().retainAll(newKeyList.subList(0, keySlotsLeft));
     }
     attributes.putAll(newKeys);
