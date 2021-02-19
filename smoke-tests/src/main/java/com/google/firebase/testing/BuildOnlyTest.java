@@ -57,6 +57,6 @@ public final class BuildOnlyTest {
 
   @Test
   public void modelDownloader_IsNotNull() {
-    assertThat(FirebaseMlModelDownloader.getInstance()).isNotNull();
+    assertThat(FirebaseModelDownloader.getInstance()).isNotNull();
   }
 }
