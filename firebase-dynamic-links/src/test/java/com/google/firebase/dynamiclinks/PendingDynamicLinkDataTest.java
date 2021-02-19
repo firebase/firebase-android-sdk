@@ -17,6 +17,7 @@ package com.google.firebase.dynamiclinks;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertNotNull;
+import static junit.framework.Assert.assertNotSame;
 import static junit.framework.Assert.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -30,6 +31,7 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
 import com.google.firebase.dynamiclinks.internal.DynamicLinkData;
+import com.google.firebase.dynamiclinks.internal.DynamicLinkUTMParams;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -187,6 +189,39 @@ public class PendingDynamicLinkDataTest {
         .thenThrow(new PackageManager.NameNotFoundException());
     Intent intent = pendingDynamicLinkData.getUpdateAppIntent(mockContext);
     assertNull(intent);
+  }
+
+  @Test
+  public void testGetUtmParameters_WithEmptyUTMParams() {
+    PendingDynamicLinkData pendingDynamicLinkData =
+        new PendingDynamicLinkData(createDynamicLinkDataExtensions());
+    assertNotNull(pendingDynamicLinkData.getUtmParameters());
+    assertEquals(pendingDynamicLinkData.getUtmParameters().size(), 0);
+  }
+
+  @Test
+  public void testGetUtmParameters_WithNonEmptyUTMParams() {
+    Bundle scionBundle = new Bundle();
+    Bundle campaignBundle = new Bundle();
+    scionBundle.putBundle(DynamicLinkUTMParams.KEY_CAMPAIGN_BUNDLE, campaignBundle);
+    campaignBundle.putString(DynamicLinkUTMParams.KEY_MEDIUM, "m");
+    campaignBundle.putString(DynamicLinkUTMParams.KEY_SOURCE, "s");
+    campaignBundle.putString(DynamicLinkUTMParams.KEY_CAMPAIGN, "c");
+
+    DynamicLinkData dynamicLinkData = createDynamicLinkDataExtensions();
+    dynamicLinkData
+        .getExtensionBundle()
+        .putBundle(DynamicLinkUTMParams.KEY_SCION_DATA_BUNDLE, scionBundle);
+    PendingDynamicLinkData pendingDynamicLinkData = new PendingDynamicLinkData(dynamicLinkData);
+
+    Bundle utmParamsBundle = pendingDynamicLinkData.getUtmParameters();
+    assertNotNull(utmParamsBundle);
+    assertNotSame(utmParamsBundle.size(), 0);
+
+    // Comparing Utm params
+    assertEquals(utmParamsBundle.getString(DynamicLinkUTMParams.KEY_UTM_MEDIUM), "m");
+    assertEquals(utmParamsBundle.getString(DynamicLinkUTMParams.KEY_UTM_SOURCE), "s");
+    assertEquals(utmParamsBundle.getString(DynamicLinkUTMParams.KEY_UTM_CAMPAIGN), "c");
   }
 
   private DynamicLinkData createDynamicLinkData() {

@@ -100,6 +100,8 @@ dependencies {
     runtimeOnly project(':firebase-installations')
     implementation project(':transport:transport-api')
     runtimeOnly project(':firebase-datatransport')
+    javadocClasspath 'com.google.auto.value:auto-value-annotations:1.6.6'
+    javadocClasspath 'com.google.code.findbugs:jsr305:3.0.2'
 
     // Google Deps
     implementation "com.google.android.gms:play-services-tasks:17.1.0"

@@ -14,40 +14,37 @@
 
 package com.google.firebase.gradle.plugins.ci.device;
 
-
+import java.util.Collections;
+import java.util.Set;
+import javax.inject.Inject;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.SetProperty;
 
-import java.util.Collections;
-import java.util.Set;
-
-import javax.inject.Inject;
-
 public class FirebaseTestLabExtension {
-    private final SetProperty<String> devices;
-    private boolean enabled;
+  private final SetProperty<String> devices;
+  private boolean enabled;
 
-    @Inject
-    public FirebaseTestLabExtension(ObjectFactory objectFactory) {
-        devices = objectFactory.setProperty(String.class);
-    }
+  @Inject
+  public FirebaseTestLabExtension(ObjectFactory objectFactory) {
+    devices = objectFactory.setProperty(String.class);
+  }
 
-    public void setEnabled(boolean value) {
-        enabled = value;
-    }
+  public void setEnabled(boolean value) {
+    enabled = value;
+  }
 
-    public boolean getEnabled() {
-        return enabled;
-    }
+  public boolean getEnabled() {
+    return enabled;
+  }
 
-    public void device(String device) {
-        devices.add(device);
-    }
+  public void device(String device) {
+    devices.add(device);
+  }
 
-    Set<String> getDevices() {
-        if( devices.get().isEmpty()) {
-            return Collections.singleton("model=Pixel2,version=27,locale=en,orientation=portrait");
-        }
-        return devices.get();
+  Set<String> getDevices() {
+    if (devices.get().isEmpty()) {
+      return Collections.singleton("model=Pixel2,version=27,locale=en,orientation=portrait");
     }
+    return devices.get();
+  }
 }
