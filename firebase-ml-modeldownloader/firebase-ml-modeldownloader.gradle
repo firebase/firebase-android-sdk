@@ -69,6 +69,8 @@ dependencies {
     implementation project(':transport:transport-runtime')
     runtimeOnly project(':firebase-installations')
 
+    javadocClasspath 'com.google.code.findbugs:jsr305:3.0.2'
+
     implementation 'androidx.annotation:annotation:1.1.0'
     implementation 'com.google.android.gms:play-services-tasks:17.2.0'
     implementation 'com.google.auto.service:auto-service-annotations:1.0-rc6'
