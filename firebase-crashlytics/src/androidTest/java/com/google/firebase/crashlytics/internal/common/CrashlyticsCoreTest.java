@@ -23,8 +23,6 @@ import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.SuccessContinuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.FirebaseApp;
-import com.google.firebase.FirebaseOptions;
 import com.google.firebase.crashlytics.BuildConfig;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
@@ -131,24 +129,16 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     assertEquals(BuildConfig.VERSION_NAME, CrashlyticsCore.getVersion());
   }
 
-  public void testNullBuildIdRequiredTrue() {
-    assertFalse(CrashlyticsCore.isBuildIdValid(null, true));
+  public void testNullBuildId() {
+    assertFalse(CrashlyticsCore.isBuildIdValid(null));
   }
 
-  public void testEmptyBuildIdRequiredTrue() {
-    assertFalse(CrashlyticsCore.isBuildIdValid("", true));
+  public void testEmptyBuildId() {
+    assertFalse(CrashlyticsCore.isBuildIdValid(""));
   }
 
-  public void testValidBuildIdRequiredTrue() {
-    assertTrue(CrashlyticsCore.isBuildIdValid("buildId", true));
-  }
-
-  public void testNullBuildIdRequiredFalse() {
-    assertTrue(CrashlyticsCore.isBuildIdValid(null, false));
-  }
-
-  public void testEmptyBuildIdRequiredFalse() {
-    assertTrue(CrashlyticsCore.isBuildIdValid("", false));
+  public void testValidBuildId() {
+    assertTrue(CrashlyticsCore.isBuildIdValid("buildId"));
   }
 
   public void testBreadcrumbSourceIsRegistered() {
@@ -260,19 +250,13 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     }
 
     CrashlyticsCore build(Context context) {
-      FirebaseOptions testFirebaseOptions;
-      testFirebaseOptions = new FirebaseOptions.Builder().setApplicationId(GOOGLE_APP_ID).build();
-
-      FirebaseApp app = mock(FirebaseApp.class);
-      when(app.getApplicationContext()).thenReturn(context);
-      when(app.getOptions()).thenReturn(testFirebaseOptions);
       FirebaseInstallationsApi installationsApiMock = mock(FirebaseInstallationsApi.class);
       when(installationsApiMock.getId()).thenReturn(Tasks.forResult("instanceId"));
       BreadcrumbSource breadcrumbSource =
           this.breadcrumbSource == null ? new DisabledBreadcrumbSource() : this.breadcrumbSource;
       final CrashlyticsCore crashlyticsCore =
           new CrashlyticsCore(
-              app,
+              context,
               new IdManager(context, "unused", installationsApiMock),
               nativeComponent,
               arbiter,

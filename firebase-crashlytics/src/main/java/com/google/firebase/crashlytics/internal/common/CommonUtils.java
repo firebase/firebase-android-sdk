@@ -345,52 +345,6 @@ public class CommonUtils {
     }
   }
 
-  /** @deprecated This method will now always return false. It should not be used. */
-  @Deprecated
-  public static boolean isLoggingEnabled(Context context) {
-    return false;
-  }
-
-  /**
-   * Gets a value for a boolean resource by its name. If a key is not present, the provided default
-   * value will be returned.
-   *
-   * <p>Tries to look up a boolean value two ways:
-   *
-   * <ol>
-   *   <li>As a <code>bool</code> resource. A discovered value is returned as-is.
-   *   <li>As a <code>string</code> resource. A discovered value is turned into a boolean with
-   *       {@link Boolean#parseBoolean(String)} before being returned.
-   * </ol>
-   *
-   * @param context {@link Context} to use when accessing resources
-   * @param key {@link String} name of the boolean value to look up
-   * @param defaultValue value to be returned if the specified resource could be not be found.
-   * @return {@link String} value of the specified property, or an empty string if it could not be
-   *     found.
-   */
-  public static boolean getBooleanResourceValue(Context context, String key, boolean defaultValue) {
-    if (context != null) {
-      final Resources resources = context.getResources();
-
-      if (resources != null) {
-        int id = getResourcesIdentifier(context, key, "bool");
-
-        if (id > 0) {
-          return resources.getBoolean(id);
-        }
-
-        id = getResourcesIdentifier(context, key, "string");
-
-        if (id > 0) {
-          return Boolean.parseBoolean(context.getString(id));
-        }
-      }
-    }
-
-    return defaultValue;
-  }
-
   public static int getResourcesIdentifier(Context context, String key, String resourceType) {
     final Resources resources = context.getResources();
     return resources.getIdentifier(key, resourceType, getResourcePackageName(context));

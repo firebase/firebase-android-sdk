@@ -21,6 +21,9 @@ import com.google.firebase.crashlytics.internal.unity.UnityVersionProvider;
 
 /** Carries static information about the app. */
 public class AppData {
+
+  public static final String DEFAULT_VERSION_NAME = "0.0";
+
   public final String googleAppId;
   public final String buildId;
 
@@ -45,7 +48,7 @@ public class AppData {
     final PackageInfo packageInfo = packageManager.getPackageInfo(packageName, 0);
     final String versionCode = Integer.toString(packageInfo.versionCode);
     final String versionName =
-        packageInfo.versionName == null ? IdManager.DEFAULT_VERSION_NAME : packageInfo.versionName;
+        packageInfo.versionName == null ? DEFAULT_VERSION_NAME : packageInfo.versionName;
 
     return new AppData(
         googleAppId,

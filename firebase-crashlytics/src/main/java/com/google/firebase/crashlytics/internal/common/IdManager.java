@@ -27,8 +27,6 @@ import java.util.regex.Pattern;
 
 public class IdManager implements InstallIdProvider {
 
-  public static final String DEFAULT_VERSION_NAME = "0.0";
-
   static final String PREFKEY_ADVERTISING_ID = "crashlytics.advertising.id";
   static final String PREFKEY_INSTALLATION_UUID = "crashlytics.installation.id";
   static final String PREFKEY_FIREBASE_IID = "firebase.installation.id";

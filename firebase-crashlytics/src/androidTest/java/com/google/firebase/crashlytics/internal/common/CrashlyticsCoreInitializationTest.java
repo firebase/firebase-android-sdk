@@ -24,8 +24,6 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.FirebaseApp;
-import com.google.firebase.FirebaseOptions;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
 import com.google.firebase.crashlytics.internal.MissingNativeComponent;
@@ -54,7 +52,6 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
 
   private Context mockAppContext;
   private Resources mockResources;
-  private FirebaseOptions testFirebaseOptions;
   private FileStore fileStore;
   private SettingsController mockSettingsController;
   private AppData appData;
@@ -65,7 +62,6 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
 
     mockAppContext = newMockContext();
     mockResources = mock(Resources.class);
-    testFirebaseOptions = new FirebaseOptions.Builder().setApplicationId(GOOGLE_APP_ID).build();
 
     fileStore = new FileStoreImpl(getContext());
 
@@ -84,17 +80,14 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
   }
 
   private static final class CoreBuilder {
-    private FirebaseApp app;
+    private Context context;
     private IdManager idManager;
     private CrashlyticsNativeComponent nativeComponent;
     private DataCollectionArbiter arbiter;
     private ExecutorService crashHandlerExecutor;
 
-    public CoreBuilder(Context context, FirebaseOptions firebaseOptions) {
-      app = mock(FirebaseApp.class);
-      when(app.getApplicationContext()).thenReturn(context);
-      when(app.getOptions()).thenReturn(firebaseOptions);
-
+    public CoreBuilder(Context context) {
+      this.context = context;
       FirebaseInstallationsApi installationsApiMock = mock(FirebaseInstallationsApi.class);
       when(installationsApiMock.getId()).thenReturn(Tasks.forResult("instanceId"));
       idManager = new IdManager(context, context.getPackageName(), installationsApiMock);
@@ -114,7 +107,7 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
 
     public CrashlyticsCore build() {
       return new CrashlyticsCore(
-          app,
+          context,
           idManager,
           nativeComponent,
           arbiter,
@@ -125,7 +118,7 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
   }
 
   private CoreBuilder builder() {
-    return new CoreBuilder(mockAppContext, testFirebaseOptions);
+    return new CoreBuilder(mockAppContext);
   }
 
   private Context newMockContext() throws Exception {
@@ -189,16 +182,14 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
   //    assertTrue(crashlyticsCore.getController().hasOpenSession());
   //  }
 
-  public void testOnPreExecute_buildIdRequiredAndExists() {
+  public void testOnPreExecute_buildIdExists() {
     final CrashlyticsCore crashlyticsCore = builder().build();
-    setupBuildIdRequired("true");
     setupAppData(BUILD_ID);
     assertTrue(crashlyticsCore.onPreExecute(appData, mockSettingsController));
   }
 
-  public void testOnPreExecute_buildIdRequiredAndDoesNotExist() {
+  public void testOnPreExecute_buildIdDoesNotExist() {
     final CrashlyticsCore crashlyticsCore = builder().build();
-    setupBuildIdRequired("true");
     setupAppData(null);
     try {
       crashlyticsCore.onPreExecute(appData, mockSettingsController);
@@ -208,23 +199,8 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
     }
   }
 
-  public void testOnPreExecute_buildIdNotRequiredAndExists() {
-    final CrashlyticsCore crashlyticsCore = builder().build();
-    setupBuildIdRequired("false");
-    setupAppData(BUILD_ID);
-    assertTrue(crashlyticsCore.onPreExecute(appData, mockSettingsController));
-  }
-
-  public void testOnPreExecute_buildIdNotRequiredAndDoesNotExist() {
-    setupBuildIdRequired("false");
-    setupAppData(null);
-    final CrashlyticsCore crashlyticsCore = builder().build();
-    assertTrue(crashlyticsCore.onPreExecute(appData, mockSettingsController));
-  }
-
   public void testOnPreExecute_didCrashOnPreviousExecution() throws Exception {
     final CrashlyticsCore crashlyticsCore = builder().build();
-    setupBuildIdRequired(String.valueOf(false));
     setupAppData(BUILD_ID);
     setupCrashMarker();
 
@@ -236,21 +212,12 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
 
   public void testOnPreExecute_didNotCrashOnPreviousExecution() {
     final CrashlyticsCore crashlyticsCore = builder().build();
-    setupBuildIdRequired(String.valueOf(false));
     setupAppData(BUILD_ID);
 
     assertFalse(getCrashMarkerFile().exists());
     assertTrue(crashlyticsCore.onPreExecute(appData, mockSettingsController));
     assertFalse(crashlyticsCore.didCrashOnPreviousExecution());
     assertFalse(getCrashMarkerFile().exists());
-  }
-
-  private void setupBuildIdRequired(String booleanValue) {
-    setupResource(
-        RES_ID_REQUIRE_BUILD_ID,
-        "string",
-        CrashlyticsCore.CRASHLYTICS_REQUIRE_BUILD_ID,
-        booleanValue);
   }
 
   private void setupAppData(String buildId) {

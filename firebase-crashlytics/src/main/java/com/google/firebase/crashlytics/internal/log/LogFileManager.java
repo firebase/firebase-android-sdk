@@ -16,8 +16,6 @@ package com.google.firebase.crashlytics.internal.log;
 
 import android.content.Context;
 import androidx.annotation.Nullable;
-import com.google.firebase.crashlytics.internal.Logger;
-import com.google.firebase.crashlytics.internal.common.CommonUtils;
 import java.io.File;
 import java.util.Set;
 
@@ -26,8 +24,6 @@ import java.util.Set;
  * synchronized or locked, and should be called on the single-threaded executor.
  */
 public class LogFileManager {
-
-  private static final String COLLECT_CUSTOM_LOGS = "com.crashlytics.CollectCustomLogs";
 
   private static final String LOGFILE_EXT = ".temp";
   private static final String LOGFILE_PREFIX = "crashlytics-userlog-";
@@ -66,14 +62,6 @@ public class LogFileManager {
     currentLog = NOOP_LOG_STORE;
 
     if (sessionId == null) {
-      return;
-    }
-
-    final boolean isLoggingEnabled =
-        CommonUtils.getBooleanResourceValue(context, COLLECT_CUSTOM_LOGS, true);
-
-    if (!isLoggingEnabled) {
-      Logger.getLogger().d("Preferences requested no custom logs. Aborting log file creation.");
       return;
     }
 
