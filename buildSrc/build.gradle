@@ -93,6 +93,10 @@ gradlePlugin {
             id = 'LicenseResolverPlugin'
             implementationClass = 'com.google.firebase.gradle.plugins.license.LicenseResolverPlugin'
         }
+        multiProjectReleasePlugin {
+            id = 'MultiProjectReleasePlugin'
+            implementationClass = 'com.google.firebase.gradle.MultiProjectReleasePlugin'
+        }
         publishingPlugin {
             id = 'PublishingPlugin'
             implementationClass = 'com.google.firebase.gradle.plugins.publish.PublishingPlugin'
