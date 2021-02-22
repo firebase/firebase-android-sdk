@@ -183,13 +183,7 @@ public class MutableDocument implements Cloneable {
 
   @Override
   public int hashCode() {
-    int result = key.hashCode();
-    result = 31 * result + version.hashCode();
-    result = 31 * result + type.hashCode();
-    result = 31 * result + (hasLocalMutations ? 1 : 0);
-    result = 31 * result + (hasCommittedMutations ? 1 : 0);
-    result = 31 * result + value.hashCode();
-    return result;
+    return key.hashCode();
   }
 
   @Override
