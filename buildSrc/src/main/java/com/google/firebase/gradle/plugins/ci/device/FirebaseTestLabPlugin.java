@@ -14,8 +14,7 @@
 
 package com.google.firebase.gradle.plugins.ci.device;
 
-import com.android.build.gradle.BaseExtension;
-
+import com.android.build.gradle.TestedExtension;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 
@@ -34,7 +33,7 @@ public class FirebaseTestLabPlugin implements Plugin<Project> {
             .getExtensions()
             .create("firebaseTestLab", FirebaseTestLabExtension.class, project.getObjects());
     extension.setEnabled(true);
-    BaseExtension android = (BaseExtension) project.getExtensions().getByName("android");
-    android.testServer(new FirebaseTestServer(project, extension));
+    TestedExtension android = (TestedExtension) project.getExtensions().getByName("android");
+    android.testServer(new FirebaseTestServer(project, extension, android));
   }
 }

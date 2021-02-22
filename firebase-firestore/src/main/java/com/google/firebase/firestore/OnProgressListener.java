@@ -17,6 +17,6 @@ package com.google.firebase.firestore;
 import androidx.annotation.NonNull;
 
 /** A listener that is called periodically during execution of a {@link LoadBundleTask}. */
-/* package */ interface OnProgressListener<ProgressT> {
+public interface OnProgressListener<ProgressT> {
   void onProgress(@NonNull ProgressT snapshot);
 }

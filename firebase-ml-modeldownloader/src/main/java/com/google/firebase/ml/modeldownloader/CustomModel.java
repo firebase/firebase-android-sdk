@@ -38,10 +38,10 @@ public class CustomModel {
   /**
    * Use when creating a custom model while the initial download is still in progress.
    *
-   * @param name - model name
-   * @param modelHash - model hash
-   * @param fileSize - model file size
-   * @param downloadId - Android Download Manger - download id
+   * @param name Model name.
+   * @param modelHash Model hash.
+   * @param fileSize Model file size.
+   * @param downloadId Android Download Manger - download id.
    * @hide
    */
   public CustomModel(
@@ -52,10 +52,10 @@ public class CustomModel {
   /**
    * Use when creating a custom model from a stored model with a new download in the background.
    *
-   * @param name - model name
-   * @param modelHash - model hash
-   * @param fileSize - model file size
-   * @param downloadId - Android Download Manger - download id
+   * @param name Model name.
+   * @param modelHash Model hash.
+   * @param fileSize Model file size.
+   * @param downloadId Android Download Manger - download id.
    * @hide
    */
   public CustomModel(
@@ -72,11 +72,11 @@ public class CustomModel {
    * url expiry should go together. These will not be stored in user preferences as this is a
    * temporary step towards setting the actual download id.
    *
-   * @param name - model name
-   * @param modelHash - model hash
-   * @param fileSize - model file size
-   * @param downloadUrl - download url path
-   * @param downloadUrlExpiry - time download url path expires
+   * @param name Model name.
+   * @param modelHash Model hash.
+   * @param fileSize Model file size.
+   * @param downloadUrl Download url path
+   * @param downloadUrlExpiry Time download url path expires.
    * @hide
    */
   public CustomModel(
@@ -91,13 +91,13 @@ public class CustomModel {
   /**
    * Use when creating a custom model while the initial download is still in progress.
    *
-   * @param name - model name
-   * @param modelHash - model hash
-   * @param fileSize - model file size
-   * @param downloadId - Android Download Manger - download id
-   * @param localFilePath - location of the current file
-   * @param downloadUrl - download url path returned from download service
-   * @param downloadUrlExpiry - expiry time of download url link
+   * @param name Model name.
+   * @param modelHash Model hash.
+   * @param fileSize Model file size.
+   * @param downloadId Android Download Manger - download id.
+   * @param localFilePath Location of the current file.
+   * @param downloadUrl Download url path returned from download service.
+   * @param downloadUrlExpiry Expiry time of download url link.
    * @hide
    */
   private CustomModel(
@@ -117,6 +117,11 @@ public class CustomModel {
     this.downloadUrlExpiry = downloadUrlExpiry;
   }
 
+  /**
+   * Retrieves the model name and identifier.
+   *
+   * @return The name of the model.
+   */
   @NonNull
   public String getName() {
     return name;
@@ -125,18 +130,18 @@ public class CustomModel {
   /**
    * The local model file. If null is returned, use the download Id to check the download status.
    *
-   * @return the local file associated with the model, if the original file download is still in
+   * @return The local file associated with the model, if the original file download is still in
    *     progress, returns null, if file update is in progress returns last fully downloaded model.
    */
   @Nullable
-  public File getFile() throws FirebaseMlException {
+  public File getFile() {
     return getFile(ModelFileDownloadService.getInstance());
   }
 
   /**
    * The local model file. If null is returned, use the download Id to check the download status.
    *
-   * @return the local file associated with the model. If the original file download is still in
+   * @return The local file associated with the model. If the original file download is still in
    *     progress, returns null. If file update is in progress, returns the last fully downloaded
    *     model.
    */
@@ -173,7 +178,7 @@ public class CustomModel {
    * The size of the file currently associated with this model. If a download is in progress, this
    * will be the size of the current model, not the new model currently being downloaded.
    *
-   * @return the local model size
+   * @return The local model size.
    */
   public long getSize() {
     return fileSize;
@@ -182,7 +187,7 @@ public class CustomModel {
   /**
    * Retrieves the model Hash.
    *
-   * @return the model hash
+   * @return The model hash
    */
   @NonNull
   public String getModelHash() {
@@ -194,7 +199,7 @@ public class CustomModel {
    * AndroidDownloadManager to query download progress. The retrieved progress information can be
    * used to populate a progress bar, monitor when an updated model is available, etc.
    *
-   * @return the download id (if download in progress), otherwise returns 0
+   * @return The download id (if download in progress), otherwise returns 0.
    */
   public long getDownloadId() {
     return downloadId;
@@ -266,7 +271,7 @@ public class CustomModel {
   /**
    * Returns the model download url, usually only present when download is about to occur.
    *
-   * @return the model download url
+   * @return The model download url.
    *     <p>Internal use only
    * @hide
    */
@@ -276,7 +281,7 @@ public class CustomModel {
   }
 
   /**
-   * @return the model file path
+   * @return The model file path.
    * @hide
    */
   @Nullable

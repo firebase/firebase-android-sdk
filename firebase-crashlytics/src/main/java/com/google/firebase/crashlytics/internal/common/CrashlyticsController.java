@@ -19,7 +19,6 @@ import android.os.Build.VERSION;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.StatFs;
-import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.SuccessContinuation;
@@ -165,12 +164,7 @@ class CrashlyticsController {
       @NonNull final Throwable ex) {
 
     Logger.getLogger()
-        .d(
-            "Crashlytics is handling uncaught "
-                + "exception \""
-                + ex
-                + "\" from thread "
-                + thread.getName());
+        .d("Handling uncaught " + "exception \"" + ex + "\" from thread " + thread.getName());
 
     // Capture the time that the crash occurs and close over it so that the time doesn't
     // reflect when we get around to executing the task later.
@@ -236,7 +230,7 @@ class CrashlyticsController {
     try {
       Utils.awaitEvenIfOnMainThread(handleUncaughtExceptionTask);
     } catch (Exception e) {
-      Log.e("WILLIS", "ERROR", e);
+      Logger.getLogger().e("Error handling uncaught exception", e);
       // Nothing to do in this case.
     }
   }
@@ -258,7 +252,7 @@ class CrashlyticsController {
     }
 
     Logger.getLogger().d("Automatic data collection is disabled.");
-    Logger.getLogger().d("Notifying that unsent reports are available.");
+    Logger.getLogger().v("Notifying that unsent reports are available.");
     unsentReportsAvailable.trySetResult(true);
 
     // If data collection gets enabled while we are waiting for an action, go ahead and send the
@@ -289,7 +283,7 @@ class CrashlyticsController {
       return sessionId != null && nativeComponent.hasCrashDataForSession(sessionId);
     }
 
-    Logger.getLogger().d("Found previous crash marker.");
+    Logger.getLogger().v("Found previous crash marker.");
     crashMarker.remove();
 
     return Boolean.TRUE;
@@ -302,7 +296,7 @@ class CrashlyticsController {
     // and 2) when there's a fatal crash. So no new reports will become available while the app is
     // running.
     if (!checkForUnsentReportsCalled.compareAndSet(false, true)) {
-      Logger.getLogger().d("checkForUnsentReports should only be called once per execution.");
+      Logger.getLogger().w("checkForUnsentReports should only be called once per execution.");
       return Tasks.forResult(false);
     }
     return unsentReportsAvailable.getTask();
@@ -321,11 +315,11 @@ class CrashlyticsController {
   Task<Void> submitAllReports(Task<AppSettingsData> appSettingsDataTask) {
     if (!reportingCoordinator.hasReportsToSend()) {
       // Just notify the user that there are no reports and stop.
-      Logger.getLogger().d("No reports are available.");
+      Logger.getLogger().v("No crash reports are available to be sent.");
       unsentReportsAvailable.trySetResult(false);
       return Tasks.forResult(null);
     }
-    Logger.getLogger().d("Unsent reports are available.");
+    Logger.getLogger().v("Crash reports are available to be sent.");
 
     return waitForReportAction()
         .onSuccessTask(
@@ -339,14 +333,14 @@ class CrashlyticsController {
                       @Override
                       public Task<Void> call() throws Exception {
                         if (!send) {
-                          Logger.getLogger().d("Reports are being deleted.");
+                          Logger.getLogger().v("Deleting cached crash reports...");
                           deleteFiles(listAppExceptionMarkerFiles());
                           reportingCoordinator.removeAllReports();
                           unsentReportsHandled.trySetResult(null);
                           return Tasks.forResult(null);
                         }
 
-                        Logger.getLogger().d("Reports are being sent.");
+                        Logger.getLogger().d("Sending cached crash reports...");
 
                         // waitForReportAction guarantees we got user permission.
                         boolean dataCollectionToken = send;
@@ -367,7 +361,7 @@ class CrashlyticsController {
                                 if (appSettingsData == null) {
                                   Logger.getLogger()
                                       .w(
-                                          "Received null app settings, cannot send reports during app startup.");
+                                          "Received null app settings at app startup. Cannot send cached reports");
                                   return Tasks.forResult(null);
                                 }
                                 logAnalyticsAppExceptionEvents();
@@ -414,7 +408,7 @@ class CrashlyticsController {
               final String currentSessionId = getCurrentSessionId();
               if (currentSessionId == null) {
                 Logger.getLogger()
-                    .d("Tried to write a non-fatal exception while no session was open.");
+                    .w("Tried to write a non-fatal exception while no session was open.");
                 return;
               }
               reportingCoordinator.persistNonFatalEvent(
@@ -526,18 +520,18 @@ class CrashlyticsController {
     backgroundWorker.checkRunningOnThread();
 
     if (isHandlingException()) {
-      Logger.getLogger().d("Skipping session finalization because a crash has already occurred.");
+      Logger.getLogger().w("Skipping session finalization because a crash has already occurred.");
       return Boolean.FALSE;
     }
 
-    Logger.getLogger().d("Finalizing previously open sessions.");
+    Logger.getLogger().v("Finalizing previously open sessions.");
     try {
       doCloseSessions(true);
     } catch (Exception e) {
       Logger.getLogger().e("Unable to finalize previously open sessions.", e);
       return false;
     }
-    Logger.getLogger().d("Closed all previously open sessions");
+    Logger.getLogger().v("Closed all previously open sessions.");
 
     return true;
   }
@@ -577,7 +571,7 @@ class CrashlyticsController {
     List<String> sortedOpenSessions = reportingCoordinator.listSortedOpenSessionIds();
 
     if (sortedOpenSessions.size() <= offset) {
-      Logger.getLogger().d("No open sessions to be closed.");
+      Logger.getLogger().v("No open sessions to be closed.");
       return;
     }
 
@@ -588,7 +582,7 @@ class CrashlyticsController {
       // data when we aren't including current.
       finalizePreviousNativeSession(mostRecentSessionIdToClose);
       if (!nativeComponent.finalizeSession(mostRecentSessionIdToClose)) {
-        Logger.getLogger().d("Could not finalize native session: " + mostRecentSessionIdToClose);
+        Logger.getLogger().w("Could not finalize native session: " + mostRecentSessionIdToClose);
       }
     }
 
@@ -627,7 +621,7 @@ class CrashlyticsController {
   // endregion
 
   private void finalizePreviousNativeSession(String previousSessionId) {
-    Logger.getLogger().d("Finalizing native report for session " + previousSessionId);
+    Logger.getLogger().v("Finalizing native report for session " + previousSessionId);
     NativeSessionFileProvider nativeSessionFileProvider =
         nativeComponent.getSessionFileProvider(previousSessionId);
     File minidumpFile = nativeSessionFileProvider.getMinidumpFile();
@@ -643,7 +637,7 @@ class CrashlyticsController {
     final File nativeSessionDirectory = new File(getNativeSessionFilesDir(), previousSessionId);
 
     if (!nativeSessionDirectory.mkdirs()) {
-      Logger.getLogger().d("Couldn't create native sessions directory");
+      Logger.getLogger().w("Couldn't create directory to store native session files, aborting.");
       return;
     }
 
@@ -673,7 +667,7 @@ class CrashlyticsController {
     try {
       new File(getFilesDir(), APP_EXCEPTION_MARKER_PREFIX + eventTime).createNewFile();
     } catch (IOException e) {
-      Logger.getLogger().d("Could not write app exception marker.");
+      Logger.getLogger().w("Could not create app exception marker file.", e);
     }
   }
 
@@ -772,7 +766,8 @@ class CrashlyticsController {
             Long.parseLong(markerFile.getName().substring(APP_EXCEPTION_MARKER_PREFIX.length()));
         events.add(logAnalyticsAppExceptionEvent(timestamp));
       } catch (NumberFormatException nfe) {
-        Logger.getLogger().d("Could not parse timestamp from file " + markerFile.getName());
+        Logger.getLogger()
+            .w("Could not parse app exception timestamp from file " + markerFile.getName());
       }
       markerFile.delete();
     }
@@ -782,9 +777,10 @@ class CrashlyticsController {
 
   private Task<Void> logAnalyticsAppExceptionEvent(long timestamp) {
     if (firebaseCrashExists()) {
-      Logger.getLogger().d("Skipping logging Crashlytics event to Firebase, FirebaseCrash exists");
+      Logger.getLogger().w("Skipping logging Crashlytics event to Firebase, FirebaseCrash exists");
       return Tasks.forResult(null);
     }
+    Logger.getLogger().d("Logging app exception event to Firebase Analytics");
     final ThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1);
     return Tasks.call(
         executor,

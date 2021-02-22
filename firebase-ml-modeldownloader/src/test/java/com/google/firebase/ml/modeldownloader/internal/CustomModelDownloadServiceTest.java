@@ -27,6 +27,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -42,6 +43,7 @@ import com.google.firebase.installations.InstallationTokenResult;
 import com.google.firebase.ml.modeldownloader.CustomModel;
 import com.google.firebase.ml.modeldownloader.FirebaseMlException;
 import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent.ErrorCode;
+import java.net.HttpURLConnection;
 import java.net.UnknownHostException;
 import java.util.concurrent.ExecutorService;
 import org.junit.Assert;
@@ -159,7 +161,7 @@ public class CustomModelDownloadServiceTest {
                 equalTo(CustomModelDownloadService.APPLICATION_JSON))
             .willReturn(
                 aResponse()
-                    .withStatus(200)
+                    .withStatus(HttpURLConnection.HTTP_OK)
                     .withHeader(CustomModelDownloadService.ETAG_HEADER, MODEL_HASH)
                     .withBody(RESPONSE_BODY)));
 
@@ -194,7 +196,7 @@ public class CustomModelDownloadServiceTest {
                 equalTo(CustomModelDownloadService.APPLICATION_JSON))
             .willReturn(
                 aResponse()
-                    .withStatus(200)
+                    .withStatus(HttpURLConnection.HTTP_OK)
                     .withHeader(CustomModelDownloadService.ETAG_HEADER, MODEL_HASH)
                     .withBody(RESPONSE_BODY)));
 
@@ -230,7 +232,7 @@ public class CustomModelDownloadServiceTest {
             .withHeader(CustomModelDownloadService.IF_NONE_MATCH_HEADER_KEY, equalTo(MODEL_HASH))
             .willReturn(
                 aResponse()
-                    .withStatus(304) // match found
+                    .withStatus(HttpURLConnection.HTTP_NOT_MODIFIED) // match found
                     .withHeader(CustomModelDownloadService.ETAG_HEADER, MODEL_HASH)));
 
     CustomModelDownloadService service =
@@ -263,9 +265,11 @@ public class CustomModelDownloadServiceTest {
             .withHeader(CustomModelDownloadService.IF_NONE_MATCH_HEADER_KEY, equalTo(MODEL_HASH))
             .willReturn(
                 aResponse()
-                    .withStatus(404) // not found
+                    .withStatus(HttpURLConnection.HTTP_NOT_FOUND) // not found
                     .withBody(
-                        "{\"status\":\"NOT_FOUND\",\"message\":\"Requested entity was not found\"}")));
+                        "{\"error\": "
+                            + "{\"message\":\"Request entity was not found.\", "
+                            + "\"status\":\"NOT_FOUND\",\"code\":404}}")));
 
     CustomModelDownloadService service =
         new CustomModelDownloadService(
@@ -273,13 +277,189 @@ public class CustomModelDownloadServiceTest {
 
     Task<CustomModel> modelTask = service.getCustomModelDetails(PROJECT_ID, MODEL_NAME, MODEL_HASH);
 
-    Assert.assertTrue(modelTask.getException().getMessage().contains("404"));
+    Assert.assertTrue(modelTask.getException() instanceof FirebaseMlException);
+    Assert.assertEquals(
+        ((FirebaseMlException) modelTask.getException()).getCode(), FirebaseMlException.NOT_FOUND);
 
     WireMock.verify(
         getRequestedFor(urlEqualTo(downloadPath))
             .withHeader(
                 CustomModelDownloadService.INSTALLATIONS_AUTH_TOKEN_HEADER,
                 equalTo(INSTALLATION_TOKEN)));
+    verify(mockEventLogger, never()).logModelInfoRetrieverFailure(any(), any(), anyInt());
+  }
+
+  @Test
+  public void downloadService_badRequest() {
+    String downloadPath =
+        String.format(CustomModelDownloadService.DOWNLOAD_MODEL_REGEX, "", PROJECT_ID, MODEL_NAME);
+    stubFor(
+        get(urlEqualTo(downloadPath))
+            .withHeader(
+                CustomModelDownloadService.INSTALLATIONS_AUTH_TOKEN_HEADER,
+                equalTo(INSTALLATION_TOKEN))
+            .withHeader(
+                CustomModelDownloadService.CONTENT_TYPE,
+                equalTo(CustomModelDownloadService.APPLICATION_JSON))
+            .withHeader(CustomModelDownloadService.IF_NONE_MATCH_HEADER_KEY, equalTo(MODEL_HASH))
+            .willReturn(
+                aResponse()
+                    .withStatus(HttpURLConnection.HTTP_BAD_REQUEST)
+                    .withBody(
+                        "{\"error\": "
+                            + "{\"message\":\"Request bad.\", "
+                            + "\"status\":\"BAD_REQUEST\",\"code\":400}}")));
+
+    CustomModelDownloadService service =
+        new CustomModelDownloadService(
+            installationsApiMock, directExecutor, API_KEY, TEST_ENDPOINT, mockEventLogger);
+
+    Task<CustomModel> modelTask = service.getCustomModelDetails(PROJECT_ID, MODEL_NAME, MODEL_HASH);
+
+    Assert.assertTrue(modelTask.getException() instanceof FirebaseMlException);
+    Assert.assertEquals(
+        ((FirebaseMlException) modelTask.getException()).getCode(),
+        FirebaseMlException.INVALID_ARGUMENT);
+
+    WireMock.verify(
+        getRequestedFor(urlEqualTo(downloadPath))
+            .withHeader(
+                CustomModelDownloadService.INSTALLATIONS_AUTH_TOKEN_HEADER,
+                equalTo(INSTALLATION_TOKEN)));
+    verify(mockEventLogger, times(1))
+        .logModelInfoRetrieverFailure(
+            any(),
+            eq(ErrorCode.MODEL_INFO_DOWNLOAD_UNSUCCESSFUL_HTTP_STATUS),
+            eq(HttpURLConnection.HTTP_BAD_REQUEST));
+  }
+
+  @Test
+  public void downloadService_forbidden() {
+    String downloadPath =
+        String.format(CustomModelDownloadService.DOWNLOAD_MODEL_REGEX, "", PROJECT_ID, MODEL_NAME);
+    stubFor(
+        get(urlEqualTo(downloadPath))
+            .withHeader(
+                CustomModelDownloadService.INSTALLATIONS_AUTH_TOKEN_HEADER,
+                equalTo(INSTALLATION_TOKEN))
+            .withHeader(
+                CustomModelDownloadService.CONTENT_TYPE,
+                equalTo(CustomModelDownloadService.APPLICATION_JSON))
+            .withHeader(CustomModelDownloadService.IF_NONE_MATCH_HEADER_KEY, equalTo(MODEL_HASH))
+            .willReturn(
+                aResponse()
+                    .withStatus(HttpURLConnection.HTTP_FORBIDDEN)
+                    .withBody(
+                        "{\"error\": "
+                            + "{\"message\":\"Request no valid.\", "
+                            + "\"status\":\"FORBIDDEN\",\"code\":403}}")));
+
+    CustomModelDownloadService service =
+        new CustomModelDownloadService(
+            installationsApiMock, directExecutor, API_KEY, TEST_ENDPOINT, mockEventLogger);
+
+    Task<CustomModel> modelTask = service.getCustomModelDetails(PROJECT_ID, MODEL_NAME, MODEL_HASH);
+
+    Assert.assertTrue(modelTask.getException() instanceof FirebaseMlException);
+    Assert.assertEquals(
+        ((FirebaseMlException) modelTask.getException()).getCode(),
+        FirebaseMlException.PERMISSION_DENIED);
+
+    WireMock.verify(
+        getRequestedFor(urlEqualTo(downloadPath))
+            .withHeader(
+                CustomModelDownloadService.INSTALLATIONS_AUTH_TOKEN_HEADER,
+                equalTo(INSTALLATION_TOKEN)));
+    verify(mockEventLogger, times(1))
+        .logModelInfoRetrieverFailure(
+            any(),
+            eq(ErrorCode.MODEL_INFO_DOWNLOAD_UNSUCCESSFUL_HTTP_STATUS),
+            eq(HttpURLConnection.HTTP_FORBIDDEN));
+  }
+
+  @Test
+  public void downloadService_internalError() {
+    String downloadPath =
+        String.format(CustomModelDownloadService.DOWNLOAD_MODEL_REGEX, "", PROJECT_ID, MODEL_NAME);
+    stubFor(
+        get(urlEqualTo(downloadPath))
+            .withHeader(
+                CustomModelDownloadService.INSTALLATIONS_AUTH_TOKEN_HEADER,
+                equalTo(INSTALLATION_TOKEN))
+            .withHeader(
+                CustomModelDownloadService.CONTENT_TYPE,
+                equalTo(CustomModelDownloadService.APPLICATION_JSON))
+            .withHeader(CustomModelDownloadService.IF_NONE_MATCH_HEADER_KEY, equalTo(MODEL_HASH))
+            .willReturn(
+                aResponse()
+                    .withStatus(HttpURLConnection.HTTP_INTERNAL_ERROR)
+                    .withBody(
+                        "{\"error\": "
+                            + "{\"message\":\"Request cannot reach server.\", "
+                            + "\"status\":\"INTERNAL_ERROR\",\"code\":500}}")));
+
+    CustomModelDownloadService service =
+        new CustomModelDownloadService(
+            installationsApiMock, directExecutor, API_KEY, TEST_ENDPOINT, mockEventLogger);
+
+    Task<CustomModel> modelTask = service.getCustomModelDetails(PROJECT_ID, MODEL_NAME, MODEL_HASH);
+
+    Assert.assertTrue(modelTask.getException() instanceof FirebaseMlException);
+    Assert.assertEquals(
+        ((FirebaseMlException) modelTask.getException()).getCode(), FirebaseMlException.INTERNAL);
+
+    WireMock.verify(
+        getRequestedFor(urlEqualTo(downloadPath))
+            .withHeader(
+                CustomModelDownloadService.INSTALLATIONS_AUTH_TOKEN_HEADER,
+                equalTo(INSTALLATION_TOKEN)));
+    verify(mockEventLogger, times(1))
+        .logModelInfoRetrieverFailure(
+            any(),
+            eq(ErrorCode.MODEL_INFO_DOWNLOAD_UNSUCCESSFUL_HTTP_STATUS),
+            eq(HttpURLConnection.HTTP_INTERNAL_ERROR));
+  }
+
+  @Test
+  public void downloadService_tooManyRequest() {
+    String downloadPath =
+        String.format(CustomModelDownloadService.DOWNLOAD_MODEL_REGEX, "", PROJECT_ID, MODEL_NAME);
+    stubFor(
+        get(urlEqualTo(downloadPath))
+            .withHeader(
+                CustomModelDownloadService.INSTALLATIONS_AUTH_TOKEN_HEADER,
+                equalTo(INSTALLATION_TOKEN))
+            .withHeader(
+                CustomModelDownloadService.CONTENT_TYPE,
+                equalTo(CustomModelDownloadService.APPLICATION_JSON))
+            .withHeader(CustomModelDownloadService.IF_NONE_MATCH_HEADER_KEY, equalTo(MODEL_HASH))
+            .willReturn(
+                aResponse()
+                    .withStatus(429)
+                    .withBody(
+                        "{\"error\": "
+                            + "{\"message\":\"Request could not be process resource exhausted.\", "
+                            + "\"status\":\"RESOURCE_EXHAUSTED\",\"code\":429}}")));
+
+    CustomModelDownloadService service =
+        new CustomModelDownloadService(
+            installationsApiMock, directExecutor, API_KEY, TEST_ENDPOINT, mockEventLogger);
+
+    Task<CustomModel> modelTask = service.getCustomModelDetails(PROJECT_ID, MODEL_NAME, MODEL_HASH);
+
+    Assert.assertTrue(modelTask.getException() instanceof FirebaseMlException);
+    Assert.assertEquals(
+        ((FirebaseMlException) modelTask.getException()).getCode(),
+        FirebaseMlException.RESOURCE_EXHAUSTED);
+
+    WireMock.verify(
+        getRequestedFor(urlEqualTo(downloadPath))
+            .withHeader(
+                CustomModelDownloadService.INSTALLATIONS_AUTH_TOKEN_HEADER,
+                equalTo(INSTALLATION_TOKEN)));
+    verify(mockEventLogger, times(1))
+        .logModelInfoRetrieverFailure(
+            any(), eq(ErrorCode.MODEL_INFO_DOWNLOAD_UNSUCCESSFUL_HTTP_STATUS), eq(429));
   }
 
   @Test
@@ -297,9 +477,11 @@ public class CustomModelDownloadServiceTest {
             .withHeader(CustomModelDownloadService.IF_NONE_MATCH_HEADER_KEY, equalTo(MODEL_HASH))
             .willReturn(
                 aResponse()
-                    .withStatus(401) // not found
+                    .withStatus(HttpURLConnection.HTTP_UNAUTHORIZED) // not authorized
                     .withBody(
-                        "{\"status\":\"UNAUTHENTICATED\",\"message\":\"Request is missing required authentication credential.\"}")));
+                        "{\"error\": "
+                            + "{\"message\":\"Request is missing required authentication credential.\", "
+                            + "\"status\":\"UNAUTHORIZED\",\"code\":401}}")));
 
     CustomModelDownloadService service =
         new CustomModelDownloadService(
@@ -307,13 +489,26 @@ public class CustomModelDownloadServiceTest {
 
     Task<CustomModel> modelTask = service.getCustomModelDetails(PROJECT_ID, MODEL_NAME, MODEL_HASH);
 
-    Assert.assertTrue(modelTask.getException().getMessage().contains("401"));
+    Assert.assertTrue(modelTask.getException() instanceof FirebaseMlException);
+    Assert.assertEquals(
+        ((FirebaseMlException) modelTask.getException()).getCode(),
+        FirebaseMlException.PERMISSION_DENIED);
+    Assert.assertTrue(
+        modelTask
+            .getException()
+            .getMessage()
+            .contains("Request is missing required authentication credential"));
 
     WireMock.verify(
         getRequestedFor(urlEqualTo(downloadPath))
             .withHeader(
                 CustomModelDownloadService.INSTALLATIONS_AUTH_TOKEN_HEADER,
                 equalTo(INSTALLATION_TOKEN)));
+    verify(mockEventLogger, times(1))
+        .logModelInfoRetrieverFailure(
+            any(),
+            eq(ErrorCode.MODEL_INFO_DOWNLOAD_UNSUCCESSFUL_HTTP_STATUS),
+            eq(HttpURLConnection.HTTP_UNAUTHORIZED));
   }
 
   @Test
@@ -329,8 +524,32 @@ public class CustomModelDownloadServiceTest {
 
     Assert.assertTrue(modelTask.getException() instanceof FirebaseMlException);
     Assert.assertEquals(
-        ((FirebaseMlException) modelTask.getException()).getCode(), FirebaseMlException.INTERNAL);
+        ((FirebaseMlException) modelTask.getException()).getCode(),
+        FirebaseMlException.UNAUTHENTICATED);
     Assert.assertTrue(modelTask.getException().getMessage().contains("authentication error"));
+
+    verify(mockEventLogger, times(1))
+        .logDownloadFailureWithReason(
+            any(), eq(false), eq(ErrorCode.MODEL_INFO_DOWNLOAD_CONNECTION_FAILED.getValue()));
+  }
+
+  @Test
+  public void downloadService_malFormedUrl() {
+    CustomModelDownloadService service =
+        new CustomModelDownloadService(
+            installationsApiMock,
+            directExecutor,
+            API_KEY,
+            "https7://localhost:8989/barUrl",
+            mockEventLogger);
+
+    Task<CustomModel> modelTask = service.getCustomModelDetails(PROJECT_ID, MODEL_NAME, MODEL_HASH);
+
+    Assert.assertTrue(modelTask.getException() instanceof FirebaseMlException);
+    Assert.assertEquals(
+        ((FirebaseMlException) modelTask.getException()).getCode(),
+        FirebaseMlException.INVALID_ARGUMENT);
+    Assert.assertTrue(modelTask.getException().getMessage().contains("download service"));
 
     verify(mockEventLogger, times(1))
         .logDownloadFailureWithReason(
@@ -350,7 +569,8 @@ public class CustomModelDownloadServiceTest {
 
     Assert.assertTrue(modelTask.getException() instanceof FirebaseMlException);
     Assert.assertEquals(
-        ((FirebaseMlException) modelTask.getException()).getCode(), FirebaseMlException.INTERNAL);
+        ((FirebaseMlException) modelTask.getException()).getCode(),
+        FirebaseMlException.NO_NETWORK_CONNECTION);
     Assert.assertTrue(modelTask.getException().getMessage().contains("no internet connection"));
 
     verify(mockEventLogger, times(1))

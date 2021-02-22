@@ -23,7 +23,9 @@ import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
 import com.google.android.datatransport.TransportFactory;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.ml.modeldownloader.BuildConfig;
 import com.google.firebase.ml.modeldownloader.CustomModel;
+import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.DeleteModelLogEvent;
 import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.EventName;
 import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent;
 import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent.DownloadStatus;
@@ -91,6 +93,30 @@ public class FirebaseMlLogger {
     return FirebaseApp.getInstance().get(FirebaseMlLogger.class);
   }
 
+  void logModelInfoRetrieverFailure(CustomModel model, ErrorCode errorCode) {
+    logModelInfoRetrieverFailure(model, errorCode, NO_FAILURE_VALUE);
+  }
+
+  void logModelInfoRetrieverSuccess(CustomModel model) {
+    logDownloadEvent(
+        model,
+        ErrorCode.NO_ERROR,
+        false,
+        /* shouldLogExactDownloadTime= */ false,
+        DownloadStatus.MODEL_INFO_RETRIEVAL_SUCCEEDED,
+        FirebaseMlLogEvent.NO_INT_VALUE);
+  }
+
+  void logModelInfoRetrieverFailure(CustomModel model, ErrorCode errorCode, int httpResponseCode) {
+    logDownloadEvent(
+        model,
+        errorCode,
+        false,
+        /* shouldLogExactDownloadTime= */ false,
+        DownloadStatus.MODEL_INFO_RETRIEVAL_FAILED,
+        httpResponseCode);
+  }
+
   public void logDownloadEventWithExactDownloadTime(
       @NonNull CustomModel customModel, ErrorCode errorCode, DownloadStatus status) {
     logDownloadEvent(
@@ -131,6 +157,25 @@ public class FirebaseMlLogger {
 
   private boolean isStatsLoggingEnabled() {
     return sharedPreferencesUtil.getCustomModelStatsCollectionFlag();
+  }
+
+  public void logDeleteModel(boolean success) {
+    if (!isStatsLoggingEnabled()) {
+      return;
+    }
+
+    try {
+      eventSender.sendEvent(
+          FirebaseMlLogEvent.builder()
+              .setDeleteModelLogEvent(
+                  DeleteModelLogEvent.builder().setIsSuccessful(success).build())
+              .setEventName(EventName.REMOTE_MODEL_DELETE_ON_DEVICE)
+              .setSystemInfo(getSystemInfo())
+              .build());
+    } catch (RuntimeException e) {
+      // Swallow the exception since logging should not break the SDK usage
+      Log.e(TAG, "Exception thrown from the logging side", e);
+    }
   }
 
   private void logDownloadEvent(
@@ -209,6 +254,7 @@ public class FirebaseMlLogger {
         .setAppId(appPackageName)
         .setAppVersion(appVersion)
         .setApiKey(apiKey)
+        .setMlSdkVersion(BuildConfig.VERSION_NAME)
         .build();
   }
 

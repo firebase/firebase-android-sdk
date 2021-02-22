@@ -1,0 +1,44 @@
+// Copyright 2021 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+plugins {
+    id "org.jetbrains.kotlin.jvm"
+    id "java-library"
+    id "com.github.johnrengelman.shadow" version "5.2.0"
+    id "com.google.protobuf"
+    id "org.jetbrains.kotlin.kapt"
+}
+
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:$protocVersion"
+    }
+}
+
+jar {
+    manifest.attributes "Main-Class": "com.google.firebase.encoders.proto.codegen.MainKt"
+}
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.3.72"
+
+    implementation "com.google.protobuf:protobuf-java:3.14.0"
+    implementation 'com.squareup:javapoet:1.13.0'
+    implementation 'com.google.guava:guava:30.0-jre'
+    implementation 'com.google.dagger:dagger:2.31.2'
+    kapt 'com.google.dagger:dagger-compiler:2.31.2'
+
+    testImplementation 'junit:junit:4.13.1'
+    testImplementation "com.google.truth:truth:1.0.1"
+}

@@ -134,6 +134,11 @@ public class ObjectValue implements Cloneable {
     setOverlay(path, null);
   }
 
+  @Override
+  public String toString() {
+    return "ObjectValue{" + internalValue + "}";
+  }
+
   /**
    * Sets the field to the provided value.
    *

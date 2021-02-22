@@ -24,6 +24,7 @@ import com.google.firebase.encoders.DataEncoder;
 import com.google.firebase.encoders.annotations.Encodable;
 import com.google.firebase.encoders.json.JsonDataEncoderBuilder;
 import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.EventName;
+import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent.ModelOptions.ModelInfo.ModelType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.nio.charset.Charset;
@@ -59,7 +60,8 @@ public abstract class FirebaseMlLogEvent {
   public enum EventName {
     UNKNOWN_EVENT(0),
     MODEL_DOWNLOAD(100),
-    MODEL_UPDATE(101);
+    MODEL_UPDATE(101),
+    REMOTE_MODEL_DELETE_ON_DEVICE(252);
     private static final SparseArray<EventName> valueMap = new SparseArray<>();
 
     private final int value;
@@ -68,6 +70,7 @@ public abstract class FirebaseMlLogEvent {
       valueMap.put(0, UNKNOWN_EVENT);
       valueMap.put(100, MODEL_DOWNLOAD);
       valueMap.put(101, MODEL_UPDATE);
+      valueMap.put(252, REMOTE_MODEL_DELETE_ON_DEVICE);
     }
 
     EventName(int value) {
@@ -100,6 +103,8 @@ public abstract class FirebaseMlLogEvent {
 
     public abstract String getFirebaseProjectId();
 
+    public abstract String getMlSdkVersion();
+
     /** Builder for {@link SystemInfo}. */
     @AutoValue.Builder
     public abstract static class Builder {
@@ -116,12 +121,18 @@ public abstract class FirebaseMlLogEvent {
       public abstract Builder setFirebaseProjectId(String value);
 
       @NonNull
+      public abstract Builder setMlSdkVersion(String value);
+
+      @NonNull
       public abstract SystemInfo build();
     }
   }
 
   @Nullable
   public abstract ModelDownloadLogEvent getModelDownloadLogEvent();
+
+  @Nullable
+  public abstract DeleteModelLogEvent getDeleteModelLogEvent();
 
   @NonNull
   protected abstract Builder toBuilder();
@@ -143,9 +154,13 @@ public abstract class FirebaseMlLogEvent {
     // range of error codes is 100 to 199.
     public enum ErrorCode {
       NO_ERROR(0),
+      TIME_OUT_FETCHING_MODEL_METADATA(5),
+      URI_EXPIRED(101),
       NO_NETWORK_CONNECTION(102),
       DOWNLOAD_FAILED(104),
+      MODEL_INFO_DOWNLOAD_UNSUCCESSFUL_HTTP_STATUS(105),
       MODEL_INFO_DOWNLOAD_CONNECTION_FAILED(107),
+      MODEL_HASH_MISMATCH(116),
       UNKNOWN_ERROR(9999);
       private static final SparseArray<ErrorCode> valueMap = new SparseArray<>();
 
@@ -153,9 +168,13 @@ public abstract class FirebaseMlLogEvent {
 
       static {
         valueMap.put(0, NO_ERROR);
+        valueMap.put(5, TIME_OUT_FETCHING_MODEL_METADATA);
+        valueMap.put(101, URI_EXPIRED);
         valueMap.put(102, NO_NETWORK_CONNECTION);
         valueMap.put(104, DOWNLOAD_FAILED);
+        valueMap.put(105, MODEL_INFO_DOWNLOAD_UNSUCCESSFUL_HTTP_STATUS);
         valueMap.put(107, MODEL_INFO_DOWNLOAD_CONNECTION_FAILED);
+        valueMap.put(116, MODEL_HASH_MISMATCH);
         valueMap.put(9999, UNKNOWN_ERROR);
       }
 
@@ -179,6 +198,7 @@ public abstract class FirebaseMlLogEvent {
     public enum DownloadStatus {
       UNKNOWN_STATUS(0),
       EXPLICITLY_REQUESTED(1),
+      MODEL_INFO_RETRIEVAL_SUCCEEDED(3),
       MODEL_INFO_RETRIEVAL_FAILED(4),
       SCHEDULED(5),
       DOWNLOADING(6),
@@ -192,6 +212,7 @@ public abstract class FirebaseMlLogEvent {
       static {
         valueMap.put(0, UNKNOWN_STATUS);
         valueMap.put(1, EXPLICITLY_REQUESTED);
+        valueMap.put(3, MODEL_INFO_RETRIEVAL_SUCCEEDED);
         valueMap.put(4, MODEL_INFO_RETRIEVAL_FAILED);
         valueMap.put(5, SCHEDULED);
         valueMap.put(6, DOWNLOADING);
@@ -314,6 +335,34 @@ public abstract class FirebaseMlLogEvent {
     }
   }
 
+  @AutoValue
+  public abstract static class DeleteModelLogEvent {
+    @NonNull
+    public static Builder builder() {
+      return new AutoValue_FirebaseMlLogEvent_DeleteModelLogEvent.Builder()
+          .setModelType(ModelType.CUSTOM)
+          .setIsSuccessful(true);
+    }
+
+    @ModelType
+    public abstract int getModelType();
+
+    public abstract boolean getIsSuccessful();
+
+    /** Builder for {@link DeleteModelLogEvent}. */
+    @AutoValue.Builder
+    public abstract static class Builder {
+      @NonNull
+      public abstract Builder setModelType(@ModelType int value);
+
+      @NonNull
+      public abstract Builder setIsSuccessful(boolean value);
+
+      @NonNull
+      public abstract DeleteModelLogEvent build();
+    }
+  }
+
   @AutoValue.Builder
   public abstract static class Builder {
 
@@ -325,6 +374,9 @@ public abstract class FirebaseMlLogEvent {
 
     @Nullable
     public abstract Builder setModelDownloadLogEvent(@Nullable ModelDownloadLogEvent value);
+
+    @Nullable
+    public abstract Builder setDeleteModelLogEvent(@Nullable DeleteModelLogEvent value);
 
     @NonNull
     public abstract FirebaseMlLogEvent build();

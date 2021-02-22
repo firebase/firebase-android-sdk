@@ -1075,6 +1075,7 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
     onDisconnectRequestQueue.clear();
 
     if (logger.logsDebug()) logger.debug("Restoring reads.");
+    // Restore gets
     ArrayList<Long> outstandingGetKeys = new ArrayList<Long>(outstandingGets.keySet());
     Collections.sort(outstandingGetKeys);
     for (Long getId : outstandingGetKeys) {
@@ -1353,6 +1354,7 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
    */
   private boolean isIdle() {
     return this.listens.isEmpty()
+        && this.outstandingGets.isEmpty()
         && this.requestCBHash.isEmpty()
         && !this.hasOnDisconnects
         && this.outstandingPuts.isEmpty();

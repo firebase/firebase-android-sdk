@@ -76,27 +76,25 @@ public final class SetMutation extends Mutation {
 
     // Unlike applyToLocalView, if we're applying a mutation to a remote document the server has
     // accepted the mutation so the precondition must have held.
-    if (mutationResult.getTransformResults() != null) {
-      Map<FieldPath, Value> transformResults =
-          serverTransformResults(document, mutationResult.getTransformResults());
-      ObjectValue localValue = value.clone();
-      localValue.set(transformResults);
-      document.asFoundDocument(mutationResult.getVersion(), localValue).withCommittedMutations();
-    } else {
-      document.asFoundDocument(mutationResult.getVersion(), value.clone()).withCommittedMutations();
-    }
+    ObjectValue newData = value.clone();
+    Map<FieldPath, Value> transformResults =
+        serverTransformResults(document, mutationResult.getTransformResults());
+    newData.set(transformResults);
+    document.asFoundDocument(mutationResult.getVersion(), newData).withCommittedMutations();
   }
 
   @Override
   public void applyToLocalView(Document document, Timestamp localWriteTime) {
     verifyKeyMatches(document);
 
-    if (this.getPrecondition().isValidFor(document)) {
-      Map<FieldPath, Value> transformResults = localTransformResults(localWriteTime, document);
-      ObjectValue localValue = value.clone();
-      localValue.set(transformResults);
-      document.asFoundDocument(getPostMutationVersion(document), localValue).withLocalMutations();
+    if (!this.getPrecondition().isValidFor(document)) {
+      return;
     }
+
+    Map<FieldPath, Value> transformResults = localTransformResults(localWriteTime, document);
+    ObjectValue localValue = value.clone();
+    localValue.set(transformResults);
+    document.asFoundDocument(getPostMutationVersion(document), localValue).withLocalMutations();
   }
 
   /** Returns the object value to use when setting the document. */

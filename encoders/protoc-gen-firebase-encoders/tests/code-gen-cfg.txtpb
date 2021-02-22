@@ -1,0 +1,2 @@
+vendor_package: "com.example"
+include: "com.firebase.testing.TestMessage"

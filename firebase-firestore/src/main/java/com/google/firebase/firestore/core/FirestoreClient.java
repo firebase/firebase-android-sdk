@@ -25,8 +25,12 @@ import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.FirebaseFirestoreSettings;
+import com.google.firebase.firestore.LoadBundleTask;
 import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.auth.User;
+import com.google.firebase.firestore.bundle.BundleReader;
+import com.google.firebase.firestore.bundle.BundleSerializer;
+import com.google.firebase.firestore.bundle.NamedQuery;
 import com.google.firebase.firestore.core.EventManager.ListenOptions;
 import com.google.firebase.firestore.local.GarbageCollectionScheduler;
 import com.google.firebase.firestore.local.LocalStore;
@@ -37,10 +41,12 @@ import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.remote.Datastore;
 import com.google.firebase.firestore.remote.GrpcMetadataProvider;
+import com.google.firebase.firestore.remote.RemoteSerializer;
 import com.google.firebase.firestore.remote.RemoteStore;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.Function;
 import com.google.firebase.firestore.util.Logger;
+import java.io.InputStream;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -57,13 +63,14 @@ public final class FirestoreClient {
   private final DatabaseInfo databaseInfo;
   private final CredentialsProvider credentialsProvider;
   private final AsyncQueue asyncQueue;
+  private final BundleSerializer bundleSerializer;
+  private final GrpcMetadataProvider metadataProvider;
 
   private Persistence persistence;
   private LocalStore localStore;
   private RemoteStore remoteStore;
   private SyncEngine syncEngine;
   private EventManager eventManager;
-  private final GrpcMetadataProvider metadataProvider;
 
   // LRU-related
   @Nullable private GarbageCollectionScheduler gcScheduler;
@@ -79,6 +86,8 @@ public final class FirestoreClient {
     this.credentialsProvider = credentialsProvider;
     this.asyncQueue = asyncQueue;
     this.metadataProvider = metadataProvider;
+    this.bundleSerializer =
+        new BundleSerializer(new RemoteSerializer(databaseInfo.getDatabaseId()));
 
     TaskCompletionSource<User> firstUser = new TaskCompletionSource<>();
     final AtomicBoolean initialized = new AtomicBoolean(false);
@@ -259,6 +268,37 @@ public final class FirestoreClient {
   public void addSnapshotsInSyncListener(EventListener<Void> listener) {
     verifyNotTerminated();
     asyncQueue.enqueueAndForget(() -> eventManager.addSnapshotsInSyncListener(listener));
+  }
+
+  public void loadBundle(InputStream bundleData, LoadBundleTask resultTask) {
+    verifyNotTerminated();
+    BundleReader bundleReader = new BundleReader(bundleSerializer, bundleData);
+    asyncQueue.enqueueAndForget(() -> syncEngine.loadBundle(bundleReader, resultTask));
+  }
+
+  public Task<Query> getNamedQuery(String queryName) {
+    verifyNotTerminated();
+    TaskCompletionSource<Query> completionSource = new TaskCompletionSource<>();
+    asyncQueue.enqueueAndForget(
+        () -> {
+          NamedQuery namedQuery = localStore.getNamedQuery(queryName);
+          if (namedQuery != null) {
+            Target target = namedQuery.getBundledQuery().getTarget();
+            completionSource.setResult(
+                new Query(
+                    target.getPath(),
+                    target.getCollectionGroup(),
+                    target.getFilters(),
+                    target.getOrderBy(),
+                    target.getLimit(),
+                    namedQuery.getBundledQuery().getLimitType(),
+                    target.getStartAt(),
+                    target.getEndAt()));
+          } else {
+            completionSource.setResult(null);
+          }
+        });
+    return completionSource.getTask();
   }
 
   public void removeSnapshotsInSyncListener(EventListener<Void> listener) {

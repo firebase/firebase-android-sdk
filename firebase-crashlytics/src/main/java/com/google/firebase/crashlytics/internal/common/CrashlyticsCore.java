@@ -193,7 +193,7 @@ public class CrashlyticsCore {
       return false;
     }
 
-    Logger.getLogger().d("Exception handling initialization successful");
+    Logger.getLogger().d("Successfully configured exception handler.");
     return true;
   }
 
@@ -228,7 +228,7 @@ public class CrashlyticsCore {
       }
 
       if (!controller.finalizeSessions()) {
-        Logger.getLogger().d("Could not finalize previous sessions.");
+        Logger.getLogger().w("Previous sessions could not be finalized.");
       }
 
       // TODO: Move this call out of this method, so that the return value merely indicates
@@ -367,7 +367,7 @@ public class CrashlyticsCore {
     } catch (InterruptedException e) {
       Logger.getLogger().e("Crashlytics was interrupted during initialization.", e);
     } catch (ExecutionException e) {
-      Logger.getLogger().e("Problem encountered during Crashlytics initialization.", e);
+      Logger.getLogger().e("Crashlytics encountered a problem during initialization.", e);
     } catch (TimeoutException e) {
       Logger.getLogger().e("Crashlytics timed out during initialization.", e);
     }
@@ -380,7 +380,7 @@ public class CrashlyticsCore {
     // Create the Crashlytics initialization marker file, which is used to determine
     // whether the app crashed before initialization could complete.
     initializationMarker.create();
-    Logger.getLogger().d("Initialization marker file created.");
+    Logger.getLogger().v("Initialization marker file was created.");
   }
 
   /** Enqueues a job to remove the Crashlytics initialization marker file */
@@ -391,7 +391,9 @@ public class CrashlyticsCore {
           public Boolean call() throws Exception {
             try {
               final boolean removed = initializationMarker.remove();
-              Logger.getLogger().d("Initialization marker file removed: " + removed);
+              if (!removed) {
+                Logger.getLogger().w("Initialization marker file was not properly removed.");
+              }
               return removed;
             } catch (Exception e) {
               Logger.getLogger()
@@ -440,7 +442,7 @@ public class CrashlyticsCore {
 
   static boolean isBuildIdValid(String buildId, boolean requiresBuildId) {
     if (!requiresBuildId) {
-      Logger.getLogger().d("Configured not to require a build ID.");
+      Logger.getLogger().v("Configured not to require a build ID.");
       return true;
     }
 

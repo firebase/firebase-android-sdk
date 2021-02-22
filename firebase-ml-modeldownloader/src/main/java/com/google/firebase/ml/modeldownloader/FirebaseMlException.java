@@ -16,7 +16,6 @@ package com.google.firebase.ml.modeldownloader;
 
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.firebase.FirebaseException;
 import java.lang.annotation.Retention;
@@ -84,7 +83,6 @@ public class FirebaseMlException extends FirebaseException {
    * Internal errors. Means some invariants expected by underlying system has been broken. If you
    * see one of these errors, something is very broken.
    */
-  // annz used
   public static final int INTERNAL = 13;
 
   /**
@@ -98,11 +96,22 @@ public class FirebaseMlException extends FirebaseException {
   /** The request does not have valid authentication credentials for the operation. */
   public static final int UNAUTHENTICATED = 16;
 
+  /** There is no network connection. */
+  public static final int NO_NETWORK_CONNECTION = 17;
+
   // ===============================================================================================
   // Error codes: 100 to 149 reserved for errors during model downloading/loading.
   /** There is not enough space left on the device. */
-  // annz used
   public static final int NOT_ENOUGH_SPACE = 101;
+
+  /** The downloaded model's hash doesn't match the expected value. */
+  public static final int MODEL_HASH_MISMATCH = 102;
+
+  /**
+   * These download url expired before download could complete. Usually, multiple download attempt
+   * will be performed before this is returned.
+   */
+  public static final int DOWNLOAD_URL_EXPIRED = 121;
 
   /**
    * The set of Firebase ML status codes. The codes are based on <a
@@ -125,7 +134,10 @@ public class FirebaseMlException extends FirebaseException {
     INTERNAL,
     UNAVAILABLE,
     UNAUTHENTICATED,
-    NOT_ENOUGH_SPACE
+    NO_NETWORK_CONNECTION,
+    NOT_ENOUGH_SPACE,
+    MODEL_HASH_MISMATCH,
+    DOWNLOAD_URL_EXPIRED
   })
   @Retention(RetentionPolicy.CLASS)
   public @interface Code {}
@@ -135,13 +147,6 @@ public class FirebaseMlException extends FirebaseException {
   /** @hide */
   public FirebaseMlException(@NonNull String detailMessage, @Code int code) {
     super(Preconditions.checkNotEmpty(detailMessage, "Provided message must not be empty."));
-    this.code = code;
-  }
-
-  /** @hide */
-  public FirebaseMlException(
-      @NonNull String detailMessage, @Code int code, @Nullable Throwable cause) {
-    super(Preconditions.checkNotEmpty(detailMessage, "Provided message must not be empty."), cause);
     this.code = code;
   }
 

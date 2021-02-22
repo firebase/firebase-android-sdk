@@ -112,31 +112,34 @@ public final class PatchMutation extends Mutation {
       // We therefore must not have the expected version of the document in our cache and return an
       // UnknownDocument with the known updateTime.
       document.asUnknownDocument(mutationResult.getVersion());
-    } else {
-      Map<FieldPath, Value> transformResults =
-          serverTransformResults(document, mutationResult.getTransformResults());
-      ObjectValue value = document.getData();
-      value.set(getPatch());
-      value.set(transformResults);
-      document
-          .asFoundDocument(mutationResult.getVersion(), document.getData())
-          .withCommittedMutations();
+      return;
     }
+
+    Map<FieldPath, Value> transformResults =
+        serverTransformResults(document, mutationResult.getTransformResults());
+    ObjectValue value = document.getData();
+    value.set(getPatch());
+    value.set(transformResults);
+    document
+        .asFoundDocument(mutationResult.getVersion(), document.getData())
+        .withCommittedMutations();
   }
 
   @Override
   public void applyToLocalView(Document document, Timestamp localWriteTime) {
     verifyKeyMatches(document);
 
-    if (getPrecondition().isValidFor(document)) {
-      Map<FieldPath, Value> transformResults = localTransformResults(localWriteTime, document);
-      ObjectValue value = document.getData();
-      value.set(getPatch());
-      value.set(transformResults);
-      document
-          .asFoundDocument(getPostMutationVersion(document), document.getData())
-          .withLocalMutations();
+    if (!getPrecondition().isValidFor(document)) {
+      return;
     }
+
+    Map<FieldPath, Value> transformResults = localTransformResults(localWriteTime, document);
+    ObjectValue value = document.getData();
+    value.set(getPatch());
+    value.set(transformResults);
+    document
+        .asFoundDocument(getPostMutationVersion(document), document.getData())
+        .withLocalMutations();
   }
 
   private Map<FieldPath, Value> getPatch() {

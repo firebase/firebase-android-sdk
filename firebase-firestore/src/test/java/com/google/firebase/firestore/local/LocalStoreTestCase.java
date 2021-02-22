@@ -19,11 +19,14 @@ import static com.google.firebase.firestore.testutil.TestUtil.assertSetEquals;
 import static com.google.firebase.firestore.testutil.TestUtil.deleteMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.deletedDoc;
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
+import static com.google.firebase.firestore.testutil.TestUtil.docMap;
 import static com.google.firebase.firestore.testutil.TestUtil.filter;
 import static com.google.firebase.firestore.testutil.TestUtil.key;
+import static com.google.firebase.firestore.testutil.TestUtil.keySet;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.testutil.TestUtil.mergeMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.noChangeEvent;
+import static com.google.firebase.firestore.testutil.TestUtil.orderBy;
 import static com.google.firebase.firestore.testutil.TestUtil.patchMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.query;
 import static com.google.firebase.firestore.testutil.TestUtil.resumeToken;
@@ -50,6 +53,9 @@ import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.auth.User;
+import com.google.firebase.firestore.bundle.BundleMetadata;
+import com.google.firebase.firestore.bundle.BundledQuery;
+import com.google.firebase.firestore.bundle.NamedQuery;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.Document;
@@ -66,7 +72,6 @@ import com.google.firebase.firestore.remote.WatchStream;
 import com.google.firebase.firestore.remote.WriteStream;
 import com.google.firebase.firestore.testutil.TestUtil;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map.Entry;
@@ -183,6 +188,25 @@ public abstract class LocalStoreTestCase {
     localStore.releaseTarget(targetId);
   }
 
+  private void saveBundle(String bundleId, int createTime) {
+    localStore.saveBundle(
+        new BundleMetadata(
+            bundleId,
+            /* version= */ 1,
+            version(createTime),
+            /* totalDocuments= */ 1,
+            /* totalBytes= */ 10));
+  }
+
+  private void bundleDocuments(Document... expected) {
+    ImmutableSortedMap<DocumentKey, Document> documents = docMap(expected);
+    lastChanges = localStore.applyBundledDocuments(documents, /* bundleId= */ "");
+  }
+
+  private void saveNamedQuery(NamedQuery namedQuery, DocumentKey... matchingKey) {
+    localStore.saveNamedQuery(namedQuery, keySet(matchingKey));
+  }
+
   /** Asserts that the last target ID is the given number. */
   private void assertTargetId(int targetId) {
     assertEquals(targetId, lastTargetId);
@@ -194,7 +218,11 @@ public abstract class LocalStoreTestCase {
 
     List<Document> actualList =
         Lists.newArrayList(Iterables.transform(lastChanges, Entry::getValue));
-    assertEquals(asList(expected), actualList);
+
+    List<Document> expectedList = asList(expected);
+    Collections.sort(expectedList, (d1, d2) -> d1.getKey().compareTo(d2.getKey()));
+
+    assertEquals(expectedList, actualList);
 
     lastChanges = null;
   }
@@ -233,6 +261,41 @@ public abstract class LocalStoreTestCase {
       assertTrue("Expected query to return: " + key, documents.containsKey(key(key)));
     }
     assertEquals(documents.size(), keys.length);
+  }
+
+  private void assertQueryDocumentMapping(int targetId, DocumentKey... keys) {
+    ImmutableSortedSet<DocumentKey> expectedKeys = keySet(keys);
+    ImmutableSortedSet<DocumentKey> actualKeys = localStore.getRemoteDocumentKeys(targetId);
+    assertEquals(expectedKeys, actualKeys);
+  }
+
+  private void assertHasNewerBundle(String bundleId, int createTime) {
+    boolean hasNewerBundle =
+        localStore.hasNewerBundle(
+            new BundleMetadata(
+                bundleId,
+                /* version= */ 1,
+                version(createTime),
+                /* totalDocuments= */ 1,
+                /* totalBytes= */ 10));
+    assertTrue(hasNewerBundle);
+  }
+
+  private void assertNoNewerBundle(String bundleId, int createTime) {
+    boolean hasNewerBundle =
+        localStore.hasNewerBundle(
+            new BundleMetadata(
+                bundleId,
+                /* version= */ 1,
+                version(createTime),
+                /* totalDocuments= */ 1,
+                /* totalBytes= */ 10));
+    assertFalse(hasNewerBundle);
+  }
+
+  private void assertHasNamedQuery(NamedQuery expectedNamedQuery) {
+    NamedQuery actualNamedQuery = localStore.getNamedQuery(expectedNamedQuery.getName());
+    assertEquals(expectedNamedQuery, actualNamedQuery);
   }
 
   /**
@@ -1235,7 +1298,7 @@ public abstract class LocalStoreTestCase {
     assertChanged(doc("foo/bar", 1, map("sum", 0, "array_union", new ArrayList<>())));
 
     writeMutations(
-        Arrays.asList(
+        asList(
             patchMutation("foo/bar", map("sum", FieldValue.increment(1))),
             patchMutation("foo/bar", map("array_union", FieldValue.arrayUnion("foo")))));
     assertChanged(
@@ -1250,8 +1313,7 @@ public abstract class LocalStoreTestCase {
             asList(2),
             emptyList()));
     assertChanged(
-        doc("foo/bar", 2, map("sum", 1, "array_union", Arrays.asList("bar", "foo")))
-            .withLocalMutations());
+        doc("foo/bar", 2, map("sum", 1, "array_union", asList("bar", "foo"))).withLocalMutations());
   }
 
   @Test
@@ -1286,6 +1348,170 @@ public abstract class LocalStoreTestCase {
     applyRemoteEvent(addedRemoteEvent(doc("foo/bar", 1, map("sum", 1337)), asList(2), emptyList()));
     assertChanged(doc("foo/bar", 1, map("sum", 1)).withLocalMutations());
     assertContains(doc("foo/bar", 1, map("sum", 1)).withLocalMutations());
+  }
+
+  @Test
+  public void testHandlesSavingBundledDocuments() {
+    bundleDocuments(doc("foo/bar", 1, map("sum", 1337)), deletedDoc("foo/bar1", 1));
+    assertChanged(doc("foo/bar", 1, map("sum", 1337)), deletedDoc("foo/bar1", 1));
+    assertContains(doc("foo/bar", 1, map("sum", 1337)));
+    assertContains(deletedDoc("foo/bar1", 1));
+
+    assertQueryDocumentMapping(/* targetId= */ 2, key("foo/bar"));
+  }
+
+  @Test
+  public void testHandlesSavingBundlesDocumentsWithNewerExistingVersion() {
+    Query query = Query.atPath(ResourcePath.fromString("foo"));
+    allocateQuery(query);
+    assertTargetId(2);
+
+    applyRemoteEvent(addedRemoteEvent(doc("foo/bar", 2, map("sum", 1337)), asList(2), emptyList()));
+    assertContains(doc("foo/bar", 2, map("sum", 1337)));
+
+    bundleDocuments(doc("foo/bar", 1, map("sum", 1337)), deletedDoc("foo/bar1", 1));
+    assertChanged(deletedDoc("foo/bar1", 1));
+    assertContains(doc("foo/bar", 2, map("sum", 1337)));
+    assertContains(deletedDoc("foo/bar1", 1));
+
+    assertQueryDocumentMapping(/* targetId= */ 4, key("foo/bar"));
+  }
+
+  @Test
+  public void testHandlesSavingBundledDocumentsWithOlderExistingVersion() {
+    Query query = Query.atPath(ResourcePath.fromString("foo"));
+    allocateQuery(query);
+    assertTargetId(2);
+
+    applyRemoteEvent(
+        addedRemoteEvent(doc("foo/bar", 1, map("val", "to-delete")), asList(2), emptyList()));
+    assertContains(doc("foo/bar", 1, map("val", "to-delete")));
+
+    bundleDocuments(doc("foo/new", 1, map("sum", 1336)), deletedDoc("foo/bar", 2));
+    assertChanged(doc("foo/new", 1, map("sum", 1336)), deletedDoc("foo/bar", 2));
+    assertContains(doc("foo/new", 1, map("sum", 1336)));
+    assertContains(deletedDoc("foo/bar", 2));
+
+    assertQueryDocumentMapping(/* targetId= */ 4, key("foo/new"));
+  }
+
+  @Test
+  public void testSavingBundledDocumentsWithSameExistingVersionShouldNotOverwrite() {
+    Query query = Query.atPath(ResourcePath.fromString("foo"));
+    allocateQuery(query);
+    assertTargetId(2);
+
+    applyRemoteEvent(
+        addedRemoteEvent(doc("foo/bar", 1, map("val", "old")), asList(2), emptyList()));
+    assertContains(doc("foo/bar", 1, map("val", "old")));
+
+    bundleDocuments(doc("foo/bar", 1, map("val", "new")));
+    assertChanged();
+    assertContains(doc("foo/bar", 1, map("val", "old")));
+
+    assertQueryDocumentMapping(/* targetId= */ 4, key("foo/bar"));
+  }
+
+  @Test
+  public void testHandlesMergeMutationWithTransformThenBundledDocuments() {
+    Query query = Query.atPath(ResourcePath.fromString("foo"));
+    allocateQuery(query);
+    assertTargetId(2);
+
+    writeMutation(
+        mergeMutation("foo/bar", map("sum", FieldValue.increment(1)), Collections.EMPTY_LIST));
+    assertChanged(doc("foo/bar", 0, map("sum", 1)).withLocalMutations());
+    assertContains(doc("foo/bar", 0, map("sum", 1)).withLocalMutations());
+
+    bundleDocuments(doc("foo/bar", 1, map("sum", 1337)));
+    assertChanged(doc("foo/bar", 1, map("sum", 1)).withLocalMutations());
+    assertContains(doc("foo/bar", 1, map("sum", 1)).withLocalMutations());
+
+    assertQueryDocumentMapping(/* targetId= */ 4, key("foo/bar"));
+  }
+
+  @Test
+  public void testHandlesPatchMutationWithTransformThenBundledDocuments() {
+    // Note: see comments in testHandlesPatchMutationWithTransformThenRemoteEvent().
+    // The behavior for this and remote event is the same.
+    Query query = Query.atPath(ResourcePath.fromString("foo"));
+    allocateQuery(query);
+    assertTargetId(2);
+
+    writeMutation(patchMutation("foo/bar", map("sum", FieldValue.increment(1))));
+    assertChanged(deletedDoc("foo/bar", 0));
+    assertNotContains("foo/bar");
+
+    bundleDocuments(doc("foo/bar", 1, map("sum", 1337)));
+    assertChanged(doc("foo/bar", 1, map("sum", 1)).withLocalMutations());
+    assertContains(doc("foo/bar", 1, map("sum", 1)).withLocalMutations());
+
+    assertQueryDocumentMapping(/* targetId= */ 4, key("foo/bar"));
+  }
+
+  @Test
+  public void testHandlesSavingAndCheckingBundleMetadata() {
+    assertNoNewerBundle("test", /* createTime= */ 1);
+    saveBundle("test", /* createTime= */ 2);
+    assertHasNewerBundle("test", /* createTime= */ 1);
+  }
+
+  @Test
+  public void testHandlesSavingAndLoadingNamedQueries() {
+    Target target = Query.atPath(ResourcePath.fromString("foo")).toTarget();
+    NamedQuery namedQuery =
+        new NamedQuery(
+            "testQuery",
+            new BundledQuery(target, Query.LimitType.LIMIT_TO_FIRST),
+            SnapshotVersion.NONE);
+    saveNamedQuery(namedQuery);
+    assertHasNamedQuery(namedQuery);
+  }
+
+  @Test
+  public void testLoadingNamedQueriesAllocatesTargetsAndUpdatesTargetDocumentMapping() {
+    bundleDocuments(doc("foo1/bar", 1, map("sum", 1337)), doc("foo2/bar", 1, map("sum", 42)));
+    assertChanged(doc("foo1/bar", 1, map("sum", 1337)), doc("foo2/bar", 1, map("sum", 42)));
+    assertContains(doc("foo1/bar", 1, map("sum", 1337)));
+    assertContains(doc("foo2/bar", 1, map("sum", 42)));
+
+    Target target1 = Query.atPath(ResourcePath.fromString("foo1")).toTarget();
+    NamedQuery namedQuery1 =
+        new NamedQuery(
+            "query-1",
+            new BundledQuery(target1, Query.LimitType.LIMIT_TO_FIRST),
+            new SnapshotVersion(Timestamp.now()));
+    saveNamedQuery(namedQuery1, key("foo1/bar"));
+    assertHasNamedQuery(namedQuery1);
+
+    assertQueryDocumentMapping(/* targetId= */ 4, key("foo1/bar"));
+
+    Target target2 = Query.atPath(ResourcePath.fromString("foo2")).toTarget();
+    NamedQuery namedQuery2 =
+        new NamedQuery(
+            "query-2",
+            new BundledQuery(target2, Query.LimitType.LIMIT_TO_FIRST),
+            new SnapshotVersion(Timestamp.now()));
+    saveNamedQuery(namedQuery2, key("foo2/bar"));
+    assertHasNamedQuery(namedQuery2);
+
+    assertQueryDocumentMapping(/* targetId= */ 6, key("foo2/bar"));
+  }
+
+  @Test
+  public void testHandlesSavingAndLoadingLimitToLastQueries() {
+    Target target =
+        Query.atPath(ResourcePath.fromString("foo"))
+            .orderBy(orderBy("foo"))
+            .limitToFirst(5) // Use `limitToFirst` so toTarget() does not flip ordering constraint
+            .toTarget();
+    NamedQuery namedQuery =
+        new NamedQuery(
+            "testQuery",
+            new BundledQuery(target, Query.LimitType.LIMIT_TO_LAST),
+            SnapshotVersion.NONE);
+    saveNamedQuery(namedQuery);
+    assertHasNamedQuery(namedQuery);
   }
 
   @Test

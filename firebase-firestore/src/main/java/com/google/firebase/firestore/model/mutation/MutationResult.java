@@ -57,7 +57,7 @@ public final class MutationResult {
    * The resulting fields returned from the backend after a mutation containing field transforms has
    * been committed. Contains one Value for each FieldTransform that was in the mutation.
    *
-   * <p>Will be null if the mutation did not contain any field transforms.
+   * <p>Returns an empty list if the mutation did not contain any field transforms.
    */
   public List<Value> getTransformResults() {
     return transformResults;

@@ -45,6 +45,7 @@ public class RealtimeTest {
 
   @After
   public void tearDown() {
+    RepoManager.clear();
     IntegrationTestHelpers.failOnFirstUncaughtException();
   }
 

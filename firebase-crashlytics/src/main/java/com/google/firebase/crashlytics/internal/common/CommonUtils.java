@@ -158,7 +158,7 @@ public class CommonUtils {
       String arch = Build.CPU_ABI;
 
       if (TextUtils.isEmpty(arch)) {
-        Logger.getLogger().d("Architecture#getValue()::Build.CPU_ABI returned null or empty");
+        Logger.getLogger().v("Architecture#getValue()::Build.CPU_ABI returned null or empty");
         return UNKNOWN;
       }
 
@@ -195,7 +195,7 @@ public class CommonUtils {
             // leave in this handling since we don't know for certain it isn't.
             bytes = convertMemInfoToBytes(result, "GB", BYTES_IN_A_GIGABYTE);
           } else {
-            Logger.getLogger().d("Unexpected meminfo format while computing RAM: " + result);
+            Logger.getLogger().w("Unexpected meminfo format while computing RAM: " + result);
           }
         } catch (NumberFormatException e) {
           Logger.getLogger().e("Unexpected meminfo format while computing RAM: " + result, e);
@@ -606,7 +606,7 @@ public class CommonUtils {
     final int id = CommonUtils.getResourcesIdentifier(context, UNITY_EDITOR_VERSION, "string");
     if (id != 0) {
       version = context.getResources().getString(id);
-      Logger.getLogger().d("Unity Editor version is: " + version);
+      Logger.getLogger().v("Unity Editor version is: " + version);
     }
     return version;
   }

@@ -22,6 +22,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.field;
 import static com.google.firebase.firestore.testutil.TestUtil.fieldMask;
 import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
+import static com.google.firebase.firestore.testutil.TestUtil.path;
 import static com.google.firebase.firestore.testutil.TestUtil.setMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.unknownDoc;
 import static java.util.Arrays.asList;
@@ -29,7 +30,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.bundle.BundledQuery;
 import com.google.firebase.firestore.core.Query;
+import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.SnapshotVersion;
@@ -194,18 +197,6 @@ public final class LocalSerializerTest {
         com.google.firebase.firestore.proto.WriteBatch.newBuilder()
             .setBatchId(42)
             .addAllWrites(asList(transformProto, transformProto))
-            .setLocalWriteTime(writeTimeProto)
-            .build();
-    assertThrows(AssertionError.class, () -> serializer.decodeMutationBatch(batchProto));
-  }
-
-  // TODO(b/174608374): Remove these tests once we perform a schema migration.
-  @Test
-  public void testOnlyTransformThrowsError() {
-    WriteBatch batchProto =
-        com.google.firebase.firestore.proto.WriteBatch.newBuilder()
-            .setBatchId(42)
-            .addAllWrites(asList(transformProto))
             .setLocalWriteTime(writeTimeProto)
             .build();
     assertThrows(AssertionError.class, () -> serializer.decodeMutationBatch(batchProto));
@@ -404,5 +395,43 @@ public final class LocalSerializerTest {
     assertEquals(expected, serializer.encodeTargetData(targetData));
     TargetData decoded = serializer.decodeTargetData(expected);
     assertEquals(targetData, decoded);
+  }
+
+  @Test
+  public void testEncodesQuery() {
+    Target target =
+        new Target(
+            path("room"),
+            /* collectionGroup= */ null,
+            Collections.emptyList(),
+            Collections.emptyList(),
+            Target.NO_LIMIT,
+            /* startAt= */ null,
+            /* endAt= */ null);
+    BundledQuery bundledQuery = new BundledQuery(target, Query.LimitType.LIMIT_TO_FIRST);
+    com.google.firestore.proto.BundledQuery encodedBundledQuery =
+        serializer.encodeBundledQuery(bundledQuery);
+    BundledQuery decodedBundledQuery = serializer.decodeBundledQuery(encodedBundledQuery);
+
+    assertEquals(bundledQuery, decodedBundledQuery);
+  }
+
+  @Test
+  public void testEncodesLimitToLastQuery() {
+    Target target =
+        new Target(
+            path("room"),
+            /* collectionGroup= */ null,
+            Collections.emptyList(),
+            Collections.emptyList(),
+            /* limit=*/ 42,
+            /* startAt= */ null,
+            /* endAt= */ null);
+    BundledQuery bundledQuery = new BundledQuery(target, Query.LimitType.LIMIT_TO_LAST);
+    com.google.firestore.proto.BundledQuery encodedBundledQuery =
+        serializer.encodeBundledQuery(bundledQuery);
+    BundledQuery decodedBundledQuery = serializer.decodeBundledQuery(encodedBundledQuery);
+
+    assertEquals(bundledQuery, decodedBundledQuery);
   }
 }

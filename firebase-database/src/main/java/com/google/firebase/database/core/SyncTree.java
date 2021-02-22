@@ -484,6 +484,60 @@ public class SyncTree {
         query.getRef(), persistenceManager.serverCache(query.getSpec()).getIndexedNode());
   }
 
+  @Nullable
+  public Node getServerValue(QuerySpec query) {
+    return persistenceManager.runInTransaction(
+        () -> {
+          Path path = query.getPath();
+
+          Node serverCacheNode = null;
+          boolean foundAncestorDefaultView = false;
+          // Any covering writes will necessarily be at the root, so really all we need to find is
+          // the server cache. Consider optimizing this once there's a better understanding of
+          // what actual behavior will be.
+          ImmutableTree<SyncPoint> tree = syncPointTree;
+          Path currentPath = path;
+          while (!tree.isEmpty()) {
+            SyncPoint currentSyncPoint = tree.getValue();
+            if (currentSyncPoint != null) {
+              serverCacheNode =
+                  serverCacheNode != null
+                      ? serverCacheNode
+                      : currentSyncPoint.getCompleteServerCache(currentPath);
+              foundAncestorDefaultView =
+                  foundAncestorDefaultView || currentSyncPoint.hasCompleteView();
+            }
+            ChildKey front =
+                currentPath.isEmpty() ? ChildKey.fromString("") : currentPath.getFront();
+            tree = tree.getChild(front);
+            currentPath = currentPath.popFront();
+          }
+
+          SyncPoint syncPoint = syncPointTree.get(path);
+          if (syncPoint == null) {
+            syncPoint = new SyncPoint(persistenceManager);
+            syncPointTree = syncPointTree.set(path, syncPoint);
+          } else {
+            serverCacheNode =
+                serverCacheNode != null
+                    ? serverCacheNode
+                    : syncPoint.getCompleteServerCache(Path.getEmptyPath());
+          }
+
+          CacheNode serverCache =
+              new CacheNode(
+                  IndexedNode.from(
+                      serverCacheNode != null ? serverCacheNode : EmptyNode.Empty(),
+                      query.getIndex()),
+                  serverCacheNode != null,
+                  false);
+
+          WriteTreeRef writesCache = pendingWriteTree.childWrites(path);
+          View view = syncPoint.getView(query, writesCache, serverCache);
+          return view.getCompleteNode();
+        });
+  }
+
   /** Add an event callback for the specified query. */
   public List<? extends Event> addEventRegistration(
       @NotNull final EventRegistration eventRegistration) {

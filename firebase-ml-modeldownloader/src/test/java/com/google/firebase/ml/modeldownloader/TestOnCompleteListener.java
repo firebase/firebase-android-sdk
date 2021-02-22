@@ -59,9 +59,8 @@ public class TestOnCompleteListener<TResult> implements OnCompleteListener<TResu
       if (exception instanceof IOException) {
         throw new ExecutionException(exception);
       }
-      // TODO(annz) replace with firebase ml exception handling.
-      if (exception instanceof Exception) {
-        throw exception;
+      if (exception instanceof FirebaseMlException) {
+        throw (FirebaseMlException) exception;
       }
       throw new IllegalStateException("got an unexpected exception type", exception);
     }

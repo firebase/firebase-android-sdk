@@ -1,10 +1,15 @@
-# Unreleased
+# 19.7.0
+- [added] Added `Query.startAfter()` and `Query.endBefore()` filter for paginating
+  RTDB queries.
+- [fixed] Fixed an issue with `Query.get()` that caused the client to go offline if
+  only `get()` operations were pending.
+
+# 19.6.0
 - [fixed] Fixed a crash on some Pixel devices that occurred when closing the
   network connection.
 - [added] Added `Query.get()`, which allows users to receive a single data
   snapshot. `Query.get()` returns the latest value even if an older value
   already exists in cache.
-- [added] Added `Query.startAfter()` filter for paginating RTDB queries.
 
 # 19.5.1
 - [fixed] Fixes a regression in v19.4 that may cause assertion failures,

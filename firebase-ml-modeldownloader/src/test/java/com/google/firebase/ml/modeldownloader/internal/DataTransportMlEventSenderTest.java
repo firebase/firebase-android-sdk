@@ -42,6 +42,7 @@ public class DataTransportMlEventSenderTest {
           .setAppVersion("0.1.0")
           .setApiKey("fakeKey5645")
           .setFirebaseProjectId("FakeFirebaseId")
+          .setMlSdkVersion("3.4.5")
           .build();
 
   @Before
