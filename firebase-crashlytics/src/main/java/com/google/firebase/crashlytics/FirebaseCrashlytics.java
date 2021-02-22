@@ -456,9 +456,9 @@ public class FirebaseCrashlytics {
    * console.
    *
    * <p>Accepts a maximum of 64 key/value pairs. If calling this method results in the number of
-   * custom keys exceeding this limit, only some of the keys will be logged (however many are
-   * needed to get to 64). Which are logged versus dropped is unpredictable as there is no
-   * intrinsic sorting of keys. Keys or values that exceed 1024 characters are truncated.
+   * custom keys exceeding this limit, only some of the keys will be logged (however many are needed
+   * to get to 64). Which are logged versus dropped is unpredictable as there is no intrinsic
+   * sorting of keys. Keys or values that exceed 1024 characters are truncated.
    *
    * @param keysAndValues A dictionary of keys and the values to associate with each key
    */
