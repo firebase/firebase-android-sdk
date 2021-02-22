@@ -29,8 +29,8 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.ListenSequence;
 import com.google.firebase.firestore.core.Query;
-import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
@@ -575,7 +575,8 @@ public abstract class LruGarbageCollectorTestCase {
         "Update a doc in the middle target",
         () -> {
           SnapshotVersion newVersion = version(3);
-          MutableDocument doc = new MutableDocument(middleDocToUpdate).setFoundDocument(newVersion, testValue);
+          MutableDocument doc =
+              new MutableDocument(middleDocToUpdate).setFoundDocument(newVersion, testValue);
           documentCache.add(doc, newVersion);
           updateTargetInTransaction(middleTarget);
         });

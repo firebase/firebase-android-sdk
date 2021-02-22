@@ -29,8 +29,8 @@ import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.LoadBundleTaskProgress;
 import com.google.firebase.firestore.core.Query;
-import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import java.util.Collections;
 import java.util.HashMap;
@@ -64,7 +64,7 @@ public class BundleLoaderTest {
 
           @Override
           public ImmutableSortedMap<DocumentKey, MutableDocument> applyBundledDocuments(
-                  ImmutableSortedMap<DocumentKey, MutableDocument> documents, String bundleId) {
+              ImmutableSortedMap<DocumentKey, MutableDocument> documents, String bundleId) {
             documents.forEach(entry -> lastDocuments.add(entry.getKey()));
             return emptyDocumentMap();
           }

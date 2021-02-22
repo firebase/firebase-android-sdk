@@ -22,9 +22,9 @@ import static org.junit.Assert.assertEquals;
 
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.DocumentViewChange.Type;
-import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.DocumentSet;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ResourcePath;
 import java.util.Arrays;
 import java.util.List;
@@ -40,7 +40,8 @@ public class ViewSnapshotTest {
   @Test
   public void testConstructor() {
     Query query = Query.atPath(ResourcePath.fromString("a"));
-    DocumentSet docs = DocumentSet.emptySet(MutableDocument.keyComparator()).add(doc("c/foo", 1, map()));
+    DocumentSet docs =
+        DocumentSet.emptySet(MutableDocument.keyComparator()).add(doc("c/foo", 1, map()));
     DocumentSet oldDocs = DocumentSet.emptySet(MutableDocument.keyComparator());
     List<DocumentViewChange> changes =
         Arrays.asList(DocumentViewChange.create(Type.ADDED, doc("c/foo", 1, map())));

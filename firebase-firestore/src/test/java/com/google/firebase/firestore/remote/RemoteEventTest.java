@@ -33,8 +33,8 @@ import static org.junit.Assert.fail;
 
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.local.TargetData;
-import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.remote.WatchChange.DocumentChange;
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChange;
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChangeType;

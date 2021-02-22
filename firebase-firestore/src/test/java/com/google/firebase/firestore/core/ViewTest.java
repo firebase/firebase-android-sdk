@@ -33,8 +33,8 @@ import static org.junit.Assert.assertTrue;
 
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.DocumentViewChange.Type;
-import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.remote.TargetChange;
 import com.google.protobuf.ByteString;
@@ -621,7 +621,8 @@ public class ViewTest {
     MutableDocument doc1Acknowledged = doc("rooms/eros/messages/1", 2, map("time", 2));
 
     MutableDocument doc2 = doc("rooms/eros/messages/2", 1, map("time", 1)).setLocalMutations();
-    MutableDocument doc2Modified = doc("rooms/eros/messages/2", 2, map("time", 3)).setLocalMutations();
+    MutableDocument doc2Modified =
+        doc("rooms/eros/messages/2", 2, map("time", 3)).setLocalMutations();
     MutableDocument doc2Acknowledged = doc("rooms/eros/messages/2", 2, map("time", 3));
 
     View view = new View(query, DocumentKey.emptyKeySet());

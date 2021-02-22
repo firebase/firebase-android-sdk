@@ -30,8 +30,8 @@ import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.Filter;
 import com.google.firebase.firestore.core.IndexRange;
 import com.google.firebase.firestore.core.Query;
-import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.testutil.TestUtil;
 import java.util.Arrays;
 import java.util.Collections;
@@ -55,7 +55,8 @@ public class IndexedQueryEngineTest {
   private static final int UPDATED_VERSION = 1;
 
   // Documents used in the verify the index lookups.
-  private static final MutableDocument NON_MATCHING_DOC = doc("coll/a", ORIGINAL_VERSION, map("a", "b"));
+  private static final MutableDocument NON_MATCHING_DOC =
+      doc("coll/a", ORIGINAL_VERSION, map("a", "b"));
   private static final MutableDocument MATCHING_DOC = doc("coll/a", UPDATED_VERSION, map("a", "a"));
   private static final MutableDocument IGNORED_DOC = doc("coll/b", ORIGINAL_VERSION, map("b", "b"));
 

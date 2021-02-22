@@ -32,9 +32,9 @@ import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.core.View;
-import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.DocumentSet;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.DeleteMutation;
 import com.google.firebase.firestore.model.mutation.Mutation;
@@ -54,15 +54,18 @@ public class QueryEngineTest {
 
   private static final int TEST_TARGET_ID = 1;
 
-  private static final MutableDocument MATCHING_DOC_A = doc("coll/a", 1, map("matches", true, "order", 1));
+  private static final MutableDocument MATCHING_DOC_A =
+      doc("coll/a", 1, map("matches", true, "order", 1));
   private static final MutableDocument NON_MATCHING_DOC_A =
       doc("coll/a", 1, map("matches", false, "order", 1));
   private static final MutableDocument PENDING_MATCHING_DOC_A =
       doc("coll/a", 1, map("matches", true, "order", 1)).setLocalMutations();
   private static final MutableDocument PENDING_NON_MATCHING_DOC_A =
       doc("coll/a", 1, map("matches", false, "order", 1)).setLocalMutations();
-  private static final MutableDocument UPDATED_DOC_A = doc("coll/a", 11, map("matches", true, "order", 1));
-  private static final MutableDocument MATCHING_DOC_B = doc("coll/b", 1, map("matches", true, "order", 2));
+  private static final MutableDocument UPDATED_DOC_A =
+      doc("coll/a", 11, map("matches", true, "order", 1));
+  private static final MutableDocument MATCHING_DOC_B =
+      doc("coll/b", 1, map("matches", true, "order", 2));
   private static final MutableDocument UPDATED_MATCHING_DOC_B =
       doc("coll/b", 11, map("matches", true, "order", 2));
 

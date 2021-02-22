@@ -14,8 +14,8 @@
 
 package com.google.firebase.firestore.remote;
 
-import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import java.util.Map;
 import java.util.Set;

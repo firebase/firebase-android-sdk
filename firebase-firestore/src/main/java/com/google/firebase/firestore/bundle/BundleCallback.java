@@ -16,8 +16,8 @@ package com.google.firebase.firestore.bundle;
 
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
-import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.MutableDocument;
 
 /** Interface implemented by components that can apply changes from a bundle to local storage. */
 public interface BundleCallback {
@@ -27,7 +27,7 @@ public interface BundleCallback {
    * <p>LocalDocuments are re-calculated if there are remaining mutations in the queue.
    */
   ImmutableSortedMap<DocumentKey, MutableDocument> applyBundledDocuments(
-          ImmutableSortedMap<DocumentKey, MutableDocument> documents, String bundleId);
+      ImmutableSortedMap<DocumentKey, MutableDocument> documents, String bundleId);
 
   /** Saves the given NamedQuery to local persistence. */
   void saveNamedQuery(NamedQuery namedQuery, ImmutableSortedSet<DocumentKey> documentKeys);

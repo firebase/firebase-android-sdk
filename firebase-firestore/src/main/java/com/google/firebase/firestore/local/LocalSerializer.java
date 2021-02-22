@@ -21,8 +21,8 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.bundle.BundledQuery;
 import com.google.firebase.firestore.core.Query.LimitType;
 import com.google.firebase.firestore.core.Target;
-import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
@@ -101,12 +101,14 @@ public final class LocalSerializer {
     DocumentKey key = rpcSerializer.decodeKey(document.getName());
     SnapshotVersion version = rpcSerializer.decodeVersion(document.getUpdateTime());
     MutableDocument result =
-        new MutableDocument(key).setFoundDocument(version, ObjectValue.fromMap(document.getFieldsMap()));
+        new MutableDocument(key)
+            .setFoundDocument(version, ObjectValue.fromMap(document.getFieldsMap()));
     return hasCommittedMutations ? result.setCommittedMutations() : result;
   }
 
   /** Encodes a NoDocument value to the equivalent proto. */
-  private com.google.firebase.firestore.proto.NoDocument encodeNoDocument(MutableDocument document) {
+  private com.google.firebase.firestore.proto.NoDocument encodeNoDocument(
+      MutableDocument document) {
     com.google.firebase.firestore.proto.NoDocument.Builder builder =
         com.google.firebase.firestore.proto.NoDocument.newBuilder();
     builder.setName(rpcSerializer.encodeKey(document.getKey()));

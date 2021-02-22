@@ -30,8 +30,8 @@ import com.google.firebase.firestore.bundle.NamedQuery;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.core.TargetIdGenerator;
-import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
@@ -336,7 +336,8 @@ public final class LocalStore implements BundleCallback {
    *
    * <p>LocalDocuments are re-calculated if there are remaining mutations in the queue.
    */
-  public ImmutableSortedMap<DocumentKey, MutableDocument> applyRemoteEvent(RemoteEvent remoteEvent) {
+  public ImmutableSortedMap<DocumentKey, MutableDocument> applyRemoteEvent(
+      RemoteEvent remoteEvent) {
     SnapshotVersion remoteVersion = remoteEvent.getSnapshotVersion();
 
     // TODO: Call queryEngine.handleDocumentChange() appropriately.
@@ -632,7 +633,7 @@ public final class LocalStore implements BundleCallback {
 
   @Override
   public ImmutableSortedMap<DocumentKey, MutableDocument> applyBundledDocuments(
-          ImmutableSortedMap<DocumentKey, MutableDocument> documents, String bundleId) {
+      ImmutableSortedMap<DocumentKey, MutableDocument> documents, String bundleId) {
     // Allocates a target to hold all document keys from the bundle, such that
     // they will not get garbage collected right away.
     TargetData umbrellaTargetData = allocateTarget(newUmbrellaTarget(bundleId));

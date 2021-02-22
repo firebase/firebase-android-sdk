@@ -17,8 +17,8 @@ package com.google.firebase.firestore.model.mutation;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import com.google.firebase.Timestamp;
-import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
 
 /** Represents a Delete operation */

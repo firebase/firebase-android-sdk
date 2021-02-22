@@ -25,10 +25,10 @@ import com.google.firebase.firestore.core.Filter;
 import com.google.firebase.firestore.core.Filter.Operator;
 import com.google.firebase.firestore.core.IndexRange;
 import com.google.firebase.firestore.core.Query;
-import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentCollections;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.Values;
 import com.google.firebase.firestore.util.Assert;
@@ -139,11 +139,13 @@ public class IndexedQueryEngine implements QueryEngine {
    */
   private ImmutableSortedMap<DocumentKey, MutableDocument> performQueryUsingIndex(
       Query query, IndexRange indexRange) {
-    ImmutableSortedMap<DocumentKey, MutableDocument> results = DocumentCollections.emptyDocumentMap();
+    ImmutableSortedMap<DocumentKey, MutableDocument> results =
+        DocumentCollections.emptyDocumentMap();
     IndexCursor cursor = collectionIndex.getCursor(query.getPath(), indexRange);
     try {
       while (cursor.next()) {
-        MutableDocument document = (MutableDocument) localDocuments.getDocument(cursor.getDocumentKey());
+        MutableDocument document =
+            (MutableDocument) localDocuments.getDocument(cursor.getDocumentKey());
         if (query.matches(document)) {
           results = results.insert(cursor.getDocumentKey(), document);
         }

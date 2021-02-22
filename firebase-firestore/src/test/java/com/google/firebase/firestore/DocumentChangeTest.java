@@ -32,8 +32,8 @@ import com.google.firebase.firestore.DocumentChange.Type;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.core.View;
 import com.google.firebase.firestore.core.ViewSnapshot;
-import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.remote.TargetChange;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
@@ -150,7 +150,8 @@ public class DocumentChangeTest {
             doc("c/a", 1, map("sort", 10)),
             doc("c/b", 1, map("sort", 20)),
             doc("c/c", 1, map("sort", 30)));
-    List<MutableDocument> adds = asList(doc("c/new-a", 2, map("sort", 0)), doc("c/e", 2, map("sort", 25)));
+    List<MutableDocument> adds =
+        asList(doc("c/new-a", 2, map("sort", 0)), doc("c/e", 2, map("sort", 25)));
     List<MutableDocument> updates =
         asList(
             doc("c/new-a", 2, map("sort", 0)),

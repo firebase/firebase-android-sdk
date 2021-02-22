@@ -29,8 +29,8 @@ import static org.junit.Assert.assertNotEquals;
 
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
-import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -107,7 +107,8 @@ abstract class RemoteDocumentCacheTestCase {
 
     List<String> keys = new ArrayList<>(Arrays.asList(paths));
     keys.add("foo/nonexistent");
-    written.put(key("foo/nonexistent"), new MutableDocument(key("foo/nonexistent"))); // Add invalid doc
+    written.put(
+        key("foo/nonexistent"), new MutableDocument(key("foo/nonexistent"))); // Add invalid doc
     Map<DocumentKey, MutableDocument> read = getAll(keys);
     assertEquals(written, read);
   }

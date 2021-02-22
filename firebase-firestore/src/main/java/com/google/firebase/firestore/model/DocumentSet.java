@@ -65,7 +65,8 @@ public final class DocumentSet implements Iterable<MutableDocument> {
   private final ImmutableSortedSet<MutableDocument> sortedSet;
 
   private DocumentSet(
-          ImmutableSortedMap<DocumentKey, MutableDocument> keyIndex, ImmutableSortedSet<MutableDocument> sortedSet) {
+      ImmutableSortedMap<DocumentKey, MutableDocument> keyIndex,
+      ImmutableSortedSet<MutableDocument> sortedSet) {
     this.keyIndex = keyIndex;
     this.sortedSet = sortedSet;
   }

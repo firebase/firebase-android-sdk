@@ -18,9 +18,9 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.UserDataReader;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.DatabaseId;
-import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.DocumentSet;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
@@ -74,7 +74,8 @@ public class TestUtil {
     return new MutableDocument(key(key)).setFoundDocument(version(version), data);
   }
 
-  public static DocumentSet docSet(Comparator<MutableDocument> comparator, MutableDocument... documents) {
+  public static DocumentSet docSet(
+      Comparator<MutableDocument> comparator, MutableDocument... documents) {
     DocumentSet set = DocumentSet.emptySet(comparator);
     for (MutableDocument document : documents) {
       set = set.add(document);

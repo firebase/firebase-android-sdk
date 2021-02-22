@@ -17,9 +17,9 @@ package com.google.firebase.firestore.model.mutation;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import com.google.firebase.Timestamp;
-import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firestore.v1.Value;
@@ -100,7 +100,8 @@ public abstract class Mutation {
    * @param document The document to mutate.
    * @param mutationResult The result of applying the mutation from the backend.
    */
-  public abstract void applyToRemoteDocument(MutableDocument document, MutationResult mutationResult);
+  public abstract void applyToRemoteDocument(
+      MutableDocument document, MutationResult mutationResult);
 
   /**
    * Applies this mutation to the given Document for the purposes of computing the new local view of
@@ -156,7 +157,7 @@ public abstract class Mutation {
    * @return The transform results list.
    */
   protected Map<FieldPath, Value> serverTransformResults(
-          MutableDocument maybeDoc, List<Value> serverTransformResults) {
+      MutableDocument maybeDoc, List<Value> serverTransformResults) {
     Map<FieldPath, Value> transformResults = new HashMap<>(fieldTransforms.size());
     hardAssert(
         fieldTransforms.size() == serverTransformResults.size(),

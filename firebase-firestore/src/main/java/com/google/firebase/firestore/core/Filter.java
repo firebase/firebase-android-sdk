@@ -14,8 +14,8 @@
 
 package com.google.firebase.firestore.core;
 
-import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.FieldPath;
+import com.google.firebase.firestore.model.MutableDocument;
 
 /** Interface used for all query filters. */
 public abstract class Filter {

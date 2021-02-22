@@ -21,8 +21,8 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.firestore.core.DocumentViewChange;
 import com.google.firebase.firestore.core.ViewSnapshot;
-import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentSet;
+import com.google.firebase.firestore.model.MutableDocument;
 import java.util.ArrayList;
 import java.util.List;
 

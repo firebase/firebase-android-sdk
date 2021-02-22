@@ -46,10 +46,10 @@ import com.google.firebase.firestore.local.LocalViewChanges;
 import com.google.firebase.firestore.local.QueryPurpose;
 import com.google.firebase.firestore.local.TargetData;
 import com.google.firebase.firestore.model.DatabaseId;
-import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.DocumentSet;
 import com.google.firebase.firestore.model.FieldPath;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
@@ -200,7 +200,8 @@ public class TestUtil {
     return new MutableDocument(key(key)).setUnknownDocument(version(version));
   }
 
-  public static ImmutableSortedMap<DocumentKey, MutableDocument> docMap(MutableDocument[] documents) {
+  public static ImmutableSortedMap<DocumentKey, MutableDocument> docMap(
+      MutableDocument[] documents) {
     ImmutableSortedMap<DocumentKey, MutableDocument> map = emptyDocumentMap();
     for (MutableDocument maybeDocument : documents) {
       map = map.insert(maybeDocument.getKey(), maybeDocument);
@@ -208,7 +209,8 @@ public class TestUtil {
     return map;
   }
 
-  public static DocumentSet docSet(Comparator<MutableDocument> comparator, MutableDocument... documents) {
+  public static DocumentSet docSet(
+      Comparator<MutableDocument> comparator, MutableDocument... documents) {
     DocumentSet set = DocumentSet.emptySet(comparator);
     for (MutableDocument document : documents) {
       set = set.add(document);
@@ -292,7 +294,8 @@ public class TestUtil {
         query(path).toTarget(), targetId, ARBITRARY_SEQUENCE_NUMBER, queryPurpose);
   }
 
-  public static ImmutableSortedMap<DocumentKey, MutableDocument> docUpdates(MutableDocument... docs) {
+  public static ImmutableSortedMap<DocumentKey, MutableDocument> docUpdates(
+      MutableDocument... docs) {
     ImmutableSortedMap<DocumentKey, MutableDocument> res =
         ImmutableSortedMap.Builder.emptyMap(DocumentKey.comparator());
     for (MutableDocument doc : docs) {
@@ -389,12 +392,14 @@ public class TestUtil {
   }
 
   public static RemoteEvent addedRemoteEvent(
-          MutableDocument doc, List<Integer> updatedInTargets, List<Integer> removedFromTargets) {
+      MutableDocument doc, List<Integer> updatedInTargets, List<Integer> removedFromTargets) {
     return addedRemoteEvent(Collections.singletonList(doc), updatedInTargets, removedFromTargets);
   }
 
   public static RemoteEvent addedRemoteEvent(
-          List<MutableDocument> docs, List<Integer> updatedInTargets, List<Integer> removedFromTargets) {
+      List<MutableDocument> docs,
+      List<Integer> updatedInTargets,
+      List<Integer> removedFromTargets) {
     Preconditions.checkArgument(!docs.isEmpty(), "Cannot pass empty docs array");
 
     WatchChangeAggregator aggregator =
@@ -425,7 +430,7 @@ public class TestUtil {
   }
 
   public static RemoteEvent updateRemoteEvent(
-          MutableDocument doc, List<Integer> updatedInTargets, List<Integer> removedFromTargets) {
+      MutableDocument doc, List<Integer> updatedInTargets, List<Integer> removedFromTargets) {
     List<Integer> activeTargets = new ArrayList<>();
     activeTargets.addAll(updatedInTargets);
     activeTargets.addAll(removedFromTargets);

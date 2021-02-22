@@ -552,7 +552,10 @@ public class MutationTest {
   }
 
   private void assertVersionTransitions(
-          Mutation mutation, MutableDocument base, MutationResult mutationResult, MutableDocument expected) {
+      Mutation mutation,
+      MutableDocument base,
+      MutationResult mutationResult,
+      MutableDocument expected) {
     MutableDocument clone = base.clone();
     mutation.applyToRemoteDocument(clone, mutationResult);
     assertEquals(expected, clone);

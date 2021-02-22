@@ -20,8 +20,8 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
-import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
@@ -91,7 +91,7 @@ class LocalDocumentsView {
   // Returns the view of the given {@code docs} as they would appear after applying all mutations in
   // the given {@code batches}.
   private void applyLocalMutationsToDocuments(
-          Map<DocumentKey, MutableDocument> docs, List<MutationBatch> batches) {
+      Map<DocumentKey, MutableDocument> docs, List<MutationBatch> batches) {
     for (Map.Entry<DocumentKey, MutableDocument> base : docs.entrySet()) {
       for (MutationBatch batch : batches) {
         batch.applyToLocalView(base.getValue());
@@ -205,7 +205,8 @@ class LocalDocumentsView {
         DocumentKey key = mutation.getKey();
         MutableDocument document = results.get(key);
         if (document == null) {
-          document = new MutableDocument(key); // Create invalid document to apply mutations on top of
+          document =
+              new MutableDocument(key); // Create invalid document to apply mutations on top of
           results = results.insert(key, document);
         }
         mutation.applyToLocalView(document, batch.getLocalWriteTime());
@@ -234,7 +235,8 @@ class LocalDocumentsView {
    * missing results for the query.
    */
   private ImmutableSortedMap<DocumentKey, MutableDocument> addMissingBaseDocuments(
-      List<MutationBatch> matchingBatches, ImmutableSortedMap<DocumentKey, MutableDocument> existingDocs) {
+      List<MutationBatch> matchingBatches,
+      ImmutableSortedMap<DocumentKey, MutableDocument> existingDocs) {
     HashSet<DocumentKey> missingDocKeys = new HashSet<>();
     for (MutationBatch batch : matchingBatches) {
       for (Mutation mutation : batch.getMutations()) {

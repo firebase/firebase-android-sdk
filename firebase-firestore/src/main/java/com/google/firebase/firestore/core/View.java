@@ -22,9 +22,9 @@ import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.DocumentViewChange.Type;
 import com.google.firebase.firestore.core.ViewSnapshot.SyncState;
-import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.DocumentSet;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.remote.TargetChange;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -112,7 +112,8 @@ public class View {
    * @param docChanges The doc changes to apply to this view.
    * @return a new set of docs, changes, and refill flag.
    */
-  public DocumentChanges computeDocChanges(ImmutableSortedMap<DocumentKey, MutableDocument> docChanges) {
+  public DocumentChanges computeDocChanges(
+      ImmutableSortedMap<DocumentKey, MutableDocument> docChanges) {
     return computeDocChanges(docChanges, null);
   }
 

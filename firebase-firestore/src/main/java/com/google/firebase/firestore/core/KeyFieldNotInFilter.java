@@ -16,9 +16,9 @@ package com.google.firebase.firestore.core;
 
 import static com.google.firebase.firestore.core.KeyFieldInFilter.extractDocumentKeysFromArrayValue;
 
-import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firestore.v1.Value;
 import java.util.ArrayList;
 import java.util.List;

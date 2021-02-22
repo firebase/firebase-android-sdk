@@ -18,8 +18,8 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedMap;
-import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import java.util.HashSet;
 import java.util.List;
@@ -80,7 +80,7 @@ public final class MutationBatch {
    * @param batchResult The result of applying the MutationBatch to the backend.
    */
   public void applyToRemoteDocument(
-          DocumentKey documentKey, MutableDocument document, MutationBatchResult batchResult) {
+      DocumentKey documentKey, MutableDocument document, MutationBatchResult batchResult) {
     hardAssert(
         document.getKey().equals(documentKey),
         "applyToRemoteDocument: key %s doesn't match maybeDoc key %s",

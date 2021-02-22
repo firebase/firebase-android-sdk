@@ -39,8 +39,8 @@ import com.google.firebase.firestore.local.QueryPurpose;
 import com.google.firebase.firestore.local.QueryResult;
 import com.google.firebase.firestore.local.ReferenceSet;
 import com.google.firebase.firestore.local.TargetData;
-import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
@@ -407,7 +407,8 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
       // Ideally, we would have a method in the local store to purge a document. However, it would
       // be tricky to keep all of the local store's invariants with another method.
       MutableDocument result = new MutableDocument(limboKey).setNoDocument(SnapshotVersion.NONE);
-      Map<DocumentKey, MutableDocument> documentUpdates = Collections.singletonMap(limboKey, result);
+      Map<DocumentKey, MutableDocument> documentUpdates =
+          Collections.singletonMap(limboKey, result);
       Set<DocumentKey> limboDocuments = Collections.singleton(limboKey);
       RemoteEvent event =
           new RemoteEvent(
@@ -617,7 +618,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
    * snapshot.
    */
   private void emitNewSnapsAndNotifyLocalStore(
-          ImmutableSortedMap<DocumentKey, MutableDocument> changes, @Nullable RemoteEvent remoteEvent) {
+      ImmutableSortedMap<DocumentKey, MutableDocument> changes, @Nullable RemoteEvent remoteEvent) {
     List<ViewSnapshot> newSnapshots = new ArrayList<>();
     List<LocalViewChanges> documentChangesInAllViews = new ArrayList<>();
 

@@ -645,8 +645,7 @@ public class SQLiteSchemaTest {
   }
 
   private void assertResultsContain(
-      ImmutableSortedMap<DocumentKey, MutableDocument> actualResults,
-      String... docs) {
+      ImmutableSortedMap<DocumentKey, MutableDocument> actualResults, String... docs) {
     for (String doc : docs) {
       assertTrue("Expected result for " + doc, actualResults.containsKey(key(doc)));
     }

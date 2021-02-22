@@ -15,9 +15,9 @@
 package com.google.firebase.firestore.core;
 
 import com.google.firebase.database.collection.ImmutableSortedSet;
-import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.DocumentSet;
+import com.google.firebase.firestore.model.MutableDocument;
 import java.util.ArrayList;
 import java.util.List;
 
