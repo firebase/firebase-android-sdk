@@ -33,7 +33,7 @@ import java.util.regex.Pattern;
 /** @hide */
 public class SharedPreferencesUtil {
 
-  private static final String FIREBASE_MODELDOWNLOADER_COLLECTION_ENABLED =
+  public static final String FIREBASE_MODELDOWNLOADER_COLLECTION_ENABLED =
       "firebase_model_downloader_collection_enabled";
   public static final String DOWNLOADING_MODEL_ID_MATCHER = "downloading_model_id_(.*?)_([^/]+)/?";
 
