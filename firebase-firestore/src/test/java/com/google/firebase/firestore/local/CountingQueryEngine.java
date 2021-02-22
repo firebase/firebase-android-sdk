@@ -19,7 +19,7 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.Query;
-import com.google.firebase.firestore.model.Document;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
@@ -62,7 +62,7 @@ class CountingQueryEngine implements QueryEngine {
   }
 
   @Override
-  public ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
+  public ImmutableSortedMap<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
       Query query,
       SnapshotVersion lastLimboFreeSnapshotVersion,
       ImmutableSortedSet<DocumentKey> remoteKeys) {
@@ -70,7 +70,7 @@ class CountingQueryEngine implements QueryEngine {
   }
 
   @Override
-  public void handleDocumentChange(Document oldDocument, Document newDocument) {
+  public void handleDocumentChange(MutableDocument oldDocument, MutableDocument newDocument) {
     queryEngine.handleDocumentChange(oldDocument, newDocument);
   }
 
@@ -115,7 +115,7 @@ class CountingQueryEngine implements QueryEngine {
   private RemoteDocumentCache wrapRemoteDocumentCache(RemoteDocumentCache subject) {
     return new RemoteDocumentCache() {
       @Override
-      public void add(Document document, SnapshotVersion readTime) {
+      public void add(MutableDocument document, SnapshotVersion readTime) {
         subject.add(document, readTime);
       }
 
@@ -126,25 +126,25 @@ class CountingQueryEngine implements QueryEngine {
 
       @Nullable
       @Override
-      public Document get(DocumentKey documentKey) {
-        Document result = subject.get(documentKey);
+      public MutableDocument get(DocumentKey documentKey) {
+        MutableDocument result = subject.get(documentKey);
         documentsReadByKey[0] += result.isValidDocument() ? 1 : 0;
         return result;
       }
 
       @Override
-      public Map<DocumentKey, Document> getAll(Iterable<DocumentKey> documentKeys) {
-        Map<DocumentKey, Document> result = subject.getAll(documentKeys);
-        for (Document document : result.values()) {
+      public Map<DocumentKey, MutableDocument> getAll(Iterable<DocumentKey> documentKeys) {
+        Map<DocumentKey, MutableDocument> result = subject.getAll(documentKeys);
+        for (MutableDocument document : result.values()) {
           documentsReadByKey[0] += document.isValidDocument() ? 1 : 0;
         }
         return result;
       }
 
       @Override
-      public ImmutableSortedMap<DocumentKey, Document> getAllDocumentsMatchingQuery(
+      public ImmutableSortedMap<DocumentKey, MutableDocument> getAllDocumentsMatchingQuery(
           Query query, SnapshotVersion sinceReadTime) {
-        ImmutableSortedMap<DocumentKey, Document> result =
+        ImmutableSortedMap<DocumentKey, MutableDocument> result =
             subject.getAllDocumentsMatchingQuery(query, sinceReadTime);
         documentsReadByQuery[0] += result.size();
         return result;

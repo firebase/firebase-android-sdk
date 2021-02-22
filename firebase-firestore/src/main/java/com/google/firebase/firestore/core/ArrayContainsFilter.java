@@ -14,7 +14,7 @@
 
 package com.google.firebase.firestore.core;
 
-import com.google.firebase.firestore.model.Document;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.Values;
 import com.google.firestore.v1.Value;
@@ -26,7 +26,7 @@ public class ArrayContainsFilter extends FieldFilter {
   }
 
   @Override
-  public boolean matches(Document doc) {
+  public boolean matches(MutableDocument doc) {
     Value other = doc.getField(getField());
     return Values.isArray(other) && Values.contains(other.getArrayValue(), getValue());
   }

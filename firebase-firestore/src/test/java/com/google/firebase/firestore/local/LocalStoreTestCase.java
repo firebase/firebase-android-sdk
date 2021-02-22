@@ -58,7 +58,7 @@ import com.google.firebase.firestore.bundle.BundledQuery;
 import com.google.firebase.firestore.bundle.NamedQuery;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.core.Target;
-import com.google.firebase.firestore.model.Document;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
@@ -98,7 +98,7 @@ public abstract class LocalStoreTestCase {
   private LocalStore localStore;
 
   private List<MutationBatch> batches;
-  private @Nullable ImmutableSortedMap<DocumentKey, Document> lastChanges;
+  private @Nullable ImmutableSortedMap<DocumentKey, MutableDocument> lastChanges;
   private @Nullable QueryResult lastQueryResult;
   private int lastTargetId;
 
@@ -198,8 +198,8 @@ public abstract class LocalStoreTestCase {
             /* totalBytes= */ 10));
   }
 
-  private void bundleDocuments(Document... expected) {
-    ImmutableSortedMap<DocumentKey, Document> documents = docMap(expected);
+  private void bundleDocuments(MutableDocument... expected) {
+    ImmutableSortedMap<DocumentKey, MutableDocument> documents = docMap(expected);
     lastChanges = localStore.applyBundledDocuments(documents, /* bundleId= */ "");
   }
 
@@ -213,13 +213,13 @@ public abstract class LocalStoreTestCase {
   }
 
   /** Asserts that a the lastChanges contain the docs in the given array. */
-  private void assertChanged(Document... expected) {
+  private void assertChanged(MutableDocument... expected) {
     assertNotNull(lastChanges);
 
-    List<Document> actualList =
+    List<MutableDocument> actualList =
         Lists.newArrayList(Iterables.transform(lastChanges, Entry::getValue));
 
-    List<Document> expectedList = asList(expected);
+    List<MutableDocument> expectedList = asList(expected);
     Collections.sort(expectedList, (d1, d2) -> d1.getKey().compareTo(d2.getKey()));
 
     assertEquals(expectedList, actualList);
@@ -231,10 +231,10 @@ public abstract class LocalStoreTestCase {
   private void assertRemoved(String... keyPaths) {
     assertNotNull(lastChanges);
 
-    ImmutableSortedMap<DocumentKey, Document> actual = lastChanges;
+    ImmutableSortedMap<DocumentKey, MutableDocument> actual = lastChanges;
     assertEquals(keyPaths.length, actual.size());
     int i = 0;
-    for (Entry<DocumentKey, Document> actualEntry : actual) {
+    for (Entry<DocumentKey, MutableDocument> actualEntry : actual) {
       assertEquals(key(keyPaths[i++]), actualEntry.getKey());
       assertFalse(actualEntry.getValue().isFoundDocument());
     }
@@ -242,21 +242,21 @@ public abstract class LocalStoreTestCase {
   }
 
   /** Asserts that the given local store contains the given document. */
-  private void assertContains(Document expected) {
-    Document actual = localStore.readDocument(expected.getKey());
+  private void assertContains(MutableDocument expected) {
+    MutableDocument actual = localStore.readDocument(expected.getKey());
     assertEquals(expected, actual);
   }
 
   /** Asserts that the given local store does not contain the given document. */
   private void assertNotContains(String keyPathString) {
     DocumentKey key = DocumentKey.fromPathString(keyPathString);
-    Document actual = localStore.readDocument(key);
+    MutableDocument actual = localStore.readDocument(key);
     assertFalse(actual.isValidDocument());
   }
 
   private void assertQueryReturned(String... keys) {
     assertNotNull(lastQueryResult);
-    ImmutableSortedMap<DocumentKey, Document> documents = lastQueryResult.getDocuments();
+    ImmutableSortedMap<DocumentKey, MutableDocument> documents = lastQueryResult.getDocuments();
     for (String key : keys) {
       assertTrue("Expected query to return: " + key, documents.containsKey(key(key)));
     }

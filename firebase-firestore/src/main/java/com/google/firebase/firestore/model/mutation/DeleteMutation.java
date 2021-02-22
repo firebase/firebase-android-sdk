@@ -17,7 +17,7 @@ package com.google.firebase.firestore.model.mutation;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import com.google.firebase.Timestamp;
-import com.google.firebase.firestore.model.Document;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.SnapshotVersion;
 
@@ -52,7 +52,7 @@ public final class DeleteMutation extends Mutation {
   }
 
   @Override
-  public void applyToRemoteDocument(Document document, MutationResult mutationResult) {
+  public void applyToRemoteDocument(MutableDocument document, MutationResult mutationResult) {
     verifyKeyMatches(document);
 
     hardAssert(
@@ -68,7 +68,7 @@ public final class DeleteMutation extends Mutation {
   }
 
   @Override
-  public void applyToLocalView(Document document, Timestamp localWriteTime) {
+  public void applyToLocalView(MutableDocument document, Timestamp localWriteTime) {
     verifyKeyMatches(document);
 
     if (getPrecondition().isValidFor(document)) {

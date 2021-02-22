@@ -16,22 +16,22 @@ package com.google.firebase.firestore.local;
 
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
-import com.google.firebase.firestore.model.Document;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentKey;
 
 /** The result of executing a query against the local store. */
 public class QueryResult {
-  private final ImmutableSortedMap<DocumentKey, Document> documents;
+  private final ImmutableSortedMap<DocumentKey, MutableDocument> documents;
   private final ImmutableSortedSet<DocumentKey> remoteKeys;
 
   public QueryResult(
-      ImmutableSortedMap<DocumentKey, Document> documents,
+      ImmutableSortedMap<DocumentKey, MutableDocument> documents,
       ImmutableSortedSet<DocumentKey> remoteKeys) {
     this.documents = documents;
     this.remoteKeys = remoteKeys;
   }
 
-  public ImmutableSortedMap<DocumentKey, Document> getDocuments() {
+  public ImmutableSortedMap<DocumentKey, MutableDocument> getDocuments() {
     return documents;
   }
 

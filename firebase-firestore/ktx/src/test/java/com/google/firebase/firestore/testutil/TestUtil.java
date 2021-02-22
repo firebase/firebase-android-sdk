@@ -18,7 +18,7 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.UserDataReader;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.DatabaseId;
-import com.google.firebase.firestore.model.Document;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.DocumentSet;
 import com.google.firebase.firestore.model.ObjectValue;
@@ -62,21 +62,21 @@ public class TestUtil {
     return new SnapshotVersion(new Timestamp(seconds, nanos));
   }
 
-  public static Document doc(String key, long version, Map<String, Object> data) {
-    return new Document(key(key)).setFoundDocument(version(version), wrapObject(data));
+  public static MutableDocument doc(String key, long version, Map<String, Object> data) {
+    return new MutableDocument(key(key)).setFoundDocument(version(version), wrapObject(data));
   }
 
-  public static Document doc(DocumentKey key, long version, Map<String, Object> data) {
-    return new Document(key).setFoundDocument(version(version), wrapObject(data));
+  public static MutableDocument doc(DocumentKey key, long version, Map<String, Object> data) {
+    return new MutableDocument(key).setFoundDocument(version(version), wrapObject(data));
   }
 
-  public static Document doc(String key, long version, ObjectValue data) {
-    return new Document(key(key)).setFoundDocument(version(version), data);
+  public static MutableDocument doc(String key, long version, ObjectValue data) {
+    return new MutableDocument(key(key)).setFoundDocument(version(version), data);
   }
 
-  public static DocumentSet docSet(Comparator<Document> comparator, Document... documents) {
+  public static DocumentSet docSet(Comparator<MutableDocument> comparator, MutableDocument... documents) {
     DocumentSet set = DocumentSet.emptySet(comparator);
-    for (Document document : documents) {
+    for (MutableDocument document : documents) {
       set = set.add(document);
     }
     return set;

@@ -14,7 +14,7 @@
 
 package com.google.firebase.firestore.core;
 
-import com.google.firebase.firestore.model.Document;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.Values;
 import com.google.firebase.firestore.util.Assert;
@@ -58,7 +58,7 @@ public class OrderBy {
     this.field = field;
   }
 
-  int compare(Document d1, Document d2) {
+  int compare(MutableDocument d1, MutableDocument d2) {
     if (field.equals(FieldPath.KEY_PATH)) {
       return direction.getComparisonModifier() * d1.getKey().compareTo(d2.getKey());
     } else {

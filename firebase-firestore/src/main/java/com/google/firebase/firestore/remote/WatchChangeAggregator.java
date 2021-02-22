@@ -23,7 +23,7 @@ import com.google.firebase.firestore.core.DocumentViewChange;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.local.QueryPurpose;
 import com.google.firebase.firestore.local.TargetData;
-import com.google.firebase.firestore.model.Document;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.remote.WatchChange.DocumentChange;
@@ -64,7 +64,7 @@ public class WatchChangeAggregator {
   private final Map<Integer, TargetState> targetStates = new HashMap<>();
 
   /** Keeps track of the documents to update since the last raised snapshot. */
-  private Map<DocumentKey, Document> pendingDocumentUpdates = new HashMap<>();
+  private Map<DocumentKey, MutableDocument> pendingDocumentUpdates = new HashMap<>();
 
   /** A mapping of document keys to their set of target IDs. */
   private Map<DocumentKey, Set<Integer>> pendingDocumentTargetMapping = new HashMap<>();
@@ -81,7 +81,7 @@ public class WatchChangeAggregator {
 
   /** Processes and adds the DocumentWatchChange to the current set of changes. */
   public void handleDocumentChange(DocumentChange documentChange) {
-    Document document = documentChange.getNewDocument();
+    MutableDocument document = documentChange.getNewDocument();
     DocumentKey documentKey = documentChange.getDocumentKey();
 
     for (int targetId : documentChange.getUpdatedTargetIds()) {
@@ -189,7 +189,7 @@ public class WatchChangeAggregator {
           // deleted document there might be another query that will raise this document as part of
           // a snapshot  until it is resolved, essentially exposing inconsistency between queries.
           DocumentKey key = DocumentKey.fromPath(target.getPath());
-          Document result = new Document(key).setNoDocument(SnapshotVersion.NONE);
+          MutableDocument result = new MutableDocument(key).setNoDocument(SnapshotVersion.NONE);
           removeDocumentFromTarget(targetId, key, result);
         } else {
           hardAssert(
@@ -227,7 +227,7 @@ public class WatchChangeAggregator {
           // limboDocumentRefs.
           DocumentKey key = DocumentKey.fromPath(targetData.getTarget().getPath());
           if (pendingDocumentUpdates.get(key) == null && !targetContainsDocument(targetId, key)) {
-            Document result = new Document(key).setNoDocument(snapshotVersion);
+            MutableDocument result = new MutableDocument(key).setNoDocument(snapshotVersion);
             removeDocumentFromTarget(targetId, key, result);
           }
         }
@@ -284,7 +284,7 @@ public class WatchChangeAggregator {
    * Adds the provided document to the internal list of document updates and its document key to the
    * given target's mapping.
    */
-  private void addDocumentToTarget(int targetId, Document document) {
+  private void addDocumentToTarget(int targetId, MutableDocument document) {
     if (!isActiveTarget(targetId)) {
       return;
     }
@@ -309,7 +309,7 @@ public class WatchChangeAggregator {
    * update the remote document cache.
    */
   private void removeDocumentFromTarget(
-      int targetId, DocumentKey key, @Nullable Document updatedDocument) {
+      int targetId, DocumentKey key, @Nullable MutableDocument updatedDocument) {
     if (!isActiveTarget(targetId)) {
       return;
     }

@@ -17,7 +17,7 @@ package com.google.firebase.firestore.remote;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
-import com.google.firebase.firestore.model.Document;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.protobuf.ByteString;
 import io.grpc.Status;
@@ -53,13 +53,13 @@ public abstract class WatchChange {
      * The new document or DeletedDocument if it was deleted. Is null if the document went out of
      * view without the server sending a new document.
      */
-    @Nullable private final Document newDocument;
+    @Nullable private final MutableDocument newDocument;
 
     public DocumentChange(
         List<Integer> updatedTargetIds,
         List<Integer> removedTargetIds,
         DocumentKey key,
-        @Nullable Document document) {
+        @Nullable MutableDocument document) {
       this.updatedTargetIds = updatedTargetIds;
       this.removedTargetIds = removedTargetIds;
       this.documentKey = key;
@@ -78,7 +78,7 @@ public abstract class WatchChange {
 
     /** The new document of this change */
     @Nullable
-    public Document getNewDocument() {
+    public MutableDocument getNewDocument() {
       return newDocument;
     }
 

@@ -24,7 +24,7 @@ import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.DocumentViewChange;
 import com.google.firebase.firestore.core.DocumentViewChange.Type;
 import com.google.firebase.firestore.core.ViewSnapshot;
-import com.google.firebase.firestore.model.Document;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.DocumentSet;
 import com.google.firebase.firestore.model.ObjectValue;
@@ -84,22 +84,22 @@ public class TestUtil {
       Map<String, ObjectValue> docsToAdd,
       boolean hasPendingWrites,
       boolean isFromCache) {
-    DocumentSet oldDocuments = docSet(Document.keyComparator());
+    DocumentSet oldDocuments = docSet(MutableDocument.keyComparator());
     ImmutableSortedSet<DocumentKey> mutatedKeys = DocumentKey.emptyKeySet();
     for (Map.Entry<String, ObjectValue> pair : oldDocs.entrySet()) {
       String docKey = path + "/" + pair.getKey();
-      Document doc = doc(docKey, 1L, pair.getValue());
+      MutableDocument doc = doc(docKey, 1L, pair.getValue());
       if (hasPendingWrites) {
         doc.setCommittedMutations();
         mutatedKeys = mutatedKeys.insert(key(docKey));
       }
       oldDocuments = oldDocuments.add(doc);
     }
-    DocumentSet newDocuments = docSet(Document.keyComparator());
+    DocumentSet newDocuments = docSet(MutableDocument.keyComparator());
     List<DocumentViewChange> documentChanges = new ArrayList<>();
     for (Map.Entry<String, ObjectValue> pair : docsToAdd.entrySet()) {
       String docKey = path + "/" + pair.getKey();
-      Document docToAdd = doc(docKey, 1L, pair.getValue());
+      MutableDocument docToAdd = doc(docKey, 1L, pair.getValue());
       if (hasPendingWrites) {
         docToAdd.setCommittedMutations();
         mutatedKeys = mutatedKeys.insert(key(docKey));

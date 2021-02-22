@@ -29,7 +29,7 @@ import static org.junit.Assert.assertNotEquals;
 
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
-import com.google.firebase.firestore.model.Document;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import java.util.ArrayList;
@@ -78,8 +78,8 @@ abstract class RemoteDocumentCacheTestCase {
   public void testSetAndReadDocument() {
     String[] paths = {"a/b", "a/b/c/d/e/f"};
     for (String path : paths) {
-      Document written = addTestDocumentAtPath(path);
-      Document read = get(path);
+      MutableDocument written = addTestDocumentAtPath(path);
+      MutableDocument read = get(path);
       assertEquals(written, read);
     }
   }
@@ -87,19 +87,19 @@ abstract class RemoteDocumentCacheTestCase {
   @Test
   public void testSetAndReadSeveralDocuments() {
     String[] paths = {"a/b", "a/b/c/d/e/f"};
-    Map<DocumentKey, Document> written = new HashMap<>();
+    Map<DocumentKey, MutableDocument> written = new HashMap<>();
     for (String path : paths) {
       written.put(DocumentKey.fromPathString(path), addTestDocumentAtPath(path));
     }
 
-    Map<DocumentKey, Document> read = getAll(Arrays.asList(paths));
+    Map<DocumentKey, MutableDocument> read = getAll(Arrays.asList(paths));
     assertEquals(written, read);
   }
 
   @Test
   public void testReadSeveralDocumentsIncludingMissingDocument() {
     String[] paths = {"foo/1", "foo/2"};
-    Map<DocumentKey, Document> written = new HashMap<>();
+    Map<DocumentKey, MutableDocument> written = new HashMap<>();
     for (String path : paths) {
       written.put(DocumentKey.fromPathString(path), addTestDocumentAtPath(path));
     }
@@ -107,8 +107,8 @@ abstract class RemoteDocumentCacheTestCase {
 
     List<String> keys = new ArrayList<>(Arrays.asList(paths));
     keys.add("foo/nonexistent");
-    written.put(key("foo/nonexistent"), new Document(key("foo/nonexistent"))); // Add invalid doc
-    Map<DocumentKey, Document> read = getAll(keys);
+    written.put(key("foo/nonexistent"), new MutableDocument(key("foo/nonexistent"))); // Add invalid doc
+    Map<DocumentKey, MutableDocument> read = getAll(keys);
     assertEquals(written, read);
   }
 
@@ -119,21 +119,21 @@ abstract class RemoteDocumentCacheTestCase {
     // Make sure to force SQLite implementation to split the large query into several smaller ones.
     int lotsOfDocuments = 2000;
     List<String> paths = new ArrayList<>();
-    Map<DocumentKey, Document> expected = new HashMap<>();
+    Map<DocumentKey, MutableDocument> expected = new HashMap<>();
     for (int i = 0; i < lotsOfDocuments; i++) {
       String path = "foo/" + String.valueOf(i);
       paths.add(path);
       expected.put(DocumentKey.fromPathString(path), addTestDocumentAtPath(path));
     }
 
-    Map<DocumentKey, Document> read = getAll(paths);
+    Map<DocumentKey, MutableDocument> read = getAll(paths);
     assertEquals(expected, read);
   }
 
   @Test
   public void testSetAndReadDeletedDocument() {
     String path = "a/b";
-    Document deletedDoc = deletedDoc(path, 42);
+    MutableDocument deletedDoc = deletedDoc(path, 42);
     add(deletedDoc, version(42));
     assertEquals(deletedDoc, get(path));
   }
@@ -141,9 +141,9 @@ abstract class RemoteDocumentCacheTestCase {
   @Test
   public void testSetDocumentToNewValue() {
     String path = "a/b";
-    Document written = addTestDocumentAtPath(path);
+    MutableDocument written = addTestDocumentAtPath(path);
 
-    Document newDoc = doc(path, 57, map("data", 5));
+    MutableDocument newDoc = doc(path, 57, map("data", 5));
     add(newDoc, version(57));
 
     assertNotEquals(written, newDoc);
@@ -174,9 +174,9 @@ abstract class RemoteDocumentCacheTestCase {
     addTestDocumentAtPath("c/1");
 
     Query query = Query.atPath(path("b"));
-    ImmutableSortedMap<DocumentKey, Document> results =
+    ImmutableSortedMap<DocumentKey, MutableDocument> results =
         remoteDocumentCache.getAllDocumentsMatchingQuery(query, SnapshotVersion.NONE);
-    List<Document> expected = asList(doc("b/1", 42, docData), doc("b/2", 42, docData));
+    List<MutableDocument> expected = asList(doc("b/1", 42, docData), doc("b/2", 42, docData));
     // assertEquals(expected, values(results));
   }
 
@@ -188,9 +188,9 @@ abstract class RemoteDocumentCacheTestCase {
     addTestDocumentAtPath("b/new", /* updateTime= */ 3, /*  readTime= = */ 13);
 
     Query query = Query.atPath(path("b"));
-    ImmutableSortedMap<DocumentKey, Document> results =
+    ImmutableSortedMap<DocumentKey, MutableDocument> results =
         remoteDocumentCache.getAllDocumentsMatchingQuery(query, version(12));
-    List<Document> expected = asList(doc("b/new", 3, docData));
+    List<MutableDocument> expected = asList(doc("b/new", 3, docData));
     assertEquals(expected, values(results));
   }
 
@@ -201,31 +201,31 @@ abstract class RemoteDocumentCacheTestCase {
     addTestDocumentAtPath("b/new", /* updateTime= */ 2, /* readTime= */ 1);
 
     Query query = Query.atPath(path("b"));
-    ImmutableSortedMap<DocumentKey, Document> results =
+    ImmutableSortedMap<DocumentKey, MutableDocument> results =
         remoteDocumentCache.getAllDocumentsMatchingQuery(query, version(1));
-    List<Document> expected = asList(doc("b/old", 1, docData));
+    List<MutableDocument> expected = asList(doc("b/old", 1, docData));
     assertEquals(expected, values(results));
   }
 
-  private Document addTestDocumentAtPath(String path) {
+  private MutableDocument addTestDocumentAtPath(String path) {
     return addTestDocumentAtPath(path, 42, 42);
   }
 
-  private Document addTestDocumentAtPath(String path, int updateTime, int readTime) {
-    Document doc = doc(path, updateTime, map("data", 2));
+  private MutableDocument addTestDocumentAtPath(String path, int updateTime, int readTime) {
+    MutableDocument doc = doc(path, updateTime, map("data", 2));
     add(doc, version(readTime));
     return doc;
   }
 
-  private void add(Document doc, SnapshotVersion readTime) {
+  private void add(MutableDocument doc, SnapshotVersion readTime) {
     persistence.runTransaction("add entry", () -> remoteDocumentCache.add(doc, readTime));
   }
 
-  private Document get(String path) {
+  private MutableDocument get(String path) {
     return remoteDocumentCache.get(key(path));
   }
 
-  private Map<DocumentKey, Document> getAll(Iterable<String> paths) {
+  private Map<DocumentKey, MutableDocument> getAll(Iterable<String> paths) {
     List<DocumentKey> keys = new ArrayList<>();
 
     for (String path : paths) {

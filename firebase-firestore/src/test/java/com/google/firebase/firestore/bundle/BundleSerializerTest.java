@@ -24,7 +24,7 @@ import com.google.firebase.firestore.core.Bound;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.DatabaseId;
-import com.google.firebase.firestore.model.Document;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.ResourcePath;
@@ -691,7 +691,7 @@ public class BundleSerializerTest {
     BundleDocument actualDocument = serializer.decodeDocument(new JSONObject(documentJson));
     BundleDocument expectedDocument =
         new BundleDocument(
-            new Document(DocumentKey.fromName(TEST_DOCUMENT))
+            new MutableDocument(DocumentKey.fromName(TEST_DOCUMENT))
                 .setFoundDocument(
                     new SnapshotVersion(new com.google.firebase.Timestamp(1577836802, 2)),
                     new ObjectValue(

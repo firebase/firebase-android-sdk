@@ -19,7 +19,7 @@ import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
-import com.google.firebase.firestore.model.Document;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.util.CustomClassMapper;
 import com.google.firestore.v1.Value;
@@ -73,14 +73,15 @@ public class DocumentSnapshot {
   private final DocumentKey key;
 
   /** Is {@code null} if the document doesn't exist */
-  private final @Nullable Document doc;
+  private final @Nullable
+  MutableDocument doc;
 
   private final SnapshotMetadata metadata;
 
   DocumentSnapshot(
       FirebaseFirestore firestore,
       DocumentKey key,
-      @Nullable Document doc,
+      @Nullable MutableDocument doc,
       boolean isFromCache,
       boolean hasPendingWrites) {
     this.firestore = checkNotNull(firestore);
@@ -90,7 +91,7 @@ public class DocumentSnapshot {
   }
 
   static DocumentSnapshot fromDocument(
-      FirebaseFirestore firestore, Document doc, boolean fromCache, boolean hasPendingWrites) {
+          FirebaseFirestore firestore, MutableDocument doc, boolean fromCache, boolean hasPendingWrites) {
     return new DocumentSnapshot(firestore, doc.getKey(), doc, fromCache, hasPendingWrites);
   }
 
@@ -117,7 +118,7 @@ public class DocumentSnapshot {
   }
 
   @Nullable
-  Document getDocument() {
+  MutableDocument getDocument() {
     return doc;
   }
 

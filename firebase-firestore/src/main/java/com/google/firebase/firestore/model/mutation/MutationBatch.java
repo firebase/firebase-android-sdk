@@ -18,7 +18,7 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedMap;
-import com.google.firebase.firestore.model.Document;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import java.util.HashSet;
@@ -80,7 +80,7 @@ public final class MutationBatch {
    * @param batchResult The result of applying the MutationBatch to the backend.
    */
   public void applyToRemoteDocument(
-      DocumentKey documentKey, Document document, MutationBatchResult batchResult) {
+          DocumentKey documentKey, MutableDocument document, MutationBatchResult batchResult) {
     hardAssert(
         document.getKey().equals(documentKey),
         "applyToRemoteDocument: key %s doesn't match maybeDoc key %s",
@@ -105,7 +105,7 @@ public final class MutationBatch {
   }
 
   /** Computes the local view of a document given all the mutations in this batch. */
-  public void applyToLocalView(Document document) {
+  public void applyToLocalView(MutableDocument document) {
     // First, apply the base state. This allows us to apply non-idempotent transform against a
     // consistent set of values.
     for (int i = 0; i < baseMutations.size(); i++) {
@@ -125,13 +125,13 @@ public final class MutationBatch {
   }
 
   /** Computes the local view for all provided documents given the mutations in this batch. */
-  public ImmutableSortedMap<DocumentKey, Document> applyToLocalDocumentSet(
-      ImmutableSortedMap<DocumentKey, Document> documentMap) {
+  public ImmutableSortedMap<DocumentKey, MutableDocument> applyToLocalDocumentSet(
+      ImmutableSortedMap<DocumentKey, MutableDocument> documentMap) {
     // TODO(mrschmidt): This implementation is O(n^2). If we iterate through the mutations first
     // (as done in `applyToLocalView(DocumentKey k, MaybeDoc d)`), we can reduce the complexity to
     // O(n).
     for (DocumentKey key : getKeys()) {
-      Document document = documentMap.get(key);
+      MutableDocument document = documentMap.get(key);
       applyToLocalView(document);
       if (!document.isValidDocument()) {
         document.setNoDocument(SnapshotVersion.NONE);

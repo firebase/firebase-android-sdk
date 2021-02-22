@@ -36,7 +36,7 @@ import com.google.firebase.firestore.local.GarbageCollectionScheduler;
 import com.google.firebase.firestore.local.LocalStore;
 import com.google.firebase.firestore.local.Persistence;
 import com.google.firebase.firestore.local.QueryResult;
-import com.google.firebase.firestore.model.Document;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.remote.Datastore;
@@ -171,13 +171,13 @@ public final class FirestoreClient {
     asyncQueue.enqueueAndForget(() -> eventManager.removeQueryListener(listener));
   }
 
-  public Task<Document> getDocumentFromLocalCache(DocumentKey docKey) {
+  public Task<MutableDocument> getDocumentFromLocalCache(DocumentKey docKey) {
     this.verifyNotTerminated();
     return asyncQueue
         .enqueue(() -> localStore.readDocument(docKey))
         .continueWith(
             (result) -> {
-              Document document = result.getResult();
+              MutableDocument document = result.getResult();
               if (document.isFoundDocument()) {
                 return document;
               } else if (document.isNoDocument()) {

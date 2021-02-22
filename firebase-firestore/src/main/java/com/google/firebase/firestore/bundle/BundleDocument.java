@@ -14,14 +14,14 @@
 
 package com.google.firebase.firestore.bundle;
 
-import com.google.firebase.firestore.model.Document;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentKey;
 
 /** A document that was saved to a bundle. */
 public class BundleDocument implements BundleElement {
-  private Document document;
+  private MutableDocument document;
 
-  public BundleDocument(Document document) {
+  public BundleDocument(MutableDocument document) {
     this.document = document;
   }
 
@@ -31,7 +31,7 @@ public class BundleDocument implements BundleElement {
   }
 
   /** Returns the document. */
-  public Document getDocument() {
+  public MutableDocument getDocument() {
     return document;
   }
 

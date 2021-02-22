@@ -35,8 +35,8 @@ public class DocumentTest {
 
   @Test
   public void testInstantiation() {
-    Document document =
-        new Document(key("messages/first")).setFoundDocument(version(1), wrapObject("a", 1));
+    MutableDocument document =
+        new MutableDocument(key("messages/first")).setFoundDocument(version(1), wrapObject("a", 1));
 
     assertEquals(key("messages/first"), document.getKey());
     assertEquals(version(1), document.getVersion());
@@ -50,8 +50,8 @@ public class DocumentTest {
     String key2 = "messages/second";
     Map<String, Object> data1 = map("a", 1);
     Map<String, Object> data2 = map("a", 2);
-    Document doc1 = doc(key1, 1, data1);
-    Document doc2 = doc(key1, 1, data1);
+    MutableDocument doc1 = doc(key1, 1, data1);
+    MutableDocument doc2 = doc(key1, 1, data1);
 
     assertEquals(doc1, doc2);
     assertEquals(doc1, doc("messages/first", 1, map("a", 1)));

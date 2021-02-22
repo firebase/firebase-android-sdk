@@ -17,7 +17,7 @@ package com.google.firebase.firestore.model.mutation;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import com.google.firebase.Timestamp;
-import com.google.firebase.firestore.model.Document;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.ObjectValue;
@@ -100,7 +100,7 @@ public abstract class Mutation {
    * @param document The document to mutate.
    * @param mutationResult The result of applying the mutation from the backend.
    */
-  public abstract void applyToRemoteDocument(Document document, MutationResult mutationResult);
+  public abstract void applyToRemoteDocument(MutableDocument document, MutationResult mutationResult);
 
   /**
    * Applies this mutation to the given Document for the purposes of computing the new local view of
@@ -110,7 +110,7 @@ public abstract class Mutation {
    * @param localWriteTime A timestamp indicating the local write time of the batch this mutation is
    *     a part of.
    */
-  public abstract void applyToLocalView(Document document, Timestamp localWriteTime);
+  public abstract void applyToLocalView(MutableDocument document, Timestamp localWriteTime);
 
   /** Helper for derived classes to implement .equals(). */
   boolean hasSameKeyAndPrecondition(Mutation other) {
@@ -127,7 +127,7 @@ public abstract class Mutation {
     return "key=" + key + ", precondition=" + precondition;
   }
 
-  void verifyKeyMatches(Document document) {
+  void verifyKeyMatches(MutableDocument document) {
     hardAssert(
         document.getKey().equals(getKey()),
         "Can only apply a mutation to a document with the same key");
@@ -138,7 +138,7 @@ public abstract class Mutation {
    * defined to return the version of the base document only if it is an existing document. Deleted
    * and unknown documents have a post-mutation version of {@code SnapshotVersion.NONE}.
    */
-  static SnapshotVersion getPostMutationVersion(Document document) {
+  static SnapshotVersion getPostMutationVersion(MutableDocument document) {
     if (document.isFoundDocument()) {
       return document.getVersion();
     } else {
@@ -156,7 +156,7 @@ public abstract class Mutation {
    * @return The transform results list.
    */
   protected Map<FieldPath, Value> serverTransformResults(
-      Document maybeDoc, List<Value> serverTransformResults) {
+          MutableDocument maybeDoc, List<Value> serverTransformResults) {
     Map<FieldPath, Value> transformResults = new HashMap<>(fieldTransforms.size());
     hardAssert(
         fieldTransforms.size() == serverTransformResults.size(),
@@ -189,7 +189,7 @@ public abstract class Mutation {
    * @return The transform results list.
    */
   protected Map<FieldPath, Value> localTransformResults(
-      Timestamp localWriteTime, Document maybeDoc) {
+      Timestamp localWriteTime, MutableDocument maybeDoc) {
     Map<FieldPath, Value> transformResults = new HashMap<>(fieldTransforms.size());
     for (FieldTransform fieldTransform : fieldTransforms) {
       TransformOperation transform = fieldTransform.getOperation();
@@ -205,7 +205,7 @@ public abstract class Mutation {
     return transformResults;
   }
 
-  public ObjectValue extractTransformBaseValue(Document document) {
+  public ObjectValue extractTransformBaseValue(MutableDocument document) {
     ObjectValue baseObject = null;
 
     for (FieldTransform transform : fieldTransforms) {

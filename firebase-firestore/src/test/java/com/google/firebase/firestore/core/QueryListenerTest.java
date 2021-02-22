@@ -30,7 +30,7 @@ import com.google.firebase.firestore.MetadataChanges;
 import com.google.firebase.firestore.core.DocumentViewChange.Type;
 import com.google.firebase.firestore.core.EventManager.ListenOptions;
 import com.google.firebase.firestore.core.View.DocumentChanges;
-import com.google.firebase.firestore.model.Document;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.DocumentSet;
 import com.google.firebase.firestore.remote.TargetChange;
@@ -47,7 +47,7 @@ import org.robolectric.annotation.Config;
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
 public class QueryListenerTest {
-  private static ViewSnapshot applyChanges(View view, Document... docs) {
+  private static ViewSnapshot applyChanges(View view, MutableDocument... docs) {
     return view.applyChanges(view.computeDocChanges(docUpdates(docs))).getSnapshot();
   }
 
@@ -75,9 +75,9 @@ public class QueryListenerTest {
     final List<ViewSnapshot> otherAccum = new ArrayList<>();
 
     Query query = Query.atPath(path("rooms"));
-    Document doc1 = doc("rooms/eros", 1, map("name", "eros"));
-    Document doc2 = doc("rooms/hades", 2, map("name", "hades"));
-    Document doc2prime = doc("rooms/hades", 3, map("name", "hades", "owner", "Jonny"));
+    MutableDocument doc1 = doc("rooms/eros", 1, map("name", "eros"));
+    MutableDocument doc2 = doc("rooms/hades", 2, map("name", "hades"));
+    MutableDocument doc2prime = doc("rooms/hades", 3, map("name", "hades", "owner", "Jonny"));
 
     QueryListener listener = queryListener(query, accum);
     QueryListener otherListener = queryListener(query, otherAccum);
@@ -157,8 +157,8 @@ public class QueryListenerTest {
     List<ViewSnapshot> filteredAccum = new ArrayList<>();
     List<ViewSnapshot> fullAccum = new ArrayList<>();
     Query query = Query.atPath(path("rooms"));
-    Document doc1 = doc("rooms/eros", 1, map("name", "eros"));
-    Document doc2 = doc("rooms/hades", 2, map("name", "hades"));
+    MutableDocument doc1 = doc("rooms/eros", 1, map("name", "eros"));
+    MutableDocument doc2 = doc("rooms/hades", 2, map("name", "hades"));
     ListenOptions options1 = new ListenOptions();
     ListenOptions options2 = new ListenOptions();
     options2.includeQueryMetadataChanges = true;
@@ -195,10 +195,10 @@ public class QueryListenerTest {
     List<ViewSnapshot> filteredAccum = new ArrayList<>();
     List<ViewSnapshot> fullAccum = new ArrayList<>();
     Query query = Query.atPath(path("rooms"));
-    Document doc1 = doc("rooms/eros", 1, map("name", "eros"));
-    Document doc1Prime = doc("rooms/eros", 1, map("name", "eros")).setLocalMutations();
-    Document doc2 = doc("rooms/hades", 2, map("name", "hades"));
-    Document doc3 = doc("rooms/other", 3, map("name", "other"));
+    MutableDocument doc1 = doc("rooms/eros", 1, map("name", "eros"));
+    MutableDocument doc1Prime = doc("rooms/eros", 1, map("name", "eros")).setLocalMutations();
+    MutableDocument doc2 = doc("rooms/hades", 2, map("name", "hades"));
+    MutableDocument doc3 = doc("rooms/other", 3, map("name", "other"));
 
     ListenOptions options1 = new ListenOptions();
     ListenOptions options2 = new ListenOptions();
@@ -232,11 +232,11 @@ public class QueryListenerTest {
   public void testRaisesQueryMetadataEventsOnlyWhenHasPendingWritesOnTheQueryChanges() {
     List<ViewSnapshot> fullAccum = new ArrayList<>();
     Query query = Query.atPath(path("rooms"));
-    Document doc1 = doc("rooms/eros", 1, map("name", "eros")).setLocalMutations();
-    Document doc2 = doc("rooms/hades", 2, map("name", "hades")).setLocalMutations();
-    Document doc1Prime = doc("rooms/eros", 1, map("name", "eros"));
-    Document doc2Prime = doc("rooms/hades", 2, map("name", "hades"));
-    Document doc3 = doc("rooms/other", 3, map("name", "other"));
+    MutableDocument doc1 = doc("rooms/eros", 1, map("name", "eros")).setLocalMutations();
+    MutableDocument doc2 = doc("rooms/hades", 2, map("name", "hades")).setLocalMutations();
+    MutableDocument doc1Prime = doc("rooms/eros", 1, map("name", "eros"));
+    MutableDocument doc2Prime = doc("rooms/hades", 2, map("name", "hades"));
+    MutableDocument doc3 = doc("rooms/other", 3, map("name", "other"));
 
     ListenOptions options = new ListenOptions();
     options.includeQueryMetadataChanges = true;
@@ -276,10 +276,10 @@ public class QueryListenerTest {
   public void testMetadataOnlyDocumentChangesAreFilteredOut() {
     List<ViewSnapshot> filteredAccum = new ArrayList<>();
     Query query = Query.atPath(path("rooms"));
-    Document doc1 = doc("rooms/eros", 1, map("name", "eros"));
-    Document doc1Prime = doc("rooms/eros", 1, map("name", "eros")).setLocalMutations();
-    Document doc2 = doc("rooms/hades", 2, map("name", "hades"));
-    Document doc3 = doc("rooms/other", 3, map("name", "other"));
+    MutableDocument doc1 = doc("rooms/eros", 1, map("name", "eros"));
+    MutableDocument doc1Prime = doc("rooms/eros", 1, map("name", "eros")).setLocalMutations();
+    MutableDocument doc2 = doc("rooms/hades", 2, map("name", "hades"));
+    MutableDocument doc3 = doc("rooms/other", 3, map("name", "other"));
 
     ListenOptions options = new ListenOptions();
     options.includeDocumentMetadataChanges = false;
@@ -313,8 +313,8 @@ public class QueryListenerTest {
     List<ViewSnapshot> events = new ArrayList<>();
     Query query = Query.atPath(path("rooms"));
 
-    Document doc1 = doc("rooms/eros", 1, map("name", "eros"));
-    Document doc2 = doc("rooms/hades", 2, map("name", "hades"));
+    MutableDocument doc1 = doc("rooms/eros", 1, map("name", "eros"));
+    MutableDocument doc2 = doc("rooms/hades", 2, map("name", "hades"));
 
     ListenOptions options = new ListenOptions();
     options.waitForSyncWhenOnline = true;
@@ -353,8 +353,8 @@ public class QueryListenerTest {
     List<ViewSnapshot> events = new ArrayList<>();
     Query query = Query.atPath(path("rooms"));
 
-    Document doc1 = doc("rooms/eros", 1, map("name", "eros"));
-    Document doc2 = doc("rooms/hades", 2, map("name", "hades"));
+    MutableDocument doc1 = doc("rooms/eros", 1, map("name", "eros"));
+    MutableDocument doc2 = doc("rooms/hades", 2, map("name", "hades"));
 
     ListenOptions options = new ListenOptions();
     options.waitForSyncWhenOnline = true;

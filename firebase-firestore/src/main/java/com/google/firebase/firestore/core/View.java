@@ -22,7 +22,7 @@ import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.DocumentViewChange.Type;
 import com.google.firebase.firestore.core.ViewSnapshot.SyncState;
-import com.google.firebase.firestore.model.Document;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.DocumentSet;
 import com.google.firebase.firestore.remote.TargetChange;
@@ -112,7 +112,7 @@ public class View {
    * @param docChanges The doc changes to apply to this view.
    * @return a new set of docs, changes, and refill flag.
    */
-  public DocumentChanges computeDocChanges(ImmutableSortedMap<DocumentKey, Document> docChanges) {
+  public DocumentChanges computeDocChanges(ImmutableSortedMap<DocumentKey, MutableDocument> docChanges) {
     return computeDocChanges(docChanges, null);
   }
 
@@ -127,7 +127,7 @@ public class View {
    * @return a new set of docs, changes, and refill flag.
    */
   public DocumentChanges computeDocChanges(
-      ImmutableSortedMap<DocumentKey, Document> docChanges,
+      ImmutableSortedMap<DocumentKey, MutableDocument> docChanges,
       @Nullable DocumentChanges previousChanges) {
     DocumentViewChangeSet changeSet =
         previousChanges != null ? previousChanges.changeSet : new DocumentViewChangeSet();
@@ -146,19 +146,19 @@ public class View {
     //
     // Note that this should never get used in a refill (when previousChanges is set), because there
     // will only be adds -- no deletes or updates.
-    Document lastDocInLimit =
+    MutableDocument lastDocInLimit =
         (query.hasLimitToFirst() && oldDocumentSet.size() == query.getLimitToFirst())
             ? oldDocumentSet.getLastDocument()
             : null;
-    Document firstDocInLimit =
+    MutableDocument firstDocInLimit =
         (query.hasLimitToLast() && oldDocumentSet.size() == query.getLimitToLast())
             ? oldDocumentSet.getFirstDocument()
             : null;
 
-    for (Map.Entry<DocumentKey, Document> entry : docChanges) {
+    for (Map.Entry<DocumentKey, MutableDocument> entry : docChanges) {
       DocumentKey key = entry.getKey();
-      Document oldDoc = oldDocumentSet.getDocument(key);
-      Document newDoc = null;
+      MutableDocument oldDoc = oldDocumentSet.getDocument(key);
+      MutableDocument newDoc = null;
 
       if (entry.getValue().isFoundDocument()) {
         hardAssert(
@@ -236,7 +236,7 @@ public class View {
     if (query.hasLimitToFirst() || query.hasLimitToLast()) {
       long limit = query.hasLimitToFirst() ? query.getLimitToFirst() : query.getLimitToLast();
       for (long i = newDocumentSet.size() - limit; i > 0; --i) {
-        Document oldDoc =
+        MutableDocument oldDoc =
             query.hasLimitToFirst()
                 ? newDocumentSet.getLastDocument()
                 : newDocumentSet.getFirstDocument();
@@ -253,7 +253,7 @@ public class View {
     return new DocumentChanges(newDocumentSet, changeSet, newMutatedKeys, needsRefill);
   }
 
-  private boolean shouldWaitForSyncedDocument(Document oldDoc, Document newDoc) {
+  private boolean shouldWaitForSyncedDocument(MutableDocument oldDoc, MutableDocument newDoc) {
     // We suppress the initial change event for documents that were modified as part of a write
     // acknowledgment (e.g. when the value of a server transform is applied) as Watch will send us
     // the same document again. By suppressing the event, we only raise two user visible events (one
@@ -373,7 +373,7 @@ public class View {
     // documents.
     ImmutableSortedSet<DocumentKey> oldLimboDocs = limboDocuments;
     limboDocuments = DocumentKey.emptyKeySet();
-    for (Document doc : documentSet) {
+    for (MutableDocument doc : documentSet) {
       if (shouldBeLimboDoc(doc.getKey())) {
         limboDocuments = limboDocuments.insert(doc.getKey());
       }
@@ -402,7 +402,7 @@ public class View {
       return false;
     }
     // The local store doesn't think it's a result, so it shouldn't be in limbo.
-    Document doc = documentSet.getDocument(key);
+    MutableDocument doc = documentSet.getDocument(key);
     if (doc == null) {
       return false;
     }

@@ -15,7 +15,7 @@
 package com.google.firebase.firestore.model.mutation;
 
 import com.google.firebase.Timestamp;
-import com.google.firebase.firestore.model.Document;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.util.Assert;
 
@@ -56,11 +56,11 @@ public final class VerifyMutation extends Mutation {
   }
 
   @Override
-  public void applyToRemoteDocument(Document document, MutationResult mutationResult) {
+  public void applyToRemoteDocument(MutableDocument document, MutationResult mutationResult) {
     throw Assert.fail("VerifyMutation should only be used in Transactions.");
   }
 
-  public void applyToLocalView(Document document, Timestamp localWriteTime) {
+  public void applyToLocalView(MutableDocument document, Timestamp localWriteTime) {
     throw Assert.fail("VerifyMutation should only be used in Transactions.");
   }
 }

@@ -46,7 +46,7 @@ import com.google.firebase.firestore.local.LocalViewChanges;
 import com.google.firebase.firestore.local.QueryPurpose;
 import com.google.firebase.firestore.local.TargetData;
 import com.google.firebase.firestore.model.DatabaseId;
-import com.google.firebase.firestore.model.Document;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.DocumentSet;
 import com.google.firebase.firestore.model.FieldPath;
@@ -180,37 +180,37 @@ public class TestUtil {
     return new SnapshotVersion(new Timestamp(seconds, nanos));
   }
 
-  public static Document doc(String key, long version, Map<String, Object> data) {
-    return new Document(key(key)).setFoundDocument(version(version), wrapObject(data));
+  public static MutableDocument doc(String key, long version, Map<String, Object> data) {
+    return new MutableDocument(key(key)).setFoundDocument(version(version), wrapObject(data));
   }
 
-  public static Document doc(DocumentKey key, long version, Map<String, Object> data) {
-    return new Document(key).setFoundDocument(version(version), wrapObject(data));
+  public static MutableDocument doc(DocumentKey key, long version, Map<String, Object> data) {
+    return new MutableDocument(key).setFoundDocument(version(version), wrapObject(data));
   }
 
-  public static Document doc(String key, long version, ObjectValue data) {
-    return new Document(key(key)).setFoundDocument(version(version), data);
+  public static MutableDocument doc(String key, long version, ObjectValue data) {
+    return new MutableDocument(key(key)).setFoundDocument(version(version), data);
   }
 
-  public static Document deletedDoc(String key, long version) {
-    return new Document(key(key)).setNoDocument(version(version));
+  public static MutableDocument deletedDoc(String key, long version) {
+    return new MutableDocument(key(key)).setNoDocument(version(version));
   }
 
-  public static Document unknownDoc(String key, long version) {
-    return new Document(key(key)).setUnknownDocument(version(version));
+  public static MutableDocument unknownDoc(String key, long version) {
+    return new MutableDocument(key(key)).setUnknownDocument(version(version));
   }
 
-  public static ImmutableSortedMap<DocumentKey, Document> docMap(Document[] documents) {
-    ImmutableSortedMap<DocumentKey, Document> map = emptyDocumentMap();
-    for (Document maybeDocument : documents) {
+  public static ImmutableSortedMap<DocumentKey, MutableDocument> docMap(MutableDocument[] documents) {
+    ImmutableSortedMap<DocumentKey, MutableDocument> map = emptyDocumentMap();
+    for (MutableDocument maybeDocument : documents) {
       map = map.insert(maybeDocument.getKey(), maybeDocument);
     }
     return map;
   }
 
-  public static DocumentSet docSet(Comparator<Document> comparator, Document... documents) {
+  public static DocumentSet docSet(Comparator<MutableDocument> comparator, MutableDocument... documents) {
     DocumentSet set = DocumentSet.emptySet(comparator);
-    for (Document document : documents) {
+    for (MutableDocument document : documents) {
       set = set.add(document);
     }
     return set;
@@ -292,10 +292,10 @@ public class TestUtil {
         query(path).toTarget(), targetId, ARBITRARY_SEQUENCE_NUMBER, queryPurpose);
   }
 
-  public static ImmutableSortedMap<DocumentKey, Document> docUpdates(Document... docs) {
-    ImmutableSortedMap<DocumentKey, Document> res =
+  public static ImmutableSortedMap<DocumentKey, MutableDocument> docUpdates(MutableDocument... docs) {
+    ImmutableSortedMap<DocumentKey, MutableDocument> res =
         ImmutableSortedMap.Builder.emptyMap(DocumentKey.comparator());
-    for (Document doc : docs) {
+    for (MutableDocument doc : docs) {
       res = res.insert(doc.getKey(), doc);
     }
     return res;
@@ -304,27 +304,27 @@ public class TestUtil {
   public static TargetChange targetChange(
       ByteString resumeToken,
       boolean current,
-      @Nullable Collection<Document> addedDocuments,
-      @Nullable Collection<Document> modifiedDocuments,
-      @Nullable Collection<? extends Document> removedDocuments) {
+      @Nullable Collection<MutableDocument> addedDocuments,
+      @Nullable Collection<MutableDocument> modifiedDocuments,
+      @Nullable Collection<? extends MutableDocument> removedDocuments) {
     ImmutableSortedSet<DocumentKey> addedDocumentKeys = DocumentKey.emptyKeySet();
     ImmutableSortedSet<DocumentKey> modifiedDocumentKeys = DocumentKey.emptyKeySet();
     ImmutableSortedSet<DocumentKey> removedDocumentKeys = DocumentKey.emptyKeySet();
 
     if (addedDocuments != null) {
-      for (Document document : addedDocuments) {
+      for (MutableDocument document : addedDocuments) {
         addedDocumentKeys = addedDocumentKeys.insert(document.getKey());
       }
     }
 
     if (modifiedDocuments != null) {
-      for (Document document : modifiedDocuments) {
+      for (MutableDocument document : modifiedDocuments) {
         modifiedDocumentKeys = modifiedDocumentKeys.insert(document.getKey());
       }
     }
 
     if (removedDocuments != null) {
-      for (Document document : removedDocuments) {
+      for (MutableDocument document : removedDocuments) {
         removedDocumentKeys = removedDocumentKeys.insert(document.getKey());
       }
     }
@@ -333,7 +333,7 @@ public class TestUtil {
         resumeToken, current, addedDocumentKeys, modifiedDocumentKeys, removedDocumentKeys);
   }
 
-  public static TargetChange ackTarget(Document... docs) {
+  public static TargetChange ackTarget(MutableDocument... docs) {
     return targetChange(ByteString.EMPTY, true, Arrays.asList(docs), null, null);
   }
 
@@ -389,12 +389,12 @@ public class TestUtil {
   }
 
   public static RemoteEvent addedRemoteEvent(
-      Document doc, List<Integer> updatedInTargets, List<Integer> removedFromTargets) {
+          MutableDocument doc, List<Integer> updatedInTargets, List<Integer> removedFromTargets) {
     return addedRemoteEvent(Collections.singletonList(doc), updatedInTargets, removedFromTargets);
   }
 
   public static RemoteEvent addedRemoteEvent(
-      List<Document> docs, List<Integer> updatedInTargets, List<Integer> removedFromTargets) {
+          List<MutableDocument> docs, List<Integer> updatedInTargets, List<Integer> removedFromTargets) {
     Preconditions.checkArgument(!docs.isEmpty(), "Cannot pass empty docs array");
 
     WatchChangeAggregator aggregator =
@@ -414,7 +414,7 @@ public class TestUtil {
 
     SnapshotVersion version = SnapshotVersion.NONE;
 
-    for (Document doc : docs) {
+    for (MutableDocument doc : docs) {
       DocumentChange change =
           new DocumentChange(updatedInTargets, removedFromTargets, doc.getKey(), doc);
       aggregator.handleDocumentChange(change);
@@ -425,7 +425,7 @@ public class TestUtil {
   }
 
   public static RemoteEvent updateRemoteEvent(
-      Document doc, List<Integer> updatedInTargets, List<Integer> removedFromTargets) {
+          MutableDocument doc, List<Integer> updatedInTargets, List<Integer> removedFromTargets) {
     List<Integer> activeTargets = new ArrayList<>();
     activeTargets.addAll(updatedInTargets);
     activeTargets.addAll(removedFromTargets);
@@ -433,7 +433,7 @@ public class TestUtil {
   }
 
   public static RemoteEvent updateRemoteEvent(
-      Document doc,
+      MutableDocument doc,
       List<Integer> updatedInTargets,
       List<Integer> removedFromTargets,
       List<Integer> activeTargets) {

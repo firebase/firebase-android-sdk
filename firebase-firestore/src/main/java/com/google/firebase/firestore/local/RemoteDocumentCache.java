@@ -16,7 +16,7 @@ package com.google.firebase.firestore.local;
 
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
-import com.google.firebase.firestore.model.Document;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import java.util.Map;
@@ -38,7 +38,7 @@ interface RemoteDocumentCache {
    * @param document A Document or NoDocument to put in the cache.
    * @param readTime The time at which the document was read or committed.
    */
-  void add(Document document, SnapshotVersion readTime);
+  void add(MutableDocument document, SnapshotVersion readTime);
 
   /** Removes the cached entry for the given key (no-op if no entry exists). */
   void remove(DocumentKey documentKey);
@@ -49,7 +49,7 @@ interface RemoteDocumentCache {
    * @param documentKey The key of the entry to look up.
    * @return The cached Document or NoDocument entry, or an invalid document if nothing is cached.
    */
-  Document get(DocumentKey documentKey);
+  MutableDocument get(DocumentKey documentKey);
 
   /**
    * Looks up a set of entries in the cache.
@@ -58,7 +58,7 @@ interface RemoteDocumentCache {
    * @return The cached Document or NoDocument entries indexed by key. If an entry is not cached, an
    *     invalid document is returned.
    */
-  Map<DocumentKey, Document> getAll(Iterable<DocumentKey> documentKeys);
+  Map<DocumentKey, MutableDocument> getAll(Iterable<DocumentKey> documentKeys);
 
   /**
    * Executes a query against the cached Document entries
@@ -73,6 +73,6 @@ interface RemoteDocumentCache {
    *     read since this snapshot version (exclusive).
    * @return The set of matching documents.
    */
-  ImmutableSortedMap<DocumentKey, Document> getAllDocumentsMatchingQuery(
+  ImmutableSortedMap<DocumentKey, MutableDocument> getAllDocumentsMatchingQuery(
       Query query, SnapshotVersion sinceReadTime);
 }

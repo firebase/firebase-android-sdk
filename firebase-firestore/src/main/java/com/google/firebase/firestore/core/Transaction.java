@@ -24,7 +24,7 @@ import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.core.UserData.ParsedSetData;
 import com.google.firebase.firestore.core.UserData.ParsedUpdateData;
-import com.google.firebase.firestore.model.Document;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.DeleteMutation;
@@ -76,7 +76,7 @@ public class Transaction {
    * Takes a set of keys and asynchronously attempts to fetch all the documents from the backend,
    * ignoring any local changes.
    */
-  public Task<List<Document>> lookup(List<DocumentKey> keys) {
+  public Task<List<MutableDocument>> lookup(List<DocumentKey> keys) {
     ensureCommitNotCalled();
 
     if (mutations.size() != 0) {
@@ -91,7 +91,7 @@ public class Transaction {
             Executors.DIRECT_EXECUTOR,
             task -> {
               if (task.isSuccessful()) {
-                for (Document doc : task.getResult()) {
+                for (MutableDocument doc : task.getResult()) {
                   recordVersion(doc);
                 }
               }
@@ -169,7 +169,7 @@ public class Transaction {
     return executor;
   }
 
-  private void recordVersion(Document doc) throws FirebaseFirestoreException {
+  private void recordVersion(MutableDocument doc) throws FirebaseFirestoreException {
     SnapshotVersion docVersion;
     if (doc.isFoundDocument()) {
       docVersion = doc.getVersion();

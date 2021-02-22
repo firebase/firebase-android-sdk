@@ -30,7 +30,7 @@ import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.Filter;
 import com.google.firebase.firestore.core.IndexRange;
 import com.google.firebase.firestore.core.Query;
-import com.google.firebase.firestore.model.Document;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.testutil.TestUtil;
 import java.util.Arrays;
@@ -55,9 +55,9 @@ public class IndexedQueryEngineTest {
   private static final int UPDATED_VERSION = 1;
 
   // Documents used in the verify the index lookups.
-  private static final Document NON_MATCHING_DOC = doc("coll/a", ORIGINAL_VERSION, map("a", "b"));
-  private static final Document MATCHING_DOC = doc("coll/a", UPDATED_VERSION, map("a", "a"));
-  private static final Document IGNORED_DOC = doc("coll/b", ORIGINAL_VERSION, map("b", "b"));
+  private static final MutableDocument NON_MATCHING_DOC = doc("coll/a", ORIGINAL_VERSION, map("a", "b"));
+  private static final MutableDocument MATCHING_DOC = doc("coll/a", UPDATED_VERSION, map("a", "a"));
+  private static final MutableDocument IGNORED_DOC = doc("coll/b", ORIGINAL_VERSION, map("b", "b"));
 
   @Before
   public void setUp() {
@@ -69,20 +69,20 @@ public class IndexedQueryEngineTest {
     queryEngine = new IndexedQueryEngine(index);
   }
 
-  private void addDocument(Document newDoc) {
+  private void addDocument(MutableDocument newDoc) {
     // Use document version as read time as the IndexedQueryEngine does not rely on read time.
     remoteDocuments.add(newDoc, newDoc.getVersion());
     queryEngine.handleDocumentChange(
         deletedDoc(newDoc.getKey().toString(), ORIGINAL_VERSION), newDoc);
   }
 
-  private void removeDocument(Document oldDoc) {
+  private void removeDocument(MutableDocument oldDoc) {
     remoteDocuments.remove(oldDoc.getKey());
     queryEngine.handleDocumentChange(
         oldDoc, deletedDoc(oldDoc.getKey().toString(), UPDATED_VERSION));
   }
 
-  private void updateDocument(Document oldDoc, Document newDoc) {
+  private void updateDocument(MutableDocument oldDoc, MutableDocument newDoc) {
     remoteDocuments.add(newDoc, newDoc.getVersion());
     queryEngine.handleDocumentChange(oldDoc, newDoc);
   }
@@ -210,7 +210,7 @@ public class IndexedQueryEngineTest {
     addDocument(MATCHING_DOC);
     Query query = query("coll").filter(filter("a", "==", "a"));
 
-    ImmutableSortedMap<DocumentKey, Document> results =
+    ImmutableSortedMap<DocumentKey, MutableDocument> results =
         queryEngine.getDocumentsMatchingQuery(
             query, /* lastLimboFreeSnapshotVersion= */ null, DocumentKey.emptyKeySet());
 
@@ -226,7 +226,7 @@ public class IndexedQueryEngineTest {
     updateDocument(NON_MATCHING_DOC, MATCHING_DOC);
     Query query = query("coll").filter(filter("a", "==", "a"));
 
-    ImmutableSortedMap<DocumentKey, Document> results =
+    ImmutableSortedMap<DocumentKey, MutableDocument> results =
         queryEngine.getDocumentsMatchingQuery(
             query, /* lastLimboFreeSnapshotVersion= */ null, DocumentKey.emptyKeySet());
 
@@ -242,7 +242,7 @@ public class IndexedQueryEngineTest {
     removeDocument(MATCHING_DOC);
     Query query = query("coll").filter(filter("a", "==", "a"));
 
-    ImmutableSortedMap<DocumentKey, Document> results =
+    ImmutableSortedMap<DocumentKey, MutableDocument> results =
         queryEngine.getDocumentsMatchingQuery(
             query, /* lastLimboFreeSnapshotVersion= */ null, DocumentKey.emptyKeySet());
 
@@ -253,15 +253,15 @@ public class IndexedQueryEngineTest {
   @Test
   @Ignore("Pending cr/164068667")
   public void nestedQuery() {
-    Document nonMatchingDoc = doc("coll/a", ORIGINAL_VERSION, map("a", map("a", "b")));
-    Document matchingDoc = doc("coll/a", UPDATED_VERSION, map("a", map("a", "a")));
-    Document ignoredDoc = doc("coll/b", ORIGINAL_VERSION, map("a", map("a", "b")));
+    MutableDocument nonMatchingDoc = doc("coll/a", ORIGINAL_VERSION, map("a", map("a", "b")));
+    MutableDocument matchingDoc = doc("coll/a", UPDATED_VERSION, map("a", map("a", "a")));
+    MutableDocument ignoredDoc = doc("coll/b", ORIGINAL_VERSION, map("a", map("a", "b")));
     addDocument(nonMatchingDoc);
     addDocument(ignoredDoc);
     updateDocument(nonMatchingDoc, matchingDoc);
     Query query = query("coll").filter(filter("a.a", "==", "a"));
 
-    ImmutableSortedMap<DocumentKey, Document> results =
+    ImmutableSortedMap<DocumentKey, MutableDocument> results =
         queryEngine.getDocumentsMatchingQuery(
             query, /* lastLimboFreeSnapshotVersion= */ null, DocumentKey.emptyKeySet());
 
@@ -276,7 +276,7 @@ public class IndexedQueryEngineTest {
     addDocument(MATCHING_DOC);
     Query query = query("coll").orderBy(TestUtil.orderBy("a"));
 
-    ImmutableSortedMap<DocumentKey, Document> results =
+    ImmutableSortedMap<DocumentKey, MutableDocument> results =
         queryEngine.getDocumentsMatchingQuery(
             query, /* lastLimboFreeSnapshotVersion= */ null, DocumentKey.emptyKeySet());
 

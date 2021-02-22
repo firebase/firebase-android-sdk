@@ -15,7 +15,7 @@
 package com.google.firebase.firestore.model.mutation;
 
 import com.google.firebase.Timestamp;
-import com.google.firebase.firestore.model.Document;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.ObjectValue;
@@ -104,7 +104,7 @@ public final class PatchMutation extends Mutation {
   }
 
   @Override
-  public void applyToRemoteDocument(Document document, MutationResult mutationResult) {
+  public void applyToRemoteDocument(MutableDocument document, MutationResult mutationResult) {
     verifyKeyMatches(document);
 
     if (!this.getPrecondition().isValidFor(document)) {
@@ -126,7 +126,7 @@ public final class PatchMutation extends Mutation {
   }
 
   @Override
-  public void applyToLocalView(Document document, Timestamp localWriteTime) {
+  public void applyToLocalView(MutableDocument document, Timestamp localWriteTime) {
     verifyKeyMatches(document);
 
     if (!getPrecondition().isValidFor(document)) {

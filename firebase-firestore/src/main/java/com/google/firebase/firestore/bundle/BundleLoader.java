@@ -20,7 +20,7 @@ import androidx.annotation.Nullable;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.LoadBundleTaskProgress;
-import com.google.firebase.firestore.model.Document;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.util.Preconditions;
 import java.util.ArrayList;
@@ -38,7 +38,7 @@ public class BundleLoader {
   private final List<NamedQuery> queries;
   private final Map<DocumentKey, BundledDocumentMetadata> documentsMetadata;
 
-  private ImmutableSortedMap<DocumentKey, Document> documents;
+  private ImmutableSortedMap<DocumentKey, MutableDocument> documents;
   private long bytesLoaded;
   @Nullable private DocumentKey currentDocument;
 
@@ -72,7 +72,7 @@ public class BundleLoader {
         documents =
             documents.insert(
                 bundledDocumentMetadata.getKey(),
-                new Document(bundledDocumentMetadata.getKey())
+                new MutableDocument(bundledDocumentMetadata.getKey())
                     .setNoDocument(bundledDocumentMetadata.getReadTime()));
         currentDocument = null;
       }
@@ -100,7 +100,7 @@ public class BundleLoader {
   }
 
   /** Applies the loaded documents and queries to local store. Returns the document view changes. */
-  public ImmutableSortedMap<DocumentKey, Document> applyChanges() {
+  public ImmutableSortedMap<DocumentKey, MutableDocument> applyChanges() {
     Preconditions.checkArgument(
         currentDocument == null,
         "Bundled documents end with a document metadata element instead of a document.");
@@ -111,7 +111,7 @@ public class BundleLoader {
         bundleMetadata.getTotalDocuments(),
         documents.size());
 
-    ImmutableSortedMap<DocumentKey, Document> changes =
+    ImmutableSortedMap<DocumentKey, MutableDocument> changes =
         bundleCallback.applyBundledDocuments(documents, bundleMetadata.getBundleId());
 
     Map<String, ImmutableSortedSet<DocumentKey>> queryDocumentMap = getQueryDocumentMapping();

@@ -15,16 +15,16 @@
 package com.google.firebase.firestore.local;
 
 import com.google.firebase.database.collection.ImmutableSortedMap;
-import com.google.firebase.firestore.model.Document;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentKey;
 
 /** The result of a write to the local store. */
 public final class LocalWriteResult {
   private final int batchId;
 
-  private final ImmutableSortedMap<DocumentKey, Document> changes;
+  private final ImmutableSortedMap<DocumentKey, MutableDocument> changes;
 
-  LocalWriteResult(int batchId, ImmutableSortedMap<DocumentKey, Document> changes) {
+  LocalWriteResult(int batchId, ImmutableSortedMap<DocumentKey, MutableDocument> changes) {
     this.batchId = batchId;
     this.changes = changes;
   }
@@ -33,7 +33,7 @@ public final class LocalWriteResult {
     return batchId;
   }
 
-  public ImmutableSortedMap<DocumentKey, Document> getChanges() {
+  public ImmutableSortedMap<DocumentKey, MutableDocument> getChanges() {
     return changes;
   }
 }

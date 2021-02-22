@@ -58,7 +58,7 @@ import com.google.firebase.firestore.local.Persistence;
 import com.google.firebase.firestore.local.PersistenceTestHelpers;
 import com.google.firebase.firestore.local.QueryPurpose;
 import com.google.firebase.firestore.local.TargetData;
-import com.google.firebase.firestore.model.Document;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
@@ -413,7 +413,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     long version = jsonDoc.getLong("version");
     JSONObject options = jsonDoc.getJSONObject("options");
     Map<String, Object> values = parseMap(jsonDoc.getJSONObject("value"));
-    Document doc = doc(jsonDoc.getString("key"), version, values);
+    MutableDocument doc = doc(jsonDoc.getString("key"), version, values);
     if (options.optBoolean("hasLocalMutations")) {
       doc.setLocalMutations();
     }
@@ -637,7 +637,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
       Map<String, Object> value =
           !docSpec.isNull("value") ? parseMap(docSpec.getJSONObject("value")) : null;
       long version = docSpec.getLong("version");
-      Document doc = value != null ? doc(key, version, value) : deletedDoc(key, version);
+      MutableDocument doc = value != null ? doc(key, version, value) : deletedDoc(key, version);
       List<Integer> updated = parseIntList(watchEntity.optJSONArray("targets"));
       List<Integer> removed = parseIntList(watchEntity.optJSONArray("removedTargets"));
       WatchChange change = new DocumentChange(updated, removed, doc.getKey(), doc);

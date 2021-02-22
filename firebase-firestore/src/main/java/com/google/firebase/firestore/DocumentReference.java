@@ -34,7 +34,7 @@ import com.google.firebase.firestore.core.QueryListener;
 import com.google.firebase.firestore.core.UserData.ParsedSetData;
 import com.google.firebase.firestore.core.UserData.ParsedUpdateData;
 import com.google.firebase.firestore.core.ViewSnapshot;
-import com.google.firebase.firestore.model.Document;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.mutation.DeleteMutation;
@@ -278,8 +278,8 @@ public class DocumentReference {
           .getDocumentFromLocalCache(key)
           .continueWith(
               Executors.DIRECT_EXECUTOR,
-              (Task<Document> task) -> {
-                Document doc = task.getResult();
+              (Task<MutableDocument> task) -> {
+                MutableDocument doc = task.getResult();
                 boolean hasPendingWrites = doc != null && doc.hasLocalMutations();
                 return new DocumentSnapshot(
                     firestore, key, doc, /*isFromCache=*/ true, hasPendingWrites);
@@ -489,7 +489,7 @@ public class DocumentReference {
               snapshot.getDocuments().size() <= 1,
               "Too many documents returned on a document query");
 
-          Document document = snapshot.getDocuments().getDocument(key);
+          MutableDocument document = snapshot.getDocuments().getDocument(key);
           DocumentSnapshot documentSnapshot;
           if (document != null) {
             boolean hasPendingWrites = snapshot.getMutatedKeys().contains(document.getKey());

@@ -16,7 +16,7 @@ package com.google.firebase.firestore.core;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
-import com.google.firebase.firestore.model.Document;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.Values;
@@ -33,7 +33,7 @@ public class KeyFieldFilter extends FieldFilter {
   }
 
   @Override
-  public boolean matches(Document doc) {
+  public boolean matches(MutableDocument doc) {
     int comparator = doc.getKey().compareTo(key);
     return this.matchesComparison(comparator);
   }

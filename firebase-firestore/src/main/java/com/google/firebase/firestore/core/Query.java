@@ -19,7 +19,7 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 import androidx.annotation.Nullable;
 import com.google.firebase.firestore.core.Filter.Operator;
 import com.google.firebase.firestore.core.OrderBy.Direction;
-import com.google.firebase.firestore.model.Document;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.ResourcePath;
@@ -410,7 +410,7 @@ public final class Query {
     return memoizedOrderBy;
   }
 
-  private boolean matchesPathAndCollectionGroup(Document doc) {
+  private boolean matchesPathAndCollectionGroup(MutableDocument doc) {
     ResourcePath docPath = doc.getKey().getPath();
     if (collectionGroup != null) {
       // NOTE: this.path is currently always empty since we don't expose Collection
@@ -423,7 +423,7 @@ public final class Query {
     }
   }
 
-  private boolean matchesFilters(Document doc) {
+  private boolean matchesFilters(MutableDocument doc) {
     for (Filter filter : filters) {
       if (!filter.matches(doc)) {
         return false;
@@ -433,7 +433,7 @@ public final class Query {
   }
 
   /** A document must have a value for every ordering clause in order to show up in the results. */
-  private boolean matchesOrderBy(Document doc) {
+  private boolean matchesOrderBy(MutableDocument doc) {
     for (OrderBy order : explicitSortOrder) {
       // order by key always matches
       if (!order.getField().equals(FieldPath.KEY_PATH) && (doc.getField(order.field) == null)) {
@@ -444,7 +444,7 @@ public final class Query {
   }
 
   /** Makes sure a document is within the bounds, if provided. */
-  private boolean matchesBounds(Document doc) {
+  private boolean matchesBounds(MutableDocument doc) {
     if (startAt != null && !startAt.sortsBeforeDocument(getOrderBy(), doc)) {
       return false;
     }
@@ -455,7 +455,7 @@ public final class Query {
   }
 
   /** Returns true if the document matches the constraints of this query. */
-  public boolean matches(Document doc) {
+  public boolean matches(MutableDocument doc) {
     return matchesPathAndCollectionGroup(doc)
         && matchesOrderBy(doc)
         && matchesFilters(doc)
@@ -463,11 +463,11 @@ public final class Query {
   }
 
   /** Returns a comparator that will sort documents according to this Query's sort order. */
-  public Comparator<Document> comparator() {
+  public Comparator<MutableDocument> comparator() {
     return new QueryComparator(getOrderBy());
   }
 
-  private static class QueryComparator implements Comparator<Document> {
+  private static class QueryComparator implements Comparator<MutableDocument> {
     private final List<OrderBy> sortOrder;
 
     QueryComparator(List<OrderBy> order) {
@@ -482,7 +482,7 @@ public final class Query {
     }
 
     @Override
-    public int compare(Document doc1, Document doc2) {
+    public int compare(MutableDocument doc1, MutableDocument doc2) {
       for (OrderBy order : sortOrder) {
         int comp = order.compare(doc1, doc2);
         if (comp != 0) {

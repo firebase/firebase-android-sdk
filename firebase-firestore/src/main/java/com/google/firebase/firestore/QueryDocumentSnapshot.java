@@ -18,7 +18,7 @@ import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import com.google.firebase.firestore.model.Document;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.util.Assert;
 import java.util.Map;
@@ -42,14 +42,14 @@ public class QueryDocumentSnapshot extends DocumentSnapshot {
   private QueryDocumentSnapshot(
       FirebaseFirestore firestore,
       DocumentKey key,
-      @Nullable Document doc,
+      @Nullable MutableDocument doc,
       boolean isFromCache,
       boolean hasPendingWrites) {
     super(firestore, key, doc, isFromCache, hasPendingWrites);
   }
 
   static QueryDocumentSnapshot fromDocument(
-      FirebaseFirestore firestore, Document doc, boolean fromCache, boolean hasPendingWrites) {
+          FirebaseFirestore firestore, MutableDocument doc, boolean fromCache, boolean hasPendingWrites) {
     return new QueryDocumentSnapshot(firestore, doc.getKey(), doc, fromCache, hasPendingWrites);
   }
 

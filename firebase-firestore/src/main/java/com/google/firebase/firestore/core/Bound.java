@@ -17,7 +17,7 @@ package com.google.firebase.firestore.core;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import com.google.firebase.firestore.core.OrderBy.Direction;
-import com.google.firebase.firestore.model.Document;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.Values;
@@ -77,7 +77,7 @@ public final class Bound {
   }
 
   /** Returns true if a document sorts before a bound using the provided sort order. */
-  public boolean sortsBeforeDocument(List<OrderBy> orderBy, Document document) {
+  public boolean sortsBeforeDocument(List<OrderBy> orderBy, MutableDocument document) {
     hardAssert(position.size() <= orderBy.size(), "Bound has more components than query's orderBy");
     int comparison = 0;
     for (int i = 0; i < position.size(); i++) {

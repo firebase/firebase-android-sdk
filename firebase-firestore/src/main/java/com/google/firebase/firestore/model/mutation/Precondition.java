@@ -18,7 +18,7 @@ import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
-import com.google.firebase.firestore.model.Document;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
 
 /**
@@ -72,7 +72,7 @@ public final class Precondition {
    * Returns true if the preconditions is valid for the given document (or null if no document is
    * available).
    */
-  public boolean isValidFor(Document doc) {
+  public boolean isValidFor(MutableDocument doc) {
     if (this.updateTime != null) {
       return doc.isFoundDocument() && doc.getVersion().equals(this.updateTime);
     } else if (this.exists != null) {

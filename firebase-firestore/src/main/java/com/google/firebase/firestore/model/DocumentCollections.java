@@ -24,8 +24,8 @@ public class DocumentCollections {
 
   /** Returns an empty, immutable document map */
   @SuppressWarnings("unchecked")
-  public static ImmutableSortedMap<DocumentKey, Document> emptyDocumentMap() {
-    return (ImmutableSortedMap<DocumentKey, Document>) EMPTY_DOCUMENT_MAP;
+  public static ImmutableSortedMap<DocumentKey, MutableDocument> emptyDocumentMap() {
+    return (ImmutableSortedMap<DocumentKey, MutableDocument>) EMPTY_DOCUMENT_MAP;
   }
 
   /** Returns an empty, immutable versions map */

@@ -18,12 +18,12 @@ import androidx.annotation.NonNull;
 import com.google.firestore.v1.Value;
 import java.util.Comparator;
 
-public class Document implements Cloneable {
-  private static final Comparator<Document> KEY_COMPARATOR =
+public class MutableDocument implements Cloneable {
+  private static final Comparator<MutableDocument> KEY_COMPARATOR =
       (left, right) -> left.getKey().compareTo(right.getKey());
 
   /** A document comparator that returns document by key and key only. */
-  public static Comparator<Document> keyComparator() {
+  public static Comparator<MutableDocument> keyComparator() {
     return KEY_COMPARATOR;
   }
 
@@ -41,14 +41,14 @@ public class Document implements Cloneable {
   boolean hasLocalMutations;
   boolean hasCommittedMutations;
 
-  public Document(DocumentKey key) {
+  public MutableDocument(DocumentKey key) {
     this.key = key;
     this.version = SnapshotVersion.NONE;
     this.type = Type.INVALID;
     this.value = new ObjectValue();
   }
 
-  private Document(
+  private MutableDocument(
       DocumentKey key,
       Type type,
       SnapshotVersion version,
@@ -64,7 +64,7 @@ public class Document implements Cloneable {
   }
 
   /** Changes the document type to FOUND_DOCUMENT and sets the given version and data. */
-  public Document setFoundDocument(SnapshotVersion version, ObjectValue value) {
+  public MutableDocument setFoundDocument(SnapshotVersion version, ObjectValue value) {
     this.version = version;
     this.type = Type.FOUND_DOCUMENT;
     this.value = value;
@@ -74,7 +74,7 @@ public class Document implements Cloneable {
   }
 
   /** Changes the document type to NO_DOCUMENT and sets the given version. */
-  public Document setNoDocument(SnapshotVersion version) {
+  public MutableDocument setNoDocument(SnapshotVersion version) {
     this.version = version;
     this.type = Type.NO_DOCUMENT;
     this.value = new ObjectValue();
@@ -84,7 +84,7 @@ public class Document implements Cloneable {
   }
 
   /** Changes the document type to UNKNOWN_DOCUMENT and sets the given version. */
-  public Document setUnknownDocument(SnapshotVersion version) {
+  public MutableDocument setUnknownDocument(SnapshotVersion version) {
     this.version = version;
     this.type = Type.UNKNOWN_DOCUMENT;
     this.value = new ObjectValue();
@@ -93,13 +93,13 @@ public class Document implements Cloneable {
     return this;
   }
 
-  public Document setCommittedMutations() {
+  public MutableDocument setCommittedMutations() {
     this.hasLocalMutations = false;
     this.hasCommittedMutations = true;
     return this;
   }
 
-  public Document setLocalMutations() {
+  public MutableDocument setLocalMutations() {
     this.hasLocalMutations = true;
     this.hasCommittedMutations = true;
     return this;
@@ -161,8 +161,8 @@ public class Document implements Cloneable {
 
   @Override
   @NonNull
-  public Document clone() {
-    return new Document(
+  public MutableDocument clone() {
+    return new MutableDocument(
         key, type, version, value.clone(), hasLocalMutations, hasCommittedMutations);
   }
 
@@ -171,7 +171,7 @@ public class Document implements Cloneable {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
 
-    Document document = (Document) o;
+    MutableDocument document = (MutableDocument) o;
 
     if (hasLocalMutations != document.hasLocalMutations) return false;
     if (hasCommittedMutations != document.hasCommittedMutations) return false;

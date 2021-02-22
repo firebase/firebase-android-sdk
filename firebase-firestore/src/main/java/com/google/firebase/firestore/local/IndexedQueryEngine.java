@@ -25,7 +25,7 @@ import com.google.firebase.firestore.core.Filter;
 import com.google.firebase.firestore.core.Filter.Operator;
 import com.google.firebase.firestore.core.IndexRange;
 import com.google.firebase.firestore.core.Query;
-import com.google.firebase.firestore.model.Document;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.DocumentCollections;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
@@ -101,7 +101,7 @@ public class IndexedQueryEngine implements QueryEngine {
   }
 
   @Override
-  public ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
+  public ImmutableSortedMap<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
       Query query,
       SnapshotVersion lastLimboFreeSnapshotVersion,
       ImmutableSortedSet<DocumentKey> remoteKeys) {
@@ -113,11 +113,11 @@ public class IndexedQueryEngine implements QueryEngine {
   }
 
   /** Executes the query using both indexes and post-filtering. */
-  private ImmutableSortedMap<DocumentKey, Document> performCollectionQuery(Query query) {
+  private ImmutableSortedMap<DocumentKey, MutableDocument> performCollectionQuery(Query query) {
     hardAssert(!query.isDocumentQuery(), "matchesCollectionQuery() called with document query.");
 
     IndexRange indexRange = extractBestIndexRange(query);
-    ImmutableSortedMap<DocumentKey, Document> filteredResults;
+    ImmutableSortedMap<DocumentKey, MutableDocument> filteredResults;
 
     if (indexRange != null) {
       filteredResults = performQueryUsingIndex(query, indexRange);
@@ -137,13 +137,13 @@ public class IndexedQueryEngine implements QueryEngine {
    * Applies 'filter' to the index cursor, looks up the relevant documents from the local documents
    * view and returns all matches.
    */
-  private ImmutableSortedMap<DocumentKey, Document> performQueryUsingIndex(
+  private ImmutableSortedMap<DocumentKey, MutableDocument> performQueryUsingIndex(
       Query query, IndexRange indexRange) {
-    ImmutableSortedMap<DocumentKey, Document> results = DocumentCollections.emptyDocumentMap();
+    ImmutableSortedMap<DocumentKey, MutableDocument> results = DocumentCollections.emptyDocumentMap();
     IndexCursor cursor = collectionIndex.getCursor(query.getPath(), indexRange);
     try {
       while (cursor.next()) {
-        Document document = (Document) localDocuments.getDocument(cursor.getDocumentKey());
+        MutableDocument document = (MutableDocument) localDocuments.getDocument(cursor.getDocumentKey());
         if (query.matches(document)) {
           results = results.insert(cursor.getDocumentKey(), document);
         }
@@ -244,7 +244,7 @@ public class IndexedQueryEngine implements QueryEngine {
   }
 
   @Override
-  public void handleDocumentChange(Document oldDocument, Document newDocument) {
+  public void handleDocumentChange(MutableDocument oldDocument, MutableDocument newDocument) {
     // TODO: Determine changed fields and make appropriate addEntry() / removeEntry()
     // on SQLiteCollectionIndex.
     throw new RuntimeException("Not yet implemented.");
