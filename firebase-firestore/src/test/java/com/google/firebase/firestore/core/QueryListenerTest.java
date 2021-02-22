@@ -196,7 +196,7 @@ public class QueryListenerTest {
     List<ViewSnapshot> fullAccum = new ArrayList<>();
     Query query = Query.atPath(path("rooms"));
     Document doc1 = doc("rooms/eros", 1, map("name", "eros"));
-    Document doc1Prime = doc("rooms/eros", 1, map("name", "eros")).withLocalMutations();
+    Document doc1Prime = doc("rooms/eros", 1, map("name", "eros")).setLocalMutations();
     Document doc2 = doc("rooms/hades", 2, map("name", "hades"));
     Document doc3 = doc("rooms/other", 3, map("name", "other"));
 
@@ -232,8 +232,8 @@ public class QueryListenerTest {
   public void testRaisesQueryMetadataEventsOnlyWhenHasPendingWritesOnTheQueryChanges() {
     List<ViewSnapshot> fullAccum = new ArrayList<>();
     Query query = Query.atPath(path("rooms"));
-    Document doc1 = doc("rooms/eros", 1, map("name", "eros")).withLocalMutations();
-    Document doc2 = doc("rooms/hades", 2, map("name", "hades")).withLocalMutations();
+    Document doc1 = doc("rooms/eros", 1, map("name", "eros")).setLocalMutations();
+    Document doc2 = doc("rooms/hades", 2, map("name", "hades")).setLocalMutations();
     Document doc1Prime = doc("rooms/eros", 1, map("name", "eros"));
     Document doc2Prime = doc("rooms/hades", 2, map("name", "hades"));
     Document doc3 = doc("rooms/other", 3, map("name", "other"));
@@ -277,7 +277,7 @@ public class QueryListenerTest {
     List<ViewSnapshot> filteredAccum = new ArrayList<>();
     Query query = Query.atPath(path("rooms"));
     Document doc1 = doc("rooms/eros", 1, map("name", "eros"));
-    Document doc1Prime = doc("rooms/eros", 1, map("name", "eros")).withLocalMutations();
+    Document doc1Prime = doc("rooms/eros", 1, map("name", "eros")).setLocalMutations();
     Document doc2 = doc("rooms/hades", 2, map("name", "hades"));
     Document doc3 = doc("rooms/other", 3, map("name", "other"));
 

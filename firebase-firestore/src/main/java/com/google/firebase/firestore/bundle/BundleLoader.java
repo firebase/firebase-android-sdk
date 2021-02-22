@@ -14,15 +14,14 @@
 
 package com.google.firebase.firestore.bundle;
 
-import static com.google.firebase.firestore.model.DocumentCollections.emptyMaybeDocumentMap;
+import static com.google.firebase.firestore.model.DocumentCollections.emptyDocumentMap;
 
 import androidx.annotation.Nullable;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.LoadBundleTaskProgress;
+import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.MaybeDocument;
-import com.google.firebase.firestore.model.NoDocument;
 import com.google.firebase.firestore.util.Preconditions;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -39,7 +38,7 @@ public class BundleLoader {
   private final List<NamedQuery> queries;
   private final Map<DocumentKey, BundledDocumentMetadata> documentsMetadata;
 
-  private ImmutableSortedMap<DocumentKey, MaybeDocument> documents;
+  private ImmutableSortedMap<DocumentKey, Document> documents;
   private long bytesLoaded;
   @Nullable private DocumentKey currentDocument;
 
@@ -47,7 +46,7 @@ public class BundleLoader {
     this.bundleCallback = bundleCallback;
     this.bundleMetadata = bundleMetadata;
     this.queries = new ArrayList<>();
-    this.documents = emptyMaybeDocumentMap();
+    this.documents = emptyDocumentMap();
     this.documentsMetadata = new HashMap<>();
   }
 
@@ -73,10 +72,8 @@ public class BundleLoader {
         documents =
             documents.insert(
                 bundledDocumentMetadata.getKey(),
-                new NoDocument(
-                    bundledDocumentMetadata.getKey(),
-                    bundledDocumentMetadata.getReadTime(),
-                    /* hasCommittedMutations= */ false));
+                new Document(bundledDocumentMetadata.getKey())
+                    .setNoDocument(bundledDocumentMetadata.getReadTime()));
         currentDocument = null;
       }
     } else if (bundleElement instanceof BundleDocument) {
@@ -103,7 +100,7 @@ public class BundleLoader {
   }
 
   /** Applies the loaded documents and queries to local store. Returns the document view changes. */
-  public ImmutableSortedMap<DocumentKey, MaybeDocument> applyChanges() {
+  public ImmutableSortedMap<DocumentKey, Document> applyChanges() {
     Preconditions.checkArgument(
         currentDocument == null,
         "Bundled documents end with a document metadata element instead of a document.");
@@ -114,7 +111,7 @@ public class BundleLoader {
         bundleMetadata.getTotalDocuments(),
         documents.size());
 
-    ImmutableSortedMap<DocumentKey, MaybeDocument> changes =
+    ImmutableSortedMap<DocumentKey, Document> changes =
         bundleCallback.applyBundledDocuments(documents, bundleMetadata.getBundleId());
 
     Map<String, ImmutableSortedSet<DocumentKey>> queryDocumentMap = getQueryDocumentMapping();

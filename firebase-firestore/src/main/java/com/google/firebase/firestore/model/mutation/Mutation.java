@@ -139,7 +139,7 @@ public abstract class Mutation {
    * and unknown documents have a post-mutation version of {@code SnapshotVersion.NONE}.
    */
   static SnapshotVersion getPostMutationVersion(Document document) {
-    if (document.exists()) {
+    if (document.isFoundDocument()) {
       return document.getVersion();
     } else {
       return SnapshotVersion.NONE;
@@ -169,7 +169,7 @@ public abstract class Mutation {
       TransformOperation transform = fieldTransform.getOperation();
 
       Value previousValue = null;
-      if (maybeDoc.exists()) {
+      if (maybeDoc.isFoundDocument()) {
         previousValue = maybeDoc.getField(fieldTransform.getFieldPath());
       }
 
@@ -195,7 +195,7 @@ public abstract class Mutation {
       TransformOperation transform = fieldTransform.getOperation();
 
       Value previousValue = null;
-      if (maybeDoc.exists()) {
+      if (maybeDoc.isFoundDocument()) {
         previousValue = maybeDoc.getField(fieldTransform.getFieldPath());
       }
 

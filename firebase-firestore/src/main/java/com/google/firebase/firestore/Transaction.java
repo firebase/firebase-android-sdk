@@ -15,7 +15,6 @@
 package com.google.firebase.firestore;
 
 import static com.google.firebase.firestore.util.Assert.fail;
-import static com.google.firebase.firestore.util.Assert.hardAssert;
 import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 
 import androidx.annotation.NonNull;
@@ -199,15 +198,16 @@ public class Transaction {
                 throw fail("Mismatch in docs returned from document lookup.");
               }
               Document doc = docs.get(0);
-              if (doc.exists()) {
+              if (doc.isFoundDocument()) {
                 return DocumentSnapshot.fromDocument(
                     firestore, (Document) doc, /*fromCache=*/ false, /*hasPendingWrites=*/ false);
-              } else {
-                hardAssert(
-                    doc.isMissing(),
-                    "BatchGetDocumentsRequest returned unexpected document: " + doc);
+              } else if (doc.isNoDocument()) {
                 return DocumentSnapshot.fromNoDocument(
                     firestore, doc.getKey(), /*fromCache=*/ false, /*hasPendingWrites=*/ false);
+              } else {
+                throw fail(
+                    "BatchGetDocumentsRequest returned unexpected document type: "
+                        + doc.getClass().getCanonicalName());
               }
             });
   }

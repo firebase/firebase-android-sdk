@@ -178,9 +178,9 @@ public final class FirestoreClient {
         .continueWith(
             (result) -> {
               Document document = result.getResult();
-              if (document.exists()) {
+              if (document.isFoundDocument()) {
                 return document;
-              } else if (document.isMissing()) {
+              } else if (document.isNoDocument()) {
                 return null;
               } else {
                 throw new FirebaseFirestoreException(

@@ -300,7 +300,7 @@ public final class LocalSerializerTest {
   }
 
   @Test
-  public void testEncodesDocument() {
+  public void testEncodesFoundDocument() {
     Document document = doc("some/path", 42, map("foo", "bar"));
 
     com.google.firebase.firestore.proto.MaybeDocument maybeDocProto =

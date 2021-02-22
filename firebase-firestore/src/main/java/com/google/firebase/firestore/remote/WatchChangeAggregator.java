@@ -85,7 +85,7 @@ public class WatchChangeAggregator {
     DocumentKey documentKey = documentChange.getDocumentKey();
 
     for (int targetId : documentChange.getUpdatedTargetIds()) {
-      if (document != null && document.exists()) {
+      if (document != null && document.isFoundDocument()) {
         addDocumentToTarget(targetId, document);
       } else {
         removeDocumentFromTarget(targetId, documentKey, document);
@@ -189,7 +189,7 @@ public class WatchChangeAggregator {
           // deleted document there might be another query that will raise this document as part of
           // a snapshot  until it is resolved, essentially exposing inconsistency between queries.
           DocumentKey key = DocumentKey.fromPath(target.getPath());
-          Document result = new Document(key).asMissingDocument(SnapshotVersion.NONE);
+          Document result = new Document(key).setNoDocument(SnapshotVersion.NONE);
           removeDocumentFromTarget(targetId, key, result);
         } else {
           hardAssert(
@@ -227,7 +227,7 @@ public class WatchChangeAggregator {
           // limboDocumentRefs.
           DocumentKey key = DocumentKey.fromPath(targetData.getTarget().getPath());
           if (pendingDocumentUpdates.get(key) == null && !targetContainsDocument(targetId, key)) {
-            Document result = new Document(key).asMissingDocument(snapshotVersion);
+            Document result = new Document(key).setNoDocument(snapshotVersion);
             removeDocumentFromTarget(targetId, key, result);
           }
         }

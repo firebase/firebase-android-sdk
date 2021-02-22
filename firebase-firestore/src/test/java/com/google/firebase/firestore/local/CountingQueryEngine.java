@@ -128,7 +128,7 @@ class CountingQueryEngine implements QueryEngine {
       @Override
       public Document get(DocumentKey documentKey) {
         Document result = subject.get(documentKey);
-        documentsReadByKey[0] += result.isValid() ? 1 : 0;
+        documentsReadByKey[0] += result.isValidDocument() ? 1 : 0;
         return result;
       }
 
@@ -136,7 +136,7 @@ class CountingQueryEngine implements QueryEngine {
       public Map<DocumentKey, Document> getAll(Iterable<DocumentKey> documentKeys) {
         Map<DocumentKey, Document> result = subject.getAll(documentKeys);
         for (Document document : result.values()) {
-          documentsReadByKey[0] += document.isValid() ? 1 : 0;
+          documentsReadByKey[0] += document.isValidDocument() ? 1 : 0;
         }
         return result;
       }

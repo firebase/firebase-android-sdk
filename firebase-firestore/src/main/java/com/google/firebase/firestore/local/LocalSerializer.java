@@ -49,11 +49,11 @@ public final class LocalSerializer {
     com.google.firebase.firestore.proto.MaybeDocument.Builder builder =
         com.google.firebase.firestore.proto.MaybeDocument.newBuilder();
 
-    if (document.exists()) {
-      builder.setDocument(encodeDocument(document));
-    } else if (document.isMissing()) {
+    if (document.isNoDocument()) {
       builder.setNoDocument(encodeNoDocument(document));
-    } else if (document.isUnknown()) {
+    } else if (document.isFoundDocument()) {
+      builder.setDocument(encodeDocument(document));
+    } else if (document.isUnknownDocument()) {
       builder.setUnknownDocument(encodeUnknownDocument(document));
     } else {
       throw fail("Unknown Document %s", document);
@@ -101,8 +101,8 @@ public final class LocalSerializer {
     DocumentKey key = rpcSerializer.decodeKey(document.getName());
     SnapshotVersion version = rpcSerializer.decodeVersion(document.getUpdateTime());
     Document result =
-        new Document(key).asFoundDocument(version, ObjectValue.fromMap(document.getFieldsMap()));
-    return hasCommittedMutations ? result.withCommittedMutations() : result;
+        new Document(key).setFoundDocument(version, ObjectValue.fromMap(document.getFieldsMap()));
+    return hasCommittedMutations ? result.setCommittedMutations() : result;
   }
 
   /** Encodes a NoDocument value to the equivalent proto. */
@@ -119,8 +119,8 @@ public final class LocalSerializer {
       com.google.firebase.firestore.proto.NoDocument proto, boolean hasCommittedMutations) {
     DocumentKey key = rpcSerializer.decodeKey(proto.getName());
     SnapshotVersion version = rpcSerializer.decodeVersion(proto.getReadTime());
-    Document result = new Document(key).asMissingDocument(version);
-    return hasCommittedMutations ? result.withCommittedMutations() : result;
+    Document result = new Document(key).setNoDocument(version);
+    return hasCommittedMutations ? result.setCommittedMutations() : result;
   }
 
   /** Encodes a UnknownDocument value to the equivalent proto. */
@@ -138,7 +138,7 @@ public final class LocalSerializer {
       com.google.firebase.firestore.proto.UnknownDocument proto) {
     DocumentKey key = rpcSerializer.decodeKey(proto.getName());
     SnapshotVersion version = rpcSerializer.decodeVersion(proto.getVersion());
-    return new Document(key).asUnknownDocument(version);
+    return new Document(key).setUnknownDocument(version);
   }
 
   /** Encodes a MutationBatch model for local storage in the mutation queue. */

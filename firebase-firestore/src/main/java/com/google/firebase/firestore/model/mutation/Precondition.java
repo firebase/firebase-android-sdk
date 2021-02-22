@@ -72,11 +72,11 @@ public final class Precondition {
    * Returns true if the preconditions is valid for the given document (or null if no document is
    * available).
    */
-  public boolean isValidFor(@Nullable Document maybeDoc) {
+  public boolean isValidFor(Document doc) {
     if (this.updateTime != null) {
-      return maybeDoc != null && maybeDoc.getVersion().equals(this.updateTime);
+      return doc.isFoundDocument() && doc.getVersion().equals(this.updateTime);
     } else if (this.exists != null) {
-      return this.exists == (maybeDoc != null && maybeDoc.exists());
+      return this.exists == doc.isFoundDocument();
     } else {
       hardAssert(this.isNone(), "Precondition should be empty");
       return true;

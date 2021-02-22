@@ -47,7 +47,7 @@ interface RemoteDocumentCache {
    * Looks up an entry in the cache.
    *
    * @param documentKey The key of the entry to look up.
-   * @return The cached Document or NoDocument entry, or an InvalidDocument if nothing is cached.
+   * @return The cached Document or NoDocument entry, or an invalid document if nothing is cached.
    */
   Document get(DocumentKey documentKey);
 
@@ -56,7 +56,7 @@ interface RemoteDocumentCache {
    *
    * @param documentKeys The keys of the entries to look up.
    * @return The cached Document or NoDocument entries indexed by key. If an entry is not cached, an
-   *     InvalidDocument is returned.
+   *     invalid document is returned.
    */
   Map<DocumentKey, Document> getAll(Iterable<DocumentKey> documentKeys);
 

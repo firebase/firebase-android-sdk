@@ -36,7 +36,7 @@ public class DocumentTest {
   @Test
   public void testInstantiation() {
     Document document =
-        new Document(key("messages/first")).asFoundDocument(version(1), wrapObject("a", 1));
+        new Document(key("messages/first")).setFoundDocument(version(1), wrapObject("a", 1));
 
     assertEquals(key("messages/first"), document.getKey());
     assertEquals(version(1), document.getVersion());
@@ -59,6 +59,6 @@ public class DocumentTest {
     assertNotEquals(doc1, doc(key1, 1, data2));
     assertNotEquals(doc1, doc(key2, 1, data1));
     assertNotEquals(doc1, doc(key1, 2, data1));
-    assertNotEquals(doc1, doc(key1, 1, data1).withLocalMutations());
+    assertNotEquals(doc1, doc(key1, 1, data1).setLocalMutations());
   }
 }

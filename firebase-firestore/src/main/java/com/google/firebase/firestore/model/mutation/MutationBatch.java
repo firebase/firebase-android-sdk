@@ -105,18 +105,12 @@ public final class MutationBatch {
   }
 
   /** Computes the local view of a document given all the mutations in this batch. */
-  public void applyToLocalView(DocumentKey documentKey, Document document) {
-    hardAssert(
-        document.getKey().equals(documentKey),
-        "applyToRemoteDocument: key %s doesn't match maybeDoc key %s",
-        documentKey,
-        document.getKey());
-
+  public void applyToLocalView(Document document) {
     // First, apply the base state. This allows us to apply non-idempotent transform against a
     // consistent set of values.
     for (int i = 0; i < baseMutations.size(); i++) {
       Mutation mutation = baseMutations.get(i);
-      if (mutation.getKey().equals(documentKey)) {
+      if (mutation.getKey().equals(document.getKey())) {
         mutation.applyToLocalView(document, localWriteTime);
       }
     }
@@ -124,7 +118,7 @@ public final class MutationBatch {
     // Second, apply all user-provided mutations.
     for (int i = 0; i < mutations.size(); i++) {
       Mutation mutation = mutations.get(i);
-      if (mutation.getKey().equals(documentKey)) {
+      if (mutation.getKey().equals(document.getKey())) {
         mutation.applyToLocalView(document, localWriteTime);
       }
     }
@@ -138,9 +132,9 @@ public final class MutationBatch {
     // O(n).
     for (DocumentKey key : getKeys()) {
       Document document = documentMap.get(key);
-      applyToLocalView(key, document);
-      if (!document.isValid()) {
-        document.asMissingDocument(SnapshotVersion.NONE);
+      applyToLocalView(document);
+      if (!document.isValidDocument()) {
+        document.setNoDocument(SnapshotVersion.NONE);
       }
       documentMap = documentMap.insert(document.getKey(), document);
     }

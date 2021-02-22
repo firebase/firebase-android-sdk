@@ -64,7 +64,7 @@ public final class DeleteMutation extends Mutation {
 
     // We store the deleted document at the commit version of the delete. Any document version
     // that the server sends us before the delete was applied is discarded
-    document.asMissingDocument(mutationResult.getVersion()).withCommittedMutations();
+    document.setNoDocument(mutationResult.getVersion()).setCommittedMutations();
   }
 
   @Override
@@ -72,7 +72,7 @@ public final class DeleteMutation extends Mutation {
     verifyKeyMatches(document);
 
     if (getPrecondition().isValidFor(document)) {
-      document.asMissingDocument(SnapshotVersion.NONE);
+      document.setNoDocument(SnapshotVersion.NONE);
     }
   }
 }

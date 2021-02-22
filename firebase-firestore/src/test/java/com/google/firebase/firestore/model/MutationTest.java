@@ -64,7 +64,7 @@ public class MutationTest {
 
     Mutation set = setMutation("collection/key", map("bar", "bar-value"));
     set.applyToLocalView(setDoc, Timestamp.now());
-    assertEquals(doc("collection/key", 0, map("bar", "bar-value")).withLocalMutations(), setDoc);
+    assertEquals(doc("collection/key", 0, map("bar", "bar-value")).setLocalMutations(), setDoc);
   }
 
   @Test
@@ -75,7 +75,7 @@ public class MutationTest {
     Mutation patch = patchMutation("collection/key", map("foo.bar", "new-bar-value"));
     patch.applyToLocalView(patchDoc, Timestamp.now());
     Map<String, Object> expectedData = map("foo", map("bar", "new-bar-value"), "baz", "baz-value");
-    assertEquals(doc("collection/key", 0, expectedData).withLocalMutations(), patchDoc);
+    assertEquals(doc("collection/key", 0, expectedData).setLocalMutations(), patchDoc);
   }
 
   @Test
@@ -86,7 +86,7 @@ public class MutationTest {
             "collection/key", map("foo.bar", "new-bar-value"), Arrays.asList(field("foo.bar")));
     upsert.applyToLocalView(mergeDoc, Timestamp.now());
     Map<String, Object> expectedData = map("foo", map("bar", "new-bar-value"));
-    assertEquals(doc("collection/key", 0, expectedData).withLocalMutations(), mergeDoc);
+    assertEquals(doc("collection/key", 0, expectedData).setLocalMutations(), mergeDoc);
   }
 
   @Test
@@ -97,7 +97,7 @@ public class MutationTest {
             "collection/key", map("foo.bar", "new-bar-value"), Arrays.asList(field("foo.bar")));
     upsert.applyToLocalView(mergeDoc, Timestamp.now());
     Map<String, Object> expectedData = map("foo", map("bar", "new-bar-value"));
-    assertEquals(doc("collection/key", 0, expectedData).withLocalMutations(), mergeDoc);
+    assertEquals(doc("collection/key", 0, expectedData).setLocalMutations(), mergeDoc);
   }
 
   @Test
@@ -111,7 +111,7 @@ public class MutationTest {
 
     patch.applyToLocalView(patchDoc, Timestamp.now());
     Map<String, Object> expectedData = map("foo", map("baz", "baz-value"));
-    assertEquals(doc("collection/key", 0, expectedData).withLocalMutations(), patchDoc);
+    assertEquals(doc("collection/key", 0, expectedData).setLocalMutations(), patchDoc);
   }
 
   @Test
@@ -122,7 +122,7 @@ public class MutationTest {
     Mutation patch = patchMutation("collection/key", map("foo.bar", "new-bar-value"));
     patch.applyToLocalView(patchDoc, Timestamp.now());
     Map<String, Object> expectedData = map("foo", map("bar", "new-bar-value"), "baz", "baz-value");
-    assertEquals(doc("collection/key", 0, expectedData).withLocalMutations(), patchDoc);
+    assertEquals(doc("collection/key", 0, expectedData).setLocalMutations(), patchDoc);
   }
 
   @Test
@@ -149,7 +149,7 @@ public class MutationTest {
     Value fieldValue = ServerTimestamps.valueOf(timestamp, wrap("bar-value"));
     expectedData.set(field("foo.bar"), fieldValue);
 
-    Document expectedDoc = doc("collection/key", 0, expectedData).withLocalMutations();
+    Document expectedDoc = doc("collection/key", 0, expectedData).setLocalMutations();
     assertEquals(expectedDoc, transformedDoc);
   }
 
@@ -453,7 +453,7 @@ public class MutationTest {
       transform.applyToLocalView(transformedDoc, Timestamp.now());
     }
 
-    Document expectedDoc = doc("collection/key", 0, expectedData).withLocalMutations();
+    Document expectedDoc = doc("collection/key", 0, expectedData).setLocalMutations();
     assertEquals(expectedDoc, transformedDoc);
   }
 
@@ -476,7 +476,7 @@ public class MutationTest {
     transform.applyToRemoteDocument(transformedDoc, mutationResult);
 
     Map<String, Object> expectedData = map("sum", 3L);
-    assertEquals(doc("collection/key", 1, expectedData).withCommittedMutations(), transformedDoc);
+    assertEquals(doc("collection/key", 1, expectedData).setCommittedMutations(), transformedDoc);
   }
 
   @Test
@@ -496,7 +496,7 @@ public class MutationTest {
 
     Map<String, Object> expectedData =
         map("foo", map("bar", serverTimestamp.toDate()), "baz", "baz-value");
-    assertEquals(doc("collection/key", 1, expectedData).withCommittedMutations(), transformedDoc);
+    assertEquals(doc("collection/key", 1, expectedData).setCommittedMutations(), transformedDoc);
   }
 
   @Test
@@ -516,7 +516,7 @@ public class MutationTest {
 
     Map<String, Object> expectedData =
         map("array1", Arrays.asList(1, 2, 3), "array2", Arrays.asList("b"));
-    assertEquals(doc("collection/key", 1, expectedData).withCommittedMutations(), transformedDoc);
+    assertEquals(doc("collection/key", 1, expectedData).setCommittedMutations(), transformedDoc);
   }
 
   @Test
@@ -537,7 +537,7 @@ public class MutationTest {
     Mutation set = setMutation("collection/key", map("foo", "new-bar"));
     set.applyToRemoteDocument(setDoc, mutationResult(4));
 
-    assertEquals(doc("collection/key", 4, map("foo", "new-bar")).withCommittedMutations(), setDoc);
+    assertEquals(doc("collection/key", 4, map("foo", "new-bar")).setCommittedMutations(), setDoc);
   }
 
   @Test
@@ -548,8 +548,7 @@ public class MutationTest {
     Mutation patch = patchMutation("collection/key", map("foo", "new-bar"));
     patch.applyToRemoteDocument(patchDoc, mutationResult(4));
 
-    assertEquals(
-        doc("collection/key", 4, map("foo", "new-bar")).withCommittedMutations(), patchDoc);
+    assertEquals(doc("collection/key", 4, map("foo", "new-bar")).setCommittedMutations(), patchDoc);
   }
 
   private void assertVersionTransitions(
@@ -568,8 +567,8 @@ public class MutationTest {
     Mutation patch = patchMutation("collection/key", map());
     Mutation delete = deleteMutation("collection/key");
 
-    Document docV7Deleted = deletedDoc("collection/key", 7).withCommittedMutations();
-    Document docV7Committed = doc("collection/key", 7, map()).withCommittedMutations();
+    Document docV7Deleted = deletedDoc("collection/key", 7).setCommittedMutations();
+    Document docV7Committed = doc("collection/key", 7, map()).setCommittedMutations();
     Document docV7Unknown = unknownDoc("collection/key", 7);
 
     MutationResult mutationResult =

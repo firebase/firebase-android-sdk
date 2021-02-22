@@ -63,15 +63,15 @@ public class TestUtil {
   }
 
   public static Document doc(String key, long version, Map<String, Object> data) {
-    return new Document(key(key)).asFoundDocument(version(version), wrapObject(data));
+    return new Document(key(key)).setFoundDocument(version(version), wrapObject(data));
   }
 
   public static Document doc(DocumentKey key, long version, Map<String, Object> data) {
-    return new Document(key).asFoundDocument(version(version), wrapObject(data));
+    return new Document(key).setFoundDocument(version(version), wrapObject(data));
   }
 
   public static Document doc(String key, long version, ObjectValue data) {
-    return new Document(key(key)).asFoundDocument(version(version), data);
+    return new Document(key(key)).setFoundDocument(version(version), data);
   }
 
   public static DocumentSet docSet(Comparator<Document> comparator, Document... documents) {

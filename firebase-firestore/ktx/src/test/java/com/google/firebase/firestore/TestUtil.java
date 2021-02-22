@@ -77,7 +77,7 @@ public class TestUtil {
     for (Map.Entry<String, ObjectValue> pair : oldDocs.entrySet()) {
       String docKey = path + "/" + pair.getKey();
       Document doc = doc(docKey, 1L, pair.getValue());
-      if (hasPendingWrites) doc.withLocalMutations();
+      if (hasPendingWrites) doc.setLocalMutations();
       oldDocuments = oldDocuments.add(doc);
       if (hasPendingWrites) {
         mutatedKeys = mutatedKeys.insert(key(docKey));
@@ -88,7 +88,7 @@ public class TestUtil {
     for (Map.Entry<String, ObjectValue> pair : docsToAdd.entrySet()) {
       String docKey = path + "/" + pair.getKey();
       Document docToAdd = doc(docKey, 1L, pair.getValue());
-      if (hasPendingWrites) docToAdd.withLocalMutations();
+      if (hasPendingWrites) docToAdd.setLocalMutations();
       newDocuments = newDocuments.add(docToAdd);
       documentChanges.add(DocumentViewChange.create(Type.ADDED, docToAdd));
 

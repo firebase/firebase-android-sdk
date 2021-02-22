@@ -29,7 +29,7 @@ public class Document implements Cloneable {
 
   private enum Type {
     INVALID,
-    DOCUMENT,
+    FOUND_DOCUMENT,
     NO_DOCUMENT,
     UNKNOWN_DOCUMENT;
   }
@@ -63,16 +63,18 @@ public class Document implements Cloneable {
     this.value = value;
   }
 
-  public Document asFoundDocument(SnapshotVersion version, ObjectValue value) {
+  /** Changes the document type to FOUND_DOCUMENT and sets the given version and data. */
+  public Document setFoundDocument(SnapshotVersion version, ObjectValue value) {
     this.version = version;
-    this.type = Type.DOCUMENT;
+    this.type = Type.FOUND_DOCUMENT;
     this.value = value;
     this.hasLocalMutations = false;
     this.hasCommittedMutations = false;
     return this;
   }
 
-  public Document asMissingDocument(SnapshotVersion version) {
+  /** Changes the document type to NO_DOCUMENT and sets the given version. */
+  public Document setNoDocument(SnapshotVersion version) {
     this.version = version;
     this.type = Type.NO_DOCUMENT;
     this.value = new ObjectValue();
@@ -81,7 +83,8 @@ public class Document implements Cloneable {
     return this;
   }
 
-  public Document asUnknownDocument(SnapshotVersion version) {
+  /** Changes the document type to UNKNOWN_DOCUMENT and sets the given version. */
+  public Document setUnknownDocument(SnapshotVersion version) {
     this.version = version;
     this.type = Type.UNKNOWN_DOCUMENT;
     this.value = new ObjectValue();
@@ -90,13 +93,13 @@ public class Document implements Cloneable {
     return this;
   }
 
-  public Document withCommittedMutations() {
+  public Document setCommittedMutations() {
     this.hasLocalMutations = false;
     this.hasCommittedMutations = true;
     return this;
   }
 
-  public Document withLocalMutations() {
+  public Document setLocalMutations() {
     this.hasLocalMutations = true;
     this.hasCommittedMutations = true;
     return this;
@@ -140,19 +143,19 @@ public class Document implements Cloneable {
     return getData().get(field);
   }
 
-  public boolean isValid() {
+  public boolean isValidDocument() {
     return !type.equals(Type.INVALID);
   }
 
-  public boolean exists() {
-    return type.equals(Type.DOCUMENT);
+  public boolean isFoundDocument() {
+    return type.equals(Type.FOUND_DOCUMENT);
   }
 
-  public boolean isMissing() {
+  public boolean isNoDocument() {
     return type.equals(Type.NO_DOCUMENT);
   }
 
-  public boolean isUnknown() {
+  public boolean isUnknownDocument() {
     return type.equals(Type.UNKNOWN_DOCUMENT);
   }
 

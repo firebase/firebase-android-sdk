@@ -181,23 +181,23 @@ public class TestUtil {
   }
 
   public static Document doc(String key, long version, Map<String, Object> data) {
-    return new Document(key(key)).asFoundDocument(version(version), wrapObject(data));
+    return new Document(key(key)).setFoundDocument(version(version), wrapObject(data));
   }
 
   public static Document doc(DocumentKey key, long version, Map<String, Object> data) {
-    return new Document(key).asFoundDocument(version(version), wrapObject(data));
+    return new Document(key).setFoundDocument(version(version), wrapObject(data));
   }
 
   public static Document doc(String key, long version, ObjectValue data) {
-    return new Document(key(key)).asFoundDocument(version(version), data);
+    return new Document(key(key)).setFoundDocument(version(version), data);
   }
 
   public static Document deletedDoc(String key, long version) {
-    return new Document(key(key)).asMissingDocument(version(version));
+    return new Document(key(key)).setNoDocument(version(version));
   }
 
   public static Document unknownDoc(String key, long version) {
-    return new Document(key(key)).asUnknownDocument(version(version));
+    return new Document(key(key)).setUnknownDocument(version(version));
   }
 
   public static ImmutableSortedMap<DocumentKey, Document> docMap(Document[] documents) {

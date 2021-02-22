@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.local;
 
+import static com.google.firebase.firestore.model.DocumentCollections.emptyDocumentMap;
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
 import static com.google.firebase.firestore.testutil.TestUtil.docSet;
 import static com.google.firebase.firestore.testutil.TestUtil.filter;
@@ -25,6 +26,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.version;
 import static org.junit.Assert.assertEquals;
 
 import com.google.android.gms.common.internal.Preconditions;
+import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.auth.User;
@@ -34,6 +36,9 @@ import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.DocumentSet;
 import com.google.firebase.firestore.model.SnapshotVersion;
+import com.google.firebase.firestore.model.mutation.DeleteMutation;
+import com.google.firebase.firestore.model.mutation.Mutation;
+import com.google.firebase.firestore.model.mutation.Precondition;
 import java.util.Collections;
 import java.util.concurrent.Callable;
 import javax.annotation.Nullable;
@@ -53,9 +58,9 @@ public class QueryEngineTest {
   private static final Document NON_MATCHING_DOC_A =
       doc("coll/a", 1, map("matches", false, "order", 1));
   private static final Document PENDING_MATCHING_DOC_A =
-      doc("coll/a", 1, map("matches", true, "order", 1)).withLocalMutations();
+      doc("coll/a", 1, map("matches", true, "order", 1)).setLocalMutations();
   private static final Document PENDING_NON_MATCHING_DOC_A =
-      doc("coll/a", 1, map("matches", false, "order", 1)).withLocalMutations();
+      doc("coll/a", 1, map("matches", false, "order", 1)).setLocalMutations();
   private static final Document UPDATED_DOC_A = doc("coll/a", 11, map("matches", true, "order", 1));
   private static final Document MATCHING_DOC_B = doc("coll/b", 1, map("matches", true, "order", 2));
   private static final Document UPDATED_MATCHING_DOC_B =
@@ -66,6 +71,7 @@ public class QueryEngineTest {
 
   private MemoryPersistence persistence;
   private MemoryRemoteDocumentCache remoteDocumentCache;
+  private MutationQueue mutationQueue;
   private TargetCache targetCache;
   private QueryEngine queryEngine;
 
@@ -76,6 +82,7 @@ public class QueryEngineTest {
     expectFullCollectionScan = null;
 
     persistence = MemoryPersistence.createEagerGcMemoryPersistence();
+    mutationQueue = persistence.getMutationQueue(User.UNAUTHENTICATED);
     targetCache = new MemoryTargetCache(persistence);
     queryEngine = new DefaultQueryEngine();
 
@@ -120,6 +127,16 @@ public class QueryEngineTest {
           for (Document doc : docs) {
             remoteDocumentCache.add(doc, doc.getVersion());
           }
+        });
+  }
+
+  /** Adds a mutation to the mutation queue. */
+  private void addMutation(Mutation mutation) {
+    persistence.runTransaction(
+        "addMutation",
+        () -> {
+          mutationQueue.addMutationBatch(
+              Timestamp.now(), Collections.emptyList(), Collections.singletonList(mutation));
         });
   }
 
@@ -338,7 +355,7 @@ public class QueryEngineTest {
     persistQueryMapping(key("coll/a"), key("coll/b"));
 
     // Update "coll/a" but make sure it still sorts before "coll/b"
-    addDocument(doc("coll/a", 1, map("order", 2)).withLocalMutations());
+    addDocument(doc("coll/a", 1, map("order", 2)).setLocalMutations());
 
     // Since the last document in the limit didn't change (and hence we know that all documents
     // written prior to query execution still sort after "coll/b"), we should use an Index-Free
@@ -348,8 +365,28 @@ public class QueryEngineTest {
     assertEquals(
         docSet(
             query.comparator(),
-            doc("coll/a", 1, map("order", 2)).withLocalMutations(),
+            doc("coll/a", 1, map("order", 2)).setLocalMutations(),
             doc("coll/b", 1, map("order", 3))),
         docs);
+  }
+
+  @Test
+  public void doesNotIncludeDocumentsDeletedByMutation() throws Exception {
+    Query query = query("coll");
+
+    addDocument(MATCHING_DOC_A, MATCHING_DOC_B);
+    persistQueryMapping(MATCHING_DOC_A.getKey(), MATCHING_DOC_B.getKey());
+
+    // Add an unacknowledged mutation
+    addMutation(new DeleteMutation(key("coll/b"), Precondition.NONE));
+
+    ImmutableSortedMap<DocumentKey, Document> docs =
+        expectFullCollectionScan(
+            () ->
+                queryEngine.getDocumentsMatchingQuery(
+                    query,
+                    LAST_LIMBO_FREE_SNAPSHOT,
+                    targetCache.getMatchingKeysForTargetId(TEST_TARGET_ID)));
+    assertEquals(emptyDocumentMap().insert(MATCHING_DOC_A.getKey(), MATCHING_DOC_A), docs);
   }
 }

@@ -160,7 +160,7 @@ public class View {
       Document oldDoc = oldDocumentSet.getDocument(key);
       Document newDoc = null;
 
-      if (entry.getValue().exists()) {
+      if (entry.getValue().isFoundDocument()) {
         hardAssert(
             key.equals(entry.getKey()),
             "Mismatching key in doc change %s != %s",

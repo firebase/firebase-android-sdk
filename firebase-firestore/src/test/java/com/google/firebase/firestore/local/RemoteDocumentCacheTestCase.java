@@ -71,7 +71,7 @@ abstract class RemoteDocumentCacheTestCase {
 
   @Test
   public void testReadDocumentNotInCache() {
-    assertFalse(get("a/b").isValid());
+    assertFalse(get("a/b").isValidDocument());
   }
 
   @Test
@@ -155,7 +155,7 @@ abstract class RemoteDocumentCacheTestCase {
     String path = "a/b";
     addTestDocumentAtPath(path);
     remove(path);
-    assertFalse(get(path).isValid());
+    assertFalse(get(path).isValidDocument());
   }
 
   @Test

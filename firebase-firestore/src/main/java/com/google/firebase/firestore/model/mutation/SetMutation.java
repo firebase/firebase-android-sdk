@@ -80,7 +80,7 @@ public final class SetMutation extends Mutation {
     Map<FieldPath, Value> transformResults =
         serverTransformResults(document, mutationResult.getTransformResults());
     newData.set(transformResults);
-    document.asFoundDocument(mutationResult.getVersion(), newData).withCommittedMutations();
+    document.setFoundDocument(mutationResult.getVersion(), newData).setCommittedMutations();
   }
 
   @Override
@@ -94,7 +94,7 @@ public final class SetMutation extends Mutation {
     Map<FieldPath, Value> transformResults = localTransformResults(localWriteTime, document);
     ObjectValue localValue = value.clone();
     localValue.set(transformResults);
-    document.asFoundDocument(getPostMutationVersion(document), localValue).withLocalMutations();
+    document.setFoundDocument(getPostMutationVersion(document), localValue).setLocalMutations();
   }
 
   /** Returns the object value to use when setting the document. */

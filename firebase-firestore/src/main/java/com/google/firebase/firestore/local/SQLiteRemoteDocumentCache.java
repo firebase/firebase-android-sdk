@@ -182,7 +182,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
           executor.execute(
               () -> {
                 Document document = decodeMaybeDocument(rawDocument);
-                if (document.exists() && query.matches(document)) {
+                if (document.isFoundDocument() && query.matches(document)) {
                   synchronized (SQLiteRemoteDocumentCache.this) {
                     matchingDocuments[0] = matchingDocuments[0].insert(document.getKey(), document);
                   }

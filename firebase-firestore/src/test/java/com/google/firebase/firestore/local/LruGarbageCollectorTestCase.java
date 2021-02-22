@@ -390,11 +390,11 @@ public abstract class LruGarbageCollectorTestCase {
         "verify",
         () -> {
           for (DocumentKey key : toBeRemoved) {
-            assertFalse(documentCache.get(key).isValid());
+            assertFalse(documentCache.get(key).isValidDocument());
             assertFalse(targetCache.containsKey(key));
           }
           for (DocumentKey key : expectedRetained) {
-            assertTrue(documentCache.get(key).isValid());
+            assertTrue(documentCache.get(key).isValidDocument());
           }
         });
   }
@@ -575,7 +575,7 @@ public abstract class LruGarbageCollectorTestCase {
         "Update a doc in the middle target",
         () -> {
           SnapshotVersion newVersion = version(3);
-          Document doc = new Document(middleDocToUpdate).asFoundDocument(newVersion, testValue);
+          Document doc = new Document(middleDocToUpdate).setFoundDocument(newVersion, testValue);
           documentCache.add(doc, newVersion);
           updateTargetInTransaction(middleTarget);
         });
@@ -608,11 +608,11 @@ public abstract class LruGarbageCollectorTestCase {
         "verify results",
         () -> {
           for (DocumentKey key : expectedRemoved) {
-            assertFalse(documentCache.get(key).isValid());
+            assertFalse(documentCache.get(key).isValidDocument());
             assertFalse(targetCache.containsKey(key));
           }
           for (DocumentKey key : expectedRetained) {
-            assertTrue(documentCache.get(key).isValid());
+            assertTrue(documentCache.get(key).isValidDocument());
           }
         });
   }

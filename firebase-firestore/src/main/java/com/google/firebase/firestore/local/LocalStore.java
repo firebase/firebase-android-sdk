@@ -440,12 +440,12 @@ public final class LocalStore implements BundleCallback {
       // Note: The order of the steps below is important, since we want to ensure that
       // rejected limbo resolutions (which fabricate NoDocuments with SnapshotVersion.NONE)
       // never add documents to cache.
-      if (!doc.exists() && doc.getVersion().equals(SnapshotVersion.NONE)) {
+      if (doc.isNoDocument() && doc.getVersion().equals(SnapshotVersion.NONE)) {
         // NoDocuments with SnapshotVersion.NONE are used in manufactured events. We remove
         // these documents from cache since we lost access.
         remoteDocuments.remove(doc.getKey());
         changedDocs.put(key, doc);
-      } else if (!existingDoc.isValid()
+      } else if (!existingDoc.isValidDocument()
           || doc.getVersion().compareTo(existingDoc.getVersion()) > 0
           || (doc.getVersion().compareTo(existingDoc.getVersion()) == 0
               && existingDoc.hasPendingWrites())) {
@@ -648,7 +648,7 @@ public final class LocalStore implements BundleCallback {
             DocumentKey documentKey = entry.getKey();
             Document document = entry.getValue();
 
-            if (document.exists()) {
+            if (document.isFoundDocument()) {
               documentKeys = documentKeys.insert(documentKey);
             }
             documentMap.put(documentKey, document);
@@ -776,7 +776,7 @@ public final class LocalStore implements BundleCallback {
 
       if (doc.getVersion().compareTo(ackVersion) < 0) {
         batch.applyToRemoteDocument(docKey, doc, batchResult);
-        if (doc.isValid()) {
+        if (doc.isValidDocument()) {
           remoteDocuments.add(doc, batchResult.getCommitVersion());
         }
       }

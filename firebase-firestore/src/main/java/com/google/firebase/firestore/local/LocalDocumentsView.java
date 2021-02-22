@@ -82,7 +82,7 @@ class LocalDocumentsView {
   private Document getDocument(DocumentKey key, List<MutationBatch> inBatches) {
     Document document = remoteDocumentCache.get(key);
     for (MutationBatch batch : inBatches) {
-      batch.applyToLocalView(key, document);
+      batch.applyToLocalView(document);
     }
 
     return document;
@@ -94,7 +94,7 @@ class LocalDocumentsView {
       Map<DocumentKey, Document> docs, List<MutationBatch> batches) {
     for (Map.Entry<DocumentKey, Document> base : docs.entrySet()) {
       for (MutationBatch batch : batches) {
-        batch.applyToLocalView(base.getKey(), base.getValue());
+        batch.applyToLocalView(base.getValue());
       }
     }
   }
@@ -157,7 +157,7 @@ class LocalDocumentsView {
     ImmutableSortedMap<DocumentKey, Document> result = emptyDocumentMap();
     // Just do a simple document lookup.
     Document doc = getDocument(DocumentKey.fromPath(path));
-    if (doc.exists()) {
+    if (doc.isFoundDocument()) {
       result = result.insert(doc.getKey(), doc);
     }
     return result;
@@ -205,11 +205,12 @@ class LocalDocumentsView {
         DocumentKey key = mutation.getKey();
         Document document = results.get(key);
         if (document == null) {
-          document = new Document(key);
+          document = new Document(key); // Create invalid document to apply mutations on top of
+          results = results.insert(key, document);
         }
         mutation.applyToLocalView(document, batch.getLocalWriteTime());
-        if (document.isValid()) {
-          results = results.insert(key, document);
+        if (!document.isFoundDocument()) {
+          results = results.remove(key);
         }
       }
     }
@@ -246,7 +247,7 @@ class LocalDocumentsView {
     ImmutableSortedMap<DocumentKey, Document> mergedDocs = existingDocs;
     Map<DocumentKey, Document> missingDocs = remoteDocumentCache.getAll(missingDocKeys);
     for (Map.Entry<DocumentKey, Document> entry : missingDocs.entrySet()) {
-      if (entry.getValue().exists()) {
+      if (entry.getValue().isFoundDocument()) {
         mergedDocs = mergedDocs.insert(entry.getKey(), entry.getValue());
       }
     }

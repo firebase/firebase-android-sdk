@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.core;
 
+import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
@@ -170,12 +171,13 @@ public class Transaction {
 
   private void recordVersion(Document doc) throws FirebaseFirestoreException {
     SnapshotVersion docVersion;
-    if (doc.exists()) {
+    if (doc.isFoundDocument()) {
       docVersion = doc.getVersion();
-    } else {
-      hardAssert(doc.isMissing(), "Unexpected document in transaction: " + doc);
+    } else if (doc.isNoDocument()) {
       // For nonexistent docs, we must use precondition with version 0 when we overwrite them.
       docVersion = SnapshotVersion.NONE;
+    } else {
+      throw fail("Unexpected document type in transaction: " + doc);
     }
 
     if (readVersions.containsKey(doc.getKey())) {
