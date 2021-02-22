@@ -55,7 +55,6 @@ public final class FirebaseAuthCredentialsProvider extends CredentialsProvider {
    * its {@link Provider#get} method returns {@code null}, but will be changed to a new {@link
    * Provider} once the "auth" module becomes available.
    */
-  @Nullable
   @GuardedBy("this")
   private Provider<InternalAuthProvider> internalAuthProviderProvider = () -> null;
 
