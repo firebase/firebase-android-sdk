@@ -61,13 +61,11 @@ public class FirebasePerfProvider extends ContentProvider {
     ConfigResolver configResolver = ConfigResolver.getInstance();
     configResolver.setContentProviderContext(getContext());
 
-    if (configResolver.isPerformanceMonitoringEnabled()) {
-      AppStateMonitor.getInstance().registerActivityLifecycleCallbacks(getContext());
-      AppStartTrace appStartTrace = AppStartTrace.getInstance();
-      appStartTrace.registerActivityLifecycleCallbacks(getContext());
+    AppStateMonitor.getInstance().registerActivityLifecycleCallbacks(getContext());
+    AppStartTrace appStartTrace = AppStartTrace.getInstance();
+    appStartTrace.registerActivityLifecycleCallbacks(getContext());
 
-      mHandler.post(new AppStartTrace.StartFromBackgroundRunnable(appStartTrace));
-    }
+    mHandler.post(new AppStartTrace.StartFromBackgroundRunnable(appStartTrace));
 
     // In the case of cold start, we create a session and start collecting gauges as early as
     // possible.
