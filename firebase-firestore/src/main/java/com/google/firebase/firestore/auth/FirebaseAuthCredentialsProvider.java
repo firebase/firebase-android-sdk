@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.auth;
 
+import android.annotation.SuppressLint;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -55,8 +56,9 @@ public final class FirebaseAuthCredentialsProvider extends CredentialsProvider {
    * its {@link Provider#get} method returns {@code null}, but will be changed to a new {@link
    * Provider} once the "auth" module becomes available.
    */
+  @Nullable
   @GuardedBy("this")
-  private Provider<InternalAuthProvider> internalAuthProviderProvider = () -> null;
+  private InternalAuthProvider internalAuthProvider;
 
   /** The listener to be notified of credential changes (sign-in / sign-out, token changes). */
   @Nullable
@@ -71,13 +73,14 @@ public final class FirebaseAuthCredentialsProvider extends CredentialsProvider {
   private boolean forceRefresh;
 
   /** Creates a new FirebaseAuthCredentialsProvider. */
+  @SuppressLint("ProviderAssignment") // TODO: Remove this @SuppressLint once b/181014061 is fixed.
   public FirebaseAuthCredentialsProvider(Deferred<InternalAuthProvider> deferredAuthProvider) {
     deferredAuthProvider.whenAvailable(
         provider -> {
           synchronized (this) {
-            internalAuthProviderProvider = provider;
+            internalAuthProvider = provider.get();
             onIdTokenChanged();
-            internalAuthProviderProvider.get().addIdTokenListener(idTokenListener);
+            internalAuthProvider.addIdTokenListener(idTokenListener);
           }
         });
   }
@@ -87,12 +90,11 @@ public final class FirebaseAuthCredentialsProvider extends CredentialsProvider {
     boolean doForceRefresh = forceRefresh;
     forceRefresh = false;
 
-    InternalAuthProvider internalAuthProvider = internalAuthProviderProvider.get();
     if (internalAuthProvider == null) {
       return Tasks.forException(new FirebaseApiNotAvailableException("auth is not available"));
     }
 
-    Task<GetTokenResult> res = internalAuthProvider.getAccessToken(doForceRefresh);
+    Task<GetTokenResult> res = internalAuthProvider.getAccessToken(forceRefresh);
 
     // Take note of the current value of the tokenCounter so that this method can fail (with a
     // FirebaseFirestoreException) if there is a token change while the request is outstanding.
@@ -134,7 +136,6 @@ public final class FirebaseAuthCredentialsProvider extends CredentialsProvider {
   public synchronized void removeChangeListener() {
     changeListener = null;
 
-    InternalAuthProvider internalAuthProvider = internalAuthProviderProvider.get();
     if (internalAuthProvider != null) {
       internalAuthProvider.removeIdTokenListener(idTokenListener);
     }
@@ -150,7 +151,6 @@ public final class FirebaseAuthCredentialsProvider extends CredentialsProvider {
 
   /** Returns the current {@link User} as obtained from the given InternalAuthProvider. */
   private synchronized User getUser() {
-    InternalAuthProvider internalAuthProvider = internalAuthProviderProvider.get();
     @Nullable String uid = (internalAuthProvider == null) ? null : internalAuthProvider.getUid();
     return uid != null ? new User(uid) : User.UNAUTHENTICATED;
   }
