@@ -14,8 +14,6 @@
 
 package com.google.firebase.database;
 
-import androidx.annotation.NonNull;
-
 import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
 import static com.google.firebase.database.snapshot.NodeUtilities.NodeFromJSON;
 import static org.junit.Assert.assertTrue;
@@ -24,7 +22,6 @@ import static org.junit.Assert.fail;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.database.android.AndroidAuthTokenProvider;
 import com.google.firebase.database.core.CompoundWrite;
 import com.google.firebase.database.core.Context;
@@ -38,8 +35,6 @@ import com.google.firebase.database.core.view.QuerySpec;
 import com.google.firebase.database.future.WriteFuture;
 import com.google.firebase.database.snapshot.ChildKey;
 import com.google.firebase.database.snapshot.Node;
-import com.google.firebase.inject.Deferred;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
@@ -266,9 +261,11 @@ public class IntegrationTestHelpers {
     config.setEventTarget(new TestEventTarget());
     config.setRunLoop(runLoop);
     config.setFirebaseApp(FirebaseApp.getInstance());
-    config.setAuthTokenProvider(new AndroidAuthTokenProvider(never -> {
-      // Auth is not available in our integration tests
-    }));
+    config.setAuthTokenProvider(
+        new AndroidAuthTokenProvider(
+            never -> {
+              // Auth is not available in our integration tests
+            }));
     return config;
   }
 

@@ -18,7 +18,6 @@ import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApiNotAvailableException;
 import com.google.firebase.auth.GetTokenResult;
-import com.google.firebase.auth.internal.IdTokenListener;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.database.core.AuthTokenProvider;
 import com.google.firebase.inject.Deferred;
@@ -42,7 +41,6 @@ public class AndroidAuthTokenProvider implements AuthTokenProvider {
     InternalAuthProvider authProvider = internalAuth.get();
 
     if (authProvider != null) {
-      // TODO: This would be easier if Deferred<T> had a "isAvailable()" API
       Task<GetTokenResult> getTokenResult = authProvider.getAccessToken(forceRefresh);
 
       getTokenResult
@@ -64,18 +62,14 @@ public class AndroidAuthTokenProvider implements AuthTokenProvider {
   @Override
   public void addTokenChangeListener(
       final ExecutorService executorService, final TokenChangeListener tokenListener) {
-    InternalAuthProvider authProvider = internalAuth.get();
-    if (authProvider == null) {
-      executorService.execute(() -> tokenListener.onTokenChange(null));
-    }
-
-    IdTokenListener idTokenListener =
-        tokenResult ->
-            executorService.execute(
-                () -> tokenListener.onTokenChange(/* nullable */ tokenResult.getToken()));
     deferredAuthProvider.whenAvailable(
-        // TODO: Could "whenAvailable" return the Auth instance rather than a provider for Auth?
-        provider -> provider.get().addIdTokenListener(idTokenListener));
+        provider ->
+            provider
+                .get()
+                .addIdTokenListener(
+                    tokenResult ->
+                        executorService.execute(
+                            () -> tokenListener.onTokenChange(tokenResult.getToken()))));
   }
 
   @Override
@@ -84,11 +78,7 @@ public class AndroidAuthTokenProvider implements AuthTokenProvider {
   }
 
   private static boolean isUnauthenticatedUsage(Exception e) {
-    if (e instanceof FirebaseApiNotAvailableException
-        || e instanceof FirebaseNoSignedInUserException) {
-      return true;
-    }
-
-    return false;
+    return e instanceof FirebaseApiNotAvailableException
+            || e instanceof FirebaseNoSignedInUserException;
   }
 }
