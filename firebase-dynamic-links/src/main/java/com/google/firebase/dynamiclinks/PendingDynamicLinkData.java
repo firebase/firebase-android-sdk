@@ -25,11 +25,13 @@ import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.util.DefaultClock;
 import com.google.firebase.dynamiclinks.internal.DynamicLinkData;
+import com.google.firebase.dynamiclinks.internal.DynamicLinkUTMParams;
 
 /** Provides accessor methods to dynamic links data. */
 public class PendingDynamicLinkData {
 
   private final DynamicLinkData dynamicLinkData;
+  @Nullable private final DynamicLinkUTMParams dynamicLinkUTMParams;
 
   /**
    * Create a dynamic link from parameters.
@@ -40,6 +42,7 @@ public class PendingDynamicLinkData {
   public PendingDynamicLinkData(DynamicLinkData dynamicLinkData) {
     if (dynamicLinkData == null) {
       this.dynamicLinkData = null;
+      this.dynamicLinkUTMParams = null;
       return;
     }
     if (dynamicLinkData.getClickTimestamp() == 0L) {
@@ -47,6 +50,7 @@ public class PendingDynamicLinkData {
       dynamicLinkData.setClickTimestamp(now);
     }
     this.dynamicLinkData = dynamicLinkData;
+    this.dynamicLinkUTMParams = new DynamicLinkUTMParams(dynamicLinkData);
   }
 
   /**
@@ -61,6 +65,7 @@ public class PendingDynamicLinkData {
       @Nullable String deepLink, int minVersion, long clickTimestamp, @Nullable Uri redirectUrl) {
     dynamicLinkData =
         new DynamicLinkData(null, deepLink, minVersion, clickTimestamp, null, redirectUrl);
+    dynamicLinkUTMParams = new DynamicLinkUTMParams(dynamicLinkData);
   }
 
   /**
@@ -98,6 +103,21 @@ public class PendingDynamicLinkData {
       return Uri.parse(deepLink);
     }
     return null;
+  }
+
+  /**
+   * Return the {@link Bundle} which contains utm parameters associated with the firebase dynamic
+   * link.
+   *
+   * @return Bundle of utm parameters associated with firebase dynamic link.
+   */
+  @NonNull
+  public Bundle getUtmParameters() {
+    if (dynamicLinkUTMParams == null) {
+      return Bundle.EMPTY;
+    }
+
+    return dynamicLinkUTMParams.asBundle();
   }
 
   /**

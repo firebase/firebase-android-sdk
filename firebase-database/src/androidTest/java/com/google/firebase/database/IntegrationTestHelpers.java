@@ -266,6 +266,7 @@ public class IntegrationTestHelpers {
             never -> {
               // Auth is not available in our integration tests
             }));
+    config.setSessionPersistenceKey(UUID.randomUUID().toString());
     return config;
   }
 

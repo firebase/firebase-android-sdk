@@ -44,6 +44,7 @@ import com.google.firebase.perf.util.ImmutableBundle;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.perf.v1.ApplicationProcessState;
 import com.google.firebase.perf.v1.TraceMetric;
+import com.google.testing.timing.FakeDirectExecutorService;
 import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Map;
@@ -387,6 +388,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     Activity activityWithNonHardwareAcceleratedView =
         createFakeActivity(/* isHardwareAccelerated =*/ true);
     ConfigResolver configResolver = ConfigResolver.getInstance();
+    configResolver.setDeviceCacheManager(new DeviceCacheManager(new FakeDirectExecutorService()));
 
     Bundle bundle = new Bundle();
     bundle.putBoolean("firebase_performance_collection_enabled", false);
@@ -404,6 +406,8 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     Activity activityWithNonHardwareAcceleratedView =
         createFakeActivity(/* isHardwareAccelerated =*/ true);
     ConfigResolver configResolver = ConfigResolver.getInstance();
+    configResolver.setDeviceCacheManager(new DeviceCacheManager(new FakeDirectExecutorService()));
+
     // Developer disables Performance Monitoring during build time.
     Bundle bundle = new Bundle();
     bundle.putBoolean("firebase_performance_collection_enabled", false);
@@ -436,6 +440,8 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     Activity activityWithNonHardwareAcceleratedView =
         createFakeActivity(/* isHardwareAccelerated =*/ true);
     ConfigResolver configResolver = ConfigResolver.getInstance();
+    configResolver.setDeviceCacheManager(new DeviceCacheManager(new FakeDirectExecutorService()));
+
     Bundle bundle = new Bundle();
     bundle.putBoolean("firebase_performance_collection_deactivated", true);
     configResolver.setMetadataBundle(new ImmutableBundle(bundle));
@@ -484,6 +490,8 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
   public void foregroundTrace_perfMonEnabledAtRuntime_traceCreated() {
     AppStateMonitor monitor = new AppStateMonitor(transportManager, mClock);
     ConfigResolver configResolver = ConfigResolver.getInstance();
+    configResolver.setDeviceCacheManager(new DeviceCacheManager(new FakeDirectExecutorService()));
+
     // Firebase Performance is disabled at build time.
     Bundle bundle = new Bundle();
     bundle.putBoolean("firebase_performance_collection_enabled", false);
@@ -521,6 +529,8 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
   public void foreGroundTrace_perfMonDeactivated_traceCreated() {
     AppStateMonitor monitor = new AppStateMonitor(transportManager, mClock);
     ConfigResolver configResolver = ConfigResolver.getInstance();
+    configResolver.setDeviceCacheManager(new DeviceCacheManager(new FakeDirectExecutorService()));
+
     // Firebase Performance is deactivated at build time.
     Bundle bundle = new Bundle();
     bundle.putBoolean("firebase_performance_collection_deactivated", true);
@@ -589,6 +599,8 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
   public void backgroundTrace_perfMonEnabledAtRuntime_traceCreated() {
     AppStateMonitor monitor = new AppStateMonitor(transportManager, mClock);
     ConfigResolver configResolver = ConfigResolver.getInstance();
+    configResolver.setDeviceCacheManager(new DeviceCacheManager(new FakeDirectExecutorService()));
+
     // Firebase Performance is disabled at build time.
     Bundle bundle = new Bundle();
     bundle.putBoolean("firebase_performance_collection_enabled", false);
@@ -627,6 +639,8 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
   public void backgroundTrace_perfMonDeactivated_traceCreated() {
     AppStateMonitor monitor = new AppStateMonitor(transportManager, mClock);
     ConfigResolver configResolver = ConfigResolver.getInstance();
+    configResolver.setDeviceCacheManager(new DeviceCacheManager(new FakeDirectExecutorService()));
+
     // Firebase Performance is deactivated at build time.
     Bundle bundle = new Bundle();
     bundle.putBoolean("firebase_performance_collection_deactivated", true);

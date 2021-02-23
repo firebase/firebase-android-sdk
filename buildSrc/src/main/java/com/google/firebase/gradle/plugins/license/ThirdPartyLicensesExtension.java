@@ -13,32 +13,36 @@
 // limitations under the License.
 
 package com.google.firebase.gradle.plugins.license;
+
 import java.io.Serializable;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ThirdPartyLicensesExtension {
-    private final ArrayList<CustomLicense> customLicenses = new ArrayList<>();
+  private final ArrayList<CustomLicense> customLicenses = new ArrayList<>();
 
-    /** Add a library with its licenses in passed-in files(relative to rootDir). Only file URIs are supported*/
-    public void add(String name, String... licenseUris) {
-        customLicenses.add(new CustomLicense(name, licenseUris));
+  /**
+   * Add a library with its licenses in passed-in files(relative to rootDir). Only file URIs are
+   * supported
+   */
+  public void add(String name, String... licenseUris) {
+    customLicenses.add(new CustomLicense(name, licenseUris));
+  }
+
+  static class CustomLicense implements Serializable {
+    final String name;
+    final List<URI> licenseUris = new ArrayList<>();
+
+    CustomLicense(String name, String[] licenseUris) {
+      this.name = name;
+      for (String s : licenseUris) {
+        this.licenseUris.add(URI.create(s));
+      }
     }
+  }
 
-    static class CustomLicense implements Serializable {
-        final String name;
-        final List<URI> licenseUris = new ArrayList<>();
-
-        CustomLicense(String name, String[] licenseUris) {
-            this.name = name;
-            for(String s: licenseUris){
-                this.licenseUris.add(URI.create(s));
-            }
-        }
-    }
-
-    List<CustomLicense> getLibraries() {
-        return customLicenses;
-    }
+  List<CustomLicense> getLibraries() {
+    return customLicenses;
+  }
 }

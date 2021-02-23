@@ -22,6 +22,8 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Utilizes platform supported APIs for storing and retrieving Firebase Performance related
@@ -40,13 +42,19 @@ public class DeviceCacheManager {
   // The key-value pairs are written to XML files that persist across user sessions, even if the
   // app is killed.
   // https://developer.android.com/guide/topics/data/data-storage.html#pref
-  private SharedPreferences sharedPref;
+  private volatile SharedPreferences sharedPref;
 
-  private DeviceCacheManager() {}
+  // Used for retrieving the shared preferences on a separate thread.
+  private ExecutorService serialExecutor;
+
+  @VisibleForTesting
+  public DeviceCacheManager(ExecutorService serialExecutor) {
+    this.serialExecutor = serialExecutor;
+  }
 
   public static synchronized DeviceCacheManager getInstance() {
     if (instance == null) {
-      instance = new DeviceCacheManager();
+      instance = new DeviceCacheManager(Executors.newSingleThreadExecutor());
     }
     return instance;
   }
@@ -56,9 +64,19 @@ public class DeviceCacheManager {
     instance = null;
   }
 
+  /**
+   * Triggers a getSharedPreferences call in a separate thread if shared preferences is not set.
+   * This method returns immediately without waiting for the getSharedPreferences call to be
+   * complete.
+   */
   public synchronized void setContext(Context context) {
     if (sharedPref == null && context != null) {
-      this.sharedPref = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+      serialExecutor.execute(
+          () -> {
+            if (sharedPref == null && context != null) {
+              this.sharedPref = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+            }
+          });
     }
   }
 

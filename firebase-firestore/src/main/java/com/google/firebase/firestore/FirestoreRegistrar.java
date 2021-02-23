@@ -47,14 +47,14 @@ public class FirestoreRegistrar implements ComponentRegistrar {
             .add(Dependency.required(Context.class))
             .add(Dependency.optionalProvider(HeartBeatInfo.class))
             .add(Dependency.optionalProvider(UserAgentPublisher.class))
-            .add(Dependency.optional(InternalAuthProvider.class))
+            .add(Dependency.deferred(InternalAuthProvider.class))
             .add(Dependency.optional(FirebaseOptions.class))
             .factory(
                 c ->
                     new FirestoreMultiDbComponent(
                         c.get(Context.class),
                         c.get(FirebaseApp.class),
-                        c.get(InternalAuthProvider.class),
+                        c.getDeferred(InternalAuthProvider.class),
                         new FirebaseClientGrpcMetadataProvider(
                             c.getProvider(UserAgentPublisher.class),
                             c.getProvider(HeartBeatInfo.class),

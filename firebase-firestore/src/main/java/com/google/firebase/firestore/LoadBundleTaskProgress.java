@@ -116,13 +116,15 @@ public final class LoadBundleTaskProgress {
     return totalBytes;
   }
 
-  /** Returns the current state of the task. */
+  /** Returns the current state of the {@link LoadBundleTask}. */
   @NonNull
   public TaskState getTaskState() {
     return taskState;
   }
 
-  /** If the task failed, returns the exception. Otherwise, returns null. */
+  /**
+   * If the {@link LoadBundleTask} failed, returns the exception. Otherwise, returns {@code null}.
+   */
   @Nullable
   public Exception getException() {
     return exception;
