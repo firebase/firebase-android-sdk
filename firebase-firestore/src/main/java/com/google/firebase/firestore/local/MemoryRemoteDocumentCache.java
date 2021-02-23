@@ -14,7 +14,7 @@
 
 package com.google.firebase.firestore.local;
 
-import static com.google.firebase.firestore.model.DocumentCollections.emptyDocumentMap;
+import static com.google.firebase.firestore.model.DocumentCollections.emptyMutableDocumentMap;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import android.util.Pair;
@@ -78,7 +78,7 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
     hardAssert(
         !query.isCollectionGroupQuery(),
         "CollectionGroup queries should be handled in LocalDocumentsView");
-    ImmutableSortedMap<DocumentKey, MutableDocument> result = emptyDocumentMap();
+    ImmutableSortedMap<DocumentKey, MutableDocument> result = emptyMutableDocumentMap();
 
     // Documents are ordered by key, so we can use a prefix scan to narrow down the documents
     // we need to match the query against.

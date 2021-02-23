@@ -30,17 +30,17 @@ import java.util.List;
  * An immutable set of documents (unique by key) ordered by the given comparator or ordered by key
  * by default if no document is present.
  */
-public final class DocumentSet implements Iterable<MutableDocument> {
+public final class DocumentSet implements Iterable<Document> {
 
   /** Returns an empty DocumentSet sorted by the given comparator, then by keys. */
-  public static DocumentSet emptySet(final Comparator<MutableDocument> comparator) {
+  public static DocumentSet emptySet(final Comparator<Document> comparator) {
     // We have to add the document key comparator to the passed in comparator, as it's the only
     // guaranteed unique property of a document.
-    Comparator<MutableDocument> adjustedComparator =
+    Comparator<Document> adjustedComparator =
         (left, right) -> {
           int comparison = comparator.compare(left, right);
           if (comparison == 0) {
-            return MutableDocument.keyComparator().compare(left, right);
+            return Document.KEY_COMPARATOR.compare(left, right);
           } else {
             return comparison;
           }
@@ -55,18 +55,17 @@ public final class DocumentSet implements Iterable<MutableDocument> {
    * guarantee the uniqueness of document keys in the set and to allow lookup and removal of
    * documents by key.
    */
-  private final ImmutableSortedMap<DocumentKey, MutableDocument> keyIndex;
+  private final ImmutableSortedMap<DocumentKey, Document> keyIndex;
 
   /**
    * The main collection of documents in the DocumentSet. The documents are ordered by the provided
    * comparator. The collection exists in addition to the index to allow ordered traversal of the
    * DocumentSet.
    */
-  private final ImmutableSortedSet<MutableDocument> sortedSet;
+  private final ImmutableSortedSet<Document> sortedSet;
 
   private DocumentSet(
-      ImmutableSortedMap<DocumentKey, MutableDocument> keyIndex,
-      ImmutableSortedSet<MutableDocument> sortedSet) {
+      ImmutableSortedMap<DocumentKey, Document> keyIndex, ImmutableSortedSet<Document> sortedSet) {
     this.keyIndex = keyIndex;
     this.sortedSet = sortedSet;
   }
@@ -86,7 +85,7 @@ public final class DocumentSet implements Iterable<MutableDocument> {
 
   /** Returns the document from this set with the given key if it exists or null if it doesn't. */
   @Nullable
-  public MutableDocument getDocument(DocumentKey key) {
+  public Document getDocument(DocumentKey key) {
     return keyIndex.get(key);
   }
 
@@ -95,7 +94,7 @@ public final class DocumentSet implements Iterable<MutableDocument> {
    * empty.
    */
   @Nullable
-  public MutableDocument getFirstDocument() {
+  public Document getFirstDocument() {
     return sortedSet.getMinEntry();
   }
 
@@ -104,7 +103,7 @@ public final class DocumentSet implements Iterable<MutableDocument> {
    * empty.
    */
   @Nullable
-  public MutableDocument getLastDocument() {
+  public Document getLastDocument() {
     return sortedSet.getMaxEntry();
   }
 
@@ -117,8 +116,8 @@ public final class DocumentSet implements Iterable<MutableDocument> {
    * @throws IllegalArgumentException if the set does not contain the key
    */
   @Nullable
-  public MutableDocument getPredecessor(DocumentKey key) {
-    MutableDocument document = keyIndex.get(key);
+  public Document getPredecessor(DocumentKey key) {
+    Document document = keyIndex.get(key);
     if (document == null) {
       throw new IllegalArgumentException("Key not contained in DocumentSet: " + key);
     }
@@ -130,7 +129,7 @@ public final class DocumentSet implements Iterable<MutableDocument> {
    * present in the set;
    */
   public int indexOf(DocumentKey key) {
-    MutableDocument document = keyIndex.get(key);
+    Document document = keyIndex.get(key);
     if (document == null) {
       return -1;
     }
@@ -141,26 +140,26 @@ public final class DocumentSet implements Iterable<MutableDocument> {
    * Returns a new DocumentSet that contains the given document, replacing any old document with the
    * same key.
    */
-  public DocumentSet add(MutableDocument document) {
+  public DocumentSet add(Document document) {
     // Remove any prior mapping of the document's key before adding, preventing sortedSet from
     // accumulating values that aren't in the index.
     DocumentSet removed = remove(document.getKey());
 
-    ImmutableSortedMap<DocumentKey, MutableDocument> newKeyIndex =
+    ImmutableSortedMap<DocumentKey, Document> newKeyIndex =
         removed.keyIndex.insert(document.getKey(), document);
-    ImmutableSortedSet<MutableDocument> newSortedSet = removed.sortedSet.insert(document);
+    ImmutableSortedSet<Document> newSortedSet = removed.sortedSet.insert(document);
     return new DocumentSet(newKeyIndex, newSortedSet);
   }
 
   /** Returns a new DocumentSet with the document for the provided key removed. */
   public DocumentSet remove(DocumentKey key) {
-    MutableDocument document = keyIndex.get(key);
+    Document document = keyIndex.get(key);
     if (document == null) {
       return this;
     }
 
-    ImmutableSortedMap<DocumentKey, MutableDocument> newKeyIndex = keyIndex.remove(key);
-    ImmutableSortedSet<MutableDocument> newSortedSet = sortedSet.remove(document);
+    ImmutableSortedMap<DocumentKey, Document> newKeyIndex = keyIndex.remove(key);
+    ImmutableSortedSet<Document> newSortedSet = sortedSet.remove(document);
     return new DocumentSet(newKeyIndex, newSortedSet);
   }
 
@@ -168,9 +167,9 @@ public final class DocumentSet implements Iterable<MutableDocument> {
    * Returns a copy of the documents in this set as array. This is O(n) in the size of the set TODO:
    * Consider making this backed by the set instead to achieve O(1)?
    */
-  public List<MutableDocument> toList() {
-    List<MutableDocument> documents = new ArrayList<>(size());
-    for (MutableDocument document : this) {
+  public List<Document> toList() {
+    List<Document> documents = new ArrayList<>(size());
+    for (Document document : this) {
       documents.add(document);
     }
     return documents;
@@ -178,7 +177,7 @@ public final class DocumentSet implements Iterable<MutableDocument> {
 
   @Override
   @NonNull
-  public Iterator<MutableDocument> iterator() {
+  public Iterator<Document> iterator() {
     return sortedSet.iterator();
   }
 
@@ -197,11 +196,11 @@ public final class DocumentSet implements Iterable<MutableDocument> {
       return false;
     }
 
-    Iterator<MutableDocument> thisIterator = iterator();
-    Iterator<MutableDocument> otherIterator = documentSet.iterator();
+    Iterator<Document> thisIterator = iterator();
+    Iterator<Document> otherIterator = documentSet.iterator();
     while (thisIterator.hasNext()) {
-      MutableDocument thisDoc = thisIterator.next();
-      MutableDocument otherDoc = otherIterator.next();
+      Document thisDoc = thisIterator.next();
+      Document otherDoc = otherIterator.next();
       if (!thisDoc.equals(otherDoc)) {
         return false;
       }
@@ -213,8 +212,9 @@ public final class DocumentSet implements Iterable<MutableDocument> {
   @Override
   public int hashCode() {
     int result = 0;
-    for (MutableDocument document : this) {
-      result = 31 * result + document.hashCode();
+    for (Document document : this) {
+      result = 31 * result + document.getKey().hashCode();
+      result = 31 * result + document.getData().hashCode();
     }
     return result;
   }
@@ -223,7 +223,7 @@ public final class DocumentSet implements Iterable<MutableDocument> {
   public String toString() {
     StringBuilder builder = new StringBuilder("[");
     boolean first = true;
-    for (MutableDocument doc : this) {
+    for (Document doc : this) {
       if (first) {
         first = false;
       } else {

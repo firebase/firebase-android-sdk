@@ -14,8 +14,8 @@
 
 package com.google.firebase.firestore.core;
 
+import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.FieldPath;
-import com.google.firebase.firestore.model.MutableDocument;
 
 /** Interface used for all query filters. */
 public abstract class Filter {
@@ -47,7 +47,7 @@ public abstract class Filter {
   public abstract FieldPath getField();
 
   /** Returns true if a document matches the filter. */
-  public abstract boolean matches(MutableDocument doc);
+  public abstract boolean matches(Document doc);
 
   /** A unique ID identifying the filter; used when serializing queries. */
   public abstract String getCanonicalId();

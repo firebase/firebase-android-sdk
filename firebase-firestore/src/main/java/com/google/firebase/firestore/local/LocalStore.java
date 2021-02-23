@@ -30,6 +30,7 @@ import com.google.firebase.firestore.bundle.NamedQuery;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.core.TargetIdGenerator;
+import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ObjectValue;
@@ -171,7 +172,7 @@ public final class LocalStore implements BundleCallback {
 
   // PORTING NOTE: no shutdown for LocalStore or persistence components on Android.
 
-  public ImmutableSortedMap<DocumentKey, MutableDocument> handleUserChange(User user) {
+  public ImmutableSortedMap<DocumentKey, Document> handleUserChange(User user) {
     // Swap out the mutation queue, grabbing the pending mutation batches before and after.
     List<MutationBatch> oldBatches = mutationQueue.getAllMutationBatches();
 
@@ -215,7 +216,7 @@ public final class LocalStore implements BundleCallback {
         () -> {
           // Load and apply all existing mutations. This lets us compute the current base state for
           // all non-idempotent transforms before applying any additional user-provided writes.
-          ImmutableSortedMap<DocumentKey, MutableDocument> existingDocuments =
+          ImmutableSortedMap<DocumentKey, Document> existingDocuments =
               localDocuments.getDocuments(keys);
 
           // For non-idempotent mutations (such as `FieldValue.increment()`), we record the base
@@ -240,7 +241,7 @@ public final class LocalStore implements BundleCallback {
 
           MutationBatch batch =
               mutationQueue.addMutationBatch(localWriteTime, baseMutations, mutations);
-          ImmutableSortedMap<DocumentKey, MutableDocument> changedDocuments =
+          ImmutableSortedMap<DocumentKey, Document> changedDocuments =
               batch.applyToLocalDocumentSet(existingDocuments);
           return new LocalWriteResult(batch.getBatchId(), changedDocuments);
         });
@@ -261,7 +262,7 @@ public final class LocalStore implements BundleCallback {
    *
    * @return The resulting (modified) documents.
    */
-  public ImmutableSortedMap<DocumentKey, MutableDocument> acknowledgeBatch(
+  public ImmutableSortedMap<DocumentKey, Document> acknowledgeBatch(
       MutationBatchResult batchResult) {
     return persistence.runTransaction(
         "Acknowledge batch",
@@ -280,7 +281,7 @@ public final class LocalStore implements BundleCallback {
    *
    * @return The resulting (modified) documents.
    */
-  public ImmutableSortedMap<DocumentKey, MutableDocument> rejectBatch(int batchId) {
+  public ImmutableSortedMap<DocumentKey, Document> rejectBatch(int batchId) {
     // TODO: Call queryEngine.handleDocumentChange() appropriately.
 
     return persistence.runTransaction(
@@ -336,8 +337,7 @@ public final class LocalStore implements BundleCallback {
    *
    * <p>LocalDocuments are re-calculated if there are remaining mutations in the queue.
    */
-  public ImmutableSortedMap<DocumentKey, MutableDocument> applyRemoteEvent(
-      RemoteEvent remoteEvent) {
+  public ImmutableSortedMap<DocumentKey, Document> applyRemoteEvent(RemoteEvent remoteEvent) {
     SnapshotVersion remoteVersion = remoteEvent.getSnapshotVersion();
 
     // TODO: Call queryEngine.handleDocumentChange() appropriately.
@@ -549,7 +549,7 @@ public final class LocalStore implements BundleCallback {
   }
 
   /** Returns the current value of a document with a given key, or null if not found. */
-  public MutableDocument readDocument(DocumentKey key) {
+  public Document readDocument(DocumentKey key) {
     return localDocuments.getDocument(key);
   }
 
@@ -632,7 +632,7 @@ public final class LocalStore implements BundleCallback {
   }
 
   @Override
-  public ImmutableSortedMap<DocumentKey, MutableDocument> applyBundledDocuments(
+  public ImmutableSortedMap<DocumentKey, Document> applyBundledDocuments(
       ImmutableSortedMap<DocumentKey, MutableDocument> documents, String bundleId) {
     // Allocates a target to hold all document keys from the bundle, such that
     // they will not get garbage collected right away.
@@ -751,7 +751,7 @@ public final class LocalStore implements BundleCallback {
       remoteKeys = this.targetCache.getMatchingKeysForTargetId(targetData.getTargetId());
     }
 
-    ImmutableSortedMap<DocumentKey, MutableDocument> documents =
+    ImmutableSortedMap<DocumentKey, Document> documents =
         queryEngine.getDocumentsMatchingQuery(
             query,
             usePreviousResults ? lastLimboFreeSnapshotVersion : SnapshotVersion.NONE,

@@ -15,9 +15,9 @@
 package com.google.firebase.firestore.core;
 
 import com.google.firebase.database.collection.ImmutableSortedSet;
+import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.DocumentSet;
-import com.google.firebase.firestore.model.MutableDocument;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -67,7 +67,7 @@ public class ViewSnapshot {
       boolean fromCache,
       boolean excludesMetadataChanges) {
     List<DocumentViewChange> viewChanges = new ArrayList<>();
-    for (MutableDocument doc : documents) {
+    for (Document doc : documents) {
       viewChanges.add(DocumentViewChange.create(DocumentViewChange.Type.ADDED, doc));
     }
     return new ViewSnapshot(

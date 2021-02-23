@@ -19,6 +19,7 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.Query;
+import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
@@ -62,7 +63,7 @@ class CountingQueryEngine implements QueryEngine {
   }
 
   @Override
-  public ImmutableSortedMap<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
+  public ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
       Query query,
       SnapshotVersion lastLimboFreeSnapshotVersion,
       ImmutableSortedSet<DocumentKey> remoteKeys) {

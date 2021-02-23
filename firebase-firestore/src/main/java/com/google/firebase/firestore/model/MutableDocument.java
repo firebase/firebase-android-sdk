@@ -16,16 +16,8 @@ package com.google.firebase.firestore.model;
 
 import androidx.annotation.NonNull;
 import com.google.firestore.v1.Value;
-import java.util.Comparator;
 
-public final class MutableDocument implements Cloneable {
-  private static final Comparator<MutableDocument> KEY_COMPARATOR =
-      (left, right) -> left.getKey().compareTo(right.getKey());
-
-  /** A document comparator that returns document by key and key only. */
-  public static Comparator<MutableDocument> keyComparator() {
-    return KEY_COMPARATOR;
-  }
+public final class MutableDocument implements Document, Cloneable {
 
   private enum DocumentType {
     /**
@@ -123,7 +115,7 @@ public final class MutableDocument implements Cloneable {
     return this;
   }
 
-  /** The key for this document */
+  @Override
   public DocumentKey getKey() {
     return key;
   }
@@ -137,11 +129,13 @@ public final class MutableDocument implements Cloneable {
   }
 
   /** Returns whether local mutations were applied via the mutation queue. */
+  @Override
   public boolean hasLocalMutations() {
     return documentState.equals(DocumentState.LOCAL_MUTATIONS);
   }
 
   /** Returns whether mutations were applied based on a write acknowledgment. */
+  @Override
   public boolean hasCommittedMutations() {
     return documentState.equals(DocumentState.COMMITTED_MUTATIONS);
   }
@@ -149,37 +143,37 @@ public final class MutableDocument implements Cloneable {
   /**
    * Whether this document has a local mutation applied that has not yet been acknowledged by Watch.
    */
+  @Override
   public boolean hasPendingWrites() {
     return hasLocalMutations() || hasCommittedMutations();
   }
 
+  @Override
   public ObjectValue getData() {
     return value;
   }
 
+  @Override
   public Value getField(FieldPath field) {
     return getData().get(field);
   }
 
-  /**
-   * Returns whether this document is valid (i.e. it is an entry in the RemoteDocumentCache, was
-   * created by a mutation or read from the backend).
-   */
+  @Override
   public boolean isValidDocument() {
     return !documentType.equals(DocumentType.INVALID);
   }
 
-  /** Returns whether the document exists and its data is known at the current version. */
+  @Override
   public boolean isFoundDocument() {
     return documentType.equals(DocumentType.FOUND_DOCUMENT);
   }
 
-  /** Returns whether the document is known to not exist at the current version. */
+  @Override
   public boolean isNoDocument() {
     return documentType.equals(DocumentType.NO_DOCUMENT);
   }
 
-  /** Returns whether the document exists and its data is unknown at the current version. */
+  @Override
   public boolean isUnknownDocument() {
     return documentType.equals(DocumentType.UNKNOWN_DOCUMENT);
   }
@@ -199,12 +193,17 @@ public final class MutableDocument implements Cloneable {
 
     if (!key.equals(document.key)) return false;
     if (!version.equals(document.version)) return false;
-    if (documentType != document.documentType) return false;
+    if (!documentType.equals(document.documentType)) return false;
+    if (!documentState.equals(document.documentState)) return false;
     return value.equals(document.value);
   }
 
   @Override
   public int hashCode() {
+    // We only use the key for the hashcode as all other document properties are mutable.
+    // While mutable documents should not be uses as keys in collections, the hash code is used
+    // in DocumentSet, which tracks Documents that are no longer being mutated but which are
+    // backed by this class.
     return key.hashCode();
   }
 

@@ -14,7 +14,7 @@
 
 package com.google.firebase.firestore.local;
 
-import static com.google.firebase.firestore.model.DocumentCollections.emptyDocumentMap;
+import static com.google.firebase.firestore.model.DocumentCollections.emptyMutableDocumentMap;
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
 import static com.google.firebase.firestore.testutil.TestUtil.docSet;
 import static com.google.firebase.firestore.testutil.TestUtil.filter;
@@ -32,6 +32,7 @@ import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.core.View;
+import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.DocumentSet;
 import com.google.firebase.firestore.model.MutableDocument;
@@ -97,7 +98,7 @@ public class QueryEngineTest {
             persistence.getMutationQueue(User.UNAUTHENTICATED),
             new MemoryIndexManager()) {
           @Override
-          public ImmutableSortedMap<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
+          public ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
               Query query, SnapshotVersion sinceReadTime) {
             assertEquals(
                 "Observed query execution mode did not match expectation",
@@ -165,7 +166,7 @@ public class QueryEngineTest {
     Preconditions.checkNotNull(
         expectFullCollectionScan,
         "Encountered runQuery() call not wrapped in expectOptimizedCollectionQuery()/expectFullCollectionQuery()");
-    ImmutableSortedMap<DocumentKey, MutableDocument> docs =
+    ImmutableSortedMap<DocumentKey, Document> docs =
         queryEngine.getDocumentsMatchingQuery(
             query,
             lastLimboFreeSnapshotVersion,
@@ -383,13 +384,13 @@ public class QueryEngineTest {
     // Add an unacknowledged mutation
     addMutation(new DeleteMutation(key("coll/b"), Precondition.NONE));
 
-    ImmutableSortedMap<DocumentKey, MutableDocument> docs =
+    ImmutableSortedMap<DocumentKey, Document> docs =
         expectFullCollectionScan(
             () ->
                 queryEngine.getDocumentsMatchingQuery(
                     query,
                     LAST_LIMBO_FREE_SNAPSHOT,
                     targetCache.getMatchingKeysForTargetId(TEST_TARGET_ID)));
-    assertEquals(emptyDocumentMap().insert(MATCHING_DOC_A.getKey(), MATCHING_DOC_A), docs);
+    assertEquals(emptyMutableDocumentMap().insert(MATCHING_DOC_A.getKey(), MATCHING_DOC_A), docs);
   }
 }

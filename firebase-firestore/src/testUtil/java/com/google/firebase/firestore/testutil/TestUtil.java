@@ -16,6 +16,7 @@ package com.google.firebase.firestore.testutil;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.firestore.model.DocumentCollections.emptyDocumentMap;
+import static com.google.firebase.firestore.model.DocumentCollections.emptyMutableDocumentMap;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -46,6 +47,7 @@ import com.google.firebase.firestore.local.LocalViewChanges;
 import com.google.firebase.firestore.local.QueryPurpose;
 import com.google.firebase.firestore.local.TargetData;
 import com.google.firebase.firestore.model.DatabaseId;
+import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.DocumentSet;
 import com.google.firebase.firestore.model.FieldPath;
@@ -202,15 +204,14 @@ public class TestUtil {
 
   public static ImmutableSortedMap<DocumentKey, MutableDocument> docMap(
       MutableDocument[] documents) {
-    ImmutableSortedMap<DocumentKey, MutableDocument> map = emptyDocumentMap();
+    ImmutableSortedMap<DocumentKey, MutableDocument> map = emptyMutableDocumentMap();
     for (MutableDocument maybeDocument : documents) {
       map = map.insert(maybeDocument.getKey(), maybeDocument);
     }
     return map;
   }
 
-  public static DocumentSet docSet(
-      Comparator<MutableDocument> comparator, MutableDocument... documents) {
+  public static DocumentSet docSet(Comparator<Document> comparator, MutableDocument... documents) {
     DocumentSet set = DocumentSet.emptySet(comparator);
     for (MutableDocument document : documents) {
       set = set.add(document);
@@ -294,10 +295,8 @@ public class TestUtil {
         query(path).toTarget(), targetId, ARBITRARY_SEQUENCE_NUMBER, queryPurpose);
   }
 
-  public static ImmutableSortedMap<DocumentKey, MutableDocument> docUpdates(
-      MutableDocument... docs) {
-    ImmutableSortedMap<DocumentKey, MutableDocument> res =
-        ImmutableSortedMap.Builder.emptyMap(DocumentKey.comparator());
+  public static ImmutableSortedMap<DocumentKey, Document> docUpdates(MutableDocument... docs) {
+    ImmutableSortedMap<DocumentKey, Document> res = emptyDocumentMap();
     for (MutableDocument doc : docs) {
       res = res.insert(doc.getKey(), doc);
     }

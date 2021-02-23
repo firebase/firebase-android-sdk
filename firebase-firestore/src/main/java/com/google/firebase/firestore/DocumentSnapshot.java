@@ -19,8 +19,8 @@ import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.util.CustomClassMapper;
 import com.google.firestore.v1.Value;
 import java.util.Date;
@@ -73,14 +73,14 @@ public class DocumentSnapshot {
   private final DocumentKey key;
 
   /** Is {@code null} if the document doesn't exist */
-  private final @Nullable MutableDocument doc;
+  private final @Nullable Document doc;
 
   private final SnapshotMetadata metadata;
 
   DocumentSnapshot(
       FirebaseFirestore firestore,
       DocumentKey key,
-      @Nullable MutableDocument doc,
+      @Nullable Document doc,
       boolean isFromCache,
       boolean hasPendingWrites) {
     this.firestore = checkNotNull(firestore);
@@ -90,16 +90,13 @@ public class DocumentSnapshot {
   }
 
   static DocumentSnapshot fromDocument(
-      FirebaseFirestore firestore,
-      MutableDocument doc,
-      boolean fromCache,
-      boolean hasPendingWrites) {
+      FirebaseFirestore firestore, Document doc, boolean fromCache, boolean hasPendingWrites) {
     return new DocumentSnapshot(firestore, doc.getKey(), doc, fromCache, hasPendingWrites);
   }
 
   static DocumentSnapshot fromNoDocument(
-      FirebaseFirestore firestore, DocumentKey key, boolean fromCache, boolean hasPendingWrites) {
-    return new DocumentSnapshot(firestore, key, null, fromCache, hasPendingWrites);
+      FirebaseFirestore firestore, DocumentKey key, boolean fromCache) {
+    return new DocumentSnapshot(firestore, key, null, fromCache, /* hasPendingWrites= */ false);
   }
 
   /** @return The id of the document. */
@@ -120,7 +117,7 @@ public class DocumentSnapshot {
   }
 
   @Nullable
-  MutableDocument getDocument() {
+  Document getDocument() {
     return doc;
   }
 
@@ -537,7 +534,8 @@ public class DocumentSnapshot {
   public int hashCode() {
     int hash = firestore.hashCode();
     hash = hash * 31 + key.hashCode();
-    hash = hash * 31 + (doc != null ? doc.hashCode() : 0);
+    hash = hash * 31 + (doc != null ? doc.getKey().hashCode() : 0);
+    hash = hash * 31 + (doc != null ? doc.getData().hashCode() : 0);
     hash = hash * 31 + metadata.hashCode();
     return hash;
   }

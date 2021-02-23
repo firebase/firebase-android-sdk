@@ -18,6 +18,7 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedMap;
+import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
@@ -125,13 +126,16 @@ public final class MutationBatch {
   }
 
   /** Computes the local view for all provided documents given the mutations in this batch. */
-  public ImmutableSortedMap<DocumentKey, MutableDocument> applyToLocalDocumentSet(
-      ImmutableSortedMap<DocumentKey, MutableDocument> documentMap) {
+  public ImmutableSortedMap<DocumentKey, Document> applyToLocalDocumentSet(
+      ImmutableSortedMap<DocumentKey, Document> documentMap) {
     // TODO(mrschmidt): This implementation is O(n^2). If we iterate through the mutations first
     // (as done in `applyToLocalView(DocumentKey k, MaybeDoc d)`), we can reduce the complexity to
     // O(n).
     for (DocumentKey key : getKeys()) {
-      MutableDocument document = documentMap.get(key);
+      // TODO(mutabledocuments): This method should take a map of MutableDocuments and we should
+      // remove
+      // this cast.
+      MutableDocument document = (MutableDocument) documentMap.get(key);
       applyToLocalView(document);
       if (!document.isValidDocument()) {
         document.setNoDocument(SnapshotVersion.NONE);

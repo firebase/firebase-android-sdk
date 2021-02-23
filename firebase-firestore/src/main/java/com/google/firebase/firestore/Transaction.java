@@ -200,13 +200,10 @@ public class Transaction {
               MutableDocument doc = docs.get(0);
               if (doc.isFoundDocument()) {
                 return DocumentSnapshot.fromDocument(
-                    firestore,
-                    (MutableDocument) doc,
-                    /*fromCache=*/ false,
-                    /*hasPendingWrites=*/ false);
+                    firestore, doc, /*fromCache=*/ false, /*hasPendingWrites=*/ false);
               } else if (doc.isNoDocument()) {
                 return DocumentSnapshot.fromNoDocument(
-                    firestore, doc.getKey(), /*fromCache=*/ false, /*hasPendingWrites=*/ false);
+                    firestore, doc.getKey(), /*fromCache=*/ false);
               } else {
                 throw fail(
                     "BatchGetDocumentsRequest returned unexpected document type: "

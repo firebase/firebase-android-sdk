@@ -33,6 +33,7 @@ import static org.junit.Assert.assertTrue;
 
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.DocumentViewChange.Type;
+import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ResourcePath;
@@ -66,7 +67,7 @@ public class ViewTest {
     MutableDocument doc2 = doc("rooms/eros/messages/2", 0, map("text", "msg2"));
     MutableDocument doc3 = doc("rooms/other/messages/1", 0, map("text", "msg3"));
 
-    ImmutableSortedMap<DocumentKey, MutableDocument> updates = docUpdates(doc1, doc2, doc3);
+    ImmutableSortedMap<DocumentKey, Document> updates = docUpdates(doc1, doc2, doc3);
     View.DocumentChanges docViewChanges = view.computeDocChanges(updates);
     TargetChange targetChange = ackTarget(doc1, doc2, doc3);
     ViewSnapshot snapshot = view.applyChanges(docViewChanges, targetChange).getSnapshot();

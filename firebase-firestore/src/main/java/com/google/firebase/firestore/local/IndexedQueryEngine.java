@@ -25,6 +25,7 @@ import com.google.firebase.firestore.core.Filter;
 import com.google.firebase.firestore.core.Filter.Operator;
 import com.google.firebase.firestore.core.IndexRange;
 import com.google.firebase.firestore.core.Query;
+import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentCollections;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
@@ -101,7 +102,7 @@ public class IndexedQueryEngine implements QueryEngine {
   }
 
   @Override
-  public ImmutableSortedMap<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
+  public ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
       Query query,
       SnapshotVersion lastLimboFreeSnapshotVersion,
       ImmutableSortedSet<DocumentKey> remoteKeys) {
@@ -113,11 +114,11 @@ public class IndexedQueryEngine implements QueryEngine {
   }
 
   /** Executes the query using both indexes and post-filtering. */
-  private ImmutableSortedMap<DocumentKey, MutableDocument> performCollectionQuery(Query query) {
+  private ImmutableSortedMap<DocumentKey, Document> performCollectionQuery(Query query) {
     hardAssert(!query.isDocumentQuery(), "matchesCollectionQuery() called with document query.");
 
     IndexRange indexRange = extractBestIndexRange(query);
-    ImmutableSortedMap<DocumentKey, MutableDocument> filteredResults;
+    ImmutableSortedMap<DocumentKey, Document> filteredResults;
 
     if (indexRange != null) {
       filteredResults = performQueryUsingIndex(query, indexRange);
@@ -137,15 +138,13 @@ public class IndexedQueryEngine implements QueryEngine {
    * Applies 'filter' to the index cursor, looks up the relevant documents from the local documents
    * view and returns all matches.
    */
-  private ImmutableSortedMap<DocumentKey, MutableDocument> performQueryUsingIndex(
+  private ImmutableSortedMap<DocumentKey, Document> performQueryUsingIndex(
       Query query, IndexRange indexRange) {
-    ImmutableSortedMap<DocumentKey, MutableDocument> results =
-        DocumentCollections.emptyDocumentMap();
+    ImmutableSortedMap<DocumentKey, Document> results = DocumentCollections.emptyDocumentMap();
     IndexCursor cursor = collectionIndex.getCursor(query.getPath(), indexRange);
     try {
       while (cursor.next()) {
-        MutableDocument document =
-            (MutableDocument) localDocuments.getDocument(cursor.getDocumentKey());
+        Document document = localDocuments.getDocument(cursor.getDocumentKey());
         if (query.matches(document)) {
           results = results.insert(cursor.getDocumentKey(), document);
         }

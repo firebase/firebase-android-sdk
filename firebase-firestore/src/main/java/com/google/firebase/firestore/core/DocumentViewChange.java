@@ -14,7 +14,7 @@
 
 package com.google.firebase.firestore.core;
 
-import com.google.firebase.firestore.model.MutableDocument;
+import com.google.firebase.firestore.model.Document;
 
 /** A change to a single document's state within a view. */
 public class DocumentViewChange {
@@ -29,20 +29,20 @@ public class DocumentViewChange {
     METADATA
   }
 
-  public static DocumentViewChange create(Type type, MutableDocument document) {
+  public static DocumentViewChange create(Type type, Document document) {
     return new DocumentViewChange(type, document);
   }
 
   private final Type type;
 
-  private final MutableDocument document;
+  private final Document document;
 
-  private DocumentViewChange(Type type, MutableDocument document) {
+  private DocumentViewChange(Type type, Document document) {
     this.type = type;
     this.document = document;
   }
 
-  public MutableDocument getDocument() {
+  public Document getDocument() {
     return document;
   }
 
@@ -64,7 +64,8 @@ public class DocumentViewChange {
   public int hashCode() {
     int res = 61;
     res = res * 31 + type.hashCode();
-    res = res * 31 + document.hashCode();
+    res = res * 31 + document.getKey().hashCode();
+    res = res * 31 + document.getData().hashCode();
     return res;
   }
 

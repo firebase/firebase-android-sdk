@@ -30,6 +30,7 @@ import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.Filter;
 import com.google.firebase.firestore.core.IndexRange;
 import com.google.firebase.firestore.core.Query;
+import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.testutil.TestUtil;
@@ -211,7 +212,7 @@ public class IndexedQueryEngineTest {
     addDocument(MATCHING_DOC);
     Query query = query("coll").filter(filter("a", "==", "a"));
 
-    ImmutableSortedMap<DocumentKey, MutableDocument> results =
+    ImmutableSortedMap<DocumentKey, Document> results =
         queryEngine.getDocumentsMatchingQuery(
             query, /* lastLimboFreeSnapshotVersion= */ null, DocumentKey.emptyKeySet());
 
@@ -227,7 +228,7 @@ public class IndexedQueryEngineTest {
     updateDocument(NON_MATCHING_DOC, MATCHING_DOC);
     Query query = query("coll").filter(filter("a", "==", "a"));
 
-    ImmutableSortedMap<DocumentKey, MutableDocument> results =
+    ImmutableSortedMap<DocumentKey, Document> results =
         queryEngine.getDocumentsMatchingQuery(
             query, /* lastLimboFreeSnapshotVersion= */ null, DocumentKey.emptyKeySet());
 
@@ -243,7 +244,7 @@ public class IndexedQueryEngineTest {
     removeDocument(MATCHING_DOC);
     Query query = query("coll").filter(filter("a", "==", "a"));
 
-    ImmutableSortedMap<DocumentKey, MutableDocument> results =
+    ImmutableSortedMap<DocumentKey, Document> results =
         queryEngine.getDocumentsMatchingQuery(
             query, /* lastLimboFreeSnapshotVersion= */ null, DocumentKey.emptyKeySet());
 
@@ -262,7 +263,7 @@ public class IndexedQueryEngineTest {
     updateDocument(nonMatchingDoc, matchingDoc);
     Query query = query("coll").filter(filter("a.a", "==", "a"));
 
-    ImmutableSortedMap<DocumentKey, MutableDocument> results =
+    ImmutableSortedMap<DocumentKey, Document> results =
         queryEngine.getDocumentsMatchingQuery(
             query, /* lastLimboFreeSnapshotVersion= */ null, DocumentKey.emptyKeySet());
 
@@ -277,7 +278,7 @@ public class IndexedQueryEngineTest {
     addDocument(MATCHING_DOC);
     Query query = query("coll").orderBy(TestUtil.orderBy("a"));
 
-    ImmutableSortedMap<DocumentKey, MutableDocument> results =
+    ImmutableSortedMap<DocumentKey, Document> results =
         queryEngine.getDocumentsMatchingQuery(
             query, /* lastLimboFreeSnapshotVersion= */ null, DocumentKey.emptyKeySet());
 

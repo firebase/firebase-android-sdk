@@ -14,12 +14,13 @@
 
 package com.google.firebase.firestore.bundle;
 
-import static com.google.firebase.firestore.model.DocumentCollections.emptyDocumentMap;
+import static com.google.firebase.firestore.model.DocumentCollections.emptyMutableDocumentMap;
 
 import androidx.annotation.Nullable;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.LoadBundleTaskProgress;
+import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.util.Preconditions;
@@ -46,7 +47,7 @@ public class BundleLoader {
     this.bundleCallback = bundleCallback;
     this.bundleMetadata = bundleMetadata;
     this.queries = new ArrayList<>();
-    this.documents = emptyDocumentMap();
+    this.documents = emptyMutableDocumentMap();
     this.documentsMetadata = new HashMap<>();
   }
 
@@ -100,7 +101,7 @@ public class BundleLoader {
   }
 
   /** Applies the loaded documents and queries to local store. Returns the document view changes. */
-  public ImmutableSortedMap<DocumentKey, MutableDocument> applyChanges() {
+  public ImmutableSortedMap<DocumentKey, Document> applyChanges() {
     Preconditions.checkArgument(
         currentDocument == null,
         "Bundled documents end with a document metadata element instead of a document.");
@@ -111,7 +112,7 @@ public class BundleLoader {
         bundleMetadata.getTotalDocuments(),
         documents.size());
 
-    ImmutableSortedMap<DocumentKey, MutableDocument> changes =
+    ImmutableSortedMap<DocumentKey, Document> changes =
         bundleCallback.applyBundledDocuments(documents, bundleMetadata.getBundleId());
 
     Map<String, ImmutableSortedSet<DocumentKey>> queryDocumentMap = getQueryDocumentMapping();

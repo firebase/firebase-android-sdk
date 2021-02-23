@@ -58,6 +58,7 @@ import com.google.firebase.firestore.bundle.BundledQuery;
 import com.google.firebase.firestore.bundle.NamedQuery;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.core.Target;
+import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ResourcePath;
@@ -98,7 +99,7 @@ public abstract class LocalStoreTestCase {
   private LocalStore localStore;
 
   private List<MutationBatch> batches;
-  private @Nullable ImmutableSortedMap<DocumentKey, MutableDocument> lastChanges;
+  private @Nullable ImmutableSortedMap<DocumentKey, Document> lastChanges;
   private @Nullable QueryResult lastQueryResult;
   private int lastTargetId;
 
@@ -216,7 +217,7 @@ public abstract class LocalStoreTestCase {
   private void assertChanged(MutableDocument... expected) {
     assertNotNull(lastChanges);
 
-    List<MutableDocument> actualList =
+    List<Document> actualList =
         Lists.newArrayList(Iterables.transform(lastChanges, Entry::getValue));
 
     List<MutableDocument> expectedList = asList(expected);
@@ -231,10 +232,10 @@ public abstract class LocalStoreTestCase {
   private void assertRemoved(String... keyPaths) {
     assertNotNull(lastChanges);
 
-    ImmutableSortedMap<DocumentKey, MutableDocument> actual = lastChanges;
+    ImmutableSortedMap<DocumentKey, Document> actual = lastChanges;
     assertEquals(keyPaths.length, actual.size());
     int i = 0;
-    for (Entry<DocumentKey, MutableDocument> actualEntry : actual) {
+    for (Entry<DocumentKey, Document> actualEntry : actual) {
       assertEquals(key(keyPaths[i++]), actualEntry.getKey());
       assertFalse(actualEntry.getValue().isFoundDocument());
     }
@@ -243,20 +244,20 @@ public abstract class LocalStoreTestCase {
 
   /** Asserts that the given local store contains the given document. */
   private void assertContains(MutableDocument expected) {
-    MutableDocument actual = localStore.readDocument(expected.getKey());
+    Document actual = localStore.readDocument(expected.getKey());
     assertEquals(expected, actual);
   }
 
   /** Asserts that the given local store does not contain the given document. */
   private void assertNotContains(String keyPathString) {
     DocumentKey key = DocumentKey.fromPathString(keyPathString);
-    MutableDocument actual = localStore.readDocument(key);
+    Document actual = localStore.readDocument(key);
     assertFalse(actual.isValidDocument());
   }
 
   private void assertQueryReturned(String... keys) {
     assertNotNull(lastQueryResult);
-    ImmutableSortedMap<DocumentKey, MutableDocument> documents = lastQueryResult.getDocuments();
+    ImmutableSortedMap<DocumentKey, Document> documents = lastQueryResult.getDocuments();
     for (String key : keys) {
       assertTrue("Expected query to return: " + key, documents.containsKey(key(key)));
     }

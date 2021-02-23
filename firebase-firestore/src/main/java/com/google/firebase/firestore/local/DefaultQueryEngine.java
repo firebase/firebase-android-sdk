@@ -19,6 +19,7 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.Query;
+import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
@@ -54,7 +55,7 @@ public class DefaultQueryEngine implements QueryEngine {
   }
 
   @Override
-  public ImmutableSortedMap<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
+  public ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
       Query query,
       SnapshotVersion lastLimboFreeSnapshotVersion,
       ImmutableSortedSet<DocumentKey> remoteKeys) {
@@ -72,9 +73,9 @@ public class DefaultQueryEngine implements QueryEngine {
       return executeFullCollectionScan(query);
     }
 
-    ImmutableSortedMap<DocumentKey, MutableDocument> documents =
+    ImmutableSortedMap<DocumentKey, Document> documents =
         localDocumentsView.getDocuments(remoteKeys);
-    ImmutableSortedSet<MutableDocument> previousResults = applyQuery(query, documents);
+    ImmutableSortedSet<Document> previousResults = applyQuery(query, documents);
 
     if ((query.hasLimitToFirst() || query.hasLimitToLast())
         && needsRefill(
@@ -92,12 +93,12 @@ public class DefaultQueryEngine implements QueryEngine {
 
     // Retrieve all results for documents that were updated since the last limbo-document free
     // remote snapshot.
-    ImmutableSortedMap<DocumentKey, MutableDocument> updatedResults =
+    ImmutableSortedMap<DocumentKey, Document> updatedResults =
         localDocumentsView.getDocumentsMatchingQuery(query, lastLimboFreeSnapshotVersion);
 
     // We merge `previousResults` into `updateResults`, since `updateResults` is already a
     // ImmutableSortedMap. If a document is contained in both lists, then its contents are the same.
-    for (MutableDocument result : previousResults) {
+    for (Document result : previousResults) {
       updatedResults = updatedResults.insert(result.getKey(), result);
     }
 
@@ -105,14 +106,14 @@ public class DefaultQueryEngine implements QueryEngine {
   }
 
   /** Applies the query filter and sorting to the provided documents. */
-  private ImmutableSortedSet<MutableDocument> applyQuery(
-      Query query, ImmutableSortedMap<DocumentKey, MutableDocument> documents) {
+  private ImmutableSortedSet<Document> applyQuery(
+      Query query, ImmutableSortedMap<DocumentKey, Document> documents) {
     // Sort the documents and re-apply the query filter since previously matching documents do not
     // necessarily still match the query.
-    ImmutableSortedSet<MutableDocument> queryResults =
+    ImmutableSortedSet<Document> queryResults =
         new ImmutableSortedSet<>(Collections.emptyList(), query.comparator());
-    for (Map.Entry<DocumentKey, MutableDocument> entry : documents) {
-      MutableDocument document = entry.getValue();
+    for (Map.Entry<DocumentKey, Document> entry : documents) {
+      Document document = entry.getValue();
       if (query.matches(document)) {
         queryResults = queryResults.insert(document);
       }
@@ -133,7 +134,7 @@ public class DefaultQueryEngine implements QueryEngine {
    */
   private boolean needsRefill(
       Query.LimitType limitType,
-      ImmutableSortedSet<MutableDocument> sortedPreviousResults,
+      ImmutableSortedSet<Document> sortedPreviousResults,
       ImmutableSortedSet<DocumentKey> remoteKeys,
       SnapshotVersion limboFreeSnapshotVersion) {
     // The query needs to be refilled if a previously matching document no longer matches.
@@ -147,7 +148,7 @@ public class DefaultQueryEngine implements QueryEngine {
     // a document that is not the limit boundary sorts differently, the boundary of the limit itself
     // did not change and documents from cache will continue to be "rejected" by this boundary.
     // Therefore, we can ignore any modifications that don't affect the last document.
-    MutableDocument documentAtLimitEdge =
+    Document documentAtLimitEdge =
         limitType == Query.LimitType.LIMIT_TO_FIRST
             ? sortedPreviousResults.getMaxEntry()
             : sortedPreviousResults.getMinEntry();
@@ -164,7 +165,7 @@ public class DefaultQueryEngine implements QueryEngine {
     // No indexes to update.
   }
 
-  private ImmutableSortedMap<DocumentKey, MutableDocument> executeFullCollectionScan(Query query) {
+  private ImmutableSortedMap<DocumentKey, Document> executeFullCollectionScan(Query query) {
     if (Logger.isDebugEnabled()) {
       Logger.debug(LOG_TAG, "Using full collection scan to execute query: %s", query.toString());
     }

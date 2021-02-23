@@ -138,7 +138,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
 
     ImmutableSortedMap<DocumentKey, MutableDocument>[] matchingDocuments =
         (ImmutableSortedMap<DocumentKey, MutableDocument>[])
-            new ImmutableSortedMap[] {DocumentCollections.emptyDocumentMap()};
+            new ImmutableSortedMap[] {DocumentCollections.emptyMutableDocumentMap()};
 
     SQLitePersistence.Query sqlQuery;
     if (sinceReadTime.equals(SnapshotVersion.NONE)) {

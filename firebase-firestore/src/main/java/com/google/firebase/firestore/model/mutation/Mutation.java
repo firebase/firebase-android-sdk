@@ -17,6 +17,7 @@ package com.google.firebase.firestore.model.mutation;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.MutableDocument;
@@ -207,7 +208,7 @@ public abstract class Mutation {
     return transformResults;
   }
 
-  public ObjectValue extractTransformBaseValue(MutableDocument document) {
+  public ObjectValue extractTransformBaseValue(Document document) {
     ObjectValue baseObject = null;
 
     for (FieldTransform transform : fieldTransforms) {

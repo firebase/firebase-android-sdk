@@ -37,7 +37,7 @@ import org.robolectric.annotation.Config;
 @Config(manifest = Config.NONE)
 public class DocumentSetTest {
 
-  private static final Comparator<MutableDocument> TEST_COMPARATOR =
+  private static final Comparator<Document> TEST_COMPARATOR =
       (left, right) -> {
         Value leftValue = left.getField(field("sort"));
         Value rightValue = right.getField(field("sort"));
@@ -137,8 +137,8 @@ public class DocumentSetTest {
 
   @Test
   public void testIsEqual() {
-    DocumentSet set1 = docSet(MutableDocument.keyComparator(), DOC1, DOC2, DOC3);
-    DocumentSet set2 = docSet(MutableDocument.keyComparator(), DOC1, DOC2, DOC3);
+    DocumentSet set1 = docSet(Document.KEY_COMPARATOR, DOC1, DOC2, DOC3);
+    DocumentSet set2 = docSet(Document.KEY_COMPARATOR, DOC1, DOC2, DOC3);
 
     assertEquals(set1, set1);
     assertEquals(set1, set2);
@@ -150,7 +150,7 @@ public class DocumentSetTest {
     assertEquals(sortedSet1, sortedSet2);
     assertFalse(sortedSet1.equals(null));
 
-    DocumentSet shortSet = docSet(MutableDocument.keyComparator(), DOC1, DOC2);
+    DocumentSet shortSet = docSet(Document.KEY_COMPARATOR, DOC1, DOC2);
     assertNotEquals(set1, shortSet);
     assertNotEquals(set1, sortedSet1);
   }

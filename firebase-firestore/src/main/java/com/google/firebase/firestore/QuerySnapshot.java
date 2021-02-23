@@ -19,7 +19,7 @@ import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.firestore.core.ViewSnapshot;
-import com.google.firebase.firestore.model.MutableDocument;
+import com.google.firebase.firestore.model.Document;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -55,9 +55,9 @@ public class QuerySnapshot implements Iterable<QueryDocumentSnapshot> {
   }
 
   private class QuerySnapshotIterator implements Iterator<QueryDocumentSnapshot> {
-    private final Iterator<MutableDocument> it;
+    private final Iterator<Document> it;
 
-    QuerySnapshotIterator(Iterator<MutableDocument> it) {
+    QuerySnapshotIterator(Iterator<Document> it) {
       this.it = it;
     }
 
@@ -133,7 +133,7 @@ public class QuerySnapshot implements Iterable<QueryDocumentSnapshot> {
   @NonNull
   public List<DocumentSnapshot> getDocuments() {
     List<DocumentSnapshot> res = new ArrayList<>(snapshot.getDocuments().size());
-    for (MutableDocument doc : snapshot.getDocuments()) {
+    for (Document doc : snapshot.getDocuments()) {
       res.add(convertDocument(doc));
     }
     return res;
@@ -186,7 +186,7 @@ public class QuerySnapshot implements Iterable<QueryDocumentSnapshot> {
     return res;
   }
 
-  private QueryDocumentSnapshot convertDocument(MutableDocument document) {
+  private QueryDocumentSnapshot convertDocument(Document document) {
     return QueryDocumentSnapshot.fromDocument(
         firestore,
         document,

@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore;
 
+import static com.google.firebase.firestore.model.DocumentCollections.emptyDocumentMap;
 import static com.google.firebase.firestore.testutil.TestUtil.ackTarget;
 import static com.google.firebase.firestore.testutil.TestUtil.deletedDoc;
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
@@ -32,6 +33,7 @@ import com.google.firebase.firestore.DocumentChange.Type;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.core.View;
 import com.google.firebase.firestore.core.ViewSnapshot;
+import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.remote.TargetChange;
@@ -57,11 +59,10 @@ public class DocumentChangeTest {
       Collection<MutableDocument> addedList,
       Collection<MutableDocument> modifiedList,
       Collection<MutableDocument> removedList) {
-    ImmutableSortedMap<DocumentKey, MutableDocument> initialDocs =
+    ImmutableSortedMap<DocumentKey, Document> initialDocs =
         docUpdates(initialDocsList.toArray(new MutableDocument[] {}));
 
-    ImmutableSortedMap<DocumentKey, MutableDocument> updates =
-        ImmutableSortedMap.Builder.emptyMap(DocumentKey.comparator());
+    ImmutableSortedMap<DocumentKey, Document> updates = emptyDocumentMap();
     for (MutableDocument doc : addedList) {
       updates = updates.insert(doc.getKey(), doc);
     }
@@ -89,8 +90,8 @@ public class DocumentChangeTest {
       return;
     }
 
-    List<MutableDocument> expected = new ArrayList<>(updatedSnapshot.getDocuments().toList());
-    List<MutableDocument> actual = new ArrayList<>(initialSnapshot.getDocuments().toList());
+    List<Document> expected = new ArrayList<>(updatedSnapshot.getDocuments().toList());
+    List<Document> actual = new ArrayList<>(initialSnapshot.getDocuments().toList());
 
     FirebaseFirestore firestore = mock(FirebaseFirestore.class);
     List<DocumentChange> changes =
