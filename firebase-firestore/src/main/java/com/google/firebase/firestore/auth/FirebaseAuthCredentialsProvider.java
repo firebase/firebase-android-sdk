@@ -87,14 +87,12 @@ public final class FirebaseAuthCredentialsProvider extends CredentialsProvider {
 
   @Override
   public synchronized Task<String> getToken() {
-    boolean doForceRefresh = forceRefresh;
-    forceRefresh = false;
-
     if (internalAuthProvider == null) {
       return Tasks.forException(new FirebaseApiNotAvailableException("auth is not available"));
     }
 
     Task<GetTokenResult> res = internalAuthProvider.getAccessToken(forceRefresh);
+    forceRefresh = false;
 
     // Take note of the current value of the tokenCounter so that this method can fail (with a
     // FirebaseFirestoreException) if there is a token change while the request is outstanding.
