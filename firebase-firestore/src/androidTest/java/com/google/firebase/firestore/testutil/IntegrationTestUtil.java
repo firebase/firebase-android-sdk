@@ -36,7 +36,6 @@ import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.MetadataChanges;
 import com.google.firebase.firestore.QuerySnapshot;
-import com.google.firebase.firestore.auth.EmptyCredentialsProvider;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.local.Persistence;

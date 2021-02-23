@@ -24,6 +24,8 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.firestore.remote.GrpcMetadataProvider;
+import com.google.firebase.firestore.testutil.ImmediateDeferred;
+import com.google.firebase.inject.Deferred;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -58,7 +60,9 @@ public class FirestoreMultiDbComponentTest {
   private static FirestoreMultiDbComponent createComponent(FirebaseApp firebaseApp) {
     Context context = InstrumentationRegistry.getInstrumentation().getContext();
     InternalAuthProvider authProvider = mock(InternalAuthProvider.class);
+    Deferred<InternalAuthProvider> deferredAuthProvider = new ImmediateDeferred<>(authProvider);
     GrpcMetadataProvider metadataProvider = mock(GrpcMetadataProvider.class);
-    return new FirestoreMultiDbComponent(context, firebaseApp, authProvider, metadataProvider);
+    return new FirestoreMultiDbComponent(
+        context, firebaseApp, deferredAuthProvider, metadataProvider);
   }
 }
