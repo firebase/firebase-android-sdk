@@ -207,8 +207,9 @@ class LocalDocumentsView {
         DocumentKey key = mutation.getKey();
         MutableDocument document = remoteDocuments.get(key);
         if (document == null) {
+          // Create invalid document to apply mutations on top of
           document =
-              new MutableDocument(key); // Create invalid document to apply mutations on top of
+              new MutableDocument(key);
           remoteDocuments = remoteDocuments.insert(key, document);
         }
         mutation.applyToLocalView(document, batch.getLocalWriteTime());

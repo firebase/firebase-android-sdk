@@ -84,7 +84,7 @@ public final class MutationBatch {
       DocumentKey documentKey, MutableDocument document, MutationBatchResult batchResult) {
     hardAssert(
         document.getKey().equals(documentKey),
-        "applyToRemoteDocument: key %s doesn't match maybeDoc key %s",
+        "applyToRemoteDocument: key %s doesn't match document key %s",
         documentKey,
         document.getKey());
 
@@ -133,8 +133,7 @@ public final class MutationBatch {
     // O(n).
     for (DocumentKey key : getKeys()) {
       // TODO(mutabledocuments): This method should take a map of MutableDocuments and we should
-      // remove
-      // this cast.
+      // remove this cast.
       MutableDocument document = (MutableDocument) documentMap.get(key);
       applyToLocalView(document);
       if (!document.isValidDocument()) {

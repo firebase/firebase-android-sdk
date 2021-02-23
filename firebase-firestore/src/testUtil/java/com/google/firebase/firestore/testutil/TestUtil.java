@@ -183,15 +183,19 @@ public class TestUtil {
   }
 
   public static MutableDocument doc(String key, long version, Map<String, Object> data) {
-    return new MutableDocument(key(key)).setFoundDocument(version(version), wrapObject(data));
+    return doc(key(key), version, wrapObject(data));
   }
 
   public static MutableDocument doc(DocumentKey key, long version, Map<String, Object> data) {
-    return new MutableDocument(key).setFoundDocument(version(version), wrapObject(data));
+    return doc(key, version, wrapObject(data));
   }
 
   public static MutableDocument doc(String key, long version, ObjectValue data) {
-    return new MutableDocument(key(key)).setFoundDocument(version(version), data);
+    return doc(key(key), version, data);
+  }
+
+  public static MutableDocument doc(DocumentKey key, long version, ObjectValue data) {
+    return new MutableDocument(key).setFoundDocument(version(version), data);
   }
 
   public static MutableDocument deletedDoc(String key, long version) {

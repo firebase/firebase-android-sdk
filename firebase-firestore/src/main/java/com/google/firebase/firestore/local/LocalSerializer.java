@@ -56,7 +56,7 @@ public final class LocalSerializer {
     } else if (document.isUnknownDocument()) {
       builder.setUnknownDocument(encodeUnknownDocument(document));
     } else {
-      throw fail("Unknown Document %s", document);
+      throw fail("Cannot encode invalid document %s", document);
     }
 
     builder.setHasCommittedMutations(document.hasCommittedMutations());

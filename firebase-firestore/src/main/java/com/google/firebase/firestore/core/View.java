@@ -158,17 +158,7 @@ public class View {
     for (Map.Entry<DocumentKey, Document> entry : docChanges) {
       DocumentKey key = entry.getKey();
       Document oldDoc = oldDocumentSet.getDocument(key);
-      Document newDoc = entry.getValue();
-
-      hardAssert(
-          key.equals(entry.getKey()),
-          "Mismatching key in doc change %s != %s",
-          key,
-          entry.getKey());
-
-      if (!query.matches(entry.getValue())) {
-        newDoc = null;
-      }
+      Document newDoc = query.matches(entry.getValue()) ? entry.getValue() : null;
 
       boolean oldDocHadPendingMutations =
           oldDoc != null && this.mutatedKeys.contains(oldDoc.getKey());
