@@ -94,8 +94,8 @@ public abstract class Mutation {
 
   /**
    * Applies this mutation to the given Document for the purposes of computing a new remote document
-   * If the input document doesn't match the expected state (e.g. it is null or outdated), an
-   * `UnknownDocument` may be created
+   * If the input document doesn't match the expected state (e.g. it is invalid or outdated), the
+   * document state may transition to unknown.
    *
    * @param document The document to mutate.
    * @param mutationResult The result of applying the mutation from the backend.
@@ -105,7 +105,8 @@ public abstract class Mutation {
 
   /**
    * Applies this mutation to the given Document for the purposes of computing the new local view of
-   * a document. Both the input and returned documents can be null.
+   * a document. If the input document doesn't match the expected state, the document is not
+   * modified.
    *
    * @param document The document to mutate.
    * @param localWriteTime A timestamp indicating the local write time of the batch this mutation is

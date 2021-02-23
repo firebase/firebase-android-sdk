@@ -118,8 +118,8 @@ public final class PatchMutation extends Mutation {
     Map<FieldPath, Value> transformResults =
         serverTransformResults(document, mutationResult.getTransformResults());
     ObjectValue value = document.getData();
-    value.set(getPatch());
-    value.set(transformResults);
+    value.setAll(getPatch());
+    value.setAll(transformResults);
     document
         .setFoundDocument(mutationResult.getVersion(), document.getData())
         .setCommittedMutations();
@@ -135,8 +135,8 @@ public final class PatchMutation extends Mutation {
 
     Map<FieldPath, Value> transformResults = localTransformResults(localWriteTime, document);
     ObjectValue value = document.getData();
-    value.set(getPatch());
-    value.set(transformResults);
+    value.setAll(getPatch());
+    value.setAll(transformResults);
     document
         .setFoundDocument(getPostMutationVersion(document), document.getData())
         .setLocalMutations();

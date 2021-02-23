@@ -661,7 +661,7 @@ public class MutationTest {
                 0,
                 "nested",
                 map("double", 42.0, "long", 42, "string", 0, "map", 0, "missing", 0)));
-    assertTrue(Values.equals(expected, baseValue.getProto()));
+    assertTrue(Values.equals(expected, baseValue.get(FieldPath.EMPTY_PATH)));
   }
 
   @Test

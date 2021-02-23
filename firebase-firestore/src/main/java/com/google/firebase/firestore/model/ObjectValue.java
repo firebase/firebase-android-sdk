@@ -27,17 +27,17 @@ import java.util.Map;
 import java.util.Set;
 
 /** A structured object value stored in Firestore. */
-public class ObjectValue implements Cloneable {
+public final class ObjectValue implements Cloneable {
   /**
-   * The immutable Value proto for this object. Local mutations are stored in `overlayMap` and and
-   * only applied when `memoize` is invoked.
+   * The immutable Value proto for this object. Local mutations are stored in `overlayMap` and only
+   * applied when {@link #buildProto()} is invoked.
    */
   private Value partialValue;
 
   /**
-   * A nested map that contains the accumulated changes that haven't yet been applied to
-   * `partialValue`. Values can either be `Value` protos, `Map<String, Object>` values (to represent
-   * additional nesting) or `null` (to represent field deletes).
+   * A nested map that contains the accumulated changes that haven't yet been applied to {@link
+   * #partialValue}. Values can either be {@link Value} protos, {@code Map<String, Object>} values
+   * (to represent additional nesting) or {@code null} (to represent field deletes).
    */
   private Map<String, Object> overlayMap = new HashMap<>();
 
@@ -61,12 +61,12 @@ public class ObjectValue implements Cloneable {
   }
 
   public Map<String, Value> getFieldsMap() {
-    return getProto().getMapValue().getFieldsMap();
+    return buildProto().getMapValue().getFieldsMap();
   }
 
   /** Recursively extracts the FieldPaths that are set in this ObjectValue. */
   public FieldMask getFieldMask() {
-    return extractFieldMask(getProto().getMapValue());
+    return extractFieldMask(buildProto().getMapValue());
   }
 
   private FieldMask extractFieldMask(MapValue value) {
@@ -99,11 +99,11 @@ public class ObjectValue implements Cloneable {
    * @return The value at the path or null if it doesn't exist.
    */
   public @Nullable Value get(FieldPath fieldPath) {
-    return get(getProto(), fieldPath);
+    return extractNestedValue(buildProto(), fieldPath);
   }
 
   @Nullable
-  Value get(Value value, FieldPath fieldPath) {
+  private Value extractNestedValue(Value value, FieldPath fieldPath) {
     if (fieldPath.isEmpty()) {
       return value;
     } else {
@@ -117,9 +117,18 @@ public class ObjectValue implements Cloneable {
     }
   }
 
-  /** Returns the Protobuf that backs this ObjectValue. */
-  public Value getProto() {
-    memoize();
+  /**
+   * Returns the Protobuf that backs this ObjectValue.
+   *
+   * <p>This method applies any outstanding modifications and memoizes the result. Further
+   * invocations are based on this memoized result.
+   */
+  private Value buildProto() {
+    MapValue mergedResult = applyOverlay(FieldPath.EMPTY_PATH, overlayMap);
+    if (mergedResult != null) {
+      partialValue = Value.newBuilder().setMapValue(mergedResult).build();
+      overlayMap.clear();
+    }
     return partialValue;
   }
 
@@ -145,7 +154,7 @@ public class ObjectValue implements Cloneable {
     setOverlay(path, value);
   }
 
-  public void set(Map<FieldPath, Value> data) {
+  public void setAll(Map<FieldPath, Value> data) {
     for (Map.Entry<FieldPath, Value> entry : data.entrySet()) {
       FieldPath path = entry.getKey();
       if (entry.getValue() == null) {
@@ -156,7 +165,9 @@ public class ObjectValue implements Cloneable {
     }
   }
 
-  /** Adds `value` to the overlay map at `path`. Creates nested map entries if needed. */
+  /**
+   * Adds {@code value} to the overlay map at {@code path}. Creates nested map entries if needed.
+   */
   private void setOverlay(FieldPath path, @Nullable Value value) {
     Map<String, Object> currentLevel = overlayMap;
 
@@ -185,30 +196,21 @@ public class ObjectValue implements Cloneable {
     currentLevel.put(path.getLastSegment(), value);
   }
 
-  /** Returns an ObjectValue with all mutations applied. */
-  void memoize() {
-    MapValue mergedResult = applyOverlay(FieldPath.EMPTY_PATH, overlayMap);
-    if (mergedResult != null) {
-      partialValue = Value.newBuilder().setMapValue(mergedResult).build();
-      overlayMap.clear();
-    }
-  }
-
   /**
-   * Applies any overlays from `currentOverlays` that exist at `currentPath` and returns the merged
-   * data at `currentPath` (or null if there were no changes).
+   * Applies any overlays from {@code currentOverlays} that exist at `currentPath` and returns the
+   * merged data at {@code currentPath} (or {@code null} if there were no changes).
    *
-   * @param currentPath The path at the current nesting level. Can be set toFieldValue.EMPTY_PATH to
-   *     represent the root.
-   * @param currentOverlays The overlays at the current nesting level in the same format as
-   *     `overlayMap`.
+   * @param currentPath The path at the current nesting level. Can be set to {@code
+   *     FieldValue.EMPTY_PATH} to represent the root.
+   * @param currentOverlays The overlays at the current nesting level in the same format as {@code
+   *     overlayMap}.
    * @return The merged data at `currentPath` or null if no modifications were applied.
    */
   private @Nullable MapValue applyOverlay(
       FieldPath currentPath, Map<String, Object> currentOverlays) {
     boolean modified = false;
 
-    @Nullable Value existingValue = get(partialValue, currentPath);
+    @Nullable Value existingValue = extractNestedValue(partialValue, currentPath);
     MapValue.Builder resultAtPath =
         Values.isMapValue(existingValue)
             // If there is already data at the current path, base our modifications on top
@@ -246,24 +248,24 @@ public class ObjectValue implements Cloneable {
     if (this == o) {
       return true;
     } else if (o instanceof ObjectValue) {
-      return Values.equals(getProto(), ((ObjectValue) o).getProto());
+      return Values.equals(buildProto(), ((ObjectValue) o).buildProto());
     }
     return false;
   }
 
   @Override
   public int hashCode() {
-    return getProto().hashCode();
+    return buildProto().hashCode();
   }
 
   @Override
   @NonNull
   public String toString() {
-    return "ObjectValue{" + "internalValue=" + getProto() + '}';
+    return "ObjectValue{" + "internalValue=" + buildProto() + '}';
   }
 
   @NonNull
   public ObjectValue clone() {
-    return new ObjectValue(getProto());
+    return new ObjectValue(buildProto());
   }
 }

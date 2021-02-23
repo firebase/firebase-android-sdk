@@ -18,7 +18,7 @@ import androidx.annotation.NonNull;
 import com.google.firestore.v1.Value;
 import java.util.Comparator;
 
-public class MutableDocument implements Cloneable {
+public final class MutableDocument implements Cloneable {
   private static final Comparator<MutableDocument> KEY_COMPARATOR =
       (left, right) -> left.getKey().compareTo(right.getKey());
 
@@ -27,81 +27,99 @@ public class MutableDocument implements Cloneable {
     return KEY_COMPARATOR;
   }
 
-  private enum Type {
+  private enum DocumentType {
+    /**
+     * Represents the initial state of a MutableDocument when only the document key is known.
+     * Invalid documents transition to other states as mutations are applied. If a document remain
+     * invalids after applying mutations, it should be discarded.
+     */
     INVALID,
+    /**
+     * Represents a document in Firestore with a key, version, data and whether the data has local
+     * mutations applied to it.
+     */
     FOUND_DOCUMENT,
+    /** Represents that no documents exists for the key at the given version. */
     NO_DOCUMENT,
+    /**
+     * Represents an existing document whose data is unknown (e.g. a document that was updated
+     * without a known base document).
+     */
     UNKNOWN_DOCUMENT;
   }
 
+  /** Describes the `hasPendingWrites` state of a document. */
+  private enum DocumentState {
+    /** Local mutations applied via the mutation queue. Document is potentially inconsistent. */
+    LOCAL_MUTATIONS,
+    /** Mutations applied based on a write acknowledgment. Document is potentially inconsistent. */
+    COMMITTED_MUTATIONS,
+    /** No mutations applied. Document was sent to us by Watch. */
+    SYNCED
+  }
+
   private final DocumentKey key;
-  private Type type;
+  private DocumentType documentType;
   private SnapshotVersion version;
   private ObjectValue value;
-  boolean hasLocalMutations;
-  boolean hasCommittedMutations;
+  private DocumentState documentState;
 
   public MutableDocument(DocumentKey key) {
-    this.key = key;
-    this.version = SnapshotVersion.NONE;
-    this.type = Type.INVALID;
-    this.value = new ObjectValue();
+    this(key, DocumentType.INVALID, SnapshotVersion.NONE, new ObjectValue(), DocumentState.SYNCED);
   }
 
   private MutableDocument(
       DocumentKey key,
-      Type type,
+      DocumentType documentType,
       SnapshotVersion version,
       ObjectValue value,
-      boolean hasLocalMutations,
-      boolean hasCommittedMutations) {
+      DocumentState documentState) {
     this.key = key;
     this.version = version;
-    this.type = type;
-    this.hasLocalMutations = hasLocalMutations;
-    this.hasCommittedMutations = hasCommittedMutations;
+    this.documentType = documentType;
+    this.documentState = documentState;
     this.value = value;
   }
 
-  /** Changes the document type to FOUND_DOCUMENT and sets the given version and data. */
+  /**
+   * Changes the document type to indicate that it exists and that its version and data are known.
+   */
   public MutableDocument setFoundDocument(SnapshotVersion version, ObjectValue value) {
     this.version = version;
-    this.type = Type.FOUND_DOCUMENT;
+    this.documentType = DocumentType.FOUND_DOCUMENT;
     this.value = value;
-    this.hasLocalMutations = false;
-    this.hasCommittedMutations = false;
+    this.documentState = DocumentState.SYNCED;
     return this;
   }
 
-  /** Changes the document type to NO_DOCUMENT and sets the given version. */
+  /** Changes the document type to indicate that it doesn't exist at the given version. */
   public MutableDocument setNoDocument(SnapshotVersion version) {
     this.version = version;
-    this.type = Type.NO_DOCUMENT;
+    this.documentType = DocumentType.NO_DOCUMENT;
     this.value = new ObjectValue();
-    this.hasLocalMutations = false;
-    this.hasCommittedMutations = false;
+    this.documentState = DocumentState.SYNCED;
     return this;
   }
 
-  /** Changes the document type to UNKNOWN_DOCUMENT and sets the given version. */
+  /**
+   * Changes the document type to indicate that it exists at a given version but that is data is not
+   * known (e.g. a document that was updated without a known base document).
+   */
   public MutableDocument setUnknownDocument(SnapshotVersion version) {
     this.version = version;
-    this.type = Type.UNKNOWN_DOCUMENT;
+    this.documentType = DocumentType.UNKNOWN_DOCUMENT;
     this.value = new ObjectValue();
-    this.hasLocalMutations = false;
-    this.hasCommittedMutations = true;
+    this.documentState = DocumentState.COMMITTED_MUTATIONS;
     return this;
   }
 
   public MutableDocument setCommittedMutations() {
-    this.hasLocalMutations = false;
-    this.hasCommittedMutations = true;
+    this.documentState = DocumentState.COMMITTED_MUTATIONS;
     return this;
   }
 
   public MutableDocument setLocalMutations() {
-    this.hasLocalMutations = true;
-    this.hasCommittedMutations = true;
+    this.documentState = DocumentState.LOCAL_MUTATIONS;
     return this;
   }
 
@@ -120,12 +138,12 @@ public class MutableDocument implements Cloneable {
 
   /** Returns whether local mutations were applied via the mutation queue. */
   public boolean hasLocalMutations() {
-    return hasLocalMutations;
+    return documentState.equals(DocumentState.LOCAL_MUTATIONS);
   }
 
   /** Returns whether mutations were applied based on a write acknowledgment. */
   public boolean hasCommittedMutations() {
-    return hasCommittedMutations;
+    return documentState.equals(DocumentState.COMMITTED_MUTATIONS);
   }
 
   /**
@@ -143,27 +161,33 @@ public class MutableDocument implements Cloneable {
     return getData().get(field);
   }
 
+  /**
+   * Returns whether this document is valid (i.e. it is an entry in the RemoteDocumentCache, was
+   * created by a mutation or read from the backend).
+   */
   public boolean isValidDocument() {
-    return !type.equals(Type.INVALID);
+    return !documentType.equals(DocumentType.INVALID);
   }
 
+  /** Returns whether the document exists and its data is known at the current version. */
   public boolean isFoundDocument() {
-    return type.equals(Type.FOUND_DOCUMENT);
+    return documentType.equals(DocumentType.FOUND_DOCUMENT);
   }
 
+  /** Returns whether the document is known to not exist at the current version. */
   public boolean isNoDocument() {
-    return type.equals(Type.NO_DOCUMENT);
+    return documentType.equals(DocumentType.NO_DOCUMENT);
   }
 
+  /** Returns whether the document exists and its data is unknown at the current version. */
   public boolean isUnknownDocument() {
-    return type.equals(Type.UNKNOWN_DOCUMENT);
+    return documentType.equals(DocumentType.UNKNOWN_DOCUMENT);
   }
 
   @Override
   @NonNull
   public MutableDocument clone() {
-    return new MutableDocument(
-        key, type, version, value.clone(), hasLocalMutations, hasCommittedMutations);
+    return new MutableDocument(key, documentType, version, value.clone(), documentState);
   }
 
   @Override
@@ -173,11 +197,9 @@ public class MutableDocument implements Cloneable {
 
     MutableDocument document = (MutableDocument) o;
 
-    if (hasLocalMutations != document.hasLocalMutations) return false;
-    if (hasCommittedMutations != document.hasCommittedMutations) return false;
     if (!key.equals(document.key)) return false;
     if (!version.equals(document.version)) return false;
-    if (type != document.type) return false;
+    if (documentType != document.documentType) return false;
     return value.equals(document.value);
   }
 
@@ -194,11 +216,9 @@ public class MutableDocument implements Cloneable {
         + ", version="
         + version
         + ", type="
-        + type
-        + ", hasLocalMutations="
-        + hasLocalMutations
-        + ", hasCommittedMutations="
-        + hasCommittedMutations
+        + documentType
+        + ", documentState="
+        + documentState
         + ", value="
         + value
         + '}';

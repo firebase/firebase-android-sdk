@@ -84,7 +84,7 @@ public class ObjectValueBuilderTest {
   @Test
   public void setsFieldInNestedObject() {
     ObjectValue objectValue = new ObjectValue();
-    objectValue.set(field("a"), wrapObject("b", fooString).getProto());
+    objectValue.set(field("a"), wrapObject("b", fooString).get(FieldPath.EMPTY_PATH));
     objectValue.set(field("a.c"), fooValue);
     assertEquals(wrapObject("a", map("b", fooString, "c", fooString)), objectValue);
   }
@@ -101,7 +101,7 @@ public class ObjectValueBuilderTest {
   public void setsNestedFieldMultipleTimes() {
     ObjectValue objectValue = new ObjectValue();
     objectValue.set(field("a.c"), fooValue);
-    objectValue.set(field("a"), wrapObject("b", fooString).getProto());
+    objectValue.set(field("a"), wrapObject("b", fooString).get(FieldPath.EMPTY_PATH));
     assertEquals(wrapObject("a", map("b", fooString)), objectValue);
   }
 
@@ -173,7 +173,7 @@ public class ObjectValueBuilderTest {
   public void replacesNestedObject() {
     ObjectValue singleValueObject = wrapObject(map("c", barString));
     ObjectValue objectValue = wrapObject("a", map("b", fooString));
-    objectValue.set(field("a"), singleValueObject.getProto());
+    objectValue.set(field("a"), singleValueObject.get(FieldPath.EMPTY_PATH));
     assertEquals(wrapObject("a", map("c", barString)), objectValue);
   }
 

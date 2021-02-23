@@ -102,7 +102,7 @@ public class FieldValueTest {
   public void testCanOverwritePrimitivesWithObjects() {
     ObjectValue objectValue = wrapObject("a", map("b", "old"));
     assertEquals(wrapObject("a", map("b", "old")), objectValue);
-    objectValue.set(field("a"), wrapObject(map("b", "mod")).getProto());
+    objectValue.set(field("a"), wrapObject(map("b", "mod")).get(FieldPath.EMPTY_PATH));
     assertEquals(wrapObject("a", map("b", "mod")), objectValue);
   }
 

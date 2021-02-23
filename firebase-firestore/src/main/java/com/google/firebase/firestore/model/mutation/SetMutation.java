@@ -79,7 +79,7 @@ public final class SetMutation extends Mutation {
     ObjectValue newData = value.clone();
     Map<FieldPath, Value> transformResults =
         serverTransformResults(document, mutationResult.getTransformResults());
-    newData.set(transformResults);
+    newData.setAll(transformResults);
     document.setFoundDocument(mutationResult.getVersion(), newData).setCommittedMutations();
   }
 
@@ -93,7 +93,7 @@ public final class SetMutation extends Mutation {
 
     Map<FieldPath, Value> transformResults = localTransformResults(localWriteTime, document);
     ObjectValue localValue = value.clone();
-    localValue.set(transformResults);
+    localValue.setAll(transformResults);
     document.setFoundDocument(getPostMutationVersion(document), localValue).setLocalMutations();
   }
 
