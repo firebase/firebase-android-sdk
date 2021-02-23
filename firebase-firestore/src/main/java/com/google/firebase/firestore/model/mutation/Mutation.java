@@ -154,12 +154,12 @@ public abstract class Mutation {
    * result of applying a transform) for use after a mutation containing transforms has been
    * acknowledged by the server.
    *
-   * @param maybeDoc The current state of the document after applying all previous mutations.
+   * @param mutableDocument The current state of the document after applying all previous mutations.
    * @param serverTransformResults The transform results received by the server.
    * @return The transform results list.
    */
   protected Map<FieldPath, Value> serverTransformResults(
-      MutableDocument maybeDoc, List<Value> serverTransformResults) {
+      MutableDocument mutableDocument, List<Value> serverTransformResults) {
     Map<FieldPath, Value> transformResults = new HashMap<>(fieldTransforms.size());
     hardAssert(
         fieldTransforms.size() == serverTransformResults.size(),
@@ -172,8 +172,8 @@ public abstract class Mutation {
       TransformOperation transform = fieldTransform.getOperation();
 
       Value previousValue = null;
-      if (maybeDoc.isFoundDocument()) {
-        previousValue = maybeDoc.getField(fieldTransform.getFieldPath());
+      if (mutableDocument.isFoundDocument()) {
+        previousValue = mutableDocument.getField(fieldTransform.getFieldPath());
       }
 
       transformResults.put(
@@ -188,18 +188,18 @@ public abstract class Mutation {
    * result of applying a transform) for use when applying a transform locally.
    *
    * @param localWriteTime The local time of the mutation (used to generate ServerTimestampValues).
-   * @param maybeDoc The current state of the document after applying all previous mutations.
+   * @param mutableDocument The current state of the document after applying all previous mutations.
    * @return The transform results list.
    */
   protected Map<FieldPath, Value> localTransformResults(
-      Timestamp localWriteTime, MutableDocument maybeDoc) {
+      Timestamp localWriteTime, MutableDocument mutableDocument) {
     Map<FieldPath, Value> transformResults = new HashMap<>(fieldTransforms.size());
     for (FieldTransform fieldTransform : fieldTransforms) {
       TransformOperation transform = fieldTransform.getOperation();
 
       Value previousValue = null;
-      if (maybeDoc.isFoundDocument()) {
-        previousValue = maybeDoc.getField(fieldTransform.getFieldPath());
+      if (mutableDocument.isFoundDocument()) {
+        previousValue = mutableDocument.getField(fieldTransform.getFieldPath());
       }
 
       transformResults.put(

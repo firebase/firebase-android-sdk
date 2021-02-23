@@ -39,16 +39,16 @@ public interface Document {
    * Returns whether this document is valid (i.e. it is an entry in the RemoteDocumentCache, was
    * created by a mutation or read from the backend).
    */
-   boolean isValidDocument() ;
+  boolean isValidDocument();
 
   /** Returns whether the document exists and its data is known at the current version. */
-   boolean isFoundDocument() ;
+  boolean isFoundDocument();
 
   /** Returns whether the document is known to not exist at the current version. */
-   boolean isNoDocument() ;
+  boolean isNoDocument();
 
   /** Returns whether the document exists and its data is unknown at the current version. */
-   boolean isUnknownDocument();
+  boolean isUnknownDocument();
 
   /** Returns the underlying data of this document. Returns an empty value if no data exists. */
   ObjectValue getData();

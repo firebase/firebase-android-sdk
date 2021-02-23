@@ -32,8 +32,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
-import javax.annotation.Nullable;
-
 /**
  * A readonly view of the local state of all documents we're tracking (i.e. we have a cached version
  * in remoteDocumentCache or local mutations for the document). The view is computed by applying the
@@ -73,8 +71,7 @@ class LocalDocumentsView {
   /**
    * Returns the the local view of the document identified by {@code key}.
    *
-   * @return Local view of the document or a null if we don't have any cached state for
-   *     it.
+   * @return Local view of the document or a null if we don't have any cached state for it.
    */
   Document getDocument(DocumentKey key) {
     List<MutationBatch> batches = mutationQueue.getAllMutationBatchesAffectingDocumentKey(key);
@@ -208,8 +205,7 @@ class LocalDocumentsView {
         MutableDocument document = remoteDocuments.get(key);
         if (document == null) {
           // Create invalid document to apply mutations on top of
-          document =
-              new MutableDocument(key);
+          document = new MutableDocument(key);
           remoteDocuments = remoteDocuments.insert(key, document);
         }
         mutation.applyToLocalView(document, batch.getLocalWriteTime());

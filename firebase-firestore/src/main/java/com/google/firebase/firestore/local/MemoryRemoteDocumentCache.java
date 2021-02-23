@@ -100,16 +100,16 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
         continue;
       }
 
-        SnapshotVersion readTime = entry.getValue().second;
-        if (readTime.compareTo(sinceReadTime) <= 0) {
-          continue;
-        }
+      SnapshotVersion readTime = entry.getValue().second;
+      if (readTime.compareTo(sinceReadTime) <= 0) {
+        continue;
+      }
 
-        if (!query.matches(doc)) {
-          continue;
-        }
+      if (!query.matches(doc)) {
+        continue;
+      }
 
-      result = result.insert(doc.getKey(), doc.clone())
+      result = result.insert(doc.getKey(), doc.clone());
     }
 
     return result;

@@ -56,7 +56,7 @@ interface RemoteDocumentCache {
    *
    * @param documentKeys The keys of the entries to look up.
    * @return The cached document entries indexed by key. If an entry is not cached, the
-   * corresponding key will be mapped to an invalid document
+   *     corresponding key will be mapped to an invalid document
    */
   Map<DocumentKey, MutableDocument> getAll(Iterable<DocumentKey> documentKeys);
 

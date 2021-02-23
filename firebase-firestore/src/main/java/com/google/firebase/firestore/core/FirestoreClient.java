@@ -38,7 +38,6 @@ import com.google.firebase.firestore.local.Persistence;
 import com.google.firebase.firestore.local.QueryResult;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.remote.Datastore;
 import com.google.firebase.firestore.remote.GrpcMetadataProvider;
