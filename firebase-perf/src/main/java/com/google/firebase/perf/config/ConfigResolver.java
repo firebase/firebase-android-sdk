@@ -94,6 +94,11 @@ public class ConfigResolver {
     configResolver = null;
   }
 
+  @VisibleForTesting
+  public void setDeviceCacheManager(DeviceCacheManager deviceCacheManager) {
+    this.deviceCacheManager = deviceCacheManager;
+  }
+
   public void setContentProviderContext(Context context) {
     setApplicationContext(context.getApplicationContext());
   }
