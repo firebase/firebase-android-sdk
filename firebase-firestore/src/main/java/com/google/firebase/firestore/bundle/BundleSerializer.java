@@ -162,7 +162,12 @@ public class BundleSerializer {
 
   private int decodeLimit(JSONObject structuredQuery) {
     JSONObject limit = structuredQuery.optJSONObject("limit");
-    return limit != null ? limit.optInt("value", -1) : -1;
+
+    if (limit != null) {
+      return limit.optInt("value", -1); // ProtobufJS
+    } else {
+      return structuredQuery.optInt("limit", -1); // Proto3 JSON
+    }
   }
 
   private Bound decodeBound(@Nullable JSONObject bound) throws JSONException {

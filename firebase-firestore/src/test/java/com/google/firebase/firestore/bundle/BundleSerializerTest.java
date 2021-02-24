@@ -553,9 +553,16 @@ public class BundleSerializerTest {
 
   @Test
   public void testDecodesLimitQuery() throws JSONException {
-    String json = "{ from: [ { collectionId: 'coll' } ], limit: { value: 5 } }";
-    Query query = TestUtil.query("coll").limitToFirst(5);
-    assertDecodesNamedQuery(json, query);
+    String[] json =
+        new String[] {
+          "{ from: [ { collectionId: 'coll' } ], limit: { value: 5 } }", // ProtobufJS
+          "{ from: [ { collectionId: 'coll' } ], limit: 5 }" // Proto3 JSON
+        };
+
+    for (String encoded : json) {
+      Query query = TestUtil.query("coll").limitToFirst(5);
+      assertDecodesNamedQuery(encoded, query);
+    }
   }
 
   @Test
