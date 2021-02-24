@@ -1,6 +1,10 @@
 ---
-name: ⚠️ Report a Bug
+name: "⚠️ Report a Bug"
 about: Think you found a bug in the SDK? Report it here.
+title: ''
+labels: ''
+assignees: ''
+
 ---
 
 <!-- DO NOT DELETE 
