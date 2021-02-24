@@ -28,8 +28,8 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.emulators.EmulatedServiceSettings;
 import com.google.firebase.storage.internal.Slashes;
+import com.google.firebase.storage.internal.StorageReferenceUri;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -688,8 +688,8 @@ public class StorageReference implements Comparable<StorageReference> {
     return mStorageUri.compareTo(other.mStorageUri);
   }
 
-  @Nullable
-  EmulatedServiceSettings getEmulatorSettings() {
-    return mFirebaseStorage.getEmulatorSettings();
+  @NonNull
+  StorageReferenceUri getStorageReferenceUri() {
+    return new StorageReferenceUri(mStorageUri, mFirebaseStorage.getEmulatorSettings());
   }
 }

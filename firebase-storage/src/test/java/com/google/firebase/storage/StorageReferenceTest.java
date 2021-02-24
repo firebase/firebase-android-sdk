@@ -20,9 +20,9 @@ import android.os.Build;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-import com.google.firebase.emulators.EmulatedServiceSettings;
 import com.google.firebase.storage.internal.MockClockHelper;
 import com.google.firebase.storage.internal.RobolectricThreadFix;
+import com.google.firebase.storage.internal.StorageReferenceUri;
 import com.google.firebase.storage.network.MockConnectionFactory;
 import com.google.firebase.storage.network.NetworkLayerMock;
 import com.google.firebase.testing.FirebaseAppRule;
@@ -79,9 +79,8 @@ public class StorageReferenceTest {
     storage.useEmulator("10.0.2.2", 9199);
 
     StorageReference ref = storage.getReference();
-    EmulatedServiceSettings emulatorSettings = ref.getEmulatorSettings();
-    Assert.assertEquals("10.0.2.2", emulatorSettings.getHost());
-    Assert.assertEquals(9199, emulatorSettings.getPort());
+    StorageReferenceUri uri = ref.getStorageReferenceUri();
+    Assert.assertEquals("http://10.0.2.2:9199/v0", uri.getHttpBaseUri().toString());
   }
 
   @Test

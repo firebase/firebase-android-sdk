@@ -18,7 +18,7 @@ import android.net.Uri;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.emulators.EmulatedServiceSettings;
+import com.google.firebase.storage.internal.StorageReferenceUri;
 
 /** A request to upload a single chunk of a large blob. */
 public class ResumableUploadByteRequest extends ResumableNetworkRequest {
@@ -29,15 +29,14 @@ public class ResumableUploadByteRequest extends ResumableNetworkRequest {
   private final int bytesToWrite;
 
   public ResumableUploadByteRequest(
-      @NonNull Uri gsUri,
+      @NonNull StorageReferenceUri storageReferenceUri,
       @NonNull FirebaseApp app,
-      @Nullable EmulatedServiceSettings emulattorSettings,
       @NonNull Uri uploadURL,
       @Nullable byte[] chunk,
       long offset,
       int bytesToWrite,
       boolean isFinal) {
-    super(gsUri, app, emulattorSettings);
+    super(storageReferenceUri, app);
     if (chunk == null && bytesToWrite != -1) {
       super.mException = new IllegalArgumentException("contentType is null or empty");
     }

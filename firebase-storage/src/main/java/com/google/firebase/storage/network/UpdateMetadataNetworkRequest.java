@@ -14,11 +14,10 @@
 
 package com.google.firebase.storage.network;
 
-import android.net.Uri;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.emulators.EmulatedServiceSettings;
+import com.google.firebase.storage.internal.StorageReferenceUri;
 import org.json.JSONObject;
 
 /** Represents a request to update metadata on a GCS blob. */
@@ -26,11 +25,10 @@ public class UpdateMetadataNetworkRequest extends NetworkRequest {
   private final JSONObject metadata;
 
   public UpdateMetadataNetworkRequest(
-      @NonNull Uri gsUri,
+      @NonNull StorageReferenceUri storageReferenceUri,
       @NonNull FirebaseApp app,
-      @Nullable EmulatedServiceSettings emulatorSettings,
       @Nullable JSONObject metadata) {
-    super(gsUri, app, emulatorSettings);
+    super(storageReferenceUri, app);
     this.metadata = metadata;
     // On kitkat and below, patch is not supported.
     this.setCustomHeader("X-HTTP-Method-Override", PATCH);

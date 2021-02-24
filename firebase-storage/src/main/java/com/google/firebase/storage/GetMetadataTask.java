@@ -56,8 +56,7 @@ class GetMetadataTask implements Runnable {
   @Override
   public void run() {
     final NetworkRequest request =
-        new GetMetadataNetworkRequest(
-            mStorageRef.getStorageUri(), mStorageRef.getApp(), mStorageRef.getEmulatorSettings());
+        new GetMetadataNetworkRequest(mStorageRef.getStorageReferenceUri(), mStorageRef.getApp());
 
     mSender.sendWithExponentialBackoff(request);
     if (request.isResultSuccess()) {

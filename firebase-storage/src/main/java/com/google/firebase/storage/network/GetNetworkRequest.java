@@ -14,11 +14,9 @@
 
 package com.google.firebase.storage.network;
 
-import android.net.Uri;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.emulators.EmulatedServiceSettings;
+import com.google.firebase.storage.internal.StorageReferenceUri;
 import java.util.Collections;
 import java.util.Map;
 
@@ -28,11 +26,8 @@ public class GetNetworkRequest extends NetworkRequest {
   private static final String TAG = "GetNetworkRequest";
 
   public GetNetworkRequest(
-      @NonNull Uri gsUri,
-      @NonNull FirebaseApp app,
-      @Nullable EmulatedServiceSettings emulatorSettings,
-      long startByte) {
-    super(gsUri, app, emulatorSettings);
+      @NonNull StorageReferenceUri storageReferenceUri, @NonNull FirebaseApp app, long startByte) {
+    super(storageReferenceUri, app);
     if (startByte != 0) {
       super.setCustomHeader("Range", "bytes=" + startByte + "-");
     }

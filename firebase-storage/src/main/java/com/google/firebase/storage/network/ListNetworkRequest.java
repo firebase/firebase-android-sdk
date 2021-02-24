@@ -19,7 +19,7 @@ import android.text.TextUtils;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.emulators.EmulatedServiceSettings;
+import com.google.firebase.storage.internal.StorageReferenceUri;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,12 +29,11 @@ public class ListNetworkRequest extends NetworkRequest {
   @Nullable private final String nextPageToken;
 
   public ListNetworkRequest(
-      @NonNull Uri gsUri,
+      @NonNull StorageReferenceUri storageReferenceUri,
       @NonNull FirebaseApp app,
-      @Nullable EmulatedServiceSettings emulatorSettings,
       @Nullable Integer maxPageSize,
       @Nullable String nextPageToken) {
-    super(gsUri, app, emulatorSettings);
+    super(storageReferenceUri, app);
     this.maxPageSize = maxPageSize;
     this.nextPageToken = nextPageToken;
   }
@@ -48,7 +47,8 @@ public class ListNetworkRequest extends NetworkRequest {
   @Override
   @NonNull
   public Uri getURL() {
-    return Uri.parse(getBaseUrl() + "/b/" + mGsUri.getAuthority() + "/o");
+    String bucketName = getStorageReferenceUri().getGsUri().getAuthority();
+    return Uri.parse(getBaseUrl() + "/b/" + bucketName + "/o");
   }
 
   @Override

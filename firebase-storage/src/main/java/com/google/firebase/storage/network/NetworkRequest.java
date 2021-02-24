@@ -29,6 +29,7 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.emulators.EmulatedServiceSettings;
 import com.google.firebase.storage.StorageException;
+import com.google.firebase.storage.internal.StorageReferenceUri;
 import com.google.firebase.storage.network.connection.HttpURLConnectionFactory;
 import com.google.firebase.storage.network.connection.HttpURLConnectionFactoryImpl;
 import java.io.BufferedOutputStream;
@@ -53,6 +54,8 @@ public abstract class NetworkRequest {
 
   private static final String X_FIREBASE_GMPID = "x-firebase-gmpid";
 
+  public static final Uri PROD_BASE_URL = Uri.parse("https://firebasestorage.googleapis.com/v0");
+
   /* Do not change these values without changing corresponding logic on the SDK side*/
   public static final int INITIALIZATION_EXCEPTION = -1;
   public static final int NETWORK_UNAVAILABLE = -2;
@@ -72,8 +75,9 @@ public abstract class NetworkRequest {
   // For test purposes only.
   /*package*/ static HttpURLConnectionFactory connectionFactory =
       new HttpURLConnectionFactoryImpl();
-  protected final Uri mGsUri;
   protected Exception mException;
+
+  private StorageReferenceUri storageReferenceUri;
 
   private static String gmsCoreVersion;
   private Context context;
@@ -85,19 +89,12 @@ public abstract class NetworkRequest {
   private HttpURLConnection connection;
   private Map<String, String> requestHeaders = new HashMap<>();
 
-  private final Uri networkRequestUrl;
-  private final Uri targetUrl;
-
   public NetworkRequest(
-      @NonNull Uri gsUri,
-      @NonNull FirebaseApp app,
-      @Nullable EmulatedServiceSettings emulatorSettings) {
-    Preconditions.checkNotNull(gsUri);
+      @NonNull StorageReferenceUri storageReferenceUri, @NonNull FirebaseApp app) {
+    Preconditions.checkNotNull(storageReferenceUri);
     Preconditions.checkNotNull(app);
-    this.mGsUri = gsUri;
+    this.storageReferenceUri = storageReferenceUri;
     this.context = app.getApplicationContext();
-    this.networkRequestUrl = getBaseUrl(emulatorSettings);
-    this.targetUrl = getDefaultURL(mGsUri, emulatorSettings);
 
     this.setCustomHeader(X_FIREBASE_GMPID, app.getOptions().getApplicationId());
   }
@@ -110,24 +107,6 @@ public abstract class NetworkRequest {
     } else {
       return Uri.parse("https://firebasestorage.googleapis.com/v0");
     }
-  }
-
-  /**
-   * Returns the target Url to use for this request
-   *
-   * @return Url for the target REST call in string form.
-   */
-  @NonNull
-  public static Uri getDefaultURL(
-      @NonNull Uri gsUri, @Nullable EmulatedServiceSettings emulatorSettings) {
-    Preconditions.checkNotNull(gsUri);
-    String pathWithoutBucket = getPathWithoutBucket(gsUri);
-    Uri.Builder uriBuilder = getBaseUrl(emulatorSettings).buildUpon();
-    uriBuilder.appendPath("b");
-    uriBuilder.appendPath(gsUri.getAuthority());
-    uriBuilder.appendPath("o");
-    uriBuilder.appendPath(pathWithoutBucket);
-    return uriBuilder.build();
   }
 
   /**
@@ -150,7 +129,7 @@ public abstract class NetworkRequest {
    * @return the path in string form.
    */
   String getPathWithoutBucket() {
-    return getPathWithoutBucket(mGsUri);
+    return getPathWithoutBucket(storageReferenceUri.getGsUri());
   }
 
   @NonNull
@@ -164,7 +143,7 @@ public abstract class NetworkRequest {
   @NonNull
   @VisibleForTesting
   public Uri getURL() {
-    return targetUrl;
+    return storageReferenceUri.getHttpUri();
   }
 
   /**
@@ -209,7 +188,12 @@ public abstract class NetworkRequest {
 
   @NonNull
   protected Uri getBaseUrl() {
-    return networkRequestUrl;
+    return storageReferenceUri.getHttpBaseUri();
+  }
+
+  @NonNull
+  protected StorageReferenceUri getStorageReferenceUri() {
+    return storageReferenceUri;
   }
 
   /** Resets the result of this request */

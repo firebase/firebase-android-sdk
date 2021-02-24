@@ -16,20 +16,18 @@ package com.google.firebase.storage.network;
 
 import android.net.Uri;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.emulators.EmulatedServiceSettings;
+import com.google.firebase.storage.internal.StorageReferenceUri;
 
 /** Queries the current status of a resumable upload session. */
 public class ResumableUploadQueryRequest extends ResumableNetworkRequest {
   private final Uri uploadURL;
 
   public ResumableUploadQueryRequest(
-      @NonNull Uri gsUri,
+      @NonNull StorageReferenceUri storageReferenceUri,
       @NonNull FirebaseApp app,
-      @Nullable EmulatedServiceSettings emulatorSettings,
       @NonNull Uri uploadURL) {
-    super(gsUri, app, emulatorSettings);
+    super(storageReferenceUri, app);
     this.uploadURL = uploadURL;
 
     super.setCustomHeader(PROTOCOL, "resumable");

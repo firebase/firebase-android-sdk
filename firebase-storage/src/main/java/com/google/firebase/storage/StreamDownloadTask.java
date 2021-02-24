@@ -118,10 +118,7 @@ public class StreamDownloadTask extends StorageTask<StreamDownloadTask.TaskSnaps
 
     request =
         new GetNetworkRequest(
-            storageRef.getStorageUri(),
-            storageRef.getApp(),
-            storageRef.getEmulatorSettings(),
-            bytesDownloaded);
+            storageRef.getStorageReferenceUri(), storageRef.getApp(), bytesDownloaded);
 
     sender.sendWithExponentialBackoff(request, false);
     resultCode = request.getResultCode();

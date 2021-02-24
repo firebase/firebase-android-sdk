@@ -86,8 +86,7 @@ public class Util {
         "Firebase Storage URLs must point to an object in your Storage Bucket. Please "
             + "obtain a URL using the Firebase Console or getDownloadUrl().";
 
-    Uri baseUrl = NetworkRequest.getBaseUrl(/* emulatorSettings= */ null);
-
+    Uri baseUrl = NetworkRequest.PROD_BASE_URL;
     String trimmedInput = s.toLowerCase();
     String bucket;
     String encodedPath;

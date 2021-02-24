@@ -55,8 +55,7 @@ public class NetworkRequestTest {
 
     StorageReference reference = storage.getReference("child");
     NetworkRequest request =
-        new GetNetworkRequest(
-            reference.getStorageUri(), reference.getApp(), reference.getEmulatorSettings(), 0);
+        new GetNetworkRequest(reference.getStorageReferenceUri(), reference.getApp(), 0);
 
     Assert.assertEquals(
         "https://firebasestorage.googleapis.com/v0/b/fooey.appspot.com/o/child",
@@ -70,8 +69,7 @@ public class NetworkRequestTest {
 
     StorageReference reference = storage.getReference("child");
     NetworkRequest request =
-        new GetNetworkRequest(
-            reference.getStorageUri(), reference.getApp(), reference.getEmulatorSettings(), 0);
+        new GetNetworkRequest(reference.getStorageReferenceUri(), reference.getApp(), 0);
 
     Assert.assertEquals(
         "http://10.0.2.2:9199/v0/b/fooey.appspot.com/o/child", request.getURL().toString());
@@ -83,8 +81,7 @@ public class NetworkRequestTest {
 
     StorageReference ref = storage.getReference();
     NetworkRequest request =
-        new ListNetworkRequest(
-            ref.getStorageUri(), ref.getApp(), ref.getEmulatorSettings(), 1, null);
+        new ListNetworkRequest(ref.getStorageReferenceUri(), ref.getApp(), 1, null);
 
     Assert.assertEquals(
         "https://firebasestorage.googleapis.com/v0/b/fooey.appspot.com/o",
@@ -98,8 +95,7 @@ public class NetworkRequestTest {
 
     StorageReference ref = storage.getReference();
     NetworkRequest request =
-        new ListNetworkRequest(
-            ref.getStorageUri(), ref.getApp(), ref.getEmulatorSettings(), 1, null);
+        new ListNetworkRequest(ref.getStorageReferenceUri(), ref.getApp(), 1, null);
 
     Assert.assertEquals(
         "http://10.0.2.2:9199/v0/b/fooey.appspot.com/o", request.getURL().toString());
