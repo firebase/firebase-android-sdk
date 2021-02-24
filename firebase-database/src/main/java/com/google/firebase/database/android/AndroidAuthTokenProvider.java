@@ -79,6 +79,6 @@ public class AndroidAuthTokenProvider implements AuthTokenProvider {
 
   private static boolean isUnauthenticatedUsage(Exception e) {
     return e instanceof FirebaseApiNotAvailableException
-            || e instanceof FirebaseNoSignedInUserException;
+        || e instanceof FirebaseNoSignedInUserException;
   }
 }
