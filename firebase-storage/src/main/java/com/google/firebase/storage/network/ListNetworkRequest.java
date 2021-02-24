@@ -48,7 +48,7 @@ public class ListNetworkRequest extends NetworkRequest {
   @NonNull
   public Uri getURL() {
     String bucketName = getStorageReferenceUri().getGsUri().getAuthority();
-    return Uri.parse(getBaseUrl() + "/b/" + bucketName + "/o");
+    return Uri.parse(getStorageReferenceUri().getHttpBaseUri() + "/b/" + bucketName + "/o");
   }
 
   @Override

@@ -20,11 +20,7 @@ import androidx.annotation.Nullable;
 import com.google.firebase.emulators.EmulatedServiceSettings;
 import com.google.firebase.storage.network.NetworkRequest;
 
-/**
- * Utility class to encapsulate the two "views" of a storage URI in a single object.
- *
- * @hide
- */
+/** Utility class to encapsulate the two "views" of a storage URI in a single object. */
 public class StorageReferenceUri {
 
   private final Uri httpBaseUri;

@@ -187,11 +187,6 @@ public abstract class NetworkRequest {
   }
 
   @NonNull
-  protected Uri getBaseUrl() {
-    return storageReferenceUri.getHttpBaseUri();
-  }
-
-  @NonNull
   protected StorageReferenceUri getStorageReferenceUri() {
     return storageReferenceUri;
   }

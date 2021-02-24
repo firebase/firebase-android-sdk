@@ -49,7 +49,7 @@ public class ResumableUploadStartRequest extends ResumableNetworkRequest {
   @NonNull
   public Uri getURL() {
     String bucket = getStorageReferenceUri().getGsUri().getAuthority();
-    Uri.Builder uriBuilder = getBaseUrl().buildUpon();
+    Uri.Builder uriBuilder = getStorageReferenceUri().getHttpBaseUri().buildUpon();
     uriBuilder.appendPath("b");
     uriBuilder.appendPath(bucket);
     uriBuilder.appendPath("o");
