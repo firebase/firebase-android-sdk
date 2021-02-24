@@ -52,8 +52,7 @@ public class StorageReferenceUri {
     // Add /o/path (if there is a path)
     String path = Slashes.normalizeSlashes(gsUri.getPath());
     if (path.length() > 0 && !"/".equals(path)) {
-      httpBuilder =
-          httpBuilder.appendPath("o").appendEncodedPath(Slashes.preserveSlashEncode(path));
+      httpBuilder = httpBuilder.appendPath("o").appendPath(path);
     }
 
     this.httpUri = httpBuilder.build();

@@ -75,7 +75,7 @@ public class StorageReferenceUriTest {
         uri.getHttpBaseUri().toString(), "https://firebasestorage.googleapis.com/v0");
     Assert.assertEquals(
         uri.getHttpUri().toString(),
-        "https://firebasestorage.googleapis.com/v0/b/bucket/o/object/path/child");
+        "https://firebasestorage.googleapis.com/v0/b/bucket/o/object%2Fpath%2Fchild");
   }
 
   @Test
@@ -85,6 +85,6 @@ public class StorageReferenceUriTest {
     Assert.assertEquals(uri.getGsUri().toString(), "gs://bucket/object/path/child");
     Assert.assertEquals(uri.getHttpBaseUri().toString(), "http://10.0.2.2:1234/v0");
     Assert.assertEquals(
-        uri.getHttpUri().toString(), "http://10.0.2.2:1234/v0/b/bucket/o/object/path/child");
+        uri.getHttpUri().toString(), "http://10.0.2.2:1234/v0/b/bucket/o/object%2Fpath%2Fchild");
   }
 }
