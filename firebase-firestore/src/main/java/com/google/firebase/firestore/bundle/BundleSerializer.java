@@ -23,9 +23,9 @@ import com.google.firebase.firestore.core.Filter;
 import com.google.firebase.firestore.core.OrderBy;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.core.Target;
-import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
@@ -111,11 +111,9 @@ public class BundleSerializer {
     decodeMapValue(value, document.getJSONObject("fields"));
 
     return new BundleDocument(
-        new Document(
-            key,
-            updateTime,
-            ObjectValue.fromMap(value.getMapValue().getFieldsMap()),
-            Document.DocumentState.SYNCED));
+        new MutableDocument(key)
+            .convertToFoundDocument(
+                updateTime, ObjectValue.fromMap(value.getMapValue().getFieldsMap())));
   }
 
   private ResourcePath decodeName(String name) {

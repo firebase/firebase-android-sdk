@@ -22,16 +22,16 @@ public class DocumentCollections {
   private static final ImmutableSortedMap<DocumentKey, ?> EMPTY_DOCUMENT_MAP =
       ImmutableSortedMap.Builder.emptyMap(DocumentKey.comparator());
 
+  /** Returns an empty, immutable map for mutable documents */
+  @SuppressWarnings("unchecked")
+  public static ImmutableSortedMap<DocumentKey, MutableDocument> emptyMutableDocumentMap() {
+    return (ImmutableSortedMap<DocumentKey, MutableDocument>) EMPTY_DOCUMENT_MAP;
+  }
+
   /** Returns an empty, immutable document map */
   @SuppressWarnings("unchecked")
   public static ImmutableSortedMap<DocumentKey, Document> emptyDocumentMap() {
     return (ImmutableSortedMap<DocumentKey, Document>) EMPTY_DOCUMENT_MAP;
-  }
-
-  /** Returns an empty, immutable "maybe" document map */
-  @SuppressWarnings("unchecked")
-  public static ImmutableSortedMap<DocumentKey, MaybeDocument> emptyMaybeDocumentMap() {
-    return (ImmutableSortedMap<DocumentKey, MaybeDocument>) EMPTY_DOCUMENT_MAP;
   }
 
   /** Returns an empty, immutable versions map */

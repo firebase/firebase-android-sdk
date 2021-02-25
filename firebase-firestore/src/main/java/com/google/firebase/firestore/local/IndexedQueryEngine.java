@@ -29,7 +29,7 @@ import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentCollections;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
-import com.google.firebase.firestore.model.MaybeDocument;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.Values;
 import com.google.firebase.firestore.util.Assert;
@@ -144,7 +144,7 @@ public class IndexedQueryEngine implements QueryEngine {
     IndexCursor cursor = collectionIndex.getCursor(query.getPath(), indexRange);
     try {
       while (cursor.next()) {
-        Document document = (Document) localDocuments.getDocument(cursor.getDocumentKey());
+        Document document = localDocuments.getDocument(cursor.getDocumentKey());
         if (query.matches(document)) {
           results = results.insert(cursor.getDocumentKey(), document);
         }
@@ -245,7 +245,7 @@ public class IndexedQueryEngine implements QueryEngine {
   }
 
   @Override
-  public void handleDocumentChange(MaybeDocument oldDocument, MaybeDocument newDocument) {
+  public void handleDocumentChange(MutableDocument oldDocument, MutableDocument newDocument) {
     // TODO: Determine changed fields and make appropriate addEntry() / removeEntry()
     // on SQLiteCollectionIndex.
     throw new RuntimeException("Not yet implemented.");

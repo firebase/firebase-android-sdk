@@ -64,7 +64,8 @@ public class DocumentViewChange {
   public int hashCode() {
     int res = 61;
     res = res * 31 + type.hashCode();
-    res = res * 31 + document.hashCode();
+    res = res * 31 + document.getKey().hashCode();
+    res = res * 31 + document.getData().hashCode();
     return res;
   }
 

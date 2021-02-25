@@ -48,6 +48,7 @@ import com.google.firebase.firestore.local.QueryPurpose;
 import com.google.firebase.firestore.local.TargetData;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
@@ -301,7 +302,7 @@ public final class RemoteSerializerTest {
             .putFields("o", Value.newBuilder().setMapValue(middle).build());
 
     Value proto = Value.newBuilder().setMapValue(obj).build();
-    assertRoundTrip(model.getProto(), proto, Value.ValueTypeCase.MAP_VALUE);
+    assertRoundTrip(model.get(FieldPath.EMPTY_PATH), proto, Value.ValueTypeCase.MAP_VALUE);
   }
 
   @Test

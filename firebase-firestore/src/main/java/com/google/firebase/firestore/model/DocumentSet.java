@@ -40,7 +40,7 @@ public final class DocumentSet implements Iterable<Document> {
         (left, right) -> {
           int comparison = comparator.compare(left, right);
           if (comparison == 0) {
-            return Document.keyComparator().compare(left, right);
+            return Document.KEY_COMPARATOR.compare(left, right);
           } else {
             return comparison;
           }
@@ -213,7 +213,8 @@ public final class DocumentSet implements Iterable<Document> {
   public int hashCode() {
     int result = 0;
     for (Document document : this) {
-      result = 31 * result + document.hashCode();
+      result = 31 * result + document.getKey().hashCode();
+      result = 31 * result + document.getData().hashCode();
     }
     return result;
   }
