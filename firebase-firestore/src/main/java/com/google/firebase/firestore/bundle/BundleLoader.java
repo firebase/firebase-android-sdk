@@ -74,7 +74,7 @@ public class BundleLoader {
             documents.insert(
                 bundledDocumentMetadata.getKey(),
                 new MutableDocument(bundledDocumentMetadata.getKey())
-                    .setNoDocument(bundledDocumentMetadata.getReadTime()));
+                    .convertToNoDocument(bundledDocumentMetadata.getReadTime()));
         currentDocument = null;
       }
     } else if (bundleElement instanceof BundleDocument) {

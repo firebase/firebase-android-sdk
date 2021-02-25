@@ -22,8 +22,8 @@ public final class MutableDocument implements Document, Cloneable {
   private enum DocumentType {
     /**
      * Represents the initial state of a MutableDocument when only the document key is known.
-     * Invalid documents transition to other states as mutations are applied. If a document remain
-     * invalids after applying mutations, it should be discarded.
+     * Invalid documents transition to other states as mutations are applied. If a document remains
+     * invalid after applying mutations, it should be discarded.
      */
     INVALID,
     /**
@@ -43,9 +43,9 @@ public final class MutableDocument implements Document, Cloneable {
   /** Describes the `hasPendingWrites` state of a document. */
   private enum DocumentState {
     /** Local mutations applied via the mutation queue. Document is potentially inconsistent. */
-    LOCAL_MUTATIONS,
+    HAS_LOCAL_MUTATIONS,
     /** Mutations applied based on a write acknowledgment. Document is potentially inconsistent. */
-    COMMITTED_MUTATIONS,
+    HAS_COMMITTED_MUTATIONS,
     /** No mutations applied. Document was sent to us by Watch. */
     SYNCED
   }
@@ -76,7 +76,7 @@ public final class MutableDocument implements Document, Cloneable {
   /**
    * Changes the document type to indicate that it exists and that its version and data are known.
    */
-  public MutableDocument setFoundDocument(SnapshotVersion version, ObjectValue value) {
+  public MutableDocument convertToFoundDocument(SnapshotVersion version, ObjectValue value) {
     this.version = version;
     this.documentType = DocumentType.FOUND_DOCUMENT;
     this.value = value;
@@ -85,7 +85,7 @@ public final class MutableDocument implements Document, Cloneable {
   }
 
   /** Changes the document type to indicate that it doesn't exist at the given version. */
-  public MutableDocument setNoDocument(SnapshotVersion version) {
+  public MutableDocument convertToNoDocument(SnapshotVersion version) {
     this.version = version;
     this.documentType = DocumentType.NO_DOCUMENT;
     this.value = new ObjectValue();
@@ -97,21 +97,21 @@ public final class MutableDocument implements Document, Cloneable {
    * Changes the document type to indicate that it exists at a given version but that is data is not
    * known (e.g. a document that was updated without a known base document).
    */
-  public MutableDocument setUnknownDocument(SnapshotVersion version) {
+  public MutableDocument convertToUnknownDocument(SnapshotVersion version) {
     this.version = version;
     this.documentType = DocumentType.UNKNOWN_DOCUMENT;
     this.value = new ObjectValue();
-    this.documentState = DocumentState.COMMITTED_MUTATIONS;
+    this.documentState = DocumentState.HAS_COMMITTED_MUTATIONS;
     return this;
   }
 
-  public MutableDocument setCommittedMutations() {
-    this.documentState = DocumentState.COMMITTED_MUTATIONS;
+  public MutableDocument setHasCommittedMutations() {
+    this.documentState = DocumentState.HAS_COMMITTED_MUTATIONS;
     return this;
   }
 
-  public MutableDocument setLocalMutations() {
-    this.documentState = DocumentState.LOCAL_MUTATIONS;
+  public MutableDocument setHasLocalMutations() {
+    this.documentState = DocumentState.HAS_LOCAL_MUTATIONS;
     return this;
   }
 
@@ -131,13 +131,13 @@ public final class MutableDocument implements Document, Cloneable {
   /** Returns whether local mutations were applied via the mutation queue. */
   @Override
   public boolean hasLocalMutations() {
-    return documentState.equals(DocumentState.LOCAL_MUTATIONS);
+    return documentState.equals(DocumentState.HAS_LOCAL_MUTATIONS);
   }
 
   /** Returns whether mutations were applied based on a write acknowledgment. */
   @Override
   public boolean hasCommittedMutations() {
-    return documentState.equals(DocumentState.COMMITTED_MUTATIONS);
+    return documentState.equals(DocumentState.HAS_COMMITTED_MUTATIONS);
   }
 
   /**

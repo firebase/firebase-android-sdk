@@ -137,7 +137,7 @@ public final class MutationBatch {
       MutableDocument document = (MutableDocument) documentMap.get(key);
       applyToLocalView(document);
       if (!document.isValidDocument()) {
-        document.setNoDocument(SnapshotVersion.NONE);
+        document.convertToNoDocument(SnapshotVersion.NONE);
       }
       documentMap = documentMap.insert(document.getKey(), document);
     }

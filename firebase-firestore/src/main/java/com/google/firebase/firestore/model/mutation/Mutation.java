@@ -156,7 +156,7 @@ public abstract class Mutation {
    *
    * @param mutableDocument The current state of the document after applying all previous mutations.
    * @param serverTransformResults The transform results received by the server.
-   * @return The transform results list.
+   * @return A map of fields to transform results.
    */
   protected Map<FieldPath, Value> serverTransformResults(
       MutableDocument mutableDocument, List<Value> serverTransformResults) {
@@ -189,7 +189,7 @@ public abstract class Mutation {
    *
    * @param localWriteTime The local time of the mutation (used to generate ServerTimestampValues).
    * @param mutableDocument The current state of the document after applying all previous mutations.
-   * @return The transform results list.
+   * @return A map of fields to transform results.
    */
   protected Map<FieldPath, Value> localTransformResults(
       Timestamp localWriteTime, MutableDocument mutableDocument) {

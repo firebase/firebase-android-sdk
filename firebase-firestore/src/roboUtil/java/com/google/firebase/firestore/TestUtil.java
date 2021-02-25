@@ -90,7 +90,7 @@ public class TestUtil {
       String docKey = path + "/" + pair.getKey();
       MutableDocument doc = doc(docKey, 1L, pair.getValue());
       if (hasPendingWrites) {
-        doc.setCommittedMutations();
+        doc.setHasCommittedMutations();
         mutatedKeys = mutatedKeys.insert(key(docKey));
       }
       oldDocuments = oldDocuments.add(doc);
@@ -101,7 +101,7 @@ public class TestUtil {
       String docKey = path + "/" + pair.getKey();
       MutableDocument docToAdd = doc(docKey, 1L, pair.getValue());
       if (hasPendingWrites) {
-        docToAdd.setCommittedMutations();
+        docToAdd.setHasCommittedMutations();
         mutatedKeys = mutatedKeys.insert(key(docKey));
       }
       newDocuments = newDocuments.add(docToAdd);

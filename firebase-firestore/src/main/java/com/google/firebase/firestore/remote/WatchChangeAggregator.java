@@ -189,7 +189,8 @@ public class WatchChangeAggregator {
           // deleted document there might be another query that will raise this document as part of
           // a snapshot  until it is resolved, essentially exposing inconsistency between queries.
           DocumentKey key = DocumentKey.fromPath(target.getPath());
-          MutableDocument result = new MutableDocument(key).setNoDocument(SnapshotVersion.NONE);
+          MutableDocument result =
+              new MutableDocument(key).convertToNoDocument(SnapshotVersion.NONE);
           removeDocumentFromTarget(targetId, key, result);
         } else {
           hardAssert(
@@ -227,7 +228,7 @@ public class WatchChangeAggregator {
           // limboDocumentRefs.
           DocumentKey key = DocumentKey.fromPath(targetData.getTarget().getPath());
           if (pendingDocumentUpdates.get(key) == null && !targetContainsDocument(targetId, key)) {
-            MutableDocument result = new MutableDocument(key).setNoDocument(snapshotVersion);
+            MutableDocument result = new MutableDocument(key).convertToNoDocument(snapshotVersion);
             removeDocumentFromTarget(targetId, key, result);
           }
         }

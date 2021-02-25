@@ -71,7 +71,8 @@ class LocalDocumentsView {
   /**
    * Returns the the local view of the document identified by {@code key}.
    *
-   * @return Local view of the document or a null if we don't have any cached state for it.
+   * @return Local view of the document or a an invalid document if we don't have any cached state
+   *     for it.
    */
   Document getDocument(DocumentKey key) {
     List<MutationBatch> batches = mutationQueue.getAllMutationBatchesAffectingDocumentKey(key);
@@ -87,8 +88,8 @@ class LocalDocumentsView {
     return document;
   }
 
-  // Returns the view of the given {@code docs} as they would appear after applying all mutations in
-  // the given {@code batches}.
+  // Applies the given {@code batches} to the given {@code docs}. The docs are updated to reflect
+  // the contents of the mutations.
   private void applyLocalMutationsToDocuments(
       Map<DocumentKey, MutableDocument> docs, List<MutationBatch> batches) {
     for (Map.Entry<DocumentKey, MutableDocument> base : docs.entrySet()) {

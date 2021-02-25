@@ -111,7 +111,7 @@ public final class PatchMutation extends Mutation {
       // Since the mutation was not rejected, we know that the precondition matched on the backend.
       // We therefore must not have the expected version of the document in our cache and return an
       // UnknownDocument with the known updateTime.
-      document.setUnknownDocument(mutationResult.getVersion());
+      document.convertToUnknownDocument(mutationResult.getVersion());
       return;
     }
 
@@ -121,8 +121,8 @@ public final class PatchMutation extends Mutation {
     value.setAll(getPatch());
     value.setAll(transformResults);
     document
-        .setFoundDocument(mutationResult.getVersion(), document.getData())
-        .setCommittedMutations();
+        .convertToFoundDocument(mutationResult.getVersion(), document.getData())
+        .setHasCommittedMutations();
   }
 
   @Override
@@ -138,8 +138,8 @@ public final class PatchMutation extends Mutation {
     value.setAll(getPatch());
     value.setAll(transformResults);
     document
-        .setFoundDocument(getPostMutationVersion(document), document.getData())
-        .setLocalMutations();
+        .convertToFoundDocument(getPostMutationVersion(document), document.getData())
+        .setHasLocalMutations();
   }
 
   private Map<FieldPath, Value> getPatch() {
