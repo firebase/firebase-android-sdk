@@ -73,6 +73,7 @@ dependencies {
   // TODO(yifany): Restore after messaging in github is up to date
   // implementation "com.google.firebase:firebase-messaging"
   implementation "com.google.firebase:firebase-ml-vision"
+  implementation "com.google.firebase:firebase-ml-modeldownloader"
   implementation "com.google.firebase:firebase-perf"
   implementation "com.google.firebase:firebase-storage"
 
