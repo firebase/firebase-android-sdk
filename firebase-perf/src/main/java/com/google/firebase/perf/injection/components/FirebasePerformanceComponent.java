@@ -18,6 +18,7 @@ import androidx.annotation.NonNull;
 import com.google.firebase.perf.FirebasePerformance;
 import com.google.firebase.perf.injection.modules.FirebasePerformanceModule;
 import dagger.Component;
+import javax.inject.Singleton;
 
 /**
  * Dagger component to create FirebasePerformanceComponent Objects.
@@ -25,6 +26,7 @@ import dagger.Component;
  * @hide
  */
 @Component(modules = {FirebasePerformanceModule.class})
+@Singleton
 public interface FirebasePerformanceComponent {
   @NonNull
   FirebasePerformance getFirebasePerformance();
