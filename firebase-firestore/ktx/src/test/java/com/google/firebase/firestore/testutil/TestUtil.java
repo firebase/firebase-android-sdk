@@ -21,6 +21,7 @@ import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.DocumentSet;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
@@ -62,28 +63,25 @@ public class TestUtil {
     return new SnapshotVersion(new Timestamp(seconds, nanos));
   }
 
-  public static Document doc(String key, long version, Map<String, Object> data) {
-    return new Document(
-        key(key), version(version), wrapObject(data), Document.DocumentState.SYNCED);
+  public static MutableDocument doc(String key, long version, Map<String, Object> data) {
+    return doc(key(key), version, wrapObject(data));
   }
 
-  public static Document doc(DocumentKey key, long version, Map<String, Object> data) {
-    return new Document(key, version(version), wrapObject(data), Document.DocumentState.SYNCED);
+  public static MutableDocument doc(DocumentKey key, long version, Map<String, Object> data) {
+    return doc(key, version, wrapObject(data));
   }
 
-  public static Document doc(
-      String key, long version, ObjectValue data, Document.DocumentState documentState) {
-    return new Document(key(key), version(version), data, documentState);
+  public static MutableDocument doc(String key, long version, ObjectValue data) {
+    return doc(key(key), version, data);
   }
 
-  public static Document doc(
-      String key, long version, Map<String, Object> data, Document.DocumentState documentState) {
-    return new Document(key(key), version(version), wrapObject(data), documentState);
+  public static MutableDocument doc(DocumentKey key, long version, ObjectValue data) {
+    return new MutableDocument(key).convertToFoundDocument(version(version), data);
   }
 
-  public static DocumentSet docSet(Comparator<Document> comparator, Document... documents) {
+  public static DocumentSet docSet(Comparator<Document> comparator, MutableDocument... documents) {
     DocumentSet set = DocumentSet.emptySet(comparator);
-    for (Document document : documents) {
+    for (MutableDocument document : documents) {
       set = set.add(document);
     }
     return set;

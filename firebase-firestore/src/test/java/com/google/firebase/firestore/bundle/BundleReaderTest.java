@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.bundle;
 
+import static com.google.firebase.firestore.testutil.TestUtil.doc;
 import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.testutil.TestUtil.orderBy;
@@ -24,7 +25,6 @@ import static org.junit.Assert.assertNotNull;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.DatabaseId;
-import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
@@ -88,42 +88,39 @@ public class BundleReaderTest {
           key("coll/doc1"), version(5600000L), /* exists= */ true, Collections.emptyList());
   public static final BundleDocument DOC1 =
       new BundleDocument(
-          new Document(
-              key("coll/doc1"),
-              version(30004000L),
+          doc(
+              "coll/doc1",
+              30004000L,
               ObjectValue.fromMap(
                   map(
                       "foo",
                       Value.newBuilder().setStringValue("value1").build(),
                       "bar",
-                      Value.newBuilder().setIntegerValue(-42).build())),
-              Document.DocumentState.SYNCED));
+                      Value.newBuilder().setIntegerValue(-42).build()))));
   public static final BundledDocumentMetadata DOC2_METADATA =
       new BundledDocumentMetadata(
           key("coll/doc1"), version(5600001L), /* exists= */ true, Collections.emptyList());
   public static final BundleDocument DOC2 =
       new BundleDocument(
-          new Document(
-              key("coll/doc2"),
-              version(30004001L),
+          doc(
+              "coll/doc2",
+              30004001L,
               ObjectValue.fromMap(
                   map(
                       "foo",
                       Value.newBuilder().setStringValue("value2").build(),
                       "bar",
-                      Value.newBuilder().setIntegerValue(42).build())),
-              Document.DocumentState.SYNCED));
+                      Value.newBuilder().setIntegerValue(42).build()))));
   public static final BundledDocumentMetadata DOC3_METADATA =
       new BundledDocumentMetadata(
           key("coll/doc3"), version(5600002L), /* exists= */ true, Collections.emptyList());
   public static final BundleDocument DOC3 =
       new BundleDocument(
-          new Document(
-              key("coll/doc3"),
-              version(30004002L),
+          doc(
+              "coll/doc3",
+              30004002L,
               ObjectValue.fromMap(
-                  map("unicodeValue", Value.newBuilder().setStringValue("\uD83D\uDE0A").build())),
-              Document.DocumentState.SYNCED));
+                  map("unicodeValue", Value.newBuilder().setStringValue("\uD83D\uDE0A").build()))));
 
   @Test
   public void testReadsQueryAndDocument() throws IOException, JSONException {

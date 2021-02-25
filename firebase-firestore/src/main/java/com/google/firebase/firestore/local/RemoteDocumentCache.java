@@ -14,12 +14,10 @@
 
 package com.google.firebase.firestore.local;
 
-import androidx.annotation.Nullable;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
-import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.MaybeDocument;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import java.util.Map;
 
@@ -37,10 +35,10 @@ interface RemoteDocumentCache {
    * <p>The cache key is extracted from {@code maybeDocument.key}. If there is already a cache entry
    * for the key, it will be replaced.
    *
-   * @param maybeDocument A Document or NoDocument to put in the cache.
+   * @param document A document to put in the cache.
    * @param readTime The time at which the document was read or committed.
    */
-  void add(MaybeDocument maybeDocument, SnapshotVersion readTime);
+  void add(MutableDocument document, SnapshotVersion readTime);
 
   /** Removes the cached entry for the given key (no-op if no entry exists). */
   void remove(DocumentKey documentKey);
@@ -49,19 +47,18 @@ interface RemoteDocumentCache {
    * Looks up an entry in the cache.
    *
    * @param documentKey The key of the entry to look up.
-   * @return The cached Document or NoDocument entry, or null if we have nothing cached.
+   * @return The cached document entry, or an invalid document if nothing is cached.
    */
-  @Nullable
-  MaybeDocument get(DocumentKey documentKey);
+  MutableDocument get(DocumentKey documentKey);
 
   /**
    * Looks up a set of entries in the cache.
    *
    * @param documentKeys The keys of the entries to look up.
-   * @return The cached Document or NoDocument entries indexed by key. If an entry is not cached,
-   *     the corresponding key will be mapped to a null value.
+   * @return The cached document entries indexed by key. If an entry is not cached, the
+   *     corresponding key will be mapped to an invalid document
    */
-  Map<DocumentKey, MaybeDocument> getAll(Iterable<DocumentKey> documentKeys);
+  Map<DocumentKey, MutableDocument> getAll(Iterable<DocumentKey> documentKeys);
 
   /**
    * Executes a query against the cached Document entries
@@ -69,13 +66,13 @@ interface RemoteDocumentCache {
    * <p>Implementations may return extra documents if convenient. The results should be re-filtered
    * by the consumer before presenting them to the user.
    *
-   * <p>Cached NoDocument entries have no bearing on query results.
+   * <p>Cached entries for non-existing documents have no bearing on query results.
    *
    * @param query The query to match documents against.
    * @param sinceReadTime If not set to SnapshotVersion.MIN, return only documents that have been
    *     read since this snapshot version (exclusive).
    * @return The set of matching documents.
    */
-  ImmutableSortedMap<DocumentKey, Document> getAllDocumentsMatchingQuery(
+  ImmutableSortedMap<DocumentKey, MutableDocument> getAllDocumentsMatchingQuery(
       Query query, SnapshotVersion sinceReadTime);
 }

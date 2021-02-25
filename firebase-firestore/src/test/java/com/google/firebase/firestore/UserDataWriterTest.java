@@ -222,7 +222,7 @@ public class UserDataWriterTest {
 
   @Test
   public void testConvertsEmptyObjects() {
-    assertEquals(wrapObject(), ObjectValue.emptyObject());
+    assertEquals(wrapObject(), new ObjectValue());
   }
 
   @Test
@@ -253,10 +253,10 @@ public class UserDataWriterTest {
   @Test
   public void testConvertsNestedObjects() {
     ObjectValue actual = wrapObject("a", map("b", map("c", "foo"), "d", true));
-    ObjectValue.Builder expected = ObjectValue.newBuilder();
+    ObjectValue expected = new ObjectValue();
     expected.set(field("a.b.c"), wrap("foo"));
     expected.set(field("a.d"), wrap(true));
-    assertEquals(expected.build(), actual);
+    assertEquals(expected, actual);
   }
 
   @Test

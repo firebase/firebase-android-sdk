@@ -21,7 +21,7 @@ import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.MaybeDocument;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
@@ -71,7 +71,7 @@ class CountingQueryEngine implements QueryEngine {
   }
 
   @Override
-  public void handleDocumentChange(MaybeDocument oldDocument, MaybeDocument newDocument) {
+  public void handleDocumentChange(MutableDocument oldDocument, MutableDocument newDocument) {
     queryEngine.handleDocumentChange(oldDocument, newDocument);
   }
 
@@ -116,8 +116,8 @@ class CountingQueryEngine implements QueryEngine {
   private RemoteDocumentCache wrapRemoteDocumentCache(RemoteDocumentCache subject) {
     return new RemoteDocumentCache() {
       @Override
-      public void add(MaybeDocument maybeDocument, SnapshotVersion readTime) {
-        subject.add(maybeDocument, readTime);
+      public void add(MutableDocument document, SnapshotVersion readTime) {
+        subject.add(document, readTime);
       }
 
       @Override
@@ -127,23 +127,25 @@ class CountingQueryEngine implements QueryEngine {
 
       @Nullable
       @Override
-      public MaybeDocument get(DocumentKey documentKey) {
-        MaybeDocument result = subject.get(documentKey);
-        documentsReadByKey[0] += result != null ? 1 : 0;
+      public MutableDocument get(DocumentKey documentKey) {
+        MutableDocument result = subject.get(documentKey);
+        documentsReadByKey[0] += result.isValidDocument() ? 1 : 0;
         return result;
       }
 
       @Override
-      public Map<DocumentKey, MaybeDocument> getAll(Iterable<DocumentKey> documentKeys) {
-        Map<DocumentKey, MaybeDocument> result = subject.getAll(documentKeys);
-        documentsReadByKey[0] += result.size();
+      public Map<DocumentKey, MutableDocument> getAll(Iterable<DocumentKey> documentKeys) {
+        Map<DocumentKey, MutableDocument> result = subject.getAll(documentKeys);
+        for (MutableDocument document : result.values()) {
+          documentsReadByKey[0] += document.isValidDocument() ? 1 : 0;
+        }
         return result;
       }
 
       @Override
-      public ImmutableSortedMap<DocumentKey, Document> getAllDocumentsMatchingQuery(
+      public ImmutableSortedMap<DocumentKey, MutableDocument> getAllDocumentsMatchingQuery(
           Query query, SnapshotVersion sinceReadTime) {
-        ImmutableSortedMap<DocumentKey, Document> result =
+        ImmutableSortedMap<DocumentKey, MutableDocument> result =
             subject.getAllDocumentsMatchingQuery(query, sinceReadTime);
         documentsReadByQuery[0] += result.size();
         return result;

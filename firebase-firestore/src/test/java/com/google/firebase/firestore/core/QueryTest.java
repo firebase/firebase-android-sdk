@@ -30,7 +30,7 @@ import static org.junit.Assert.assertTrue;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.Blob;
 import com.google.firebase.firestore.GeoPoint;
-import com.google.firebase.firestore.model.Document;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.testutil.ComparatorTester;
 import com.google.firebase.firestore.testutil.TestUtil;
@@ -49,9 +49,9 @@ public class QueryTest {
   @Test
   public void testMatchesBasedDocumentKey() {
     ResourcePath queryPath = ResourcePath.fromString("rooms/eros/messages/1");
-    Document doc1 = doc("rooms/eros/messages/1", 0, map("text", "msg1"));
-    Document doc2 = doc("rooms/eros/messages/2", 0, map("text", "msg2"));
-    Document doc3 = doc("rooms/other/messages/1", 0, map("text", "msg3"));
+    MutableDocument doc1 = doc("rooms/eros/messages/1", 0, map("text", "msg1"));
+    MutableDocument doc2 = doc("rooms/eros/messages/2", 0, map("text", "msg2"));
+    MutableDocument doc3 = doc("rooms/other/messages/1", 0, map("text", "msg3"));
 
     Query query = Query.atPath(queryPath);
     assertTrue(query.matches(doc1));
@@ -62,10 +62,10 @@ public class QueryTest {
   @Test
   public void testMatchesShallowAncestorQuery() {
     ResourcePath queryPath = ResourcePath.fromString("rooms/eros/messages");
-    Document doc1 = doc("rooms/eros/messages/1", 0, map("text", "msg1"));
-    Document doc1meta = doc("rooms/eros/messages/1/meta/1", 0, map("meta", "meta-value"));
-    Document doc2 = doc("rooms/eros/messages/2", 0, map("text", "msg2"));
-    Document doc3 = doc("rooms/other/messages/1", 0, map("text", "msg3"));
+    MutableDocument doc1 = doc("rooms/eros/messages/1", 0, map("text", "msg1"));
+    MutableDocument doc1meta = doc("rooms/eros/messages/1/meta/1", 0, map("meta", "meta-value"));
+    MutableDocument doc2 = doc("rooms/eros/messages/2", 0, map("text", "msg2"));
+    MutableDocument doc3 = doc("rooms/other/messages/1", 0, map("text", "msg3"));
 
     Query query = Query.atPath(queryPath);
     assertTrue(query.matches(doc1));
@@ -77,8 +77,8 @@ public class QueryTest {
   @Test
   public void testEmptyFieldsAreAllowedForQueries() {
     ResourcePath queryPath = ResourcePath.fromString("rooms/eros/messages");
-    Document doc1 = doc("rooms/eros/messages/1", 0, map("text", "msg1"));
-    Document doc2 = doc("rooms/eros/messages/2", 0, map());
+    MutableDocument doc1 = doc("rooms/eros/messages/1", 0, map("text", "msg1"));
+    MutableDocument doc2 = doc("rooms/eros/messages/2", 0, map());
 
     Query query = Query.atPath(queryPath).filter(filter("text", "==", "msg1"));
     assertTrue(query.matches(doc1));
@@ -92,11 +92,11 @@ public class QueryTest {
     Query query2 =
         Query.atPath(ResourcePath.fromString("collection")).filter(filter("sort", "<=", 2));
 
-    Document doc1 = doc("collection/1", 0, map("sort", 1));
-    Document doc2 = doc("collection/2", 0, map("sort", 2));
-    Document doc3 = doc("collection/3", 0, map("sort", 3));
-    Document doc4 = doc("collection/4", 0, map("sort", false));
-    Document doc5 = doc("collection/5", 0, map("sort", "string"));
+    MutableDocument doc1 = doc("collection/1", 0, map("sort", 1));
+    MutableDocument doc2 = doc("collection/2", 0, map("sort", 2));
+    MutableDocument doc3 = doc("collection/3", 0, map("sort", 3));
+    MutableDocument doc4 = doc("collection/4", 0, map("sort", false));
+    MutableDocument doc5 = doc("collection/5", 0, map("sort", "string"));
 
     assertFalse(query1.matches(doc1));
     assertTrue(query1.matches(doc2));
@@ -118,7 +118,7 @@ public class QueryTest {
             .filter(filter("array", "array-contains", 42L));
 
     // not an array
-    Document document = doc("collection/1", 0, map("array", 1));
+    MutableDocument document = doc("collection/1", 0, map("array", 1));
     assertFalse(query.matches(document));
 
     // empty array
@@ -146,7 +146,7 @@ public class QueryTest {
             .filter(filter("array", "array-contains", map("a", asList(42))));
 
     // array without element
-    Document document =
+    MutableDocument document =
         doc(
             "collection/1",
             0,
@@ -170,7 +170,7 @@ public class QueryTest {
         Query.atPath(ResourcePath.fromString("collection"))
             .filter(filter("zip", "in", asList(12345)));
 
-    Document document = doc("collection/1", 0, map("zip", 12345));
+    MutableDocument document = doc("collection/1", 0, map("zip", 12345));
     assertTrue(query.matches(document));
 
     // Value matches in array.
@@ -193,7 +193,7 @@ public class QueryTest {
             .filter(filter("zip", "in", asList(map("a", asList(42)))));
 
     // Containing object in array.
-    Document document = doc("collection/1", 0, map("zip", asList(map("a", asList(42)))));
+    MutableDocument document = doc("collection/1", 0, map("zip", asList(map("a", asList(42)))));
     assertFalse(query.matches(document));
 
     // Containing object.
@@ -208,7 +208,7 @@ public class QueryTest {
             .filter(filter("zip", "not-in", asList(12345)));
 
     // No match.
-    Document document = doc("collection/1", 0, map("zip", 23456));
+    MutableDocument document = doc("collection/1", 0, map("zip", 23456));
     assertTrue(query.matches(document));
 
     // Value matches in array.
@@ -249,7 +249,7 @@ public class QueryTest {
             .filter(filter("zip", "not-in", asList(map("a", asList(42)))));
 
     // Containing object in array.
-    Document document = doc("collection/1", 0, map("zip", asList(map("a", asList(42)))));
+    MutableDocument document = doc("collection/1", 0, map("zip", asList(map("a", asList(42)))));
     assertTrue(query.matches(document));
 
     // Containing object.
@@ -263,7 +263,7 @@ public class QueryTest {
         Query.atPath(ResourcePath.fromString("collection"))
             .filter(filter("zip", "array-contains-any", asList(12345)));
 
-    Document document = doc("collection/1", 0, map("zip", asList(12345)));
+    MutableDocument document = doc("collection/1", 0, map("zip", asList(12345)));
     assertTrue(query.matches(document));
 
     // Value matches in non-array.
@@ -286,7 +286,7 @@ public class QueryTest {
             .filter(filter("zip", "array-contains-any", asList(map("a", asList(42)))));
 
     // Containing object in array.
-    Document document = doc("collection/1", 0, map("zip", asList(map("a", asList(42)))));
+    MutableDocument document = doc("collection/1", 0, map("zip", asList(map("a", asList(42)))));
     assertTrue(query.matches(document));
 
     // Containing object.
@@ -299,12 +299,12 @@ public class QueryTest {
     Query query =
         Query.atPath(ResourcePath.fromString("collection"))
             .filter(filter("sort", "==", Double.NaN));
-    Document doc1 = doc("collection/1", 0, map("sort", Double.NaN));
-    Document doc2 = doc("collection/2", 0, map("sort", 2));
-    Document doc3 = doc("collection/3", 0, map("sort", 3.1));
-    Document doc4 = doc("collection/4", 0, map("sort", false));
-    Document doc5 = doc("collection/5", 0, map("sort", "string"));
-    Document doc6 = doc("collection/6", 0, map("sort", null));
+    MutableDocument doc1 = doc("collection/1", 0, map("sort", Double.NaN));
+    MutableDocument doc2 = doc("collection/2", 0, map("sort", 2));
+    MutableDocument doc3 = doc("collection/3", 0, map("sort", 3.1));
+    MutableDocument doc4 = doc("collection/4", 0, map("sort", false));
+    MutableDocument doc5 = doc("collection/5", 0, map("sort", "string"));
+    MutableDocument doc6 = doc("collection/6", 0, map("sort", null));
 
     assertTrue(query.matches(doc1));
     assertFalse(query.matches(doc2));
@@ -328,12 +328,12 @@ public class QueryTest {
   public void testNullFilter() {
     Query query =
         Query.atPath(ResourcePath.fromString("collection")).filter(filter("sort", "==", null));
-    Document doc1 = doc("collection/1", 0, map("sort", null));
-    Document doc2 = doc("collection/2", 0, map("sort", 2));
-    Document doc3 = doc("collection/3", 0, map("sort", 3.1));
-    Document doc4 = doc("collection/4", 0, map("sort", false));
-    Document doc5 = doc("collection/5", 0, map("sort", "string"));
-    Document doc6 = doc("collection/6", 0, map("sort", Double.NaN));
+    MutableDocument doc1 = doc("collection/1", 0, map("sort", null));
+    MutableDocument doc2 = doc("collection/2", 0, map("sort", 2));
+    MutableDocument doc3 = doc("collection/3", 0, map("sort", 3.1));
+    MutableDocument doc4 = doc("collection/4", 0, map("sort", false));
+    MutableDocument doc5 = doc("collection/5", 0, map("sort", "string"));
+    MutableDocument doc6 = doc("collection/6", 0, map("sort", Double.NaN));
 
     assertTrue(query.matches(doc1));
     assertFalse(query.matches(doc2));
@@ -358,13 +358,13 @@ public class QueryTest {
     Query query2 =
         Query.atPath(ResourcePath.fromString("collection")).filter(filter("sort", ">=", 2));
 
-    Document doc1 = doc("collection/1", 0, map("sort", 2));
-    Document doc2 = doc("collection/2", 0, map("sort", asList()));
-    Document doc3 = doc("collection/3", 0, map("sort", asList(1)));
-    Document doc4 = doc("collection/4", 0, map("sort", map("foo", 2)));
-    Document doc5 = doc("collection/5", 0, map("sort", map("foo", "bar")));
-    Document doc6 = doc("collection/6", 0, map("sort", map()));
-    Document doc7 = doc("collection/7", 0, map("sort", asList(3, 1)));
+    MutableDocument doc1 = doc("collection/1", 0, map("sort", 2));
+    MutableDocument doc2 = doc("collection/2", 0, map("sort", asList()));
+    MutableDocument doc3 = doc("collection/3", 0, map("sort", asList(1)));
+    MutableDocument doc4 = doc("collection/4", 0, map("sort", map("foo", 2)));
+    MutableDocument doc5 = doc("collection/5", 0, map("sort", map("foo", "bar")));
+    MutableDocument doc6 = doc("collection/6", 0, map("sort", map()));
+    MutableDocument doc7 = doc("collection/7", 0, map("sort", asList(3, 1)));
 
     assertTrue(query1.matches(doc1));
     assertFalse(query1.matches(doc2));
@@ -387,11 +387,11 @@ public class QueryTest {
   public void testDoesNotRemoveComplexObjectsWithOrderBy() {
     Query query = Query.atPath(ResourcePath.fromString("collection")).orderBy(orderBy("sort"));
 
-    Document doc1 = doc("collection/1", 0, map("sort", 2));
-    Document doc2 = doc("collection/2", 0, map("sort", asList()));
-    Document doc3 = doc("collection/3", 0, map("sort", asList(1)));
-    Document doc4 = doc("collection/4", 0, map("sort", map("foo", 2)));
-    Document doc5 = doc("collection/5", 0, map("sort", map("foo", "bar")));
+    MutableDocument doc1 = doc("collection/1", 0, map("sort", 2));
+    MutableDocument doc2 = doc("collection/2", 0, map("sort", asList()));
+    MutableDocument doc3 = doc("collection/3", 0, map("sort", asList(1)));
+    MutableDocument doc4 = doc("collection/4", 0, map("sort", map("foo", 2)));
+    MutableDocument doc5 = doc("collection/5", 0, map("sort", map("foo", "bar")));
 
     assertTrue(query.matches(doc1));
     assertTrue(query.matches(doc2));
@@ -403,7 +403,7 @@ public class QueryTest {
   @Test
   public void testFiltersArrays() {
     Query baseQuery = Query.atPath(ResourcePath.fromString("collection"));
-    Document doc1 = doc("collection/doc", 0, map("tags", asList("foo", 1, true)));
+    MutableDocument doc1 = doc("collection/doc", 0, map("tags", asList("foo", 1, true)));
     List<Filter> matchingFilters = asList(filter("tags", "==", asList("foo", 1, true)));
 
     List<Filter> nonMatchingFilters =
@@ -424,7 +424,7 @@ public class QueryTest {
   @Test
   public void testFiltersObjects() {
     Query baseQuery = Query.atPath(ResourcePath.fromString("collection"));
-    Document doc1 =
+    MutableDocument doc1 =
         doc(
             "collection/doc",
             0,

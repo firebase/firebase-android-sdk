@@ -456,7 +456,8 @@ public final class Query {
 
   /** Returns true if the document matches the constraints of this query. */
   public boolean matches(Document doc) {
-    return matchesPathAndCollectionGroup(doc)
+    return doc.isFoundDocument()
+        && matchesPathAndCollectionGroup(doc)
         && matchesOrderBy(doc)
         && matchesFilters(doc)
         && matchesBounds(doc);
