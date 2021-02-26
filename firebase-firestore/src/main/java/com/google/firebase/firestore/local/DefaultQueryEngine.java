@@ -21,7 +21,7 @@ import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.MaybeDocument;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.util.Logger;
 import java.util.Collections;
@@ -73,7 +73,7 @@ public class DefaultQueryEngine implements QueryEngine {
       return executeFullCollectionScan(query);
     }
 
-    ImmutableSortedMap<DocumentKey, MaybeDocument> documents =
+    ImmutableSortedMap<DocumentKey, Document> documents =
         localDocumentsView.getDocuments(remoteKeys);
     ImmutableSortedSet<Document> previousResults = applyQuery(query, documents);
 
@@ -107,16 +107,15 @@ public class DefaultQueryEngine implements QueryEngine {
 
   /** Applies the query filter and sorting to the provided documents. */
   private ImmutableSortedSet<Document> applyQuery(
-      Query query, ImmutableSortedMap<DocumentKey, MaybeDocument> documents) {
+      Query query, ImmutableSortedMap<DocumentKey, Document> documents) {
     // Sort the documents and re-apply the query filter since previously matching documents do not
     // necessarily still match the query.
     ImmutableSortedSet<Document> queryResults =
         new ImmutableSortedSet<>(Collections.emptyList(), query.comparator());
-    for (Map.Entry<DocumentKey, MaybeDocument> entry : documents) {
-      MaybeDocument maybeDoc = entry.getValue();
-      if (maybeDoc instanceof Document && query.matches((Document) maybeDoc)) {
-        Document doc = (Document) maybeDoc;
-        queryResults = queryResults.insert(doc);
+    for (Map.Entry<DocumentKey, Document> entry : documents) {
+      Document document = entry.getValue();
+      if (query.matches(document)) {
+        queryResults = queryResults.insert(document);
       }
     }
     return queryResults;
@@ -162,7 +161,7 @@ public class DefaultQueryEngine implements QueryEngine {
   }
 
   @Override
-  public void handleDocumentChange(MaybeDocument oldDocument, MaybeDocument newDocument) {
+  public void handleDocumentChange(MutableDocument oldDocument, MutableDocument newDocument) {
     // No indexes to update.
   }
 

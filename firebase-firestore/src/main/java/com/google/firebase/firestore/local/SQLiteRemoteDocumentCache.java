@@ -17,14 +17,12 @@ package com.google.firebase.firestore.local;
 import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
-import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
-import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentCollections;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.MaybeDocument;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.util.BackgroundQueue;
@@ -48,14 +46,14 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
   }
 
   @Override
-  public void add(MaybeDocument maybeDocument, SnapshotVersion readTime) {
+  public void add(MutableDocument document, SnapshotVersion readTime) {
     hardAssert(
         !readTime.equals(SnapshotVersion.NONE),
         "Cannot add document to the RemoteDocumentCache with a read time of zero");
 
-    String path = pathForKey(maybeDocument.getKey());
+    String path = pathForKey(document.getKey());
     Timestamp timestamp = readTime.getTimestamp();
-    MessageLite message = serializer.encodeMaybeDocument(maybeDocument);
+    MessageLite message = serializer.encodeMaybeDocument(document);
 
     db.execute(
         "INSERT OR REPLACE INTO remote_documents "
@@ -66,7 +64,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
         timestamp.getNanoseconds(),
         message.toByteArray());
 
-    db.getIndexManager().addToCollectionParentIndex(maybeDocument.getKey().getPath().popLast());
+    db.getIndexManager().addToCollectionParentIndex(document.getKey().getPath().popLast());
   }
 
   @Override
@@ -76,28 +74,29 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     db.execute("DELETE FROM remote_documents WHERE path = ?", path);
   }
 
-  @Nullable
   @Override
-  public MaybeDocument get(DocumentKey documentKey) {
+  public MutableDocument get(DocumentKey documentKey) {
     String path = pathForKey(documentKey);
 
-    return db.query("SELECT contents FROM remote_documents WHERE path = ?")
-        .binding(path)
-        .firstValue(row -> decodeMaybeDocument(row.getBlob(0)));
+    MutableDocument document =
+        db.query("SELECT contents FROM remote_documents WHERE path = ?")
+            .binding(path)
+            .firstValue(row -> decodeMaybeDocument(row.getBlob(0)));
+    return document != null ? document : MutableDocument.newInvalidDocument(documentKey);
   }
 
   @Override
-  public Map<DocumentKey, MaybeDocument> getAll(Iterable<DocumentKey> documentKeys) {
+  public Map<DocumentKey, MutableDocument> getAll(Iterable<DocumentKey> documentKeys) {
     List<Object> args = new ArrayList<>();
     for (DocumentKey key : documentKeys) {
       args.add(EncodedPath.encode(key.getPath()));
     }
 
-    Map<DocumentKey, MaybeDocument> results = new HashMap<>();
+    Map<DocumentKey, MutableDocument> results = new HashMap<>();
     for (DocumentKey key : documentKeys) {
       // Make sure each key has a corresponding entry, which is null in case the document is not
       // found.
-      results.put(key, null);
+      results.put(key, MutableDocument.newInvalidDocument(key));
     }
 
     SQLitePersistence.LongQuery longQuery =
@@ -112,7 +111,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
           .performNextSubquery()
           .forEach(
               row -> {
-                MaybeDocument decoded = decodeMaybeDocument(row.getBlob(0));
+                MutableDocument decoded = decodeMaybeDocument(row.getBlob(0));
                 results.put(decoded.getKey(), decoded);
               });
     }
@@ -121,7 +120,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
   }
 
   @Override
-  public ImmutableSortedMap<DocumentKey, Document> getAllDocumentsMatchingQuery(
+  public ImmutableSortedMap<DocumentKey, MutableDocument> getAllDocumentsMatchingQuery(
       Query query, SnapshotVersion sinceReadTime) {
     hardAssert(
         !query.isCollectionGroupQuery(),
@@ -137,9 +136,9 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
 
     BackgroundQueue backgroundQueue = new BackgroundQueue();
 
-    ImmutableSortedMap<DocumentKey, Document>[] matchingDocuments =
-        (ImmutableSortedMap<DocumentKey, Document>[])
-            new ImmutableSortedMap[] {DocumentCollections.emptyDocumentMap()};
+    ImmutableSortedMap<DocumentKey, MutableDocument>[] matchingDocuments =
+        (ImmutableSortedMap<DocumentKey, MutableDocument>[])
+            new ImmutableSortedMap[] {DocumentCollections.emptyMutableDocumentMap()};
 
     SQLitePersistence.Query sqlQuery;
     if (sinceReadTime.equals(SnapshotVersion.NONE)) {
@@ -182,12 +181,10 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
           Executor executor = row.isLast() ? Executors.DIRECT_EXECUTOR : backgroundQueue;
           executor.execute(
               () -> {
-                MaybeDocument maybeDoc = decodeMaybeDocument(rawDocument);
-
-                if (maybeDoc instanceof Document && query.matches((Document) maybeDoc)) {
+                MutableDocument document = decodeMaybeDocument(rawDocument);
+                if (document.isFoundDocument() && query.matches(document)) {
                   synchronized (SQLiteRemoteDocumentCache.this) {
-                    matchingDocuments[0] =
-                        matchingDocuments[0].insert(maybeDoc.getKey(), (Document) maybeDoc);
+                    matchingDocuments[0] = matchingDocuments[0].insert(document.getKey(), document);
                   }
                 }
               });
@@ -206,7 +203,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     return EncodedPath.encode(key.getPath());
   }
 
-  private MaybeDocument decodeMaybeDocument(byte[] bytes) {
+  private MutableDocument decodeMaybeDocument(byte[] bytes) {
     try {
       return serializer.decodeMaybeDocument(
           com.google.firebase.firestore.proto.MaybeDocument.parseFrom(bytes));

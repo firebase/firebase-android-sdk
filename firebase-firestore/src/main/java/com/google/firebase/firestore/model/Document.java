@@ -14,7 +14,6 @@
 
 package com.google.firebase.firestore.model;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firestore.v1.Value;
 import java.util.Comparator;
@@ -23,98 +22,49 @@ import java.util.Comparator;
  * Represents a document in Firestore with a key, version, data and whether the data has local
  * mutations applied to it.
  */
-public final class Document extends MaybeDocument {
-
-  /** Describes the `hasPendingWrites` state of a document. */
-  public enum DocumentState {
-    /** Local mutations applied via the mutation queue. Document is potentially inconsistent. */
-    LOCAL_MUTATIONS,
-    /** Mutations applied based on a write acknowledgment. Document is potentially inconsistent. */
-    COMMITTED_MUTATIONS,
-    /** No mutations applied. Document was sent to us by Watch. */
-    SYNCED
-  }
-
-  private static final Comparator<Document> KEY_COMPARATOR =
-      (left, right) -> left.getKey().compareTo(right.getKey());
-
+public interface Document {
   /** A document comparator that returns document by key and key only. */
-  public static Comparator<Document> keyComparator() {
-    return KEY_COMPARATOR;
-  }
+  Comparator<Document> KEY_COMPARATOR = (left, right) -> left.getKey().compareTo(right.getKey());
 
-  private final DocumentState documentState;
-  private ObjectValue objectValue;
+  /** The key for this document */
+  DocumentKey getKey();
 
-  public Document(
-      DocumentKey key,
-      SnapshotVersion version,
-      ObjectValue objectValue,
-      DocumentState documentState) {
-    super(key, version);
-    this.documentState = documentState;
-    this.objectValue = objectValue;
-  }
+  /**
+   * Returns the version of this document if it exists or a version at which this document was
+   * guaranteed to not exist.
+   */
+  SnapshotVersion getVersion();
 
-  @NonNull
-  public ObjectValue getData() {
-    return objectValue;
-  }
+  /**
+   * Returns whether this document is valid (i.e. it is an entry in the RemoteDocumentCache, was
+   * created by a mutation or read from the backend).
+   */
+  boolean isValidDocument();
 
-  public @Nullable Value getField(FieldPath path) {
-    return objectValue.get(path);
-  }
+  /** Returns whether the document exists and its data is known at the current version. */
+  boolean isFoundDocument();
 
-  public boolean hasLocalMutations() {
-    return documentState.equals(DocumentState.LOCAL_MUTATIONS);
-  }
+  /** Returns whether the document is known to not exist at the current version. */
+  boolean isNoDocument();
 
-  public boolean hasCommittedMutations() {
-    return documentState.equals(DocumentState.COMMITTED_MUTATIONS);
-  }
+  /** Returns whether the document exists and its data is unknown at the current version. */
+  boolean isUnknownDocument();
 
-  @Override
-  public boolean hasPendingWrites() {
-    return this.hasLocalMutations() || this.hasCommittedMutations();
-  }
+  /** Returns the underlying data of this document. Returns an empty value if no data exists. */
+  ObjectValue getData();
 
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (!(o instanceof Document)) {
-      return false;
-    }
+  /** Returns the data of the given path. Returns null if no data exists. */
+  @Nullable
+  Value getField(FieldPath path);
 
-    Document document = (Document) o;
+  /** Returns whether local mutations were applied via the mutation queue. */
+  boolean hasLocalMutations();
 
-    return getVersion().equals(document.getVersion())
-        && getKey().equals(document.getKey())
-        && documentState.equals(document.documentState)
-        && objectValue.equals(document.objectValue);
-  }
+  /** Returns whether mutations were applied based on a write acknowledgment. */
+  boolean hasCommittedMutations();
 
-  @Override
-  public int hashCode() {
-    int result = getKey().hashCode();
-    result = 31 * result + getVersion().hashCode();
-    result = 31 * result + documentState.hashCode();
-    result = 31 * result + objectValue.hashCode();
-    return result;
-  }
-
-  @Override
-  public String toString() {
-    return "Document{"
-        + "key="
-        + getKey()
-        + ", data="
-        + getData()
-        + ", version="
-        + getVersion()
-        + ", documentState="
-        + documentState.name()
-        + '}';
-  }
+  /**
+   * Whether this document has a local mutation applied that has not yet been acknowledged by Watch.
+   */
+  boolean hasPendingWrites();
 }

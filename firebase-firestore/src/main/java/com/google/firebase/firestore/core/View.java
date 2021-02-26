@@ -25,7 +25,6 @@ import com.google.firebase.firestore.core.ViewSnapshot.SyncState;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.DocumentSet;
-import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.remote.TargetChange;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -113,8 +112,7 @@ public class View {
    * @param docChanges The doc changes to apply to this view.
    * @return a new set of docs, changes, and refill flag.
    */
-  public <D extends MaybeDocument> DocumentChanges computeDocChanges(
-      ImmutableSortedMap<DocumentKey, D> docChanges) {
+  public DocumentChanges computeDocChanges(ImmutableSortedMap<DocumentKey, Document> docChanges) {
     return computeDocChanges(docChanges, null);
   }
 
@@ -128,8 +126,9 @@ public class View {
    *     and changes instead of the current view.
    * @return a new set of docs, changes, and refill flag.
    */
-  public <D extends MaybeDocument> DocumentChanges computeDocChanges(
-      ImmutableSortedMap<DocumentKey, D> docChanges, @Nullable DocumentChanges previousChanges) {
+  public DocumentChanges computeDocChanges(
+      ImmutableSortedMap<DocumentKey, Document> docChanges,
+      @Nullable DocumentChanges previousChanges) {
     DocumentViewChangeSet changeSet =
         previousChanges != null ? previousChanges.changeSet : new DocumentViewChangeSet();
     DocumentSet oldDocumentSet =
@@ -156,26 +155,10 @@ public class View {
             ? oldDocumentSet.getFirstDocument()
             : null;
 
-    for (Map.Entry<DocumentKey, ? extends MaybeDocument> entry : docChanges) {
+    for (Map.Entry<DocumentKey, Document> entry : docChanges) {
       DocumentKey key = entry.getKey();
       Document oldDoc = oldDocumentSet.getDocument(key);
-      Document newDoc = null;
-      MaybeDocument maybeDoc = entry.getValue();
-
-      if (maybeDoc instanceof Document) {
-        newDoc = (Document) maybeDoc;
-      }
-
-      if (newDoc != null) {
-        hardAssert(
-            key.equals(newDoc.getKey()),
-            "Mismatching key in doc change %s != %s",
-            key,
-            newDoc.getKey());
-        if (!query.matches(newDoc)) {
-          newDoc = null;
-        }
-      }
+      Document newDoc = query.matches(entry.getValue()) ? entry.getValue() : null;
 
       boolean oldDocHadPendingMutations =
           oldDoc != null && this.mutatedKeys.contains(oldDoc.getKey());

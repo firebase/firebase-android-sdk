@@ -21,11 +21,9 @@ import static com.google.firebase.firestore.testutil.TestUtil.wrap;
 import static com.google.firebase.firestore.testutil.TestUtil.wrapObject;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 
 import com.google.firebase.firestore.model.mutation.FieldMask;
-import com.google.firestore.v1.Value;
 import java.util.Map;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -65,142 +63,108 @@ public class FieldValueTest {
 
   @Test
   public void testOverwritesExistingFields() {
-    ObjectValue old = wrapObject("a", "old");
-    ObjectValue mod = setField(old, "a", wrap("mod"));
-    assertNotEquals(old, mod);
-    assertEquals(wrapObject("a", "old"), old);
-    assertEquals(wrapObject("a", "mod"), mod);
+    ObjectValue objectValue = wrapObject("a", "old");
+    assertEquals(wrapObject("a", "old"), objectValue);
+    objectValue.set(field("a"), wrap("mod"));
+    assertEquals(wrapObject("a", "mod"), objectValue);
   }
 
   @Test
   public void testAddsNewFields() {
-    ObjectValue empty = ObjectValue.emptyObject();
-    ObjectValue mod = setField(empty, "a", wrap("mod"));
-    assertEquals(wrapObject(), empty);
-    assertEquals(wrapObject("a", "mod"), mod);
+    ObjectValue objectValue = new ObjectValue();
+    assertEquals(wrapObject(), objectValue);
+    objectValue.set(field("a"), wrap("mod"));
+    assertEquals(wrapObject("a", "mod"), objectValue);
 
-    ObjectValue old = mod;
-    mod = setField(old, "b", wrap(1));
-    assertEquals(wrapObject("a", "mod"), old);
-    assertEquals(wrapObject("a", "mod", "b", 1), mod);
+    objectValue.set(field("b"), wrap(1));
+    assertEquals(wrapObject("a", "mod", "b", 1), objectValue);
   }
 
   @Test
   public void testAddsMultipleNewFields() {
-    ObjectValue object = ObjectValue.emptyObject();
-    object = setField(object, "a", wrap("a"));
-    object = object.toBuilder().set(field("b"), wrap("b")).set(field("c"), wrap("c")).build();
+    ObjectValue object = new ObjectValue();
+    object.set(field("a"), wrap("a"));
+    object.set(field("b"), wrap("b"));
+    object.set(field("c"), wrap("c"));
 
     assertEquals(wrapObject("a", "a", "b", "b", "c", "c"), object);
   }
 
   @Test
   public void testImplicitlyCreatesObjects() {
-    ObjectValue old = wrapObject("a", "old");
-    ObjectValue mod = setField(old, "b.c.d", wrap("mod"));
-
-    assertNotEquals(old, mod);
-    assertEquals(wrapObject("a", "old"), old);
-    assertEquals(wrapObject("a", "old", "b", map("c", map("d", "mod"))), mod);
+    ObjectValue objectValue = wrapObject("a", "old");
+    assertEquals(wrapObject("a", "old"), objectValue);
+    objectValue.set(field("b.c.d"), wrap("mod"));
+    assertEquals(wrapObject("a", "old", "b", map("c", map("d", "mod"))), objectValue);
   }
 
   @Test
   public void testCanOverwritePrimitivesWithObjects() {
-    ObjectValue old = wrapObject("a", map("b", "old"));
-    ObjectValue mod = setField(old, "a", map("b", "mod"));
-    assertNotEquals(old, mod);
-    assertEquals(wrapObject("a", map("b", "old")), old);
-    assertEquals(wrapObject("a", map("b", "mod")), mod);
+    ObjectValue objectValue = wrapObject("a", map("b", "old"));
+    assertEquals(wrapObject("a", map("b", "old")), objectValue);
+    objectValue.set(field("a"), wrapObject(map("b", "mod")).get(FieldPath.EMPTY_PATH));
+    assertEquals(wrapObject("a", map("b", "mod")), objectValue);
   }
 
   @Test
   public void testAddsToNestedObjects() {
-    ObjectValue old = wrapObject("a", map("b", "old"));
-    ObjectValue mod = setField(old, "a.c", wrap("mod"));
-    assertNotEquals(old, mod);
-    assertEquals(wrapObject("a", map("b", "old")), old);
-    assertEquals(wrapObject("a", map("b", "old", "c", "mod")), mod);
+    ObjectValue objectValue = wrapObject("a", map("b", "old"));
+    assertEquals(wrapObject("a", map("b", "old")), objectValue);
+    objectValue.set(field("a.c"), wrap("mod"));
+    assertEquals(wrapObject("a", map("b", "old", "c", "mod")), objectValue);
   }
 
   @Test
   public void testDeletesKey() {
-    ObjectValue old = wrapObject("a", 1, "b", 2);
-    ObjectValue mod = deleteField(old, "a");
+    ObjectValue objectValue = wrapObject("a", 1, "b", 2);
+    assertEquals(wrapObject("a", 1, "b", 2), objectValue);
 
-    assertNotEquals(old, mod);
-    assertEquals(wrapObject("a", 1, "b", 2), old);
-    assertEquals(wrapObject("b", 2), mod);
+    objectValue.delete(field("a"));
+    assertEquals(wrapObject("b", 2), objectValue);
 
-    ObjectValue empty = deleteField(mod, "b");
-    assertNotEquals(mod, empty);
-    assertEquals(wrapObject("b", 2), mod);
-    assertEquals(ObjectValue.emptyObject(), empty);
+    objectValue.delete(field("b"));
+    assertEquals(new ObjectValue(), objectValue);
   }
 
   @Test
   public void testDeletesHandleMissingKeys() {
-    ObjectValue old = wrapObject("a", map("b", 1, "c", 2));
-    ObjectValue mod = deleteField(old, "b");
-    assertEquals(mod, old);
-    assertEquals(wrapObject("a", map("b", 1, "c", 2)), mod);
+    ObjectValue objectValue = wrapObject("a", map("b", 1, "c", 2));
+    assertEquals(wrapObject("a", map("b", 1, "c", 2)), objectValue);
+    objectValue.delete(field("b"));
+    assertEquals(wrapObject("a", map("b", 1, "c", 2)), objectValue);
 
-    mod = deleteField(old, "a.d");
-    assertEquals(old, mod);
-    assertEquals(wrapObject("a", map("b", 1, "c", 2)), mod);
+    objectValue.delete(field("a.d"));
+    assertEquals(wrapObject("a", map("b", 1, "c", 2)), objectValue);
 
-    mod = deleteField(old, "a.b.c");
-    assertEquals(old, mod);
-    assertEquals(wrapObject("a", map("b", 1, "c", 2)), mod);
+    objectValue.delete(field("a.b.c"));
+    assertEquals(wrapObject("a", map("b", 1, "c", 2)), objectValue);
   }
 
   @Test
   public void testDeletesNestedKeys() {
     Map<String, Object> orig = map("a", map("b", 1, "c", map("d", 2, "e", 3)));
-    ObjectValue old = wrapObject(orig);
-    ObjectValue mod = deleteField(old, "a.c.d");
+    ObjectValue objectValue = wrapObject(orig);
+    assertEquals(wrapObject(orig), objectValue);
 
-    assertNotEquals(mod, old);
-    assertEquals(wrapObject(orig), old);
-
+    objectValue.delete(field("a.c.d"));
     Map<String, Object> second = map("a", map("b", 1, "c", map("e", 3)));
-    assertEquals(wrapObject(second), mod);
-
-    old = mod;
-    mod = deleteField(old, "a.c");
-
-    assertNotEquals(old, mod);
-    assertEquals(wrapObject(second), old);
+    assertEquals(wrapObject(second), objectValue);
 
     Map<String, Object> third = map("a", map("b", 1));
-    assertEquals(wrapObject(third), mod);
+    objectValue.delete(field("a.c"));
+    assertEquals(wrapObject(third), objectValue);
 
-    old = mod;
-    mod = deleteField(old, "a");
-
-    assertNotEquals(old, mod);
-    assertEquals(wrapObject(third), old);
-    assertEquals(ObjectValue.emptyObject(), mod);
+    objectValue.delete(field("a"));
+    assertEquals(new ObjectValue(), objectValue);
   }
 
   @Test
   public void testDeletesMultipleFields() {
     ObjectValue object = wrapObject("a", "a", "b", "b", "c", "c");
-    object = object.toBuilder().delete(field("a")).build();
-    object = object.toBuilder().delete(field("b")).delete(field("c")).build();
+    object.delete(field("a"));
+    object.delete(field("b"));
+    object.delete(field("c"));
 
-    assertEquals(ObjectValue.emptyObject(), object);
-  }
-
-  private ObjectValue setField(ObjectValue objectValue, String fieldPath, Value value) {
-    return objectValue.toBuilder().set(field(fieldPath), value).build();
-  }
-
-  private ObjectValue setField(
-      ObjectValue objectValue, String fieldPath, Map<String, Object> value) {
-    return objectValue.toBuilder().set(field(fieldPath), wrapObject(value).getProto()).build();
-  }
-
-  private ObjectValue deleteField(ObjectValue objectValue, String fieldPath) {
-    return objectValue.toBuilder().delete(field(fieldPath)).build();
+    assertEquals(new ObjectValue(), object);
   }
 }

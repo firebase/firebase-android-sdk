@@ -95,8 +95,8 @@ public class DocumentSnapshot {
   }
 
   static DocumentSnapshot fromNoDocument(
-      FirebaseFirestore firestore, DocumentKey key, boolean fromCache, boolean hasPendingWrites) {
-    return new DocumentSnapshot(firestore, key, null, fromCache, hasPendingWrites);
+      FirebaseFirestore firestore, DocumentKey key, boolean fromCache) {
+    return new DocumentSnapshot(firestore, key, null, fromCache, /* hasPendingWrites= */ false);
   }
 
   /** @return The id of the document. */
@@ -534,7 +534,8 @@ public class DocumentSnapshot {
   public int hashCode() {
     int hash = firestore.hashCode();
     hash = hash * 31 + key.hashCode();
-    hash = hash * 31 + (doc != null ? doc.hashCode() : 0);
+    hash = hash * 31 + (doc != null ? doc.getKey().hashCode() : 0);
+    hash = hash * 31 + (doc != null ? doc.getData().hashCode() : 0);
     hash = hash * 31 + metadata.hashCode();
     return hash;
   }

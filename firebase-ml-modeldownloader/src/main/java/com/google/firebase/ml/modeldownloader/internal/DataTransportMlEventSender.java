@@ -21,7 +21,7 @@ import com.google.android.datatransport.Transport;
 import com.google.android.datatransport.TransportFactory;
 
 /**
- * This class is responsible for sending Firebase Ml Log Events to Firebase through Google
+ * This class is responsible for sending Firebase ML Log Events to Firebase through Google
  * DataTransport.
  *
  * <p>These will be equivalent to LogEvent.proto internally.
