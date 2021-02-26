@@ -21,11 +21,10 @@ import com.google.firestore.v1.Value;
  * Represents a document in Firestore with a key, version, data and whether it has local mutations
  * applied to it.
  *
- * <p>Documents can transition between states via {@link
- * #convertToFoundDocument(SnapshotVersion,ObjectValue)}, {@link
- * #convertToNoDocument(SnapshotVersion)} and {@link #convertToUnknownDocument(SnapshotVersion)}. If
- * a document does not transition to one of these states even after all mutations have been applied,
- * {@link #isValidDocument()} returns false and the document should be removed from all views.
+ * <p>Documents can transition between states via {@link #convertToFoundDocument}, {@link
+ * #convertToNoDocument} and {@link #convertToUnknownDocument}. If a document does not transition to
+ * one of these states even after all mutations have been applied, {@link #isValidDocument} returns
+ * false and the document should be removed from all views.
  */
 public final class MutableDocument implements Document, Cloneable {
 
@@ -66,6 +65,10 @@ public final class MutableDocument implements Document, Cloneable {
   private ObjectValue value;
   private DocumentState documentState;
 
+  private MutableDocument(DocumentKey key) {
+    this.key = key;
+  }
+
   private MutableDocument(
       DocumentKey key,
       DocumentType documentType,
@@ -95,14 +98,12 @@ public final class MutableDocument implements Document, Cloneable {
   /** Creates a new document that is known to exist with the given data at the given version. */
   public static MutableDocument newFoundDocument(
       DocumentKey documentKey, SnapshotVersion version, ObjectValue value) {
-    return new MutableDocument(
-        documentKey, DocumentType.FOUND_DOCUMENT, version, value, DocumentState.SYNCED);
+    return new MutableDocument(documentKey).convertToFoundDocument(version, value);
   }
 
   /** Creates a new document that is known to not exisr at the given version. */
   public static MutableDocument newNoDocument(DocumentKey documentKey, SnapshotVersion version) {
-    return new MutableDocument(
-        documentKey, DocumentType.NO_DOCUMENT, version, new ObjectValue(), DocumentState.SYNCED);
+    return new MutableDocument(documentKey).convertToNoDocument(version);
   }
 
   /**
@@ -111,12 +112,7 @@ public final class MutableDocument implements Document, Cloneable {
    */
   public static MutableDocument newUnknownDocument(
       DocumentKey documentKey, SnapshotVersion version) {
-    return new MutableDocument(
-        documentKey,
-        DocumentType.UNKNOWN_DOCUMENT,
-        version,
-        new ObjectValue(),
-        DocumentState.HAS_COMMITTED_MUTATIONS);
+    return new MutableDocument(documentKey).convertToUnknownDocument(version);
   }
 
   /**
