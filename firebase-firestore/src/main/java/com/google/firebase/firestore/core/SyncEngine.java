@@ -407,8 +407,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
       // It's a limbo doc. Create a synthetic event saying it was deleted. This is kind of a hack.
       // Ideally, we would have a method in the local store to purge a document. However, it would
       // be tricky to keep all of the local store's invariants with another method.
-      MutableDocument result =
-          new MutableDocument(limboKey).convertToNoDocument(SnapshotVersion.NONE);
+      MutableDocument result = MutableDocument.newNoDocument(limboKey, SnapshotVersion.NONE);
       Map<DocumentKey, MutableDocument> documentUpdates =
           Collections.singletonMap(limboKey, result);
       Set<DocumentKey> limboDocuments = Collections.singleton(limboKey);

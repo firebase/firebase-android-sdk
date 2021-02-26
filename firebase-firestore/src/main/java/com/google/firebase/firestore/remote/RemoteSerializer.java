@@ -246,7 +246,7 @@ public final class RemoteSerializer {
     SnapshotVersion version = decodeVersion(response.getFound().getUpdateTime());
     hardAssert(
         !version.equals(SnapshotVersion.NONE), "Got a document response with no snapshot version");
-    return new MutableDocument(key).convertToFoundDocument(version, value);
+    return MutableDocument.newFoundDocument(key, version, value);
   }
 
   private MutableDocument decodeMissingDocument(BatchGetDocumentsResponse response) {
@@ -258,7 +258,7 @@ public final class RemoteSerializer {
     hardAssert(
         !version.equals(SnapshotVersion.NONE),
         "Got a no document response with no snapshot version");
-    return new MutableDocument(key).convertToNoDocument(version);
+    return MutableDocument.newNoDocument(key, version);
   }
 
   // Mutations
@@ -874,7 +874,7 @@ public final class RemoteSerializer {
         hardAssert(
             !version.equals(SnapshotVersion.NONE), "Got a document change without an update time");
         ObjectValue data = ObjectValue.fromMap(docChange.getDocument().getFieldsMap());
-        MutableDocument document = new MutableDocument(key).convertToFoundDocument(version, data);
+        MutableDocument document = MutableDocument.newFoundDocument(key, version, data);
         watchChange = new WatchChange.DocumentChange(added, removed, document.getKey(), document);
         break;
       case DOCUMENT_DELETE:
@@ -883,7 +883,7 @@ public final class RemoteSerializer {
         key = decodeKey(docDelete.getDocument());
         // Note that version might be unset in which case we use SnapshotVersion.NONE
         version = decodeVersion(docDelete.getReadTime());
-        MutableDocument doc = new MutableDocument(key).convertToNoDocument(version);
+        MutableDocument doc = MutableDocument.newNoDocument(key, version);
         watchChange =
             new WatchChange.DocumentChange(Collections.emptyList(), removed, doc.getKey(), doc);
         break;
