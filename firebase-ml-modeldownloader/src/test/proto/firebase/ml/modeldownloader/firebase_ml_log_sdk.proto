@@ -26,7 +26,7 @@ option java_multiple_files = true;
 // Information about various parts of the system: app, Firebase, SDK, TFLite.
 message SystemInfo {
   // The application's unique id.  On Android, this is the package
-  // name, e.g., "com.hello.world".
+  // name, for example, "com.hello.world".
   string app_id = 1 ;
 
   // Application version string.  On Android, this is the version name (not the
@@ -137,11 +137,11 @@ message ModelDownloadLogEvent {
   // retrieval of the model info in Firebase backend, and then the download of
   // the model file in GCS. Whether or not the download is requested implicitly
   // or explicitly does not affect the later stages of the download. As a
-  // result, later stages (i.e. enum tag 3+) do not distinguish between explicit
+  // result, later stages (specifically enum tag 3+) do not distinguish between explicit
   // and implicit triggering.
   enum DownloadStatus {
     UNKNOWN_STATUS = 0;
-    // The download is requested by the developer, i.e. ensureModelDownloaded()
+    // The download is requested by the developer, specifically when ensureModelDownloaded()
     // is called.
     EXPLICITLY_REQUESTED = 1;
 
