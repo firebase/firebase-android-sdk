@@ -19,12 +19,13 @@ import com.google.firestore.v1.Value;
 
 /**
  * Represents a document in Firestore with a key, version, data and whether it has local mutations
- * applied to it. Documents can start out as {@link DocumentType#INVALID} and transition to a valid
- * states via {@link #convertToFoundDocument(SnapshotVersion,ObjectValue)}, {@link
- * #convertToNoDocument(SnapshotVersion)} and {@link #convertToUnknownDocument(SnapshotVersion)}.
+ * applied to it.
  *
- * <p>Invalid documents serve as base documents for mutations. If a document remains invalid even
- * after all mutations have been applied, it should be removed from all views.
+ * <p>Documents can transition between states via {@link
+ * #convertToFoundDocument(SnapshotVersion,ObjectValue)}, {@link
+ * #convertToNoDocument(SnapshotVersion)} and {@link #convertToUnknownDocument(SnapshotVersion)}. If
+ * a document does not transition to one of these states even after all mutations have been applied,
+ * {@link #isValidDocument()} returns false and the document should be removed from all views.
  */
 public final class MutableDocument implements Document, Cloneable {
 
