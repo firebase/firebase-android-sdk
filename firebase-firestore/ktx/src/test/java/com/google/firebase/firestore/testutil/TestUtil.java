@@ -76,7 +76,7 @@ public class TestUtil {
   }
 
   public static MutableDocument doc(DocumentKey key, long version, ObjectValue data) {
-    return new MutableDocument(key).convertToFoundDocument(version(version), data);
+    return MutableDocument.newFoundDocument(key, version(version), data);
   }
 
   public static DocumentSet docSet(Comparator<Document> comparator, MutableDocument... documents) {

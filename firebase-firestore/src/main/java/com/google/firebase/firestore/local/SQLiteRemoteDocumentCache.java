@@ -82,7 +82,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
         db.query("SELECT contents FROM remote_documents WHERE path = ?")
             .binding(path)
             .firstValue(row -> decodeMaybeDocument(row.getBlob(0)));
-    return document != null ? document : new MutableDocument(documentKey);
+    return document != null ? document : MutableDocument.newInvalidDocument(documentKey);
   }
 
   @Override
@@ -96,7 +96,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     for (DocumentKey key : documentKeys) {
       // Make sure each key has a corresponding entry, which is null in case the document is not
       // found.
-      results.put(key, new MutableDocument(key));
+      results.put(key, MutableDocument.newInvalidDocument(key));
     }
 
     SQLitePersistence.LongQuery longQuery =

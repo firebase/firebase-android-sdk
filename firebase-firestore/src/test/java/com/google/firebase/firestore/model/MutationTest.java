@@ -91,7 +91,7 @@ public class MutationTest {
 
   @Test
   public void testAppliesPatchToNullDocWithMergeToDocuments() {
-    MutableDocument mergeDoc = new MutableDocument(key("collection/key"));
+    MutableDocument mergeDoc = MutableDocument.newInvalidDocument(key("collection/key"));
     Mutation upsert =
         mergeMutation(
             "collection/key", map("foo.bar", "new-bar-value"), Arrays.asList(field("foo.bar")));
@@ -582,17 +582,26 @@ public class MutationTest {
     assertVersionTransitions(set, docV3, mutationResult, docV7Committed);
     assertVersionTransitions(set, deletedV3, mutationResult, docV7Committed);
     assertVersionTransitions(
-        set, new MutableDocument(key("collection/key")), mutationResult, docV7Committed);
+        set,
+        MutableDocument.newInvalidDocument(key("collection/key")),
+        mutationResult,
+        docV7Committed);
 
     assertVersionTransitions(patch, docV3, mutationResult, docV7Committed);
     assertVersionTransitions(patch, deletedV3, mutationResult, docV7Unknown);
     assertVersionTransitions(
-        patch, new MutableDocument(key("collection/key")), mutationResult, docV7Unknown);
+        patch,
+        MutableDocument.newInvalidDocument(key("collection/key")),
+        mutationResult,
+        docV7Unknown);
 
     assertVersionTransitions(delete, docV3, mutationResult, docV7Deleted);
     assertVersionTransitions(delete, deletedV3, mutationResult, docV7Deleted);
     assertVersionTransitions(
-        delete, new MutableDocument(key("collection/key")), mutationResult, docV7Deleted);
+        delete,
+        MutableDocument.newInvalidDocument(key("collection/key")),
+        mutationResult,
+        docV7Deleted);
   }
 
   @Test

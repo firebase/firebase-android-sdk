@@ -73,8 +73,8 @@ public class BundleLoader {
         documents =
             documents.insert(
                 bundledDocumentMetadata.getKey(),
-                new MutableDocument(bundledDocumentMetadata.getKey())
-                    .convertToNoDocument(bundledDocumentMetadata.getReadTime()));
+                MutableDocument.newNoDocument(
+                    bundledDocumentMetadata.getKey(), bundledDocumentMetadata.getReadTime()));
         currentDocument = null;
       }
     } else if (bundleElement instanceof BundleDocument) {

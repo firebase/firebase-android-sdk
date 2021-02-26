@@ -17,6 +17,15 @@ package com.google.firebase.firestore.model;
 import androidx.annotation.NonNull;
 import com.google.firestore.v1.Value;
 
+/**
+ * Represents a document in Firestore with a key, version, data and whether it has local mutations
+ * applied to it. Documents can start out as {@link DocumentType#INVALID} and transition to a valid
+ * states via {@link #convertToFoundDocument(SnapshotVersion,ObjectValue)}, {@link
+ * #convertToNoDocument(SnapshotVersion)} and {@link #convertToUnknownDocument(SnapshotVersion)}.
+ *
+ * <p>Invalid documents serve as base documents for mutations. If a document remains invalid even
+ * after all mutations have been applied, it should be removed from all views.
+ */
 public final class MutableDocument implements Document, Cloneable {
 
   private enum DocumentType {
@@ -56,10 +65,6 @@ public final class MutableDocument implements Document, Cloneable {
   private ObjectValue value;
   private DocumentState documentState;
 
-  public MutableDocument(DocumentKey key) {
-    this(key, DocumentType.INVALID, SnapshotVersion.NONE, new ObjectValue(), DocumentState.SYNCED);
-  }
-
   private MutableDocument(
       DocumentKey key,
       DocumentType documentType,
@@ -71,6 +76,46 @@ public final class MutableDocument implements Document, Cloneable {
     this.documentType = documentType;
     this.documentState = documentState;
     this.value = value;
+  }
+
+  /**
+   * Creates a document with no known version or data, but which can serve as base document for
+   * mutations.
+   */
+  public static MutableDocument newInvalidDocument(DocumentKey documentKey) {
+    return new MutableDocument(
+        documentKey,
+        DocumentType.INVALID,
+        SnapshotVersion.NONE,
+        new ObjectValue(),
+        DocumentState.SYNCED);
+  }
+
+  /** Creates a new document that is known to exist with the given data at the given version. */
+  public static MutableDocument newFoundDocument(
+      DocumentKey documentKey, SnapshotVersion version, ObjectValue value) {
+    return new MutableDocument(
+        documentKey, DocumentType.FOUND_DOCUMENT, version, value, DocumentState.SYNCED);
+  }
+
+  /** Creates a new document that is known to not exisr at the given version. */
+  public static MutableDocument newNoDocument(DocumentKey documentKey, SnapshotVersion version) {
+    return new MutableDocument(
+        documentKey, DocumentType.NO_DOCUMENT, version, new ObjectValue(), DocumentState.SYNCED);
+  }
+
+  /**
+   * Creates a new document that is known to exist at the given version but whose data is not known
+   * (e.g. a document that was updated without a known base document).
+   */
+  public static MutableDocument newUnknownDocument(
+      DocumentKey documentKey, SnapshotVersion version) {
+    return new MutableDocument(
+        documentKey,
+        DocumentType.UNKNOWN_DOCUMENT,
+        version,
+        new ObjectValue(),
+        DocumentState.HAS_COMMITTED_MUTATIONS);
   }
 
   /**
@@ -94,8 +139,8 @@ public final class MutableDocument implements Document, Cloneable {
   }
 
   /**
-   * Changes the document type to indicate that it exists at a given version but that is data is not
-   * known (e.g. a document that was updated without a known base document).
+   * Changes the document type to indicate that it exists at a given version but that its data is
+   * not known (e.g. a document that was updated without a known base document).
    */
   public MutableDocument convertToUnknownDocument(SnapshotVersion version) {
     this.version = version;
@@ -120,29 +165,21 @@ public final class MutableDocument implements Document, Cloneable {
     return key;
   }
 
-  /**
-   * Returns the version of this document if it exists or a version at which this document was
-   * guaranteed to not exist.
-   */
+  @Override
   public SnapshotVersion getVersion() {
     return version;
   }
 
-  /** Returns whether local mutations were applied via the mutation queue. */
   @Override
   public boolean hasLocalMutations() {
     return documentState.equals(DocumentState.HAS_LOCAL_MUTATIONS);
   }
 
-  /** Returns whether mutations were applied based on a write acknowledgment. */
   @Override
   public boolean hasCommittedMutations() {
     return documentState.equals(DocumentState.HAS_COMMITTED_MUTATIONS);
   }
 
-  /**
-   * Whether this document has a local mutation applied that has not yet been acknowledged by Watch.
-   */
   @Override
   public boolean hasPendingWrites() {
     return hasLocalMutations() || hasCommittedMutations();
