@@ -409,7 +409,7 @@ public final class LocalSerializerTest {
             /* startAt= */ null,
             /* endAt= */ null);
     BundledQuery bundledQuery = new BundledQuery(target, Query.LimitType.LIMIT_TO_FIRST);
-    com.google.firestore.proto.BundledQuery encodedBundledQuery =
+    com.google.firestore.bundle.BundledQuery encodedBundledQuery =
         serializer.encodeBundledQuery(bundledQuery);
     BundledQuery decodedBundledQuery = serializer.decodeBundledQuery(encodedBundledQuery);
 
@@ -428,7 +428,7 @@ public final class LocalSerializerTest {
             /* startAt= */ null,
             /* endAt= */ null);
     BundledQuery bundledQuery = new BundledQuery(target, Query.LimitType.LIMIT_TO_LAST);
-    com.google.firestore.proto.BundledQuery encodedBundledQuery =
+    com.google.firestore.bundle.BundledQuery encodedBundledQuery =
         serializer.encodeBundledQuery(bundledQuery);
     BundledQuery decodedBundledQuery = serializer.decodeBundledQuery(encodedBundledQuery);
 
