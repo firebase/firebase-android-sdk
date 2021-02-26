@@ -76,18 +76,10 @@ public final class MutationBatch {
    * Applies all the mutations in this MutationBatch to the specified document to create a new
    * remote document.
    *
-   * @param documentKey The key of the document to apply mutations to.
    * @param document The document to apply mutations to.
    * @param batchResult The result of applying the MutationBatch to the backend.
    */
-  public void applyToRemoteDocument(
-      DocumentKey documentKey, MutableDocument document, MutationBatchResult batchResult) {
-    hardAssert(
-        document.getKey().equals(documentKey),
-        "applyToRemoteDocument: key %s doesn't match document key %s",
-        documentKey,
-        document.getKey());
-
+  public void applyToRemoteDocument(MutableDocument document, MutationBatchResult batchResult) {
     int size = mutations.size();
     List<MutationResult> mutationResults = batchResult.getMutationResults();
     hardAssert(
@@ -98,7 +90,7 @@ public final class MutationBatch {
 
     for (int i = 0; i < size; i++) {
       Mutation mutation = mutations.get(i);
-      if (mutation.getKey().equals(documentKey)) {
+      if (mutation.getKey().equals(document.getKey())) {
         MutationResult mutationResult = mutationResults.get(i);
         mutation.applyToRemoteDocument(document, mutationResult);
       }
@@ -129,7 +121,7 @@ public final class MutationBatch {
   public ImmutableSortedMap<DocumentKey, Document> applyToLocalDocumentSet(
       ImmutableSortedMap<DocumentKey, Document> documentMap) {
     // TODO(mrschmidt): This implementation is O(n^2). If we iterate through the mutations first
-    // (as done in `applyToLocalView(DocumentKey k, MaybeDoc d)`), we can reduce the complexity to
+    // (as done in `applyToLocalView(MutableDocument d)`), we can reduce the complexity to
     // O(n).
     for (DocumentKey key : getKeys()) {
       // TODO(mutabledocuments): This method should take a map of MutableDocuments and we should

@@ -29,7 +29,7 @@ import org.robolectric.annotation.Config;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
-public class ObjectValueBuilderTest {
+public class MutableObjectValueTest {
   private String fooString = "foo";
   private Value fooValue = wrap(fooString);
   private String barString = "bar";
@@ -37,7 +37,7 @@ public class ObjectValueBuilderTest {
   private Value emptyObject = Value.newBuilder().setMapValue(MapValue.getDefaultInstance()).build();
 
   @Test
-  public void supportsEmptyobjectValues() {
+  public void supportsEmptyObjectValues() {
     ObjectValue objectValue = new ObjectValue();
     assertEquals(new ObjectValue(), objectValue);
   }

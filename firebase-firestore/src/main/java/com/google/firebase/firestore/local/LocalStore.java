@@ -776,7 +776,7 @@ public final class LocalStore implements BundleCallback {
       hardAssert(ackVersion != null, "docVersions should contain every doc in the write.");
 
       if (doc.getVersion().compareTo(ackVersion) < 0) {
-        batch.applyToRemoteDocument(docKey, doc, batchResult);
+        batch.applyToRemoteDocument(doc, batchResult);
         if (doc.isValidDocument()) {
           remoteDocuments.add(doc, batchResult.getCommitVersion());
         }

@@ -111,9 +111,8 @@ public class BundleSerializer {
     decodeMapValue(value, document.getJSONObject("fields"));
 
     return new BundleDocument(
-        new MutableDocument(key)
-            .convertToFoundDocument(
-                updateTime, ObjectValue.fromMap(value.getMapValue().getFieldsMap())));
+        MutableDocument.newFoundDocument(
+            key, updateTime, ObjectValue.fromMap(value.getMapValue().getFieldsMap())));
   }
 
   private ResourcePath decodeName(String name) {

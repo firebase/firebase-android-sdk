@@ -36,8 +36,7 @@ public class DocumentTest {
   @Test
   public void testInstantiation() {
     MutableDocument document =
-        new MutableDocument(key("messages/first"))
-            .convertToFoundDocument(version(1), wrapObject("a", 1));
+        MutableDocument.newFoundDocument(key("messages/first"), version(1), wrapObject("a", 1));
 
     assertEquals(key("messages/first"), document.getKey());
     assertEquals(version(1), document.getVersion());
