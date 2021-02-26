@@ -106,7 +106,7 @@ public class FirebaseModelDownloader {
   }
 
   /**
-   * Get the downloaded model file based on download type and conditions. DownloadType behaviours:
+   * Gets the downloaded model file based on download type and conditions. DownloadType behaviours:
    *
    * <ul>
    *   <li>{@link DownloadType#LOCAL_MODEL}: returns the current model if present, otherwise
@@ -116,8 +116,9 @@ public class FirebaseModelDownloader {
    *       present and triggers an update to fetch a new version in the background. If no local
    *       model is present triggers a new download (or finds one in progress) and only completes
    *       when download is finished.
-   *   <li>{@link DownloadType#LATEST_MODEL}: check for latest model, if different from local model,
-   *       trigger new download, task only completes when download finishes
+   *   <li>{@link DownloadType#LATEST_MODEL}: returns the latest model. Checks if latest model is
+   *       different from local model. If the models are the same, returns the current model.
+   *       Otherwise, triggers a new model download and returns when this download finishes.
    * </ul>
    *
    * Most common exceptions include:
@@ -127,8 +128,9 @@ public class FirebaseModelDownloader {
    *   <li>{@link FirebaseMlException#NOT_FOUND}: No model found with the given name.
    *   <li>{@link FirebaseMlException#NOT_ENOUGH_SPACE}: Not enough space on device to download
    *       model.
-   *   <li>{@link FirebaseMlException#DOWNLOAD_URL_EXPIRED}: Url used to fetch model expired before
-   *       model download completed. (Rare: these calls are retried internally before being raised.)
+   *   <li>{@link FirebaseMlException#DOWNLOAD_URL_EXPIRED}: URL used to fetch model expired before
+   *       model download completed. (This return is rare; these calls are retried internally before
+   *       being raised.)
    * </ul>
    *
    * @param modelName Model name.
@@ -449,7 +451,7 @@ public class FirebaseModelDownloader {
   }
 
   /**
-   * Delete local model. Removes any information and files associated with the model name.
+   * Deletes the local model. Removes any information and files associated with the model name.
    *
    * @param modelName Name of the model.
    */
@@ -474,37 +476,38 @@ public class FirebaseModelDownloader {
   }
 
   /**
-   * Enables stats collection in Firebase Ml ModelDownloader via Firelog. The stats include API
+   * Enables stats collection in Firebase ML ModelDownloader via Firelog. The stats include API
    * calls counts, errors, API call durations, options, etc. No personally identifiable information
    * is logged.
    *
-   * <p>The setting is per FirebaseApp, and it is persistent together with app's private data. It
-   * means if the user uninstalls the app or clears all app data, the setting will be erased. The
-   * best practice is to set the flag in each initialization.
+   * <p>The setting is set by the initialization of <code>FirebaseApp</code>, and it is persistent
+   * together with the app's private data. It means that if the user uninstalls the app or clears
+   * all app data, the setting will be erased. The best practice is to set the flag in each
+   * initialization.
    *
-   * <p>By default the logging matches the Firebase wide data collection switch.
+   * <p>By default, the logging matches the Firebase-wide data collection switch.
    *
-   * @param enabled Is logging enabled, set to null (default) to use Firebase wide data collection
-   *     switch.
+   * @param enabled Turns the logging state on or off. To revert to using the Firebase-wide data
+   *     collection switch, set this value to <code>null</code>.
    */
   public void setModelDownloaderCollectionEnabled(@Nullable Boolean enabled) {
     sharedPreferencesUtil.setCustomModelStatsCollectionEnabled(enabled);
   }
 
   /**
-   * Get the current models' download id (returns background download id when applicable). This id
+   * Gets the current model's download ID (returns background download ID when applicable). This ID
    * can be used to create a progress bar to track file download progress.
    *
-   * <p>[Preferred] If getModelTask is not null, then this task returns when the download id is not
+   * <p>[Preferred] If getModelTask is not null, then this task returns when the download ID is not
    * 0 (download has been enqueued) or when the getModelTask completes (returning 0).
    *
-   * <p>If getModelTask is null, then immediately returns the download id of the model. This will be
-   * 0 if the model doesn't exist, the model has completed downloading, or the download hasn't been
-   * enqueued.
+   * <p>If getModelTask is null, then this task immediately returns the download ID of the model.
+   * This will be 0 if the model doesn't exist, the model has completed downloading, or the download
+   * hasn't been enqueued.
    *
    * @param modelName Model name.
    * @param getModelTask The most recent getModel task associated with the model name.
-   * @return Download id associated with Android Download Manager.
+   * @return Download ID associated with Android <code>DownloadManager</code>.
    */
   @NonNull
   public Task<Long> getModelDownloadId(

@@ -30,7 +30,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.nio.charset.Charset;
 
 /**
- * Class used to log firebase ml log statistics. All values should match internal LogEvent for
+ * Class used to log firebase ML log statistics. All values should match internal LogEvent for
  * numbering and naming.
  *
  * @hide
@@ -193,7 +193,7 @@ public abstract class FirebaseMlLogEvent {
     // retrieval of the model info in Firebase backend, and then the download of
     // the model file in GCS. Whether or not the download is requested implicitly
     // or explicitly does not affect the later stages of the download. As a
-    // result, later stages (i.e. enum tag 3+) do not distinguish between explicit
+    // result, later stages (specifically enum tag 3+) do not distinguish between explicit
     // and implicit triggering.
     public enum DownloadStatus {
       UNKNOWN_STATUS(0),
