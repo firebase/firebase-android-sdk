@@ -33,6 +33,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import javax.inject.Inject;
 
 /**
  * This class collects CPU Gauge metrics and queues them up on its ConcurrentLinkedQueue. It is the
@@ -96,6 +97,7 @@ public class CpuGaugeCollector {
   }
 
   @VisibleForTesting
+  @Inject
   CpuGaugeCollector(
       ScheduledExecutorService cpuMetricCollectorExecutor,
       String fakeProcFileName,

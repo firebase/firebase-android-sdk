@@ -28,6 +28,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import javax.inject.Inject;
 
 /**
  * This class collects Memory Gauge metrics and queues them up on its ConcurrentLinkedQueue. It is
@@ -68,6 +69,7 @@ public class MemoryGaugeCollector {
   }
 
   @VisibleForTesting
+  @Inject
   MemoryGaugeCollector(ScheduledExecutorService memoryMetricCollectorExecutor, Runtime runtime) {
     this.memoryMetricCollectorExecutor = memoryMetricCollectorExecutor;
     memoryMetricReadings = new ConcurrentLinkedQueue<>();
