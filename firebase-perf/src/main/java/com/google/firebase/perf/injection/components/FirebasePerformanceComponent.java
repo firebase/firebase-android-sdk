@@ -17,7 +17,7 @@ package com.google.firebase.perf.injection.components;
 import androidx.annotation.NonNull;
 import com.google.firebase.perf.FirebasePerformance;
 import com.google.firebase.perf.injection.modules.FirebasePerformanceModule;
-import com.google.firebase.perf.injection.modules.GaugeCollectorsModule;
+import com.google.firebase.perf.injection.modules.GaugeModule;
 import dagger.Component;
 
 /**
@@ -25,7 +25,7 @@ import dagger.Component;
  *
  * @hide
  */
-@Component(modules = {FirebasePerformanceModule.class, GaugeCollectorsModule.class})
+@Component(modules = {FirebasePerformanceModule.class, GaugeModule.class})
 public interface FirebasePerformanceComponent {
   @NonNull
   FirebasePerformance getFirebasePerformance();
