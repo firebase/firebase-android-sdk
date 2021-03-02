@@ -42,22 +42,20 @@ import javax.inject.Inject;
 /** @hide */
 public class MemoryGaugeCollector {
 
+  public static final long INVALID_MEMORY_COLLECTION_FREQUENCY = -1;
   private static final AndroidLogger logger = AndroidLogger.getInstance();
 
   @SuppressLint("StaticFieldLeak")
   private static final MemoryGaugeCollector sharedInstance = new MemoryGaugeCollector();
 
-  public static final long INVALID_MEMORY_COLLECTION_FREQUENCY = -1;
-
   // This value indicates that we do not know the frequency at which to collect Memory Metrics. If
   // this value is set for the memoryMetricCollectionRateMs, we do not collect Memory Metrics.
   private static final int UNSET_MEMORY_METRIC_COLLECTION_RATE = -1;
 
-  private final ScheduledExecutorService memoryMetricCollectorExecutor;
-
   /* This is populated by MemoryGaugeCollector but it's drained by GaugeManager.*/
   public final ConcurrentLinkedQueue<AndroidMemoryReading> memoryMetricReadings;
 
+  private final ScheduledExecutorService memoryMetricCollectorExecutor;
   private final Runtime runtime;
 
   @Nullable private ScheduledFuture memoryMetricCollectorJob = null;
