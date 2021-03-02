@@ -285,15 +285,25 @@ public class TestDownloadHelper {
     String bytesDownloaded = Long.toString(state.getBytesTransferred());
     String totalBytes = Long.toString(state.getTotalByteCount());
 
-    return "  exceptionMessage:" + exceptionMessage + "\n  bytesDownloaded:" + bytesDownloaded + "\n  totalBytes:" + totalBytes;
+    return "  exceptionMessage:"
+        + exceptionMessage
+        + "\n  bytesDownloaded:"
+        + bytesDownloaded
+        + "\n  totalBytes:"
+        + totalBytes;
   }
 
   private static String streamTaskToString(StreamDownloadTask.TaskSnapshot state) {
     String exceptionMessage = state.getError() != null ? state.getError().getMessage() : "<none>";
     String bytesDownloaded = Long.toString(state.getBytesTransferred());
-      String totalBytes = Long.toString(state.getTotalByteCount());
+    String totalBytes = Long.toString(state.getTotalByteCount());
 
-    return "  exceptionMessage:" + exceptionMessage + "\n  bytesDownloaded:" + bytesDownloaded + "\n  totalBytes:" + totalBytes;
+    return "  exceptionMessage:"
+        + exceptionMessage
+        + "\n  bytesDownloaded:"
+        + bytesDownloaded
+        + "\n  totalBytes:"
+        + totalBytes;
   }
 
   /** for testing */
