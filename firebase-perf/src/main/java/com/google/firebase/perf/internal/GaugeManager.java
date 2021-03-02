@@ -100,6 +100,8 @@ public class GaugeManager {
 
   /** Sets the application context once it is available. */
   public void setApplicationContext(Context applicationContext) {
+    // TODO(rkhinda): Eventually we would want GaugeMetadataManager to be injected via the
+    //  constructor. Below is just an intermediate state.
     this.gaugeMetadataManager =
         GaugeMetadataManager_Factory.newInstance(
             Runtime.getRuntime(),

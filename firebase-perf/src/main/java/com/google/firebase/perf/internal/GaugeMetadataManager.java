@@ -48,7 +48,6 @@ class GaugeMetadataManager {
   private final MemoryInfo memoryInfo;
   private final String currentProcessName;
 
-  @VisibleForTesting
   @Inject
   GaugeMetadataManager(
       Runtime runtime, Context applicationContext, ActivityManager activityManager) {
