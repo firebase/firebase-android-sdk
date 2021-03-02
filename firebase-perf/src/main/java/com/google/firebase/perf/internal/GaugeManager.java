@@ -14,6 +14,7 @@
 
 package com.google.firebase.perf.internal;
 
+import android.app.ActivityManager;
 import android.content.Context;
 import androidx.annotation.Keep;
 import androidx.annotation.Nullable;
@@ -98,8 +99,12 @@ public class GaugeManager {
   }
 
   /** Sets the application context once it is available. */
-  public void setApplicationContext(Context context) {
-    this.gaugeMetadataManager = new GaugeMetadataManager(context);
+  public void setApplicationContext(Context applicationContext) {
+    this.gaugeMetadataManager =
+        GaugeMetadataManager_Factory.newInstance(
+            Runtime.getRuntime(),
+            applicationContext,
+            (ActivityManager) applicationContext.getSystemService(Context.ACTIVITY_SERVICE));
   }
 
   /** Returns the singleton instance of this class. */

@@ -12,22 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.perf.injection.components;
+package com.google.firebase.perf.injection.modules;
 
-import androidx.annotation.NonNull;
-import com.google.firebase.perf.FirebasePerformance;
-import com.google.firebase.perf.injection.modules.FirebasePerformanceModule;
-import com.google.firebase.perf.injection.modules.GaugeModule;
-import dagger.Component;
+import android.app.ActivityManager;
+import android.content.Context;
+import dagger.Module;
+import dagger.Provides;
 
 /**
- * Dagger component to create FirebasePerformanceComponent Objects.
+ * Provider for {@link com.google.firebase.perf.internal.GaugeManager} and related classes.
  *
  * @hide
  */
-@Component(modules = {FirebasePerformanceModule.class, GaugeModule.class})
-public interface FirebasePerformanceComponent {
+@Module
+public class GaugeModule {
 
-  @NonNull
-  FirebasePerformance getFirebasePerformance();
+  @Provides
+  Runtime providesRuntime() {
+    return Runtime.getRuntime();
+  }
+
+  @Provides
+  ActivityManager providesActivityManager(Context applicationContext) {
+    return (ActivityManager) applicationContext.getSystemService(Context.ACTIVITY_SERVICE);
+  }
 }
