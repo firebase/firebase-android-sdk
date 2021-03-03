@@ -20,7 +20,8 @@ import android.os.Build.VERSION;
 import android.os.Build.VERSION_CODES;
 import android.system.OsConstants;
 import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
+import com.google.firebase.perf.injection.qualifiers.ClockTicksPerSecond;
+import com.google.firebase.perf.injection.qualifiers.ProcFileName;
 import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.perf.v1.CpuMetricReading;
@@ -34,7 +35,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
-import javax.inject.Named;
+import javax.inject.Singleton;
 
 /**
  * This class collects CPU Gauge metrics and queues them up on its ConcurrentLinkedQueue. It is the
@@ -46,6 +47,7 @@ import javax.inject.Named;
  * @hide
  */
 /** @hide */
+@Singleton
 public class CpuGaugeCollector {
 
   public static final long INVALID_CPU_COLLECTION_FREQUENCY = -1;
@@ -76,17 +78,18 @@ public class CpuGaugeCollector {
   // This utility isn't provided by TimeUnits.SECONDS.toMicros() - it only accepts longs.
   private static final long MICROSECONDS_PER_SECOND = TimeUnit.SECONDS.toMicros(1);
 
+  // TODO: Remove sharedInstance.
+  @Nullable private static CpuGaugeCollector sharedInstance = null;
+
   /* This is populated by CpuGaugeCollector but it's drained by GaugeManager.*/
   public final ConcurrentLinkedQueue<CpuMetricReading> cpuMetricReadings =
       new ConcurrentLinkedQueue<>();
 
-  // TODO: Remove sharedInstance.
-  @Nullable private static CpuGaugeCollector sharedInstance = null;
   @Nullable private ScheduledFuture cpuMetricCollectorJob = null;
   private final ScheduledExecutorService cpuMetricCollectorExecutor;
-  private long cpuMetricCollectionRateMs = UNSET_CPU_METRIC_COLLECTION_RATE;
   private final long clockTicksPerSecond;
   private final String procFileName;
+  private long cpuMetricCollectionRateMs = UNSET_CPU_METRIC_COLLECTION_RATE;
 
   // TODO: Remove the private constructor.
   private CpuGaugeCollector() {
@@ -98,12 +101,11 @@ public class CpuGaugeCollector {
     clockTicksPerSecond = getClockTicksPerSecond();
   }
 
-  @VisibleForTesting
   @Inject
   CpuGaugeCollector(
       ScheduledExecutorService cpuMetricCollectorExecutor,
-      @Named("proc file name") String procFileName,
-      @Named("clock ticks per second") long clockTicksPerSecond) {
+      @ProcFileName String procFileName,
+      @ClockTicksPerSecond long clockTicksPerSecond) {
     this.cpuMetricCollectorExecutor = cpuMetricCollectorExecutor;
     this.procFileName = procFileName;
     this.clockTicksPerSecond = clockTicksPerSecond;

@@ -16,7 +16,6 @@ package com.google.firebase.perf.gauges;
 
 import android.annotation.SuppressLint;
 import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
 import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.util.StorageUnit;
 import com.google.firebase.perf.util.Timer;
@@ -29,6 +28,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
 /**
  * This class collects Memory Gauge metrics and queues them up on its ConcurrentLinkedQueue. It is
@@ -40,6 +40,7 @@ import javax.inject.Inject;
  * @hide
  */
 /** @hide */
+@Singleton
 public class MemoryGaugeCollector {
 
   public static final long INVALID_MEMORY_COLLECTION_FREQUENCY = -1;
@@ -66,7 +67,6 @@ public class MemoryGaugeCollector {
     this(Executors.newSingleThreadScheduledExecutor(), Runtime.getRuntime());
   }
 
-  @VisibleForTesting
   @Inject
   MemoryGaugeCollector(ScheduledExecutorService memoryMetricCollectorExecutor, Runtime runtime) {
     this.memoryMetricCollectorExecutor = memoryMetricCollectorExecutor;

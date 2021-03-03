@@ -18,11 +18,12 @@ import static android.system.Os.sysconf;
 
 import android.os.Build;
 import android.system.OsConstants;
+import com.google.firebase.perf.injection.qualifiers.ClockTicksPerSecond;
+import com.google.firebase.perf.injection.qualifiers.ProcFileName;
 import dagger.Module;
 import dagger.Provides;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import javax.inject.Named;
 
 /**
  * Provider for {@link com.google.firebase.perf.gauges}.
@@ -40,7 +41,7 @@ public class GaugeModule {
   }
 
   @Provides
-  @Named("proc file name")
+  @ProcFileName
   String providesProcFileName() {
     int pid = android.os.Process.myPid();
     String procFileName = String.format("/proc/%d/stat", pid);
@@ -48,7 +49,7 @@ public class GaugeModule {
   }
 
   @Provides
-  @Named("clock ticks per second")
+  @ClockTicksPerSecond
   long providesClockTicksPerSecond() {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
       return sysconf(OsConstants._SC_CLK_TCK);
