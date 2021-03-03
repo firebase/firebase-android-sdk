@@ -18,6 +18,8 @@ import static com.google.android.gms.common.internal.Preconditions.checkNotNull;
 
 import android.text.TextUtils;
 import androidx.annotation.NonNull;
+
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.database.annotations.Nullable;
@@ -266,6 +268,18 @@ public class FirebaseDatabase {
   public synchronized void setLogLevel(@NonNull Logger.Level logLevel) {
     assertUnfrozen("setLogLevel");
     this.config.setLogLevel(logLevel);
+  }
+
+  /**
+   * Run a transaction capable of reading, and then mutating multiple locations.
+   * @param updateFunction
+   * @param <TResult>
+   * @return
+   */
+  @Nullable
+  public <TResult> Task<TResult> runTransaction(
+          @NonNull DatabaseTransaction.Function<TResult> updateFunction) {
+    return null;
   }
 
   /**
