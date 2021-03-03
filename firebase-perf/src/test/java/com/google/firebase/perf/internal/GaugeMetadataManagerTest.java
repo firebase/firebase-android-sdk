@@ -53,24 +53,25 @@ public class GaugeMetadataManagerTest extends FirebasePerformanceTestBase {
 
   @Mock private Runtime runtime;
 
-  private Context applicationContext;
-  private ActivityManager activityManager;
-  private MemoryInfo memoryInfo;
-  private GaugeMetadataManager testGaugeMetadataManager;
+  private Context spyApplicationContext;
+  private ActivityManager spyActivityManager;
+  private MemoryInfo spyMemoryInfo;
 
   @Before
   public void setUp() {
     initMocks(this);
 
-    applicationContext = RuntimeEnvironment.application;
-    activityManager =
-        (ActivityManager) applicationContext.getSystemService(Context.ACTIVITY_SERVICE);
-    memoryInfo = new ActivityManager.MemoryInfo();
+    spyApplicationContext = spy(RuntimeEnvironment.application);
+    spyActivityManager =
+        spy((ActivityManager) spyApplicationContext.getSystemService(Context.ACTIVITY_SERVICE));
+    spyMemoryInfo = spy(new ActivityManager.MemoryInfo());
 
     mockMemory();
+  }
 
-    testGaugeMetadataManager =
-        new GaugeMetadataManager(runtime, applicationContext, activityManager, memoryInfo);
+  private GaugeMetadataManager newTestInstance() {
+    return new GaugeMetadataManager(
+        runtime, spyApplicationContext, spyActivityManager, spyMemoryInfo);
   }
 
   private void mockMemory() {
@@ -78,65 +79,61 @@ public class GaugeMetadataManagerTest extends FirebasePerformanceTestBase {
     //  is an incubating feature for mocking final classes.
     // when(runtime.maxMemory()).thenReturn(RUNTIME_MAX_MEMORY_BYTES);
 
-    memoryInfo.totalMem = DEVICE_RAM_SIZE_BYTES;
+    spyMemoryInfo.totalMem = DEVICE_RAM_SIZE_BYTES;
 
-    shadowOf(activityManager).setMemoryInfo(memoryInfo);
-    shadowOf(activityManager).setMemoryClass(RUNTIME_MAX_ENCOURAGED_MEMORY_MB);
+    shadowOf(spyActivityManager).setMemoryInfo(spyMemoryInfo);
+    shadowOf(spyActivityManager).setMemoryClass(RUNTIME_MAX_ENCOURAGED_MEMORY_MB);
   }
 
   @Test
   public void testInitialization_getProcessNameReturnsNull_doesNotCrash() {
-    ActivityManager activityManagerPartialMock = spy(activityManager);
-    when(activityManagerPartialMock.getRunningAppProcesses()).thenReturn(null);
-
-    assertThat(new GaugeMetadataManager(runtime, applicationContext, activityManager, memoryInfo))
-        .isNotNull();
+    when(spyActivityManager.getRunningAppProcesses()).thenReturn(null);
+    assertThat(newTestInstance()).isNotNull();
   }
 
   @Test
   public void testGetProcessName_noProcessInfoList_returnsPackageName() {
-    shadowOf(activityManager).setProcesses(new ArrayList<>());
-    assertThat(
-            new GaugeMetadataManager(runtime, applicationContext, activityManager, memoryInfo)
-                .getProcessName())
-        .isEqualTo(applicationContext.getPackageName());
+    shadowOf(spyActivityManager).setProcesses(new ArrayList<>());
+    when(spyApplicationContext.getPackageName()).thenReturn("com.test.package");
+
+    assertThat(newTestInstance().getProcessName()).isEqualTo("com.test.package");
   }
 
   @Test
   public void testGetProcessName_processListWithoutCurrentPid_returnsPackageName() {
-    shadowOf(activityManager)
+    shadowOf(spyActivityManager)
         .setProcesses(
-            generateFakeAppProcessInfoListThatContainsPid(android.os.Process.myPid() + 100));
-    assertThat(
-            new GaugeMetadataManager(runtime, applicationContext, activityManager, memoryInfo)
-                .getProcessName())
-        .isEqualTo(applicationContext.getPackageName());
+            generateFakeAppProcessInfoListWithPidAndProcessName(
+                android.os.Process.myPid() + 100, /* processName= */ "fakeProcessName"));
+    when(spyApplicationContext.getPackageName()).thenReturn("com.test.package");
+
+    assertThat(newTestInstance().getProcessName()).isEqualTo("com.test.package");
   }
 
   @Test
   public void testGetProcessName_processListWithCurrentPid_returnsProcessName() {
-    shadowOf(activityManager)
-        .setProcesses(generateFakeAppProcessInfoListThatContainsPid(android.os.Process.myPid()));
-    assertThat(
-            new GaugeMetadataManager(runtime, applicationContext, activityManager, memoryInfo)
-                .getProcessName())
-        .isEqualTo("fakeProcessName");
+    shadowOf(spyActivityManager)
+        .setProcesses(
+            generateFakeAppProcessInfoListWithPidAndProcessName(
+                android.os.Process.myPid(), /* processName= */ "fakeProcessName"));
+    assertThat(newTestInstance().getProcessName()).isEqualTo("fakeProcessName");
   }
 
   @Test
   public void testGetMaxAppJavaHeapMemory_returnsExpectedValue() {
-    assertThat(testGaugeMetadataManager.getMaxAppJavaHeapMemoryKb()).isGreaterThan(0);
+    assertThat(newTestInstance().getMaxAppJavaHeapMemoryKb()).isGreaterThan(0);
     //        .isEqualTo(StorageUnit.BYTES.toKilobytes(RUNTIME_MAX_MEMORY_BYTES));
   }
 
   @Test
   public void testGetMaxEncouragedAppJavaHeapMemory_returnsExpectedValue() {
-    assertThat(testGaugeMetadataManager.getMaxEncouragedAppJavaHeapMemoryKb())
+    assertThat(newTestInstance().getMaxEncouragedAppJavaHeapMemoryKb())
         .isEqualTo(StorageUnit.MEGABYTES.toKilobytes(RUNTIME_MAX_ENCOURAGED_MEMORY_MB));
   }
 
   @Test
   public void testGetDeviceRamSize_returnsExpectedValue() throws IOException {
+    GaugeMetadataManager testGaugeMetadataManager = newTestInstance();
     int ramSize = testGaugeMetadataManager.getDeviceRamSizeKb();
 
     assertThat(ramSize).isEqualTo(StorageUnit.BYTES.toKilobytes(DEVICE_RAM_SIZE_BYTES));
@@ -159,10 +156,11 @@ public class GaugeMetadataManagerTest extends FirebasePerformanceTestBase {
     return file.getAbsolutePath();
   }
 
-  private List<RunningAppProcessInfo> generateFakeAppProcessInfoListThatContainsPid(int pid) {
+  private List<RunningAppProcessInfo> generateFakeAppProcessInfoListWithPidAndProcessName(
+      int pid, String processName) {
     ActivityManager.RunningAppProcessInfo fakeProcessInfoList = new RunningAppProcessInfo();
     fakeProcessInfoList.pid = pid;
-    fakeProcessInfoList.processName = "fakeProcessName";
+    fakeProcessInfoList.processName = processName;
 
     List<RunningAppProcessInfo> processInfoList = new ArrayList<>();
     processInfoList.add(fakeProcessInfoList);
