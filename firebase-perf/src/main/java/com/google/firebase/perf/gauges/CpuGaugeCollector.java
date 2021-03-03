@@ -85,10 +85,10 @@ public class CpuGaugeCollector {
   public final ConcurrentLinkedQueue<CpuMetricReading> cpuMetricReadings =
       new ConcurrentLinkedQueue<>();
 
-  @Nullable private ScheduledFuture cpuMetricCollectorJob = null;
   private final ScheduledExecutorService cpuMetricCollectorExecutor;
   private final long clockTicksPerSecond;
   private final String procFileName;
+  @Nullable private ScheduledFuture cpuMetricCollectorJob = null;
   private long cpuMetricCollectionRateMs = UNSET_CPU_METRIC_COLLECTION_RATE;
 
   // TODO: Remove the private constructor.
