@@ -50,13 +50,14 @@ class GaugeMetadataManager {
 
   @Inject
   GaugeMetadataManager(
-      Runtime runtime, Context applicationContext, ActivityManager activityManager) {
+      Runtime runtime,
+      Context applicationContext,
+      ActivityManager activityManager,
+      MemoryInfo memoryInfo) {
+    this.runtime = runtime;
     this.applicationContext = applicationContext;
     this.activityManager = activityManager;
-    this.runtime = runtime;
-
-    memoryInfo = new ActivityManager.MemoryInfo();
-    activityManager.getMemoryInfo(memoryInfo);
+    this.memoryInfo = memoryInfo;
 
     // Assign the current process name here to avoid iterating through all the running processes
     // each time getCurrentProcessName() is called.

@@ -81,7 +81,8 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
             new GaugeMetadataManager(
                 Runtime.getRuntime(),
                 RuntimeEnvironment.application,
-                (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE)));
+                (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE),
+                new ActivityManager.MemoryInfo()));
     fakeCpuGaugeCollector = spy(CpuGaugeCollector.getInstance());
     fakeMemoryGaugeCollector = spy(MemoryGaugeCollector.getInstance());
 

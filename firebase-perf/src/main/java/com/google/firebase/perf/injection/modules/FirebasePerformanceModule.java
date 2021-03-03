@@ -57,7 +57,7 @@ public class FirebasePerformanceModule {
   }
 
   @Provides
-  Context providesContext() {
+  Context providesApplicationContext() {
     return firebaseApp.getApplicationContext();
   }
 

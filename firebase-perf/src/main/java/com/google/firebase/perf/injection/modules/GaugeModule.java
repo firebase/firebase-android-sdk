@@ -15,6 +15,7 @@
 package com.google.firebase.perf.injection.modules;
 
 import android.app.ActivityManager;
+import android.app.ActivityManager.MemoryInfo;
 import android.content.Context;
 import dagger.Module;
 import dagger.Provides;
@@ -35,5 +36,13 @@ public class GaugeModule {
   @Provides
   ActivityManager providesActivityManager(Context applicationContext) {
     return (ActivityManager) applicationContext.getSystemService(Context.ACTIVITY_SERVICE);
+  }
+
+  @Provides
+  MemoryInfo providesMemoryInfo(ActivityManager activityManager) {
+    MemoryInfo memoryInfo = new ActivityManager.MemoryInfo();
+    activityManager.getMemoryInfo(memoryInfo);
+
+    return memoryInfo;
   }
 }

@@ -102,11 +102,15 @@ public class GaugeManager {
   public void setApplicationContext(Context applicationContext) {
     // TODO(rkhinda): Eventually we would want GaugeMetadataManager to be injected via the
     //  constructor. Below is just an intermediate state.
+
+    ActivityManager activityManager =
+        (ActivityManager) applicationContext.getSystemService(Context.ACTIVITY_SERVICE);
+    ActivityManager.MemoryInfo memoryInfo = new ActivityManager.MemoryInfo();
+    activityManager.getMemoryInfo(memoryInfo);
+
     this.gaugeMetadataManager =
-        GaugeMetadataManager_Factory.newInstance(
-            Runtime.getRuntime(),
-            applicationContext,
-            (ActivityManager) applicationContext.getSystemService(Context.ACTIVITY_SERVICE));
+        new GaugeMetadataManager(
+            Runtime.getRuntime(), applicationContext, activityManager, memoryInfo);
   }
 
   /** Returns the singleton instance of this class. */
