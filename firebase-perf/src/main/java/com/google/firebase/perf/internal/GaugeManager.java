@@ -14,6 +14,7 @@
 
 package com.google.firebase.perf.internal;
 
+import android.app.ActivityManager;
 import android.content.Context;
 import androidx.annotation.Keep;
 import androidx.annotation.Nullable;
@@ -98,8 +99,18 @@ public class GaugeManager {
   }
 
   /** Sets the application context once it is available. */
-  public void setApplicationContext(Context context) {
-    this.gaugeMetadataManager = new GaugeMetadataManager(context);
+  public void setApplicationContext(Context applicationContext) {
+    // TODO(rkhinda): Eventually we would want GaugeMetadataManager to be injected via the
+    //  constructor. Below is just an intermediate state.
+
+    ActivityManager activityManager =
+        (ActivityManager) applicationContext.getSystemService(Context.ACTIVITY_SERVICE);
+    ActivityManager.MemoryInfo memoryInfo = new ActivityManager.MemoryInfo();
+    activityManager.getMemoryInfo(memoryInfo);
+
+    this.gaugeMetadataManager =
+        new GaugeMetadataManager(
+            Runtime.getRuntime(), applicationContext, activityManager, memoryInfo);
   }
 
   /** Returns the singleton instance of this class. */

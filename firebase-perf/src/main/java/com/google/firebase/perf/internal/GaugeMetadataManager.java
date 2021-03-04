@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.inject.Inject;
 
 /**
  * The {@code GaugeMetadataManager} class is responsible for collecting {@link GaugeMetadata}
@@ -40,24 +41,23 @@ class GaugeMetadataManager {
 
   private static final AndroidLogger logger = AndroidLogger.getInstance();
 
+  private final Context applicationContext;
   private final Runtime runtime;
   private final ActivityManager activityManager;
+
   private final MemoryInfo memoryInfo;
   private final String currentProcessName;
-  private final Context applicationContext;
 
-  GaugeMetadataManager(Context applicationContext) {
-    this(Runtime.getRuntime(), applicationContext);
-  }
-
-  @VisibleForTesting
-  GaugeMetadataManager(Runtime runtime, Context applicationContext) {
+  @Inject
+  GaugeMetadataManager(
+      Runtime runtime,
+      Context applicationContext,
+      ActivityManager activityManager,
+      MemoryInfo memoryInfo) {
     this.runtime = runtime;
     this.applicationContext = applicationContext;
-    this.activityManager =
-        (ActivityManager) applicationContext.getSystemService(Context.ACTIVITY_SERVICE);
-    memoryInfo = new ActivityManager.MemoryInfo();
-    activityManager.getMemoryInfo(memoryInfo);
+    this.activityManager = activityManager;
+    this.memoryInfo = memoryInfo;
 
     // Assign the current process name here to avoid iterating through all the running processes
     // each time getCurrentProcessName() is called.

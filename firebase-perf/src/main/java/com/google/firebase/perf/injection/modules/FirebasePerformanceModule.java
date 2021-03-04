@@ -14,6 +14,7 @@
 
 package com.google.firebase.perf.injection.modules;
 
+import android.content.Context;
 import androidx.annotation.NonNull;
 import com.google.android.datatransport.TransportFactory;
 import com.google.firebase.FirebaseApp;
@@ -53,6 +54,11 @@ public class FirebasePerformanceModule {
   @Provides
   FirebaseApp providesFirebaseApp() {
     return firebaseApp;
+  }
+
+  @Provides
+  Context providesApplicationContext() {
+    return firebaseApp.getApplicationContext();
   }
 
   @Provides
