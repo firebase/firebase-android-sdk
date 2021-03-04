@@ -16,8 +16,8 @@ package com.google.firebase.perf.injection.components;
 
 import androidx.annotation.NonNull;
 import com.google.firebase.perf.FirebasePerformance;
+import com.google.firebase.perf.gauges.GaugeModule;
 import com.google.firebase.perf.injection.modules.FirebasePerformanceModule;
-import com.google.firebase.perf.injection.modules.GaugeModule;
 import dagger.Component;
 import javax.inject.Singleton;
 

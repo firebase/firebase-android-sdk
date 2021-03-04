@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.perf.injection.modules;
+package com.google.firebase.perf.gauges;
 
 import static android.system.Os.sysconf;
 
