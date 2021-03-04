@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.perf.injection.modules;
+package com.google.firebase.perf.gauges;
 
 import android.app.ActivityManager;
 import android.app.ActivityManager.MemoryInfo;
@@ -21,7 +21,7 @@ import dagger.Module;
 import dagger.Provides;
 
 /**
- * Provider for {@link com.google.firebase.perf.internal.GaugeManager} and related classes.
+ * Provider for {@link com.google.firebase.perf.gauges}.
  *
  * @hide
  */
