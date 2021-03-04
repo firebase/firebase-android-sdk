@@ -16,6 +16,9 @@ package com.google.firebase.perf.gauges;
 
 import static android.system.Os.sysconf;
 
+import android.app.ActivityManager;
+import android.app.ActivityManager.MemoryInfo;
+import android.content.Context;
 import android.os.Build;
 import android.system.OsConstants;
 import com.google.firebase.perf.injection.qualifiers.ClockTicksPerSecond;
@@ -24,11 +27,6 @@ import dagger.Module;
 import dagger.Provides;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import android.app.ActivityManager;
-import android.app.ActivityManager.MemoryInfo;
-import android.content.Context;
-import dagger.Module;
-import dagger.Provides;
 
 /**
  * Provider for {@link com.google.firebase.perf.gauges}.
