@@ -12,24 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.perf.injection.components;
+package com.google.firebase.perf.injection.qualifiers;
 
-import androidx.annotation.NonNull;
-import com.google.firebase.perf.FirebasePerformance;
-import com.google.firebase.perf.gauges.GaugeModule;
-import com.google.firebase.perf.injection.modules.FirebasePerformanceModule;
-import dagger.Component;
-import javax.inject.Singleton;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+
+import java.lang.annotation.Documented;
+import java.lang.annotation.Retention;
+import javax.inject.Qualifier;
 
 /**
- * Dagger component to create FirebasePerformanceComponent Objects.
+ * Dagger binding qualifier for Proc file name.
  *
  * @hide
  */
-@Singleton
-@Component(modules = {FirebasePerformanceModule.class, GaugeModule.class})
-public interface FirebasePerformanceComponent {
-
-  @NonNull
-  FirebasePerformance getFirebasePerformance();
-}
+@Documented
+@Retention(RUNTIME)
+@Qualifier
+public @interface ProcFileName {}

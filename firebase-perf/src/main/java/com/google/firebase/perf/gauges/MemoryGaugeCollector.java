@@ -16,7 +16,6 @@ package com.google.firebase.perf.gauges;
 
 import android.annotation.SuppressLint;
 import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
 import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.util.StorageUnit;
 import com.google.firebase.perf.util.Timer;
@@ -28,6 +27,8 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 
 /**
  * This class collects Memory Gauge metrics and queues them up on its ConcurrentLinkedQueue. It is
@@ -39,24 +40,23 @@ import java.util.concurrent.TimeUnit;
  * @hide
  */
 /** @hide */
+@Singleton
 public class MemoryGaugeCollector {
 
+  public static final long INVALID_MEMORY_COLLECTION_FREQUENCY = -1;
   private static final AndroidLogger logger = AndroidLogger.getInstance();
 
   @SuppressLint("StaticFieldLeak")
   private static final MemoryGaugeCollector sharedInstance = new MemoryGaugeCollector();
 
-  public static final long INVALID_MEMORY_COLLECTION_FREQUENCY = -1;
-
   // This value indicates that we do not know the frequency at which to collect Memory Metrics. If
   // this value is set for the memoryMetricCollectionRateMs, we do not collect Memory Metrics.
   private static final int UNSET_MEMORY_METRIC_COLLECTION_RATE = -1;
 
-  private final ScheduledExecutorService memoryMetricCollectorExecutor;
-
   /* This is populated by MemoryGaugeCollector but it's drained by GaugeManager.*/
   public final ConcurrentLinkedQueue<AndroidMemoryReading> memoryMetricReadings;
 
+  private final ScheduledExecutorService memoryMetricCollectorExecutor;
   private final Runtime runtime;
 
   @Nullable private ScheduledFuture memoryMetricCollectorJob = null;
@@ -67,7 +67,7 @@ public class MemoryGaugeCollector {
     this(Executors.newSingleThreadScheduledExecutor(), Runtime.getRuntime());
   }
 
-  @VisibleForTesting
+  @Inject
   MemoryGaugeCollector(ScheduledExecutorService memoryMetricCollectorExecutor, Runtime runtime) {
     this.memoryMetricCollectorExecutor = memoryMetricCollectorExecutor;
     memoryMetricReadings = new ConcurrentLinkedQueue<>();

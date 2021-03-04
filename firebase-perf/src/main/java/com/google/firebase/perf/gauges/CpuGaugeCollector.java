@@ -20,7 +20,8 @@ import android.os.Build.VERSION;
 import android.os.Build.VERSION_CODES;
 import android.system.OsConstants;
 import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
+import com.google.firebase.perf.injection.qualifiers.ClockTicksPerSecond;
+import com.google.firebase.perf.injection.qualifiers.ProcFileName;
 import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.perf.v1.CpuMetricReading;
@@ -33,6 +34,8 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 
 /**
  * This class collects CPU Gauge metrics and queues them up on its ConcurrentLinkedQueue. It is the
@@ -44,11 +47,12 @@ import java.util.concurrent.TimeUnit;
  * @hide
  */
 /** @hide */
+@Singleton
 public class CpuGaugeCollector {
 
-  private static final AndroidLogger logger = AndroidLogger.getInstance();
-
   public static final long INVALID_CPU_COLLECTION_FREQUENCY = -1;
+
+  private static final AndroidLogger logger = AndroidLogger.getInstance();
 
   // The /proc/[pid]/stat file gives us values in clock ticks. These have to be converted to
   // seconds. To do that, we currently use an Android 20+ API to get seconds per clock tick, and for
@@ -74,39 +78,41 @@ public class CpuGaugeCollector {
   // This utility isn't provided by TimeUnits.SECONDS.toMicros() - it only accepts longs.
   private static final long MICROSECONDS_PER_SECOND = TimeUnit.SECONDS.toMicros(1);
 
+  // TODO: Remove sharedInstance.
   @Nullable private static CpuGaugeCollector sharedInstance = null;
-  @Nullable private ScheduledFuture cpuMetricCollectorJob = null;
-
-  private final ScheduledExecutorService cpuMetricCollectorExecutor;
-  private long cpuMetricCollectionRateMs = UNSET_CPU_METRIC_COLLECTION_RATE;
-  private final long clockTicksPerSecond;
-  private final String procFileName;
 
   /* This is populated by CpuGaugeCollector but it's drained by GaugeManager.*/
-  public final ConcurrentLinkedQueue<CpuMetricReading> cpuMetricReadings;
+  public final ConcurrentLinkedQueue<CpuMetricReading> cpuMetricReadings =
+      new ConcurrentLinkedQueue<>();
 
+  private final ScheduledExecutorService cpuMetricCollectorExecutor;
+  private final long clockTicksPerSecond;
+  private final String procFileName;
+  @Nullable private ScheduledFuture cpuMetricCollectorJob = null;
+  private long cpuMetricCollectionRateMs = UNSET_CPU_METRIC_COLLECTION_RATE;
+
+  // TODO: Remove the private constructor.
   private CpuGaugeCollector() {
-    cpuMetricReadings = new ConcurrentLinkedQueue<>();
     cpuMetricCollectorExecutor = Executors.newSingleThreadScheduledExecutor();
 
     int pid = android.os.Process.myPid();
-    procFileName = "/proc/" + Integer.toString(pid) + "/stat";
+    procFileName = String.format("/proc/%d/stat", pid);
 
     clockTicksPerSecond = getClockTicksPerSecond();
   }
 
-  @VisibleForTesting
+  @Inject
   CpuGaugeCollector(
       ScheduledExecutorService cpuMetricCollectorExecutor,
-      String fakeProcFileName,
-      long clockTicksPerSecond) {
-    cpuMetricReadings = new ConcurrentLinkedQueue<>();
+      @ProcFileName String procFileName,
+      @ClockTicksPerSecond long clockTicksPerSecond) {
     this.cpuMetricCollectorExecutor = cpuMetricCollectorExecutor;
-    procFileName = fakeProcFileName;
+    this.procFileName = procFileName;
     this.clockTicksPerSecond = clockTicksPerSecond;
   }
 
   /** Returns the singleton instance of this class. */
+  // TODO: Remove getInstance() and make its caller DI compatible.
   public static CpuGaugeCollector getInstance() {
     if (sharedInstance == null) {
       sharedInstance = new CpuGaugeCollector();
