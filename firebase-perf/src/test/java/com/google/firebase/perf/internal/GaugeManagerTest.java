@@ -26,6 +26,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import android.app.ActivityManager;
+import android.content.Context;
 import com.google.firebase.perf.FirebasePerformanceTestBase;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.gauges.CpuGaugeCollector;
@@ -75,7 +77,12 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     mockTransportManager = mock(TransportManager.class);
     mockConfigResolver = mock(ConfigResolver.class);
     fakeGaugeMetadataManager =
-        spy(new GaugeMetadataManager(Runtime.getRuntime(), RuntimeEnvironment.application));
+        spy(
+            new GaugeMetadataManager(
+                Runtime.getRuntime(),
+                RuntimeEnvironment.application,
+                (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE),
+                new ActivityManager.MemoryInfo()));
     fakeCpuGaugeCollector = spy(CpuGaugeCollector.getInstance());
     fakeMemoryGaugeCollector = spy(MemoryGaugeCollector.getInstance());
 

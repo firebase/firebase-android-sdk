@@ -29,6 +29,7 @@ import javax.inject.Singleton;
 @Singleton
 @Component(modules = {FirebasePerformanceModule.class, GaugeModule.class})
 public interface FirebasePerformanceComponent {
+
   @NonNull
   FirebasePerformance getFirebasePerformance();
 }

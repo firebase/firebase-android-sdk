@@ -24,6 +24,11 @@ import dagger.Module;
 import dagger.Provides;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import android.app.ActivityManager;
+import android.app.ActivityManager.MemoryInfo;
+import android.content.Context;
+import dagger.Module;
+import dagger.Provides;
 
 /**
  * Provider for {@link com.google.firebase.perf.gauges}.
@@ -59,8 +64,20 @@ public class GaugeModule {
     }
   }
 
-  @Provides
   Runtime providesRuntime() {
     return Runtime.getRuntime();
+  }
+
+  @Provides
+  ActivityManager providesActivityManager(Context applicationContext) {
+    return (ActivityManager) applicationContext.getSystemService(Context.ACTIVITY_SERVICE);
+  }
+
+  @Provides
+  MemoryInfo providesMemoryInfo(ActivityManager activityManager) {
+    MemoryInfo memoryInfo = new ActivityManager.MemoryInfo();
+    activityManager.getMemoryInfo(memoryInfo);
+
+    return memoryInfo;
   }
 }
