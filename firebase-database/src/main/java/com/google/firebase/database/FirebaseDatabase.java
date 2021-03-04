@@ -19,6 +19,7 @@ import static com.google.android.gms.common.internal.Preconditions.checkNotNull;
 import android.text.TextUtils;
 import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.database.annotations.Nullable;
@@ -27,9 +28,11 @@ import com.google.firebase.database.core.Path;
 import com.google.firebase.database.core.Repo;
 import com.google.firebase.database.core.RepoInfo;
 import com.google.firebase.database.core.RepoManager;
+import com.google.firebase.database.core.Transaction;
 import com.google.firebase.database.core.utilities.ParsedUrl;
 import com.google.firebase.database.core.utilities.Utilities;
 import com.google.firebase.database.core.utilities.Validation;
+import com.google.firebase.database.utilities.Function;
 import com.google.firebase.emulators.EmulatedServiceSettings;
 
 /**
@@ -279,16 +282,14 @@ public class FirebaseDatabase {
   @Nullable
   public <TResult> Task<TResult> runTransaction(
       @NonNull DatabaseTransaction.Function<TResult> updateFunction) {
-    this.repo.scheduleNow(
-        new Runnable() {
-          @Override
-          public void run() {
-            //
-            // Tasks.call(com.google.firebase.database.core.Transaction.getDefaultExecutor(),
-            // updateFunction.apply());
-          }
-        });
-    return null;
+
+    Function<Transaction, Task<TResult>> wrapped =
+      internalTransaction ->
+         Tasks.call(com.google.firebase.database.core.Transaction.getDefaultExecutor(),
+                 () -> updateFunction.apply(new DatabaseTransaction.DatabaseTransactionContext(
+                         internalTransaction, FirebaseDatabase.this)));
+
+    return repo.runTransaction(wrapped);
   }
 
   /**

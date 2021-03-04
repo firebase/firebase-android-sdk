@@ -52,6 +52,8 @@ import com.google.firebase.database.snapshot.IndexedNode;
 import com.google.firebase.database.snapshot.Node;
 import com.google.firebase.database.snapshot.NodeUtilities;
 import com.google.firebase.database.snapshot.RangeMerge;
+import com.google.firebase.database.utilities.Function;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -1004,6 +1006,10 @@ public class Repo implements PersistentConnection.Delegate {
       this.postEvents(events);
       sendAllReadyTransactions();
     }
+  }
+
+  public <TResult> Task<TResult> runTransaction(Function<com.google.firebase.database.core.Transaction, Task<TResult>> updateFunction) {
+    return null;
   }
 
   private Node getLatestState(Path path) {
