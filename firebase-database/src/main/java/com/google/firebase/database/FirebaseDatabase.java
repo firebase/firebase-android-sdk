@@ -18,7 +18,6 @@ import static com.google.android.gms.common.internal.Preconditions.checkNotNull;
 
 import android.text.TextUtils;
 import androidx.annotation.NonNull;
-
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
@@ -272,13 +271,23 @@ public class FirebaseDatabase {
 
   /**
    * Run a transaction capable of reading, and then mutating multiple locations.
+   *
    * @param updateFunction
    * @param <TResult>
    * @return
    */
   @Nullable
   public <TResult> Task<TResult> runTransaction(
-          @NonNull DatabaseTransaction.Function<TResult> updateFunction) {
+      @NonNull DatabaseTransaction.Function<TResult> updateFunction) {
+    this.repo.scheduleNow(
+        new Runnable() {
+          @Override
+          public void run() {
+            //
+            // Tasks.call(com.google.firebase.database.core.Transaction.getDefaultExecutor(),
+            // updateFunction.apply());
+          }
+        });
     return null;
   }
 

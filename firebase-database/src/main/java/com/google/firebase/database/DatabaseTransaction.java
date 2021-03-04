@@ -15,59 +15,56 @@
 package com.google.firebase.database;
 
 import androidx.annotation.NonNull;
-
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.database.annotations.Nullable;
-
 import java.util.concurrent.ExecutionException;
 
 public class DatabaseTransaction {
 
-    public static class DatabaseTransactionContext {
+  public static class DatabaseTransactionContext {
 
-        private final com.google.firebase.database.core.Transaction transaction;
-        private final FirebaseDatabase database;
+    private final com.google.firebase.database.core.Transaction transaction;
+    private final FirebaseDatabase database;
 
-        DatabaseTransactionContext(com.google.firebase.database.core.Transaction transaction, FirebaseDatabase database) {
-            this.transaction = transaction;
-            this.database = database;
-        }
-
-        @Nullable
-        public DataSnapshot get(@NonNull Query query) throws FirebaseDatabaseException {
-            try {
-                return Tasks.await(transaction.get(query));
-            } catch (ExecutionException e) {
-                if (e.getCause() instanceof FirebaseDatabaseException) {
-                    throw ((FirebaseDatabaseException) e.getCause());
-                }
-                throw new RuntimeException((e.getCause()));
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        @Nullable
-        public Transaction set(@NonNull DatabaseReference ref, @NonNull Object data) {
-            return null;
-        };
-
-        @Nullable
-        public Transaction update(@NonNull DatabaseReference ref, @NonNull Object data) {
-            return null;
-        };
-
-        @Nullable
-        public Transaction remove(@NonNull DatabaseReference ref) {
-            return null;
-        };
-
+    DatabaseTransactionContext(
+        com.google.firebase.database.core.Transaction transaction, FirebaseDatabase database) {
+      this.transaction = transaction;
+      this.database = database;
     }
 
-    public interface Function<T> {
-
-        @Nullable
-        T apply(@NonNull DatabaseTransactionContext transaction) throws FirebaseDatabaseException;
-
+    @Nullable
+    public DataSnapshot get(@NonNull Query query) throws FirebaseDatabaseException {
+      try {
+        return Tasks.await(transaction.get(query));
+      } catch (ExecutionException e) {
+        if (e.getCause() instanceof FirebaseDatabaseException) {
+          throw ((FirebaseDatabaseException) e.getCause());
+        }
+        throw new RuntimeException((e.getCause()));
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      }
     }
+
+    @Nullable
+    public Transaction set(@NonNull DatabaseReference ref, @NonNull Object data) {
+      return null;
+    };
+
+    @Nullable
+    public Transaction update(@NonNull DatabaseReference ref, @NonNull Object data) {
+      return null;
+    };
+
+    @Nullable
+    public Transaction remove(@NonNull DatabaseReference ref) {
+      return null;
+    };
+  }
+
+  public interface Function<T> {
+
+    @Nullable
+    T apply(@NonNull DatabaseTransactionContext transaction) throws FirebaseDatabaseException;
+  }
 }

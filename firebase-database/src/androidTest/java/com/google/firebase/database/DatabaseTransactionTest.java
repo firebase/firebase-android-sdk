@@ -16,36 +16,35 @@ package com.google.firebase.database;
 
 import androidx.annotation.NonNull;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
-
+import java.util.concurrent.Semaphore;
 import org.junit.After;
 import org.junit.Test;
-
-import java.util.concurrent.Semaphore;
 
 @org.junit.runner.RunWith(AndroidJUnit4.class)
 public class DatabaseTransactionTest {
 
-    @After
-    public void tearDown() {
-        IntegrationTestHelpers.failOnFirstUncaughtException();
-    }
+  @After
+  public void tearDown() {
+    IntegrationTestHelpers.failOnFirstUncaughtException();
+  }
 
-    @Test
-    public void testNoOpTransactionRuns() throws InterruptedException {
-        DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
-        FirebaseDatabase db = ref.getDatabase();
+  @Test
+  public void testNoOpTransactionRuns() throws InterruptedException {
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
+    FirebaseDatabase db = ref.getDatabase();
 
-        Semaphore semaphore = new Semaphore(0);
+    Semaphore semaphore = new Semaphore(0);
 
-        db.runTransaction(new DatabaseTransaction.Function<Void>() {
-            @Override
-            public Void apply(@NonNull DatabaseTransaction.DatabaseTransactionContext transaction) throws FirebaseDatabaseException {
-                semaphore.release();
-                return null;
-            }
+    db.runTransaction(
+        new DatabaseTransaction.Function<Void>() {
+          @Override
+          public Void apply(@NonNull DatabaseTransaction.DatabaseTransactionContext transaction)
+              throws FirebaseDatabaseException {
+            semaphore.release();
+            return null;
+          }
         });
 
-        IntegrationTestHelpers.waitFor(semaphore);
-    }
-
+    IntegrationTestHelpers.waitFor(semaphore);
+  }
 }

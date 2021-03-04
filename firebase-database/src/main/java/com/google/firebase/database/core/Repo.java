@@ -17,6 +17,7 @@ package com.google.firebase.database.core;
 import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
 
 import androidx.annotation.NonNull;
+import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -57,6 +58,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.ExecutorService;
 
 public class Repo implements PersistentConnection.Delegate {
 
@@ -494,14 +496,48 @@ public class Repo implements PersistentConnection.Delegate {
         new Runnable() {
           @Override
           public void run() {
+            ExecutorService defaultExecutor =
+                ((DefaultRunLoop) ctx.getRunLoop()).getExecutorService();
+            getNode(query)
+                .continueWith(
+                    defaultExecutor,
+                    new Continuation<Node, DataSnapshot>() {
+                      @Override
+                      public DataSnapshot then(@NonNull Task<Node> task) throws Exception {
+                        return InternalHelpers.createDataSnapshot(
+                            query.getRef(),
+                            IndexedNode.from(task.getResult(), query.getSpec().getIndex()));
+                      }
+                    })
+                .addOnCompleteListener(
+                    defaultExecutor,
+                    new OnCompleteListener<DataSnapshot>() {
+                      @Override
+                      public void onComplete(@NonNull Task<DataSnapshot> task) {
+                        if (task.isSuccessful()) {
+                          source.setResult(task.getResult());
+                        } else {
+                          source.setException(task.getException());
+                        }
+                      }
+                    });
+          }
+        });
+    return source.getTask();
+  }
+
+  public Task<Node> getNode(Query query) {
+    TaskCompletionSource<Node> source = new TaskCompletionSource<>();
+    this.scheduleNow(
+        new Runnable() {
+          @Override
+          public void run() {
             // Always check active-listener in-memory caches first. These are always at least as
             // up to date as the persistence cache.
             Node cached =
                 serverSyncTree.calcCompleteEventCacheFromRoot(query.getPath(), new ArrayList<>());
             if (!cached.isEmpty()) {
-              source.setResult(
-                  InternalHelpers.createDataSnapshot(
-                      query.getRef(), IndexedNode.from(cached, query.getSpec().getIndex())));
+              source.setResult(cached);
               return;
             }
             serverSyncTree.setQueryActive(query.getSpec());
@@ -518,8 +554,9 @@ public class Repo implements PersistentConnection.Delegate {
                                   + query.getPath()
                                   + " falling back to disk cache after error: "
                                   + task.getException().getMessage());
-                          DataSnapshot cached = serverSyncTree.persistenceServerCache(query);
-                          if (!cached.exists()) {
+                          Node cached = serverSyncTree.persistenceServerCacheNode(query).getNode();
+                          // TODO(wyszynski): is it an error if this empty?
+                          if (cached.isEmpty()) {
                             source.setException(task.getException());
                           } else {
                             source.setResult(cached);
@@ -528,10 +565,7 @@ public class Repo implements PersistentConnection.Delegate {
                           Node serverNode = NodeUtilities.NodeFromJSON(task.getResult());
                           postEvents(
                               serverSyncTree.applyServerOverwrite(query.getPath(), serverNode));
-                          source.setResult(
-                              InternalHelpers.createDataSnapshot(
-                                  query.getRef(),
-                                  IndexedNode.from(serverNode, query.getSpec().getIndex())));
+                          source.setResult(serverNode);
                         }
                         serverSyncTree.setQueryInactive(query.getSpec());
                       }

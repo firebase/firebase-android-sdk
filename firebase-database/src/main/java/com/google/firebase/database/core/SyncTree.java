@@ -481,7 +481,11 @@ public class SyncTree {
 
   public DataSnapshot persistenceServerCache(Query query) {
     return InternalHelpers.createDataSnapshot(
-        query.getRef(), persistenceManager.serverCache(query.getSpec()).getIndexedNode());
+        query.getRef(), persistenceServerCacheNode(query).getIndexedNode());
+  }
+
+  public CacheNode persistenceServerCacheNode(Query query) {
+    return persistenceManager.serverCache(query.getSpec());
   }
 
   /** Add an event callback for the specified query. */

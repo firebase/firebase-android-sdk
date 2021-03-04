@@ -14,27 +14,28 @@
 
 package com.google.firebase.database;
 
-import androidx.annotation.NonNull;
-
-import com.google.firebase.FirebaseException;
-
 import static com.google.firebase.components.Preconditions.checkNotNull;
+
+import androidx.annotation.NonNull;
+import com.google.firebase.FirebaseException;
 
 public class FirebaseDatabaseException extends FirebaseException {
 
-    public enum Code {
-        Ok(0);
+  public enum Code {
+    Ok(0);
 
-        private final int value;
+    private final int value;
 
-        Code(int value) {this.value = value;}
+    Code(int value) {
+      this.value = value;
     }
+  }
 
-    private final Code code;
+  private final Code code;
 
-    public FirebaseDatabaseException(@NonNull String detailMessage, @NonNull Code code) {
-        super(detailMessage);
-        checkNotNull(detailMessage, "Provided message must not be null.");
-        this.code = checkNotNull(code, "Provided code must not be null.");
-    }
+  public FirebaseDatabaseException(@NonNull String detailMessage, @NonNull Code code) {
+    super(detailMessage);
+    checkNotNull(detailMessage, "Provided message must not be null.");
+    this.code = checkNotNull(code, "Provided code must not be null.");
+  }
 }
