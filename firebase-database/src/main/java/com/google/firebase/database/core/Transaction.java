@@ -17,6 +17,7 @@ package com.google.firebase.database.core;
 import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.InternalHelpers;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.core.utilities.Pair;
@@ -36,7 +37,9 @@ public class Transaction {
 
   private Repo repo;
 
-  private List<Pair<Query, String>> queryHashes;
+  private List<Pair<Query, String>> queries;
+
+  private List<Pair<DatabaseReference, Object>> writes;
 
   private static final Executor defaultExecutor = createDefaultExecutor();
 
@@ -74,7 +77,16 @@ public class Transaction {
             });
   }
 
+  public void set(@NonNull DatabaseReference ref, @NonNull Object data) {
+    writes.add(new Pair(ref, data));
+  }
+
   public void recordQueryResult(Query query, Node node) {
-    queryHashes.add(new Pair(query, node.getHash()));
+    queries.add(new Pair(query, node.getHash()));
+  }
+
+  public Task<Void> commit() {
+    // TODO(wyszynski): validate read set hasn't been modified, do the multipath update.
+    return null;
   }
 }

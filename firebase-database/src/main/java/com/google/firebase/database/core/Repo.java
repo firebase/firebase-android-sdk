@@ -27,6 +27,7 @@ import com.google.firebase.database.DatabaseException;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.InternalHelpers;
+import com.google.firebase.database.Logger;
 import com.google.firebase.database.MutableData;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.Transaction;
@@ -53,13 +54,13 @@ import com.google.firebase.database.snapshot.Node;
 import com.google.firebase.database.snapshot.NodeUtilities;
 import com.google.firebase.database.snapshot.RangeMerge;
 import com.google.firebase.database.utilities.Function;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 
 public class Repo implements PersistentConnection.Delegate {
@@ -469,6 +470,18 @@ public class Repo implements PersistentConnection.Delegate {
 
     Path affectedPath = abortTransactions(path, DatabaseError.OVERRIDDEN_BY_SET);
     this.rerunTransactions(affectedPath);
+  }
+
+  Executor getDefaultExecutor() {
+    return ((DefaultRunLoop) getDefaultRunLoop()).getExecutorService();
+  }
+
+  RunLoop getDefaultRunLoop() {
+    return ((DefaultRunLoop) ctx.getRunLoop());
+  }
+
+  Logger getLogger() {
+    return ctx.getLogger();
   }
 
   /**
@@ -896,6 +909,10 @@ public class Repo implements PersistentConnection.Delegate {
     }
   }
 
+  public com.google.firebase.database.core.Transaction createTransaction() {
+    return new com.google.firebase.database.core.Transaction(this);
+  }
+
   public void startTransaction(Path path, final Transaction.Handler handler, boolean applyLocally) {
     if (operationLogger.logsDebug()) {
       operationLogger.debug("transaction: " + path);
@@ -932,6 +949,11 @@ public class Repo implements PersistentConnection.Delegate {
         };
     addEventCallback(new ValueEventRegistration(this, listener, watchRef.getSpec()));
 
+    // TransactionData is a descriptor for a single transaction. It contains:
+    // 1. Input and output snapshots.
+    // 2. A reference to the transaction handler.
+    // 3. The state of the transaction.
+    // 4. An ordering key.
     TransactionData transaction =
         new TransactionData(
             path,
@@ -943,12 +965,17 @@ public class Repo implements PersistentConnection.Delegate {
 
     // Run transaction initially.
     Node currentState = this.getLatestState(path);
+
+    // Tells the transaction what the state of the data it's modifying was
+    // when the transaciton first ran.
     transaction.currentInputSnapshot = currentState;
     MutableData mutableCurrent = InternalHelpers.createMutableData(currentState);
 
     DatabaseError error = null;
     Transaction.Result result;
     try {
+      // Runs the user code. Note that for these transactions, we're still on the
+      // Repo run-loop.
       result = handler.doTransaction(mutableCurrent);
       if (result == null) {
         throw new NullPointerException("Transaction returned null as result");
@@ -963,6 +990,9 @@ public class Repo implements PersistentConnection.Delegate {
       transaction.currentOutputSnapshotRaw = null;
       transaction.currentOutputSnapshotResolved = null;
       final DatabaseError innerClassError = error;
+
+      // The transaction completion handler is called with the input
+      // snapshot if the transaction aborts.
       final DataSnapshot snap =
           InternalHelpers.createDataSnapshot(
               watchRef, IndexedNode.from(transaction.currentInputSnapshot));
@@ -974,9 +1004,11 @@ public class Repo implements PersistentConnection.Delegate {
             }
           });
     } else {
+      // The user callback executed successfully.
       // Mark as run and add to our queue.
       transaction.status = TransactionStatus.RUN;
 
+      // Add the transaction node to the appropriate queue.
       Tree<List<TransactionData>> queueNode = transactionQueueTree.subTree(path);
       List<TransactionData> nodeQueue = queueNode.getValue();
       if (nodeQueue == null) {
@@ -987,6 +1019,7 @@ public class Repo implements PersistentConnection.Delegate {
 
       Map<String, Object> serverValues = ServerValues.generateServerValues(serverClock);
       Node newNodeUnresolved = result.getNode();
+
       Node newNode =
           ServerValues.resolveDeferredValueSnapshot(
               newNodeUnresolved, transaction.currentInputSnapshot, serverValues);
@@ -1008,8 +1041,9 @@ public class Repo implements PersistentConnection.Delegate {
     }
   }
 
-  public <TResult> Task<TResult> runTransaction(Function<com.google.firebase.database.core.Transaction, Task<TResult>> updateFunction) {
-    return null;
+  public <TResult> Task<TResult> runTransaction(
+      Function<com.google.firebase.database.core.Transaction, Task<TResult>> updateFunction) {
+    return new TransactionRunner<TResult>(this, transactionLogger, updateFunction).run();
   }
 
   private Node getLatestState(Path path) {

@@ -284,10 +284,13 @@ public class FirebaseDatabase {
       @NonNull DatabaseTransaction.Function<TResult> updateFunction) {
 
     Function<Transaction, Task<TResult>> wrapped =
-      internalTransaction ->
-         Tasks.call(com.google.firebase.database.core.Transaction.getDefaultExecutor(),
-                 () -> updateFunction.apply(new DatabaseTransaction.DatabaseTransactionContext(
-                         internalTransaction, FirebaseDatabase.this)));
+        internalTransaction ->
+            Tasks.call(
+                com.google.firebase.database.core.Transaction.getDefaultExecutor(),
+                () ->
+                    updateFunction.apply(
+                        new DatabaseTransaction.DatabaseTransactionContext(
+                            internalTransaction, FirebaseDatabase.this)));
 
     return repo.runTransaction(wrapped);
   }
