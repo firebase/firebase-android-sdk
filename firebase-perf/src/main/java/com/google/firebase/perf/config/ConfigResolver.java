@@ -45,6 +45,7 @@ import com.google.firebase.perf.util.ImmutableBundle;
 import com.google.firebase.perf.util.Optional;
 import com.google.firebase.perf.util.Utils;
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
 /**
  * Retrieves configuration value from various config storage sources and returns resolved
@@ -54,6 +55,7 @@ import javax.inject.Inject;
  * @hide
  */
 /** @hide */
+@Singleton
 public class ConfigResolver {
 
   private static final AndroidLogger logger = AndroidLogger.getInstance();
@@ -61,7 +63,7 @@ public class ConfigResolver {
 
   // Configuration Storage objects.
   private ImmutableBundle metadataBundle;
-  private RemoteConfigManager remoteConfigManager;
+  @Inject RemoteConfigManager remoteConfigManager;
   private DeviceCacheManager deviceCacheManager;
 
   /**
@@ -76,8 +78,6 @@ public class ConfigResolver {
       @Nullable RemoteConfigManager remoteConfigManager,
       @Nullable ImmutableBundle metadataBundle,
       @Nullable DeviceCacheManager deviceCacheManager) {
-    this.remoteConfigManager =
-        remoteConfigManager == null ? RemoteConfigManager.getInstance() : remoteConfigManager;
     this.metadataBundle = metadataBundle == null ? new ImmutableBundle() : metadataBundle;
     this.deviceCacheManager =
         deviceCacheManager == null ? DeviceCacheManager.getInstance() : deviceCacheManager;
