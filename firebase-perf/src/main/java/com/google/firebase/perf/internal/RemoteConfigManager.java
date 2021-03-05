@@ -21,6 +21,9 @@ import androidx.annotation.Keep;
 import androidx.annotation.Nullable;
 import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.firebase.inject.Provider;
+import com.google.firebase.perf.injection.components.DaggerRemoteConfigManagerComponent;
+import com.google.firebase.perf.injection.components.RemoteConfigManagerComponent;
+import com.google.firebase.perf.injection.modules.RemoteConfigManagerModule;
 import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.util.Optional;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
@@ -50,7 +53,7 @@ public class RemoteConfigManager {
 
   private static final String FIREPERF_FRC_NAMESPACE_NAME = "fireperf";
 
-  private static final RemoteConfigManager sharedInstance = new RemoteConfigManager();
+  private static final RemoteConfigManager sharedInstance = DaggerRemoteConfigManagerComponent.create().getRemoteConfigManager();
   private static final long TIME_AFTER_WHICH_A_FETCH_IS_CONSIDERED_STALE_MS =
       TimeUnit.HOURS.toMillis(12);
 
@@ -64,19 +67,6 @@ public class RemoteConfigManager {
 
   private final ConcurrentHashMap<String, FirebaseRemoteConfigValue> allRcConfigMap;
 
-  private RemoteConfigManager() {
-    this(
-        new ThreadPoolExecutor(
-            /* corePoolSize= */ 0,
-            /* maximumPoolSize= */ 1,
-            /* keepAliveTime= */ 0L,
-            TimeUnit.SECONDS,
-            new LinkedBlockingQueue<Runnable>()),
-        /* firebaseRemoteConfig= */ null // set once FirebaseRemoteConfig is initialized
-        );
-  }
-
-  @VisibleForTesting
   @Inject
   RemoteConfigManager(Executor executor, FirebaseRemoteConfig firebaseRemoteConfig) {
     this.executor = executor;
