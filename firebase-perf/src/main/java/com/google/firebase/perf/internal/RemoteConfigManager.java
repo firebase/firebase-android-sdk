@@ -32,6 +32,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import javax.inject.Inject;
 
 /**
  * Manages retrieving all the remote config keys and values that the SDK needs.
@@ -76,6 +77,7 @@ public class RemoteConfigManager {
   }
 
   @VisibleForTesting
+  @Inject
   RemoteConfigManager(Executor executor, FirebaseRemoteConfig firebaseRemoteConfig) {
     this.executor = executor;
     this.firebaseRemoteConfig = firebaseRemoteConfig;

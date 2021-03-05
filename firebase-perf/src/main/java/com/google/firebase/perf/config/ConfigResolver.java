@@ -44,6 +44,7 @@ import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.util.ImmutableBundle;
 import com.google.firebase.perf.util.Optional;
 import com.google.firebase.perf.util.Utils;
+import javax.inject.Inject;
 
 /**
  * Retrieves configuration value from various config storage sources and returns resolved
@@ -70,7 +71,7 @@ public class ConfigResolver {
    * @param remoteConfigManager the Remote Config values set by Firebase Performance
    * @param metadataBundle a bundle of metadata values set by app developers in the AndroidManifest
    */
-  @VisibleForTesting
+  @Inject
   public ConfigResolver(
       @Nullable RemoteConfigManager remoteConfigManager,
       @Nullable ImmutableBundle metadataBundle,
@@ -82,6 +83,7 @@ public class ConfigResolver {
         deviceCacheManager == null ? DeviceCacheManager.getInstance() : deviceCacheManager;
   }
 
+  // TODO: Remove getInstance() and make its caller DI compatible.
   public static synchronized ConfigResolver getInstance() {
     if (configResolver == null) {
       configResolver = new ConfigResolver(null, null, null);
