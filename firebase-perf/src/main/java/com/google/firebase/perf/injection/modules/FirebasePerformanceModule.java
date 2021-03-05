@@ -25,6 +25,9 @@ import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.internal.GaugeManager;
 import com.google.firebase.perf.internal.RemoteConfigManager;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
+
+import javax.inject.Inject;
+
 import dagger.Module;
 import dagger.Provides;
 
@@ -39,6 +42,8 @@ public class FirebasePerformanceModule {
   private final FirebaseInstallationsApi firebaseInstallations;
   private final Provider<RemoteConfigComponent> remoteConfigComponentProvider;
   private final Provider<TransportFactory> transportFactoryProvider;
+
+  @Inject RemoteConfigManager remoteConfigManager;
 
   public FirebasePerformanceModule(
       @NonNull FirebaseApp firebaseApp,
@@ -78,7 +83,7 @@ public class FirebasePerformanceModule {
 
   @Provides
   RemoteConfigManager providesRemoteConfigManager() {
-    return RemoteConfigManager.getInstance();
+    return remoteConfigManager;
   }
 
   @Provides

@@ -32,6 +32,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import javax.inject.Inject;
 
 /**
  * Manages retrieving all the remote config keys and values that the SDK needs.
@@ -49,7 +50,7 @@ public class RemoteConfigManager {
 
   private static final String FIREPERF_FRC_NAMESPACE_NAME = "fireperf";
 
-  private static final RemoteConfigManager sharedInstance = new RemoteConfigManager();
+//  private static final RemoteConfigManager sharedInstance = new RemoteConfigManager();
   private static final long TIME_AFTER_WHICH_A_FETCH_IS_CONSIDERED_STALE_MS =
       TimeUnit.HOURS.toMillis(12);
 
@@ -63,19 +64,7 @@ public class RemoteConfigManager {
 
   private final ConcurrentHashMap<String, FirebaseRemoteConfigValue> allRcConfigMap;
 
-  private RemoteConfigManager() {
-    this(
-        new ThreadPoolExecutor(
-            /* corePoolSize= */ 0,
-            /* maximumPoolSize= */ 1,
-            /* keepAliveTime= */ 0L,
-            TimeUnit.SECONDS,
-            new LinkedBlockingQueue<Runnable>()),
-        /* firebaseRemoteConfig= */ null // set once FirebaseRemoteConfig is initialized
-        );
-  }
-
-  @VisibleForTesting
+  @Inject
   RemoteConfigManager(Executor executor, FirebaseRemoteConfig firebaseRemoteConfig) {
     this.executor = executor;
     this.firebaseRemoteConfig = firebaseRemoteConfig;
@@ -86,9 +75,9 @@ public class RemoteConfigManager {
   }
 
   /** Gets the singleton instance. */
-  public static RemoteConfigManager getInstance() {
-    return sharedInstance;
-  }
+//  public static RemoteConfigManager getInstance() {
+//    return sharedInstance;
+//  }
 
   /**
    * Sets the {@link Provider} for {@link RemoteConfigComponent} from which we can extract the
