@@ -34,7 +34,6 @@ import com.google.firebase.database.core.utilities.Utilities;
 import com.google.firebase.database.core.utilities.Validation;
 import com.google.firebase.database.utilities.Function;
 import com.google.firebase.emulators.EmulatedServiceSettings;
-
 import java.util.concurrent.Executor;
 
 /**
@@ -284,7 +283,8 @@ public class FirebaseDatabase {
   @Nullable
   public <TResult> Task<TResult> runTransaction(
       @NonNull DatabaseTransaction.Function<TResult> updateFunction) {
-    return runTransaction(updateFunction, com.google.firebase.database.core.Transaction.getDefaultExecutor());
+    return runTransaction(
+        updateFunction, com.google.firebase.database.core.Transaction.getDefaultExecutor());
   }
 
   /**
@@ -296,15 +296,14 @@ public class FirebaseDatabase {
    */
   @Nullable
   public <TResult> Task<TResult> runTransaction(
-          @NonNull DatabaseTransaction.Function<TResult> updateFunction, @NonNull Executor executor) {
+      @NonNull DatabaseTransaction.Function<TResult> updateFunction, @NonNull Executor executor) {
     Function<Transaction, Task<TResult>> wrapped =
-            internalTransaction ->
-                    Tasks.call(
-                            executor,
-                            () ->
-                                    updateFunction.apply(
-                                            new DatabaseTransaction(
-                                                    internalTransaction, FirebaseDatabase.this)));
+        internalTransaction ->
+            Tasks.call(
+                executor,
+                () ->
+                    updateFunction.apply(
+                        new DatabaseTransaction(internalTransaction, FirebaseDatabase.this)));
     return repo.runTransaction(wrapped);
   }
 

@@ -17,7 +17,6 @@ package com.google.firebase.database.core;
 import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
 
 import androidx.annotation.NonNull;
-import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -521,14 +520,19 @@ public class Repo implements PersistentConnection.Delegate {
                       @Override
                       public void onComplete(@NonNull Task<Node> task) {
                         if (task.isSuccessful()) {
-                          source.setResult(InternalHelpers.createDataSnapshot(
+                          source.setResult(
+                              InternalHelpers.createDataSnapshot(
                                   query.getRef(),
                                   IndexedNode.from(task.getResult(), query.getSpec().getIndex())));
                         } else {
                           if (task.getException() != null) {
                             source.setException(task.getException());
                           } else {
-                            source.setException(new FirebaseDatabaseException(String.format("Unknown error for get: %s", query.getSpec().toString()), FirebaseDatabaseException.Code.Unknown));
+                            source.setException(
+                                new FirebaseDatabaseException(
+                                    String.format(
+                                        "Unknown error for get: %s", query.getSpec().toString()),
+                                    FirebaseDatabaseException.Code.Unknown));
                           }
                         }
                       }
@@ -539,57 +543,51 @@ public class Repo implements PersistentConnection.Delegate {
   }
 
   public Task<Node> getNode(Query query) {
-    return getNode(query, -1);
-  }
-
-  public Task<Node> getNode(Query query, long excludeWriteIdsAfter) {
     TaskCompletionSource<Node> source = new TaskCompletionSource<>();
     this.scheduleNow(
-            new Runnable() {
-              @Override
-              public void run() {
-                // Always check active-listener in-memory caches first. These are always at least as
-                // up to date as the persistence cache.
-                Node cached = excludeWriteIdsAfter == -1 ?
-                        serverSyncTree.calcCompleteEventCacheFromRoot(query.getPath(), new ArrayList<>()) :
-                        serverSyncTree.calcCompleteEventCacheFromRoot(query.getPath(), excludeWriteIdsAfter);
-                if (!cached.isEmpty()) {
-                  source.setResult(cached);
-                  return;
-                }
-                serverSyncTree.setQueryActive(query.getSpec());
-                connection
-                        .get(query.getPath().asList(), query.getSpec().getParams().getWireProtocolParams())
-                        .addOnCompleteListener(
-                                ((DefaultRunLoop) ctx.getRunLoop()).getExecutorService(),
-                                new OnCompleteListener<Object>() {
-                                  @Override
-                                  public void onComplete(@NonNull Task<Object> task) {
-                                    if (!task.isSuccessful()) {
-                                      operationLogger.info(
-                                              "get for query "
-                                                      + query.getPath()
-                                                      + " falling back to disk cache after error: "
-                                                      + task.getException().getMessage());
-                                      // TODO(wyszynski): getLatestState
-                                      Node cached = serverSyncTree.persistenceServerCacheNode(query).getNode();
-                                      // TODO(wyszynski): is it an error if this empty?
-                                      if (cached.isEmpty()) {
-                                        source.setException(task.getException());
-                                      } else {
-                                        source.setResult(cached);
-                                      }
-                                    } else {
-                                      Node serverNode = NodeUtilities.NodeFromJSON(task.getResult());
-                                      postEvents(
-                                              serverSyncTree.applyServerOverwrite(query.getPath(), serverNode));
-                                      source.setResult(serverNode);
-                                    }
-                                    serverSyncTree.setQueryInactive(query.getSpec());
-                                  }
-                                });
-              }
-            });
+        new Runnable() {
+          @Override
+          public void run() {
+            // Always check active-listener in-memory caches first. These are always at least as
+            // up to date as the persistence cache.
+            Node cached =
+                serverSyncTree.calcCompleteEventCacheFromRoot(query.getPath(), new ArrayList<>());
+            if (!cached.isEmpty()) {
+              source.setResult(cached);
+              return;
+            }
+            serverSyncTree.setQueryActive(query.getSpec());
+            connection
+                .get(query.getPath().asList(), query.getSpec().getParams().getWireProtocolParams())
+                .addOnCompleteListener(
+                    ((DefaultRunLoop) ctx.getRunLoop()).getExecutorService(),
+                    new OnCompleteListener<Object>() {
+                      @Override
+                      public void onComplete(@NonNull Task<Object> task) {
+                        if (!task.isSuccessful()) {
+                          operationLogger.info(
+                              "get for query "
+                                  + query.getPath()
+                                  + " falling back to disk cache after error: "
+                                  + task.getException().getMessage());
+                          Node cached = serverSyncTree.persistenceServerCacheNode(query).getNode();
+                          // TODO(wyszynski): is it an error if this empty?
+                          if (cached.isEmpty()) {
+                            source.setException(task.getException());
+                          } else {
+                            source.setResult(cached);
+                          }
+                        } else {
+                          Node serverNode = NodeUtilities.NodeFromJSON(task.getResult());
+                          postEvents(
+                              serverSyncTree.applyServerOverwrite(query.getPath(), serverNode));
+                          source.setResult(serverNode);
+                        }
+                        serverSyncTree.setQueryInactive(query.getSpec());
+                      }
+                    });
+          }
+        });
     return source.getTask();
   }
 

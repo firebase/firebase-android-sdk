@@ -71,9 +71,9 @@ public class Transaction {
   public Task<DataSnapshot> get(@NonNull Query query) {
     if (writes.size() != 0) {
       return Tasks.forException(
-              new FirebaseDatabaseException("Firebase Database transactions require all reads to be executed before all writes",
-                      FirebaseDatabaseException.Code.InvalidArgument)
-      );
+          new FirebaseDatabaseException(
+              "Firebase Database transactions require all reads to be executed before all writes",
+              FirebaseDatabaseException.Code.InvalidArgument));
     }
     // Note that query.get runs on the repo's runloop, but we record the results
     // here, in the transaction executor.

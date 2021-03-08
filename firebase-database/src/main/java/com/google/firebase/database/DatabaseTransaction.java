@@ -21,39 +21,37 @@ import java.util.concurrent.ExecutionException;
 
 public class DatabaseTransaction {
 
-    private final com.google.firebase.database.core.Transaction transaction;
-    private final FirebaseDatabase database;
+  private final com.google.firebase.database.core.Transaction transaction;
+  private final FirebaseDatabase database;
 
-    DatabaseTransaction(
-        com.google.firebase.database.core.Transaction transaction, FirebaseDatabase database) {
-      this.transaction = transaction;
-      this.database = database;
-    }
+  DatabaseTransaction(
+      com.google.firebase.database.core.Transaction transaction, FirebaseDatabase database) {
+    this.transaction = transaction;
+    this.database = database;
+  }
 
-    @Nullable
-    public DataSnapshot get(@NonNull Query query) throws FirebaseDatabaseException {
-      try {
-        return Tasks.await(transaction.get(query));
-      } catch (ExecutionException | InterruptedException e) {
-        if (e.getCause() instanceof FirebaseDatabaseException) {
-          throw ((FirebaseDatabaseException) e.getCause());
-        }
-        throw new FirebaseDatabaseException(e.getMessage(), FirebaseDatabaseException.Code.User);
+  @Nullable
+  public DataSnapshot get(@NonNull Query query) throws FirebaseDatabaseException {
+    try {
+      return Tasks.await(transaction.get(query));
+    } catch (ExecutionException | InterruptedException e) {
+      if (e.getCause() instanceof FirebaseDatabaseException) {
+        throw ((FirebaseDatabaseException) e.getCause());
       }
+      throw new FirebaseDatabaseException(e.getMessage(), FirebaseDatabaseException.Code.User);
     }
+  }
 
-    @Nullable
-    public void set(@NonNull DatabaseReference ref, @NonNull Object data) {
-        transaction.set(ref, data);
-    };
+  @Nullable
+  public void set(@NonNull DatabaseReference ref, @NonNull Object data) {
+    transaction.set(ref, data);
+  };
 
-    @Nullable
-    public void update(@NonNull DatabaseReference ref, @NonNull Object data) {
-    };
+  @Nullable
+  public void update(@NonNull DatabaseReference ref, @NonNull Object data) {};
 
-    @Nullable
-    public void remove(@NonNull DatabaseReference ref) {
-    };
+  @Nullable
+  public void remove(@NonNull DatabaseReference ref) {};
 
   public interface Function<T> {
 
