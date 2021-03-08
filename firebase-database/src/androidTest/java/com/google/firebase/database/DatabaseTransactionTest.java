@@ -38,7 +38,7 @@ public class DatabaseTransactionTest {
     db.runTransaction(
         new DatabaseTransaction.Function<Void>() {
           @Override
-          public Void apply(@NonNull DatabaseTransaction.DatabaseTransactionContext transaction)
+          public Void apply(@NonNull DatabaseTransaction transaction)
               throws FirebaseDatabaseException {
             semaphore.release();
             return null;

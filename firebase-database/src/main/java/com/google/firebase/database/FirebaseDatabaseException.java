@@ -22,7 +22,11 @@ import com.google.firebase.FirebaseException;
 public class FirebaseDatabaseException extends FirebaseException {
 
   public enum Code {
-    Ok(0);
+    Ok(0),
+    InvalidArgument(1),
+    // This means the error surfaced in user code (e.g., a transaction callback)
+    User(2),
+    Unknown(3);
 
     private final int value;
 

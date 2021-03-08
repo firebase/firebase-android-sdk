@@ -16,8 +16,10 @@ package com.google.firebase.database.core;
 
 import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabaseException;
 import com.google.firebase.database.InternalHelpers;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.core.utilities.Pair;
@@ -41,10 +43,13 @@ public class Transaction {
 
   private List<Pair<DatabaseReference, Object>> writes;
 
+  private long transactionStartWriteId;
+
   private static final Executor defaultExecutor = createDefaultExecutor();
 
   public Transaction(Repo repo) {
     this.repo = repo;
+    this.transactionStartWriteId = this.repo.getNextWriteId();
   }
 
   private static Executor createDefaultExecutor() {
@@ -64,6 +69,12 @@ public class Transaction {
   }
 
   public Task<DataSnapshot> get(@NonNull Query query) {
+    if (writes.size() != 0) {
+      return Tasks.forException(
+              new FirebaseDatabaseException("Firebase Database transactions require all reads to be executed before all writes",
+                      FirebaseDatabaseException.Code.InvalidArgument)
+      );
+    }
     // Note that query.get runs on the repo's runloop, but we record the results
     // here, in the transaction executor.
     Executor executor = Runnable::run;

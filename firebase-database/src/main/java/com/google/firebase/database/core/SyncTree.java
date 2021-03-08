@@ -883,6 +883,19 @@ public class SyncTree {
     return calcCompleteEventCache(path, writeIdsToExclude);
   }
 
+  public Node calcCompleteEventCacheFromRoot(Path path, Long excludeWriteIdsAfter) {
+    SyncPoint currentSyncPoint = syncPointTree.getValue();
+    Node serverCache = null;
+    if (currentSyncPoint != null) {
+      serverCache = currentSyncPoint.getCompleteServerCache(Path.getEmptyPath());
+    }
+    if (serverCache != null) {
+      return this.pendingWriteTree.calcCompleteEventCache(
+              path, serverCache, excludeWriteIdsAfter, true);
+    }
+    return calcCompleteEventCache(path, excludeWriteIdsAfter);
+  }
+
   /**
    * Returns a complete cache, if we have one, of the data at a particular path. The location must
    * have a listener above it, but as this is only used by transaction code, that should always be

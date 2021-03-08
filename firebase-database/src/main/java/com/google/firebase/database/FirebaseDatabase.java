@@ -35,6 +35,8 @@ import com.google.firebase.database.core.utilities.Validation;
 import com.google.firebase.database.utilities.Function;
 import com.google.firebase.emulators.EmulatedServiceSettings;
 
+import java.util.concurrent.Executor;
+
 /**
  * The entry point for accessing a Firebase Database. You can get an instance by calling {@link
  * FirebaseDatabase#getInstance()}. To access a location in the database and read or write data, use
@@ -282,16 +284,27 @@ public class FirebaseDatabase {
   @Nullable
   public <TResult> Task<TResult> runTransaction(
       @NonNull DatabaseTransaction.Function<TResult> updateFunction) {
+    return runTransaction(updateFunction, com.google.firebase.database.core.Transaction.getDefaultExecutor());
+  }
 
+  /**
+   * Run a transaction capable of reading, and then mutating multiple locations.
+   *
+   * @param updateFunction
+   * @param <TResult>
+   * @return
+   */
+  @Nullable
+  public <TResult> Task<TResult> runTransaction(
+          @NonNull DatabaseTransaction.Function<TResult> updateFunction, @NonNull Executor executor) {
     Function<Transaction, Task<TResult>> wrapped =
-        internalTransaction ->
-            Tasks.call(
-                com.google.firebase.database.core.Transaction.getDefaultExecutor(),
-                () ->
-                    updateFunction.apply(
-                        new DatabaseTransaction.DatabaseTransactionContext(
-                            internalTransaction, FirebaseDatabase.this)));
-
+            internalTransaction ->
+                    Tasks.call(
+                            executor,
+                            () ->
+                                    updateFunction.apply(
+                                            new DatabaseTransaction(
+                                                    internalTransaction, FirebaseDatabase.this)));
     return repo.runTransaction(wrapped);
   }
 

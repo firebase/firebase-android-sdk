@@ -21,12 +21,10 @@ import java.util.concurrent.ExecutionException;
 
 public class DatabaseTransaction {
 
-  public static class DatabaseTransactionContext {
-
     private final com.google.firebase.database.core.Transaction transaction;
     private final FirebaseDatabase database;
 
-    DatabaseTransactionContext(
+    DatabaseTransaction(
         com.google.firebase.database.core.Transaction transaction, FirebaseDatabase database) {
       this.transaction = transaction;
       this.database = database;
@@ -36,35 +34,30 @@ public class DatabaseTransaction {
     public DataSnapshot get(@NonNull Query query) throws FirebaseDatabaseException {
       try {
         return Tasks.await(transaction.get(query));
-      } catch (ExecutionException e) {
+      } catch (ExecutionException | InterruptedException e) {
         if (e.getCause() instanceof FirebaseDatabaseException) {
           throw ((FirebaseDatabaseException) e.getCause());
         }
-        throw new RuntimeException((e.getCause()));
-      } catch (InterruptedException e) {
-        throw new RuntimeException(e);
+        throw new FirebaseDatabaseException(e.getMessage(), FirebaseDatabaseException.Code.User);
       }
     }
 
     @Nullable
-    public Transaction set(@NonNull DatabaseReference ref, @NonNull Object data) {
-      return null;
+    public void set(@NonNull DatabaseReference ref, @NonNull Object data) {
+        transaction.set(ref, data);
     };
 
     @Nullable
-    public Transaction update(@NonNull DatabaseReference ref, @NonNull Object data) {
-      return null;
+    public void update(@NonNull DatabaseReference ref, @NonNull Object data) {
     };
 
     @Nullable
-    public Transaction remove(@NonNull DatabaseReference ref) {
-      return null;
+    public void remove(@NonNull DatabaseReference ref) {
     };
-  }
 
   public interface Function<T> {
 
     @Nullable
-    T apply(@NonNull DatabaseTransactionContext transaction) throws FirebaseDatabaseException;
+    T apply(@NonNull DatabaseTransaction transaction) throws FirebaseDatabaseException;
   }
 }
