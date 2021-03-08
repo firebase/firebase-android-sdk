@@ -14,13 +14,12 @@
 
 package com.google.firebase.database.core;
 
+import com.google.firebase.database.core.utilities.Predicate;
 import com.google.firebase.database.core.view.CacheNode;
 import com.google.firebase.database.snapshot.ChildKey;
 import com.google.firebase.database.snapshot.Index;
 import com.google.firebase.database.snapshot.NamedNode;
 import com.google.firebase.database.snapshot.Node;
-import java.util.Collections;
-import java.util.List;
 
 /**
  * A WriteTreeRef wraps a WriteTree and a path, for convenient access to a particular subtree. All
@@ -54,17 +53,17 @@ public class WriteTreeRef {
    * writes. Note that customizing the returned node can lead to a more expensive calculation.
    */
   public Node calcCompleteEventCache(Node completeServerCache) {
-    return this.calcCompleteEventCache(completeServerCache, Collections.<Long>emptyList());
+    return this.calcCompleteEventCache(completeServerCache, null);
   }
 
-  public Node calcCompleteEventCache(Node completeServerCache, List<Long> writeIdsToExclude) {
-    return this.calcCompleteEventCache(completeServerCache, writeIdsToExclude, false);
+  public Node calcCompleteEventCache(Node completeServerCache, Predicate<Long> writeIdPred) {
+    return this.calcCompleteEventCache(completeServerCache, writeIdPred, false);
   }
 
   public Node calcCompleteEventCache(
-      Node completeServerCache, List<Long> writeIdsToExclude, boolean includeHiddenWrites) {
+      Node completeServerCache, Predicate<Long> writeIdPred, boolean includeHiddenWrites) {
     return this.writeTree.calcCompleteEventCache(
-        this.treePath, completeServerCache, writeIdsToExclude, includeHiddenWrites);
+        this.treePath, completeServerCache, writeIdPred, includeHiddenWrites);
   }
 
   /**

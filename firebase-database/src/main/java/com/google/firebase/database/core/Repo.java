@@ -40,6 +40,7 @@ import com.google.firebase.database.core.persistence.PersistenceManager;
 import com.google.firebase.database.core.utilities.DefaultClock;
 import com.google.firebase.database.core.utilities.DefaultRunLoop;
 import com.google.firebase.database.core.utilities.OffsetClock;
+import com.google.firebase.database.core.utilities.Predicate;
 import com.google.firebase.database.core.utilities.Tree;
 import com.google.firebase.database.core.view.Event;
 import com.google.firebase.database.core.view.EventRaiser;
@@ -440,7 +441,7 @@ public class Repo implements PersistentConnection.Delegate {
     }
 
     Map<String, Object> serverValues = ServerValues.generateServerValues(serverClock);
-    Node existing = serverSyncTree.calcCompleteEventCache(path, new ArrayList<>());
+    Node existing = serverSyncTree.calcCompleteEventCache(path, null);
     Node newValue =
         ServerValues.resolveDeferredValueSnapshot(newValueUnresolved, existing, serverValues);
 
@@ -758,7 +759,7 @@ public class Repo implements PersistentConnection.Delegate {
         new SparseSnapshotTree.SparseSnapshotTreeVisitor() {
           @Override
           public void visitTree(Path prefixPath, Node node) {
-            Node existing = serverSyncTree.calcCompleteEventCache(prefixPath, new ArrayList<>());
+            Node existing = serverSyncTree.calcCompleteEventCache(prefixPath, null);
             Node resolvedNode =
                 ServerValues.resolveDeferredValueSnapshot(node, existing, serverValues);
             events.addAll(serverSyncTree.applyServerOverwrite(prefixPath, resolvedNode));
@@ -975,8 +976,23 @@ public class Repo implements PersistentConnection.Delegate {
     return this.getLatestState(path, new ArrayList<Long>());
   }
 
-  private Node getLatestState(Path path, List<Long> excudeSets) {
-    Node state = this.serverSyncTree.calcCompleteEventCache(path, excudeSets);
+  private static class WriteIdSetPredicate implements Predicate<Long> {
+
+    List<Long> excludeWriteIds;
+
+    public WriteIdSetPredicate(List<Long> excludeWriteIds) {
+      this.excludeWriteIds = excludeWriteIds;
+    }
+
+    @Override
+    public boolean evaluate(Long object) {
+      return !excludeWriteIds.contains(object);
+    }
+  }
+
+  private Node getLatestState(Path path, List<Long> excludeSets) {
+    Node state =
+        this.serverSyncTree.calcCompleteEventCache(path, new WriteIdSetPredicate(excludeSets));
     if (state == null) {
       state = EmptyNode.Empty();
     }

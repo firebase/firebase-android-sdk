@@ -16,7 +16,6 @@ package com.google.firebase.database.core;
 
 import com.google.firebase.database.snapshot.ChildKey;
 import com.google.firebase.database.snapshot.Node;
-import java.util.ArrayList;
 
 /**
  * A ValueProvider defers the calculation of a Node's value until needed.
@@ -73,7 +72,7 @@ abstract class ValueProvider {
 
     @Override
     public Node node() {
-      return syncTree.calcCompleteEventCache(path, new ArrayList<>());
+      return syncTree.calcCompleteEventCache(path, null);
     }
   }
 }
