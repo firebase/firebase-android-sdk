@@ -273,7 +273,7 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
   private void close(State finalState, Status status) {
     hardAssert(isStarted(), "Only started streams should be closed.");
     hardAssert(
-        finalState == State.Error || status.equals(Status.OK),
+        finalState == State.Error || status.isOk(),
         "Can't provide an error when not in an error state.");
     workerQueue.verifyIsCurrentThread();
 

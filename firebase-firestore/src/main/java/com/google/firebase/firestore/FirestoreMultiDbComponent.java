@@ -24,6 +24,7 @@ import com.google.firebase.FirebaseAppLifecycleListener;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.firestore.remote.GrpcMetadataProvider;
+import com.google.firebase.inject.Deferred;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -40,13 +41,13 @@ class FirestoreMultiDbComponent
 
   private final FirebaseApp app;
   private final Context context;
-  private final InternalAuthProvider authProvider;
+  private final Deferred<InternalAuthProvider> authProvider;
   private final GrpcMetadataProvider metadataProvider;
 
   FirestoreMultiDbComponent(
       @NonNull Context context,
       @NonNull FirebaseApp app,
-      @Nullable InternalAuthProvider authProvider,
+      @NonNull Deferred<InternalAuthProvider> authProvider,
       @Nullable GrpcMetadataProvider metadataProvider) {
     this.context = context;
     this.app = app;

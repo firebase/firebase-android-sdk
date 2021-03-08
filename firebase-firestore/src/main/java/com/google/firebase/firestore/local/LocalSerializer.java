@@ -18,14 +18,13 @@ import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.bundle.BundledQuery;
+import com.google.firebase.firestore.core.Query.LimitType;
 import com.google.firebase.firestore.core.Target;
-import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.MaybeDocument;
-import com.google.firebase.firestore.model.NoDocument;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.SnapshotVersion;
-import com.google.firebase.firestore.model.UnknownDocument;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
 import com.google.firebase.firestore.remote.RemoteSerializer;
@@ -34,7 +33,6 @@ import com.google.firestore.v1.Write;
 import com.google.firestore.v1.Write.Builder;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /** Serializer for values stored in the LocalStore. */
@@ -47,30 +45,27 @@ public final class LocalSerializer {
   }
 
   /** Encodes a MaybeDocument model to the equivalent protocol buffer for local storage. */
-  com.google.firebase.firestore.proto.MaybeDocument encodeMaybeDocument(MaybeDocument document) {
+  com.google.firebase.firestore.proto.MaybeDocument encodeMaybeDocument(MutableDocument document) {
     com.google.firebase.firestore.proto.MaybeDocument.Builder builder =
         com.google.firebase.firestore.proto.MaybeDocument.newBuilder();
 
-    if (document instanceof NoDocument) {
-      NoDocument noDocument = (NoDocument) document;
-      builder.setNoDocument(encodeNoDocument(noDocument));
-      builder.setHasCommittedMutations(noDocument.hasCommittedMutations());
-    } else if (document instanceof Document) {
-      Document existingDocument = (Document) document;
-      builder.setDocument(encodeDocument(existingDocument));
-      builder.setHasCommittedMutations(existingDocument.hasCommittedMutations());
-    } else if (document instanceof UnknownDocument) {
-      builder.setUnknownDocument(encodeUnknownDocument((UnknownDocument) document));
-      builder.setHasCommittedMutations(true);
+    if (document.isNoDocument()) {
+      builder.setNoDocument(encodeNoDocument(document));
+    } else if (document.isFoundDocument()) {
+      builder.setDocument(encodeDocument(document));
+    } else if (document.isUnknownDocument()) {
+      builder.setUnknownDocument(encodeUnknownDocument(document));
     } else {
-      throw fail("Unknown document type %s", document.getClass().getCanonicalName());
+      throw fail("Cannot encode invalid document %s", document);
     }
+
+    builder.setHasCommittedMutations(document.hasCommittedMutations());
 
     return builder.build();
   }
 
   /** Decodes a MaybeDocument proto to the equivalent model. */
-  MaybeDocument decodeMaybeDocument(com.google.firebase.firestore.proto.MaybeDocument proto) {
+  MutableDocument decodeMaybeDocument(com.google.firebase.firestore.proto.MaybeDocument proto) {
     switch (proto.getDocumentTypeCase()) {
       case DOCUMENT:
         return decodeDocument(proto.getDocument(), proto.getHasCommittedMutations());
@@ -90,7 +85,7 @@ public final class LocalSerializer {
    * Encodes a Document for local storage. This differs from the v1 RPC serializer for Documents in
    * that it preserves the updateTime, which is considered an output only value by the server.
    */
-  private com.google.firestore.v1.Document encodeDocument(Document document) {
+  private com.google.firestore.v1.Document encodeDocument(MutableDocument document) {
     com.google.firestore.v1.Document.Builder builder =
         com.google.firestore.v1.Document.newBuilder();
     builder.setName(rpcSerializer.encodeKey(document.getKey()));
@@ -101,21 +96,19 @@ public final class LocalSerializer {
   }
 
   /** Decodes a Document proto to the equivalent model. */
-  private Document decodeDocument(
+  private MutableDocument decodeDocument(
       com.google.firestore.v1.Document document, boolean hasCommittedMutations) {
     DocumentKey key = rpcSerializer.decodeKey(document.getName());
     SnapshotVersion version = rpcSerializer.decodeVersion(document.getUpdateTime());
-    return new Document(
-        key,
-        version,
-        ObjectValue.fromMap(document.getFieldsMap()),
-        hasCommittedMutations
-            ? Document.DocumentState.COMMITTED_MUTATIONS
-            : Document.DocumentState.SYNCED);
+    MutableDocument result =
+        MutableDocument.newFoundDocument(
+            key, version, ObjectValue.fromMap(document.getFieldsMap()));
+    return hasCommittedMutations ? result.setHasCommittedMutations() : result;
   }
 
   /** Encodes a NoDocument value to the equivalent proto. */
-  private com.google.firebase.firestore.proto.NoDocument encodeNoDocument(NoDocument document) {
+  private com.google.firebase.firestore.proto.NoDocument encodeNoDocument(
+      MutableDocument document) {
     com.google.firebase.firestore.proto.NoDocument.Builder builder =
         com.google.firebase.firestore.proto.NoDocument.newBuilder();
     builder.setName(rpcSerializer.encodeKey(document.getKey()));
@@ -124,16 +117,17 @@ public final class LocalSerializer {
   }
 
   /** Decodes a NoDocument proto to the equivalent model. */
-  private NoDocument decodeNoDocument(
+  private MutableDocument decodeNoDocument(
       com.google.firebase.firestore.proto.NoDocument proto, boolean hasCommittedMutations) {
     DocumentKey key = rpcSerializer.decodeKey(proto.getName());
     SnapshotVersion version = rpcSerializer.decodeVersion(proto.getReadTime());
-    return new NoDocument(key, version, hasCommittedMutations);
+    MutableDocument result = MutableDocument.newNoDocument(key, version);
+    return hasCommittedMutations ? result.setHasCommittedMutations() : result;
   }
 
   /** Encodes a UnknownDocument value to the equivalent proto. */
   private com.google.firebase.firestore.proto.UnknownDocument encodeUnknownDocument(
-      UnknownDocument document) {
+      MutableDocument document) {
     com.google.firebase.firestore.proto.UnknownDocument.Builder builder =
         com.google.firebase.firestore.proto.UnknownDocument.newBuilder();
     builder.setName(rpcSerializer.encodeKey(document.getKey()));
@@ -142,11 +136,11 @@ public final class LocalSerializer {
   }
 
   /** Decodes a UnknownDocument proto to the equivalent model. */
-  private UnknownDocument decodeUnknownDocument(
+  private MutableDocument decodeUnknownDocument(
       com.google.firebase.firestore.proto.UnknownDocument proto) {
     DocumentKey key = rpcSerializer.decodeKey(proto.getName());
     SnapshotVersion version = rpcSerializer.decodeVersion(proto.getVersion());
-    return new UnknownDocument(key, version);
+    return MutableDocument.newUnknownDocument(key, version);
   }
 
   /** Encodes a MutationBatch model for local storage in the mutation queue. */
@@ -182,28 +176,27 @@ public final class LocalSerializer {
     // representing `transforms` with `update_transforms` on the SDK means that old `transform`
     // mutations stored in IndexedDB need to be updated to `update_transforms`.
     // TODO(b/174608374): Remove this code once we perform a schema migration.
-    for (int i = batch.getWritesCount() - 1; i >= 0; --i) {
-      Write mutation = batch.getWrites(i);
-      if (mutation.hasTransform()) {
+    for (int i = 0; i < batch.getWritesCount(); ++i) {
+      Write currentMutation = batch.getWrites(i);
+      boolean hasTransform =
+          i + 1 < batch.getWritesCount() && batch.getWrites(i + 1).hasTransform();
+      if (hasTransform) {
         hardAssert(
-            i >= 1 && !batch.getWrites(i - 1).hasTransform() && batch.getWrites(i - 1).hasUpdate(),
+            batch.getWrites(i).hasUpdate(),
             "TransformMutation should be preceded by a patch or set mutation");
-        Write mutationToJoin = batch.getWrites(i - 1);
-        Builder newMutationBuilder = Write.newBuilder(mutationToJoin);
-        for (FieldTransform fieldTransform : mutation.getTransform().getFieldTransformsList()) {
+        Builder newMutationBuilder = Write.newBuilder(currentMutation);
+        Write transformMutation = batch.getWrites(i + 1);
+        for (FieldTransform fieldTransform :
+            transformMutation.getTransform().getFieldTransformsList()) {
           newMutationBuilder.addUpdateTransforms(fieldTransform);
         }
         mutations.add(rpcSerializer.decodeMutation(newMutationBuilder.build()));
-        --i;
+        ++i;
       } else {
-        mutations.add(rpcSerializer.decodeMutation(mutation));
+        mutations.add(rpcSerializer.decodeMutation(currentMutation));
       }
     }
 
-    // Reverse the mutations to preserve the original ordering since the above for-loop iterates in
-    // reverse order. We use reverse() instead of prepending the elements into the mutations array
-    // since prepending to a List is O(n).
-    Collections.reverse(mutations);
     return new MutationBatch(batchId, localWriteTime, baseMutations, mutations);
   }
 
@@ -265,5 +258,33 @@ public final class LocalSerializer {
         version,
         lastLimboFreeSnapshotVersion,
         resumeToken);
+  }
+
+  public com.google.firestore.bundle.BundledQuery encodeBundledQuery(BundledQuery bundledQuery) {
+    com.google.firestore.v1.Target.QueryTarget queryTarget =
+        rpcSerializer.encodeQueryTarget(bundledQuery.getTarget());
+
+    com.google.firestore.bundle.BundledQuery.Builder result =
+        com.google.firestore.bundle.BundledQuery.newBuilder();
+    result.setLimitType(
+        bundledQuery.getLimitType().equals(LimitType.LIMIT_TO_FIRST)
+            ? com.google.firestore.bundle.BundledQuery.LimitType.FIRST
+            : com.google.firestore.bundle.BundledQuery.LimitType.LAST);
+    result.setParent(queryTarget.getParent());
+    result.setStructuredQuery(queryTarget.getStructuredQuery());
+
+    return result.build();
+  }
+
+  public BundledQuery decodeBundledQuery(com.google.firestore.bundle.BundledQuery bundledQuery) {
+    LimitType limitType =
+        bundledQuery.getLimitType().equals(com.google.firestore.bundle.BundledQuery.LimitType.FIRST)
+            ? LimitType.LIMIT_TO_FIRST
+            : LimitType.LIMIT_TO_LAST;
+    Target target =
+        rpcSerializer.decodeQueryTarget(
+            bundledQuery.getParent(), bundledQuery.getStructuredQuery());
+
+    return new BundledQuery(target, limitType);
   }
 }

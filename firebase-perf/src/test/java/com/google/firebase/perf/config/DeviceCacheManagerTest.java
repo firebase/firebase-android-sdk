@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.perf.FirebasePerformanceTestBase;
+import com.google.testing.timing.FakeScheduledExecutorService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -28,27 +29,32 @@ import org.robolectric.RobolectricTestRunner;
 public final class DeviceCacheManagerTest extends FirebasePerformanceTestBase {
 
   private DeviceCacheManager deviceCacheManager;
+  private FakeScheduledExecutorService fakeScheduledExecutorService;
 
   @Before
   public void setUp() {
-    deviceCacheManager = DeviceCacheManager.getInstance();
+    fakeScheduledExecutorService = new FakeScheduledExecutorService();
+    deviceCacheManager = new DeviceCacheManager(fakeScheduledExecutorService);
   }
 
   @Test
   public void getBoolean_valueIsNotSet_returnsEmpty() {
     deviceCacheManager.setContext(context);
+    fakeScheduledExecutorService.runAll();
 
     assertThat(deviceCacheManager.getBoolean("some_key").isAvailable()).isFalse();
   }
 
   @Test
   public void getBoolean_contextAndValueNotSet_returnsEmpty() {
+    assertThat(fakeScheduledExecutorService.isEmpty()).isTrue();
     assertThat(deviceCacheManager.getBoolean("some_key").isAvailable()).isFalse();
   }
 
   @Test
   public void getBoolean_valueIsSet_returnsSetValue() {
     deviceCacheManager.setContext(context);
+    fakeScheduledExecutorService.runAll();
     deviceCacheManager.setValue("some_key", true);
 
     assertThat(deviceCacheManager.getBoolean("some_key").get()).isTrue();
@@ -57,7 +63,7 @@ public final class DeviceCacheManagerTest extends FirebasePerformanceTestBase {
   @Test
   public void clear_setBooleanThenCleared_returnsEmpty() {
     deviceCacheManager.setContext(context);
-
+    fakeScheduledExecutorService.runAll();
     deviceCacheManager.setValue("some_key", true);
 
     assertThat(deviceCacheManager.getBoolean("some_key").get()).isTrue();
@@ -70,14 +76,17 @@ public final class DeviceCacheManagerTest extends FirebasePerformanceTestBase {
   public void getBoolean_firebaseAppNotExist_returnsEmpty() {
     DeviceCacheManager.clearInstance();
     FirebaseApp.clearInstancesForTest();
-    deviceCacheManager = DeviceCacheManager.getInstance();
+    deviceCacheManager = new DeviceCacheManager(fakeScheduledExecutorService);
     deviceCacheManager.setValue("some_key", true);
 
+    assertThat(fakeScheduledExecutorService.isEmpty()).isTrue();
     assertThat(deviceCacheManager.getBoolean("some_key").isAvailable()).isFalse();
   }
 
   @Test
   public void setValueBoolean_setTwice_canGetLatestValue() {
+    deviceCacheManager.setContext(context);
+    fakeScheduledExecutorService.runAll();
     deviceCacheManager.setValue("some_key", true);
     assertThat(deviceCacheManager.getBoolean("some_key").get()).isTrue();
 
@@ -86,10 +95,10 @@ public final class DeviceCacheManagerTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  public void setValueBoolean_contextNotSet_canGetValue() {
+  public void setValueBoolean_contextNotSet_returnsEmpty() {
     deviceCacheManager.setValue("some_key", true);
 
-    assertThat(deviceCacheManager.getBoolean("some_key").get()).isTrue();
+    assertThat(deviceCacheManager.getBoolean("some_key").isAvailable()).isFalse();
   }
 
   @Test
@@ -100,6 +109,7 @@ public final class DeviceCacheManagerTest extends FirebasePerformanceTestBase {
   @Test
   public void getString_valueIsNotSet_returnsEmpty() {
     deviceCacheManager.setContext(context);
+    fakeScheduledExecutorService.runAll();
 
     assertThat(deviceCacheManager.getString("some_key").isAvailable()).isFalse();
   }
@@ -112,23 +122,26 @@ public final class DeviceCacheManagerTest extends FirebasePerformanceTestBase {
   @Test
   public void getString_valueIsSet_returnsSetValue() {
     deviceCacheManager.setContext(context);
-    deviceCacheManager.setValue("some_key", "speicalValue");
+    fakeScheduledExecutorService.runAll();
+    deviceCacheManager.setValue("some_key", "specialValue");
 
-    assertThat(deviceCacheManager.getString("some_key").get()).isEqualTo("speicalValue");
+    assertThat(deviceCacheManager.getString("some_key").get()).isEqualTo("specialValue");
   }
 
   @Test
   public void getString_firebaseAppNotExist_returnsEmpty() {
     DeviceCacheManager.clearInstance();
     FirebaseApp.clearInstancesForTest();
-    deviceCacheManager = DeviceCacheManager.getInstance();
-    deviceCacheManager.setValue("some_key", "speicalValue");
+    deviceCacheManager = new DeviceCacheManager(fakeScheduledExecutorService);
+    deviceCacheManager.setValue("some_key", "specialValue");
 
     assertThat(deviceCacheManager.getString("some_key").isAvailable()).isFalse();
   }
 
   @Test
   public void setValueString_setTwice_canGetLatestValue() {
+    deviceCacheManager.setContext(context);
+    fakeScheduledExecutorService.runAll();
     deviceCacheManager.setValue("some_key", "EarliestValue");
     assertThat(deviceCacheManager.getString("some_key").get()).isEqualTo("EarliestValue");
 
@@ -137,25 +150,30 @@ public final class DeviceCacheManagerTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  public void setValueString_contextNotSet_canGetValue() {
+  public void setValueString_contextNotSet_returnsEmpty() {
     deviceCacheManager.setValue("some_key", "newValue");
-    assertThat(deviceCacheManager.getString("some_key").get()).isEqualTo("newValue");
+    assertThat(deviceCacheManager.getString("some_key").isAvailable()).isFalse();
   }
 
   @Test
   public void setValueString_setNullString_returnsEmpty() {
+    deviceCacheManager.setContext(context);
+    fakeScheduledExecutorService.runAll();
     deviceCacheManager.setValue("some_key", null);
     assertThat(deviceCacheManager.getString("some_key").isAvailable()).isFalse();
   }
 
   @Test
   public void setValueString_keyIsNull_returnsFalse() {
+    deviceCacheManager.setContext(context);
+    fakeScheduledExecutorService.runAll();
     assertThat(deviceCacheManager.setValue(null, "value")).isFalse();
   }
 
   @Test
   public void getFloat_valueIsNotSet_returnsEmpty() {
     deviceCacheManager.setContext(context);
+    fakeScheduledExecutorService.runAll();
 
     assertThat(deviceCacheManager.getFloat("some_key").isAvailable()).isFalse();
   }
@@ -163,14 +181,16 @@ public final class DeviceCacheManagerTest extends FirebasePerformanceTestBase {
   @Test
   public void getFloat_contextAndValueNotSet_returnsEmpty() {
     DeviceCacheManager.clearInstance();
-    deviceCacheManager = DeviceCacheManager.getInstance();
+    deviceCacheManager = new DeviceCacheManager(fakeScheduledExecutorService);
 
+    assertThat(fakeScheduledExecutorService.isEmpty()).isTrue();
     assertThat(deviceCacheManager.getFloat("some_key").isAvailable()).isFalse();
   }
 
   @Test
   public void getFloat_valueIsSet_returnsSetValue() {
     deviceCacheManager.setContext(context);
+    fakeScheduledExecutorService.runAll();
     deviceCacheManager.setValue("some_key", 1.2f);
 
     assertThat(deviceCacheManager.getFloat("some_key").get()).isEqualTo(1.2f);
@@ -180,14 +200,17 @@ public final class DeviceCacheManagerTest extends FirebasePerformanceTestBase {
   public void getFloat_firebaseAppNotExist_returnsEmpty() {
     DeviceCacheManager.clearInstance();
     FirebaseApp.clearInstancesForTest();
-    deviceCacheManager = DeviceCacheManager.getInstance();
+    deviceCacheManager = new DeviceCacheManager(fakeScheduledExecutorService);
     deviceCacheManager.setValue("some_key", 1.2f);
 
+    assertThat(fakeScheduledExecutorService.isEmpty()).isTrue();
     assertThat(deviceCacheManager.getFloat("some_key").isAvailable()).isFalse();
   }
 
   @Test
   public void setValueFloat_setTwice_canGetLatestValue() {
+    deviceCacheManager.setContext(context);
+    fakeScheduledExecutorService.runAll();
     deviceCacheManager.setValue("some_key", 1.01f);
     assertThat(deviceCacheManager.getFloat("some_key").get()).isEqualTo(1.01f);
 
@@ -196,36 +219,42 @@ public final class DeviceCacheManagerTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  public void setValueFloat_contextNotSet_canGetValue() {
+  public void setValueFloat_contextNotSet_returnsEmpty() {
     deviceCacheManager.setValue("some_key", 100.0f);
-    assertThat(deviceCacheManager.getFloat("some_key").get()).isEqualTo(100.0f);
+    assertThat(deviceCacheManager.getFloat("some_key").isAvailable()).isFalse();
   }
 
   @Test
   public void setValueFloat_keyIsNull_returnsFalse() {
+    deviceCacheManager.setContext(context);
+    fakeScheduledExecutorService.runAll();
     assertThat(deviceCacheManager.setValue(null, 10.0f)).isFalse();
   }
 
   @Test
   public void getLong_valueIsNotSet_returnsEmpty() {
     DeviceCacheManager.clearInstance();
-    deviceCacheManager = DeviceCacheManager.getInstance();
+    deviceCacheManager = new DeviceCacheManager(fakeScheduledExecutorService);
     deviceCacheManager.setContext(context);
+    fakeScheduledExecutorService.runAll();
 
+    assertThat(fakeScheduledExecutorService.isEmpty()).isTrue();
     assertThat(deviceCacheManager.getLong("some_key").isAvailable()).isFalse();
   }
 
   @Test
   public void getLong_contextAndValueNotSet_returnsEmpty() {
     DeviceCacheManager.clearInstance();
-    deviceCacheManager = DeviceCacheManager.getInstance();
+    deviceCacheManager = new DeviceCacheManager(fakeScheduledExecutorService);
 
+    assertThat(fakeScheduledExecutorService.isEmpty()).isTrue();
     assertThat(deviceCacheManager.getLong("some_key").isAvailable()).isFalse();
   }
 
   @Test
   public void getLong_valueIsSet_returnsSetValue() {
     deviceCacheManager.setContext(context);
+    fakeScheduledExecutorService.runAll();
     deviceCacheManager.setValue("some_key", 1L);
 
     assertThat(deviceCacheManager.getLong("some_key").get()).isEqualTo(1L);
@@ -235,7 +264,7 @@ public final class DeviceCacheManagerTest extends FirebasePerformanceTestBase {
   public void getLong_firebaseAppNotExist_returnsEmpty() {
     DeviceCacheManager.clearInstance();
     FirebaseApp.clearInstancesForTest();
-    deviceCacheManager = DeviceCacheManager.getInstance();
+    deviceCacheManager = new DeviceCacheManager(fakeScheduledExecutorService);
     deviceCacheManager.setValue("some_key", 1L);
 
     assertThat(deviceCacheManager.getLong("some_key").isAvailable()).isFalse();
@@ -243,6 +272,8 @@ public final class DeviceCacheManagerTest extends FirebasePerformanceTestBase {
 
   @Test
   public void setValueLong_setTwice_canGetLatestValue() {
+    deviceCacheManager.setContext(context);
+    fakeScheduledExecutorService.runAll();
     deviceCacheManager.setValue("some_key", 2L);
     assertThat(deviceCacheManager.getLong("some_key").get()).isEqualTo(2L);
 
@@ -251,13 +282,16 @@ public final class DeviceCacheManagerTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  public void setValueLong_contextNotSet_canGetValue() {
+  public void setValueLong_contextNotSet_returnsEmpty() {
     deviceCacheManager.setValue("some_key", 100L);
-    assertThat(deviceCacheManager.getLong("some_key").get()).isEqualTo(100L);
+    // The key is not set if the shared preference is not fetched and available.
+    assertThat(deviceCacheManager.getLong("some_key").isAvailable()).isFalse();
   }
 
   @Test
   public void setValueLong_keyIsNull_returnsFalse() {
+    deviceCacheManager.setContext(context);
+    fakeScheduledExecutorService.runAll();
     assertThat(deviceCacheManager.setValue(null, 10.0f)).isFalse();
   }
 }

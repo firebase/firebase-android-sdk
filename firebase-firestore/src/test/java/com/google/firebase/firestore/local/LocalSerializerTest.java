@@ -22,6 +22,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.field;
 import static com.google.firebase.firestore.testutil.TestUtil.fieldMask;
 import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
+import static com.google.firebase.firestore.testutil.TestUtil.path;
 import static com.google.firebase.firestore.testutil.TestUtil.setMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.unknownDoc;
 import static java.util.Arrays.asList;
@@ -29,13 +30,12 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.bundle.BundledQuery;
 import com.google.firebase.firestore.core.Query;
+import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.DatabaseId;
-import com.google.firebase.firestore.model.Document;
-import com.google.firebase.firestore.model.MaybeDocument;
-import com.google.firebase.firestore.model.NoDocument;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
-import com.google.firebase.firestore.model.UnknownDocument;
 import com.google.firebase.firestore.model.mutation.FieldMask;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
@@ -204,18 +204,6 @@ public final class LocalSerializerTest {
 
   // TODO(b/174608374): Remove these tests once we perform a schema migration.
   @Test
-  public void testOnlyTransformThrowsError() {
-    WriteBatch batchProto =
-        com.google.firebase.firestore.proto.WriteBatch.newBuilder()
-            .setBatchId(42)
-            .addAllWrites(asList(transformProto))
-            .setLocalWriteTime(writeTimeProto)
-            .build();
-    assertThrows(AssertionError.class, () -> serializer.decodeMutationBatch(batchProto));
-  }
-
-  // TODO(b/174608374): Remove these tests once we perform a schema migration.
-  @Test
   public void testDeleteAndTransformThrowError() {
     WriteBatch batchProto =
         com.google.firebase.firestore.proto.WriteBatch.newBuilder()
@@ -312,8 +300,8 @@ public final class LocalSerializerTest {
   }
 
   @Test
-  public void testEncodesDocumentAsMaybeDocument() {
-    Document document = doc("some/path", 42, map("foo", "bar"));
+  public void testEncodesFoundDocument() {
+    MutableDocument document = doc("some/path", 42, map("foo", "bar"));
 
     com.google.firebase.firestore.proto.MaybeDocument maybeDocProto =
         com.google.firebase.firestore.proto.MaybeDocument.newBuilder()
@@ -326,13 +314,13 @@ public final class LocalSerializerTest {
             .build();
 
     assertEquals(maybeDocProto, serializer.encodeMaybeDocument(document));
-    MaybeDocument decoded = serializer.decodeMaybeDocument(maybeDocProto);
+    MutableDocument decoded = serializer.decodeMaybeDocument(maybeDocProto);
     assertEquals(document, decoded);
   }
 
   @Test
-  public void testEncodesDeletedDocumentAsMaybeDocument() {
-    NoDocument deletedDoc = deletedDoc("some/path", 42);
+  public void testEncodesDeletedDocument() {
+    MutableDocument deletedDoc = deletedDoc("some/path", 42);
 
     com.google.firebase.firestore.proto.MaybeDocument maybeDocProto =
         com.google.firebase.firestore.proto.MaybeDocument.newBuilder()
@@ -344,13 +332,13 @@ public final class LocalSerializerTest {
             .build();
 
     assertEquals(maybeDocProto, serializer.encodeMaybeDocument(deletedDoc));
-    MaybeDocument decoded = serializer.decodeMaybeDocument(maybeDocProto);
+    MutableDocument decoded = serializer.decodeMaybeDocument(maybeDocProto);
     assertEquals(deletedDoc, decoded);
   }
 
   @Test
-  public void testEncodesUnknownDocumentAsMaybeDocument() {
-    UnknownDocument unknownDoc = unknownDoc("some/path", 42);
+  public void testEncodesUnknownDocument() {
+    MutableDocument unknownDoc = unknownDoc("some/path", 42);
 
     com.google.firebase.firestore.proto.MaybeDocument maybeDocProto =
         com.google.firebase.firestore.proto.MaybeDocument.newBuilder()
@@ -363,7 +351,7 @@ public final class LocalSerializerTest {
             .build();
 
     assertEquals(maybeDocProto, serializer.encodeMaybeDocument(unknownDoc));
-    MaybeDocument decoded = serializer.decodeMaybeDocument(maybeDocProto);
+    MutableDocument decoded = serializer.decodeMaybeDocument(maybeDocProto);
     assertEquals(unknownDoc, decoded);
   }
 
@@ -407,5 +395,43 @@ public final class LocalSerializerTest {
     assertEquals(expected, serializer.encodeTargetData(targetData));
     TargetData decoded = serializer.decodeTargetData(expected);
     assertEquals(targetData, decoded);
+  }
+
+  @Test
+  public void testEncodesQuery() {
+    Target target =
+        new Target(
+            path("room"),
+            /* collectionGroup= */ null,
+            Collections.emptyList(),
+            Collections.emptyList(),
+            Target.NO_LIMIT,
+            /* startAt= */ null,
+            /* endAt= */ null);
+    BundledQuery bundledQuery = new BundledQuery(target, Query.LimitType.LIMIT_TO_FIRST);
+    com.google.firestore.bundle.BundledQuery encodedBundledQuery =
+        serializer.encodeBundledQuery(bundledQuery);
+    BundledQuery decodedBundledQuery = serializer.decodeBundledQuery(encodedBundledQuery);
+
+    assertEquals(bundledQuery, decodedBundledQuery);
+  }
+
+  @Test
+  public void testEncodesLimitToLastQuery() {
+    Target target =
+        new Target(
+            path("room"),
+            /* collectionGroup= */ null,
+            Collections.emptyList(),
+            Collections.emptyList(),
+            /* limit=*/ 42,
+            /* startAt= */ null,
+            /* endAt= */ null);
+    BundledQuery bundledQuery = new BundledQuery(target, Query.LimitType.LIMIT_TO_LAST);
+    com.google.firestore.bundle.BundledQuery encodedBundledQuery =
+        serializer.encodeBundledQuery(bundledQuery);
+    BundledQuery decodedBundledQuery = serializer.decodeBundledQuery(encodedBundledQuery);
+
+    assertEquals(bundledQuery, decodedBundledQuery);
   }
 }

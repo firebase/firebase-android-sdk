@@ -137,7 +137,7 @@ public class Uploader {
                   transportContext, clock.getTime() + response.getNextRequestWaitMillis());
             }
             if (eventStore.hasPendingEventsFor(transportContext)) {
-              workScheduler.schedule(transportContext, 1);
+              workScheduler.schedule(transportContext, 1, true);
             }
           }
           return null;

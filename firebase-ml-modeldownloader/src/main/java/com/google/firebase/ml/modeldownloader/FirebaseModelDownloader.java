@@ -85,7 +85,7 @@ public class FirebaseModelDownloader {
   /**
    * Returns the {@link FirebaseModelDownloader} initialized with the default {@link FirebaseApp}.
    *
-   * @return a {@link FirebaseModelDownloader} instance
+   * @return A {@link FirebaseModelDownloader} instance
    */
   @NonNull
   public static FirebaseModelDownloader getInstance() {
@@ -96,8 +96,8 @@ public class FirebaseModelDownloader {
   /**
    * Returns the {@link FirebaseModelDownloader} initialized with a custom {@link FirebaseApp}.
    *
-   * @param app a custom {@link FirebaseApp}
-   * @return a {@link FirebaseModelDownloader} instance
+   * @param app A custom {@link FirebaseApp}
+   * @return A {@link FirebaseModelDownloader} instance
    */
   @NonNull
   public static FirebaseModelDownloader getInstance(@NonNull FirebaseApp app) {
@@ -106,7 +106,7 @@ public class FirebaseModelDownloader {
   }
 
   /**
-   * Get the downloaded model file based on download type and conditions. DownloadType behaviours:
+   * Gets the downloaded model file based on download type and conditions. DownloadType behaviours:
    *
    * <ul>
    *   <li>{@link DownloadType#LOCAL_MODEL}: returns the current model if present, otherwise
@@ -116,13 +116,26 @@ public class FirebaseModelDownloader {
    *       present and triggers an update to fetch a new version in the background. If no local
    *       model is present triggers a new download (or finds one in progress) and only completes
    *       when download is finished.
-   *   <li>{@link DownloadType#LATEST_MODEL}: check for latest model, if different from local model,
-   *       trigger new download, task only completes when download finishes
+   *   <li>{@link DownloadType#LATEST_MODEL}: returns the latest model. Checks if latest model is
+   *       different from local model. If the models are the same, returns the current model.
+   *       Otherwise, triggers a new model download and returns when this download finishes.
    * </ul>
    *
-   * @param modelName - model name
-   * @param downloadType - download type
-   * @param conditions - download conditions
+   * Most common exceptions include:
+   *
+   * <ul>
+   *   <li>{@link FirebaseMlException#NO_NETWORK_CONNECTION}: Error connecting to the network.
+   *   <li>{@link FirebaseMlException#NOT_FOUND}: No model found with the given name.
+   *   <li>{@link FirebaseMlException#NOT_ENOUGH_SPACE}: Not enough space on device to download
+   *       model.
+   *   <li>{@link FirebaseMlException#DOWNLOAD_URL_EXPIRED}: URL used to fetch model expired before
+   *       model download completed. (This return is rare; these calls are retried internally before
+   *       being raised.)
+   * </ul>
+   *
+   * @param modelName Model name.
+   * @param downloadType {@link DownloadType} to determine which model to return.
+   * @param conditions {@link CustomModelDownloadConditions} to be used during file download.
    * @return Custom model
    */
   @NonNull
@@ -158,8 +171,8 @@ public class FirebaseModelDownloader {
    * is in progress returns the downloading model version. Otherwise, this model is in a bad state -
    * clears the model and return null
    *
-   * @param modelName - name of the model
-   * @return the local model with file downloaded details or null if no local model.
+   * @param modelName Name of the model.
+   * @return The local model with file downloaded details or null if no local model.
    */
   @Nullable
   private CustomModel getLocalModelDetails(@NonNull String modelName) {
@@ -360,6 +373,12 @@ public class FirebaseModelDownloader {
       @Nullable CustomModelDownloadConditions conditions,
       Task<Void> downloadTask,
       int retryCounter) {
+    if (retryCounter <= 0) {
+      return Tasks.forException(
+          new FirebaseMlException(
+              "File download failed after multiple attempts, possible expired url.",
+              FirebaseMlException.DOWNLOAD_URL_EXPIRED));
+    }
     if (downloadTask.getException() instanceof FirebaseMlException
         && ((FirebaseMlException) downloadTask.getException()).getCode()
             == FirebaseMlException.DOWNLOAD_URL_EXPIRED) {
@@ -381,14 +400,8 @@ public class FirebaseModelDownloader {
                         if (retryDownloadTask.isSuccessful()) {
                           return finishModelDownload(modelName);
                         }
-                        if (retryCounter > 1) {
-                          return retryExpiredUrlDownload(
-                              modelName, conditions, downloadTask, retryCounter - 1);
-                        }
-                        return Tasks.forException(
-                            new FirebaseMlException(
-                                "File download failed after multiple attempts, possible expired url.",
-                                FirebaseMlException.DOWNLOAD_URL_EXPIRED));
+                        return retryExpiredUrlDownload(
+                            modelName, conditions, downloadTask, retryCounter - 1);
                       });
             }
             return Tasks.forException(retryModelDetailTask.getException());
@@ -422,11 +435,9 @@ public class FirebaseModelDownloader {
   }
 
   /**
-   * Triggers the move to permanent storage of successful model downloads and lists all models
-   * downloaded to device.
+   * Lists all models downloaded to device.
    *
-   * @return The set of all models that are downloaded to this device, triggers completion of file
-   *     moves for completed model downloads.
+   * @return The set of all models that are downloaded to this device.
    */
   @NonNull
   public Task<Set<CustomModel>> listDownloadedModels() {
@@ -440,9 +451,9 @@ public class FirebaseModelDownloader {
   }
 
   /**
-   * Delete old local models, when no longer in use.
+   * Deletes the local model. Removes any information and files associated with the model name.
    *
-   * @param modelName - name of the model
+   * @param modelName Name of the model.
    */
   @NonNull
   public Task<Void> deleteDownloadedModel(@NonNull String modelName) {
@@ -451,49 +462,73 @@ public class FirebaseModelDownloader {
     executor.execute(
         () -> {
           // remove all files associated with this model and then clean up model references.
-          deleteModelDetails(modelName);
+          boolean isSuccessful = deleteModelDetails(modelName);
           taskCompletionSource.setResult(null);
+          eventLogger.logDeleteModel(isSuccessful);
         });
     return taskCompletionSource.getTask();
   }
 
-  private void deleteModelDetails(@NonNull String modelName) {
-    fileManager.deleteAllModels(modelName);
+  private boolean deleteModelDetails(@NonNull String modelName) {
+    boolean isSuccessful = fileManager.deleteAllModels(modelName);
     sharedPreferencesUtil.clearModelDetails(modelName);
+    return isSuccessful;
   }
 
   /**
-   * Update the settings which allow logging to firelog.
+   * Enables stats collection in Firebase ML ModelDownloader via Firelog. The stats include API
+   * calls counts, errors, API call durations, options, etc. No personally identifiable information
+   * is logged.
    *
-   * @param enabled - is statistics logging enabled
+   * <p>The setting is set by the initialization of <code>FirebaseApp</code>, and it is persistent
+   * together with the app's private data. It means that if the user uninstalls the app or clears
+   * all app data, the setting will be erased. The best practice is to set the flag in each
+   * initialization.
+   *
+   * <p>By default, the logging matches the Firebase-wide data collection switch.
+   *
+   * @param enabled Turns the logging state on or off. To revert to using the Firebase-wide data
+   *     collection switch, set this value to <code>null</code>.
    */
-  public void setStatsCollectionEnabled(boolean enabled) {
+  public void setModelDownloaderCollectionEnabled(@Nullable Boolean enabled) {
     sharedPreferencesUtil.setCustomModelStatsCollectionEnabled(enabled);
   }
 
   /**
-   * Get the current models' download id (returns background download id when applicable). This id
+   * Gets the current model's download ID (returns background download ID when applicable). This ID
    * can be used to create a progress bar to track file download progress.
    *
-   * <p>If no model exists or there is no download in progress, return 0.
+   * <p>[Preferred] If getModelTask is not null, then this task returns when the download ID is not
+   * 0 (download has been enqueued) or when the getModelTask completes (returning 0).
    *
-   * <p>If 0 is returned immediately after starting a download via getModel, then
+   * <p>If getModelTask is null, then this task immediately returns the download ID of the model.
+   * This will be 0 if the model doesn't exist, the model has completed downloading, or the download
+   * hasn't been enqueued.
    *
-   * <ul>
-   *   <li>the enqueuing wasn't needed: the getModel task already completed and/or no background
-   *       update.
-   *   <li>the enqueuing hasn't completed: the download id hasn't generated yet - try again.
-   * </ul>
-   *
-   * @param modelName - model name
-   * @return id associated with Android Download Manager.
+   * @param modelName Model name.
+   * @param getModelTask The most recent getModel task associated with the model name.
+   * @return Download ID associated with Android <code>DownloadManager</code>.
    */
-  public long getModelDownloadId(@NonNull String modelName) {
-    CustomModel localModel = sharedPreferencesUtil.getDownloadingCustomModelDetails(modelName);
-    if (localModel != null) {
-      return localModel.getDownloadId();
+  @NonNull
+  public Task<Long> getModelDownloadId(
+      @NonNull String modelName, @Nullable Task<CustomModel> getModelTask) {
+    if (getModelTask == null) {
+      CustomModel localModel = sharedPreferencesUtil.getDownloadingCustomModelDetails(modelName);
+      if (localModel != null) {
+        return Tasks.forResult(localModel.getDownloadId());
+      }
+      return Tasks.forResult(0L);
     }
-    return 0;
+
+    long downloadId = 0;
+    while (downloadId == 0 && !getModelTask.isComplete()) {
+      CustomModel localModel = sharedPreferencesUtil.getDownloadingCustomModelDetails(modelName);
+      if (localModel != null) {
+        downloadId = localModel.getDownloadId();
+      }
+    }
+
+    return Tasks.forResult(downloadId);
   }
 
   /** Returns the nick name of the {@link FirebaseApp} of this {@link FirebaseModelDownloader} */

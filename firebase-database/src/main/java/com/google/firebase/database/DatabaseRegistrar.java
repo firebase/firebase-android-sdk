@@ -34,11 +34,11 @@ public class DatabaseRegistrar implements ComponentRegistrar {
     return Arrays.asList(
         Component.builder(FirebaseDatabaseComponent.class)
             .add(Dependency.required(FirebaseApp.class))
-            .add(Dependency.optional(InternalAuthProvider.class))
+            .add(Dependency.deferred(InternalAuthProvider.class))
             .factory(
                 c ->
                     new FirebaseDatabaseComponent(
-                        c.get(FirebaseApp.class), c.get(InternalAuthProvider.class)))
+                        c.get(FirebaseApp.class), c.getDeferred(InternalAuthProvider.class)))
             .build(),
         LibraryVersionComponent.create("fire-rtdb", BuildConfig.VERSION_NAME));
   }

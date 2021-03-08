@@ -16,6 +16,7 @@ package com.google.firebase.firestore.model;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.firestore.model.mutation.FieldMask;
 import com.google.firestore.v1.MapValue;
@@ -26,11 +27,19 @@ import java.util.Map;
 import java.util.Set;
 
 /** A structured object value stored in Firestore. */
-public class ObjectValue {
-  private Value internalValue;
+public final class ObjectValue implements Cloneable {
+  /**
+   * The immutable Value proto for this object. Local mutations are stored in `overlayMap` and only
+   * applied when {@link #buildProto()} is invoked.
+   */
+  private Value partialValue;
 
-  private static final ObjectValue EMPTY_INSTANCE =
-      new ObjectValue(Value.newBuilder().setMapValue(MapValue.getDefaultInstance()).build());
+  /**
+   * A nested map that contains the accumulated changes that haven't yet been applied to {@link
+   * #partialValue}. Values can either be {@link Value} protos, {@code Map<String, Object>} values
+   * (to represent additional nesting) or {@code null} (to represent field deletes).
+   */
+  private Map<String, Object> overlayMap = new HashMap<>();
 
   public static ObjectValue fromMap(Map<String, Value> value) {
     return new ObjectValue(
@@ -44,25 +53,20 @@ public class ObjectValue {
     hardAssert(
         !ServerTimestamps.isServerTimestamp(value),
         "ServerTimestamps should not be used as an ObjectValue");
-    this.internalValue = value;
+    this.partialValue = value;
   }
 
-  public static ObjectValue emptyObject() {
-    return EMPTY_INSTANCE;
-  }
-
-  /** Returns a new Builder instance that is based on an empty object. */
-  public static Builder newBuilder() {
-    return EMPTY_INSTANCE.toBuilder();
+  public ObjectValue() {
+    this(Value.newBuilder().setMapValue(MapValue.getDefaultInstance()).build());
   }
 
   public Map<String, Value> getFieldsMap() {
-    return internalValue.getMapValue().getFieldsMap();
+    return buildProto().getMapValue().getFieldsMap();
   }
 
   /** Recursively extracts the FieldPaths that are set in this ObjectValue. */
   public FieldMask getFieldMask() {
-    return extractFieldMask(internalValue.getMapValue());
+    return extractFieldMask(buildProto().getMapValue());
   }
 
   private FieldMask extractFieldMask(MapValue value) {
@@ -95,10 +99,14 @@ public class ObjectValue {
    * @return The value at the path or null if it doesn't exist.
    */
   public @Nullable Value get(FieldPath fieldPath) {
+    return extractNestedValue(buildProto(), fieldPath);
+  }
+
+  @Nullable
+  private Value extractNestedValue(Value value, FieldPath fieldPath) {
     if (fieldPath.isEmpty()) {
-      return internalValue;
+      return value;
     } else {
-      Value value = internalValue;
       for (int i = 0; i < fieldPath.length() - 1; ++i) {
         value = value.getMapValue().getFieldsOrDefault(fieldPath.getSegment(i), null);
         if (!Values.isMapValue(value)) {
@@ -109,9 +117,130 @@ public class ObjectValue {
     }
   }
 
-  /** Returns the Protobuf that backs this ObjectValue. */
-  public Value getProto() {
-    return internalValue;
+  /**
+   * Returns the Protobuf that backs this ObjectValue.
+   *
+   * <p>This method applies any outstanding modifications and memoizes the result. Further
+   * invocations are based on this memoized result.
+   */
+  private Value buildProto() {
+    MapValue mergedResult = applyOverlay(FieldPath.EMPTY_PATH, overlayMap);
+    if (mergedResult != null) {
+      partialValue = Value.newBuilder().setMapValue(mergedResult).build();
+      overlayMap.clear();
+    }
+    return partialValue;
+  }
+
+  /**
+   * Removes the field at the specified path. If there is no field at the specified path nothing is
+   * changed.
+   *
+   * @param path The field path to remove
+   */
+  public void delete(FieldPath path) {
+    hardAssert(!path.isEmpty(), "Cannot delete field for empty path on ObjectValue");
+    setOverlay(path, null);
+  }
+
+  /**
+   * Sets the field to the provided value.
+   *
+   * @param path The field path to set.
+   * @param value The value to set.
+   */
+  public void set(FieldPath path, Value value) {
+    hardAssert(!path.isEmpty(), "Cannot set field for empty path on ObjectValue");
+    setOverlay(path, value);
+  }
+
+  public void setAll(Map<FieldPath, Value> data) {
+    for (Map.Entry<FieldPath, Value> entry : data.entrySet()) {
+      FieldPath path = entry.getKey();
+      if (entry.getValue() == null) {
+        delete(path);
+      } else {
+        set(path, entry.getValue());
+      }
+    }
+  }
+
+  /**
+   * Adds {@code value} to the overlay map at {@code path}. Creates nested map entries if needed.
+   */
+  private void setOverlay(FieldPath path, @Nullable Value value) {
+    Map<String, Object> currentLevel = overlayMap;
+
+    for (int i = 0; i < path.length() - 1; ++i) {
+      String currentSegment = path.getSegment(i);
+      Object currentValue = currentLevel.get(currentSegment);
+
+      if (currentValue instanceof Map) {
+        // Re-use a previously created map
+        currentLevel = (Map<String, Object>) currentValue;
+      } else if (currentValue instanceof Value
+          && ((Value) currentValue).getValueTypeCase() == Value.ValueTypeCase.MAP_VALUE) {
+        // Convert the existing Protobuf MapValue into a Java map
+        Map<String, Object> nextLevel =
+            new HashMap<>(((Value) currentValue).getMapValue().getFieldsMap());
+        currentLevel.put(currentSegment, nextLevel);
+        currentLevel = nextLevel;
+      } else {
+        // Create an empty hash map to represent the current nesting level
+        Map<String, Object> nextLevel = new HashMap<>();
+        currentLevel.put(currentSegment, nextLevel);
+        currentLevel = nextLevel;
+      }
+    }
+
+    currentLevel.put(path.getLastSegment(), value);
+  }
+
+  /**
+   * Applies any overlays from {@code currentOverlays} that exist at `currentPath` and returns the
+   * merged data at {@code currentPath} (or {@code null} if there were no changes).
+   *
+   * @param currentPath The path at the current nesting level. Can be set to {@code
+   *     FieldValue.EMPTY_PATH} to represent the root.
+   * @param currentOverlays The overlays at the current nesting level in the same format as {@code
+   *     overlayMap}.
+   * @return The merged data at `currentPath` or null if no modifications were applied.
+   */
+  private @Nullable MapValue applyOverlay(
+      FieldPath currentPath, Map<String, Object> currentOverlays) {
+    boolean modified = false;
+
+    @Nullable Value existingValue = extractNestedValue(partialValue, currentPath);
+    MapValue.Builder resultAtPath =
+        Values.isMapValue(existingValue)
+            // If there is already data at the current path, base our modifications on top
+            // of the existing data.
+            ? existingValue.getMapValue().toBuilder()
+            : MapValue.newBuilder();
+
+    for (Map.Entry<String, Object> entry : currentOverlays.entrySet()) {
+      String pathSegment = entry.getKey();
+      Object value = entry.getValue();
+
+      if (value instanceof Map) {
+        @Nullable
+        MapValue nested =
+            applyOverlay(currentPath.append(pathSegment), (Map<String, Object>) value);
+        if (nested != null) {
+          resultAtPath.putFields(pathSegment, Value.newBuilder().setMapValue(nested).build());
+          modified = true;
+        }
+      } else if (value instanceof Value) {
+        resultAtPath.putFields(pathSegment, (Value) value);
+        modified = true;
+      } else if (resultAtPath.containsFields(pathSegment)) {
+        hardAssert(value == null, "Expected entry to be a Map, a Value or null");
+        resultAtPath.removeFields(pathSegment);
+        modified = true;
+      }
+    }
+
+    return modified ? resultAtPath.build() : null;
   }
 
   @Override
@@ -119,152 +248,24 @@ public class ObjectValue {
     if (this == o) {
       return true;
     } else if (o instanceof ObjectValue) {
-      return Values.equals(internalValue, ((ObjectValue) o).internalValue);
+      return Values.equals(buildProto(), ((ObjectValue) o).buildProto());
     }
     return false;
   }
 
   @Override
   public int hashCode() {
-    return internalValue.hashCode();
+    return buildProto().hashCode();
   }
 
-  /** Creates a ObjectValue.Builder instance that is based on the current value. */
-  public ObjectValue.Builder toBuilder() {
-    return new ObjectValue.Builder(this);
+  @Override
+  @NonNull
+  public String toString() {
+    return "ObjectValue{" + "internalValue=" + buildProto() + '}';
   }
 
-  /**
-   * An ObjectValue.Builder provides APIs to set and delete fields from an ObjectValue. All
-   * operations mutate the existing instance.
-   */
-  public static class Builder {
-
-    /** The existing data to mutate. */
-    private ObjectValue baseObject;
-
-    /**
-     * A nested map that contains the accumulated changes in this builder. Values can either be
-     * `Value` protos, `Map<String, Object>` values (to represent additional nesting) or `null` (to
-     * represent field deletes).
-     */
-    private Map<String, Object> overlayMap;
-
-    Builder(ObjectValue baseObject) {
-      this.baseObject = baseObject;
-      this.overlayMap = new HashMap<>();
-    }
-
-    /**
-     * Sets the field to the provided value.
-     *
-     * @param path The field path to set.
-     * @param value The value to set.
-     * @return The current Builder instance.
-     */
-    public ObjectValue.Builder set(FieldPath path, Value value) {
-      hardAssert(!path.isEmpty(), "Cannot set field for empty path on ObjectValue");
-      setOverlay(path, value);
-      return this;
-    }
-
-    /**
-     * Removes the field at the specified path. If there is no field at the specified path nothing
-     * is changed.
-     *
-     * @param path The field path to remove
-     * @return The current Builder instance.
-     */
-    public ObjectValue.Builder delete(FieldPath path) {
-      hardAssert(!path.isEmpty(), "Cannot delete field for empty path on ObjectValue");
-      setOverlay(path, null);
-      return this;
-    }
-
-    /** Adds `value` to the overlay map at `path`. Creates nested map entries if needed. */
-    private void setOverlay(FieldPath path, @Nullable Value value) {
-      Map<String, Object> currentLevel = overlayMap;
-
-      for (int i = 0; i < path.length() - 1; ++i) {
-        String currentSegment = path.getSegment(i);
-        Object currentValue = currentLevel.get(currentSegment);
-
-        if (currentValue instanceof Map) {
-          // Re-use a previously created map
-          currentLevel = (Map<String, Object>) currentValue;
-        } else if (currentValue instanceof Value
-            && ((Value) currentValue).getValueTypeCase() == Value.ValueTypeCase.MAP_VALUE) {
-          // Convert the existing Protobuf MapValue into a Java map
-          Map<String, Object> nextLevel =
-              new HashMap<>(((Value) currentValue).getMapValue().getFieldsMap());
-          currentLevel.put(currentSegment, nextLevel);
-          currentLevel = nextLevel;
-        } else {
-          // Create an empty hash map to represent the current nesting level
-          Map<String, Object> nextLevel = new HashMap<>();
-          currentLevel.put(currentSegment, nextLevel);
-          currentLevel = nextLevel;
-        }
-      }
-
-      currentLevel.put(path.getLastSegment(), value);
-    }
-
-    /** Returns an ObjectValue with all mutations applied. */
-    public ObjectValue build() {
-      MapValue mergedResult = applyOverlay(FieldPath.EMPTY_PATH, overlayMap);
-      if (mergedResult != null) {
-        return new ObjectValue(Value.newBuilder().setMapValue(mergedResult).build());
-      } else {
-        return this.baseObject;
-      }
-    }
-
-    /**
-     * Applies any overlays from `currentOverlays` that exist at `currentPath` and returns the
-     * merged data at `currentPath` (or null if there were no changes).
-     *
-     * @param currentPath The path at the current nesting level. Can be set toFieldValue.EMPTY_PATH
-     *     to represent the root.
-     * @param currentOverlays The overlays at the current nesting level in the same format as
-     *     `overlayMap`.
-     * @return The merged data at `currentPath` or null if no modifications were applied.
-     */
-    private @Nullable MapValue applyOverlay(
-        FieldPath currentPath, Map<String, Object> currentOverlays) {
-      boolean modified = false;
-
-      @Nullable Value existingValue = baseObject.get(currentPath);
-      MapValue.Builder resultAtPath =
-          Values.isMapValue(existingValue)
-              // If there is already data at the current path, base our modifications on top
-              // of the existing data.
-              ? existingValue.getMapValue().toBuilder()
-              : MapValue.newBuilder();
-
-      for (Map.Entry<String, Object> entry : currentOverlays.entrySet()) {
-        String pathSegment = entry.getKey();
-        Object value = entry.getValue();
-
-        if (value instanceof Map) {
-          @Nullable
-          MapValue nested =
-              applyOverlay(currentPath.append(pathSegment), (Map<String, Object>) value);
-          if (nested != null) {
-            resultAtPath.putFields(pathSegment, Value.newBuilder().setMapValue(nested).build());
-            modified = true;
-          }
-        } else if (value instanceof Value) {
-          resultAtPath.putFields(pathSegment, (Value) value);
-          modified = true;
-        } else if (resultAtPath.containsFields(pathSegment)) {
-          hardAssert(value == null, "Expected entry to be a Map, a Value or null");
-          resultAtPath.removeFields(pathSegment);
-          modified = true;
-        }
-      }
-
-      return modified ? resultAtPath.build() : null;
-    }
+  @NonNull
+  public ObjectValue clone() {
+    return new ObjectValue(buildProto());
   }
 }

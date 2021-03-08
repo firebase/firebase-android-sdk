@@ -17,6 +17,8 @@ package com.google.firebase.ml.modeldownloader.internal;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
 import android.os.SystemClock;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -31,6 +33,8 @@ import java.util.regex.Pattern;
 /** @hide */
 public class SharedPreferencesUtil {
 
+  public static final String FIREBASE_MODELDOWNLOADER_COLLECTION_ENABLED =
+      "firebase_model_downloader_collection_enabled";
   public static final String DOWNLOADING_MODEL_ID_MATCHER = "downloading_model_id_(.*?)_([^/]+)/?";
 
   public static final String PREFERENCES_PACKAGE_NAME = "com.google.firebase.ml.modelDownloader";
@@ -253,25 +257,66 @@ public class SharedPreferencesUtil {
   /**
    * Should Firelog logging be enabled.
    *
-   * @return whether or not firelog events should be logged. Default to true.
+   * @return whether or not firelog events should be logged. Checks shared preference, then
+   *     manifest, finally defaults to Firebase wide data collection switch.
    */
   public synchronized boolean getCustomModelStatsCollectionFlag() {
-    return getSharedPreferences()
-        .getBoolean(
-            String.format(EVENT_LOGGING_ENABLED_PATTERN, CUSTOM_MODEL_LIB, persistenceKey), true);
+    if (getSharedPreferences()
+        .contains(String.format(EVENT_LOGGING_ENABLED_PATTERN, CUSTOM_MODEL_LIB, persistenceKey))) {
+      return getSharedPreferences()
+          .getBoolean(
+              String.format(EVENT_LOGGING_ENABLED_PATTERN, CUSTOM_MODEL_LIB, persistenceKey), true);
+    }
+    Boolean manifestFlag =
+        readModelDownloaderCollectionEnabledFromManifest(firebaseApp.getApplicationContext());
+    if (manifestFlag != null) {
+      return manifestFlag;
+    }
+    return firebaseApp.isDataCollectionDefaultEnabled();
+  }
+
+  @Nullable
+  private static Boolean readModelDownloaderCollectionEnabledFromManifest(
+      Context applicationContext) {
+    try {
+      final PackageManager packageManager = applicationContext.getPackageManager();
+      if (packageManager != null) {
+        final ApplicationInfo applicationInfo =
+            packageManager.getApplicationInfo(
+                applicationContext.getPackageName(), PackageManager.GET_META_DATA);
+        if (applicationInfo != null
+            && applicationInfo.metaData != null
+            && applicationInfo.metaData.containsKey(FIREBASE_MODELDOWNLOADER_COLLECTION_ENABLED)) {
+          return applicationInfo.metaData.getBoolean(FIREBASE_MODELDOWNLOADER_COLLECTION_ENABLED);
+        }
+      }
+    } catch (PackageManager.NameNotFoundException e) {
+      // This shouldn't happen since it's this app's package, but fall through to default
+      // if so.
+    }
+    return null;
   }
 
   /**
-   * Set whether firelog logging should be enabled. When not explicitly set, the default is true.
+   * Set whether firelog logging should be enabled. When not explicitly set, uses the Firebase wide
+   * data collection switch.
    *
    * @param enable - False to turn off logging. True to turn on logging.
    */
-  public synchronized void setCustomModelStatsCollectionEnabled(boolean enable) {
-    getSharedPreferences()
-        .edit()
-        .putBoolean(
-            String.format(EVENT_LOGGING_ENABLED_PATTERN, CUSTOM_MODEL_LIB, persistenceKey), enable)
-        .apply();
+  public synchronized void setCustomModelStatsCollectionEnabled(Boolean enable) {
+    if (enable == null) {
+      getSharedPreferences()
+          .edit()
+          .remove(String.format(EVENT_LOGGING_ENABLED_PATTERN, CUSTOM_MODEL_LIB, persistenceKey))
+          .commit();
+    } else {
+      getSharedPreferences()
+          .edit()
+          .putBoolean(
+              String.format(EVENT_LOGGING_ENABLED_PATTERN, CUSTOM_MODEL_LIB, persistenceKey),
+              enable)
+          .commit();
+    }
   }
 
   /**

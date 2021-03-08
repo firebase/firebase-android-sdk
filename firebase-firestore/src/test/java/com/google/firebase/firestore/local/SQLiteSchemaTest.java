@@ -24,6 +24,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.query;
 import static com.google.firebase.firestore.testutil.TestUtil.version;
 import static com.google.firebase.firestore.util.Assert.fail;
 import static java.util.Arrays.asList;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -37,6 +38,7 @@ import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.proto.MaybeDocument;
 import com.google.firebase.firestore.proto.Target;
@@ -437,7 +439,7 @@ public class SQLiteSchemaTest {
 
     // Verify that queries with SnapshotVersion.NONE return all results, regardless of whether the
     // read time has been set.
-    ImmutableSortedMap<DocumentKey, com.google.firebase.firestore.model.Document> results =
+    ImmutableSortedMap<DocumentKey, MutableDocument> results =
         remoteDocumentCache.getAllDocumentsMatchingQuery(query("coll"), version(0));
     assertResultsContain(results, "coll/existing", "coll/old", "coll/current", "coll/new");
 
@@ -569,6 +571,55 @@ public class SQLiteSchemaTest {
             });
   }
 
+  @Test
+  public void createsBundlesTable() {
+    schema.runMigrations();
+
+    assertNoResultsForQuery("SELECT * FROM bundles", NO_ARGS);
+
+    db.execSQL(
+        "INSERT INTO bundles (bundle_id, create_time_seconds, create_time_nanos, schema_version) "
+            + "VALUES ('foo', 1, 2, 3)");
+
+    Cursor cursor =
+        db.rawQuery(
+            "SELECT bundle_id, create_time_seconds, create_time_nanos, schema_version FROM bundles",
+            NO_ARGS);
+    assertTrue(cursor.moveToFirst());
+    assertEquals("foo", cursor.getString(cursor.getColumnIndex("bundle_id")));
+    assertEquals(1, cursor.getInt(cursor.getColumnIndex("create_time_seconds")));
+    assertEquals(2, cursor.getInt(cursor.getColumnIndex("create_time_nanos")));
+    assertEquals(3, cursor.getInt(cursor.getColumnIndex("schema_version")));
+
+    assertFalse(cursor.moveToNext());
+    cursor.close();
+  }
+
+  @Test
+  public void createsNamedQueriesTable() {
+    schema.runMigrations();
+
+    assertNoResultsForQuery("SELECT * FROM named_queries", NO_ARGS);
+
+    db.execSQL(
+        "INSERT INTO named_queries (name, read_time_seconds, read_time_nanos, bundled_query_proto) "
+            + "VALUES ('foo', 1, 2, ?)",
+        new Object[] {new byte[] {}});
+
+    Cursor cursor =
+        db.rawQuery(
+            "SELECT name, read_time_seconds, read_time_nanos, bundled_query_proto FROM named_queries",
+            NO_ARGS);
+    assertTrue(cursor.moveToFirst());
+    assertEquals("foo", cursor.getString(cursor.getColumnIndex("name")));
+    assertEquals(1, cursor.getInt(cursor.getColumnIndex("read_time_seconds")));
+    assertEquals(2, cursor.getInt(cursor.getColumnIndex("read_time_nanos")));
+    assertArrayEquals(new byte[] {}, cursor.getBlob(cursor.getColumnIndex("bundled_query_proto")));
+
+    assertFalse(cursor.moveToNext());
+    cursor.close();
+  }
+
   private SQLiteRemoteDocumentCache createRemoteDocumentCache() {
     SQLitePersistence persistence =
         new SQLitePersistence(serializer, LruGarbageCollector.Params.Default(), opener);
@@ -594,8 +645,7 @@ public class SQLiteSchemaTest {
   }
 
   private void assertResultsContain(
-      ImmutableSortedMap<DocumentKey, com.google.firebase.firestore.model.Document> actualResults,
-      String... docs) {
+      ImmutableSortedMap<DocumentKey, MutableDocument> actualResults, String... docs) {
     for (String doc : docs) {
       assertTrue("Expected result for " + doc, actualResults.containsKey(key(doc)));
     }

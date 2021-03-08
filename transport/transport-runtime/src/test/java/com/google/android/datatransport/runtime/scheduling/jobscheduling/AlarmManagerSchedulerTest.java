@@ -18,6 +18,7 @@ import static android.os.Build.VERSION_CODES.LOLLIPOP;
 import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.AdditionalMatchers.gt;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -121,6 +122,18 @@ public class AlarmManagerSchedulerTest {
             eq(AlarmManager.ELAPSED_REALTIME),
             eq(INITIAL_TIMESTAMP + THIRTY_SECONDS),
             any()); // 2^0*DELTA
+  }
+
+  @Test
+  public void schedule_secondAttemptThenForce() {
+    Intent intent = getIntent(TRANSPORT_CONTEXT);
+    store.recordNextCallTime(TRANSPORT_CONTEXT, 5);
+    assertThat(scheduler.isJobServiceOn(intent)).isFalse();
+    scheduler.schedule(TRANSPORT_CONTEXT, 2);
+    assertThat(scheduler.isJobServiceOn(intent)).isTrue();
+    scheduler.schedule(TRANSPORT_CONTEXT, 1, true);
+    // When you force the schedule it gets scheduled again.
+    verify(alarmManager, times(2)).set(eq(AlarmManager.ELAPSED_REALTIME), anyLong(), any());
   }
 
   @Test

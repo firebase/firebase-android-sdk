@@ -33,9 +33,9 @@ public class FirebaseMlException extends FirebaseException {
   public static final int UNKNOWN = 2;
 
   /**
-   * Client specified an invalid argument. Note that this differs from FAILED_PRECONDITION.
-   * INVALID_ARGUMENT indicates arguments that are problematic regardless of the state of the system
-   * (e.g., an invalid field name).
+   * Client specified an invalid argument. Note that this differs from <code>FAILED_PRECONDITION
+   * </code>. <code>INVALID_ARGUMENT</code> indicates arguments that are problematic regardless of
+   * the state of the system (for example, an invalid field name).
    */
   public static final int INVALID_ARGUMENT = 3;
 
@@ -80,8 +80,8 @@ public class FirebaseMlException extends FirebaseException {
   public static final int UNIMPLEMENTED = 12;
 
   /**
-   * Internal errors. Means some invariants expected by underlying system has been broken. If you
-   * see one of these errors, something is very broken.
+   * Internal errors. Means some invariant expected by underlying system has been broken. If you see
+   * one of these errors, something is very broken.
    */
   public static final int INTERNAL = 13;
 
@@ -89,12 +89,15 @@ public class FirebaseMlException extends FirebaseException {
    * The service is currently unavailable. This is a most likely a transient condition and may be
    * corrected by retrying with a backoff.
    *
-   * <p>In ML Kit, this error is mostly about the models being not available yet.
+   * <p>In ML Model Downloader, this error is mostly about the models being not available yet.
    */
   public static final int UNAVAILABLE = 14;
 
   /** The request does not have valid authentication credentials for the operation. */
   public static final int UNAUTHENTICATED = 16;
+
+  /** There is no network connection. */
+  public static final int NO_NETWORK_CONNECTION = 17;
 
   // ===============================================================================================
   // Error codes: 100 to 149 reserved for errors during model downloading/loading.
@@ -105,7 +108,7 @@ public class FirebaseMlException extends FirebaseException {
   public static final int MODEL_HASH_MISMATCH = 102;
 
   /**
-   * These download url expired before download could complete. Usually, multiple download attempt
+   * The download URL expired before download could complete. Usually, multiple download attempts
    * will be performed before this is returned.
    */
   public static final int DOWNLOAD_URL_EXPIRED = 121;
@@ -131,6 +134,7 @@ public class FirebaseMlException extends FirebaseException {
     INTERNAL,
     UNAVAILABLE,
     UNAUTHENTICATED,
+    NO_NETWORK_CONNECTION,
     NOT_ENOUGH_SPACE,
     MODEL_HASH_MISMATCH,
     DOWNLOAD_URL_EXPIRED

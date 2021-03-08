@@ -29,11 +29,9 @@ import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.local.QueryPurpose;
 import com.google.firebase.firestore.local.TargetData;
 import com.google.firebase.firestore.model.DatabaseId;
-import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
-import com.google.firebase.firestore.model.MaybeDocument;
-import com.google.firebase.firestore.model.NoDocument;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
@@ -209,6 +207,13 @@ public final class RemoteSerializer {
         && path.getSegment(2).equals("databases");
   }
 
+  /** Validates that a path has a prefix that belongs to the current database. */
+  public boolean isLocalResourceName(ResourcePath path) {
+    return isValidResourceName(path)
+        && path.getSegment(1).equals(databaseId.getProjectId())
+        && path.getSegment(3).equals(databaseId.getDatabaseId());
+  }
+
   public String databaseName() {
     return databaseName;
   }
@@ -222,7 +227,7 @@ public final class RemoteSerializer {
     return builder.build();
   }
 
-  public MaybeDocument decodeMaybeDocument(BatchGetDocumentsResponse response) {
+  public MutableDocument decodeMaybeDocument(BatchGetDocumentsResponse response) {
     if (response.getResultCase().equals(ResultCase.FOUND)) {
       return decodeFoundDocument(response);
     } else if (response.getResultCase().equals(ResultCase.MISSING)) {
@@ -232,7 +237,7 @@ public final class RemoteSerializer {
     }
   }
 
-  private Document decodeFoundDocument(BatchGetDocumentsResponse response) {
+  private MutableDocument decodeFoundDocument(BatchGetDocumentsResponse response) {
     Assert.hardAssert(
         response.getResultCase().equals(ResultCase.FOUND),
         "Tried to deserialize a found document from a missing document.");
@@ -241,10 +246,10 @@ public final class RemoteSerializer {
     SnapshotVersion version = decodeVersion(response.getFound().getUpdateTime());
     hardAssert(
         !version.equals(SnapshotVersion.NONE), "Got a document response with no snapshot version");
-    return new Document(key, version, value, Document.DocumentState.SYNCED);
+    return MutableDocument.newFoundDocument(key, version, value);
   }
 
-  private NoDocument decodeMissingDocument(BatchGetDocumentsResponse response) {
+  private MutableDocument decodeMissingDocument(BatchGetDocumentsResponse response) {
     Assert.hardAssert(
         response.getResultCase().equals(ResultCase.MISSING),
         "Tried to deserialize a missing document from a found document.");
@@ -253,7 +258,7 @@ public final class RemoteSerializer {
     hardAssert(
         !version.equals(SnapshotVersion.NONE),
         "Got a no document response with no snapshot version");
-    return new NoDocument(key, version, /*hasCommittedMutations=*/ false);
+    return MutableDocument.newNoDocument(key, version);
   }
 
   // Mutations
@@ -438,13 +443,10 @@ public final class RemoteSerializer {
       version = commitVersion;
     }
 
-    List<Value> transformResults = null;
     int transformResultsCount = proto.getTransformResultsCount();
-    if (transformResultsCount > 0) {
-      transformResults = new ArrayList<>(transformResultsCount);
-      for (int i = 0; i < transformResultsCount; i++) {
-        transformResults.add(proto.getTransformResults(i));
-      }
+    List<Value> transformResults = new ArrayList<>(transformResultsCount);
+    for (int i = 0; i < transformResultsCount; i++) {
+      transformResults.add(proto.getTransformResults(i));
     }
     return new MutationResult(version, transformResults);
   }
@@ -488,7 +490,15 @@ public final class RemoteSerializer {
     }
 
     builder.setTargetId(targetData.getTargetId());
-    builder.setResumeToken(targetData.getResumeToken());
+
+    if (targetData.getResumeToken().isEmpty()
+        && targetData.getSnapshotVersion().compareTo(SnapshotVersion.NONE) > 0) {
+      // TODO(wuandy): Consider removing above check because it is most likely true. Right now, many
+      // tests depend on this behaviour though (leaving min() out of serialization).
+      builder.setReadTime(encodeTimestamp(targetData.getSnapshotVersion().getTimestamp()));
+    } else {
+      builder.setResumeToken(targetData.getResumeToken());
+    }
 
     return builder.build();
   }
@@ -556,10 +566,9 @@ public final class RemoteSerializer {
     return builder.build();
   }
 
-  public com.google.firebase.firestore.core.Target decodeQueryTarget(QueryTarget target) {
-    ResourcePath path = decodeQueryPath(target.getParent());
-
-    StructuredQuery query = target.getStructuredQuery();
+  public com.google.firebase.firestore.core.Target decodeQueryTarget(
+      String parent, StructuredQuery query) {
+    ResourcePath path = decodeQueryPath(parent);
 
     String collectionGroup = null;
     int fromCount = query.getFromCount();
@@ -608,16 +617,12 @@ public final class RemoteSerializer {
       endAt = decodeBound(query.getEndAt());
     }
 
-    return new Query(
-            path,
-            collectionGroup,
-            filterBy,
-            orderBy,
-            limit,
-            Query.LimitType.LIMIT_TO_FIRST,
-            startAt,
-            endAt)
-        .toTarget();
+    return new com.google.firebase.firestore.core.Target(
+        path, collectionGroup, filterBy, orderBy, limit, startAt, endAt);
+  }
+
+  public com.google.firebase.firestore.core.Target decodeQueryTarget(QueryTarget target) {
+    return decodeQueryTarget(target.getParent(), target.getStructuredQuery());
   }
 
   // Filters
@@ -869,7 +874,7 @@ public final class RemoteSerializer {
         hardAssert(
             !version.equals(SnapshotVersion.NONE), "Got a document change without an update time");
         ObjectValue data = ObjectValue.fromMap(docChange.getDocument().getFieldsMap());
-        Document document = new Document(key, version, data, Document.DocumentState.SYNCED);
+        MutableDocument document = MutableDocument.newFoundDocument(key, version, data);
         watchChange = new WatchChange.DocumentChange(added, removed, document.getKey(), document);
         break;
       case DOCUMENT_DELETE:
@@ -878,7 +883,7 @@ public final class RemoteSerializer {
         key = decodeKey(docDelete.getDocument());
         // Note that version might be unset in which case we use SnapshotVersion.NONE
         version = decodeVersion(docDelete.getReadTime());
-        NoDocument doc = new NoDocument(key, version, /*hasCommittedMutations=*/ false);
+        MutableDocument doc = MutableDocument.newNoDocument(key, version);
         watchChange =
             new WatchChange.DocumentChange(Collections.emptyList(), removed, doc.getKey(), doc);
         break;

@@ -48,6 +48,8 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 
 /**
  * The Firebase Performance Monitoring API.
@@ -59,6 +61,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * #setPerformanceCollectionEnabled(boolean)
  * FirebasePerformance.setPerformanceCollectionEnabled(false)}.
  */
+@Singleton
 public class FirebasePerformance implements FirebasePerformanceAttributable {
 
   private static final AndroidLogger logger = AndroidLogger.getInstance();
@@ -132,22 +135,10 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
   // to false if it's been force disabled or it is set to null if neither.
   @Nullable private Boolean mPerformanceCollectionForceEnabledState = null;
 
-  /** This constructor is invoked from {@link com.google.firebase.perf.FirebasePerfRegistrar}. */
-  FirebasePerformance(
-      FirebaseApp firebaseApp,
-      Provider<RemoteConfigComponent> firebaseRemoteConfigProvider,
-      FirebaseInstallationsApi firebaseInstallationsApi,
-      Provider<TransportFactory> transportFactoryProvider) {
-
-    this(
-        firebaseApp,
-        firebaseRemoteConfigProvider,
-        firebaseInstallationsApi,
-        transportFactoryProvider,
-        RemoteConfigManager.getInstance(),
-        ConfigResolver.getInstance(),
-        GaugeManager.getInstance());
-  }
+  private final FirebaseApp firebaseApp;
+  private final Provider<RemoteConfigComponent> firebaseRemoteConfigProvider;
+  private final FirebaseInstallationsApi firebaseInstallationsApi;
+  private final Provider<TransportFactory> transportFactoryProvider;
 
   /**
    * Constructs the FirebasePerformance class and allows injecting dependencies.
@@ -164,6 +155,7 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
    * @param gaugeManager The GaugeManager instance.
    */
   @VisibleForTesting
+  @Inject
   FirebasePerformance(
       FirebaseApp firebaseApp,
       Provider<RemoteConfigComponent> firebaseRemoteConfigProvider,
@@ -172,6 +164,11 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
       RemoteConfigManager remoteConfigManager,
       ConfigResolver configResolver,
       GaugeManager gaugeManager) {
+
+    this.firebaseApp = firebaseApp;
+    this.firebaseRemoteConfigProvider = firebaseRemoteConfigProvider;
+    this.firebaseInstallationsApi = firebaseInstallationsApi;
+    this.transportFactoryProvider = transportFactoryProvider;
 
     if (firebaseApp == null) {
       this.mPerformanceCollectionForceEnabledState = false;

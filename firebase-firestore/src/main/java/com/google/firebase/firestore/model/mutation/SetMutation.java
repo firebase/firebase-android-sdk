@@ -14,16 +14,15 @@
 
 package com.google.firebase.firestore.model.mutation;
 
-import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
-import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.MaybeDocument;
+import com.google.firebase.firestore.model.FieldPath;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ObjectValue;
-import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firestore.v1.Value;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * A mutation that creates or replaces the document at the given key with the object value contents.
@@ -72,40 +71,34 @@ public final class SetMutation extends Mutation {
   }
 
   @Override
-  public MaybeDocument applyToRemoteDocument(
-      @Nullable MaybeDocument maybeDoc, MutationResult mutationResult) {
-    verifyKeyMatches(maybeDoc);
+  public void applyToRemoteDocument(MutableDocument document, MutationResult mutationResult) {
+    verifyKeyMatches(document);
 
     // Unlike applyToLocalView, if we're applying a mutation to a remote document the server has
     // accepted the mutation so the precondition must have held.
-
-    SnapshotVersion version = mutationResult.getVersion();
-
-    ObjectValue newData = value;
-    if (mutationResult.getTransformResults() != null) {
-      List<Value> transformResults =
-          serverTransformResults(maybeDoc, mutationResult.getTransformResults());
-      newData = transformObject(newData, transformResults);
-    }
-
-    return new Document(getKey(), version, newData, Document.DocumentState.COMMITTED_MUTATIONS);
+    ObjectValue newData = value.clone();
+    Map<FieldPath, Value> transformResults =
+        serverTransformResults(document, mutationResult.getTransformResults());
+    newData.setAll(transformResults);
+    document
+        .convertToFoundDocument(mutationResult.getVersion(), newData)
+        .setHasCommittedMutations();
   }
 
-  @Nullable
   @Override
-  public MaybeDocument applyToLocalView(
-      @Nullable MaybeDocument maybeDoc, Timestamp localWriteTime) {
-    verifyKeyMatches(maybeDoc);
+  public void applyToLocalView(MutableDocument document, Timestamp localWriteTime) {
+    verifyKeyMatches(document);
 
-    if (!this.getPrecondition().isValidFor(maybeDoc)) {
-      return maybeDoc;
+    if (!this.getPrecondition().isValidFor(document)) {
+      return;
     }
 
-    List<Value> transformResults = localTransformResults(localWriteTime, maybeDoc);
-    ObjectValue newData = transformObject(value, transformResults);
-
-    SnapshotVersion version = getPostMutationVersion(maybeDoc);
-    return new Document(getKey(), version, newData, Document.DocumentState.LOCAL_MUTATIONS);
+    Map<FieldPath, Value> transformResults = localTransformResults(localWriteTime, document);
+    ObjectValue localValue = value.clone();
+    localValue.setAll(transformResults);
+    document
+        .convertToFoundDocument(getPostMutationVersion(document), localValue)
+        .setHasLocalMutations();
   }
 
   /** Returns the object value to use when setting the document. */

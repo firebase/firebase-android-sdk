@@ -39,6 +39,7 @@ import com.google.firebase.perf.internal.RemoteConfigManager;
 import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.ImmutableBundle;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
+import com.google.testing.timing.FakeDirectExecutorService;
 import java.util.Map;
 import org.junit.After;
 import org.junit.Assert;
@@ -67,6 +68,8 @@ public class FirebasePerformanceTest {
   @Nullable private GaugeManager spyGaugeManager = null;
 
   @Rule public MockitoRule initRule = MockitoJUnit.rule();
+
+  private FakeDirectExecutorService fakeDirectExecutorService;
 
   @Before
   public void setUp() throws NameNotFoundException {
@@ -98,6 +101,7 @@ public class FirebasePerformanceTest {
     spyConfigResolver = spy(ConfigResolver.getInstance());
 
     spyGaugeManager = spy(GaugeManager.getInstance());
+    fakeDirectExecutorService = new FakeDirectExecutorService();
   }
 
   @After
@@ -542,8 +546,9 @@ public class FirebasePerformanceTest {
       Provider<RemoteConfigComponent> firebaseRemoteConfigProvider,
       Provider<TransportFactory> transportFactoryProvider) {
     if (sharedPreferencesEnabledDisabledKey != null) {
-      DeviceCacheManager.getInstance()
-          .setValue(Constants.ENABLE_DISABLE, sharedPreferencesEnabledDisabledKey);
+      DeviceCacheManager deviceCacheManager = new DeviceCacheManager(fakeDirectExecutorService);
+      deviceCacheManager.setContext(ApplicationProvider.getApplicationContext());
+      deviceCacheManager.setValue(Constants.ENABLE_DISABLE, sharedPreferencesEnabledDisabledKey);
     }
 
     Bundle bundle = new Bundle();

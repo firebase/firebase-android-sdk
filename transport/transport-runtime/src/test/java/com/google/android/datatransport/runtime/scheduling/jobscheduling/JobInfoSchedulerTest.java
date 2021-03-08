@@ -55,6 +55,31 @@ public class JobInfoSchedulerTest {
   private final JobInfoScheduler scheduler = new JobInfoScheduler(context, store, config);
 
   @Test
+  public void schedule_secondAttemptThenForce() {
+    store.recordNextCallTime(TRANSPORT_CONTEXT, 5);
+    scheduler.schedule(TRANSPORT_CONTEXT, 2);
+    int jobId = scheduler.getJobId(TRANSPORT_CONTEXT);
+    assertThat(jobScheduler.getAllPendingJobs()).isNotEmpty();
+    assertThat(jobScheduler.getAllPendingJobs().size()).isEqualTo(1);
+    JobInfo jobInfo = jobScheduler.getAllPendingJobs().get(0);
+    PersistableBundle bundle = jobInfo.getExtras();
+    assertThat(jobInfo.getId()).isEqualTo(jobId);
+    assertThat(bundle.get(JobInfoScheduler.BACKEND_NAME))
+        .isEqualTo(TRANSPORT_CONTEXT.getBackendName());
+    assertThat(bundle.get(JobInfoScheduler.ATTEMPT_NUMBER)).isEqualTo(2);
+    // Schedule again with force set to true.
+    scheduler.schedule(TRANSPORT_CONTEXT, 1, true);
+    assertThat(jobScheduler.getAllPendingJobs().size()).isEqualTo(1);
+    jobInfo = jobScheduler.getAllPendingJobs().get(0);
+    bundle = jobInfo.getExtras();
+    assertThat(jobInfo.getId()).isEqualTo(jobId);
+    assertThat(bundle.get(JobInfoScheduler.BACKEND_NAME))
+        .isEqualTo(TRANSPORT_CONTEXT.getBackendName());
+    //  Earlier job should be overwritten with the newly scheduled job.
+    assertThat(bundle.get(JobInfoScheduler.ATTEMPT_NUMBER)).isEqualTo(1);
+  }
+
+  @Test
   public void schedule_longWaitTimeFirstAttempt() {
     store.recordNextCallTime(TRANSPORT_CONTEXT, 1000000);
     scheduler.schedule(TRANSPORT_CONTEXT, 1);
