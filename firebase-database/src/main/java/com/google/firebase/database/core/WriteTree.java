@@ -184,20 +184,20 @@ public class WriteTree {
    * include hidden writes), attempt to calculate a complete snapshot for the given path
    */
   public Node calcCompleteEventCache(Path treePath, Node completeServerCache) {
-    return this.calcCompleteEventCache(treePath, completeServerCache, new ArrayList<Long>());
+    return this.calcCompleteEventCache(treePath, completeServerCache, null);
   }
 
   public Node calcCompleteEventCache(
-      Path treePath, Node completeServerCache, List<Long> writeIdsToExclude) {
-    return this.calcCompleteEventCache(treePath, completeServerCache, writeIdsToExclude, false);
+      Path treePath, Node completeServerCache, Predicate<Long> writeIdPred) {
+    return this.calcCompleteEventCache(treePath, completeServerCache, writeIdPred, false);
   }
 
   public Node calcCompleteEventCache(
       final Path treePath,
       Node completeServerCache,
-      final List<Long> writeIdsToExclude,
+      final Predicate<Long> writeIdPred,
       final boolean includeHiddenWrites) {
-    if (writeIdsToExclude.isEmpty() && !includeHiddenWrites) {
+    if (writeIdPred == null && !includeHiddenWrites) {
       Node shadowingNode = this.visibleWrites.getCompleteNode(treePath);
       if (shadowingNode != null) {
         return shadowingNode;
@@ -235,7 +235,7 @@ public class WriteTree {
                 @Override
                 public boolean evaluate(UserWriteRecord write) {
                   return (write.isVisible() || includeHiddenWrites)
-                      && !writeIdsToExclude.contains(write.getWriteId())
+                      && writeIdPred.evaluate(write.getWriteId())
                       && (write.getPath().contains(treePath) || treePath.contains(write.getPath()));
                 }
               };
