@@ -29,7 +29,7 @@ option csharp_namespace = "Firestore.Proto";
 option go_package = "google.golang.org/genproto/firestore/proto;firestore";
 option java_multiple_files = true;
 option java_outer_classname = "BundleProto";
-option java_package = "com.google.firestore.proto";
+option java_package = "com.google.firestore.bundle";
 option objc_class_prefix = "FSTPB";
 option php_namespace = "Firestore\\Proto";
 

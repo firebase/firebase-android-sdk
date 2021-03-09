@@ -167,7 +167,11 @@ public class UnitTestHelpers {
     config.setEventTarget(new TestEventTarget());
     config.setRunLoop(runLoop);
     config.setFirebaseApp(FirebaseApp.getInstance());
-    config.setAuthTokenProvider(AndroidAuthTokenProvider.forUnauthenticatedAccess());
+    config.setAuthTokenProvider(
+        new AndroidAuthTokenProvider(
+            never -> {
+              // Auth is not available in our unit tests
+            }));
     return config;
   }
 

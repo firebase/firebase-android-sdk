@@ -58,9 +58,8 @@ import com.google.firebase.firestore.local.Persistence;
 import com.google.firebase.firestore.local.PersistenceTestHelpers;
 import com.google.firebase.firestore.local.QueryPurpose;
 import com.google.firebase.firestore.local.TargetData;
-import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.MaybeDocument;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
@@ -85,8 +84,10 @@ import com.google.firebase.firestore.util.AsyncQueue.TimerId;
 import com.google.protobuf.ByteString;
 import io.grpc.Status;
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -101,7 +102,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
-import org.apache.tools.ant.filters.StringInputStream;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -413,14 +413,14 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
       throws JSONException {
     long version = jsonDoc.getLong("version");
     JSONObject options = jsonDoc.getJSONObject("options");
-    Document.DocumentState documentState =
-        options.optBoolean("hasLocalMutations")
-            ? Document.DocumentState.LOCAL_MUTATIONS
-            : (options.optBoolean("hasCommittedMutations")
-                ? Document.DocumentState.COMMITTED_MUTATIONS
-                : Document.DocumentState.SYNCED);
     Map<String, Object> values = parseMap(jsonDoc.getJSONObject("value"));
-    Document doc = doc(jsonDoc.getString("key"), version, values, documentState);
+    MutableDocument doc = doc(jsonDoc.getString("key"), version, values);
+    if (options.optBoolean("hasLocalMutations")) {
+      doc.setHasLocalMutations();
+    }
+    if (options.optBoolean("hasCommittedMutations")) {
+      doc.setHasCommittedMutations();
+    }
     return DocumentViewChange.create(type, doc);
   }
 
@@ -510,7 +510,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     BundleReader bundleReader =
         new BundleReader(
             new BundleSerializer(new RemoteSerializer(databaseInfo.getDatabaseId())),
-            new StringInputStream(json));
+            new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)));
     LoadBundleTask bundleTask = new LoadBundleTask();
     queue.runSync(
         () -> {
@@ -638,7 +638,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
       Map<String, Object> value =
           !docSpec.isNull("value") ? parseMap(docSpec.getJSONObject("value")) : null;
       long version = docSpec.getLong("version");
-      MaybeDocument doc = value != null ? doc(key, version, value) : deletedDoc(key, version);
+      MutableDocument doc = value != null ? doc(key, version, value) : deletedDoc(key, version);
       List<Integer> updated = parseIntList(watchEntity.optJSONArray("targets"));
       List<Integer> removed = parseIntList(watchEntity.optJSONArray("removedTargets"));
       WatchChange change = new DocumentChange(updated, removed, doc.getKey(), doc);

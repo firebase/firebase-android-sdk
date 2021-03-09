@@ -13,8 +13,8 @@
 // limitations under the License.
 package com.google.firebase.gradle.plugins;
 
-import static com.google.firebase.gradle.plugins.ProjectUtilsKt.toBoolean;
 import static com.google.firebase.gradle.plugins.ClosureUtil.closureOf;
+import static com.google.firebase.gradle.plugins.ProjectUtilsKt.toBoolean;
 
 import com.android.build.gradle.LibraryExtension;
 import com.google.common.collect.ImmutableList;
@@ -93,11 +93,14 @@ public class JavadocPlugin implements Plugin<Project> {
         generateJavadoc,
         closureOf(
             (Javadoc javadoc) -> {
-              project.getTasks().all(it -> {
-                if (it.getName().equals("assembleRelease")) {
-                  javadoc.dependsOn(it);
-                }
-              });
+              project
+                  .getTasks()
+                  .all(
+                      it -> {
+                        if (it.getName().equals("assembleRelease")) {
+                          javadoc.dependsOn(it);
+                        }
+                      });
               // Besides third party libraries, firestore depends on the sibling module
               // :immutable-collection,
               // which needs to be in the classpath when javadoc is run
@@ -148,8 +151,9 @@ public class JavadocPlugin implements Plugin<Project> {
                           javadoc.setClasspath(
                               javadoc
                                   .getClasspath()
-                                  .plus(getJars(variant.getCompileConfiguration())
-                                      .plus(getJars(variant.getRuntimeConfiguration()))));
+                                  .plus(
+                                      getJars(variant.getCompileConfiguration())
+                                          .plus(getJars(variant.getRuntimeConfiguration()))));
 
                           // this includes compiled sources which avoids "cannot find symbol" errors
                           javadoc.setClasspath(
@@ -260,9 +264,12 @@ public class JavadocPlugin implements Plugin<Project> {
             }));
     project
         .getTasks()
-        .create(TasksKt.JAVADOC_TASK_NAME, task -> {
-          task.dependsOn(generateJavadoc);
-        });
+        .create(
+            TasksKt.JAVADOC_TASK_NAME,
+            task -> {
+              task.dependsOn(generateJavadoc);
+              createEmptyApiFile(project);
+            });
   }
 
   private static void applyDokka(Project project) {
@@ -275,20 +282,25 @@ public class JavadocPlugin implements Plugin<Project> {
   private static Task applyDummyJavadoc(Project project) {
     return project
         .getTasks()
-        .create(TasksKt.JAVADOC_TASK_NAME, task -> {
-          task.doLast(
-              t -> {
-                File dir = project.file(project.getBuildDir() + "/tmp/javadoc");
-                project.mkdir(dir);
-                try {
-                  project.file(dir + "/api.txt").createNewFile();
-                } catch (IOException e) {
-                  throw new GradleException("Unable to create file", e);
-                }
-              });
-          task.doLast(
-              t -> project.mkdir(project.getBuildDir() + "/docs/javadoc/reference"));
-        });
+        .create(
+            TasksKt.JAVADOC_TASK_NAME,
+            task -> {
+              task.doLast(
+                  t -> {
+                    createEmptyApiFile(project);
+                  });
+              task.doLast(t -> project.mkdir(project.getBuildDir() + "/docs/javadoc/reference"));
+            });
+  }
+
+  private static void createEmptyApiFile(Project project) {
+    File dir = project.file(project.getBuildDir() + "/tmp/javadoc");
+    project.mkdir(dir);
+    try {
+      project.file(dir + "/api.txt").createNewFile();
+    } catch (IOException e) {
+      throw new GradleException("Unable to create file", e);
+    }
   }
 
   private static FileCollection getJars(Configuration configuration) {

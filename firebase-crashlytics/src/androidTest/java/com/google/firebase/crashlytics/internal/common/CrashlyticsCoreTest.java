@@ -38,6 +38,8 @@ import com.google.firebase.crashlytics.internal.settings.TestSettingsData;
 import com.google.firebase.crashlytics.internal.settings.model.SettingsData;
 import com.google.firebase.crashlytics.internal.unity.UnityVersionProvider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import org.mockito.Mockito;
 
@@ -123,6 +125,126 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     crashlyticsCore.setCustomKey(" " + key1 + " ", " " + longValue + " ");
     assertTrue(metadata.getCustomKeys().containsKey(key1));
     assertEquals(longValue, metadata.getCustomKeys().get(key1));
+  }
+
+  public void testBulkCustomKeys() throws Exception {
+    final double DELTA = 1e-15;
+
+    UserMetadata metadata = crashlyticsCore.getController().getUserMetadata();
+
+    final String stringKey = "string key";
+    final String stringValue = "value1";
+    final String trimmedKey = "trimmed key";
+    final String trimmedValue = "trimmed value";
+
+    final StringBuffer idBuffer = new StringBuffer("id012345");
+    while (idBuffer.length() < UserMetadata.MAX_ATTRIBUTE_SIZE) {
+      idBuffer.append("0");
+    }
+    final String longId = idBuffer.toString();
+    final String superLongId = longId + "more chars";
+    final String longStringValue = longId.replaceAll("0", "x");
+    final String superLongValue = longStringValue + "some more chars";
+
+    final String booleanKey = "boolean key";
+    final Boolean booleanValue = true;
+
+    final String doubleKey = "double key";
+    final double doubleValue = 1.000000000000001;
+
+    final String floatKey = "float key";
+    final float floatValue = 2.000002f;
+
+    final String longKey = "long key";
+    final long longValue = 3;
+
+    final String intKey = "int key";
+    final int intValue = 4;
+
+    Map<String, String> keysAndValues = new HashMap<>();
+    keysAndValues.put(stringKey, stringValue);
+    keysAndValues.put(" " + trimmedKey + " ", " " + trimmedValue + " ");
+    keysAndValues.put(longId, longStringValue);
+    keysAndValues.put(superLongId, superLongValue);
+    keysAndValues.put(booleanKey, booleanValue.toString());
+    keysAndValues.put(doubleKey, String.valueOf(doubleValue));
+    keysAndValues.put(floatKey, String.valueOf(floatValue));
+    keysAndValues.put(longKey, String.valueOf(longValue));
+    keysAndValues.put(intKey, String.valueOf(intValue));
+
+    crashlyticsCore.setCustomKeys(keysAndValues);
+
+    assertEquals(stringValue, metadata.getCustomKeys().get(stringKey));
+    assertEquals(trimmedValue, metadata.getCustomKeys().get(trimmedKey));
+    assertEquals(longStringValue, metadata.getCustomKeys().get(longId));
+    // Test truncation of custom keys and attributes
+    assertNull(metadata.getCustomKeys().get(superLongId));
+    assertTrue(Boolean.parseBoolean(metadata.getCustomKeys().get(booleanKey)));
+    assertEquals(doubleValue, Double.parseDouble(metadata.getCustomKeys().get(doubleKey)), DELTA);
+    assertEquals(floatValue, Float.parseFloat(metadata.getCustomKeys().get(floatKey)), DELTA);
+    assertEquals(longValue, Long.parseLong(metadata.getCustomKeys().get(longKey)), DELTA);
+    assertEquals(intValue, Integer.parseInt(metadata.getCustomKeys().get(intKey)), DELTA);
+
+    // Add the max number of attributes (already set 8)
+    Map<String, String> addlKeysAndValues = new HashMap<>();
+    for (int i = 8; i < UserMetadata.MAX_ATTRIBUTES; ++i) {
+      final String key = "key" + i;
+      final String value = "value" + i;
+      addlKeysAndValues.put(key, value);
+    }
+    crashlyticsCore.setCustomKeys(addlKeysAndValues);
+
+    // Ensure all keys have been set
+    assertEquals(UserMetadata.MAX_ATTRIBUTES, metadata.getCustomKeys().size(), DELTA);
+
+    // Make sure the first MAX_ATTRIBUTES - 8 keys were set
+    for (int i = 8; i < UserMetadata.MAX_ATTRIBUTES + 1; ++i) {
+      final String key = "key" + i;
+      final String value = "value" + i;
+    }
+
+    Map<String, String> extraKeysAndValues = new HashMap<>();
+    for (int i = UserMetadata.MAX_ATTRIBUTES; i < UserMetadata.MAX_ATTRIBUTES + 10; ++i) {
+      final String key = "key" + i;
+      final String value = "value" + i;
+      extraKeysAndValues.put(key, value);
+    }
+    crashlyticsCore.setCustomKeys(extraKeysAndValues);
+
+    // Make sure the extra keys were not added
+    for (int i = UserMetadata.MAX_ATTRIBUTES; i < UserMetadata.MAX_ATTRIBUTES + 10; ++i) {
+      final String key = "key" + i;
+      assertFalse(metadata.getCustomKeys().containsKey(key));
+    }
+
+    // Check updating existing keys and setting to null
+    final String updatedStringValue = "string value 1";
+    final boolean updatedBooleanValue = false;
+    final double updatedDoubleValue = -1.000000000000001;
+    final float updatedFloatValue = -2.000002f;
+    final long updatedLongValue = -3;
+    final int updatedIntValue = -4;
+
+    Map<String, String> updatedKeysAndValues = new HashMap<>();
+    updatedKeysAndValues.put(stringKey, updatedStringValue);
+    updatedKeysAndValues.put(longId, null);
+    updatedKeysAndValues.put(booleanKey, String.valueOf(updatedBooleanValue));
+    updatedKeysAndValues.put(doubleKey, String.valueOf(updatedDoubleValue));
+    updatedKeysAndValues.put(floatKey, String.valueOf(updatedFloatValue));
+    updatedKeysAndValues.put(longKey, String.valueOf(updatedLongValue));
+    updatedKeysAndValues.put(intKey, String.valueOf(updatedIntValue));
+
+    crashlyticsCore.setCustomKeys(updatedKeysAndValues);
+
+    assertEquals(updatedStringValue, metadata.getCustomKeys().get(stringKey));
+    assertFalse(Boolean.parseBoolean(metadata.getCustomKeys().get(booleanKey)));
+    assertEquals(
+        updatedDoubleValue, Double.parseDouble(metadata.getCustomKeys().get(doubleKey)), DELTA);
+    assertEquals(
+        updatedFloatValue, Float.parseFloat(metadata.getCustomKeys().get(floatKey)), DELTA);
+    assertEquals(updatedLongValue, Long.parseLong(metadata.getCustomKeys().get(longKey)), DELTA);
+    assertEquals(updatedIntValue, Integer.parseInt(metadata.getCustomKeys().get(intKey)), DELTA);
+    assertEquals("", metadata.getCustomKeys().get(longId));
   }
 
   public void testGetVersion() {

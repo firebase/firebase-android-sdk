@@ -39,9 +39,9 @@ import com.google.firebase.firestore.local.QueryPurpose;
 import com.google.firebase.firestore.local.QueryResult;
 import com.google.firebase.firestore.local.ReferenceSet;
 import com.google.firebase.firestore.local.TargetData;
+import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.MaybeDocument;
-import com.google.firebase.firestore.model.NoDocument;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
@@ -346,7 +346,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
       }
     }
 
-    ImmutableSortedMap<DocumentKey, MaybeDocument> changes = localStore.applyRemoteEvent(event);
+    ImmutableSortedMap<DocumentKey, Document> changes = localStore.applyRemoteEvent(event);
     emitNewSnapsAndNotifyLocalStore(changes, event);
   }
 
@@ -407,10 +407,9 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
       // It's a limbo doc. Create a synthetic event saying it was deleted. This is kind of a hack.
       // Ideally, we would have a method in the local store to purge a document. However, it would
       // be tricky to keep all of the local store's invariants with another method.
-      Map<DocumentKey, MaybeDocument> documentUpdates =
-          Collections.singletonMap(
-              limboKey,
-              new NoDocument(limboKey, SnapshotVersion.NONE, /*hasCommittedMutations=*/ false));
+      MutableDocument result = MutableDocument.newNoDocument(limboKey, SnapshotVersion.NONE);
+      Map<DocumentKey, MutableDocument> documentUpdates =
+          Collections.singletonMap(limboKey, result);
       Set<DocumentKey> limboDocuments = Collections.singleton(limboKey);
       RemoteEvent event =
           new RemoteEvent(
@@ -437,7 +436,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
 
     resolvePendingWriteTasks(mutationBatchResult.getBatch().getBatchId());
 
-    ImmutableSortedMap<DocumentKey, MaybeDocument> changes =
+    ImmutableSortedMap<DocumentKey, Document> changes =
         localStore.acknowledgeBatch(mutationBatchResult);
 
     emitNewSnapsAndNotifyLocalStore(changes, /*remoteEvent=*/ null);
@@ -446,7 +445,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
   @Override
   public void handleRejectedWrite(int batchId, Status status) {
     assertCallback("handleRejectedWrite");
-    ImmutableSortedMap<DocumentKey, MaybeDocument> changes = localStore.rejectBatch(batchId);
+    ImmutableSortedMap<DocumentKey, Document> changes = localStore.rejectBatch(batchId);
 
     if (!changes.isEmpty()) {
       logErrorIfInteresting(status, "Write failed at %s", changes.getMinKey().getPath());
@@ -539,7 +538,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
         }
       }
 
-      ImmutableSortedMap<DocumentKey, MaybeDocument> changes = bundleLoader.applyChanges();
+      ImmutableSortedMap<DocumentKey, Document> changes = bundleLoader.applyChanges();
 
       // TODO(b/160876443): This currently raises snapshots with `fromCache=false` if users already
       // listen to some queries and bundles has newer version.
@@ -620,7 +619,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
    * snapshot.
    */
   private void emitNewSnapsAndNotifyLocalStore(
-      ImmutableSortedMap<DocumentKey, MaybeDocument> changes, @Nullable RemoteEvent remoteEvent) {
+      ImmutableSortedMap<DocumentKey, Document> changes, @Nullable RemoteEvent remoteEvent) {
     List<ViewSnapshot> newSnapshots = new ArrayList<>();
     List<LocalViewChanges> documentChangesInAllViews = new ArrayList<>();
 
@@ -730,7 +729,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
       // Fails tasks waiting for pending writes requested by previous user.
       failOutstandingPendingWritesAwaitingTasks();
       // Notify local store and emit any resulting events from swapping out the mutation queue.
-      ImmutableSortedMap<DocumentKey, MaybeDocument> changes = localStore.handleUserChange(user);
+      ImmutableSortedMap<DocumentKey, Document> changes = localStore.handleUserChange(user);
       emitNewSnapsAndNotifyLocalStore(changes, /*remoteEvent=*/ null);
     }
 

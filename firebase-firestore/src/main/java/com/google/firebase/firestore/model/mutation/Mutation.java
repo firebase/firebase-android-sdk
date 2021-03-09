@@ -16,17 +16,18 @@ package com.google.firebase.firestore.model.mutation;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
-import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
-import com.google.firebase.firestore.model.MaybeDocument;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firestore.v1.Value;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Represents a Mutation of a document. Different subclasses of Mutation will perform different
@@ -93,33 +94,26 @@ public abstract class Mutation {
   }
 
   /**
-   * Applies this mutation to the given MaybeDocument for the purposes of computing a new remote
-   * document. If the input document doesn't match the expected state (e.g. it is null or outdated),
-   * an `UnknownDocument` can be returned.
+   * Applies this mutation to the given Document for the purposes of computing a new remote document
+   * If the input document doesn't match the expected state (e.g. it is invalid or outdated), the
+   * document state may transition to unknown.
    *
-   * @param maybeDoc The document to mutate. The input document can be null if the client has no
-   *     knowledge of the pre-mutation state of the document.
+   * @param document The document to mutate.
    * @param mutationResult The result of applying the mutation from the backend.
-   * @return The mutated document. The returned document may be an UnknownDocument if the mutation
-   *     could not be applied to the locally cached base document.
    */
-  public abstract MaybeDocument applyToRemoteDocument(
-      @Nullable MaybeDocument maybeDoc, MutationResult mutationResult);
+  public abstract void applyToRemoteDocument(
+      MutableDocument document, MutationResult mutationResult);
 
   /**
-   * Applies this mutation to the given MaybeDocument for the purposes of computing the new local
-   * view of a document. Both the input and returned documents can be null.
+   * Applies this mutation to the given Document for the purposes of computing the new local view of
+   * a document. If the input document doesn't match the expected state, the document is not
+   * modified.
    *
-   * @param maybeDoc The document to mutate. The input document can be null if the client has no
-   *     knowledge of the pre-mutation state of the document.
+   * @param document The document to mutate.
    * @param localWriteTime A timestamp indicating the local write time of the batch this mutation is
    *     a part of.
-   * @return The mutated document. The returned document may be null, but only if maybeDoc was null
-   *     and the mutation would not create a new document.
    */
-  @Nullable
-  public abstract MaybeDocument applyToLocalView(
-      @Nullable MaybeDocument maybeDoc, Timestamp localWriteTime);
+  public abstract void applyToLocalView(MutableDocument document, Timestamp localWriteTime);
 
   /** Helper for derived classes to implement .equals(). */
   boolean hasSameKeyAndPrecondition(Mutation other) {
@@ -136,12 +130,10 @@ public abstract class Mutation {
     return "key=" + key + ", precondition=" + precondition;
   }
 
-  void verifyKeyMatches(@Nullable MaybeDocument maybeDoc) {
-    if (maybeDoc != null) {
-      hardAssert(
-          maybeDoc.getKey().equals(getKey()),
-          "Can only apply a mutation to a document with the same key");
-    }
+  void verifyKeyMatches(MutableDocument document) {
+    hardAssert(
+        document.getKey().equals(getKey()),
+        "Can only apply a mutation to a document with the same key");
   }
 
   /**
@@ -149,9 +141,9 @@ public abstract class Mutation {
    * defined to return the version of the base document only if it is an existing document. Deleted
    * and unknown documents have a post-mutation version of {@code SnapshotVersion.NONE}.
    */
-  static SnapshotVersion getPostMutationVersion(@Nullable MaybeDocument maybeDoc) {
-    if (maybeDoc instanceof Document) {
-      return maybeDoc.getVersion();
+  static SnapshotVersion getPostMutationVersion(MutableDocument document) {
+    if (document.isFoundDocument()) {
+      return document.getVersion();
     } else {
       return SnapshotVersion.NONE;
     }
@@ -162,13 +154,13 @@ public abstract class Mutation {
    * result of applying a transform) for use after a mutation containing transforms has been
    * acknowledged by the server.
    *
-   * @param maybeDoc The current state of the document after applying all previous mutations.
+   * @param mutableDocument The current state of the document after applying all previous mutations.
    * @param serverTransformResults The transform results received by the server.
-   * @return The transform results list.
+   * @return A map of fields to transform results.
    */
-  protected List<Value> serverTransformResults(
-      @Nullable MaybeDocument maybeDoc, List<Value> serverTransformResults) {
-    ArrayList<Value> transformResults = new ArrayList<>(fieldTransforms.size());
+  protected Map<FieldPath, Value> serverTransformResults(
+      MutableDocument mutableDocument, List<Value> serverTransformResults) {
+    Map<FieldPath, Value> transformResults = new HashMap<>(fieldTransforms.size());
     hardAssert(
         fieldTransforms.size() == serverTransformResults.size(),
         "server transform count (%d) should match field transform count (%d)",
@@ -180,11 +172,12 @@ public abstract class Mutation {
       TransformOperation transform = fieldTransform.getOperation();
 
       Value previousValue = null;
-      if (maybeDoc instanceof Document) {
-        previousValue = ((Document) maybeDoc).getField(fieldTransform.getFieldPath());
+      if (mutableDocument.isFoundDocument()) {
+        previousValue = mutableDocument.getField(fieldTransform.getFieldPath());
       }
 
-      transformResults.add(
+      transformResults.put(
+          fieldTransform.getFieldPath(),
           transform.applyToRemoteDocument(previousValue, serverTransformResults.get(i)));
     }
     return transformResults;
@@ -195,56 +188,40 @@ public abstract class Mutation {
    * result of applying a transform) for use when applying a transform locally.
    *
    * @param localWriteTime The local time of the mutation (used to generate ServerTimestampValues).
-   * @param maybeDoc The current state of the document after applying all previous mutations.
-   * @return The transform results list.
+   * @param mutableDocument The current state of the document after applying all previous mutations.
+   * @return A map of fields to transform results.
    */
-  protected List<Value> localTransformResults(
-      Timestamp localWriteTime, @Nullable MaybeDocument maybeDoc) {
-    ArrayList<Value> transformResults = new ArrayList<>(fieldTransforms.size());
+  protected Map<FieldPath, Value> localTransformResults(
+      Timestamp localWriteTime, MutableDocument mutableDocument) {
+    Map<FieldPath, Value> transformResults = new HashMap<>(fieldTransforms.size());
     for (FieldTransform fieldTransform : fieldTransforms) {
       TransformOperation transform = fieldTransform.getOperation();
 
       Value previousValue = null;
-      if (maybeDoc instanceof Document) {
-        previousValue = ((Document) maybeDoc).getField(fieldTransform.getFieldPath());
+      if (mutableDocument.isFoundDocument()) {
+        previousValue = mutableDocument.getField(fieldTransform.getFieldPath());
       }
 
-      transformResults.add(transform.applyToLocalView(previousValue, localWriteTime));
+      transformResults.put(
+          fieldTransform.getFieldPath(), transform.applyToLocalView(previousValue, localWriteTime));
     }
     return transformResults;
   }
 
-  ObjectValue transformObject(ObjectValue objectValue, List<Value> transformResults) {
-    hardAssert(
-        transformResults.size() == fieldTransforms.size(), "Transform results length mismatch.");
-
-    ObjectValue.Builder builder = objectValue.toBuilder();
-    for (int i = 0; i < fieldTransforms.size(); i++) {
-      FieldTransform fieldTransform = fieldTransforms.get(i);
-      FieldPath fieldPath = fieldTransform.getFieldPath();
-      builder.set(fieldPath, transformResults.get(i));
-    }
-    return builder.build();
-  }
-
-  public ObjectValue extractTransformBaseValue(@Nullable MaybeDocument maybeDoc) {
-    ObjectValue.Builder baseObject = null;
+  public ObjectValue extractTransformBaseValue(Document document) {
+    ObjectValue baseObject = null;
 
     for (FieldTransform transform : fieldTransforms) {
-      Value existingValue = null;
-      if (maybeDoc instanceof Document) {
-        existingValue = ((Document) maybeDoc).getField(transform.getFieldPath());
-      }
-
+      Value existingValue = document.getField(transform.getFieldPath());
       Value coercedValue = transform.getOperation().computeBaseValue(existingValue);
       if (coercedValue != null) {
         if (baseObject == null) {
-          baseObject = ObjectValue.newBuilder();
+          baseObject = new ObjectValue();
         }
         baseObject.set(transform.getFieldPath(), coercedValue);
       }
     }
 
-    return baseObject != null ? baseObject.build() : null;
+    return baseObject;
   }
 }

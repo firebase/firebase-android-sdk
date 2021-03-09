@@ -41,6 +41,7 @@ import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.perf.v1.ApplicationProcessState;
 import com.google.firebase.perf.v1.TraceMetric;
+import com.google.testing.timing.FakeDirectExecutorService;
 import java.util.Random;
 import org.junit.Before;
 import org.junit.Test;
@@ -80,7 +81,9 @@ public class TraceTest extends FirebasePerformanceTestBase {
     ConfigResolver.clearInstance();
 
     context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().clear().commit();
-    ConfigResolver.getInstance().setApplicationContext(context);
+    ConfigResolver configResolver = ConfigResolver.getInstance();
+    configResolver.setDeviceCacheManager(new DeviceCacheManager(new FakeDirectExecutorService()));
+    configResolver.setApplicationContext(context);
   }
 
   @Test

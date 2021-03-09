@@ -1,3 +1,6 @@
+# Unreleased
+- [added] Added a public API to allow bulk logging of custom keys and values.
+
 # 17.1.0
 
 - [fixed] Updated Crashlytics integration with Firebase Analytics to

@@ -35,7 +35,7 @@ import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelD
 import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.SystemInfo;
 
 /**
- * Logging class for Firebase Ml Event logging.
+ * Logging class for Firebase ML Event logging.
  *
  * @hide
  */
