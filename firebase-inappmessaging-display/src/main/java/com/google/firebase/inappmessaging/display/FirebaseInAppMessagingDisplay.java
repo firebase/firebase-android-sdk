@@ -480,7 +480,10 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
   }
 
   private void loadNullableImage(
-      Activity activity, BindingWrapper fiam, ImageData imageData, FiamImageLoader.Callback callback) {
+      Activity activity,
+      BindingWrapper fiam,
+      ImageData imageData,
+      FiamImageLoader.Callback callback) {
     if (isValidImageData(imageData)) {
       imageLoader
           .load(imageData.getImageUrl())

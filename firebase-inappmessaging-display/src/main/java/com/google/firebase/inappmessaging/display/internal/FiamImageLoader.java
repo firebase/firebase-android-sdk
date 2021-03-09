@@ -17,32 +17,20 @@ package com.google.firebase.inappmessaging.display.internal;
 import android.graphics.drawable.Drawable;
 import android.text.TextUtils;
 import android.widget.ImageView;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-
+import androidx.annotation.VisibleForTesting;
 import com.bumptech.glide.RequestBuilder;
 import com.bumptech.glide.RequestManager;
-import com.bumptech.glide.load.DataSource;
-import com.bumptech.glide.load.engine.GlideException;
 import com.bumptech.glide.load.model.GlideUrl;
 import com.bumptech.glide.load.model.LazyHeaders;
-import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.target.CustomTarget;
-import com.bumptech.glide.request.target.Target;
 import com.bumptech.glide.request.transition.Transition;
-import com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks;
 import com.google.firebase.inappmessaging.display.internal.injection.scopes.FirebaseAppScope;
-import com.google.firebase.inappmessaging.model.InAppMessage;
-
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import javax.inject.Inject;
 
 /**
@@ -54,17 +42,17 @@ import javax.inject.Inject;
 public class FiamImageLoader {
 
   private final RequestManager requestManager;
-  private final Map<String, Set<CustomTarget>> tags=new HashMap<>();
+  private final Map<String, Set<CustomTarget>> tags = new HashMap<>();
 
   @Inject
-  FiamImageLoader(RequestManager requestManager) {
+  public FiamImageLoader(RequestManager requestManager) {
     this.requestManager = requestManager;
   }
 
   public FiamImageRequestCreator load(@Nullable String imageUrl) {
     Logging.logd("Starting Downloading Image : " + imageUrl);
-    GlideUrl glideUrl = new GlideUrl(imageUrl,new LazyHeaders.Builder().addHeader("Accept",
-            "image/*").build());
+    GlideUrl glideUrl =
+        new GlideUrl(imageUrl, new LazyHeaders.Builder().addHeader("Accept", "image/*").build());
     RequestBuilder<Drawable> requestBuilder = requestManager.load(glideUrl);
     return new FiamImageRequestCreator(requestBuilder);
   }
@@ -74,8 +62,8 @@ public class FiamImageLoader {
     synchronized (tag) {
       if (tags.containsKey(tag)) {
         Set<CustomTarget> targets = tags.get(tag);
-        for (CustomTarget target: targets) {
-          if(target!=null) {
+        for (CustomTarget target : targets) {
+          if (target != null) {
             requestManager.clear(target);
           }
         }
@@ -83,13 +71,21 @@ public class FiamImageLoader {
     }
   }
 
-  public final class FiamImageRequestCreator {
+  @VisibleForTesting
+  boolean containsTag(String tag) {
+    return tags != null
+        && tags.containsKey(tag)
+        && tags.get(tag) != null
+        && tags.get(tag).size() > 0;
+  }
+
+  public class FiamImageRequestCreator {
     private final RequestBuilder<Drawable> requestBuilder;
     private Callback target;
     private String tag;
 
-    private FiamImageRequestCreator(RequestBuilder<Drawable> requestBuilder) {
-     this. requestBuilder = requestBuilder;
+    public FiamImageRequestCreator(RequestBuilder<Drawable> requestBuilder) {
+      this.requestBuilder = requestBuilder;
     }
 
     public FiamImageRequestCreator placeholder(int placeholderResId) {
@@ -104,21 +100,21 @@ public class FiamImageLoader {
       return this;
     }
 
-    private void checkAndTag(){
-      if(target==null || TextUtils.isEmpty(tag)){
+    private void checkAndTag() {
+      if (target == null || TextUtils.isEmpty(tag)) {
         return;
       }
 
-      synchronized (tags){
+      synchronized (tags) {
         Set<CustomTarget> set;
-        if(tags.containsKey(tag)){
+        if (tags.containsKey(tag)) {
           set = tags.get(tag);
-        }else{
+        } else {
           set = new HashSet<>();
-          tags.put(tag,set);
+          tags.put(tag, set);
         }
 
-        if(!set.contains(target)) {
+        if (!set.contains(target)) {
           set.add(target);
         }
       }
@@ -133,7 +129,7 @@ public class FiamImageLoader {
     }
   }
 
-  public static abstract class Callback extends CustomTarget<Drawable> {
+  public abstract static class Callback extends CustomTarget<Drawable> {
 
     private ImageView imageView;
 
@@ -145,13 +141,14 @@ public class FiamImageLoader {
     }
 
     private void setImage(Drawable drawable) {
-      if(imageView!=null){
+      if (imageView != null) {
         imageView.setImageDrawable(drawable);
       }
     }
 
     @Override
-    public void onResourceReady(@NonNull Drawable resource, @Nullable Transition<? super Drawable> transition) {
+    public void onResourceReady(
+        @NonNull Drawable resource, @Nullable Transition<? super Drawable> transition) {
       Logging.logd("Downloading Image Success!!!");
       setImage(resource);
       onSuccess();
@@ -165,10 +162,11 @@ public class FiamImageLoader {
     }
 
     public abstract void onSuccess();
+
     public abstract void onError(Exception e);
 
     void setImageView(ImageView imageView) {
-      this.imageView=imageView;
+      this.imageView = imageView;
     }
   }
 }

@@ -21,7 +21,6 @@ package com.google.firebase.inappmessaging.display.internal;
 // fiam headless, with the in app message as a parameter
 
 import androidx.annotation.Nullable;
-
 import com.bumptech.glide.load.DataSource;
 import com.bumptech.glide.load.engine.GlideException;
 import com.bumptech.glide.request.RequestListener;
@@ -29,7 +28,6 @@ import com.bumptech.glide.request.target.Target;
 import com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks;
 import com.google.firebase.inappmessaging.display.internal.injection.scopes.FirebaseAppScope;
 import com.google.firebase.inappmessaging.model.InAppMessage;
-
 import javax.inject.Inject;
 
 /** @hide */
@@ -47,19 +45,20 @@ public class GlideErrorListener implements RequestListener<Object> {
     this.displayCallbacks = displayCallbacks;
   }
 
-
   @Override
-  public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Object> target,
-                              boolean isFirstResource) {
+  public boolean onLoadFailed(
+      @Nullable GlideException e, Object model, Target<Object> target, boolean isFirstResource) {
     Logging.logd("Image Downloading  Error : " + e.getMessage() + ":" + e.getCause());
 
     if (inAppMessage != null && displayCallbacks != null) {
-      if ( e.getLocalizedMessage().contains("Failed to decode")) {
+      if (e.getLocalizedMessage().contains("Failed to decode")) {
         displayCallbacks.displayErrorEncountered(
-                FirebaseInAppMessagingDisplayCallbacks.InAppMessagingErrorReason.IMAGE_UNSUPPORTED_FORMAT);
+            FirebaseInAppMessagingDisplayCallbacks.InAppMessagingErrorReason
+                .IMAGE_UNSUPPORTED_FORMAT);
       } else {
         displayCallbacks.displayErrorEncountered(
-                FirebaseInAppMessagingDisplayCallbacks.InAppMessagingErrorReason.UNSPECIFIED_RENDER_ERROR);
+            FirebaseInAppMessagingDisplayCallbacks.InAppMessagingErrorReason
+                .UNSPECIFIED_RENDER_ERROR);
       }
     }
 
@@ -67,8 +66,12 @@ public class GlideErrorListener implements RequestListener<Object> {
   }
 
   @Override
-  public boolean onResourceReady(Object resource, Object model, Target<Object> target,
-                                 DataSource dataSource, boolean isFirstResource) {
+  public boolean onResourceReady(
+      Object resource,
+      Object model,
+      Target<Object> target,
+      DataSource dataSource,
+      boolean isFirstResource) {
     Logging.logd("Image Downloading  Success : " + resource);
     return false;
   }
