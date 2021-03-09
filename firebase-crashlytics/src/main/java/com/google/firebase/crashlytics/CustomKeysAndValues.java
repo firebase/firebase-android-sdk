@@ -20,7 +20,7 @@ import java.util.Map;
 
 /**
  * Helper class which handles the storage and conversion to strings of key/value pairs with
- * heterogenous value types.
+ * heterogeneous value types.
  */
 public class CustomKeysAndValues {
 
