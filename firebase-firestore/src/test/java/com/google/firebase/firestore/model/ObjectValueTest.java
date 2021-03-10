@@ -134,6 +134,7 @@ public class ObjectValueTest {
     assertEquals(wrapObject("a", "a", "b", "b", "c", "c"), object);
   }
 
+  @Test
   public void testAddsNestedField() {
     ObjectValue objectValue = new ObjectValue();
     objectValue.set(field("a.b"), fooValue);
