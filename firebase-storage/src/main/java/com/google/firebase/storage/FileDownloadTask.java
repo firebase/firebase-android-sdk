@@ -207,7 +207,7 @@ public class FileDownloadTask extends StorageTask<FileDownloadTask.TaskSnapshot>
               && getInternalState() == INTERNAL_STATE_IN_PROGRESS;
 
       if (success) {
-        mTotalBytes = request.getResultingContentLength();
+        mTotalBytes = request.getResultingContentLength() + mResumeOffset;
         String newEtag = request.getResultString("ETag");
         if (!TextUtils.isEmpty(newEtag)
             && mETagVerification != null

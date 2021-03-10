@@ -137,9 +137,7 @@ public class StreamDownloadTask extends StorageTask<StreamDownloadTask.TaskSnaps
       }
 
       eTagVerification = newEtag;
-      if (totalBytes == -1) {
-        totalBytes = request.getResultingContentLength();
-      }
+      totalBytes = request.getResultingContentLength() + bytesDownloaded;
       return request.getStream();
     } else {
       throw new IOException("Could not open resulting stream.");
