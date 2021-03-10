@@ -24,6 +24,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 import com.google.firebase.firestore.model.mutation.FieldMask;
+import com.google.firestore.v1.MapValue;
+import com.google.firestore.v1.Value;
 import java.util.Map;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -32,7 +34,19 @@ import org.robolectric.annotation.Config;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
-public class FieldValueTest {
+public class ObjectValueTest {
+
+  private String fooString = "foo";
+  private Value fooValue = wrap(fooString);
+  private String barString = "bar";
+  private Value barValue = wrap(barString);
+  private Value emptyObject = Value.newBuilder().setMapValue(MapValue.getDefaultInstance()).build();
+
+  @Test
+  public void supportsEmptyObjectValues() {
+    ObjectValue objectValue = new ObjectValue();
+    assertEquals(new ObjectValue(), objectValue);
+  }
 
   @Test
   public void testExtractsFields() {
@@ -70,6 +84,36 @@ public class FieldValueTest {
   }
 
   @Test
+  public void testOverwritesNestedFields() {
+    ObjectValue objectValue = wrapObject("a", map("b", fooString, "c", map("d", fooString)));
+    objectValue.set(field("a.b"), barValue);
+    objectValue.set(field("a.c.d"), barValue);
+    assertEquals(wrapObject("a", map("b", barString, "c", map("d", barString))), objectValue);
+  }
+
+  @Test
+  public void testOverwritesDeeplyNestedField() {
+    ObjectValue objectValue = wrapObject("a", map("b", fooString));
+    objectValue.set(field("a.b.c"), barValue);
+    assertEquals(wrapObject("a", map("b", map("c", barString))), objectValue);
+  }
+
+  @Test
+  public void testOverwritesNestedObject() {
+    ObjectValue objectValue = wrapObject("a", map("b", map("c", fooString, "d", fooString)));
+    objectValue.set(field("a.b"), barValue);
+    assertEquals(wrapObject("a", map("b", "bar")), objectValue);
+  }
+
+  @Test
+  public void testReplacesNestedObject() {
+    ObjectValue singleValueObject = wrapObject(map("c", barString));
+    ObjectValue objectValue = wrapObject("a", map("b", fooString));
+    objectValue.set(field("a"), singleValueObject.get(FieldPath.EMPTY_PATH));
+    assertEquals(wrapObject("a", map("c", barString)), objectValue);
+  }
+
+  @Test
   public void testAddsNewFields() {
     ObjectValue objectValue = new ObjectValue();
     assertEquals(wrapObject(), objectValue);
@@ -88,6 +132,53 @@ public class FieldValueTest {
     object.set(field("c"), wrap("c"));
 
     assertEquals(wrapObject("a", "a", "b", "b", "c", "c"), object);
+  }
+
+  public void testAddsNestedField() {
+    ObjectValue objectValue = new ObjectValue();
+    objectValue.set(field("a.b"), fooValue);
+    objectValue.set(field("c.d.e"), fooValue);
+    assertEquals(
+        wrapObject("a", map("b", fooString), "c", map("d", map("e", fooString))), objectValue);
+  }
+
+  @Test
+  public void testAddsFieldInNestedObject() {
+    ObjectValue objectValue = new ObjectValue();
+    objectValue.set(field("a"), wrapObject("b", fooString).get(FieldPath.EMPTY_PATH));
+    objectValue.set(field("a.c"), fooValue);
+    assertEquals(wrapObject("a", map("b", fooString, "c", fooString)), objectValue);
+  }
+
+  @Test
+  public void testAddsTwoFieldsInNestedObject() {
+    ObjectValue objectValue = new ObjectValue();
+    objectValue.set(field("a.b"), fooValue);
+    objectValue.set(field("a.c"), fooValue);
+    assertEquals(wrapObject("a", map("b", fooString, "c", fooString)), objectValue);
+  }
+
+  @Test
+  public void testAddDeeplyNestedFieldInNestedObject() {
+    ObjectValue objectValue = new ObjectValue();
+    objectValue.set(field("a.b.c.d.e.f"), fooValue);
+    assertEquals(
+        wrapObject("a", map("b", map("c", map("d", map("e", map("f", fooString)))))), objectValue);
+  }
+
+  @Test
+  public void testAddsSingleFieldInExistingObject() {
+    ObjectValue objectValue = wrapObject("a", fooString);
+    objectValue.set(field("b"), fooValue);
+    assertEquals(wrapObject("a", fooString, "b", fooString), objectValue);
+  }
+
+  @Test
+  public void testSetsNestedFieldMultipleTimes() {
+    ObjectValue objectValue = new ObjectValue();
+    objectValue.set(field("a.c"), fooValue);
+    objectValue.set(field("a"), wrapObject("b", fooString).get(FieldPath.EMPTY_PATH));
+    assertEquals(wrapObject("a", map("b", fooString)), objectValue);
   }
 
   @Test
@@ -159,12 +250,38 @@ public class FieldValueTest {
   }
 
   @Test
-  public void testDeletesMultipleFields() {
-    ObjectValue object = wrapObject("a", "a", "b", "b", "c", "c");
-    object.delete(field("a"));
-    object.delete(field("b"));
-    object.delete(field("c"));
+  public void testDeletesNestedObject() {
+    ObjectValue objectValue =
+        wrapObject("a", map("b", map("c", fooString, "d", fooString), "f", fooString));
+    objectValue.delete(field("a.b"));
+    assertEquals(wrapObject("a", map("f", fooString)), objectValue);
+  }
 
-    assertEquals(new ObjectValue(), object);
+  @Test
+  public void testAddsAndDeletesField() {
+    ObjectValue objectValue = new ObjectValue();
+    objectValue.set(field(fooString), fooValue);
+    objectValue.delete(field(fooString));
+    assertEquals(wrapObject(), objectValue);
+  }
+
+  @Test
+  public void testAddsAndDeletesNestedField() {
+    ObjectValue objectValue = new ObjectValue();
+    objectValue.set(field("a.b.c"), fooValue);
+    objectValue.set(field("a.b.d"), fooValue);
+    objectValue.set(field("f.g"), fooValue);
+    objectValue.set(field("h"), fooValue);
+    objectValue.delete(field("a.b.c"));
+    objectValue.delete(field("h"));
+    assertEquals(
+        wrapObject("a", map("b", map("d", fooString)), "f", map("g", fooString)), objectValue);
+  }
+
+  @Test
+  public void testMergesExistingObject() {
+    ObjectValue objectValue = wrapObject("a", map("b", fooString));
+    objectValue.set(field("a.c"), fooValue);
+    assertEquals(wrapObject("a", map("b", fooString, "c", fooString)), objectValue);
   }
 }
