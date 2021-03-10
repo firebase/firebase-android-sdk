@@ -43,7 +43,7 @@ public class ObjectValueTest {
   private Value emptyObject = Value.newBuilder().setMapValue(MapValue.getDefaultInstance()).build();
 
   @Test
-  public void supportsEmptyObjectValues() {
+  public void testSupportsEmptyObjectValues() {
     ObjectValue objectValue = new ObjectValue();
     assertEquals(new ObjectValue(), objectValue);
   }
