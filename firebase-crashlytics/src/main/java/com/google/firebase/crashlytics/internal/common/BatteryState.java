@@ -18,6 +18,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.BatteryManager;
+import com.google.firebase.crashlytics.internal.Logger;
 
 /** A utility class representing the state of the battery. */
 class BatteryState {
@@ -66,11 +67,16 @@ class BatteryState {
     boolean powerConnected = false;
     Float level = null;
 
-    final IntentFilter ifilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
-    final Intent batteryStatusIntent = context.registerReceiver(null, ifilter);
-    if (batteryStatusIntent != null) {
-      powerConnected = isPowerConnected(batteryStatusIntent);
-      level = getLevel(batteryStatusIntent);
+    try {
+      final IntentFilter ifilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
+      final Intent batteryStatusIntent = context.registerReceiver(/*receiver=*/ null, ifilter);
+      if (batteryStatusIntent != null) {
+        powerConnected = isPowerConnected(batteryStatusIntent);
+        level = getLevel(batteryStatusIntent);
+      }
+    } catch (IllegalStateException ex) {
+      // This happens on some devices when the app registers too many receivers.
+      Logger.getLogger().e("An error occurred getting battery state.", ex);
     }
 
     return new BatteryState(level, powerConnected);
