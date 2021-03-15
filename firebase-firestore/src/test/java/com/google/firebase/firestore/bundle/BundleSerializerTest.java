@@ -698,13 +698,13 @@ public class BundleSerializerTest {
     BundleDocument actualDocument = serializer.decodeDocument(new JSONObject(documentJson));
     BundleDocument expectedDocument =
         new BundleDocument(
-            new MutableDocument(DocumentKey.fromName(TEST_DOCUMENT))
-                .convertToFoundDocument(
-                    new SnapshotVersion(new com.google.firebase.Timestamp(1577836802, 2)),
-                    new ObjectValue(
-                        Value.newBuilder()
-                            .setMapValue(MapValue.newBuilder().putFields("foo", proto))
-                            .build())));
+            MutableDocument.newFoundDocument(
+                DocumentKey.fromName(TEST_DOCUMENT),
+                new SnapshotVersion(new com.google.firebase.Timestamp(1577836802, 2)),
+                new ObjectValue(
+                    Value.newBuilder()
+                        .setMapValue(MapValue.newBuilder().putFields("foo", proto))
+                        .build())));
 
     assertEquals(expectedDocument, actualDocument);
   }

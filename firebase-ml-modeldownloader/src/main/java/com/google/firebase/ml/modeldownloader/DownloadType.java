@@ -18,7 +18,7 @@ public enum DownloadType {
   /** Use local model when present, otherwise download and return latest model */
   LOCAL_MODEL,
   /**
-   * When local model present: Use local model and download latest model in background. Otherwise,
+   * When local model present, use local model and download latest model in background. Otherwise,
    * download and return latest model.
    */
   LOCAL_MODEL_UPDATE_IN_BACKGROUND,

@@ -107,8 +107,7 @@ abstract class RemoteDocumentCacheTestCase {
 
     List<String> keys = new ArrayList<>(Arrays.asList(paths));
     keys.add("foo/nonexistent");
-    written.put(
-        key("foo/nonexistent"), new MutableDocument(key("foo/nonexistent"))); // Add invalid doc
+    written.put(key("foo/nonexistent"), MutableDocument.newInvalidDocument(key("foo/nonexistent")));
     Map<DocumentKey, MutableDocument> read = getAll(keys);
     assertEquals(written, read);
   }

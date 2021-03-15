@@ -60,7 +60,7 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
   @Override
   public MutableDocument get(DocumentKey key) {
     Pair<MutableDocument, SnapshotVersion> entry = docs.get(key);
-    return entry != null ? entry.first.clone() : new MutableDocument(key);
+    return entry != null ? entry.first.clone() : MutableDocument.newInvalidDocument(key);
   }
 
   @Override

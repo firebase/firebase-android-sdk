@@ -101,8 +101,8 @@ public final class LocalSerializer {
     DocumentKey key = rpcSerializer.decodeKey(document.getName());
     SnapshotVersion version = rpcSerializer.decodeVersion(document.getUpdateTime());
     MutableDocument result =
-        new MutableDocument(key)
-            .convertToFoundDocument(version, ObjectValue.fromMap(document.getFieldsMap()));
+        MutableDocument.newFoundDocument(
+            key, version, ObjectValue.fromMap(document.getFieldsMap()));
     return hasCommittedMutations ? result.setHasCommittedMutations() : result;
   }
 
@@ -121,7 +121,7 @@ public final class LocalSerializer {
       com.google.firebase.firestore.proto.NoDocument proto, boolean hasCommittedMutations) {
     DocumentKey key = rpcSerializer.decodeKey(proto.getName());
     SnapshotVersion version = rpcSerializer.decodeVersion(proto.getReadTime());
-    MutableDocument result = new MutableDocument(key).convertToNoDocument(version);
+    MutableDocument result = MutableDocument.newNoDocument(key, version);
     return hasCommittedMutations ? result.setHasCommittedMutations() : result;
   }
 
@@ -140,7 +140,7 @@ public final class LocalSerializer {
       com.google.firebase.firestore.proto.UnknownDocument proto) {
     DocumentKey key = rpcSerializer.decodeKey(proto.getName());
     SnapshotVersion version = rpcSerializer.decodeVersion(proto.getVersion());
-    return new MutableDocument(key).convertToUnknownDocument(version);
+    return MutableDocument.newUnknownDocument(key, version);
   }
 
   /** Encodes a MutationBatch model for local storage in the mutation queue. */
