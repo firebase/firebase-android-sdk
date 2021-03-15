@@ -281,11 +281,11 @@ public class Query {
   }*/
 
   /**
-   * Create a query constrained to only return child nodes with a value greater than the given
-   * value, using the given orderBy directive or priority as default.
+   * Creates a query constrained to only return child nodes with a value greater than the given
+   * value, using the given {@code orderBy} directive or priority as default.
    *
    * @param value The value to start at, exclusive
-   * @return A Query with the new constraint
+   * @return A query with the new constraint
    * @since 19.6
    */
   @NonNull
@@ -297,11 +297,11 @@ public class Query {
   }
 
   /**
-   * Create a query constrained to only return child nodes with a value greater than the given
-   * value, using the given orderBy directive or priority as default.
+   * Creates a query constrained to only return child nodes with a value greater than the given
+   * value, using the given {@code orderBy} directive or priority as default.
    *
    * @param value The value to start at, exclusive
-   * @return A Query with the new constraint
+   * @return A query with the new constraint
    * @since 19.6
    */
   @NonNull
@@ -310,11 +310,11 @@ public class Query {
   }
 
   /**
-   * Create a query constrained to only return child nodes with a value greater than the given
-   * value, using the given orderBy directive or priority as default.
+   * Creates a query constrained to only return child nodes with a value greater than the given
+   * value, using the given {@code orderBy} directive or priority as default.
    *
    * @param value The value to start at, exclusive
-   * @return A Query with the new constraint
+   * @return A query with the new constraint
    * @since 19.6
    */
   @NonNull
@@ -323,13 +323,13 @@ public class Query {
   }
 
   /**
-   * Create a query constrained to only return child nodes with a value greater or equal to the
-   * given value, using the given orderBy directive or priority as default, and additionally only
-   * child nodes with a key greater than the given key.
+   * Creates a query constrained to only return child nodes with a value greater or equal to the
+   * given value, using the given {@code orderBy} directive or priority as default, and additionally
+   * only child nodes with a key greater than the given key.
    *
    * @param value The value to start at
    * @param key The key to start at, exclusive
-   * @return A Query with the new constraint
+   * @return A query with the new constraint
    * @since 19.6
    */
   @NonNull
@@ -343,13 +343,13 @@ public class Query {
   }
 
   /**
-   * Create a query constrained to only return child nodes with a value greater than or equal to the
-   * given value, using the given orderBy directive or priority as default, and additionally only
-   * child nodes with a key greater than the given key.
+   * Creates a query constrained to only return child nodes with a value greater than or equal to
+   * the given value, using the given {@code orderBy} directive or priority as default, and
+   * additionally only child nodes with a key greater than the given key.
    *
    * @param value The value to start at
    * @param key The key name to start at, exclusive
-   * @return A Query with the new constraint
+   * @return A query with the new constraint
    * @since 19.6
    */
   @NonNull
@@ -358,13 +358,13 @@ public class Query {
   }
 
   /**
-   * Create a query constrained to only return child nodes with a value greater than or equal to the
-   * given value, using the given orderBy directive or priority as default, and additionally only
-   * child nodes with a key greater than the given key.
+   * Creates a query constrained to only return child nodes with a value greater than or equal to
+   * the given value, using the given {@code orderBy} directive or priority as default, and
+   * additionally only child nodes with a key greater than the given key.
    *
    * @param value The value to start at
    * @param key The key to start at, exclusive
-   * @return A Query with the new constraint
+   * @return A query with the new constraint
    * @since 19.6
    */
   @NonNull
@@ -377,11 +377,11 @@ public class Query {
   }
 
   /**
-   * Create a query constrained to only return child nodes with a value greater than or equal to the
-   * given value, using the given orderBy directive or priority as default.
+   * Creates a query constrained to only return child nodes with a value greater than or equal to
+   * the given value, using the given {@code orderBy} directive or priority as default.
    *
    * @param value The value to start at, inclusive
-   * @return A Query with the new constraint
+   * @return A query with the new constraint
    */
   @NonNull
   public Query startAt(@Nullable String value) {
@@ -389,11 +389,11 @@ public class Query {
   }
 
   /**
-   * Create a query constrained to only return child nodes with a value greater than or equal to the
-   * given value, using the given orderBy directive or priority as default.
+   * Creates a query constrained to only return child nodes with a value greater than or equal to
+   * the given value, using the given {@code orderBy} directive or priority as default.
    *
    * @param value The value to start at, inclusive
-   * @return A Query with the new constraint
+   * @return A query with the new constraint
    */
   @NonNull
   public Query startAt(double value) {
@@ -401,11 +401,11 @@ public class Query {
   }
 
   /**
-   * Create a query constrained to only return child nodes with a value greater than or equal to the
-   * given value, using the given orderBy directive or priority as default.
+   * Creates a query constrained to only return child nodes with a value greater than or equal to
+   * the given value, using the given {@code orderBy} directive or priority as default.
    *
    * @param value The value to start at, inclusive
-   * @return A Query with the new constraint
+   * @return A query with the new constraint
    * @since 2.0
    */
   @NonNull
@@ -414,13 +414,13 @@ public class Query {
   }
 
   /**
-   * Create a query constrained to only return child nodes with a value greater than or equal to the
-   * given value, using the given orderBy directive or priority as default, and additionally only
-   * child nodes with a key greater than or equal to the given key.
+   * Creates a query constrained to only return child nodes with a value greater than or equal to
+   * the given value, using the given {@code orderBy} directive or priority as default, and
+   * additionally only child nodes with a key greater than or equal to the given key.
    *
    * @param value The priority to start at, inclusive
    * @param key The key to start at, inclusive
-   * @return A Query with the new constraint
+   * @return A query with the new constraint
    */
   @NonNull
   public Query startAt(@Nullable String value, @Nullable String key) {
@@ -430,13 +430,13 @@ public class Query {
   }
 
   /**
-   * Create a query constrained to only return child nodes with a value greater than or equal to the
-   * given value, using the given orderBy directive or priority as default, and additionally only
-   * child nodes with a key greater than or equal to the given key.
+   * Creates a query constrained to only return child nodes with a value greater than or equal to
+   * the given value, using the given {@code orderBy} directive or priority as default, and
+   * additionally only child nodes with a key greater than or equal to the given key.
    *
    * @param value The priority to start at, inclusive
    * @param key The key name to start at, inclusive
-   * @return A Query with the new constraint
+   * @return A query with the new constraint
    */
   @NonNull
   public Query startAt(double value, @Nullable String key) {
@@ -444,13 +444,13 @@ public class Query {
   }
 
   /**
-   * Create a query constrained to only return child nodes with a value greater than or equal to the
-   * given value, using the given orderBy directive or priority as default, and additionally only
-   * child nodes with a key greater than or equal to the given key.
+   * Creates a query constrained to only return child nodes with a value greater than or equal to
+   * the given value, using the given {@code orderBy} directive or priority as default, and
+   * additionally only child nodes with a key greater than or equal to the given key.
    *
    * @param value The priority to start at, inclusive
    * @param key The key to start at, inclusive
-   * @return A Query with the new constraint
+   * @return A query with the new constraint
    * @since 2.0
    */
   @NonNull
@@ -486,11 +486,11 @@ public class Query {
   }
 
   /**
-   * Create a query constrained to only return child nodes with a value less than the given value,
-   * using the given orderBy directive or priority as default.
+   * Creates a query constrained to only return child nodes with a value less than the given value,
+   * using the given {@code orderBy} directive or priority as default.
    *
    * @param value The value to end at, exclusive
-   * @return A Query with the new constraint
+   * @return A query with the new constraint
    * @since 19.6
    */
   @NonNull
@@ -502,11 +502,11 @@ public class Query {
   }
 
   /**
-   * Create a query constrained to only return child nodes with a value less than the given value,
-   * using the given orderBy directive or priority as default.
+   * Creates a query constrained to only return child nodes with a value less than the given value,
+   * using the given {@code orderBy} directive or priority as default.
    *
    * @param value The value to end at, exclusive
-   * @return A Query with the new constraint
+   * @return A query with the new constraint
    * @since 19.6
    */
   @NonNull
@@ -515,11 +515,11 @@ public class Query {
   }
 
   /**
-   * Create a query constrained to only return child nodes with a value less than the given value,
-   * using the given orderBy directive or priority as default.
+   * Creates a query constrained to only return child nodes with a value less than the given value,
+   * using the given {@code orderBy} directive or priority as default.
    *
    * @param value The value to end at, exclusive
-   * @return A Query with the new constraint
+   * @return A query with the new constraint
    * @since 19.6
    */
   @NonNull
@@ -528,13 +528,13 @@ public class Query {
   }
 
   /**
-   * Create a query constrained to only return child nodes with a value less than or equal to the
-   * given value, using the given orderBy directive or priority as default, and additionally only
-   * child nodes with a key less than the given key.
+   * Creates a query constrained to only return child nodes with a value less than or equal to the
+   * given value, using the given {@code orderBy} directive or priority as default, and additionally
+   * only child nodes with a key less than the given key.
    *
    * @param value The value to end at
    * @param key The key to end at, exclusive
-   * @return A Query with the new constraint
+   * @return A query with the new constraint
    * @since 19.6
    */
   @NonNull
@@ -548,13 +548,13 @@ public class Query {
   }
 
   /**
-   * Create a query constrained to only return child nodes with a value less than or equal to the
-   * given value, using the given orderBy directive or priority as default, and additionally only
-   * child nodes with a key less than the given key.
+   * Creates a query constrained to only return child nodes with a value less than or equal to the
+   * given value, using the given {@code orderBy} directive or priority as default, and additionally
+   * only child nodes with a key less than the given key.
    *
    * @param value The value to end at
    * @param key The key to end at, exclusive
-   * @return A Query with the new constraint
+   * @return A query with the new constraint
    * @since 19.6
    */
   @NonNull
@@ -563,13 +563,13 @@ public class Query {
   }
 
   /**
-   * Create a query constrained to only return child nodes with a value less than or equal to the
-   * given value, using the given orderBy directive or priority as default, and additionally only
-   * child nodes with a key less than the given key.
+   * Creates a query constrained to only return child nodes with a value less than or equal to the
+   * given value, using the given {@code orderBy} directive or priority as default, and additionally
+   * only child nodes with a key less than the given key.
    *
    * @param value The value to end at
    * @param key The key to end at, exclusive
-   * @return A Query with the new constraint
+   * @return A query with the new constraint
    * @since 19.6
    */
   @NonNull
@@ -582,11 +582,11 @@ public class Query {
   }
 
   /**
-   * Create a query constrained to only return child nodes with a value less than or equal to the
-   * given value, using the given orderBy directive or priority as default.
+   * Creates a query constrained to only return child nodes with a value less than or equal to the
+   * given value, using the given {@code orderBy} directive or priority as default.
    *
    * @param value The value to end at, inclusive
-   * @return A Query with the new constraint
+   * @return A query with the new constraint
    */
   @NonNull
   public Query endAt(@Nullable String value) {
@@ -594,11 +594,11 @@ public class Query {
   }
 
   /**
-   * Create a query constrained to only return child nodes with a value less than or equal to the
-   * given value, using the given orderBy directive or priority as default.
+   * Creates a query constrained to only return child nodes with a value less than or equal to the
+   * given value, using the given {@code orderBy} directive or priority as default.
    *
    * @param value The value to end at, inclusive
-   * @return A Query with the new constraint
+   * @return A query with the new constraint
    */
   @NonNull
   public Query endAt(double value) {
@@ -606,11 +606,11 @@ public class Query {
   }
 
   /**
-   * Create a query constrained to only return child nodes with a value less than or equal to the
-   * given value, using the given orderBy directive or priority as default.
+   * Creates a query constrained to only return child nodes with a value less than or equal to the
+   * given value, using the given {@code orderBy} directive or priority as default.
    *
    * @param value The value to end at, inclusive
-   * @return A Query with the new constraint
+   * @return A query with the new constraint
    * @since 2.0
    */
   @NonNull
@@ -619,13 +619,13 @@ public class Query {
   }
 
   /**
-   * Create a query constrained to only return child nodes with a value less than or equal to the
-   * given value, using the given orderBy directive or priority as default, and additionally only
-   * child nodes with a key key less than or equal to the given key.
+   * Creates a query constrained to only return child nodes with a value less than or equal to the
+   * given value, using the given {@code orderBy} directive or priority as default, and additionally
+   * only child nodes with a key less than or equal to the given key.
    *
    * @param value The value to end at, inclusive
    * @param key The key to end at, inclusive
-   * @return A Query with the new constraint
+   * @return A query with the new constraint
    */
   @NonNull
   public Query endAt(@Nullable String value, @Nullable String key) {
@@ -635,13 +635,13 @@ public class Query {
   }
 
   /**
-   * Create a query constrained to only return child nodes with a value less than or equal to the
-   * given value, using the given orderBy directive or priority as default, and additionally only
-   * child nodes with a key less than or equal to the given key.
+   * Creates a query constrained to only return child nodes with a value less than or equal to the
+   * given value, using the given {@code orderBy} directive or priority as default, and additionally
+   * only child nodes with a key less than or equal to the given key.
    *
    * @param value The value to end at, inclusive
    * @param key The key to end at, inclusive
-   * @return A Query with the new constraint
+   * @return A query with the new constraint
    */
   @NonNull
   public Query endAt(double value, @Nullable String key) {
@@ -649,13 +649,13 @@ public class Query {
   }
 
   /**
-   * Create a query constrained to only return child nodes with a value less than or equal to the
-   * given value, using the given orderBy directive or priority as default, and additionally only
-   * child nodes with a key less than or equal to the given key.
+   * Creates a query constrained to only return child nodes with a value less than or equal to the
+   * given value, using the given {@code orderBy} directive or priority as default, and additionally
+   * only child nodes with a key less than or equal to the given key.
    *
    * @param value The value to end at, inclusive
    * @param key The key to end at, inclusive
-   * @return A Query with the new constraint
+   * @return A query with the new constraint
    * @since 2.0
    */
   @NonNull
@@ -680,7 +680,7 @@ public class Query {
   }
 
   /**
-   * Create a query constrained to only return child nodes with the given value
+   * Creates a query constrained to only return child nodes with the given value.
    *
    * @param value The value to query for
    * @return A query with the new constraint
@@ -692,7 +692,7 @@ public class Query {
   }
 
   /**
-   * Create a query constrained to only return child nodes with the given value
+   * Creates a query constrained to only return child nodes with the given value.
    *
    * @param value The value to query for
    * @return A query with the new constraint
@@ -704,7 +704,7 @@ public class Query {
   }
 
   /**
-   * Create a query constrained to only return child nodes with the given value.
+   * Creates a query constrained to only return child nodes with the given value.
    *
    * @param value The value to query for
    * @return A query with the new constraint
@@ -717,7 +717,7 @@ public class Query {
   }
 
   /**
-   * Create a query constrained to only return the child node with the given key and value. Note
+   * Creates a query constrained to only return the child node with the given key and value. Note
    * that there is at most one such child as names are unique.
    *
    * @param value The value to query for
@@ -731,7 +731,7 @@ public class Query {
   }
 
   /**
-   * Create a query constrained to only return the child node with the given key and value. Note
+   * Creates a query constrained to only return the child node with the given key and value. Note
    * that there is at most one such child as keys are unique.
    *
    * @param value The value to query for
@@ -745,7 +745,7 @@ public class Query {
   }
 
   /**
-   * Create a query constrained to only return the child node with the given key and value. Note
+   * Creates a query constrained to only return the child node with the given key and value. Note
    * that there is at most one such child as keys are unique.
    *
    * @param value The value to query for
@@ -759,10 +759,10 @@ public class Query {
   }
 
   /**
-   * Create a query with limit and anchor it to the start of the window
+   * Creates a query with limit and anchor it to the start of the window.
    *
    * @param limit The maximum number of child nodes to return
-   * @return A Query with the new constraint
+   * @return A query with the new constraint
    * @since 2.0
    */
   @NonNull
@@ -778,10 +778,10 @@ public class Query {
   }
 
   /**
-   * Create a query with limit and anchor it to the end of the window
+   * Creates a query with limit and anchor it to the end of the window.
    *
    * @param limit The maximum number of child nodes to return
-   * @return A Query with the new constraint
+   * @return A query with the new constraint
    * @since 2.0
    */
   @NonNull
@@ -797,10 +797,10 @@ public class Query {
   }
 
   /**
-   * Create a query in which child nodes are ordered by the values of the specified path.
+   * Creates a query in which child nodes are ordered by the values of the specified path.
    *
    * @param path The path to the child node to use for sorting
-   * @return A Query with the new constraint
+   * @return A query with the new constraint
    * @since 2.0
    */
   @NonNull
@@ -831,9 +831,9 @@ public class Query {
   }
 
   /**
-   * Create a query in which child nodes are ordered by their priorities.
+   * Creates a query in which child nodes are ordered by their priorities.
    *
-   * @return A Query with the new constraint
+   * @return A query with the new constraint
    * @since 2.0
    */
   @NonNull
@@ -845,9 +845,9 @@ public class Query {
   }
 
   /**
-   * Create a query in which child nodes are ordered by their keys.
+   * Creates a query in which child nodes are ordered by their keys.
    *
-   * @return A Query with the new constraint
+   * @return A query with the new constraint
    * @since 2.0
    */
   @NonNull
@@ -859,9 +859,9 @@ public class Query {
   }
 
   /**
-   * Create a query in which nodes are ordered by their value
+   * Creates a query in which nodes are ordered by their value
    *
-   * @return A Query with the new constraint
+   * @return A query with the new constraint
    * @since 2.2
    */
   @NonNull

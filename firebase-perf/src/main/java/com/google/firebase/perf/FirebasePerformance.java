@@ -49,6 +49,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
 /**
  * The Firebase Performance Monitoring API.
@@ -60,6 +61,7 @@ import javax.inject.Inject;
  * #setPerformanceCollectionEnabled(boolean)
  * FirebasePerformance.setPerformanceCollectionEnabled(false)}.
  */
+@Singleton
 public class FirebasePerformance implements FirebasePerformanceAttributable {
 
   private static final AndroidLogger logger = AndroidLogger.getInstance();

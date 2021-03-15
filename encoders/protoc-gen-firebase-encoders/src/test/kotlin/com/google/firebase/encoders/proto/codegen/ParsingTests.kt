@@ -112,8 +112,6 @@ class ParsingTests {
 
     @Test
     fun `parse with self-referencing message should succeed`() {
-        val protos = listOf(LinkedListProto.getDescriptor().file.toProto())
-
         val result = parse(
                 LinkedListProto.getDescriptor().file,
                 include = listOf(LinkedListProto.getDefaultInstance()))
@@ -132,9 +130,14 @@ class ParsingTests {
                 include = listOf(Extendable.getDefaultInstance()))
 
         val msg = result.messageAt(0)
-        assertThat(msg.fields).hasSize(1)
-        assertThat(msg.fields[0]).isEqualTo(
+        assertThat(msg.fields).hasSize(2)
+
+        assertThat(msg.fields.withName("extended")).isEqualTo(
                 ProtoField(name = "extended", number = 101, type = Primitive.STRING))
+
+        val nested = msg.messageFieldNamed("nested")
+        val ext = nested.messageFieldNamed("ext")
+        assertThat(ext).isSameInstanceAs(msg)
     }
 }
 

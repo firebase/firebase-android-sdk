@@ -49,19 +49,19 @@ class DefaultParser @Inject constructor(private val config: CodeGenConfig) : Des
 
             val parent = Owner.Package(file.`package`, javaPackage, file.name)
             parseEnums(parent, file.enumTypeList).plus(parseMessages(parent, file.messageTypeList))
-        }
+        }.toList()
 
         val extensions = discoverExtensions(files)
 
-        val typesWithExtensions = parsedTypes.map { type ->
+        for (type in parsedTypes) {
             val msgExtensions = extensions[type.protobufFullName]
             if (type !is Message || msgExtensions == null) {
-                return@map type
+                continue
             }
-            type.withMoreFields(msgExtensions)
-        }.toList()
-        resolveReferences(typesWithExtensions)
-        return typesWithExtensions.filter {
+            type.addFields(msgExtensions)
+        }
+        resolveReferences(parsedTypes)
+        return parsedTypes.filter {
             config.includeList.contains(it.protobufFullName)
         }
     }

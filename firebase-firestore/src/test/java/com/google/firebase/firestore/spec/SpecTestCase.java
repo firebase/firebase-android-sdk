@@ -84,8 +84,10 @@ import com.google.firebase.firestore.util.AsyncQueue.TimerId;
 import com.google.protobuf.ByteString;
 import io.grpc.Status;
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -100,7 +102,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
-import org.apache.tools.ant.filters.StringInputStream;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -509,7 +510,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     BundleReader bundleReader =
         new BundleReader(
             new BundleSerializer(new RemoteSerializer(databaseInfo.getDatabaseId())),
-            new StringInputStream(json));
+            new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)));
     LoadBundleTask bundleTask = new LoadBundleTask();
     queue.runSync(
         () -> {

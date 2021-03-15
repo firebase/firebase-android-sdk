@@ -195,15 +195,15 @@ public class TestUtil {
   }
 
   public static MutableDocument doc(DocumentKey key, long version, ObjectValue data) {
-    return new MutableDocument(key).convertToFoundDocument(version(version), data);
+    return MutableDocument.newFoundDocument(key, version(version), data);
   }
 
   public static MutableDocument deletedDoc(String key, long version) {
-    return new MutableDocument(key(key)).convertToNoDocument(version(version));
+    return MutableDocument.newNoDocument(key(key), version(version));
   }
 
   public static MutableDocument unknownDoc(String key, long version) {
-    return new MutableDocument(key(key)).convertToUnknownDocument(version(version));
+    return MutableDocument.newUnknownDocument(key(key), version(version));
   }
 
   public static ImmutableSortedMap<DocumentKey, MutableDocument> docMap(
