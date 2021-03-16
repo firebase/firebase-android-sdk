@@ -23,6 +23,7 @@ import static org.mockito.MockitoAnnotations.initMocks;
 import android.app.Activity;
 import android.content.pm.ProviderInfo;
 import android.os.Bundle;
+import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.perf.FirebasePerformanceTestBase;
 import com.google.firebase.perf.internal.SessionManager;
 import com.google.firebase.perf.provider.FirebasePerfProvider;
@@ -228,7 +229,7 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
     Assert.assertEquals(oldSessionId, SessionManager.getInstance().perfSession().sessionId());
 
     FirebasePerfProvider provider = new FirebasePerfProvider();
-    provider.attachInfo(RuntimeEnvironment.systemContext, new ProviderInfo());
+    provider.attachInfo(ApplicationProvider.getApplicationContext(), new ProviderInfo());
 
     Assert.assertNotEquals(oldSessionId, SessionManager.getInstance().perfSession().sessionId());
   }
