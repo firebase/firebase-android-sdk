@@ -52,6 +52,7 @@ import java.util.regex.Pattern;
 public class CommonUtils {
 
   private static final String SHA1_INSTANCE = "SHA-1";
+  private static final String SDK = "sdk";
 
   public static final String SHARED_PREFS_NAME = "com.google.firebase.crashlytics";
   public static final String LEGACY_SHARED_PREFS_NAME = "com.crashlytics.prefs";
@@ -401,23 +402,7 @@ public class CommonUtils {
    */
   public static boolean isEmulator(Context context) {
     final String androidId = Secure.getString(context.getContentResolver(), Secure.ANDROID_ID);
-    return androidId == null
-        || (Build.BRAND.startsWith("generic") && Build.DEVICE.startsWith("generic"))
-        || Build.FINGERPRINT.startsWith("generic")
-        || Build.FINGERPRINT.startsWith("unknown")
-        || Build.HARDWARE.contains("goldfish")
-        || Build.HARDWARE.contains("ranchu")
-        || Build.MODEL.contains("google_sdk")
-        || Build.MODEL.contains("Emulator")
-        || Build.MODEL.contains("Android SDK built for x86")
-        || Build.MANUFACTURER.contains("Genymotion")
-        || Build.PRODUCT.contains("sdk_google")
-        || Build.PRODUCT.contains("google_sdk")
-        || Build.PRODUCT.contains("sdk")
-        || Build.PRODUCT.contains("sdk_x86")
-        || Build.PRODUCT.contains("vbox86p")
-        || Build.PRODUCT.contains("emulator")
-        || Build.PRODUCT.contains("simulator");
+    return Build.PRODUCT.contains(SDK) || androidId == null;
   }
 
   public static boolean isRooted(Context context) {
