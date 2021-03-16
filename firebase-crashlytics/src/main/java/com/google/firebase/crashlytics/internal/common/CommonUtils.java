@@ -52,6 +52,8 @@ import java.util.regex.Pattern;
 public class CommonUtils {
 
   private static final String SHA1_INSTANCE = "SHA-1";
+  private static final String GOLDFISH = "goldfish";
+  private static final String RANCHU = "ranchu";
   private static final String SDK = "sdk";
 
   public static final String SHARED_PREFS_NAME = "com.google.firebase.crashlytics";
@@ -402,7 +404,10 @@ public class CommonUtils {
    */
   public static boolean isEmulator(Context context) {
     final String androidId = Secure.getString(context.getContentResolver(), Secure.ANDROID_ID);
-    return Build.PRODUCT.contains(SDK) || androidId == null;
+    return Build.PRODUCT.contains(SDK)
+        || Build.HARDWARE.contains(GOLDFISH)
+        || Build.HARDWARE.contains(RANCHU)
+        || androidId == null;
   }
 
   public static boolean isRooted(Context context) {
