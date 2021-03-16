@@ -33,7 +33,6 @@ import android.os.StatFs;
 import android.provider.Settings.Secure;
 import android.text.TextUtils;
 import com.google.firebase.crashlytics.internal.Logger;
-import com.google.firebase.crashlytics.internal.model.ImmutableList;
 import java.io.BufferedReader;
 import java.io.Closeable;
 import java.io.File;
