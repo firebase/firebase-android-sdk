@@ -27,6 +27,7 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.inappmessaging.display.internal.bindingwrappers.BindingWrapper;
 import com.google.firebase.inappmessaging.display.internal.bindingwrappers.ImageBindingWrapper;
 import java.util.HashMap;
@@ -38,13 +39,12 @@ import org.mockito.Captor;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 21, qualifiers = "port")
 public class FiamWindowManagerTest {
-  private static final Context appContext = RuntimeEnvironment.application.getApplicationContext();
+  private static final Context appContext = ApplicationProvider.getApplicationContext();
   private static final int WINDOW_GRAVITY = Gravity.CENTER;
   private static final InAppMessageLayoutConfig inappMessageLayoutConfig =
       InAppMessageLayoutConfig.builder()

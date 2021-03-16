@@ -98,6 +98,7 @@ dependencies {
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation 'androidx.test:rules:1.2.0'
+    testImplementation 'androidx.test:core:1.2.0'
 }
 
 // ==========================================================================
