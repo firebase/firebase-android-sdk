@@ -1,9 +1,9 @@
-// Copyright 2020 Google LLC
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
-//
 // You may obtain a copy of the License at
+//
 //      http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.perf.internal;
+package com.google.firebase.perf.validator;
 
 import android.content.Context;
 import androidx.annotation.NonNull;
@@ -83,6 +83,7 @@ public abstract class PerfMetricValidator {
    * @return null if the string can be used as Trace name, if not, an error string explaining why it
    *     can't be used.
    */
+  @Nullable
   public static String validateTraceName(@Nullable String str) {
     if (str == null) {
       return "Trace name must not be null";
@@ -112,6 +113,7 @@ public abstract class PerfMetricValidator {
    * @return null if the string can be used as Counter name, if not, an error string explaining why
    *     it can't be used.
    */
+  @Nullable
   public static String validateMetricName(@Nullable String str) {
     if (str == null) {
       return "Metric name must not be null";
@@ -137,6 +139,7 @@ public abstract class PerfMetricValidator {
    * @return null if the entry can be used as an Attribute, if not, an error string explaining why
    *     it can't be used.
    */
+  @Nullable
   public static String validateAttribute(@NonNull Map.Entry<String, String> attribute) {
     String key = attribute.getKey();
     String value = attribute.getValue();
