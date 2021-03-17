@@ -56,7 +56,6 @@ public class FirebasePerfRegistrar implements ComponentRegistrar {
             // components that are not required during initialization so as not to force initialize
             // them at app startup (refer
             // https://github.com/google/guice/wiki/InjectingProviders#providers-for-lazy-loading).
-            .eagerInDefaultApp()
             .build(),
         LibraryVersionComponent.create("fire-perf", BuildConfig.VERSION_NAME));
   }

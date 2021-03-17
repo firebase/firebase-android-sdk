@@ -24,6 +24,7 @@ import android.view.WindowManager;
 import androidx.annotation.NonNull;
 import androidx.core.app.FrameMetricsAggregator;
 import com.google.android.gms.common.util.VisibleForTesting;
+import com.google.firebase.perf.FirebasePerformance;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.metrics.Trace;
@@ -206,6 +207,7 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
       updateAppState(ApplicationProcessState.FOREGROUND);
       if (mIsColdStart) {
         // case 1: app startup.
+        FirebasePerformance.getInstance();
         mIsColdStart = false;
       } else {
         // case 2: app switch from background to foreground.
