@@ -154,7 +154,6 @@ public class ConfigResolver {
     }
 
     // 4. Return null. Because Firebase Performance will read high-level Firebase flag in this case.
-    logger.debug("CollectionEnabled metadata key unknown or value not found in manifest.");
     return null;
   }
 
