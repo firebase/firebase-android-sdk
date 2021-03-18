@@ -50,6 +50,11 @@ class ProviderAssignmentDetector : Detector(), SourceCodeScanner {
         if (assignmentExpression != node.uastParent?.uastParent) {
             return
         }
+
+        if (hasDeferredApiAnnotation(context, assignmentExpression)) {
+            return
+        }
+
         assignmentTarget.resolve()?.let {
             if (it is PsiField) {
                 context.report(
