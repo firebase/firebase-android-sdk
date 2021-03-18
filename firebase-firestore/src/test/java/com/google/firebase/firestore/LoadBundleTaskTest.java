@@ -61,7 +61,20 @@ public class LoadBundleTaskTest {
 
   @Test
   public void testImplementsAllTaskInterface() {
+    // Check if the internal gms Hide annotation is accessible.
+    Class hideClazz = null;
+    try {
+      hideClazz = Class.forName("com.google.android.gms.common.internal.Hide");
+    } catch (ClassNotFoundException e) {
+      // Swallow the exception.
+    }
+
     for (Method method : Task.class.getDeclaredMethods()) {
+      // This method is annotated with @Hide, skipping.
+      if (hideClazz != null && method.getAnnotation(hideClazz) != null) {
+        continue;
+      }
+
       try {
         LoadBundleTask.class.getDeclaredMethod(method.getName(), method.getParameterTypes());
       } catch (NoSuchMethodException e) {
