@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.perf.validator;
+package com.google.firebase.perf.metrics.validator;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.Mockito.doAnswer;
@@ -39,7 +39,7 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.robolectric.RobolectricTestRunner;
 
-/** Unit tests for {@link com.google.firebase.perf.validator.FirebasePerfTraceValidator}. */
+/** Unit tests for {@link com.google.firebase.perf.metrics.validator.FirebasePerfTraceValidator}. */
 @RunWith(RobolectricTestRunner.class)
 public class FirebasePerfTraceValidatorTest extends FirebasePerformanceTestBase {
 

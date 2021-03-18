@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.perf.validator;
+package com.google.firebase.perf.metrics.validator;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertFalse;
@@ -29,7 +29,9 @@ import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 
-/** Unit tests for {@link com.google.firebase.perf.validator.FirebasePerfNetworkValidator}. */
+/**
+ * Unit tests for {@link com.google.firebase.perf.metrics.validator.FirebasePerfNetworkValidator}.
+ */
 @RunWith(RobolectricTestRunner.class)
 public class FirebasePerfNetworkValidatorTest extends FirebasePerformanceTestBase {
   private final FirebasePerfNetworkValidator validator =
