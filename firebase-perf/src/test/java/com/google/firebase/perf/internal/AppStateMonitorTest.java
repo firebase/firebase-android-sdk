@@ -492,14 +492,16 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     ConfigResolver configResolver = ConfigResolver.getInstance();
     configResolver.setDeviceCacheManager(new DeviceCacheManager(new FakeDirectExecutorService()));
 
-    // Firebase Performance is disabled at build time.
-    Bundle bundle = new Bundle();
-    bundle.putBoolean("firebase_performance_collection_enabled", false);
-    configResolver.setMetadataBundle(new ImmutableBundle(bundle));
-
     // activity1 comes to foreground.
     mCurrentTime = 1;
     monitor.onActivityResumed(activity1);
+
+    // Disable performance collection after FirebasePerformance is initialized in the
+    // onActivityResumed callback. This is because FirebasePerformance will read Manifest file by
+    // default.
+    Bundle bundle = new Bundle();
+    bundle.putBoolean("firebase_performance_collection_enabled", false);
+    configResolver.setMetadataBundle(new ImmutableBundle(bundle));
 
     // activity1 goes to background.
     mCurrentTime = 2;
@@ -531,14 +533,16 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     ConfigResolver configResolver = ConfigResolver.getInstance();
     configResolver.setDeviceCacheManager(new DeviceCacheManager(new FakeDirectExecutorService()));
 
-    // Firebase Performance is deactivated at build time.
-    Bundle bundle = new Bundle();
-    bundle.putBoolean("firebase_performance_collection_deactivated", true);
-    configResolver.setMetadataBundle(new ImmutableBundle(bundle));
-
     // activity1 comes to foreground.
     mCurrentTime = 1;
     monitor.onActivityResumed(activity1);
+
+    // Deactivate performance collection after FirebasePerformance is initialized in the
+    // onActivityResumed callback. This is because FirebasePerformance will read Manifest file by
+    // default.
+    Bundle bundle = new Bundle();
+    bundle.putBoolean("firebase_performance_collection_deactivated", true);
+    configResolver.setMetadataBundle(new ImmutableBundle(bundle));
 
     // activity1 goes to background.
     mCurrentTime = 2;
@@ -601,14 +605,18 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     ConfigResolver configResolver = ConfigResolver.getInstance();
     configResolver.setDeviceCacheManager(new DeviceCacheManager(new FakeDirectExecutorService()));
 
-    // Firebase Performance is disabled at build time.
+    // activity1 comes to foreground.
+    mCurrentTime = 1;
+    monitor.onActivityResumed(activity1);
+
+    // Disable performance collection after FirebasePerformance is initialized in the
+    // onActivityResumed callback. This is because FirebasePerformance will read Manifest file by
+    // default.
     Bundle bundle = new Bundle();
     bundle.putBoolean("firebase_performance_collection_enabled", false);
     configResolver.setMetadataBundle(new ImmutableBundle(bundle));
 
-    // activity1 comes to background.
-    mCurrentTime = 1;
-    monitor.onActivityResumed(activity1);
+    // activity1 goes to background.
     monitor.onActivityStopped(activity1);
 
     // activity1 goes to foreground.
@@ -641,14 +649,18 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     ConfigResolver configResolver = ConfigResolver.getInstance();
     configResolver.setDeviceCacheManager(new DeviceCacheManager(new FakeDirectExecutorService()));
 
-    // Firebase Performance is deactivated at build time.
+    // activity1 comes to foreground.
+    mCurrentTime = 1;
+    monitor.onActivityResumed(activity1);
+
+    // Deactivate performance collection after FirebasePerformance is initialized in the
+    // onActivityResumed callback. This is because FirebasePerformance will read Manifest file by
+    // default.
     Bundle bundle = new Bundle();
     bundle.putBoolean("firebase_performance_collection_deactivated", true);
     configResolver.setMetadataBundle(new ImmutableBundle(bundle));
 
-    // activity1 comes to background.
-    mCurrentTime = 1;
-    monitor.onActivityResumed(activity1);
+    // activity1 goes to background.
     monitor.onActivityStopped(activity1);
 
     // activity1 goes to foreground.
