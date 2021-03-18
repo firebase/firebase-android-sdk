@@ -23,6 +23,7 @@ import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.analytics.connector.AnalyticsConnector.ConditionalUserProperty;
+import com.google.firebase.inject.Provider;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayDeque;
@@ -56,7 +57,7 @@ public class FirebaseABTesting {
   static final String ORIGIN_LAST_KNOWN_START_TIME_KEY_FORMAT = "%s_lastKnownExperimentStartTime";
 
   /** The App's Firebase Analytics client. */
-  private final AnalyticsConnector analyticsConnector;
+  private final Provider<AnalyticsConnector> analyticsConnector;
 
   /** The name of an ABT client. */
   private final String originService;
@@ -89,7 +90,7 @@ public class FirebaseABTesting {
    */
   public FirebaseABTesting(
       Context unusedAppContext,
-      AnalyticsConnector analyticsConnector,
+      Provider<AnalyticsConnector> analyticsConnector,
       @OriginService String originService) {
     this.analyticsConnector = analyticsConnector;
     this.originService = originService;
@@ -333,11 +334,14 @@ public class FirebaseABTesting {
   }
 
   private void addExperimentToAnalytics(ConditionalUserProperty experiment) {
-    analyticsConnector.setConditionalUserProperty(experiment);
+    AnalyticsConnector connector = this.analyticsConnector.get();
+    if (connector != null) {
+      connector.setConditionalUserProperty(experiment);
+    }
   }
 
   private void throwAbtExceptionIfAnalyticsIsNull() throws AbtException {
-    if (analyticsConnector == null) {
+    if (analyticsConnector.get() == null) {
       throw new AbtException(
           "The Analytics SDK is not available. "
               + "Please check that the Analytics SDK is included in your app dependencies.");
@@ -350,14 +354,17 @@ public class FirebaseABTesting {
    * breaking, or if the underlying Analytics clear method is failing.
    */
   private void removeExperimentFromAnalytics(String experimentId) {
-    analyticsConnector.clearConditionalUserProperty(
-        experimentId, /*clearEventName=*/ null, /*clearEventParams=*/ null);
+    AnalyticsConnector connector = this.analyticsConnector.get();
+    if (connector != null) {
+      connector.clearConditionalUserProperty(
+          experimentId, /*clearEventName=*/ null, /*clearEventParams=*/ null);
+    }
   }
 
   @WorkerThread
   private int getMaxUserPropertiesInAnalytics() {
     if (maxUserProperties == null) {
-      maxUserProperties = analyticsConnector.getMaxUserProperties(originService);
+      maxUserProperties = analyticsConnector.get().getMaxUserProperties(originService);
     }
     return maxUserProperties;
   }
@@ -370,7 +377,8 @@ public class FirebaseABTesting {
    */
   @WorkerThread
   private List<ConditionalUserProperty> getAllExperimentsInAnalytics() {
-    return analyticsConnector.getConditionalUserProperties(
-        originService, /*propertyNamePrefix=*/ "");
+    return analyticsConnector
+        .get()
+        .getConditionalUserProperties(originService, /*propertyNamePrefix=*/ "");
   }
 }

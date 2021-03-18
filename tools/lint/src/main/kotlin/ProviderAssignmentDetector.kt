@@ -39,9 +39,17 @@ class ProviderAssignmentDetector : Detector(), SourceCodeScanner {
         if (!isProviderGet(method)) {
             return
         }
-        val assignmentTarget = node.getParentOfType<JavaUAssignmentExpression>(
-                JavaUAssignmentExpression::class.java,
-                true)?.leftOperand as? UReferenceExpression ?: return
+        val assignmentExpression = node
+                .getParentOfType<JavaUAssignmentExpression>(
+                    JavaUAssignmentExpression::class.java, true)
+        val assignmentTarget = assignmentExpression?.leftOperand as? UReferenceExpression ?: return
+
+        // This would only be true if assigning the result of get(),
+        // in cases like foo = p.get().someMethod() there would be an intermediate parent
+        // and we don't want to trigger in such cases.
+        if (assignmentExpression != node.uastParent?.uastParent) {
+            return
+        }
         assignmentTarget.resolve()?.let {
             if (it is PsiField) {
                 context.report(

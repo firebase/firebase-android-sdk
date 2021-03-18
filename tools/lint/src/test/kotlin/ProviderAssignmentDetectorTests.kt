@@ -87,4 +87,19 @@ class ProviderAssignmentDetectorTests : LintDetectorTest() {
                 .run()
                 .expectClean()
     }
+
+    fun test_assignmentAnssdUseOfProvider_shouldSucceed() {
+        lint().files(java(providerSource()), java("""
+            import com.google.firebase.inject.Provider;
+
+            class Foo {
+              private final int length;
+              Foo(Provider<String> p) {
+                length = p.get().length;
+              }
+            }
+        """.trimIndent()))
+                .run()
+                .expectClean()
+    }
 }
