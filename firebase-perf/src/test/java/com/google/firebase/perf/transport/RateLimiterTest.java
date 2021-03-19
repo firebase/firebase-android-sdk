@@ -15,8 +15,8 @@
 package com.google.firebase.perf.transport;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.firebase.perf.metrics.ResourceType.NETWORK;
-import static com.google.firebase.perf.metrics.ResourceType.TRACE;
+import static com.google.firebase.perf.metrics.resource.ResourceType.NETWORK;
+import static com.google.firebase.perf.metrics.resource.ResourceType.TRACE;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
