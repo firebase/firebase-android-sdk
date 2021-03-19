@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.testing;
+package com.google.firebase.testing.e2e;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import com.example.com.google.firebase.testing.LinkedListProto;
-import com.example.com.google.firebase.testing.Other;
-import com.example.com.google.firebase.testing.SimpleProto;
-import com.example.com.google.firebase.testing.Types;
-import com.example.com.google.firebase.testing.Types32;
-import com.example.com.google.firebase.testing.Types64;
+import com.example.com.google.firebase.testing.e2e.LinkedListProto;
+import com.example.com.google.firebase.testing.e2e.Other;
+import com.example.com.google.firebase.testing.e2e.SimpleProto;
+import com.example.com.google.firebase.testing.e2e.Types;
+import com.example.com.google.firebase.testing.e2e.Types32;
+import com.example.com.google.firebase.testing.e2e.Types64;
 import com.example.google.protobuf.Timestamp;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
