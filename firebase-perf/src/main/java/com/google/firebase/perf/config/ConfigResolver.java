@@ -39,7 +39,6 @@ import com.google.firebase.perf.config.ConfigurationConstants.SessionsSamplingRa
 import com.google.firebase.perf.config.ConfigurationConstants.TraceEventCountBackground;
 import com.google.firebase.perf.config.ConfigurationConstants.TraceEventCountForeground;
 import com.google.firebase.perf.config.ConfigurationConstants.TraceSamplingRate;
-import com.google.firebase.perf.internal.RemoteConfigManager;
 import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.util.ImmutableBundle;
 import com.google.firebase.perf.util.Optional;

@@ -1,9 +1,9 @@
-// Copyright 2020 Google LLC
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
-//
 // You may obtain a copy of the License at
+//
 //      http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.perf.impl;
+package com.google.firebase.perf.metrics;
 
 import static com.google.firebase.perf.network.NetworkRequestMetricBuilderUtil.isAllowedUserAgent;
 
@@ -25,7 +25,6 @@ import com.google.firebase.perf.internal.PerfSession;
 import com.google.firebase.perf.internal.SessionAwareObject;
 import com.google.firebase.perf.internal.SessionManager;
 import com.google.firebase.perf.logging.AndroidLogger;
-import com.google.firebase.perf.metrics.HttpMetric;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.Timer;

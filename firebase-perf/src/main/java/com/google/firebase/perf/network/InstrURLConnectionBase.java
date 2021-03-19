@@ -15,8 +15,8 @@
 package com.google.firebase.perf.network;
 
 import android.os.Build;
-import com.google.firebase.perf.impl.NetworkRequestMetricBuilder;
 import com.google.firebase.perf.logging.AndroidLogger;
+import com.google.firebase.perf.metrics.NetworkRequestMetricBuilder;
 import com.google.firebase.perf.util.Timer;
 import java.io.IOException;
 import java.io.InputStream;
