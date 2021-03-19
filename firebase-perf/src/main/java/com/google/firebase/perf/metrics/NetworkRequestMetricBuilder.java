@@ -18,8 +18,8 @@ import static com.google.firebase.perf.network.NetworkRequestMetricBuilderUtil.i
 
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
-import com.google.firebase.perf.internal.AppStateMonitor;
-import com.google.firebase.perf.internal.AppStateUpdateHandler;
+import com.google.firebase.perf.application.AppStateMonitor;
+import com.google.firebase.perf.application.AppStateUpdateHandler;
 import com.google.firebase.perf.internal.GaugeManager;
 import com.google.firebase.perf.internal.PerfSession;
 import com.google.firebase.perf.internal.SessionAwareObject;
