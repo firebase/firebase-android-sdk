@@ -24,6 +24,7 @@ import android.view.WindowManager;
 import androidx.annotation.NonNull;
 import androidx.core.app.FrameMetricsAggregator;
 import com.google.android.gms.common.util.VisibleForTesting;
+import com.google.firebase.inject.Provider;
 import com.google.firebase.perf.FirebasePerformance;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.logging.AndroidLogger;
@@ -62,7 +63,11 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
     if (sInstance == null) {
       synchronized (AppStateMonitor.class) {
         if (sInstance == null) {
-          sInstance = new AppStateMonitor(TransportManager.getInstance(), new Clock());
+          sInstance =
+              new AppStateMonitor(
+                  TransportManager.getInstance(),
+                  new Clock(),
+                  () -> FirebasePerformance.getInstance());
         }
       }
     }
@@ -73,6 +78,7 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
       "androidx.core.app.FrameMetricsAggregator";
   private boolean mRegistered = false;
   private final TransportManager transportManager;
+  private final Provider<FirebasePerformance> firebasePerformanceProvider;
   private ConfigResolver mConfigResolver;
   private final Clock mClock;
   private boolean mIsColdStart = true;
@@ -92,9 +98,13 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
   private FrameMetricsAggregator mFrameMetricsAggregator;
   private final WeakHashMap<Activity, Trace> mActivity2ScreenTrace = new WeakHashMap<>();
 
-  AppStateMonitor(TransportManager transportManager, Clock clock) {
+  AppStateMonitor(
+      TransportManager transportManager,
+      Clock clock,
+      Provider<FirebasePerformance> firebasePerformanceProvider) {
     this.transportManager = transportManager;
     mClock = clock;
+    this.firebasePerformanceProvider = firebasePerformanceProvider;
     mConfigResolver = ConfigResolver.getInstance();
     hasFrameMetricsAggregator = hasFrameMetricsAggregatorClass();
     if (hasFrameMetricsAggregator) {
@@ -207,7 +217,7 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
       updateAppState(ApplicationProcessState.FOREGROUND);
       if (mIsColdStart) {
         // case 1: app startup.
-        FirebasePerformance.getInstance();
+        firebasePerformanceProvider.get();
         mIsColdStart = false;
       } else {
         // case 2: app switch from background to foreground.
