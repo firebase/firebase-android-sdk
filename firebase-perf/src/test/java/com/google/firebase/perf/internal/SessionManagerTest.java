@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.perf.application;
+package com.google.firebase.perf.internal;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -26,10 +26,7 @@ import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import com.google.firebase.perf.FirebasePerformanceTestBase;
-import com.google.firebase.perf.internal.GaugeManager;
-import com.google.firebase.perf.internal.PerfSession;
-import com.google.firebase.perf.internal.SessionAwareObject;
-import com.google.firebase.perf.internal.SessionManager;
+import com.google.firebase.perf.application.AppStateMonitor;
 import com.google.firebase.perf.v1.ApplicationProcessState;
 import java.lang.ref.WeakReference;
 import org.junit.Before;

@@ -21,7 +21,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import com.google.firebase.perf.FirebasePerformanceTestBase;
-import com.google.firebase.perf.internal.AppStateMonitor;
+import com.google.firebase.perf.application.AppStateMonitor;
 import com.google.firebase.perf.internal.GaugeManager;
 import com.google.firebase.perf.internal.PerfSession;
 import com.google.firebase.perf.internal.SessionManager;

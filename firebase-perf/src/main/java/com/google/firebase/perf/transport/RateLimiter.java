@@ -14,15 +14,15 @@
 
 package com.google.firebase.perf.transport;
 
-import static com.google.firebase.perf.internal.ResourceType.NETWORK;
-import static com.google.firebase.perf.internal.ResourceType.TRACE;
+import static com.google.firebase.perf.metrics.ResourceType.NETWORK;
+import static com.google.firebase.perf.metrics.ResourceType.TRACE;
 
 import android.content.Context;
 import androidx.annotation.NonNull;
 import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.firebase.perf.config.ConfigResolver;
-import com.google.firebase.perf.internal.ResourceType;
 import com.google.firebase.perf.logging.AndroidLogger;
+import com.google.firebase.perf.metrics.ResourceType;
 import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.Timer;
