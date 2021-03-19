@@ -19,7 +19,6 @@ import androidx.annotation.Nullable;
 import com.google.firebase.perf.FirebasePerformance.HttpMethod;
 import com.google.firebase.perf.FirebasePerformanceAttributable;
 import com.google.firebase.perf.config.ConfigResolver;
-import com.google.firebase.perf.impl.NetworkRequestMetricBuilder;
 import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.metrics.validator.PerfMetricValidator;
 import com.google.firebase.perf.transport.TransportManager;
