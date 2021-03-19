@@ -15,7 +15,7 @@
 package com.google.firebase.perf.metrics;
 
 import androidx.annotation.NonNull;
-import com.google.firebase.perf.internal.PerfSession;
+import com.google.firebase.perf.session.PerfSession;
 import com.google.firebase.perf.v1.TraceMetric;
 import java.util.Arrays;
 import java.util.List;

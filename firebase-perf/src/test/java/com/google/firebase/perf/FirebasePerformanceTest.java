@@ -35,7 +35,7 @@ import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.config.DeviceCacheManager;
 import com.google.firebase.perf.config.RemoteConfigManager;
-import com.google.firebase.perf.internal.GaugeManager;
+import com.google.firebase.perf.session.GaugeManager;
 import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.ImmutableBundle;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
