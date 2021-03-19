@@ -19,9 +19,9 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 /** Annotates various resource types in Firebase Performance. */
-/** @hide */
 @StringDef({ResourceType.TRACE, ResourceType.NETWORK})
 @Retention(RetentionPolicy.RUNTIME)
+/** @hide */
 public @interface ResourceType {
   String TRACE = "Trace";
   String NETWORK = "Network";
