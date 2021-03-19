@@ -97,6 +97,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -106,7 +107,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Test;
-import org.robolectric.android.util.concurrent.RoboExecutorService;
+import org.robolectric.android.util.concurrent.InlineExecutorService;
 
 /**
  * Subclasses of SpecTestCase run a set of portable event specifications from JSON spec files
@@ -222,7 +223,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
   private int snapshotsInSyncEvents = 0;
 
   /** An executor to use for test callbacks. */
-  private final RoboExecutorService backgroundExecutor = new RoboExecutorService();
+  private final ExecutorService backgroundExecutor = new InlineExecutorService();
 
   /** The current user for the SyncEngine. Determines which mutation queue is active. */
   private User currentUser;
