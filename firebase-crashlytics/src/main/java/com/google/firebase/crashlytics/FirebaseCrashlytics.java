@@ -26,7 +26,7 @@ import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.analytics.connector.AnalyticsConnector.AnalyticsConnectorHandle;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.Logger;
-import com.google.firebase.crashlytics.internal.MissingNativeComponent;
+import com.google.firebase.crashlytics.internal.ProviderProxyNativeComponent;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsEventLogger;
 import com.google.firebase.crashlytics.internal.analytics.BlockingAnalyticsEventLogger;
 import com.google.firebase.crashlytics.internal.analytics.BreadcrumbAnalyticsEventReceiver;
@@ -80,9 +80,7 @@ public class FirebaseCrashlytics {
 
     final DataCollectionArbiter arbiter = new DataCollectionArbiter(app);
 
-    if (nativeComponent == null) {
-      nativeComponent = new MissingNativeComponent();
-    }
+    ProviderProxyNativeComponent proxyNativeComponent = new ProviderProxyNativeComponent(nativeComponent);
 
     // Integration with Firebase Analytics
 
@@ -154,7 +152,7 @@ public class FirebaseCrashlytics {
         new CrashlyticsCore(
             app,
             idManager,
-            nativeComponent,
+            proxyNativeComponent,
             arbiter,
             breadcrumbSource,
             analyticsEventLogger,
