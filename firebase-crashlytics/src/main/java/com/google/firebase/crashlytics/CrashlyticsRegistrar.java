@@ -21,9 +21,9 @@ import com.google.firebase.components.ComponentContainer;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
+import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
-import com.google.firebase.inject.Provider;
 import java.util.Arrays;
 import java.util.List;
 
@@ -46,7 +46,8 @@ public class CrashlyticsRegistrar implements ComponentRegistrar {
   private FirebaseCrashlytics buildCrashlytics(ComponentContainer container) {
     FirebaseApp app = container.get(FirebaseApp.class);
 
-    Provider<CrashlyticsNativeComponent> nativeComponent = container.getProvider(CrashlyticsNativeComponent.class);
+    Provider<CrashlyticsNativeComponent> nativeComponent =
+        container.getProvider(CrashlyticsNativeComponent.class);
 
     AnalyticsConnector analyticsConnector = container.get(AnalyticsConnector.class);
 

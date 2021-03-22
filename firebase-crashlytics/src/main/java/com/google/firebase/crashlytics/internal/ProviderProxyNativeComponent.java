@@ -80,14 +80,16 @@ public final class ProviderProxyNativeComponent implements CrashlyticsNativeComp
       int deliveryMechanism,
       @NonNull String unityVersion) {
     if (provider.get() != null) {
-      provider.get().writeSessionApp(
-        sessionId, 
-        appIdentifier, 
-        versionCode, 
-        versionName, 
-        installUuid, 
-        deliveryMechanism, 
-        unityVersion);
+      provider
+          .get()
+          .writeSessionApp(
+              sessionId,
+              appIdentifier,
+              versionCode,
+              versionName,
+              installUuid,
+              deliveryMechanism,
+              unityVersion);
     }
   }
 
@@ -116,18 +118,18 @@ public final class ProviderProxyNativeComponent implements CrashlyticsNativeComp
       @NonNull String modelClass) {
     if (provider.get() != null) {
       provider
-        .get()
-        .writeSessionDevice(
-          sessionId, 
-          arch, 
-          model, 
-          availableProcessors, 
-          totalRam, 
-          diskSpace, 
-          isEmulator, 
-          state, 
-          manufacturer, 
-          modelClass);
+          .get()
+          .writeSessionDevice(
+              sessionId,
+              arch,
+              model,
+              availableProcessors,
+              totalRam,
+              diskSpace,
+              isEmulator,
+              state,
+              manufacturer,
+              modelClass);
     }
   }
 

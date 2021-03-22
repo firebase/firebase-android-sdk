@@ -44,8 +44,8 @@ import com.google.firebase.crashlytics.internal.network.HttpRequestFactory;
 import com.google.firebase.crashlytics.internal.settings.SettingsController;
 import com.google.firebase.crashlytics.internal.unity.ResourceUnityVersionProvider;
 import com.google.firebase.crashlytics.internal.unity.UnityVersionProvider;
-import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.inject.Provider;
+import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -80,7 +80,8 @@ public class FirebaseCrashlytics {
 
     final DataCollectionArbiter arbiter = new DataCollectionArbiter(app);
 
-    ProviderProxyNativeComponent proxyNativeComponent = new ProviderProxyNativeComponent(nativeComponent);
+    ProviderProxyNativeComponent proxyNativeComponent =
+        new ProviderProxyNativeComponent(nativeComponent);
 
     // Integration with Firebase Analytics
 

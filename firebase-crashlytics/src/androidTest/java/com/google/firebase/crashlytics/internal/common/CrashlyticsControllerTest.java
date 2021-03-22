@@ -25,8 +25,8 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
-import com.google.firebase.crashlytics.internal.ProviderProxyNativeComponent;
 import com.google.firebase.crashlytics.internal.NativeSessionFileProvider;
+import com.google.firebase.crashlytics.internal.ProviderProxyNativeComponent;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsEventLogger;
 import com.google.firebase.crashlytics.internal.log.LogFileManager;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
@@ -111,8 +111,8 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
     private LogFileManager logFileManager = null;
 
     ControllerBuilder() {
-      dataCollectionArbiter = mockDataCollectionArbiter;S
-      nativeComponent = new ProviderProxyNativeComponent(() -> null);
+      dataCollectionArbiter = mockDataCollectionArbiter;
+      S nativeComponent = new ProviderProxyNativeComponent(() -> null);
 
       unityVersionProvider = mock(UnityVersionProvider.class);
       when(unityVersionProvider.getUnityVersion()).thenReturn(null);
