@@ -45,6 +45,7 @@ import com.google.firebase.crashlytics.internal.settings.SettingsController;
 import com.google.firebase.crashlytics.internal.unity.ResourceUnityVersionProvider;
 import com.google.firebase.crashlytics.internal.unity.UnityVersionProvider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
+import com.google.firebase.inject.Provider;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -69,7 +70,7 @@ public class FirebaseCrashlytics {
   static @Nullable FirebaseCrashlytics init(
       @NonNull FirebaseApp app,
       @NonNull FirebaseInstallationsApi firebaseInstallationsApi,
-      @Nullable CrashlyticsNativeComponent nativeComponent,
+      @NonNull Provider<CrashlyticsNativeComponent> nativeComponent,
       @Nullable AnalyticsConnector analyticsConnector) {
     Logger.getLogger().i("Initializing Firebase Crashlytics " + CrashlyticsCore.getVersion());
     Context context = app.getApplicationContext();
