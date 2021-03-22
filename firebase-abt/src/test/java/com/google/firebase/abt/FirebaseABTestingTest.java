@@ -76,7 +76,7 @@ public class FirebaseABTestingTest {
     firebaseAbt =
         new FirebaseABTesting(
             /*unusedAppContext=*/ null,
-            /*analyticsConnector=*/ mockAnalyticsConnector,
+            /*analyticsConnector=*/ () -> mockAnalyticsConnector,
             ORIGIN_SERVICE);
 
     when(mockAnalyticsConnector.getMaxUserProperties(ORIGIN_SERVICE))
@@ -189,7 +189,7 @@ public class FirebaseABTestingTest {
   public void replaceAllExperiments_analyticsSdkUnavailable_throwsAbtException() {
     firebaseAbt =
         new FirebaseABTesting(
-            /*unusedAppContext=*/ null, /*analyticsConnector=*/ null, ORIGIN_SERVICE);
+            /*unusedAppContext=*/ null, /*analyticsConnector=*/ () -> null, ORIGIN_SERVICE);
 
     AbtException actualException =
         assertThrows(
@@ -243,7 +243,7 @@ public class FirebaseABTestingTest {
   public void removeAllExperiments_analyticsSdkUnavailable_throwsAbtException() {
     firebaseAbt =
         new FirebaseABTesting(
-            /*unusedAppContext=*/ null, /*analyticsConnector=*/ null, ORIGIN_SERVICE);
+            /*unusedAppContext=*/ null, /*analyticsConnector=*/ () -> null, ORIGIN_SERVICE);
 
     AbtException actualException =
         assertThrows(AbtException.class, () -> firebaseAbt.removeAllExperiments());
@@ -281,7 +281,7 @@ public class FirebaseABTestingTest {
   public void getAllExperiments_analyticsSdkUnavailable_throwsAbtException() {
     firebaseAbt =
         new FirebaseABTesting(
-            /*unusedAppContext=*/ null, /*analyticsConnector=*/ null, ORIGIN_SERVICE);
+            /*unusedAppContext=*/ null, /*analyticsConnector=*/ () -> null, ORIGIN_SERVICE);
 
     AbtException actualException =
         assertThrows(AbtException.class, () -> firebaseAbt.getAllExperiments());
