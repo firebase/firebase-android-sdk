@@ -334,10 +334,7 @@ public class FirebaseABTesting {
   }
 
   private void addExperimentToAnalytics(ConditionalUserProperty experiment) {
-    AnalyticsConnector connector = this.analyticsConnector.get();
-    if (connector != null) {
-      connector.setConditionalUserProperty(experiment);
-    }
+    analyticsConnector.get().setConditionalUserProperty(experiment);
   }
 
   private void throwAbtExceptionIfAnalyticsIsNull() throws AbtException {
@@ -354,11 +351,10 @@ public class FirebaseABTesting {
    * breaking, or if the underlying Analytics clear method is failing.
    */
   private void removeExperimentFromAnalytics(String experimentId) {
-    AnalyticsConnector connector = this.analyticsConnector.get();
-    if (connector != null) {
-      connector.clearConditionalUserProperty(
-          experimentId, /*clearEventName=*/ null, /*clearEventParams=*/ null);
-    }
+    analyticsConnector
+        .get()
+        .clearConditionalUserProperty(
+            experimentId, /*clearEventName=*/ null, /*clearEventParams=*/ null);
   }
 
   @WorkerThread
