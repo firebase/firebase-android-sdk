@@ -80,7 +80,14 @@ public final class ProviderProxyNativeComponent implements CrashlyticsNativeComp
       int deliveryMechanism,
       @NonNull String unityVersion) {
     if (provider.get() != null) {
-      provider.get().writeSessionApp(sessionId, appIdentifier, versionCode, versionName, deliveryMechanism, unityVersion);
+      provider.get().writeSessionApp(
+        sessionId, 
+        appIdentifier, 
+        versionCode, 
+        versionName, 
+        installUuid, 
+        deliveryMechanism, 
+        unityVersion);
     }
   }
 
