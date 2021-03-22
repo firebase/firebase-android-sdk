@@ -104,4 +104,24 @@ class ProviderAssignmentDetectorTests : LintDetectorTest() {
                 .run()
                 .expectClean()
     }
+
+    fun test_assignmentFromWithinADeferredApiMethod_shouldSucceed() {
+        lint().files(
+                java(providerSource()),
+                java(annotationSource()),
+                java(deferredSource()),
+                java("""
+                    import com.google.firebase.inject.Deferred;
+                    class Foo {
+                        private String s;
+                        Foo(Deferred<String> d) {
+                          d.whenAvailable(p -> {
+                            s = p.get();
+                          });
+                        }
+                    }
+                """.trimIndent()))
+                .run()
+                .expectClean()
+    }
 }
