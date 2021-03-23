@@ -16,7 +16,15 @@ package com.google.firebase.perf;
 
 import com.google.firebase.perf.application.AppStateMonitor;
 
+/**
+ * FirebasePerformanceInitializer to initialize FirebasePerformance during app cold start
+ *
+ * @hide
+ */
+/** @hide */
 public final class FirebasePerformanceInitializer implements AppStateMonitor.AppColdStartCallback {
+
+  /** @hide */
   @Override
   public void onAppColdStart() {
     // Initialize FirebasePerformance when app cold starts.
