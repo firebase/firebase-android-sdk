@@ -32,7 +32,6 @@ import java.util.concurrent.Executors;
  * @hide
  */
 /** @hide */
-@VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
 public class DeviceCacheManager {
 
   private static final AndroidLogger logger = AndroidLogger.getInstance();
@@ -80,7 +79,7 @@ public class DeviceCacheManager {
     }
   }
 
-  public boolean containsKey(String key) {
+  protected boolean containsKey(String key) {
     return sharedPref != null && key != null && sharedPref.contains(key);
   }
 
@@ -88,7 +87,7 @@ public class DeviceCacheManager {
    * Retrieves value stored in caching layer for {@code key}, if caching layer is not initialized,
    * or value with the desired type doesn't exist in caching layer, return {@code Optional.empty()}.
    */
-  public Optional<Boolean> getBoolean(String key) {
+  protected Optional<Boolean> getBoolean(String key) {
     if (key == null) {
       logger.debug("Key is null when getting boolean value on device cache.");
       return Optional.absent();
@@ -116,7 +115,7 @@ public class DeviceCacheManager {
   }
 
   /** Clears the value for {@code key} in caching layer. */
-  public void clear(String key) {
+  protected void clear(String key) {
     if (key == null) {
       logger.debug("Key is null. Cannot clear nullable key");
       return;
@@ -130,6 +129,7 @@ public class DeviceCacheManager {
    *
    * @return whether provided value has been saved to device caching layer.
    */
+  @VisibleForTesting
   public boolean setValue(String key, boolean value) {
     if (key == null) {
       logger.debug("Key is null when setting boolean value on device cache.");
@@ -149,7 +149,7 @@ public class DeviceCacheManager {
    * Retrieves value stored in caching layer for {@code key}, if caching layer is not initialized,
    * or value with the desired type doesn't exist in caching layer, return {@code Optional.empty()}.
    */
-  public Optional<String> getString(String key) {
+  protected Optional<String> getString(String key) {
     if (key == null) {
       logger.debug("Key is null when getting String value on device cache.");
       return Optional.absent();
@@ -183,6 +183,7 @@ public class DeviceCacheManager {
    *
    * @return whether provided value has been saved to device caching layer.
    */
+  @VisibleForTesting
   public boolean setValue(String key, String value) {
     if (key == null) {
       logger.debug("Key is null when setting String value on device cache.");
@@ -209,7 +210,7 @@ public class DeviceCacheManager {
    * Retrieves value stored in caching layer for {@code key}, if caching layer is not initialized,
    * or value with the desired type doesn't exist in caching layer, return {@code Optional.empty()}.
    */
-  public Optional<Float> getFloat(String key) {
+  protected Optional<Float> getFloat(String key) {
     if (key == null) {
       logger.debug("Key is null when getting float value on device cache.");
       return Optional.absent();
@@ -242,6 +243,7 @@ public class DeviceCacheManager {
    *
    * @return whether provided value has been saved to device caching layer.
    */
+  @VisibleForTesting
   public boolean setValue(String key, float value) {
     if (key == null) {
       logger.debug("Key is null when setting float value on device cache.");
@@ -261,7 +263,7 @@ public class DeviceCacheManager {
    * Retrieves value stored in caching layer for {@code key}, if caching layer is not initialized,
    * or value with the desired type doesn't exist in caching layer, return {@code Optional.empty()}.
    */
-  public Optional<Long> getLong(String key) {
+  protected Optional<Long> getLong(String key) {
     if (key == null) {
       logger.debug("Key is null when getting long value on device cache.");
       return Optional.absent();
@@ -294,6 +296,7 @@ public class DeviceCacheManager {
    *
    * @return whether provided value has been saved to device caching layer.
    */
+  @VisibleForTesting
   public boolean setValue(String key, long value) {
     if (key == null) {
       logger.debug("Key is null when setting long value on device cache.");

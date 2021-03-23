@@ -14,9 +14,6 @@
 
 package com.google.firebase.perf.config;
 
-import android.content.Context;
-import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager.NameNotFoundException;
 import androidx.annotation.Keep;
 import androidx.annotation.Nullable;
 import com.google.android.gms.common.util.VisibleForTesting;
@@ -117,7 +114,7 @@ public class RemoteConfigManager {
    * @param key The key to fetch the double value for.
    * @return The float value of the key or not present.
    */
-  public Optional<Float> getFloat(String key) {
+  protected Optional<Float> getFloat(String key) {
     if (key == null) {
       logger.debug("The key to get Remote Config float value is null.");
       return Optional.absent();
@@ -143,7 +140,7 @@ public class RemoteConfigManager {
    * @param key The key to fetch the long value for.
    * @return The long value of the key or not present.
    */
-  public Optional<Long> getLong(String key) {
+  protected Optional<Long> getLong(String key) {
     if (key == null) {
       logger.debug("The key to get Remote Config long value is null.");
       return Optional.absent();
@@ -169,7 +166,7 @@ public class RemoteConfigManager {
    * @param key The key to fetch the boolean value for.
    * @return The boolean value of the key or not present.
    */
-  public Optional<Boolean> getBoolean(String key) {
+  protected Optional<Boolean> getBoolean(String key) {
     if (key == null) {
       logger.debug("The key to get Remote Config boolean value is null.");
       return Optional.absent();
@@ -195,7 +192,7 @@ public class RemoteConfigManager {
    * @param key The key to fetch the String value for.
    * @return The String value of the key or not present.
    */
-  public Optional<String> getString(String key) {
+  protected Optional<String> getString(String key) {
     if (key == null) {
       logger.debug("The key to get Remote Config String value is null.");
       return Optional.absent();
@@ -221,7 +218,7 @@ public class RemoteConfigManager {
    * @return The value of the key or the default value.
    */
   @SuppressWarnings("unchecked")
-  public <T extends Object> T getRemoteConfigValueOrDefault(String key, T defaultValue) {
+  protected <T extends Object> T getRemoteConfigValueOrDefault(String key, T defaultValue) {
 
     Object valueToReturn = defaultValue;
     FirebaseRemoteConfigValue rcValue = getRemoteConfigValue(key);
@@ -281,7 +278,7 @@ public class RemoteConfigManager {
   }
 
   /** Returns if the most recent fetch attempt was failed. */
-  public boolean isLastFetchFailed() {
+  protected boolean isLastFetchFailed() {
     return firebaseRemoteConfig == null
         || (firebaseRemoteConfig.getInfo().getLastFetchStatus()
             == FirebaseRemoteConfig.LAST_FETCH_STATUS_FAILURE);
@@ -333,7 +330,8 @@ public class RemoteConfigManager {
   }
 
   /** Returns true if Firebase Remote Config is available, false otherwise. */
-  public boolean isFirebaseRemoteConfigAvailable() {
+  @VisibleForTesting
+  private boolean isFirebaseRemoteConfigAvailable() {
     if (firebaseRemoteConfig == null && firebaseRemoteConfigProvider != null) {
       RemoteConfigComponent rcComponent = firebaseRemoteConfigProvider.get();
 
@@ -355,17 +353,5 @@ public class RemoteConfigManager {
   private boolean shouldFetchAndActivateRemoteConfigValues() {
     return (getCurrentSystemTimeMillis() - firebaseRemoteConfigLastFetchTimestampMs)
         > TIME_AFTER_WHICH_A_FETCH_IS_CONSIDERED_STALE_MS;
-  }
-
-  /** Gets the version code of the Android app. */
-  @VisibleForTesting
-  public static int getVersionCode(Context context) {
-    try {
-      PackageInfo pi =
-          context.getPackageManager().getPackageInfo(context.getPackageName(), /* flags= */ 0);
-      return pi.versionCode;
-    } catch (NameNotFoundException e) {
-      return 0;
-    }
   }
 }

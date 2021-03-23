@@ -209,7 +209,7 @@ final class ConfigurationConstants {
       super();
     }
 
-    public static synchronized SessionsCpuCaptureFrequencyForegroundMs getInstance() {
+    protected static synchronized SessionsCpuCaptureFrequencyForegroundMs getInstance() {
       if (instance == null) {
         instance = new SessionsCpuCaptureFrequencyForegroundMs();
       }
@@ -247,7 +247,7 @@ final class ConfigurationConstants {
       super();
     }
 
-    public static synchronized SessionsCpuCaptureFrequencyBackgroundMs getInstance() {
+    protected static synchronized SessionsCpuCaptureFrequencyBackgroundMs getInstance() {
       if (instance == null) {
         instance = new SessionsCpuCaptureFrequencyBackgroundMs();
       }
@@ -285,7 +285,7 @@ final class ConfigurationConstants {
       super();
     }
 
-    public static synchronized SessionsMemoryCaptureFrequencyForegroundMs getInstance() {
+    protected static synchronized SessionsMemoryCaptureFrequencyForegroundMs getInstance() {
       if (instance == null) {
         instance = new SessionsMemoryCaptureFrequencyForegroundMs();
       }
@@ -323,7 +323,7 @@ final class ConfigurationConstants {
       super();
     }
 
-    public static synchronized SessionsMemoryCaptureFrequencyBackgroundMs getInstance() {
+    protected static synchronized SessionsMemoryCaptureFrequencyBackgroundMs getInstance() {
       if (instance == null) {
         instance = new SessionsMemoryCaptureFrequencyBackgroundMs();
       }
@@ -360,7 +360,7 @@ final class ConfigurationConstants {
       super();
     }
 
-    public static synchronized SessionsMaxDurationMinutes getInstance() {
+    protected static synchronized SessionsMaxDurationMinutes getInstance() {
       if (instance == null) {
         instance = new SessionsMaxDurationMinutes();
       }
@@ -396,7 +396,7 @@ final class ConfigurationConstants {
       super();
     }
 
-    public static synchronized TraceEventCountForeground getInstance() {
+    protected static synchronized TraceEventCountForeground getInstance() {
       if (instance == null) {
         instance = new TraceEventCountForeground();
       }
@@ -426,7 +426,7 @@ final class ConfigurationConstants {
       super();
     }
 
-    public static synchronized TraceEventCountBackground getInstance() {
+    protected static synchronized TraceEventCountBackground getInstance() {
       if (instance == null) {
         instance = new TraceEventCountBackground();
       }
@@ -456,7 +456,7 @@ final class ConfigurationConstants {
       super();
     }
 
-    public static synchronized NetworkEventCountForeground getInstance() {
+    protected static synchronized NetworkEventCountForeground getInstance() {
       if (instance == null) {
         instance = new NetworkEventCountForeground();
       }
@@ -486,7 +486,7 @@ final class ConfigurationConstants {
       super();
     }
 
-    public static synchronized NetworkEventCountBackground getInstance() {
+    protected static synchronized NetworkEventCountBackground getInstance() {
       if (instance == null) {
         instance = new NetworkEventCountBackground();
       }
@@ -516,7 +516,7 @@ final class ConfigurationConstants {
       super();
     }
 
-    public static synchronized RateLimitSec getInstance() {
+    protected static synchronized RateLimitSec getInstance() {
       if (instance == null) {
         instance = new RateLimitSec();
       }
@@ -546,7 +546,7 @@ final class ConfigurationConstants {
       super();
     }
 
-    public static synchronized SessionsSamplingRate getInstance() {
+    protected static synchronized SessionsSamplingRate getInstance() {
       if (instance == null) {
         instance = new SessionsSamplingRate();
       }
@@ -598,7 +598,7 @@ final class ConfigurationConstants {
       super();
     }
 
-    public static synchronized LogSourceName getInstance() {
+    protected static synchronized LogSourceName getInstance() {
       if (instance == null) {
         instance = new LogSourceName();
       }
