@@ -1,4 +1,4 @@
-// Copyright 2020 Google LLC
+f// Copyright 2020 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -112,7 +112,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
 
     ControllerBuilder() {
       dataCollectionArbiter = mockDataCollectionArbiter;
-      S nativeComponent = new ProviderProxyNativeComponent(() -> null);
+      nativeComponent = new ProviderProxyNativeComponent(() -> null);
 
       unityVersionProvider = mock(UnityVersionProvider.class);
       when(unityVersionProvider.getUnityVersion()).thenReturn(null);
