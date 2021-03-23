@@ -34,7 +34,7 @@ import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.metrics.HttpMetric;
 import com.google.firebase.perf.metrics.Trace;
 import com.google.firebase.perf.metrics.validator.PerfMetricValidator;
-import com.google.firebase.perf.session.GaugeManager;
+import com.google.firebase.perf.session.gauges.GaugeManager;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.ImmutableBundle;
