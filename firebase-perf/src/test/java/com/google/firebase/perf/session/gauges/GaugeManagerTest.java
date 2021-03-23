@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.perf.session.collectors;
+package com.google.firebase.perf.session.gauges;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
@@ -47,7 +47,7 @@ import org.mockito.ArgumentMatchers;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 
-/** Unit tests for {@link com.google.firebase.perf.session.collectors.GaugeManager} */
+/** Unit tests for {@link com.google.firebase.perf.session.gauges.GaugeManager} */
 @RunWith(RobolectricTestRunner.class)
 public final class GaugeManagerTest extends FirebasePerformanceTestBase {
 

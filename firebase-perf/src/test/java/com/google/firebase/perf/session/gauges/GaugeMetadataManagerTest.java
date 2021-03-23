@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.perf.session.collectors;
+package com.google.firebase.perf.session.gauges;
 
 import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -41,7 +41,7 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.shadows.ShadowEnvironment;
 
-/** Unit tests for {@link com.google.firebase.perf.session.collectors.GaugeMetadataManager} */
+/** Unit tests for {@link com.google.firebase.perf.session.gauges.GaugeMetadataManager} */
 @RunWith(RobolectricTestRunner.class)
 public class GaugeMetadataManagerTest extends FirebasePerformanceTestBase {
 
