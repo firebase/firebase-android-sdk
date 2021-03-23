@@ -22,6 +22,7 @@ import static java.util.Collections.singletonList;
 import android.app.Activity;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.lifecycle.LifecycleOwner;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
@@ -29,6 +30,7 @@ import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.core.ActivityScope;
 import com.google.firebase.firestore.core.AsyncEventListener;
 import com.google.firebase.firestore.core.EventManager.ListenOptions;
+import com.google.firebase.firestore.core.LifecycleOwnerScope;
 import com.google.firebase.firestore.core.ListenerRegistrationImpl;
 import com.google.firebase.firestore.core.QueryListener;
 import com.google.firebase.firestore.core.UserData.ParsedSetData;
@@ -305,6 +307,7 @@ public class DocumentReference {
             Executors.DIRECT_EXECUTOR,
             options,
             null,
+            null,
             (snapshot, error) -> {
               if (error != null) {
                 res.setException(error);
@@ -431,7 +434,8 @@ public class DocumentReference {
     checkNotNull(executor, "Provided executor must not be null.");
     checkNotNull(metadataChanges, "Provided MetadataChanges value must not be null.");
     checkNotNull(listener, "Provided EventListener must not be null.");
-    return addSnapshotListenerInternal(executor, internalOptions(metadataChanges), null, listener);
+    return addSnapshotListenerInternal(
+        executor, internalOptions(metadataChanges), null, null, listener);
   }
 
   /**
@@ -455,7 +459,39 @@ public class DocumentReference {
     checkNotNull(metadataChanges, "Provided MetadataChanges value must not be null.");
     checkNotNull(listener, "Provided EventListener must not be null.");
     return addSnapshotListenerInternal(
-        Executors.DEFAULT_CALLBACK_EXECUTOR, internalOptions(metadataChanges), activity, listener);
+        Executors.DEFAULT_CALLBACK_EXECUTOR,
+        internalOptions(metadataChanges),
+        activity,
+        null,
+        listener);
+  }
+
+  /**
+   * Starts listening to the document referenced by this {@code DocumentReference} with the given
+   * options using an LifecycleOwner-scoped listener.
+   *
+   * <p>The listener will be automatically removed during {@link LifecycleOwner's ON_STOP Event'}.
+   *
+   * @param lifecycleOwner The LifecycleOwner to scope the listener to.
+   * @param metadataChanges Indicates whether metadata-only changes (i.e. only {@code
+   *     DocumentSnapshot.getMetadata()} changed) should trigger snapshot events.
+   * @param listener The event listener that will be called with the snapshots.
+   * @return A registration object that can be used to remove the listener.
+   */
+  @NonNull
+  public ListenerRegistration addSnapshotListener(
+      @NonNull LifecycleOwner lifecycleOwner,
+      @NonNull MetadataChanges metadataChanges,
+      @NonNull EventListener<DocumentSnapshot> listener) {
+    checkNotNull(lifecycleOwner, "Provided LifecycleOwner must not be null.");
+    checkNotNull(metadataChanges, "Provided MetadataChanges value must not be null.");
+    checkNotNull(listener, "Provided EventListener must not be null.");
+    return addSnapshotListenerInternal(
+        Executors.DEFAULT_CALLBACK_EXECUTOR,
+        internalOptions(metadataChanges),
+        null,
+        lifecycleOwner,
+        listener);
   }
 
   /**
@@ -466,6 +502,7 @@ public class DocumentReference {
    * @param userExecutor The executor to use to call the listener.
    * @param options The options to use for this listen.
    * @param activity Optional activity this listener is scoped to.
+   * @param lifecycleOwner Optional LifecycleOwner this listener is scoped to.
    * @param userListener The user-supplied event listener that will be called with document
    *     snapshots.
    * @return A registration object that can be used to remove the listener.
@@ -474,6 +511,7 @@ public class DocumentReference {
       Executor userExecutor,
       ListenOptions options,
       @Nullable Activity activity,
+      @Nullable LifecycleOwner lifecycleOwner,
       EventListener<DocumentSnapshot> userListener) {
 
     // Convert from ViewSnapshots to DocumentSnapshots.
@@ -511,9 +549,12 @@ public class DocumentReference {
     com.google.firebase.firestore.core.Query query = asQuery();
     QueryListener queryListener = firestore.getClient().listen(query, options, asyncListener);
 
-    return ActivityScope.bind(
-        activity,
-        new ListenerRegistrationImpl(firestore.getClient(), queryListener, asyncListener));
+    ListenerRegistration registration =
+        new ListenerRegistrationImpl(firestore.getClient(), queryListener, asyncListener);
+    if (lifecycleOwner != null) {
+      return LifecycleOwnerScope.bind(lifecycleOwner, registration);
+    }
+    return ActivityScope.bind(activity, registration);
   }
 
   @Override

@@ -57,6 +57,7 @@ package com.google.firebase.firestore {
     method @NonNull public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(@NonNull com.google.firebase.firestore.MetadataChanges, @NonNull com.google.firebase.firestore.EventListener<com.google.firebase.firestore.DocumentSnapshot>);
     method @NonNull public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(@NonNull java.util.concurrent.Executor, @NonNull com.google.firebase.firestore.MetadataChanges, @NonNull com.google.firebase.firestore.EventListener<com.google.firebase.firestore.DocumentSnapshot>);
     method @NonNull public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(@NonNull android.app.Activity, @NonNull com.google.firebase.firestore.MetadataChanges, @NonNull com.google.firebase.firestore.EventListener<com.google.firebase.firestore.DocumentSnapshot>);
+    method @NonNull public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(@NonNull androidx.lifecycle.LifecycleOwner, @NonNull com.google.firebase.firestore.MetadataChanges, @NonNull com.google.firebase.firestore.EventListener<com.google.firebase.firestore.DocumentSnapshot>);
     method @NonNull public com.google.firebase.firestore.CollectionReference collection(@NonNull String);
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> delete();
     method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.firestore.DocumentSnapshot> get();
@@ -134,6 +135,7 @@ package com.google.firebase.firestore {
   public class FirebaseFirestore {
     method @NonNull public com.google.firebase.firestore.ListenerRegistration addSnapshotsInSyncListener(@NonNull Runnable);
     method @NonNull public com.google.firebase.firestore.ListenerRegistration addSnapshotsInSyncListener(@NonNull android.app.Activity, @NonNull Runnable);
+    method @NonNull public com.google.firebase.firestore.ListenerRegistration addSnapshotsInSyncListener(@NonNull androidx.lifecycle.LifecycleOwner, @NonNull Runnable);
     method @NonNull public com.google.firebase.firestore.ListenerRegistration addSnapshotsInSyncListener(@NonNull java.util.concurrent.Executor, @NonNull Runnable);
     method @NonNull public com.google.firebase.firestore.WriteBatch batch();
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> clearPersistence();
@@ -285,9 +287,11 @@ package com.google.firebase.firestore {
     method @NonNull public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(@NonNull com.google.firebase.firestore.EventListener<com.google.firebase.firestore.QuerySnapshot>);
     method @NonNull public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(@NonNull java.util.concurrent.Executor, @NonNull com.google.firebase.firestore.EventListener<com.google.firebase.firestore.QuerySnapshot>);
     method @NonNull public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(@NonNull android.app.Activity, @NonNull com.google.firebase.firestore.EventListener<com.google.firebase.firestore.QuerySnapshot>);
+    method @NonNull public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(@NonNull androidx.lifecycle.LifecycleOwner, @NonNull com.google.firebase.firestore.EventListener<com.google.firebase.firestore.QuerySnapshot>);
     method @NonNull public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(@NonNull com.google.firebase.firestore.MetadataChanges, @NonNull com.google.firebase.firestore.EventListener<com.google.firebase.firestore.QuerySnapshot>);
     method @NonNull public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(@NonNull java.util.concurrent.Executor, @NonNull com.google.firebase.firestore.MetadataChanges, @NonNull com.google.firebase.firestore.EventListener<com.google.firebase.firestore.QuerySnapshot>);
     method @NonNull public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(@NonNull android.app.Activity, @NonNull com.google.firebase.firestore.MetadataChanges, @NonNull com.google.firebase.firestore.EventListener<com.google.firebase.firestore.QuerySnapshot>);
+    method @NonNull public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(@NonNull androidx.lifecycle.LifecycleOwner, @NonNull com.google.firebase.firestore.MetadataChanges, @NonNull com.google.firebase.firestore.EventListener<com.google.firebase.firestore.QuerySnapshot>);
     method @NonNull public com.google.firebase.firestore.Query endAt(@NonNull com.google.firebase.firestore.DocumentSnapshot);
     method @NonNull public com.google.firebase.firestore.Query endAt(java.lang.Object...);
     method @NonNull public com.google.firebase.firestore.Query endBefore(@NonNull com.google.firebase.firestore.DocumentSnapshot);
