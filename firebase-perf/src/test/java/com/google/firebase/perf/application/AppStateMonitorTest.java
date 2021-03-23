@@ -32,6 +32,7 @@ import android.app.Application;
 import android.content.Context;
 import android.os.Bundle;
 import android.view.WindowManager.LayoutParams;
+import com.google.firebase.perf.FirebasePerformanceInitializer;
 import com.google.firebase.perf.FirebasePerformanceTestBase;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.config.DeviceCacheManager;
@@ -720,6 +721,35 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     assertThat(clientState.get(client1)).isEqualTo(ApplicationProcessState.BACKGROUND);
     assertThat(clientState.get(client2)).isEqualTo(ApplicationProcessState.BACKGROUND);
     assertThat(clientState.get(client3)).isEqualTo(ApplicationProcessState.BACKGROUND);
+  }
+
+  @Test
+  public void appColdStart_singleClient_callbackIsCalled() {
+    AppStateMonitor monitor = new AppStateMonitor(transportManager, mClock);
+    FirebasePerformanceInitializer mockInitializer = mock(FirebasePerformanceInitializer.class);
+    monitor.registerForAppColdStart(mockInitializer);
+
+    // Activity comes to Foreground
+    monitor.onActivityResumed(activity1);
+    verify(mockInitializer, times(1)).onAppColdStart();
+  }
+
+  @Test
+  public void appHotStart_singleClient_callbackIsNotCalled() {
+    AppStateMonitor monitor = new AppStateMonitor(transportManager, mClock);
+    FirebasePerformanceInitializer mockInitializer = mock(FirebasePerformanceInitializer.class);
+    monitor.registerForAppColdStart(mockInitializer);
+
+    // Activity comes to Foreground
+    monitor.onActivityResumed(activity1);
+    verify(mockInitializer, times(1)).onAppColdStart();
+
+    // Activity goes to Background
+    monitor.onActivityStopped(activity1);
+
+    // Activity comes to Foreground
+    monitor.onActivityResumed(activity1);
+    verify(mockInitializer, times(1)).onAppColdStart();
   }
 
   private static Activity createFakeActivity(boolean isHardwareAccelerated) {
