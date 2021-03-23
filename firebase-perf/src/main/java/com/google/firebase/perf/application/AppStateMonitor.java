@@ -24,8 +24,6 @@ import android.view.WindowManager;
 import androidx.annotation.NonNull;
 import androidx.core.app.FrameMetricsAggregator;
 import com.google.android.gms.common.util.VisibleForTesting;
-import com.google.firebase.inject.Provider;
-import com.google.firebase.perf.FirebasePerformance;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.metrics.Trace;
@@ -64,11 +62,7 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
     if (sInstance == null) {
       synchronized (AppStateMonitor.class) {
         if (sInstance == null) {
-          sInstance =
-              new AppStateMonitor(
-                  TransportManager.getInstance(),
-                  new Clock(),
-                  () -> FirebasePerformance.getInstance());
+          sInstance = new AppStateMonitor(TransportManager.getInstance(), new Clock());
         }
       }
     }
@@ -79,7 +73,6 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
       "androidx.core.app.FrameMetricsAggregator";
   private boolean mRegistered = false;
   private final TransportManager transportManager;
-  private final Provider<FirebasePerformance> firebasePerformanceProvider;
   private ConfigResolver mConfigResolver;
   private final Clock mClock;
   private boolean mIsColdStart = true;
@@ -92,20 +85,17 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
 
   private ApplicationProcessState mCurrentState = ApplicationProcessState.BACKGROUND;
 
-  private Set<WeakReference<AppStateCallback>> mClients =
+  private Set<WeakReference<AppStateCallback>> appStateClients =
       new HashSet<WeakReference<AppStateCallback>>();
+  private Set<AppColdStartCallback> appColdStartClients = new HashSet<AppColdStartCallback>();
 
   private boolean hasFrameMetricsAggregator = false;
   private FrameMetricsAggregator mFrameMetricsAggregator;
   private final WeakHashMap<Activity, Trace> mActivity2ScreenTrace = new WeakHashMap<>();
 
-  AppStateMonitor(
-      TransportManager transportManager,
-      Clock clock,
-      Provider<FirebasePerformance> firebasePerformanceProvider) {
+  AppStateMonitor(TransportManager transportManager, Clock clock) {
     this.transportManager = transportManager;
     mClock = clock;
-    this.firebasePerformanceProvider = firebasePerformanceProvider;
     mConfigResolver = ConfigResolver.getInstance();
     hasFrameMetricsAggregator = hasFrameMetricsAggregatorClass();
     if (hasFrameMetricsAggregator) {
@@ -218,7 +208,7 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
       updateAppState(ApplicationProcessState.FOREGROUND);
       if (mIsColdStart) {
         // case 1: app startup.
-        firebasePerformanceProvider.get();
+        sendAppColdStartUpdate();
         mIsColdStart = false;
       } else {
         // case 2: app switch from background to foreground.
@@ -253,8 +243,8 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
    */
   /** @hide */
   public void registerForAppState(WeakReference<AppStateCallback> client) {
-    synchronized (mClients) {
-      mClients.add(client);
+    synchronized (appStateClients) {
+      appStateClients.add(client);
     }
   }
 
@@ -266,16 +256,43 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
    */
   /** @hide */
   public void unregisterForAppState(WeakReference<AppStateCallback> client) {
-    synchronized (mClients) {
-      mClients.remove(client);
+    synchronized (appStateClients) {
+      appStateClients.remove(client);
+    }
+  }
+
+  /**
+   * Register a client to receive app cold start update.
+   *
+   * @param client an AppColdStartCallback instance.
+   * @hide
+   */
+  /** @hide */
+  public void registerForAppColdStart(AppColdStartCallback client) {
+    synchronized (appStateClients) {
+      appColdStartClients.add(client);
+    }
+  }
+
+  /**
+   * Unregister the client to stop receiving app cold start update.
+   *
+   * @param client an AppColdStartCallback instance.
+   * @hide
+   */
+  /** @hide */
+  public void unregisterForColdStart(AppColdStartCallback client) {
+    synchronized (appStateClients) {
+      appColdStartClients.remove(client);
     }
   }
 
   /** Send update state update to registered clients. */
   private void updateAppState(ApplicationProcessState newState) {
     mCurrentState = newState;
-    synchronized (mClients) {
-      for (Iterator<WeakReference<AppStateCallback>> i = mClients.iterator(); i.hasNext(); ) {
+    synchronized (appStateClients) {
+      for (Iterator<WeakReference<AppStateCallback>> i = appStateClients.iterator();
+          i.hasNext(); ) {
         AppStateCallback callback = i.next().get();
         if (callback != null) {
           callback.onUpdateAppState(mCurrentState);
@@ -283,6 +300,18 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
           // The object pointing by WeakReference has already been garbage collected.
           // Remove it from the Set.
           i.remove();
+        }
+      }
+    }
+  }
+
+  /** Send cold start update to registered clients. */
+  private void sendAppColdStartUpdate() {
+    synchronized (appStateClients) {
+      for (Iterator<AppColdStartCallback> i = appColdStartClients.iterator(); i.hasNext(); ) {
+        AppColdStartCallback callback = i.next();
+        if (callback != null) {
+          callback.onAppColdStart();
         }
       }
     }
@@ -446,6 +475,15 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
     /** @hide */
     /** @hide */
     public void onUpdateAppState(ApplicationProcessState newState);
+  }
+
+  /**
+   * An interface to be implemented by clients which needs to receive app cold start update.
+   *
+   * @hide
+   */
+  public static interface AppColdStartCallback {
+    public void onAppColdStart();
   }
 
   /**
