@@ -15,6 +15,7 @@
 package com.google.firebase.inappmessaging.internal;
 
 import android.os.Bundle;
+import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
@@ -110,8 +111,11 @@ public class ProxyAnalyticsConnector implements AnalyticsConnector {
 
   private static class ProxyAnalyticsConnectorHandle implements AnalyticsConnectorHandle {
     private static final Object UNREGISTERED = new Object();
+
+    @GuardedBy("this")
     private Set<String> eventNames = new HashSet<>();
-    private Object instance;
+
+    private volatile Object instance;
 
     private ProxyAnalyticsConnectorHandle(
         String s,
@@ -119,14 +123,20 @@ public class ProxyAnalyticsConnector implements AnalyticsConnector {
         Deferred<AnalyticsConnector> analyticsConnector) {
       analyticsConnector.whenAvailable(
           connectorProvider -> {
+            Object result = instance;
+            if (result == UNREGISTERED) {
+              return;
+            }
+            AnalyticsConnector connector = connectorProvider.get();
+            // Now that analytics is available:
+
+            // register the listener with analytics.
+            AnalyticsConnectorHandle handle =
+                connector.registerAnalyticsConnectorListener(s, listener);
+            instance = handle;
+
+            // propagate registered event names to analytics.
             synchronized (ProxyAnalyticsConnectorHandle.this) {
-              if (instance == UNREGISTERED) {
-                return;
-              }
-              AnalyticsConnector connector = connectorProvider.get();
-              AnalyticsConnectorHandle handle =
-                  connector.registerAnalyticsConnectorListener(s, listener);
-              instance = handle;
               if (!eventNames.isEmpty()) {
                 handle.registerEventNames(eventNames);
                 eventNames = new HashSet<>();
@@ -136,42 +146,53 @@ public class ProxyAnalyticsConnector implements AnalyticsConnector {
     }
 
     @Override
-    public synchronized void unregister() {
-      if (instance == UNREGISTERED) {
+    public void unregister() {
+      Object result = instance;
+      if (result == UNREGISTERED) {
         return;
       }
-      if (instance != null) {
-        AnalyticsConnectorHandle handle = (AnalyticsConnectorHandle) this.instance;
+
+      if (result != null) {
+        AnalyticsConnectorHandle handle = (AnalyticsConnectorHandle) result;
         handle.unregister();
       }
       instance = UNREGISTERED;
-      eventNames.clear();
+      synchronized (this) {
+        eventNames.clear();
+      }
     }
 
     @Override
-    public synchronized void registerEventNames(@NonNull Set<String> set) {
-      if (instance == UNREGISTERED) {
+    public void registerEventNames(@NonNull Set<String> set) {
+      Object result = instance;
+      if (result == UNREGISTERED) {
         return;
       }
-      if (instance != null) {
-        AnalyticsConnectorHandle handle = (AnalyticsConnectorHandle) this.instance;
+
+      if (result != null) {
+        AnalyticsConnectorHandle handle = (AnalyticsConnectorHandle) result;
         handle.registerEventNames(set);
         return;
       }
-      eventNames.addAll(set);
+      synchronized (this) {
+        eventNames.addAll(set);
+      }
     }
 
     @Override
-    public synchronized void unregisterEventNames() {
-      if (instance == UNREGISTERED) {
+    public void unregisterEventNames() {
+      Object result = instance;
+      if (result == UNREGISTERED) {
         return;
       }
-      if (instance != null) {
-        AnalyticsConnectorHandle handle = (AnalyticsConnectorHandle) this.instance;
+      if (result != null) {
+        AnalyticsConnectorHandle handle = (AnalyticsConnectorHandle) result;
         handle.unregisterEventNames();
         return;
       }
-      eventNames.clear();
+      synchronized (this) {
+        eventNames.clear();
+      }
     }
   }
 }
