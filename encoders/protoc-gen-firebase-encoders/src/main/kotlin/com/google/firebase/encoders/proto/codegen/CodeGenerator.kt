@@ -246,7 +246,7 @@ internal class Gen(
         }
         val messageTypeName = ClassName.bestGuess(type.name)
 
-        val constructor = MethodSpec.constructorBuilder().addModifiers(Modifier.PRIVATE)
+        val constructor = MethodSpec.constructorBuilder()
         messageClass.addMethod(MethodSpec.methodBuilder("newBuilder")
                 .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
                 .returns(ClassName.bestGuess("Builder"))
@@ -351,7 +351,7 @@ internal class Gen(
                 .addCode("return new \$T(\$L);\n", messageTypeName, buildMethodArgs)
                 .build())
 
-        val builderConstructor = MethodSpec.constructorBuilder().addModifiers(Modifier.PRIVATE)
+        val builderConstructor = MethodSpec.constructorBuilder()
 
         for (field in type.fields) {
             builder.addField(FieldSpec.builder(field.typeName, "${field.name}_", Modifier.PRIVATE).build())

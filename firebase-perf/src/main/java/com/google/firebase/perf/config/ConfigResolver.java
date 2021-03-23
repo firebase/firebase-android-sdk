@@ -39,7 +39,6 @@ import com.google.firebase.perf.config.ConfigurationConstants.SessionsSamplingRa
 import com.google.firebase.perf.config.ConfigurationConstants.TraceEventCountBackground;
 import com.google.firebase.perf.config.ConfigurationConstants.TraceEventCountForeground;
 import com.google.firebase.perf.config.ConfigurationConstants.TraceSamplingRate;
-import com.google.firebase.perf.internal.RemoteConfigManager;
 import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.util.ImmutableBundle;
 import com.google.firebase.perf.util.Optional;
@@ -154,7 +153,6 @@ public class ConfigResolver {
     }
 
     // 4. Return null. Because Firebase Performance will read high-level Firebase flag in this case.
-    logger.debug("CollectionEnabled metadata key unknown or value not found in manifest.");
     return null;
   }
 

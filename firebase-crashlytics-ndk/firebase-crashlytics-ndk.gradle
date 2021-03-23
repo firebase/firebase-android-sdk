@@ -36,6 +36,7 @@ android {
         externalNativeBuild {
             ndkBuild {
                 arguments '-j4'
+                arguments '--output-sync=none'
             }
         }
 
@@ -83,7 +84,9 @@ android {
     }
 }
 
+
 import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 
 // There is not any normal way to package native executables in an Android APK.
 // It is normal to package native code as a loadable module but Android's APK
@@ -100,7 +103,7 @@ def fixTrampolineFilenames(variantBaseName) {
 
             // There is no need to delete the original file, it will not be
             // packaged into the APK
-            Files.copy(initial.toPath(), renamed.toPath())
+            Files.copy(initial.toPath(), renamed.toPath(), StandardCopyOption.REPLACE_EXISTING)
         }
     }
 }
