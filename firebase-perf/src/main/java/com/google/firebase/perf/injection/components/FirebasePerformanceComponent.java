@@ -20,11 +20,7 @@ import com.google.firebase.perf.injection.modules.FirebasePerformanceModule;
 import dagger.Component;
 import javax.inject.Singleton;
 
-/**
- * Dagger component to create FirebasePerformanceComponent Objects.
- *
- * @hide
- */
+/** Dagger component to create FirebasePerformanceComponent Objects. */
 @Component(modules = {FirebasePerformanceModule.class})
 @Singleton
 public interface FirebasePerformanceComponent {

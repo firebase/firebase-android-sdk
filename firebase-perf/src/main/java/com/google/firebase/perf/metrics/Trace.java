@@ -70,7 +70,6 @@ public class Trace extends AppStateUpdateHandler
 
   /** @hide */
   @Override
-  /** @hide */
   public void updateSession(PerfSession session) {
     // Note(b/152218504): Being defensive to fix the NPE
     if (session == null) {
@@ -89,7 +88,6 @@ public class Trace extends AppStateUpdateHandler
    * @param name name of the trace object
    * @hide
    */
-  /** @hide */
   @NonNull
   public static Trace create(@NonNull String name) {
     // Make a copy of input name so it does not hold onto the reference which is thread-safer.
@@ -117,7 +115,6 @@ public class Trace extends AppStateUpdateHandler
    * @param attributes The map of custom attributes
    * @hide
    */
-  /** @hide */
   private Trace(
       @NonNull Trace parent,
       @NonNull String name,
@@ -145,7 +142,6 @@ public class Trace extends AppStateUpdateHandler
    *
    * @hide
    */
-  /** @hide */
   public Trace(
       @NonNull String name,
       @NonNull TransportManager transportManager,
@@ -160,7 +156,6 @@ public class Trace extends AppStateUpdateHandler
    *
    * @hide
    */
-  /** @hide */
   public Trace(
       @NonNull String name,
       @NonNull TransportManager transportManager,
@@ -293,7 +288,6 @@ public class Trace extends AppStateUpdateHandler
    * @param name Name to be given to the stage.
    * @hide
    */
-  /** @hide */
   void startStage(@NonNull String name) {
     Timer currentTime = clock.getTime();
     setEndTimeOfLastStage(currentTime);
@@ -305,7 +299,6 @@ public class Trace extends AppStateUpdateHandler
    *
    * @hide
    */
-  /** @hide */
   void stopStage() {
     setEndTimeOfLastStage(clock.getTime());
   }
@@ -418,7 +411,6 @@ public class Trace extends AppStateUpdateHandler
    * @return The instance of the {@link Trace}.
    * @hide
    */
-  /** @hide */
   @NonNull
   static synchronized Trace getTrace(@NonNull String traceName) {
     Trace trace = sTraces.get(traceName);
@@ -429,7 +421,6 @@ public class Trace extends AppStateUpdateHandler
     return trace;
   }
 
-  /** @hide */
   /** @hide */
   @VisibleForTesting
   @NonNull
@@ -456,7 +447,6 @@ public class Trace extends AppStateUpdateHandler
    * @return The instance of the {@link Trace} started.
    * @hide
    */
-  /** @hide */
   @Nullable
   static Trace startTrace(@NonNull String traceName) {
     Trace trace = sTraces.get(traceName);
@@ -475,7 +465,6 @@ public class Trace extends AppStateUpdateHandler
    * @return The instance of the {@link Trace} stopped.
    * @hide
    */
-  /** @hide */
   @Nullable
   static Trace stopTrace(@NonNull String traceName) {
     Trace trace = sTraces.get(traceName);
@@ -491,7 +480,6 @@ public class Trace extends AppStateUpdateHandler
    *
    * @hide
    */
-  /** @hide */
   @Override
   protected void finalize() throws Throwable {
     try {
@@ -506,14 +494,12 @@ public class Trace extends AppStateUpdateHandler
   }
 
   /** @hide */
-  /** @hide */
   @VisibleForTesting
   @NonNull
   String getName() {
     return name;
   }
 
-  /** @hide */
   /** @hide */
   @VisibleForTesting
   @NonNull
@@ -522,20 +508,17 @@ public class Trace extends AppStateUpdateHandler
   }
 
   /** @hide */
-  /** @hide */
   @VisibleForTesting
   Timer getStartTime() {
     return startTime;
   }
 
   /** @hide */
-  /** @hide */
   @VisibleForTesting
   Timer getEndTime() {
     return endTime;
   }
 
-  /** @hide */
   /** @hide */
   @VisibleForTesting
   @NonNull
@@ -549,7 +532,6 @@ public class Trace extends AppStateUpdateHandler
    * @return true if trace is stopped. false if not stopped.
    * @hide
    */
-  /** @hide */
   @VisibleForTesting
   boolean isStopped() {
     return endTime != null;
@@ -561,7 +543,6 @@ public class Trace extends AppStateUpdateHandler
    * @return true if trace has started, false if it has not started
    * @hide
    */
-  /** @hide */
   @VisibleForTesting
   boolean hasStarted() {
     return startTime != null;
@@ -573,7 +554,6 @@ public class Trace extends AppStateUpdateHandler
    * @return true if trace has been started but not stopped.
    * @hide
    */
-  /** @hide */
   @VisibleForTesting
   boolean isActive() {
     return hasStarted() && !isStopped();
@@ -717,7 +697,6 @@ public class Trace extends AppStateUpdateHandler
   }
 
   /** @hide */
-  /** @hide */
   @VisibleForTesting
   static final Parcelable.Creator<Trace> CREATOR_DATAONLY =
       new Parcelable.Creator<Trace>() {
@@ -730,7 +709,6 @@ public class Trace extends AppStateUpdateHandler
         }
       };
 
-  /** @hide */
   /** @hide */
   @VisibleForTesting
   List<PerfSession> getSessions() {

@@ -26,7 +26,6 @@ import java.util.Map;
  *
  * @hide
  */
-/** @hide */
 class TraceMetricBuilder {
   private final Trace mTrace;
 

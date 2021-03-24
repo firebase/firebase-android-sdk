@@ -22,10 +22,7 @@ import java.lang.ref.WeakReference;
 /**
  * A client that can be registered with AppStateMonitor class to receive foreground/background app
  * state update.
- *
- * @hide
  */
-/** @hide */
 public abstract class AppStateUpdateHandler implements AppStateCallback {
 
   private AppStateMonitor mAppStateMonitor;
@@ -38,21 +35,15 @@ public abstract class AppStateUpdateHandler implements AppStateCallback {
   // the registration in AppStateMonitor will prevent Trace to be deallocated.
   private WeakReference<AppStateCallback> mWeakRef;
 
-  /** @hide */
-  /** @hide */
   protected AppStateUpdateHandler() {
     this(AppStateMonitor.getInstance());
   }
 
-  /** @hide */
-  /** @hide */
   protected AppStateUpdateHandler(@NonNull AppStateMonitor appStateMonitor) {
     mAppStateMonitor = appStateMonitor;
     mWeakRef = new WeakReference<AppStateCallback>(this);
   }
 
-  /** @hide */
-  /** @hide */
   protected void registerForAppState() {
     if (mIsRegisteredForAppState) {
       return;
@@ -62,8 +53,6 @@ public abstract class AppStateUpdateHandler implements AppStateCallback {
     mIsRegisteredForAppState = true;
   }
 
-  /** @hide */
-  /** @hide */
   protected void unregisterForAppState() {
     if (!mIsRegisteredForAppState) {
       return;
@@ -72,14 +61,21 @@ public abstract class AppStateUpdateHandler implements AppStateCallback {
     mIsRegisteredForAppState = false;
   }
 
-  /** @hide */
-  /** @hide */
   protected void incrementTsnsCount(int count) {
     mAppStateMonitor.incrementTsnsCount(count);
   }
 
-  /** @hide */
-  /** @hide */
+  /**
+   * Reason: HIDE_ANNOTATION_REQUIRED_IN_CHILD_CLASS
+   *
+   * <p>Hide annotation is needed here even if the entire package (containing this class) is hidden.
+   * This is because this class is extended by a Public API class and thus any public methods in
+   * this class would then become a part of the Public API transitively. Adding the hide annotation
+   * to the class level does not work either and it has to be added to the concerned public method
+   * specifically.
+   *
+   * @hide
+   */
   @Override
   public void onUpdateAppState(ApplicationProcessState newState) {
     // For Trace and NetworkRequestMetricBuilder, the app state means all app states the app
@@ -94,8 +90,11 @@ public abstract class AppStateUpdateHandler implements AppStateCallback {
     }
   }
 
-  /** @hide */
-  /** @hide */
+  /**
+   * Reason: HIDE_ANNOTATION_REQUIRED_IN_CHILD_CLASS
+   *
+   * @hide
+   */
   public ApplicationProcessState getAppState() {
     return mState;
   }

@@ -27,11 +27,7 @@ import com.google.firebase.remoteconfig.RemoteConfigComponent;
 import dagger.Module;
 import dagger.Provides;
 
-/**
- * Provider for {@link FirebasePerformance}.
- *
- * @hide
- */
+/** Provider for {@link FirebasePerformance}. */
 @Module
 public class FirebasePerformanceModule {
   private final FirebaseApp firebaseApp;

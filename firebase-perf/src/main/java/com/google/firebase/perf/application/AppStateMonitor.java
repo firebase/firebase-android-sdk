@@ -45,13 +45,7 @@ import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/**
- * Trace timer implementation to send foreground and background session log.
- *
- * @hide
- */
-
-/** @hide */
+/** Trace timer implementation to send foreground and background session log. */
 public class AppStateMonitor implements ActivityLifecycleCallbacks {
 
   private static final AndroidLogger logger = AndroidLogger.getInstance();
@@ -125,8 +119,6 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
     }
   }
 
-  /** @hide */
-  /** @hide */
   public void incrementCount(@NonNull String name, long value) {
     // This method is called by RateLimiter.java when a log exceeds rate limit and to be dropped
     // It can be on any thread. sendSessionLog() method is called in callback methods from main UI
@@ -141,24 +133,16 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
     }
   }
 
-  /** @hide */
-  /** @hide */
   public void incrementTsnsCount(int value) {
     mTsnsCount.addAndGet(value);
   }
 
-  /** @hide */
-  /** @hide */
   @Override
   public void onActivityCreated(Activity activity, Bundle savedInstanceState) {}
 
-  /** @hide */
-  /** @hide */
   @Override
   public void onActivityDestroyed(Activity activity) {}
 
-  /** @hide */
-  /** @hide */
   @Override
   public synchronized void onActivityStarted(Activity activity) {
     if (isScreenTraceSupported(activity) && mConfigResolver.isPerformanceMonitoringEnabled()) {
@@ -171,8 +155,6 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
     }
   }
 
-  /** @hide */
-  /** @hide */
   @Override
   public synchronized void onActivityStopped(Activity activity) {
     if (isScreenTraceSupported(activity)) {
@@ -192,8 +174,6 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
     }
   }
 
-  /** @hide */
-  /** @hide */
   @Override
   public synchronized void onActivityResumed(Activity activity) {
     // cases:
@@ -224,11 +204,7 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
     return mIsColdStart;
   }
 
-  /**
-   * @return current app state.
-   * @hide
-   */
-  /** @hide */
+  /** @return current app state. */
   public ApplicationProcessState getAppState() {
     return mCurrentState;
   }
@@ -237,9 +213,7 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
    * Register a client to receive app state update.
    *
    * @param client an AppStateCallback instance.
-   * @hide
    */
-  /** @hide */
   public void registerForAppState(WeakReference<AppStateCallback> client) {
     synchronized (mClients) {
       mClients.add(client);
@@ -250,9 +224,7 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
    * Unregister the client to stop receiving app state update.
    *
    * @param client an AppStateCallback instance.
-   * @hide
    */
-  /** @hide */
   public void unregisterForAppState(WeakReference<AppStateCallback> client) {
     synchronized (mClients) {
       mClients.remove(client);
@@ -424,15 +396,8 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
     }
   }
 
-  /**
-   * An interface to be implemented by clients which needs to receive app state update.
-   *
-   * @hide
-   */
-  /** @hide */
+  /** An interface to be implemented by clients which needs to receive app state update. */
   public static interface AppStateCallback {
-    /** @hide */
-    /** @hide */
     public void onUpdateAppState(ApplicationProcessState newState);
   }
 
@@ -441,9 +406,7 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
    *
    * @param activity activity object.
    * @return screen trace name.
-   * @hide
    */
-  /** @hide */
   public static String getScreenTraceName(Activity activity) {
     return Constants.SCREEN_TRACE_PREFIX + activity.getClass().getSimpleName();
   }

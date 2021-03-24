@@ -28,10 +28,7 @@ import java.util.concurrent.Executors;
 /**
  * Utilizes platform supported APIs for storing and retrieving Firebase Performance related
  * configurations.
- *
- * @hide
  */
-/** @hide */
 @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
 public class DeviceCacheManager {
 

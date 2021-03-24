@@ -28,12 +28,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Details of a session including a unique Id and related information.
- *
- * @hide
- */
-/** @hide */
+/** Details of a session including a unique Id and related information. */
 public class PerfSession implements Parcelable {
 
   private String mSessionId;

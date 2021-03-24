@@ -37,11 +37,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * This class is responsible for orchestrating different Gauges like CPU and Memory, collating that
  * information and logging it to the Transport.
- *
- * @hide
  */
-
-/** @hide */
 @Keep // Needed because of b/117526359.
 public class GaugeManager {
 

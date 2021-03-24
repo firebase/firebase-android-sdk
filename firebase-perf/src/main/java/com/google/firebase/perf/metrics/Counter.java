@@ -24,7 +24,6 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * @hide
  */
-/** @hide */
 public class Counter implements Parcelable {
   private final String mName;
   private AtomicLong mCount;

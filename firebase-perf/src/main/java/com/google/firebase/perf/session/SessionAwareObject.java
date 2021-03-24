@@ -18,17 +18,13 @@ package com.google.firebase.perf.session;
  * Any object that cares about changes in the {@link com.google.firebase.perf.session.PerfSession}
  * that is active for the given app. This object is then registered with the {@link SessionManager}
  * which then supplies it with updates as needed.
- *
- * @hide
  */
-/** @hide */
 public interface SessionAwareObject {
 
   /**
    * Updates the SessionAwareObject with the new sessionId.
    *
    * @param session The new PerfSession.
-   * @hide
    */
   void updateSession(PerfSession session);
 }

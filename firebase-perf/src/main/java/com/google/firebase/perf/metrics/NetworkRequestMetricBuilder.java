@@ -46,8 +46,6 @@ import java.util.Map;
  *
  * @hide
  */
-
-/** @hide */
 public final class NetworkRequestMetricBuilder extends AppStateUpdateHandler
     implements SessionAwareObject {
 
@@ -71,9 +69,7 @@ public final class NetworkRequestMetricBuilder extends AppStateUpdateHandler
 
   private final WeakReference<SessionAwareObject> weakReference = new WeakReference<>(this);
 
-  /** @hide */
   @Override
-  /** @hide */
   public void updateSession(PerfSession session) {
     // Note(b/152218504): Being defensive to fix the NPE
     if (session == null) {
