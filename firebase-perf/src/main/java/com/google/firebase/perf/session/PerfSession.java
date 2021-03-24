@@ -50,11 +50,6 @@ public class PerfSession implements Parcelable {
     PerfSession session = new PerfSession(sessionId, new Clock());
     session.setGaugeAndEventCollectionEnabled(shouldCollectGaugesAndEvents());
 
-    AndroidLogger.getInstance()
-        .debug(
-            "Creating a new %s Session: %s",
-            session.isVerbose() ? "Verbose" : "Non Verbose", sessionId);
-
     return session;
   }
 
