@@ -676,55 +676,55 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  public void activityStateChanges_singleClient_callbackIsCalled() {
+  public void activityStateChanges_singleSubscriber_callbackIsCalled() {
     AppStateMonitor monitor = new AppStateMonitor(transportManager, mClock);
-    Map<Integer, ApplicationProcessState> clientState = new HashMap<>();
+    Map<Integer, ApplicationProcessState> subscriberState = new HashMap<>();
 
-    final int client1 = 1;
+    final int subscriber1 = 1;
     monitor.registerForAppState(
-        new WeakReference<>(newState -> clientState.put(client1, newState)));
+        new WeakReference<>(newState -> subscriberState.put(subscriber1, newState)));
 
     // Activity comes to Foreground
     monitor.onActivityResumed(activity1);
-    assertThat(clientState.get(client1)).isEqualTo(ApplicationProcessState.FOREGROUND);
+    assertThat(subscriberState.get(subscriber1)).isEqualTo(ApplicationProcessState.FOREGROUND);
 
     // Activity goes to Background
     monitor.onActivityStopped(activity1);
-    assertThat(clientState.get(client1)).isEqualTo(ApplicationProcessState.BACKGROUND);
+    assertThat(subscriberState.get(subscriber1)).isEqualTo(ApplicationProcessState.BACKGROUND);
   }
 
   @Test
-  public void activityStateChanges_multipleClients_callbackCalledOnEachClient() {
+  public void activityStateChanges_multipleSubscribers_callbackCalledOnEachSubscriber() {
     AppStateMonitor monitor = new AppStateMonitor(transportManager, mClock);
-    Map<Integer, ApplicationProcessState> clientState = new HashMap<>();
+    Map<Integer, ApplicationProcessState> subscriberState = new HashMap<>();
 
-    final int client1 = 1;
+    final int subscriber1 = 1;
     monitor.registerForAppState(
-        new WeakReference<>(newState -> clientState.put(client1, newState)));
+        new WeakReference<>(newState -> subscriberState.put(subscriber1, newState)));
 
-    final int client2 = 2;
+    final int subscriber2 = 2;
     monitor.registerForAppState(
-        new WeakReference<>(newState -> clientState.put(client2, newState)));
+        new WeakReference<>(newState -> subscriberState.put(subscriber2, newState)));
 
-    final int client3 = 3;
+    final int subscriber3 = 3;
     monitor.registerForAppState(
-        new WeakReference<>(newState -> clientState.put(client3, newState)));
+        new WeakReference<>(newState -> subscriberState.put(subscriber3, newState)));
 
     // Activity comes to Foreground
     monitor.onActivityResumed(activity1);
-    assertThat(clientState.get(client1)).isEqualTo(ApplicationProcessState.FOREGROUND);
-    assertThat(clientState.get(client2)).isEqualTo(ApplicationProcessState.FOREGROUND);
-    assertThat(clientState.get(client3)).isEqualTo(ApplicationProcessState.FOREGROUND);
+    assertThat(subscriberState.get(subscriber1)).isEqualTo(ApplicationProcessState.FOREGROUND);
+    assertThat(subscriberState.get(subscriber2)).isEqualTo(ApplicationProcessState.FOREGROUND);
+    assertThat(subscriberState.get(subscriber3)).isEqualTo(ApplicationProcessState.FOREGROUND);
 
     // Activity goes to Background
     monitor.onActivityStopped(activity1);
-    assertThat(clientState.get(client1)).isEqualTo(ApplicationProcessState.BACKGROUND);
-    assertThat(clientState.get(client2)).isEqualTo(ApplicationProcessState.BACKGROUND);
-    assertThat(clientState.get(client3)).isEqualTo(ApplicationProcessState.BACKGROUND);
+    assertThat(subscriberState.get(subscriber1)).isEqualTo(ApplicationProcessState.BACKGROUND);
+    assertThat(subscriberState.get(subscriber2)).isEqualTo(ApplicationProcessState.BACKGROUND);
+    assertThat(subscriberState.get(subscriber3)).isEqualTo(ApplicationProcessState.BACKGROUND);
   }
 
   @Test
-  public void appColdStart_singleClient_callbackIsCalled() {
+  public void appColdStart_singleSubscriber_callbackIsCalled() {
     AppStateMonitor monitor = new AppStateMonitor(transportManager, mClock);
     FirebasePerformanceInitializer mockInitializer = mock(FirebasePerformanceInitializer.class);
     monitor.registerForAppColdStart(mockInitializer);
@@ -735,7 +735,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  public void appHotStart_singleClient_callbackIsNotCalled() {
+  public void appHotStart_singleSubscriber_callbackIsNotCalled() {
     AppStateMonitor monitor = new AppStateMonitor(transportManager, mClock);
     FirebasePerformanceInitializer mockInitializer = mock(FirebasePerformanceInitializer.class);
     monitor.registerForAppColdStart(mockInitializer);
@@ -750,6 +750,32 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     // Activity comes to Foreground
     monitor.onActivityResumed(activity1);
     verify(mockInitializer, times(1)).onAppColdStart();
+  }
+
+  @Test
+  public void appColdStart_multipleSubscriber_callbackIsCalled() {
+    AppStateMonitor monitor = new AppStateMonitor(transportManager, mClock);
+    FirebasePerformanceInitializer mockInitializer1 = mock(FirebasePerformanceInitializer.class);
+    FirebasePerformanceInitializer mockInitializer2 = mock(FirebasePerformanceInitializer.class);
+    monitor.registerForAppColdStart(mockInitializer1);
+    monitor.registerForAppColdStart(mockInitializer2);
+
+    // Activity comes to Foreground
+    monitor.onActivityResumed(activity1);
+    verify(mockInitializer1, times(1)).onAppColdStart();
+    verify(mockInitializer2, times(1)).onAppColdStart();
+  }
+
+  @Test
+  public void appColdStart_singleSubscriberRegistersForMultipleTimes_oneCallbackIsCalled() {
+    AppStateMonitor monitor = new AppStateMonitor(transportManager, mClock);
+    FirebasePerformanceInitializer mockInitializer1 = mock(FirebasePerformanceInitializer.class);
+    monitor.registerForAppColdStart(mockInitializer1);
+    monitor.registerForAppColdStart(mockInitializer1);
+
+    // Activity comes to Foreground
+    monitor.onActivityResumed(activity1);
+    verify(mockInitializer1, times(1)).onAppColdStart();
   }
 
   private static Activity createFakeActivity(boolean isHardwareAccelerated) {
