@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.perf.session.collectors;
+package com.google.firebase.perf.session.gauges;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.MockitoAnnotations.initMocks;
@@ -29,7 +29,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.robolectric.RobolectricTestRunner;
 
-/** Unit tests for {@link com.google.firebase.perf.session.collectors.MemoryGaugeCollector} */
+/** Unit tests for {@link com.google.firebase.perf.session.gauges.MemoryGaugeCollector} */
 @RunWith(RobolectricTestRunner.class)
 public class MemoryGaugeCollectorTest {
 
