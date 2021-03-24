@@ -27,6 +27,7 @@ import static org.mockito.MockitoAnnotations.initMocks;
 
 import com.google.firebase.perf.FirebasePerformanceTestBase;
 import com.google.firebase.perf.application.AppStateMonitor;
+import com.google.firebase.perf.session.gauges.GaugeManager;
 import com.google.firebase.perf.v1.ApplicationProcessState;
 import java.lang.ref.WeakReference;
 import org.junit.Before;

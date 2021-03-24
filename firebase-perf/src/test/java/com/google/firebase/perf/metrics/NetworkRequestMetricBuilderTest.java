@@ -22,9 +22,9 @@ import static org.mockito.MockitoAnnotations.initMocks;
 
 import com.google.firebase.perf.FirebasePerformanceTestBase;
 import com.google.firebase.perf.application.AppStateMonitor;
-import com.google.firebase.perf.session.GaugeManager;
 import com.google.firebase.perf.session.PerfSession;
 import com.google.firebase.perf.session.SessionManager;
+import com.google.firebase.perf.session.gauges.GaugeManager;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.Timer;

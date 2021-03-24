@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.perf.session.collectors;
+package com.google.firebase.perf.session.gauges;
 
 import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -34,7 +34,7 @@ import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.shadows.ShadowEnvironment;
 
-/** Unit tests for {@link com.google.firebase.perf.session.collectors.CpuGaugeCollector} */
+/** Unit tests for {@link com.google.firebase.perf.session.gauges.CpuGaugeCollector} */
 @RunWith(RobolectricTestRunner.class)
 public final class CpuGaugeCollectorTest {
   private static final long MICROSECONDS_PER_SECOND = TimeUnit.SECONDS.toMicros(1);

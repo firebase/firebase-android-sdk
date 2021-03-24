@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.perf.session;
+package com.google.firebase.perf.session.gauges;
 
 import android.app.ActivityManager;
 import android.app.ActivityManager.MemoryInfo;

@@ -37,7 +37,7 @@ import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.config.DeviceCacheManager;
 import com.google.firebase.perf.metrics.NetworkRequestMetricBuilder;
 import com.google.firebase.perf.metrics.Trace;
-import com.google.firebase.perf.session.GaugeManager;
+import com.google.firebase.perf.session.gauges.GaugeManager;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.Constants;
