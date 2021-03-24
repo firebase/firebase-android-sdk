@@ -21,6 +21,7 @@ firebaseLibrary {
     releaseWith project(':firebase-ml-modeldownloader')
     publishJavadoc = true
     publishSources = true
+    testLab.enabled = false
 }
 
 android {
@@ -35,7 +36,6 @@ android {
     sourceSets {
         main.java.srcDirs += 'src/main/kotlin'
         test.java.srcDirs += 'src/test/kotlin'
-        androidTest.java.srcDirs += 'src/androidTest/kotlin'
     }
     testOptions.unitTests.includeAndroidResources = true
 }
