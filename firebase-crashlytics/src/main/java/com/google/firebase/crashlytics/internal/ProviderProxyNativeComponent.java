@@ -31,24 +31,27 @@ public final class ProviderProxyNativeComponent implements CrashlyticsNativeComp
 
   @Override
   public boolean hasCrashDataForSession(@NonNull String sessionId) {
-    if (provider.get() != null) {
-      return provider.get().hasCrashDataForSession(sessionId);
+    CrashlyticsNativeComponent nativeComponent = provider.get();
+    if (nativeComponent != null) {
+      return nativeComponent.hasCrashDataForSession(sessionId);
     }
     return false;
   }
 
   @Override
   public boolean openSession(@NonNull String sessionId) {
-    if (provider.get() != null) {
-      provider.get().openSession(sessionId);
+    CrashlyticsNativeComponent nativeComponent = provider.get();
+    if (nativeComponent != null) {
+      return nativeComponent.openSession(sessionId);
     }
     return true;
   }
 
   @Override
   public boolean finalizeSession(@NonNull String sessionId) {
-    if (provider.get() != null) {
-      provider.get().finalizeSession(sessionId);
+    CrashlyticsNativeComponent nativeComponent = provider.get();
+    if (nativeComponent != null) {
+      return nativeComponent.finalizeSession(sessionId);
     }
     return true;
   }
@@ -56,8 +59,9 @@ public final class ProviderProxyNativeComponent implements CrashlyticsNativeComp
   @NonNull
   @Override
   public NativeSessionFileProvider getSessionFileProvider(@NonNull String sessionId) {
-    if (provider.get() != null) {
-      provider.get().getSessionFileProvider(sessionId);
+    CrashlyticsNativeComponent nativeComponent = provider.get();
+    if (nativeComponent != null) {
+      return nativeComponent.getSessionFileProvider(sessionId);
     }
     return MISSING_NATIVE_SESSION_FILE_PROVIDER;
   }
@@ -65,8 +69,9 @@ public final class ProviderProxyNativeComponent implements CrashlyticsNativeComp
   @Override
   public void writeBeginSession(
       @NonNull String sessionId, @NonNull String generator, long startedAtSeconds) {
-    if (provider.get() != null) {
-      provider.get().writeBeginSession(sessionId, generator, startedAtSeconds);
+    CrashlyticsNativeComponent nativeComponent = provider.get();
+    if (nativeComponent != null) {
+      nativeComponent.writeBeginSession(sessionId, generator, startedAtSeconds);
     }
   }
 
@@ -79,17 +84,16 @@ public final class ProviderProxyNativeComponent implements CrashlyticsNativeComp
       @NonNull String installUuid,
       int deliveryMechanism,
       @NonNull String unityVersion) {
-    if (provider.get() != null) {
-      provider
-          .get()
-          .writeSessionApp(
-              sessionId,
-              appIdentifier,
-              versionCode,
-              versionName,
-              installUuid,
-              deliveryMechanism,
-              unityVersion);
+    CrashlyticsNativeComponent nativeComponent = provider.get();
+    if (nativeComponent != null) {
+      nativeComponent.writeSessionApp(
+          sessionId,
+          appIdentifier,
+          versionCode,
+          versionName,
+          installUuid,
+          deliveryMechanism,
+          unityVersion);
     }
   }
 
@@ -99,8 +103,9 @@ public final class ProviderProxyNativeComponent implements CrashlyticsNativeComp
       @NonNull String osRelease,
       @NonNull String osCodeName,
       boolean isRooted) {
-    if (provider.get() != null) {
-      provider.get().writeSessionOs(sessionId, osRelease, osCodeName, isRooted);
+    CrashlyticsNativeComponent nativeComponent = provider.get();
+    if (nativeComponent != null) {
+      nativeComponent.writeSessionOs(sessionId, osRelease, osCodeName, isRooted);
     }
   }
 
@@ -116,20 +121,19 @@ public final class ProviderProxyNativeComponent implements CrashlyticsNativeComp
       int state,
       @NonNull String manufacturer,
       @NonNull String modelClass) {
-    if (provider.get() != null) {
-      provider
-          .get()
-          .writeSessionDevice(
-              sessionId,
-              arch,
-              model,
-              availableProcessors,
-              totalRam,
-              diskSpace,
-              isEmulator,
-              state,
-              manufacturer,
-              modelClass);
+    CrashlyticsNativeComponent nativeComponent = provider.get();
+    if (nativeComponent != null) {
+      nativeComponent.writeSessionDevice(
+          sessionId,
+          arch,
+          model,
+          availableProcessors,
+          totalRam,
+          diskSpace,
+          isEmulator,
+          state,
+          manufacturer,
+          modelClass);
     }
   }
 
