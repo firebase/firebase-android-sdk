@@ -25,7 +25,7 @@ public class InstrumentApacheHttpResponseHandler<T> implements ResponseHandler<T
 
   private final ResponseHandler<? extends T> responseHandlerDelegate;
   private final Timer timer;
-  private final NetworkRequestMetricBuilder networkRequestBuilder;
+  private final NetworkRequestMetricBuilder networkMetricBuilder;
 
   public InstrumentApacheHttpResponseHandler(
       ResponseHandler<? extends T> responseHandler,
@@ -33,24 +33,24 @@ public class InstrumentApacheHttpResponseHandler<T> implements ResponseHandler<T
       NetworkRequestMetricBuilder builder) {
     responseHandlerDelegate = responseHandler;
     this.timer = timer;
-    networkRequestBuilder = builder;
+    networkMetricBuilder = builder;
   }
 
   @Override
   public T handleResponse(HttpResponse httpResponse) throws IOException {
-    networkRequestBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
-    networkRequestBuilder.setHttpResponseCode(httpResponse.getStatusLine().getStatusCode());
+    networkMetricBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
+    networkMetricBuilder.setHttpResponseCode(httpResponse.getStatusLine().getStatusCode());
     Long responseContentLength =
         NetworkRequestMetricBuilderUtil.getApacheHttpMessageContentLength(httpResponse);
     if (responseContentLength != null) {
-      networkRequestBuilder.setResponsePayloadBytes(responseContentLength);
+      networkMetricBuilder.setResponsePayloadBytes(responseContentLength);
     }
     String contentType =
         NetworkRequestMetricBuilderUtil.getApacheHttpResponseContentType(httpResponse);
     if (contentType != null) {
-      networkRequestBuilder.setResponseContentType(contentType);
+      networkMetricBuilder.setResponseContentType(contentType);
     }
-    networkRequestBuilder.build();
+    networkMetricBuilder.build();
     return responseHandlerDelegate.handleResponse(httpResponse);
   }
 }

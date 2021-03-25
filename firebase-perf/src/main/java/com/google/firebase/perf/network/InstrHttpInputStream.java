@@ -23,7 +23,7 @@ import java.io.InputStream;
 public final class InstrHttpInputStream extends InputStream {
 
   private final InputStream inputStream;
-  private final NetworkRequestMetricBuilder networkRequestBuilder;
+  private final NetworkRequestMetricBuilder networkMetricBuilder;
   private final Timer timer;
   private long bytesRead = -1;
   private long timeToResponseInitiated;
@@ -40,8 +40,8 @@ public final class InstrHttpInputStream extends InputStream {
       final InputStream inputStream, final NetworkRequestMetricBuilder builder, Timer timer) {
     this.timer = timer;
     this.inputStream = inputStream;
-    networkRequestBuilder = builder;
-    timeToResponseInitiated = networkRequestBuilder.getTimeToResponseInitiatedMicros();
+    networkMetricBuilder = builder;
+    timeToResponseInitiated = networkMetricBuilder.getTimeToResponseInitiatedMicros();
   }
 
   @Override
@@ -49,8 +49,8 @@ public final class InstrHttpInputStream extends InputStream {
     try {
       return inputStream.available();
     } catch (final IOException e) {
-      networkRequestBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
-      NetworkRequestMetricBuilderUtil.logError(networkRequestBuilder);
+      networkMetricBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
+      NetworkRequestMetricBuilderUtil.logError(networkMetricBuilder);
       throw e;
     }
   }
@@ -65,17 +65,17 @@ public final class InstrHttpInputStream extends InputStream {
     try {
       inputStream.close();
       if (bytesRead != -1) {
-        networkRequestBuilder.setResponsePayloadBytes(bytesRead);
+        networkMetricBuilder.setResponsePayloadBytes(bytesRead);
       }
       if (timeToResponseInitiated != -1) {
-        networkRequestBuilder.setTimeToResponseInitiatedMicros(timeToResponseInitiated);
+        networkMetricBuilder.setTimeToResponseInitiatedMicros(timeToResponseInitiated);
       }
 
-      networkRequestBuilder.setTimeToResponseCompletedMicros(timeToResponseLastRead);
-      networkRequestBuilder.build();
+      networkMetricBuilder.setTimeToResponseCompletedMicros(timeToResponseLastRead);
+      networkMetricBuilder.build();
     } catch (final IOException e) {
-      networkRequestBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
-      NetworkRequestMetricBuilderUtil.logError(networkRequestBuilder);
+      networkMetricBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
+      NetworkRequestMetricBuilderUtil.logError(networkMetricBuilder);
       throw e;
     }
   }
@@ -100,16 +100,16 @@ public final class InstrHttpInputStream extends InputStream {
       }
       if (bytesRead == -1 && timeToResponseLastRead == -1) {
         timeToResponseLastRead = tempTime;
-        networkRequestBuilder.setTimeToResponseCompletedMicros(timeToResponseLastRead);
-        networkRequestBuilder.build();
+        networkMetricBuilder.setTimeToResponseCompletedMicros(timeToResponseLastRead);
+        networkMetricBuilder.build();
       } else {
         this.bytesRead++;
-        networkRequestBuilder.setResponsePayloadBytes(this.bytesRead);
+        networkMetricBuilder.setResponsePayloadBytes(this.bytesRead);
       }
       return bytesRead;
     } catch (final IOException e) {
-      networkRequestBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
-      NetworkRequestMetricBuilderUtil.logError(networkRequestBuilder);
+      networkMetricBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
+      NetworkRequestMetricBuilderUtil.logError(networkMetricBuilder);
       throw e;
     }
   }
@@ -125,16 +125,16 @@ public final class InstrHttpInputStream extends InputStream {
       }
       if (bytesRead == -1 && timeToResponseLastRead == -1) {
         timeToResponseLastRead = tempTime;
-        networkRequestBuilder.setTimeToResponseCompletedMicros(timeToResponseLastRead);
-        networkRequestBuilder.build();
+        networkMetricBuilder.setTimeToResponseCompletedMicros(timeToResponseLastRead);
+        networkMetricBuilder.build();
       } else {
         this.bytesRead += bytesRead;
-        networkRequestBuilder.setResponsePayloadBytes(this.bytesRead);
+        networkMetricBuilder.setResponsePayloadBytes(this.bytesRead);
       }
       return bytesRead;
     } catch (final IOException e) {
-      networkRequestBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
-      NetworkRequestMetricBuilderUtil.logError(networkRequestBuilder);
+      networkMetricBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
+      NetworkRequestMetricBuilderUtil.logError(networkMetricBuilder);
       throw e;
     }
   }
@@ -149,16 +149,16 @@ public final class InstrHttpInputStream extends InputStream {
       }
       if (bytesRead == -1 && timeToResponseLastRead == -1) {
         timeToResponseLastRead = tempTime;
-        networkRequestBuilder.setTimeToResponseCompletedMicros(timeToResponseLastRead);
-        networkRequestBuilder.build();
+        networkMetricBuilder.setTimeToResponseCompletedMicros(timeToResponseLastRead);
+        networkMetricBuilder.build();
       } else {
         this.bytesRead += bytesRead;
-        networkRequestBuilder.setResponsePayloadBytes(this.bytesRead);
+        networkMetricBuilder.setResponsePayloadBytes(this.bytesRead);
       }
       return bytesRead;
     } catch (final IOException e) {
-      networkRequestBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
-      NetworkRequestMetricBuilderUtil.logError(networkRequestBuilder);
+      networkMetricBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
+      NetworkRequestMetricBuilderUtil.logError(networkMetricBuilder);
       throw e;
     }
   }
@@ -168,8 +168,8 @@ public final class InstrHttpInputStream extends InputStream {
     try {
       inputStream.reset();
     } catch (final IOException e) {
-      networkRequestBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
-      NetworkRequestMetricBuilderUtil.logError(networkRequestBuilder);
+      networkMetricBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
+      NetworkRequestMetricBuilderUtil.logError(networkMetricBuilder);
       throw e;
     }
   }
@@ -184,15 +184,15 @@ public final class InstrHttpInputStream extends InputStream {
       }
       if (skipped == -1 && timeToResponseLastRead == -1) {
         timeToResponseLastRead = tempTime;
-        networkRequestBuilder.setTimeToResponseCompletedMicros(timeToResponseLastRead);
+        networkMetricBuilder.setTimeToResponseCompletedMicros(timeToResponseLastRead);
       } else {
         bytesRead += skipped;
-        networkRequestBuilder.setResponsePayloadBytes(bytesRead);
+        networkMetricBuilder.setResponsePayloadBytes(bytesRead);
       }
       return skipped;
     } catch (final IOException e) {
-      networkRequestBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
-      NetworkRequestMetricBuilderUtil.logError(networkRequestBuilder);
+      networkMetricBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
+      NetworkRequestMetricBuilderUtil.logError(networkMetricBuilder);
       throw e;
     }
   }

@@ -27,7 +27,7 @@ import okhttp3.Response;
 /** Instruments the callback for the OkHttp Enqueue function */
 public class InstrumentOkHttpEnqueueCallback implements Callback {
   private final Callback callback;
-  private final NetworkRequestMetricBuilder networkRequestBuilder;
+  private final NetworkRequestMetricBuilder networkMetricBuilder;
   private final long startTimeMicros;
   private final Timer timer;
 
@@ -37,7 +37,7 @@ public class InstrumentOkHttpEnqueueCallback implements Callback {
       Timer timer,
       long startTime) {
     this.callback = callback;
-    networkRequestBuilder = NetworkRequestMetricBuilder.builder(transportManager);
+    networkMetricBuilder = NetworkRequestMetricBuilder.builder(transportManager);
     startTimeMicros = startTime;
     this.timer = timer;
   }
@@ -48,16 +48,16 @@ public class InstrumentOkHttpEnqueueCallback implements Callback {
     if (request != null) {
       HttpUrl url = request.url();
       if (url != null) {
-        networkRequestBuilder.setUrl(url.url().toString());
+        networkMetricBuilder.setUrl(url.url().toString());
       }
       String method = request.method();
       if (method != null) {
-        networkRequestBuilder.setHttpMethod(request.method());
+        networkMetricBuilder.setHttpMethod(request.method());
       }
     }
-    networkRequestBuilder.setRequestStartTimeMicros(startTimeMicros);
-    networkRequestBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
-    NetworkRequestMetricBuilderUtil.logError(networkRequestBuilder);
+    networkMetricBuilder.setRequestStartTimeMicros(startTimeMicros);
+    networkMetricBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
+    NetworkRequestMetricBuilderUtil.logError(networkMetricBuilder);
     callback.onFailure(call, e);
   }
 
@@ -65,7 +65,7 @@ public class InstrumentOkHttpEnqueueCallback implements Callback {
   public void onResponse(Call call, Response response) throws IOException {
     long responseCompletedTimeMicros = timer.getDurationMicros();
     FirebasePerfOkHttpClient.sendNetworkMetric(
-        response, networkRequestBuilder, startTimeMicros, responseCompletedTimeMicros);
+        response, networkMetricBuilder, startTimeMicros, responseCompletedTimeMicros);
     callback.onResponse(call, response);
   }
 }

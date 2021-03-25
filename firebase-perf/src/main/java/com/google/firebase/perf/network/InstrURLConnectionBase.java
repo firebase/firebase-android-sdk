@@ -39,7 +39,7 @@ class InstrURLConnectionBase {
   private static final String USER_AGENT_PROPERTY = "User-Agent";
 
   private final HttpURLConnection httpUrlConnection;
-  private final NetworkRequestMetricBuilder networkRequestBuilder;
+  private final NetworkRequestMetricBuilder networkMetricBuilder;
   private long timeRequested = -1;
   private long timeToResponseInitiated = -1;
   private final Timer timer;
@@ -53,54 +53,54 @@ class InstrURLConnectionBase {
   public InstrURLConnectionBase(
       HttpURLConnection connection, Timer timer, NetworkRequestMetricBuilder builder) {
     httpUrlConnection = connection;
-    networkRequestBuilder = builder;
+    networkMetricBuilder = builder;
     this.timer = timer;
-    networkRequestBuilder.setUrl(httpUrlConnection.getURL().toString());
+    networkMetricBuilder.setUrl(httpUrlConnection.getURL().toString());
   }
 
   public void connect() throws IOException {
     if (timeRequested == -1) {
       timer.reset();
       timeRequested = timer.getMicros();
-      networkRequestBuilder.setRequestStartTimeMicros(timeRequested);
+      networkMetricBuilder.setRequestStartTimeMicros(timeRequested);
     }
     try {
       httpUrlConnection.connect();
     } catch (final IOException e) {
-      networkRequestBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
-      NetworkRequestMetricBuilderUtil.logError(networkRequestBuilder);
+      networkMetricBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
+      NetworkRequestMetricBuilderUtil.logError(networkMetricBuilder);
       throw e;
     }
   }
 
   @SuppressWarnings("UrlConnectionChecker")
   public void disconnect() {
-    networkRequestBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
-    networkRequestBuilder.build();
+    networkMetricBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
+    networkMetricBuilder.build();
     httpUrlConnection.disconnect();
   }
 
   public Object getContent() throws IOException {
     updateRequestInfo();
-    networkRequestBuilder.setHttpResponseCode(httpUrlConnection.getResponseCode());
+    networkMetricBuilder.setHttpResponseCode(httpUrlConnection.getResponseCode());
 
     Object content;
     try {
       content = httpUrlConnection.getContent();
     } catch (final IOException e) {
-      networkRequestBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
-      NetworkRequestMetricBuilderUtil.logError(networkRequestBuilder);
+      networkMetricBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
+      NetworkRequestMetricBuilderUtil.logError(networkMetricBuilder);
       throw e;
     }
 
     if (content instanceof InputStream) {
-      networkRequestBuilder.setResponseContentType(httpUrlConnection.getContentType());
-      content = new InstrHttpInputStream((InputStream) content, networkRequestBuilder, timer);
+      networkMetricBuilder.setResponseContentType(httpUrlConnection.getContentType());
+      content = new InstrHttpInputStream((InputStream) content, networkMetricBuilder, timer);
     } else {
-      networkRequestBuilder.setResponseContentType(httpUrlConnection.getContentType());
-      networkRequestBuilder.setResponsePayloadBytes(httpUrlConnection.getContentLength());
-      networkRequestBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
-      networkRequestBuilder.build();
+      networkMetricBuilder.setResponseContentType(httpUrlConnection.getContentType());
+      networkMetricBuilder.setResponsePayloadBytes(httpUrlConnection.getContentLength());
+      networkMetricBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
+      networkMetricBuilder.build();
     }
     return content;
   }
@@ -108,25 +108,25 @@ class InstrURLConnectionBase {
   @SuppressWarnings("rawtypes")
   public Object getContent(final Class[] classes) throws IOException {
     updateRequestInfo();
-    networkRequestBuilder.setHttpResponseCode(httpUrlConnection.getResponseCode());
+    networkMetricBuilder.setHttpResponseCode(httpUrlConnection.getResponseCode());
 
     Object content;
     try {
       content = httpUrlConnection.getContent(classes);
     } catch (final IOException e) {
-      networkRequestBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
-      NetworkRequestMetricBuilderUtil.logError(networkRequestBuilder);
+      networkMetricBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
+      NetworkRequestMetricBuilderUtil.logError(networkMetricBuilder);
       throw e;
     }
 
     if (content instanceof InputStream) {
-      networkRequestBuilder.setResponseContentType(httpUrlConnection.getContentType());
-      content = new InstrHttpInputStream((InputStream) content, networkRequestBuilder, timer);
+      networkMetricBuilder.setResponseContentType(httpUrlConnection.getContentType());
+      content = new InstrHttpInputStream((InputStream) content, networkMetricBuilder, timer);
     } else {
-      networkRequestBuilder.setResponseContentType(httpUrlConnection.getContentType());
-      networkRequestBuilder.setResponsePayloadBytes(httpUrlConnection.getContentLength());
-      networkRequestBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
-      networkRequestBuilder.build();
+      networkMetricBuilder.setResponseContentType(httpUrlConnection.getContentType());
+      networkMetricBuilder.setResponsePayloadBytes(httpUrlConnection.getContentLength());
+      networkMetricBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
+      networkMetricBuilder.build();
     }
 
     return content;
@@ -134,15 +134,15 @@ class InstrURLConnectionBase {
 
   public InputStream getInputStream() throws IOException {
     updateRequestInfo();
-    networkRequestBuilder.setHttpResponseCode(httpUrlConnection.getResponseCode());
-    networkRequestBuilder.setResponseContentType(httpUrlConnection.getContentType());
+    networkMetricBuilder.setHttpResponseCode(httpUrlConnection.getResponseCode());
+    networkMetricBuilder.setResponseContentType(httpUrlConnection.getContentType());
 
     try {
       final InputStream inputStream = httpUrlConnection.getInputStream();
-      return new InstrHttpInputStream(inputStream, networkRequestBuilder, timer);
+      return new InstrHttpInputStream(inputStream, networkMetricBuilder, timer);
     } catch (final IOException e) {
-      networkRequestBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
-      NetworkRequestMetricBuilderUtil.logError(networkRequestBuilder);
+      networkMetricBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
+      NetworkRequestMetricBuilderUtil.logError(networkMetricBuilder);
       throw e;
     }
   }
@@ -155,10 +155,10 @@ class InstrURLConnectionBase {
 
   public OutputStream getOutputStream() throws IOException {
     try {
-      return new InstrHttpOutputStream(httpUrlConnection.getOutputStream(), networkRequestBuilder, timer);
+      return new InstrHttpOutputStream(httpUrlConnection.getOutputStream(), networkMetricBuilder, timer);
     } catch (final IOException e) {
-      networkRequestBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
-      NetworkRequestMetricBuilderUtil.logError(networkRequestBuilder);
+      networkMetricBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
+      NetworkRequestMetricBuilderUtil.logError(networkMetricBuilder);
       throw e;
     }
   }
@@ -167,8 +167,8 @@ class InstrURLConnectionBase {
     try {
       return httpUrlConnection.getPermission();
     } catch (final IOException e) {
-      networkRequestBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
-      NetworkRequestMetricBuilderUtil.logError(networkRequestBuilder);
+      networkMetricBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
+      NetworkRequestMetricBuilderUtil.logError(networkMetricBuilder);
       throw e;
     }
   }
@@ -177,15 +177,15 @@ class InstrURLConnectionBase {
     updateRequestInfo();
     if (timeToResponseInitiated == -1) {
       timeToResponseInitiated = timer.getDurationMicros();
-      networkRequestBuilder.setTimeToResponseInitiatedMicros(timeToResponseInitiated);
+      networkMetricBuilder.setTimeToResponseInitiatedMicros(timeToResponseInitiated);
     }
     try {
       final int code = httpUrlConnection.getResponseCode();
-      networkRequestBuilder.setHttpResponseCode(code);
+      networkMetricBuilder.setHttpResponseCode(code);
       return code;
     } catch (final IOException e) {
-      networkRequestBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
-      NetworkRequestMetricBuilderUtil.logError(networkRequestBuilder);
+      networkMetricBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
+      NetworkRequestMetricBuilderUtil.logError(networkMetricBuilder);
       throw e;
     }
   }
@@ -194,15 +194,15 @@ class InstrURLConnectionBase {
     updateRequestInfo();
     if (timeToResponseInitiated == -1) {
       timeToResponseInitiated = timer.getDurationMicros();
-      networkRequestBuilder.setTimeToResponseInitiatedMicros(timeToResponseInitiated);
+      networkMetricBuilder.setTimeToResponseInitiatedMicros(timeToResponseInitiated);
     }
     try {
       final String message = httpUrlConnection.getResponseMessage();
-      networkRequestBuilder.setHttpResponseCode(httpUrlConnection.getResponseCode());
+      networkMetricBuilder.setHttpResponseCode(httpUrlConnection.getResponseCode());
       return message;
     } catch (final IOException e) {
-      networkRequestBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
-      NetworkRequestMetricBuilderUtil.logError(networkRequestBuilder);
+      networkMetricBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
+      NetworkRequestMetricBuilderUtil.logError(networkMetricBuilder);
       throw e;
     }
   }
@@ -320,13 +320,13 @@ class InstrURLConnectionBase {
   public InputStream getErrorStream() {
     updateRequestInfo();
     try {
-      networkRequestBuilder.setHttpResponseCode(httpUrlConnection.getResponseCode());
+      networkMetricBuilder.setHttpResponseCode(httpUrlConnection.getResponseCode());
     } catch (IOException e) {
       logger.debug("IOException thrown trying to obtain the response code");
     }
     InputStream errorStream = httpUrlConnection.getErrorStream();
     if (errorStream != null) {
-      return new InstrHttpInputStream(errorStream, networkRequestBuilder, timer);
+      return new InstrHttpInputStream(errorStream, networkMetricBuilder, timer);
     }
     return errorStream;
   }
@@ -420,7 +420,7 @@ class InstrURLConnectionBase {
 
   public void setRequestProperty(final String key, final String value) {
     if (USER_AGENT_PROPERTY.equalsIgnoreCase(key)) {
-      networkRequestBuilder.setUserAgent(value);
+      networkMetricBuilder.setUserAgent(value);
     }
 
     httpUrlConnection.setRequestProperty(key, value);
@@ -443,18 +443,18 @@ class InstrURLConnectionBase {
     if (timeRequested == -1) {
       timer.reset();
       timeRequested = timer.getMicros();
-      networkRequestBuilder.setRequestStartTimeMicros(timeRequested);
+      networkMetricBuilder.setRequestStartTimeMicros(timeRequested);
     }
     final String method = getRequestMethod();
     if (method != null) {
       // TODO(b/177945490): Check special case if you send a post but nothing in the output
-      networkRequestBuilder.setHttpMethod(method);
+      networkMetricBuilder.setHttpMethod(method);
     } else {
       // Default POST if getDoOutput, GET otherwise.
       if (getDoOutput()) {
-        networkRequestBuilder.setHttpMethod("POST");
+        networkMetricBuilder.setHttpMethod("POST");
       } else {
-        networkRequestBuilder.setHttpMethod("GET");
+        networkMetricBuilder.setHttpMethod("GET");
       }
     }
   }
