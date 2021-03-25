@@ -45,7 +45,7 @@ public class RemoteConfigRegistrar implements ComponentRegistrar {
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.required(FirebaseInstallationsApi.class))
             .add(Dependency.required(AbtComponent.class))
-            .add(Dependency.optional(AnalyticsConnector.class))
+            .add(Dependency.optionalProvider(AnalyticsConnector.class))
             .factory(
                 container ->
                     new RemoteConfigComponent(
@@ -53,7 +53,7 @@ public class RemoteConfigRegistrar implements ComponentRegistrar {
                         container.get(FirebaseApp.class),
                         container.get(FirebaseInstallationsApi.class),
                         container.get(AbtComponent.class).get(OriginService.REMOTE_CONFIG),
-                        container.get(AnalyticsConnector.class)))
+                        container.getProvider(AnalyticsConnector.class)))
             .eagerInDefaultApp()
             .build(),
         LibraryVersionComponent.create("fire-rc", BuildConfig.VERSION_NAME));
