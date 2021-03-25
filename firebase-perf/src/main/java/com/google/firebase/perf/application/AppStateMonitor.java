@@ -85,8 +85,9 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
 
   private ApplicationProcessState mCurrentState = ApplicationProcessState.BACKGROUND;
 
-  private Set<WeakReference<AppStateCallback>> mClients =
+  private Set<WeakReference<AppStateCallback>> appStateSubscribers =
       new HashSet<WeakReference<AppStateCallback>>();
+  private Set<AppColdStartCallback> appColdStartSubscribers = new HashSet<AppColdStartCallback>();
 
   private boolean hasFrameMetricsAggregator = false;
   private FrameMetricsAggregator mFrameMetricsAggregator;
@@ -207,6 +208,7 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
       updateAppState(ApplicationProcessState.FOREGROUND);
       if (mIsColdStart) {
         // case 1: app startup.
+        sendAppColdStartUpdate();
         mIsColdStart = false;
       } else {
         // case 2: app switch from background to foreground.
@@ -234,36 +236,50 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
   }
 
   /**
-   * Register a client to receive app state update.
+   * Register a subscriber to receive app state update.
    *
    * @param client an AppStateCallback instance.
    * @hide
    */
   /** @hide */
-  public void registerForAppState(WeakReference<AppStateCallback> client) {
-    synchronized (mClients) {
-      mClients.add(client);
+  public void registerForAppState(WeakReference<AppStateCallback> subscriber) {
+    synchronized (appStateSubscribers) {
+      appStateSubscribers.add(subscriber);
     }
   }
 
   /**
-   * Unregister the client to stop receiving app state update.
+   * Unregister the subscriber to stop receiving app state update.
    *
-   * @param client an AppStateCallback instance.
+   * @param subscriber an AppStateCallback instance.
    * @hide
    */
   /** @hide */
-  public void unregisterForAppState(WeakReference<AppStateCallback> client) {
-    synchronized (mClients) {
-      mClients.remove(client);
+  public void unregisterForAppState(WeakReference<AppStateCallback> subscriber) {
+    synchronized (appStateSubscribers) {
+      appStateSubscribers.remove(subscriber);
     }
   }
 
-  /** Send update state update to registered clients. */
+  /**
+   * Register a subscriber to receive app cold start update.
+   *
+   * @param subscriber the {@link AppColdStartCallback} instance.
+   * @hide
+   */
+  /** @hide */
+  public void registerForAppColdStart(AppColdStartCallback subscriber) {
+    synchronized (appStateSubscribers) {
+      appColdStartSubscribers.add(subscriber);
+    }
+  }
+
+  /** Send update state update to registered subscribers. */
   private void updateAppState(ApplicationProcessState newState) {
     mCurrentState = newState;
-    synchronized (mClients) {
-      for (Iterator<WeakReference<AppStateCallback>> i = mClients.iterator(); i.hasNext(); ) {
+    synchronized (appStateSubscribers) {
+      for (Iterator<WeakReference<AppStateCallback>> i = appStateSubscribers.iterator();
+          i.hasNext(); ) {
         AppStateCallback callback = i.next().get();
         if (callback != null) {
           callback.onUpdateAppState(mCurrentState);
@@ -271,6 +287,18 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
           // The object pointing by WeakReference has already been garbage collected.
           // Remove it from the Set.
           i.remove();
+        }
+      }
+    }
+  }
+
+  /** Send cold start update to registered subscribers. */
+  private void sendAppColdStartUpdate() {
+    synchronized (appStateSubscribers) {
+      for (Iterator<AppColdStartCallback> i = appColdStartSubscribers.iterator(); i.hasNext(); ) {
+        AppColdStartCallback callback = i.next();
+        if (callback != null) {
+          callback.onAppColdStart();
         }
       }
     }
@@ -425,7 +453,7 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
   }
 
   /**
-   * An interface to be implemented by clients which needs to receive app state update.
+   * An interface to be implemented by subscribers which needs to receive app state update.
    *
    * @hide
    */
@@ -434,6 +462,15 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
     /** @hide */
     /** @hide */
     public void onUpdateAppState(ApplicationProcessState newState);
+  }
+
+  /**
+   * An interface to be implemented by subscribers which needs to receive app cold start update.
+   *
+   * @hide
+   */
+  public static interface AppColdStartCallback {
+    public void onAppColdStart();
   }
 
   /**
