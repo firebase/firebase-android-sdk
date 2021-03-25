@@ -49,21 +49,21 @@ public class InstrHttpInputStreamTest extends FirebasePerformanceTestBase {
   @Mock Timer timer;
   @Captor ArgumentCaptor<NetworkRequestMetric> networkArgumentCaptor;
 
-  private NetworkRequestMetricBuilder networkRequestBuilder;
+  private NetworkRequestMetricBuilder networkMetricBuilder;
 
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
     when(timer.getMicros()).thenReturn((long) 1000);
     when(timer.getDurationMicros()).thenReturn((long) 2000);
-    networkRequestBuilder = NetworkRequestMetricBuilder.builder(transportManager);
+    networkMetricBuilder = NetworkRequestMetricBuilder.builder(transportManager);
   }
 
   @Test
   public void testAvailable() throws IOException {
     int availableVal = 7;
     when(mInputStream.available()).thenReturn(availableVal);
-    int ret = new InstrHttpInputStream(mInputStream, networkRequestBuilder, timer).available();
+    int ret = new InstrHttpInputStream(mInputStream, networkMetricBuilder, timer).available();
 
     assertThat(ret).isEqualTo(availableVal);
     verify(mInputStream).available();
@@ -71,7 +71,7 @@ public class InstrHttpInputStreamTest extends FirebasePerformanceTestBase {
 
   @Test
   public void testClose() throws IOException {
-    new InstrHttpInputStream(mInputStream, networkRequestBuilder, timer).close();
+    new InstrHttpInputStream(mInputStream, networkMetricBuilder, timer).close();
 
     verify(mInputStream).close();
     verify(transportManager)
@@ -83,7 +83,7 @@ public class InstrHttpInputStreamTest extends FirebasePerformanceTestBase {
   public void testMark() throws IOException {
     int markInput = 256;
 
-    new InstrHttpInputStream(mInputStream, networkRequestBuilder, timer).mark(markInput);
+    new InstrHttpInputStream(mInputStream, networkMetricBuilder, timer).mark(markInput);
 
     verify(mInputStream).mark(markInput);
   }
@@ -91,7 +91,7 @@ public class InstrHttpInputStreamTest extends FirebasePerformanceTestBase {
   @Test
   public void testMarkSupported() throws IOException {
     when(mInputStream.markSupported()).thenReturn(true);
-    boolean ret = new InstrHttpInputStream(mInputStream, networkRequestBuilder, timer).markSupported();
+    boolean ret = new InstrHttpInputStream(mInputStream, networkMetricBuilder, timer).markSupported();
 
     assertThat(ret).isTrue();
     verify(mInputStream).markSupported();
@@ -101,7 +101,7 @@ public class InstrHttpInputStreamTest extends FirebasePerformanceTestBase {
   public void testRead() throws IOException {
     int readVal = 256;
     when(mInputStream.read()).thenReturn(readVal);
-    int ret = new InstrHttpInputStream(mInputStream, networkRequestBuilder, timer).read();
+    int ret = new InstrHttpInputStream(mInputStream, networkMetricBuilder, timer).read();
 
     assertThat(ret).isEqualTo(readVal);
     verify(mInputStream).read();
@@ -114,7 +114,7 @@ public class InstrHttpInputStreamTest extends FirebasePerformanceTestBase {
     int readLength = 256;
     when(mInputStream.read(buffer, offset, readLength)).thenReturn(readLength);
     int ret =
-        new InstrHttpInputStream(mInputStream, networkRequestBuilder, timer).read(buffer, offset, readLength);
+        new InstrHttpInputStream(mInputStream, networkMetricBuilder, timer).read(buffer, offset, readLength);
 
     assertThat(ret).isEqualTo(readLength);
     verify(mInputStream).read(buffer, offset, readLength);
@@ -126,7 +126,7 @@ public class InstrHttpInputStreamTest extends FirebasePerformanceTestBase {
     byte[] buffer = new byte[] {(byte) 0xe6};
     int readLength = 256;
     when(mInputStream.read(buffer)).thenReturn(readLength);
-    int ret = new InstrHttpInputStream(mInputStream, networkRequestBuilder, timer).read(buffer);
+    int ret = new InstrHttpInputStream(mInputStream, networkMetricBuilder, timer).read(buffer);
 
     assertThat(ret).isEqualTo(readLength);
     verify(mInputStream).read(buffer);
@@ -134,7 +134,7 @@ public class InstrHttpInputStreamTest extends FirebasePerformanceTestBase {
 
   @Test
   public void testReset() throws IOException {
-    new InstrHttpInputStream(mInputStream, networkRequestBuilder, timer).reset();
+    new InstrHttpInputStream(mInputStream, networkMetricBuilder, timer).reset();
 
     verify(mInputStream).reset();
   }
@@ -143,7 +143,7 @@ public class InstrHttpInputStreamTest extends FirebasePerformanceTestBase {
   public void testSkip() throws IOException {
     int skipLength = 64;
     when(mInputStream.skip(skipLength)).thenReturn((long) skipLength);
-    long ret = new InstrHttpInputStream(mInputStream, networkRequestBuilder, timer).skip(skipLength);
+    long ret = new InstrHttpInputStream(mInputStream, networkMetricBuilder, timer).skip(skipLength);
 
     assertThat(ret).isEqualTo(skipLength);
     verify(mInputStream).skip(skipLength);
@@ -154,7 +154,7 @@ public class InstrHttpInputStreamTest extends FirebasePerformanceTestBase {
     doThrow(new IOException()).when(mInputStream).available();
     assertThrows(
         IOException.class,
-        () -> new InstrHttpInputStream(mInputStream, networkRequestBuilder, timer).available());
+        () -> new InstrHttpInputStream(mInputStream, networkMetricBuilder, timer).available());
 
     verify(transportManager)
         .log(networkArgumentCaptor.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
@@ -166,7 +166,7 @@ public class InstrHttpInputStreamTest extends FirebasePerformanceTestBase {
   public void closeThrowsIOException() throws IOException {
     doThrow(new IOException()).when(mInputStream).close();
     assertThrows(
-        IOException.class, () -> new InstrHttpInputStream(mInputStream, networkRequestBuilder, timer).close());
+        IOException.class, () -> new InstrHttpInputStream(mInputStream, networkMetricBuilder, timer).close());
 
     verify(transportManager)
         .log(networkArgumentCaptor.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
@@ -178,7 +178,7 @@ public class InstrHttpInputStreamTest extends FirebasePerformanceTestBase {
   public void readThrowsIOException() throws IOException {
     doThrow(new IOException()).when(mInputStream).read();
     assertThrows(
-        IOException.class, () -> new InstrHttpInputStream(mInputStream, networkRequestBuilder, timer).read());
+        IOException.class, () -> new InstrHttpInputStream(mInputStream, networkMetricBuilder, timer).read());
 
     verify(transportManager)
         .log(networkArgumentCaptor.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
@@ -195,7 +195,7 @@ public class InstrHttpInputStreamTest extends FirebasePerformanceTestBase {
     assertThrows(
         IOException.class,
         () ->
-            new InstrHttpInputStream(mInputStream, networkRequestBuilder, timer)
+            new InstrHttpInputStream(mInputStream, networkMetricBuilder, timer)
                 .read(buffer, offset, readLength));
 
     verify(transportManager)
@@ -210,7 +210,7 @@ public class InstrHttpInputStreamTest extends FirebasePerformanceTestBase {
     doThrow(new IOException()).when(mInputStream).read(buffer);
     assertThrows(
         IOException.class,
-        () -> new InstrHttpInputStream(mInputStream, networkRequestBuilder, timer).read(buffer));
+        () -> new InstrHttpInputStream(mInputStream, networkMetricBuilder, timer).read(buffer));
 
     verify(transportManager)
         .log(networkArgumentCaptor.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
@@ -222,7 +222,7 @@ public class InstrHttpInputStreamTest extends FirebasePerformanceTestBase {
   public void resetThrowsIOException() throws IOException {
     doThrow(new IOException()).when(mInputStream).reset();
     assertThrows(
-        IOException.class, () -> new InstrHttpInputStream(mInputStream, networkRequestBuilder, timer).reset());
+        IOException.class, () -> new InstrHttpInputStream(mInputStream, networkMetricBuilder, timer).reset());
 
     verify(transportManager)
         .log(networkArgumentCaptor.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
@@ -236,7 +236,7 @@ public class InstrHttpInputStreamTest extends FirebasePerformanceTestBase {
     doThrow(new IOException()).when(mInputStream).skip(byteCount);
     assertThrows(
         IOException.class,
-        () -> new InstrHttpInputStream(mInputStream, networkRequestBuilder, timer).skip(byteCount));
+        () -> new InstrHttpInputStream(mInputStream, networkMetricBuilder, timer).skip(byteCount));
 
     verify(transportManager)
         .log(networkArgumentCaptor.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
@@ -248,7 +248,7 @@ public class InstrHttpInputStreamTest extends FirebasePerformanceTestBase {
   public void readEOFLogsMetric() throws IOException {
     when(mInputStream.read()).thenReturn(-1);
 
-    new InstrHttpInputStream(mInputStream, networkRequestBuilder, timer).read();
+    new InstrHttpInputStream(mInputStream, networkMetricBuilder, timer).read();
 
     verify(transportManager)
         .log(networkArgumentCaptor.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
@@ -261,7 +261,7 @@ public class InstrHttpInputStreamTest extends FirebasePerformanceTestBase {
     byte[] buffer = new byte[] {(byte) 0xe0};
     when(mInputStream.read(buffer)).thenReturn(-1);
 
-    new InstrHttpInputStream(mInputStream, networkRequestBuilder, timer).read(buffer);
+    new InstrHttpInputStream(mInputStream, networkMetricBuilder, timer).read(buffer);
 
     verify(transportManager)
         .log(networkArgumentCaptor.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
@@ -276,7 +276,7 @@ public class InstrHttpInputStreamTest extends FirebasePerformanceTestBase {
     int readLength = 256;
     when(mInputStream.read(buffer, offset, readLength)).thenReturn(-1);
 
-    new InstrHttpInputStream(mInputStream, networkRequestBuilder, timer).read(buffer, offset, readLength);
+    new InstrHttpInputStream(mInputStream, networkMetricBuilder, timer).read(buffer, offset, readLength);
 
     verify(transportManager)
         .log(networkArgumentCaptor.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
