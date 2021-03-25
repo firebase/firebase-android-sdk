@@ -403,6 +403,30 @@ public class DocumentReference {
 
   /**
    * Starts listening to the document referenced by this {@code DocumentReference} with the given
+   * options using a LifecycleOwner-scoped listener.
+   *
+   * <p>The listener will be automatically removed during {@link LifecycleOwner's ON_STOP Event'}.
+   *
+   * @param lifecycleOwner  The LifecycleOwner to scope the listener to.
+   * @param listener        The event listener that will be called with the snapshots.
+   * @return A registration object that can be used to remove the listener.
+   */
+  @NonNull
+  public ListenerRegistration addSnapshotListener(
+          @NonNull LifecycleOwner lifecycleOwner,
+          @NonNull EventListener<DocumentSnapshot> listener) {
+    checkNotNull(lifecycleOwner, "Provided LifecycleOwner must not be null.");
+    checkNotNull(listener, "Provided EventListener must not be null.");
+    return addSnapshotListenerInternal(
+            Executors.DEFAULT_CALLBACK_EXECUTOR,
+            internalOptions(MetadataChanges.EXCLUDE),
+            null,
+            lifecycleOwner,
+            listener);
+  }
+
+  /**
+   * Starts listening to the document referenced by this {@code DocumentReference} with the given
    * options.
    *
    * @param metadataChanges Indicates whether metadata-only changes (i.e. only {@code
@@ -468,7 +492,7 @@ public class DocumentReference {
 
   /**
    * Starts listening to the document referenced by this {@code DocumentReference} with the given
-   * options using an LifecycleOwner-scoped listener.
+   * options using a LifecycleOwner-scoped listener.
    *
    * <p>The listener will be automatically removed during {@link LifecycleOwner's ON_STOP Event'}.
    *
