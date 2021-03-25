@@ -155,7 +155,8 @@ class InstrURLConnectionBase {
 
   public OutputStream getOutputStream() throws IOException {
     try {
-      return new InstrHttpOutputStream(httpUrlConnection.getOutputStream(), networkMetricBuilder, timer);
+      return new InstrHttpOutputStream(
+          httpUrlConnection.getOutputStream(), networkMetricBuilder, timer);
     } catch (final IOException e) {
       networkMetricBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
       NetworkRequestMetricBuilderUtil.logError(networkMetricBuilder);

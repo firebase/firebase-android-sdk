@@ -61,7 +61,8 @@ public final class NetworkRequestMetricBuilder extends AppStateUpdateHandler
   private final GaugeManager gaugeManager;
   private final TransportManager transportManager;
 
-  private final NetworkRequestMetric.Builder networkMetricBuilder = NetworkRequestMetric.newBuilder();
+  private final NetworkRequestMetric.Builder networkMetricBuilder =
+      NetworkRequestMetric.newBuilder();
 
   @Nullable private String userAgent;
 
