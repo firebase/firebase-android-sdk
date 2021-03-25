@@ -54,24 +54,24 @@ import org.robolectric.RobolectricTestRunner;
 public class InstrHttpURLConnectionTest extends FirebasePerformanceTestBase {
 
   @Mock private TransportManager transportManager;
-  @Mock private Timer mTimer;
-  @Captor private ArgumentCaptor<NetworkRequestMetric> mArgMetric;
+  @Mock private Timer timer;
+  @Captor private ArgumentCaptor<NetworkRequestMetric> networkArgumentCaptor;
 
-  private NetworkRequestMetricBuilder mBuilder;
+  private NetworkRequestMetricBuilder networkRequestBuilder;
 
   @Before
   public void setUp() {
     initMocks(this);
-    when(mTimer.getMicros()).thenReturn((long) 1000);
-    when(mTimer.getDurationMicros()).thenReturn((long) 2000);
-    mBuilder = NetworkRequestMetricBuilder.builder(transportManager);
+    when(timer.getMicros()).thenReturn((long) 1000);
+    when(timer.getDurationMicros()).thenReturn((long) 2000);
+    networkRequestBuilder = NetworkRequestMetricBuilder.builder(transportManager);
   }
 
   @Test
   public void testConnect() throws IOException {
     HttpURLConnection urlConnection = mockHttpUrlConnection();
 
-    new InstrHttpURLConnection(urlConnection, mTimer, mBuilder).connect();
+    new InstrHttpURLConnection(urlConnection, timer, networkRequestBuilder).connect();
 
     verify(urlConnection).connect();
   }
@@ -80,12 +80,12 @@ public class InstrHttpURLConnectionTest extends FirebasePerformanceTestBase {
   public void testDisconnect() throws IOException {
     HttpURLConnection urlConnection = mockHttpUrlConnection();
 
-    new InstrHttpURLConnection(urlConnection, mTimer, mBuilder).disconnect();
+    new InstrHttpURLConnection(urlConnection, timer, networkRequestBuilder).disconnect();
 
     verify(urlConnection).disconnect();
     verify(transportManager)
-        .log(mArgMetric.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
-    NetworkRequestMetric metric = mArgMetric.getValue();
+        .log(networkArgumentCaptor.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
+    NetworkRequestMetric metric = networkArgumentCaptor.getValue();
     assertEquals(2000, metric.getTimeToResponseCompletedUs());
   }
 
@@ -96,13 +96,13 @@ public class InstrHttpURLConnectionTest extends FirebasePerformanceTestBase {
     Object fakeObject = new Object();
     when(urlConnection.getContent()).thenReturn(fakeObject);
 
-    Object retObj = new InstrHttpURLConnection(urlConnection, mTimer, mBuilder).getContent();
+    Object retObj = new InstrHttpURLConnection(urlConnection, timer, networkRequestBuilder).getContent();
 
     assertEquals(fakeObject, retObj);
     verify(urlConnection).getContent();
     verify(transportManager)
-        .log(mArgMetric.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
-    NetworkRequestMetric metric = mArgMetric.getValue();
+        .log(networkArgumentCaptor.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
+    NetworkRequestMetric metric = networkArgumentCaptor.getValue();
     assertEquals(1000, metric.getClientStartTimeUs());
     assertEquals(HttpMethod.POST, metric.getHttpMethod());
     assertEquals(urlConnection.getResponseCode(), metric.getHttpResponseCode());
@@ -118,12 +118,12 @@ public class InstrHttpURLConnectionTest extends FirebasePerformanceTestBase {
     when(urlConnection.getDoOutput()).thenReturn(true);
     when(urlConnection.getContent()).thenThrow(new IOException());
 
-    new InstrHttpURLConnection(urlConnection, mTimer, mBuilder).getContent();
+    new InstrHttpURLConnection(urlConnection, timer, networkRequestBuilder).getContent();
 
     verify(urlConnection).getContent();
     verify(transportManager)
-        .log(mArgMetric.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
-    NetworkRequestMetric metric = mArgMetric.getValue();
+        .log(networkArgumentCaptor.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
+    NetworkRequestMetric metric = networkArgumentCaptor.getValue();
     assertEquals(1000, metric.getClientStartTimeUs());
     assertEquals(HttpMethod.POST, metric.getHttpMethod());
     assertEquals(urlConnection.getResponseCode(), metric.getHttpResponseCode());
@@ -141,13 +141,13 @@ public class InstrHttpURLConnectionTest extends FirebasePerformanceTestBase {
     Object fakeObject = new Object();
     when(urlConnection.getContent(classes)).thenReturn(fakeObject);
 
-    Object retObj = new InstrHttpURLConnection(urlConnection, mTimer, mBuilder).getContent(classes);
+    Object retObj = new InstrHttpURLConnection(urlConnection, timer, networkRequestBuilder).getContent(classes);
 
     assertEquals(fakeObject, retObj);
     verify(urlConnection).getContent(classes);
     verify(transportManager)
-        .log(mArgMetric.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
-    NetworkRequestMetric metric = mArgMetric.getValue();
+        .log(networkArgumentCaptor.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
+    NetworkRequestMetric metric = networkArgumentCaptor.getValue();
     assertEquals(1000, metric.getClientStartTimeUs());
     assertEquals(HttpMethod.POST, metric.getHttpMethod());
     assertEquals(urlConnection.getResponseCode(), metric.getHttpResponseCode());
@@ -161,7 +161,7 @@ public class InstrHttpURLConnectionTest extends FirebasePerformanceTestBase {
     HttpURLConnection urlConnection = mockHttpUrlConnection();
     when(urlConnection.getDoOutput()).thenReturn(false);
 
-    new InstrHttpURLConnection(urlConnection, mTimer, mBuilder).getInputStream();
+    new InstrHttpURLConnection(urlConnection, timer, networkRequestBuilder).getInputStream();
 
     verify(urlConnection).getInputStream();
   }
@@ -172,7 +172,7 @@ public class InstrHttpURLConnectionTest extends FirebasePerformanceTestBase {
     when(urlConnection.getDoOutput()).thenReturn(false);
 
     long lastModified =
-        new InstrHttpURLConnection(urlConnection, mTimer, mBuilder).getLastModified();
+        new InstrHttpURLConnection(urlConnection, timer, networkRequestBuilder).getLastModified();
 
     assertEquals(6000, lastModified);
     verify(urlConnection).getLastModified();
@@ -185,7 +185,7 @@ public class InstrHttpURLConnectionTest extends FirebasePerformanceTestBase {
     when(urlConnection.getOutputStream()).thenReturn(outputStream);
 
     OutputStream retOutputStream =
-        new InstrHttpURLConnection(urlConnection, mTimer, mBuilder).getOutputStream();
+        new InstrHttpURLConnection(urlConnection, timer, networkRequestBuilder).getOutputStream();
 
     assertTrue(retOutputStream instanceof InstrHttpOutputStream);
     verify(urlConnection).getOutputStream();
@@ -198,7 +198,7 @@ public class InstrHttpURLConnectionTest extends FirebasePerformanceTestBase {
     when(urlConnection.getPermission()).thenReturn(permission);
 
     Permission retPermission =
-        new InstrHttpURLConnection(urlConnection, mTimer, mBuilder).getPermission();
+        new InstrHttpURLConnection(urlConnection, timer, networkRequestBuilder).getPermission();
 
     assertEquals(permission, retPermission);
     verify(urlConnection).getPermission();
@@ -208,7 +208,7 @@ public class InstrHttpURLConnectionTest extends FirebasePerformanceTestBase {
   public void testGetResponseCode() throws IOException {
     HttpURLConnection urlConnection = mockHttpUrlConnection();
 
-    int retCode = new InstrHttpURLConnection(urlConnection, mTimer, mBuilder).getResponseCode();
+    int retCode = new InstrHttpURLConnection(urlConnection, timer, networkRequestBuilder).getResponseCode();
 
     assertEquals(200, retCode);
     verify(urlConnection).getResponseCode();
@@ -220,7 +220,7 @@ public class InstrHttpURLConnectionTest extends FirebasePerformanceTestBase {
     when(urlConnection.getResponseMessage()).thenReturn("return message");
 
     String retMessage =
-        new InstrHttpURLConnection(urlConnection, mTimer, mBuilder).getResponseMessage();
+        new InstrHttpURLConnection(urlConnection, timer, networkRequestBuilder).getResponseMessage();
 
     assertEquals("return message", retMessage);
     verify(urlConnection).getResponseMessage();
@@ -232,7 +232,7 @@ public class InstrHttpURLConnectionTest extends FirebasePerformanceTestBase {
     when(urlConnection.getExpiration()).thenReturn((long) 1000);
 
     long retExpiration =
-        new InstrHttpURLConnection(urlConnection, mTimer, mBuilder).getExpiration();
+        new InstrHttpURLConnection(urlConnection, timer, networkRequestBuilder).getExpiration();
 
     assertEquals(1000, retExpiration);
     verify(urlConnection).getExpiration();
@@ -244,7 +244,7 @@ public class InstrHttpURLConnectionTest extends FirebasePerformanceTestBase {
     when(urlConnection.getHeaderField(1)).thenReturn("text/html");
 
     String retHeader =
-        new InstrHttpURLConnection(urlConnection, mTimer, mBuilder).getHeaderField(1);
+        new InstrHttpURLConnection(urlConnection, timer, networkRequestBuilder).getHeaderField(1);
 
     assertEquals("text/html", retHeader);
     verify(urlConnection).getHeaderField(1);
@@ -256,7 +256,7 @@ public class InstrHttpURLConnectionTest extends FirebasePerformanceTestBase {
     when(urlConnection.getHeaderField("content-type")).thenReturn("text/html");
 
     String retHeader =
-        new InstrHttpURLConnection(urlConnection, mTimer, mBuilder).getHeaderField("content-type");
+        new InstrHttpURLConnection(urlConnection, timer, networkRequestBuilder).getHeaderField("content-type");
 
     assertEquals("text/html", retHeader);
     verify(urlConnection).getHeaderField("content-type");
@@ -268,7 +268,7 @@ public class InstrHttpURLConnectionTest extends FirebasePerformanceTestBase {
     when(urlConnection.getHeaderFieldInt("content-type", 1)).thenReturn(2);
 
     int retHeader =
-        new InstrHttpURLConnection(urlConnection, mTimer, mBuilder)
+        new InstrHttpURLConnection(urlConnection, timer, networkRequestBuilder)
             .getHeaderFieldInt("content-type", 1);
 
     assertEquals(2, retHeader);
@@ -281,7 +281,7 @@ public class InstrHttpURLConnectionTest extends FirebasePerformanceTestBase {
     when(urlConnection.getHeaderFieldLong("content-type", 1)).thenReturn((long) 2);
 
     long retHeader =
-        new InstrHttpURLConnection(urlConnection, mTimer, mBuilder)
+        new InstrHttpURLConnection(urlConnection, timer, networkRequestBuilder)
             .getHeaderFieldLong("content-type", 1);
 
     assertEquals(2, retHeader);
@@ -294,7 +294,7 @@ public class InstrHttpURLConnectionTest extends FirebasePerformanceTestBase {
     when(urlConnection.getHeaderFieldKey(1)).thenReturn("content-type");
 
     String retHeader =
-        new InstrHttpURLConnection(urlConnection, mTimer, mBuilder).getHeaderFieldKey(1);
+        new InstrHttpURLConnection(urlConnection, timer, networkRequestBuilder).getHeaderFieldKey(1);
 
     assertEquals("content-type", retHeader);
     verify(urlConnection).getHeaderFieldKey(1);
@@ -308,7 +308,7 @@ public class InstrHttpURLConnectionTest extends FirebasePerformanceTestBase {
     when(urlConnection.getHeaderFields()).thenReturn(values);
 
     Map<String, List<String>> ret =
-        new InstrHttpURLConnection(urlConnection, mTimer, mBuilder).getHeaderFields();
+        new InstrHttpURLConnection(urlConnection, timer, networkRequestBuilder).getHeaderFields();
 
     assertEquals(values, ret);
     verify(urlConnection).getHeaderFields();
@@ -319,7 +319,7 @@ public class InstrHttpURLConnectionTest extends FirebasePerformanceTestBase {
     HttpURLConnection urlConnection = mockHttpUrlConnection();
     when(urlConnection.getContentEncoding()).thenReturn("ascii");
 
-    String ret = new InstrHttpURLConnection(urlConnection, mTimer, mBuilder).getContentEncoding();
+    String ret = new InstrHttpURLConnection(urlConnection, timer, networkRequestBuilder).getContentEncoding();
 
     assertEquals("ascii", ret);
     verify(urlConnection).getContentEncoding();
@@ -330,7 +330,7 @@ public class InstrHttpURLConnectionTest extends FirebasePerformanceTestBase {
     HttpURLConnection urlConnection = mockHttpUrlConnection();
     when(urlConnection.getContentLength()).thenReturn(256);
 
-    int ret = new InstrHttpURLConnection(urlConnection, mTimer, mBuilder).getContentLength();
+    int ret = new InstrHttpURLConnection(urlConnection, timer, networkRequestBuilder).getContentLength();
 
     assertEquals(256, ret);
     // 2 times, one for updating the request info and one for the return value
@@ -342,7 +342,7 @@ public class InstrHttpURLConnectionTest extends FirebasePerformanceTestBase {
     HttpURLConnection urlConnection = mockHttpUrlConnection();
     when(urlConnection.getContentLengthLong()).thenReturn((long) 256);
 
-    long ret = new InstrHttpURLConnection(urlConnection, mTimer, mBuilder).getContentLengthLong();
+    long ret = new InstrHttpURLConnection(urlConnection, timer, networkRequestBuilder).getContentLengthLong();
 
     assertEquals(256, ret);
     verify(urlConnection).getContentLengthLong();
@@ -353,7 +353,7 @@ public class InstrHttpURLConnectionTest extends FirebasePerformanceTestBase {
     HttpURLConnection urlConnection = mockHttpUrlConnection();
     when(urlConnection.getContentType()).thenReturn("text/html");
 
-    String ret = new InstrHttpURLConnection(urlConnection, mTimer, mBuilder).getContentType();
+    String ret = new InstrHttpURLConnection(urlConnection, timer, networkRequestBuilder).getContentType();
 
     assertEquals("text/html", ret);
     verify(urlConnection).getContentType();
@@ -364,7 +364,7 @@ public class InstrHttpURLConnectionTest extends FirebasePerformanceTestBase {
     HttpURLConnection urlConnection = mockHttpUrlConnection();
     when(urlConnection.getDate()).thenReturn((long) 1000);
 
-    long ret = new InstrHttpURLConnection(urlConnection, mTimer, mBuilder).getDate();
+    long ret = new InstrHttpURLConnection(urlConnection, timer, networkRequestBuilder).getDate();
 
     assertEquals(1000, ret);
     verify(urlConnection).getDate();
@@ -376,7 +376,7 @@ public class InstrHttpURLConnectionTest extends FirebasePerformanceTestBase {
     String key = "test";
     String value = "one";
 
-    new InstrHttpURLConnection(urlConnection, mTimer, mBuilder).addRequestProperty(key, value);
+    new InstrHttpURLConnection(urlConnection, timer, networkRequestBuilder).addRequestProperty(key, value);
 
     verify(urlConnection).addRequestProperty(key, value);
   }
@@ -387,7 +387,7 @@ public class InstrHttpURLConnectionTest extends FirebasePerformanceTestBase {
     when(urlConnection.getAllowUserInteraction()).thenReturn(true);
 
     boolean res =
-        new InstrHttpURLConnection(urlConnection, mTimer, mBuilder).getAllowUserInteraction();
+        new InstrHttpURLConnection(urlConnection, timer, networkRequestBuilder).getAllowUserInteraction();
 
     assertEquals(true, res);
     verify(urlConnection).getAllowUserInteraction();
@@ -399,7 +399,7 @@ public class InstrHttpURLConnectionTest extends FirebasePerformanceTestBase {
     int timeout = 8;
     when(urlConnection.getConnectTimeout()).thenReturn(timeout);
 
-    int res = new InstrHttpURLConnection(urlConnection, mTimer, mBuilder).getConnectTimeout();
+    int res = new InstrHttpURLConnection(urlConnection, timer, networkRequestBuilder).getConnectTimeout();
 
     assertEquals(timeout, res);
     verify(urlConnection).getConnectTimeout();
@@ -410,7 +410,7 @@ public class InstrHttpURLConnectionTest extends FirebasePerformanceTestBase {
     HttpURLConnection urlConnection = mockHttpUrlConnection();
     when(urlConnection.getDefaultUseCaches()).thenReturn(false);
 
-    boolean res = new InstrHttpURLConnection(urlConnection, mTimer, mBuilder).getDefaultUseCaches();
+    boolean res = new InstrHttpURLConnection(urlConnection, timer, networkRequestBuilder).getDefaultUseCaches();
 
     assertFalse(res);
     verify(urlConnection).getDefaultUseCaches();
@@ -421,7 +421,7 @@ public class InstrHttpURLConnectionTest extends FirebasePerformanceTestBase {
     HttpURLConnection urlConnection = mockHttpUrlConnection();
     when(urlConnection.getDoInput()).thenReturn(true);
 
-    boolean res = new InstrHttpURLConnection(urlConnection, mTimer, mBuilder).getDoInput();
+    boolean res = new InstrHttpURLConnection(urlConnection, timer, networkRequestBuilder).getDoInput();
 
     assertEquals(true, res);
     verify(urlConnection).getDoInput();
@@ -432,7 +432,7 @@ public class InstrHttpURLConnectionTest extends FirebasePerformanceTestBase {
     HttpURLConnection urlConnection = mockHttpUrlConnection();
     when(urlConnection.getDoOutput()).thenReturn(false);
 
-    boolean result = new InstrHttpURLConnection(urlConnection, mTimer, mBuilder).getDoOutput();
+    boolean result = new InstrHttpURLConnection(urlConnection, timer, networkRequestBuilder).getDoOutput();
 
     assertFalse(result);
     verify(urlConnection).getDoOutput();
@@ -444,7 +444,7 @@ public class InstrHttpURLConnectionTest extends FirebasePerformanceTestBase {
     InputStream inputStream = mock(InputStream.class);
     when(urlConnection.getErrorStream()).thenReturn(inputStream);
 
-    InputStream res = new InstrHttpURLConnection(urlConnection, mTimer, mBuilder).getErrorStream();
+    InputStream res = new InstrHttpURLConnection(urlConnection, timer, networkRequestBuilder).getErrorStream();
 
     assertThat(res).isInstanceOf(InstrHttpInputStream.class);
     verify(urlConnection).getErrorStream();
@@ -455,7 +455,7 @@ public class InstrHttpURLConnectionTest extends FirebasePerformanceTestBase {
     HttpURLConnection urlConnection = mockHttpUrlConnection();
     when(urlConnection.getErrorStream()).thenReturn(null);
 
-    InputStream res = new InstrHttpURLConnection(urlConnection, mTimer, mBuilder).getErrorStream();
+    InputStream res = new InstrHttpURLConnection(urlConnection, timer, networkRequestBuilder).getErrorStream();
 
     assertThat(res).isNull();
     verify(urlConnection).getErrorStream();
@@ -467,7 +467,7 @@ public class InstrHttpURLConnectionTest extends FirebasePerformanceTestBase {
     long modifiedSince = 3000;
     when(urlConnection.getIfModifiedSince()).thenReturn(modifiedSince);
 
-    long res = new InstrHttpURLConnection(urlConnection, mTimer, mBuilder).getIfModifiedSince();
+    long res = new InstrHttpURLConnection(urlConnection, timer, networkRequestBuilder).getIfModifiedSince();
 
     assertEquals(modifiedSince, res);
     verify(urlConnection).getIfModifiedSince();
@@ -479,7 +479,7 @@ public class InstrHttpURLConnectionTest extends FirebasePerformanceTestBase {
     when(urlConnection.getInstanceFollowRedirects()).thenReturn(true);
 
     boolean res =
-        new InstrHttpURLConnection(urlConnection, mTimer, mBuilder).getInstanceFollowRedirects();
+        new InstrHttpURLConnection(urlConnection, timer, networkRequestBuilder).getInstanceFollowRedirects();
 
     assertEquals(true, res);
     verify(urlConnection).getInstanceFollowRedirects();
@@ -491,7 +491,7 @@ public class InstrHttpURLConnectionTest extends FirebasePerformanceTestBase {
     int timeout = 9;
     when(urlConnection.getReadTimeout()).thenReturn(timeout);
 
-    int res = new InstrHttpURLConnection(urlConnection, mTimer, mBuilder).getReadTimeout();
+    int res = new InstrHttpURLConnection(urlConnection, timer, networkRequestBuilder).getReadTimeout();
 
     assertEquals(timeout, res);
     verify(urlConnection).getReadTimeout();
@@ -503,7 +503,7 @@ public class InstrHttpURLConnectionTest extends FirebasePerformanceTestBase {
     String method = "POST";
     when(urlConnection.getRequestMethod()).thenReturn(method);
 
-    String res = new InstrHttpURLConnection(urlConnection, mTimer, mBuilder).getRequestMethod();
+    String res = new InstrHttpURLConnection(urlConnection, timer, networkRequestBuilder).getRequestMethod();
 
     assertEquals(method, res);
     verify(urlConnection).getRequestMethod();
@@ -517,7 +517,7 @@ public class InstrHttpURLConnectionTest extends FirebasePerformanceTestBase {
     when(urlConnection.getRequestProperties()).thenReturn(input);
 
     Map<String, List<String>> res =
-        new InstrHttpURLConnection(urlConnection, mTimer, mBuilder).getRequestProperties();
+        new InstrHttpURLConnection(urlConnection, timer, networkRequestBuilder).getRequestProperties();
 
     assertEquals(input, res);
     verify(urlConnection).getRequestProperties();
@@ -531,7 +531,7 @@ public class InstrHttpURLConnectionTest extends FirebasePerformanceTestBase {
     when(urlConnection.getRequestProperty(property)).thenReturn(value);
 
     String res =
-        new InstrHttpURLConnection(urlConnection, mTimer, mBuilder).getRequestProperty(property);
+        new InstrHttpURLConnection(urlConnection, timer, networkRequestBuilder).getRequestProperty(property);
 
     assertEquals(value, res);
     verify(urlConnection).getRequestProperty(property);
@@ -543,7 +543,7 @@ public class InstrHttpURLConnectionTest extends FirebasePerformanceTestBase {
     boolean useCaches = false;
     when(urlConnection.getUseCaches()).thenReturn(useCaches);
 
-    boolean res = new InstrHttpURLConnection(urlConnection, mTimer, mBuilder).getUseCaches();
+    boolean res = new InstrHttpURLConnection(urlConnection, timer, networkRequestBuilder).getUseCaches();
 
     assertEquals(useCaches, res);
     verify(urlConnection).getUseCaches();
@@ -554,7 +554,7 @@ public class InstrHttpURLConnectionTest extends FirebasePerformanceTestBase {
     HttpURLConnection urlConnection = mockHttpUrlConnection();
     boolean val = false;
 
-    new InstrHttpURLConnection(urlConnection, mTimer, mBuilder).setAllowUserInteraction(val);
+    new InstrHttpURLConnection(urlConnection, timer, networkRequestBuilder).setAllowUserInteraction(val);
 
     verify(urlConnection).setAllowUserInteraction(val);
   }
@@ -564,7 +564,7 @@ public class InstrHttpURLConnectionTest extends FirebasePerformanceTestBase {
     HttpURLConnection urlConnection = mockHttpUrlConnection();
     int val = 134;
 
-    new InstrHttpURLConnection(urlConnection, mTimer, mBuilder).setChunkedStreamingMode(val);
+    new InstrHttpURLConnection(urlConnection, timer, networkRequestBuilder).setChunkedStreamingMode(val);
 
     verify(urlConnection).setChunkedStreamingMode(val);
   }
@@ -574,7 +574,7 @@ public class InstrHttpURLConnectionTest extends FirebasePerformanceTestBase {
     HttpURLConnection urlConnection = mockHttpUrlConnection();
     int val = 150;
 
-    new InstrHttpURLConnection(urlConnection, mTimer, mBuilder).setConnectTimeout(val);
+    new InstrHttpURLConnection(urlConnection, timer, networkRequestBuilder).setConnectTimeout(val);
 
     verify(urlConnection).setConnectTimeout(val);
   }
@@ -584,7 +584,7 @@ public class InstrHttpURLConnectionTest extends FirebasePerformanceTestBase {
     HttpURLConnection urlConnection = mockHttpUrlConnection();
     boolean val = true;
 
-    new InstrHttpURLConnection(urlConnection, mTimer, mBuilder).setDefaultUseCaches(val);
+    new InstrHttpURLConnection(urlConnection, timer, networkRequestBuilder).setDefaultUseCaches(val);
 
     verify(urlConnection).setDefaultUseCaches(val);
   }
@@ -594,7 +594,7 @@ public class InstrHttpURLConnectionTest extends FirebasePerformanceTestBase {
     HttpURLConnection urlConnection = mockHttpUrlConnection();
     boolean val = false;
 
-    new InstrHttpURLConnection(urlConnection, mTimer, mBuilder).setDoInput(val);
+    new InstrHttpURLConnection(urlConnection, timer, networkRequestBuilder).setDoInput(val);
 
     verify(urlConnection).setDoInput(val);
   }
@@ -604,7 +604,7 @@ public class InstrHttpURLConnectionTest extends FirebasePerformanceTestBase {
     HttpURLConnection urlConnection = mockHttpUrlConnection();
     boolean val = true;
 
-    new InstrHttpURLConnection(urlConnection, mTimer, mBuilder).setDoOutput(val);
+    new InstrHttpURLConnection(urlConnection, timer, networkRequestBuilder).setDoOutput(val);
 
     verify(urlConnection).setDoOutput(val);
   }
@@ -614,7 +614,7 @@ public class InstrHttpURLConnectionTest extends FirebasePerformanceTestBase {
     HttpURLConnection urlConnection = mockHttpUrlConnection();
     int val = 200;
 
-    new InstrHttpURLConnection(urlConnection, mTimer, mBuilder).setFixedLengthStreamingMode(val);
+    new InstrHttpURLConnection(urlConnection, timer, networkRequestBuilder).setFixedLengthStreamingMode(val);
 
     verify(urlConnection).setFixedLengthStreamingMode(val);
   }
@@ -624,7 +624,7 @@ public class InstrHttpURLConnectionTest extends FirebasePerformanceTestBase {
     HttpURLConnection urlConnection = mockHttpUrlConnection();
     long val = 142;
 
-    new InstrHttpURLConnection(urlConnection, mTimer, mBuilder).setFixedLengthStreamingMode(val);
+    new InstrHttpURLConnection(urlConnection, timer, networkRequestBuilder).setFixedLengthStreamingMode(val);
 
     verify(urlConnection).setFixedLengthStreamingMode(val);
   }
@@ -634,7 +634,7 @@ public class InstrHttpURLConnectionTest extends FirebasePerformanceTestBase {
     HttpURLConnection urlConnection = mockHttpUrlConnection();
     long val = 72;
 
-    new InstrHttpURLConnection(urlConnection, mTimer, mBuilder).setIfModifiedSince(val);
+    new InstrHttpURLConnection(urlConnection, timer, networkRequestBuilder).setIfModifiedSince(val);
 
     verify(urlConnection).setIfModifiedSince(val);
   }
@@ -644,7 +644,7 @@ public class InstrHttpURLConnectionTest extends FirebasePerformanceTestBase {
     HttpURLConnection urlConnection = mockHttpUrlConnection();
     boolean val = false;
 
-    new InstrHttpURLConnection(urlConnection, mTimer, mBuilder).setInstanceFollowRedirects(val);
+    new InstrHttpURLConnection(urlConnection, timer, networkRequestBuilder).setInstanceFollowRedirects(val);
 
     verify(urlConnection).setInstanceFollowRedirects(val);
   }
@@ -654,7 +654,7 @@ public class InstrHttpURLConnectionTest extends FirebasePerformanceTestBase {
     HttpURLConnection urlConnection = mockHttpUrlConnection();
     int val = 63;
 
-    new InstrHttpURLConnection(urlConnection, mTimer, mBuilder).setReadTimeout(val);
+    new InstrHttpURLConnection(urlConnection, timer, networkRequestBuilder).setReadTimeout(val);
 
     verify(urlConnection).setReadTimeout(val);
   }
@@ -664,7 +664,7 @@ public class InstrHttpURLConnectionTest extends FirebasePerformanceTestBase {
     HttpURLConnection urlConnection = mockHttpUrlConnection();
     String val = "GET";
 
-    new InstrHttpURLConnection(urlConnection, mTimer, mBuilder).setRequestMethod(val);
+    new InstrHttpURLConnection(urlConnection, timer, networkRequestBuilder).setRequestMethod(val);
 
     verify(urlConnection).setRequestMethod(val);
   }
@@ -675,7 +675,7 @@ public class InstrHttpURLConnectionTest extends FirebasePerformanceTestBase {
     String key = "content-length";
     String val = "256";
 
-    new InstrHttpURLConnection(urlConnection, mTimer, mBuilder).setRequestProperty(key, val);
+    new InstrHttpURLConnection(urlConnection, timer, networkRequestBuilder).setRequestProperty(key, val);
 
     verify(urlConnection).setRequestProperty(key, val);
   }
@@ -685,7 +685,7 @@ public class InstrHttpURLConnectionTest extends FirebasePerformanceTestBase {
     HttpURLConnection urlConnection = mockHttpUrlConnection();
     boolean val = true;
 
-    new InstrHttpURLConnection(urlConnection, mTimer, mBuilder).setUseCaches(val);
+    new InstrHttpURLConnection(urlConnection, timer, networkRequestBuilder).setUseCaches(val);
 
     verify(urlConnection).setUseCaches(val);
   }
@@ -696,7 +696,7 @@ public class InstrHttpURLConnectionTest extends FirebasePerformanceTestBase {
     boolean val = true;
     when(urlConnection.usingProxy()).thenReturn(true);
 
-    boolean res = new InstrHttpURLConnection(urlConnection, mTimer, mBuilder).usingProxy();
+    boolean res = new InstrHttpURLConnection(urlConnection, timer, networkRequestBuilder).usingProxy();
 
     assertEquals(val, res);
     verify(urlConnection).usingProxy();
