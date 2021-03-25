@@ -26,10 +26,12 @@ import okhttp3.Response;
 
 /** Instruments the callback for the OkHttp Enqueue function */
 public class InstrumentOkHttpEnqueueCallback implements Callback {
+
   private final Callback callback;
   private final NetworkRequestMetricBuilder networkMetricBuilder;
-  private final long startTimeMicros;
   private final Timer timer;
+
+  private final long startTimeMicros;
 
   public InstrumentOkHttpEnqueueCallback(
       final Callback callback,

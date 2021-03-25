@@ -35,13 +35,14 @@ import java.util.Map;
 class InstrURLConnectionBase {
 
   private static final AndroidLogger logger = AndroidLogger.getInstance();
-
   private static final String USER_AGENT_PROPERTY = "User-Agent";
 
   private final HttpURLConnection httpUrlConnection;
   private final NetworkRequestMetricBuilder networkMetricBuilder;
-  private long timeRequested = -1;
-  private long timeToResponseInitiated = -1;
+
+  private long timeRequestedInMicros = -1;
+  private long timeToResponseInitiatedInMicros = -1;
+
   private final Timer timer;
 
   /**
@@ -59,10 +60,10 @@ class InstrURLConnectionBase {
   }
 
   public void connect() throws IOException {
-    if (timeRequested == -1) {
+    if (timeRequestedInMicros == -1) {
       timer.reset();
-      timeRequested = timer.getMicros();
-      networkMetricBuilder.setRequestStartTimeMicros(timeRequested);
+      timeRequestedInMicros = timer.getMicros();
+      networkMetricBuilder.setRequestStartTimeMicros(timeRequestedInMicros);
     }
     try {
       httpUrlConnection.connect();
@@ -176,9 +177,9 @@ class InstrURLConnectionBase {
 
   public int getResponseCode() throws IOException {
     updateRequestInfo();
-    if (timeToResponseInitiated == -1) {
-      timeToResponseInitiated = timer.getDurationMicros();
-      networkMetricBuilder.setTimeToResponseInitiatedMicros(timeToResponseInitiated);
+    if (timeToResponseInitiatedInMicros == -1) {
+      timeToResponseInitiatedInMicros = timer.getDurationMicros();
+      networkMetricBuilder.setTimeToResponseInitiatedMicros(timeToResponseInitiatedInMicros);
     }
     try {
       final int code = httpUrlConnection.getResponseCode();
@@ -193,9 +194,9 @@ class InstrURLConnectionBase {
 
   public String getResponseMessage() throws IOException {
     updateRequestInfo();
-    if (timeToResponseInitiated == -1) {
-      timeToResponseInitiated = timer.getDurationMicros();
-      networkMetricBuilder.setTimeToResponseInitiatedMicros(timeToResponseInitiated);
+    if (timeToResponseInitiatedInMicros == -1) {
+      timeToResponseInitiatedInMicros = timer.getDurationMicros();
+      networkMetricBuilder.setTimeToResponseInitiatedMicros(timeToResponseInitiatedInMicros);
     }
     try {
       final String message = httpUrlConnection.getResponseMessage();
@@ -441,10 +442,10 @@ class InstrURLConnectionBase {
   }
 
   private void updateRequestInfo() {
-    if (timeRequested == -1) {
+    if (timeRequestedInMicros == -1) {
       timer.reset();
-      timeRequested = timer.getMicros();
-      networkMetricBuilder.setRequestStartTimeMicros(timeRequested);
+      timeRequestedInMicros = timer.getMicros();
+      networkMetricBuilder.setRequestStartTimeMicros(timeRequestedInMicros);
     }
     final String method = getRequestMethod();
     if (method != null) {

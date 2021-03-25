@@ -22,10 +22,12 @@ import java.io.OutputStream;
 /** Instrument the Output Stream Request with UrlConnection */
 public final class InstrHttpOutputStream extends OutputStream {
 
-  private OutputStream outputStream;
-  long bytesWritten = -1;
-  NetworkRequestMetricBuilder networkMetricBuilder;
+  private final OutputStream outputStream;
   private final Timer timer;
+
+  NetworkRequestMetricBuilder networkMetricBuilder;
+
+  long bytesWritten = -1;
 
   public InstrHttpOutputStream(
       final OutputStream outputStream, NetworkRequestMetricBuilder builder, Timer timer) {

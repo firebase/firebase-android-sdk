@@ -22,8 +22,9 @@ import java.util.concurrent.TimeUnit;
 
 /** A Timer class provides both wall-clock (epoch) time and high resolution time (nano time). */
 public class Timer implements Parcelable {
+
   /** Wall-clock time or epoch time in microseconds, */
-  private long time;
+  private long timeInMicros;
   /**
    * High resolution time in nanoseconds. High resolution time should only be used to calculate
    * duration or latency. It is not wall-clock time.
@@ -35,7 +36,7 @@ public class Timer implements Parcelable {
    * com.google.firebase.perf.util.Clock.
    */
   public Timer() {
-    time = TimeUnit.MILLISECONDS.toMicros(System.currentTimeMillis());
+    timeInMicros = TimeUnit.MILLISECONDS.toMicros(System.currentTimeMillis());
     highResTime = System.nanoTime();
   }
 
@@ -47,7 +48,7 @@ public class Timer implements Parcelable {
    */
   @VisibleForTesting
   public Timer(long time) {
-    this.time = time;
+    this.timeInMicros = time;
     highResTime = TimeUnit.MICROSECONDS.toNanos(time);
   }
 
@@ -59,24 +60,24 @@ public class Timer implements Parcelable {
    */
   @VisibleForTesting
   public Timer(long time, long highResTime) {
-    this.time = time;
+    this.timeInMicros = time;
     this.highResTime = highResTime;
   }
 
   private Timer(Parcel in) {
-    time = in.readLong();
+    timeInMicros = in.readLong();
     highResTime = in.readLong();
   }
 
   /** resets the start time */
   public void reset() {
-    time = TimeUnit.MILLISECONDS.toMicros(System.currentTimeMillis());
+    timeInMicros = TimeUnit.MILLISECONDS.toMicros(System.currentTimeMillis());
     highResTime = System.nanoTime();
   }
 
   /** Return wall-clock time in microseconds. */
   public long getMicros() {
-    return time;
+    return timeInMicros;
   }
 
   /**
@@ -110,7 +111,7 @@ public class Timer implements Parcelable {
    *     was created.
    */
   public long getCurrentTimestampMicros() {
-    return time + getDurationMicros();
+    return timeInMicros + getDurationMicros();
   }
 
   /**
@@ -131,7 +132,7 @@ public class Timer implements Parcelable {
    * @param flags always will be the value 0.
    */
   public void writeToParcel(Parcel out, int flags) {
-    out.writeLong(time);
+    out.writeLong(timeInMicros);
     out.writeLong(highResTime);
   }
 

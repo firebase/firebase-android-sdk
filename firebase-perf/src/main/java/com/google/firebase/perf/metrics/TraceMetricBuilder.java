@@ -28,6 +28,7 @@ import java.util.Map;
  */
 /** @hide */
 class TraceMetricBuilder {
+
   private final Trace trace;
 
   TraceMetricBuilder(@NonNull Trace trace) {

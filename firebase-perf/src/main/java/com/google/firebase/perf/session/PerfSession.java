@@ -36,9 +36,10 @@ import java.util.concurrent.TimeUnit;
 /** @hide */
 public class PerfSession implements Parcelable {
 
-  private String sessionId;
-  private boolean gaugeAndEventCollectionEnabled = false;
-  private Timer creationTime;
+  private final String sessionId;
+  private final Timer creationTime;
+
+  private boolean isGaugeAndEventCollectionEnabled = false;
 
   /*
    * Creates a PerfSession object and decides what metrics to collect.
@@ -68,7 +69,7 @@ public class PerfSession implements Parcelable {
   private PerfSession(@NonNull Parcel in) {
     super();
     sessionId = in.readString();
-    gaugeAndEventCollectionEnabled = in.readByte() != 0;
+    isGaugeAndEventCollectionEnabled = in.readByte() != 0;
     creationTime = in.readParcelable(Timer.class.getClassLoader());
   }
 
@@ -88,19 +89,19 @@ public class PerfSession implements Parcelable {
    * Enables/Disables the gauge and event collection for the system.
    */
   public void setGaugeAndEventCollectionEnabled(boolean enabled) {
-    gaugeAndEventCollectionEnabled = enabled;
+    isGaugeAndEventCollectionEnabled = enabled;
   }
 
   /*
    * Returns if gauge and event collection is enabled for the system.
    */
   public boolean isGaugeAndEventCollectionEnabled() {
-    return gaugeAndEventCollectionEnabled;
+    return isGaugeAndEventCollectionEnabled;
   }
 
   /** Returns if the current session is verbose or not. */
   public boolean isVerbose() {
-    return gaugeAndEventCollectionEnabled;
+    return isGaugeAndEventCollectionEnabled;
   }
 
   /** Checks if the current {@link com.google.firebase.perf.v1.PerfSession} is verbose or not. */
@@ -130,7 +131,7 @@ public class PerfSession implements Parcelable {
         com.google.firebase.perf.v1.PerfSession.newBuilder().setSessionId(sessionId);
 
     // If gauge collection is enabled, enable gauge collection verbosity.
-    if (gaugeAndEventCollectionEnabled) {
+    if (isGaugeAndEventCollectionEnabled) {
       sessionMetric.addSessionVerbosity(SessionVerbosity.GAUGES_AND_SYSTEM_EVENTS);
     }
     return sessionMetric.build();
@@ -203,7 +204,7 @@ public class PerfSession implements Parcelable {
    */
   public void writeToParcel(@NonNull Parcel out, int flags) {
     out.writeString(sessionId);
-    out.writeByte((byte) (gaugeAndEventCollectionEnabled ? 1 : 0));
+    out.writeByte((byte) (isGaugeAndEventCollectionEnabled ? 1 : 0));
     out.writeParcelable(creationTime, 0);
   }
 

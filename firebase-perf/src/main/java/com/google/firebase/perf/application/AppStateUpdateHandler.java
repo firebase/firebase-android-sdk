@@ -28,15 +28,16 @@ import java.lang.ref.WeakReference;
 /** @hide */
 public abstract class AppStateUpdateHandler implements AppStateCallback {
 
-  private AppStateMonitor appStateMonitor;
-  private ApplicationProcessState currentAppState =
-      ApplicationProcessState.APPLICATION_PROCESS_STATE_UNKNOWN;
-  private boolean isRegisteredForAppState = false;
+  private final AppStateMonitor appStateMonitor;
   // The weak reference to register/unregister with AppStateMonitor.
   // It must be a weak reference because unregisterForAppState() is called typically from
   // Trace.stop() and user may forget to call Trace.stop(), if it was a strong reference,
   // the registration in AppStateMonitor will prevent Trace to be deallocated.
-  private WeakReference<AppStateCallback> appStateCallback;
+  private final WeakReference<AppStateCallback> appStateCallback;
+
+  private boolean isRegisteredForAppState = false;
+  private ApplicationProcessState currentAppState =
+      ApplicationProcessState.APPLICATION_PROCESS_STATE_UNKNOWN;
 
   /** @hide */
   /** @hide */

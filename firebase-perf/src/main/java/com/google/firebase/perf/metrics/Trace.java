@@ -51,22 +51,24 @@ public class Trace extends AppStateUpdateHandler
   private static final AndroidLogger logger = AndroidLogger.getInstance();
   private static final Map<String, Trace> traceNameToTraceMap = new ConcurrentHashMap<>();
 
+  private final WeakReference<SessionAwareObject> sessionAwareObject = new WeakReference<>(this);
+
   private final Trace parent;
   private final GaugeManager gaugeManager;
   private final String name;
 
+  private final Map<String, Counter> counterNameToCounterMap;
+  private final Map<String, String> customAttributesMap;
+
   // TODO(b/177317027): Consider using a Set to avoid adding same PerfSession object
   private final List<PerfSession> sessions;
-
   private final List<Trace> subtraces;
-  private final Map<String, Counter> counterNameToCounterMap;
-  private final Clock clock;
+
   private final TransportManager transportManager;
-  private final Map<String, String> customAttributesMap;
+  private final Clock clock;
+
   private Timer startTime;
   private Timer endTime;
-
-  private final WeakReference<SessionAwareObject> sessionAwareObject = new WeakReference<>(this);
 
   /** @hide */
   @Override

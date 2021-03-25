@@ -52,7 +52,6 @@ public final class NetworkRequestMetricBuilder extends AppStateUpdateHandler
     implements SessionAwareObject {
 
   private static final AndroidLogger logger = AndroidLogger.getInstance();
-
   private static final char HIGHEST_CONTROL_CHAR = '\u001f';
   private static final char HIGHEST_ASCII_CHAR = '\u007f';
 
@@ -61,15 +60,13 @@ public final class NetworkRequestMetricBuilder extends AppStateUpdateHandler
   private final GaugeManager gaugeManager;
   private final TransportManager transportManager;
 
-  private final NetworkRequestMetric.Builder networkMetricBuilder =
-      NetworkRequestMetric.newBuilder();
+  private final NetworkRequestMetric.Builder builder = NetworkRequestMetric.newBuilder();
+  private final WeakReference<SessionAwareObject> weakReference = new WeakReference<>(this);
 
   @Nullable private String userAgent;
 
   private boolean isReportSent;
   private boolean isManualNetworkRequestMetric;
-
-  private final WeakReference<SessionAwareObject> weakReference = new WeakReference<>(this);
 
   /** @hide */
   @Override
@@ -134,7 +131,7 @@ public final class NetworkRequestMetricBuilder extends AppStateUpdateHandler
       url = Utils.stripSensitiveInfo(url);
 
       // Limits the URL length to 2000 chars.
-      networkMetricBuilder.setUrl(Utils.truncateURL(url, Constants.MAX_URL_LENGTH));
+      builder.setUrl(Utils.truncateURL(url, Constants.MAX_URL_LENGTH));
     }
 
     return this;
@@ -142,7 +139,7 @@ public final class NetworkRequestMetricBuilder extends AppStateUpdateHandler
 
   /** Gets the url for the current {@link NetworkRequestMetric}. */
   public String getUrl() {
-    return networkMetricBuilder.getUrl();
+    return builder.getUrl();
   }
 
   /** Sets the user-agent for the current network request. */
@@ -196,31 +193,31 @@ public final class NetworkRequestMetricBuilder extends AppStateUpdateHandler
           httpMethod = HttpMethod.HTTP_METHOD_UNKNOWN;
           break;
       }
-      networkMetricBuilder.setHttpMethod(httpMethod);
+      builder.setHttpMethod(httpMethod);
     }
     return this;
   }
 
   /** Sets the httpResponseCode for the current {@link NetworkRequestMetric}. */
   public NetworkRequestMetricBuilder setHttpResponseCode(int code) {
-    networkMetricBuilder.setHttpResponseCode(code);
+    builder.setHttpResponseCode(code);
     return this;
   }
 
   /** Answers whether the builder has an HttpResponseCode. */
   public boolean hasHttpResponseCode() {
-    return networkMetricBuilder.hasHttpResponseCode();
+    return builder.hasHttpResponseCode();
   }
 
   /** Sets the requestPayloadBytes for the current {@link NetworkRequestMetric}. */
   public NetworkRequestMetricBuilder setRequestPayloadBytes(long bytes) {
-    networkMetricBuilder.setRequestPayloadBytes(bytes);
+    builder.setRequestPayloadBytes(bytes);
     return this;
   }
 
   /** Sets the customAttributes for the current {@link NetworkRequestMetric}. */
   public NetworkRequestMetricBuilder setCustomAttributes(Map<String, String> attributes) {
-    networkMetricBuilder.clearCustomAttributes().putAllCustomAttributes(attributes);
+    builder.clearCustomAttributes().putAllCustomAttributes(attributes);
     return this;
   }
 
@@ -238,7 +235,7 @@ public final class NetworkRequestMetricBuilder extends AppStateUpdateHandler
     PerfSession perfSession = sessionManager.perfSession();
     SessionManager.getInstance().registerForSessionUpdates(weakReference);
 
-    networkMetricBuilder.setClientStartTimeUs(time);
+    builder.setClientStartTimeUs(time);
     updateSession(perfSession);
 
     if (perfSession.isGaugeAndEventCollectionEnabled()) {
@@ -250,19 +247,19 @@ public final class NetworkRequestMetricBuilder extends AppStateUpdateHandler
 
   /** Sets the timeToRequestCompletedUs for the current {@link NetworkRequestMetric}. */
   public NetworkRequestMetricBuilder setTimeToRequestCompletedMicros(long time) {
-    networkMetricBuilder.setTimeToRequestCompletedUs(time);
+    builder.setTimeToRequestCompletedUs(time);
     return this;
   }
 
   /** Sets the timeToResponseInitiatedUs for the current {@link NetworkRequestMetric}. */
   public NetworkRequestMetricBuilder setTimeToResponseInitiatedMicros(long time) {
-    networkMetricBuilder.setTimeToResponseInitiatedUs(time);
+    builder.setTimeToResponseInitiatedUs(time);
     return this;
   }
 
   /** Gets the timeToResponseInitiatedUs for the current {@link NetworkRequestMetric}. */
   public long getTimeToResponseInitiatedMicros() {
-    return networkMetricBuilder.getTimeToResponseInitiatedUs();
+    return builder.getTimeToResponseInitiatedUs();
   }
 
   /**
@@ -275,7 +272,7 @@ public final class NetworkRequestMetricBuilder extends AppStateUpdateHandler
    * @see PerfSession#isGaugeAndEventCollectionEnabled()
    */
   public NetworkRequestMetricBuilder setTimeToResponseCompletedMicros(long time) {
-    networkMetricBuilder.setTimeToResponseCompletedUs(time);
+    builder.setTimeToResponseCompletedUs(time);
 
     if (SessionManager.getInstance().perfSession().isGaugeAndEventCollectionEnabled()) {
       gaugeManager.collectGaugeMetricOnce(SessionManager.getInstance().perfSession().getTimer());
@@ -286,19 +283,19 @@ public final class NetworkRequestMetricBuilder extends AppStateUpdateHandler
 
   /** Sets the responsePayloadBytes for the current {@link NetworkRequestMetric}. */
   public NetworkRequestMetricBuilder setResponsePayloadBytes(long bytes) {
-    networkMetricBuilder.setResponsePayloadBytes(bytes);
+    builder.setResponsePayloadBytes(bytes);
     return this;
   }
 
   /** Sets the responseContentType for the current {@link NetworkRequestMetric}. */
   public NetworkRequestMetricBuilder setResponseContentType(@Nullable String contentType) {
     if (contentType == null) {
-      networkMetricBuilder.clearResponseContentType();
+      builder.clearResponseContentType();
       return this;
     }
 
     if (isValidContentType(contentType)) {
-      networkMetricBuilder.setResponseContentType(contentType);
+      builder.setResponseContentType(contentType);
     } else {
       logger.info("The content type of the response is not a valid content-type:" + contentType);
     }
@@ -310,7 +307,7 @@ public final class NetworkRequestMetricBuilder extends AppStateUpdateHandler
    * the current {@link NetworkRequestMetric}.
    */
   public NetworkRequestMetricBuilder setNetworkClientErrorReason() {
-    networkMetricBuilder.setNetworkClientErrorReason(NetworkClientErrorReason.GENERIC_CLIENT_ERROR);
+    builder.setNetworkClientErrorReason(NetworkClientErrorReason.GENERIC_CLIENT_ERROR);
     return this;
   }
 
@@ -322,10 +319,10 @@ public final class NetworkRequestMetricBuilder extends AppStateUpdateHandler
     com.google.firebase.perf.v1.PerfSession[] perfSessions =
         PerfSession.buildAndSort(getSessions());
     if (perfSessions != null) {
-      networkMetricBuilder.addAllPerfSessions(Arrays.asList(perfSessions));
+      builder.addAllPerfSessions(Arrays.asList(perfSessions));
     }
 
-    NetworkRequestMetric metric = networkMetricBuilder.build();
+    NetworkRequestMetric metric = builder.build();
 
     if (!isAllowedUserAgent(userAgent)) {
       logger.debug("Dropping network request from a 'User-Agent' that is not allowed");
@@ -349,12 +346,12 @@ public final class NetworkRequestMetricBuilder extends AppStateUpdateHandler
 
   /** Checks if the network request has stopped. */
   private boolean isStopped() {
-    return networkMetricBuilder.hasTimeToResponseCompletedUs();
+    return builder.hasTimeToResponseCompletedUs();
   }
 
   /** Checks if the network request has started. */
   private boolean hasStarted() {
-    return networkMetricBuilder.hasClientStartTimeUs();
+    return builder.hasClientStartTimeUs();
   }
 
   @VisibleForTesting
@@ -384,7 +381,7 @@ public final class NetworkRequestMetricBuilder extends AppStateUpdateHandler
 
   @VisibleForTesting
   void clearBuilderFields() {
-    networkMetricBuilder.clear();
+    builder.clear();
   }
 
   /**

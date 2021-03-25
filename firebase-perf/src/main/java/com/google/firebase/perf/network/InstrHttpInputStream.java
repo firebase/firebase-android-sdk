@@ -25,6 +25,7 @@ public final class InstrHttpInputStream extends InputStream {
   private final InputStream inputStream;
   private final NetworkRequestMetricBuilder networkMetricBuilder;
   private final Timer timer;
+
   private long bytesRead = -1;
   private long timeToResponseInitiated;
   private long timeToResponseLastRead = -1;

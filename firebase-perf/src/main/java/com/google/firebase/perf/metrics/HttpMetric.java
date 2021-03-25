@@ -39,9 +39,10 @@ public class HttpMetric implements FirebasePerformanceAttributable {
 
   private static final AndroidLogger logger = AndroidLogger.getInstance();
 
-  private NetworkRequestMetricBuilder networkMetricBuilder;
-  private Timer timer;
+  private final NetworkRequestMetricBuilder networkMetricBuilder;
+  private final Timer timer;
   private final Map<String, String> customAttributesMap;
+
   private boolean isStopped = false;
   private boolean isDisabled = false;
 

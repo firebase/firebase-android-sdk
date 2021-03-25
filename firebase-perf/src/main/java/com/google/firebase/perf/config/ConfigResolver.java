@@ -55,11 +55,12 @@ import com.google.firebase.perf.util.Utils;
 public class ConfigResolver {
 
   private static final AndroidLogger logger = AndroidLogger.getInstance();
+
   private static volatile ConfigResolver instance;
 
   // Configuration Storage objects.
+  private final RemoteConfigManager remoteConfigManager;
   private ImmutableBundle metadataBundle;
-  private RemoteConfigManager remoteConfigManager;
   private DeviceCacheManager deviceCacheManager;
 
   /**

@@ -53,7 +53,9 @@ import java.util.concurrent.TimeUnit;
  */
 /** @hide */
 public class AppStartTrace implements ActivityLifecycleCallbacks {
+
   private static final long MAX_LATENCY_BEFORE_UI_INIT = TimeUnit.MINUTES.toMicros(1);
+
   private static volatile AppStartTrace instance;
 
   /**

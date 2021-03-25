@@ -45,17 +45,16 @@ import java.util.concurrent.TimeUnit;
  */
 final class RateLimiter {
 
+  /** Gets the sampling and rate limiting configs. */
+  private final ConfigResolver configResolver;
   /** The app's bucket ID for sampling, a number in [0.0f, 1.0f). */
   private final float samplingBucketId;
-
-  /** Enable android logging or not */
-  private boolean isLogcatEnabled = false;
 
   private RateLimiterImpl traceLimiter = null;
   private RateLimiterImpl networkLimiter = null;
 
-  /** Gets the sampling and rate limiting configs. */
-  private final ConfigResolver configResolver;
+  /** Enable android logging or not */
+  private boolean isLogcatEnabled = false;
 
   /**
    * Construct a token bucket rate limiter.
@@ -212,24 +211,26 @@ final class RateLimiter {
   static class RateLimiterImpl {
 
     private static final AndroidLogger logger = AndroidLogger.getInstance();
-
     private static final long MICROS_IN_A_SECOND = TimeUnit.SECONDS.toMicros(1);
 
-    // Token bucket capacity, also the initial number of tokens in the bucket.
-    private long capacity;
-    // Number of new tokens generated per second.
-    private double rate;
+    private final Clock clock;
+    private final boolean isLogcatEnabled;
+
     // Last time a token is consumed.
     private Timer lastTimeTokenConsumed;
+
+    // Number of new tokens generated per second.
+    private double rate;
+    // Token bucket capacity, also the initial number of tokens in the bucket.
+    private long capacity;
     // Number of tokens in the bucket.
     private long tokenCount;
-    private final Clock clock;
 
     private double foregroundRate;
-    private long foregroundCapacity;
     private double backgroundRate;
+
+    private long foregroundCapacity;
     private long backgroundCapacity;
-    private final boolean isLogcatEnabled;
 
     RateLimiterImpl(
         final double rate,

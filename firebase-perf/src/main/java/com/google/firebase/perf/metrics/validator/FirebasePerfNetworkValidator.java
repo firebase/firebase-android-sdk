@@ -28,7 +28,6 @@ import java.net.URI;
 final class FirebasePerfNetworkValidator extends PerfMetricValidator {
 
   private static final AndroidLogger logger = AndroidLogger.getInstance();
-
   private static final String HTTP_SCHEMA = "http";
   private static final String HTTPS = "https";
   // This is the value used by java.net.URI when a port was not specified when a URI is created.

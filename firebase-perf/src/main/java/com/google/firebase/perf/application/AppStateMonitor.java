@@ -55,8 +55,33 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class AppStateMonitor implements ActivityLifecycleCallbacks {
 
   private static final AndroidLogger logger = AndroidLogger.getInstance();
+  private static final String FRAME_METRICS_AGGREGATOR_CLASSNAME =
+      "androidx.core.app.FrameMetricsAggregator";
 
   private static volatile AppStateMonitor instance;
+
+  private final WeakHashMap<Activity, Boolean> activityToResumedMap = new WeakHashMap<>();
+  private final WeakHashMap<Activity, Trace> activityToScreenTraceMap = new WeakHashMap<>();
+  private final Map<String, Long> metricToCountMap = new HashMap<>();
+  private final Set<WeakReference<AppStateCallback>> appStateSubscribers = new HashSet<>();
+
+  /* Count for TRACE_STARTED_NOT_STOPPED */
+  private final AtomicInteger tsnsCount = new AtomicInteger(0);
+
+  private final TransportManager transportManager;
+  private final ConfigResolver configResolver;
+  private final Clock clock;
+
+  private FrameMetricsAggregator frameMetricsAggregator;
+
+  private Timer resumeTime; // The time app comes to foreground
+  private Timer stopTime; // The time app goes to background
+
+  private ApplicationProcessState currentAppState = ApplicationProcessState.BACKGROUND;
+
+  private boolean isRegisteredForLifecycleCallbacks = false;
+  private boolean isColdStart = true;
+  private boolean hasFrameMetricsAggregator = false;
 
   public static AppStateMonitor getInstance() {
     if (instance == null) {
@@ -68,29 +93,6 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
     }
     return instance;
   }
-
-  private static final String FRAME_METRICS_AGGREGATOR_CLASSNAME =
-      "androidx.core.app.FrameMetricsAggregator";
-  private boolean isRegisteredForLifecycleCallbacks = false;
-  private final TransportManager transportManager;
-  private ConfigResolver configResolver;
-  private final Clock clock;
-  private boolean isColdStart = true;
-  private final WeakHashMap<Activity, Boolean> activityToResumedMap = new WeakHashMap<>();
-  private Timer stopTime; // The time app goes to background
-  private Timer resumeTime; // The time app comes to foreground
-  private final Map<String, Long> metricToCountMap = new HashMap<>();
-  /* Count for TRACE_STARTED_NOT_STOPPED */
-  private AtomicInteger tsnsCount = new AtomicInteger(0);
-
-  private ApplicationProcessState currentAppState = ApplicationProcessState.BACKGROUND;
-
-  private Set<WeakReference<AppStateCallback>> appStateSubscribers =
-      new HashSet<WeakReference<AppStateCallback>>();
-
-  private boolean hasFrameMetricsAggregator = false;
-  private FrameMetricsAggregator frameMetricsAggregator;
-  private final WeakHashMap<Activity, Trace> activityToScreenTraceMap = new WeakHashMap<>();
 
   AppStateMonitor(TransportManager transportManager, Clock clock) {
     this.transportManager = transportManager;

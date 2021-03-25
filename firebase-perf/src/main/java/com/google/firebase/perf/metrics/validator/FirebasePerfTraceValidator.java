@@ -26,7 +26,7 @@ final class FirebasePerfTraceValidator extends PerfMetricValidator {
 
   private static final AndroidLogger logger = AndroidLogger.getInstance();
 
-  private TraceMetric traceMetric;
+  private final TraceMetric traceMetric;
 
   FirebasePerfTraceValidator(@NonNull TraceMetric traceMetric) {
     this.traceMetric = traceMetric;

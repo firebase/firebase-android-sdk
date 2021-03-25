@@ -75,15 +75,15 @@ public class CpuGaugeCollector {
   private static final long MICROSECONDS_PER_SECOND = TimeUnit.SECONDS.toMicros(1);
 
   @Nullable private static CpuGaugeCollector instance = null;
-  @Nullable private ScheduledFuture cpuMetricCollectorJob = null;
-
-  private final ScheduledExecutorService cpuMetricCollectorExecutor;
-  private long cpuMetricCollectionRateMs = UNSET_CPU_METRIC_COLLECTION_RATE;
-  private final long clockTicksPerSecond;
-  private final String procFileName;
 
   /* This is populated by CpuGaugeCollector but it's drained by GaugeManager.*/
   public final ConcurrentLinkedQueue<CpuMetricReading> cpuMetricReadings;
+  private final ScheduledExecutorService cpuMetricCollectorExecutor;
+  private final String procFileName;
+  private final long clockTicksPerSecond;
+
+  @Nullable private ScheduledFuture cpuMetricCollectorJob = null;
+  private long cpuMetricCollectionRateMs = UNSET_CPU_METRIC_COLLECTION_RATE;
 
   private CpuGaugeCollector() {
     cpuMetricReadings = new ConcurrentLinkedQueue<>();
