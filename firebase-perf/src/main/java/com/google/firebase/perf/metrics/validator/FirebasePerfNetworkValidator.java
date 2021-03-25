@@ -34,12 +34,12 @@ final class FirebasePerfNetworkValidator extends PerfMetricValidator {
   // This is the value used by java.net.URI when a port was not specified when a URI is created.
   private static final int EMPTY_PORT = -1;
 
-  private final NetworkRequestMetric mNetworkMetric;
-  private final Context context;
+  private final NetworkRequestMetric networkMetric;
+  private final Context appContext;
 
-  FirebasePerfNetworkValidator(NetworkRequestMetric networkRequestMetric, Context context) {
-    this.context = context;
-    mNetworkMetric = networkRequestMetric;
+  FirebasePerfNetworkValidator(NetworkRequestMetric networkRequestMetric, Context appContext) {
+    this.appContext = appContext;
+    networkMetric = networkRequestMetric;
   }
 
   /**
@@ -48,17 +48,17 @@ final class FirebasePerfNetworkValidator extends PerfMetricValidator {
    * @return a boolean which indicates if the trace is valid.
    */
   public boolean isValidPerfMetric() {
-    if (isEmptyUrl(mNetworkMetric.getUrl())) {
-      logger.info("URL is missing:" + mNetworkMetric.getUrl());
+    if (isEmptyUrl(networkMetric.getUrl())) {
+      logger.info("URL is missing:" + networkMetric.getUrl());
       return false;
     }
-    URI uri = getResultUrl(mNetworkMetric.getUrl());
+    URI uri = getResultUrl(networkMetric.getUrl());
     if (uri == null) {
       logger.info("URL cannot be parsed");
       return false;
     }
 
-    if (!isAllowlisted(uri, context)) {
+    if (!isAllowlisted(uri, appContext)) {
       logger.info("URL fails allowlist rule: " + uri);
       return false;
     }
@@ -78,58 +78,57 @@ final class FirebasePerfNetworkValidator extends PerfMetricValidator {
       logger.info("URL port is less than or equal to 0");
       return false;
     }
-    if (!isValidHttpMethod(
-        mNetworkMetric.hasHttpMethod() ? mNetworkMetric.getHttpMethod() : null)) {
-      logger.info("HTTP Method is null or invalid: " + mNetworkMetric.getHttpMethod());
+    if (!isValidHttpMethod(networkMetric.hasHttpMethod() ? networkMetric.getHttpMethod() : null)) {
+      logger.info("HTTP Method is null or invalid: " + networkMetric.getHttpMethod());
       return false;
     }
-    if (mNetworkMetric.hasHttpResponseCode()
-        && !isValidHttpResponseCode(mNetworkMetric.getHttpResponseCode())) {
-      logger.info("HTTP ResponseCode is a negative value:" + mNetworkMetric.getHttpResponseCode());
+    if (networkMetric.hasHttpResponseCode()
+        && !isValidHttpResponseCode(networkMetric.getHttpResponseCode())) {
+      logger.info("HTTP ResponseCode is a negative value:" + networkMetric.getHttpResponseCode());
       return false;
     }
-    if (mNetworkMetric.hasRequestPayloadBytes()
-        && !isValidPayload(mNetworkMetric.getRequestPayloadBytes())) {
-      logger.info("Request Payload is a negative value:" + mNetworkMetric.getRequestPayloadBytes());
+    if (networkMetric.hasRequestPayloadBytes()
+        && !isValidPayload(networkMetric.getRequestPayloadBytes())) {
+      logger.info("Request Payload is a negative value:" + networkMetric.getRequestPayloadBytes());
       return false;
     }
-    if (mNetworkMetric.hasResponsePayloadBytes()
-        && !isValidPayload(mNetworkMetric.getResponsePayloadBytes())) {
+    if (networkMetric.hasResponsePayloadBytes()
+        && !isValidPayload(networkMetric.getResponsePayloadBytes())) {
       logger.info(
-          "Response Payload is a negative value:" + mNetworkMetric.getResponsePayloadBytes());
+          "Response Payload is a negative value:" + networkMetric.getResponsePayloadBytes());
       return false;
     }
-    if (!mNetworkMetric.hasClientStartTimeUs() || mNetworkMetric.getClientStartTimeUs() <= 0) {
+    if (!networkMetric.hasClientStartTimeUs() || networkMetric.getClientStartTimeUs() <= 0) {
       logger.info(
           "Start time of the request is null, or zero, or a negative value:"
-              + mNetworkMetric.getClientStartTimeUs());
+              + networkMetric.getClientStartTimeUs());
       return false;
     }
-    if (mNetworkMetric.hasTimeToRequestCompletedUs()
-        && !isValidTime(mNetworkMetric.getTimeToRequestCompletedUs())) {
+    if (networkMetric.hasTimeToRequestCompletedUs()
+        && !isValidTime(networkMetric.getTimeToRequestCompletedUs())) {
       logger.info(
           "Time to complete the request is a negative value:"
-              + mNetworkMetric.getTimeToRequestCompletedUs());
+              + networkMetric.getTimeToRequestCompletedUs());
       return false;
     }
-    if (mNetworkMetric.hasTimeToResponseInitiatedUs()
-        && !isValidTime(mNetworkMetric.getTimeToResponseInitiatedUs())) {
+    if (networkMetric.hasTimeToResponseInitiatedUs()
+        && !isValidTime(networkMetric.getTimeToResponseInitiatedUs())) {
       logger.info(
           "Time from the start of the request to the start of the response is null or a "
               + "negative value:"
-              + mNetworkMetric.getTimeToResponseInitiatedUs());
+              + networkMetric.getTimeToResponseInitiatedUs());
       return false;
     }
-    if (!mNetworkMetric.hasTimeToResponseCompletedUs()
-        || mNetworkMetric.getTimeToResponseCompletedUs() <= 0) {
+    if (!networkMetric.hasTimeToResponseCompletedUs()
+        || networkMetric.getTimeToResponseCompletedUs() <= 0) {
       logger.info(
           "Time from the start of the request to the end of the response is null, negative or "
               + "zero:"
-              + mNetworkMetric.getTimeToResponseCompletedUs());
+              + networkMetric.getTimeToResponseCompletedUs());
       return false;
     }
     // Don't log any requests with a connection error set
-    if (!mNetworkMetric.hasHttpResponseCode()) {
+    if (!networkMetric.hasHttpResponseCode()) {
       logger.info("Did not receive a HTTP Response Code");
       return false;
     }

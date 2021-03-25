@@ -55,7 +55,7 @@ import com.google.firebase.perf.util.Utils;
 public class ConfigResolver {
 
   private static final AndroidLogger logger = AndroidLogger.getInstance();
-  private static volatile ConfigResolver configResolver;
+  private static volatile ConfigResolver instance;
 
   // Configuration Storage objects.
   private ImmutableBundle metadataBundle;
@@ -82,15 +82,15 @@ public class ConfigResolver {
   }
 
   public static synchronized ConfigResolver getInstance() {
-    if (configResolver == null) {
-      configResolver = new ConfigResolver(null, null, null);
+    if (instance == null) {
+      instance = new ConfigResolver(null, null, null);
     }
-    return configResolver;
+    return instance;
   }
 
   @VisibleForTesting
   public static void clearInstance() {
-    configResolver = null;
+    instance = null;
   }
 
   @VisibleForTesting
@@ -102,9 +102,9 @@ public class ConfigResolver {
     setApplicationContext(context.getApplicationContext());
   }
 
-  public void setApplicationContext(Context context) {
-    logger.setLogcatEnabled(Utils.isDebugLoggingEnabled(context));
-    deviceCacheManager.setContext(context);
+  public void setApplicationContext(Context appContext) {
+    logger.setLogcatEnabled(Utils.isDebugLoggingEnabled(appContext));
+    deviceCacheManager.setContext(appContext);
   }
 
   public void setMetadataBundle(ImmutableBundle bundle) {

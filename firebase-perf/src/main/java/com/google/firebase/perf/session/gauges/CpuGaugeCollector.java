@@ -74,7 +74,7 @@ public class CpuGaugeCollector {
   // This utility isn't provided by TimeUnits.SECONDS.toMicros() - it only accepts longs.
   private static final long MICROSECONDS_PER_SECOND = TimeUnit.SECONDS.toMicros(1);
 
-  @Nullable private static CpuGaugeCollector sharedInstance = null;
+  @Nullable private static CpuGaugeCollector instance = null;
   @Nullable private ScheduledFuture cpuMetricCollectorJob = null;
 
   private final ScheduledExecutorService cpuMetricCollectorExecutor;
@@ -108,10 +108,10 @@ public class CpuGaugeCollector {
 
   /** Returns the singleton instance of this class. */
   public static CpuGaugeCollector getInstance() {
-    if (sharedInstance == null) {
-      sharedInstance = new CpuGaugeCollector();
+    if (instance == null) {
+      instance = new CpuGaugeCollector();
     }
-    return sharedInstance;
+    return instance;
   }
 
   /**

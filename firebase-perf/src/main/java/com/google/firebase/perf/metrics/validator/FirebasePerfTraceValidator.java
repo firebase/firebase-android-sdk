@@ -26,10 +26,10 @@ final class FirebasePerfTraceValidator extends PerfMetricValidator {
 
   private static final AndroidLogger logger = AndroidLogger.getInstance();
 
-  private TraceMetric mTraceMetric;
+  private TraceMetric traceMetric;
 
   FirebasePerfTraceValidator(@NonNull TraceMetric traceMetric) {
-    mTraceMetric = traceMetric;
+    this.traceMetric = traceMetric;
   }
 
   /**
@@ -39,14 +39,14 @@ final class FirebasePerfTraceValidator extends PerfMetricValidator {
    * @return a boolean which indicates if the trace is valid.
    */
   public boolean isValidPerfMetric() {
-    if (!isValidTrace(mTraceMetric, 0)) {
-      logger.warn("Invalid Trace:" + mTraceMetric.getName());
+    if (!isValidTrace(traceMetric, 0)) {
+      logger.warn("Invalid Trace:" + traceMetric.getName());
       return false;
     }
 
-    if (hasCounters(mTraceMetric)) {
-      if (!areCountersValid(mTraceMetric)) {
-        logger.warn("Invalid Counters for Trace:" + mTraceMetric.getName());
+    if (hasCounters(traceMetric)) {
+      if (!areCountersValid(traceMetric)) {
+        logger.warn("Invalid Counters for Trace:" + traceMetric.getName());
         return false;
       }
     }

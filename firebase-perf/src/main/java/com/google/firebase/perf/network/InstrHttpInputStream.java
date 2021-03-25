@@ -22,12 +22,12 @@ import java.io.InputStream;
 /** Instrument the Input Stream Response with UrlConnection */
 public final class InstrHttpInputStream extends InputStream {
 
-  private final InputStream mInputStream;
-  private final NetworkRequestMetricBuilder mBuilder;
-  private final Timer mTimer;
-  private long mBytesRead = -1;
-  private long mTimeToResponseInitiated;
-  private long mTimeToResponseLastRead = -1;
+  private final InputStream inputStream;
+  private final NetworkRequestMetricBuilder metricBuilder;
+  private final Timer timer;
+  private long bytesRead = -1;
+  private long timeToResponseInitiated;
+  private long timeToResponseLastRead = -1;
 
   /**
    * Instrumented inputStream object
@@ -38,78 +38,78 @@ public final class InstrHttpInputStream extends InputStream {
    */
   public InstrHttpInputStream(
       final InputStream inputStream, final NetworkRequestMetricBuilder builder, Timer timer) {
-    mTimer = timer;
-    mInputStream = inputStream;
-    mBuilder = builder;
-    mTimeToResponseInitiated = mBuilder.getTimeToResponseInitiatedMicros();
+    this.timer = timer;
+    this.inputStream = inputStream;
+    metricBuilder = builder;
+    timeToResponseInitiated = metricBuilder.getTimeToResponseInitiatedMicros();
   }
 
   @Override
   public int available() throws IOException {
     try {
-      return mInputStream.available();
+      return inputStream.available();
     } catch (final IOException e) {
-      mBuilder.setTimeToResponseCompletedMicros(mTimer.getDurationMicros());
-      NetworkRequestMetricBuilderUtil.logError(mBuilder);
+      metricBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
+      NetworkRequestMetricBuilderUtil.logError(metricBuilder);
       throw e;
     }
   }
 
   @Override
   public void close() throws IOException {
-    long tempTime = mTimer.getDurationMicros();
-    if (mTimeToResponseLastRead == -1) {
-      mTimeToResponseLastRead = tempTime;
+    long tempTime = timer.getDurationMicros();
+    if (timeToResponseLastRead == -1) {
+      timeToResponseLastRead = tempTime;
     }
 
     try {
-      mInputStream.close();
-      if (mBytesRead != -1) {
-        mBuilder.setResponsePayloadBytes(mBytesRead);
+      inputStream.close();
+      if (bytesRead != -1) {
+        metricBuilder.setResponsePayloadBytes(bytesRead);
       }
-      if (mTimeToResponseInitiated != -1) {
-        mBuilder.setTimeToResponseInitiatedMicros(mTimeToResponseInitiated);
+      if (timeToResponseInitiated != -1) {
+        metricBuilder.setTimeToResponseInitiatedMicros(timeToResponseInitiated);
       }
 
-      mBuilder.setTimeToResponseCompletedMicros(mTimeToResponseLastRead);
-      mBuilder.build();
+      metricBuilder.setTimeToResponseCompletedMicros(timeToResponseLastRead);
+      metricBuilder.build();
     } catch (final IOException e) {
-      mBuilder.setTimeToResponseCompletedMicros(mTimer.getDurationMicros());
-      NetworkRequestMetricBuilderUtil.logError(mBuilder);
+      metricBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
+      NetworkRequestMetricBuilderUtil.logError(metricBuilder);
       throw e;
     }
   }
 
   @Override
   public void mark(final int readlimit) {
-    mInputStream.mark(readlimit);
+    inputStream.mark(readlimit);
   }
 
   @Override
   public boolean markSupported() {
-    return mInputStream.markSupported();
+    return inputStream.markSupported();
   }
 
   @Override
   public int read() throws IOException {
     try {
-      final int bytesRead = mInputStream.read();
-      long tempTime = mTimer.getDurationMicros();
-      if (mTimeToResponseInitiated == -1) {
-        mTimeToResponseInitiated = tempTime;
+      final int bytesRead = inputStream.read();
+      long tempTime = timer.getDurationMicros();
+      if (timeToResponseInitiated == -1) {
+        timeToResponseInitiated = tempTime;
       }
-      if (bytesRead == -1 && mTimeToResponseLastRead == -1) {
-        mTimeToResponseLastRead = tempTime;
-        mBuilder.setTimeToResponseCompletedMicros(mTimeToResponseLastRead);
-        mBuilder.build();
+      if (bytesRead == -1 && timeToResponseLastRead == -1) {
+        timeToResponseLastRead = tempTime;
+        metricBuilder.setTimeToResponseCompletedMicros(timeToResponseLastRead);
+        metricBuilder.build();
       } else {
-        mBytesRead++;
-        mBuilder.setResponsePayloadBytes(mBytesRead);
+        this.bytesRead++;
+        metricBuilder.setResponsePayloadBytes(this.bytesRead);
       }
       return bytesRead;
     } catch (final IOException e) {
-      mBuilder.setTimeToResponseCompletedMicros(mTimer.getDurationMicros());
-      NetworkRequestMetricBuilderUtil.logError(mBuilder);
+      metricBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
+      NetworkRequestMetricBuilderUtil.logError(metricBuilder);
       throw e;
     }
   }
@@ -118,23 +118,23 @@ public final class InstrHttpInputStream extends InputStream {
   public int read(final byte[] buffer, final int byteOffset, final int byteCount)
       throws IOException {
     try {
-      final int bytesRead = mInputStream.read(buffer, byteOffset, byteCount);
-      long tempTime = mTimer.getDurationMicros();
-      if (mTimeToResponseInitiated == -1) {
-        mTimeToResponseInitiated = tempTime;
+      final int bytesRead = inputStream.read(buffer, byteOffset, byteCount);
+      long tempTime = timer.getDurationMicros();
+      if (timeToResponseInitiated == -1) {
+        timeToResponseInitiated = tempTime;
       }
-      if (bytesRead == -1 && mTimeToResponseLastRead == -1) {
-        mTimeToResponseLastRead = tempTime;
-        mBuilder.setTimeToResponseCompletedMicros(mTimeToResponseLastRead);
-        mBuilder.build();
+      if (bytesRead == -1 && timeToResponseLastRead == -1) {
+        timeToResponseLastRead = tempTime;
+        metricBuilder.setTimeToResponseCompletedMicros(timeToResponseLastRead);
+        metricBuilder.build();
       } else {
-        mBytesRead += bytesRead;
-        mBuilder.setResponsePayloadBytes(mBytesRead);
+        this.bytesRead += bytesRead;
+        metricBuilder.setResponsePayloadBytes(this.bytesRead);
       }
       return bytesRead;
     } catch (final IOException e) {
-      mBuilder.setTimeToResponseCompletedMicros(mTimer.getDurationMicros());
-      NetworkRequestMetricBuilderUtil.logError(mBuilder);
+      metricBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
+      NetworkRequestMetricBuilderUtil.logError(metricBuilder);
       throw e;
     }
   }
@@ -142,23 +142,23 @@ public final class InstrHttpInputStream extends InputStream {
   @Override
   public int read(final byte[] buffer) throws IOException {
     try {
-      final int bytesRead = mInputStream.read(buffer);
-      long tempTime = mTimer.getDurationMicros();
-      if (mTimeToResponseInitiated == -1) {
-        mTimeToResponseInitiated = tempTime;
+      final int bytesRead = inputStream.read(buffer);
+      long tempTime = timer.getDurationMicros();
+      if (timeToResponseInitiated == -1) {
+        timeToResponseInitiated = tempTime;
       }
-      if (bytesRead == -1 && mTimeToResponseLastRead == -1) {
-        mTimeToResponseLastRead = tempTime;
-        mBuilder.setTimeToResponseCompletedMicros(mTimeToResponseLastRead);
-        mBuilder.build();
+      if (bytesRead == -1 && timeToResponseLastRead == -1) {
+        timeToResponseLastRead = tempTime;
+        metricBuilder.setTimeToResponseCompletedMicros(timeToResponseLastRead);
+        metricBuilder.build();
       } else {
-        mBytesRead += bytesRead;
-        mBuilder.setResponsePayloadBytes(mBytesRead);
+        this.bytesRead += bytesRead;
+        metricBuilder.setResponsePayloadBytes(this.bytesRead);
       }
       return bytesRead;
     } catch (final IOException e) {
-      mBuilder.setTimeToResponseCompletedMicros(mTimer.getDurationMicros());
-      NetworkRequestMetricBuilderUtil.logError(mBuilder);
+      metricBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
+      NetworkRequestMetricBuilderUtil.logError(metricBuilder);
       throw e;
     }
   }
@@ -166,10 +166,10 @@ public final class InstrHttpInputStream extends InputStream {
   @Override
   public void reset() throws IOException {
     try {
-      mInputStream.reset();
+      inputStream.reset();
     } catch (final IOException e) {
-      mBuilder.setTimeToResponseCompletedMicros(mTimer.getDurationMicros());
-      NetworkRequestMetricBuilderUtil.logError(mBuilder);
+      metricBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
+      NetworkRequestMetricBuilderUtil.logError(metricBuilder);
       throw e;
     }
   }
@@ -177,22 +177,22 @@ public final class InstrHttpInputStream extends InputStream {
   @Override
   public long skip(final long byteCount) throws IOException {
     try {
-      final long skipped = mInputStream.skip(byteCount);
-      long tempTime = mTimer.getDurationMicros();
-      if (mTimeToResponseInitiated == -1) {
-        mTimeToResponseInitiated = tempTime;
+      final long skipped = inputStream.skip(byteCount);
+      long tempTime = timer.getDurationMicros();
+      if (timeToResponseInitiated == -1) {
+        timeToResponseInitiated = tempTime;
       }
-      if (skipped == -1 && mTimeToResponseLastRead == -1) {
-        mTimeToResponseLastRead = tempTime;
-        mBuilder.setTimeToResponseCompletedMicros(mTimeToResponseLastRead);
+      if (skipped == -1 && timeToResponseLastRead == -1) {
+        timeToResponseLastRead = tempTime;
+        metricBuilder.setTimeToResponseCompletedMicros(timeToResponseLastRead);
       } else {
-        mBytesRead += skipped;
-        mBuilder.setResponsePayloadBytes(mBytesRead);
+        bytesRead += skipped;
+        metricBuilder.setResponsePayloadBytes(bytesRead);
       }
       return skipped;
     } catch (final IOException e) {
-      mBuilder.setTimeToResponseCompletedMicros(mTimer.getDurationMicros());
-      NetworkRequestMetricBuilderUtil.logError(mBuilder);
+      metricBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
+      NetworkRequestMetricBuilderUtil.logError(metricBuilder);
       throw e;
     }
   }

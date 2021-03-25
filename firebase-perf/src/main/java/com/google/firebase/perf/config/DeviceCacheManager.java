@@ -69,12 +69,12 @@ public class DeviceCacheManager {
    * This method returns immediately without waiting for the getSharedPreferences call to be
    * complete.
    */
-  public synchronized void setContext(Context context) {
-    if (sharedPref == null && context != null) {
+  public synchronized void setContext(Context appContext) {
+    if (sharedPref == null && appContext != null) {
       serialExecutor.execute(
           () -> {
-            if (sharedPref == null && context != null) {
-              this.sharedPref = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+            if (sharedPref == null && appContext != null) {
+              this.sharedPref = appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
             }
           });
     }

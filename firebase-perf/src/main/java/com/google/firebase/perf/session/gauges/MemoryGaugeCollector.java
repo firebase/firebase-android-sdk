@@ -44,7 +44,7 @@ public class MemoryGaugeCollector {
   private static final AndroidLogger logger = AndroidLogger.getInstance();
 
   @SuppressLint("StaticFieldLeak")
-  private static final MemoryGaugeCollector sharedInstance = new MemoryGaugeCollector();
+  private static final MemoryGaugeCollector instance = new MemoryGaugeCollector();
 
   public static final long INVALID_MEMORY_COLLECTION_FREQUENCY = -1;
 
@@ -76,7 +76,7 @@ public class MemoryGaugeCollector {
 
   /** Returns the singleton instance of this class. */
   public static MemoryGaugeCollector getInstance() {
-    return sharedInstance;
+    return instance;
   }
 
   /**

@@ -467,9 +467,10 @@ public class TransportManager implements AppStateCallback {
    * https://developer.android.com/guide/topics/manifest/manifest-element#vname) of the android
    * application.
    */
-  private static String getVersionName(final Context context) {
+  private static String getVersionName(final Context appContext) {
     try {
-      PackageInfo pi = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
+      PackageInfo pi =
+          appContext.getPackageManager().getPackageInfo(appContext.getPackageName(), 0);
       return pi.versionName == null ? "" : pi.versionName;
     } catch (NameNotFoundException e) {
       return "";
