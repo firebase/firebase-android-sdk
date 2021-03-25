@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 /** Fake executor service that simply executes the runnable in the same thread. */
 public class FakeDirectExecutorService extends AbstractExecutorService {
 
-  private boolean shutdown = false;
+  private boolean isShutdown = false;
 
   public void execute(Runnable command) {
     command.run();
@@ -34,22 +34,22 @@ public class FakeDirectExecutorService extends AbstractExecutorService {
 
   @Override
   public boolean isShutdown() {
-    return shutdown;
+    return isShutdown;
   }
 
   @Override
   public void shutdown() {
-    shutdown = true;
+    isShutdown = true;
   }
 
   @Override
   public List<Runnable> shutdownNow() {
-    shutdown = true;
+    isShutdown = true;
     return Arrays.asList();
   }
 
   @Override
   public boolean isTerminated() {
-    return shutdown;
+    return isShutdown;
   }
 }

@@ -108,7 +108,6 @@ public class TransportManager implements AppStateCallback {
       new ConcurrentLinkedQueue<>();
 
   private final AtomicBoolean isTransportInitialized = new AtomicBoolean(false);
-  private final ApplicationInfo.Builder applicationInfoBuilder;
 
   private FirebaseApp firebaseApp;
   @Nullable private FirebasePerformance firebasePerformance;
@@ -120,6 +119,7 @@ public class TransportManager implements AppStateCallback {
   private ConfigResolver configResolver;
   private RateLimiter rateLimiter;
   private AppStateMonitor appStateMonitor;
+  private ApplicationInfo.Builder applicationInfoBuilder;
 
   private boolean isForegroundState = false;
 
@@ -135,8 +135,6 @@ public class TransportManager implements AppStateCallback {
             /* keepAliveTime= */ 10,
             TimeUnit.SECONDS,
             new LinkedBlockingQueue<>());
-
-    this.applicationInfoBuilder = ApplicationInfo.newBuilder();
 
     cacheMap = new ConcurrentHashMap<>();
     cacheMap.put(KEY_AVAILABLE_TRACES_FOR_CACHING, MAX_TRACE_METRICS_CACHE_SIZE);
@@ -219,6 +217,7 @@ public class TransportManager implements AppStateCallback {
   private void finishInitialization() {
     appStateMonitor.registerForAppState(new WeakReference<>(instance));
 
+    applicationInfoBuilder = ApplicationInfo.newBuilder();
     applicationInfoBuilder
         .setGoogleAppId(firebaseApp.getOptions().getApplicationId())
         .setAndroidAppInfo(

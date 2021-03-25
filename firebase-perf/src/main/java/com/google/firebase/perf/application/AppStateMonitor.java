@@ -64,6 +64,7 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
   private final WeakHashMap<Activity, Trace> activityToScreenTraceMap = new WeakHashMap<>();
   private final Map<String, Long> metricToCountMap = new HashMap<>();
   private final Set<WeakReference<AppStateCallback>> appStateSubscribers = new HashSet<>();
+  private Set<AppColdStartCallback> appColdStartSubscribers = new HashSet<>();
 
   /* Count for TRACE_STARTED_NOT_STOPPED */
   private final AtomicInteger tsnsCount = new AtomicInteger(0);
@@ -208,6 +209,7 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
       updateAppState(ApplicationProcessState.FOREGROUND);
       if (isColdStart) {
         // case 1: app startup.
+        sendAppColdStartUpdate();
         isColdStart = false;
       } else {
         // case 2: app switch from background to foreground.
@@ -234,32 +236,45 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
   }
 
   /**
-   * Register a client to receive app state update.
+   * Register a subscriber to receive app state update.
    *
    * @param client an AppStateCallback instance.
    * @hide
    */
   /** @hide */
-  public void registerForAppState(WeakReference<AppStateCallback> client) {
+  public void registerForAppState(WeakReference<AppStateCallback> subscriber) {
     synchronized (appStateSubscribers) {
-      appStateSubscribers.add(client);
+      appStateSubscribers.add(subscriber);
     }
   }
 
   /**
-   * Unregister the client to stop receiving app state update.
+   * Unregister the subscriber to stop receiving app state update.
    *
-   * @param client an AppStateCallback instance.
+   * @param subscriber an AppStateCallback instance.
    * @hide
    */
   /** @hide */
-  public void unregisterForAppState(WeakReference<AppStateCallback> client) {
+  public void unregisterForAppState(WeakReference<AppStateCallback> subscriber) {
     synchronized (appStateSubscribers) {
-      appStateSubscribers.remove(client);
+      appStateSubscribers.remove(subscriber);
     }
   }
 
-  /** Send update state update to registered clients. */
+  /**
+   * Register a subscriber to receive app cold start update.
+   *
+   * @param subscriber the {@link AppColdStartCallback} instance.
+   * @hide
+   */
+  /** @hide */
+  public void registerForAppColdStart(AppColdStartCallback subscriber) {
+    synchronized (appStateSubscribers) {
+      appColdStartSubscribers.add(subscriber);
+    }
+  }
+
+  /** Send update state update to registered subscribers. */
   private void updateAppState(ApplicationProcessState newState) {
     currentAppState = newState;
     synchronized (appStateSubscribers) {
@@ -272,6 +287,18 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
           // The object pointing by WeakReference has already been garbage collected.
           // Remove it from the Set.
           i.remove();
+        }
+      }
+    }
+  }
+
+  /** Send cold start update to registered subscribers. */
+  private void sendAppColdStartUpdate() {
+    synchronized (appStateSubscribers) {
+      for (Iterator<AppColdStartCallback> i = appColdStartSubscribers.iterator(); i.hasNext(); ) {
+        AppColdStartCallback callback = i.next();
+        if (callback != null) {
+          callback.onAppColdStart();
         }
       }
     }
@@ -426,7 +453,7 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
   }
 
   /**
-   * An interface to be implemented by clients which needs to receive app state update.
+   * An interface to be implemented by subscribers which needs to receive app state update.
    *
    * @hide
    */
@@ -435,6 +462,15 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
     /** @hide */
     /** @hide */
     public void onUpdateAppState(ApplicationProcessState newState);
+  }
+
+  /**
+   * An interface to be implemented by subscribers which needs to receive app cold start update.
+   *
+   * @hide
+   */
+  public static interface AppColdStartCallback {
+    public void onAppColdStart();
   }
 
   /**

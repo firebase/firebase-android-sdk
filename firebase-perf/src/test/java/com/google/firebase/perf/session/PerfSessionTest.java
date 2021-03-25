@@ -53,8 +53,8 @@ public class PerfSessionTest extends FirebasePerformanceTestBase {
     DeviceCacheManager.clearInstance();
     ConfigResolver.clearInstance();
 
-    context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().clear().commit();
-    ConfigResolver.getInstance().setApplicationContext(context);
+    appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().clear().commit();
+    ConfigResolver.getInstance().setApplicationContext(appContext);
   }
 
   @Test
