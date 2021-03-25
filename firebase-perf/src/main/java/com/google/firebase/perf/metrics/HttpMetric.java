@@ -39,7 +39,7 @@ public class HttpMetric implements FirebasePerformanceAttributable {
 
   private static final AndroidLogger logger = AndroidLogger.getInstance();
 
-  private NetworkRequestMetricBuilder metricBuilder;
+  private NetworkRequestMetricBuilder networkRequestBuilder;
   private Timer timer;
   private final Map<String, String> customAttributesMap;
   private boolean isStopped = false;
@@ -56,9 +56,9 @@ public class HttpMetric implements FirebasePerformanceAttributable {
     customAttributesMap = new ConcurrentHashMap<>();
     this.timer = timer;
 
-    metricBuilder =
+    networkRequestBuilder =
         NetworkRequestMetricBuilder.builder(transportManager).setUrl(url).setHttpMethod(httpMethod);
-    metricBuilder.setManualNetworkRequestMetric();
+    networkRequestBuilder.setManualNetworkRequestMetric();
 
     if (!ConfigResolver.getInstance().isPerformanceMonitoringEnabled()) {
       logger.info("HttpMetric feature is disabled. URL %s", url);
@@ -83,7 +83,7 @@ public class HttpMetric implements FirebasePerformanceAttributable {
    * @param responseCode valid values are greater than 0. Invalid usage will be logged.
    */
   public void setHttpResponseCode(int responseCode) {
-    metricBuilder.setHttpResponseCode(responseCode);
+    networkRequestBuilder.setHttpResponseCode(responseCode);
   }
 
   /**
@@ -92,7 +92,7 @@ public class HttpMetric implements FirebasePerformanceAttributable {
    * @param bytes valid values are greater than or equal to 0. Invalid usage will be logged.
    */
   public void setRequestPayloadSize(long bytes) {
-    metricBuilder.setRequestPayloadBytes(bytes);
+    networkRequestBuilder.setRequestPayloadBytes(bytes);
   }
 
   /**
@@ -101,7 +101,7 @@ public class HttpMetric implements FirebasePerformanceAttributable {
    * @param bytes valid values are greater than or equal to 0. Invalid usage will be logged.
    */
   public void setResponsePayloadSize(long bytes) {
-    metricBuilder.setResponsePayloadBytes(bytes);
+    networkRequestBuilder.setResponsePayloadBytes(bytes);
   }
 
   /**
@@ -110,13 +110,13 @@ public class HttpMetric implements FirebasePerformanceAttributable {
    * @param contentType valid string of MIME type. Invalid usage will be logged.
    */
   public void setResponseContentType(@Nullable String contentType) {
-    metricBuilder.setResponseContentType(contentType);
+    networkRequestBuilder.setResponseContentType(contentType);
   }
 
   /** Marks the start time of the request */
   public void start() {
     timer.reset();
-    metricBuilder.setRequestStartTimeMicros(timer.getMicros());
+    networkRequestBuilder.setRequestStartTimeMicros(timer.getMicros());
   }
 
   /**
@@ -126,7 +126,7 @@ public class HttpMetric implements FirebasePerformanceAttributable {
    */
   /** @hide */
   public void markRequestComplete() {
-    metricBuilder.setTimeToRequestCompletedMicros(timer.getDurationMicros());
+    networkRequestBuilder.setTimeToRequestCompletedMicros(timer.getDurationMicros());
   }
 
   /**
@@ -136,7 +136,7 @@ public class HttpMetric implements FirebasePerformanceAttributable {
    */
   /** @hide */
   public void markResponseStart() {
-    metricBuilder.setTimeToResponseInitiatedMicros(timer.getDurationMicros());
+    networkRequestBuilder.setTimeToResponseInitiatedMicros(timer.getDurationMicros());
   }
 
   /**
@@ -148,7 +148,7 @@ public class HttpMetric implements FirebasePerformanceAttributable {
       return;
     }
 
-    metricBuilder
+    networkRequestBuilder
         .setTimeToResponseCompletedMicros(timer.getDurationMicros())
         .setCustomAttributes(customAttributesMap)
         .build();
@@ -173,7 +173,7 @@ public class HttpMetric implements FirebasePerformanceAttributable {
       checkAttribute(attribute, value);
       logger.debug(
           "Setting attribute '%s' to %s on network request '%s'",
-          attribute, value, metricBuilder.getUrl());
+          attribute, value, networkRequestBuilder.getUrl());
     } catch (Exception e) {
       logger.error(
           "Cannot set attribute '%s' with value '%s' (%s)", attribute, value, e.getMessage());

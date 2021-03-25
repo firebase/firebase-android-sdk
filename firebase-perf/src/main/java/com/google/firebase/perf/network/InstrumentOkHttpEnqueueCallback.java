@@ -27,7 +27,7 @@ import okhttp3.Response;
 /** Instruments the callback for the OkHttp Enqueue function */
 public class InstrumentOkHttpEnqueueCallback implements Callback {
   private final Callback callback;
-  private final NetworkRequestMetricBuilder metricBuilder;
+  private final NetworkRequestMetricBuilder networkRequestBuilder;
   private final long startTimeMicros;
   private final Timer timer;
 
@@ -37,7 +37,7 @@ public class InstrumentOkHttpEnqueueCallback implements Callback {
       Timer timer,
       long startTime) {
     this.callback = callback;
-    metricBuilder = NetworkRequestMetricBuilder.builder(transportManager);
+    networkRequestBuilder = NetworkRequestMetricBuilder.builder(transportManager);
     startTimeMicros = startTime;
     this.timer = timer;
   }
@@ -48,16 +48,16 @@ public class InstrumentOkHttpEnqueueCallback implements Callback {
     if (request != null) {
       HttpUrl url = request.url();
       if (url != null) {
-        metricBuilder.setUrl(url.url().toString());
+        networkRequestBuilder.setUrl(url.url().toString());
       }
       String method = request.method();
       if (method != null) {
-        metricBuilder.setHttpMethod(request.method());
+        networkRequestBuilder.setHttpMethod(request.method());
       }
     }
-    metricBuilder.setRequestStartTimeMicros(startTimeMicros);
-    metricBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
-    NetworkRequestMetricBuilderUtil.logError(metricBuilder);
+    networkRequestBuilder.setRequestStartTimeMicros(startTimeMicros);
+    networkRequestBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
+    NetworkRequestMetricBuilderUtil.logError(networkRequestBuilder);
     callback.onFailure(call, e);
   }
 
@@ -65,7 +65,7 @@ public class InstrumentOkHttpEnqueueCallback implements Callback {
   public void onResponse(Call call, Response response) throws IOException {
     long responseCompletedTimeMicros = timer.getDurationMicros();
     FirebasePerfOkHttpClient.sendNetworkMetric(
-        response, metricBuilder, startTimeMicros, responseCompletedTimeMicros);
+        response, networkRequestBuilder, startTimeMicros, responseCompletedTimeMicros);
     callback.onResponse(call, response);
   }
 }
