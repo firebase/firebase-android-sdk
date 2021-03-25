@@ -161,21 +161,24 @@ public class NetworkRequestMetricBuilderTest extends FirebasePerformanceTestBase
   @Test
   public void testSetRequestEndTimeMicros() {
     long time = 2000;
-    NetworkRequestMetric metric = networkMetricBuilder.setTimeToRequestCompletedMicros(time).build();
+    NetworkRequestMetric metric =
+        networkMetricBuilder.setTimeToRequestCompletedMicros(time).build();
     assertThat(metric.getTimeToRequestCompletedUs()).isEqualTo(time);
   }
 
   @Test
   public void testSetTimeToResponseInitiatedMicros() {
     long time = 2000;
-    NetworkRequestMetric metric = networkMetricBuilder.setTimeToResponseInitiatedMicros(time).build();
+    NetworkRequestMetric metric =
+        networkMetricBuilder.setTimeToResponseInitiatedMicros(time).build();
     assertThat(metric.getTimeToResponseInitiatedUs()).isEqualTo(time);
   }
 
   @Test
   public void testSetTimeToResponseCompletedMicros() {
     long time = 2000;
-    NetworkRequestMetric metric = networkMetricBuilder.setTimeToResponseCompletedMicros(time).build();
+    NetworkRequestMetric metric =
+        networkMetricBuilder.setTimeToResponseCompletedMicros(time).build();
     assertThat(metric.getTimeToResponseCompletedUs()).isEqualTo(time);
   }
 

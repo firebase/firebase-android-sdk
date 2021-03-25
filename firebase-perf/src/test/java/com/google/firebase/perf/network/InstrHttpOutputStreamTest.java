@@ -162,7 +162,9 @@ public class InstrHttpOutputStreamTest extends FirebasePerformanceTestBase {
 
     assertThrows(
         IOException.class,
-        () -> new InstrHttpOutputStream(outputStream, networkMetricBuilder, timer).write(buffer, 0, 1));
+        () ->
+            new InstrHttpOutputStream(outputStream, networkMetricBuilder, timer)
+                .write(buffer, 0, 1));
 
     verify(transportManager)
         .log(networkArgumentCaptor.capture(), ArgumentMatchers.any(ApplicationProcessState.class));

@@ -160,8 +160,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     monitor.onActivityResumed(activity1);
     monitor.onActivityStopped(activity1);
 
-    verify(transportManager)
-        .log(argTraceMetric.capture(), nullable(ApplicationProcessState.class));
+    verify(transportManager).log(argTraceMetric.capture(), nullable(ApplicationProcessState.class));
     TraceMetric metric = argTraceMetric.getValue();
 
     Map<String, Long> counters = metric.getCountersMap();

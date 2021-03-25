@@ -124,7 +124,9 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
     Assert.assertEquals(startTime, trace.getOnStartTime().getMicros());
     Assert.assertEquals(resumeTime, trace.getOnResumeTime().getMicros());
     verify(transportManager, times(1))
-        .log(traceArgumentCaptor.capture(), ArgumentMatchers.nullable(ApplicationProcessState.class));
+        .log(
+            traceArgumentCaptor.capture(),
+            ArgumentMatchers.nullable(ApplicationProcessState.class));
     TraceMetric metric = traceArgumentCaptor.getValue();
 
     Assert.assertEquals(Constants.TraceNames.APP_START_TRACE_NAME.toString(), metric.getName());
@@ -201,7 +203,9 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
     Assert.assertNull(trace.getOnResumeTime());
     // There should be no trace sent.
     verify(transportManager, times(0))
-        .log(traceArgumentCaptor.capture(), ArgumentMatchers.nullable(ApplicationProcessState.class));
+        .log(
+            traceArgumentCaptor.capture(),
+            ArgumentMatchers.nullable(ApplicationProcessState.class));
   }
 
   @Test
@@ -218,7 +222,9 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
     Assert.assertNull(trace.getOnResumeTime());
     // There should be no trace sent.
     verify(transportManager, times(0))
-        .log(traceArgumentCaptor.capture(), ArgumentMatchers.nullable(ApplicationProcessState.class));
+        .log(
+            traceArgumentCaptor.capture(),
+            ArgumentMatchers.nullable(ApplicationProcessState.class));
   }
 
   @Test

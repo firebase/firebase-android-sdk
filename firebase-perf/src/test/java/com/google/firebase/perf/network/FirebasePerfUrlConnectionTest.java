@@ -65,7 +65,8 @@ public class FirebasePerfUrlConnectionTest extends FirebasePerformanceTestBase {
       fail("expected IOException");
     } catch (IOException e) {
       verify(transportManager)
-          .log(networkArgumentCaptor.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
+          .log(
+              networkArgumentCaptor.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
       NetworkRequestMetric metric = networkArgumentCaptor.getValue();
       verifyNetworkRequestMetric(metric);
     }
@@ -82,7 +83,8 @@ public class FirebasePerfUrlConnectionTest extends FirebasePerformanceTestBase {
       fail("expected IOException");
     } catch (IOException e) {
       verify(transportManager)
-          .log(networkArgumentCaptor.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
+          .log(
+              networkArgumentCaptor.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
       NetworkRequestMetric metric = networkArgumentCaptor.getValue();
       verifyNetworkRequestMetric(metric);
     }
@@ -101,7 +103,8 @@ public class FirebasePerfUrlConnectionTest extends FirebasePerformanceTestBase {
       fail("expected IOException");
     } catch (IOException e) {
       verify(transportManager)
-          .log(networkArgumentCaptor.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
+          .log(
+              networkArgumentCaptor.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
       NetworkRequestMetric metric = networkArgumentCaptor.getValue();
       verifyNetworkRequestMetric(metric);
     }
