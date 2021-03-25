@@ -54,16 +54,16 @@ public class GaugeMetadataManagerTest extends FirebasePerformanceTestBase {
 
   @Mock private Runtime runtime;
   private ActivityManager activityManager;
-  private Context context;
+  private Context appContext;
 
   @Before
   public void setUp() {
     initMocks(this);
-    context = RuntimeEnvironment.application;
-    activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+    appContext = RuntimeEnvironment.application;
+    activityManager = (ActivityManager) appContext.getSystemService(Context.ACTIVITY_SERVICE);
 
     mockMemory();
-    testGaugeMetadataManager = new GaugeMetadataManager(runtime, context);
+    testGaugeMetadataManager = new GaugeMetadataManager(runtime, appContext);
   }
 
   private void mockMemory() {
@@ -83,14 +83,14 @@ public class GaugeMetadataManagerTest extends FirebasePerformanceTestBase {
     ActivityManager activityManagerPartialMock = spy(activityManager);
     when(activityManagerPartialMock.getRunningAppProcesses()).thenReturn(null);
 
-    assertThat(new GaugeMetadataManager(runtime, context)).isNotNull();
+    assertThat(new GaugeMetadataManager(runtime, appContext)).isNotNull();
   }
 
   @Test
   public void testGetProcessName_noProcessInfoList_returnsPackageName() {
     shadowOf(activityManager).setProcesses(new ArrayList<>());
-    assertThat(new GaugeMetadataManager(runtime, context).getProcessName())
-        .isEqualTo(context.getPackageName());
+    assertThat(new GaugeMetadataManager(runtime, appContext).getProcessName())
+        .isEqualTo(appContext.getPackageName());
   }
 
   @Test
@@ -98,15 +98,15 @@ public class GaugeMetadataManagerTest extends FirebasePerformanceTestBase {
     shadowOf(activityManager)
         .setProcesses(
             generateFakeAppProcessInfoListThatContainsPid(android.os.Process.myPid() + 100));
-    assertThat(new GaugeMetadataManager(runtime, context).getProcessName())
-        .isEqualTo(context.getPackageName());
+    assertThat(new GaugeMetadataManager(runtime, appContext).getProcessName())
+        .isEqualTo(appContext.getPackageName());
   }
 
   @Test
   public void testGetProcessName_processListWithCurrentPid_returnsProcessName() {
     shadowOf(activityManager)
         .setProcesses(generateFakeAppProcessInfoListThatContainsPid(android.os.Process.myPid()));
-    assertThat(new GaugeMetadataManager(runtime, context).getProcessName())
+    assertThat(new GaugeMetadataManager(runtime, appContext).getProcessName())
         .isEqualTo("fakeProcessName");
   }
 
