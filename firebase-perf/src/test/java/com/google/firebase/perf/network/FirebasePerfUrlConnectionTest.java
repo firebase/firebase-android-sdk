@@ -44,14 +44,14 @@ import org.robolectric.RobolectricTestRunner;
 public class FirebasePerfUrlConnectionTest extends FirebasePerformanceTestBase {
 
   @Mock private TransportManager transportManager;
-  @Mock private Timer mTimer;
-  @Captor private ArgumentCaptor<NetworkRequestMetric> mArgMetric;
+  @Mock private Timer timer;
+  @Captor private ArgumentCaptor<NetworkRequestMetric> networkArgumentCaptor;
 
   @Before
   public void setUp() {
     initMocks(this);
-    when(mTimer.getMicros()).thenReturn((long) 1000);
-    when(mTimer.getDurationMicros()).thenReturn((long) 2000);
+    when(timer.getMicros()).thenReturn((long) 1000);
+    when(timer.getDurationMicros()).thenReturn((long) 2000);
   }
 
   @Test
@@ -61,12 +61,13 @@ public class FirebasePerfUrlConnectionTest extends FirebasePerformanceTestBase {
     when(wrapper.openConnection()).thenThrow(IOException.class);
 
     try {
-      FirebasePerfUrlConnection.openStream(wrapper, transportManager, mTimer);
+      FirebasePerfUrlConnection.openStream(wrapper, transportManager, timer);
       fail("expected IOException");
     } catch (IOException e) {
       verify(transportManager)
-          .log(mArgMetric.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
-      NetworkRequestMetric metric = mArgMetric.getValue();
+          .log(
+              networkArgumentCaptor.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
+      NetworkRequestMetric metric = networkArgumentCaptor.getValue();
       verifyNetworkRequestMetric(metric);
     }
   }
@@ -78,12 +79,13 @@ public class FirebasePerfUrlConnectionTest extends FirebasePerformanceTestBase {
     when(wrapper.openConnection()).thenThrow(IOException.class);
 
     try {
-      FirebasePerfUrlConnection.getContent(wrapper, transportManager, mTimer);
+      FirebasePerfUrlConnection.getContent(wrapper, transportManager, timer);
       fail("expected IOException");
     } catch (IOException e) {
       verify(transportManager)
-          .log(mArgMetric.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
-      NetworkRequestMetric metric = mArgMetric.getValue();
+          .log(
+              networkArgumentCaptor.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
+      NetworkRequestMetric metric = networkArgumentCaptor.getValue();
       verifyNetworkRequestMetric(metric);
     }
   }
@@ -97,12 +99,13 @@ public class FirebasePerfUrlConnectionTest extends FirebasePerformanceTestBase {
     when(wrapper.openConnection()).thenThrow(IOException.class);
 
     try {
-      FirebasePerfUrlConnection.getContent(wrapper, classes, transportManager, mTimer);
+      FirebasePerfUrlConnection.getContent(wrapper, classes, transportManager, timer);
       fail("expected IOException");
     } catch (IOException e) {
       verify(transportManager)
-          .log(mArgMetric.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
-      NetworkRequestMetric metric = mArgMetric.getValue();
+          .log(
+              networkArgumentCaptor.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
+      NetworkRequestMetric metric = networkArgumentCaptor.getValue();
       verifyNetworkRequestMetric(metric);
     }
   }
