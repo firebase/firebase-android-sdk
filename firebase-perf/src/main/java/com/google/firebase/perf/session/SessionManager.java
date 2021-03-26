@@ -38,7 +38,7 @@ import java.util.Set;
 public class SessionManager extends AppStateUpdateHandler {
 
   @SuppressLint("StaticFieldLeak")
-  private static final SessionManager ourInstance = new SessionManager();
+  private static final SessionManager instance = new SessionManager();
 
   private final GaugeManager gaugeManager;
   private final AppStateMonitor appStateMonitor;
@@ -48,7 +48,7 @@ public class SessionManager extends AppStateUpdateHandler {
 
   /** Returns the singleton instance of SessionManager. */
   public static SessionManager getInstance() {
-    return ourInstance;
+    return instance;
   }
 
   /** Returns the currently active PerfSession. */

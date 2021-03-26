@@ -45,28 +45,27 @@ import java.util.concurrent.TimeUnit;
  */
 final class RateLimiter {
 
+  /** Gets the sampling and rate limiting configs. */
+  private final ConfigResolver configResolver;
   /** The app's bucket ID for sampling, a number in [0.0f, 1.0f). */
   private final float samplingBucketId;
+
+  private RateLimiterImpl traceLimiter = null;
+  private RateLimiterImpl networkLimiter = null;
 
   /** Enable android logging or not */
   private boolean isLogcatEnabled = false;
 
-  private RateLimiterImpl mTraceLimiter = null;
-  private RateLimiterImpl mNetworkLimiter = null;
-
-  /** Gets the sampling and rate limiting configs. */
-  private final ConfigResolver configResolver;
-
   /**
    * Construct a token bucket rate limiter.
    *
-   * @param context app context.
+   * @param appContext the application's context.
    * @param rate number of token generated per minute.
    * @param capacity token bucket capacity
    */
-  public RateLimiter(@NonNull Context context, final double rate, final long capacity) {
+  public RateLimiter(@NonNull Context appContext, final double rate, final long capacity) {
     this(rate, capacity, new Clock(), getSamplingBucketId(), ConfigResolver.getInstance());
-    this.isLogcatEnabled = Utils.isDebugLoggingEnabled(context);
+    this.isLogcatEnabled = Utils.isDebugLoggingEnabled(appContext);
   }
 
   /** Generates a bucket id between [0.0f, 1.0f) for sampling, it is sticky across app lifecycle. */
@@ -87,10 +86,10 @@ final class RateLimiter {
     this.samplingBucketId = samplingBucketId;
     this.configResolver = configResolver;
 
-    mTraceLimiter =
+    traceLimiter =
         new RateLimiterImpl(rate, capacity, clock, configResolver, TRACE, isLogcatEnabled);
 
-    mNetworkLimiter =
+    networkLimiter =
         new RateLimiterImpl(rate, capacity, clock, configResolver, NETWORK, isLogcatEnabled);
   }
 
@@ -141,9 +140,9 @@ final class RateLimiter {
     }
 
     if (metric.hasNetworkRequestMetric()) {
-      return mNetworkLimiter.check(metric);
+      return networkLimiter.check(metric);
     } else if (metric.hasTraceMetric()) {
-      return mTraceLimiter.check(metric);
+      return traceLimiter.check(metric);
     } else {
       return false;
     }
@@ -194,8 +193,8 @@ final class RateLimiter {
 
   /** Change rate when app switch between foreground and background. */
   void changeRate(boolean isForeground) {
-    mTraceLimiter.changeRate(isForeground);
-    mNetworkLimiter.changeRate(isForeground);
+    traceLimiter.changeRate(isForeground);
+    networkLimiter.changeRate(isForeground);
   }
 
   @VisibleForTesting
@@ -212,24 +211,26 @@ final class RateLimiter {
   static class RateLimiterImpl {
 
     private static final AndroidLogger logger = AndroidLogger.getInstance();
-
     private static final long MICROS_IN_A_SECOND = TimeUnit.SECONDS.toMicros(1);
 
-    // Token bucket capacity, also the initial number of tokens in the bucket.
-    private long mCapacity;
-    // Number of new tokens generated per second.
-    private double mRate;
-    // Last time a token is consumed.
-    private Timer mLastTimeTokenConsumed;
-    // Number of tokens in the bucket.
-    private long mTokenCount;
-    private final Clock mClock;
-
-    private double mForegroundRate;
-    private long mForegroundCapacity;
-    private double mBackgroundRate;
-    private long mBackgroundCapacity;
+    private final Clock clock;
     private final boolean isLogcatEnabled;
+
+    // Last time a token is consumed.
+    private Timer lastTimeTokenConsumed;
+
+    // Number of new tokens generated per second.
+    private double rate;
+    // Token bucket capacity, also the initial number of tokens in the bucket.
+    private long capacity;
+    // Number of tokens in the bucket.
+    private long tokenCount;
+
+    private double foregroundRate;
+    private double backgroundRate;
+
+    private long foregroundCapacity;
+    private long backgroundCapacity;
 
     RateLimiterImpl(
         final double rate,
@@ -238,11 +239,11 @@ final class RateLimiter {
         ConfigResolver configResolver,
         final @ResourceType String type,
         boolean isLogcatEnabled) {
-      mClock = clock;
-      mCapacity = capacity;
-      mRate = rate;
-      mTokenCount = capacity;
-      mLastTimeTokenConsumed = mClock.getTime();
+      this.clock = clock;
+      this.capacity = capacity;
+      this.rate = rate;
+      tokenCount = capacity;
+      lastTimeTokenConsumed = this.clock.getTime();
       setRateByReadingRemoteConfigValues(configResolver, type, isLogcatEnabled);
       this.isLogcatEnabled = isLogcatEnabled;
     }
@@ -256,15 +257,14 @@ final class RateLimiter {
      * @return true if pass, false if fail.
      */
     synchronized boolean check(@NonNull PerfMetric metric) {
-      Timer now = mClock.getTime();
+      Timer now = clock.getTime();
       long newTokens =
           Math.max(
-              0,
-              (long) (mLastTimeTokenConsumed.getDurationMicros(now) * mRate / MICROS_IN_A_SECOND));
-      mTokenCount = Math.min(mTokenCount + newTokens, mCapacity);
-      if (mTokenCount > 0) {
-        mTokenCount--;
-        mLastTimeTokenConsumed = now;
+              0, (long) (lastTimeTokenConsumed.getDurationMicros(now) * rate / MICROS_IN_A_SECOND));
+      tokenCount = Math.min(tokenCount + newTokens, capacity);
+      if (tokenCount > 0) {
+        tokenCount--;
+        lastTimeTokenConsumed = now;
         return true;
       }
       if (isLogcatEnabled) {
@@ -279,8 +279,8 @@ final class RateLimiter {
      * @param isForeground if true, apply foreground rate, otherwise apply background rate.
      */
     synchronized void changeRate(boolean isForeground) {
-      mRate = isForeground ? mForegroundRate : mBackgroundRate;
-      mCapacity = isForeground ? mForegroundCapacity : mBackgroundCapacity;
+      rate = isForeground ? foregroundRate : backgroundRate;
+      capacity = isForeground ? foregroundCapacity : backgroundCapacity;
     }
 
     /**
@@ -297,24 +297,23 @@ final class RateLimiter {
       long fLimitTime = getFlimitSec(configResolver, type);
       long fLimitEvents = getFlimitEvents(configResolver, type);
 
-      mForegroundRate = ((double) fLimitEvents) / fLimitTime;
-      mForegroundCapacity = fLimitEvents;
+      foregroundRate = ((double) fLimitEvents) / fLimitTime;
+      foregroundCapacity = fLimitEvents;
       if (isLogcatEnabled) {
         logger.debug(
             "Foreground %s logging rate:%f, burst capacity:%d",
-            type, mForegroundRate, mForegroundCapacity);
+            type, foregroundRate, foregroundCapacity);
       }
 
       // Calculates background rate limit.
       long bLimitTime = getBlimitSec(configResolver, type);
       long bLimitEvents = getBlimitEvents(configResolver, type);
 
-      mBackgroundRate = ((double) bLimitEvents) / bLimitTime;
-      mBackgroundCapacity = bLimitEvents;
+      backgroundRate = ((double) bLimitEvents) / bLimitTime;
+      backgroundCapacity = bLimitEvents;
       if (isLogcatEnabled) {
         logger.debug(
-            "Background %s logging rate:%f, capacity:%d",
-            type, mBackgroundRate, mBackgroundCapacity);
+            "Background %s logging rate:%f, capacity:%d", type, backgroundRate, backgroundCapacity);
       }
     }
 
@@ -352,32 +351,32 @@ final class RateLimiter {
 
     @VisibleForTesting
     double getForegroundRate() {
-      return mForegroundRate;
+      return foregroundRate;
     }
 
     @VisibleForTesting
     long getForegroundCapacity() {
-      return mForegroundCapacity;
+      return foregroundCapacity;
     }
 
     @VisibleForTesting
     double getBackgroundRate() {
-      return mBackgroundRate;
+      return backgroundRate;
     }
 
     @VisibleForTesting
     long getBackgroundCapacity() {
-      return mBackgroundCapacity;
+      return backgroundCapacity;
     }
 
     @VisibleForTesting
     double getRate() {
-      return mRate;
+      return rate;
     }
 
     @VisibleForTesting
     void setRate(double newRate) {
-      mRate = newRate;
+      rate = newRate;
     }
   }
 }

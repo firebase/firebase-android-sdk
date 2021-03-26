@@ -23,34 +23,34 @@ import org.apache.http.client.ResponseHandler;
 /** Instrument response handler for apache http functions */
 public class InstrumentApacheHttpResponseHandler<T> implements ResponseHandler<T> {
 
-  private final ResponseHandler<? extends T> mResponseHandlerDelegate;
-  private final Timer mTimer;
-  private final NetworkRequestMetricBuilder mBuilder;
+  private final ResponseHandler<? extends T> responseHandlerDelegate;
+  private final Timer timer;
+  private final NetworkRequestMetricBuilder networkMetricBuilder;
 
   public InstrumentApacheHttpResponseHandler(
       ResponseHandler<? extends T> responseHandler,
       Timer timer,
       NetworkRequestMetricBuilder builder) {
-    mResponseHandlerDelegate = responseHandler;
-    mTimer = timer;
-    mBuilder = builder;
+    responseHandlerDelegate = responseHandler;
+    this.timer = timer;
+    networkMetricBuilder = builder;
   }
 
   @Override
   public T handleResponse(HttpResponse httpResponse) throws IOException {
-    mBuilder.setTimeToResponseCompletedMicros(mTimer.getDurationMicros());
-    mBuilder.setHttpResponseCode(httpResponse.getStatusLine().getStatusCode());
+    networkMetricBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
+    networkMetricBuilder.setHttpResponseCode(httpResponse.getStatusLine().getStatusCode());
     Long responseContentLength =
         NetworkRequestMetricBuilderUtil.getApacheHttpMessageContentLength(httpResponse);
     if (responseContentLength != null) {
-      mBuilder.setResponsePayloadBytes(responseContentLength);
+      networkMetricBuilder.setResponsePayloadBytes(responseContentLength);
     }
     String contentType =
         NetworkRequestMetricBuilderUtil.getApacheHttpResponseContentType(httpResponse);
     if (contentType != null) {
-      mBuilder.setResponseContentType(contentType);
+      networkMetricBuilder.setResponseContentType(contentType);
     }
-    mBuilder.build();
-    return mResponseHandlerDelegate.handleResponse(httpResponse);
+    networkMetricBuilder.build();
+    return responseHandlerDelegate.handleResponse(httpResponse);
   }
 }

@@ -22,10 +22,10 @@ public class FirebasePerfApplicationInfoValidator extends PerfMetricValidator {
 
   private static final AndroidLogger logger = AndroidLogger.getInstance();
 
-  private final ApplicationInfo mApplicationInfo;
+  private final ApplicationInfo applicationInfo;
 
   FirebasePerfApplicationInfoValidator(ApplicationInfo applicationInfo) {
-    mApplicationInfo = applicationInfo;
+    this.applicationInfo = applicationInfo;
   }
 
   /**
@@ -43,29 +43,29 @@ public class FirebasePerfApplicationInfoValidator extends PerfMetricValidator {
   }
 
   private boolean isValidApplicationInfo() {
-    if (mApplicationInfo == null) {
+    if (applicationInfo == null) {
       logger.warn("ApplicationInfo is null");
       return false;
     }
-    if (!mApplicationInfo.hasGoogleAppId()) {
+    if (!applicationInfo.hasGoogleAppId()) {
       logger.warn("GoogleAppId is null");
       return false;
     }
-    if (!mApplicationInfo.hasAppInstanceId()) {
+    if (!applicationInfo.hasAppInstanceId()) {
       logger.warn("AppInstanceId is null");
       return false;
     }
-    if (!mApplicationInfo.hasApplicationProcessState()) {
+    if (!applicationInfo.hasApplicationProcessState()) {
       logger.warn("ApplicationProcessState is null");
       return false;
     }
     // androidAppInfo is not required, but if it exists, we have to validate its required fields.
-    if (mApplicationInfo.hasAndroidAppInfo()) {
-      if (!mApplicationInfo.getAndroidAppInfo().hasPackageName()) {
+    if (applicationInfo.hasAndroidAppInfo()) {
+      if (!applicationInfo.getAndroidAppInfo().hasPackageName()) {
         logger.warn("AndroidAppInfo.packageName is null");
         return false;
       }
-      if (!mApplicationInfo.getAndroidAppInfo().hasSdkVersion()) {
+      if (!applicationInfo.getAndroidAppInfo().hasSdkVersion()) {
         logger.warn("AndroidAppInfo.sdkVersion is null");
         return false;
       }

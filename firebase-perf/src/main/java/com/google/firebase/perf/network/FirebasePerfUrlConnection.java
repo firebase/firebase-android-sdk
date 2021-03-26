@@ -31,6 +31,7 @@ import javax.net.ssl.HttpsURLConnection;
  * information for the NetworkRequestMetric for UrlConnection.
  */
 public class FirebasePerfUrlConnection {
+
   private FirebasePerfUrlConnection() {}
 
   // Bytecode instrumented functions
