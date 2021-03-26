@@ -46,8 +46,7 @@ import java.util.concurrent.TimeUnit;
 public class GaugeManager {
 
   private static final AndroidLogger logger = AndroidLogger.getInstance();
-
-  private static GaugeManager sharedInstance = new GaugeManager();
+  private static final GaugeManager instance = new GaugeManager();
 
   // This is a guesstimate of the max amount of time to wait before any pending metrics' collection
   // might take.
@@ -62,12 +61,10 @@ public class GaugeManager {
   private final TransportManager transportManager;
 
   @Nullable private GaugeMetadataManager gaugeMetadataManager;
-
+  @Nullable private ScheduledFuture gaugeManagerDataCollectionJob = null;
+  @Nullable private String sessionId = null;
   private ApplicationProcessState applicationProcessState =
       ApplicationProcessState.APPLICATION_PROCESS_STATE_UNKNOWN;
-
-  @Nullable private String sessionId = null;
-  @Nullable private ScheduledFuture gaugeManagerDataCollectionJob = null;
 
   private GaugeManager() {
     this(
@@ -97,13 +94,13 @@ public class GaugeManager {
   }
 
   /** Sets the application context once it is available. */
-  public void setApplicationContext(Context context) {
-    this.gaugeMetadataManager = new GaugeMetadataManager(context);
+  public void setApplicationContext(Context appContext) {
+    this.gaugeMetadataManager = new GaugeMetadataManager(appContext);
   }
 
   /** Returns the singleton instance of this class. */
   public static synchronized GaugeManager getInstance() {
-    return sharedInstance;
+    return instance;
   }
 
   /**
