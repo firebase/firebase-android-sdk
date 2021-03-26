@@ -33,6 +33,7 @@ import org.apache.http.protocol.HttpContext;
  */
 @SuppressWarnings("deprecation") // Apache http library is needed for instrumentation
 public class FirebasePerfHttpClient {
+
   private FirebasePerfHttpClient() {}
 
   /**

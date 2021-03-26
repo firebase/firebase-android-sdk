@@ -49,24 +49,26 @@ public class Trace extends AppStateUpdateHandler
     implements Parcelable, FirebasePerformanceAttributable, SessionAwareObject {
 
   private static final AndroidLogger logger = AndroidLogger.getInstance();
-  private static final Map<String, Trace> sTraces = new ConcurrentHashMap<>();
+  private static final Map<String, Trace> traceNameToTraceMap = new ConcurrentHashMap<>();
+
+  private final WeakReference<SessionAwareObject> sessionAwareObject = new WeakReference<>(this);
 
   private final Trace parent;
   private final GaugeManager gaugeManager;
   private final String name;
 
+  private final Map<String, Counter> counterNameToCounterMap;
+  private final Map<String, String> customAttributesMap;
+
   // TODO(b/177317027): Consider using a Set to avoid adding same PerfSession object
   private final List<PerfSession> sessions;
-
   private final List<Trace> subtraces;
-  private final Map<String, Counter> counters;
-  private final Clock clock;
+
   private final TransportManager transportManager;
-  private final Map<String, String> attributes;
+  private final Clock clock;
+
   private Timer startTime;
   private Timer endTime;
-
-  private final WeakReference<SessionAwareObject> weakReference = new WeakReference<>(this);
 
   /** @hide */
   @Override
@@ -128,8 +130,8 @@ public class Trace extends AppStateUpdateHandler
     this.startTime = startTime;
     this.endTime = endTime;
     this.subtraces = subtraces != null ? subtraces : new ArrayList<>();
-    this.counters = counters != null ? counters : new ConcurrentHashMap<>();
-    this.attributes = attributes != null ? attributes : new ConcurrentHashMap<>();
+    this.counterNameToCounterMap = counters != null ? counters : new ConcurrentHashMap<>();
+    this.customAttributesMap = attributes != null ? attributes : new ConcurrentHashMap<>();
     clock = parent.clock;
     transportManager = parent.transportManager;
     sessions = Collections.synchronizedList(new ArrayList<>());
@@ -166,8 +168,8 @@ public class Trace extends AppStateUpdateHandler
     parent = null;
     this.name = name.trim();
     subtraces = new ArrayList<>();
-    counters = new ConcurrentHashMap<>();
-    attributes = new ConcurrentHashMap<>();
+    counterNameToCounterMap = new ConcurrentHashMap<>();
+    customAttributesMap = new ConcurrentHashMap<>();
     this.clock = clock;
     this.transportManager = transportManager;
     sessions = Collections.synchronizedList(new ArrayList<>());
@@ -180,9 +182,9 @@ public class Trace extends AppStateUpdateHandler
     name = in.readString();
     subtraces = new ArrayList<>();
     in.readList(subtraces, Trace.class.getClassLoader());
-    counters = new ConcurrentHashMap<>();
-    attributes = new ConcurrentHashMap<>();
-    in.readMap(counters, Counter.class.getClassLoader());
+    counterNameToCounterMap = new ConcurrentHashMap<>();
+    customAttributesMap = new ConcurrentHashMap<>();
+    in.readMap(counterNameToCounterMap, Counter.class.getClassLoader());
     startTime = in.readParcelable(Timer.class.getClassLoader());
     endTime = in.readParcelable(Timer.class.getClassLoader());
     sessions = Collections.synchronizedList(new ArrayList<PerfSession>());
@@ -225,7 +227,7 @@ public class Trace extends AppStateUpdateHandler
 
     SessionManager sessionManager = SessionManager.getInstance();
     PerfSession perfSession = sessionManager.perfSession();
-    SessionManager.getInstance().registerForSessionUpdates(weakReference);
+    SessionManager.getInstance().registerForSessionUpdates(sessionAwareObject);
 
     updateSession(perfSession);
 
@@ -246,7 +248,7 @@ public class Trace extends AppStateUpdateHandler
       return;
     }
 
-    SessionManager.getInstance().unregisterForSessionUpdates(weakReference);
+    SessionManager.getInstance().unregisterForSessionUpdates(sessionAwareObject);
 
     unregisterForAppState();
     endTime = clock.getTime();
@@ -305,10 +307,10 @@ public class Trace extends AppStateUpdateHandler
 
   @NonNull
   private Counter obtainOrCreateCounterByName(@NonNull String counterName) {
-    Counter counter = counters.get(counterName);
+    Counter counter = counterNameToCounterMap.get(counterName);
     if (counter == null) {
       counter = new Counter(counterName);
-      counters.put(counterName, counter);
+      counterNameToCounterMap.put(counterName, counter);
     }
     return counter;
   }
@@ -360,7 +362,7 @@ public class Trace extends AppStateUpdateHandler
   public long getLongMetric(@NonNull String metricName) {
     Counter counter = null;
     if (metricName != null) {
-      counter = counters.get(metricName.trim());
+      counter = counterNameToCounterMap.get(metricName.trim());
     }
     if (counter == null) {
       return 0;
@@ -413,10 +415,10 @@ public class Trace extends AppStateUpdateHandler
    */
   @NonNull
   static synchronized Trace getTrace(@NonNull String traceName) {
-    Trace trace = sTraces.get(traceName);
+    Trace trace = traceNameToTraceMap.get(traceName);
     if (trace == null) {
       trace = new Trace(traceName);
-      sTraces.put(traceName, trace);
+      traceNameToTraceMap.put(traceName, trace);
     }
     return trace;
   }
@@ -429,12 +431,12 @@ public class Trace extends AppStateUpdateHandler
       @NonNull TransportManager transportManager,
       @NonNull Clock clock,
       @NonNull AppStateMonitor appStateMonitor) {
-    Trace trace = sTraces.get(traceName);
+    Trace trace = traceNameToTraceMap.get(traceName);
     if (trace == null) {
       trace =
           new Trace(
               traceName, transportManager, clock, appStateMonitor, GaugeManager.getInstance());
-      sTraces.put(traceName, trace);
+      traceNameToTraceMap.put(traceName, trace);
     }
     return trace;
   }
@@ -449,7 +451,7 @@ public class Trace extends AppStateUpdateHandler
    */
   @Nullable
   static Trace startTrace(@NonNull String traceName) {
-    Trace trace = sTraces.get(traceName);
+    Trace trace = traceNameToTraceMap.get(traceName);
     if (trace != null) {
       trace.start();
     }
@@ -467,10 +469,10 @@ public class Trace extends AppStateUpdateHandler
    */
   @Nullable
   static Trace stopTrace(@NonNull String traceName) {
-    Trace trace = sTraces.get(traceName);
+    Trace trace = traceNameToTraceMap.get(traceName);
     if (trace != null) {
       trace.stop();
-      sTraces.remove(traceName);
+      traceNameToTraceMap.remove(traceName);
     }
     return trace;
   }
@@ -504,7 +506,7 @@ public class Trace extends AppStateUpdateHandler
   @VisibleForTesting
   @NonNull
   Map<String, Counter> getCounters() {
-    return counters;
+    return counterNameToCounterMap;
   }
 
   /** @hide */
@@ -571,7 +573,7 @@ public class Trace extends AppStateUpdateHandler
     out.writeParcelable(parent, 0);
     out.writeString(name);
     out.writeList(subtraces);
-    out.writeMap(counters);
+    out.writeMap(counterNameToCounterMap);
     out.writeParcelable(startTime, 0);
     out.writeParcelable(endTime, 0);
     synchronized (sessions) {
@@ -619,7 +621,7 @@ public class Trace extends AppStateUpdateHandler
       noError = false;
     }
     if (noError) {
-      attributes.put(attribute, value);
+      customAttributesMap.put(attribute, value);
     }
   }
 
@@ -628,8 +630,8 @@ public class Trace extends AppStateUpdateHandler
       throw new IllegalArgumentException(
           String.format(Locale.ENGLISH, "Trace '%s' has been stopped", name));
     }
-    if (!attributes.containsKey(key)
-        && attributes.size() >= Constants.MAX_TRACE_CUSTOM_ATTRIBUTES) {
+    if (!customAttributesMap.containsKey(key)
+        && customAttributesMap.size() >= Constants.MAX_TRACE_CUSTOM_ATTRIBUTES) {
       throw new IllegalArgumentException(
           String.format(
               Locale.ENGLISH,
@@ -655,7 +657,7 @@ public class Trace extends AppStateUpdateHandler
       logger.error("Can't remove a attribute from a Trace that's stopped.");
       return;
     }
-    attributes.remove(attribute);
+    customAttributesMap.remove(attribute);
   }
 
   /**
@@ -668,7 +670,7 @@ public class Trace extends AppStateUpdateHandler
   @Nullable
   @Keep
   public String getAttribute(@NonNull String attribute) {
-    return attributes.get(attribute);
+    return customAttributesMap.get(attribute);
   }
 
   /**
@@ -680,7 +682,7 @@ public class Trace extends AppStateUpdateHandler
   @NonNull
   @Keep
   public Map<String, String> getAttributes() {
-    return new HashMap<>(attributes);
+    return new HashMap<>(customAttributesMap);
   }
 
   /**

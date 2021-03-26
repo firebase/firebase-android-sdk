@@ -49,73 +49,76 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class AppStateMonitor implements ActivityLifecycleCallbacks {
 
   private static final AndroidLogger logger = AndroidLogger.getInstance();
+  private static final String FRAME_METRICS_AGGREGATOR_CLASSNAME =
+      "androidx.core.app.FrameMetricsAggregator";
 
-  private static volatile AppStateMonitor sInstance;
+  private static volatile AppStateMonitor instance;
+
+  private final WeakHashMap<Activity, Boolean> activityToResumedMap = new WeakHashMap<>();
+  private final WeakHashMap<Activity, Trace> activityToScreenTraceMap = new WeakHashMap<>();
+  private final Map<String, Long> metricToCountMap = new HashMap<>();
+  private final Set<WeakReference<AppStateCallback>> appStateSubscribers = new HashSet<>();
+  private Set<AppColdStartCallback> appColdStartSubscribers = new HashSet<>();
+
+  /* Count for TRACE_STARTED_NOT_STOPPED */
+  private final AtomicInteger tsnsCount = new AtomicInteger(0);
+
+  private final TransportManager transportManager;
+  private final ConfigResolver configResolver;
+  private final Clock clock;
+
+  private FrameMetricsAggregator frameMetricsAggregator;
+
+  private Timer resumeTime; // The time app comes to foreground
+  private Timer stopTime; // The time app goes to background
+
+  private ApplicationProcessState currentAppState = ApplicationProcessState.BACKGROUND;
+
+  private boolean isRegisteredForLifecycleCallbacks = false;
+  private boolean isColdStart = true;
+  private boolean hasFrameMetricsAggregator = false;
 
   public static AppStateMonitor getInstance() {
-    if (sInstance == null) {
+    if (instance == null) {
       synchronized (AppStateMonitor.class) {
-        if (sInstance == null) {
-          sInstance = new AppStateMonitor(TransportManager.getInstance(), new Clock());
+        if (instance == null) {
+          instance = new AppStateMonitor(TransportManager.getInstance(), new Clock());
         }
       }
     }
-    return sInstance;
+    return instance;
   }
-
-  private static final String FRAME_METRICS_AGGREGATOR_CLASSNAME =
-      "androidx.core.app.FrameMetricsAggregator";
-  private boolean mRegistered = false;
-  private final TransportManager transportManager;
-  private ConfigResolver mConfigResolver;
-  private final Clock mClock;
-  private boolean mIsColdStart = true;
-  private final WeakHashMap<Activity, Boolean> mResumed = new WeakHashMap<>();
-  private Timer mStopTime; // The time app goes to background
-  private Timer mResumeTime; // The time app comes to foreground
-  private final Map<String, Long> mMetrics = new HashMap<>();
-  /* Count for TRACE_STARTED_NOT_STOPPED */
-  private AtomicInteger mTsnsCount = new AtomicInteger(0);
-
-  private ApplicationProcessState mCurrentState = ApplicationProcessState.BACKGROUND;
-
-  private Set<WeakReference<AppStateCallback>> mClients =
-      new HashSet<WeakReference<AppStateCallback>>();
-
-  private boolean hasFrameMetricsAggregator = false;
-  private FrameMetricsAggregator mFrameMetricsAggregator;
-  private final WeakHashMap<Activity, Trace> mActivity2ScreenTrace = new WeakHashMap<>();
 
   AppStateMonitor(TransportManager transportManager, Clock clock) {
     this.transportManager = transportManager;
-    mClock = clock;
-    mConfigResolver = ConfigResolver.getInstance();
+    this.clock = clock;
+    configResolver = ConfigResolver.getInstance();
     hasFrameMetricsAggregator = hasFrameMetricsAggregatorClass();
     if (hasFrameMetricsAggregator) {
-      mFrameMetricsAggregator = new FrameMetricsAggregator();
+      frameMetricsAggregator = new FrameMetricsAggregator();
     }
   }
 
   public synchronized void registerActivityLifecycleCallbacks(Context context) {
     // Make sure the callback is registered only once.
-    if (mRegistered) {
+    if (isRegisteredForLifecycleCallbacks) {
       return;
     }
     Context appContext = context.getApplicationContext();
     if (appContext instanceof Application) {
       ((Application) appContext).registerActivityLifecycleCallbacks(this);
-      mRegistered = true;
+      isRegisteredForLifecycleCallbacks = true;
     }
   }
 
   public synchronized void unregisterActivityLifecycleCallbacks(Context context) {
-    if (!mRegistered) {
+    if (!isRegisteredForLifecycleCallbacks) {
       return;
     }
     Context appContext = context.getApplicationContext();
     if (appContext instanceof Application) {
       ((Application) appContext).unregisterActivityLifecycleCallbacks(this);
-      mRegistered = false;
+      isRegisteredForLifecycleCallbacks = false;
     }
   }
 
@@ -123,18 +126,18 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
     // This method is called by RateLimiter.java when a log exceeds rate limit and to be dropped
     // It can be on any thread. sendSessionLog() method is called in callback methods from main UI
     // thread, thus we need synchronized access on mMetrics.
-    synchronized (mMetrics) {
-      Long v = mMetrics.get(name);
+    synchronized (metricToCountMap) {
+      Long v = metricToCountMap.get(name);
       if (v == null) {
-        mMetrics.put(name, value);
+        metricToCountMap.put(name, value);
       } else {
-        mMetrics.put(name, v + value);
+        metricToCountMap.put(name, v + value);
       }
     }
   }
 
   public void incrementTsnsCount(int value) {
-    mTsnsCount.addAndGet(value);
+    tsnsCount.addAndGet(value);
   }
 
   @Override
@@ -145,13 +148,13 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
 
   @Override
   public synchronized void onActivityStarted(Activity activity) {
-    if (isScreenTraceSupported(activity) && mConfigResolver.isPerformanceMonitoringEnabled()) {
+    if (isScreenTraceSupported(activity) && configResolver.isPerformanceMonitoringEnabled()) {
       // Starts recording frame metrics for this activity.
-      mFrameMetricsAggregator.add(activity);
+      frameMetricsAggregator.add(activity);
       // Start the Trace
-      Trace screenTrace = new Trace(getScreenTraceName(activity), transportManager, mClock, this);
+      Trace screenTrace = new Trace(getScreenTraceName(activity), transportManager, clock, this);
       screenTrace.start();
-      mActivity2ScreenTrace.put(activity, screenTrace);
+      activityToScreenTraceMap.put(activity, screenTrace);
     }
   }
 
@@ -162,14 +165,13 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
     }
 
     // Last activity has its onActivityStopped called, the app goes to background.
-    if (mResumed.containsKey(activity)) {
-      mResumed.remove(activity);
-      if (mResumed.isEmpty()) {
+    if (activityToResumedMap.containsKey(activity)) {
+      activityToResumedMap.remove(activity);
+      if (activityToResumedMap.isEmpty()) {
         // no more activity in foreground, app goes to background.
-        mStopTime = mClock.getTime();
+        stopTime = clock.getTime();
         updateAppState(ApplicationProcessState.BACKGROUND);
-        sendSessionLog(
-            Constants.TraceNames.FOREGROUND_TRACE_NAME.toString(), mResumeTime, mStopTime);
+        sendSessionLog(Constants.TraceNames.FOREGROUND_TRACE_NAME.toString(), resumeTime, stopTime);
       }
     }
   }
@@ -180,69 +182,93 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
     // 1. At app startup, first activity comes to foreground.
     // 2. app switch from background to foreground.
     // 3. app already in foreground, current activity is replaced by another activity.
-    if (mResumed.isEmpty()) {
+    if (activityToResumedMap.isEmpty()) {
       // The first resumed activity means app comes to foreground.
-      mResumeTime = mClock.getTime();
-      mResumed.put(activity, true);
+      resumeTime = clock.getTime();
+      activityToResumedMap.put(activity, true);
       updateAppState(ApplicationProcessState.FOREGROUND);
-      if (mIsColdStart) {
+      if (isColdStart) {
         // case 1: app startup.
-        mIsColdStart = false;
+        sendAppColdStartUpdate();
+        isColdStart = false;
       } else {
         // case 2: app switch from background to foreground.
-        sendSessionLog(
-            Constants.TraceNames.BACKGROUND_TRACE_NAME.toString(), mStopTime, mResumeTime);
+        sendSessionLog(Constants.TraceNames.BACKGROUND_TRACE_NAME.toString(), stopTime, resumeTime);
       }
     } else {
       // case 3: app already in foreground, current activity is replaced by another activity.
-      mResumed.put(activity, true);
+      activityToResumedMap.put(activity, true);
     }
   }
 
   /** Returns if this is the cold start of the app. */
   public boolean isColdStart() {
-    return mIsColdStart;
+    return isColdStart;
   }
 
   /** @return current app state. */
   public ApplicationProcessState getAppState() {
-    return mCurrentState;
+    return currentAppState;
   }
 
   /**
-   * Register a client to receive app state update.
+   * Register a subscriber to receive app state update.
    *
-   * @param client an AppStateCallback instance.
+   * @param subscriber an AppStateCallback instance.
    */
-  public void registerForAppState(WeakReference<AppStateCallback> client) {
-    synchronized (mClients) {
-      mClients.add(client);
+  public void registerForAppState(WeakReference<AppStateCallback> subscriber) {
+    synchronized (appStateSubscribers) {
+      appStateSubscribers.add(subscriber);
     }
   }
 
   /**
-   * Unregister the client to stop receiving app state update.
+   * Unregister the subscriber to stop receiving app state update.
    *
-   * @param client an AppStateCallback instance.
+   * @param subscriber an AppStateCallback instance.
    */
-  public void unregisterForAppState(WeakReference<AppStateCallback> client) {
-    synchronized (mClients) {
-      mClients.remove(client);
+  public void unregisterForAppState(WeakReference<AppStateCallback> subscriber) {
+    synchronized (appStateSubscribers) {
+      appStateSubscribers.remove(subscriber);
     }
   }
 
-  /** Send update state update to registered clients. */
+  /**
+   * Register a subscriber to receive app cold start update.
+   *
+   * @param subscriber the {@link AppColdStartCallback} instance.
+   */
+  public void registerForAppColdStart(AppColdStartCallback subscriber) {
+    synchronized (appStateSubscribers) {
+      appColdStartSubscribers.add(subscriber);
+    }
+  }
+
+  /** Send update state update to registered subscribers. */
   private void updateAppState(ApplicationProcessState newState) {
-    mCurrentState = newState;
-    synchronized (mClients) {
-      for (Iterator<WeakReference<AppStateCallback>> i = mClients.iterator(); i.hasNext(); ) {
+    currentAppState = newState;
+    synchronized (appStateSubscribers) {
+      for (Iterator<WeakReference<AppStateCallback>> i = appStateSubscribers.iterator();
+          i.hasNext(); ) {
         AppStateCallback callback = i.next().get();
         if (callback != null) {
-          callback.onUpdateAppState(mCurrentState);
+          callback.onUpdateAppState(currentAppState);
         } else {
           // The object pointing by WeakReference has already been garbage collected.
           // Remove it from the Set.
           i.remove();
+        }
+      }
+    }
+  }
+
+  /** Send cold start update to registered subscribers. */
+  private void sendAppColdStartUpdate() {
+    synchronized (appStateSubscribers) {
+      for (Iterator<AppColdStartCallback> i = appColdStartSubscribers.iterator(); i.hasNext(); ) {
+        AppColdStartCallback callback = i.next();
+        if (callback != null) {
+          callback.onAppColdStart();
         }
       }
     }
@@ -254,7 +280,7 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
    * @return true if app is in foreground, false if in background.
    */
   public boolean isForeground() {
-    return mCurrentState == ApplicationProcessState.FOREGROUND;
+    return currentAppState == ApplicationProcessState.FOREGROUND;
   }
 
   @Override
@@ -269,20 +295,20 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
    * @param activity activity object.
    */
   private void sendScreenTrace(Activity activity) {
-    if (!mActivity2ScreenTrace.containsKey(activity)) {
+    if (!activityToScreenTraceMap.containsKey(activity)) {
       return;
     }
-    Trace screenTrace = mActivity2ScreenTrace.get(activity);
+    Trace screenTrace = activityToScreenTraceMap.get(activity);
     if (screenTrace == null) {
       return;
     }
-    mActivity2ScreenTrace.remove(activity);
+    activityToScreenTraceMap.remove(activity);
 
     int totalFrames = 0;
     int slowFrames = 0;
     int frozenFrames = 0;
     // Stops recording metrics for this Activity and returns the currently-collected metrics
-    SparseIntArray[] arr = mFrameMetricsAggregator.remove(activity);
+    SparseIntArray[] arr = frameMetricsAggregator.remove(activity);
     if (arr != null) {
       SparseIntArray frameTimes = arr[FrameMetricsAggregator.TOTAL_INDEX];
       if (frameTimes != null) {
@@ -338,7 +364,7 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
    * @param endTime session trace end time.
    */
   private void sendSessionLog(String name, Timer startTime, Timer endTime) {
-    if (!mConfigResolver.isPerformanceMonitoringEnabled()) {
+    if (!configResolver.isPerformanceMonitoringEnabled()) {
       return;
     }
     // TODO(b/117776450): We should also capture changes in the Session ID.
@@ -349,15 +375,15 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
             .setDurationUs(startTime.getDurationMicros(endTime))
             .addPerfSessions(SessionManager.getInstance().perfSession().build());
     // Atomically get mTsnsCount and set it to zero.
-    int tsnsCount = mTsnsCount.getAndSet(0);
-    synchronized (mMetrics) {
-      metric.putAllCounters(mMetrics);
+    int tsnsCount = this.tsnsCount.getAndSet(0);
+    synchronized (metricToCountMap) {
+      metric.putAllCounters(metricToCountMap);
       if (tsnsCount != 0) {
         metric.putCounters(CounterNames.TRACE_STARTED_NOT_STOPPED.toString(), tsnsCount);
       }
 
       // reset metrics.
-      mMetrics.clear();
+      metricToCountMap.clear();
     }
     // The Foreground and Background trace marks the transition between the two states,
     // so we always specify the state to be ApplicationProcessState.FOREGROUND_BACKGROUND.
@@ -396,9 +422,15 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
     }
   }
 
+  /** An interface to be implemented by subscribers which needs to receive app state update. */
   /** An interface to be implemented by clients which needs to receive app state update. */
   public static interface AppStateCallback {
     public void onUpdateAppState(ApplicationProcessState newState);
+  }
+
+  /** An interface to be implemented by subscribers which needs to receive app cold start update. */
+  public static interface AppColdStartCallback {
+    public void onAppColdStart();
   }
 
   /**
@@ -413,26 +445,26 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
 
   @VisibleForTesting
   WeakHashMap<Activity, Boolean> getResumed() {
-    return mResumed;
+    return activityToResumedMap;
   }
 
   @VisibleForTesting
   WeakHashMap<Activity, Trace> getActivity2ScreenTrace() {
-    return mActivity2ScreenTrace;
+    return activityToScreenTraceMap;
   }
 
   @VisibleForTesting
   Timer getPauseTime() {
-    return mStopTime;
+    return stopTime;
   }
 
   @VisibleForTesting
   Timer getResumeTime() {
-    return mResumeTime;
+    return resumeTime;
   }
 
   @VisibleForTesting
   public void setIsColdStart(boolean isColdStart) {
-    mIsColdStart = isColdStart;
+    this.isColdStart = isColdStart;
   }
 }

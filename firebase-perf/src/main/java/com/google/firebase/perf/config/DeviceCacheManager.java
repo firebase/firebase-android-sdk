@@ -33,16 +33,16 @@ import java.util.concurrent.Executors;
 public class DeviceCacheManager {
 
   private static final AndroidLogger logger = AndroidLogger.getInstance();
-  private static DeviceCacheManager instance;
-
   private static final String PREFS_NAME = Constants.PREFS_NAME;
+
+  private static DeviceCacheManager instance;
   // The key-value pairs are written to XML files that persist across user sessions, even if the
   // app is killed.
   // https://developer.android.com/guide/topics/data/data-storage.html#pref
   private volatile SharedPreferences sharedPref;
 
   // Used for retrieving the shared preferences on a separate thread.
-  private ExecutorService serialExecutor;
+  private final ExecutorService serialExecutor;
 
   @VisibleForTesting
   public DeviceCacheManager(ExecutorService serialExecutor) {
@@ -66,12 +66,12 @@ public class DeviceCacheManager {
    * This method returns immediately without waiting for the getSharedPreferences call to be
    * complete.
    */
-  public synchronized void setContext(Context context) {
-    if (sharedPref == null && context != null) {
+  public synchronized void setContext(Context appContext) {
+    if (sharedPref == null && appContext != null) {
       serialExecutor.execute(
           () -> {
-            if (sharedPref == null && context != null) {
-              this.sharedPref = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+            if (sharedPref == null && appContext != null) {
+              this.sharedPref = appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
             }
           });
     }

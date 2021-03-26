@@ -25,8 +25,9 @@ import java.util.concurrent.atomic.AtomicLong;
  * @hide
  */
 public class Counter implements Parcelable {
-  private final String mName;
-  private AtomicLong mCount;
+
+  private final String name;
+  private final AtomicLong count;
 
   /**
    * Creates a Counter with given name.
@@ -34,13 +35,13 @@ public class Counter implements Parcelable {
    * @param name Name of the counter.
    */
   public Counter(@NonNull String name) {
-    mName = name;
-    mCount = new AtomicLong(0);
+    this.name = name;
+    count = new AtomicLong(0);
   }
 
   private Counter(Parcel in) {
-    mName = in.readString();
-    mCount = new AtomicLong(in.readLong());
+    name = in.readString();
+    count = new AtomicLong(in.readLong());
   }
 
   /**
@@ -49,7 +50,7 @@ public class Counter implements Parcelable {
    * @param counts A number by which the counter is incremented.
    */
   public void increment(long counts) {
-    mCount.addAndGet(counts);
+    count.addAndGet(counts);
   }
 
   /**
@@ -59,7 +60,7 @@ public class Counter implements Parcelable {
    */
   @NonNull
   String getName() {
-    return mName;
+    return name;
   }
 
   /**
@@ -68,7 +69,7 @@ public class Counter implements Parcelable {
    * @return Current count of this counter.
    */
   long getCount() {
-    return mCount.get();
+    return count.get();
   }
 
   /**
@@ -77,7 +78,7 @@ public class Counter implements Parcelable {
    * @param newCount The new count for the counter.
    */
   void setCount(long newCount) {
-    mCount.set(newCount);
+    count.set(newCount);
   }
 
   /**
@@ -88,8 +89,8 @@ public class Counter implements Parcelable {
    * @param flags always will be the value 0.
    */
   public void writeToParcel(Parcel out, int flags) {
-    out.writeString(mName);
-    out.writeLong(mCount.get());
+    out.writeString(name);
+    out.writeLong(count.get());
   }
 
   /**
