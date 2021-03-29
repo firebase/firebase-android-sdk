@@ -423,7 +423,6 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
   }
 
   /** An interface to be implemented by subscribers which needs to receive app state update. */
-  /** An interface to be implemented by clients which needs to receive app state update. */
   public static interface AppStateCallback {
     public void onUpdateAppState(ApplicationProcessState newState);
   }
