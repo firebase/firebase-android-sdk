@@ -28,12 +28,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-/**
- * Session manager to generate sessionIDs and broadcast to the application.
- *
- * @hide
- */
-/** @hide */
+/** Session manager to generate sessionIDs and broadcast to the application. */
 @Keep // Needed because of b/117526359.
 public class SessionManager extends AppStateUpdateHandler {
 

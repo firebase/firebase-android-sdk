@@ -13,4 +13,4 @@
 // limitations under the License.
 
 /** @hide */
-package com.google.firebase.perf.metrics.resource;
+package com.google.firebase.perf.injection.modules;
