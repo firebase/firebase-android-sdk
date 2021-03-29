@@ -90,7 +90,7 @@ class ModelDownloaderTests : BaseTestCase() {
 
         val customModel = CustomModel(modelName, modelHash, fileSize, downloadId)
 
-        val (file, name, hash, size, id) = customModel
+        val (file, size, id, hash, name) = customModel
 
         assertThat(name).isEqualTo(customModel.name)
         assertThat(hash).isEqualTo(customModel.modelHash)
