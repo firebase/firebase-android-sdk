@@ -48,11 +48,11 @@ public class FirebasePerformanceTestBase {
   protected static final String FAKE_FIREBASE_DB_URL = "https://fir-perftestapp.firebaseio.com";
   protected static final String FAKE_FIREBASE_PROJECT_ID = "fir-perftestapp";
 
-  protected Context context;
+  protected Context appContext;
 
   @Before
   public void setUpFirebaseApp() {
-    context = ApplicationProvider.getApplicationContext();
+    appContext = ApplicationProvider.getApplicationContext();
     FirebaseOptions options =
         new FirebaseOptions.Builder()
             .setApplicationId(FAKE_FIREBASE_APPLICATION_ID)
@@ -60,7 +60,7 @@ public class FirebasePerformanceTestBase {
             .setDatabaseUrl(FAKE_FIREBASE_DB_URL)
             .setProjectId(FAKE_FIREBASE_PROJECT_ID)
             .build();
-    FirebaseApp.initializeApp(context, options);
+    FirebaseApp.initializeApp(appContext, options);
   }
 
   @After

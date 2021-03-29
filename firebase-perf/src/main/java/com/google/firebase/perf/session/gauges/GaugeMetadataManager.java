@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.perf.session;
+package com.google.firebase.perf.session.gauges;
 
 import android.app.ActivityManager;
 import android.app.ActivityManager.MemoryInfo;
@@ -44,18 +44,17 @@ class GaugeMetadataManager {
   private final ActivityManager activityManager;
   private final MemoryInfo memoryInfo;
   private final String currentProcessName;
-  private final Context applicationContext;
+  private final Context appContext;
 
-  GaugeMetadataManager(Context applicationContext) {
-    this(Runtime.getRuntime(), applicationContext);
+  GaugeMetadataManager(Context appContext) {
+    this(Runtime.getRuntime(), appContext);
   }
 
   @VisibleForTesting
-  GaugeMetadataManager(Runtime runtime, Context applicationContext) {
+  GaugeMetadataManager(Runtime runtime, Context appContext) {
     this.runtime = runtime;
-    this.applicationContext = applicationContext;
-    this.activityManager =
-        (ActivityManager) applicationContext.getSystemService(Context.ACTIVITY_SERVICE);
+    this.appContext = appContext;
+    this.activityManager = (ActivityManager) appContext.getSystemService(Context.ACTIVITY_SERVICE);
     memoryInfo = new ActivityManager.MemoryInfo();
     activityManager.getMemoryInfo(memoryInfo);
 
@@ -130,6 +129,6 @@ class GaugeMetadataManager {
       }
     }
 
-    return applicationContext.getPackageName();
+    return appContext.getPackageName();
   }
 }

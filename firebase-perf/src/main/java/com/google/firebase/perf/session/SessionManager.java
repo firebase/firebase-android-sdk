@@ -19,6 +19,7 @@ import androidx.annotation.Keep;
 import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.firebase.perf.application.AppStateMonitor;
 import com.google.firebase.perf.application.AppStateUpdateHandler;
+import com.google.firebase.perf.session.gauges.GaugeManager;
 import com.google.firebase.perf.v1.ApplicationProcessState;
 import com.google.firebase.perf.v1.GaugeMetadata;
 import com.google.firebase.perf.v1.GaugeMetric;
@@ -37,7 +38,7 @@ import java.util.Set;
 public class SessionManager extends AppStateUpdateHandler {
 
   @SuppressLint("StaticFieldLeak")
-  private static final SessionManager ourInstance = new SessionManager();
+  private static final SessionManager instance = new SessionManager();
 
   private final GaugeManager gaugeManager;
   private final AppStateMonitor appStateMonitor;
@@ -47,7 +48,7 @@ public class SessionManager extends AppStateUpdateHandler {
 
   /** Returns the singleton instance of SessionManager. */
   public static SessionManager getInstance() {
-    return ourInstance;
+    return instance;
   }
 
   /** Returns the currently active PerfSession. */

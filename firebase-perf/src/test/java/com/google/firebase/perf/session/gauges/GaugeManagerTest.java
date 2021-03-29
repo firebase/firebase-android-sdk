@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.perf.session;
+package com.google.firebase.perf.session.gauges;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
@@ -29,8 +29,7 @@ import static org.mockito.Mockito.when;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.perf.FirebasePerformanceTestBase;
 import com.google.firebase.perf.config.ConfigResolver;
-import com.google.firebase.perf.session.collectors.CpuGaugeCollector;
-import com.google.firebase.perf.session.collectors.MemoryGaugeCollector;
+import com.google.firebase.perf.session.PerfSession;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.Timer;
@@ -48,7 +47,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
 import org.robolectric.RobolectricTestRunner;
 
-/** Unit tests for {@link GaugeManager} */
+/** Unit tests for {@link com.google.firebase.perf.session.gauges.GaugeManager} */
 @RunWith(RobolectricTestRunner.class)
 public final class GaugeManagerTest extends FirebasePerformanceTestBase {
 

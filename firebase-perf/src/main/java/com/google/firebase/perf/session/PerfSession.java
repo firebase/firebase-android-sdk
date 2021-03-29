@@ -20,7 +20,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.perf.config.ConfigResolver;
-import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.perf.v1.SessionVerbosity;
@@ -36,9 +35,10 @@ import java.util.concurrent.TimeUnit;
 /** @hide */
 public class PerfSession implements Parcelable {
 
-  private String mSessionId;
-  private boolean mGaugeAndEventCollectionEnabled = false;
-  private Timer mCreationTime;
+  private final String sessionId;
+  private final Timer creationTime;
+
+  private boolean isGaugeAndEventCollectionEnabled = false;
 
   /*
    * Creates a PerfSession object and decides what metrics to collect.
@@ -50,57 +50,52 @@ public class PerfSession implements Parcelable {
     PerfSession session = new PerfSession(sessionId, new Clock());
     session.setGaugeAndEventCollectionEnabled(shouldCollectGaugesAndEvents());
 
-    AndroidLogger.getInstance()
-        .debug(
-            "Creating a new %s Session: %s",
-            session.isVerbose() ? "Verbose" : "Non Verbose", sessionId);
-
     return session;
   }
 
   /** Creates a PerfSession with the provided {@code sessionId} and {@code clock}. */
   @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
   public PerfSession(String sessionId, Clock clock) {
-    mSessionId = sessionId;
-    mCreationTime = clock.getTime();
+    this.sessionId = sessionId;
+    creationTime = clock.getTime();
   }
 
   private PerfSession(@NonNull Parcel in) {
     super();
-    mSessionId = in.readString();
-    mGaugeAndEventCollectionEnabled = in.readByte() != 0;
-    mCreationTime = in.readParcelable(Timer.class.getClassLoader());
+    sessionId = in.readString();
+    isGaugeAndEventCollectionEnabled = in.readByte() != 0;
+    creationTime = in.readParcelable(Timer.class.getClassLoader());
   }
 
   /** Returns the sessionId of the object. */
   public String sessionId() {
-    return mSessionId;
+    return sessionId;
   }
 
   /**
    * Returns a timer object that has been seeded with the system time at which the session began.
    */
   public Timer getTimer() {
-    return mCreationTime;
+    return creationTime;
   }
 
   /*
    * Enables/Disables the gauge and event collection for the system.
    */
   public void setGaugeAndEventCollectionEnabled(boolean enabled) {
-    mGaugeAndEventCollectionEnabled = enabled;
+    isGaugeAndEventCollectionEnabled = enabled;
   }
 
   /*
    * Returns if gauge and event collection is enabled for the system.
    */
   public boolean isGaugeAndEventCollectionEnabled() {
-    return mGaugeAndEventCollectionEnabled;
+    return isGaugeAndEventCollectionEnabled;
   }
 
   /** Returns if the current session is verbose or not. */
   public boolean isVerbose() {
-    return mGaugeAndEventCollectionEnabled;
+    return isGaugeAndEventCollectionEnabled;
   }
 
   /** Checks if the current {@link com.google.firebase.perf.v1.PerfSession} is verbose or not. */
@@ -120,17 +115,17 @@ public class PerfSession implements Parcelable {
    * since the creation time of the current session.
    */
   public boolean isExpired() {
-    return TimeUnit.MICROSECONDS.toMinutes(mCreationTime.getDurationMicros())
+    return TimeUnit.MICROSECONDS.toMinutes(creationTime.getDurationMicros())
         > ConfigResolver.getInstance().getSessionsMaxDurationMinutes();
   }
 
   /** Creates and returns the proto object for PerfSession object. */
   public com.google.firebase.perf.v1.PerfSession build() {
     com.google.firebase.perf.v1.PerfSession.Builder sessionMetric =
-        com.google.firebase.perf.v1.PerfSession.newBuilder().setSessionId(mSessionId);
+        com.google.firebase.perf.v1.PerfSession.newBuilder().setSessionId(sessionId);
 
     // If gauge collection is enabled, enable gauge collection verbosity.
-    if (mGaugeAndEventCollectionEnabled) {
+    if (isGaugeAndEventCollectionEnabled) {
       sessionMetric.addSessionVerbosity(SessionVerbosity.GAUGES_AND_SYSTEM_EVENTS);
     }
     return sessionMetric.build();
@@ -202,9 +197,9 @@ public class PerfSession implements Parcelable {
    * @param flags Additional flags about how the object should be written.
    */
   public void writeToParcel(@NonNull Parcel out, int flags) {
-    out.writeString(mSessionId);
-    out.writeByte((byte) (mGaugeAndEventCollectionEnabled ? 1 : 0));
-    out.writeParcelable(mCreationTime, 0);
+    out.writeString(sessionId);
+    out.writeByte((byte) (isGaugeAndEventCollectionEnabled ? 1 : 0));
+    out.writeParcelable(creationTime, 0);
   }
 
   /**
