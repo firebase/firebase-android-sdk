@@ -13,6 +13,5 @@
 // limitations under the License.
 
 /** @hide */
-/** @hide */
 package com.google.firebase.perf.util;
 

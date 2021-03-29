@@ -17,12 +17,7 @@ package com.google.firebase.perf.logging;
 import androidx.annotation.VisibleForTesting;
 import java.util.Locale;
 
-/**
- * Firebase Performance logger that writes to logcat.
- *
- * @hide
- */
-/** @hide */
+/** Firebase Performance logger that writes to logcat. */
 public class AndroidLogger {
 
   private static volatile AndroidLogger instance;
