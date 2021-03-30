@@ -30,8 +30,8 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 
-const val APP_ID = "APP_ID"
-const val API_KEY = "API_KEY"
+const val APP_ID = "1:1234567890:android:321abc456def7890"
+const val API_KEY = "AIzaSyDOCAbC123dEf456GhI789jKl012-MnO"
 
 const val EXISTING_APP = "existing"
 
@@ -45,6 +45,15 @@ abstract class BaseTestCase {
                         .setApiKey(API_KEY)
                         .setProjectId("123")
                         .build()
+        )
+        Firebase.initialize(
+                RuntimeEnvironment.application,
+                FirebaseOptions.Builder()
+                        .setApplicationId(APP_ID)
+                        .setApiKey(API_KEY)
+                        .setProjectId("123")
+                        .build(),
+                EXISTING_APP
         )
     }
 
