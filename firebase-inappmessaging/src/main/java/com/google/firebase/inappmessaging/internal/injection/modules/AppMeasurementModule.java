@@ -16,7 +16,8 @@ package com.google.firebase.inappmessaging.internal.injection.modules;
 
 import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.events.Subscriber;
-import com.google.firebase.inappmessaging.internal.StubAnalyticsConnector;
+import com.google.firebase.inappmessaging.internal.ProxyAnalyticsConnector;
+import com.google.firebase.inject.Deferred;
 import dagger.Module;
 import dagger.Provides;
 import javax.inject.Singleton;
@@ -29,13 +30,12 @@ import javax.inject.Singleton;
 @Module
 public class AppMeasurementModule {
 
-  private AnalyticsConnector analyticsConnector;
-  private Subscriber firebaseEventsSubscriber;
+  private final AnalyticsConnector analyticsConnector;
+  private final Subscriber firebaseEventsSubscriber;
 
   public AppMeasurementModule(
-      AnalyticsConnector analyticsConnector, Subscriber firebaseEventsSubscriber) {
-    this.analyticsConnector =
-        analyticsConnector != null ? analyticsConnector : StubAnalyticsConnector.instance;
+      Deferred<AnalyticsConnector> analyticsConnector, Subscriber firebaseEventsSubscriber) {
+    this.analyticsConnector = new ProxyAnalyticsConnector(analyticsConnector);
     this.firebaseEventsSubscriber = firebaseEventsSubscriber;
   }
 
