@@ -110,7 +110,7 @@ public class PersonalizationTest {
         .when(mockAnalyticsConnector)
         .logEvent(eq(ANALYTICS_ORIGIN_PERSONALIZATION), anyString(), any(Bundle.class));
 
-    personalization = new Personalization(mockAnalyticsConnector);
+    personalization = new Personalization(() -> mockAnalyticsConnector);
 
     FAKE_LOGS.clear();
   }
