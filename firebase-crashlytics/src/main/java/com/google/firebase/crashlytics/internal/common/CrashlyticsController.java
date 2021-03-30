@@ -25,10 +25,10 @@ import com.google.android.gms.tasks.SuccessContinuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.crashlytics.AnalyticsDeferredComponents;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.NativeSessionFileProvider;
-import com.google.firebase.crashlytics.internal.analytics.AnalyticsEventLogger;
 import com.google.firebase.crashlytics.internal.log.LogFileManager;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.settings.SettingsDataProvider;
@@ -79,7 +79,7 @@ class CrashlyticsController {
   private final LogFileManager logFileManager;
   private final CrashlyticsNativeComponent nativeComponent;
   private final String unityVersion;
-  private final AnalyticsEventLogger analyticsEventLogger;
+  private final AnalyticsDeferredComponents analyticsDeferredComponents;
   private final SessionReportingCoordinator reportingCoordinator;
 
   private CrashlyticsUncaughtExceptionHandler crashHandler;
@@ -113,7 +113,7 @@ class CrashlyticsController {
       LogFileManager.DirectoryProvider logFileDirectoryProvider,
       SessionReportingCoordinator sessionReportingCoordinator,
       CrashlyticsNativeComponent nativeComponent,
-      AnalyticsEventLogger analyticsEventLogger) {
+      AnalyticsDeferredComponents analyticsDeferredComponents) {
     this.context = context;
     this.backgroundWorker = backgroundWorker;
     this.idManager = idManager;
@@ -126,7 +126,7 @@ class CrashlyticsController {
     this.logFileDirectoryProvider = logFileDirectoryProvider;
     this.nativeComponent = nativeComponent;
     this.unityVersion = appData.unityVersionProvider.getUnityVersion();
-    this.analyticsEventLogger = analyticsEventLogger;
+    this.analyticsDeferredComponents = analyticsDeferredComponents;
 
     this.reportingCoordinator = sessionReportingCoordinator;
   }
@@ -798,7 +798,9 @@ class CrashlyticsController {
             params.putInt(FIREBASE_CRASH_TYPE, FIREBASE_CRASH_TYPE_FATAL);
             params.putLong(FIREBASE_TIMESTAMP, timestamp);
 
-            analyticsEventLogger.logEvent(FIREBASE_APPLICATION_EXCEPTION, params);
+            analyticsDeferredComponents
+                .getAnalyticsEventLogger()
+                .logEvent(FIREBASE_APPLICATION_EXCEPTION, params);
 
             return null;
           }

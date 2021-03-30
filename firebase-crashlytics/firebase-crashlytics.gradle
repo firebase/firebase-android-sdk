@@ -64,7 +64,7 @@ dependencies {
     implementation project(':transport:transport-backend-cct')
     implementation project(':firebase-installations-interop')
     runtimeOnly project(':firebase-installations')
-    implementation 'com.google.firebase:firebase-measurement-connector:18.0.0'
+    implementation 'com.google.firebase:firebase-measurement-connector:18.0.2'
     implementation "com.google.android.gms:play-services-tasks:17.0.0"
 
     javadocClasspath 'com.google.code.findbugs:jsr305:3.0.2'

@@ -22,11 +22,10 @@ import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.crashlytics.AnalyticsDeferredComponents;
 import com.google.firebase.crashlytics.BuildConfig;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.Logger;
-import com.google.firebase.crashlytics.internal.analytics.AnalyticsEventLogger;
-import com.google.firebase.crashlytics.internal.breadcrumbs.BreadcrumbSource;
 import com.google.firebase.crashlytics.internal.log.LogFileManager;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.persistence.FileStoreImpl;
@@ -78,8 +77,7 @@ public class CrashlyticsCore {
   private CrashlyticsController controller;
 
   private final IdManager idManager;
-  private final BreadcrumbSource breadcrumbSource;
-  private final AnalyticsEventLogger analyticsEventLogger;
+  private final AnalyticsDeferredComponents analyticsDeferredComponents;
   private final ExecutorService crashHandlerExecutor;
   private final CrashlyticsBackgroundWorker backgroundWorker;
 
@@ -92,16 +90,14 @@ public class CrashlyticsCore {
       IdManager idManager,
       CrashlyticsNativeComponent nativeComponent,
       DataCollectionArbiter dataCollectionArbiter,
-      BreadcrumbSource breadcrumbSource,
-      AnalyticsEventLogger analyticsEventLogger,
+      AnalyticsDeferredComponents analyticsDeferredComponents,
       ExecutorService crashHandlerExecutor) {
     this.app = app;
     this.dataCollectionArbiter = dataCollectionArbiter;
     this.context = app.getApplicationContext();
     this.idManager = idManager;
     this.nativeComponent = nativeComponent;
-    this.breadcrumbSource = breadcrumbSource;
-    this.analyticsEventLogger = analyticsEventLogger;
+    this.analyticsDeferredComponents = analyticsDeferredComponents;
     this.crashHandlerExecutor = crashHandlerExecutor;
     this.backgroundWorker = new CrashlyticsBackgroundWorker(crashHandlerExecutor);
 
@@ -164,7 +160,7 @@ public class CrashlyticsCore {
               logFileDirectoryProvider,
               sessionReportingCoordinator,
               nativeComponent,
-              analyticsEventLogger);
+              analyticsDeferredComponents);
 
       // If the file is present at this point, then the previous run's initialization
       // did not complete, and we want to perform initialization synchronously this time.
@@ -216,7 +212,7 @@ public class CrashlyticsCore {
     markInitializationStarted();
 
     try {
-      breadcrumbSource.registerBreadcrumbHandler(this::log);
+      analyticsDeferredComponents.getBreadcrumbSource().registerBreadcrumbHandler(this::log);
 
       final Settings settingsData = settingsProvider.getSettings();
 
