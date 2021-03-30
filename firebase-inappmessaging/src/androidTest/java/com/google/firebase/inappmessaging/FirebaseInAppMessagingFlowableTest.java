@@ -265,7 +265,8 @@ public class FirebaseInAppMessagingFlowableTest {
             .testForegroundFlowableModule(new TestForegroundFlowableModule(foregroundNotifier))
             .applicationModule(new ApplicationModule(application))
             .appMeasurementModule(
-                new AppMeasurementModule(analyticsConnector, firebaseEventSubscriber))
+                new AppMeasurementModule(
+                    p -> p.handle(() -> analyticsConnector), firebaseEventSubscriber))
             .testSystemClockModule(new TestSystemClockModule(NOW))
             .programmaticContextualTriggerFlowableModule(
                 new ProgrammaticContextualTriggerFlowableModule(
@@ -313,7 +314,7 @@ public class FirebaseInAppMessagingFlowableTest {
   public void onAppOpen_whenAnalyticsAbsent_notifiesSubscriber() {
     TestUniversalComponent analyticsLessUniversalComponent =
         universalComponentBuilder
-            .appMeasurementModule(new AppMeasurementModule(null, firebaseEventSubscriber))
+            .appMeasurementModule(new AppMeasurementModule(handler -> {}, firebaseEventSubscriber))
             .build();
     TestAppComponent appComponent =
         appComponentBuilder.universalComponent(analyticsLessUniversalComponent).build();
