@@ -163,7 +163,7 @@ public final class FirebaseRemoteConfigTest {
     Context context = RuntimeEnvironment.application;
     FirebaseApp firebaseApp = initializeFirebaseApp(context);
 
-    Personalization personalization = new Personalization(mockAnalyticsConnector);
+    Personalization personalization = new Personalization(() -> mockAnalyticsConnector);
     ConfigGetParameterHandler parameterHandler =
         new ConfigGetParameterHandler(directExecutor, mockActivatedCache, mockDefaultsCache);
     parameterHandler.addListener(personalization::logArmActive);
