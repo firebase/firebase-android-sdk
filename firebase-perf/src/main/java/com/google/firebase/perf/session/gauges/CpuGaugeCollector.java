@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.perf.session.collectors;
+package com.google.firebase.perf.session.gauges;
 
 import static android.system.Os.sysconf;
 
@@ -40,10 +40,7 @@ import java.util.concurrent.TimeUnit;
  *
  * <p>The class methods are not generally thread safe, but it is thread safe to read and write to
  * the ConcurrentLinkedQueue.
- *
- * @hide
  */
-/** @hide */
 public class CpuGaugeCollector {
 
   private static final AndroidLogger logger = AndroidLogger.getInstance();
@@ -74,16 +71,16 @@ public class CpuGaugeCollector {
   // This utility isn't provided by TimeUnits.SECONDS.toMicros() - it only accepts longs.
   private static final long MICROSECONDS_PER_SECOND = TimeUnit.SECONDS.toMicros(1);
 
-  @Nullable private static CpuGaugeCollector sharedInstance = null;
-  @Nullable private ScheduledFuture cpuMetricCollectorJob = null;
-
-  private final ScheduledExecutorService cpuMetricCollectorExecutor;
-  private long cpuMetricCollectionRateMs = UNSET_CPU_METRIC_COLLECTION_RATE;
-  private final long clockTicksPerSecond;
-  private final String procFileName;
+  @Nullable private static CpuGaugeCollector instance = null;
 
   /* This is populated by CpuGaugeCollector but it's drained by GaugeManager.*/
   public final ConcurrentLinkedQueue<CpuMetricReading> cpuMetricReadings;
+  private final ScheduledExecutorService cpuMetricCollectorExecutor;
+  private final String procFileName;
+  private final long clockTicksPerSecond;
+
+  @Nullable private ScheduledFuture cpuMetricCollectorJob = null;
+  private long cpuMetricCollectionRateMs = UNSET_CPU_METRIC_COLLECTION_RATE;
 
   private CpuGaugeCollector() {
     cpuMetricReadings = new ConcurrentLinkedQueue<>();
@@ -108,10 +105,10 @@ public class CpuGaugeCollector {
 
   /** Returns the singleton instance of this class. */
   public static CpuGaugeCollector getInstance() {
-    if (sharedInstance == null) {
-      sharedInstance = new CpuGaugeCollector();
+    if (instance == null) {
+      instance = new CpuGaugeCollector();
     }
-    return sharedInstance;
+    return instance;
   }
 
   /**

@@ -16,12 +16,7 @@ package com.google.firebase.perf.logging;
 
 import android.util.Log;
 
-/**
- * Wrapper that handles Android logcat logging.
- *
- * @hide
- */
-/** @hide */
+/** Wrapper that handles Android logcat logging. */
 class LogWrapper {
 
   private static final String LOG_TAG = "FirebasePerformance";

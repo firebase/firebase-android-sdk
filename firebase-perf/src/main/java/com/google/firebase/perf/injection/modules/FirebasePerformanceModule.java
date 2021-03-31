@@ -22,16 +22,12 @@ import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.perf.FirebasePerformance;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.config.RemoteConfigManager;
-import com.google.firebase.perf.session.GaugeManager;
+import com.google.firebase.perf.session.gauges.GaugeManager;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
 import dagger.Module;
 import dagger.Provides;
 
-/**
- * Provider for {@link FirebasePerformance}.
- *
- * @hide
- */
+/** Provider for {@link FirebasePerformance}. */
 @Module
 public class FirebasePerformanceModule {
   private final FirebaseApp firebaseApp;
