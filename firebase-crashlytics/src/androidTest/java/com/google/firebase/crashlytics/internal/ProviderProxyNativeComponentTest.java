@@ -22,7 +22,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
-public class ProviderProxyNative {
+public class ProviderProxyNativeComponentTest {
   private static final String TEST_STRING = "abc";
   private static final long TEST_LONG = 123;
   private static final boolean TEST_BOOLEAN = true;
