@@ -962,7 +962,7 @@ public final class FirebaseRemoteConfigTest {
   @Test
   public void personalization_hasMetadata_successful() throws Exception {
     List<Bundle> fakeLogs = new ArrayList<>();
-    when(mockAnalyticsConnectorProvider.get()).thenReturn(mockAnalyticsConnector);
+    when(mockAnalyticsConnectorProvider.get()).thenReturn(null).thenReturn(mockAnalyticsConnector);
     doAnswer(invocation -> fakeLogs.add(invocation.getArgument(2)))
         .when(mockAnalyticsConnector)
         .logEvent(
@@ -992,21 +992,19 @@ public final class FirebaseRemoteConfigTest {
               personalizationFrc.getString("key1");
               personalizationFrc.getString("key2");
 
-              verify(mockAnalyticsConnector, times(2))
+              // Since the first time we tried to get the Analytics connector we got `null` (not
+              // available) we should only get the values for the second `getString` call.
+              verify(mockAnalyticsConnector, times(1))
                   .logEvent(
                       eq(Personalization.ANALYTICS_ORIGIN_PERSONALIZATION),
                       eq(Personalization.EXTERNAL_EVENT),
                       any(Bundle.class));
-              assertThat(fakeLogs).hasSize(2);
+              assertThat(fakeLogs).hasSize(1);
 
               assertThat(fakeLogs.get(0))
                   .string(EXTERNAL_PERSONALIZATION_ID_PARAM)
-                  .isEqualTo("id1");
-              assertThat(fakeLogs.get(0)).string(EXTERNAL_ARM_VALUE_PARAM).isEqualTo("value1");
-              assertThat(fakeLogs.get(1))
-                  .string(EXTERNAL_PERSONALIZATION_ID_PARAM)
                   .isEqualTo("id2");
-              assertThat(fakeLogs.get(1)).string(EXTERNAL_ARM_VALUE_PARAM).isEqualTo("value2");
+              assertThat(fakeLogs.get(0)).string(EXTERNAL_ARM_VALUE_PARAM).isEqualTo("value2");
             });
   }
 
@@ -1034,7 +1032,7 @@ public final class FirebaseRemoteConfigTest {
         .addOnCompleteListener(
             success -> {
               personalizationFrc.getString("key1");
-
+              personalizationFrc.getString("key2");
               verify(mockAnalyticsConnector, never())
                   .logEvent(anyString(), anyString(), any(Bundle.class));
               assertThat(fakeLogs).isEmpty();
