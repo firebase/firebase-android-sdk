@@ -18,6 +18,7 @@ import static com.google.firebase.crashlytics.FirebaseCrashlytics.APP_EXCEPTION_
 import static com.google.firebase.crashlytics.FirebaseCrashlytics.FIREBASE_CRASHLYTICS_ANALYTICS_ORIGIN;
 import static com.google.firebase.crashlytics.FirebaseCrashlytics.LEGACY_CRASH_ANALYTICS_ORIGIN;
 
+import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.annotations.DeferredApi;
@@ -39,7 +40,10 @@ import java.util.concurrent.TimeUnit;
 public class AnalyticsDeferredComponents {
   private final Deferred<AnalyticsConnector> analyticsConnectorDeferred;
   private BreadcrumbSource breadcrumbSource;
+
+  @GuardedBy("this")
   private List<BreadcrumbHandler> breadcrumbHandlerList;
+
   private AnalyticsEventLogger analyticsEventLogger;
 
   public AnalyticsDeferredComponents(Deferred<AnalyticsConnector> analyticsConnectorDeferred) {
@@ -62,8 +66,10 @@ public class AnalyticsDeferredComponents {
 
   public BreadcrumbSource getDeferredBreadcrumbSource() {
     return breadcrumbHandler -> {
-      breadcrumbHandlerList.add(breadcrumbHandler);
-      breadcrumbSource.registerBreadcrumbHandler(breadcrumbHandler);
+      synchronized (this) {
+        breadcrumbHandlerList.add(breadcrumbHandler);
+        breadcrumbSource.registerBreadcrumbHandler(breadcrumbHandler);
+      }
     };
   }
 
@@ -108,15 +114,23 @@ public class AnalyticsDeferredComponents {
                     APP_EXCEPTION_CALLBACK_TIMEOUT_MS,
                     TimeUnit.MILLISECONDS);
 
-            // Set the appropriate event receivers to receive events from the FA listener
-            crashlyticsAnalyticsListener.setBreadcrumbEventReceiver(breadcrumbReceiver);
-            crashlyticsAnalyticsListener.setCrashlyticsOriginEventReceiver(
-                blockingAnalyticsEventLogger);
+            synchronized (this) {
+              // We need to re-register every handler registered in the other receiver. These
+              // instructions are synchronized to ensure no handler is lost when registering the new
+              // objects.
+              for (BreadcrumbHandler handler : breadcrumbHandlerList) {
+                breadcrumbReceiver.registerBreadcrumbHandler(handler);
+              }
+              // Set the appropriate event receivers to receive events from the FA listener
+              crashlyticsAnalyticsListener.setBreadcrumbEventReceiver(breadcrumbReceiver);
+              crashlyticsAnalyticsListener.setCrashlyticsOriginEventReceiver(
+                  blockingAnalyticsEventLogger);
 
-            // Set the breadcrumb event receiver as the breadcrumb source for Crashlytics.
-            breadcrumbSource = breadcrumbReceiver;
-            // Set the blocking analytics event logger for Crashlytics.
-            analyticsEventLogger = blockingAnalyticsEventLogger;
+              // Set the breadcrumb event receiver as the breadcrumb source for Crashlytics.
+              breadcrumbSource = breadcrumbReceiver;
+              // Set the blocking analytics event logger for Crashlytics.
+              analyticsEventLogger = blockingAnalyticsEventLogger;
+            }
           } else {
             Logger.getLogger()
                 .w(
