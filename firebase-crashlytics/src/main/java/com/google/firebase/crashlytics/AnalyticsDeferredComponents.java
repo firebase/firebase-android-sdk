@@ -27,15 +27,19 @@ import com.google.firebase.crashlytics.internal.analytics.BlockingAnalyticsEvent
 import com.google.firebase.crashlytics.internal.analytics.BreadcrumbAnalyticsEventReceiver;
 import com.google.firebase.crashlytics.internal.analytics.CrashlyticsOriginAnalyticsEventLogger;
 import com.google.firebase.crashlytics.internal.analytics.UnavailableAnalyticsEventLogger;
+import com.google.firebase.crashlytics.internal.breadcrumbs.BreadcrumbHandler;
 import com.google.firebase.crashlytics.internal.breadcrumbs.BreadcrumbSource;
 import com.google.firebase.crashlytics.internal.breadcrumbs.DisabledBreadcrumbSource;
 import com.google.firebase.inject.Deferred;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /** @hide */
 public class AnalyticsDeferredComponents {
   private final Deferred<AnalyticsConnector> analyticsConnectorDeferred;
   private BreadcrumbSource breadcrumbSource;
+  private List<BreadcrumbHandler> breadcrumbHandlerList;
   private AnalyticsEventLogger analyticsEventLogger;
 
   public AnalyticsDeferredComponents(Deferred<AnalyticsConnector> analyticsConnectorDeferred) {
@@ -51,16 +55,20 @@ public class AnalyticsDeferredComponents {
       @NonNull AnalyticsEventLogger analyticsEventLogger) {
     this.analyticsConnectorDeferred = analyticsConnectorDeferred;
     this.breadcrumbSource = breadcrumbSource;
+    this.breadcrumbHandlerList = new ArrayList<>();
     this.analyticsEventLogger = analyticsEventLogger;
     init();
   }
 
-  public BreadcrumbSource getBreadcrumbSource() {
-    return breadcrumbSource;
+  public BreadcrumbSource getDeferredBreadcrumbSource() {
+    return breadcrumbHandler -> {
+      breadcrumbHandlerList.add(breadcrumbHandler);
+      breadcrumbSource.registerBreadcrumbHandler(breadcrumbHandler);
+    };
   }
 
   public AnalyticsEventLogger getAnalyticsEventLogger() {
-    return analyticsEventLogger;
+    return (name, params) -> analyticsEventLogger.logEvent(name, params);
   }
 
   private void init() {

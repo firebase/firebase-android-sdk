@@ -87,7 +87,8 @@ public class FirebaseCrashlytics {
             idManager,
             nativeComponent,
             arbiter,
-            analyticsDeferredComponents,
+            analyticsDeferredComponents.getDeferredBreadcrumbSource(),
+            analyticsDeferredComponents.getAnalyticsEventLogger(),
             crashHandlerExecutor);
 
     final String googleAppId = app.getOptions().getApplicationId();
