@@ -714,7 +714,7 @@ public class ConfigFetchHandlerTest {
         spy(
             new ConfigFetchHandler(
                 mockFirebaseInstallations,
-                analyticsConnector,
+                () -> analyticsConnector,
                 directExecutor,
                 mockClock,
                 mockRandom,

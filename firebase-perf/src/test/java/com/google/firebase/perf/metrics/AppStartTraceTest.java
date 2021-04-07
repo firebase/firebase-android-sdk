@@ -24,8 +24,8 @@ import android.app.Activity;
 import android.content.pm.ProviderInfo;
 import android.os.Bundle;
 import com.google.firebase.perf.FirebasePerformanceTestBase;
-import com.google.firebase.perf.internal.SessionManager;
 import com.google.firebase.perf.provider.FirebasePerfProvider;
+import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.Constants;
@@ -49,22 +49,22 @@ import org.robolectric.RuntimeEnvironment;
 @RunWith(RobolectricTestRunner.class)
 public class AppStartTraceTest extends FirebasePerformanceTestBase {
 
-  @Mock private Clock mClock;
+  @Mock private Clock clock;
   @Mock private TransportManager transportManager;
-  @Mock private Activity mActivity1;
-  @Mock private Activity mActivity2;
-  @Mock private Bundle mBundle;
+  @Mock private Activity activity1;
+  @Mock private Activity activity2;
+  @Mock private Bundle bundle;
 
-  private ArgumentCaptor<TraceMetric> mArguments;
+  private ArgumentCaptor<TraceMetric> traceArgumentCaptor;
 
   // a mocked current wall-clock time in microseconds.
-  private long mCurrentTime = 0;
+  private long currentTime = 0;
 
   // wall-clock time in microseconds
-  private long mAppStartTime;
+  private long appStartTime;
 
   // high resolution time in microseconds
-  private long mAppStartHRT;
+  private long appStartHRT;
 
   @Before
   public void setUp() {
@@ -73,48 +73,48 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
             new Answer<Timer>() {
               @Override
               public Timer answer(InvocationOnMock invocationOnMock) throws Throwable {
-                return new Timer(mCurrentTime);
+                return new Timer(currentTime);
               }
             })
-        .when(mClock)
+        .when(clock)
         .getTime();
     transportManager = mock(TransportManager.class);
-    mArguments = ArgumentCaptor.forClass(TraceMetric.class);
-    mAppStartTime = FirebasePerfProvider.getAppStartTime().getMicros();
-    mAppStartHRT = FirebasePerfProvider.getAppStartTime().getHighResTime();
+    traceArgumentCaptor = ArgumentCaptor.forClass(TraceMetric.class);
+    appStartTime = FirebasePerfProvider.getAppStartTime().getMicros();
+    appStartHRT = FirebasePerfProvider.getAppStartTime().getHighResTime();
   }
 
   /** Test activity sequentially goes through onCreate()->onStart()->onResume() state change. */
   @Test
   public void testLaunchActivity() {
-    AppStartTrace trace = new AppStartTrace(transportManager, mClock);
+    AppStartTrace trace = new AppStartTrace(transportManager, clock);
     // first activity goes through onCreate()->onStart()->onResume() state change.
-    mCurrentTime = 1;
-    trace.onActivityCreated(mActivity1, mBundle);
-    mCurrentTime = 2;
-    trace.onActivityStarted(mActivity1);
-    mCurrentTime = 3;
-    trace.onActivityResumed(mActivity1);
-    verifyFinalState(mActivity1, trace, 1, 2, 3);
+    currentTime = 1;
+    trace.onActivityCreated(activity1, bundle);
+    currentTime = 2;
+    trace.onActivityStarted(activity1);
+    currentTime = 3;
+    trace.onActivityResumed(activity1);
+    verifyFinalState(activity1, trace, 1, 2, 3);
     // same activity goes through onCreate()->onStart()->onResume() state change again.
     // should have no effect on AppStartTrace.
-    mCurrentTime = 4;
-    trace.onActivityCreated(mActivity1, mBundle);
-    mCurrentTime = 5;
-    trace.onActivityStarted(mActivity1);
-    mCurrentTime = 6;
-    trace.onActivityResumed(mActivity1);
-    verifyFinalState(mActivity1, trace, 1, 2, 3);
+    currentTime = 4;
+    trace.onActivityCreated(activity1, bundle);
+    currentTime = 5;
+    trace.onActivityStarted(activity1);
+    currentTime = 6;
+    trace.onActivityResumed(activity1);
+    verifyFinalState(activity1, trace, 1, 2, 3);
 
     // a different activity goes through onCreate()->onStart()->onResume() state change.
     // should have no effect on AppStartTrace.
-    mCurrentTime = 7;
-    trace.onActivityCreated(mActivity2, mBundle);
-    mCurrentTime = 8;
-    trace.onActivityStarted(mActivity2);
-    mCurrentTime = 9;
-    trace.onActivityResumed(mActivity2);
-    verifyFinalState(mActivity1, trace, 1, 2, 3);
+    currentTime = 7;
+    trace.onActivityCreated(activity2, bundle);
+    currentTime = 8;
+    trace.onActivityStarted(activity2);
+    currentTime = 9;
+    trace.onActivityResumed(activity2);
+    verifyFinalState(activity1, trace, 1, 2, 3);
   }
 
   private void verifyFinalState(
@@ -124,18 +124,20 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
     Assert.assertEquals(startTime, trace.getOnStartTime().getMicros());
     Assert.assertEquals(resumeTime, trace.getOnResumeTime().getMicros());
     verify(transportManager, times(1))
-        .log(mArguments.capture(), ArgumentMatchers.nullable(ApplicationProcessState.class));
-    TraceMetric metric = mArguments.getValue();
+        .log(
+            traceArgumentCaptor.capture(),
+            ArgumentMatchers.nullable(ApplicationProcessState.class));
+    TraceMetric metric = traceArgumentCaptor.getValue();
 
     Assert.assertEquals(Constants.TraceNames.APP_START_TRACE_NAME.toString(), metric.getName());
-    Assert.assertEquals(mAppStartTime, metric.getClientStartTimeUs());
-    Assert.assertEquals(resumeTime - mAppStartHRT, metric.getDurationUs());
+    Assert.assertEquals(appStartTime, metric.getClientStartTimeUs());
+    Assert.assertEquals(resumeTime - appStartHRT, metric.getDurationUs());
 
     Assert.assertEquals(3, metric.getSubtracesCount());
     Assert.assertEquals(
         Constants.TraceNames.ON_CREATE_TRACE_NAME.toString(), metric.getSubtraces(0).getName());
-    Assert.assertEquals(mAppStartTime, metric.getSubtraces(0).getClientStartTimeUs());
-    Assert.assertEquals(createTime - mAppStartHRT, metric.getSubtraces(0).getDurationUs());
+    Assert.assertEquals(appStartTime, metric.getSubtraces(0).getClientStartTimeUs());
+    Assert.assertEquals(createTime - appStartHRT, metric.getSubtraces(0).getDurationUs());
 
     Assert.assertEquals(
         Constants.TraceNames.ON_START_TRACE_NAME.toString(), metric.getSubtraces(1).getName());
@@ -156,69 +158,73 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
    */
   @Test
   public void testInterleavedActivity() {
-    AppStartTrace trace = new AppStartTrace(transportManager, mClock);
+    AppStartTrace trace = new AppStartTrace(transportManager, clock);
     // first activity onCreate()
-    mCurrentTime = 1;
-    trace.onActivityCreated(mActivity1, mBundle);
-    Assert.assertEquals(mActivity1, trace.getLaunchActivity());
+    currentTime = 1;
+    trace.onActivityCreated(activity1, bundle);
+    Assert.assertEquals(activity1, trace.getLaunchActivity());
     Assert.assertEquals(1, trace.getOnCreateTime().getMicros());
     // second activity onCreate(), should not change onCreate time.
-    mCurrentTime = 2;
-    trace.onActivityCreated(mActivity2, mBundle);
+    currentTime = 2;
+    trace.onActivityCreated(activity2, bundle);
     Assert.assertEquals(1, trace.getOnCreateTime().getMicros());
     // second activity onStart() time is recorded as onStartTime.
-    mCurrentTime = 3;
-    trace.onActivityStarted(mActivity2);
+    currentTime = 3;
+    trace.onActivityStarted(activity2);
     Assert.assertEquals(3, trace.getOnStartTime().getMicros());
     // second activity onResume() time is recorded as onResumeTime.
     // and second activity is recorded as AppStartActivity.
-    mCurrentTime = 4;
-    trace.onActivityResumed(mActivity2);
-    Assert.assertEquals(mActivity1, trace.getLaunchActivity());
-    Assert.assertEquals(mActivity2, trace.getAppStartActivity());
-    verifyFinalState(mActivity2, trace, 1, 3, 4);
+    currentTime = 4;
+    trace.onActivityResumed(activity2);
+    Assert.assertEquals(activity1, trace.getLaunchActivity());
+    Assert.assertEquals(activity2, trace.getAppStartActivity());
+    verifyFinalState(activity2, trace, 1, 3, 4);
 
     // first activity continues.
-    mCurrentTime = 5;
-    trace.onActivityStarted(mActivity1);
-    mCurrentTime = 6;
-    trace.onActivityResumed(mActivity1);
-    verifyFinalState(mActivity2, trace, 1, 3, 4);
+    currentTime = 5;
+    trace.onActivityStarted(activity1);
+    currentTime = 6;
+    trace.onActivityResumed(activity1);
+    verifyFinalState(activity2, trace, 1, 3, 4);
   }
 
   @Test
   public void testDelayedAppStart() {
-    AppStartTrace trace = new AppStartTrace(transportManager, mClock);
+    AppStartTrace trace = new AppStartTrace(transportManager, clock);
     // Delays activity creation after 1 minute from app start time.
-    mCurrentTime = mAppStartTime + TimeUnit.MINUTES.toMicros(1) + 1;
-    trace.onActivityCreated(mActivity1, mBundle);
-    Assert.assertEquals(mCurrentTime, trace.getOnCreateTime().getMicros());
-    ++mCurrentTime;
-    trace.onActivityStarted(mActivity1);
-    ++mCurrentTime;
-    trace.onActivityResumed(mActivity1);
+    currentTime = appStartTime + TimeUnit.MINUTES.toMicros(1) + 1;
+    trace.onActivityCreated(activity1, bundle);
+    Assert.assertEquals(currentTime, trace.getOnCreateTime().getMicros());
+    ++currentTime;
+    trace.onActivityStarted(activity1);
+    ++currentTime;
+    trace.onActivityResumed(activity1);
     Assert.assertNull(trace.getOnStartTime());
     Assert.assertNull(trace.getOnResumeTime());
     // There should be no trace sent.
     verify(transportManager, times(0))
-        .log(mArguments.capture(), ArgumentMatchers.nullable(ApplicationProcessState.class));
+        .log(
+            traceArgumentCaptor.capture(),
+            ArgumentMatchers.nullable(ApplicationProcessState.class));
   }
 
   @Test
   public void testStartFromBackground() {
-    AppStartTrace trace = new AppStartTrace(transportManager, mClock);
+    AppStartTrace trace = new AppStartTrace(transportManager, clock);
     trace.setIsStartFromBackground();
-    trace.onActivityCreated(mActivity1, mBundle);
+    trace.onActivityCreated(activity1, bundle);
     Assert.assertNull(trace.getOnCreateTime());
-    ++mCurrentTime;
-    trace.onActivityStarted(mActivity1);
+    ++currentTime;
+    trace.onActivityStarted(activity1);
     Assert.assertNull(trace.getOnStartTime());
-    ++mCurrentTime;
-    trace.onActivityResumed(mActivity1);
+    ++currentTime;
+    trace.onActivityResumed(activity1);
     Assert.assertNull(trace.getOnResumeTime());
     // There should be no trace sent.
     verify(transportManager, times(0))
-        .log(mArguments.capture(), ArgumentMatchers.nullable(ApplicationProcessState.class));
+        .log(
+            traceArgumentCaptor.capture(),
+            ArgumentMatchers.nullable(ApplicationProcessState.class));
   }
 
   @Test

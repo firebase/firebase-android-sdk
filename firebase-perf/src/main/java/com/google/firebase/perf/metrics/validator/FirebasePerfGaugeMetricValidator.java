@@ -22,6 +22,7 @@ import com.google.firebase.perf.v1.PerfMetric;
  * containing it should be logged to transport.
  */
 final class FirebasePerfGaugeMetricValidator extends PerfMetricValidator {
+
   private final GaugeMetric gaugeMetric;
 
   FirebasePerfGaugeMetricValidator(GaugeMetric gaugeMetric) {

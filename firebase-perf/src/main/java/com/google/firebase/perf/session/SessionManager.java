@@ -1,9 +1,9 @@
-// Copyright 2020 Google LLC
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
-//
 // You may obtain a copy of the License at
+//
 //      http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
@@ -12,11 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.perf.internal;
+package com.google.firebase.perf.session;
 
 import android.annotation.SuppressLint;
 import androidx.annotation.Keep;
 import com.google.android.gms.common.util.VisibleForTesting;
+import com.google.firebase.perf.application.AppStateMonitor;
+import com.google.firebase.perf.application.AppStateUpdateHandler;
+import com.google.firebase.perf.session.gauges.GaugeManager;
 import com.google.firebase.perf.v1.ApplicationProcessState;
 import com.google.firebase.perf.v1.GaugeMetadata;
 import com.google.firebase.perf.v1.GaugeMetric;
@@ -25,17 +28,12 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-/**
- * Session manager to generate sessionIDs and broadcast to the application.
- *
- * @hide
- */
-/** @hide */
+/** Session manager to generate sessionIDs and broadcast to the application. */
 @Keep // Needed because of b/117526359.
 public class SessionManager extends AppStateUpdateHandler {
 
   @SuppressLint("StaticFieldLeak")
-  private static final SessionManager ourInstance = new SessionManager();
+  private static final SessionManager instance = new SessionManager();
 
   private final GaugeManager gaugeManager;
   private final AppStateMonitor appStateMonitor;
@@ -45,7 +43,7 @@ public class SessionManager extends AppStateUpdateHandler {
 
   /** Returns the singleton instance of SessionManager. */
   public static SessionManager getInstance() {
-    return ourInstance;
+    return instance;
   }
 
   /** Returns the currently active PerfSession. */

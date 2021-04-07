@@ -16,7 +16,7 @@ package com.google.firebase.lint.checks
 
 import com.android.tools.lint.checks.infrastructure.LintDetectorTest
 
-private fun annotationSource(): String {
+fun annotationSource(): String {
     return """
         package com.google.firebase.annotations;
 
@@ -25,7 +25,7 @@ private fun annotationSource(): String {
     """.trimIndent()
 }
 
-private fun deferredSource(): String {
+fun deferredSource(): String {
     return """
         package com.google.firebase.inject;
         import com.google.firebase.annotations.DeferredApi;
@@ -51,7 +51,7 @@ fun providerSource(): String {
     """.trimIndent()
 }
 
-private fun annotatedInterface() = """
+fun annotatedInterface() = """
             import com.google.firebase.annotations.DeferredApi;
             
             interface MyApi {

@@ -22,21 +22,22 @@ import java.util.concurrent.TimeUnit;
 
 /** A Timer class provides both wall-clock (epoch) time and high resolution time (nano time). */
 public class Timer implements Parcelable {
+
   /** Wall-clock time or epoch time in microseconds, */
-  private long mTime;
+  private long timeInMicros;
   /**
    * High resolution time in nanoseconds. High resolution time should only be used to calculate
    * duration or latency. It is not wall-clock time.
    */
-  private long mHighResTime;
+  private long highResTime;
 
   /**
    * Construct Timer object using System clock. Make it package visible to be only accessible from
    * com.google.firebase.perf.util.Clock.
    */
   public Timer() {
-    mTime = TimeUnit.MILLISECONDS.toMicros(System.currentTimeMillis());
-    mHighResTime = System.nanoTime();
+    timeInMicros = TimeUnit.MILLISECONDS.toMicros(System.currentTimeMillis());
+    highResTime = System.nanoTime();
   }
 
   /**
@@ -47,8 +48,8 @@ public class Timer implements Parcelable {
    */
   @VisibleForTesting
   public Timer(long time) {
-    mTime = time;
-    mHighResTime = TimeUnit.MICROSECONDS.toNanos(time);
+    this.timeInMicros = time;
+    highResTime = TimeUnit.MICROSECONDS.toNanos(time);
   }
 
   /**
@@ -59,24 +60,24 @@ public class Timer implements Parcelable {
    */
   @VisibleForTesting
   public Timer(long time, long highResTime) {
-    mTime = time;
-    mHighResTime = highResTime;
+    this.timeInMicros = time;
+    this.highResTime = highResTime;
   }
 
   private Timer(Parcel in) {
-    mTime = in.readLong();
-    mHighResTime = in.readLong();
+    timeInMicros = in.readLong();
+    highResTime = in.readLong();
   }
 
   /** resets the start time */
   public void reset() {
-    mTime = TimeUnit.MILLISECONDS.toMicros(System.currentTimeMillis());
-    mHighResTime = System.nanoTime();
+    timeInMicros = TimeUnit.MILLISECONDS.toMicros(System.currentTimeMillis());
+    highResTime = System.nanoTime();
   }
 
   /** Return wall-clock time in microseconds. */
   public long getMicros() {
-    return mTime;
+    return timeInMicros;
   }
 
   /**
@@ -87,7 +88,7 @@ public class Timer implements Parcelable {
    * @return duration in microseconds.
    */
   public long getDurationMicros() {
-    return TimeUnit.NANOSECONDS.toMicros(System.nanoTime() - this.mHighResTime);
+    return TimeUnit.NANOSECONDS.toMicros(System.nanoTime() - this.highResTime);
   }
 
   /**
@@ -98,7 +99,7 @@ public class Timer implements Parcelable {
    * @return duration in microseconds.
    */
   public long getDurationMicros(@NonNull final Timer end) {
-    return TimeUnit.NANOSECONDS.toMicros(end.mHighResTime - this.mHighResTime);
+    return TimeUnit.NANOSECONDS.toMicros(end.highResTime - this.highResTime);
   }
 
   /**
@@ -110,7 +111,7 @@ public class Timer implements Parcelable {
    *     was created.
    */
   public long getCurrentTimestampMicros() {
-    return mTime + getDurationMicros();
+    return timeInMicros + getDurationMicros();
   }
 
   /**
@@ -120,7 +121,7 @@ public class Timer implements Parcelable {
    */
   @VisibleForTesting
   public long getHighResTime() {
-    return TimeUnit.NANOSECONDS.toMicros(mHighResTime);
+    return TimeUnit.NANOSECONDS.toMicros(highResTime);
   }
 
   /**
@@ -131,8 +132,8 @@ public class Timer implements Parcelable {
    * @param flags always will be the value 0.
    */
   public void writeToParcel(Parcel out, int flags) {
-    out.writeLong(mTime);
-    out.writeLong(mHighResTime);
+    out.writeLong(timeInMicros);
+    out.writeLong(highResTime);
   }
 
   /**

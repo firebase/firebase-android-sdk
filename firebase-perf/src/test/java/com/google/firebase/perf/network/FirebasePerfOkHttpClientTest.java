@@ -46,7 +46,7 @@ import org.robolectric.RobolectricTestRunner;
 public class FirebasePerfOkHttpClientTest extends FirebasePerformanceTestBase {
 
   @Mock TransportManager transportManager;
-  @Captor ArgumentCaptor<NetworkRequestMetric> mArgMetric;
+  @Captor ArgumentCaptor<NetworkRequestMetric> networkArgumentCaptor;
 
   @Before
   public void setUp() {
@@ -79,8 +79,8 @@ public class FirebasePerfOkHttpClientTest extends FirebasePerformanceTestBase {
         response, builder, startTimeMicros, responseCompletedTimeMicros);
 
     verify(transportManager)
-        .log(mArgMetric.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
-    NetworkRequestMetric metric = mArgMetric.getValue();
+        .log(networkArgumentCaptor.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
+    NetworkRequestMetric metric = networkArgumentCaptor.getValue();
     assertThat(metric.getUrl()).isEqualTo("https://www.google.com/");
     assertThat(metric.getHttpMethod()).isEqualTo(HttpMethod.POST);
     assertThat(metric.getRequestPayloadBytes()).isEqualTo(requestStr.length());
@@ -117,8 +117,8 @@ public class FirebasePerfOkHttpClientTest extends FirebasePerformanceTestBase {
         response, builder, startTimeMicros, responseCompletedTimeMicros);
 
     verify(transportManager)
-        .log(mArgMetric.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
-    NetworkRequestMetric metric = mArgMetric.getValue();
+        .log(networkArgumentCaptor.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
+    NetworkRequestMetric metric = networkArgumentCaptor.getValue();
     assertThat(metric.getUrl()).isEqualTo("https://www.google.com/");
     assertThat(metric.getHttpMethod()).isEqualTo(HttpMethod.POST);
     assertThat(metric.getRequestPayloadBytes()).isEqualTo(requestStr.length());

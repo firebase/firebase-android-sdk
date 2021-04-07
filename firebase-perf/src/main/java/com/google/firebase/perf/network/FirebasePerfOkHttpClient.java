@@ -30,6 +30,7 @@ import okhttp3.ResponseBody;
 
 /** These are the functions that are bytecode instrumented into the apk for OkHttp functions */
 public class FirebasePerfOkHttpClient {
+
   private FirebasePerfOkHttpClient() {}
 
   @Keep

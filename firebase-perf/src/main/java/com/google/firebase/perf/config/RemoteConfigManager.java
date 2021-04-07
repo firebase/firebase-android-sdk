@@ -38,30 +38,24 @@ import java.util.concurrent.TimeUnit;
  *
  * <p>The source of Remote config is currently Firebase Remote Config. Read more at
  * go/fireperf-remote-config-android.
- *
- * @hide
  */
-/** @hide */
 @Keep // Needed because of b/117526359.
 public class RemoteConfigManager {
 
   private static final AndroidLogger logger = AndroidLogger.getInstance();
-
+  private static final RemoteConfigManager instance = new RemoteConfigManager();
   private static final String FIREPERF_FRC_NAMESPACE_NAME = "fireperf";
-
-  private static final RemoteConfigManager sharedInstance = new RemoteConfigManager();
   private static final long TIME_AFTER_WHICH_A_FETCH_IS_CONSIDERED_STALE_MS =
       TimeUnit.HOURS.toMillis(12);
-
   private static final long FETCH_NEVER_HAPPENED_TIMESTAMP_MS = 0;
+
+  private final ConcurrentHashMap<String, FirebaseRemoteConfigValue> allRcConfigMap;
+  private final Executor executor;
+
   private long firebaseRemoteConfigLastFetchTimestampMs = FETCH_NEVER_HAPPENED_TIMESTAMP_MS;
 
   @Nullable private Provider<RemoteConfigComponent> firebaseRemoteConfigProvider;
   @Nullable private FirebaseRemoteConfig firebaseRemoteConfig;
-
-  private final Executor executor;
-
-  private final ConcurrentHashMap<String, FirebaseRemoteConfigValue> allRcConfigMap;
 
   private RemoteConfigManager() {
     this(
@@ -87,7 +81,7 @@ public class RemoteConfigManager {
 
   /** Gets the singleton instance. */
   public static RemoteConfigManager getInstance() {
-    return sharedInstance;
+    return instance;
   }
 
   /**

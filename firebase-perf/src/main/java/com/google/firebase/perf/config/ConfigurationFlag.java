@@ -19,10 +19,7 @@ import androidx.annotation.Nullable;
 /**
  * Parent class to be extended for each configuration flag. Provides basic constant fields and
  * common methods for all flags.
- *
- * @hide
  */
-/** @hide */
 abstract class ConfigurationFlag<T> {
 
   ConfigurationFlag() {}

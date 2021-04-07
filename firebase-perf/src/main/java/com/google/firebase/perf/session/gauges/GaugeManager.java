@@ -1,9 +1,9 @@
-// Copyright 2020 Google LLC
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
-//
 // You may obtain a copy of the License at
+//
 //      http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
@@ -12,16 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.perf.internal;
+package com.google.firebase.perf.session.gauges;
 
 import android.content.Context;
 import androidx.annotation.Keep;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.perf.config.ConfigResolver;
-import com.google.firebase.perf.gauges.CpuGaugeCollector;
-import com.google.firebase.perf.gauges.MemoryGaugeCollector;
 import com.google.firebase.perf.logging.AndroidLogger;
+import com.google.firebase.perf.session.PerfSession;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.perf.v1.AndroidMemoryReading;
@@ -38,17 +37,12 @@ import java.util.concurrent.TimeUnit;
 /**
  * This class is responsible for orchestrating different Gauges like CPU and Memory, collating that
  * information and logging it to the Transport.
- *
- * @hide
  */
-
-/** @hide */
 @Keep // Needed because of b/117526359.
 public class GaugeManager {
 
   private static final AndroidLogger logger = AndroidLogger.getInstance();
-
-  private static GaugeManager sharedInstance = new GaugeManager();
+  private static final GaugeManager instance = new GaugeManager();
 
   // This is a guesstimate of the max amount of time to wait before any pending metrics' collection
   // might take.
@@ -63,12 +57,10 @@ public class GaugeManager {
   private final TransportManager transportManager;
 
   @Nullable private GaugeMetadataManager gaugeMetadataManager;
-
+  @Nullable private ScheduledFuture gaugeManagerDataCollectionJob = null;
+  @Nullable private String sessionId = null;
   private ApplicationProcessState applicationProcessState =
       ApplicationProcessState.APPLICATION_PROCESS_STATE_UNKNOWN;
-
-  @Nullable private String sessionId = null;
-  @Nullable private ScheduledFuture gaugeManagerDataCollectionJob = null;
 
   private GaugeManager() {
     this(
@@ -98,13 +90,13 @@ public class GaugeManager {
   }
 
   /** Sets the application context once it is available. */
-  public void setApplicationContext(Context context) {
-    this.gaugeMetadataManager = new GaugeMetadataManager(context);
+  public void setApplicationContext(Context appContext) {
+    this.gaugeMetadataManager = new GaugeMetadataManager(appContext);
   }
 
   /** Returns the singleton instance of this class. */
   public static synchronized GaugeManager getInstance() {
-    return sharedInstance;
+    return instance;
   }
 
   /**
@@ -253,7 +245,7 @@ public class GaugeManager {
    * @param appState The {@link ApplicationProcessState} for which these gauges are collected.
    * @return true if GaugeMetadata was logged, false otherwise.
    */
-  boolean logGaugeMetadata(String sessionId, ApplicationProcessState appState) {
+  public boolean logGaugeMetadata(String sessionId, ApplicationProcessState appState) {
     if (gaugeMetadataManager != null) {
       GaugeMetric gaugeMetric =
           GaugeMetric.newBuilder()

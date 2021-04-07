@@ -1,9 +1,9 @@
-// Copyright 2020 Google LLC
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
-//
 // You may obtain a copy of the License at
+//
 //      http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.perf.gauges;
+package com.google.firebase.perf.session.gauges;
 
 import android.annotation.SuppressLint;
 import androidx.annotation.Nullable;
@@ -35,32 +35,25 @@ import java.util.concurrent.TimeUnit;
  *
  * <p>The class methods are not generally thread safe, but it is thread safe to read and write to
  * the ConcurrentLinkedQueue.
- *
- * @hide
  */
-/** @hide */
 public class MemoryGaugeCollector {
 
   private static final AndroidLogger logger = AndroidLogger.getInstance();
 
   @SuppressLint("StaticFieldLeak")
-  private static final MemoryGaugeCollector sharedInstance = new MemoryGaugeCollector();
+  private static final MemoryGaugeCollector instance = new MemoryGaugeCollector();
 
   public static final long INVALID_MEMORY_COLLECTION_FREQUENCY = -1;
-
   // This value indicates that we do not know the frequency at which to collect Memory Metrics. If
   // this value is set for the memoryMetricCollectionRateMs, we do not collect Memory Metrics.
   private static final int UNSET_MEMORY_METRIC_COLLECTION_RATE = -1;
 
   private final ScheduledExecutorService memoryMetricCollectorExecutor;
-
   /* This is populated by MemoryGaugeCollector but it's drained by GaugeManager.*/
   public final ConcurrentLinkedQueue<AndroidMemoryReading> memoryMetricReadings;
-
   private final Runtime runtime;
 
   @Nullable private ScheduledFuture memoryMetricCollectorJob = null;
-
   private long memoryMetricCollectionRateMs = UNSET_MEMORY_METRIC_COLLECTION_RATE;
 
   private MemoryGaugeCollector() {
@@ -76,7 +69,7 @@ public class MemoryGaugeCollector {
 
   /** Returns the singleton instance of this class. */
   public static MemoryGaugeCollector getInstance() {
-    return sharedInstance;
+    return instance;
   }
 
   /**

@@ -38,11 +38,12 @@ public class AbtRegistrar implements ComponentRegistrar {
     return Arrays.asList(
         Component.builder(AbtComponent.class)
             .add(Dependency.required(Context.class))
-            .add(Dependency.optional(AnalyticsConnector.class))
+            .add(Dependency.optionalProvider(AnalyticsConnector.class))
             .factory(
                 container ->
                     new AbtComponent(
-                        container.get(Context.class), container.get(AnalyticsConnector.class)))
+                        container.get(Context.class),
+                        container.getProvider(AnalyticsConnector.class)))
             .build(),
         LibraryVersionComponent.create("fire-abt", BuildConfig.VERSION_NAME));
   }

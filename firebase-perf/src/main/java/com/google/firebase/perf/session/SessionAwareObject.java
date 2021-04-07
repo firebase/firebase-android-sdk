@@ -1,9 +1,9 @@
-// Copyright 2020 Google LLC
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
-//
 // You may obtain a copy of the License at
+//
 //      http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
@@ -12,18 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.perf.internal;
+package com.google.firebase.perf.session;
 
-import androidx.annotation.StringDef;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
+/**
+ * Any object that cares about changes in the {@link com.google.firebase.perf.session.PerfSession}
+ * that is active for the given app. This object is then registered with the {@link SessionManager}
+ * which then supplies it with updates as needed.
+ */
+public interface SessionAwareObject {
 
-/** Annotates various resource types in Firebase Performance. */
-@StringDef({ResourceType.TRACE, ResourceType.NETWORK})
-@Retention(RetentionPolicy.RUNTIME)
-public @interface ResourceType {
-  String TRACE = "Trace";
-  String NETWORK = "Network";
-  // Session is not used but listed as comment here for the parity of resource list.
-  // String SESSION = "Session";
+  /**
+   * Updates the SessionAwareObject with the new sessionId.
+   *
+   * @param session The new PerfSession.
+   */
+  void updateSession(PerfSession session);
 }

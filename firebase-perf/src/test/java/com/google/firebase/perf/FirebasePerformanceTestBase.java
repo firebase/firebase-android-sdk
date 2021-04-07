@@ -20,8 +20,8 @@ import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.perf.config.ConfigResolver;
-import com.google.firebase.perf.internal.PerfSession;
-import com.google.firebase.perf.internal.SessionManager;
+import com.google.firebase.perf.session.PerfSession;
+import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.util.ImmutableBundle;
 import org.junit.After;
 import org.junit.Before;
@@ -48,11 +48,11 @@ public class FirebasePerformanceTestBase {
   protected static final String FAKE_FIREBASE_DB_URL = "https://fir-perftestapp.firebaseio.com";
   protected static final String FAKE_FIREBASE_PROJECT_ID = "fir-perftestapp";
 
-  protected Context context;
+  protected Context appContext;
 
   @Before
   public void setUpFirebaseApp() {
-    context = ApplicationProvider.getApplicationContext();
+    appContext = ApplicationProvider.getApplicationContext();
     FirebaseOptions options =
         new FirebaseOptions.Builder()
             .setApplicationId(FAKE_FIREBASE_APPLICATION_ID)
@@ -60,7 +60,7 @@ public class FirebasePerformanceTestBase {
             .setDatabaseUrl(FAKE_FIREBASE_DB_URL)
             .setProjectId(FAKE_FIREBASE_PROJECT_ID)
             .build();
-    FirebaseApp.initializeApp(context, options);
+    FirebaseApp.initializeApp(appContext, options);
   }
 
   @After

@@ -21,7 +21,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import com.google.firebase.perf.FirebasePerformanceTestBase;
-import com.google.firebase.perf.internal.AppStateMonitor;
+import com.google.firebase.perf.application.AppStateMonitor;
 import com.google.firebase.perf.metrics.Trace;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Clock;
@@ -43,9 +43,9 @@ import org.robolectric.RobolectricTestRunner;
 @RunWith(RobolectricTestRunner.class)
 public class FirebasePerfTraceValidatorTest extends FirebasePerformanceTestBase {
 
-  private long mCurrentTime = 0;
+  private long currentTime = 0;
 
-  @Mock private Clock mClock;
+  @Mock private Clock clock;
 
   @Before
   public void setUp() {
@@ -54,10 +54,10 @@ public class FirebasePerfTraceValidatorTest extends FirebasePerformanceTestBase 
             new Answer<Timer>() {
               @Override
               public Timer answer(InvocationOnMock invocationOnMock) throws Throwable {
-                return new Timer(mCurrentTime);
+                return new Timer(currentTime);
               }
             })
-        .when(mClock)
+        .when(clock)
         .getTime();
   }
 
@@ -243,10 +243,10 @@ public class FirebasePerfTraceValidatorTest extends FirebasePerformanceTestBase 
     AppStateMonitor appStateMonitor = mock(AppStateMonitor.class);
     ArgumentCaptor<TraceMetric> argMetric = ArgumentCaptor.forClass(TraceMetric.class);
 
-    Trace trace = new Trace(traceName, transportManager, mClock, appStateMonitor);
-    mCurrentTime = expectedClientStartTime;
+    Trace trace = new Trace(traceName, transportManager, clock, appStateMonitor);
+    currentTime = expectedClientStartTime;
     trace.start();
-    mCurrentTime += expectedTraceDuration;
+    currentTime += expectedTraceDuration;
     trace.stop();
     verify(transportManager)
         .log(argMetric.capture(), ArgumentMatchers.nullable(ApplicationProcessState.class));

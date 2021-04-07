@@ -1,9 +1,9 @@
-// Copyright 2020 Google LLC
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
-//
 // You may obtain a copy of the License at
+//
 //      http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
@@ -12,91 +12,91 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.perf.internal;
+package com.google.firebase.perf.application;
 
 import androidx.annotation.NonNull;
-import com.google.firebase.perf.internal.AppStateMonitor.AppStateCallback;
+import com.google.firebase.perf.application.AppStateMonitor.AppStateCallback;
 import com.google.firebase.perf.v1.ApplicationProcessState;
 import java.lang.ref.WeakReference;
 
 /**
  * A client that can be registered with AppStateMonitor class to receive foreground/background app
  * state update.
- *
- * @hide
  */
-/** @hide */
 public abstract class AppStateUpdateHandler implements AppStateCallback {
 
-  private AppStateMonitor mAppStateMonitor;
-  private ApplicationProcessState mState =
-      ApplicationProcessState.APPLICATION_PROCESS_STATE_UNKNOWN;
-  private boolean mIsRegisteredForAppState = false;
+  private final AppStateMonitor appStateMonitor;
   // The weak reference to register/unregister with AppStateMonitor.
   // It must be a weak reference because unregisterForAppState() is called typically from
   // Trace.stop() and user may forget to call Trace.stop(), if it was a strong reference,
   // the registration in AppStateMonitor will prevent Trace to be deallocated.
-  private WeakReference<AppStateCallback> mWeakRef;
+  private final WeakReference<AppStateCallback> appStateCallback;
 
-  /** @hide */
-  /** @hide */
+  private boolean isRegisteredForAppState = false;
+  private ApplicationProcessState currentAppState =
+      ApplicationProcessState.APPLICATION_PROCESS_STATE_UNKNOWN;
+
   protected AppStateUpdateHandler() {
     this(AppStateMonitor.getInstance());
   }
 
-  /** @hide */
-  /** @hide */
   protected AppStateUpdateHandler(@NonNull AppStateMonitor appStateMonitor) {
-    mAppStateMonitor = appStateMonitor;
-    mWeakRef = new WeakReference<AppStateCallback>(this);
+    this.appStateMonitor = appStateMonitor;
+    appStateCallback = new WeakReference<AppStateCallback>(this);
   }
 
-  /** @hide */
-  /** @hide */
   protected void registerForAppState() {
-    if (mIsRegisteredForAppState) {
+    if (isRegisteredForAppState) {
       return;
     }
-    mState = mAppStateMonitor.getAppState();
-    mAppStateMonitor.registerForAppState(mWeakRef);
-    mIsRegisteredForAppState = true;
+    currentAppState = appStateMonitor.getAppState();
+    appStateMonitor.registerForAppState(appStateCallback);
+    isRegisteredForAppState = true;
   }
 
-  /** @hide */
-  /** @hide */
   protected void unregisterForAppState() {
-    if (!mIsRegisteredForAppState) {
+    if (!isRegisteredForAppState) {
       return;
     }
-    mAppStateMonitor.unregisterForAppState(mWeakRef);
-    mIsRegisteredForAppState = false;
+    appStateMonitor.unregisterForAppState(appStateCallback);
+    isRegisteredForAppState = false;
   }
 
-  /** @hide */
-  /** @hide */
   protected void incrementTsnsCount(int count) {
-    mAppStateMonitor.incrementTsnsCount(count);
+    appStateMonitor.incrementTsnsCount(count);
   }
 
-  /** @hide */
-  /** @hide */
+  /**
+   * Reason: HIDE_ANNOTATION_REQUIRED_IN_CHILD_CLASS
+   *
+   * <p>Hide annotation is needed here even if the entire package (containing this class) is hidden.
+   * This is because this class is extended by a Public API class and thus any public methods in
+   * this class would then become a part of the Public API transitively. Adding the hide annotation
+   * to the class level does not work either and it has to be added to the concerned public method
+   * specifically.
+   *
+   * @hide
+   */
   @Override
   public void onUpdateAppState(ApplicationProcessState newState) {
     // For Trace and NetworkRequestMetricBuilder, the app state means all app states the app
     // has been through during the duration of the trace.
-    if (mState == ApplicationProcessState.APPLICATION_PROCESS_STATE_UNKNOWN) {
-      mState = newState;
-    } else if (mState != newState
+    if (currentAppState == ApplicationProcessState.APPLICATION_PROCESS_STATE_UNKNOWN) {
+      currentAppState = newState;
+    } else if (currentAppState != newState
         && newState != ApplicationProcessState.APPLICATION_PROCESS_STATE_UNKNOWN) {
       // newState is not unknown and they're not equal, which means one is foreground and the other
       // is background.
-      mState = ApplicationProcessState.FOREGROUND_BACKGROUND;
+      currentAppState = ApplicationProcessState.FOREGROUND_BACKGROUND;
     }
   }
 
-  /** @hide */
-  /** @hide */
+  /**
+   * Reason: HIDE_ANNOTATION_REQUIRED_IN_CHILD_CLASS
+   *
+   * @hide
+   */
   public ApplicationProcessState getAppState() {
-    return mState;
+    return currentAppState;
   }
 }
