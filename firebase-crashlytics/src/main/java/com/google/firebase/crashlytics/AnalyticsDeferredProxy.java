@@ -37,7 +37,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /** @hide */
-public class AnalyticsDeferredComponents {
+public class AnalyticsDeferredProxy {
   private final Deferred<AnalyticsConnector> analyticsConnectorDeferred;
   private volatile AnalyticsEventLogger analyticsEventLogger;
   private volatile BreadcrumbSource breadcrumbSource;
@@ -45,14 +45,14 @@ public class AnalyticsDeferredComponents {
   @GuardedBy("this")
   private List<BreadcrumbHandler> breadcrumbHandlerList;
 
-  public AnalyticsDeferredComponents(Deferred<AnalyticsConnector> analyticsConnectorDeferred) {
+  public AnalyticsDeferredProxy(Deferred<AnalyticsConnector> analyticsConnectorDeferred) {
     this(
         analyticsConnectorDeferred,
         new DisabledBreadcrumbSource(),
         new UnavailableAnalyticsEventLogger());
   }
 
-  public AnalyticsDeferredComponents(
+  public AnalyticsDeferredProxy(
       Deferred<AnalyticsConnector> analyticsConnectorDeferred,
       @NonNull BreadcrumbSource breadcrumbSource,
       @NonNull AnalyticsEventLogger analyticsEventLogger) {

@@ -76,8 +76,8 @@ public class FirebaseCrashlytics {
     }
 
     // Integration with Firebase Analytics
-    final AnalyticsDeferredComponents analyticsDeferredComponents =
-        new AnalyticsDeferredComponents(analyticsConnector);
+    final AnalyticsDeferredProxy analyticsDeferredProxy =
+        new AnalyticsDeferredProxy(analyticsConnector);
 
     final ExecutorService crashHandlerExecutor =
         ExecutorUtils.buildSingleThreadExecutorService("Crashlytics Exception Handler");
@@ -87,8 +87,8 @@ public class FirebaseCrashlytics {
             idManager,
             nativeComponent,
             arbiter,
-            analyticsDeferredComponents.getDeferredBreadcrumbSource(),
-            analyticsDeferredComponents.getAnalyticsEventLogger(),
+            analyticsDeferredProxy.getDeferredBreadcrumbSource(),
+            analyticsDeferredProxy.getAnalyticsEventLogger(),
             crashHandlerExecutor);
 
     final String googleAppId = app.getOptions().getApplicationId();
