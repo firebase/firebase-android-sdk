@@ -18,14 +18,15 @@ import android.content.Context;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
-import java.util.Collections;
+import com.google.firebase.platforminfo.LibraryVersionComponent;
+import java.util.Arrays;
 import java.util.List;
 
 public class DynamicLoadingRegistrar implements ComponentRegistrar {
 
   @Override
   public List<Component<?>> getComponents() {
-    return Collections.singletonList(
+    return Arrays.asList(
         Component.builder(DynamicLoadingSupport.class)
             .add(Dependency.required(Context.class))
             .add(Dependency.required(ComponentLoader.class))
@@ -34,6 +35,7 @@ public class DynamicLoadingRegistrar implements ComponentRegistrar {
                 container ->
                     new DynamicLoadingSupport(
                         container.get(Context.class), container.get(ComponentLoader.class)))
-            .build());
+            .build(),
+        LibraryVersionComponent.create("fire-dyn-mod", BuildConfig.VERSION_NAME));
   }
 }
