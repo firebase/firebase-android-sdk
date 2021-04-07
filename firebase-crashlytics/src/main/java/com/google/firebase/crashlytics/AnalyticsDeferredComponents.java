@@ -39,13 +39,12 @@ import java.util.concurrent.TimeUnit;
 /** @hide */
 public class AnalyticsDeferredComponents {
   private final Deferred<AnalyticsConnector> analyticsConnectorDeferred;
-  private BreadcrumbSource breadcrumbSource;
+  private volatile AnalyticsEventLogger analyticsEventLogger;
+  private volatile BreadcrumbSource breadcrumbSource;
 
   @GuardedBy("this")
   private List<BreadcrumbHandler> breadcrumbHandlerList;
-
-  private AnalyticsEventLogger analyticsEventLogger;
-
+  
   public AnalyticsDeferredComponents(Deferred<AnalyticsConnector> analyticsConnectorDeferred) {
     this(
         analyticsConnectorDeferred,
