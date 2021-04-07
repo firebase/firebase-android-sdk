@@ -44,7 +44,7 @@ public class AnalyticsDeferredComponents {
 
   @GuardedBy("this")
   private List<BreadcrumbHandler> breadcrumbHandlerList;
-  
+
   public AnalyticsDeferredComponents(Deferred<AnalyticsConnector> analyticsConnectorDeferred) {
     this(
         analyticsConnectorDeferred,
@@ -66,7 +66,9 @@ public class AnalyticsDeferredComponents {
   public BreadcrumbSource getDeferredBreadcrumbSource() {
     return breadcrumbHandler -> {
       synchronized (this) {
-        breadcrumbHandlerList.add(breadcrumbHandler);
+        if (breadcrumbSource instanceof DisabledBreadcrumbSource) {
+          breadcrumbHandlerList.add(breadcrumbHandler);
+        }
         breadcrumbSource.registerBreadcrumbHandler(breadcrumbHandler);
       }
     };
