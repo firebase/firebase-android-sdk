@@ -106,7 +106,6 @@ class ModelDownloaderTests : BaseTestCase() {
         assertThat(size).isEqualTo(customModel.size)
         assertThat(id).isEqualTo(customModel.downloadId)
     }
-
 }
 
 @RunWith(RobolectricTestRunner::class)

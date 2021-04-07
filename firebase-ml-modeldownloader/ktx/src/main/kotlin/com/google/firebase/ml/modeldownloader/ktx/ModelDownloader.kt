@@ -33,10 +33,9 @@ val Firebase.modelDownloader: FirebaseModelDownloader
 /** Returns the [FirebaseModelDownloader] instance of a given [FirebaseApp]. */
 fun Firebase.modelDownloader(app: FirebaseApp) = FirebaseModelDownloader.getInstance(app)
 
-
 /** Returns a [CustomModelDownloadConditions] initialized using the [init] function. */
 fun customModelDownloadConditions(
-        init: CustomModelDownloadConditions.Builder.() -> Unit
+    init: CustomModelDownloadConditions.Builder.() -> Unit
 ): CustomModelDownloadConditions {
     val builder = CustomModelDownloadConditions.Builder()
     builder.init()
