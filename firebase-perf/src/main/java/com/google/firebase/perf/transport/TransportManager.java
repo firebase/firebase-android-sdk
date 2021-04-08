@@ -450,6 +450,9 @@ public class TransportManager implements AppStateCallback {
   private void dispatchLog(PerfMetric perfMetric) {
     logger.info("Logging %s", getLogcatMsg(perfMetric));
 
+    // Log console URL
+    logger.info("Please visit %s for more information.", getConsoleURL(perfMetric));
+
     flgTransport.log(perfMetric);
   }
 
@@ -579,7 +582,7 @@ public class TransportManager implements AppStateCallback {
 
   // region Logcat/Console Logging Utility Methods
 
-  private static String getLogcatMsg(PerfMetricOrBuilder perfMetric) {
+  private String getLogcatMsg(PerfMetricOrBuilder perfMetric) {
     if (perfMetric.hasTraceMetric()) {
       return getLogcatMsg(perfMetric.getTraceMetric());
     }
@@ -595,9 +598,8 @@ public class TransportManager implements AppStateCallback {
     return "log";
   }
 
-  private static String getLogcatMsg(TraceMetric traceMetric) {
+  private String getLogcatMsg(TraceMetric traceMetric) {
     long durationInUs = traceMetric.getDurationUs();
-
     return String.format(
         Locale.ENGLISH,
         "trace metric: %s (duration: %.4fms)",
@@ -605,7 +607,7 @@ public class TransportManager implements AppStateCallback {
         durationInUs / 1000.0);
   }
 
-  private static String getLogcatMsg(NetworkRequestMetric networkRequestMetric) {
+  private String getLogcatMsg(NetworkRequestMetric networkRequestMetric) {
     long durationInUs =
         networkRequestMetric.hasTimeToResponseCompletedUs()
             ? networkRequestMetric.getTimeToResponseCompletedUs()
@@ -624,7 +626,7 @@ public class TransportManager implements AppStateCallback {
         durationInUs / 1000.0);
   }
 
-  private static String getLogcatMsg(GaugeMetric gaugeMetric) {
+  private String getLogcatMsg(GaugeMetric gaugeMetric) {
     return String.format(
         Locale.ENGLISH,
         "gauges (hasMetadata: %b, cpuGaugeCount: %d, memoryGaugeCount: %d)",
@@ -633,6 +635,34 @@ public class TransportManager implements AppStateCallback {
         gaugeMetric.getAndroidMemoryReadingsCount());
   }
 
+  // endregion
+
+  // region Logcat/Console Logging Utility Methods
+
+  private String getConsoleURL(PerfMetricOrBuilder perfMetric) {
+    if (perfMetric.hasTraceMetric()) {
+      return getConsoleURL(perfMetric.getTraceMetric());
+    }
+
+    if (perfMetric.hasNetworkRequestMetric()) {
+      return getConsoleURL(perfMetric.getNetworkRequestMetric());
+    }
+    return "log";
+  }
+
+  private String getConsoleURL(TraceMetric traceMetric) {
+    return String.format(
+        "https://console.firebase.google.com/project/%s/performance/app/android:%s/metrics/trace/DURATION_TRACE/%s",
+        firebaseApp.getOptions().getProjectId(),
+        appContext.getPackageName(),
+        traceMetric.getName());
+  }
+
+  private String getConsoleURL(NetworkRequestMetric networkRequestMetric) {
+    return String.format(
+        "https://console.firebase.google.com/project/%s/performance/app/android:%s/trends",
+        firebaseApp.getOptions().getProjectId(), appContext.getPackageName());
+  }
   // endregion
 
   // region Visible for Testing
