@@ -83,6 +83,7 @@ dependencies {
     androidTestImplementation 'androidx.test:runner:1.2.0'
     androidTestImplementation 'androidx.test:core:1.2.0'
     androidTestImplementation 'org.mockito:mockito-core:2.25.0'
+    androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
     androidTestImplementation 'com.linkedin.dexmaker:dexmaker:2.25.0'
     androidTestImplementation 'com.linkedin.dexmaker:dexmaker-mockito:2.25.0'
     androidTestImplementation 'com.google.protobuf:protobuf-java:2.4.1'

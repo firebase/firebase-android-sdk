@@ -43,7 +43,7 @@ public class AnalyticsDeferredProxy {
   private volatile BreadcrumbSource breadcrumbSource;
 
   @GuardedBy("this")
-  private List<BreadcrumbHandler> breadcrumbHandlerList;
+  private final List<BreadcrumbHandler> breadcrumbHandlerList;
 
   public AnalyticsDeferredProxy(Deferred<AnalyticsConnector> analyticsConnectorDeferred) {
     this(
@@ -149,9 +149,9 @@ public class AnalyticsDeferredProxy {
    *
    * <p>Should only be called from within the context of `whenAvailable` in the Deferred Connector.
    *
-   * @param analyticsConnector
-   * @param listener
-   * @return
+   * @param analyticsConnector Connector to Analytics.
+   * @param listener Crashlytics listener to subscribe to analytics.
+   * @return The Analytics handler
    */
   @DeferredApi
   private static AnalyticsConnector.AnalyticsConnectorHandle subscribeToAnalyticsEvents(
