@@ -4,10 +4,6 @@
     "features": {
       "collect_logged_exceptions": true,
       "collect_reports": true,
-      "collect_analytics": false,
-      "prompt_enabled": false,
-      "push_enabled": false,
-      "firebase_crashlytics_enabled": false,
       "collect_anrs": true
     },
     "app": {
