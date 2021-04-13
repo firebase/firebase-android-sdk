@@ -52,7 +52,6 @@ final class FlgTransport {
       logger.warn("Unable to dispatch event because Flg Transport is not available");
       return;
     }
-
     flgTransport.send(Event.ofData(perfMetric));
   }
 
