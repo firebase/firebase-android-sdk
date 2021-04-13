@@ -96,6 +96,7 @@ public class SettingsV3JsonTransformTest extends CrashlyticsTestCase {
 
   private void assertFeaturesData(FeaturesSettingsData featuresSettingsData) {
     assertTrue(featuresSettingsData.collectReports);
+    assertFalse(featuresSettingsData.collectAnrs);
   }
 
   private void verifySettingsDataObject(

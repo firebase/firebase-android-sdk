@@ -119,9 +119,14 @@ class SettingsV3JsonTransform implements SettingsJsonTransform {
             SettingsJsonConstants.FEATURES_COLLECT_REPORTS_KEY,
             SettingsJsonConstants.FEATURES_COLLECT_REPORTS_DEFAULT);
 
+    final boolean collectAnrs =
+        json.optBoolean(
+            SettingsJsonConstants.FEATURES_COLLECT_ANRS_KEY,
+            SettingsJsonConstants.FEATURES_COLLECT_ANRS_DEFAULT);
+
     // TODO: Build support back for "collect logged exceptions"
 
-    return new FeaturesSettingsData(collectReports);
+    return new FeaturesSettingsData(collectReports, collectAnrs);
   }
 
   private static SessionSettingsData defaultSessionData() {
