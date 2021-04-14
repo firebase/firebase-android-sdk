@@ -18,10 +18,14 @@ import androidx.annotation.Keep
 import com.google.firebase.FirebaseApp
 import com.google.firebase.components.Component
 import com.google.firebase.components.ComponentRegistrar
+import com.google.firebase.database.ChildEventListener
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.GenericTypeIndicator
 import com.google.firebase.database.MutableData
+import com.google.firebase.database.ValueEventListener
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.platforminfo.LibraryVersionComponent
 
@@ -57,6 +61,36 @@ inline fun <reified T> DataSnapshot.getValue(): T? {
  */
 inline fun <reified T> MutableData.getValue(): T? {
     return getValue(object : GenericTypeIndicator<T>() {})
+}
+
+/**
+ * Add a listener for changes in the data at this location. Each time time the data changes, your
+ * listener will be called with an non-null snapshot of the data.
+ */
+inline fun DatabaseReference.addValueEventListener(
+        crossinline onValue: (snapshot: DataSnapshot?, error: DatabaseError?) -> Unit
+): ValueEventListener {
+    val listener = object : ValueEventListener {
+        override fun onDataChange(snapshot: DataSnapshot) = onValue(snapshot, null)
+        override fun onCancelled(error: DatabaseError) = onValue(null, error)
+    }
+    addValueEventListener(listener)
+    return listener
+}
+
+/**
+ * Add a listener for a single change in the data at this location. This listener will be
+ * triggered once with the value of the data at the location.
+ */
+inline fun DatabaseReference.addListenerForSingleValueEvent(
+        crossinline onceValue: (snapshot: DataSnapshot?, error: DatabaseError?) -> Unit
+): ValueEventListener {
+    val listener = object : ValueEventListener {
+        override fun onDataChange(snapshot: DataSnapshot) = onceValue(snapshot, null)
+        override fun onCancelled(error: DatabaseError) = onceValue(null, error)
+    }
+    addListenerForSingleValueEvent(listener)
+    return listener
 }
 
 internal const val LIBRARY_NAME: String = "fire-db-ktx"
