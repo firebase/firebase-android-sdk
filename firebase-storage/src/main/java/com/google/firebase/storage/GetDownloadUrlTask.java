@@ -51,6 +51,7 @@ class GetDownloadUrlTask implements Runnable {
         new ExponentialBackoffSender(
             storage.getApp().getApplicationContext(),
             storage.getAuthProvider(),
+            storage.getAppCheckProvider(),
             storage.getMaxOperationRetryTimeMillis());
   }
 

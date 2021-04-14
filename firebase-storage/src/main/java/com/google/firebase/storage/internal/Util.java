@@ -25,6 +25,8 @@ import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.appcheck.AppCheckTokenResult;
+import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
 import com.google.firebase.auth.GetTokenResult;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.storage.network.NetworkRequest;
@@ -163,6 +165,31 @@ public class Util {
       }
     } catch (ExecutionException | InterruptedException | TimeoutException e) {
       Log.e(TAG, "error getting token " + e);
+    }
+    return null;
+  }
+
+  @Nullable
+  public static String getCurrentAppCheckToken(
+      @Nullable InternalAppCheckTokenProvider appCheckProvider) {
+    if (appCheckProvider == null) {
+      return null;
+    }
+
+    try {
+      Task<AppCheckTokenResult> pendingResult =
+          appCheckProvider.getToken(/* forceRefresh= */ false);
+      AppCheckTokenResult result =
+          Tasks.await(pendingResult, MAXIMUM_TOKEN_WAIT_TIME_MS, TimeUnit.MILLISECONDS);
+      if (result.getError() != null) {
+        Log.w(
+            TAG,
+            "Error getting App Check token; using placeholder token instead. Error: "
+                + result.getError());
+      }
+      return result.getToken();
+    } catch (ExecutionException | InterruptedException | TimeoutException e) {
+      Log.e(TAG, "Unexpected error getting App Check token: " + e);
     }
     return null;
   }

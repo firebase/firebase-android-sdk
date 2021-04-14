@@ -57,6 +57,7 @@ public class StreamDownloadTask extends StorageTask<StreamDownloadTask.TaskSnaps
         new ExponentialBackoffSender(
             storage.getApp().getApplicationContext(),
             storage.getAuthProvider(),
+            storage.getAppCheckProvider(),
             storage.getMaxDownloadRetryTimeMillis());
   }
 

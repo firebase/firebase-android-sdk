@@ -53,6 +53,7 @@ public class FileDownloadTask extends StorageTask<FileDownloadTask.TaskSnapshot>
         new ExponentialBackoffSender(
             storage.getApp().getApplicationContext(),
             storage.getAuthProvider(),
+            storage.getAppCheckProvider(),
             storage.getMaxDownloadRetryTimeMillis());
   }
 
