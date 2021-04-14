@@ -91,6 +91,17 @@ public class CrashlyticsReportPersistenceTest {
   }
 
   @Test
+  public void testPersistReports_getStartTimestampMs() {
+    final String sessionId = "testSession";
+    final CrashlyticsReport testReport = makeTestReport(sessionId);
+
+    reportPersistence.persistReport(testReport);
+    assertEquals(
+        testReport.getSession().getStartedAt() * 1000,
+        reportPersistence.getStartTimestampMs(sessionId));
+  }
+
+  @Test
   public void testHasFinalizedReports() {
     final String sessionId = "testSession";
     final CrashlyticsReport testReport = makeTestReport(sessionId);
