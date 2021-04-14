@@ -663,7 +663,7 @@ class CrashlyticsController {
     return getTimestampSeconds(System.currentTimeMillis());
   }
 
-  private static long getTimestampSeconds(Long timestampMillis) {
+  private static long getTimestampSeconds(long timestampMillis) {
     return timestampMillis / 1000;
   }
 
