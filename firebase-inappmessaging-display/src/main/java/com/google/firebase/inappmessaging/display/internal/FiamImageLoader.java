@@ -14,6 +14,8 @@
 
 package com.google.firebase.inappmessaging.display.internal;
 
+import static com.bumptech.glide.load.DecodeFormat.PREFER_ARGB_8888;
+
 import android.graphics.drawable.Drawable;
 import android.text.TextUtils;
 import android.widget.ImageView;
@@ -53,7 +55,8 @@ public class FiamImageLoader {
     Logging.logd("Starting Downloading Image : " + imageUrl);
     GlideUrl glideUrl =
         new GlideUrl(imageUrl, new LazyHeaders.Builder().addHeader("Accept", "image/*").build());
-    RequestBuilder<Drawable> requestBuilder = requestManager.load(glideUrl);
+    RequestBuilder<Drawable> requestBuilder =
+        requestManager.load(glideUrl).format(PREFER_ARGB_8888);
     return new FiamImageRequestCreator(requestBuilder);
   }
 
