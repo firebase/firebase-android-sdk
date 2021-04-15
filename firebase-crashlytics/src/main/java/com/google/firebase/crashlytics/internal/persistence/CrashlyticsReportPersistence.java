@@ -190,7 +190,7 @@ public class CrashlyticsReportPersistence {
    * @param sessionId
    * @return startTimestampMs
    */
-  public long getStartTimestampMs(String sessionId) {
+  public long getStartTimestampMillis(String sessionId) {
     final File sessionDirectory = getSessionDirectoryById(sessionId);
     final File sessionStartTimestampFile =
         new File(sessionDirectory, SESSION_START_TIMESTAMP_FILE_NAME);

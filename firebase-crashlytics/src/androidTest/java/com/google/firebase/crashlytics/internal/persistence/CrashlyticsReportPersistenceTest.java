@@ -91,14 +91,14 @@ public class CrashlyticsReportPersistenceTest {
   }
 
   @Test
-  public void testPersistReports_getStartTimestampMs() {
+  public void testPersistReports_getStartTimestampMillis() {
     final String sessionId = "testSession";
     final CrashlyticsReport testReport = makeTestReport(sessionId);
 
     reportPersistence.persistReport(testReport);
     assertEquals(
         testReport.getSession().getStartedAt() * 1000,
-        reportPersistence.getStartTimestampMs(sessionId));
+        reportPersistence.getStartTimestampMillis(sessionId));
   }
 
   @Test
