@@ -14,7 +14,7 @@
 
 package com.google.firebase.database.connection;
 
-public interface ConnectionAuthTokenProvider {
+public interface ConnectionTokenProvider {
 
   interface GetTokenCallback {
     /**
