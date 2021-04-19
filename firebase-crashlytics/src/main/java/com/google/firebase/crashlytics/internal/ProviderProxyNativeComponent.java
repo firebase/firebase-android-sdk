@@ -15,37 +15,65 @@
 package com.google.firebase.crashlytics.internal;
 
 import androidx.annotation.NonNull;
+import com.google.firebase.inject.Provider;
 import java.io.File;
 
-public final class MissingNativeComponent implements CrashlyticsNativeComponent {
+public final class ProviderProxyNativeComponent implements CrashlyticsNativeComponent {
 
   private static final NativeSessionFileProvider MISSING_NATIVE_SESSION_FILE_PROVIDER =
       new MissingNativeSessionFileProvider();
 
+  private final Provider<CrashlyticsNativeComponent> provider;
+
+  public ProviderProxyNativeComponent(Provider<CrashlyticsNativeComponent> provider) {
+    this.provider = provider;
+  }
+
   @Override
   public boolean hasCrashDataForSession(@NonNull String sessionId) {
+    CrashlyticsNativeComponent nativeComponent = provider.get();
+    if (nativeComponent != null) {
+      return nativeComponent.hasCrashDataForSession(sessionId);
+    }
     return false;
   }
 
   @Override
   public boolean openSession(@NonNull String sessionId) {
+    CrashlyticsNativeComponent nativeComponent = provider.get();
+    if (nativeComponent != null) {
+      return nativeComponent.openSession(sessionId);
+    }
     return true;
   }
 
   @Override
   public boolean finalizeSession(@NonNull String sessionId) {
+    CrashlyticsNativeComponent nativeComponent = provider.get();
+    if (nativeComponent != null) {
+      return nativeComponent.finalizeSession(sessionId);
+    }
     return true;
   }
 
   @NonNull
   @Override
   public NativeSessionFileProvider getSessionFileProvider(@NonNull String sessionId) {
+    CrashlyticsNativeComponent nativeComponent = provider.get();
+    if (nativeComponent != null) {
+      return nativeComponent.getSessionFileProvider(sessionId);
+    }
     return MISSING_NATIVE_SESSION_FILE_PROVIDER;
   }
 
   @Override
   public void writeBeginSession(
-      @NonNull String sessionId, @NonNull String generator, long startedAtSeconds) {}
+      @NonNull String sessionId, @NonNull String generator, long startedAtSeconds) {
+    CrashlyticsNativeComponent nativeComponent = provider.get();
+    if (nativeComponent != null) {
+      nativeComponent.writeBeginSession(sessionId, generator, startedAtSeconds);
+    }
+  }
 
   @Override
   public void writeSessionApp(
@@ -55,14 +83,31 @@ public final class MissingNativeComponent implements CrashlyticsNativeComponent 
       @NonNull String versionName,
       @NonNull String installUuid,
       int deliveryMechanism,
-      @NonNull String unityVersion) {}
+      @NonNull String unityVersion) {
+    CrashlyticsNativeComponent nativeComponent = provider.get();
+    if (nativeComponent != null) {
+      nativeComponent.writeSessionApp(
+          sessionId,
+          appIdentifier,
+          versionCode,
+          versionName,
+          installUuid,
+          deliveryMechanism,
+          unityVersion);
+    }
+  }
 
   @Override
   public void writeSessionOs(
       @NonNull String sessionId,
       @NonNull String osRelease,
       @NonNull String osCodeName,
-      boolean isRooted) {}
+      boolean isRooted) {
+    CrashlyticsNativeComponent nativeComponent = provider.get();
+    if (nativeComponent != null) {
+      nativeComponent.writeSessionOs(sessionId, osRelease, osCodeName, isRooted);
+    }
+  }
 
   @Override
   public void writeSessionDevice(
@@ -75,7 +120,22 @@ public final class MissingNativeComponent implements CrashlyticsNativeComponent 
       boolean isEmulator,
       int state,
       @NonNull String manufacturer,
-      @NonNull String modelClass) {}
+      @NonNull String modelClass) {
+    CrashlyticsNativeComponent nativeComponent = provider.get();
+    if (nativeComponent != null) {
+      nativeComponent.writeSessionDevice(
+          sessionId,
+          arch,
+          model,
+          availableProcessors,
+          totalRam,
+          diskSpace,
+          isEmulator,
+          state,
+          manufacturer,
+          modelClass);
+    }
+  }
 
   private static final class MissingNativeSessionFileProvider implements NativeSessionFileProvider {
 
