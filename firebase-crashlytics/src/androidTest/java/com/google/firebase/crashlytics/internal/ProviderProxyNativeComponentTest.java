@@ -16,12 +16,14 @@ package com.google.firebase.crashlytics.internal;
 
 import static org.mockito.ArgumentMatchers.eq;
 
+import androidx.test.runner.AndroidJUnit4;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
+@RunWith(AndroidJUnit4.class)
 public class ProviderProxyNativeComponentTest {
   private static final String TEST_STRING = "abc";
   private static final long TEST_LONG = 123;
