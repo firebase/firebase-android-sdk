@@ -19,6 +19,7 @@ import android.text.TextUtils;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.storage.internal.StorageReferenceUri;
 import java.util.HashMap;
 import java.util.Map;
 import org.json.JSONObject;
@@ -29,11 +30,11 @@ public class ResumableUploadStartRequest extends ResumableNetworkRequest {
   private final String contentType;
 
   public ResumableUploadStartRequest(
-      @NonNull Uri gsUri,
+      @NonNull StorageReferenceUri storageReferenceUri,
       @NonNull FirebaseApp app,
       @Nullable JSONObject metadata,
       @NonNull String contentType) {
-    super(gsUri, app);
+    super(storageReferenceUri, app);
     this.metadata = metadata;
     this.contentType = contentType;
     if (TextUtils.isEmpty(this.contentType)) {
@@ -46,10 +47,11 @@ public class ResumableUploadStartRequest extends ResumableNetworkRequest {
 
   @Override
   @NonNull
-  protected Uri getURL() {
-    Uri.Builder uriBuilder = sNetworkRequestUrl.buildUpon();
+  public Uri getURL() {
+    String bucket = getStorageReferenceUri().getGsUri().getAuthority();
+    Uri.Builder uriBuilder = getStorageReferenceUri().getHttpBaseUri().buildUpon();
     uriBuilder.appendPath("b");
-    uriBuilder.appendPath(mGsUri.getAuthority());
+    uriBuilder.appendPath(bucket);
     uriBuilder.appendPath("o");
     return uriBuilder.build();
   }
