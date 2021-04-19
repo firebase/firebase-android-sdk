@@ -23,10 +23,13 @@ import android.text.TextUtils;
 import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.emulators.EmulatedServiceSettings;
 import com.google.firebase.storage.StorageException;
+import com.google.firebase.storage.internal.StorageReferenceUri;
 import com.google.firebase.storage.network.connection.HttpURLConnectionFactory;
 import com.google.firebase.storage.network.connection.HttpURLConnectionFactoryImpl;
 import java.io.BufferedOutputStream;
@@ -51,6 +54,8 @@ public abstract class NetworkRequest {
 
   private static final String X_FIREBASE_GMPID = "x-firebase-gmpid";
 
+  public static final Uri PROD_BASE_URL = Uri.parse("https://firebasestorage.googleapis.com/v0");
+
   /* Do not change these values without changing corresponding logic on the SDK side*/
   public static final int INITIALIZATION_EXCEPTION = -1;
   public static final int NETWORK_UNAVAILABLE = -2;
@@ -67,13 +72,12 @@ public abstract class NetworkRequest {
   private static final String CONTENT_LENGTH = "Content-Length";
   private static final String UTF_8 = "UTF-8";
 
-  @NonNull static Uri sNetworkRequestUrl = Uri.parse("https://firebasestorage.googleapis.com/v0");
-
   // For test purposes only.
   /*package*/ static HttpURLConnectionFactory connectionFactory =
       new HttpURLConnectionFactoryImpl();
-  protected final Uri mGsUri;
   protected Exception mException;
+
+  private StorageReferenceUri storageReferenceUri;
 
   private static String gmsCoreVersion;
   private Context context;
@@ -85,35 +89,24 @@ public abstract class NetworkRequest {
   private HttpURLConnection connection;
   private Map<String, String> requestHeaders = new HashMap<>();
 
-  public NetworkRequest(@NonNull Uri gsUri, @NonNull FirebaseApp app) {
-    Preconditions.checkNotNull(gsUri);
+  public NetworkRequest(
+      @NonNull StorageReferenceUri storageReferenceUri, @NonNull FirebaseApp app) {
+    Preconditions.checkNotNull(storageReferenceUri);
     Preconditions.checkNotNull(app);
-    this.mGsUri = gsUri;
+    this.storageReferenceUri = storageReferenceUri;
     this.context = app.getApplicationContext();
 
     this.setCustomHeader(X_FIREBASE_GMPID, app.getOptions().getApplicationId());
   }
 
   @NonNull
-  public static String getAuthority() {
-    return sNetworkRequestUrl.getAuthority();
-  }
-
-  /**
-   * Returns the target Url to use for this request
-   *
-   * @return Url for the target REST call in string form.
-   */
-  @NonNull
-  public static Uri getDefaultURL(@NonNull Uri gsUri) {
-    Preconditions.checkNotNull(gsUri);
-    String pathWithoutBucket = getPathWithoutBucket(gsUri);
-    Uri.Builder uriBuilder = sNetworkRequestUrl.buildUpon();
-    uriBuilder.appendPath("b");
-    uriBuilder.appendPath(gsUri.getAuthority());
-    uriBuilder.appendPath("o");
-    uriBuilder.appendPath(pathWithoutBucket);
-    return uriBuilder.build();
+  public static Uri getBaseUrl(@Nullable EmulatedServiceSettings emulatorSettings) {
+    if (emulatorSettings != null) {
+      return Uri.parse(
+          "http://" + emulatorSettings.getHost() + ":" + emulatorSettings.getPort() + "/v0");
+    } else {
+      return Uri.parse("https://firebasestorage.googleapis.com/v0");
+    }
   }
 
   /**
@@ -136,7 +129,7 @@ public abstract class NetworkRequest {
    * @return the path in string form.
    */
   String getPathWithoutBucket() {
-    return getPathWithoutBucket(mGsUri);
+    return getPathWithoutBucket(storageReferenceUri.getGsUri());
   }
 
   @NonNull
@@ -148,8 +141,9 @@ public abstract class NetworkRequest {
    * @return Url for the target REST call in string form.
    */
   @NonNull
-  protected Uri getURL() {
-    return getDefaultURL(mGsUri);
+  @VisibleForTesting
+  public Uri getURL() {
+    return storageReferenceUri.getHttpUri();
   }
 
   /**
@@ -190,6 +184,11 @@ public abstract class NetworkRequest {
   @Nullable
   protected Map<String, String> getQueryParameters() {
     return null;
+  }
+
+  @NonNull
+  protected StorageReferenceUri getStorageReferenceUri() {
+    return storageReferenceUri;
   }
 
   /** Resets the result of this request */

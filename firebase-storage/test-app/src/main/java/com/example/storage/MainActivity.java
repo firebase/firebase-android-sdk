@@ -391,6 +391,13 @@ public class MainActivity extends AppCompatActivity {
 
     clickButton = findViewById(R.id.listAll);
     clickButton.setOnClickListener(v -> runTaskTest("listAll", TestCommandHelper::listAllFiles));
+
+    clickButton = findViewById(R.id.useEmulator);
+    clickButton.setOnClickListener(
+        v -> {
+          storage.useEmulator("10.0.2.2", 9199);
+          v.setEnabled(false);
+        });
   }
 
   private void runTaskTest(final String testName, TaskProvider runner) {

@@ -52,7 +52,9 @@ class UpdateMetadataTask implements Runnable {
   public void run() {
     final NetworkRequest request =
         new UpdateMetadataNetworkRequest(
-            mStorageRef.getStorageUri(), mStorageRef.getApp(), mNewMetadata.createJSONObject());
+            mStorageRef.getStorageReferenceUri(),
+            mStorageRef.getApp(),
+            mNewMetadata.createJSONObject());
 
     mSender.sendWithExponentialBackoff(request);
     if (request.isResultSuccess()) {

@@ -54,7 +54,7 @@ import com.google.firebase.storage.network.NetworkRequest;
   @Override
   public void run() {
     final NetworkRequest request =
-        new DeleteNetworkRequest(mStorageRef.getStorageUri(), mStorageRef.getApp());
+        new DeleteNetworkRequest(mStorageRef.getStorageReferenceUri(), mStorageRef.getApp());
     mSender.sendWithExponentialBackoff(request);
     request.completeTask(mPendingResult, null);
   }
