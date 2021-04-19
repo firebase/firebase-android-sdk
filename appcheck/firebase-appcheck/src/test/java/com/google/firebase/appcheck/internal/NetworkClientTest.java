@@ -50,9 +50,9 @@ public class NetworkClientTest {
   private static final String APP_ID = "appId";
   private static final String PROJECT_ID = "projectId";
   private static final String SAFETY_NET_EXPECTED_URL =
-      "https://firebaseappcheck.googleapis.com/v1alpha/projects/projectId/apps/appId:exchangeSafetyNetToken?key=apiKey";
+      "https://firebaseappcheck.googleapis.com/v1beta/projects/projectId/apps/appId:exchangeSafetyNetToken?key=apiKey";
   private static final String DEBUG_EXPECTED_URL =
-      "https://firebaseappcheck.googleapis.com/v1alpha/projects/projectId/apps/appId:exchangeDebugToken?key=apiKey";
+      "https://firebaseappcheck.googleapis.com/v1beta/projects/projectId/apps/appId:exchangeDebugToken?key=apiKey";
   private static final String JSON_REQUEST = "jsonRequest";
   private static final int SUCCESS_CODE = 200;
   private static final int ERROR_CODE = 404;

@@ -29,7 +29,7 @@ import org.robolectric.annotation.Config;
 public class AppCheckTokenResponseTest {
 
   private static final String ATTESTATION_TOKEN = "attestationToken";
-  private static final String TIME_TO_LIVE = "timeToLive";
+  private static final String TIME_TO_LIVE = "ttl";
 
   @Test
   public void fromJsonString_expectDeserialized() throws Exception {

@@ -29,7 +29,7 @@ import org.json.JSONObject;
 public class AppCheckTokenResponse {
 
   @VisibleForTesting static final String ATTESTATION_TOKEN_KEY = "attestationToken";
-  @VisibleForTesting static final String TIME_TO_LIVE_KEY = "timeToLive";
+  @VisibleForTesting static final String TIME_TO_LIVE_KEY = "ttl";
 
   private String attestationToken;
   private String timeToLive;
