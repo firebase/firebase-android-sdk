@@ -24,6 +24,7 @@ import com.google.android.gms.common.internal.Preconditions;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.auth.internal.InternalAuthProvider;
+import com.google.firebase.emulators.EmulatedServiceSettings;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.storage.internal.Util;
 import java.io.UnsupportedEncodingException;
@@ -50,6 +51,8 @@ public class FirebaseStorage {
   private long sMaxUploadRetry = 10 * DateUtils.MINUTE_IN_MILLIS; //  10 * 60 * 1000
   private long sMaxDownloadRetry = 10 * DateUtils.MINUTE_IN_MILLIS; //  10 * 60 * 1000
   private long sMaxQueryRetry = 2 * DateUtils.MINUTE_IN_MILLIS; //  2 * 60 * 1000
+
+  @Nullable private EmulatedServiceSettings emulatorSettings;
 
   FirebaseStorage(
       @Nullable String bucketName,
@@ -152,6 +155,18 @@ public class FirebaseStorage {
       Log.e(TAG, "Unable to parse url:" + url, e);
       throw new IllegalArgumentException(STORAGE_URI_PARSE_EXCEPTION);
     }
+  }
+
+  /**
+   * Modifies this FirebaseStorage instance to communicate with the Storage emulator.
+   *
+   * <p>Note: Call this method before using the instance to do any storage operations.
+   *
+   * @param host the emulator host (for example, 10.0.2.2)
+   * @param port the emulator port (for example, 9000)
+   */
+  public void useEmulator(@NonNull String host, int port) {
+    this.emulatorSettings = new EmulatedServiceSettings(host, port);
   }
 
   /**
@@ -306,5 +321,10 @@ public class FirebaseStorage {
   @Nullable
   InternalAuthProvider getAuthProvider() {
     return mAuthProvider != null ? mAuthProvider.get() : null;
+  }
+
+  @Nullable
+  EmulatedServiceSettings getEmulatorSettings() {
+    return emulatorSettings;
   }
 }

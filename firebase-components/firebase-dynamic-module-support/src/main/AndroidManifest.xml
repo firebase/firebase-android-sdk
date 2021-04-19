@@ -18,4 +18,16 @@
     package="com.google.firebase.dynamicloading">
     <!--Although the *SdkVersion is captured in gradle build files, this is required for non gradle builds-->
     <!--<uses-sdk android:minSdkVersion="14"/>-->
+
+  <application>
+    <service
+      android:name="com.google.firebase.components.ComponentDiscoveryService"
+      android:exported="false"
+      tools:remove="android:splitName">
+      <!-- The above splitName removal is necessary to avoid manifest merge conflicts
+           when more than one dynamic-feature module depends on Firebase libraries. -->
+        <meta-data android:name="com.google.firebase.components:com.google.firebase.dynamicloading.DynamicLoadingRegistrar"
+          android:value="com.google.firebase.components.ComponentRegistrar" />
+    </service>
+  </application>
 </manifest>

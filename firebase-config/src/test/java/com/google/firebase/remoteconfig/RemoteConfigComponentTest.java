@@ -172,7 +172,7 @@ public class RemoteConfigComponentTest {
         mockFirebaseApp,
         mockFirebaseInstallations,
         mockFirebaseAbt,
-        mockAnalyticsConnector,
+        () -> mockAnalyticsConnector,
         /* loadGetDefault= */ true);
   }
 
@@ -183,7 +183,7 @@ public class RemoteConfigComponentTest {
         mockFirebaseApp,
         mockFirebaseInstallations,
         mockFirebaseAbt,
-        mockAnalyticsConnector,
+        () -> mockAnalyticsConnector,
         /* loadGetDefault= */ false);
   }
 

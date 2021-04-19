@@ -16,8 +16,8 @@ package com.google.firebase.perf.network;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import com.google.firebase.perf.impl.NetworkRequestMetricBuilder;
 import com.google.firebase.perf.logging.AndroidLogger;
+import com.google.firebase.perf.metrics.NetworkRequestMetricBuilder;
 import java.util.regex.Pattern;
 import org.apache.http.Header;
 import org.apache.http.HttpMessage;

@@ -39,7 +39,6 @@ import com.google.firebase.perf.config.ConfigurationConstants.SessionsSamplingRa
 import com.google.firebase.perf.config.ConfigurationConstants.TraceEventCountBackground;
 import com.google.firebase.perf.config.ConfigurationConstants.TraceEventCountForeground;
 import com.google.firebase.perf.config.ConfigurationConstants.TraceSamplingRate;
-import com.google.firebase.perf.internal.RemoteConfigManager;
 import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.util.ImmutableBundle;
 import com.google.firebase.perf.util.Optional;
@@ -49,18 +48,16 @@ import com.google.firebase.perf.util.Utils;
  * Retrieves configuration value from various config storage sources and returns resolved
  * configuration value to the caller. This class is the single source of truth for all
  * configurations across Firebase Performance.
- *
- * @hide
  */
-/** @hide */
 public class ConfigResolver {
 
   private static final AndroidLogger logger = AndroidLogger.getInstance();
-  private static volatile ConfigResolver configResolver;
+
+  private static volatile ConfigResolver instance;
 
   // Configuration Storage objects.
+  private final RemoteConfigManager remoteConfigManager;
   private ImmutableBundle metadataBundle;
-  private RemoteConfigManager remoteConfigManager;
   private DeviceCacheManager deviceCacheManager;
 
   /**
@@ -83,15 +80,15 @@ public class ConfigResolver {
   }
 
   public static synchronized ConfigResolver getInstance() {
-    if (configResolver == null) {
-      configResolver = new ConfigResolver(null, null, null);
+    if (instance == null) {
+      instance = new ConfigResolver(null, null, null);
     }
-    return configResolver;
+    return instance;
   }
 
   @VisibleForTesting
   public static void clearInstance() {
-    configResolver = null;
+    instance = null;
   }
 
   @VisibleForTesting
@@ -103,9 +100,9 @@ public class ConfigResolver {
     setApplicationContext(context.getApplicationContext());
   }
 
-  public void setApplicationContext(Context context) {
-    logger.setLogcatEnabled(Utils.isDebugLoggingEnabled(context));
-    deviceCacheManager.setContext(context);
+  public void setApplicationContext(Context appContext) {
+    logger.setLogcatEnabled(Utils.isDebugLoggingEnabled(appContext));
+    deviceCacheManager.setContext(appContext);
   }
 
   public void setMetadataBundle(ImmutableBundle bundle) {

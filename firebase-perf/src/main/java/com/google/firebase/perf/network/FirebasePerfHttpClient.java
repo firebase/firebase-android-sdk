@@ -15,7 +15,7 @@
 package com.google.firebase.perf.network;
 
 import androidx.annotation.Keep;
-import com.google.firebase.perf.impl.NetworkRequestMetricBuilder;
+import com.google.firebase.perf.metrics.NetworkRequestMetricBuilder;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Timer;
 import java.io.IOException;
@@ -33,6 +33,7 @@ import org.apache.http.protocol.HttpContext;
  */
 @SuppressWarnings("deprecation") // Apache http library is needed for instrumentation
 public class FirebasePerfHttpClient {
+
   private FirebasePerfHttpClient() {}
 
   /**

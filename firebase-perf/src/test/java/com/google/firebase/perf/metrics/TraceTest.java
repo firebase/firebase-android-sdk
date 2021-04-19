@@ -29,12 +29,12 @@ import static org.mockito.MockitoAnnotations.initMocks;
 import android.content.Context;
 import android.os.Parcel;
 import com.google.firebase.perf.FirebasePerformanceTestBase;
+import com.google.firebase.perf.application.AppStateMonitor;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.config.DeviceCacheManager;
-import com.google.firebase.perf.internal.AppStateMonitor;
-import com.google.firebase.perf.internal.GaugeManager;
-import com.google.firebase.perf.internal.PerfSession;
-import com.google.firebase.perf.internal.SessionManager;
+import com.google.firebase.perf.session.PerfSession;
+import com.google.firebase.perf.session.SessionManager;
+import com.google.firebase.perf.session.gauges.GaugeManager;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.Constants;
@@ -80,10 +80,10 @@ public class TraceTest extends FirebasePerformanceTestBase {
     DeviceCacheManager.clearInstance();
     ConfigResolver.clearInstance();
 
-    context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().clear().commit();
+    appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().clear().commit();
     ConfigResolver configResolver = ConfigResolver.getInstance();
     configResolver.setDeviceCacheManager(new DeviceCacheManager(new FakeDirectExecutorService()));
-    configResolver.setApplicationContext(context);
+    configResolver.setApplicationContext(appContext);
   }
 
   @Test

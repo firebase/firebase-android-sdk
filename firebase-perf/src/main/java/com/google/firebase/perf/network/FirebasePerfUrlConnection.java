@@ -15,7 +15,7 @@
 package com.google.firebase.perf.network;
 
 import androidx.annotation.Keep;
-import com.google.firebase.perf.impl.NetworkRequestMetricBuilder;
+import com.google.firebase.perf.metrics.NetworkRequestMetricBuilder;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.perf.util.URLWrapper;
@@ -31,6 +31,7 @@ import javax.net.ssl.HttpsURLConnection;
  * information for the NetworkRequestMetric for UrlConnection.
  */
 public class FirebasePerfUrlConnection {
+
   private FirebasePerfUrlConnection() {}
 
   // Bytecode instrumented functions

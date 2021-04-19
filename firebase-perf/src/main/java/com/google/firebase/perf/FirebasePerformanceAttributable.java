@@ -25,7 +25,6 @@ import java.util.Map;
  *
  * @hide
  */
-/** @hide */
 public interface FirebasePerformanceAttributable {
 
   // Redefining some constants for javadoc as Constants class is hidden

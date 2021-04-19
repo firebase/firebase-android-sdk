@@ -15,8 +15,8 @@
 package com.google.firebase.perf.network;
 
 import android.os.Build;
-import com.google.firebase.perf.impl.NetworkRequestMetricBuilder;
 import com.google.firebase.perf.logging.AndroidLogger;
+import com.google.firebase.perf.metrics.NetworkRequestMetricBuilder;
 import com.google.firebase.perf.util.Timer;
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,14 +35,15 @@ import java.util.Map;
 class InstrURLConnectionBase {
 
   private static final AndroidLogger logger = AndroidLogger.getInstance();
-
   private static final String USER_AGENT_PROPERTY = "User-Agent";
 
-  private final HttpURLConnection mHttpUrlConnection;
-  private final NetworkRequestMetricBuilder mBuilder;
-  private long mTimeRequested = -1;
-  private long mTimeToResponseInitiated = -1;
-  private final Timer mTimer;
+  private final HttpURLConnection httpUrlConnection;
+  private final NetworkRequestMetricBuilder networkMetricBuilder;
+
+  private long timeRequestedInMicros = -1;
+  private long timeToResponseInitiatedInMicros = -1;
+
+  private final Timer timer;
 
   /**
    * Instrumented HttpURLConnectionBase object
@@ -52,55 +53,55 @@ class InstrURLConnectionBase {
    */
   public InstrURLConnectionBase(
       HttpURLConnection connection, Timer timer, NetworkRequestMetricBuilder builder) {
-    mHttpUrlConnection = connection;
-    mBuilder = builder;
-    mTimer = timer;
-    mBuilder.setUrl(mHttpUrlConnection.getURL().toString());
+    httpUrlConnection = connection;
+    networkMetricBuilder = builder;
+    this.timer = timer;
+    networkMetricBuilder.setUrl(httpUrlConnection.getURL().toString());
   }
 
   public void connect() throws IOException {
-    if (mTimeRequested == -1) {
-      mTimer.reset();
-      mTimeRequested = mTimer.getMicros();
-      mBuilder.setRequestStartTimeMicros(mTimeRequested);
+    if (timeRequestedInMicros == -1) {
+      timer.reset();
+      timeRequestedInMicros = timer.getMicros();
+      networkMetricBuilder.setRequestStartTimeMicros(timeRequestedInMicros);
     }
     try {
-      mHttpUrlConnection.connect();
+      httpUrlConnection.connect();
     } catch (final IOException e) {
-      mBuilder.setTimeToResponseCompletedMicros(mTimer.getDurationMicros());
-      NetworkRequestMetricBuilderUtil.logError(mBuilder);
+      networkMetricBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
+      NetworkRequestMetricBuilderUtil.logError(networkMetricBuilder);
       throw e;
     }
   }
 
   @SuppressWarnings("UrlConnectionChecker")
   public void disconnect() {
-    mBuilder.setTimeToResponseCompletedMicros(mTimer.getDurationMicros());
-    mBuilder.build();
-    mHttpUrlConnection.disconnect();
+    networkMetricBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
+    networkMetricBuilder.build();
+    httpUrlConnection.disconnect();
   }
 
   public Object getContent() throws IOException {
     updateRequestInfo();
-    mBuilder.setHttpResponseCode(mHttpUrlConnection.getResponseCode());
+    networkMetricBuilder.setHttpResponseCode(httpUrlConnection.getResponseCode());
 
     Object content;
     try {
-      content = mHttpUrlConnection.getContent();
+      content = httpUrlConnection.getContent();
     } catch (final IOException e) {
-      mBuilder.setTimeToResponseCompletedMicros(mTimer.getDurationMicros());
-      NetworkRequestMetricBuilderUtil.logError(mBuilder);
+      networkMetricBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
+      NetworkRequestMetricBuilderUtil.logError(networkMetricBuilder);
       throw e;
     }
 
     if (content instanceof InputStream) {
-      mBuilder.setResponseContentType(mHttpUrlConnection.getContentType());
-      content = new InstrHttpInputStream((InputStream) content, mBuilder, mTimer);
+      networkMetricBuilder.setResponseContentType(httpUrlConnection.getContentType());
+      content = new InstrHttpInputStream((InputStream) content, networkMetricBuilder, timer);
     } else {
-      mBuilder.setResponseContentType(mHttpUrlConnection.getContentType());
-      mBuilder.setResponsePayloadBytes(mHttpUrlConnection.getContentLength());
-      mBuilder.setTimeToResponseCompletedMicros(mTimer.getDurationMicros());
-      mBuilder.build();
+      networkMetricBuilder.setResponseContentType(httpUrlConnection.getContentType());
+      networkMetricBuilder.setResponsePayloadBytes(httpUrlConnection.getContentLength());
+      networkMetricBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
+      networkMetricBuilder.build();
     }
     return content;
   }
@@ -108,25 +109,25 @@ class InstrURLConnectionBase {
   @SuppressWarnings("rawtypes")
   public Object getContent(final Class[] classes) throws IOException {
     updateRequestInfo();
-    mBuilder.setHttpResponseCode(mHttpUrlConnection.getResponseCode());
+    networkMetricBuilder.setHttpResponseCode(httpUrlConnection.getResponseCode());
 
     Object content;
     try {
-      content = mHttpUrlConnection.getContent(classes);
+      content = httpUrlConnection.getContent(classes);
     } catch (final IOException e) {
-      mBuilder.setTimeToResponseCompletedMicros(mTimer.getDurationMicros());
-      NetworkRequestMetricBuilderUtil.logError(mBuilder);
+      networkMetricBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
+      NetworkRequestMetricBuilderUtil.logError(networkMetricBuilder);
       throw e;
     }
 
     if (content instanceof InputStream) {
-      mBuilder.setResponseContentType(mHttpUrlConnection.getContentType());
-      content = new InstrHttpInputStream((InputStream) content, mBuilder, mTimer);
+      networkMetricBuilder.setResponseContentType(httpUrlConnection.getContentType());
+      content = new InstrHttpInputStream((InputStream) content, networkMetricBuilder, timer);
     } else {
-      mBuilder.setResponseContentType(mHttpUrlConnection.getContentType());
-      mBuilder.setResponsePayloadBytes(mHttpUrlConnection.getContentLength());
-      mBuilder.setTimeToResponseCompletedMicros(mTimer.getDurationMicros());
-      mBuilder.build();
+      networkMetricBuilder.setResponseContentType(httpUrlConnection.getContentType());
+      networkMetricBuilder.setResponsePayloadBytes(httpUrlConnection.getContentLength());
+      networkMetricBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
+      networkMetricBuilder.build();
     }
 
     return content;
@@ -134,106 +135,107 @@ class InstrURLConnectionBase {
 
   public InputStream getInputStream() throws IOException {
     updateRequestInfo();
-    mBuilder.setHttpResponseCode(mHttpUrlConnection.getResponseCode());
-    mBuilder.setResponseContentType(mHttpUrlConnection.getContentType());
+    networkMetricBuilder.setHttpResponseCode(httpUrlConnection.getResponseCode());
+    networkMetricBuilder.setResponseContentType(httpUrlConnection.getContentType());
 
     try {
-      final InputStream inputStream = mHttpUrlConnection.getInputStream();
-      return new InstrHttpInputStream(inputStream, mBuilder, mTimer);
+      final InputStream inputStream = httpUrlConnection.getInputStream();
+      return new InstrHttpInputStream(inputStream, networkMetricBuilder, timer);
     } catch (final IOException e) {
-      mBuilder.setTimeToResponseCompletedMicros(mTimer.getDurationMicros());
-      NetworkRequestMetricBuilderUtil.logError(mBuilder);
+      networkMetricBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
+      NetworkRequestMetricBuilderUtil.logError(networkMetricBuilder);
       throw e;
     }
   }
 
   public long getLastModified() {
     updateRequestInfo();
-    final long value = mHttpUrlConnection.getLastModified();
+    final long value = httpUrlConnection.getLastModified();
     return value;
   }
 
   public OutputStream getOutputStream() throws IOException {
     try {
-      return new InstrHttpOutputStream(mHttpUrlConnection.getOutputStream(), mBuilder, mTimer);
+      return new InstrHttpOutputStream(
+          httpUrlConnection.getOutputStream(), networkMetricBuilder, timer);
     } catch (final IOException e) {
-      mBuilder.setTimeToResponseCompletedMicros(mTimer.getDurationMicros());
-      NetworkRequestMetricBuilderUtil.logError(mBuilder);
+      networkMetricBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
+      NetworkRequestMetricBuilderUtil.logError(networkMetricBuilder);
       throw e;
     }
   }
 
   public Permission getPermission() throws IOException {
     try {
-      return mHttpUrlConnection.getPermission();
+      return httpUrlConnection.getPermission();
     } catch (final IOException e) {
-      mBuilder.setTimeToResponseCompletedMicros(mTimer.getDurationMicros());
-      NetworkRequestMetricBuilderUtil.logError(mBuilder);
+      networkMetricBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
+      NetworkRequestMetricBuilderUtil.logError(networkMetricBuilder);
       throw e;
     }
   }
 
   public int getResponseCode() throws IOException {
     updateRequestInfo();
-    if (mTimeToResponseInitiated == -1) {
-      mTimeToResponseInitiated = mTimer.getDurationMicros();
-      mBuilder.setTimeToResponseInitiatedMicros(mTimeToResponseInitiated);
+    if (timeToResponseInitiatedInMicros == -1) {
+      timeToResponseInitiatedInMicros = timer.getDurationMicros();
+      networkMetricBuilder.setTimeToResponseInitiatedMicros(timeToResponseInitiatedInMicros);
     }
     try {
-      final int code = mHttpUrlConnection.getResponseCode();
-      mBuilder.setHttpResponseCode(code);
+      final int code = httpUrlConnection.getResponseCode();
+      networkMetricBuilder.setHttpResponseCode(code);
       return code;
     } catch (final IOException e) {
-      mBuilder.setTimeToResponseCompletedMicros(mTimer.getDurationMicros());
-      NetworkRequestMetricBuilderUtil.logError(mBuilder);
+      networkMetricBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
+      NetworkRequestMetricBuilderUtil.logError(networkMetricBuilder);
       throw e;
     }
   }
 
   public String getResponseMessage() throws IOException {
     updateRequestInfo();
-    if (mTimeToResponseInitiated == -1) {
-      mTimeToResponseInitiated = mTimer.getDurationMicros();
-      mBuilder.setTimeToResponseInitiatedMicros(mTimeToResponseInitiated);
+    if (timeToResponseInitiatedInMicros == -1) {
+      timeToResponseInitiatedInMicros = timer.getDurationMicros();
+      networkMetricBuilder.setTimeToResponseInitiatedMicros(timeToResponseInitiatedInMicros);
     }
     try {
-      final String message = mHttpUrlConnection.getResponseMessage();
-      mBuilder.setHttpResponseCode(mHttpUrlConnection.getResponseCode());
+      final String message = httpUrlConnection.getResponseMessage();
+      networkMetricBuilder.setHttpResponseCode(httpUrlConnection.getResponseCode());
       return message;
     } catch (final IOException e) {
-      mBuilder.setTimeToResponseCompletedMicros(mTimer.getDurationMicros());
-      NetworkRequestMetricBuilderUtil.logError(mBuilder);
+      networkMetricBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
+      NetworkRequestMetricBuilderUtil.logError(networkMetricBuilder);
       throw e;
     }
   }
 
   public long getExpiration() {
     updateRequestInfo();
-    final long exp = mHttpUrlConnection.getExpiration();
+    final long exp = httpUrlConnection.getExpiration();
     return exp;
   }
 
   public String getHeaderField(final int n) {
     updateRequestInfo();
-    final String value = mHttpUrlConnection.getHeaderField(n);
+    final String value = httpUrlConnection.getHeaderField(n);
     return value;
   }
 
   public String getHeaderField(final String name) {
     updateRequestInfo();
-    final String value = mHttpUrlConnection.getHeaderField(name);
+    final String value = httpUrlConnection.getHeaderField(name);
     return value;
   }
 
   public long getHeaderFieldDate(final String name, final long defaultDate) {
     updateRequestInfo();
-    final long value = mHttpUrlConnection.getHeaderFieldDate(name, defaultDate);
+    final long value = httpUrlConnection.getHeaderFieldDate(name, defaultDate);
     return value;
   }
 
   public int getHeaderFieldInt(final String name, final int defaultInt) {
     updateRequestInfo();
-    final int value = mHttpUrlConnection.getHeaderFieldInt(name, defaultInt);
+    final int value = httpUrlConnection.getHeaderFieldInt(name, defaultInt);
     return value;
   }
 
@@ -241,38 +243,38 @@ class InstrURLConnectionBase {
     updateRequestInfo();
     long value = 0;
     if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
-      value = mHttpUrlConnection.getHeaderFieldLong(name, defaultLong);
+      value = httpUrlConnection.getHeaderFieldLong(name, defaultLong);
     }
     return value;
   }
 
   public String getHeaderFieldKey(final int n) {
     updateRequestInfo();
-    final String value = mHttpUrlConnection.getHeaderFieldKey(n);
+    final String value = httpUrlConnection.getHeaderFieldKey(n);
     return value;
   }
 
   public Map<String, List<String>> getHeaderFields() {
     updateRequestInfo();
-    final Map<String, List<String>> value = mHttpUrlConnection.getHeaderFields();
+    final Map<String, List<String>> value = httpUrlConnection.getHeaderFields();
     return value;
   }
 
   public String getContentEncoding() {
     updateRequestInfo();
-    return mHttpUrlConnection.getContentEncoding();
+    return httpUrlConnection.getContentEncoding();
   }
 
   public int getContentLength() {
     updateRequestInfo();
-    return mHttpUrlConnection.getContentLength();
+    return httpUrlConnection.getContentLength();
   }
 
   public long getContentLengthLong() {
     updateRequestInfo();
     long contentLength = 0;
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-      contentLength = mHttpUrlConnection.getContentLengthLong();
+      contentLength = httpUrlConnection.getContentLengthLong();
     }
 
     return contentLength;
@@ -280,181 +282,181 @@ class InstrURLConnectionBase {
 
   public String getContentType() {
     updateRequestInfo();
-    return mHttpUrlConnection.getContentType();
+    return httpUrlConnection.getContentType();
   }
 
   public long getDate() {
     updateRequestInfo();
-    return mHttpUrlConnection.getDate();
+    return httpUrlConnection.getDate();
   }
 
   public void addRequestProperty(final String key, final String value) {
-    mHttpUrlConnection.addRequestProperty(key, value);
+    httpUrlConnection.addRequestProperty(key, value);
   }
 
   @Override
   public boolean equals(final Object obj) {
-    return mHttpUrlConnection.equals(obj);
+    return httpUrlConnection.equals(obj);
   }
 
   public boolean getAllowUserInteraction() {
-    return mHttpUrlConnection.getAllowUserInteraction();
+    return httpUrlConnection.getAllowUserInteraction();
   }
 
   public int getConnectTimeout() {
-    return mHttpUrlConnection.getConnectTimeout();
+    return httpUrlConnection.getConnectTimeout();
   }
 
   public boolean getDefaultUseCaches() {
-    return mHttpUrlConnection.getDefaultUseCaches();
+    return httpUrlConnection.getDefaultUseCaches();
   }
 
   public boolean getDoInput() {
-    return mHttpUrlConnection.getDoInput();
+    return httpUrlConnection.getDoInput();
   }
 
   public boolean getDoOutput() {
-    return mHttpUrlConnection.getDoOutput();
+    return httpUrlConnection.getDoOutput();
   }
 
   public InputStream getErrorStream() {
     updateRequestInfo();
     try {
-      mBuilder.setHttpResponseCode(mHttpUrlConnection.getResponseCode());
+      networkMetricBuilder.setHttpResponseCode(httpUrlConnection.getResponseCode());
     } catch (IOException e) {
       logger.debug("IOException thrown trying to obtain the response code");
     }
-    InputStream errorStream = mHttpUrlConnection.getErrorStream();
+    InputStream errorStream = httpUrlConnection.getErrorStream();
     if (errorStream != null) {
-      return new InstrHttpInputStream(errorStream, mBuilder, mTimer);
+      return new InstrHttpInputStream(errorStream, networkMetricBuilder, timer);
     }
     return errorStream;
   }
 
   public long getIfModifiedSince() {
-    return mHttpUrlConnection.getIfModifiedSince();
+    return httpUrlConnection.getIfModifiedSince();
   }
 
   public boolean getInstanceFollowRedirects() {
-    return mHttpUrlConnection.getInstanceFollowRedirects();
+    return httpUrlConnection.getInstanceFollowRedirects();
   }
 
   public int getReadTimeout() {
-    return mHttpUrlConnection.getReadTimeout();
+    return httpUrlConnection.getReadTimeout();
   }
 
   public String getRequestMethod() {
-    return mHttpUrlConnection.getRequestMethod();
+    return httpUrlConnection.getRequestMethod();
   }
 
   public Map<String, List<String>> getRequestProperties() {
-    return mHttpUrlConnection.getRequestProperties();
+    return httpUrlConnection.getRequestProperties();
   }
 
   public String getRequestProperty(final String key) {
-    return mHttpUrlConnection.getRequestProperty(key);
+    return httpUrlConnection.getRequestProperty(key);
   }
 
   public URL getURL() {
-    return mHttpUrlConnection.getURL();
+    return httpUrlConnection.getURL();
   }
 
   public boolean getUseCaches() {
-    return mHttpUrlConnection.getUseCaches();
+    return httpUrlConnection.getUseCaches();
   }
 
   @Override
   public int hashCode() {
-    return mHttpUrlConnection.hashCode();
+    return httpUrlConnection.hashCode();
   }
 
   public void setAllowUserInteraction(final boolean allowuserinteraction) {
-    mHttpUrlConnection.setAllowUserInteraction(allowuserinteraction);
+    httpUrlConnection.setAllowUserInteraction(allowuserinteraction);
   }
 
   public void setChunkedStreamingMode(final int chunklen) {
-    mHttpUrlConnection.setChunkedStreamingMode(chunklen);
+    httpUrlConnection.setChunkedStreamingMode(chunklen);
   }
 
   public void setConnectTimeout(final int timeout) {
-    mHttpUrlConnection.setConnectTimeout(timeout);
+    httpUrlConnection.setConnectTimeout(timeout);
   }
 
   public void setDefaultUseCaches(final boolean defaultusecaches) {
-    mHttpUrlConnection.setDefaultUseCaches(defaultusecaches);
+    httpUrlConnection.setDefaultUseCaches(defaultusecaches);
   }
 
   public void setDoInput(final boolean doinput) {
-    mHttpUrlConnection.setDoInput(doinput);
+    httpUrlConnection.setDoInput(doinput);
   }
 
   public void setDoOutput(final boolean dooutput) {
-    mHttpUrlConnection.setDoOutput(dooutput);
+    httpUrlConnection.setDoOutput(dooutput);
   }
 
   public void setFixedLengthStreamingMode(final int contentLength) {
-    mHttpUrlConnection.setFixedLengthStreamingMode(contentLength);
+    httpUrlConnection.setFixedLengthStreamingMode(contentLength);
   }
 
   public void setFixedLengthStreamingMode(final long contentLength) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-      mHttpUrlConnection.setFixedLengthStreamingMode(contentLength);
+      httpUrlConnection.setFixedLengthStreamingMode(contentLength);
     }
   }
 
   public void setIfModifiedSince(final long ifmodifiedsince) {
-    mHttpUrlConnection.setIfModifiedSince(ifmodifiedsince);
+    httpUrlConnection.setIfModifiedSince(ifmodifiedsince);
   }
 
   public void setInstanceFollowRedirects(final boolean followRedirects) {
-    mHttpUrlConnection.setInstanceFollowRedirects(followRedirects);
+    httpUrlConnection.setInstanceFollowRedirects(followRedirects);
   }
 
   public void setReadTimeout(final int timeout) {
-    mHttpUrlConnection.setReadTimeout(timeout);
+    httpUrlConnection.setReadTimeout(timeout);
   }
 
   public void setRequestMethod(final String method) throws ProtocolException {
-    mHttpUrlConnection.setRequestMethod(method);
+    httpUrlConnection.setRequestMethod(method);
   }
 
   public void setRequestProperty(final String key, final String value) {
     if (USER_AGENT_PROPERTY.equalsIgnoreCase(key)) {
-      mBuilder.setUserAgent(value);
+      networkMetricBuilder.setUserAgent(value);
     }
 
-    mHttpUrlConnection.setRequestProperty(key, value);
+    httpUrlConnection.setRequestProperty(key, value);
   }
 
   public void setUseCaches(final boolean usecaches) {
-    mHttpUrlConnection.setUseCaches(usecaches);
+    httpUrlConnection.setUseCaches(usecaches);
   }
 
   @Override
   public String toString() {
-    return mHttpUrlConnection.toString();
+    return httpUrlConnection.toString();
   }
 
   public boolean usingProxy() {
-    return mHttpUrlConnection.usingProxy();
+    return httpUrlConnection.usingProxy();
   }
 
   private void updateRequestInfo() {
-    if (mTimeRequested == -1) {
-      mTimer.reset();
-      mTimeRequested = mTimer.getMicros();
-      mBuilder.setRequestStartTimeMicros(mTimeRequested);
+    if (timeRequestedInMicros == -1) {
+      timer.reset();
+      timeRequestedInMicros = timer.getMicros();
+      networkMetricBuilder.setRequestStartTimeMicros(timeRequestedInMicros);
     }
     final String method = getRequestMethod();
     if (method != null) {
       // TODO(b/177945490): Check special case if you send a post but nothing in the output
-      mBuilder.setHttpMethod(method);
+      networkMetricBuilder.setHttpMethod(method);
     } else {
       // Default POST if getDoOutput, GET otherwise.
       if (getDoOutput()) {
-        mBuilder.setHttpMethod("POST");
+        networkMetricBuilder.setHttpMethod("POST");
       } else {
-        mBuilder.setHttpMethod("GET");
+        networkMetricBuilder.setHttpMethod("GET");
       }
     }
   }

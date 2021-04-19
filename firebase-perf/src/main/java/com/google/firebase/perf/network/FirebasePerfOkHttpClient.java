@@ -15,7 +15,7 @@
 package com.google.firebase.perf.network;
 
 import androidx.annotation.Keep;
-import com.google.firebase.perf.impl.NetworkRequestMetricBuilder;
+import com.google.firebase.perf.metrics.NetworkRequestMetricBuilder;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Timer;
 import java.io.IOException;
@@ -30,6 +30,7 @@ import okhttp3.ResponseBody;
 
 /** These are the functions that are bytecode instrumented into the apk for OkHttp functions */
 public class FirebasePerfOkHttpClient {
+
   private FirebasePerfOkHttpClient() {}
 
   @Keep

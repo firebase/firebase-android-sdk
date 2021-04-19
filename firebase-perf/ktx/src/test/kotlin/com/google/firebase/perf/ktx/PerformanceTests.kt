@@ -22,7 +22,7 @@ import com.google.firebase.ktx.app
 import com.google.firebase.ktx.initialize
 import com.google.firebase.perf.FirebasePerformance
 import com.google.firebase.perf.FirebasePerformance.HttpMethod
-import com.google.firebase.perf.internal.AppStateMonitor
+import com.google.firebase.perf.application.AppStateMonitor
 import com.google.firebase.perf.metrics.HttpMetric
 import com.google.firebase.perf.metrics.Trace
 import com.google.firebase.perf.metrics.getTraceCounter

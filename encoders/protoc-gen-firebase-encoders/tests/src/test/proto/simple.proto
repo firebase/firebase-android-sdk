@@ -15,7 +15,7 @@
 
 syntax = "proto3";
 
-package com.google.firebase.testing;
+package com.google.firebase.testing.e2e;
 
 import "google/protobuf/timestamp.proto";
 
