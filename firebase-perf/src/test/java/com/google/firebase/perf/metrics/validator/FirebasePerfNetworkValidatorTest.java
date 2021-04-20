@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.perf.FirebasePerformanceTestBase;
 import com.google.firebase.perf.metrics.NetworkRequestMetricBuilder;
 import com.google.firebase.perf.transport.TransportManager;
@@ -27,7 +28,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.RuntimeEnvironment;
 
 /**
  * Unit tests for {@link com.google.firebase.perf.metrics.validator.FirebasePerfNetworkValidator}.
@@ -35,14 +35,15 @@ import org.robolectric.RuntimeEnvironment;
 @RunWith(RobolectricTestRunner.class)
 public class FirebasePerfNetworkValidatorTest extends FirebasePerformanceTestBase {
   private final FirebasePerfNetworkValidator validator =
-      new FirebasePerfNetworkValidator(null, RuntimeEnvironment.application);
+      new FirebasePerfNetworkValidator(null, ApplicationProvider.getApplicationContext());
 
   @Test
   public void testIsValid() {
     NetworkRequestMetricBuilder metricBuilder =
         createNetworkRequestMetricBuilderWithRequiredValuesPresent();
     FirebasePerfNetworkValidator validator =
-        new FirebasePerfNetworkValidator(metricBuilder.build(), RuntimeEnvironment.application);
+        new FirebasePerfNetworkValidator(
+            metricBuilder.build(), ApplicationProvider.getApplicationContext());
     assertTrue(validator.isValidPerfMetric());
   }
 
@@ -52,7 +53,8 @@ public class FirebasePerfNetworkValidatorTest extends FirebasePerformanceTestBas
         createNetworkRequestMetricBuilderWithRequiredValuesPresent();
     metricBuilder.setUrl("");
     FirebasePerfNetworkValidator validator =
-        new FirebasePerfNetworkValidator(metricBuilder.build(), RuntimeEnvironment.application);
+        new FirebasePerfNetworkValidator(
+            metricBuilder.build(), ApplicationProvider.getApplicationContext());
     assertFalse(validator.isValidPerfMetric());
   }
 
@@ -62,7 +64,8 @@ public class FirebasePerfNetworkValidatorTest extends FirebasePerformanceTestBas
         createNetworkRequestMetricBuilderWithRequiredValuesPresent();
     metricBuilder.setUrl("badurl{??//..}");
     FirebasePerfNetworkValidator validator =
-        new FirebasePerfNetworkValidator(metricBuilder.build(), RuntimeEnvironment.application);
+        new FirebasePerfNetworkValidator(
+            metricBuilder.build(), ApplicationProvider.getApplicationContext());
     assertFalse(validator.isValidPerfMetric());
   }
 
@@ -87,7 +90,8 @@ public class FirebasePerfNetworkValidatorTest extends FirebasePerformanceTestBas
         createNetworkRequestMetricBuilderWithRequiredValuesPresent();
     metricBuilder.setHttpResponseCode(-2);
     FirebasePerfNetworkValidator validator =
-        new FirebasePerfNetworkValidator(metricBuilder.build(), RuntimeEnvironment.application);
+        new FirebasePerfNetworkValidator(
+            metricBuilder.build(), ApplicationProvider.getApplicationContext());
     assertFalse(validator.isValidPerfMetric());
   }
 
@@ -105,7 +109,7 @@ public class FirebasePerfNetworkValidatorTest extends FirebasePerformanceTestBas
 
     assertFalse(metric.hasHttpResponseCode());
     FirebasePerfNetworkValidator validator =
-        new FirebasePerfNetworkValidator(metric, RuntimeEnvironment.application);
+        new FirebasePerfNetworkValidator(metric, ApplicationProvider.getApplicationContext());
     assertFalse(validator.isValidPerfMetric());
   }
 
@@ -117,7 +121,7 @@ public class FirebasePerfNetworkValidatorTest extends FirebasePerformanceTestBas
 
     assertFalse(metric.hasRequestPayloadBytes());
     FirebasePerfNetworkValidator validator =
-        new FirebasePerfNetworkValidator(metric, RuntimeEnvironment.application);
+        new FirebasePerfNetworkValidator(metric, ApplicationProvider.getApplicationContext());
     assertTrue(validator.isValidPerfMetric());
   }
 
@@ -127,7 +131,8 @@ public class FirebasePerfNetworkValidatorTest extends FirebasePerformanceTestBas
         createNetworkRequestMetricBuilderWithRequiredValuesPresent();
     metricBuilder.setRequestPayloadBytes(-1L);
     FirebasePerfNetworkValidator validator =
-        new FirebasePerfNetworkValidator(metricBuilder.build(), RuntimeEnvironment.application);
+        new FirebasePerfNetworkValidator(
+            metricBuilder.build(), ApplicationProvider.getApplicationContext());
     assertFalse(validator.isValidPerfMetric());
   }
 
@@ -138,7 +143,7 @@ public class FirebasePerfNetworkValidatorTest extends FirebasePerformanceTestBas
     NetworkRequestMetric metric = metricBuilder.build();
     assertFalse(metric.hasResponsePayloadBytes());
     FirebasePerfNetworkValidator validator =
-        new FirebasePerfNetworkValidator(metric, RuntimeEnvironment.application);
+        new FirebasePerfNetworkValidator(metric, ApplicationProvider.getApplicationContext());
     assertTrue(validator.isValidPerfMetric());
   }
 
@@ -148,7 +153,8 @@ public class FirebasePerfNetworkValidatorTest extends FirebasePerformanceTestBas
         createNetworkRequestMetricBuilderWithRequiredValuesPresent();
     metricBuilder.setResponsePayloadBytes(-1L);
     FirebasePerfNetworkValidator validator =
-        new FirebasePerfNetworkValidator(metricBuilder.build(), RuntimeEnvironment.application);
+        new FirebasePerfNetworkValidator(
+            metricBuilder.build(), ApplicationProvider.getApplicationContext());
     assertFalse(validator.isValidPerfMetric());
   }
 
@@ -165,19 +171,23 @@ public class FirebasePerfNetworkValidatorTest extends FirebasePerformanceTestBas
 
     assertFalse(metricBuilder.build().hasClientStartTimeUs());
     assertFalse(
-        new FirebasePerfNetworkValidator(metricBuilder.build(), RuntimeEnvironment.application)
+        new FirebasePerfNetworkValidator(
+                metricBuilder.build(), ApplicationProvider.getApplicationContext())
             .isValidPerfMetric());
     metricBuilder.setRequestStartTimeMicros(0L);
     assertFalse(
-        new FirebasePerfNetworkValidator(metricBuilder.build(), RuntimeEnvironment.application)
+        new FirebasePerfNetworkValidator(
+                metricBuilder.build(), ApplicationProvider.getApplicationContext())
             .isValidPerfMetric());
     metricBuilder.setRequestStartTimeMicros(-1L);
     assertFalse(
-        new FirebasePerfNetworkValidator(metricBuilder.build(), RuntimeEnvironment.application)
+        new FirebasePerfNetworkValidator(
+                metricBuilder.build(), ApplicationProvider.getApplicationContext())
             .isValidPerfMetric());
     metricBuilder.setRequestStartTimeMicros(System.currentTimeMillis() * 1000L);
     assertTrue(
-        new FirebasePerfNetworkValidator(metricBuilder.build(), RuntimeEnvironment.application)
+        new FirebasePerfNetworkValidator(
+                metricBuilder.build(), ApplicationProvider.getApplicationContext())
             .isValidPerfMetric());
   }
 
@@ -189,7 +199,7 @@ public class FirebasePerfNetworkValidatorTest extends FirebasePerformanceTestBas
 
     assertFalse(metric.hasTimeToRequestCompletedUs());
     FirebasePerfNetworkValidator validator =
-        new FirebasePerfNetworkValidator(metric, RuntimeEnvironment.application);
+        new FirebasePerfNetworkValidator(metric, ApplicationProvider.getApplicationContext());
     assertTrue(validator.isValidPerfMetric());
   }
 
@@ -199,7 +209,8 @@ public class FirebasePerfNetworkValidatorTest extends FirebasePerformanceTestBas
         createNetworkRequestMetricBuilderWithRequiredValuesPresent();
     metricBuilder.setTimeToRequestCompletedMicros(-1L);
     FirebasePerfNetworkValidator validator =
-        new FirebasePerfNetworkValidator(metricBuilder.build(), RuntimeEnvironment.application);
+        new FirebasePerfNetworkValidator(
+            metricBuilder.build(), ApplicationProvider.getApplicationContext());
     assertFalse(validator.isValidPerfMetric());
   }
 
@@ -210,7 +221,7 @@ public class FirebasePerfNetworkValidatorTest extends FirebasePerformanceTestBas
     NetworkRequestMetric metric = metricBuilder.build();
     assertFalse(metric.hasTimeToResponseInitiatedUs());
     FirebasePerfNetworkValidator validator =
-        new FirebasePerfNetworkValidator(metric, RuntimeEnvironment.application);
+        new FirebasePerfNetworkValidator(metric, ApplicationProvider.getApplicationContext());
     assertTrue(validator.isValidPerfMetric());
   }
 
@@ -220,7 +231,8 @@ public class FirebasePerfNetworkValidatorTest extends FirebasePerformanceTestBas
         createNetworkRequestMetricBuilderWithRequiredValuesPresent();
     metricBuilder.setTimeToResponseInitiatedMicros(-1L);
     FirebasePerfNetworkValidator validator =
-        new FirebasePerfNetworkValidator(metricBuilder.build(), RuntimeEnvironment.application);
+        new FirebasePerfNetworkValidator(
+            metricBuilder.build(), ApplicationProvider.getApplicationContext());
     assertFalse(validator.isValidPerfMetric());
   }
 
@@ -230,7 +242,8 @@ public class FirebasePerfNetworkValidatorTest extends FirebasePerformanceTestBas
         createNetworkRequestMetricBuilderWithRequiredValuesPresent();
     metricBuilder.setTimeToResponseCompletedMicros(-1L);
     FirebasePerfNetworkValidator validator =
-        new FirebasePerfNetworkValidator(metricBuilder.build(), RuntimeEnvironment.application);
+        new FirebasePerfNetworkValidator(
+            metricBuilder.build(), ApplicationProvider.getApplicationContext());
     assertFalse(validator.isValidPerfMetric());
   }
 
@@ -241,7 +254,7 @@ public class FirebasePerfNetworkValidatorTest extends FirebasePerformanceTestBas
     NetworkRequestMetric metric = metricBuilder.build();
     assertFalse(metric.hasResponseContentType());
     FirebasePerfNetworkValidator validator =
-        new FirebasePerfNetworkValidator(metric, RuntimeEnvironment.application);
+        new FirebasePerfNetworkValidator(metric, ApplicationProvider.getApplicationContext());
     assertTrue(validator.isValidPerfMetric());
   }
 
@@ -257,7 +270,7 @@ public class FirebasePerfNetworkValidatorTest extends FirebasePerformanceTestBas
 
     NetworkRequestMetric metric = metricBuilder.build();
     FirebasePerfNetworkValidator validator =
-        new FirebasePerfNetworkValidator(metric, RuntimeEnvironment.application);
+        new FirebasePerfNetworkValidator(metric, ApplicationProvider.getApplicationContext());
     assertTrue(validator.isValidPerfMetric());
     assertFalse(metric.hasResponseContentType());
   }
@@ -268,7 +281,8 @@ public class FirebasePerfNetworkValidatorTest extends FirebasePerformanceTestBas
         createNetworkRequestMetricBuilderWithRequiredValuesPresent();
     metricBuilder.setResponseContentType("a\u0020");
     FirebasePerfNetworkValidator validator =
-        new FirebasePerfNetworkValidator(metricBuilder.build(), RuntimeEnvironment.application);
+        new FirebasePerfNetworkValidator(
+            metricBuilder.build(), ApplicationProvider.getApplicationContext());
     assertTrue(validator.isValidPerfMetric());
   }
 
@@ -289,7 +303,8 @@ public class FirebasePerfNetworkValidatorTest extends FirebasePerformanceTestBas
     metricBuilder.setTimeToResponseCompletedMicros(400L);
 
     FirebasePerfNetworkValidator metricValidator =
-        new FirebasePerfNetworkValidator(metricBuilder.build(), RuntimeEnvironment.application);
+        new FirebasePerfNetworkValidator(
+            metricBuilder.build(), ApplicationProvider.getApplicationContext());
     assertThat(metricValidator.isValidPerfMetric()).isFalse();
   }
 
@@ -305,7 +320,8 @@ public class FirebasePerfNetworkValidatorTest extends FirebasePerformanceTestBas
     metricBuilder.setTimeToResponseCompletedMicros(400L);
 
     FirebasePerfNetworkValidator metricValidator =
-        new FirebasePerfNetworkValidator(metricBuilder.build(), RuntimeEnvironment.application);
+        new FirebasePerfNetworkValidator(
+            metricBuilder.build(), ApplicationProvider.getApplicationContext());
     assertThat(metricValidator.isValidPerfMetric()).isFalse();
   }
 
@@ -323,7 +339,7 @@ public class FirebasePerfNetworkValidatorTest extends FirebasePerformanceTestBas
 
     assertThat(metric.hasHttpResponseCode()).isFalse();
     FirebasePerfNetworkValidator metricValidator =
-        new FirebasePerfNetworkValidator(metric, RuntimeEnvironment.application);
+        new FirebasePerfNetworkValidator(metric, ApplicationProvider.getApplicationContext());
     assertThat(metricValidator.isValidPerfMetric()).isFalse();
   }
 
@@ -341,7 +357,7 @@ public class FirebasePerfNetworkValidatorTest extends FirebasePerformanceTestBas
 
     assertThat(metric.hasClientStartTimeUs()).isFalse();
     FirebasePerfNetworkValidator metricValidator =
-        new FirebasePerfNetworkValidator(metric, RuntimeEnvironment.application);
+        new FirebasePerfNetworkValidator(metric, ApplicationProvider.getApplicationContext());
     assertThat(metricValidator.isValidPerfMetric()).isFalse();
   }
 
@@ -359,7 +375,7 @@ public class FirebasePerfNetworkValidatorTest extends FirebasePerformanceTestBas
 
     assertThat(metric.hasTimeToResponseCompletedUs()).isFalse();
     FirebasePerfNetworkValidator metricValidator =
-        new FirebasePerfNetworkValidator(metric, RuntimeEnvironment.application);
+        new FirebasePerfNetworkValidator(metric, ApplicationProvider.getApplicationContext());
     assertThat(metricValidator.isValidPerfMetric()).isFalse();
   }
 

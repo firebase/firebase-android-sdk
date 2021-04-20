@@ -33,6 +33,7 @@ import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
 import android.util.Log;
+import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.iid.FirebaseIidMessengerCompat;
 import com.google.firebase.iid.MessengerIpcClient;
 import com.google.firebase.iid.MessengerIpcClient.What;
@@ -46,7 +47,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
-import org.robolectric.RuntimeEnvironment;
 import org.robolectric.shadows.ShadowPausedLooper;
 
 /**
@@ -236,7 +236,7 @@ public final class MessengerIpcClientTester {
    * Sets the binder that will be returned when binding to the register intent action on GmsCore.
    */
   public static void setRegisterBinder(IBinder binder) {
-    Application application = RuntimeEnvironment.application;
+    Application application = ApplicationProvider.getApplicationContext();
     Intent expectedBindingIntent = new Intent(ACTION_REGISTER);
     expectedBindingIntent.setPackage(PACKAGE_GMS);
     shadowOf(application)

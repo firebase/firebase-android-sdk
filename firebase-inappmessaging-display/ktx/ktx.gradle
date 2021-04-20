@@ -59,4 +59,5 @@ dependencies {
     testImplementation ("com.google.firebase:firebase-analytics:17.0.0") {
         exclude group: "com.google.firebase", module: "firebase-common"
     }
+    testImplementation 'androidx.test:core:1.2.0'
 }

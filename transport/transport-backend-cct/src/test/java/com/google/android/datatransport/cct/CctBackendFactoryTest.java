@@ -16,6 +16,7 @@ package com.google.android.datatransport.cct;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import androidx.test.core.app.ApplicationProvider;
 import com.google.android.datatransport.runtime.backends.CreationContext;
 import com.google.android.datatransport.runtime.time.TestClock;
 import java.net.MalformedURLException;
@@ -23,7 +24,6 @@ import java.net.URL;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.RuntimeEnvironment;
 
 @RunWith(RobolectricTestRunner.class)
 public class CctBackendFactoryTest {
@@ -37,7 +37,7 @@ public class CctBackendFactoryTest {
     CctBackendFactory cctBackendFactory = new CctBackendFactory();
     CreationContext creationContext =
         CreationContext.create(
-            RuntimeEnvironment.application,
+            ApplicationProvider.getApplicationContext(),
             wallClock,
             uptimeClock,
             CCTDestination.DESTINATION_NAME);

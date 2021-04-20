@@ -17,11 +17,13 @@ package com.google.firebase.storage;
 import static com.google.firebase.common.testutil.Assert.assertThrows;
 
 import android.os.Build;
+import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.storage.internal.MockClockHelper;
 import com.google.firebase.storage.internal.RobolectricThreadFix;
+import com.google.firebase.storage.internal.StorageReferenceUri;
 import com.google.firebase.storage.network.MockConnectionFactory;
 import com.google.firebase.storage.network.NetworkLayerMock;
 import com.google.firebase.testing.FirebaseAppRule;
@@ -32,7 +34,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 
 /** Tests for {@link FirebaseStorage}. */
@@ -70,6 +71,16 @@ public class StorageReferenceTest {
     instance.setMaxUploadRetryTimeMillis(1337);
     Assert.assertEquals(42, instance.getReference().getStorage().getMaxDownloadRetryTimeMillis());
     Assert.assertEquals(1337, instance.getReference().getStorage().getMaxUploadRetryTimeMillis());
+  }
+
+  @Test
+  public void retainsEmulatorProperties() {
+    FirebaseStorage storage = FirebaseStorage.getInstance(app);
+    storage.useEmulator("10.0.2.2", 9199);
+
+    StorageReference ref = storage.getReference();
+    StorageReferenceUri uri = ref.getStorageReferenceUri();
+    Assert.assertEquals("http://10.0.2.2:9199/v0", uri.getHttpBaseUri().toString());
   }
 
   @Test
@@ -152,7 +163,7 @@ public class StorageReferenceTest {
   public void initWithApp() throws Exception {
     FirebaseApp app2 =
         FirebaseApp.initializeApp(
-            RuntimeEnvironment.application.getApplicationContext(),
+            ApplicationProvider.getApplicationContext(),
             new FirebaseOptions.Builder()
                 .setApiKey("fooey")
                 .setApplicationId("fooey")
