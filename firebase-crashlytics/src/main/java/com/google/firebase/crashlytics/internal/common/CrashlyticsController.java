@@ -167,14 +167,14 @@ class CrashlyticsController {
 
     // Capture the time that the crash occurs and close over it so that the time doesn't
     // reflect when we get around to executing the task later.
-    final long time = System.currentTimeMillis();
+    final long timestampMillis = System.currentTimeMillis();
 
     final Task<Void> handleUncaughtExceptionTask =
         backgroundWorker.submitTask(
             new Callable<Task<Void>>() {
               @Override
               public Task<Void> call() throws Exception {
-                final long timestampSeconds = getTimestampSeconds(time);
+                final long timestampSeconds = getTimestampSeconds(timestampMillis);
 
                 final String currentSessionId = getCurrentSessionId();
                 if (currentSessionId == null) {
@@ -189,7 +189,7 @@ class CrashlyticsController {
                 reportingCoordinator.persistFatalEvent(
                     ex, thread, currentSessionId, timestampSeconds);
 
-                doWriteAppExceptionMarker(time);
+                doWriteAppExceptionMarker(timestampMillis);
 
                 doCloseSessions();
                 doOpenSession();
@@ -396,14 +396,14 @@ class CrashlyticsController {
   void writeNonFatalException(@NonNull final Thread thread, @NonNull final Throwable ex) {
     // Capture and close over the current time, so that we get the exact call time,
     // rather than the time at which the task executes.
-    final long time = System.currentTimeMillis();
+    final long timestampMillis = System.currentTimeMillis();
 
     backgroundWorker.submit(
         new Runnable() {
           @Override
           public void run() {
             if (!isHandlingException()) {
-              long timestampSeconds = getTimestampSeconds(time);
+              long timestampSeconds = getTimestampSeconds(timestampMillis);
               final String currentSessionId = getCurrentSessionId();
               if (currentSessionId == null) {
                 Logger.getLogger()
