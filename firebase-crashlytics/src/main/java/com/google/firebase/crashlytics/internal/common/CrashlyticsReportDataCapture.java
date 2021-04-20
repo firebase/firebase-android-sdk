@@ -79,8 +79,8 @@ public class CrashlyticsReportDataCapture {
     this.stackTraceTrimmingStrategy = stackTraceTrimmingStrategy;
   }
 
-  public CrashlyticsReport captureReportData(String identifier, long timestamp) {
-    return buildReportData().setSession(populateSessionData(identifier, timestamp)).build();
+  public CrashlyticsReport captureReportData(String identifier, long timestampSeconds) {
+    return buildReportData().setSession(populateSessionData(identifier, timestampSeconds)).build();
   }
 
   public Event captureEventData(
@@ -120,9 +120,9 @@ public class CrashlyticsReportDataCapture {
         .setPlatform(REPORT_ANDROID_PLATFORM);
   }
 
-  private CrashlyticsReport.Session populateSessionData(String identifier, long timestamp) {
+  private CrashlyticsReport.Session populateSessionData(String identifier, long timestampSeconds) {
     return CrashlyticsReport.Session.builder()
-        .setStartedAt(timestamp)
+        .setStartedAt(timestampSeconds)
         .setIdentifier(identifier)
         .setGenerator(GENERATOR)
         .setApp(populateSessionApplicationData())

@@ -37,7 +37,6 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -168,14 +167,14 @@ class CrashlyticsController {
 
     // Capture the time that the crash occurs and close over it so that the time doesn't
     // reflect when we get around to executing the task later.
-    final Date time = new Date();
+    final long timestampMillis = System.currentTimeMillis();
 
     final Task<Void> handleUncaughtExceptionTask =
         backgroundWorker.submitTask(
             new Callable<Task<Void>>() {
               @Override
               public Task<Void> call() throws Exception {
-                final long timestampSeconds = getTimestampSeconds(time);
+                final long timestampSeconds = getTimestampSeconds(timestampMillis);
 
                 final String currentSessionId = getCurrentSessionId();
                 if (currentSessionId == null) {
@@ -190,7 +189,7 @@ class CrashlyticsController {
                 reportingCoordinator.persistFatalEvent(
                     ex, thread, currentSessionId, timestampSeconds);
 
-                doWriteAppExceptionMarker(time.getTime());
+                doWriteAppExceptionMarker(timestampMillis);
 
                 doCloseSessions();
                 doOpenSession();
@@ -397,14 +396,14 @@ class CrashlyticsController {
   void writeNonFatalException(@NonNull final Thread thread, @NonNull final Throwable ex) {
     // Capture and close over the current time, so that we get the exact call time,
     // rather than the time at which the task executes.
-    final Date time = new Date();
+    final long timestampMillis = System.currentTimeMillis();
 
     backgroundWorker.submit(
         new Runnable() {
           @Override
           public void run() {
             if (!isHandlingException()) {
-              long timestampSeconds = getTimestampSeconds(time);
+              long timestampSeconds = getTimestampSeconds(timestampMillis);
               final String currentSessionId = getCurrentSessionId();
               if (currentSessionId == null) {
                 Logger.getLogger()
@@ -661,11 +660,11 @@ class CrashlyticsController {
   }
 
   private static long getCurrentTimestampSeconds() {
-    return getTimestampSeconds(new Date());
+    return getTimestampSeconds(System.currentTimeMillis());
   }
 
-  private static long getTimestampSeconds(Date date) {
-    return date.getTime() / 1000;
+  private static long getTimestampSeconds(long timestampMillis) {
+    return timestampMillis / 1000;
   }
 
   // region Serialization to protobuf

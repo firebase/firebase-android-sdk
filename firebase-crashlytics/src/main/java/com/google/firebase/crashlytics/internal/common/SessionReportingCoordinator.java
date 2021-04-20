@@ -88,8 +88,9 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
   }
 
   @Override
-  public void onBeginSession(@NonNull String sessionId, long timestamp) {
-    final CrashlyticsReport capturedReport = dataCapture.captureReportData(sessionId, timestamp);
+  public void onBeginSession(@NonNull String sessionId, long timestampSeconds) {
+    final CrashlyticsReport capturedReport =
+        dataCapture.captureReportData(sessionId, timestampSeconds);
 
     reportPersistence.persistReport(capturedReport);
   }
