@@ -22,6 +22,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import androidx.test.core.app.ApplicationProvider;
 import com.google.android.datatransport.Encoding;
 import com.google.android.datatransport.runtime.EncodedPayload;
 import com.google.android.datatransport.runtime.EventInternal;
@@ -39,7 +40,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.stubbing.Answer;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 
 @Config(sdk = {LOLLIPOP})
@@ -74,7 +74,7 @@ public class UploaderTest {
   private Uploader uploader =
       spy(
           new Uploader(
-              RuntimeEnvironment.application,
+              ApplicationProvider.getApplicationContext(),
               mockRegistry,
               store,
               mockScheduler,
