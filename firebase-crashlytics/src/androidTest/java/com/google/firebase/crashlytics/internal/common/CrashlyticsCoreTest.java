@@ -28,7 +28,7 @@ import com.google.firebase.FirebaseOptions;
 import com.google.firebase.crashlytics.BuildConfig;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
-import com.google.firebase.crashlytics.internal.MissingNativeComponent;
+import com.google.firebase.crashlytics.internal.ProviderProxyNativeComponent;
 import com.google.firebase.crashlytics.internal.analytics.UnavailableAnalyticsEventLogger;
 import com.google.firebase.crashlytics.internal.breadcrumbs.BreadcrumbHandler;
 import com.google.firebase.crashlytics.internal.breadcrumbs.BreadcrumbSource;
@@ -48,7 +48,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
   private static final String GOOGLE_APP_ID = "google:app:id";
 
   private static final CrashlyticsNativeComponent MISSING_NATIVE_COMPONENT =
-      new MissingNativeComponent();
+      new ProviderProxyNativeComponent(() -> null);
 
   private CrashlyticsCore crashlyticsCore;
   private BreadcrumbSource mockBreadcrumbSource;
