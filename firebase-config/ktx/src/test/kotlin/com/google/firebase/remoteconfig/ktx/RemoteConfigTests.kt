@@ -14,6 +14,7 @@
 
 package com.google.firebase.remoteconfig.ktx
 
+import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.MoreExecutors
 import com.google.firebase.FirebaseApp
@@ -37,7 +38,6 @@ import org.junit.runner.RunWith
 import org.mockito.Mockito.`when`
 import org.mockito.Mockito.mock
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
 
 const val APP_ID = "1:14368190084:android:09cb977358c6f241"
 const val API_KEY = "AIzaSyabcdefghijklmnopqrstuvwxyz1234567"
@@ -61,7 +61,7 @@ abstract class BaseTestCase {
     @Before
     fun setUp() {
         Firebase.initialize(
-                RuntimeEnvironment.application,
+                ApplicationProvider.getApplicationContext(),
                 FirebaseOptions.Builder()
                         .setApplicationId(APP_ID)
                         .setApiKey(API_KEY)
@@ -70,7 +70,7 @@ abstract class BaseTestCase {
         )
 
         Firebase.initialize(
-                RuntimeEnvironment.application,
+                ApplicationProvider.getApplicationContext(),
                 FirebaseOptions.Builder()
                         .setApplicationId(APP_ID)
                         .setApiKey(API_KEY)
