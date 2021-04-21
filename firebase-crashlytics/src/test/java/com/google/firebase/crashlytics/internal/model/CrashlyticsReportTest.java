@@ -229,6 +229,10 @@ public class CrashlyticsReportTest {
     return makeTestEvent("ANR");
   }
 
+  private static Event makeTestEvent() {
+    return makeTestEvent("test");
+  }
+
   private static Event makeTestEvent(String eventType) {
     return Event.builder()
         .setType(eventType)
@@ -274,10 +278,6 @@ public class CrashlyticsReportTest {
                 .setRamUsed(10000000)
                 .build())
         .build();
-  }
-
-  private static Event makeTestEvent() {
-    return makeTestEvent("test");
   }
 
   private static CrashlyticsReport.ApplicationExitInfo makeAppExitInfo() {
