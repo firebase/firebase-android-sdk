@@ -36,11 +36,25 @@ public class CrashlyticsReportTest {
 
     assertNull(testReport.getSession().getEvents());
 
-    final CrashlyticsReport withEventsReport = testReport.withEvents(makeTestEvents(2));
+    final CrashlyticsReport withEventsReport = testReport.withEvents(makeTestEvents(2, false));
 
     assertNotEquals(testReport, withEventsReport);
     assertNotNull(withEventsReport.getSession().getEvents());
     assertEquals(2, withEventsReport.getSession().getEvents().size());
+  }
+
+  @Test
+  public void testWithEvents_returnsNewReportWithAnr() {
+    final CrashlyticsReport testReport = makeTestReport();
+
+    assertNull(testReport.getSession().getEvents());
+    final CrashlyticsReport withAnrEventsReport =
+        testReport.withEvents(makeTestEvents(2, true)).withAppExitInfo(makeAppExitInfo());
+
+    assertNotEquals(testReport, withAnrEventsReport);
+    assertNotNull(withAnrEventsReport.getSession().getEvents());
+    assertEquals(2, withAnrEventsReport.getSession().getEvents().size());
+    assertNotNull(withAnrEventsReport.getAppExitInfo());
   }
 
   @Test
@@ -201,17 +215,25 @@ public class CrashlyticsReportTest {
         .build();
   }
 
-  private static ImmutableList<Event> makeTestEvents(int numEvents) {
+  private static ImmutableList<Event> makeTestEvents(int numEvents, boolean includeAnr) {
     List<Event> events = new ArrayList<>();
     for (int i = 0; i < numEvents; i++) {
-      events.add(makeTestEvent());
+      if (i == numEvents - 1 && includeAnr) {
+        events.add(makeAnrEvent());
+      } else {
+        events.add(makeTestEvent());
+      }
     }
     return ImmutableList.from(events);
   }
 
-  private static Event makeTestEvent() {
+  private static Event makeAnrEvent() {
+    return makeTestEvent("ANR");
+  }
+
+  private static Event makeTestEvent(String eventType) {
     return Event.builder()
-        .setType("type")
+        .setType(eventType)
         .setTimestamp(1000)
         .setApp(
             Session.Event.Application.builder()
@@ -253,6 +275,20 @@ public class CrashlyticsReportTest {
                 .setProximityOn(true)
                 .setRamUsed(10000000)
                 .build())
+        .build();
+  }
+
+  private static Event makeTestEvent() {
+    return makeTestEvent("test");
+  }
+
+  private static CrashlyticsReport.ApplicationExitInfo makeAppExitInfo() {
+    return CrashlyticsReport.ApplicationExitInfo.builder()
+        .setTraceFile("trace")
+        .setTimestamp(1L)
+        .setImportance(1)
+        .setReasonCode(1)
+        .setProcessName("test")
         .build();
   }
 
