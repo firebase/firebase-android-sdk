@@ -1059,6 +1059,7 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
           public void onResponse(Map<String, Object> response) {
             String status = (String) response.get(REQUEST_STATUS);
             if (status.equals("ok")) {
+              connectionState = ConnectionState.Connected;
               invalidAuthTokenCount = 0;
               sendAppCheckTokenHelper(restoreStateAfterComplete);
             } else {
@@ -1117,7 +1118,6 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
         response -> {
           String status = (String) response.get(REQUEST_STATUS);
           if (status.equals("ok")) {
-            connectionState = ConnectionState.Connected;
             invalidAppCheckTokenCount = 0;
             if (restoreStateAfterComplete) {
               restoreState();
