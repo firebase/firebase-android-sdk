@@ -159,9 +159,9 @@ public abstract class CrashlyticsReport {
   }
 
   /**
-   * Augment an existing {@link CrashlyticsReport} with an ApplicationExitInfoPayload
+   * Augment an existing {@link CrashlyticsReport} with an ApplicationExitInfo
    *
-   * @return a new {@link CrashlyticsReport} with AppExitInfo data inside of it.
+   * @return a new {@link CrashlyticsReport} with AppExitInfo inside of it.
    */
   @NonNull
   public CrashlyticsReport withAppExitInfo(@NonNull ApplicationExitInfo appExitInfo) {
