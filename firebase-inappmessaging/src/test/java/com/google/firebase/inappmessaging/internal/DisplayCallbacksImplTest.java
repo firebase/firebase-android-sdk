@@ -41,6 +41,7 @@ import static org.mockito.Mockito.when;
 
 import android.app.Application;
 import androidx.annotation.NonNull;
+import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
@@ -77,7 +78,6 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 
 @RunWith(RobolectricTestRunner.class)
@@ -198,7 +198,7 @@ public class DisplayCallbacksImplTest {
     fakeImpressionCompletable = Completable.fromCallable(() -> wasRecorded = true);
     fakeRateLimitCompletable = Completable.fromCallable(() -> wasIncremented = true);
 
-    application = RuntimeEnvironment.application;
+    application = ApplicationProvider.getApplicationContext();
 
     options =
         new FirebaseOptions.Builder()

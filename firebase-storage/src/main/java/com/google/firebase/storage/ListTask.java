@@ -60,7 +60,7 @@ class ListTask implements Runnable {
   public void run() {
     final NetworkRequest request =
         new ListNetworkRequest(
-            storageRef.getStorageUri(), storageRef.getApp(), maxResults, pageToken);
+            storageRef.getStorageReferenceUri(), storageRef.getApp(), maxResults, pageToken);
 
     sender.sendWithExponentialBackoff(request);
 

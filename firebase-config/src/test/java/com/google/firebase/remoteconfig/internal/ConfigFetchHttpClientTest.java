@@ -40,6 +40,7 @@ import static org.mockito.MockitoAnnotations.initMocks;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.os.Build;
+import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.common.util.MockClock;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;
@@ -61,7 +62,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 
 /**
@@ -95,7 +95,7 @@ public class ConfigFetchHttpClientTest {
   @Before
   public void setUp() throws Exception {
     initMocks(this);
-    context = RuntimeEnvironment.application;
+    context = ApplicationProvider.getApplicationContext();
     configFetchHttpClient =
         new ConfigFetchHttpClient(
             context,

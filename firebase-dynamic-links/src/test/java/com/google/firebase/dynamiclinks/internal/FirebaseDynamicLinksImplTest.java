@@ -27,6 +27,7 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.RemoteException;
+import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.common.api.internal.TaskApiCall;
 import com.google.android.gms.common.internal.safeparcel.SafeParcelableSerializer;
@@ -47,7 +48,6 @@ import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.RuntimeEnvironment;
 
 /** Test {@link FirebaseDynamicLinksImpl}. */
 @RunWith(RobolectricTestRunner.class)
@@ -94,7 +94,8 @@ public class FirebaseDynamicLinksImplTest {
     FirebaseOptions.Builder firebaseOptionsBuilder =
         new FirebaseOptions.Builder().setApplicationId("application_id").setApiKey("api_key");
     firebaseApp =
-        FirebaseApp.initializeApp(RuntimeEnvironment.application, firebaseOptionsBuilder.build());
+        FirebaseApp.initializeApp(
+            ApplicationProvider.getApplicationContext(), firebaseOptionsBuilder.build());
     // Create uri with properly escaped query params.
     updateAppUri =
         Uri.parse("market://details?id=com.google.android.gm&min_version=10")

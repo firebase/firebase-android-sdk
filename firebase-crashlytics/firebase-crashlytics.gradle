@@ -57,6 +57,7 @@ dependencies {
 
     implementation project(':encoders:firebase-encoders')
     implementation project(':encoders:firebase-encoders-json')
+    implementation project(':firebase-annotations')
     implementation project(':firebase-common')
     implementation project(':firebase-components')
     implementation project(':transport:transport-api')
@@ -64,7 +65,7 @@ dependencies {
     implementation project(':transport:transport-backend-cct')
     implementation project(':firebase-installations-interop')
     runtimeOnly project(':firebase-installations')
-    implementation 'com.google.firebase:firebase-measurement-connector:18.0.0'
+    implementation 'com.google.firebase:firebase-measurement-connector:18.0.2'
     implementation "com.google.android.gms:play-services-tasks:17.0.0"
 
     javadocClasspath 'com.google.code.findbugs:jsr305:3.0.2'
@@ -82,6 +83,7 @@ dependencies {
     androidTestImplementation 'androidx.test:runner:1.2.0'
     androidTestImplementation 'androidx.test:core:1.2.0'
     androidTestImplementation 'org.mockito:mockito-core:2.25.0'
+    androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
     androidTestImplementation 'com.linkedin.dexmaker:dexmaker:2.25.0'
     androidTestImplementation 'com.linkedin.dexmaker:dexmaker-mockito:2.25.0'
     androidTestImplementation 'com.google.protobuf:protobuf-java:2.4.1'

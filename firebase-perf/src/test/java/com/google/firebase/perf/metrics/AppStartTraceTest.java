@@ -23,6 +23,7 @@ import static org.mockito.MockitoAnnotations.initMocks;
 import android.app.Activity;
 import android.content.pm.ProviderInfo;
 import android.os.Bundle;
+import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.perf.FirebasePerformanceTestBase;
 import com.google.firebase.perf.provider.FirebasePerfProvider;
 import com.google.firebase.perf.session.SessionManager;
@@ -43,7 +44,6 @@ import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.RuntimeEnvironment;
 
 /** Unit tests for {@link AppStartTrace}. */
 @RunWith(RobolectricTestRunner.class)
@@ -234,7 +234,7 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
     Assert.assertEquals(oldSessionId, SessionManager.getInstance().perfSession().sessionId());
 
     FirebasePerfProvider provider = new FirebasePerfProvider();
-    provider.attachInfo(RuntimeEnvironment.systemContext, new ProviderInfo());
+    provider.attachInfo(ApplicationProvider.getApplicationContext(), new ProviderInfo());
 
     Assert.assertNotEquals(oldSessionId, SessionManager.getInstance().perfSession().sessionId());
   }

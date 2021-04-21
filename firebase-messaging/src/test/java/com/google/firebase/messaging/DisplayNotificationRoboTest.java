@@ -62,7 +62,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 import org.robolectric.shadows.ShadowSystemClock;
 
@@ -132,7 +131,7 @@ public class DisplayNotificationRoboTest {
 
   @Before
   public void setUp() throws IOException {
-    context = spy(RuntimeEnvironment.application);
+    context = spy(ApplicationProvider.getApplicationContext());
     activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
     keyguardManager = (KeyguardManager) context.getSystemService(Context.KEYGUARD_SERVICE);
     notificationManager =
