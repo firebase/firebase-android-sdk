@@ -36,7 +36,7 @@ public class CrashlyticsReportTest {
 
     assertNull(testReport.getSession().getEvents());
 
-    final CrashlyticsReport withEventsReport = testReport.withEvents(makeTestEvents(2, false));
+    final CrashlyticsReport withEventsReport = testReport.withEvents(makeTestEvents(2));
 
     assertNotEquals(testReport, withEventsReport);
     assertNotNull(withEventsReport.getSession().getEvents());
@@ -49,11 +49,13 @@ public class CrashlyticsReportTest {
 
     assertNull(testReport.getSession().getEvents());
     final CrashlyticsReport withAnrEventsReport =
-        testReport.withEvents(makeTestEvents(2, true)).withAppExitInfo(makeAppExitInfo());
+        testReport
+            .withEvents(ImmutableList.from(makeAnrEvent()))
+            .withAppExitInfo(makeAppExitInfo());
 
     assertNotEquals(testReport, withAnrEventsReport);
     assertNotNull(withAnrEventsReport.getSession().getEvents());
-    assertEquals(2, withAnrEventsReport.getSession().getEvents().size());
+    assertEquals(1, withAnrEventsReport.getSession().getEvents().size());
     assertNotNull(withAnrEventsReport.getAppExitInfo());
   }
 
@@ -215,14 +217,10 @@ public class CrashlyticsReportTest {
         .build();
   }
 
-  private static ImmutableList<Event> makeTestEvents(int numEvents, boolean includeAnr) {
+  private static ImmutableList<Event> makeTestEvents(int numEvents) {
     List<Event> events = new ArrayList<>();
     for (int i = 0; i < numEvents; i++) {
-      if (i == numEvents - 1 && includeAnr) {
-        events.add(makeAnrEvent());
-      } else {
-        events.add(makeTestEvent());
-      }
+      events.add(makeTestEvent());
     }
     return ImmutableList.from(events);
   }
