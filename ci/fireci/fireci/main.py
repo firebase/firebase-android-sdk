@@ -20,8 +20,9 @@ from .internal import main
 
 logging.basicConfig(
     format='%(name)s: [%(levelname)s] %(message)s',
-    level=logging.DEBUG,
+    level=logging.INFO,
 )
+logging.getLogger('fireci').setLevel(logging.DEBUG)
 
 plugins.discover()
 
