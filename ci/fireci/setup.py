@@ -27,7 +27,9 @@ setup(
     install_requires=[
         'click==7.0',
         'PyGithub==1.43.8',
+        'pystache==0.5.4',
         'requests==2.23.0',
+        'PyYAML==5.4.1',
     ],
     packages=find_packages(exclude=['tests']),
     entry_points={
