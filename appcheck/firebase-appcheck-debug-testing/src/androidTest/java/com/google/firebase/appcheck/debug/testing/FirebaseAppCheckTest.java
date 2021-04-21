@@ -52,6 +52,7 @@ public class FirebaseAppCheckTest {
   }
 
   @Test
+  @Ignore("TODO: Re-enable after setting up debug secret environment variable in public repo.")
   public void exchangeDebugSecretForAppCheckToken() throws Exception {
     debugAppCheckTestHelper.withDebugProvider(
         () -> {
