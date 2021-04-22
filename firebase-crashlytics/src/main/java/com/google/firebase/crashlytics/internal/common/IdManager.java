@@ -118,8 +118,9 @@ public class IdManager implements InstallIdProvider {
       Logger.getLogger().v("Fetched Firebase Installation ID: " + trueFid);
 
       if (trueFid == null) {
-        // This shouldn't happen often; the safest thing to do is to create a synthetic ID instead
-        trueFid = createSyntheticFid();
+        // This shouldn't happen often. We will assume the cached FID is valid, if it exists.
+        // Otherwise, the safest thing to do is to create a synthetic ID instead
+        trueFid = (cachedFid == null ? createSyntheticFid() : cachedFid);
       }
 
       if (trueFid.equals(cachedFid)) {
@@ -148,11 +149,11 @@ public class IdManager implements InstallIdProvider {
     return crashlyticsInstallId;
   }
 
-  private String createSyntheticFid() {
+  static String createSyntheticFid() {
     return SYNTHETIC_FID_PREFIX + UUID.randomUUID().toString();
   }
 
-  private boolean isSyntheticFid(String fid) {
+  static boolean isSyntheticFid(String fid) {
     return (fid != null && fid.startsWith(SYNTHETIC_FID_PREFIX));
   }
 

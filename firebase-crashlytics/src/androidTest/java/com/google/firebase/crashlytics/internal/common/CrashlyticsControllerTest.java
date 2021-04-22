@@ -62,7 +62,12 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
 
     FirebaseInstallationsApi installationsApiMock = mock(FirebaseInstallationsApi.class);
     when(installationsApiMock.getId()).thenReturn(Tasks.forResult("instanceId"));
-    idManager = new IdManager(testContext, testContext.getPackageName(), installationsApiMock);
+    idManager =
+        new IdManager(
+            testContext,
+            testContext.getPackageName(),
+            installationsApiMock,
+            DataCollectionArbiterTest.createMockDataCollectionArbiter(true));
 
     // For each test case, create a new, random subdirectory to guarantee a clean slate for file
     // manipulation.

@@ -27,6 +27,12 @@ public class DataCollectionArbiterTest extends CrashlyticsTestCase {
 
   final String PREFS_NAME = CommonUtils.SHARED_PREFS_NAME;
 
+  public static DataCollectionArbiter createMockDataCollectionArbiter(boolean collectionEnabled) {
+    DataCollectionArbiter dca = mock(DataCollectionArbiter.class);
+    when(dca.isAutomaticDataCollectionEnabled()).thenReturn(collectionEnabled);
+    return dca;
+  }
+
   public void testSetCrashlyticsDataCollectionEnabled() throws Exception {
     Context mockContext = mock(Context.class);
     FirebaseApp app = mock(FirebaseApp.class);

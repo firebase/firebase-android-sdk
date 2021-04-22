@@ -97,7 +97,12 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
 
       FirebaseInstallationsApi installationsApiMock = mock(FirebaseInstallationsApi.class);
       when(installationsApiMock.getId()).thenReturn(Tasks.forResult("instanceId"));
-      idManager = new IdManager(context, context.getPackageName(), installationsApiMock);
+      idManager =
+          new IdManager(
+              context,
+              context.getPackageName(),
+              installationsApiMock,
+              DataCollectionArbiterTest.createMockDataCollectionArbiter(true));
 
       nativeComponent = new ProviderProxyNativeComponent(() -> null);
 

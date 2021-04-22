@@ -30,7 +30,12 @@ public class CLSUUIDTest extends CrashlyticsTestCase {
     super.setUp();
     FirebaseInstallationsApi installationsApiMock = mock(FirebaseInstallationsApi.class);
     when(installationsApiMock.getId()).thenReturn(Tasks.forResult("instanceId"));
-    idManager = new IdManager(getContext(), getContext().getPackageName(), installationsApiMock);
+    idManager =
+        new IdManager(
+            getContext(),
+            getContext().getPackageName(),
+            installationsApiMock,
+            DataCollectionArbiterTest.createMockDataCollectionArbiter(true));
     uuid = new CLSUUID(idManager);
   }
 

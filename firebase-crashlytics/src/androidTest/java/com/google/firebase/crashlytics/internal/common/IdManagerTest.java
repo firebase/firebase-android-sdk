@@ -57,15 +57,20 @@ public class IdManagerTest extends CrashlyticsTestCase {
         .apply();
   }
 
-  private IdManager createIdManager(String instanceId) {
+  private IdManager createIdManager(String instanceId, boolean dataCollectionEnabled) {
     FirebaseInstallationsApi iid = mock(FirebaseInstallationsApi.class);
     when(iid.getId()).thenReturn(Tasks.forResult(instanceId));
-    return new IdManager(getContext(), getContext().getPackageName(), iid);
+
+    return new IdManager(
+        getContext(),
+        getContext().getPackageName(),
+        iid,
+        DataCollectionArbiterTest.createMockDataCollectionArbiter(dataCollectionEnabled));
   }
 
   public void testCreateUUID() {
     final String fid = "test_fid";
-    final IdManager idManager = createIdManager(fid);
+    final IdManager idManager = createIdManager(fid, true);
     final String installId = idManager.getCrashlyticsInstallId();
     assertNotNull(installId);
 
@@ -88,13 +93,18 @@ public class IdManagerTest extends CrashlyticsTestCase {
         .putString(IdManager.PREFKEY_FIREBASE_IID, "firebase-iid")
         .apply();
 
-    final IdManager idManager = new IdManager(getContext(), getContext().getPackageName(), fis);
+    final IdManager idManager =
+        new IdManager(
+            getContext(),
+            getContext().getPackageName(),
+            fis,
+            DataCollectionArbiterTest.createMockDataCollectionArbiter(true));
     final String actualInstallId = idManager.getCrashlyticsInstallId();
     assertNotNull(actualInstallId);
     assertEquals(expectedInstallId, actualInstallId);
   }
 
-  public void testInstanceIdChanges() {
+  public void testInstanceIdChanges_dataCollectionEnabled() {
     // Set up the initial state with a valid iid and uuid.
     final String oldUuid = "old_uuid";
     final String newFid = "new_test_fid";
@@ -105,7 +115,7 @@ public class IdManagerTest extends CrashlyticsTestCase {
         .apply();
 
     // Initialize the manager with a different FID.
-    IdManager idManager = createIdManager(newFid);
+    IdManager idManager = createIdManager(newFid, true);
 
     String installId = idManager.getCrashlyticsInstallId();
     assertNotNull(installId);
@@ -118,9 +128,9 @@ public class IdManagerTest extends CrashlyticsTestCase {
     assertEquals(installId, idManager.getCrashlyticsInstallId());
   }
 
-  public void testInstanceIdDoesntChange() {
+  void validateInstanceIdDoesntChange(boolean dataCollectionEnabled) {
     final String oldUuid = "test_uuid";
-    final String fid = "test_fid";
+    final String fid = dataCollectionEnabled ? "test_fid" : IdManager.createSyntheticFid();
     // Set up the initial state with a valid iid and uuid.
     prefs
         .edit()
@@ -129,7 +139,7 @@ public class IdManagerTest extends CrashlyticsTestCase {
         .apply();
 
     // Initialize the manager with the same IID.
-    IdManager idManager = createIdManager(fid);
+    IdManager idManager = createIdManager(fid, dataCollectionEnabled);
 
     String installId = idManager.getCrashlyticsInstallId();
     assertNotNull(installId);
@@ -144,31 +154,54 @@ public class IdManagerTest extends CrashlyticsTestCase {
     assertEquals(oldUuid, idManager.getCrashlyticsInstallId());
   }
 
-  public void testLegacyInstanceIdMigration() {
-    // Pre-Firebase versions of Crashlytics stored the installation ID in a different preference
-    // store. This test verifies that the legacy ID, if it exists, is migrated to the new
-    // preference store and returned by the IdManager. It also verifies that the legacy ID is
-    // then removed from the legacy preference store.
-    final String legacyId = "legacy_uuid";
-    final String fid = "new_fid";
-    legacyPrefs
+  public void testInstanceIdDoesntChange_dataCollectionEnabled() {
+    validateInstanceIdDoesntChange(true);
+  }
+
+  public void testInstanceIdDoesntChange_dataCollectionDisabled() {
+    validateInstanceIdDoesntChange(false);
+  }
+
+  public void testInstanceIdRotatesWithDataCollectionFlag() {
+    final String originalUuid = "test_uuid";
+    final String originalFid = "test_fid";
+    // Set up the initial state with a valid iid and uuid.
+    prefs
         .edit()
-        .putString(IdManager.PREFKEY_LEGACY_INSTALLATION_UUID, legacyId)
-        .putString(IdManager.PREFKEY_ADVERTISING_ID, "test_adid")
+        .putString(IdManager.PREFKEY_INSTALLATION_UUID, originalUuid)
+        .putString(IdManager.PREFKEY_FIREBASE_IID, originalFid)
         .apply();
 
-    final IdManager idManager = createIdManager(fid);
-    assertEquals(legacyId, idManager.getCrashlyticsInstallId());
-    assertEquals(fid, prefs.getString(IdManager.PREFKEY_FIREBASE_IID, null));
-    assertEquals(legacyId, prefs.getString(IdManager.PREFKEY_INSTALLATION_UUID, null));
-    assertFalse(legacyPrefs.contains(IdManager.PREFKEY_LEGACY_INSTALLATION_UUID));
-
-    // The legacy SDK would cache the ad id, so that the installation ID could be rotated when the
-    // ad id changed. Crashlytics now rotates the installation ID based on the Firebase Install Id,
-    // so we verify that the ad id is removed from the legacy preference store:
-    assertFalse(legacyPrefs.contains(IdManager.PREFKEY_ADVERTISING_ID));
+    // Initialize the manager with the same FID.
+    IdManager idManager = createIdManager(originalFid, true);
+    String firstUuid = idManager.getCrashlyticsInstallId();
+    assertNotNull(firstUuid);
+    assertEquals(originalUuid, firstUuid);
 
     // subsequent calls should return the same id
-    assertEquals(legacyId, idManager.getCrashlyticsInstallId());
+    assertEquals(firstUuid, idManager.getCrashlyticsInstallId());
+    assertEquals(firstUuid, createIdManager(originalFid, true).getCrashlyticsInstallId());
+
+    // Disable data collection manager and confirm we get a different id
+    idManager = createIdManager(originalFid, false);
+    String secondUuid = idManager.getCrashlyticsInstallId();
+    assertNotSame(secondUuid, firstUuid);
+    assertEquals(secondUuid, idManager.getCrashlyticsInstallId());
+    assertEquals(secondUuid, createIdManager(null, false).getCrashlyticsInstallId());
+    // Check that we cached an synthetic FID
+    final SharedPreferences prefs = CommonUtils.getSharedPrefs(getContext());
+    String cachedFid = prefs.getString(IdManager.PREFKEY_FIREBASE_IID, null);
+    assertTrue(IdManager.isSyntheticFid(cachedFid));
+
+    // re-enable data collection
+    idManager = createIdManager(originalFid, true);
+    String thirdUuid = idManager.getCrashlyticsInstallId();
+    assertNotSame(thirdUuid, firstUuid);
+    assertNotSame(thirdUuid, secondUuid);
+    assertEquals(thirdUuid, idManager.getCrashlyticsInstallId());
+    assertEquals(thirdUuid, createIdManager(originalFid, true).getCrashlyticsInstallId());
+    // The cached ID should be back to the original
+    cachedFid = prefs.getString(IdManager.PREFKEY_FIREBASE_IID, null);
+    assertEquals(cachedFid, originalFid);
   }
 }
