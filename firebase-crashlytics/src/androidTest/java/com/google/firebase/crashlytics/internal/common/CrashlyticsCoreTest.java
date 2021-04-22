@@ -395,7 +395,11 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
       final CrashlyticsCore crashlyticsCore =
           new CrashlyticsCore(
               app,
-              new IdManager(context, "unused", installationsApiMock),
+              new IdManager(
+                  context,
+                  "unused",
+                  installationsApiMock,
+                  DataCollectionArbiterTest.MOCK_ARBITER_ENABLED),
               nativeComponent,
               arbiter,
               breadcrumbSource,

@@ -57,22 +57,25 @@ public class FirebaseCrashlytics {
   static final String LEGACY_CRASH_ANALYTICS_ORIGIN = "crash";
   static final int APP_EXCEPTION_CALLBACK_TIMEOUT_MS = 500;
 
-  static final String CRASHLYTICS_API_ENDPOINT = "com.crashlytics.ApiEndpoint";
-
   static @Nullable FirebaseCrashlytics init(
       @NonNull FirebaseApp app,
       @NonNull FirebaseInstallationsApi firebaseInstallationsApi,
       @NonNull Provider<CrashlyticsNativeComponent> nativeComponent,
       @NonNull Deferred<AnalyticsConnector> analyticsConnector) {
-    Logger.getLogger().i("Initializing Firebase Crashlytics " + CrashlyticsCore.getVersion());
+
     Context context = app.getApplicationContext();
-    // Set up the IdManager.
     final String appIdentifier = context.getPackageName();
-    final IdManager idManager = new IdManager(context, appIdentifier, firebaseInstallationsApi);
+    Logger.getLogger()
+        .i(
+            "Initializing Firebase Crashlytics "
+                + CrashlyticsCore.getVersion()
+                + " for "
+                + appIdentifier);
 
     final DataCollectionArbiter arbiter = new DataCollectionArbiter(app);
-
-    ProviderProxyNativeComponent proxyNativeComponent =
+    final IdManager idManager =
+        new IdManager(context, appIdentifier, firebaseInstallationsApi, arbiter);
+    final ProviderProxyNativeComponent proxyNativeComponent =
         new ProviderProxyNativeComponent(nativeComponent);
 
     // Integration with Firebase Analytics
