@@ -40,6 +40,30 @@ public abstract class FirebaseAppCheck implements InternalAppCheckTokenProvider 
    * associated with this FirebaseAppCheck instance. Any {@link AppCheckTokenListener}s attached to
    * this FirebaseAppCheck instance will be transferred from any existing factory to the newly
    * installed one.
+   *
+   * <p>Automatic token refreshing will only occur if the global {@code
+   * isDataCollectionDefaultEnabled} flag is set to true. To allow automatic token refreshing for
+   * Firebase App Check without changing the {@code isDataCollectionDefaultEnabled} flag for other
+   * Firebase SDKs, use {@link #installAppCheckProviderFactory(boolean, AppCheckProviderFactory)}
+   * instead or call {@link #setTokenAutoRefreshEnabled(boolean)} after installing the {@code
+   * factory}.
    */
   public abstract void installAppCheckProviderFactory(@NonNull AppCheckProviderFactory factory);
+
+  /**
+   * Installs the given {@link AppCheckProviderFactory}, overwriting any that previously was
+   * associated with this FirebaseAppCheck instance. Any {@link AppCheckTokenListener}s attached to
+   * this FirebaseAppCheck instance will be transferred from any existing factory to the newly
+   * installed one.
+   *
+   * <p>Automatic token refreshing will only occur if the {@code isTokenAutoRefreshEnabled} field is
+   * set to true. To use the global {@code isDataCollectionDefaultEnabled} flag for determining
+   * automatic token refreshing, {@link #installAppCheckProviderFactory(AppCheckProviderFactory)}
+   * should be called instead.
+   */
+  public abstract void installAppCheckProviderFactory(
+      boolean isTokenAutoRefreshEnabled, @NonNull AppCheckProviderFactory factory);
+
+  /** Sets the {@code isTokenAutoRefreshEnabled} flag. */
+  public abstract void setTokenAutoRefreshEnabled(boolean isTokenAutoRefreshEnabled);
 }

@@ -38,6 +38,7 @@ public final class TokenRefreshManager {
   private volatile boolean isBackgrounded;
   private volatile int currentListenerCount;
   private volatile long nextRefreshTimeMillis;
+  private volatile boolean isAutoRefreshEnabled;
 
   TokenRefreshManager(@NonNull Context context, @NonNull DefaultFirebaseAppCheck firebaseAppCheck) {
     this(
@@ -107,8 +108,13 @@ public final class TokenRefreshManager {
     currentListenerCount = newListenerCount;
   }
 
+  public void setIsAutoRefreshEnabled(boolean isAutoRefreshEnabled) {
+    this.isAutoRefreshEnabled = isAutoRefreshEnabled;
+  }
+
   private boolean shouldScheduleRefresh() {
-    return !isBackgrounded
+    return isAutoRefreshEnabled
+        && !isBackgrounded
         && currentListenerCount > 0
         && nextRefreshTimeMillis != UNSET_REFRESH_TIME;
   }
