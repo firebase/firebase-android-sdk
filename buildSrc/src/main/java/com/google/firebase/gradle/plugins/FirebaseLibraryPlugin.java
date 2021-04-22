@@ -49,10 +49,11 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
 
     LibraryExtension android = project.getExtensions().getByType(LibraryExtension.class);
 
-    android.compileOptions(options -> {
-      options.setSourceCompatibility(JavaVersion.VERSION_1_8);
-      options.setTargetCompatibility(JavaVersion.VERSION_1_8);
-    });
+    android.compileOptions(
+        options -> {
+          options.setSourceCompatibility(JavaVersion.VERSION_1_8);
+          options.setTargetCompatibility(JavaVersion.VERSION_1_8);
+        });
 
     // In the case of and android library signing config only affects instrumentation test APK.
     // We need it signed with default debug credentials in order for FTL to accept the APK.
