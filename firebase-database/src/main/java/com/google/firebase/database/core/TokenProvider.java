@@ -17,7 +17,7 @@ package com.google.firebase.database.core;
 import java.util.concurrent.ExecutorService;
 
 /** */
-public interface AuthTokenProvider {
+public interface TokenProvider {
   /** */
   public interface GetTokenCompletionListener {
     /**

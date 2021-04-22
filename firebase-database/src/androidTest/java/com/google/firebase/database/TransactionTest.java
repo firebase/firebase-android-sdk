@@ -24,9 +24,9 @@ import static org.junit.Assert.fail;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.firebase.database.DatabaseReference.CompletionListener;
-import com.google.firebase.database.core.AuthTokenProvider;
 import com.google.firebase.database.core.DatabaseConfig;
 import com.google.firebase.database.core.RepoManager;
+import com.google.firebase.database.core.TokenProvider;
 import com.google.firebase.database.future.ReadFuture;
 import com.google.firebase.database.future.WriteFuture;
 import java.util.ArrayList;
@@ -2005,7 +2005,7 @@ public class TransactionTest {
     // server, but that's harder to manufacture from a test.
     final DatabaseConfig cfg = IntegrationTestHelpers.newTestConfig();
     cfg.setAuthTokenProvider(
-        new AuthTokenProvider() {
+        new TokenProvider() {
           private int count = 0;
 
           @Override

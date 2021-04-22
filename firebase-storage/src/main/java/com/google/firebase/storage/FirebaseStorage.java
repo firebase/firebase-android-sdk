@@ -23,6 +23,9 @@ import androidx.annotation.Nullable;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
+import com.google.firebase.appcheck.AppCheckTokenResult;
+import com.google.firebase.appcheck.interop.AppCheckTokenListener;
+import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.emulators.EmulatedServiceSettings;
 import com.google.firebase.inject.Provider;
@@ -47,6 +50,7 @@ public class FirebaseStorage {
       "The storage Uri cannot contain a path element.";
   @NonNull private final FirebaseApp mApp;
   @Nullable private final Provider<InternalAuthProvider> mAuthProvider;
+  @Nullable private final Provider<InternalAppCheckTokenProvider> mAppCheckProvider;
   @Nullable private final String mBucketName;
   private long sMaxUploadRetry = 10 * DateUtils.MINUTE_IN_MILLIS; //  10 * 60 * 1000
   private long sMaxDownloadRetry = 10 * DateUtils.MINUTE_IN_MILLIS; //  10 * 60 * 1000
@@ -57,10 +61,25 @@ public class FirebaseStorage {
   FirebaseStorage(
       @Nullable String bucketName,
       @NonNull FirebaseApp app,
-      @Nullable Provider<InternalAuthProvider> authProvider) {
+      @Nullable Provider<InternalAuthProvider> authProvider,
+      @Nullable Provider<InternalAppCheckTokenProvider> appCheckProvider) {
     mBucketName = bucketName;
     mApp = app;
     mAuthProvider = authProvider;
+    mAppCheckProvider = appCheckProvider;
+    if (mAppCheckProvider != null && mAppCheckProvider.get() != null) {
+      mAppCheckProvider
+          .get()
+          .addAppCheckTokenListener(
+              new AppCheckTokenListener() {
+                @Override
+                public void onAppCheckTokenChanged(
+                    @NonNull AppCheckTokenResult appCheckTokenResult) {
+                  // Do nothing; we just need to register a listener so that the App Check SDK knows
+                  // to auto-refresh the token.
+                }
+              });
+    }
   }
 
   private static FirebaseStorage getInstanceImpl(@NonNull FirebaseApp app, @Nullable Uri url) {
@@ -321,6 +340,11 @@ public class FirebaseStorage {
   @Nullable
   InternalAuthProvider getAuthProvider() {
     return mAuthProvider != null ? mAuthProvider.get() : null;
+  }
+
+  @Nullable
+  InternalAppCheckTokenProvider getAppCheckProvider() {
+    return mAppCheckProvider != null ? mAppCheckProvider.get() : null;
   }
 
   @Nullable
