@@ -17,7 +17,7 @@ plugins {
 }
 
 firebaseLibrary {
-    publishSources = false
+    publishSources = true
 }
 
 android {
