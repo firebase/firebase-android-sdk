@@ -14,6 +14,7 @@
 
 package com.google.firebase.appcheck;
 
+import android.annotation.SuppressLint;
 import androidx.annotation.NonNull;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appcheck.interop.AppCheckTokenListener;
@@ -44,7 +45,7 @@ public abstract class FirebaseAppCheck implements InternalAppCheckTokenProvider 
    * <p>Automatic token refreshing will only occur if the global {@code
    * isDataCollectionDefaultEnabled} flag is set to true. To allow automatic token refreshing for
    * Firebase App Check without changing the {@code isDataCollectionDefaultEnabled} flag for other
-   * Firebase SDKs, use {@link #installAppCheckProviderFactory(boolean, AppCheckProviderFactory)}
+   * Firebase SDKs, use {@link #installAppCheckProviderFactory(AppCheckProviderFactory, boolean)}
    * instead or call {@link #setTokenAutoRefreshEnabled(boolean)} after installing the {@code
    * factory}.
    */
@@ -61,8 +62,9 @@ public abstract class FirebaseAppCheck implements InternalAppCheckTokenProvider 
    * automatic token refreshing, {@link #installAppCheckProviderFactory(AppCheckProviderFactory)}
    * should be called instead.
    */
+  @SuppressLint("FirebaseLambdaLast")
   public abstract void installAppCheckProviderFactory(
-      boolean isTokenAutoRefreshEnabled, @NonNull AppCheckProviderFactory factory);
+      @NonNull AppCheckProviderFactory factory, boolean isTokenAutoRefreshEnabled);
 
   /** Sets the {@code isTokenAutoRefreshEnabled} flag. */
   public abstract void setTokenAutoRefreshEnabled(boolean isTokenAutoRefreshEnabled);
