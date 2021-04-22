@@ -67,7 +67,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
             testContext,
             testContext.getPackageName(),
             installationsApiMock,
-            DataCollectionArbiterTest.createMockDataCollectionArbiter(true));
+            DataCollectionArbiterTest.MOCK_ARBITER_ENABLED);
 
     // For each test case, create a new, random subdirectory to guarantee a clean slate for file
     // manipulation.

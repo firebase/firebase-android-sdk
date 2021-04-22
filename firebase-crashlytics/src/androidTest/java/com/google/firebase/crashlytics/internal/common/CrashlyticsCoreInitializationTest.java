@@ -102,7 +102,7 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
               context,
               context.getPackageName(),
               installationsApiMock,
-              DataCollectionArbiterTest.createMockDataCollectionArbiter(true));
+              DataCollectionArbiterTest.MOCK_ARBITER_ENABLED);
 
       nativeComponent = new ProviderProxyNativeComponent(() -> null);
 

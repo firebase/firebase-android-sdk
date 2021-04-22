@@ -14,6 +14,8 @@
 
 package com.google.firebase.crashlytics.internal.common;
 
+import static com.google.firebase.crashlytics.internal.common.DataCollectionArbiterTest.MOCK_ARBITER_DISABLED;
+import static com.google.firebase.crashlytics.internal.common.DataCollectionArbiterTest.MOCK_ARBITER_ENABLED;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -57,20 +59,16 @@ public class IdManagerTest extends CrashlyticsTestCase {
         .apply();
   }
 
-  private IdManager createIdManager(String instanceId, boolean dataCollectionEnabled) {
+  private IdManager createIdManager(String instanceId, DataCollectionArbiter arbiter) {
     FirebaseInstallationsApi iid = mock(FirebaseInstallationsApi.class);
     when(iid.getId()).thenReturn(Tasks.forResult(instanceId));
 
-    return new IdManager(
-        getContext(),
-        getContext().getPackageName(),
-        iid,
-        DataCollectionArbiterTest.createMockDataCollectionArbiter(dataCollectionEnabled));
+    return new IdManager(getContext(), getContext().getPackageName(), iid, arbiter);
   }
 
   public void testCreateUUID() {
     final String fid = "test_fid";
-    final IdManager idManager = createIdManager(fid, true);
+    final IdManager idManager = createIdManager(fid, MOCK_ARBITER_ENABLED);
     final String installId = idManager.getCrashlyticsInstallId();
     assertNotNull(installId);
 
@@ -94,11 +92,7 @@ public class IdManagerTest extends CrashlyticsTestCase {
         .apply();
 
     final IdManager idManager =
-        new IdManager(
-            getContext(),
-            getContext().getPackageName(),
-            fis,
-            DataCollectionArbiterTest.createMockDataCollectionArbiter(true));
+        new IdManager(getContext(), getContext().getPackageName(), fis, MOCK_ARBITER_ENABLED);
     final String actualInstallId = idManager.getCrashlyticsInstallId();
     assertNotNull(actualInstallId);
     assertEquals(expectedInstallId, actualInstallId);
@@ -115,7 +109,7 @@ public class IdManagerTest extends CrashlyticsTestCase {
         .apply();
 
     // Initialize the manager with a different FID.
-    IdManager idManager = createIdManager(newFid, true);
+    IdManager idManager = createIdManager(newFid, MOCK_ARBITER_ENABLED);
 
     String installId = idManager.getCrashlyticsInstallId();
     assertNotNull(installId);
@@ -139,7 +133,8 @@ public class IdManagerTest extends CrashlyticsTestCase {
         .apply();
 
     // Initialize the manager with the same IID.
-    IdManager idManager = createIdManager(fid, dataCollectionEnabled);
+    IdManager idManager =
+        createIdManager(fid, dataCollectionEnabled ? MOCK_ARBITER_ENABLED : MOCK_ARBITER_DISABLED);
 
     String installId = idManager.getCrashlyticsInstallId();
     assertNotNull(installId);
@@ -155,11 +150,11 @@ public class IdManagerTest extends CrashlyticsTestCase {
   }
 
   public void testInstanceIdDoesntChange_dataCollectionEnabled() {
-    validateInstanceIdDoesntChange(true);
+    validateInstanceIdDoesntChange(/*dataCollectionEnabled*/ true);
   }
 
   public void testInstanceIdDoesntChange_dataCollectionDisabled() {
-    validateInstanceIdDoesntChange(false);
+    validateInstanceIdDoesntChange(/*dataCollectionEnabled*/ false);
   }
 
   public void testInstanceIdRotatesWithDataCollectionFlag() {
@@ -173,33 +168,36 @@ public class IdManagerTest extends CrashlyticsTestCase {
         .apply();
 
     // Initialize the manager with the same FID.
-    IdManager idManager = createIdManager(originalFid, true);
+    IdManager idManager = createIdManager(originalFid, MOCK_ARBITER_ENABLED);
     String firstUuid = idManager.getCrashlyticsInstallId();
     assertNotNull(firstUuid);
     assertEquals(originalUuid, firstUuid);
 
     // subsequent calls should return the same id
     assertEquals(firstUuid, idManager.getCrashlyticsInstallId());
-    assertEquals(firstUuid, createIdManager(originalFid, true).getCrashlyticsInstallId());
+    assertEquals(
+        firstUuid, createIdManager(originalFid, MOCK_ARBITER_ENABLED).getCrashlyticsInstallId());
 
     // Disable data collection manager and confirm we get a different id
-    idManager = createIdManager(originalFid, false);
+    idManager = createIdManager(originalFid, MOCK_ARBITER_DISABLED);
     String secondUuid = idManager.getCrashlyticsInstallId();
     assertNotSame(secondUuid, firstUuid);
     assertEquals(secondUuid, idManager.getCrashlyticsInstallId());
-    assertEquals(secondUuid, createIdManager(null, false).getCrashlyticsInstallId());
+    assertEquals(
+        secondUuid, createIdManager(null, MOCK_ARBITER_DISABLED).getCrashlyticsInstallId());
     // Check that we cached an synthetic FID
     final SharedPreferences prefs = CommonUtils.getSharedPrefs(getContext());
     String cachedFid = prefs.getString(IdManager.PREFKEY_FIREBASE_IID, null);
     assertTrue(IdManager.isSyntheticFid(cachedFid));
 
     // re-enable data collection
-    idManager = createIdManager(originalFid, true);
+    idManager = createIdManager(originalFid, MOCK_ARBITER_ENABLED);
     String thirdUuid = idManager.getCrashlyticsInstallId();
     assertNotSame(thirdUuid, firstUuid);
     assertNotSame(thirdUuid, secondUuid);
     assertEquals(thirdUuid, idManager.getCrashlyticsInstallId());
-    assertEquals(thirdUuid, createIdManager(originalFid, true).getCrashlyticsInstallId());
+    assertEquals(
+        thirdUuid, createIdManager(originalFid, MOCK_ARBITER_ENABLED).getCrashlyticsInstallId());
     // The cached ID should be back to the original
     cachedFid = prefs.getString(IdManager.PREFKEY_FIREBASE_IID, null);
     assertEquals(cachedFid, originalFid);

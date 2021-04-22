@@ -25,12 +25,15 @@ import java.lang.reflect.Method;
 
 public class DataCollectionArbiterTest extends CrashlyticsTestCase {
 
-  final String PREFS_NAME = CommonUtils.SHARED_PREFS_NAME;
+  static final DataCollectionArbiter MOCK_ARBITER_ENABLED;
+  static final DataCollectionArbiter MOCK_ARBITER_DISABLED;
 
-  public static DataCollectionArbiter createMockDataCollectionArbiter(boolean collectionEnabled) {
-    DataCollectionArbiter dca = mock(DataCollectionArbiter.class);
-    when(dca.isAutomaticDataCollectionEnabled()).thenReturn(collectionEnabled);
-    return dca;
+  static {
+    MOCK_ARBITER_ENABLED = mock(DataCollectionArbiter.class);
+    when(MOCK_ARBITER_ENABLED.isAutomaticDataCollectionEnabled()).thenReturn(true);
+
+    MOCK_ARBITER_DISABLED = mock(DataCollectionArbiter.class);
+    when(MOCK_ARBITER_DISABLED.isAutomaticDataCollectionEnabled()).thenReturn(false);
   }
 
   public void testSetCrashlyticsDataCollectionEnabled() throws Exception {

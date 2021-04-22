@@ -68,7 +68,7 @@ public class CrashlyticsReportDataCaptureTest {
             context,
             context.getPackageName(),
             installationsApiMock,
-            DataCollectionArbiterTest.createMockDataCollectionArbiter(true));
+            DataCollectionArbiterTest.MOCK_ARBITER_ENABLED);
     final AppData appData =
         AppData.create(context, idManager, "googleAppId", "buildId", unityVersionProvider);
     dataCapture =

@@ -35,7 +35,7 @@ public class CLSUUIDTest extends CrashlyticsTestCase {
             getContext(),
             getContext().getPackageName(),
             installationsApiMock,
-            DataCollectionArbiterTest.createMockDataCollectionArbiter(true));
+            DataCollectionArbiterTest.MOCK_ARBITER_ENABLED);
     uuid = new CLSUUID(idManager);
   }
 

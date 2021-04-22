@@ -399,7 +399,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
                   context,
                   "unused",
                   installationsApiMock,
-                  DataCollectionArbiterTest.createMockDataCollectionArbiter(true)),
+                  DataCollectionArbiterTest.MOCK_ARBITER_ENABLED),
               nativeComponent,
               arbiter,
               breadcrumbSource,
