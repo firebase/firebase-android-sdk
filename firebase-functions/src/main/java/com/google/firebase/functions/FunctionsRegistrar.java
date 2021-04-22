@@ -17,6 +17,7 @@ package com.google.firebase.functions;
 import android.content.Context;
 import androidx.annotation.Keep;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
@@ -39,11 +40,13 @@ public class FunctionsRegistrar implements ComponentRegistrar {
         Component.builder(ContextProvider.class)
             .add(Dependency.optionalProvider(InternalAuthProvider.class))
             .add(Dependency.requiredProvider(FirebaseInstanceIdInternal.class))
+            .add(Dependency.deferred(InternalAppCheckTokenProvider.class))
             .factory(
                 c ->
                     new FirebaseContextProvider(
                         c.getProvider(InternalAuthProvider.class),
-                        c.getProvider(FirebaseInstanceIdInternal.class)))
+                        c.getProvider(FirebaseInstanceIdInternal.class),
+                        c.getDeferred(InternalAppCheckTokenProvider.class)))
             .build(),
         Component.builder(FunctionsMultiResourceComponent.class)
             .add(Dependency.required(Context.class))

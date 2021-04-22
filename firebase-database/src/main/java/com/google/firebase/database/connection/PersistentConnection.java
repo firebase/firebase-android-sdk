@@ -29,7 +29,7 @@ public interface PersistentConnection {
 
     void onDisconnect();
 
-    void onAuthStatus(boolean authOk);
+    void onConnectionStatus(boolean connectionOk);
 
     void onServerInfoUpdate(Map<String, Object> updates);
   }
@@ -45,6 +45,12 @@ public interface PersistentConnection {
   void refreshAuthToken();
 
   void refreshAuthToken(String token);
+
+  // AppCheck
+
+  void refreshAppCheckToken();
+
+  void refreshAppCheckToken(String token);
 
   // Listens
 
