@@ -19,6 +19,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import androidx.test.runner.AndroidJUnit4;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;

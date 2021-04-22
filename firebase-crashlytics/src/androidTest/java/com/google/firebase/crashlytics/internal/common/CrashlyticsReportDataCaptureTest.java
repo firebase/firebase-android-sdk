@@ -27,7 +27,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.BatteryManager;
 import androidx.test.core.app.ApplicationProvider;
-import androidx.test.runner.AndroidJUnit4;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event.Application.Execution;
