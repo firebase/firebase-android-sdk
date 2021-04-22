@@ -55,6 +55,7 @@ public class TokenRefreshManagerTest {
     tokenRefreshManager =
         new TokenRefreshManager(
             ApplicationProvider.getApplicationContext(), mockTokenRefresher, mockClock);
+    tokenRefreshManager.setIsAutoRefreshEnabled(/* isAutoRefreshEnabled= */ true);
     validAppCheckToken =
         new DefaultAppCheckToken(
             TOKEN_PAYLOAD, EXPIRES_IN_ONE_HOUR_MILLIS, mockClock.currentTimeMillis());
@@ -90,6 +91,15 @@ public class TokenRefreshManagerTest {
   @Test
   public void maybeScheduleTokenRefresh_noListeners_doesNotScheduleRefresh() {
     tokenRefreshManager.onListenerCountChanged(/* newListenerCount= */ 0);
+    tokenRefreshManager.maybeScheduleTokenRefresh(validAppCheckToken);
+
+    verify(mockTokenRefresher, never()).scheduleRefresh(anyLong());
+  }
+
+  @Test
+  public void maybeScheduleTokenRefresh_autoRefreshDisabled_doesNotScheduleRefresh() {
+    tokenRefreshManager.setIsAutoRefreshEnabled(/* isAutoRefreshEnabled= */ false);
+    tokenRefreshManager.onListenerCountChanged(/* newListenerCount= */ 1);
     tokenRefreshManager.maybeScheduleTokenRefresh(validAppCheckToken);
 
     verify(mockTokenRefresher, never()).scheduleRefresh(anyLong());

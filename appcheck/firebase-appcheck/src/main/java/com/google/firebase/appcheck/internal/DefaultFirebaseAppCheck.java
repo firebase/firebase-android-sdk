@@ -62,15 +62,27 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
 
   @Override
   public void installAppCheckProviderFactory(@NonNull AppCheckProviderFactory factory) {
+    installAppCheckProviderFactory(firebaseApp.isDataCollectionDefaultEnabled(), factory);
+  }
+
+  @Override
+  public void installAppCheckProviderFactory(
+      boolean isTokenAutoRefreshEnabled, @NonNull AppCheckProviderFactory factory) {
     checkNotNull(factory);
     appCheckProviderFactory = factory;
     appCheckProvider = factory.create(firebaseApp);
+    tokenRefreshManager.setIsAutoRefreshEnabled(isTokenAutoRefreshEnabled);
   }
 
   @VisibleForTesting
   @Nullable
   public AppCheckProviderFactory getInstalledAppCheckProviderFactory() {
     return appCheckProviderFactory;
+  }
+
+  @Override
+  public void setTokenAutoRefreshEnabled(boolean isTokenAutoRefreshEnabled) {
+    tokenRefreshManager.setIsAutoRefreshEnabled(isTokenAutoRefreshEnabled);
   }
 
   @VisibleForTesting
