@@ -150,11 +150,11 @@ public class IdManagerTest extends CrashlyticsTestCase {
   }
 
   public void testInstanceIdDoesntChange_dataCollectionEnabled() {
-    validateInstanceIdDoesntChange(/*dataCollectionEnabled*/ true);
+    validateInstanceIdDoesntChange(/*dataCollectionEnabled=*/ true);
   }
 
   public void testInstanceIdDoesntChange_dataCollectionDisabled() {
-    validateInstanceIdDoesntChange(/*dataCollectionEnabled*/ false);
+    validateInstanceIdDoesntChange(/*dataCollectionEnabled=*/ false);
   }
 
   public void testInstanceIdRotatesWithDataCollectionFlag() {
