@@ -284,7 +284,7 @@ public class FileDownloadTask extends StorageTask<FileDownloadTask.TaskSnapshot>
       return mBytesDownloaded;
     }
 
-    /** @return the total bytes to upload.. */
+    /** @return the total bytes of the download or -1 if the size of the download is not known. */
     public long getTotalByteCount() {
       return FileDownloadTask.this.getTotalBytes();
     }

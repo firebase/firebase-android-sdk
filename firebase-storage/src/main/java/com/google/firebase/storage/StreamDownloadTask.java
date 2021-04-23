@@ -480,7 +480,7 @@ public class StreamDownloadTask extends StorageTask<StreamDownloadTask.TaskSnaps
       return mBytesDownloaded;
     }
 
-    /** @return the total bytes of the download. */
+    /** @return the total bytes of the download or -1 if the size of the download is not known. */
     public long getTotalByteCount() {
       return StreamDownloadTask.this.getTotalBytes();
     }
