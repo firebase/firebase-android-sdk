@@ -19,7 +19,8 @@ import java.util.concurrent.ScheduledExecutorService;
 
 public class ConnectionContext {
   private final ScheduledExecutorService executorService;
-  private final ConnectionAuthTokenProvider authTokenProvider;
+  private final ConnectionTokenProvider authTokenProvider;
+  private final ConnectionTokenProvider appCheckTokenProvider;
   private final Logger logger;
   private final boolean persistenceEnabled;
   private final String clientSdkVersion;
@@ -29,7 +30,8 @@ public class ConnectionContext {
 
   public ConnectionContext(
       Logger logger,
-      ConnectionAuthTokenProvider authTokenProvider,
+      ConnectionTokenProvider authTokenProvider,
+      ConnectionTokenProvider appCheckTokenProvider,
       ScheduledExecutorService executorService,
       boolean persistenceEnabled,
       String clientSdkVersion,
@@ -38,6 +40,7 @@ public class ConnectionContext {
       String sslCacheDirectory) {
     this.logger = logger;
     this.authTokenProvider = authTokenProvider;
+    this.appCheckTokenProvider = appCheckTokenProvider;
     this.executorService = executorService;
     this.persistenceEnabled = persistenceEnabled;
     this.clientSdkVersion = clientSdkVersion;
@@ -50,8 +53,12 @@ public class ConnectionContext {
     return this.logger;
   }
 
-  public ConnectionAuthTokenProvider getAuthTokenProvider() {
+  public ConnectionTokenProvider getAuthTokenProvider() {
     return this.authTokenProvider;
+  }
+
+  public ConnectionTokenProvider getAppCheckTokenProvider() {
+    return this.appCheckTokenProvider;
   }
 
   public ScheduledExecutorService getExecutorService() {

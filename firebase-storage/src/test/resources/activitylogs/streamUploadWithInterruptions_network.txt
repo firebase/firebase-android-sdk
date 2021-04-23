@@ -4,6 +4,7 @@ Url:https://firebasestorage.googleapis.com/v0/b/fooey.appspot.com/o?name=testdat
 setRequestMethod:POST
 setRequestProperty:X-Firebase-Storage-Version,Android/[No Gmscore]
 setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:x-firebase-appcheck,eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ==
 setRequestProperty:X-Goog-Upload-Protocol,resumable
 setRequestProperty:X-Goog-Upload-Header-Content-Type,application/octet-stream
 setRequestProperty:X-Goog-Upload-Command,start
@@ -45,6 +46,7 @@ Url:https://firebasestorage.googleapis.com/v0/b/fooey.appspot.com/o?name=testdat
 setRequestMethod:POST
 setRequestProperty:X-Firebase-Storage-Version,Android/[No Gmscore]
 setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:x-firebase-appcheck,eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ==
 setRequestProperty:X-Goog-Upload-Offset,0
 setRequestProperty:X-Goog-Upload-Protocol,resumable
 setRequestProperty:X-Goog-Upload-Command,upload, finalize
