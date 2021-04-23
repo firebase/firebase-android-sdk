@@ -17,6 +17,7 @@ package com.google.firebase.storage;
 import androidx.annotation.Keep;
 import androidx.annotation.RestrictTo;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
@@ -35,10 +36,13 @@ public class StorageRegistrar implements ComponentRegistrar {
         Component.builder(FirebaseStorageComponent.class)
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.optionalProvider(InternalAuthProvider.class))
+            .add(Dependency.optionalProvider(InternalAppCheckTokenProvider.class))
             .factory(
                 c ->
                     new FirebaseStorageComponent(
-                        c.get(FirebaseApp.class), c.getProvider(InternalAuthProvider.class)))
+                        c.get(FirebaseApp.class),
+                        c.getProvider(InternalAuthProvider.class),
+                        c.getProvider(InternalAppCheckTokenProvider.class)))
             .build(),
         LibraryVersionComponent.create("fire-gcs", BuildConfig.VERSION_NAME));
   }

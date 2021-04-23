@@ -4,6 +4,7 @@ Url:https://firebasestorage.googleapis.com/v0/b/fooey.appspot.com/o/empty.dat?al
 setRequestMethod:GET
 setRequestProperty:X-Firebase-Storage-Version,Android/[No Gmscore]
 setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:x-firebase-appcheck,eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ==
 setRequestProperty:Content-Length,0
 setUseCaches:false
 setDoInput:true

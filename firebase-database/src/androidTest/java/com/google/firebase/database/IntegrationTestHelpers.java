@@ -22,6 +22,7 @@ import static org.junit.Assert.fail;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.database.android.AndroidAppCheckTokenProvider;
 import com.google.firebase.database.android.AndroidAuthTokenProvider;
 import com.google.firebase.database.core.CompoundWrite;
 import com.google.firebase.database.core.Context;
@@ -206,7 +207,7 @@ public class IntegrationTestHelpers {
       t = runLoop.caughtException.getAndSet(null);
       if (t != null) {
         t.printStackTrace();
-        fail("Found error on run loop");
+        fail("Found error on run loop: " + t);
       }
     }
   }
@@ -265,6 +266,11 @@ public class IntegrationTestHelpers {
         new AndroidAuthTokenProvider(
             never -> {
               // Auth is not available in our integration tests
+            }));
+    config.setAppCheckTokenProvider(
+        new AndroidAppCheckTokenProvider(
+            never -> {
+              // AppCheck is not available in our integration tests
             }));
     config.setSessionPersistenceKey(UUID.randomUUID().toString());
     return config;
