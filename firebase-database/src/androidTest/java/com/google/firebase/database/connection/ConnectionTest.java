@@ -66,7 +66,7 @@ public class ConnectionTest {
             IntegrationTestValues.getProjectId(),
             /*secure=*/ true);
     DatabaseConfig config = IntegrationTestHelpers.newFrozenTestConfig();
-    Connection conn = new Connection(config.getConnectionContext(), info, null, del, null);
+    Connection conn = new Connection(config.getConnectionContext(), info, null, del, null, "");
     conn.open();
     IntegrationTestHelpers.waitFor(valSemaphore);
   }
