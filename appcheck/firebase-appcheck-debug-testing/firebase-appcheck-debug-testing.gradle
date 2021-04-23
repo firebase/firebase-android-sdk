@@ -32,8 +32,7 @@ android {
         minSdkVersion project.minSdkVersion
         versionName version
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-        // TODO: Uncomment the line below once we configure the debug secret environment variable in the public repo.
-        // testInstrumentationRunnerArgument "firebaseAppCheckDebugSecret", System.getenv("FIREBASE_APP_CHECK_DEBUG_SECRET") ?: ''
+        testInstrumentationRunnerArgument "firebaseAppCheckDebugSecret", System.getenv("FIREBASE_APP_CHECK_DEBUG_SECRET") ?: ''
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
