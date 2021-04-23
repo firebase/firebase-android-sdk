@@ -54,7 +54,6 @@ import com.google.firebase.inappmessaging.model.ImageOnlyMessage;
 import com.google.firebase.inappmessaging.model.InAppMessage;
 import com.google.firebase.inappmessaging.model.MessageType;
 import com.google.firebase.inappmessaging.model.ModalMessage;
-import com.squareup.picasso.Callback;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -347,7 +346,7 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
         activity,
         bindingWrapper,
         extractImageData(inAppMessage),
-        new Callback() {
+        new FiamImageLoader.Callback() {
           @Override
           public void onSuccess() {
             // Setup dismiss on touch outside
@@ -481,7 +480,10 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
   }
 
   private void loadNullableImage(
-      Activity activity, BindingWrapper fiam, ImageData imageData, Callback callback) {
+      Activity activity,
+      BindingWrapper fiam,
+      ImageData imageData,
+      FiamImageLoader.Callback callback) {
     if (isValidImageData(imageData)) {
       imageLoader
           .load(imageData.getImageUrl())

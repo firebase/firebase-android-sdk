@@ -15,14 +15,18 @@
 package com.google.firebase.inappmessaging.display.internal;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import android.graphics.drawable.Drawable;
 import android.widget.ImageView;
-import com.squareup.picasso.Callback;
-import com.squareup.picasso.Picasso;
-import com.squareup.picasso.RequestCreator;
+import com.bumptech.glide.RequestBuilder;
+import com.bumptech.glide.RequestManager;
+import com.bumptech.glide.load.model.GlideUrl;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -35,19 +39,19 @@ import org.robolectric.annotation.Config;
 @Config(sdk = 21, qualifiers = "por")
 public class FiamImageLoaderTest {
   private static final String IMAGE_URL = "https://www.imgur.com";
-  @Mock private Picasso picasso;
+  @Mock private RequestManager glideRequestManager;
   private FiamImageLoader imageLoader;
-  @Mock private RequestCreator requestCreator;
+  @Mock private RequestBuilder<Drawable> requestBuilder;
 
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
-    imageLoader = new FiamImageLoader(picasso);
+    imageLoader = new FiamImageLoader(glideRequestManager);
   }
 
   @Test
-  public void load_createdFiamImageRequestCreator() {
-    when(picasso.load(IMAGE_URL)).thenReturn(requestCreator);
+  public void testLoad_ReturnsFiamImageRequestCreator() {
+    when(glideRequestManager.load(IMAGE_URL)).thenReturn(requestBuilder);
 
     assertThat(imageLoader.load(IMAGE_URL).getClass())
         .isEqualTo(FiamImageLoader.FiamImageRequestCreator.class);
@@ -55,31 +59,35 @@ public class FiamImageLoaderTest {
 
   @Test
   public void placeholder_setsPlaceholderOnUnderlyingRequestCreator() {
-    when(picasso.load(IMAGE_URL)).thenReturn(requestCreator);
+    when(glideRequestManager.load(any(GlideUrl.class))).thenReturn(requestBuilder);
+
     FiamImageLoader.FiamImageRequestCreator fiamImageRequestCreator = imageLoader.load(IMAGE_URL);
     fiamImageRequestCreator.placeholder(1);
 
-    verify(requestCreator).placeholder(1);
+    verify(requestBuilder).placeholder(1);
   }
 
   @Test
   public void tag_tagsUnderlyingRequestCreator() {
-    when(picasso.load(IMAGE_URL)).thenReturn(requestCreator);
+    ImageView imageView = mock(ImageView.class);
+    FiamImageLoader.Callback callback = mock(FiamImageLoader.Callback.class);
+    when(glideRequestManager.load(any(GlideUrl.class))).thenReturn(requestBuilder);
     FiamImageLoader.FiamImageRequestCreator fiamImageRequestCreator = imageLoader.load(IMAGE_URL);
+    fiamImageRequestCreator.into(imageView, callback);
+    assertFalse(imageLoader.containsTag(String.class.getSimpleName()));
     fiamImageRequestCreator.tag(String.class);
-
-    verify(requestCreator).tag(String.class);
+    assertTrue(imageLoader.containsTag(String.class.getSimpleName()));
   }
 
   @Test
   public void into_invokesUnderlyingRequestCreator() {
     ImageView imageView = mock(ImageView.class);
-    Callback callback = mock(Callback.class);
+    FiamImageLoader.Callback callback = mock(FiamImageLoader.Callback.class);
 
-    when(picasso.load(IMAGE_URL)).thenReturn(requestCreator);
+    when(glideRequestManager.load(any(GlideUrl.class))).thenReturn(requestBuilder);
     FiamImageLoader.FiamImageRequestCreator fiamImageRequestCreator = imageLoader.load(IMAGE_URL);
     fiamImageRequestCreator.into(imageView, callback);
 
-    verify(requestCreator).into(imageView, callback);
+    verify(requestBuilder).into(callback);
   }
 }
