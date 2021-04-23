@@ -83,6 +83,8 @@ public class BomGeneratorTask extends DefaultTask {
           "com.google.firebase:firebase-messaging-directboot",
           "com.google.firebase:firebase-messaging-ktx",
           "com.google.firebase:firebase-ml-model-interpreter",
+          "com.google.firebase:firebase-ml-modeldownloader",
+          "com.google.firebase:firebase-ml-modeldownloader-ktx",
           "com.google.firebase:firebase-ml-vision",
           "com.google.firebase:firebase-perf",
           "com.google.firebase:firebase-perf-ktx",
