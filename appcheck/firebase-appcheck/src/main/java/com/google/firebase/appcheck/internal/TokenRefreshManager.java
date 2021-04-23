@@ -30,7 +30,7 @@ public final class TokenRefreshManager {
 
   private static final long REFRESH_BUFFER_ABSOLUTE_MILLIS = 60 * 1000; // 60 seconds
   private static final double REFRESH_BUFFER_FRACTION = 0.5;
-  private static final long FIVE_MINUTES_IN_MILLIS = 5 * 60 * 1000; // 5 minutes
+  private static final long FIVE_MINUTES_IN_MILLIS = 5 * 60 * 1000;
   private static final long UNSET_REFRESH_TIME = -1;
 
   private final DefaultTokenRefresher tokenRefresher;
