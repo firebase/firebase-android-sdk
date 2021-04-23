@@ -96,12 +96,10 @@ public final class DefaultAppCheckToken extends AppCheckToken {
     return receivedAtTimestamp + expiresInMillis;
   }
 
-  @VisibleForTesting
   long getReceivedAtTimestamp() {
     return receivedAtTimestamp;
   }
 
-  @VisibleForTesting
   long getExpiresInMillis() {
     return expiresInMillis;
   }
