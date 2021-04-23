@@ -34,7 +34,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @RunWith(AndroidJUnit4.class)
-@Ignore("TODO: Re-enable after setting up debug secret environment variable in public repo.")
 public class FirebaseAppCheckTest {
   private final DebugAppCheckTestHelper debugAppCheckTestHelper =
       DebugAppCheckTestHelper.fromInstrumentationArgs();
