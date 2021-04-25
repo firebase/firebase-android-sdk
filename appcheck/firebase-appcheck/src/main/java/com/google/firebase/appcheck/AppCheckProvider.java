@@ -20,8 +20,8 @@ import com.google.android.gms.tasks.Task;
 /**
  * Interface for a provider that generates {@link AppCheckToken}s. This provider can be called at
  * any time by any Firebase library that depends (optionally or otherwise) on {@link
- * AppCheckToken}s. This provider should be responsible for determining if a new token can be
- * created at the time of the call and returning that new token if it can be.
+ * AppCheckToken}s. This provider is responsible for determining if it can create a new token
+ * at the time of the call and returning that new token if it can.
  */
 public interface AppCheckProvider {
 
