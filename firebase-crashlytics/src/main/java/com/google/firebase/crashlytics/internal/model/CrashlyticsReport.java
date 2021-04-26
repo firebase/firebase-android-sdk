@@ -105,6 +105,9 @@ public abstract class CrashlyticsReport {
   @Nullable
   public abstract FilesPayload getNdkPayload();
 
+  @Nullable
+  public abstract ApplicationExitInfo getAppExitInfo();
+
   @NonNull
   protected abstract Builder toBuilder();
 
@@ -153,6 +156,16 @@ public abstract class CrashlyticsReport {
   @NonNull
   public CrashlyticsReport withNdkPayload(@NonNull FilesPayload filesPayload) {
     return toBuilder().setSession(null).setNdkPayload(filesPayload).build();
+  }
+
+  /**
+   * Augment an existing {@link CrashlyticsReport} with an ApplicationExitInfo
+   *
+   * @return a new {@link CrashlyticsReport} with AppExitInfo inside of it.
+   */
+  @NonNull
+  public CrashlyticsReport withAppExitInfo(@NonNull ApplicationExitInfo appExitInfo) {
+    return toBuilder().setAppExitInfo(appExitInfo).build();
   }
 
   /**
@@ -1021,6 +1034,53 @@ public abstract class CrashlyticsReport {
     }
   }
 
+  @AutoValue
+  public abstract static class ApplicationExitInfo {
+
+    @NonNull
+    public static ApplicationExitInfo.Builder builder() {
+      return new AutoValue_CrashlyticsReport_ApplicationExitInfo.Builder();
+    }
+
+    @NonNull
+    public abstract String getProcessName();
+
+    @NonNull
+    public abstract int getReasonCode();
+
+    @NonNull
+    public abstract int getImportance();
+
+    @NonNull
+    public abstract long getTimestamp();
+
+    @NonNull
+    public abstract String getTraceFile();
+
+    /** Builder for {@link ApplicationExitInfo}. */
+    @AutoValue.Builder
+    public abstract static class Builder {
+
+      @NonNull
+      public abstract ApplicationExitInfo.Builder setProcessName(@NonNull String value);
+
+      @NonNull
+      public abstract ApplicationExitInfo.Builder setReasonCode(@NonNull int value);
+
+      @NonNull
+      public abstract ApplicationExitInfo.Builder setImportance(@NonNull int value);
+
+      @NonNull
+      public abstract ApplicationExitInfo.Builder setTimestamp(@NonNull long value);
+
+      @Nullable
+      public abstract ApplicationExitInfo.Builder setTraceFile(@Nullable String value);
+
+      @NonNull
+      public abstract ApplicationExitInfo build();
+    }
+  }
+
   @AutoValue.Builder
   public abstract static class Builder {
 
@@ -1047,6 +1107,9 @@ public abstract class CrashlyticsReport {
 
     @NonNull
     public abstract Builder setNdkPayload(FilesPayload value);
+
+    @NonNull
+    public abstract Builder setAppExitInfo(ApplicationExitInfo value);
 
     @NonNull
     public abstract CrashlyticsReport build();

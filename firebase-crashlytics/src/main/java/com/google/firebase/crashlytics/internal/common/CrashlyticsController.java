@@ -190,7 +190,6 @@ class CrashlyticsController {
                     ex, thread, currentSessionId, timestampSeconds);
 
                 doWriteAppExceptionMarker(timestampMillis);
-
                 doCloseSessions();
                 doOpenSession();
 

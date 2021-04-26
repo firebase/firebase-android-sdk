@@ -44,6 +44,22 @@ public class CrashlyticsReportTest {
   }
 
   @Test
+  public void testWithEvents_returnsNewReportWithAnr() {
+    final CrashlyticsReport testReport = makeTestReport();
+
+    assertNull(testReport.getSession().getEvents());
+    final CrashlyticsReport withAnrEventsReport =
+        testReport
+            .withEvents(ImmutableList.from(makeAnrEvent()))
+            .withAppExitInfo(makeAppExitInfo());
+
+    assertNotEquals(testReport, withAnrEventsReport);
+    assertNotNull(withAnrEventsReport.getSession().getEvents());
+    assertEquals(1, withAnrEventsReport.getSession().getEvents().size());
+    assertNotNull(withAnrEventsReport.getAppExitInfo());
+  }
+
+  @Test
   public void testWithOrganizationId_returnsNewReportWithOrganizationId() {
     final CrashlyticsReport testReport = makeTestReport();
 
@@ -209,9 +225,17 @@ public class CrashlyticsReportTest {
     return ImmutableList.from(events);
   }
 
+  private static Event makeAnrEvent() {
+    return makeTestEvent("ANR");
+  }
+
   private static Event makeTestEvent() {
+    return makeTestEvent("test");
+  }
+
+  private static Event makeTestEvent(String eventType) {
     return Event.builder()
-        .setType("type")
+        .setType(eventType)
         .setTimestamp(1000)
         .setApp(
             Session.Event.Application.builder()
@@ -253,6 +277,16 @@ public class CrashlyticsReportTest {
                 .setProximityOn(true)
                 .setRamUsed(10000000)
                 .build())
+        .build();
+  }
+
+  private static CrashlyticsReport.ApplicationExitInfo makeAppExitInfo() {
+    return CrashlyticsReport.ApplicationExitInfo.builder()
+        .setTraceFile("trace")
+        .setTimestamp(1L)
+        .setImportance(1)
+        .setReasonCode(1)
+        .setProcessName("test")
         .build();
   }
 
