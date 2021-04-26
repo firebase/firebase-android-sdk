@@ -36,7 +36,7 @@ public class TokenRefreshManagerTest {
   private static final String TOKEN_PAYLOAD = "tokenPayload";
   private static final long EXPIRES_IN_ONE_HOUR_MILLIS = 60L * 60L * 1000L;
   private static final long EXPIRE_IN_THREE_MINUTES_MILLIS = 3L * 60L * 1000L;
-  private static final long NINE_TENTHS_HOUR_MILLIS = 3240000L; // 0.9 * 1 hour
+  private static final long THIRTY_FIVE_MINUTES_MILLIS = 35L * 60L * 1000L;
   private static final long TWO_MINUTES_MILLIS = 2L * 60L * 1000L;
   private static final long CURRENT_TIME_MILLIS = 1000L;
 
@@ -73,11 +73,14 @@ public class TokenRefreshManagerTest {
     tokenRefreshManager.onListenerCountChanged(/* newListenerCount= */ 1);
     tokenRefreshManager.maybeScheduleTokenRefresh(expiresInOneHourToken);
 
-    verify(mockTokenRefresher).scheduleRefresh(NINE_TENTHS_HOUR_MILLIS);
+    verify(mockTokenRefresher).scheduleRefresh(THIRTY_FIVE_MINUTES_MILLIS);
   }
 
   @Test
   public void maybeScheduleTokenRefresh_useExpirationTimeAbsoluteBuffer() {
+    // This should not occur, as the minimum TTL should be at least 15 minutes, but this test case
+    // checks to make sure that in the case we receive a shorter-than-expected TTL from the backend,
+    // we handle it gracefully.
     DefaultAppCheckToken expiresInThreeMinutesToken =
         new DefaultAppCheckToken(
             TOKEN_PAYLOAD, EXPIRE_IN_THREE_MINUTES_MILLIS, mockClock.currentTimeMillis());
