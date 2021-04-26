@@ -29,7 +29,8 @@ import com.google.firebase.appcheck.internal.util.Clock;
 public final class TokenRefreshManager {
 
   private static final long REFRESH_BUFFER_ABSOLUTE_MILLIS = 60 * 1000; // 60 seconds
-  private static final double REFRESH_BUFFER_FRACTION = 0.9;
+  private static final double REFRESH_BUFFER_FRACTION = 0.5;
+  private static final long FIVE_MINUTES_IN_MILLIS = 5 * 60 * 1000;
   private static final long UNSET_REFRESH_TIME = -1;
 
   private final DefaultTokenRefresher tokenRefresher;
@@ -84,13 +85,16 @@ public final class TokenRefreshManager {
       defaultToken = DefaultAppCheckToken.constructFromRawToken(token.getToken());
     }
 
-    // The next refresh time is either receivedAt + 0.9*expiresIn or 60 seconds before expiration,
-    // whichever is earlier.
+    // The next refresh time is receivedAt + 0.5*expiresIn + 5 minutes.
     nextRefreshTimeMillis =
-        Math.min(
-            defaultToken.getReceivedAtTimestamp()
-                + (long) (REFRESH_BUFFER_FRACTION * defaultToken.getExpiresInMillis()),
-            defaultToken.getExpireTimeMillis() - REFRESH_BUFFER_ABSOLUTE_MILLIS);
+        defaultToken.getReceivedAtTimestamp()
+            + (long) (REFRESH_BUFFER_FRACTION * defaultToken.getExpiresInMillis())
+            + FIVE_MINUTES_IN_MILLIS;
+    if (nextRefreshTimeMillis > defaultToken.getExpireTimeMillis()) {
+      // This shouldn't happen, as the minimum allowed TTL should be at least 15 minutes, but adding
+      // this check to be safe.
+      nextRefreshTimeMillis = defaultToken.getExpireTimeMillis() - REFRESH_BUFFER_ABSOLUTE_MILLIS;
+    }
     if (shouldScheduleRefresh()) {
       tokenRefresher.scheduleRefresh(nextRefreshTimeMillis - clock.currentTimeMillis());
     }
