@@ -47,8 +47,8 @@ public class NetworkClient {
   private static final String CONTENT_TYPE = "Content-Type";
   private static final String APPLICATION_JSON = "application/json";
   private static final String UTF_8 = "UTF-8";
-  private static final String X_FIREBASE_CLIENT = "X-Firebase-Client";
-  private static final String X_FIREBASE_CLIENT_LOG_TYPE = "X-Firebase-Client-Log-Type";
+  @VisibleForTesting static final String X_FIREBASE_CLIENT = "X-Firebase-Client";
+  @VisibleForTesting static final String X_FIREBASE_CLIENT_LOG_TYPE = "X-Firebase-Client-Log-Type";
 
   private final DefaultFirebaseAppCheck firebaseAppCheck;
   private final String apiKey;
