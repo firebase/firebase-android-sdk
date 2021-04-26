@@ -48,6 +48,12 @@ public class CrashlyticsReportJsonTransform {
   }
 
   @NonNull
+  public String appExitInfoToJson(
+      @NonNull CrashlyticsReport.ApplicationExitInfo applicationExitInfo) {
+    return CRASHLYTICS_REPORT_JSON_ENCODER.encode(applicationExitInfo);
+  }
+
+  @NonNull
   public CrashlyticsReport reportFromJson(@NonNull String json) throws IOException {
     try (JsonReader jsonReader = new JsonReader(new StringReader(json))) {
       return parseReport(jsonReader);
@@ -60,6 +66,16 @@ public class CrashlyticsReportJsonTransform {
   public CrashlyticsReport.Session.Event eventFromJson(@NonNull String json) throws IOException {
     try (JsonReader jsonReader = new JsonReader(new StringReader(json))) {
       return parseEvent(jsonReader);
+    } catch (IllegalStateException e) {
+      throw new IOException(e);
+    }
+  }
+
+  @NonNull
+  public CrashlyticsReport.ApplicationExitInfo applicationExitInfoFromJson(@NonNull String json)
+      throws IOException {
+    try (JsonReader jsonReader = new JsonReader(new StringReader(json))) {
+      return parseAppExitInfo(jsonReader);
     } catch (IllegalStateException e) {
       throw new IOException(e);
     }
@@ -96,6 +112,9 @@ public class CrashlyticsReportJsonTransform {
           break;
         case "ndkPayload":
           builder.setNdkPayload(parseNdkPayload(jsonReader));
+          break;
+        case "appExitInfo":
+          builder.setAppExitInfo(parseAppExitInfo(jsonReader));
           break;
         default:
           jsonReader.skipValue();
@@ -181,6 +200,40 @@ public class CrashlyticsReportJsonTransform {
     }
     jsonReader.endObject();
 
+    return builder.build();
+  }
+
+  @NonNull
+  private static CrashlyticsReport.ApplicationExitInfo parseAppExitInfo(
+      @NonNull JsonReader jsonReader) throws IOException {
+    final CrashlyticsReport.ApplicationExitInfo.Builder builder =
+        CrashlyticsReport.ApplicationExitInfo.builder();
+
+    jsonReader.beginObject();
+    while (jsonReader.hasNext()) {
+      String name = jsonReader.nextName();
+      switch (name) {
+        case "processName":
+          builder.setProcessName(jsonReader.nextString());
+          break;
+        case "reasonCode":
+          builder.setReasonCode(jsonReader.nextInt());
+          break;
+        case "importance":
+          builder.setImportance(jsonReader.nextInt());
+          break;
+        case "timestamp":
+          builder.setTimestamp(jsonReader.nextLong());
+          break;
+        case "traceFile":
+          builder.setTraceFile(jsonReader.nextString());
+          break;
+        default:
+          jsonReader.skipValue();
+          break;
+      }
+    }
+    jsonReader.endObject();
     return builder.build();
   }
 

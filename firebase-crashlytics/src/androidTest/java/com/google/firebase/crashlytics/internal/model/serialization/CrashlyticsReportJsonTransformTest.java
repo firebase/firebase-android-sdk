@@ -59,12 +59,31 @@ public class CrashlyticsReportJsonTransformTest {
   }
 
   @Test
+  public void testReportToJsonAndBack_with_appExitInfo_equals() throws IOException {
+    final CrashlyticsReport testReport = makeTestReport(false).withAppExitInfo(makeAppExitInfo());
+    final String testReportJson = transform.reportToJson(testReport);
+    final CrashlyticsReport reifiedReport = transform.reportFromJson(testReportJson);
+    assertNotSame(reifiedReport, testReport);
+    assertEquals(reifiedReport, testReport);
+  }
+
+  @Test
   public void testEventToJsonAndBack_equals() throws IOException {
     final CrashlyticsReport.Session.Event testEvent = makeTestEvent();
     final String testEventJson = transform.eventToJson(testEvent);
     final CrashlyticsReport.Session.Event reifiedEvent = transform.eventFromJson(testEventJson);
     assertNotSame(reifiedEvent, testEvent);
     assertEquals(reifiedEvent, testEvent);
+  }
+
+  @Test
+  public void testAppExitInfoToJsonAndBack_equals() throws IOException {
+    final CrashlyticsReport.ApplicationExitInfo testAppExitInfo = makeAppExitInfo();
+    final String testAppExitInfoJson = transform.appExitInfoToJson(testAppExitInfo);
+    final CrashlyticsReport.ApplicationExitInfo reifiedAppExitInfo =
+        transform.applicationExitInfoFromJson(testAppExitInfoJson);
+    assertNotSame(reifiedAppExitInfo, testAppExitInfo);
+    assertEquals(reifiedAppExitInfo, testAppExitInfo);
   }
 
   private static CrashlyticsReport makeTestReport(boolean useDevelopmentPlatform) {
@@ -191,5 +210,15 @@ public class CrashlyticsReportJsonTransformTest {
             .setOffset(751)
             .setImportance(4)
             .build());
+  }
+
+  private static CrashlyticsReport.ApplicationExitInfo makeAppExitInfo() {
+    return CrashlyticsReport.ApplicationExitInfo.builder()
+        .setTraceFile("trace")
+        .setTimestamp(1L)
+        .setImportance(1)
+        .setReasonCode(1)
+        .setProcessName("test")
+        .build();
   }
 }
