@@ -31,14 +31,20 @@ import com.google.firebase.appcheck.AppCheckTokenResult;
 import com.google.firebase.appcheck.FirebaseAppCheck;
 import com.google.firebase.appcheck.internal.util.Clock;
 import com.google.firebase.appcheck.interop.AppCheckTokenListener;
+import com.google.firebase.heartbeatinfo.HeartBeatInfo;
+import com.google.firebase.inject.Provider;
+import com.google.firebase.platforminfo.UserAgentPublisher;
 import java.util.ArrayList;
 import java.util.List;
 
 public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
 
   private static final long BUFFER_TIME_MILLIS = 5 * 60 * 1000; // 5 minutes in milliseconds
+  private static final String HEART_BEAT_STORAGE_TAG = "fire-app-check";
 
   private final FirebaseApp firebaseApp;
+  private final Provider<UserAgentPublisher> userAgentPublisherProvider;
+  private final Provider<HeartBeatInfo> heartBeatInfoProvider;
   private final List<AppCheckTokenListener> appCheckTokenListenerList;
   private final StorageHelper storageHelper;
   private final TokenRefreshManager tokenRefreshManager;
@@ -48,9 +54,16 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
   private AppCheckProvider appCheckProvider;
   private AppCheckToken cachedToken;
 
-  public DefaultFirebaseAppCheck(@NonNull FirebaseApp firebaseApp) {
+  public DefaultFirebaseAppCheck(
+      @NonNull FirebaseApp firebaseApp,
+      @NonNull Provider<UserAgentPublisher> userAgentPublisherProvider,
+      @NonNull Provider<HeartBeatInfo> heartBeatInfoProvider) {
     checkNotNull(firebaseApp);
+    checkNotNull(userAgentPublisherProvider);
+    checkNotNull(heartBeatInfoProvider);
     this.firebaseApp = firebaseApp;
+    this.userAgentPublisherProvider = userAgentPublisherProvider;
+    this.heartBeatInfoProvider = heartBeatInfoProvider;
     this.appCheckTokenListenerList = new ArrayList<>();
     this.storageHelper =
         new StorageHelper(firebaseApp.getApplicationContext(), firebaseApp.getPersistenceKey());
@@ -153,6 +166,21 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
                             task.getException().getMessage(), task.getException())));
               }
             });
+  }
+
+  @Nullable
+  String getUserAgent() {
+    return userAgentPublisherProvider.get() != null
+        ? userAgentPublisherProvider.get().getUserAgent()
+        : null;
+  }
+
+  @Nullable
+  String getHeartbeatCode() {
+    return heartBeatInfoProvider.get() != null
+        ? Integer.toString(
+            heartBeatInfoProvider.get().getHeartBeatCode(HEART_BEAT_STORAGE_TAG).getCode())
+        : null;
   }
 
   /** Sets the in-memory cached {@link AppCheckToken}. */

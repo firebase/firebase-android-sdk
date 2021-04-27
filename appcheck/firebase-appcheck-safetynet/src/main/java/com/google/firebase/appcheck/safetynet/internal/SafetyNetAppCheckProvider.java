@@ -67,14 +67,9 @@ public class SafetyNetAppCheckProvider implements AppCheckProvider {
     checkNotNull(googleApiAvailability);
     this.context = firebaseApp.getApplicationContext();
     this.apiKey = firebaseApp.getOptions().getApiKey();
-    String appId = firebaseApp.getOptions().getApplicationId();
-    String projectId = firebaseApp.getOptions().getProjectId();
-    if (projectId == null) {
-      throw new IllegalArgumentException("FirebaseOptions#getProjectId cannot be null.");
-    }
     this.backgroundExecutor = backgroundExecutor;
     this.safetyNetClientTask = initSafetyNetClient(googleApiAvailability, this.backgroundExecutor);
-    this.networkClient = new NetworkClient(apiKey, appId, projectId);
+    this.networkClient = new NetworkClient(firebaseApp);
   }
 
   @VisibleForTesting

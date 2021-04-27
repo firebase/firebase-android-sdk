@@ -45,16 +45,7 @@ public class DebugAppCheckProvider implements AppCheckProvider {
 
   public DebugAppCheckProvider(@NonNull FirebaseApp firebaseApp, @Nullable String debugSecret) {
     checkNotNull(firebaseApp);
-    String projectId = firebaseApp.getOptions().getProjectId();
-    if (projectId == null) {
-      throw new IllegalArgumentException("FirebaseOptions#getProjectId cannot be null.");
-    }
-
-    this.networkClient =
-        new NetworkClient(
-            firebaseApp.getOptions().getApiKey(),
-            firebaseApp.getOptions().getApplicationId(),
-            projectId);
+    this.networkClient = new NetworkClient(firebaseApp);
     this.backgroundExecutor = Executors.newCachedThreadPool();
     this.debugSecretTask =
         debugSecret == null
