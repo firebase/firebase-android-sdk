@@ -19,8 +19,9 @@ import static com.google.android.gms.common.internal.Preconditions.checkNotNull;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
+import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseException;
-import com.google.firebase.appcheck.BuildConfig;
+import com.google.firebase.appcheck.FirebaseAppCheck;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -46,9 +47,10 @@ public class NetworkClient {
   private static final String CONTENT_TYPE = "Content-Type";
   private static final String APPLICATION_JSON = "application/json";
   private static final String UTF_8 = "UTF-8";
-  private static final String X_FIREBASE_CLIENT = "X-Firebase-Client";
-  private static final String PLATFORM_NAME = "fire-app-check";
+  @VisibleForTesting static final String X_FIREBASE_CLIENT = "X-Firebase-Client";
+  @VisibleForTesting static final String X_FIREBASE_CLIENT_LOG_TYPE = "X-Firebase-Client-Log-Type";
 
+  private final DefaultFirebaseAppCheck firebaseAppCheck;
   private final String apiKey;
   private final String appId;
   private final String projectId;
@@ -61,13 +63,15 @@ public class NetworkClient {
   public static final int SAFETY_NET = 1;
   public static final int DEBUG = 2;
 
-  public NetworkClient(@NonNull String apiKey, @NonNull String appId, @NonNull String projectId) {
-    checkNotNull(apiKey);
-    checkNotNull(appId);
-    checkNotNull(projectId);
-    this.apiKey = apiKey;
-    this.appId = appId;
-    this.projectId = projectId;
+  public NetworkClient(@NonNull FirebaseApp firebaseApp) {
+    checkNotNull(firebaseApp);
+    this.firebaseAppCheck = (DefaultFirebaseAppCheck) FirebaseAppCheck.getInstance(firebaseApp);
+    this.apiKey = firebaseApp.getOptions().getApiKey();
+    this.appId = firebaseApp.getOptions().getApplicationId();
+    this.projectId = firebaseApp.getOptions().getProjectId();
+    if (projectId == null) {
+      throw new IllegalArgumentException("FirebaseOptions#getProjectId cannot be null.");
+    }
   }
 
   /**
@@ -85,8 +89,13 @@ public class NetworkClient {
       urlConnection.setDoOutput(true);
       urlConnection.setFixedLengthStreamingMode(requestBytes.length);
       urlConnection.setRequestProperty(CONTENT_TYPE, APPLICATION_JSON);
-      urlConnection.setRequestProperty(
-          X_FIREBASE_CLIENT, PLATFORM_NAME + "/" + BuildConfig.VERSION_NAME);
+      if (firebaseAppCheck.getUserAgent() != null) {
+        urlConnection.setRequestProperty(X_FIREBASE_CLIENT, firebaseAppCheck.getUserAgent());
+      }
+      if (firebaseAppCheck.getHeartbeatCode() != null) {
+        urlConnection.setRequestProperty(
+            X_FIREBASE_CLIENT_LOG_TYPE, firebaseAppCheck.getHeartbeatCode());
+      }
 
       try (OutputStream out =
           new BufferedOutputStream(urlConnection.getOutputStream(), requestBytes.length)) {
