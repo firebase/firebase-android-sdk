@@ -37,9 +37,9 @@ public abstract class FirebaseAppCheck implements InternalAppCheckTokenProvider 
   }
 
   /**
-   * Installs the given {@link AppCheckProviderFactory}, overwriting any that previously was
+   * Installs the given {@link AppCheckProviderFactory}, overwriting any that were previously
    * associated with this FirebaseAppCheck instance. Any {@link AppCheckTokenListener}s attached to
-   * this FirebaseAppCheck instance will be transferred from any existing factory to the newly
+   * this FirebaseAppCheck instance will be transferred from existing factories to the newly
    * installed one.
    *
    * <p>Automatic token refreshing will only occur if the global {@code
@@ -52,9 +52,9 @@ public abstract class FirebaseAppCheck implements InternalAppCheckTokenProvider 
   public abstract void installAppCheckProviderFactory(@NonNull AppCheckProviderFactory factory);
 
   /**
-   * Installs the given {@link AppCheckProviderFactory}, overwriting any that previously was
+   * Installs the given {@link AppCheckProviderFactory}, overwriting any that were previously
    * associated with this FirebaseAppCheck instance. Any {@link AppCheckTokenListener}s attached to
-   * this FirebaseAppCheck instance will be transferred from any existing factory to the newly
+   * this FirebaseAppCheck instance will be transferred from existing factories to the newly
    * installed one.
    *
    * <p>Automatic token refreshing will only occur if the {@code isTokenAutoRefreshEnabled} field is
