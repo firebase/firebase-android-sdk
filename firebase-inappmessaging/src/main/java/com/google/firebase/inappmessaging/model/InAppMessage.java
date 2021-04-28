@@ -141,21 +141,21 @@ public abstract class InAppMessage {
     return backgroundHexColor;
   }
 
-  /** @deprecated Use {@link #getCampaignMetadata()#getCampaignId()} instead. */
+  /** @deprecated Use {@link #getCampaignMetadata()} instead. */
   @Nullable
   @Deprecated
   public String getCampaignId() {
     return campaignMetadata.getCampaignId();
   }
 
-  /** @deprecated Use {@link #getCampaignMetadata()#getCampaignName()} instead. */
+  /** @deprecated Use {@link #getCampaignMetadata()} instead. */
   @Nullable
   @Deprecated
   public String getCampaignName() {
     return campaignMetadata.getCampaignName();
   }
 
-  /** @deprecated Use {@link #getCampaignMetadata()#getIsTestMessage()} instead. */
+  /** @deprecated Use {@link #getCampaignMetadata()} instead. */
   @Nullable
   @Deprecated
   public Boolean getIsTestMessage() {
