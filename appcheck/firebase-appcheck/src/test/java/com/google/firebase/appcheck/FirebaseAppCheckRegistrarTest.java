@@ -19,6 +19,8 @@ import static com.google.common.truth.Truth.assertThat;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.Dependency;
+import com.google.firebase.heartbeatinfo.HeartBeatInfo;
+import com.google.firebase.platforminfo.UserAgentPublisher;
 import java.util.List;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -33,10 +35,13 @@ public class FirebaseAppCheckRegistrarTest {
     FirebaseAppCheckRegistrar firebaseAppCheckRegistrar = new FirebaseAppCheckRegistrar();
     List<Component<?>> components = firebaseAppCheckRegistrar.getComponents();
     assertThat(components).isNotEmpty();
-    assertThat(components).hasSize(1);
+    assertThat(components).hasSize(2);
     Component<?> firebaseAppCheckComponent = components.get(0);
     assertThat(firebaseAppCheckComponent.getDependencies())
-        .containsExactly(Dependency.required(FirebaseApp.class));
+        .containsExactly(
+            Dependency.required(FirebaseApp.class),
+            Dependency.optionalProvider(UserAgentPublisher.class),
+            Dependency.optionalProvider(HeartBeatInfo.class));
     assertThat(firebaseAppCheckComponent.isAlwaysEager()).isTrue();
   }
 }

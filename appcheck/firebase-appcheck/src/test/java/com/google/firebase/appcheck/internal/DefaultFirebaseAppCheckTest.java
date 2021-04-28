@@ -29,6 +29,8 @@ import com.google.firebase.appcheck.AppCheckProvider;
 import com.google.firebase.appcheck.AppCheckProviderFactory;
 import com.google.firebase.appcheck.AppCheckTokenResult;
 import com.google.firebase.appcheck.interop.AppCheckTokenListener;
+import com.google.firebase.heartbeatinfo.HeartBeatInfo;
+import com.google.firebase.platforminfo.UserAgentPublisher;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -53,8 +55,11 @@ public class DefaultFirebaseAppCheckTest {
   @Mock private AppCheckProviderFactory mockAppCheckProviderFactory;
   @Mock private AppCheckProvider mockAppCheckProvider;
   @Mock private AppCheckTokenListener mockAppCheckTokenListener;
+  @Mock private UserAgentPublisher mockUserAgentPublisher;
+  @Mock private HeartBeatInfo mockHeartBeatInfo;
 
   private DefaultAppCheckToken validDefaultAppCheckToken;
+  private DefaultFirebaseAppCheck defaultFirebaseAppCheck;
 
   @Before
   public void setup() {
@@ -66,6 +71,10 @@ public class DefaultFirebaseAppCheckTest {
     when(mockFirebaseApp.getPersistenceKey()).thenReturn(PERSISTENCE_KEY);
     when(mockAppCheckProviderFactory.create(any())).thenReturn(mockAppCheckProvider);
     when(mockAppCheckProvider.getToken()).thenReturn(Tasks.forResult(validDefaultAppCheckToken));
+
+    defaultFirebaseAppCheck =
+        new DefaultFirebaseAppCheck(
+            mockFirebaseApp, () -> mockUserAgentPublisher, () -> mockHeartBeatInfo);
   }
 
   @Test
@@ -73,13 +82,30 @@ public class DefaultFirebaseAppCheckTest {
     assertThrows(
         NullPointerException.class,
         () -> {
-          new DefaultFirebaseAppCheck(null);
+          new DefaultFirebaseAppCheck(null, () -> mockUserAgentPublisher, () -> mockHeartBeatInfo);
+        });
+  }
+
+  @Test
+  public void testConstructor_nullUserAgentPublisherProvider_expectThrows() {
+    assertThrows(
+        NullPointerException.class,
+        () -> {
+          new DefaultFirebaseAppCheck(mockFirebaseApp, null, () -> mockHeartBeatInfo);
+        });
+  }
+
+  @Test
+  public void testConstructor_nullHeartBeatInfoProvider_expectThrows() {
+    assertThrows(
+        NullPointerException.class,
+        () -> {
+          new DefaultFirebaseAppCheck(mockFirebaseApp, () -> mockUserAgentPublisher, null);
         });
   }
 
   @Test
   public void testInstallAppCheckFactory_nullFactory_expectThrows() {
-    DefaultFirebaseAppCheck defaultFirebaseAppCheck = new DefaultFirebaseAppCheck(mockFirebaseApp);
     assertThrows(
         NullPointerException.class,
         () -> {
@@ -89,7 +115,6 @@ public class DefaultFirebaseAppCheckTest {
 
   @Test
   public void testAddAppCheckTokenListener_nullListener_expectThrows() {
-    DefaultFirebaseAppCheck defaultFirebaseAppCheck = new DefaultFirebaseAppCheck(mockFirebaseApp);
     assertThrows(
         NullPointerException.class,
         () -> {
@@ -99,7 +124,6 @@ public class DefaultFirebaseAppCheckTest {
 
   @Test
   public void testRemoveAppCheckTokenListener_nullListener_expectThrows() {
-    DefaultFirebaseAppCheck defaultFirebaseAppCheck = new DefaultFirebaseAppCheck(mockFirebaseApp);
     assertThrows(
         NullPointerException.class,
         () -> {
@@ -109,7 +133,6 @@ public class DefaultFirebaseAppCheckTest {
 
   @Test
   public void testGetToken_noFactoryInstalled_returnResultWithError() throws Exception {
-    DefaultFirebaseAppCheck defaultFirebaseAppCheck = new DefaultFirebaseAppCheck(mockFirebaseApp);
     Task<AppCheckTokenResult> tokenTask =
         defaultFirebaseAppCheck.getToken(/* forceRefresh= */ false);
     assertThat(tokenTask.isComplete()).isTrue();
@@ -120,7 +143,6 @@ public class DefaultFirebaseAppCheckTest {
 
   @Test
   public void testGetToken_factoryInstalled_proxiesToAppCheckFactory() {
-    DefaultFirebaseAppCheck defaultFirebaseAppCheck = new DefaultFirebaseAppCheck(mockFirebaseApp);
     defaultFirebaseAppCheck.installAppCheckProviderFactory(mockAppCheckProviderFactory);
 
     defaultFirebaseAppCheck.getToken(/* forceRefresh= */ false);
@@ -130,14 +152,11 @@ public class DefaultFirebaseAppCheckTest {
 
   @Test
   public void testGetInstalledAppCheckProviderFactory_noFactoryInstalled_returnsNull() {
-    DefaultFirebaseAppCheck defaultFirebaseAppCheck = new DefaultFirebaseAppCheck(mockFirebaseApp);
-
     assertThat(defaultFirebaseAppCheck.getInstalledAppCheckProviderFactory()).isNull();
   }
 
   @Test
   public void testGetInstalledAppCheckProviderFactory_factoryInstalled_returnsFactory() {
-    DefaultFirebaseAppCheck defaultFirebaseAppCheck = new DefaultFirebaseAppCheck(mockFirebaseApp);
     defaultFirebaseAppCheck.installAppCheckProviderFactory(mockAppCheckProviderFactory);
 
     assertThat(defaultFirebaseAppCheck.getInstalledAppCheckProviderFactory())
@@ -146,7 +165,6 @@ public class DefaultFirebaseAppCheckTest {
 
   @Test
   public void testGetToken_factoryInstalledAndListenerRegistered_triggersListenerOnSuccess() {
-    DefaultFirebaseAppCheck defaultFirebaseAppCheck = new DefaultFirebaseAppCheck(mockFirebaseApp);
     defaultFirebaseAppCheck.installAppCheckProviderFactory(mockAppCheckProviderFactory);
     defaultFirebaseAppCheck.addAppCheckTokenListener(mockAppCheckTokenListener);
 
@@ -162,7 +180,6 @@ public class DefaultFirebaseAppCheckTest {
 
   @Test
   public void testGetToken_factoryInstalledAndListenerRegistered_doesNotTriggerListenerOnFailure() {
-    DefaultFirebaseAppCheck defaultFirebaseAppCheck = new DefaultFirebaseAppCheck(mockFirebaseApp);
     defaultFirebaseAppCheck.installAppCheckProviderFactory(mockAppCheckProviderFactory);
     defaultFirebaseAppCheck.addAppCheckTokenListener(mockAppCheckTokenListener);
 
@@ -177,7 +194,6 @@ public class DefaultFirebaseAppCheckTest {
 
   @Test
   public void testGetToken_existingValidToken_triggersListenerUponAdding() {
-    DefaultFirebaseAppCheck defaultFirebaseAppCheck = new DefaultFirebaseAppCheck(mockFirebaseApp);
     defaultFirebaseAppCheck.setCachedToken(validDefaultAppCheckToken);
 
     defaultFirebaseAppCheck.addAppCheckTokenListener(mockAppCheckTokenListener);
@@ -193,8 +209,6 @@ public class DefaultFirebaseAppCheckTest {
   public void testGetToken_existingInvalidToken_doesNotTriggerListenerUponAdding() {
     DefaultAppCheckToken invalidDefaultAppCheckToken =
         new DefaultAppCheckToken(TOKEN_PAYLOAD, EXPIRES_NOW);
-
-    DefaultFirebaseAppCheck defaultFirebaseAppCheck = new DefaultFirebaseAppCheck(mockFirebaseApp);
     defaultFirebaseAppCheck.setCachedToken(invalidDefaultAppCheckToken);
 
     defaultFirebaseAppCheck.addAppCheckTokenListener(mockAppCheckTokenListener);
@@ -204,7 +218,6 @@ public class DefaultFirebaseAppCheckTest {
 
   @Test
   public void testGetToken_existingValidToken_doesNotRequestNewToken() {
-    DefaultFirebaseAppCheck defaultFirebaseAppCheck = new DefaultFirebaseAppCheck(mockFirebaseApp);
     defaultFirebaseAppCheck.setCachedToken(validDefaultAppCheckToken);
     defaultFirebaseAppCheck.installAppCheckProviderFactory(mockAppCheckProviderFactory);
 
@@ -215,7 +228,6 @@ public class DefaultFirebaseAppCheckTest {
 
   @Test
   public void testGetToken_existingValidToken_forceRefresh_requestsNewToken() {
-    DefaultFirebaseAppCheck defaultFirebaseAppCheck = new DefaultFirebaseAppCheck(mockFirebaseApp);
     defaultFirebaseAppCheck.setCachedToken(validDefaultAppCheckToken);
     defaultFirebaseAppCheck.installAppCheckProviderFactory(mockAppCheckProviderFactory);
 
@@ -228,8 +240,6 @@ public class DefaultFirebaseAppCheckTest {
   public void testGetToken_existingInvalidToken_requestsNewToken() {
     DefaultAppCheckToken invalidDefaultAppCheckToken =
         new DefaultAppCheckToken(TOKEN_PAYLOAD, EXPIRES_NOW);
-
-    DefaultFirebaseAppCheck defaultFirebaseAppCheck = new DefaultFirebaseAppCheck(mockFirebaseApp);
     defaultFirebaseAppCheck.setCachedToken(invalidDefaultAppCheckToken);
     defaultFirebaseAppCheck.installAppCheckProviderFactory(mockAppCheckProviderFactory);
 

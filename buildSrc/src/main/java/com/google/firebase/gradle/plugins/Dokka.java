@@ -56,6 +56,7 @@ final class Dokka {
       FirebaseLibraryExtension firebaseLibrary) {
 
     Configuration javadocClasspath = project.getConfigurations().create("javadocClasspath");
+    project.getDependencies().add("javadocClasspath", "com.google.code.findbugs:jsr305:3.0.2");
     if (android != null) {
       javadocClasspath
           .getAttributes()
