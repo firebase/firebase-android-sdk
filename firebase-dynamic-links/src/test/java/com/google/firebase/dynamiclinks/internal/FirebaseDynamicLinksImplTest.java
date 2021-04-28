@@ -154,6 +154,13 @@ public class FirebaseDynamicLinksImplTest {
   }
 
   @Test
+  public void testGetDynamicLink_NullIntent() {
+    api.getDynamicLink((Intent) null);
+    verify(mockGoogleApi)
+        .doWrite(ArgumentMatchers.<TaskApiCall<DynamicLinksClient, PendingDynamicLinkData>>any());
+  }
+
+  @Test
   public void testGetDynamicLink_IntentWithDynamicLinkData() {
     Bundle extensions = new Bundle();
     extensions.putString(PARAMETER, VALUE);

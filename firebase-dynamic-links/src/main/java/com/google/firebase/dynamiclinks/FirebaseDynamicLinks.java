@@ -18,6 +18,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -99,7 +100,7 @@ public abstract class FirebaseDynamicLinks {
    * <p>If a dynamic link, the call will also send FirebaseAnalytics dynamic link event.
    */
   @NonNull
-  public abstract Task<PendingDynamicLinkData> getDynamicLink(@NonNull Intent intent);
+  public abstract Task<PendingDynamicLinkData> getDynamicLink(@Nullable Intent intent);
 
   /**
    * Determine if the app has a pending dynamic link and provide access to the dynamic link
