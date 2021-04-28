@@ -20,13 +20,21 @@ import static com.google.firebase.appcheck.internal.AppCheckTokenResponse.TIME_T
 import static com.google.firebase.appcheck.internal.HttpErrorResponse.CODE_KEY;
 import static com.google.firebase.appcheck.internal.HttpErrorResponse.ERROR_KEY;
 import static com.google.firebase.appcheck.internal.HttpErrorResponse.MESSAGE_KEY;
+import static com.google.firebase.appcheck.internal.NetworkClient.X_FIREBASE_CLIENT;
+import static com.google.firebase.appcheck.internal.NetworkClient.X_FIREBASE_CLIENT_LOG_TYPE;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import android.content.Context;
+import androidx.test.core.app.ApplicationProvider;
+import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseException;
+import com.google.firebase.FirebaseOptions;
+import com.google.firebase.appcheck.FirebaseAppCheck;
 import java.io.ByteArrayInputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
@@ -37,7 +45,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mockito.Spy;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
@@ -59,42 +66,33 @@ public class NetworkClientTest {
   private static final String ATTESTATION_TOKEN = "token";
   private static final String TIME_TO_LIVE = "3600s";
   private static final String ERROR_MESSAGE = "error message";
+  private static final String SDK_NAME = "fire-app-check";
 
   @Mock HttpURLConnection mockHttpUrlConnection;
   @Mock OutputStream outputStream;
 
-  @Spy NetworkClient networkClient = new NetworkClient(API_KEY, APP_ID, PROJECT_ID);
+  private FirebaseApp firebaseApp;
+  private NetworkClient networkClient;
 
   @Before
   public void setup() throws Exception {
     MockitoAnnotations.initMocks(this);
+
+    FirebaseApp.clearInstancesForTest();
+    firebaseApp =
+        initializeFirebaseApp(
+            ApplicationProvider.getApplicationContext(), FirebaseApp.DEFAULT_APP_NAME);
+    networkClient = spy(new NetworkClient(firebaseApp));
+
     doReturn(mockHttpUrlConnection).when(networkClient).createHttpUrlConnection(any(URL.class));
   }
 
   @Test
-  public void init_nullApiKey_throwsException() {
+  public void init_nullFirebaseApp_throwsException() {
     assertThrows(
         NullPointerException.class,
         () -> {
-          new NetworkClient(null, APP_ID, PROJECT_ID);
-        });
-  }
-
-  @Test
-  public void init_nullAppId_throwsException() {
-    assertThrows(
-        NullPointerException.class,
-        () -> {
-          new NetworkClient(API_KEY, null, PROJECT_ID);
-        });
-  }
-
-  @Test
-  public void init_nullProjectId_throwsException() {
-    assertThrows(
-        NullPointerException.class,
-        () -> {
-          new NetworkClient(API_KEY, APP_ID, null);
+          new NetworkClient(null);
         });
   }
 
@@ -118,6 +116,13 @@ public class NetworkClientTest {
     verify(networkClient).createHttpUrlConnection(expectedUrl);
     verify(outputStream)
         .write(JSON_REQUEST.getBytes(), /* off= */ 0, JSON_REQUEST.getBytes().length);
+
+    String userAgent = ((DefaultFirebaseAppCheck) FirebaseAppCheck.getInstance()).getUserAgent();
+    String heartBeatCode =
+        ((DefaultFirebaseAppCheck) FirebaseAppCheck.getInstance()).getHeartbeatCode();
+    verify(mockHttpUrlConnection).setRequestProperty(X_FIREBASE_CLIENT, userAgent);
+    verify(mockHttpUrlConnection).setRequestProperty(X_FIREBASE_CLIENT_LOG_TYPE, heartBeatCode);
+    assertThat(userAgent).contains(SDK_NAME);
   }
 
   @Test
@@ -141,6 +146,13 @@ public class NetworkClientTest {
     verify(networkClient).createHttpUrlConnection(expectedUrl);
     verify(outputStream)
         .write(JSON_REQUEST.getBytes(), /* off= */ 0, JSON_REQUEST.getBytes().length);
+
+    String userAgent = ((DefaultFirebaseAppCheck) FirebaseAppCheck.getInstance()).getUserAgent();
+    String heartBeatCode =
+        ((DefaultFirebaseAppCheck) FirebaseAppCheck.getInstance()).getHeartbeatCode();
+    verify(mockHttpUrlConnection).setRequestProperty(X_FIREBASE_CLIENT, userAgent);
+    verify(mockHttpUrlConnection).setRequestProperty(X_FIREBASE_CLIENT_LOG_TYPE, heartBeatCode);
+    assertThat(userAgent).contains(SDK_NAME);
   }
 
   @Test
@@ -162,6 +174,13 @@ public class NetworkClientTest {
     verify(networkClient).createHttpUrlConnection(expectedUrl);
     verify(outputStream)
         .write(JSON_REQUEST.getBytes(), /* off= */ 0, JSON_REQUEST.getBytes().length);
+
+    String userAgent = ((DefaultFirebaseAppCheck) FirebaseAppCheck.getInstance()).getUserAgent();
+    String heartBeatCode =
+        ((DefaultFirebaseAppCheck) FirebaseAppCheck.getInstance()).getHeartbeatCode();
+    verify(mockHttpUrlConnection).setRequestProperty(X_FIREBASE_CLIENT, userAgent);
+    verify(mockHttpUrlConnection).setRequestProperty(X_FIREBASE_CLIENT_LOG_TYPE, heartBeatCode);
+    assertThat(userAgent).contains(SDK_NAME);
   }
 
   @Test
@@ -185,6 +204,13 @@ public class NetworkClientTest {
     verify(networkClient).createHttpUrlConnection(expectedUrl);
     verify(outputStream)
         .write(JSON_REQUEST.getBytes(), /* off= */ 0, JSON_REQUEST.getBytes().length);
+
+    String userAgent = ((DefaultFirebaseAppCheck) FirebaseAppCheck.getInstance()).getUserAgent();
+    String heartBeatCode =
+        ((DefaultFirebaseAppCheck) FirebaseAppCheck.getInstance()).getHeartbeatCode();
+    verify(mockHttpUrlConnection).setRequestProperty(X_FIREBASE_CLIENT, userAgent);
+    verify(mockHttpUrlConnection).setRequestProperty(X_FIREBASE_CLIENT_LOG_TYPE, heartBeatCode);
+    assertThat(userAgent).contains(SDK_NAME);
   }
 
   @Test
@@ -212,5 +238,16 @@ public class NetworkClientTest {
     responseBodyJson.put(ERROR_KEY, innerJson);
 
     return responseBodyJson;
+  }
+
+  private static FirebaseApp initializeFirebaseApp(Context context, String name) {
+    return FirebaseApp.initializeApp(
+        context,
+        new FirebaseOptions.Builder()
+            .setApiKey(API_KEY)
+            .setApplicationId(APP_ID)
+            .setProjectId(PROJECT_ID)
+            .build(),
+        name);
   }
 }
