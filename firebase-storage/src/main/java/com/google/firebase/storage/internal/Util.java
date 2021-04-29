@@ -15,7 +15,6 @@
 package com.google.firebase.storage.internal;
 
 import android.net.Uri;
-import android.os.RemoteException;
 import android.text.TextUtils;
 import android.util.Log;
 import androidx.annotation.NonNull;
@@ -25,6 +24,8 @@ import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.appcheck.AppCheckTokenResult;
+import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
 import com.google.firebase.auth.GetTokenResult;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.storage.network.NetworkRequest;
@@ -70,10 +71,6 @@ public class Util {
     return Objects.equal(a, b);
   }
 
-  private static String getAuthority() throws RemoteException {
-    return NetworkRequest.getAuthority();
-  }
-
   /**
    * Normalizes a Firebase Storage uri into its "gs://" format and strips any trailing slash.
    *
@@ -91,6 +88,7 @@ public class Util {
         "Firebase Storage URLs must point to an object in your Storage Bucket. Please "
             + "obtain a URL using the Firebase Console or getDownloadUrl().";
 
+    Uri baseUrl = NetworkRequest.PROD_BASE_URL;
     String trimmedInput = s.toLowerCase();
     String bucket;
     String encodedPath;
@@ -104,13 +102,7 @@ public class Util {
       if (scheme != null
           && (equals(scheme.toLowerCase(), "http") || equals(scheme.toLowerCase(), "https"))) {
         String lowerAuthority = uri.getAuthority().toLowerCase();
-        int indexOfAuth;
-        try {
-          indexOfAuth = lowerAuthority.indexOf(getAuthority());
-        } catch (RemoteException e) {
-          throw new UnsupportedEncodingException(
-              "Could not parse Url because the Storage network layer did not load");
-        }
+        int indexOfAuth = lowerAuthority.indexOf(baseUrl.getAuthority());
         encodedPath = Slashes.slashize(uri.getEncodedPath());
         if (indexOfAuth == 0 && encodedPath.startsWith("/")) {
           int firstBSlash = encodedPath.indexOf("/b/", 0); // /v0/b/bucket.storage
@@ -163,6 +155,31 @@ public class Util {
       }
     } catch (ExecutionException | InterruptedException | TimeoutException e) {
       Log.e(TAG, "error getting token " + e);
+    }
+    return null;
+  }
+
+  @Nullable
+  public static String getCurrentAppCheckToken(
+      @Nullable InternalAppCheckTokenProvider appCheckProvider) {
+    if (appCheckProvider == null) {
+      return null;
+    }
+
+    try {
+      Task<AppCheckTokenResult> pendingResult =
+          appCheckProvider.getToken(/* forceRefresh= */ false);
+      AppCheckTokenResult result =
+          Tasks.await(pendingResult, MAXIMUM_TOKEN_WAIT_TIME_MS, TimeUnit.MILLISECONDS);
+      if (result.getError() != null) {
+        Log.w(
+            TAG,
+            "Error getting App Check token; using placeholder token instead. Error: "
+                + result.getError());
+      }
+      return result.getToken();
+    } catch (ExecutionException | InterruptedException | TimeoutException e) {
+      Log.e(TAG, "Unexpected error getting App Check token: " + e);
     }
     return null;
   }

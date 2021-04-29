@@ -152,6 +152,7 @@ dependencies {
     }
     testImplementation "io.grpc:grpc-testing:$grpcVersion"
     testImplementation 'com.google.guava:guava:27.1-android'
+    testImplementation 'androidx.test:core:1.2.0'
 
     androidTestImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test:runner:1.2.0'

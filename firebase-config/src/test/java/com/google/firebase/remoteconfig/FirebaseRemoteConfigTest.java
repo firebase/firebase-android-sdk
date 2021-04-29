@@ -39,6 +39,7 @@ import static org.mockito.Mockito.when;
 import android.content.Context;
 import android.content.res.Resources;
 import android.os.Bundle;
+import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.shadows.common.internal.ShadowPreconditions;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -80,7 +81,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 import org.skyscreamer.jsonassert.JSONAssert;
 
@@ -167,7 +167,7 @@ public final class FirebaseRemoteConfigTest {
     MockitoAnnotations.initMocks(this);
 
     Executor directExecutor = MoreExecutors.directExecutor();
-    Context context = RuntimeEnvironment.application;
+    Context context = ApplicationProvider.getApplicationContext();
     FirebaseApp firebaseApp = initializeFirebaseApp(context);
 
     Personalization personalization = new Personalization(mockAnalyticsConnectorProvider);
@@ -1077,8 +1077,9 @@ public final class FirebaseRemoteConfigTest {
   }
 
   private static int getResourceId(String xmlResourceName) {
-    Resources r = RuntimeEnvironment.application.getResources();
-    return r.getIdentifier(xmlResourceName, "xml", RuntimeEnvironment.application.getPackageName());
+    Resources r = ApplicationProvider.getApplicationContext().getResources();
+    return r.getIdentifier(
+        xmlResourceName, "xml", ApplicationProvider.getApplicationContext().getPackageName());
   }
 
   private static ConfigContainer newDefaultsContainer(Map<String, String> configsMap)

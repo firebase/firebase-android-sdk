@@ -28,7 +28,7 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
-import com.google.firebase.crashlytics.internal.MissingNativeComponent;
+import com.google.firebase.crashlytics.internal.ProviderProxyNativeComponent;
 import com.google.firebase.crashlytics.internal.analytics.UnavailableAnalyticsEventLogger;
 import com.google.firebase.crashlytics.internal.breadcrumbs.DisabledBreadcrumbSource;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
@@ -97,9 +97,14 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
 
       FirebaseInstallationsApi installationsApiMock = mock(FirebaseInstallationsApi.class);
       when(installationsApiMock.getId()).thenReturn(Tasks.forResult("instanceId"));
-      idManager = new IdManager(context, context.getPackageName(), installationsApiMock);
+      idManager =
+          new IdManager(
+              context,
+              context.getPackageName(),
+              installationsApiMock,
+              DataCollectionArbiterTest.MOCK_ARBITER_ENABLED);
 
-      nativeComponent = new MissingNativeComponent();
+      nativeComponent = new ProviderProxyNativeComponent(() -> null);
 
       arbiter = mock(DataCollectionArbiter.class);
       when(arbiter.isAutomaticDataCollectionEnabled()).thenReturn(true);

@@ -26,10 +26,8 @@ setup(
     version='0.1',
     install_requires=[
         'click==7.0',
-        'opencensus==0.2.0',
-        'google-cloud-monitoring==0.31.1',
         'PyGithub==1.43.8',
-        'requests==2.23.0'
+        'requests==2.23.0',
     ],
     packages=find_packages(exclude=['tests']),
     entry_points={

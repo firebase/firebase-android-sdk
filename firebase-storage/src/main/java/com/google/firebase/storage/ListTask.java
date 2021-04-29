@@ -52,6 +52,7 @@ class ListTask implements Runnable {
         new ExponentialBackoffSender(
             storage.getApp().getApplicationContext(),
             storage.getAuthProvider(),
+            storage.getAppCheckProvider(),
             storage.getMaxDownloadRetryTimeMillis());
   }
 
@@ -59,7 +60,7 @@ class ListTask implements Runnable {
   public void run() {
     final NetworkRequest request =
         new ListNetworkRequest(
-            storageRef.getStorageUri(), storageRef.getApp(), maxResults, pageToken);
+            storageRef.getStorageReferenceUri(), storageRef.getApp(), maxResults, pageToken);
 
     sender.sendWithExponentialBackoff(request);
 

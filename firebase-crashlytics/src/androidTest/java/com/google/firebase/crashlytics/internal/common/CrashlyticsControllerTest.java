@@ -25,8 +25,8 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
-import com.google.firebase.crashlytics.internal.MissingNativeComponent;
 import com.google.firebase.crashlytics.internal.NativeSessionFileProvider;
+import com.google.firebase.crashlytics.internal.ProviderProxyNativeComponent;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsEventLogger;
 import com.google.firebase.crashlytics.internal.log.LogFileManager;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
@@ -62,7 +62,12 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
 
     FirebaseInstallationsApi installationsApiMock = mock(FirebaseInstallationsApi.class);
     when(installationsApiMock.getId()).thenReturn(Tasks.forResult("instanceId"));
-    idManager = new IdManager(testContext, testContext.getPackageName(), installationsApiMock);
+    idManager =
+        new IdManager(
+            testContext,
+            testContext.getPackageName(),
+            installationsApiMock,
+            DataCollectionArbiterTest.MOCK_ARBITER_ENABLED);
 
     // For each test case, create a new, random subdirectory to guarantee a clean slate for file
     // manipulation.
@@ -112,7 +117,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
 
     ControllerBuilder() {
       dataCollectionArbiter = mockDataCollectionArbiter;
-      nativeComponent = new MissingNativeComponent();
+      nativeComponent = new ProviderProxyNativeComponent(() -> null);
 
       unityVersionProvider = mock(UnityVersionProvider.class);
       when(unityVersionProvider.getUnityVersion()).thenReturn(null);

@@ -57,6 +57,7 @@ public class StreamDownloadTask extends StorageTask<StreamDownloadTask.TaskSnaps
         new ExponentialBackoffSender(
             storage.getApp().getApplicationContext(),
             storage.getAuthProvider(),
+            storage.getAppCheckProvider(),
             storage.getMaxDownloadRetryTimeMillis());
   }
 
@@ -117,7 +118,8 @@ public class StreamDownloadTask extends StorageTask<StreamDownloadTask.TaskSnaps
     }
 
     request =
-        new GetNetworkRequest(storageRef.getStorageUri(), storageRef.getApp(), bytesDownloaded);
+        new GetNetworkRequest(
+            storageRef.getStorageReferenceUri(), storageRef.getApp(), bytesDownloaded);
 
     sender.sendWithExponentialBackoff(request, false);
     resultCode = request.getResultCode();

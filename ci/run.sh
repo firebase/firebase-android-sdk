@@ -17,6 +17,5 @@
 set -e
 
 DIRECTORY=$(cd `dirname $0` && pwd)
-echo $DIRECTORY
-$DIRECTORY/fireci/setup.py develop
+$DIRECTORY/fireci/setup.py develop >> /dev/null
 fireci $@

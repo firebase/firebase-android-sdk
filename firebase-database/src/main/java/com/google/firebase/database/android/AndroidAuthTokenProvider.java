@@ -19,13 +19,13 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApiNotAvailableException;
 import com.google.firebase.auth.GetTokenResult;
 import com.google.firebase.auth.internal.InternalAuthProvider;
-import com.google.firebase.database.core.AuthTokenProvider;
+import com.google.firebase.database.core.TokenProvider;
 import com.google.firebase.inject.Deferred;
 import com.google.firebase.internal.api.FirebaseNoSignedInUserException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class AndroidAuthTokenProvider implements AuthTokenProvider {
+public class AndroidAuthTokenProvider implements TokenProvider {
   private final Deferred<InternalAuthProvider> deferredAuthProvider;
   private final AtomicReference<InternalAuthProvider> internalAuth;
 
