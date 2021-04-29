@@ -49,8 +49,10 @@ import com.google.firebase.perf.v1.PerfMetricOrBuilder;
 import com.google.firebase.perf.v1.TraceMetric;
 import java.lang.ref.WeakReference;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
@@ -99,9 +101,12 @@ public class TransportManager implements AppStateCallback {
   private static final int MAX_TRACE_METRICS_CACHE_SIZE = 50;
   private static final int MAX_NETWORK_REQUEST_METRICS_CACHE_SIZE = 50;
   private static final int MAX_GAUGE_METRICS_CACHE_SIZE = 50;
+  // The number of unique metrics logged with console URL
+  private static final int MAX_UNIQUE_METRICS_WITH_CONSOLE_URL = 100;
   private final Map<String, Integer> cacheMap;
   private final ConcurrentLinkedQueue<PendingPerfEvent> pendingEventsQueue =
       new ConcurrentLinkedQueue<>();
+  private final Set<String> metricsLoggedWithConsoleUrl = new HashSet<>();
 
   private final AtomicBoolean isTransportInitialized = new AtomicBoolean(false);
 
@@ -116,6 +121,8 @@ public class TransportManager implements AppStateCallback {
   private RateLimiter rateLimiter;
   private AppStateMonitor appStateMonitor;
   private ApplicationInfo.Builder applicationInfoBuilder;
+  private String packageName;
+  private String projectId;
 
   private boolean isForegroundState = false;
 
@@ -156,6 +163,7 @@ public class TransportManager implements AppStateCallback {
       ExecutorService executorService) {
 
     this.firebaseApp = firebaseApp;
+    this.projectId = firebaseApp.getOptions().getProjectId();
     this.appContext = firebaseApp.getApplicationContext();
     this.firebasePerformance = firebasePerformance;
     this.firebaseInstallationsApi = firebaseInstallationsApi;
@@ -190,6 +198,7 @@ public class TransportManager implements AppStateCallback {
       @NonNull Provider<TransportFactory> flgTransportFactoryProvider) {
 
     this.firebaseApp = firebaseApp;
+    projectId = firebaseApp.getOptions().getProjectId();
     this.firebaseInstallationsApi = firebaseInstallationsApi;
     this.flgTransportFactoryProvider = flgTransportFactoryProvider;
 
@@ -201,6 +210,7 @@ public class TransportManager implements AppStateCallback {
   @WorkerThread
   private void syncInit() {
     appContext = firebaseApp.getApplicationContext();
+    packageName = appContext.getPackageName();
     configResolver = ConfigResolver.getInstance();
     rateLimiter = new RateLimiter(appContext, Constants.RATE_PER_MINUTE, Constants.BURST_CAPACITY);
     appStateMonitor = AppStateMonitor.getInstance();
@@ -218,7 +228,7 @@ public class TransportManager implements AppStateCallback {
         .setGoogleAppId(firebaseApp.getOptions().getApplicationId())
         .setAndroidAppInfo(
             AndroidApplicationInfo.newBuilder()
-                .setPackageName(appContext.getPackageName())
+                .setPackageName(packageName)
                 .setSdkVersion(BuildConfig.FIREPERF_VERSION_NAME)
                 .setVersionName(getVersionName(appContext)));
 
@@ -450,8 +460,10 @@ public class TransportManager implements AppStateCallback {
   private void dispatchLog(PerfMetric perfMetric) {
     logger.info("Logging %s", getLogcatMsg(perfMetric));
 
-    // Log console URL
-    logger.info("Please visit %s for more information.", getConsoleURL(perfMetric));
+    // Logs the console URL for every unique trace metric name.
+    if (isAllowedToLogUrl(perfMetric)) {
+      logger.info("Please visit %s for more information.", getConsoleUrl(perfMetric));
+    }
 
     flgTransport.log(perfMetric);
   }
@@ -582,7 +594,7 @@ public class TransportManager implements AppStateCallback {
 
   // region Logcat/Console Logging Utility Methods
 
-  private String getLogcatMsg(PerfMetricOrBuilder perfMetric) {
+  private static String getLogcatMsg(PerfMetricOrBuilder perfMetric) {
     if (perfMetric.hasTraceMetric()) {
       return getLogcatMsg(perfMetric.getTraceMetric());
     }
@@ -598,7 +610,7 @@ public class TransportManager implements AppStateCallback {
     return "log";
   }
 
-  private String getLogcatMsg(TraceMetric traceMetric) {
+  private static String getLogcatMsg(TraceMetric traceMetric) {
     long durationInUs = traceMetric.getDurationUs();
     return String.format(
         Locale.ENGLISH,
@@ -607,7 +619,7 @@ public class TransportManager implements AppStateCallback {
         durationInUs / 1000.0);
   }
 
-  private String getLogcatMsg(NetworkRequestMetric networkRequestMetric) {
+  private static String getLogcatMsg(NetworkRequestMetric networkRequestMetric) {
     long durationInUs =
         networkRequestMetric.hasTimeToResponseCompletedUs()
             ? networkRequestMetric.getTimeToResponseCompletedUs()
@@ -626,7 +638,7 @@ public class TransportManager implements AppStateCallback {
         durationInUs / 1000.0);
   }
 
-  private String getLogcatMsg(GaugeMetric gaugeMetric) {
+  private static String getLogcatMsg(GaugeMetric gaugeMetric) {
     return String.format(
         Locale.ENGLISH,
         "gauges (hasMetadata: %b, cpuGaugeCount: %d, memoryGaugeCount: %d)",
@@ -639,30 +651,44 @@ public class TransportManager implements AppStateCallback {
 
   // region Logcat/Console Logging Utility Methods
 
-  private String getConsoleURL(PerfMetricOrBuilder perfMetric) {
+  private boolean isAllowedToLogUrl(PerfMetricOrBuilder perfMetric) {
+    String metricName;
     if (perfMetric.hasTraceMetric()) {
-      return getConsoleURL(perfMetric.getTraceMetric());
+      metricName = perfMetric.getTraceMetric().getName();
+    } else {
+      return false;
     }
+    if (metricsLoggedWithConsoleUrl.size() == MAX_UNIQUE_METRICS_WITH_CONSOLE_URL) {
+      metricsLoggedWithConsoleUrl.clear();
+    }
+    if (!metricsLoggedWithConsoleUrl.contains(metricName)) {
+      metricsLoggedWithConsoleUrl.add(metricName);
+      return true;
+    } else {
+      return false;
+    }
+  }
 
-    if (perfMetric.hasNetworkRequestMetric()) {
-      return getConsoleURL(perfMetric.getNetworkRequestMetric());
+  private String getConsoleUrl(PerfMetricOrBuilder perfMetric) {
+    if (perfMetric.hasTraceMetric()) {
+      return getConsoleUrl(perfMetric.getTraceMetric());
     }
     return "log";
   }
 
-  private String getConsoleURL(TraceMetric traceMetric) {
-    return String.format(
-        "https://console.firebase.google.com/project/%s/performance/app/android:%s/metrics/trace/DURATION_TRACE/%s",
-        firebaseApp.getOptions().getProjectId(),
-        appContext.getPackageName(),
-        traceMetric.getName());
+  private String getConsoleUrl(TraceMetric traceMetric) {
+    String traceName = traceMetric.getName();
+    if (traceName.startsWith(Constants.SCREEN_TRACE_PREFIX)) {
+      return String.format(
+          "https://console.firebase.google.com/project/%s/performance/app/android:%s/metrics/trace/SCREEN_TRACE/%s",
+          projectId, packageName, traceName);
+    } else {
+      return String.format(
+          "https://console.firebase.google.com/project/%s/performance/app/android:%s/metrics/trace/DURATION_TRACE/%s",
+          projectId, packageName, traceName);
+    }
   }
 
-  private String getConsoleURL(NetworkRequestMetric networkRequestMetric) {
-    return String.format(
-        "https://console.firebase.google.com/project/%s/performance/app/android:%s/trends",
-        firebaseApp.getOptions().getProjectId(), appContext.getPackageName());
-  }
   // endregion
 
   // region Visible for Testing

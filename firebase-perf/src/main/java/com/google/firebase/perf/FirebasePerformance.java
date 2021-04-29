@@ -31,6 +31,7 @@ import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.config.RemoteConfigManager;
 import com.google.firebase.perf.logging.AndroidLogger;
+import com.google.firebase.perf.logging.LogWrapper;
 import com.google.firebase.perf.metrics.HttpMetric;
 import com.google.firebase.perf.metrics.Trace;
 import com.google.firebase.perf.metrics.validator.PerfMetricValidator;
@@ -191,6 +192,13 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
     gaugeManager.setApplicationContext(appContext);
 
     mPerformanceCollectionForceEnabledState = configResolver.getIsPerformanceCollectionEnabled();
+    if (isPerformanceCollectionEnabled()) {
+      Log.i(
+          LogWrapper.getLogTag(),
+          String.format(
+              "Please visit https://console.firebase.google.com/project/%s/performance/app/android:%s/trends to see the metrics.",
+              firebaseApp.getOptions().getProjectId(), appContext.getPackageName()));
+    }
   }
 
   /**
