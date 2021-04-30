@@ -24,7 +24,6 @@ buildscript {
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
-
         classpath 'com.google.gms:google-services:4.3.5'
 
         // Add the Crashlytics Gradle plugin (be sure to add version
@@ -47,16 +46,11 @@ allprojects {
         }
 
         maven {
-            url rootProject.file('../build/m2repository')
+            url rootProject.file('../../../build/m2repository')
         }
     }
 }
 
-task cleanTestApps(type: Delete) {
-    delete 'test-apps'
-}
-
 task clean(type: Delete) {
     delete rootProject.buildDir
-    dependsOn cleanTestApps
 }

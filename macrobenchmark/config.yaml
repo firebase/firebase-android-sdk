@@ -1,71 +1,71 @@
 baseline:
-  - name: baseline
-    application-id: com.google.firebase.benchmark.baseline
+  name: baseline
+  application-id: com.google.firebase.benchmark.baseline
 
 firebase-config:
-  - name: config
-    application-id: com.google.firebase.benchmark.config
-    dependencies:
-      - com.google.firebase:firebase-config-ktx
+  name: config
+  application-id: com.google.firebase.benchmark.config
+  dependencies:
+    - com.google.firebase:firebase-config-ktx
 
 firebase-crashlytics:
-  - name: crash
-    application-id: com.google.firebase.benchmark.crash
-    dependencies:
-      - com.google.firebase:firebase-crashlytics-ktx
-    plugins:
-      - com.google.firebase.crashlytics
+  name: crash
+  application-id: com.google.firebase.benchmark.crash
+  dependencies:
+    - com.google.firebase:firebase-crashlytics-ktx
+  plugins:
+    - com.google.firebase.crashlytics
 
 firebase-database:
-  - name: database
-    application-id: com.google.firebase.benchmark.database
-    dependencies:
-      - com.google.firebase:firebase-database-ktx
+  name: database
+  application-id: com.google.firebase.benchmark.database
+  dependencies:
+    - com.google.firebase:firebase-database-ktx
 
 firebase-dynamic-links:
-  - name: dynamiclinks
-    application-id: com.google.firebase.benchmark.dynamiclinks
-    dependencies:
-      - com.google.firebase:firebase-dynamic-links-ktx
+  name: dynamiclinks
+  application-id: com.google.firebase.benchmark.dynamiclinks
+  dependencies:
+    - com.google.firebase:firebase-dynamic-links-ktx
 
 firebase-firestore:
-  - name: firestore
-    application-id: com.google.firebase.benchmark.firestore
-    dependencies:
-      - com.google.firebase:firebase-firestore-ktx
+  name: firestore
+  application-id: com.google.firebase.benchmark.firestore
+  dependencies:
+    - com.google.firebase:firebase-firestore-ktx
 
 firebase-functions:
-  - name: functions
-    application-id: com.google.firebase.benchmark.functions
-    dependencies:
-      - com.google.firebase:firebase-functions-ktx
+  name: functions
+  application-id: com.google.firebase.benchmark.functions
+  dependencies:
+    - com.google.firebase:firebase-functions-ktx
 
 firebase-inappmessaging-display:
-  - name: inappmessaging
-    application-id: com.google.firebase.benchmark.inappmessaging
-    dependencies:
-      - com.google.firebase:firebase-inappmessaging-ktx
-      - com.google.firebase:firebase-inappmessaging-display-ktx
+  name: inappmessaging
+  application-id: com.google.firebase.benchmark.inappmessaging
+  dependencies:
+    - com.google.firebase:firebase-inappmessaging-ktx
+    - com.google.firebase:firebase-inappmessaging-display-ktx
 
 firebase-messaging:
-  - name: messaging
-    application-id: com.google.firebase.benchmark.messaging
-    dependencies:
-      - com.google.firebase:firebase-messaging-ktx
+  name: messaging
+  application-id: com.google.firebase.benchmark.messaging
+  dependencies:
+    - com.google.firebase:firebase-messaging-ktx
 
 firebase-perf:
-  - name: perf
-    application-id: com.google.firebase.benchmark.perf
-    dependencies:
-      - com.google.firebase:firebase-perf-ktx
-    plugins:
-      - com.google.firebase.firebase-perf
+  name: perf
+  application-id: com.google.firebase.benchmark.perf
+  dependencies:
+    - com.google.firebase:firebase-perf-ktx
+  plugins:
+    - com.google.firebase.firebase-perf
 
 firebase-storage:
-  - name: storage
-    application-id: com.google.firebase.benchmark.storage
-    dependencies:
-      - com.google.firebase:firebase-storage-ktx
+  name: storage
+  application-id: com.google.firebase.benchmark.storage
+  dependencies:
+    - com.google.firebase:firebase-storage-ktx
 
 
 

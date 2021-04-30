@@ -12,14 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-rootProject.name = "macrobenchmark"
-
-def testAppsDir = file('test-apps')
-if (testAppsDir.exists()) {
-    testAppsDir.eachDir {
-        include ":${it.name}:app"
-        include ":${it.name}:benchmark"
-        project(":${it.name}:app").projectDir = file("${it.path}/app")
-        project(":${it.name}:benchmark").projectDir = file("${it.path}/benchmark")
-    }
-}
+rootProject.name = 'macrobenchmark'
+include ':app'
+include ':benchmark'
