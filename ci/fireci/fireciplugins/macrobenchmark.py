@@ -20,6 +20,7 @@ import os
 import random
 import sys
 
+import click
 import pystache
 import shutil
 import yaml
@@ -56,7 +57,7 @@ async def _parse_artifact_versions():
   proc = await asyncio.subprocess.create_subprocess_exec('./gradlew', 'assembleAllForSmokeTests')
   await proc.wait()
 
-  with open('build/m2repository/changed-artifacts.json', 'r') as json_file:
+  with open('build/m2repository/changed-artifacts.json') as json_file:
     artifacts = json.load(json_file)
   return dict(_artifact_key_version(x) for x in artifacts['headGit'])
 
@@ -67,7 +68,7 @@ def _artifact_key_version(artifact):
 
 
 async def _parse_config_yaml():
-  with open('macrobenchmark/config.yaml', 'r') as yaml_file:
+  with open('macrobenchmark/config.yaml') as yaml_file:
     return yaml.safe_load(yaml_file)
 
 
@@ -167,7 +168,8 @@ class MacrobenchmarkTest:
     await self._exec_subprocess(executable, args)
 
   async def _exec_subprocess(self, executable, args):
-    self.logger.info(f'Executing command: "{" ".join([executable, *args])}"...')
+    command = " ".join([executable, *args])
+    self.logger.info(f'Executing command: "{command}"...')
 
     proc = await asyncio.subprocess.create_subprocess_exec(
       executable,
@@ -179,6 +181,14 @@ class MacrobenchmarkTest:
       self._stream_output(executable, proc.stdout),
       self._stream_output(executable, proc.stderr)
     )
+
+    await proc.communicate()
+    if proc.returncode == 0:
+      self.logger.info(f'"{command}" finished.')
+    else:
+      message = f'"{command}" exited with return code {proc.returncode}.'
+      self.logger.error(message)
+      raise click.ClickException(message)
 
   async def _stream_output(self, executable, stream: asyncio.StreamReader):
     async for line in stream:
