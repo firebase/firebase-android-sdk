@@ -18,11 +18,11 @@ import json
 import logging
 import os
 import random
+import shutil
 import sys
 
 import click
 import pystache
-import shutil
 import yaml
 
 from fireci import ci_command
@@ -48,7 +48,11 @@ async def _launch_macrobenchmark_test():
 
   with chdir('macrobenchmark'):
     runners = [MacrobenchmarkTest(k, v, artifact_versions) for k, v in config.items()]
-    await asyncio.gather(*[x.run() for x in runners])
+    results = await asyncio.gather(*[x.run() for x in runners], return_exceptions=True)
+
+  if any(map(lambda x: isinstance(x, Exception), results)):
+    _logger.error(f'Exceptions: {[x for x in results if (isinstance(x, Exception))]}')
+    raise click.ClickException('Macrobenchmark test failed with above errors.')
 
   _logger.info('Macrobenchmark test finished.')
 
