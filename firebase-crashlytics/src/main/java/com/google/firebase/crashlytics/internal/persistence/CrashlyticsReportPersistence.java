@@ -14,8 +14,12 @@
 
 package com.google.firebase.crashlytics.internal.persistence;
 
+import android.app.ApplicationExitInfo;
+import android.os.Build;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
+import androidx.annotation.VisibleForTesting;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.common.CrashlyticsReportWithSessionId;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
@@ -24,6 +28,7 @@ import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.
 import com.google.firebase.crashlytics.internal.model.ImmutableList;
 import com.google.firebase.crashlytics.internal.model.serialization.CrashlyticsReportJsonTransform;
 import com.google.firebase.crashlytics.internal.settings.SettingsDataProvider;
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileFilter;
@@ -31,8 +36,12 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.io.Reader;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -59,6 +68,8 @@ public class CrashlyticsReportPersistence {
 
   private static final String REPORT_FILE_NAME = "report";
   private static final String USER_FILE_NAME = "user";
+  // A single session should have only a single AppExitInfo.
+  private static final String APP_EXIT_INFO_FILE_NAME = "app-exit-info";
   // We use the lastModified timestamp of this file to quickly store and access the startTime in ms
   // of a session.
   private static final String SESSION_START_TIMESTAMP_FILE_NAME = "start-time";
@@ -161,6 +172,17 @@ public class CrashlyticsReportPersistence {
       Logger.getLogger().w("Could not persist event for session " + sessionId, e);
     }
     trimEvents(sessionDirectory, maxEventsToKeep);
+  }
+
+  @RequiresApi(api = Build.VERSION_CODES.R)
+  public void persistAppExitInfoEvent(
+      @NonNull CrashlyticsReport.Session.Event event,
+      @NonNull String sessionId,
+      @Nullable ApplicationExitInfo applicationExitInfo) {
+    persistEvent(event, sessionId, false);
+
+    final File sessionDirectory = getSessionDirectoryById(sessionId);
+    persistApplicationExitInfo(applicationExitInfo, sessionId);
   }
 
   public void persistUserIdForSession(@NonNull String userId, @NonNull String sessionId) {
@@ -563,5 +585,54 @@ public class CrashlyticsReportPersistence {
 
   private static long convertTimestampFromSecondsToMs(long timestampSeconds) {
     return timestampSeconds * 1000;
+  }
+
+  @RequiresApi(api = Build.VERSION_CODES.R)
+  @VisibleForTesting
+  public void persistApplicationExitInfo(
+      ApplicationExitInfo applicationExitInfo, String sessionId) {
+    File sessionDirectory = getSessionDirectoryById(sessionId);
+    String inputTrace = null;
+    try {
+      inputTrace = convertInputStreamToString(applicationExitInfo.getTraceInputStream());
+    } catch (IOException e) {
+      Logger.getLogger()
+          .w(
+              "Could not get input trace in application exit info: "
+                  + applicationExitInfo.toString()
+                  + " Error: "
+                  + e);
+    }
+
+    CrashlyticsReport.ApplicationExitInfo crashlyticsAppExitInfo =
+        CrashlyticsReport.ApplicationExitInfo.builder()
+            .setImportance(applicationExitInfo.getImportance())
+            .setProcessName(applicationExitInfo.getProcessName())
+            .setReasonCode(applicationExitInfo.getReason())
+            .setTimestamp(applicationExitInfo.getTimestamp())
+            .setTraceFile(inputTrace)
+            .build();
+
+    try {
+      String appExitInfo = TRANSFORM.appExitInfoToJson(crashlyticsAppExitInfo);
+      writeTextFile(new File(sessionDirectory, APP_EXIT_INFO_FILE_NAME), appExitInfo);
+    } catch (IOException e) {
+      Logger.getLogger().w("Unable to write app exit info file: " + e);
+    }
+  }
+
+  @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+  private static String convertInputStreamToString(InputStream inputStream) throws IOException {
+    StringBuilder stringBuilder = new StringBuilder();
+    try (Reader reader =
+        new BufferedReader(
+            new InputStreamReader(inputStream, Charset.forName(StandardCharsets.UTF_8.name())))) {
+      int c = 0;
+      while ((c = reader.read()) != -1) {
+        stringBuilder.append((char) c);
+      }
+
+      return stringBuilder.toString();
+    }
   }
 }

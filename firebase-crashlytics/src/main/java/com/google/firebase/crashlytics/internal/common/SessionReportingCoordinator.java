@@ -14,9 +14,12 @@
 
 package com.google.firebase.crashlytics.internal.common;
 
+import android.app.ApplicationExitInfo;
 import android.content.Context;
+import android.os.Build;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.crashlytics.internal.Logger;
@@ -44,6 +47,7 @@ import java.util.concurrent.Executor;
 public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
 
   private static final String EVENT_TYPE_CRASH = "crash";
+  private static final String EVENT_TYPE_ANR = "anr";
   private static final String EVENT_TYPE_LOGGED = "error";
   private static final int EVENT_THREAD_IMPORTANCE = 4;
   private static final int MAX_CHAINED_EXCEPTION_DEPTH = 8;
@@ -120,6 +124,34 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
       @NonNull Throwable event, @NonNull Thread thread, @NonNull String sessionId, long timestamp) {
     Logger.getLogger().v("Persisting non-fatal event for session " + sessionId);
     persistEvent(event, thread, sessionId, EVENT_TYPE_LOGGED, timestamp, false);
+  }
+
+  @RequiresApi(api = Build.VERSION_CODES.R)
+  public void persistAppExitInfoEvent(String sessionId, ApplicationExitInfo applicationExitInfo) {
+    long sessionStartTime = reportPersistence.getStartTimestampMillis(sessionId);
+    // ApplicationExitInfo did not occur during the session.
+    if (applicationExitInfo.getTimestamp() < sessionStartTime) {
+      return;
+    }
+
+    // Currently we only persist these if it is an ANR.
+    if (applicationExitInfo.getReason() != ApplicationExitInfo.REASON_ANR) {
+      return;
+    }
+
+    // TODO: Refactor Event to only contain relevant information rather than unnecessary data like
+    // thread, exception etc.
+    final CrashlyticsReport.Session.Event capturedEvent =
+        dataCapture.captureEventData(
+            new Exception("ANR"),
+            Thread.currentThread(),
+            EVENT_TYPE_ANR,
+            applicationExitInfo.getTimestamp(),
+            EVENT_THREAD_IMPORTANCE,
+            MAX_CHAINED_EXCEPTION_DEPTH,
+            false);
+    Logger.getLogger().d("Persisting anr for session " + sessionId);
+    reportPersistence.persistAppExitInfoEvent(capturedEvent, sessionId, applicationExitInfo);
   }
 
   public void finalizeSessionWithNativeEvent(
