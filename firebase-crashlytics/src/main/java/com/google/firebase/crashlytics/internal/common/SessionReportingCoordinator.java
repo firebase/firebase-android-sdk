@@ -33,7 +33,14 @@ import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.send.DataTransportCrashlyticsReportSender;
 import com.google.firebase.crashlytics.internal.settings.SettingsDataProvider;
 import com.google.firebase.crashlytics.internal.stacktrace.StackTraceTrimmingStrategy;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -150,8 +157,10 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
             EVENT_THREAD_IMPORTANCE,
             MAX_CHAINED_EXCEPTION_DEPTH,
             false);
+    CrashlyticsReport.ApplicationExitInfo crashlyticsAppExitInfo =
+        convertApplicationExitInfo(applicationExitInfo);
     Logger.getLogger().d("Persisting anr for session " + sessionId);
-    reportPersistence.persistAppExitInfoEvent(capturedEvent, sessionId, applicationExitInfo);
+    reportPersistence.persistAppExitInfoEvent(capturedEvent, sessionId, crashlyticsAppExitInfo);
   }
 
   public void finalizeSessionWithNativeEvent(
@@ -295,5 +304,44 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
         (CustomAttribute attr1, CustomAttribute attr2) -> attr1.getKey().compareTo(attr2.getKey()));
 
     return attributesList;
+  }
+
+  @RequiresApi(api = Build.VERSION_CODES.R)
+  private static CrashlyticsReport.ApplicationExitInfo convertApplicationExitInfo(
+      ApplicationExitInfo applicationExitInfo) {
+    String inputTrace = null;
+    try {
+      inputTrace = convertInputStreamToString(applicationExitInfo.getTraceInputStream());
+    } catch (IOException e) {
+      Logger.getLogger()
+          .w(
+              "Could not get input trace in application exit info: "
+                  + applicationExitInfo.toString()
+                  + " Error: "
+                  + e);
+    }
+
+    return CrashlyticsReport.ApplicationExitInfo.builder()
+        .setImportance(applicationExitInfo.getImportance())
+        .setProcessName(applicationExitInfo.getProcessName())
+        .setReasonCode(applicationExitInfo.getReason())
+        .setTimestamp(applicationExitInfo.getTimestamp())
+        .setTraceFile(inputTrace)
+        .build();
+  }
+
+  @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+  private static String convertInputStreamToString(InputStream inputStream) throws IOException {
+    StringBuilder stringBuilder = new StringBuilder();
+    try (Reader reader =
+        new BufferedReader(
+            new InputStreamReader(inputStream, Charset.forName(StandardCharsets.UTF_8.name())))) {
+      int c = 0;
+      while ((c = reader.read()) != -1) {
+        stringBuilder.append((char) c);
+      }
+
+      return stringBuilder.toString();
+    }
   }
 }

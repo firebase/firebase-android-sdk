@@ -14,12 +14,8 @@
 
 package com.google.firebase.crashlytics.internal.persistence;
 
-import android.app.ApplicationExitInfo;
-import android.os.Build;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
-import androidx.annotation.VisibleForTesting;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.common.CrashlyticsReportWithSessionId;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
@@ -28,7 +24,6 @@ import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.
 import com.google.firebase.crashlytics.internal.model.ImmutableList;
 import com.google.firebase.crashlytics.internal.model.serialization.CrashlyticsReportJsonTransform;
 import com.google.firebase.crashlytics.internal.settings.SettingsDataProvider;
-import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileFilter;
@@ -36,12 +31,8 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.io.Reader;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -80,6 +71,7 @@ public class CrashlyticsReportPersistence {
       EVENT_FILE_NAME_PREFIX.length() + EVENT_COUNTER_WIDTH;
   private static final String PRIORITY_EVENT_SUFFIX = "_";
   private static final String NORMAL_EVENT_SUFFIX = "";
+  private static final String EVENT_TYPE_ANR = "anr";
 
   private static final CrashlyticsReportJsonTransform TRANSFORM =
       new CrashlyticsReportJsonTransform();
@@ -174,14 +166,18 @@ public class CrashlyticsReportPersistence {
     trimEvents(sessionDirectory, maxEventsToKeep);
   }
 
-  @RequiresApi(api = Build.VERSION_CODES.R)
+  /**
+   * Persist an ANR event and the relevant ApplicationExitInfo to the given session.
+   *
+   * @param event
+   * @param sessionId
+   * @param applicationExitInfo
+   */
   public void persistAppExitInfoEvent(
       @NonNull CrashlyticsReport.Session.Event event,
       @NonNull String sessionId,
-      @Nullable ApplicationExitInfo applicationExitInfo) {
-    persistEvent(event, sessionId, false);
-
-    final File sessionDirectory = getSessionDirectoryById(sessionId);
+      @NonNull CrashlyticsReport.ApplicationExitInfo applicationExitInfo) {
+    persistEvent(event, sessionId, true);
     persistApplicationExitInfo(applicationExitInfo, sessionId);
   }
 
@@ -353,11 +349,21 @@ public class CrashlyticsReportPersistence {
     Collections.sort(eventFiles);
     final List<Event> events = new ArrayList<>();
     boolean isHighPriorityReport = false;
+    CrashlyticsReport.ApplicationExitInfo appExitInfo = null;
 
     for (File eventFile : eventFiles) {
       try {
-        events.add(TRANSFORM.eventFromJson(readTextFile(eventFile)));
+        Event event = TRANSFORM.eventFromJson(readTextFile(eventFile));
+        events.add(event);
         isHighPriorityReport = isHighPriorityReport || isHighPriorityEventFile(eventFile.getName());
+
+        if (event.getType().equals(EVENT_TYPE_ANR)) {
+          try {
+            appExitInfo = getAppExitInfo(sessionDirectory);
+          } catch (IOException e) {
+            Logger.getLogger().d("Failed to read AppExitInfo: ", e);
+          }
+        }
       } catch (IOException e) {
         Logger.getLogger().w("Could not add event to report for " + eventFile, e);
       }
@@ -382,7 +388,13 @@ public class CrashlyticsReportPersistence {
     final File reportFile = new File(sessionDirectory, REPORT_FILE_NAME);
     final File outputDirectory = isHighPriorityReport ? priorityReportsDirectory : reportsDirectory;
     synthesizeReportFile(
-        reportFile, outputDirectory, events, sessionEndTime, isHighPriorityReport, userId);
+        reportFile,
+        outputDirectory,
+        events,
+        sessionEndTime,
+        isHighPriorityReport,
+        userId,
+        appExitInfo);
   }
 
   private static void synthesizeNativeReportFile(
@@ -408,13 +420,17 @@ public class CrashlyticsReportPersistence {
       @NonNull List<Event> events,
       long sessionEndTime,
       boolean isCrashed,
-      @Nullable String userId) {
+      @Nullable String userId,
+      @Nullable CrashlyticsReport.ApplicationExitInfo applicationExitInfo) {
     try {
       CrashlyticsReport report =
           TRANSFORM
               .reportFromJson(readTextFile(reportFile))
               .withSessionEndFields(sessionEndTime, isCrashed, userId)
               .withEvents(ImmutableList.from(events));
+      if (applicationExitInfo != null) {
+        report = report.withAppExitInfo(applicationExitInfo);
+      }
 
       final Session session = report.getSession();
 
@@ -587,52 +603,21 @@ public class CrashlyticsReportPersistence {
     return timestampSeconds * 1000;
   }
 
-  @RequiresApi(api = Build.VERSION_CODES.R)
-  @VisibleForTesting
-  public void persistApplicationExitInfo(
-      ApplicationExitInfo applicationExitInfo, String sessionId) {
+  private void persistApplicationExitInfo(
+      CrashlyticsReport.ApplicationExitInfo applicationExitInfo, String sessionId) {
     File sessionDirectory = getSessionDirectoryById(sessionId);
-    String inputTrace = null;
-    try {
-      inputTrace = convertInputStreamToString(applicationExitInfo.getTraceInputStream());
-    } catch (IOException e) {
-      Logger.getLogger()
-          .w(
-              "Could not get input trace in application exit info: "
-                  + applicationExitInfo.toString()
-                  + " Error: "
-                  + e);
-    }
-
-    CrashlyticsReport.ApplicationExitInfo crashlyticsAppExitInfo =
-        CrashlyticsReport.ApplicationExitInfo.builder()
-            .setImportance(applicationExitInfo.getImportance())
-            .setProcessName(applicationExitInfo.getProcessName())
-            .setReasonCode(applicationExitInfo.getReason())
-            .setTimestamp(applicationExitInfo.getTimestamp())
-            .setTraceFile(inputTrace)
-            .build();
 
     try {
-      String appExitInfo = TRANSFORM.appExitInfoToJson(crashlyticsAppExitInfo);
+      String appExitInfo = TRANSFORM.appExitInfoToJson(applicationExitInfo);
       writeTextFile(new File(sessionDirectory, APP_EXIT_INFO_FILE_NAME), appExitInfo);
     } catch (IOException e) {
       Logger.getLogger().w("Unable to write app exit info file: " + e);
     }
   }
 
-  @RequiresApi(api = Build.VERSION_CODES.KITKAT)
-  private static String convertInputStreamToString(InputStream inputStream) throws IOException {
-    StringBuilder stringBuilder = new StringBuilder();
-    try (Reader reader =
-        new BufferedReader(
-            new InputStreamReader(inputStream, Charset.forName(StandardCharsets.UTF_8.name())))) {
-      int c = 0;
-      while ((c = reader.read()) != -1) {
-        stringBuilder.append((char) c);
-      }
-
-      return stringBuilder.toString();
-    }
+  private CrashlyticsReport.ApplicationExitInfo getAppExitInfo(File sessionDirectory)
+      throws IOException {
+    File appExitInfoFile = new File(sessionDirectory, APP_EXIT_INFO_FILE_NAME);
+    return TRANSFORM.applicationExitInfoFromJson(readTextFile(appExitInfoFile));
   }
 }

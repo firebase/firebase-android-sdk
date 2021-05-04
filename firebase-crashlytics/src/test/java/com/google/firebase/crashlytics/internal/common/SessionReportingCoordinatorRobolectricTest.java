@@ -91,14 +91,14 @@ public class SessionReportingCoordinatorRobolectricTest {
     reportingCoordinator.persistAppExitInfoEvent(sessionId, testApplicationExitInfo);
 
     verify(dataCapture, never())
-            .captureEventData(
-                    any(Throwable.class),
-                    any(Thread.class),
-                    eq("anr"),
-                    anyLong(),
-                    anyInt(),
-                    anyInt(),
-                    anyBoolean());
+        .captureEventData(
+            any(Throwable.class),
+            any(Thread.class),
+            eq("anr"),
+            anyLong(),
+            anyInt(),
+            anyInt(),
+            anyBoolean());
     verify(reportPersistence, never())
         .persistAppExitInfoEvent(any(), eq(sessionId), eq(testApplicationExitInfo));
   }
@@ -118,14 +118,14 @@ public class SessionReportingCoordinatorRobolectricTest {
     reportingCoordinator.persistAppExitInfoEvent(sessionId, testApplicationExitInfo);
 
     verify(dataCapture, never())
-            .captureEventData(
-                    any(Throwable.class),
-                    any(Thread.class),
-                    eq("anr"),
-                    anyLong(),
-                    anyInt(),
-                    anyInt(),
-                    anyBoolean());
+        .captureEventData(
+            any(Throwable.class),
+            any(Thread.class),
+            eq("anr"),
+            anyLong(),
+            anyInt(),
+            anyInt(),
+            anyBoolean());
     verify(reportPersistence, never())
         .persistAppExitInfoEvent(any(), eq(sessionId), eq(testApplicationExitInfo));
   }
