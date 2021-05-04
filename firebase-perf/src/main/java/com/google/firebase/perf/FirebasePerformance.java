@@ -199,9 +199,7 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
           String.format(
               "Welcome to Firebase Performance Monitoring! Please visit %s in a minute to see details.",
               ConsoleUrlGenerator.generateDashboardUrl(
-                  firebaseApp.getOptions().getProjectId(), appContext.getPackageName()),
-              firebaseApp.getOptions().getProjectId(),
-              appContext.getPackageName()));
+                  firebaseApp.getOptions().getProjectId(), appContext.getPackageName())));
     }
   }
 
