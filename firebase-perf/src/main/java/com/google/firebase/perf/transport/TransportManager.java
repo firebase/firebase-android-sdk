@@ -50,10 +50,8 @@ import com.google.firebase.perf.v1.PerfMetricOrBuilder;
 import com.google.firebase.perf.v1.TraceMetric;
 import java.lang.ref.WeakReference;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
@@ -102,12 +100,9 @@ public class TransportManager implements AppStateCallback {
   private static final int MAX_TRACE_METRICS_CACHE_SIZE = 50;
   private static final int MAX_NETWORK_REQUEST_METRICS_CACHE_SIZE = 50;
   private static final int MAX_GAUGE_METRICS_CACHE_SIZE = 50;
-  // The number of unique metrics logged with console URL
-  private static final int MAX_UNIQUE_METRICS_WITH_CONSOLE_URL = 100;
   private final Map<String, Integer> cacheMap;
   private final ConcurrentLinkedQueue<PendingPerfEvent> pendingEventsQueue =
       new ConcurrentLinkedQueue<>();
-  private final Set<String> metricsLoggedWithConsoleUrl = new HashSet<>();
 
   private final AtomicBoolean isTransportInitialized = new AtomicBoolean(false);
 
@@ -460,7 +455,7 @@ public class TransportManager implements AppStateCallback {
   @WorkerThread
   private void dispatchLog(PerfMetric perfMetric) {
 
-    // Logs the console URL for every trace metric.
+    // Logs the metrics to logcat plus console URL for every trace metric.
     if (perfMetric.hasTraceMetric()) {
       logger.info(
           "Logging %s. Please visit %s in a minute for details.",
@@ -650,10 +645,6 @@ public class TransportManager implements AppStateCallback {
         gaugeMetric.getCpuMetricReadingsCount(),
         gaugeMetric.getAndroidMemoryReadingsCount());
   }
-
-  // endregion
-
-  // region Logcat/Console Logging Utility Methods
 
   private String getConsoleUrl(TraceMetric traceMetric) {
     String traceName = traceMetric.getName();
