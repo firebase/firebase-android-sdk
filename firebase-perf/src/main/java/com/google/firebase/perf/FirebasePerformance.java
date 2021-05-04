@@ -31,6 +31,7 @@ import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.config.RemoteConfigManager;
 import com.google.firebase.perf.logging.AndroidLogger;
+import com.google.firebase.perf.logging.ConsoleUrlGenerator;
 import com.google.firebase.perf.logging.LogWrapper;
 import com.google.firebase.perf.metrics.HttpMetric;
 import com.google.firebase.perf.metrics.Trace;
@@ -194,10 +195,13 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
     mPerformanceCollectionForceEnabledState = configResolver.getIsPerformanceCollectionEnabled();
     if (isPerformanceCollectionEnabled()) {
       Log.i(
-          LogWrapper.getLogTag(),
+          LogWrapper.LOG_TAG,
           String.format(
-              "Please visit https://console.firebase.google.com/project/%s/performance/app/android:%s/trends to see the metrics.",
-              firebaseApp.getOptions().getProjectId(), appContext.getPackageName()));
+              "Welcome to Firebase Performance Monitoring! Please visit %s in a minute to see details.",
+              ConsoleUrlGenerator.generateDashboardUrl(
+                  firebaseApp.getOptions().getProjectId(), appContext.getPackageName()),
+              firebaseApp.getOptions().getProjectId(),
+              appContext.getPackageName()));
     }
   }
 

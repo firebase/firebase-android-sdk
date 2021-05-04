@@ -35,6 +35,7 @@ import com.google.firebase.perf.application.AppStateMonitor;
 import com.google.firebase.perf.application.AppStateMonitor.AppStateCallback;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.logging.AndroidLogger;
+import com.google.firebase.perf.logging.ConsoleUrlGenerator;
 import com.google.firebase.perf.metrics.validator.PerfMetricValidator;
 import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.util.Constants;
@@ -458,11 +459,14 @@ public class TransportManager implements AppStateCallback {
 
   @WorkerThread
   private void dispatchLog(PerfMetric perfMetric) {
-    logger.info("Logging %s", getLogcatMsg(perfMetric));
 
-    // Logs the console URL for every unique trace metric name.
-    if (isAllowedToLogUrl(perfMetric)) {
-      logger.info("Please visit %s for more information.", getConsoleUrl(perfMetric));
+    // Logs the console URL for every trace metric.
+    if (perfMetric.hasTraceMetric()) {
+      logger.info(
+          "Logging %s. Please visit %s in a minute for details.",
+          getLogcatMsg(perfMetric), getConsoleUrl(perfMetric.getTraceMetric()));
+    } else {
+      logger.info("Logging %s", getLogcatMsg(perfMetric));
     }
 
     flgTransport.log(perfMetric);
@@ -651,41 +655,12 @@ public class TransportManager implements AppStateCallback {
 
   // region Logcat/Console Logging Utility Methods
 
-  private boolean isAllowedToLogUrl(PerfMetricOrBuilder perfMetric) {
-    String metricName;
-    if (perfMetric.hasTraceMetric()) {
-      metricName = perfMetric.getTraceMetric().getName();
-    } else {
-      return false;
-    }
-    if (metricsLoggedWithConsoleUrl.size() == MAX_UNIQUE_METRICS_WITH_CONSOLE_URL) {
-      metricsLoggedWithConsoleUrl.clear();
-    }
-    if (!metricsLoggedWithConsoleUrl.contains(metricName)) {
-      metricsLoggedWithConsoleUrl.add(metricName);
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  private String getConsoleUrl(PerfMetricOrBuilder perfMetric) {
-    if (perfMetric.hasTraceMetric()) {
-      return getConsoleUrl(perfMetric.getTraceMetric());
-    }
-    return "log";
-  }
-
   private String getConsoleUrl(TraceMetric traceMetric) {
     String traceName = traceMetric.getName();
     if (traceName.startsWith(Constants.SCREEN_TRACE_PREFIX)) {
-      return String.format(
-          "https://console.firebase.google.com/project/%s/performance/app/android:%s/metrics/trace/SCREEN_TRACE/%s",
-          projectId, packageName, traceName);
+      return ConsoleUrlGenerator.generateScreenTraceUrl(projectId, packageName, traceName);
     } else {
-      return String.format(
-          "https://console.firebase.google.com/project/%s/performance/app/android:%s/metrics/trace/DURATION_TRACE/%s",
-          projectId, packageName, traceName);
+      return ConsoleUrlGenerator.generateCustomTraceUrl(projectId, packageName, traceName);
     }
   }
 

@@ -19,7 +19,7 @@ import android.util.Log;
 /** Wrapper that handles Android logcat logging. */
 public class LogWrapper {
 
-  private static final String LOG_TAG = "FirebasePerformance";
+  public static final String LOG_TAG = "FirebasePerformance";
 
   private static LogWrapper instance;
 
@@ -29,10 +29,6 @@ public class LogWrapper {
     }
 
     return instance;
-  }
-
-  public static String getLogTag() {
-    return LOG_TAG;
   }
 
   void d(String msg) {
