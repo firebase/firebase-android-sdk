@@ -20,6 +20,7 @@ import android.os.Build;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.crashlytics.internal.Logger;
@@ -309,10 +310,10 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
   @RequiresApi(api = Build.VERSION_CODES.R)
   private static CrashlyticsReport.ApplicationExitInfo convertApplicationExitInfo(
       ApplicationExitInfo applicationExitInfo) {
-    String inputTrace = null;
+    String traceFile = null;
     try {
-      inputTrace = convertInputStreamToString(applicationExitInfo.getTraceInputStream());
-    } catch (IOException e) {
+      traceFile = convertInputStreamToString(applicationExitInfo.getTraceInputStream());
+    } catch (IOException | NullPointerException e) {
       Logger.getLogger()
           .w(
               "Could not get input trace in application exit info: "
@@ -326,12 +327,14 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
         .setProcessName(applicationExitInfo.getProcessName())
         .setReasonCode(applicationExitInfo.getReason())
         .setTimestamp(applicationExitInfo.getTimestamp())
-        .setTraceFile(inputTrace)
+        .setTraceFile(traceFile)
         .build();
   }
 
   @RequiresApi(api = Build.VERSION_CODES.KITKAT)
-  private static String convertInputStreamToString(InputStream inputStream) throws IOException {
+  @VisibleForTesting
+  public static String convertInputStreamToString(@Nullable InputStream inputStream)
+      throws IOException, NullPointerException {
     StringBuilder stringBuilder = new StringBuilder();
     try (Reader reader =
         new BufferedReader(

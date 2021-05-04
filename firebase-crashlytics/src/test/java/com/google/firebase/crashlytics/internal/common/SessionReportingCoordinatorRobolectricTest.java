@@ -1,5 +1,6 @@
 package com.google.firebase.crashlytics.internal.common;
 
+import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -14,11 +15,16 @@ import static org.robolectric.Shadows.shadowOf;
 import android.app.ActivityManager;
 import android.app.ApplicationExitInfo;
 import android.content.Context;
+import android.os.Build;
+import androidx.annotation.RequiresApi;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.crashlytics.internal.log.LogFileManager;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.persistence.CrashlyticsReportPersistence;
 import com.google.firebase.crashlytics.internal.send.DataTransportCrashlyticsReportSender;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -74,7 +80,8 @@ public class SessionReportingCoordinatorRobolectricTest {
             anyInt(),
             anyBoolean());
     verify(reportPersistence)
-        .persistAppExitInfoEvent(any(), eq(sessionId), eq(testApplicationExitInfo));
+        .persistAppExitInfoEvent(
+            any(), eq(sessionId), eq(convertApplicationExitInfo(testApplicationExitInfo)));
   }
 
   @Test
@@ -100,7 +107,8 @@ public class SessionReportingCoordinatorRobolectricTest {
             anyInt(),
             anyBoolean());
     verify(reportPersistence, never())
-        .persistAppExitInfoEvent(any(), eq(sessionId), eq(testApplicationExitInfo));
+        .persistAppExitInfoEvent(
+            any(), eq(sessionId), eq(convertApplicationExitInfo(testApplicationExitInfo)));
   }
 
   @Test
@@ -127,7 +135,15 @@ public class SessionReportingCoordinatorRobolectricTest {
             anyInt(),
             anyBoolean());
     verify(reportPersistence, never())
-        .persistAppExitInfoEvent(any(), eq(sessionId), eq(testApplicationExitInfo));
+        .persistAppExitInfoEvent(
+            any(), eq(sessionId), eq(convertApplicationExitInfo(testApplicationExitInfo)));
+  }
+
+  @Test
+  public void testconvertInputStreamToString_worksSuccessfully() throws IOException {
+    String stackTrace = "-----stacktrace---------";
+    InputStream inputStream = new ByteArrayInputStream(stackTrace.getBytes());
+    assertEquals(stackTrace, SessionReportingCoordinator.convertInputStreamToString(inputStream));
   }
 
   private void mockEventInteractions() {
@@ -158,5 +174,21 @@ public class SessionReportingCoordinatorRobolectricTest {
         .addApplicationExitInfo(
             runningAppProcessInfo.processName, runningAppProcessInfo.pid, reason, 1);
     return activityManager.getHistoricalProcessExitReasons(null, 0, 0).get(0);
+  }
+
+  @RequiresApi(api = Build.VERSION_CODES.R)
+  private static CrashlyticsReport.ApplicationExitInfo convertApplicationExitInfo(
+      ApplicationExitInfo applicationExitInfo) {
+    // The ApplicationExitInfo inserted by ShadowApplicationManager does not contain an input trace,
+    // and so it will be null.
+    // Thus, these tests verify that an ApplicationExitInfo is successfully converted even when the
+    // input trace fails to be parsed as a string.
+    return CrashlyticsReport.ApplicationExitInfo.builder()
+        .setImportance(applicationExitInfo.getImportance())
+        .setProcessName(applicationExitInfo.getProcessName())
+        .setReasonCode(applicationExitInfo.getReason())
+        .setTimestamp(applicationExitInfo.getTimestamp())
+        .setTraceFile(null)
+        .build();
   }
 }

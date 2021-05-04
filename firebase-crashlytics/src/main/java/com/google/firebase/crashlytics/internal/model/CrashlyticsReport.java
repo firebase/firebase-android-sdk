@@ -1054,7 +1054,8 @@ public abstract class CrashlyticsReport {
     @NonNull
     public abstract long getTimestamp();
 
-    @NonNull
+    @Nullable
+    // Not all ApplicationExitInfos have a trace file.
     public abstract String getTraceFile();
 
     /** Builder for {@link ApplicationExitInfo}. */
