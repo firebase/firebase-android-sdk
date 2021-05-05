@@ -165,6 +165,7 @@ class MacrobenchmarkTest:
     args += ['--test', test_apk_path]
     args += ['--device', 'model=flame,version=30,locale=en,orientation=portrait']
     args += ['--directories-to-pull', '/sdcard/Download']
+    args += ['--results-bucket', 'gs://fireescape-macrobenchmark']
     args += ['--environment-variables', ','.join(ftl_environment_variables)]
     args += ['--timeout', '30m']
     args += ['--project', 'fireescape-c4819']
