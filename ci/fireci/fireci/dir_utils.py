@@ -1,6 +1,4 @@
-#!/usr/bin/env python3
-#
-# Copyright 2018 Google LLC
+# Copyright 2021 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,25 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import contextlib
+import logging
 import os
-from setuptools import find_packages, setup
 
-os.chdir(os.path.abspath(os.path.dirname(__file__)))
+_logger = logging.getLogger('fireci.dir_utils')
 
-requires = []
 
-setup(
-    name='fireci',
-    version='0.1',
-    install_requires=[
-        'click==7.0',
-        'PyGithub==1.43.8',
-        'pystache==0.5.4',
-        'requests==2.23.0',
-        'PyYAML==5.4.1',
-    ],
-    packages=find_packages(exclude=['tests']),
-    entry_points={
-        'console_scripts': ['fireci = fireci.main:cli'],
-    },
-)
+@contextlib.contextmanager
+def chdir(directory):
+  """Change working dir to `directory` and restore to original afterwards."""
+  _logger.debug(f'Changing directory to: {directory} ...')
+  original_dir = os.getcwd()
+  os.chdir(directory)
+  try:
+    yield
+  finally:
+    _logger.debug(f'Restoring directory to: {original_dir} ...')
+    os.chdir(original_dir)
