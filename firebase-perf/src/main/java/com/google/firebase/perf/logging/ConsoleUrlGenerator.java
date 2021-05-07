@@ -16,7 +16,8 @@ package com.google.firebase.perf.logging;
 
 public final class ConsoleUrlGenerator {
   private static final String URL_BASE_PATH = "https://console.firebase.google.com";
-  private static final String UTM_MEDIUM = "perf-android-studio";
+  private static final String UTM_MEDIUM = "android-ide";
+  private static final String UTM_SOURCE = "perf-android-sdk";
 
   /**
    * Generate the console URL for Firebase Performance dashboard page.
@@ -39,8 +40,8 @@ public final class ConsoleUrlGenerator {
    */
   public static String generateCustomTraceUrl(String projectId, String packageName, String name) {
     return String.format(
-        "%s/project/%s/performance/app/android:%s/metrics/trace/DURATION_TRACE/%s?utm_medium=%s",
-        URL_BASE_PATH, projectId, packageName, name, UTM_MEDIUM);
+        "%s/project/%s/performance/app/android:%s/metrics/trace/DURATION_TRACE/%s?utm_source=%s&utm_medium=%s",
+        URL_BASE_PATH, projectId, packageName, name, UTM_SOURCE, UTM_MEDIUM);
   }
 
   /**
@@ -52,7 +53,7 @@ public final class ConsoleUrlGenerator {
    */
   public static String generateScreenTraceUrl(String projectId, String packageName, String name) {
     return String.format(
-        "%s/project/%s/performance/app/android:%s/metrics/trace/SCREEN_TRACE/%s?utm_medium=%s",
-        URL_BASE_PATH, projectId, packageName, name, UTM_MEDIUM);
+        "%s/project/%s/performance/app/android:%s/metrics/trace/SCREEN_TRACE/%s?utm_source=%s&utm_medium=%s",
+        URL_BASE_PATH, projectId, packageName, name, UTM_SOURCE, UTM_MEDIUM);
   }
 }
