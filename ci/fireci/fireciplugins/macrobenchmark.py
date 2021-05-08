@@ -40,10 +40,11 @@ def macrobenchmark():
 async def _launch_macrobenchmark_test():
   _logger.info('Starting macrobenchmark test...')
 
-  artifact_versions, config, _ = await asyncio.gather(
+  artifact_versions, config, _, _ = await asyncio.gather(
     _parse_artifact_versions(),
     _parse_config_yaml(),
-    _create_gradle_wrapper()
+    _create_gradle_wrapper(),
+    _copy_google_services(),
   )
 
   with chdir('macrobenchmark'):
@@ -89,6 +90,14 @@ async def _create_gradle_wrapper():
     'macrobenchmark'
   )
   await proc.wait()
+
+
+async def _copy_google_services():
+  if 'FIREBASE_CI' in os.environ:
+    src = os.environ['FIREBASE_GOOGLE_SERVICES_PATH']
+    dst = 'macrobenchmark/template/app/google-services.json'
+    _logger.info(f'Running on CI. Copying "{src}" to "{dst}"...')
+    shutil.copyfile(src, dst)
 
 
 class MacrobenchmarkTest:
