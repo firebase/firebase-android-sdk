@@ -14,6 +14,7 @@
 
 #include <jni.h>
 #include <unistd.h>
+#include <dlfcn.h>
 
 #include "crashlytics/config.h"
 #include "crashlytics/crashpad_handler_main.h"
@@ -89,6 +90,25 @@ private:
 
 } // namespace detail
 
+typedef int (*CrashpadHandlerMainFunc)(int, char **);
+
+CrashpadHandlerMainFunc load_libcrashlytics_common()
+{
+    void* common = dlopen("libcrashlytics-common.so", RTLD_LAZY | RTLD_LOCAL);
+    if (common == nullptr) {
+        LOGE("Could not load libcrashlytics-common.so");
+        return nullptr;
+    }
+
+    void* handler = dlsym(common, "CrashpadHandlerMain");
+    if (handler == nullptr) {
+        LOGE("Could not find CrashpadHandlerMain in libcrashlytics-common.so");
+        return nullptr;
+    }
+
+    return reinterpret_cast<CrashpadHandlerMainFunc>(handler);
+}
+
 }}} // namespace google::crashlytics::jni
 
 jint JNI_OnLoad(JavaVM* vm, void* reserved)
@@ -110,7 +130,15 @@ jint JNI_Init(JNIEnv* env, jobject obj, jobjectArray pathsArray)
     }
 
     google::crashlytics::jni::detail::scoped_array_delete deletor{ argv };
-    return CrashpadHandlerMain(incoming_length, argv);
+
+    google::crashlytics::jni::CrashpadHandlerMainFunc CrashpadHandlerMain =
+        google::crashlytics::jni::load_libcrashlytics_common();
+    if (CrashpadHandlerMain != nullptr) {
+        return CrashpadHandlerMain(incoming_length, argv);
+    }
+
+    LOGE("Unable to load necessary components to capture crash");
+    return 0;
 }
 
 int main(int argc, char* argv[])

@@ -17,8 +17,8 @@
 #include "handler/handler_main.h"
 #include "crashlytics/detail/supplementary_file.h"
 
-extern "C"
-int CrashpadHandlerMain(int argc, char* argv[])
+extern "C" int CrashpadHandlerMain(int argc, char* argv[]) __attribute__((visibility ("default")));
+extern "C" int CrashpadHandlerMain(int argc, char* argv[])
 {
     int status = crashpad::HandlerMain(argc, argv, nullptr);
 

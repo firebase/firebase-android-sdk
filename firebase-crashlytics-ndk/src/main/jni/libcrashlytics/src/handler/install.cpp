@@ -19,8 +19,6 @@
 
 #include <sys/system_properties.h>
 
-#include "client/crashpad_client.h"
-
 #include "crashlytics/config.h"
 #include "crashlytics/handler/install.h"
 #include "crashlytics/handler/detail/context.h"
@@ -35,40 +33,33 @@ extern int open(const char* filename);
 namespace google { namespace crashlytics { namespace handler {
 namespace detail {
 
-crashpad::CrashpadClient* GetCrashpadClient() {
-    static crashpad::CrashpadClient* client = new crashpad::CrashpadClient();
-    return client;
+void* load_crashlytics_common()
+{
+    void* common = dlopen("libcrashlytics-common.so", RTLD_LAZY | RTLD_LOCAL);
+    if (common == nullptr) {
+        LOGE("Could not load libcrashlytics-common.so");
+    }
+
+    return common;
 }
 
-void finalize()
+template<typename Func>
+Func load_crashlytics_common_func(void* common, const std::string& func_name)
 {
-    DEBUG_OUT("Finalizing");
-    delete GetCrashpadClient();
+    if (common == nullptr) {
+        return nullptr;
+    }
+
+    void* func_ptr = dlsym(common, func_name.c_str());
+    if (func_ptr == nullptr) {
+        LOGE("Could not find %s in libcrashlytics-common.so", func_name.c_str());
+        return nullptr;
+    }
+
+    return reinterpret_cast<Func>(func_ptr);
 }
 
 } // namespace detail
-
-#if defined(__arm__) && defined(__ARM_ARCH_7A__)
-#define CURRENT_ABI "armeabi-v7a"
-#elif defined(__arm__)
-#define CURRENT_ABI "armeabi"
-#elif defined(__i386__)
-#define CURRENT_ABI "x86"
-#elif defined(__mips__)
-#define CURRENT_ABI "mips"
-#elif defined(__x86_64__)
-#define CURRENT_ABI "x86_64"
-#elif defined(__aarch64__)
-#define CURRENT_ABI "arm64-v8a"
-#else
-#error "Unsupported target abi"
-#endif
-
-#if defined(ARCH_CPU_64_BITS)
-  static constexpr bool kUse64Bit = true;
-#else
-  static constexpr bool kUse64Bit = false;
-#endif
 
 bool is_at_least_q()
 {
@@ -121,44 +112,41 @@ bool get_handler_trampoline(std::string& handler_trampoline, std::string& handle
     return true;
 }
 
+bool install_signal_handler_java(
+    const std::vector<std::string>* env,
+    const detail::context& handler_context)
+{
+    using InstallSignalHandlerJava = bool (*)(
+        const std::vector<std::string>* env,
+        const detail::context& handler_context);
+
+    InstallSignalHandlerJava install =
+        detail::load_crashlytics_common_func<InstallSignalHandlerJava>(
+            detail::load_crashlytics_common(),
+            "install_signal_handler_java");
+    
+    return install && install(env, handler_context);
+}
+
 bool install_signal_handler_linker(
     const std::vector<std::string>* env,
     const detail::context& handler_context,
     const std::string& handler_trampoline,
     const std::string& handler_library)
-{   
-    base::FilePath database { handler_context.filename };
-    base::FilePath metrics_dir;
-    
-    std::string url;
-    std::map<std::string, std::string> annotations;
-    std::vector<std::string> arguments;
-
-    DEBUG_OUT("Installing Crashpad handler via trampoline");
-
-    return detail::GetCrashpadClient()->StartHandlerWithLinkerAtCrash(
-        handler_trampoline, handler_library, 
-        kUse64Bit, env, database, metrics_dir, url, annotations, arguments
-    );
-}
-
-bool install_signal_handler_java(
-    const std::vector<std::string>* env,
-    const detail::context& handler_context)
 {
-    std::string class_name = "com/google/firebase/crashlytics/ndk/CrashpadMain";
-    
-    base::FilePath database(handler_context.filename);
-    base::FilePath metrics_dir;
-    
-    std::string url;
-    std::map<std::string, std::string> annotations;
-    std::vector<std::string> arguments;
+    using InstallSignalHandlerLinker = bool (*)(
+        const std::vector<std::string>* env,
+        const detail::context& handler_context,
+        const std::string& handler_trampoline,
+        const std::string& handler_library);
 
-    DEBUG_OUT("Installing Java Crashpad handler");
-
-    return detail::GetCrashpadClient()->StartJavaHandlerAtCrash(
-        class_name, env, database, metrics_dir, url, annotations, arguments);
+    InstallSignalHandlerLinker install =
+        detail::load_crashlytics_common_func<InstallSignalHandlerLinker>(
+            detail::load_crashlytics_common(),
+            "install_signal_handler_linker");
+    
+    return install &&
+        install(env, handler_context, handler_trampoline, handler_library);
 }
 
 bool install_signal_handler(const detail::context& handler_context)
@@ -186,13 +174,26 @@ bool install_handlers(detail::context handler_context)
     DEBUG_OUT("!!Crashlytics is in debug mode!!");
     DEBUG_OUT("Path is %s", handler_context.filename);
 
-    atexit(detail::finalize);
-
     LOGD("Initializing libcrashlytics version %s", VERSION);
     return install_signal_handler(handler_context);
 }
 
 }}}
+
+extern "C" int CrashpadHandlerMain(int argc, char* argv[]) __attribute__((visibility ("default")));
+extern "C" int CrashpadHandlerMain(int argc, char* argv[])
+{
+    using CrashpadHandlerMainFunc = int (*)(int, char **);
+    using namespace google::crashlytics::handler;
+
+    CrashpadHandlerMainFunc handler_main =
+        detail::load_crashlytics_common_func<CrashpadHandlerMainFunc>(
+            detail::load_crashlytics_common(), "CrashpadHandlerMain");
+    
+    return handler_main
+        ? handler_main(argc, argv)
+        : -1;
+}
 
 #if defined (CRASHLYTICS_DEBUG)
 //! When building in debug, we can search for this symbol in the output of readelf or objdump, to verify
