@@ -27,8 +27,8 @@ public final class ConsoleUrlGenerator {
    */
   public static String generateDashboardUrl(String projectId, String packageName) {
     return String.format(
-        "%s/project/%s/performance/app/android:%s/trends?utm_medium=%s",
-        URL_BASE_PATH, projectId, packageName, UTM_MEDIUM);
+        "%s/project/%s/performance/app/android:%s/trends?utm_source=%s&utm_medium=%s",
+        URL_BASE_PATH, projectId, packageName, UTM_SOURCE, UTM_MEDIUM);
   }
 
   /**
