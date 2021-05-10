@@ -85,7 +85,7 @@ async def _create_gradle_wrapper():
     './gradlew',
     'wrapper',
     '--gradle-version',
-    '7.0',
+    '6.9',
     '--project-dir',
     'macrobenchmark'
   )
