@@ -126,19 +126,7 @@ class MacrobenchmarkTest:
     app_id = self.test_app_config['application-id']
     self.logger.info(f'Creating test app "{app_name}" with application-id "{app_id}"...')
 
-    mustache_context = {
-      'application-id': app_id,
-      'plugins': self.test_app_config['plugins'] if 'plugins' in self.test_app_config else [],
-      'dependencies': [
-        {
-          'key': x,
-          'version': self.artifact_versions[x]
-        } for x in self.test_app_config['dependencies']
-      ] if 'dependencies' in self.test_app_config else [],
-    }
-
-    if app_name != 'baseline':
-      mustache_context['plugins'].append('com.google.gms.google-services')
+    mustache_context = await self._prepare_mustache_context()
 
     shutil.copytree('template', self.test_app_dir)
     with chdir(self.test_app_dir):
@@ -180,6 +168,33 @@ class MacrobenchmarkTest:
     args += ['--project', 'fireescape-c4819']
 
     await self._exec_subprocess(executable, args)
+
+  async def _prepare_mustache_context(self):
+    app_name = self.test_app_config['name']
+    app_id = self.test_app_config['application-id']
+
+    mustache_context = {
+      'application-id': app_id,
+      'plugins': [],
+      'dependencies': [],
+    }
+
+    if app_name != 'baseline':
+      mustache_context['plugins'].append('com.google.gms.google-services')
+
+    if 'plugins' in self.test_app_config:
+      mustache_context['plugins'].extend(self.test_app_config['plugins'])
+
+    if 'dependencies' in self.test_app_config:
+      for dep in self.test_app_config['dependencies']:
+        if '@' in dep:
+          key, version = dep.split('@', 1)
+          dependency = {'key': key, 'version': version}
+        else:
+          dependency = {'key': dep, 'version': self.artifact_versions[dep]}
+        mustache_context['dependencies'].append(dependency)
+
+    return mustache_context
 
   async def _exec_subprocess(self, executable, args):
     command = " ".join([executable, *args])
