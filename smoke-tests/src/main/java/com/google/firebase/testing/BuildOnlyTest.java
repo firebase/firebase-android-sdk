@@ -19,8 +19,7 @@ import static com.google.common.truth.Truth.assertThat;
 import com.google.firebase.appindexing.FirebaseAppIndex;
 import com.google.firebase.inappmessaging.FirebaseInAppMessaging;
 // import com.google.firebase.messaging.FirebaseMessaging;
-// import com.google.firebase.perf.FirebasePerformance;
-import com.google.firebase.ml.vision.FirebaseVision;
+import com.google.firebase.perf.FirebasePerformance;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -44,13 +43,8 @@ public final class BuildOnlyTest {
 //    assertThat(FirebaseMessaging.getInstance()).isNotNull();
 //  }
 
-//  @Test
-//  public void performance_IsNotNull() {
-//    assertThat(FirebasePerformance.getInstance()).isNotNull();
-//  }
-
   @Test
-  public void vision_IsNotNull() {
-    assertThat(FirebaseVision.getInstance()).isNotNull();
+  public void performance_IsNotNull() {
+    assertThat(FirebasePerformance.getInstance()).isNotNull();
   }
 }
