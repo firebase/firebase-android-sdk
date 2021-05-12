@@ -29,21 +29,21 @@ import com.google.firebase.appcheck.internal.DefaultFirebaseAppCheck;
  *
  * <p>Example Usage:
  *
- * <pre>{@code
- * @RunWith(AndroidJunit4.class)
+ * <pre>
+ * &#64;RunWith(AndroidJunit4.class)
  * public class MyTests {
  *   private final DebugAppCheckTestHelper debugAppCheckTestHelper =
  *       DebugAppCheckTestHelper.fromInstrumentationArgs();
  *
- *   @Test
- *   public testWithDefaultApp() {
+ *   &#64;Test
+ *   public void testWithDefaultApp() {
  *     debugAppCheckTestHelper.withDebugProvider(() -> {
  *       // Test code that requires a debug AppCheckToken
  *     });
  *   }
  *
- *   @Test
- *   public testWithNonDefaultApp() {
+ *   &#64;Test
+ *   public void testWithNonDefaultApp() {
  *     debugAppCheckTestHelper.withDebugProvider(
  *         FirebaseApp.getInstance("nonDefaultApp"),
  *         () -> {
@@ -51,9 +51,9 @@ import com.google.firebase.appcheck.internal.DefaultFirebaseAppCheck;
  *         });
  *   }
  * }
- * }</pre>
+ * </pre>
  *
- * <pre>{@code
+ * <pre>
  * // In build.gradle.kts
  * android {
  *   defaultConfig {
@@ -63,7 +63,7 @@ import com.google.firebase.appcheck.internal.DefaultFirebaseAppCheck;
  *     }
  *   }
  * }
- * }</pre>
+ * </pre>
  */
 public final class DebugAppCheckTestHelper {
   private static final String DEBUG_SECRET_KEY = "firebaseAppCheckDebugSecret";
@@ -71,7 +71,7 @@ public final class DebugAppCheckTestHelper {
   private final String debugSecret;
 
   /**
-   * Create a {@link DebugAppCheckTestHelper} instance with the debug secret obtained from {@link
+   * Creates a {@link DebugAppCheckTestHelper} instance with the debug secret obtained from {@link
    * InstrumentationRegistry} arguments.
    */
   @NonNull
