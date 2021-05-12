@@ -24,13 +24,15 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+import static androidx.test.core.app.ApplicationProvider.getApplicationContext;
+
 /** Contains initialization test cases for build-only libraries. */
 @RunWith(JUnit4.class)
 public final class BuildOnlyTest {
 
   @Test
   public void appindexing_IsNotNull() {
-    assertThat(FirebaseAppIndex.getInstance()).isNotNull();
+    assertThat(FirebaseAppIndex.getInstance(getApplicationContext())).isNotNull();
   }
 
   @Test
