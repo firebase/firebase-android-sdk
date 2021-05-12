@@ -22,14 +22,15 @@ import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
 
 public abstract class FirebaseAppCheck implements InternalAppCheckTokenProvider {
 
-  /** Get the default instance of FirebaseAppCheck. */
+  /** Gets the default instance of {@code FirebaseAppCheck}. */
   @NonNull
   public static FirebaseAppCheck getInstance() {
     return getInstance(FirebaseApp.getInstance());
   }
 
   /**
-   * Get the instance of FirebaseAppCheck associated with the given {@link FirebaseApp} instance.
+   * Gets the instance of {@code FirebaseAppCheck} associated with the given {@link FirebaseApp}
+   * instance.
    */
   @NonNull
   public static FirebaseAppCheck getInstance(@NonNull FirebaseApp firebaseApp) {
@@ -38,9 +39,9 @@ public abstract class FirebaseAppCheck implements InternalAppCheckTokenProvider 
 
   /**
    * Installs the given {@link AppCheckProviderFactory}, overwriting any that were previously
-   * associated with this FirebaseAppCheck instance. Any {@link AppCheckTokenListener}s attached to
-   * this FirebaseAppCheck instance will be transferred from existing factories to the newly
-   * installed one.
+   * associated with this {@code FirebaseAppCheck} instance. Any {@link AppCheckTokenListener}s
+   * attached to this {@code FirebaseAppCheck} instance will be transferred from existing factories
+   * to the newly installed one.
    *
    * <p>Automatic token refreshing will only occur if the global {@code
    * isDataCollectionDefaultEnabled} flag is set to true. To allow automatic token refreshing for
@@ -53,14 +54,14 @@ public abstract class FirebaseAppCheck implements InternalAppCheckTokenProvider 
 
   /**
    * Installs the given {@link AppCheckProviderFactory}, overwriting any that were previously
-   * associated with this FirebaseAppCheck instance. Any {@link AppCheckTokenListener}s attached to
-   * this FirebaseAppCheck instance will be transferred from existing factories to the newly
-   * installed one.
+   * associated with this {@code FirebaseAppCheck} instance. Any {@link AppCheckTokenListener}s
+   * attached to this {@code FirebaseAppCheck} instance will be transferred from existing factories
+   * to the newly installed one.
    *
    * <p>Automatic token refreshing will only occur if the {@code isTokenAutoRefreshEnabled} field is
    * set to true. To use the global {@code isDataCollectionDefaultEnabled} flag for determining
-   * automatic token refreshing, {@link #installAppCheckProviderFactory(AppCheckProviderFactory)}
-   * should be called instead.
+   * automatic token refreshing, call {@link
+   * #installAppCheckProviderFactory(AppCheckProviderFactory)} instead.
    */
   @SuppressLint("FirebaseLambdaLast")
   public abstract void installAppCheckProviderFactory(
