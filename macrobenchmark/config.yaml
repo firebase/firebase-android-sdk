@@ -44,6 +44,7 @@ firebase-inappmessaging-display:
   name: inappmessaging
   application-id: com.google.firebase.benchmark.inappmessaging
   dependencies:
+    - com.google.firebase:firebase-analytics-ktx@18.0.3
     - com.google.firebase:firebase-inappmessaging-ktx
     - com.google.firebase:firebase-inappmessaging-display-ktx
 
