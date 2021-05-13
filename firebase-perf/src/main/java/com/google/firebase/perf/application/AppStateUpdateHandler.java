@@ -45,17 +45,6 @@ public abstract class AppStateUpdateHandler implements AppStateCallback {
     appStateCallback = new WeakReference<AppStateCallback>(this);
   }
 
-  /**
-   * Reason: HIDE_ANNOTATION_REQUIRED_IN_CHILD_CLASS
-   *
-   * <p>Hide annotation is needed here even if the entire package (containing this class) is hidden.
-   * This is because this class is extended by a Public API class and thus any public methods in
-   * this class would then become a part of the Public API transitively. Adding the hide annotation
-   * to the class level does not work either and it has to be added to the concerned public method
-   * specifically.
-   *
-   * @hide
-   */
   protected void registerForAppState() {
     if (isRegisteredForAppState) {
       return;
@@ -65,11 +54,6 @@ public abstract class AppStateUpdateHandler implements AppStateCallback {
     isRegisteredForAppState = true;
   }
 
-  /**
-   * Reason: HIDE_ANNOTATION_REQUIRED_IN_CHILD_CLASS
-   *
-   * @hide
-   */
   protected void unregisterForAppState() {
     if (!isRegisteredForAppState) {
       return;
@@ -78,17 +62,18 @@ public abstract class AppStateUpdateHandler implements AppStateCallback {
     isRegisteredForAppState = false;
   }
 
-  /**
-   * Reason: HIDE_ANNOTATION_REQUIRED_IN_CHILD_CLASS
-   *
-   * @hide
-   */
   protected void incrementTsnsCount(int count) {
     appStateMonitor.incrementTsnsCount(count);
   }
 
   /**
    * Reason: HIDE_ANNOTATION_REQUIRED_IN_CHILD_CLASS
+   *
+   * <p>Hide annotation is needed here even if the entire package (containing this class) is hidden.
+   * This is because this class is extended by a Public API class and thus any public methods in
+   * this class would then become a part of the Public API transitively. Adding the hide annotation
+   * to the class level does not work either and it has to be added to the concerned public method
+   * specifically.
    *
    * @hide
    */
