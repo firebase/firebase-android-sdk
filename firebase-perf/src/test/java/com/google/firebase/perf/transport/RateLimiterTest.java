@@ -61,6 +61,8 @@ public class RateLimiterTest extends FirebasePerformanceTestBase {
   private static final Rate TWO_TOKENS_PER_MINUTE = new Rate(2, 1, MINUTES);
   private static final Rate FOUR_TOKENS_PER_MINUTE = new Rate(4, 1, MINUTES);
   private static final Rate TWO_TOKENS_PER_SECOND = new Rate(2, 1, SECONDS);
+  private static final Rate THREE_TOKENS_PER_SECOND = new Rate(3, 1, SECONDS);
+  private static final Rate TEN_TOKENS_PER_SECOND = new Rate(10, 1, SECONDS);
 
   @Before
   public void setUp() {
@@ -125,7 +127,7 @@ public class RateLimiterTest extends FirebasePerformanceTestBase {
 
   /** An edge test case for Token Bucket algorithm. */
   @Test
-  public void testRateLimitImplWithIrregularTimeIntervals() {
+  public void testRateLimiterImplWithIrregularTimeIntervals() {
 
     makeConfigResolverReturnDefaultValues();
 
@@ -165,7 +167,8 @@ public class RateLimiterTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  public void testRateLimitImplWithLongTimeGapBetweenEvents_doesNotAccumulateTokensOrCauseBurst() {
+  public void
+      testRateLimiterImplWithLongTimeGapBetweenEvents_doesNotAccumulateTokensOrCauseBurst() {
 
     makeConfigResolverReturnDefaultValues();
 
@@ -203,6 +206,97 @@ public class RateLimiterTest extends FirebasePerformanceTestBase {
     assertThat(limiter.check(metric)).isFalse();
     // clock is 663 seconds, count before check is 0, 0 new tokens added, count after check is 0
     currentTime = currentTime.plusSeconds(1);
+    assertThat(limiter.check(metric)).isFalse();
+  }
+
+  @Test
+  public void testRateLimiterImplWithBursts_rateLessThanCapacity_doesNotAllowMoreThanCapacity() {
+
+    makeConfigResolverReturnDefaultValues();
+
+    // Make Config Resolver returns default value for resource sampling rate.
+    when(mockConfigResolver.getTraceSamplingRate()).thenReturn(1.0f);
+    when(mockConfigResolver.getNetworkRequestSamplingRate()).thenReturn(1.0f);
+
+    // allow 3 logs per second. token bucket capacity is 4.
+    RateLimiterImpl limiter =
+        new RateLimiterImpl(THREE_TOKENS_PER_SECOND, 4, mClock, mockConfigResolver, NETWORK, false);
+    PerfMetric metric = PerfMetric.getDefaultInstance();
+
+    // clock is 0, token count starts at 4, none should be replenished
+    assertThat(limiter.check(metric)).isTrue();
+    assertThat(limiter.check(metric)).isTrue();
+    assertThat(limiter.check(metric)).isTrue();
+    assertThat(limiter.check(metric)).isTrue();
+    assertThat(limiter.check(metric)).isFalse();
+    assertThat(limiter.check(metric)).isFalse();
+
+    // clock is 1 second, 3 events should be allowed within the second
+    currentTime = currentTime.plusSeconds(1);
+    assertThat(limiter.check(metric)).isTrue();
+    assertThat(limiter.check(metric)).isTrue();
+    assertThat(limiter.check(metric)).isTrue();
+    assertThat(limiter.check(metric)).isFalse();
+
+    // the first burst has finished, and there are 1 event per second for the next 3 seconds
+    currentTime = currentTime.plusSeconds(1);
+    assertThat(limiter.check(metric)).isTrue();
+    currentTime = currentTime.plusSeconds(1);
+    assertThat(limiter.check(metric)).isTrue();
+    currentTime = currentTime.plusSeconds(1);
+    assertThat(limiter.check(metric)).isTrue();
+
+    // after 10 seconds, the second burst is here, but capacity = 4 events are allowed
+    currentTime = currentTime.plusSeconds(10);
+    assertThat(limiter.check(metric)).isTrue();
+    assertThat(limiter.check(metric)).isTrue();
+    assertThat(limiter.check(metric)).isTrue();
+    assertThat(limiter.check(metric)).isTrue();
+    assertThat(limiter.check(metric)).isFalse();
+    assertThat(limiter.check(metric)).isFalse();
+    assertThat(limiter.check(metric)).isFalse();
+  }
+
+  @Test
+  public void testRateLimiterImplWithBursts_rateMoreThanCapacity_doesNotAllowMoreThanCapacity() {
+
+    makeConfigResolverReturnDefaultValues();
+
+    // Make Config Resolver returns default value for resource sampling rate.
+    when(mockConfigResolver.getTraceSamplingRate()).thenReturn(1.0f);
+    when(mockConfigResolver.getNetworkRequestSamplingRate()).thenReturn(1.0f);
+
+    // allow 3 logs per second. token bucket capacity is 2.
+    RateLimiterImpl limiter =
+        new RateLimiterImpl(THREE_TOKENS_PER_SECOND, 2, mClock, mockConfigResolver, NETWORK, false);
+    PerfMetric metric = PerfMetric.getDefaultInstance();
+
+    // clock is 0, token count starts at 2, none should be replenished
+    assertThat(limiter.check(metric)).isTrue();
+    assertThat(limiter.check(metric)).isTrue();
+    assertThat(limiter.check(metric)).isFalse();
+    assertThat(limiter.check(metric)).isFalse();
+
+    // clock is 1 second, 2 events should be allowed within the second due to capacity cap
+    currentTime = currentTime.plusSeconds(1);
+    assertThat(limiter.check(metric)).isTrue();
+    assertThat(limiter.check(metric)).isTrue();
+    assertThat(limiter.check(metric)).isFalse();
+    assertThat(limiter.check(metric)).isFalse();
+
+    // the first burst has finished, and there are 1 event per second for the next 3 seconds
+    currentTime = currentTime.plusSeconds(1);
+    assertThat(limiter.check(metric)).isTrue();
+    currentTime = currentTime.plusSeconds(1);
+    assertThat(limiter.check(metric)).isTrue();
+    currentTime = currentTime.plusSeconds(1);
+    assertThat(limiter.check(metric)).isTrue();
+
+    // the second burst is here, but only capacity = 2 events are allowed
+    currentTime = currentTime.plusSeconds(10);
+    assertThat(limiter.check(metric)).isTrue();
+    assertThat(limiter.check(metric)).isTrue();
+    assertThat(limiter.check(metric)).isFalse();
     assertThat(limiter.check(metric)).isFalse();
   }
 
