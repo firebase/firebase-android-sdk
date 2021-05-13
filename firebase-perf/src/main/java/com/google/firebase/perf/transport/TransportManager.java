@@ -458,7 +458,7 @@ public class TransportManager implements AppStateCallback {
     // Logs the metrics to logcat plus console URL for every trace metric.
     if (perfMetric.hasTraceMetric()) {
       logger.info(
-          "Logging %s. Please visit %s in a minute for details.",
+          "Logging %s. In a minute, visit the Firebase console to view your data: %s",
           getLogcatMsg(perfMetric), getConsoleUrl(perfMetric.getTraceMetric()));
     } else {
       logger.info("Logging %s", getLogcatMsg(perfMetric));

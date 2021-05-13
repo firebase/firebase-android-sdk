@@ -197,7 +197,7 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
       Log.i(
           LogWrapper.LOG_TAG,
           String.format(
-              "Welcome to Firebase Performance Monitoring! Please visit %s in a minute to see details.",
+              "Firebase Performance Monitoring is successfully initialized! In a minute, visit the Firebase console to view your data: %s",
               ConsoleUrlGenerator.generateDashboardUrl(
                   firebaseApp.getOptions().getProjectId(), appContext.getPackageName())));
     }
