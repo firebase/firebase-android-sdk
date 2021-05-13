@@ -15,6 +15,7 @@
 package com.google.firebase.perf.transport;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.MINUTES;
 
 import android.content.Context;
 import android.content.pm.PackageInfo;
@@ -39,6 +40,7 @@ import com.google.firebase.perf.metrics.validator.PerfMetricValidator;
 import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.Constants.CounterNames;
+import com.google.firebase.perf.util.Rate;
 import com.google.firebase.perf.v1.AndroidApplicationInfo;
 import com.google.firebase.perf.v1.ApplicationInfo;
 import com.google.firebase.perf.v1.ApplicationProcessState;
@@ -202,7 +204,9 @@ public class TransportManager implements AppStateCallback {
   private void syncInit() {
     appContext = firebaseApp.getApplicationContext();
     configResolver = ConfigResolver.getInstance();
-    rateLimiter = new RateLimiter(appContext, Constants.RATE_PER_MINUTE, Constants.BURST_CAPACITY);
+    rateLimiter =
+        new RateLimiter(
+            appContext, new Rate(Constants.RATE_PER_MINUTE, 1, MINUTES), Constants.BURST_CAPACITY);
     appStateMonitor = AppStateMonitor.getInstance();
     flgTransport =
         new FlgTransport(flgTransportFactoryProvider, configResolver.getAndCacheLogSourceName());
