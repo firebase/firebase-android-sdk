@@ -55,7 +55,8 @@ public class RateTest {
 
     assertThat(twoTokensPerMillisecond.getTokensPerSeconds()).isEqualTo(2.0 * 1000);
     assertThat(sevenTokensPerTenMillisecond.getTokensPerSeconds()).isEqualTo((7.0 / 10) * 1000);
-    assertThat(thirtyOneTokensPerTenMillisecond.getTokensPerSeconds()).isEqualTo((31.0 / 10) * 1000);
+    assertThat(thirtyOneTokensPerTenMillisecond.getTokensPerSeconds())
+        .isEqualTo((31.0 / 10) * 1000);
   }
 
   @Test
