@@ -54,7 +54,7 @@ public class FirebaseInAppMessagingDisplayRegistrar implements ComponentRegistra
 
   private FirebaseInAppMessagingDisplay buildFirebaseInAppMessagingUI(
       ComponentContainer container) {
-    FirebaseApp firebaseApp = FirebaseApp.getInstance();
+    FirebaseApp firebaseApp = container.get(FirebaseApp.class);
     FirebaseInAppMessaging headless = container.get(FirebaseInAppMessaging.class);
     Application firebaseApplication = (Application) firebaseApp.getApplicationContext();
 
