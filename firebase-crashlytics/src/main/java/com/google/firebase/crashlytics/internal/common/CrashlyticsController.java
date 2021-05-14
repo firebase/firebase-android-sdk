@@ -13,6 +13,8 @@
 // limitations under the License.
 package com.google.firebase.crashlytics.internal.common;
 
+import android.app.ActivityManager;
+import android.app.ApplicationExitInfo;
 import android.content.Context;
 import android.os.Build;
 import android.os.Build.VERSION;
@@ -190,7 +192,7 @@ class CrashlyticsController {
                     ex, thread, currentSessionId, timestampSeconds);
 
                 doWriteAppExceptionMarker(timestampMillis);
-                doCloseSessions();
+                doCloseSessions(settingsDataProvider);
                 doOpenSession();
 
                 // If automatic data collection is disabled, we'll need to wait until the next run
@@ -520,8 +522,10 @@ class CrashlyticsController {
    *
    * <p>This method can not be called while the {@link CrashlyticsCore} settings lock is held. It
    * will result in a deadlock!
+   *
+   * @param settingsDataProvider
    */
-  boolean finalizeSessions() {
+  boolean finalizeSessions(SettingsDataProvider settingsDataProvider) {
     backgroundWorker.checkRunningOnThread();
 
     if (isHandlingException()) {
@@ -531,7 +535,7 @@ class CrashlyticsController {
 
     Logger.getLogger().v("Finalizing previously open sessions.");
     try {
-      doCloseSessions(true);
+      doCloseSessions(true, settingsDataProvider);
     } catch (Exception e) {
       Logger.getLogger().e("Unable to finalize previously open sessions.", e);
       return false;
@@ -562,15 +566,16 @@ class CrashlyticsController {
     reportingCoordinator.onBeginSession(sessionIdentifier, startedAtSeconds);
   }
 
-  void doCloseSessions() {
-    doCloseSessions(false);
+  void doCloseSessions(SettingsDataProvider settingsDataProvider) {
+    doCloseSessions(false, settingsDataProvider);
   }
 
   /**
    * Not synchronized/locked. Must be executed from the single thread executor service used by this
    * class.
    */
-  private void doCloseSessions(boolean skipCurrentSession) {
+  private void doCloseSessions(
+      boolean skipCurrentSession, SettingsDataProvider settingsDataProvider) {
     final int offset = skipCurrentSession ? 1 : 0;
 
     List<String> sortedOpenSessions = reportingCoordinator.listSortedOpenSessionIds();
@@ -581,6 +586,12 @@ class CrashlyticsController {
     }
 
     final String mostRecentSessionIdToClose = sortedOpenSessions.get(offset);
+
+    if (settingsDataProvider.getSettings().getFeaturesData().collectAnrs) {
+      // TODO: Consider writing applicationExitInfo for all sessions instead of just the most recent
+      // sessionId to close.
+      writeApplicationExitInfoEventIfRelevant(mostRecentSessionIdToClose);
+    }
 
     if (nativeComponent.hasCrashDataForSession(mostRecentSessionIdToClose)) {
       // We only finalize the current session if it's a Java crash, so only finalize native crash
@@ -855,5 +866,24 @@ class CrashlyticsController {
     return nativeSessionFiles;
   }
 
+  // endregion
+
+  // region ApplicationExitInfo
+
+  /** If an ApplicationExitInfo exists relevant to the session, writes that event. */
+  private void writeApplicationExitInfoEventIfRelevant(String sessionId) {
+    if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+      ActivityManager activityManager =
+          (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+      List<ApplicationExitInfo> applicationExitInfoList =
+          activityManager.getHistoricalProcessExitReasons(null, 0, 0);
+
+      // Passes the latest applicationExitInfo to ReportCoordinator, which persists it if it
+      // happened during the session.
+      if (applicationExitInfoList.size() != 0) {
+        reportingCoordinator.persistAppExitInfoEvent(sessionId, applicationExitInfoList.get(0));
+      }
+    }
+  }
   // endregion
 }

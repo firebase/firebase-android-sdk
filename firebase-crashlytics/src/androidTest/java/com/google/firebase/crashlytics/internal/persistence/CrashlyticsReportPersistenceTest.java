@@ -668,6 +668,36 @@ public class CrashlyticsReportPersistenceTest {
         finalizedReport2);
   }
 
+  @Test
+  public void testPersistAppExitInfo() throws IOException {
+    reportPersistence =
+        new CrashlyticsReportPersistence(
+            folder.newFolder(), getSettingsMock(VERY_LARGE_UPPER_LIMIT, 4));
+    final String sessionId = "testSession";
+    final CrashlyticsReport testReport = makeTestReport(sessionId);
+    final CrashlyticsReport.Session.Event testEvent1 = makeTestEvent("anr", "reason1");
+    final CrashlyticsReport.ApplicationExitInfo testAppExitInfo = makeAppExitInfo();
+
+    reportPersistence.persistReport(testReport);
+    reportPersistence.persistAppExitInfoEvent(testEvent1, sessionId, testAppExitInfo);
+
+    final long endedAt = System.currentTimeMillis();
+
+    reportPersistence.finalizeReports("skippedSession", endedAt);
+
+    final List<CrashlyticsReportWithSessionId> finalizedReports =
+        reportPersistence.loadFinalizedReports();
+    assertEquals(1, finalizedReports.size());
+    final CrashlyticsReport finalizedReport = finalizedReports.get(0).getReport();
+    assertEquals(1, finalizedReport.getSession().getEvents().size());
+    assertEquals(
+        testReport
+            .withSessionEndFields(endedAt, true, null)
+            .withEvents(ImmutableList.from(testEvent1))
+            .withAppExitInfo(testAppExitInfo),
+        finalizedReport);
+  }
+
   private static void persistReportWithEvent(
       CrashlyticsReportPersistence reportPersistence, String sessionId, boolean isHighPriority) {
     CrashlyticsReport testReport = makeTestReport(sessionId);
@@ -743,7 +773,7 @@ public class CrashlyticsReportPersistenceTest {
 
   private static Event makeTestEvent(String type, String reason) {
     return Event.builder()
-        .setType("type")
+        .setType(type)
         .setTimestamp(1000)
         .setApp(
             Session.Event.Application.builder()
@@ -818,5 +848,15 @@ public class CrashlyticsReportPersistenceTest {
             .setOffset(751)
             .setImportance(4)
             .build());
+  }
+
+  private static CrashlyticsReport.ApplicationExitInfo makeAppExitInfo() {
+    return CrashlyticsReport.ApplicationExitInfo.builder()
+        .setTraceFile("trace")
+        .setTimestamp(1L)
+        .setImportance(1)
+        .setReasonCode(1)
+        .setProcessName("test")
+        .build();
   }
 }

@@ -14,9 +14,13 @@
 
 package com.google.firebase.crashlytics.internal.common;
 
+import android.app.ApplicationExitInfo;
 import android.content.Context;
+import android.os.Build;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
+import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.crashlytics.internal.Logger;
@@ -30,7 +34,14 @@ import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.send.DataTransportCrashlyticsReportSender;
 import com.google.firebase.crashlytics.internal.settings.SettingsDataProvider;
 import com.google.firebase.crashlytics.internal.stacktrace.StackTraceTrimmingStrategy;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -44,6 +55,7 @@ import java.util.concurrent.Executor;
 public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
 
   private static final String EVENT_TYPE_CRASH = "crash";
+  private static final String EVENT_TYPE_ANR = "anr";
   private static final String EVENT_TYPE_LOGGED = "error";
   private static final int EVENT_THREAD_IMPORTANCE = 4;
   private static final int MAX_CHAINED_EXCEPTION_DEPTH = 8;
@@ -120,6 +132,36 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
       @NonNull Throwable event, @NonNull Thread thread, @NonNull String sessionId, long timestamp) {
     Logger.getLogger().v("Persisting non-fatal event for session " + sessionId);
     persistEvent(event, thread, sessionId, EVENT_TYPE_LOGGED, timestamp, false);
+  }
+
+  @RequiresApi(api = Build.VERSION_CODES.R)
+  public void persistAppExitInfoEvent(String sessionId, ApplicationExitInfo applicationExitInfo) {
+    long sessionStartTime = reportPersistence.getStartTimestampMillis(sessionId);
+    // ApplicationExitInfo did not occur during the session.
+    if (applicationExitInfo.getTimestamp() < sessionStartTime) {
+      return;
+    }
+
+    // Currently we only persist these if it is an ANR.
+    if (applicationExitInfo.getReason() != ApplicationExitInfo.REASON_ANR) {
+      return;
+    }
+
+    // TODO: Refactor Event to only contain relevant information rather than unnecessary data like
+    // thread, exception etc.
+    final CrashlyticsReport.Session.Event capturedEvent =
+        dataCapture.captureEventData(
+            new Exception("ANR"),
+            Thread.currentThread(),
+            EVENT_TYPE_ANR,
+            applicationExitInfo.getTimestamp(),
+            EVENT_THREAD_IMPORTANCE,
+            MAX_CHAINED_EXCEPTION_DEPTH,
+            false);
+    CrashlyticsReport.ApplicationExitInfo crashlyticsAppExitInfo =
+        convertApplicationExitInfo(applicationExitInfo);
+    Logger.getLogger().d("Persisting anr for session " + sessionId);
+    reportPersistence.persistAppExitInfoEvent(capturedEvent, sessionId, crashlyticsAppExitInfo);
   }
 
   public void finalizeSessionWithNativeEvent(
@@ -263,5 +305,46 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
         (CustomAttribute attr1, CustomAttribute attr2) -> attr1.getKey().compareTo(attr2.getKey()));
 
     return attributesList;
+  }
+
+  @RequiresApi(api = Build.VERSION_CODES.R)
+  private static CrashlyticsReport.ApplicationExitInfo convertApplicationExitInfo(
+      ApplicationExitInfo applicationExitInfo) {
+    String traceFile = null;
+    try {
+      traceFile = convertInputStreamToString(applicationExitInfo.getTraceInputStream());
+    } catch (IOException | NullPointerException e) {
+      Logger.getLogger()
+          .w(
+              "Could not get input trace in application exit info: "
+                  + applicationExitInfo.toString()
+                  + " Error: "
+                  + e);
+    }
+
+    return CrashlyticsReport.ApplicationExitInfo.builder()
+        .setImportance(applicationExitInfo.getImportance())
+        .setProcessName(applicationExitInfo.getProcessName())
+        .setReasonCode(applicationExitInfo.getReason())
+        .setTimestamp(applicationExitInfo.getTimestamp())
+        .setTraceFile(traceFile)
+        .build();
+  }
+
+  @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+  @VisibleForTesting
+  public static String convertInputStreamToString(@Nullable InputStream inputStream)
+      throws IOException, NullPointerException {
+    StringBuilder stringBuilder = new StringBuilder();
+    try (Reader reader =
+        new BufferedReader(
+            new InputStreamReader(inputStream, Charset.forName(StandardCharsets.UTF_8.name())))) {
+      int c = 0;
+      while ((c = reader.read()) != -1) {
+        stringBuilder.append((char) c);
+      }
+
+      return stringBuilder.toString();
+    }
   }
 }
