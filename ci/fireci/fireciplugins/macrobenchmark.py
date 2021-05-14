@@ -40,10 +40,11 @@ def macrobenchmark():
 async def _launch_macrobenchmark_test():
   _logger.info('Starting macrobenchmark test...')
 
-  artifact_versions, config, _ = await asyncio.gather(
+  artifact_versions, config, _, _ = await asyncio.gather(
     _parse_artifact_versions(),
     _parse_config_yaml(),
-    _create_gradle_wrapper()
+    _create_gradle_wrapper(),
+    _copy_google_services(),
   )
 
   with chdir('macrobenchmark'):
@@ -84,11 +85,19 @@ async def _create_gradle_wrapper():
     './gradlew',
     'wrapper',
     '--gradle-version',
-    '7.0',
+    '6.9',
     '--project-dir',
     'macrobenchmark'
   )
   await proc.wait()
+
+
+async def _copy_google_services():
+  if 'FIREBASE_CI' in os.environ:
+    src = os.environ['FIREBASE_GOOGLE_SERVICES_PATH']
+    dst = 'macrobenchmark/template/app/google-services.json'
+    _logger.info(f'Running on CI. Copying "{src}" to "{dst}"...')
+    shutil.copyfile(src, dst)
 
 
 class MacrobenchmarkTest:
@@ -117,19 +126,7 @@ class MacrobenchmarkTest:
     app_id = self.test_app_config['application-id']
     self.logger.info(f'Creating test app "{app_name}" with application-id "{app_id}"...')
 
-    mustache_context = {
-      'application-id': app_id,
-      'plugins': self.test_app_config['plugins'] if 'plugins' in self.test_app_config else [],
-      'dependencies': [
-        {
-          'key': x,
-          'version': self.artifact_versions[x]
-        } for x in self.test_app_config['dependencies']
-      ] if 'dependencies' in self.test_app_config else [],
-    }
-
-    if app_name != 'baseline':
-      mustache_context['plugins'].append('com.google.gms.google-services')
+    mustache_context = await self._prepare_mustache_context()
 
     shutil.copytree('template', self.test_app_dir)
     with chdir(self.test_app_dir):
@@ -171,6 +168,33 @@ class MacrobenchmarkTest:
     args += ['--project', 'fireescape-c4819']
 
     await self._exec_subprocess(executable, args)
+
+  async def _prepare_mustache_context(self):
+    app_name = self.test_app_config['name']
+    app_id = self.test_app_config['application-id']
+
+    mustache_context = {
+      'application-id': app_id,
+      'plugins': [],
+      'dependencies': [],
+    }
+
+    if app_name != 'baseline':
+      mustache_context['plugins'].append('com.google.gms.google-services')
+
+    if 'plugins' in self.test_app_config:
+      mustache_context['plugins'].extend(self.test_app_config['plugins'])
+
+    if 'dependencies' in self.test_app_config:
+      for dep in self.test_app_config['dependencies']:
+        if '@' in dep:
+          key, version = dep.split('@', 1)
+          dependency = {'key': key, 'version': version}
+        else:
+          dependency = {'key': dep, 'version': self.artifact_versions[dep]}
+        mustache_context['dependencies'].append(dependency)
+
+    return mustache_context
 
   async def _exec_subprocess(self, executable, args):
     command = " ".join([executable, *args])

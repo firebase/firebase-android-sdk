@@ -77,7 +77,6 @@ dependencies {
   implementation "com.google.firebase:firebase-inappmessaging"
   // TODO(yifany): Restore after messaging in github is up to date
   // implementation "com.google.firebase:firebase-messaging"
-  implementation "com.google.firebase:firebase-ml-vision"
   implementation "com.google.firebase:firebase-perf"
   implementation "com.google.firebase:firebase-storage"
 
@@ -86,17 +85,11 @@ dependencies {
   implementation "androidx.test:runner:1.2.0"
   implementation "com.google.truth:truth:0.44"
   implementation "junit:junit:4.12"
+  implementation "androidx.test:core:1.3.0"
 
   // Common utilities (instrumentation side)
-  androidTestImplementation "androidx.test:core:1.2.0"
   androidTestImplementation "androidx.test:runner:1.2.0"
   androidTestImplementation "junit:junit:4.12"
-
-  // TODO(yifany): Remove the temporary fix after b/164175567
-  // https://firebase.google.com/support/release-notes/android#mlkit-self-serve-fixes
-  implementation "com.google.android.gms:play-services-vision:20.1.1"
-  implementation "com.google.android.gms:play-services-vision-common:19.1.1"
-  implementation "com.google.android.gms:play-services-vision-image-label:18.0.5"
 }
 
 clean.doLast {
