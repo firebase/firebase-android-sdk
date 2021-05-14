@@ -21,8 +21,8 @@ import com.google.firebase.FirebaseApp;
 public interface AppCheckProviderFactory {
 
   /**
-   * Gets the {@link AppCheckProvider} associated with the given FirebaseApp instance, or creates
-   * one if none already exists.
+   * Gets the {@link AppCheckProvider} associated with the given {@link FirebaseApp} instance, or
+   * creates one if none already exists.
    */
   @NonNull
   AppCheckProvider create(@NonNull FirebaseApp firebaseApp);
