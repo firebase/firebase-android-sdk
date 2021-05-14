@@ -666,11 +666,14 @@ public abstract class CrashlyticsReport {
             return new AutoValue_CrashlyticsReport_Session_Event_Application_Execution.Builder();
           }
 
-          @NonNull
+          @Nullable
           public abstract ImmutableList<Thread> getThreads();
 
-          @NonNull
+          @Nullable
           public abstract Exception getException();
+
+          @Nullable
+          public abstract ApplicationExitInfo getAppExitInfo();
 
           @NonNull
           public abstract Signal getSignal();
@@ -904,6 +907,9 @@ public abstract class CrashlyticsReport {
 
             @NonNull
             public abstract Builder setException(@NonNull Exception value);
+
+            @NonNull
+            public abstract Builder setAppExitInfo(@NonNull ApplicationExitInfo value);
 
             @NonNull
             public abstract Builder setSignal(@NonNull Signal value);
