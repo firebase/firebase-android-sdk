@@ -26,61 +26,61 @@ import org.robolectric.RobolectricTestRunner;
 public class RateTest {
 
   @Test
-  public void ratePerMinute() throws InterruptedException {
+  public void ratePerMinute() throws Exception {
     Rate twoTokensPerMinute = new Rate(2, 1, TimeUnit.MINUTES);
     Rate twentyTokensPerTenMinutes = new Rate(5, 10, TimeUnit.MINUTES);
     Rate twoTokensPerTenMinutes = new Rate(2, 10, TimeUnit.MINUTES);
 
-    assertThat(twoTokensPerMinute.getTokenPerSeconds()).isEqualTo(2.0 / 60);
-    assertThat(twentyTokensPerTenMinutes.getTokenPerSeconds()).isEqualTo((5.0 / 10) / 60);
-    assertThat(twoTokensPerTenMinutes.getTokenPerSeconds()).isEqualTo((2.0 / 10) / 60);
+    assertThat(twoTokensPerMinute.getTokensPerSeconds()).isEqualTo(2.0 / 60);
+    assertThat(twentyTokensPerTenMinutes.getTokensPerSeconds()).isEqualTo((5.0 / 10) / 60);
+    assertThat(twoTokensPerTenMinutes.getTokensPerSeconds()).isEqualTo((2.0 / 10) / 60);
   }
 
   @Test
-  public void ratePerSecond() throws InterruptedException {
+  public void ratePerSecond() throws Exception {
     Rate twoTokensPerSecond = new Rate(2, 1, TimeUnit.SECONDS);
     Rate twoTokensPerThirtySeconds = new Rate(2, 30, TimeUnit.SECONDS);
     Rate seventyTokensPerThirtySeconds = new Rate(70, 30, TimeUnit.SECONDS);
 
-    assertThat(twoTokensPerSecond.getTokenPerSeconds()).isEqualTo(2.0);
-    assertThat(twoTokensPerThirtySeconds.getTokenPerSeconds()).isEqualTo(2.0 / 30);
-    assertThat(seventyTokensPerThirtySeconds.getTokenPerSeconds()).isEqualTo(70.0 / 30);
+    assertThat(twoTokensPerSecond.getTokensPerSeconds()).isEqualTo(2.0);
+    assertThat(twoTokensPerThirtySeconds.getTokensPerSeconds()).isEqualTo(2.0 / 30);
+    assertThat(seventyTokensPerThirtySeconds.getTokensPerSeconds()).isEqualTo(70.0 / 30);
   }
 
   @Test
-  public void ratePerMillisecond() throws InterruptedException {
+  public void ratePerMillisecond() throws Exception {
     Rate twoTokensPerMillisecond = new Rate(2, 1, TimeUnit.MILLISECONDS);
     Rate sevenTokensPerTenMillisecond = new Rate(7, 10, TimeUnit.MILLISECONDS);
     Rate thirtyOneTokensPerTenMillisecond = new Rate(31, 10, TimeUnit.MILLISECONDS);
 
-    assertThat(twoTokensPerMillisecond.getTokenPerSeconds()).isEqualTo(2.0 * 1000);
-    assertThat(sevenTokensPerTenMillisecond.getTokenPerSeconds()).isEqualTo((7.0 / 10) * 1000);
-    assertThat(thirtyOneTokensPerTenMillisecond.getTokenPerSeconds()).isEqualTo((31.0 / 10) * 1000);
+    assertThat(twoTokensPerMillisecond.getTokensPerSeconds()).isEqualTo(2.0 * 1000);
+    assertThat(sevenTokensPerTenMillisecond.getTokensPerSeconds()).isEqualTo((7.0 / 10) * 1000);
+    assertThat(thirtyOneTokensPerTenMillisecond.getTokensPerSeconds()).isEqualTo((31.0 / 10) * 1000);
   }
 
   @Test
-  public void ratePerMicrosecond() throws InterruptedException {
+  public void ratePerMicrosecond() throws Exception {
     Rate twoTokensPerMicrosecond = new Rate(2, 1, TimeUnit.MICROSECONDS);
     Rate sevenTokensPerTenMicroseconds = new Rate(7, 10, TimeUnit.MICROSECONDS);
     Rate thirtyOneTokensPerTenMicroseconds = new Rate(31, 10, TimeUnit.MICROSECONDS);
 
-    assertThat(twoTokensPerMicrosecond.getTokenPerSeconds()).isEqualTo(2.0 * 1000 * 1000);
-    assertThat(sevenTokensPerTenMicroseconds.getTokenPerSeconds())
+    assertThat(twoTokensPerMicrosecond.getTokensPerSeconds()).isEqualTo(2.0 * 1000 * 1000);
+    assertThat(sevenTokensPerTenMicroseconds.getTokensPerSeconds())
         .isEqualTo((7.0 / 10) * 1000 * 1000);
-    assertThat(thirtyOneTokensPerTenMicroseconds.getTokenPerSeconds())
+    assertThat(thirtyOneTokensPerTenMicroseconds.getTokensPerSeconds())
         .isEqualTo((31.0 / 10) * 1000 * 1000);
   }
 
   @Test
-  public void ratePerNanosecond() throws InterruptedException {
+  public void ratePerNanosecond() throws Exception {
     Rate twoTokensPerNanosecond = new Rate(2, 1, TimeUnit.NANOSECONDS);
     Rate sevenTokensPerTenNanoseconds = new Rate(7, 10, TimeUnit.NANOSECONDS);
     Rate thirtyOneTokensPerTenNanoseconds = new Rate(31, 10, TimeUnit.NANOSECONDS);
 
-    assertThat(twoTokensPerNanosecond.getTokenPerSeconds()).isEqualTo(2.0 * 1000 * 1000 * 1000);
-    assertThat(sevenTokensPerTenNanoseconds.getTokenPerSeconds())
+    assertThat(twoTokensPerNanosecond.getTokensPerSeconds()).isEqualTo(2.0 * 1000 * 1000 * 1000);
+    assertThat(sevenTokensPerTenNanoseconds.getTokensPerSeconds())
         .isEqualTo((7.0 / 10) * 1000 * 1000 * 1000);
-    assertThat(thirtyOneTokensPerTenNanoseconds.getTokenPerSeconds())
+    assertThat(thirtyOneTokensPerTenNanoseconds.getTokensPerSeconds())
         .isEqualTo((31.0 / 10) * 1000 * 1000 * 1000);
   }
 }

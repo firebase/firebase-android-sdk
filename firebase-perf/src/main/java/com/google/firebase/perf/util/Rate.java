@@ -14,14 +14,16 @@
 
 package com.google.firebase.perf.util;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.util.concurrent.TimeUnit;
 
 /** A Rate object representing the number of tokens per total specified time unit. */
 public class Rate {
 
-  private static final long NANO_IN_SECOND = 1000 * 1000 * 1000;
-  private static final long MICRO_IN_SECOND = 1000 * 1000;
-  private static final long MILLI_IN_SECOND = 1000;
+  private static final long NANO_IN_SECOND = SECONDS.toNanos(1);
+  private static final long MICRO_IN_SECOND = SECONDS.toMicros(1);
+  private static final long MILLI_IN_SECOND = SECONDS.toMillis(1);
 
   private long numTokensPerTotalTimeUnit;
   private long numTimeUnits;
@@ -49,7 +51,7 @@ public class Rate {
    *
    * @return rate in tokens per second
    */
-  public double getTokenPerSeconds() {
+  public double getTokensPerSeconds() {
     switch (timeUnit) {
       case NANOSECONDS:
         return ((double) numTokensPerTotalTimeUnit / numTimeUnits) * NANO_IN_SECOND;

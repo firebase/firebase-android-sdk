@@ -264,14 +264,14 @@ final class RateLimiter {
               0,
               (long)
                   (lastTimeTokenReplenished.getDurationMicros(now)
-                      * rate.getTokenPerSeconds()
+                      * rate.getTokensPerSeconds()
                       / MICROS_IN_A_SECOND));
       tokenCount = Math.min(tokenCount + newTokens, capacity);
       if (newTokens > 0) {
         lastTimeTokenReplenished =
             new Timer(
                 lastTimeTokenReplenished.getMicros()
-                    + (long) (newTokens * MICROS_IN_A_SECOND / rate.getTokenPerSeconds()));
+                    + (long) (newTokens * MICROS_IN_A_SECOND / rate.getTokensPerSeconds()));
       }
       if (tokenCount > 0) {
         tokenCount--;

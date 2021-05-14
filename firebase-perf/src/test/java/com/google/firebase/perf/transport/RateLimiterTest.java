@@ -515,10 +515,10 @@ public class RateLimiterTest extends FirebasePerformanceTestBase {
             NETWORK,
             /* isLogcatEnabled= */ false);
 
-    assertThat(limiter.getRate().getTokenPerSeconds()).isEqualTo(2.0);
-    assertThat(limiter.getForegroundRate().getTokenPerSeconds()).isEqualTo(700.0d / 60L);
+    assertThat(limiter.getRate().getTokensPerSeconds()).isEqualTo(2.0);
+    assertThat(limiter.getForegroundRate().getTokensPerSeconds()).isEqualTo(700.0d / 60L);
     assertThat(limiter.getForegroundCapacity()).isEqualTo(700L);
-    assertThat(limiter.getBackgroundRate().getTokenPerSeconds()).isEqualTo(60.0d / 60L);
+    assertThat(limiter.getBackgroundRate().getTokensPerSeconds()).isEqualTo(60.0d / 60L);
     assertThat(limiter.getBackgroundCapacity()).isEqualTo(60L);
   }
 
@@ -535,11 +535,11 @@ public class RateLimiterTest extends FirebasePerformanceTestBase {
             NETWORK,
             /* isLogcatEnabled= */ false);
 
-    assertThat(limiter.getRate().getTokenPerSeconds()).isEqualTo(2.0);
+    assertThat(limiter.getRate().getTokensPerSeconds()).isEqualTo(2.0);
 
-    assertThat(limiter.getForegroundRate().getTokenPerSeconds()).isEqualTo(700.0d / 600);
+    assertThat(limiter.getForegroundRate().getTokensPerSeconds()).isEqualTo(700.0d / 600);
     assertThat(limiter.getForegroundCapacity()).isEqualTo(700L);
-    assertThat(limiter.getBackgroundRate().getTokenPerSeconds()).isEqualTo(70.0d / 600);
+    assertThat(limiter.getBackgroundRate().getTokensPerSeconds()).isEqualTo(70.0d / 600);
     assertThat(limiter.getBackgroundCapacity()).isEqualTo(70L);
   }
 
@@ -560,10 +560,10 @@ public class RateLimiterTest extends FirebasePerformanceTestBase {
             TRACE,
             /* isLogcatEnabled= */ false);
 
-    assertThat(limiter.getRate().getTokenPerSeconds()).isEqualTo(2.0);
-    assertThat(limiter.getForegroundRate().getTokenPerSeconds()).isEqualTo(600.0d / 60L);
+    assertThat(limiter.getRate().getTokensPerSeconds()).isEqualTo(2.0);
+    assertThat(limiter.getForegroundRate().getTokensPerSeconds()).isEqualTo(600.0d / 60L);
     assertThat(limiter.getForegroundCapacity()).isEqualTo(600L);
-    assertThat(limiter.getBackgroundRate().getTokenPerSeconds()).isEqualTo(60.0d / 60L);
+    assertThat(limiter.getBackgroundRate().getTokensPerSeconds()).isEqualTo(60.0d / 60L);
     assertThat(limiter.getBackgroundCapacity()).isEqualTo(60L);
   }
 
@@ -580,11 +580,11 @@ public class RateLimiterTest extends FirebasePerformanceTestBase {
             TRACE,
             /* isLogcatEnabled= */ false);
 
-    assertThat(limiter.getRate().getTokenPerSeconds()).isEqualTo(2.0);
+    assertThat(limiter.getRate().getTokensPerSeconds()).isEqualTo(2.0);
 
-    assertThat(limiter.getForegroundRate().getTokenPerSeconds()).isEqualTo(300.0d / 600);
+    assertThat(limiter.getForegroundRate().getTokensPerSeconds()).isEqualTo(300.0d / 600);
     assertThat(limiter.getForegroundCapacity()).isEqualTo(300L);
-    assertThat(limiter.getBackgroundRate().getTokenPerSeconds()).isEqualTo(30.0d / 600);
+    assertThat(limiter.getBackgroundRate().getTokensPerSeconds()).isEqualTo(30.0d / 600);
     assertThat(limiter.getBackgroundCapacity()).isEqualTo(30L);
   }
 
