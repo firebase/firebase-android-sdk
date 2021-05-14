@@ -59,8 +59,8 @@ public class CrashlyticsReportJsonTransformTest {
   }
 
   @Test
-  public void testEventToJsonAndBack_equals() throws IOException {
-    final CrashlyticsReport.Session.Event testEvent = makeTestEvent();
+  public void testAnrEventToJsonAndBack_equals() throws IOException {
+    final CrashlyticsReport.Session.Event testEvent = makeAnrEvent();
     final String testEventJson = transform.eventToJson(testEvent);
     final CrashlyticsReport.Session.Event reifiedEvent = transform.eventFromJson(testEventJson);
     assertNotSame(reifiedEvent, testEvent);
@@ -68,8 +68,8 @@ public class CrashlyticsReportJsonTransformTest {
   }
 
   @Test
-  public void testAnrEventToJsonAndBack_equals() throws IOException {
-    final CrashlyticsReport.Session.Event testEvent = makeAnrEvent();
+  public void testEventToJsonAndBack_equals() throws IOException {
+    final CrashlyticsReport.Session.Event testEvent = makeTestEvent();
     final String testEventJson = transform.eventToJson(testEvent);
     final CrashlyticsReport.Session.Event reifiedEvent = transform.eventFromJson(testEventJson);
     assertNotSame(reifiedEvent, testEvent);
