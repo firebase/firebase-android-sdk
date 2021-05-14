@@ -166,21 +166,6 @@ public class CrashlyticsReportPersistence {
     trimEvents(sessionDirectory, maxEventsToKeep);
   }
 
-  /**
-   * Persist an ANR event and the relevant ApplicationExitInfo to the given session.
-   *
-   * @param event
-   * @param sessionId
-   * @param applicationExitInfo
-   */
-  public void persistAppExitInfoEvent(
-      @NonNull CrashlyticsReport.Session.Event event,
-      @NonNull String sessionId,
-      @NonNull CrashlyticsReport.ApplicationExitInfo applicationExitInfo) {
-    persistEvent(event, sessionId, true);
-    persistApplicationExitInfo(applicationExitInfo, sessionId);
-  }
-
   public void persistUserIdForSession(@NonNull String userId, @NonNull String sessionId) {
     final File sessionDirectory = getSessionDirectoryById(sessionId);
     try {

@@ -84,18 +84,8 @@ public class SessionReportingCoordinatorRobolectricTest {
     reportingCoordinator.onBeginSession(sessionId, sessionStartTimestamp);
     reportingCoordinator.persistAppExitInfoEvent(sessionId, testApplicationExitInfo);
 
-    verify(dataCapture)
-        .captureEventData(
-            any(Throwable.class),
-            any(Thread.class),
-            eq("anr"),
-            anyLong(),
-            anyInt(),
-            anyInt(),
-            anyBoolean());
-    verify(reportPersistence)
-        .persistAppExitInfoEvent(
-            any(), eq(sessionId), eq(convertApplicationExitInfo(testApplicationExitInfo)));
+    verify(dataCapture).captureAnrEventData(convertApplicationExitInfo(testApplicationExitInfo));
+    verify(reportPersistence).persistEvent(any(), eq(sessionId), eq(true));
   }
 
   @Test
@@ -112,17 +102,8 @@ public class SessionReportingCoordinatorRobolectricTest {
     reportingCoordinator.persistAppExitInfoEvent(sessionId, testApplicationExitInfo);
 
     verify(dataCapture, never())
-        .captureEventData(
-            any(Throwable.class),
-            any(Thread.class),
-            eq("anr"),
-            anyLong(),
-            anyInt(),
-            anyInt(),
-            anyBoolean());
-    verify(reportPersistence, never())
-        .persistAppExitInfoEvent(
-            any(), eq(sessionId), eq(convertApplicationExitInfo(testApplicationExitInfo)));
+        .captureAnrEventData(convertApplicationExitInfo(testApplicationExitInfo));
+    verify(reportPersistence, never()).persistEvent(any(), eq(sessionId), eq(true));
   }
 
   @Test
@@ -140,17 +121,8 @@ public class SessionReportingCoordinatorRobolectricTest {
     reportingCoordinator.persistAppExitInfoEvent(sessionId, testApplicationExitInfo);
 
     verify(dataCapture, never())
-        .captureEventData(
-            any(Throwable.class),
-            any(Thread.class),
-            eq("anr"),
-            anyLong(),
-            anyInt(),
-            anyInt(),
-            anyBoolean());
-    verify(reportPersistence, never())
-        .persistAppExitInfoEvent(
-            any(), eq(sessionId), eq(convertApplicationExitInfo(testApplicationExitInfo)));
+        .captureAnrEventData(convertApplicationExitInfo(testApplicationExitInfo));
+    verify(reportPersistence, never()).persistEvent(any(), eq(sessionId), eq(true));
   }
 
   @Test

@@ -62,7 +62,6 @@ public class CrashlyticsReportTest {
             .getApp()
             .getExecution()
             .getAppExitInfo());
-    assertNull(withAnrEventsReport.getAppExitInfo());
   }
 
   @Test

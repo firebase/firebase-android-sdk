@@ -147,21 +147,10 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
       return;
     }
 
-    // TODO: Refactor Event to only contain relevant information rather than unnecessary data like
-    // thread, exception etc.
     final CrashlyticsReport.Session.Event capturedEvent =
-        dataCapture.captureEventData(
-            new Exception("ANR"),
-            Thread.currentThread(),
-            EVENT_TYPE_ANR,
-            applicationExitInfo.getTimestamp(),
-            EVENT_THREAD_IMPORTANCE,
-            MAX_CHAINED_EXCEPTION_DEPTH,
-            false);
-    CrashlyticsReport.ApplicationExitInfo crashlyticsAppExitInfo =
-        convertApplicationExitInfo(applicationExitInfo);
+        dataCapture.captureAnrEventData(convertApplicationExitInfo(applicationExitInfo));
     Logger.getLogger().d("Persisting anr for session " + sessionId);
-    reportPersistence.persistAppExitInfoEvent(capturedEvent, sessionId, crashlyticsAppExitInfo);
+    reportPersistence.persistEvent(capturedEvent, sessionId, true);
   }
 
   public void finalizeSessionWithNativeEvent(
