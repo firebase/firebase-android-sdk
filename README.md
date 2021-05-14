@@ -61,6 +61,9 @@ https://firebase.google.com.
     submodules by running `git submodule update --init --recursive`.
 * Import the firebase-android-sdk gradle project into Android Studio using the
   **Import project(Gradle, Eclipse ADT, etc.)** option.
+* `firebase-crashlytics-ndk` must be built with NDK 21. See
+  [firebase-crashlytics-ndk](firebase-crashlytics-ndk/README.md) for more 
+  details.
 
 ## Testing
 
