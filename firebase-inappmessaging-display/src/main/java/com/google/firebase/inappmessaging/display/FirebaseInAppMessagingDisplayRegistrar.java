@@ -17,7 +17,6 @@ package com.google.firebase.inappmessaging.display;
 import android.app.Application;
 import androidx.annotation.Keep;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentContainer;
 import com.google.firebase.components.ComponentRegistrar;
@@ -46,7 +45,6 @@ public class FirebaseInAppMessagingDisplayRegistrar implements ComponentRegistra
     return Arrays.asList(
         Component.builder(FirebaseInAppMessagingDisplay.class)
             .add(Dependency.required(FirebaseApp.class))
-            .add(Dependency.required(AnalyticsConnector.class))
             .add(Dependency.required(FirebaseInAppMessaging.class))
             .factory(this::buildFirebaseInAppMessagingUI)
             .eagerInDefaultApp()
