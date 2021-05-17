@@ -33,9 +33,46 @@ extern int open(const char* filename);
 namespace google { namespace crashlytics { namespace handler {
 namespace detail {
 
+bool self_path(std::string& self, std::string& path)
+{
+    Dl_info info;
+    if (dladdr(reinterpret_cast<void*>(&self_path), &info) == 0 ||
+        dlsym(dlopen(info.dli_fname, RTLD_NOLOAD | RTLD_LAZY),
+                "CrashpadHandlerMain") == nullptr) {
+
+        DEBUG_OUT("Unable to find CrashpadHandlerMain; %s", info.dli_fname);
+        return false;
+    }
+
+    DEBUG_OUT("Path for libcrashlytics.so is %s", info.dli_fname);
+
+    std::string local_handler_library { info.dli_fname };
+
+    size_t libdir_end = local_handler_library.rfind('/');
+    if (libdir_end == std::string::npos) {
+        DEBUG_OUT("Unable to find '/' in %s", local_handler_library.c_str());
+        return false;
+    }
+
+    self = local_handler_library;
+    path = std::string(local_handler_library, 0, libdir_end + 1);
+    return true;
+}
+
 void* load_crashlytics_common()
 {
-    void* common = dlopen("libcrashlytics-common.so", RTLD_LAZY | RTLD_LOCAL);
+    std::string self;
+    std::string path;
+
+    if (!self_path(self, path)) {
+        LOGE("Could not fild self when loading libcrashlytics-common.so");
+        return nullptr;
+    }
+
+    std::string libcrashlytics_common_path =
+        path + "libcrashlytics-common.so";
+
+    void* common = dlopen(libcrashlytics_common_path.c_str(), RTLD_LAZY | RTLD_LOCAL);
     if (common == nullptr) {
         LOGE("Could not load libcrashlytics-common.so");
     }
@@ -79,36 +116,19 @@ bool is_at_least_q()
 // adjacent to it.
 bool get_handler_trampoline(std::string& handler_trampoline, std::string& handler_library)
 {
+    std::string self;
+    std::string path;
+
     // The linker doesn't support loading executables passed on its command
     // line until Q.
-    if (!is_at_least_q()) {
+    if (!is_at_least_q() || !detail::self_path(self, path)) {
         return false;
     }
 
-    Dl_info info;
-    if (dladdr(reinterpret_cast<void*>(&get_handler_trampoline), &info) == 0 ||
-        dlsym(dlopen(info.dli_fname, RTLD_NOLOAD | RTLD_LAZY),
-                "CrashpadHandlerMain") == nullptr) {
-
-        DEBUG_OUT("Unable to find CrashpadHandlerMain; %s", info.dli_fname);
-        return false;
-    }
-
-    DEBUG_OUT("Path for libcrashlytics.so is %s", info.dli_fname);
-
-    std::string local_handler_library { info.dli_fname };
-
-    size_t libdir_end = local_handler_library.rfind('/');
-    if (libdir_end == std::string::npos) {
-        DEBUG_OUT("Unable to find '/' in %s", local_handler_library.c_str());
-        return false;
-    }
-
-    std::string local_handler_trampoline(local_handler_library, 0, libdir_end + 1);
-    local_handler_trampoline += "libcrashlytics-trampoline.so";
+    std::string local_handler_trampoline = path + "libcrashlytics-trampoline.so";
 
     handler_trampoline.swap(local_handler_trampoline);
-    handler_library.swap(local_handler_library);
+    handler_library.swap(self);
     return true;
 }
 
