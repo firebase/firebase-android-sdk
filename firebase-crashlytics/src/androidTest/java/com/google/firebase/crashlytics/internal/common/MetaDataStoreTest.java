@@ -222,6 +222,32 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
     assertEquals(0, readKeys.size());
   }
 
+  public void testWriteKeys_readSeparateFromUser() {
+    final Map<String, String> keys =
+            new HashMap<String, String>() {
+              {
+                put(KEY_1, VALUE_1);
+              }
+            };
+
+    final Map<String, String> internalKeys =
+            new HashMap<String, String>() {
+              {
+                put(KEY_2, VALUE_2);
+                put(KEY_3, VALUE_3);
+              }
+            };
+
+    storeUnderTest.writeKeyData(SESSION_ID_1, keys);
+    storeUnderTest.writeKeyData(SESSION_ID_1, internalKeys, /*isInternal=*/ true);
+
+    final Map<String, String> readKeys = storeUnderTest.readKeyData(SESSION_ID_1);
+    final Map<String, String> readInternalKeys = storeUnderTest.readKeyData(SESSION_ID_1, true);
+
+    assertEqualMaps(keys, readKeys);
+    assertEqualMaps(internalKeys, readInternalKeys);
+  }
+
   public void testReadKeys_noStoredData() {
     final Map<String, String> readKeys = storeUnderTest.readKeyData(SESSION_ID_1);
     assertEquals(0, readKeys.size());
