@@ -147,6 +147,7 @@ public class CrashlyticsCore {
               appData,
               logFileManager,
               userMetadata,
+              internalKeys,
               stackTraceTrimmingStrategy,
               settingsProvider);
 

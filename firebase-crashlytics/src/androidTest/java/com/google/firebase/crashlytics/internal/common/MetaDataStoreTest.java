@@ -224,19 +224,19 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
 
   public void testWriteKeys_readSeparateFromUser() {
     final Map<String, String> keys =
-            new HashMap<String, String>() {
-              {
-                put(KEY_1, VALUE_1);
-              }
-            };
+        new HashMap<String, String>() {
+          {
+            put(KEY_1, VALUE_1);
+          }
+        };
 
     final Map<String, String> internalKeys =
-            new HashMap<String, String>() {
-              {
-                put(KEY_2, VALUE_2);
-                put(KEY_3, VALUE_3);
-              }
-            };
+        new HashMap<String, String>() {
+          {
+            put(KEY_2, VALUE_2);
+            put(KEY_3, VALUE_3);
+          }
+        };
 
     storeUnderTest.writeKeyData(SESSION_ID_1, keys);
     storeUnderTest.writeKeyData(SESSION_ID_1, internalKeys, /*isInternal=*/ true);

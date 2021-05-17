@@ -84,12 +84,14 @@ class MetaDataStore {
     }
     return new UserMetadata();
   }
+
   public void writeKeyData(String sessionId, Map<String, String> keyData) {
     writeKeyData(sessionId, keyData, false);
   }
 
   void writeKeyData(String sessionId, Map<String, String> keyData, boolean isInternal) {
-    final File f = isInternal ? getInternalKeysFileForSession(sessionId) : getKeysFileForSession(sessionId);
+    final File f =
+        isInternal ? getInternalKeysFileForSession(sessionId) : getKeysFileForSession(sessionId);
     Writer writer = null;
     try {
       final String keyDataString = keysDataToJson(keyData);
@@ -108,7 +110,8 @@ class MetaDataStore {
   }
 
   Map<String, String> readKeyData(String sessionId, boolean isInternal) {
-    final File f = isInternal ? getInternalKeysFileForSession(sessionId) : getKeysFileForSession(sessionId);
+    final File f =
+        isInternal ? getInternalKeysFileForSession(sessionId) : getKeysFileForSession(sessionId);
     if (!f.exists()) {
       return Collections.emptyMap();
     }
