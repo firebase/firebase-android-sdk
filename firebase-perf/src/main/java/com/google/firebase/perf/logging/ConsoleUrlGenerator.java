@@ -57,6 +57,7 @@ public final class ConsoleUrlGenerator {
         "%s/metrics/trace/SCREEN_TRACE/%s?utm_source=%s&utm_medium=%s",
         rootUrl, name, UTM_SOURCE, UTM_MEDIUM);
   }
+
   /**
    * Get the root URL for the project and package.
    *
