@@ -55,7 +55,6 @@ import java.util.concurrent.Executor;
 public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
 
   private static final String EVENT_TYPE_CRASH = "crash";
-  private static final String EVENT_TYPE_ANR = "anr";
   private static final String EVENT_TYPE_LOGGED = "error";
   private static final int EVENT_THREAD_IMPORTANCE = 4;
   private static final int MAX_CHAINED_EXCEPTION_DEPTH = 8;

@@ -20,6 +20,7 @@ import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
+import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.ContextWrapper;
@@ -99,6 +100,21 @@ public class CrashlyticsReportDataCaptureTest {
 
     assertNull(report.getSession().getApp().getDevelopmentPlatform());
     assertNull(report.getSession().getApp().getDevelopmentPlatformVersion());
+  }
+
+  @Test
+  public void testCaptureAnrEvent() {
+    CrashlyticsReport.ApplicationExitInfo testApplicationExitInfo = makeAppExitInfo();
+    final CrashlyticsReport.Session.Event event =
+        dataCapture.captureAnrEventData(testApplicationExitInfo);
+
+    assertEquals("anr", event.getType());
+    assertEquals(testApplicationExitInfo, event.getApp().getExecution().getAppExitInfo());
+    assertEquals(testApplicationExitInfo.getTimestamp(), event.getTimestamp());
+    assertEquals(
+        testApplicationExitInfo.getImportance()
+            != ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND,
+        event.getApp().getBackground());
   }
 
   @Test
@@ -368,5 +384,15 @@ public class CrashlyticsReportDataCaptureTest {
         return getBaseContext().registerReceiver(receiver, filter);
       }
     };
+  }
+
+  private static CrashlyticsReport.ApplicationExitInfo makeAppExitInfo() {
+    return CrashlyticsReport.ApplicationExitInfo.builder()
+        .setTraceFile("trace")
+        .setTimestamp(1L)
+        .setImportance(ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND)
+        .setReasonCode(1)
+        .setProcessName("test")
+        .build();
   }
 }
