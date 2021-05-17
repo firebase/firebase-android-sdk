@@ -21,10 +21,6 @@ import java.util.concurrent.TimeUnit;
 /** A Rate object representing the number of tokens per total specified time unit. */
 public class Rate {
 
-  private static final long NANO_IN_SECOND = SECONDS.toNanos(1);
-  private static final long MICRO_IN_SECOND = SECONDS.toMicros(1);
-  private static final long MILLI_IN_SECOND = SECONDS.toMillis(1);
-
   private long numTokensPerTotalTimeUnit;
   private long numTimeUnits;
   private TimeUnit timeUnit;
@@ -54,11 +50,11 @@ public class Rate {
   public double getTokensPerSeconds() {
     switch (timeUnit) {
       case NANOSECONDS:
-        return ((double) numTokensPerTotalTimeUnit / numTimeUnits) * NANO_IN_SECOND;
+        return ((double) numTokensPerTotalTimeUnit / numTimeUnits) * SECONDS.toNanos(1);
       case MICROSECONDS:
-        return ((double) numTokensPerTotalTimeUnit / numTimeUnits) * MICRO_IN_SECOND;
+        return ((double) numTokensPerTotalTimeUnit / numTimeUnits) * SECONDS.toMicros(1);
       case MILLISECONDS:
-        return ((double) numTokensPerTotalTimeUnit / numTimeUnits) * MILLI_IN_SECOND;
+        return ((double) numTokensPerTotalTimeUnit / numTimeUnits) * SECONDS.toMillis(1);
       default:
         return (double) numTokensPerTotalTimeUnit / timeUnit.toSeconds(numTimeUnits);
     }
