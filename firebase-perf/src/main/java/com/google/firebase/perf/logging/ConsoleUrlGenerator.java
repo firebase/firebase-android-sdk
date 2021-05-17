@@ -26,9 +26,8 @@ public final class ConsoleUrlGenerator {
    * @param packageName the name of this application's package
    */
   public static String generateDashboardUrl(String projectId, String packageName) {
-    return String.format(
-        "%s/project/%s/performance/app/android:%s/trends?utm_source=%s&utm_medium=%s",
-        URL_BASE_PATH, projectId, packageName, UTM_SOURCE, UTM_MEDIUM);
+    String rootUrl = getRootUrl(projectId, packageName);
+    return String.format("%s/trends?utm_source=%s&utm_medium=%s", rootUrl, UTM_SOURCE, UTM_MEDIUM);
   }
 
   /**
@@ -39,9 +38,10 @@ public final class ConsoleUrlGenerator {
    * @param name the trace name
    */
   public static String generateCustomTraceUrl(String projectId, String packageName, String name) {
+    String rootUrl = getRootUrl(projectId, packageName);
     return String.format(
-        "%s/project/%s/performance/app/android:%s/metrics/trace/DURATION_TRACE/%s?utm_source=%s&utm_medium=%s",
-        URL_BASE_PATH, projectId, packageName, name, UTM_SOURCE, UTM_MEDIUM);
+        "%s/metrics/trace/DURATION_TRACE/%s?utm_source=%s&utm_medium=%s",
+        rootUrl, name, UTM_SOURCE, UTM_MEDIUM);
   }
 
   /**
@@ -52,8 +52,19 @@ public final class ConsoleUrlGenerator {
    * @param name the trace name
    */
   public static String generateScreenTraceUrl(String projectId, String packageName, String name) {
+    String rootUrl = getRootUrl(projectId, packageName);
     return String.format(
-        "%s/project/%s/performance/app/android:%s/metrics/trace/SCREEN_TRACE/%s?utm_source=%s&utm_medium=%s",
-        URL_BASE_PATH, projectId, packageName, name, UTM_SOURCE, UTM_MEDIUM);
+        "%s/metrics/trace/SCREEN_TRACE/%s?utm_source=%s&utm_medium=%s",
+        rootUrl, name, UTM_SOURCE, UTM_MEDIUM);
+  }
+  /**
+   * Get the root URL for the project and package.
+   *
+   * @param projectId the Firebase project ID
+   * @param packageName the name of this application's package
+   */
+  private static String getRootUrl(String projectId, String packageName) {
+    return String.format(
+        "%s/project/%s/performance/app/android:%s", URL_BASE_PATH, projectId, packageName);
   }
 }
