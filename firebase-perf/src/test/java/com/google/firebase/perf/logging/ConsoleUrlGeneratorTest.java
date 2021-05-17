@@ -20,37 +20,30 @@ import org.junit.Test;
 
 /** Unit tests for {@link ConsoleUrlGenerator}. */
 public class ConsoleUrlGeneratorTest {
-  private static final String PROJECT_ID = "test-project";
-  private static final String PACKAGE_NAME = "test-package";
-  private static final String TRACE_NAME = "test-trace";
 
   @Test
   public void testDashboardUrl() {
-    String url = ConsoleUrlGenerator.generateDashboardUrl(PROJECT_ID, PACKAGE_NAME);
+    String url = ConsoleUrlGenerator.generateDashboardUrl("test-project", "test-package");
     assertThat(url)
         .isEqualTo(
-            String.format(
-                "https://console.firebase.google.com/project/%s/performance/app/android:%s/trends?utm_source=perf-android-sdk&utm_medium=android-ide",
-                PROJECT_ID, PACKAGE_NAME));
+            "https://console.firebase.google.com/project/test-project/performance/app/android:test-package/trends?utm_source=perf-android-sdk&utm_medium=android-ide");
   }
 
   @Test
   public void testCustomTraceUrl() {
-    String url = ConsoleUrlGenerator.generateCustomTraceUrl(PROJECT_ID, PACKAGE_NAME, TRACE_NAME);
+    String url =
+        ConsoleUrlGenerator.generateCustomTraceUrl("test-project", "test-package", "test-trace");
     assertThat(url)
         .isEqualTo(
-            String.format(
-                "https://console.firebase.google.com/project/%s/performance/app/android:%s/metrics/trace/DURATION_TRACE/%s?utm_source=perf-android-sdk&utm_medium=android-ide",
-                PROJECT_ID, PACKAGE_NAME, TRACE_NAME));
+            "https://console.firebase.google.com/project/test-project/performance/app/android:test-package/metrics/trace/DURATION_TRACE/test-trace?utm_source=perf-android-sdk&utm_medium=android-ide");
   }
 
   @Test
   public void testScreenTraceUrl() {
-    String url = ConsoleUrlGenerator.generateScreenTraceUrl(PROJECT_ID, PACKAGE_NAME, TRACE_NAME);
+    String url =
+        ConsoleUrlGenerator.generateScreenTraceUrl("test-project", "test-package", "test-trace");
     assertThat(url)
         .isEqualTo(
-            String.format(
-                "https://console.firebase.google.com/project/%s/performance/app/android:%s/metrics/trace/SCREEN_TRACE/%s?utm_source=perf-android-sdk&utm_medium=android-ide",
-                PROJECT_ID, PACKAGE_NAME, TRACE_NAME));
+            "https://console.firebase.google.com/project/test-project/performance/app/android:test-package/metrics/trace/SCREEN_TRACE/test-trace?utm_source=perf-android-sdk&utm_medium=android-ide");
   }
 }
