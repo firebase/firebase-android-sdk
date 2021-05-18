@@ -18,12 +18,16 @@ import json
 import logging
 import os
 import random
+import re
 import shutil
+import statistics
 import sys
+import uuid
 
 import click
 import pystache
 import yaml
+from google.cloud import storage
 
 from fireci import ci_command
 from fireci.dir_utils import chdir
@@ -114,14 +118,18 @@ class MacrobenchmarkTest:
     self.artifact_versions = artifact_versions
     self.logger = MacrobenchmarkLoggerAdapter(logger, sdk_name)
     self.test_app_dir = os.path.join('test-apps', test_app_config['name'])
+    self.test_results_bucket = 'fireescape-benchmark-results'
+    self.test_results_dir = str(uuid.uuid4())
+    self.gcs_client = storage.Client()
 
   async def run(self):
-    """Starts the workflow of src creation, apks assembling, and FTL testing in order."""
-    await self._create_test_src()
-    await self._assemble_apks()
-    await self._upload_apks_to_ftl()
+    """Starts the workflow of src creation, apks assembly, FTL testing and results upload."""
+    await self._create_benchmark_projects()
+    await self._assemble_benchmark_apks()
+    await self._execute_benchmark_tests()
+    await self._upload_benchmark_results()
 
-  async def _create_test_src(self):
+  async def _create_benchmark_projects(self):
     app_name = self.test_app_config['name']
     app_id = self.test_app_config['application-id']
     self.logger.info(f'Creating test app "{app_name}" with application-id "{app_id}"...')
@@ -138,12 +146,12 @@ class MacrobenchmarkTest:
         with open(original_name, 'w') as file:
           file.write(result)
 
-  async def _assemble_apks(self):
+  async def _assemble_benchmark_apks(self):
     executable = './gradlew'
     args = ['assemble', 'assembleAndroidTest', '--project-dir', self.test_app_dir]
     await self._exec_subprocess(executable, args)
 
-  async def _upload_apks_to_ftl(self):
+  async def _execute_benchmark_tests(self):
     app_apk_path = glob.glob(f'{self.test_app_dir}/app/**/*.apk', recursive=True)[0]
     test_apk_path = glob.glob(f'{self.test_app_dir}/benchmark/**/*.apk', recursive=True)[0]
 
@@ -162,7 +170,8 @@ class MacrobenchmarkTest:
     args += ['--test', test_apk_path]
     args += ['--device', 'model=flame,version=30,locale=en,orientation=portrait']
     args += ['--directories-to-pull', '/sdcard/Download']
-    args += ['--results-bucket', 'gs://fireescape-macrobenchmark']
+    args += ['--results-bucket', f'gs://{self.test_results_bucket}']
+    args += ['--results-dir', self.test_results_dir]
     args += ['--environment-variables', ','.join(ftl_environment_variables)]
     args += ['--timeout', '30m']
     args += ['--project', 'fireescape-c4819']
@@ -195,6 +204,32 @@ class MacrobenchmarkTest:
         mustache_context['dependencies'].append(dependency)
 
     return mustache_context
+
+  async def _upload_benchmark_results(self):
+    results = []
+    blobs = self.gcs_client.list_blobs(self.test_results_bucket, prefix=self.test_results_dir)
+    files = [x for x in blobs if re.search(r'artifacts/[^/]*\.json', x.name)]
+    for file in files:
+      device = re.search(r'([^/]*)/artifacts/', file.name).group(1)
+      benchmarks = json.loads(file.download_as_bytes())['benchmarks']
+      for benchmark in benchmarks:
+        method = benchmark['name']
+        clazz = benchmark['className'].split('.')[-1]
+        runs = benchmark['metrics']['startupMs']['runs']
+        results.append({
+          'sdk': self.sdk_name,
+          'device': device,
+          'name': f'{clazz}.{method}',
+          'min': min(runs),
+          'max': max(runs),
+          'mean': statistics.mean(runs),
+          'median': statistics.median(runs),
+          'stdev': statistics.stdev(runs),
+          'unit': 'ms',
+        })
+    self.logger.info(f'Benchmark results: {results}')
+
+    # TODO(yifany): upload to metric service once it is ready
 
   async def _exec_subprocess(self, executable, args):
     command = " ".join([executable, *args])
