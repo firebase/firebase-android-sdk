@@ -371,16 +371,6 @@ public class FirebaseCrashlytics {
     core.setCustomKeys(keysAndValues.keysAndValues);
   }
 
-  /**
-   * Sets an internal key and value that are associated with subsequent fatal and non-fatal reports.
-   *
-   * @param key A unique key
-   * @param value A value to be associated with the given key
-   */
-  public void setInternalKey(@NonNull String key, String value) {
-    core.setInternalKey(key, value);
-  }
-
   // region Unsent report management.
 
   /**

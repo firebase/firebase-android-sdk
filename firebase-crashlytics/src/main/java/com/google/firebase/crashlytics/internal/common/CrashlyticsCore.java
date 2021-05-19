@@ -356,6 +356,9 @@ public class CrashlyticsCore {
    * trimmed ({@link String#trim()}), and keys or values that exceed 1024 characters will be
    * truncated.
    *
+   * <p>IMPORTANT: This method is accessed via reflection and JNI. Do not change the type without
+   * updating the SDKs that depend on it.
+   *
    * @throws NullPointerException if key is null.
    */
   public void setInternalKey(String key, String value) {
