@@ -222,6 +222,7 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
     assertEquals(0, readKeys.size());
   }
 
+  // Ensures the Internal Keys and User Custom Keys are stored separately
   public void testWriteKeys_readSeparateFromUser() {
     final Map<String, String> keys =
         new HashMap<String, String>() {
