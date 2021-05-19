@@ -10,7 +10,7 @@ firebase-config:
 
 firebase-common:
   name: common
-  application-id: com.google.firebase.benchmark.common
+  application-id: com.google.firebase.benchmark.baseline
   dependencies:
     - com.google.firebase:firebase-common
 
