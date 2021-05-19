@@ -8,6 +8,12 @@ firebase-config:
   dependencies:
     - com.google.firebase:firebase-config-ktx
 
+firebase-common:
+  name: common
+  application-id: com.google.firebase.benchmark.common
+  dependencies:
+    - com.google.firebase:firebase-common
+
 firebase-crashlytics:
   name: crash
   application-id: com.google.firebase.benchmark.crash
