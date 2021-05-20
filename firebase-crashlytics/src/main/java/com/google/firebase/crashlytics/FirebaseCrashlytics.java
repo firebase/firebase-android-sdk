@@ -156,6 +156,7 @@ public class FirebaseCrashlytics {
     return new FirebaseCrashlytics(core);
   }
 
+  // This property is accessed by the Unity SDK via JNI.
   private final CrashlyticsCore core;
 
   private FirebaseCrashlytics(@NonNull CrashlyticsCore core) {
