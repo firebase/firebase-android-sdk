@@ -20,17 +20,19 @@ import os
 import random
 import re
 import shutil
-import statistics
 import sys
 import uuid
 
 import click
+import numpy
 import pystache
 import yaml
 from google.cloud import storage
 
 from fireci import ci_command
 from fireci.dir_utils import chdir
+from fireci import prow_utils
+from fireci import uploader
 
 _logger = logging.getLogger('fireci.macrobenchmark')
 
@@ -55,9 +57,7 @@ async def _launch_macrobenchmark_test():
     runners = [MacrobenchmarkTest(k, v, artifact_versions) for k, v in config.items()]
     results = await asyncio.gather(*[x.run() for x in runners], return_exceptions=True)
 
-  if any(map(lambda x: isinstance(x, Exception), results)):
-    _logger.error(f'Exceptions: {[x for x in results if (isinstance(x, Exception))]}')
-    raise click.ClickException('Macrobenchmark test failed with above errors.')
+  await _post_processing(results)
 
   _logger.info('Macrobenchmark test finished.')
 
@@ -104,6 +104,19 @@ async def _copy_google_services():
     shutil.copyfile(src, dst)
 
 
+async def _post_processing(results):
+  # Upload successful measurements to the metric service
+  measurements = [i for x in results if not isinstance(x, Exception) for i in x]
+  metrics_service_url = os.getenv('METRICS_SERVICE_URL')
+  access_token = prow_utils.gcloud_identity_token()
+  uploader.post_report(measurements, metrics_service_url, access_token, metric='macrobenchmark')
+
+  # Raise exceptions for failed measurements
+  if any(map(lambda x: isinstance(x, Exception), results)):
+    _logger.error(f'Exceptions: {[x for x in results if isinstance(x, Exception)]}')
+    raise click.ClickException('Macrobenchmark test failed with above errors.')
+
+
 class MacrobenchmarkTest:
   """Builds the test based on configurations and runs the test on FTL."""
   def __init__(
@@ -127,7 +140,7 @@ class MacrobenchmarkTest:
     await self._create_benchmark_projects()
     await self._assemble_benchmark_apks()
     await self._execute_benchmark_tests()
-    await self._upload_benchmark_results()
+    return await self._aggregate_benchmark_results()
 
   async def _create_benchmark_projects(self):
     app_name = self.test_app_config['name']
@@ -205,7 +218,7 @@ class MacrobenchmarkTest:
 
     return mustache_context
 
-  async def _upload_benchmark_results(self):
+  async def _aggregate_benchmark_results(self):
     results = []
     blobs = self.gcs_client.list_blobs(self.test_results_bucket, prefix=self.test_results_dir)
     files = [x for x in blobs if re.search(r'artifacts/[^/]*\.json', x.name)]
@@ -222,14 +235,13 @@ class MacrobenchmarkTest:
           'name': f'{clazz}.{method}',
           'min': min(runs),
           'max': max(runs),
-          'mean': statistics.mean(runs),
-          'median': statistics.median(runs),
-          'stdev': statistics.stdev(runs),
+          'p50': numpy.percentile(runs, 50),
+          'p90': numpy.percentile(runs, 90),
+          'p99': numpy.percentile(runs, 99),
           'unit': 'ms',
         })
     self.logger.info(f'Benchmark results: {results}')
-
-    # TODO(yifany): upload to metric service once it is ready
+    return results
 
   async def _exec_subprocess(self, executable, args):
     command = " ".join([executable, *args])
