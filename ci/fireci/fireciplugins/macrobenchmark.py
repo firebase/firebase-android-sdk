@@ -106,7 +106,11 @@ async def _copy_google_services():
 
 async def _post_processing(results):
   # Upload successful measurements to the metric service
-  measurements = [i for x in results if not isinstance(x, Exception) for i in x]
+  measurements = []
+  for result in results:
+    if not isinstance(result, Exception):
+      measurements.extend(result)
+
   metrics_service_url = os.getenv('METRICS_SERVICE_URL')
   access_token = prow_utils.gcloud_identity_token()
   uploader.post_report(measurements, metrics_service_url, access_token, metric='macrobenchmark')
