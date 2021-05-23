@@ -23,6 +23,49 @@ Refer [GMaven](https://maven.google.com/web/index.html?q=firebase-perf#com.googl
 
 ## Released
 
+## v20.0.1 (M97)
+
+#### Android library
+
+*   {{feature}} Added Firebase console URL logging to logcat.
+*   {{fixed}} Fixed RateLimiter replenishment logic and unit alligenment.
+
+#### Kotlin extensions
+
+The Kotlin extensions library transitively includes the updated
+`firebase-performance` library. The Kotlin extensions library has no additional
+updates.
+
+## v20.0.0 (M95)
+
+#### Android library
+
+*   {{feature}} Introduce Dagger as a dependency injection framework for some
+    parts of the code.
+*   {{changed}} Improved the code organization of the SDK (package restructure,
+    code conventions, remove unncessary annotations).
+*   {{changed}} Improve the launch time of the SDK.
+
+#### Kotlin extensions
+
+The Kotlin extensions library transitively includes the updated
+`firebase-performance` library. The Kotlin extensions library has no additional
+updates.
+
+## v19.1.1 (M89)
+
+#### Android library
+
+*   {{feature}} The Firebase Performance Monitoring SDK is now open sourced.
+*   {{changed}} Improved performance event dispatch wait time from 2 hours to
+    30 seconds.
+
+#### Kotlin extensions
+
+The Kotlin extensions library transitively includes the updated
+`firebase-performance` library. The Kotlin extensions library has no additional
+updates.
+
 ## v19.1.0 (M87)
 
 #### Android library
