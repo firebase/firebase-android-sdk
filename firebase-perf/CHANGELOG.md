@@ -28,7 +28,7 @@ Refer [GMaven](https://maven.google.com/web/index.html?q=firebase-perf#com.googl
 #### Android library
 
 *   {{feature}} Added Firebase console URL logging to logcat.
-*   {{fixed}} Fixed RateLimiter replenishment logic and unit alligenment.
+*   {{fixed}} Fixed RateLimiter replenishment logic and unit alignment.
 
 #### Kotlin extensions
 
