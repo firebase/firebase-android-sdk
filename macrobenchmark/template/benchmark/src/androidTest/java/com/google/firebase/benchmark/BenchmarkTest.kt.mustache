@@ -25,7 +25,7 @@ import org.junit.runners.Parameterized
 
 
 @RunWith(Parameterized::class)
-class Test(private val startupMode: StartupMode) {
+class BenchmarkTest(private val startupMode: StartupMode) {
     @get:Rule
     val benchmarkRule = MacrobenchmarkRule()
 
