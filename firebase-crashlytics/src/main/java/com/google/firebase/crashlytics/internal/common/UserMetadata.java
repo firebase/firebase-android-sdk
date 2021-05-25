@@ -55,7 +55,9 @@ public class UserMetadata {
           {
             put(key, value);
           }
-        }, attributes, MAX_ATTRIBUTE_SIZE);
+        },
+        attributes,
+        MAX_ATTRIBUTE_SIZE);
   }
 
   public void setCustomKeys(Map<String, String> keysAndValues) {
@@ -68,15 +70,18 @@ public class UserMetadata {
 
   public void setInternalKey(String key, String value) {
     setSyncCustomKeys(
-            new HashMap<String, String>() {
-              {
-                put(key, value);
-              }
-            }, internalKeys, MAX_INTERNAL_KEY_SIZE);
+        new HashMap<String, String>() {
+          {
+            put(key, value);
+          }
+        },
+        internalKeys,
+        MAX_INTERNAL_KEY_SIZE);
   }
 
   /** Gatekeeper function for access to attributes or internalKeys */
-  private synchronized void setSyncCustomKeys(Map<String, String> keysAndValues, Map<String, String> keys_map, int maxAttributeSize) {
+  private synchronized void setSyncCustomKeys(
+      Map<String, String> keysAndValues, Map<String, String> keys_map, int maxAttributeSize) {
     // We want all access to the keys_map hashmap to be locked so that there is no way to create
     // a race condition and add more than MAX_ATTRIBUTES keys.
 
@@ -87,7 +92,8 @@ public class UserMetadata {
     // Split into current and new keys
     for (Map.Entry<String, String> entry : keysAndValues.entrySet()) {
       String key = sanitizeKey(entry.getKey(), maxAttributeSize);
-      String value = (entry.getValue() == null) ? "" : sanitizeAttribute(entry.getValue(), maxAttributeSize);
+      String value =
+          (entry.getValue() == null) ? "" : sanitizeAttribute(entry.getValue(), maxAttributeSize);
       if (keys_map.containsKey(key)) {
         currentKeys.put(key, value);
       } else {
