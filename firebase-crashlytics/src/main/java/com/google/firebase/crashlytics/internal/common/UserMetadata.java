@@ -27,9 +27,11 @@ import java.util.Map;
 public class UserMetadata {
   static final int MAX_ATTRIBUTES = 64;
   static final int MAX_ATTRIBUTE_SIZE = 1024;
+  static final int MAX_INTERNAL_KEY_SIZE = 8192;
 
   private String userId = null;
   private final Map<String, String> attributes = new HashMap<>();
+  private final Map<String, String> internalKeys = new HashMap<>();
 
   public UserMetadata() {}
 
@@ -39,7 +41,7 @@ public class UserMetadata {
   }
 
   public void setUserId(String identifier) {
-    userId = sanitizeAttribute(identifier);
+    userId = sanitizeAttribute(identifier, MAX_ATTRIBUTE_SIZE);
   }
 
   @NonNull
@@ -51,18 +53,31 @@ public class UserMetadata {
     setSyncCustomKeys(
         new HashMap<String, String>() {
           {
-            put(sanitizeKey(key), sanitizeAttribute(value));
+            put(key, value);
           }
-        });
+        }, attributes, MAX_ATTRIBUTE_SIZE);
   }
 
   public void setCustomKeys(Map<String, String> keysAndValues) {
-    setSyncCustomKeys(keysAndValues);
+    setSyncCustomKeys(keysAndValues, attributes, MAX_ATTRIBUTE_SIZE);
   }
 
-  /** Gatekeeper function for access to attributes */
-  private synchronized void setSyncCustomKeys(Map<String, String> keysAndValues) {
-    // We want all access to the attributes hashmap to be locked so that there is no way to create
+  public Map<String, String> getInternalKeys() {
+    return Collections.unmodifiableMap(internalKeys);
+  }
+
+  public void setInternalKey(String key, String value) {
+    setSyncCustomKeys(
+            new HashMap<String, String>() {
+              {
+                put(key, value);
+              }
+            }, internalKeys, MAX_INTERNAL_KEY_SIZE);
+  }
+
+  /** Gatekeeper function for access to attributes or internalKeys */
+  private synchronized void setSyncCustomKeys(Map<String, String> keysAndValues, Map<String, String> keys_map, int maxAttributeSize) {
+    // We want all access to the keys_map hashmap to be locked so that there is no way to create
     // a race condition and add more than MAX_ATTRIBUTES keys.
 
     // Update any existing keys first, then add any additional keys
@@ -71,42 +86,42 @@ public class UserMetadata {
 
     // Split into current and new keys
     for (Map.Entry<String, String> entry : keysAndValues.entrySet()) {
-      String key = sanitizeKey(entry.getKey());
-      String value = (entry.getValue() == null) ? "" : sanitizeAttribute(entry.getValue());
-      if (attributes.containsKey(key)) {
+      String key = sanitizeKey(entry.getKey(), maxAttributeSize);
+      String value = (entry.getValue() == null) ? "" : sanitizeAttribute(entry.getValue(), maxAttributeSize);
+      if (keys_map.containsKey(key)) {
         currentKeys.put(key, value);
       } else {
         newKeys.put(key, value);
       }
     }
 
-    attributes.putAll(currentKeys);
+    keys_map.putAll(currentKeys);
 
     // Add new keys if there is space
-    if (attributes.size() + newKeys.size() > MAX_ATTRIBUTES) {
-      int keySlotsLeft = MAX_ATTRIBUTES - attributes.size();
+    if (keys_map.size() + newKeys.size() > MAX_ATTRIBUTES) {
+      int keySlotsLeft = MAX_ATTRIBUTES - keys_map.size();
       Logger.getLogger()
           .v("Exceeded maximum number of custom attributes (" + MAX_ATTRIBUTES + ").");
       List<String> newKeyList = new ArrayList<>(newKeys.keySet());
       newKeys.keySet().retainAll(newKeyList.subList(0, keySlotsLeft));
     }
-    attributes.putAll(newKeys);
+    keys_map.putAll(newKeys);
   }
 
   /** Checks that the key is not null then sanitizes it. */
-  private static String sanitizeKey(String key) {
+  private static String sanitizeKey(String key, int maxAttributeSize) {
     if (key == null) {
       throw new IllegalArgumentException("Custom attribute key must not be null.");
     }
-    return sanitizeAttribute(key);
+    return sanitizeAttribute(key, maxAttributeSize);
   }
 
   /** Trims the string and truncates it to MAX_ATTRIBUTE_SIZE. */
-  private static String sanitizeAttribute(String input) {
+  private static String sanitizeAttribute(String input, int maxAttributeSize) {
     if (input != null) {
       input = input.trim();
-      if (input.length() > MAX_ATTRIBUTE_SIZE) {
-        input = input.substring(0, MAX_ATTRIBUTE_SIZE);
+      if (input.length() > maxAttributeSize) {
+        input = input.substring(0, maxAttributeSize);
       }
     }
     return input;

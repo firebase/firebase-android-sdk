@@ -131,7 +131,6 @@ public class CrashlyticsCore {
       initializationMarker = new CrashlyticsFileMarker(INITIALIZATION_MARKER_FILE_NAME, fileStore);
 
       final UserMetadata userMetadata = new UserMetadata();
-      final InternalKeys internalKeys = new InternalKeys();
       final LogFileDirectoryProvider logFileDirectoryProvider =
           new LogFileDirectoryProvider(fileStore);
       final LogFileManager logFileManager = new LogFileManager(context, logFileDirectoryProvider);
@@ -147,7 +146,6 @@ public class CrashlyticsCore {
               appData,
               logFileManager,
               userMetadata,
-              internalKeys,
               stackTraceTrimmingStrategy,
               settingsProvider);
 
@@ -161,7 +159,6 @@ public class CrashlyticsCore {
               crashMarker,
               appData,
               userMetadata,
-              internalKeys,
               logFileManager,
               logFileDirectoryProvider,
               sessionReportingCoordinator,

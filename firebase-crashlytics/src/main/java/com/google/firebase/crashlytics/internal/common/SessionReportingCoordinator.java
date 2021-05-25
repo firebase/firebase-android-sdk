@@ -55,7 +55,6 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
       AppData appData,
       LogFileManager logFileManager,
       UserMetadata userMetadata,
-      InternalKeys internalKeys,
       StackTraceTrimmingStrategy stackTraceTrimmingStrategy,
       SettingsDataProvider settingsProvider) {
     final File rootFilesDirectory = new File(fileStore.getFilesDirPath());
@@ -66,7 +65,7 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
     final DataTransportCrashlyticsReportSender reportSender =
         DataTransportCrashlyticsReportSender.create(context);
     return new SessionReportingCoordinator(
-        dataCapture, reportPersistence, reportSender, logFileManager, userMetadata, internalKeys);
+        dataCapture, reportPersistence, reportSender, logFileManager, userMetadata);
   }
 
   private final CrashlyticsReportDataCapture dataCapture;
@@ -74,21 +73,18 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
   private final DataTransportCrashlyticsReportSender reportsSender;
   private final LogFileManager logFileManager;
   private final UserMetadata reportMetadata;
-  private final InternalKeys reportInternalKeys;
 
   SessionReportingCoordinator(
       CrashlyticsReportDataCapture dataCapture,
       CrashlyticsReportPersistence reportPersistence,
       DataTransportCrashlyticsReportSender reportsSender,
       LogFileManager logFileManager,
-      UserMetadata reportMetadata,
-      InternalKeys reportInternalKeys) {
+      UserMetadata reportMetadata) {
     this.dataCapture = dataCapture;
     this.reportPersistence = reportPersistence;
     this.reportsSender = reportsSender;
     this.logFileManager = logFileManager;
     this.reportMetadata = reportMetadata;
-    this.reportInternalKeys = reportInternalKeys;
   }
 
   @Override
@@ -225,7 +221,7 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
     final List<CustomAttribute> sortedCustomAttributes =
         getSortedCustomAttributes(reportMetadata.getCustomKeys());
     final List<CustomAttribute> sortedInternalKeys =
-        getSortedCustomAttributes(reportInternalKeys.getInternalKeys());
+        getSortedCustomAttributes(reportMetadata.getInternalKeys());
 
     if (!sortedCustomAttributes.isEmpty()) {
       eventBuilder.setApp(
