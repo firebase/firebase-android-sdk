@@ -299,7 +299,12 @@ public class FirebaseFunctions {
     MediaType contentType = MediaType.parse("application/json");
     RequestBody requestBody = RequestBody.create(contentType, bodyJSON.toString());
 
-    Request.Builder request = new Request.Builder().url(url).post(requestBody);
+    Request.Builder request = new Request.Builder().url(url);
+    if (data != null) {
+      request = request.post(requestBody);
+    } else {
+      request = request.get();
+    }
     if (context.getAuthToken() != null) {
       request = request.header("Authorization", "Bearer " + context.getAuthToken());
     }
