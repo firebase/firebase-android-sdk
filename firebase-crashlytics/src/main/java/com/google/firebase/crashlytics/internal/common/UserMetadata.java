@@ -16,11 +16,6 @@ package com.google.firebase.crashlytics.internal.common;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import com.google.firebase.crashlytics.internal.Logger;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /** Handles attributes set by the user. */
@@ -30,8 +25,8 @@ public class UserMetadata {
   static final int MAX_INTERNAL_KEY_SIZE = 8192;
 
   private String userId = null;
-  private final Map<String, String> attributes = new HashMap<>();
-  private final Map<String, String> internalKeys = new HashMap<>();
+  private final KeysMap customKeys = new KeysMap(MAX_ATTRIBUTES, MAX_ATTRIBUTE_SIZE);
+  private final KeysMap internalKeys = new KeysMap(MAX_ATTRIBUTES, MAX_INTERNAL_KEY_SIZE);
 
   public UserMetadata() {}
 
@@ -41,95 +36,27 @@ public class UserMetadata {
   }
 
   public void setUserId(String identifier) {
-    userId = sanitizeAttribute(identifier, MAX_ATTRIBUTE_SIZE);
+    userId = customKeys.sanitizeAttribute(identifier);
   }
 
   @NonNull
   public Map<String, String> getCustomKeys() {
-    return Collections.unmodifiableMap(attributes);
+    return customKeys.getKeys();
   }
 
   public void setCustomKey(String key, String value) {
-    setSyncCustomKeys(
-        new HashMap<String, String>() {
-          {
-            put(key, value);
-          }
-        },
-        attributes,
-        MAX_ATTRIBUTE_SIZE);
+    customKeys.setKey(key, value);
   }
 
   public void setCustomKeys(Map<String, String> keysAndValues) {
-    setSyncCustomKeys(keysAndValues, attributes, MAX_ATTRIBUTE_SIZE);
+    customKeys.setKeys(keysAndValues);
   }
 
   public Map<String, String> getInternalKeys() {
-    return Collections.unmodifiableMap(internalKeys);
+    return internalKeys.getKeys();
   }
 
   public void setInternalKey(String key, String value) {
-    setSyncCustomKeys(
-        new HashMap<String, String>() {
-          {
-            put(key, value);
-          }
-        },
-        internalKeys,
-        MAX_INTERNAL_KEY_SIZE);
-  }
-
-  /** Gatekeeper function for access to attributes or internalKeys */
-  private synchronized void setSyncCustomKeys(
-      Map<String, String> keysAndValues, Map<String, String> keys_map, int maxAttributeSize) {
-    // We want all access to the keys_map hashmap to be locked so that there is no way to create
-    // a race condition and add more than MAX_ATTRIBUTES keys.
-
-    // Update any existing keys first, then add any additional keys
-    Map<String, String> currentKeys = new HashMap<String, String>();
-    Map<String, String> newKeys = new HashMap<String, String>();
-
-    // Split into current and new keys
-    for (Map.Entry<String, String> entry : keysAndValues.entrySet()) {
-      String key = sanitizeKey(entry.getKey(), maxAttributeSize);
-      String value =
-          (entry.getValue() == null) ? "" : sanitizeAttribute(entry.getValue(), maxAttributeSize);
-      if (keys_map.containsKey(key)) {
-        currentKeys.put(key, value);
-      } else {
-        newKeys.put(key, value);
-      }
-    }
-
-    keys_map.putAll(currentKeys);
-
-    // Add new keys if there is space
-    if (keys_map.size() + newKeys.size() > MAX_ATTRIBUTES) {
-      int keySlotsLeft = MAX_ATTRIBUTES - keys_map.size();
-      Logger.getLogger()
-          .v("Exceeded maximum number of custom attributes (" + MAX_ATTRIBUTES + ").");
-      List<String> newKeyList = new ArrayList<>(newKeys.keySet());
-      newKeys.keySet().retainAll(newKeyList.subList(0, keySlotsLeft));
-    }
-    keys_map.putAll(newKeys);
-  }
-
-  /** Checks that the key is not null then sanitizes it. */
-  private static String sanitizeKey(String key, int maxAttributeSize) {
-    if (key == null) {
-      throw new IllegalArgumentException("Custom attribute key must not be null.");
-    }
-    return sanitizeAttribute(key, maxAttributeSize);
-  }
-
-  /** Trims the string and truncates it to MAX_ATTRIBUTE_SIZE. */
-  private static String sanitizeAttribute(String input, int maxAttributeSize) {
-    if (input != null) {
-      input = input.trim();
-      if (input.length() > maxAttributeSize) {
-        input = input.substring(0, maxAttributeSize);
-      }
-    }
-    return input;
+    internalKeys.setKey(key, value);
   }
 }
