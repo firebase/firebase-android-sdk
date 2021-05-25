@@ -56,9 +56,21 @@ public class RecipeVersionWriter {
     outputBuilder.append(
         generateVersionVariable(
             depsByArtifactId,
+            "Analytics KTX",
+            "analytics-ktx-dependency",
+            "com.google.firebase:firebase-analytics-ktx"));
+    outputBuilder.append(
+        generateVersionVariable(
+            depsByArtifactId,
             "Crashlytics",
             "crashlytics-dependency",
             "com.google.firebase:firebase-crashlytics"));
+    outputBuilder.append(
+        generateVersionVariable(
+            depsByArtifactId,
+            "Crashlytics KTX",
+            "crashlytics-ktx-dependency",
+            "com.google.firebase:firebase-crashlytics-ktx"));
     outputBuilder.append(
         generateVersionVariable(
             depsByArtifactId,
@@ -68,9 +80,21 @@ public class RecipeVersionWriter {
     outputBuilder.append(
         generateVersionVariable(
             depsByArtifactId,
+            "Performance Monitoring KTX",
+            "perf-ktx-dependency",
+            "com.google.firebase:firebase-perf-ktx"));
+    outputBuilder.append(
+        generateVersionVariable(
+            depsByArtifactId,
             "Cloud Messaging",
             "messaging-dependency",
             "com.google.firebase:firebase-messaging"));
+    outputBuilder.append(
+        generateVersionVariable(
+            depsByArtifactId,
+            "Cloud Messaging KTX",
+            "messaging-ktx-dependency",
+            "com.google.firebase:firebase-messaging-ktx"));
     outputBuilder.append(
         generateVersionVariable(
             depsByArtifactId,
@@ -80,9 +104,21 @@ public class RecipeVersionWriter {
     outputBuilder.append(
         generateVersionVariable(
             depsByArtifactId,
+            "Authentication KTX",
+            "auth-ktx-dependency",
+            "com.google.firebase:firebase-auth-ktx"));
+    outputBuilder.append(
+        generateVersionVariable(
+            depsByArtifactId,
             "Realtime Database",
             "database-dependency",
             "com.google.firebase:firebase-database"));
+    outputBuilder.append(
+        generateVersionVariable(
+            depsByArtifactId,
+            "Realtime Database KTX",
+            "database-ktx-dependency",
+            "com.google.firebase:firebase-database-ktx"));
     outputBuilder.append(
         generateVersionVariable(
             depsByArtifactId,
@@ -92,9 +128,21 @@ public class RecipeVersionWriter {
     outputBuilder.append(
         generateVersionVariable(
             depsByArtifactId,
+            "Cloud Storage KTX",
+            "storage-ktx-dependency",
+            "com.google.firebase:firebase-storage-ktx"));
+    outputBuilder.append(
+        generateVersionVariable(
+            depsByArtifactId,
             "Remote Config",
             "remote-config-dependency",
             "com.google.firebase:firebase-config"));
+    outputBuilder.append(
+        generateVersionVariable(
+            depsByArtifactId,
+            "Remote Config KTX",
+            "remote-config-ktx-dependency",
+            "com.google.firebase:firebase-config-ktx"));
     outputBuilder.append(
         generateVersionVariable(
             depsByArtifactId,
@@ -113,15 +161,33 @@ public class RecipeVersionWriter {
     outputBuilder.append(
         generateVersionVariable(
             depsByArtifactId,
+            "Cloud Firestore KTX",
+            "firestore-ktx-dependency",
+            "com.google.firebase:firebase-firestore-ktx"));
+    outputBuilder.append(
+        generateVersionVariable(
+            depsByArtifactId,
             "Firebase Functions",
             "functions-dependency",
             "com.google.firebase:firebase-functions"));
     outputBuilder.append(
         generateVersionVariable(
             depsByArtifactId,
+            "Firebase Functions KTX",
+            "functions-ktx-dependency",
+            "com.google.firebase:firebase-functions-ktx"));
+    outputBuilder.append(
+        generateVersionVariable(
+            depsByArtifactId,
             "Firebase Dynamic Links",
             "fdl-dependency",
             "com.google.firebase:firebase-dynamic-links"));
+    outputBuilder.append(
+        generateVersionVariable(
+            depsByArtifactId,
+            "Firebase Dynamic Links KTX",
+            "fdl-ktx-dependency",
+            "com.google.firebase:firebase-dynamic-links-ktx"));
     outputBuilder.append(
         generateVersionVariable(
             depsByArtifactId,

@@ -51,7 +51,7 @@ public final class DocumentKey implements Comparable<DocumentKey> {
   public static DocumentKey fromName(String name) {
     ResourcePath resourceName = ResourcePath.fromString(name);
     hardAssert(
-        resourceName.length() >= 4
+        resourceName.length() > 4
             && resourceName.getSegment(0).equals("projects")
             && resourceName.getSegment(2).equals("databases")
             && resourceName.getSegment(4).equals("documents"),

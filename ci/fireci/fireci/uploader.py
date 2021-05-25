@@ -19,13 +19,15 @@ import requests
 import subprocess
 import urllib.parse
 
+from . import prow_utils
+
 _logger = logging.getLogger('fireci.uploader')
 
 
-def post_report(test_report, metrics_service_url, access_token, note=''):
+def post_report(test_report, metrics_service_url, access_token, metric='reports', note=''):
   """Post a report to the metrics service backend."""
 
-  endpoint = _construct_request_endpoint(note)
+  endpoint = _construct_request_endpoint(metric, note)
   headers = {'Authorization': f'Bearer {access_token}', 'Content-Type': 'application/json'}
   data = json.dumps(test_report)
 
@@ -39,24 +41,26 @@ def post_report(test_report, metrics_service_url, access_token, note=''):
   _logger.info(f'Response: {result.text}')
 
 
-def _construct_request_endpoint(note):
+def _construct_request_endpoint(metric, note):
   repo_owner = os.getenv('REPO_OWNER')
   repo_name = os.getenv('REPO_NAME')
   branch = os.getenv('PULL_BASE_REF')
   pull_request = os.getenv('PULL_NUMBER')
 
   commit = _get_commit_hash('HEAD@{0}')
+  log = prow_utils.prow_job_log_link()
 
-  endpoint = f'/repos/{repo_owner}/{repo_name}/commits/{commit}/reports'
+  endpoint = f'/repos/{repo_owner}/{repo_name}/commits/{commit}/{metric}?log={log}'
   if pull_request:
-    base_commit = _get_commit_hash('HEAD@{1}')
-    endpoint += f'?pull_request={pull_request}&base_commit={base_commit}'
+    base_commit = os.getenv('PULL_BASE_SHA')
+    head_commit = os.getenv('PULL_PULL_SHA')
+    endpoint += f'&pull_request={pull_request}&base_commit={base_commit}&head_commit={head_commit}'
 
     commit_note = _get_prow_commit_note('HEAD@{0}')
     note += f'\n{commit_note}\n'
     endpoint += f'&note={urllib.parse.quote(note)}'
   else:
-    endpoint += f'?branch={branch}'
+    endpoint += f'&branch={branch}'
 
   return endpoint
 
