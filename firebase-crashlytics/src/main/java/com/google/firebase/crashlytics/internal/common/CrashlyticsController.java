@@ -67,7 +67,6 @@ class CrashlyticsController {
   private final DataCollectionArbiter dataCollectionArbiter;
   private final CrashlyticsFileMarker crashMarker;
   private final UserMetadata userMetadata;
-  private final InternalKeys internalKeys;
 
   private final CrashlyticsBackgroundWorker backgroundWorker;
 
@@ -110,7 +109,6 @@ class CrashlyticsController {
       CrashlyticsFileMarker crashMarker,
       AppData appData,
       UserMetadata userMetadata,
-      InternalKeys internalKeys,
       LogFileManager logFileManager,
       LogFileManager.DirectoryProvider logFileDirectoryProvider,
       SessionReportingCoordinator sessionReportingCoordinator,
@@ -124,7 +122,6 @@ class CrashlyticsController {
     this.crashMarker = crashMarker;
     this.appData = appData;
     this.userMetadata = userMetadata;
-    this.internalKeys = internalKeys;
     this.logFileManager = logFileManager;
     this.logFileDirectoryProvider = logFileDirectoryProvider;
     this.nativeComponent = nativeComponent;
@@ -449,7 +446,7 @@ class CrashlyticsController {
 
   void setInternalKey(String key, String value) {
     try {
-      internalKeys.setInternalKey(key, value);
+      userMetadata.setInternalKey(key, value);
     } catch (IllegalArgumentException ex) {
       if (context != null && CommonUtils.isAppDebuggable(context)) {
         throw ex;
@@ -458,7 +455,7 @@ class CrashlyticsController {
         return;
       }
     }
-    cacheKeyData(internalKeys.getInternalKeys(), true);
+    cacheKeyData(userMetadata.getInternalKeys(), true);
   }
 
   /**
