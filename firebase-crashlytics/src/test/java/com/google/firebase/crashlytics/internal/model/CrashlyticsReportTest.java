@@ -318,6 +318,9 @@ public class CrashlyticsReportTest {
         .setImportance(1)
         .setReasonCode(1)
         .setProcessName("test")
+        .setPid(1)
+        .setPss(1)
+        .setRss(1)
         .build();
   }
 

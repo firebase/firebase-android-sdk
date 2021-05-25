@@ -1049,6 +1049,9 @@ public abstract class CrashlyticsReport {
     }
 
     @NonNull
+    public abstract int getPid();
+
+    @NonNull
     public abstract String getProcessName();
 
     @NonNull
@@ -1056,6 +1059,12 @@ public abstract class CrashlyticsReport {
 
     @NonNull
     public abstract int getImportance();
+
+    @NonNull
+    public abstract long getPss();
+
+    @NonNull
+    public abstract long getRss();
 
     @NonNull
     public abstract long getTimestamp();
@@ -1067,6 +1076,8 @@ public abstract class CrashlyticsReport {
     /** Builder for {@link ApplicationExitInfo}. */
     @AutoValue.Builder
     public abstract static class Builder {
+      @NonNull
+      public abstract ApplicationExitInfo.Builder setPid(@NonNull int value);
 
       @NonNull
       public abstract ApplicationExitInfo.Builder setProcessName(@NonNull String value);
@@ -1076,6 +1087,12 @@ public abstract class CrashlyticsReport {
 
       @NonNull
       public abstract ApplicationExitInfo.Builder setImportance(@NonNull int value);
+
+      @NonNull
+      public abstract ApplicationExitInfo.Builder setPss(@NonNull long value);
+
+      @NonNull
+      public abstract ApplicationExitInfo.Builder setRss(@NonNull long value);
 
       @NonNull
       public abstract ApplicationExitInfo.Builder setTimestamp(@NonNull long value);

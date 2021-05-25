@@ -174,6 +174,9 @@ public class SessionReportingCoordinatorRobolectricTest {
         .setProcessName(applicationExitInfo.getProcessName())
         .setReasonCode(applicationExitInfo.getReason())
         .setTimestamp(applicationExitInfo.getTimestamp())
+        .setPid(applicationExitInfo.getPid())
+        .setPss(applicationExitInfo.getPss())
+        .setRss(applicationExitInfo.getRss())
         .setTraceFile(null)
         .build();
   }

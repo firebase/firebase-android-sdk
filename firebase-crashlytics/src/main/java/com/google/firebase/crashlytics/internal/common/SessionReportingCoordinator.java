@@ -315,6 +315,9 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
         .setProcessName(applicationExitInfo.getProcessName())
         .setReasonCode(applicationExitInfo.getReason())
         .setTimestamp(applicationExitInfo.getTimestamp())
+        .setPid(applicationExitInfo.getPid())
+        .setPss(applicationExitInfo.getPss())
+        .setRss(applicationExitInfo.getRss())
         .setTraceFile(traceFile)
         .build();
   }

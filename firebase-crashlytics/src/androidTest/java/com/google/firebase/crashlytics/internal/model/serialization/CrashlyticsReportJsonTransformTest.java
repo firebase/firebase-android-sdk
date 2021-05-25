@@ -253,6 +253,9 @@ public class CrashlyticsReportJsonTransformTest {
         .setImportance(1)
         .setReasonCode(1)
         .setProcessName("test")
+        .setPid(1)
+        .setPss(1L)
+        .setRss(1L)
         .build();
   }
 }

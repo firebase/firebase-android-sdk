@@ -210,6 +210,9 @@ public class CrashlyticsReportJsonTransform {
     while (jsonReader.hasNext()) {
       String name = jsonReader.nextName();
       switch (name) {
+        case "pid":
+          builder.setPid(jsonReader.nextInt());
+          break;
         case "processName":
           builder.setProcessName(jsonReader.nextString());
           break;
@@ -218,6 +221,12 @@ public class CrashlyticsReportJsonTransform {
           break;
         case "importance":
           builder.setImportance(jsonReader.nextInt());
+          break;
+        case "pss":
+          builder.setPss(jsonReader.nextLong());
+          break;
+        case "rss":
+          builder.setRss(jsonReader.nextLong());
           break;
         case "timestamp":
           builder.setTimestamp(jsonReader.nextLong());
