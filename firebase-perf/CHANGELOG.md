@@ -27,7 +27,8 @@ Refer [GMaven](https://maven.google.com/web/index.html?q=firebase-perf#com.googl
 
 #### Android library
 
-*   {{feature}} Added Firebase console URL logging to logcat.
+*   {{feature}} Firebase Performance logs now contain URLs to see the performance 
+    data on the Firebase console.
 *   {{fixed}} Fixed RateLimiter replenishment logic and unit alignment.
 
 #### Kotlin extensions
