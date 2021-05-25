@@ -386,12 +386,12 @@ public class Values {
     builder.append("]");
   }
 
-  /** Returns true if `value` is either a INTEGER_VALUE. */
+  /** Returns true if `value` is a INTEGER_VALUE. */
   public static boolean isInteger(@Nullable Value value) {
     return value != null && value.getValueTypeCase() == Value.ValueTypeCase.INTEGER_VALUE;
   }
 
-  /** Returns true if `value` is either a DOUBLE_VALUE. */
+  /** Returns true if `value` is a DOUBLE_VALUE. */
   public static boolean isDouble(@Nullable Value value) {
     return value != null && value.getValueTypeCase() == Value.ValueTypeCase.DOUBLE_VALUE;
   }
