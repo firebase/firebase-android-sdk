@@ -477,6 +477,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     // activity1 comes to foreground.
     currentTime = 3;
     monitor.onActivityResumed(activity1);
+    verify(transportManager, times(1)).log(any(TraceMetric.class), eq(FOREGROUND_BACKGROUND));
 
     // activity1 goes to background.
     currentTime = 4;
