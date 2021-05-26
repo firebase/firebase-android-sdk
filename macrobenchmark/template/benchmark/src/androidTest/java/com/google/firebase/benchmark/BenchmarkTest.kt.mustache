@@ -31,14 +31,14 @@ class BenchmarkTest(private val startupMode: StartupMode) {
 
     @Test
     fun startup() = benchmarkRule.measureRepeated(
-        packageName = "{{application-id}}",
+        packageName = "com.google.firebase.macrobenchmark",
         metrics = listOf(StartupTimingMetric()),
         iterations = 20,
         startupMode = startupMode
     ) {
         pressHome()
         val intent = Intent()
-        intent.setPackage("{{application-id}}")
+        intent.setPackage("com.google.firebase.macrobenchmark")
         intent.setAction("com.google.firebase.benchmark.STARTUP_ACTIVITY")
         startActivityAndWait(intent)
     }
