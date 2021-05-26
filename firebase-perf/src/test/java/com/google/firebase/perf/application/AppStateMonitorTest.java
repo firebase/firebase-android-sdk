@@ -474,6 +474,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
 
     // Developer disabled Performance Monitoring during runtime.
     ConfigResolver.getInstance().setIsPerformanceCollectionEnabled(false);
+    assertThat(ConfigResolver.getInstance().getIsPerformanceCollectionEnabled()).isFalse();
     assertThat(ConfigResolver.getInstance().getIsPerformanceCollectionDeactivated()).isFalse();
     assertThat(ConfigResolver.getInstance().isPerformanceMonitoringEnabled()).isFalse();
 
@@ -579,6 +580,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
 
     // Developer disabled Performance Monitoring during runtime.
     ConfigResolver.getInstance().setIsPerformanceCollectionEnabled(false);
+    assertThat(ConfigResolver.getInstance().getIsPerformanceCollectionEnabled()).isFalse();
     assertThat(ConfigResolver.getInstance().getIsPerformanceCollectionDeactivated()).isFalse();
     assertThat(ConfigResolver.getInstance().isPerformanceMonitoringEnabled()).isFalse();
 
