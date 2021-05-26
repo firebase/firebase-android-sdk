@@ -127,11 +127,12 @@ public class Uploader {
                     .build());
       }
       if (response.getStatus() == BackendResponse.Status.TRANSIENT_ERROR) {
+        long finalMaxNextRequestWaitMillis1 = maxNextRequestWaitMillis;
         guard.runCriticalSection(
             () -> {
               eventStore.recordFailure(persistedEvents);
               eventStore.recordNextCallTime(
-                  transportContext, clock.getTime() + maxNextRequestWaitMillis);
+                  transportContext, clock.getTime() + finalMaxNextRequestWaitMillis1);
               return null;
             });
         workScheduler.schedule(transportContext, attemptNumber + 1, true);
@@ -148,9 +149,10 @@ public class Uploader {
         }
       }
     }
+    long finalMaxNextRequestWaitMillis = maxNextRequestWaitMillis;
     guard.runCriticalSection(() -> {
         eventStore.recordNextCallTime(
-            transportContext, clock.getTime() + maxNextRequestWaitMillis);
+            transportContext, clock.getTime() + finalMaxNextRequestWaitMillis);
         return null;
     });
   }
