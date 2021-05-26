@@ -18,15 +18,21 @@ import json
 import logging
 import os
 import random
+import re
 import shutil
 import sys
+import uuid
 
 import click
+import numpy
 import pystache
 import yaml
+from google.cloud import storage
 
 from fireci import ci_command
 from fireci.dir_utils import chdir
+from fireci import prow_utils
+from fireci import uploader
 
 _logger = logging.getLogger('fireci.macrobenchmark')
 
@@ -40,19 +46,18 @@ def macrobenchmark():
 async def _launch_macrobenchmark_test():
   _logger.info('Starting macrobenchmark test...')
 
-  artifact_versions, config, _ = await asyncio.gather(
+  artifact_versions, config, _, _ = await asyncio.gather(
     _parse_artifact_versions(),
     _parse_config_yaml(),
-    _create_gradle_wrapper()
+    _create_gradle_wrapper(),
+    _copy_google_services(),
   )
 
   with chdir('macrobenchmark'):
     runners = [MacrobenchmarkTest(k, v, artifact_versions) for k, v in config.items()]
     results = await asyncio.gather(*[x.run() for x in runners], return_exceptions=True)
 
-  if any(map(lambda x: isinstance(x, Exception), results)):
-    _logger.error(f'Exceptions: {[x for x in results if (isinstance(x, Exception))]}')
-    raise click.ClickException('Macrobenchmark test failed with above errors.')
+  await _post_processing(results)
 
   _logger.info('Macrobenchmark test finished.')
 
@@ -84,11 +89,36 @@ async def _create_gradle_wrapper():
     './gradlew',
     'wrapper',
     '--gradle-version',
-    '7.0',
+    '6.9',
     '--project-dir',
     'macrobenchmark'
   )
   await proc.wait()
+
+
+async def _copy_google_services():
+  if 'FIREBASE_CI' in os.environ:
+    src = os.environ['FIREBASE_GOOGLE_SERVICES_PATH']
+    dst = 'macrobenchmark/template/app/google-services.json'
+    _logger.info(f'Running on CI. Copying "{src}" to "{dst}"...')
+    shutil.copyfile(src, dst)
+
+
+async def _post_processing(results):
+  # Upload successful measurements to the metric service
+  measurements = []
+  for result in results:
+    if not isinstance(result, Exception):
+      measurements.extend(result)
+
+  metrics_service_url = os.getenv('METRICS_SERVICE_URL')
+  access_token = prow_utils.gcloud_identity_token()
+  uploader.post_report(measurements, metrics_service_url, access_token, metric='macrobenchmark')
+
+  # Raise exceptions for failed measurements
+  if any(map(lambda x: isinstance(x, Exception), results)):
+    _logger.error(f'Exceptions: {[x for x in results if isinstance(x, Exception)]}')
+    raise click.ClickException('Macrobenchmark test failed with above errors.')
 
 
 class MacrobenchmarkTest:
@@ -105,31 +135,22 @@ class MacrobenchmarkTest:
     self.artifact_versions = artifact_versions
     self.logger = MacrobenchmarkLoggerAdapter(logger, sdk_name)
     self.test_app_dir = os.path.join('test-apps', test_app_config['name'])
+    self.test_results_bucket = 'fireescape-benchmark-results'
+    self.test_results_dir = str(uuid.uuid4())
+    self.gcs_client = storage.Client()
 
   async def run(self):
-    """Starts the workflow of src creation, apks assembling, and FTL testing in order."""
-    await self._create_test_src()
-    await self._assemble_apks()
-    await self._upload_apks_to_ftl()
+    """Starts the workflow of src creation, apks assembly, FTL testing and results upload."""
+    await self._create_benchmark_projects()
+    await self._assemble_benchmark_apks()
+    await self._execute_benchmark_tests()
+    return await self._aggregate_benchmark_results()
 
-  async def _create_test_src(self):
+  async def _create_benchmark_projects(self):
     app_name = self.test_app_config['name']
-    app_id = self.test_app_config['application-id']
-    self.logger.info(f'Creating test app "{app_name}" with application-id "{app_id}"...')
+    self.logger.info(f'Creating test app "{app_name}"...')
 
-    mustache_context = {
-      'application-id': app_id,
-      'plugins': self.test_app_config['plugins'] if 'plugins' in self.test_app_config else [],
-      'dependencies': [
-        {
-          'key': x,
-          'version': self.artifact_versions[x]
-        } for x in self.test_app_config['dependencies']
-      ] if 'dependencies' in self.test_app_config else [],
-    }
-
-    if app_name != 'baseline':
-      mustache_context['plugins'].append('com.google.gms.google-services')
+    mustache_context = await self._prepare_mustache_context()
 
     shutil.copytree('template', self.test_app_dir)
     with chdir(self.test_app_dir):
@@ -141,12 +162,12 @@ class MacrobenchmarkTest:
         with open(original_name, 'w') as file:
           file.write(result)
 
-  async def _assemble_apks(self):
+  async def _assemble_benchmark_apks(self):
     executable = './gradlew'
     args = ['assemble', 'assembleAndroidTest', '--project-dir', self.test_app_dir]
     await self._exec_subprocess(executable, args)
 
-  async def _upload_apks_to_ftl(self):
+  async def _execute_benchmark_tests(self):
     app_apk_path = glob.glob(f'{self.test_app_dir}/app/**/*.apk', recursive=True)[0]
     test_apk_path = glob.glob(f'{self.test_app_dir}/benchmark/**/*.apk', recursive=True)[0]
 
@@ -165,12 +186,63 @@ class MacrobenchmarkTest:
     args += ['--test', test_apk_path]
     args += ['--device', 'model=flame,version=30,locale=en,orientation=portrait']
     args += ['--directories-to-pull', '/sdcard/Download']
-    args += ['--results-bucket', 'gs://fireescape-macrobenchmark']
+    args += ['--results-bucket', f'gs://{self.test_results_bucket}']
+    args += ['--results-dir', self.test_results_dir]
     args += ['--environment-variables', ','.join(ftl_environment_variables)]
     args += ['--timeout', '30m']
     args += ['--project', 'fireescape-c4819']
 
     await self._exec_subprocess(executable, args)
+
+  async def _prepare_mustache_context(self):
+    app_name = self.test_app_config['name']
+
+    mustache_context = {
+      'plugins': [],
+      'dependencies': [],
+    }
+
+    if app_name != 'baseline':
+      mustache_context['plugins'].append('com.google.gms.google-services')
+
+    if 'plugins' in self.test_app_config:
+      mustache_context['plugins'].extend(self.test_app_config['plugins'])
+
+    if 'dependencies' in self.test_app_config:
+      for dep in self.test_app_config['dependencies']:
+        if '@' in dep:
+          key, version = dep.split('@', 1)
+          dependency = {'key': key, 'version': version}
+        else:
+          dependency = {'key': dep, 'version': self.artifact_versions[dep]}
+        mustache_context['dependencies'].append(dependency)
+
+    return mustache_context
+
+  async def _aggregate_benchmark_results(self):
+    results = []
+    blobs = self.gcs_client.list_blobs(self.test_results_bucket, prefix=self.test_results_dir)
+    files = [x for x in blobs if re.search(r'artifacts/[^/]*\.json', x.name)]
+    for file in files:
+      device = re.search(r'([^/]*)/artifacts/', file.name).group(1)
+      benchmarks = json.loads(file.download_as_bytes())['benchmarks']
+      for benchmark in benchmarks:
+        method = benchmark['name']
+        clazz = benchmark['className'].split('.')[-1]
+        runs = benchmark['metrics']['startupMs']['runs']
+        results.append({
+          'sdk': self.sdk_name,
+          'device': device,
+          'name': f'{clazz}.{method}',
+          'min': min(runs),
+          'max': max(runs),
+          'p50': numpy.percentile(runs, 50),
+          'p90': numpy.percentile(runs, 90),
+          'p99': numpy.percentile(runs, 99),
+          'unit': 'ms',
+        })
+    self.logger.info(f'Benchmark results: {results}')
+    return results
 
   async def _exec_subprocess(self, executable, args):
     command = " ".join([executable, *args])

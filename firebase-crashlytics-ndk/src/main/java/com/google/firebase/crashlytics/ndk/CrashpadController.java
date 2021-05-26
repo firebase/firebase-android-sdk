@@ -30,7 +30,9 @@ import java.nio.charset.Charset;
 
 public class CrashpadController {
 
+  @SuppressWarnings("CharsetObjectCanBeUsed") // StandardCharsets requires API level 19.
   private static final Charset UTF_8 = Charset.forName("UTF-8");
+
   private static final String SESSION_METADATA_FILE = "session.json";
   private static final String APP_METADATA_FILE = "app.json";
   private static final String DEVICE_METADATA_FILE = "device.json";
@@ -49,6 +51,7 @@ public class CrashpadController {
   public boolean initialize(
       String sessionId, String generator, long startedAtSeconds, StaticSessionData sessionData) {
 
+    filesManager.cleanOldSessionFileDirectories();
     final File crashReportDirectory = filesManager.getSessionFileDirectory(sessionId);
     try {
       if (crashReportDirectory != null) {
@@ -76,7 +79,8 @@ public class CrashpadController {
   }
 
   public boolean finalizeSession(String sessionId) {
-    filesManager.deleteSessionFilesDirectory(sessionId);
+    filesManager.deleteSessionFileDirectory(sessionId);
+    filesManager.cleanOldSessionFileDirectories();
     return true;
   }
 

@@ -26,9 +26,8 @@ import com.google.android.gms.tasks.Task;
 public interface AppCheckProvider {
 
   /**
-   * Returns a {@link Task} which resolves to one of three things: (1) A valid {@link
-   * AppCheckToken}. (2) {@code null} in the event that a token is unavailable. (3) An {@link
-   * Exception} in the case that an unexpected failure occurred while getting the token.
+   * Returns a {@link Task} which resolves to a valid {@link AppCheckToken} or an {@link Exception}
+   * in the case that an unexpected failure occurred while getting the token.
    */
   @NonNull
   Task<AppCheckToken> getToken();

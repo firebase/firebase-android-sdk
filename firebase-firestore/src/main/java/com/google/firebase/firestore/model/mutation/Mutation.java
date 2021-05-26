@@ -170,12 +170,7 @@ public abstract class Mutation {
     for (int i = 0; i < serverTransformResults.size(); i++) {
       FieldTransform fieldTransform = fieldTransforms.get(i);
       TransformOperation transform = fieldTransform.getOperation();
-
-      Value previousValue = null;
-      if (mutableDocument.isFoundDocument()) {
-        previousValue = mutableDocument.getField(fieldTransform.getFieldPath());
-      }
-
+      Value previousValue = mutableDocument.getField(fieldTransform.getFieldPath());
       transformResults.put(
           fieldTransform.getFieldPath(),
           transform.applyToRemoteDocument(previousValue, serverTransformResults.get(i)));
@@ -196,12 +191,7 @@ public abstract class Mutation {
     Map<FieldPath, Value> transformResults = new HashMap<>(fieldTransforms.size());
     for (FieldTransform fieldTransform : fieldTransforms) {
       TransformOperation transform = fieldTransform.getOperation();
-
-      Value previousValue = null;
-      if (mutableDocument.isFoundDocument()) {
-        previousValue = mutableDocument.getField(fieldTransform.getFieldPath());
-      }
-
+      Value previousValue = mutableDocument.getField(fieldTransform.getFieldPath());
       transformResults.put(
           fieldTransform.getFieldPath(), transform.applyToLocalView(previousValue, localWriteTime));
     }

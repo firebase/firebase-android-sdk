@@ -22,7 +22,7 @@ import com.google.firebase.appcheck.safetynet.internal.SafetyNetAppCheckProvider
 
 /**
  * Implementation of an {@link AppCheckProviderFactory} that builds {@link
- * SafetyNetAppCheckProvider}s. This is the default implementation
+ * SafetyNetAppCheckProvider}s. This is the default implementation.
  */
 public class SafetyNetAppCheckProviderFactory implements AppCheckProviderFactory {
 
@@ -31,6 +31,10 @@ public class SafetyNetAppCheckProviderFactory implements AppCheckProviderFactory
 
   private SafetyNetAppCheckProviderFactory() {}
 
+  /**
+   * Gets an instance of this class for installation into a {@link
+   * com.google.firebase.appcheck.FirebaseAppCheck} instance.
+   */
   @NonNull
   public static SafetyNetAppCheckProviderFactory getInstance() {
     return instance;
