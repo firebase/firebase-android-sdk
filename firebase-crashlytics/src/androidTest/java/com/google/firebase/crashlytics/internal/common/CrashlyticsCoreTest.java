@@ -28,7 +28,7 @@ import com.google.firebase.FirebaseOptions;
 import com.google.firebase.crashlytics.BuildConfig;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
-import com.google.firebase.crashlytics.internal.ProviderProxyNativeComponent;
+import com.google.firebase.crashlytics.internal.DeferredCrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.analytics.UnavailableAnalyticsEventLogger;
 import com.google.firebase.crashlytics.internal.breadcrumbs.BreadcrumbHandler;
 import com.google.firebase.crashlytics.internal.breadcrumbs.BreadcrumbSource;
@@ -37,10 +37,12 @@ import com.google.firebase.crashlytics.internal.settings.SettingsController;
 import com.google.firebase.crashlytics.internal.settings.TestSettingsData;
 import com.google.firebase.crashlytics.internal.settings.model.SettingsData;
 import com.google.firebase.crashlytics.internal.unity.UnityVersionProvider;
+import com.google.firebase.inject.Deferred;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 
 public class CrashlyticsCoreTest extends CrashlyticsTestCase {
@@ -48,7 +50,14 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
   private static final String GOOGLE_APP_ID = "google:app:id";
 
   private static final CrashlyticsNativeComponent MISSING_NATIVE_COMPONENT =
-      new ProviderProxyNativeComponent(() -> null);
+      new DeferredCrashlyticsNativeComponent(new Deferred<CrashlyticsNativeComponent>() {
+        @Override
+        public void whenAvailable(
+            @NonNull Deferred.DeferredHandler<CrashlyticsNativeComponent> handler) {
+          //no-op
+        }
+      });
+
 
   private CrashlyticsCore crashlyticsCore;
   private BreadcrumbSource mockBreadcrumbSource;

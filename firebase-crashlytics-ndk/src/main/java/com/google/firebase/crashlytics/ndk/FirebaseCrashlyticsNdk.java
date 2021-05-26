@@ -19,6 +19,7 @@ import androidx.annotation.NonNull;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.NativeSessionFileProvider;
+import com.google.firebase.crashlytics.internal.model.StaticSessionData;
 import java.io.File;
 
 /** The Crashlytics NDK Kit provides crash reporting functionality for Android NDK users. */
@@ -30,16 +31,18 @@ class FirebaseCrashlyticsNdk implements CrashlyticsNativeComponent {
   static FirebaseCrashlyticsNdk create(@NonNull Context context) {
     final File rootDir = new File(context.getFilesDir(), FILES_PATH);
 
-    final NativeComponentController controller =
+    final CrashpadController controller =
         new CrashpadController(
             context, new JniNativeApi(context), new NdkCrashFilesManager(rootDir));
     return new FirebaseCrashlyticsNdk(controller);
   }
 
-  private final NativeComponentController controller;
+  private final CrashpadController controller;
 
-  FirebaseCrashlyticsNdk(@NonNull NativeComponentController controller) {
+  FirebaseCrashlyticsNdk(@NonNull CrashpadController controller) {
     this.controller = controller;
+
+    Logger.getLogger().d("FirebaseCrashlyticsNdk constructor: " + controller);
   }
 
   @Override
@@ -48,17 +51,24 @@ class FirebaseCrashlyticsNdk implements CrashlyticsNativeComponent {
   }
 
   @Override
-  public boolean openSession(String sessionId) {
-    final boolean initSuccess = controller.initialize(sessionId);
-    if (!initSuccess) {
+  public void openSession(
+      @NonNull String sessionId,
+      @NonNull String generator,
+      long startedAtSeconds,
+      @NonNull StaticSessionData sessionData) {
+
+    Logger.getLogger().d("FirebaseCrashlyticsNdk openSession");
+
+    if (controller.initialize(sessionId, generator, startedAtSeconds, sessionData)) {
       Logger.getLogger().w("Failed to initialize Crashlytics NDK for session " + sessionId);
     }
-    return initSuccess;
   }
 
   @Override
-  public boolean finalizeSession(@NonNull String sessionId) {
-    return controller.finalizeSession(sessionId);
+  public void finalizeSession(@NonNull String sessionId) {
+    if (!controller.finalizeSession(sessionId)) {
+      Logger.getLogger().w("Could not finalize native session: " + sessionId);
+    }
   }
 
   @NonNull
@@ -67,64 +77,5 @@ class FirebaseCrashlyticsNdk implements CrashlyticsNativeComponent {
     // TODO: If this is called more than once with the same ID, it should return
     // equivalent objects.
     return new SessionFilesProvider(controller.getFilesForSession(sessionId));
-  }
-
-  @Override
-  public void writeBeginSession(
-      @NonNull String sessionId, @NonNull String generator, long startedAtSeconds) {
-    controller.writeBeginSession(sessionId, generator, startedAtSeconds);
-  }
-
-  @Override
-  public void writeSessionApp(
-      @NonNull String sessionId,
-      @NonNull String appIdentifier,
-      @NonNull String versionCode,
-      @NonNull String versionName,
-      @NonNull String installUuid,
-      int deliveryMechanism,
-      @NonNull String unityVersion) {
-    controller.writeSessionApp(
-        sessionId,
-        appIdentifier,
-        versionCode,
-        versionName,
-        installUuid,
-        deliveryMechanism,
-        unityVersion);
-  }
-
-  @Override
-  public void writeSessionOs(
-      @NonNull String sessionId,
-      @NonNull String osRelease,
-      @NonNull String osCodeName,
-      boolean isRooted) {
-    controller.writeSessionOs(sessionId, osRelease, osCodeName, isRooted);
-  }
-
-  @Override
-  public void writeSessionDevice(
-      @NonNull String sessionId,
-      int arch,
-      @NonNull String model,
-      int availableProcessors,
-      long totalRam,
-      long diskSpace,
-      boolean isEmulator,
-      int state,
-      @NonNull String manufacturer,
-      @NonNull String modelClass) {
-    controller.writeSessionDevice(
-        sessionId,
-        arch,
-        model,
-        availableProcessors,
-        totalRam,
-        diskSpace,
-        isEmulator,
-        state,
-        manufacturer,
-        modelClass);
   }
 }

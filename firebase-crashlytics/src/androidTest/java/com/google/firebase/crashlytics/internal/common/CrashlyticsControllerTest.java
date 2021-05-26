@@ -26,7 +26,6 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
 import com.google.firebase.crashlytics.internal.NativeSessionFileProvider;
-import com.google.firebase.crashlytics.internal.ProviderProxyNativeComponent;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsEventLogger;
 import com.google.firebase.crashlytics.internal.log.LogFileManager;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
@@ -53,6 +52,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
   private File testFilesDirectory;
   private SessionReportingCoordinator mockSessionReportingCoordinator;
   private DataCollectionArbiter mockDataCollectionArbiter;
+  private CrashlyticsNativeComponent mockNativeComponent = mock(CrashlyticsNativeComponent.class);
 
   @Override
   protected void setUp() throws Exception {
@@ -108,7 +108,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
   /** A convenience class for building CrashlyticsController instances for testing. */
   private class ControllerBuilder {
     private DataCollectionArbiter dataCollectionArbiter;
-    private CrashlyticsNativeComponent nativeComponent;
+    private CrashlyticsNativeComponent nativeComponent = null;
     private UnityVersionProvider unityVersionProvider;
     private AnalyticsEventLogger analyticsEventLogger;
     private SessionReportingCoordinator sessionReportingCoordinator;
@@ -117,7 +117,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
 
     ControllerBuilder() {
       dataCollectionArbiter = mockDataCollectionArbiter;
-      nativeComponent = new ProviderProxyNativeComponent(() -> null);
+      nativeComponent = mockNativeComponent;
 
       unityVersionProvider = mock(UnityVersionProvider.class);
       when(unityVersionProvider.getUnityVersion()).thenReturn(null);
