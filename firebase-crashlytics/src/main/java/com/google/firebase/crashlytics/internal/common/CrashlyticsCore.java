@@ -131,6 +131,7 @@ public class CrashlyticsCore {
       initializationMarker = new CrashlyticsFileMarker(INITIALIZATION_MARKER_FILE_NAME, fileStore);
 
       final UserMetadata userMetadata = new UserMetadata();
+
       final LogFileDirectoryProvider logFileDirectoryProvider =
           new LogFileDirectoryProvider(fileStore);
       final LogFileManager logFileManager = new LogFileManager(context, logFileDirectoryProvider);
@@ -344,22 +345,6 @@ public class CrashlyticsCore {
    */
   public void setCustomKeys(Map<String, String> keysAndValues) {
     controller.setCustomKeys(keysAndValues);
-  }
-
-  /**
-   * Set a value to be associated with a given key for your crash data. The key/value pairs will be
-   * reported with any crash that occurs in this session. A maximum of 64 key/value pairs can be
-   * stored for any type. New keys added over that limit will be ignored. Keys and values are
-   * trimmed ({@link String#trim()}), and keys or values that exceed 1024 characters will be
-   * truncated.
-   *
-   * <p>IMPORTANT: This method is accessed via reflection and JNI. Do not change the type without
-   * updating the SDKs that depend on it.
-   *
-   * @throws NullPointerException if key is null.
-   */
-  public void setInternalKey(String key, String value) {
-    controller.setInternalKey(key, value);
   }
 
   // endregion
