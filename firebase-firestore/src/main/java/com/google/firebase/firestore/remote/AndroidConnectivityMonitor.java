@@ -25,6 +25,7 @@ import android.net.ConnectivityManager;
 import android.net.Network;
 import android.os.Build;
 import androidx.annotation.Nullable;
+import com.google.android.gms.common.api.internal.BackgroundDetector;
 import com.google.firebase.firestore.util.Consumer;
 import java.util.ArrayList;
 import java.util.List;
@@ -35,7 +36,8 @@ import java.util.List;
  * <p>Implementation note: Most of the code here was shamelessly stolen from
  * https://github.com/grpc/grpc-java/blob/master/android/src/main/java/io/grpc/android/AndroidChannelBuilder.java
  */
-public final class AndroidConnectivityMonitor implements ConnectivityMonitor {
+public final class AndroidConnectivityMonitor
+    implements ConnectivityMonitor, BackgroundDetector.BackgroundStateChangeListener {
 
   private final Context context;
   @Nullable private final ConnectivityManager connectivityManager;
@@ -50,6 +52,7 @@ public final class AndroidConnectivityMonitor implements ConnectivityMonitor {
 
     connectivityManager =
         (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+    configureBackgroundStateListener();
     configureNetworkMonitoring();
   }
 
@@ -96,53 +99,60 @@ public final class AndroidConnectivityMonitor implements ConnectivityMonitor {
     }
   }
 
+  private void configureBackgroundStateListener() {
+    BackgroundDetector.getInstance().addListener(this);
+  }
+
+  @Override
+  public void onBackgroundStateChanged(boolean background) {
+    if (!background && isConnected()) {
+      raiseCallbacks(/* connected= */ true);
+    }
+  }
+
   /** Respond to changes in the default network. Only used on API levels 24+. */
   @TargetApi(Build.VERSION_CODES.N)
   private class DefaultNetworkCallback extends ConnectivityManager.NetworkCallback {
     @Override
     public void onAvailable(Network network) {
-      synchronized (callbacks) {
-        for (Consumer<NetworkStatus> callback : callbacks) {
-          callback.accept(NetworkStatus.REACHABLE);
-        }
-      }
+      raiseCallbacks(/* connected= */ true);
     }
 
     @Override
     public void onLost(Network network) {
-      synchronized (callbacks) {
-        for (Consumer<NetworkStatus> callback : callbacks) {
-          callback.accept(NetworkStatus.UNREACHABLE);
-        }
-      }
+      raiseCallbacks(/* connected= */ false);
     }
   }
 
   /** Respond to network changes. Only used on API levels < 24. */
   private class NetworkReceiver extends BroadcastReceiver {
-    private boolean isConnected = false;
+    private boolean wasConnected = false;
 
     @Override
     @SuppressWarnings("deprecation")
     public void onReceive(Context context, Intent intent) {
-      ConnectivityManager conn =
-          (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-      android.net.NetworkInfo networkInfo = conn.getActiveNetworkInfo();
-      boolean wasConnected = isConnected;
-      isConnected = networkInfo != null && networkInfo.isConnected();
-      if (isConnected && !wasConnected) {
-        synchronized (callbacks) {
-          for (Consumer<NetworkStatus> callback : callbacks) {
-            callback.accept(NetworkStatus.REACHABLE);
-          }
-        }
+      boolean isConnected = isConnected();
+      if (isConnected() && !wasConnected) {
+        raiseCallbacks(/* connected= */ true);
       } else if (!isConnected && wasConnected) {
-        synchronized (callbacks) {
-          for (Consumer<NetworkStatus> callback : callbacks) {
-            callback.accept(NetworkStatus.UNREACHABLE);
-          }
-        }
+        raiseCallbacks(/* connected= */ false);
+      }
+      wasConnected = isConnected;
+    }
+  }
+
+  private void raiseCallbacks(boolean connected) {
+    synchronized (callbacks) {
+      for (Consumer<NetworkStatus> callback : callbacks) {
+        callback.accept(connected ? NetworkStatus.REACHABLE : NetworkStatus.UNREACHABLE);
       }
     }
+  }
+
+  private boolean isConnected() {
+    ConnectivityManager conn =
+        (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+    android.net.NetworkInfo networkInfo = conn.getActiveNetworkInfo();
+    return networkInfo != null && networkInfo.isConnected();
   }
 }
