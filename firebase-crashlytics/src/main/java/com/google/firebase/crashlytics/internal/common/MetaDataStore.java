@@ -41,7 +41,6 @@ class MetaDataStore {
 
   private static final String USERDATA_SUFFIX = "user";
   private static final String KEYDATA_SUFFIX = "keys";
-  private static final String INTERNAL_KEYDATA_SUFFIX = "internal-keys";
   private static final String METADATA_EXT = ".meta";
 
   private static final String KEY_USER_ID = "userId";
@@ -86,12 +85,7 @@ class MetaDataStore {
   }
 
   public void writeKeyData(String sessionId, Map<String, String> keyData) {
-    writeKeyData(sessionId, keyData, false);
-  }
-
-  void writeKeyData(String sessionId, Map<String, String> keyData, boolean isInternal) {
-    final File f =
-        isInternal ? getInternalKeysFileForSession(sessionId) : getKeysFileForSession(sessionId);
+    final File f = getKeysFileForSession(sessionId);
     Writer writer = null;
     try {
       final String keyDataString = keysDataToJson(keyData);
@@ -106,12 +100,7 @@ class MetaDataStore {
   }
 
   public Map<String, String> readKeyData(String sessionId) {
-    return readKeyData(sessionId, false);
-  }
-
-  Map<String, String> readKeyData(String sessionId, boolean isInternal) {
-    final File f =
-        isInternal ? getInternalKeysFileForSession(sessionId) : getKeysFileForSession(sessionId);
+    final File f = getKeysFileForSession(sessionId);
     if (!f.exists()) {
       return Collections.emptyMap();
     }
@@ -136,11 +125,6 @@ class MetaDataStore {
   @NonNull
   public File getKeysFileForSession(String sessionId) {
     return new File(filesDir, sessionId + KEYDATA_SUFFIX + METADATA_EXT);
-  }
-
-  @NonNull
-  public File getInternalKeysFileForSession(String sessionId) {
-    return new File(filesDir, sessionId + INTERNAL_KEYDATA_SUFFIX + METADATA_EXT);
   }
 
   private static UserMetadata jsonToUserData(String json) throws JSONException {

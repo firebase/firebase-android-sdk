@@ -220,8 +220,6 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
 
     final List<CustomAttribute> sortedCustomAttributes =
         getSortedCustomAttributes(reportMetadata.getCustomKeys());
-    final List<CustomAttribute> sortedInternalKeys =
-        getSortedCustomAttributes(reportMetadata.getInternalKeys());
 
     if (!sortedCustomAttributes.isEmpty()) {
       eventBuilder.setApp(
@@ -229,7 +227,6 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
               .getApp()
               .toBuilder()
               .setCustomAttributes(ImmutableList.from(sortedCustomAttributes))
-              .setInternalKeys(ImmutableList.from(sortedInternalKeys))
               .build());
     }
 
