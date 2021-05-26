@@ -473,6 +473,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
 
     // Developer disabled Performance Monitoring during runtime.
     ConfigResolver.getInstance().setIsPerformanceCollectionEnabled(false);
+    assertThat(ConfigResolver.getInstance().isPerformanceMonitoringEnabled()).isFalse();
 
     // activity1 comes to foreground.
     currentTime = 3;
@@ -576,6 +577,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
 
     // Developer disabled Performance Monitoring during runtime.
     ConfigResolver.getInstance().setIsPerformanceCollectionEnabled(false);
+    assertThat(ConfigResolver.getInstance().isPerformanceMonitoringEnabled()).isFalse();
 
     // activity1 goes to foreground.
     currentTime = 2;
