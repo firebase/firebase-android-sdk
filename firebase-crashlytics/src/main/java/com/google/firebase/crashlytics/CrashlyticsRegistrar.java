@@ -35,7 +35,7 @@ public class CrashlyticsRegistrar implements ComponentRegistrar {
         Component.builder(FirebaseCrashlytics.class)
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.required(FirebaseInstallationsApi.class))
-            .add(Dependency.optionalProvider(CrashlyticsNativeComponent.class))
+            .add(Dependency.deferred(CrashlyticsNativeComponent.class))
             .add(Dependency.deferred(AnalyticsConnector.class))
             .factory(this::buildCrashlytics)
             .eagerInDefaultApp()
