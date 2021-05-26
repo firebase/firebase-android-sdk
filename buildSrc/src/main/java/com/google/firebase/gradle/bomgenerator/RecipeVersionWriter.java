@@ -197,6 +197,12 @@ public class RecipeVersionWriter {
     outputBuilder.append(
         generateVersionVariable(
             depsByArtifactId,
+            "FIAM Display KTX",
+            "fiamd-ktx-dependency",
+            "com.google.firebase:firebase-inappmessaging-display-ktx"));
+    outputBuilder.append(
+        generateVersionVariable(
+            depsByArtifactId,
             "Firebase MLKit Vision",
             "ml-vision-dependency",
             "com.google.firebase:firebase-ml-vision"));
