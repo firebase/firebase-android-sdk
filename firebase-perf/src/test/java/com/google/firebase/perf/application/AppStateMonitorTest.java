@@ -87,6 +87,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
 
     DeviceCacheManager.clearInstance();
     ConfigResolver.clearInstance();
+    ConfigResolver.getInstance();
   }
 
   @Test
@@ -578,6 +579,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
 
     // Developer disabled Performance Monitoring during runtime.
     ConfigResolver.getInstance().setIsPerformanceCollectionEnabled(false);
+    assertThat(ConfigResolver.getInstance().getIsPerformanceCollectionDeactivated()).isFalse();
     assertThat(ConfigResolver.getInstance().isPerformanceMonitoringEnabled()).isFalse();
 
     // activity1 goes to foreground.
