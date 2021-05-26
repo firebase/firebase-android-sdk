@@ -150,10 +150,11 @@ public class Uploader {
       }
     }
     long finalMaxNextRequestWaitMillis = maxNextRequestWaitMillis;
-    guard.runCriticalSection(() -> {
-        eventStore.recordNextCallTime(
-            transportContext, clock.getTime() + finalMaxNextRequestWaitMillis);
-        return null;
-    });
+    guard.runCriticalSection(
+        () -> {
+          eventStore.recordNextCallTime(
+              transportContext, clock.getTime() + finalMaxNextRequestWaitMillis);
+          return null;
+        });
   }
 }
