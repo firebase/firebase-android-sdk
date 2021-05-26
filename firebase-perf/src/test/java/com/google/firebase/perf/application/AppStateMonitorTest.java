@@ -87,7 +87,9 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
 
     DeviceCacheManager.clearInstance();
     ConfigResolver.clearInstance();
-    ConfigResolver.getInstance();
+
+    Bundle bundle = new Bundle();
+    ConfigResolver.getInstance().setMetadataBundle(new ImmutableBundle(bundle));
   }
 
   @Test
@@ -472,8 +474,10 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     // Foreground traces has been created because Performance Monitoring is enabled.
     verify(transportManager, times(1)).log(any(TraceMetric.class), eq(FOREGROUND_BACKGROUND));
 
+    assertThat(ConfigResolver.getInstance().getIsPerformanceCollectionDeactivated()).isFalse();
     // Developer disabled Performance Monitoring during runtime.
     ConfigResolver.getInstance().setIsPerformanceCollectionEnabled(false);
+    assertThat(ConfigResolver.getInstance().getIsPerformanceCollectionDeactivated()).isFalse();
     assertThat(ConfigResolver.getInstance().getIsPerformanceCollectionEnabled()).isFalse();
     assertThat(ConfigResolver.getInstance().getIsPerformanceCollectionDeactivated()).isFalse();
     assertThat(ConfigResolver.getInstance().isPerformanceMonitoringEnabled()).isFalse();
@@ -578,8 +582,10 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     // Foreground trace has been created because Performance Monitoring is enabled.
     verify(transportManager, times(1)).log(any(TraceMetric.class), eq(FOREGROUND_BACKGROUND));
 
+    assertThat(ConfigResolver.getInstance().getIsPerformanceCollectionDeactivated()).isFalse();
     // Developer disabled Performance Monitoring during runtime.
     ConfigResolver.getInstance().setIsPerformanceCollectionEnabled(false);
+    assertThat(ConfigResolver.getInstance().getIsPerformanceCollectionDeactivated()).isFalse();
     assertThat(ConfigResolver.getInstance().getIsPerformanceCollectionEnabled()).isFalse();
     assertThat(ConfigResolver.getInstance().getIsPerformanceCollectionDeactivated()).isFalse();
     assertThat(ConfigResolver.getInstance().isPerformanceMonitoringEnabled()).isFalse();
