@@ -56,7 +56,7 @@ class FirebaseCrashlyticsNdk implements CrashlyticsNativeComponent {
       @NonNull StaticSessionData sessionData) {
 
     Logger.getLogger().d("Opening native session: " + sessionId);
-    if (controller.initialize(sessionId, generator, startedAtSeconds, sessionData)) {
+    if (!controller.initialize(sessionId, generator, startedAtSeconds, sessionData)) {
       Logger.getLogger().w("Failed to initialize Crashlytics NDK for session " + sessionId);
     }
   }
