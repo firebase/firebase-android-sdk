@@ -28,8 +28,8 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
+import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponentDeferredProxy;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
-import com.google.firebase.crashlytics.internal.DeferredCrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.analytics.UnavailableAnalyticsEventLogger;
 import com.google.firebase.crashlytics.internal.breadcrumbs.DisabledBreadcrumbSource;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
@@ -106,14 +106,15 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
               installationsApiMock,
               DataCollectionArbiterTest.MOCK_ARBITER_ENABLED);
 
-      nativeComponent = new DeferredCrashlyticsNativeComponent(
-          new Deferred<CrashlyticsNativeComponent>() {
-            @Override
-            public void whenAvailable(
-                @NonNull Deferred.DeferredHandler<CrashlyticsNativeComponent> handler) {
-              //no-op
-            }
-          });
+      nativeComponent =
+          new CrashlyticsNativeComponentDeferredProxy(
+              new Deferred<CrashlyticsNativeComponent>() {
+                @Override
+                public void whenAvailable(
+                    @NonNull Deferred.DeferredHandler<CrashlyticsNativeComponent> handler) {
+                  // no-op
+                }
+              });
 
       arbiter = mock(DataCollectionArbiter.class);
       when(arbiter.isAutomaticDataCollectionEnabled()).thenReturn(true);

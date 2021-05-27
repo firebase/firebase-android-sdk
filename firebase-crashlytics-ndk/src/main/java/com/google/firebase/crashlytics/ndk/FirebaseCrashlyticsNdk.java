@@ -41,8 +41,6 @@ class FirebaseCrashlyticsNdk implements CrashlyticsNativeComponent {
 
   FirebaseCrashlyticsNdk(@NonNull CrashpadController controller) {
     this.controller = controller;
-
-    Logger.getLogger().d("FirebaseCrashlyticsNdk constructor: " + controller);
   }
 
   @Override
@@ -57,8 +55,7 @@ class FirebaseCrashlyticsNdk implements CrashlyticsNativeComponent {
       long startedAtSeconds,
       @NonNull StaticSessionData sessionData) {
 
-    Logger.getLogger().d("FirebaseCrashlyticsNdk openSession");
-
+    Logger.getLogger().d("Opening native session: " + sessionId);
     if (controller.initialize(sessionId, generator, startedAtSeconds, sessionData)) {
       Logger.getLogger().w("Failed to initialize Crashlytics NDK for session " + sessionId);
     }
@@ -66,6 +63,8 @@ class FirebaseCrashlyticsNdk implements CrashlyticsNativeComponent {
 
   @Override
   public void finalizeSession(@NonNull String sessionId) {
+
+    Logger.getLogger().d("Finalizing native session: " + sessionId);
     if (!controller.finalizeSession(sessionId)) {
       Logger.getLogger().w("Could not finalize native session: " + sessionId);
     }

@@ -19,6 +19,7 @@ import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentContainer;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
+import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.util.Arrays;
 import java.util.List;
@@ -27,7 +28,7 @@ public class CrashlyticsNdkRegistrar implements ComponentRegistrar {
   @Override
   public List<Component<?>> getComponents() {
     return Arrays.asList(
-        Component.builder(FirebaseCrashlyticsNdk.class)
+        Component.builder(CrashlyticsNativeComponent.class)
             .add(Dependency.required(Context.class))
             .factory(this::buildCrashlyticsNdk)
             .eagerInDefaultApp()
@@ -35,7 +36,7 @@ public class CrashlyticsNdkRegistrar implements ComponentRegistrar {
         LibraryVersionComponent.create("fire-cls-ndk", BuildConfig.VERSION_NAME));
   }
 
-  private FirebaseCrashlyticsNdk buildCrashlyticsNdk(ComponentContainer container) {
+  private CrashlyticsNativeComponent buildCrashlyticsNdk(ComponentContainer container) {
     Context context = container.get(Context.class);
     return FirebaseCrashlyticsNdk.create(context);
   }

@@ -20,7 +20,7 @@ import com.google.firebase.inject.Deferred;
 import java.io.File;
 import java.util.concurrent.atomic.AtomicReference;
 
-public final class DeferredCrashlyticsNativeComponent implements CrashlyticsNativeComponent {
+public final class CrashlyticsNativeComponentDeferredProxy implements CrashlyticsNativeComponent {
 
   private static final NativeSessionFileProvider MISSING_NATIVE_SESSION_FILE_PROVIDER =
       new MissingNativeSessionFileProvider();
@@ -29,12 +29,13 @@ public final class DeferredCrashlyticsNativeComponent implements CrashlyticsNati
   private final AtomicReference<CrashlyticsNativeComponent> availableNativeComponent =
       new AtomicReference<>(null);
 
-  public DeferredCrashlyticsNativeComponent(
+  public CrashlyticsNativeComponentDeferredProxy(
       Deferred<CrashlyticsNativeComponent> deferredNativeComponent) {
     this.deferredNativeComponent = deferredNativeComponent;
+
     this.deferredNativeComponent.whenAvailable(
         nativeComponent -> {
-          Logger.getLogger().d("Crashlytics Native Component now available.");
+          Logger.getLogger().d("Crashlytics native component now available.");
           availableNativeComponent.set(nativeComponent.get());
         });
   }
@@ -48,18 +49,24 @@ public final class DeferredCrashlyticsNativeComponent implements CrashlyticsNati
   @Override
   public void openSession(
       @NonNull String sessionId,
-      String generator,
+      @NonNull String generator,
       long startedAtSeconds,
-      StaticSessionData sessionData) {
+      @NonNull StaticSessionData sessionData) {
+
+    Logger.getLogger().v("Deferring native open session: " + sessionId);
+
     this.deferredNativeComponent.whenAvailable(
-        nativeComponent ->
-            nativeComponent.get().openSession(sessionId, generator, startedAtSeconds, sessionData));
+        nativeComponent -> {
+          nativeComponent.get().openSession(sessionId, generator, startedAtSeconds, sessionData);
+        });
   }
 
   @Override
   public void finalizeSession(@NonNull String sessionId) {
     this.deferredNativeComponent.whenAvailable(
-        nativeComponent -> nativeComponent.get().finalizeSession(sessionId));
+        nativeComponent -> {
+          nativeComponent.get().finalizeSession(sessionId);
+        });
   }
 
   @NonNull

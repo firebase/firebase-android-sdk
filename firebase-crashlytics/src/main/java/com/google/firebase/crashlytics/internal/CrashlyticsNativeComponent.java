@@ -21,14 +21,12 @@ public interface CrashlyticsNativeComponent {
 
   boolean hasCrashDataForSession(@NonNull String sessionId);
 
-  // TODO: Consider what to do with the rest of the lifecycle if openSession fails.
   void openSession(
       @NonNull String sessionId,
       @NonNull String generator,
       long startedAtSeconds,
       @NonNull StaticSessionData sessionData);
 
-  // TODO: Consider whether these methods should return boolean or throw exceptions.
   void finalizeSession(@NonNull String sessionId);
 
   @NonNull

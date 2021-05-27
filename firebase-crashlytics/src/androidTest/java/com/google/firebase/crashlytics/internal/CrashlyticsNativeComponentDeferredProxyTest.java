@@ -28,7 +28,7 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 @RunWith(AndroidJUnit4.class)
-public class DeferredCrashlyticsNativeComponentTest {
+public class CrashlyticsNativeComponentDeferredProxyTest {
   private static final String TEST_SESSION_ID = "abc";
   private static final String TEST_GENERATOR = "abc";
   private static final long TEST_START_TIME = 123;
@@ -42,8 +42,8 @@ public class DeferredCrashlyticsNativeComponentTest {
 
   @Test
   public void testProviderProxyCallsThroughProvidedValue() {
-    DeferredCrashlyticsNativeComponent proxy =
-        new DeferredCrashlyticsNativeComponent(
+    CrashlyticsNativeComponentDeferredProxy proxy =
+        new CrashlyticsNativeComponentDeferredProxy(
             new Deferred<CrashlyticsNativeComponent>() {
               @Override
               public void whenAvailable(

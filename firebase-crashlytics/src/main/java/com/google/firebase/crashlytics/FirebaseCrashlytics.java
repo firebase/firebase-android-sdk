@@ -24,7 +24,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
-import com.google.firebase.crashlytics.internal.DeferredCrashlyticsNativeComponent;
+import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponentDeferredProxy;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.common.AppData;
 import com.google.firebase.crashlytics.internal.common.CommonUtils;
@@ -74,8 +74,8 @@ public class FirebaseCrashlytics {
     final DataCollectionArbiter arbiter = new DataCollectionArbiter(app);
     final IdManager idManager =
         new IdManager(context, appIdentifier, firebaseInstallationsApi, arbiter);
-    final DeferredCrashlyticsNativeComponent proxyNativeComponent =
-        new DeferredCrashlyticsNativeComponent(nativeComponent);
+    final CrashlyticsNativeComponentDeferredProxy deferredNativeComponent =
+        new CrashlyticsNativeComponentDeferredProxy(nativeComponent);
 
     // Integration with Firebase Analytics
     final AnalyticsDeferredProxy analyticsDeferredProxy =
@@ -87,7 +87,7 @@ public class FirebaseCrashlytics {
         new CrashlyticsCore(
             app,
             idManager,
-            proxyNativeComponent,
+            deferredNativeComponent,
             arbiter,
             analyticsDeferredProxy.getDeferredBreadcrumbSource(),
             analyticsDeferredProxy.getAnalyticsEventLogger(),
@@ -95,6 +95,7 @@ public class FirebaseCrashlytics {
 
     final String googleAppId = app.getOptions().getApplicationId();
     final String mappingFileId = CommonUtils.getMappingFileId(context);
+
     Logger.getLogger().d("Mapping file ID is: " + mappingFileId);
 
     final UnityVersionProvider unityVersionProvider = new ResourceUnityVersionProvider(context);
