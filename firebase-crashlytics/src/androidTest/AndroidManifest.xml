@@ -1,14 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.crashlytics.android.core">
-    <uses-sdk android:minSdkVersion="16"
-      android:targetSdkVersion="30"
-      android:maxSdkVersion="30" />
-
     <application>
-
 
         <meta-data android:name="io.fabric.ApiKey"
                    android:value="a000000000000000000000000000000000000000"/>
 
     </application>
+
 </manifest>
