@@ -87,9 +87,6 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
 
     DeviceCacheManager.clearInstance();
     ConfigResolver.clearInstance();
-
-    Bundle bundle = new Bundle();
-    ConfigResolver.getInstance().setMetadataBundle(new ImmutableBundle(bundle));
   }
 
   @Test
@@ -462,6 +459,8 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
   @Test
   public void foregroundTrace_perfMonDisabledAtRuntime_traceNotCreated() {
     AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
+    ConfigResolver configResolver = ConfigResolver.getInstance();
+    configResolver.setDeviceCacheManager(new DeviceCacheManager(new FakeDirectExecutorService()));
 
     // activity1 comes to foreground.
     currentTime = 1;
@@ -474,18 +473,12 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     // Foreground traces has been created because Performance Monitoring is enabled.
     verify(transportManager, times(1)).log(any(TraceMetric.class), eq(FOREGROUND_BACKGROUND));
 
-    assertThat(ConfigResolver.getInstance().getIsPerformanceCollectionDeactivated()).isFalse();
     // Developer disabled Performance Monitoring during runtime.
     ConfigResolver.getInstance().setIsPerformanceCollectionEnabled(false);
-    assertThat(ConfigResolver.getInstance().getIsPerformanceCollectionDeactivated()).isFalse();
-    assertThat(ConfigResolver.getInstance().getIsPerformanceCollectionEnabled()).isFalse();
-    assertThat(ConfigResolver.getInstance().getIsPerformanceCollectionDeactivated()).isFalse();
-    assertThat(ConfigResolver.getInstance().isPerformanceMonitoringEnabled()).isFalse();
 
     // activity1 comes to foreground.
     currentTime = 3;
     monitor.onActivityResumed(activity1);
-    verify(transportManager, times(1)).log(any(TraceMetric.class), eq(FOREGROUND_BACKGROUND));
 
     // activity1 goes to background.
     currentTime = 4;
@@ -574,6 +567,8 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
   @Test
   public void backgroundTrace_perfMonDisabledAtRuntime_traceNotCreated() {
     AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
+    ConfigResolver configResolver = ConfigResolver.getInstance();
+    configResolver.setDeviceCacheManager(new DeviceCacheManager(new FakeDirectExecutorService()));
 
     // activity1 comes to background.
     currentTime = 1;
@@ -582,13 +577,8 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     // Foreground trace has been created because Performance Monitoring is enabled.
     verify(transportManager, times(1)).log(any(TraceMetric.class), eq(FOREGROUND_BACKGROUND));
 
-    assertThat(ConfigResolver.getInstance().getIsPerformanceCollectionDeactivated()).isFalse();
     // Developer disabled Performance Monitoring during runtime.
     ConfigResolver.getInstance().setIsPerformanceCollectionEnabled(false);
-    assertThat(ConfigResolver.getInstance().getIsPerformanceCollectionDeactivated()).isFalse();
-    assertThat(ConfigResolver.getInstance().getIsPerformanceCollectionEnabled()).isFalse();
-    assertThat(ConfigResolver.getInstance().getIsPerformanceCollectionDeactivated()).isFalse();
-    assertThat(ConfigResolver.getInstance().isPerformanceMonitoringEnabled()).isFalse();
 
     // activity1 goes to foreground.
     currentTime = 2;
