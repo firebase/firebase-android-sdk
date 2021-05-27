@@ -151,7 +151,10 @@ public class RecipeVersionWriter {
             "com.google.firebase:firebase-appindexing"));
     outputBuilder.append(
         generateVersionVariable(
-            depsByArtifactId, "Admob", "ads-dependency", "com.google.android.gms:play-services-ads"));
+            depsByArtifactId,
+            "Admob",
+            "ads-dependency",
+            "com.google.android.gms:play-services-ads"));
     outputBuilder.append(
         generateVersionVariable(
             depsByArtifactId,
