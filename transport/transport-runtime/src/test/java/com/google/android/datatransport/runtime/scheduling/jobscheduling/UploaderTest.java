@@ -15,6 +15,7 @@
 package com.google.android.datatransport.runtime.scheduling.jobscheduling;
 
 import static android.os.Build.VERSION_CODES.LOLLIPOP;
+import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -38,7 +39,6 @@ import java.nio.charset.Charset;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.stubbing.Answer;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
@@ -65,6 +65,7 @@ public class UploaderTest {
           .addMetadata("key1", "value1")
           .addMetadata("key2", "value2")
           .build();
+  private static final int MANY_EVENT_COUNT = 1000;
 
   private final EventStore store = spy(new InMemoryEventStore());
   private BackendRegistry mockRegistry = mock(BackendRegistry.class);
@@ -126,21 +127,18 @@ public class UploaderTest {
     when(mockBackend.send(any())).thenReturn(BackendResponse.transientError());
     uploader.logAndUpdateState(TRANSPORT_CONTEXT, 1);
     verify(store, times(1)).recordFailure(any());
-    verify(mockScheduler, times(1)).schedule(TRANSPORT_CONTEXT, 2);
+    verify(mockScheduler, times(1)).schedule(TRANSPORT_CONTEXT, 2, true);
   }
 
   @Test
-  public void logAndUpdateStatus_whenMoreEventsAvailableInStore_shouldReschedule() {
-    when(mockBackend.send(any()))
-        .then(
-            (Answer<BackendResponse>)
-                invocation -> {
-                  // store a new event
-                  store.persist(TRANSPORT_CONTEXT, EVENT);
-                  return BackendResponse.ok(1000);
-                });
+  public void logAndUpdateStatus_manyEvents_shouldUploadAll() {
+    when(mockBackend.send(any())).thenReturn(BackendResponse.ok(1000));
+    for (int i = 0; i < MANY_EVENT_COUNT; i++) {
+      store.persist(TRANSPORT_CONTEXT, EVENT);
+    }
+
     Iterable<PersistedEvent> persistedEvents = store.loadBatch(TRANSPORT_CONTEXT);
     uploader.logAndUpdateState(TRANSPORT_CONTEXT, 1);
-    verify(mockScheduler, times(1)).schedule(TRANSPORT_CONTEXT, 1, true);
+    assertThat(store.hasPendingEventsFor(TRANSPORT_CONTEXT)).isFalse();
   }
 }
