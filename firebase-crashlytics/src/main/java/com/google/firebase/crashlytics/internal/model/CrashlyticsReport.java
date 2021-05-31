@@ -105,9 +105,6 @@ public abstract class CrashlyticsReport {
   @Nullable
   public abstract FilesPayload getNdkPayload();
 
-  @Nullable
-  public abstract ApplicationExitInfo getAppExitInfo();
-
   @NonNull
   protected abstract Builder toBuilder();
 
@@ -156,16 +153,6 @@ public abstract class CrashlyticsReport {
   @NonNull
   public CrashlyticsReport withNdkPayload(@NonNull FilesPayload filesPayload) {
     return toBuilder().setSession(null).setNdkPayload(filesPayload).build();
-  }
-
-  /**
-   * Augment an existing {@link CrashlyticsReport} with an ApplicationExitInfo
-   *
-   * @return a new {@link CrashlyticsReport} with AppExitInfo inside of it.
-   */
-  @NonNull
-  public CrashlyticsReport withAppExitInfo(@NonNull ApplicationExitInfo appExitInfo) {
-    return toBuilder().setAppExitInfo(appExitInfo).build();
   }
 
   /**
@@ -1137,9 +1124,6 @@ public abstract class CrashlyticsReport {
 
     @NonNull
     public abstract Builder setNdkPayload(FilesPayload value);
-
-    @NonNull
-    public abstract Builder setAppExitInfo(ApplicationExitInfo value);
 
     @NonNull
     public abstract CrashlyticsReport build();
