@@ -23,6 +23,7 @@ import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+import androidx.lifecycle.LifecycleOwner;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
@@ -36,6 +37,7 @@ import com.google.firebase.firestore.core.ActivityScope;
 import com.google.firebase.firestore.core.AsyncEventListener;
 import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.core.FirestoreClient;
+import com.google.firebase.firestore.core.LifecycleOwnerScope;
 import com.google.firebase.firestore.local.SQLitePersistence;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.ResourcePath;
@@ -555,7 +557,30 @@ public class FirebaseFirestore {
   @NonNull
   public ListenerRegistration addSnapshotsInSyncListener(
       @NonNull Activity activity, @NonNull Runnable runnable) {
-    return addSnapshotsInSyncListener(Executors.DEFAULT_CALLBACK_EXECUTOR, activity, runnable);
+    return addSnapshotsInSyncListener(
+        Executors.DEFAULT_CALLBACK_EXECUTOR, activity, null, runnable);
+  }
+
+  /**
+   * Attaches a listener for a snapshots-in-sync event. The snapshots-in-sync event indicates that
+   * all listeners affected by a given change have fired, even if a single server-generated change
+   * affects multiple listeners.
+   *
+   * <p>NOTE: The snapshots-in-sync event only indicates that listeners are in sync with each other,
+   * but does not relate to whether those snapshots are in sync with the server. Use
+   * SnapshotMetadata in the individual listeners to determine if a snapshot is from the cache or
+   * the server.
+   *
+   * @param lifecycleOwner The LifecycleOwner to scope the listener to.
+   * @param runnable A callback to be called every time all snapshot listeners are in sync with each
+   *     other.
+   * @return A registration object that can be used to remove the listener.
+   */
+  @NonNull
+  public ListenerRegistration addSnapshotsInSyncListener(
+      @NonNull LifecycleOwner lifecycleOwner, @NonNull Runnable runnable) {
+    return addSnapshotsInSyncListener(
+        Executors.DEFAULT_CALLBACK_EXECUTOR, null, lifecycleOwner, runnable);
   }
 
   /**
@@ -576,7 +601,7 @@ public class FirebaseFirestore {
   @NonNull
   public ListenerRegistration addSnapshotsInSyncListener(
       @NonNull Executor executor, @NonNull Runnable runnable) {
-    return addSnapshotsInSyncListener(executor, null, runnable);
+    return addSnapshotsInSyncListener(executor, null, null, runnable);
   }
 
   /**
@@ -645,14 +670,20 @@ public class FirebaseFirestore {
    *
    * <p>Will be Activity scoped if the activity parameter is non-{@code null}.
    *
+   * <p>Will be LifecycleOwner scoped if the owner parameter is non-{@code null}.
+   *
    * @param userExecutor The executor to use to call the listener.
    * @param activity Optional activity this listener is scoped to.
+   * @param owner Optional LifecycleOwner this listener is scoped to.
    * @param runnable A callback to be called every time all snapshot listeners are in sync with each
    *     other.
    * @return A registration object that can be used to remove the listener.
    */
   private ListenerRegistration addSnapshotsInSyncListener(
-      Executor userExecutor, @Nullable Activity activity, @NonNull Runnable runnable) {
+      Executor userExecutor,
+      @Nullable Activity activity,
+      @Nullable LifecycleOwner owner,
+      @NonNull Runnable runnable) {
     ensureClientConfigured();
     EventListener<Void> eventListener =
         (Void v, FirebaseFirestoreException error) -> {
@@ -662,12 +693,15 @@ public class FirebaseFirestore {
     AsyncEventListener<Void> asyncListener =
         new AsyncEventListener<Void>(userExecutor, eventListener);
     client.addSnapshotsInSyncListener(asyncListener);
-    return ActivityScope.bind(
-        activity,
+    ListenerRegistration registration =
         () -> {
           asyncListener.mute();
           client.removeSnapshotsInSyncListener(asyncListener);
-        });
+        };
+    if (owner != null) {
+      return LifecycleOwnerScope.bind(owner, registration);
+    }
+    return ActivityScope.bind(activity, registration);
   }
 
   FirestoreClient getClient() {

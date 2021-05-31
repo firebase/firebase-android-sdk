@@ -21,6 +21,7 @@ import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 import android.app.Activity;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.lifecycle.LifecycleOwner;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
@@ -32,6 +33,7 @@ import com.google.firebase.firestore.core.EventManager.ListenOptions;
 import com.google.firebase.firestore.core.FieldFilter;
 import com.google.firebase.firestore.core.Filter;
 import com.google.firebase.firestore.core.Filter.Operator;
+import com.google.firebase.firestore.core.LifecycleOwnerScope;
 import com.google.firebase.firestore.core.ListenerRegistrationImpl;
 import com.google.firebase.firestore.core.OrderBy;
 import com.google.firebase.firestore.core.QueryListener;
@@ -967,6 +969,7 @@ public class Query {
             Executors.DIRECT_EXECUTOR,
             options,
             null,
+            null,
             (snapshot, error) -> {
               if (error != null) {
                 res.setException(error);
@@ -1045,6 +1048,21 @@ public class Query {
   }
 
   /**
+   * Starts listening to this query with the given options, using a LifecycleOwner-scoped listener.
+   *
+   * <p>The listener will be automatically removed during {@link LifecycleOwner's ON_STOP Event'}.
+   *
+   * @param lifecycleOwner The LifecycleOwner to scope the listener to.
+   * @param listener The event listener that will be called with the snapshots.
+   * @return A registration object that can be used to remove the listener.
+   */
+  @NonNull
+  public ListenerRegistration addSnapshotListener(
+      @NonNull LifecycleOwner lifecycleOwner, @NonNull EventListener<QuerySnapshot> listener) {
+    return addSnapshotListener(lifecycleOwner, MetadataChanges.EXCLUDE, listener);
+  }
+
+  /**
    * Starts listening to this query with the given options.
    *
    * @param metadataChanges Indicates whether metadata-only changes (i.e. only {@code
@@ -1075,7 +1093,8 @@ public class Query {
     checkNotNull(executor, "Provided executor must not be null.");
     checkNotNull(metadataChanges, "Provided MetadataChanges value must not be null.");
     checkNotNull(listener, "Provided EventListener must not be null.");
-    return addSnapshotListenerInternal(executor, internalOptions(metadataChanges), null, listener);
+    return addSnapshotListenerInternal(
+        executor, internalOptions(metadataChanges), null, null, listener);
   }
 
   /**
@@ -1098,7 +1117,38 @@ public class Query {
     checkNotNull(metadataChanges, "Provided MetadataChanges value must not be null.");
     checkNotNull(listener, "Provided EventListener must not be null.");
     return addSnapshotListenerInternal(
-        Executors.DEFAULT_CALLBACK_EXECUTOR, internalOptions(metadataChanges), activity, listener);
+        Executors.DEFAULT_CALLBACK_EXECUTOR,
+        internalOptions(metadataChanges),
+        activity,
+        null,
+        listener);
+  }
+
+  /**
+   * Starts listening to this query with the given options, using a LifecycleOwner-scoped listener.
+   *
+   * <p>The listener will be automatically removed during {@link LifecycleOwner's ON_STOP Event'}.
+   *
+   * @param lifecycleOwner The LifecycleOwner to scope the listener to.
+   * @param metadataChanges Indicates whether metadata-only changes (i.e. only {@code
+   *     QuerySnapshot.getMetadata()} changed) should trigger snapshot events.
+   * @param listener The event listener that will be called with the snapshots.
+   * @return A registration object that can be used to remove the listener.
+   */
+  @NonNull
+  public ListenerRegistration addSnapshotListener(
+      @NonNull LifecycleOwner lifecycleOwner,
+      @NonNull MetadataChanges metadataChanges,
+      @NonNull EventListener<QuerySnapshot> listener) {
+    checkNotNull(lifecycleOwner, "Provided LifecycleOwner must not be null.");
+    checkNotNull(metadataChanges, "Provided MetadataChanges value must not be null.");
+    checkNotNull(listener, "Provided EventListener must not be null.");
+    return addSnapshotListenerInternal(
+        Executors.DEFAULT_CALLBACK_EXECUTOR,
+        internalOptions(metadataChanges),
+        null,
+        lifecycleOwner,
+        listener);
   }
 
   /**
@@ -1116,6 +1166,7 @@ public class Query {
       Executor executor,
       ListenOptions options,
       @Nullable Activity activity,
+      @Nullable LifecycleOwner lifecycleOwner,
       EventListener<QuerySnapshot> userListener) {
     validateHasExplicitOrderByForLimitToLast();
 
@@ -1138,9 +1189,13 @@ public class Query {
         new AsyncEventListener<>(executor, viewListener);
 
     QueryListener queryListener = firestore.getClient().listen(query, options, asyncListener);
-    return ActivityScope.bind(
-        activity,
-        new ListenerRegistrationImpl(firestore.getClient(), queryListener, asyncListener));
+    ListenerRegistration registration =
+        new ListenerRegistrationImpl(firestore.getClient(), queryListener, asyncListener);
+
+    if (lifecycleOwner != null) {
+      return LifecycleOwnerScope.bind(lifecycleOwner, registration);
+    }
+    return ActivityScope.bind(activity, registration);
   }
 
   private void validateHasExplicitOrderByForLimitToLast() {

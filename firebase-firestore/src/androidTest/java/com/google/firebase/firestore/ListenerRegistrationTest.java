@@ -21,6 +21,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 import android.app.Activity;
+import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.rule.ActivityTestRule;
@@ -222,5 +223,55 @@ public class ListenerRegistrationTest {
   public void activityScopedListenerStopsListeningWhenFragmentActivityStops() {
     TestFragmentActivity activity = activityTestFragmentRule.launchActivity(/*intent=*/ null);
     activityScopedListenerStopsListeningWhenActivityStops(activity);
+  }
+
+  public static class TestDialogFragment extends DialogFragment {
+    private final Semaphore stopped = new Semaphore(0);
+
+    @Override
+    public void onStop() {
+      super.onStop();
+      stopped.release();
+    }
+
+    public void waitForStop() {
+      waitFor(stopped, 1);
+    }
+  }
+
+  @Test
+  public void lifecycleOwnerScopedListenerStopsListeningWhenLifecycleOwnerStops() {
+    TestFragmentActivity activity = activityTestFragmentRule.launchActivity(/*intent=*/ null);
+
+    // Show a TestDialogFragment in the TestActivity
+    TestDialogFragment testDialogFragment = new TestDialogFragment();
+    testDialogFragment.show(activity.getSupportFragmentManager(), "TestDialogFragment");
+
+    CollectionReference collectionReference = testCollection();
+    DocumentReference documentReference = collectionReference.document();
+    Semaphore events = new Semaphore(0);
+    collectionReference.addSnapshotListener(
+        testDialogFragment,
+        (value, error) -> {
+          assertNull(error);
+          events.release();
+        });
+
+    // Initial events
+    waitFor(events, 1);
+
+    // We have a listener, so this should generate events.
+    waitFor(documentReference.set(map("foo", "bar")));
+    assertEquals(1, events.availablePermits());
+    waitFor(events, 1);
+
+    // Since we created an LifecycleOwner-scoped listener, dismissing the dialog should cause the
+    // listener to be automatically unregistered.
+    testDialogFragment.dismiss();
+    testDialogFragment.waitForStop();
+
+    // No listeners, therefore, there should be no events.
+    waitFor(documentReference.set(map("foo", "new-bar")));
+    assertEquals(0, events.availablePermits());
   }
 }
