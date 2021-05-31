@@ -148,8 +148,9 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
 
     final CrashlyticsReport.Session.Event capturedEvent =
         dataCapture.captureAnrEventData(convertApplicationExitInfo(applicationExitInfo));
+
     Logger.getLogger().d("Persisting anr for session " + sessionId);
-    reportPersistence.persistEvent(capturedEvent, sessionId, true);
+    reportPersistence.persistEvent(addLogsAndCustomKeysToEvent(capturedEvent), sessionId, true);
   }
 
   public void finalizeSessionWithNativeEvent(
@@ -215,28 +216,9 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
     return Tasks.whenAll(sendTasks);
   }
 
-  private void persistEvent(
-      @NonNull Throwable event,
-      @NonNull Thread thread,
-      @NonNull String sessionId,
-      @NonNull String eventType,
-      long timestamp,
-      boolean includeAllThreads) {
-
-    final boolean isHighPriority = eventType.equals(EVENT_TYPE_CRASH);
-
-    final CrashlyticsReport.Session.Event capturedEvent =
-        dataCapture.captureEventData(
-            event,
-            thread,
-            eventType,
-            timestamp,
-            EVENT_THREAD_IMPORTANCE,
-            MAX_CHAINED_EXCEPTION_DEPTH,
-            includeAllThreads);
-
+  private CrashlyticsReport.Session.Event addLogsAndCustomKeysToEvent(
+      CrashlyticsReport.Session.Event capturedEvent) {
     final CrashlyticsReport.Session.Event.Builder eventBuilder = capturedEvent.toBuilder();
-
     final String content = logFileManager.getLogString();
 
     if (content != null) {
@@ -264,7 +246,31 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
               .build());
     }
 
-    reportPersistence.persistEvent(eventBuilder.build(), sessionId, isHighPriority);
+    return eventBuilder.build();
+  }
+
+  private void persistEvent(
+      @NonNull Throwable event,
+      @NonNull Thread thread,
+      @NonNull String sessionId,
+      @NonNull String eventType,
+      long timestamp,
+      boolean includeAllThreads) {
+
+    final boolean isHighPriority = eventType.equals(EVENT_TYPE_CRASH);
+
+    final CrashlyticsReport.Session.Event capturedEvent =
+        dataCapture.captureEventData(
+            event,
+            thread,
+            eventType,
+            timestamp,
+            EVENT_THREAD_IMPORTANCE,
+            MAX_CHAINED_EXCEPTION_DEPTH,
+            includeAllThreads);
+
+    reportPersistence.persistEvent(
+        addLogsAndCustomKeysToEvent(capturedEvent), sessionId, isHighPriority);
   }
 
   private boolean onReportSendComplete(@NonNull Task<CrashlyticsReportWithSessionId> task) {
