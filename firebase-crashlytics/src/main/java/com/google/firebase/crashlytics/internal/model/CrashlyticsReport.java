@@ -1090,7 +1090,7 @@ public abstract class CrashlyticsReport {
       @NonNull
       public abstract ApplicationExitInfo.Builder setTimestamp(@NonNull long value);
 
-      @Nullable
+      @NonNull
       public abstract ApplicationExitInfo.Builder setTraceFile(@Nullable String value);
 
       @NonNull

@@ -16,10 +16,6 @@ package com.google.firebase.crashlytics.internal.common;
 
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -139,14 +135,7 @@ public class SessionReportingCoordinatorRobolectricTest {
     when(mockEventApp.toBuilder()).thenReturn(mockEventAppBuilder);
     when(mockEventAppBuilder.setCustomAttributes(any())).thenReturn(mockEventAppBuilder);
     when(mockEventAppBuilder.build()).thenReturn(mockEventApp);
-    when(dataCapture.captureEventData(
-            any(Throwable.class),
-            any(Thread.class),
-            anyString(),
-            anyLong(),
-            anyInt(),
-            anyInt(),
-            anyBoolean()))
+    when(dataCapture.captureAnrEventData(any(CrashlyticsReport.ApplicationExitInfo.class)))
         .thenReturn(mockEvent);
   }
 

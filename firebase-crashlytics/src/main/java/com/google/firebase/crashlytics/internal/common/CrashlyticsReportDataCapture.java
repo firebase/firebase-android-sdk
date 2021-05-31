@@ -111,13 +111,11 @@ public class CrashlyticsReportDataCapture {
   }
 
   public Event captureAnrEventData(CrashlyticsReport.ApplicationExitInfo applicationExitInfo) {
-    final int orientation = context.getResources().getConfiguration().orientation;
-
     return Event.builder()
         .setType("anr")
         .setTimestamp(applicationExitInfo.getTimestamp())
-        .setApp(populateEventApplicationData(orientation, applicationExitInfo))
-        .setDevice(populateEventDeviceData(orientation))
+        .setApp(populateEventApplicationData(applicationExitInfo))
+        .setDevice(populateEventDeviceData(-1))
         .build();
   }
 
@@ -224,13 +222,13 @@ public class CrashlyticsReportDataCapture {
   }
 
   private Event.Application populateEventApplicationData(
-      int orientation, CrashlyticsReport.ApplicationExitInfo applicationExitInfo) {
+      CrashlyticsReport.ApplicationExitInfo applicationExitInfo) {
     boolean isBackground =
         applicationExitInfo.getImportance() != RunningAppProcessInfo.IMPORTANCE_FOREGROUND;
 
     return Event.Application.builder()
         .setBackground(isBackground)
-        .setUiOrientation(orientation)
+        .setUiOrientation(-1)
         .setExecution(populateExecutionData(applicationExitInfo))
         .build();
   }
