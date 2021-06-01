@@ -22,5 +22,7 @@ interface CrashFilesManager {
 
   File getSessionFileDirectory(String sessionId);
 
-  void deleteSessionFilesDirectory(String sessionId);
+  void deleteSessionFileDirectory(String sessionId);
+
+  void cleanOldSessionFileDirectories();
 }

@@ -216,8 +216,7 @@ public final class LocalStore implements BundleCallback {
         () -> {
           // Load and apply all existing mutations. This lets us compute the current base state for
           // all non-idempotent transforms before applying any additional user-provided writes.
-          ImmutableSortedMap<DocumentKey, Document> existingDocuments =
-              localDocuments.getDocuments(keys);
+          ImmutableSortedMap<DocumentKey, Document> documents = localDocuments.getDocuments(keys);
 
           // For non-idempotent mutations (such as `FieldValue.increment()`), we record the base
           // state in a separate patch mutation. This is later used to guarantee consistent values
@@ -226,7 +225,7 @@ public final class LocalStore implements BundleCallback {
           List<Mutation> baseMutations = new ArrayList<>();
           for (Mutation mutation : mutations) {
             ObjectValue baseValue =
-                mutation.extractTransformBaseValue(existingDocuments.get(mutation.getKey()));
+                mutation.extractTransformBaseValue(documents.get(mutation.getKey()));
             if (baseValue != null) {
               // NOTE: The base state should only be applied if there's some existing
               // document to override, so use a Precondition of exists=true
@@ -241,9 +240,8 @@ public final class LocalStore implements BundleCallback {
 
           MutationBatch batch =
               mutationQueue.addMutationBatch(localWriteTime, baseMutations, mutations);
-          ImmutableSortedMap<DocumentKey, Document> changedDocuments =
-              batch.applyToLocalDocumentSet(existingDocuments);
-          return new LocalWriteResult(batch.getBatchId(), changedDocuments);
+          batch.applyToLocalDocumentSet(documents);
+          return new LocalWriteResult(batch.getBatchId(), documents);
         });
   }
 

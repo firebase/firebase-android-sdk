@@ -118,8 +118,7 @@ public final class MutationBatch {
   }
 
   /** Computes the local view for all provided documents given the mutations in this batch. */
-  public ImmutableSortedMap<DocumentKey, Document> applyToLocalDocumentSet(
-      ImmutableSortedMap<DocumentKey, Document> documentMap) {
+  public void applyToLocalDocumentSet(ImmutableSortedMap<DocumentKey, Document> documentMap) {
     // TODO(mrschmidt): This implementation is O(n^2). If we iterate through the mutations first
     // (as done in `applyToLocalView(MutableDocument d)`), we can reduce the complexity to
     // O(n).
@@ -131,9 +130,7 @@ public final class MutationBatch {
       if (!document.isValidDocument()) {
         document.convertToNoDocument(SnapshotVersion.NONE);
       }
-      documentMap = documentMap.insert(document.getKey(), document);
     }
-    return documentMap;
   }
 
   @Override
