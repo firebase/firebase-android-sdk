@@ -97,49 +97,63 @@ public class Uploader {
 
   void logAndUpdateState(TransportContext transportContext, int attemptNumber) {
     TransportBackend backend = backendRegistry.get(transportContext.getBackendName());
+    long maxNextRequestWaitMillis = 0;
 
-    Iterable<PersistedEvent> persistedEvents =
-        guard.runCriticalSection(() -> eventStore.loadBatch(transportContext));
+    while (guard.runCriticalSection(() -> eventStore.hasPendingEventsFor(transportContext))) {
+      Iterable<PersistedEvent> persistedEvents =
+          guard.runCriticalSection(() -> eventStore.loadBatch(transportContext));
 
-    // Do not make a call to the backend if the list is empty.
-    if (!persistedEvents.iterator().hasNext()) {
-      return;
-    }
-
-    BackendResponse response;
-    if (backend == null) {
-      Logging.d(
-          LOG_TAG, "Unknown backend for %s, deleting event batch for it...", transportContext);
-      response = BackendResponse.fatalError();
-    } else {
-      List<EventInternal> eventInternals = new ArrayList<>();
-
-      for (PersistedEvent persistedEvent : persistedEvents) {
-        eventInternals.add(persistedEvent.getEvent());
+      // Do not make a call to the backend if the list is empty.
+      if (!persistedEvents.iterator().hasNext()) {
+        return;
       }
-      response =
-          backend.send(
-              BackendRequest.builder()
-                  .setEvents(eventInternals)
-                  .setExtras(transportContext.getExtras())
-                  .build());
-    }
 
+      BackendResponse response;
+      if (backend == null) {
+        Logging.d(
+            LOG_TAG, "Unknown backend for %s, deleting event batch for it...", transportContext);
+        response = BackendResponse.fatalError();
+      } else {
+        List<EventInternal> eventInternals = new ArrayList<>();
+
+        for (PersistedEvent persistedEvent : persistedEvents) {
+          eventInternals.add(persistedEvent.getEvent());
+        }
+        response =
+            backend.send(
+                BackendRequest.builder()
+                    .setEvents(eventInternals)
+                    .setExtras(transportContext.getExtras())
+                    .build());
+      }
+      if (response.getStatus() == BackendResponse.Status.TRANSIENT_ERROR) {
+        long finalMaxNextRequestWaitMillis1 = maxNextRequestWaitMillis;
+        guard.runCriticalSection(
+            () -> {
+              eventStore.recordFailure(persistedEvents);
+              eventStore.recordNextCallTime(
+                  transportContext, clock.getTime() + finalMaxNextRequestWaitMillis1);
+              return null;
+            });
+        workScheduler.schedule(transportContext, attemptNumber + 1, true);
+        return;
+      } else {
+        guard.runCriticalSection(
+            () -> {
+              eventStore.recordSuccess(persistedEvents);
+              return null;
+            });
+        if (response.getStatus() == BackendResponse.Status.OK) {
+          maxNextRequestWaitMillis =
+              Math.max(maxNextRequestWaitMillis, response.getNextRequestWaitMillis());
+        }
+      }
+    }
+    long finalMaxNextRequestWaitMillis = maxNextRequestWaitMillis;
     guard.runCriticalSection(
         () -> {
-          if (response.getStatus() == BackendResponse.Status.TRANSIENT_ERROR) {
-            eventStore.recordFailure(persistedEvents);
-            workScheduler.schedule(transportContext, attemptNumber + 1);
-          } else {
-            eventStore.recordSuccess(persistedEvents);
-            if (response.getStatus() == BackendResponse.Status.OK) {
-              eventStore.recordNextCallTime(
-                  transportContext, clock.getTime() + response.getNextRequestWaitMillis());
-            }
-            if (eventStore.hasPendingEventsFor(transportContext)) {
-              workScheduler.schedule(transportContext, 1, true);
-            }
-          }
+          eventStore.recordNextCallTime(
+              transportContext, clock.getTime() + finalMaxNextRequestWaitMillis);
           return null;
         });
   }

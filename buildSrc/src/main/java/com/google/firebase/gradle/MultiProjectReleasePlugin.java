@@ -64,13 +64,8 @@ public class MultiProjectReleasePlugin implements Plugin<Project> {
     boolean releaseJavadocs = toBoolean(System.getProperty("releaseJavadocs", "true"));
 
     File firebaseDevsiteJavadoc = new File(project.getBuildDir(), "firebase-javadocs/");
-    firebaseDevsiteJavadoc.mkdirs();
-    File gmsDevsiteJavadoc = new File(project.getBuildDir(), "gms-javadocs/");
-    gmsDevsiteJavadoc.mkdirs();
     File firebaseClientBuildDest = new File(firebaseDevsiteJavadoc, "client/");
     firebaseClientBuildDest.mkdirs();
-    File gmsClientBuildDest = new File(gmsDevsiteJavadoc, "client/");
-    gmsClientBuildDest.mkdirs();
 
     project.subprojects(
         sub -> {
@@ -141,31 +136,10 @@ public class MultiProjectReleasePlugin implements Plugin<Project> {
                                       copy -> {
                                         copy.from(
                                             publishableProject.getBuildDir()
-                                                + "/docs/javadoc/reference");
-                                        copy.include("**/*");
-                                        copy.into(gmsDevsiteJavadoc);
-                                      });
-
-                                  publishableProject.copy(
-                                      copy -> {
-                                        copy.from(
-                                            publishableProject.getBuildDir()
                                                 + "/docs/javadoc/reference/_toc.yaml");
                                         copy.include("**/*");
                                         copy.into(
                                             firebaseClientBuildDest
-                                                + "/"
-                                                + publishableProject.getName());
-                                      });
-
-                                  publishableProject.copy(
-                                      copy -> {
-                                        copy.from(
-                                            publishableProject.getBuildDir()
-                                                + "/docs/javadoc/reference/_toc.yaml");
-                                        copy.include("**/*");
-                                        copy.into(
-                                            gmsClientBuildDest
                                                 + "/"
                                                 + publishableProject.getName());
                                       });
@@ -202,16 +176,11 @@ public class MultiProjectReleasePlugin implements Plugin<Project> {
                                                 "_toc.yaml");
                                         delSpec.delete(
                                             relativeDeletablePaths.stream()
-                                                .flatMap(
+                                                .map(
                                                     path ->
-                                                        ImmutableList.of(
-                                                            firebaseDevsiteJavadoc.getPath()
-                                                                + "/"
-                                                                + path,
-                                                            gmsDevsiteJavadoc.getPath()
-                                                                + "/"
-                                                                + path)
-                                                            .stream())
+                                                        firebaseDevsiteJavadoc.getPath()
+                                                            + "/"
+                                                            + path)
                                                 .collect(Collectors.toList()));
                                       });
                                   // Transform
@@ -221,44 +190,31 @@ public class MultiProjectReleasePlugin implements Plugin<Project> {
                                         execSpec.setWorkingDir(firebaseDevsiteJavadoc);
                                         execSpec.setCommandLine(
                                             project.getRootProject().file("buildSrc").getPath()
-                                                + "/devsite_transform.sh");
-                                      });
-
-                                  project.exec(
-                                      execSpec -> {
-                                        execSpec.setIgnoreExitValue(true);
-                                        execSpec.setWorkingDir(gmsDevsiteJavadoc);
-                                        execSpec.commandLine(
-                                            project.getRootProject().file("buildSrc").getPath()
-                                                + "/gms_transform.sh");
+                                                + "/firesite_transform.sh");
                                       });
 
                                   // Tidy
                                   String tidyBinary = System.getProperty("tidyBinaryPath", null);
                                   String tidyConfig = System.getProperty("tidyConfigPath", null);
                                   if (tidyBinary != null && tidyConfig != null) {
-                                    for (File dir :
-                                        ImmutableList.of(
-                                            firebaseDevsiteJavadoc, gmsDevsiteJavadoc)) {
-                                      try {
-                                        Files.walk(dir.toPath())
-                                            .filter(
-                                                p ->
-                                                    p.toFile().isFile()
-                                                        && p.toString().endsWith(".html"))
-                                            .forEach(
-                                                p -> {
-                                                  project.exec(
-                                                      execSpec -> {
-                                                        System.out.println("Tidying " + p);
-                                                        execSpec.setIgnoreExitValue(true);
-                                                        execSpec.commandLine(
-                                                            tidyBinary, "-config", tidyConfig, p);
-                                                      });
-                                                });
-                                      } catch (IOException e) {
-                                        throw new GradleException("Directory walk failed.", e);
-                                      }
+                                    try {
+                                      Files.walk(firebaseDevsiteJavadoc.toPath())
+                                          .filter(
+                                              p ->
+                                                  p.toFile().isFile()
+                                                      && p.toString().endsWith(".html"))
+                                          .forEach(
+                                              p -> {
+                                                project.exec(
+                                                    execSpec -> {
+                                                      System.out.println("Tidying " + p);
+                                                      execSpec.setIgnoreExitValue(true);
+                                                      execSpec.commandLine(
+                                                          tidyBinary, "-config", tidyConfig, p);
+                                                    });
+                                              });
+                                    } catch (IOException e) {
+                                      throw new GradleException("Directory walk failed.", e);
                                     }
                                   }
                                 });
@@ -278,22 +234,8 @@ public class MultiProjectReleasePlugin implements Plugin<Project> {
                             zip.include("**/*");
                           });
 
-              Zip assembleGmsJavadocZip =
-                  project
-                      .getTasks()
-                      .create(
-                          "assembleGmsJavadocZip",
-                          Zip.class,
-                          zip -> {
-                            zip.dependsOn(prepareJavadocs);
-                            zip.getDestinationDirectory().set(project.getBuildDir());
-                            zip.getArchiveFileName().set("gms-javadoc.zip");
-                            zip.from(gmsDevsiteJavadoc);
-                            zip.include("**/*");
-                          });
-
               if (releaseJavadocs) {
-                firebasePublish.dependsOn(assembleFirebaseJavadocZip, assembleGmsJavadocZip);
+                firebasePublish.dependsOn(assembleFirebaseJavadocZip);
               }
             });
   }
