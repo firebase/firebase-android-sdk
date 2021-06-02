@@ -649,6 +649,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     }
     syncEngineListener.onViewSnapshots(newSnapshots);
     localStore.notifyLocalViewChanges(documentChangesInAllViews);
+    localStore.updateIndexEntries(changes);
   }
 
   /** Updates the limbo document state for the given targetId. */

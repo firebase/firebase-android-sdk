@@ -15,6 +15,9 @@ package com.google.firebase.firestore.local;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import com.google.firebase.firestore.core.Query;
+import com.google.firebase.firestore.model.Document;
+import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.ResourcePath;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,6 +38,17 @@ class MemoryIndexManager implements IndexManager {
   @Override
   public List<ResourcePath> getCollectionParents(String collectionId) {
     return collectionParentsIndex.getEntries(collectionId);
+  }
+
+  @Override
+  public void addDocument(Document document) {}
+
+  @Override
+  public void enableIndex(ResourcePath collectionPath, IndexDefinition index) {}
+
+  @Override
+  public Iterable<DocumentKey> getDocumentsMatchingQuery(Query query) {
+    return null;
   }
 
   /**

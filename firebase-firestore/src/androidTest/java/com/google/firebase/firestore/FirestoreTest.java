@@ -72,6 +72,49 @@ public class FirestoreTest {
   }
 
   @Test
+  public void testCanUseIndexForEquality() {
+    CollectionReference collectionReference = testCollection("rooms");
+    collectionReference.getFirestore().enableIndex(collectionReference, "foo", Direction.ASCENDING);
+    collectionReference.add(map("foo", "bar"));
+    collectionReference.add(map("foo", "baz"));
+    QuerySnapshot snap = waitFor(collectionReference.whereEqualTo("foo", "bar").get());
+    assertEquals(1, snap.size());
+  }
+
+  @Test
+  public void testCanUseIndexForInequality() {
+    CollectionReference collectionReference = testCollection("rooms");
+    collectionReference.getFirestore().enableIndex(collectionReference, "foo", Direction.ASCENDING);
+    collectionReference.add(map("foo", 1));
+    collectionReference.add(map("foo", 2));
+    collectionReference.add(map("foo", 3));
+    QuerySnapshot snap = waitFor(collectionReference.whereGreaterThan("foo", 1).get());
+    assertEquals(2, snap.size());
+  }
+
+  @Test
+  public void testCanUseIndexForInequalityWithDouble() {
+    CollectionReference collectionReference = testCollection("rooms");
+    collectionReference.getFirestore().enableIndex(collectionReference, "foo", Direction.ASCENDING);
+    collectionReference.add(map("foo", 1));
+    collectionReference.add(map("foo", 2.0));
+    collectionReference.add(map("foo", 3));
+    QuerySnapshot snap = waitFor(collectionReference.whereGreaterThan("foo", 1.0).get());
+    assertEquals(2, snap.size());
+  }
+
+  @Test
+  public void testCanUseIndexForArrayContains() {
+    CollectionReference collectionReference = testCollection("rooms");
+    collectionReference.getFirestore().enableArrayContainsIndex(collectionReference, "foo");
+    collectionReference.document("match1").set(map("foo", Collections.singletonList("a")));
+    collectionReference.document("match2").set(map("foo", Collections.singletonList("a")));
+    collectionReference.document("nomatch").set(map("foo", Collections.singletonList("b")));
+    QuerySnapshot snap = waitFor(collectionReference.whereArrayContains("foo", "a").get());
+    assertEquals(2, snap.size());
+  }
+
+  @Test
   public void testCanUpdateAnExistingDocument() {
     DocumentReference documentReference = testCollection("rooms").document("eros");
     Map<String, Object> initialValue =

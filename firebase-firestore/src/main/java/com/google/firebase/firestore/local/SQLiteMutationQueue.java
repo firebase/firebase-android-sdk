@@ -209,7 +209,7 @@ final class SQLiteMutationQueue implements MutationQueue {
       String path = EncodedPath.encode(key.getPath());
       db.execute(indexInserter, uid, path, batchId);
 
-      db.getIndexManager().addToCollectionParentIndex(key.getPath().popLast());
+      // db.getIndexManager().addToCollectionParentIndex(key.getPath().popLast());
     }
 
     return batch;

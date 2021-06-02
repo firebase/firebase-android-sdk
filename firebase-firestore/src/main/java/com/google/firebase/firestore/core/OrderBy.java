@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.core;
 
+import com.google.firebase.firestore.local.IndexManager;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.Values;
@@ -68,6 +69,14 @@ public class OrderBy {
           v1 != null && v2 != null, "Trying to compare documents on fields that don't exist.");
       return direction.getComparisonModifier() * Values.compare(v1, v2);
     }
+  }
+
+  public IndexManager.IndexComponent getIndexComponent() {
+    return new IndexManager.IndexComponent(
+        field,
+        direction.equals(Direction.ASCENDING)
+            ? IndexManager.IndexComponent.IndexType.ASC
+            : IndexManager.IndexComponent.IndexType.DESC);
   }
 
   @Override

@@ -36,8 +36,10 @@ import com.google.firebase.firestore.core.ActivityScope;
 import com.google.firebase.firestore.core.AsyncEventListener;
 import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.core.FirestoreClient;
+import com.google.firebase.firestore.local.IndexManager;
 import com.google.firebase.firestore.local.SQLitePersistence;
 import com.google.firebase.firestore.model.DatabaseId;
+import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.remote.FirestoreChannel;
 import com.google.firebase.firestore.remote.GrpcMetadataProvider;
@@ -201,6 +203,58 @@ public class FirebaseFirestore {
 
       this.settings = settings;
     }
+  }
+
+  public void enableIndex(
+      @NonNull CollectionReference collection,
+      @NonNull String fieldPath,
+      @NonNull Query.Direction direction) {
+    IndexManager.IndexDefinition definition = new IndexManager.IndexDefinition();
+    definition.add(
+        new IndexManager.IndexComponent(
+            FieldPath.fromServerFormat(fieldPath),
+            direction.equals(Query.Direction.ASCENDING)
+                ? IndexManager.IndexComponent.IndexType.ASC
+                : IndexManager.IndexComponent.IndexType.DESC));
+    enableIndex(collection.query.getPath(), definition);
+  }
+
+  public void enableArrayContainsIndex(
+      @NonNull CollectionReference collection, @NonNull String fieldPath) {
+    IndexManager.IndexDefinition definition = new IndexManager.IndexDefinition();
+    definition.add(
+        new IndexManager.IndexComponent(
+            FieldPath.fromServerFormat(fieldPath),
+            IndexManager.IndexComponent.IndexType.ARRAY_CONTAINS));
+    enableIndex(collection.query.getPath(), definition);
+  }
+
+  public void enableIndex(
+      @NonNull CollectionReference collection,
+      @NonNull String fieldPath1,
+      @NonNull Query.Direction direction1,
+      @NonNull String fieldPath2,
+      @NonNull Query.Direction direction2) {
+    IndexManager.IndexDefinition definition = new IndexManager.IndexDefinition();
+    definition.add(
+        new IndexManager.IndexComponent(
+            FieldPath.fromServerFormat(fieldPath1),
+            direction1.equals(Query.Direction.ASCENDING)
+                ? IndexManager.IndexComponent.IndexType.ASC
+                : IndexManager.IndexComponent.IndexType.DESC));
+    definition.add(
+        new IndexManager.IndexComponent(
+            FieldPath.fromServerFormat(fieldPath2),
+            direction2.equals(Query.Direction.ASCENDING)
+                ? IndexManager.IndexComponent.IndexType.ASC
+                : IndexManager.IndexComponent.IndexType.DESC));
+    enableIndex(collection.query.getPath(), definition);
+  }
+
+  private void enableIndex(ResourcePath path, IndexManager.IndexDefinition definition) {
+
+    ensureClientConfigured();
+    client.enableIndex(path, definition);
   }
 
   /**
