@@ -293,7 +293,7 @@ public final class NetworkRequestMetricBuilder extends AppStateUpdateHandler
     if (isValidContentType(contentType)) {
       builder.setResponseContentType(contentType);
     } else {
-      logger.debug("The content type of the response is not a valid content-type:" + contentType);
+      logger.warn("The content type of the response is not a valid content-type:" + contentType);
     }
     return this;
   }

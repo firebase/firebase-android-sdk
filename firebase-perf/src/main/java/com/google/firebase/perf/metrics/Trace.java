@@ -75,7 +75,7 @@ public class Trace extends AppStateUpdateHandler
   public void updateSession(PerfSession session) {
     // Note(b/152218504): Being defensive to fix the NPE
     if (session == null) {
-      logger.debug("Unable to add new SessionId to the Trace. Continuing without it.");
+      logger.warn("Unable to add new SessionId to the Trace. Continuing without it.");
       return;
     }
 
