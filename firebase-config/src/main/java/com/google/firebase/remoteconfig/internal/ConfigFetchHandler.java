@@ -498,7 +498,9 @@ public class ConfigFetchHandler {
   @WorkerThread
   private Map<String, String> getUserProperties() {
     Map<String, String> userPropertiesMap = new HashMap<>();
-    AnalyticsConnector connector = this.analyticsConnector.get();
+    AnalyticsConnector connector = this.analyticsConnector != null
+                ? this.analyticsConnector.get() : null;
+    
     if (connector == null) {
       return userPropertiesMap;
     }
