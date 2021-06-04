@@ -881,7 +881,10 @@ class CrashlyticsController {
       // Passes the latest applicationExitInfo to ReportCoordinator, which persists it if it
       // happened during the session.
       if (applicationExitInfoList.size() != 0) {
-        reportingCoordinator.persistAppExitInfoEvent(sessionId, applicationExitInfoList.get(0));
+        final LogFileManager previousSessionLogManager =
+            new LogFileManager(context, logFileDirectoryProvider, sessionId);
+        reportingCoordinator.persistAppExitInfoEvent(
+            sessionId, applicationExitInfoList.get(0), previousSessionLogManager);
       }
     }
   }
