@@ -456,10 +456,6 @@ public class CrashlyticsReportJsonTransform {
           builder.setCustomAttributes(
               parseArray(jsonReader, CrashlyticsReportJsonTransform::parseCustomAttribute));
           break;
-        case "internalKeys":
-          builder.setInternalKeys(
-              parseArray(jsonReader, CrashlyticsReportJsonTransform::parseCustomAttribute));
-          break;
         default:
           jsonReader.skipValue();
           break;

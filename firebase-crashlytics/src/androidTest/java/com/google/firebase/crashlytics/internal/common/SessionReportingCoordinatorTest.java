@@ -229,13 +229,11 @@ public class SessionReportingCoordinatorTest {
         ImmutableList.from(customAttribute1, customAttribute2);
 
     when(reportMetadata.getCustomKeys()).thenReturn(attributes);
-    when(reportMetadata.getInternalKeys()).thenReturn(attributes);
 
     reportingCoordinator.onBeginSession(sessionId, timestamp);
     reportingCoordinator.persistNonFatalEvent(mockException, mockThread, sessionId, timestamp);
 
     verify(mockEventAppBuilder).setCustomAttributes(expectedCustomAttributes);
-    verify(mockEventAppBuilder).setInternalKeys(expectedCustomAttributes);
     verify(mockEventAppBuilder).build();
     verify(mockEventBuilder).setApp(mockEventApp);
     verify(mockEventBuilder).build();
@@ -290,13 +288,11 @@ public class SessionReportingCoordinatorTest {
         ImmutableList.from(customAttribute1, customAttribute2);
 
     when(reportMetadata.getCustomKeys()).thenReturn(attributes);
-    when(reportMetadata.getInternalKeys()).thenReturn(attributes);
 
     reportingCoordinator.onBeginSession(sessionId, timestamp);
     reportingCoordinator.persistFatalEvent(mockException, mockThread, sessionId, timestamp);
 
     verify(mockEventAppBuilder).setCustomAttributes(expectedCustomAttributes);
-    verify(mockEventAppBuilder).setInternalKeys(expectedCustomAttributes);
     verify(mockEventAppBuilder).build();
     verify(mockEventBuilder).setApp(mockEventApp);
     verify(mockEventBuilder).build();
@@ -465,7 +461,6 @@ public class SessionReportingCoordinatorTest {
     when(mockEvent.getApp()).thenReturn(mockEventApp);
     when(mockEventApp.toBuilder()).thenReturn(mockEventAppBuilder);
     when(mockEventAppBuilder.setCustomAttributes(any())).thenReturn(mockEventAppBuilder);
-    when(mockEventAppBuilder.setInternalKeys(any())).thenReturn(mockEventAppBuilder);
     when(mockEventAppBuilder.build()).thenReturn(mockEventApp);
     when(dataCapture.captureEventData(
             any(Throwable.class),
