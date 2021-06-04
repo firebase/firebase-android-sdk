@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -33,6 +33,17 @@ public class DynamicLinksClient extends GmsClient<IDynamicLinksService> {
   public static final String SERVICE_DESCRIPTOR =
       "com.google.firebase.dynamiclinks.internal.IDynamicLinksService";
 
+  private static final int V17 = 12451000;
+
+  public enum ServiceId {
+    DYNAMIC_LINKS_API_VALUE(131);
+    private final int label;
+
+    private ServiceId(int label) {
+      this.label = label;
+    }
+  }
+
   public DynamicLinksClient(
       Context context,
       Looper looper,
@@ -42,8 +53,7 @@ public class DynamicLinksClient extends GmsClient<IDynamicLinksService> {
     super(
         context,
         looper,
-        // ServiceId.DYNAMIC_LINKS_API_VALUE,
-        131,
+        ServiceId.DYNAMIC_LINKS_API_VALUE.label,
         clientSettings,
         connectedListener,
         connectionFailedListener);
@@ -67,7 +77,7 @@ public class DynamicLinksClient extends GmsClient<IDynamicLinksService> {
     return IDynamicLinksService.Stub.asInterface(binder);
   }
 
-  void getDynamicLink(IDynamicLinksCallbacks.Stub callback, String dynamicLink) {
+  void getDynamicLink(IDynamicLinksCallbacks.Stub callback, @Nullable String dynamicLink) {
     try {
       getService().getDynamicLink(callback, dynamicLink);
     } catch (RemoteException e) {
@@ -89,7 +99,11 @@ public class DynamicLinksClient extends GmsClient<IDynamicLinksService> {
     // or an older version is now supported. Do _not_ use JAR_BUILD_VERSION_CODE as long as this
     // code is shipped in the 3P SDK (which ships ~from head / dev and would not work with the head
     // version of the .apk)..
-    // return BuildConstants.BaseApkVersion.V17;
-    return 12451000;
+    return V17;
+  }
+
+  @Override
+  public boolean usesClientTelemetry() {
+    return true;
   }
 }

@@ -12,8 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/** @hide */
-
 package com.google.firebase.dynamiclinks.internal;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
+/**
+ * Indicates that a class outside of GMS Core has already subclassed a GMS Core class and will
+ * eventually need to migrate their code in accordance with go/gmscore-restricted-inheritance.
+ */
+@Retention(RetentionPolicy.SOURCE)
+@Target({ElementType.TYPE})
+@Inherited
+public @interface LegacyGmsCoreInheritance {}
