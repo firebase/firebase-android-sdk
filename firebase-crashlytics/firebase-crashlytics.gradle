@@ -18,7 +18,10 @@ plugins {
 }
 
 firebaseLibrary {
-    testLab.enabled = true
+    testLab {
+        enabled = true
+        device 'model=flame,version=30'
+    }
 }
 
 android {
