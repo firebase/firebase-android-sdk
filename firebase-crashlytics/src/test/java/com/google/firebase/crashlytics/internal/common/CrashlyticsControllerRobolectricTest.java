@@ -29,6 +29,7 @@ import android.content.Context;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.crashlytics.internal.ProviderProxyNativeComponent;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsEventLogger;
+import com.google.firebase.crashlytics.internal.log.LogFileManager;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.settings.SettingsDataProvider;
 import com.google.firebase.crashlytics.internal.settings.model.FeaturesSettingsData;
@@ -54,6 +55,7 @@ public class CrashlyticsControllerRobolectricTest {
   @Mock private File mockFilesDirectory;
   @Mock private SessionReportingCoordinator mockSessionReportingCoordinator;
   @Mock private DataCollectionArbiter mockDataCollectionArbiter;
+  @Mock private LogFileManager.DirectoryProvider mockLogFileDirecotryProvider;
 
   @Before
   public void setUp() {
@@ -72,7 +74,8 @@ public class CrashlyticsControllerRobolectricTest {
     controller.doCloseSessions(mockSettingsDataProvider);
     // Since we haven't added any app exit info to the shadow activity manager, there won't exist a
     // single app exit info, and so this method won't be called.
-    verify(mockSessionReportingCoordinator, never()).persistAppExitInfoEvent(eq(sessionId), any());
+    verify(mockSessionReportingCoordinator, never())
+        .persistAppExitInfoEvent(eq(sessionId), any(), any(LogFileManager.class));
   }
 
   @Test
@@ -86,7 +89,8 @@ public class CrashlyticsControllerRobolectricTest {
     mockSettingsData(true);
     controller.doCloseSessions(mockSettingsDataProvider);
     verify(mockSessionReportingCoordinator)
-        .persistAppExitInfoEvent(eq(sessionId), eq(testApplicationExitInfo));
+        .persistAppExitInfoEvent(
+            eq(sessionId), eq(testApplicationExitInfo), any(LogFileManager.class));
   }
 
   @Test
@@ -98,7 +102,8 @@ public class CrashlyticsControllerRobolectricTest {
         .thenReturn(Collections.singletonList(sessionId));
     mockSettingsData(false);
     controller.doCloseSessions(mockSettingsDataProvider);
-    verify(mockSessionReportingCoordinator, never()).persistAppExitInfoEvent(eq(sessionId), any());
+    verify(mockSessionReportingCoordinator, never())
+        .persistAppExitInfoEvent(eq(sessionId), any(), any(LogFileManager.class));
   }
 
   private void mockSettingsData(boolean collectAnrs) {
@@ -130,7 +135,7 @@ public class CrashlyticsControllerRobolectricTest {
             appData,
             null,
             null,
-            null,
+            mockLogFileDirecotryProvider,
             mockSessionReportingCoordinator,
             new ProviderProxyNativeComponent(() -> null),
             mock(AnalyticsEventLogger.class));
