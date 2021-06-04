@@ -434,28 +434,14 @@ class CrashlyticsController {
         return;
       }
     }
-    cacheKeyData(userMetadata.getCustomKeys(), false);
+    cacheKeyData(userMetadata.getCustomKeys());
   }
 
   void setCustomKeys(Map<String, String> keysAndValues) {
     // Write all the key/value pairs before doing anything computationally expensive.
     userMetadata.setCustomKeys(keysAndValues);
     // Once all the key/value pairs are added, update the cache.
-    cacheKeyData(userMetadata.getCustomKeys(), false);
-  }
-
-  void setInternalKey(String key, String value) {
-    try {
-      userMetadata.setInternalKey(key, value);
-    } catch (IllegalArgumentException ex) {
-      if (context != null && CommonUtils.isAppDebuggable(context)) {
-        throw ex;
-      } else {
-        Logger.getLogger().e("Attempting to set custom attribute with null key, ignoring.");
-        return;
-      }
-    }
-    cacheKeyData(userMetadata.getInternalKeys(), true);
+    cacheKeyData(userMetadata.getCustomKeys());
   }
 
   /**
@@ -489,13 +475,13 @@ class CrashlyticsController {
    * crash happens immediately after setting a value. If this becomes a problem, we can investigate
    * writing synchronously, or potentially add an explicit user-facing API for synchronous writes.
    */
-  private void cacheKeyData(final Map<String, String> keyData, boolean isInternal) {
+  private void cacheKeyData(final Map<String, String> keyData) {
     backgroundWorker.submit(
         new Callable<Void>() {
           @Override
           public Void call() throws Exception {
             final String currentSessionId = getCurrentSessionId();
-            new MetaDataStore(getFilesDir()).writeKeyData(currentSessionId, keyData, isInternal);
+            new MetaDataStore(getFilesDir()).writeKeyData(currentSessionId, keyData);
             return null;
           }
         });

@@ -638,9 +638,6 @@ public abstract class CrashlyticsReport {
         public abstract ImmutableList<CustomAttribute> getCustomAttributes();
 
         @Nullable
-        public abstract ImmutableList<CustomAttribute> getInternalKeys();
-
-        @Nullable
         public abstract Boolean getBackground();
 
         public abstract int getUiOrientation();
@@ -922,9 +919,6 @@ public abstract class CrashlyticsReport {
           @NonNull
           public abstract Builder setCustomAttributes(
               @NonNull ImmutableList<CustomAttribute> value);
-
-          @NonNull
-          public abstract Builder setInternalKeys(@NonNull ImmutableList<CustomAttribute> value);
 
           @NonNull
           public abstract Builder setBackground(@Nullable Boolean value);
