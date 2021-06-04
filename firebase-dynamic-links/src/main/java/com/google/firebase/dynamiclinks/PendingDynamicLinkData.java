@@ -5,11 +5,11 @@ import android.content.Intent;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.annotation.KeepForSdk;
-import com.google.android.gms.common.internal.Hide;
+
 import com.google.android.gms.common.internal.ShowFirstParty;
 import com.google.android.gms.common.util.DefaultClock;
 import com.google.android.gms.common.util.VisibleForTesting;
@@ -70,7 +70,7 @@ public class PendingDynamicLinkData {
    */
   @Hide
   @KeepForSdk
-  @ShowFirstParty
+
   @Nullable
   public Bundle getExtensions() {
     if (dynamicLinkData == null) {

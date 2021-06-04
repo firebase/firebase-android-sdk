@@ -4,7 +4,7 @@ import android.os.Bundle;
 import android.text.TextUtils;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
-import com.google.android.gms.common.internal.Hide;
+
 
 /**
  * Class to extract UTM parameters from firebase dynamic link.

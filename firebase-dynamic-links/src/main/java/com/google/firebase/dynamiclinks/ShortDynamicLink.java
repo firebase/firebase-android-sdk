@@ -1,8 +1,8 @@
 package com.google.firebase.dynamiclinks;
 
 import android.net.Uri;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.IntDef;
 import com.google.firebase.dynamiclinks.DynamicLink.Builder;
 import java.lang.annotation.Retention;

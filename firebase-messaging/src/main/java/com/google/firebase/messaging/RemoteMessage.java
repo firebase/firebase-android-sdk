@@ -140,7 +140,7 @@ public final class RemoteMessage extends AbstractSafeParcelable {
   }
 
   /** @hide */
-  @ShowFirstParty
+
   @Nullable
   public byte[] getRawData() {
     return bundle.getByteArray(MessagePayloadKeys.RAW_DATA);
@@ -360,7 +360,7 @@ public final class RemoteMessage extends AbstractSafeParcelable {
     }
 
     /** @hide */
-    @ShowFirstParty
+
     @NonNull
     public Builder setRawData(byte[] data) {
       bundle.putByteArray(MessagePayloadKeys.RAW_DATA, data);

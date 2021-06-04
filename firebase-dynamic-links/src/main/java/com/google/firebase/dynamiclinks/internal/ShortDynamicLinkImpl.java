@@ -2,7 +2,7 @@ package com.google.firebase.dynamiclinks.internal;
 
 import android.net.Uri;
 import android.os.Parcel;
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 import com.google.android.gms.common.internal.safeparcel.AbstractSafeParcelable;
 import com.google.android.gms.common.internal.safeparcel.SafeParcelable;
 import com.google.firebase.dynamiclinks.ShortDynamicLink;
