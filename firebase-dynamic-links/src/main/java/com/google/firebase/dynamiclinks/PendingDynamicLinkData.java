@@ -27,7 +27,7 @@ public class PendingDynamicLinkData {
    *
    * @hide
    */
-  @Hide
+
   @KeepForSdk
   @VisibleForTesting
   public PendingDynamicLinkData(DynamicLinkData dynamicLinkData) {
@@ -68,7 +68,7 @@ public class PendingDynamicLinkData {
    * @return A bundle will all extension data.
    * @hide
    */
-  @Hide
+
   @KeepForSdk
 
   @Nullable
@@ -149,7 +149,7 @@ public class PendingDynamicLinkData {
    * @return Url that can be used to create an intent to launch an activity.
    * @hide
    */
-  @Hide
+
   @VisibleForTesting
   @Nullable
   public Uri getRedirectUrl() {

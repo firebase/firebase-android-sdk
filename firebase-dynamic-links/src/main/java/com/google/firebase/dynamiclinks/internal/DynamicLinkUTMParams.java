@@ -11,7 +11,7 @@ import androidx.annotation.VisibleForTesting;
  *
  * @hide
  */
-@Hide
+
 public class DynamicLinkUTMParams {
 
   @VisibleForTesting public static final String KEY_CAMPAIGN_BUNDLE = "_cmp";

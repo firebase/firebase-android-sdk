@@ -19,7 +19,7 @@ import java.util.List;
  *
  * @hide
  */
-@Hide
+
 @KeepForSdk
 @Keep
 public final class FirebaseDynamicLinkRegistrar implements ComponentRegistrar {
