@@ -1,17 +1,3 @@
-// Copyright 2018 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package com.google.firebase.dynamiclinks;
 
 import android.content.Context;
@@ -19,25 +5,30 @@ import android.content.Intent;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.net.Uri;
 import android.os.Bundle;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import com.google.android.gms.common.GooglePlayServicesUtil;
+import com.google.android.gms.common.annotation.KeepForSdk;
+import com.google.android.gms.common.internal.Hide;
+import com.google.android.gms.common.internal.ShowFirstParty;
 import com.google.android.gms.common.util.DefaultClock;
+import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.firebase.dynamiclinks.internal.DynamicLinkData;
 import com.google.firebase.dynamiclinks.internal.DynamicLinkUTMParams;
 
 /** Provides accessor methods to dynamic links data. */
 public class PendingDynamicLinkData {
 
-  private final DynamicLinkData dynamicLinkData;
   @Nullable private final DynamicLinkUTMParams dynamicLinkUTMParams;
+  @Nullable private final DynamicLinkData dynamicLinkData;
 
   /**
    * Create a dynamic link from parameters.
    *
    * @hide
    */
+  @Hide
+  @KeepForSdk
   @VisibleForTesting
   public PendingDynamicLinkData(DynamicLinkData dynamicLinkData) {
     if (dynamicLinkData == null) {
@@ -77,6 +68,9 @@ public class PendingDynamicLinkData {
    * @return A bundle will all extension data.
    * @hide
    */
+  @Hide
+  @KeepForSdk
+  @ShowFirstParty
   @Nullable
   public Bundle getExtensions() {
     if (dynamicLinkData == null) {
@@ -114,7 +108,7 @@ public class PendingDynamicLinkData {
   @NonNull
   public Bundle getUtmParameters() {
     if (dynamicLinkUTMParams == null) {
-      return Bundle.EMPTY;
+      return new Bundle();
     }
 
     return dynamicLinkUTMParams.asBundle();
@@ -155,7 +149,9 @@ public class PendingDynamicLinkData {
    * @return Url that can be used to create an intent to launch an activity.
    * @hide
    */
+  @Hide
   @VisibleForTesting
+  @Nullable
   public Uri getRedirectUrl() {
     if (dynamicLinkData == null) {
       return null;

@@ -1,30 +1,31 @@
-// Copyright 2018 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package com.google.firebase.dynamiclinks.internal;
 
 import android.content.Context;
 import android.os.Looper;
-import androidx.annotation.NonNull;
-import androidx.annotation.VisibleForTesting;
+import android.support.annotation.NonNull;
+import com.google.android.gms.client.annotations.LegacyGmsCoreInheritance;
+import com.google.android.gms.client.annotations.ReviewedExceptionGmsCoreInheritance;
 import com.google.android.gms.common.api.Api;
+import com.google.android.gms.common.api.Api.ApiOptions;
 import com.google.android.gms.common.api.Api.ApiOptions.NoOptions;
 import com.google.android.gms.common.api.GoogleApi;
 import com.google.android.gms.common.api.GoogleApiClient.ConnectionCallbacks;
 import com.google.android.gms.common.api.GoogleApiClient.OnConnectionFailedListener;
 import com.google.android.gms.common.internal.ClientSettings;
+import com.google.android.gms.common.util.VisibleForTesting;
+import com.google.errorprone.annotations.RestrictedInheritance;
 
+/** */
+@RestrictedInheritance(
+    explanation =
+        "Sub classing of GMS Core's APIs are restricted to GMS Core client libs and testing fakes.",
+    link = "go/gmscore-restrictedinheritance",
+    // This class can only be subclassed within GMS Core's code base.
+    allowedOnPath = ".*java.*/com/google/android/gms.*",
+    allowlistAnnotations = {
+      LegacyGmsCoreInheritance.class,
+      ReviewedExceptionGmsCoreInheritance.class
+    })
 public class DynamicLinksApi extends GoogleApi<NoOptions> {
 
   private static final Api.ClientKey<DynamicLinksClient> CLIENT_KEY =
@@ -63,6 +64,6 @@ public class DynamicLinksApi extends GoogleApi<NoOptions> {
    */
   @VisibleForTesting
   public DynamicLinksApi(@NonNull Context context) {
-    super(context, API, null /* options */, Settings.DEFAULT_SETTINGS);
+    super(context, API, ApiOptions.NO_OPTIONS /* options */, Settings.DEFAULT_SETTINGS);
   }
 }
