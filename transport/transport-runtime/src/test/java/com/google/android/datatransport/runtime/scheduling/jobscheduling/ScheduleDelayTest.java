@@ -19,7 +19,7 @@ import static com.google.common.truth.Truth.assertThat;
 import com.google.android.datatransport.Priority;
 import com.google.android.datatransport.runtime.time.Clock;
 import com.google.android.datatransport.runtime.time.TestClock;
-import edu.emory.mathcs.backport.java.util.Collections;
+import java.util.Collections;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
