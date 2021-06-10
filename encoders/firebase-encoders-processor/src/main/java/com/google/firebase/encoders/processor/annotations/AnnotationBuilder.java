@@ -136,7 +136,7 @@ public final class AnnotationBuilder {
 
           @Override
           protected Void defaultAction(Object o, Void unused) {
-            fieldSpec.initializer("$L", o);
+            fieldSpec.initializer("$L", value);
             return null;
           }
         }.visit(value, null);
