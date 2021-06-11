@@ -15,6 +15,7 @@
 #include <jni.h>
 #include <unistd.h>
 #include <dlfcn.h>
+#include <string>
 
 #include "crashlytics/config.h"
 #include "crashlytics/crashpad_handler_main.h"
@@ -92,19 +93,24 @@ private:
 
 typedef int (*CrashpadHandlerMainFunc)(int, char **);
 
-CrashpadHandlerMainFunc load_libcrashlytics_common()
+CrashpadHandlerMainFunc load_libcrashlytics_common(const std::string& lib_path)
 {
-    void* common = dlopen("libcrashlytics-common.so", RTLD_LAZY | RTLD_LOCAL);
+    std::string full_path = lib_path + "libcrashlytics-common.so";
+    DEBUG_OUT("About to load: %s", full_path.c_str());
+
+    void* common = dlopen(full_path.c_str(), RTLD_LAZY | RTLD_LOCAL);
     if (common == nullptr) {
         LOGE("Could not load libcrashlytics-common.so");
         return nullptr;
     }
+    DEBUG_OUT("libcrashlytics-common.so loaded");
 
     void* handler = dlsym(common, "CrashpadHandlerMain");
     if (handler == nullptr) {
         LOGE("Could not find CrashpadHandlerMain in libcrashlytics-common.so");
         return nullptr;
     }
+    DEBUG_OUT("CrashpadHandlerMain found.");
 
     return reinterpret_cast<CrashpadHandlerMainFunc>(handler);
 }
@@ -118,23 +124,29 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved)
 
 jint JNI_Init(JNIEnv* env, jobject obj, jobjectArray pathsArray)
 {
+    LOGI("JNI_Init entry");
     jsize incoming_length = env->GetArrayLength(pathsArray);
 
-    char** argv = new char*[incoming_length];
+    char** argv = new char*[incoming_length - 1];
+    std::string lib_path;
 
-    for (auto i = 0; i < incoming_length; ++i) {
+    for (auto i = 0, j=0; i < incoming_length; ++i) {
       jstring element =
         static_cast<jstring>(env->GetObjectArrayElement(pathsArray, i));
 
-      argv[i] = const_cast<char *>(env->GetStringUTFChars(element, 0));
+        if (i == 1) {
+          lib_path = const_cast<char *>(env->GetStringUTFChars(element, 0));
+        } else {
+            argv[j++] = const_cast<char*>(env->GetStringUTFChars(element, 0));
+        }
     }
 
     google::crashlytics::jni::detail::scoped_array_delete deletor{ argv };
 
     google::crashlytics::jni::CrashpadHandlerMainFunc CrashpadHandlerMain =
-        google::crashlytics::jni::load_libcrashlytics_common();
+        google::crashlytics::jni::load_libcrashlytics_common(lib_path);
     if (CrashpadHandlerMain != nullptr) {
-        return CrashpadHandlerMain(incoming_length, argv);
+        return CrashpadHandlerMain(incoming_length - 1, argv);
     }
 
     LOGE("Unable to load necessary components to capture crash");

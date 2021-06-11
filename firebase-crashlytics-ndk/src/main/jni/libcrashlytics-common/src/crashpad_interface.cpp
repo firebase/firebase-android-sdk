@@ -103,6 +103,8 @@ bool install_signal_handler_java(
     std::map<std::string, std::string> annotations;
     std::vector<std::string> arguments;
 
+    arguments.push_back(env->back());
+
     DEBUG_OUT("Installing Java Crashpad handler");
     atexit(detail::finalize);
 

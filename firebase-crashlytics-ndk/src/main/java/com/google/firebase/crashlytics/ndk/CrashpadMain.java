@@ -14,10 +14,17 @@
 
 package com.google.firebase.crashlytics.ndk;
 
+import android.util.Log;
+
 public class CrashpadMain {
   public static void main(String[] args) {
+
+    StringBuilder argsString = new StringBuilder();
+    for(String s : args) { argsString.append(s + "; "); }
+    Log.d("FirebaseCrashlytics", argsString.toString());
+
     try {
-      System.loadLibrary("crashlytics-handler");
+      System.load(args[1]+ "libcrashlytics-handler.so");
     } catch (UnsatisfiedLinkError e) {
       throw new RuntimeException(e);
     }

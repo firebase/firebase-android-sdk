@@ -36,26 +36,42 @@ namespace detail {
 bool self_path(std::string& self, std::string& path)
 {
     Dl_info info;
-    if (dladdr(reinterpret_cast<void*>(&self_path), &info) == 0 ||
-        dlsym(dlopen(info.dli_fname, RTLD_NOLOAD | RTLD_LAZY),
-                "CrashpadHandlerMain") == nullptr) {
+    if (dladdr(reinterpret_cast<void*>(&self_path), &info) == 0) {
+        DEBUG_OUT("dladdr failed; %s %s", info.dli_fname, dlerror());
+        return false;
+    }
+    std::string mypath = info.dli_fname;
+    mypath += "!/lib/x86/libcrashlytics.so";
 
-        DEBUG_OUT("Unable to find CrashpadHandlerMain; %s", info.dli_fname);
+    DEBUG_OUT("info.dli_fname (not really): %s", mypath.c_str());
+    // RTLD_NOLOAD not available on older APIs.
+
+    //void* handle = dlopen(info.dli_fname, /*RTLD_NOLOAD | */RTLD_LAZY);
+    void* handle = dlopen(mypath.c_str(), /*RTLD_NOLOAD | */RTLD_LAZY);
+    if (handle == nullptr) {
+        //DEBUG_OUT("dlopen failed; %s %s", info.dli_fname, dlerror());
+        DEBUG_OUT("dlopen failed; %s %s", mypath.c_str(), dlerror());
+        return false;
+    }
+    if (dlsym(handle, "CrashpadHandlerMain") == nullptr) {
+        DEBUG_OUT("failed to find CrashpadHandlerMain; %s %s", info.dli_fname, dlerror());
         return false;
     }
 
     DEBUG_OUT("Path for libcrashlytics.so is %s", info.dli_fname);
 
-    std::string local_handler_library { info.dli_fname };
+    std::string local_handler_library { mypath.c_str() };
 
     size_t libdir_end = local_handler_library.rfind('/');
+    /*
     if (libdir_end == std::string::npos) {
         DEBUG_OUT("Unable to find '/' in %s", local_handler_library.c_str());
         return false;
     }
+     */
 
     self = local_handler_library;
-    path = std::string(local_handler_library, 0, libdir_end + 1);
+    path = (libdir_end == std::string::npos) ? "" : std::string(local_handler_library, 0, libdir_end + 1);
     return true;
 }
 
@@ -65,7 +81,7 @@ void* load_crashlytics_common()
     std::string path;
 
     if (!self_path(self, path)) {
-        LOGE("Could not fild self when loading libcrashlytics-common.so");
+        LOGE("Could not find self when loading libcrashlytics-common.so");
         return nullptr;
     }
 
@@ -181,6 +197,11 @@ bool install_signal_handler(const detail::context& handler_context)
     env->push_back("CLASSPATH=" + classpath);
     env->push_back("LD_LIBRARY_PATH=" + lib_path);
     env->push_back("ANDROID_DATA=/data");
+
+    std::string self;
+    std::string path;
+    detail::self_path(self, path);
+    env->push_back(path);
 
     bool use_java_handler = !get_handler_trampoline(handler_trampoline, handler_library);
 
