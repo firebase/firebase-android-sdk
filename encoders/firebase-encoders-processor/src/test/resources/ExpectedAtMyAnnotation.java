@@ -38,7 +38,7 @@ public final class AtMyAnnotation {
 
   private String strVal = "default";
 
-  private MyAnnotation.MyEnum enumVal = com.example.MyAnnotation.MyEnum.VALUE1;
+  private MyAnnotation.MyEnum enumVal = MyAnnotation.MyEnum.VALUE1;
 
   public AtMyAnnotation intVal(int intVal) {
     this.intVal = intVal;
