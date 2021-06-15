@@ -260,9 +260,7 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
               .setInternalKeys(ImmutableList.from(sortedInternalKeys))
               .build());
     }
-
-    if (reportMetadata.getUserId() != null) {}
-
+    
     return eventBuilder.build();
   }
 
