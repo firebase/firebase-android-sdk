@@ -155,7 +155,7 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
 
     Logger.getLogger().d("Persisting anr for session " + sessionId);
     reportPersistence.persistEvent(
-        addLogsAndReportMetadataToEvent(
+        addLogsAndCustomKeysToEvent(
             capturedEvent, logFileManagerForSession, userMetadataForSession),
         sessionId,
         true);
@@ -224,12 +224,12 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
     return Tasks.whenAll(sendTasks);
   }
 
-  private CrashlyticsReport.Session.Event addLogsAndReportMetadataToEvent(
+  private CrashlyticsReport.Session.Event addLogsAndCustomKeysToEvent(
       CrashlyticsReport.Session.Event capturedEvent) {
-    return addLogsAndReportMetadataToEvent(capturedEvent, logFileManager, reportMetadata);
+    return addLogsAndCustomKeysToEvent(capturedEvent, logFileManager, reportMetadata);
   }
 
-  private CrashlyticsReport.Session.Event addLogsAndReportMetadataToEvent(
+  private CrashlyticsReport.Session.Event addLogsAndCustomKeysToEvent(
       CrashlyticsReport.Session.Event capturedEvent,
       LogFileManager logFileManager,
       UserMetadata reportMetadata) {
@@ -260,7 +260,7 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
               .setInternalKeys(ImmutableList.from(sortedInternalKeys))
               .build());
     }
-    
+
     return eventBuilder.build();
   }
 
@@ -285,7 +285,7 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
             includeAllThreads);
 
     reportPersistence.persistEvent(
-        addLogsAndReportMetadataToEvent(capturedEvent), sessionId, isHighPriority);
+        addLogsAndCustomKeysToEvent(capturedEvent), sessionId, isHighPriority);
   }
 
   private boolean onReportSendComplete(@NonNull Task<CrashlyticsReportWithSessionId> task) {
