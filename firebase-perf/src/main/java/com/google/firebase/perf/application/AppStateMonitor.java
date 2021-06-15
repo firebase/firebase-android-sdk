@@ -20,7 +20,6 @@ import android.app.Application.ActivityLifecycleCallbacks;
 import android.content.Context;
 import android.os.Bundle;
 import android.util.SparseIntArray;
-import android.view.WindowManager;
 import androidx.annotation.NonNull;
 import androidx.core.app.FrameMetricsAggregator;
 import com.google.android.gms.common.util.VisibleForTesting;
@@ -308,7 +307,7 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
     int slowFrames = 0;
     int frozenFrames = 0;
     // Stops recording metrics for this Activity and returns the currently-collected metrics
-    SparseIntArray[] arr = frameMetricsAggregator.remove(activity);
+    SparseIntArray[] arr = frameMetricsAggregator.reset();
     if (arr != null) {
       SparseIntArray frameTimes = arr[FrameMetricsAggregator.TOTAL_INDEX];
       if (frameTimes != null) {
@@ -391,21 +390,13 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
   }
 
   /**
-   * Only send screen trace if FrameMetricsAggregator exists and the activity is hardware
-   * accelerated.
+   * Only send screen trace if FrameMetricsAggregator exists.
    *
    * @param activity The Activity for which we're monitoring the screen rendering performance.
    * @return true if supported, false if not.
    */
   private boolean isScreenTraceSupported(Activity activity) {
-    return hasFrameMetricsAggregator
-        // This check is needed because we can't observe frame rates for a non hardware accelerated
-        // view.
-        // See b/133827763.
-        && activity.getWindow() != null
-        && ((activity.getWindow().getAttributes().flags
-                & WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED)
-            != 0);
+    return hasFrameMetricsAggregator;
   }
 
   /**
