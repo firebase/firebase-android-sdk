@@ -54,6 +54,7 @@ public class SessionReportingCoordinatorRobolectricTest {
   @Mock private CrashlyticsReport.Session.Event.Application mockEventApp;
   @Mock private CrashlyticsReport.Session.Event.Application.Builder mockEventAppBuilder;
   @Mock private LogFileManager mockLogFileManager;
+  @Mock UserMetadata mockUserMetadata;
 
   private SessionReportingCoordinator reportingCoordinator;
 
@@ -80,7 +81,7 @@ public class SessionReportingCoordinatorRobolectricTest {
 
     reportingCoordinator.onBeginSession(sessionId, sessionStartTimestamp);
     reportingCoordinator.persistAppExitInfoEvent(
-        sessionId, testApplicationExitInfo, mockLogFileManager);
+        sessionId, testApplicationExitInfo, mockLogFileManager, mockUserMetadata);
 
     verify(dataCapture).captureAnrEventData(convertApplicationExitInfo(testApplicationExitInfo));
     verify(reportPersistence).persistEvent(any(), eq(sessionId), eq(true));
@@ -98,7 +99,7 @@ public class SessionReportingCoordinatorRobolectricTest {
 
     reportingCoordinator.onBeginSession(sessionId, sessionStartTimestamp);
     reportingCoordinator.persistAppExitInfoEvent(
-        sessionId, testApplicationExitInfo, mockLogFileManager);
+        sessionId, testApplicationExitInfo, mockLogFileManager, mockUserMetadata);
 
     verify(dataCapture, never())
         .captureAnrEventData(convertApplicationExitInfo(testApplicationExitInfo));
@@ -118,7 +119,7 @@ public class SessionReportingCoordinatorRobolectricTest {
 
     reportingCoordinator.onBeginSession(sessionId, sessionStartTimestamp);
     reportingCoordinator.persistAppExitInfoEvent(
-        sessionId, testApplicationExitInfo, mockLogFileManager);
+        sessionId, testApplicationExitInfo, mockLogFileManager, mockUserMetadata);
 
     verify(dataCapture, never())
         .captureAnrEventData(convertApplicationExitInfo(testApplicationExitInfo));

@@ -75,7 +75,8 @@ public class CrashlyticsControllerRobolectricTest {
     // Since we haven't added any app exit info to the shadow activity manager, there won't exist a
     // single app exit info, and so this method won't be called.
     verify(mockSessionReportingCoordinator, never())
-        .persistAppExitInfoEvent(eq(sessionId), any(), any(LogFileManager.class));
+        .persistAppExitInfoEvent(
+            eq(sessionId), any(), any(LogFileManager.class), any(UserMetadata.class));
   }
 
   @Test
@@ -90,7 +91,10 @@ public class CrashlyticsControllerRobolectricTest {
     controller.doCloseSessions(mockSettingsDataProvider);
     verify(mockSessionReportingCoordinator)
         .persistAppExitInfoEvent(
-            eq(sessionId), eq(testApplicationExitInfo), any(LogFileManager.class));
+            eq(sessionId),
+            eq(testApplicationExitInfo),
+            any(LogFileManager.class),
+            any(UserMetadata.class));
   }
 
   @Test
@@ -103,7 +107,8 @@ public class CrashlyticsControllerRobolectricTest {
     mockSettingsData(false);
     controller.doCloseSessions(mockSettingsDataProvider);
     verify(mockSessionReportingCoordinator, never())
-        .persistAppExitInfoEvent(eq(sessionId), any(), any(LogFileManager.class));
+        .persistAppExitInfoEvent(
+            eq(sessionId), any(), any(LogFileManager.class), any(UserMetadata.class));
   }
 
   private void mockSettingsData(boolean collectAnrs) {
