@@ -25,6 +25,7 @@ import org.junit.runners.Suite;
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
   BuildOnlyTest.class,
+  CrashlyticsTest.class,
   DatabaseTest.class,
   DynamicLinksTest.class,
   FirestoreTest.class,

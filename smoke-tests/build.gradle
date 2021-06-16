@@ -25,6 +25,7 @@ buildscript {
   dependencies {
     classpath "com.android.tools.build:gradle:3.4.3"
     classpath "com.google.gms:google-services:4.3.0"
+    classpath "com.google.firebase:firebase-crashlytics-gradle:2.7.0"
   }
 }
 
@@ -70,6 +71,7 @@ dependencies {
   implementation "com.google.firebase:firebase-auth"
   implementation "com.google.firebase:firebase-common"
   implementation "com.google.firebase:firebase-config"
+  implementation "com.google.firebase:firebase-crashlytics"
   implementation "com.google.firebase:firebase-database"
   implementation "com.google.firebase:firebase-dynamic-links"
   implementation "com.google.firebase:firebase-firestore"
@@ -101,3 +103,4 @@ clean.doLast {
 }
 
 apply plugin: "com.google.gms.google-services"
+apply plugin: "com.google.firebase.crashlytics"
