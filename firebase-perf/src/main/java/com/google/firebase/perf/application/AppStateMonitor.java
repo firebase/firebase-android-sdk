@@ -289,7 +289,8 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
   public void onActivityPaused(Activity activity) {}
 
   /**
-   * Send screen trace.
+   * Send screen trace. If hardware acceleration is not enabled, all frame metrics will be zero and
+   * the trace will not be sent.
    *
    * @param activity activity object.
    */
