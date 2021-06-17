@@ -42,7 +42,6 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
   public void apply(Project project) {
     project.apply(ImmutableMap.of("plugin", "com.android.library"));
     project.apply(ImmutableMap.of("plugin", LicenseResolverPlugin.class));
-    project.apply(ImmutableMap.of("plugin", "com.github.sherter.google-java-format"));
 
     FirebaseLibraryExtension firebaseLibrary =
         project
