@@ -25,6 +25,7 @@ import com.google.firebase.gradle.plugins.apiinfo.GenerateApiTxtFileTask;
 import com.google.firebase.gradle.plugins.apiinfo.GetMetalavaJarTask;
 import com.google.firebase.gradle.plugins.ci.Coverage;
 import com.google.firebase.gradle.plugins.ci.device.FirebaseTestServer;
+import com.google.firebase.gradle.plugins.license.LicenseResolverPlugin;
 import java.io.File;
 import java.nio.file.Paths;
 import org.gradle.api.JavaVersion;
@@ -40,6 +41,8 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
   @Override
   public void apply(Project project) {
     project.apply(ImmutableMap.of("plugin", "com.android.library"));
+    project.apply(ImmutableMap.of("plugin", LicenseResolverPlugin.class));
+    project.apply(ImmutableMap.of("plugin", "com.github.sherter.google-java-format"));
 
     FirebaseLibraryExtension firebaseLibrary =
         project
