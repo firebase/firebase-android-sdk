@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
   package="com.google.firebase.dynamiclinks">
-  <uses-sdk android:minSdkVersion="16"/>
+  <!--<uses-sdk android:minSdkVersion="16"/>-->
 
   <application>
       <service android:name="com.google.firebase.components.ComponentDiscoveryService"

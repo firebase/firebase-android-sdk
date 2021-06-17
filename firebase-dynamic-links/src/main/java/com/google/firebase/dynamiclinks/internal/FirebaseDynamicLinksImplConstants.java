@@ -12,19 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/// THIS FILE IS AUTO GENERATED. Do not modify.
 package com.google.firebase.dynamiclinks.internal;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Inherited;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
-/**
- * Indicates that a class outside of GMS Core has been reviewed and is permitted (as an exception)
- * to extend a GMS Core class. See: go/gmscore-restricted-inheritance.
- */
-@Retention(RetentionPolicy.SOURCE)
-@Target({ElementType.TYPE})
-@Inherited
-public @interface ReviewedExceptionGmsCoreInheritance {}
+interface FirebaseDynamicLinksImplConstants {
+  int GET_DYNAMIC_LINK_METHOD_KEY = 13201;
+  int CREATE_SHORT_DYNAMIC_LINK_METHOD_KEY = 13202;
+}

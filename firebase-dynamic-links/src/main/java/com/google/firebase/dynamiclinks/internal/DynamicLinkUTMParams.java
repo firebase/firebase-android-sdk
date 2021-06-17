@@ -5,13 +5,11 @@ import android.text.TextUtils;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 
-
 /**
  * Class to extract UTM parameters from firebase dynamic link.
  *
  * @hide
  */
-
 public class DynamicLinkUTMParams {
 
   @VisibleForTesting public static final String KEY_CAMPAIGN_BUNDLE = "_cmp";

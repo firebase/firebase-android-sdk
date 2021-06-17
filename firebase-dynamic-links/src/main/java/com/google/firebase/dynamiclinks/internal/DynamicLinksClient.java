@@ -11,8 +11,6 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.internal.ClientSettings;
 import com.google.android.gms.common.internal.GmsClient;
 
-
-
 /** GmsClient class for Dynamic Links. */
 public class DynamicLinksClient extends GmsClient<IDynamicLinksService> {
 
@@ -23,9 +21,10 @@ public class DynamicLinksClient extends GmsClient<IDynamicLinksService> {
 
   private static final int V17 = 12451000;
 
-  public  enum ServiceId {
-    DYNAMIC_LINKS_API(131);
+  public enum ServiceId {
+    DYNAMIC_LINKS_API_VALUE(131);
     private final int label;
+
     private ServiceId(int label) {
       this.label = label;
     }

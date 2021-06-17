@@ -3,8 +3,6 @@ package com.google.firebase.dynamiclinks.internal;
 import android.content.Context;
 import android.os.Looper;
 import androidx.annotation.NonNull;
-import com.google.firebase.dynamiclinks.internal.ReviewedExceptionGmsCoreInheritance;
-import com.google.firebase.dynamiclinks.internal.LegacyGmsCoreInheritance;
 import com.google.android.gms.common.api.Api;
 import com.google.android.gms.common.api.Api.ApiOptions;
 import com.google.android.gms.common.api.Api.ApiOptions.NoOptions;

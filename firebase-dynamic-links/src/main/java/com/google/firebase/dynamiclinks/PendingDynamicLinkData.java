@@ -9,8 +9,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.annotation.KeepForSdk;
-
-import com.google.android.gms.common.internal.ShowFirstParty;
 import com.google.android.gms.common.util.DefaultClock;
 import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.firebase.dynamiclinks.internal.DynamicLinkData;
@@ -27,7 +25,6 @@ public class PendingDynamicLinkData {
    *
    * @hide
    */
-
   @KeepForSdk
   @VisibleForTesting
   public PendingDynamicLinkData(DynamicLinkData dynamicLinkData) {
@@ -68,9 +65,7 @@ public class PendingDynamicLinkData {
    * @return A bundle will all extension data.
    * @hide
    */
-
   @KeepForSdk
-
   @Nullable
   public Bundle getExtensions() {
     if (dynamicLinkData == null) {
@@ -149,7 +144,6 @@ public class PendingDynamicLinkData {
    * @return Url that can be used to create an intent to launch an activity.
    * @hide
    */
-
   @VisibleForTesting
   @Nullable
   public Uri getRedirectUrl() {

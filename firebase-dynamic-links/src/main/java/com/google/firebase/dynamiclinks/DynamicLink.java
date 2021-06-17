@@ -77,7 +77,6 @@ public final class DynamicLink {
     private final Bundle fdlParameters;
 
     /** @hide */
-
     public Builder(FirebaseDynamicLinksImpl firebaseDynamicLinks) {
       firebaseDynamicLinksImpl = firebaseDynamicLinks;
       builderParameters = new Bundle();
