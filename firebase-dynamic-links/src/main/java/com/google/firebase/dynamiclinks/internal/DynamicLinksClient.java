@@ -8,10 +8,10 @@ import android.os.RemoteException;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.internal.BuildConstants;
 import com.google.android.gms.common.internal.ClientSettings;
 import com.google.android.gms.common.internal.GmsClient;
-import com.google.android.gms.common.proto.GCoreServiceId.ServiceId;
+
+
 
 /** GmsClient class for Dynamic Links. */
 public class DynamicLinksClient extends GmsClient<IDynamicLinksService> {
@@ -20,6 +20,16 @@ public class DynamicLinksClient extends GmsClient<IDynamicLinksService> {
       "com.google.firebase.dynamiclinks.service.START";
   public static final String SERVICE_DESCRIPTOR =
       "com.google.firebase.dynamiclinks.internal.IDynamicLinksService";
+
+  private static final int V17 = 12451000;
+
+  public  enum ServiceId {
+    DYNAMIC_LINKS_API(131);
+    private final int label;
+    private ServiceId(int label) {
+      this.label = label;
+    }
+  }
 
   public DynamicLinksClient(
       Context context,
@@ -30,7 +40,7 @@ public class DynamicLinksClient extends GmsClient<IDynamicLinksService> {
     super(
         context,
         looper,
-        ServiceId.DYNAMIC_LINKS_API_VALUE,
+        ServiceId.DYNAMIC_LINKS_API_VALUE.label,
         clientSettings,
         connectedListener,
         connectionFailedListener);
@@ -76,7 +86,7 @@ public class DynamicLinksClient extends GmsClient<IDynamicLinksService> {
     // or an older version is now supported. Do _not_ use JAR_BUILD_VERSION_CODE as long as this
     // code is shipped in the 3P SDK (which ships ~from head / dev and would not work with the head
     // version of the .apk)..
-    return BuildConstants.BaseApkVersion.V17;
+    return V17;
   }
 
   @Override

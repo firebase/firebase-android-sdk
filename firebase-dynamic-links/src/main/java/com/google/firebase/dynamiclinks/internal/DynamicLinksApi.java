@@ -3,8 +3,8 @@ package com.google.firebase.dynamiclinks.internal;
 import android.content.Context;
 import android.os.Looper;
 import androidx.annotation.NonNull;
-import com.google.android.gms.client.annotations.LegacyGmsCoreInheritance;
-import com.google.android.gms.client.annotations.ReviewedExceptionGmsCoreInheritance;
+import com.google.firebase.dynamiclinks.internal.ReviewedExceptionGmsCoreInheritance;
+import com.google.firebase.dynamiclinks.internal.LegacyGmsCoreInheritance;
 import com.google.android.gms.common.api.Api;
 import com.google.android.gms.common.api.Api.ApiOptions;
 import com.google.android.gms.common.api.Api.ApiOptions.NoOptions;
@@ -13,19 +13,7 @@ import com.google.android.gms.common.api.GoogleApiClient.ConnectionCallbacks;
 import com.google.android.gms.common.api.GoogleApiClient.OnConnectionFailedListener;
 import com.google.android.gms.common.internal.ClientSettings;
 import com.google.android.gms.common.util.VisibleForTesting;
-import com.google.errorprone.annotations.RestrictedInheritance;
 
-/** */
-@RestrictedInheritance(
-    explanation =
-        "Sub classing of GMS Core's APIs are restricted to GMS Core client libs and testing fakes.",
-    link = "go/gmscore-restrictedinheritance",
-    // This class can only be subclassed within GMS Core's code base.
-    allowedOnPath = ".*java.*/com/google/android/gms.*",
-    allowlistAnnotations = {
-      LegacyGmsCoreInheritance.class,
-      ReviewedExceptionGmsCoreInheritance.class
-    })
 public class DynamicLinksApi extends GoogleApi<NoOptions> {
 
   private static final Api.ClientKey<DynamicLinksClient> CLIENT_KEY =
