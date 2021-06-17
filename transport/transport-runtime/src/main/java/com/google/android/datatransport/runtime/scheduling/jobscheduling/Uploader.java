@@ -137,16 +137,20 @@ public class Uploader {
             });
         workScheduler.schedule(transportContext, attemptNumber + 1, true);
         return;
-      } else {
+      } else if (response.getStatus() == BackendResponse.Status.FATAL_ERROR) {
         guard.runCriticalSection(
             () -> {
               eventStore.recordSuccess(persistedEvents);
               return null;
             });
-        if (response.getStatus() == BackendResponse.Status.OK) {
-          maxNextRequestWaitMillis =
-              Math.max(maxNextRequestWaitMillis, response.getNextRequestWaitMillis());
-        }
+      } else if (response.getStatus() == BackendResponse.Status.OK) {
+        guard.runCriticalSection(
+            () -> {
+              eventStore.recordSuccess(persistedEvents);
+              return null;
+            });
+        maxNextRequestWaitMillis =
+            Math.max(maxNextRequestWaitMillis, response.getNextRequestWaitMillis());
       }
     }
     long finalMaxNextRequestWaitMillis = maxNextRequestWaitMillis;
