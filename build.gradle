@@ -77,27 +77,6 @@ configure(subprojects) {
         }
     }
 
-    apply plugin: 'com.github.sherter.google-java-format'
-    googleJavaFormat {
-        toolVersion = '1.7'
-    }
-    tasks.googleJavaFormat {
-        source '.'
-        include '**/java/**/*.java'
-        exclude '**/generated/**'
-        exclude 'src/testUtil/java/com/google/firebase/firestore/testutil/Assert.java'
-        exclude 'src/testUtil/java/com/google/firebase/firestore/testutil/ThrowingRunnable.java'
-        exclude '**/package-info.java'
-    }
-    tasks.verifyGoogleJavaFormat {
-        source '.'
-        include '**/java/**/*.java'
-        exclude '**/generated/**'
-        exclude 'src/testUtil/java/com/google/firebase/firestore/testutil/Assert.java'
-        exclude 'src/testUtil/java/com/google/firebase/firestore/testutil/ThrowingRunnable.java'
-        exclude '**/package-info.java'
-    }
-
     apply plugin: "org.jlleitschuh.gradle.ktlint"
 }
 
