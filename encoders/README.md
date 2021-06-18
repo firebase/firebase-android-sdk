@@ -89,7 +89,7 @@ dependencies {
 *code-gen-cfg.textproto* 
 
 Note:
-- The file names must be identical, words are separated by hyphen(-) not by underscore(_).
+- The filename must be the same as the filename determined in the gradle build file.
 - Only need to specify the "root" proto object, anything it references will automatically be included.
 ```textproto
 # code_gen_cfg.textproto
