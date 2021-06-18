@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package com.google.firebase.dynamiclinks.internal;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Parcel;
+import androidx.annotation.Nullable;
 import com.google.android.gms.common.internal.safeparcel.AbstractSafeParcelable;
 import com.google.android.gms.common.internal.safeparcel.SafeParcelable;
 
@@ -25,9 +26,11 @@ import com.google.android.gms.common.internal.safeparcel.SafeParcelable;
 public class DynamicLinkData extends AbstractSafeParcelable {
 
   @SafeParcelable.Field(id = 1, getter = "getDynamicLink")
+  @Nullable
   private String dynamicLink;
 
   @SafeParcelable.Field(id = 2, getter = "getDeepLink")
+  @Nullable
   private String deepLink;
 
   @SafeParcelable.Field(id = 3, getter = "getMinVersion")
@@ -37,11 +40,14 @@ public class DynamicLinkData extends AbstractSafeParcelable {
   private long clickTimestamp = 0L;
 
   @SafeParcelable.Field(id = 5, getter = "getExtensionBundle")
+  @Nullable
   private Bundle extensionBundle = null;
 
   @SafeParcelable.Field(id = 6, getter = "getRedirectUrl")
+  @Nullable
   private Uri redirectUrl;
 
+  @Nullable
   public String getDynamicLink() {
     return dynamicLink;
   }
@@ -50,6 +56,7 @@ public class DynamicLinkData extends AbstractSafeParcelable {
     this.dynamicLink = dynamicLink;
   }
 
+  @Nullable
   public String getDeepLink() {
     return deepLink;
   }
@@ -82,6 +89,7 @@ public class DynamicLinkData extends AbstractSafeParcelable {
     this.redirectUrl = redirectUrl;
   }
 
+  @Nullable
   public Uri getRedirectUrl() {
     return redirectUrl;
   }
@@ -101,12 +109,12 @@ public class DynamicLinkData extends AbstractSafeParcelable {
 
   @SafeParcelable.Constructor
   public DynamicLinkData(
-      @Param(id = 1) String dynamicLink,
-      @Param(id = 2) String deepLink,
+      @Nullable @Param(id = 1) String dynamicLink,
+      @Nullable @Param(id = 2) String deepLink,
       @Param(id = 3) int minVersion,
       @Param(id = 4) long clickTimestamp,
-      @Param(id = 5) Bundle extensions,
-      @Param(id = 6) Uri redirectUrl) {
+      @Nullable @Param(id = 5) Bundle extensions,
+      @Nullable @Param(id = 6) Uri redirectUrl) {
     this.dynamicLink = dynamicLink;
     this.deepLink = deepLink;
     this.minVersion = minVersion;

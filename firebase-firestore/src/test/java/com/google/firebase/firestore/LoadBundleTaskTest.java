@@ -70,7 +70,7 @@ public class LoadBundleTaskTest {
     }
 
     for (Method method : Task.class.getDeclaredMethods()) {
-      // This method is annotated with @Hide, skipping.
+      // This method is annotated with , skipping.
       if (hideClazz != null && method.getAnnotation(hideClazz) != null) {
         continue;
       }

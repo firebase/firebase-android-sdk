@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
 package com.google.firebase.dynamiclinks.internal;
 
 import androidx.annotation.Keep;
+import com.google.android.gms.common.annotation.KeepForSdk;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.components.Component;
@@ -31,6 +32,7 @@ import java.util.List;
  *
  * @hide
  */
+@KeepForSdk
 @Keep
 public final class FirebaseDynamicLinkRegistrar implements ComponentRegistrar {
 
@@ -40,11 +42,12 @@ public final class FirebaseDynamicLinkRegistrar implements ComponentRegistrar {
     Component<FirebaseDynamicLinks> firebaseDynamicLinks =
         Component.builder(FirebaseDynamicLinks.class)
             .add(Dependency.required(FirebaseApp.class))
-            .add(Dependency.optional(AnalyticsConnector.class))
+            .add(Dependency.optionalProvider(AnalyticsConnector.class))
             .factory(
                 container ->
                     new FirebaseDynamicLinksImpl(
-                        container.get(FirebaseApp.class), container.get(AnalyticsConnector.class)))
+                        container.get(FirebaseApp.class),
+                        container.getProvider(AnalyticsConnector.class)))
             .build(); // no need for eager init for the Internal component.
 
     return Arrays.asList(firebaseDynamicLinks);

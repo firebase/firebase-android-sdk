@@ -28,7 +28,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.collection.ArrayMap;
 import com.google.android.gms.common.annotation.KeepForSdk;
-import com.google.android.gms.common.internal.ShowFirstParty;
 import com.google.android.gms.common.internal.safeparcel.AbstractSafeParcelable;
 import com.google.android.gms.common.internal.safeparcel.SafeParcelable;
 import com.google.firebase.iid.FirebaseInstanceId;
@@ -140,7 +139,6 @@ public final class RemoteMessage extends AbstractSafeParcelable {
   }
 
   /** @hide */
-  @ShowFirstParty
   @Nullable
   public byte[] getRawData() {
     return bundle.getByteArray(MessagePayloadKeys.RAW_DATA);
@@ -360,7 +358,6 @@ public final class RemoteMessage extends AbstractSafeParcelable {
     }
 
     /** @hide */
-    @ShowFirstParty
     @NonNull
     public Builder setRawData(byte[] data) {
       bundle.putByteArray(MessagePayloadKeys.RAW_DATA, data);

@@ -14,10 +14,12 @@
 
 package com.google.firebase.dynamiclinks;
 
+import static com.google.common.truth.Truth.assertThat;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertNotNull;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import android.net.Uri;
 import android.os.Bundle;
@@ -33,6 +35,7 @@ import com.google.firebase.dynamiclinks.DynamicLink.NavigationInfoParameters;
 import com.google.firebase.dynamiclinks.DynamicLink.SocialMetaTagParameters;
 import com.google.firebase.dynamiclinks.ShortDynamicLink.Suffix;
 import com.google.firebase.dynamiclinks.internal.FirebaseDynamicLinksImpl;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -103,8 +106,10 @@ public class DynamicLinkTest {
     FirebaseApp.clearInstancesForTest();
     FirebaseOptions.Builder firebaseOptionsBuilder =
         new FirebaseOptions.Builder().setApplicationId("application_id").setApiKey(API_KEY);
-    FirebaseApp.initializeApp(
-        ApplicationProvider.getApplicationContext(), firebaseOptionsBuilder.build());
+    FirebaseApp firebaseApp =
+        FirebaseApp.initializeApp(
+            ApplicationProvider.getApplicationContext(), firebaseOptionsBuilder.build());
+    when(mockFDLImpl.getFirebaseApp()).thenReturn(firebaseApp);
 
     builder = new Builder(mockFDLImpl);
     builder.setDynamicLinkDomain(DOMAIN);
@@ -422,6 +427,20 @@ public class DynamicLinkTest {
     Bundle fdlParameters = getFdlParameterBundle();
     // Should not be set to "1" when not enabled.
     assertFalse("1".equals(fdlParameters.get(NavigationInfoParameters.KEY_FORCED_REDIRECT)));
+  }
+
+  @Test
+  public void testSetDynamicLinkDomainDoesNotAcceptCustomDomain() {
+    IllegalArgumentException e =
+        Assert.assertThrows(
+            IllegalArgumentException.class,
+            () -> {
+              builder.setDynamicLinkDomain(CUSTOM_DOMAIN_WITHOUT_SCHEME);
+            });
+    assertThat(e.getMessage())
+        .isEqualTo(
+            "Use setDomainUriPrefix() instead, setDynamicLinkDomain() is only applicable for "
+                + "*.page.link and *.app.goo.gl domains.");
   }
 
   /** Gets the Bundle that contains the options used to create the short Dynamic Link. */
