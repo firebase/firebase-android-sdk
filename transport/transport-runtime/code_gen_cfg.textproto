@@ -1,0 +1,3 @@
+vendor_package: "com.google"
+
+include: "firebase.transport.ClientMetrics"

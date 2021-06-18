@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-configure(subprojects) {
-    group = 'com.google.android.datatransport'
-}
+package com.google.android.datatransport.runtime.proto;
+import com.google.firebase.transport.ClientMetrics;
+import com.google.firebase.transport.TimeWindow;
 
+public class ExperimentProto {
+    public static TimeWindow getTimeWindow() {
+        TimeWindow timeWindow = TimeWindow.newBuilder().setStartMs(100).build();
+        return timeWindow;
+    }
+}

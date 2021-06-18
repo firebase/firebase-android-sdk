@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-configure(subprojects) {
-    group = 'com.google.android.datatransport'
-}
+package com.google.android.datatransport.runtime.proto;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+@RunWith(AndroidJUnit4.class)
+public class ExperimentProtoTest {
+    @Test
+    public void test_123() {
+        ExperimentProto.getTimeWindow();
+    }
+}
