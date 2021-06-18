@@ -812,7 +812,7 @@ public class SyncTree {
     public int hashCode() {
       return spec.hashCode();
     }
-  };
+  }
 
   public void keepSynced(final QuerySpec query, final boolean keep) {
     if (keep && !keepSyncedQueries.contains(query)) {

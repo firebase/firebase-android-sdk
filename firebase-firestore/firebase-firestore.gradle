@@ -108,6 +108,11 @@ configurations.all {
     exclude group: "com.google.protobuf", module: "protobuf-java"
 }
 
+googleJavaFormat {
+    exclude 'src/testUtil/java/com/google/firebase/firestore/testutil/Assert.java'
+    exclude 'src/testUtil/java/com/google/firebase/firestore/testutil/ThrowingRunnable.java'
+}
+
 dependencies {
     implementation project(':firebase-common')
     implementation project(':protolite-well-known-types')
