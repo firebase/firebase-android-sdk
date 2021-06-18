@@ -559,7 +559,7 @@ class SQLiteSchema {
                 throw fail("Failed to decode Query data for target %s", targetId);
               }
             });
-  };
+  }
 
   private void createBundleCache() {
     ifTablesDontExist(
