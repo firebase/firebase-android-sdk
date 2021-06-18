@@ -25,9 +25,6 @@ android {
     adbOptions {
         timeOutInMs 60 * 1000
     }
-    useLibrary 'android.test.runner'
-    useLibrary 'android.test.base'
-    useLibrary 'android.test.mock'
 
     compileSdkVersion project.targetSdkVersion
     defaultConfig {
