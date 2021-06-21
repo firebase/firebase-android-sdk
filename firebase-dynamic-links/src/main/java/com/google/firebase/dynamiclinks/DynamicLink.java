@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -94,10 +94,8 @@ public final class DynamicLink {
     public Builder(FirebaseDynamicLinksImpl firebaseDynamicLinks) {
       firebaseDynamicLinksImpl = firebaseDynamicLinks;
       builderParameters = new Bundle();
-      if (FirebaseApp.getInstance() != null) {
-        builderParameters.putString(
-            KEY_API_KEY, FirebaseApp.getInstance().getOptions().getApiKey());
-      }
+      builderParameters.putString(
+          KEY_API_KEY, firebaseDynamicLinks.getFirebaseApp().getOptions().getApiKey());
       fdlParameters = new Bundle();
       builderParameters.putBundle(KEY_DYNAMIC_LINK_PARAMETERS, fdlParameters);
     }

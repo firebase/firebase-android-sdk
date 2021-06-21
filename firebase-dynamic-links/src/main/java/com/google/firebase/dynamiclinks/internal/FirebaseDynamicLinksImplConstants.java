@@ -12,5 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/** @hide */
+/// THIS FILE IS AUTO GENERATED. Do not modify.
 package com.google.firebase.dynamiclinks.internal;
+
+interface FirebaseDynamicLinksImplConstants {
+  int GET_DYNAMIC_LINK_METHOD_KEY = 13201;
+  int CREATE_SHORT_DYNAMIC_LINK_METHOD_KEY = 13202;
+}
