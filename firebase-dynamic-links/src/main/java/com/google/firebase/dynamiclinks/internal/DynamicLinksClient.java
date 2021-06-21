@@ -32,17 +32,10 @@ public class DynamicLinksClient extends GmsClient<IDynamicLinksService> {
       "com.google.firebase.dynamiclinks.service.START";
   public static final String SERVICE_DESCRIPTOR =
       "com.google.firebase.dynamiclinks.internal.IDynamicLinksService";
-
+  private static final int DYNAMIC_LINKS_API_VALUE = 131;
   private static final int V17 = 12451000;
 
-  public enum ServiceId {
-    DYNAMIC_LINKS_API_VALUE(131);
-    private final int label;
 
-    private ServiceId(int label) {
-      this.label = label;
-    }
-  }
 
   public DynamicLinksClient(
       Context context,
@@ -53,7 +46,7 @@ public class DynamicLinksClient extends GmsClient<IDynamicLinksService> {
     super(
         context,
         looper,
-        ServiceId.DYNAMIC_LINKS_API_VALUE.label,
+        DYNAMIC_LINKS_API_VALUE,
         clientSettings,
         connectedListener,
         connectionFailedListener);
