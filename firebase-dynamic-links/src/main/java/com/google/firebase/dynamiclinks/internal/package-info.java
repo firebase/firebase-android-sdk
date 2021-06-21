@@ -13,7 +13,5 @@
 // limitations under the License.
 
 /** @hide */
-
 package com.google.firebase.dynamiclinks.internal;
-
 

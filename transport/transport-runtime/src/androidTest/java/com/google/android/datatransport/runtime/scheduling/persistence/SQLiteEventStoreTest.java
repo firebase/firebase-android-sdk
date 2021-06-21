@@ -59,8 +59,7 @@ public class SQLiteEventStoreTest {
   private static final long HOUR = 60 * 60 * 1000;
   private static final int MAX_BLOB_SIZE_BYTES = 6;
   private static final EventStoreConfig CONFIG =
-      EventStoreConfig.DEFAULT
-          .toBuilder()
+      EventStoreConfig.DEFAULT.toBuilder()
           .setLoadBatchSize(5)
           .setEventCleanUpAge(HOUR)
           .setMaxBlobByteSizePerRow(MAX_BLOB_SIZE_BYTES)
@@ -148,8 +147,7 @@ public class SQLiteEventStoreTest {
 
     EventInternal event1 = EVENT;
     EventInternal event2 =
-        EVENT
-            .toBuilder()
+        EVENT.toBuilder()
             .setEncodedPayload(
                 new EncodedPayload(JSON_ENCODING, "World".getBytes(Charset.defaultCharset())))
             .build();
@@ -176,8 +174,7 @@ public class SQLiteEventStoreTest {
 
     EventInternal event1 = EVENT;
     EventInternal event2 =
-        EVENT
-            .toBuilder()
+        EVENT.toBuilder()
             .setEncodedPayload(
                 new EncodedPayload(JSON_ENCODING, "World".getBytes(Charset.defaultCharset())))
             .build();
