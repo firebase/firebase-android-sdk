@@ -35,8 +35,6 @@ public class DynamicLinksClient extends GmsClient<IDynamicLinksService> {
   private static final int DYNAMIC_LINKS_API_VALUE = 131;
   private static final int V17 = 12451000;
 
-
-
   public DynamicLinksClient(
       Context context,
       Looper looper,
