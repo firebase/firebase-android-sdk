@@ -15,6 +15,7 @@
 package com.google.firebase.appdistribution;
 
 import androidx.annotation.IntDef;
+import androidx.annotation.NonNull;
 import com.google.firebase.FirebaseException;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -55,6 +56,7 @@ public abstract class FirebaseAppDistributionException extends FirebaseException
 
   public abstract int getCode();
 
+  @NonNull
   public abstract Optional<FirebaseAppDistributionApi.AppDistributionRelease> getRelease();
 
   @IntDef({

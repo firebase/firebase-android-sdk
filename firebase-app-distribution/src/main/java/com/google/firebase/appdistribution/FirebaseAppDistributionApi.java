@@ -55,18 +55,22 @@ public abstract class FirebaseAppDistributionApi {
    * Interface to subscribe to status updates on the release update process. Called by updateApp.
    */
   public interface UpdateProgressListener {
-    public void onProgressUpdate(UpdateProgress updateProgress);
+
+    public void onProgressUpdate(@NonNull UpdateProgress updateProgress);
   }
 
   public interface UpdateProgress {
     // The number of bytes downloaded so far for the APK.
     //  Returns -1 if called on an AAB.
+    @NonNull
     public long getApkBytesDownloaded();
 
     // The total number of bytes to download for the APK.
     // Returns -1 if called on an AAB.
+    @NonNull
     public long getApkTotalBytesToDownload();
 
+    @NonNull
     public UpdateStatus getUpdateStatus();
   }
 
@@ -110,15 +114,19 @@ public abstract class FirebaseAppDistributionApi {
   /** The release information returned by the update check when a new version is available. */
   public interface AppDistributionRelease {
     // The short bundle version of this build (example 1.0.0)
+    @NonNull
     public String getDisplayVersion();
 
     // The bundle version of this build (example: 123)
+    @NonNull
     public String getBuildVersion();
 
     // The release notes for this build
+    @NonNull
     public String getReleaseNotes();
 
     // The binary type for this build
+    @NonNull
     public BinaryType getBinaryType();
   }
 
