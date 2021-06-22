@@ -21,6 +21,7 @@ import android.database.sqlite.SQLiteDatabase;
 import com.google.android.datatransport.Encoding;
 import com.google.android.datatransport.Priority;
 import com.google.android.datatransport.runtime.EncodedPayload;
+import com.google.android.datatransport.runtime.firebase.transport.LogEventDropped;
 import com.google.android.datatransport.runtime.util.PriorityMapping;
 import java.nio.charset.Charset;
 import java.util.Random;
@@ -190,6 +191,65 @@ class StateSimulations {
       metadata.put("value", "value1");
       long metadataId = db.insert("event_metadata", null, metadata);
       assertThat(metadataId).isNotEqualTo(-1);
+    }
+  }
+
+  static class V5 implements StateSimulator {
+    @Override
+    public void simulate(SchemaManager schemaManager) {
+      SQLiteDatabase db = schemaManager.getWritableDatabase();
+      Random rd = new Random();
+      byte[] arr = new byte[7];
+      rd.nextBytes(arr);
+
+      ContentValues record = new ContentValues();
+      record.put("backend_name", "b1");
+      record.put("priority", PriorityMapping.toInt(Priority.DEFAULT));
+      record.put("next_request_ms", 0);
+      record.put("extras", arr);
+      long contextId = db.insert("transport_contexts", null, record);
+      assertThat(contextId).isNotEqualTo(-1);
+
+      ContentValues values = new ContentValues();
+      values.put("context_id", contextId);
+      values.put("transport_name", "42");
+      values.put("timestamp_ms", 1);
+      values.put("uptime_ms", 2);
+      values.put(
+          "payload",
+          new EncodedPayload(PROTOBUF_ENCODING, "Hello".getBytes(Charset.defaultCharset()))
+              .getBytes());
+      values.put("code", 1);
+      values.put("num_attempts", 0);
+      values.put("payload_encoding", "encoding");
+      values.put("inline", true);
+      long newEventId = db.insert("events", null, values);
+      assertThat(newEventId).isNotEqualTo(-1);
+
+      ContentValues payloads = new ContentValues();
+      values.put("sequence_num", newEventId);
+      values.put("event_id", "42");
+      values.put("bytes", "event".getBytes());
+      long payloadId = db.insert("event_payloads", null, payloads);
+
+      ContentValues metadata = new ContentValues();
+      metadata.put("event_id", newEventId);
+      metadata.put("name", "key1");
+      metadata.put("value", "value1");
+      long metadataId = db.insert("event_metadata", null, metadata);
+      assertThat(metadataId).isNotEqualTo(-1);
+
+      ContentValues metrics = new ContentValues();
+      metrics.put("log_source", "source1");
+      metrics.put("reason", LogEventDropped.Reason.CACHE_FULL.getNumber());
+      metrics.put("events_dropped_count", 20);
+      long recordId = db.insert("log_event_dropped", null, metrics);
+      assertThat(recordId).isNotEqualTo(-1);
+
+      ContentValues timeValue = new ContentValues();
+      timeValue.put("start_ms", 1311);
+      long timeValueId = db.insert("log_event_dropped_time", null, timeValue);
+      assertThat(timeValueId).isNotEqualTo(-1);
     }
   }
 }
