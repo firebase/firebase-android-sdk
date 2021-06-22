@@ -15,18 +15,16 @@
 package com.google.firebase.appdistribution;
 
 import androidx.annotation.Keep;
-
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
-
 import java.util.Arrays;
 import java.util.List;
 
 /** @hide */
 @Keep
 public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
-    @Override
-    public List<Component<?>> getComponents() {
-        return Arrays.asList();
-    }
+  @Override
+  public List<Component<?>> getComponents() {
+    return Arrays.asList();
+  }
 }

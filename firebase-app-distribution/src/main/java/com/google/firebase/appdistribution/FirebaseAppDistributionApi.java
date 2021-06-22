@@ -12,133 +12,118 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package com.google.firebase.appdistribution;
 
+import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
-
+import java.util.Optional;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Optional;
+public abstract class FirebaseAppDistributionApi {
 
+  /**
+   * Updates the app to the latest release, if one is available. Returns the release information or
+   * an empty Optional if no update is found. Performs the following actions: 1. If tester is not
+   * signed in, presents the tester with a Google sign in UI 2. Checks if a newer release is
+   * available. If so, presents the tester with a confirmation dialog to begin the download. 3. For
+   * APKs, downloads the binary and starts an installation intent. 4. For AABs, directs the tester
+   * to the Play app to complete the download and installation.
+   */
+  @NonNull
+  public abstract Task<Optional<AppDistributionRelease>> updateToLatestRelease();
 
+  /**
+   * Returns an AppDistributionRelease if one is available for the current signed in tester. If no
+   * update is found, returns an empty Optional. If tester is not signed in, presents the tester
+   * with a Google sign in UI
+   */
+  @NonNull
+  public abstract Task<Optional<AppDistributionRelease>> checkForUpdate();
 
-public abstract class FirebaseAppDistributionApi  {
+  /**
+   * Updates app to the latest release. If the latest release is an APK, downloads the binary and
+   * starts an installation If the latest release is an AAB, directs the tester to the Play app to
+   * complete the download and installation.
+   *
+   * @throws an UPDATE_NOT_AVAIALBLE exception if
+   * @param updateProgressListener a callback function invoked as the update progresses
+   */
+  @NonNull
+  public abstract Task<Void> updateApp(@Nullable UpdateProgressListener updateProgressListener);
 
-    public static FirebaseAppDistributionApi getInstance() {
-        return null;
-    };
+  /**
+   * Interface to subscribe to status updates on the release update process. Called by updateApp.
+   */
+  public interface UpdateProgressListener {
+    public void onProgressUpdate(UpdateProgress updateProgress);
+  }
 
-    /**
-     * Updates the app to the latest release, if one is available. Returns the release
-     * information or an empty Optional if no update is found. Performs the following actions:
-     * 1. If tester is not signed in, presents the tester with a Google sign in UI
-     * 2. Checks if a newer release is available. If so, presents the tester with a
-     * confirmation dialog to begin the download.
-     * 3. For APKs, downloads the binary and starts an installation intent.
-     * 4. For AABs, directs the tester to the Play app to complete the download and
-     * installation.
-     */
-    public abstract Task<Optional<AppDistributionRelease>> updateToLatestRelease();
+  public interface UpdateProgress {
+    // The number of bytes downloaded so far for the APK.
+    //  Returns -1 if called on an AAB.
+    public long getApkBytesDownloaded();
 
-    /**
-     * Returns an AppDistributionRelease if one is available for the current signed in
-     * tester. If no update is found, returns an empty Optional. If tester is not signed in, presents the
-     * tester with a Google sign in UI
-     */
-    public abstract Task<Optional<AppDistributionRelease>> checkForUpdate();
+    // The total number of bytes to download for the APK.
+    // Returns -1 if called on an AAB.
+    public long getApkTotalBytesToDownload();
 
-    /**
-     * Updates app to the latest release.
-     * If the latest release is an APK, downloads the binary and starts an installation
-     * If the latest release is an AAB, directs the tester to the Play app to complete the
-     * download and installation.
-     * @throws an UPDATE_NOT_AVAIALBLE exception if
-     * @param updateProgressListener a callback function invoked as the update progresses
-     */
-    public abstract Task<Void> updateApp(@Nullable UpdateProgressListener updateProgressListener);
+    public UpdateStatus getUpdateStatus();
+  }
 
-    /**
-     * Interface to subscribe to status updates on the release update process.
-     * Called by updateApp.
-     */
-    public interface UpdateProgressListener {
-        public void onProgressUpdate(UpdateProgress updateProgress);
-    }
+  public enum UpdateStatus {
+    // Update queued but not started
+    PENDING,
 
-    public interface UpdateProgress {
-        // The number of bytes downloaded so far for the APK.
-        //  Returns -1 if called on an AAB.
-        public long getApkBytesDownloaded();
+    // Download in progress
+    DOWNLOADING,
 
-        // The total number of bytes to download for the APK.
-        // Returns -1 if called on an AAB.
-        public long getApkTotalBytesToDownload();
+    // Download completed
+    DOWNLOADED,
 
-        public UpdateStatus getUpdateStatus();
-    }
+    // Download failed
+    DOWNLOAD_FAILED,
 
-    public enum UpdateStatus {
-        // Update queued but not started
-        PENDING,
+    // Update installed
+    INSTALLED,
 
-        // Download in progress
-        DOWNLOADING,
+    // Installation cancelled
+    INSTALL_CANCELED,
 
-        // Download completed
-        DOWNLOADED,
+    // Installation failed
+    INSTALL_FAILED,
 
-        // Download failed
-        DOWNLOAD_FAILED,
+    // AAB flow (directed to Play)
+    REDIRECTED_TO_PLAY,
+  }
 
-        // Update installed
-        INSTALLED,
+  /** Signs in the App Distribution tester. Presents the tester with a Google sign in UI */
+  @NonNull
+  public abstract Task<Void> signInTester();
 
-        // Installation cancelled
-        INSTALL_CANCELED,
+  /** Returns true if the App Distribution tester is signed in */
+  @NonNull
+  public abstract boolean isTesterSignedIn();
 
-        // Installation failed
-        INSTALL_FAILED,
+  /** Signs out the App Distribution tester */
+  public abstract void signOutTester();
 
-        // AAB flow (directed to Play)
-        REDIRECTED_TO_PLAY,
-    }
+  /** The release information returned by the update check when a new version is available. */
+  public interface AppDistributionRelease {
+    // The short bundle version of this build (example 1.0.0)
+    public String getDisplayVersion();
 
-    /**
-     * Signs in the App Distribution tester. Presents the tester with a Google sign in UI
-     */
-    public abstract Task<Void> signInTester();
+    // The bundle version of this build (example: 123)
+    public String getBuildVersion();
 
-    /**
-     * Returns true if the App Distribution tester is signed in
-     */
-    public abstract boolean isTesterSignedIn();
+    // The release notes for this build
+    public String getReleaseNotes();
 
-    /**
-     * Signs out the App Distribution tester
-     */
-    public abstract void signOutTester();
+    // The binary type for this build
+    public BinaryType getBinaryType();
+  }
 
-    /**
-     * The release information returned by the update check when a new version is available.
-     */
-    public interface AppDistributionRelease {
-        // The short bundle version of this build (example 1.0.0)
-        public String getDisplayVersion();
-
-        // The bundle version of this build (example: 123)
-        public String getBuildVersion();
-
-        // The release notes for this build
-        public String getReleaseNotes();
-
-        // The binary type for this build
-        public BinaryType getBinaryType();
-    }
-
-    public enum BinaryType {
-        AAB, APK
-    }
+  public enum BinaryType {
+    AAB,
+    APK
+  }
 }
-
-
