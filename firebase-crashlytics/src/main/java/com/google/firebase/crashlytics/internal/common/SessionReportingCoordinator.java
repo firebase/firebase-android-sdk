@@ -134,7 +134,11 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
   }
 
   @RequiresApi(api = Build.VERSION_CODES.R)
-  public void persistAppExitInfoEvent(String sessionId, ApplicationExitInfo applicationExitInfo) {
+  public void persistAppExitInfoEvent(
+      String sessionId,
+      ApplicationExitInfo applicationExitInfo,
+      LogFileManager logFileManagerForSession,
+      UserMetadata userMetadataForSession) {
     long sessionStartTime = reportPersistence.getStartTimestampMillis(sessionId);
     // ApplicationExitInfo did not occur during the session.
     if (applicationExitInfo.getTimestamp() < sessionStartTime) {
@@ -150,7 +154,11 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
         dataCapture.captureAnrEventData(convertApplicationExitInfo(applicationExitInfo));
 
     Logger.getLogger().d("Persisting anr for session " + sessionId);
-    reportPersistence.persistEvent(addLogsAndCustomKeysToEvent(capturedEvent), sessionId, true);
+    reportPersistence.persistEvent(
+        addLogsAndCustomKeysToEvent(
+            capturedEvent, logFileManagerForSession, userMetadataForSession),
+        sessionId,
+        true);
   }
 
   public void finalizeSessionWithNativeEvent(
@@ -218,6 +226,13 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
 
   private CrashlyticsReport.Session.Event addLogsAndCustomKeysToEvent(
       CrashlyticsReport.Session.Event capturedEvent) {
+    return addLogsAndCustomKeysToEvent(capturedEvent, logFileManager, reportMetadata);
+  }
+
+  private CrashlyticsReport.Session.Event addLogsAndCustomKeysToEvent(
+      CrashlyticsReport.Session.Event capturedEvent,
+      LogFileManager logFileManager,
+      UserMetadata reportMetadata) {
     final CrashlyticsReport.Session.Event.Builder eventBuilder = capturedEvent.toBuilder();
     final String content = logFileManager.getLogString();
 

@@ -53,6 +53,8 @@ public class SessionReportingCoordinatorRobolectricTest {
   @Mock private CrashlyticsReport.Session.Event.Builder mockEventBuilder;
   @Mock private CrashlyticsReport.Session.Event.Application mockEventApp;
   @Mock private CrashlyticsReport.Session.Event.Application.Builder mockEventAppBuilder;
+  @Mock private LogFileManager mockLogFileManager;
+  @Mock UserMetadata mockUserMetadata;
 
   private SessionReportingCoordinator reportingCoordinator;
 
@@ -78,7 +80,8 @@ public class SessionReportingCoordinatorRobolectricTest {
     ApplicationExitInfo testApplicationExitInfo = addAppExitInfo(ApplicationExitInfo.REASON_ANR);
 
     reportingCoordinator.onBeginSession(sessionId, sessionStartTimestamp);
-    reportingCoordinator.persistAppExitInfoEvent(sessionId, testApplicationExitInfo);
+    reportingCoordinator.persistAppExitInfoEvent(
+        sessionId, testApplicationExitInfo, mockLogFileManager, mockUserMetadata);
 
     verify(dataCapture).captureAnrEventData(convertApplicationExitInfo(testApplicationExitInfo));
     verify(reportPersistence).persistEvent(any(), eq(sessionId), eq(true));
@@ -95,7 +98,8 @@ public class SessionReportingCoordinatorRobolectricTest {
     ApplicationExitInfo testApplicationExitInfo = addAppExitInfo(ApplicationExitInfo.REASON_ANR);
 
     reportingCoordinator.onBeginSession(sessionId, sessionStartTimestamp);
-    reportingCoordinator.persistAppExitInfoEvent(sessionId, testApplicationExitInfo);
+    reportingCoordinator.persistAppExitInfoEvent(
+        sessionId, testApplicationExitInfo, mockLogFileManager, mockUserMetadata);
 
     verify(dataCapture, never())
         .captureAnrEventData(convertApplicationExitInfo(testApplicationExitInfo));
@@ -114,7 +118,8 @@ public class SessionReportingCoordinatorRobolectricTest {
         addAppExitInfo(ApplicationExitInfo.REASON_DEPENDENCY_DIED);
 
     reportingCoordinator.onBeginSession(sessionId, sessionStartTimestamp);
-    reportingCoordinator.persistAppExitInfoEvent(sessionId, testApplicationExitInfo);
+    reportingCoordinator.persistAppExitInfoEvent(
+        sessionId, testApplicationExitInfo, mockLogFileManager, mockUserMetadata);
 
     verify(dataCapture, never())
         .captureAnrEventData(convertApplicationExitInfo(testApplicationExitInfo));
