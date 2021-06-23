@@ -46,6 +46,7 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
   private final Provider<UserAgentPublisher> userAgentPublisherProvider;
   private final Provider<HeartBeatInfo> heartBeatInfoProvider;
   private final List<AppCheckTokenListener> appCheckTokenListenerList;
+  private final List<AppCheckListener> appCheckListenerList;
   private final StorageHelper storageHelper;
   private final TokenRefreshManager tokenRefreshManager;
   private final Clock clock;
@@ -65,6 +66,7 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
     this.userAgentPublisherProvider = userAgentPublisherProvider;
     this.heartBeatInfoProvider = heartBeatInfoProvider;
     this.appCheckTokenListenerList = new ArrayList<>();
+    this.appCheckListenerList = new ArrayList<>();
     this.storageHelper =
         new StorageHelper(firebaseApp.getApplicationContext(), firebaseApp.getPersistenceKey());
     this.tokenRefreshManager =
@@ -110,7 +112,8 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
   public void addAppCheckTokenListener(@NonNull AppCheckTokenListener listener) {
     checkNotNull(listener);
     appCheckTokenListenerList.add(listener);
-    tokenRefreshManager.onListenerCountChanged(appCheckTokenListenerList.size());
+    tokenRefreshManager.onListenerCountChanged(
+        appCheckTokenListenerList.size() + appCheckListenerList.size());
     // If there is a token available, trigger the listener with the current token.
     if (hasValidToken()) {
       listener.onAppCheckTokenChanged(
@@ -122,7 +125,28 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
   public void removeAppCheckTokenListener(@NonNull AppCheckTokenListener listener) {
     checkNotNull(listener);
     appCheckTokenListenerList.remove(listener);
-    tokenRefreshManager.onListenerCountChanged(appCheckTokenListenerList.size());
+    tokenRefreshManager.onListenerCountChanged(
+        appCheckTokenListenerList.size() + appCheckListenerList.size());
+  }
+
+  @Override
+  public void addAppCheckListener(@NonNull AppCheckListener listener) {
+    checkNotNull(listener);
+    appCheckListenerList.add(listener);
+    tokenRefreshManager.onListenerCountChanged(
+        appCheckTokenListenerList.size() + appCheckListenerList.size());
+    // If there is a token available, trigger the listener with the current token.
+    if (hasValidToken()) {
+      listener.onAppCheckTokenChanged(cachedToken);
+    }
+  }
+
+  @Override
+  public void removeAppCheckListener(@NonNull AppCheckListener listener) {
+    checkNotNull(listener);
+    appCheckListenerList.remove(listener);
+    tokenRefreshManager.onListenerCountChanged(
+        appCheckTokenListenerList.size() + appCheckListenerList.size());
   }
 
   @NonNull
@@ -137,22 +161,31 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
               new FirebaseException("No AppCheckProvider installed.")));
     }
     // TODO: Cache the in-flight task.
+    return fetchTokenResultFromProvider();
+  }
+
+  @NonNull
+  @Override
+  public Task<AppCheckToken> getAppCheckToken(boolean forceRefresh) {
+    if (!forceRefresh && hasValidToken()) {
+      return Tasks.forResult(cachedToken);
+    }
+    if (appCheckProvider == null) {
+      return Tasks.forException(new FirebaseException("No AppCheckProvider installed."));
+    }
     return fetchTokenFromProvider();
   }
 
   /** Fetches an {@link AppCheckTokenResult} via the installed {@link AppCheckProvider}. */
-  Task<AppCheckTokenResult> fetchTokenFromProvider() {
-    return appCheckProvider
-        .getToken()
+  Task<AppCheckTokenResult> fetchTokenResultFromProvider() {
+    return fetchTokenFromProvider()
         .continueWithTask(
             new Continuation<AppCheckToken, Task<AppCheckTokenResult>>() {
               @Override
               public Task<AppCheckTokenResult> then(@NonNull Task<AppCheckToken> task) {
                 if (task.isSuccessful()) {
-                  AppCheckToken token = task.getResult();
-                  updateStoredToken(token);
                   AppCheckTokenResult tokenResult =
-                      DefaultAppCheckTokenResult.constructFromAppCheckToken(token);
+                      DefaultAppCheckTokenResult.constructFromAppCheckToken(task.getResult());
                   for (AppCheckTokenListener listener : appCheckTokenListenerList) {
                     listener.onAppCheckTokenChanged(tokenResult);
                   }
@@ -164,6 +197,26 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
                     DefaultAppCheckTokenResult.constructFromError(
                         new FirebaseException(
                             task.getException().getMessage(), task.getException())));
+              }
+            });
+  }
+
+  /** Fetches an {@link AppCheckToken} via the installed {@link AppCheckProvider}. */
+  Task<AppCheckToken> fetchTokenFromProvider() {
+    return appCheckProvider
+        .getToken()
+        .continueWithTask(
+            new Continuation<AppCheckToken, Task<AppCheckToken>>() {
+              @Override
+              public Task<AppCheckToken> then(@NonNull Task<AppCheckToken> task) {
+                if (task.isSuccessful()) {
+                  AppCheckToken token = task.getResult();
+                  updateStoredToken(token);
+                  for (AppCheckListener listener : appCheckListenerList) {
+                    listener.onAppCheckTokenChanged(token);
+                  }
+                }
+                return task;
               }
             });
   }
