@@ -58,6 +58,7 @@ android {
         versionName version
         multiDexEnabled true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        consumerProguardFiles 'proguard.txt'
     }
 
     sourceSets {
@@ -105,6 +106,11 @@ configurations.all {
         }
     }
     exclude group: "com.google.protobuf", module: "protobuf-java"
+}
+
+googleJavaFormat {
+    exclude 'src/testUtil/java/com/google/firebase/firestore/testutil/Assert.java'
+    exclude 'src/testUtil/java/com/google/firebase/firestore/testutil/ThrowingRunnable.java'
 }
 
 dependencies {
