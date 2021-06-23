@@ -16,9 +16,10 @@ package com.google.firebase.appdistribution;
 
 import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import org.jetbrains.annotations.Nullable;
 
-public abstract class FirebaseAppDistribution {
+public class FirebaseAppDistribution {
 
   /**
    * Updates the app to the latest release, if one is available. Returns the release information or
@@ -29,7 +30,9 @@ public abstract class FirebaseAppDistribution {
    * to complete the download and installation.
    */
   @NonNull
-  public abstract Task<AppDistributionRelease> updateToLatestRelease();
+  public Task<AppDistributionRelease> updateToLatestRelease() {
+    return Tasks.forResult(null);
+  }
 
   /**
    * Returns an AppDistributionRelease if one is available for the current signed in tester. If no
@@ -37,7 +40,9 @@ public abstract class FirebaseAppDistribution {
    * sign in UI
    */
   @NonNull
-  public abstract Task<AppDistributionRelease> checkForUpdate();
+  public Task<AppDistributionRelease> checkForUpdate() {
+    return Tasks.forResult(null);
+  }
 
   /**
    * Updates app to the latest release. If the latest release is an APK, downloads the binary and
@@ -48,13 +53,14 @@ public abstract class FirebaseAppDistribution {
    * @param updateProgressListener a callback function invoked as the update progresses
    */
   @NonNull
-  public abstract Task<Void> updateApp(@Nullable UpdateProgressListener updateProgressListener);
+  public Task<Void> updateApp(@Nullable UpdateProgressListener updateProgressListener) {
+    return Tasks.forResult(null);
+  }
 
   /**
    * Interface to subscribe to status updates on the release update process. Called by updateApp.
    */
   public interface UpdateProgressListener {
-
     public void onProgressUpdate(@NonNull UpdateProgress updateProgress);
   }
 
@@ -101,14 +107,18 @@ public abstract class FirebaseAppDistribution {
 
   /** Signs in the App Distribution tester. Presents the tester with a Google sign in UI */
   @NonNull
-  public abstract Task<Void> signInTester();
+  public Task<Void> signInTester() {
+    return Tasks.forResult(null);
+  }
 
   /** Returns true if the App Distribution tester is signed in */
   @NonNull
-  public abstract boolean isTesterSignedIn();
+  public boolean isTesterSignedIn() {
+    return false;
+  }
 
   /** Signs out the App Distribution tester */
-  public abstract void signOutTester();
+  public void signOutTester() {}
 
   /** The release information returned by the update check when a new version is available. */
   public interface AppDistributionRelease {
