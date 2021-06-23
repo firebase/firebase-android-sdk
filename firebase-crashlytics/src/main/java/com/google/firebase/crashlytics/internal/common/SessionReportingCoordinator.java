@@ -55,7 +55,6 @@ import java.util.concurrent.Executor;
 public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
 
   private static final String EVENT_TYPE_CRASH = "crash";
-  private static final String EVENT_TYPE_ANR = "anr";
   private static final String EVENT_TYPE_LOGGED = "error";
   private static final int EVENT_THREAD_IMPORTANCE = 4;
   private static final int MAX_CHAINED_EXCEPTION_DEPTH = 8;
@@ -147,21 +146,11 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
       return;
     }
 
-    // TODO: Refactor Event to only contain relevant information rather than unnecessary data like
-    // thread, exception etc.
     final CrashlyticsReport.Session.Event capturedEvent =
-        dataCapture.captureEventData(
-            new Exception("ANR"),
-            Thread.currentThread(),
-            EVENT_TYPE_ANR,
-            applicationExitInfo.getTimestamp(),
-            EVENT_THREAD_IMPORTANCE,
-            MAX_CHAINED_EXCEPTION_DEPTH,
-            false);
-    CrashlyticsReport.ApplicationExitInfo crashlyticsAppExitInfo =
-        convertApplicationExitInfo(applicationExitInfo);
+        dataCapture.captureAnrEventData(convertApplicationExitInfo(applicationExitInfo));
+
     Logger.getLogger().d("Persisting anr for session " + sessionId);
-    reportPersistence.persistAppExitInfoEvent(capturedEvent, sessionId, crashlyticsAppExitInfo);
+    reportPersistence.persistEvent(addLogsAndCustomKeysToEvent(capturedEvent), sessionId, true);
   }
 
   public void finalizeSessionWithNativeEvent(
@@ -227,28 +216,9 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
     return Tasks.whenAll(sendTasks);
   }
 
-  private void persistEvent(
-      @NonNull Throwable event,
-      @NonNull Thread thread,
-      @NonNull String sessionId,
-      @NonNull String eventType,
-      long timestamp,
-      boolean includeAllThreads) {
-
-    final boolean isHighPriority = eventType.equals(EVENT_TYPE_CRASH);
-
-    final CrashlyticsReport.Session.Event capturedEvent =
-        dataCapture.captureEventData(
-            event,
-            thread,
-            eventType,
-            timestamp,
-            EVENT_THREAD_IMPORTANCE,
-            MAX_CHAINED_EXCEPTION_DEPTH,
-            includeAllThreads);
-
+  private CrashlyticsReport.Session.Event addLogsAndCustomKeysToEvent(
+      CrashlyticsReport.Session.Event capturedEvent) {
     final CrashlyticsReport.Session.Event.Builder eventBuilder = capturedEvent.toBuilder();
-
     final String content = logFileManager.getLogString();
 
     if (content != null) {
@@ -274,7 +244,31 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
               .build());
     }
 
-    reportPersistence.persistEvent(eventBuilder.build(), sessionId, isHighPriority);
+    return eventBuilder.build();
+  }
+
+  private void persistEvent(
+      @NonNull Throwable event,
+      @NonNull Thread thread,
+      @NonNull String sessionId,
+      @NonNull String eventType,
+      long timestamp,
+      boolean includeAllThreads) {
+
+    final boolean isHighPriority = eventType.equals(EVENT_TYPE_CRASH);
+
+    final CrashlyticsReport.Session.Event capturedEvent =
+        dataCapture.captureEventData(
+            event,
+            thread,
+            eventType,
+            timestamp,
+            EVENT_THREAD_IMPORTANCE,
+            MAX_CHAINED_EXCEPTION_DEPTH,
+            includeAllThreads);
+
+    reportPersistence.persistEvent(
+        addLogsAndCustomKeysToEvent(capturedEvent), sessionId, isHighPriority);
   }
 
   private boolean onReportSendComplete(@NonNull Task<CrashlyticsReportWithSessionId> task) {
@@ -328,6 +322,9 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
         .setProcessName(applicationExitInfo.getProcessName())
         .setReasonCode(applicationExitInfo.getReason())
         .setTimestamp(applicationExitInfo.getTimestamp())
+        .setPid(applicationExitInfo.getPid())
+        .setPss(applicationExitInfo.getPss())
+        .setRss(applicationExitInfo.getRss())
         .setTraceFile(traceFile)
         .build();
   }

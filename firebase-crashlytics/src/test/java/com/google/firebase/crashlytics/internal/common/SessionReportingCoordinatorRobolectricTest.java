@@ -16,10 +16,6 @@ package com.google.firebase.crashlytics.internal.common;
 
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -84,18 +80,8 @@ public class SessionReportingCoordinatorRobolectricTest {
     reportingCoordinator.onBeginSession(sessionId, sessionStartTimestamp);
     reportingCoordinator.persistAppExitInfoEvent(sessionId, testApplicationExitInfo);
 
-    verify(dataCapture)
-        .captureEventData(
-            any(Throwable.class),
-            any(Thread.class),
-            eq("anr"),
-            anyLong(),
-            anyInt(),
-            anyInt(),
-            anyBoolean());
-    verify(reportPersistence)
-        .persistAppExitInfoEvent(
-            any(), eq(sessionId), eq(convertApplicationExitInfo(testApplicationExitInfo)));
+    verify(dataCapture).captureAnrEventData(convertApplicationExitInfo(testApplicationExitInfo));
+    verify(reportPersistence).persistEvent(any(), eq(sessionId), eq(true));
   }
 
   @Test
@@ -112,17 +98,8 @@ public class SessionReportingCoordinatorRobolectricTest {
     reportingCoordinator.persistAppExitInfoEvent(sessionId, testApplicationExitInfo);
 
     verify(dataCapture, never())
-        .captureEventData(
-            any(Throwable.class),
-            any(Thread.class),
-            eq("anr"),
-            anyLong(),
-            anyInt(),
-            anyInt(),
-            anyBoolean());
-    verify(reportPersistence, never())
-        .persistAppExitInfoEvent(
-            any(), eq(sessionId), eq(convertApplicationExitInfo(testApplicationExitInfo)));
+        .captureAnrEventData(convertApplicationExitInfo(testApplicationExitInfo));
+    verify(reportPersistence, never()).persistEvent(any(), eq(sessionId), eq(true));
   }
 
   @Test
@@ -140,17 +117,8 @@ public class SessionReportingCoordinatorRobolectricTest {
     reportingCoordinator.persistAppExitInfoEvent(sessionId, testApplicationExitInfo);
 
     verify(dataCapture, never())
-        .captureEventData(
-            any(Throwable.class),
-            any(Thread.class),
-            eq("anr"),
-            anyLong(),
-            anyInt(),
-            anyInt(),
-            anyBoolean());
-    verify(reportPersistence, never())
-        .persistAppExitInfoEvent(
-            any(), eq(sessionId), eq(convertApplicationExitInfo(testApplicationExitInfo)));
+        .captureAnrEventData(convertApplicationExitInfo(testApplicationExitInfo));
+    verify(reportPersistence, never()).persistEvent(any(), eq(sessionId), eq(true));
   }
 
   @Test
@@ -167,14 +135,7 @@ public class SessionReportingCoordinatorRobolectricTest {
     when(mockEventApp.toBuilder()).thenReturn(mockEventAppBuilder);
     when(mockEventAppBuilder.setCustomAttributes(any())).thenReturn(mockEventAppBuilder);
     when(mockEventAppBuilder.build()).thenReturn(mockEventApp);
-    when(dataCapture.captureEventData(
-            any(Throwable.class),
-            any(Thread.class),
-            anyString(),
-            anyLong(),
-            anyInt(),
-            anyInt(),
-            anyBoolean()))
+    when(dataCapture.captureAnrEventData(any(CrashlyticsReport.ApplicationExitInfo.class)))
         .thenReturn(mockEvent);
   }
 
@@ -202,6 +163,9 @@ public class SessionReportingCoordinatorRobolectricTest {
         .setProcessName(applicationExitInfo.getProcessName())
         .setReasonCode(applicationExitInfo.getReason())
         .setTimestamp(applicationExitInfo.getTimestamp())
+        .setPid(applicationExitInfo.getPid())
+        .setPss(applicationExitInfo.getPss())
+        .setRss(applicationExitInfo.getRss())
         .setTraceFile(null)
         .build();
   }

@@ -49,14 +49,19 @@ public class CrashlyticsReportTest {
 
     assertNull(testReport.getSession().getEvents());
     final CrashlyticsReport withAnrEventsReport =
-        testReport
-            .withEvents(ImmutableList.from(makeAnrEvent()))
-            .withAppExitInfo(makeAppExitInfo());
+        testReport.withEvents(ImmutableList.from(makeAnrEvent()));
 
     assertNotEquals(testReport, withAnrEventsReport);
     assertNotNull(withAnrEventsReport.getSession().getEvents());
     assertEquals(1, withAnrEventsReport.getSession().getEvents().size());
-    assertNotNull(withAnrEventsReport.getAppExitInfo());
+    assertNotNull(
+        withAnrEventsReport
+            .getSession()
+            .getEvents()
+            .get(0)
+            .getApp()
+            .getExecution()
+            .getAppExitInfo());
   }
 
   @Test
@@ -225,16 +230,42 @@ public class CrashlyticsReportTest {
   }
 
   private static Event makeAnrEvent() {
-    return makeTestEvent("ANR");
+    return Event.builder()
+        .setType("anr")
+        .setTimestamp(1000)
+        .setApp(
+            Session.Event.Application.builder()
+                .setBackground(false)
+                .setExecution(
+                    Execution.builder()
+                        .setBinaries(
+                            ImmutableList.from(
+                                Execution.BinaryImage.builder()
+                                    .setBaseAddress(0)
+                                    .setName("name")
+                                    .setSize(100000)
+                                    .setUuid("uuid")
+                                    .build()))
+                        .setSignal(Signal.builder().setCode("0").setName("0").setAddress(0).build())
+                        .setAppExitInfo(makeAppExitInfo())
+                        .build())
+                .setUiOrientation(1)
+                .build())
+        .setDevice(
+            Session.Event.Device.builder()
+                .setBatteryLevel(0.5)
+                .setBatteryVelocity(3)
+                .setDiskUsed(10000000)
+                .setOrientation(1)
+                .setProximityOn(true)
+                .setRamUsed(10000000)
+                .build())
+        .build();
   }
 
   private static Event makeTestEvent() {
-    return makeTestEvent("test");
-  }
-
-  private static Event makeTestEvent(String eventType) {
     return Event.builder()
-        .setType(eventType)
+        .setType("test")
         .setTimestamp(1000)
         .setApp(
             Session.Event.Application.builder()
@@ -286,6 +317,9 @@ public class CrashlyticsReportTest {
         .setImportance(1)
         .setReasonCode(1)
         .setProcessName("test")
+        .setPid(1)
+        .setPss(1)
+        .setRss(1)
         .build();
   }
 

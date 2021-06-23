@@ -52,7 +52,6 @@ import java.util.concurrent.TimeUnit;
 import org.mockito.ArgumentCaptor;
 
 public class CrashlyticsControllerTest extends CrashlyticsTestCase {
-
   private static final String GOOGLE_APP_ID = "google:app:id";
 
   private Context testContext;

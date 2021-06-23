@@ -113,9 +113,6 @@ public class CrashlyticsReportJsonTransform {
         case "ndkPayload":
           builder.setNdkPayload(parseNdkPayload(jsonReader));
           break;
-        case "appExitInfo":
-          builder.setAppExitInfo(parseAppExitInfo(jsonReader));
-          break;
         default:
           jsonReader.skipValue();
           break;
@@ -213,6 +210,9 @@ public class CrashlyticsReportJsonTransform {
     while (jsonReader.hasNext()) {
       String name = jsonReader.nextName();
       switch (name) {
+        case "pid":
+          builder.setPid(jsonReader.nextInt());
+          break;
         case "processName":
           builder.setProcessName(jsonReader.nextString());
           break;
@@ -221,6 +221,12 @@ public class CrashlyticsReportJsonTransform {
           break;
         case "importance":
           builder.setImportance(jsonReader.nextInt());
+          break;
+        case "pss":
+          builder.setPss(jsonReader.nextLong());
+          break;
+        case "rss":
+          builder.setRss(jsonReader.nextLong());
           break;
         case "timestamp":
           builder.setTimestamp(jsonReader.nextLong());
@@ -491,6 +497,9 @@ public class CrashlyticsReportJsonTransform {
         case "binaries":
           builder.setBinaries(
               parseArray(jsonReader, CrashlyticsReportJsonTransform::parseEventBinaryImage));
+          break;
+        case "appExitInfo":
+          builder.setAppExitInfo(parseAppExitInfo(jsonReader));
           break;
         default:
           jsonReader.skipValue();

@@ -110,6 +110,20 @@ public class CrashlyticsReportDataCapture {
         .build();
   }
 
+  public Event captureAnrEventData(CrashlyticsReport.ApplicationExitInfo applicationExitInfo) {
+    // This is not the orientation of the device at the time of ANR.
+    // It's filtered out when the backend processes it.
+    // TODO: Consider setting it to 0 to mark it as unknown.
+    final int orientation = context.getResources().getConfiguration().orientation;
+
+    return Event.builder()
+        .setType("anr")
+        .setTimestamp(applicationExitInfo.getTimestamp())
+        .setApp(populateEventApplicationData(orientation, applicationExitInfo))
+        .setDevice(populateEventDeviceData(orientation))
+        .build();
+  }
+
   private CrashlyticsReport.Builder buildReportData() {
     return CrashlyticsReport.builder()
         .setSdkVersion(BuildConfig.VERSION_NAME)
@@ -212,6 +226,18 @@ public class CrashlyticsReportDataCapture {
         .build();
   }
 
+  private Event.Application populateEventApplicationData(
+      int orientation, CrashlyticsReport.ApplicationExitInfo applicationExitInfo) {
+    boolean isBackground =
+        applicationExitInfo.getImportance() != RunningAppProcessInfo.IMPORTANCE_FOREGROUND;
+
+    return Event.Application.builder()
+        .setBackground(isBackground)
+        .setUiOrientation(orientation)
+        .setExecution(populateExecutionData(applicationExitInfo))
+        .build();
+  }
+
   private Event.Device populateEventDeviceData(int orientation) {
     final BatteryState battery = BatteryState.get(context);
     final Float batteryLevel = battery.getBatteryLevel();
@@ -245,6 +271,15 @@ public class CrashlyticsReportDataCapture {
                 trimmedEvent, eventThread, eventThreadImportance, includeAllThreads))
         .setException(
             populateExceptionData(trimmedEvent, eventThreadImportance, maxChainedExceptions))
+        .setSignal(populateSignalData())
+        .setBinaries(populateBinaryImagesList())
+        .build();
+  }
+
+  private Execution populateExecutionData(
+      CrashlyticsReport.ApplicationExitInfo applicationExitInfo) {
+    return Execution.builder()
+        .setAppExitInfo(applicationExitInfo)
         .setSignal(populateSignalData())
         .setBinaries(populateBinaryImagesList())
         .build();

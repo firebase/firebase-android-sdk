@@ -105,9 +105,6 @@ public abstract class CrashlyticsReport {
   @Nullable
   public abstract FilesPayload getNdkPayload();
 
-  @Nullable
-  public abstract ApplicationExitInfo getAppExitInfo();
-
   @NonNull
   protected abstract Builder toBuilder();
 
@@ -156,16 +153,6 @@ public abstract class CrashlyticsReport {
   @NonNull
   public CrashlyticsReport withNdkPayload(@NonNull FilesPayload filesPayload) {
     return toBuilder().setSession(null).setNdkPayload(filesPayload).build();
-  }
-
-  /**
-   * Augment an existing {@link CrashlyticsReport} with an ApplicationExitInfo
-   *
-   * @return a new {@link CrashlyticsReport} with AppExitInfo inside of it.
-   */
-  @NonNull
-  public CrashlyticsReport withAppExitInfo(@NonNull ApplicationExitInfo appExitInfo) {
-    return toBuilder().setAppExitInfo(appExitInfo).build();
   }
 
   /**
@@ -669,11 +656,14 @@ public abstract class CrashlyticsReport {
             return new AutoValue_CrashlyticsReport_Session_Event_Application_Execution.Builder();
           }
 
-          @NonNull
+          @Nullable
           public abstract ImmutableList<Thread> getThreads();
 
-          @NonNull
+          @Nullable
           public abstract Exception getException();
+
+          @Nullable
+          public abstract ApplicationExitInfo getAppExitInfo();
 
           @NonNull
           public abstract Signal getSignal();
@@ -909,6 +899,9 @@ public abstract class CrashlyticsReport {
             public abstract Builder setException(@NonNull Exception value);
 
             @NonNull
+            public abstract Builder setAppExitInfo(@NonNull ApplicationExitInfo value);
+
+            @NonNull
             public abstract Builder setSignal(@NonNull Signal value);
 
             @NonNull
@@ -1049,6 +1042,9 @@ public abstract class CrashlyticsReport {
     }
 
     @NonNull
+    public abstract int getPid();
+
+    @NonNull
     public abstract String getProcessName();
 
     @NonNull
@@ -1056,6 +1052,12 @@ public abstract class CrashlyticsReport {
 
     @NonNull
     public abstract int getImportance();
+
+    @NonNull
+    public abstract long getPss();
+
+    @NonNull
+    public abstract long getRss();
 
     @NonNull
     public abstract long getTimestamp();
@@ -1067,6 +1069,8 @@ public abstract class CrashlyticsReport {
     /** Builder for {@link ApplicationExitInfo}. */
     @AutoValue.Builder
     public abstract static class Builder {
+      @NonNull
+      public abstract ApplicationExitInfo.Builder setPid(@NonNull int value);
 
       @NonNull
       public abstract ApplicationExitInfo.Builder setProcessName(@NonNull String value);
@@ -1078,9 +1082,15 @@ public abstract class CrashlyticsReport {
       public abstract ApplicationExitInfo.Builder setImportance(@NonNull int value);
 
       @NonNull
+      public abstract ApplicationExitInfo.Builder setPss(@NonNull long value);
+
+      @NonNull
+      public abstract ApplicationExitInfo.Builder setRss(@NonNull long value);
+
+      @NonNull
       public abstract ApplicationExitInfo.Builder setTimestamp(@NonNull long value);
 
-      @Nullable
+      @NonNull
       public abstract ApplicationExitInfo.Builder setTraceFile(@Nullable String value);
 
       @NonNull
@@ -1114,9 +1124,6 @@ public abstract class CrashlyticsReport {
 
     @NonNull
     public abstract Builder setNdkPayload(FilesPayload value);
-
-    @NonNull
-    public abstract Builder setAppExitInfo(ApplicationExitInfo value);
 
     @NonNull
     public abstract CrashlyticsReport build();

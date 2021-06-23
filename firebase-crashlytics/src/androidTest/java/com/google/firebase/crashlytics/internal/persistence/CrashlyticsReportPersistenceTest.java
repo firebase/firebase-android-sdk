@@ -669,17 +669,15 @@ public class CrashlyticsReportPersistenceTest {
   }
 
   @Test
-  public void testPersistAppExitInfo() throws IOException {
+  public void testPersistReportWithAnrEvent() throws IOException {
     reportPersistence =
         new CrashlyticsReportPersistence(
             folder.newFolder(), getSettingsMock(VERY_LARGE_UPPER_LIMIT, 4));
     final String sessionId = "testSession";
     final CrashlyticsReport testReport = makeTestReport(sessionId);
-    final CrashlyticsReport.Session.Event testEvent1 = makeTestEvent("anr", "reason1");
-    final CrashlyticsReport.ApplicationExitInfo testAppExitInfo = makeAppExitInfo();
-
+    final Event testEvent = makeTestAnrEvent();
     reportPersistence.persistReport(testReport);
-    reportPersistence.persistAppExitInfoEvent(testEvent1, sessionId, testAppExitInfo);
+    reportPersistence.persistEvent(testEvent, sessionId, true);
 
     final long endedAt = System.currentTimeMillis();
 
@@ -690,12 +688,6 @@ public class CrashlyticsReportPersistenceTest {
     assertEquals(1, finalizedReports.size());
     final CrashlyticsReport finalizedReport = finalizedReports.get(0).getReport();
     assertEquals(1, finalizedReport.getSession().getEvents().size());
-    assertEquals(
-        testReport
-            .withSessionEndFields(endedAt, true, null)
-            .withEvents(ImmutableList.from(testEvent1))
-            .withAppExitInfo(testAppExitInfo),
-        finalizedReport);
   }
 
   private static void persistReportWithEvent(
@@ -818,6 +810,40 @@ public class CrashlyticsReportPersistenceTest {
         .build();
   }
 
+  private static Event makeTestAnrEvent() {
+    return Event.builder()
+        .setType("anr")
+        .setTimestamp(1000)
+        .setApp(
+            Session.Event.Application.builder()
+                .setBackground(false)
+                .setExecution(
+                    Execution.builder()
+                        .setBinaries(
+                            ImmutableList.from(
+                                Execution.BinaryImage.builder()
+                                    .setBaseAddress(0)
+                                    .setName("name")
+                                    .setSize(100000)
+                                    .setUuid("uuid")
+                                    .build()))
+                        .setSignal(Signal.builder().setCode("0").setName("0").setAddress(0).build())
+                        .setAppExitInfo(makeAppExitInfo())
+                        .build())
+                .setUiOrientation(1)
+                .build())
+        .setDevice(
+            Session.Event.Device.builder()
+                .setBatteryLevel(0.5)
+                .setBatteryVelocity(3)
+                .setDiskUsed(10000000)
+                .setOrientation(1)
+                .setProximityOn(true)
+                .setRamUsed(10000000)
+                .build())
+        .build();
+  }
+
   private static ImmutableList<Frame> makeTestFrames() {
     return ImmutableList.from(
         Frame.builder()
@@ -857,6 +883,9 @@ public class CrashlyticsReportPersistenceTest {
         .setImportance(1)
         .setReasonCode(1)
         .setProcessName("test")
+        .setPid(1)
+        .setPss(1L)
+        .setRss(1L)
         .build();
   }
 }

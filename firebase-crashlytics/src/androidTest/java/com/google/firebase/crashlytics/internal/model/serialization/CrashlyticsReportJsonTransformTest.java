@@ -59,12 +59,12 @@ public class CrashlyticsReportJsonTransformTest {
   }
 
   @Test
-  public void testReportToJsonAndBack_with_appExitInfo_equals() throws IOException {
-    final CrashlyticsReport testReport = makeTestReport(false).withAppExitInfo(makeAppExitInfo());
-    final String testReportJson = transform.reportToJson(testReport);
-    final CrashlyticsReport reifiedReport = transform.reportFromJson(testReportJson);
-    assertNotSame(reifiedReport, testReport);
-    assertEquals(reifiedReport, testReport);
+  public void testAnrEventToJsonAndBack_equals() throws IOException {
+    final CrashlyticsReport.Session.Event testEvent = makeAnrEvent();
+    final String testEventJson = transform.eventToJson(testEvent);
+    final CrashlyticsReport.Session.Event reifiedEvent = transform.eventFromJson(testEventJson);
+    assertNotSame(reifiedEvent, testEvent);
+    assertEquals(reifiedEvent, testEvent);
   }
 
   @Test
@@ -180,6 +180,40 @@ public class CrashlyticsReportJsonTransformTest {
         .build();
   }
 
+  private static Event makeAnrEvent() {
+    return Event.builder()
+        .setType("anr")
+        .setTimestamp(1000)
+        .setApp(
+            Session.Event.Application.builder()
+                .setBackground(false)
+                .setExecution(
+                    Execution.builder()
+                        .setBinaries(
+                            ImmutableList.from(
+                                Execution.BinaryImage.builder()
+                                    .setBaseAddress(0)
+                                    .setName("name")
+                                    .setSize(100000)
+                                    .setUuid("uuid")
+                                    .build()))
+                        .setSignal(Signal.builder().setCode("0").setName("0").setAddress(0).build())
+                        .setAppExitInfo(makeAppExitInfo())
+                        .build())
+                .setUiOrientation(1)
+                .build())
+        .setDevice(
+            Session.Event.Device.builder()
+                .setBatteryLevel(0.5)
+                .setBatteryVelocity(3)
+                .setDiskUsed(10000000)
+                .setOrientation(1)
+                .setProximityOn(true)
+                .setRamUsed(10000000)
+                .build())
+        .build();
+  }
+
   private static ImmutableList<Frame> makeTestFrames() {
     return ImmutableList.from(
         Frame.builder()
@@ -219,6 +253,9 @@ public class CrashlyticsReportJsonTransformTest {
         .setImportance(1)
         .setReasonCode(1)
         .setProcessName("test")
+        .setPid(1)
+        .setPss(1L)
+        .setRss(1L)
         .build();
   }
 }
