@@ -25,7 +25,6 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.appcheck.AppCheckToken;
 import com.google.firebase.appcheck.AppCheckTokenResult;
 import com.google.firebase.appcheck.FirebaseAppCheck;
-import com.google.firebase.appcheck.FirebaseAppCheck.AppCheckListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.ListResult;
 import java.util.concurrent.ExecutionException;
