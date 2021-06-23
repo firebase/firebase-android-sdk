@@ -19,7 +19,6 @@ import androidx.annotation.NonNull;
 import com.google.firebase.FirebaseException;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-import java.util.Optional;
 
 public abstract class FirebaseAppDistributionException extends FirebaseException {
   // Unknown error.
@@ -57,7 +56,7 @@ public abstract class FirebaseAppDistributionException extends FirebaseException
   public abstract int getCode();
 
   @NonNull
-  public abstract Optional<FirebaseAppDistributionApi.AppDistributionRelease> getRelease();
+  public abstract FirebaseAppDistribution.AppDistributionRelease getRelease();
 
   @IntDef({
     FirebaseAppDistributionException.UNKNOWN_ERROR,

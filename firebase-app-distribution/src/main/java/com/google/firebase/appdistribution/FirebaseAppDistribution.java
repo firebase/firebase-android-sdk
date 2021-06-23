@@ -16,36 +16,35 @@ package com.google.firebase.appdistribution;
 
 import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
-import java.util.Optional;
 import org.jetbrains.annotations.Nullable;
 
-public abstract class FirebaseAppDistributionApi {
+public abstract class FirebaseAppDistribution {
 
   /**
    * Updates the app to the latest release, if one is available. Returns the release information or
-   * an empty Optional if no update is found. Performs the following actions: 1. If tester is not
-   * signed in, presents the tester with a Google sign in UI 2. Checks if a newer release is
-   * available. If so, presents the tester with a confirmation dialog to begin the download. 3. For
-   * APKs, downloads the binary and starts an installation intent. 4. For AABs, directs the tester
-   * to the Play app to complete the download and installation.
+   * null if no update is found. Performs the following actions: 1. If tester is not signed in,
+   * presents the tester with a Google sign in UI 2. Checks if a newer release is available. If so,
+   * presents the tester with a confirmation dialog to begin the download. 3. For APKs, downloads
+   * the binary and starts an installation intent. 4. For AABs, directs the tester to the Play app
+   * to complete the download and installation.
    */
   @NonNull
-  public abstract Task<Optional<AppDistributionRelease>> updateToLatestRelease();
+  public abstract Task<AppDistributionRelease> updateToLatestRelease();
 
   /**
    * Returns an AppDistributionRelease if one is available for the current signed in tester. If no
-   * update is found, returns an empty Optional. If tester is not signed in, presents the tester
-   * with a Google sign in UI
+   * update is found, returns null. If tester is not signed in, presents the tester with a Google
+   * sign in UI
    */
   @NonNull
-  public abstract Task<Optional<AppDistributionRelease>> checkForUpdate();
+  public abstract Task<AppDistributionRelease> checkForUpdate();
 
   /**
    * Updates app to the latest release. If the latest release is an APK, downloads the binary and
    * starts an installation If the latest release is an AAB, directs the tester to the Play app to
    * complete the download and installation.
    *
-   * @throws an UPDATE_NOT_AVAIALBLE exception if
+   * @throws an UPDATE_NOT_AVAIALBLE exception if no new release is cached from checkForUpdate
    * @param updateProgressListener a callback function invoked as the update progresses
    */
   @NonNull
