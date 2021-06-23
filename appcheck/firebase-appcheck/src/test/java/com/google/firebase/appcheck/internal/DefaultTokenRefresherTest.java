@@ -24,8 +24,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.FirebaseException;
-import com.google.firebase.appcheck.AppCheckTokenResult;
+import com.google.firebase.appcheck.AppCheckToken;
 import java.util.concurrent.ScheduledExecutorService;
 import org.junit.Before;
 import org.junit.Test;
@@ -47,7 +46,7 @@ public class DefaultTokenRefresherTest {
 
   @Mock DefaultFirebaseAppCheck mockFirebaseAppCheck;
   @Mock ScheduledExecutorService mockScheduledExecutorService;
-  @Mock AppCheckTokenResult mockAppCheckTokenResult;
+  @Mock AppCheckToken mockAppCheckToken;
 
   private DefaultTokenRefresher defaultTokenRefresher;
 
@@ -56,7 +55,7 @@ public class DefaultTokenRefresherTest {
     MockitoAnnotations.initMocks(this);
 
     when(mockFirebaseAppCheck.fetchTokenFromProvider())
-        .thenReturn(Tasks.forResult(mockAppCheckTokenResult));
+        .thenReturn(Tasks.forResult(mockAppCheckToken));
 
     defaultTokenRefresher =
         new DefaultTokenRefresher(mockFirebaseAppCheck, mockScheduledExecutorService);
@@ -77,7 +76,8 @@ public class DefaultTokenRefresherTest {
 
   @Test
   public void scheduleRefresh_taskFails_schedulesRefreshAfterFailure() {
-    when(mockAppCheckTokenResult.getError()).thenReturn(new FirebaseException(ERROR));
+    when(mockFirebaseAppCheck.fetchTokenFromProvider())
+        .thenReturn(Tasks.forException(new Exception()));
     defaultTokenRefresher.scheduleRefresh(TIME_TO_REFRESH_MILLIS);
 
     ArgumentCaptor<Runnable> onRefreshCaptor = ArgumentCaptor.forClass(Runnable.class);
@@ -94,7 +94,8 @@ public class DefaultTokenRefresherTest {
 
   @Test
   public void scheduleRefreshAfterFailure_exponentialBackoff() {
-    when(mockAppCheckTokenResult.getError()).thenReturn(new FirebaseException(ERROR));
+    when(mockFirebaseAppCheck.fetchTokenFromProvider())
+        .thenReturn(Tasks.forException(new Exception()));
     defaultTokenRefresher.scheduleRefresh(TIME_TO_REFRESH_MILLIS);
 
     ArgumentCaptor<Runnable> onRefreshCaptor = ArgumentCaptor.forClass(Runnable.class);
@@ -131,7 +132,8 @@ public class DefaultTokenRefresherTest {
 
   @Test
   public void scheduleRefresh_resetsDelay() {
-    when(mockAppCheckTokenResult.getError()).thenReturn(new FirebaseException(ERROR));
+    when(mockFirebaseAppCheck.fetchTokenFromProvider())
+        .thenReturn(Tasks.forException(new Exception()));
     defaultTokenRefresher.scheduleRefresh(TIME_TO_REFRESH_MILLIS);
 
     ArgumentCaptor<Runnable> onRefreshCaptor = ArgumentCaptor.forClass(Runnable.class);

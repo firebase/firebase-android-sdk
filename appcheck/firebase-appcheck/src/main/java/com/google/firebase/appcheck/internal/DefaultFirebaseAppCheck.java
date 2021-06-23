@@ -184,12 +184,8 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
               @Override
               public Task<AppCheckTokenResult> then(@NonNull Task<AppCheckToken> task) {
                 if (task.isSuccessful()) {
-                  AppCheckTokenResult tokenResult =
-                      DefaultAppCheckTokenResult.constructFromAppCheckToken(task.getResult());
-                  for (AppCheckTokenListener listener : appCheckTokenListenerList) {
-                    listener.onAppCheckTokenChanged(tokenResult);
-                  }
-                  return Tasks.forResult(tokenResult);
+                  return Tasks.forResult(
+                      DefaultAppCheckTokenResult.constructFromAppCheckToken(task.getResult()));
                 }
                 // If the token exchange failed, return a dummy token for integrators to attach in
                 // their headers.
@@ -214,6 +210,11 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
                   updateStoredToken(token);
                   for (AppCheckListener listener : appCheckListenerList) {
                     listener.onAppCheckTokenChanged(token);
+                  }
+                  AppCheckTokenResult tokenResult =
+                      DefaultAppCheckTokenResult.constructFromAppCheckToken(token);
+                  for (AppCheckTokenListener listener : appCheckTokenListenerList) {
+                    listener.onAppCheckTokenChanged(tokenResult);
                   }
                 }
                 return task;
