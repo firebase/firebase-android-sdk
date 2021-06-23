@@ -28,6 +28,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appcheck.AppCheckToken;
 import com.google.firebase.appcheck.FirebaseAppCheck;
+import com.google.firebase.appcheck.FirebaseAppCheck.AppCheckListener;
 import com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory;
 import com.google.firebase.appcheck.safetynet.SafetyNetAppCheckProviderFactory;
 import com.google.firebase.storage.FirebaseStorage;
@@ -40,6 +41,7 @@ public class MainActivity extends AppCompatActivity {
 
   private FirebaseAppCheck firebaseAppCheck;
   private FirebaseStorage firebaseStorage;
+  private AppCheckListener appCheckListener;
   private Button installSafetyNetButton;
   private Button installDebugButton;
   private Button getAppCheckTokenButton;
@@ -54,10 +56,27 @@ public class MainActivity extends AppCompatActivity {
     initViews();
   }
 
+  @Override
+  protected void onDestroy() {
+    super.onDestroy();
+
+    firebaseAppCheck.removeAppCheckListener(appCheckListener);
+  }
+
   private void initFirebase() {
     FirebaseApp.initializeApp(this);
     firebaseAppCheck = FirebaseAppCheck.getInstance();
     firebaseStorage = FirebaseStorage.getInstance();
+
+    appCheckListener =
+        new AppCheckListener() {
+          @Override
+          public void onAppCheckTokenChanged(@NonNull AppCheckToken token) {
+            Log.d(TAG, "onAppCheckTokenChanged");
+          }
+        };
+
+    firebaseAppCheck.addAppCheckListener(appCheckListener);
   }
 
   private void initViews() {
