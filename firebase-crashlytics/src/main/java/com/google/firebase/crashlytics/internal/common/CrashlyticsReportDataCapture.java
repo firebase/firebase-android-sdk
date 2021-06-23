@@ -111,6 +111,9 @@ public class CrashlyticsReportDataCapture {
   }
 
   public Event captureAnrEventData(CrashlyticsReport.ApplicationExitInfo applicationExitInfo) {
+    // This is not the orientation of the device at the time of ANR.
+    // It's filtered out when the backend processes it.
+    // TODO: Consider setting it to 0 to mark it as unknown.
     final int orientation = context.getResources().getConfiguration().orientation;
 
     return Event.builder()
