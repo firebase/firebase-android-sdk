@@ -40,7 +40,7 @@ import org.gradle.api.Project;
  *       GenerateLicensesTask} to create the artifacts necessary for our release.
  * </ul>
  */
-class LicenseResolverPlugin implements Plugin<Project> {
+public class LicenseResolverPlugin implements Plugin<Project> {
   private static final String[] ANDROID_PLUGINS = {
     "com.android.application", "com.android.library", "com.android.test"
   };

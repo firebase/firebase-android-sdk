@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,13 +17,14 @@ package com.google.firebase.dynamiclinks.internal;
 import android.content.Context;
 import android.os.Looper;
 import androidx.annotation.NonNull;
-import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.api.Api;
+import com.google.android.gms.common.api.Api.ApiOptions;
 import com.google.android.gms.common.api.Api.ApiOptions.NoOptions;
 import com.google.android.gms.common.api.GoogleApi;
 import com.google.android.gms.common.api.GoogleApiClient.ConnectionCallbacks;
 import com.google.android.gms.common.api.GoogleApiClient.OnConnectionFailedListener;
 import com.google.android.gms.common.internal.ClientSettings;
+import com.google.android.gms.common.util.VisibleForTesting;
 
 public class DynamicLinksApi extends GoogleApi<NoOptions> {
 
@@ -63,6 +64,6 @@ public class DynamicLinksApi extends GoogleApi<NoOptions> {
    */
   @VisibleForTesting
   public DynamicLinksApi(@NonNull Context context) {
-    super(context, API, null /* options */, Settings.DEFAULT_SETTINGS);
+    super(context, API, ApiOptions.NO_OPTIONS /* options */, Settings.DEFAULT_SETTINGS);
   }
 }

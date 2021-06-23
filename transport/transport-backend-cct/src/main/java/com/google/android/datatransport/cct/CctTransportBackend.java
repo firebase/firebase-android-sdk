@@ -151,8 +151,7 @@ final class CctTransportBackend implements TransportBackend {
   public EventInternal decorate(EventInternal eventInternal) {
     NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
 
-    return eventInternal
-        .toBuilder()
+    return eventInternal.toBuilder()
         .addMetadata(KEY_SDK_VERSION, Build.VERSION.SDK_INT)
         .addMetadata(KEY_MODEL, Build.MODEL)
         .addMetadata(KEY_HARDWARE, Build.HARDWARE)
