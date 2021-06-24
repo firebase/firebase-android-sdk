@@ -18,25 +18,21 @@ import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
-
 import org.jetbrains.annotations.Nullable;
 
 public class FirebaseAppDistribution {
 
   private final FirebaseApp firebaseApp;
 
-  public FirebaseAppDistribution(FirebaseApp firebaseApp){
+  public FirebaseAppDistribution(FirebaseApp firebaseApp) {
     this.firebaseApp = firebaseApp;
   }
 
-  /**
-   * @return a FirebaseInstallationsApi instance
-   */
+  /** @return a FirebaseInstallationsApi instance */
   @NonNull
   public static FirebaseAppDistribution getInstance() {
     return new FirebaseAppDistribution(FirebaseApp.getInstance());
   }
-
 
   /**
    * Updates the app to the latest release, if one is available. Returns the release information or
@@ -74,54 +70,6 @@ public class FirebaseAppDistribution {
     return Tasks.forResult(null);
   }
 
-  /**
-   * Interface to subscribe to status updates on the release update process. Called by updateApp.
-   */
-  public interface UpdateProgressListener {
-    public void onProgressUpdate(@NonNull UpdateProgress updateProgress);
-  }
-
-  public interface UpdateProgress {
-    // The number of bytes downloaded so far for the APK.
-    //  Returns -1 if called on an AAB.
-    @NonNull
-    public long getApkBytesDownloaded();
-
-    // The total number of bytes to download for the APK.
-    // Returns -1 if called on an AAB.
-    @NonNull
-    public long getApkTotalBytesToDownload();
-
-    @NonNull
-    public UpdateStatus getUpdateStatus();
-  }
-
-  public enum UpdateStatus {
-    // Update queued but not started
-    PENDING,
-
-    // Download in progress
-    DOWNLOADING,
-
-    // Download completed
-    DOWNLOADED,
-
-    // Download failed
-    DOWNLOAD_FAILED,
-
-    // Update installed
-    INSTALLED,
-
-    // Installation cancelled
-    INSTALL_CANCELED,
-
-    // Installation failed
-    INSTALL_FAILED,
-
-    // AAB flow (directed to Play)
-    REDIRECTED_TO_PLAY,
-  }
-
   /** Signs in the App Distribution tester. Presents the tester with a Google sign in UI */
   @NonNull
   public Task<Void> signInTester() {
@@ -136,28 +84,4 @@ public class FirebaseAppDistribution {
 
   /** Signs out the App Distribution tester */
   public void signOutTester() {}
-
-  /** The release information returned by the update check when a new version is available. */
-  public interface AppDistributionRelease {
-    // The short bundle version of this build (example 1.0.0)
-    @NonNull
-    public String getDisplayVersion();
-
-    // The bundle version of this build (example: 123)
-    @NonNull
-    public String getBuildVersion();
-
-    // The release notes for this build
-    @NonNull
-    public String getReleaseNotes();
-
-    // The binary type for this build
-    @NonNull
-    public BinaryType getBinaryType();
-  }
-
-  public enum BinaryType {
-    AAB,
-    APK
-  }
 }

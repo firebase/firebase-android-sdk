@@ -56,7 +56,7 @@ public abstract class FirebaseAppDistributionException extends FirebaseException
   public abstract int getCode();
 
   @NonNull
-  public abstract FirebaseAppDistribution.AppDistributionRelease getRelease();
+  public abstract AppDistributionRelease getRelease();
 
   @IntDef({
     FirebaseAppDistributionException.UNKNOWN_ERROR,
