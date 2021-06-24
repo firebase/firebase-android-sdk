@@ -16,6 +16,10 @@ package com.google.firebase.appdistribution;
 
 import androidx.annotation.NonNull;
 
+/**
+ * Interface for AppDistributonRelease object returned by checkForUpdate() and
+ * updateToLatestRelease()
+ */
 public interface AppDistributionRelease {
   // The short bundle version of this build (example 1.0.0)
   @NonNull

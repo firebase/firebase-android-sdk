@@ -19,7 +19,7 @@ import androidx.annotation.NonNull;
 /** Interface to subscribe to status updates on the release update process. Called by updateApp. */
 public interface UpdateProgressListener {
   /**
-   * Method invoked during updating to track progress
+   * Method invoked during updating to track progress by modifying UpdateProgress object
    *
    * @param UpdateProgress object to be modified
    */

@@ -20,6 +20,7 @@ import com.google.firebase.FirebaseException;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
+/** Possible exceptions thrown in FirebaseAppDistribution */
 public abstract class FirebaseAppDistributionException extends FirebaseException {
   // Unknown error.
   public static final int UNKNOWN_ERROR = 1;

@@ -24,6 +24,7 @@ public class FirebaseAppDistribution {
 
   private final FirebaseApp firebaseApp;
 
+  /** Constructor for FirebaseAppDistribution */
   public FirebaseAppDistribution(FirebaseApp firebaseApp) {
     this.firebaseApp = firebaseApp;
   }
