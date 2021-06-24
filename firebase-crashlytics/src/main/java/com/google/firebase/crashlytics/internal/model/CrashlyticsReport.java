@@ -656,11 +656,14 @@ public abstract class CrashlyticsReport {
             return new AutoValue_CrashlyticsReport_Session_Event_Application_Execution.Builder();
           }
 
-          @NonNull
+          @Nullable
           public abstract ImmutableList<Thread> getThreads();
 
-          @NonNull
+          @Nullable
           public abstract Exception getException();
+
+          @Nullable
+          public abstract ApplicationExitInfo getAppExitInfo();
 
           @NonNull
           public abstract Signal getSignal();
@@ -896,6 +899,9 @@ public abstract class CrashlyticsReport {
             public abstract Builder setException(@NonNull Exception value);
 
             @NonNull
+            public abstract Builder setAppExitInfo(@NonNull ApplicationExitInfo value);
+
+            @NonNull
             public abstract Builder setSignal(@NonNull Signal value);
 
             @NonNull
@@ -1024,6 +1030,71 @@ public abstract class CrashlyticsReport {
         @NonNull
         public abstract Event build();
       }
+    }
+  }
+
+  @AutoValue
+  public abstract static class ApplicationExitInfo {
+
+    @NonNull
+    public static ApplicationExitInfo.Builder builder() {
+      return new AutoValue_CrashlyticsReport_ApplicationExitInfo.Builder();
+    }
+
+    @NonNull
+    public abstract int getPid();
+
+    @NonNull
+    public abstract String getProcessName();
+
+    @NonNull
+    public abstract int getReasonCode();
+
+    @NonNull
+    public abstract int getImportance();
+
+    @NonNull
+    public abstract long getPss();
+
+    @NonNull
+    public abstract long getRss();
+
+    @NonNull
+    public abstract long getTimestamp();
+
+    @Nullable
+    // Not all ApplicationExitInfos have a trace file.
+    public abstract String getTraceFile();
+
+    /** Builder for {@link ApplicationExitInfo}. */
+    @AutoValue.Builder
+    public abstract static class Builder {
+      @NonNull
+      public abstract ApplicationExitInfo.Builder setPid(@NonNull int value);
+
+      @NonNull
+      public abstract ApplicationExitInfo.Builder setProcessName(@NonNull String value);
+
+      @NonNull
+      public abstract ApplicationExitInfo.Builder setReasonCode(@NonNull int value);
+
+      @NonNull
+      public abstract ApplicationExitInfo.Builder setImportance(@NonNull int value);
+
+      @NonNull
+      public abstract ApplicationExitInfo.Builder setPss(@NonNull long value);
+
+      @NonNull
+      public abstract ApplicationExitInfo.Builder setRss(@NonNull long value);
+
+      @NonNull
+      public abstract ApplicationExitInfo.Builder setTimestamp(@NonNull long value);
+
+      @NonNull
+      public abstract ApplicationExitInfo.Builder setTraceFile(@Nullable String value);
+
+      @NonNull
+      public abstract ApplicationExitInfo build();
     }
   }
 
