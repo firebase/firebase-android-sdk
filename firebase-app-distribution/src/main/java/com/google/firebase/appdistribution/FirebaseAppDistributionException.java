@@ -22,43 +22,47 @@ import java.lang.annotation.RetentionPolicy;
 
 /** Possible exceptions thrown in FirebaseAppDistribution */
 public abstract class FirebaseAppDistributionException extends FirebaseException {
-  // Unknown error.
+  /** Unknown error. */
   public static final int UNKNOWN_ERROR = 1;
 
-  // Authentication failed
+  /** Authentication failed */
   public static final int AUTHENTICATION_FAILURE_ERROR = 2;
 
-  // Authentication canceled
+  /** Authentication canceled */
   public static final int AUTHENTICATION_CANCELED_ERROR = 3;
 
-  // No Network available to make requests or the request timed out
+  /** No Network available to make requests or the request timed out */
   public static final int NETWORK_FAILURE_ERROR = 4;
 
-  // Download failed
+  /** Download failed */
   public static final int DOWNLOAD_FAILURE_ERROR = 5;
 
-  // Installation failed
+  /** Installation failed */
   public static final int INSTALLATION_FAILURE_ERROR = 6;
 
-  // Installation canceled
+  /** Installation canceled */
   public static final int INSTALLATION_CANCELED_ERROR = 7;
 
-  // Update not available for the current tester and app
+  /** Update not available for the current tester and app */
   public static final int UPDATE_NOT_AVAILABLE_ERROR = 8;
 
-  // Installation failed due to signature mismatch
+  /** Installation failed due to signature mismatch */
   public static final int INSTALLATION_FAILURE_SIGNATURE_MISMATCH_ERROR = 9;
-  // App is in production
+
+  /** App is in production */
   public static final int APP_RUNNING_IN_PRODUCTION_ERROR = 10;
 
-  // Download URL for release expired
+  /** Download URL for release expired */
   public static final int RELEASE_URL_EXPIRED_ERROR = 11;
 
+  /** Get error code */
   public abstract int getCode();
 
+  /** Get cached release when error was thrown */
   @NonNull
   public abstract AppDistributionRelease getRelease();
 
+  /** The set of FirebaseAppDistribution status codes. */
   @IntDef({
     FirebaseAppDistributionException.UNKNOWN_ERROR,
     FirebaseAppDistributionException.AUTHENTICATION_FAILURE_ERROR,
@@ -73,5 +77,6 @@ public abstract class FirebaseAppDistributionException extends FirebaseException
     FirebaseAppDistributionException.RELEASE_URL_EXPIRED_ERROR,
   })
   @Retention(RetentionPolicy.CLASS)
+  /** Interface for converting int to error code */
   public @interface Code {}
 }

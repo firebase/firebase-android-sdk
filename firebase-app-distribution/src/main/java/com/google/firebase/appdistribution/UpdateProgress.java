@@ -18,17 +18,15 @@ import androidx.annotation.NonNull;
 
 /** Interface to get download progress for APKs and the status of the update. Used in updateApp. */
 public interface UpdateProgress {
-  // The number of bytes downloaded so far for the APK.
-  //  Returns -1 if called on an AAB.
+  /** The number of bytes downloaded so far for the APK. Returns -1 if called on an AAB. */
   @NonNull
   public long getApkBytesDownloaded();
 
-  // The total number of bytes to download for the APK.
-  // Returns -1 if called on an AAB.
+  /** The total number of bytes to download for the APK. Returns -1 if called on an AAB. */
   @NonNull
   public long getApkTotalBytesToDownload();
 
   @NonNull
-  // returns the current state of the update
+  /** returns the current state of the update */
   public UpdateStatus getUpdateStatus();
 }

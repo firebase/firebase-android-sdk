@@ -23,7 +23,7 @@ import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.util.Arrays;
 import java.util.List;
 
-/** @hide */
+/** Registers FirebaseAppDistribution */
 @Keep
 public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
   @Override

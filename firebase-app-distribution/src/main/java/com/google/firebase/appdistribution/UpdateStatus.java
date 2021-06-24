@@ -16,27 +16,27 @@ package com.google.firebase.appdistribution;
 
 /** Enum for possible states during Update, used in UpdateProgress. */
 public enum UpdateStatus {
-  // Update queued but not started
+  /** Update queued but not started */
   PENDING,
 
-  // Download in progress
+  /** Download in progress */
   DOWNLOADING,
 
-  // Download completed
+  /** Download completed */
   DOWNLOADED,
 
-  // Download failed
+  /** Download failed */
   DOWNLOAD_FAILED,
 
-  // Update installed
+  /** Update installed */
   INSTALLED,
 
-  // Installation cancelled
+  /** Installation cancelled */
   INSTALL_CANCELED,
 
-  // Installation failed
+  /** Installation failed */
   INSTALL_FAILED,
 
-  // AAB flow (directed to Play)
+  /** AAB flow (directed to Play) */
   REDIRECTED_TO_PLAY,
 }

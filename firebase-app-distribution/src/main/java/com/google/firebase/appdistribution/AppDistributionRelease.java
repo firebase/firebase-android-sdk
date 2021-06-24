@@ -21,19 +21,19 @@ import androidx.annotation.NonNull;
  * updateToLatestRelease()
  */
 public interface AppDistributionRelease {
-  // The short bundle version of this build (example 1.0.0)
+  /** The short bundle version of this build (example 1.0.0) */
   @NonNull
   public String getDisplayVersion();
 
-  // The bundle version of this build (example: 123)
+  /** The bundle version of this build (example: 123) */
   @NonNull
   public String getBuildVersion();
 
-  // The release notes for this build
+  /** The release notes for this build */
   @NonNull
   public String getReleaseNotes();
 
-  // The binary type for this build
+  /** The binary type for this build */
   @NonNull
   public BinaryType getBinaryType();
 }
