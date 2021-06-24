@@ -13,6 +13,8 @@
 // limitations under the License.
 package com.google.firebase.crashlytics.internal.common;
 
+import android.app.ActivityManager;
+import android.app.ApplicationExitInfo;
 import android.content.Context;
 import android.os.Build;
 import android.os.Build.VERSION;
@@ -37,7 +39,6 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -168,14 +169,14 @@ class CrashlyticsController {
 
     // Capture the time that the crash occurs and close over it so that the time doesn't
     // reflect when we get around to executing the task later.
-    final Date time = new Date();
+    final long timestampMillis = System.currentTimeMillis();
 
     final Task<Void> handleUncaughtExceptionTask =
         backgroundWorker.submitTask(
             new Callable<Task<Void>>() {
               @Override
               public Task<Void> call() throws Exception {
-                final long timestampSeconds = getTimestampSeconds(time);
+                final long timestampSeconds = getTimestampSeconds(timestampMillis);
 
                 final String currentSessionId = getCurrentSessionId();
                 if (currentSessionId == null) {
@@ -190,9 +191,8 @@ class CrashlyticsController {
                 reportingCoordinator.persistFatalEvent(
                     ex, thread, currentSessionId, timestampSeconds);
 
-                doWriteAppExceptionMarker(time.getTime());
-
-                doCloseSessions();
+                doWriteAppExceptionMarker(timestampMillis);
+                doCloseSessions(settingsDataProvider);
                 doOpenSession();
 
                 // If automatic data collection is disabled, we'll need to wait until the next run
@@ -397,14 +397,14 @@ class CrashlyticsController {
   void writeNonFatalException(@NonNull final Thread thread, @NonNull final Throwable ex) {
     // Capture and close over the current time, so that we get the exact call time,
     // rather than the time at which the task executes.
-    final Date time = new Date();
+    final long timestampMillis = System.currentTimeMillis();
 
     backgroundWorker.submit(
         new Runnable() {
           @Override
           public void run() {
             if (!isHandlingException()) {
-              long timestampSeconds = getTimestampSeconds(time);
+              long timestampSeconds = getTimestampSeconds(timestampMillis);
               final String currentSessionId = getCurrentSessionId();
               if (currentSessionId == null) {
                 Logger.getLogger()
@@ -536,8 +536,10 @@ class CrashlyticsController {
    *
    * <p>This method can not be called while the {@link CrashlyticsCore} settings lock is held. It
    * will result in a deadlock!
+   *
+   * @param settingsDataProvider
    */
-  boolean finalizeSessions() {
+  boolean finalizeSessions(SettingsDataProvider settingsDataProvider) {
     backgroundWorker.checkRunningOnThread();
 
     if (isHandlingException()) {
@@ -547,7 +549,7 @@ class CrashlyticsController {
 
     Logger.getLogger().v("Finalizing previously open sessions.");
     try {
-      doCloseSessions(true);
+      doCloseSessions(true, settingsDataProvider);
     } catch (Exception e) {
       Logger.getLogger().e("Unable to finalize previously open sessions.", e);
       return false;
@@ -578,15 +580,16 @@ class CrashlyticsController {
     reportingCoordinator.onBeginSession(sessionIdentifier, startedAtSeconds);
   }
 
-  void doCloseSessions() {
-    doCloseSessions(false);
+  void doCloseSessions(SettingsDataProvider settingsDataProvider) {
+    doCloseSessions(false, settingsDataProvider);
   }
 
   /**
    * Not synchronized/locked. Must be executed from the single thread executor service used by this
    * class.
    */
-  private void doCloseSessions(boolean skipCurrentSession) {
+  private void doCloseSessions(
+      boolean skipCurrentSession, SettingsDataProvider settingsDataProvider) {
     final int offset = skipCurrentSession ? 1 : 0;
 
     List<String> sortedOpenSessions = reportingCoordinator.listSortedOpenSessionIds();
@@ -597,6 +600,12 @@ class CrashlyticsController {
     }
 
     final String mostRecentSessionIdToClose = sortedOpenSessions.get(offset);
+
+    if (settingsDataProvider.getSettings().getFeaturesData().collectAnrs) {
+      // TODO: Consider writing applicationExitInfo for all sessions instead of just the most recent
+      // sessionId to close.
+      writeApplicationExitInfoEventIfRelevant(mostRecentSessionIdToClose);
+    }
 
     if (nativeComponent.hasCrashDataForSession(mostRecentSessionIdToClose)) {
       // We only finalize the current session if it's a Java crash, so only finalize native crash
@@ -675,11 +684,11 @@ class CrashlyticsController {
   }
 
   private static long getCurrentTimestampSeconds() {
-    return getTimestampSeconds(new Date());
+    return getTimestampSeconds(System.currentTimeMillis());
   }
 
-  private static long getTimestampSeconds(Date date) {
-    return date.getTime() / 1000;
+  private static long getTimestampSeconds(long timestampMillis) {
+    return timestampMillis / 1000;
   }
 
   // region Serialization to protobuf
@@ -871,5 +880,36 @@ class CrashlyticsController {
     return nativeSessionFiles;
   }
 
+  // endregion
+
+  // region ApplicationExitInfo
+
+  /** If an ApplicationExitInfo exists relevant to the session, writes that event. */
+  private void writeApplicationExitInfoEventIfRelevant(String sessionId) {
+    if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+      ActivityManager activityManager =
+          (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+      // Gets the latest app exit info.
+      List<ApplicationExitInfo> applicationExitInfoList =
+          activityManager.getHistoricalProcessExitReasons(null, 0, 1);
+
+      // Passes the latest applicationExitInfo to ReportCoordinator, which persists it if it
+      // happened during the session.
+      if (applicationExitInfoList.size() != 0) {
+        final LogFileManager relevantSessionLogManager =
+            new LogFileManager(context, logFileDirectoryProvider, sessionId);
+        final UserMetadata relevantUserMetadata = new UserMetadata();
+        relevantUserMetadata.setCustomKeys(new MetaDataStore(getFilesDir()).readKeyData(sessionId));
+        reportingCoordinator.persistAppExitInfoEvent(
+            sessionId,
+            applicationExitInfoList.get(0),
+            relevantSessionLogManager,
+            relevantUserMetadata);
+      }
+    } else {
+      Logger.getLogger()
+          .v("ANR feature enabled, but device is API " + android.os.Build.VERSION.SDK_INT);
+    }
+  }
   // endregion
 }

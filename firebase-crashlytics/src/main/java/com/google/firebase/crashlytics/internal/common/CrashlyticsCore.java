@@ -227,7 +227,7 @@ public class CrashlyticsCore {
             new RuntimeException("Collection of crash reports disabled in Crashlytics settings."));
       }
 
-      if (!controller.finalizeSessions()) {
+      if (!controller.finalizeSessions(settingsProvider)) {
         Logger.getLogger().w("Previous sessions could not be finalized.");
       }
 
