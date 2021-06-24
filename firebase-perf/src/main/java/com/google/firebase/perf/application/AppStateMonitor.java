@@ -149,6 +149,10 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
   public synchronized void onActivityStarted(Activity activity) {
     if (isScreenTraceSupported(activity) && configResolver.isPerformanceMonitoringEnabled()) {
       // Starts recording frame metrics for this activity.
+      /**
+       * TODO: Only add activities that are hardware acceleration enabled so that calling {@link
+       * FrameMetricsAggregator#remove(Activity)} will not throw exceptions.
+       */
       frameMetricsAggregator.add(activity);
       // Start the Trace
       Trace screenTrace = new Trace(getScreenTraceName(activity), transportManager, clock, this);
@@ -307,7 +311,13 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
     int totalFrames = 0;
     int slowFrames = 0;
     int frozenFrames = 0;
-    // Stops recording metrics for this Activity and returns the currently-collected metrics
+    /**
+     * Resets the metrics data and returns the currently-collected metrics. Note that {@link
+     * FrameMetricsAggregator#reset()} will not stop recording for the activity. The reason of using
+     * {@link FrameMetricsAggregator#reset()} is that {@link
+     * FrameMetricsAggregator#remove(Activity)} will throw exceptions for hardware acceleration
+     * disabled activities.
+     */
     SparseIntArray[] arr = frameMetricsAggregator.reset();
     if (arr != null) {
       SparseIntArray frameTimes = arr[FrameMetricsAggregator.TOTAL_INDEX];
