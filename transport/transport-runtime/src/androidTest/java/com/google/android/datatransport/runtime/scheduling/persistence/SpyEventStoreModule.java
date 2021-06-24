@@ -16,6 +16,8 @@ package com.google.android.datatransport.runtime.scheduling.persistence;
 
 import static org.mockito.Mockito.spy;
 
+import android.content.Context;
+import androidx.test.platform.app.InstrumentationRegistry;
 import com.google.android.datatransport.runtime.synchronization.SynchronizationGuard;
 import com.google.android.datatransport.runtime.time.Clock;
 import com.google.android.datatransport.runtime.time.Monotonic;
@@ -40,7 +42,8 @@ public abstract class SpyEventStoreModule {
       @Monotonic Clock clock,
       EventStoreConfig config,
       SchemaManager schemaManager) {
-    return spy(new SQLiteEventStore(wallClock, clock, config, schemaManager));
+    Context context = InstrumentationRegistry.getInstrumentation().getContext();
+    return spy(new SQLiteEventStore(wallClock, clock, config, schemaManager, context));
   }
 
   @Binds
