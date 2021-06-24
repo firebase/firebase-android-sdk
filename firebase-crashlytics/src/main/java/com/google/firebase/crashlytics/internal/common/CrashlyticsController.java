@@ -889,8 +889,9 @@ class CrashlyticsController {
     if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
       ActivityManager activityManager =
           (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+      // Gets the latest app exit info.
       List<ApplicationExitInfo> applicationExitInfoList =
-          activityManager.getHistoricalProcessExitReasons(null, 0, 0);
+          activityManager.getHistoricalProcessExitReasons(null, 0, 1);
 
       // Passes the latest applicationExitInfo to ReportCoordinator, which persists it if it
       // happened during the session.
@@ -905,6 +906,9 @@ class CrashlyticsController {
             relevantSessionLogManager,
             relevantUserMetadata);
       }
+    } else {
+      Logger.getLogger()
+          .v("ANR feature enabled, but device is API " + android.os.Build.VERSION.SDK_INT);
     }
   }
   // endregion

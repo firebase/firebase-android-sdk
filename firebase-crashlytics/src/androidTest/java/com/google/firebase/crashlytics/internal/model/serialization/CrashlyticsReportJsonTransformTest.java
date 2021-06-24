@@ -79,7 +79,7 @@ public class CrashlyticsReportJsonTransformTest {
   @Test
   public void testAppExitInfoToJsonAndBack_equals() throws IOException {
     final CrashlyticsReport.ApplicationExitInfo testAppExitInfo = makeAppExitInfo();
-    final String testAppExitInfoJson = transform.appExitInfoToJson(testAppExitInfo);
+    final String testAppExitInfoJson = transform.applicationExitInfoToJson(testAppExitInfo);
     final CrashlyticsReport.ApplicationExitInfo reifiedAppExitInfo =
         transform.applicationExitInfoFromJson(testAppExitInfoJson);
     assertNotSame(reifiedAppExitInfo, testAppExitInfo);

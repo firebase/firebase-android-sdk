@@ -48,7 +48,7 @@ public class CrashlyticsReportJsonTransform {
   }
 
   @NonNull
-  public String appExitInfoToJson(
+  public String applicationExitInfoToJson(
       @NonNull CrashlyticsReport.ApplicationExitInfo applicationExitInfo) {
     return CRASHLYTICS_REPORT_JSON_ENCODER.encode(applicationExitInfo);
   }
