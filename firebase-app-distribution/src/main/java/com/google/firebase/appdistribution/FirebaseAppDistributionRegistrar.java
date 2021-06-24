@@ -15,8 +15,13 @@
 package com.google.firebase.appdistribution;
 
 import androidx.annotation.Keep;
+
+import com.google.firebase.FirebaseApp;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
+import com.google.firebase.components.Dependency;
+import com.google.firebase.platforminfo.LibraryVersionComponent;
+
 import java.util.Arrays;
 import java.util.List;
 
@@ -25,6 +30,15 @@ import java.util.List;
 public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
   @Override
   public List<Component<?>> getComponents() {
-    return Arrays.asList();
+    return Arrays.asList(
+            Component.builder(FirebaseAppDistribution.class)
+                    .add(Dependency.required(FirebaseApp.class))
+                    .factory(c -> new FirebaseAppDistribution(c.get(FirebaseApp.class)))
+                    .build(),
+            LibraryVersionComponent.create("fire-app-distribution", BuildConfig.VERSION_NAME));
   }
+
+
+
+
 }

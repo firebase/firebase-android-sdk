@@ -41,4 +41,5 @@ dependencies {
     implementation 'org.jetbrains:annotations:15.0'
     implementation project(path: ':firebase-components')
     implementation 'com.google.android.gms:play-services-tasks:17.0.0'
+    implementation project(path: ':firebase-common')
 }

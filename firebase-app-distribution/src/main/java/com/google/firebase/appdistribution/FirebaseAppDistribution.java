@@ -17,9 +17,26 @@ package com.google.firebase.appdistribution;
 import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.FirebaseApp;
+
 import org.jetbrains.annotations.Nullable;
 
 public class FirebaseAppDistribution {
+
+  private final FirebaseApp firebaseApp;
+
+  public FirebaseAppDistribution(FirebaseApp firebaseApp){
+    this.firebaseApp = firebaseApp;
+  }
+
+  /**
+   * @return a FirebaseInstallationsApi instance
+   */
+  @NonNull
+  public static FirebaseAppDistribution getInstance() {
+    return new FirebaseAppDistribution(FirebaseApp.getInstance());
+  }
+
 
   /**
    * Updates the app to the latest release, if one is available. Returns the release information or
