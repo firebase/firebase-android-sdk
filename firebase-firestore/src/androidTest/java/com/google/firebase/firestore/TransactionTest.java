@@ -639,14 +639,15 @@ public class TransactionTest {
     DocumentReference doc1 = firestore.collection("counters").document();
     AtomicInteger count = new AtomicInteger(0);
     waitFor(doc1.set(map("count", 15)));
-    Task<Void> transactionTask = firestore.runTransaction(
-        transaction -> {
-          // Get the first doc.
-          transaction.get(doc1);
-          // Do a write outside of the transaction to cause the transaction to fail.
-          waitFor(doc1.set(map("count", 1234 + count.incrementAndGet())));
-          return null;
-        });
+    Task<Void> transactionTask =
+        firestore.runTransaction(
+            transaction -> {
+              // Get the first doc.
+              transaction.get(doc1);
+              // Do a write outside of the transaction to cause the transaction to fail.
+              waitFor(doc1.set(map("count", 1234 + count.incrementAndGet())));
+              return null;
+            });
 
     Exception e = waitForException(transactionTask);
     assertEquals(Code.FAILED_PRECONDITION, ((FirebaseFirestoreException) e).getCode());
