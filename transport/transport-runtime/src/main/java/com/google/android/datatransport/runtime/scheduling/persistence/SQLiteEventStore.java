@@ -29,6 +29,12 @@ import com.google.android.datatransport.Encoding;
 import com.google.android.datatransport.runtime.EncodedPayload;
 import com.google.android.datatransport.runtime.EventInternal;
 import com.google.android.datatransport.runtime.TransportContext;
+import com.google.android.datatransport.runtime.firebase.transport.ClientMetrics;
+import com.google.android.datatransport.runtime.firebase.transport.GlobalMetrics;
+import com.google.android.datatransport.runtime.firebase.transport.LogEventDropped;
+import com.google.android.datatransport.runtime.firebase.transport.LogSourceMetrics;
+import com.google.android.datatransport.runtime.firebase.transport.StorageMetrics;
+import com.google.android.datatransport.runtime.firebase.transport.TimeWindow;
 import com.google.android.datatransport.runtime.logging.Logging;
 import com.google.android.datatransport.runtime.synchronization.SynchronizationException;
 import com.google.android.datatransport.runtime.synchronization.SynchronizationGuard;
@@ -51,7 +57,7 @@ import javax.inject.Singleton;
 /** {@link EventStore} implementation backed by a SQLite database. */
 @Singleton
 @WorkerThread
-public class SQLiteEventStore implements EventStore, SynchronizationGuard {
+public class SQLiteEventStore implements EventStore, SynchronizationGuard, ClientAnalyticsStore {
 
   private static final String LOG_TAG = "SQLiteEventStore";
 
@@ -528,6 +534,145 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
         SystemClock.sleep(LOCK_RETRY_BACK_OFF_MILLIS);
       }
     } while (true);
+  }
+
+  /**
+   * Record log event dropped.
+   *
+   * @param eventsDroppedCount number of events dropped
+   * @param reason reason why events are dropped
+   * @param logSource log source of the dropped events
+   */
+  @Override
+  public void recordLogEventDropped(
+      long eventsDroppedCount, LogEventDropped.Reason reason, String logSource) {
+    if (!isLogEventDroppedExist(reason, logSource)) {
+      ContentValues metrics = new ContentValues();
+      metrics.put("log_source", logSource);
+      metrics.put("reason", reason.getNumber());
+      metrics.put("events_dropped_count", eventsDroppedCount);
+      inTransaction(
+          db -> {
+            db.insert("log_event_dropped", null, metrics);
+            return null;
+          });
+    } else {
+      String query =
+          "UPDATE log_event_dropped SET events_dropped_count = events_dropped_count + "
+              + eventsDroppedCount
+              + " WHERE log_source = ? AND reason = ?";
+      inTransaction(
+          db -> {
+            db.execSQL(query, new String[] {logSource, Integer.toString(reason.getNumber())});
+            return null;
+          });
+    }
+  }
+
+  private boolean isLogEventDroppedExist(LogEventDropped.Reason reason, String logSource) {
+    String query = "SELECT 1 FROM log_event_dropped" + " WHERE log_source = ? AND reason = ?";
+    String[] selectionArgs = new String[] {logSource, Integer.toString(reason.getNumber())};
+    return inTransaction(
+        db -> tryWithCursor(db.rawQuery(query, selectionArgs), cursor -> cursor.getCount() > 0));
+  }
+
+  /**
+   * Load full-populated ClientMetrics.
+   *
+   * @return the returned ClientMetrics is fully populated with persisted and non-persisted fields.
+   */
+  @Override
+  public ClientMetrics loadClientMetrics() {
+    long currentTime = wallClock.getTime();
+    ClientMetrics.Builder clientMetricsBuilder = ClientMetrics.newBuilder();
+    Map<String, List<LogEventDropped>> metricsMap = new HashMap<>();
+    String query = "SELECT log_source, reason, events_dropped_count FROM log_event_dropped";
+
+    return inTransaction(
+        db ->
+            tryWithCursor(
+                db.rawQuery(query, new String[] {}),
+                cursor -> {
+                  while (cursor.moveToNext()) {
+                    String logSource = cursor.getString(0);
+                    LogEventDropped.Reason reason =
+                        LogEventDropped.Reason.values()[cursor.getInt(1)];
+                    long eventsDroppedCount = cursor.getLong(2);
+                    if (!metricsMap.containsKey(logSource)) {
+                      metricsMap.put(logSource, new ArrayList<>());
+                    }
+                    metricsMap
+                        .get(logSource)
+                        .add(
+                            LogEventDropped.newBuilder()
+                                .setReason(reason)
+                                .setEventsDroppedCount(eventsDroppedCount)
+                                .build());
+                  }
+                  populateLogSourcesMetrics(clientMetricsBuilder, metricsMap);
+                  setTimeWindow(clientMetricsBuilder, currentTime);
+                  setGlobalMetrics(clientMetricsBuilder);
+                  setAppNamespace(clientMetricsBuilder);
+                  return clientMetricsBuilder.build();
+                }));
+  }
+
+  private void populateLogSourcesMetrics(
+      ClientMetrics.Builder clientMetricsBuilder, Map<String, List<LogEventDropped>> metricsMap) {
+    for (Map.Entry<String, List<LogEventDropped>> entry : metricsMap.entrySet()) {
+      clientMetricsBuilder.addLogSourceMetrics(
+          LogSourceMetrics.newBuilder()
+              .setLogSource(entry.getKey())
+              .setLogEventDroppedList(entry.getValue())
+              .build());
+    }
+  }
+
+  private void setTimeWindow(ClientMetrics.Builder clientMetricsBuilder, long currentTime) {
+    inTransaction(
+        db ->
+            tryWithCursor(
+                db.rawQuery(
+                    "SELECT last_metrics_upload_ms FROM global_log_event_state", new String[] {}),
+                cursor -> {
+                  while (cursor.moveToNext()) {
+                    long start_ms = cursor.getLong(0);
+                    clientMetricsBuilder.setWindow(
+                        TimeWindow.newBuilder().setStartMs(start_ms).setEndMs(currentTime).build());
+                  }
+                  return null;
+                }));
+  }
+
+  private void setGlobalMetrics(ClientMetrics.Builder clientMetricsBuilder) {
+    clientMetricsBuilder.setGlobalMetrics(
+        GlobalMetrics.newBuilder()
+            .setStorageMetrics(
+                StorageMetrics.newBuilder()
+                    .setCurrentCacheSizeBytes(getByteSize())
+                    .setMaxCacheSizeBytes(EventStoreConfig.DEFAULT.getMaxStorageSizeInBytes())
+                    .build())
+            .build());
+  }
+
+  private void setAppNamespace(ClientMetrics.Builder clientMetricsBuilder) {
+    clientMetricsBuilder.setAppNamespace(context.getPackageName());
+  }
+
+  /**
+   * This Method delete every rows in log_event_dropped table, and update last_metrics_upload_ms in
+   * global_log_event_state table to current time.
+   */
+  @Override
+  public void resetClientMetrics() {
+    inTransaction(
+        db -> {
+          db.compileStatement("DELETE FROM log_event_dropped").execute();
+          db.compileStatement(
+                  "UPDATE global_log_event_state SET last_metrics_upload_ms=" + wallClock.getTime())
+              .execute();
+          return null;
+        });
   }
 
   interface Producer<T> {

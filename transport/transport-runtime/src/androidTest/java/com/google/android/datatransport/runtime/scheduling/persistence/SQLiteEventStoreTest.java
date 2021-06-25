@@ -28,9 +28,13 @@ import com.google.android.datatransport.Priority;
 import com.google.android.datatransport.runtime.EncodedPayload;
 import com.google.android.datatransport.runtime.EventInternal;
 import com.google.android.datatransport.runtime.TransportContext;
+import com.google.android.datatransport.runtime.firebase.transport.ClientMetrics;
+import com.google.android.datatransport.runtime.firebase.transport.LogEventDropped;
+import com.google.android.datatransport.runtime.firebase.transport.LogSourceMetrics;
 import com.google.android.datatransport.runtime.time.Clock;
 import com.google.android.datatransport.runtime.time.TestClock;
 import com.google.android.datatransport.runtime.time.UptimeClock;
+import com.google.common.truth.Correspondence;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collections;
@@ -58,6 +62,41 @@ public class SQLiteEventStoreTest {
           .addMetadata("key2", "value2")
           .build();
 
+  private final LogSourceMetrics LOG_SOURCE_METRICS_1 =
+      LogSourceMetrics.newBuilder()
+          .setLogSource(LOG_SOURCE_1)
+          .addLogEventDropped(
+              LogEventDropped.newBuilder()
+                  .setReason(REASON_CACHE_FULL)
+                  .setEventsDroppedCount(EVENT_DROPPED_COUNT_1)
+                  .build())
+          .build();
+
+  private final LogSourceMetrics LOG_SOURCE_METRICS_2 =
+      LogSourceMetrics.newBuilder()
+          .setLogSource(LOG_SOURCE_2)
+          .addLogEventDropped(
+              LogEventDropped.newBuilder()
+                  .setReason(REASON_CACHE_FULL)
+                  .setEventsDroppedCount(EVENT_DROPPED_COUNT_2)
+                  .build())
+          .build();
+
+  private final LogSourceMetrics LOG_SOURCE_METRICS_3 =
+      LogSourceMetrics.newBuilder()
+          .setLogSource(LOG_SOURCE_3)
+          .addLogEventDropped(
+              LogEventDropped.newBuilder()
+                  .setReason(REASON_CACHE_FULL)
+                  .setEventsDroppedCount(EVENT_DROPPED_COUNT_1)
+                  .build())
+          .addLogEventDropped(
+              LogEventDropped.newBuilder()
+                  .setReason(REASON_MAX_RETRIES_REACHED)
+                  .setEventsDroppedCount(EVENT_DROPPED_COUNT_2)
+                  .build())
+          .build();
+
   private static final long HOUR = 60 * 60 * 1000;
   private static final int MAX_BLOB_SIZE_BYTES = 6;
   private static final EventStoreConfig CONFIG =
@@ -66,6 +105,15 @@ public class SQLiteEventStoreTest {
           .setEventCleanUpAge(HOUR)
           .setMaxBlobByteSizePerRow(MAX_BLOB_SIZE_BYTES)
           .build();
+
+  private static final LogEventDropped.Reason REASON_CACHE_FULL = LogEventDropped.Reason.CACHE_FULL;
+  private static final LogEventDropped.Reason REASON_MAX_RETRIES_REACHED =
+      LogEventDropped.Reason.MAX_RETRIES_REACHED;
+  private static final long EVENT_DROPPED_COUNT_1 = 10;
+  private static final long EVENT_DROPPED_COUNT_2 = 11;
+  private static final String LOG_SOURCE_1 = "source1";
+  private static final String LOG_SOURCE_2 = "source2";
+  private static final String LOG_SOURCE_3 = "source3";
 
   private final TestClock clock = new TestClock(1);
   private final Context context = InstrumentationRegistry.getInstrumentation().getContext();
@@ -444,5 +492,201 @@ public class SQLiteEventStoreTest {
     store.recordSuccess(Collections.singleton(persistedEvent2));
 
     assertThat(store.loadActiveContexts()).containsExactly(ctx1);
+  }
+
+  @Test
+  public void recordLogEventDropped_withNoExistingRowShouldInsertNewRowToDb() {
+    store.resetClientMetrics();
+    store.recordLogEventDropped(
+        LOG_SOURCE_METRICS_1.getLogEventDroppedList().get(0).getEventsDroppedCount(),
+        LOG_SOURCE_METRICS_1.getLogEventDroppedList().get(0).getReason(),
+        LOG_SOURCE_METRICS_1.getLogSource());
+
+    ClientMetrics clientMetrics = store.loadClientMetrics();
+    assertThat(clientMetrics.getLogSourceMetricsList().size()).isEqualTo(1);
+    assertThat(clientMetrics.getLogSourceMetricsList())
+        .comparingElementsUsing(CLIENT_METRICS_CORRESPONDENCE)
+        .contains(LOG_SOURCE_METRICS_1);
+  }
+
+  @Test
+  public void recordLogEventDropped_withSameLogSourceAndReasonShouldIncrementCount() {
+    store.resetClientMetrics();
+    store.recordLogEventDropped(EVENT_DROPPED_COUNT_1, REASON_CACHE_FULL, LOG_SOURCE_1);
+    store.recordLogEventDropped(EVENT_DROPPED_COUNT_2, REASON_CACHE_FULL, LOG_SOURCE_1);
+
+    ClientMetrics clientMetrics = store.loadClientMetrics();
+    assertThat(
+            clientMetrics
+                .getLogSourceMetricsList()
+                .get(0)
+                .getLogEventDroppedList()
+                .get(0)
+                .getEventsDroppedCount())
+        .isEqualTo(EVENT_DROPPED_COUNT_1 + EVENT_DROPPED_COUNT_2);
+  }
+
+  @Test
+  public void recordLogEventDropped_withDifferentLogSourceShouldWriteIntoDifferentRows() {
+    store.resetClientMetrics();
+    store.recordLogEventDropped(
+        LOG_SOURCE_METRICS_1.getLogEventDroppedList().get(0).getEventsDroppedCount(),
+        LOG_SOURCE_METRICS_1.getLogEventDroppedList().get(0).getReason(),
+        LOG_SOURCE_METRICS_1.getLogSource());
+    store.recordLogEventDropped(
+        LOG_SOURCE_METRICS_2.getLogEventDroppedList().get(0).getEventsDroppedCount(),
+        LOG_SOURCE_METRICS_2.getLogEventDroppedList().get(0).getReason(),
+        LOG_SOURCE_METRICS_2.getLogSource());
+
+    ClientMetrics clientMetrics = store.loadClientMetrics();
+    assertThat(clientMetrics.getLogSourceMetricsList().size()).isEqualTo(2);
+    assertThat(clientMetrics.getLogSourceMetricsList())
+        .comparingElementsUsing(CLIENT_METRICS_CORRESPONDENCE)
+        .contains(LOG_SOURCE_METRICS_1);
+    assertThat(clientMetrics.getLogSourceMetricsList())
+        .comparingElementsUsing(CLIENT_METRICS_CORRESPONDENCE)
+        .contains(LOG_SOURCE_METRICS_2);
+  }
+
+  @Test
+  public void recordLogEventDropped_withDifferentReasonShouldWriteIntoDifferentRows() {
+    store.resetClientMetrics();
+    store.recordLogEventDropped(
+        LOG_SOURCE_METRICS_3.getLogEventDroppedList().get(0).getEventsDroppedCount(),
+        LOG_SOURCE_METRICS_3.getLogEventDroppedList().get(0).getReason(),
+        LOG_SOURCE_METRICS_3.getLogSource());
+    store.recordLogEventDropped(
+        LOG_SOURCE_METRICS_3.getLogEventDroppedList().get(1).getEventsDroppedCount(),
+        LOG_SOURCE_METRICS_3.getLogEventDroppedList().get(1).getReason(),
+        LOG_SOURCE_METRICS_3.getLogSource());
+
+    ClientMetrics clientMetrics = store.loadClientMetrics();
+    assertThat(clientMetrics.getLogSourceMetricsList().size()).isEqualTo(1);
+    assertThat(clientMetrics.getLogSourceMetricsList())
+        .comparingElementsUsing(CLIENT_METRICS_CORRESPONDENCE)
+        .contains(LOG_SOURCE_METRICS_3);
+  }
+
+  @Test
+  public void loadClientMetrics_shouldIncludeCorrectLogSourceMetrics() {
+    store.resetClientMetrics();
+    store.recordLogEventDropped(
+        LOG_SOURCE_METRICS_1.getLogEventDroppedList().get(0).getEventsDroppedCount(),
+        LOG_SOURCE_METRICS_1.getLogEventDroppedList().get(0).getReason(),
+        LOG_SOURCE_METRICS_1.getLogSource());
+    store.recordLogEventDropped(
+        LOG_SOURCE_METRICS_2.getLogEventDroppedList().get(0).getEventsDroppedCount(),
+        LOG_SOURCE_METRICS_2.getLogEventDroppedList().get(0).getReason(),
+        LOG_SOURCE_METRICS_2.getLogSource());
+    store.recordLogEventDropped(
+        LOG_SOURCE_METRICS_3.getLogEventDroppedList().get(0).getEventsDroppedCount(),
+        LOG_SOURCE_METRICS_3.getLogEventDroppedList().get(0).getReason(),
+        LOG_SOURCE_METRICS_3.getLogSource());
+    store.recordLogEventDropped(
+        LOG_SOURCE_METRICS_3.getLogEventDroppedList().get(1).getEventsDroppedCount(),
+        LOG_SOURCE_METRICS_3.getLogEventDroppedList().get(1).getReason(),
+        LOG_SOURCE_METRICS_3.getLogSource());
+
+    ClientMetrics clientMetrics = store.loadClientMetrics();
+    assertThat(clientMetrics.getLogSourceMetricsList().size()).isEqualTo(3);
+    assertThat(clientMetrics.getLogSourceMetricsList())
+        .comparingElementsUsing(CLIENT_METRICS_CORRESPONDENCE)
+        .contains(LOG_SOURCE_METRICS_1);
+    assertThat(clientMetrics.getLogSourceMetricsList())
+        .comparingElementsUsing(CLIENT_METRICS_CORRESPONDENCE)
+        .contains(LOG_SOURCE_METRICS_2);
+    assertThat(clientMetrics.getLogSourceMetricsList())
+        .comparingElementsUsing(CLIENT_METRICS_CORRESPONDENCE)
+        .contains(LOG_SOURCE_METRICS_3);
+  }
+
+  @Test
+  public void loadClientMetrics_shouldIncludeCorrectTimeWindow() {
+    final long START_MS = clock.getTime();
+    store.resetClientMetrics();
+    clock.advance(10);
+    final long END_MS = clock.getTime();
+
+    ClientMetrics clientMetrics = store.loadClientMetrics();
+    assertThat(clientMetrics.getWindow().getStartMs()).isEqualTo(START_MS);
+    assertThat(clientMetrics.getWindow().getEndMs()).isEqualTo(END_MS);
+  }
+
+  @Test
+  public void loadClientMetrics_shouldIncludeCorrectAppNameSpace() {
+    store.resetClientMetrics();
+
+    ClientMetrics clientMetrics = store.loadClientMetrics();
+    assertThat(clientMetrics.getAppNamespace()).isEqualTo(context.getPackageName());
+  }
+
+  @Test
+  public void loadClientMetrics_shouldIncludeCorrectGlobalMetrics() {
+    store.resetClientMetrics();
+    store.recordLogEventDropped(EVENT_DROPPED_COUNT_1, REASON_CACHE_FULL, LOG_SOURCE_1);
+
+    ClientMetrics clientMetrics = store.loadClientMetrics();
+    assertThat(clientMetrics.getGlobalMetrics().getStorageMetrics().getCurrentCacheSizeBytes())
+        .isEqualTo(store.getByteSize());
+    assertThat(clientMetrics.getGlobalMetrics().getStorageMetrics().getMaxCacheSizeBytes())
+        .isEqualTo(EventStoreConfig.DEFAULT.getMaxStorageSizeInBytes());
+  }
+
+  @Test
+  public void
+      loadClientMetrics_whenDbIsEmpty_shouldReturnClientMetricsWithEmptyLogSourceMetricsList() {
+    store.resetClientMetrics();
+
+    ClientMetrics clientMetrics = store.loadClientMetrics();
+    assertThat(clientMetrics.getLogSourceMetricsList().size()).isEqualTo(0);
+  }
+
+  @Test
+  public void resetClintAnalyticsMetrics_shouldRemoveAllRowsInLogEventDroppedTable() {
+    store.recordLogEventDropped(EVENT_DROPPED_COUNT_1, REASON_CACHE_FULL, LOG_SOURCE_1);
+    assertThat(isLogEventDroppedTableEmpty()).isFalse();
+
+    store.resetClientMetrics();
+    assertThat(isLogEventDroppedTableEmpty()).isTrue();
+  }
+
+  @Test
+  public void resetClintAnalyticsMetrics_shouldSetLastMetricsUploadMsToCurrentTime() {
+    final long CURRENT_TIME = clock.getTime();
+    store.resetClientMetrics();
+
+    assertThat(store.loadClientMetrics().getWindow().getStartMs()).isEqualTo(CURRENT_TIME);
+  }
+
+  private boolean isLogEventDroppedTableEmpty() {
+    return store.inTransaction(
+        db ->
+            tryWithCursor(
+                db.rawQuery("SELECT 1 FROM log_event_dropped", new String[] {}),
+                cursor -> cursor.getCount() <= 0));
+  }
+
+  private static final Correspondence<LogSourceMetrics, LogSourceMetrics>
+      CLIENT_METRICS_CORRESPONDENCE =
+      Correspondence.from(
+          SQLiteEventStoreTest::compareLogSourceMetricsByFields, "compare by fields");
+
+  private static boolean compareLogSourceMetricsByFields(
+      LogSourceMetrics actual, LogSourceMetrics expected) {
+    if (actual.getLogEventDroppedList().size() != expected.getLogEventDroppedList().size()) {
+      return false;
+    }
+
+    Map<LogEventDropped.Reason, Long> actualEventDroppedMap = new HashMap<>();
+    for (LogEventDropped entry : actual.getLogEventDroppedList()) {
+      actualEventDroppedMap.put(entry.getReason(), entry.getEventsDroppedCount());
+    }
+    for (LogEventDropped entry : expected.getLogEventDroppedList()) {
+      if (!actualEventDroppedMap.containsKey(entry.getReason())
+          || actualEventDroppedMap.get(entry.getReason()) != entry.getEventsDroppedCount()) {
+        return false;
+      }
+    }
+    return actual.getLogSource().equals(expected.getLogSource());
   }
 }
