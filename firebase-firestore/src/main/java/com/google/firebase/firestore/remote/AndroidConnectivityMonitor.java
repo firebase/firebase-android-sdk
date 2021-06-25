@@ -101,14 +101,11 @@ public final class AndroidConnectivityMonitor implements ConnectivityMonitor {
         .registerActivityLifecycleCallbacks(
             new Application.ActivityLifecycleCallbacks() {
               @Override
-              public void onActivityCreated(@NonNull Activity activity, Bundle savedInstanceState) {
-                raiseForegroundNotification();
-              }
+              public void onActivityCreated(
+                  @NonNull Activity activity, Bundle savedInstanceState) {}
 
               @Override
-              public void onActivityStarted(@NonNull Activity activity) {
-                raiseForegroundNotification();
-              }
+              public void onActivityStarted(@NonNull Activity activity) {}
 
               @Override
               public void onActivityResumed(@NonNull Activity activity) {
