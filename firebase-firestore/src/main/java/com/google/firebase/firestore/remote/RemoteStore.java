@@ -216,7 +216,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
 
                 // If the network has been explicitly disabled, make sure we don't accidentally
                 // re-enable it.
-                if (canUseNetwork()) {
+                if (!onlineStateTracker.getState().equals(OnlineState.ONLINE) && canUseNetwork()) {
                   // Tear down and re-create our network streams. This will ensure the backoffs are
                   // reset.
                   Logger.debug(LOG_TAG, "Restarting streams for network reachability change.");
