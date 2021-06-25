@@ -28,6 +28,9 @@ import com.google.android.datatransport.Priority;
 import com.google.android.datatransport.runtime.EncodedPayload;
 import com.google.android.datatransport.runtime.EventInternal;
 import com.google.android.datatransport.runtime.TransportContext;
+import com.google.android.datatransport.runtime.firebase.transport.ClientMetrics;
+import com.google.android.datatransport.runtime.firebase.transport.LogEventDropped;
+import com.google.android.datatransport.runtime.firebase.transport.LogSourceMetrics;
 import com.google.android.datatransport.runtime.time.Clock;
 import com.google.android.datatransport.runtime.time.TestClock;
 import com.google.android.datatransport.runtime.time.UptimeClock;
@@ -35,6 +38,7 @@ import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.junit.Test;
@@ -66,6 +70,14 @@ public class SQLiteEventStoreTest {
           .setEventCleanUpAge(HOUR)
           .setMaxBlobByteSizePerRow(MAX_BLOB_SIZE_BYTES)
           .build();
+
+  private static final LogEventDropped.Reason REASON_CACHE_FULL = LogEventDropped.Reason.CACHE_FULL;
+  private static final LogEventDropped.Reason REASON_MAX_RETRIES_REACHED =
+      LogEventDropped.Reason.MAX_RETRIES_REACHED;
+  private static final long EVENT_DROPPED_COUNT_1 = 10;
+  private static final long EVENT_DROPPED_COUNT_2 = 11;
+  private static final String LOG_SOURCE_1 = "source1";
+  private static final String LOG_SOURCE_2 = "source2";
 
   private final TestClock clock = new TestClock(1);
   private final Context context = InstrumentationRegistry.getInstrumentation().getContext();
@@ -444,5 +456,210 @@ public class SQLiteEventStoreTest {
     store.recordSuccess(Collections.singleton(persistedEvent2));
 
     assertThat(store.loadActiveContexts()).containsExactly(ctx1);
+  }
+
+  @Test
+  public void recordLogEventDropped_withNoExistingRowShouldInsertNewRowToDb() {
+    store.resetClientMetrics();
+    store.recordLogEventDropped(EVENT_DROPPED_COUNT_1, REASON_CACHE_FULL, LOG_SOURCE_1);
+
+    ClientMetrics clientMetrics = store.loadClientMetrics();
+    assertThat(clientMetrics.getLogSourceMetricsList().size()).isEqualTo(1);
+    LogSourceMetrics logSourceMetrics = clientMetrics.getLogSourceMetricsList().get(0);
+    List<LogEventDropped> logEventDroppedList = logSourceMetrics.getLogEventDroppedList();
+    assertThat(logEventDroppedList.size()).isEqualTo(1);
+    LogEventDropped logEventDropped = logEventDroppedList.get(0);
+
+    assertThat(logSourceMetrics.getLogSource()).isEqualTo(LOG_SOURCE_1);
+    assertThat(logEventDropped.getReason()).isEqualTo(REASON_CACHE_FULL);
+    assertThat(logEventDropped.getEventsDroppedCount()).isEqualTo(EVENT_DROPPED_COUNT_1);
+  }
+
+  @Test
+  public void recordLogEventDropped_withSameLogSourceAndReasonShouldIncrementCount() {
+    store.resetClientMetrics();
+    store.runCriticalSection(
+        () -> {
+          store.recordLogEventDropped(EVENT_DROPPED_COUNT_1, REASON_CACHE_FULL, LOG_SOURCE_1);
+          return null;
+        });
+    store.runCriticalSection(
+        () -> {
+          store.recordLogEventDropped(EVENT_DROPPED_COUNT_2, REASON_CACHE_FULL, LOG_SOURCE_1);
+          return null;
+        });
+
+    ClientMetrics clientMetrics = store.loadClientMetrics();
+    assertThat(clientMetrics.getLogSourceMetricsList().size()).isEqualTo(1);
+    LogSourceMetrics logSourceMetrics = clientMetrics.getLogSourceMetricsList().get(0);
+    List<LogEventDropped> logEventDroppedList = logSourceMetrics.getLogEventDroppedList();
+    assertThat(logEventDroppedList.size()).isEqualTo(1);
+    LogEventDropped logEventDropped = logEventDroppedList.get(0);
+
+    assertThat(logSourceMetrics.getLogSource()).isEqualTo(LOG_SOURCE_1);
+    assertThat(logEventDropped.getReason()).isEqualTo(REASON_CACHE_FULL);
+    assertThat(logEventDropped.getEventsDroppedCount())
+        .isEqualTo(EVENT_DROPPED_COUNT_1 + EVENT_DROPPED_COUNT_2);
+  }
+
+  @Test
+  public void recordLogEventDropped_withDifferentLogSourceShouldWriteIntoDifferentRows() {
+    store.resetClientMetrics();
+    store.runCriticalSection(
+        () -> {
+          store.recordLogEventDropped(EVENT_DROPPED_COUNT_1, REASON_CACHE_FULL, LOG_SOURCE_1);
+          return null;
+        });
+    store.runCriticalSection(
+        () -> {
+          store.recordLogEventDropped(EVENT_DROPPED_COUNT_2, REASON_CACHE_FULL, LOG_SOURCE_2);
+          return null;
+        });
+
+    ClientMetrics clientMetrics = store.loadClientMetrics();
+    assertThat(clientMetrics.getLogSourceMetricsList().size()).isEqualTo(2);
+    LogSourceMetrics logSourceMetrics_1 = clientMetrics.getLogSourceMetricsList().get(0);
+    LogSourceMetrics logSourceMetrics_2 = clientMetrics.getLogSourceMetricsList().get(1);
+    List<LogEventDropped> logEventDroppedList_1 = logSourceMetrics_1.getLogEventDroppedList();
+    List<LogEventDropped> logEventDroppedList_2 = logSourceMetrics_2.getLogEventDroppedList();
+    assertThat(logEventDroppedList_1.size()).isEqualTo(1);
+    assertThat(logEventDroppedList_2.size()).isEqualTo(1);
+    LogEventDropped logEventDropped_1 = logEventDroppedList_1.get(0);
+    LogEventDropped logEventDropped_2 = logEventDroppedList_2.get(0);
+
+    assertThat(logSourceMetrics_1.getLogSource()).isEqualTo(LOG_SOURCE_1);
+    assertThat(logEventDropped_1.getReason()).isEqualTo(REASON_CACHE_FULL);
+    assertThat(logEventDropped_1.getEventsDroppedCount()).isEqualTo(EVENT_DROPPED_COUNT_1);
+
+    assertThat(logSourceMetrics_2.getLogSource()).isEqualTo(LOG_SOURCE_2);
+    assertThat(logEventDropped_2.getReason()).isEqualTo(REASON_CACHE_FULL);
+    assertThat(logEventDropped_2.getEventsDroppedCount()).isEqualTo(EVENT_DROPPED_COUNT_2);
+  }
+
+  @Test
+  public void recordLogEventDropped_withDifferentReasonShouldWriteIntoDifferentRows() {
+    store.resetClientMetrics();
+    store.runCriticalSection(
+        () -> {
+          store.recordLogEventDropped(EVENT_DROPPED_COUNT_1, REASON_CACHE_FULL, LOG_SOURCE_1);
+          return null;
+        });
+    store.runCriticalSection(
+        () -> {
+          store.recordLogEventDropped(
+              EVENT_DROPPED_COUNT_2, REASON_MAX_RETRIES_REACHED, LOG_SOURCE_1);
+          return null;
+        });
+
+    ClientMetrics clientMetrics = store.loadClientMetrics();
+    assertThat(clientMetrics.getLogSourceMetricsList().size()).isEqualTo(1);
+    LogSourceMetrics logSourceMetrics = clientMetrics.getLogSourceMetricsList().get(0);
+    List<LogEventDropped> logEventDroppedList = logSourceMetrics.getLogEventDroppedList();
+    assertThat(logEventDroppedList.size()).isEqualTo(2);
+    LogEventDropped logEventDropped_1 = logEventDroppedList.get(0);
+    LogEventDropped logEventDropped_2 = logEventDroppedList.get(1);
+
+    assertThat(logSourceMetrics.getLogSource()).isEqualTo(LOG_SOURCE_1);
+    assertThat(logEventDropped_1.getReason()).isEqualTo(REASON_CACHE_FULL);
+    assertThat(logEventDropped_1.getEventsDroppedCount()).isEqualTo(EVENT_DROPPED_COUNT_1);
+    assertThat(logEventDropped_2.getReason()).isEqualTo(REASON_MAX_RETRIES_REACHED);
+    assertThat(logEventDropped_2.getEventsDroppedCount()).isEqualTo(EVENT_DROPPED_COUNT_2);
+  }
+
+  @Test
+  public void loadClientMetrics_shouldReturnClientMetricsWithCorrectFields() {
+    final long START_MS = clock.getTime();
+    store.resetClientMetrics();
+    store.runCriticalSection(
+        () -> {
+          store.recordLogEventDropped(EVENT_DROPPED_COUNT_1, REASON_CACHE_FULL, LOG_SOURCE_1);
+          return null;
+        });
+    clock.advance(1);
+    store.runCriticalSection(
+        () -> {
+          store.recordLogEventDropped(EVENT_DROPPED_COUNT_2, REASON_CACHE_FULL, LOG_SOURCE_2);
+          return null;
+        });
+    clock.advance(1);
+    store.runCriticalSection(
+        () -> {
+          store.recordLogEventDropped(
+              EVENT_DROPPED_COUNT_2, REASON_MAX_RETRIES_REACHED, LOG_SOURCE_2);
+          return null;
+        });
+    final long END_MS = clock.getTime();
+
+    ClientMetrics clientMetrics = store.loadClientMetrics();
+    assertThat(clientMetrics.getLogSourceMetricsList().size()).isEqualTo(2);
+    LogSourceMetrics logSourceMetrics_1 = clientMetrics.getLogSourceMetricsList().get(0);
+    LogSourceMetrics logSourceMetrics_2 = clientMetrics.getLogSourceMetricsList().get(1);
+    List<LogEventDropped> logEventDroppedList_1 = logSourceMetrics_1.getLogEventDroppedList();
+    List<LogEventDropped> logEventDroppedList_2 = logSourceMetrics_2.getLogEventDroppedList();
+    assertThat(logEventDroppedList_1.size()).isEqualTo(1);
+    assertThat(logEventDroppedList_2.size()).isEqualTo(2);
+    LogEventDropped logEventDropped_1 = logEventDroppedList_1.get(0);
+    LogEventDropped logEventDropped_2 = logEventDroppedList_2.get(0);
+    LogEventDropped logEventDropped_3 = logEventDroppedList_2.get(1);
+
+    assertThat(logSourceMetrics_1.getLogSource()).isEqualTo(LOG_SOURCE_1);
+    assertThat(logEventDropped_1.getReason()).isEqualTo(REASON_CACHE_FULL);
+    assertThat(logEventDropped_1.getEventsDroppedCount()).isEqualTo(EVENT_DROPPED_COUNT_1);
+
+    assertThat(logSourceMetrics_2.getLogSource()).isEqualTo(LOG_SOURCE_2);
+    assertThat(logEventDropped_2.getReason()).isEqualTo(REASON_CACHE_FULL);
+    assertThat(logEventDropped_2.getEventsDroppedCount()).isEqualTo(EVENT_DROPPED_COUNT_2);
+    assertThat(logEventDropped_3.getReason()).isEqualTo(REASON_MAX_RETRIES_REACHED);
+    assertThat(logEventDropped_3.getEventsDroppedCount()).isEqualTo(EVENT_DROPPED_COUNT_2);
+
+    assertThat(clientMetrics.getAppNamespace()).isEqualTo(context.getPackageName());
+    assertThat(clientMetrics.getGlobalMetrics().getStorageMetrics().getCurrentCacheSizeBytes())
+        .isEqualTo(store.getByteSize());
+    assertThat(clientMetrics.getGlobalMetrics().getStorageMetrics().getMaxCacheSizeBytes())
+        .isEqualTo(EventStoreConfig.DEFAULT.getMaxStorageSizeInBytes());
+    assertThat(clientMetrics.getWindow().getStartMs()).isEqualTo(START_MS);
+    assertThat(clientMetrics.getWindow().getEndMs()).isEqualTo(END_MS);
+  }
+
+  @Test
+  public void loadClientMetrics_whenDbIsEmpty_shouldReturnClientMetricsWithEmptyLogEventList() {
+    store.resetClientMetrics();
+    final long START_MS = clock.getTime();
+    clock.advance(1);
+    final long END_MS = clock.getTime();
+
+    ClientMetrics clientMetrics = store.loadClientMetrics();
+    assertThat(clientMetrics.getLogSourceMetricsList().size()).isEqualTo(0);
+    assertThat(clientMetrics.getAppNamespace()).isEqualTo(context.getPackageName());
+    assertThat(clientMetrics.getGlobalMetrics().getStorageMetrics().getCurrentCacheSizeBytes())
+        .isEqualTo(store.getByteSize());
+    assertThat(clientMetrics.getGlobalMetrics().getStorageMetrics().getMaxCacheSizeBytes())
+        .isEqualTo(EventStoreConfig.DEFAULT.getMaxStorageSizeInBytes());
+    assertThat(clientMetrics.getWindow().getStartMs()).isEqualTo(START_MS);
+    assertThat(clientMetrics.getWindow().getEndMs()).isEqualTo(END_MS);
+  }
+
+  @Test
+  public void resetClintAnalyticsMetrics_shouldRemoveAllRowsInLogEventDroppedTable() {
+    store.recordLogEventDropped(EVENT_DROPPED_COUNT_1, REASON_CACHE_FULL, LOG_SOURCE_1);
+    assertThat(isLogEventDroppedTableEmpty()).isFalse();
+    store.resetClientMetrics();
+    assertThat(isLogEventDroppedTableEmpty()).isTrue();
+  }
+
+  @Test
+  public void resetClintAnalyticsMetrics_shouldSetLastMetricsUploadMsToCurrentTime() {
+    store.resetClientMetrics();
+    final long CURRENT_TIME = clock.getTime();
+
+    assertThat(store.loadClientMetrics().getWindow().getStartMs()).isEqualTo(CURRENT_TIME);
+  }
+
+  private boolean isLogEventDroppedTableEmpty() {
+    return store.inTransaction(
+        db ->
+            tryWithCursor(
+                db.rawQuery("SELECT 1 FROM log_event_dropped", new String[] {}),
+                cursor -> cursor.getCount() <= 0));
   }
 }
