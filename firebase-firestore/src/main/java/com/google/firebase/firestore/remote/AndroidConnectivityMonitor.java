@@ -100,6 +100,8 @@ public final class AndroidConnectivityMonitor implements ConnectivityMonitor {
     ((Application) context.getApplicationContext())
         .registerActivityLifecycleCallbacks(
             new Application.ActivityLifecycleCallbacks() {
+              @Nullable Activity lastActivity = null;
+
               @Override
               public void onActivityCreated(
                   @NonNull Activity activity, Bundle savedInstanceState) {}
@@ -109,11 +111,19 @@ public final class AndroidConnectivityMonitor implements ConnectivityMonitor {
 
               @Override
               public void onActivityResumed(@NonNull Activity activity) {
-                raiseForegroundNotification();
+                // Only raise the foreground notification if the same activity when to the
+                // background before. This prevents notifications when an app switches between
+                // activities.
+                if (activity == lastActivity) {
+                  raiseForegroundNotification();
+                }
+                lastActivity = null;
               }
 
               @Override
-              public void onActivityPaused(@NonNull Activity activity) {}
+              public void onActivityPaused(@NonNull Activity activity) {
+                lastActivity = activity;
+              }
 
               @Override
               public void onActivityStopped(@NonNull Activity activity) {}
