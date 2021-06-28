@@ -20,9 +20,11 @@ import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.Application;
 import android.content.BroadcastReceiver;
+import android.content.ComponentCallbacks2;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.res.Configuration;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.os.Build;
@@ -33,6 +35,7 @@ import com.google.firebase.firestore.util.Consumer;
 import com.google.firebase.firestore.util.Logger;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Android implementation of ConnectivityMonitor. Parallel implementations exist for N+ and pre-N.
@@ -94,47 +97,56 @@ public final class AndroidConnectivityMonitor implements ConnectivityMonitor {
   }
 
   private void configureBackgroundStateListener() {
+    Application applicationContext = (Application) context.getApplicationContext();
+    final AtomicBoolean inBackground = new AtomicBoolean();
+
     // Manually register an ActivityLifecycleCallback. Android's BackgroundDetector only notifies
     // when it is certain that the app transitioned from background to foreground. Instead, we
     // want to be notified whenever there is a slight chance that this transition happened.
-    ((Application) context.getApplicationContext())
-        .registerActivityLifecycleCallbacks(
-            new Application.ActivityLifecycleCallbacks() {
-              @Nullable Activity lastActivity = null;
+    applicationContext.registerActivityLifecycleCallbacks(
+        new Application.ActivityLifecycleCallbacks() {
+          @Override
+          public void onActivityCreated(@NonNull Activity activity, Bundle savedInstanceState) {}
 
-              @Override
-              public void onActivityCreated(
-                  @NonNull Activity activity, Bundle savedInstanceState) {}
+          @Override
+          public void onActivityStarted(@NonNull Activity activity) {}
 
-              @Override
-              public void onActivityStarted(@NonNull Activity activity) {}
+          @Override
+          public void onActivityResumed(@NonNull Activity activity) {
+            if (inBackground.compareAndSet(true, false)) {
+              raiseForegroundNotification();
+            }
+          }
 
-              @Override
-              public void onActivityResumed(@NonNull Activity activity) {
-                // Only raise the foreground notification if the same activity when to the
-                // background before. This prevents notifications when an app switches between
-                // activities.
-                if (activity == lastActivity) {
-                  raiseForegroundNotification();
-                }
-                lastActivity = null;
-              }
+          @Override
+          public void onActivityPaused(@NonNull Activity activity) {}
 
-              @Override
-              public void onActivityPaused(@NonNull Activity activity) {
-                lastActivity = activity;
-              }
+          @Override
+          public void onActivityStopped(@NonNull Activity activity) {}
 
-              @Override
-              public void onActivityStopped(@NonNull Activity activity) {}
+          @Override
+          public void onActivitySaveInstanceState(
+              @NonNull Activity activity, @NonNull Bundle outState) {}
 
-              @Override
-              public void onActivitySaveInstanceState(
-                  @NonNull Activity activity, @NonNull Bundle outState) {}
+          @Override
+          public void onActivityDestroyed(@NonNull Activity activity) {}
+        });
 
-              @Override
-              public void onActivityDestroyed(@NonNull Activity activity) {}
-            });
+    applicationContext.registerComponentCallbacks(
+        new ComponentCallbacks2() {
+          @Override
+          public void onTrimMemory(int level) {
+            if (level == ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN) {
+              inBackground.set(true);
+            }
+          }
+
+          @Override
+          public void onConfigurationChanged(@NonNull Configuration newConfig) {}
+
+          @Override
+          public void onLowMemory() {}
+        });
   }
 
   public void raiseForegroundNotification() {

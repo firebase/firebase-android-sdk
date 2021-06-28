@@ -1,6 +1,6 @@
-# Unreelased
+# Unreleased
 - [changed] Increases the aggressiveness of network retires when an app's
-  visibility status changes.
+  foreground status changes.
 
 # 23.0.1
 - [changed] The SDK now tries to immediately establish a connection to the
