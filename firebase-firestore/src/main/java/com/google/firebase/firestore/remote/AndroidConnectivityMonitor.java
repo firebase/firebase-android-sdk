@@ -97,19 +97,27 @@ public final class AndroidConnectivityMonitor implements ConnectivityMonitor {
   }
 
   private void configureBackgroundStateListener() {
-    Application applicationContext = (Application) context.getApplicationContext();
+    Application application = (Application) context.getApplicationContext();
     final AtomicBoolean inBackground = new AtomicBoolean();
 
     // Manually register an ActivityLifecycleCallback. Android's BackgroundDetector only notifies
     // when it is certain that the app transitioned from background to foreground. Instead, we
     // want to be notified whenever there is a slight chance that this transition happened.
-    applicationContext.registerActivityLifecycleCallbacks(
+    application.registerActivityLifecycleCallbacks(
         new Application.ActivityLifecycleCallbacks() {
           @Override
-          public void onActivityCreated(@NonNull Activity activity, Bundle savedInstanceState) {}
+          public void onActivityCreated(@NonNull Activity activity, Bundle savedInstanceState) {
+            if (inBackground.compareAndSet(true, false)) {
+              raiseForegroundNotification();
+            }
+          }
 
           @Override
-          public void onActivityStarted(@NonNull Activity activity) {}
+          public void onActivityStarted(@NonNull Activity activity) {
+            if (inBackground.compareAndSet(true, false)) {
+              raiseForegroundNotification();
+            }
+          }
 
           @Override
           public void onActivityResumed(@NonNull Activity activity) {
@@ -132,7 +140,7 @@ public final class AndroidConnectivityMonitor implements ConnectivityMonitor {
           public void onActivityDestroyed(@NonNull Activity activity) {}
         });
 
-    applicationContext.registerComponentCallbacks(
+    application.registerComponentCallbacks(
         new ComponentCallbacks2() {
           @Override
           public void onTrimMemory(int level) {
