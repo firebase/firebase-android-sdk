@@ -16,6 +16,7 @@ package com.google.firebase.appcheck;
 
 import android.annotation.SuppressLint;
 import androidx.annotation.NonNull;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appcheck.interop.AppCheckTokenListener;
 import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
@@ -69,4 +70,30 @@ public abstract class FirebaseAppCheck implements InternalAppCheckTokenProvider 
 
   /** Sets the {@code isTokenAutoRefreshEnabled} flag. */
   public abstract void setTokenAutoRefreshEnabled(boolean isTokenAutoRefreshEnabled);
+
+  /**
+   * Requests a Firebase App Check token. This method should be used ONLY if you need to authorize
+   * requests to a non-Firebase backend. Requests to Firebase backends are authorized automatically
+   * if configured.
+   */
+  @NonNull
+  public abstract Task<AppCheckToken> getAppCheckToken(boolean forceRefresh);
+
+  /**
+   * Registers an {@link AppCheckListener} to changes in the token state. This method should be used
+   * ONLY if you need to authorize requests to a non-Firebase backend. Requests to Firebase backends
+   * are authorized automatically if configured.
+   */
+  public abstract void addAppCheckListener(@NonNull AppCheckListener listener);
+
+  /** Unregisters an {@link AppCheckListener} to changes in the token state. */
+  public abstract void removeAppCheckListener(@NonNull AppCheckListener listener);
+
+  public interface AppCheckListener {
+    /**
+     * This method gets invoked on the UI thread on changes to the token state. Does not trigger on
+     * token expiry.
+     */
+    void onAppCheckTokenChanged(@NonNull AppCheckToken token);
+  }
 }

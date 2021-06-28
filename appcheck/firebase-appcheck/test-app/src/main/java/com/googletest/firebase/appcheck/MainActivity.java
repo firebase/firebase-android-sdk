@@ -26,8 +26,9 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.appcheck.AppCheckTokenResult;
+import com.google.firebase.appcheck.AppCheckToken;
 import com.google.firebase.appcheck.FirebaseAppCheck;
+import com.google.firebase.appcheck.FirebaseAppCheck.AppCheckListener;
 import com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory;
 import com.google.firebase.appcheck.safetynet.SafetyNetAppCheckProviderFactory;
 import com.google.firebase.storage.FirebaseStorage;
@@ -40,6 +41,7 @@ public class MainActivity extends AppCompatActivity {
 
   private FirebaseAppCheck firebaseAppCheck;
   private FirebaseStorage firebaseStorage;
+  private AppCheckListener appCheckListener;
   private Button installSafetyNetButton;
   private Button installDebugButton;
   private Button getAppCheckTokenButton;
@@ -54,10 +56,27 @@ public class MainActivity extends AppCompatActivity {
     initViews();
   }
 
+  @Override
+  protected void onDestroy() {
+    super.onDestroy();
+
+    firebaseAppCheck.removeAppCheckListener(appCheckListener);
+  }
+
   private void initFirebase() {
     FirebaseApp.initializeApp(this);
     firebaseAppCheck = FirebaseAppCheck.getInstance();
     firebaseStorage = FirebaseStorage.getInstance();
+
+    appCheckListener =
+        new AppCheckListener() {
+          @Override
+          public void onAppCheckTokenChanged(@NonNull AppCheckToken token) {
+            Log.d(TAG, "onAppCheckTokenChanged");
+          }
+        };
+
+    firebaseAppCheck.addAppCheckListener(appCheckListener);
   }
 
   private void initViews() {
@@ -96,30 +115,21 @@ public class MainActivity extends AppCompatActivity {
         new OnClickListener() {
           @Override
           public void onClick(View v) {
-            Task<AppCheckTokenResult> task = firebaseAppCheck.getToken(/* forceRefresh= */ false);
+            Task<AppCheckToken> task = firebaseAppCheck.getAppCheckToken(/* forceRefresh= */ true);
             task.addOnSuccessListener(
-                new OnSuccessListener<AppCheckTokenResult>() {
+                new OnSuccessListener<AppCheckToken>() {
                   @Override
-                  public void onSuccess(AppCheckTokenResult appCheckTokenResult) {
-                    if (appCheckTokenResult.getError() == null) {
-                      Log.d(TAG, "Successfully retrieved AppCheck token.");
-                      showToast("Successfully retrieved AppCheck token.");
-                    } else {
-                      Log.d(
-                          TAG,
-                          "AppCheck token exchange failed with error: "
-                              + appCheckTokenResult.getError().getMessage());
-                      showToast("AppCheck token exchange failed.");
-                    }
+                  public void onSuccess(AppCheckToken appCheckToken) {
+                    Log.d(TAG, "Successfully retrieved AppCheck token.");
+                    showToast("Successfully retrieved AppCheck token.");
                   }
                 });
             task.addOnFailureListener(
                 new OnFailureListener() {
                   @Override
                   public void onFailure(@NonNull Exception e) {
-                    // This should not happen; the task should always return with a success.
-                    Log.e(TAG, "Unexpected failure in getToken: " + e.toString());
-                    showToast("Unexpected failure in getToken.");
+                    Log.d(TAG, "AppCheck token exchange failed with error: " + e.getMessage());
+                    showToast("AppCheck token exchange failed.");
                   }
                 });
           }
