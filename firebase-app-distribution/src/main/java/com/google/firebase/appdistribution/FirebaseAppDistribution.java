@@ -18,14 +18,13 @@ import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
-import org.jetbrains.annotations.Nullable;
 
 public class FirebaseAppDistribution {
 
   private final FirebaseApp firebaseApp;
 
   /** Constructor for FirebaseAppDistribution */
-  public FirebaseAppDistribution(@NonNull FirebaseApp firebaseApp) {
+  FirebaseAppDistribution(@NonNull FirebaseApp firebaseApp) {
     this.firebaseApp = firebaseApp;
   }
 
@@ -63,12 +62,12 @@ public class FirebaseAppDistribution {
    * starts an installation If the latest release is an AAB, directs the tester to the Play app to
    * complete the download and installation.
    *
-   * @throws an UPDATE_NOT_AVAIALBLE exception if no new release is cached from checkForUpdate
-   * @param updateProgressListener a callback function invoked as the update progresses
+   * @throws an {@link Status.UPDATE_NOT_AVAILABLE_ERROR} exception if no new release is cached from
+   *     checkForUpdate
    */
   @NonNull
-  public Task<Void> updateApp(@Nullable UpdateProgressListener updateProgressListener) {
-    return Tasks.forResult(null);
+  public UpdateTask updateApp() {
+    return (UpdateTask) Tasks.forResult(new UpdateState(0, 0, UpdateStatus.PENDING));
   }
 
   /** Signs in the App Distribution tester. Presents the tester with a Google sign in UI */

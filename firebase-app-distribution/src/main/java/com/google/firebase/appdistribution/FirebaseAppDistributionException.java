@@ -14,69 +14,63 @@
 
 package com.google.firebase.appdistribution;
 
-import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import com.google.firebase.FirebaseException;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
 
 /** Possible exceptions thrown in FirebaseAppDistribution */
-public abstract class FirebaseAppDistributionException extends FirebaseException {
-  /** Unknown error. */
-  public static final int UNKNOWN_ERROR = 1;
+public class FirebaseAppDistributionException extends FirebaseException {
+  public enum Status {
+    /** Unknown error. */
+    UNKNOWN,
 
-  /** Authentication failed */
-  public static final int AUTHENTICATION_FAILURE_ERROR = 2;
+    /** Authentication failed */
+    AUTHENTICATION_FAILURE,
 
-  /** Authentication canceled */
-  public static final int AUTHENTICATION_CANCELED_ERROR = 3;
+    /** Authentication canceled */
+    AUTHENTICATION_CANCELED,
 
-  /** No Network available to make requests or the request timed out */
-  public static final int NETWORK_FAILURE_ERROR = 4;
+    /** No Network available to make requests or the request timed out */
+    NETWORK_FAILURE,
 
-  /** Download failed */
-  public static final int DOWNLOAD_FAILURE_ERROR = 5;
+    /** Download failed */
+    DOWNLOAD_FAILURE,
 
-  /** Installation failed */
-  public static final int INSTALLATION_FAILURE_ERROR = 6;
+    /** Installation failed */
+    INSTALLATION_FAILURE,
 
-  /** Installation canceled */
-  public static final int INSTALLATION_CANCELED_ERROR = 7;
+    /** Installation canceled */
+    INSTALLATION_CANCELED,
 
-  /** Update not available for the current tester and app */
-  public static final int UPDATE_NOT_AVAILABLE_ERROR = 8;
+    /** Update not available for the current tester and app */
+    UPDATE_NOT_AVAILABLE,
 
-  /** Installation failed due to signature mismatch */
-  public static final int INSTALLATION_FAILURE_SIGNATURE_MISMATCH_ERROR = 9;
+    /** Installation failed due to signature mismatch */
+    INSTALLATION_FAILURE_SIGNATURE_MISMATCH,
 
-  /** App is in production */
-  public static final int APP_RUNNING_IN_PRODUCTION_ERROR = 10;
+    /** App is in production */
+    APP_RUNNING_IN_PRODUCTION,
 
-  /** Download URL for release expired */
-  public static final int RELEASE_URL_EXPIRED_ERROR = 11;
+    /** Download URL for release expired */
+    RELEASE_URL_EXPIRED,
+  }
 
-  /** Get error code */
-  public abstract int getCode();
+  @NonNull private final Status status;
+  @NonNull private final AppDistributionRelease release;
+
+  FirebaseAppDistributionException(
+      @NonNull Status status, @NonNull AppDistributionRelease release) {
+    this.status = status;
+    this.release = release;
+  }
 
   /** Get cached release when error was thrown */
   @NonNull
-  public abstract AppDistributionRelease getRelease();
+  public AppDistributionRelease getRelease() {
+    return release;
+  }
 
-  /** The set of FirebaseAppDistribution status codes. */
-  @IntDef({
-    FirebaseAppDistributionException.UNKNOWN_ERROR,
-    FirebaseAppDistributionException.AUTHENTICATION_FAILURE_ERROR,
-    FirebaseAppDistributionException.AUTHENTICATION_CANCELED_ERROR,
-    FirebaseAppDistributionException.NETWORK_FAILURE_ERROR,
-    FirebaseAppDistributionException.DOWNLOAD_FAILURE_ERROR,
-    FirebaseAppDistributionException.INSTALLATION_FAILURE_ERROR,
-    FirebaseAppDistributionException.INSTALLATION_CANCELED_ERROR,
-    FirebaseAppDistributionException.UPDATE_NOT_AVAILABLE_ERROR,
-    FirebaseAppDistributionException.INSTALLATION_FAILURE_SIGNATURE_MISMATCH_ERROR,
-    FirebaseAppDistributionException.APP_RUNNING_IN_PRODUCTION_ERROR,
-    FirebaseAppDistributionException.RELEASE_URL_EXPIRED_ERROR,
-  })
-  @Retention(RetentionPolicy.CLASS)
-  /** Interface for converting int to error code */
-  public @interface Code {}
+  @NonNull
+  public Status getErrorCode() {
+    return status;
+  }
 }

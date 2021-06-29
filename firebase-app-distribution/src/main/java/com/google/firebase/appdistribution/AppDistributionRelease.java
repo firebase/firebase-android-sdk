@@ -17,23 +17,44 @@ package com.google.firebase.appdistribution;
 import androidx.annotation.NonNull;
 
 /**
- * Interface for AppDistributonRelease object returned by checkForUpdate() and
+ * Data class for AppDistributionRelease object returned by checkForUpdate() and
  * updateToLatestRelease()
  */
-public interface AppDistributionRelease {
+public final class AppDistributionRelease {
+  private final String displayVersion;
+  private final String buildVersion;
+  private final String releaseNotes;
+  private final BinaryType binaryType;
+
+  AppDistributionRelease(
+      String displayVersion, String buildVersion, String releaseNotes, BinaryType binaryType) {
+    this.displayVersion = displayVersion;
+    this.buildVersion = buildVersion;
+    this.releaseNotes = releaseNotes;
+    this.binaryType = binaryType;
+  }
+
   /** The short bundle version of this build (example 1.0.0) */
   @NonNull
-  public String getDisplayVersion();
+  public String getDisplayVersion() {
+    return displayVersion;
+  }
 
   /** The bundle version of this build (example: 123) */
   @NonNull
-  public String getBuildVersion();
+  public String getBuildVersion() {
+    return buildVersion;
+  }
 
   /** The release notes for this build */
   @NonNull
-  public String getReleaseNotes();
+  public String getReleaseNotes() {
+    return releaseNotes;
+  }
 
   /** The binary type for this build */
   @NonNull
-  public BinaryType getBinaryType();
+  public BinaryType getBinaryType() {
+    return binaryType;
+  }
 }

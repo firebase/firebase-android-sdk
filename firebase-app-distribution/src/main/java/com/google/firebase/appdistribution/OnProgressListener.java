@@ -16,12 +16,7 @@ package com.google.firebase.appdistribution;
 
 import androidx.annotation.NonNull;
 
-/** Interface to subscribe to status updates on the release update process. Called by updateApp. */
-public interface UpdateProgressListener {
-  /**
-   * Method invoked during updating to track progress by modifying UpdateProgress object
-   *
-   * @param UpdateProgress object to be modified
-   */
-  public void onProgressUpdate(@NonNull UpdateProgress updateProgress);
+/** A listener that is called periodically during execution of the {@link UpdateTask}. */
+public interface OnProgressListener {
+  void onProgressUpdate(@NonNull UpdateState updateState);
 }

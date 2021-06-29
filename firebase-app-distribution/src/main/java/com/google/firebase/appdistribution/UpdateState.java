@@ -16,17 +16,33 @@ package com.google.firebase.appdistribution;
 
 import androidx.annotation.NonNull;
 
-/** Interface to get download progress for APKs and the status of the update. Used in updateApp. */
-public interface UpdateProgress {
+/** Data class to get download progress for APKs and the status of the update. Used in updateApp. */
+public final class UpdateState {
+  private final long apkBytesDownloaded;
+  private final long apkTotalBytesToDownload;
+  private final UpdateStatus updateStatus;
+
+  UpdateState(long apkBytesDownloaded, long apkTotalBytesToDownload, UpdateStatus updateStatus) {
+    this.apkBytesDownloaded = apkBytesDownloaded;
+    this.apkTotalBytesToDownload = apkTotalBytesToDownload;
+    this.updateStatus = updateStatus;
+  }
+
   /** The number of bytes downloaded so far for the APK. Returns -1 if called on an AAB. */
   @NonNull
-  public long getApkBytesDownloaded();
+  public long getApkBytesDownloaded() {
+    return apkBytesDownloaded;
+  }
 
   /** The total number of bytes to download for the APK. Returns -1 if called on an AAB. */
   @NonNull
-  public long getApkTotalBytesToDownload();
+  public long getApkTotalBytesToDownload() {
+    return apkTotalBytesToDownload;
+  }
 
   @NonNull
   /** returns the current state of the update */
-  public UpdateStatus getUpdateStatus();
+  public UpdateStatus getUpdateStatus() {
+    return updateStatus;
+  }
 }
