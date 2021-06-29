@@ -44,7 +44,6 @@ buildscript {
 
 apply from: 'sdkProperties.gradle'
 
-
 ext {
     playServicesVersion = '16.0.1'
     supportAnnotationsVersion = '28.0.0'
