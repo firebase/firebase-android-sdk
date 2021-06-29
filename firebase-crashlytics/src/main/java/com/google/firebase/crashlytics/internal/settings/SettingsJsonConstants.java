@@ -29,9 +29,11 @@ class SettingsJsonConstants {
 
   // Feature Switch Keys
   static final String FEATURES_COLLECT_REPORTS_KEY = "collect_reports";
+  static final String FEATURES_COLLECT_ANRS_KEY = "collect_anrs";
 
   // Feature Switch Defaults
   static final boolean FEATURES_COLLECT_REPORTS_DEFAULT = true;
+  static final boolean FEATURES_COLLECT_ANRS_DEFAULT = false;
 
   // Fabric JSON Keys
   static final String FABRIC_BUNDLE_ID = "bundle_id";

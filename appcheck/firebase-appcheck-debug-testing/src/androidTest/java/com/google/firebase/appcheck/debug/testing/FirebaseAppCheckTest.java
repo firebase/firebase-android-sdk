@@ -22,6 +22,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.appcheck.AppCheckToken;
 import com.google.firebase.appcheck.AppCheckTokenResult;
 import com.google.firebase.appcheck.FirebaseAppCheck;
 import com.google.firebase.storage.FirebaseStorage;
@@ -52,7 +53,7 @@ public class FirebaseAppCheckTest {
   }
 
   @Test
-  public void exchangeDebugSecretForAppCheckToken() throws Exception {
+  public void exchangeDebugSecretForAppCheckToken_interopApi() throws Exception {
     debugAppCheckTestHelper.withDebugProvider(
         () -> {
           Task<AppCheckTokenResult> tokenResultTask = firebaseAppCheck.getToken(true);
@@ -60,6 +61,17 @@ public class FirebaseAppCheckTest {
           AppCheckTokenResult result = tokenResultTask.getResult();
           assertThat(result.getToken()).isNotEmpty();
           assertThat(result.getError()).isNull();
+        });
+  }
+
+  @Test
+  public void exchangeDebugSecretForAppCheckToken_publicApi() throws Exception {
+    debugAppCheckTestHelper.withDebugProvider(
+        () -> {
+          Task<AppCheckToken> tokenTask = firebaseAppCheck.getAppCheckToken(true);
+          Tasks.await(tokenTask);
+          AppCheckToken result = tokenTask.getResult();
+          assertThat(result.getToken()).isNotEmpty();
         });
   }
 

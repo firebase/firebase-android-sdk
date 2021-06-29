@@ -20,6 +20,8 @@ import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
+import android.app.ActivityManager;
+import android.app.ActivityManager.RunningAppProcessInfo;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.ContextWrapper;
@@ -99,6 +101,30 @@ public class CrashlyticsReportDataCaptureTest {
 
     assertNull(report.getSession().getApp().getDevelopmentPlatform());
     assertNull(report.getSession().getApp().getDevelopmentPlatformVersion());
+  }
+
+  @Test
+  public void testCaptureAnrEvent_foregroundAnr() {
+    CrashlyticsReport.ApplicationExitInfo testApplicationExitInfo = makeAppExitInfo(false);
+    final CrashlyticsReport.Session.Event event =
+        dataCapture.captureAnrEventData(testApplicationExitInfo);
+
+    assertEquals("anr", event.getType());
+    assertEquals(testApplicationExitInfo, event.getApp().getExecution().getAppExitInfo());
+    assertEquals(testApplicationExitInfo.getTimestamp(), event.getTimestamp());
+    assertEquals(false, event.getApp().getBackground());
+  }
+
+  @Test
+  public void testCaptureAnrEvent_backgroundAnr() {
+    CrashlyticsReport.ApplicationExitInfo testApplicationExitInfo = makeAppExitInfo(true);
+    final CrashlyticsReport.Session.Event event =
+        dataCapture.captureAnrEventData(testApplicationExitInfo);
+
+    assertEquals("anr", event.getType());
+    assertEquals(testApplicationExitInfo, event.getApp().getExecution().getAppExitInfo());
+    assertEquals(testApplicationExitInfo.getTimestamp(), event.getTimestamp());
+    assertEquals(true, event.getApp().getBackground());
   }
 
   @Test
@@ -368,5 +394,22 @@ public class CrashlyticsReportDataCaptureTest {
         return getBaseContext().registerReceiver(receiver, filter);
       }
     };
+  }
+
+  private static CrashlyticsReport.ApplicationExitInfo makeAppExitInfo(boolean isBackground) {
+    final int anrImportance =
+        isBackground
+            ? RunningAppProcessInfo.IMPORTANCE_CACHED
+            : ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND;
+    return CrashlyticsReport.ApplicationExitInfo.builder()
+        .setTraceFile("trace")
+        .setTimestamp(1L)
+        .setImportance(anrImportance)
+        .setReasonCode(1)
+        .setProcessName("test")
+        .setPid(1)
+        .setPss(1L)
+        .setRss(1L)
+        .build();
   }
 }

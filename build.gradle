@@ -77,78 +77,8 @@ configure(subprojects) {
         }
     }
 
-    apply plugin: 'com.github.sherter.google-java-format'
-    googleJavaFormat {
-        toolVersion = '1.7'
-    }
-    tasks.googleJavaFormat {
-        source '.'
-        include '**/java/**/*.java'
-        exclude '**/generated/**'
-        exclude 'src/testUtil/java/com/google/firebase/firestore/testutil/Assert.java'
-        exclude 'src/testUtil/java/com/google/firebase/firestore/testutil/ThrowingRunnable.java'
-        exclude '**/package-info.java'
-    }
-    tasks.verifyGoogleJavaFormat {
-        source '.'
-        include '**/java/**/*.java'
-        exclude '**/generated/**'
-        exclude 'src/testUtil/java/com/google/firebase/firestore/testutil/Assert.java'
-        exclude 'src/testUtil/java/com/google/firebase/firestore/testutil/ThrowingRunnable.java'
-        exclude '**/package-info.java'
-    }
-
     apply plugin: "org.jlleitschuh.gradle.ktlint"
 }
-
-
-/**
- * Configure "Preguarding" for the subprojects.
- *
- * <p> The way it works is every library subproject that has the android plugin applied and:
- *
- *  <ul>
- *    <li>Contains a file named "preguard.txt" will get proguarded using that file as proguard
- *        configuration in release mode.
- *    <li>Contains a file named "proguard.txt" will ship this file inside its release aar as a
- *        consumer proguard file.
- */
-configure(subprojects) {
-    def PREGUARD_FILE_NAME = 'preguard.txt'
-    def CONSUMER_PROGUARD_FILE_NAME = 'proguard.txt'
-    afterEvaluate { Project sub ->
-
-        if (sub.plugins.findPlugin('com.android.library') == null) {
-            return
-        }
-
-        boolean skipPreguard = sub.getProperties().getOrDefault('firebaseSkipPreguard', 'true').toBoolean()
-        def defaultPreguard = rootProject.getProperties().getOrDefault('firebaseDefaultPreguardFile', 'default-preguard.txt')
-
-        if(!skipPreguard) {
-
-            sub.android {
-                buildTypes {
-                    release {
-                        // default behavior for minifyEnabled is:
-                        // useProguard true
-                        // shrinkResources false
-                        minifyEnabled true
-                        proguardFiles file(defaultPreguard), sub.file(PREGUARD_FILE_NAME)
-                    }
-                }
-            }
-        }
-
-        // Ship consumer proguard config if it exists.
-        if (sub.file(CONSUMER_PROGUARD_FILE_NAME).exists()) {
-            sub.android { buildTypes { release { consumerProguardFiles 'proguard.txt' } } }
-        }
-
-        sub.apply plugin: LicenseResolverPlugin
-    }
-}
-
 
 task clean(type: Delete) {
     delete rootProject.buildDir

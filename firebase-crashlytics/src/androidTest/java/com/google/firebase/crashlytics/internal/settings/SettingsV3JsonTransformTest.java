@@ -60,6 +60,14 @@ public class SettingsV3JsonTransformTest extends CrashlyticsTestCase {
     verifySettingsDataObject(mockCurrentTimeProvider, settingsData, true);
   }
 
+  public void testFirebaseSettingsTransform_collectAnrs() throws Exception {
+    final JSONObject testJson = getTestJSON("firebase_settings_collect_anrs.json");
+
+    final SettingsData settingsData = transform.buildFromJson(mockCurrentTimeProvider, testJson);
+
+    verifySettingsDataObject(mockCurrentTimeProvider, settingsData, false, true);
+  }
+
   public void testToJsonAndBackSurvival() throws IOException, JSONException {
     final JSONObject testJson = getTestJSON("firebase_settings.json");
 
@@ -94,8 +102,9 @@ public class SettingsV3JsonTransformTest extends CrashlyticsTestCase {
     assertEquals(4, settingsData.maxCompleteSessionsCount);
   }
 
-  private void assertFeaturesData(FeaturesSettingsData featuresSettingsData) {
+  private void assertFeaturesData(FeaturesSettingsData featuresSettingsData, boolean collectAnrs) {
     assertTrue(featuresSettingsData.collectReports);
+    assertEquals(featuresSettingsData.collectAnrs, collectAnrs);
   }
 
   private void verifySettingsDataObject(
@@ -105,6 +114,14 @@ public class SettingsV3JsonTransformTest extends CrashlyticsTestCase {
 
   private void verifySettingsDataObject(
       CurrentTimeProvider mockCurrentTimeProvider, SettingsData settingsData, boolean isAppNew) {
+    verifySettingsDataObject(mockCurrentTimeProvider, settingsData, isAppNew, false);
+  }
+
+  private void verifySettingsDataObject(
+      CurrentTimeProvider mockCurrentTimeProvider,
+      SettingsData settingsData,
+      boolean isAppNew,
+      boolean collectAnrs) {
     assertEquals(7200010, settingsData.expiresAtMillis);
 
     assertEquals(3, settingsData.settingsVersion);
@@ -112,7 +129,7 @@ public class SettingsV3JsonTransformTest extends CrashlyticsTestCase {
 
     assertAppData(settingsData.appData, isAppNew);
 
-    assertFeaturesData(settingsData.featuresData);
+    assertFeaturesData(settingsData.featuresData, collectAnrs);
 
     assertSettingsData(settingsData.sessionData);
 

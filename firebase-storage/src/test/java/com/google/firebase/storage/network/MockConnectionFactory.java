@@ -50,7 +50,7 @@ public class MockConnectionFactory implements HttpURLConnectionFactory {
   private final Semaphore pauseSemaphore = new Semaphore(0);
   private int lineCount = 0;
   private int pauseRecord = Integer.MAX_VALUE;
-  private int currentRecord = 0;;
+  private int currentRecord = 0;
 
   public MockConnectionFactory(String testName, boolean binaryBody) {
     this.binaryBody = binaryBody;

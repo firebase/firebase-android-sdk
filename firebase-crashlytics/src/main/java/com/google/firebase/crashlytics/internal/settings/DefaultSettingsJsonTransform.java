@@ -97,7 +97,12 @@ class DefaultSettingsJsonTransform implements SettingsJsonTransform {
             SettingsJsonConstants.FEATURES_COLLECT_REPORTS_KEY,
             SettingsJsonConstants.FEATURES_COLLECT_REPORTS_DEFAULT);
 
-    return new FeaturesSettingsData(collectReports);
+    final boolean collectAnrs =
+        json.optBoolean(
+            SettingsJsonConstants.FEATURES_COLLECT_ANRS_KEY,
+            SettingsJsonConstants.FEATURES_COLLECT_ANRS_DEFAULT);
+
+    return new FeaturesSettingsData(collectReports, collectAnrs);
   }
 
   private static SessionSettingsData buildSessionDataFrom(JSONObject json) {

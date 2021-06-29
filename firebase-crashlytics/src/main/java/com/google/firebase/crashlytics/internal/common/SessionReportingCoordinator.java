@@ -14,9 +14,13 @@
 
 package com.google.firebase.crashlytics.internal.common;
 
+import android.app.ApplicationExitInfo;
 import android.content.Context;
+import android.os.Build;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
+import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.crashlytics.internal.Logger;
@@ -30,7 +34,14 @@ import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.send.DataTransportCrashlyticsReportSender;
 import com.google.firebase.crashlytics.internal.settings.SettingsDataProvider;
 import com.google.firebase.crashlytics.internal.stacktrace.StackTraceTrimmingStrategy;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -88,8 +99,9 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
   }
 
   @Override
-  public void onBeginSession(@NonNull String sessionId, long timestamp) {
-    final CrashlyticsReport capturedReport = dataCapture.captureReportData(sessionId, timestamp);
+  public void onBeginSession(@NonNull String sessionId, long timestampSeconds) {
+    final CrashlyticsReport capturedReport =
+        dataCapture.captureReportData(sessionId, timestampSeconds);
 
     reportPersistence.persistReport(capturedReport);
   }
@@ -119,6 +131,34 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
       @NonNull Throwable event, @NonNull Thread thread, @NonNull String sessionId, long timestamp) {
     Logger.getLogger().v("Persisting non-fatal event for session " + sessionId);
     persistEvent(event, thread, sessionId, EVENT_TYPE_LOGGED, timestamp, false);
+  }
+
+  @RequiresApi(api = Build.VERSION_CODES.R)
+  public void persistAppExitInfoEvent(
+      String sessionId,
+      ApplicationExitInfo applicationExitInfo,
+      LogFileManager logFileManagerForSession,
+      UserMetadata userMetadataForSession) {
+    long sessionStartTime = reportPersistence.getStartTimestampMillis(sessionId);
+    // ApplicationExitInfo did not occur during the session.
+    if (applicationExitInfo.getTimestamp() < sessionStartTime) {
+      return;
+    }
+
+    // Currently we only persist these if it is an ANR.
+    if (applicationExitInfo.getReason() != ApplicationExitInfo.REASON_ANR) {
+      return;
+    }
+
+    final CrashlyticsReport.Session.Event capturedEvent =
+        dataCapture.captureAnrEventData(convertApplicationExitInfo(applicationExitInfo));
+
+    Logger.getLogger().d("Persisting anr for session " + sessionId);
+    reportPersistence.persistEvent(
+        addLogsAndCustomKeysToEvent(
+            capturedEvent, logFileManagerForSession, userMetadataForSession),
+        sessionId,
+        true);
   }
 
   public void finalizeSessionWithNativeEvent(
@@ -184,6 +224,44 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
     return Tasks.whenAll(sendTasks);
   }
 
+  private CrashlyticsReport.Session.Event addLogsAndCustomKeysToEvent(
+      CrashlyticsReport.Session.Event capturedEvent) {
+    return addLogsAndCustomKeysToEvent(capturedEvent, logFileManager, reportMetadata);
+  }
+
+  private CrashlyticsReport.Session.Event addLogsAndCustomKeysToEvent(
+      CrashlyticsReport.Session.Event capturedEvent,
+      LogFileManager logFileManager,
+      UserMetadata reportMetadata) {
+    final CrashlyticsReport.Session.Event.Builder eventBuilder = capturedEvent.toBuilder();
+    final String content = logFileManager.getLogString();
+
+    if (content != null) {
+      eventBuilder.setLog(
+          CrashlyticsReport.Session.Event.Log.builder().setContent(content).build());
+    } else {
+      Logger.getLogger().v("No log data to include with this event.");
+    }
+
+    // TODO: Put this back once support for reports endpoint is removed.
+    // logFileManager.clearLog(); // Clear log to prepare for next event.
+
+    final List<CustomAttribute> sortedCustomAttributes =
+        getSortedCustomAttributes(reportMetadata.getCustomKeys());
+    final List<CustomAttribute> sortedInternalKeys =
+        getSortedCustomAttributes(reportMetadata.getInternalKeys());
+
+    if (!sortedCustomAttributes.isEmpty()) {
+      eventBuilder.setApp(
+          capturedEvent.getApp().toBuilder()
+              .setCustomAttributes(ImmutableList.from(sortedCustomAttributes))
+              .setInternalKeys(ImmutableList.from(sortedInternalKeys))
+              .build());
+    }
+
+    return eventBuilder.build();
+  }
+
   private void persistEvent(
       @NonNull Throwable event,
       @NonNull Thread thread,
@@ -204,36 +282,8 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
             MAX_CHAINED_EXCEPTION_DEPTH,
             includeAllThreads);
 
-    final CrashlyticsReport.Session.Event.Builder eventBuilder = capturedEvent.toBuilder();
-
-    final String content = logFileManager.getLogString();
-
-    if (content != null) {
-      eventBuilder.setLog(
-          CrashlyticsReport.Session.Event.Log.builder().setContent(content).build());
-    } else {
-      Logger.getLogger().v("No log data to include with this event.");
-    }
-
-    // TODO: Put this back once support for reports endpoint is removed.
-    // logFileManager.clearLog(); // Clear log to prepare for next event.
-
-    final List<CustomAttribute> sortedCustomAttributes =
-        getSortedCustomAttributes(reportMetadata.getCustomKeys());
-    final List<CustomAttribute> sortedInternalKeys =
-        getSortedCustomAttributes(reportMetadata.getInternalKeys());
-
-    if (!sortedCustomAttributes.isEmpty()) {
-      eventBuilder.setApp(
-          capturedEvent
-              .getApp()
-              .toBuilder()
-              .setCustomAttributes(ImmutableList.from(sortedCustomAttributes))
-              .setInternalKeys(ImmutableList.from(sortedInternalKeys))
-              .build());
-    }
-
-    reportPersistence.persistEvent(eventBuilder.build(), sessionId, isHighPriority);
+    reportPersistence.persistEvent(
+        addLogsAndCustomKeysToEvent(capturedEvent), sessionId, isHighPriority);
   }
 
   private boolean onReportSendComplete(@NonNull Task<CrashlyticsReportWithSessionId> task) {
@@ -265,5 +315,49 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
         (CustomAttribute attr1, CustomAttribute attr2) -> attr1.getKey().compareTo(attr2.getKey()));
 
     return attributesList;
+  }
+
+  @RequiresApi(api = Build.VERSION_CODES.R)
+  private static CrashlyticsReport.ApplicationExitInfo convertApplicationExitInfo(
+      ApplicationExitInfo applicationExitInfo) {
+    String traceFile = null;
+    try {
+      traceFile = convertInputStreamToString(applicationExitInfo.getTraceInputStream());
+    } catch (IOException | NullPointerException e) {
+      Logger.getLogger()
+          .w(
+              "Could not get input trace in application exit info: "
+                  + applicationExitInfo.toString()
+                  + " Error: "
+                  + e);
+    }
+
+    return CrashlyticsReport.ApplicationExitInfo.builder()
+        .setImportance(applicationExitInfo.getImportance())
+        .setProcessName(applicationExitInfo.getProcessName())
+        .setReasonCode(applicationExitInfo.getReason())
+        .setTimestamp(applicationExitInfo.getTimestamp())
+        .setPid(applicationExitInfo.getPid())
+        .setPss(applicationExitInfo.getPss())
+        .setRss(applicationExitInfo.getRss())
+        .setTraceFile(traceFile)
+        .build();
+  }
+
+  @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+  @VisibleForTesting
+  public static String convertInputStreamToString(@Nullable InputStream inputStream)
+      throws IOException, NullPointerException {
+    StringBuilder stringBuilder = new StringBuilder();
+    try (Reader reader =
+        new BufferedReader(
+            new InputStreamReader(inputStream, Charset.forName(StandardCharsets.UTF_8.name())))) {
+      int c = 0;
+      while ((c = reader.read()) != -1) {
+        stringBuilder.append((char) c);
+      }
+
+      return stringBuilder.toString();
+    }
   }
 }
