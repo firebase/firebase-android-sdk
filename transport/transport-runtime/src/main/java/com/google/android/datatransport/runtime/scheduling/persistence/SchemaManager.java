@@ -90,13 +90,13 @@ final class SchemaManager extends SQLiteOpenHelper {
           + "events_dropped_count BIGINT NOT NULL,"
           + "PRIMARY KEY(log_source, reason))";
 
-  private static final String CREATE_LOG_EVENT_DROPPED_TIME_TABLE =
-      "CREATE TABLE log_event_dropped_time (start_ms BIGINT PRIMARY KEY)";
+  private static final String CREATE_GLOBAL_LOG_EVENT_STATE_TABLE =
+      "CREATE TABLE global_log_event_state (last_metrics_upload_ms BIGINT PRIMARY KEY)";
 
   private static final String DROP_LOG_EVENT_DROPPED_SQL = "DROP TABLE IF EXISTS log_event_dropped";
 
-  private static final String DROP_LOG_EVENT_DROPPED_TIME_SQL =
-      "DROP TABLE IF EXISTS log_event_dropped_time";
+  private static final String DROP_GLOBAL_LOG_EVENT_STATE_SQL =
+      "DROP TABLE IF EXISTS global_log_event_state";
 
   static int SCHEMA_VERSION = 5;
 
@@ -129,7 +129,7 @@ final class SchemaManager extends SQLiteOpenHelper {
   private static final SchemaManager.Migration MIGRATION_TO_V5 =
       db -> {
         db.execSQL(CREATE_LOG_EVENT_DROPPED_TABLE);
-        db.execSQL(CREATE_LOG_EVENT_DROPPED_TIME_TABLE);
+        db.execSQL(CREATE_GLOBAL_LOG_EVENT_STATE_TABLE);
       };
 
   private static final List<Migration> INCREMENTAL_MIGRATIONS =
@@ -186,7 +186,7 @@ final class SchemaManager extends SQLiteOpenHelper {
     db.execSQL(DROP_CONTEXTS_SQL);
     db.execSQL(DROP_PAYLOADS_SQL);
     db.execSQL(DROP_LOG_EVENT_DROPPED_SQL);
-    db.execSQL(DROP_LOG_EVENT_DROPPED_TIME_SQL);
+    db.execSQL(DROP_GLOBAL_LOG_EVENT_STATE_SQL);
     // Indices are dropped automatically when the tables are dropped
 
     onCreate(db, newVersion);

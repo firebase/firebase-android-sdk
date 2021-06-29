@@ -246,10 +246,10 @@ class StateSimulations {
       long recordId = db.insert("log_event_dropped", null, metrics);
       assertThat(recordId).isNotEqualTo(-1);
 
-      ContentValues timeValue = new ContentValues();
-      timeValue.put("start_ms", 1311);
-      long timeValueId = db.insert("log_event_dropped_time", null, timeValue);
-      assertThat(timeValueId).isNotEqualTo(-1);
+      ContentValues globalState = new ContentValues();
+      globalState.put("last_metrics_upload_ms", 1311);
+      long stateId = db.insert("global_log_event_state", null, globalState);
+      assertThat(stateId).isNotEqualTo(-1);
     }
   }
 }
