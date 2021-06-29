@@ -13,8 +13,40 @@
 // limitations under the License.
 
 plugins {
+    id "com.google.protobuf"
     id 'firebase-library'
     id 'firebase-vendor'
+}
+
+// add a dependency on the protoc plugin's fat jar to make it available to protobuf below.
+configurations.create("protobuild")
+dependencies {
+    protobuild project(path: ":encoders:protoc-gen-firebase-encoders", configuration: "shadow")
+}
+
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:$protocVersion"
+    }
+    plugins {
+        firebaseEncoders {
+            path = configurations.protobuild.asPath
+        }
+    }
+    generateProtoTasks {
+        all().each { task ->
+            task.dependsOn configurations.protobuild
+            task.inputs.file 'code-gen-cfg.textproto'
+            task.plugins {
+                firebaseEncoders {
+                    option file('code-gen-cfg.textproto').path
+                }
+            }
+            task.builtins {
+                remove java
+            }
+        }
+    }
 }
 
 firebaseLibrary {
@@ -47,6 +79,11 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
     sourceSets {
+        main {
+            proto {
+                srcDir 'src/main/proto'
+            }
+        }
         androidTest {
             aidl {
                 srcDir 'src/androidTest/aidl'
@@ -66,7 +103,9 @@ dependencies {
     implementation project(':transport:transport-api')
     implementation 'androidx.annotation:annotation:1.1.0'
     implementation 'javax.inject:javax.inject:1'
-
+    implementation project(":encoders:firebase-encoders")
+    implementation project(":encoders:firebase-encoders-proto")
+    annotationProcessor project(":encoders:firebase-encoders-processor")
 
     vendor ('com.google.dagger:dagger:2.27') {
         exclude group: "javax.inject", module: "javax.inject"
