@@ -15,7 +15,6 @@
 package com.google.android.datatransport.runtime.scheduling.persistence;
 
 import android.content.ContentValues;
-import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteDatabaseLockedException;
@@ -46,6 +45,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.inject.Singleton;
 
 /** {@link EventStore} implementation backed by a SQLite database. */
@@ -64,7 +64,7 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
   private final Clock wallClock;
   private final Clock monotonicClock;
   private final EventStoreConfig config;
-  private final Context context;
+  private final String packageName;
 
   @Inject
   SQLiteEventStore(
@@ -72,13 +72,13 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
       @Monotonic Clock clock,
       EventStoreConfig config,
       SchemaManager schemaManager,
-      Context context) {
+      @Named("PACKAGE_NAME") String packageName) {
 
     this.schemaManager = schemaManager;
     this.wallClock = wallClock;
     this.monotonicClock = clock;
     this.config = config;
-    this.context = context;
+    this.packageName = packageName;
   }
 
   @VisibleForTesting
