@@ -21,7 +21,6 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import androidx.test.core.app.ApplicationProvider;
-import androidx.test.platform.app.InstrumentationRegistry;
 import com.google.android.datatransport.Encoding;
 import com.google.android.datatransport.Priority;
 import com.google.android.datatransport.runtime.EncodedPayload;
