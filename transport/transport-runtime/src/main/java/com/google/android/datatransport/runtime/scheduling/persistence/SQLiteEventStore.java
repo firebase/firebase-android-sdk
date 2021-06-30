@@ -57,7 +57,8 @@ import javax.inject.Singleton;
 /** {@link EventStore} implementation backed by a SQLite database. */
 @Singleton
 @WorkerThread
-public class SQLiteEventStore implements EventStore, SynchronizationGuard, ClientAnalyticsStore {
+public class SQLiteEventStore
+    implements EventStore, SynchronizationGuard, ClientHealthMetricsStore {
 
   private static final String LOG_TAG = "SQLiteEventStore";
 

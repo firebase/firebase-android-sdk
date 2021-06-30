@@ -668,8 +668,8 @@ public class SQLiteEventStoreTest {
 
   private static final Correspondence<LogSourceMetrics, LogSourceMetrics>
       CLIENT_METRICS_CORRESPONDENCE =
-      Correspondence.from(
-          SQLiteEventStoreTest::compareLogSourceMetricsByFields, "compare by fields");
+          Correspondence.from(
+              SQLiteEventStoreTest::compareLogSourceMetricsByFields, "compare by fields");
 
   private static boolean compareLogSourceMetricsByFields(
       LogSourceMetrics actual, LogSourceMetrics expected) {
