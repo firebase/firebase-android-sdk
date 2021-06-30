@@ -15,7 +15,6 @@
 package com.google.android.datatransport.runtime.scheduling.persistence;
 
 import android.content.ContentValues;
-import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteDatabaseLockedException;
@@ -42,6 +41,7 @@ import com.google.android.datatransport.runtime.time.Clock;
 import com.google.android.datatransport.runtime.time.Monotonic;
 import com.google.android.datatransport.runtime.time.WallTime;
 import com.google.android.datatransport.runtime.util.PriorityMapping;
+import dagger.Lazy;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -52,6 +52,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.inject.Singleton;
 
 /** {@link EventStore} implementation backed by a SQLite database. */
@@ -71,7 +72,7 @@ public class SQLiteEventStore
   private final Clock wallClock;
   private final Clock monotonicClock;
   private final EventStoreConfig config;
-  private final Context context;
+  private final Lazy<String> packageName;
 
   @Inject
   SQLiteEventStore(
@@ -79,13 +80,13 @@ public class SQLiteEventStore
       @Monotonic Clock clock,
       EventStoreConfig config,
       SchemaManager schemaManager,
-      Context context) {
+      @Named("PACKAGE_NAME") Lazy<String> packageName) {
 
     this.schemaManager = schemaManager;
     this.wallClock = wallClock;
     this.monotonicClock = clock;
     this.config = config;
-    this.context = context;
+    this.packageName = packageName;
   }
 
   @VisibleForTesting
@@ -613,7 +614,7 @@ public class SQLiteEventStore
                   populateLogSourcesMetrics(clientMetricsBuilder, metricsMap);
                   setTimeWindow(clientMetricsBuilder, currentTime);
                   setGlobalMetrics(clientMetricsBuilder);
-                  setAppNamespace(clientMetricsBuilder);
+                  clientMetricsBuilder.setAppNamespace(packageName.get());
                   return clientMetricsBuilder.build();
                 }));
   }
@@ -654,10 +655,6 @@ public class SQLiteEventStore
                     .setMaxCacheSizeBytes(EventStoreConfig.DEFAULT.getMaxStorageSizeInBytes())
                     .build())
             .build());
-  }
-
-  private void setAppNamespace(ClientMetrics.Builder clientMetricsBuilder) {
-    clientMetricsBuilder.setAppNamespace(context.getPackageName());
   }
 
   /**

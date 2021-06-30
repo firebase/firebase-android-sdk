@@ -18,11 +18,9 @@ import static com.google.android.datatransport.runtime.scheduling.persistence.SQ
 import static com.google.android.datatransport.runtime.scheduling.persistence.SchemaManager.SCHEMA_VERSION;
 import static com.google.common.truth.Truth.assertThat;
 
-import android.content.Context;
 import android.database.DatabaseUtils;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.platform.app.InstrumentationRegistry;
 import com.google.android.datatransport.Encoding;
 import com.google.android.datatransport.Priority;
 import com.google.android.datatransport.runtime.EncodedPayload;
@@ -35,6 +33,7 @@ import com.google.android.datatransport.runtime.time.Clock;
 import com.google.android.datatransport.runtime.time.TestClock;
 import com.google.android.datatransport.runtime.time.UptimeClock;
 import com.google.common.truth.Correspondence;
+import dagger.Lazy;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collections;
@@ -116,11 +115,12 @@ public class SQLiteEventStoreTest {
   private static final String LOG_SOURCE_3 = "source3";
 
   private final TestClock clock = new TestClock(1);
-  private final Context context = InstrumentationRegistry.getInstrumentation().getContext();
-  private final SQLiteEventStore store = newStoreWithConfig(clock, CONFIG, context);
+  private final Lazy<String> packageName =
+      () -> ApplicationProvider.getApplicationContext().getPackageName();
+  private final SQLiteEventStore store = newStoreWithConfig(clock, CONFIG, packageName);
 
   private static SQLiteEventStore newStoreWithConfig(
-      Clock clock, EventStoreConfig config, Context context) {
+      Clock clock, EventStoreConfig config, Lazy<String> packageName) {
     return new SQLiteEventStore(
         clock,
         new UptimeClock(),
@@ -129,7 +129,7 @@ public class SQLiteEventStoreTest {
             ApplicationProvider.getApplicationContext(),
             UUID.randomUUID().toString(),
             SCHEMA_VERSION),
-        context);
+        packageName);
   }
 
   @Test
@@ -374,14 +374,14 @@ public class SQLiteEventStoreTest {
         newStoreWithConfig(
             clock,
             CONFIG.toBuilder().setMaxStorageSizeInBytes(store.getByteSize()).build(),
-            context);
+            packageName);
     assertThat(storeUnderTest.persist(TRANSPORT_CONTEXT, EVENT)).isNull();
 
     storeUnderTest =
         newStoreWithConfig(
             clock,
             CONFIG.toBuilder().setMaxStorageSizeInBytes(store.getByteSize() + 1).build(),
-            context);
+            packageName);
     assertThat(storeUnderTest.persist(TRANSPORT_CONTEXT, EVENT)).isNotNull();
   }
 
@@ -617,7 +617,7 @@ public class SQLiteEventStoreTest {
     store.resetClientMetrics();
 
     ClientMetrics clientMetrics = store.loadClientMetrics();
-    assertThat(clientMetrics.getAppNamespace()).isEqualTo(context.getPackageName());
+    assertThat(clientMetrics.getAppNamespace()).isEqualTo(packageName.get());
   }
 
   @Test
