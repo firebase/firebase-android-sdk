@@ -22,6 +22,7 @@ import com.google.android.datatransport.runtime.time.Clock;
 import com.google.android.datatransport.runtime.time.Monotonic;
 import com.google.android.datatransport.runtime.time.WallTime;
 import dagger.Binds;
+import dagger.Lazy;
 import dagger.Module;
 import dagger.Provides;
 import javax.inject.Named;
@@ -41,7 +42,7 @@ public abstract class SpyEventStoreModule {
       @Monotonic Clock clock,
       EventStoreConfig config,
       SchemaManager schemaManager,
-      @Named("PACKAGE_NAME") String packageName) {
+      @Named("PACKAGE_NAME") Lazy<String> packageName) {
     return spy(new SQLiteEventStore(wallClock, clock, config, schemaManager, packageName));
   }
 

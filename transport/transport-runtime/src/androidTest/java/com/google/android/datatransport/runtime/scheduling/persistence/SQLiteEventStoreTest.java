@@ -29,6 +29,7 @@ import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.time.Clock;
 import com.google.android.datatransport.runtime.time.TestClock;
 import com.google.android.datatransport.runtime.time.UptimeClock;
+import dagger.Lazy;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collections;
@@ -66,11 +67,12 @@ public class SQLiteEventStoreTest {
           .build();
 
   private final TestClock clock = new TestClock(1);
-  private final String packageName = ApplicationProvider.getApplicationContext().getPackageName();
+  private final Lazy<String> packageName =
+      () -> ApplicationProvider.getApplicationContext().getPackageName();
   private final SQLiteEventStore store = newStoreWithConfig(clock, CONFIG, packageName);
 
   private static SQLiteEventStore newStoreWithConfig(
-      Clock clock, EventStoreConfig config, String packageName) {
+      Clock clock, EventStoreConfig config, Lazy<String> packageName) {
     return new SQLiteEventStore(
         clock,
         new UptimeClock(),

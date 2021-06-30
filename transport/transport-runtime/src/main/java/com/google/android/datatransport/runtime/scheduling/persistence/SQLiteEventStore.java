@@ -35,6 +35,7 @@ import com.google.android.datatransport.runtime.time.Clock;
 import com.google.android.datatransport.runtime.time.Monotonic;
 import com.google.android.datatransport.runtime.time.WallTime;
 import com.google.android.datatransport.runtime.util.PriorityMapping;
+import dagger.Lazy;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -64,7 +65,7 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
   private final Clock wallClock;
   private final Clock monotonicClock;
   private final EventStoreConfig config;
-  private final String packageName;
+  private final Lazy<String> packageName;
 
   @Inject
   SQLiteEventStore(
@@ -72,7 +73,7 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
       @Monotonic Clock clock,
       EventStoreConfig config,
       SchemaManager schemaManager,
-      @Named("PACKAGE_NAME") String packageName) {
+      @Named("PACKAGE_NAME") Lazy<String> packageName) {
 
     this.schemaManager = schemaManager;
     this.wallClock = wallClock;
