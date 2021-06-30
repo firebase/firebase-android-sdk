@@ -28,6 +28,7 @@ import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.time.TestClock;
 import com.google.android.datatransport.runtime.time.UptimeClock;
 import com.google.android.datatransport.runtime.util.PriorityMapping;
+import dagger.Lazy;
 import java.nio.charset.Charset;
 import java.util.Map;
 import org.junit.Assert;
@@ -70,7 +71,8 @@ public class SchemaManagerTest {
       EventStoreConfig.DEFAULT.toBuilder().setLoadBatchSize(5).setEventCleanUpAge(HOUR).build();
 
   private final TestClock clock = new TestClock(1);
-  private final String packageName = ApplicationProvider.getApplicationContext().getPackageName();
+  private final Lazy<String> packageName =
+      () -> ApplicationProvider.getApplicationContext().getPackageName();
 
   @Test
   public void persist_correctlyRoundTrips() {
