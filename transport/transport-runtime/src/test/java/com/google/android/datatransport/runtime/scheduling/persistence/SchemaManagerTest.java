@@ -72,7 +72,7 @@ public class SchemaManagerTest {
       EventStoreConfig.DEFAULT.toBuilder().setLoadBatchSize(5).setEventCleanUpAge(HOUR).build();
 
   private final TestClock clock = new TestClock(1);
-  Context context = InstrumentationRegistry.getInstrumentation().getContext();
+  private final Context context = ApplicationProvider.getApplicationContext();
 
   @Test
   public void persist_correctlyRoundTrips() {
