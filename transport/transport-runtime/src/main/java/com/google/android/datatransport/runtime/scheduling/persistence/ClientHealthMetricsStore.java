@@ -22,7 +22,7 @@ import com.google.android.datatransport.runtime.firebase.transport.LogEventDropp
  *
  * <p>Responsible for storing, updating, and retrieving client analytics data.
  */
-public interface ClientAnalyticsStore {
+public interface ClientHealthMetricsStore {
   /**
    * Record log event dropped.
    *
