@@ -29,7 +29,7 @@ package com.example.my;
 
 import "google/protobuf/timestamp.proto";
 
-message MyProto {
+message SimpleProto {
   int32 value = 1;
   .google.protobuf.Timestamp time = 2;
 }
@@ -93,8 +93,8 @@ Note:
 - Only need to specify the "root" proto object, anything it references will automatically be included.
 ```textproto
 # code_gen_cfg.textproto
-# proto-file: google3/third_party/firebase/android/encoders/protoc_gen/proto/config.proto
-# proto-message: CodeGenConfig
+# proto-file: src/main/proto/my.proto
+# proto-message: SimpleProto
 
 # all types will be vendored in this package
 vendor_package: "com.google"
