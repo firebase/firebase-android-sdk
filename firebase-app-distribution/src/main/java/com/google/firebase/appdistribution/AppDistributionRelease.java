@@ -15,46 +15,43 @@
 package com.google.firebase.appdistribution;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import com.google.auto.value.AutoValue;
 
 /**
- * Data class for AppDistributionRelease object returned by checkForUpdate() and
+ * This class represents the AppDistributionRelease object returned by checkForUpdate() and
  * updateToLatestRelease()
+ *
+ * <p>It is an immutable value class implemented by AutoValue.
+ *
+ * @see <a
+ *     href="https://github.com/google/auto/tree/master/value">https://github.com/google/auto/tree/master/value</a>
  */
-public final class AppDistributionRelease {
-  private final String displayVersion;
-  private final String buildVersion;
-  private final String releaseNotes;
-  private final BinaryType binaryType;
-
-  AppDistributionRelease(
-      String displayVersion, String buildVersion, String releaseNotes, BinaryType binaryType) {
-    this.displayVersion = displayVersion;
-    this.buildVersion = buildVersion;
-    this.releaseNotes = releaseNotes;
-    this.binaryType = binaryType;
-  }
-
+@AutoValue
+public abstract class AppDistributionRelease {
   /** The short bundle version of this build (example 1.0.0) */
   @NonNull
-  public String getDisplayVersion() {
-    return displayVersion;
-  }
+  public abstract String getDisplayVersion();
 
   /** The bundle version of this build (example: 123) */
   @NonNull
-  public String getBuildVersion() {
-    return buildVersion;
-  }
+  public abstract String getBuildVersion();
 
   /** The release notes for this build */
-  @NonNull
-  public String getReleaseNotes() {
-    return releaseNotes;
-  }
+  @Nullable
+  public abstract String getReleaseNotes();
 
   /** The binary type for this build */
   @NonNull
-  public BinaryType getBinaryType() {
-    return binaryType;
+  public abstract BinaryType getBinaryType();
+
+  @NonNull
+  public static AppDistributionRelease create(
+      @NonNull String displayVersion,
+      @NonNull String buildVersion,
+      @Nullable String releaseNotes,
+      @NonNull BinaryType binaryType) {
+    return new AutoValue_AppDistributionRelease(
+        displayVersion, buildVersion, releaseNotes, binaryType);
   }
 }
