@@ -15,6 +15,7 @@
 package com.google.firebase.appdistribution;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.firebase.FirebaseException;
 
 /** Possible exceptions thrown in FirebaseAppDistribution */
@@ -55,12 +56,17 @@ public class FirebaseAppDistributionException extends FirebaseException {
   }
 
   @NonNull private final Status status;
-  @NonNull private final AppDistributionRelease release;
+  @Nullable private final AppDistributionRelease release;
 
   FirebaseAppDistributionException(
-      @NonNull Status status, @NonNull AppDistributionRelease release) {
+      @NonNull Status status, @Nullable AppDistributionRelease release) {
     this.status = status;
     this.release = release;
+  }
+
+  FirebaseAppDistributionException(@NonNull Status status) {
+    this.status = status;
+    this.release = null;
   }
 
   /** Get cached release when error was thrown */

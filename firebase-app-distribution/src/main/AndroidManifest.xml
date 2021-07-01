@@ -24,5 +24,16 @@
                 android:name="com.google.firebase.components:com.google.firebase.appdistribution.FirebaseAppDistributionRegistrar"
                 android:value="com.google.firebase.components.ComponentRegistrar" />
         </service>
+
+        <activity android:name=".SignInResultActivity" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+
+                <data android:scheme="${applicationId}" android:host="authredirect" />
+
+            </intent-filter>
+        </activity>
     </application>
 </manifest>
