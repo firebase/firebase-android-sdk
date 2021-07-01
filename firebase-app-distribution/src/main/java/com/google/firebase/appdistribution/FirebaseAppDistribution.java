@@ -39,6 +39,9 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.installations.FirebaseInstallationsApi;
+import com.google.firebase.installations.InstallationTokenResult;
+
+import java.net.ProtocolException;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -119,6 +122,42 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
    */
   @NonNull
   public Task<AppDistributionRelease> checkForUpdate() {
+    String fid;
+    firebaseInstallationsApi
+            .getId().addOnSuccessListener(new OnSuccessListener<String>() {
+      @Override
+      public void onSuccess(String fid) {
+        String appId = firebaseApp.getOptions().getApplicationId();
+        String apiKey = firebaseApp.getOptions().getApiKey();
+        firebaseInstallationsApi.getToken(false).addOnSuccessListener(new OnSuccessListener<InstallationTokenResult>() {
+          @Override
+          public void onSuccess(InstallationTokenResult installationTokenResult) {
+            String token = installationTokenResult.getToken();
+            FirebaseAppDistributionTesterApiClient client =
+                    new FirebaseAppDistributionTesterApiClient(fid, appId, apiKey, token);
+            try {
+              Thread t = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                  try {
+                    client.fetchLatestRelease();
+                  } catch (Exception e) {
+                    e.printStackTrace();
+                  }
+                }
+              });
+              t.start();
+
+            } catch (Exception e) {
+              Log.v(TAG, "client failed: " + e.getMessage());
+              e.printStackTrace();
+            }
+          }
+        });
+      }
+    });
+
+
     return Tasks.forResult(null);
   }
 
