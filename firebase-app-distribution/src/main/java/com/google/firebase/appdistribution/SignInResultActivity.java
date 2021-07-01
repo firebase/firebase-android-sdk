@@ -18,6 +18,10 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+/**
+ * Activity opened through Deep Link when returning from web signIn flow. SignIn task is successful
+ * when SignInResultActivity is created.
+ */
 public class SignInResultActivity extends AppCompatActivity {
 
   @Override

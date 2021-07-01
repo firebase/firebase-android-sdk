@@ -98,7 +98,7 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void signInTester_whenDialogConfirmed_andChromeAvailable_opensCustomTab() {
+  public void signInTester_whenDialogConfirmedAndChromeAvailable_opensCustomTab() {
 
     firebaseAppDistribution.onActivityResumed(activity);
     final ResolveInfo resolveInfo = new ResolveInfo();
@@ -106,7 +106,6 @@ public class FirebaseAppDistributionTest {
     final Intent customTabIntent =
         new Intent("android.support.customtabs.action.CustomTabsService");
     customTabIntent.setPackage("com.android.chrome");
-    // todo: change to addActivityForIntent
     shadowPackageManager.addResolveInfoForIntent(customTabIntent, resolveInfo);
 
     Task<Void> signInTask = firebaseAppDistribution.signInTester();
@@ -122,7 +121,7 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void signInTester_whenReopenApp_duringSignIn_taskFails() {
+  public void signInTester_whenReopenAppDuringSignIn_taskFails() {
     firebaseAppDistribution.onActivityResumed(activity);
     Task<Void> signInTask = firebaseAppDistribution.signInTester();
     if (ShadowAlertDialog.getLatestDialog() instanceof AlertDialog) {
@@ -138,7 +137,7 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void signInTester_whenReturn_fromSignIn_taskSucceeds() {
+  public void signInTester_whenReturnFromSignIn_taskSucceeds() {
     firebaseAppDistribution.onActivityResumed(activity);
     Task<Void> signInTask = firebaseAppDistribution.signInTester();
     if (ShadowAlertDialog.getLatestDialog() instanceof AlertDialog) {

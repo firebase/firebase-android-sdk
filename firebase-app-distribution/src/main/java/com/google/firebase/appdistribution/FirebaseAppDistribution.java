@@ -1,3 +1,17 @@
+// Copyright 2021 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package com.google.firebase.appdistribution;
 
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_CANCELED;
@@ -35,7 +49,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
   private static final String TAG = "FirebaseAppDistribution";
   private Activity currentActivity;
   @VisibleForTesting private boolean currentlySigningIn = false;
-  private TaskCompletionSource<Void> signInTaskCompletionSource;
+  private TaskCompletionSource<Void> signInTaskCompletionSource = null;
 
   /** Constructor for FirebaseAppDistribution */
   public FirebaseAppDistribution(
@@ -73,15 +87,11 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
    */
   @NonNull
   public Task<AppDistributionRelease> updateToLatestRelease() {
-    Log.v("updateToLatestRelease", "called");
-    Log.v("updateToLatestRelease", currentActivity.getClass().getName());
 
     TaskCompletionSource<AppDistributionRelease> taskCompletionSource =
         new TaskCompletionSource<>();
 
-    Task<Void> signInTask = signInTester();
-
-    signInTask
+    signInTester()
         .addOnSuccessListener(
             new OnSuccessListener<Void>() {
               @Override
@@ -131,7 +141,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     return resolveInfos != null && !resolveInfos.isEmpty();
   }
 
-  public static @NonNull String getApplicationName(@NonNull Context context) {
+  private static String getApplicationName(Context context) {
     try {
       return context.getApplicationInfo().loadLabel(context.getPackageManager()).toString();
     } catch (Exception e) {
@@ -140,23 +150,14 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     }
   }
 
-  private void openSignIn(Uri uri) {
+  private void openSignInFlowInBrowser(Uri uri) {
     currentlySigningIn = true;
     if (supportsCustomTabs(firebaseApp.getApplicationContext())) {
       // If we can launch a chrome view, try that.
-      CustomTabsIntent.Builder builder = new CustomTabsIntent.Builder();
-
-      builder.setStartAnimations(
-          currentActivity.getApplicationContext(), R.anim.slide_in_right, R.anim.slide_out_left);
-
-      builder.setExitAnimations(
-          currentActivity.getApplicationContext(), R.anim.slide_in_left, R.anim.slide_out_right);
-
-      CustomTabsIntent customTabsIntent = builder.build();
+      CustomTabsIntent customTabsIntent = new CustomTabsIntent.Builder().build();
       Intent intent = customTabsIntent.intent;
       intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
       intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-
       customTabsIntent.launchUrl(currentActivity, uri);
 
     } else {
@@ -169,14 +170,22 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     }
   }
 
-  /** Signs in the App Distribution tester. Presents the tester with a Google sign in UI */
-  @NonNull
-  public Task<Void> signInTester() {
-    //    TaskCompletionSource<Void> taskCompletionSource = new TaskCompletionSource<>();
-    this.signInTaskCompletionSource = new TaskCompletionSource<>();
+  private OnSuccessListener<String> getFidGenerationOnSuccessListener(Context context) {
+    return new OnSuccessListener<String>() {
+      @Override
+      public void onSuccess(String fid) {
+        Uri uri =
+            Uri.parse(
+                String.format(
+                    "https://appdistribution.firebase.dev/nba/pub/apps/"
+                        + "%s/installations/%s/buildalerts?appName=%s",
+                    firebaseApp.getOptions().getApplicationId(), fid, getApplicationName(context)));
+        openSignInFlowInBrowser(uri);
+      }
+    };
+  }
 
-    Context context = firebaseApp.getApplicationContext();
-
+  private AlertDialog getSignInAlertDialog(Context context) {
     AlertDialog alertDialog = new AlertDialog.Builder(currentActivity).create();
     alertDialog.setTitle(context.getString(R.string.signin_dialog_title));
     alertDialog.setMessage(context.getString(R.string.singin_dialog_message));
@@ -188,25 +197,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
           public void onClick(DialogInterface dialogInterface, int i) {
             firebaseInstallationsApi
                 .getId()
-                .addOnSuccessListener(
-                    new OnSuccessListener<String>() {
-                      @Override
-                      public void onSuccess(String fid) {
-
-                        Uri uri =
-                            Uri.parse(
-                                String.format(
-                                    "https://appdistribution.firebase.dev/nba/pub/apps/"
-                                        + "%s/installations/%s/buildalerts?appName=%s",
-                                    firebaseApp.getOptions().getApplicationId(),
-                                    fid,
-                                    getApplicationName(context)));
-
-                        Log.v("FAD Url", uri.toString());
-                        Log.v("FirebaseApp name", firebaseApp.getName());
-                        openSignIn(uri);
-                      }
-                    })
+                .addOnSuccessListener(getFidGenerationOnSuccessListener(context))
                 .addOnFailureListener(
                     new OnFailureListener() {
                       @Override
@@ -228,14 +219,23 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
             dialogInterface.dismiss();
           }
         });
+    return alertDialog;
+  }
 
+  /** Signs in the App Distribution tester. Presents the tester with a Google sign in UI */
+  @NonNull
+  public Task<Void> signInTester() {
+
+    this.signInTaskCompletionSource = new TaskCompletionSource<>();
+    Context context = firebaseApp.getApplicationContext();
+    AlertDialog alertDialog = getSignInAlertDialog(context);
     alertDialog.show();
 
     return signInTaskCompletionSource.getTask();
   }
 
   private void setSignInTaskCompletionError(FirebaseAppDistributionException e) {
-    if (!signInTaskCompletionSource.getTask().isComplete()) {
+    if (signInTaskCompletionSource != null && !signInTaskCompletionSource.getTask().isComplete()) {
       this.signInTaskCompletionSource.setException(e);
     }
   }
@@ -269,9 +269,12 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
   public void onActivityResumed(@NonNull @NotNull Activity activity) {
     Log.d(TAG, "Resumed activity: " + activity.getClass().getName());
 
+    // signInActivity is only opened after successful redirection from signIn flow,
+    // should not be treated as reentering the app
     if (activity instanceof SignInResultActivity) {
       return;
     }
+
     // throw error if app reentered during signin
     if (currentlySigningIn) {
       currentlySigningIn = false;
@@ -299,7 +302,6 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
   @Override
   public void onActivityDestroyed(@NonNull @NotNull Activity activity) {
     Log.d(TAG, "Destroyed activity: " + activity.getClass().getName());
-    // destroyed comes after resumed
     if (this.currentActivity == activity) {
       this.currentActivity = null;
     }
