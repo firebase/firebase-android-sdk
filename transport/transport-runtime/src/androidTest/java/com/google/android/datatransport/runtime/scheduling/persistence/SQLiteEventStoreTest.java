@@ -29,6 +29,7 @@ import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.time.Clock;
 import com.google.android.datatransport.runtime.time.TestClock;
 import com.google.android.datatransport.runtime.time.UptimeClock;
+import dagger.Lazy;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collections;
@@ -66,9 +67,12 @@ public class SQLiteEventStoreTest {
           .build();
 
   private final TestClock clock = new TestClock(1);
-  private final SQLiteEventStore store = newStoreWithConfig(clock, CONFIG);
+  private final Lazy<String> packageName =
+      () -> ApplicationProvider.getApplicationContext().getPackageName();
+  private final SQLiteEventStore store = newStoreWithConfig(clock, CONFIG, packageName);
 
-  private static SQLiteEventStore newStoreWithConfig(Clock clock, EventStoreConfig config) {
+  private static SQLiteEventStore newStoreWithConfig(
+      Clock clock, EventStoreConfig config, Lazy<String> packageName) {
     return new SQLiteEventStore(
         clock,
         new UptimeClock(),
@@ -76,7 +80,8 @@ public class SQLiteEventStoreTest {
         new SchemaManager(
             ApplicationProvider.getApplicationContext(),
             UUID.randomUUID().toString(),
-            SCHEMA_VERSION));
+            SCHEMA_VERSION),
+        packageName);
   }
 
   @Test
@@ -319,12 +324,16 @@ public class SQLiteEventStoreTest {
   public void persist_whenDbSizeOnDiskIsAtLimit_shouldNotPersistNewEvents() {
     SQLiteEventStore storeUnderTest =
         newStoreWithConfig(
-            clock, CONFIG.toBuilder().setMaxStorageSizeInBytes(store.getByteSize()).build());
+            clock,
+            CONFIG.toBuilder().setMaxStorageSizeInBytes(store.getByteSize()).build(),
+            packageName);
     assertThat(storeUnderTest.persist(TRANSPORT_CONTEXT, EVENT)).isNull();
 
     storeUnderTest =
         newStoreWithConfig(
-            clock, CONFIG.toBuilder().setMaxStorageSizeInBytes(store.getByteSize() + 1).build());
+            clock,
+            CONFIG.toBuilder().setMaxStorageSizeInBytes(store.getByteSize() + 1).build(),
+            packageName);
     assertThat(storeUnderTest.persist(TRANSPORT_CONTEXT, EVENT)).isNotNull();
   }
 
