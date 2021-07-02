@@ -548,27 +548,23 @@ public class SQLiteEventStore
   @Override
   public void recordLogEventDropped(
       long eventsDroppedCount, LogEventDropped.Reason reason, String logSource) {
-    if (!isLogEventDroppedExist(reason, logSource)) {
-      ContentValues metrics = new ContentValues();
-      metrics.put("log_source", logSource);
-      metrics.put("reason", reason.getNumber());
-      metrics.put("events_dropped_count", eventsDroppedCount);
-      inTransaction(
-          db -> {
-            db.insert("log_event_dropped", null, metrics);
-            return null;
-          });
-    } else {
-      String query =
-          "UPDATE log_event_dropped SET events_dropped_count = events_dropped_count + "
-              + eventsDroppedCount
-              + " WHERE log_source = ? AND reason = ?";
-      inTransaction(
-          db -> {
-            db.execSQL(query, new String[] {logSource, Integer.toString(reason.getNumber())});
-            return null;
-          });
-    }
+    String sql =
+        "INSERT INTO log_event_dropped (log_source, reason, events_dropped_count) "
+            + "VALUES(?, ?, ?) "
+            + "ON CONFLICT(log_source, reason) "
+            + "DO UPDATE SET events_dropped_count = events_dropped_count + ?";
+    String[] bindingArgs =
+        new String[] {
+          logSource,
+          Integer.toString(reason.getNumber()),
+          Long.toString(eventsDroppedCount),
+          Long.toString(eventsDroppedCount)
+        };
+    inTransaction(
+        db -> {
+          db.execSQL(sql, bindingArgs);
+          return null;
+        });
   }
 
   private LogEventDropped.Reason convertToReason(int number) {
@@ -590,13 +586,6 @@ public class SQLiteEventStore
       throw new IllegalArgumentException(
           number + " is not valid. No matched LogEventDropped.Reason found.");
     }
-  }
-
-  private boolean isLogEventDroppedExist(LogEventDropped.Reason reason, String logSource) {
-    String query = "SELECT 1 FROM log_event_dropped" + " WHERE log_source = ? AND reason = ?";
-    String[] selectionArgs = new String[] {logSource, Integer.toString(reason.getNumber())};
-    return inTransaction(
-        db -> tryWithCursor(db.rawQuery(query, selectionArgs), cursor -> cursor.getCount() > 0));
   }
 
   /**
