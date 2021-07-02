@@ -548,21 +548,26 @@ public class SQLiteEventStore
   @Override
   public void recordLogEventDropped(
       long eventsDroppedCount, LogEventDropped.Reason reason, String logSource) {
-    String sql =
-        "INSERT INTO log_event_dropped (log_source, reason, events_dropped_count) "
-            + "VALUES(?, ?, ?) "
-            + "ON CONFLICT(log_source, reason) "
-            + "DO UPDATE SET events_dropped_count = events_dropped_count + ?";
-    String[] bindingArgs =
-        new String[] {
-          logSource,
-          Integer.toString(reason.getNumber()),
-          Long.toString(eventsDroppedCount),
-          Long.toString(eventsDroppedCount)
-        };
     inTransaction(
         db -> {
-          db.execSQL(sql, bindingArgs);
+          String selectSql =
+              "SELECT 1 FROM log_event_dropped" + " WHERE log_source = ? AND reason = ?";
+          String[] selectionArgs = new String[] {logSource, Integer.toString(reason.getNumber())};
+          boolean isRowExist =
+              tryWithCursor(db.rawQuery(selectSql, selectionArgs), cursor -> cursor.getCount() > 0);
+          if (!isRowExist) {
+            ContentValues metrics = new ContentValues();
+            metrics.put("log_source", logSource);
+            metrics.put("reason", reason.getNumber());
+            metrics.put("events_dropped_count", eventsDroppedCount);
+            db.insert("log_event_dropped", null, metrics);
+          } else {
+            String updateSql =
+                "UPDATE log_event_dropped SET events_dropped_count = events_dropped_count + "
+                    + eventsDroppedCount
+                    + " WHERE log_source = ? AND reason = ?";
+            db.execSQL(updateSql, new String[] {logSource, Integer.toString(reason.getNumber())});
+          }
           return null;
         });
   }
