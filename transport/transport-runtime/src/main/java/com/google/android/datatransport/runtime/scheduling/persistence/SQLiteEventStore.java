@@ -571,6 +571,27 @@ public class SQLiteEventStore
     }
   }
 
+  private LogEventDropped.Reason convertToReason(int number) {
+    if (number == LogEventDropped.Reason.REASON_UNKNOWN.getNumber()) {
+      return LogEventDropped.Reason.REASON_UNKNOWN;
+    } else if (number == LogEventDropped.Reason.MESSAGE_TOO_OLD.getNumber()) {
+      return LogEventDropped.Reason.MESSAGE_TOO_OLD;
+    } else if (number == LogEventDropped.Reason.CACHE_FULL.getNumber()) {
+      return LogEventDropped.Reason.CACHE_FULL;
+    } else if (number == LogEventDropped.Reason.PAYLOAD_TOO_BIG.getNumber()) {
+      return LogEventDropped.Reason.PAYLOAD_TOO_BIG;
+    } else if (number == LogEventDropped.Reason.MAX_RETRIES_REACHED.getNumber()) {
+      return LogEventDropped.Reason.MAX_RETRIES_REACHED;
+    } else if (number == LogEventDropped.Reason.INVALID_PAYLOD.getNumber()) {
+      return LogEventDropped.Reason.INVALID_PAYLOD;
+    } else if (number == LogEventDropped.Reason.SERVER_ERROR.getNumber()) {
+      return LogEventDropped.Reason.SERVER_ERROR;
+    } else {
+      throw new IllegalArgumentException(
+          number + " is not valid. No matched LogEventDropped.Reason found.");
+    }
+  }
+
   private boolean isLogEventDroppedExist(LogEventDropped.Reason reason, String logSource) {
     String query = "SELECT 1 FROM log_event_dropped" + " WHERE log_source = ? AND reason = ?";
     String[] selectionArgs = new String[] {logSource, Integer.toString(reason.getNumber())};
@@ -597,8 +618,7 @@ public class SQLiteEventStore
                 cursor -> {
                   while (cursor.moveToNext()) {
                     String logSource = cursor.getString(0);
-                    LogEventDropped.Reason reason =
-                        LogEventDropped.Reason.values()[cursor.getInt(1)];
+                    LogEventDropped.Reason reason = convertToReason(cursor.getInt(1));
                     long eventsDroppedCount = cursor.getLong(2);
                     if (!metricsMap.containsKey(logSource)) {
                       metricsMap.put(logSource, new ArrayList<>());
