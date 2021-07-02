@@ -1,3 +1,7 @@
+# 20.0.1
+- [fixed] Fixed an issue where connections would hang when using appcheck
+  without Auth.
+
 # 19.7.0
 - [added] Added `Query.startAfter()` and `Query.endBefore()` filter for paginating
   RTDB queries.
