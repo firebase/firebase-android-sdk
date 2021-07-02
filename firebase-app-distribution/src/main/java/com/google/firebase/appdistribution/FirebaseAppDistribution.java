@@ -31,6 +31,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import androidx.browser.customtabs.CustomTabsIntent;
 import com.google.android.gms.common.internal.Preconditions;
+import com.google.android.gms.tasks.CancellationToken;
+import com.google.android.gms.tasks.CancellationTokenSource;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
@@ -50,6 +52,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
   private Activity currentActivity;
   @VisibleForTesting private boolean currentlySigningIn = false;
   private TaskCompletionSource<Void> signInTaskCompletionSource = null;
+  private CancellationTokenSource signInCancellationSource;
 
   /** Constructor for FirebaseAppDistribution */
   public FirebaseAppDistribution(
@@ -177,9 +180,11 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
         Uri uri =
             Uri.parse(
                 String.format(
-                    "https://appdistribution.firebase.dev/nba/pub/apps/"
-                        + "%s/installations/%s/buildalerts?appName=%s",
-                    firebaseApp.getOptions().getApplicationId(), fid, getApplicationName(context)));
+                    "https://appdistribution.firebase.google.com/pub/apps/%s/installations/%s/buildalerts?appName=%s&packageName=%s",
+                    firebaseApp.getOptions().getApplicationId(),
+                    fid,
+                    getApplicationName(context),
+                    context.getPackageName()));
         openSignInFlowInBrowser(uri);
       }
     };
@@ -225,8 +230,13 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
   /** Signs in the App Distribution tester. Presents the tester with a Google sign in UI */
   @NonNull
   public Task<Void> signInTester() {
+    if (signInTaskCompletionSource != null && !signInTaskCompletionSource.getTask().isComplete()) {
+      signInCancellationSource.cancel();
+    }
 
-    this.signInTaskCompletionSource = new TaskCompletionSource<>();
+    signInCancellationSource = new CancellationTokenSource();
+    signInTaskCompletionSource = new TaskCompletionSource<>(signInCancellationSource.getToken());
+
     Context context = firebaseApp.getApplicationContext();
     AlertDialog alertDialog = getSignInAlertDialog(context);
     alertDialog.show();
@@ -236,7 +246,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
 
   private void setSignInTaskCompletionError(FirebaseAppDistributionException e) {
     if (signInTaskCompletionSource != null && !signInTaskCompletionSource.getTask().isComplete()) {
-      this.signInTaskCompletionSource.setException(e);
+      signInTaskCompletionSource.setException(e);
     }
   }
 
