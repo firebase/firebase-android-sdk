@@ -23,6 +23,8 @@ import android.app.Application;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import android.os.Bundle;
@@ -30,6 +32,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import androidx.browser.customtabs.CustomTabsIntent;
+import androidx.core.content.pm.PackageInfoCompat;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.tasks.CancellationTokenSource;
 import com.google.android.gms.tasks.OnFailureListener;
@@ -40,8 +43,6 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
-
-import java.net.ProtocolException;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -122,43 +123,79 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
    */
   @NonNull
   public Task<AppDistributionRelease> checkForUpdate() {
-    String fid;
+    TaskCompletionSource<AppDistributionRelease> checkForUpdateTaskCompletionSource =
+        new TaskCompletionSource<>();
     firebaseInstallationsApi
-            .getId().addOnSuccessListener(new OnSuccessListener<String>() {
-      @Override
-      public void onSuccess(String fid) {
-        String appId = firebaseApp.getOptions().getApplicationId();
-        String apiKey = firebaseApp.getOptions().getApiKey();
-        firebaseInstallationsApi.getToken(false).addOnSuccessListener(new OnSuccessListener<InstallationTokenResult>() {
-          @Override
-          public void onSuccess(InstallationTokenResult installationTokenResult) {
-            String token = installationTokenResult.getToken();
-            FirebaseAppDistributionTesterApiClient client =
-                    new FirebaseAppDistributionTesterApiClient(fid, appId, apiKey, token);
-            try {
-              Thread t = new Thread(new Runnable() {
-                @Override
-                public void run() {
-                  try {
-                    client.fetchLatestRelease();
-                  } catch (Exception e) {
-                    e.printStackTrace();
-                  }
-                }
-              });
-              t.start();
+        .getId()
+        .addOnSuccessListener(
+            new OnSuccessListener<String>() {
+              @Override
+              public void onSuccess(String fid) {
+                String appId = firebaseApp.getOptions().getApplicationId();
+                String apiKey = firebaseApp.getOptions().getApiKey();
+                firebaseInstallationsApi
+                    .getToken(true)
+                    .addOnSuccessListener(
+                        new OnSuccessListener<InstallationTokenResult>() {
+                          @Override
+                          public void onSuccess(InstallationTokenResult installationTokenResult) {
+                            String authToken = installationTokenResult.getToken();
+                            Context context = firebaseApp.getApplicationContext();
 
-            } catch (Exception e) {
-              Log.v(TAG, "client failed: " + e.getMessage());
-              e.printStackTrace();
-            }
-          }
-        });
-      }
-    });
+                            PackageInfo pInfo = null;
+                            try {
+                              pInfo =
+                                  context
+                                      .getPackageManager()
+                                      .getPackageInfo(context.getPackageName(), 0);
+                            } catch (PackageManager.NameNotFoundException e) {
+                              checkForUpdateTaskCompletionSource.setException(
+                                  new FirebaseAppDistributionException(
+                                      FirebaseAppDistributionException.Status.UNKNOWN));
+                            }
+                            long versionCode = PackageInfoCompat.getLongVersionCode(pInfo);
 
+                            Log.v("build version", String.valueOf(versionCode));
+                            FirebaseAppDistributionTesterApiClient client =
+                                new FirebaseAppDistributionTesterApiClient(
+                                    fid, appId, apiKey, authToken, versionCode);
+                            try {
+                              Log.v("testing", "thread");
+                              Thread t =
+                                  new Thread(
+                                      new Runnable() {
+                                        @Override
+                                        public void run() {
+                                          try {
+                                            Log.v("testing", "beforefetch");
+                                            AppDistributionRelease latestRelease =
+                                                client.fetchLatestRelease();
 
-    return Tasks.forResult(null);
+                                            checkForUpdateTaskCompletionSource.setResult(
+                                                latestRelease);
+                                          } catch (Exception e) {
+                                            checkForUpdateTaskCompletionSource.setException(
+                                                new FirebaseAppDistributionException(
+                                                    FirebaseAppDistributionException.Status
+                                                        .UNKNOWN));
+                                          }
+                                        }
+                                      });
+                              t.start();
+                              Log.v("testing", "afterthread");
+
+                            } catch (Exception e) {
+                              Log.v(TAG, "client failed: " + e.getMessage());
+                              checkForUpdateTaskCompletionSource.setException(
+                                  new FirebaseAppDistributionException(
+                                      FirebaseAppDistributionException.Status.UNKNOWN));
+                            }
+                          }
+                        });
+              }
+            });
+
+    return checkForUpdateTaskCompletionSource.getTask();
   }
 
   /**
