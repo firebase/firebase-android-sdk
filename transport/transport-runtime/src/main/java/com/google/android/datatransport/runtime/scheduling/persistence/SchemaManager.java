@@ -93,6 +93,9 @@ final class SchemaManager extends SQLiteOpenHelper {
   private static final String CREATE_GLOBAL_LOG_EVENT_STATE_TABLE =
       "CREATE TABLE global_log_event_state (last_metrics_upload_ms BIGINT PRIMARY KEY)";
 
+  private static final String CREATE_INITIAL_GLOBAL_LOG_EVENT_STATE_VALUE_SQL =
+      "INSERT INTO global_log_event_state VALUES (" + System.currentTimeMillis() + ")";
+
   private static final String DROP_LOG_EVENT_DROPPED_SQL = "DROP TABLE IF EXISTS log_event_dropped";
 
   private static final String DROP_GLOBAL_LOG_EVENT_STATE_SQL =
@@ -130,6 +133,7 @@ final class SchemaManager extends SQLiteOpenHelper {
       db -> {
         db.execSQL(CREATE_LOG_EVENT_DROPPED_TABLE);
         db.execSQL(CREATE_GLOBAL_LOG_EVENT_STATE_TABLE);
+        db.execSQL(CREATE_INITIAL_GLOBAL_LOG_EVENT_STATE_VALUE_SQL);
       };
 
   private static final List<Migration> INCREMENTAL_MIGRATIONS =
