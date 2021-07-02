@@ -583,8 +583,12 @@ public class SQLiteEventStore
     } else if (number == LogEventDropped.Reason.SERVER_ERROR.getNumber()) {
       return LogEventDropped.Reason.SERVER_ERROR;
     } else {
-      throw new IllegalArgumentException(
-          number + " is not valid. No matched LogEventDropped.Reason found.");
+      Logging.d(
+          LOG_TAG,
+          "%n is not valid. No matched LogEventDropped-Reason found. "
+              + "Treated it as REASON_UNKNOWN",
+          number);
+      return LogEventDropped.Reason.REASON_UNKNOWN;
     }
   }
 
@@ -595,7 +599,6 @@ public class SQLiteEventStore
    */
   @Override
   public ClientMetrics loadClientMetrics() {
-    long currentTime = wallClock.getTime();
     ClientMetrics.Builder clientMetricsBuilder = ClientMetrics.newBuilder();
     Map<String, List<LogEventDropped>> metricsMap = new HashMap<>();
     String query = "SELECT log_source, reason, events_dropped_count FROM log_event_dropped";
@@ -621,8 +624,8 @@ public class SQLiteEventStore
                                 .build());
                   }
                   populateLogSourcesMetrics(clientMetricsBuilder, metricsMap);
-                  setTimeWindow(clientMetricsBuilder, currentTime);
-                  setGlobalMetrics(clientMetricsBuilder);
+                  clientMetricsBuilder.setWindow(getTimeWindow());
+                  clientMetricsBuilder.setGlobalMetrics(getGlobalMetrics());
                   clientMetricsBuilder.setAppNamespace(packageName.get());
                   return clientMetricsBuilder.build();
                 }));
@@ -639,31 +642,30 @@ public class SQLiteEventStore
     }
   }
 
-  private void setTimeWindow(ClientMetrics.Builder clientMetricsBuilder, long currentTime) {
-    inTransaction(
+  private TimeWindow getTimeWindow() {
+    long currentTime = wallClock.getTime();
+
+    return inTransaction(
         db ->
             tryWithCursor(
                 db.rawQuery(
-                    "SELECT last_metrics_upload_ms FROM global_log_event_state", new String[] {}),
+                    "SELECT last_metrics_upload_ms FROM global_log_event_state LIMIT 1",
+                    new String[] {}),
                 cursor -> {
-                  while (cursor.moveToNext()) {
-                    long start_ms = cursor.getLong(0);
-                    clientMetricsBuilder.setWindow(
-                        TimeWindow.newBuilder().setStartMs(start_ms).setEndMs(currentTime).build());
-                  }
-                  return null;
+                  cursor.moveToNext();
+                  long start_ms = cursor.getLong(0);
+                  return TimeWindow.newBuilder().setStartMs(start_ms).setEndMs(currentTime).build();
                 }));
   }
 
-  private void setGlobalMetrics(ClientMetrics.Builder clientMetricsBuilder) {
-    clientMetricsBuilder.setGlobalMetrics(
-        GlobalMetrics.newBuilder()
-            .setStorageMetrics(
-                StorageMetrics.newBuilder()
-                    .setCurrentCacheSizeBytes(getByteSize())
-                    .setMaxCacheSizeBytes(EventStoreConfig.DEFAULT.getMaxStorageSizeInBytes())
-                    .build())
-            .build());
+  private GlobalMetrics getGlobalMetrics() {
+    return GlobalMetrics.newBuilder()
+        .setStorageMetrics(
+            StorageMetrics.newBuilder()
+                .setCurrentCacheSizeBytes(getByteSize())
+                .setMaxCacheSizeBytes(EventStoreConfig.DEFAULT.getMaxStorageSizeInBytes())
+                .build())
+        .build();
   }
 
   /**
