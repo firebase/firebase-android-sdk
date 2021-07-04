@@ -308,13 +308,17 @@ public class MessagingAnalytics {
     }
 
     // TODO(b/78465387) Use components dependency framework to get analyticsConnector obj
-    @SuppressWarnings("FirebaseUseExplicitDependencies")
-    AnalyticsConnector analytics = FirebaseApp.getInstance().get(AnalyticsConnector.class);
-    if (analytics != null) {
-      analytics.logEvent(ScionAnalytics.ORIGIN_FCM, event, scionPayload);
-    } else {
-      // Client did not include the measurement library
-      Log.w(TAG, "Unable to log event: analytics library is missing");
+    try {
+      @SuppressWarnings("FirebaseUseExplicitDependencies")
+      AnalyticsConnector analytics = FirebaseApp.getInstance().get(AnalyticsConnector.class);
+      if (analytics != null) {
+        analytics.logEvent(ScionAnalytics.ORIGIN_FCM, event, scionPayload);
+      } else {
+        // Client did not include the measurement library
+        Log.w(TAG, "Unable to log event: analytics library is missing");
+      }
+    } catch (IllegalStateException e) {
+      Log.w(TAG, "Unable to log event: Firebase app not initialized");
     }
   }
 
