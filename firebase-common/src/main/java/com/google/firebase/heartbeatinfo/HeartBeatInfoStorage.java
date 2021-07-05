@@ -147,7 +147,7 @@ class HeartBeatInfoStorage {
   */
   synchronized boolean shouldSendSdkHeartBeat(String heartBeatTag, long millis) {
     if (sharedPreferences.contains(heartBeatTag)) {
-      if (!isSameDateUtc(sharedPreferences.getLong(heartBeatTag, -1), millis)) {
+      if (isSameDateUtc(sharedPreferences.getLong(heartBeatTag, -1), millis)) {
         sharedPreferences.edit().putLong(heartBeatTag, millis).apply();
         return true;
       }
