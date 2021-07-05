@@ -137,7 +137,7 @@ class HeartBeatInfoStorage {
     Date targetDate = new Date(target);
     String baseDateString = getFormattedDateString(baseDate);
     String targetDateString = getFormattedDateString(targetDate);
-    return baseDateString.equals(targetDateString)
+    return baseDateString.equals(targetDateString);
   }
 
   /*
