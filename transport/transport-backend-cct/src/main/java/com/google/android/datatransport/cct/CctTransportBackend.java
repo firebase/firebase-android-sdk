@@ -36,6 +36,7 @@ import com.google.android.datatransport.cct.internal.NetworkConnectionInfo;
 import com.google.android.datatransport.cct.internal.QosTier;
 import com.google.android.datatransport.runtime.EncodedPayload;
 import com.google.android.datatransport.runtime.EventInternal;
+import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.backends.BackendRequest;
 import com.google.android.datatransport.runtime.backends.BackendResponse;
 import com.google.android.datatransport.runtime.backends.TransportBackend;
@@ -394,6 +395,11 @@ final class CctTransportBackend implements TransportBackend {
       Logging.e(LOG_TAG, "Could not make request to the backend", e);
       return BackendResponse.transientError();
     }
+  }
+
+  @Override
+  public boolean shouldUploadClientHealthMetric(TransportContext transportContext) {
+    return transportContext.getExtras() != null;
   }
 
   @VisibleForTesting

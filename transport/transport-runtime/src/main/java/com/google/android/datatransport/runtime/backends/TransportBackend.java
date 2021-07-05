@@ -15,9 +15,14 @@
 package com.google.android.datatransport.runtime.backends;
 
 import com.google.android.datatransport.runtime.EventInternal;
+import com.google.android.datatransport.runtime.TransportContext;
 
 public interface TransportBackend {
   EventInternal decorate(EventInternal event);
 
   BackendResponse send(BackendRequest backendRequest);
+
+  default boolean shouldUploadClientHealthMetric(TransportContext transportContext) {
+    return false;
+  }
 }
