@@ -93,7 +93,7 @@ public class DefaultHeartBeatInfo implements HeartBeatInfo {
           HeartBeat heartBeat;
           for (SdkHeartBeatResult sdkHeartBeatResult : sdkHeartBeatResults) {
             shouldSendGlobalHeartBeat =
-                HeartBeatInfoStorage.isSameDateUtc(
+                !HeartBeatInfoStorage.isSameDateUtc(
                     lastGlobalHeartBeat, sdkHeartBeatResult.getMillis());
             if (shouldSendGlobalHeartBeat) {
               heartBeat = HeartBeat.COMBINED;

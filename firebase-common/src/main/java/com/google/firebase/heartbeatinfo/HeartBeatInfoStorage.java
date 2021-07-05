@@ -130,7 +130,11 @@ class HeartBeatInfoStorage {
   static boolean isSameDateUtc(long base, long target) {
     Date baseDate = new Date(base);
     Date targetDate = new Date(target);
-    return !(FORMATTER.format(baseDate).equals(FORMATTER.format(targetDate)));
+    return baseDate
+        .toInstant()
+        .toString()
+        .substring(0, 10)
+        .equals(targetDate.toInstant().toString().substring(0, 10));
   }
 
   /*
@@ -140,7 +144,7 @@ class HeartBeatInfoStorage {
   */
   synchronized boolean shouldSendSdkHeartBeat(String heartBeatTag, long millis) {
     if (sharedPreferences.contains(heartBeatTag)) {
-      if (isSameDateUtc(sharedPreferences.getLong(heartBeatTag, -1), millis)) {
+      if (!isSameDateUtc(sharedPreferences.getLong(heartBeatTag, -1), millis)) {
         sharedPreferences.edit().putLong(heartBeatTag, millis).apply();
         return true;
       }

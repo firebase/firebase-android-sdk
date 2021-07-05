@@ -82,9 +82,9 @@ public class HeartBeatInfoStorageTest {
 
   @Test
   public void isSameDate_returnsCorrectly() {
-    assertThat(HeartBeatInfoStorage.isSameDateUtc(0, 1000000000)).isTrue();
-    assertThat(HeartBeatInfoStorage.isSameDateUtc(0, 0)).isFalse();
-    assertThat(HeartBeatInfoStorage.isSameDateUtc(1000000000, 1000001000)).isFalse();
+    assertThat(HeartBeatInfoStorage.isSameDateUtc(0, 1000000000)).isFalse();
+    assertThat(HeartBeatInfoStorage.isSameDateUtc(0, 0)).isTrue();
+    assertThat(HeartBeatInfoStorage.isSameDateUtc(1000000000, 1000001000)).isTrue();
   }
 
   @Test
