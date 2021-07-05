@@ -137,7 +137,7 @@ class HeartBeatInfoStorage {
     String targetDateString = targetDate
             .toInstant()
             .toString()
-            .substring(0, 10)
+            .substring(0, 10);
     return baseDateString.equals(targetDateString);
   }
 
