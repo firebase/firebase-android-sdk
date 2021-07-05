@@ -23,10 +23,10 @@ public interface TransportBackend {
   BackendResponse send(BackendRequest backendRequest);
 
   /**
-   * This method indicate whether data sent through {@link TransportBackend} with
-   * {@link TransportContext} should be recorded as client health metrics and upload to Flg server.
+   * This method indicate whether data sent through {@link TransportBackend} with {@link
+   * TransportContext} should be recorded as client health metrics and upload to Flg server.
    *
-   * By default, it returns false, and events will not be recorded and uploaded to Flg server.
+   * <p>By default, it returns false, and events will not be recorded and uploaded to Flg server.
    */
   default boolean shouldUploadClientHealthMetrics(TransportContext transportContext) {
     return false;
