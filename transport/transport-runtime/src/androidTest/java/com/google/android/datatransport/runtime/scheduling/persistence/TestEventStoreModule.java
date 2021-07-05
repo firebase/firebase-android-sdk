@@ -15,6 +15,13 @@
 package com.google.android.datatransport.runtime.scheduling.persistence;
 
 import android.content.Context;
+import com.google.android.datatransport.runtime.EventInternal;
+import com.google.android.datatransport.runtime.TransportContext;
+import com.google.android.datatransport.runtime.backends.BackendRegistry;
+import com.google.android.datatransport.runtime.backends.BackendRequest;
+import com.google.android.datatransport.runtime.backends.BackendResponse;
+import com.google.android.datatransport.runtime.backends.TransportBackend;
+import com.google.android.datatransport.runtime.backends.UploadOptions;
 import com.google.android.datatransport.runtime.synchronization.SynchronizationGuard;
 import dagger.Binds;
 import dagger.Module;
@@ -60,5 +67,26 @@ public abstract class TestEventStoreModule {
   @Named("PACKAGE_NAME")
   static String packageName(Context context) {
     return context.getPackageName();
+  }
+
+  @Provides
+  static BackendRegistry backendRegistry() {
+    return name ->
+        new TransportBackend() {
+          @Override
+          public EventInternal decorate(EventInternal event) {
+            return null;
+          }
+
+          @Override
+          public BackendResponse send(BackendRequest backendRequest) {
+            return null;
+          }
+
+          @Override
+          public UploadOptions getUploadOptions(TransportContext transportContext) {
+            return UploadOptions.builder().setShouldUploadClientHealthMetrics(true).build();
+          }
+        };
   }
 }

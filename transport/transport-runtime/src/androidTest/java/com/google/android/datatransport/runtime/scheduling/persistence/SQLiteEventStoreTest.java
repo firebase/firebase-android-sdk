@@ -26,6 +26,11 @@ import com.google.android.datatransport.Priority;
 import com.google.android.datatransport.runtime.EncodedPayload;
 import com.google.android.datatransport.runtime.EventInternal;
 import com.google.android.datatransport.runtime.TransportContext;
+import com.google.android.datatransport.runtime.backends.BackendRegistry;
+import com.google.android.datatransport.runtime.backends.BackendRequest;
+import com.google.android.datatransport.runtime.backends.BackendResponse;
+import com.google.android.datatransport.runtime.backends.TransportBackend;
+import com.google.android.datatransport.runtime.backends.UploadOptions;
 import com.google.android.datatransport.runtime.firebase.transport.ClientMetrics;
 import com.google.android.datatransport.runtime.firebase.transport.LogEventDropped;
 import com.google.android.datatransport.runtime.firebase.transport.LogSourceMetrics;
@@ -114,13 +119,33 @@ public class SQLiteEventStoreTest {
   private static final String LOG_SOURCE_2 = "source2";
   private static final String LOG_SOURCE_3 = "source3";
 
+  private static final BackendRegistry fakeRegistry =
+      name ->
+          new TransportBackend() {
+            @Override
+            public EventInternal decorate(EventInternal event) {
+              return null;
+            }
+
+            @Override
+            public BackendResponse send(BackendRequest backendRequest) {
+              return null;
+            }
+
+            @Override
+            public UploadOptions getUploadOptions(TransportContext transportContext) {
+              return UploadOptions.builder().setShouldUploadClientHealthMetrics(true).build();
+            }
+          };
+
   private final TestClock clock = new TestClock(1);
   private final Lazy<String> packageName =
       () -> ApplicationProvider.getApplicationContext().getPackageName();
-  private final SQLiteEventStore store = newStoreWithConfig(clock, CONFIG, packageName);
+  private final SQLiteEventStore store =
+      newStoreWithConfig(clock, CONFIG, packageName, fakeRegistry);
 
   private static SQLiteEventStore newStoreWithConfig(
-      Clock clock, EventStoreConfig config, Lazy<String> packageName) {
+      Clock clock, EventStoreConfig config, Lazy<String> packageName, BackendRegistry registry) {
     return new SQLiteEventStore(
         clock,
         new UptimeClock(),
@@ -129,7 +154,8 @@ public class SQLiteEventStoreTest {
             ApplicationProvider.getApplicationContext(),
             UUID.randomUUID().toString(),
             SCHEMA_VERSION),
-        packageName);
+        packageName,
+        registry);
   }
 
   @Test
@@ -374,14 +400,16 @@ public class SQLiteEventStoreTest {
         newStoreWithConfig(
             clock,
             CONFIG.toBuilder().setMaxStorageSizeInBytes(store.getByteSize()).build(),
-            packageName);
+            packageName,
+            fakeRegistry);
     assertThat(storeUnderTest.persist(TRANSPORT_CONTEXT, EVENT)).isNull();
 
     storeUnderTest =
         newStoreWithConfig(
             clock,
             CONFIG.toBuilder().setMaxStorageSizeInBytes(store.getByteSize() + 1).build(),
-            packageName);
+            packageName,
+            fakeRegistry);
     assertThat(storeUnderTest.persist(TRANSPORT_CONTEXT, EVENT)).isNotNull();
   }
 

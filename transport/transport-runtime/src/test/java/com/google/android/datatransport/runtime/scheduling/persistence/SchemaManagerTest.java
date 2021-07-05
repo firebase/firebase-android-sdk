@@ -25,6 +25,11 @@ import com.google.android.datatransport.Priority;
 import com.google.android.datatransport.runtime.EncodedPayload;
 import com.google.android.datatransport.runtime.EventInternal;
 import com.google.android.datatransport.runtime.TransportContext;
+import com.google.android.datatransport.runtime.backends.BackendRegistry;
+import com.google.android.datatransport.runtime.backends.BackendRequest;
+import com.google.android.datatransport.runtime.backends.BackendResponse;
+import com.google.android.datatransport.runtime.backends.TransportBackend;
+import com.google.android.datatransport.runtime.backends.UploadOptions;
 import com.google.android.datatransport.runtime.time.TestClock;
 import com.google.android.datatransport.runtime.time.UptimeClock;
 import com.google.android.datatransport.runtime.util.PriorityMapping;
@@ -66,6 +71,25 @@ public class SchemaManagerTest {
               new EncodedPayload(PROTOBUF_ENCODING, "World".getBytes(Charset.defaultCharset())))
           .build();
 
+  private static final BackendRegistry fakeRegistry =
+      name ->
+          new TransportBackend() {
+            @Override
+            public EventInternal decorate(EventInternal event) {
+              return null;
+            }
+
+            @Override
+            public BackendResponse send(BackendRequest backendRequest) {
+              return null;
+            }
+
+            @Override
+            public UploadOptions getUploadOptions(TransportContext transportContext) {
+              return UploadOptions.builder().setShouldUploadClientHealthMetrics(true).build();
+            }
+          };
+
   private static final long HOUR = 60 * 60 * 1000;
   private static final EventStoreConfig CONFIG =
       EventStoreConfig.DEFAULT.toBuilder().setLoadBatchSize(5).setEventCleanUpAge(HOUR).build();
@@ -79,7 +103,8 @@ public class SchemaManagerTest {
     SchemaManager schemaManager =
         new SchemaManager(ApplicationProvider.getApplicationContext(), DB_NAME, SCHEMA_VERSION);
     SQLiteEventStore store =
-        new SQLiteEventStore(clock, new UptimeClock(), CONFIG, schemaManager, packageName);
+        new SQLiteEventStore(
+            clock, new UptimeClock(), CONFIG, schemaManager, packageName, fakeRegistry);
 
     PersistedEvent newEvent = store.persist(CONTEXT1, EVENT1);
     Iterable<PersistedEvent> events = store.loadBatch(CONTEXT1);
@@ -96,7 +121,8 @@ public class SchemaManagerTest {
         new SchemaManager(ApplicationProvider.getApplicationContext(), DB_NAME, oldVersion);
 
     SQLiteEventStore store =
-        new SQLiteEventStore(clock, new UptimeClock(), CONFIG, schemaManager, packageName);
+        new SQLiteEventStore(
+            clock, new UptimeClock(), CONFIG, schemaManager, packageName, fakeRegistry);
 
     schemaManager.onUpgrade(schemaManager.getWritableDatabase(), oldVersion, newVersion);
     PersistedEvent newEvent1 = store.persist(CONTEXT1, EVENT1);
@@ -111,7 +137,8 @@ public class SchemaManagerTest {
     SchemaManager schemaManager =
         new SchemaManager(ApplicationProvider.getApplicationContext(), DB_NAME, oldVersion);
     SQLiteEventStore store =
-        new SQLiteEventStore(clock, new UptimeClock(), CONFIG, schemaManager, packageName);
+        new SQLiteEventStore(
+            clock, new UptimeClock(), CONFIG, schemaManager, packageName, fakeRegistry);
     // We simulate operations as done by an older SQLLiteEventStore at V1
     // We cannot simulate older operations with a newer client
     PersistedEvent event1 = simulatedPersistOnV1Database(schemaManager, CONTEXT1, EVENT1);
@@ -129,7 +156,8 @@ public class SchemaManagerTest {
     SchemaManager schemaManager =
         new SchemaManager(ApplicationProvider.getApplicationContext(), DB_NAME, oldVersion);
     SQLiteEventStore store =
-        new SQLiteEventStore(clock, new UptimeClock(), CONFIG, schemaManager, packageName);
+        new SQLiteEventStore(
+            clock, new UptimeClock(), CONFIG, schemaManager, packageName, fakeRegistry);
     // We simulate operations as done by an older SQLLiteEventStore at V1
     // We cannot simulate older operations with a newer client
     PersistedEvent event1 = simulatedPersistOnV1Database(schemaManager, CONTEXT1, EVENT1);

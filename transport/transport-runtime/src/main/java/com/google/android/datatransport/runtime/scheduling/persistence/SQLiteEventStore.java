@@ -28,6 +28,7 @@ import com.google.android.datatransport.Encoding;
 import com.google.android.datatransport.runtime.EncodedPayload;
 import com.google.android.datatransport.runtime.EventInternal;
 import com.google.android.datatransport.runtime.TransportContext;
+import com.google.android.datatransport.runtime.backends.BackendRegistry;
 import com.google.android.datatransport.runtime.firebase.transport.ClientMetrics;
 import com.google.android.datatransport.runtime.firebase.transport.GlobalMetrics;
 import com.google.android.datatransport.runtime.firebase.transport.LogEventDropped;
@@ -73,6 +74,7 @@ public class SQLiteEventStore
   private final Clock monotonicClock;
   private final EventStoreConfig config;
   private final Lazy<String> packageName;
+  private final BackendRegistry backendRegistry;
 
   @Inject
   SQLiteEventStore(
@@ -80,13 +82,15 @@ public class SQLiteEventStore
       @Monotonic Clock clock,
       EventStoreConfig config,
       SchemaManager schemaManager,
-      @Named("PACKAGE_NAME") Lazy<String> packageName) {
+      @Named("PACKAGE_NAME") Lazy<String> packageName,
+      BackendRegistry backendRegistry) {
 
     this.schemaManager = schemaManager;
     this.wallClock = wallClock;
     this.monotonicClock = clock;
     this.config = config;
     this.packageName = packageName;
+    this.backendRegistry = backendRegistry;
   }
 
   @VisibleForTesting
