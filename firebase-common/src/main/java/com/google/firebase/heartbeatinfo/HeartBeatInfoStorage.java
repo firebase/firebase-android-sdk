@@ -127,14 +127,18 @@ class HeartBeatInfoStorage {
     sharedPreferences.edit().remove(HEART_BEAT_COUNT_TAG).apply();
   }
 
-  static boolean isSameDateUtc(long base, long target) {
+  synchronized static boolean isSameDateUtc(long base, long target) {
     Date baseDate = new Date(base);
     Date targetDate = new Date(target);
-    return baseDate
-        .toInstant()
-        .toString()
-        .substring(0, 10)
-        .equals(targetDate.toInstant().toString().substring(0, 10));
+    String baseDateString = baseDate
+            .toInstant()
+            .toString()
+            .substring(0, 10);
+    String targetDateString = targetDate
+            .toInstant()
+            .toString()
+            .substring(0, 10)
+    return baseDateString.equals(targetDateString);
   }
 
   /*
