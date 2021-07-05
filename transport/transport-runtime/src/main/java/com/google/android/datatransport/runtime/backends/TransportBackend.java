@@ -28,7 +28,7 @@ public interface TransportBackend {
    *
    * <p>By default, it returns false, and events will not be recorded and uploaded to Flg server.
    */
-  default boolean shouldUploadClientHealthMetrics(TransportContext transportContext) {
-    return false;
+  default UploadOptions getUploadOptions(TransportContext transportContext) {
+    return UploadOptions.none();
   }
 }

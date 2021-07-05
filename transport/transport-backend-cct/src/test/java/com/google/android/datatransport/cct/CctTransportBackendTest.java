@@ -714,19 +714,23 @@ public class CctTransportBackendTest {
   @Test
   public void shouldUploadClientHealthMetrics_returnTrueIfSendToFlg() {
     assertThat(
-            BACKEND.shouldUploadClientHealthMetrics(
-                TransportContext.builder()
-                    .setBackendName("cct")
-                    .setExtras(CCTDestination.LEGACY_INSTANCE.getExtras())
-                    .build()))
+            BACKEND
+                .getUploadOptions(
+                    TransportContext.builder()
+                        .setBackendName("cct")
+                        .setExtras(CCTDestination.LEGACY_INSTANCE.getExtras())
+                        .build())
+                .shouldUploadClientHealthMetrics())
         .isTrue();
   }
 
   @Test
   public void shouldUploadClientHealthMetrics_returnFalseIfSendToCct() {
     assertThat(
-            BACKEND.shouldUploadClientHealthMetrics(
-                TransportContext.builder().setBackendName("cct").setExtras(null).build()))
+            BACKEND
+                .getUploadOptions(
+                    TransportContext.builder().setBackendName("cct").setExtras(null).build())
+                .shouldUploadClientHealthMetrics())
         .isFalse();
   }
 
