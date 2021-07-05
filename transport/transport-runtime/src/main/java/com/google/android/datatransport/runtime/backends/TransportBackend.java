@@ -15,9 +15,19 @@
 package com.google.android.datatransport.runtime.backends;
 
 import com.google.android.datatransport.runtime.EventInternal;
+import com.google.android.datatransport.runtime.TransportContext;
 
 public interface TransportBackend {
   EventInternal decorate(EventInternal event);
 
   BackendResponse send(BackendRequest backendRequest);
+
+  /**
+   * This method indicate whether data sent through {@link TransportBackend} should be uploaded.
+   *
+   * <p>By default, it will not be upload to anywhere.
+   */
+  default UploadOptions getUploadOptions(TransportContext transportContext) {
+    return UploadOptions.none();
+  }
 }
