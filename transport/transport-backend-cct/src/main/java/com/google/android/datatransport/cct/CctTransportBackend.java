@@ -36,11 +36,9 @@ import com.google.android.datatransport.cct.internal.NetworkConnectionInfo;
 import com.google.android.datatransport.cct.internal.QosTier;
 import com.google.android.datatransport.runtime.EncodedPayload;
 import com.google.android.datatransport.runtime.EventInternal;
-import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.backends.BackendRequest;
 import com.google.android.datatransport.runtime.backends.BackendResponse;
 import com.google.android.datatransport.runtime.backends.TransportBackend;
-import com.google.android.datatransport.runtime.backends.UploadOptions;
 import com.google.android.datatransport.runtime.logging.Logging;
 import com.google.android.datatransport.runtime.time.Clock;
 import com.google.firebase.encoders.DataEncoder;
@@ -396,13 +394,6 @@ final class CctTransportBackend implements TransportBackend {
       Logging.e(LOG_TAG, "Could not make request to the backend", e);
       return BackendResponse.transientError();
     }
-  }
-
-  @Override
-  public UploadOptions getUploadOptions(TransportContext transportContext) {
-    return UploadOptions.builder()
-        .setShouldUploadClientHealthMetrics(transportContext.getExtras() != null)
-        .build();
   }
 
   @VisibleForTesting
