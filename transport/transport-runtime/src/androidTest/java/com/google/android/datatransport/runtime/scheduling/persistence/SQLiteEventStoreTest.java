@@ -413,6 +413,29 @@ public class SQLiteEventStoreTest {
   }
 
   @Test
+  public void cleanUp_whenEventIsOld_shouldRecordLogEventDroppedDueToMessageTooOld() {
+    store.resetClientMetrics();
+    store.persist(TRANSPORT_CONTEXT, EVENT);
+    clock.advance(HOUR + 1);
+
+    store.cleanUp();
+
+    ClientMetrics clientMetrics = store.loadClientMetrics();
+    LogSourceMetrics logSourceMetrics =
+        LogSourceMetrics.newBuilder()
+            .setLogSource(EVENT.getTransportName())
+            .addLogEventDropped(
+                LogEventDropped.newBuilder()
+                    .setReason(LogEventDropped.Reason.MESSAGE_TOO_OLD)
+                    .setEventsDroppedCount(1)
+                    .build())
+            .build();
+    assertThat(clientMetrics.getLogSourceMetricsList())
+        .comparingElementsUsing(CLIENT_METRICS_CORRESPONDENCE)
+        .contains(logSourceMetrics);
+  }
+
+  @Test
   public void loadActiveContexts_whenNoContextsAvailable_shouldReturnEmptyList() {
     assertThat(store.loadActiveContexts()).isEmpty();
   }

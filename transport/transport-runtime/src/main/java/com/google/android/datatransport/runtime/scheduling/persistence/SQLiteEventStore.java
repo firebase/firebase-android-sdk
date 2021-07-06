@@ -352,7 +352,27 @@ public class SQLiteEventStore
   public int cleanUp() {
     long oneWeekAgo = wallClock.getTime() - config.getEventCleanUpAge();
     return inTransaction(
-        db -> db.delete("events", "timestamp_ms < ?", new String[] {String.valueOf(oneWeekAgo)}));
+        db -> {
+          String query =
+              "SELECT COUNT(*), transport_name FROM events "
+                  + "INNER JOIN transport_contexts ON (events.context_id=transport_contexts._id) "
+                  + "WHERE timestamp_ms < ? "
+                  + "GROUP BY transport_name";
+          String[] selectionArgs = new String[] {String.valueOf(oneWeekAgo)};
+          tryWithCursor(
+              db.rawQuery(query, selectionArgs),
+              cursor -> {
+                while (cursor.moveToNext()) {
+                  int count = cursor.getInt(0);
+                  String transportName = cursor.getString(1);
+                  recordLogEventDropped(
+                      count, LogEventDropped.Reason.MESSAGE_TOO_OLD, transportName);
+                }
+                return null;
+              });
+
+          return db.delete("events", "timestamp_ms < ?", selectionArgs);
+        });
   }
 
   @Override
