@@ -40,7 +40,6 @@ import com.google.android.datatransport.cct.internal.ClientInfo;
 import com.google.android.datatransport.cct.internal.NetworkConnectionInfo;
 import com.google.android.datatransport.runtime.EncodedPayload;
 import com.google.android.datatransport.runtime.EventInternal;
-import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.backends.BackendRequest;
 import com.google.android.datatransport.runtime.backends.BackendResponse;
 import com.google.android.datatransport.runtime.time.TestClock;
@@ -709,29 +708,6 @@ public class CctTransportBackendTest {
             .withRequestBody(matchingJsonPath("$[?(@.logRequest[1].logEvent.size() == 1)]")));
 
     assertEquals(BackendResponse.ok(3), response);
-  }
-
-  @Test
-  public void shouldUploadClientHealthMetrics_returnTrueIfSendToFlg() {
-    assertThat(
-            BACKEND
-                .getUploadOptions(
-                    TransportContext.builder()
-                        .setBackendName("cct")
-                        .setExtras(CCTDestination.LEGACY_INSTANCE.getExtras())
-                        .build())
-                .shouldUploadClientHealthMetrics())
-        .isTrue();
-  }
-
-  @Test
-  public void shouldUploadClientHealthMetrics_returnFalseIfSendToCct() {
-    assertThat(
-            BACKEND
-                .getUploadOptions(
-                    TransportContext.builder().setBackendName("cct").setExtras(null).build())
-                .shouldUploadClientHealthMetrics())
-        .isFalse();
   }
 
   // When there is no active network, the ConnectivityManager returns null when
