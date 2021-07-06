@@ -286,6 +286,31 @@ public class SQLiteEventStoreTest {
   }
 
   @Test
+  public void persist_whenDbSizeOnDiskIsAtLimit_shouldRecordLogEventDroppedDueToCacheFull() {
+    SQLiteEventStore storeUnderTest =
+        newStoreWithConfig(
+            clock,
+            CONFIG.toBuilder().setMaxStorageSizeInBytes(store.getByteSize()).build(),
+            packageName);
+
+    storeUnderTest.persist(TRANSPORT_CONTEXT, EVENT);
+
+    ClientMetrics clientMetrics = storeUnderTest.loadClientMetrics();
+    LogSourceMetrics logSourceMetrics =
+        LogSourceMetrics.newBuilder()
+            .setLogSource(EVENT.getTransportName())
+            .addLogEventDropped(
+                LogEventDropped.newBuilder()
+                    .setEventsDroppedCount(1)
+                    .setReason(REASON_CACHE_FULL)
+                    .build())
+            .build();
+    assertThat(clientMetrics.getLogSourceMetricsList())
+        .comparingElementsUsing(CLIENT_METRICS_CORRESPONDENCE)
+        .contains(logSourceMetrics);
+  }
+
+  @Test
   public void recordSuccess_deletesEvents() {
     PersistedEvent newEvent1 = store.persist(TRANSPORT_CONTEXT, EVENT);
     PersistedEvent newEvent2 = store.persist(TRANSPORT_CONTEXT, EVENT);

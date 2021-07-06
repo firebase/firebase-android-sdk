@@ -114,6 +114,8 @@ public class SQLiteEventStore
               // TODO(vkryachko): come up with a more sophisticated algorithm for limiting disk
               // space.
               if (isStorageAtLimit()) {
+                recordLogEventDropped(
+                    1, LogEventDropped.Reason.CACHE_FULL, event.getTransportName());
                 return -1L;
               }
 
