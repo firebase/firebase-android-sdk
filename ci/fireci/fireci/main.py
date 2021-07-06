@@ -18,7 +18,6 @@ from . import commands
 from . import plugins
 from .internal import main
 
-
 logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S %z %Z',
     format='[%(levelname).1s] %(asctime)s %(name)s: %(message)s',
