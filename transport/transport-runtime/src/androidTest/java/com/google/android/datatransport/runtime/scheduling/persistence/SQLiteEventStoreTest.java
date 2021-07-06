@@ -17,6 +17,7 @@ package com.google.android.datatransport.runtime.scheduling.persistence;
 import static com.google.android.datatransport.runtime.scheduling.persistence.SQLiteEventStore.tryWithCursor;
 import static com.google.android.datatransport.runtime.scheduling.persistence.SchemaManager.SCHEMA_VERSION;
 import static com.google.common.truth.Truth.assertThat;
+import static org.mockito.Mockito.mock;
 
 import android.database.DatabaseUtils;
 import androidx.test.core.app.ApplicationProvider;
@@ -26,6 +27,7 @@ import com.google.android.datatransport.Priority;
 import com.google.android.datatransport.runtime.EncodedPayload;
 import com.google.android.datatransport.runtime.EventInternal;
 import com.google.android.datatransport.runtime.TransportContext;
+import com.google.android.datatransport.runtime.backends.BackendRegistry;
 import com.google.android.datatransport.runtime.firebase.transport.ClientMetrics;
 import com.google.android.datatransport.runtime.firebase.transport.LogEventDropped;
 import com.google.android.datatransport.runtime.firebase.transport.LogSourceMetrics;
@@ -113,14 +115,16 @@ public class SQLiteEventStoreTest {
   private static final String LOG_SOURCE_1 = "source1";
   private static final String LOG_SOURCE_2 = "source2";
   private static final String LOG_SOURCE_3 = "source3";
+  private BackendRegistry mockRegistry = mock(BackendRegistry.class);
 
   private final TestClock clock = new TestClock(1);
   private final Lazy<String> packageName =
       () -> ApplicationProvider.getApplicationContext().getPackageName();
-  private final SQLiteEventStore store = newStoreWithConfig(clock, CONFIG, packageName);
+  private final SQLiteEventStore store =
+      newStoreWithConfig(clock, CONFIG, packageName, mockRegistry);
 
   private static SQLiteEventStore newStoreWithConfig(
-      Clock clock, EventStoreConfig config, Lazy<String> packageName) {
+      Clock clock, EventStoreConfig config, Lazy<String> packageName, BackendRegistry registry) {
     return new SQLiteEventStore(
         clock,
         new UptimeClock(),
@@ -129,7 +133,8 @@ public class SQLiteEventStoreTest {
             ApplicationProvider.getApplicationContext(),
             UUID.randomUUID().toString(),
             SCHEMA_VERSION),
-        packageName);
+        packageName,
+        registry);
   }
 
   @Test
@@ -374,14 +379,16 @@ public class SQLiteEventStoreTest {
         newStoreWithConfig(
             clock,
             CONFIG.toBuilder().setMaxStorageSizeInBytes(store.getByteSize()).build(),
-            packageName);
+            packageName,
+            mockRegistry);
     assertThat(storeUnderTest.persist(TRANSPORT_CONTEXT, EVENT)).isNull();
 
     storeUnderTest =
         newStoreWithConfig(
             clock,
             CONFIG.toBuilder().setMaxStorageSizeInBytes(store.getByteSize() + 1).build(),
-            packageName);
+            packageName,
+            mockRegistry);
     assertThat(storeUnderTest.persist(TRANSPORT_CONTEXT, EVENT)).isNotNull();
   }
 

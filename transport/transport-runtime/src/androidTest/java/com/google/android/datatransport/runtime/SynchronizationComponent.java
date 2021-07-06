@@ -15,6 +15,7 @@
 package com.google.android.datatransport.runtime;
 
 import android.content.Context;
+import com.google.android.datatransport.runtime.backends.BackendRegistryModule;
 import com.google.android.datatransport.runtime.scheduling.persistence.SQLiteEventStore;
 import com.google.android.datatransport.runtime.scheduling.persistence.TestEventStoreModule;
 import com.google.android.datatransport.runtime.synchronization.SynchronizationGuard;
@@ -23,7 +24,7 @@ import dagger.BindsInstance;
 import dagger.Component;
 import javax.inject.Singleton;
 
-@Component(modules = {TestEventStoreModule.class, TimeModule.class})
+@Component(modules = {TestEventStoreModule.class, TimeModule.class, BackendRegistryModule.class})
 @Singleton
 public abstract class SynchronizationComponent {
   private static SQLiteEventStore INSTANCE;
