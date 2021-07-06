@@ -355,7 +355,6 @@ public class SQLiteEventStore
         db -> {
           String query =
               "SELECT COUNT(*), transport_name FROM events "
-                  + "INNER JOIN transport_contexts ON (events.context_id=transport_contexts._id) "
                   + "WHERE timestamp_ms < ? "
                   + "GROUP BY transport_name";
           String[] selectionArgs = new String[] {String.valueOf(oneWeekAgo)};
