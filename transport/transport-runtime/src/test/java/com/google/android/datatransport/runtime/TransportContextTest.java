@@ -34,6 +34,9 @@ public class TransportContextTest {
           .setBackendName(BACKEND_NAME)
           .build();
 
+  private static final TransportContext CTX_EMPTY_EXTRAS =
+      TransportContext.builder().setPriority(Priority.DEFAULT).setBackendName(BACKEND_NAME).build();
+
   @Test
   public void withPriority_whenPriorityNotChanged_shouldReturnEqualContext() {
     assertThat(CTX.withPriority(Priority.DEFAULT)).isEqualTo(CTX);
@@ -53,5 +56,15 @@ public class TransportContextTest {
                 .setExtras(EXTRAS)
                 .setBackendName(BACKEND_NAME)
                 .build());
+  }
+
+  @Test
+  public void shouldUploadClientHealthMetrics_returnTrueExtrasIsNotEmpty() {
+    assertThat(CTX.shouldUploadClientHealthMetrics()).isTrue();
+  }
+
+  @Test
+  public void shouldUploadClientHealthMetrics_returnFalseExtrasIsEmpty() {
+    assertThat(CTX_EMPTY_EXTRAS.shouldUploadClientHealthMetrics()).isFalse();
   }
 }
