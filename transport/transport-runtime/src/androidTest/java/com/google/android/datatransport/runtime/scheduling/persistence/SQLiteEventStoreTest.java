@@ -18,6 +18,7 @@ import static com.google.android.datatransport.runtime.scheduling.persistence.SQ
 import static com.google.android.datatransport.runtime.scheduling.persistence.SchemaManager.SCHEMA_VERSION;
 import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import android.database.DatabaseUtils;
 import androidx.test.core.app.ApplicationProvider;
@@ -28,6 +29,8 @@ import com.google.android.datatransport.runtime.EncodedPayload;
 import com.google.android.datatransport.runtime.EventInternal;
 import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.backends.BackendRegistry;
+import com.google.android.datatransport.runtime.backends.TransportBackend;
+import com.google.android.datatransport.runtime.backends.UploadOptions;
 import com.google.android.datatransport.runtime.firebase.transport.ClientMetrics;
 import com.google.android.datatransport.runtime.firebase.transport.LogEventDropped;
 import com.google.android.datatransport.runtime.firebase.transport.LogSourceMetrics;
@@ -116,6 +119,7 @@ public class SQLiteEventStoreTest {
   private static final String LOG_SOURCE_2 = "source2";
   private static final String LOG_SOURCE_3 = "source3";
   private BackendRegistry mockRegistry = mock(BackendRegistry.class);
+  private TransportBackend mockBackend = mock(TransportBackend.class);
 
   private final TestClock clock = new TestClock(1);
   private final Lazy<String> packageName =
@@ -663,6 +667,57 @@ public class SQLiteEventStoreTest {
     store.resetClientMetrics();
 
     assertThat(store.loadClientMetrics().getWindow().getStartMs()).isEqualTo(CURRENT_TIME);
+  }
+
+  @Test
+  public void
+      persist_whenDbSizeOnDiskIsAtLimitAndShouldUploadClientHealthMetrics_shouldRecordLogEventDroppedDueToCacheFull() {
+    SQLiteEventStore storeUnderTest =
+        newStoreWithConfig(
+            clock,
+            CONFIG.toBuilder().setMaxStorageSizeInBytes(store.getByteSize()).build(),
+            packageName,
+            mockRegistry);
+    when(mockRegistry.get(TRANSPORT_CONTEXT.getBackendName())).thenReturn(mockBackend);
+    when(mockBackend.getUploadOptions(TRANSPORT_CONTEXT))
+        .thenReturn(UploadOptions.builder().setShouldUploadClientHealthMetrics(true).build());
+
+    storeUnderTest.persist(TRANSPORT_CONTEXT, EVENT);
+
+    ClientMetrics clientMetrics = storeUnderTest.loadClientMetrics();
+
+    LogSourceMetrics logSourceMetrics =
+        LogSourceMetrics.newBuilder()
+            .setLogSource(EVENT.getTransportName())
+            .addLogEventDropped(
+                LogEventDropped.newBuilder()
+                    .setEventsDroppedCount(1)
+                    .setReason(REASON_CACHE_FULL)
+                    .build())
+            .build();
+
+    assertThat(clientMetrics.getLogSourceMetricsList())
+        .comparingElementsUsing(CLIENT_METRICS_CORRESPONDENCE)
+        .contains(logSourceMetrics);
+  }
+
+  @Test
+  public void
+      persist_whenDbSizeOnDiskIsAtLimitButShouldNotUploadClientHealthMetrics_shouldNotRecordLogEventDropped() {
+    SQLiteEventStore storeUnderTest =
+        newStoreWithConfig(
+            clock,
+            CONFIG.toBuilder().setMaxStorageSizeInBytes(store.getByteSize()).build(),
+            packageName,
+            mockRegistry);
+    when(mockRegistry.get(TRANSPORT_CONTEXT.getBackendName())).thenReturn(mockBackend);
+    when(mockBackend.getUploadOptions(TRANSPORT_CONTEXT))
+        .thenReturn(UploadOptions.builder().setShouldUploadClientHealthMetrics(false).build());
+
+    storeUnderTest.persist(TRANSPORT_CONTEXT, EVENT);
+
+    ClientMetrics clientMetrics = storeUnderTest.loadClientMetrics();
+    assertThat(clientMetrics.getLogSourceMetricsList().isEmpty()).isTrue();
   }
 
   private boolean isLogEventDroppedTableEmpty() {

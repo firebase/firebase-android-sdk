@@ -29,6 +29,7 @@ import com.google.android.datatransport.runtime.EncodedPayload;
 import com.google.android.datatransport.runtime.EventInternal;
 import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.backends.BackendRegistry;
+import com.google.android.datatransport.runtime.backends.TransportBackend;
 import com.google.android.datatransport.runtime.firebase.transport.ClientMetrics;
 import com.google.android.datatransport.runtime.firebase.transport.GlobalMetrics;
 import com.google.android.datatransport.runtime.firebase.transport.LogEventDropped;
@@ -118,6 +119,10 @@ public class SQLiteEventStore
               // TODO(vkryachko): come up with a more sophisticated algorithm for limiting disk
               // space.
               if (isStorageAtLimit()) {
+                if (shouldUploadClientHealthMetrics(transportContext)) {
+                  recordLogEventDropped(
+                      1, LogEventDropped.Reason.CACHE_FULL, event.getTransportName());
+                }
                 return -1L;
               }
 
@@ -675,6 +680,14 @@ public class SQLiteEventStore
                 .setMaxCacheSizeBytes(EventStoreConfig.DEFAULT.getMaxStorageSizeInBytes())
                 .build())
         .build();
+  }
+
+  private boolean shouldUploadClientHealthMetrics(TransportContext transportContext) {
+    TransportBackend backend = backendRegistry.get(transportContext.getBackendName());
+    if (backend != null) {
+      return backend.getUploadOptions(transportContext).shouldUploadClientHealthMetrics();
+    }
+    return false;
   }
 
   /**
