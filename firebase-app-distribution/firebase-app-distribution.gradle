@@ -55,6 +55,9 @@ dependencies {
 
     implementation 'com.google.android.gms:play-services-tasks:17.0.0'
 
+    compileOnly 'com.google.auto.value:auto-value-annotations:1.6.5'
+    annotationProcessor 'com.google.auto.value:auto-value:1.6.5'
+
     implementation 'com.android.support:customtabs:28.0.0'
     implementation "androidx.browser:browser:1.3.0"
 }
