@@ -332,6 +332,57 @@ public class SQLiteEventStoreTest {
   }
 
   @Test
+  public void
+      recordFailure_withSingleEventReachedMaxAttemptNum_shouldRecordLogEventDroppedDueToMaxRetriesReached() {
+    PersistedEvent newEvent1 = store.persist(TRANSPORT_CONTEXT, EVENT);
+    store.persist(TRANSPORT_CONTEXT, EVENT);
+    store.persist(TRANSPORT_CONTEXT, EVENT);
+
+    for (int i = 0; i < SQLiteEventStore.MAX_RETRIES; i++) {
+      store.recordFailure(Collections.singletonList(newEvent1));
+    }
+
+    ClientMetrics clientMetrics = store.loadClientMetrics();
+    final LogSourceMetrics logSourceMetrics =
+        LogSourceMetrics.newBuilder()
+            .setLogSource(EVENT.getTransportName())
+            .addLogEventDropped(
+                LogEventDropped.newBuilder()
+                    .setReason(LogEventDropped.Reason.MAX_RETRIES_REACHED)
+                    .setEventsDroppedCount(1)
+                    .build())
+            .build();
+    assertThat(clientMetrics.getLogSourceMetricsList())
+        .comparingElementsUsing(CLIENT_METRICS_CORRESPONDENCE)
+        .contains(logSourceMetrics);
+  }
+
+  @Test
+  public void
+      recordFailure_withMultipleEventsReachedMaxAttemptNum_shouldRecordLogEventDroppedDueToMaxRetriesReached() {
+    PersistedEvent newEvent1 = store.persist(TRANSPORT_CONTEXT, EVENT);
+    PersistedEvent newEvent2 = store.persist(TRANSPORT_CONTEXT, EVENT);
+
+    for (int i = 0; i < SQLiteEventStore.MAX_RETRIES; i++) {
+      store.recordFailure(Arrays.asList(newEvent1, newEvent2));
+    }
+
+    ClientMetrics clientMetrics = store.loadClientMetrics();
+    final LogSourceMetrics logSourceMetrics =
+        LogSourceMetrics.newBuilder()
+            .setLogSource(EVENT.getTransportName())
+            .addLogEventDropped(
+                LogEventDropped.newBuilder()
+                    .setReason(LogEventDropped.Reason.MAX_RETRIES_REACHED)
+                    .setEventsDroppedCount(2)
+                    .build())
+            .build();
+    assertThat(clientMetrics.getLogSourceMetricsList())
+        .comparingElementsUsing(CLIENT_METRICS_CORRESPONDENCE)
+        .contains(logSourceMetrics);
+  }
+
+  @Test
   public void getNextCallTime_doesNotReturnUnknownBackends() {
     assertThat(store.getNextCallTime(TRANSPORT_CONTEXT)).isEqualTo(0);
   }
