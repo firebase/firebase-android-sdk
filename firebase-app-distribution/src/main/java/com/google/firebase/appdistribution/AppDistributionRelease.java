@@ -29,6 +29,12 @@ import com.google.auto.value.AutoValue;
  */
 @AutoValue
 public abstract class AppDistributionRelease {
+
+  @NonNull
+  public static Builder builder() {
+    return new AutoValue_AppDistributionRelease.Builder();
+  }
+
   /** The short bundle version of this build (example 1.0.0) */
   @NonNull
   public abstract String getDisplayVersion();
@@ -45,13 +51,23 @@ public abstract class AppDistributionRelease {
   @NonNull
   public abstract BinaryType getBinaryType();
 
-  @NonNull
-  public static AppDistributionRelease create(
-      @NonNull String displayVersion,
-      @NonNull String buildVersion,
-      @Nullable String releaseNotes,
-      @NonNull BinaryType binaryType) {
-    return new AutoValue_AppDistributionRelease(
-        displayVersion, buildVersion, releaseNotes, binaryType);
+  /** Builder for {@link AppDistributionRelease}. */
+  @AutoValue.Builder
+  public abstract static class Builder {
+
+    @NonNull
+    public abstract Builder setDisplayVersion(@NonNull String value);
+
+    @NonNull
+    public abstract Builder setBuildVersion(@NonNull String value);
+
+    @NonNull
+    public abstract Builder setReleaseNotes(@Nullable String value);
+
+    @NonNull
+    public abstract Builder setBinaryType(@NonNull BinaryType value);
+
+    @NonNull
+    public abstract AppDistributionRelease build();
   }
 }
