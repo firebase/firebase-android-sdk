@@ -96,7 +96,7 @@ These are tests that run on a hardware device or emulator. These tests have
 access to Instrumentation APIs, give you access to information such as the
 [Android Context](https://developer.android.com/reference/android/content/Context).
 In Firebase, instrumentation tests are used at different capacities by different
-projects. Some tests may exercise device capabilities, while stubbing any calls
+projects. Some tests may exercise device capabilities while stubbing any calls
 to the backend, while some others may call out to nightly backend builds to
 ensure distributed API compatibility.
 
@@ -116,8 +116,7 @@ If you don't have a suitable testing project already:
   * If you don't yet have a project you want to use for testing, create one.
   * Add an Android app to the project
   * Give the app any package name you like.
-  * Download the resulting `google-services.json` file and put it in the root of
-    your checkout.
+  * Download the resulting `google-services.json` file and put it in the root of your checkout.
 
 #### Running Integration Tests on Local Emulator
 
@@ -166,14 +165,14 @@ The
 [@Keep](https://developer.android.com/reference/android/support/annotation/Keep)
 annotation is *blessed* to be honored by android's [default proguard
 configuration](https://developer.android.com/studio/write/annotations#keep).  A common use for
-this annotation is because of reflection. These APIs should be generally **discouraged**, because
+this annotation is because of reflection. These APIs should be generally **discouraged** because
 they can't be proguarded.
 
 ### @KeepForSdk
 
 APIs that are intended to be used by Firebase SDKs should be annotated with
 `@KeepForSdk`. The key benefit here is that the annotation is *blessed* to throw
-linter errors on Android Studio if used by the developer from a non firebase
+linter errors on Android Studio if used by the developer from a non-firebase
 package, thereby providing a valuable guard rail.
 
 
@@ -181,7 +180,7 @@ package, thereby providing a valuable guard rail.
 
 We annotate APIs that meant to be used by developers with
 [@PublicAPI](firebase-common/src/main/java/com/google/firebase/annotations/PublicApi.java).   This
-annotation will be used by tooling to help inform the version bump (major, minor, patch) that is
+annotation will be used by tools to help inform the version bump (major, minor, patch) that is
 required for the next release.
 
 ## Proguarding
@@ -194,18 +193,17 @@ proguard friendly, but the dependencies of Firebase SDKs may not be.
 In addition to preguard.txt, projects declare an additional set of proguard
 rules in a proguard.txt that are honored by the developer's app while building
 the app's proguarded apk. This file typically contains the keep rules that need
-to be honored during the app' s proguarding phase.
+to be honored during the app's proguarding phase.
 
 As a best practice, these explicit rules should be scoped to only libraries
 whose source code is outside the firebase-android-sdk codebase making annotation
-based approaches insufficient.The combination of keep rules resulting from the
-annotations, the preguard.txt and the proguard.txt collectively determine the
-APIs that are preserved at **runtime**.
+based approaches insufficient.The combination of keep rules resulting from the annotations, 
+the preguard.txt and the proguard.txt collectively determine the APIs that are preserved at **runtime**.
 
 ## Publishing
 
 Firebase is published as a collection of libraries each of which either
-represents a top level product, or contains shared functionality used by one or
+represents a top-level product or contains shared functionality used by one or
 more projects. The projects are published as managed maven artifacts available
 at [Google's Maven Repository](https://maven.google.com). This section helps
 reason about how developers may make changes to firebase projects and have their
@@ -222,7 +220,7 @@ strategy](https://docs.gradle.org/current/dsl/org.gradle.api.artifacts.Resolutio
 
 ### Commands
 
-The simplest way to publish a project and all its associated dependencies is to
+The simplest way to publish a project and all its associated dependencies are to
 just publish all projects. The following command builds SNAPSHOT dependencies of
 all projects. All pom level dependencies within the published artifacts will
 also point to SNAPSHOT versions that are co-published.
