@@ -157,10 +157,12 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
                         new OnSuccessListener<InstallationTokenResult>() {
                           @Override
                           public void onSuccess(InstallationTokenResult installationTokenResult) {
+
                             String authToken = installationTokenResult.getToken();
                             String appId = firebaseApp.getOptions().getApplicationId();
                             String apiKey = firebaseApp.getOptions().getApiKey();
 
+                            //make into method parameters
                             FirebaseAppDistributionTesterApiClient client =
                                 new FirebaseAppDistributionTesterApiClient(fid, appId, apiKey);
 
@@ -194,6 +196,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
               Context context = firebaseApp.getApplicationContext();
               long currentInstalledVersionCode = getInstalledAppVersionCode(context);
 
+              //move logic outside,
               checkForUpdateHandler.post(
                   new Runnable() {
                     @Override
