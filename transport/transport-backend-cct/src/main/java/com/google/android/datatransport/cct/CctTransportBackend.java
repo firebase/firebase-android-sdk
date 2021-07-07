@@ -387,6 +387,8 @@ final class CctTransportBackend implements TransportBackend {
         return BackendResponse.ok(response.nextRequestMillis);
       } else if (response.code >= 500 || response.code == 404) {
         return BackendResponse.transientError();
+      } else if (response.code == 400) {
+        return BackendResponse.invalidPayload();
       } else {
         return BackendResponse.fatalError();
       }
