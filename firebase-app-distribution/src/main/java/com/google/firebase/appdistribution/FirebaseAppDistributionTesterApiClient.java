@@ -66,8 +66,14 @@ public class FirebaseAppDistributionTesterApiClient {
           latestReleaseJson.getString(BINARY_TYPE_JSON_KEY).equals("APK")
               ? BinaryType.APK
               : BinaryType.AAB;
+
       latestRelease =
-          new AppDistributionRelease(displayVersion, buildVersion, releaseNotes, binaryType);
+          AppDistributionRelease.builder()
+              .setDisplayVersion(displayVersion)
+              .setBuildVersion(buildVersion)
+              .setReleaseNotes(releaseNotes)
+              .setBinaryType(binaryType)
+              .build();
 
     } catch (IOException | JSONException e) {
       throw new FirebaseAppDistributionException(FirebaseAppDistributionException.Status.UNKNOWN);
