@@ -48,17 +48,8 @@ import org.robolectric.shadows.ShadowPackageManager;
 
 @RunWith(RobolectricTestRunner.class)
 public class FirebaseAppDistributionTest {
-
-  private FirebaseApp firebaseApp;
-  private FirebaseAppDistribution firebaseAppDistribution;
-
-  @Mock private FirebaseInstallationsApi mockFirebaseInstallations;
-  @Mock private Bundle mockBundle;
-  @Mock SignInResultActivity mockSignInResultActivity;
-
   public static final String TEST_API_KEY = "AIzaSyabcdefghijklmnopqrstuvwxyz1234567";
   public static final String TEST_APP_ID_1 = "1:123456789:android:abcdef";
-  public static final String TEST_APP_NAME = "TestApp";
   public static final String TEST_PROJECT_ID = "777777777777";
   public static final String TEST_FID_1 = "cccccccccccccccccccccc";
   public static final String TEST_URL =
@@ -68,11 +59,17 @@ public class FirebaseAppDistributionTest {
               + "&packageName=com.google.firebase.appdistribution.test",
           TEST_APP_ID_1, TEST_FID_1);
 
+  private FirebaseApp firebaseApp;
+  private FirebaseAppDistribution firebaseAppDistribution;
   private TestActivity activity;
   private ShadowActivity shadowActivity;
   private ShadowPackageManager shadowPackageManager;
 
-  public static class TestActivity extends Activity {}
+  @Mock private FirebaseInstallationsApi mockFirebaseInstallations;
+  @Mock private Bundle mockBundle;
+  @Mock SignInResultActivity mockSignInResultActivity;
+
+  static class TestActivity extends Activity {}
 
   @Before
   public void setup() {
@@ -102,7 +99,6 @@ public class FirebaseAppDistributionTest {
 
   @Test
   public void signInTester_whenDialogConfirmedAndChromeAvailable_opensCustomTab() {
-
     firebaseAppDistribution.onActivityResumed(activity);
     final ResolveInfo resolveInfo = new ResolveInfo();
     resolveInfo.resolvePackageName = "garbage";
@@ -111,7 +107,27 @@ public class FirebaseAppDistributionTest {
     customTabIntent.setPackage("com.android.chrome");
     shadowPackageManager.addResolveInfoForIntent(customTabIntent, resolveInfo);
 
-    Task<Void> signInTask = firebaseAppDistribution.signInTester();
+    firebaseAppDistribution.signInTester();
+
+    if (ShadowAlertDialog.getLatestDialog() instanceof AlertDialog) {
+      AlertDialog dialog = (AlertDialog) ShadowAlertDialog.getLatestDialog();
+      assertTrue(dialog.isShowing());
+      dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
+    }
+
+    verify(mockFirebaseInstallations, times(1)).getId();
+    assertThat(shadowActivity.getNextStartedActivity().getData()).isEqualTo(Uri.parse(TEST_URL));
+  }
+
+  @Test
+  public void signInTester_whenDialogConfirmedAndChromeNotAvailable_opensBrowserIntent() {
+    firebaseAppDistribution.onActivityResumed(activity);
+    final ResolveInfo resolveInfo = new ResolveInfo();
+    resolveInfo.resolvePackageName = "garbage";
+    final Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(TEST_URL));
+    shadowPackageManager.addResolveInfoForIntent(browserIntent, resolveInfo);
+
+    firebaseAppDistribution.signInTester();
 
     if (ShadowAlertDialog.getLatestDialog() instanceof AlertDialog) {
       AlertDialog dialog = (AlertDialog) ShadowAlertDialog.getLatestDialog();
@@ -152,5 +168,16 @@ public class FirebaseAppDistributionTest {
     assertFalse(signInTask.isComplete());
     firebaseAppDistribution.onActivityCreated(mockSignInResultActivity, mockBundle);
     assertTrue(signInTask.isSuccessful());
+  }
+
+  @Test
+  public void signInTester_whenSignInCalledMultipleTimes_cancelsPreviousTask() {
+    firebaseAppDistribution.onActivityResumed(activity);
+
+    Task<Void> signInTask1 = firebaseAppDistribution.signInTester();
+    Task<Void> signInTask2 = firebaseAppDistribution.signInTester();
+
+    assertTrue(signInTask1.isCanceled());
+    assertFalse(signInTask2.isComplete());
   }
 }
