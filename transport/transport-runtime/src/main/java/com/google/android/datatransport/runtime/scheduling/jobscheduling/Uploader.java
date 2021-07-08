@@ -153,7 +153,8 @@ public class Uploader {
         if (response.getStatus() == BackendResponse.Status.OK) {
           maxNextRequestWaitMillis =
               Math.max(maxNextRequestWaitMillis, response.getNextRequestWaitMillis());
-        } else if (response.getStatus() == BackendResponse.Status.INVALID_PAYLOAD) {
+        } else if (response.getStatus() == BackendResponse.Status.INVALID_PAYLOAD
+            || response.getStatus() == BackendResponse.Status.FATAL_ERROR) {
           Map<String, Integer> countMap = new HashMap<>();
           for (PersistedEvent persistedEvent : persistedEvents) {
             String logSource = persistedEvent.getEvent().getTransportName();
@@ -163,9 +164,13 @@ public class Uploader {
               countMap.put(logSource, countMap.get(logSource) + 1);
             }
           }
+          final LogEventDropped.Reason REASON =
+              response.getStatus() == BackendResponse.Status.INVALID_PAYLOAD
+                  ? LogEventDropped.Reason.INVALID_PAYLOD
+                  : LogEventDropped.Reason.REASON_UNKNOWN;
           for (Map.Entry<String, Integer> entry : countMap.entrySet()) {
             clientHealthMetricsStore.recordLogEventDropped(
-                entry.getValue(), LogEventDropped.Reason.INVALID_PAYLOD, entry.getKey());
+                entry.getValue(), REASON, entry.getKey());
           }
         }
       }

@@ -169,6 +169,29 @@ public class UploaderTest {
   }
 
   @Test
+  public void
+      upload_singleEvent_withFatalErrorResponse_shouldRecordLogEventDroppedDueToInvalidPayload() {
+    when(mockBackend.send(any())).thenReturn(BackendResponse.fatalError());
+    uploader.upload(TRANSPORT_CONTEXT, 1, mockRunnable);
+    verify(mockClientHealthMetricsStore, times(1))
+        .recordLogEventDropped(1, LogEventDropped.Reason.REASON_UNKNOWN, EVENT.getTransportName());
+  }
+
+  @Test
+  public void
+      upload_multipleEvents_withFatalErrorResponse_shouldRecordLogEventDroppedDueToInvalidPayload() {
+    store.persist(TRANSPORT_CONTEXT, EVENT);
+    store.persist(TRANSPORT_CONTEXT, ANOTHER_EVENT);
+    when(mockBackend.send(any())).thenReturn(BackendResponse.fatalError());
+    uploader.upload(TRANSPORT_CONTEXT, 1, mockRunnable);
+    verify(mockClientHealthMetricsStore, times(1))
+        .recordLogEventDropped(2, LogEventDropped.Reason.REASON_UNKNOWN, EVENT.getTransportName());
+    verify(mockClientHealthMetricsStore, times(1))
+        .recordLogEventDropped(
+            1, LogEventDropped.Reason.REASON_UNKNOWN, ANOTHER_EVENT.getTransportName());
+  }
+
+  @Test
   public void logAndUpdateStatus_manyEvents_shouldUploadAll() {
     when(mockBackend.send(any())).thenReturn(BackendResponse.ok(1000));
     for (int i = 0; i < MANY_EVENT_COUNT; i++) {
