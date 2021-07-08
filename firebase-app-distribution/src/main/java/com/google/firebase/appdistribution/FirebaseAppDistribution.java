@@ -162,11 +162,11 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
                             String appId = firebaseApp.getOptions().getApplicationId();
                             String apiKey = firebaseApp.getOptions().getApiKey();
 
-                            //make into method parameters
+                            // make into method parameters
                             FirebaseAppDistributionTesterApiClient client =
-                                new FirebaseAppDistributionTesterApiClient(fid, appId, apiKey);
+                                new FirebaseAppDistributionTesterApiClient();
 
-                            handleLatestReleaseFromClient(client, authToken);
+                            handleLatestReleaseFromClient(client, fid, appId, apiKey, authToken);
                           }
                         });
               }
@@ -185,29 +185,33 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
   }
 
   private void handleLatestReleaseFromClient(
-      FirebaseAppDistributionTesterApiClient client, String authToken) {
+      FirebaseAppDistributionTesterApiClient client,
+      String fid,
+      String appId,
+      String apiKey,
+      String authToken) {
     checkForUpdateExecutor.execute(
         new Runnable() {
           @Override
           public void run() {
             try {
-              AppDistributionRelease latestRelease = client.fetchLatestRelease(authToken);
+              AppDistributionRelease latestRelease =
+                  client.fetchLatestRelease(fid, appId, apiKey, authToken);
 
               Context context = firebaseApp.getApplicationContext();
               long currentInstalledVersionCode = getInstalledAppVersionCode(context);
 
-              //move logic outside,
+              if (Long.parseLong(latestRelease.getBuildVersion()) <= currentInstalledVersionCode) {
+                // already on latest release
+                latestRelease = null;
+              }
+
+              AppDistributionRelease finalLatestRelease = latestRelease;
               checkForUpdateHandler.post(
                   new Runnable() {
                     @Override
                     public void run() {
-                      if (currentInstalledVersionCode
-                          < Long.parseLong(latestRelease.getBuildVersion())) {
-                        // latest release is newer
-                        checkForUpdateTaskCompletionSource.setResult(latestRelease);
-                      } else {
-                        checkForUpdateTaskCompletionSource.setResult(null);
-                      }
+                      checkForUpdateTaskCompletionSource.setResult(finalLatestRelease);
                     }
                   });
             } catch (Exception e) {

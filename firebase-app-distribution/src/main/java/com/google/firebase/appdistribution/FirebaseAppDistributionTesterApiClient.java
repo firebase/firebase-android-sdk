@@ -1,3 +1,17 @@
+// Copyright 2021 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package com.google.firebase.appdistribution;
 
 import android.util.Log;
@@ -15,10 +29,6 @@ import org.json.JSONObject;
 
 public class FirebaseAppDistributionTesterApiClient {
 
-  private final String fid;
-  private final String appId;
-  private final String apiKey;
-
   private final String TAG = "FADTesterApiClient";
 
   private static final String RELEASE_ENDPOINT_URL_FORMAT =
@@ -32,20 +42,14 @@ public class FirebaseAppDistributionTesterApiClient {
   private static final String BINARY_TYPE_JSON_KEY = "binaryType";
   public static final int DEFAULT_BUFFER_SIZE = 8192;
 
-  FirebaseAppDistributionTesterApiClient(
-      @NonNull String fid, @NonNull String appId, @NonNull String apiKey) {
-    this.fid = fid;
-    this.appId = appId;
-    this.apiKey = apiKey;
-  }
-
-  public AppDistributionRelease fetchLatestRelease(@NonNull String authToken)
+  public AppDistributionRelease fetchLatestRelease(
+      @NonNull String fid, @NonNull String appId, @NonNull String apiKey, @NonNull String authToken)
       throws FirebaseAppDistributionException, ProtocolException {
 
     AppDistributionRelease latestRelease = null;
-    HttpsURLConnection conn = openHttpsUrlConnection();
+    HttpsURLConnection conn = openHttpsUrlConnection(appId, fid);
     conn.setRequestMethod(REQUEST_METHOD);
-    conn.setRequestProperty(API_KEY_HEADER, this.apiKey);
+    conn.setRequestProperty(API_KEY_HEADER, apiKey);
     conn.setRequestProperty(INSTALLATION_AUTH_HEADER, authToken);
 
     try {
@@ -99,10 +103,10 @@ public class FirebaseAppDistributionTesterApiClient {
     return latestRelease;
   }
 
-  private HttpsURLConnection openHttpsUrlConnection()
+  private HttpsURLConnection openHttpsUrlConnection(String appId, String fid)
       throws FirebaseAppDistributionException, ProtocolException {
     HttpsURLConnection httpsURLConnection;
-    URL url = getReleasesEndpointUrl();
+    URL url = getReleasesEndpointUrl(appId, fid);
     try {
       httpsURLConnection = (HttpsURLConnection) url.openConnection();
     } catch (IOException ignored) {
@@ -111,9 +115,10 @@ public class FirebaseAppDistributionTesterApiClient {
     return httpsURLConnection;
   }
 
-  private URL getReleasesEndpointUrl() throws FirebaseAppDistributionException {
+  private URL getReleasesEndpointUrl(String appId, String fid)
+      throws FirebaseAppDistributionException {
     try {
-      return new URL(String.format(RELEASE_ENDPOINT_URL_FORMAT, this.appId, this.fid));
+      return new URL(String.format(RELEASE_ENDPOINT_URL_FORMAT, appId, fid));
     } catch (MalformedURLException e) {
       throw new FirebaseAppDistributionException(FirebaseAppDistributionException.Status.UNKNOWN);
     }
