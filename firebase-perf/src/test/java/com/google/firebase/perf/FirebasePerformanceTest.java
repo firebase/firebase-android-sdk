@@ -549,6 +549,9 @@ public class FirebasePerformanceTest {
       DeviceCacheManager deviceCacheManager = new DeviceCacheManager(fakeDirectExecutorService);
       deviceCacheManager.setContext(ApplicationProvider.getApplicationContext());
       deviceCacheManager.setValue(Constants.ENABLE_DISABLE, sharedPreferencesEnabledDisabledKey);
+    } else {
+      DeviceCacheManager deviceCacheManager = new DeviceCacheManager(fakeDirectExecutorService);
+      deviceCacheManager.setContext(ApplicationProvider.getApplicationContext());
     }
 
     Bundle bundle = new Bundle();
