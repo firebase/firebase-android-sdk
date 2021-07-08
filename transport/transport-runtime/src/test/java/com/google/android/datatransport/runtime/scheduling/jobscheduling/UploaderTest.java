@@ -31,6 +31,7 @@ import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.backends.BackendRegistry;
 import com.google.android.datatransport.runtime.backends.BackendResponse;
 import com.google.android.datatransport.runtime.backends.TransportBackend;
+import com.google.android.datatransport.runtime.scheduling.persistence.ClientHealthMetricsStore;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
 import com.google.android.datatransport.runtime.scheduling.persistence.InMemoryEventStore;
 import com.google.android.datatransport.runtime.scheduling.persistence.PersistedEvent;
@@ -72,6 +73,8 @@ public class UploaderTest {
   private TransportBackend mockBackend = mock(TransportBackend.class);
   private WorkScheduler mockScheduler = mock(WorkScheduler.class);
   private Runnable mockRunnable = mock(Runnable.class);
+  private ClientHealthMetricsStore mockClientHealthMetricsStore =
+      mock(ClientHealthMetricsStore.class);
   private Uploader uploader =
       spy(
           new Uploader(
@@ -81,7 +84,8 @@ public class UploaderTest {
               mockScheduler,
               Runnable::run,
               guard,
-              () -> 2));
+              () -> 2,
+              mockClientHealthMetricsStore));
 
   @Before
   public void setUp() {

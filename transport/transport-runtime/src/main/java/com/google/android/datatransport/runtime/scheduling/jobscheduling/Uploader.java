@@ -24,6 +24,7 @@ import com.google.android.datatransport.runtime.backends.BackendRequest;
 import com.google.android.datatransport.runtime.backends.BackendResponse;
 import com.google.android.datatransport.runtime.backends.TransportBackend;
 import com.google.android.datatransport.runtime.logging.Logging;
+import com.google.android.datatransport.runtime.scheduling.persistence.ClientHealthMetricsStore;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
 import com.google.android.datatransport.runtime.scheduling.persistence.PersistedEvent;
 import com.google.android.datatransport.runtime.synchronization.SynchronizationException;
@@ -47,6 +48,7 @@ public class Uploader {
   private final Executor executor;
   private final SynchronizationGuard guard;
   private final Clock clock;
+  private final ClientHealthMetricsStore clientHealthMetricsStore;
 
   @Inject
   public Uploader(
@@ -56,7 +58,8 @@ public class Uploader {
       WorkScheduler workScheduler,
       Executor executor,
       SynchronizationGuard guard,
-      @WallTime Clock clock) {
+      @WallTime Clock clock,
+      ClientHealthMetricsStore clientHealthMetricsStore) {
     this.context = context;
     this.backendRegistry = backendRegistry;
     this.eventStore = eventStore;
@@ -64,6 +67,7 @@ public class Uploader {
     this.executor = executor;
     this.guard = guard;
     this.clock = clock;
+    this.clientHealthMetricsStore = clientHealthMetricsStore;
   }
 
   boolean isNetworkAvailable() {
