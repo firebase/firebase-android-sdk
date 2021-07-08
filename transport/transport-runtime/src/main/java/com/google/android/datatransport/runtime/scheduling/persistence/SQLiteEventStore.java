@@ -224,12 +224,28 @@ public class SQLiteEventStore
     if (!events.iterator().hasNext()) {
       return;
     }
-    String query =
+    String incrementAttemptNumQuery =
         "UPDATE events SET num_attempts = num_attempts + 1 WHERE _id in " + toIdList(events);
+    String countMaxAttemptsEventsQuery =
+        "SELECT COUNT(*), transport_name FROM events "
+            + "WHERE num_attempts >= "
+            + MAX_RETRIES
+            + " GROUP BY transport_name";
 
     inTransaction(
         db -> {
-          db.compileStatement(query).execute();
+          db.compileStatement(incrementAttemptNumQuery).execute();
+          tryWithCursor(
+              db.rawQuery(countMaxAttemptsEventsQuery, null),
+              cursor -> {
+                while (cursor.moveToNext()) {
+                  int count = cursor.getInt(0);
+                  String transportName = cursor.getString(1);
+                  recordLogEventDropped(
+                      count, LogEventDropped.Reason.MAX_RETRIES_REACHED, transportName);
+                }
+                return null;
+              });
           db.compileStatement("DELETE FROM events WHERE num_attempts >= " + MAX_RETRIES).execute();
           return null;
         });
