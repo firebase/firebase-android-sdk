@@ -52,6 +52,9 @@ public abstract class SpyEventStoreModule {
   @Binds
   abstract SynchronizationGuard synchronizationGuard(SQLiteEventStore store);
 
+  @Binds
+  abstract ClientHealthMetricsStore clientHealthMetricsStore(SQLiteEventStore store);
+
   @Provides
   @Named("SCHEMA_VERSION")
   static int schemaVersion() {
