@@ -15,8 +15,6 @@
 import logging
 import os
 import subprocess
-import sys
-
 
 _logger = logging.getLogger('fireci.gradle')
 
@@ -39,9 +37,19 @@ def run(*args, gradle_opts='', workdir=None, check=True):
   command = ['./gradlew'] + list(args)
   _logger.info('Executing gradle command: "%s" in directory: "%s"',
                " ".join(command), workdir if workdir else '.')
-  return subprocess.run(
+
+  with subprocess.Popen(
       command,
       cwd=workdir,
       env=new_env,
-      check=check,
-  )
+      stdout=subprocess.PIPE,
+      stderr=subprocess.STDOUT,
+  ) as p:
+    for line in p.stdout:
+      _logger.info(line.decode().rstrip())
+
+    p.communicate()
+
+    if check and p.returncode:
+      raise subprocess.CalledProcessError(p.returncode, p.args, p.stdout, p.stderr)
+  return subprocess.CompletedProcess(p.args, p.returncode, p.stdout, p.stderr)

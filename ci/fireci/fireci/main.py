@@ -19,7 +19,8 @@ from . import plugins
 from .internal import main
 
 logging.basicConfig(
-    format='%(name)s: [%(levelname)s] %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S %z %Z',
+    format='[%(levelname).1s] %(asctime)s %(name)s: %(message)s',
     level=logging.INFO,
 )
 logging.getLogger('fireci').setLevel(logging.DEBUG)
