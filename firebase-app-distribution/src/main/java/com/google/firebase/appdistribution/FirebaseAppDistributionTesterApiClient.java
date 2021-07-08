@@ -14,7 +14,6 @@
 
 package com.google.firebase.appdistribution;
 
-import android.util.Log;
 import androidx.annotation.NonNull;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
@@ -29,8 +28,7 @@ import org.json.JSONObject;
 
 public class FirebaseAppDistributionTesterApiClient {
 
-  private final String TAG = "FADTesterApiClient";
-
+  private static final String TAG = "FADTesterApiClient";
   private static final String RELEASE_ENDPOINT_URL_FORMAT =
       "https://firebaseapptesters.googleapis.com/v1alpha/devices/-/testerApps/%s/installations/%s/releases";
   private static final String REQUEST_METHOD = "GET";
@@ -53,10 +51,7 @@ public class FirebaseAppDistributionTesterApiClient {
     conn.setRequestProperty(INSTALLATION_AUTH_HEADER, authToken);
 
     try {
-      Log.v(TAG, String.valueOf(conn.getResponseCode()));
       JSONObject latestReleaseJson = readFetchReleaseInputStream(conn.getInputStream());
-      Log.v("Json release", latestReleaseJson.toString());
-
       long latestBuildVersion = Long.parseLong(latestReleaseJson.getString(BUILD_VERSION_JSON_KEY));
       final String displayVersion = latestReleaseJson.getString(DISPLAY_VERSION_JSON_KEY);
       final String buildVersion = latestReleaseJson.getString(BUILD_VERSION_JSON_KEY);
@@ -80,7 +75,8 @@ public class FirebaseAppDistributionTesterApiClient {
               .build();
 
     } catch (IOException | JSONException e) {
-      throw new FirebaseAppDistributionException(FirebaseAppDistributionException.Status.UNKNOWN);
+      throw new FirebaseAppDistributionException(
+          FirebaseAppDistributionException.Status.NETWORK_FAILURE);
     } finally {
       conn.disconnect();
     }
@@ -95,7 +91,6 @@ public class FirebaseAppDistributionTesterApiClient {
     String result = convertInputStreamToString(jsonIn);
     try {
       JSONObject json = new JSONObject(result);
-      Log.v("all releases", json.getJSONArray("releases").toString());
       latestRelease = json.getJSONArray("releases").getJSONObject(0);
     } catch (JSONException e) {
       throw new FirebaseAppDistributionException(FirebaseAppDistributionException.Status.UNKNOWN);
@@ -110,7 +105,8 @@ public class FirebaseAppDistributionTesterApiClient {
     try {
       httpsURLConnection = (HttpsURLConnection) url.openConnection();
     } catch (IOException ignored) {
-      throw new FirebaseAppDistributionException(FirebaseAppDistributionException.Status.UNKNOWN);
+      throw new FirebaseAppDistributionException(
+          FirebaseAppDistributionException.Status.NETWORK_FAILURE);
     }
     return httpsURLConnection;
   }
