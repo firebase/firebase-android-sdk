@@ -560,8 +560,9 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
   @Override
   public void onKill(String reason) {
     logger.warn(
-      "Firebase Database connection was forcefully killed by the server. Will not attempt reconnect. Reason: "
-      + reason);
+        "Firebase Database connection was forcefully killed by the server. Will not attempt"
+            + " reconnect. Reason: "
+            + reason);
 
     interrupt(SERVER_KILL_INTERRUPT_REASON);
   }
