@@ -74,8 +74,7 @@ dependencies {
   implementation "com.google.firebase:firebase-firestore"
   implementation "com.google.firebase:firebase-functions"
   implementation "com.google.firebase:firebase-inappmessaging"
-  // TODO(yifany): Restore after messaging in github is up to date
-  // implementation "com.google.firebase:firebase-messaging"
+  implementation "com.google.firebase:firebase-messaging"
   implementation "com.google.firebase:firebase-perf"
   implementation "com.google.firebase:firebase-storage"
 
