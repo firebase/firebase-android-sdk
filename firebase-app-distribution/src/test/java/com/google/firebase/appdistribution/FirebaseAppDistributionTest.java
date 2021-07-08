@@ -66,6 +66,7 @@ public class FirebaseAppDistributionTest {
   private ShadowPackageManager shadowPackageManager;
 
   @Mock private FirebaseInstallationsApi mockFirebaseInstallations;
+  @Mock private FirebaseAppDistributionTesterApiClient mockFirebaseAppDistributionTesterApiClient;
   @Mock private Bundle mockBundle;
   @Mock SignInResultActivity mockSignInResultActivity;
 
@@ -87,7 +88,9 @@ public class FirebaseAppDistributionTest {
                 .setApiKey(TEST_API_KEY)
                 .build());
 
-    firebaseAppDistribution = new FirebaseAppDistribution(firebaseApp, mockFirebaseInstallations);
+    firebaseAppDistribution =
+        new FirebaseAppDistribution(
+            firebaseApp, mockFirebaseInstallations, mockFirebaseAppDistributionTesterApiClient);
 
     when(mockFirebaseInstallations.getId()).thenReturn(Tasks.forResult(TEST_FID_1));
 

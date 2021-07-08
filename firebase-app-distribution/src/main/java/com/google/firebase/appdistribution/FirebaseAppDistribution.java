@@ -28,7 +28,6 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 import androidx.annotation.NonNull;
@@ -56,7 +55,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
 
   private final FirebaseApp firebaseApp;
   private final FirebaseInstallationsApi firebaseInstallationsApi;
-  //  private final FirebaseAppDistributionTesterApiClient firebaseAppDistributionTesterApiClient;
+  private final FirebaseAppDistributionTesterApiClient firebaseAppDistributionTesterApiClient;
   private static final String TAG = "FirebaseAppDistribution";
   private Activity currentActivity;
   private boolean currentlySigningIn = false;
@@ -70,9 +69,11 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
   /** Constructor for FirebaseAppDistribution */
   public FirebaseAppDistribution(
       @NonNull FirebaseApp firebaseApp,
-      @NonNull FirebaseInstallationsApi firebaseInstallationsApi) {
+      @NonNull FirebaseInstallationsApi firebaseInstallationsApi,
+      @NonNull FirebaseAppDistributionTesterApiClient firebaseAppDistributionTesterApiClient) {
     this.firebaseApp = firebaseApp;
     this.firebaseInstallationsApi = firebaseInstallationsApi;
+    this.firebaseAppDistributionTesterApiClient = firebaseAppDistributionTesterApiClient;
     this.checkForUpdateExecutor = Executors.newFixedThreadPool(4);
   }
 
@@ -173,7 +174,6 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
                         new OnSuccessListener<InstallationTokenResult>() {
                           @Override
                           public void onSuccess(InstallationTokenResult installationTokenResult) {
-
                             handleLatestReleaseFromClient(
                                 fid,
                                 firebaseApp.getOptions().getApplicationId(),
@@ -373,10 +373,9 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
           @Override
           public void run() {
             try {
-              FirebaseAppDistributionTesterApiClient client =
-                  new FirebaseAppDistributionTesterApiClient();
               AppDistributionRelease latestRelease =
-                  client.fetchLatestRelease(fid, appId, apiKey, authToken);
+                  firebaseAppDistributionTesterApiClient.fetchLatestRelease(
+                      fid, appId, apiKey, authToken);
 
               Context context = firebaseApp.getApplicationContext();
               long currentInstalledVersionCode = getInstalledAppVersionCode(context);
@@ -405,8 +404,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
   }
 
   private void updateOnUiThread(Runnable runnable) {
-    Handler mainThreadHandler = HandlerCompat.createAsync(Looper.getMainLooper());
-    mainThreadHandler.post(runnable);
+    HandlerCompat.createAsync(Looper.getMainLooper()).post(runnable);
   }
 
   private long getInstalledAppVersionCode(Context context) {
