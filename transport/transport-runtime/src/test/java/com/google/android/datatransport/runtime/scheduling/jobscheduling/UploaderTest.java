@@ -31,6 +31,7 @@ import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.backends.BackendRegistry;
 import com.google.android.datatransport.runtime.backends.BackendResponse;
 import com.google.android.datatransport.runtime.backends.TransportBackend;
+import com.google.android.datatransport.runtime.firebase.transport.LogEventDropped;
 import com.google.android.datatransport.runtime.scheduling.persistence.ClientHealthMetricsStore;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
 import com.google.android.datatransport.runtime.scheduling.persistence.InMemoryEventStore;
@@ -59,6 +60,16 @@ public class UploaderTest {
   private static final EventInternal EVENT =
       EventInternal.builder()
           .setTransportName("42")
+          .setEventMillis(1)
+          .setUptimeMillis(2)
+          .setEncodedPayload(
+              new EncodedPayload(Encoding.of("proto"), "Hello".getBytes(Charset.defaultCharset())))
+          .addMetadata("key1", "value1")
+          .addMetadata("key2", "value2")
+          .build();
+  private static final EventInternal ANOTHER_EVENT =
+      EventInternal.builder()
+          .setTransportName("43")
           .setEventMillis(1)
           .setUptimeMillis(2)
           .setEncodedPayload(
@@ -132,6 +143,29 @@ public class UploaderTest {
     uploader.logAndUpdateState(TRANSPORT_CONTEXT, 1);
     verify(store, times(1)).recordFailure(any());
     verify(mockScheduler, times(1)).schedule(TRANSPORT_CONTEXT, 2, true);
+  }
+
+  @Test
+  public void
+      upload_singleEvent_withInvalidPayloadResponse_shouldRecordLogEventDroppedDueToInvalidPayload() {
+    when(mockBackend.send(any())).thenReturn(BackendResponse.invalidPayload());
+    uploader.upload(TRANSPORT_CONTEXT, 1, mockRunnable);
+    verify(mockClientHealthMetricsStore, times(1))
+        .recordLogEventDropped(1, LogEventDropped.Reason.INVALID_PAYLOD, EVENT.getTransportName());
+  }
+
+  @Test
+  public void
+      upload_multipleEvents_withInvalidPayloadResponse_shouldRecordLogEventDroppedDueToInvalidPayload() {
+    store.persist(TRANSPORT_CONTEXT, EVENT);
+    store.persist(TRANSPORT_CONTEXT, ANOTHER_EVENT);
+    when(mockBackend.send(any())).thenReturn(BackendResponse.invalidPayload());
+    uploader.upload(TRANSPORT_CONTEXT, 1, mockRunnable);
+    verify(mockClientHealthMetricsStore, times(1))
+        .recordLogEventDropped(2, LogEventDropped.Reason.INVALID_PAYLOD, EVENT.getTransportName());
+    verify(mockClientHealthMetricsStore, times(1))
+        .recordLogEventDropped(
+            1, LogEventDropped.Reason.INVALID_PAYLOD, ANOTHER_EVENT.getTransportName());
   }
 
   @Test
