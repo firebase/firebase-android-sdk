@@ -140,7 +140,7 @@ public class BomGeneratorTask extends DefaultTask {
           "firebase-storage-common-license",
           "firebase-storage-license",
           "perf-plugin",
-          "play-services-ads"
+          "play-services-ads",
           "protolite-well-known-types",
           "testlab-instr-lib",
           "firebase-installations-interop",
