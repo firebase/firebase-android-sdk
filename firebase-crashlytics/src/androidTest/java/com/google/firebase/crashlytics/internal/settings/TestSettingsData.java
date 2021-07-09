@@ -41,7 +41,7 @@ public class TestSettingsData extends SettingsData {
   }
 
   private static FeaturesSettingsData buildFeaturesData() {
-    return new FeaturesSettingsData(true);
+    return new FeaturesSettingsData(true, false);
   }
 
   private static SessionSettingsData buildSettingsData() {

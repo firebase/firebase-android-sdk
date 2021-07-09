@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,21 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.errorprone;
+package com.google.firebase.appdistribution;
 
-public class NoStaticOrDefaultMethodsInInterfacesPositiveCases {
+import androidx.annotation.NonNull;
 
-  public interface InterfaceWithDefault {
-    // BUG: Diagnostic contains: Avoid static/default
-    default void method1() {
-      return;
-    }
-  }
-
-  public interface InterfaceWithStatic {
-    // BUG: Diagnostic contains: Avoid static/default
-    static void method1() {
-      return;
-    }
-  }
+/** A listener that is called periodically during execution of the {@link UpdateTask}. */
+public interface OnProgressListener {
+  void onProgressUpdate(@NonNull UpdateState updateState);
 }

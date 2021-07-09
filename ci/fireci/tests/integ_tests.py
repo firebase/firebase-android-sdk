@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 import pathlib
-import subprocess
 import unittest
 
 from click.testing import CliRunner
@@ -41,7 +39,7 @@ class CliInvocationTests(unittest.TestCase):
                 ['./gradlew'] + args,
                 {'GRADLE_OPTS': 'opts'},
                 ('sdk1/build/output/file1', 'content1'),
-                ('sdk1/build/outputss/file2', 'content2'),
+                ('sdk1/build/outputs/file2', 'content2'),
             ),
             mode=0o744))
     result = self.runner.invoke(cli, [
@@ -53,7 +51,7 @@ class CliInvocationTests(unittest.TestCase):
     artifacts = pathlib.Path('_artifacts')
     self.assertTrue(artifacts.exists())
 
-    output_file = artifacts / 'sdk1_build_outputss' / 'file2'
+    output_file = artifacts / 'sdk1_build_outputs' / 'file2'
     self.assertFalse(output_file.exists())
 
     output_file = artifacts / 'sdk1_build_output' / 'file1'

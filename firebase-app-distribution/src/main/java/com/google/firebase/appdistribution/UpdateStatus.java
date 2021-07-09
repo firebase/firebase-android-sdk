@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,13 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.errorprone;
+package com.google.firebase.appdistribution;
 
-public class NoStaticOrDefaultMethodsInInterfacesNegativeCases {
+/** Enum for possible states during Update, used in UpdateProgress. */
+public enum UpdateStatus {
+  /** Update queued but not started */
+  PENDING,
 
-  public interface EmptyInterface {}
+  /** Download in progress */
+  DOWNLOADING,
 
-  public interface NonDefaultInterface {
-    void method1();
-  }
+  /** Download completed */
+  DOWNLOADED,
+
+  /** Download failed */
+  DOWNLOAD_FAILED,
+
+  /** Update installed */
+  INSTALLED,
+
+  /** Installation cancelled */
+  INSTALL_CANCELED,
+
+  /** Installation failed */
+  INSTALL_FAILED,
+
+  /** AAB flow (directed to Play) */
+  REDIRECTED_TO_PLAY,
 }

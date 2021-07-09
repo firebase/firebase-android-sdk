@@ -13,18 +13,17 @@
 // limitations under the License.
 
 import java.nio.file.Files
-import java.nio.file.Path
 import java.nio.file.Paths
 
 buildscript {
   repositories {
     google()
-    jcenter()
+    mavenCentral()
   }
 
   dependencies {
-    classpath "com.android.tools.build:gradle:3.4.3"
-    classpath "com.google.gms:google-services:4.3.0"
+    classpath "com.android.tools.build:gradle:4.2.2"
+    classpath "com.google.gms:google-services:4.3.8"
   }
 }
 
@@ -81,15 +80,15 @@ dependencies {
   implementation "com.google.firebase:firebase-storage"
 
   // Common utilities (application side)
-  implementation "androidx.test:rules:1.2.0"
-  implementation "androidx.test:runner:1.2.0"
-  implementation "com.google.truth:truth:0.44"
-  implementation "junit:junit:4.12"
-  implementation "androidx.test:core:1.3.0"
+  implementation "androidx.test:rules:1.4.0"
+  implementation "androidx.test:runner:1.4.0"
+  implementation "com.google.truth:truth:1.0.1"
+  implementation "junit:junit:4.13.2"
+  implementation "androidx.test:core:1.4.0"
 
   // Common utilities (instrumentation side)
-  androidTestImplementation "androidx.test:runner:1.2.0"
-  androidTestImplementation "junit:junit:4.12"
+  androidTestImplementation "androidx.test:runner:1.4.0"
+  androidTestImplementation "junit:junit:4.13.2"
 }
 
 clean.doLast {

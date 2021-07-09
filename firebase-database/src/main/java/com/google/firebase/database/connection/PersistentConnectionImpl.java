@@ -1148,7 +1148,7 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
         };
 
     Map<String, Object> request = new HashMap<>();
-    hardAssert(appCheckToken != null, "Auth token must be set to authenticate!");
+    hardAssert(appCheckToken != null, "App check token must be set!");
     request.put(REQUEST_APPCHECK_TOKEN, appCheckToken);
     sendSensitive(REQUEST_ACTION_APPCHECK, /*isSensitive=*/ true, request, onComplete);
   }
@@ -1173,17 +1173,15 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
         "Wanted to restore tokens, but was in wrong state: %s",
         this.connectionState);
 
-    if (authToken == null && appCheckToken == null) {
-      if (logger.logsDebug()) logger.debug("Not restoring auth because tokens are null.");
-      this.connectionState = ConnectionState.Connected;
-      restoreState();
-      return;
-    }
-
     if (authToken != null) {
       if (logger.logsDebug()) logger.debug("Restoring auth.");
       this.connectionState = ConnectionState.Authenticating;
       sendAuthAndRestoreState();
+    } else {
+      if (logger.logsDebug()) logger.debug("Not restoring auth because auth token is null.");
+      this.connectionState = ConnectionState.Connected;
+      // Send our appcheck token (if we have one), then restore state.
+      sendAppCheckTokenHelper(true);
     }
   }
 
