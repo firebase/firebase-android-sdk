@@ -33,7 +33,7 @@ class BenchmarkTest(private val startupMode: StartupMode) {
     fun startup() = benchmarkRule.measureRepeated(
         packageName = "com.google.firebase.macrobenchmark",
         metrics = listOf(StartupTimingMetric()),
-        iterations = 40,
+        iterations = 20,
         startupMode = startupMode
     ) {
         pressHome()
@@ -47,7 +47,7 @@ class BenchmarkTest(private val startupMode: StartupMode) {
         @Parameterized.Parameters(name = "mode={0}")
         @JvmStatic
         fun parameters(): List<Array<Any>> {
-            return listOf(StartupMode.COLD, StartupMode.WARM, StartupMode.HOT)
+            return listOf(StartupMode.COLD)
                 .map { arrayOf(it) }
         }
     }
