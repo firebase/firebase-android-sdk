@@ -18,6 +18,7 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
@@ -157,7 +158,7 @@ public class FirebaseCrashlytics {
     return new FirebaseCrashlytics(core);
   }
 
-  // package-private for smoke tests
+  @VisibleForTesting // accessible for smoke tests
   final CrashlyticsCore core;
 
   private FirebaseCrashlytics(@NonNull CrashlyticsCore core) {

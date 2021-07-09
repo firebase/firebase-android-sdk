@@ -79,7 +79,7 @@ public class CrashlyticsCore {
   private CrashlyticsController controller;
   private final IdManager idManager;
 
-  @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+  @VisibleForTesting
   public final BreadcrumbSource breadcrumbSource;
   private final AnalyticsEventLogger analyticsEventLogger;
 
