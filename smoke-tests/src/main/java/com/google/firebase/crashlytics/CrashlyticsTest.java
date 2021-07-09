@@ -12,23 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.testing;
+package com.google.firebase.crashlytics;
 
 import static com.google.common.truth.Truth.assertThat;
 
 import android.os.Bundle;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.analytics.FirebaseAnalytics;
-import com.google.firebase.crashlytics.FirebaseCrashlytics;
 
 import androidx.test.runner.AndroidJUnit4;
 import com.google.firebase.crashlytics.internal.breadcrumbs.BreadcrumbSource;
+import com.google.firebase.crashlytics.internal.common.CrashlyticsCore;
 import java.lang.reflect.Field;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+/**
+ * This class is in the com.google.firebase.crashlytics package to access FirebaseCrashlytics's
+ * package-private fields.
+ **/
 @RunWith(AndroidJUnit4.class)
 public final class CrashlyticsTest {
 
@@ -37,15 +41,7 @@ public final class CrashlyticsTest {
     // Validates that Firebase Analytics and Crashlytics interoperability is working, by confirming
     // that events sent to Firebase Analytics are received by the Crashlytics breadcrumb handler.
     try {
-      // need to use reflection to get the breadcrumb handler.
-      FirebaseCrashlytics crashlytics = FirebaseCrashlytics.getInstance();
-      Field coreField = crashlytics.getClass().getDeclaredField("core");
-      coreField.setAccessible(true);
-      Object core = coreField.get(crashlytics);
-      Field breadcrumbSourceField = core.getClass().getDeclaredField("breadcrumbSource");
-      breadcrumbSourceField.setAccessible(true);
-      BreadcrumbSource breadcrumbSource = (BreadcrumbSource)breadcrumbSourceField.get(core);
-
+      BreadcrumbSource breadcrumbSource = FirebaseCrashlytics.getInstance().core.breadcrumbSource;
       final CountDownLatch eventReceivedLatch = new CountDownLatch(1);
       breadcrumbSource.registerBreadcrumbHandler(breadcrumbHandler -> {
         eventReceivedLatch.countDown();

@@ -19,6 +19,7 @@ import android.text.TextUtils;
 import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
@@ -76,10 +77,12 @@ public class CrashlyticsCore {
   private boolean didCrashOnPreviousExecution;
 
   private CrashlyticsController controller;
-
   private final IdManager idManager;
-  private final BreadcrumbSource breadcrumbSource;
+
+  @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+  public final BreadcrumbSource breadcrumbSource;
   private final AnalyticsEventLogger analyticsEventLogger;
+
   private final ExecutorService crashHandlerExecutor;
   private final CrashlyticsBackgroundWorker backgroundWorker;
 

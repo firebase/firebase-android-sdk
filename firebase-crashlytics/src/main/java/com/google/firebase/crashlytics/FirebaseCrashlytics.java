@@ -84,6 +84,7 @@ public class FirebaseCrashlytics {
 
     final ExecutorService crashHandlerExecutor =
         ExecutorUtils.buildSingleThreadExecutorService("Crashlytics Exception Handler");
+
     final CrashlyticsCore core =
         new CrashlyticsCore(
             app,
@@ -156,7 +157,8 @@ public class FirebaseCrashlytics {
     return new FirebaseCrashlytics(core);
   }
 
-  private final CrashlyticsCore core;
+  // package-private for smoke tests
+  final CrashlyticsCore core;
 
   private FirebaseCrashlytics(@NonNull CrashlyticsCore core) {
     this.core = core;
