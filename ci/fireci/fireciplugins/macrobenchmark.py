@@ -113,7 +113,7 @@ async def _post_processing(results):
 
   metrics_service_url = os.getenv('METRICS_SERVICE_URL')
   access_token = prow_utils.gcloud_identity_token()
-  uploader.post_report(measurements, metrics_service_url, access_token, metric='macrobenchmark')
+  # uploader.post_report(measurements, metrics_service_url, access_token, metric='macrobenchmark')
 
   # Raise exceptions for failed measurements
   if any(map(lambda x: isinstance(x, Exception), results)):
@@ -239,6 +239,7 @@ class MacrobenchmarkTest:
           'p50': numpy.percentile(runs, 50),
           'p90': numpy.percentile(runs, 90),
           'p99': numpy.percentile(runs, 99),
+          'stdev': numpy.std(runs),
           'unit': 'ms',
         })
     self.logger.info(f'Benchmark results: {results}')
