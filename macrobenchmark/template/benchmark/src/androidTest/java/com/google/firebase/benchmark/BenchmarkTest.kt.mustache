@@ -33,7 +33,7 @@ class BenchmarkTest(private val startupMode: StartupMode) {
     fun startup() = benchmarkRule.measureRepeated(
         packageName = "com.google.firebase.macrobenchmark",
         metrics = listOf(StartupTimingMetric()),
-        iterations = 20,
+        iterations = 30,
         startupMode = startupMode
     ) {
         pressHome()
