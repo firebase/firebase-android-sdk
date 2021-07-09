@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,4 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-rootProject.name = 'smoke-tests'
+package com.google.firebase.appdistribution;
+
+/** Enum of Android App Binary types, used in AppDistributionRelease */
+public enum BinaryType {
+  AAB,
+  APK
+}
