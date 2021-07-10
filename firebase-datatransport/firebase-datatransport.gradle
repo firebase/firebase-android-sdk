@@ -14,8 +14,21 @@
 
 plugins {
     id 'firebase-library'
+    id 'com.google.protobuf'
 }
 
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:$protocVersion"
+    }
+    generateProtoTasks {
+        all().each { task ->
+            task.builtins {
+                java { option 'lite' }
+            }
+        }
+    }
+}
 firebaseLibrary {
     publishJavadoc = false
     publishSources = true
@@ -42,6 +55,19 @@ android {
             includeAndroidResources = true
         }
     }
+    sourceSets {
+        main {
+            proto {
+                srcDir 'src/proto'
+            }
+            java {
+            }
+        }
+        test {
+            java {
+            }
+        }
+    }
 }
 
 dependencies {
@@ -51,6 +77,7 @@ dependencies {
     implementation project(':transport:transport-runtime')
     implementation project(':transport:transport-backend-cct')
     implementation 'androidx.annotation:annotation:1.1.0'
+    implementation "com.google.protobuf:protobuf-javalite:$javaliteVersion"
 
     testImplementation 'androidx.test:runner:1.2.0'
     testImplementation "org.robolectric:robolectric:$robolectricVersion"

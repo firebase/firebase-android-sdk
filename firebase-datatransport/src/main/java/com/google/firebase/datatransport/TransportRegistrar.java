@@ -22,6 +22,9 @@ import com.google.android.datatransport.runtime.TransportRuntime;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
+import com.google.firebase.heartbeatinfo.HeartBeatInfo;
+import com.google.firebase.platforminfo.UserAgentPublisher;
+
 import java.util.Collections;
 import java.util.List;
 
@@ -30,13 +33,12 @@ public class TransportRegistrar implements ComponentRegistrar {
   @Override
   public List<Component<?>> getComponents() {
     return Collections.singletonList(
-        Component.builder(TransportFactory.class)
+        Component.builder(FirebaseDataTransport.class)
             .add(Dependency.required(Context.class))
+            .add(Dependency.requiredProvider(HeartBeatInfo.class))
+            .add(Dependency.requiredProvider(UserAgentPublisher.class))
             .factory(
-                c -> {
-                  TransportRuntime.initialize(c.get(Context.class));
-                  return TransportRuntime.getInstance().newFactory(CCTDestination.LEGACY_INSTANCE);
-                })
+                c -> new DefaultFirebaseDataTransport(c.get(Context.class), c.getProvider(HeartBeatInfo.class), c.getProvider(UserAgentPublisher.class)))
             .build());
   }
 }
