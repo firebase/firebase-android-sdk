@@ -35,6 +35,7 @@ import com.google.firebase.database.core.utilities.Clock;
 import com.google.firebase.database.core.utilities.ImmutableTree;
 import com.google.firebase.database.core.utilities.NodeSizeEstimator;
 import com.google.firebase.database.core.utilities.Pair;
+import com.google.firebase.database.core.utilities.Predicate;
 import com.google.firebase.database.core.view.CacheNode;
 import com.google.firebase.database.core.view.Change;
 import com.google.firebase.database.core.view.DataEvent;
@@ -920,17 +921,16 @@ public class SyncTree {
   }
 
   /** Similar to calcCompleteEventCache, but doesn't skip the root view cache. */
-  public Node calcCompleteEventCacheFromRoot(Path path, List<Long> writeIdsToExclude) {
+  public Node calcCompleteEventCacheFromRoot(Path path, Predicate<Long> writeIdPred) {
     SyncPoint currentSyncPoint = syncPointTree.getValue();
     Node serverCache = null;
     if (currentSyncPoint != null) {
       serverCache = currentSyncPoint.getCompleteServerCache(Path.getEmptyPath());
     }
     if (serverCache != null) {
-      return this.pendingWriteTree.calcCompleteEventCache(
-          path, serverCache, writeIdsToExclude, true);
+      return this.pendingWriteTree.calcCompleteEventCache(path, serverCache, writeIdPred, true);
     }
-    return calcCompleteEventCache(path, writeIdsToExclude);
+    return calcCompleteEventCache(path, writeIdPred);
   }
 
   /**
@@ -941,7 +941,7 @@ public class SyncTree {
    * <p>Note: this method will *include* hidden writes from transaction with applyLocally set to
    * false.
    */
-  public Node calcCompleteEventCache(Path path, List<Long> writeIdsToExclude) {
+  public Node calcCompleteEventCache(Path path, Predicate<Long> writeIdPred) {
     ImmutableTree<SyncPoint> tree = this.syncPointTree;
     SyncPoint currentSyncPoint = tree.getValue();
     Node serverCache = null;
@@ -958,7 +958,7 @@ public class SyncTree {
         serverCache = currentSyncPoint.getCompleteServerCache(relativePath);
       }
     } while (!pathToFollow.isEmpty() && serverCache == null);
-    return this.pendingWriteTree.calcCompleteEventCache(path, serverCache, writeIdsToExclude, true);
+    return this.pendingWriteTree.calcCompleteEventCache(path, serverCache, writeIdPred, true);
   }
 
   /** Static tracker for next query tag. */
