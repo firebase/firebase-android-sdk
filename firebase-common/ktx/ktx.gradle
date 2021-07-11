@@ -19,6 +19,7 @@ plugins {
 
 firebaseLibrary {
     releaseWith project(':firebase-common')
+    publishJavadoc = false
 }
 
 android {
