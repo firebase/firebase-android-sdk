@@ -18,8 +18,7 @@ import androidx.annotation.Nullable;
 import com.google.firebase.firestore.util.Logger;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.CharBuffer;
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -35,17 +34,17 @@ public class BundleReader {
   protected static final int BUFFER_CAPACITY = 1024;
 
   private final BundleSerializer serializer;
-  private final InputStreamReader dataReader;
+  private final InputStream bundleInputStream;
   private final Charset charset = Charset.forName("UTF-8");
 
   @Nullable BundleMetadata metadata;
-  private CharBuffer buffer;
+  private ByteBuffer buffer;
   long bytesRead;
 
   public BundleReader(BundleSerializer serializer, InputStream data) {
     this.serializer = serializer;
-    dataReader = new InputStreamReader(data, charset);
-    buffer = CharBuffer.allocate(BUFFER_CAPACITY);
+    bundleInputStream = data;
+    buffer = ByteBuffer.allocate(BUFFER_CAPACITY);
 
     buffer.flip(); // Start the buffer in "reading mode"
   }
@@ -83,7 +82,7 @@ public class BundleReader {
   }
 
   public void close() throws IOException {
-    dataReader.close();
+    bundleInputStream.close();
   }
 
   /**
@@ -101,9 +100,9 @@ public class BundleReader {
       return null;
     }
 
-    String json = readJsonString(Integer.parseInt(lengthPrefix));
-    bytesRead += lengthPrefix.length() + json.getBytes(charset).length;
-    return decodeBundleElement(json);
+    ReadJsonResult result = readJson(Integer.parseInt(lengthPrefix));
+    bytesRead += lengthPrefix.getBytes(charset).length + result.getByteCount();
+    return decodeBundleElement(result.getJson());
   }
 
   /**
@@ -133,7 +132,7 @@ public class BundleReader {
       throw abort("Reached the end of bundle when a length string is expected.");
     }
 
-    char[] c = new char[nextOpenBracket];
+    byte[] c = new byte[nextOpenBracket];
     buffer.get(c);
     return new String(c);
   }
@@ -153,29 +152,50 @@ public class BundleReader {
     }
   }
 
+  private class ReadJsonResult {
+    private String json;
+    private int byteCount;
+
+    ReadJsonResult(String json, int byteCount) {
+      this.json = json;
+      this.byteCount = byteCount;
+    }
+
+    String getJson() {
+      return json;
+    }
+
+    int getByteCount() {
+      return byteCount;
+    }
+  }
+
   /**
    * Reads from a specified position from the internal buffer, for a specified number of bytes,
    * pulling more data from the underlying stream if needed.
    *
-   * <p>Returns a string decoded from the read bytes.
+   * <p>Returns an object containing the Json string and its UTF8 byte count.
    */
-  private String readJsonString(int length) throws IOException {
+  private ReadJsonResult readJson(int length) throws IOException {
     StringBuilder json = new StringBuilder(length);
 
     int remaining = length;
+    int bytesRead = 0;
     while (remaining > 0) {
       if (buffer.remaining() == 0 && !pullMoreData()) {
         throw abort("Reached the end of bundle when more data was expected.");
       }
 
       int read = Math.min(remaining, buffer.remaining());
-      json.append(buffer, 0, read);
-      buffer.position(buffer.position() + read);
+      byte[] bytes = new byte[read];
+      buffer.get(bytes);
+      json.append(new String(bytes, charset));
 
+      bytesRead += read;
       remaining -= read;
     }
 
-    return json.toString();
+    return new ReadJsonResult(json.toString(), bytesRead);
   }
 
   /**
@@ -185,9 +205,12 @@ public class BundleReader {
    */
   private boolean pullMoreData() throws IOException {
     buffer.compact();
-    int read = dataReader.read(buffer);
+    int bytesToRead = Math.min(bundleInputStream.available(), buffer.remaining());
+    byte[] bytes = new byte[bytesToRead];
+    int bytesRead = bundleInputStream.read(bytes);
+    buffer.put(bytes);
     buffer.flip();
-    return read > 0;
+    return bytesRead > 0;
   }
 
   /** Converts a JSON-encoded bundle element into its model class. */

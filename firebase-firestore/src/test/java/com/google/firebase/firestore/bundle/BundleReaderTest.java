@@ -469,7 +469,7 @@ public class BundleReaderTest {
               exists);
       this.elements.add(json);
       if (!exists) ++totalDocuments;
-      totalBytes += getByteLength(json);
+      totalBytes += getUTF8BytesCountWithPrefix(json);
       return json;
     }
 
@@ -493,7 +493,7 @@ public class BundleReaderTest {
               fieldsJson);
       elements.add(json);
       ++totalDocuments;
-      totalBytes += getByteLength(json);
+      totalBytes += getUTF8BytesCountWithPrefix(json);
       return json;
     }
 
@@ -520,14 +520,18 @@ public class BundleReaderTest {
               structuredQueryJson,
               limitType.equals(Query.LimitType.LIMIT_TO_FIRST) ? "FIRST" : "LAST");
       elements.add(json);
-      totalBytes += getByteLength(json);
+      totalBytes += getUTF8BytesCountWithPrefix(json);
       return json;
     }
 
-    private int getByteLength(String json) {
-      int elementLength = json.getBytes(StandardCharsets.UTF_8).length;
+    private int getUTF8BytesCountWithPrefix(String json) {
+      int elementLength = getUTF8BytesCount(json);
       int prefixLength = (int) (Math.log10(elementLength) + 1);
       return prefixLength + elementLength;
+    }
+
+    private int getUTF8BytesCount(String json) {
+      return json.getBytes(StandardCharsets.UTF_8).length;
     }
 
     String getMetadataElement(String id, long createTimeMicros, int version) {
@@ -556,7 +560,7 @@ public class BundleReaderTest {
       builder.append(metadataElement);
 
       for (String element : this.elements) {
-        builder.append(element.length());
+        builder.append(getUTF8BytesCount(element));
         builder.append(element);
       }
 
