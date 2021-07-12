@@ -17,12 +17,15 @@ package com.google.android.datatransport.runtime.scheduling.jobscheduling;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import com.google.android.datatransport.Encoding;
+import com.google.android.datatransport.runtime.EncodedPayload;
 import com.google.android.datatransport.runtime.EventInternal;
 import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.backends.BackendRegistry;
 import com.google.android.datatransport.runtime.backends.BackendRequest;
 import com.google.android.datatransport.runtime.backends.BackendResponse;
 import com.google.android.datatransport.runtime.backends.TransportBackend;
+import com.google.android.datatransport.runtime.firebase.transport.ClientMetrics;
 import com.google.android.datatransport.runtime.firebase.transport.LogEventDropped;
 import com.google.android.datatransport.runtime.logging.Logging;
 import com.google.android.datatransport.runtime.scheduling.persistence.ClientHealthMetricsStore;
@@ -31,6 +34,7 @@ import com.google.android.datatransport.runtime.scheduling.persistence.Persisted
 import com.google.android.datatransport.runtime.synchronization.SynchronizationException;
 import com.google.android.datatransport.runtime.synchronization.SynchronizationGuard;
 import com.google.android.datatransport.runtime.time.Clock;
+import com.google.android.datatransport.runtime.time.Monotonic;
 import com.google.android.datatransport.runtime.time.WallTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -43,6 +47,7 @@ import javax.inject.Inject;
 public class Uploader {
 
   private static final String LOG_TAG = "Uploader";
+  private static final String CLIENT_HEALTH_METRICS_LOG_SOURCE = "1710";
 
   private final Context context;
   private final BackendRegistry backendRegistry;
@@ -51,6 +56,7 @@ public class Uploader {
   private final Executor executor;
   private final SynchronizationGuard guard;
   private final Clock clock;
+  private final Clock uptimeClock;
   private final ClientHealthMetricsStore clientHealthMetricsStore;
 
   @Inject
@@ -62,6 +68,7 @@ public class Uploader {
       Executor executor,
       SynchronizationGuard guard,
       @WallTime Clock clock,
+      @Monotonic Clock uptimeClock,
       ClientHealthMetricsStore clientHealthMetricsStore) {
     this.context = context;
     this.backendRegistry = backendRegistry;
@@ -70,6 +77,7 @@ public class Uploader {
     this.executor = executor;
     this.guard = guard;
     this.clock = clock;
+    this.uptimeClock = uptimeClock;
     this.clientHealthMetricsStore = clientHealthMetricsStore;
   }
 
@@ -126,6 +134,22 @@ public class Uploader {
         for (PersistedEvent persistedEvent : persistedEvents) {
           eventInternals.add(persistedEvent.getEvent());
         }
+
+        if (transportContext.shouldUploadClientHealthMetrics()) {
+          ClientMetrics clientMetrics =
+              guard.runCriticalSection(clientHealthMetricsStore::loadClientMetrics);
+          EventInternal eventInternal =
+              EventInternal.builder()
+                  .setEventMillis(clock.getTime())
+                  .setUptimeMillis(uptimeClock.getTime())
+                  .setTransportName(CLIENT_HEALTH_METRICS_LOG_SOURCE)
+                  .setEncodedPayload(
+                      new EncodedPayload(Encoding.of("proto"), clientMetrics.toByteArray()))
+                  .build();
+          EventInternal decoratedEvent = backend.decorate(eventInternal);
+          eventInternals.add(decoratedEvent);
+        }
+
         response =
             backend.send(
                 BackendRequest.builder()

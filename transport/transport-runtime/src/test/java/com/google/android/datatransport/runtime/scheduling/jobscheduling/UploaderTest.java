@@ -17,6 +17,7 @@ package com.google.android.datatransport.runtime.scheduling.jobscheduling;
 import static android.os.Build.VERSION_CODES.LOLLIPOP;
 import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -31,6 +32,7 @@ import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.backends.BackendRegistry;
 import com.google.android.datatransport.runtime.backends.BackendResponse;
 import com.google.android.datatransport.runtime.backends.TransportBackend;
+import com.google.android.datatransport.runtime.firebase.transport.ClientMetrics;
 import com.google.android.datatransport.runtime.firebase.transport.LogEventDropped;
 import com.google.android.datatransport.runtime.scheduling.persistence.ClientHealthMetricsStore;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
@@ -38,9 +40,11 @@ import com.google.android.datatransport.runtime.scheduling.persistence.InMemoryE
 import com.google.android.datatransport.runtime.scheduling.persistence.PersistedEvent;
 import com.google.android.datatransport.runtime.synchronization.SynchronizationGuard;
 import java.nio.charset.Charset;
+import java.util.Arrays;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.AdditionalAnswers;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
@@ -55,8 +59,15 @@ public class UploaderTest {
         }
       };
   private static final String BACKEND_NAME = "backend1";
+  private static final String ANOTHER_BACKEND_NAME = "backend1";
+  private static final String CLIENT_HEALTH_METRICS_LOG_SOURCE = "1710";
   private static final TransportContext TRANSPORT_CONTEXT =
       TransportContext.builder().setBackendName(BACKEND_NAME).build();
+  private static final TransportContext ANOTHER_TRANSPORT_CONTEXT =
+      TransportContext.builder()
+          .setBackendName(ANOTHER_BACKEND_NAME)
+          .setExtras("foo".getBytes())
+          .build();
   private static final EventInternal EVENT =
       EventInternal.builder()
           .setTransportName("42")
@@ -80,6 +91,7 @@ public class UploaderTest {
   private static final int MANY_EVENT_COUNT = 1000;
 
   private final EventStore store = spy(new InMemoryEventStore());
+  private final EventStore mockStore = mock(EventStore.class);
   private BackendRegistry mockRegistry = mock(BackendRegistry.class);
   private TransportBackend mockBackend = mock(TransportBackend.class);
   private WorkScheduler mockScheduler = mock(WorkScheduler.class);
@@ -95,6 +107,7 @@ public class UploaderTest {
               mockScheduler,
               Runnable::run,
               guard,
+              () -> 2,
               () -> 2,
               mockClientHealthMetricsStore));
 
@@ -178,5 +191,33 @@ public class UploaderTest {
     Iterable<PersistedEvent> persistedEvents = store.loadBatch(TRANSPORT_CONTEXT);
     uploader.logAndUpdateState(TRANSPORT_CONTEXT, 1);
     assertThat(store.hasPendingEventsFor(TRANSPORT_CONTEXT)).isFalse();
+  }
+
+  @Test
+  public void upload_toFlgServer_shouldIncludeClientHealthMetrics() {
+    final ClientMetrics expectedClientMetrics = ClientMetrics.getDefaultInstance();
+    when(mockRegistry.get(BACKEND_NAME)).thenReturn(mockBackend);
+    when(mockBackend.send(any())).thenReturn(BackendResponse.ok(1000));
+    when(mockBackend.decorate(any())).then(AdditionalAnswers.returnsFirstArg());
+    when(mockClientHealthMetricsStore.loadClientMetrics()).thenReturn(expectedClientMetrics);
+
+    store.persist(ANOTHER_TRANSPORT_CONTEXT, EVENT);
+    uploader.upload(ANOTHER_TRANSPORT_CONTEXT, 0, mockRunnable);
+
+    verify(mockClientHealthMetricsStore, times(1)).loadClientMetrics();
+    verify(mockBackend, times(1))
+        .send(
+            argThat(
+                (backendRequest -> {
+                  for (EventInternal eventInternal : backendRequest.getEvents()) {
+                    if (eventInternal.getTransportName().equals(CLIENT_HEALTH_METRICS_LOG_SOURCE)
+                        && Arrays.equals(
+                            eventInternal.getEncodedPayload().getBytes(),
+                            expectedClientMetrics.toByteArray())) {
+                      return true;
+                    }
+                  }
+                  return false;
+                })));
   }
 }
