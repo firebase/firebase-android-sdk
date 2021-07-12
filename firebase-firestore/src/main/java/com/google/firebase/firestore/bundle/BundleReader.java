@@ -134,7 +134,7 @@ public class BundleReader {
 
     byte[] c = new byte[nextOpenBracket];
     buffer.get(c);
-    return new String(c);
+    return charset.decode(ByteBuffer.wrap(c)).toString();
   }
 
   /** Returns the index of the first open bracket, or -1 if none is found. */
@@ -152,7 +152,7 @@ public class BundleReader {
     }
   }
 
-  private class ReadJsonResult {
+  private static final class ReadJsonResult {
     private String json;
     private int byteCount;
 
@@ -189,7 +189,7 @@ public class BundleReader {
       int read = Math.min(remaining, buffer.remaining());
       byte[] bytes = new byte[read];
       buffer.get(bytes);
-      json.append(new String(bytes, charset));
+      json.append(charset.decode(ByteBuffer.wrap(bytes)));
 
       bytesRead += read;
       remaining -= read;
