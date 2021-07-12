@@ -20,7 +20,6 @@ import android.app.Application.ActivityLifecycleCallbacks;
 import android.content.Context;
 import android.os.Bundle;
 import android.util.SparseIntArray;
-import android.view.WindowManager;
 import androidx.annotation.NonNull;
 import androidx.core.app.FrameMetricsAggregator;
 import com.google.android.gms.common.util.VisibleForTesting;
@@ -150,6 +149,10 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
   public synchronized void onActivityStarted(Activity activity) {
     if (isScreenTraceSupported(activity) && configResolver.isPerformanceMonitoringEnabled()) {
       // Starts recording frame metrics for this activity.
+      /**
+       * TODO: Only add activities that are hardware acceleration enabled so that calling {@link
+       * FrameMetricsAggregator#remove(Activity)} will not throw exceptions.
+       */
       frameMetricsAggregator.add(activity);
       // Start the Trace
       Trace screenTrace = new Trace(getScreenTraceName(activity), transportManager, clock, this);
@@ -290,7 +293,8 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
   public void onActivityPaused(Activity activity) {}
 
   /**
-   * Send screen trace.
+   * Send screen trace. If hardware acceleration is not enabled, all frame metrics will be zero and
+   * the trace will not be sent.
    *
    * @param activity activity object.
    */
@@ -307,8 +311,14 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
     int totalFrames = 0;
     int slowFrames = 0;
     int frozenFrames = 0;
-    // Stops recording metrics for this Activity and returns the currently-collected metrics
-    SparseIntArray[] arr = frameMetricsAggregator.remove(activity);
+    /**
+     * Resets the metrics data and returns the currently-collected metrics. Note that {@link
+     * FrameMetricsAggregator#reset()} will not stop recording for the activity. The reason of using
+     * {@link FrameMetricsAggregator#reset()} is that {@link
+     * FrameMetricsAggregator#remove(Activity)} will throw exceptions for hardware acceleration
+     * disabled activities.
+     */
+    SparseIntArray[] arr = frameMetricsAggregator.reset();
     if (arr != null) {
       SparseIntArray frameTimes = arr[FrameMetricsAggregator.TOTAL_INDEX];
       if (frameTimes != null) {
@@ -391,21 +401,13 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
   }
 
   /**
-   * Only send screen trace if FrameMetricsAggregator exists and the activity is hardware
-   * accelerated.
+   * Only send screen trace if FrameMetricsAggregator exists.
    *
    * @param activity The Activity for which we're monitoring the screen rendering performance.
    * @return true if supported, false if not.
    */
   private boolean isScreenTraceSupported(Activity activity) {
-    return hasFrameMetricsAggregator
-        // This check is needed because we can't observe frame rates for a non hardware accelerated
-        // view.
-        // See b/133827763.
-        && activity.getWindow() != null
-        && ((activity.getWindow().getAttributes().flags
-                & WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED)
-            != 0);
+    return hasFrameMetricsAggregator;
   }
 
   /**

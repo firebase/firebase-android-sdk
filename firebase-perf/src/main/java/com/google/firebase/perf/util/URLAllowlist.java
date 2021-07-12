@@ -36,7 +36,7 @@ public class URLAllowlist {
     }
 
     AndroidLogger.getInstance()
-        .info("Detected domain allowlist, only allowlisted domains will be measured.");
+        .debug("Detected domain allowlist, only allowlisted domains will be measured.");
     if (allowlistedDomains == null) {
       allowlistedDomains = resources.getStringArray(resourceId);
     }

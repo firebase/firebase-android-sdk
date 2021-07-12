@@ -60,8 +60,7 @@ public class SchemaManagerTest {
           .build();
 
   private static final EventInternal EVENT2 =
-      EVENT1
-          .toBuilder()
+      EVENT1.toBuilder()
           .setEncodedPayload(
               new EncodedPayload(PROTOBUF_ENCODING, "World".getBytes(Charset.defaultCharset())))
           .build();
