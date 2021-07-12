@@ -24,6 +24,7 @@ import javax.inject.Named;
 @Module
 public abstract class TestEventStoreModule {
   private static final long MAX_DB_STORAGE_SIZE_IN_BYTES = 10 * 1024 * 1024;
+  private static final long MAX_DB_GLOBAL_STORAGE_SIZE_IN_BYTES = 12 * 1024 * 1024;
   private static final int LOAD_BATCH_SIZE = 200;
   private static final int LOCK_TIME_OUT_MS = 0;
 
@@ -31,6 +32,7 @@ public abstract class TestEventStoreModule {
   static EventStoreConfig storeConfig() {
     return EventStoreConfig.builder()
         .setMaxStorageSizeInBytes(MAX_DB_STORAGE_SIZE_IN_BYTES)
+        .setMaxGlobalStorageSizeInBytes(MAX_DB_GLOBAL_STORAGE_SIZE_IN_BYTES)
         .setLoadBatchSize(LOAD_BATCH_SIZE)
         .setCriticalSectionEnterTimeoutMs(LOCK_TIME_OUT_MS)
         .setEventCleanUpAge(60 * 1000)

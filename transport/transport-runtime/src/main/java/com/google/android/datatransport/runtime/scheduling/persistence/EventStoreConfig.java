@@ -19,6 +19,7 @@ import com.google.auto.value.AutoValue;
 @AutoValue
 abstract class EventStoreConfig {
   private static final long MAX_DB_STORAGE_SIZE_IN_BYTES = 10 * 1024 * 1024;
+  private static final long MAX_DB_GLOBAL_STORAGE_SIZE_IN_BYTES = 12 * 1024 * 1024;
   private static final int LOAD_BATCH_SIZE = 200;
   private static final int LOCK_TIME_OUT_MS = 10000;
   private static final long DURATION_ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
@@ -27,6 +28,7 @@ abstract class EventStoreConfig {
   static final EventStoreConfig DEFAULT =
       EventStoreConfig.builder()
           .setMaxStorageSizeInBytes(MAX_DB_STORAGE_SIZE_IN_BYTES)
+          .setMaxGlobalStorageSizeInBytes(MAX_DB_GLOBAL_STORAGE_SIZE_IN_BYTES)
           .setLoadBatchSize(LOAD_BATCH_SIZE)
           .setCriticalSectionEnterTimeoutMs(LOCK_TIME_OUT_MS)
           .setEventCleanUpAge(DURATION_ONE_WEEK_MS)
@@ -34,6 +36,8 @@ abstract class EventStoreConfig {
           .build();
 
   abstract long getMaxStorageSizeInBytes();
+
+  abstract long getMaxGlobalStorageSizeInBytes();
 
   abstract int getLoadBatchSize();
 
@@ -50,6 +54,7 @@ abstract class EventStoreConfig {
   Builder toBuilder() {
     return builder()
         .setMaxStorageSizeInBytes(getMaxStorageSizeInBytes())
+        .setMaxGlobalStorageSizeInBytes(getMaxGlobalStorageSizeInBytes())
         .setLoadBatchSize(getLoadBatchSize())
         .setCriticalSectionEnterTimeoutMs(getCriticalSectionEnterTimeoutMs())
         .setEventCleanUpAge(getEventCleanUpAge())
@@ -59,6 +64,8 @@ abstract class EventStoreConfig {
   @AutoValue.Builder
   abstract static class Builder {
     abstract Builder setMaxStorageSizeInBytes(long value);
+
+    abstract Builder setMaxGlobalStorageSizeInBytes(long value);
 
     abstract Builder setLoadBatchSize(int value);
 

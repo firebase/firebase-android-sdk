@@ -587,6 +587,9 @@ public class SQLiteEventStore
       long eventsDroppedCount, LogEventDropped.Reason reason, String logSource) {
     inTransaction(
         db -> {
+          if (isStorageAtGlobalLimit()) {
+            return null;
+          }
           String selectSql =
               "SELECT 1 FROM log_event_dropped" + " WHERE log_source = ? AND reason = ?";
           String[] selectionArgs = new String[] {logSource, Integer.toString(reason.getNumber())};
@@ -786,6 +789,12 @@ public class SQLiteEventStore
     long byteSize = getPageCount() * getPageSize();
 
     return byteSize >= config.getMaxStorageSizeInBytes();
+  }
+
+  private boolean isStorageAtGlobalLimit() {
+    long byteSize = getPageCount() * getPageSize();
+
+    return byteSize >= config.getMaxGlobalStorageSizeInBytes();
   }
 
   @VisibleForTesting

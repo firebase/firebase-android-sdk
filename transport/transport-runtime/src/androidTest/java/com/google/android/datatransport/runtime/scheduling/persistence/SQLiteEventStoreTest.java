@@ -667,6 +667,18 @@ public class SQLiteEventStoreTest {
   }
 
   @Test
+  public void recordLogEventDropped_whenDbSizeOnDiskIsAtGlobalLimit_shouldNotRecordAnything() {
+    SQLiteEventStore storeUnderTest =
+        newStoreWithConfig(
+            clock, CONFIG.toBuilder().setMaxGlobalStorageSizeInBytes(0).build(), packageName);
+
+    storeUnderTest.recordLogEventDropped(1, REASON_MAX_RETRIES_REACHED, LOG_SOURCE_1);
+
+    ClientMetrics clientMetrics = storeUnderTest.loadClientMetrics();
+    assertThat(clientMetrics.getLogSourceMetricsList().size()).isEqualTo(0);
+  }
+
+  @Test
   public void loadClientMetrics_shouldIncludeCorrectLogSourceMetrics() {
     store.resetClientMetrics();
     store.recordLogEventDropped(
