@@ -371,6 +371,21 @@ public class SQLiteEventStore
     long oneWeekAgo = wallClock.getTime() - config.getEventCleanUpAge();
     return inTransaction(
         db -> {
+          // Delete old client health metrics
+          tryWithCursor(
+              db.rawQuery(
+                  "SELECT last_metrics_upload_ms FROM global_log_event_state LIMIT 1",
+                  new String[] {}),
+              cursor -> {
+                cursor.moveToNext();
+                long startMs = cursor.getLong(0);
+                if (startMs < oneWeekAgo) {
+                  resetClientMetrics();
+                }
+                return null;
+              });
+
+          // Record old events
           String query =
               "SELECT COUNT(*), transport_name FROM events "
                   + "WHERE timestamp_ms < ? "
@@ -388,6 +403,7 @@ public class SQLiteEventStore
                 return null;
               });
 
+          // Delete old events
           return db.delete("events", "timestamp_ms < ?", selectionArgs);
         });
   }

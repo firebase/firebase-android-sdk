@@ -512,6 +512,18 @@ public class SQLiteEventStoreTest {
   }
 
   @Test
+  public void cleanUp_whenClientHealthMetricsIsOld_shouldDeleteIt() {
+    store.resetClientMetrics();
+    store.recordLogEventDropped(1, REASON_MAX_RETRIES_REACHED, LOG_SOURCE_1);
+    clock.advance(HOUR + 1);
+
+    store.cleanUp();
+
+    ClientMetrics clientMetrics = store.loadClientMetrics();
+    assertThat(clientMetrics.getLogSourceMetricsList().size()).isEqualTo(0);
+  }
+
+  @Test
   public void loadActiveContexts_whenNoContextsAvailable_shouldReturnEmptyList() {
     assertThat(store.loadActiveContexts()).isEmpty();
   }
