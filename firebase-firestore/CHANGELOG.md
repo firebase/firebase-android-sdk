@@ -3,7 +3,8 @@
   multi-bytes unicode character leads to failures.
 
 # 23.0.2
-- [changed] Improved Firestore's network condition detection.
+- [changed] Increases the aggressiveness of network retries when an app's
+  foreground status changes.
 
 # 23.0.1
 - [changed] The SDK now tries to immediately establish a connection to the

@@ -140,6 +140,7 @@ public class BomGeneratorTask extends DefaultTask {
           "firebase-storage-common-license",
           "firebase-storage-license",
           "perf-plugin",
+          "play-services-ads",
           "protolite-well-known-types",
           "testlab-instr-lib",
           "firebase-installations-interop",
@@ -158,6 +159,7 @@ public class BomGeneratorTask extends DefaultTask {
           "firebase-ml-natural-language-translate-model");
   private static final List<String> IMPORTANT_NON_FIREBASE_LIBRARIES =
       ImmutableList.of(
+          "com.google.android.gms:play-services-ads",
           "com.google.gms:google-services",
           "com.android.tools.build:gradle",
           "com.google.firebase:perf-plugin",

@@ -14,6 +14,7 @@
 
 package com.google.firebase.gradle.plugins;
 
+import com.github.sherter.googlejavaformatgradleplugin.GoogleJavaFormatExtension;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.firebase.gradle.plugins.apiinfo.ApiInformationTask;
@@ -37,6 +38,9 @@ public class FirebaseJavaLibraryPlugin implements Plugin<Project> {
   @Override
   public void apply(Project project) {
     project.apply(ImmutableMap.of("plugin", "java-library"));
+    project.apply(ImmutableMap.of("plugin", "com.github.sherter.google-java-format"));
+    project.getExtensions().getByType(GoogleJavaFormatExtension.class).setToolVersion("1.10.0");
+
     FirebaseLibraryExtension firebaseLibrary =
         project
             .getExtensions()
