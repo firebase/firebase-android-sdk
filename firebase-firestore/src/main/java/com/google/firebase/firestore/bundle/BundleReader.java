@@ -100,9 +100,10 @@ public class BundleReader {
       return null;
     }
 
-    ReadJsonResult result = readJson(Integer.parseInt(lengthPrefix));
-    bytesRead += lengthPrefix.getBytes(charset).length + result.getByteCount();
-    return decodeBundleElement(result.getJson());
+    int jsonStringByteCount = Integer.parseInt(lengthPrefix);
+    String json = readJson(jsonStringByteCount);
+    bytesRead += lengthPrefix.getBytes(charset).length + jsonStringByteCount;
+    return decodeBundleElement(json);
   }
 
   /**
@@ -176,26 +177,21 @@ public class BundleReader {
    *
    * <p>Returns an object containing the Json string and its UTF8 byte count.
    */
-  private ReadJsonResult readJson(int length) throws IOException {
-    StringBuilder json = new StringBuilder(length);
+  private String readJson(int bytesToRead) throws IOException {
+    StringBuilder json = new StringBuilder();
 
-    int remaining = length;
-    int bytesRead = 0;
-    while (remaining > 0) {
-      if (buffer.remaining() == 0 && !pullMoreData()) {
+    while (buffer.remaining() < bytesToRead) {
+      if (!pullMoreData()) {
         throw abort("Reached the end of bundle when more data was expected.");
       }
-
-      int read = Math.min(remaining, buffer.remaining());
-      byte[] bytes = new byte[read];
-      buffer.get(bytes);
-      json.append(charset.decode(ByteBuffer.wrap(bytes)));
-
-      bytesRead += read;
-      remaining -= read;
     }
 
-    return new ReadJsonResult(json.toString(), bytesRead);
+    // By now `buffer` has enough content for the desired JSON string.
+    byte[] bytes = new byte[bytesToRead];
+    buffer.get(bytes);
+    json.append(charset.decode(ByteBuffer.wrap(bytes)));
+
+    return json.toString();
   }
 
   /**
