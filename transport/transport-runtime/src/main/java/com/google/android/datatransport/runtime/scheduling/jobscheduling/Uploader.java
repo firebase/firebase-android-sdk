@@ -164,8 +164,12 @@ public class Uploader {
             }
           }
           for (Map.Entry<String, Integer> entry : countMap.entrySet()) {
-            clientHealthMetricsStore.recordLogEventDropped(
-                entry.getValue(), LogEventDropped.Reason.INVALID_PAYLOD, entry.getKey());
+            guard.runCriticalSection(
+                () -> {
+                  clientHealthMetricsStore.recordLogEventDropped(
+                      entry.getValue(), LogEventDropped.Reason.INVALID_PAYLOD, entry.getKey());
+                  return null;
+                });
           }
         }
       }
