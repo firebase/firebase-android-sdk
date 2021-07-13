@@ -14,10 +14,13 @@
 
 package com.google.firebase.appdistribution;
 
+import android.app.Application;
+
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.components.Component;
+import com.google.firebase.components.ComponentContainer;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
 import com.google.firebase.installations.FirebaseInstallationsApi;
@@ -38,11 +41,16 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
         Component.builder(FirebaseAppDistribution.class)
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.required(FirebaseInstallationsApi.class))
-            .factory(
-                c ->
-                    new FirebaseAppDistribution(
-                        c.get(FirebaseApp.class), c.get(FirebaseInstallationsApi.class)))
+            .factory(this::buildFirebaseAppDistribution)
             .build(),
         LibraryVersionComponent.create("fire-app-distribution", BuildConfig.VERSION_NAME));
   }
+
+  private FirebaseAppDistribution buildFirebaseAppDistribution(ComponentContainer container) {
+    FirebaseApp app = container.get(FirebaseApp.class);
+    FirebaseInstallationsApi firebaseInstallations = container.get(FirebaseInstallationsApi.class);
+    Application firebaseApplication = (Application) app.getApplicationContext();
+    return new FirebaseAppDistribution(app, firebaseInstallations);
+  }
+
 }
