@@ -17,6 +17,7 @@ package com.google.firebase.appdistribution;
 import static androidx.test.InstrumentationRegistry.getContext;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.when;
 
 import java.io.ByteArrayInputStream;
@@ -37,11 +38,11 @@ import org.robolectric.RobolectricTestRunner;
 @RunWith(RobolectricTestRunner.class)
 public class FirebaseAppDistributionTesterApiClientTest {
 
-  public static final String TEST_API_KEY = "AIzaSyabcdefghijklmnopqrstuvwxyz1234567";
-  public static final String TEST_APP_ID_1 = "1:123456789:android:abcdef";
-  public static final String TEST_AUTH_TOKEN = "fad.auth.token";
-  public static final String TEST_FID_1 = "cccccccccccccccccccccc";
-  public static final String INVALID_RESPONSE = "InvalidResponse";
+  private static final String TEST_API_KEY = "AIzaSyabcdefghijklmnopqrstuvwxyz1234567";
+  private static final String TEST_APP_ID_1 = "1:123456789:android:abcdef";
+  private static final String TEST_AUTH_TOKEN = "fad.auth.token";
+  private static final String TEST_FID_1 = "cccccccccccccccccccccc";
+  private static final String INVALID_RESPONSE = "InvalidResponse";
 
   private FirebaseAppDistributionTesterApiClient firebaseAppDistributionTesterApiClient;
   @Mock private HttpsURLConnection mockHttpsURLConnection;
@@ -78,15 +79,8 @@ public class FirebaseAppDistributionTesterApiClientTest {
   @Test
   public void fetchLatestRelease_whenResponseFails_throwsError() throws Exception {
     when(mockHttpsURLConnection.getInputStream()).thenThrow(new IOException());
-    AppDistributionRelease release = null;
-    try {
-      release =
-          firebaseAppDistributionTesterApiClient.fetchLatestRelease(
-              TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN);
-    } catch (Exception e) {
-      assertEquals(FirebaseAppDistributionException.class, e.getClass());
-    }
-    assertNull(release);
+    assertThrows(FirebaseAppDistributionException.class, () -> firebaseAppDistributionTesterApiClient.fetchLatestRelease(
+            TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN));
   }
 
   @Test
@@ -94,15 +88,8 @@ public class FirebaseAppDistributionTesterApiClientTest {
     InputStream response =
         new ByteArrayInputStream(INVALID_RESPONSE.getBytes(StandardCharsets.UTF_8));
     when(mockHttpsURLConnection.getInputStream()).thenReturn(response);
-    AppDistributionRelease release = null;
-    try {
-      release =
-          firebaseAppDistributionTesterApiClient.fetchLatestRelease(
-              TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN);
-    } catch (Exception e) {
-      assertEquals(e.getClass(), FirebaseAppDistributionException.class);
-    }
-    assertNull(release);
+    assertThrows(FirebaseAppDistributionException.class, () -> firebaseAppDistributionTesterApiClient.fetchLatestRelease(
+            TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN));
   }
 
   private JSONObject getTestJSON(String fileName) throws IOException, JSONException {

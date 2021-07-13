@@ -249,7 +249,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     // throw error if app reentered during signin
     if (currentlySigningIn) {
       currentlySigningIn = false;
-      setSignInTaskCompletionError(new FirebaseAppDistributionException(AUTHENTICATION_FAILURE));
+      setSignInTaskCompletionError(new FirebaseAppDistributionException(AUTHENTICATION_CANCELED));
     }
     this.currentActivity = activity;
   }
@@ -386,9 +386,13 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
         latestRelease = retrievedLatestRelease;
       }
     } catch (FirebaseAppDistributionException | ProtocolException e) {
-      setCheckForUpdateTaskCompletionError(
-          new FirebaseAppDistributionException(
-              e.getMessage(), FirebaseAppDistributionException.Status.NETWORK_FAILURE));
+      if (e.getClass().equals(FirebaseAppDistributionException.class)) {
+        setCheckForUpdateTaskCompletionError((FirebaseAppDistributionException) e);
+      } else {
+        setCheckForUpdateTaskCompletionError(
+                new FirebaseAppDistributionException(
+                        e.getMessage(), FirebaseAppDistributionException.Status.NETWORK_FAILURE));
+      }
     }
     return latestRelease;
   }

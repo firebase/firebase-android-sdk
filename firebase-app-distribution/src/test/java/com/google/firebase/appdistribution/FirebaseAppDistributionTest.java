@@ -51,18 +51,33 @@ import org.robolectric.shadows.ShadowPackageManager;
 
 @RunWith(RobolectricTestRunner.class)
 public class FirebaseAppDistributionTest {
-  public static final String TEST_API_KEY = "AIzaSyabcdefghijklmnopqrstuvwxyz1234567";
-  public static final String TEST_APP_ID_1 = "1:123456789:android:abcdef";
-  public static final String TEST_PROJECT_ID = "777777777777";
-  public static final String TEST_FID_1 = "cccccccccccccccccccccc";
-  public static final String TEST_FID_2 = "dddddddddddddddddddddd";
-  public static final String TEST_AUTH_TOKEN = "fad.auth.token";
-  public static final String TEST_URL =
+  private static final String TEST_API_KEY = "AIzaSyabcdefghijklmnopqrstuvwxyz1234567";
+  private static final String TEST_APP_ID_1 = "1:123456789:android:abcdef";
+  private static final String TEST_PROJECT_ID = "777777777777";
+  private static final String TEST_FID_1 = "cccccccccccccccccccccc";
+  private static final String TEST_FID_2 = "dddddddddddddddddddddd";
+  private static final String TEST_AUTH_TOKEN = "fad.auth.token";
+  private static final String TEST_URL =
       String.format(
           "https://appdistribution.firebase.google.com/pub/testerapps/%s/installations/%s/buildalerts"
               + "?appName=com.google.firebase.appdistribution.test"
               + "&packageName=com.google.firebase.appdistribution.test",
           TEST_APP_ID_1, TEST_FID_1);
+  private static AppDistributionRelease TEST_RELEASE_1 =
+          AppDistributionRelease.builder()
+                  .setBinaryType(BinaryType.APK)
+                  .setBuildVersion("3")
+                  .setDisplayVersion("3.0")
+                  .setReleaseNotes("Newer version.")
+                  .build();
+
+  AppDistributionRelease TEST_RELEASE_2 =
+          AppDistributionRelease.builder()
+                  .setBinaryType(BinaryType.APK)
+                  .setBuildVersion("0")
+                  .setDisplayVersion("0.0")
+                  .setReleaseNotes("Older version.")
+                  .build();
 
   private FirebaseApp firebaseApp;
   private FirebaseAppDistribution firebaseAppDistribution;
@@ -103,29 +118,14 @@ public class FirebaseAppDistributionTest {
         .thenReturn(Tasks.forResult(mockInstallationTokenResult));
     when(mockInstallationTokenResult.getToken()).thenReturn(TEST_AUTH_TOKEN);
 
-    AppDistributionRelease testRelease1 =
-        AppDistributionRelease.builder()
-            .setBinaryType(BinaryType.APK)
-            .setBuildVersion("3")
-            .setDisplayVersion("3.0")
-            .setReleaseNotes("Newer version.")
-            .build();
-
-    AppDistributionRelease testRelease2 =
-        AppDistributionRelease.builder()
-            .setBinaryType(BinaryType.APK)
-            .setBuildVersion("0")
-            .setDisplayVersion("0.0")
-            .setReleaseNotes("Older version.")
-            .build();
 
     when(mockFirebaseAppDistributionTesterApiClient.fetchLatestRelease(
             TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN))
-        .thenReturn(testRelease1);
+        .thenReturn(TEST_RELEASE_1);
 
     when(mockFirebaseAppDistributionTesterApiClient.fetchLatestRelease(
             TEST_FID_2, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN))
-        .thenReturn(testRelease2);
+        .thenReturn(TEST_RELEASE_2);
 
     shadowPackageManager =
         shadowOf(ApplicationProvider.getApplicationContext().getPackageManager());
@@ -240,7 +240,7 @@ public class FirebaseAppDistributionTest {
             TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN);
 
     assertNotNull(release);
-    assertEquals("3", release.getBuildVersion());
+    assertEquals(TEST_RELEASE_1.getBuildVersion(), release.getBuildVersion());
   }
 
   @Test
