@@ -169,9 +169,9 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     Tasks.whenAllComplete(installationIdTask, installationAuthTokenTask)
         .addOnSuccessListener(
             tasks -> {
-              String fid = (String) tasks.get(0).getResult();
+              String fid = installationIdTask.getResult();
               InstallationTokenResult installationTokenResult =
-                  (InstallationTokenResult) tasks.get(1).getResult();
+                  installationAuthTokenTask.getResult();
               checkForUpdateExecutor.execute(
                   () -> {
                     AppDistributionRelease latestRelease =
