@@ -61,7 +61,7 @@ public class FirebaseAppDistributionTest {
   public static final String TEST_AUTH_TOKEN = "fad.auth.token";
   public static final String TEST_URL =
       String.format(
-          "https://appdistribution.firebase.google.com/pub/apps/%s/installations/%s/buildalerts"
+          "https://appdistribution.firebase.google.com/pub/testerapps/%s/installations/%s/buildalerts"
               + "?appName=com.google.firebase.appdistribution.test"
               + "&packageName=com.google.firebase.appdistribution.test",
           TEST_APP_ID_1, TEST_FID_1);
