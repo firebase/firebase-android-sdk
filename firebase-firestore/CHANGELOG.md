@@ -1,6 +1,6 @@
 # 23.0.3
 - [fixed] Fixed an issue when loading a data bundle with
-  multi-bytes unicode character leads to failures.
+  multi-byte Unicode characters leads to failures.
 
 # 23.0.2
 - [changed] Increases the aggressiveness of network retries when an app's
