@@ -60,7 +60,7 @@ public class UploaderTest {
       };
   private static final String BACKEND_NAME = "backend1";
   private static final String ANOTHER_BACKEND_NAME = "backend1";
-  private static final String CLIENT_HEALTH_METRICS_LOG_SOURCE = "1710";
+  private static final String CLIENT_HEALTH_METRICS_LOG_SOURCE = "GDT_CLIENT_METRICS";
   private static final TransportContext TRANSPORT_CONTEXT =
       TransportContext.builder().setBackendName(BACKEND_NAME).build();
   private static final TransportContext ANOTHER_TRANSPORT_CONTEXT =
