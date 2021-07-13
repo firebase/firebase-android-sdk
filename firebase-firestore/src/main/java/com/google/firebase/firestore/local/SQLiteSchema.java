@@ -49,7 +49,7 @@ class SQLiteSchema {
    * The version of the schema. Increase this by one for each migration added to runMigrations
    * below.
    */
-  static final int VERSION = 12;
+  static final int VERSION = 13;
 
   // Remove this constant and increment VERSION to enable indexing support
   static final int INDEXING_SUPPORT_VERSION = VERSION + 1;
@@ -161,6 +161,11 @@ class SQLiteSchema {
     if (fromVersion < 12 && toVersion >= 12) {
       createBundleCache();
     }
+
+    if (fromVersion < 13 && toVersion >= 13) {
+      addLocalContent();
+    }
+
     /*
      * Adding a new migration? READ THIS FIRST!
      *
@@ -581,6 +586,10 @@ class SQLiteSchema {
                   + "read_time_nanos INTEGER, "
                   + "bundled_query_proto BLOB)");
         });
+  }
+
+  private void addLocalContent() {
+    db.execSQL("ALTER TABLE remote_documents ADD COLUMN local_content BLOB");
   }
 
   private boolean tableExists(String table) {
