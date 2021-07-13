@@ -32,7 +32,7 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -44,6 +44,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(AndroidJUnit4.class)
 public class BundleTest {
+  private static Charset UTF8_CHARSET = Charset.forName("UTF-8");
   private static String[] BUNDLE_TEMPLATES =
       new String[] {
         "{\"metadata\":{\"id\":\"test-bundle\",\"createTime\":{\"seconds\":1001,\"nanos\":9999},"
@@ -251,8 +252,8 @@ public class BundleTest {
     assertEquals(asList(map("bar", 1L, "k", "a")), querySnapshotToValues(limitToLastSnapshot));
   }
 
-  private int getUTF8BytesCount(String s) {
-    return s.getBytes(StandardCharsets.UTF_8).length;
+  private int getUTF8ByteCount(String s) {
+    return s.getBytes(UTF8_CHARSET).length;
   }
 
   /**
@@ -267,7 +268,7 @@ public class BundleTest {
     for (int i = 1; i < BUNDLE_TEMPLATES.length; ++i) {
       // Extract elements from BUNDLE_TEMPLATE and replace the project ID.
       String element = BUNDLE_TEMPLATES[i].replaceAll("\\{projectId\\}", projectId);
-      bundle.append(getUTF8BytesCount(element));
+      bundle.append(getUTF8ByteCount(element));
       bundle.append(element);
     }
 
@@ -278,7 +279,7 @@ public class BundleTest {
         BUNDLE_TEMPLATES[0].replace(
             "{totalBytes}", Integer.toString(bundleString.getBytes("UTF-8").length));
 
-    String fullBundle = getUTF8BytesCount(metadata) + metadata + bundleString;
+    String fullBundle = getUTF8ByteCount(metadata) + metadata + bundleString;
     return fullBundle.getBytes("UTF-8");
   }
 
