@@ -47,7 +47,7 @@ import javax.inject.Inject;
 public class Uploader {
 
   private static final String LOG_TAG = "Uploader";
-  private static final String CLIENT_HEALTH_METRICS_LOG_SOURCE = "1710";
+  private static final String CLIENT_HEALTH_METRICS_LOG_SOURCE = "GDT_CLIENT_METRICS";
 
   private final Context context;
   private final BackendRegistry backendRegistry;
