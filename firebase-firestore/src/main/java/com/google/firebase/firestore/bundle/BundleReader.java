@@ -16,6 +16,7 @@ package com.google.firebase.firestore.bundle;
 
 import androidx.annotation.Nullable;
 import com.google.firebase.firestore.util.Logger;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -178,20 +179,22 @@ public class BundleReader {
    * <p>Returns an object containing the Json string and its UTF8 byte count.
    */
   private String readJson(int bytesToRead) throws IOException {
-    StringBuilder json = new StringBuilder();
+    ByteArrayOutputStream jsonBytes = new ByteArrayOutputStream();
 
-    while (buffer.remaining() < bytesToRead) {
-      if (!pullMoreData()) {
+    int remaining = bytesToRead;
+    while (remaining > 0) {
+      if (buffer.remaining() == 0 && !pullMoreData()) {
         throw abort("Reached the end of bundle when more data was expected.");
       }
+
+      int read = Math.min(remaining, buffer.remaining());
+      jsonBytes.write(buffer.slice().array(), 0, read);
+      buffer.position(buffer.position() + read);
+
+      remaining -= read;
     }
 
-    // By now `buffer` has enough content for the desired JSON string.
-    byte[] bytes = new byte[bytesToRead];
-    buffer.get(bytes);
-    json.append(charset.decode(ByteBuffer.wrap(bytes)));
-
-    return json.toString();
+    return jsonBytes.toString(charset.name());
   }
 
   /**
