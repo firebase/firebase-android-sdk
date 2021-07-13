@@ -43,9 +43,9 @@ public class BundleReader {
   private ByteBuffer buffer;
   long bytesRead;
 
-  public BundleReader(BundleSerializer serializer, InputStream data) {
+  public BundleReader(BundleSerializer serializer, InputStream bundleInputStream) {
     this.serializer = serializer;
-    bundleInputStream = data;
+    this.bundleInputStream = bundleInputStream;
     buffer = ByteBuffer.allocate(BUFFER_CAPACITY);
 
     buffer.flip(); // Start the buffer in "reading mode"
