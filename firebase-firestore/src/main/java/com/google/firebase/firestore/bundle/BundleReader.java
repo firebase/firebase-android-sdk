@@ -163,14 +163,19 @@ public class BundleReader {
   private String readJsonString(int bytesToRead) throws IOException {
     ByteArrayOutputStream jsonBytes = new ByteArrayOutputStream();
 
+    // Read at least `bytesToRead` number of bytes from the bundle into `this.buffer`, pulling more
+    // data if necessary.
+    // Exactly `bytesToRead` number of bytes will be put in `jsonBytes` after the loop completes.
     int remaining = bytesToRead;
     while (remaining > 0) {
       if (buffer.remaining() == 0 && !pullMoreData()) {
         throw abort("Reached the end of bundle when more data was expected.");
       }
 
+      // `read` is the number of bytes guaranteed to exist in `this.buffer` after the above
+      // call to `pullMoreData`. Copy them to `jsonBytes` and advance `this.buffer`'s position.
       int read = Math.min(remaining, buffer.remaining());
-      jsonBytes.write(buffer.slice().array(), 0, read);
+      jsonBytes.write(buffer.array(), buffer.position(), read);
       buffer.position(buffer.position() + read);
 
       remaining -= read;
