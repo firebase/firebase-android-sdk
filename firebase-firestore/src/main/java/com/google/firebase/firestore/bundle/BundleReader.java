@@ -102,7 +102,7 @@ public class BundleReader {
     }
 
     int jsonStringByteCount = Integer.parseInt(lengthPrefix);
-    String json = readJson(jsonStringByteCount);
+    String json = readJsonString(jsonStringByteCount);
     bytesRead += lengthPrefix.getBytes(charset).length + jsonStringByteCount;
     return decodeBundleElement(json);
   }
@@ -160,7 +160,7 @@ public class BundleReader {
    *
    * <p>Returns an object containing the Json string and its UTF8 byte count.
    */
-  private String readJson(int bytesToRead) throws IOException {
+  private String readJsonString(int bytesToRead) throws IOException {
     ByteArrayOutputStream jsonBytes = new ByteArrayOutputStream();
 
     int remaining = bytesToRead;
