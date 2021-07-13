@@ -158,8 +158,8 @@ public class FirebaseCrashlytics {
     return new FirebaseCrashlytics(core);
   }
 
-  @VisibleForTesting // accessible for smoke tests
-  final CrashlyticsCore core;
+  @VisibleForTesting(otherwise = VisibleForTesting.PROTECTED) // accessible for smoke tests
+  public final CrashlyticsCore core;
 
   private FirebaseCrashlytics(@NonNull CrashlyticsCore core) {
     this.core = core;
