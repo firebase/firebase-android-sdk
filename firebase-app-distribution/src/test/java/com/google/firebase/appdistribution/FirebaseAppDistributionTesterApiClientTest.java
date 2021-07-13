@@ -1,0 +1,72 @@
+package com.google.firebase.appdistribution;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.mockito.Mockito.when;
+
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import javax.net.ssl.HttpsURLConnection;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.robolectric.RobolectricTestRunner;
+
+@RunWith(RobolectricTestRunner.class)
+public class FirebaseAppDistributionTesterApiClientTest {
+
+  public static final String TEST_API_KEY = "AIzaSyabcdefghijklmnopqrstuvwxyz1234567";
+  public static final String TEST_APP_ID_1 = "1:123456789:android:abcdef";
+  public static final String TEST_AUTH_TOKEN = "fad.auth.token";
+  public static final String TEST_FID_1 = "cccccccccccccccccccccc";
+  public static final String INVALID_RESPONSE = "InvalidResponse";
+  public static final String SUCCESSFUL_RESPONSE =
+      "{\"releases\": [{\"name\":\"devices/3d6942794f7cecca44e0ff4f/testerApps/1:378474073654:android:f886de0625fd488dc21297/releases/2g0n7rk01mjdo\",\"releaseTime\":\"2021-07-07T17:10:03Z\",\"buildVersion\":\"3\",\"displayVersion\":\"3.0\",\"releaseNotes\":\"This is a test release.\",\"downloadUrl\":\"https://firebaseapptesters.googleapis.com/v1alpha/devices/3d6942794f7cecca44e0ff4f/testerApps/1:378474073654:android:f886de0625fd488dc21297/releases/2g0n7rk01mjdo:download?tester_client=ios_sdk&token=AFb1MRwAAAAAYO3Cpy79kVVQDN4P1P-ija4QSO3MKnkfrYvx1XYkcbQ_1mCZ6mUjto5d4NG77CnEL0lFLqLGuSTi9DbTzAa-tKCukMP2yuvif8Rm9wtCO9k8KekV7mHNNNlWs9WczBc1quZjJ8pwHCGE-XAlXxR5hN7ZxNFXns0igQlRZoryjmADZdnvfHlJ3-dC616_g93vRsAHmjBVMz-gO1Wv1iuYhw9Des0Eh0VOmzqLgYZxaRdcdJOzpPijHzQAYiyMS3VkOhrdAQKsWZ48NwYHJMbI_o0G9WLElH1wlL63Vs9DAeBwZNRCqtFpAkcpzO9UuTipP-UsFRmanf7IH6QceOda4dM8vzM&key=AIzaSyCT43_YT7B59u5KtzIlbJrwANinug62pHo\",\"latest\":true,\"codeHash\":\"aa8002876b1e9b90b81df4ca3bb80529be670f35\",\"fileSize\":\"3725041\",\"expirationTime\":\"2021-12-04T17:10:03Z\",\"binaryType\":\"APK\"}]}";
+
+  private FirebaseAppDistributionTesterApiClient firebaseAppDistributionTesterApiClient;
+  @Mock private HttpsURLConnection mockHttpsURLConnection;
+
+  @Before
+  public void setup() throws Exception {
+    MockitoAnnotations.initMocks(this);
+    firebaseAppDistributionTesterApiClient =
+        Mockito.spy(new FirebaseAppDistributionTesterApiClient());
+    Mockito.doReturn(mockHttpsURLConnection)
+        .when(firebaseAppDistributionTesterApiClient)
+        .openHttpsUrlConnection(TEST_APP_ID_1, TEST_FID_1);
+  }
+
+  @Test
+  public void fetchLatestRelease_whenResponseSuccessful_returnsRelease() throws Exception {
+    InputStream response =
+        new ByteArrayInputStream(SUCCESSFUL_RESPONSE.getBytes(StandardCharsets.UTF_8));
+    when(mockHttpsURLConnection.getInputStream()).thenReturn(response);
+    AppDistributionRelease release =
+        firebaseAppDistributionTesterApiClient.fetchLatestRelease(
+            TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN);
+    assertEquals(release.getBinaryType(), BinaryType.APK);
+    assertEquals(release.getBuildVersion(), "3");
+    assertEquals(release.getDisplayVersion(), "3.0");
+    assertEquals(release.getReleaseNotes(), "This is a test release.");
+  }
+
+  @Test
+  public void fetchLatestRelease_whenResponseFails_throwsError() throws Exception {
+    InputStream response =
+        new ByteArrayInputStream(INVALID_RESPONSE.getBytes(StandardCharsets.UTF_8));
+    when(mockHttpsURLConnection.getInputStream()).thenReturn(response);
+    AppDistributionRelease release = null;
+    try {
+      release =
+          firebaseAppDistributionTesterApiClient.fetchLatestRelease(
+              TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN);
+    } catch (Exception e) {
+      assertEquals(e.getClass(), FirebaseAppDistributionException.class);
+    }
+    assertNull(release);
+  }
+}

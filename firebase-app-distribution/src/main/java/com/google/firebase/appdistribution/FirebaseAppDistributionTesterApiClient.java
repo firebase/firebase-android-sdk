@@ -40,7 +40,7 @@ public class FirebaseAppDistributionTesterApiClient {
   private static final String BINARY_TYPE_JSON_KEY = "binaryType";
   public static final int DEFAULT_BUFFER_SIZE = 8192;
 
-  public AppDistributionRelease fetchLatestRelease(
+  public @NonNull AppDistributionRelease fetchLatestRelease(
       @NonNull String fid, @NonNull String appId, @NonNull String apiKey, @NonNull String authToken)
       throws FirebaseAppDistributionException, ProtocolException {
 
@@ -93,20 +93,21 @@ public class FirebaseAppDistributionTesterApiClient {
       JSONObject json = new JSONObject(result);
       latestRelease = json.getJSONArray("releases").getJSONObject(0);
     } catch (JSONException e) {
-      throw new FirebaseAppDistributionException(FirebaseAppDistributionException.Status.UNKNOWN);
+      throw new FirebaseAppDistributionException(
+          e.getMessage(), FirebaseAppDistributionException.Status.UNKNOWN);
     }
     return latestRelease;
   }
 
-  private HttpsURLConnection openHttpsUrlConnection(String appId, String fid)
+  HttpsURLConnection openHttpsUrlConnection(String appId, String fid)
       throws FirebaseAppDistributionException, ProtocolException {
     HttpsURLConnection httpsURLConnection;
     URL url = getReleasesEndpointUrl(appId, fid);
     try {
       httpsURLConnection = (HttpsURLConnection) url.openConnection();
-    } catch (IOException ignored) {
+    } catch (IOException e) {
       throw new FirebaseAppDistributionException(
-          FirebaseAppDistributionException.Status.NETWORK_FAILURE);
+          e.getMessage(), FirebaseAppDistributionException.Status.NETWORK_FAILURE);
     }
     return httpsURLConnection;
   }
@@ -116,7 +117,8 @@ public class FirebaseAppDistributionTesterApiClient {
     try {
       return new URL(String.format(RELEASE_ENDPOINT_URL_FORMAT, appId, fid));
     } catch (MalformedURLException e) {
-      throw new FirebaseAppDistributionException(FirebaseAppDistributionException.Status.UNKNOWN);
+      throw new FirebaseAppDistributionException(
+          e.getMessage(), FirebaseAppDistributionException.Status.UNKNOWN);
     }
   }
 

@@ -69,6 +69,12 @@ public class FirebaseAppDistributionException extends FirebaseException {
     this.release = null;
   }
 
+  public FirebaseAppDistributionException(@NonNull String message, @NonNull Status status) {
+    super(message);
+    this.status = status;
+    this.release = null;
+  }
+
   public FirebaseAppDistributionException(
       @NonNull String message, @NonNull Status status, @Nullable AppDistributionRelease release) {
     super(message);

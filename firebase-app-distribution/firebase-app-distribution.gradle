@@ -51,6 +51,8 @@ dependencies {
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation 'org.mockito:mockito-core:2.25.0'
     androidTestImplementation "org.mockito:mockito-android:2.25.0"
+    androidTestImplementation "androidx.arch.core:core-testing:2.1.0"
+    testImplementation 'androidx.arch.core:core-testing:2.1.0'
     testImplementation 'androidx.test:core:1.2.0'
 
     implementation 'com.google.android.gms:play-services-tasks:17.0.0'

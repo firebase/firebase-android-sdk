@@ -17,6 +17,8 @@ package com.google.firebase.appdistribution;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -29,13 +31,16 @@ import android.content.Intent;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import android.os.Bundle;
+import androidx.arch.core.executor.testing.InstantTaskExecutorRule;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.installations.FirebaseInstallationsApi;
+import com.google.firebase.installations.InstallationTokenResult;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -52,6 +57,8 @@ public class FirebaseAppDistributionTest {
   public static final String TEST_APP_ID_1 = "1:123456789:android:abcdef";
   public static final String TEST_PROJECT_ID = "777777777777";
   public static final String TEST_FID_1 = "cccccccccccccccccccccc";
+  public static final String TEST_FID_2 = "dddddddddddddddddddddd";
+  public static final String TEST_AUTH_TOKEN = "fad.auth.token";
   public static final String TEST_URL =
       String.format(
           "https://appdistribution.firebase.google.com/pub/apps/%s/installations/%s/buildalerts"
@@ -67,13 +74,18 @@ public class FirebaseAppDistributionTest {
 
   @Mock private FirebaseInstallationsApi mockFirebaseInstallations;
   @Mock private FirebaseAppDistributionTesterApiClient mockFirebaseAppDistributionTesterApiClient;
+  @Mock private InstallationTokenResult mockInstallationTokenResult;
+  @Mock private AppDistributionRelease mockAppDistributionRelease;
+  @Mock private AppDistributionRelease mockAppDistributionRelease2;
   @Mock private Bundle mockBundle;
   @Mock SignInResultActivity mockSignInResultActivity;
+
+  @Rule public InstantTaskExecutorRule instantTaskExecutorRule = new InstantTaskExecutorRule();
 
   static class TestActivity extends Activity {}
 
   @Before
-  public void setup() {
+  public void setup() throws Exception {
 
     MockitoAnnotations.initMocks(this);
 
@@ -93,6 +105,12 @@ public class FirebaseAppDistributionTest {
             firebaseApp, mockFirebaseInstallations, mockFirebaseAppDistributionTesterApiClient);
 
     when(mockFirebaseInstallations.getId()).thenReturn(Tasks.forResult(TEST_FID_1));
+    when(mockFirebaseInstallations.getToken(true))
+        .thenReturn(Tasks.forResult(mockInstallationTokenResult));
+    when(mockInstallationTokenResult.getToken()).thenReturn(TEST_AUTH_TOKEN);
+    when(mockFirebaseAppDistributionTesterApiClient.fetchLatestRelease(
+            TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN))
+        .thenReturn(mockAppDistributionRelease);
 
     shadowPackageManager =
         shadowOf(ApplicationProvider.getApplicationContext().getPackageManager());
@@ -182,5 +200,42 @@ public class FirebaseAppDistributionTest {
 
     assertTrue(signInTask1.isCanceled());
     assertFalse(signInTask2.isComplete());
+  }
+
+  @Test
+  public void checkForUpdate_whenCalled_getsFidAndAuthToken() throws Exception {
+    Task<AppDistributionRelease> task = firebaseAppDistribution.checkForUpdate();
+    verify(mockFirebaseInstallations, times(1)).getId();
+    verify(mockFirebaseInstallations, times(1)).getToken(true);
+  }
+
+  @Test
+  public void checkForUpdate_whenCalledMultipleTimes_cancelsPreviousTask() throws Exception {
+    Task<AppDistributionRelease> signInTask1 = firebaseAppDistribution.checkForUpdate();
+    Task<AppDistributionRelease> signInTask2 = firebaseAppDistribution.checkForUpdate();
+
+    assertTrue(signInTask1.isCanceled());
+    assertFalse(signInTask2.isComplete());
+  }
+
+  @Test
+  public void getLatestReleaseFromClient_whenNotOnLatestBuild_returnsRelease() {
+    when(mockAppDistributionRelease.getBuildVersion()).thenReturn("3");
+    AppDistributionRelease release =
+        firebaseAppDistribution.getLatestReleaseFromClient(
+            TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN);
+
+    assertNotNull(release);
+    assertEquals("3", release.getBuildVersion());
+  }
+
+  @Test
+  public void getLatestReleaseFromClient_whenOnLatestBuild_returnsNull() {
+    when(mockAppDistributionRelease.getBuildVersion()).thenReturn("0");
+    AppDistributionRelease release =
+        firebaseAppDistribution.getLatestReleaseFromClient(
+            TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN);
+
+    assertNull(release);
   }
 }
