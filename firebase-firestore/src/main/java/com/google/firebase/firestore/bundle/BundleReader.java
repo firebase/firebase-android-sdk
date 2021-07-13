@@ -154,24 +154,6 @@ public class BundleReader {
     }
   }
 
-  private static final class ReadJsonResult {
-    private String json;
-    private int byteCount;
-
-    ReadJsonResult(String json, int byteCount) {
-      this.json = json;
-      this.byteCount = byteCount;
-    }
-
-    String getJson() {
-      return json;
-    }
-
-    int getByteCount() {
-      return byteCount;
-    }
-  }
-
   /**
    * Reads from a specified position from the internal buffer, for a specified number of bytes,
    * pulling more data from the underlying stream if needed.
