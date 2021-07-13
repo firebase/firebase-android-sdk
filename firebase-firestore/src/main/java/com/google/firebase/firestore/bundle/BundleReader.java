@@ -19,6 +19,7 @@ import com.google.firebase.firestore.util.Logger;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import org.json.JSONException;
@@ -38,6 +39,7 @@ public class BundleReader {
 
   private final BundleSerializer serializer;
   private final InputStream bundleInputStream;
+  private final InputStreamReader dataReader;
 
   @Nullable BundleMetadata metadata;
   private ByteBuffer buffer;
@@ -46,6 +48,7 @@ public class BundleReader {
   public BundleReader(BundleSerializer serializer, InputStream bundleInputStream) {
     this.serializer = serializer;
     this.bundleInputStream = bundleInputStream;
+    this.dataReader = new InputStreamReader(this.bundleInputStream);
     buffer = ByteBuffer.allocate(BUFFER_CAPACITY);
 
     buffer.flip(); // Start the buffer in "reading mode"
@@ -135,9 +138,9 @@ public class BundleReader {
       throw abort("Reached the end of bundle when a length string is expected.");
     }
 
-    byte[] c = new byte[nextOpenBracket];
-    buffer.get(c);
-    return UTF8_CHARSET.decode(ByteBuffer.wrap(c)).toString();
+    byte[] b = new byte[nextOpenBracket];
+    buffer.get(b);
+    return UTF8_CHARSET.decode(ByteBuffer.wrap(b)).toString();
   }
 
   /** Returns the index of the first open bracket, or -1 if none is found. */
@@ -193,16 +196,9 @@ public class BundleReader {
   private boolean pullMoreData() throws IOException {
     buffer.compact();
 
-    int available = bundleInputStream.available();
-    int bytesToRead = Math.min(available, buffer.remaining());
-    // `available` is an estimation, we still try to read if the estimation is 0, to move things
-    // forward.
-    if (available == 0) {
-      bytesToRead = buffer.remaining();
-    }
     int bytesRead =
         bundleInputStream.read(
-            buffer.array(), buffer.arrayOffset() + buffer.position(), bytesToRead);
+            buffer.array(), buffer.arrayOffset() + buffer.position(), buffer.remaining());
     boolean readSuccess = bytesRead > 0;
     if (readSuccess) {
       buffer.position(buffer.position() + bytesRead);
