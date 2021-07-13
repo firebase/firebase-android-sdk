@@ -200,11 +200,12 @@ public class BundleReader {
     if (available == 0) {
       bytesToRead = buffer.remaining();
     }
-    byte[] bytes = new byte[bytesToRead];
-    int bytesRead = bundleInputStream.read(bytes);
+    int bytesRead =
+        bundleInputStream.read(
+            buffer.array(), buffer.arrayOffset() + buffer.position(), bytesToRead);
     boolean readSuccess = bytesRead > 0;
     if (readSuccess) {
-      buffer.put(bytes, 0, bytesRead);
+      buffer.position(buffer.position() + bytesRead);
     }
 
     buffer.flip();
