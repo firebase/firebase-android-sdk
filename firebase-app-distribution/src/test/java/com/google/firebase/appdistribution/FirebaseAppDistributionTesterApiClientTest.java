@@ -84,7 +84,7 @@ public class FirebaseAppDistributionTesterApiClientTest {
           firebaseAppDistributionTesterApiClient.fetchLatestRelease(
               TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN);
     } catch (Exception e) {
-      assertEquals(e.getClass(), FirebaseAppDistributionException.class);
+      assertEquals(FirebaseAppDistributionException.class, e.getClass());
     }
     assertNull(release);
   }

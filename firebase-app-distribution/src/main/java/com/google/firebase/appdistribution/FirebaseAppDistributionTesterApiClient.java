@@ -77,7 +77,7 @@ public class FirebaseAppDistributionTesterApiClient {
     } catch (IOException | JSONException e) {
       // todo: change error status based on response code
       throw new FirebaseAppDistributionException(
-          e.getMessage(), FirebaseAppDistributionException.Status.NETWORK_FAILURE);
+          FirebaseAppDistributionException.Status.NETWORK_FAILURE);
     } finally {
       conn.disconnect();
     }
