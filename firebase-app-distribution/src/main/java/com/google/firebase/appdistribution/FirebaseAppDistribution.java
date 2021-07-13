@@ -390,8 +390,8 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
         setCheckForUpdateTaskCompletionError((FirebaseAppDistributionException) e);
       } else {
         setCheckForUpdateTaskCompletionError(
-                new FirebaseAppDistributionException(
-                        e.getMessage(), FirebaseAppDistributionException.Status.NETWORK_FAILURE));
+            new FirebaseAppDistributionException(
+                e.getMessage(), FirebaseAppDistributionException.Status.NETWORK_FAILURE));
       }
     }
     return latestRelease;

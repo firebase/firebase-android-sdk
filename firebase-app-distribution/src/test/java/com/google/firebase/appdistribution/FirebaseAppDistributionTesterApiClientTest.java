@@ -16,7 +16,6 @@ package com.google.firebase.appdistribution;
 
 import static androidx.test.InstrumentationRegistry.getContext;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.when;
 
@@ -79,8 +78,11 @@ public class FirebaseAppDistributionTesterApiClientTest {
   @Test
   public void fetchLatestRelease_whenResponseFails_throwsError() throws Exception {
     when(mockHttpsURLConnection.getInputStream()).thenThrow(new IOException());
-    assertThrows(FirebaseAppDistributionException.class, () -> firebaseAppDistributionTesterApiClient.fetchLatestRelease(
-            TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN));
+    assertThrows(
+        FirebaseAppDistributionException.class,
+        () ->
+            firebaseAppDistributionTesterApiClient.fetchLatestRelease(
+                TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN));
   }
 
   @Test
@@ -88,8 +90,11 @@ public class FirebaseAppDistributionTesterApiClientTest {
     InputStream response =
         new ByteArrayInputStream(INVALID_RESPONSE.getBytes(StandardCharsets.UTF_8));
     when(mockHttpsURLConnection.getInputStream()).thenReturn(response);
-    assertThrows(FirebaseAppDistributionException.class, () -> firebaseAppDistributionTesterApiClient.fetchLatestRelease(
-            TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN));
+    assertThrows(
+        FirebaseAppDistributionException.class,
+        () ->
+            firebaseAppDistributionTesterApiClient.fetchLatestRelease(
+                TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN));
   }
 
   private JSONObject getTestJSON(String fileName) throws IOException, JSONException {

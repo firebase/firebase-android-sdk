@@ -64,20 +64,20 @@ public class FirebaseAppDistributionTest {
               + "&packageName=com.google.firebase.appdistribution.test",
           TEST_APP_ID_1, TEST_FID_1);
   private static AppDistributionRelease TEST_RELEASE_1 =
-          AppDistributionRelease.builder()
-                  .setBinaryType(BinaryType.APK)
-                  .setBuildVersion("3")
-                  .setDisplayVersion("3.0")
-                  .setReleaseNotes("Newer version.")
-                  .build();
+      AppDistributionRelease.builder()
+          .setBinaryType(BinaryType.APK)
+          .setBuildVersion("3")
+          .setDisplayVersion("3.0")
+          .setReleaseNotes("Newer version.")
+          .build();
 
   AppDistributionRelease TEST_RELEASE_2 =
-          AppDistributionRelease.builder()
-                  .setBinaryType(BinaryType.APK)
-                  .setBuildVersion("0")
-                  .setDisplayVersion("0.0")
-                  .setReleaseNotes("Older version.")
-                  .build();
+      AppDistributionRelease.builder()
+          .setBinaryType(BinaryType.APK)
+          .setBuildVersion("0")
+          .setDisplayVersion("0.0")
+          .setReleaseNotes("Older version.")
+          .build();
 
   private FirebaseApp firebaseApp;
   private FirebaseAppDistribution firebaseAppDistribution;
@@ -117,7 +117,6 @@ public class FirebaseAppDistributionTest {
     when(mockFirebaseInstallations.getToken(true))
         .thenReturn(Tasks.forResult(mockInstallationTokenResult));
     when(mockInstallationTokenResult.getToken()).thenReturn(TEST_AUTH_TOKEN);
-
 
     when(mockFirebaseAppDistributionTesterApiClient.fetchLatestRelease(
             TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN))
