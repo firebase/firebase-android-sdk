@@ -43,6 +43,7 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
                     new FirebaseAppDistribution(
                         c.get(FirebaseApp.class),
                         c.get(FirebaseInstallationsApi.class),
+                        // todo: check if this is best way to inject client
                         new FirebaseAppDistributionTesterApiClient()))
             .build(),
         LibraryVersionComponent.create("fire-app-distribution", BuildConfig.VERSION_NAME));

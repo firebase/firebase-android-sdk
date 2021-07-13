@@ -162,51 +162,38 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     checkForUpdateTaskCompletionSource =
         new TaskCompletionSource<>(checkForUpdateCancellationSource.getToken());
 
-    firebaseInstallationsApi
-        .getId()
-        .addOnSuccessListener(
-            new OnSuccessListener<String>() {
-              @Override
-              public void onSuccess(String fid) {
-                firebaseInstallationsApi
-                    .getToken(true)
-                    .addOnSuccessListener(
-                        new OnSuccessListener<InstallationTokenResult>() {
-                          @Override
-                          public void onSuccess(InstallationTokenResult installationTokenResult) {
-                            checkForUpdateExecutor.execute(
-                                new Runnable() {
-                                  @Override
-                                  public void run() {
-                                    AppDistributionRelease latestRelease =
-                                        getLatestReleaseFromClient(
-                                            fid,
-                                            firebaseApp.getOptions().getApplicationId(),
-                                            firebaseApp.getOptions().getApiKey(),
-                                            installationTokenResult.getToken());
+    Task<String> installationIdTask = firebaseInstallationsApi.getId();
+    Task<InstallationTokenResult> installationAuthTokenTask =
+        firebaseInstallationsApi.getToken(true);
 
-                                    updateOnUiThread(
-                                        new Runnable() {
-                                          @Override
-                                          public void run() {
-                                            checkForUpdateTaskCompletionSource.setResult(
-                                                latestRelease);
-                                          }
-                                        });
-                                  }
-                                });
+    Tasks.whenAllComplete(installationIdTask, installationAuthTokenTask)
+        .addOnSuccessListener(
+            tasks -> {
+              String fid = (String) tasks.get(0).getResult();
+              InstallationTokenResult installationTokenResult =
+                  (InstallationTokenResult) tasks.get(1).getResult();
+              checkForUpdateExecutor.execute(
+                  () -> {
+                    AppDistributionRelease latestRelease =
+                        getLatestReleaseFromClient(
+                            fid,
+                            firebaseApp.getOptions().getApplicationId(),
+                            firebaseApp.getOptions().getApiKey(),
+                            installationTokenResult.getToken());
+
+                    updateOnUiThread(
+                        new Runnable() {
+                          @Override
+                          public void run() {
+                            checkForUpdateTaskCompletionSource.setResult(latestRelease);
                           }
                         });
-              }
+                  });
             })
         .addOnFailureListener(
-            new OnFailureListener() {
-              @Override
-              public void onFailure(@NonNull Exception e) {
+            e ->
                 setCheckForUpdateTaskCompletionError(
-                    new FirebaseAppDistributionException(e.getMessage(), AUTHENTICATION_FAILURE));
-              }
-            });
+                    new FirebaseAppDistributionException(e.getMessage(), AUTHENTICATION_FAILURE)));
 
     return checkForUpdateTaskCompletionSource.getTask();
   }

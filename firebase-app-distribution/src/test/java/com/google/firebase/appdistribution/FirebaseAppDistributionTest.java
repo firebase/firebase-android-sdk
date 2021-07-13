@@ -31,7 +31,6 @@ import android.content.Intent;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import android.os.Bundle;
-import androidx.arch.core.executor.testing.InstantTaskExecutorRule;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
@@ -40,7 +39,6 @@ import com.google.firebase.FirebaseOptions;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -75,12 +73,8 @@ public class FirebaseAppDistributionTest {
   @Mock private FirebaseInstallationsApi mockFirebaseInstallations;
   @Mock private FirebaseAppDistributionTesterApiClient mockFirebaseAppDistributionTesterApiClient;
   @Mock private InstallationTokenResult mockInstallationTokenResult;
-  @Mock private AppDistributionRelease mockAppDistributionRelease;
-  @Mock private AppDistributionRelease mockAppDistributionRelease2;
   @Mock private Bundle mockBundle;
   @Mock SignInResultActivity mockSignInResultActivity;
-
-  @Rule public InstantTaskExecutorRule instantTaskExecutorRule = new InstantTaskExecutorRule();
 
   static class TestActivity extends Activity {}
 
@@ -108,9 +102,30 @@ public class FirebaseAppDistributionTest {
     when(mockFirebaseInstallations.getToken(true))
         .thenReturn(Tasks.forResult(mockInstallationTokenResult));
     when(mockInstallationTokenResult.getToken()).thenReturn(TEST_AUTH_TOKEN);
+
+    AppDistributionRelease testRelease1 =
+        AppDistributionRelease.builder()
+            .setBinaryType(BinaryType.APK)
+            .setBuildVersion("3")
+            .setDisplayVersion("3.0")
+            .setReleaseNotes("Newer version.")
+            .build();
+
+    AppDistributionRelease testRelease2 =
+        AppDistributionRelease.builder()
+            .setBinaryType(BinaryType.APK)
+            .setBuildVersion("0")
+            .setDisplayVersion("0.0")
+            .setReleaseNotes("Older version.")
+            .build();
+
     when(mockFirebaseAppDistributionTesterApiClient.fetchLatestRelease(
             TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN))
-        .thenReturn(mockAppDistributionRelease);
+        .thenReturn(testRelease1);
+
+    when(mockFirebaseAppDistributionTesterApiClient.fetchLatestRelease(
+            TEST_FID_2, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN))
+        .thenReturn(testRelease2);
 
     shadowPackageManager =
         shadowOf(ApplicationProvider.getApplicationContext().getPackageManager());
@@ -210,17 +225,16 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void checkForUpdate_whenCalledMultipleTimes_cancelsPreviousTask() throws Exception {
-    Task<AppDistributionRelease> signInTask1 = firebaseAppDistribution.checkForUpdate();
-    Task<AppDistributionRelease> signInTask2 = firebaseAppDistribution.checkForUpdate();
+  public void checkForUpdateTask_whenCalledMultipleTimes_cancelsPreviousTask() throws Exception {
+    Task<AppDistributionRelease> checkForUpdateTask1 = firebaseAppDistribution.checkForUpdate();
+    Task<AppDistributionRelease> checkForUpdateTask2 = firebaseAppDistribution.checkForUpdate();
 
-    assertTrue(signInTask1.isCanceled());
-    assertFalse(signInTask2.isComplete());
+    assertTrue(checkForUpdateTask1.isCanceled());
+    assertFalse(checkForUpdateTask2.isComplete());
   }
 
   @Test
   public void getLatestReleaseFromClient_whenNotOnLatestBuild_returnsRelease() {
-    when(mockAppDistributionRelease.getBuildVersion()).thenReturn("3");
     AppDistributionRelease release =
         firebaseAppDistribution.getLatestReleaseFromClient(
             TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN);
@@ -231,10 +245,9 @@ public class FirebaseAppDistributionTest {
 
   @Test
   public void getLatestReleaseFromClient_whenOnLatestBuild_returnsNull() {
-    when(mockAppDistributionRelease.getBuildVersion()).thenReturn("0");
     AppDistributionRelease release =
         firebaseAppDistribution.getLatestReleaseFromClient(
-            TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN);
+            TEST_FID_2, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN);
 
     assertNull(release);
   }

@@ -30,7 +30,7 @@ public class FirebaseAppDistributionTesterApiClient {
 
   private static final String TAG = "FADTesterApiClient";
   private static final String RELEASE_ENDPOINT_URL_FORMAT =
-      "https://firebaseapptesters.googleapis.com/v1alpha/devices/-/testerApps/%s/installations/%s/releases";
+      "https://firebaseapptesters.googleapis.com/v1alpha/devices123/-/testerApps/%s/installations/%s/releases";
   private static final String REQUEST_METHOD = "GET";
   private static final String API_KEY_HEADER = "x-goog-api-key";
   private static final String INSTALLATION_AUTH_HEADER = "X-Goog-Firebase-Installations-Auth";
@@ -75,8 +75,9 @@ public class FirebaseAppDistributionTesterApiClient {
               .build();
 
     } catch (IOException | JSONException e) {
+      // todo: change error status based on response code
       throw new FirebaseAppDistributionException(
-          FirebaseAppDistributionException.Status.NETWORK_FAILURE);
+          e.getMessage(), FirebaseAppDistributionException.Status.NETWORK_FAILURE);
     } finally {
       conn.disconnect();
     }
