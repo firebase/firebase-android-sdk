@@ -545,11 +545,12 @@ public class FirebasePerformanceTest {
       Boolean sharedPreferencesEnabledDisabledKey,
       Provider<RemoteConfigComponent> firebaseRemoteConfigProvider,
       Provider<TransportFactory> transportFactoryProvider) {
+    DeviceCacheManager deviceCacheManager = new DeviceCacheManager(fakeDirectExecutorService);
+    deviceCacheManager.setContext(ApplicationProvider.getApplicationContext());
     if (sharedPreferencesEnabledDisabledKey != null) {
-      DeviceCacheManager deviceCacheManager = new DeviceCacheManager(fakeDirectExecutorService);
-      deviceCacheManager.setContext(ApplicationProvider.getApplicationContext());
       deviceCacheManager.setValue(Constants.ENABLE_DISABLE, sharedPreferencesEnabledDisabledKey);
     }
+    spyConfigResolver.setDeviceCacheManager(deviceCacheManager);
 
     Bundle bundle = new Bundle();
     if (metadataFireperfEnabledKey != null) {
