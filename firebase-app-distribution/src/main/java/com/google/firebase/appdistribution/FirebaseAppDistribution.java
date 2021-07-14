@@ -382,8 +382,8 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
       AppDistributionRelease retrievedLatestRelease =
           firebaseAppDistributionTesterApiClient.fetchLatestRelease(fid, appId, apiKey, authToken);
 
-      Context context = firebaseApp.getApplicationContext();
-      long currentInstalledVersionCode = getInstalledAppVersionCode(context);
+      long currentInstalledVersionCode =
+          getInstalledAppVersionCode(firebaseApp.getApplicationContext());
 
       // todo: change to comparing codehash
       if (Long.parseLong(retrievedLatestRelease.getBuildVersion()) > currentInstalledVersionCode) {
@@ -391,7 +391,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
         // uninstalling
         latestRelease = retrievedLatestRelease;
       }
-    } catch (FirebaseAppDistributionException | ProtocolException e) {
+    } catch (FirebaseAppDistributionException | ProtocolException | NumberFormatException e) {
       if (e instanceof FirebaseAppDistributionException) {
         setCheckForUpdateTaskCompletionError((FirebaseAppDistributionException) e);
       } else {

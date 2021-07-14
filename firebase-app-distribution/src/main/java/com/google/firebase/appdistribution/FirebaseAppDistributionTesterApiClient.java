@@ -52,7 +52,6 @@ public class FirebaseAppDistributionTesterApiClient {
 
     try {
       JSONObject latestReleaseJson = readFetchReleaseInputStream(conn.getInputStream());
-      long latestBuildVersion = Long.parseLong(latestReleaseJson.getString(BUILD_VERSION_JSON_KEY));
       final String displayVersion = latestReleaseJson.getString(DISPLAY_VERSION_JSON_KEY);
       final String buildVersion = latestReleaseJson.getString(BUILD_VERSION_JSON_KEY);
       String releaseNotes;
