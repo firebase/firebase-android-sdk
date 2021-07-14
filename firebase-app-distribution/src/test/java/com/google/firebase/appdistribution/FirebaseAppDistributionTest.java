@@ -17,6 +17,8 @@ package com.google.firebase.appdistribution;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -35,6 +37,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.installations.FirebaseInstallationsApi;
+import com.google.firebase.installations.InstallationTokenResult;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -48,16 +51,33 @@ import org.robolectric.shadows.ShadowPackageManager;
 
 @RunWith(RobolectricTestRunner.class)
 public class FirebaseAppDistributionTest {
-  public static final String TEST_API_KEY = "AIzaSyabcdefghijklmnopqrstuvwxyz1234567";
-  public static final String TEST_APP_ID_1 = "1:123456789:android:abcdef";
-  public static final String TEST_PROJECT_ID = "777777777777";
-  public static final String TEST_FID_1 = "cccccccccccccccccccccc";
-  public static final String TEST_URL =
+  private static final String TEST_API_KEY = "AIzaSyabcdefghijklmnopqrstuvwxyz1234567";
+  private static final String TEST_APP_ID_1 = "1:123456789:android:abcdef";
+  private static final String TEST_PROJECT_ID = "777777777777";
+  private static final String TEST_FID_1 = "cccccccccccccccccccccc";
+  private static final String TEST_FID_2 = "dddddddddddddddddddddd";
+  private static final String TEST_AUTH_TOKEN = "fad.auth.token";
+  private static final String TEST_URL =
       String.format(
-          "https://appdistribution.firebase.google.com/pub/apps/%s/installations/%s/buildalerts"
+          "https://appdistribution.firebase.google.com/pub/testerapps/%s/installations/%s/buildalerts"
               + "?appName=com.google.firebase.appdistribution.test"
               + "&packageName=com.google.firebase.appdistribution.test",
           TEST_APP_ID_1, TEST_FID_1);
+  private static AppDistributionRelease TEST_RELEASE_1 =
+      AppDistributionRelease.builder()
+          .setBinaryType(BinaryType.APK)
+          .setBuildVersion("3")
+          .setDisplayVersion("3.0")
+          .setReleaseNotes("Newer version.")
+          .build();
+
+  AppDistributionRelease TEST_RELEASE_2 =
+      AppDistributionRelease.builder()
+          .setBinaryType(BinaryType.APK)
+          .setBuildVersion("0")
+          .setDisplayVersion("0.0")
+          .setReleaseNotes("Older version.")
+          .build();
 
   private FirebaseApp firebaseApp;
   private FirebaseAppDistribution firebaseAppDistribution;
@@ -66,13 +86,15 @@ public class FirebaseAppDistributionTest {
   private ShadowPackageManager shadowPackageManager;
 
   @Mock private FirebaseInstallationsApi mockFirebaseInstallations;
+  @Mock private FirebaseAppDistributionTesterApiClient mockFirebaseAppDistributionTesterApiClient;
+  @Mock private InstallationTokenResult mockInstallationTokenResult;
   @Mock private Bundle mockBundle;
   @Mock SignInResultActivity mockSignInResultActivity;
 
   static class TestActivity extends Activity {}
 
   @Before
-  public void setup() {
+  public void setup() throws Exception {
 
     MockitoAnnotations.initMocks(this);
 
@@ -87,9 +109,22 @@ public class FirebaseAppDistributionTest {
                 .setApiKey(TEST_API_KEY)
                 .build());
 
-    firebaseAppDistribution = new FirebaseAppDistribution(firebaseApp, mockFirebaseInstallations);
+    firebaseAppDistribution =
+        new FirebaseAppDistribution(
+            firebaseApp, mockFirebaseInstallations, mockFirebaseAppDistributionTesterApiClient);
 
     when(mockFirebaseInstallations.getId()).thenReturn(Tasks.forResult(TEST_FID_1));
+    when(mockFirebaseInstallations.getToken(false))
+        .thenReturn(Tasks.forResult(mockInstallationTokenResult));
+    when(mockInstallationTokenResult.getToken()).thenReturn(TEST_AUTH_TOKEN);
+
+    when(mockFirebaseAppDistributionTesterApiClient.fetchLatestRelease(
+            TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN))
+        .thenReturn(TEST_RELEASE_1);
+
+    when(mockFirebaseAppDistributionTesterApiClient.fetchLatestRelease(
+            TEST_FID_2, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN))
+        .thenReturn(TEST_RELEASE_2);
 
     shadowPackageManager =
         shadowOf(ApplicationProvider.getApplicationContext().getPackageManager());
@@ -179,5 +214,40 @@ public class FirebaseAppDistributionTest {
 
     assertTrue(signInTask1.isCanceled());
     assertFalse(signInTask2.isComplete());
+  }
+
+  @Test
+  public void checkForUpdate_whenCalled_getsFidAndAuthToken() throws Exception {
+    Task<AppDistributionRelease> task = firebaseAppDistribution.checkForUpdate();
+    verify(mockFirebaseInstallations, times(1)).getId();
+    verify(mockFirebaseInstallations, times(1)).getToken(false);
+  }
+
+  @Test
+  public void checkForUpdateTask_whenCalledMultipleTimes_cancelsPreviousTask() throws Exception {
+    Task<AppDistributionRelease> checkForUpdateTask1 = firebaseAppDistribution.checkForUpdate();
+    Task<AppDistributionRelease> checkForUpdateTask2 = firebaseAppDistribution.checkForUpdate();
+
+    assertTrue(checkForUpdateTask1.isCanceled());
+    assertFalse(checkForUpdateTask2.isComplete());
+  }
+
+  @Test
+  public void getLatestReleaseFromClient_whenNotOnLatestBuild_returnsRelease() {
+    AppDistributionRelease release =
+        firebaseAppDistribution.getLatestReleaseFromClient(
+            TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN);
+
+    assertNotNull(release);
+    assertEquals(TEST_RELEASE_1.getBuildVersion(), release.getBuildVersion());
+  }
+
+  @Test
+  public void getLatestReleaseFromClient_whenOnLatestBuild_returnsNull() {
+    AppDistributionRelease release =
+        firebaseAppDistribution.getLatestReleaseFromClient(
+            TEST_FID_2, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN);
+
+    assertNull(release);
   }
 }
