@@ -36,30 +36,35 @@ import org.junit.runner.RunWith;
 @RunWith(AndroidJUnit4.class)
 public final class CrashlyticsTest {
 
-  @Test
-  public void analyticsIntegration() {
-    // Validates that Firebase Analytics and Crashlytics interoperability is working, by confirming
-    // that events sent to Firebase Analytics are received by the Crashlytics breadcrumb handler.
-    try {
-      BreadcrumbSource breadcrumbSource = FirebaseCrashlytics.getInstance().core.breadcrumbSource;
-      final CountDownLatch eventReceivedLatch = new CountDownLatch(1);
-      breadcrumbSource.registerBreadcrumbHandler(breadcrumbHandler -> {
-        eventReceivedLatch.countDown();
-      });
-
-      Bundle eventBundle = new Bundle();
-      eventBundle.putString(FirebaseAnalytics.Param.ITEM_NAME, "testName");
-      FirebaseAnalytics.getInstance(ApplicationProvider.getApplicationContext()).logEvent(
-          FirebaseAnalytics.Event.APP_OPEN, eventBundle);
-
-      // Wait up to 2 seconds, which is plenty of time for the event
-      eventReceivedLatch.await(2000, TimeUnit.MILLISECONDS);
-      assertThat(eventReceivedLatch.getCount()).isEqualTo(0);
-
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
-  }
+//  TODO(yifany): Uncomment after M100 releases.
+//
+//                Fields `core` and `breadcrumbSource` were made visible for test in
+//                https://github.com/firebase/firebase-android-sdk/pull/2737, which goes out in
+//                18.2.0 (M100). This test case that builds against 18.1.0 is expected to fail.
+//  @Test
+//  public void analyticsIntegration() {
+//    // Validates that Firebase Analytics and Crashlytics interoperability is working, by confirming
+//    // that events sent to Firebase Analytics are received by the Crashlytics breadcrumb handler.
+//    try {
+//      BreadcrumbSource breadcrumbSource = FirebaseCrashlytics.getInstance().core.breadcrumbSource;
+//      final CountDownLatch eventReceivedLatch = new CountDownLatch(1);
+//      breadcrumbSource.registerBreadcrumbHandler(breadcrumbHandler -> {
+//        eventReceivedLatch.countDown();
+//      });
+//
+//      Bundle eventBundle = new Bundle();
+//      eventBundle.putString(FirebaseAnalytics.Param.ITEM_NAME, "testName");
+//      FirebaseAnalytics.getInstance(ApplicationProvider.getApplicationContext()).logEvent(
+//          FirebaseAnalytics.Event.APP_OPEN, eventBundle);
+//
+//      // Wait up to 2 seconds, which is plenty of time for the event
+//      eventReceivedLatch.await(2000, TimeUnit.MILLISECONDS);
+//      assertThat(eventReceivedLatch.getCount()).isEqualTo(0);
+//
+//    } catch (Exception e) {
+//      throw new RuntimeException(e);
+//    }
+//  }
 
   @Test
   public void setCustomKeys() {
