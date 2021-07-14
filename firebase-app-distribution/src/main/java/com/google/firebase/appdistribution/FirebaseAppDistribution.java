@@ -386,7 +386,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
         latestRelease = retrievedLatestRelease;
       }
     } catch (FirebaseAppDistributionException | ProtocolException e) {
-      if (e.getClass().equals(FirebaseAppDistributionException.class)) {
+      if (e instanceof FirebaseAppDistributionException) {
         setCheckForUpdateTaskCompletionError((FirebaseAppDistributionException) e);
       } else {
         setCheckForUpdateTaskCompletionError(
