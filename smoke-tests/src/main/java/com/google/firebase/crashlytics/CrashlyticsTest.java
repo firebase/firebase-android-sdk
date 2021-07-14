@@ -16,16 +16,16 @@ package com.google.firebase.crashlytics;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import android.os.Bundle;
-import androidx.test.core.app.ApplicationProvider;
-import com.google.firebase.analytics.FirebaseAnalytics;
+//import android.os.Bundle;
+//import androidx.test.core.app.ApplicationProvider;
+//import com.google.firebase.analytics.FirebaseAnalytics;
 
 import androidx.test.runner.AndroidJUnit4;
-import com.google.firebase.crashlytics.internal.breadcrumbs.BreadcrumbSource;
-import com.google.firebase.crashlytics.internal.common.CrashlyticsCore;
-import java.lang.reflect.Field;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+//import com.google.firebase.crashlytics.internal.breadcrumbs.BreadcrumbSource;
+//import com.google.firebase.crashlytics.internal.common.CrashlyticsCore;
+//import java.lang.reflect.Field;
+//import java.util.concurrent.CountDownLatch;
+//import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
