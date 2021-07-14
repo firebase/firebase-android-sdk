@@ -89,12 +89,10 @@ public class FirebaseAppDistributionTest {
           .setReleaseNotes("Current version.")
           .build();
 
-  private FirebaseApp firebaseApp;
   private FirebaseAppDistribution firebaseAppDistribution;
   private TestActivity activity;
   private ShadowActivity shadowActivity;
   private ShadowPackageManager shadowPackageManager;
-  private ApplicationInfo applicationInfo;
 
   @Mock private FirebaseInstallationsApi mockFirebaseInstallations;
   @Mock private FirebaseAppDistributionTesterApiClient mockFirebaseAppDistributionTesterApiClient;
@@ -111,18 +109,17 @@ public class FirebaseAppDistributionTest {
 
     FirebaseApp.clearInstancesForTest();
 
-    firebaseApp =
-        FirebaseApp.initializeApp(
+    FirebaseApp firebaseApp = FirebaseApp.initializeApp(
             ApplicationProvider.getApplicationContext(),
             new FirebaseOptions.Builder()
-                .setApplicationId(TEST_APP_ID_1)
-                .setProjectId(TEST_PROJECT_ID)
-                .setApiKey(TEST_API_KEY)
-                .build());
+                    .setApplicationId(TEST_APP_ID_1)
+                    .setProjectId(TEST_PROJECT_ID)
+                    .setApiKey(TEST_API_KEY)
+                    .build());
 
     firebaseAppDistribution =
         new FirebaseAppDistribution(
-            firebaseApp, mockFirebaseInstallations, mockFirebaseAppDistributionTesterApiClient);
+                firebaseApp, mockFirebaseInstallations, mockFirebaseAppDistributionTesterApiClient);
 
     when(mockFirebaseInstallations.getId()).thenReturn(Tasks.forResult(TEST_FID_1));
     when(mockFirebaseInstallations.getToken(false))
@@ -137,8 +134,7 @@ public class FirebaseAppDistributionTest {
     shadowPackageManager =
         shadowOf(ApplicationProvider.getApplicationContext().getPackageManager());
 
-    applicationInfo =
-        ApplicationInfoBuilder.newBuilder()
+    ApplicationInfo applicationInfo = ApplicationInfoBuilder.newBuilder()
             .setPackageName(ApplicationProvider.getApplicationContext().getPackageName())
             .build();
     applicationInfo.metaData = new Bundle();
@@ -240,14 +236,14 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void checkForUpdate_whenCalled_getsFidAndAuthToken() throws Exception {
-    Task<AppDistributionRelease> task = firebaseAppDistribution.checkForUpdate();
+  public void checkForUpdate_whenCalled_getsFidAndAuthToken() {
+    firebaseAppDistribution.checkForUpdate();
     verify(mockFirebaseInstallations, times(1)).getId();
     verify(mockFirebaseInstallations, times(1)).getToken(false);
   }
 
   @Test
-  public void checkForUpdateTask_whenCalledMultipleTimes_cancelsPreviousTask() throws Exception {
+  public void checkForUpdateTask_whenCalledMultipleTimes_cancelsPreviousTask() {
     Task<AppDistributionRelease> checkForUpdateTask1 = firebaseAppDistribution.checkForUpdate();
     Task<AppDistributionRelease> checkForUpdateTask2 = firebaseAppDistribution.checkForUpdate();
 
