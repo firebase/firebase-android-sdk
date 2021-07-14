@@ -188,7 +188,9 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
                         new Runnable() {
                           @Override
                           public void run() {
-                            checkForUpdateTaskCompletionSource.setResult(latestRelease);
+                            if (!checkForUpdateTaskCompletionSource.getTask().isComplete()) {
+                              checkForUpdateTaskCompletionSource.setResult(latestRelease);
+                            }
                           }
                         });
                   });
