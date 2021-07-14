@@ -114,7 +114,7 @@ public class FirebaseAppDistributionTest {
             firebaseApp, mockFirebaseInstallations, mockFirebaseAppDistributionTesterApiClient);
 
     when(mockFirebaseInstallations.getId()).thenReturn(Tasks.forResult(TEST_FID_1));
-    when(mockFirebaseInstallations.getToken(true))
+    when(mockFirebaseInstallations.getToken(false))
         .thenReturn(Tasks.forResult(mockInstallationTokenResult));
     when(mockInstallationTokenResult.getToken()).thenReturn(TEST_AUTH_TOKEN);
 
@@ -220,7 +220,7 @@ public class FirebaseAppDistributionTest {
   public void checkForUpdate_whenCalled_getsFidAndAuthToken() throws Exception {
     Task<AppDistributionRelease> task = firebaseAppDistribution.checkForUpdate();
     verify(mockFirebaseInstallations, times(1)).getId();
-    verify(mockFirebaseInstallations, times(1)).getToken(true);
+    verify(mockFirebaseInstallations, times(1)).getToken(false);
   }
 
   @Test

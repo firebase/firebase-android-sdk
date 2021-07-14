@@ -48,7 +48,6 @@ import java.net.ProtocolException;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class FirebaseAppDistribution implements Application.ActivityLifecycleCallbacks {
@@ -56,11 +55,14 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
   private final FirebaseApp firebaseApp;
   private final FirebaseInstallationsApi firebaseInstallationsApi;
   private final FirebaseAppDistributionTesterApiClient firebaseAppDistributionTesterApiClient;
+  private final int UPDATE_THREAD_POOL_SIZE = 4;
   private static final String TAG = "FirebaseAppDistribution";
   private Activity currentActivity;
   private boolean currentlySigningIn = false;
   private TaskCompletionSource<Void> signInTaskCompletionSource = null;
   private CancellationTokenSource signInCancellationSource;
+  private final String SIGNIN_REDIRECT_URL =
+      "https://appdistribution.firebase.google.com/pub/testerapps/%s/installations/%s/buildalerts?appName=%s&packageName=%s";
 
   private TaskCompletionSource<AppDistributionRelease> checkForUpdateTaskCompletionSource = null;
   private CancellationTokenSource checkForUpdateCancellationSource;
@@ -74,7 +76,8 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     this.firebaseApp = firebaseApp;
     this.firebaseInstallationsApi = firebaseInstallationsApi;
     this.firebaseAppDistributionTesterApiClient = firebaseAppDistributionTesterApiClient;
-    this.checkForUpdateExecutor = Executors.newFixedThreadPool(4);
+    // todo: verify if this is best way to use executorservice here
+    this.checkForUpdateExecutor = Executors.newFixedThreadPool(UPDATE_THREAD_POOL_SIZE);
   }
 
   /** @return a FirebaseAppDistribution instance */
@@ -120,7 +123,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
         .addOnFailureListener(
             new OnFailureListener() {
               @Override
-              public void onFailure(@NonNull @NotNull Exception e) {
+              public void onFailure(@NonNull Exception e) {
                 taskCompletionSource.setException(e);
               }
             });
@@ -138,8 +141,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     signInCancellationSource = new CancellationTokenSource();
     signInTaskCompletionSource = new TaskCompletionSource<>(signInCancellationSource.getToken());
 
-    Context context = firebaseApp.getApplicationContext();
-    AlertDialog alertDialog = getSignInAlertDialog(context);
+    AlertDialog alertDialog = getSignInAlertDialog(firebaseApp.getApplicationContext());
     alertDialog.show();
 
     return signInTaskCompletionSource.getTask();
@@ -163,8 +165,9 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
         new TaskCompletionSource<>(checkForUpdateCancellationSource.getToken());
 
     Task<String> installationIdTask = firebaseInstallationsApi.getId();
+    // forceRefresh is false to get locally cached token if available
     Task<InstallationTokenResult> installationAuthTokenTask =
-        firebaseInstallationsApi.getToken(true);
+        firebaseInstallationsApi.getToken(false);
 
     Tasks.whenAllComplete(installationIdTask, installationAuthTokenTask)
         .addOnSuccessListener(
@@ -214,30 +217,33 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
   /** Returns true if the App Distribution tester is signed in */
   @NonNull
   public boolean isTesterSignedIn() {
-    return false;
+    // todo: implement when signIn persistence is done
+    throw new UnsupportedOperationException("Not yet implemented.");
   }
 
   /** Signs out the App Distribution tester */
-  public void signOutTester() {}
+  public void signOutTester() {
+    // todo: implement when signIn persistence is done
+    throw new UnsupportedOperationException("Not yet implemented.");
+  }
 
   @Override
-  public void onActivityCreated(
-      @NonNull @NotNull Activity activity, @androidx.annotation.Nullable @Nullable Bundle bundle) {
+  public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle bundle) {
     Log.d(TAG, "Created activity: " + activity.getClass().getName());
     // if signinactivity is created, sign-in was succesful
-    if (currentlySigningIn && activity instanceof SignInResultActivity) {
+    if (activity instanceof SignInResultActivity) {
       currentlySigningIn = false;
       signInTaskCompletionSource.setResult(null);
     }
   }
 
   @Override
-  public void onActivityStarted(@NonNull @NotNull Activity activity) {
+  public void onActivityStarted(@NonNull Activity activity) {
     Log.d(TAG, "Started activity: " + activity.getClass().getName());
   }
 
   @Override
-  public void onActivityResumed(@NonNull @NotNull Activity activity) {
+  public void onActivityResumed(@NonNull Activity activity) {
     Log.d(TAG, "Resumed activity: " + activity.getClass().getName());
 
     // signInActivity is only opened after successful redirection from signIn flow,
@@ -255,23 +261,22 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
   }
 
   @Override
-  public void onActivityPaused(@NonNull @NotNull Activity activity) {
+  public void onActivityPaused(@NonNull Activity activity) {
     Log.d(TAG, "Paused activity: " + activity.getClass().getName());
   }
 
   @Override
-  public void onActivityStopped(@NonNull @NotNull Activity activity) {
+  public void onActivityStopped(@NonNull Activity activity) {
     Log.d(TAG, "Stopped activity: " + activity.getClass().getName());
   }
 
   @Override
-  public void onActivitySaveInstanceState(
-      @NonNull @NotNull Activity activity, @NonNull @NotNull Bundle bundle) {
+  public void onActivitySaveInstanceState(@NonNull Activity activity, @NonNull Bundle bundle) {
     Log.d(TAG, "Saved activity: " + activity.getClass().getName());
   }
 
   @Override
-  public void onActivityDestroyed(@NonNull @NotNull Activity activity) {
+  public void onActivityDestroyed(@NonNull Activity activity) {
     Log.d(TAG, "Destroyed activity: " + activity.getClass().getName());
     if (this.currentActivity == activity) {
       this.currentActivity = null;
@@ -331,7 +336,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
                 .addOnFailureListener(
                     new OnFailureListener() {
                       @Override
-                      public void onFailure(@NonNull @NotNull Exception e) {
+                      public void onFailure(@NonNull Exception e) {
                         setSignInTaskCompletionError(
                             new FirebaseAppDistributionException(
                                 e.getMessage(), AUTHENTICATION_FAILURE));
@@ -360,7 +365,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
         Uri uri =
             Uri.parse(
                 String.format(
-                    "https://appdistribution.firebase.google.com/pub/testerapps/%s/installations/%s/buildalerts?appName=%s&packageName=%s",
+                    SIGNIN_REDIRECT_URL,
                     firebaseApp.getOptions().getApplicationId(),
                     fid,
                     getApplicationName(context),
@@ -380,6 +385,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
       Context context = firebaseApp.getApplicationContext();
       long currentInstalledVersionCode = getInstalledAppVersionCode(context);
 
+      // todo: change to comparing codehash
       if (Long.parseLong(retrievedLatestRelease.getBuildVersion()) > currentInstalledVersionCode) {
         // only return a release if device can upgrade to the new release without
         // uninstalling
