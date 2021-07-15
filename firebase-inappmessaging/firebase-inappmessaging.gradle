@@ -99,7 +99,7 @@ configurations.all {
     if(it.name.contains('AndroidTestRuntimeClasspath')) {
         it.resolutionStrategy {
             force 'org.checkerframework:checker-compat-qual:2.5.5'
-            force 'com.google.guava:guava:28.1-android'
+            force 'com.google.guava:guava:30.1-android'
         }
     }
 }
@@ -152,7 +152,7 @@ dependencies {
         exclude group: 'com.google.protobuf', module: 'protobuf-java'
     }
     testImplementation "io.grpc:grpc-testing:$grpcVersion"
-    testImplementation 'com.google.guava:guava:27.1-android'
+    testImplementation 'com.google.guava:guava:30.1-android'
     testImplementation 'androidx.test:core:1.2.0'
 
     androidTestImplementation 'junit:junit:4.12'
