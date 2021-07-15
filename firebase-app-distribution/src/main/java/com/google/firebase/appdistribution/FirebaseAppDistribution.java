@@ -221,8 +221,30 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
    *     is cached from checkForUpdate
    */
   @NonNull
-  public UpdateTask updateApp() {
-    return (UpdateTask) Tasks.forResult(new UpdateState(0, 0, UpdateStatus.PENDING));
+  public UpdateTask updateApp() throws FirebaseAppDistributionException {
+
+    if (updateAppTaskCompletionSource != null
+            && !updateAppTaskCompletionSource.getTask().isComplete()) {
+      updateAppCancellationSource.cancel();
+    }
+
+    updateAppCancellationSource = new CancellationTokenSource();
+    updateAppTaskCompletionSource =
+            new TaskCompletionSource<>(updateAppCancellationSource.getToken());
+
+
+    if (appDistributionReleaseInternal == null) {
+      throw new FirebaseAppDistributionException("No new release available. Try calling checkForUpdate", FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE);
+    }
+
+    if (appDistributionReleaseInternal.getBinaryType() == BinaryType.AAB) {
+      redirectToPlayForAabUpdate(appDistributionReleaseInternal.getDownloadUrl());
+    } else {
+      throw new UnsupportedOperationException("Not yet implemented.");
+    }
+
+
+    return (UpdateTask) updateAppTaskCompletionSource.getTask();
   }
 
   /** Returns true if the App Distribution tester is signed in */
