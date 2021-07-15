@@ -187,7 +187,11 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
                               firebaseApp.getOptions().getApiKey(),
                               installationTokenResult.getToken());
                       updateOnUiThread(
-                          () -> checkForUpdateTaskCompletionSource.setResult(latestRelease));
+                          () -> {
+                            if (checkForUpdateTaskCompletionSource != null
+                                    && !checkForUpdateTaskCompletionSource.getTask().isComplete())
+                            checkForUpdateTaskCompletionSource.setResult(latestRelease);
+                          });
                     } catch (FirebaseAppDistributionException ex) {
                       updateOnUiThread(() -> setCheckForUpdateTaskCompletionError(ex));
                     }
