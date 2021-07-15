@@ -15,6 +15,7 @@
 package com.google.firebase.appdistribution;
 
 import androidx.annotation.NonNull;
+import com.google.firebase.appdistribution.internal.AppDistributionReleaseInternal;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -28,7 +29,6 @@ import org.json.JSONObject;
 
 public class FirebaseAppDistributionTesterApiClient {
 
-  private static final String TAG = "FADTesterApiClient";
   private static final String RELEASE_ENDPOINT_URL_FORMAT =
       "https://firebaseapptesters.googleapis.com/v1alpha/devices/-/testerApps/%s/installations/%s/releases";
   private static final String REQUEST_METHOD = "GET";
@@ -38,13 +38,16 @@ public class FirebaseAppDistributionTesterApiClient {
   private static final String DISPLAY_VERSION_JSON_KEY = "displayVersion";
   private static final String RELEASE_NOTES_JSON_KEY = "releaseNotes";
   private static final String BINARY_TYPE_JSON_KEY = "binaryType";
+  private static final String CODE_HASH_KEY = "codeHash";
+  private static final String IAS_ARTIFACT_ID_KEY = "iasArtifactId";
+  private static final String DOWNLOAD_URL_KEY = "downloadUrl";
   public static final int DEFAULT_BUFFER_SIZE = 8192;
 
-  public @NonNull AppDistributionRelease fetchLatestRelease(
+  public @NonNull AppDistributionReleaseInternal fetchLatestRelease(
       @NonNull String fid, @NonNull String appId, @NonNull String apiKey, @NonNull String authToken)
       throws FirebaseAppDistributionException, ProtocolException {
 
-    AppDistributionRelease latestRelease = null;
+    AppDistributionReleaseInternal latestRelease;
     HttpsURLConnection conn = openHttpsUrlConnection(appId, fid);
     conn.setRequestMethod(REQUEST_METHOD);
     conn.setRequestProperty(API_KEY_HEADER, apiKey);
@@ -54,23 +57,25 @@ public class FirebaseAppDistributionTesterApiClient {
       JSONObject latestReleaseJson = readFetchReleaseInputStream(conn.getInputStream());
       final String displayVersion = latestReleaseJson.getString(DISPLAY_VERSION_JSON_KEY);
       final String buildVersion = latestReleaseJson.getString(BUILD_VERSION_JSON_KEY);
-      String releaseNotes;
-      try {
-        releaseNotes = latestReleaseJson.getString(RELEASE_NOTES_JSON_KEY);
-      } catch (JSONException e) {
-        releaseNotes = "";
-      }
+      String releaseNotes = tryGetValue(latestReleaseJson, RELEASE_NOTES_JSON_KEY);
+      String codeHash = tryGetValue(latestReleaseJson, CODE_HASH_KEY);
+      String iasArtifactId = tryGetValue(latestReleaseJson, IAS_ARTIFACT_ID_KEY);
+      String downloadUrl = tryGetValue(latestReleaseJson, DOWNLOAD_URL_KEY);
+
       final BinaryType binaryType =
           latestReleaseJson.getString(BINARY_TYPE_JSON_KEY).equals("APK")
               ? BinaryType.APK
               : BinaryType.AAB;
 
       latestRelease =
-          AppDistributionRelease.builder()
+          AppDistributionReleaseInternal.builder()
               .setDisplayVersion(displayVersion)
               .setBuildVersion(buildVersion)
               .setReleaseNotes(releaseNotes)
               .setBinaryType(binaryType)
+              .setIasArtifactId(iasArtifactId)
+              .setCodeHash(codeHash)
+              .setDownloadUrl(downloadUrl)
               .build();
 
     } catch (IOException | JSONException e) {
@@ -84,9 +89,17 @@ public class FirebaseAppDistributionTesterApiClient {
     return latestRelease;
   }
 
+  private String tryGetValue(JSONObject jsonObject, String key) {
+    try {
+      return jsonObject.getString(key);
+    } catch (JSONException e) {
+      return "";
+    }
+  }
+
   private JSONObject readFetchReleaseInputStream(InputStream in)
       throws FirebaseAppDistributionException, IOException {
-    JSONObject latestRelease = null;
+    JSONObject latestRelease;
     InputStream jsonIn = new BufferedInputStream(in);
     String result = convertInputStreamToString(jsonIn);
     try {
@@ -100,7 +113,7 @@ public class FirebaseAppDistributionTesterApiClient {
   }
 
   HttpsURLConnection openHttpsUrlConnection(String appId, String fid)
-      throws FirebaseAppDistributionException, ProtocolException {
+      throws FirebaseAppDistributionException {
     HttpsURLConnection httpsURLConnection;
     URL url = getReleasesEndpointUrl(appId, fid);
     try {
