@@ -19,13 +19,14 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 public final class ReleaseIdentificationUtils {
   private static final String TAG = "ReleaseIdentification";
 
   @Nullable
-  public static String extractInternalAppSharingArtifactId(Context appContext) {
+  public static String extractInternalAppSharingArtifactId(@NonNull Context appContext) {
     try {
       PackageInfo packageInfo =
           appContext
