@@ -393,6 +393,8 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
       AppDistributionReleaseInternal retrievedLatestRelease =
           firebaseAppDistributionTesterApiClient.fetchLatestRelease(fid, appId, apiKey, authToken);
 
+      this.appDistributionReleaseInternal = retrievedLatestRelease;
+
       long currentInstalledVersionCode =
           getInstalledAppVersionCode(firebaseApp.getApplicationContext());
 
