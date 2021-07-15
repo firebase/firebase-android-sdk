@@ -116,7 +116,7 @@ public final class MemoryPersistence extends Persistence {
   }
 
   @Override
-  IndexManager getIndexManager() {
+  IndexManager getIndexManager(User user) {
     return indexManager;
   }
 

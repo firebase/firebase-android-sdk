@@ -24,8 +24,8 @@ import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.core.UserData.ParsedSetData;
 import com.google.firebase.firestore.core.UserData.ParsedUpdateData;
+import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.DeleteMutation;
 import com.google.firebase.firestore.model.mutation.Mutation;
@@ -76,7 +76,7 @@ public class Transaction {
    * Takes a set of keys and asynchronously attempts to fetch all the documents from the backend,
    * ignoring any local changes.
    */
-  public Task<List<MutableDocument>> lookup(List<DocumentKey> keys) {
+  public Task<List<Document>> lookup(List<DocumentKey> keys) {
     ensureCommitNotCalled();
 
     if (mutations.size() != 0) {
@@ -91,7 +91,7 @@ public class Transaction {
             Executors.DIRECT_EXECUTOR,
             task -> {
               if (task.isSuccessful()) {
-                for (MutableDocument doc : task.getResult()) {
+                for (Document doc : task.getResult()) {
                   recordVersion(doc);
                 }
               }
@@ -169,7 +169,7 @@ public class Transaction {
     return executor;
   }
 
-  private void recordVersion(MutableDocument doc) throws FirebaseFirestoreException {
+  private void recordVersion(Document doc) throws FirebaseFirestoreException {
     SnapshotVersion docVersion;
     if (doc.isFoundDocument()) {
       docVersion = doc.getVersion();
@@ -214,7 +214,7 @@ public class Transaction {
     // The first time a document is written, we want to take into account the read time and
     // existence.
     if (!writtenDocs.contains(key) && version != null) {
-      if (version != null && version.equals(SnapshotVersion.NONE)) {
+      if (version.equals(SnapshotVersion.NONE)) {
         // The document to update doesn't exist, so fail the transaction.
         //
         // This has to be validated locally because you can't send a precondition that a document

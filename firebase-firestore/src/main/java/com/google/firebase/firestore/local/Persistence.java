@@ -49,10 +49,6 @@ import com.google.firebase.firestore.util.Supplier;
 public abstract class Persistence {
   static final String TAG = Persistence.class.getSimpleName();
 
-  /** Temporary setting for enabling indexing-specific code paths while in development. */
-  // TODO: Remove this.
-  public static boolean INDEXING_SUPPORT_ENABLED = false;
-
   // Local subclasses only, please.
   Persistence() {}
 
@@ -87,7 +83,7 @@ public abstract class Persistence {
   abstract RemoteDocumentCache getRemoteDocumentCache();
 
   /** Creates an IndexManager that manages our persisted query indexes. */
-  abstract IndexManager getIndexManager();
+  abstract IndexManager getIndexManager(User user);
 
   /** Returns a BundleCache representing the persisted cache of loaded bundles. */
   abstract BundleCache getBundleCache();

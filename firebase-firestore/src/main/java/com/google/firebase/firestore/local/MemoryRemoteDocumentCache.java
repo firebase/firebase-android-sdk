@@ -14,7 +14,6 @@
 
 package com.google.firebase.firestore.local;
 
-import static com.google.firebase.firestore.model.DocumentCollections.emptyMutableDocumentMap;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import android.util.Pair;
@@ -49,7 +48,7 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
         "Cannot add document to the RemoteDocumentCache with a read time of zero");
     docs = docs.insert(document.getKey(), new Pair<>(document.clone(), readTime));
 
-    persistence.getIndexManager().addToCollectionParentIndex(document.getKey().getPath().popLast());
+    // persistence.getIndexManager().addToCollectionParentIndex(document.getKey().getPath().popLast());
   }
 
   @Override
@@ -73,12 +72,12 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
   }
 
   @Override
-  public ImmutableSortedMap<DocumentKey, MutableDocument> getAllDocumentsMatchingQuery(
+  public Map<DocumentKey, MutableDocument> getAllDocumentsMatchingQuery(
       Query query, SnapshotVersion sinceReadTime) {
     hardAssert(
         !query.isCollectionGroupQuery(),
         "CollectionGroup queries should be handled in LocalDocumentsView");
-    ImmutableSortedMap<DocumentKey, MutableDocument> result = emptyMutableDocumentMap();
+    Map<DocumentKey, MutableDocument> result = new HashMap<>();
 
     // Documents are ordered by key, so we can use a prefix scan to narrow down the documents
     // we need to match the query against.
@@ -109,7 +108,7 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
         continue;
       }
 
-      result = result.insert(doc.getKey(), doc.clone());
+      result.put(doc.getKey(), doc.clone());
     }
 
     return result;

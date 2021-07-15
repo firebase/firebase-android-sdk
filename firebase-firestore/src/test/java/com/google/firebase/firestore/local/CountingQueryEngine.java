@@ -143,9 +143,9 @@ class CountingQueryEngine implements QueryEngine {
       }
 
       @Override
-      public ImmutableSortedMap<DocumentKey, MutableDocument> getAllDocumentsMatchingQuery(
+      public Map<DocumentKey, MutableDocument> getAllDocumentsMatchingQuery(
           Query query, SnapshotVersion sinceReadTime) {
-        ImmutableSortedMap<DocumentKey, MutableDocument> result =
+        Map<DocumentKey, MutableDocument> result =
             subject.getAllDocumentsMatchingQuery(query, sinceReadTime);
         documentsReadByQuery[0] += result.size();
         return result;

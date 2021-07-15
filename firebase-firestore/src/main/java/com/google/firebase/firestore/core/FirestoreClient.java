@@ -33,11 +33,13 @@ import com.google.firebase.firestore.bundle.BundleSerializer;
 import com.google.firebase.firestore.bundle.NamedQuery;
 import com.google.firebase.firestore.core.EventManager.ListenOptions;
 import com.google.firebase.firestore.local.GarbageCollectionScheduler;
+import com.google.firebase.firestore.local.IndexManager;
 import com.google.firebase.firestore.local.LocalStore;
 import com.google.firebase.firestore.local.Persistence;
 import com.google.firebase.firestore.local.QueryResult;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.remote.Datastore;
 import com.google.firebase.firestore.remote.GrpcMetadataProvider;
@@ -313,5 +315,9 @@ public final class FirestoreClient {
     if (this.isTerminated()) {
       throw new IllegalStateException("The client has already been terminated");
     }
+  }
+
+  public void enableIndex(ResourcePath path, IndexManager.IndexDefinition definition) {
+    asyncQueue.enqueueAndForget(() -> localStore.enableIndex(path, definition));
   }
 }

@@ -23,7 +23,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.core.UserData.ParsedSetData;
 import com.google.firebase.firestore.core.UserData.ParsedUpdateData;
-import com.google.firebase.firestore.model.MutableDocument;
+import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.util.Executors;
 import com.google.firebase.firestore.util.Util;
 import java.util.Collections;
@@ -193,11 +193,11 @@ public class Transaction {
               if (!task.isSuccessful()) {
                 throw task.getException();
               }
-              List<MutableDocument> docs = task.getResult();
+              List<Document> docs = task.getResult();
               if (docs.size() != 1) {
                 throw fail("Mismatch in docs returned from document lookup.");
               }
-              MutableDocument doc = docs.get(0);
+              Document doc = docs.get(0);
               if (doc.isFoundDocument()) {
                 return DocumentSnapshot.fromDocument(
                     firestore, doc, /*fromCache=*/ false, /*hasPendingWrites=*/ false);

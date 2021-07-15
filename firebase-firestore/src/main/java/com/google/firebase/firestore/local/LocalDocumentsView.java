@@ -188,12 +188,18 @@ class LocalDocumentsView {
   /** Queries the remote documents and overlays mutations. */
   private ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingCollectionQuery(
       Query query, SnapshotVersion sinceReadTime) {
-    ImmutableSortedMap<DocumentKey, MutableDocument> remoteDocuments =
-        remoteDocumentCache.getAllDocumentsMatchingQuery(query, sinceReadTime);
+    Map<DocumentKey, MutableDocument> remoteDocuments;
+
+    Iterable<DocumentKey> documentsMatchingQuery = indexManager.getDocumentsMatchingQuery(query);
+    if (documentsMatchingQuery != null) {
+      remoteDocuments = remoteDocumentCache.getAll(documentsMatchingQuery);
+    } else {
+      remoteDocuments = remoteDocumentCache.getAllDocumentsMatchingQuery(query, sinceReadTime);
+    }
 
     List<MutationBatch> matchingBatches = mutationQueue.getAllMutationBatchesAffectingQuery(query);
 
-    remoteDocuments = addMissingBaseDocuments(matchingBatches, remoteDocuments);
+    addMissingBaseDocuments(matchingBatches, remoteDocuments);
 
     for (MutationBatch batch : matchingBatches) {
       for (Mutation mutation : batch.getMutations()) {
@@ -207,17 +213,17 @@ class LocalDocumentsView {
         if (document == null) {
           // Create invalid document to apply mutations on top of
           document = MutableDocument.newInvalidDocument(key);
-          remoteDocuments = remoteDocuments.insert(key, document);
+          remoteDocuments.put(key, document);
         }
         mutation.applyToLocalView(document, batch.getLocalWriteTime());
         if (!document.isFoundDocument()) {
-          remoteDocuments = remoteDocuments.remove(key);
+          remoteDocuments.remove(key);
         }
       }
     }
 
     ImmutableSortedMap<DocumentKey, Document> results = emptyDocumentMap();
-    for (Map.Entry<DocumentKey, MutableDocument> docEntry : remoteDocuments) {
+    for (Map.Entry<DocumentKey, MutableDocument> docEntry : remoteDocuments.entrySet()) {
       // Finally, insert the documents that still match the query
       if (query.matches(docEntry.getValue())) {
         results = results.insert(docEntry.getKey(), docEntry.getValue());
@@ -235,9 +241,8 @@ class LocalDocumentsView {
    * those {@code PatchMutation}s will be ignored because no base document can be found, and lead to
    * missing results for the query.
    */
-  private ImmutableSortedMap<DocumentKey, MutableDocument> addMissingBaseDocuments(
-      List<MutationBatch> matchingBatches,
-      ImmutableSortedMap<DocumentKey, MutableDocument> existingDocs) {
+  private void addMissingBaseDocuments(
+      List<MutationBatch> matchingBatches, Map<DocumentKey, MutableDocument> existingDocs) {
     HashSet<DocumentKey> missingDocKeys = new HashSet<>();
     for (MutationBatch batch : matchingBatches) {
       for (Mutation mutation : batch.getMutations()) {
@@ -247,14 +252,11 @@ class LocalDocumentsView {
       }
     }
 
-    ImmutableSortedMap<DocumentKey, MutableDocument> mergedDocs = existingDocs;
     Map<DocumentKey, MutableDocument> missingDocs = remoteDocumentCache.getAll(missingDocKeys);
     for (Map.Entry<DocumentKey, MutableDocument> entry : missingDocs.entrySet()) {
       if (entry.getValue().isFoundDocument()) {
-        mergedDocs = mergedDocs.insert(entry.getKey(), entry.getValue());
+        existingDocs.put(entry.getKey(), entry.getValue());
       }
     }
-
-    return mergedDocs;
   }
 }

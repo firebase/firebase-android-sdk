@@ -19,11 +19,14 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 import androidx.annotation.Nullable;
 import com.google.firebase.firestore.core.Filter.Operator;
 import com.google.firebase.firestore.core.OrderBy.Direction;
+import com.google.firebase.firestore.local.IndexManager.IndexComponent;
+import com.google.firebase.firestore.local.IndexManager.IndexDefinition;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.util.Assert;
+import com.google.firestore.v1.Value;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -111,6 +114,93 @@ public final class Query {
         null);
   }
 
+  public List<IndexDefinition> getIndexComponents() {
+    List<IndexComponent> unspecifiedComponents = new ArrayList<>();
+    for (Filter filter : filters) {
+      unspecifiedComponents.add(filter.getIndexComponent());
+    }
+    for (OrderBy orderBy : getOrderBy()) {
+      for (int i = 0; i < unspecifiedComponents.size(); ++i) {
+        if (unspecifiedComponents.get(i).getFieldPath().equals(orderBy.field)) {
+          unspecifiedComponents.set(i, orderBy.getIndexComponent());
+        }
+      }
+    }
+    List<IndexDefinition> components = new ArrayList<>();
+    expandIndexComponents(components, unspecifiedComponents);
+    return components;
+  }
+
+  public @Nullable List<Value> getLowerBound() {
+    List<Value> unspecifiedComponents = new ArrayList<>();
+    for (Filter filter : filters) {
+      Value lowerBound = filter.getLowerBound();
+      if (lowerBound == null) return null;
+      unspecifiedComponents.add(lowerBound);
+    }
+    return unspecifiedComponents;
+  }
+
+  public boolean isLowerInclusive() {
+    for (Filter filter : filters) {
+      boolean inclusive = filter.isLowerInclusive();
+      if (!inclusive) return false;
+    }
+    return true;
+  }
+
+  public @Nullable List<Value> getUpperBound() {
+    List<Value> unspecifiedComponents = new ArrayList<>();
+    for (Filter filter : filters) {
+      Value upperBound = filter.getUpperBound();
+      if (upperBound == null) return null;
+      unspecifiedComponents.add(upperBound);
+    }
+    return unspecifiedComponents;
+  }
+
+  public boolean isUpperInclusive() {
+    for (Filter filter : filters) {
+      boolean inclusive = filter.isUpperInclusive();
+      if (!inclusive) return false;
+    }
+    return true;
+  }
+
+  private void expandIndexComponents(
+      List<IndexDefinition> existing, List<IndexComponent> unspecifiedComponents) {
+    if (!unspecifiedComponents.isEmpty()) {
+      if (existing.isEmpty()) {
+        existing.add(new IndexDefinition());
+      }
+      IndexComponent first = unspecifiedComponents.get(0);
+      if (!first.getType().equals(IndexComponent.IndexType.ANY)) {
+        for (IndexDefinition indexDefinition : existing) {
+          indexDefinition.add(first);
+        }
+      } else {
+        int originalSize = existing.size();
+
+        // Support subsets for index building
+        for (int i = 0; i < originalSize; ++i) {
+          {
+            IndexDefinition original = new IndexDefinition();
+            original.addAll(existing.get(i).subList(0, existing.get(i).size()));
+            original.add(new IndexComponent(first.getFieldPath(), IndexComponent.IndexType.ASC));
+            existing.add(original);
+          }
+          {
+            IndexDefinition original = new IndexDefinition();
+            original.addAll(existing.get(i).subList(0, existing.get(i).size()));
+            original.add(new IndexComponent(first.getFieldPath(), IndexComponent.IndexType.DESC));
+            existing.add(original);
+          }
+        }
+      }
+      expandIndexComponents(
+          existing, unspecifiedComponents.subList(1, unspecifiedComponents.size()));
+    }
+  }
   /** The base path of the query. */
   public ResourcePath getPath() {
     return path;

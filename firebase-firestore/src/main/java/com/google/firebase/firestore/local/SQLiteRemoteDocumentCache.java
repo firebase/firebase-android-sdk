@@ -18,9 +18,7 @@ import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import com.google.firebase.Timestamp;
-import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
-import com.google.firebase.firestore.model.DocumentCollections;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ResourcePath;
@@ -64,7 +62,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
         timestamp.getNanoseconds(),
         message.toByteArray());
 
-    db.getIndexManager().addToCollectionParentIndex(document.getKey().getPath().popLast());
+    // db.getIndexManager().addToCollectionParentIndex(document.getKey().getPath().popLast());
   }
 
   @Override
@@ -120,7 +118,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
   }
 
   @Override
-  public ImmutableSortedMap<DocumentKey, MutableDocument> getAllDocumentsMatchingQuery(
+  public Map<DocumentKey, MutableDocument> getAllDocumentsMatchingQuery(
       Query query, SnapshotVersion sinceReadTime) {
     hardAssert(
         !query.isCollectionGroupQuery(),
@@ -136,9 +134,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
 
     BackgroundQueue backgroundQueue = new BackgroundQueue();
 
-    ImmutableSortedMap<DocumentKey, MutableDocument>[] matchingDocuments =
-        (ImmutableSortedMap<DocumentKey, MutableDocument>[])
-            new ImmutableSortedMap[] {DocumentCollections.emptyMutableDocumentMap()};
+    Map<DocumentKey, MutableDocument> matchingDocuments = new HashMap<>();
 
     SQLitePersistence.Query sqlQuery;
     if (sinceReadTime.equals(SnapshotVersion.NONE)) {
@@ -184,7 +180,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
                 MutableDocument document = decodeMaybeDocument(rawDocument);
                 if (document.isFoundDocument() && query.matches(document)) {
                   synchronized (SQLiteRemoteDocumentCache.this) {
-                    matchingDocuments[0] = matchingDocuments[0].insert(document.getKey(), document);
+                    matchingDocuments.put(document.getKey(), document);
                   }
                 }
               });
@@ -196,7 +192,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
       fail("Interrupted while deserializing documents", e);
     }
 
-    return matchingDocuments[0];
+    return matchingDocuments;
   }
 
   private String pathForKey(DocumentKey key) {

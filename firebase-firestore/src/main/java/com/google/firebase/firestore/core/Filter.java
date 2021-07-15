@@ -14,11 +14,17 @@
 
 package com.google.firebase.firestore.core;
 
+import com.google.firebase.firestore.local.IndexManager;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.FieldPath;
+import com.google.firestore.v1.Value;
 
 /** Interface used for all query filters. */
 public abstract class Filter {
+  public abstract boolean isLowerInclusive();
+
+  public abstract boolean isUpperInclusive();
+
   public enum Operator {
     LESS_THAN("<"),
     LESS_THAN_OR_EQUAL("<="),
@@ -46,9 +52,16 @@ public abstract class Filter {
   /** Returns the field the Filter operates over. */
   public abstract FieldPath getField();
 
+  /** Returns the field the Filter operates over. */
+  public abstract Value getLowerBound();
+
+  /** Returns the field the Filter operates over. */
+  public abstract Value getUpperBound();
   /** Returns true if a document matches the filter. */
   public abstract boolean matches(Document doc);
 
   /** A unique ID identifying the filter; used when serializing queries. */
   public abstract String getCanonicalId();
+
+  public abstract IndexManager.IndexComponent getIndexComponent();
 }
