@@ -55,9 +55,9 @@ public abstract class AppDistributionReleaseInternal {
   @Nullable
   public abstract String getCodeHash();
 
-  /** IAS artifact id.
-   * This value is inserted into the manifest of APK's installed via
-   * Used to map a release to an APK installed via an app bundle
+  /**
+   * IAS artifact id. This value is inserted into the manifest of APK's installed via Used to map a
+   * release to an APK installed via an app bundle
    */
   @Nullable
   public abstract String getIasArtifactId();
