@@ -19,6 +19,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.when;
 
+import com.google.firebase.appdistribution.internal.AppDistributionReleaseInternal;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -61,18 +62,37 @@ public class FirebaseAppDistributionTesterApiClientTest {
   }
 
   @Test
-  public void fetchLatestRelease_whenResponseSuccessful_returnsRelease() throws Exception {
-    JSONObject releaseJson = getTestJSON("testReleaseResponse.json");
+  public void fetchLatestRelease_whenResponseSuccessfulForApk_returnsRelease() throws Exception {
+    JSONObject releaseJson = getTestJSON("testApkReleaseResponse.json");
     InputStream response =
         new ByteArrayInputStream(releaseJson.toString().getBytes(StandardCharsets.UTF_8));
     when(mockHttpsURLConnection.getInputStream()).thenReturn(response);
-    AppDistributionRelease release =
+    AppDistributionReleaseInternal release =
         firebaseAppDistributionTesterApiClient.fetchLatestRelease(
             TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN);
     assertEquals(release.getBinaryType(), BinaryType.APK);
     assertEquals(release.getBuildVersion(), "3");
     assertEquals(release.getDisplayVersion(), "3.0");
     assertEquals(release.getReleaseNotes(), "This is a test release.");
+    assertEquals(release.getDownloadUrl(), "http://test-url-apk");
+    assertEquals(release.getCodeHash(), "code-hash-apk-1");
+  }
+
+  @Test
+  public void fetchLatestRelease_whenResponseSuccessfulForAab_returnsRelease() throws Exception {
+    JSONObject releaseJson = getTestJSON("testAabReleaseResponse.json");
+    InputStream response =
+        new ByteArrayInputStream(releaseJson.toString().getBytes(StandardCharsets.UTF_8));
+    when(mockHttpsURLConnection.getInputStream()).thenReturn(response);
+    AppDistributionReleaseInternal release =
+        firebaseAppDistributionTesterApiClient.fetchLatestRelease(
+            TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN);
+    assertEquals(release.getBinaryType(), BinaryType.AAB);
+    assertEquals(release.getBuildVersion(), "3");
+    assertEquals(release.getDisplayVersion(), "3.0");
+    assertEquals(release.getReleaseNotes(), "This is a test release.");
+    assertEquals(release.getDownloadUrl(), "http://test-url-aab");
+    assertEquals(release.getIasArtifactId(), "ias-artifact-id-1");
   }
 
   @Test
