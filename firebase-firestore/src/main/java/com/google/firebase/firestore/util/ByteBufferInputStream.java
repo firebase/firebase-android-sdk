@@ -28,6 +28,11 @@ public class ByteBufferInputStream extends InputStream {
   }
 
   @Override
+  public int available() throws IOException {
+    return this.buffer.remaining();
+  }
+
+  @Override
   public int read() {
     if (!buffer.hasRemaining()) {
       return -1;

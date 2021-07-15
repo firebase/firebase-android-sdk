@@ -50,7 +50,8 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
     FirebaseApp app = container.get(FirebaseApp.class);
     FirebaseInstallationsApi firebaseInstallations = container.get(FirebaseInstallationsApi.class);
     Application firebaseApplication = (Application) app.getApplicationContext();
-    return new FirebaseAppDistribution(app, firebaseInstallations);
+
+    return new FirebaseAppDistribution(app, firebaseInstallations, new FirebaseAppDistributionTesterApiClient());
   }
 
 }
