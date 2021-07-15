@@ -189,8 +189,8 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
                       updateOnUiThread(
                           () -> {
                             if (checkForUpdateTaskCompletionSource != null
-                                    && !checkForUpdateTaskCompletionSource.getTask().isComplete())
-                            checkForUpdateTaskCompletionSource.setResult(latestRelease);
+                                && !checkForUpdateTaskCompletionSource.getTask().isComplete())
+                              checkForUpdateTaskCompletionSource.setResult(latestRelease);
                           });
                     } catch (FirebaseAppDistributionException ex) {
                       updateOnUiThread(() -> setCheckForUpdateTaskCompletionError(ex));
