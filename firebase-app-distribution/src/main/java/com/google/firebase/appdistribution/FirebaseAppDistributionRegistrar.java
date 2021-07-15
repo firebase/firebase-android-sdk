@@ -15,7 +15,7 @@
 package com.google.firebase.appdistribution;
 
 import android.app.Application;
-
+import android.util.Log;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import com.google.firebase.FirebaseApp;
@@ -35,6 +35,9 @@ import java.util.List;
  */
 @Keep
 public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
+
+  private static String TAG = "FadRegistrar";
+
   @Override
   public @NonNull List<Component<?>> getComponents() {
     return Arrays.asList(
@@ -47,11 +50,20 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
   }
 
   private FirebaseAppDistribution buildFirebaseAppDistribution(ComponentContainer container) {
-    FirebaseApp app = container.get(FirebaseApp.class);
+    FirebaseApp firebaseApp = container.get(FirebaseApp.class);
     FirebaseInstallationsApi firebaseInstallations = container.get(FirebaseInstallationsApi.class);
-    Application firebaseApplication = (Application) app.getApplicationContext();
+    FirebaseAppDistribution appDistribution =
+        new FirebaseAppDistribution(firebaseApp, firebaseInstallations);
 
-    return new FirebaseAppDistribution(app, firebaseInstallations, new FirebaseAppDistributionTesterApiClient());
+    if (firebaseApp.getApplicationContext() instanceof Application) {
+      Application firebaseApplication = (Application) firebaseApp.getApplicationContext();
+      firebaseApplication.registerActivityLifecycleCallbacks(appDistribution);
+    } else {
+      Log.e(
+          TAG,
+          "Error registering app to ActivityLifecycleCallbacks. SDK might not function correctly.");
+    }
+
+    return appDistribution;
   }
-
 }

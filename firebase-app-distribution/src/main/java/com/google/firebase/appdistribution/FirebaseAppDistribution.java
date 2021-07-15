@@ -80,6 +80,13 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     this.checkForUpdateExecutor = Executors.newFixedThreadPool(UPDATE_THREAD_POOL_SIZE);
   }
 
+  /** Constructor for FirebaseAppDistribution */
+  public FirebaseAppDistribution(
+      @NonNull FirebaseApp firebaseApp,
+      @NonNull FirebaseInstallationsApi firebaseInstallationsApi) {
+    this(firebaseApp, firebaseInstallationsApi, new FirebaseAppDistributionTesterApiClient());
+  }
+
   /** @return a FirebaseAppDistribution instance */
   @NonNull
   public static FirebaseAppDistribution getInstance() {
