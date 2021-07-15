@@ -86,11 +86,11 @@ public final class SetMutation extends Mutation {
   }
 
   @Override
-  public void applyToLocalView(MutableDocument document, Timestamp localWriteTime) {
+  public boolean applyToLocalView(MutableDocument document, Timestamp localWriteTime) {
     verifyKeyMatches(document);
 
     if (!this.getPrecondition().isValidFor(document)) {
-      return;
+      return false;
     }
 
     Map<FieldPath, Value> transformResults = localTransformResults(localWriteTime, document);
@@ -99,6 +99,8 @@ public final class SetMutation extends Mutation {
     document
         .convertToFoundDocument(getPostMutationVersion(document), localValue)
         .setHasLocalMutations();
+
+    return true;
   }
 
   /** Returns the object value to use when setting the document. */

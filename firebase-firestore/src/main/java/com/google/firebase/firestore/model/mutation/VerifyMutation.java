@@ -60,7 +60,7 @@ public final class VerifyMutation extends Mutation {
     throw Assert.fail("VerifyMutation should only be used in Transactions.");
   }
 
-  public void applyToLocalView(MutableDocument document, Timestamp localWriteTime) {
+  public boolean applyToLocalView(MutableDocument document, Timestamp localWriteTime) {
     throw Assert.fail("VerifyMutation should only be used in Transactions.");
   }
 }

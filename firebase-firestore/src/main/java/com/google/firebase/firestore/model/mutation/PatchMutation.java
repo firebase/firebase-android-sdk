@@ -126,11 +126,11 @@ public final class PatchMutation extends Mutation {
   }
 
   @Override
-  public void applyToLocalView(MutableDocument document, Timestamp localWriteTime) {
+  public boolean applyToLocalView(MutableDocument document, Timestamp localWriteTime) {
     verifyKeyMatches(document);
 
     if (!getPrecondition().isValidFor(document)) {
-      return;
+      return false;
     }
 
     Map<FieldPath, Value> transformResults = localTransformResults(localWriteTime, document);
@@ -140,6 +140,8 @@ public final class PatchMutation extends Mutation {
     document
         .convertToFoundDocument(getPostMutationVersion(document), document.getData())
         .setHasLocalMutations();
+
+    return true;
   }
 
   private Map<FieldPath, Value> getPatch() {

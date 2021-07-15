@@ -129,7 +129,7 @@ public class QueryEngineTest {
         "addDocument",
         () -> {
           for (MutableDocument doc : docs) {
-            remoteDocumentCache.add(doc, doc.getVersion());
+            remoteDocumentCache.add(doc, null, doc.getVersion());
           }
         });
   }

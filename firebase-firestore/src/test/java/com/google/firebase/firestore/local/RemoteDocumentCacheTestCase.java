@@ -218,7 +218,7 @@ abstract class RemoteDocumentCacheTestCase {
   }
 
   private void add(MutableDocument doc, SnapshotVersion readTime) {
-    persistence.runTransaction("add entry", () -> remoteDocumentCache.add(doc, readTime));
+    persistence.runTransaction("add entry", () -> remoteDocumentCache.add(doc, null, readTime));
   }
 
   private MutableDocument get(String path) {

@@ -98,7 +98,7 @@ public final class MutationBatch {
   }
 
   /** Computes the local view of a document given all the mutations in this batch. */
-  public void applyToLocalView(MutableDocument document) {
+  public boolean applyToLocalView(MutableDocument document) {
     // First, apply the base state. This allows us to apply non-idempotent transform against a
     // consistent set of values.
     for (int i = 0; i < baseMutations.size(); i++) {
@@ -109,12 +109,18 @@ public final class MutationBatch {
     }
 
     // Second, apply all user-provided mutations.
+    boolean changed = false;
     for (int i = 0; i < mutations.size(); i++) {
       Mutation mutation = mutations.get(i);
       if (mutation.getKey().equals(document.getKey())) {
-        mutation.applyToLocalView(document, localWriteTime);
+        boolean applied = mutation.applyToLocalView(document, localWriteTime);
+        if (applied && !changed) {
+          changed = true;
+        }
       }
     }
+
+    return changed;
   }
 
   /** Computes the local view for all provided documents given the mutations in this batch. */

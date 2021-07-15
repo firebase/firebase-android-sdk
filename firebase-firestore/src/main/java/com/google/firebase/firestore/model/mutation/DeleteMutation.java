@@ -68,11 +68,14 @@ public final class DeleteMutation extends Mutation {
   }
 
   @Override
-  public void applyToLocalView(MutableDocument document, Timestamp localWriteTime) {
+  public boolean applyToLocalView(MutableDocument document, Timestamp localWriteTime) {
     verifyKeyMatches(document);
 
     if (getPrecondition().isValidFor(document)) {
       document.convertToNoDocument(SnapshotVersion.NONE);
+      return true;
     }
+
+    return false;
   }
 }

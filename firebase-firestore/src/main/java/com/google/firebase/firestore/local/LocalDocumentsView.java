@@ -17,6 +17,7 @@ package com.google.firebase.firestore.local;
 import static com.google.firebase.firestore.model.DocumentCollections.emptyDocumentMap;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
@@ -28,6 +29,8 @@ import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
 import com.google.firebase.firestore.model.mutation.PatchMutation;
+import com.google.firebase.firestore.util.Logger;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -37,7 +40,7 @@ import java.util.Map;
  * in remoteDocumentCache or local mutations for the document). The view is computed by applying the
  * mutations in the MutationQueue to the RemoteDocumentCache.
  */
-// TODO: Turn this into the UnifiedDocumentCache / whatever.
+// TODO(overlay): Turn this into the UnifiedDocumentCache / whatever.
 class LocalDocumentsView {
 
   private final RemoteDocumentCache remoteDocumentCache;
@@ -88,15 +91,31 @@ class LocalDocumentsView {
     return document;
   }
 
-  // Applies the given {@code batches} to the given {@code docs}. The docs are updated to reflect
-  // the contents of the mutations.
-  private void applyLocalMutationsToDocuments(
+  // Applies the given {@code batches} to the given {@code docs}. The the result of application is
+  // returned in a new Map, with both the original doc and the applied doc (if applied).
+  private Map<DocumentKey, DocumentBaseAndFinal> applyLocalMutationsToDocuments(
       Map<DocumentKey, MutableDocument> docs, List<MutationBatch> batches) {
+    Map<DocumentKey, DocumentBaseAndFinal> result = new HashMap<>();
     for (Map.Entry<DocumentKey, MutableDocument> base : docs.entrySet()) {
+      MutableDocument baseDoc = base.getValue().clone();
+      DocumentBaseAndFinal baseAndFinal = new DocumentBaseAndFinal();
+      baseAndFinal.baseDoc = base.getValue();
+
+      boolean changed = false;
       for (MutationBatch batch : batches) {
-        batch.applyToLocalView(base.getValue());
+        boolean applied = batch.applyToLocalView(baseDoc);
+        if (applied && !changed) {
+          changed = true;
+        }
       }
+
+      if (changed) {
+        baseAndFinal.finalDoc = baseDoc;
+      }
+      result.put(base.getKey(), baseAndFinal);
     }
+
+    return result;
   }
 
   /**
@@ -120,11 +139,91 @@ class LocalDocumentsView {
 
     List<MutationBatch> batches =
         mutationQueue.getAllMutationBatchesAffectingDocumentKeys(docs.keySet());
-    applyLocalMutationsToDocuments(docs, batches);
-    for (Map.Entry<DocumentKey, MutableDocument> entry : docs.entrySet()) {
-      results = results.insert(entry.getKey(), entry.getValue());
+    Map<DocumentKey, DocumentBaseAndFinal> applied = applyLocalMutationsToDocuments(docs, batches);
+    for (Map.Entry<DocumentKey, DocumentBaseAndFinal> entry : applied.entrySet()) {
+      results = results.insert(entry.getKey(), entry.getValue().getDocument());
     }
     return results;
+  }
+
+  // TODO(Overlay): Better name, and better place.
+  private static final class DocumentBaseAndFinal {
+    MutableDocument baseDoc = null;
+    MutableDocument finalDoc = null;
+
+    MutableDocument getDocument() {
+      return finalDoc == null ? baseDoc : finalDoc;
+    }
+  }
+
+  /**
+   * Populates the remote document cache with documents from backend or a bundle. Returns the
+   * document changes resulting from applying those documents.
+   *
+   * <p>Note: this function will use `documentVersions` if it is defined. When it is not defined, it
+   * resorts to `globalVersion`.
+   *
+   * @param docsToPopulate Documents to be applied.
+   * @param documentVersions A DocumentKey-to-SnapshotVersion map if documents have their own read
+   *     time.
+   * @param globalVersion A SnapshotVersion representing the read time if all documents have the
+   *     same read time.
+   * @return A map representing the new view of the changed documents.
+   */
+  Map<DocumentKey, MutableDocument> populateDocumentChanges(
+      Map<DocumentKey, MutableDocument> docsToPopulate,
+      @Nullable Map<DocumentKey, SnapshotVersion> documentVersions,
+      SnapshotVersion globalVersion) {
+    Map<DocumentKey, MutableDocument> changedDocsView = new HashMap<>();
+
+    // Each loop iteration only affects its "own" doc, so it's safe to get all the remote
+    // documents in advance in a single call.
+    Map<DocumentKey, MutableDocument> existingDocs =
+        remoteDocumentCache.getAll(docsToPopulate.keySet());
+
+    // TODO(Overlay): Can we avoid this now that we have local_content in remote document cache?
+    List<MutationBatch> batches =
+        mutationQueue.getAllMutationBatchesAffectingDocumentKeys(docsToPopulate.keySet());
+    // TODO(Overlay): This is running for all changed docs X all batches that might affect..pretty
+    // wasteful.
+    Map<DocumentKey, DocumentBaseAndFinal> localDocs =
+        applyLocalMutationsToDocuments(docsToPopulate, batches);
+
+    for (Map.Entry<DocumentKey, DocumentBaseAndFinal> entry : localDocs.entrySet()) {
+      DocumentKey key = entry.getKey();
+      MutableDocument doc = entry.getValue().baseDoc;
+      MutableDocument localDocView = entry.getValue().finalDoc;
+      MutableDocument existingDoc = existingDocs.get(key);
+      SnapshotVersion readTime =
+          documentVersions != null ? documentVersions.get(key) : globalVersion;
+
+      // Note: The order of the steps below is important, since we want to ensure that
+      // rejected limbo resolutions (which fabricate NoDocuments with SnapshotVersion.NONE)
+      // never add documents to cache.
+      if (doc.isNoDocument() && doc.getVersion().equals(SnapshotVersion.NONE)) {
+        // NoDocuments with SnapshotVersion.NONE are used in manufactured events. We remove
+        // these documents from cache since we lost access.
+        remoteDocumentCache.remove(doc.getKey());
+        changedDocsView.put(key, doc);
+      } else if (!existingDoc.isValidDocument()
+          || doc.getVersion().compareTo(existingDoc.getVersion()) > 0
+          || (doc.getVersion().compareTo(existingDoc.getVersion()) == 0
+              && existingDoc.hasPendingWrites())) {
+        hardAssert(
+            !SnapshotVersion.NONE.equals(readTime),
+            "Cannot add a document when the remote version is zero");
+        remoteDocumentCache.add(doc, localDocView, readTime);
+        changedDocsView.put(key, localDocView);
+      } else {
+        Logger.debug(
+            "LocalStore",
+            "Ignoring outdated watch update for %s." + "Current version: %s  Watch version: %s",
+            key,
+            existingDoc.getVersion(),
+            doc.getVersion());
+      }
+    }
+    return changedDocsView;
   }
 
   // TODO: The Querying implementation here should move 100% to the query engines.

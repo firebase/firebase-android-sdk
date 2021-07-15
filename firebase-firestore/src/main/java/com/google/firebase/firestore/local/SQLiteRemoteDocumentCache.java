@@ -34,6 +34,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
+import javax.annotation.Nullable;
 
 final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
 
@@ -46,7 +47,10 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
   }
 
   @Override
-  public void add(MutableDocument document, SnapshotVersion readTime) {
+  public void add(
+      MutableDocument document,
+      @Nullable MutableDocument documentWithMutations,
+      SnapshotVersion readTime) {
     hardAssert(
         !readTime.equals(SnapshotVersion.NONE),
         "Cannot add document to the RemoteDocumentCache with a read time of zero");

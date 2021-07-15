@@ -138,7 +138,7 @@ public abstract class LruGarbageCollectorTestCase {
 
   private MutableDocument cacheADocumentInTransaction() {
     MutableDocument doc = nextTestDocument();
-    documentCache.add(doc, doc.getVersion());
+    documentCache.add(doc, null, doc.getVersion());
     return doc;
   }
 
@@ -577,7 +577,7 @@ public abstract class LruGarbageCollectorTestCase {
           SnapshotVersion newVersion = version(3);
           MutableDocument doc =
               MutableDocument.newFoundDocument(middleDocToUpdate, newVersion, testValue);
-          documentCache.add(doc, newVersion);
+          documentCache.add(doc, null, newVersion);
           updateTargetInTransaction(middleTarget);
         });
 

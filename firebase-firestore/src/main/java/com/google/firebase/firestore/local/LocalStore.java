@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.local;
 
+import static com.google.firebase.firestore.model.DocumentCollections.emptyDocumentMap;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 import static java.util.Arrays.asList;
 
@@ -43,7 +44,6 @@ import com.google.firebase.firestore.model.mutation.PatchMutation;
 import com.google.firebase.firestore.model.mutation.Precondition;
 import com.google.firebase.firestore.remote.RemoteEvent;
 import com.google.firebase.firestore.remote.TargetChange;
-import com.google.firebase.firestore.util.Logger;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -386,9 +386,6 @@ public final class LocalStore implements BundleCallback {
             }
           }
 
-          Map<DocumentKey, MutableDocument> changedDocs =
-              populateDocumentChanges(documentUpdates, null, remoteEvent.getSnapshotVersion());
-
           // HACK: The only reason we allow snapshot version NONE is so that we can synthesize
           // remote events when we get permission denied errors while trying to resolve the
           // state of a locally cached document that is in limbo.
@@ -402,67 +399,17 @@ public final class LocalStore implements BundleCallback {
             targetCache.setLastRemoteSnapshotVersion(remoteVersion);
           }
 
-          return localDocuments.getLocalViewOfDocuments(changedDocs);
+          // TODO(Overlay): populateDocumentChanges can return a sorted map directly.
+          Map<DocumentKey, MutableDocument> changedDocs =
+              localDocuments.populateDocumentChanges(
+                  documentUpdates, null, remoteEvent.getSnapshotVersion());
+
+          ImmutableSortedMap<DocumentKey, Document> results = emptyDocumentMap();
+          for (Map.Entry<DocumentKey, MutableDocument> entry : changedDocs.entrySet()) {
+            results = results.insert(entry.getKey(), entry.getValue());
+          }
+          return results;
         });
-  }
-
-  /**
-   * Populates the remote document cache with documents from backend or a bundle. Returns the
-   * document changes resulting from applying those documents.
-   *
-   * <p>Note: this function will use `documentVersions` if it is defined. When it is not defined, it
-   * resorts to `globalVersion`.
-   *
-   * @param documents Documents to be applied.
-   * @param documentVersions A DocumentKey-to-SnapshotVersion map if documents have their own read
-   *     time.
-   * @param globalVersion A SnapshotVersion representing the read time if all documents have the
-   *     same read time.
-   */
-  private Map<DocumentKey, MutableDocument> populateDocumentChanges(
-      Map<DocumentKey, MutableDocument> documents,
-      @Nullable Map<DocumentKey, SnapshotVersion> documentVersions,
-      SnapshotVersion globalVersion) {
-    Map<DocumentKey, MutableDocument> changedDocs = new HashMap<>();
-
-    // Each loop iteration only affects its "own" doc, so it's safe to get all the remote
-    // documents in advance in a single call.
-    Map<DocumentKey, MutableDocument> existingDocs = remoteDocuments.getAll(documents.keySet());
-
-    for (Entry<DocumentKey, MutableDocument> entry : documents.entrySet()) {
-      DocumentKey key = entry.getKey();
-      MutableDocument doc = entry.getValue();
-      MutableDocument existingDoc = existingDocs.get(key);
-      SnapshotVersion readTime =
-          documentVersions != null ? documentVersions.get(key) : globalVersion;
-
-      // Note: The order of the steps below is important, since we want to ensure that
-      // rejected limbo resolutions (which fabricate NoDocuments with SnapshotVersion.NONE)
-      // never add documents to cache.
-      if (doc.isNoDocument() && doc.getVersion().equals(SnapshotVersion.NONE)) {
-        // NoDocuments with SnapshotVersion.NONE are used in manufactured events. We remove
-        // these documents from cache since we lost access.
-        remoteDocuments.remove(doc.getKey());
-        changedDocs.put(key, doc);
-      } else if (!existingDoc.isValidDocument()
-          || doc.getVersion().compareTo(existingDoc.getVersion()) > 0
-          || (doc.getVersion().compareTo(existingDoc.getVersion()) == 0
-              && existingDoc.hasPendingWrites())) {
-        hardAssert(
-            !SnapshotVersion.NONE.equals(readTime),
-            "Cannot add a document when the remote version is zero");
-        remoteDocuments.add(doc, readTime);
-        changedDocs.put(key, doc);
-      } else {
-        Logger.debug(
-            "LocalStore",
-            "Ignoring outdated watch update for %s." + "Current version: %s  Watch version: %s",
-            key,
-            existingDoc.getVersion(),
-            doc.getVersion());
-      }
-    }
-    return changedDocs;
   }
 
   /**
@@ -657,9 +604,14 @@ public final class LocalStore implements BundleCallback {
           targetCache.removeMatchingKeysForTargetId(umbrellaTargetData.getTargetId());
           targetCache.addMatchingKeys(documentKeys, umbrellaTargetData.getTargetId());
 
+          // TODO(Overlay): Replace below with `return localDocuments.populateDocumentChanges`.
           Map<DocumentKey, MutableDocument> changedDocs =
-              populateDocumentChanges(documentMap, versionMap, SnapshotVersion.NONE);
-          return localDocuments.getLocalViewOfDocuments(changedDocs);
+              localDocuments.populateDocumentChanges(documentMap, versionMap, SnapshotVersion.NONE);
+          ImmutableSortedMap<DocumentKey, Document> results = emptyDocumentMap();
+          for (Map.Entry<DocumentKey, MutableDocument> entry : changedDocs.entrySet()) {
+            results = results.insert(entry.getKey(), entry.getValue());
+          }
+          return results;
         });
   }
 
@@ -776,7 +728,9 @@ public final class LocalStore implements BundleCallback {
       if (doc.getVersion().compareTo(ackVersion) < 0) {
         batch.applyToRemoteDocument(doc, batchResult);
         if (doc.isValidDocument()) {
-          remoteDocuments.add(doc, batchResult.getCommitVersion());
+          // TODO(Overlay): This is wrong. We need to calculate the new local version, instead of
+          // null.
+          remoteDocuments.add(doc, null, batchResult.getCommitVersion());
         }
       }
     }

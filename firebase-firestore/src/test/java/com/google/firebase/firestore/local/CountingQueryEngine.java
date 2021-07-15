@@ -116,8 +116,9 @@ class CountingQueryEngine implements QueryEngine {
   private RemoteDocumentCache wrapRemoteDocumentCache(RemoteDocumentCache subject) {
     return new RemoteDocumentCache() {
       @Override
-      public void add(MutableDocument document, SnapshotVersion readTime) {
-        subject.add(document, readTime);
+      public void add(
+          MutableDocument document, MutableDocument mutatedDocument, SnapshotVersion readTime) {
+        subject.add(document, null, readTime);
       }
 
       @Override

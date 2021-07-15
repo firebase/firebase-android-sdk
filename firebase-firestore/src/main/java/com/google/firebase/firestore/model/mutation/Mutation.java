@@ -113,7 +113,7 @@ public abstract class Mutation {
    * @param localWriteTime A timestamp indicating the local write time of the batch this mutation is
    *     a part of.
    */
-  public abstract void applyToLocalView(MutableDocument document, Timestamp localWriteTime);
+  public abstract boolean applyToLocalView(MutableDocument document, Timestamp localWriteTime);
 
   /** Helper for derived classes to implement .equals(). */
   boolean hasSameKeyAndPrecondition(Mutation other) {
