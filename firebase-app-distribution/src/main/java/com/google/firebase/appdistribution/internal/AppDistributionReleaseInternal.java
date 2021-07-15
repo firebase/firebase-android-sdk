@@ -51,12 +51,18 @@ public abstract class AppDistributionReleaseInternal {
   @NonNull
   public abstract BinaryType getBinaryType();
 
+  /** Hash of binary of an Android app */
   @Nullable
   public abstract String getCodeHash();
 
+  /** IAS artifact id.
+   * This value is inserted into the manifest of APK's installed via
+   * Used to map a release to an APK installed via an app bundle
+   */
   @Nullable
   public abstract String getIasArtifactId();
 
+  /** Short-lived download URL */
   @Nullable
   public abstract String getDownloadUrl();
 
