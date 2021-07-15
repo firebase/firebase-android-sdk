@@ -385,7 +385,8 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
       long currentInstalledVersionCode =
           getInstalledAppVersionCode(firebaseApp.getApplicationContext());
 
-      if (isNewerBuildVersion(retrievedLatestRelease) && !isInstalledRelease(retrievedLatestRelease)) {
+      if (isNewerBuildVersion(retrievedLatestRelease)
+          && !isInstalledRelease(retrievedLatestRelease)) {
         return convertToAppDistributionRelease(retrievedLatestRelease);
       } else {
         // Return null if retrieved latest release is older or currently installed

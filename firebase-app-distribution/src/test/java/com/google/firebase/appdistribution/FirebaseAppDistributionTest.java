@@ -109,21 +109,22 @@ public class FirebaseAppDistributionTest {
 
     FirebaseApp.clearInstancesForTest();
 
-    FirebaseApp firebaseApp = FirebaseApp.initializeApp(
+    FirebaseApp firebaseApp =
+        FirebaseApp.initializeApp(
             ApplicationProvider.getApplicationContext(),
             new FirebaseOptions.Builder()
-                    .setApplicationId(TEST_APP_ID_1)
-                    .setProjectId(TEST_PROJECT_ID)
-                    .setApiKey(TEST_API_KEY)
-                    .build());
+                .setApplicationId(TEST_APP_ID_1)
+                .setProjectId(TEST_PROJECT_ID)
+                .setApiKey(TEST_API_KEY)
+                .build());
 
     firebaseAppDistribution =
         new FirebaseAppDistribution(
-                firebaseApp, mockFirebaseInstallations, mockFirebaseAppDistributionTesterApiClient);
+            firebaseApp, mockFirebaseInstallations, mockFirebaseAppDistributionTesterApiClient);
 
     when(mockFirebaseInstallations.getId()).thenReturn(Tasks.forResult(TEST_FID_1));
     when(mockFirebaseInstallations.getToken(false))
-            .thenReturn(Tasks.forResult(mockInstallationTokenResult));
+        .thenReturn(Tasks.forResult(mockInstallationTokenResult));
 
     when(mockInstallationTokenResult.getToken()).thenReturn(TEST_AUTH_TOKEN);
 
@@ -134,16 +135,17 @@ public class FirebaseAppDistributionTest {
     shadowPackageManager =
         shadowOf(ApplicationProvider.getApplicationContext().getPackageManager());
 
-    ApplicationInfo applicationInfo = ApplicationInfoBuilder.newBuilder()
+    ApplicationInfo applicationInfo =
+        ApplicationInfoBuilder.newBuilder()
             .setPackageName(ApplicationProvider.getApplicationContext().getPackageName())
             .build();
     applicationInfo.metaData = new Bundle();
     applicationInfo.metaData.putString(IAS_ARTIFACT_ID_KEY, TEST_IAS_ARTIFACT_ID);
     PackageInfo packageInfo =
-            PackageInfoBuilder.newBuilder()
-                    .setPackageName(ApplicationProvider.getApplicationContext().getPackageName())
-                    .setApplicationInfo(applicationInfo)
-                    .build();
+        PackageInfoBuilder.newBuilder()
+            .setPackageName(ApplicationProvider.getApplicationContext().getPackageName())
+            .setApplicationInfo(applicationInfo)
+            .build();
     packageInfo.setLongVersionCode(INSTALLED_VERSION_CODE);
     shadowPackageManager.installPackage(packageInfo);
 
@@ -268,21 +270,21 @@ public class FirebaseAppDistributionTest {
 
   @Test
   public void getLatestReleaseFromClient_whenLatestReleaseIsOlderBuildThanInstalled_returnsNull()
-          throws FirebaseAppDistributionException, ProtocolException {
+      throws FirebaseAppDistributionException, ProtocolException {
     AppDistributionReleaseInternal olderTestRelease =
-            AppDistributionReleaseInternal.builder()
-                    .setBinaryType(BinaryType.APK)
-                    .setBuildVersion("1")
-                    .setDisplayVersion("1.0")
-                    .setReleaseNotes("Older version.")
-                    .build();
+        AppDistributionReleaseInternal.builder()
+            .setBinaryType(BinaryType.APK)
+            .setBuildVersion("1")
+            .setDisplayVersion("1.0")
+            .setReleaseNotes("Older version.")
+            .build();
     when(mockFirebaseAppDistributionTesterApiClient.fetchLatestRelease(
             TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN))
-            .thenReturn(olderTestRelease);
+        .thenReturn(olderTestRelease);
 
     AppDistributionRelease release =
-            firebaseAppDistribution.getLatestReleaseFromClient(
-                    TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN);
+        firebaseAppDistribution.getLatestReleaseFromClient(
+            TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN);
 
     assertNull(release);
   }
@@ -307,8 +309,8 @@ public class FirebaseAppDistributionTest {
             TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN);
     assertEquals(
         AppDistributionRelease.builder()
-                .setBuildVersion(TEST_RELEASE_CURRENT.getBuildVersion())
-                .setDisplayVersion(TEST_RELEASE_CURRENT.getDisplayVersion())
+            .setBuildVersion(TEST_RELEASE_CURRENT.getBuildVersion())
+            .setDisplayVersion(TEST_RELEASE_CURRENT.getDisplayVersion())
             .setBinaryType(BinaryType.AAB)
             .build(),
         result);
