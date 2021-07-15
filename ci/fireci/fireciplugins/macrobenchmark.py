@@ -148,8 +148,7 @@ class MacrobenchmarkTest:
 
   async def _create_benchmark_projects(self):
     app_name = self.test_app_config['name']
-    app_id = self.test_app_config['application-id']
-    self.logger.info(f'Creating test app "{app_name}" with application-id "{app_id}"...')
+    self.logger.info(f'Creating test app "{app_name}"...')
 
     mustache_context = await self._prepare_mustache_context()
 
@@ -197,10 +196,8 @@ class MacrobenchmarkTest:
 
   async def _prepare_mustache_context(self):
     app_name = self.test_app_config['name']
-    app_id = self.test_app_config['application-id']
 
     mustache_context = {
-      'application-id': app_id,
       'plugins': [],
       'dependencies': [],
     }

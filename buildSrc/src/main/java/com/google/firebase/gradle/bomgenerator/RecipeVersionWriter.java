@@ -151,7 +151,10 @@ public class RecipeVersionWriter {
             "com.google.firebase:firebase-appindexing"));
     outputBuilder.append(
         generateVersionVariable(
-            depsByArtifactId, "Admob", "ads-dependency", "com.google.firebase:firebase-ads"));
+            depsByArtifactId,
+            "Admob",
+            "ads-dependency",
+            "com.google.android.gms:play-services-ads"));
     outputBuilder.append(
         generateVersionVariable(
             depsByArtifactId,
@@ -194,6 +197,12 @@ public class RecipeVersionWriter {
             "FIAM Display",
             "fiamd-dependency",
             "com.google.firebase:firebase-inappmessaging-display"));
+    outputBuilder.append(
+        generateVersionVariable(
+            depsByArtifactId,
+            "FIAM Display KTX",
+            "fiamd-ktx-dependency",
+            "com.google.firebase:firebase-inappmessaging-display-ktx"));
     outputBuilder.append(
         generateVersionVariable(
             depsByArtifactId,

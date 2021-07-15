@@ -121,7 +121,7 @@ public class TransportRuntimeTest {
             fixedClock(EVENT_MILLIS),
             fixedClock(UPTIME_MILLIS),
             new ImmediateScheduler(Runnable::run, mockRegistry),
-            new Uploader(null, null, null, null, null, null, () -> 2),
+            new Uploader(null, null, null, null, null, null, () -> 2, null, null),
             mockInitializer);
 
     verify(mockInitializer, times(1)).ensureContextsScheduled();
@@ -131,9 +131,7 @@ public class TransportRuntimeTest {
         .thenAnswer(
             (Answer<EventInternal>)
                 invocation ->
-                    invocation
-                        .<EventInternal>getArgument(0)
-                        .toBuilder()
+                    invocation.<EventInternal>getArgument(0).toBuilder()
                         .addMetadata(TEST_KEY, TEST_VALUE)
                         .build());
     TransportFactory factory = runtime.newFactory(mockBackendName);
@@ -174,7 +172,7 @@ public class TransportRuntimeTest {
             fixedClock(EVENT_MILLIS),
             fixedClock(UPTIME_MILLIS),
             new ImmediateScheduler(Runnable::run, mockRegistry),
-            new Uploader(null, null, null, null, null, null, () -> 2),
+            new Uploader(null, null, null, null, null, null, () -> 2, null, null),
             mockInitializer);
 
     verify(mockInitializer, times(1)).ensureContextsScheduled();
@@ -204,7 +202,7 @@ public class TransportRuntimeTest {
             fixedClock(UPTIME_MILLIS),
             new DefaultScheduler(
                 Runnable::run, mockRegistry, mockWorkScheduler, mockEventStore, guard),
-            new Uploader(null, null, null, null, null, null, () -> 2),
+            new Uploader(null, null, null, null, null, null, () -> 2, null, null),
             mockInitializer);
 
     verify(mockInitializer, times(1)).ensureContextsScheduled();
@@ -214,9 +212,7 @@ public class TransportRuntimeTest {
         .thenAnswer(
             (Answer<EventInternal>)
                 invocation ->
-                    invocation
-                        .<EventInternal>getArgument(0)
-                        .toBuilder()
+                    invocation.<EventInternal>getArgument(0).toBuilder()
                         .addMetadata(TEST_KEY, TEST_VALUE)
                         .build());
     TransportFactory factory = runtime.newFactory(mockBackendName);
@@ -254,7 +250,7 @@ public class TransportRuntimeTest {
             fixedClock(UPTIME_MILLIS),
             new DefaultScheduler(
                 Runnable::run, mockRegistry, mockWorkScheduler, mockEventStore, guard),
-            new Uploader(null, null, null, null, null, null, () -> 2),
+            new Uploader(null, null, null, null, null, null, () -> 2, null, null),
             mockInitializer);
 
     verify(mockInitializer, times(1)).ensureContextsScheduled();
@@ -280,7 +276,7 @@ public class TransportRuntimeTest {
             fixedClock(EVENT_MILLIS),
             fixedClock(UPTIME_MILLIS),
             new ImmediateScheduler(Runnable::run, mockRegistry),
-            new Uploader(null, null, null, null, null, null, () -> 2),
+            new Uploader(null, null, null, null, null, null, () -> 2, null, null),
             mockInitializer);
 
     TransportFactory transportFactory = runtime.newFactory(new TestDestination());
@@ -302,7 +298,7 @@ public class TransportRuntimeTest {
             fixedClock(EVENT_MILLIS),
             fixedClock(UPTIME_MILLIS),
             new ImmediateScheduler(Runnable::run, mockRegistry),
-            new Uploader(null, null, null, null, null, null, () -> 2),
+            new Uploader(null, null, null, null, null, null, () -> 2, null, null),
             mockInitializer);
 
     TransportFactory transportFactory = runtime.newFactory(new YamlEncodedDestination());

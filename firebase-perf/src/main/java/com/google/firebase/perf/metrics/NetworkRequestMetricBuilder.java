@@ -70,7 +70,7 @@ public final class NetworkRequestMetricBuilder extends AppStateUpdateHandler
   public void updateSession(PerfSession session) {
     // Note(b/152218504): Being defensive to fix the NPE
     if (session == null) {
-      logger.info("Unable to add new SessionId to the Network Trace. Continuing without it.");
+      logger.warn("Unable to add new SessionId to the Network Trace. Continuing without it.");
       return;
     }
 
@@ -293,7 +293,7 @@ public final class NetworkRequestMetricBuilder extends AppStateUpdateHandler
     if (isValidContentType(contentType)) {
       builder.setResponseContentType(contentType);
     } else {
-      logger.info("The content type of the response is not a valid content-type:" + contentType);
+      logger.warn("The content type of the response is not a valid content-type:" + contentType);
     }
     return this;
   }
@@ -332,7 +332,7 @@ public final class NetworkRequestMetricBuilder extends AppStateUpdateHandler
     }
 
     if (isManualNetworkRequestMetric) {
-      logger.info(
+      logger.debug(
           "This metric has already been queued for transmission.  "
               + "Please create a new HttpMetric for each request/response");
     }

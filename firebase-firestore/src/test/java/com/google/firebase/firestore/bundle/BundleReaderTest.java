@@ -32,7 +32,7 @@ import com.google.firebase.firestore.remote.RemoteSerializer;
 import com.google.firestore.v1.Value;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -121,6 +121,7 @@ public class BundleReaderTest {
               30004002L,
               ObjectValue.fromMap(
                   map("unicodeValue", Value.newBuilder().setStringValue("\uD83D\uDE0A").build()))));
+  private static final Charset UTF8_CHARSET = Charset.forName("UTF-8");
 
   @Test
   public void testReadsQueryAndDocument() throws IOException, JSONException {
@@ -133,8 +134,7 @@ public class BundleReaderTest {
         bundleBuilder.build("bundle-1", /* createTimeMicros= */ 6000000L, /* version= */ 1);
 
     BundleReader bundleReader =
-        new BundleReader(
-            SERIALIZER, new ByteArrayInputStream(bundle.getBytes(StandardCharsets.UTF_8)));
+        new BundleReader(SERIALIZER, new ByteArrayInputStream(bundle.getBytes(UTF8_CHARSET)));
 
     List<BundleElement> bundleElements =
         verifyAllElements(bundleReader, limitQuery, limitToLastQuery, documentMetadata, document);
@@ -157,8 +157,7 @@ public class BundleReaderTest {
         bundleBuilder.build("bundle-1", /* createTimeMicros= */ 6000000L, /* version= */ 1);
 
     BundleReader bundleReader =
-        new BundleReader(
-            SERIALIZER, new ByteArrayInputStream(bundle.getBytes(StandardCharsets.UTF_8)));
+        new BundleReader(SERIALIZER, new ByteArrayInputStream(bundle.getBytes(UTF8_CHARSET)));
 
     List<BundleElement> bundleElements =
         verifyAllElements(bundleReader, doc1Metadata, doc1, limitQuery, doc2Metadata, doc2);
@@ -179,8 +178,7 @@ public class BundleReaderTest {
         bundleBuilder.build("bundle-1", /* createTimeMicros= */ 6000000L, /* version= */ 1);
 
     BundleReader bundleReader =
-        new BundleReader(
-            SERIALIZER, new ByteArrayInputStream(bundle.getBytes(StandardCharsets.UTF_8)));
+        new BundleReader(SERIALIZER, new ByteArrayInputStream(bundle.getBytes(UTF8_CHARSET)));
 
     List<BundleElement> bundleElements =
         verifyAllElements(bundleReader, documentMetadata, document);
@@ -199,8 +197,7 @@ public class BundleReaderTest {
         bundleBuilder.build("bundle-1", /* createTimeMicros= */ 6000000L, /* version= */ 1);
 
     BundleReader bundleReader =
-        new BundleReader(
-            SERIALIZER, new ByteArrayInputStream(bundle.getBytes(StandardCharsets.UTF_8)));
+        new BundleReader(SERIALIZER, new ByteArrayInputStream(bundle.getBytes(UTF8_CHARSET)));
 
     List<BundleElement> bundleElements =
         verifyAllElements(bundleReader, deletedDocumentMetadata, documentMetadata, document);
@@ -217,8 +214,7 @@ public class BundleReaderTest {
         bundleBuilder.build("bundle-1", /* createTimeMicros= */ 6000000L, /* version= */ 1);
 
     BundleReader bundleReader =
-        new BundleReader(
-            SERIALIZER, new ByteArrayInputStream(bundle.getBytes(StandardCharsets.UTF_8)));
+        new BundleReader(SERIALIZER, new ByteArrayInputStream(bundle.getBytes(UTF8_CHARSET)));
 
     verifyAllElements(bundleReader);
   }
@@ -228,8 +224,7 @@ public class BundleReaderTest {
     String bundle = "{metadata: 'no length prefix' }";
 
     BundleReader bundleReader =
-        new BundleReader(
-            SERIALIZER, new ByteArrayInputStream(bundle.getBytes(StandardCharsets.UTF_8)));
+        new BundleReader(SERIALIZER, new ByteArrayInputStream(bundle.getBytes(UTF8_CHARSET)));
 
     bundleReader.getBundleMetadata();
   }
@@ -239,8 +234,7 @@ public class BundleReaderTest {
     String bundle = "3abc";
 
     BundleReader bundleReader =
-        new BundleReader(
-            SERIALIZER, new ByteArrayInputStream(bundle.getBytes(StandardCharsets.UTF_8)));
+        new BundleReader(SERIALIZER, new ByteArrayInputStream(bundle.getBytes(UTF8_CHARSET)));
     bundleReader.getBundleMetadata();
   }
 
@@ -249,8 +243,7 @@ public class BundleReaderTest {
     String bundle = "3{abc}";
 
     BundleReader bundleReader =
-        new BundleReader(
-            SERIALIZER, new ByteArrayInputStream(bundle.getBytes(StandardCharsets.UTF_8)));
+        new BundleReader(SERIALIZER, new ByteArrayInputStream(bundle.getBytes(UTF8_CHARSET)));
     bundleReader.getBundleMetadata();
   }
 
@@ -261,8 +254,7 @@ public class BundleReaderTest {
         bundleBuilder.build("bundle-1", /* createTimeMicros= */ 6000000L, /* version= */ 1) + "foo";
 
     BundleReader bundleReader =
-        new BundleReader(
-            SERIALIZER, new ByteArrayInputStream(bundle.getBytes(StandardCharsets.UTF_8)));
+        new BundleReader(SERIALIZER, new ByteArrayInputStream(bundle.getBytes(UTF8_CHARSET)));
     bundleReader.getNextElement();
   }
 
@@ -271,8 +263,7 @@ public class BundleReaderTest {
     String bundle = "3{}";
 
     BundleReader bundleReader =
-        new BundleReader(
-            SERIALIZER, new ByteArrayInputStream(bundle.getBytes(StandardCharsets.UTF_8)));
+        new BundleReader(SERIALIZER, new ByteArrayInputStream(bundle.getBytes(UTF8_CHARSET)));
     bundleReader.getBundleMetadata();
   }
 
@@ -290,8 +281,7 @@ public class BundleReaderTest {
     String bundle = json.length() + json;
 
     BundleReader bundleReader =
-        new BundleReader(
-            SERIALIZER, new ByteArrayInputStream(bundle.getBytes(StandardCharsets.UTF_8)));
+        new BundleReader(SERIALIZER, new ByteArrayInputStream(bundle.getBytes(UTF8_CHARSET)));
 
     bundleReader.getBundleMetadata();
   }
@@ -309,8 +299,7 @@ public class BundleReaderTest {
             "bundle-" + longString, /* createTimeMicros= */ 6000000L, /* version= */ 1);
 
     BundleReader bundleReader =
-        new BundleReader(
-            SERIALIZER, new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)));
+        new BundleReader(SERIALIZER, new ByteArrayInputStream(json.getBytes(UTF8_CHARSET)));
 
     BundleMetadata expectedMetadata =
         new BundleMetadata("bundle-" + longString, 1, version(6000000L), 0, 0);
@@ -327,8 +316,7 @@ public class BundleReaderTest {
         bundleBuilder.build("bundle-1", /* createTimeMicros= */ 6000000L, /* version= */ 1);
 
     BundleReader bundleReader =
-        new BundleReader(
-            SERIALIZER, new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)));
+        new BundleReader(SERIALIZER, new ByteArrayInputStream(json.getBytes(UTF8_CHARSET)));
 
     List<BundleElement> bundleElements = verifyAllElements(bundleReader, docMetadata, doc);
 
@@ -432,7 +420,7 @@ public class BundleReaderTest {
       }
       elements.add(nextElement);
 
-      int elementLength = expectedElement.getBytes(StandardCharsets.UTF_8).length;
+      int elementLength = expectedElement.getBytes(UTF8_CHARSET).length;
       actualBytesRead += (int) (Math.log10(elementLength) + 1) + elementLength;
       assertEquals(actualBytesRead, bundleReader.getBytesRead());
     }
@@ -469,7 +457,7 @@ public class BundleReaderTest {
               exists);
       this.elements.add(json);
       if (!exists) ++totalDocuments;
-      totalBytes += getByteLength(json);
+      totalBytes += getUTF8BytesCountWithPrefix(json);
       return json;
     }
 
@@ -493,7 +481,7 @@ public class BundleReaderTest {
               fieldsJson);
       elements.add(json);
       ++totalDocuments;
-      totalBytes += getByteLength(json);
+      totalBytes += getUTF8BytesCountWithPrefix(json);
       return json;
     }
 
@@ -520,14 +508,18 @@ public class BundleReaderTest {
               structuredQueryJson,
               limitType.equals(Query.LimitType.LIMIT_TO_FIRST) ? "FIRST" : "LAST");
       elements.add(json);
-      totalBytes += getByteLength(json);
+      totalBytes += getUTF8BytesCountWithPrefix(json);
       return json;
     }
 
-    private int getByteLength(String json) {
-      int elementLength = json.getBytes(StandardCharsets.UTF_8).length;
+    private int getUTF8BytesCountWithPrefix(String json) {
+      int elementLength = getUTF8BytesCount(json);
       int prefixLength = (int) (Math.log10(elementLength) + 1);
       return prefixLength + elementLength;
+    }
+
+    private int getUTF8BytesCount(String json) {
+      return json.getBytes(UTF8_CHARSET).length;
     }
 
     String getMetadataElement(String id, long createTimeMicros, int version) {
@@ -556,7 +548,7 @@ public class BundleReaderTest {
       builder.append(metadataElement);
 
       for (String element : this.elements) {
-        builder.append(element.length());
+        builder.append(getUTF8BytesCount(element));
         builder.append(element);
       }
 

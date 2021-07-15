@@ -62,8 +62,7 @@ public class FirebasePerfApplicationInfoValidatorTest {
     // All required fields present.
     assertThat(
             new FirebasePerfApplicationInfoValidator(
-                    validApplicationInfo
-                        .toBuilder()
+                    validApplicationInfo.toBuilder()
                         .setAndroidAppInfo(
                             AndroidApplicationInfo.newBuilder()
                                 .setPackageName("validPackageName")
@@ -75,8 +74,7 @@ public class FirebasePerfApplicationInfoValidatorTest {
     // Package name missing.
     assertThat(
             new FirebasePerfApplicationInfoValidator(
-                    validApplicationInfo
-                        .toBuilder()
+                    validApplicationInfo.toBuilder()
                         .setAndroidAppInfo(AndroidApplicationInfo.newBuilder().setSdkVersion("1.3"))
                         .build())
                 .isValidPerfMetric())
@@ -85,8 +83,7 @@ public class FirebasePerfApplicationInfoValidatorTest {
     // SDK Version missing.
     assertThat(
             new FirebasePerfApplicationInfoValidator(
-                    validApplicationInfo
-                        .toBuilder()
+                    validApplicationInfo.toBuilder()
                         .setAndroidAppInfo(
                             AndroidApplicationInfo.newBuilder().setPackageName("validPackageName"))
                         .build())

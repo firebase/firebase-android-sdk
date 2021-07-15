@@ -214,14 +214,29 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
                 // Porting Note: Unlike iOS, `restartNetwork()` is called even when the network
                 // becomes unreachable as we don't have any other way to tear down our streams.
 
+                // We only invoke restartNetwork() when the network status differs from our online
+                // state. This prevents frequent reconnects as the callback is invoked whenever
+                // the app reaches the foreground.
+                if (networkStatus.equals(NetworkStatus.REACHABLE)
+                    && onlineStateTracker.getState().equals(OnlineState.ONLINE)) {
+                  return;
+                }
+
+                if (networkStatus.equals(NetworkStatus.UNREACHABLE)
+                    && onlineStateTracker.getState().equals(OnlineState.OFFLINE)) {
+                  return;
+                }
+
                 // If the network has been explicitly disabled, make sure we don't accidentally
                 // re-enable it.
-                if (canUseNetwork()) {
-                  // Tear down and re-create our network streams. This will ensure the backoffs are
-                  // reset.
-                  Logger.debug(LOG_TAG, "Restarting streams for network reachability change.");
-                  restartNetwork();
+                if (!canUseNetwork()) {
+                  return;
                 }
+
+                // Tear down and re-create our network streams. This will ensure the backoffs are
+                // reset.
+                Logger.debug(LOG_TAG, "Restarting streams for network reachability change.");
+                restartNetwork();
               });
         });
   }

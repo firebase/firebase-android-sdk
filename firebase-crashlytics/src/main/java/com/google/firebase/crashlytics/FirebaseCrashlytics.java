@@ -18,6 +18,7 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
@@ -84,6 +85,7 @@ public class FirebaseCrashlytics {
 
     final ExecutorService crashHandlerExecutor =
         ExecutorUtils.buildSingleThreadExecutorService("Crashlytics Exception Handler");
+
     final CrashlyticsCore core =
         new CrashlyticsCore(
             app,
@@ -156,7 +158,8 @@ public class FirebaseCrashlytics {
     return new FirebaseCrashlytics(core);
   }
 
-  private final CrashlyticsCore core;
+  @VisibleForTesting // accessible for smoke tests
+  final CrashlyticsCore core;
 
   private FirebaseCrashlytics(@NonNull CrashlyticsCore core) {
     this.core = core;

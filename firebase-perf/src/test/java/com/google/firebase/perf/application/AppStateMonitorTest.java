@@ -87,6 +87,9 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
 
     DeviceCacheManager.clearInstance();
     ConfigResolver.clearInstance();
+
+    ConfigResolver configResolver = ConfigResolver.getInstance();
+    configResolver.setDeviceCacheManager(new DeviceCacheManager(new FakeDirectExecutorService()));
   }
 
   @Test
@@ -370,13 +373,12 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  public void screenTrace_noHardwareAccelerated_traceNotCreated() {
+  public void screenTrace_noHardwareAccelerated_noExceptionThrown() {
     AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
     Activity activityWithNonHardwareAcceleratedView =
         createFakeActivity(/* isHardwareAccelerated =*/ false);
 
     monitor.onActivityStarted(activityWithNonHardwareAcceleratedView);
-    assertThat(monitor.getActivity2ScreenTrace()).isEmpty();
 
     // Confirm that this doesn't throw an exception.
     monitor.onActivityStopped(activityWithNonHardwareAcceleratedView);
@@ -387,12 +389,10 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
     Activity activityWithNonHardwareAcceleratedView =
         createFakeActivity(/* isHardwareAccelerated =*/ true);
-    ConfigResolver configResolver = ConfigResolver.getInstance();
-    configResolver.setDeviceCacheManager(new DeviceCacheManager(new FakeDirectExecutorService()));
 
     Bundle bundle = new Bundle();
     bundle.putBoolean("firebase_performance_collection_enabled", false);
-    configResolver.setMetadataBundle(new ImmutableBundle(bundle));
+    ConfigResolver.getInstance().setMetadataBundle(new ImmutableBundle(bundle));
 
     monitor.onActivityStarted(activityWithNonHardwareAcceleratedView);
     assertThat(monitor.getActivity2ScreenTrace()).isEmpty();
@@ -405,16 +405,14 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
     Activity activityWithNonHardwareAcceleratedView =
         createFakeActivity(/* isHardwareAccelerated =*/ true);
-    ConfigResolver configResolver = ConfigResolver.getInstance();
-    configResolver.setDeviceCacheManager(new DeviceCacheManager(new FakeDirectExecutorService()));
 
     // Developer disables Performance Monitoring during build time.
     Bundle bundle = new Bundle();
     bundle.putBoolean("firebase_performance_collection_enabled", false);
-    configResolver.setMetadataBundle(new ImmutableBundle(bundle));
+    ConfigResolver.getInstance().setMetadataBundle(new ImmutableBundle(bundle));
 
     // Case #1: developer has enabled Performance Monitoring during runtime.
-    configResolver.setIsPerformanceCollectionEnabled(true);
+    ConfigResolver.getInstance().setIsPerformanceCollectionEnabled(true);
 
     // Assert that screen trace has been created.
     currentTime = 100;
@@ -425,7 +423,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     assertThat(monitor.getActivity2ScreenTrace()).isEmpty();
 
     // Case #2: developer has disabled Performance Monitoring during runtime.
-    configResolver.setIsPerformanceCollectionEnabled(false);
+    ConfigResolver.getInstance().setIsPerformanceCollectionEnabled(false);
 
     // Assert that screen trace has not been created.
     monitor.onActivityStarted(activityWithNonHardwareAcceleratedView);
@@ -489,13 +487,11 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
   @Test
   public void foregroundTrace_perfMonEnabledAtRuntime_traceCreated() {
     AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
-    ConfigResolver configResolver = ConfigResolver.getInstance();
-    configResolver.setDeviceCacheManager(new DeviceCacheManager(new FakeDirectExecutorService()));
 
     // Firebase Performance is disabled at build time.
     Bundle bundle = new Bundle();
     bundle.putBoolean("firebase_performance_collection_enabled", false);
-    configResolver.setMetadataBundle(new ImmutableBundle(bundle));
+    ConfigResolver.getInstance().setMetadataBundle(new ImmutableBundle(bundle));
 
     // activity1 comes to foreground.
     currentTime = 1;
@@ -509,7 +505,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     verify(transportManager, never()).log(any(TraceMetric.class), eq(FOREGROUND_BACKGROUND));
 
     // Developer enabled Performance Monitoring during runtime.
-    configResolver.setIsPerformanceCollectionEnabled(true);
+    ConfigResolver.getInstance().setIsPerformanceCollectionEnabled(true);
 
     // activity1 comes to foreground.
     currentTime = 3;
@@ -528,13 +524,11 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
   @Test
   public void foreGroundTrace_perfMonDeactivated_traceCreated() {
     AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
-    ConfigResolver configResolver = ConfigResolver.getInstance();
-    configResolver.setDeviceCacheManager(new DeviceCacheManager(new FakeDirectExecutorService()));
 
     // Firebase Performance is deactivated at build time.
     Bundle bundle = new Bundle();
     bundle.putBoolean("firebase_performance_collection_deactivated", true);
-    configResolver.setMetadataBundle(new ImmutableBundle(bundle));
+    ConfigResolver.getInstance().setMetadataBundle(new ImmutableBundle(bundle));
 
     // activity1 comes to foreground.
     currentTime = 1;
@@ -548,7 +542,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     verify(transportManager, never()).log(any(TraceMetric.class), eq(FOREGROUND_BACKGROUND));
 
     // Developer enabled Performance Monitoring during runtime.
-    configResolver.setIsPerformanceCollectionEnabled(true);
+    ConfigResolver.getInstance().setIsPerformanceCollectionEnabled(true);
 
     // activity1 comes to foreground.
     currentTime = 3;
@@ -598,13 +592,11 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
   @Test
   public void backgroundTrace_perfMonEnabledAtRuntime_traceCreated() {
     AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
-    ConfigResolver configResolver = ConfigResolver.getInstance();
-    configResolver.setDeviceCacheManager(new DeviceCacheManager(new FakeDirectExecutorService()));
 
     // Firebase Performance is disabled at build time.
     Bundle bundle = new Bundle();
     bundle.putBoolean("firebase_performance_collection_enabled", false);
-    configResolver.setMetadataBundle(new ImmutableBundle(bundle));
+    ConfigResolver.getInstance().setMetadataBundle(new ImmutableBundle(bundle));
 
     // activity1 comes to background.
     currentTime = 1;
@@ -619,7 +611,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     verify(transportManager, never()).log(any(TraceMetric.class), eq(FOREGROUND_BACKGROUND));
 
     // Developer enabled Performance Monitoring during runtime.
-    configResolver.setIsPerformanceCollectionEnabled(true);
+    ConfigResolver.getInstance().setIsPerformanceCollectionEnabled(true);
 
     // activity1 comes to background.
     currentTime = 3;
@@ -638,13 +630,11 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
   @Test
   public void backgroundTrace_perfMonDeactivated_traceCreated() {
     AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
-    ConfigResolver configResolver = ConfigResolver.getInstance();
-    configResolver.setDeviceCacheManager(new DeviceCacheManager(new FakeDirectExecutorService()));
 
     // Firebase Performance is deactivated at build time.
     Bundle bundle = new Bundle();
     bundle.putBoolean("firebase_performance_collection_deactivated", true);
-    configResolver.setMetadataBundle(new ImmutableBundle(bundle));
+    ConfigResolver.getInstance().setMetadataBundle(new ImmutableBundle(bundle));
 
     // activity1 comes to background.
     currentTime = 1;
@@ -659,7 +649,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     verify(transportManager, never()).log(any(TraceMetric.class), eq(FOREGROUND_BACKGROUND));
 
     // Developer enabled Performance Monitoring during runtime.
-    configResolver.setIsPerformanceCollectionEnabled(true);
+    ConfigResolver.getInstance().setIsPerformanceCollectionEnabled(true);
 
     // activity1 comes to background.
     currentTime = 3;

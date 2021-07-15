@@ -76,7 +76,7 @@ android {
             }
 
             tasks.findAll {
-                it.name.startsWith("externalNativeBuild")
+                it.name.startsWith("externalNativeBuild") && !it.name.contains("Clean")
             }.each {
                 func.dependsOn it
             }
