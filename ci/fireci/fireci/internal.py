@@ -21,8 +21,6 @@ import logging
 import os
 import shutil
 
-from . import emulator
-from . import stats
 
 _logger = logging.getLogger('fireci')
 
@@ -52,16 +50,6 @@ def _artifact_handler(target_directory, artifact_patterns):
         shutil.copyfile(path, target_name)
 
 
-@contextlib.contextmanager
-def _emulator_handler(enabled, *args, **kwargs):
-  if not enabled:
-    yield
-    return
-
-  with emulator.EmulatorHandler(*args, **kwargs):
-    yield
-
-
 class _CommonOptions:
   pass
 
@@ -85,32 +73,6 @@ _pass_options = click.make_pass_decorator(_CommonOptions, ensure=True)
     multiple=True,
     type=str,
 )
-@click.option(
-    '--with-emulator',
-    default=False,
-    help='Specifies whether to start an Android emulator a command executes.',
-    is_flag=True,
-)
-@click.option(
-    '--emulator-name',
-    default='test',
-    help='Specifies the AVD name to launch the emulator with.',
-)
-@click.option(
-    '--emulator-binary',
-    default='emulator',
-    help='Specifies the name/full path to the emulator binary.',
-)
-@click.option(
-    '--adb-binary',
-    default='adb',
-    help='Specifies the name/full path to the adb binary.',
-)
-@click.option(
-    '--enable-metrics',
-    is_flag=True,
-    envvar='FIREBASE_ENABLE_METRICS',
-    help='Enables metrics collection for various build stages.')
 @_pass_options
 def main(options, **kwargs):
   """Main command group.
@@ -119,8 +81,6 @@ def main(options, **kwargs):
     """
   for k, v in kwargs.items():
     setattr(options, k, v)
-  if options.enable_metrics:
-    stats.configure()
 
 
 def ci_command(name=None):
@@ -142,14 +102,9 @@ def ci_command(name=None):
     @_pass_options
     @click.pass_context
     def new_func(ctx, options, *args, **kwargs):
-      with stats.measure("cicmd:" + actual_name), _artifact_handler(
+      with _artifact_handler(
           options.artifact_target_dir,
-          options.artifact_patterns), _emulator_handler(
-              options.with_emulator,
-              options.artifact_target_dir,
-              name=options.emulator_name,
-              emulator_binary=options.emulator_binary,
-              adb_binary=options.adb_binary):
+          options.artifact_patterns):
         return ctx.invoke(f, *args, **kwargs)
 
     return functools.update_wrapper(new_func, f)

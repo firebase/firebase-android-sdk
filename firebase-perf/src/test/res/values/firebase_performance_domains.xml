@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><!-- Copyright 2020 Google Inc. All Rights Reserved. -->
+
+<resources>
+  <string-array name="firebase_performance_whitelisted_domains">
+    <item>google.com</item>
+    <item>googleapis.com</item>
+    <item>app-measurement.com</item>
+  </string-array>
+</resources>

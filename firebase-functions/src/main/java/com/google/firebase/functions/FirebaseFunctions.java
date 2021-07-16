@@ -156,8 +156,8 @@ public class FirebaseFunctions {
    * Creates a Cloud Functions client with the given app and region or custom domain.
    *
    * @param app The app for the Firebase project.
-   * @param regionOrCustomDomain The region or custom domain for the HTTPS trigger, such as
-   *     "us-central1" or "https://mydomain.com".
+   * @param regionOrCustomDomain The region or custom domain for the HTTPS trigger, such as {@code
+   *     "us-central1"} or {@code "https://mydomain.com"}.
    */
   @NonNull
   public static FirebaseFunctions getInstance(
@@ -184,8 +184,8 @@ public class FirebaseFunctions {
   /**
    * Creates a Cloud Functions client with the default app and given region or custom domain.
    *
-   * @param regionOrCustomDomain The regionOrCustomDomain for the HTTPS trigger, such as
-   *     "us-central1" or "https://mydomain.com".
+   * @param regionOrCustomDomain The region or custom domain for the HTTPS trigger, such as {@code
+   *     "us-central1"} or {@code "https://mydomain.com"}.
    */
   @NonNull
   public static FirebaseFunctions getInstance(@NonNull String regionOrCustomDomain) {
@@ -305,6 +305,9 @@ public class FirebaseFunctions {
     }
     if (context.getInstanceIdToken() != null) {
       request = request.header("Firebase-Instance-ID-Token", context.getInstanceIdToken());
+    }
+    if (context.getAppCheckToken() != null) {
+      request = request.header("X-Firebase-AppCheck", context.getAppCheckToken());
     }
 
     OkHttpClient callClient = options.apply(client);

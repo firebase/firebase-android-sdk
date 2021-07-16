@@ -58,6 +58,18 @@ public class BatteryStateTest extends CrashlyticsTestCase {
     assertEquals(1, state.getBatteryVelocity());
   }
 
+  public void testTooManyReceivers() {
+    Context mockContext = mock(Context.class);
+    when(mockContext.registerReceiver(isNull(), any()))
+        .thenThrow(new IllegalStateException("Too many receivers"));
+
+    BatteryState state = BatteryState.get(mockContext);
+
+    assertNull(state.getBatteryLevel());
+    assertFalse(state.isPowerConnected());
+    assertEquals(1, state.getBatteryVelocity());
+  }
+
   public void testEmptyIntent() {
     final Context mockContext = mock(Context.class);
     when(mockContext.registerReceiver(isNull(), any())).thenReturn(new Intent());

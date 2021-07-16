@@ -53,6 +53,7 @@ public class FileDownloadTask extends StorageTask<FileDownloadTask.TaskSnapshot>
         new ExponentialBackoffSender(
             storage.getApp().getApplicationContext(),
             storage.getAuthProvider(),
+            storage.getAppCheckProvider(),
             storage.getMaxDownloadRetryTimeMillis());
   }
 
@@ -195,7 +196,8 @@ public class FileDownloadTask extends StorageTask<FileDownloadTask.TaskSnapshot>
       mException = null;
       mSender.reset();
       final NetworkRequest request =
-          new GetNetworkRequest(mStorageRef.getStorageUri(), mStorageRef.getApp(), mResumeOffset);
+          new GetNetworkRequest(
+              mStorageRef.getStorageReferenceUri(), mStorageRef.getApp(), mResumeOffset);
 
       mSender.sendWithExponentialBackoff(request, false);
       mResultCode = request.getResultCode();
@@ -207,7 +209,7 @@ public class FileDownloadTask extends StorageTask<FileDownloadTask.TaskSnapshot>
               && getInternalState() == INTERNAL_STATE_IN_PROGRESS;
 
       if (success) {
-        mTotalBytes = request.getResultingContentLength();
+        mTotalBytes = request.getResultingContentLength() + mResumeOffset;
         String newEtag = request.getResultString("ETag");
         if (!TextUtils.isEmpty(newEtag)
             && mETagVerification != null

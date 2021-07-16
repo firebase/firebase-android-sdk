@@ -86,20 +86,20 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
       dispatcher.run(
           () -> {
             if (Logger.isDebugEnabled()) {
-              Map<String, String> whitelistedHeaders = new HashMap<>();
+              Map<String, String> allowlistedHeaders = new HashMap<>();
               for (String header : headers.keys()) {
                 if (Datastore.WHITE_LISTED_HEADERS.contains(header.toLowerCase(Locale.ENGLISH))) {
-                  whitelistedHeaders.put(
+                  allowlistedHeaders.put(
                       header,
                       headers.get(Metadata.Key.of(header, Metadata.ASCII_STRING_MARSHALLER)));
                 }
               }
-              if (!whitelistedHeaders.isEmpty()) {
+              if (!allowlistedHeaders.isEmpty()) {
                 Logger.debug(
                     AbstractStream.this.getClass().getSimpleName(),
                     "(%x) Stream received headers: %s",
                     System.identityHashCode(AbstractStream.this),
-                    whitelistedHeaders);
+                    allowlistedHeaders);
               }
             }
           });
@@ -273,7 +273,7 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
   private void close(State finalState, Status status) {
     hardAssert(isStarted(), "Only started streams should be closed.");
     hardAssert(
-        finalState == State.Error || status.equals(Status.OK),
+        finalState == State.Error || status.isOk(),
         "Can't provide an error when not in an error state.");
     workerQueue.verifyIsCurrentThread();
 

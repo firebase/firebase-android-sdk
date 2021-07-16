@@ -28,6 +28,7 @@ import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.time.TestClock;
 import com.google.android.datatransport.runtime.time.UptimeClock;
 import com.google.android.datatransport.runtime.util.PriorityMapping;
+import dagger.Lazy;
 import java.nio.charset.Charset;
 import java.util.Map;
 import org.junit.Assert;
@@ -60,8 +61,7 @@ public class SchemaManagerTest {
           .build();
 
   private static final EventInternal EVENT2 =
-      EVENT1
-          .toBuilder()
+      EVENT1.toBuilder()
           .setEncodedPayload(
               new EncodedPayload(PROTOBUF_ENCODING, "World".getBytes(Charset.defaultCharset())))
           .build();
@@ -71,12 +71,15 @@ public class SchemaManagerTest {
       EventStoreConfig.DEFAULT.toBuilder().setLoadBatchSize(5).setEventCleanUpAge(HOUR).build();
 
   private final TestClock clock = new TestClock(1);
+  private final Lazy<String> packageName =
+      () -> ApplicationProvider.getApplicationContext().getPackageName();
 
   @Test
   public void persist_correctlyRoundTrips() {
     SchemaManager schemaManager =
         new SchemaManager(ApplicationProvider.getApplicationContext(), DB_NAME, SCHEMA_VERSION);
-    SQLiteEventStore store = new SQLiteEventStore(clock, new UptimeClock(), CONFIG, schemaManager);
+    SQLiteEventStore store =
+        new SQLiteEventStore(clock, new UptimeClock(), CONFIG, schemaManager, packageName);
 
     PersistedEvent newEvent = store.persist(CONTEXT1, EVENT1);
     Iterable<PersistedEvent> events = store.loadBatch(CONTEXT1);
@@ -92,7 +95,8 @@ public class SchemaManagerTest {
     SchemaManager schemaManager =
         new SchemaManager(ApplicationProvider.getApplicationContext(), DB_NAME, oldVersion);
 
-    SQLiteEventStore store = new SQLiteEventStore(clock, new UptimeClock(), CONFIG, schemaManager);
+    SQLiteEventStore store =
+        new SQLiteEventStore(clock, new UptimeClock(), CONFIG, schemaManager, packageName);
 
     schemaManager.onUpgrade(schemaManager.getWritableDatabase(), oldVersion, newVersion);
     PersistedEvent newEvent1 = store.persist(CONTEXT1, EVENT1);
@@ -106,7 +110,8 @@ public class SchemaManagerTest {
     int newVersion = SCHEMA_VERSION;
     SchemaManager schemaManager =
         new SchemaManager(ApplicationProvider.getApplicationContext(), DB_NAME, oldVersion);
-    SQLiteEventStore store = new SQLiteEventStore(clock, new UptimeClock(), CONFIG, schemaManager);
+    SQLiteEventStore store =
+        new SQLiteEventStore(clock, new UptimeClock(), CONFIG, schemaManager, packageName);
     // We simulate operations as done by an older SQLLiteEventStore at V1
     // We cannot simulate older operations with a newer client
     PersistedEvent event1 = simulatedPersistOnV1Database(schemaManager, CONTEXT1, EVENT1);
@@ -123,7 +128,8 @@ public class SchemaManagerTest {
     int newVersion = 4;
     SchemaManager schemaManager =
         new SchemaManager(ApplicationProvider.getApplicationContext(), DB_NAME, oldVersion);
-    SQLiteEventStore store = new SQLiteEventStore(clock, new UptimeClock(), CONFIG, schemaManager);
+    SQLiteEventStore store =
+        new SQLiteEventStore(clock, new UptimeClock(), CONFIG, schemaManager, packageName);
     // We simulate operations as done by an older SQLLiteEventStore at V1
     // We cannot simulate older operations with a newer client
     PersistedEvent event1 = simulatedPersistOnV1Database(schemaManager, CONTEXT1, EVENT1);

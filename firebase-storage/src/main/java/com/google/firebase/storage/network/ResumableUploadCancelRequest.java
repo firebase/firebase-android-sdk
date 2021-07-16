@@ -18,6 +18,7 @@ import android.net.Uri;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.storage.internal.StorageReferenceUri;
 
 /** Cancels an upload request in progress. */
 public class ResumableUploadCancelRequest extends ResumableNetworkRequest {
@@ -26,8 +27,10 @@ public class ResumableUploadCancelRequest extends ResumableNetworkRequest {
   private final Uri uploadURL;
 
   public ResumableUploadCancelRequest(
-      @NonNull Uri gsUri, @NonNull FirebaseApp app, @NonNull Uri uploadURL) {
-    super(gsUri, app);
+      @NonNull StorageReferenceUri storageReferenceUri,
+      @NonNull FirebaseApp app,
+      @NonNull Uri uploadURL) {
+    super(storageReferenceUri, app);
     cancelCalled = true;
     this.uploadURL = uploadURL;
     super.setCustomHeader(PROTOCOL, "resumable");
@@ -42,7 +45,7 @@ public class ResumableUploadCancelRequest extends ResumableNetworkRequest {
 
   @NonNull
   @Override
-  protected Uri getURL() {
+  public Uri getURL() {
     return uploadURL;
   }
 }

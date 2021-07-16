@@ -19,5 +19,13 @@
   public <methods>;
 }
 
+-keepclassmembers class com.google.firebase.crashlytics.FirebaseCrashlytics {
+  private com.google.firebase.crashlytics.internal.common.CrashlyticsCore core;
+}
+
+-keepclassmembers class com.google.firebase.crashlytics.internal.common.CrashlyticsCore {
+  private com.google.firebase.crashlytics.internal.breadcrumbs.BreadcrumbSource breadcrumbSource;
+}
+
 -dontwarn android.**
 -dontwarn okio.**

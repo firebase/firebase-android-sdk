@@ -23,9 +23,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
-import com.google.android.gms.common.internal.Preconditions;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.ml.modeldownloader.CustomModel;
+import com.google.firebase.ml.modeldownloader.FirebaseMlException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -38,18 +38,17 @@ import java.io.IOException;
  */
 public class ModelFileManager {
 
+  public static final String CUSTOM_MODEL_ROOT_PATH = "com.google.firebase.ml.custom.models";
   private static final String TAG = "FirebaseModelFileManage";
-
-  @VisibleForTesting
-  static final String CUSTOM_MODEL_ROOT_PATH = "com.google.firebase.ml.custom.models";
-
   private static final int INVALID_INDEX = -1;
   private final Context context;
   private final FirebaseApp firebaseApp;
+  private final SharedPreferencesUtil sharedPreferencesUtil;
 
   public ModelFileManager(@NonNull FirebaseApp firebaseApp) {
     this.context = firebaseApp.getApplicationContext();
     this.firebaseApp = firebaseApp;
+    this.sharedPreferencesUtil = new SharedPreferencesUtil(firebaseApp);
   }
 
   /**
@@ -61,6 +60,23 @@ public class ModelFileManager {
   @NonNull
   public static ModelFileManager getInstance() {
     return FirebaseApp.getInstance().get(ModelFileManager.class);
+  }
+
+  void deleteNonLatestCustomModels() throws FirebaseMlException {
+    File root = getDirImpl("");
+
+    boolean ret = true;
+    if (root.isDirectory()) {
+      for (File f : root.listFiles()) {
+        // for each custom model sub directory - extract customModelName and clean up old models.
+        String modelName = f.getName();
+
+        CustomModel model = sharedPreferencesUtil.getCustomModelDetails(modelName);
+        if (model != null) {
+          deleteOldModels(modelName, model.getLocalFilePath());
+        }
+      }
+    }
   }
 
   /**
@@ -87,15 +103,17 @@ public class ModelFileManager {
    */
   @VisibleForTesting
   @WorkerThread
-  File getDirImpl(@NonNull String modelName) throws Exception {
+  File getDirImpl(@NonNull String modelName) throws FirebaseMlException {
     File modelDir = getModelDirUnsafe(modelName);
     if (!modelDir.exists()) {
       if (!modelDir.mkdirs()) {
-        throw new Exception("Failed to create model folder: " + modelDir);
+        throw new FirebaseMlException(
+            "Failed to create model folder: " + modelDir, FirebaseMlException.INTERNAL);
       }
     } else if (!modelDir.isDirectory()) {
-      throw new Exception(
-          "Can not create model folder, since an existing file has the same name: " + modelDir);
+      throw new FirebaseMlException(
+          "Can not create model folder, since an existing file has the same name: " + modelDir,
+          FirebaseMlException.ALREADY_EXISTS);
     }
     return modelDir;
   }
@@ -124,20 +142,8 @@ public class ModelFileManager {
 
   @VisibleForTesting
   @Nullable
-  File getModelFileDestination(@NonNull CustomModel model) throws Exception {
+  File getModelFileDestination(@NonNull CustomModel model) throws FirebaseMlException {
     File destFolder = getDirImpl(model.getName());
-    if (!destFolder.exists()) {
-      Log.d(TAG, "model folder does not exist, creating one: " + destFolder.getAbsolutePath());
-      if (!destFolder.mkdirs()) {
-        // TODO(annzimmer) change to FirebaseMLException when logging complete. Add test at same
-        // time.
-        throw new Exception("Failed to create model folder: " + destFolder);
-      }
-    } else if (!destFolder.isDirectory()) {
-      // TODO(annzimmer) change to FirebaseMLException when logging complete. Add test at same time.
-      throw new Exception(
-          "Can not create model folder, since an existing file has the same name: " + destFolder);
-    }
 
     int index = getLatestCachedModelVersion(destFolder);
     return new File(destFolder, String.valueOf(index + 1));
@@ -160,7 +166,7 @@ public class ModelFileManager {
   @WorkerThread
   public synchronized File moveModelToDestinationFolder(
       @NonNull CustomModel customModel, @NonNull ParcelFileDescriptor modelFileDescriptor)
-      throws Exception {
+      throws FirebaseMlException {
     File modelFileDestination = getModelFileDestination(customModel);
     // why would this ever be true?
     File modelFolder = modelFileDestination.getParentFile();
@@ -191,6 +197,40 @@ public class ModelFileManager {
   }
 
   /**
+   * Deletes old models in the custom model directory, except the {@code latestModelFilePath}. This
+   * should only be called when no files are in use or more specifically when the first
+   * initialization, otherwise it may remove a model that is in use.
+   *
+   * @param latestModelFilePath The file path to the latest custom model.
+   */
+  @WorkerThread
+  public synchronized void deleteOldModels(
+      @NonNull String modelName, @NonNull String latestModelFilePath) {
+    File modelFolder = getModelDirUnsafe(modelName);
+    if (!modelFolder.exists()) {
+      return;
+    }
+
+    File latestFile = new File(latestModelFilePath);
+    int latestIndex = Integer.parseInt(latestFile.getName());
+    File[] modelFiles = modelFolder.listFiles();
+
+    boolean isAllDeleted = true;
+    int fileInt;
+    for (File modelFile : modelFiles) {
+      try {
+        fileInt = Integer.parseInt(modelFile.getName());
+      } catch (NumberFormatException ex) {
+        // unexpected file - ignore
+        fileInt = Integer.MAX_VALUE;
+      }
+      if (fileInt < latestIndex) {
+        isAllDeleted = isAllDeleted && modelFile.delete();
+      }
+    }
+  }
+
+  /**
    * Deletes all previously cached Model File(s) and the model root folder.
    *
    * <p>All model and model support files are stored in temp folder until the model gets fully
@@ -198,9 +238,9 @@ public class ModelFileManager {
    * destination for a model in this method.
    */
   @WorkerThread
-  public synchronized void deleteAllModels(@NonNull String modelName) {
+  public synchronized boolean deleteAllModels(@NonNull String modelName) {
     File modelFolder = getModelDirUnsafe(modelName);
-    deleteRecursively(modelFolder);
+    return deleteRecursively(modelFolder);
   }
 
   /**
@@ -215,7 +255,7 @@ public class ModelFileManager {
 
     boolean ret = true;
     if (root.isDirectory()) {
-      for (File f : Preconditions.checkNotNull(root.listFiles())) {
+      for (File f : root.listFiles()) {
         ret = ret && deleteRecursively(f);
       }
     }

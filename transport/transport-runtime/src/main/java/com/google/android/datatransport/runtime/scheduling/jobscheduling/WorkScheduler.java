@@ -19,4 +19,6 @@ import com.google.android.datatransport.runtime.TransportContext;
 /** Schedules the services to be able to eventually log events to their respective backends. */
 public interface WorkScheduler {
   void schedule(TransportContext transportContext, int attemptNumber);
+
+  void schedule(TransportContext transportContext, int attemptNumber, boolean force);
 }

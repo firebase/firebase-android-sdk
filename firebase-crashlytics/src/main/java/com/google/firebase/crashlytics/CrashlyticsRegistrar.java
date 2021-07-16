@@ -21,6 +21,8 @@ import com.google.firebase.components.ComponentContainer;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
+import com.google.firebase.inject.Deferred;
+import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.util.Arrays;
@@ -34,8 +36,8 @@ public class CrashlyticsRegistrar implements ComponentRegistrar {
         Component.builder(FirebaseCrashlytics.class)
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.required(FirebaseInstallationsApi.class))
-            .add(Dependency.optional(AnalyticsConnector.class))
-            .add(Dependency.optional(CrashlyticsNativeComponent.class))
+            .add(Dependency.optionalProvider(CrashlyticsNativeComponent.class))
+            .add(Dependency.deferred(AnalyticsConnector.class))
             .factory(this::buildCrashlytics)
             .eagerInDefaultApp()
             .build(),
@@ -45,9 +47,11 @@ public class CrashlyticsRegistrar implements ComponentRegistrar {
   private FirebaseCrashlytics buildCrashlytics(ComponentContainer container) {
     FirebaseApp app = container.get(FirebaseApp.class);
 
-    CrashlyticsNativeComponent nativeComponent = container.get(CrashlyticsNativeComponent.class);
+    Provider<CrashlyticsNativeComponent> nativeComponent =
+        container.getProvider(CrashlyticsNativeComponent.class);
 
-    AnalyticsConnector analyticsConnector = container.get(AnalyticsConnector.class);
+    Deferred<AnalyticsConnector> analyticsConnector =
+        container.getDeferred(AnalyticsConnector.class);
 
     FirebaseInstallationsApi firebaseInstallations = container.get(FirebaseInstallationsApi.class);
 

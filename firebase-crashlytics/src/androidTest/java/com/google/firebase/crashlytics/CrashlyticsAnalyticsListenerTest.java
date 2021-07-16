@@ -23,9 +23,15 @@ import static org.junit.Assert.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.when;
 
 import android.os.Bundle;
+import com.google.firebase.analytics.connector.AnalyticsConnector;
+import com.google.firebase.crashlytics.internal.analytics.AnalyticsEventLogger;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsEventReceiver;
+import com.google.firebase.crashlytics.internal.breadcrumbs.BreadcrumbSource;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -38,6 +44,12 @@ public class CrashlyticsAnalyticsListenerTest {
   @Mock private AnalyticsEventReceiver breadcrumbReceiver;
 
   @Mock private AnalyticsEventReceiver crashlyticsOriginEventReceiver;
+
+  @Mock private AnalyticsConnector analyticsConnector;
+
+  @Mock private BreadcrumbSource breadcrumbSource;
+
+  @Mock private AnalyticsEventLogger analyticsEventLogger;
 
   private CrashlyticsAnalyticsListener listener;
 
@@ -129,6 +141,49 @@ public class CrashlyticsAnalyticsListenerTest {
     listener.onMessageTriggered(0, event);
     Mockito.verify(crashlyticsOriginEventReceiver, Mockito.never())
         .onEvent(anyString(), any(Bundle.class));
+  }
+
+  @Test
+  public void testAnalyticsDeferredProxyDefaultObjects() {
+    AnalyticsDeferredProxy proxy =
+        new AnalyticsDeferredProxy(handler -> {}, breadcrumbSource, analyticsEventLogger);
+    proxy.getAnalyticsEventLogger().logEvent("EventName", new Bundle());
+    proxy.getDeferredBreadcrumbSource().registerBreadcrumbHandler(null);
+
+    Mockito.verify(breadcrumbSource).registerBreadcrumbHandler(any());
+    Mockito.verify(analyticsEventLogger).logEvent(eq("EventName"), any());
+  }
+
+  @Test
+  public void testAnalyticsDeferredProxyAvailableButNull() {
+    AnalyticsDeferredProxy proxy =
+        new AnalyticsDeferredProxy(
+            p -> p.handle(() -> analyticsConnector), breadcrumbSource, analyticsEventLogger);
+    proxy.getAnalyticsEventLogger().logEvent("EventName", new Bundle());
+    proxy.getDeferredBreadcrumbSource().registerBreadcrumbHandler(null);
+
+    // Since the connector is not setup, it should fail registering and the default mocks should be
+    // invoked.
+    Mockito.verify(analyticsConnector, Mockito.atLeast(1))
+        .registerAnalyticsConnectorListener(any(), any());
+    Mockito.verify(breadcrumbSource).registerBreadcrumbHandler(any());
+    Mockito.verify(analyticsEventLogger).logEvent(eq("EventName"), any());
+  }
+
+  @Test
+  public void testAnalyticsDeferredProxyAvailable() {
+    when(analyticsConnector.registerAnalyticsConnectorListener(any(), any()))
+        .thenReturn(mock(AnalyticsConnector.AnalyticsConnectorHandle.class));
+
+    AnalyticsDeferredProxy proxy =
+        new AnalyticsDeferredProxy(
+            p -> p.handle(() -> analyticsConnector), breadcrumbSource, analyticsEventLogger);
+    proxy.getAnalyticsEventLogger().logEvent("EventName", new Bundle());
+    proxy.getDeferredBreadcrumbSource().registerBreadcrumbHandler(null);
+
+    // Mocks passed in the constructor shouldn't need to be used.
+    Mockito.verify(breadcrumbSource, never()).registerBreadcrumbHandler(any());
+    Mockito.verify(analyticsEventLogger, never()).logEvent(eq("EventName"), any());
   }
 
   private static Bundle makeEventBundle(String name, Bundle params) {

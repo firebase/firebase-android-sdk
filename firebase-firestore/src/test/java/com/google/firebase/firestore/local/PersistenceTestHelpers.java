@@ -31,7 +31,7 @@ public final class PersistenceTestHelpers {
 
   public static DatabaseInfo nextDatabaseInfo() {
     return new DatabaseInfo(
-        DatabaseId.forDatabase("project", "database"),
+        DatabaseId.forProject("test-project"),
         nextSQLiteDatabaseName(),
         "localhost",
         /* sslEnabled= */ false);

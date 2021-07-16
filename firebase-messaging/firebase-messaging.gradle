@@ -73,6 +73,8 @@ dependencies {
     testCompileOnly 'com.google.auto.value:auto-value-annotations:1.6.3'
     testAnnotationProcessor "com.google.auto.value:auto-value:1.6.3"
 
+    javadocClasspath 'com.google.auto.value:auto-value-annotations:1.6.6'
+
     testImplementation 'androidx.test:core:1.2.0'
     testImplementation 'androidx.test:rules:1.2.0'
     testImplementation 'androidx.test:runner:1.2.0'

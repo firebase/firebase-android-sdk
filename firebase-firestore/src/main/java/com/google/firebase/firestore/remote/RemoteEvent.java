@@ -15,7 +15,7 @@
 package com.google.firebase.firestore.remote;
 
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.MaybeDocument;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import java.util.Map;
 import java.util.Set;
@@ -28,14 +28,14 @@ public final class RemoteEvent {
   private final SnapshotVersion snapshotVersion;
   private final Map<Integer, TargetChange> targetChanges;
   private final Set<Integer> targetMismatches;
-  private final Map<DocumentKey, MaybeDocument> documentUpdates;
+  private final Map<DocumentKey, MutableDocument> documentUpdates;
   private final Set<DocumentKey> resolvedLimboDocuments;
 
   public RemoteEvent(
       SnapshotVersion snapshotVersion,
       Map<Integer, TargetChange> targetChanges,
       Set<Integer> targetMismatches,
-      Map<DocumentKey, MaybeDocument> documentUpdates,
+      Map<DocumentKey, MutableDocument> documentUpdates,
       Set<DocumentKey> resolvedLimboDocuments) {
     this.snapshotVersion = snapshotVersion;
     this.targetChanges = targetChanges;
@@ -66,7 +66,7 @@ public final class RemoteEvent {
    * Returns a set of which documents have changed or been deleted, along with the doc's new values
    * (if not deleted).
    */
-  public Map<DocumentKey, MaybeDocument> getDocumentUpdates() {
+  public Map<DocumentKey, MutableDocument> getDocumentUpdates() {
     return documentUpdates;
   }
 

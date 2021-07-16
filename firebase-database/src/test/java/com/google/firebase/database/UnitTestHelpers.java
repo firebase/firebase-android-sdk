@@ -22,6 +22,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
+import com.google.firebase.database.android.AndroidAppCheckTokenProvider;
 import com.google.firebase.database.android.AndroidAuthTokenProvider;
 import com.google.firebase.database.core.Context;
 import com.google.firebase.database.core.CoreTestHelpers;
@@ -167,7 +168,16 @@ public class UnitTestHelpers {
     config.setEventTarget(new TestEventTarget());
     config.setRunLoop(runLoop);
     config.setFirebaseApp(FirebaseApp.getInstance());
-    config.setAuthTokenProvider(AndroidAuthTokenProvider.forUnauthenticatedAccess());
+    config.setAuthTokenProvider(
+        new AndroidAuthTokenProvider(
+            never -> {
+              // Auth is not available in our unit tests
+            }));
+    config.setAppCheckTokenProvider(
+        new AndroidAppCheckTokenProvider(
+            never -> {
+              // AppCheck is not available in our integration tests
+            }));
     return config;
   }
 

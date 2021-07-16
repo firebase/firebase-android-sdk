@@ -1,4 +1,14 @@
-# Unreleased
+# 20.0.1
+- [fixed] Fixed an issue where connections would hang when using appcheck
+  without Auth.
+
+# 19.7.0
+- [added] Added `Query.startAfter()` and `Query.endBefore()` filter for paginating
+  RTDB queries.
+- [fixed] Fixed an issue with `Query.get()` that caused the client to go offline if
+  only `get()` operations were pending.
+
+# 19.6.0
 - [fixed] Fixed a crash on some Pixel devices that occurred when closing the
   network connection.
 - [added] Added `Query.get()`, which allows users to receive a single data

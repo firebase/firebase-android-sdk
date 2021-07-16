@@ -54,6 +54,11 @@ public class FiamWindowManager {
       return;
     }
 
+    if (activity.isFinishing()) {
+      Logging.loge("Activity is finishing or does not have valid window token. Cannot show FIAM.");
+      return;
+    }
+
     InAppMessageLayoutConfig config = bindingWrapper.getConfig();
     final WindowManager.LayoutParams layoutParams = getLayoutParams(config, activity);
 

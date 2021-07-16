@@ -15,10 +15,12 @@
 package com.google.firebase.ml.modeldownloader.internal;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import android.os.SystemClock;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
@@ -44,12 +46,13 @@ public class SharedPreferencesUtilTest {
   private static final CustomModel CUSTOM_MODEL_DOWNLOADING =
       new CustomModel(MODEL_NAME, MODEL_HASH, 100, 986);
   private SharedPreferencesUtil sharedPreferencesUtil;
+  private FirebaseApp app;
 
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
     FirebaseApp.clearInstancesForTest();
-    FirebaseApp app =
+    app =
         FirebaseApp.initializeApp(
             ApplicationProvider.getApplicationContext(),
             new FirebaseOptions.Builder()
@@ -57,6 +60,7 @@ public class SharedPreferencesUtilTest {
                 .setProjectId(TEST_PROJECT_ID)
                 .build());
 
+    app.setDataCollectionDefaultEnabled(Boolean.TRUE);
     // default sharedPreferenceUtil
     sharedPreferencesUtil = new SharedPreferencesUtil(app);
     assertNotNull(sharedPreferencesUtil);
@@ -71,25 +75,25 @@ public class SharedPreferencesUtilTest {
   }
 
   @Test
-  public void setUploadedCustomModelDetails_localModelPresent() throws IllegalArgumentException {
-    sharedPreferencesUtil.setUploadedCustomModelDetails(CUSTOM_MODEL_DOWNLOAD_COMPLETE);
+  public void setLoadedCustomModelDetails_localModelPresent() throws IllegalArgumentException {
+    sharedPreferencesUtil.setLoadedCustomModelDetails(CUSTOM_MODEL_DOWNLOAD_COMPLETE);
     CustomModel retrievedModel = sharedPreferencesUtil.getCustomModelDetails(MODEL_NAME);
     assertEquals(retrievedModel, CUSTOM_MODEL_DOWNLOAD_COMPLETE);
   }
 
   @Test
-  public void setUploadedCustomModelDetails_initialDownloadStartedAndCompleted()
+  public void setLoadedCustomModelDetails_initialDownloadStartedAndCompleted()
       throws IllegalArgumentException {
     sharedPreferencesUtil.setDownloadingCustomModelDetails(CUSTOM_MODEL_DOWNLOADING);
-    sharedPreferencesUtil.setUploadedCustomModelDetails(CUSTOM_MODEL_DOWNLOAD_COMPLETE);
+    sharedPreferencesUtil.setLoadedCustomModelDetails(CUSTOM_MODEL_DOWNLOAD_COMPLETE);
     CustomModel retrievedModel = sharedPreferencesUtil.getCustomModelDetails(MODEL_NAME);
     assertEquals(retrievedModel, CUSTOM_MODEL_DOWNLOAD_COMPLETE);
   }
 
   @Test
-  public void setUploadedCustomModelDetails_localModelWithUploadInBackGround()
+  public void setLoadedCustomModelDetails_localModelWithDownloadInBackGround()
       throws IllegalArgumentException {
-    sharedPreferencesUtil.setUploadedCustomModelDetails(CUSTOM_MODEL_DOWNLOAD_COMPLETE);
+    sharedPreferencesUtil.setLoadedCustomModelDetails(CUSTOM_MODEL_DOWNLOAD_COMPLETE);
     sharedPreferencesUtil.setDownloadingCustomModelDetails(CUSTOM_MODEL_DOWNLOADING);
     CustomModel retrievedModel = sharedPreferencesUtil.getCustomModelDetails(MODEL_NAME);
     assertEquals(retrievedModel, CUSTOM_MODEL_UPDATE_IN_BACKGROUND);
@@ -97,7 +101,7 @@ public class SharedPreferencesUtilTest {
 
   @Test
   public void clearModelDetails_clearLocalAndDownloadingInfo() throws IllegalArgumentException {
-    sharedPreferencesUtil.setUploadedCustomModelDetails(CUSTOM_MODEL_DOWNLOAD_COMPLETE);
+    sharedPreferencesUtil.setLoadedCustomModelDetails(CUSTOM_MODEL_DOWNLOAD_COMPLETE);
     sharedPreferencesUtil.setDownloadingCustomModelDetails(CUSTOM_MODEL_DOWNLOADING);
     CustomModel retrievedModel = sharedPreferencesUtil.getCustomModelDetails(MODEL_NAME);
     assertEquals(retrievedModel, CUSTOM_MODEL_UPDATE_IN_BACKGROUND);
@@ -108,7 +112,7 @@ public class SharedPreferencesUtilTest {
 
   @Test
   public void clearDownloadingModelDetails_keepsLocalModel() throws IllegalArgumentException {
-    sharedPreferencesUtil.setUploadedCustomModelDetails(CUSTOM_MODEL_DOWNLOAD_COMPLETE);
+    sharedPreferencesUtil.setLoadedCustomModelDetails(CUSTOM_MODEL_DOWNLOAD_COMPLETE);
     sharedPreferencesUtil.setDownloadingCustomModelDetails(CUSTOM_MODEL_DOWNLOADING);
     CustomModel retrievedModel = sharedPreferencesUtil.getCustomModelDetails(MODEL_NAME);
     assertEquals(retrievedModel, CUSTOM_MODEL_UPDATE_IN_BACKGROUND);
@@ -120,8 +124,19 @@ public class SharedPreferencesUtilTest {
   }
 
   @Test
+  public void clearDownloadCustomModelDetails_keepsLocalModel() throws IllegalArgumentException {
+    sharedPreferencesUtil.setLoadedCustomModelDetails(CUSTOM_MODEL_DOWNLOAD_COMPLETE);
+    sharedPreferencesUtil.setDownloadingCustomModelDetails(CUSTOM_MODEL_DOWNLOADING);
+    CustomModel retrievedModel = sharedPreferencesUtil.getCustomModelDetails(MODEL_NAME);
+    assertEquals(retrievedModel, CUSTOM_MODEL_UPDATE_IN_BACKGROUND);
+    sharedPreferencesUtil.clearDownloadCustomModelDetails(CUSTOM_MODEL_DOWNLOAD_COMPLETE.getName());
+    retrievedModel = sharedPreferencesUtil.getCustomModelDetails(MODEL_NAME);
+    assertEquals(retrievedModel, CUSTOM_MODEL_DOWNLOAD_COMPLETE);
+  }
+
+  @Test
   public void listDownloadedModels_localModelFound() {
-    sharedPreferencesUtil.setUploadedCustomModelDetails(CUSTOM_MODEL_DOWNLOAD_COMPLETE);
+    sharedPreferencesUtil.setLoadedCustomModelDetails(CUSTOM_MODEL_DOWNLOAD_COMPLETE);
     Set<CustomModel> retrievedModel = sharedPreferencesUtil.listDownloadedModels();
     assertEquals(retrievedModel.size(), 1);
     assertEquals(retrievedModel.iterator().next(), CUSTOM_MODEL_DOWNLOAD_COMPLETE);
@@ -140,21 +155,111 @@ public class SharedPreferencesUtilTest {
 
   @Test
   public void listDownloadedModels_multipleModels() {
-    sharedPreferencesUtil.setUploadedCustomModelDetails(CUSTOM_MODEL_DOWNLOAD_COMPLETE);
+    sharedPreferencesUtil.setLoadedCustomModelDetails(CUSTOM_MODEL_DOWNLOAD_COMPLETE);
 
     CustomModel model2 =
         new CustomModel(MODEL_NAME + "2", MODEL_HASH + "2", 102, 0, "file/path/store/ModelName2/1");
-    sharedPreferencesUtil.setUploadedCustomModelDetails(model2);
+    sharedPreferencesUtil.setLoadedCustomModelDetails(model2);
 
     CustomModel model3 =
         new CustomModel(MODEL_NAME + "3", MODEL_HASH + "3", 103, 0, "file/path/store/ModelName3/1");
 
-    sharedPreferencesUtil.setUploadedCustomModelDetails(model3);
+    sharedPreferencesUtil.setLoadedCustomModelDetails(model3);
 
     Set<CustomModel> retrievedModel = sharedPreferencesUtil.listDownloadedModels();
     assertEquals(retrievedModel.size(), 3);
     assertTrue(retrievedModel.contains(CUSTOM_MODEL_DOWNLOAD_COMPLETE));
     assertTrue(retrievedModel.contains(model2));
     assertTrue(retrievedModel.contains(model3));
+  }
+
+  @Test
+  public void getCustomModelStatsCollectionFlag_defaultFirebaseAppTrue() {
+    assertEquals(
+        sharedPreferencesUtil.getCustomModelStatsCollectionFlag(),
+        app.isDataCollectionDefaultEnabled());
+    assertTrue(sharedPreferencesUtil.getCustomModelStatsCollectionFlag());
+  }
+
+  @Test
+  public void getCustomModelStatsCollectionFlag_defaultFirebaseAppFalse() {
+    app.setDataCollectionDefaultEnabled(Boolean.FALSE);
+    // default sharedPreferenceUtil
+    SharedPreferencesUtil disableLogUtil = new SharedPreferencesUtil(app);
+    assertEquals(
+        disableLogUtil.getCustomModelStatsCollectionFlag(), app.isDataCollectionDefaultEnabled());
+    assertFalse(disableLogUtil.getCustomModelStatsCollectionFlag());
+  }
+
+  @Test
+  public void getCustomModelStatsCollectionFlag_overrideFirebaseAppFalse() {
+    app.setDataCollectionDefaultEnabled(Boolean.FALSE);
+    // default sharedPreferenceUtil
+    SharedPreferencesUtil sharedPreferencesUtil2 = new SharedPreferencesUtil(app);
+    sharedPreferencesUtil2.setCustomModelStatsCollectionEnabled(true);
+    assertEquals(sharedPreferencesUtil2.getCustomModelStatsCollectionFlag(), true);
+    assertTrue(sharedPreferencesUtil2.getCustomModelStatsCollectionFlag());
+  }
+
+  @Test
+  public void setCustomModelStatsCollectionFlag_updates() {
+    sharedPreferencesUtil.setCustomModelStatsCollectionEnabled(false);
+    assertFalse(sharedPreferencesUtil.getCustomModelStatsCollectionFlag());
+    sharedPreferencesUtil.setCustomModelStatsCollectionEnabled(true);
+    assertTrue(sharedPreferencesUtil.getCustomModelStatsCollectionFlag());
+  }
+
+  @Test
+  public void setCustomModelStatsCollectionFlag_nullUpdates() {
+    sharedPreferencesUtil.setCustomModelStatsCollectionEnabled(false);
+    sharedPreferencesUtil.setCustomModelStatsCollectionEnabled(null);
+    assertEquals(
+        sharedPreferencesUtil.getCustomModelStatsCollectionFlag(),
+        app.isDataCollectionDefaultEnabled());
+    app.setDataCollectionDefaultEnabled(Boolean.FALSE);
+    assertFalse(sharedPreferencesUtil.getCustomModelStatsCollectionFlag());
+    app.setDataCollectionDefaultEnabled(Boolean.TRUE);
+    assertTrue(sharedPreferencesUtil.getCustomModelStatsCollectionFlag());
+  }
+
+  @Test
+  public void getModelDownloadBeginTimeMs_default0() {
+    assertEquals(sharedPreferencesUtil.getModelDownloadBeginTimeMs(CUSTOM_MODEL_DOWNLOADING), 0L);
+  }
+
+  @Test
+  public void setModelDownloadBeginTimeMs_updates() {
+    SystemClock.setCurrentTimeMillis(100L);
+    sharedPreferencesUtil.setDownloadingCustomModelDetails(CUSTOM_MODEL_DOWNLOADING);
+    assertEquals(sharedPreferencesUtil.getModelDownloadBeginTimeMs(CUSTOM_MODEL_DOWNLOADING), 100L);
+
+    // Completing the download clears the begin time.
+    SystemClock.setCurrentTimeMillis(200L);
+    sharedPreferencesUtil.setLoadedCustomModelDetails(CUSTOM_MODEL_DOWNLOAD_COMPLETE);
+    assertEquals(sharedPreferencesUtil.getModelDownloadBeginTimeMs(CUSTOM_MODEL_DOWNLOADING), 0L);
+  }
+
+  @Test
+  public void getModelDownloadCompleteTimeMs_default0() {
+    assertEquals(
+        sharedPreferencesUtil.getModelDownloadCompleteTimeMs(CUSTOM_MODEL_DOWNLOADING), 0L);
+  }
+
+  @Test
+  public void setModelDownloadCompleteTimeMs_updates() {
+    sharedPreferencesUtil.setModelDownloadCompleteTimeMs(CUSTOM_MODEL_DOWNLOADING, 100L);
+    assertEquals(
+        sharedPreferencesUtil.getModelDownloadCompleteTimeMs(CUSTOM_MODEL_DOWNLOADING), 100L);
+
+    // Completing the download clears the completion time.
+    sharedPreferencesUtil.setModelDownloadCompleteTimeMs(CUSTOM_MODEL_DOWNLOADING, 250L);
+    assertEquals(
+        sharedPreferencesUtil.getModelDownloadCompleteTimeMs(CUSTOM_MODEL_DOWNLOADING), 250L);
+
+    // Completing the download clears the begin time.
+    SystemClock.setCurrentTimeMillis(300L);
+    sharedPreferencesUtil.setLoadedCustomModelDetails(CUSTOM_MODEL_DOWNLOAD_COMPLETE);
+    assertEquals(
+        sharedPreferencesUtil.getModelDownloadCompleteTimeMs(CUSTOM_MODEL_DOWNLOADING), 0L);
   }
 }

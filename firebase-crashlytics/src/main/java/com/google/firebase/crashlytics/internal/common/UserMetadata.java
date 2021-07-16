@@ -16,18 +16,17 @@ package com.google.firebase.crashlytics.internal.common;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import com.google.firebase.crashlytics.internal.Logger;
-import java.util.Collections;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /** Handles attributes set by the user. */
 public class UserMetadata {
   static final int MAX_ATTRIBUTES = 64;
   static final int MAX_ATTRIBUTE_SIZE = 1024;
+  static final int MAX_INTERNAL_KEY_SIZE = 8192;
 
   private String userId = null;
-  private final ConcurrentHashMap<String, String> attributes = new ConcurrentHashMap<>();
+  private final KeysMap customKeys = new KeysMap(MAX_ATTRIBUTES, MAX_ATTRIBUTE_SIZE);
+  private final KeysMap internalKeys = new KeysMap(MAX_ATTRIBUTES, MAX_INTERNAL_KEY_SIZE);
 
   public UserMetadata() {}
 
@@ -37,40 +36,27 @@ public class UserMetadata {
   }
 
   public void setUserId(String identifier) {
-    userId = sanitizeAttribute(identifier);
+    userId = customKeys.sanitizeAttribute(identifier);
   }
 
   @NonNull
   public Map<String, String> getCustomKeys() {
-    // Use of ConcurrentHashMap as the underlying attributes map guarantees safety should
-    // attributes be added after this unmodifiable view is returned.
-    return Collections.unmodifiableMap(attributes);
+    return customKeys.getKeys();
   }
 
   public void setCustomKey(String key, String value) {
-    if (key == null) {
-      throw new IllegalArgumentException("Custom attribute key must not be null.");
-    }
-
-    key = sanitizeAttribute(key);
-
-    if (attributes.size() >= MAX_ATTRIBUTES && !attributes.containsKey(key)) {
-      Logger.getLogger().d("Exceeded maximum number of custom attributes (" + MAX_ATTRIBUTES + ")");
-      return;
-    }
-
-    value = (value == null) ? "" : sanitizeAttribute(value);
-    attributes.put(key, value);
+    customKeys.setKey(key, value);
   }
 
-  /** Trims the string and truncates it to MAX_ATTRIBUTE_SIZE. */
-  private static String sanitizeAttribute(String input) {
-    if (input != null) {
-      input = input.trim();
-      if (input.length() > MAX_ATTRIBUTE_SIZE) {
-        input = input.substring(0, MAX_ATTRIBUTE_SIZE);
-      }
-    }
-    return input;
+  public void setCustomKeys(Map<String, String> keysAndValues) {
+    customKeys.setKeys(keysAndValues);
+  }
+
+  public Map<String, String> getInternalKeys() {
+    return internalKeys.getKeys();
+  }
+
+  public void setInternalKey(String key, String value) {
+    internalKeys.setKey(key, value);
   }
 }

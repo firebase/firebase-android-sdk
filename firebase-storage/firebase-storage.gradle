@@ -77,6 +77,7 @@ android {
 dependencies {
     implementation project(':firebase-common')
     implementation project(':firebase-components')
+    implementation project(':appcheck:firebase-appcheck-interop')
 
     implementation 'androidx.annotation:annotation:1.1.0'
     implementation 'com.google.android.gms:play-services-base:17.0.0'
@@ -84,6 +85,8 @@ dependencies {
     implementation('com.google.firebase:firebase-auth-interop:18.0.0') {
         exclude group: "com.google.firebase", module: "firebase-common"
     }
+
+    javadocClasspath 'com.google.code.findbugs:jsr305:3.0.2'
 
     androidTestImplementation "androidx.annotation:annotation:1.1.0"
     androidTestImplementation 'androidx.test:rules:1.2.0'
@@ -96,6 +99,8 @@ dependencies {
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation 'androidx.test:rules:1.2.0'
+    testImplementation 'androidx.test:core:1.2.0'
+    testImplementation project(':appcheck:firebase-appcheck')
 }
 
 // ==========================================================================

@@ -19,8 +19,11 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
@@ -41,10 +44,14 @@ import com.google.firebase.FirebaseOptions;
 import com.google.firebase.FirebaseOptions.Builder;
 import com.google.firebase.ml.modeldownloader.CustomModel;
 import com.google.firebase.ml.modeldownloader.CustomModelDownloadConditions;
+import com.google.firebase.ml.modeldownloader.FirebaseMlException;
 import com.google.firebase.ml.modeldownloader.TestOnCompleteListener;
+import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent.DownloadStatus;
+import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent.ErrorCode;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Date;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.junit.After;
@@ -68,14 +75,20 @@ public class ModelFileDownloadServiceTest {
   private static final String MODEL_NAME = "MODEL_NAME_1";
   private static final String MODEL_HASH = "dsf324";
   public static final String MODEL_URL = "https://project.firebase.com/modelName/23424.jpg";
-  private static final long URL_EXPIRATION = 604800L;
 
+  private static final long URL_EXPIRATION_OLD = 1608063572000L;
+
+  private static final long URL_EXPIRATION_FUTURE = (new Date()).getTime() + 600000;
   private static final Long DOWNLOAD_ID = 987923L;
 
+  private static final CustomModel CUSTOM_MODEL_PREVIOUS_LOADED =
+      new CustomModel(MODEL_NAME, MODEL_HASH + "2", 105, 0, "FakeFile/path.tflite");
   private static final CustomModel CUSTOM_MODEL_NO_URL =
       new CustomModel(MODEL_NAME, MODEL_HASH, 100, 0);
   private static final CustomModel CUSTOM_MODEL_URL =
-      new CustomModel(MODEL_NAME, MODEL_HASH, 100, MODEL_URL, URL_EXPIRATION);
+      new CustomModel(MODEL_NAME, MODEL_HASH, 100, MODEL_URL, URL_EXPIRATION_FUTURE);
+  private static final CustomModel CUSTOM_MODEL_EXPIRED_URL =
+      new CustomModel(MODEL_NAME, MODEL_HASH, 100, MODEL_URL, URL_EXPIRATION_OLD);
   private static final CustomModel CUSTOM_MODEL_DOWNLOADING =
       new CustomModel(MODEL_NAME, MODEL_HASH, 100, DOWNLOAD_ID);
   CustomModel customModelDownloadComplete;
@@ -87,16 +100,19 @@ public class ModelFileDownloadServiceTest {
   File testAppModelFile;
 
   private ModelFileDownloadService modelFileDownloadService;
+
+  private ModelFileDownloadService modelFileDownloadServiceInitialLoad;
   private SharedPreferencesUtil sharedPreferencesUtil;
   @Mock DownloadManager mockDownloadManager;
   @Mock ModelFileManager mockFileManager;
+  @Mock FirebaseMlLogger mockStatsLogger;
 
   ExecutorService executor;
   private MatrixCursor matrixCursor;
   FirebaseApp app;
 
   @Before
-  public void setUp() {
+  public void setUp() throws IOException {
     MockitoAnnotations.initMocks(this);
     FirebaseApp.clearInstancesForTest();
     app = FirebaseApp.initializeApp(ApplicationProvider.getApplicationContext(), FIREBASE_OPTIONS);
@@ -107,18 +123,28 @@ public class ModelFileDownloadServiceTest {
 
     modelFileDownloadService =
         new ModelFileDownloadService(
-            app, mockDownloadManager, mockFileManager, sharedPreferencesUtil);
+            app,
+            mockDownloadManager,
+            mockFileManager,
+            sharedPreferencesUtil,
+            mockStatsLogger,
+            false);
+
+    modelFileDownloadServiceInitialLoad =
+        new ModelFileDownloadService(
+            app,
+            mockDownloadManager,
+            mockFileManager,
+            sharedPreferencesUtil,
+            mockStatsLogger,
+            true);
 
     matrixCursor = new MatrixCursor(new String[] {DownloadManager.COLUMN_STATUS});
-    try {
-      testTempModelFile = File.createTempFile("fakeTempFile", ".tflite");
+    testTempModelFile = File.createTempFile("fakeTempFile", ".tflite");
 
-      testAppModelFile = File.createTempFile("fakeAppFile", ".tflite");
-      customModelDownloadComplete =
-          new CustomModel(MODEL_NAME, MODEL_HASH, 100, 0, testAppModelFile.getPath());
-    } catch (IOException ex) {
-      System.out.println("Error creating test files");
-    }
+    testAppModelFile = File.createTempFile("fakeAppFile", ".tflite");
+    customModelDownloadComplete =
+        new CustomModel(MODEL_NAME, MODEL_HASH, 100, 0, testAppModelFile.getPath());
   }
 
   @After
@@ -160,6 +186,9 @@ public class ModelFileDownloadServiceTest {
         sharedPreferencesUtil.getDownloadingCustomModelDetails(MODEL_NAME),
         CUSTOM_MODEL_DOWNLOADING);
 
+    verify(mockStatsLogger, times(1))
+        .logDownloadEventWithExactDownloadTime(
+            eq(CUSTOM_MODEL_DOWNLOADING), eq(ErrorCode.NO_ERROR), eq(DownloadStatus.SUCCEEDED));
     verify(mockDownloadManager, times(1)).enqueue(any());
     verify(mockDownloadManager, atLeastOnce()).query(any());
   }
@@ -178,6 +207,7 @@ public class ModelFileDownloadServiceTest {
     Task<Void> task =
         modelFileDownloadService.download(
             CUSTOM_MODEL_URL, new CustomModelDownloadConditions.Builder().requireWifi().build());
+    when(mockDownloadManager.remove(anyLong())).thenReturn(1);
 
     // Complete the download
     Intent downloadCompleteIntent = new Intent(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
@@ -194,8 +224,28 @@ public class ModelFileDownloadServiceTest {
     assertEquals(
         sharedPreferencesUtil.getDownloadingCustomModelDetails(MODEL_NAME),
         CUSTOM_MODEL_DOWNLOADING);
+    verify(mockStatsLogger, times(1))
+        .logDownloadEventWithExactDownloadTime(
+            eq(CUSTOM_MODEL_DOWNLOADING), eq(ErrorCode.NO_ERROR), eq(DownloadStatus.SUCCEEDED));
     verify(mockDownloadManager, times(1)).enqueue(any());
     verify(mockDownloadManager, atLeastOnce()).query(any());
+  }
+
+  @Test
+  public void getExistingDownloadTask_matchingTask() {
+    Task<Void> downloadTask =
+        modelFileDownloadService.getTaskCompletionSourceInstance(99).getTask();
+    assertEquals(modelFileDownloadService.getExistingDownloadTask(99), downloadTask);
+  }
+
+  @Test
+  public void getExistingDownloadTask_noMatchingTask() {
+    assertNull(modelFileDownloadService.getExistingDownloadTask(77));
+  }
+
+  @Test
+  public void getExistingDownloadTask_noDownloadId() {
+    assertNull(modelFileDownloadService.getExistingDownloadTask(0));
   }
 
   @Test
@@ -223,6 +273,12 @@ public class ModelFileDownloadServiceTest {
     assertNull(sharedPreferencesUtil.getDownloadingCustomModelDetails(MODEL_NAME));
     verify(mockDownloadManager, never()).enqueue(any());
     verify(mockDownloadManager, never()).query(any());
+    verify(mockStatsLogger, times(1))
+        .logDownloadEventWithErrorCode(
+            eq(CUSTOM_MODEL_NO_URL),
+            eq(false),
+            eq(DownloadStatus.EXPLICITLY_REQUESTED),
+            eq(ErrorCode.NO_ERROR));
   }
 
   @Test
@@ -248,15 +304,158 @@ public class ModelFileDownloadServiceTest {
     assertEquals(
         sharedPreferencesUtil.getDownloadingCustomModelDetails(MODEL_NAME),
         CUSTOM_MODEL_DOWNLOADING);
+    verify(mockStatsLogger, times(1))
+        .logDownloadEventWithExactDownloadTime(
+            eq(CUSTOM_MODEL_DOWNLOADING), eq(ErrorCode.NO_ERROR), eq(DownloadStatus.SUCCEEDED));
+    verify(mockDownloadManager, times(1)).enqueue(any());
+    verify(mockDownloadManager, atLeastOnce()).query(any());
+
+    verify(mockStatsLogger, times(1))
+        .logDownloadEventWithErrorCode(
+            eq(CUSTOM_MODEL_URL),
+            eq(false),
+            eq(DownloadStatus.EXPLICITLY_REQUESTED),
+            eq(ErrorCode.NO_ERROR));
+  }
+
+  @Test
+  public void ensureModelDownloaded_downloadCompletes_missingModel() throws Exception {
+    when(mockDownloadManager.enqueue(any())).thenReturn(DOWNLOAD_ID);
+    matrixCursor.addRow(new Integer[] {DownloadManager.STATUS_SUCCESSFUL});
+    when(mockDownloadManager.query(any())).thenReturn(matrixCursor);
+
+    TestOnCompleteListener<Void> onCompleteListener = new TestOnCompleteListener<>();
+    Task<Void> task = modelFileDownloadService.ensureModelDownloaded(CUSTOM_MODEL_URL);
+
+    // clear the model before completing the download
+    sharedPreferencesUtil.clearModelDetails(CUSTOM_MODEL_URL.getName());
+
+    // Complete the download
+    Intent downloadCompleteIntent = new Intent(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
+    downloadCompleteIntent.putExtra(DownloadManager.EXTRA_DOWNLOAD_ID, DOWNLOAD_ID);
+    app.getApplicationContext().sendBroadcast(downloadCompleteIntent);
+
+    try {
+      task.addOnCompleteListener(executor, onCompleteListener);
+      onCompleteListener.await();
+    } catch (FirebaseMlException ex) {
+      assertEquals(ex.getCode(), FirebaseMlException.INTERNAL);
+    }
+    assertTrue(task.isComplete());
+    assertFalse(task.isSuccessful());
+    assertTrue(task.getException() instanceof FirebaseMlException);
 
     verify(mockDownloadManager, times(1)).enqueue(any());
     verify(mockDownloadManager, atLeastOnce()).query(any());
+
+    verify(mockStatsLogger, times(1))
+        .logDownloadEventWithErrorCode(
+            eq(CUSTOM_MODEL_URL),
+            eq(false),
+            eq(DownloadStatus.EXPLICITLY_REQUESTED),
+            eq(ErrorCode.NO_ERROR));
   }
 
   @Test
   public void ensureModelDownloaded_downloadFailed() {
     when(mockDownloadManager.enqueue(any())).thenReturn(DOWNLOAD_ID);
-    matrixCursor.addRow(new Integer[] {DownloadManager.STATUS_FAILED});
+    matrixCursor =
+        new MatrixCursor(
+            new String[] {DownloadManager.COLUMN_STATUS, DownloadManager.COLUMN_REASON});
+    matrixCursor.addRow(
+        new Integer[] {DownloadManager.STATUS_FAILED, DownloadManager.ERROR_INSUFFICIENT_SPACE});
+    when(mockDownloadManager.query(any())).thenReturn(matrixCursor);
+    TestOnCompleteListener<Void> onCompleteListener = new TestOnCompleteListener<>();
+    Task<Void> task = modelFileDownloadService.ensureModelDownloaded(CUSTOM_MODEL_URL);
+
+    try {
+      // Complete the download
+      Intent downloadCompleteIntent = new Intent(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
+      downloadCompleteIntent.putExtra(DownloadManager.EXTRA_DOWNLOAD_ID, DOWNLOAD_ID);
+      app.getApplicationContext().sendBroadcast(downloadCompleteIntent);
+
+      task.addOnCompleteListener(executor, onCompleteListener);
+      onCompleteListener.await();
+    } catch (FirebaseMlException ex) {
+      assertEquals(ex.getCode(), FirebaseMlException.NOT_ENOUGH_SPACE);
+    } catch (Exception ex) {
+      fail("Unexpected error: " + ex.getMessage());
+    }
+
+    assertTrue(task.isComplete());
+    assertFalse(task.isSuccessful());
+    assertTrue(task.getException() instanceof FirebaseMlException);
+    assertEquals(
+        sharedPreferencesUtil.getDownloadingCustomModelDetails(MODEL_NAME),
+        CUSTOM_MODEL_DOWNLOADING);
+
+    verify(mockDownloadManager, times(1)).enqueue(any());
+    verify(mockDownloadManager, atLeastOnce()).query(any());
+
+    verify(mockStatsLogger, times(1))
+        .logDownloadEventWithErrorCode(
+            eq(CUSTOM_MODEL_URL),
+            eq(false),
+            eq(DownloadStatus.EXPLICITLY_REQUESTED),
+            eq(ErrorCode.NO_ERROR));
+  }
+
+  @Test
+  public void ensureModelDownloaded_downloadFailed_urlExpiry() {
+    when(mockDownloadManager.enqueue(any())).thenReturn(DOWNLOAD_ID);
+    matrixCursor =
+        new MatrixCursor(
+            new String[] {DownloadManager.COLUMN_STATUS, DownloadManager.COLUMN_REASON});
+    matrixCursor.addRow(new Integer[] {DownloadManager.STATUS_FAILED, 400});
+    when(mockDownloadManager.query(any())).thenReturn(matrixCursor);
+
+    CustomModel justAboutToExpireModel =
+        new CustomModel(MODEL_NAME, MODEL_HASH, 100, MODEL_URL, (new Date()).getTime() + 3);
+
+    TestOnCompleteListener<Void> onCompleteListener = new TestOnCompleteListener<>();
+    Task<Void> task = modelFileDownloadService.ensureModelDownloaded(justAboutToExpireModel);
+
+    try {
+      // Complete the download
+      // sleep long enough for the url to expire
+      Thread.sleep(4);
+      Intent downloadCompleteIntent = new Intent(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
+      downloadCompleteIntent.putExtra(DownloadManager.EXTRA_DOWNLOAD_ID, DOWNLOAD_ID);
+      app.getApplicationContext().sendBroadcast(downloadCompleteIntent);
+
+      task.addOnCompleteListener(executor, onCompleteListener);
+      onCompleteListener.await();
+    } catch (FirebaseMlException ex) {
+      assertEquals(ex.getCode(), FirebaseMlException.DOWNLOAD_URL_EXPIRED);
+    } catch (Exception ex) {
+      fail("Unexpected error message: " + ex.getMessage());
+    }
+
+    assertTrue(task.isComplete());
+    assertFalse(task.isSuccessful());
+    assertTrue(task.getException().getMessage().contains("Retry: Expired URL"));
+    assertEquals(
+        sharedPreferencesUtil.getDownloadingCustomModelDetails(MODEL_NAME),
+        CUSTOM_MODEL_DOWNLOADING);
+
+    verify(mockDownloadManager, times(1)).enqueue(any());
+    verify(mockDownloadManager, atLeastOnce()).query(any());
+
+    verify(mockStatsLogger, times(1))
+        .logDownloadEventWithErrorCode(
+            eq(justAboutToExpireModel),
+            eq(false),
+            eq(DownloadStatus.EXPLICITLY_REQUESTED),
+            eq(ErrorCode.NO_ERROR));
+  }
+
+  @Test
+  public void ensureModelDownloaded_downloadFailed_goodUrlExpiry() {
+    when(mockDownloadManager.enqueue(any())).thenReturn(DOWNLOAD_ID);
+    matrixCursor =
+        new MatrixCursor(
+            new String[] {DownloadManager.COLUMN_STATUS, DownloadManager.COLUMN_REASON});
+    matrixCursor.addRow(new Integer[] {DownloadManager.STATUS_FAILED, 304});
     when(mockDownloadManager.query(any())).thenReturn(matrixCursor);
 
     TestOnCompleteListener<Void> onCompleteListener = new TestOnCompleteListener<>();
@@ -270,23 +469,202 @@ public class ModelFileDownloadServiceTest {
 
       task.addOnCompleteListener(executor, onCompleteListener);
       onCompleteListener.await();
+    } catch (FirebaseMlException ex) {
+      assertEquals(ex.getCode(), FirebaseMlException.INTERNAL);
     } catch (Exception ex) {
-      assertTrue(ex.getMessage().contains("Failed"));
+      fail("Unexpected error message: " + ex.getMessage());
     }
 
     assertTrue(task.isComplete());
     assertFalse(task.isSuccessful());
-    assertTrue(task.getException().getMessage().contains("Failed"));
+    assertTrue(task.getException().getMessage().contains("304"));
     assertEquals(
         sharedPreferencesUtil.getDownloadingCustomModelDetails(MODEL_NAME),
         CUSTOM_MODEL_DOWNLOADING);
 
     verify(mockDownloadManager, times(1)).enqueue(any());
     verify(mockDownloadManager, atLeastOnce()).query(any());
+
+    verify(mockStatsLogger, times(1))
+        .logDownloadEventWithErrorCode(
+            eq(CUSTOM_MODEL_URL),
+            eq(false),
+            eq(DownloadStatus.EXPLICITLY_REQUESTED),
+            eq(ErrorCode.NO_ERROR));
   }
 
   @Test
-  public void scheduleModelDownload_success() {
+  public void ensureModelDownloaded_downloadFailed_noUrl() {
+    when(mockDownloadManager.enqueue(any())).thenReturn(DOWNLOAD_ID);
+    matrixCursor =
+        new MatrixCursor(
+            new String[] {DownloadManager.COLUMN_STATUS, DownloadManager.COLUMN_REASON});
+    matrixCursor.addRow(new Integer[] {DownloadManager.STATUS_FAILED, 400});
+    when(mockDownloadManager.query(any())).thenReturn(matrixCursor);
+
+    TestOnCompleteListener<Void> onCompleteListener = new TestOnCompleteListener<>();
+    Task<Void> task = modelFileDownloadService.ensureModelDownloaded(CUSTOM_MODEL_NO_URL);
+
+    try {
+      // Complete the download
+      Intent downloadCompleteIntent = new Intent(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
+      downloadCompleteIntent.putExtra(DownloadManager.EXTRA_DOWNLOAD_ID, DOWNLOAD_ID);
+      app.getApplicationContext().sendBroadcast(downloadCompleteIntent);
+
+      task.addOnCompleteListener(executor, onCompleteListener);
+      onCompleteListener.await();
+    } catch (FirebaseMlException ex) {
+      assertEquals(ex.getCode(), FirebaseMlException.INTERNAL);
+    } catch (Exception ex) {
+      fail("Unexpected error message: " + ex.getMessage());
+    }
+
+    assertTrue(task.isComplete());
+    assertFalse(task.isSuccessful());
+    assertTrue(task.getException().getMessage().contains("Failed to schedule"));
+    assertEquals(sharedPreferencesUtil.getDownloadingCustomModelDetails(MODEL_NAME), null);
+
+    verify(mockDownloadManager, never()).enqueue(any());
+
+    verify(mockStatsLogger, times(1))
+        .logDownloadEventWithErrorCode(
+            eq(CUSTOM_MODEL_NO_URL),
+            eq(false),
+            eq(DownloadStatus.EXPLICITLY_REQUESTED),
+            eq(ErrorCode.NO_ERROR));
+  }
+
+  @Test
+  public void ensureModelDownloaded_alreadyInProgess_completed() throws Exception {
+    when(mockDownloadManager.enqueue(any())).thenReturn(DOWNLOAD_ID);
+    matrixCursor.addRow(new Integer[] {DownloadManager.STATUS_SUCCESSFUL});
+    when(mockDownloadManager.query(any())).thenReturn(matrixCursor);
+
+    // set up first request
+    TestOnCompleteListener<Void> onCompleteListener = new TestOnCompleteListener<>();
+    Task<Void> task = modelFileDownloadService.ensureModelDownloaded(CUSTOM_MODEL_URL);
+    task.addOnCompleteListener(executor, onCompleteListener);
+    assertEquals(
+        sharedPreferencesUtil.getDownloadingCustomModelDetails(MODEL_NAME),
+        CUSTOM_MODEL_DOWNLOADING);
+
+    // now retry before completing
+    TestOnCompleteListener<Void> onCompleteListener2 = new TestOnCompleteListener<>();
+    Task<Void> task2 = modelFileDownloadService.ensureModelDownloaded(CUSTOM_MODEL_URL);
+    task2.addOnCompleteListener(executor, onCompleteListener2);
+
+    // Complete the download
+    Intent downloadCompleteIntent = new Intent(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
+    downloadCompleteIntent.putExtra(DownloadManager.EXTRA_DOWNLOAD_ID, DOWNLOAD_ID);
+    app.getApplicationContext().sendBroadcast(downloadCompleteIntent);
+
+    onCompleteListener.await();
+    onCompleteListener2.await();
+
+    assertTrue(task.isComplete());
+    assertTrue(task.isSuccessful());
+    assertNull(task.getResult());
+    assertTrue(task2.isComplete());
+    assertTrue(task2.isSuccessful());
+    assertNull(task2.getResult());
+    assertEquals(
+        sharedPreferencesUtil.getDownloadingCustomModelDetails(MODEL_NAME),
+        CUSTOM_MODEL_DOWNLOADING);
+
+    verify(mockDownloadManager, times(1)).enqueue(any());
+    verify(mockDownloadManager, atLeastOnce()).query(any());
+    verify(mockStatsLogger, atLeastOnce())
+        .logDownloadEventWithErrorCode(
+            eq(CUSTOM_MODEL_DOWNLOADING),
+            eq(false),
+            eq(DownloadStatus.DOWNLOADING),
+            eq(ErrorCode.NO_ERROR));
+
+    verify(mockStatsLogger, times(2))
+        .logDownloadEventWithErrorCode(
+            eq(CUSTOM_MODEL_URL),
+            eq(false),
+            eq(DownloadStatus.EXPLICITLY_REQUESTED),
+            eq(ErrorCode.NO_ERROR));
+  }
+
+  @Test
+  public void ensureModelDownloaded_alreadyInProgess_UrlExpired() throws Exception {
+    when(mockDownloadManager.enqueue(any())).thenReturn(DOWNLOAD_ID);
+    matrixCursor.addRow(new Integer[] {DownloadManager.PAUSED_WAITING_FOR_NETWORK});
+    MatrixCursor matrixCursor2 =
+        new MatrixCursor(
+            new String[] {DownloadManager.COLUMN_STATUS, DownloadManager.COLUMN_REASON});
+    matrixCursor2.addRow(new Integer[] {DownloadManager.STATUS_FAILED, 400});
+
+    MatrixCursor matrixCursorRetry = new MatrixCursor(new String[] {DownloadManager.COLUMN_STATUS});
+    matrixCursorRetry.addRow(new Integer[] {DownloadManager.STATUS_SUCCESSFUL});
+    when(mockDownloadManager.query(any()))
+        .thenReturn(matrixCursor) // first download query in progress - get status
+        // .thenReturn(matrixCursor2) // first download failure triggered - get status
+        // .thenReturn(matrixCursor2) // first download failed - check error cause
+        .thenReturn(matrixCursorRetry); // second download query
+
+    when(mockDownloadManager.remove(eq(DOWNLOAD_ID))).thenReturn(1);
+
+    // set up the first request
+    CustomModel justAboutToExpireModel =
+        new CustomModel(MODEL_NAME, MODEL_HASH, 100, MODEL_URL, (new Date()).getTime() + 30);
+    TestOnCompleteListener<Void> onCompleteListener = new TestOnCompleteListener<>();
+    Task<Void> task = modelFileDownloadService.ensureModelDownloaded(justAboutToExpireModel);
+    task.addOnCompleteListener(executor, onCompleteListener);
+
+    assertEquals(
+        sharedPreferencesUtil.getDownloadingCustomModelDetails(MODEL_NAME),
+        CUSTOM_MODEL_DOWNLOADING);
+
+    // now retry before completing
+    Task<Void> task2 = modelFileDownloadService.ensureModelDownloaded(CUSTOM_MODEL_EXPIRED_URL);
+    try {
+      TestOnCompleteListener<Void> onCompleteListener2 = new TestOnCompleteListener<>();
+      task2.addOnCompleteListener(executor, onCompleteListener2);
+      Intent downloadCompleteIntent = new Intent(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
+      downloadCompleteIntent.putExtra(DownloadManager.EXTRA_DOWNLOAD_ID, DOWNLOAD_ID);
+      app.getApplicationContext().sendBroadcast(downloadCompleteIntent);
+      onCompleteListener2.await();
+    } catch (FirebaseMlException ex) {
+      assertEquals(ex.getCode(), FirebaseMlException.DOWNLOAD_URL_EXPIRED);
+    }
+
+    verify(mockDownloadManager, times(1)).enqueue(any());
+    verify(mockDownloadManager, times(1)).query(any());
+    verify(mockDownloadManager, times(1)).remove(anyLong());
+    verify(mockStatsLogger, times(1))
+        .logDownloadEventWithErrorCode(
+            eq(CUSTOM_MODEL_DOWNLOADING),
+            eq(false),
+            eq(DownloadStatus.SCHEDULED),
+            eq(ErrorCode.NO_ERROR));
+    verify(mockStatsLogger, times(1))
+        .logDownloadEventWithErrorCode(
+            eq(CUSTOM_MODEL_DOWNLOADING),
+            eq(false),
+            eq(DownloadStatus.SCHEDULED),
+            eq(ErrorCode.NO_ERROR));
+    verify(mockStatsLogger, times(1))
+        .logDownloadFailureWithReason(
+            eq(CUSTOM_MODEL_EXPIRED_URL), eq(false), eq(ErrorCode.URI_EXPIRED.getValue()));
+    verify(mockStatsLogger, times(1))
+        .logDownloadEventWithErrorCode(
+            eq(CUSTOM_MODEL_EXPIRED_URL),
+            eq(false),
+            eq(DownloadStatus.EXPLICITLY_REQUESTED),
+            eq(ErrorCode.NO_ERROR));
+    verify(mockStatsLogger, times(1))
+        .logDownloadEventWithErrorCode(
+            eq(justAboutToExpireModel),
+            eq(false),
+            eq(DownloadStatus.EXPLICITLY_REQUESTED),
+            eq(ErrorCode.NO_ERROR));
+  }
+
+  @Test
+  public void scheduleModelDownload_success() throws FirebaseMlException {
     when(mockDownloadManager.enqueue(any())).thenReturn(DOWNLOAD_ID);
     Long id = modelFileDownloadService.scheduleModelDownload(CUSTOM_MODEL_URL);
     assertEquals(DOWNLOAD_ID, id);
@@ -294,10 +672,16 @@ public class ModelFileDownloadServiceTest {
         sharedPreferencesUtil.getDownloadingCustomModelDetails(MODEL_NAME),
         CUSTOM_MODEL_DOWNLOADING);
     verify(mockDownloadManager, times(1)).enqueue(any());
+    verify(mockStatsLogger, times(1))
+        .logDownloadEventWithErrorCode(
+            eq(CUSTOM_MODEL_DOWNLOADING),
+            eq(false),
+            eq(DownloadStatus.SCHEDULED),
+            eq(ErrorCode.NO_ERROR));
   }
 
   @Test
-  public void scheduleModelDownload_noUri() {
+  public void scheduleModelDownload_noUri() throws FirebaseMlException {
     assertNull(modelFileDownloadService.scheduleModelDownload(CUSTOM_MODEL_NO_URL));
     verify(mockDownloadManager, never()).enqueue(any());
   }
@@ -310,6 +694,15 @@ public class ModelFileDownloadServiceTest {
         () -> modelFileDownloadService.scheduleModelDownload(CUSTOM_MODEL_URL));
     assertNull(sharedPreferencesUtil.getDownloadingCustomModelDetails(MODEL_NAME));
     verify(mockDownloadManager, times(1)).enqueue(any());
+  }
+
+  @Test
+  public void scheduleModelDownload_failed_expiredUrl() {
+    assertThrows(
+        FirebaseMlException.class,
+        () -> modelFileDownloadService.scheduleModelDownload(CUSTOM_MODEL_EXPIRED_URL));
+    assertNull(sharedPreferencesUtil.getDownloadingCustomModelDetails(MODEL_NAME));
+    verify(mockDownloadManager, never()).enqueue(any());
   }
 
   @Test
@@ -340,6 +733,7 @@ public class ModelFileDownloadServiceTest {
     when(mockDownloadManager.openDownloadedFile(anyLong()))
         .thenReturn(
             ParcelFileDescriptor.open(testTempModelFile, ParcelFileDescriptor.MODE_READ_ONLY));
+    when(mockDownloadManager.remove(eq(DOWNLOAD_ID))).thenReturn(1);
 
     when(mockFileManager.moveModelToDestinationFolder(any(), any())).thenReturn(testAppModelFile);
 
@@ -348,10 +742,66 @@ public class ModelFileDownloadServiceTest {
     assertEquals(
         sharedPreferencesUtil.getCustomModelDetails(MODEL_NAME), customModelDownloadComplete);
     verify(mockDownloadManager, times(3)).query(any());
+    verify(mockDownloadManager, times(1)).remove(anyLong());
   }
 
   @Test
-  public void maybeCheckDownloadingComplete_downloadInprogress() throws Exception {
+  public void maybeCheckDownloadingComplete_downloadFailed() throws Exception {
+    sharedPreferencesUtil.setDownloadingCustomModelDetails(CUSTOM_MODEL_DOWNLOADING);
+    assertNull(modelFileDownloadService.getDownloadingModelStatusCode(0L));
+    matrixCursor =
+        new MatrixCursor(
+            new String[] {DownloadManager.COLUMN_STATUS, DownloadManager.COLUMN_REASON});
+    matrixCursor.addRow(
+        new Integer[] {DownloadManager.STATUS_FAILED, DownloadManager.ERROR_INSUFFICIENT_SPACE});
+    when(mockDownloadManager.query(any())).thenReturn(matrixCursor);
+    when(mockDownloadManager.openDownloadedFile(anyLong()))
+        .thenReturn(
+            ParcelFileDescriptor.open(testTempModelFile, ParcelFileDescriptor.MODE_READ_ONLY));
+    when(mockDownloadManager.remove(eq(DOWNLOAD_ID))).thenReturn(1);
+
+    when(mockFileManager.moveModelToDestinationFolder(any(), any())).thenReturn(testAppModelFile);
+
+    modelFileDownloadService.maybeCheckDownloadingComplete();
+
+    assertNull(sharedPreferencesUtil.getCustomModelDetails(MODEL_NAME));
+    verify(mockDownloadManager, times(4)).query(any());
+    verify(mockDownloadManager, times(1)).remove(anyLong());
+    verify(mockStatsLogger, times(1))
+        .logDownloadFailureWithReason(
+            eq(CUSTOM_MODEL_DOWNLOADING), eq(false), eq(DownloadManager.ERROR_INSUFFICIENT_SPACE));
+  }
+
+  @Test
+  public void maybeCheckDownloadingComplete_secondDownloadFailed() throws Exception {
+    sharedPreferencesUtil.setLoadedCustomModelDetails(CUSTOM_MODEL_PREVIOUS_LOADED);
+    sharedPreferencesUtil.setDownloadingCustomModelDetails(CUSTOM_MODEL_DOWNLOADING);
+    assertNull(modelFileDownloadService.getDownloadingModelStatusCode(0L));
+    matrixCursor =
+        new MatrixCursor(
+            new String[] {DownloadManager.COLUMN_STATUS, DownloadManager.COLUMN_REASON});
+    matrixCursor.addRow(
+        new Integer[] {DownloadManager.STATUS_FAILED, DownloadManager.ERROR_FILE_ERROR});
+    when(mockDownloadManager.query(any())).thenReturn(matrixCursor);
+    when(mockDownloadManager.openDownloadedFile(anyLong()))
+        .thenReturn(
+            ParcelFileDescriptor.open(testTempModelFile, ParcelFileDescriptor.MODE_READ_ONLY));
+    when(mockDownloadManager.remove(eq(DOWNLOAD_ID))).thenReturn(1);
+
+    when(mockFileManager.moveModelToDestinationFolder(any(), any())).thenReturn(testAppModelFile);
+
+    modelFileDownloadService.maybeCheckDownloadingComplete();
+
+    assertEquals(
+        sharedPreferencesUtil.getCustomModelDetails(MODEL_NAME), CUSTOM_MODEL_PREVIOUS_LOADED);
+    verify(mockDownloadManager, times(4)).query(any());
+    verify(mockDownloadManager, times(1)).remove(anyLong());
+    verify(mockStatsLogger, times(1))
+        .logDownloadFailureWithReason(any(), eq(false), eq(DownloadManager.ERROR_FILE_ERROR));
+  }
+
+  @Test
+  public void maybeCheckDownloadingComplete_downloadInprogress() {
     sharedPreferencesUtil.setDownloadingCustomModelDetails(CUSTOM_MODEL_DOWNLOADING);
     assertNull(modelFileDownloadService.getDownloadingModelStatusCode(0L));
     matrixCursor.addRow(new Integer[] {DownloadManager.STATUS_RUNNING});
@@ -377,6 +827,7 @@ public class ModelFileDownloadServiceTest {
     when(mockDownloadManager.openDownloadedFile(anyLong()))
         .thenReturn(
             ParcelFileDescriptor.open(testTempModelFile, ParcelFileDescriptor.MODE_READ_ONLY));
+    when(mockDownloadManager.remove(anyLong())).thenReturn(1);
 
     when(mockFileManager.moveModelToDestinationFolder(any(), any())).thenReturn(testAppModelFile);
 
@@ -388,16 +839,19 @@ public class ModelFileDownloadServiceTest {
         sharedPreferencesUtil.getCustomModelDetails(secondModelName),
         new CustomModel(secondModelName, MODEL_HASH, 100, 0, testAppModelFile.getPath()));
     verify(mockDownloadManager, times(5)).query(any());
+    verify(mockDownloadManager, times(2)).remove(anyLong());
   }
 
   @Test
-  public void maybeCheckDownloadingComplete_noDownloadsInProgress() throws Exception {
+  public void maybeCheckDownloadingComplete_noDownloadsInProgress() {
     modelFileDownloadService.maybeCheckDownloadingComplete();
     verify(mockDownloadManager, never()).query(any());
+    verify(mockDownloadManager, never()).remove(anyLong());
   }
 
   @Test
-  public void loadNewlyDownloadedModelFile_successFilePresent() throws Exception {
+  public void loadNewlyDownloadedModelFile_successFilePresent()
+      throws FirebaseMlException, FileNotFoundException {
     // Not found
     assertNull(modelFileDownloadService.getDownloadingModelStatusCode(0L));
     matrixCursor.addRow(new Integer[] {DownloadManager.STATUS_SUCCESSFUL});
@@ -405,6 +859,7 @@ public class ModelFileDownloadServiceTest {
     when(mockDownloadManager.openDownloadedFile(anyLong()))
         .thenReturn(
             ParcelFileDescriptor.open(testTempModelFile, ParcelFileDescriptor.MODE_READ_ONLY));
+    when(mockDownloadManager.remove(anyLong())).thenReturn(1);
 
     when(mockFileManager.moveModelToDestinationFolder(any(), any())).thenReturn(testAppModelFile);
 
@@ -414,10 +869,19 @@ public class ModelFileDownloadServiceTest {
 
     CustomModel retrievedModel = sharedPreferencesUtil.getCustomModelDetails(MODEL_NAME);
     assertEquals(retrievedModel, customModelDownloadComplete);
+    verify(mockDownloadManager, times(1)).remove(anyLong());
+    verify(mockFileManager, never()).deleteNonLatestCustomModels();
+    verify(mockStatsLogger, times(1))
+        .logDownloadEventWithErrorCode(
+            eq(CUSTOM_MODEL_DOWNLOADING),
+            eq(true),
+            eq(DownloadStatus.SUCCEEDED),
+            eq(ErrorCode.NO_ERROR));
   }
 
   @Test
-  public void loadNewlyDownloadedModelFile_successNoFile() throws Exception {
+  public void loadNewlyDownloadedModelFile_successNoFile()
+      throws FileNotFoundException, FirebaseMlException {
     // Not found
     assertNull(modelFileDownloadService.getDownloadingModelStatusCode(0L));
     matrixCursor.addRow(new Integer[] {DownloadManager.STATUS_SUCCESSFUL});
@@ -425,28 +889,88 @@ public class ModelFileDownloadServiceTest {
     doThrow(new FileNotFoundException("File not found."))
         .when(mockDownloadManager)
         .openDownloadedFile(anyLong());
+    when(mockDownloadManager.remove(anyLong())).thenReturn(1);
 
     assertNull(modelFileDownloadService.loadNewlyDownloadedModelFile(CUSTOM_MODEL_DOWNLOADING));
     assertNull(sharedPreferencesUtil.getDownloadingCustomModelDetails(MODEL_NAME));
+    verify(mockDownloadManager, times(1)).remove(anyLong());
+    verify(mockFileManager, never()).deleteNonLatestCustomModels();
+    verify(mockStatsLogger, times(1))
+        .logDownloadEventWithErrorCode(
+            eq(CUSTOM_MODEL_DOWNLOADING),
+            eq(true),
+            eq(DownloadStatus.SUCCEEDED),
+            eq(ErrorCode.NO_ERROR));
   }
 
   @Test
-  public void loadNewlyDownloadedModelFile_Running() throws Exception {
+  public void loadNewlyDownloadedModelFile_Running() throws FirebaseMlException {
     // Not found
     assertNull(modelFileDownloadService.getDownloadingModelStatusCode(0L));
     matrixCursor.addRow(new Integer[] {DownloadManager.STATUS_RUNNING});
     when(mockDownloadManager.query(any())).thenReturn(matrixCursor);
     assertNull(modelFileDownloadService.loadNewlyDownloadedModelFile(CUSTOM_MODEL_DOWNLOADING));
     assertNull(sharedPreferencesUtil.getCustomModelDetails(MODEL_NAME));
+    verify(mockDownloadManager, never()).remove(anyLong());
+    verify(mockFileManager, never()).deleteNonLatestCustomModels();
+    verify(mockStatsLogger, never())
+        .logDownloadEventWithErrorCode(any(), anyBoolean(), any(), any());
   }
 
   @Test
-  public void loadNewlyDownloadedModelFile_Failed() throws Exception {
+  public void loadNewlyDownloadedModelFile_Failed() throws FirebaseMlException {
     // Not found
     assertNull(modelFileDownloadService.getDownloadingModelStatusCode(0L));
-    matrixCursor.addRow(new Integer[] {DownloadManager.STATUS_FAILED});
+    matrixCursor =
+        new MatrixCursor(
+            new String[] {DownloadManager.COLUMN_STATUS, DownloadManager.COLUMN_REASON});
+    matrixCursor.addRow(
+        new Integer[] {DownloadManager.STATUS_FAILED, DownloadManager.ERROR_INSUFFICIENT_SPACE});
+
     when(mockDownloadManager.query(any())).thenReturn(matrixCursor);
+    when(mockDownloadManager.remove(anyLong())).thenReturn(1);
+
     assertNull(modelFileDownloadService.loadNewlyDownloadedModelFile(CUSTOM_MODEL_DOWNLOADING));
     assertNull(sharedPreferencesUtil.getCustomModelDetails(MODEL_NAME));
+    verify(mockDownloadManager, times(1)).remove(anyLong());
+    verify(mockStatsLogger, times(1))
+        .logDownloadFailureWithReason(
+            eq(CUSTOM_MODEL_DOWNLOADING), eq(false), eq(DownloadManager.ERROR_INSUFFICIENT_SPACE));
+    verify(mockFileManager, never()).deleteNonLatestCustomModels();
+  }
+
+  @Test
+  public void loadNewlyDownloadedModelFile_initialLoad_successFilePresent()
+      throws FirebaseMlException, FileNotFoundException {
+    // Not found
+    assertNull(modelFileDownloadServiceInitialLoad.getDownloadingModelStatusCode(0L));
+    matrixCursor.addRow(new Integer[] {DownloadManager.STATUS_SUCCESSFUL});
+    when(mockDownloadManager.query(any())).thenReturn(matrixCursor);
+    when(mockDownloadManager.openDownloadedFile(anyLong()))
+        .thenReturn(
+            ParcelFileDescriptor.open(testTempModelFile, ParcelFileDescriptor.MODE_READ_ONLY));
+    when(mockDownloadManager.remove(anyLong())).thenReturn(1);
+
+    when(mockFileManager.moveModelToDestinationFolder(any(), any())).thenReturn(testAppModelFile);
+
+    assertEquals(
+        modelFileDownloadServiceInitialLoad.loadNewlyDownloadedModelFile(CUSTOM_MODEL_DOWNLOADING),
+        testAppModelFile);
+
+    // second attempt should not call deleteNonLatestCustomModels a second time.
+    assertEquals(
+        modelFileDownloadServiceInitialLoad.loadNewlyDownloadedModelFile(CUSTOM_MODEL_DOWNLOADING),
+        testAppModelFile);
+
+    CustomModel retrievedModel = sharedPreferencesUtil.getCustomModelDetails(MODEL_NAME);
+    assertEquals(retrievedModel, customModelDownloadComplete);
+    verify(mockDownloadManager, times(2)).remove(anyLong());
+    verify(mockFileManager, times(1)).deleteNonLatestCustomModels();
+    verify(mockStatsLogger, times(2))
+        .logDownloadEventWithErrorCode(
+            eq(CUSTOM_MODEL_DOWNLOADING),
+            eq(true),
+            eq(DownloadStatus.SUCCEEDED),
+            eq(ErrorCode.NO_ERROR));
   }
 }

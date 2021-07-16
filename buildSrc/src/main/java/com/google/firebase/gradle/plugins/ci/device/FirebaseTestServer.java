@@ -14,11 +14,14 @@
 
 package com.google.firebase.gradle.plugins.ci.device;
 
+import com.android.build.gradle.TestedExtension;
 import com.android.builder.testing.api.TestServer;
 import com.google.common.collect.ImmutableList;
 import com.google.firebase.gradle.plugins.ci.Environment;
 import java.io.File;
 import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.stream.Collectors;
@@ -29,11 +32,22 @@ public class FirebaseTestServer extends TestServer {
   private final Project project;
   private final FirebaseTestLabExtension extension;
   private final Random random;
+  private final Map<String, Map<String, String>> instrumentationArgs;
 
-  public FirebaseTestServer(Project project, FirebaseTestLabExtension extension) {
+  public FirebaseTestServer(
+      Project project, FirebaseTestLabExtension extension, TestedExtension android) {
     this.project = project;
     this.extension = extension;
+    this.instrumentationArgs = new HashMap<>();
     this.random = new Random(System.currentTimeMillis());
+
+    android
+        .getTestVariants()
+        .all(
+            variant ->
+                instrumentationArgs.put(
+                    variant.getName(),
+                    variant.getMergedFlavor().getTestInstrumentationRunnerArguments()));
   }
 
   @Override
@@ -43,6 +57,8 @@ public class FirebaseTestServer extends TestServer {
 
   @Override
   public void uploadApks(String variantName, File testApk, File testedApk) {
+
+    Map<String, String> currentInstrumentationArgs = instrumentationArgs.get(variantName);
     // test lab requires an "app" apk, so we give an empty apk to it.
     String testedApkPath =
         testedApk != null
@@ -84,6 +100,14 @@ public class FirebaseTestServer extends TestServer {
                 args.add(
                     "--results-dir",
                     Paths.get(dir, project.getPath() + "_" + random.nextLong()).toString()));
+
+    if (currentInstrumentationArgs != null) {
+      String variablesArg =
+          currentInstrumentationArgs.entrySet().stream()
+              .map(entry -> entry.getKey() + "=" + entry.getValue())
+              .collect(Collectors.joining(","));
+      args.add("--environment-variables", variablesArg);
+    }
 
     project.exec(
         spec -> {

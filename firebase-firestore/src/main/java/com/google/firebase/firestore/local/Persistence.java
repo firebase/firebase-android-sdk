@@ -89,6 +89,9 @@ public abstract class Persistence {
   /** Creates an IndexManager that manages our persisted query indexes. */
   abstract IndexManager getIndexManager();
 
+  /** Returns a BundleCache representing the persisted cache of loaded bundles. */
+  abstract BundleCache getBundleCache();
+
   /**
    * Performs an operation inside a persistence transaction. Any reads or writes against persistence
    * must be performed within a transaction. Writes will be committed atomically once the

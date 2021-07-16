@@ -16,7 +16,10 @@ package com.google.firebase.database.core;
 
 import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
 
+import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.InternalHelpers;
+import com.google.firebase.database.Query;
 import com.google.firebase.database.annotations.NotNull;
 import com.google.firebase.database.annotations.Nullable;
 import com.google.firebase.database.collection.LLRBNode;
@@ -476,6 +479,65 @@ public class SyncTree {
         });
   }
 
+  public DataSnapshot persistenceServerCache(Query query) {
+    return InternalHelpers.createDataSnapshot(
+        query.getRef(), persistenceManager.serverCache(query.getSpec()).getIndexedNode());
+  }
+
+  @Nullable
+  public Node getServerValue(QuerySpec query) {
+    return persistenceManager.runInTransaction(
+        () -> {
+          Path path = query.getPath();
+
+          Node serverCacheNode = null;
+          boolean foundAncestorDefaultView = false;
+          // Any covering writes will necessarily be at the root, so really all we need to find is
+          // the server cache. Consider optimizing this once there's a better understanding of
+          // what actual behavior will be.
+          ImmutableTree<SyncPoint> tree = syncPointTree;
+          Path currentPath = path;
+          while (!tree.isEmpty()) {
+            SyncPoint currentSyncPoint = tree.getValue();
+            if (currentSyncPoint != null) {
+              serverCacheNode =
+                  serverCacheNode != null
+                      ? serverCacheNode
+                      : currentSyncPoint.getCompleteServerCache(currentPath);
+              foundAncestorDefaultView =
+                  foundAncestorDefaultView || currentSyncPoint.hasCompleteView();
+            }
+            ChildKey front =
+                currentPath.isEmpty() ? ChildKey.fromString("") : currentPath.getFront();
+            tree = tree.getChild(front);
+            currentPath = currentPath.popFront();
+          }
+
+          SyncPoint syncPoint = syncPointTree.get(path);
+          if (syncPoint == null) {
+            syncPoint = new SyncPoint(persistenceManager);
+            syncPointTree = syncPointTree.set(path, syncPoint);
+          } else {
+            serverCacheNode =
+                serverCacheNode != null
+                    ? serverCacheNode
+                    : syncPoint.getCompleteServerCache(Path.getEmptyPath());
+          }
+
+          CacheNode serverCache =
+              new CacheNode(
+                  IndexedNode.from(
+                      serverCacheNode != null ? serverCacheNode : EmptyNode.Empty(),
+                      query.getIndex()),
+                  serverCacheNode != null,
+                  false);
+
+          WriteTreeRef writesCache = pendingWriteTree.childWrites(path);
+          View view = syncPoint.getView(query, writesCache, serverCache);
+          return view.getCompleteNode();
+        });
+  }
+
   /** Add an event callback for the specified query. */
   public List<? extends Event> addEventRegistration(
       @NotNull final EventRegistration eventRegistration) {
@@ -750,7 +812,7 @@ public class SyncTree {
     public int hashCode() {
       return spec.hashCode();
     }
-  };
+  }
 
   public void keepSynced(final QuerySpec query, final boolean keep) {
     if (keep && !keepSyncedQueries.contains(query)) {
@@ -855,6 +917,20 @@ public class SyncTree {
   /** Return the tag associated with the given query. */
   private Tag tagForQuery(QuerySpec query) {
     return this.queryToTagMap.get(query);
+  }
+
+  /** Similar to calcCompleteEventCache, but doesn't skip the root view cache. */
+  public Node calcCompleteEventCacheFromRoot(Path path, List<Long> writeIdsToExclude) {
+    SyncPoint currentSyncPoint = syncPointTree.getValue();
+    Node serverCache = null;
+    if (currentSyncPoint != null) {
+      serverCache = currentSyncPoint.getCompleteServerCache(Path.getEmptyPath());
+    }
+    if (serverCache != null) {
+      return this.pendingWriteTree.calcCompleteEventCache(
+          path, serverCache, writeIdsToExclude, true);
+    }
+    return calcCompleteEventCache(path, writeIdsToExclude);
   }
 
   /**

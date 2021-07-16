@@ -32,6 +32,13 @@ android {
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
+    lintOptions {
+        // com.squareup.picasso:picasso:2.71828 depends on com.android.support:exifinterface so we
+        // disable this lint error since we have no control over that dependency and enabling
+        // jetification in our SDK build will still require developers to use jetification in their
+        // apps.
+        disable "GradleCompatible"
+    }
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
@@ -69,10 +76,6 @@ dependencies {
     implementation project(':firebase-common')
     implementation project(':firebase-components')
     implementation project(':firebase-inappmessaging')
-
-    implementation('com.google.firebase:firebase-measurement-connector:18.0.0') {
-        exclude group: 'com.google.firebase', module: 'firebase-common'
-    }
 
     implementation 'com.google.android.gms:play-services-tasks:17.1.0'
     implementation 'androidx.appcompat:appcompat:1.1.0'

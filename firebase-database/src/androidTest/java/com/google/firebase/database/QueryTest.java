@@ -14,6 +14,7 @@
 
 package com.google.firebase.database;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -24,6 +25,8 @@ import static org.junit.Assert.fail;
 import androidx.annotation.NonNull;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
@@ -54,6 +57,7 @@ public class QueryTest {
 
   @After
   public void tearDown() {
+    RepoManager.clear();
     IntegrationTestHelpers.failOnFirstUncaughtException();
   }
 
@@ -64,11 +68,21 @@ public class QueryTest {
 
     ref.limitToLast(10);
     ref.startAt("199").limitToLast(10);
+    ref.startAfter("199").limitToLast(10);
     ref.startAt("199", "test").limitToLast(10);
+    ref.startAfter("199", "test").limitToLast(10);
     ref.endAt(199).limitToLast(1);
+    ref.endBefore(199).limitToLast(1);
     ref.startAt(50, "test").endAt(100, "tree");
+    ref.startAfter(50, "test").endAt(100, "tree");
     ref.startAt(4).endAt(10);
+    ref.startAfter(4).endAt(10);
     ref.startAt(null).endAt(10);
+    ref.startAfter(null).endAt(10);
+    ref.startAt(4).endBefore(10);
+    ref.startAfter(4).endBefore(10);
+    ref.startAt(null).endBefore(10);
+    ref.startAfter(null).endBefore(10);
     ref.orderByChild("child");
     ref.orderByChild("child/deep/path");
     ref.orderByValue();
@@ -172,13 +186,31 @@ public class QueryTest {
     } catch (IllegalArgumentException e) { // ignore
     }
     try {
+      ref.orderByKey().startAfter(1);
+      fail("Should throw");
+    } catch (DatabaseException e) { // ignore
+    } catch (IllegalArgumentException e) { // ignore
+    }
+    try {
       ref.orderByKey().startAt(null);
       fail("Should throw");
     } catch (DatabaseException e) { // ignore
     } catch (IllegalArgumentException e) { // ignore
     }
     try {
+      ref.orderByKey().startAfter(null);
+      fail("Should throw");
+    } catch (DatabaseException e) { // ignore
+    } catch (IllegalArgumentException e) { // ignore
+    }
+    try {
       ref.orderByKey().endAt(null);
+      fail("Should throw");
+    } catch (DatabaseException e) { // ignore
+    } catch (IllegalArgumentException e) { // ignore
+    }
+    try {
+      ref.orderByKey().endBefore(null);
       fail("Should throw");
     } catch (DatabaseException e) { // ignore
     } catch (IllegalArgumentException e) { // ignore
@@ -196,13 +228,31 @@ public class QueryTest {
     } catch (IllegalArgumentException e) { // ignore
     }
     try {
+      ref.orderByKey().startAfter("test", "test");
+      fail("Should throw");
+    } catch (DatabaseException e) { // ignore
+    } catch (IllegalArgumentException e) { // ignore
+    }
+    try {
       ref.orderByKey().endAt(1);
       fail("Should throw");
     } catch (DatabaseException e) { // ignore
     } catch (IllegalArgumentException e) { // ignore
     }
     try {
+      ref.orderByKey().endBefore(1);
+      fail("Should throw");
+    } catch (DatabaseException e) { // ignore
+    } catch (IllegalArgumentException e) { // ignore
+    }
+    try {
       ref.orderByKey().endAt("test", "test");
+      fail("Should throw");
+    } catch (DatabaseException e) { // ignore
+    } catch (IllegalArgumentException e) { // ignore
+    }
+    try {
+      ref.orderByKey().endBefore("test", "test");
       fail("Should throw");
     } catch (DatabaseException e) { // ignore
     } catch (IllegalArgumentException e) { // ignore
@@ -258,7 +308,19 @@ public class QueryTest {
     } catch (IllegalArgumentException e) { // ignore
     }
     try {
+      ref.equalTo(true).endBefore("test", "test");
+      fail("Should throw");
+    } catch (DatabaseException e) { // ignore
+    } catch (IllegalArgumentException e) { // ignore
+    }
+    try {
       ref.equalTo(true).startAt("test", "test");
+      fail("Should throw");
+    } catch (DatabaseException e) { // ignore
+    } catch (IllegalArgumentException e) { // ignore
+    }
+    try {
+      ref.equalTo(true).startAfter("test", "test");
       fail("Should throw");
     } catch (DatabaseException e) { // ignore
     } catch (IllegalArgumentException e) { // ignore
@@ -294,13 +356,31 @@ public class QueryTest {
     } catch (IllegalArgumentException e) { // ignore
     }
     try {
+      ref.startAfter(5).equalTo(10);
+      fail("Should throw");
+    } catch (DatabaseException e) { // ignore
+    } catch (IllegalArgumentException e) { // ignore
+    }
+    try {
       ref.orderByPriority().startAt(false);
       fail("Should throw");
     } catch (DatabaseException e) { // ignore
     } catch (IllegalArgumentException e) { // ignore
     }
     try {
+      ref.orderByPriority().startAfter(false);
+      fail("Should throw");
+    } catch (DatabaseException e) { // ignore
+    } catch (IllegalArgumentException e) { // ignore
+    }
+    try {
       ref.orderByPriority().endAt(true);
+      fail("Should throw");
+    } catch (DatabaseException e) { // ignore
+    } catch (IllegalArgumentException e) { // ignore
+    }
+    try {
+      ref.orderByPriority().endBefore(true);
       fail("Should throw");
     } catch (DatabaseException e) { // ignore
     } catch (IllegalArgumentException e) { // ignore
@@ -330,6 +410,29 @@ public class QueryTest {
 
       try {
         ref.endAt(null, key);
+        fail("Should throw");
+      } catch (DatabaseException e) { // ignore
+
+      }
+    }
+  }
+
+  @Test
+  public void passingInvalidKeysToStartAfterOrEndBeforeThrows() throws DatabaseException {
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
+
+    List<String> badKeys =
+        Arrays.asList(
+            ".test", "test.", "fo$o", "[what", "ever]", "ha#sh", "/thing", "th/ing", "thing/");
+    for (String key : badKeys) {
+      try {
+        ref.startAfter(null, key);
+        fail("Should throw");
+      } catch (DatabaseException e) { // ignore
+
+      }
+      try {
+        ref.endBefore(null, key);
         fail("Should throw");
       } catch (DatabaseException e) { // ignore
 
@@ -444,12 +547,14 @@ public class QueryTest {
   }
 
   @Test
-  public void setVariousLimitsEnsureDataIsCorrect() throws DatabaseException, InterruptedException {
+  public void setVariousLimitsEnsureDataIsCorrect()
+      throws DatabaseException, InterruptedException, TimeoutException, TestFailure {
     DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     ValueExpectationHelper expectations = new ValueExpectationHelper();
     expectations.add(ref.limitToLast(1), new MapBuilder().put("c", 3L).build());
     expectations.add(ref.endAt(null).limitToLast(1), new MapBuilder().put("c", 3L).build());
+    expectations.add(ref.endBefore(null).limitToLast(1), null);
     expectations.add(ref.limitToLast(2), new MapBuilder().put("b", 2L).put("c", 3L).build());
     expectations.add(
         ref.limitToLast(3), new MapBuilder().put("a", 1L).put("b", 2L).put("c", 3L).build());
@@ -457,7 +562,6 @@ public class QueryTest {
         ref.limitToLast(4), new MapBuilder().put("a", 1L).put("b", 2L).put("c", 3L).build());
 
     ref.setValue(new MapBuilder().put("a", 1).put("b", 2).put("c", 3).build());
-
     expectations.waitForEvents();
   }
 
@@ -475,6 +579,133 @@ public class QueryTest {
         ref.startAt(null, "b").limitToFirst(3), new MapBuilder().put("b", 2L).put("c", 3L).build());
 
     ref.setValue(new MapBuilder().put("a", 1).put("b", 2).put("c", 3).build());
+
+    expectations.waitForEvents();
+  }
+
+  @Test
+  public void testStartAfterWithOrderByKey()
+      throws DatabaseException, InterruptedException, ExecutionException, TimeoutException,
+          TestFailure {
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
+    DatabaseReference childOne = ref.push();
+    DatabaseReference childTwo = ref.push();
+    Tasks.await(childOne.setValue(1L));
+    Tasks.await(childTwo.setValue(2L));
+
+    DataSnapshot snapshot = Tasks.await(ref.orderByKey().startAfter(childOne.getKey()).get());
+
+    Map<String, Long> values = (Map<String, Long>) snapshot.getValue();
+
+    assertNotNull(values);
+    assertArrayEquals(values.keySet().toArray(), new String[] {childTwo.getKey()});
+    assertArrayEquals(values.values().toArray(), new Long[] {values.get(childTwo.getKey())});
+  }
+
+  @Test
+  public void testEndBeforeWithOrderByKey()
+      throws DatabaseException, InterruptedException, ExecutionException {
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
+    DatabaseReference childOne = ref.push();
+    DatabaseReference childTwo = ref.push();
+    Tasks.await(childOne.setValue(1L));
+    Tasks.await(childTwo.setValue(2L));
+
+    DataSnapshot snapshot = Tasks.await(ref.orderByKey().endBefore(childTwo.getKey()).get());
+    Map<String, Long> values = (Map<String, Long>) snapshot.getValue();
+
+    assertNotNull(values);
+    assertArrayEquals(values.keySet().toArray(), new String[] {childOne.getKey()});
+    assertArrayEquals(values.values().toArray(), new Long[] {values.get(childOne.getKey())});
+  }
+
+  // This test checks that range filters are applied to in-memory data if our active listeners
+  // have already retrieved the data we need to satisfy the get().
+  @Test
+  public void testEndBeforeWithOrderByKeyOverlappingListener()
+      throws DatabaseException, InterruptedException, ExecutionException {
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
+    DatabaseReference childOne = ref.push();
+    DatabaseReference childTwo = ref.push();
+    Tasks.await(childOne.setValue(1L));
+    Tasks.await(childTwo.setValue(2L));
+
+    Semaphore semaphore = new Semaphore(0);
+    ValueEventListener listener =
+        new ValueEventListener() {
+          @Override
+          public void onDataChange(@NonNull DataSnapshot snapshot) {
+            semaphore.release();
+          }
+
+          @Override
+          public void onCancelled(@NonNull DatabaseError error) {}
+        };
+
+    ref.addValueEventListener(listener);
+
+    IntegrationTestHelpers.waitFor(semaphore);
+
+    DataSnapshot snapshot = Tasks.await(ref.orderByKey().endBefore(childTwo.getKey()).get());
+    Map<String, Long> values = (Map<String, Long>) snapshot.getValue();
+
+    assertNotNull(values);
+    assertArrayEquals(values.keySet().toArray(), new String[] {childOne.getKey()});
+    assertArrayEquals(values.values().toArray(), new Long[] {values.get(childOne.getKey())});
+    ref.removeEventListener(listener);
+  }
+
+  @Test
+  public void testStartAfterWithOrderByKeyOverlappingListener()
+      throws DatabaseException, InterruptedException, ExecutionException {
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
+    DatabaseReference childOne = ref.push();
+    DatabaseReference childTwo = ref.push();
+    Tasks.await(childOne.setValue(1L));
+    Tasks.await(childTwo.setValue(2L));
+
+    Semaphore semaphore = new Semaphore(0);
+    ValueEventListener listener =
+        new ValueEventListener() {
+          @Override
+          public void onDataChange(@NonNull DataSnapshot snapshot) {
+            semaphore.release();
+          }
+
+          @Override
+          public void onCancelled(@NonNull DatabaseError error) {}
+        };
+    ref.addValueEventListener(listener);
+
+    IntegrationTestHelpers.waitFor(semaphore);
+
+    DataSnapshot snapshot = Tasks.await(ref.orderByKey().startAfter(childOne.getKey()).get());
+    Map<String, Long> values = (Map<String, Long>) snapshot.getValue();
+
+    assertNotNull(values);
+    assertArrayEquals(values.keySet().toArray(), new String[] {childTwo.getKey()});
+    assertArrayEquals(values.values().toArray(), new Long[] {values.get(childTwo.getKey())});
+    ref.removeEventListener(listener);
+  }
+
+  @Test
+  public void setVariousLimitsWithStartAfterName() throws DatabaseException, InterruptedException {
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
+
+    ValueExpectationHelper expectations = new ValueExpectationHelper();
+    expectations.add(ref.startAfter(null).limitToFirst(1), null);
+    expectations.add(
+        ref.startAfter(null, "c").limitToFirst(1), new MapBuilder().put("d", 4L).build());
+    expectations.add(
+        ref.startAfter(null, "b").limitToFirst(1), new MapBuilder().put("c", 3L).build());
+    expectations.add(
+        ref.startAfter(null, "b").limitToFirst(2),
+        new MapBuilder().put("c", 3L).put("d", 4L).build());
+    expectations.add(
+        ref.startAfter(null, "b").limitToFirst(3),
+        new MapBuilder().put("c", 3L).put("d", 4L).build());
+
+    ref.setValue(new MapBuilder().put("a", 1).put("b", 2).put("c", 3).put("d", 4).build());
 
     expectations.waitForEvents();
   }
@@ -500,6 +731,37 @@ public class QueryTest {
         ref.startAt(null, "b").limitToFirst(2), new MapBuilder().put("b", 2L).put("c", 3L).build());
     expectations.add(
         ref.startAt(null, "b").limitToFirst(3), new MapBuilder().put("b", 2L).put("c", 3L).build());
+
+    expectations.waitForEvents();
+  }
+
+  @Test
+  public void setVariousLimitsWithStartAfterNameWithServerData()
+      throws DatabaseException, InterruptedException, TestFailure, ExecutionException,
+          TimeoutException {
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
+
+    // TODO: this test kinda has race conditions. The listens are added sequentially, so we get a
+    // lot of partial data back from the server. This all correct, and we end up in the correct
+    // state, but it's still kinda weird. Consider having ValueExpectationHelper deal with initial
+    // state.
+
+    new WriteFuture(ref, new MapBuilder().put("a", 1).put("b", 2).put("c", 3).put("d", 4).build())
+        .timedGet();
+
+    ValueExpectationHelper expectations = new ValueExpectationHelper();
+
+    expectations.add(ref.startAfter(null).limitToFirst(1), null);
+    expectations.add(
+        ref.startAfter(null, "c").limitToFirst(1), new MapBuilder().put("d", 4L).build());
+    expectations.add(
+        ref.startAfter(null, "b").limitToFirst(1), new MapBuilder().put("c", 3L).build());
+    expectations.add(
+        ref.startAfter(null, "b").limitToFirst(2),
+        new MapBuilder().put("c", 3L).put("d", 4L).build());
+    expectations.add(
+        ref.startAfter(null, "b").limitToFirst(3),
+        new MapBuilder().put("c", 3L).put("d", 4L).build());
 
     expectations.waitForEvents();
   }
@@ -659,6 +921,57 @@ public class QueryTest {
   }
 
   @Test
+  public void setLimitEnsureChildRemovedAndChildAddedHitWhenDataEntersLimitWithStartAfter()
+      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+          InterruptedException {
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
+
+    final List<String> added = new ArrayList<String>();
+    final List<String> removed = new ArrayList<String>();
+
+    ref.startAfter(null, "a")
+        .limitToFirst(2)
+        .addChildEventListener(
+            new ChildEventListener() {
+              @Override
+              public void onChildAdded(DataSnapshot snapshot, String previousChildName) {
+                added.add(snapshot.getKey());
+              }
+
+              @Override
+              public void onChildChanged(DataSnapshot snapshot, String previousChildName) {
+                // no-op
+              }
+
+              @Override
+              public void onChildRemoved(DataSnapshot snapshot) {
+                removed.add(snapshot.getKey());
+              }
+
+              @Override
+              public void onChildMoved(DataSnapshot snapshot, String previousChildName) {
+                // no-op
+              }
+
+              @Override
+              public void onCancelled(DatabaseError error) {}
+            });
+
+    new WriteFuture(ref, new MapBuilder().put("a", 1).put("b", 2).put("c", 3).build()).timedGet();
+    List<String> expected = new ArrayList<String>();
+    expected.add("b");
+    expected.add("c");
+    DeepEquals.assertEquals(expected, added);
+    added.clear();
+    assertTrue(removed.isEmpty());
+    new WriteFuture(ref.child("aa"), 4).timedGet();
+    assertEquals(1, added.size());
+    assertEquals("aa", added.get(0));
+    assertEquals(1, removed.size());
+    assertEquals("c", removed.get(0));
+  }
+
+  @Test
   public void setLimitEnsureChildRemovedAndChildAddedHitWhenLimitIsHitFromFrontWithServerData()
       throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
           InterruptedException {
@@ -713,6 +1026,61 @@ public class QueryTest {
   }
 
   @Test
+  public void
+      setLimitEnsureChildRemovedAndChildAddedHitWhenLimitIsHitFromFrontWithServerDataWithStartAfter()
+          throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+              InterruptedException {
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
+
+    final List<String> added = new ArrayList<String>();
+    final List<String> removed = new ArrayList<String>();
+
+    new WriteFuture(ref, new MapBuilder().put("a", 1).put("b", 2).put("c", 3).build()).timedGet();
+    final Semaphore semaphore = new Semaphore(0);
+    ref.startAfter(null, "a")
+        .limitToFirst(2)
+        .addChildEventListener(
+            new ChildEventListener() {
+              @Override
+              public void onChildAdded(DataSnapshot snapshot, String previousChildName) {
+                added.add(snapshot.getKey());
+                semaphore.release(1);
+              }
+
+              @Override
+              public void onChildChanged(DataSnapshot snapshot, String previousChildName) {
+                // no-op
+              }
+
+              @Override
+              public void onChildRemoved(DataSnapshot snapshot) {
+                removed.add(snapshot.getKey());
+              }
+
+              @Override
+              public void onChildMoved(DataSnapshot snapshot, String previousChildName) {
+                // no-op
+              }
+
+              @Override
+              public void onCancelled(DatabaseError error) {}
+            });
+
+    IntegrationTestHelpers.waitFor(semaphore, 2);
+    List<String> expected = new ArrayList<String>();
+    expected.add("b");
+    expected.add("c");
+    DeepEquals.assertEquals(expected, added);
+    added.clear();
+    assertTrue(removed.isEmpty());
+    new WriteFuture(ref.child("aa"), 4).timedGet();
+    assertEquals(1, added.size());
+    assertEquals("aa", added.get(0));
+    assertEquals(1, removed.size());
+    assertEquals("c", removed.get(0));
+  }
+
+  @Test
   public void setStartAndLimitEnsureChildAddedFiredWhenLimitIsntHit()
       throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
           InterruptedException {
@@ -763,6 +1131,58 @@ public class QueryTest {
   }
 
   @Test
+  public void setStartAfterAndLimitEnsureChildAddedFiredWhenLimitIsntHit()
+      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+          InterruptedException {
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
+
+    final List<String> added = new ArrayList<String>();
+    final List<String> removed = new ArrayList<String>();
+
+    ref.startAfter(null, "a")
+        .limitToFirst(2)
+        .addChildEventListener(
+            new ChildEventListener() {
+              @Override
+              public void onChildAdded(DataSnapshot snapshot, String previousChildName) {
+                added.add(snapshot.getKey());
+              }
+
+              @Override
+              public void onChildChanged(DataSnapshot snapshot, String previousChildName) {
+                // no-op
+              }
+
+              @Override
+              public void onChildRemoved(DataSnapshot snapshot) {
+                removed.add(snapshot.getKey());
+              }
+
+              @Override
+              public void onChildMoved(DataSnapshot snapshot, String previousChildName) {
+                // no-op
+              }
+
+              @Override
+              public void onCancelled(DatabaseError error) {}
+            });
+
+    new WriteFuture(ref, new MapBuilder().put("c", 3).build()).timedGet();
+    List<String> expected = new ArrayList<String>();
+    expected.add("c");
+    DeepEquals.assertEquals(expected, added);
+    assertTrue(removed.isEmpty());
+    added.clear();
+    expected.clear();
+    new WriteFuture(ref.child("b"), 4).timedGet();
+    expected.add("b");
+    DeepEquals.assertEquals(expected, added);
+    new WriteFuture(ref.child("a"), 5).timedGet();
+    DeepEquals.assertEquals(expected, added);
+    assertTrue(removed.isEmpty());
+  }
+
+  @Test
   public void setStartAndLimitEnsureChildAddedFiredWhenLimitIsntHitWithServerData()
       throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
           InterruptedException {
@@ -774,6 +1194,60 @@ public class QueryTest {
     final List<String> removed = new ArrayList<String>();
     final Semaphore semaphore = new Semaphore(0);
     ref.startAt(null, "a")
+        .limitToFirst(2)
+        .addChildEventListener(
+            new ChildEventListener() {
+              @Override
+              public void onChildAdded(DataSnapshot snapshot, String previousChildName) {
+                added.add(snapshot.getKey());
+                semaphore.release(1);
+              }
+
+              @Override
+              public void onChildChanged(DataSnapshot snapshot, String previousChildName) {
+                // no-op
+              }
+
+              @Override
+              public void onChildRemoved(DataSnapshot snapshot) {
+                removed.add(snapshot.getKey());
+              }
+
+              @Override
+              public void onChildMoved(DataSnapshot snapshot, String previousChildName) {
+                // no-op
+              }
+
+              @Override
+              public void onCancelled(DatabaseError error) {}
+            });
+
+    IntegrationTestHelpers.waitFor(semaphore);
+    List<String> expected = new ArrayList<String>();
+    expected.add("c");
+    DeepEquals.assertEquals(expected, added);
+    assertTrue(removed.isEmpty());
+    added.clear();
+    expected.clear();
+    new WriteFuture(ref.child("b"), 4).timedGet();
+    expected.add("b");
+    DeepEquals.assertEquals(expected, added);
+    assertTrue(removed.isEmpty());
+  }
+
+  @Test
+  public void setStartAfterAndLimitEnsureChildAddedFiredWhenLimitIsntHitWithServerData()
+      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+          InterruptedException {
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
+
+    new WriteFuture(ref, new MapBuilder().put("a", 5).build()).timedGet();
+    new WriteFuture(ref, new MapBuilder().put("c", 3).build()).timedGet();
+
+    final List<String> added = new ArrayList<String>();
+    final List<String> removed = new ArrayList<String>();
+    final Semaphore semaphore = new Semaphore(0);
+    ref.startAfter(null, "a")
         .limitToFirst(2)
         .addChildEventListener(
             new ChildEventListener() {
@@ -1056,6 +1530,75 @@ public class QueryTest {
   }
 
   @Test
+  public void startAfterEndAtWithPriorityWorks() throws DatabaseException, InterruptedException {
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
+
+    ValueExpectationHelper helper = new ValueExpectationHelper();
+    helper.add(ref.startAfter("w").endAt("y"), new MapBuilder().put("b", 2L).put("c", 3L).build());
+    helper.add(ref.startAfter("w").endAt("x"), new MapBuilder().put("c", 3L).build());
+    helper.add(ref.startAfter("a").endAt("c"), null);
+
+    ref.setValue(
+        new MapBuilder()
+            .put("a", new MapBuilder().put(".value", 1).put(".priority", "z").build())
+            .put("b", new MapBuilder().put(".value", 2).put(".priority", "y").build())
+            .put("c", new MapBuilder().put(".value", 3).put(".priority", "x").build())
+            .put("d", new MapBuilder().put(".value", 4).put(".priority", "w").build())
+            .build());
+
+    helper.waitForEvents();
+  }
+
+  @Test
+  public void startAtEndBeforeWithPriorityWorks() throws DatabaseException, InterruptedException {
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
+
+    ValueExpectationHelper helper = new ValueExpectationHelper();
+    helper.add(ref.startAt("w").endBefore("y"), new MapBuilder().put("c", 3L).put("d", 4L).build());
+    helper.add(ref.startAt("w").endBefore("w"), null);
+    helper.add(ref.startAt("a").endBefore("c"), null);
+
+    ref.setValue(
+        new MapBuilder()
+            .put("a", new MapBuilder().put(".value", 1).put(".priority", "z").build())
+            .put("b", new MapBuilder().put(".value", 2).put(".priority", "y").build())
+            .put("c", new MapBuilder().put(".value", 3).put(".priority", "x").build())
+            .put("d", new MapBuilder().put(".value", 4).put(".priority", "w").build())
+            .build());
+
+    helper.waitForEvents();
+  }
+
+  @Test
+  public void startAfterEndBeforeWithPriorityWorks()
+      throws DatabaseException, InterruptedException {
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
+
+    ValueExpectationHelper helper = new ValueExpectationHelper();
+    helper.add(
+        ref.startAfter("w").endBefore("z"), new MapBuilder().put("c", 3L).put("b", 2L).build());
+    helper.add(ref.startAfter("w").endBefore("w"), null);
+    helper.add(ref.startAfter("a").endBefore("c"), null);
+    Semaphore semaphore = new Semaphore(0);
+    ref.setValue(
+            new MapBuilder()
+                .put("a", new MapBuilder().put(".value", 1).put(".priority", "z").build())
+                .put("b", new MapBuilder().put(".value", 2).put(".priority", "y").build())
+                .put("c", new MapBuilder().put(".value", 3).put(".priority", "x").build())
+                .put("d", new MapBuilder().put(".value", 4).put(".priority", "w").build())
+                .build())
+        .addOnCompleteListener(
+            new OnCompleteListener<Void>() {
+              @Override
+              public void onComplete(@NonNull Task<Void> task) {
+                semaphore.release();
+              }
+            });
+
+    helper.waitForEvents();
+  }
+
+  @Test
   public void startAtEndAtWithPriorityWorksWithServerData()
       throws DatabaseException, InterruptedException {
     DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
@@ -1079,6 +1622,69 @@ public class QueryTest {
   }
 
   @Test
+  public void startAfterEndAtWithPriorityWorksWithServerData()
+      throws DatabaseException, InterruptedException {
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
+
+    ref.setValue(
+        new MapBuilder()
+            .put("a", new MapBuilder().put(".value", 1).put(".priority", "z").build())
+            .put("b", new MapBuilder().put(".value", 2).put(".priority", "y").build())
+            .put("c", new MapBuilder().put(".value", 3).put(".priority", "x").build())
+            .put("d", new MapBuilder().put(".value", 4).put(".priority", "w").build())
+            .build());
+
+    ValueExpectationHelper helper = new ValueExpectationHelper();
+    helper.add(ref.startAfter("w").endAt("y"), new MapBuilder().put("b", 2L).put("c", 3L).build());
+    helper.add(ref.startAfter("w").endAt("x"), new MapBuilder().put("c", 3L).build());
+    helper.add(ref.startAfter("a").endAt("c"), null);
+
+    helper.waitForEvents();
+  }
+
+  @Test
+  public void startAtEndBeforeWithPriorityWorksWithServerData()
+      throws DatabaseException, InterruptedException {
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
+
+    ref.setValue(
+        new MapBuilder()
+            .put("a", new MapBuilder().put(".value", 1).put(".priority", "z").build())
+            .put("b", new MapBuilder().put(".value", 2).put(".priority", "y").build())
+            .put("c", new MapBuilder().put(".value", 3).put(".priority", "x").build())
+            .put("d", new MapBuilder().put(".value", 4).put(".priority", "w").build())
+            .build());
+
+    ValueExpectationHelper helper = new ValueExpectationHelper();
+    helper.add(ref.startAt("w").endBefore("y"), new MapBuilder().put("d", 4L).put("c", 3L).build());
+    helper.add(ref.startAt("w").endBefore("x"), new MapBuilder().put("d", 4L).build());
+    helper.add(ref.startAt("a").endBefore("c"), null);
+
+    helper.waitForEvents();
+  }
+
+  @Test
+  public void startAfterEndBeforeWithPriorityWorksWithServerData()
+      throws DatabaseException, InterruptedException {
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
+
+    ref.setValue(
+        new MapBuilder()
+            .put("a", new MapBuilder().put(".value", 1).put(".priority", "z").build())
+            .put("b", new MapBuilder().put(".value", 2).put(".priority", "y").build())
+            .put("c", new MapBuilder().put(".value", 3).put(".priority", "x").build())
+            .put("d", new MapBuilder().put(".value", 4).put(".priority", "w").build())
+            .build());
+
+    ValueExpectationHelper helper = new ValueExpectationHelper();
+    helper.add(ref.startAfter("w").endBefore("y"), new MapBuilder().put("c", 3L).build());
+    helper.add(ref.startAfter("w").endBefore("x"), null);
+    helper.add(ref.startAfter("a").endBefore("c"), null);
+
+    helper.waitForEvents();
+  }
+
+  @Test
   public void startAtEndAtWithPriorityAndNameWorks()
       throws DatabaseException, InterruptedException {
     DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
@@ -1090,6 +1696,29 @@ public class QueryTest {
     helper.add(
         ref.startAt(1, "b").endAt(2, "c"), new MapBuilder().put("b", 2L).put("c", 3L).build());
     helper.add(ref.startAt(1, "c").endAt(2), new MapBuilder().put("c", 3L).put("d", 4L).build());
+
+    ref.setValue(
+        new MapBuilder()
+            .put("a", new MapBuilder().put(".value", 1).put(".priority", 1).build())
+            .put("b", new MapBuilder().put(".value", 2).put(".priority", 1).build())
+            .put("c", new MapBuilder().put(".value", 3).put(".priority", 2).build())
+            .put("d", new MapBuilder().put(".value", 4).put(".priority", 2).build())
+            .build());
+
+    helper.waitForEvents();
+  }
+
+  @Test
+  public void startAfterEndAtWithPriorityAndNameWorks()
+      throws DatabaseException, InterruptedException {
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
+
+    ValueExpectationHelper helper = new ValueExpectationHelper();
+    helper.add(
+        ref.startAfter(1, "a").endAt(2, "d"),
+        new MapBuilder().put("b", 2L).put("c", 3L).put("d", 4L).build());
+    helper.add(ref.startAfter(1, "b").endAt(2, "c"), new MapBuilder().put("c", 3L).build());
+    helper.add(ref.startAfter(1, "c").endAt(2), new MapBuilder().put("c", 3L).put("d", 4L).build());
 
     ref.setValue(
         new MapBuilder()
@@ -1122,6 +1751,29 @@ public class QueryTest {
     helper.add(
         ref.startAt(1, "b").endAt(2, "c"), new MapBuilder().put("b", 2L).put("c", 3L).build());
     helper.add(ref.startAt(1, "c").endAt(2), new MapBuilder().put("c", 3L).put("d", 4L).build());
+
+    helper.waitForEvents();
+  }
+
+  @Test
+  public void startAfterEndAtWithPriorityAndNameWorksWithServerData()
+      throws DatabaseException, InterruptedException {
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
+
+    ref.setValue(
+        new MapBuilder()
+            .put("a", new MapBuilder().put(".value", 1).put(".priority", 1).build())
+            .put("b", new MapBuilder().put(".value", 2).put(".priority", 1).build())
+            .put("c", new MapBuilder().put(".value", 3).put(".priority", 2).build())
+            .put("d", new MapBuilder().put(".value", 4).put(".priority", 2).build())
+            .build());
+
+    ValueExpectationHelper helper = new ValueExpectationHelper();
+    helper.add(
+        ref.startAfter(1, "a").endAt(2, "d"),
+        new MapBuilder().put("b", 2L).put("c", 3L).put("d", 4L).build());
+    helper.add(ref.startAfter(1, "b").endAt(2, "c"), new MapBuilder().put("c", 3L).build());
+    helper.add(ref.startAfter(1, "c").endAt(2), new MapBuilder().put("c", 3L).put("d", 4L).build());
 
     helper.waitForEvents();
   }
@@ -1409,7 +2061,7 @@ public class QueryTest {
   }
 
   @Test
-  public void nullPrioritiesIncludedInStartAt2() throws DatabaseException, InterruptedException {
+  public void nullPrioritiesIncludedInStartAt() throws DatabaseException, InterruptedException {
     DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     ref.setValue(
@@ -1423,6 +2075,25 @@ public class QueryTest {
 
     DataSnapshot snap = IntegrationTestHelpers.getSnap(ref.startAt(2));
     Map<String, Object> expected = new MapBuilder().put("c", 2L).put("d", 3L).put("e", 4L).build();
+    Object result = snap.getValue();
+    DeepEquals.assertEquals(expected, result);
+  }
+
+  @Test
+  public void nullPrioritiesIncludedInStartAfter() throws DatabaseException, InterruptedException {
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
+
+    ref.setValue(
+        new MapBuilder()
+            .put("a", new MapBuilder().put(".priority", null).put(".value", 0).build())
+            .put("b", new MapBuilder().put(".priority", null).put(".value", 1).build())
+            .put("c", new MapBuilder().put(".priority", 2).put(".value", 2).build())
+            .put("d", new MapBuilder().put(".priority", 3).put(".value", 3).build())
+            .put("e", new MapBuilder().put(".priority", "hi").put(".value", 4).build())
+            .build());
+
+    DataSnapshot snap = IntegrationTestHelpers.getSnap(ref.startAfter(2));
+    Map<String, Object> expected = new MapBuilder().put("d", 3L).put("e", 4L).build();
     Object result = snap.getValue();
     DeepEquals.assertEquals(expected, result);
   }
@@ -2077,6 +2748,43 @@ public class QueryTest {
       i++;
     }
     assertEquals(2, i);
+  }
+
+  @Test
+  public void startAfterWithTwoArgumentsWorks()
+      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+          InterruptedException {
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
+
+    new WriteFuture(
+            ref,
+            new MapBuilder()
+                .put(
+                    "Walker",
+                    new MapBuilder()
+                        .put("name", "Walker")
+                        .put("score", 20)
+                        .put(".priority", 20)
+                        .build())
+                .put(
+                    "Michael",
+                    new MapBuilder()
+                        .put("name", "Michael")
+                        .put("score", 100)
+                        .put(".priority", 100)
+                        .build())
+                .build())
+        .timedGet();
+
+    DataSnapshot snap =
+        IntegrationTestHelpers.getSnap(ref.startAfter(20, "Walker").limitToFirst(2));
+    List<String> expected = Arrays.asList("Michael");
+    int i = 0;
+    for (DataSnapshot child : snap.getChildren()) {
+      assertEquals(expected.get(i), child.getKey());
+      i++;
+    }
+    assertEquals(1, i);
   }
 
   @Test
@@ -2921,6 +3629,179 @@ public class QueryTest {
   }
 
   @Test
+  public void correctlyGetEventsForStartAfterEndAtQueriesWhenPriorityChanges()
+      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+          InterruptedException {
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
+
+    final List<String> addedFirst = new ArrayList<String>();
+    final List<String> removedFirst = new ArrayList<String>();
+    final List<String> addedSecond = new ArrayList<String>();
+    final List<String> removedSecond = new ArrayList<String>();
+
+    ref.startAfter(0)
+        .endAt(10)
+        .addChildEventListener(
+            new ChildEventListener() {
+              @Override
+              public void onChildAdded(DataSnapshot snapshot, String previousChildName) {
+                addedFirst.add(snapshot.getKey());
+              }
+
+              @Override
+              public void onChildChanged(DataSnapshot snapshot, String previousChildName) {
+                // No-op
+              }
+
+              @Override
+              public void onChildRemoved(DataSnapshot snapshot) {
+                removedFirst.add(snapshot.getKey());
+              }
+
+              @Override
+              public void onChildMoved(DataSnapshot snapshot, String previousChildName) {
+                // No-op
+              }
+
+              @Override
+              public void onCancelled(DatabaseError error) {}
+            });
+
+    ref.startAfter(10)
+        .endAt(20)
+        .addChildEventListener(
+            new ChildEventListener() {
+              @Override
+              public void onChildAdded(DataSnapshot snapshot, String previousChildName) {
+                addedSecond.add(snapshot.getKey());
+              }
+
+              @Override
+              public void onChildChanged(DataSnapshot snapshot, String previousChildName) {
+                // No-op
+              }
+
+              @Override
+              public void onChildRemoved(DataSnapshot snapshot) {
+                removedSecond.add(snapshot.getKey());
+              }
+
+              @Override
+              public void onChildMoved(DataSnapshot snapshot, String previousChildName) {
+                // No-op
+              }
+
+              @Override
+              public void onCancelled(DatabaseError error) {}
+            });
+
+    ref.child("a").setValue("a", 5);
+    ref.child("a").setValue("a", 15);
+    ref.child("a").setValue("a", 10);
+    new WriteFuture(ref.child("a"), "a", 5).timedGet();
+
+    assertEquals(2, addedFirst.size());
+    assertEquals("a", addedFirst.get(0));
+    assertEquals("a", addedFirst.get(1));
+
+    assertEquals(1, removedFirst.size());
+    assertEquals("a", removedFirst.get(0));
+
+    assertEquals(1, addedSecond.size());
+    assertEquals("a", addedSecond.get(0));
+
+    assertEquals(1, removedSecond.size());
+    assertEquals("a", removedSecond.get(0));
+  }
+
+  @Test
+  public void correctlyGetEventsForStartAtEndBeforeQueriesWhenPriorityChanges()
+      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+          InterruptedException {
+    DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
+
+    final List<String> addedFirst = new ArrayList<String>();
+    final List<String> removedFirst = new ArrayList<String>();
+    final List<String> addedSecond = new ArrayList<String>();
+    final List<String> removedSecond = new ArrayList<String>();
+
+    ref.startAt(0)
+        .endBefore(10)
+        .addChildEventListener(
+            new ChildEventListener() {
+              @Override
+              public void onChildAdded(DataSnapshot snapshot, String previousChildName) {
+                addedFirst.add(snapshot.getKey());
+              }
+
+              @Override
+              public void onChildChanged(DataSnapshot snapshot, String previousChildName) {
+                // No-op
+              }
+
+              @Override
+              public void onChildRemoved(DataSnapshot snapshot) {
+                removedFirst.add(snapshot.getKey());
+              }
+
+              @Override
+              public void onChildMoved(DataSnapshot snapshot, String previousChildName) {
+                // No-op
+              }
+
+              @Override
+              public void onCancelled(DatabaseError error) {}
+            });
+
+    ref.startAt(10)
+        .endBefore(20)
+        .addChildEventListener(
+            new ChildEventListener() {
+              @Override
+              public void onChildAdded(DataSnapshot snapshot, String previousChildName) {
+                addedSecond.add(snapshot.getKey());
+              }
+
+              @Override
+              public void onChildChanged(DataSnapshot snapshot, String previousChildName) {
+                // No-op
+              }
+
+              @Override
+              public void onChildRemoved(DataSnapshot snapshot) {
+                removedSecond.add(snapshot.getKey());
+              }
+
+              @Override
+              public void onChildMoved(DataSnapshot snapshot, String previousChildName) {
+                // No-op
+              }
+
+              @Override
+              public void onCancelled(DatabaseError error) {}
+            });
+
+    ref.child("a").setValue("a", 5);
+    ref.child("a").setValue("a", 15);
+    ref.child("a").setValue("a", 10);
+    ref.child("a").setValue("a", 20);
+    new WriteFuture(ref.child("a"), "a", 5).timedGet();
+
+    assertEquals(2, addedFirst.size());
+    assertEquals("a", addedFirst.get(0));
+    assertEquals("a", addedFirst.get(1));
+
+    assertEquals(1, removedFirst.size());
+    assertEquals("a", removedFirst.get(0));
+
+    assertEquals(1, addedSecond.size());
+    assertEquals("a", addedSecond.get(0));
+
+    assertEquals(1, removedSecond.size());
+    assertEquals("a", removedSecond.get(0));
+  }
+
+  @Test
   public void behavesWithDivergingQueries()
       throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
           InterruptedException {
@@ -3055,6 +3936,213 @@ public class QueryTest {
   }
 
   @Test
+  public void integerKeysBehaveNumericallyStartAfter()
+      throws InterruptedException, TestFailure, TimeoutException {
+    final DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
+    final Semaphore done = new Semaphore(0);
+    ref.setValue(
+        new MapBuilder()
+            .put("1", true)
+            .put("50", true)
+            .put("550", true)
+            .put("6", true)
+            .put("600", true)
+            .put("70", true)
+            .put("8", true)
+            .put("80", true)
+            .build(),
+        new DatabaseReference.CompletionListener() {
+          @Override
+          public void onComplete(DatabaseError error, DatabaseReference ref) {
+            ref.startAfter(null, "80")
+                .addListenerForSingleValueEvent(
+                    new ValueEventListener() {
+                      @Override
+                      public void onDataChange(DataSnapshot snapshot) {
+                        Map<String, Object> expected =
+                            new MapBuilder().put("550", true).put("600", true).build();
+                        DeepEquals.assertEquals(expected, snapshot.getValue());
+                        done.release();
+                      }
+
+                      @Override
+                      public void onCancelled(DatabaseError error) {}
+                    });
+          }
+        });
+
+    IntegrationTestHelpers.waitFor(done);
+  }
+
+  @Test
+  public void integerKeysBehaveNumericallyEndBefore()
+      throws InterruptedException, TestFailure, TimeoutException {
+    final DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
+    final Semaphore done = new Semaphore(0);
+    ref.setValue(
+        new MapBuilder()
+            .put("1", true)
+            .put("50", true)
+            .put("550", true)
+            .put("6", true)
+            .put("600", true)
+            .put("70", true)
+            .put("8", true)
+            .put("80", true)
+            .build(),
+        new DatabaseReference.CompletionListener() {
+          @Override
+          public void onComplete(DatabaseError error, DatabaseReference ref) {
+            ref.endBefore(null, "10")
+                .addListenerForSingleValueEvent(
+                    new ValueEventListener() {
+                      @Override
+                      public void onDataChange(DataSnapshot snapshot) {
+                        Map<String, Object> expected =
+                            new MapBuilder().put("1", true).put("6", true).put("8", true).build();
+                        DeepEquals.assertEquals(expected, snapshot.getValue());
+                        done.release();
+                      }
+
+                      @Override
+                      public void onCancelled(DatabaseError error) {}
+                    });
+          }
+        });
+
+    IntegrationTestHelpers.waitFor(done);
+  }
+
+  @Test
+  public void integerKeysBehaveNumericallyWithStartAfterOverflow()
+      throws InterruptedException, TestFailure, TimeoutException {
+    final DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
+    final Semaphore done = new Semaphore(0);
+    ref.setValue(
+        new MapBuilder()
+            .put(String.valueOf(Integer.MAX_VALUE), true)
+            .put("80", true)
+            .put("1", true)
+            .put("50", true)
+            .put("550", true)
+            .put("6", true)
+            .put("600", true)
+            .put("70", true)
+            .put("8", true)
+            .put("a", true)
+            .build(),
+        new DatabaseReference.CompletionListener() {
+          @Override
+          public void onComplete(DatabaseError error, DatabaseReference ref) {
+            ref.startAfter(null, String.valueOf(Integer.MAX_VALUE))
+                .addListenerForSingleValueEvent(
+                    new ValueEventListener() {
+                      @Override
+                      public void onDataChange(DataSnapshot snapshot) {
+                        DeepEquals.assertEquals(
+                            new MapBuilder().put("a", true).build(), snapshot.getValue());
+                        done.release();
+                      }
+
+                      @Override
+                      public void onCancelled(DatabaseError error) {}
+                    });
+          }
+        });
+
+    IntegrationTestHelpers.waitFor(done);
+  }
+
+  @Test
+  public void integerKeysBehaveNumericallyWithEndBeforeUnderflow()
+      throws InterruptedException, TestFailure, TimeoutException {
+    final DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
+    final Semaphore done = new Semaphore(0);
+    ref.setValue(
+        new MapBuilder()
+            .put(String.valueOf(Integer.MIN_VALUE), true)
+            .put("80", true)
+            .put("1", true)
+            .put("50", true)
+            .put("550", true)
+            .put("6", true)
+            .put("600", true)
+            .put("70", true)
+            .put("8", true)
+            .build(),
+        new DatabaseReference.CompletionListener() {
+          @Override
+          public void onComplete(DatabaseError error, DatabaseReference ref) {
+            ref.endBefore(null, String.valueOf(Integer.MIN_VALUE))
+                .addListenerForSingleValueEvent(
+                    new ValueEventListener() {
+                      @Override
+                      public void onDataChange(DataSnapshot snapshot) {
+                        DeepEquals.assertEquals(null, snapshot.getValue());
+                        done.release();
+                      }
+
+                      @Override
+                      public void onCancelled(DatabaseError error) {}
+                    });
+          }
+        });
+
+    IntegrationTestHelpers.waitFor(done);
+  }
+
+  @Test
+  public void integerKeysBehaveNumericallyWithEndBeforeMinLex()
+      throws InterruptedException, TestFailure, TimeoutException {
+    final DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
+    final Semaphore done = new Semaphore(0);
+    ref.setValue(
+        new MapBuilder()
+            .put(String.valueOf(Integer.MAX_VALUE), true)
+            .put("80", true)
+            .put("1", true)
+            .put("50", true)
+            .put("550", true)
+            .put("6", true)
+            .put("600", true)
+            .put("70", true)
+            .put("8", true)
+            .put("a", true)
+            .build(),
+        new DatabaseReference.CompletionListener() {
+          @Override
+          public void onComplete(DatabaseError error, DatabaseReference ref) {
+            ref.endBefore(null, String.valueOf(/* MIN_PUSH_CHAR = */ '-'))
+                .addListenerForSingleValueEvent(
+                    new ValueEventListener() {
+                      @Override
+                      public void onDataChange(DataSnapshot snapshot) {
+                        DeepEquals.assertEquals(
+                            snapshot.getValue(),
+                            new MapBuilder()
+                                .put(String.valueOf(Integer.MAX_VALUE), true)
+                                .put("80", true)
+                                .put("1", true)
+                                .put("50", true)
+                                .put("550", true)
+                                .put("6", true)
+                                .put("600", true)
+                                .put("70", true)
+                                .put("8", true)
+                                .build());
+                        done.release();
+                      }
+
+                      @Override
+                      public void onCancelled(DatabaseError error) {}
+                    });
+          }
+        });
+
+    IntegrationTestHelpers.waitFor(done);
+  }
+
+  @Test
   public void integerKeysBehaveNumerically2()
       throws InterruptedException, TestFailure, TimeoutException {
     final DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
@@ -3129,6 +4217,46 @@ public class QueryTest {
                                 .put("70", true)
                                 .put("80", true)
                                 .build();
+                        DeepEquals.assertEquals(expected, snapshot.getValue());
+                        done.release();
+                      }
+
+                      @Override
+                      public void onCancelled(DatabaseError error) {}
+                    });
+          }
+        });
+
+    IntegrationTestHelpers.waitFor(done);
+  }
+
+  @Test
+  public void integerKeysBehaveNumericallyWithStartAfterEndAt()
+      throws InterruptedException, TestFailure, TimeoutException {
+    final DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
+    final Semaphore done = new Semaphore(0);
+    ref.setValue(
+        new MapBuilder()
+            .put("1", true)
+            .put("50", true)
+            .put("550", true)
+            .put("6", true)
+            .put("600", true)
+            .put("70", true)
+            .put("8", true)
+            .put("80", true)
+            .build(),
+        new DatabaseReference.CompletionListener() {
+          @Override
+          public void onComplete(DatabaseError error, DatabaseReference ref) {
+            ref.startAfter(null, "50")
+                .endAt(null, "80")
+                .addListenerForSingleValueEvent(
+                    new ValueEventListener() {
+                      @Override
+                      public void onDataChange(DataSnapshot snapshot) {
+                        Map<String, Object> expected =
+                            new MapBuilder().put("70", true).put("80", true).build();
                         DeepEquals.assertEquals(expected, snapshot.getValue());
                         done.release();
                       }
@@ -3419,7 +4547,8 @@ public class QueryTest {
   }
 
   @Test
-  public void emptyQueryGet() throws DatabaseException, InterruptedException, ExecutionException {
+  public void testGetReturnsNullForEmptyNodeWhenOnline()
+      throws DatabaseException, InterruptedException, ExecutionException {
     FirebaseApp app =
         appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
     FirebaseDatabase db = FirebaseDatabase.getInstance(app);
@@ -3427,23 +4556,27 @@ public class QueryTest {
   }
 
   @Test
-  public void offlineQueryGet() throws DatabaseException, InterruptedException {
+  public void testGetThrowsExceptionForEmptyNodeWhenOffline()
+      throws DatabaseException, InterruptedException {
     FirebaseApp app =
         appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
     FirebaseDatabase db = FirebaseDatabase.getInstance(app);
-    DatabaseReference node = db.getReference();
+    DatabaseReference node = db.getReference().child(db.getReference().push().getKey());
     db.goOffline();
     try {
       Tasks.await(node.get());
     } catch (ExecutionException e) {
       assertEquals(e.getCause().getMessage(), "Client is offline");
       return;
+    } finally {
+      db.goOnline();
     }
     fail("Client get succeeded even though offline.");
   }
 
   @Test
-  public void getQueryBasic() throws DatabaseException, InterruptedException, ExecutionException {
+  public void testGetSendsServerGetForNodeWithNoListenerWhenOnline()
+      throws DatabaseException, InterruptedException, ExecutionException {
     FirebaseApp app =
         appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
     FirebaseDatabase db = FirebaseDatabase.getInstance(app);
@@ -3453,14 +4586,173 @@ public class QueryTest {
   }
 
   @Test
-  public void getQueryCached()
-      throws DatabaseException, InterruptedException, TimeoutException, TestFailure,
-          ExecutionException {
-    FirebaseApp app =
-        appForDatabaseUrl(IntegrationTestValues.getAltNamespace(), UUID.randomUUID().toString());
-    FirebaseDatabase db = FirebaseDatabase.getInstance(app);
-    DatabaseReference ref = db.getReference();
-    final Semaphore semaphore = new Semaphore(0);
+  public void testGetProbesInMemoryCacheForActiveListenerWhenOffline()
+      throws DatabaseException, InterruptedException, ExecutionException, TestFailure,
+          TimeoutException {
+    FirebaseApp readerApp =
+        appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
+    FirebaseApp writerApp =
+        appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
+    FirebaseDatabase readerDb = FirebaseDatabase.getInstance(readerApp);
+    readerDb.setPersistenceEnabled(true);
+    FirebaseDatabase writerDb = FirebaseDatabase.getInstance(writerApp);
+
+    DatabaseReference reader = readerDb.getReference();
+    DatabaseReference writer = writerDb.getReference();
+    String key = reader.push().getKey();
+    reader = reader.child(key);
+    writer = writer.child(key);
+
+    ValueEventListener listener = null;
+    try {
+      new WriteFuture(writer, 42L).timedGet();
+
+      assertEquals(Tasks.await(reader.get()).getValue(), 42L);
+
+      Semaphore semaphore = new Semaphore(0);
+      listener =
+          new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+              assertEquals(snapshot.getValue(), 42L);
+              semaphore.release();
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {}
+          };
+      reader.addValueEventListener(listener);
+      IntegrationTestHelpers.waitFor(semaphore);
+      readerDb.goOffline();
+      assertEquals(Tasks.await(reader.get()).getValue(), 42L);
+    } finally {
+      if (listener != null) {
+        reader.removeEventListener(listener);
+      }
+      readerDb.goOnline();
+    }
+  }
+
+  @Test
+  public void testGetWithPendingWrites() throws ExecutionException, InterruptedException {
+    DatabaseReference node = IntegrationTestHelpers.getRandomNode();
+    node.getDatabase().goOffline();
+    try {
+      Map<String, Object> expected = new MapBuilder().put("foo", "bar").build();
+      node.setValue(expected);
+      DataSnapshot snapshot = Tasks.await(node.get());
+      assertEquals(snapshot.getValue(), expected);
+    } finally {
+      node.getDatabase().goOnline();
+    }
+  }
+
+  @Test
+  public void testGetChildOfPendingWrites() throws ExecutionException, InterruptedException {
+    DatabaseReference node = IntegrationTestHelpers.getRandomNode();
+    node.getDatabase().goOffline();
+    try {
+      node.setValue(new MapBuilder().put("foo", "bar").build());
+      DataSnapshot snapshot = Tasks.await(node.child("foo").get());
+      assertEquals(snapshot.getValue(), "bar");
+    } finally {
+      node.getDatabase().goOnline();
+    }
+  }
+
+  @Test
+  public void testGetSendsServerProbesPersistenceCacheWhenOfflineWithNoListener()
+      throws DatabaseException, InterruptedException, ExecutionException, TestFailure,
+          TimeoutException {
+    FirebaseApp readerApp =
+        appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
+    FirebaseApp writerApp =
+        appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
+    FirebaseDatabase readerDb = FirebaseDatabase.getInstance(readerApp);
+    readerDb.setPersistenceEnabled(true);
+    FirebaseDatabase writerDb = FirebaseDatabase.getInstance(writerApp);
+
+    DatabaseReference reader = readerDb.getReference();
+    DatabaseReference writer = writerDb.getReference();
+    String key = reader.push().getKey();
+    reader = reader.child(key);
+    writer = writer.child(key);
+
+    new WriteFuture(writer, 42L).timedGet();
+
+    Semaphore semaphore = new Semaphore(0);
+    ValueEventListener listener =
+        new ValueEventListener() {
+          @Override
+          public void onDataChange(@NonNull DataSnapshot snapshot) {
+            if (snapshot.getValue().equals(42L)) {
+              semaphore.release();
+            }
+          }
+
+          @Override
+          public void onCancelled(@NonNull DatabaseError error) {}
+        };
+    reader.addValueEventListener(listener);
+    IntegrationTestHelpers.waitFor(semaphore);
+
+    readerDb.goOffline();
+    try {
+      reader.removeEventListener(listener);
+      assertEquals(Tasks.await(reader.get()).getValue(), 42L);
+    } finally {
+      readerDb.goOnline();
+    }
+  }
+
+  @Test
+  public void testGetUpdatesPersistenceCacheWhenEnabled()
+      throws DatabaseException, InterruptedException, ExecutionException, TestFailure,
+          TimeoutException {
+    FirebaseApp readerApp =
+        appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
+    FirebaseApp writerApp =
+        appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
+    FirebaseDatabase readerDb = FirebaseDatabase.getInstance(readerApp);
+    readerDb.setPersistenceEnabled(true);
+    FirebaseDatabase writerDb = FirebaseDatabase.getInstance(writerApp);
+
+    DatabaseReference reader = readerDb.getReference();
+    DatabaseReference writer = writerDb.getReference();
+    String key = reader.push().getKey();
+    reader = reader.child(key);
+    writer = writer.child(key);
+
+    assertNull(new WriteFuture(writer, 42L).timedGet());
+    assertEquals(42L, Tasks.await(reader.get()).getValue());
+
+    readerDb.goOffline();
+    try {
+      assertNotNull(ReadFuture.untilEquals(reader, 42L).timedGet());
+    } finally {
+      readerDb.goOnline();
+    }
+  }
+
+  @Test
+  public void testGetSkipsPersistenceCacheWhenOnline()
+      throws InterruptedException, ExecutionException, TimeoutException, TestFailure {
+    FirebaseApp readerApp =
+        appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
+    FirebaseApp writerApp =
+        appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
+    FirebaseDatabase readerDb = FirebaseDatabase.getInstance(readerApp);
+    readerDb.setPersistenceEnabled(true);
+    FirebaseDatabase writerDb = FirebaseDatabase.getInstance(writerApp);
+
+    DatabaseReference reader = readerDb.getReference();
+    DatabaseReference writer = writerDb.getReference();
+    String key = reader.push().getKey();
+    reader = reader.child(key);
+    writer = writer.child(key);
+
+    Semaphore semaphore = new Semaphore(0);
+
     ValueEventListener listener =
         new ValueEventListener() {
           @Override
@@ -3473,76 +4765,14 @@ public class QueryTest {
           @Override
           public void onCancelled(@NonNull DatabaseError error) {}
         };
-    ref.addValueEventListener(listener);
-    ref.setValue(42L);
-    IntegrationTestHelpers.waitFor(semaphore);
-    db.goOffline();
-    try {
-      // Since we still have a listener on `ref`, the 42L should be cached here.
-      assertEquals(42L, Tasks.await(ref.get()).getValue());
-    } finally {
-      ref.removeEventListener(listener);
-    }
-  }
 
-  @Test
-  public void getRetrievesLatestServerValue()
-      throws DatabaseException, InterruptedException, ExecutionException, TestFailure,
-          TimeoutException {
-    FirebaseApp readerApp =
-        appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
-    FirebaseApp writerApp =
-        appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
-    FirebaseDatabase readerDb = FirebaseDatabase.getInstance(readerApp);
-    FirebaseDatabase writerDb = FirebaseDatabase.getInstance(writerApp);
-    DatabaseReference reader = readerDb.getReference();
-    DatabaseReference writer = writerDb.getReference();
-
-    final Semaphore readerSemaphore = new Semaphore(0);
-    reader.addValueEventListener(
-        new ValueEventListener() {
-          @Override
-          public void onDataChange(@NonNull DataSnapshot snapshot) {
-            if (snapshot.getValue() != null && snapshot.getValue().equals(42L)) {
-              readerSemaphore.release();
-            }
-          }
-
-          @Override
-          public void onCancelled(@NonNull DatabaseError error) {}
-        });
-
-    WriteFuture write = new WriteFuture(writer, 42L);
-    assertNull(write.timedGet());
-    IntegrationTestHelpers.waitFor(readerSemaphore);
-
-    write = new WriteFuture(writer, 43L);
-    assertNull(write.timedGet());
-
-    assertEquals(43L, Tasks.await(reader.get()).getValue());
-  }
-
-  @Test
-  public void getUpdatesPersistenceCacheWhenEnabled()
-      throws DatabaseException, InterruptedException, ExecutionException, TestFailure,
-          TimeoutException {
-    FirebaseApp readerApp =
-        appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
-    FirebaseApp writerApp =
-        appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
-    FirebaseDatabase readerDb = FirebaseDatabase.getInstance(readerApp);
-    readerDb.setPersistenceEnabled(true);
-    FirebaseDatabase writerDb = FirebaseDatabase.getInstance(writerApp);
-    DatabaseReference reader = readerDb.getReference();
-    DatabaseReference writer = writerDb.getReference();
-
+    reader.addValueEventListener(listener);
     assertNull(new WriteFuture(writer, 42L).timedGet());
-    assertEquals(42L, Tasks.await(reader.get()).getValue());
+    IntegrationTestHelpers.waitFor(semaphore);
+    reader.removeEventListener(listener);
 
-    readerDb.goOffline();
-
-    Semaphore semaphore = new Semaphore(0);
-    assertNotNull(ReadFuture.untilEquals(reader, 42L).timedGet());
+    assertNull(new WriteFuture(writer, 43L).timedGet());
+    assertEquals(43L, Tasks.await(reader.get()).getValue());
   }
 
   @Test

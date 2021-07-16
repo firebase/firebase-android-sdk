@@ -15,6 +15,8 @@
 package com.google.firebase.firestore.testutil;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.firebase.firestore.model.DocumentCollections.emptyDocumentMap;
+import static com.google.firebase.firestore.model.DocumentCollections.emptyMutableDocumentMap;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -49,12 +51,10 @@ import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.DocumentSet;
 import com.google.firebase.firestore.model.FieldPath;
-import com.google.firebase.firestore.model.MaybeDocument;
-import com.google.firebase.firestore.model.NoDocument;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
-import com.google.firebase.firestore.model.UnknownDocument;
 import com.google.firebase.firestore.model.Values;
 import com.google.firebase.firestore.model.mutation.DeleteMutation;
 import com.google.firebase.firestore.model.mutation.FieldMask;
@@ -182,40 +182,42 @@ public class TestUtil {
     return new SnapshotVersion(new Timestamp(seconds, nanos));
   }
 
-  public static Document doc(String key, long version, Map<String, Object> data) {
-    return new Document(
-        key(key), version(version), wrapObject(data), Document.DocumentState.SYNCED);
+  public static MutableDocument doc(String key, long version, Map<String, Object> data) {
+    return doc(key(key), version, wrapObject(data));
   }
 
-  public static Document doc(DocumentKey key, long version, Map<String, Object> data) {
-    return new Document(key, version(version), wrapObject(data), Document.DocumentState.SYNCED);
+  public static MutableDocument doc(DocumentKey key, long version, Map<String, Object> data) {
+    return doc(key, version, wrapObject(data));
   }
 
-  public static Document doc(
-      String key, long version, ObjectValue data, Document.DocumentState documentState) {
-    return new Document(key(key), version(version), data, documentState);
+  public static MutableDocument doc(String key, long version, ObjectValue data) {
+    return doc(key(key), version, data);
   }
 
-  public static Document doc(
-      String key, long version, Map<String, Object> data, Document.DocumentState documentState) {
-    return new Document(key(key), version(version), wrapObject(data), documentState);
+  public static MutableDocument doc(DocumentKey key, long version, ObjectValue data) {
+    return MutableDocument.newFoundDocument(key, version(version), data);
   }
 
-  public static NoDocument deletedDoc(String key, long version) {
-    return deletedDoc(key, version, /*hasCommittedMutations=*/ false);
+  public static MutableDocument deletedDoc(String key, long version) {
+    return MutableDocument.newNoDocument(key(key), version(version));
   }
 
-  public static NoDocument deletedDoc(String key, long version, boolean hasCommittedMutations) {
-    return new NoDocument(key(key), version(version), hasCommittedMutations);
+  public static MutableDocument unknownDoc(String key, long version) {
+    return MutableDocument.newUnknownDocument(key(key), version(version));
   }
 
-  public static UnknownDocument unknownDoc(String key, long version) {
-    return new UnknownDocument(key(key), version(version));
+  public static ImmutableSortedMap<DocumentKey, MutableDocument> docMap(
+      MutableDocument[] documents) {
+    ImmutableSortedMap<DocumentKey, MutableDocument> map = emptyMutableDocumentMap();
+    for (MutableDocument maybeDocument : documents) {
+      map = map.insert(maybeDocument.getKey(), maybeDocument);
+    }
+    return map;
   }
 
-  public static DocumentSet docSet(Comparator<Document> comparator, Document... documents) {
+  public static DocumentSet docSet(Comparator<Document> comparator, MutableDocument... documents) {
     DocumentSet set = DocumentSet.emptySet(comparator);
-    for (Document document : documents) {
+    for (MutableDocument document : documents) {
       set = set.add(document);
     }
     return set;
@@ -297,19 +299,9 @@ public class TestUtil {
         query(path).toTarget(), targetId, ARBITRARY_SEQUENCE_NUMBER, queryPurpose);
   }
 
-  public static ImmutableSortedMap<DocumentKey, MaybeDocument> docUpdates(MaybeDocument... docs) {
-    ImmutableSortedMap<DocumentKey, MaybeDocument> res =
-        ImmutableSortedMap.Builder.emptyMap(DocumentKey.comparator());
-    for (MaybeDocument doc : docs) {
-      res = res.insert(doc.getKey(), doc);
-    }
-    return res;
-  }
-
-  public static ImmutableSortedMap<DocumentKey, Document> docUpdates(Document... docs) {
-    ImmutableSortedMap<DocumentKey, Document> res =
-        ImmutableSortedMap.Builder.emptyMap(DocumentKey.comparator());
-    for (Document doc : docs) {
+  public static ImmutableSortedMap<DocumentKey, Document> docUpdates(MutableDocument... docs) {
+    ImmutableSortedMap<DocumentKey, Document> res = emptyDocumentMap();
+    for (MutableDocument doc : docs) {
       res = res.insert(doc.getKey(), doc);
     }
     return res;
@@ -318,27 +310,27 @@ public class TestUtil {
   public static TargetChange targetChange(
       ByteString resumeToken,
       boolean current,
-      @Nullable Collection<Document> addedDocuments,
-      @Nullable Collection<Document> modifiedDocuments,
-      @Nullable Collection<? extends MaybeDocument> removedDocuments) {
+      @Nullable Collection<MutableDocument> addedDocuments,
+      @Nullable Collection<MutableDocument> modifiedDocuments,
+      @Nullable Collection<? extends MutableDocument> removedDocuments) {
     ImmutableSortedSet<DocumentKey> addedDocumentKeys = DocumentKey.emptyKeySet();
     ImmutableSortedSet<DocumentKey> modifiedDocumentKeys = DocumentKey.emptyKeySet();
     ImmutableSortedSet<DocumentKey> removedDocumentKeys = DocumentKey.emptyKeySet();
 
     if (addedDocuments != null) {
-      for (Document document : addedDocuments) {
+      for (MutableDocument document : addedDocuments) {
         addedDocumentKeys = addedDocumentKeys.insert(document.getKey());
       }
     }
 
     if (modifiedDocuments != null) {
-      for (Document document : modifiedDocuments) {
+      for (MutableDocument document : modifiedDocuments) {
         modifiedDocumentKeys = modifiedDocumentKeys.insert(document.getKey());
       }
     }
 
     if (removedDocuments != null) {
-      for (MaybeDocument document : removedDocuments) {
+      for (MutableDocument document : removedDocuments) {
         removedDocumentKeys = removedDocumentKeys.insert(document.getKey());
       }
     }
@@ -347,7 +339,7 @@ public class TestUtil {
         resumeToken, current, addedDocumentKeys, modifiedDocumentKeys, removedDocumentKeys);
   }
 
-  public static TargetChange ackTarget(Document... docs) {
+  public static TargetChange ackTarget(MutableDocument... docs) {
     return targetChange(ByteString.EMPTY, true, Arrays.asList(docs), null, null);
   }
 
@@ -403,12 +395,14 @@ public class TestUtil {
   }
 
   public static RemoteEvent addedRemoteEvent(
-      MaybeDocument doc, List<Integer> updatedInTargets, List<Integer> removedFromTargets) {
+      MutableDocument doc, List<Integer> updatedInTargets, List<Integer> removedFromTargets) {
     return addedRemoteEvent(Collections.singletonList(doc), updatedInTargets, removedFromTargets);
   }
 
   public static RemoteEvent addedRemoteEvent(
-      List<MaybeDocument> docs, List<Integer> updatedInTargets, List<Integer> removedFromTargets) {
+      List<MutableDocument> docs,
+      List<Integer> updatedInTargets,
+      List<Integer> removedFromTargets) {
     Preconditions.checkArgument(!docs.isEmpty(), "Cannot pass empty docs array");
 
     WatchChangeAggregator aggregator =
@@ -428,7 +422,7 @@ public class TestUtil {
 
     SnapshotVersion version = SnapshotVersion.NONE;
 
-    for (MaybeDocument doc : docs) {
+    for (MutableDocument doc : docs) {
       DocumentChange change =
           new DocumentChange(updatedInTargets, removedFromTargets, doc.getKey(), doc);
       aggregator.handleDocumentChange(change);
@@ -439,7 +433,7 @@ public class TestUtil {
   }
 
   public static RemoteEvent updateRemoteEvent(
-      MaybeDocument doc, List<Integer> updatedInTargets, List<Integer> removedFromTargets) {
+      MutableDocument doc, List<Integer> updatedInTargets, List<Integer> removedFromTargets) {
     List<Integer> activeTargets = new ArrayList<>();
     activeTargets.addAll(updatedInTargets);
     activeTargets.addAll(removedFromTargets);
@@ -447,7 +441,7 @@ public class TestUtil {
   }
 
   public static RemoteEvent updateRemoteEvent(
-      MaybeDocument doc,
+      MutableDocument doc,
       List<Integer> updatedInTargets,
       List<Integer> removedFromTargets,
       List<Integer> activeTargets) {
@@ -486,12 +480,20 @@ public class TestUtil {
   }
 
   public static PatchMutation patchMutation(String path, Map<String, Object> values) {
-    return patchMutation(path, values, null);
+    return patchMutationHelper(path, values, Precondition.exists(true), null);
   }
 
-  public static PatchMutation patchMutation(
-      String path, Map<String, Object> values, @Nullable List<FieldPath> updateMask) {
-    // Replace '<DELETE>' from JSON with FieldValue
+  public static PatchMutation mergeMutation(
+      String path, Map<String, Object> values, List<FieldPath> updateMask) {
+    return patchMutationHelper(path, values, Precondition.NONE, updateMask);
+  }
+
+  private static PatchMutation patchMutationHelper(
+      String path,
+      Map<String, Object> values,
+      Precondition precondition,
+      @Nullable List<FieldPath> updateMask) {
+    // Replace '<DELETE>' from JSON
     for (Entry<String, Object> entry : values.entrySet()) {
       if (entry.getValue().equals(DELETE_SENTINEL)) {
         values.put(entry.getKey(), FieldValue.delete());
@@ -500,13 +502,15 @@ public class TestUtil {
 
     UserDataReader dataReader = new UserDataReader(DatabaseId.forProject("project"));
     ParsedUpdateData parsed = dataReader.parseUpdateData(values);
-    boolean merge = updateMask != null;
+
+    // `mergeMutation()` provides an update mask for the merged fields, whereas `patchMutation()`
+    // requires the update mask to be parsed from the values.
+    Collection<FieldPath> mask = updateMask != null ? updateMask : parsed.getFieldMask().getMask();
 
     // We sort the fieldMaskPaths to make the order deterministic in tests. (Otherwise, when we
     // flatten a Set to a proto repeated field, we'll end up comparing in iterator order and
     // possibly consider {foo,bar} != {bar,foo}.)
-    SortedSet<FieldPath> fieldMaskPaths =
-        new TreeSet<>(merge ? updateMask : parsed.getFieldMask().getMask());
+    SortedSet<FieldPath> fieldMaskPaths = new TreeSet<>(mask);
 
     // The order of the transforms doesn't matter, but we sort them so tests can assume a particular
     // order.
@@ -518,7 +522,7 @@ public class TestUtil {
         key(path),
         parsed.getData(),
         FieldMask.fromSet(fieldMaskPaths),
-        merge ? Precondition.NONE : Precondition.exists(true),
+        precondition,
         fieldTransforms);
   }
 
@@ -531,7 +535,7 @@ public class TestUtil {
   }
 
   public static MutationResult mutationResult(long version) {
-    return new MutationResult(version(version), null);
+    return new MutationResult(version(version), Collections.emptyList());
   }
 
   public static LocalViewChanges viewChanges(

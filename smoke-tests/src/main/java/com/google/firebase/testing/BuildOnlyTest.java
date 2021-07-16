@@ -19,11 +19,13 @@ import static com.google.common.truth.Truth.assertThat;
 import com.google.firebase.appindexing.FirebaseAppIndex;
 import com.google.firebase.inappmessaging.FirebaseInAppMessaging;
 // import com.google.firebase.messaging.FirebaseMessaging;
-// import com.google.firebase.perf.FirebasePerformance;
-import com.google.firebase.ml.vision.FirebaseVision;
+import com.google.firebase.ml.modeldownloader.FirebaseModelDownloader;
+import com.google.firebase.perf.FirebasePerformance;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+
+import static androidx.test.core.app.ApplicationProvider.getApplicationContext;
 
 /** Contains initialization test cases for build-only libraries. */
 @RunWith(JUnit4.class)
@@ -31,7 +33,7 @@ public final class BuildOnlyTest {
 
   @Test
   public void appindexing_IsNotNull() {
-    assertThat(FirebaseAppIndex.getInstance()).isNotNull();
+    assertThat(FirebaseAppIndex.getInstance(getApplicationContext())).isNotNull();
   }
 
   @Test
@@ -44,13 +46,13 @@ public final class BuildOnlyTest {
 //    assertThat(FirebaseMessaging.getInstance()).isNotNull();
 //  }
 
-//  @Test
-//  public void performance_IsNotNull() {
-//    assertThat(FirebasePerformance.getInstance()).isNotNull();
-//  }
+  @Test
+  public void modelDownloader_IsNotNull() {
+    assertThat(FirebaseModelDownloader.getInstance()).isNotNull();
+  }
 
   @Test
-  public void vision_IsNotNull() {
-    assertThat(FirebaseVision.getInstance()).isNotNull();
+  public void performance_IsNotNull() {
+    assertThat(FirebasePerformance.getInstance()).isNotNull();
   }
 }

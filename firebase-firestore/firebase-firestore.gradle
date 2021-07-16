@@ -58,6 +58,7 @@ android {
         versionName version
         multiDexEnabled true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        consumerProguardFiles 'proguard.txt'
     }
 
     sourceSets {
@@ -107,6 +108,11 @@ configurations.all {
     exclude group: "com.google.protobuf", module: "protobuf-java"
 }
 
+googleJavaFormat {
+    exclude 'src/testUtil/java/com/google/firebase/firestore/testutil/Assert.java'
+    exclude 'src/testUtil/java/com/google/firebase/firestore/testutil/ThrowingRunnable.java'
+}
+
 dependencies {
     implementation project(':firebase-common')
     implementation project(':protolite-well-known-types')
@@ -116,6 +122,8 @@ dependencies {
 
     //To provide @Generated annotations
     compileOnly 'javax.annotation:jsr250-api:1.0'
+
+    javadocClasspath 'com.google.auto.value:auto-value-annotations:1.6.6'
 
     implementation 'androidx.annotation:annotation:1.1.0'
     implementation "io.grpc:grpc-stub:$grpcVersion"
@@ -127,7 +135,7 @@ dependencies {
     implementation 'com.google.android.gms:play-services-base:17.0.0'
 
     implementation 'com.squareup.okhttp:okhttp:2.7.5'
-    implementation('com.google.firebase:firebase-auth-interop:18.0.0') {
+    implementation('com.google.firebase:firebase-auth-interop:19.0.2') {
         exclude group: "com.google.firebase", module: "firebase-common"
     }
 

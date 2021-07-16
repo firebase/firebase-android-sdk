@@ -49,7 +49,7 @@ class CLSUUID {
     _clsId =
         String.format(
                 Locale.US,
-                "%s-%s-%s-%s",
+                "%s%s%s%s",
                 timeSeqPid.substring(0, 12),
                 timeSeqPid.substring(12, 16),
                 timeSeqPid.subSequence(16, 20),

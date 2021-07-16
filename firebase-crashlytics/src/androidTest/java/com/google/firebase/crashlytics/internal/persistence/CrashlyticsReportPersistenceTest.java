@@ -72,6 +72,57 @@ public class CrashlyticsReportPersistenceTest {
   }
 
   @Test
+  public void testListSortedOpenSessionIds() {
+    final String[] expectedIds = new String[] {"sessionId3", "sessionId2", "sessionId1"};
+
+    reportPersistence.persistReport(makeTestReport(expectedIds[1]));
+    reportPersistence.persistReport(makeTestReport(expectedIds[0]));
+    reportPersistence.persistReport(makeTestReport(expectedIds[2]));
+
+    final List<String> openSessionIds = reportPersistence.listSortedOpenSessionIds();
+
+    assertArrayEquals(expectedIds, openSessionIds.toArray());
+  }
+
+  @Test
+  public void testListSortedOpenSessionIds_noOpenSessions() {
+    final List<String> openSessionIds = reportPersistence.listSortedOpenSessionIds();
+    assertTrue(openSessionIds.isEmpty());
+  }
+
+  @Test
+  public void testPersistReports_getStartTimestampMillis() {
+    final String sessionId = "testSession";
+    final CrashlyticsReport testReport = makeTestReport(sessionId);
+
+    reportPersistence.persistReport(testReport);
+    assertEquals(
+        testReport.getSession().getStartedAt() * 1000,
+        reportPersistence.getStartTimestampMillis(sessionId));
+  }
+
+  @Test
+  public void testHasFinalizedReports() {
+    final String sessionId = "testSession";
+    final CrashlyticsReport testReport = makeTestReport(sessionId);
+    final CrashlyticsReport.Session.Event testEvent = makeTestEvent();
+
+    reportPersistence.persistReport(testReport);
+    reportPersistence.persistEvent(testEvent, sessionId);
+
+    final long endedAt = System.currentTimeMillis();
+
+    reportPersistence.finalizeReports("skippedSession", endedAt);
+
+    assertTrue(reportPersistence.hasFinalizedReports());
+  }
+
+  @Test
+  public void testHasFinalizedReports_noReports() {
+    assertFalse(reportPersistence.hasFinalizedReports());
+  }
+
+  @Test
   public void testLoadFinalizeReports_noReports_returnsNothing() {
     assertTrue(reportPersistence.loadFinalizedReports().isEmpty());
   }
@@ -617,6 +668,28 @@ public class CrashlyticsReportPersistenceTest {
         finalizedReport2);
   }
 
+  @Test
+  public void testPersistReportWithAnrEvent() throws IOException {
+    reportPersistence =
+        new CrashlyticsReportPersistence(
+            folder.newFolder(), getSettingsMock(VERY_LARGE_UPPER_LIMIT, 4));
+    final String sessionId = "testSession";
+    final CrashlyticsReport testReport = makeTestReport(sessionId);
+    final Event testEvent = makeTestAnrEvent();
+    reportPersistence.persistReport(testReport);
+    reportPersistence.persistEvent(testEvent, sessionId, true);
+
+    final long endedAt = System.currentTimeMillis();
+
+    reportPersistence.finalizeReports("skippedSession", endedAt);
+
+    final List<CrashlyticsReportWithSessionId> finalizedReports =
+        reportPersistence.loadFinalizedReports();
+    assertEquals(1, finalizedReports.size());
+    final CrashlyticsReport finalizedReport = finalizedReports.get(0).getReport();
+    assertEquals(1, finalizedReport.getSession().getEvents().size());
+  }
+
   private static void persistReportWithEvent(
       CrashlyticsReportPersistence reportPersistence, String sessionId, boolean isHighPriority) {
     CrashlyticsReport testReport = makeTestReport(sessionId);
@@ -692,7 +765,7 @@ public class CrashlyticsReportPersistenceTest {
 
   private static Event makeTestEvent(String type, String reason) {
     return Event.builder()
-        .setType("type")
+        .setType(type)
         .setTimestamp(1000)
         .setApp(
             Session.Event.Application.builder()
@@ -722,6 +795,40 @@ public class CrashlyticsReportPersistenceTest {
                                     .setImportance(4)
                                     .setFrames(makeTestFrames())
                                     .build()))
+                        .build())
+                .setUiOrientation(1)
+                .build())
+        .setDevice(
+            Session.Event.Device.builder()
+                .setBatteryLevel(0.5)
+                .setBatteryVelocity(3)
+                .setDiskUsed(10000000)
+                .setOrientation(1)
+                .setProximityOn(true)
+                .setRamUsed(10000000)
+                .build())
+        .build();
+  }
+
+  private static Event makeTestAnrEvent() {
+    return Event.builder()
+        .setType("anr")
+        .setTimestamp(1000)
+        .setApp(
+            Session.Event.Application.builder()
+                .setBackground(false)
+                .setExecution(
+                    Execution.builder()
+                        .setBinaries(
+                            ImmutableList.from(
+                                Execution.BinaryImage.builder()
+                                    .setBaseAddress(0)
+                                    .setName("name")
+                                    .setSize(100000)
+                                    .setUuid("uuid")
+                                    .build()))
+                        .setSignal(Signal.builder().setCode("0").setName("0").setAddress(0).build())
+                        .setAppExitInfo(makeAppExitInfo())
                         .build())
                 .setUiOrientation(1)
                 .build())
@@ -767,5 +874,18 @@ public class CrashlyticsReportPersistenceTest {
             .setOffset(751)
             .setImportance(4)
             .build());
+  }
+
+  private static CrashlyticsReport.ApplicationExitInfo makeAppExitInfo() {
+    return CrashlyticsReport.ApplicationExitInfo.builder()
+        .setTraceFile("trace")
+        .setTimestamp(1L)
+        .setImportance(1)
+        .setReasonCode(1)
+        .setProcessName("test")
+        .setPid(1)
+        .setPss(1L)
+        .setRss(1L)
+        .build();
   }
 }

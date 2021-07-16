@@ -98,7 +98,7 @@ public class DocumentChange {
    *
    * @return A snapshot of the new data (for {@link DocumentChange.Type#ADDED} or {@link
    *     DocumentChange.Type#MODIFIED}) or the removed data (for {@link
-   *     DocumentChange.Type.REMOVED}).
+   *     DocumentChange.Type#REMOVED}).
    */
   @NonNull
   public QueryDocumentSnapshot getDocument() {

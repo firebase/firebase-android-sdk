@@ -43,16 +43,6 @@ import java.util.Map;
  */
 public class CrashlyticsReportDataCapture {
 
-  private static final String GENERATOR =
-      String.format(Locale.US, "Crashlytics Android SDK/%s", BuildConfig.VERSION_NAME);
-
-  // GeneratorType ANDROID_SDK = 3;
-  private static final int GENERATOR_TYPE = 3;
-
-  private static final int REPORT_ANDROID_PLATFORM = 4;
-  private static final int SESSION_ANDROID_PLATFORM = 3;
-  private static final String SIGNAL_DEFAULT = "0";
-
   private static final Map<String, Integer> ARCHITECTURES_BY_NAME = new HashMap<>();
 
   static {
@@ -62,6 +52,16 @@ public class CrashlyticsReportDataCapture {
     ARCHITECTURES_BY_NAME.put("x86", Architecture.X86_32);
     ARCHITECTURES_BY_NAME.put("x86_64", Architecture.X86_64);
   }
+
+  static final String GENERATOR =
+      String.format(Locale.US, "Crashlytics Android SDK/%s", BuildConfig.VERSION_NAME);
+
+  // GeneratorType ANDROID_SDK = 3;
+  static final int GENERATOR_TYPE = 3;
+
+  static final int REPORT_ANDROID_PLATFORM = 4;
+  static final int SESSION_ANDROID_PLATFORM = 3;
+  static final String SIGNAL_DEFAULT = "0";
 
   private final Context context;
   private final IdManager idManager;
@@ -79,12 +79,8 @@ public class CrashlyticsReportDataCapture {
     this.stackTraceTrimmingStrategy = stackTraceTrimmingStrategy;
   }
 
-  public CrashlyticsReport captureReportData(String identifier, long timestamp) {
-    return buildReportData().setSession(populateSessionData(identifier, timestamp)).build();
-  }
-
-  public CrashlyticsReport captureReportData() {
-    return buildReportData().build();
+  public CrashlyticsReport captureReportData(String identifier, long timestampSeconds) {
+    return buildReportData().setSession(populateSessionData(identifier, timestampSeconds)).build();
   }
 
   public Event captureEventData(
@@ -114,6 +110,20 @@ public class CrashlyticsReportDataCapture {
         .build();
   }
 
+  public Event captureAnrEventData(CrashlyticsReport.ApplicationExitInfo applicationExitInfo) {
+    // This is not the orientation of the device at the time of ANR.
+    // It's filtered out when the backend processes it.
+    // TODO: Consider setting it to 0 to mark it as unknown.
+    final int orientation = context.getResources().getConfiguration().orientation;
+
+    return Event.builder()
+        .setType("anr")
+        .setTimestamp(applicationExitInfo.getTimestamp())
+        .setApp(populateEventApplicationData(orientation, applicationExitInfo))
+        .setDevice(populateEventDeviceData(orientation))
+        .build();
+  }
+
   private CrashlyticsReport.Builder buildReportData() {
     return CrashlyticsReport.builder()
         .setSdkVersion(BuildConfig.VERSION_NAME)
@@ -124,9 +134,9 @@ public class CrashlyticsReportDataCapture {
         .setPlatform(REPORT_ANDROID_PLATFORM);
   }
 
-  private CrashlyticsReport.Session populateSessionData(String identifier, long timestamp) {
+  private CrashlyticsReport.Session populateSessionData(String identifier, long timestampSeconds) {
     return CrashlyticsReport.Session.builder()
-        .setStartedAt(timestamp)
+        .setStartedAt(timestampSeconds)
         .setIdentifier(identifier)
         .setGenerator(GENERATOR)
         .setApp(populateSessionApplicationData())
@@ -216,6 +226,18 @@ public class CrashlyticsReportDataCapture {
         .build();
   }
 
+  private Event.Application populateEventApplicationData(
+      int orientation, CrashlyticsReport.ApplicationExitInfo applicationExitInfo) {
+    boolean isBackground =
+        applicationExitInfo.getImportance() != RunningAppProcessInfo.IMPORTANCE_FOREGROUND;
+
+    return Event.Application.builder()
+        .setBackground(isBackground)
+        .setUiOrientation(orientation)
+        .setExecution(populateExecutionData(applicationExitInfo))
+        .build();
+  }
+
   private Event.Device populateEventDeviceData(int orientation) {
     final BatteryState battery = BatteryState.get(context);
     final Float batteryLevel = battery.getBatteryLevel();
@@ -249,6 +271,15 @@ public class CrashlyticsReportDataCapture {
                 trimmedEvent, eventThread, eventThreadImportance, includeAllThreads))
         .setException(
             populateExceptionData(trimmedEvent, eventThreadImportance, maxChainedExceptions))
+        .setSignal(populateSignalData())
+        .setBinaries(populateBinaryImagesList())
+        .build();
+  }
+
+  private Execution populateExecutionData(
+      CrashlyticsReport.ApplicationExitInfo applicationExitInfo) {
+    return Execution.builder()
+        .setAppExitInfo(applicationExitInfo)
         .setSignal(populateSignalData())
         .setBinaries(populateBinaryImagesList())
         .build();

@@ -21,8 +21,10 @@ import static com.google.firebase.inappmessaging.testutil.TestData.BANNER_MESSAG
 import static com.google.firebase.inappmessaging.testutil.TestData.CARD_MESSAGE_MODEL;
 import static com.google.firebase.inappmessaging.testutil.TestData.IMAGE_MESSAGE_MODEL;
 import static com.google.firebase.inappmessaging.testutil.TestData.IMAGE_MESSAGE_MODEL_WITHOUT_ACTION;
+import static com.google.firebase.inappmessaging.testutil.TestData.IMAGE_MESSAGE_WEB_ACTION_MODEL;
 import static com.google.firebase.inappmessaging.testutil.TestData.IMAGE_URL_STRING;
 import static com.google.firebase.inappmessaging.testutil.TestData.MODAL_MESSAGE_MODEL;
+import static com.google.firebase.inappmessaging.testutil.TestData.WEB_ACTION_URL_STRING;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
@@ -33,7 +35,6 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.robolectric.RuntimeEnvironment.application;
 import static org.robolectric.Shadows.shadowOf;
 
 import android.app.Activity;
@@ -185,7 +186,7 @@ public class FirebaseInAppMessagingDisplayTest {
     activityTwo = Robolectric.buildActivity(TestSecondActivity.class).create().get();
     shadowActivity = shadowOf(activity);
 
-    LayoutInflater inflater = LayoutInflater.from(application);
+    LayoutInflater inflater = LayoutInflater.from(ApplicationProvider.getApplicationContext());
     imageBindingWrapper =
         spy(new ImageBindingWrapper(imageLayoutConfig, inflater, IMAGE_MESSAGE_MODEL));
     modalBindingWrapper =
@@ -211,7 +212,7 @@ public class FirebaseInAppMessagingDisplayTest {
             impressionTimer,
             autoDismissTimer,
             windowManager,
-            application,
+            ApplicationProvider.getApplicationContext(),
             bindingClient,
             animator);
   }
@@ -546,7 +547,11 @@ public class FirebaseInAppMessagingDisplayTest {
     verify(fakeRequestCreator).into(any(ImageView.class), callbackArgCaptor.capture());
     callbackArgCaptor.getValue().onSuccess();
 
-    verify(animator).slideIntoView(eq(application), any(View.class), eq(FiamAnimator.Position.TOP));
+    verify(animator)
+        .slideIntoView(
+            eq(ApplicationProvider.getApplicationContext()),
+            any(View.class),
+            eq(FiamAnimator.Position.TOP));
   }
 
   @Test
@@ -586,12 +591,15 @@ public class FirebaseInAppMessagingDisplayTest {
     customTabIntent.setPackage("com.android.chrome");
     shadowPackageManager.addResolveInfoForIntent(customTabIntent, resolveInfo);
     resumeActivity(activity);
-    listener.displayMessage(IMAGE_MESSAGE_MODEL, callbacks);
+    listener.displayMessage(IMAGE_MESSAGE_WEB_ACTION_MODEL, callbacks);
     verify(imageBindingWrapper)
         .inflate(onClickListenerArgCaptor.capture(), any(OnClickListener.class));
-    onClickListenerArgCaptor.getValue().get(IMAGE_MESSAGE_MODEL.getAction()).onClick(null);
+    onClickListenerArgCaptor
+        .getValue()
+        .get(IMAGE_MESSAGE_WEB_ACTION_MODEL.getAction())
+        .onClick(null);
     assertThat(shadowActivity.getNextStartedActivity().getData())
-        .isEqualTo(Uri.parse(ACTION_URL_STRING));
+        .isEqualTo(Uri.parse(WEB_ACTION_URL_STRING));
   }
 
   @Test

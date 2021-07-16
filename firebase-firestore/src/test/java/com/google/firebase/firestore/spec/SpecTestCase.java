@@ -40,7 +40,10 @@ import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.FirebaseFirestoreSettings;
+import com.google.firebase.firestore.LoadBundleTask;
 import com.google.firebase.firestore.auth.User;
+import com.google.firebase.firestore.bundle.BundleReader;
+import com.google.firebase.firestore.bundle.BundleSerializer;
 import com.google.firebase.firestore.core.ComponentProvider;
 import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.core.DocumentViewChange;
@@ -55,9 +58,8 @@ import com.google.firebase.firestore.local.Persistence;
 import com.google.firebase.firestore.local.PersistenceTestHelpers;
 import com.google.firebase.firestore.local.QueryPurpose;
 import com.google.firebase.firestore.local.TargetData;
-import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.MaybeDocument;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
@@ -66,6 +68,7 @@ import com.google.firebase.firestore.model.mutation.MutationResult;
 import com.google.firebase.firestore.remote.ExistenceFilter;
 import com.google.firebase.firestore.remote.MockDatastore;
 import com.google.firebase.firestore.remote.RemoteEvent;
+import com.google.firebase.firestore.remote.RemoteSerializer;
 import com.google.firebase.firestore.remote.RemoteStore;
 import com.google.firebase.firestore.remote.RemoteStore.RemoteStoreCallback;
 import com.google.firebase.firestore.remote.WatchChange;
@@ -81,8 +84,10 @@ import com.google.firebase.firestore.util.AsyncQueue.TimerId;
 import com.google.protobuf.ByteString;
 import io.grpc.Status;
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -92,6 +97,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -101,7 +107,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Test;
-import org.robolectric.android.util.concurrent.RoboExecutorService;
+import org.robolectric.android.util.concurrent.InlineExecutorService;
 
 /**
  * Subclasses of SpecTestCase run a set of portable event specifications from JSON spec files
@@ -190,7 +196,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
   private Set<DocumentKey> expectedEnqueuedLimboDocs;
 
   /** Set of expected active targets, keyed by target ID. */
-  private Map<Integer, Pair<List<TargetData>, String>> expectedActiveTargets;
+  private Map<Integer, List<TargetData>> expectedActiveTargets;
 
   /**
    * The writes that have been sent to the SyncEngine via {@link SyncEngine#writeMutations} but not
@@ -217,7 +223,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
   private int snapshotsInSyncEvents = 0;
 
   /** An executor to use for test callbacks. */
-  private final RoboExecutorService backgroundExecutor = new RoboExecutorService();
+  private final ExecutorService backgroundExecutor = new InlineExecutorService();
 
   /** The current user for the SyncEngine. Determines which mutation queue is active. */
   private User currentUser;
@@ -408,14 +414,14 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
       throws JSONException {
     long version = jsonDoc.getLong("version");
     JSONObject options = jsonDoc.getJSONObject("options");
-    Document.DocumentState documentState =
-        options.optBoolean("hasLocalMutations")
-            ? Document.DocumentState.LOCAL_MUTATIONS
-            : (options.optBoolean("hasCommittedMutations")
-                ? Document.DocumentState.COMMITTED_MUTATIONS
-                : Document.DocumentState.SYNCED);
     Map<String, Object> values = parseMap(jsonDoc.getJSONObject("value"));
-    Document doc = doc(jsonDoc.getString("key"), version, values, documentState);
+    MutableDocument doc = doc(jsonDoc.getString("key"), version, values);
+    if (options.optBoolean("hasLocalMutations")) {
+      doc.setHasLocalMutations();
+    }
+    if (options.optBoolean("hasCommittedMutations")) {
+      doc.setHasCommittedMutations();
+    }
     return DocumentViewChange.create(type, doc);
   }
 
@@ -466,9 +472,9 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
   // Methods for doing the steps of the spec test.
   //
 
-  private void doListen(JSONArray listenSpec) throws Exception {
-    int expectedId = listenSpec.getInt(0);
-    Query query = parseQuery(listenSpec.get(1));
+  private void doListen(JSONObject listenSpec) throws Exception {
+    int expectedId = listenSpec.getInt("targetId");
+    Query query = parseQuery(listenSpec.getJSONObject("query"));
     // TODO: Allow customizing listen options in spec tests
     ListenOptions options = new ListenOptions();
     options.includeDocumentMetadataChanges = true;
@@ -499,6 +505,20 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     Query query = parseQuery(unlistenSpec.get(1));
     QueryListener listener = queryListeners.remove(query);
     queue.runSync(() -> eventManager.removeQueryListener(listener));
+  }
+
+  private void doLoadBundle(String json) throws Exception {
+    BundleReader bundleReader =
+        new BundleReader(
+            new BundleSerializer(new RemoteSerializer(databaseInfo.getDatabaseId())),
+            new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)));
+    LoadBundleTask bundleTask = new LoadBundleTask();
+    queue.runSync(
+        () -> {
+          syncEngine.loadBundle(bundleReader, bundleTask);
+          bundleTask.addOnFailureListener(e -> log("Loading bundle failed with " + e));
+        });
+    assertTrue(bundleTask.isSuccessful());
   }
 
   private void doMutation(Mutation mutation) throws Exception {
@@ -619,7 +639,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
       Map<String, Object> value =
           !docSpec.isNull("value") ? parseMap(docSpec.getJSONObject("value")) : null;
       long version = docSpec.getLong("version");
-      MaybeDocument doc = value != null ? doc(key, version, value) : deletedDoc(key, version);
+      MutableDocument doc = value != null ? doc(key, version, value) : deletedDoc(key, version);
       List<Integer> updated = parseIntList(watchEntity.optJSONArray("targets"));
       List<Integer> removed = parseIntList(watchEntity.optJSONArray("removedTargets"));
       WatchChange change = new DocumentChange(updated, removed, doc.getKey(), doc);
@@ -693,7 +713,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     validateNextWriteSent(write.first);
 
     MutationResult mutationResult =
-        new MutationResult(version(version), /*transformResults=*/ null);
+        new MutationResult(version(version), /*transformResults=*/ Collections.emptyList());
     queue.runSync(() -> datastore.ackWrite(version(version), singletonList(mutationResult)));
   }
 
@@ -784,7 +804,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     }
 
     if (step.has("userListen")) {
-      doListen(step.getJSONArray("userListen"));
+      doListen(step.getJSONObject("userListen"));
     } else if (step.has("userUnlisten")) {
       doUnlisten(step.getJSONArray("userUnlisten"));
     } else if (step.has("userSet")) {
@@ -799,6 +819,8 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
       doRemoveSnapshotsInSyncListener();
     } else if (step.has("drainQueue")) {
       doDrainQueue();
+    } else if (step.has("loadBundle")) {
+      doLoadBundle(step.getString("loadBundle"));
     } else if (step.has("watchAck")) {
       doWatchAck(step.getJSONArray("watchAck"));
     } else if (step.has("watchCurrent")) {
@@ -963,10 +985,9 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
           int targetId = Integer.parseInt(targetIdString);
 
           JSONObject queryDataJson = activeTargets.getJSONObject(targetIdString);
-          String resumeToken = queryDataJson.getString("resumeToken");
           JSONArray queryArrayJson = queryDataJson.getJSONArray("queries");
 
-          expectedActiveTargets.put(targetId, new Pair<>(new ArrayList<>(), resumeToken));
+          expectedActiveTargets.put(targetId, new ArrayList<>());
           for (int i = 0; i < queryArrayJson.length(); i++) {
             Query query = parseQuery(queryArrayJson.getJSONObject(i));
             // TODO: populate the purpose of the target once it's possible to encode that in the
@@ -974,10 +995,19 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
             // always the right value.
             TargetData targetData =
                 new TargetData(
-                        query.toTarget(), targetId, ARBITRARY_SEQUENCE_NUMBER, QueryPurpose.LISTEN)
-                    .withResumeToken(ByteString.copyFromUtf8(resumeToken), SnapshotVersion.NONE);
+                    query.toTarget(), targetId, ARBITRARY_SEQUENCE_NUMBER, QueryPurpose.LISTEN);
+            if (queryDataJson.has("resumeToken")) {
+              targetData =
+                  targetData.withResumeToken(
+                      ByteString.copyFromUtf8(queryDataJson.getString("resumeToken")),
+                      SnapshotVersion.NONE);
+            } else {
+              targetData =
+                  targetData.withResumeToken(
+                      ByteString.EMPTY, version(queryDataJson.getInt("readTime")));
+            }
 
-            expectedActiveTargets.get(targetId).first.add(targetData);
+            expectedActiveTargets.get(targetId).add(targetData);
           }
         }
       }
@@ -1095,13 +1125,12 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     // Create a copy so we can modify it in tests
     Map<Integer, TargetData> actualTargets = new HashMap<>(datastore.activeTargets());
 
-    for (Map.Entry<Integer, Pair<List<TargetData>, String>> expected :
-        expectedActiveTargets.entrySet()) {
+    for (Map.Entry<Integer, List<TargetData>> expected : expectedActiveTargets.entrySet()) {
       assertTrue(
           "Expected active target not found: " + expected.getValue(),
           actualTargets.containsKey(expected.getKey()));
 
-      List<TargetData> expectedQueries = expected.getValue().first;
+      List<TargetData> expectedQueries = expected.getValue();
       TargetData expectedTarget = expectedQueries.get(0);
       TargetData actualTarget = actualTargets.get(expected.getKey());
 

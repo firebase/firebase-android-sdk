@@ -61,7 +61,7 @@ HTML coverage reports can be produced locally with `./gradlew <product>:checkCov
 Report files are located at `<product-build-dir>/reports/jacoco/`.
 '''
 
-  uploader.post_report(test_report, metrics_service_url, access_token, note)
+  uploader.post_report(test_report, metrics_service_url, access_token, note=note)
 
 
 def _parse_xml_reports():

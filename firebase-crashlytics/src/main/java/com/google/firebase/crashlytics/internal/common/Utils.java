@@ -19,13 +19,6 @@ import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
-import java.io.File;
-import java.io.FilenameFilter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
@@ -37,71 +30,7 @@ import java.util.concurrent.TimeoutException;
 /** Utils */
 public final class Utils {
 
-  private static final FilenameFilter ALL_FILES_FILTER =
-      new FilenameFilter() {
-        @Override
-        public boolean accept(File dir, String filename) {
-          return true;
-        }
-      };
-
   private Utils() {}
-
-  /**
-   * Caps the number of fatal and native sessions at maxAllowed, deleting session files with older
-   * timestamps if necessary. Synchronization is up to the caller.
-   *
-   * @return the number of files ultimately retained.
-   */
-  static int capSessionCount(
-      File nativeDirectory, File fatalDirectory, int maxAllowed, Comparator<File> sortComparator) {
-    final List<File> allFiles = new ArrayList<>();
-    File[] nativeFiles = nativeDirectory.listFiles();
-    File[] fatalFiles = fatalDirectory.listFiles(ALL_FILES_FILTER);
-    nativeFiles = (nativeFiles != null) ? nativeFiles : new File[0];
-    fatalFiles = (fatalFiles != null) ? fatalFiles : new File[0];
-    allFiles.addAll(Arrays.asList(nativeFiles));
-    allFiles.addAll(Arrays.asList(fatalFiles));
-    return capFileCount(allFiles, maxAllowed, sortComparator);
-  }
-
-  static int capFileCount(File directory, int maxAllowed, Comparator<File> sortComparator) {
-    return capFileCount(directory, ALL_FILES_FILTER, maxAllowed, sortComparator);
-  }
-
-  /**
-   * Caps the number of files matching the given filter at maxAllowed, deleting files with older
-   * timestamps if necessary. Synchronization is up to the caller.
-   *
-   * @return the number of files ultimately retained.
-   */
-  static int capFileCount(
-      File directory, FilenameFilter filter, int maxAllowed, Comparator<File> sortComparator) {
-    final File[] sessionFiles = directory.listFiles(filter);
-
-    if (sessionFiles == null) {
-      return 0;
-    }
-
-    return capFileCount(Arrays.asList(sessionFiles), maxAllowed, sortComparator);
-  }
-
-  static int capFileCount(List<File> files, int maxAllowed, Comparator<File> sortComparator) {
-    int numRetained = files.size();
-    // sort so that we iterate over the oldest first
-    Collections.sort(files, sortComparator);
-
-    for (File file : files) {
-      // delete until we come under the max
-      if (numRetained <= maxAllowed) {
-        return numRetained;
-      }
-      recursiveDelete(file);
-      numRetained--;
-    }
-
-    return numRetained;
-  }
 
   /** @return A tasks that is resolved when either of the given tasks is resolved. */
   public static <T> Task<T> race(Task<T> t1, Task<T> t2) {
@@ -202,13 +131,4 @@ public final class Utils {
   private static final ExecutorService TASK_CONTINUATION_EXECUTOR_SERVICE =
       ExecutorUtils.buildSingleThreadExecutorService(
           "awaitEvenIfOnMainThread task continuation executor");
-
-  private static void recursiveDelete(File f) {
-    if (f.isDirectory()) {
-      for (File s : f.listFiles()) {
-        recursiveDelete(s);
-      }
-    }
-    f.delete();
-  }
 }

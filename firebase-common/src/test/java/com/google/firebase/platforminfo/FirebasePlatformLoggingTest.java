@@ -23,6 +23,7 @@ import android.os.Build;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.firebase.FirebaseOptions;
+import java.util.regex.Pattern;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.annotation.Config;
@@ -79,7 +80,7 @@ public class FirebasePlatformLoggingTest {
         app -> {
           UserAgentPublisher ua = app.get(UserAgentPublisher.class);
 
-          assertThat(ua.getUserAgent()).contains("android-platform/ ");
+          assertThat(ua.getUserAgent()).containsMatch(Pattern.compile("android-platform/($|\\s)"));
         });
   }
 
@@ -110,7 +111,7 @@ public class FirebasePlatformLoggingTest {
         app -> {
           UserAgentPublisher ua = app.get(UserAgentPublisher.class);
 
-          assertThat(ua.getUserAgent()).contains("android-platform/ ");
+          assertThat(ua.getUserAgent()).containsMatch(Pattern.compile("android-platform/($|\\s)"));
         });
   }
 
@@ -141,7 +142,7 @@ public class FirebasePlatformLoggingTest {
         app -> {
           UserAgentPublisher ua = app.get(UserAgentPublisher.class);
 
-          assertThat(ua.getUserAgent()).contains("android-platform/ ");
+          assertThat(ua.getUserAgent()).containsMatch(Pattern.compile("android-platform/($|\\s)"));
         });
   }
 
@@ -153,7 +154,7 @@ public class FirebasePlatformLoggingTest {
         app -> {
           UserAgentPublisher ua = app.get(UserAgentPublisher.class);
 
-          assertThat(ua.getUserAgent()).contains("android-installer/ ");
+          assertThat(ua.getUserAgent()).containsMatch(Pattern.compile("android-installer/($|\\s)"));
         });
   }
 

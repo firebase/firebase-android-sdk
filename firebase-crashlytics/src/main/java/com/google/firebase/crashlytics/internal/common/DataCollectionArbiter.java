@@ -46,7 +46,7 @@ public class DataCollectionArbiter {
    * A Task that will be resolved when explicit data collection permission is granted by calling
    * grantDataCollectionPermission.
    */
-  private TaskCompletionSource<Void> dataCollectionExplicitlyApproved =
+  private final TaskCompletionSource<Void> dataCollectionExplicitlyApproved =
       new TaskCompletionSource<>();
 
   public DataCollectionArbiter(FirebaseApp app) {
@@ -186,7 +186,7 @@ public class DataCollectionArbiter {
     } catch (PackageManager.NameNotFoundException e) {
       // This shouldn't happen since it's this app's package, but fall through to default
       // if so.
-      Logger.getLogger().d("Unable to get PackageManager. Falling through", e);
+      Logger.getLogger().e("Could not read data collection permission from manifest", e);
     }
     return null;
   }

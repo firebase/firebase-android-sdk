@@ -109,7 +109,7 @@ public final class UserDataReader {
 
     ParseAccumulator accumulator = new ParseAccumulator(UserData.Source.Update);
     ParseContext context = accumulator.rootContext();
-    ObjectValue.Builder updateData = ObjectValue.newBuilder();
+    ObjectValue updateData = new ObjectValue();
 
     for (Entry<String, Object> entry : data.entrySet()) {
       FieldPath fieldPath =
@@ -130,7 +130,7 @@ public final class UserDataReader {
       }
     }
 
-    return accumulator.toUpdateData(updateData.build());
+    return accumulator.toUpdateData(updateData);
   }
 
   /**
@@ -146,7 +146,7 @@ public final class UserDataReader {
 
     ParseAccumulator accumulator = new ParseAccumulator(UserData.Source.Update);
     ParseContext context = accumulator.rootContext();
-    ObjectValue.Builder updateData = ObjectValue.newBuilder();
+    ObjectValue updateData = new ObjectValue();
 
     Iterator<Object> iterator = fieldsAndValues.iterator();
     while (iterator.hasNext()) {
@@ -180,7 +180,7 @@ public final class UserDataReader {
       }
     }
 
-    return accumulator.toUpdateData(updateData.build());
+    return accumulator.toUpdateData(updateData);
   }
 
   /** Parse a "query value" (e.g. value in a where filter or a value in a cursor bound). */

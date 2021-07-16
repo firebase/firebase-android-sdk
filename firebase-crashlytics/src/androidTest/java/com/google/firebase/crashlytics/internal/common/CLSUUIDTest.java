@@ -30,7 +30,12 @@ public class CLSUUIDTest extends CrashlyticsTestCase {
     super.setUp();
     FirebaseInstallationsApi installationsApiMock = mock(FirebaseInstallationsApi.class);
     when(installationsApiMock.getId()).thenReturn(Tasks.forResult("instanceId"));
-    idManager = new IdManager(getContext(), getContext().getPackageName(), installationsApiMock);
+    idManager =
+        new IdManager(
+            getContext(),
+            getContext().getPackageName(),
+            installationsApiMock,
+            DataCollectionArbiterTest.MOCK_ARBITER_ENABLED);
     uuid = new CLSUUID(idManager);
   }
 
@@ -43,7 +48,7 @@ public class CLSUUIDTest extends CrashlyticsTestCase {
   public void testToString() {
     final String s = uuid.toString();
     assertNotNull("The uuid string value should not be null", s);
-    assertEquals("The uuid string value should be 35 chars long", 35, s.length());
+    assertEquals("The uuid string value should be 32 chars long", 32, s.length());
   }
 
   /** Test that we don't get duplicate CLSUUID string values in a set of 100 uuid generated. */

@@ -12,19 +12,47 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Copy google-services JSON file specified in FIREBASE_GOOGLE_SERVICES_PATH
-// environment variable(default: "${project.rootDir}/google-services.json").
+// Copy 'google-services' JSON file specified in the FIREBASE_GOOGLE_SERVICES_PATH environment
+// variable (default: "${project.rootDir}/google-services.json").
 // Note that this fails silently.
 task copyRootGoogleServices(type: Copy) {
-    from(System.env.FIREBASE_GOOGLE_SERVICES_PATH ?: "${rootDir}/google-services.json")
+    String sourceGoogleServicesFilePath = System.env.FIREBASE_GOOGLE_SERVICES_PATH ?: "${rootDir}/google-services.json"
+
+    // Copies the 'google-services.json' from (source) into (destination)
+    from sourceGoogleServicesFilePath
     into projectDir
+
+    // Renames the source file to 'google-services.json' (handy if the source json file name is different)
     rename {
         'google-services.json'
     }
 
-    filter { String line ->
-        return line.replaceAll(/"package_name":\s+".*"/) {
-            "\"package_name\": \"${packageName}\""
+    String targetPackageLine = "\"package_name\": \"${packageName}\""
+    boolean targetPackageFound = false
+
+    File sourceGoogleServicesFile = new File(sourceGoogleServicesFilePath)
+    if (sourceGoogleServicesFile.exists()) {
+        targetPackageFound = sourceGoogleServicesFile.getText('UTF-8').contains(targetPackageLine)
+    }
+
+    println(sprintf("Task:copyRootGoogleServices -> sourceGoogleServicesFile {path: '%s', exists: %b}" +
+            ", dest {path: '%s'}, targetPackage {name: '%s', foundInSource: %b}",
+            sourceGoogleServicesFile.getPath(), sourceGoogleServicesFile.exists(),
+            projectDir, packageName, targetPackageFound))
+
+    // Do not modify 'google-services.json' if the target 'package_name' already exists
+    if (!targetPackageFound) {
+        // Modifies 'google-services.json' such that all declared 'package_name' entries are
+        // replaced with the target 'package_name'. This tricks google-services plugin into thinking
+        // that the target 'package_name' is a Firebase App and allows connection to the Firebase
+        // project. Note that all events generated from that app will then go to whatever the first
+        // client entry in the 'google-services.json' file.
+        // Note: Filtering allows us to change the contents of the file that are copied from source
+        // before they reach their new destination.
+        filter { String line ->
+            return line.replaceAll(/"package_name":\s+".*"/) {
+                targetPackageLine
+            }
         }
     }
 }
@@ -34,6 +62,12 @@ task copyRootGoogleServices(type: Copy) {
 afterEvaluate {
     if (tasks.findByName("processReleaseGoogleServices")) {
         processReleaseGoogleServices.dependsOn 'copyRootGoogleServices'
+    }
+    if (tasks.findByName("processDebugGoogleServices")) {
+        processDebugGoogleServices.dependsOn 'copyRootGoogleServices'
+    }
+    if (tasks.findByName("processAggressiveGoogleServices")) {
+        processAggressiveGoogleServices.dependsOn 'copyRootGoogleServices'
     }
 }
 

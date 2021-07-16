@@ -499,8 +499,7 @@ public class DocumentReference {
           } else {
             // We don't raise `hasPendingWrites` for deleted documents.
             documentSnapshot =
-                DocumentSnapshot.fromNoDocument(
-                    firestore, key, snapshot.isFromCache(), /* hasPendingWrites= */ false);
+                DocumentSnapshot.fromNoDocument(firestore, key, snapshot.isFromCache());
           }
           userListener.onEvent(documentSnapshot, null);
         };
