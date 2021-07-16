@@ -16,10 +16,11 @@ package com.google.firebase.firestore.bundle;
 
 import androidx.annotation.Nullable;
 import com.google.firebase.firestore.util.Logger;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.CharBuffer;
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -34,18 +35,21 @@ public class BundleReader {
   /** The capacity for the internal char buffer. */
   protected static final int BUFFER_CAPACITY = 1024;
 
+  private static final Charset UTF8_CHARSET = Charset.forName("UTF-8");
+
   private final BundleSerializer serializer;
+  private final InputStream bundleInputStream;
   private final InputStreamReader dataReader;
-  private final Charset charset = Charset.forName("UTF-8");
 
   @Nullable BundleMetadata metadata;
-  private CharBuffer buffer;
+  private ByteBuffer buffer;
   long bytesRead;
 
-  public BundleReader(BundleSerializer serializer, InputStream data) {
+  public BundleReader(BundleSerializer serializer, InputStream bundleInputStream) {
     this.serializer = serializer;
-    dataReader = new InputStreamReader(data, charset);
-    buffer = CharBuffer.allocate(BUFFER_CAPACITY);
+    this.bundleInputStream = bundleInputStream;
+    this.dataReader = new InputStreamReader(this.bundleInputStream);
+    buffer = ByteBuffer.allocate(BUFFER_CAPACITY);
 
     buffer.flip(); // Start the buffer in "reading mode"
   }
@@ -83,7 +87,7 @@ public class BundleReader {
   }
 
   public void close() throws IOException {
-    dataReader.close();
+    bundleInputStream.close();
   }
 
   /**
@@ -101,8 +105,9 @@ public class BundleReader {
       return null;
     }
 
-    String json = readJsonString(Integer.parseInt(lengthPrefix));
-    bytesRead += lengthPrefix.length() + json.getBytes(charset).length;
+    int jsonStringByteCount = Integer.parseInt(lengthPrefix);
+    String json = readJsonString(jsonStringByteCount);
+    bytesRead += lengthPrefix.getBytes(UTF8_CHARSET).length + jsonStringByteCount;
     return decodeBundleElement(json);
   }
 
@@ -133,9 +138,9 @@ public class BundleReader {
       throw abort("Reached the end of bundle when a length string is expected.");
     }
 
-    char[] c = new char[nextOpenBracket];
-    buffer.get(c);
-    return new String(c);
+    byte[] b = new byte[nextOpenBracket];
+    buffer.get(b);
+    return UTF8_CHARSET.decode(ByteBuffer.wrap(b)).toString();
   }
 
   /** Returns the index of the first open bracket, or -1 if none is found. */
@@ -157,25 +162,30 @@ public class BundleReader {
    * Reads from a specified position from the internal buffer, for a specified number of bytes,
    * pulling more data from the underlying stream if needed.
    *
-   * <p>Returns a string decoded from the read bytes.
+   * <p>Returns an object containing the Json string and its UTF8 byte count.
    */
-  private String readJsonString(int length) throws IOException {
-    StringBuilder json = new StringBuilder(length);
+  private String readJsonString(int bytesToRead) throws IOException {
+    ByteArrayOutputStream jsonBytes = new ByteArrayOutputStream();
 
-    int remaining = length;
+    // Read at least `bytesToRead` number of bytes from the bundle into `this.buffer`, pulling more
+    // data if necessary.
+    // Exactly `bytesToRead` number of bytes will be put in `jsonBytes` after the loop completes.
+    int remaining = bytesToRead;
     while (remaining > 0) {
       if (buffer.remaining() == 0 && !pullMoreData()) {
         throw abort("Reached the end of bundle when more data was expected.");
       }
 
+      // `read` is the number of bytes guaranteed to exist in `this.buffer` after the above
+      // call to `pullMoreData`. Copy them to `jsonBytes` and advance `this.buffer`'s position.
       int read = Math.min(remaining, buffer.remaining());
-      json.append(buffer, 0, read);
+      jsonBytes.write(buffer.array(), buffer.arrayOffset() + buffer.position(), read);
       buffer.position(buffer.position() + read);
 
       remaining -= read;
     }
 
-    return json.toString();
+    return jsonBytes.toString(UTF8_CHARSET.name());
   }
 
   /**
@@ -185,9 +195,17 @@ public class BundleReader {
    */
   private boolean pullMoreData() throws IOException {
     buffer.compact();
-    int read = dataReader.read(buffer);
+
+    int bytesRead =
+        bundleInputStream.read(
+            buffer.array(), buffer.arrayOffset() + buffer.position(), buffer.remaining());
+    boolean readSuccess = bytesRead > 0;
+    if (readSuccess) {
+      buffer.position(buffer.position() + bytesRead);
+    }
+
     buffer.flip();
-    return read > 0;
+    return readSuccess;
   }
 
   /** Converts a JSON-encoded bundle element into its model class. */

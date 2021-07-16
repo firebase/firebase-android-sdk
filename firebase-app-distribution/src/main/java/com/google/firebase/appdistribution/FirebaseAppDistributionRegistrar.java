@@ -14,10 +14,13 @@
 
 package com.google.firebase.appdistribution;
 
+import android.app.Application;
+import android.util.Log;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.components.Component;
+import com.google.firebase.components.ComponentContainer;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
 import com.google.firebase.installations.FirebaseInstallationsApi;
@@ -32,17 +35,35 @@ import java.util.List;
  */
 @Keep
 public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
+
+  private static String TAG = "FadRegistrar";
+
   @Override
   public @NonNull List<Component<?>> getComponents() {
     return Arrays.asList(
         Component.builder(FirebaseAppDistribution.class)
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.required(FirebaseInstallationsApi.class))
-            .factory(
-                c ->
-                    new FirebaseAppDistribution(
-                        c.get(FirebaseApp.class), c.get(FirebaseInstallationsApi.class)))
+            .factory(this::buildFirebaseAppDistribution)
             .build(),
         LibraryVersionComponent.create("fire-app-distribution", BuildConfig.VERSION_NAME));
+  }
+
+  private FirebaseAppDistribution buildFirebaseAppDistribution(ComponentContainer container) {
+    FirebaseApp firebaseApp = container.get(FirebaseApp.class);
+    FirebaseInstallationsApi firebaseInstallations = container.get(FirebaseInstallationsApi.class);
+    FirebaseAppDistribution appDistribution =
+        new FirebaseAppDistribution(firebaseApp, firebaseInstallations);
+
+    if (firebaseApp.getApplicationContext() instanceof Application) {
+      Application firebaseApplication = (Application) firebaseApp.getApplicationContext();
+      firebaseApplication.registerActivityLifecycleCallbacks(appDistribution);
+    } else {
+      Log.e(
+          TAG,
+          "Error registering app to ActivityLifecycleCallbacks. SDK might not function correctly.");
+    }
+
+    return appDistribution;
   }
 }

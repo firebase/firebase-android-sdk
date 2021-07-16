@@ -45,8 +45,7 @@ dependencies {
     implementation 'com.android.support:appcompat-v7:28.0.0'
     implementation project(path: ':firebase-installations')
 
-    testImplementation 'junit:junit:4.12'
-    testImplementation 'junit:junit:4.12'
+    testImplementation 'junit:junit:4.13.2'
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation 'org.mockito:mockito-core:2.25.0'
