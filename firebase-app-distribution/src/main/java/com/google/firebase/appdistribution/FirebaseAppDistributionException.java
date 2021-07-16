@@ -20,6 +20,8 @@ import com.google.firebase.FirebaseException;
 
 /** Possible exceptions thrown in FirebaseAppDistribution */
 public class FirebaseAppDistributionException extends FirebaseException {
+  private static final String TAG = "FirebaseAppDistributionException";
+
   public enum Status {
     /** Unknown error. */
     UNKNOWN,
@@ -58,17 +60,6 @@ public class FirebaseAppDistributionException extends FirebaseException {
   @NonNull private final Status status;
   @Nullable private final AppDistributionRelease release;
 
-  public FirebaseAppDistributionException(
-      @NonNull Status status, @Nullable AppDistributionRelease release) {
-    this.status = status;
-    this.release = release;
-  }
-
-  public FirebaseAppDistributionException(@NonNull Status status) {
-    this.status = status;
-    this.release = null;
-  }
-
   public FirebaseAppDistributionException(@NonNull String message, @NonNull Status status) {
     super(message);
     this.status = status;
@@ -80,6 +71,13 @@ public class FirebaseAppDistributionException extends FirebaseException {
     super(message);
     this.status = status;
     this.release = release;
+  }
+
+  public FirebaseAppDistributionException(
+      @NonNull String message, @NonNull Status status, @NonNull Throwable cause) {
+    super(message, cause);
+    this.status = status;
+    this.release = null;
   }
 
   public FirebaseAppDistributionException(
