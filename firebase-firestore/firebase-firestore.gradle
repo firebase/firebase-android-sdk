@@ -96,6 +96,12 @@ android.libraryVariants.all { variant ->
         variant.buildConfigField("boolean", "USE_EMULATOR_FOR_TESTS", "true")
     }
 
+    Boolean enableIndexing = System.env.FIRESTOR_ENABLE_INDEXING ?: false
+    if (enableIndexing) {
+        variant.buildConfigField("boolean", "ENABLE_INDEXING", "true")
+    } else {
+        variant.buildConfigField("boolean", "ENABLE_INDEXING", "false")
+    }
 }
 
 configurations.all {

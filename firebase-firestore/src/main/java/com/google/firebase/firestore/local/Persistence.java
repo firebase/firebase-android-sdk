@@ -16,6 +16,7 @@ package com.google.firebase.firestore.local;
 
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.util.Supplier;
+import com.google.firebase.firestore.BuildConfig;
 
 /**
  * Persistence is the lowest-level shared interface to persistent storage in Firestore.
@@ -51,7 +52,7 @@ public abstract class Persistence {
 
   /** Temporary setting for enabling indexing-specific code paths while in development. */
   // TODO: Remove this.
-  public static boolean INDEXING_SUPPORT_ENABLED = false;
+  public static boolean INDEXING_SUPPORT_ENABLED = BuildConfig.ENABLE_INDEXING;
 
   // Local subclasses only, please.
   Persistence() {}
