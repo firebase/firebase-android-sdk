@@ -511,21 +511,32 @@ public class LoadBundleTask extends Task<LoadBundleTaskProgress> {
     hardAssert(
         result.getTaskState().equals(LoadBundleTaskProgress.TaskState.SUCCESS),
         "Expected success, but was " + result.getTaskState());
+    // Use the same executor from the listeners to set result, if it is set.
+    Executor executor = null;
     synchronized (lock) {
       snapshot = result;
       for (ManagedListener listener : progressListeners) {
+        if (executor == null) {
+          executor = listener.executor;
+        }
         listener.invokeAsync(snapshot);
       }
       progressListeners.clear();
     }
 
-    completionSource.setResult(result);
+    if (executor != null) {
+      executor.execute(() -> completionSource.setResult(result));
+    } else {
+      completionSource.setResult(result);
+    }
   }
 
   /** @hide */
   @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
   public void setException(@NonNull Exception exception) {
     LoadBundleTaskProgress snapshot;
+    // Use the same executor from the listeners to set exception, if it is set.
+    Executor executor = null;
     synchronized (lock) {
       snapshot =
           new LoadBundleTaskProgress(
@@ -537,12 +548,19 @@ public class LoadBundleTask extends Task<LoadBundleTaskProgress> {
               LoadBundleTaskProgress.TaskState.ERROR);
       this.snapshot = snapshot;
       for (ManagedListener listener : progressListeners) {
+        if (executor == null) {
+          executor = listener.executor;
+        }
         listener.invokeAsync(snapshot);
       }
       progressListeners.clear();
     }
 
-    completionSource.setException(exception);
+    if (executor != null) {
+      executor.execute(() -> completionSource.setException(exception));
+    } else {
+      completionSource.setException(exception);
+    }
   }
 
   /** @hide */
