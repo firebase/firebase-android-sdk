@@ -14,9 +14,9 @@
 
 package com.google.firebase.firestore.local;
 
+import com.google.firebase.firestore.BuildConfig;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.util.Supplier;
-import com.google.firebase.firestore.BuildConfig;
 
 /**
  * Persistence is the lowest-level shared interface to persistent storage in Firestore.
