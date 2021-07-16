@@ -47,7 +47,6 @@ import com.google.firebase.appdistribution.internal.AppDistributionReleaseIntern
 import com.google.firebase.appdistribution.internal.ReleaseIdentificationUtils;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
-import java.net.ProtocolException;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
