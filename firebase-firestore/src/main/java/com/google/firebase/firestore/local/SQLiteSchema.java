@@ -176,7 +176,7 @@ class SQLiteSchema {
 
     if (fromVersion < INDEXING_SUPPORT_VERSION && toVersion >= INDEXING_SUPPORT_VERSION) {
       Preconditions.checkState(Persistence.INDEXING_SUPPORT_ENABLED);
-      createLocalDocumentsCollectionIndex();
+      createFieldIndex();
     }
   }
 
@@ -336,24 +336,31 @@ class SQLiteSchema {
         });
   }
 
-  // TODO(indexing): Put the schema version in this method name.
-  private void createLocalDocumentsCollectionIndex() {
+  private void createFieldIndex() {
+    // Create two tables to support document indexing. `index_configuration` holds the
+    // configuration for all currently active indices. All entries apply for all users and it is
+    // not possible to only enable indices for a subset of users. `field_index` holds the index
+    // values. If there are pending mutations that affect an indexed field, an additional index
+    // entry is created per mutated field.
     ifTablesDontExist(
-        new String[] {"collection_index"},
+        new String[] {"index_configuration", "field_index"},
         () -> {
-          // A per-user, per-collection index for cached documents indexed by a single field's name
-          // and value.
           db.execSQL(
-              "CREATE TABLE collection_index ("
-                  + "uid TEXT, "
-                  + "collection_path TEXT, "
-                  + "field_path TEXT, "
-                  + "field_value_type INTEGER, " // determines type of field_value fields.
-                  + "field_value_1, " // first component
-                  + "field_value_2, " // second component; required for timestamps, GeoPoints
+              "CREATE TABLE index_configuration ("
+                  + "index_id INTEGER, "
+                  + "path TEXT, " // collection path
+                  + "field_paths BLOB, " // field path, direction pairs
+                  + "update_time_seconds INTEGER, " // time of last document update added to index
+                  + "update_time_nanos INTEGER, "
+                  + "PRIMARY KEY (index_id))");
+
+          db.execSQL(
+              "CREATE TABLE field_index ("
+                  + "index_id INTEGER, "
+                  + "index_value BLOB, " // field value pairs
+                  + "uid TEXT, " // user id or null if there are no pending mutations
                   + "document_id TEXT, "
-                  + "PRIMARY KEY (uid, collection_path, field_path, field_value_type, field_value_1, "
-                  + "field_value_2, document_id))");
+                  + "PRIMARY KEY (index_id, index_value, uid, document_id))");
         });
   }
 
