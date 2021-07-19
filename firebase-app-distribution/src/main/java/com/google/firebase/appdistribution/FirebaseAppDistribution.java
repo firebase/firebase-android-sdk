@@ -236,10 +236,11 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     updateAppCancellationSource = new CancellationTokenSource();
     updateAppTaskCompletionSource =
         new TaskCompletionSource<>(updateAppCancellationSource.getToken());
+    Context context = firebaseApp.getApplicationContext();
 
     if (appDistributionReleaseInternal == null) {
       throw new FirebaseAppDistributionException(
-          "No new release available. Try calling checkForUpdate",
+          context.getString(R.string.no_update_available),
           FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE);
     }
 
@@ -249,7 +250,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
       throw new UnsupportedOperationException("Not yet implemented.");
     }
 
-    return null;
+    return new UpdateTaskImpl(updateAppTaskCompletionSource.getTask());
   }
 
   /** Returns true if the App Distribution tester is signed in */
