@@ -28,7 +28,7 @@ class UpdateTaskImpl extends UpdateTask {
   @NonNull private final Task<UpdateState> task;
   @Nullable private OnProgressListener listener = null;
 
-  public UpdateTaskImpl(@NonNull Task<UpdateState> task) {
+  UpdateTaskImpl(@NonNull Task<UpdateState> task) {
     this.task = task;
   }
 

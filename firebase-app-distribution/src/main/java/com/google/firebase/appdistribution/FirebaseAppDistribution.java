@@ -501,7 +501,12 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
                 firebaseApp.getApplicationContext()));
   }
 
-  private void redirectToPlayForAabUpdate(String downloadUrl) {
+  private void redirectToPlayForAabUpdate(String downloadUrl)
+      throws FirebaseAppDistributionException {
+    if (downloadUrl == null) {
+      throw new FirebaseAppDistributionException(
+          "Download URL not found.", FirebaseAppDistributionException.Status.NETWORK_FAILURE);
+    }
     Intent updateIntent = new Intent(Intent.ACTION_VIEW);
     Uri uri = Uri.parse(downloadUrl);
     updateIntent.setData(uri);
