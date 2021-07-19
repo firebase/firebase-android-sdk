@@ -72,7 +72,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
 
   private TaskCompletionSource<UpdateState> updateAppTaskCompletionSource = null;
   private CancellationTokenSource updateAppCancellationSource;
-
+  private UpdateTaskImpl updateTask;
   private AppDistributionReleaseInternal cachedLatestRelease;
 
   /** Constructor for FirebaseAppDistribution */
@@ -193,7 +193,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
               checkForUpdateExecutor.execute(
                   () -> {
                     try {
-                      AppDistributionRelease latestRelease =
+                      AppDistributionReleaseInternal latestRelease =
                           getLatestReleaseFromClient(
                               fid,
                               firebaseApp.getOptions().getApplicationId(),
@@ -201,9 +201,11 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
                               installationTokenResult.getToken());
                       updateOnUiThread(
                           () -> {
+                            setCachedLatestRelease(latestRelease);
                             if (checkForUpdateTaskCompletionSource != null
                                 && !checkForUpdateTaskCompletionSource.getTask().isComplete())
-                              checkForUpdateTaskCompletionSource.setResult(latestRelease);
+                              checkForUpdateTaskCompletionSource.setResult(
+                                  convertToAppDistributionRelease(latestRelease));
                           });
                     } catch (FirebaseAppDistributionException ex) {
                       updateOnUiThread(() -> setCheckForUpdateTaskCompletionError(ex));
@@ -239,6 +241,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     updateAppTaskCompletionSource =
         new TaskCompletionSource<>(updateAppCancellationSource.getToken());
     Context context = firebaseApp.getApplicationContext();
+    this.updateTask = new UpdateTaskImpl(updateAppTaskCompletionSource.getTask());
 
     if (cachedLatestRelease == null) {
       throw new FirebaseAppDistributionException(
@@ -249,10 +252,11 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     if (cachedLatestRelease.getBinaryType() == BinaryType.AAB) {
       redirectToPlayForAabUpdate(cachedLatestRelease.getDownloadUrl());
     } else {
+      // todo: create update class when implementing APK
       throw new UnsupportedOperationException("Not yet implemented.");
     }
 
-    return new UpdateTaskImpl(updateAppTaskCompletionSource.getTask());
+    return this.updateTask;
   }
 
   /** Returns true if the App Distribution tester is signed in */
@@ -420,21 +424,18 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
   }
 
   @VisibleForTesting
-  AppDistributionRelease getLatestReleaseFromClient(
+  AppDistributionReleaseInternal getLatestReleaseFromClient(
       String fid, String appId, String apiKey, String authToken)
       throws FirebaseAppDistributionException {
     try {
       AppDistributionReleaseInternal retrievedLatestRelease =
           firebaseAppDistributionTesterApiClient.fetchLatestRelease(fid, appId, apiKey, authToken);
 
-      this.cachedLatestRelease = retrievedLatestRelease;
-
       if (isNewerBuildVersion(retrievedLatestRelease)
           && !isInstalledRelease(retrievedLatestRelease)) {
-        return convertToAppDistributionRelease(retrievedLatestRelease);
+        return retrievedLatestRelease;
       } else {
         // Return null if retrieved latest release is older or currently installed
-        this.cachedLatestRelease = null;
         return null;
       }
     } catch (NumberFormatException e) {
@@ -443,6 +444,10 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
           FirebaseAppDistributionException.Status.NETWORK_FAILURE,
           e);
     }
+  }
+
+  void setCachedLatestRelease(AppDistributionReleaseInternal latestRelease) {
+    this.cachedLatestRelease = latestRelease;
   }
 
   private AppDistributionRelease convertToAppDistributionRelease(
@@ -519,11 +524,13 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     updateIntent.setData(uri);
     updateIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
     currentActivity.startActivity(updateIntent);
-    updateAppTaskCompletionSource.setResult(
+    UpdateState updateState =
         UpdateState.builder()
             .setApkBytesDownloaded(-1)
             .setApkTotalBytesToDownload(-1)
             .setUpdateStatus(UpdateStatus.REDIRECTED_TO_PLAY)
-            .build());
+            .build();
+    updateAppTaskCompletionSource.setResult(updateState);
+    this.updateTask.updateProgress(updateState);
   }
 }

@@ -270,7 +270,7 @@ public class FirebaseAppDistributionTest {
             TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN))
         .thenReturn(TEST_RELEASE_NEWER_APK);
 
-    AppDistributionRelease release =
+    AppDistributionReleaseInternal release =
         firebaseAppDistribution.getLatestReleaseFromClient(
             TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN);
 
@@ -292,7 +292,7 @@ public class FirebaseAppDistributionTest {
             TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN))
         .thenReturn(olderTestRelease);
 
-    AppDistributionRelease release =
+    AppDistributionReleaseInternal release =
         firebaseAppDistribution.getLatestReleaseFromClient(
             TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN);
 
@@ -314,13 +314,16 @@ public class FirebaseAppDistributionTest {
                 .setBinaryType(BinaryType.AAB)
                 .build());
 
-    AppDistributionRelease result =
+    AppDistributionReleaseInternal result =
         firebaseAppDistribution.getLatestReleaseFromClient(
             TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN);
     assertEquals(
-        AppDistributionRelease.builder()
+        AppDistributionReleaseInternal.builder()
             .setBuildVersion(TEST_RELEASE_CURRENT.getBuildVersion())
             .setDisplayVersion(TEST_RELEASE_CURRENT.getDisplayVersion())
+            .setCodeHash("codehash")
+            .setDownloadUrl("http://fake-download-url")
+            .setIasArtifactId("test-ias-artifact-id-2")
             .setBinaryType(BinaryType.AAB)
             .build(),
         result);
@@ -341,7 +344,7 @@ public class FirebaseAppDistributionTest {
                 .setBinaryType(BinaryType.AAB)
                 .build());
 
-    AppDistributionRelease result =
+    AppDistributionReleaseInternal result =
         firebaseAppDistribution.getLatestReleaseFromClient(
             TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN);
     assertNull(result);
@@ -360,11 +363,7 @@ public class FirebaseAppDistributionTest {
   @Test
   public void updateAppTask_whenAabReleaseAvailable_redirectsToPlay() throws Exception {
     firebaseAppDistribution.onActivityResumed(activity);
-    when(mockFirebaseAppDistributionTesterApiClient.fetchLatestRelease(any(), any(), any(), any()))
-        .thenReturn(TEST_RELEASE_NEWER_AAB);
-    // call getLatestReleaseFromClient to set cachedLatestRelease
-    firebaseAppDistribution.getLatestReleaseFromClient(
-        TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN);
+    firebaseAppDistribution.setCachedLatestRelease(TEST_RELEASE_NEWER_AAB);
 
     UpdateTask updateTask = firebaseAppDistribution.updateApp();
 
