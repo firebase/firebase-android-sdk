@@ -104,20 +104,20 @@ class UpdateTaskImpl extends UpdateTask {
   @NonNull
   @Override
   public Task<UpdateState> addOnFailureListener(@NonNull OnFailureListener onFailureListener) {
-    return this.addOnFailureListener(onFailureListener);
+    return this.task.addOnFailureListener(onFailureListener);
   }
 
   @NonNull
   @Override
   public Task<UpdateState> addOnFailureListener(
       @NonNull Executor executor, @NonNull OnFailureListener onFailureListener) {
-    return this.addOnFailureListener(executor, onFailureListener);
+    return this.task.addOnFailureListener(executor, onFailureListener);
   }
 
   @NonNull
   @Override
   public Task<UpdateState> addOnFailureListener(
       @NonNull Activity activity, @NonNull OnFailureListener onFailureListener) {
-    return this.addOnFailureListener(activity, onFailureListener);
+    return this.task.addOnFailureListener(activity, onFailureListener);
   }
 }

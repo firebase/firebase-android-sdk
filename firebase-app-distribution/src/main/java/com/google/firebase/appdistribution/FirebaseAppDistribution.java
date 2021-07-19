@@ -344,7 +344,6 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     } else {
       // If we can't launch a chrome view try to launch anything that can handle a URL.
       Intent browserIntent = new Intent(Intent.ACTION_VIEW, uri);
-      ResolveInfo info = currentActivity.getPackageManager().resolveActivity(browserIntent, 0);
       browserIntent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
       browserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
       currentActivity.startActivity(browserIntent);
@@ -422,9 +421,6 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
           firebaseAppDistributionTesterApiClient.fetchLatestRelease(fid, appId, apiKey, authToken);
 
       this.appDistributionReleaseInternal = retrievedLatestRelease;
-
-      long currentInstalledVersionCode =
-          getInstalledAppVersionCode(firebaseApp.getApplicationContext());
 
       if (isNewerBuildVersion(retrievedLatestRelease)
           && !isInstalledRelease(retrievedLatestRelease)) {
