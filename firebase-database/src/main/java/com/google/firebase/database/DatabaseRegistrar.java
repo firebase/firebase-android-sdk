@@ -17,6 +17,7 @@ package com.google.firebase.database;
 import androidx.annotation.Keep;
 import androidx.annotation.RestrictTo;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
@@ -35,10 +36,13 @@ public class DatabaseRegistrar implements ComponentRegistrar {
         Component.builder(FirebaseDatabaseComponent.class)
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.deferred(InternalAuthProvider.class))
+            .add(Dependency.deferred(InternalAppCheckTokenProvider.class))
             .factory(
                 c ->
                     new FirebaseDatabaseComponent(
-                        c.get(FirebaseApp.class), c.getDeferred(InternalAuthProvider.class)))
+                        c.get(FirebaseApp.class),
+                        c.getDeferred(InternalAuthProvider.class),
+                        c.getDeferred(InternalAppCheckTokenProvider.class)))
             .build(),
         LibraryVersionComponent.create("fire-rtdb", BuildConfig.VERSION_NAME));
   }

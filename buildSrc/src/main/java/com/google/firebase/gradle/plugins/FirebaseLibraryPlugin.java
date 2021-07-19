@@ -18,6 +18,7 @@ import static com.google.firebase.gradle.plugins.ClosureUtil.closureOf;
 
 import com.android.build.gradle.LibraryExtension;
 import com.android.build.gradle.api.AndroidSourceSet;
+import com.github.sherter.googlejavaformatgradleplugin.GoogleJavaFormatExtension;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.firebase.gradle.plugins.apiinfo.ApiInformationTask;
@@ -25,8 +26,10 @@ import com.google.firebase.gradle.plugins.apiinfo.GenerateApiTxtFileTask;
 import com.google.firebase.gradle.plugins.apiinfo.GetMetalavaJarTask;
 import com.google.firebase.gradle.plugins.ci.Coverage;
 import com.google.firebase.gradle.plugins.ci.device.FirebaseTestServer;
+import com.google.firebase.gradle.plugins.license.LicenseResolverPlugin;
 import java.io.File;
 import java.nio.file.Paths;
+import org.gradle.api.JavaVersion;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.attributes.Attribute;
@@ -39,6 +42,9 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
   @Override
   public void apply(Project project) {
     project.apply(ImmutableMap.of("plugin", "com.android.library"));
+    project.apply(ImmutableMap.of("plugin", LicenseResolverPlugin.class));
+    project.apply(ImmutableMap.of("plugin", "com.github.sherter.google-java-format"));
+    project.getExtensions().getByType(GoogleJavaFormatExtension.class).setToolVersion("1.10.0");
 
     FirebaseLibraryExtension firebaseLibrary =
         project
@@ -47,6 +53,12 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
                 "firebaseLibrary", FirebaseLibraryExtension.class, project, LibraryType.ANDROID);
 
     LibraryExtension android = project.getExtensions().getByType(LibraryExtension.class);
+
+    android.compileOptions(
+        options -> {
+          options.setSourceCompatibility(JavaVersion.VERSION_1_8);
+          options.setTargetCompatibility(JavaVersion.VERSION_1_8);
+        });
 
     // In the case of and android library signing config only affects instrumentation test APK.
     // We need it signed with default debug credentials in order for FTL to accept the APK.

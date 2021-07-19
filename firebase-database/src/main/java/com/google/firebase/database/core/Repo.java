@@ -114,9 +114,7 @@ public class Repo implements PersistentConnection.Delegate {
         .getAuthTokenProvider()
         .addTokenChangeListener(
             ((DefaultRunLoop) ctx.getRunLoop()).getExecutorService(),
-            new AuthTokenProvider.TokenChangeListener() {
-              // TODO: Remove this once AndroidAuthTokenProvider is updated to call the
-              // other overload.
+            new TokenProvider.TokenChangeListener() {
               @Override
               public void onTokenChange() {
                 operationLogger.debug("Auth token changed, triggering auth token refresh");
@@ -127,6 +125,26 @@ public class Repo implements PersistentConnection.Delegate {
               public void onTokenChange(String token) {
                 operationLogger.debug("Auth token changed, triggering auth token refresh");
                 connection.refreshAuthToken(token);
+              }
+            });
+
+    this.ctx
+        .getAppCheckTokenProvider()
+        .addTokenChangeListener(
+            ((DefaultRunLoop) ctx.getRunLoop()).getExecutorService(),
+            new TokenProvider.TokenChangeListener() {
+              @Override
+              public void onTokenChange() {
+                operationLogger.debug(
+                    "App check token changed, triggering app check token refresh");
+                connection.refreshAppCheckToken();
+              }
+
+              @Override
+              public void onTokenChange(String token) {
+                operationLogger.debug(
+                    "App check token changed, triggering app check token refresh");
+                connection.refreshAppCheckToken(token);
               }
             });
 
@@ -685,8 +703,8 @@ public class Repo implements PersistentConnection.Delegate {
   }
 
   @Override
-  public void onAuthStatus(boolean authOk) {
-    onServerInfoUpdate(Constants.DOT_INFO_AUTHENTICATED, authOk);
+  public void onConnectionStatus(boolean connectionOk) {
+    onServerInfoUpdate(Constants.DOT_INFO_AUTHENTICATED, connectionOk);
   }
 
   public void onServerInfoUpdate(ChildKey key, Object value) {

@@ -53,6 +53,7 @@ public abstract class NetworkRequest {
   private static final String TAG = "NetworkRequest";
 
   private static final String X_FIREBASE_GMPID = "x-firebase-gmpid";
+  private static final String X_FIREBASE_APPCHECK = "x-firebase-appcheck";
 
   public static final Uri PROD_BASE_URL = Uri.parse("https://firebasestorage.googleapis.com/v0");
 
@@ -223,7 +224,7 @@ public abstract class NetworkRequest {
   }
 
   @SuppressWarnings("deprecation")
-  public void performRequestStart(String token) {
+  public void performRequestStart(@Nullable String authToken, @Nullable String appCheckToken) {
     if (mException != null) {
       resultCode = INITIALIZATION_EXCEPTION;
       return;
@@ -245,7 +246,7 @@ public abstract class NetworkRequest {
       connection = createConnection();
       connection.setRequestMethod(getAction());
 
-      constructMessage(connection, token);
+      constructMessage(connection, authToken, appCheckToken);
       parseResponse(connection);
       if (Log.isLoggable(TAG, Log.DEBUG)) {
         Log.d(TAG, "network request result " + resultCode);
@@ -265,8 +266,8 @@ public abstract class NetworkRequest {
   }
 
   /** Sends the REST network request. */
-  private final void performRequest(String token) {
-    performRequestStart(token);
+  private final void performRequest(@Nullable String authToken, @Nullable String appCheckToken) {
+    performRequestStart(authToken, appCheckToken);
     try {
       processResponseStream();
     } catch (IOException e) {
@@ -278,11 +279,14 @@ public abstract class NetworkRequest {
     performRequestEnd();
   }
 
-  public void performRequest(@Nullable String authToken, @NonNull Context applicationContext) {
+  public void performRequest(
+      @Nullable String authToken,
+      @Nullable String appCheckToken,
+      @NonNull Context applicationContext) {
     if (!ensureNetworkAvailable(applicationContext)) {
       return;
     }
-    performRequest(authToken);
+    performRequest(authToken, appCheckToken);
   }
 
   @SuppressWarnings("deprecation")
@@ -335,13 +339,21 @@ public abstract class NetworkRequest {
   }
 
   @SuppressWarnings("TryFinallyCanBeTryWithResources")
-  private void constructMessage(@NonNull HttpURLConnection conn, String token) throws IOException {
+  private void constructMessage(
+      @NonNull HttpURLConnection conn, @Nullable String authToken, @Nullable String appCheckToken)
+      throws IOException {
     Preconditions.checkNotNull(conn);
 
-    if (!TextUtils.isEmpty(token)) {
-      conn.setRequestProperty("Authorization", "Firebase " + token);
+    if (!TextUtils.isEmpty(authToken)) {
+      conn.setRequestProperty("Authorization", "Firebase " + authToken);
     } else {
       Log.w(TAG, "no auth token for request");
+    }
+
+    if (!TextUtils.isEmpty(appCheckToken)) {
+      conn.setRequestProperty(X_FIREBASE_APPCHECK, appCheckToken);
+    } else {
+      Log.w(TAG, "No App Check token for request.");
     }
 
     StringBuilder userAgent = new StringBuilder("Android/");

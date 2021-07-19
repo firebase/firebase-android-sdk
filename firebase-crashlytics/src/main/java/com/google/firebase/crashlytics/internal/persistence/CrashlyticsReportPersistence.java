@@ -59,6 +59,11 @@ public class CrashlyticsReportPersistence {
 
   private static final String REPORT_FILE_NAME = "report";
   private static final String USER_FILE_NAME = "user";
+  // A single session should have only a single AppExitInfo.
+  private static final String APP_EXIT_INFO_FILE_NAME = "app-exit-info";
+  // We use the lastModified timestamp of this file to quickly store and access the startTime in ms
+  // of a session.
+  private static final String SESSION_START_TIMESTAMP_FILE_NAME = "start-time";
   private static final String EVENT_FILE_NAME_PREFIX = "event";
   private static final int EVENT_COUNTER_WIDTH = 10; // String width of maximum positive int value
   private static final String EVENT_COUNTER_FORMAT = "%0" + EVENT_COUNTER_WIDTH + "d";
@@ -66,6 +71,7 @@ public class CrashlyticsReportPersistence {
       EVENT_FILE_NAME_PREFIX.length() + EVENT_COUNTER_WIDTH;
   private static final String PRIORITY_EVENT_SUFFIX = "_";
   private static final String NORMAL_EVENT_SUFFIX = "";
+  private static final String EVENT_TYPE_ANR = "anr";
 
   private static final CrashlyticsReportJsonTransform TRANSFORM =
       new CrashlyticsReportJsonTransform();
@@ -110,6 +116,10 @@ public class CrashlyticsReportPersistence {
       final File sessionDirectory = prepareDirectory(getSessionDirectoryById(sessionId));
       final String json = TRANSFORM.reportToJson(report);
       writeTextFile(new File(sessionDirectory, REPORT_FILE_NAME), json);
+      writeTextFile(
+          new File(sessionDirectory, SESSION_START_TIMESTAMP_FILE_NAME),
+          "",
+          session.getStartedAt());
     } catch (IOException e) {
       Logger.getLogger().d("Could not persist report for session " + sessionId, e);
     }
@@ -175,6 +185,19 @@ public class CrashlyticsReportPersistence {
       openSessionIds.add(f.getName());
     }
     return openSessionIds;
+  }
+
+  /**
+   * Gets the startTimestampMs of the given sessionId.
+   *
+   * @param sessionId
+   * @return startTimestampMs
+   */
+  public long getStartTimestampMillis(String sessionId) {
+    final File sessionDirectory = getSessionDirectoryById(sessionId);
+    final File sessionStartTimestampFile =
+        new File(sessionDirectory, SESSION_START_TIMESTAMP_FILE_NAME);
+    return sessionStartTimestampFile.lastModified();
   }
 
   public boolean hasFinalizedReports() {
@@ -314,7 +337,8 @@ public class CrashlyticsReportPersistence {
 
     for (File eventFile : eventFiles) {
       try {
-        events.add(TRANSFORM.eventFromJson(readTextFile(eventFile)));
+        Event event = TRANSFORM.eventFromJson(readTextFile(eventFile));
+        events.add(event);
         isHighPriorityReport = isHighPriorityReport || isHighPriorityEventFile(eventFile.getName());
       } catch (IOException e) {
         Logger.getLogger().w("Could not add event to report for " + eventFile, e);
@@ -373,7 +397,6 @@ public class CrashlyticsReportPersistence {
               .reportFromJson(readTextFile(reportFile))
               .withSessionEndFields(sessionEndTime, isCrashed, userId)
               .withEvents(ImmutableList.from(events));
-
       final Session session = report.getSession();
 
       if (session == null) {
@@ -489,6 +512,14 @@ public class CrashlyticsReportPersistence {
     }
   }
 
+  private static void writeTextFile(File file, String text, long lastModifiedTimestampSeconds)
+      throws IOException {
+    try (OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(file), UTF_8)) {
+      writer.write(text);
+      file.setLastModified(convertTimestampFromSecondsToMs(lastModifiedTimestampSeconds));
+    }
+  }
+
   @NonNull
   private static String readTextFile(@NonNull File file) throws IOException {
     final byte[] readBuffer = new byte[8192];
@@ -531,5 +562,9 @@ public class CrashlyticsReportPersistence {
       }
     }
     file.delete();
+  }
+
+  private static long convertTimestampFromSecondsToMs(long timestampSeconds) {
+    return timestampSeconds * 1000;
   }
 }

@@ -18,6 +18,7 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
@@ -57,22 +58,25 @@ public class FirebaseCrashlytics {
   static final String LEGACY_CRASH_ANALYTICS_ORIGIN = "crash";
   static final int APP_EXCEPTION_CALLBACK_TIMEOUT_MS = 500;
 
-  static final String CRASHLYTICS_API_ENDPOINT = "com.crashlytics.ApiEndpoint";
-
   static @Nullable FirebaseCrashlytics init(
       @NonNull FirebaseApp app,
       @NonNull FirebaseInstallationsApi firebaseInstallationsApi,
       @NonNull Provider<CrashlyticsNativeComponent> nativeComponent,
       @NonNull Deferred<AnalyticsConnector> analyticsConnector) {
-    Logger.getLogger().i("Initializing Firebase Crashlytics " + CrashlyticsCore.getVersion());
+
     Context context = app.getApplicationContext();
-    // Set up the IdManager.
     final String appIdentifier = context.getPackageName();
-    final IdManager idManager = new IdManager(context, appIdentifier, firebaseInstallationsApi);
+    Logger.getLogger()
+        .i(
+            "Initializing Firebase Crashlytics "
+                + CrashlyticsCore.getVersion()
+                + " for "
+                + appIdentifier);
 
     final DataCollectionArbiter arbiter = new DataCollectionArbiter(app);
-
-    ProviderProxyNativeComponent proxyNativeComponent =
+    final IdManager idManager =
+        new IdManager(context, appIdentifier, firebaseInstallationsApi, arbiter);
+    final ProviderProxyNativeComponent proxyNativeComponent =
         new ProviderProxyNativeComponent(nativeComponent);
 
     // Integration with Firebase Analytics
@@ -81,6 +85,7 @@ public class FirebaseCrashlytics {
 
     final ExecutorService crashHandlerExecutor =
         ExecutorUtils.buildSingleThreadExecutorService("Crashlytics Exception Handler");
+
     final CrashlyticsCore core =
         new CrashlyticsCore(
             app,
@@ -153,7 +158,8 @@ public class FirebaseCrashlytics {
     return new FirebaseCrashlytics(core);
   }
 
-  private final CrashlyticsCore core;
+  @VisibleForTesting // accessible for smoke tests
+  final CrashlyticsCore core;
 
   private FirebaseCrashlytics(@NonNull CrashlyticsCore core) {
     this.core = core;
@@ -346,8 +352,8 @@ public class FirebaseCrashlytics {
 
   /**
    * Sets multiple custom keys and values that are associated with subsequent fatal and non-fatal
-   * reports. This method is intended as an alternative to `setCustomKey` in order to reduce the
-   * computational load of writing out multiple key/value pairs at the same time.
+   * reports. This method is intended as an alternative to {@code setCustomKey} in order to reduce
+   * the computational load of writing out multiple key/value pairs at the same time.
    *
    * <p>Multiple calls to this method with the same key update the value for that key.
    *
@@ -422,10 +428,10 @@ public class FirebaseCrashlytics {
    * disabled. Use {@link #deleteUnsentReports()} to delete any reports stored on the device without
    * sending them to Crashlytics.
    *
-   * @param enabled whether to enable automatic data collection. When set to `false`, the new value
-   *     does not apply until the next run of the app. To disable data collection by default for all
-   *     app runs, add the `firebase_crashlytics_collection_enabled` flag to your app's
-   *     AndroidManifest.xml.
+   * @param enabled whether to enable automatic data collection. When set to {@code false}, the new
+   *     value does not apply until the next run of the app. To disable data collection by default
+   *     for all app runs, add the {@code firebase_crashlytics_collection_enabled} flag to your
+   *     app's AndroidManifest.xml.
    */
   public void setCrashlyticsCollectionEnabled(boolean enabled) {
     core.setCrashlyticsCollectionEnabled(enabled);
@@ -435,8 +441,8 @@ public class FirebaseCrashlytics {
    * Enables or disables the automatic data collection configuration for Crashlytics.
    *
    * <p>If this is set, it overrides any automatic data collection settings configured in the
-   * AndroidManifest.xml as well as any Firebase-wide settings. If set to `null`, the override is
-   * cleared.
+   * AndroidManifest.xml as well as any Firebase-wide settings. If set to {@code null}, the override
+   * is cleared.
    *
    * <p>If automatic data collection is disabled for Crashlytics, crash reports are stored on the
    * device. To check for reports, use the {@link #checkForUnsentReports()} method. Use {@link
@@ -444,10 +450,10 @@ public class FirebaseCrashlytics {
    * disabled. Use {@link #deleteUnsentReports()} to delete any reports stored on the device without
    * sending them to Crashlytics.
    *
-   * @param enabled whether to enable or disable automatic data collection. When set to `false`, the
-   *     new value does not apply until the next run of the app. When set to `null`, the override is
-   *     cleared and automatic data collection settings are determined by the configuration in your
-   *     AndroidManifest.xml or other Firebase-wide settings.
+   * @param enabled whether to enable or disable automatic data collection. When set to {@code
+   *     false}, the new value does not apply until the next run of the app. When set to {@code
+   *     null}, the override is cleared and automatic data collection settings are determined by the
+   *     configuration in your AndroidManifest.xml or other Firebase-wide settings.
    */
   public void setCrashlyticsCollectionEnabled(@Nullable Boolean enabled) {
     core.setCrashlyticsCollectionEnabled(enabled);

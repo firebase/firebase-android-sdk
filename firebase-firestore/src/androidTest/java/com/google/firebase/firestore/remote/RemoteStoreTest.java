@@ -81,16 +81,16 @@ public class RemoteStoreTest {
     RemoteStore remoteStore =
         new RemoteStore(callback, localStore, datastore, testQueue, connectivityMonitor);
 
-    waitFor(testQueue.enqueue(() -> remoteStore.forceEnableNetwork()));
+    waitFor(testQueue.enqueue(remoteStore::forceEnableNetwork));
     drain(testQueue);
     networkChangeSemaphore.drainPermits();
 
     connectivityMonitor.goOffline();
     waitFor(networkChangeSemaphore);
     drain(testQueue);
-
-    waitFor(testQueue.enqueue(() -> remoteStore.forceEnableNetwork()));
     networkChangeSemaphore.drainPermits();
+
+    waitFor(testQueue.enqueue(remoteStore::forceEnableNetwork));
     connectivityMonitor.goOnline();
     waitFor(networkChangeSemaphore);
   }

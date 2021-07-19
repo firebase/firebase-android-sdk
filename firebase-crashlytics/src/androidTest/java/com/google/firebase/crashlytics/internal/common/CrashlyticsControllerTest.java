@@ -14,7 +14,16 @@
 
 package com.google.firebase.crashlytics.internal.common;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyLong;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -43,7 +52,6 @@ import java.util.concurrent.TimeUnit;
 import org.mockito.ArgumentCaptor;
 
 public class CrashlyticsControllerTest extends CrashlyticsTestCase {
-
   private static final String GOOGLE_APP_ID = "google:app:id";
 
   private Context testContext;
@@ -62,7 +70,12 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
 
     FirebaseInstallationsApi installationsApiMock = mock(FirebaseInstallationsApi.class);
     when(installationsApiMock.getId()).thenReturn(Tasks.forResult("instanceId"));
-    idManager = new IdManager(testContext, testContext.getPackageName(), installationsApiMock);
+    idManager =
+        new IdManager(
+            testContext,
+            testContext.getPackageName(),
+            installationsApiMock,
+            DataCollectionArbiterTest.MOCK_ARBITER_ENABLED);
 
     // For each test case, create a new, random subdirectory to guarantee a clean slate for file
     // manipulation.
@@ -203,7 +216,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
         .thenReturn(Arrays.asList(sessionId));
 
     controller.writeNonFatalException(thread, nonFatal);
-    controller.doCloseSessions();
+    controller.doCloseSessions(testSettingsDataProvider);
 
     verify(mockSessionReportingCoordinator)
         .persistNonFatalEvent(eq(nonFatal), eq(thread), eq(sessionId), anyLong());
@@ -300,7 +313,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
             .setLogFileManager(logFileManager)
             .build();
 
-    controller.finalizeSessions();
+    controller.finalizeSessions(testSettingsDataProvider);
 
     final File[] nativeDirectories = controller.listNativeSessionFileDirectories();
 
@@ -314,7 +327,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
 
   public void testMissingNativeComponentCausesNoReports() {
     final CrashlyticsController controller = createController();
-    controller.finalizeSessions();
+    controller.finalizeSessions(testSettingsDataProvider);
 
     final File[] sessionFiles = controller.listNativeSessionFileDirectories();
 
@@ -360,7 +373,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
         testSettingsDataProvider, Thread.currentThread(), new RuntimeException());
 
     // This should not throw.
-    controller.finalizeSessions();
+    controller.finalizeSessions(testSettingsDataProvider);
   }
 
   public void testUploadWithNoReports() throws Exception {
@@ -524,7 +537,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
     controller.openSession();
     controller.handleUncaughtException(
         testSettingsDataProvider, Thread.currentThread(), new RuntimeException("Fatal"));
-    controller.finalizeSessions();
+    controller.finalizeSessions(testSettingsDataProvider);
 
     assertFirebaseAnalyticsCrashEvent(mockFirebaseAnalyticsLogger);
   }

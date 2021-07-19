@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,23 +21,25 @@ import android.net.Uri;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.GooglePlayServicesUtil;
+import com.google.android.gms.common.annotation.KeepForSdk;
 import com.google.android.gms.common.util.DefaultClock;
+import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.firebase.dynamiclinks.internal.DynamicLinkData;
 import com.google.firebase.dynamiclinks.internal.DynamicLinkUTMParams;
 
 /** Provides accessor methods to dynamic links data. */
 public class PendingDynamicLinkData {
 
-  private final DynamicLinkData dynamicLinkData;
   @Nullable private final DynamicLinkUTMParams dynamicLinkUTMParams;
+  @Nullable private final DynamicLinkData dynamicLinkData;
 
   /**
    * Create a dynamic link from parameters.
    *
    * @hide
    */
+  @KeepForSdk
   @VisibleForTesting
   public PendingDynamicLinkData(DynamicLinkData dynamicLinkData) {
     if (dynamicLinkData == null) {
@@ -77,6 +79,7 @@ public class PendingDynamicLinkData {
    * @return A bundle will all extension data.
    * @hide
    */
+  @KeepForSdk
   @Nullable
   public Bundle getExtensions() {
     if (dynamicLinkData == null) {
@@ -114,7 +117,7 @@ public class PendingDynamicLinkData {
   @NonNull
   public Bundle getUtmParameters() {
     if (dynamicLinkUTMParams == null) {
-      return Bundle.EMPTY;
+      return new Bundle();
     }
 
     return dynamicLinkUTMParams.asBundle();
@@ -156,6 +159,7 @@ public class PendingDynamicLinkData {
    * @hide
    */
   @VisibleForTesting
+  @Nullable
   public Uri getRedirectUrl() {
     if (dynamicLinkData == null) {
       return null;

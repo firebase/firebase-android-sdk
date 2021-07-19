@@ -306,6 +306,9 @@ public class FirebaseFunctions {
     if (context.getInstanceIdToken() != null) {
       request = request.header("Firebase-Instance-ID-Token", context.getInstanceIdToken());
     }
+    if (context.getAppCheckToken() != null) {
+      request = request.header("X-Firebase-AppCheck", context.getAppCheckToken());
+    }
 
     OkHttpClient callClient = options.apply(client);
     Call call = callClient.newCall(request.build());

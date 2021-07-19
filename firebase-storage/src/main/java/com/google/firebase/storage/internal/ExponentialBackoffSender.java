@@ -21,6 +21,7 @@ import androidx.annotation.Nullable;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.common.util.Clock;
 import com.google.android.gms.common.util.DefaultClock;
+import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.storage.network.NetworkRequest;
 import java.util.Random;
@@ -41,13 +42,18 @@ public class ExponentialBackoffSender {
   /*package*/ static Clock clock = DefaultClock.getInstance();
   private final Context context;
   @Nullable private final InternalAuthProvider authProvider;
+  @Nullable private final InternalAppCheckTokenProvider appCheckProvider;
   private long retryTime;
   private volatile boolean canceled;
 
   public ExponentialBackoffSender(
-      Context context, @Nullable InternalAuthProvider authProvider, long retryTime) {
+      Context context,
+      @Nullable InternalAuthProvider authProvider,
+      @Nullable InternalAppCheckTokenProvider appCheckProvider,
+      long retryTime) {
     this.context = context;
     this.authProvider = authProvider;
+    this.appCheckProvider = appCheckProvider;
     this.retryTime = retryTime;
   }
 
@@ -67,9 +73,13 @@ public class ExponentialBackoffSender {
     Preconditions.checkNotNull(request);
     long deadLine = clock.elapsedRealtime() + retryTime;
     if (closeRequest) {
-      request.performRequest(Util.getCurrentAuthToken(authProvider), context);
+      request.performRequest(
+          Util.getCurrentAuthToken(authProvider),
+          Util.getCurrentAppCheckToken(appCheckProvider),
+          context);
     } else {
-      request.performRequestStart(Util.getCurrentAuthToken(authProvider));
+      request.performRequestStart(
+          Util.getCurrentAuthToken(authProvider), Util.getCurrentAppCheckToken(appCheckProvider));
     }
 
     int currentSleepTime = NETWORK_STATUS_POLL_INTERVAL;
@@ -100,9 +110,13 @@ public class ExponentialBackoffSender {
       }
       request.reset();
       if (closeRequest) {
-        request.performRequest(Util.getCurrentAuthToken(authProvider), context);
+        request.performRequest(
+            Util.getCurrentAuthToken(authProvider),
+            Util.getCurrentAppCheckToken(appCheckProvider),
+            context);
       } else {
-        request.performRequestStart(Util.getCurrentAuthToken(authProvider));
+        request.performRequestStart(
+            Util.getCurrentAuthToken(authProvider), Util.getCurrentAppCheckToken(appCheckProvider));
       }
     }
   }

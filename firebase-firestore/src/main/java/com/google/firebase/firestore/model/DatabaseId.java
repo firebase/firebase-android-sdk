@@ -43,7 +43,7 @@ public final class DatabaseId implements Comparable<DatabaseId> {
   public static DatabaseId fromName(String name) {
     ResourcePath resourceName = ResourcePath.fromString(name);
     hardAssert(
-        resourceName.length() >= 3
+        resourceName.length() > 3
             && resourceName.getSegment(0).equals("projects")
             && resourceName.getSegment(2).equals("databases"),
         "Tried to parse an invalid resource name: %s",

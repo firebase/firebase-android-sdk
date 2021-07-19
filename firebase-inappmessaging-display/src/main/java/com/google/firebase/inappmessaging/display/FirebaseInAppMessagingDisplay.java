@@ -536,7 +536,7 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
   }
 
   private void launchUriIntent(Activity activity, Uri uri) {
-    if (supportsCustomTabs(activity)) {
+    if (ishttpOrHttpsUri(uri) && supportsCustomTabs(activity)) {
       // If we can launch a chrome view, try that.
       CustomTabsIntent customTabsIntent = new CustomTabsIntent.Builder().build();
       Intent intent = customTabsIntent.intent;
@@ -564,5 +564,13 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
     List<ResolveInfo> resolveInfos =
         activity.getPackageManager().queryIntentServices(customTabIntent, 0);
     return resolveInfos != null && !resolveInfos.isEmpty();
+  }
+
+  private boolean ishttpOrHttpsUri(Uri uri) {
+    if (uri == null) {
+      return false;
+    }
+    String scheme = uri.getScheme();
+    return scheme != null && (scheme.equalsIgnoreCase("http") || scheme.equalsIgnoreCase("https"));
   }
 }

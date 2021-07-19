@@ -4,6 +4,7 @@ Url:https://firebasestorage.googleapis.com/v0/b/fooey.appspot.com/o/image.jpg?al
 setRequestMethod:GET
 setRequestProperty:X-Firebase-Storage-Version,Android/[No Gmscore]
 setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:x-firebase-appcheck,eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ==
 setRequestProperty:Content-Length,0
 setUseCaches:false
 setDoInput:true
@@ -55,6 +56,7 @@ Url:https://firebasestorage.googleapis.com/v0/b/fooey.appspot.com/o/image.jpg?al
 setRequestMethod:GET
 setRequestProperty:X-Firebase-Storage-Version,Android/[No Gmscore]
 setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:x-firebase-appcheck,eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ==
 setRequestProperty:Range,bytes=269083-
 setRequestProperty:Content-Length,0
 setUseCaches:false
@@ -108,6 +110,7 @@ Url:https://firebasestorage.googleapis.com/v0/b/fooey.appspot.com/o/image.jpg?al
 setRequestMethod:GET
 setRequestProperty:X-Firebase-Storage-Version,Android/[No Gmscore]
 setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:x-firebase-appcheck,eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ==
 setRequestProperty:Range,bytes=538102-
 setRequestProperty:Content-Length,0
 setUseCaches:false
@@ -161,6 +164,7 @@ Url:https://firebasestorage.googleapis.com/v0/b/fooey.appspot.com/o/image.jpg?al
 setRequestMethod:GET
 setRequestProperty:X-Firebase-Storage-Version,Android/[No Gmscore]
 setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:x-firebase-appcheck,eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ==
 setRequestProperty:Range,bytes=807123-
 setRequestProperty:Content-Length,0
 setUseCaches:false

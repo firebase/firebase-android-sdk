@@ -10,6 +10,7 @@ setRequestProperty:Content-Type,application/json
 setDoOutput:true
 setRequestProperty:Content-Length,59
 setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:x-firebase-appcheck,eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ==
 setUseCaches:false
 setDoInput:true
 getOutputStream:
@@ -54,6 +55,7 @@ setRequestProperty:X-Goog-Upload-Command,upload
 setDoOutput:true
 setRequestProperty:Content-Length,262144
 setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:x-firebase-appcheck,eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ==
 setUseCaches:false
 setDoInput:true
 getOutputStream:
@@ -93,6 +95,7 @@ setRequestProperty:X-Goog-Upload-Protocol,resumable
 setRequestProperty:X-Goog-Upload-Command,query
 setRequestProperty:Content-Length,0
 setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:x-firebase-appcheck,eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ==
 setUseCaches:false
 setDoInput:true
 getResponseCode:200
@@ -135,6 +138,7 @@ setRequestProperty:X-Goog-Upload-Command,upload
 setDoOutput:true
 setRequestProperty:Content-Length,262144
 setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:x-firebase-appcheck,eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ==
 setUseCaches:false
 setDoInput:true
 getOutputStream:
@@ -176,6 +180,7 @@ setRequestProperty:X-Goog-Upload-Command,upload
 setDoOutput:true
 setRequestProperty:Content-Length,524288
 setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:x-firebase-appcheck,eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ==
 setUseCaches:false
 setDoInput:true
 getOutputStream:
@@ -217,6 +222,7 @@ setRequestProperty:X-Goog-Upload-Command,upload
 setDoOutput:true
 setRequestProperty:Content-Length,1048576
 setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:x-firebase-appcheck,eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ==
 setUseCaches:false
 setDoInput:true
 getOutputStream:
@@ -256,6 +262,7 @@ setRequestProperty:X-Goog-Upload-Protocol,resumable
 setRequestProperty:X-Goog-Upload-Command,query
 setRequestProperty:Content-Length,0
 setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:x-firebase-appcheck,eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ==
 setUseCaches:false
 setDoInput:true
 getResponseCode:500
@@ -296,6 +303,7 @@ setRequestProperty:X-Goog-Upload-Protocol,resumable
 setRequestProperty:X-Goog-Upload-Command,query
 setRequestProperty:Content-Length,0
 setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:x-firebase-appcheck,eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ==
 setUseCaches:false
 setDoInput:true
 getResponseCode:200
@@ -338,6 +346,7 @@ setRequestProperty:X-Goog-Upload-Command,upload
 setDoOutput:true
 setRequestProperty:Content-Length,262144
 setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:x-firebase-appcheck,eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ==
 setUseCaches:false
 setDoInput:true
 getOutputStream:
@@ -379,6 +388,7 @@ setRequestProperty:X-Goog-Upload-Command,upload
 setDoOutput:true
 setRequestProperty:Content-Length,524288
 setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:x-firebase-appcheck,eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ==
 setUseCaches:false
 setDoInput:true
 getOutputStream:
@@ -418,6 +428,7 @@ setRequestProperty:X-Goog-Upload-Protocol,resumable
 setRequestProperty:X-Goog-Upload-Command,query
 setRequestProperty:Content-Length,0
 setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:x-firebase-appcheck,eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ==
 setUseCaches:false
 setDoInput:true
 getResponseCode:200
@@ -460,6 +471,7 @@ setRequestProperty:X-Goog-Upload-Command,upload
 setDoOutput:true
 setRequestProperty:Content-Length,262144
 setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:x-firebase-appcheck,eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ==
 setUseCaches:false
 setDoInput:true
 getOutputStream:
@@ -499,6 +511,7 @@ setRequestProperty:X-Goog-Upload-Protocol,resumable
 setRequestProperty:X-Goog-Upload-Command,query
 setRequestProperty:Content-Length,0
 setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:x-firebase-appcheck,eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ==
 setUseCaches:false
 setDoInput:true
 getResponseCode:500
@@ -539,6 +552,7 @@ setRequestProperty:X-Goog-Upload-Protocol,resumable
 setRequestProperty:X-Goog-Upload-Command,query
 setRequestProperty:Content-Length,0
 setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:x-firebase-appcheck,eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ==
 setUseCaches:false
 setDoInput:true
 getResponseCode:200
@@ -581,6 +595,7 @@ setRequestProperty:X-Goog-Upload-Command,upload
 setDoOutput:true
 setRequestProperty:Content-Length,262144
 setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:x-firebase-appcheck,eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ==
 setUseCaches:false
 setDoInput:true
 getOutputStream:
@@ -620,6 +635,7 @@ setRequestProperty:X-Goog-Upload-Protocol,resumable
 setRequestProperty:X-Goog-Upload-Command,query
 setRequestProperty:Content-Length,0
 setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:x-firebase-appcheck,eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ==
 setUseCaches:false
 setDoInput:true
 getResponseCode:500
@@ -660,6 +676,7 @@ setRequestProperty:X-Goog-Upload-Protocol,resumable
 setRequestProperty:X-Goog-Upload-Command,query
 setRequestProperty:Content-Length,0
 setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:x-firebase-appcheck,eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ==
 setUseCaches:false
 setDoInput:true
 getResponseCode:200
@@ -702,6 +719,7 @@ setRequestProperty:X-Goog-Upload-Command,upload
 setDoOutput:true
 setRequestProperty:Content-Length,262144
 setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:x-firebase-appcheck,eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ==
 setUseCaches:false
 setDoInput:true
 getOutputStream:
@@ -743,6 +761,7 @@ setRequestProperty:X-Goog-Upload-Command,upload
 setDoOutput:true
 setRequestProperty:Content-Length,524288
 setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:x-firebase-appcheck,eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ==
 setUseCaches:false
 setDoInput:true
 getOutputStream:
@@ -782,6 +801,7 @@ setRequestProperty:X-Goog-Upload-Protocol,resumable
 setRequestProperty:X-Goog-Upload-Command,query
 setRequestProperty:Content-Length,0
 setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:x-firebase-appcheck,eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ==
 setUseCaches:false
 setDoInput:true
 getResponseCode:500
@@ -822,6 +842,7 @@ setRequestProperty:X-Goog-Upload-Protocol,resumable
 setRequestProperty:X-Goog-Upload-Command,query
 setRequestProperty:Content-Length,0
 setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:x-firebase-appcheck,eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ==
 setUseCaches:false
 setDoInput:true
 getResponseCode:500
@@ -862,6 +883,7 @@ setRequestProperty:X-Goog-Upload-Protocol,resumable
 setRequestProperty:X-Goog-Upload-Command,query
 setRequestProperty:Content-Length,0
 setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:x-firebase-appcheck,eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ==
 setUseCaches:false
 setDoInput:true
 getResponseCode:200
@@ -904,6 +926,7 @@ setRequestProperty:X-Goog-Upload-Command,upload
 setDoOutput:true
 setRequestProperty:Content-Length,262144
 setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:x-firebase-appcheck,eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ==
 setUseCaches:false
 setDoInput:true
 getOutputStream:
@@ -943,6 +966,7 @@ setRequestProperty:X-Goog-Upload-Protocol,resumable
 setRequestProperty:X-Goog-Upload-Command,query
 setRequestProperty:Content-Length,0
 setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:x-firebase-appcheck,eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ==
 setUseCaches:false
 setDoInput:true
 getResponseCode:500
@@ -983,6 +1007,7 @@ setRequestProperty:X-Goog-Upload-Protocol,resumable
 setRequestProperty:X-Goog-Upload-Command,query
 setRequestProperty:Content-Length,0
 setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:x-firebase-appcheck,eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ==
 setUseCaches:false
 setDoInput:true
 getResponseCode:500
@@ -1023,6 +1048,7 @@ setRequestProperty:X-Goog-Upload-Protocol,resumable
 setRequestProperty:X-Goog-Upload-Command,query
 setRequestProperty:Content-Length,0
 setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:x-firebase-appcheck,eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ==
 setUseCaches:false
 setDoInput:true
 getResponseCode:500
@@ -1063,6 +1089,7 @@ setRequestProperty:X-Goog-Upload-Protocol,resumable
 setRequestProperty:X-Goog-Upload-Command,query
 setRequestProperty:Content-Length,0
 setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:x-firebase-appcheck,eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ==
 setUseCaches:false
 setDoInput:true
 getResponseCode:500
@@ -1103,6 +1130,7 @@ setRequestProperty:X-Goog-Upload-Protocol,resumable
 setRequestProperty:X-Goog-Upload-Command,query
 setRequestProperty:Content-Length,0
 setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:x-firebase-appcheck,eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ==
 setUseCaches:false
 setDoInput:true
 getResponseCode:500
@@ -1143,6 +1171,7 @@ setRequestProperty:X-Goog-Upload-Protocol,resumable
 setRequestProperty:X-Goog-Upload-Command,query
 setRequestProperty:Content-Length,0
 setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:x-firebase-appcheck,eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ==
 setUseCaches:false
 setDoInput:true
 getResponseCode:200
@@ -1185,6 +1214,7 @@ setRequestProperty:X-Goog-Upload-Command,upload
 setDoOutput:true
 setRequestProperty:Content-Length,262144
 setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:x-firebase-appcheck,eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ==
 setUseCaches:false
 setDoInput:true
 getOutputStream:
@@ -1224,6 +1254,7 @@ setRequestProperty:X-Goog-Upload-Protocol,resumable
 setRequestProperty:X-Goog-Upload-Command,query
 setRequestProperty:Content-Length,0
 setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:x-firebase-appcheck,eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ==
 setUseCaches:false
 setDoInput:true
 getResponseCode:500
@@ -1264,6 +1295,7 @@ setRequestProperty:X-Goog-Upload-Protocol,resumable
 setRequestProperty:X-Goog-Upload-Command,query
 setRequestProperty:Content-Length,0
 setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:x-firebase-appcheck,eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ==
 setUseCaches:false
 setDoInput:true
 getResponseCode:500
@@ -1304,6 +1336,7 @@ setRequestProperty:X-Goog-Upload-Protocol,resumable
 setRequestProperty:X-Goog-Upload-Command,query
 setRequestProperty:Content-Length,0
 setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:x-firebase-appcheck,eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ==
 setUseCaches:false
 setDoInput:true
 getResponseCode:500
@@ -1344,6 +1377,7 @@ setRequestProperty:X-Goog-Upload-Protocol,resumable
 setRequestProperty:X-Goog-Upload-Command,query
 setRequestProperty:Content-Length,0
 setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:x-firebase-appcheck,eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ==
 setUseCaches:false
 setDoInput:true
 getResponseCode:200
@@ -1386,6 +1420,7 @@ setRequestProperty:X-Goog-Upload-Command,upload, finalize
 setDoOutput:true
 setRequestProperty:Content-Length,221982
 setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:x-firebase-appcheck,eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ==
 setUseCaches:false
 setDoInput:true
 getOutputStream:
