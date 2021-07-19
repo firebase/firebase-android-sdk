@@ -96,13 +96,83 @@ public class FirebaseAppDistributionTesterApiClientTest {
   }
 
   @Test
-  public void fetchLatestRelease_whenResponseFails_throwsError() throws Exception {
+  public void fetchLatestRelease_whenResponseFailsWith401_throwsError() throws Exception {
     when(mockHttpsURLConnection.getInputStream()).thenThrow(new IOException());
-    assertThrows(
-        FirebaseAppDistributionException.class,
-        () ->
-            firebaseAppDistributionTesterApiClient.fetchLatestRelease(
-                TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN));
+    when(mockHttpsURLConnection.getResponseCode()).thenReturn(401);
+
+    FirebaseAppDistributionException ex =
+        assertThrows(
+            FirebaseAppDistributionException.class,
+            () ->
+                firebaseAppDistributionTesterApiClient.fetchLatestRelease(
+                    TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN));
+
+    assertEquals(FirebaseAppDistributionException.Status.AUTHENTICATION_FAILURE, ex.getErrorCode());
+    assertEquals("Failed to authenticate the tester", ex.getMessage());
+  }
+
+  @Test
+  public void fetchLatestRelease_whenResponseFailsWith403_throwsError() throws Exception {
+    when(mockHttpsURLConnection.getInputStream()).thenThrow(new IOException());
+    when(mockHttpsURLConnection.getResponseCode()).thenReturn(403);
+
+    FirebaseAppDistributionException ex =
+        assertThrows(
+            FirebaseAppDistributionException.class,
+            () ->
+                firebaseAppDistributionTesterApiClient.fetchLatestRelease(
+                    TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN));
+
+    assertEquals(FirebaseAppDistributionException.Status.AUTHENTICATION_FAILURE, ex.getErrorCode());
+    assertEquals("Failed to authorize the tester", ex.getMessage());
+  }
+
+  @Test
+  public void fetchLatestRelease_whenResponseFailsWith404_throwsError() throws Exception {
+    when(mockHttpsURLConnection.getInputStream()).thenThrow(new IOException());
+    when(mockHttpsURLConnection.getResponseCode()).thenReturn(404);
+
+    FirebaseAppDistributionException ex =
+        assertThrows(
+            FirebaseAppDistributionException.class,
+            () ->
+                firebaseAppDistributionTesterApiClient.fetchLatestRelease(
+                    TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN));
+
+    assertEquals(FirebaseAppDistributionException.Status.AUTHENTICATION_FAILURE, ex.getErrorCode());
+    assertEquals("Tester or release not found", ex.getMessage());
+  }
+
+  @Test
+  public void fetchLatestRelease_whenResponseFailsWith504_throwsError() throws Exception {
+    when(mockHttpsURLConnection.getInputStream()).thenThrow(new IOException());
+    when(mockHttpsURLConnection.getResponseCode()).thenReturn(504);
+
+    FirebaseAppDistributionException ex =
+        assertThrows(
+            FirebaseAppDistributionException.class,
+            () ->
+                firebaseAppDistributionTesterApiClient.fetchLatestRelease(
+                    TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN));
+
+    assertEquals(FirebaseAppDistributionException.Status.NETWORK_FAILURE, ex.getErrorCode());
+    assertEquals("Failed to fetch releases due to timeout", ex.getMessage());
+  }
+
+  @Test
+  public void fetchLatestRelease_whenResponseFailsWithUnknownCode_throwsError() throws Exception {
+    when(mockHttpsURLConnection.getInputStream()).thenThrow(new IOException());
+    when(mockHttpsURLConnection.getResponseCode()).thenReturn(409);
+
+    FirebaseAppDistributionException ex =
+        assertThrows(
+            FirebaseAppDistributionException.class,
+            () ->
+                firebaseAppDistributionTesterApiClient.fetchLatestRelease(
+                    TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN));
+
+    assertEquals(FirebaseAppDistributionException.Status.NETWORK_FAILURE, ex.getErrorCode());
+    assertEquals("Failed to fetch releases due to unknown network error", ex.getMessage());
   }
 
   @Test
@@ -110,11 +180,16 @@ public class FirebaseAppDistributionTesterApiClientTest {
     InputStream response =
         new ByteArrayInputStream(INVALID_RESPONSE.getBytes(StandardCharsets.UTF_8));
     when(mockHttpsURLConnection.getInputStream()).thenReturn(response);
-    assertThrows(
-        FirebaseAppDistributionException.class,
-        () ->
-            firebaseAppDistributionTesterApiClient.fetchLatestRelease(
-                TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN));
+    FirebaseAppDistributionException ex =
+        assertThrows(
+            FirebaseAppDistributionException.class,
+            () ->
+                firebaseAppDistributionTesterApiClient.fetchLatestRelease(
+                    TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN));
+
+    assertEquals(FirebaseAppDistributionException.Status.UNKNOWN, ex.getErrorCode());
+    assertEquals("Error parsing service response", ex.getMessage());
+    assert (ex.getCause() instanceof JSONException);
   }
 
   private JSONObject getTestJSON(String fileName) throws IOException, JSONException {
