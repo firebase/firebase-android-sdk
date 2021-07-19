@@ -362,7 +362,7 @@ public class FirebaseAppDistributionTest {
     firebaseAppDistribution.onActivityResumed(activity);
     when(mockFirebaseAppDistributionTesterApiClient.fetchLatestRelease(any(), any(), any(), any()))
         .thenReturn(TEST_RELEASE_NEWER_AAB);
-    // call getLatestReleaseFromClient to set appDistributionReleaseInternal
+    // call getLatestReleaseFromClient to set cachedLatestRelease
     firebaseAppDistribution.getLatestReleaseFromClient(
         TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN);
 
