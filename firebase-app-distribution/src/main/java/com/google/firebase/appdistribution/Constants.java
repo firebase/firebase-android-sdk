@@ -25,6 +25,9 @@ class Constants {
 
     public static final String AUTHORIZATION_ERROR = "Failed to authorize the tester";
 
+    public static final String AUTHENTICATION_CANCELLED =
+        "Tester cancelled the authentication flow";
+
     public static final String NOT_FOUND_ERROR = "Tester or release not found";
 
     public static final String TIMEOUT_ERROR = "Failed to fetch releases due to timeout";

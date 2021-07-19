@@ -268,7 +268,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
       currentlySigningIn = false;
       setSignInTaskCompletionError(
           new FirebaseAppDistributionException(
-              "Tester cancelled authentication flow", AUTHENTICATION_CANCELED));
+              Constants.ErrorMessages.AUTHENTICATION_CANCELLED, AUTHENTICATION_CANCELED));
     }
     this.currentActivity = activity;
   }
