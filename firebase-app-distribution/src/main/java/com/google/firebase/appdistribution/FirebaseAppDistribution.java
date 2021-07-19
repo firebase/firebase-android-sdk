@@ -70,8 +70,9 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
   private CancellationTokenSource checkForUpdateCancellationSource;
   private final Executor checkForUpdateExecutor;
 
-  /** Constructor for FirebaseAppDistribution */
-  public FirebaseAppDistribution(
+  /** Internal Constructor for FirebaseAppDistribution */
+  @VisibleForTesting
+  FirebaseAppDistribution(
       @NonNull FirebaseApp firebaseApp,
       @NonNull FirebaseInstallationsApi firebaseInstallationsApi,
       @NonNull FirebaseAppDistributionTesterApiClient firebaseAppDistributionTesterApiClient) {
