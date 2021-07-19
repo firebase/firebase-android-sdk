@@ -32,7 +32,7 @@ class UpdateTaskImpl extends UpdateTask {
     this.task = task;
   }
 
-  public void updateProgress(@NonNull UpdateState updateState) {
+  void updateProgress(@NonNull UpdateState updateState) {
     if (this.listener != null) {
       this.listener.onProgressUpdate(updateState);
     }
