@@ -31,6 +31,7 @@ import android.os.Bundle;
 import android.os.Looper;
 import android.util.Log;
 import androidx.annotation.NonNull;
+import androidx.annotation.VisibleForTesting;
 import androidx.browser.customtabs.CustomTabsIntent;
 import androidx.core.content.pm.PackageInfoCompat;
 import androidx.core.os.HandlerCompat;
@@ -46,7 +47,6 @@ import com.google.firebase.appdistribution.internal.AppDistributionReleaseIntern
 import com.google.firebase.appdistribution.internal.ReleaseIdentificationUtils;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
-import java.net.ProtocolException;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -70,8 +70,9 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
   private CancellationTokenSource checkForUpdateCancellationSource;
   private final Executor checkForUpdateExecutor;
 
-  /** Constructor for FirebaseAppDistribution */
-  public FirebaseAppDistribution(
+  /** Internal Constructor for FirebaseAppDistribution */
+  @VisibleForTesting
+  FirebaseAppDistribution(
       @NonNull FirebaseApp firebaseApp,
       @NonNull FirebaseInstallationsApi firebaseInstallationsApi,
       @NonNull FirebaseAppDistributionTesterApiClient firebaseAppDistributionTesterApiClient) {
@@ -207,7 +208,8 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
         .addOnFailureListener(
             e ->
                 setCheckForUpdateTaskCompletionError(
-                    new FirebaseAppDistributionException(e.getMessage(), AUTHENTICATION_FAILURE)));
+                    new FirebaseAppDistributionException(
+                        Constants.ErrorMessages.AUTHENTICATION_ERROR, AUTHENTICATION_FAILURE, e)));
 
     return checkForUpdateTaskCompletionSource.getTask();
   }
@@ -217,8 +219,8 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
    * starts an installation If the latest release is an AAB, directs the tester to the Play app to
    * complete the download and installation.
    *
-   * @throws FirebaseAppDistributionException with UPDATE_NOT_AVAIALBLE exception if no new release
-   *     is cached from checkForUpdate
+   * <p>cancels task with FirebaseAppDistributionException with UPDATE_NOT_AVAIALBLE exception if no
+   * new release is cached from checkForUpdate
    */
   @NonNull
   public UpdateTask updateApp() {
@@ -226,7 +228,6 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
   }
 
   /** Returns true if the App Distribution tester is signed in */
-  @NonNull
   public boolean isTesterSignedIn() {
     // todo: implement when signIn persistence is done
     throw new UnsupportedOperationException("Not yet implemented.");
@@ -266,7 +267,9 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     // throw error if app reentered during signin
     if (currentlySigningIn) {
       currentlySigningIn = false;
-      setSignInTaskCompletionError(new FirebaseAppDistributionException(AUTHENTICATION_CANCELED));
+      setSignInTaskCompletionError(
+          new FirebaseAppDistributionException(
+              Constants.ErrorMessages.AUTHENTICATION_CANCELLED, AUTHENTICATION_CANCELED));
     }
     this.currentActivity = activity;
   }
@@ -350,7 +353,9 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
                       public void onFailure(@NonNull Exception e) {
                         setSignInTaskCompletionError(
                             new FirebaseAppDistributionException(
-                                e.getMessage(), AUTHENTICATION_FAILURE));
+                                Constants.ErrorMessages.AUTHENTICATION_ERROR,
+                                AUTHENTICATION_FAILURE,
+                                e));
                       }
                     });
           }
@@ -362,7 +367,8 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
           @Override
           public void onClick(DialogInterface dialogInterface, int i) {
             setSignInTaskCompletionError(
-                new FirebaseAppDistributionException(AUTHENTICATION_CANCELED));
+                new FirebaseAppDistributionException(
+                    "Tester cancelled authentication flow", AUTHENTICATION_CANCELED));
             dialogInterface.dismiss();
           }
         });
@@ -386,6 +392,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     };
   }
 
+  @VisibleForTesting
   AppDistributionRelease getLatestReleaseFromClient(
       String fid, String appId, String apiKey, String authToken)
       throws FirebaseAppDistributionException {
@@ -403,13 +410,11 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
         // Return null if retrieved latest release is older or currently installed
         return null;
       }
-    } catch (FirebaseAppDistributionException | ProtocolException | NumberFormatException e) {
-      if (e instanceof FirebaseAppDistributionException) {
-        throw (FirebaseAppDistributionException) e;
-      } else {
-        throw new FirebaseAppDistributionException(
-            e.getMessage(), FirebaseAppDistributionException.Status.NETWORK_FAILURE);
-      }
+    } catch (NumberFormatException e) {
+      throw new FirebaseAppDistributionException(
+          Constants.ErrorMessages.NETWORK_ERROR,
+          FirebaseAppDistributionException.Status.NETWORK_FAILURE,
+          e);
     }
   }
 
@@ -434,7 +439,9 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     } catch (PackageManager.NameNotFoundException e) {
       checkForUpdateTaskCompletionSource.setException(
           new FirebaseAppDistributionException(
-              e.getMessage(), FirebaseAppDistributionException.Status.UNKNOWN));
+              Constants.ErrorMessages.UNKNOWN_ERROR,
+              FirebaseAppDistributionException.Status.UNKNOWN,
+              e));
     }
     return PackageInfoCompat.getLongVersionCode(pInfo);
   }
