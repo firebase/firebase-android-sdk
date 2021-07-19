@@ -20,8 +20,6 @@ import com.google.firebase.FirebaseException;
 
 /** Possible exceptions thrown in FirebaseAppDistribution */
 public class FirebaseAppDistributionException extends FirebaseException {
-  private static final String TAG = "FirebaseAppDistributionException";
-
   public enum Status {
     /** Unknown error. */
     UNKNOWN,
