@@ -21,7 +21,6 @@ import static com.google.firebase.inappmessaging.testutil.TestData.CARD_MESSAGE_
 import static com.google.firebase.inappmessaging.testutil.TestData.IMAGE_MESSAGE_MODEL;
 import static com.google.firebase.inappmessaging.testutil.TestData.IMAGE_MESSAGE_MODEL_WITHOUT_ACTION;
 import static com.google.firebase.inappmessaging.testutil.TestData.IMAGE_MESSAGE_WEB_ACTION_MODEL;
-import static com.google.firebase.inappmessaging.testutil.TestData.IMAGE_URL_STRING;
 import static com.google.firebase.inappmessaging.testutil.TestData.MODAL_MESSAGE_MODEL;
 import static com.google.firebase.inappmessaging.testutil.TestData.WEB_ACTION_URL_STRING;
 import static org.mockito.ArgumentMatchers.any;

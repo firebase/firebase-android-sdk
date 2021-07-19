@@ -47,23 +47,20 @@ public class FiamImageLoaderTest {
   public void setup() {
     MockitoAnnotations.initMocks(this);
     imageLoader = new FiamImageLoader(glideRequestManager);
+    when(glideRequestManager.load(any(GlideUrl.class))).thenReturn(requestBuilder);
+    when(requestBuilder.format(any())).thenReturn(requestBuilder);
   }
 
   @Test
   public void testLoad_ReturnsFiamImageRequestCreator() {
-    when(glideRequestManager.load(IMAGE_URL)).thenReturn(requestBuilder);
-
     assertThat(imageLoader.load(IMAGE_URL).getClass())
         .isEqualTo(FiamImageLoader.FiamImageRequestCreator.class);
   }
 
   @Test
   public void placeholder_setsPlaceholderOnUnderlyingRequestCreator() {
-    when(glideRequestManager.load(any(GlideUrl.class))).thenReturn(requestBuilder);
-
     FiamImageLoader.FiamImageRequestCreator fiamImageRequestCreator = imageLoader.load(IMAGE_URL);
     fiamImageRequestCreator.placeholder(1);
-
     verify(requestBuilder).placeholder(1);
   }
 
@@ -71,7 +68,6 @@ public class FiamImageLoaderTest {
   public void tag_tagsUnderlyingRequestCreator() {
     ImageView imageView = mock(ImageView.class);
     FiamImageLoader.Callback callback = mock(FiamImageLoader.Callback.class);
-    when(glideRequestManager.load(any(GlideUrl.class))).thenReturn(requestBuilder);
     FiamImageLoader.FiamImageRequestCreator fiamImageRequestCreator = imageLoader.load(IMAGE_URL);
     fiamImageRequestCreator.into(imageView, callback);
     assertFalse(imageLoader.containsTag(String.class.getSimpleName()));
@@ -83,11 +79,8 @@ public class FiamImageLoaderTest {
   public void into_invokesUnderlyingRequestCreator() {
     ImageView imageView = mock(ImageView.class);
     FiamImageLoader.Callback callback = mock(FiamImageLoader.Callback.class);
-
-    when(glideRequestManager.load(any(GlideUrl.class))).thenReturn(requestBuilder);
     FiamImageLoader.FiamImageRequestCreator fiamImageRequestCreator = imageLoader.load(IMAGE_URL);
     fiamImageRequestCreator.into(imageView, callback);
-
     verify(requestBuilder).into(callback);
   }
 }
