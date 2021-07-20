@@ -152,27 +152,18 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
                         }
                       })
                   .addOnFailureListener(
-                      e -> {
-                        if (e instanceof FirebaseAppDistributionException) {
-                          setUpdateToLatestReleaseTaskCompletionError(
-                              (FirebaseAppDistributionException) e);
-                        } else {
-                          setUpdateToLatestReleaseTaskCompletionError(
+                      e ->
+                          setUpdateToLatestReleaseErrorWithDefault(
+                              e,
                               new FirebaseAppDistributionException(
-                                  Constants.ErrorMessages.NETWORK_ERROR, NETWORK_FAILURE));
-                        }
-                      });
+                                  Constants.ErrorMessages.NETWORK_ERROR, NETWORK_FAILURE)));
             })
         .addOnFailureListener(
-            e -> {
-              if (e instanceof FirebaseAppDistributionException) {
-                setUpdateToLatestReleaseTaskCompletionError((FirebaseAppDistributionException) e);
-              } else {
-                setUpdateToLatestReleaseTaskCompletionError(
+            e ->
+                setUpdateToLatestReleaseErrorWithDefault(
+                    e,
                     new FirebaseAppDistributionException(
-                        Constants.ErrorMessages.AUTHENTICATION_ERROR, AUTHENTICATION_FAILURE));
-              }
-            });
+                        Constants.ErrorMessages.AUTHENTICATION_ERROR, AUTHENTICATION_FAILURE)));
 
     return updateToLatestReleaseTaskCompletionSource.getTask();
   }
@@ -538,6 +529,15 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     }
   }
 
+  private void setUpdateToLatestReleaseErrorWithDefault(
+      Exception e, FirebaseAppDistributionException defaultFirebaseException) {
+    if (e instanceof FirebaseAppDistributionException) {
+      setUpdateToLatestReleaseTaskCompletionError((FirebaseAppDistributionException) e);
+    } else {
+      setUpdateToLatestReleaseTaskCompletionError(defaultFirebaseException);
+    }
+  }
+
   private boolean isNewerBuildVersion(AppDistributionReleaseInternal latestRelease) {
     return Long.parseLong(latestRelease.getBuildVersion())
         >= getInstalledAppVersionCode(firebaseApp.getApplicationContext());
@@ -601,17 +601,11 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
                     updateState ->
                         updateToLatestReleaseTaskCompletionSource.setResult(latestRelease))
                 .addOnFailureListener(
-                    e -> {
-                      if (e instanceof FirebaseAppDistributionException) {
-                        setUpdateToLatestReleaseTaskCompletionError(
-                            (FirebaseAppDistributionException) e);
-                      } else {
-                        setUpdateToLatestReleaseTaskCompletionError(
+                    e ->
+                        setUpdateToLatestReleaseErrorWithDefault(
+                            e,
                             new FirebaseAppDistributionException(
-                                Constants.ErrorMessages.NETWORK_ERROR,
-                                FirebaseAppDistributionException.Status.NETWORK_FAILURE));
-                      }
-                    });
+                                Constants.ErrorMessages.NETWORK_ERROR, NETWORK_FAILURE)));
           } catch (FirebaseAppDistributionException e) {
             setUpdateToLatestReleaseTaskCompletionError(e);
           }
