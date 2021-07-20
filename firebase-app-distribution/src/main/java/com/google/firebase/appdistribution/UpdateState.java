@@ -15,34 +15,44 @@
 package com.google.firebase.appdistribution;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import com.google.auto.value.AutoValue;
 
 /** Data class to get download progress for APKs and the status of the update. Used in updateApp. */
-public final class UpdateState {
-  private final long apkBytesDownloaded;
-  private final long apkTotalBytesToDownload;
-  private final UpdateStatus updateStatus;
+@AutoValue
+public abstract class UpdateState {
 
-  UpdateState(long apkBytesDownloaded, long apkTotalBytesToDownload, UpdateStatus updateStatus) {
-    this.apkBytesDownloaded = apkBytesDownloaded;
-    this.apkTotalBytesToDownload = apkTotalBytesToDownload;
-    this.updateStatus = updateStatus;
+  @NonNull
+  public static UpdateState.Builder builder() {
+    return new AutoValue_UpdateState.Builder();
   }
 
   /** The number of bytes downloaded so far for the APK. Returns -1 if called on an AAB. */
   @NonNull
-  public long getApkBytesDownloaded() {
-    return apkBytesDownloaded;
-  }
+  public abstract long getApkBytesDownloaded();
 
   /** The total number of bytes to download for the APK. Returns -1 if called on an AAB. */
   @NonNull
-  public long getApkTotalBytesToDownload() {
-    return apkTotalBytesToDownload;
-  }
+  public abstract long getApkTotalBytesToDownload();
 
   @NonNull
   /** returns the current state of the update */
-  public UpdateStatus getUpdateStatus() {
-    return updateStatus;
+  public abstract UpdateStatus getUpdateStatus();
+
+  /** Builder for {@link UpdateState}. */
+  @AutoValue.Builder
+  public abstract static class Builder {
+
+    @NonNull
+    public abstract UpdateState.Builder setApkBytesDownloaded(@NonNull long value);
+
+    @NonNull
+    public abstract UpdateState.Builder setApkTotalBytesToDownload(@NonNull long value);
+
+    @NonNull
+    public abstract UpdateState.Builder setUpdateStatus(@Nullable UpdateStatus value);
+
+    @NonNull
+    public abstract UpdateState build();
   }
 }

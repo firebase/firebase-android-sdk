@@ -70,7 +70,12 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
   private CancellationTokenSource checkForUpdateCancellationSource;
   private final Executor checkForUpdateExecutor;
 
-  /** Internal Constructor for FirebaseAppDistribution */
+  private TaskCompletionSource<UpdateState> updateAppTaskCompletionSource = null;
+  private CancellationTokenSource updateAppCancellationSource;
+  private UpdateTaskImpl updateTask;
+  private AppDistributionReleaseInternal cachedLatestRelease;
+
+  /** Constructor for FirebaseAppDistribution */
   @VisibleForTesting
   FirebaseAppDistribution(
       @NonNull FirebaseApp firebaseApp,
@@ -188,7 +193,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
               checkForUpdateExecutor.execute(
                   () -> {
                     try {
-                      AppDistributionRelease latestRelease =
+                      AppDistributionReleaseInternal latestRelease =
                           getLatestReleaseFromClient(
                               fid,
                               firebaseApp.getOptions().getApplicationId(),
@@ -196,9 +201,11 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
                               installationTokenResult.getToken());
                       updateOnUiThread(
                           () -> {
+                            setCachedLatestRelease(latestRelease);
                             if (checkForUpdateTaskCompletionSource != null
                                 && !checkForUpdateTaskCompletionSource.getTask().isComplete())
-                              checkForUpdateTaskCompletionSource.setResult(latestRelease);
+                              checkForUpdateTaskCompletionSource.setResult(
+                                  convertToAppDistributionRelease(latestRelease));
                           });
                     } catch (FirebaseAppDistributionException ex) {
                       updateOnUiThread(() -> setCheckForUpdateTaskCompletionError(ex));
@@ -223,8 +230,34 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
    * new release is cached from checkForUpdate
    */
   @NonNull
-  public UpdateTask updateApp() {
-    return (UpdateTask) Tasks.forResult(new UpdateState(0, 0, UpdateStatus.PENDING));
+  public UpdateTask updateApp() throws FirebaseAppDistributionException {
+
+    if (updateAppTaskCompletionSource != null
+        && !updateAppTaskCompletionSource.getTask().isComplete()) {
+      updateAppCancellationSource.cancel();
+    }
+
+    updateAppCancellationSource = new CancellationTokenSource();
+    updateAppTaskCompletionSource =
+        new TaskCompletionSource<>(updateAppCancellationSource.getToken());
+    Context context = firebaseApp.getApplicationContext();
+    this.updateTask = new UpdateTaskImpl(updateAppTaskCompletionSource.getTask());
+
+    if (cachedLatestRelease == null) {
+      updateAppTaskCompletionSource.setException(
+          new FirebaseAppDistributionException(
+              context.getString(R.string.no_update_available),
+              FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE));
+    } else {
+      if (cachedLatestRelease.getBinaryType() == BinaryType.AAB) {
+        redirectToPlayForAabUpdate(cachedLatestRelease.getDownloadUrl());
+      } else {
+        // todo: create update class when implementing APK
+        throw new UnsupportedOperationException("Not yet implemented.");
+      }
+    }
+
+    return this.updateTask;
   }
 
   /** Returns true if the App Distribution tester is signed in */
@@ -319,7 +352,6 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     } else {
       // If we can't launch a chrome view try to launch anything that can handle a URL.
       Intent browserIntent = new Intent(Intent.ACTION_VIEW, uri);
-      ResolveInfo info = currentActivity.getPackageManager().resolveActivity(browserIntent, 0);
       browserIntent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
       browserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
       currentActivity.startActivity(browserIntent);
@@ -393,19 +425,16 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
   }
 
   @VisibleForTesting
-  AppDistributionRelease getLatestReleaseFromClient(
+  AppDistributionReleaseInternal getLatestReleaseFromClient(
       String fid, String appId, String apiKey, String authToken)
       throws FirebaseAppDistributionException {
     try {
       AppDistributionReleaseInternal retrievedLatestRelease =
           firebaseAppDistributionTesterApiClient.fetchLatestRelease(fid, appId, apiKey, authToken);
 
-      long currentInstalledVersionCode =
-          getInstalledAppVersionCode(firebaseApp.getApplicationContext());
-
       if (isNewerBuildVersion(retrievedLatestRelease)
           && !isInstalledRelease(retrievedLatestRelease)) {
-        return convertToAppDistributionRelease(retrievedLatestRelease);
+        return retrievedLatestRelease;
       } else {
         // Return null if retrieved latest release is older or currently installed
         return null;
@@ -416,6 +445,11 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
           FirebaseAppDistributionException.Status.NETWORK_FAILURE,
           e);
     }
+  }
+
+  @VisibleForTesting
+  void setCachedLatestRelease(AppDistributionReleaseInternal latestRelease) {
+    this.cachedLatestRelease = latestRelease;
   }
 
   private AppDistributionRelease convertToAppDistributionRelease(
@@ -479,5 +513,26 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
         .equals(
             ReleaseIdentificationUtils.extractInternalAppSharingArtifactId(
                 firebaseApp.getApplicationContext()));
+  }
+
+  private void redirectToPlayForAabUpdate(String downloadUrl)
+      throws FirebaseAppDistributionException {
+    if (downloadUrl == null) {
+      throw new FirebaseAppDistributionException(
+          "Download URL not found.", FirebaseAppDistributionException.Status.NETWORK_FAILURE);
+    }
+    Intent updateIntent = new Intent(Intent.ACTION_VIEW);
+    Uri uri = Uri.parse(downloadUrl);
+    updateIntent.setData(uri);
+    updateIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    currentActivity.startActivity(updateIntent);
+    UpdateState updateState =
+        UpdateState.builder()
+            .setApkBytesDownloaded(-1)
+            .setApkTotalBytesToDownload(-1)
+            .setUpdateStatus(UpdateStatus.REDIRECTED_TO_PLAY)
+            .build();
+    updateAppTaskCompletionSource.setResult(updateState);
+    this.updateTask.updateProgress(updateState);
   }
 }
