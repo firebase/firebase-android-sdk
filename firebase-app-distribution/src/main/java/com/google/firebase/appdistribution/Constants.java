@@ -32,6 +32,8 @@ class Constants {
 
     public static final String TIMEOUT_ERROR = "Failed to fetch releases due to timeout";
 
+    public static final String UPDATE_CANCELLED = "Update Cancelled.";
+
     public static final String UNKNOWN_ERROR = "Unknown Error";
   }
 }

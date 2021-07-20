@@ -19,5 +19,8 @@
   <string name="singin_yes_button">Turn on</string>
   <string name="singin_no_button">Not now</string>
   <string name="no_update_available">No new release available, try calling checkForUpdate.</string>
+  <string name="update_dialog_title">New Version Available</string>
+  <string name="update_yes_button">Update</string>
+  <string name="update_no_button">Cancel</string>
 
 </resources>
