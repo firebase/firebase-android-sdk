@@ -140,12 +140,39 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
 
     // todo: when persistence is implemented and user already signed in, skip signInTester
     signInTester()
-        .addOnSuccessListener(unused -> showUpdateDialogIfNewReleaseAvailable())
+        .addOnSuccessListener(
+            unused -> {
+              checkForUpdate()
+                  .addOnSuccessListener(
+                      latestRelease -> {
+                        if (latestRelease != null) {
+                          showUpdateAlertDialog(latestRelease);
+                        } else {
+                          updateToLatestReleaseTaskCompletionSource.setResult(null);
+                        }
+                      })
+                  .addOnFailureListener(
+                      e -> {
+                        if (e instanceof FirebaseAppDistributionException) {
+                          setUpdateToLatestReleaseTaskCompletionError(
+                              (FirebaseAppDistributionException) e);
+                        } else {
+                          setUpdateToLatestReleaseTaskCompletionError(
+                              new FirebaseAppDistributionException(
+                                  Constants.ErrorMessages.NETWORK_ERROR, NETWORK_FAILURE));
+                        }
+                      });
+            })
         .addOnFailureListener(
-            e ->
+            e -> {
+              if (e instanceof FirebaseAppDistributionException) {
+                setUpdateToLatestReleaseTaskCompletionError((FirebaseAppDistributionException) e);
+              } else {
                 setUpdateToLatestReleaseTaskCompletionError(
                     new FirebaseAppDistributionException(
-                        Constants.ErrorMessages.AUTHENTICATION_ERROR, AUTHENTICATION_FAILURE)));
+                        Constants.ErrorMessages.AUTHENTICATION_ERROR, AUTHENTICATION_FAILURE));
+              }
+            });
 
     return updateToLatestReleaseTaskCompletionSource.getTask();
   }
@@ -552,28 +579,6 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
             .build();
     updateAppTaskCompletionSource.setResult(updateState);
     this.updateTask.updateProgress(updateState);
-  }
-
-  private void showUpdateDialogIfNewReleaseAvailable() {
-    checkForUpdate()
-        .addOnSuccessListener(
-            latestRelease -> {
-              if (latestRelease != null) {
-                showUpdateAlertDialog(latestRelease);
-              } else {
-                updateToLatestReleaseTaskCompletionSource.setResult(null);
-              }
-            })
-        .addOnFailureListener(
-            e -> {
-              if (e instanceof FirebaseAppDistributionException) {
-                setUpdateToLatestReleaseTaskCompletionError((FirebaseAppDistributionException) e);
-              } else {
-                setUpdateToLatestReleaseTaskCompletionError(
-                    new FirebaseAppDistributionException(
-                        Constants.ErrorMessages.NETWORK_ERROR, NETWORK_FAILURE));
-              }
-            });
   }
 
   private void showUpdateAlertDialog(AppDistributionRelease latestRelease) {

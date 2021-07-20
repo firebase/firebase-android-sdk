@@ -17,6 +17,7 @@ package com.google.firebase.appdistribution;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -49,6 +50,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
@@ -81,13 +83,21 @@ public class FirebaseAppDistributionTest {
           .setBinaryType(BinaryType.APK)
           .build();
 
-  private static final AppDistributionReleaseInternal TEST_RELEASE_NEWER_AAB =
+  private static final AppDistributionReleaseInternal TEST_RELEASE_NEWER_AAB_INTERNAL =
       AppDistributionReleaseInternal.builder()
           .setBuildVersion("3")
           .setDisplayVersion("3.0")
           .setReleaseNotes("Newer version.")
           .setBinaryType(BinaryType.AAB)
           .setDownloadUrl("https://test-url")
+          .build();
+
+  private static final AppDistributionRelease TEST_RELEASE_NEWER_AAB =
+      AppDistributionRelease.builder()
+          .setBuildVersion("3")
+          .setDisplayVersion("3.0")
+          .setReleaseNotes("Newer version.")
+          .setBinaryType(BinaryType.AAB)
           .build();
 
   private static final AppDistributionReleaseInternal TEST_RELEASE_CURRENT =
@@ -128,8 +138,11 @@ public class FirebaseAppDistributionTest {
                 .build());
 
     firebaseAppDistribution =
-        new FirebaseAppDistribution(
-            firebaseApp, mockFirebaseInstallations, mockFirebaseAppDistributionTesterApiClient);
+        Mockito.spy(
+            new FirebaseAppDistribution(
+                firebaseApp,
+                mockFirebaseInstallations,
+                mockFirebaseAppDistributionTesterApiClient));
 
     when(mockFirebaseInstallations.getId()).thenReturn(Tasks.forResult(TEST_FID_1));
     when(mockFirebaseInstallations.getToken(false))
@@ -363,12 +376,12 @@ public class FirebaseAppDistributionTest {
   @Test
   public void updateAppTask_whenAabReleaseAvailable_redirectsToPlay() throws Exception {
     firebaseAppDistribution.onActivityResumed(activity);
-    firebaseAppDistribution.setCachedLatestRelease(TEST_RELEASE_NEWER_AAB);
+    firebaseAppDistribution.setCachedLatestRelease(TEST_RELEASE_NEWER_AAB_INTERNAL);
 
     UpdateTask updateTask = firebaseAppDistribution.updateApp();
 
     assertThat(shadowActivity.getNextStartedActivity().getData())
-        .isEqualTo(Uri.parse(TEST_RELEASE_NEWER_AAB.getDownloadUrl()));
+        .isEqualTo(Uri.parse(TEST_RELEASE_NEWER_AAB_INTERNAL.getDownloadUrl()));
 
     UpdateState taskResult = updateTask.getResult();
 
@@ -376,4 +389,69 @@ public class FirebaseAppDistributionTest {
     assertEquals(-1, taskResult.getApkTotalBytesToDownload());
     assertEquals(UpdateStatus.REDIRECTED_TO_PLAY, taskResult.getUpdateStatus());
   }
+
+  @Test
+  public void updateToLatestRelease_whenCalledMultipleTimes_cancelsPreviousTask() {
+    firebaseAppDistribution.onActivityResumed(activity);
+    Task<AppDistributionRelease> updateToLatestReleaseTask1 =
+        firebaseAppDistribution.updateToLatestRelease();
+    Task<AppDistributionRelease> updateToLatestReleaseTask2 =
+        firebaseAppDistribution.updateToLatestRelease();
+
+    assertTrue(updateToLatestReleaseTask1.isCanceled());
+    assertFalse(updateToLatestReleaseTask2.isComplete());
+  }
+
+  @Test
+  public void updateToLatestRelease_whenNewReleaseAvailable_showsUpdateDialog() throws Exception {
+    firebaseAppDistribution.onActivityResumed(activity);
+    firebaseAppDistribution.updateToLatestRelease();
+    firebaseAppDistribution.setCachedLatestRelease(TEST_RELEASE_NEWER_AAB_INTERNAL);
+    Mockito.doReturn(Tasks.forResult(TEST_RELEASE_NEWER_AAB))
+        .when(firebaseAppDistribution)
+        .checkForUpdate();
+
+    // signIn flow
+    assertTrue(ShadowAlertDialog.getLatestDialog() instanceof AlertDialog);
+    AlertDialog signInDialog = (AlertDialog) ShadowAlertDialog.getLatestDialog();
+    assertTrue(signInDialog.isShowing());
+    signInDialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
+
+    firebaseAppDistribution.onActivityCreated(mockSignInResultActivity, mockBundle);
+    firebaseAppDistribution.onActivityResumed(activity);
+
+    // update flow
+    assertTrue(ShadowAlertDialog.getLatestDialog() instanceof AlertDialog);
+    AlertDialog updateDialog = (AlertDialog) ShadowAlertDialog.getLatestDialog();
+    assertNotEquals(signInDialog, updateDialog);
+    assertTrue(updateDialog.isShowing());
+    updateDialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
+
+    assertThat(shadowActivity.getNextStartedActivity().getData())
+        .isEqualTo(Uri.parse(TEST_RELEASE_NEWER_AAB_INTERNAL.getDownloadUrl()));
+  }
+
+  @Test
+  public void updateToLatestRelease_whenNoReleaseAvailable_updateDialogNotShown() throws Exception {
+    firebaseAppDistribution.onActivityResumed(activity);
+    firebaseAppDistribution.updateToLatestRelease();
+    firebaseAppDistribution.setCachedLatestRelease(null);
+    Mockito.doReturn(Tasks.forResult(null)).when(firebaseAppDistribution).checkForUpdate();
+
+    // signIn flow
+    assertTrue(ShadowAlertDialog.getLatestDialog() instanceof AlertDialog);
+    AlertDialog signInDialog = (AlertDialog) ShadowAlertDialog.getLatestDialog();
+    assertTrue(signInDialog.isShowing());
+    signInDialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
+
+    firebaseAppDistribution.onActivityCreated(mockSignInResultActivity, mockBundle);
+    firebaseAppDistribution.onActivityResumed(activity);
+
+    // update flow
+    assertTrue(ShadowAlertDialog.getLatestDialog() instanceof AlertDialog);
+    AlertDialog latestDialog = (AlertDialog) ShadowAlertDialog.getLatestDialog();
+    assertEquals(latestDialog, signInDialog);
+  }
+
+  // todo: add updatetoLatestRelease tests with persistence logic when implemented
 }
