@@ -15,6 +15,7 @@
 package com.google.firebase.appdistribution;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_FAILURE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -22,6 +23,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -104,6 +107,14 @@ public class FirebaseAppDistributionTest {
       AppDistributionReleaseInternal.builder()
           .setBinaryType(BinaryType.APK)
           .setBuildVersion(Long.toString(INSTALLED_VERSION_CODE))
+          .setDisplayVersion("2.0")
+          .setReleaseNotes("Current version.")
+          .build();
+
+  private static final AppDistributionReleaseInternal TEST_RELEASE_VERSION_ERROR =
+      AppDistributionReleaseInternal.builder()
+          .setBinaryType(BinaryType.APK)
+          .setBuildVersion("Error")
           .setDisplayVersion("2.0")
           .setReleaseNotes("Current version.")
           .build();
@@ -403,7 +414,8 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void updateToLatestRelease_whenNewReleaseAvailable_showsUpdateDialog() throws Exception {
+  public void updateToLatestRelease_whenNewAabReleaseAvailable_showsUpdateDialog()
+      throws Exception {
     firebaseAppDistribution.onActivityResumed(activity);
     firebaseAppDistribution.updateToLatestRelease();
     firebaseAppDistribution.setCachedLatestRelease(TEST_RELEASE_NEWER_AAB_INTERNAL);
@@ -416,7 +428,6 @@ public class FirebaseAppDistributionTest {
     AlertDialog signInDialog = (AlertDialog) ShadowAlertDialog.getLatestDialog();
     assertTrue(signInDialog.isShowing());
     signInDialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
-
     firebaseAppDistribution.onActivityCreated(mockSignInResultActivity, mockBundle);
     firebaseAppDistribution.onActivityResumed(activity);
 
@@ -443,7 +454,6 @@ public class FirebaseAppDistributionTest {
     AlertDialog signInDialog = (AlertDialog) ShadowAlertDialog.getLatestDialog();
     assertTrue(signInDialog.isShowing());
     signInDialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
-
     firebaseAppDistribution.onActivityCreated(mockSignInResultActivity, mockBundle);
     firebaseAppDistribution.onActivityResumed(activity);
 
@@ -451,6 +461,72 @@ public class FirebaseAppDistributionTest {
     assertTrue(ShadowAlertDialog.getLatestDialog() instanceof AlertDialog);
     AlertDialog latestDialog = (AlertDialog) ShadowAlertDialog.getLatestDialog();
     assertEquals(latestDialog, signInDialog);
+  }
+
+  @Test
+  public void updateToLatestRelease_whenSignInCancelled_checkForUpdateNotCalled() {
+    firebaseAppDistribution.onActivityResumed(activity);
+    Task<AppDistributionRelease> task = firebaseAppDistribution.updateToLatestRelease();
+
+    // signIn flow
+    assertTrue(ShadowAlertDialog.getLatestDialog() instanceof AlertDialog);
+    AlertDialog signInDialog = (AlertDialog) ShadowAlertDialog.getLatestDialog();
+    assertTrue(signInDialog.isShowing());
+    signInDialog.getButton(AlertDialog.BUTTON_NEGATIVE).performClick();
+
+    Mockito.verify(firebaseAppDistribution, never()).checkForUpdate();
+    assertTrue(task.getException() instanceof FirebaseAppDistributionException);
+    FirebaseAppDistributionException ex = (FirebaseAppDistributionException) task.getException();
+    assertEquals("Tester cancelled authentication flow", ex.getMessage());
+    assertEquals(
+        FirebaseAppDistributionException.Status.AUTHENTICATION_CANCELED, ex.getErrorCode());
+  }
+
+  @Test
+  public void updateToLatestRelease_whenSignInFailed_checkForUpdateNotCalled() {
+    firebaseAppDistribution.onActivityResumed(activity);
+    doReturn(
+            Tasks.forException(
+                new FirebaseAppDistributionException(
+                    Constants.ErrorMessages.AUTHENTICATION_ERROR, AUTHENTICATION_FAILURE)))
+        .when(firebaseAppDistribution)
+        .signInTester();
+
+    Task<AppDistributionRelease> task = firebaseAppDistribution.updateToLatestRelease();
+
+    Mockito.verify(firebaseAppDistribution, never()).checkForUpdate();
+    assertTrue(task.getException() instanceof FirebaseAppDistributionException);
+    FirebaseAppDistributionException ex = (FirebaseAppDistributionException) task.getException();
+    assertEquals(Constants.ErrorMessages.AUTHENTICATION_ERROR, ex.getMessage());
+    assertEquals(AUTHENTICATION_FAILURE, ex.getErrorCode());
+  }
+
+  @Test
+  public void updateToLatestRelease_whenCheckForUpdateFails_updateAppNotCalled() throws Exception {
+    firebaseAppDistribution.onActivityResumed(activity);
+    doReturn(
+            Tasks.forException(
+                new FirebaseAppDistributionException(
+                    Constants.ErrorMessages.NETWORK_ERROR,
+                    FirebaseAppDistributionException.Status.NETWORK_FAILURE)))
+        .when(firebaseAppDistribution)
+        .checkForUpdate();
+    when(mockFirebaseInstallations.getId()).thenReturn(Tasks.forResult(TEST_FID_1));
+    Task<AppDistributionRelease> task = firebaseAppDistribution.updateToLatestRelease();
+
+    // signIn flow
+    assertTrue(ShadowAlertDialog.getLatestDialog() instanceof AlertDialog);
+    AlertDialog signInDialog = (AlertDialog) ShadowAlertDialog.getLatestDialog();
+    assertTrue(signInDialog.isShowing());
+    signInDialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
+    firebaseAppDistribution.onActivityCreated(mockSignInResultActivity, mockBundle);
+    firebaseAppDistribution.onActivityResumed(activity);
+
+    Mockito.verify(firebaseAppDistribution, never()).updateApp();
+    assertTrue(task.getException() instanceof FirebaseAppDistributionException);
+    FirebaseAppDistributionException ex = (FirebaseAppDistributionException) task.getException();
+    assertEquals(Constants.ErrorMessages.NETWORK_ERROR, ex.getMessage());
+    assertEquals(FirebaseAppDistributionException.Status.NETWORK_FAILURE, ex.getErrorCode());
   }
 
   // todo: add updatetoLatestRelease tests with persistence logic when implemented
