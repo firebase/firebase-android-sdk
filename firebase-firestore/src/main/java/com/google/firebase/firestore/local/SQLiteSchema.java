@@ -348,8 +348,9 @@ class SQLiteSchema {
           db.execSQL(
               "CREATE TABLE index_configuration ("
                   + "index_id INTEGER, "
-                  + "path TEXT, " // collection path
+                  + "collection_id TEXT, " // collection id
                   + "field_paths BLOB, " // field path, direction pairs
+                  + "active INTEGER, " // whether index is active
                   + "update_time_seconds INTEGER, " // time of last document update added to index
                   + "update_time_nanos INTEGER, "
                   + "PRIMARY KEY (index_id))");
