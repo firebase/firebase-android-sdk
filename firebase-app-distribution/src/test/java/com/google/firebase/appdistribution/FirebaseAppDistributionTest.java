@@ -73,12 +73,21 @@ public class FirebaseAppDistributionTest {
               + "?appName=com.google.firebase.appdistribution.test"
               + "&packageName=com.google.firebase.appdistribution.test",
           TEST_APP_ID_1, TEST_FID_1);
-  private static final AppDistributionReleaseInternal TEST_RELEASE_NEWER =
+  private static final AppDistributionReleaseInternal TEST_RELEASE_NEWER_APK =
       AppDistributionReleaseInternal.builder()
           .setBuildVersion("3")
           .setDisplayVersion("3.0")
           .setReleaseNotes("Newer version.")
           .setBinaryType(BinaryType.APK)
+          .build();
+
+  private static final AppDistributionReleaseInternal TEST_RELEASE_NEWER_AAB =
+      AppDistributionReleaseInternal.builder()
+          .setBuildVersion("3")
+          .setDisplayVersion("3.0")
+          .setReleaseNotes("Newer version.")
+          .setBinaryType(BinaryType.AAB)
+          .setDownloadUrl("https://test-url")
           .build();
 
   private static final AppDistributionReleaseInternal TEST_RELEASE_CURRENT =
@@ -258,14 +267,14 @@ public class FirebaseAppDistributionTest {
       throws FirebaseAppDistributionException, ProtocolException {
     when(mockFirebaseAppDistributionTesterApiClient.fetchLatestRelease(
             TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN))
-        .thenReturn(TEST_RELEASE_NEWER);
+        .thenReturn(TEST_RELEASE_NEWER_APK);
 
-    AppDistributionRelease release =
+    AppDistributionReleaseInternal release =
         firebaseAppDistribution.getLatestReleaseFromClient(
             TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN);
 
     assertNotNull(release);
-    assertEquals(TEST_RELEASE_NEWER.getBuildVersion(), release.getBuildVersion());
+    assertEquals(TEST_RELEASE_NEWER_APK.getBuildVersion(), release.getBuildVersion());
   }
 
   @Test
@@ -282,7 +291,7 @@ public class FirebaseAppDistributionTest {
             TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN))
         .thenReturn(olderTestRelease);
 
-    AppDistributionRelease release =
+    AppDistributionReleaseInternal release =
         firebaseAppDistribution.getLatestReleaseFromClient(
             TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN);
 
@@ -304,13 +313,16 @@ public class FirebaseAppDistributionTest {
                 .setBinaryType(BinaryType.AAB)
                 .build());
 
-    AppDistributionRelease result =
+    AppDistributionReleaseInternal result =
         firebaseAppDistribution.getLatestReleaseFromClient(
             TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN);
     assertEquals(
-        AppDistributionRelease.builder()
+        AppDistributionReleaseInternal.builder()
             .setBuildVersion(TEST_RELEASE_CURRENT.getBuildVersion())
             .setDisplayVersion(TEST_RELEASE_CURRENT.getDisplayVersion())
+            .setCodeHash("codehash")
+            .setDownloadUrl("http://fake-download-url")
+            .setIasArtifactId("test-ias-artifact-id-2")
             .setBinaryType(BinaryType.AAB)
             .build(),
         result);
@@ -331,9 +343,37 @@ public class FirebaseAppDistributionTest {
                 .setBinaryType(BinaryType.AAB)
                 .build());
 
-    AppDistributionRelease result =
+    AppDistributionReleaseInternal result =
         firebaseAppDistribution.getLatestReleaseFromClient(
             TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN);
     assertNull(result);
+  }
+
+  @Test
+  public void updateAppTask_whenNoReleaseAvailable_throwsError() throws Exception {
+    UpdateTask updateTask = firebaseAppDistribution.updateApp();
+    assertFalse(updateTask.isSuccessful());
+    assertTrue(updateTask.getException() instanceof FirebaseAppDistributionException);
+    FirebaseAppDistributionException ex =
+        (FirebaseAppDistributionException) updateTask.getException();
+    assertEquals(FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE, ex.getErrorCode());
+    assertEquals("No new release available, try calling checkForUpdate.", ex.getMessage());
+  }
+
+  @Test
+  public void updateAppTask_whenAabReleaseAvailable_redirectsToPlay() throws Exception {
+    firebaseAppDistribution.onActivityResumed(activity);
+    firebaseAppDistribution.setCachedLatestRelease(TEST_RELEASE_NEWER_AAB);
+
+    UpdateTask updateTask = firebaseAppDistribution.updateApp();
+
+    assertThat(shadowActivity.getNextStartedActivity().getData())
+        .isEqualTo(Uri.parse(TEST_RELEASE_NEWER_AAB.getDownloadUrl()));
+
+    UpdateState taskResult = updateTask.getResult();
+
+    assertEquals(-1, taskResult.getApkBytesDownloaded());
+    assertEquals(-1, taskResult.getApkTotalBytesToDownload());
+    assertEquals(UpdateStatus.REDIRECTED_TO_PLAY, taskResult.getUpdateStatus());
   }
 }

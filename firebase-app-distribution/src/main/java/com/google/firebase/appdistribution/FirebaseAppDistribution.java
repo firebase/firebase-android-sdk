@@ -31,6 +31,7 @@ import android.os.Bundle;
 import android.os.Looper;
 import android.util.Log;
 import androidx.annotation.NonNull;
+import androidx.annotation.VisibleForTesting;
 import androidx.browser.customtabs.CustomTabsIntent;
 import androidx.core.content.pm.PackageInfoCompat;
 import androidx.core.os.HandlerCompat;
@@ -46,7 +47,6 @@ import com.google.firebase.appdistribution.internal.AppDistributionReleaseIntern
 import com.google.firebase.appdistribution.internal.ReleaseIdentificationUtils;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
-import java.net.ProtocolException;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -70,8 +70,14 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
   private CancellationTokenSource checkForUpdateCancellationSource;
   private final Executor checkForUpdateExecutor;
 
+  private TaskCompletionSource<UpdateState> updateAppTaskCompletionSource = null;
+  private CancellationTokenSource updateAppCancellationSource;
+  private UpdateTaskImpl updateTask;
+  private AppDistributionReleaseInternal cachedLatestRelease;
+
   /** Constructor for FirebaseAppDistribution */
-  public FirebaseAppDistribution(
+  @VisibleForTesting
+  FirebaseAppDistribution(
       @NonNull FirebaseApp firebaseApp,
       @NonNull FirebaseInstallationsApi firebaseInstallationsApi,
       @NonNull FirebaseAppDistributionTesterApiClient firebaseAppDistributionTesterApiClient) {
@@ -187,7 +193,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
               checkForUpdateExecutor.execute(
                   () -> {
                     try {
-                      AppDistributionRelease latestRelease =
+                      AppDistributionReleaseInternal latestRelease =
                           getLatestReleaseFromClient(
                               fid,
                               firebaseApp.getOptions().getApplicationId(),
@@ -195,9 +201,11 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
                               installationTokenResult.getToken());
                       updateOnUiThread(
                           () -> {
+                            setCachedLatestRelease(latestRelease);
                             if (checkForUpdateTaskCompletionSource != null
                                 && !checkForUpdateTaskCompletionSource.getTask().isComplete())
-                              checkForUpdateTaskCompletionSource.setResult(latestRelease);
+                              checkForUpdateTaskCompletionSource.setResult(
+                                  convertToAppDistributionRelease(latestRelease));
                           });
                     } catch (FirebaseAppDistributionException ex) {
                       updateOnUiThread(() -> setCheckForUpdateTaskCompletionError(ex));
@@ -207,7 +215,8 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
         .addOnFailureListener(
             e ->
                 setCheckForUpdateTaskCompletionError(
-                    new FirebaseAppDistributionException(e.getMessage(), AUTHENTICATION_FAILURE)));
+                    new FirebaseAppDistributionException(
+                        Constants.ErrorMessages.AUTHENTICATION_ERROR, AUTHENTICATION_FAILURE, e)));
 
     return checkForUpdateTaskCompletionSource.getTask();
   }
@@ -217,16 +226,41 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
    * starts an installation If the latest release is an AAB, directs the tester to the Play app to
    * complete the download and installation.
    *
-   * @throws FirebaseAppDistributionException with UPDATE_NOT_AVAIALBLE exception if no new release
-   *     is cached from checkForUpdate
+   * <p>cancels task with FirebaseAppDistributionException with UPDATE_NOT_AVAIALBLE exception if no
+   * new release is cached from checkForUpdate
    */
   @NonNull
-  public UpdateTask updateApp() {
-    return (UpdateTask) Tasks.forResult(new UpdateState(0, 0, UpdateStatus.PENDING));
+  public UpdateTask updateApp() throws FirebaseAppDistributionException {
+
+    if (updateAppTaskCompletionSource != null
+        && !updateAppTaskCompletionSource.getTask().isComplete()) {
+      updateAppCancellationSource.cancel();
+    }
+
+    updateAppCancellationSource = new CancellationTokenSource();
+    updateAppTaskCompletionSource =
+        new TaskCompletionSource<>(updateAppCancellationSource.getToken());
+    Context context = firebaseApp.getApplicationContext();
+    this.updateTask = new UpdateTaskImpl(updateAppTaskCompletionSource.getTask());
+
+    if (cachedLatestRelease == null) {
+      updateAppTaskCompletionSource.setException(
+          new FirebaseAppDistributionException(
+              context.getString(R.string.no_update_available),
+              FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE));
+    } else {
+      if (cachedLatestRelease.getBinaryType() == BinaryType.AAB) {
+        redirectToPlayForAabUpdate(cachedLatestRelease.getDownloadUrl());
+      } else {
+        // todo: create update class when implementing APK
+        throw new UnsupportedOperationException("Not yet implemented.");
+      }
+    }
+
+    return this.updateTask;
   }
 
   /** Returns true if the App Distribution tester is signed in */
-  @NonNull
   public boolean isTesterSignedIn() {
     // todo: implement when signIn persistence is done
     throw new UnsupportedOperationException("Not yet implemented.");
@@ -266,7 +300,9 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     // throw error if app reentered during signin
     if (currentlySigningIn) {
       currentlySigningIn = false;
-      setSignInTaskCompletionError(new FirebaseAppDistributionException(AUTHENTICATION_CANCELED));
+      setSignInTaskCompletionError(
+          new FirebaseAppDistributionException(
+              Constants.ErrorMessages.AUTHENTICATION_CANCELLED, AUTHENTICATION_CANCELED));
     }
     this.currentActivity = activity;
   }
@@ -316,7 +352,6 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     } else {
       // If we can't launch a chrome view try to launch anything that can handle a URL.
       Intent browserIntent = new Intent(Intent.ACTION_VIEW, uri);
-      ResolveInfo info = currentActivity.getPackageManager().resolveActivity(browserIntent, 0);
       browserIntent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
       browserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
       currentActivity.startActivity(browserIntent);
@@ -350,7 +385,9 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
                       public void onFailure(@NonNull Exception e) {
                         setSignInTaskCompletionError(
                             new FirebaseAppDistributionException(
-                                e.getMessage(), AUTHENTICATION_FAILURE));
+                                Constants.ErrorMessages.AUTHENTICATION_ERROR,
+                                AUTHENTICATION_FAILURE,
+                                e));
                       }
                     });
           }
@@ -362,7 +399,8 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
           @Override
           public void onClick(DialogInterface dialogInterface, int i) {
             setSignInTaskCompletionError(
-                new FirebaseAppDistributionException(AUTHENTICATION_CANCELED));
+                new FirebaseAppDistributionException(
+                    "Tester cancelled authentication flow", AUTHENTICATION_CANCELED));
             dialogInterface.dismiss();
           }
         });
@@ -386,31 +424,32 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     };
   }
 
-  AppDistributionRelease getLatestReleaseFromClient(
+  @VisibleForTesting
+  AppDistributionReleaseInternal getLatestReleaseFromClient(
       String fid, String appId, String apiKey, String authToken)
       throws FirebaseAppDistributionException {
     try {
       AppDistributionReleaseInternal retrievedLatestRelease =
           firebaseAppDistributionTesterApiClient.fetchLatestRelease(fid, appId, apiKey, authToken);
 
-      long currentInstalledVersionCode =
-          getInstalledAppVersionCode(firebaseApp.getApplicationContext());
-
       if (isNewerBuildVersion(retrievedLatestRelease)
           && !isInstalledRelease(retrievedLatestRelease)) {
-        return convertToAppDistributionRelease(retrievedLatestRelease);
+        return retrievedLatestRelease;
       } else {
         // Return null if retrieved latest release is older or currently installed
         return null;
       }
-    } catch (FirebaseAppDistributionException | ProtocolException | NumberFormatException e) {
-      if (e instanceof FirebaseAppDistributionException) {
-        throw (FirebaseAppDistributionException) e;
-      } else {
-        throw new FirebaseAppDistributionException(
-            e.getMessage(), FirebaseAppDistributionException.Status.NETWORK_FAILURE);
-      }
+    } catch (NumberFormatException e) {
+      throw new FirebaseAppDistributionException(
+          Constants.ErrorMessages.NETWORK_ERROR,
+          FirebaseAppDistributionException.Status.NETWORK_FAILURE,
+          e);
     }
+  }
+
+  @VisibleForTesting
+  void setCachedLatestRelease(AppDistributionReleaseInternal latestRelease) {
+    this.cachedLatestRelease = latestRelease;
   }
 
   private AppDistributionRelease convertToAppDistributionRelease(
@@ -434,7 +473,9 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     } catch (PackageManager.NameNotFoundException e) {
       checkForUpdateTaskCompletionSource.setException(
           new FirebaseAppDistributionException(
-              e.getMessage(), FirebaseAppDistributionException.Status.UNKNOWN));
+              Constants.ErrorMessages.UNKNOWN_ERROR,
+              FirebaseAppDistributionException.Status.UNKNOWN,
+              e));
     }
     return PackageInfoCompat.getLongVersionCode(pInfo);
   }
@@ -472,5 +513,26 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
         .equals(
             ReleaseIdentificationUtils.extractInternalAppSharingArtifactId(
                 firebaseApp.getApplicationContext()));
+  }
+
+  private void redirectToPlayForAabUpdate(String downloadUrl)
+      throws FirebaseAppDistributionException {
+    if (downloadUrl == null) {
+      throw new FirebaseAppDistributionException(
+          "Download URL not found.", FirebaseAppDistributionException.Status.NETWORK_FAILURE);
+    }
+    Intent updateIntent = new Intent(Intent.ACTION_VIEW);
+    Uri uri = Uri.parse(downloadUrl);
+    updateIntent.setData(uri);
+    updateIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    currentActivity.startActivity(updateIntent);
+    UpdateState updateState =
+        UpdateState.builder()
+            .setApkBytesDownloaded(-1)
+            .setApkTotalBytesToDownload(-1)
+            .setUpdateStatus(UpdateStatus.REDIRECTED_TO_PLAY)
+            .build();
+    updateAppTaskCompletionSource.setResult(updateState);
+    this.updateTask.updateProgress(updateState);
   }
 }
