@@ -16,6 +16,7 @@ package com.google.firebase.appdistribution;
 
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_CANCELED;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_FAILURE;
+import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.NETWORK_FAILURE;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -75,6 +76,10 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
   private UpdateTaskImpl updateTask;
   private AppDistributionReleaseInternal cachedLatestRelease;
 
+  private TaskCompletionSource<AppDistributionRelease> updateToLatestReleaseTaskCompletionSource =
+      null;
+  private CancellationTokenSource updateToLatestReleaseCancellationSource;
+
   /** Constructor for FirebaseAppDistribution */
   @VisibleForTesting
   FirebaseAppDistribution(
@@ -124,26 +129,43 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
   @NonNull
   public Task<AppDistributionRelease> updateToLatestRelease() {
 
-    TaskCompletionSource<AppDistributionRelease> taskCompletionSource =
-        new TaskCompletionSource<>();
+    if (updateToLatestReleaseTaskCompletionSource != null
+        && !updateToLatestReleaseTaskCompletionSource.getTask().isComplete()) {
+      updateToLatestReleaseCancellationSource.cancel();
+    }
 
+    updateToLatestReleaseCancellationSource = new CancellationTokenSource();
+    updateToLatestReleaseTaskCompletionSource =
+        new TaskCompletionSource<>(updateToLatestReleaseCancellationSource.getToken());
+
+    // todo: when persistence is implemented and user already signed in, skip signInTester
     signInTester()
         .addOnSuccessListener(
-            new OnSuccessListener<Void>() {
-              @Override
-              public void onSuccess(Void unused) {
-                taskCompletionSource.setResult(null);
-              }
+            unused -> {
+              checkForUpdate()
+                  .addOnSuccessListener(
+                      latestRelease -> {
+                        if (latestRelease != null) {
+                          showUpdateAlertDialog(latestRelease);
+                        } else {
+                          updateToLatestReleaseTaskCompletionSource.setResult(null);
+                        }
+                      })
+                  .addOnFailureListener(
+                      e ->
+                          setUpdateToLatestReleaseErrorWithDefault(
+                              e,
+                              new FirebaseAppDistributionException(
+                                  Constants.ErrorMessages.NETWORK_ERROR, NETWORK_FAILURE)));
             })
         .addOnFailureListener(
-            new OnFailureListener() {
-              @Override
-              public void onFailure(@NonNull Exception e) {
-                taskCompletionSource.setException(e);
-              }
-            });
+            e ->
+                setUpdateToLatestReleaseErrorWithDefault(
+                    e,
+                    new FirebaseAppDistributionException(
+                        Constants.ErrorMessages.AUTHENTICATION_ERROR, AUTHENTICATION_FAILURE)));
 
-    return taskCompletionSource.getTask();
+    return updateToLatestReleaseTaskCompletionSource.getTask();
   }
 
   /** Signs in the App Distribution tester. Presents the tester with a Google sign in UI */
@@ -244,7 +266,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     this.updateTask = new UpdateTaskImpl(updateAppTaskCompletionSource.getTask());
 
     if (cachedLatestRelease == null) {
-      updateAppTaskCompletionSource.setException(
+      setUpdateAppTaskCompletionError(
           new FirebaseAppDistributionException(
               context.getString(R.string.no_update_available),
               FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE));
@@ -493,6 +515,29 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     }
   }
 
+  private void setUpdateAppTaskCompletionError(FirebaseAppDistributionException e) {
+    if (updateAppTaskCompletionSource != null
+        && !updateAppTaskCompletionSource.getTask().isComplete()) {
+      updateAppTaskCompletionSource.setException(e);
+    }
+  }
+
+  private void setUpdateToLatestReleaseTaskCompletionError(FirebaseAppDistributionException e) {
+    if (updateToLatestReleaseTaskCompletionSource != null
+        && !updateToLatestReleaseTaskCompletionSource.getTask().isComplete()) {
+      updateToLatestReleaseTaskCompletionSource.setException(e);
+    }
+  }
+
+  private void setUpdateToLatestReleaseErrorWithDefault(
+      Exception e, FirebaseAppDistributionException defaultFirebaseException) {
+    if (e instanceof FirebaseAppDistributionException) {
+      setUpdateToLatestReleaseTaskCompletionError((FirebaseAppDistributionException) e);
+    } else {
+      setUpdateToLatestReleaseTaskCompletionError(defaultFirebaseException);
+    }
+  }
+
   private boolean isNewerBuildVersion(AppDistributionReleaseInternal latestRelease) {
     return Long.parseLong(latestRelease.getBuildVersion())
         >= getInstalledAppVersionCode(firebaseApp.getApplicationContext());
@@ -534,5 +579,48 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
             .build();
     updateAppTaskCompletionSource.setResult(updateState);
     this.updateTask.updateProgress(updateState);
+  }
+
+  private void showUpdateAlertDialog(AppDistributionRelease latestRelease) {
+    Context context = firebaseApp.getApplicationContext();
+    AlertDialog alertDialog = new AlertDialog.Builder(currentActivity).create();
+    alertDialog.setTitle(context.getString(R.string.update_dialog_title));
+
+    alertDialog.setMessage(
+        String.format(
+            "Version %s (%s) is available.",
+            latestRelease.getDisplayVersion(), latestRelease.getBuildVersion()));
+
+    alertDialog.setButton(
+        AlertDialog.BUTTON_POSITIVE,
+        context.getString(R.string.update_yes_button),
+        (dialogInterface, i) -> {
+          try {
+            updateApp()
+                .addOnSuccessListener(
+                    updateState ->
+                        updateToLatestReleaseTaskCompletionSource.setResult(latestRelease))
+                .addOnFailureListener(
+                    e ->
+                        setUpdateToLatestReleaseErrorWithDefault(
+                            e,
+                            new FirebaseAppDistributionException(
+                                Constants.ErrorMessages.NETWORK_ERROR, NETWORK_FAILURE)));
+          } catch (FirebaseAppDistributionException e) {
+            setUpdateToLatestReleaseTaskCompletionError(e);
+          }
+        });
+    alertDialog.setButton(
+        AlertDialog.BUTTON_NEGATIVE,
+        context.getString(R.string.update_no_button),
+        (dialogInterface, i) -> {
+          dialogInterface.dismiss();
+          setUpdateToLatestReleaseTaskCompletionError(
+              new FirebaseAppDistributionException(
+                  Constants.ErrorMessages.UPDATE_CANCELLED,
+                  FirebaseAppDistributionException.Status.INSTALLATION_CANCELED));
+        });
+
+    alertDialog.show();
   }
 }
