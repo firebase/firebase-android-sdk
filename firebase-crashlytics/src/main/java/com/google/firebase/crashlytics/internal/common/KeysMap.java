@@ -89,7 +89,9 @@ public class KeysMap {
 
   /** Trims the string and truncates it to maxEntryLength. */
   public String sanitizeAttribute(String input) {
-    if (input != null) {
+    if (input == null) {
+      return "";
+    } else {
       input = input.trim();
       if (input.length() > maxEntryLength) {
         input = input.substring(0, maxEntryLength);
