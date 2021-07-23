@@ -545,6 +545,11 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
   private void assertFirebaseAnalyticsCrashEvent(AnalyticsEventLogger mockFirebaseAnalyticsLogger) {
     final ArgumentCaptor<Bundle> captor = ArgumentCaptor.forClass(Bundle.class);
 
+    // The event gets sent back almost immediately, but on a separate thread.
+    try {
+      Thread.sleep(500);
+    } catch (InterruptedException e) {
+    }
     verify(mockFirebaseAnalyticsLogger, times(1))
         .logEvent(eq(CrashlyticsController.FIREBASE_APPLICATION_EXCEPTION), captor.capture());
     assertEquals(
