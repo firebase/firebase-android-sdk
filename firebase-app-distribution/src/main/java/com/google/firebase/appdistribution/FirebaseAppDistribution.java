@@ -14,7 +14,6 @@
 
 package com.google.firebase.appdistribution;
 
-import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_CANCELED;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_FAILURE;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.NETWORK_FAILURE;
 
@@ -22,54 +21,28 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Application;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
-import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Looper;
 import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
-import androidx.browser.customtabs.CustomTabsIntent;
-import androidx.core.content.pm.PackageInfoCompat;
-import androidx.core.os.HandlerCompat;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.tasks.CancellationTokenSource;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
-import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appdistribution.internal.AppDistributionReleaseInternal;
-import com.google.firebase.appdistribution.internal.ReleaseIdentificationUtils;
 import com.google.firebase.installations.FirebaseInstallationsApi;
-import com.google.firebase.installations.InstallationTokenResult;
-import java.util.List;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import org.jetbrains.annotations.Nullable;
 
 public class FirebaseAppDistribution implements Application.ActivityLifecycleCallbacks {
+  private static final String TAG = "FirebaseAppDistribution";
 
   private final FirebaseApp firebaseApp;
-  private final FirebaseInstallationsApi firebaseInstallationsApi;
-  private final FirebaseAppDistributionTesterApiClient firebaseAppDistributionTesterApiClient;
-  private final int UPDATE_THREAD_POOL_SIZE = 4;
-  private static final String TAG = "FirebaseAppDistribution";
+  private final TesterSignInClient testerSignInClient;
+  private final CheckForUpdateClient checkForUpdateClient;
   private Activity currentActivity;
-  private boolean currentlySigningIn = false;
-  private TaskCompletionSource<Void> signInTaskCompletionSource = null;
-  private CancellationTokenSource signInCancellationSource;
-  private final String SIGNIN_REDIRECT_URL =
-      "https://appdistribution.firebase.google.com/pub/testerapps/%s/installations/%s/buildalerts?appName=%s&packageName=%s";
-
-  private TaskCompletionSource<AppDistributionRelease> checkForUpdateTaskCompletionSource = null;
-  private CancellationTokenSource checkForUpdateCancellationSource;
-  private final Executor checkForUpdateExecutor;
 
   private TaskCompletionSource<UpdateState> updateAppTaskCompletionSource = null;
   private CancellationTokenSource updateAppCancellationSource;
@@ -84,20 +57,22 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
   @VisibleForTesting
   FirebaseAppDistribution(
       @NonNull FirebaseApp firebaseApp,
-      @NonNull FirebaseInstallationsApi firebaseInstallationsApi,
-      @NonNull FirebaseAppDistributionTesterApiClient firebaseAppDistributionTesterApiClient) {
+      @NonNull TesterSignInClient testerSignInClient,
+      @NonNull CheckForUpdateClient checkForUpdateClient) {
     this.firebaseApp = firebaseApp;
-    this.firebaseInstallationsApi = firebaseInstallationsApi;
-    this.firebaseAppDistributionTesterApiClient = firebaseAppDistributionTesterApiClient;
-    // todo: verify if this is best way to use executorservice here
-    this.checkForUpdateExecutor = Executors.newFixedThreadPool(UPDATE_THREAD_POOL_SIZE);
+    this.testerSignInClient = testerSignInClient;
+    this.checkForUpdateClient = checkForUpdateClient;
   }
 
   /** Constructor for FirebaseAppDistribution */
   public FirebaseAppDistribution(
       @NonNull FirebaseApp firebaseApp,
       @NonNull FirebaseInstallationsApi firebaseInstallationsApi) {
-    this(firebaseApp, firebaseInstallationsApi, new FirebaseAppDistributionTesterApiClient());
+    this(
+        firebaseApp,
+        new TesterSignInClient(firebaseApp, firebaseInstallationsApi),
+        new CheckForUpdateClient(
+            firebaseApp, new FirebaseAppDistributionTesterApiClient(), firebaseInstallationsApi));
   }
 
   /** @return a FirebaseAppDistribution instance */
@@ -171,17 +146,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
   /** Signs in the App Distribution tester. Presents the tester with a Google sign in UI */
   @NonNull
   public Task<Void> signInTester() {
-    if (signInTaskCompletionSource != null && !signInTaskCompletionSource.getTask().isComplete()) {
-      signInCancellationSource.cancel();
-    }
-
-    signInCancellationSource = new CancellationTokenSource();
-    signInTaskCompletionSource = new TaskCompletionSource<>(signInCancellationSource.getToken());
-
-    AlertDialog alertDialog = getSignInAlertDialog(firebaseApp.getApplicationContext());
-    alertDialog.show();
-
-    return signInTaskCompletionSource.getTask();
+    return this.testerSignInClient.signInTester(currentActivity);
   }
 
   /**
@@ -191,56 +156,17 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
    */
   @NonNull
   public Task<AppDistributionRelease> checkForUpdate() {
-
-    if (checkForUpdateTaskCompletionSource != null
-        && !checkForUpdateTaskCompletionSource.getTask().isComplete()) {
-      checkForUpdateCancellationSource.cancel();
-    }
-
-    checkForUpdateCancellationSource = new CancellationTokenSource();
-    checkForUpdateTaskCompletionSource =
-        new TaskCompletionSource<>(checkForUpdateCancellationSource.getToken());
-
-    Task<String> installationIdTask = firebaseInstallationsApi.getId();
-    // forceRefresh is false to get locally cached token if available
-    Task<InstallationTokenResult> installationAuthTokenTask =
-        firebaseInstallationsApi.getToken(false);
-
-    Tasks.whenAllSuccess(installationIdTask, installationAuthTokenTask)
-        .addOnSuccessListener(
-            tasks -> {
-              String fid = installationIdTask.getResult();
-              InstallationTokenResult installationTokenResult =
-                  installationAuthTokenTask.getResult();
-              checkForUpdateExecutor.execute(
-                  () -> {
-                    try {
-                      AppDistributionReleaseInternal latestRelease =
-                          getLatestReleaseFromClient(
-                              fid,
-                              firebaseApp.getOptions().getApplicationId(),
-                              firebaseApp.getOptions().getApiKey(),
-                              installationTokenResult.getToken());
-                      updateOnUiThread(
-                          () -> {
-                            setCachedLatestRelease(latestRelease);
-                            if (checkForUpdateTaskCompletionSource != null
-                                && !checkForUpdateTaskCompletionSource.getTask().isComplete())
-                              checkForUpdateTaskCompletionSource.setResult(
-                                  convertToAppDistributionRelease(latestRelease));
-                          });
-                    } catch (FirebaseAppDistributionException ex) {
-                      updateOnUiThread(() -> setCheckForUpdateTaskCompletionError(ex));
-                    }
-                  });
-            })
-        .addOnFailureListener(
-            e ->
-                setCheckForUpdateTaskCompletionError(
-                    new FirebaseAppDistributionException(
-                        Constants.ErrorMessages.AUTHENTICATION_ERROR, AUTHENTICATION_FAILURE, e)));
-
-    return checkForUpdateTaskCompletionSource.getTask();
+    return this.checkForUpdateClient
+        .checkForUpdate()
+        .continueWith(
+            task -> {
+              // Calling task.getResult() on a failed task will cause the Continuation to fail
+              // with the original exception. See:
+              // https://developers.google.com/android/reference/com/google/android/gms/tasks/Continuation
+              AppDistributionReleaseInternal latestRelease = task.getResult();
+              setCachedLatestRelease(latestRelease);
+              return convertToAppDistributionRelease(latestRelease);
+            });
   }
 
   /**
@@ -297,10 +223,9 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
   @Override
   public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle bundle) {
     Log.d(TAG, "Created activity: " + activity.getClass().getName());
-    // if signinactivity is created, sign-in was succesful
+    // if SignInResultActivity is created, sign-in was successful
     if (activity instanceof SignInResultActivity) {
-      currentlySigningIn = false;
-      signInTaskCompletionSource.setResult(null);
+      this.testerSignInClient.setSuccessfulSignInResult();
     }
   }
 
@@ -313,19 +238,17 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
   public void onActivityResumed(@NonNull Activity activity) {
     Log.d(TAG, "Resumed activity: " + activity.getClass().getName());
 
-    // signInActivity is only opened after successful redirection from signIn flow,
+    // SignInResultActivity is only opened after successful redirection from signIn flow,
     // should not be treated as reentering the app
     if (activity instanceof SignInResultActivity) {
       return;
     }
 
-    // throw error if app reentered during signin
-    if (currentlySigningIn) {
-      currentlySigningIn = false;
-      setSignInTaskCompletionError(
-          new FirebaseAppDistributionException(
-              Constants.ErrorMessages.AUTHENTICATION_CANCELLED, AUTHENTICATION_CANCELED));
+    // Throw error if app reentered during sign in
+    if (this.testerSignInClient.isCurrentlySigningIn()) {
+      testerSignInClient.setCanceledAuthenticationError();
     }
+
     this.currentActivity = activity;
   }
 
@@ -352,130 +275,11 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     }
   }
 
-  private static String getApplicationName(Context context) {
-    try {
-      return context.getApplicationInfo().loadLabel(context.getPackageManager()).toString();
-    } catch (Exception e) {
-      Log.e(TAG, "Unable to retrieve App name");
-      return "";
-    }
-  }
-
-  private void openSignInFlowInBrowser(Uri uri) {
-    currentlySigningIn = true;
-    if (supportsCustomTabs(firebaseApp.getApplicationContext())) {
-      // If we can launch a chrome view, try that.
-      CustomTabsIntent customTabsIntent = new CustomTabsIntent.Builder().build();
-      Intent intent = customTabsIntent.intent;
-      intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
-      intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-      customTabsIntent.launchUrl(currentActivity, uri);
-
-    } else {
-      // If we can't launch a chrome view try to launch anything that can handle a URL.
-      Intent browserIntent = new Intent(Intent.ACTION_VIEW, uri);
-      browserIntent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
-      browserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-      currentActivity.startActivity(browserIntent);
-    }
-  }
-
-  private boolean supportsCustomTabs(Context context) {
-    Intent customTabIntent = new Intent("android.support.customtabs.action.CustomTabsService");
-    customTabIntent.setPackage("com.android.chrome");
-    List<ResolveInfo> resolveInfos =
-        context.getPackageManager().queryIntentServices(customTabIntent, 0);
-    return resolveInfos != null && !resolveInfos.isEmpty();
-  }
-
-  private AlertDialog getSignInAlertDialog(Context context) {
-    AlertDialog alertDialog = new AlertDialog.Builder(currentActivity).create();
-    alertDialog.setTitle(context.getString(R.string.signin_dialog_title));
-    alertDialog.setMessage(context.getString(R.string.singin_dialog_message));
-    alertDialog.setButton(
-        AlertDialog.BUTTON_POSITIVE,
-        context.getString(R.string.singin_yes_button),
-        new DialogInterface.OnClickListener() {
-          @Override
-          public void onClick(DialogInterface dialogInterface, int i) {
-            firebaseInstallationsApi
-                .getId()
-                .addOnSuccessListener(getFidGenerationOnSuccessListener(context))
-                .addOnFailureListener(
-                    new OnFailureListener() {
-                      @Override
-                      public void onFailure(@NonNull Exception e) {
-                        setSignInTaskCompletionError(
-                            new FirebaseAppDistributionException(
-                                Constants.ErrorMessages.AUTHENTICATION_ERROR,
-                                AUTHENTICATION_FAILURE,
-                                e));
-                      }
-                    });
-          }
-        });
-    alertDialog.setButton(
-        AlertDialog.BUTTON_NEGATIVE,
-        context.getString(R.string.singin_no_button),
-        new DialogInterface.OnClickListener() {
-          @Override
-          public void onClick(DialogInterface dialogInterface, int i) {
-            setSignInTaskCompletionError(
-                new FirebaseAppDistributionException(
-                    "Tester cancelled authentication flow", AUTHENTICATION_CANCELED));
-            dialogInterface.dismiss();
-          }
-        });
-    return alertDialog;
-  }
-
-  private OnSuccessListener<String> getFidGenerationOnSuccessListener(Context context) {
-    return new OnSuccessListener<String>() {
-      @Override
-      public void onSuccess(String fid) {
-        Uri uri =
-            Uri.parse(
-                String.format(
-                    SIGNIN_REDIRECT_URL,
-                    firebaseApp.getOptions().getApplicationId(),
-                    fid,
-                    getApplicationName(context),
-                    context.getPackageName()));
-        openSignInFlowInBrowser(uri);
-      }
-    };
-  }
-
-  @VisibleForTesting
-  AppDistributionReleaseInternal getLatestReleaseFromClient(
-      String fid, String appId, String apiKey, String authToken)
-      throws FirebaseAppDistributionException {
-    try {
-      AppDistributionReleaseInternal retrievedLatestRelease =
-          firebaseAppDistributionTesterApiClient.fetchLatestRelease(fid, appId, apiKey, authToken);
-
-      if (isNewerBuildVersion(retrievedLatestRelease)
-          && !isInstalledRelease(retrievedLatestRelease)) {
-        return retrievedLatestRelease;
-      } else {
-        // Return null if retrieved latest release is older or currently installed
-        return null;
-      }
-    } catch (NumberFormatException e) {
-      throw new FirebaseAppDistributionException(
-          Constants.ErrorMessages.NETWORK_ERROR,
-          FirebaseAppDistributionException.Status.NETWORK_FAILURE,
-          e);
-    }
-  }
-
-  @VisibleForTesting
-  void setCachedLatestRelease(AppDistributionReleaseInternal latestRelease) {
-    this.cachedLatestRelease = latestRelease;
-  }
-
   private AppDistributionRelease convertToAppDistributionRelease(
       AppDistributionReleaseInternal internalRelease) {
+    if (internalRelease == null) {
+      return null;
+    }
     return AppDistributionRelease.builder()
         .setBuildVersion(internalRelease.getBuildVersion())
         .setDisplayVersion(internalRelease.getDisplayVersion())
@@ -484,35 +288,14 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
         .build();
   }
 
-  private void updateOnUiThread(Runnable runnable) {
-    HandlerCompat.createAsync(Looper.getMainLooper()).post(runnable);
+  @VisibleForTesting
+  void setCachedLatestRelease(AppDistributionReleaseInternal latestRelease) {
+    this.cachedLatestRelease = latestRelease;
   }
 
-  private long getInstalledAppVersionCode(Context context) {
-    PackageInfo pInfo = null;
-    try {
-      pInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
-    } catch (PackageManager.NameNotFoundException e) {
-      checkForUpdateTaskCompletionSource.setException(
-          new FirebaseAppDistributionException(
-              Constants.ErrorMessages.UNKNOWN_ERROR,
-              FirebaseAppDistributionException.Status.UNKNOWN,
-              e));
-    }
-    return PackageInfoCompat.getLongVersionCode(pInfo);
-  }
-
-  private void setCheckForUpdateTaskCompletionError(FirebaseAppDistributionException e) {
-    if (checkForUpdateTaskCompletionSource != null
-        && !checkForUpdateTaskCompletionSource.getTask().isComplete()) {
-      this.checkForUpdateTaskCompletionSource.setException(e);
-    }
-  }
-
-  private void setSignInTaskCompletionError(FirebaseAppDistributionException e) {
-    if (signInTaskCompletionSource != null && !signInTaskCompletionSource.getTask().isComplete()) {
-      signInTaskCompletionSource.setException(e);
-    }
+  @VisibleForTesting
+  AppDistributionReleaseInternal getCachedLatestRelease() {
+    return this.cachedLatestRelease;
   }
 
   private void setUpdateAppTaskCompletionError(FirebaseAppDistributionException e) {
@@ -536,28 +319,6 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     } else {
       setUpdateToLatestReleaseTaskCompletionError(defaultFirebaseException);
     }
-  }
-
-  private boolean isNewerBuildVersion(AppDistributionReleaseInternal latestRelease) {
-    return Long.parseLong(latestRelease.getBuildVersion())
-        >= getInstalledAppVersionCode(firebaseApp.getApplicationContext());
-  }
-
-  private boolean isInstalledRelease(AppDistributionReleaseInternal latestRelease) {
-    if (latestRelease.getBinaryType().equals(BinaryType.APK)) {
-      // TODO(rachelprince): APK codehash verification
-      return false;
-    }
-
-    if (latestRelease.getIasArtifactId() == null) {
-      return false;
-    }
-    // AAB BinaryType
-    return latestRelease
-        .getIasArtifactId()
-        .equals(
-            ReleaseIdentificationUtils.extractInternalAppSharingArtifactId(
-                firebaseApp.getApplicationContext()));
   }
 
   private void redirectToPlayForAabUpdate(String downloadUrl)
