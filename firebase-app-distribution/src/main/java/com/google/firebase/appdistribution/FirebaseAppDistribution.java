@@ -156,7 +156,17 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
    */
   @NonNull
   public Task<AppDistributionRelease> checkForUpdate() {
-    return this.checkForUpdateClient.checkForUpdate();
+    return this.checkForUpdateClient
+        .checkForUpdate()
+        .continueWith(
+            task -> {
+              // Calling task.getResult() on a failed task will cause the Continuation to fail
+              // with the original exception. See:
+              // https://developers.google.com/android/reference/com/google/android/gms/tasks/Continuation
+              AppDistributionReleaseInternal latestRelease = task.getResult();
+              setCachedLatestRelease(latestRelease);
+              return convertToAppDistributionRelease(latestRelease);
+            });
   }
 
   /**
@@ -215,7 +225,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     Log.d(TAG, "Created activity: " + activity.getClass().getName());
     // if SignInResultActivity is created, sign-in was successful
     if (activity instanceof SignInResultActivity) {
-      this.testerSignInClient.setNullSignInTaskResult();
+      this.testerSignInClient.setSuccessfulSignInResult();
     }
   }
 
@@ -265,9 +275,27 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     }
   }
 
+  private AppDistributionRelease convertToAppDistributionRelease(
+      AppDistributionReleaseInternal internalRelease) {
+    if (internalRelease == null) {
+      return null;
+    }
+    return AppDistributionRelease.builder()
+        .setBuildVersion(internalRelease.getBuildVersion())
+        .setDisplayVersion(internalRelease.getDisplayVersion())
+        .setReleaseNotes(internalRelease.getReleaseNotes())
+        .setBinaryType(internalRelease.getBinaryType())
+        .build();
+  }
+
   @VisibleForTesting
   void setCachedLatestRelease(AppDistributionReleaseInternal latestRelease) {
     this.cachedLatestRelease = latestRelease;
+  }
+
+  @VisibleForTesting
+  AppDistributionReleaseInternal getCachedLatestRelease() {
+    return this.cachedLatestRelease;
   }
 
   private void setUpdateAppTaskCompletionError(FirebaseAppDistributionException e) {

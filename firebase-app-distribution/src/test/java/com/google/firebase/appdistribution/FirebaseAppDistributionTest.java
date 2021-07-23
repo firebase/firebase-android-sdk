@@ -19,6 +19,7 @@ import static com.google.firebase.appdistribution.FirebaseAppDistributionExcepti
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_FAILURE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -43,6 +44,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.appdistribution.Constants.ErrorMessages;
+import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import com.google.firebase.appdistribution.internal.AppDistributionReleaseInternal;
 import com.google.firebase.installations.InstallationTokenResult;
 import org.junit.Before;
@@ -81,14 +83,6 @@ public class FirebaseAppDistributionTest {
           .setDisplayVersion("3.0")
           .setReleaseNotes("Newer version.")
           .setBinaryType(BinaryType.AAB)
-          .build();
-
-  private static final AppDistributionReleaseInternal TEST_RELEASE_VERSION_ERROR =
-      AppDistributionReleaseInternal.builder()
-          .setBinaryType(BinaryType.APK)
-          .setBuildVersion("Error")
-          .setDisplayVersion("2.0")
-          .setReleaseNotes("Current version.")
           .build();
 
   private FirebaseAppDistribution firebaseAppDistribution;
@@ -176,7 +170,39 @@ public class FirebaseAppDistributionTest {
     }
 
     firebaseAppDistribution.onActivityCreated(mockSignInResultActivity, mockBundle);
-    verify(mockTesterSignInClient, times(1)).setNullSignInTaskResult();
+    verify(mockTesterSignInClient, times(1)).setSuccessfulSignInResult();
+  }
+
+  @Test
+  public void checkForUpdate_whenCheckForUpdateFails_throwsError() throws Exception {
+    firebaseAppDistribution.setCachedLatestRelease(null);
+    when(mockCheckForUpdateClient.checkForUpdate())
+        .thenReturn(
+            Tasks.forException(
+                new FirebaseAppDistributionException(
+                    ErrorMessages.JSON_PARSING_ERROR, Status.NETWORK_FAILURE)));
+
+    firebaseAppDistribution.onActivityResumed(activity);
+    Task<AppDistributionRelease> task = firebaseAppDistribution.checkForUpdate();
+
+    assertTrue(task.getException() instanceof FirebaseAppDistributionException);
+    FirebaseAppDistributionException e = (FirebaseAppDistributionException) task.getException();
+    assertEquals(ErrorMessages.JSON_PARSING_ERROR, e.getMessage());
+    assertEquals(Status.NETWORK_FAILURE, e.getErrorCode());
+    assertNull(firebaseAppDistribution.getCachedLatestRelease());
+  }
+
+  @Test
+  public void checkForUpdate_whenCheckForUpdateSucceeds_returnsRelease() throws Exception {
+    when(mockCheckForUpdateClient.checkForUpdate())
+        .thenReturn(Tasks.forResult(TEST_RELEASE_NEWER_AAB_INTERNAL));
+
+    firebaseAppDistribution.onActivityResumed(activity);
+    Task<AppDistributionRelease> task = firebaseAppDistribution.checkForUpdate();
+
+    assertNotNull(task.getResult());
+    assertEquals(TEST_RELEASE_NEWER_AAB, task.getResult());
+    assertEquals(TEST_RELEASE_NEWER_AAB_INTERNAL, firebaseAppDistribution.getCachedLatestRelease());
   }
 
   @Test
@@ -211,7 +237,7 @@ public class FirebaseAppDistributionTest {
   public void updateToLatestRelease_whenNewAabReleaseAvailable_showsUpdateDialog()
       throws Exception {
     when(mockCheckForUpdateClient.checkForUpdate())
-        .thenReturn(Tasks.forResult(TEST_RELEASE_NEWER_AAB));
+        .thenReturn(Tasks.forResult(TEST_RELEASE_NEWER_AAB_INTERNAL));
     firebaseAppDistribution.setCachedLatestRelease(TEST_RELEASE_NEWER_AAB_INTERNAL);
 
     firebaseAppDistribution.onActivityResumed(activity);
@@ -229,7 +255,7 @@ public class FirebaseAppDistributionTest {
         String.format(
             "Version %s (%s) is available.",
             TEST_RELEASE_NEWER_AAB.getDisplayVersion(), TEST_RELEASE_NEWER_AAB.getBuildVersion()),
-        shadowOf(updateDialog).getMessage());
+        shadowOf(updateDialog).getMessage().toString());
     assertTrue(updateDialog.isShowing());
     updateDialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
 

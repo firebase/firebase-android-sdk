@@ -36,14 +36,15 @@ import com.google.firebase.installations.InstallationTokenResult;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
-public class CheckForUpdateClient {
+class CheckForUpdateClient {
   private static final int UPDATE_THREAD_POOL_SIZE = 4;
 
   private final FirebaseApp firebaseApp;
   private FirebaseAppDistributionTesterApiClient firebaseAppDistributionTesterApiClient;
   private final FirebaseInstallationsApi firebaseInstallationsApi;
 
-  private TaskCompletionSource<AppDistributionRelease> checkForUpdateTaskCompletionSource = null;
+  private TaskCompletionSource<AppDistributionReleaseInternal> checkForUpdateTaskCompletionSource =
+      null;
   private CancellationTokenSource checkForUpdateCancellationSource;
   private final Executor checkForUpdateExecutor;
 
@@ -59,7 +60,7 @@ public class CheckForUpdateClient {
   }
 
   @NonNull
-  public Task<AppDistributionRelease> checkForUpdate() {
+  public Task<AppDistributionReleaseInternal> checkForUpdate() {
 
     if (checkForUpdateTaskCompletionSource != null
         && !checkForUpdateTaskCompletionSource.getTask().isComplete()) {
@@ -92,11 +93,9 @@ public class CheckForUpdateClient {
                               installationTokenResult.getToken());
                       updateOnUiThread(
                           () -> {
-                            // TODO: add latest release to storage
                             if (checkForUpdateTaskCompletionSource != null
                                 && !checkForUpdateTaskCompletionSource.getTask().isComplete())
-                              checkForUpdateTaskCompletionSource.setResult(
-                                  convertToAppDistributionRelease(latestRelease));
+                              checkForUpdateTaskCompletionSource.setResult(latestRelease);
                           });
                     } catch (FirebaseAppDistributionException ex) {
                       updateOnUiThread(() -> setCheckForUpdateTaskCompletionError(ex));
@@ -133,16 +132,6 @@ public class CheckForUpdateClient {
           FirebaseAppDistributionException.Status.NETWORK_FAILURE,
           e);
     }
-  }
-
-  private AppDistributionRelease convertToAppDistributionRelease(
-      AppDistributionReleaseInternal internalRelease) {
-    return AppDistributionRelease.builder()
-        .setBuildVersion(internalRelease.getBuildVersion())
-        .setDisplayVersion(internalRelease.getDisplayVersion())
-        .setReleaseNotes(internalRelease.getReleaseNotes())
-        .setBinaryType(internalRelease.getBinaryType())
-        .build();
   }
 
   private void updateOnUiThread(Runnable runnable) {

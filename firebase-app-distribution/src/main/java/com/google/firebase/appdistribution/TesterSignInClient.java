@@ -36,7 +36,7 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.util.List;
 
-public class TesterSignInClient {
+class TesterSignInClient {
   private static final String TAG = "FADSignInTester";
 
   private TaskCompletionSource<Void> signInTaskCompletionSource = null;
@@ -78,7 +78,7 @@ public class TesterSignInClient {
             Constants.ErrorMessages.AUTHENTICATION_CANCELLED, AUTHENTICATION_CANCELED));
   }
 
-  void setNullSignInTaskResult() {
+  void setSuccessfulSignInResult() {
     signInTaskCompletionSource.setResult(null);
   }
 

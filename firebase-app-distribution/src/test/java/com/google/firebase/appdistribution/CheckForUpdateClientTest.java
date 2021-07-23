@@ -35,7 +35,6 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-import com.google.firebase.appdistribution.FirebaseAppDistributionTest.TestActivity;
 import com.google.firebase.appdistribution.internal.AppDistributionReleaseInternal;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
@@ -44,9 +43,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.shadows.ShadowActivity;
 import org.robolectric.shadows.ShadowPackageManager;
 
 @RunWith(RobolectricTestRunner.class)
@@ -77,8 +74,6 @@ public class CheckForUpdateClientTest {
           .build();
 
   private CheckForUpdateClient checkForUpdateClient;
-  private TestActivity activity;
-  private ShadowActivity shadowActivity;
   private ShadowPackageManager shadowPackageManager;
 
   @Mock private FirebaseInstallationsApi mockFirebaseInstallations;
@@ -123,9 +118,6 @@ public class CheckForUpdateClientTest {
     packageInfo.setLongVersionCode(INSTALLED_VERSION_CODE);
     shadowPackageManager.installPackage(packageInfo);
 
-    activity = Robolectric.buildActivity(TestActivity.class).create().get();
-    shadowActivity = shadowOf(activity);
-
     checkForUpdateClient =
         new CheckForUpdateClient(
             firebaseApp, mockFirebaseAppDistributionTesterApiClient, mockFirebaseInstallations);
@@ -140,8 +132,10 @@ public class CheckForUpdateClientTest {
 
   @Test
   public void checkForUpdateTask_whenCalledMultipleTimes_cancelsPreviousTask() {
-    Task<AppDistributionRelease> checkForUpdateTask1 = checkForUpdateClient.checkForUpdate();
-    Task<AppDistributionRelease> checkForUpdateTask2 = checkForUpdateClient.checkForUpdate();
+    Task<AppDistributionReleaseInternal> checkForUpdateTask1 =
+        checkForUpdateClient.checkForUpdate();
+    Task<AppDistributionReleaseInternal> checkForUpdateTask2 =
+        checkForUpdateClient.checkForUpdate();
 
     assertTrue(checkForUpdateTask1.isCanceled());
     assertFalse(checkForUpdateTask2.isComplete());
