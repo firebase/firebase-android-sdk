@@ -89,30 +89,27 @@ private:
     char** arr_;
 };
 
+using CrashpadHandlerMainFunc = int (*)(int, char **);
+
 } // namespace detail
 
-typedef int (*CrashpadHandlerMainFunc)(int, char **);
-
-CrashpadHandlerMainFunc load_libcrashlytics_common(const std::string& lib_path)
+detail::CrashpadHandlerMainFunc load_libcrashlytics_common(const std::string& lib_path)
 {
     std::string full_path = lib_path + "libcrashlytics-common.so";
-    DEBUG_OUT("About to load: %s", full_path.c_str());
-
+    
     void* common = dlopen(full_path.c_str(), RTLD_LAZY | RTLD_LOCAL);
     if (common == nullptr) {
-        LOGE("Could not load libcrashlytics-common.so");
+        LOGE("Could not load libcrashlytics-common.so from %s", full_path.c_str());
         return nullptr;
     }
-    DEBUG_OUT("libcrashlytics-common.so loaded");
 
     void* handler = dlsym(common, "CrashpadHandlerMain");
     if (handler == nullptr) {
         LOGE("Could not find CrashpadHandlerMain in libcrashlytics-common.so");
         return nullptr;
     }
-    DEBUG_OUT("CrashpadHandlerMain found.");
 
-    return reinterpret_cast<CrashpadHandlerMainFunc>(handler);
+    return reinterpret_cast<detail::CrashpadHandlerMainFunc>(handler);
 }
 
 }}} // namespace google::crashlytics::jni
@@ -124,27 +121,28 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved)
 
 jint JNI_Init(JNIEnv* env, jobject obj, jobjectArray pathsArray)
 {
-    LOGI("JNI_Init entry");
     jsize incoming_length = env->GetArrayLength(pathsArray);
 
     char** argv = new char*[incoming_length - 1];
     std::string lib_path;
 
-    for (auto i = 0, j=0; i < incoming_length; ++i) {
-      jstring element =
-        static_cast<jstring>(env->GetObjectArrayElement(pathsArray, i));
+    for (auto i = 0, j = 0; i < incoming_length; ++i) {
+        jstring element =
+            static_cast<jstring>(env->GetObjectArrayElement(pathsArray, i));
 
         if (i == 1) {
-          lib_path = const_cast<char *>(env->GetStringUTFChars(element, 0));
-        } else {
-            argv[j++] = const_cast<char*>(env->GetStringUTFChars(element, 0));
+            lib_path = const_cast<char *>(env->GetStringUTFChars(element, 0));
+            continue;
         }
+        
+        argv[j++] = const_cast<char *>(env->GetStringUTFChars(element, 0));
     }
 
     google::crashlytics::jni::detail::scoped_array_delete deletor{ argv };
 
-    google::crashlytics::jni::CrashpadHandlerMainFunc CrashpadHandlerMain =
+    google::crashlytics::jni::detail::CrashpadHandlerMainFunc CrashpadHandlerMain =
         google::crashlytics::jni::load_libcrashlytics_common(lib_path);
+
     if (CrashpadHandlerMain != nullptr) {
         return CrashpadHandlerMain(incoming_length - 1, argv);
     }

@@ -32,7 +32,7 @@ extern "C" int CrashpadHandlerMain(int argc, char* argv[])
         google::crashlytics::write_device_info(fd);
     });
 
-    DEBUG_OUT("CrashpadHandlerMain done: %d", status);
+    DEBUG_OUT("CrashpadHandlerMain exited with status %d", status);
 
     return status;
 }

@@ -39,8 +39,6 @@ void finalize()
 #define CURRENT_ABI "armeabi"
 #elif defined(__i386__)
 #define CURRENT_ABI "x86"
-#elif defined(__mips__)
-#define CURRENT_ABI "mips"
 #elif defined(__x86_64__)
 #define CURRENT_ABI "x86_64"
 #elif defined(__aarch64__)

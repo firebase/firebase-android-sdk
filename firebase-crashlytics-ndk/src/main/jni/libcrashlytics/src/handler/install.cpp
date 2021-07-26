@@ -24,6 +24,20 @@
 #include "crashlytics/handler/detail/context.h"
 #include "crashlytics/version.h"
 
+#if defined(__arm__) && defined(__ARM_ARCH_7A__)
+#define CURRENT_ABI "armeabi-v7a"
+#elif defined(__arm__)
+#define CURRENT_ABI "armeabi"
+#elif defined(__i386__)
+#define CURRENT_ABI "x86"
+#elif defined(__x86_64__)
+#define CURRENT_ABI "x86_64"
+#elif defined(__aarch64__)
+#define CURRENT_ABI "arm64-v8a"
+#else
+#error "Unsupported target abi"
+#endif
+
 namespace google { namespace crashlytics { namespace detail {
 
 extern int open(const char* filename);
@@ -33,6 +47,34 @@ extern int open(const char* filename);
 namespace google { namespace crashlytics { namespace handler {
 namespace detail {
 
+bool is_at_least_q()
+{
+    char api_level[PROP_VALUE_MAX] = {};
+    if (__system_property_get("ro.build.version.sdk", api_level) && atoi(api_level) >= 29) {
+        DEBUG_OUT("API level is Q+; %s", api_level);
+        return true;
+    }
+
+    DEBUG_OUT("API level is pre-Q; %s", api_level);
+    return false;
+}
+
+int dlopen_flags()
+{
+    return is_at_least_q() ? RTLD_NOLOAD | RTLD_LAZY : RTLD_LAZY;
+}
+
+std::string make_libcrashlytics_path(const Dl_info& info)
+{
+    std::string path = info.dli_fname;
+
+    if (is_at_least_q() || path.rfind("!/lib") != std::string::npos) {
+        return path;
+    }
+
+    return path + "!/lib/" + CURRENT_ABI + "libcrashlytics.so";
+}
+
 bool self_path(std::string& self, std::string& path)
 {
     Dl_info info;
@@ -40,38 +82,27 @@ bool self_path(std::string& self, std::string& path)
         DEBUG_OUT("dladdr failed; %s %s", info.dli_fname, dlerror());
         return false;
     }
-    std::string mypath = info.dli_fname;
-    mypath += "!/lib/x86/libcrashlytics.so";
+    std::string libcrashlytics_path = make_libcrashlytics_path(info);
 
-    DEBUG_OUT("info.dli_fname (not really): %s", mypath.c_str());
-    // RTLD_NOLOAD not available on older APIs.
-
-    //void* handle = dlopen(info.dli_fname, /*RTLD_NOLOAD | */RTLD_LAZY);
-    void* handle = dlopen(mypath.c_str(), /*RTLD_NOLOAD | */RTLD_LAZY);
+    void* handle = dlopen(libcrashlytics_path.c_str(), dlopen_flags());
     if (handle == nullptr) {
-        //DEBUG_OUT("dlopen failed; %s %s", info.dli_fname, dlerror());
-        DEBUG_OUT("dlopen failed; %s %s", mypath.c_str(), dlerror());
+        DEBUG_OUT("dlopen failed; %s %s", libcrashlytics_path.c_str(), dlerror());
         return false;
     }
     if (dlsym(handle, "CrashpadHandlerMain") == nullptr) {
-        DEBUG_OUT("failed to find CrashpadHandlerMain; %s %s", info.dli_fname, dlerror());
+        DEBUG_OUT("Failed to find CrashpadHandlerMain; %s %s", info.dli_fname, dlerror());
         return false;
     }
 
     DEBUG_OUT("Path for libcrashlytics.so is %s", info.dli_fname);
 
-    std::string local_handler_library { mypath.c_str() };
+    size_t libdir_end = libcrashlytics_path.rfind('/');
 
-    size_t libdir_end = local_handler_library.rfind('/');
-    /*
-    if (libdir_end == std::string::npos) {
-        DEBUG_OUT("Unable to find '/' in %s", local_handler_library.c_str());
-        return false;
-    }
-     */
+    self = libcrashlytics_path;
+    path = libdir_end == std::string::npos
+        ? ""
+        : std::string(libcrashlytics_path, 0, libdir_end + 1);
 
-    self = local_handler_library;
-    path = (libdir_end == std::string::npos) ? "" : std::string(local_handler_library, 0, libdir_end + 1);
     return true;
 }
 
@@ -114,18 +145,6 @@ Func load_crashlytics_common_func(void* common, const std::string& func_name)
 
 } // namespace detail
 
-bool is_at_least_q()
-{
-    char api_level[PROP_VALUE_MAX] = {};
-    if (__system_property_get("ro.build.version.sdk", api_level) && atoi(api_level) >= 29) {
-        DEBUG_OUT("API level is Q+; %s", api_level);
-        return true;
-    }
-
-    DEBUG_OUT("API level is pre-Q; %s", api_level);
-    return false;
-}
-
 // Constructs paths to a handler trampoline executable and a library exporting
 // the symbol `CrashpadHandlerMain()`. This requires this function to be built
 // into the same object exporting this symbol and the handler trampoline is
@@ -137,7 +156,7 @@ bool get_handler_trampoline(std::string& handler_trampoline, std::string& handle
 
     // The linker doesn't support loading executables passed on its command
     // line until Q.
-    if (!is_at_least_q() || !detail::self_path(self, path)) {
+    if (!detail::is_at_least_q() || !detail::self_path(self, path)) {
         return false;
     }
 
@@ -231,9 +250,7 @@ extern "C" int CrashpadHandlerMain(int argc, char* argv[])
         detail::load_crashlytics_common_func<CrashpadHandlerMainFunc>(
             detail::load_crashlytics_common(), "CrashpadHandlerMain");
     
-    return handler_main
-        ? handler_main(argc, argv)
-        : -1;
+    return handler_main ? handler_main(argc, argv) : -1;
 }
 
 #if defined (CRASHLYTICS_DEBUG)
