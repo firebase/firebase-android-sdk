@@ -378,7 +378,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
           dialogInterface.dismiss();
           setUpdateToLatestReleaseTaskCompletionError(
               new FirebaseAppDistributionException(
-                  Constants.ErrorMessages.UPDATE_CANCELLED,
+                  Constants.ErrorMessages.UPDATE_CANCELED,
                   FirebaseAppDistributionException.Status.INSTALLATION_CANCELED));
         });
 
