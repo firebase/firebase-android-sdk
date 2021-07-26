@@ -93,6 +93,7 @@ public class FirebaseAppDistributionTest {
   @Mock private InstallationTokenResult mockInstallationTokenResult;
   @Mock private TesterSignInClient mockTesterSignInClient;
   @Mock private CheckForUpdateClient mockCheckForUpdateClient;
+  @Mock private SignInStorage mockSignInStorage;
   @Mock private Bundle mockBundle;
   @Mock SignInResultActivity mockSignInResultActivity;
 
@@ -117,7 +118,7 @@ public class FirebaseAppDistributionTest {
     firebaseAppDistribution =
         spy(
             new FirebaseAppDistribution(
-                firebaseApp, mockTesterSignInClient, mockCheckForUpdateClient));
+                firebaseApp, mockTesterSignInClient, mockCheckForUpdateClient, mockSignInStorage));
 
     when(mockTesterSignInClient.signInTester(any())).thenReturn(Tasks.forResult(null));
 
@@ -139,6 +140,8 @@ public class FirebaseAppDistributionTest {
             .build();
     packageInfo.setLongVersionCode(INSTALLED_VERSION_CODE);
     shadowPackageManager.installPackage(packageInfo);
+
+    when(mockSignInStorage.getSignInStatus()).thenReturn(true);
 
     activity = Robolectric.buildActivity(TestActivity.class).create().get();
     shadowActivity = shadowOf(activity);
@@ -236,6 +239,7 @@ public class FirebaseAppDistributionTest {
   @Test
   public void updateToLatestRelease_whenNewAabReleaseAvailable_showsUpdateDialog()
       throws Exception {
+
     when(mockCheckForUpdateClient.checkForUpdate())
         .thenReturn(Tasks.forResult(TEST_RELEASE_NEWER_AAB_INTERNAL));
     firebaseAppDistribution.setCachedLatestRelease(TEST_RELEASE_NEWER_AAB_INTERNAL);
@@ -248,7 +252,6 @@ public class FirebaseAppDistributionTest {
     firebaseAppDistribution.onActivityResumed(activity);
 
     // Update flow
-    verify(mockTesterSignInClient, times(1)).signInTester(activity);
     assertTrue(ShadowAlertDialog.getLatestDialog() instanceof AlertDialog);
     AlertDialog updateDialog = (AlertDialog) ShadowAlertDialog.getLatestDialog();
     assertEquals(
@@ -275,12 +278,12 @@ public class FirebaseAppDistributionTest {
     firebaseAppDistribution.onActivityCreated(mockSignInResultActivity, mockBundle);
     firebaseAppDistribution.onActivityResumed(activity);
 
-    verify(mockTesterSignInClient, times(1)).signInTester(activity);
     assertNull(ShadowAlertDialog.getLatestAlertDialog());
   }
 
   @Test
   public void updateToLatestRelease_whenSignInCancelled_checkForUpdateNotCalled() {
+    when(mockSignInStorage.getSignInStatus()).thenReturn(false);
     when(mockTesterSignInClient.signInTester(any()))
         .thenReturn(
             Tasks.forException(
@@ -304,6 +307,7 @@ public class FirebaseAppDistributionTest {
 
   @Test
   public void updateToLatestRelease_whenSignInFailed_checkForUpdateNotCalled() {
+    when(mockSignInStorage.getSignInStatus()).thenReturn(false);
     when(mockTesterSignInClient.signInTester(any()))
         .thenReturn(
             Tasks.forException(
