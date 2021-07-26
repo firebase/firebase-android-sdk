@@ -51,6 +51,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
@@ -93,7 +94,7 @@ public class FirebaseAppDistributionTest {
   @Mock private InstallationTokenResult mockInstallationTokenResult;
   @Mock private TesterSignInClient mockTesterSignInClient;
   @Mock private CheckForUpdateClient mockCheckForUpdateClient;
-  @Mock private SignInStorage mockSignInStorage;
+  private SignInStorage signInStorage;
   @Mock private Bundle mockBundle;
   @Mock SignInResultActivity mockSignInResultActivity;
 
@@ -115,10 +116,13 @@ public class FirebaseAppDistributionTest {
                 .setApiKey(TEST_API_KEY)
                 .build());
 
+    // this is spy instead of mock to be able to test isTesterSingedIn functionality
+    signInStorage = spy(new SignInStorage(firebaseApp.getApplicationContext()));
+
     firebaseAppDistribution =
         spy(
             new FirebaseAppDistribution(
-                firebaseApp, mockTesterSignInClient, mockCheckForUpdateClient, mockSignInStorage));
+                firebaseApp, mockTesterSignInClient, mockCheckForUpdateClient, signInStorage));
 
     when(mockTesterSignInClient.signInTester(any())).thenReturn(Tasks.forResult(null));
 
@@ -140,8 +144,6 @@ public class FirebaseAppDistributionTest {
             .build();
     packageInfo.setLongVersionCode(INSTALLED_VERSION_CODE);
     shadowPackageManager.installPackage(packageInfo);
-
-    when(mockSignInStorage.getSignInStatus()).thenReturn(true);
 
     activity = Robolectric.buildActivity(TestActivity.class).create().get();
     shadowActivity = shadowOf(activity);
@@ -209,18 +211,31 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
+  public void checkForUpdate_whenSignedIn_doesNotCallSignInTester() {
+    Mockito.doReturn(true).when(signInStorage).getSignInStatus();
+    firebaseAppDistribution.onActivityResumed(activity);
+    when(mockCheckForUpdateClient.checkForUpdate())
+        .thenReturn(Tasks.forResult(TEST_RELEASE_NEWER_AAB_INTERNAL));
+    firebaseAppDistribution.onActivityResumed(activity);
+    firebaseAppDistribution.checkForUpdate();
+    verify(mockTesterSignInClient, never()).signInTester(any());
+  }
+
+  @Test
   public void updateAppTask_whenNoReleaseAvailable_throwsError() throws Exception {
+    Mockito.doReturn(true).when(signInStorage).getSignInStatus();
     UpdateTask updateTask = firebaseAppDistribution.updateApp();
     assertFalse(updateTask.isSuccessful());
     assertTrue(updateTask.getException() instanceof FirebaseAppDistributionException);
     FirebaseAppDistributionException ex =
         (FirebaseAppDistributionException) updateTask.getException();
     assertEquals(FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE, ex.getErrorCode());
-    assertEquals("No new release available, try calling checkForUpdate.", ex.getMessage());
+    assertEquals(ErrorMessages.NOT_FOUND_ERROR, ex.getMessage());
   }
 
   @Test
   public void updateAppTask_whenAabReleaseAvailable_redirectsToPlay() throws Exception {
+    Mockito.doReturn(true).when(signInStorage).getSignInStatus();
     firebaseAppDistribution.onActivityResumed(activity);
     firebaseAppDistribution.setCachedLatestRelease(TEST_RELEASE_NEWER_AAB_INTERNAL);
 
@@ -234,6 +249,19 @@ public class FirebaseAppDistributionTest {
     assertEquals(-1, taskResult.getApkBytesDownloaded());
     assertEquals(-1, taskResult.getApkTotalBytesToDownload());
     assertEquals(UpdateStatus.REDIRECTED_TO_PLAY, taskResult.getUpdateStatus());
+  }
+
+  @Test
+  public void updateApp_whenNotSignedIn_throwsError() throws Exception {
+    Mockito.doReturn(false).when(signInStorage).getSignInStatus();
+    firebaseAppDistribution.onActivityResumed(activity);
+
+    UpdateTask task = firebaseAppDistribution.updateApp();
+
+    assertTrue(task.getException() instanceof FirebaseAppDistributionException);
+    FirebaseAppDistributionException e = (FirebaseAppDistributionException) task.getException();
+    assertEquals(Constants.ErrorMessages.AUTHENTICATION_ERROR, e.getMessage());
+    assertEquals(AUTHENTICATION_FAILURE, e.getErrorCode());
   }
 
   @Test
@@ -283,7 +311,7 @@ public class FirebaseAppDistributionTest {
 
   @Test
   public void updateToLatestRelease_whenSignInCancelled_checkForUpdateNotCalled() {
-    when(mockSignInStorage.getSignInStatus()).thenReturn(false);
+    Mockito.doReturn(false).when(signInStorage).getSignInStatus();
     when(mockTesterSignInClient.signInTester(any()))
         .thenReturn(
             Tasks.forException(
@@ -307,7 +335,7 @@ public class FirebaseAppDistributionTest {
 
   @Test
   public void updateToLatestRelease_whenSignInFailed_checkForUpdateNotCalled() {
-    when(mockSignInStorage.getSignInStatus()).thenReturn(false);
+    Mockito.doReturn(false).when(signInStorage).getSignInStatus();
     when(mockTesterSignInClient.signInTester(any()))
         .thenReturn(
             Tasks.forException(
@@ -344,5 +372,30 @@ public class FirebaseAppDistributionTest {
     assertEquals(FirebaseAppDistributionException.Status.NETWORK_FAILURE, e.getErrorCode());
   }
 
-  // TODO: add updatetoLatestRelease tests with persistence logic when implemented
+  @Test
+  public void updateToLatestRelease_whenSignedIn_doesNotCallSignInTester() {
+    firebaseAppDistribution.onActivityResumed(activity);
+    when(mockCheckForUpdateClient.checkForUpdate())
+        .thenReturn(Tasks.forResult(TEST_RELEASE_NEWER_AAB_INTERNAL));
+    Mockito.doReturn(true).when(signInStorage).getSignInStatus();
+    firebaseAppDistribution.updateToLatestRelease();
+    verify(mockTesterSignInClient, never()).signInTester(any());
+  }
+
+  @Test
+  public void isTesterSignedIn_afterSuccessfulSignIn_returnsTrue() {
+    assertFalse(firebaseAppDistribution.isTesterSignedIn());
+    firebaseAppDistribution.onActivityCreated(mockSignInResultActivity, mockBundle);
+    firebaseAppDistribution.onActivityResumed(activity);
+    assertTrue(firebaseAppDistribution.isTesterSignedIn());
+  }
+
+  @Test
+  public void isTesterSignedIn_afterSignOut_returnsFalse() {
+    firebaseAppDistribution.onActivityCreated(mockSignInResultActivity, mockBundle);
+    firebaseAppDistribution.onActivityResumed(activity);
+    assertTrue(firebaseAppDistribution.isTesterSignedIn());
+    firebaseAppDistribution.signOutTester();
+    assertFalse(firebaseAppDistribution.isTesterSignedIn());
+  }
 }

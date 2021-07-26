@@ -16,6 +16,7 @@ package com.google.firebase.appdistribution;
 
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_FAILURE;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.NETWORK_FAILURE;
+import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -177,7 +178,18 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
   @NonNull
   public UpdateTask updateApp() throws FirebaseAppDistributionException {
 
-    if (isTesterSignedIn()) {
+    if (!isTesterSignedIn()) {
+      return new UpdateTaskImpl(
+          Tasks.forException(
+              new FirebaseAppDistributionException(
+                  Constants.ErrorMessages.AUTHENTICATION_ERROR, AUTHENTICATION_FAILURE)));
+    }
+    if (cachedLatestRelease == null) {
+      return new UpdateTaskImpl(
+          Tasks.forException(
+              new FirebaseAppDistributionException(
+                  Constants.ErrorMessages.NOT_FOUND_ERROR, UPDATE_NOT_AVAILABLE)));
+    } else {
       if (updateAppTaskCompletionSource != null
           && !updateAppTaskCompletionSource.getTask().isComplete()) {
         updateAppCancellationSource.cancel();
@@ -204,13 +216,6 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
       }
       return this.updateTask;
     }
-
-    // if user is not signedIn
-    return new UpdateTaskImpl(
-        Tasks.forException(
-            new FirebaseAppDistributionException(
-                Constants.ErrorMessages.NOT_FOUND_ERROR,
-                FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE)));
   }
 
   /** Returns true if the App Distribution tester is signed in */
@@ -221,7 +226,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
   /** Signs out the App Distribution tester */
   public void signOutTester() {
     this.cachedLatestRelease = null;
-    this.signInStorage.storeSignInStatus(false);
+    this.signInStorage.setSignInStatus(false);
   }
 
   @Override
@@ -230,7 +235,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     // if SignInResultActivity is created, sign-in was successful
     if (activity instanceof SignInResultActivity) {
       this.testerSignInClient.setSuccessfulSignInResult();
-      this.signInStorage.storeSignInStatus(true);
+      this.signInStorage.setSignInStatus(true);
     }
   }
 

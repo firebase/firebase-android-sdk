@@ -30,7 +30,7 @@ public class SignInStorage {
         applicationContext.getSharedPreferences(SIGNIN_PREFERENCES_NAME, Context.MODE_PRIVATE);
   }
 
-  void storeSignInStatus(boolean testerSignedIn) {
+  void setSignInStatus(boolean testerSignedIn) {
     this.signInSharedPreferences.edit().putBoolean(SIGNIN_TAG, testerSignedIn).apply();
   }
 
