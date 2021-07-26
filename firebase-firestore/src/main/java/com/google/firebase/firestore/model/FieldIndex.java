@@ -72,6 +72,13 @@ public class FieldIndex implements Iterable<FieldIndex.Segment> {
       if (!fieldPath.equals(segment.fieldPath)) return false;
       return kind == segment.kind;
     }
+
+    @Override
+    public int hashCode() {
+      int result = fieldPath.hashCode();
+      result = 31 * result + kind.hashCode();
+      return result;
+    }
   }
 
   private final String collectionId;
