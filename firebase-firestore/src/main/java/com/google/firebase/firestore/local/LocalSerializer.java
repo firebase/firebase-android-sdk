@@ -22,12 +22,14 @@ import com.google.firebase.firestore.bundle.BundledQuery;
 import com.google.firebase.firestore.core.Query.LimitType;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
 import com.google.firebase.firestore.remote.RemoteSerializer;
+import com.google.firestore.admin.v1.Index;
 import com.google.firestore.v1.DocumentTransform.FieldTransform;
 import com.google.firestore.v1.Write;
 import com.google.firestore.v1.Write.Builder;
@@ -286,5 +288,32 @@ public final class LocalSerializer {
             bundledQuery.getParent(), bundledQuery.getStructuredQuery());
 
     return new BundledQuery(target, limitType);
+  }
+
+  public Index encodeFieldIndex(FieldIndex fieldIndex) {
+    Index.Builder index = Index.newBuilder();
+    // The Mobile SDKs treat all indices as collectiong group indices.
+    index.setQueryScope(Index.QueryScope.COLLECTION_GROUP);
+
+    for (FieldIndex.Segment segment : fieldIndex) {
+      Index.IndexField.Builder indexField = Index.IndexField.newBuilder();
+      indexField.setFieldPath(segment.getFieldPath().canonicalString());
+      switch (segment.getKind()) {
+        case ASCENDING:
+          indexField.setOrder(Index.IndexField.Order.ASCENDING);
+          break;
+        case DESCENDING:
+          indexField.setOrder(Index.IndexField.Order.DESCENDING);
+          break;
+        case CONTAINS:
+          indexField.setArrayConfig(Index.IndexField.ArrayConfig.CONTAINS);
+          break;
+        default:
+          throw fail("Unknown index kind %s", segment.getKind());
+      }
+      index.addFields(indexField);
+    }
+
+    return index.build();
   }
 }

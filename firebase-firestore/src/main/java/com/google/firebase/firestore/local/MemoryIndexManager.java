@@ -15,6 +15,7 @@ package com.google.firebase.firestore.local;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.ResourcePath;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,6 +36,11 @@ class MemoryIndexManager implements IndexManager {
   @Override
   public List<ResourcePath> getCollectionParents(String collectionId) {
     return collectionParentsIndex.getEntries(collectionId);
+  }
+
+  @Override
+  public void addFieldIndex(FieldIndex index) {
+    // Field indices are not supported with memory persistence.
   }
 
   /**

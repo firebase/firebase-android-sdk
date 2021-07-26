@@ -161,4 +161,17 @@ public class Preconditions {
       throw new IllegalStateException();
     }
   }
+
+  /**
+   * Ensures the truth of an expression involving the state of the calling instance, but not
+   * involving any parameters to the calling method.
+   *
+   * @param expression a boolean expression
+   * @throws IllegalStateException if {@code expression} is false
+   */
+  public static void checkState(boolean expression, String message) {
+    if (!expression) {
+      throw new IllegalStateException(message);
+    }
+  }
 }

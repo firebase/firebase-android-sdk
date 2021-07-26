@@ -32,6 +32,7 @@ import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.core.TargetIdGenerator;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.ResourcePath;
@@ -106,6 +107,9 @@ public final class LocalStore implements BundleCallback {
   /** Manages our in-memory or durable persistence. */
   private final Persistence persistence;
 
+  /** Manages the list of active field and collection indices. */
+  private final IndexManager indexManager;
+
   /** The set of all mutations that have been sent but not yet been applied to the backend. */
   private MutationQueue mutationQueue;
 
@@ -145,8 +149,8 @@ public final class LocalStore implements BundleCallback {
     targetIdGenerator = TargetIdGenerator.forTargetCache(targetCache.getHighestTargetId());
     mutationQueue = persistence.getMutationQueue(initialUser);
     remoteDocuments = persistence.getRemoteDocumentCache();
-    localDocuments =
-        new LocalDocumentsView(remoteDocuments, mutationQueue, persistence.getIndexManager());
+    indexManager = persistence.getIndexManager();
+    localDocuments = new LocalDocumentsView(remoteDocuments, mutationQueue, indexManager);
 
     this.queryEngine = queryEngine;
     queryEngine.setLocalDocumentsView(localDocuments);
@@ -182,8 +186,7 @@ public final class LocalStore implements BundleCallback {
     List<MutationBatch> newBatches = mutationQueue.getAllMutationBatches();
 
     // Recreate our LocalDocumentsView using the new MutationQueue.
-    localDocuments =
-        new LocalDocumentsView(remoteDocuments, mutationQueue, persistence.getIndexManager());
+    localDocuments = new LocalDocumentsView(remoteDocuments, mutationQueue, indexManager);
     queryEngine.setLocalDocumentsView(localDocuments);
 
     // Union the old/new changed keys.
@@ -695,6 +698,17 @@ public final class LocalStore implements BundleCallback {
   public @Nullable NamedQuery getNamedQuery(String queryName) {
     return persistence.runTransaction(
         "Get named query", () -> bundleCache.getNamedQuery(queryName));
+  }
+
+  public void configureIndices(List<FieldIndex> fieldIndices) {
+    persistence.runTransaction(
+        "Configure indices",
+        () -> {
+          // TODO(indexing): Disable no longer active indices
+          for (FieldIndex fieldIndex : fieldIndices) {
+            indexManager.addFieldIndex(fieldIndex);
+          }
+        });
   }
 
   /** Mutable state for the transaction in allocateQuery. */
