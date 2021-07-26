@@ -201,19 +201,13 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
       Context context = firebaseApp.getApplicationContext();
       this.updateTask = new UpdateTaskImpl(updateAppTaskCompletionSource.getTask());
 
-      if (cachedLatestRelease == null) {
-        setUpdateAppTaskCompletionError(
-            new FirebaseAppDistributionException(
-                context.getString(R.string.no_update_available),
-                FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE));
+      if (cachedLatestRelease.getBinaryType() == BinaryType.AAB) {
+        redirectToPlayForAabUpdate(cachedLatestRelease.getDownloadUrl());
       } else {
-        if (cachedLatestRelease.getBinaryType() == BinaryType.AAB) {
-          redirectToPlayForAabUpdate(cachedLatestRelease.getDownloadUrl());
-        } else {
-          // todo: create update class when implementing APK
-          throw new UnsupportedOperationException("Not yet implemented.");
-        }
+        // todo: create update class when implementing APK
+        throw new UnsupportedOperationException("Not yet implemented.");
       }
+
       return this.updateTask;
     }
   }
