@@ -120,7 +120,7 @@ public final class SQLitePersistence extends Persistence {
     this.opener = openHelper;
     this.serializer = serializer;
     this.targetCache = new SQLiteTargetCache(this, this.serializer);
-    this.indexManager = new SQLiteIndexManager(this);
+    this.indexManager = new SQLiteIndexManager(this, this.serializer);
     this.bundleCache = new SQLiteBundleCache(this, this.serializer);
     this.remoteDocumentCache = new SQLiteRemoteDocumentCache(this, this.serializer);
     this.referenceDelegate = new SQLiteLruReferenceDelegate(this, params);
