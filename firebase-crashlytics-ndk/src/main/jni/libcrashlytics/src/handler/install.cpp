@@ -64,15 +64,20 @@ int dlopen_flags()
     return is_at_least_q() ? RTLD_NOLOAD | RTLD_LAZY : RTLD_LAZY;
 }
 
+bool ends_with(const std::string& path, const std::string& suffix)
+{
+    return std::equal(suffix.rbegin(), suffix.rend(), path.rbegin());
+}
+
 std::string make_libcrashlytics_path(const Dl_info& info)
 {
     std::string path = info.dli_fname;
 
-    if (is_at_least_q() || path.rfind("!/lib") != std::string::npos) {
+    if (is_at_least_q() || path.rfind("!/lib") != std::string::npos || ends_with(path, ".so")) {
         return path;
     }
 
-    return path + "!/lib/" + CURRENT_ABI + "libcrashlytics.so";
+    return path + "!/lib/" + CURRENT_ABI + "/libcrashlytics.so";
 }
 
 bool self_path(std::string& self, std::string& path)
