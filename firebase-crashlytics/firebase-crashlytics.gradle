@@ -18,7 +18,10 @@ plugins {
 }
 
 firebaseLibrary {
-    testLab.enabled = true
+    testLab {
+        enabled = true
+        device 'model=flame,version=30'
+    }
 }
 
 android {
@@ -26,10 +29,11 @@ android {
         timeOutInMs 60 * 1000
     }
 
-    compileSdkVersion project.targetSdkVersion
+    compileSdkVersion 30
+    testOptions.unitTests.includeAndroidResources = true
     defaultConfig {
         minSdkVersion 16
-        targetSdkVersion project.targetSdkVersion
+        targetSdkVersion 30
         versionName version
 
         multiDexEnabled true
@@ -74,7 +78,8 @@ dependencies {
     annotationProcessor 'com.google.auto.value:auto-value:1.6.5'
 
     testImplementation 'androidx.test:runner:1.3.0'
-    testImplementation "org.robolectric:robolectric:$robolectricVersion"
+    testImplementation 'androidx.test:core:1.3.0'
+    testImplementation "org.robolectric:robolectric:4.5"
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.mockito:mockito-core:3.3.3'
 

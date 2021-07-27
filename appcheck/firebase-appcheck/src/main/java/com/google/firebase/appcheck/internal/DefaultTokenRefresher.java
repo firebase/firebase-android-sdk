@@ -20,10 +20,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
-import com.google.firebase.appcheck.AppCheckTokenResult;
-import com.google.firebase.appcheck.internal.util.Logger;
+import com.google.android.gms.tasks.OnFailureListener;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -94,22 +91,15 @@ public class DefaultTokenRefresher {
   }
 
   private void onRefresh() {
-    Task<AppCheckTokenResult> task = firebaseAppCheck.fetchTokenFromProvider();
-    task.addOnCompleteListener(
-        new OnCompleteListener<AppCheckTokenResult>() {
-          @Override
-          public void onComplete(@NonNull Task<AppCheckTokenResult> task) {
-            if (task.isSuccessful()) {
-              AppCheckTokenResult tokenResult = task.getResult();
-              if (tokenResult.getError() != null) {
+    firebaseAppCheck
+        .fetchTokenFromProvider()
+        .addOnFailureListener(
+            new OnFailureListener() {
+              @Override
+              public void onFailure(@NonNull Exception e) {
                 scheduleRefreshAfterFailure();
               }
-            } else {
-              // Task was not successful; this should not happen.
-              Logger.getLogger().e("Unexpected failure while fetching token.");
-            }
-          }
-        });
+            });
   }
 
   /** Cancels the in-flight scheduled refresh. */

@@ -238,7 +238,7 @@ public class RemoteConfigComponent {
       String namespace, ConfigCacheClient fetchedCacheClient, ConfigMetadataClient metadataClient) {
     return new ConfigFetchHandler(
         firebaseInstallations,
-        isPrimaryApp(firebaseApp) ? analyticsConnector : null,
+        isPrimaryApp(firebaseApp) ? analyticsConnector : () -> null,
         executorService,
         DEFAULT_CLOCK,
         DEFAULT_RANDOM,

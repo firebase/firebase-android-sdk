@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -74,7 +74,7 @@ public abstract class FirebaseDynamicLinks {
    * <p>When a dynamic link is clicked by the user, in most cases it is captured when clicked and
    * stored until accessed by {@link #getDynamicLink(Intent)} and returned as the {@link
    * PendingDynamicLinkData} of the {@link Task}. If the dynamic link was not captured, as is the
-   * case when App Links launches launches the app, then the dynamic link is provided in the {@link
+   * case when App Links launches the app, then the dynamic link is provided in the {@link
    * Intent#getData()}. The intent data is then processed to retrieve the dynamic link data. If the
    * dynamic links is both captured and is present in the intent, then the captured data will take
    * precedence. The captured data will be removed after first access.

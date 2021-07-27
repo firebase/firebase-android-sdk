@@ -27,7 +27,9 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appcheck.AppCheckProvider;
 import com.google.firebase.appcheck.AppCheckProviderFactory;
+import com.google.firebase.appcheck.AppCheckToken;
 import com.google.firebase.appcheck.AppCheckTokenResult;
+import com.google.firebase.appcheck.FirebaseAppCheck.AppCheckListener;
 import com.google.firebase.appcheck.interop.AppCheckTokenListener;
 import com.google.firebase.heartbeatinfo.HeartBeatInfo;
 import com.google.firebase.platforminfo.UserAgentPublisher;
@@ -55,6 +57,7 @@ public class DefaultFirebaseAppCheckTest {
   @Mock private AppCheckProviderFactory mockAppCheckProviderFactory;
   @Mock private AppCheckProvider mockAppCheckProvider;
   @Mock private AppCheckTokenListener mockAppCheckTokenListener;
+  @Mock private AppCheckListener mockAppCheckListener;
   @Mock private UserAgentPublisher mockUserAgentPublisher;
   @Mock private HeartBeatInfo mockHeartBeatInfo;
 
@@ -132,6 +135,71 @@ public class DefaultFirebaseAppCheckTest {
   }
 
   @Test
+  public void testAddAppCheckListener_nullListener_expectThrows() {
+    assertThrows(
+        NullPointerException.class,
+        () -> {
+          defaultFirebaseAppCheck.addAppCheckListener(null);
+        });
+  }
+
+  @Test
+  public void testRemoveAppCheckListener_nullListener_expectThrows() {
+    assertThrows(
+        NullPointerException.class,
+        () -> {
+          defaultFirebaseAppCheck.removeAppCheckListener(null);
+        });
+  }
+
+  @Test
+  public void testAddAppCheckTokenListener_existingValidToken_triggersListenerUponAdding() {
+    defaultFirebaseAppCheck.setCachedToken(validDefaultAppCheckToken);
+
+    defaultFirebaseAppCheck.addAppCheckTokenListener(mockAppCheckTokenListener);
+
+    ArgumentCaptor<DefaultAppCheckTokenResult> tokenResultCaptor =
+        ArgumentCaptor.forClass(DefaultAppCheckTokenResult.class);
+    verify(mockAppCheckTokenListener).onAppCheckTokenChanged(tokenResultCaptor.capture());
+    assertThat(tokenResultCaptor.getValue().getToken()).isEqualTo(TOKEN_PAYLOAD);
+    assertThat(tokenResultCaptor.getValue().getError()).isNull();
+  }
+
+  @Test
+  public void testAddAppCheckTokenListener_existingInvalidToken_doesNotTriggerListenerUponAdding() {
+    DefaultAppCheckToken invalidDefaultAppCheckToken =
+        new DefaultAppCheckToken(TOKEN_PAYLOAD, EXPIRES_NOW);
+    defaultFirebaseAppCheck.setCachedToken(invalidDefaultAppCheckToken);
+
+    defaultFirebaseAppCheck.addAppCheckTokenListener(mockAppCheckTokenListener);
+
+    verify(mockAppCheckTokenListener, never()).onAppCheckTokenChanged(any());
+  }
+
+  @Test
+  public void testAddAppCheckListener_existingValidToken_triggersListenerUponAdding() {
+    defaultFirebaseAppCheck.setCachedToken(validDefaultAppCheckToken);
+
+    defaultFirebaseAppCheck.addAppCheckListener(mockAppCheckListener);
+
+    ArgumentCaptor<DefaultAppCheckToken> tokenCaptor =
+        ArgumentCaptor.forClass(DefaultAppCheckToken.class);
+    verify(mockAppCheckListener).onAppCheckTokenChanged(tokenCaptor.capture());
+    assertThat(tokenCaptor.getValue().getToken()).isEqualTo(TOKEN_PAYLOAD);
+  }
+
+  @Test
+  public void testAddAppCheckListener_existingInvalidToken_doesNotTriggerListenerUponAdding() {
+    DefaultAppCheckToken invalidDefaultAppCheckToken =
+        new DefaultAppCheckToken(TOKEN_PAYLOAD, EXPIRES_NOW);
+    defaultFirebaseAppCheck.setCachedToken(invalidDefaultAppCheckToken);
+
+    defaultFirebaseAppCheck.addAppCheckListener(mockAppCheckListener);
+
+    verify(mockAppCheckListener, never()).onAppCheckTokenChanged(any());
+  }
+
+  @Test
   public void testGetToken_noFactoryInstalled_returnResultWithError() throws Exception {
     Task<AppCheckTokenResult> tokenTask =
         defaultFirebaseAppCheck.getToken(/* forceRefresh= */ false);
@@ -142,10 +210,27 @@ public class DefaultFirebaseAppCheckTest {
   }
 
   @Test
+  public void testGetAppCheckToken_noFactoryInstalled_taskFails() throws Exception {
+    Task<AppCheckToken> tokenTask =
+        defaultFirebaseAppCheck.getAppCheckToken(/* forceRefresh= */ false);
+    assertThat(tokenTask.isComplete()).isTrue();
+    assertThat(tokenTask.isSuccessful()).isFalse();
+  }
+
+  @Test
   public void testGetToken_factoryInstalled_proxiesToAppCheckFactory() {
     defaultFirebaseAppCheck.installAppCheckProviderFactory(mockAppCheckProviderFactory);
 
     defaultFirebaseAppCheck.getToken(/* forceRefresh= */ false);
+
+    verify(mockAppCheckProvider).getToken();
+  }
+
+  @Test
+  public void testGetAppCheckToken_factoryInstalled_proxiesToAppCheckFactory() {
+    defaultFirebaseAppCheck.installAppCheckProviderFactory(mockAppCheckProviderFactory);
+
+    defaultFirebaseAppCheck.getAppCheckToken(/* forceRefresh= */ false);
 
     verify(mockAppCheckProvider).getToken();
   }
@@ -167,6 +252,7 @@ public class DefaultFirebaseAppCheckTest {
   public void testGetToken_factoryInstalledAndListenerRegistered_triggersListenerOnSuccess() {
     defaultFirebaseAppCheck.installAppCheckProviderFactory(mockAppCheckProviderFactory);
     defaultFirebaseAppCheck.addAppCheckTokenListener(mockAppCheckTokenListener);
+    defaultFirebaseAppCheck.addAppCheckListener(mockAppCheckListener);
 
     defaultFirebaseAppCheck.getToken(/* forceRefresh= */ false);
 
@@ -176,12 +262,17 @@ public class DefaultFirebaseAppCheckTest {
     verify(mockAppCheckTokenListener).onAppCheckTokenChanged(tokenResultCaptor.capture());
     assertThat(tokenResultCaptor.getValue().getToken()).isEqualTo(TOKEN_PAYLOAD);
     assertThat(tokenResultCaptor.getValue().getError()).isNull();
+    ArgumentCaptor<DefaultAppCheckToken> tokenCaptor =
+        ArgumentCaptor.forClass(DefaultAppCheckToken.class);
+    verify(mockAppCheckListener).onAppCheckTokenChanged(tokenCaptor.capture());
+    assertThat(tokenCaptor.getValue()).isEqualTo(validDefaultAppCheckToken);
   }
 
   @Test
   public void testGetToken_factoryInstalledAndListenerRegistered_doesNotTriggerListenerOnFailure() {
     defaultFirebaseAppCheck.installAppCheckProviderFactory(mockAppCheckProviderFactory);
     defaultFirebaseAppCheck.addAppCheckTokenListener(mockAppCheckTokenListener);
+    defaultFirebaseAppCheck.addAppCheckListener(mockAppCheckListener);
 
     when(mockAppCheckProvider.getToken())
         .thenReturn(Tasks.forException(new Exception(EXCEPTION_TEXT)));
@@ -190,30 +281,45 @@ public class DefaultFirebaseAppCheckTest {
 
     verify(mockAppCheckProvider).getToken();
     verify(mockAppCheckTokenListener, never()).onAppCheckTokenChanged(any());
+    verify(mockAppCheckListener, never()).onAppCheckTokenChanged(any());
   }
 
   @Test
-  public void testGetToken_existingValidToken_triggersListenerUponAdding() {
-    defaultFirebaseAppCheck.setCachedToken(validDefaultAppCheckToken);
-
+  public void
+      testGetAppCheckToken_factoryInstalledAndListenerRegistered_triggersListenerOnSuccess() {
+    defaultFirebaseAppCheck.installAppCheckProviderFactory(mockAppCheckProviderFactory);
     defaultFirebaseAppCheck.addAppCheckTokenListener(mockAppCheckTokenListener);
+    defaultFirebaseAppCheck.addAppCheckListener(mockAppCheckListener);
 
+    defaultFirebaseAppCheck.getAppCheckToken(/* forceRefresh= */ false);
+
+    verify(mockAppCheckProvider).getToken();
     ArgumentCaptor<DefaultAppCheckTokenResult> tokenResultCaptor =
         ArgumentCaptor.forClass(DefaultAppCheckTokenResult.class);
     verify(mockAppCheckTokenListener).onAppCheckTokenChanged(tokenResultCaptor.capture());
     assertThat(tokenResultCaptor.getValue().getToken()).isEqualTo(TOKEN_PAYLOAD);
     assertThat(tokenResultCaptor.getValue().getError()).isNull();
+    ArgumentCaptor<DefaultAppCheckToken> tokenCaptor =
+        ArgumentCaptor.forClass(DefaultAppCheckToken.class);
+    verify(mockAppCheckListener).onAppCheckTokenChanged(tokenCaptor.capture());
+    assertThat(tokenCaptor.getValue()).isEqualTo(validDefaultAppCheckToken);
   }
 
   @Test
-  public void testGetToken_existingInvalidToken_doesNotTriggerListenerUponAdding() {
-    DefaultAppCheckToken invalidDefaultAppCheckToken =
-        new DefaultAppCheckToken(TOKEN_PAYLOAD, EXPIRES_NOW);
-    defaultFirebaseAppCheck.setCachedToken(invalidDefaultAppCheckToken);
-
+  public void
+      testGetAppCheckToken_factoryInstalledAndListenerRegistered_doesNotTriggerListenerOnFailure() {
+    defaultFirebaseAppCheck.installAppCheckProviderFactory(mockAppCheckProviderFactory);
     defaultFirebaseAppCheck.addAppCheckTokenListener(mockAppCheckTokenListener);
+    defaultFirebaseAppCheck.addAppCheckListener(mockAppCheckListener);
 
+    when(mockAppCheckProvider.getToken())
+        .thenReturn(Tasks.forException(new Exception(EXCEPTION_TEXT)));
+
+    defaultFirebaseAppCheck.getAppCheckToken(/* forceRefresh= */ false);
+
+    verify(mockAppCheckProvider).getToken();
     verify(mockAppCheckTokenListener, never()).onAppCheckTokenChanged(any());
+    verify(mockAppCheckListener, never()).onAppCheckTokenChanged(any());
   }
 
   @Test
@@ -244,6 +350,38 @@ public class DefaultFirebaseAppCheckTest {
     defaultFirebaseAppCheck.installAppCheckProviderFactory(mockAppCheckProviderFactory);
 
     defaultFirebaseAppCheck.getToken(/* forceRefresh= */ false);
+
+    verify(mockAppCheckProvider).getToken();
+  }
+
+  @Test
+  public void testGetAppCheckToken_existingValidToken_doesNotRequestNewToken() {
+    defaultFirebaseAppCheck.setCachedToken(validDefaultAppCheckToken);
+    defaultFirebaseAppCheck.installAppCheckProviderFactory(mockAppCheckProviderFactory);
+
+    defaultFirebaseAppCheck.getAppCheckToken(/* forceRefresh= */ false);
+
+    verify(mockAppCheckProvider, never()).getToken();
+  }
+
+  @Test
+  public void testGetAppCheckToken_existingValidToken_forceRefresh_requestsNewToken() {
+    defaultFirebaseAppCheck.setCachedToken(validDefaultAppCheckToken);
+    defaultFirebaseAppCheck.installAppCheckProviderFactory(mockAppCheckProviderFactory);
+
+    defaultFirebaseAppCheck.getAppCheckToken(/* forceRefresh= */ true);
+
+    verify(mockAppCheckProvider).getToken();
+  }
+
+  @Test
+  public void testGetAppCheckToken_existingInvalidToken_requestsNewToken() {
+    DefaultAppCheckToken invalidDefaultAppCheckToken =
+        new DefaultAppCheckToken(TOKEN_PAYLOAD, EXPIRES_NOW);
+    defaultFirebaseAppCheck.setCachedToken(invalidDefaultAppCheckToken);
+    defaultFirebaseAppCheck.installAppCheckProviderFactory(mockAppCheckProviderFactory);
+
+    defaultFirebaseAppCheck.getAppCheckToken(/* forceRefresh= */ false);
 
     verify(mockAppCheckProvider).getToken();
   }

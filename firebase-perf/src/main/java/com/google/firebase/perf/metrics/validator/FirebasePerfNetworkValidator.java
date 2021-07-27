@@ -48,71 +48,71 @@ final class FirebasePerfNetworkValidator extends PerfMetricValidator {
    */
   public boolean isValidPerfMetric() {
     if (isEmptyUrl(networkMetric.getUrl())) {
-      logger.info("URL is missing:" + networkMetric.getUrl());
+      logger.warn("URL is missing:" + networkMetric.getUrl());
       return false;
     }
     URI uri = getResultUrl(networkMetric.getUrl());
     if (uri == null) {
-      logger.info("URL cannot be parsed");
+      logger.warn("URL cannot be parsed");
       return false;
     }
 
     if (!isAllowlisted(uri, appContext)) {
-      logger.info("URL fails allowlist rule: " + uri);
+      logger.warn("URL fails allowlist rule: " + uri);
       return false;
     }
     if (!isValidHost(uri.getHost())) {
-      logger.info("URL host is null or invalid");
+      logger.warn("URL host is null or invalid");
       return false;
     }
     if (!isValidScheme(uri.getScheme())) {
-      logger.info("URL scheme is null or invalid");
+      logger.warn("URL scheme is null or invalid");
       return false;
     }
     if (!isValidUserInfo(uri.getUserInfo())) {
-      logger.info("URL user info is null");
+      logger.warn("URL user info is null");
       return false;
     }
     if (!isValidPort(uri.getPort())) {
-      logger.info("URL port is less than or equal to 0");
+      logger.warn("URL port is less than or equal to 0");
       return false;
     }
     if (!isValidHttpMethod(networkMetric.hasHttpMethod() ? networkMetric.getHttpMethod() : null)) {
-      logger.info("HTTP Method is null or invalid: " + networkMetric.getHttpMethod());
+      logger.warn("HTTP Method is null or invalid: " + networkMetric.getHttpMethod());
       return false;
     }
     if (networkMetric.hasHttpResponseCode()
         && !isValidHttpResponseCode(networkMetric.getHttpResponseCode())) {
-      logger.info("HTTP ResponseCode is a negative value:" + networkMetric.getHttpResponseCode());
+      logger.warn("HTTP ResponseCode is a negative value:" + networkMetric.getHttpResponseCode());
       return false;
     }
     if (networkMetric.hasRequestPayloadBytes()
         && !isValidPayload(networkMetric.getRequestPayloadBytes())) {
-      logger.info("Request Payload is a negative value:" + networkMetric.getRequestPayloadBytes());
+      logger.warn("Request Payload is a negative value:" + networkMetric.getRequestPayloadBytes());
       return false;
     }
     if (networkMetric.hasResponsePayloadBytes()
         && !isValidPayload(networkMetric.getResponsePayloadBytes())) {
-      logger.info(
+      logger.warn(
           "Response Payload is a negative value:" + networkMetric.getResponsePayloadBytes());
       return false;
     }
     if (!networkMetric.hasClientStartTimeUs() || networkMetric.getClientStartTimeUs() <= 0) {
-      logger.info(
+      logger.warn(
           "Start time of the request is null, or zero, or a negative value:"
               + networkMetric.getClientStartTimeUs());
       return false;
     }
     if (networkMetric.hasTimeToRequestCompletedUs()
         && !isValidTime(networkMetric.getTimeToRequestCompletedUs())) {
-      logger.info(
+      logger.warn(
           "Time to complete the request is a negative value:"
               + networkMetric.getTimeToRequestCompletedUs());
       return false;
     }
     if (networkMetric.hasTimeToResponseInitiatedUs()
         && !isValidTime(networkMetric.getTimeToResponseInitiatedUs())) {
-      logger.info(
+      logger.warn(
           "Time from the start of the request to the start of the response is null or a "
               + "negative value:"
               + networkMetric.getTimeToResponseInitiatedUs());
@@ -120,7 +120,7 @@ final class FirebasePerfNetworkValidator extends PerfMetricValidator {
     }
     if (!networkMetric.hasTimeToResponseCompletedUs()
         || networkMetric.getTimeToResponseCompletedUs() <= 0) {
-      logger.info(
+      logger.warn(
           "Time from the start of the request to the end of the response is null, negative or "
               + "zero:"
               + networkMetric.getTimeToResponseCompletedUs());
@@ -128,7 +128,7 @@ final class FirebasePerfNetworkValidator extends PerfMetricValidator {
     }
     // Don't log any requests with a connection error set
     if (!networkMetric.hasHttpResponseCode()) {
-      logger.info("Did not receive a HTTP Response Code");
+      logger.warn("Did not receive a HTTP Response Code");
       return false;
     }
     return true;

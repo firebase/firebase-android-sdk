@@ -43,6 +43,7 @@ android {
         targetSdkVersion project.targetSdkVersion
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         versionName version
+        consumerProguardFiles 'proguard.txt'
     }
     compileOptions {
         sourceCompatibility = '1.8'

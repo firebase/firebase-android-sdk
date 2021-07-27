@@ -27,6 +27,7 @@ public abstract class BackendResponse {
     OK,
     TRANSIENT_ERROR,
     FATAL_ERROR,
+    INVALID_PAYLOAD
   }
 
   /** Status result of the backend call */
@@ -41,6 +42,10 @@ public abstract class BackendResponse {
 
   public static BackendResponse fatalError() {
     return new AutoValue_BackendResponse(Status.FATAL_ERROR, -1);
+  }
+
+  public static BackendResponse invalidPayload() {
+    return new AutoValue_BackendResponse(Status.INVALID_PAYLOAD, -1);
   }
 
   public static BackendResponse ok(long nextRequestWaitMillis) {

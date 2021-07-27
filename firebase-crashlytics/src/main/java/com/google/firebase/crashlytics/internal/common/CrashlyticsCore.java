@@ -19,6 +19,7 @@ import android.text.TextUtils;
 import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
@@ -76,10 +77,11 @@ public class CrashlyticsCore {
   private boolean didCrashOnPreviousExecution;
 
   private CrashlyticsController controller;
-
   private final IdManager idManager;
-  private final BreadcrumbSource breadcrumbSource;
+
+  @VisibleForTesting public final BreadcrumbSource breadcrumbSource;
   private final AnalyticsEventLogger analyticsEventLogger;
+
   private final ExecutorService crashHandlerExecutor;
   private final CrashlyticsBackgroundWorker backgroundWorker;
 
@@ -131,7 +133,6 @@ public class CrashlyticsCore {
       initializationMarker = new CrashlyticsFileMarker(INITIALIZATION_MARKER_FILE_NAME, fileStore);
 
       final UserMetadata userMetadata = new UserMetadata();
-
       final LogFileDirectoryProvider logFileDirectoryProvider =
           new LogFileDirectoryProvider(fileStore);
       final LogFileManager logFileManager = new LogFileManager(context, logFileDirectoryProvider);
@@ -228,7 +229,7 @@ public class CrashlyticsCore {
             new RuntimeException("Collection of crash reports disabled in Crashlytics settings."));
       }
 
-      if (!controller.finalizeSessions()) {
+      if (!controller.finalizeSessions(settingsProvider)) {
         Logger.getLogger().w("Previous sessions could not be finalized.");
       }
 
@@ -345,6 +346,22 @@ public class CrashlyticsCore {
    */
   public void setCustomKeys(Map<String, String> keysAndValues) {
     controller.setCustomKeys(keysAndValues);
+  }
+
+  /**
+   * Set a value to be associated with a given key for your crash data. The key/value pairs will be
+   * reported with any crash that occurs in this session. A maximum of 64 key/value pairs can be
+   * stored for any type. New keys added over that limit will be ignored. Keys and values are
+   * trimmed ({@link String#trim()}), and keys or values that exceed 1024 characters will be
+   * truncated.
+   *
+   * <p>IMPORTANT: This method is accessed via reflection and JNI. Do not change the type without
+   * updating the SDKs that depend on it.
+   *
+   * @throws NullPointerException if key is null.
+   */
+  public void setInternalKey(String key, String value) {
+    controller.setInternalKey(key, value);
   }
 
   // endregion

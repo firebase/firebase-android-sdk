@@ -14,6 +14,7 @@
 
 package com.google.android.datatransport.runtime.scheduling.persistence;
 
+import android.content.Context;
 import com.google.android.datatransport.runtime.synchronization.SynchronizationGuard;
 import dagger.Binds;
 import dagger.Module;
@@ -34,6 +35,9 @@ public abstract class EventStoreModule {
   @Binds
   abstract SynchronizationGuard synchronizationGuard(SQLiteEventStore store);
 
+  @Binds
+  abstract ClientHealthMetricsStore clientHealthMetricsStore(SQLiteEventStore store);
+
   @Provides
   @Named("SCHEMA_VERSION")
   static int schemaVersion() {
@@ -44,5 +48,11 @@ public abstract class EventStoreModule {
   @Named("SQLITE_DB_NAME")
   static String dbName() {
     return SchemaManager.DB_NAME;
+  }
+
+  @Provides
+  @Named("PACKAGE_NAME")
+  static String packageName(Context context) {
+    return context.getPackageName();
   }
 }

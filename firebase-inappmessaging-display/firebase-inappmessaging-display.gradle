@@ -32,6 +32,13 @@ android {
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
+    lintOptions {
+        // com.squareup.picasso:picasso:2.71828 depends on com.android.support:exifinterface so we
+        // disable this lint error since we have no control over that dependency and enabling
+        // jetification in our SDK build will still require developers to use jetification in their
+        // apps.
+        disable "GradleCompatible"
+    }
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
@@ -78,8 +85,8 @@ dependencies {
     implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
     implementation 'com.google.auto.value:auto-value-annotations:1.6.6'
 
-    implementation "com.squareup.picasso:picasso:2.71828"
-    implementation "com.squareup.okhttp:okhttp:2.7.5"
+    implementation 'com.github.bumptech.glide:glide:4.11.0'
+    annotationProcessor 'com.github.bumptech.glide:compiler:4.11.0'
 
     vendor ('com.google.dagger:dagger:2.27') {
         exclude group: "javax.inject", module: "javax.inject"

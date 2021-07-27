@@ -130,15 +130,21 @@ public class Publisher {
     Configuration dummyDependencyConfiguration =
         project.getConfigurations().create("publisherDummyConfig");
     Set<Dependency> nonProjectDependencies =
-        project.getConfigurations().getByName(firebaseLibrary.getRuntimeClasspath())
-            .getAllDependencies().stream()
+        project
+            .getConfigurations()
+            .getByName(firebaseLibrary.getRuntimeClasspath())
+            .getAllDependencies()
+            .stream()
             .filter(dep -> !(dep instanceof ProjectDependency))
             .collect(Collectors.toSet());
 
     dummyDependencyConfiguration.getDependencies().addAll(nonProjectDependencies);
     try {
-      return project.getConfigurations().getByName(firebaseLibrary.getRuntimeClasspath())
-          .getAllDependencies().stream()
+      return project
+          .getConfigurations()
+          .getByName(firebaseLibrary.getRuntimeClasspath())
+          .getAllDependencies()
+          .stream()
           .map(dep -> getType(dummyDependencyConfiguration, dep))
           .filter(Objects::nonNull)
           .collect(Collectors.toMap(lib -> lib.name, lib -> lib.type.getFormat()));

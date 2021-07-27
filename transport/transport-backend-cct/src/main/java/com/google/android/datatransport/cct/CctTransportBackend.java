@@ -151,8 +151,7 @@ final class CctTransportBackend implements TransportBackend {
   public EventInternal decorate(EventInternal eventInternal) {
     NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
 
-    return eventInternal
-        .toBuilder()
+    return eventInternal.toBuilder()
         .addMetadata(KEY_SDK_VERSION, Build.VERSION.SDK_INT)
         .addMetadata(KEY_MODEL, Build.MODEL)
         .addMetadata(KEY_HARDWARE, Build.HARDWARE)
@@ -388,6 +387,8 @@ final class CctTransportBackend implements TransportBackend {
         return BackendResponse.ok(response.nextRequestMillis);
       } else if (response.code >= 500 || response.code == 404) {
         return BackendResponse.transientError();
+      } else if (response.code == 400) {
+        return BackendResponse.invalidPayload();
       } else {
         return BackendResponse.fatalError();
       }
