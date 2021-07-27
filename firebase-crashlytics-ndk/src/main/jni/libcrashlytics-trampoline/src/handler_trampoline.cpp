@@ -38,7 +38,8 @@ int main(int argc, char* argv[])
   MainType crashpad_main =
       reinterpret_cast<MainType>(dlsym(handle, "CrashpadHandlerMain"));
   if (!crashpad_main) {
-    __android_log_print(ANDROID_LOG_FATAL, kTag, "dlsym: %s", dlerror());
+    __android_log_print(
+      ANDROID_LOG_FATAL, kTag, "(%s) dlsym: %s", argv[1], dlerror());
     return EXIT_FAILURE;
   }
 

@@ -23,12 +23,13 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
+import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
+import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponentDeferredProxy;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
-import com.google.firebase.crashlytics.internal.ProviderProxyNativeComponent;
 import com.google.firebase.crashlytics.internal.analytics.UnavailableAnalyticsEventLogger;
 import com.google.firebase.crashlytics.internal.breadcrumbs.DisabledBreadcrumbSource;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
@@ -37,6 +38,7 @@ import com.google.firebase.crashlytics.internal.settings.SettingsController;
 import com.google.firebase.crashlytics.internal.settings.TestSettingsData;
 import com.google.firebase.crashlytics.internal.settings.model.SettingsData;
 import com.google.firebase.crashlytics.internal.unity.UnityVersionProvider;
+import com.google.firebase.inject.Deferred;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.io.File;
 import java.io.IOException;
@@ -104,7 +106,15 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
               installationsApiMock,
               DataCollectionArbiterTest.MOCK_ARBITER_ENABLED);
 
-      nativeComponent = new ProviderProxyNativeComponent(() -> null);
+      nativeComponent =
+          new CrashlyticsNativeComponentDeferredProxy(
+              new Deferred<CrashlyticsNativeComponent>() {
+                @Override
+                public void whenAvailable(
+                    @NonNull Deferred.DeferredHandler<CrashlyticsNativeComponent> handler) {
+                  // no-op
+                }
+              });
 
       arbiter = mock(DataCollectionArbiter.class);
       when(arbiter.isAutomaticDataCollectionEnabled()).thenReturn(true);

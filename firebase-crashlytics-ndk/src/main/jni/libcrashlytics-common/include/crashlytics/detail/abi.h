@@ -12,10 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef __CRASHLYTICS_VERSION_H__
-#define __CRASHLYTICS_VERSION_H__
+#ifndef __CRASHLYTICS_ABI_H__
+#define __CRASHLYTICS_ABI_H__
 
-//! Authoritative libcrashlytics version string.
-#define VERSION "3.1.0"
+#if defined(__arm__) && defined(__ARM_ARCH_7A__)
+#define CURRENT_ABI "armeabi-v7a"
+#elif defined(__arm__)
+#define CURRENT_ABI "armeabi"
+#elif defined(__i386__)
+#define CURRENT_ABI "x86"
+#elif defined(__x86_64__)
+#define CURRENT_ABI "x86_64"
+#elif defined(__aarch64__)
+#define CURRENT_ABI "arm64-v8a"
+#else
+#error "Unsupported target abi"
+#endif
 
-#endif // __CRASHLYTICS_VERSION_H__
+#if defined(ARCH_CPU_64_BITS)
+  static constexpr bool kUse64Bit = true;
+#else
+  static constexpr bool kUse64Bit = false;
+#endif
+
+#endif // __CRASHLYTICS_ABI_H__
