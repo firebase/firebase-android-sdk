@@ -280,12 +280,12 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void updateToLatestRelease_whenSignInCancelled_checkForUpdateNotCalled() {
+  public void updateToLatestRelease_whenSignInCanceled_checkForUpdateNotCalled() {
     when(mockTesterSignInClient.signInTester(any()))
         .thenReturn(
             Tasks.forException(
                 new FirebaseAppDistributionException(
-                    ErrorMessages.AUTHENTICATION_CANCELLED, AUTHENTICATION_CANCELED)));
+                    ErrorMessages.AUTHENTICATION_CANCELED, AUTHENTICATION_CANCELED)));
 
     firebaseAppDistribution.onActivityResumed(activity);
     Task<AppDistributionRelease> task = firebaseAppDistribution.updateToLatestRelease();
@@ -298,7 +298,7 @@ public class FirebaseAppDistributionTest {
     verify(mockCheckForUpdateClient, never()).checkForUpdate();
     assertTrue(task.getException() instanceof FirebaseAppDistributionException);
     FirebaseAppDistributionException e = (FirebaseAppDistributionException) task.getException();
-    assertEquals("Tester cancelled the authentication flow", e.getMessage());
+    assertEquals("Tester canceled the authentication flow", e.getMessage());
     assertEquals(AUTHENTICATION_CANCELED, e.getErrorCode());
   }
 

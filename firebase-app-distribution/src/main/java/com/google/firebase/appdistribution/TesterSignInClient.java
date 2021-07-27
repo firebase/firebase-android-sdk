@@ -33,6 +33,7 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.appdistribution.Constants.ErrorMessages;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.util.List;
 
@@ -75,7 +76,7 @@ class TesterSignInClient {
   void setCanceledAuthenticationError() {
     setSignInTaskCompletionError(
         new FirebaseAppDistributionException(
-            Constants.ErrorMessages.AUTHENTICATION_CANCELLED, AUTHENTICATION_CANCELED));
+            Constants.ErrorMessages.AUTHENTICATION_CANCELED, AUTHENTICATION_CANCELED));
   }
 
   void setSuccessfulSignInResult() {
@@ -117,7 +118,7 @@ class TesterSignInClient {
           public void onClick(DialogInterface dialogInterface, int i) {
             setSignInTaskCompletionError(
                 new FirebaseAppDistributionException(
-                    "Tester cancelled authentication flow", AUTHENTICATION_CANCELED));
+                    ErrorMessages.AUTHENTICATION_CANCELED, AUTHENTICATION_CANCELED));
             dialogInterface.dismiss();
           }
         });
