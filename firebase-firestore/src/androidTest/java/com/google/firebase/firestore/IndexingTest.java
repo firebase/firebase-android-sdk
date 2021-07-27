@@ -23,6 +23,7 @@ import com.google.firebase.firestore.testutil.Assert;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import java.util.concurrent.ExecutionException;
 import org.junit.After;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -35,6 +36,7 @@ public class IndexingTest {
   }
 
   @Test
+  @Ignore("Todo(indexing): Enable test when schema is updated")
   public void testCanConfigureIndices() throws ExecutionException, InterruptedException {
     FirebaseFirestore db = testFirestore();
     Task<Void> indexTask =
