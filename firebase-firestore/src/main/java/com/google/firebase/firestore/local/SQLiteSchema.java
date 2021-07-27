@@ -343,8 +343,8 @@ class SQLiteSchema {
    * table apply for all users. It is not possible to only enable indices for a subset of users.
    *
    * <p>The `index_entries` table holds the index values themselves. An index value is created for
-   * every indexed field. If there are pending mutations that affect an indexed field, an additional
-   * index entry is created per mutated field.
+   * each field combination that matches a configured index. If there are pending mutations that
+   * affect an indexed field, an additional index entry is created per mutated field.
    */
   private void createFieldIndex() {
     ifTablesDontExist(
