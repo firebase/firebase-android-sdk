@@ -21,7 +21,7 @@ import android.content.SharedPreferences;
 public class SignInStorage {
 
   private static final String SIGNIN_PREFERENCES_NAME = "FirebaseAppDistributionSignInStorage";
-  private static final String SIGNIN_TAG = "firebase_app_distro_signin";
+  private static final String SIGNIN_TAG = "firebase_app_distribution_signin";
 
   private final SharedPreferences signInSharedPreferences;
 

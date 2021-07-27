@@ -115,9 +115,6 @@ public class FirebaseAppDistributionTest {
                 .setApiKey(TEST_API_KEY)
                 .build());
 
-    // this is spy instead of mock to be able to test isTesterSingedIn functionality
-    //    signInStorage = spy(new SignInStorage(firebaseApp.getApplicationContext()));
-
     firebaseAppDistribution =
         spy(
             new FirebaseAppDistribution(
@@ -265,6 +262,8 @@ public class FirebaseAppDistributionTest {
   @Test
   public void updateToLatestRelease_whenNewAabReleaseAvailable_showsUpdateDialog()
       throws Exception {
+    // mockSignInStorage returns false then true to simulate logging in during first signIn check in
+    // updateToLatestRelease
     when(mockSignInStorage.getSignInStatus()).thenReturn(false).thenReturn(true);
     when(mockCheckForUpdateClient.checkForUpdate())
         .thenReturn(Tasks.forResult(TEST_RELEASE_NEWER_AAB_INTERNAL));
