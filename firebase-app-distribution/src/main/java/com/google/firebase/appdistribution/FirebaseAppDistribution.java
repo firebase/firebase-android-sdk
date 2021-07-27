@@ -189,27 +189,27 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
           Tasks.forException(
               new FirebaseAppDistributionException(
                   Constants.ErrorMessages.NOT_FOUND_ERROR, UPDATE_NOT_AVAILABLE)));
-    } else {
-      if (updateAppTaskCompletionSource != null
-          && !updateAppTaskCompletionSource.getTask().isComplete()) {
-        updateAppCancellationSource.cancel();
-      }
-
-      updateAppCancellationSource = new CancellationTokenSource();
-      updateAppTaskCompletionSource =
-          new TaskCompletionSource<>(updateAppCancellationSource.getToken());
-      Context context = firebaseApp.getApplicationContext();
-      this.updateTask = new UpdateTaskImpl(updateAppTaskCompletionSource.getTask());
-
-      if (cachedLatestRelease.getBinaryType() == BinaryType.AAB) {
-        redirectToPlayForAabUpdate(cachedLatestRelease.getDownloadUrl());
-      } else {
-        // todo: create update class when implementing APK
-        throw new UnsupportedOperationException("Not yet implemented.");
-      }
-
-      return this.updateTask;
     }
+
+    if (updateAppTaskCompletionSource != null
+        && !updateAppTaskCompletionSource.getTask().isComplete()) {
+      updateAppCancellationSource.cancel();
+    }
+
+    updateAppCancellationSource = new CancellationTokenSource();
+    updateAppTaskCompletionSource =
+        new TaskCompletionSource<>(updateAppCancellationSource.getToken());
+    Context context = firebaseApp.getApplicationContext();
+    this.updateTask = new UpdateTaskImpl(updateAppTaskCompletionSource.getTask());
+
+    if (cachedLatestRelease.getBinaryType() == BinaryType.AAB) {
+      redirectToPlayForAabUpdate(cachedLatestRelease.getDownloadUrl());
+    } else {
+      // todo: create update class when implementing APK
+      throw new UnsupportedOperationException("Not yet implemented.");
+    }
+
+    return this.updateTask;
   }
 
   /** Returns true if the App Distribution tester is signed in */
