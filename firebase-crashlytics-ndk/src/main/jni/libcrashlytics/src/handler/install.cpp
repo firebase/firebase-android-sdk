@@ -91,8 +91,6 @@ bool self_path(std::string& self, std::string& path)
         return false;
     }
 
-    DEBUG_OUT("Path for libcrashlytics.so is %s", info.dli_fname);
-
     size_t libdir_end = libcrashlytics_path.rfind('/');
 
     self = libcrashlytics_path;

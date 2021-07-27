@@ -16,7 +16,7 @@
 #define __CRASHLYTICS_CONFIG_H__
 
 //! Define this for internal testing.
-#define CRASHLYTICS_DEBUG
+//#define CRASHLYTICS_DEBUG
 
 //! This should be defined for production builds. Undefining it removes the JNI specific entry points for
 //  the purpose of being able to dynamically link with host JNI libraries.
