@@ -16,6 +16,7 @@ package com.google.firebase.appdistribution;
 
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_FAILURE;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.NETWORK_FAILURE;
+import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -31,6 +32,7 @@ import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.tasks.CancellationTokenSource;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appdistribution.internal.AppDistributionReleaseInternal;
 import com.google.firebase.installations.FirebaseInstallationsApi;
@@ -53,15 +55,19 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
       null;
   private CancellationTokenSource updateToLatestReleaseCancellationSource;
 
+  private SignInStorage signInStorage;
+
   /** Constructor for FirebaseAppDistribution */
   @VisibleForTesting
   FirebaseAppDistribution(
       @NonNull FirebaseApp firebaseApp,
       @NonNull TesterSignInClient testerSignInClient,
-      @NonNull CheckForUpdateClient checkForUpdateClient) {
+      @NonNull CheckForUpdateClient checkForUpdateClient,
+      @NonNull SignInStorage signInStorage) {
     this.firebaseApp = firebaseApp;
     this.testerSignInClient = testerSignInClient;
     this.checkForUpdateClient = checkForUpdateClient;
+    this.signInStorage = signInStorage;
   }
 
   /** Constructor for FirebaseAppDistribution */
@@ -72,7 +78,8 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
         firebaseApp,
         new TesterSignInClient(firebaseApp, firebaseInstallationsApi),
         new CheckForUpdateClient(
-            firebaseApp, new FirebaseAppDistributionTesterApiClient(), firebaseInstallationsApi));
+            firebaseApp, new FirebaseAppDistributionTesterApiClient(), firebaseInstallationsApi),
+        new SignInStorage(firebaseApp.getApplicationContext()));
   }
 
   /** @return a FirebaseAppDistribution instance */
@@ -113,32 +120,21 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     updateToLatestReleaseTaskCompletionSource =
         new TaskCompletionSource<>(updateToLatestReleaseCancellationSource.getToken());
 
-    // todo: when persistence is implemented and user already signed in, skip signInTester
-    signInTester()
-        .addOnSuccessListener(
-            unused -> {
-              checkForUpdate()
-                  .addOnSuccessListener(
-                      latestRelease -> {
-                        if (latestRelease != null) {
-                          showUpdateAlertDialog(latestRelease);
-                        } else {
-                          updateToLatestReleaseTaskCompletionSource.setResult(null);
-                        }
-                      })
-                  .addOnFailureListener(
-                      e ->
-                          setUpdateToLatestReleaseErrorWithDefault(
-                              e,
-                              new FirebaseAppDistributionException(
-                                  Constants.ErrorMessages.NETWORK_ERROR, NETWORK_FAILURE)));
-            })
-        .addOnFailureListener(
-            e ->
-                setUpdateToLatestReleaseErrorWithDefault(
-                    e,
-                    new FirebaseAppDistributionException(
-                        Constants.ErrorMessages.AUTHENTICATION_ERROR, AUTHENTICATION_FAILURE)));
+    if (isTesterSignedIn()) {
+      checkForNewReleaseAndUpdateIfAvailable();
+    } else {
+      signInTester()
+          .addOnSuccessListener(
+              unused -> {
+                checkForNewReleaseAndUpdateIfAvailable();
+              })
+          .addOnFailureListener(
+              e ->
+                  setUpdateToLatestReleaseErrorWithDefault(
+                      e,
+                      new FirebaseAppDistributionException(
+                          Constants.ErrorMessages.AUTHENTICATION_ERROR, AUTHENTICATION_FAILURE)));
+    }
 
     return updateToLatestReleaseTaskCompletionSource.getTask();
   }
@@ -156,17 +152,19 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
    */
   @NonNull
   public Task<AppDistributionRelease> checkForUpdate() {
-    return this.checkForUpdateClient
-        .checkForUpdate()
-        .continueWith(
-            task -> {
-              // Calling task.getResult() on a failed task will cause the Continuation to fail
-              // with the original exception. See:
-              // https://developers.google.com/android/reference/com/google/android/gms/tasks/Continuation
-              AppDistributionReleaseInternal latestRelease = task.getResult();
-              setCachedLatestRelease(latestRelease);
-              return convertToAppDistributionRelease(latestRelease);
-            });
+    if (isTesterSignedIn()) {
+      return getCheckForUpdateTask();
+    } else {
+      return signInTester()
+          .continueWithTask(
+              task -> {
+                if (task.isSuccessful()) {
+                  return getCheckForUpdateTask();
+                } else {
+                  return Tasks.forException(task.getException());
+                }
+              });
+    }
   }
 
   /**
@@ -180,6 +178,19 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
   @NonNull
   public UpdateTask updateApp() throws FirebaseAppDistributionException {
 
+    if (!isTesterSignedIn()) {
+      return new UpdateTaskImpl(
+          Tasks.forException(
+              new FirebaseAppDistributionException(
+                  Constants.ErrorMessages.AUTHENTICATION_ERROR, AUTHENTICATION_FAILURE)));
+    }
+    if (cachedLatestRelease == null) {
+      return new UpdateTaskImpl(
+          Tasks.forException(
+              new FirebaseAppDistributionException(
+                  Constants.ErrorMessages.NOT_FOUND_ERROR, UPDATE_NOT_AVAILABLE)));
+    }
+
     if (updateAppTaskCompletionSource != null
         && !updateAppTaskCompletionSource.getTask().isComplete()) {
       updateAppCancellationSource.cancel();
@@ -191,18 +202,11 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     Context context = firebaseApp.getApplicationContext();
     this.updateTask = new UpdateTaskImpl(updateAppTaskCompletionSource.getTask());
 
-    if (cachedLatestRelease == null) {
-      setUpdateAppTaskCompletionError(
-          new FirebaseAppDistributionException(
-              context.getString(R.string.no_update_available),
-              FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE));
+    if (cachedLatestRelease.getBinaryType() == BinaryType.AAB) {
+      redirectToPlayForAabUpdate(cachedLatestRelease.getDownloadUrl());
     } else {
-      if (cachedLatestRelease.getBinaryType() == BinaryType.AAB) {
-        redirectToPlayForAabUpdate(cachedLatestRelease.getDownloadUrl());
-      } else {
-        // todo: create update class when implementing APK
-        throw new UnsupportedOperationException("Not yet implemented.");
-      }
+      // todo: create update class when implementing APK
+      throw new UnsupportedOperationException("Not yet implemented.");
     }
 
     return this.updateTask;
@@ -210,14 +214,13 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
 
   /** Returns true if the App Distribution tester is signed in */
   public boolean isTesterSignedIn() {
-    // todo: implement when signIn persistence is done
-    throw new UnsupportedOperationException("Not yet implemented.");
+    return this.signInStorage.getSignInStatus();
   }
 
   /** Signs out the App Distribution tester */
   public void signOutTester() {
-    // todo: implement when signIn persistence is done
-    throw new UnsupportedOperationException("Not yet implemented.");
+    this.cachedLatestRelease = null;
+    this.signInStorage.setSignInStatus(false);
   }
 
   @Override
@@ -226,6 +229,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     // if SignInResultActivity is created, sign-in was successful
     if (activity instanceof SignInResultActivity) {
       this.testerSignInClient.setSuccessfulSignInResult();
+      this.signInStorage.setSignInStatus(true);
     }
   }
 
@@ -319,6 +323,38 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     } else {
       setUpdateToLatestReleaseTaskCompletionError(defaultFirebaseException);
     }
+  }
+
+  private Task<AppDistributionRelease> getCheckForUpdateTask() {
+    return this.checkForUpdateClient
+        .checkForUpdate()
+        .continueWith(
+            task -> {
+              // Calling task.getResult() on a failed task will cause the Continuation to fail
+              // with the original exception. See:
+              // https://developers.google.com/android/reference/com/google/android/gms/tasks/Continuation
+              AppDistributionReleaseInternal latestRelease = task.getResult();
+              setCachedLatestRelease(latestRelease);
+              return convertToAppDistributionRelease(latestRelease);
+            });
+  }
+
+  private void checkForNewReleaseAndUpdateIfAvailable() {
+    checkForUpdate()
+        .addOnSuccessListener(
+            latestRelease -> {
+              if (latestRelease != null) {
+                showUpdateAlertDialog(latestRelease);
+              } else {
+                updateToLatestReleaseTaskCompletionSource.setResult(null);
+              }
+            })
+        .addOnFailureListener(
+            e ->
+                setUpdateToLatestReleaseErrorWithDefault(
+                    e,
+                    new FirebaseAppDistributionException(
+                        Constants.ErrorMessages.NETWORK_ERROR, NETWORK_FAILURE)));
   }
 
   private void redirectToPlayForAabUpdate(String downloadUrl)
