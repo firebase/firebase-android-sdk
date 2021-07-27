@@ -23,20 +23,7 @@
 #include "crashlytics/handler/install.h"
 #include "crashlytics/handler/detail/context.h"
 #include "crashlytics/version.h"
-
-#if defined(__arm__) && defined(__ARM_ARCH_7A__)
-#define CURRENT_ABI "armeabi-v7a"
-#elif defined(__arm__)
-#define CURRENT_ABI "armeabi"
-#elif defined(__i386__)
-#define CURRENT_ABI "x86"
-#elif defined(__x86_64__)
-#define CURRENT_ABI "x86_64"
-#elif defined(__aarch64__)
-#define CURRENT_ABI "arm64-v8a"
-#else
-#error "Unsupported target abi"
-#endif
+#include "crashlytics/detail/abi.h"
 
 namespace google { namespace crashlytics { namespace detail {
 
@@ -49,14 +36,18 @@ namespace detail {
 
 bool is_at_least_q()
 {
-    char api_level[PROP_VALUE_MAX] = {};
-    if (__system_property_get("ro.build.version.sdk", api_level) && atoi(api_level) >= 29) {
-        DEBUG_OUT("API level is Q+; %s", api_level);
-        return true;
-    }
+    static bool is_at_least_q_via_property = []() {
+        char api_level[PROP_VALUE_MAX] = {};
+        if (__system_property_get("ro.build.version.sdk", api_level) && atoi(api_level) >= 29) {
+            DEBUG_OUT("API level is Q+; %s", api_level);
+            return true;
+        }
 
-    DEBUG_OUT("API level is pre-Q; %s", api_level);
-    return false;
+        DEBUG_OUT("API level is pre-Q; %s", api_level);
+        return false;
+    }();
+
+    return is_at_least_q_via_property;
 }
 
 int dlopen_flags()
@@ -87,6 +78,7 @@ bool self_path(std::string& self, std::string& path)
         DEBUG_OUT("dladdr failed; %s %s", info.dli_fname, dlerror());
         return false;
     }
+    
     std::string libcrashlytics_path = make_libcrashlytics_path(info);
 
     void* handle = dlopen(libcrashlytics_path.c_str(), dlopen_flags());

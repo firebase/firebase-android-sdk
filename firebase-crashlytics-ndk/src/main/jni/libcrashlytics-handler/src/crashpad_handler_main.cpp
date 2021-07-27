@@ -97,8 +97,6 @@ detail::CrashpadHandlerMainFunc load_libcrashlytics_common(const std::string& li
 {
     std::string full_path = lib_path + "libcrashlytics-common.so";
 
-    DEBUG_OUT("About to load %s", full_path.c_str());
-    
     void* common = dlopen(full_path.c_str(), RTLD_LAZY | RTLD_LOCAL);
     if (common == nullptr) {
         LOGE("Could not load libcrashlytics-common.so from %s", full_path.c_str());
@@ -123,8 +121,6 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved)
 
 jint JNI_Init(JNIEnv* env, jobject obj, jobjectArray pathsArray)
 {
-    DEBUG_OUT("JNI Entry");
-
     jsize incoming_length = env->GetArrayLength(pathsArray);
 
     char** argv = new char*[incoming_length - 1];
