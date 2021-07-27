@@ -46,7 +46,7 @@ public class KeysMap {
     String sanitizedKey = sanitizeKey(key);
     // The entry can be added if we're under the size limit or we're updating an existing entry
     if (keys.size() < maxEntries || keys.containsKey(sanitizedKey)) {
-      keys.put(sanitizedKey, sanitizeAttribute(value));
+      keys.put(sanitizedKey, value == null ? "" : sanitizeAttribute(value));
     } else {
       Logger.getLogger()
           .w(
@@ -63,7 +63,8 @@ public class KeysMap {
       String sanitizedKey = sanitizeKey(entry.getKey());
       // The entry can be added if we're under the size limit or we're updating an existing entry
       if (keys.size() < maxEntries || keys.containsKey(sanitizedKey)) {
-        keys.put(sanitizedKey, sanitizeAttribute(entry.getValue()));
+        String value = entry.getValue();
+        keys.put(sanitizedKey, value == null ? "" : sanitizeAttribute(value));
       } else {
         ++nOverLimit;
       }
@@ -87,11 +88,9 @@ public class KeysMap {
     return sanitizeAttribute(key);
   }
 
-  /** Trims the string and truncates it to maxEntryLength. */
+  /** Trims the string and truncates it to maxEntryLength, or returns null if input is null. */
   public String sanitizeAttribute(String input) {
-    if (input == null) {
-      return "";
-    } else {
+    if (input != null) {
       input = input.trim();
       if (input.length() > maxEntryLength) {
         input = input.substring(0, maxEntryLength);
