@@ -26,8 +26,10 @@ import static org.robolectric.Shadows.shadowOf;
 import android.app.ActivityManager;
 import android.app.ApplicationExitInfo;
 import android.content.Context;
+import androidx.annotation.NonNull;
 import androidx.test.core.app.ApplicationProvider;
-import com.google.firebase.crashlytics.internal.ProviderProxyNativeComponent;
+import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
+import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponentDeferredProxy;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsEventLogger;
 import com.google.firebase.crashlytics.internal.log.LogFileManager;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
@@ -35,6 +37,7 @@ import com.google.firebase.crashlytics.internal.settings.SettingsDataProvider;
 import com.google.firebase.crashlytics.internal.settings.model.FeaturesSettingsData;
 import com.google.firebase.crashlytics.internal.settings.model.Settings;
 import com.google.firebase.crashlytics.internal.unity.UnityVersionProvider;
+import com.google.firebase.inject.Deferred;
 import java.io.File;
 import java.util.Collections;
 import org.junit.Before;
@@ -56,6 +59,16 @@ public class CrashlyticsControllerRobolectricTest {
   @Mock private SessionReportingCoordinator mockSessionReportingCoordinator;
   @Mock private DataCollectionArbiter mockDataCollectionArbiter;
   @Mock private LogFileManager.DirectoryProvider mockLogFileDirecotryProvider;
+
+  private static final CrashlyticsNativeComponent MISSING_NATIVE_COMPONENT =
+      new CrashlyticsNativeComponentDeferredProxy(
+          new Deferred<CrashlyticsNativeComponent>() {
+            @Override
+            public void whenAvailable(
+                @NonNull Deferred.DeferredHandler<CrashlyticsNativeComponent> handler) {
+              // no-op
+            }
+          });
 
   @Before
   public void setUp() {
@@ -142,7 +155,7 @@ public class CrashlyticsControllerRobolectricTest {
             null,
             mockLogFileDirecotryProvider,
             mockSessionReportingCoordinator,
-            new ProviderProxyNativeComponent(() -> null),
+            MISSING_NATIVE_COMPONENT,
             mock(AnalyticsEventLogger.class));
     controller.openSession();
     return controller;
