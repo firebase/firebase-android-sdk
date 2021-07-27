@@ -17,6 +17,7 @@
 
 #include "client/crashpad_client.h"
 #include "crashlytics/config.h"
+#include "crashlytics/detail/abi.h"
 #include "crashlytics/handler/detail/context.h"
 
 namespace google { namespace crashlytics { namespace handler {
@@ -32,26 +33,6 @@ void finalize()
     DEBUG_OUT("Finalizing");
     delete GetCrashpadClient();
 }
-
-#if defined(__arm__) && defined(__ARM_ARCH_7A__)
-#define CURRENT_ABI "armeabi-v7a"
-#elif defined(__arm__)
-#define CURRENT_ABI "armeabi"
-#elif defined(__i386__)
-#define CURRENT_ABI "x86"
-#elif defined(__x86_64__)
-#define CURRENT_ABI "x86_64"
-#elif defined(__aarch64__)
-#define CURRENT_ABI "arm64-v8a"
-#else
-#error "Unsupported target abi"
-#endif
-
-#if defined(ARCH_CPU_64_BITS)
-  static constexpr bool kUse64Bit = true;
-#else
-  static constexpr bool kUse64Bit = false;
-#endif
 
 extern "C" {
 
