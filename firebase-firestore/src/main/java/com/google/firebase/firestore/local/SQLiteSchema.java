@@ -51,7 +51,7 @@ class SQLiteSchema {
    */
   static final int VERSION = 12;
 
-  // Remove this constant and increment VERSION to enable indexing support
+  // TODO(indexing): Remove this constant and increment VERSION to enable indexing support
   static final int INDEXING_SUPPORT_VERSION = VERSION + 1;
 
   /**
@@ -336,14 +336,19 @@ class SQLiteSchema {
         });
   }
 
+  /**
+   * Creates the necessary tables to support document indexing.
+   *
+   * <p>The `index_configuration` table holds the configuration for all indices. Entries in this
+   * table apply for all users. It is not possible to only enable indices for a subset of users.
+   *
+   * <p>The `index_entries` table holds the index values themselves. An index value is created for
+   * every indexed field. If there are pending mutations that affect an indexed field, an additional
+   * index entry is created per mutated field.
+   */
   private void createFieldIndex() {
-    // Create two tables to support document indexing. `index_configuration` holds the
-    // configuration for all currently active indices. All entries apply for all users and it is
-    // not possible to only enable indices for a subset of users. `field_index` holds the index
-    // values. If there are pending mutations that affect an indexed field, an additional index
-    // entry is created per mutated field.
     ifTablesDontExist(
-        new String[] {"index_configuration", "field_index"},
+        new String[] {"index_configuration", "index_entries"},
         () -> {
           db.execSQL(
               "CREATE TABLE index_configuration ("
@@ -356,7 +361,7 @@ class SQLiteSchema {
                   + "PRIMARY KEY (index_id))");
 
           db.execSQL(
-              "CREATE TABLE field_index ("
+              "CREATE TABLE index_entries ("
                   + "index_id INTEGER, "
                   + "index_value BLOB, " // field value pairs
                   + "uid TEXT, " // user id or null if there are no pending mutations
