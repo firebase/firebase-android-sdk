@@ -17,8 +17,8 @@
 #include "handler/handler_main.h"
 #include "crashlytics/detail/supplementary_file.h"
 
-extern "C"
-int CrashpadHandlerMain(int argc, char* argv[])
+extern "C" int CrashpadHandlerMain(int argc, char* argv[]) __attribute__((visibility ("default")));
+extern "C" int CrashpadHandlerMain(int argc, char* argv[])
 {
     int status = crashpad::HandlerMain(argc, argv, nullptr);
 
@@ -32,7 +32,7 @@ int CrashpadHandlerMain(int argc, char* argv[])
         google::crashlytics::write_device_info(fd);
     });
 
-    DEBUG_OUT("Done");
+    DEBUG_OUT("CrashpadHandlerMain exited with status %d", status);
 
     return status;
 }

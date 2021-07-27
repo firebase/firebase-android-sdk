@@ -20,6 +20,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.common.CommonUtils;
+import com.google.firebase.crashlytics.internal.model.StaticSessionData;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -27,7 +28,7 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
 
-class CrashpadController implements NativeComponentController {
+public class CrashpadController {
 
   @SuppressWarnings("CharsetObjectCanBeUsed") // StandardCharsets requires API level 19.
   private static final Charset UTF_8 = Charset.forName("UTF-8");
@@ -47,23 +48,28 @@ class CrashpadController implements NativeComponentController {
     this.filesManager = filesManager;
   }
 
-  @Override
-  public boolean initialize(String sessionId) {
-    boolean initSuccess = false;
+  public boolean initialize(
+      String sessionId, String generator, long startedAtSeconds, StaticSessionData sessionData) {
+
     filesManager.cleanOldSessionFileDirectories();
     final File crashReportDirectory = filesManager.getSessionFileDirectory(sessionId);
     try {
       if (crashReportDirectory != null) {
         final String crashReportPath = crashReportDirectory.getCanonicalPath();
-        initSuccess = nativeApi.initialize(crashReportPath, context.getAssets());
+        if (nativeApi.initialize(crashReportPath, context.getAssets())) {
+          writeBeginSession(sessionId, generator, startedAtSeconds);
+          writeSessionApp(sessionId, sessionData.appData());
+          writeSessionOs(sessionId, sessionData.osData());
+          writeSessionDevice(sessionId, sessionData.deviceData());
+          return true;
+        }
       }
     } catch (IOException e) {
       Logger.getLogger().e("Error initializing Crashlytics NDK", e);
     }
-    return initSuccess;
+    return false;
   }
 
-  @Override
   public boolean hasCrashDataForSession(String sessionId) {
     if (filesManager.hasSessionFileDirectory(sessionId)) {
       final File crashFile = getFilesForSession(sessionId).minidump;
@@ -72,14 +78,12 @@ class CrashpadController implements NativeComponentController {
     return false;
   }
 
-  @Override
   public boolean finalizeSession(String sessionId) {
     filesManager.deleteSessionFileDirectory(sessionId);
     filesManager.cleanOldSessionFileDirectories();
     return true;
   }
 
-  @Override
   @NonNull
   public SessionFiles getFilesForSession(String sessionId) {
     final File sessionFileDirectory = filesManager.getSessionFileDirectory(sessionId);
@@ -110,64 +114,50 @@ class CrashpadController implements NativeComponentController {
     return builder.build();
   }
 
-  @Override
   public void writeBeginSession(String sessionId, String generator, long startedAtSeconds) {
     final String json =
         SessionMetadataJsonSerializer.serializeBeginSession(sessionId, generator, startedAtSeconds);
-    writeSessionJsonFile(sessionId, json, SESSION_METADATA_FILE);
+    writeSessionJsonFile(filesManager, sessionId, json, SESSION_METADATA_FILE);
   }
 
-  @Override
-  public void writeSessionApp(
-      String sessionId,
-      String appIdentifier,
-      String versionCode,
-      String versionName,
-      String installUuid,
-      int deliveryMechanism,
-      String unityVersion) {
-    unityVersion = !TextUtils.isEmpty(unityVersion) ? unityVersion : "";
+  public void writeSessionApp(String sessionId, StaticSessionData.AppData appData) {
+    final String unityVersion =
+        !TextUtils.isEmpty(appData.unityVersion()) ? appData.unityVersion() : "";
     final String json =
         SessionMetadataJsonSerializer.serializeSessionApp(
-            appIdentifier, versionCode, versionName, installUuid, deliveryMechanism, unityVersion);
-    writeSessionJsonFile(sessionId, json, APP_METADATA_FILE);
+            appData.appIdentifier(),
+            appData.versionCode(),
+            appData.versionName(),
+            appData.installUuid(),
+            appData.deliveryMechanism(),
+            unityVersion);
+    writeSessionJsonFile(filesManager, sessionId, json, APP_METADATA_FILE);
   }
 
-  @Override
-  public void writeSessionOs(
-      String sessionId, String osRelease, String osCodeName, boolean isRooted) {
+  public void writeSessionOs(String sessionId, StaticSessionData.OsData osData) {
     final String json =
-        SessionMetadataJsonSerializer.serializeSessionOs(osRelease, osCodeName, isRooted);
-    writeSessionJsonFile(sessionId, json, OS_METADATA_FILE);
+        SessionMetadataJsonSerializer.serializeSessionOs(
+            osData.osRelease(), osData.osCodeName(), osData.isRooted());
+    writeSessionJsonFile(filesManager, sessionId, json, OS_METADATA_FILE);
   }
 
-  @Override
-  public void writeSessionDevice(
-      String sessionId,
-      int arch,
-      String model,
-      int availableProcessors,
-      long totalRam,
-      long diskSpace,
-      boolean isEmulator,
-      int state,
-      String manufacturer,
-      String modelClass) {
+  public void writeSessionDevice(String sessionId, StaticSessionData.DeviceData deviceData) {
     final String json =
         SessionMetadataJsonSerializer.serializeSessionDevice(
-            arch,
-            model,
-            availableProcessors,
-            totalRam,
-            diskSpace,
-            isEmulator,
-            state,
-            manufacturer,
-            modelClass);
-    writeSessionJsonFile(sessionId, json, DEVICE_METADATA_FILE);
+            deviceData.arch(),
+            deviceData.model(),
+            deviceData.availableProcessors(),
+            deviceData.totalRam(),
+            deviceData.diskSpace(),
+            deviceData.isEmulator(),
+            deviceData.state(),
+            deviceData.manufacturer(),
+            deviceData.modelClass());
+    writeSessionJsonFile(filesManager, sessionId, json, DEVICE_METADATA_FILE);
   }
 
-  private void writeSessionJsonFile(String sessionId, String json, String fileName) {
+  private static void writeSessionJsonFile(
+      CrashFilesManager filesManager, String sessionId, String json, String fileName) {
     final File sessionDirectory = filesManager.getSessionFileDirectory(sessionId);
     final File jsonFile = new File(sessionDirectory, fileName);
     writeTextFile(jsonFile, json);

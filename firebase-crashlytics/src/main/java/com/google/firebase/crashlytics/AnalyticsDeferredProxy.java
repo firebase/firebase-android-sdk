@@ -81,6 +81,8 @@ public class AnalyticsDeferredProxy {
   private void init() {
     analyticsConnectorDeferred.whenAvailable(
         analyticsConnector -> {
+          Logger.getLogger().d("AnalyticsConnector now available.");
+
           AnalyticsConnector connector = analyticsConnector.get();
           // If FA is available, create a logger to log events from the Crashlytics origin.
           final CrashlyticsOriginAnalyticsEventLogger directAnalyticsEventLogger =
