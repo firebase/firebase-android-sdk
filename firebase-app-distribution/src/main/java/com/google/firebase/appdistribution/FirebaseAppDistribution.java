@@ -383,11 +383,17 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     AlertDialog alertDialog = new AlertDialog.Builder(currentActivity).create();
     alertDialog.setTitle(context.getString(R.string.update_dialog_title));
 
-    alertDialog.setMessage(
-        String.format(
-            "Version %s (%s) is available.",
-            latestRelease.getDisplayVersion(), latestRelease.getBuildVersion()));
+    StringBuilder message =
+        new StringBuilder(
+            String.format(
+                "Version %s (%s) is available.",
+                latestRelease.getDisplayVersion(), latestRelease.getBuildVersion()));
 
+    if (latestRelease.getReleaseNotes() != null && !latestRelease.getReleaseNotes().isEmpty()) {
+      message.append(String.format("\n\nRelease notes: %s", latestRelease.getReleaseNotes()));
+    }
+
+    alertDialog.setMessage(message);
     alertDialog.setButton(
         AlertDialog.BUTTON_POSITIVE,
         context.getString(R.string.update_yes_button),
