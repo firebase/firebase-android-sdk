@@ -77,6 +77,15 @@ public class FirebaseAppDistributionTest {
           .setDownloadUrl("https://test-url")
           .build();
 
+  private static final AppDistributionReleaseInternal TEST_RELEASE_NEWER_AAB_INTERNAL_2 =
+      AppDistributionReleaseInternal.builder()
+          .setBuildVersion("3")
+          .setDisplayVersion("3.0")
+          .setReleaseNotes("")
+          .setBinaryType(BinaryType.AAB)
+          .setDownloadUrl("https://test-url")
+          .build();
+
   private static final AppDistributionRelease TEST_RELEASE_NEWER_AAB =
       AppDistributionRelease.builder()
           .setBuildVersion("3")
@@ -282,14 +291,37 @@ public class FirebaseAppDistributionTest {
     AlertDialog updateDialog = (AlertDialog) ShadowAlertDialog.getLatestDialog();
     assertEquals(
         String.format(
-            "Version %s (%s) is available.",
-            TEST_RELEASE_NEWER_AAB.getDisplayVersion(), TEST_RELEASE_NEWER_AAB.getBuildVersion()),
+            "Version %s (%s) is available.\n\nRelease notes: %s",
+            TEST_RELEASE_NEWER_AAB.getDisplayVersion(),
+            TEST_RELEASE_NEWER_AAB.getBuildVersion(),
+            TEST_RELEASE_NEWER_AAB.getReleaseNotes()),
         shadowOf(updateDialog).getMessage().toString());
     assertTrue(updateDialog.isShowing());
     updateDialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
 
     assertThat(shadowActivity.getNextStartedActivity().getData())
         .isEqualTo(Uri.parse(TEST_RELEASE_NEWER_AAB_INTERNAL.getDownloadUrl()));
+  }
+
+  @Test
+  public void updateToLatestRelease_whenReleaseNotesEmpty_doesNotShowReleaseNotes()
+      throws Exception {
+    when(mockSignInStorage.getSignInStatus()).thenReturn(true);
+    when(mockCheckForUpdateClient.checkForUpdate())
+        .thenReturn(Tasks.forResult(TEST_RELEASE_NEWER_AAB_INTERNAL_2));
+    firebaseAppDistribution.setCachedLatestRelease(TEST_RELEASE_NEWER_AAB_INTERNAL_2);
+
+    firebaseAppDistribution.onActivityResumed(activity);
+    firebaseAppDistribution.updateToLatestRelease();
+
+    // Update flow
+    assertTrue(ShadowAlertDialog.getLatestDialog() instanceof AlertDialog);
+    AlertDialog updateDialog = (AlertDialog) ShadowAlertDialog.getLatestDialog();
+    assertEquals(
+        String.format(
+            "Version %s (%s) is available.",
+            TEST_RELEASE_NEWER_AAB.getDisplayVersion(), TEST_RELEASE_NEWER_AAB.getBuildVersion()),
+        shadowOf(updateDialog).getMessage().toString());
   }
 
   @Test
@@ -382,14 +414,14 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void isTesterSignedIn_afterSuccessfulSignIn_returnsTrue() {
+  public void signInTester_afterSuccessfulSignIn_setsSignInStatusTrue() {
     firebaseAppDistribution.onActivityCreated(mockSignInResultActivity, mockBundle);
     firebaseAppDistribution.onActivityResumed(activity);
     verify(mockSignInStorage).setSignInStatus(true);
   }
 
   @Test
-  public void isTesterSignedIn_afterSignOut_returnsFalse() {
+  public void signInTester_afterSignOut_setsSignInStatusFalse() {
     firebaseAppDistribution.onActivityCreated(mockSignInResultActivity, mockBundle);
     firebaseAppDistribution.onActivityResumed(activity);
     verify(mockSignInStorage).setSignInStatus(true);
