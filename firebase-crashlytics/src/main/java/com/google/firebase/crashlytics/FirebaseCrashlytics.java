@@ -67,7 +67,7 @@ public class FirebaseCrashlytics {
     final String appIdentifier = context.getPackageName();
     Logger.getLogger()
         .i(
-            "Initializing Firebase Crashlytics "
+            " Initializing Firebase Crashlytics "
                 + CrashlyticsCore.getVersion()
                 + " for "
                 + appIdentifier);

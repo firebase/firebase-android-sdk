@@ -23,7 +23,6 @@ import java.util.Map;
 /** Handles any key/values for metadata. */
 public class KeysMap {
 
-
   // We use synchronized methods in this class rather than a ConcurrentHashMap because the
   // getKeys() method would need to return a defensive copy in either case. So using the standard
   // HashMap with synchronized access is more straightforward, and enables us to continue allowing
