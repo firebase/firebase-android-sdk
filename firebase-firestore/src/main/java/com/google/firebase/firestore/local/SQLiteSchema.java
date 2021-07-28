@@ -51,7 +51,7 @@ class SQLiteSchema {
    */
   static final int VERSION = 12;
 
-  // Remove this constant and increment VERSION to enable indexing support
+  // TODO(indexing): Remove this constant and increment VERSION to enable indexing support
   static final int INDEXING_SUPPORT_VERSION = VERSION + 1;
 
   /**
@@ -176,7 +176,7 @@ class SQLiteSchema {
 
     if (fromVersion < INDEXING_SUPPORT_VERSION && toVersion >= INDEXING_SUPPORT_VERSION) {
       Preconditions.checkState(Persistence.INDEXING_SUPPORT_ENABLED);
-      createLocalDocumentsCollectionIndex();
+      createFieldIndex();
     }
   }
 
@@ -336,24 +336,37 @@ class SQLiteSchema {
         });
   }
 
-  // TODO(indexing): Put the schema version in this method name.
-  private void createLocalDocumentsCollectionIndex() {
+  /**
+   * Creates the necessary tables to support document indexing.
+   *
+   * <p>The `index_configuration` table holds the configuration for all indices. Entries in this
+   * table apply for all users. It is not possible to only enable indices for a subset of users.
+   *
+   * <p>The `index_entries` table holds the index values themselves. An index value is created for
+   * each field combination that matches a configured index. If there are pending mutations that
+   * affect an indexed field, an additional index entry is created per mutated field.
+   */
+  private void createFieldIndex() {
     ifTablesDontExist(
-        new String[] {"collection_index"},
+        new String[] {"index_configuration", "index_entries"},
         () -> {
-          // A per-user, per-collection index for cached documents indexed by a single field's name
-          // and value.
           db.execSQL(
-              "CREATE TABLE collection_index ("
-                  + "uid TEXT, "
-                  + "collection_path TEXT, "
-                  + "field_path TEXT, "
-                  + "field_value_type INTEGER, " // determines type of field_value fields.
-                  + "field_value_1, " // first component
-                  + "field_value_2, " // second component; required for timestamps, GeoPoints
+              "CREATE TABLE index_configuration ("
+                  + "index_id INTEGER, "
+                  + "collection_id TEXT, " // collection id
+                  + "field_paths BLOB, " // field path, direction pairs
+                  + "active INTEGER, " // whether index is active
+                  + "update_time_seconds INTEGER, " // time of last document update added to index
+                  + "update_time_nanos INTEGER, "
+                  + "PRIMARY KEY (index_id))");
+
+          db.execSQL(
+              "CREATE TABLE index_entries ("
+                  + "index_id INTEGER, "
+                  + "index_value BLOB, " // field value pairs
+                  + "uid TEXT, " // user id or null if there are no pending mutations
                   + "document_id TEXT, "
-                  + "PRIMARY KEY (uid, collection_path, field_path, field_value_type, field_value_1, "
-                  + "field_value_2, document_id))");
+                  + "PRIMARY KEY (index_id, index_value, uid, document_id))");
         });
   }
 
