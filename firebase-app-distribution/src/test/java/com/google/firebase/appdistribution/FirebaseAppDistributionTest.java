@@ -92,6 +92,7 @@ public class FirebaseAppDistributionTest {
   @Mock private InstallationTokenResult mockInstallationTokenResult;
   @Mock private TesterSignInClient mockTesterSignInClient;
   @Mock private CheckForUpdateClient mockCheckForUpdateClient;
+  @Mock private UpdateAppClient mockUpdateAppClient;
   @Mock private SignInStorage mockSignInStorage;
   @Mock private Bundle mockBundle;
   @Mock SignInResultActivity mockSignInResultActivity;
@@ -117,7 +118,11 @@ public class FirebaseAppDistributionTest {
     firebaseAppDistribution =
         spy(
             new FirebaseAppDistribution(
-                firebaseApp, mockTesterSignInClient, mockCheckForUpdateClient, mockSignInStorage));
+                firebaseApp,
+                mockTesterSignInClient,
+                mockCheckForUpdateClient,
+                mockUpdateAppClient,
+                mockSignInStorage));
 
     when(mockTesterSignInClient.signInTester(any())).thenReturn(Tasks.forResult(null));
 
