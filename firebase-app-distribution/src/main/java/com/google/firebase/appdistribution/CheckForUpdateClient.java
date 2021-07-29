@@ -40,12 +40,10 @@ class CheckForUpdateClient {
   private static final int UPDATE_THREAD_POOL_SIZE = 4;
 
   private final FirebaseApp firebaseApp;
-  private FirebaseAppDistributionTesterApiClient firebaseAppDistributionTesterApiClient;
+  private final FirebaseAppDistributionTesterApiClient firebaseAppDistributionTesterApiClient;
   private final FirebaseInstallationsApi firebaseInstallationsApi;
 
-  private TaskCompletionSource<AppDistributionReleaseInternal> checkForUpdateTaskCompletionSource =
-      null;
-  private CancellationTokenSource checkForUpdateCancellationSource;
+  Task<AppDistributionReleaseInternal> cachedCheckForUpdate = null;
   private final Executor checkForUpdateExecutor;
 
   CheckForUpdateClient(
@@ -59,31 +57,36 @@ class CheckForUpdateClient {
     this.checkForUpdateExecutor = Executors.newFixedThreadPool(UPDATE_THREAD_POOL_SIZE);
   }
 
+  CheckForUpdateClient(
+          @NonNull FirebaseApp firebaseApp,
+          @NonNull FirebaseAppDistributionTesterApiClient firebaseAppDistributionTesterApiClient,
+          @NonNull FirebaseInstallationsApi firebaseInstallationsApi,
+          @NonNull Executor executor) {
+    this.firebaseApp = firebaseApp;
+    this.firebaseAppDistributionTesterApiClient = firebaseAppDistributionTesterApiClient;
+    this.firebaseInstallationsApi = firebaseInstallationsApi;
+    // TODO: verify if this is best way to use executorservice here
+    this.checkForUpdateExecutor = executor;
+  }
+
   @NonNull
-  public Task<AppDistributionReleaseInternal> checkForUpdate() {
+  public synchronized Task<AppDistributionReleaseInternal> checkForUpdate() {
 
-    if (checkForUpdateTaskCompletionSource != null
-        && !checkForUpdateTaskCompletionSource.getTask().isComplete()) {
-      checkForUpdateCancellationSource.cancel();
+    if(cachedCheckForUpdate != null && !cachedCheckForUpdate.isComplete()) {
+      return cachedCheckForUpdate;
     }
-
-    checkForUpdateCancellationSource = new CancellationTokenSource();
-    checkForUpdateTaskCompletionSource =
-        new TaskCompletionSource<>(checkForUpdateCancellationSource.getToken());
 
     Task<String> installationIdTask = firebaseInstallationsApi.getId();
     // forceRefresh is false to get locally cached token if available
     Task<InstallationTokenResult> installationAuthTokenTask =
         firebaseInstallationsApi.getToken(false);
 
-    Tasks.whenAllSuccess(installationIdTask, installationAuthTokenTask)
-        .addOnSuccessListener(
-            tasks -> {
+    this.cachedCheckForUpdate = Tasks.whenAllSuccess(installationIdTask, installationAuthTokenTask)
+        .onSuccessTask(
+            checkForUpdateExecutor, tasks -> {
               String fid = installationIdTask.getResult();
               InstallationTokenResult installationTokenResult =
                   installationAuthTokenTask.getResult();
-              checkForUpdateExecutor.execute(
-                  () -> {
                     try {
                       AppDistributionReleaseInternal latestRelease =
                           getLatestReleaseFromClient(
@@ -91,24 +94,16 @@ class CheckForUpdateClient {
                               firebaseApp.getOptions().getApplicationId(),
                               firebaseApp.getOptions().getApiKey(),
                               installationTokenResult.getToken());
-                      updateOnUiThread(
-                          () -> {
-                            if (checkForUpdateTaskCompletionSource != null
-                                && !checkForUpdateTaskCompletionSource.getTask().isComplete())
-                              checkForUpdateTaskCompletionSource.setResult(latestRelease);
-                          });
+                      return Tasks.forResult(latestRelease);
                     } catch (FirebaseAppDistributionException ex) {
-                      updateOnUiThread(() -> setCheckForUpdateTaskCompletionError(ex));
+                      return Tasks.forException(ex);
                     }
-                  });
             })
         .addOnFailureListener(
-            e ->
-                setCheckForUpdateTaskCompletionError(
-                    new FirebaseAppDistributionException(
-                        Constants.ErrorMessages.AUTHENTICATION_ERROR, AUTHENTICATION_FAILURE, e)));
+            e -> Tasks.forException(new FirebaseAppDistributionException(
+                    Constants.ErrorMessages.AUTHENTICATION_ERROR, AUTHENTICATION_FAILURE, e)));
 
-    return checkForUpdateTaskCompletionSource.getTask();
+    return cachedCheckForUpdate;
   }
 
   @VisibleForTesting
@@ -134,18 +129,7 @@ class CheckForUpdateClient {
     }
   }
 
-  private void updateOnUiThread(Runnable runnable) {
-    HandlerCompat.createAsync(Looper.getMainLooper()).post(runnable);
-  }
-
-  private void setCheckForUpdateTaskCompletionError(FirebaseAppDistributionException e) {
-    if (checkForUpdateTaskCompletionSource != null
-        && !checkForUpdateTaskCompletionSource.getTask().isComplete()) {
-      this.checkForUpdateTaskCompletionSource.setException(e);
-    }
-  }
-
-  private boolean isNewerBuildVersion(AppDistributionReleaseInternal latestRelease) {
+  private boolean isNewerBuildVersion(AppDistributionReleaseInternal latestRelease) throws FirebaseAppDistributionException {
     return Long.parseLong(latestRelease.getBuildVersion())
         >= getInstalledAppVersionCode(firebaseApp.getApplicationContext());
   }
@@ -167,16 +151,15 @@ class CheckForUpdateClient {
                 firebaseApp.getApplicationContext()));
   }
 
-  private long getInstalledAppVersionCode(Context context) {
-    PackageInfo pInfo = null;
+  private long getInstalledAppVersionCode(Context context) throws FirebaseAppDistributionException {
+    PackageInfo pInfo;
     try {
       pInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
     } catch (PackageManager.NameNotFoundException e) {
-      checkForUpdateTaskCompletionSource.setException(
-          new FirebaseAppDistributionException(
+      throw new FirebaseAppDistributionException(
               Constants.ErrorMessages.UNKNOWN_ERROR,
               FirebaseAppDistributionException.Status.UNKNOWN,
-              e));
+              e);
     }
     return PackageInfoCompat.getLongVersionCode(pInfo);
   }

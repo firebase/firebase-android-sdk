@@ -28,6 +28,8 @@ import static org.robolectric.Shadows.shadowOf;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.os.Bundle;
+import android.os.Looper;
+
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.core.content.pm.ApplicationInfoBuilder;
 import androidx.test.core.content.pm.PackageInfoBuilder;
@@ -39,12 +41,18 @@ import com.google.firebase.appdistribution.internal.AppDistributionReleaseIntern
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
+import org.robolectric.annotation.LooperMode;
 import org.robolectric.shadows.ShadowPackageManager;
+
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 @RunWith(RobolectricTestRunner.class)
 public class CheckForUpdateClientTest {
@@ -79,6 +87,11 @@ public class CheckForUpdateClientTest {
   @Mock private FirebaseInstallationsApi mockFirebaseInstallations;
   @Mock private FirebaseAppDistributionTesterApiClient mockFirebaseAppDistributionTesterApiClient;
   @Mock private InstallationTokenResult mockInstallationTokenResult;
+
+  Executor testExecutor = Executors.newSingleThreadExecutor();
+
+//  @Rule public InstantTaskExecutorRule executorRule = new InstantTaskExecutorRule();
+
 
   @Before
   public void setup() {
@@ -120,7 +133,26 @@ public class CheckForUpdateClientTest {
 
     checkForUpdateClient =
         new CheckForUpdateClient(
-            firebaseApp, mockFirebaseAppDistributionTesterApiClient, mockFirebaseInstallations);
+            firebaseApp, mockFirebaseAppDistributionTesterApiClient, mockFirebaseInstallations, testExecutor);
+  }
+
+  @Test
+  public void checkForUpdate_succeeds() throws Exception {
+    when(mockFirebaseAppDistributionTesterApiClient.fetchLatestRelease(any(), any(), any(), any()))
+            .thenReturn(TEST_RELEASE_CURRENT);
+    when(mockFirebaseInstallations.getId()).thenReturn(Tasks.forResult(TEST_FID_1));
+    when(mockFirebaseInstallations.getToken(false))
+            .thenReturn(Tasks.forResult(mockInstallationTokenResult));
+
+    TestOnCompleteListener<AppDistributionReleaseInternal> onCompleteListener =
+            new TestOnCompleteListener<>();
+    Task<AppDistributionReleaseInternal> task = checkForUpdateClient.checkForUpdate();
+    task.addOnCompleteListener(testExecutor, onCompleteListener);
+
+    AppDistributionReleaseInternal appDistributionReleaseInternal = onCompleteListener.await();
+    assertEquals(TEST_RELEASE_CURRENT, appDistributionReleaseInternal);
+    verify(mockFirebaseInstallations, times(1)).getId();
+    verify(mockFirebaseInstallations, times(1)).getToken(false);
   }
 
   @Test
@@ -131,14 +163,13 @@ public class CheckForUpdateClientTest {
   }
 
   @Test
-  public void checkForUpdateTask_whenCalledMultipleTimes_cancelsPreviousTask() {
+  public void checkForUpdateTask_whenCalledMultipleTimes_returnsTheSameTask() {
     Task<AppDistributionReleaseInternal> checkForUpdateTask1 =
         checkForUpdateClient.checkForUpdate();
     Task<AppDistributionReleaseInternal> checkForUpdateTask2 =
         checkForUpdateClient.checkForUpdate();
 
-    assertTrue(checkForUpdateTask1.isCanceled());
-    assertFalse(checkForUpdateTask2.isComplete());
+    assertEquals(checkForUpdateTask1, checkForUpdateTask2);
   }
 
   @Test
