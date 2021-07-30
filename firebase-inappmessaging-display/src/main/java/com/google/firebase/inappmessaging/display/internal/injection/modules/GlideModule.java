@@ -12,26 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.inappmessaging.display.internal.injection.components;
+package com.google.firebase.inappmessaging.display.internal.injection.modules;
 
-import com.google.firebase.inappmessaging.display.FirebaseInAppMessagingDisplay;
-import com.google.firebase.inappmessaging.display.internal.FiamImageLoader;
+import android.app.Application;
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.RequestManager;
 import com.google.firebase.inappmessaging.display.internal.GlideErrorListener;
-import com.google.firebase.inappmessaging.display.internal.injection.modules.GlideModule;
-import com.google.firebase.inappmessaging.display.internal.injection.modules.HeadlessInAppMessagingModule;
 import com.google.firebase.inappmessaging.display.internal.injection.scopes.FirebaseAppScope;
-import dagger.Component;
+import dagger.Module;
+import dagger.Provides;
 
 /** @hide */
-@FirebaseAppScope
-@Component(
-    dependencies = {UniversalComponent.class},
-    modules = {HeadlessInAppMessagingModule.class, GlideModule.class})
-public interface AppComponent {
+@Module
+public class GlideModule {
+  @Provides
   @FirebaseAppScope
-  FirebaseInAppMessagingDisplay providesFirebaseInAppMessagingUI();
-
-  GlideErrorListener glideErrorListener();
-
-  FiamImageLoader fiamImageLoader();
+  RequestManager providesGlideRequestManager(
+      Application application, GlideErrorListener glideErrorListener) {
+    return Glide.with(application).addDefaultRequestListener(glideErrorListener);
+  }
 }

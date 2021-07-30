@@ -96,6 +96,18 @@ android.libraryVariants.all { variant ->
         variant.buildConfigField("boolean", "USE_EMULATOR_FOR_TESTS", "true")
     }
 
+    def localProps = new Properties()
+
+    try {
+    file("local.properties").withInputStream { localProps.load(it) }
+    } catch (FileNotFoundException e) {
+    }
+
+    if (localProps['firestoreEnableIndexing']) {
+        variant.buildConfigField("boolean", "ENABLE_INDEXING", "true")
+    } else {
+        variant.buildConfigField("boolean", "ENABLE_INDEXING", "false")
+    }
 }
 
 configurations.all {

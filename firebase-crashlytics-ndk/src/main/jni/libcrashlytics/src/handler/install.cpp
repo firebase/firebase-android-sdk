@@ -19,12 +19,11 @@
 
 #include <sys/system_properties.h>
 
-#include "client/crashpad_client.h"
-
 #include "crashlytics/config.h"
 #include "crashlytics/handler/install.h"
 #include "crashlytics/handler/detail/context.h"
 #include "crashlytics/version.h"
+#include "crashlytics/detail/abi.h"
 
 namespace google { namespace crashlytics { namespace detail {
 
@@ -35,52 +34,111 @@ extern int open(const char* filename);
 namespace google { namespace crashlytics { namespace handler {
 namespace detail {
 
-crashpad::CrashpadClient* GetCrashpadClient() {
-    static crashpad::CrashpadClient* client = new crashpad::CrashpadClient();
-    return client;
+bool is_at_least_q()
+{
+    static bool is_at_least_q_via_property = []() {
+        char api_level[PROP_VALUE_MAX] = {};
+        if (__system_property_get("ro.build.version.sdk", api_level) && atoi(api_level) >= 29) {
+            DEBUG_OUT("API level is Q+; %s", api_level);
+            return true;
+        }
+
+        DEBUG_OUT("API level is pre-Q; %s", api_level);
+        return false;
+    }();
+
+    return is_at_least_q_via_property;
 }
 
-void finalize()
+int dlopen_flags()
 {
-    DEBUG_OUT("Finalizing");
-    delete GetCrashpadClient();
+    return is_at_least_q() ? RTLD_NOLOAD | RTLD_LAZY : RTLD_LAZY;
+}
+
+bool ends_with(const std::string& path, const std::string& suffix)
+{
+    return std::equal(suffix.rbegin(), suffix.rend(), path.rbegin());
+}
+
+std::string make_libcrashlytics_path(const Dl_info& info)
+{
+    std::string path = info.dli_fname;
+
+    if (is_at_least_q() || path.rfind("!/lib") != std::string::npos || ends_with(path, ".so")) {
+        return path;
+    }
+
+    return path + "!/lib/" + CURRENT_ABI + "/libcrashlytics.so";
+}
+
+bool self_path(std::string& self, std::string& path)
+{
+    Dl_info info;
+    if (dladdr(reinterpret_cast<void*>(&self_path), &info) == 0) {
+        DEBUG_OUT("dladdr failed; %s %s", info.dli_fname, dlerror());
+        return false;
+    }
+    
+    std::string libcrashlytics_path = make_libcrashlytics_path(info);
+
+    void* handle = dlopen(libcrashlytics_path.c_str(), dlopen_flags());
+    if (handle == nullptr) {
+        DEBUG_OUT("dlopen failed; %s %s", libcrashlytics_path.c_str(), dlerror());
+        return false;
+    }
+    if (dlsym(handle, "CrashpadHandlerMain") == nullptr) {
+        DEBUG_OUT("Failed to find CrashpadHandlerMain; %s %s", info.dli_fname, dlerror());
+        return false;
+    }
+
+    size_t libdir_end = libcrashlytics_path.rfind('/');
+
+    self = libcrashlytics_path;
+    path = libdir_end == std::string::npos
+        ? ""
+        : std::string(libcrashlytics_path, 0, libdir_end + 1);
+
+    return true;
+}
+
+void* load_crashlytics_common()
+{
+    std::string self;
+    std::string path;
+
+    if (!self_path(self, path)) {
+        LOGE("Could not find self when loading libcrashlytics-common.so");
+        return nullptr;
+    }
+
+    std::string libcrashlytics_common_path =
+        path + "libcrashlytics-common.so";
+
+    void* common = dlopen(libcrashlytics_common_path.c_str(), RTLD_LAZY | RTLD_LOCAL);
+    if (common == nullptr) {
+        LOGE("Could not load libcrashlytics-common.so");
+    }
+
+    return common;
+}
+
+template<typename Func>
+Func load_crashlytics_common_func(void* common, const std::string& func_name)
+{
+    if (common == nullptr) {
+        return nullptr;
+    }
+
+    void* func_ptr = dlsym(common, func_name.c_str());
+    if (func_ptr == nullptr) {
+        LOGE("Could not find %s in libcrashlytics-common.so", func_name.c_str());
+        return nullptr;
+    }
+
+    return reinterpret_cast<Func>(func_ptr);
 }
 
 } // namespace detail
-
-#if defined(__arm__) && defined(__ARM_ARCH_7A__)
-#define CURRENT_ABI "armeabi-v7a"
-#elif defined(__arm__)
-#define CURRENT_ABI "armeabi"
-#elif defined(__i386__)
-#define CURRENT_ABI "x86"
-#elif defined(__mips__)
-#define CURRENT_ABI "mips"
-#elif defined(__x86_64__)
-#define CURRENT_ABI "x86_64"
-#elif defined(__aarch64__)
-#define CURRENT_ABI "arm64-v8a"
-#else
-#error "Unsupported target abi"
-#endif
-
-#if defined(ARCH_CPU_64_BITS)
-  static constexpr bool kUse64Bit = true;
-#else
-  static constexpr bool kUse64Bit = false;
-#endif
-
-bool is_at_least_q()
-{
-    char api_level[PROP_VALUE_MAX] = {};
-    if (__system_property_get("ro.build.version.sdk", api_level) && atoi(api_level) >= 29) {
-        DEBUG_OUT("API level is Q+; %s", api_level);
-        return true;
-    }
-
-    DEBUG_OUT("API level is pre-Q; %s", api_level);
-    return false;
-}
 
 // Constructs paths to a handler trampoline executable and a library exporting
 // the symbol `CrashpadHandlerMain()`. This requires this function to be built
@@ -88,37 +146,36 @@ bool is_at_least_q()
 // adjacent to it.
 bool get_handler_trampoline(std::string& handler_trampoline, std::string& handler_library)
 {
+    std::string self;
+    std::string path;
+
     // The linker doesn't support loading executables passed on its command
     // line until Q.
-    if (!is_at_least_q()) {
+    if (!detail::is_at_least_q() || !detail::self_path(self, path)) {
         return false;
     }
 
-    Dl_info info;
-    if (dladdr(reinterpret_cast<void*>(&get_handler_trampoline), &info) == 0 ||
-        dlsym(dlopen(info.dli_fname, RTLD_NOLOAD | RTLD_LAZY),
-                "CrashpadHandlerMain") == nullptr) {
-
-        DEBUG_OUT("Unable to find CrashpadHandlerMain; %s", info.dli_fname);
-        return false;
-    }
-
-    DEBUG_OUT("Path for libcrashlytics.so is %s", info.dli_fname);
-
-    std::string local_handler_library { info.dli_fname };
-
-    size_t libdir_end = local_handler_library.rfind('/');
-    if (libdir_end == std::string::npos) {
-        DEBUG_OUT("Unable to find '/' in %s", local_handler_library.c_str());
-        return false;
-    }
-
-    std::string local_handler_trampoline(local_handler_library, 0, libdir_end + 1);
-    local_handler_trampoline += "libcrashlytics-trampoline.so";
+    std::string local_handler_trampoline = path + "libcrashlytics-trampoline.so";
 
     handler_trampoline.swap(local_handler_trampoline);
-    handler_library.swap(local_handler_library);
+    handler_library.swap(self);
     return true;
+}
+
+bool install_signal_handler_java(
+    const std::vector<std::string>* env,
+    const detail::context& handler_context)
+{
+    using InstallSignalHandlerJava = bool (*)(
+        const std::vector<std::string>* env,
+        const detail::context& handler_context);
+
+    InstallSignalHandlerJava install =
+        detail::load_crashlytics_common_func<InstallSignalHandlerJava>(
+            detail::load_crashlytics_common(),
+            "install_signal_handler_java");
+    
+    return install && install(env, handler_context);
 }
 
 bool install_signal_handler_linker(
@@ -126,39 +183,20 @@ bool install_signal_handler_linker(
     const detail::context& handler_context,
     const std::string& handler_trampoline,
     const std::string& handler_library)
-{   
-    base::FilePath database { handler_context.filename };
-    base::FilePath metrics_dir;
-    
-    std::string url;
-    std::map<std::string, std::string> annotations;
-    std::vector<std::string> arguments;
-
-    DEBUG_OUT("Installing Crashpad handler via trampoline");
-
-    return detail::GetCrashpadClient()->StartHandlerWithLinkerAtCrash(
-        handler_trampoline, handler_library, 
-        kUse64Bit, env, database, metrics_dir, url, annotations, arguments
-    );
-}
-
-bool install_signal_handler_java(
-    const std::vector<std::string>* env,
-    const detail::context& handler_context)
 {
-    std::string class_name = "com/google/firebase/crashlytics/ndk/CrashpadMain";
-    
-    base::FilePath database(handler_context.filename);
-    base::FilePath metrics_dir;
-    
-    std::string url;
-    std::map<std::string, std::string> annotations;
-    std::vector<std::string> arguments;
+    using InstallSignalHandlerLinker = bool (*)(
+        const std::vector<std::string>* env,
+        const detail::context& handler_context,
+        const std::string& handler_trampoline,
+        const std::string& handler_library);
 
-    DEBUG_OUT("Installing Java Crashpad handler");
-
-    return detail::GetCrashpadClient()->StartJavaHandlerAtCrash(
-        class_name, env, database, metrics_dir, url, annotations, arguments);
+    InstallSignalHandlerLinker install =
+        detail::load_crashlytics_common_func<InstallSignalHandlerLinker>(
+            detail::load_crashlytics_common(),
+            "install_signal_handler_linker");
+    
+    return install &&
+        install(env, handler_context, handler_trampoline, handler_library);
 }
 
 bool install_signal_handler(const detail::context& handler_context)
@@ -174,6 +212,11 @@ bool install_signal_handler(const detail::context& handler_context)
     env->push_back("LD_LIBRARY_PATH=" + lib_path);
     env->push_back("ANDROID_DATA=/data");
 
+    std::string self;
+    std::string path;
+    detail::self_path(self, path);
+    env->push_back(path);
+
     bool use_java_handler = !get_handler_trampoline(handler_trampoline, handler_library);
 
     return use_java_handler
@@ -186,13 +229,24 @@ bool install_handlers(detail::context handler_context)
     DEBUG_OUT("!!Crashlytics is in debug mode!!");
     DEBUG_OUT("Path is %s", handler_context.filename);
 
-    atexit(detail::finalize);
-
     LOGD("Initializing libcrashlytics version %s", VERSION);
     return install_signal_handler(handler_context);
 }
 
 }}}
+
+extern "C" int CrashpadHandlerMain(int argc, char* argv[]) __attribute__((visibility ("default")));
+extern "C" int CrashpadHandlerMain(int argc, char* argv[])
+{
+    using CrashpadHandlerMainFunc = int (*)(int, char **);
+    using namespace google::crashlytics::handler;
+
+    CrashpadHandlerMainFunc handler_main =
+        detail::load_crashlytics_common_func<CrashpadHandlerMainFunc>(
+            detail::load_crashlytics_common(), "CrashpadHandlerMain");
+    
+    return handler_main ? handler_main(argc, argv) : -1;
+}
 
 #if defined (CRASHLYTICS_DEBUG)
 //! When building in debug, we can search for this symbol in the output of readelf or objdump, to verify

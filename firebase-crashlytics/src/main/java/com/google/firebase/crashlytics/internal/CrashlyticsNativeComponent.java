@@ -15,48 +15,20 @@
 package com.google.firebase.crashlytics.internal;
 
 import androidx.annotation.NonNull;
+import com.google.firebase.crashlytics.internal.model.StaticSessionData;
 
 public interface CrashlyticsNativeComponent {
 
   boolean hasCrashDataForSession(@NonNull String sessionId);
 
-  // TODO: Consider what to do with the rest of the lifecycle if openSession fails.
-  boolean openSession(@NonNull String sessionId);
+  void openSession(
+      @NonNull String sessionId,
+      @NonNull String generator,
+      long startedAtSeconds,
+      @NonNull StaticSessionData sessionData);
 
-  // TODO: Consider whether these methods should return boolean or throw exceptions.
-
-  boolean finalizeSession(@NonNull String sessionId);
+  void finalizeSession(@NonNull String sessionId);
 
   @NonNull
   NativeSessionFileProvider getSessionFileProvider(@NonNull String sessionId);
-
-  void writeBeginSession(
-      @NonNull String sessionId, @NonNull String generator, long startedAtSeconds);
-
-  void writeSessionApp(
-      @NonNull String sessionId,
-      @NonNull String appIdentifier,
-      @NonNull String versionCode,
-      @NonNull String versionName,
-      @NonNull String installUuid,
-      int deliveryMechanism,
-      @NonNull String unityVersion);
-
-  void writeSessionOs(
-      @NonNull String sessionId,
-      @NonNull String osRelease,
-      @NonNull String osCodeName,
-      boolean isRooted);
-
-  void writeSessionDevice(
-      @NonNull String sessionId,
-      int arch,
-      @NonNull String model,
-      int availableProcessors,
-      long totalRam,
-      long diskSpace,
-      boolean isEmulator,
-      int state,
-      @NonNull String manufacturer,
-      @NonNull String modelClass);
 }

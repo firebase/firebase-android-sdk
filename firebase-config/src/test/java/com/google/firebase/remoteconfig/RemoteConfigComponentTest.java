@@ -127,7 +127,7 @@ public class RemoteConfigComponentTest {
         getNewFrcComponent()
             .getFetchHandler(DEFAULT_NAMESPACE, mockFetchedCache, mockMetadataClient);
 
-    assertThat(fetchHandler.getAnalyticsConnector()).isNull();
+    assertThat(fetchHandler.getAnalyticsConnector().get()).isNull();
   }
 
   @Test
