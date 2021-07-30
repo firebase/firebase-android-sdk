@@ -28,42 +28,42 @@ import java.util.concurrent.TimeUnit;
  * allowing the main thread to be woken up when the Tasks complete.
  */
 public class TestOnCompleteListener<TResult> implements OnCompleteListener<TResult> {
-    private static final long TIMEOUT_MS = 5000;
-    private final CountDownLatch latch = new CountDownLatch(1);
-    private volatile TResult result;
-    private volatile Exception exception;
-    private volatile boolean successful;
+  private static final long TIMEOUT_MS = 5000;
+  private final CountDownLatch latch = new CountDownLatch(1);
+  private volatile TResult result;
+  private volatile Exception exception;
+  private volatile boolean successful;
 
-    @Override
-    public void onComplete(@NonNull Task<TResult> task) {
-        successful = task.isSuccessful();
-        if (successful) {
-            result = task.getResult();
-        } else {
-            exception = task.getException();
-        }
-        latch.countDown();
+  @Override
+  public void onComplete(@NonNull Task<TResult> task) {
+    successful = task.isSuccessful();
+    if (successful) {
+      result = task.getResult();
+    } else {
+      exception = task.getException();
     }
+    latch.countDown();
+  }
 
-    /** Blocks until the {@link #onComplete} is called. */
-    public TResult await() throws InterruptedException, ExecutionException, FirebaseAppDistributionException {
-        if (!latch.await(TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
-            throw new InterruptedException("timed out waiting for result");
-        }
-        if (successful) {
-            return result;
-        } else {
-            if (exception instanceof InterruptedException) {
-                throw (InterruptedException) exception;
-            }
-            if (exception instanceof FirebaseAppDistributionException) {
-                throw (FirebaseAppDistributionException) exception;
-            }
-            if (exception instanceof IOException) {
-                throw new ExecutionException(exception);
-            }
-            throw new IllegalStateException("got an unexpected exception type", exception);
-        }
+  /** Blocks until the {@link #onComplete} is called. */
+  public TResult await()
+      throws InterruptedException, ExecutionException, FirebaseAppDistributionException {
+    if (!latch.await(TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
+      throw new InterruptedException("timed out waiting for result");
     }
+    if (successful) {
+      return result;
+    } else {
+      if (exception instanceof InterruptedException) {
+        throw (InterruptedException) exception;
+      }
+      if (exception instanceof FirebaseAppDistributionException) {
+        throw (FirebaseAppDistributionException) exception;
+      }
+      if (exception instanceof IOException) {
+        throw new ExecutionException(exception);
+      }
+      throw new IllegalStateException("got an unexpected exception type", exception);
+    }
+  }
 }
-

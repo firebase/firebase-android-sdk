@@ -19,14 +19,10 @@ import static com.google.firebase.appdistribution.FirebaseAppDistributionExcepti
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.os.Looper;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.content.pm.PackageInfoCompat;
-import androidx.core.os.HandlerCompat;
-import com.google.android.gms.tasks.CancellationTokenSource;
 import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appdistribution.internal.AppDistributionReleaseInternal;
@@ -58,10 +54,10 @@ class CheckForUpdateClient {
   }
 
   CheckForUpdateClient(
-          @NonNull FirebaseApp firebaseApp,
-          @NonNull FirebaseAppDistributionTesterApiClient firebaseAppDistributionTesterApiClient,
-          @NonNull FirebaseInstallationsApi firebaseInstallationsApi,
-          @NonNull Executor executor) {
+      @NonNull FirebaseApp firebaseApp,
+      @NonNull FirebaseAppDistributionTesterApiClient firebaseAppDistributionTesterApiClient,
+      @NonNull FirebaseInstallationsApi firebaseInstallationsApi,
+      @NonNull Executor executor) {
     this.firebaseApp = firebaseApp;
     this.firebaseAppDistributionTesterApiClient = firebaseAppDistributionTesterApiClient;
     this.firebaseInstallationsApi = firebaseInstallationsApi;
@@ -72,7 +68,7 @@ class CheckForUpdateClient {
   @NonNull
   public synchronized Task<AppDistributionReleaseInternal> checkForUpdate() {
 
-    if(cachedCheckForUpdate != null && !cachedCheckForUpdate.isComplete()) {
+    if (cachedCheckForUpdate != null && !cachedCheckForUpdate.isComplete()) {
       return cachedCheckForUpdate;
     }
 
@@ -81,27 +77,33 @@ class CheckForUpdateClient {
     Task<InstallationTokenResult> installationAuthTokenTask =
         firebaseInstallationsApi.getToken(false);
 
-    this.cachedCheckForUpdate = Tasks.whenAllSuccess(installationIdTask, installationAuthTokenTask)
-        .onSuccessTask(
-            checkForUpdateExecutor, tasks -> {
-              String fid = installationIdTask.getResult();
-              InstallationTokenResult installationTokenResult =
-                  installationAuthTokenTask.getResult();
-                    try {
-                      AppDistributionReleaseInternal latestRelease =
-                          getLatestReleaseFromClient(
-                              fid,
-                              firebaseApp.getOptions().getApplicationId(),
-                              firebaseApp.getOptions().getApiKey(),
-                              installationTokenResult.getToken());
-                      return Tasks.forResult(latestRelease);
-                    } catch (FirebaseAppDistributionException ex) {
-                      return Tasks.forException(ex);
-                    }
-            })
-        .addOnFailureListener(
-            e -> Tasks.forException(new FirebaseAppDistributionException(
-                    Constants.ErrorMessages.AUTHENTICATION_ERROR, AUTHENTICATION_FAILURE, e)));
+    this.cachedCheckForUpdate =
+        Tasks.whenAllSuccess(installationIdTask, installationAuthTokenTask)
+            .onSuccessTask(
+                checkForUpdateExecutor,
+                tasks -> {
+                  String fid = installationIdTask.getResult();
+                  InstallationTokenResult installationTokenResult =
+                      installationAuthTokenTask.getResult();
+                  try {
+                    AppDistributionReleaseInternal latestRelease =
+                        getLatestReleaseFromClient(
+                            fid,
+                            firebaseApp.getOptions().getApplicationId(),
+                            firebaseApp.getOptions().getApiKey(),
+                            installationTokenResult.getToken());
+                    return Tasks.forResult(latestRelease);
+                  } catch (FirebaseAppDistributionException ex) {
+                    return Tasks.forException(ex);
+                  }
+                })
+            .addOnFailureListener(
+                e ->
+                    Tasks.forException(
+                        new FirebaseAppDistributionException(
+                            Constants.ErrorMessages.AUTHENTICATION_ERROR,
+                            AUTHENTICATION_FAILURE,
+                            e)));
 
     return cachedCheckForUpdate;
   }
@@ -129,7 +131,8 @@ class CheckForUpdateClient {
     }
   }
 
-  private boolean isNewerBuildVersion(AppDistributionReleaseInternal latestRelease) throws FirebaseAppDistributionException {
+  private boolean isNewerBuildVersion(AppDistributionReleaseInternal latestRelease)
+      throws FirebaseAppDistributionException {
     return Long.parseLong(latestRelease.getBuildVersion())
         >= getInstalledAppVersionCode(firebaseApp.getApplicationContext());
   }
@@ -157,9 +160,9 @@ class CheckForUpdateClient {
       pInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
     } catch (PackageManager.NameNotFoundException e) {
       throw new FirebaseAppDistributionException(
-              Constants.ErrorMessages.UNKNOWN_ERROR,
-              FirebaseAppDistributionException.Status.UNKNOWN,
-              e);
+          Constants.ErrorMessages.UNKNOWN_ERROR,
+          FirebaseAppDistributionException.Status.UNKNOWN,
+          e);
     }
     return PackageInfoCompat.getLongVersionCode(pInfo);
   }
