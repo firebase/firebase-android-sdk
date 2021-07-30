@@ -1,5 +1,6 @@
 # Firebase Android Open Source Development
-
+@VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+void myMethod() { ... }
 This repository contains a subset of the Firebase Android SDK source. It
 currently includes the following Firebase libraries, and some of their
 dependencies:
