@@ -43,10 +43,6 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
   private final CheckForUpdateClient checkForUpdateClient;
   private final UpdateAppClient updateAppClient;
   private Activity currentActivity;
-
-  private TaskCompletionSource<UpdateState> updateAppTaskCompletionSource = null;
-  private CancellationTokenSource updateAppCancellationSource;
-  private UpdateTaskImpl updateTask;
   private AppDistributionReleaseInternal cachedLatestRelease;
 
   private TaskCompletionSource<AppDistributionRelease> updateToLatestReleaseTaskCompletionSource =
@@ -79,7 +75,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
         new TesterSignInClient(firebaseApp, firebaseInstallationsApi),
         new CheckForUpdateClient(
             firebaseApp, new FirebaseAppDistributionTesterApiClient(), firebaseInstallationsApi),
-        new UpdateAppClient(firebaseApp.getApplicationContext()),
+        new UpdateAppClient(firebaseApp),
         new SignInStorage(firebaseApp.getApplicationContext()));
   }
 
