@@ -77,7 +77,43 @@ tests may be used to support changes.
 > To run with errorprone add `withErrorProne` to the command line, e.g.
 >
 > `./gradlew :<firebase-project>:check withErrorProne`.
+Write your tests
+After you've configured your testing environment, it's time to write tests that evaluate your app's functionality. This section describes how to write small, medium, and large tests.
 
+Levels of the Testing Pyramid
+A pyramid containing three layers
+Figure 2. The Testing Pyramid, showing the three categories of tests that you should include in your app's test suite
+The Testing Pyramid, shown in Figure 2, illustrates how your app should include the three categories of tests: small, medium, and large:
+
+Small tests are unit tests that validate your app's behavior one class at a time.
+Medium tests are integration tests that validate either interactions between levels of the stack within a module, or interactions between related modules.
+Large tests are end-to-end tests that validate user journeys spanning multiple modules of your app.
+As you work up the pyramid, from small tests to large tests, each test increases in fidelity but also increases in execution time and effort to maintain and debug. Therefore, you should write more unit tests than integration tests, and more integration tests than end-to-end tests. Although the proportion of tests for each category can vary based on your app's use cases, we generally recommend the following split among the categories: 70 percent small, 20 percent medium, and 10 percent large.
+
+To learn more about the Android Testing Pyramid, see the Test-Driven Development on Android session video from Google I/O 2017, starting at 1:51.
+
+Write small tests
+The small tests that you write should be highly-focused unit tests that exhaustively validate the functionality and contracts of each class within your app.
+
+As you add and change methods within a particular class, create and run unit tests against them. If these tests depend on the Android framework, use a unified, device-agnostic API, such as the androidx.test APIs. This consistency allows you to run your test locally without a physical device or emulator.
+
+If your tests rely on resources, enable the includeAndroidResources option in your app's build.gradle file. Your unit tests can then access compiled versions of your resources, allowing the tests to run more quickly and accurately.
+
+app/build.gradle
+
+Groovy
+Kotlin
+
+android {
+    // ...
+
+    testOptions {
+        unitTests {
+            includeAndroidResources = true
+        }
+    }
+}
+Note: Android Studio 3.4 and higher provide compiled versions of your resources by default.
 ### Unit Testing
 
 These are tests that run on your machine's local Java Virtual Machine (JVM). At
