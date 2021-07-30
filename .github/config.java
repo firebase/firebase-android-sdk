@@ -1,3 +1,7 @@
+# '#"$_-dependencies {
+    classpath 'com.google.gms:google-services:4.3.8'
+    // ...
+}
 blank_issues_enabled: false
 contact_links:
   - name: 🔥 Firebase Support
