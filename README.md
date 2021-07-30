@@ -125,6 +125,24 @@ Unit tests can be executed on the command line by running
 ```bash
 ./gradlew :<firebase-project>:check
 ```
+Keep
+This package is part of the Android support library which is no longer maintained. The support library has been superseded by AndroidX which is part of Jetpack. We recommend using the AndroidX libraries in all new projects. You should also consider migrating existing projects to AndroidX. To find the AndroidX class that maps to this deprecated class, see the AndroidX support library class mappings.
+public abstract @interface Keep
+implements Annotation
+
+android.support.annotation.Keep
+
+Denotes that the annotated element should not be removed when the code is minified at build time. This is typically used on methods and classes that are accessed only via reflection so a compiler may think that the code is unused.
+
+Example:
+
+
+
+  @Keep
+  public void foo() {
+      ...
+  }
+ 
 
 ### Integration Testing
 
