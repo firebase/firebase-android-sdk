@@ -27,11 +27,11 @@ import android.net.Uri;
 import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.browser.customtabs.CustomTabsIntent;
-import com.google.android.gms.tasks.CancellationTokenSource;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appdistribution.Constants.ErrorMessages;
 import com.google.firebase.installations.FirebaseInstallationsApi;
@@ -41,27 +41,32 @@ class TesterSignInClient {
   private static final String TAG = "FADSignInTester";
 
   private TaskCompletionSource<Void> signInTaskCompletionSource = null;
-  private CancellationTokenSource signInCancellationSource;
   private final String SIGNIN_REDIRECT_URL =
       "https://appdistribution.firebase.google.com/pub/testerapps/%s/installations/%s/buildalerts?appName=%s&packageName=%s";
   private final FirebaseApp firebaseApp;
   private final FirebaseInstallationsApi firebaseInstallationsApi;
+  private final SignInStorage signInStorage;
 
   TesterSignInClient(
       @NonNull FirebaseApp firebaseApp,
-      @NonNull FirebaseInstallationsApi firebaseInstallationsApi) {
+      @NonNull FirebaseInstallationsApi firebaseInstallationsApi,
+      @NonNull final SignInStorage signInStorage) {
     this.firebaseApp = firebaseApp;
     this.firebaseInstallationsApi = firebaseInstallationsApi;
+    this.signInStorage = signInStorage;
   }
 
   @NonNull
-  public Task<Void> signInTester(@NonNull Activity currentActivity) {
-    if (this.isCurrentlySigningIn()) {
-      signInCancellationSource.cancel();
+  public synchronized Task<Void> signInTester(@NonNull Activity currentActivity) {
+    if (signInStorage.getSignInStatus()) {
+      return Tasks.forResult(null);
     }
 
-    signInCancellationSource = new CancellationTokenSource();
-    signInTaskCompletionSource = new TaskCompletionSource<>(signInCancellationSource.getToken());
+    if (this.isCurrentlySigningIn()) {
+      return signInTaskCompletionSource.getTask();
+    }
+
+    signInTaskCompletionSource = new TaskCompletionSource<>();
 
     AlertDialog alertDialog = getSignInAlertDialog(currentActivity);
     alertDialog.show();
