@@ -16,10 +16,8 @@ package com.google.firebase.firestore.local;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
-import android.database.Cursor;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.ResourcePath;
-import com.google.firebase.firestore.util.Function;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -75,14 +73,7 @@ final class SQLiteIndexManager implements IndexManager {
   public void addFieldIndex(FieldIndex index) {
     int currentMax =
         db.query("SELECT MAX(index_id) FROM index_configuration")
-            .firstValue(
-                new Function<Cursor, Integer>() {
-                  @javax.annotation.Nullable
-                  @Override
-                  public Integer apply(@javax.annotation.Nullable Cursor input) {
-                    return input.isNull(0) ? 0 : input.getInt(0);
-                  }
-                });
+            .firstValue(input -> input.isNull(0) ? 0 : input.getInt(0));
 
     db.execute(
         "INSERT OR IGNORE INTO index_configuration ("

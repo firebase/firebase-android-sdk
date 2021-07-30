@@ -292,7 +292,8 @@ public final class LocalSerializer {
 
   public Index encodeFieldIndex(FieldIndex fieldIndex) {
     Index.Builder index = Index.newBuilder();
-    // The Mobile SDKs treat all indices as collectiong group indices.
+    // The Mobile SDKs treat all indices as collection group indices, as we run all collection group
+    // queries against each collection separately.
     index.setQueryScope(Index.QueryScope.COLLECTION_GROUP);
 
     for (FieldIndex.Segment segment : fieldIndex) {

@@ -312,11 +312,11 @@ public class FirebaseFirestore {
             JSONObject field = fields.getJSONObject(f);
             FieldPath fieldPath = FieldPath.fromServerFormat(field.getString("fieldPath"));
             if ("CONTAINS".equals(field.optString("arrayConfig"))) {
-              fieldIndex = fieldIndex.withComponent(fieldPath, FieldIndex.Segment.Kind.CONTAINS);
+              fieldIndex = fieldIndex.withAddedField(fieldPath, FieldIndex.Segment.Kind.CONTAINS);
             } else if ("ASCENDING".equals(field.optString("order"))) {
-              fieldIndex = fieldIndex.withComponent(fieldPath, FieldIndex.Segment.Kind.ASCENDING);
+              fieldIndex = fieldIndex.withAddedField(fieldPath, FieldIndex.Segment.Kind.ASCENDING);
             } else if ("DESCENDING".equals(field.optString("order"))) {
-              fieldIndex = fieldIndex.withComponent(fieldPath, FieldIndex.Segment.Kind.DESCENDING);
+              fieldIndex = fieldIndex.withAddedField(fieldPath, FieldIndex.Segment.Kind.DESCENDING);
             } else {
               throw new IllegalArgumentException(
                   String.format(

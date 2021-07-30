@@ -31,10 +31,10 @@ import java.util.List;
  * group-scoped indices. Every index can be used for both single collection and collection group
  * queries.
  */
-public class FieldIndex implements Iterable<FieldIndex.Segment> {
+public final class FieldIndex implements Iterable<FieldIndex.Segment> {
 
   /** An index component consisting of field path and index type. */
-  public static class Segment {
+  public static final class Segment {
     /** The type of the index, e.g. for which sorting order it can be used. */
     public enum Kind {
       /** Ascending index. Can be used for <, <=, ==, >=, > and IN with ascending ordering. */
@@ -106,7 +106,7 @@ public class FieldIndex implements Iterable<FieldIndex.Segment> {
   }
 
   /** Returns a new field index with additional index segment. */
-  public FieldIndex withComponent(FieldPath fieldPath, Segment.Kind kind) {
+  public FieldIndex withAddedField(FieldPath fieldPath, Segment.Kind kind) {
     List<Segment> newSegments = new ArrayList<>(segments);
     newSegments.add(new Segment(fieldPath, kind));
     return new FieldIndex(collectionId, newSegments);
