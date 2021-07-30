@@ -19,6 +19,7 @@ import static com.google.firebase.appdistribution.FirebaseAppDistributionExcepti
 import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
+import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.CancellationTokenSource;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
@@ -32,12 +33,13 @@ public class UpdateAppClient {
   private UpdateTaskImpl updateTask;
   private FirebaseApp firebaseApp;
 
-  public UpdateAppClient(FirebaseApp firebaseApp) {
+  public UpdateAppClient(@NonNull FirebaseApp firebaseApp) {
     this.firebaseApp = firebaseApp;
   }
 
+  @NonNull
   public UpdateTask getUpdateTask(
-      AppDistributionReleaseInternal latestRelease, Activity currentActivity)
+      @NonNull AppDistributionReleaseInternal latestRelease, @NonNull Activity currentActivity)
       throws FirebaseAppDistributionException {
 
     if (latestRelease == null) {
