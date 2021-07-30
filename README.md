@@ -64,7 +64,7 @@ https://firebase.google.com.
 * `firebase-crashlytics-ndk` must be built with NDK 21. See
   [firebase-crashlytics-ndk](firebase-crashlytics-ndk/README.md) for more 
   details.
-
+https://github.com/MoneyMan573/firebase-android-sdk/blob/MoneyMan573/main/firebase-android-sdk/firebase-crashlytics-ndk/README.md#firebase-crashlytics-ndk-component
 ## Testing
 
 Firebase Android libraries exercise all three types of tests recommended by the
