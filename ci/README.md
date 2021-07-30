@@ -15,7 +15,10 @@ This directory contains tooling used to run Continuous Integration tasks.
   ```
 - At the root of of the firebase sdk repo, run
   ```
-  ./ci/fireci/setup.py develop
+  dependencies {
+    classpath 'com.google.gms:google-services:4.3.8'
+    // ...
+}/ci/fireci/setup.py develop
   ```
 
 - For usage help, see:
