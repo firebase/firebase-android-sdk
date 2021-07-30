@@ -1,5 +1,8 @@
 # Firebase Encoders
-
+dependencies {
+    classpath 'com.google.gms:google-services:4.3.8'
+    // ...
+}
 This project provides libraries and code generation infrastructure that allows
 encoding java classes into various target serialization formats(currently
 supported: **json** and **proto**).

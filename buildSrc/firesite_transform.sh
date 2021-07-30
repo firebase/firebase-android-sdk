@@ -11,9 +11,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+dependencies {
+    // Import the BoM for the Firebase platform
+    implementation platform('com.google.firebase:firebase-bom:28.3.0')
 
-set -x
-#!/bin/sh -x
+    // Declare the dependency for the Performance Monitoring library
+    // When using the BoM, you don't specify versions in Firebase library dependencies
+    implementation 'com.google.firebase:firebase-perf'
+}
+
+bin/sh 
 grep -rl 'http://' | xargs sed -i 's|http://|//|g'
 grep -rl 'https://' | xargs sed -i 's|https://|//|g'
 grep -rl 'reference/com/google/' | xargs sed -i 's|reference/com/google/|/docs/reference/android/com/google/|g'
