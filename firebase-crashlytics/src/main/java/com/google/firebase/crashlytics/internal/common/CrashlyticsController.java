@@ -13,6 +13,8 @@
 // limitations under the License.
 package com.google.firebase.crashlytics.internal.common;
 
+import android.app.ActivityManager;
+import android.app.ApplicationExitInfo;
 import android.content.Context;
 import android.os.Build;
 import android.os.Build.VERSION;
@@ -30,6 +32,7 @@ import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.NativeSessionFileProvider;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsEventLogger;
 import com.google.firebase.crashlytics.internal.log.LogFileManager;
+import com.google.firebase.crashlytics.internal.model.StaticSessionData;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.settings.SettingsDataProvider;
 import com.google.firebase.crashlytics.internal.settings.model.AppSettingsData;
@@ -37,7 +40,6 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -168,14 +170,14 @@ class CrashlyticsController {
 
     // Capture the time that the crash occurs and close over it so that the time doesn't
     // reflect when we get around to executing the task later.
-    final Date time = new Date();
+    final long timestampMillis = System.currentTimeMillis();
 
     final Task<Void> handleUncaughtExceptionTask =
         backgroundWorker.submitTask(
             new Callable<Task<Void>>() {
               @Override
               public Task<Void> call() throws Exception {
-                final long timestampSeconds = getTimestampSeconds(time);
+                final long timestampSeconds = getTimestampSeconds(timestampMillis);
 
                 final String currentSessionId = getCurrentSessionId();
                 if (currentSessionId == null) {
@@ -190,9 +192,8 @@ class CrashlyticsController {
                 reportingCoordinator.persistFatalEvent(
                     ex, thread, currentSessionId, timestampSeconds);
 
-                doWriteAppExceptionMarker(time.getTime());
-
-                doCloseSessions();
+                doWriteAppExceptionMarker(timestampMillis);
+                doCloseSessions(settingsDataProvider);
                 doOpenSession();
 
                 // If automatic data collection is disabled, we'll need to wait until the next run
@@ -397,14 +398,14 @@ class CrashlyticsController {
   void writeNonFatalException(@NonNull final Thread thread, @NonNull final Throwable ex) {
     // Capture and close over the current time, so that we get the exact call time,
     // rather than the time at which the task executes.
-    final Date time = new Date();
+    final long timestampMillis = System.currentTimeMillis();
 
     backgroundWorker.submit(
         new Runnable() {
           @Override
           public void run() {
             if (!isHandlingException()) {
-              long timestampSeconds = getTimestampSeconds(time);
+              long timestampSeconds = getTimestampSeconds(timestampMillis);
               final String currentSessionId = getCurrentSessionId();
               if (currentSessionId == null) {
                 Logger.getLogger()
@@ -434,14 +435,28 @@ class CrashlyticsController {
         return;
       }
     }
-    cacheKeyData(userMetadata.getCustomKeys());
+    cacheKeyData(userMetadata.getCustomKeys(), false);
   }
 
   void setCustomKeys(Map<String, String> keysAndValues) {
     // Write all the key/value pairs before doing anything computationally expensive.
     userMetadata.setCustomKeys(keysAndValues);
     // Once all the key/value pairs are added, update the cache.
-    cacheKeyData(userMetadata.getCustomKeys());
+    cacheKeyData(userMetadata.getCustomKeys(), false);
+  }
+
+  void setInternalKey(String key, String value) {
+    try {
+      userMetadata.setInternalKey(key, value);
+    } catch (IllegalArgumentException ex) {
+      if (context != null && CommonUtils.isAppDebuggable(context)) {
+        throw ex;
+      } else {
+        Logger.getLogger().e("Attempting to set custom attribute with null key, ignoring.");
+        return;
+      }
+    }
+    cacheKeyData(userMetadata.getInternalKeys(), true);
   }
 
   /**
@@ -475,13 +490,13 @@ class CrashlyticsController {
    * crash happens immediately after setting a value. If this becomes a problem, we can investigate
    * writing synchronously, or potentially add an explicit user-facing API for synchronous writes.
    */
-  private void cacheKeyData(final Map<String, String> keyData) {
+  private void cacheKeyData(final Map<String, String> keyData, boolean isInternal) {
     backgroundWorker.submit(
         new Callable<Void>() {
           @Override
           public Void call() throws Exception {
             final String currentSessionId = getCurrentSessionId();
-            new MetaDataStore(getFilesDir()).writeKeyData(currentSessionId, keyData);
+            new MetaDataStore(getFilesDir()).writeKeyData(currentSessionId, keyData, isInternal);
             return null;
           }
         });
@@ -522,8 +537,10 @@ class CrashlyticsController {
    *
    * <p>This method can not be called while the {@link CrashlyticsCore} settings lock is held. It
    * will result in a deadlock!
+   *
+   * @param settingsDataProvider
    */
-  boolean finalizeSessions() {
+  boolean finalizeSessions(SettingsDataProvider settingsDataProvider) {
     backgroundWorker.checkRunningOnThread();
 
     if (isHandlingException()) {
@@ -533,7 +550,7 @@ class CrashlyticsController {
 
     Logger.getLogger().v("Finalizing previously open sessions.");
     try {
-      doCloseSessions(true);
+      doCloseSessions(true, settingsDataProvider);
     } catch (Exception e) {
       Logger.getLogger().e("Unable to finalize previously open sessions.", e);
       return false;
@@ -553,26 +570,33 @@ class CrashlyticsController {
 
     Logger.getLogger().d("Opening a new session with ID " + sessionIdentifier);
 
-    nativeComponent.openSession(sessionIdentifier);
+    final String generator =
+        String.format(Locale.US, GENERATOR_FORMAT, CrashlyticsCore.getVersion());
 
-    writeBeginSession(sessionIdentifier, startedAtSeconds);
-    writeSessionApp(sessionIdentifier);
-    writeSessionOS(sessionIdentifier);
-    writeSessionDevice(sessionIdentifier);
+    StaticSessionData.AppData appData = createAppData(idManager, this.appData, unityVersion);
+    StaticSessionData.OsData osData = createOsData(getContext());
+    StaticSessionData.DeviceData deviceData = createDeviceData(getContext());
+
+    nativeComponent.openSession(
+        sessionIdentifier,
+        generator,
+        startedAtSeconds,
+        StaticSessionData.create(appData, osData, deviceData));
+
     logFileManager.setCurrentSession(sessionIdentifier);
-
     reportingCoordinator.onBeginSession(sessionIdentifier, startedAtSeconds);
   }
 
-  void doCloseSessions() {
-    doCloseSessions(false);
+  void doCloseSessions(SettingsDataProvider settingsDataProvider) {
+    doCloseSessions(false, settingsDataProvider);
   }
 
   /**
    * Not synchronized/locked. Must be executed from the single thread executor service used by this
    * class.
    */
-  private void doCloseSessions(boolean skipCurrentSession) {
+  private void doCloseSessions(
+      boolean skipCurrentSession, SettingsDataProvider settingsDataProvider) {
     final int offset = skipCurrentSession ? 1 : 0;
 
     List<String> sortedOpenSessions = reportingCoordinator.listSortedOpenSessionIds();
@@ -584,13 +608,17 @@ class CrashlyticsController {
 
     final String mostRecentSessionIdToClose = sortedOpenSessions.get(offset);
 
+    if (settingsDataProvider.getSettings().getFeaturesData().collectAnrs) {
+      // TODO: Consider writing applicationExitInfo for all sessions instead of just the most recent
+      // sessionId to close.
+      writeApplicationExitInfoEventIfRelevant(mostRecentSessionIdToClose);
+    }
+
     if (nativeComponent.hasCrashDataForSession(mostRecentSessionIdToClose)) {
       // We only finalize the current session if it's a Java crash, so only finalize native crash
       // data when we aren't including current.
       finalizePreviousNativeSession(mostRecentSessionIdToClose);
-      if (!nativeComponent.finalizeSession(mostRecentSessionIdToClose)) {
-        Logger.getLogger().w("Could not finalize native session: " + mostRecentSessionIdToClose);
-      }
+      nativeComponent.finalizeSession(mostRecentSessionIdToClose);
     }
 
     String currentSessionId = null;
@@ -661,11 +689,11 @@ class CrashlyticsController {
   }
 
   private static long getCurrentTimestampSeconds() {
-    return getTimestampSeconds(new Date());
+    return getTimestampSeconds(System.currentTimeMillis());
   }
 
-  private static long getTimestampSeconds(Date date) {
-    return date.getTime() / 1000;
+  private static long getTimestampSeconds(long timestampMillis) {
+    return timestampMillis / 1000;
   }
 
   // region Serialization to protobuf
@@ -678,64 +706,36 @@ class CrashlyticsController {
     }
   }
 
-  private void writeBeginSession(final String sessionId, final long startedAtSeconds) {
-    final String generator =
-        String.format(Locale.US, GENERATOR_FORMAT, CrashlyticsCore.getVersion());
-
-    nativeComponent.writeBeginSession(sessionId, generator, startedAtSeconds);
-  }
-
-  private void writeSessionApp(String sessionId) {
-    final String appIdentifier = idManager.getAppIdentifier();
-    final String versionCode = appData.versionCode;
-    final String versionName = appData.versionName;
-    final String installUuid = idManager.getCrashlyticsInstallId();
-    final int deliveryMechanism =
-        DeliveryMechanism.determineFrom(appData.installerPackageName).getId();
-
-    nativeComponent.writeSessionApp(
-        sessionId,
-        appIdentifier,
-        versionCode,
-        versionName,
-        installUuid,
-        deliveryMechanism,
+  private static StaticSessionData.AppData createAppData(
+      IdManager idManager, AppData appData, String unityVersion) {
+    return StaticSessionData.AppData.create(
+        idManager.getAppIdentifier(),
+        appData.versionCode,
+        appData.versionName,
+        idManager.getCrashlyticsInstallId(),
+        DeliveryMechanism.determineFrom(appData.installerPackageName).getId(),
         unityVersion);
   }
 
-  private void writeSessionOS(String sessionId) {
-    final String osRelease = VERSION.RELEASE;
-    final String osCodeName = VERSION.CODENAME;
-    final boolean isRooted = CommonUtils.isRooted(getContext());
-
-    nativeComponent.writeSessionOs(sessionId, osRelease, osCodeName, isRooted);
+  private static StaticSessionData.OsData createOsData(Context context) {
+    return StaticSessionData.OsData.create(
+        VERSION.RELEASE, VERSION.CODENAME, CommonUtils.isRooted(context));
   }
 
-  private void writeSessionDevice(String sessionId) {
-    final Context context = getContext();
+  private static StaticSessionData.DeviceData createDeviceData(Context context) {
     final StatFs statFs = new StatFs(Environment.getDataDirectory().getPath());
-
-    final int arch = CommonUtils.getCpuArchitectureInt();
-    final String model = Build.MODEL;
-    final int availableProcessors = Runtime.getRuntime().availableProcessors();
-    final long totalRam = CommonUtils.getTotalRamInBytes();
     final long diskSpace = (long) statFs.getBlockCount() * (long) statFs.getBlockSize();
-    final boolean isEmulator = CommonUtils.isEmulator(context);
-    final int state = CommonUtils.getDeviceState(context);
-    final String manufacturer = Build.MANUFACTURER;
-    final String modelClass = Build.PRODUCT;
 
-    nativeComponent.writeSessionDevice(
-        sessionId,
-        arch,
-        model,
-        availableProcessors,
-        totalRam,
+    return StaticSessionData.DeviceData.create(
+        CommonUtils.getCpuArchitectureInt(),
+        Build.MODEL,
+        Runtime.getRuntime().availableProcessors(),
+        CommonUtils.getTotalRamInBytes(),
         diskSpace,
-        isEmulator,
-        state,
-        manufacturer,
-        modelClass);
+        CommonUtils.isEmulator(context),
+        CommonUtils.getDeviceState(context),
+        Build.MANUFACTURER,
+        Build.PRODUCT);
   }
 
   // endregion
@@ -857,5 +857,36 @@ class CrashlyticsController {
     return nativeSessionFiles;
   }
 
+  // endregion
+
+  // region ApplicationExitInfo
+
+  /** If an ApplicationExitInfo exists relevant to the session, writes that event. */
+  private void writeApplicationExitInfoEventIfRelevant(String sessionId) {
+    if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+      ActivityManager activityManager =
+          (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+      // Gets the latest app exit info.
+      List<ApplicationExitInfo> applicationExitInfoList =
+          activityManager.getHistoricalProcessExitReasons(null, 0, 1);
+
+      // Passes the latest applicationExitInfo to ReportCoordinator, which persists it if it
+      // happened during the session.
+      if (applicationExitInfoList.size() != 0) {
+        final LogFileManager relevantSessionLogManager =
+            new LogFileManager(context, logFileDirectoryProvider, sessionId);
+        final UserMetadata relevantUserMetadata = new UserMetadata();
+        relevantUserMetadata.setCustomKeys(new MetaDataStore(getFilesDir()).readKeyData(sessionId));
+        reportingCoordinator.persistAppExitInfoEvent(
+            sessionId,
+            applicationExitInfoList.get(0),
+            relevantSessionLogManager,
+            relevantUserMetadata);
+      }
+    } else {
+      Logger.getLogger()
+          .v("ANR feature enabled, but device is API " + android.os.Build.VERSION.SDK_INT);
+    }
+  }
   // endregion
 }

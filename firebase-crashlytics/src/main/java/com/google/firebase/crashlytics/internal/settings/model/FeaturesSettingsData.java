@@ -17,8 +17,10 @@ package com.google.firebase.crashlytics.internal.settings.model;
 /** Immutable value object for storing feature switch settings */
 public class FeaturesSettingsData {
   public final boolean collectReports;
+  public final boolean collectAnrs;
 
-  public FeaturesSettingsData(boolean collectReports) {
+  public FeaturesSettingsData(boolean collectReports, boolean collectAnrs) {
     this.collectReports = collectReports;
+    this.collectAnrs = collectAnrs;
   }
 }

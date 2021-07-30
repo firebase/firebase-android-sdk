@@ -14,6 +14,7 @@
 
 package com.google.firebase.perf.ktx
 
+import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
@@ -22,7 +23,7 @@ import com.google.firebase.ktx.app
 import com.google.firebase.ktx.initialize
 import com.google.firebase.perf.FirebasePerformance
 import com.google.firebase.perf.FirebasePerformance.HttpMethod
-import com.google.firebase.perf.internal.AppStateMonitor
+import com.google.firebase.perf.application.AppStateMonitor
 import com.google.firebase.perf.metrics.HttpMetric
 import com.google.firebase.perf.metrics.Trace
 import com.google.firebase.perf.metrics.getTraceCounter
@@ -48,7 +49,6 @@ import org.mockito.Mockito.doAnswer
 import org.mockito.Mockito.verify
 import org.mockito.MockitoAnnotations.initMocks
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
 
 const val APP_ID = "APP_ID"
 const val API_KEY = "API_KEY"
@@ -59,7 +59,7 @@ abstract class BaseTestCase {
     @Before
     open fun setUp() {
         Firebase.initialize(
-                RuntimeEnvironment.application,
+                ApplicationProvider.getApplicationContext(),
                 FirebaseOptions.Builder()
                         .setApplicationId(APP_ID)
                         .setApiKey(API_KEY)
@@ -68,7 +68,7 @@ abstract class BaseTestCase {
         )
 
         Firebase.initialize(
-                RuntimeEnvironment.application,
+                ApplicationProvider.getApplicationContext(),
                 FirebaseOptions.Builder()
                         .setApplicationId(APP_ID)
                         .setApiKey(API_KEY)

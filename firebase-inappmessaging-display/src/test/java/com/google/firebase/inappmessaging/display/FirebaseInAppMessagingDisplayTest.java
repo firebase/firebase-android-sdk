@@ -15,31 +15,32 @@
 package com.google.firebase.inappmessaging.display;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.firebase.inappmessaging.display.internal.FiamImageLoader.FiamImageRequestCreator;
 import static com.google.firebase.inappmessaging.testutil.TestData.ACTION_URL_STRING;
 import static com.google.firebase.inappmessaging.testutil.TestData.BANNER_MESSAGE_MODEL;
 import static com.google.firebase.inappmessaging.testutil.TestData.CARD_MESSAGE_MODEL;
 import static com.google.firebase.inappmessaging.testutil.TestData.IMAGE_MESSAGE_MODEL;
 import static com.google.firebase.inappmessaging.testutil.TestData.IMAGE_MESSAGE_MODEL_WITHOUT_ACTION;
-import static com.google.firebase.inappmessaging.testutil.TestData.IMAGE_URL_STRING;
+import static com.google.firebase.inappmessaging.testutil.TestData.IMAGE_MESSAGE_WEB_ACTION_MODEL;
 import static com.google.firebase.inappmessaging.testutil.TestData.MODAL_MESSAGE_MODEL;
+import static com.google.firebase.inappmessaging.testutil.TestData.WEB_ACTION_URL_STRING;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.robolectric.RuntimeEnvironment.application;
 import static org.robolectric.Shadows.shadowOf;
 
 import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.ResolveInfo;
 import android.content.res.Configuration;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
@@ -50,12 +51,15 @@ import android.view.ViewTreeObserver;
 import android.widget.Button;
 import android.widget.ImageView;
 import androidx.test.core.app.ApplicationProvider;
+import com.bumptech.glide.RequestBuilder;
+import com.bumptech.glide.RequestManager;
 import com.google.firebase.inappmessaging.FirebaseInAppMessaging;
 import com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplay;
 import com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks;
 import com.google.firebase.inappmessaging.display.internal.BindingWrapperFactory;
 import com.google.firebase.inappmessaging.display.internal.FiamAnimator;
 import com.google.firebase.inappmessaging.display.internal.FiamImageLoader;
+import com.google.firebase.inappmessaging.display.internal.FiamImageLoader.Callback;
 import com.google.firebase.inappmessaging.display.internal.FiamWindowManager;
 import com.google.firebase.inappmessaging.display.internal.InAppMessageLayoutConfig;
 import com.google.firebase.inappmessaging.display.internal.RenewableTimer;
@@ -67,8 +71,6 @@ import com.google.firebase.inappmessaging.display.internal.injection.modules.Inf
 import com.google.firebase.inappmessaging.model.Action;
 import com.google.firebase.inappmessaging.model.InAppMessage;
 import com.google.firebase.inappmessaging.model.MessageType;
-import com.squareup.picasso.Callback;
-import com.squareup.picasso.RequestCreator;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -98,7 +100,6 @@ public class FirebaseInAppMessagingDisplayTest {
   private InflaterConfigModule inflaterConfigModule = new InflaterConfigModule();
 
   @Mock private FirebaseInAppMessaging headless;
-  @Mock private FiamImageLoader imageLoader;
   @Mock private RenewableTimer impressionTimer;
   @Mock private RenewableTimer autoDismissTimer;
   @Mock private FiamWindowManager windowManager;
@@ -117,7 +118,9 @@ public class FirebaseInAppMessagingDisplayTest {
   @Mock private ViewTreeObserver.OnGlobalLayoutListener globalLayoutListener;
   @Mock private FiamAnimator animator;
   @Mock private FirebaseInAppMessagingDisplayCallbacks callbacks;
+  @Mock private RequestManager requestManager;
 
+  private FiamImageLoader imageLoader;
   private ImageBindingWrapper imageBindingWrapper;
   private InAppMessageLayoutConfig imageLayoutConfig;
   private ModalBindingWrapper modalBindingWrapper;
@@ -132,7 +135,8 @@ public class FirebaseInAppMessagingDisplayTest {
   private ShadowActivity shadowActivity;
   private ShadowPackageManager shadowPackageManager;
   private FirebaseInAppMessagingDisplay listener;
-  private FiamImageRequestCreator fakeRequestCreator = spy(new FakeRequestCreater(null));
+  @Mock private RequestBuilder<Drawable> requestBuilder;
+  private FiamImageLoader.FiamImageRequestCreator fiamImageRequestCreator;
 
   @Before
   public void setup() {
@@ -185,7 +189,7 @@ public class FirebaseInAppMessagingDisplayTest {
     activityTwo = Robolectric.buildActivity(TestSecondActivity.class).create().get();
     shadowActivity = shadowOf(activity);
 
-    LayoutInflater inflater = LayoutInflater.from(application);
+    LayoutInflater inflater = LayoutInflater.from(ApplicationProvider.getApplicationContext());
     imageBindingWrapper =
         spy(new ImageBindingWrapper(imageLayoutConfig, inflater, IMAGE_MESSAGE_MODEL));
     modalBindingWrapper =
@@ -201,8 +205,9 @@ public class FirebaseInAppMessagingDisplayTest {
         .thenReturn(modalBindingWrapper);
     when(bindingClient.createBannerBindingWrapper(eq(bannerLayoutConfig), any(InAppMessage.class)))
         .thenReturn(bannerBindingWrapper);
-
-    when(imageLoader.load(IMAGE_URL_STRING)).thenReturn(fakeRequestCreator);
+    imageLoader = spy(new FiamImageLoader(requestManager));
+    fiamImageRequestCreator = spy(imageLoader.new FiamImageRequestCreator(requestBuilder));
+    doReturn(fiamImageRequestCreator).when(imageLoader).load(any());
     fiamUI =
         new com.google.firebase.inappmessaging.display.FirebaseInAppMessagingDisplay(
             headless,
@@ -211,7 +216,7 @@ public class FirebaseInAppMessagingDisplayTest {
             impressionTimer,
             autoDismissTimer,
             windowManager,
-            application,
+            ApplicationProvider.getApplicationContext(),
             bindingClient,
             animator);
   }
@@ -278,7 +283,7 @@ public class FirebaseInAppMessagingDisplayTest {
   public void onActivityNewActivityStarted_displaysFiamInNewActivity() {
     resumeActivity(activity);
     listener.displayMessage(IMAGE_MESSAGE_MODEL, callbacks);
-    verify(fakeRequestCreator).into(any(ImageView.class), callbackArgCaptor.capture());
+    verify(fiamImageRequestCreator).into(any(ImageView.class), callbackArgCaptor.capture());
     callbackArgCaptor.getValue().onSuccess();
     // fiam should be displayed with reference to the first activity
     verify(windowManager).show(imageBindingWrapper, activity);
@@ -286,7 +291,8 @@ public class FirebaseInAppMessagingDisplayTest {
     pauseActivity(activity);
     resumeActivity(activityTwo);
     listener.displayMessage(IMAGE_MESSAGE_MODEL, callbacks);
-    verify(fakeRequestCreator, times(2)).into(any(ImageView.class), callbackArgCaptor.capture());
+    verify(fiamImageRequestCreator, times(2))
+        .into(any(ImageView.class), callbackArgCaptor.capture());
     callbackArgCaptor.getValue().onSuccess();
     // fiam should be displayed with reference to the second activity
     verify(windowManager).show(imageBindingWrapper, activityTwo);
@@ -296,7 +302,7 @@ public class FirebaseInAppMessagingDisplayTest {
   public void onActivityOldActivityDestroyed_displaysFiamInNewActivity() {
     resumeActivity(activity);
     listener.displayMessage(IMAGE_MESSAGE_MODEL, callbacks);
-    verify(fakeRequestCreator).into(any(ImageView.class), callbackArgCaptor.capture());
+    verify(fiamImageRequestCreator).into(any(ImageView.class), callbackArgCaptor.capture());
     callbackArgCaptor.getValue().onSuccess();
     // fiam should be displayed with reference to the first activity
     verify(windowManager).show(imageBindingWrapper, activity);
@@ -306,7 +312,8 @@ public class FirebaseInAppMessagingDisplayTest {
     // android lifecycle destroys first activity after second is created
     fiamUI.onActivityDestroyed(activity);
     listener.displayMessage(IMAGE_MESSAGE_MODEL, callbacks);
-    verify(fakeRequestCreator, times(2)).into(any(ImageView.class), callbackArgCaptor.capture());
+    verify(fiamImageRequestCreator, times(2))
+        .into(any(ImageView.class), callbackArgCaptor.capture());
     callbackArgCaptor.getValue().onSuccess();
     // fiam should be displayed with reference to the second activity
     verify(windowManager).show(imageBindingWrapper, activityTwo);
@@ -317,12 +324,13 @@ public class FirebaseInAppMessagingDisplayTest {
     when(windowManager.isFiamDisplayed()).thenReturn(true);
     resumeActivity(activity);
     listener.displayMessage(IMAGE_MESSAGE_MODEL, callbacks);
-    verify(fakeRequestCreator).into(any(ImageView.class), callbackArgCaptor.capture());
+    verify(fiamImageRequestCreator).into(any(ImageView.class), callbackArgCaptor.capture());
     callbackArgCaptor.getValue().onSuccess();
     pauseActivity(activity);
     resumeActivity(activity);
 
-    verify(fakeRequestCreator, times(2)).into(any(ImageView.class), callbackArgCaptor.capture());
+    verify(fiamImageRequestCreator, times(2))
+        .into(any(ImageView.class), callbackArgCaptor.capture());
     callbackArgCaptor.getValue().onSuccess();
 
     // assert that fiam was shown once originally and once after resuming
@@ -334,7 +342,7 @@ public class FirebaseInAppMessagingDisplayTest {
     when(windowManager.isFiamDisplayed()).thenReturn(true);
     resumeActivity(activity);
     listener.displayMessage(IMAGE_MESSAGE_MODEL, callbacks);
-    verify(fakeRequestCreator).into(any(ImageView.class), callbackArgCaptor.capture());
+    verify(fiamImageRequestCreator).into(any(ImageView.class), callbackArgCaptor.capture());
     callbackArgCaptor.getValue().onSuccess();
 
     verify(windowManager).show(imageBindingWrapper, activity);
@@ -345,7 +353,7 @@ public class FirebaseInAppMessagingDisplayTest {
     when(windowManager.isFiamDisplayed()).thenReturn(true);
     resumeActivity(activity);
     listener.displayMessage(MODAL_MESSAGE_MODEL, callbacks);
-    verify(fakeRequestCreator).into(any(ImageView.class), callbackArgCaptor.capture());
+    verify(fiamImageRequestCreator).into(any(ImageView.class), callbackArgCaptor.capture());
     callbackArgCaptor.getValue().onSuccess();
 
     verify(windowManager).show(modalBindingWrapper, activity);
@@ -357,7 +365,7 @@ public class FirebaseInAppMessagingDisplayTest {
     when(windowManager.isFiamDisplayed()).thenReturn(true);
     resumeActivity(activity);
     listener.displayMessage(CARD_MESSAGE_MODEL, callbacks);
-    verify(fakeRequestCreator).into(any(ImageView.class), callbackArgCaptor.capture());
+    verify(fiamImageRequestCreator).into(any(ImageView.class), callbackArgCaptor.capture());
     callbackArgCaptor.getValue().onSuccess();
 
     verify(windowManager).show(cardBindingWrapper, activity);
@@ -406,18 +414,18 @@ public class FirebaseInAppMessagingDisplayTest {
     resumeActivity(activity);
     listener.displayMessage(IMAGE_MESSAGE_MODEL, callbacks);
 
-    verify(fakeRequestCreator).tag(TestActivity.class);
-    verify(fakeRequestCreator).placeholder(R.drawable.image_placeholder);
-    verify(fakeRequestCreator).into(any(ImageView.class), any(Callback.class));
+    verify(fiamImageRequestCreator).tag(TestActivity.class);
+    verify(fiamImageRequestCreator).placeholder(R.drawable.image_placeholder);
+    verify(fiamImageRequestCreator).into(any(ImageView.class), any(Callback.class));
   }
 
   @Test
   public void streamListener_whenNoImageUrlExists_doesNotLoadImage() {
     resumeActivity(activity);
     listener.displayMessage(null, callbacks);
-    verify(fakeRequestCreator, times(0)).tag(TestActivity.class);
-    verify(fakeRequestCreator, times(0)).placeholder(R.drawable.image_placeholder);
-    verify(fakeRequestCreator, times(0)).into(any(ImageView.class), any(Callback.class));
+    verify(fiamImageRequestCreator, times(0)).tag(TestActivity.class);
+    verify(fiamImageRequestCreator, times(0)).placeholder(R.drawable.image_placeholder);
+    verify(fiamImageRequestCreator, times(0)).into(any(ImageView.class), any(Callback.class));
   }
 
   @Test
@@ -425,7 +433,7 @@ public class FirebaseInAppMessagingDisplayTest {
     when(windowManager.isFiamDisplayed()).thenReturn(true);
     resumeActivity(activity);
     listener.displayMessage(IMAGE_MESSAGE_MODEL, callbacks);
-    verify(fakeRequestCreator)
+    verify(fiamImageRequestCreator)
         .into(eq(imageBindingWrapper.getImageView()), callbackArgCaptor.capture());
 
     callbackArgCaptor.getValue().onSuccess();
@@ -436,7 +444,7 @@ public class FirebaseInAppMessagingDisplayTest {
   public void streamListener_whenImageLoadSucceeds_startsImpressionTimer() {
     resumeActivity(activity);
     listener.displayMessage(IMAGE_MESSAGE_MODEL, callbacks);
-    verify(fakeRequestCreator).into(any(ImageView.class), callbackArgCaptor.capture());
+    verify(fiamImageRequestCreator).into(any(ImageView.class), callbackArgCaptor.capture());
 
     callbackArgCaptor.getValue().onSuccess();
     verify(impressionTimer)
@@ -454,7 +462,7 @@ public class FirebaseInAppMessagingDisplayTest {
   public void streamListener_whenImageLoadSucceedsForAutoDismissFiam_startsDismissTimer() {
     resumeActivity(activity);
     listener.displayMessage(BANNER_MESSAGE_MODEL, callbacks);
-    verify(fakeRequestCreator).into(any(ImageView.class), callbackArgCaptor.capture());
+    verify(fiamImageRequestCreator).into(any(ImageView.class), callbackArgCaptor.capture());
 
     callbackArgCaptor.getValue().onSuccess();
     verify(autoDismissTimer)
@@ -473,7 +481,7 @@ public class FirebaseInAppMessagingDisplayTest {
   public void streamListener_whenImageLoadFails_stopsImpressionTimer() {
     resumeActivity(activity);
     listener.displayMessage(IMAGE_MESSAGE_MODEL, callbacks);
-    verify(fakeRequestCreator).into(any(ImageView.class), callbackArgCaptor.capture());
+    verify(fiamImageRequestCreator).into(any(ImageView.class), callbackArgCaptor.capture());
 
     Exception e = new IOException();
     callbackArgCaptor.getValue().onError(e);
@@ -485,7 +493,7 @@ public class FirebaseInAppMessagingDisplayTest {
   public void streamListener_whenImageLoadFails_stopsDismissTimer() {
     resumeActivity(activity);
     listener.displayMessage(BANNER_MESSAGE_MODEL, callbacks);
-    verify(fakeRequestCreator).into(any(ImageView.class), callbackArgCaptor.capture());
+    verify(fiamImageRequestCreator).into(any(ImageView.class), callbackArgCaptor.capture());
     Exception e = new IOException();
     callbackArgCaptor.getValue().onError(e);
     verify(autoDismissTimer).cancel();
@@ -495,7 +503,7 @@ public class FirebaseInAppMessagingDisplayTest {
   public void streamListener_whenImageLoadFailsForModal_removesLayoutListener() {
     resumeActivity(activity);
     listener.displayMessage(MODAL_MESSAGE_MODEL, callbacks);
-    verify(fakeRequestCreator)
+    verify(fiamImageRequestCreator)
         .into(eq(modalBindingWrapper.getImageView()), callbackArgCaptor.capture());
 
     ViewTreeObserver.OnGlobalLayoutListener mockListener =
@@ -515,7 +523,7 @@ public class FirebaseInAppMessagingDisplayTest {
     when(windowManager.isFiamDisplayed()).thenReturn(true);
     resumeActivity(activity);
     listener.displayMessage(IMAGE_MESSAGE_MODEL, callbacks);
-    verify(fakeRequestCreator).into(any(ImageView.class), callbackArgCaptor.capture());
+    verify(fiamImageRequestCreator).into(any(ImageView.class), callbackArgCaptor.capture());
     callbackArgCaptor.getValue().onSuccess();
 
     imageBindingWrapper
@@ -528,7 +536,7 @@ public class FirebaseInAppMessagingDisplayTest {
   public void streamListener_forBackgroundDisabledFiams_returnsTrueOnTouchEvents() {
     resumeActivity(activity);
     listener.displayMessage(IMAGE_MESSAGE_MODEL, callbacks);
-    verify(fakeRequestCreator).into(any(ImageView.class), callbackArgCaptor.capture());
+    verify(fiamImageRequestCreator).into(any(ImageView.class), callbackArgCaptor.capture());
     callbackArgCaptor.getValue().onSuccess();
 
     boolean ret =
@@ -543,10 +551,14 @@ public class FirebaseInAppMessagingDisplayTest {
     when(windowManager.isFiamDisplayed()).thenReturn(true);
     resumeActivity(activity);
     listener.displayMessage(BANNER_MESSAGE_MODEL, callbacks);
-    verify(fakeRequestCreator).into(any(ImageView.class), callbackArgCaptor.capture());
+    verify(fiamImageRequestCreator).into(any(ImageView.class), callbackArgCaptor.capture());
     callbackArgCaptor.getValue().onSuccess();
 
-    verify(animator).slideIntoView(eq(application), any(View.class), eq(FiamAnimator.Position.TOP));
+    verify(animator)
+        .slideIntoView(
+            eq(ApplicationProvider.getApplicationContext()),
+            any(View.class),
+            eq(FiamAnimator.Position.TOP));
   }
 
   @Test
@@ -554,7 +566,7 @@ public class FirebaseInAppMessagingDisplayTest {
     resumeActivity(activity);
     listener.displayMessage(IMAGE_MESSAGE_MODEL, callbacks);
     when(windowManager.isFiamDisplayed()).thenReturn(true);
-    verify(fakeRequestCreator).into(any(ImageView.class), callbackArgCaptor.capture());
+    verify(fiamImageRequestCreator).into(any(ImageView.class), callbackArgCaptor.capture());
     callbackArgCaptor.getValue().onSuccess();
     verify(impressionTimer).start(timerArgCaptor.capture(), anyLong(), anyLong());
 
@@ -568,7 +580,7 @@ public class FirebaseInAppMessagingDisplayTest {
     resumeActivity(activity);
     listener.displayMessage(BANNER_MESSAGE_MODEL, callbacks);
     when(windowManager.isFiamDisplayed()).thenReturn(true);
-    verify(fakeRequestCreator).into(any(ImageView.class), callbackArgCaptor.capture());
+    verify(fiamImageRequestCreator).into(any(ImageView.class), callbackArgCaptor.capture());
     callbackArgCaptor.getValue().onSuccess();
     verify(autoDismissTimer).start(timerArgCaptor.capture(), anyLong(), anyLong());
 
@@ -586,12 +598,15 @@ public class FirebaseInAppMessagingDisplayTest {
     customTabIntent.setPackage("com.android.chrome");
     shadowPackageManager.addResolveInfoForIntent(customTabIntent, resolveInfo);
     resumeActivity(activity);
-    listener.displayMessage(IMAGE_MESSAGE_MODEL, callbacks);
+    listener.displayMessage(IMAGE_MESSAGE_WEB_ACTION_MODEL, callbacks);
     verify(imageBindingWrapper)
         .inflate(onClickListenerArgCaptor.capture(), any(OnClickListener.class));
-    onClickListenerArgCaptor.getValue().get(IMAGE_MESSAGE_MODEL.getAction()).onClick(null);
+    onClickListenerArgCaptor
+        .getValue()
+        .get(IMAGE_MESSAGE_WEB_ACTION_MODEL.getAction())
+        .onClick(null);
     assertThat(shadowActivity.getNextStartedActivity().getData())
-        .isEqualTo(Uri.parse(ACTION_URL_STRING));
+        .isEqualTo(Uri.parse(WEB_ACTION_URL_STRING));
   }
 
   @Test
@@ -675,25 +690,4 @@ public class FirebaseInAppMessagingDisplayTest {
   static class TestActivity extends Activity {}
 
   static class TestSecondActivity extends Activity {}
-
-  static class FakeRequestCreater extends FiamImageRequestCreator {
-    public FakeRequestCreater(RequestCreator requestCreator) {
-      super(requestCreator);
-    }
-
-    @Override
-    public FiamImageRequestCreator placeholder(int placeholderResId) {
-      return this;
-    }
-
-    @Override
-    public FiamImageRequestCreator tag(Class c) {
-      return this;
-    }
-
-    @Override
-    public void into(ImageView imageView, Callback callback) {
-      // do nothing
-    }
-  }
 }

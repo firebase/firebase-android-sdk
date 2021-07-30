@@ -23,7 +23,11 @@ import androidx.annotation.Nullable;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
+import com.google.firebase.appcheck.AppCheckTokenResult;
+import com.google.firebase.appcheck.interop.AppCheckTokenListener;
+import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
 import com.google.firebase.auth.internal.InternalAuthProvider;
+import com.google.firebase.emulators.EmulatedServiceSettings;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.storage.internal.Util;
 import java.io.UnsupportedEncodingException;
@@ -46,18 +50,36 @@ public class FirebaseStorage {
       "The storage Uri cannot contain a path element.";
   @NonNull private final FirebaseApp mApp;
   @Nullable private final Provider<InternalAuthProvider> mAuthProvider;
+  @Nullable private final Provider<InternalAppCheckTokenProvider> mAppCheckProvider;
   @Nullable private final String mBucketName;
   private long sMaxUploadRetry = 10 * DateUtils.MINUTE_IN_MILLIS; //  10 * 60 * 1000
   private long sMaxDownloadRetry = 10 * DateUtils.MINUTE_IN_MILLIS; //  10 * 60 * 1000
   private long sMaxQueryRetry = 2 * DateUtils.MINUTE_IN_MILLIS; //  2 * 60 * 1000
 
+  @Nullable private EmulatedServiceSettings emulatorSettings;
+
   FirebaseStorage(
       @Nullable String bucketName,
       @NonNull FirebaseApp app,
-      @Nullable Provider<InternalAuthProvider> authProvider) {
+      @Nullable Provider<InternalAuthProvider> authProvider,
+      @Nullable Provider<InternalAppCheckTokenProvider> appCheckProvider) {
     mBucketName = bucketName;
     mApp = app;
     mAuthProvider = authProvider;
+    mAppCheckProvider = appCheckProvider;
+    if (mAppCheckProvider != null && mAppCheckProvider.get() != null) {
+      mAppCheckProvider
+          .get()
+          .addAppCheckTokenListener(
+              new AppCheckTokenListener() {
+                @Override
+                public void onAppCheckTokenChanged(
+                    @NonNull AppCheckTokenResult appCheckTokenResult) {
+                  // Do nothing; we just need to register a listener so that the App Check SDK knows
+                  // to auto-refresh the token.
+                }
+              });
+    }
   }
 
   private static FirebaseStorage getInstanceImpl(@NonNull FirebaseApp app, @Nullable Uri url) {
@@ -152,6 +174,18 @@ public class FirebaseStorage {
       Log.e(TAG, "Unable to parse url:" + url, e);
       throw new IllegalArgumentException(STORAGE_URI_PARSE_EXCEPTION);
     }
+  }
+
+  /**
+   * Modifies this FirebaseStorage instance to communicate with the Storage emulator.
+   *
+   * <p>Note: Call this method before using the instance to do any storage operations.
+   *
+   * @param host the emulator host (for example, 10.0.2.2)
+   * @param port the emulator port (for example, 9000)
+   */
+  public void useEmulator(@NonNull String host, int port) {
+    this.emulatorSettings = new EmulatedServiceSettings(host, port);
   }
 
   /**
@@ -306,5 +340,15 @@ public class FirebaseStorage {
   @Nullable
   InternalAuthProvider getAuthProvider() {
     return mAuthProvider != null ? mAuthProvider.get() : null;
+  }
+
+  @Nullable
+  InternalAppCheckTokenProvider getAppCheckProvider() {
+    return mAppCheckProvider != null ? mAppCheckProvider.get() : null;
+  }
+
+  @Nullable
+  EmulatedServiceSettings getEmulatorSettings() {
+    return emulatorSettings;
   }
 }

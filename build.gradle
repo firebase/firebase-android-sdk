@@ -31,10 +31,8 @@ buildscript {
     dependencies {
         classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.14'
         classpath 'net.ltgt.gradle:gradle-errorprone-plugin:1.3.0'
-        classpath 'org.jsoup:jsoup:1.13.1'
         classpath 'gradle.plugin.com.github.sherter.google-java-format:google-java-format-gradle-plugin:0.9'
         classpath 'com.google.gms:google-services:4.3.3'
-        classpath 'me.tatarka:gradle-retrolambda:3.7.1'
         classpath 'digital.wup:android-maven-publish:3.6.3'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
         classpath 'org.jlleitschuh.gradle:ktlint-gradle:9.2.1'
@@ -57,7 +55,6 @@ ext {
 apply plugin: com.google.firebase.gradle.plugins.publish.PublishingPlugin
 apply plugin: com.google.firebase.gradle.plugins.ci.ContinuousIntegrationPlugin
 apply plugin: com.google.firebase.gradle.plugins.ci.SmokeTestsPlugin
-apply plugin: com.google.firebase.gradle.plugins.ci.metrics.MetricsPlugin
 
 firebaseContinuousIntegration {
     ignorePaths = [
@@ -80,84 +77,8 @@ configure(subprojects) {
         }
     }
 
-    apply plugin: 'com.github.sherter.google-java-format'
-    googleJavaFormat {
-        toolVersion = '1.7'
-    }
-    tasks.googleJavaFormat {
-        source '.'
-        include '**/java/**/*.java'
-        exclude '**/generated/**'
-        exclude 'src/testUtil/java/com/google/firebase/firestore/testutil/Assert.java'
-        exclude 'src/testUtil/java/com/google/firebase/firestore/testutil/ThrowingRunnable.java'
-        exclude '**/package-info.java'
-    }
-    tasks.verifyGoogleJavaFormat {
-        source '.'
-        include '**/java/**/*.java'
-        exclude '**/generated/**'
-        exclude 'src/testUtil/java/com/google/firebase/firestore/testutil/Assert.java'
-        exclude 'src/testUtil/java/com/google/firebase/firestore/testutil/ThrowingRunnable.java'
-        exclude '**/package-info.java'
-    }
-
     apply plugin: "org.jlleitschuh.gradle.ktlint"
 }
-
-
-/**
- * Configure "Preguarding" and Desugaring for the subprojects.
- *
- * <p>Desugaring is enabled with the 'me.tatarka:gradle-retrolambda' plugin as the built-in Android
- * desugaring is not supported for libraries.
- *
- * <p> The way it works is every library subproject that has the android plugin applied and:
- *
- *  <ul>
- *    <li>Contains a file named "preguard.txt" will get proguarded using that file as proguard
- *        configuration in release mode.
- *    <li>Contains a file named "proguard.txt" will ship this file inside its release aar as a
- *        consumer proguard file.
- */
-configure(subprojects) {
-    def PREGUARD_FILE_NAME = 'preguard.txt'
-    def CONSUMER_PROGUARD_FILE_NAME = 'proguard.txt'
-    afterEvaluate { Project sub ->
-
-        if (sub.plugins.findPlugin('com.android.library') == null) {
-            return
-        }
-
-        // Apply the retrolambda plugin
-        sub.apply plugin: 'me.tatarka.retrolambda'
-
-        boolean skipPreguard = sub.getProperties().getOrDefault('firebaseSkipPreguard', 'true').toBoolean()
-        def defaultPreguard = rootProject.getProperties().getOrDefault('firebaseDefaultPreguardFile', 'default-preguard.txt')
-
-        if(!skipPreguard) {
-
-            sub.android {
-                buildTypes {
-                    release {
-                        // default behavior for minifyEnabled is:
-                        // useProguard true
-                        // shrinkResources false
-                        minifyEnabled true
-                        proguardFiles file(defaultPreguard), sub.file(PREGUARD_FILE_NAME)
-                    }
-                }
-            }
-        }
-
-        // Ship consumer proguard config if it exists.
-        if (sub.file(CONSUMER_PROGUARD_FILE_NAME).exists()) {
-            sub.android { buildTypes { release { consumerProguardFiles 'proguard.txt' } } }
-        }
-
-        sub.apply plugin: LicenseResolverPlugin
-    }
-}
-
 
 task clean(type: Delete) {
     delete rootProject.buildDir

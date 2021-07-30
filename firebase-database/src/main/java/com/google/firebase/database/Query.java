@@ -139,7 +139,7 @@ public class Query {
   }
 
   /**
-   * Add a listener for changes in the data at this location. Each time time the data changes, your
+   * Add a listener for changes in the data at this location. Each time the data changes, your
    * listener will be called with an immutable snapshot of the data.
    *
    * @param listener The listener to be called with changes

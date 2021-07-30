@@ -26,6 +26,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.abt.FirebaseABTesting;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
+import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.remoteconfig.internal.ConfigCacheClient;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler;
@@ -78,7 +79,7 @@ public class RemoteConfigComponent {
   private final FirebaseApp firebaseApp;
   private final FirebaseInstallationsApi firebaseInstallations;
   private final FirebaseABTesting firebaseAbt;
-  @Nullable private final AnalyticsConnector analyticsConnector;
+  @Nullable private final Provider<AnalyticsConnector> analyticsConnector;
 
   private final String appId;
 
@@ -91,7 +92,7 @@ public class RemoteConfigComponent {
       FirebaseApp firebaseApp,
       FirebaseInstallationsApi firebaseInstallations,
       FirebaseABTesting firebaseAbt,
-      @Nullable AnalyticsConnector analyticsConnector) {
+      Provider<AnalyticsConnector> analyticsConnector) {
     this(
         context,
         Executors.newCachedThreadPool(),
@@ -110,7 +111,7 @@ public class RemoteConfigComponent {
       FirebaseApp firebaseApp,
       FirebaseInstallationsApi firebaseInstallations,
       FirebaseABTesting firebaseAbt,
-      @Nullable AnalyticsConnector analyticsConnector,
+      Provider<AnalyticsConnector> analyticsConnector,
       boolean loadGetDefault) {
     this.context = context;
     this.executorService = executorService;
@@ -237,7 +238,7 @@ public class RemoteConfigComponent {
       String namespace, ConfigCacheClient fetchedCacheClient, ConfigMetadataClient metadataClient) {
     return new ConfigFetchHandler(
         firebaseInstallations,
-        isPrimaryApp(firebaseApp) ? analyticsConnector : null,
+        isPrimaryApp(firebaseApp) ? analyticsConnector : () -> null,
         executorService,
         DEFAULT_CLOCK,
         DEFAULT_RANDOM,
@@ -265,10 +266,8 @@ public class RemoteConfigComponent {
 
   @Nullable
   private static Personalization getPersonalization(
-      FirebaseApp firebaseApp, String namespace, @Nullable AnalyticsConnector analyticsConnector) {
-    if (isPrimaryApp(firebaseApp)
-        && namespace.equals(DEFAULT_NAMESPACE)
-        && analyticsConnector != null) {
+      FirebaseApp firebaseApp, String namespace, Provider<AnalyticsConnector> analyticsConnector) {
+    if (isPrimaryApp(firebaseApp) && namespace.equals(DEFAULT_NAMESPACE)) {
       return new Personalization(analyticsConnector);
     }
     return null;

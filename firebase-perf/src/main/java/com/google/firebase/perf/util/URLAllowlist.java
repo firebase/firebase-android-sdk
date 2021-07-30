@@ -26,17 +26,17 @@ public class URLAllowlist {
   private static String[] allowlistedDomains;
 
   /** Returns true if the URL's domain covered by a allowlist rule. */
-  public static boolean isURLAllowlisted(@NonNull URI uri, @NonNull Context context) {
-    Resources resources = context.getResources();
+  public static boolean isURLAllowlisted(@NonNull URI uri, @NonNull Context appContext) {
+    Resources resources = appContext.getResources();
     int resourceId =
         resources.getIdentifier(
-            "firebase_performance_whitelisted_domains", "array", context.getPackageName());
+            "firebase_performance_whitelisted_domains", "array", appContext.getPackageName());
     if (resourceId == 0) {
       return true;
     }
 
     AndroidLogger.getInstance()
-        .info("Detected domain allowlist, only allowlisted domains will be measured.");
+        .debug("Detected domain allowlist, only allowlisted domains will be measured.");
     if (allowlistedDomains == null) {
       allowlistedDomains = resources.getStringArray(resourceId);
     }

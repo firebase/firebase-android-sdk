@@ -58,6 +58,7 @@ android {
         versionName version
         multiDexEnabled true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        consumerProguardFiles 'proguard.txt'
     }
 
     sourceSets {
@@ -95,6 +96,18 @@ android.libraryVariants.all { variant ->
         variant.buildConfigField("boolean", "USE_EMULATOR_FOR_TESTS", "true")
     }
 
+    def localProps = new Properties()
+
+    try {
+    file("local.properties").withInputStream { localProps.load(it) }
+    } catch (FileNotFoundException e) {
+    }
+
+    if (localProps['firestoreEnableIndexing']) {
+        variant.buildConfigField("boolean", "ENABLE_INDEXING", "true")
+    } else {
+        variant.buildConfigField("boolean", "ENABLE_INDEXING", "false")
+    }
 }
 
 configurations.all {
@@ -105,6 +118,11 @@ configurations.all {
         }
     }
     exclude group: "com.google.protobuf", module: "protobuf-java"
+}
+
+googleJavaFormat {
+    exclude 'src/testUtil/java/com/google/firebase/firestore/testutil/Assert.java'
+    exclude 'src/testUtil/java/com/google/firebase/firestore/testutil/ThrowingRunnable.java'
 }
 
 dependencies {

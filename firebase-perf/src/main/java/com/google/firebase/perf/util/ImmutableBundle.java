@@ -21,10 +21,7 @@ import com.google.firebase.perf.logging.AndroidLogger;
  * An immutable, thread safe wrapper around @{link android.os.Bundle} that only exposes get methods.
  * This assumes that the keys and values themselves are immutable and so it only performs a shallow
  * copy of the bundle.
- *
- * @hide
  */
-/** @hide */
 public final class ImmutableBundle {
 
   private static final AndroidLogger logger = AndroidLogger.getInstance();

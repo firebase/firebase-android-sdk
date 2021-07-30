@@ -27,10 +27,12 @@ public class Constants {
 
   // Max length of URL.
   public static final int MAX_URL_LENGTH = 2000;
+
   // Max hostname length in URL.
   public static final int MAX_HOST_LENGTH = 255;
   public static final int MAX_CONTENT_TYPE_LENGTH = 128;
   public static final int MAX_TRACE_CUSTOM_ATTRIBUTES = 5;
+
   // Trace limits
   public static final int MAX_TRACE_ID_LENGTH = 100;
   public static final int MAX_COUNTER_ID_LENGTH = 100;

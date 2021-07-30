@@ -44,7 +44,7 @@ public class DynamicLinkUTMParams {
 
   public DynamicLinkUTMParams(DynamicLinkData dynamicLinkData) {
     this.dynamicLinkData = dynamicLinkData;
-    this.utmParamsBundle = initUTMParamsBundle();
+    this.utmParamsBundle = initUTMParamsBundle(dynamicLinkData);
   }
 
   @NonNull
@@ -52,26 +52,28 @@ public class DynamicLinkUTMParams {
     return new Bundle(utmParamsBundle);
   }
 
-  private Bundle initUTMParamsBundle() {
+  @NonNull
+  private static Bundle initUTMParamsBundle(DynamicLinkData dynamicLinkData) {
+    Bundle bundle = new Bundle();
     if (dynamicLinkData == null || dynamicLinkData.getExtensionBundle() == null) {
-      return Bundle.EMPTY;
+      return bundle;
     }
 
     Bundle scionBundle = dynamicLinkData.getExtensionBundle().getBundle(KEY_SCION_DATA_BUNDLE);
 
     if (scionBundle == null) {
-      return Bundle.EMPTY;
+      return bundle;
     }
 
     Bundle campaignBundle = scionBundle.getBundle(KEY_CAMPAIGN_BUNDLE);
     if (campaignBundle == null) {
-      return Bundle.EMPTY;
+      return bundle;
     }
 
-    Bundle bundle = new Bundle();
     checkAndAdd(KEY_MEDIUM, KEY_UTM_MEDIUM, campaignBundle, bundle);
     checkAndAdd(KEY_SOURCE, KEY_UTM_SOURCE, campaignBundle, bundle);
     checkAndAdd(KEY_CAMPAIGN, KEY_UTM_CAMPAIGN, campaignBundle, bundle);
+
     return bundle;
   }
 
@@ -79,7 +81,7 @@ public class DynamicLinkUTMParams {
    * Checks and adds the value from source bundle to the destination bundle based on the source
    *  key and destination key.
    */
-  private void checkAndAdd(
+  private static void checkAndAdd(
       @NonNull String sourceKey,
       @NonNull String destKey,
       @NonNull Bundle source,

@@ -21,18 +21,18 @@ import java.net.URLConnection;
 /** Wrapper for URL class allowing unit testing */
 public class URLWrapper {
 
-  private final URL mURL;
+  private final URL url;
 
   public URLWrapper(URL url) {
-    mURL = url;
+    this.url = url;
   }
 
   @SuppressWarnings("UrlConnectionChecker")
   public URLConnection openConnection() throws IOException {
-    return mURL.openConnection();
+    return url.openConnection();
   }
 
   public String toString() {
-    return mURL.toString();
+    return url.toString();
   }
 }

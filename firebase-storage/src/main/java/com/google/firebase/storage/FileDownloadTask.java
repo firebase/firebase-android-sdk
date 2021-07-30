@@ -53,6 +53,7 @@ public class FileDownloadTask extends StorageTask<FileDownloadTask.TaskSnapshot>
         new ExponentialBackoffSender(
             storage.getApp().getApplicationContext(),
             storage.getAuthProvider(),
+            storage.getAppCheckProvider(),
             storage.getMaxDownloadRetryTimeMillis());
   }
 
@@ -195,7 +196,8 @@ public class FileDownloadTask extends StorageTask<FileDownloadTask.TaskSnapshot>
       mException = null;
       mSender.reset();
       final NetworkRequest request =
-          new GetNetworkRequest(mStorageRef.getStorageUri(), mStorageRef.getApp(), mResumeOffset);
+          new GetNetworkRequest(
+              mStorageRef.getStorageReferenceUri(), mStorageRef.getApp(), mResumeOffset);
 
       mSender.sendWithExponentialBackoff(request, false);
       mResultCode = request.getResultCode();

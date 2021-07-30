@@ -88,6 +88,11 @@ class OnlineStateTracker {
     shouldWarnClientIsOffline = true;
   }
 
+  /** Returns the current online state. */
+  OnlineState getState() {
+    return state;
+  }
+
   /**
    * Called by RemoteStore when a watch stream is started (including on each backoff attempt).
    *

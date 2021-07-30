@@ -18,7 +18,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import com.google.firebase.perf.FirebasePerformanceTestBase;
-import com.google.firebase.perf.internal.AppStateMonitor;
+import com.google.firebase.perf.application.AppStateMonitor;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.Constants;
@@ -44,35 +44,35 @@ public class TraceMetricBuilderTest extends FirebasePerformanceTestBase {
   private static final String TRACE_ATTRIBUTE_KEY = "TRACE_ATTRIBUTE_KEY";
   private static final String TRACE_ATTRIBUTE_VALUE = "TRACE_ATTRIBUTE_VALUE";
 
-  private long mCurrentTime = 0;
+  private long currentTime = 0;
 
-  @Mock private Clock mClock;
+  @Mock private Clock clock;
 
   @Mock private TransportManager transportManager;
 
-  @Mock private AppStateMonitor mAppStateMonitor;
+  @Mock private AppStateMonitor appStateMonitor;
 
   @Before
   public void setUp() {
-    mCurrentTime = 0;
+    currentTime = 0;
     initMocks(this);
     doAnswer(
             new Answer<Timer>() {
               @Override
               public Timer answer(InvocationOnMock invocationOnMock) throws Throwable {
-                return new Timer(mCurrentTime);
+                return new Timer(currentTime);
               }
             })
-        .when(mClock)
+        .when(clock)
         .getTime();
   }
 
   @Test
   public void testJustStartAndStopWithoutCheckpointsAndCounters() {
-    Trace trace = new Trace(TRACE_1, transportManager, mClock, mAppStateMonitor);
-    mCurrentTime = 1;
+    Trace trace = new Trace(TRACE_1, transportManager, clock, appStateMonitor);
+    currentTime = 1;
     trace.start();
-    mCurrentTime = 2;
+    currentTime = 2;
     trace.stop();
     TraceMetric traceMetric = new TraceMetricBuilder(trace).build();
 
@@ -85,15 +85,15 @@ public class TraceMetricBuilderTest extends FirebasePerformanceTestBase {
 
   @Test
   public void testAddingCountersWithStartAndStop() {
-    Trace trace = new Trace(TRACE_1, transportManager, mClock, mAppStateMonitor);
-    mCurrentTime = 1;
+    Trace trace = new Trace(TRACE_1, transportManager, clock, appStateMonitor);
+    currentTime = 1;
     trace.start();
     trace.incrementMetric(METRIC_1, 1);
     trace.incrementMetric(METRIC_1, 1);
     trace.incrementMetric(METRIC_2, 1);
     trace.incrementMetric(METRIC_2, 1);
     trace.incrementMetric(METRIC_2, 1);
-    mCurrentTime = 2;
+    currentTime = 2;
     trace.stop();
     TraceMetric traceMetric = new TraceMetricBuilder(trace).build();
 
@@ -111,13 +111,13 @@ public class TraceMetricBuilderTest extends FirebasePerformanceTestBase {
 
   @Test
   public void testIncrementingCounterByX() {
-    Trace trace = new Trace(TRACE_1, transportManager, mClock, mAppStateMonitor);
-    mCurrentTime = 1;
+    Trace trace = new Trace(TRACE_1, transportManager, clock, appStateMonitor);
+    currentTime = 1;
     trace.start();
     trace.incrementMetric(METRIC_1, 5);
     trace.incrementMetric(METRIC_2, 1);
     trace.incrementMetric(METRIC_2, 10);
-    mCurrentTime = 2;
+    currentTime = 2;
     trace.stop();
     TraceMetric traceMetric = new TraceMetricBuilder(trace).build();
 
@@ -135,12 +135,12 @@ public class TraceMetricBuilderTest extends FirebasePerformanceTestBase {
 
   @Test
   public void testAddingSubtraceWithStartAndStop() {
-    Trace trace = new Trace(TRACE_1, transportManager, mClock, mAppStateMonitor);
-    mCurrentTime = 1;
+    Trace trace = new Trace(TRACE_1, transportManager, clock, appStateMonitor);
+    currentTime = 1;
     trace.start();
-    mCurrentTime = 2;
+    currentTime = 2;
     trace.startStage(TRACE_2);
-    mCurrentTime = 3;
+    currentTime = 3;
     trace.stop();
     TraceMetric traceMetric = new TraceMetricBuilder(trace).build();
 
@@ -159,17 +159,17 @@ public class TraceMetricBuilderTest extends FirebasePerformanceTestBase {
 
   @Test
   public void testAddingSubtraceAndCountersWithStartAndStop() {
-    Trace trace = new Trace(TRACE_1, transportManager, mClock, mAppStateMonitor);
-    mCurrentTime = 1;
+    Trace trace = new Trace(TRACE_1, transportManager, clock, appStateMonitor);
+    currentTime = 1;
     trace.start();
-    mCurrentTime = 2;
+    currentTime = 2;
     trace.startStage(TRACE_2);
     trace.incrementMetric(METRIC_1, 1);
     trace.incrementMetric(METRIC_1, 1);
     trace.incrementMetric(METRIC_2, 1);
     trace.incrementMetric(METRIC_2, 1);
     trace.incrementMetric(METRIC_2, 1);
-    mCurrentTime = 3;
+    currentTime = 3;
     trace.stop();
     TraceMetric traceMetric = new TraceMetricBuilder(trace).build();
 
@@ -194,13 +194,13 @@ public class TraceMetricBuilderTest extends FirebasePerformanceTestBase {
 
   @Test
   public void testAddingCustomAttributes() {
-    Trace trace = new Trace(TRACE_1, transportManager, mClock, mAppStateMonitor);
-    mCurrentTime = 1;
+    Trace trace = new Trace(TRACE_1, transportManager, clock, appStateMonitor);
+    currentTime = 1;
     trace.start();
-    mCurrentTime = 2;
+    currentTime = 2;
     trace.startStage(TRACE_2);
     trace.putAttribute(TRACE_ATTRIBUTE_KEY, TRACE_ATTRIBUTE_VALUE);
-    mCurrentTime = 3;
+    currentTime = 3;
     trace.stop();
     TraceMetric traceMetric = new TraceMetricBuilder(trace).build();
     Assert.assertEquals(TRACE_1, traceMetric.getName());
@@ -213,14 +213,14 @@ public class TraceMetricBuilderTest extends FirebasePerformanceTestBase {
     String beforeStart = "beforeStart";
     String afterStart = "afterStart";
     String afterStop = "afterStop";
-    Trace trace = new Trace(TRACE_1, transportManager, mClock, mAppStateMonitor);
-    mCurrentTime = 1;
+    Trace trace = new Trace(TRACE_1, transportManager, clock, appStateMonitor);
+    currentTime = 1;
     trace.start();
-    mCurrentTime = 2;
+    currentTime = 2;
     trace.putAttribute(TRACE_ATTRIBUTE_KEY + beforeStart, TRACE_ATTRIBUTE_VALUE + beforeStart);
     trace.startStage(TRACE_2);
     trace.putAttribute(TRACE_ATTRIBUTE_KEY + afterStart, TRACE_ATTRIBUTE_VALUE + afterStart);
-    mCurrentTime = 3;
+    currentTime = 3;
     trace.stop();
     trace.putAttribute(TRACE_ATTRIBUTE_KEY + afterStop, TRACE_ATTRIBUTE_VALUE + afterStop);
     TraceMetric traceMetric = new TraceMetricBuilder(trace).build();
@@ -235,10 +235,10 @@ public class TraceMetricBuilderTest extends FirebasePerformanceTestBase {
 
   @Test
   public void testAddingMoreThanMaxLocalAttributes() {
-    Trace trace = new Trace(TRACE_1, transportManager, mClock, mAppStateMonitor);
-    mCurrentTime = 1;
+    Trace trace = new Trace(TRACE_1, transportManager, clock, appStateMonitor);
+    currentTime = 1;
     trace.start();
-    mCurrentTime = 2;
+    currentTime = 2;
     for (int i = 0; i <= Constants.MAX_TRACE_CUSTOM_ATTRIBUTES; i++) {
       trace.putAttribute(TRACE_ATTRIBUTE_KEY + i, TRACE_ATTRIBUTE_VALUE + i);
     }
@@ -256,13 +256,13 @@ public class TraceMetricBuilderTest extends FirebasePerformanceTestBase {
 
   @Test
   public void testRemovingCustomAttributes() {
-    Trace trace = new Trace(TRACE_1, transportManager, mClock, mAppStateMonitor);
-    mCurrentTime = 1;
+    Trace trace = new Trace(TRACE_1, transportManager, clock, appStateMonitor);
+    currentTime = 1;
     trace.start();
-    mCurrentTime = 2;
+    currentTime = 2;
     trace.startStage(TRACE_2);
     trace.putAttribute(TRACE_ATTRIBUTE_KEY, TRACE_ATTRIBUTE_VALUE);
-    mCurrentTime = 3;
+    currentTime = 3;
     trace.removeAttribute(TRACE_ATTRIBUTE_KEY);
     trace.stop();
     TraceMetric traceMetric = new TraceMetricBuilder(trace).build();
@@ -272,12 +272,12 @@ public class TraceMetricBuilderTest extends FirebasePerformanceTestBase {
 
   @Test
   public void testAddingAttributeWithNullKey() {
-    Trace trace = new Trace(TRACE_1, transportManager, mClock, mAppStateMonitor);
-    mCurrentTime = 1;
+    Trace trace = new Trace(TRACE_1, transportManager, clock, appStateMonitor);
+    currentTime = 1;
     trace.start();
-    mCurrentTime = 2;
+    currentTime = 2;
     trace.putAttribute(null, TRACE_ATTRIBUTE_VALUE);
-    mCurrentTime = 3;
+    currentTime = 3;
     trace.stop();
     TraceMetric traceMetric = new TraceMetricBuilder(trace).build();
     Assert.assertEquals(TRACE_1, traceMetric.getName());
@@ -286,12 +286,12 @@ public class TraceMetricBuilderTest extends FirebasePerformanceTestBase {
 
   @Test
   public void testAddingAttributeWithNullValue() {
-    Trace trace = new Trace(TRACE_1, transportManager, mClock, mAppStateMonitor);
-    mCurrentTime = 1;
+    Trace trace = new Trace(TRACE_1, transportManager, clock, appStateMonitor);
+    currentTime = 1;
     trace.start();
-    mCurrentTime = 2;
+    currentTime = 2;
     trace.putAttribute(TRACE_ATTRIBUTE_KEY, null);
-    mCurrentTime = 3;
+    currentTime = 3;
     trace.stop();
     TraceMetric traceMetric = new TraceMetricBuilder(trace).build();
     Assert.assertEquals(TRACE_1, traceMetric.getName());
@@ -300,13 +300,13 @@ public class TraceMetricBuilderTest extends FirebasePerformanceTestBase {
 
   @Test
   public void testRemovingNonExistingCustomAttributes() {
-    Trace trace = new Trace(TRACE_1, transportManager, mClock, mAppStateMonitor);
-    mCurrentTime = 1;
+    Trace trace = new Trace(TRACE_1, transportManager, clock, appStateMonitor);
+    currentTime = 1;
     trace.start();
-    mCurrentTime = 2;
+    currentTime = 2;
     trace.startStage(TRACE_2);
     trace.putAttribute(TRACE_ATTRIBUTE_KEY, TRACE_ATTRIBUTE_VALUE);
-    mCurrentTime = 3;
+    currentTime = 3;
     trace.removeAttribute(TRACE_ATTRIBUTE_KEY + "NonExisting");
     trace.stop();
     TraceMetric traceMetric = new TraceMetricBuilder(trace).build();
@@ -317,13 +317,13 @@ public class TraceMetricBuilderTest extends FirebasePerformanceTestBase {
 
   @Test
   public void testUpdatingCustomAttributes() {
-    Trace trace = new Trace(TRACE_1, transportManager, mClock, mAppStateMonitor);
-    mCurrentTime = 1;
+    Trace trace = new Trace(TRACE_1, transportManager, clock, appStateMonitor);
+    currentTime = 1;
     trace.start();
-    mCurrentTime = 2;
+    currentTime = 2;
     trace.startStage(TRACE_2);
     trace.putAttribute(TRACE_ATTRIBUTE_KEY, TRACE_ATTRIBUTE_VALUE);
-    mCurrentTime = 3;
+    currentTime = 3;
     trace.putAttribute(TRACE_ATTRIBUTE_KEY, TRACE_ATTRIBUTE_VALUE + "New");
     trace.stop();
     TraceMetric traceMetric = new TraceMetricBuilder(trace).build();

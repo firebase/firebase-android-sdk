@@ -51,9 +51,9 @@ public class DeveloperListenerManager {
   private Map<FirebaseInAppMessagingDismissListener, DismissExecutorAndListener>
       registeredDismissListeners = new HashMap<>();
   private Map<FirebaseInAppMessagingDisplayErrorListener, ErrorsExecutorAndListener>
-      registeredErrorListeners = new HashMap<>();;
+      registeredErrorListeners = new HashMap<>();
   private Map<FirebaseInAppMessagingImpressionListener, ImpressionExecutorAndListener>
-      registeredImpressionListeners = new HashMap<>();;
+      registeredImpressionListeners = new HashMap<>();
 
   private static BlockingQueue<Runnable> mCallbackQueue = new LinkedBlockingQueue<>();
   private static final ThreadPoolExecutor CALLBACK_QUEUE_EXECUTOR =

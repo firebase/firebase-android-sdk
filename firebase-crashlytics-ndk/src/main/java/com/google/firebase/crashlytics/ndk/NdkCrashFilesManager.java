@@ -17,8 +17,13 @@ package com.google.firebase.crashlytics.ndk;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import java.io.File;
+import java.util.Arrays;
+import java.util.Comparator;
 
 class NdkCrashFilesManager implements CrashFilesManager {
+  private static final Comparator<? super File> LATEST_SESSION_FIRST =
+      (f1, f2) -> f2.getName().compareTo(f1.getName());
+  private static final int MAX_SESSIONS = 8;
 
   private final File rootPath;
 
@@ -38,8 +43,19 @@ class NdkCrashFilesManager implements CrashFilesManager {
   }
 
   @Override
-  public void deleteSessionFilesDirectory(String sessionId) {
+  public void deleteSessionFileDirectory(String sessionId) {
     recursiveDelete(new File(rootPath, sessionId));
+  }
+
+  @Override
+  public void cleanOldSessionFileDirectories() {
+    File[] sessionFileDirectories = rootPath.listFiles(File::isDirectory);
+    if (sessionFileDirectories != null && sessionFileDirectories.length > MAX_SESSIONS) {
+      Arrays.sort(sessionFileDirectories, LATEST_SESSION_FIRST);
+      for (int i = MAX_SESSIONS; i < sessionFileDirectories.length; i++) {
+        recursiveDelete(sessionFileDirectories[i]);
+      }
+    }
   }
 
   @Nullable

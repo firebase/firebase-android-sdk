@@ -45,6 +45,7 @@ class UpdateMetadataTask implements Runnable {
         new ExponentialBackoffSender(
             storage.getApp().getApplicationContext(),
             storage.getAuthProvider(),
+            storage.getAppCheckProvider(),
             storage.getMaxOperationRetryTimeMillis());
   }
 
@@ -52,7 +53,9 @@ class UpdateMetadataTask implements Runnable {
   public void run() {
     final NetworkRequest request =
         new UpdateMetadataNetworkRequest(
-            mStorageRef.getStorageUri(), mStorageRef.getApp(), mNewMetadata.createJSONObject());
+            mStorageRef.getStorageReferenceUri(),
+            mStorageRef.getApp(),
+            mNewMetadata.createJSONObject());
 
     mSender.sendWithExponentialBackoff(request);
     if (request.isResultSuccess()) {

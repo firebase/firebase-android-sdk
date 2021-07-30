@@ -93,7 +93,7 @@ public class PushIdGenerator {
     return next.append(
             new String(new char[MAX_KEY_LEN - next.length()]).replace("\0", "" + MAX_PUSH_CHAR))
         .toString();
-  };
+  }
 
   public static final String successor(String key) {
     Validation.validateNullableKey(key);

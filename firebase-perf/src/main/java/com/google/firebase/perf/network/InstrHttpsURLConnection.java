@@ -14,7 +14,7 @@
 
 package com.google.firebase.perf.network;
 
-import com.google.firebase.perf.impl.NetworkRequestMetricBuilder;
+import com.google.firebase.perf.metrics.NetworkRequestMetricBuilder;
 import com.google.firebase.perf.util.Timer;
 import java.io.IOException;
 import java.io.InputStream;
@@ -37,8 +37,8 @@ import javax.net.ssl.SSLSocketFactory;
  */
 public final class InstrHttpsURLConnection extends HttpsURLConnection {
 
-  private final InstrURLConnectionBase mDelegate;
-  private final HttpsURLConnection mHttpsURLConnection;
+  private final InstrURLConnectionBase delegate;
+  private final HttpsURLConnection httpsURLConnection;
 
   /**
    * Instrumented HttpsURLConnection object
@@ -49,334 +49,334 @@ public final class InstrHttpsURLConnection extends HttpsURLConnection {
   InstrHttpsURLConnection(
       HttpsURLConnection connection, Timer timer, NetworkRequestMetricBuilder builder) {
     super(connection.getURL());
-    mHttpsURLConnection = connection;
-    mDelegate = new InstrURLConnectionBase(connection, timer, builder);
+    httpsURLConnection = connection;
+    delegate = new InstrURLConnectionBase(connection, timer, builder);
   }
 
   @Override
   public void connect() throws IOException {
-    mDelegate.connect();
+    delegate.connect();
   }
 
   @Override
   public void disconnect() {
-    mDelegate.disconnect();
+    delegate.disconnect();
   }
 
   @Override
   public Object getContent() throws IOException {
-    return mDelegate.getContent();
+    return delegate.getContent();
   }
 
   @SuppressWarnings("rawtypes")
   @Override
   public Object getContent(final Class[] classes) throws IOException {
-    return mDelegate.getContent(classes);
+    return delegate.getContent(classes);
   }
 
   @Override
   public InputStream getInputStream() throws IOException {
-    return mDelegate.getInputStream();
+    return delegate.getInputStream();
   }
 
   @Override
   public long getLastModified() {
-    return mDelegate.getLastModified();
+    return delegate.getLastModified();
   }
 
   @Override
   public OutputStream getOutputStream() throws IOException {
-    return mDelegate.getOutputStream();
+    return delegate.getOutputStream();
   }
 
   @Override
   public Permission getPermission() throws IOException {
-    return mDelegate.getPermission();
+    return delegate.getPermission();
   }
 
   @Override
   public int getResponseCode() throws IOException {
-    return mDelegate.getResponseCode();
+    return delegate.getResponseCode();
   }
 
   @Override
   public String getResponseMessage() throws IOException {
-    return mDelegate.getResponseMessage();
+    return delegate.getResponseMessage();
   }
 
   @Override
   public long getExpiration() {
-    return mDelegate.getExpiration();
+    return delegate.getExpiration();
   }
 
   @Override
   public String getHeaderField(final int n) {
-    return mDelegate.getHeaderField(n);
+    return delegate.getHeaderField(n);
   }
 
   @Override
   public String getHeaderField(final String name) {
-    return mDelegate.getHeaderField(name);
+    return delegate.getHeaderField(name);
   }
 
   @Override
   public long getHeaderFieldDate(final String name, final long defaultDate) {
-    return mDelegate.getHeaderFieldDate(name, defaultDate);
+    return delegate.getHeaderFieldDate(name, defaultDate);
   }
 
   @Override
   public int getHeaderFieldInt(final String name, final int defaultInt) {
-    return mDelegate.getHeaderFieldInt(name, defaultInt);
+    return delegate.getHeaderFieldInt(name, defaultInt);
   }
 
   @Override
   public long getHeaderFieldLong(final String name, final long defaultLong) {
-    return mDelegate.getHeaderFieldLong(name, defaultLong);
+    return delegate.getHeaderFieldLong(name, defaultLong);
   }
 
   @Override
   public String getHeaderFieldKey(final int n) {
-    return mDelegate.getHeaderFieldKey(n);
+    return delegate.getHeaderFieldKey(n);
   }
 
   @Override
   public Map<String, List<String>> getHeaderFields() {
-    return mDelegate.getHeaderFields();
+    return delegate.getHeaderFields();
   }
 
   @Override
   public String getContentEncoding() {
-    return mDelegate.getContentEncoding();
+    return delegate.getContentEncoding();
   }
 
   @Override
   public int getContentLength() {
-    return mDelegate.getContentLength();
+    return delegate.getContentLength();
   }
 
   @Override
   public long getContentLengthLong() {
-    return mDelegate.getContentLengthLong();
+    return delegate.getContentLengthLong();
   }
 
   @Override
   public String getContentType() {
-    return mDelegate.getContentType();
+    return delegate.getContentType();
   }
 
   @Override
   public long getDate() {
-    return mDelegate.getDate();
+    return delegate.getDate();
   }
 
   @Override
   public void addRequestProperty(final String key, final String value) {
-    mDelegate.addRequestProperty(key, value);
+    delegate.addRequestProperty(key, value);
   }
 
   @Override
   public boolean equals(final Object obj) {
-    return mDelegate.equals(obj);
+    return delegate.equals(obj);
   }
 
   @Override
   public boolean getAllowUserInteraction() {
-    return mDelegate.getAllowUserInteraction();
+    return delegate.getAllowUserInteraction();
   }
 
   @Override
   public int getConnectTimeout() {
-    return mDelegate.getConnectTimeout();
+    return delegate.getConnectTimeout();
   }
 
   @Override
   public boolean getDefaultUseCaches() {
-    return mDelegate.getDefaultUseCaches();
+    return delegate.getDefaultUseCaches();
   }
 
   @Override
   public boolean getDoInput() {
-    return mDelegate.getDoInput();
+    return delegate.getDoInput();
   }
 
   @Override
   public boolean getDoOutput() {
-    return mDelegate.getDoOutput();
+    return delegate.getDoOutput();
   }
 
   @Override
   public InputStream getErrorStream() {
-    return mDelegate.getErrorStream();
+    return delegate.getErrorStream();
   }
 
   @Override
   public long getIfModifiedSince() {
-    return mDelegate.getIfModifiedSince();
+    return delegate.getIfModifiedSince();
   }
 
   @Override
   public boolean getInstanceFollowRedirects() {
-    return mDelegate.getInstanceFollowRedirects();
+    return delegate.getInstanceFollowRedirects();
   }
 
   @Override
   public int getReadTimeout() {
-    return mDelegate.getReadTimeout();
+    return delegate.getReadTimeout();
   }
 
   @Override
   public String getRequestMethod() {
-    return mDelegate.getRequestMethod();
+    return delegate.getRequestMethod();
   }
 
   @Override
   public Map<String, List<String>> getRequestProperties() {
-    return mDelegate.getRequestProperties();
+    return delegate.getRequestProperties();
   }
 
   @Override
   public String getRequestProperty(final String key) {
-    return mDelegate.getRequestProperty(key);
+    return delegate.getRequestProperty(key);
   }
 
   @Override
   public URL getURL() {
-    return mDelegate.getURL();
+    return delegate.getURL();
   }
 
   @Override
   public boolean getUseCaches() {
-    return mDelegate.getUseCaches();
+    return delegate.getUseCaches();
   }
 
   @Override
   public int hashCode() {
-    return mDelegate.hashCode();
+    return delegate.hashCode();
   }
 
   @Override
   public void setAllowUserInteraction(final boolean allowuserinteraction) {
-    mDelegate.setAllowUserInteraction(allowuserinteraction);
+    delegate.setAllowUserInteraction(allowuserinteraction);
   }
 
   @Override
   public void setChunkedStreamingMode(final int chunklen) {
-    mDelegate.setChunkedStreamingMode(chunklen);
+    delegate.setChunkedStreamingMode(chunklen);
   }
 
   @Override
   public void setConnectTimeout(final int timeout) {
-    mDelegate.setConnectTimeout(timeout);
+    delegate.setConnectTimeout(timeout);
   }
 
   @Override
   public void setDefaultUseCaches(final boolean defaultusecaches) {
-    mDelegate.setDefaultUseCaches(defaultusecaches);
+    delegate.setDefaultUseCaches(defaultusecaches);
   }
 
   @Override
   public void setDoInput(final boolean doinput) {
-    mDelegate.setDoInput(doinput);
+    delegate.setDoInput(doinput);
   }
 
   @Override
   public void setDoOutput(final boolean dooutput) {
-    mDelegate.setDoOutput(dooutput);
+    delegate.setDoOutput(dooutput);
   }
 
   @Override
   public void setFixedLengthStreamingMode(final int contentLength) {
-    mDelegate.setFixedLengthStreamingMode(contentLength);
+    delegate.setFixedLengthStreamingMode(contentLength);
   }
 
   @Override
   public void setFixedLengthStreamingMode(final long contentLength) {
-    mDelegate.setFixedLengthStreamingMode(contentLength);
+    delegate.setFixedLengthStreamingMode(contentLength);
   }
 
   @Override
   public void setIfModifiedSince(final long ifmodifiedsince) {
-    mDelegate.setIfModifiedSince(ifmodifiedsince);
+    delegate.setIfModifiedSince(ifmodifiedsince);
   }
 
   @Override
   public void setInstanceFollowRedirects(final boolean followRedirects) {
-    mDelegate.setInstanceFollowRedirects(followRedirects);
+    delegate.setInstanceFollowRedirects(followRedirects);
   }
 
   @Override
   public void setReadTimeout(final int timeout) {
-    mDelegate.setReadTimeout(timeout);
+    delegate.setReadTimeout(timeout);
   }
 
   @Override
   public void setRequestMethod(final String method) throws ProtocolException {
-    mDelegate.setRequestMethod(method);
+    delegate.setRequestMethod(method);
   }
 
   @Override
   public void setRequestProperty(final String key, final String value) {
-    mDelegate.setRequestProperty(key, value);
+    delegate.setRequestProperty(key, value);
   }
 
   @Override
   public void setUseCaches(final boolean usecaches) {
-    mDelegate.setUseCaches(usecaches);
+    delegate.setUseCaches(usecaches);
   }
 
   @Override
   public String toString() {
-    return mDelegate.toString();
+    return delegate.toString();
   }
 
   @Override
   public boolean usingProxy() {
-    return mDelegate.usingProxy();
+    return delegate.usingProxy();
   }
 
   // Unique to HttpsURLConnection
   @Override
   public String getCipherSuite() {
-    return mHttpsURLConnection.getCipherSuite();
+    return httpsURLConnection.getCipherSuite();
   }
 
   @Override
   public HostnameVerifier getHostnameVerifier() {
-    return mHttpsURLConnection.getHostnameVerifier();
+    return httpsURLConnection.getHostnameVerifier();
   }
 
   @Override
   public Certificate[] getLocalCertificates() {
-    return mHttpsURLConnection.getLocalCertificates();
+    return httpsURLConnection.getLocalCertificates();
   }
 
   @Override
   public Principal getLocalPrincipal() {
-    return mHttpsURLConnection.getLocalPrincipal();
+    return httpsURLConnection.getLocalPrincipal();
   }
 
   @Override
   public Principal getPeerPrincipal() throws SSLPeerUnverifiedException {
-    return mHttpsURLConnection.getPeerPrincipal();
+    return httpsURLConnection.getPeerPrincipal();
   }
 
   @Override
   public Certificate[] getServerCertificates() throws SSLPeerUnverifiedException {
-    return mHttpsURLConnection.getServerCertificates();
+    return httpsURLConnection.getServerCertificates();
   }
 
   @Override
   public SSLSocketFactory getSSLSocketFactory() {
-    return mHttpsURLConnection.getSSLSocketFactory();
+    return httpsURLConnection.getSSLSocketFactory();
   }
 
   @Override
   public void setHostnameVerifier(HostnameVerifier verifier) {
-    mHttpsURLConnection.setHostnameVerifier(verifier);
+    httpsURLConnection.setHostnameVerifier(verifier);
   }
 
   @Override
   public void setSSLSocketFactory(SSLSocketFactory factory) {
-    mHttpsURLConnection.setSSLSocketFactory(factory);
+    httpsURLConnection.setSSLSocketFactory(factory);
   }
 }

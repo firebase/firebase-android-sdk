@@ -32,9 +32,9 @@ import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.perf.FirebasePerformance;
 import com.google.firebase.perf.FirebasePerformanceTestBase;
+import com.google.firebase.perf.application.AppStateMonitor;
 import com.google.firebase.perf.config.ConfigResolver;
-import com.google.firebase.perf.internal.AppStateMonitor;
-import com.google.firebase.perf.internal.SessionManager;
+import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.shadows.ShadowPreconditions;
 import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.Constants;
@@ -1130,7 +1130,7 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
     TraceMetric.Builder validTrace = createValidTraceMetric().toBuilder();
     List<PerfSession> perfSessions = new ArrayList<>();
     perfSessions.add(
-        new com.google.firebase.perf.internal.PerfSession("fakeSessionId", new Clock()).build());
+        new com.google.firebase.perf.session.PerfSession("fakeSessionId", new Clock()).build());
     validTrace.addAllPerfSessions(perfSessions);
 
     testTransportManager.log(validTrace.build());
@@ -1148,7 +1148,7 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
         createValidNetworkRequestMetric().toBuilder();
     List<PerfSession> perfSessions = new ArrayList<>();
     perfSessions.add(
-        new com.google.firebase.perf.internal.PerfSession("fakeSessionId", new Clock()).build());
+        new com.google.firebase.perf.session.PerfSession("fakeSessionId", new Clock()).build());
     validNetworkRequest.clearPerfSessions().addAllPerfSessions(perfSessions);
 
     testTransportManager.log(validNetworkRequest.build());
@@ -1162,8 +1162,8 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
 
   @Test
   public void logTraceMetric_perfSessionExpired_updatesSessionId() {
-    com.google.firebase.perf.internal.PerfSession mockPerfSession =
-        mock(com.google.firebase.perf.internal.PerfSession.class);
+    com.google.firebase.perf.session.PerfSession mockPerfSession =
+        mock(com.google.firebase.perf.session.PerfSession.class);
     when(mockPerfSession.sessionId()).thenReturn("sessionId");
     when(mockPerfSession.isExpired()).thenReturn(true);
 
@@ -1179,8 +1179,8 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
 
   @Test
   public void logNetworkMetric_perfSessionExpired_updatesSessionId() {
-    com.google.firebase.perf.internal.PerfSession mockPerfSession =
-        mock(com.google.firebase.perf.internal.PerfSession.class);
+    com.google.firebase.perf.session.PerfSession mockPerfSession =
+        mock(com.google.firebase.perf.session.PerfSession.class);
     when(mockPerfSession.sessionId()).thenReturn("sessionId");
     when(mockPerfSession.isExpired()).thenReturn(true);
 
@@ -1196,8 +1196,8 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
 
   @Test
   public void logGaugeMetric_perfSessionExpired_updatesSessionId() {
-    com.google.firebase.perf.internal.PerfSession mockPerfSession =
-        mock(com.google.firebase.perf.internal.PerfSession.class);
+    com.google.firebase.perf.session.PerfSession mockPerfSession =
+        mock(com.google.firebase.perf.session.PerfSession.class);
     when(mockPerfSession.sessionId()).thenReturn("sessionId");
     when(mockPerfSession.isExpired()).thenReturn(true);
 
@@ -1213,8 +1213,8 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
 
   @Test
   public void logTraceMetric_perfSessionNotExpired_doesNotUpdateSessionId() {
-    com.google.firebase.perf.internal.PerfSession mockPerfSession =
-        mock(com.google.firebase.perf.internal.PerfSession.class);
+    com.google.firebase.perf.session.PerfSession mockPerfSession =
+        mock(com.google.firebase.perf.session.PerfSession.class);
     when(mockPerfSession.sessionId()).thenReturn("sessionId");
     when(mockPerfSession.isExpired()).thenReturn(false);
 
@@ -1230,8 +1230,8 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
 
   @Test
   public void logNetworkMetric_perfSessionNotExpired_doesNotUpdateSessionId() {
-    com.google.firebase.perf.internal.PerfSession mockPerfSession =
-        mock(com.google.firebase.perf.internal.PerfSession.class);
+    com.google.firebase.perf.session.PerfSession mockPerfSession =
+        mock(com.google.firebase.perf.session.PerfSession.class);
     when(mockPerfSession.sessionId()).thenReturn("sessionId");
     when(mockPerfSession.isExpired()).thenReturn(false);
 
@@ -1247,8 +1247,8 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
 
   @Test
   public void logGaugeMetric_perfSessionNotExpired_doesNotUpdateSessionId() {
-    com.google.firebase.perf.internal.PerfSession mockPerfSession =
-        mock(com.google.firebase.perf.internal.PerfSession.class);
+    com.google.firebase.perf.session.PerfSession mockPerfSession =
+        mock(com.google.firebase.perf.session.PerfSession.class);
     when(mockPerfSession.sessionId()).thenReturn("sessionId");
     when(mockPerfSession.isExpired()).thenReturn(false);
 

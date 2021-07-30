@@ -35,6 +35,7 @@ import com.google.android.gms.common.util.Clock;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
+import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigClientException;
@@ -79,7 +80,7 @@ public class ConfigFetchHandler {
   @VisibleForTesting static final int HTTP_TOO_MANY_REQUESTS = 429;
 
   private final FirebaseInstallationsApi firebaseInstallations;
-  @Nullable private final AnalyticsConnector analyticsConnector;
+  private final Provider<AnalyticsConnector> analyticsConnector;
 
   private final Executor executor;
   private final Clock clock;
@@ -93,7 +94,7 @@ public class ConfigFetchHandler {
   /** FRC Fetch Handler constructor. */
   public ConfigFetchHandler(
       FirebaseInstallationsApi firebaseInstallations,
-      @Nullable AnalyticsConnector analyticsConnector,
+      Provider<AnalyticsConnector> analyticsConnector,
       Executor executor,
       Clock clock,
       Random randomGenerator,
@@ -497,12 +498,13 @@ public class ConfigFetchHandler {
   @WorkerThread
   private Map<String, String> getUserProperties() {
     Map<String, String> userPropertiesMap = new HashMap<>();
-    if (analyticsConnector == null) {
+    AnalyticsConnector connector = this.analyticsConnector.get();
+    if (connector == null) {
       return userPropertiesMap;
     }
 
     for (Map.Entry<String, Object> userPropertyEntry :
-        analyticsConnector.getUserProperties(/*includeInternal=*/ false).entrySet()) {
+        connector.getUserProperties(/*includeInternal=*/ false).entrySet()) {
       userPropertiesMap.put(userPropertyEntry.getKey(), userPropertyEntry.getValue().toString());
     }
     return userPropertiesMap;
@@ -510,8 +512,7 @@ public class ConfigFetchHandler {
 
   /** Used to verify that the fetch handler is getting Analytics as expected. */
   @VisibleForTesting
-  @Nullable
-  public AnalyticsConnector getAnalyticsConnector() {
+  public Provider<AnalyticsConnector> getAnalyticsConnector() {
     return analyticsConnector;
   }
 

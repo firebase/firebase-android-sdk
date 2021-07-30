@@ -21,7 +21,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.google.firebase.perf.FirebasePerformanceTestBase;
-import com.google.firebase.perf.impl.NetworkRequestMetricBuilder;
+import com.google.firebase.perf.metrics.NetworkRequestMetricBuilder;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.perf.v1.ApplicationProcessState;
@@ -43,131 +43,133 @@ import org.robolectric.RobolectricTestRunner;
 @RunWith(RobolectricTestRunner.class)
 public class InstrHttpOutputStreamTest extends FirebasePerformanceTestBase {
 
-  @Mock OutputStream mOutputStream;
+  @Mock OutputStream outputStream;
   @Mock TransportManager transportManager;
-  @Mock Timer mTimer;
-  @Captor ArgumentCaptor<NetworkRequestMetric> mArgMetric;
+  @Mock Timer timer;
+  @Captor ArgumentCaptor<NetworkRequestMetric> networkArgumentCaptor;
 
-  private NetworkRequestMetricBuilder mBuilder;
+  private NetworkRequestMetricBuilder networkMetricBuilder;
 
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
-    when(mTimer.getMicros()).thenReturn((long) 1000);
-    when(mTimer.getDurationMicros()).thenReturn((long) 2000);
-    mBuilder = NetworkRequestMetricBuilder.builder(transportManager);
+    when(timer.getMicros()).thenReturn((long) 1000);
+    when(timer.getDurationMicros()).thenReturn((long) 2000);
+    networkMetricBuilder = NetworkRequestMetricBuilder.builder(transportManager);
   }
 
   @Test
   public void testClose() throws IOException {
-    new InstrHttpOutputStream(mOutputStream, mBuilder, mTimer).close();
+    new InstrHttpOutputStream(outputStream, networkMetricBuilder, timer).close();
 
-    NetworkRequestMetric metric = mBuilder.build();
+    NetworkRequestMetric metric = networkMetricBuilder.build();
     assertThat(metric.getTimeToRequestCompletedUs()).isEqualTo(2000);
-    verify(mOutputStream).close();
+    verify(outputStream).close();
   }
 
   @Test
   public void testFlush() throws IOException {
-    new InstrHttpOutputStream(mOutputStream, mBuilder, mTimer).flush();
+    new InstrHttpOutputStream(outputStream, networkMetricBuilder, timer).flush();
 
-    verify(mOutputStream).flush();
+    verify(outputStream).flush();
   }
 
   @Test
   public void testWriteInt() throws IOException {
-    new InstrHttpOutputStream(mOutputStream, mBuilder, mTimer).write(8);
+    new InstrHttpOutputStream(outputStream, networkMetricBuilder, timer).write(8);
 
-    verify(mOutputStream).write(8);
+    verify(outputStream).write(8);
   }
 
   @Test
   public void testWriteByteArray() throws IOException {
     byte[] buffer = new byte[] {(byte) 0xe0};
 
-    new InstrHttpOutputStream(mOutputStream, mBuilder, mTimer).write(buffer);
+    new InstrHttpOutputStream(outputStream, networkMetricBuilder, timer).write(buffer);
 
-    verify(mOutputStream).write(buffer);
+    verify(outputStream).write(buffer);
   }
 
   @Test
   public void testWriteByteArrayOffLength() throws IOException {
     byte[] buffer = new byte[] {(byte) 0xe0};
 
-    new InstrHttpOutputStream(mOutputStream, mBuilder, mTimer).write(buffer, 0, 1);
+    new InstrHttpOutputStream(outputStream, networkMetricBuilder, timer).write(buffer, 0, 1);
 
-    verify(mOutputStream).write(buffer, 0, 1);
+    verify(outputStream).write(buffer, 0, 1);
   }
 
   @Test
   public void closeThrowsIOException() throws IOException {
-    doThrow(new IOException()).when(mOutputStream).close();
+    doThrow(new IOException()).when(outputStream).close();
 
     assertThrows(
         IOException.class,
-        () -> new InstrHttpOutputStream(mOutputStream, mBuilder, mTimer).close());
+        () -> new InstrHttpOutputStream(outputStream, networkMetricBuilder, timer).close());
 
     verify(transportManager)
-        .log(mArgMetric.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
-    verifyErrorNetworkMetric(mArgMetric.getValue());
-    verify(mOutputStream).close();
+        .log(networkArgumentCaptor.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
+    verifyErrorNetworkMetric(networkArgumentCaptor.getValue());
+    verify(outputStream).close();
   }
 
   @Test
   public void flushThrowsIOException() throws IOException {
-    doThrow(new IOException()).when(mOutputStream).flush();
+    doThrow(new IOException()).when(outputStream).flush();
 
     assertThrows(
         IOException.class,
-        () -> new InstrHttpOutputStream(mOutputStream, mBuilder, mTimer).flush());
+        () -> new InstrHttpOutputStream(outputStream, networkMetricBuilder, timer).flush());
 
     verify(transportManager)
-        .log(mArgMetric.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
-    verifyErrorNetworkMetric(mArgMetric.getValue());
-    verify(mOutputStream).flush();
+        .log(networkArgumentCaptor.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
+    verifyErrorNetworkMetric(networkArgumentCaptor.getValue());
+    verify(outputStream).flush();
   }
 
   @Test
   public void writeIntThrowsIOException() throws IOException {
-    doThrow(new IOException()).when(mOutputStream).write(8);
+    doThrow(new IOException()).when(outputStream).write(8);
 
     assertThrows(
         IOException.class,
-        () -> new InstrHttpOutputStream(mOutputStream, mBuilder, mTimer).write(8));
+        () -> new InstrHttpOutputStream(outputStream, networkMetricBuilder, timer).write(8));
 
     verify(transportManager)
-        .log(mArgMetric.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
-    verifyErrorNetworkMetric(mArgMetric.getValue());
-    verify(mOutputStream).write(8);
+        .log(networkArgumentCaptor.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
+    verifyErrorNetworkMetric(networkArgumentCaptor.getValue());
+    verify(outputStream).write(8);
   }
 
   @Test
   public void writeByteThrowsIOException() throws IOException {
     byte[] buffer = new byte[] {(byte) 0xe0};
-    doThrow(new IOException()).when(mOutputStream).write(buffer);
+    doThrow(new IOException()).when(outputStream).write(buffer);
 
     assertThrows(
         IOException.class,
-        () -> new InstrHttpOutputStream(mOutputStream, mBuilder, mTimer).write(buffer));
+        () -> new InstrHttpOutputStream(outputStream, networkMetricBuilder, timer).write(buffer));
     verify(transportManager)
-        .log(mArgMetric.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
-    verifyErrorNetworkMetric(mArgMetric.getValue());
-    verify(mOutputStream).write(buffer);
+        .log(networkArgumentCaptor.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
+    verifyErrorNetworkMetric(networkArgumentCaptor.getValue());
+    verify(outputStream).write(buffer);
   }
 
   @Test
   public void writeByteOffsetLengthThrowsIOException() throws IOException {
     byte[] buffer = new byte[] {(byte) 0xe0};
-    doThrow(new IOException()).when(mOutputStream).write(buffer, 0, 1);
+    doThrow(new IOException()).when(outputStream).write(buffer, 0, 1);
 
     assertThrows(
         IOException.class,
-        () -> new InstrHttpOutputStream(mOutputStream, mBuilder, mTimer).write(buffer, 0, 1));
+        () ->
+            new InstrHttpOutputStream(outputStream, networkMetricBuilder, timer)
+                .write(buffer, 0, 1));
 
     verify(transportManager)
-        .log(mArgMetric.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
-    verifyErrorNetworkMetric(mArgMetric.getValue());
-    verify(mOutputStream).write(buffer, 0, 1);
+        .log(networkArgumentCaptor.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
+    verifyErrorNetworkMetric(networkArgumentCaptor.getValue());
+    verify(outputStream).write(buffer, 0, 1);
   }
 
   private void verifyErrorNetworkMetric(NetworkRequestMetric metric) {

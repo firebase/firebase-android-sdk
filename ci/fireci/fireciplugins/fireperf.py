@@ -20,6 +20,7 @@ import pathlib
 
 from fireci import ci_command
 from fireci import gradle
+from fireci.dir_utils import chdir
 
 _logger = logging.getLogger('fireci.fireperf')
 
@@ -58,19 +59,6 @@ def fireperf_e2e_test(target_environment, plugin_repo_dir):
     fireperf_e2e_test_gradle_command += [gradle.P('fireperfBuildForAutopush', 'true')]
   _logger.info(f'Running fireperf e2e test with target environment: {target_environment} ...')
   gradle.run(*fireperf_e2e_test_gradle_command)
-
-
-@contextlib.contextmanager
-def chdir(directory):
-  """Change working dir to `directory` and restore to original afterwards."""
-  _logger.debug(f'Changing directory to: {directory} ...')
-  original_dir = os.getcwd()
-  os.chdir(directory)
-  try:
-    yield
-  finally:
-    _logger.debug(f'Restoring directory to: {original_dir} ...')
-    os.chdir(original_dir)
 
 
 def _find_fireperf_plugin_version():

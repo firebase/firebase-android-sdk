@@ -32,7 +32,9 @@ import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.VariableElement;
 import javax.lang.model.util.ElementFilter;
+import javax.lang.model.util.SimpleAnnotationValueVisitor8;
 
 /**
  * Generates an annotation implementation.
@@ -123,7 +125,21 @@ public final class AnnotationBuilder {
           FieldSpec.builder(field.type, field.name).addModifiers(Modifier.PRIVATE);
       AnnotationValue value = annotationImpl.defaults.get(field);
       if (value != null) {
-        fieldSpec.initializer("$L", value);
+        new SimpleAnnotationValueVisitor8<Void, Void>() {
+          @Override
+          public Void visitEnumConstant(VariableElement c, Void unused) {
+            // Using $L would print the simple name of the enum constant in JDK 17,
+            // see: https://github.com/square/javapoet/issues/845
+            fieldSpec.initializer("$T.$L", c.asType(), c.getSimpleName());
+            return null;
+          }
+
+          @Override
+          protected Void defaultAction(Object o, Void unused) {
+            fieldSpec.initializer("$L", value);
+            return null;
+          }
+        }.visit(value, null);
       }
       annotationBuilder.addMethod(
           MethodSpec.methodBuilder(field.name)

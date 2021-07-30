@@ -15,6 +15,7 @@
 package com.google.firebase.perf.transport;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.MINUTES;
 
 import android.content.Context;
 import android.content.pm.PackageInfo;
@@ -31,14 +32,16 @@ import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.perf.BuildConfig;
 import com.google.firebase.perf.FirebasePerformance;
+import com.google.firebase.perf.application.AppStateMonitor;
+import com.google.firebase.perf.application.AppStateMonitor.AppStateCallback;
 import com.google.firebase.perf.config.ConfigResolver;
-import com.google.firebase.perf.internal.AppStateMonitor;
-import com.google.firebase.perf.internal.AppStateMonitor.AppStateCallback;
-import com.google.firebase.perf.internal.PerfMetricValidator;
-import com.google.firebase.perf.internal.SessionManager;
 import com.google.firebase.perf.logging.AndroidLogger;
+import com.google.firebase.perf.logging.ConsoleUrlGenerator;
+import com.google.firebase.perf.metrics.validator.PerfMetricValidator;
+import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.Constants.CounterNames;
+import com.google.firebase.perf.util.Rate;
 import com.google.firebase.perf.v1.AndroidApplicationInfo;
 import com.google.firebase.perf.v1.ApplicationInfo;
 import com.google.firebase.perf.v1.ApplicationProcessState;
@@ -78,11 +81,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * <p>TODO(b/172008005): Implement a Callback functionality for the caller/subscriber to know
  * whether the log was actually dispatched or not.
- *
- * @hide
  */
-
-/** @hide */
 public class TransportManager implements AppStateCallback {
 
   private static final AndroidLogger logger = AndroidLogger.getInstance();
@@ -94,24 +93,7 @@ public class TransportManager implements AppStateCallback {
   private static final int CORE_POOL_SIZE = 0;
   private static final int MAX_POOL_SIZE = 1; // Only need single thread
 
-  private FirebaseApp firebaseApp;
-  @Nullable private FirebasePerformance firebasePerformance;
-  private FirebaseInstallationsApi firebaseInstallationsApi;
-  private Provider<TransportFactory> flgTransportFactoryProvider;
-  private FlgTransport flgTransport;
-
-  private ExecutorService executorService;
-  private final ApplicationInfo.Builder applicationInfoBuilder;
-  private Context appContext;
-  private ConfigResolver configResolver;
-  private RateLimiter rateLimiter;
-  private AppStateMonitor appStateMonitor;
-
-  private final AtomicBoolean isTransportInitialized = new AtomicBoolean(false);
-  private boolean isForegroundState = false;
-
   // Allows for in-memory caching of events while the TransportManager is not initialized
-  private final Map<String, Integer> cacheMap;
   private static final String KEY_AVAILABLE_TRACES_FOR_CACHING = "KEY_AVAILABLE_TRACES_FOR_CACHING";
   private static final String KEY_AVAILABLE_NETWORK_REQUESTS_FOR_CACHING =
       "KEY_AVAILABLE_NETWORK_REQUESTS_FOR_CACHING";
@@ -120,8 +102,27 @@ public class TransportManager implements AppStateCallback {
   private static final int MAX_TRACE_METRICS_CACHE_SIZE = 50;
   private static final int MAX_NETWORK_REQUEST_METRICS_CACHE_SIZE = 50;
   private static final int MAX_GAUGE_METRICS_CACHE_SIZE = 50;
+  private final Map<String, Integer> cacheMap;
   private final ConcurrentLinkedQueue<PendingPerfEvent> pendingEventsQueue =
       new ConcurrentLinkedQueue<>();
+
+  private final AtomicBoolean isTransportInitialized = new AtomicBoolean(false);
+
+  private FirebaseApp firebaseApp;
+  @Nullable private FirebasePerformance firebasePerformance;
+  private FirebaseInstallationsApi firebaseInstallationsApi;
+  private Provider<TransportFactory> flgTransportFactoryProvider;
+  private FlgTransport flgTransport;
+  private ExecutorService executorService;
+  private Context appContext;
+  private ConfigResolver configResolver;
+  private RateLimiter rateLimiter;
+  private AppStateMonitor appStateMonitor;
+  private ApplicationInfo.Builder applicationInfoBuilder;
+  private String packageName;
+  private String projectId;
+
+  private boolean isForegroundState = false;
 
   private TransportManager() {
     // MAX_POOL_SIZE must always be 1. We only allow one thread in this Executor. The reason
@@ -135,8 +136,6 @@ public class TransportManager implements AppStateCallback {
             /* keepAliveTime= */ 10,
             TimeUnit.SECONDS,
             new LinkedBlockingQueue<>());
-
-    this.applicationInfoBuilder = ApplicationInfo.newBuilder();
 
     cacheMap = new ConcurrentHashMap<>();
     cacheMap.put(KEY_AVAILABLE_TRACES_FOR_CACHING, MAX_TRACE_METRICS_CACHE_SIZE);
@@ -162,6 +161,7 @@ public class TransportManager implements AppStateCallback {
       ExecutorService executorService) {
 
     this.firebaseApp = firebaseApp;
+    this.projectId = firebaseApp.getOptions().getProjectId();
     this.appContext = firebaseApp.getApplicationContext();
     this.firebasePerformance = firebasePerformance;
     this.firebaseInstallationsApi = firebaseInstallationsApi;
@@ -196,6 +196,7 @@ public class TransportManager implements AppStateCallback {
       @NonNull Provider<TransportFactory> flgTransportFactoryProvider) {
 
     this.firebaseApp = firebaseApp;
+    projectId = firebaseApp.getOptions().getProjectId();
     this.firebaseInstallationsApi = firebaseInstallationsApi;
     this.flgTransportFactoryProvider = flgTransportFactoryProvider;
 
@@ -207,8 +208,11 @@ public class TransportManager implements AppStateCallback {
   @WorkerThread
   private void syncInit() {
     appContext = firebaseApp.getApplicationContext();
+    packageName = appContext.getPackageName();
     configResolver = ConfigResolver.getInstance();
-    rateLimiter = new RateLimiter(appContext, Constants.RATE_PER_MINUTE, Constants.BURST_CAPACITY);
+    rateLimiter =
+        new RateLimiter(
+            appContext, new Rate(Constants.RATE_PER_MINUTE, 1, MINUTES), Constants.BURST_CAPACITY);
     appStateMonitor = AppStateMonitor.getInstance();
     flgTransport =
         new FlgTransport(flgTransportFactoryProvider, configResolver.getAndCacheLogSourceName());
@@ -219,11 +223,12 @@ public class TransportManager implements AppStateCallback {
   private void finishInitialization() {
     appStateMonitor.registerForAppState(new WeakReference<>(instance));
 
+    applicationInfoBuilder = ApplicationInfo.newBuilder();
     applicationInfoBuilder
         .setGoogleAppId(firebaseApp.getOptions().getApplicationId())
         .setAndroidAppInfo(
             AndroidApplicationInfo.newBuilder()
-                .setPackageName(appContext.getPackageName())
+                .setPackageName(packageName)
                 .setSdkVersion(BuildConfig.FIREPERF_VERSION_NAME)
                 .setVersionName(getVersionName(appContext)));
 
@@ -453,7 +458,15 @@ public class TransportManager implements AppStateCallback {
 
   @WorkerThread
   private void dispatchLog(PerfMetric perfMetric) {
-    logger.info("Logging %s", getLogcatMsg(perfMetric));
+
+    // Logs the metrics to logcat plus console URL for every trace metric.
+    if (perfMetric.hasTraceMetric()) {
+      logger.info(
+          "Logging %s. In a minute, visit the Firebase console to view your data: %s",
+          getLogcatMsg(perfMetric), getConsoleUrl(perfMetric.getTraceMetric()));
+    } else {
+      logger.info("Logging %s", getLogcatMsg(perfMetric));
+    }
 
     flgTransport.log(perfMetric);
   }
@@ -467,9 +480,10 @@ public class TransportManager implements AppStateCallback {
    * https://developer.android.com/guide/topics/manifest/manifest-element#vname) of the android
    * application.
    */
-  private static String getVersionName(final Context context) {
+  private static String getVersionName(final Context appContext) {
     try {
-      PackageInfo pi = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
+      PackageInfo pi =
+          appContext.getPackageManager().getPackageInfo(appContext.getPackageName(), 0);
       return pi.versionName == null ? "" : pi.versionName;
     } catch (NameNotFoundException e) {
       return "";
@@ -601,7 +615,6 @@ public class TransportManager implements AppStateCallback {
 
   private static String getLogcatMsg(TraceMetric traceMetric) {
     long durationInUs = traceMetric.getDurationUs();
-
     return String.format(
         Locale.ENGLISH,
         "trace metric: %s (duration: %.4fms)",
@@ -635,6 +648,15 @@ public class TransportManager implements AppStateCallback {
         gaugeMetric.hasGaugeMetadata(),
         gaugeMetric.getCpuMetricReadingsCount(),
         gaugeMetric.getAndroidMemoryReadingsCount());
+  }
+
+  private String getConsoleUrl(TraceMetric traceMetric) {
+    String traceName = traceMetric.getName();
+    if (traceName.startsWith(Constants.SCREEN_TRACE_PREFIX)) {
+      return ConsoleUrlGenerator.generateScreenTraceUrl(projectId, packageName, traceName);
+    } else {
+      return ConsoleUrlGenerator.generateCustomTraceUrl(projectId, packageName, traceName);
+    }
   }
 
   // endregion
