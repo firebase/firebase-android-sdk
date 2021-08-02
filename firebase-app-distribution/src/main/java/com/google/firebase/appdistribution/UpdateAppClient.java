@@ -46,13 +46,14 @@ import okhttp3.ResponseBody;
 public class UpdateAppClient {
 
   private int UPDATE_INTERVAL_MS = 250;
+  private String TAG = "FADUpdateAppClient";
   private TaskCompletionSource<UpdateState> updateAppTaskCompletionSource = null;
   private CancellationTokenSource updateAppCancellationSource;
   private TaskCompletionSource<File> downloadTaskCompletionSource;
   private CancellationTokenSource downloadCancellationTokenSource;
   private Executor downloadExecutor;
   private Handler downloadHandler;
-  private TaskCompletionSource<Integer> installTaskCompletionSource;
+  private TaskCompletionSource<Void> installTaskCompletionSource;
   private CancellationTokenSource installCancellationTokenSource;
   private OkHttpClient httpClient;
   UpdateTaskImpl updateTask;
@@ -113,12 +114,17 @@ public class UpdateAppClient {
     getDownloadTask(downloadUrl)
         .addOnSuccessListener(
             file -> {
-              Log.v("updateApk", "success");
               install(file.getPath(), currentActivity)
                   .addOnSuccessListener(
-                      integer -> {
-                        // will change with api update
-                        updateAppTaskCompletionSource.setResult(null);
+                      Void -> {
+                        UpdateState updateState =
+                            UpdateState.builder()
+                                .setApkTotalBytesToDownload(0)
+                                .setApkBytesDownloaded(file.length())
+                                .setUpdateStatus(UpdateStatus.INSTALLED)
+                                .build();
+                        updateTask.updateProgress(updateState);
+                        updateAppTaskCompletionSource.setResult(updateState);
                       })
                   .addOnFailureListener(
                       e ->
@@ -127,7 +133,13 @@ public class UpdateAppClient {
                                   Constants.ErrorMessages.NETWORK_ERROR,
                                   FirebaseAppDistributionException.Status.INSTALLATION_FAILURE)));
             })
-        .addOnFailureListener(e -> Log.v("updateApk", "failure"));
+        .addOnFailureListener(
+            e ->
+                setUpdateAppErrorWithDefault(
+                    e,
+                    new FirebaseAppDistributionException(
+                        Constants.ErrorMessages.NETWORK_ERROR,
+                        FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE)));
   }
 
   public Task<File> getDownloadTask(String downloadUrl) {
@@ -159,7 +171,6 @@ public class UpdateAppClient {
               ResponseBody responseBody = response.body();
               long responseLength = responseBody.contentLength();
               String fileName = getApplicationName() + ".apk";
-              ;
               downloadToDisk(responseBody.byteStream(), responseLength, fileName);
             }
           } catch (IOException e) {
@@ -189,13 +200,15 @@ public class UpdateAppClient {
         downloadedSize += readSize;
         readSize = input.read(data);
 
-        //update progress logic for onProgressListener
+        // update progress logic for onProgressListener
         long currentTimeMs = System.currentTimeMillis();
         if (currentTimeMs - lastMsUpdated > UPDATE_INTERVAL_MS) {
           lastMsUpdated = currentTimeMs;
           updateProgressOnMainThread(totalSize, downloadedSize, UpdateStatus.DOWNLOADING);
         }
       }
+      // completion
+      updateProgressOnMainThread(totalSize, downloadedSize, UpdateStatus.DOWNLOADED);
 
     } catch (IOException e) {
       setDownloadTaskCompletionError(
@@ -222,12 +235,13 @@ public class UpdateAppClient {
   }
 
   private String getApplicationName() {
-    Context context = firebaseApp.getApplicationContext();
-    ApplicationInfo applicationInfo = context.getApplicationInfo();
-    int stringId = applicationInfo.labelRes;
-    return stringId == 0
-        ? applicationInfo.nonLocalizedLabel.toString()
-        : context.getString(stringId);
+    try {
+      Context context = firebaseApp.getApplicationContext();
+      return context.getApplicationInfo().loadLabel(context.getPackageManager()).toString();
+    } catch (Exception e) {
+      Log.e(TAG, "Unable to retrieve App name");
+      return "";
+    }
   }
 
   private void setDownloadTaskCompletionError(FirebaseAppDistributionException e) {
@@ -237,7 +251,7 @@ public class UpdateAppClient {
     }
   }
 
-  public Task<Integer> install(String path, Activity currentActivity) {
+  public Task<Void> install(String path, Activity currentActivity) {
     Intent intent = new Intent(currentActivity, InstallActivity.class);
     intent.putExtra("INSTALL_PATH", path);
     this.installCancellationTokenSource = new CancellationTokenSource();
@@ -256,20 +270,24 @@ public class UpdateAppClient {
     }
   }
 
-  private void updateProgressOnMainThread(long total, long downloaded, UpdateStatus status) {
+  private void setUpdateAppErrorWithDefault(
+      Exception e, FirebaseAppDistributionException defaultFirebaseException) {
+    if (e instanceof FirebaseAppDistributionException) {
+      setUpdateAppTaskCompletionError((FirebaseAppDistributionException) e);
+    } else {
+      setUpdateAppTaskCompletionError(defaultFirebaseException);
+    }
+  }
+
+  private void updateProgressOnMainThread(long totalBytes, long downloadedBytes, UpdateStatus status) {
     downloadHandler.post(
-        new Runnable() {
-          @Override
-          public void run() {
-            Log.v("left", String.valueOf(total-downloaded));
-            Log.v("downloaded", String.valueOf(downloaded));
-            updateTask.updateProgress(
-                UpdateState.builder()
-                    .setApkTotalBytesToDownload(total - downloaded)
-                    .setApkBytesDownloaded(downloaded)
-                    .setUpdateStatus(status)
-                    .build());
-          }
+        () -> {
+          updateTask.updateProgress(
+              UpdateState.builder()
+                  .setApkTotalBytesToDownload(totalBytes - downloadedBytes)
+                  .setApkBytesDownloaded(downloadedBytes)
+                  .setUpdateStatus(status)
+                  .build());
         });
   }
 }
