@@ -82,8 +82,6 @@ public class CheckForUpdateClientTest {
 
   Executor testExecutor = Executors.newSingleThreadExecutor();
 
-  //  @Rule public InstantTaskExecutorRule executorRule = new InstantTaskExecutorRule();
-
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
