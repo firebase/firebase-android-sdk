@@ -183,7 +183,8 @@ public class CheckForUpdateClientTest {
         assertThrows(FirebaseAppDistributionException.class, onCompleteListener::await);
 
     assertEquals(Constants.ErrorMessages.NETWORK_ERROR, actualException.getMessage());
-    assertEquals(FirebaseAppDistributionException.Status.NETWORK_FAILURE, actualException.getErrorCode());
+    assertEquals(
+        FirebaseAppDistributionException.Status.NETWORK_FAILURE, actualException.getErrorCode());
     assertEquals(expectedException, actualException.getCause());
   }
 
@@ -191,19 +192,21 @@ public class CheckForUpdateClientTest {
   public void checkForUpdate_appDistroFailure() throws Exception {
     when(mockFirebaseInstallations.getId()).thenReturn(Tasks.forResult(TEST_FID_1));
     when(mockFirebaseInstallations.getToken(false))
-            .thenReturn(Tasks.forResult(mockInstallationTokenResult));
+        .thenReturn(Tasks.forResult(mockInstallationTokenResult));
 
-    FirebaseAppDistributionException expectedException = new FirebaseAppDistributionException("test", FirebaseAppDistributionException.Status.UNKNOWN);
+    FirebaseAppDistributionException expectedException =
+        new FirebaseAppDistributionException(
+            "test", FirebaseAppDistributionException.Status.UNKNOWN);
     when(mockFirebaseAppDistributionTesterApiClient.fetchLatestRelease(any(), any(), any(), any()))
-            .thenThrow(expectedException);
+        .thenThrow(expectedException);
 
     TestOnCompleteListener<AppDistributionReleaseInternal> onCompleteListener =
-            new TestOnCompleteListener<>();
+        new TestOnCompleteListener<>();
     Task<AppDistributionReleaseInternal> task = checkForUpdateClient.checkForUpdate();
     task.addOnCompleteListener(testExecutor, onCompleteListener);
 
     FirebaseAppDistributionException actualException =
-            assertThrows(FirebaseAppDistributionException.class, onCompleteListener::await);
+        assertThrows(FirebaseAppDistributionException.class, onCompleteListener::await);
 
     assertEquals(expectedException, actualException);
   }

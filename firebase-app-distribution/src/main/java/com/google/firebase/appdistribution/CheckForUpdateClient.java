@@ -95,8 +95,11 @@ class CheckForUpdateClient {
                     return Tasks.forException(ex);
                   }
                 })
-            .continueWithTask(checkForUpdateExecutor,
-                task -> TaskUtils.handleTaskFailure(task,
+            .continueWithTask(
+                checkForUpdateExecutor,
+                task ->
+                    TaskUtils.handleTaskFailure(
+                        task,
                         Constants.ErrorMessages.NETWORK_ERROR,
                         FirebaseAppDistributionException.Status.NETWORK_FAILURE));
 

@@ -18,15 +18,19 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 
 class TaskUtils {
-    static <TResult> Task<TResult> handleTaskFailure(Task<TResult> task, String defaultErrorMessage, FirebaseAppDistributionException.Status defaultErrorStatus) {
-        if (task.isComplete() && !task.isSuccessful()) {
-            Exception e = task.getException();
-            if (e instanceof FirebaseAppDistributionException) {
-                return task;
-            }
-
-            return Tasks.forException(new FirebaseAppDistributionException(defaultErrorMessage, defaultErrorStatus, e));
-        }
+  static <TResult> Task<TResult> handleTaskFailure(
+      Task<TResult> task,
+      String defaultErrorMessage,
+      FirebaseAppDistributionException.Status defaultErrorStatus) {
+    if (task.isComplete() && !task.isSuccessful()) {
+      Exception e = task.getException();
+      if (e instanceof FirebaseAppDistributionException) {
         return task;
+      }
+
+      return Tasks.forException(
+          new FirebaseAppDistributionException(defaultErrorMessage, defaultErrorStatus, e));
     }
+    return task;
+  }
 }
