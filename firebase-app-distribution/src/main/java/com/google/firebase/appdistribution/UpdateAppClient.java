@@ -14,15 +14,12 @@
 
 package com.google.firebase.appdistribution;
 
-import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE;
-
 import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
 import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.CancellationTokenSource;
 import com.google.android.gms.tasks.TaskCompletionSource;
-import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appdistribution.internal.AppDistributionReleaseInternal;
 
@@ -43,16 +40,8 @@ public class UpdateAppClient {
       @NonNull AppDistributionReleaseInternal latestRelease, @NonNull Activity currentActivity)
       throws FirebaseAppDistributionException {
 
-    if (latestRelease == null) {
-      return new UpdateTaskImpl(
-          Tasks.forException(
-              new FirebaseAppDistributionException(
-                  Constants.ErrorMessages.NOT_FOUND_ERROR, UPDATE_NOT_AVAILABLE)));
-    }
-
-    if (updateAppTaskCompletionSource != null
-        && !updateAppTaskCompletionSource.getTask().isComplete()) {
-      updateAppCancellationSource.cancel();
+    if (this.updateTask != null && !updateTask.isComplete()) {
+      return this.updateTask;
     }
 
     updateAppCancellationSource = new CancellationTokenSource();

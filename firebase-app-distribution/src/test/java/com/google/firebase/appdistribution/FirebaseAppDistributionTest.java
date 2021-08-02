@@ -17,6 +17,7 @@ package com.google.firebase.appdistribution;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_CANCELED;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_FAILURE;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -243,7 +244,14 @@ public class FirebaseAppDistributionTest {
     when(mockCheckForUpdateClient.checkForUpdate()).thenReturn(Tasks.forResult(latestRelease));
     firebaseAppDistribution.setCachedLatestRelease(latestRelease);
     when(mockUpdateAppClient.getUpdateTask(latestRelease, activity))
-        .thenReturn(new UpdateTaskImpl(Tasks.forResult(any())));
+        .thenReturn(
+            new UpdateTaskImpl(
+                Tasks.forResult(
+                    UpdateState.builder()
+                        .setApkBytesDownloaded(-1)
+                        .setApkTotalBytesToDownload(-1)
+                        .setUpdateStatus(UpdateStatus.REDIRECTED_TO_PLAY)
+                        .build())));
 
     firebaseAppDistribution.onActivityResumed(activity);
     firebaseAppDistribution.updateToLatestRelease();
@@ -391,5 +399,17 @@ public class FirebaseAppDistributionTest {
     verify(mockSignInStorage).setSignInStatus(true);
     firebaseAppDistribution.signOutTester();
     verify(mockSignInStorage).setSignInStatus(false);
+  }
+
+  @Test
+  public void updateAppTask_whenNoReleaseAvailable_throwsError() throws Exception {
+    when(mockSignInStorage.getSignInStatus()).thenReturn(true);
+    UpdateTask updateTask = firebaseAppDistribution.updateApp();
+    assertFalse(updateTask.isSuccessful());
+    assertTrue(updateTask.getException() instanceof FirebaseAppDistributionException);
+    FirebaseAppDistributionException ex =
+        (FirebaseAppDistributionException) updateTask.getException();
+    assertEquals(FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE, ex.getErrorCode());
+    assertEquals(Constants.ErrorMessages.NOT_FOUND_ERROR, ex.getMessage());
   }
 }

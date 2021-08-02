@@ -16,6 +16,7 @@ package com.google.firebase.appdistribution;
 
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_FAILURE;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.NETWORK_FAILURE;
+import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -180,6 +181,13 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
           Tasks.forException(
               new FirebaseAppDistributionException(
                   Constants.ErrorMessages.AUTHENTICATION_ERROR, AUTHENTICATION_FAILURE)));
+    }
+
+    if (cachedLatestRelease == null) {
+      return new UpdateTaskImpl(
+          Tasks.forException(
+              new FirebaseAppDistributionException(
+                  Constants.ErrorMessages.NOT_FOUND_ERROR, UPDATE_NOT_AVAILABLE)));
     }
 
     return this.updateAppClient.getUpdateTask(cachedLatestRelease, currentActivity);
