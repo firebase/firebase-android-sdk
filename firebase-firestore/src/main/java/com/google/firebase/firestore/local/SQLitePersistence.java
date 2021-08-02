@@ -187,6 +187,11 @@ public final class SQLitePersistence extends Persistence {
   }
 
   @Override
+  LocalDocumentCache getLocalDocumentCache(User user) {
+    return new SQLiteLocalDocumentCache(this, user, serializer);
+  }
+
+  @Override
   RemoteDocumentCache getRemoteDocumentCache() {
     return remoteDocumentCache;
   }

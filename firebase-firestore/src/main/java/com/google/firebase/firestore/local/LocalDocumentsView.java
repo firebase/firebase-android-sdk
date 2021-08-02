@@ -26,14 +26,13 @@ import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
-import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
-import com.google.firebase.firestore.model.mutation.PatchMutation;
+import com.google.firebase.firestore.model.mutation.MutationBatchResult;
 import com.google.firebase.firestore.util.Logger;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * A readonly view of the local state of all documents we're tracking (i.e. we have a cached version
@@ -44,16 +43,19 @@ import java.util.Map;
 class LocalDocumentsView {
 
   private final RemoteDocumentCache remoteDocumentCache;
+  private final LocalDocumentCache localDocumentCache;
   private final MutationQueue mutationQueue;
   private final IndexManager indexManager;
 
   LocalDocumentsView(
       RemoteDocumentCache remoteDocumentCache,
       MutationQueue mutationQueue,
-      IndexManager indexManager) {
+      IndexManager indexManager,
+      LocalDocumentCache localDocumentCache) {
     this.remoteDocumentCache = remoteDocumentCache;
     this.mutationQueue = mutationQueue;
     this.indexManager = indexManager;
+    this.localDocumentCache = localDocumentCache;
   }
 
   @VisibleForTesting
@@ -78,17 +80,14 @@ class LocalDocumentsView {
    *     for it.
    */
   Document getDocument(DocumentKey key) {
-    List<MutationBatch> batches = mutationQueue.getAllMutationBatchesAffectingDocumentKey(key);
-    return getDocument(key, batches);
-  }
-
-  // Internal version of {@code getDocument} that allows reusing batches.
-  private Document getDocument(DocumentKey key, List<MutationBatch> inBatches) {
-    MutableDocument document = remoteDocumentCache.get(key);
-    for (MutationBatch batch : inBatches) {
-      batch.applyToLocalView(document);
+    MutableDocument local = localDocumentCache.get(key);
+    MutableDocument remote = remoteDocumentCache.get(key);
+    SnapshotVersion version = remote.getVersion();
+    if (local != null) {
+      version = local.getVersion().compareTo(version) > 0 ? local.getVersion() : version;
+      return local.setVersion(version);
     }
-    return document;
+    return remote;
   }
 
   // Applies the given {@code batches} to the given {@code docs}. The the result of application is
@@ -126,24 +125,48 @@ class LocalDocumentsView {
    */
   ImmutableSortedMap<DocumentKey, Document> getDocuments(Iterable<DocumentKey> keys) {
     Map<DocumentKey, MutableDocument> docs = remoteDocumentCache.getAll(keys);
-    return getLocalViewOfDocuments(docs);
-  }
-
-  /**
-   * Similar to {@code #getDocuments}, but creates the local view from the given {@code baseDocs}
-   * without retrieving documents from the local store.
-   */
-  ImmutableSortedMap<DocumentKey, Document> getLocalViewOfDocuments(
-      Map<DocumentKey, MutableDocument> docs) {
+    Map<DocumentKey, MutableDocument> local_docs = localDocumentCache.getAll(keys);
     ImmutableSortedMap<DocumentKey, Document> results = emptyDocumentMap();
 
-    List<MutationBatch> batches =
-        mutationQueue.getAllMutationBatchesAffectingDocumentKeys(docs.keySet());
-    Map<DocumentKey, DocumentBaseAndFinal> applied = applyLocalMutationsToDocuments(docs, batches);
-    for (Map.Entry<DocumentKey, DocumentBaseAndFinal> entry : applied.entrySet()) {
-      results = results.insert(entry.getKey(), entry.getValue().getDocument());
+    for (Map.Entry<DocumentKey, MutableDocument> entry : docs.entrySet()) {
+      if (local_docs.containsKey(entry.getKey())) {
+        MutableDocument localDoc = local_docs.get(entry.getKey());
+        SnapshotVersion version = entry.getValue().getVersion();
+        if (localDoc.getVersion().compareTo(version) > 0) {
+          version = localDoc.getVersion();
+        }
+        results = results.insert(entry.getKey(), localDoc.setVersion(version));
+      } else {
+        results = results.insert(entry.getKey(), entry.getValue());
+      }
     }
     return results;
+  }
+
+  public void saveLocalDocuments(ImmutableSortedMap<DocumentKey, Document> documents) {
+    for (Map.Entry<DocumentKey, Document> entry : documents) {
+      // TODO(Overlay): This cast is ugly.
+      localDocumentCache.add((MutableDocument) entry.getValue());
+    }
+  }
+
+  public void repopulateCache(Set<DocumentKey> keys) {
+    Map<DocumentKey, MutableDocument> existingDocs = remoteDocumentCache.getAll(keys);
+
+    // TODO(Overlay): Can we avoid this now that we have local_content in remote document cache?
+    List<MutationBatch> batches = mutationQueue.getAllMutationBatchesAffectingDocumentKeys(keys);
+    // TODO(Overlay): This is running for all changed docs X all batches that might affect..pretty
+    // wasteful.
+    Map<DocumentKey, DocumentBaseAndFinal> localDocs =
+        applyLocalMutationsToDocuments(existingDocs, batches);
+
+    for (Map.Entry<DocumentKey, DocumentBaseAndFinal> entry : localDocs.entrySet()) {
+      localDocumentCache.add((MutableDocument) entry.getValue().finalDoc);
+    }
+  }
+
+  public LocalDocumentCache getLocalDocumentCache() {
+    return this.localDocumentCache;
   }
 
   // TODO(Overlay): Better name, and better place.
@@ -181,7 +204,6 @@ class LocalDocumentsView {
     Map<DocumentKey, MutableDocument> existingDocs =
         remoteDocumentCache.getAll(docsToPopulate.keySet());
 
-    // TODO(Overlay): Can we avoid this now that we have local_content in remote document cache?
     List<MutationBatch> batches =
         mutationQueue.getAllMutationBatchesAffectingDocumentKeys(docsToPopulate.keySet());
     // TODO(Overlay): This is running for all changed docs X all batches that might affect..pretty
@@ -204,6 +226,7 @@ class LocalDocumentsView {
         // NoDocuments with SnapshotVersion.NONE are used in manufactured events. We remove
         // these documents from cache since we lost access.
         remoteDocumentCache.remove(doc.getKey());
+        localDocumentCache.remove(doc.getKey());
         changedDocsView.put(key, doc);
       } else if (!existingDoc.isValidDocument()
           || doc.getVersion().compareTo(existingDoc.getVersion()) > 0
@@ -212,8 +235,17 @@ class LocalDocumentsView {
         hardAssert(
             !SnapshotVersion.NONE.equals(readTime),
             "Cannot add a document when the remote version is zero");
-        remoteDocumentCache.add(doc, localDocView, readTime);
-        changedDocsView.put(key, localDocView);
+        remoteDocumentCache.add(doc, readTime);
+        if (localDocView != null) {
+          localDocumentCache.add(localDocView);
+        } else {
+          // TODO(Overlay): this is wrong. It should be when there are no mutations to the document.
+          // The mutations can cancel each other, leading to localDocView == null, but it is still
+          // inconsistent.
+          localDocumentCache.remove(key);
+        }
+
+        changedDocsView.put(key, localDocView == null ? doc : localDocView);
       } else {
         Logger.debug(
             "LocalStore",
@@ -224,6 +256,28 @@ class LocalDocumentsView {
       }
     }
     return changedDocsView;
+  }
+
+  void applyWriteToRemoteDocuments(MutationBatchResult batchResult) {
+    MutationBatch batch = batchResult.getBatch();
+    Set<DocumentKey> docKeys = batch.getKeys();
+    for (DocumentKey docKey : docKeys) {
+      MutableDocument doc = remoteDocumentCache.get(docKey);
+      SnapshotVersion ackVersion = batchResult.getDocVersions().get(docKey);
+      hardAssert(ackVersion != null, "docVersions should contain every doc in the write.");
+
+      if (doc.getVersion().compareTo(ackVersion) < 0) {
+        batch.applyToRemoteDocument(doc, batchResult);
+        if (doc.isValidDocument()) {
+          remoteDocumentCache.add(doc, batchResult.getCommitVersion());
+          // TODO(Overlay): Can we save this update, doc content does not change, only
+          // mutation_flags changed.
+          localDocumentCache.add(doc);
+        }
+      }
+    }
+
+    mutationQueue.removeMutationBatch(batch);
   }
 
   // TODO: The Querying implementation here should move 100% to the query engines.
@@ -289,71 +343,27 @@ class LocalDocumentsView {
       Query query, SnapshotVersion sinceReadTime) {
     ImmutableSortedMap<DocumentKey, MutableDocument> remoteDocuments =
         remoteDocumentCache.getAllDocumentsMatchingQuery(query, sinceReadTime);
+    ImmutableSortedMap<DocumentKey, MutableDocument> localMatches =
+        localDocumentCache.getAllDocumentsMatchingQuery(query);
 
-    List<MutationBatch> matchingBatches = mutationQueue.getAllMutationBatchesAffectingQuery(query);
-
-    remoteDocuments = addMissingBaseDocuments(matchingBatches, remoteDocuments);
-
-    for (MutationBatch batch : matchingBatches) {
-      for (Mutation mutation : batch.getMutations()) {
-        // Only process documents belonging to the collection.
-        if (!query.getPath().isImmediateParentOf(mutation.getKey().getPath())) {
-          continue;
+    ImmutableSortedMap<DocumentKey, Document> results = emptyDocumentMap();
+    for (Map.Entry<DocumentKey, MutableDocument> localEntry : localMatches) {
+      if (remoteDocuments.containsKey(localEntry.getKey())) {
+        SnapshotVersion version = remoteDocuments.get(localEntry.getKey()).getVersion();
+        if (localEntry.getValue().getVersion().compareTo(version) > 0) {
+          version = localEntry.getValue().getVersion();
         }
-
-        DocumentKey key = mutation.getKey();
-        MutableDocument document = remoteDocuments.get(key);
-        if (document == null) {
-          // Create invalid document to apply mutations on top of
-          document = MutableDocument.newInvalidDocument(key);
-          remoteDocuments = remoteDocuments.insert(key, document);
-        }
-        mutation.applyToLocalView(document, batch.getLocalWriteTime());
-        if (!document.isFoundDocument()) {
-          remoteDocuments = remoteDocuments.remove(key);
-        }
+        results = results.insert(localEntry.getKey(), localEntry.getValue().setVersion(version));
+        remoteDocuments = remoteDocuments.remove(localEntry.getKey());
+      } else {
+        results = results.insert(localEntry.getKey(), localEntry.getValue());
       }
     }
 
-    ImmutableSortedMap<DocumentKey, Document> results = emptyDocumentMap();
     for (Map.Entry<DocumentKey, MutableDocument> docEntry : remoteDocuments) {
-      // Finally, insert the documents that still match the query
-      if (query.matches(docEntry.getValue())) {
-        results = results.insert(docEntry.getKey(), docEntry.getValue());
-      }
+      results = results.insert(docEntry.getKey(), docEntry.getValue());
     }
 
     return results;
-  }
-
-  /**
-   * It is possible that a {@code PatchMutation} can make a document match a query, even if the
-   * version in the {@code RemoteDocumentCache} is not a match yet (waiting for server to ack). To
-   * handle this, we find all document keys affected by the {@code PatchMutation}s that are not in
-   * {@code existingDocs} yet, and back fill them via {@code remoteDocumentCache.getAll}, otherwise
-   * those {@code PatchMutation}s will be ignored because no base document can be found, and lead to
-   * missing results for the query.
-   */
-  private ImmutableSortedMap<DocumentKey, MutableDocument> addMissingBaseDocuments(
-      List<MutationBatch> matchingBatches,
-      ImmutableSortedMap<DocumentKey, MutableDocument> existingDocs) {
-    HashSet<DocumentKey> missingDocKeys = new HashSet<>();
-    for (MutationBatch batch : matchingBatches) {
-      for (Mutation mutation : batch.getMutations()) {
-        if (mutation instanceof PatchMutation && !existingDocs.containsKey(mutation.getKey())) {
-          missingDocKeys.add(mutation.getKey());
-        }
-      }
-    }
-
-    ImmutableSortedMap<DocumentKey, MutableDocument> mergedDocs = existingDocs;
-    Map<DocumentKey, MutableDocument> missingDocs = remoteDocumentCache.getAll(missingDocKeys);
-    for (Map.Entry<DocumentKey, MutableDocument> entry : missingDocs.entrySet()) {
-      if (entry.getValue().isFoundDocument()) {
-        mergedDocs = mergedDocs.insert(entry.getKey(), entry.getValue());
-      }
-    }
-
-    return mergedDocs;
   }
 }

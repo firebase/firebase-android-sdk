@@ -126,6 +126,11 @@ public final class MemoryPersistence extends Persistence {
   }
 
   @Override
+  LocalDocumentCache getLocalDocumentCache(User user) {
+    return null;
+  }
+
+  @Override
   void runTransaction(String action, Runnable operation) {
     referenceDelegate.onTransactionStarted();
     try {

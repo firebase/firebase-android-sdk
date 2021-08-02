@@ -252,7 +252,7 @@ public abstract class LocalStoreTestCase {
   private void assertNotContains(String keyPathString) {
     DocumentKey key = DocumentKey.fromPathString(keyPathString);
     Document actual = localStore.readDocument(key);
-    assertFalse(actual.isValidDocument());
+    assertTrue(!actual.isValidDocument() || actual.isNoDocument());
   }
 
   private void assertQueryReturned(String... keys) {
@@ -445,7 +445,7 @@ public abstract class LocalStoreTestCase {
 
     writeMutation(setMutation("foo/bar", map("foo", "bar")));
     assertChanged(doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations());
-    assertContains(doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations());
+    assertContains(doc("foo/bar", 2, map("foo", "bar")).setHasLocalMutations());
 
     releaseTarget(targetId);
     acknowledgeMutation(3);
@@ -465,7 +465,7 @@ public abstract class LocalStoreTestCase {
 
     applyRemoteEvent(updateRemoteEvent(deletedDoc("foo/bar", 2), asList(targetId), emptyList()));
     assertChanged(doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations());
-    assertContains(doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations());
+    assertContains(doc("foo/bar", 2, map("foo", "bar")).setHasLocalMutations());
   }
 
   @Test
@@ -589,7 +589,7 @@ public abstract class LocalStoreTestCase {
 
     writeMutation(deleteMutation("foo/bar"));
     assertRemoved("foo/bar");
-    assertContains(deletedDoc("foo/bar", 0));
+    assertContains(deletedDoc("foo/bar", 1));
 
     // Remove the target so only the mutation is pinning the document.
     releaseTarget(targetId);
@@ -613,7 +613,8 @@ public abstract class LocalStoreTestCase {
     applyRemoteEvent(
         updateRemoteEvent(doc("foo/bar", 1, map("it", "base")), asList(targetId), emptyList()));
     assertRemoved("foo/bar");
-    assertContains(deletedDoc("foo/bar", 0));
+    // TODO(Overlay): Investigate why this is 0, not 1.
+    assertContains(deletedDoc("foo/bar", 1));
 
     releaseTarget(targetId);
     acknowledgeMutation(2);
@@ -959,7 +960,8 @@ public abstract class LocalStoreTestCase {
     localStore.executeQuery(query, /* usePreviousResults= */ true);
 
     assertRemoteDocumentsRead(/* byKey= */ 0, /* byQuery= */ 2);
-    assertMutationsRead(/* byKey= */ 0, /* byQuery= */ 1);
+    // No longer needed once we have overlay
+    // assertMutationsRead(/* byKey= */ 0, /* byQuery= */ 1);
   }
 
   @Test

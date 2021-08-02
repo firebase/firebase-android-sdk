@@ -163,7 +163,7 @@ class SQLiteSchema {
     }
 
     if (fromVersion < 13 && toVersion >= 13) {
-      addLocalContents();
+      addLocalDocuments();
     }
 
     /*
@@ -588,8 +588,14 @@ class SQLiteSchema {
         });
   }
 
-  private void addLocalContents() {
-    db.execSQL("ALTER TABLE remote_documents ADD COLUMN local_contents BLOB");
+  private void addLocalDocuments() {
+    db.execSQL(
+        "CREATE TABLE local_documents ("
+            + "path TEXT, "
+            + "uid TEXT, "
+            + "content BLOB, "
+            + "mutation_flag INTEGER, "
+            + "PRIMARY KEY (path, uid))");
   }
 
   private boolean tableExists(String table) {

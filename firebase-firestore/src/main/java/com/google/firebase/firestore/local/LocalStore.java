@@ -107,10 +107,8 @@ public final class LocalStore implements BundleCallback {
   private final Persistence persistence;
 
   /** The set of all mutations that have been sent but not yet been applied to the backend. */
+  // TODO(Overlay): May even mutationQueue should be managed by UnifiedDocumentsView.
   private MutationQueue mutationQueue;
-
-  /** The last known state of all referenced documents according to the backend. */
-  private final RemoteDocumentCache remoteDocuments;
 
   /** The current state of all referenced documents, reflecting local changes. */
   private LocalDocumentsView localDocuments;
@@ -144,9 +142,12 @@ public final class LocalStore implements BundleCallback {
     bundleCache = persistence.getBundleCache();
     targetIdGenerator = TargetIdGenerator.forTargetCache(targetCache.getHighestTargetId());
     mutationQueue = persistence.getMutationQueue(initialUser);
-    remoteDocuments = persistence.getRemoteDocumentCache();
     localDocuments =
-        new LocalDocumentsView(remoteDocuments, mutationQueue, persistence.getIndexManager());
+        new LocalDocumentsView(
+            persistence.getRemoteDocumentCache(),
+            mutationQueue,
+            persistence.getIndexManager(),
+            persistence.getLocalDocumentCache(initialUser));
 
     this.queryEngine = queryEngine;
     queryEngine.setLocalDocumentsView(localDocuments);
@@ -183,7 +184,11 @@ public final class LocalStore implements BundleCallback {
 
     // Recreate our LocalDocumentsView using the new MutationQueue.
     localDocuments =
-        new LocalDocumentsView(remoteDocuments, mutationQueue, persistence.getIndexManager());
+        new LocalDocumentsView(
+            persistence.getRemoteDocumentCache(),
+            mutationQueue,
+            persistence.getIndexManager(),
+            persistence.getLocalDocumentCache(user));
     queryEngine.setLocalDocumentsView(localDocuments);
 
     // Union the old/new changed keys.
@@ -241,6 +246,7 @@ public final class LocalStore implements BundleCallback {
           MutationBatch batch =
               mutationQueue.addMutationBatch(localWriteTime, baseMutations, mutations);
           batch.applyToLocalDocumentSet(documents);
+          localDocuments.saveLocalDocuments(documents);
           return new LocalWriteResult(batch.getBatchId(), documents);
         });
   }
@@ -267,7 +273,7 @@ public final class LocalStore implements BundleCallback {
         () -> {
           MutationBatch batch = batchResult.getBatch();
           mutationQueue.acknowledgeBatch(batch, batchResult.getStreamToken());
-          applyWriteToRemoteDocuments(batchResult);
+          localDocuments.applyWriteToRemoteDocuments(batchResult);
           mutationQueue.performConsistencyCheck();
           return localDocuments.getDocuments(batch.getKeys());
         });
@@ -290,6 +296,7 @@ public final class LocalStore implements BundleCallback {
 
           mutationQueue.removeMutationBatch(toReject);
           mutationQueue.performConsistencyCheck();
+          localDocuments.repopulateCache(toReject.getKeys());
           return localDocuments.getDocuments(toReject.getKeys());
         });
   }
@@ -715,27 +722,6 @@ public final class LocalStore implements BundleCallback {
    */
   public ImmutableSortedSet<DocumentKey> getRemoteDocumentKeys(int targetId) {
     return targetCache.getMatchingKeysForTargetId(targetId);
-  }
-
-  private void applyWriteToRemoteDocuments(MutationBatchResult batchResult) {
-    MutationBatch batch = batchResult.getBatch();
-    Set<DocumentKey> docKeys = batch.getKeys();
-    for (DocumentKey docKey : docKeys) {
-      MutableDocument doc = remoteDocuments.get(docKey);
-      SnapshotVersion ackVersion = batchResult.getDocVersions().get(docKey);
-      hardAssert(ackVersion != null, "docVersions should contain every doc in the write.");
-
-      if (doc.getVersion().compareTo(ackVersion) < 0) {
-        batch.applyToRemoteDocument(doc, batchResult);
-        if (doc.isValidDocument()) {
-          // TODO(Overlay): This is wrong. We need to calculate the new local version, instead of
-          // null.
-          remoteDocuments.add(doc, null, batchResult.getCommitVersion());
-        }
-      }
-    }
-
-    mutationQueue.removeMutationBatch(batch);
   }
 
   public LruGarbageCollector.Results collectGarbage(LruGarbageCollector garbageCollector) {

@@ -96,7 +96,8 @@ public class QueryEngineTest {
         new LocalDocumentsView(
             remoteDocumentCache,
             persistence.getMutationQueue(User.UNAUTHENTICATED),
-            new MemoryIndexManager()) {
+            new MemoryIndexManager(),
+            persistence.getLocalDocumentCache(User.UNAUTHENTICATED)) {
           @Override
           public ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
               Query query, SnapshotVersion sinceReadTime) {
@@ -129,7 +130,7 @@ public class QueryEngineTest {
         "addDocument",
         () -> {
           for (MutableDocument doc : docs) {
-            remoteDocumentCache.add(doc, null, doc.getVersion());
+            remoteDocumentCache.add(doc, doc.getVersion());
           }
         });
   }

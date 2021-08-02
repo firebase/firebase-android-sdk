@@ -58,7 +58,8 @@ class CountingQueryEngine implements QueryEngine {
         new LocalDocumentsView(
             wrapRemoteDocumentCache(localDocuments.getRemoteDocumentCache()),
             wrapMutationQueue(localDocuments.getMutationQueue()),
-            localDocuments.getIndexManager());
+            localDocuments.getIndexManager(),
+            localDocuments.getLocalDocumentCache());
     queryEngine.setLocalDocumentsView(view);
   }
 
@@ -116,9 +117,8 @@ class CountingQueryEngine implements QueryEngine {
   private RemoteDocumentCache wrapRemoteDocumentCache(RemoteDocumentCache subject) {
     return new RemoteDocumentCache() {
       @Override
-      public void add(
-          MutableDocument document, MutableDocument mutatedDocument, SnapshotVersion readTime) {
-        subject.add(document, null, readTime);
+      public void add(MutableDocument document, SnapshotVersion readTime) {
+        subject.add(document, readTime);
       }
 
       @Override

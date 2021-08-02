@@ -28,13 +28,11 @@ import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.util.BackgroundQueue;
 import com.google.firebase.firestore.util.Executors;
 import com.google.protobuf.InvalidProtocolBufferException;
-import com.google.protobuf.MessageLite;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
-import javax.annotation.Nullable;
 
 final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
 
@@ -47,28 +45,22 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
   }
 
   @Override
-  public void add(
-      MutableDocument document,
-      @Nullable MutableDocument documentWithMutations,
-      SnapshotVersion readTime) {
+  public void add(MutableDocument document, SnapshotVersion readTime) {
     hardAssert(
         !readTime.equals(SnapshotVersion.NONE),
         "Cannot add document to the RemoteDocumentCache with a read time of zero");
 
     String path = pathForKey(document.getKey());
     Timestamp timestamp = readTime.getTimestamp();
-    byte[] mutatedDocumentMessage = documentWithMutations == null? null : serializer.encodeMaybeDocument(documentWithMutations).toByteArray();
 
     db.execute(
         "INSERT OR REPLACE INTO remote_documents "
-            + "(path, read_time_seconds, read_time_nanos, contents, local_contents) "
-            + "VALUES (?, ?, ?, ?, ?)",
+            + "(path, read_time_seconds, read_time_nanos, contents) "
+            + "VALUES (?, ?, ?, ?)",
         path,
         timestamp.getSeconds(),
         timestamp.getNanoseconds(),
-      serializer.encodeMaybeDocument(document).toByteArray(),
-        mutatedDocumentMessage
-      );
+        serializer.encodeMaybeDocument(document).toByteArray());
 
     db.getIndexManager().addToCollectionParentIndex(document.getKey().getPath().popLast());
   }
@@ -86,16 +78,12 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
 
     // TODO(Overlay): Can we do this if not-null else logic in pure sql?
     MutableDocument document =
-        db.query("SELECT contents, local_contents FROM remote_documents WHERE path = ?")
+        db.query("SELECT contents FROM remote_documents WHERE path = ?")
             .binding(path)
-            .firstValue(row -> {
-              byte[] rawMutatedDocument = row.getBlob(1);
-              if(rawMutatedDocument == null) {
-                return decodeMaybeDocument(row.getBlob(0));
-              }
-              MutableDocument mutableDocument = decodeMaybeDocument(row.getBlob(1));
-              return mutableDocument;
-            });
+            .firstValue(
+                row -> {
+                  return decodeMaybeDocument(row.getBlob(0));
+                });
     return document != null ? document : MutableDocument.newInvalidDocument(documentKey);
   }
 
@@ -116,7 +104,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     SQLitePersistence.LongQuery longQuery =
         new SQLitePersistence.LongQuery(
             db,
-            "SELECT contents, local_contents FROM remote_documents " + "WHERE path IN (",
+            "SELECT contents FROM remote_documents " + "WHERE path IN (",
             args,
             ") ORDER BY path");
 
@@ -125,14 +113,8 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
           .performNextSubquery()
           .forEach(
               row -> {
-                byte[] rawMutatedDocument = row.getBlob(1);
-                if(rawMutatedDocument == null) {
-                  MutableDocument decoded = decodeMaybeDocument(row.getBlob(0));
-                  results.put(decoded.getKey(), decoded);
-                } else {
-                  MutableDocument mutableDocument = decodeMaybeDocument(row.getBlob(1));
-                  results.put(mutableDocument.getKey(), mutableDocument);
-                }
+                MutableDocument decoded = decodeMaybeDocument(row.getBlob(0));
+                results.put(decoded.getKey(), decoded);
               });
     }
 
@@ -163,7 +145,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     SQLitePersistence.Query sqlQuery;
     if (sinceReadTime.equals(SnapshotVersion.NONE)) {
       sqlQuery =
-          db.query("SELECT path, contents, local_contents FROM remote_documents WHERE path >= ? AND path < ?")
+          db.query("SELECT path, contents FROM remote_documents WHERE path >= ? AND path < ?")
               .binding(prefixPath, prefixSuccessorPath);
     } else {
       // Execute an index-free query and filter by read time. This is safe since all document
@@ -171,7 +153,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
       // time set.
       sqlQuery =
           db.query(
-                  "SELECT path, contents, local_contents FROM remote_documents WHERE path >= ? AND path < ?"
+                  "SELECT path, contents FROM remote_documents WHERE path >= ? AND path < ?"
                       + "AND (read_time_seconds > ? OR (read_time_seconds = ? AND read_time_nanos > ?))")
               .binding(
                   prefixPath,
@@ -194,21 +176,14 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
             return;
           }
 
-          byte[] rawDocument = row.getBlob(2);
-          if(rawDocument == null || rawDocument.length == 0) {
-            rawDocument = row.getBlob(1);
-          }
+          byte[] rawDocument = row.getBlob(1);
 
           // Since scheduling background tasks incurs overhead, we only dispatch to a
           // background thread if there are still some documents remaining.
           Executor executor = row.isLast() ? Executors.DIRECT_EXECUTOR : backgroundQueue;
-          // TODO(Overlay): this is to meet the final var requirement for lamdas, we should be able
-          // to by-pass this. However, this entire method will get re-written by indexed query
-          // serving..so leave it for now.
-          byte[] finalRawDocument = rawDocument;
           executor.execute(
               () -> {
-                MutableDocument document = decodeMaybeDocument(finalRawDocument);
+                MutableDocument document = decodeMaybeDocument(rawDocument);
                 if (document.isFoundDocument() && query.matches(document)) {
                   synchronized (SQLiteRemoteDocumentCache.this) {
                     matchingDocuments[0] = matchingDocuments[0].insert(document.getKey(), document);

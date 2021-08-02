@@ -28,6 +28,11 @@ import com.google.firestore.v1.Value;
  */
 public final class MutableDocument implements Document, Cloneable {
 
+  public Document setVersion(SnapshotVersion version) {
+    this.version = version;
+    return this;
+  }
+
   private enum DocumentType {
     /**
      * Represents the initial state of a MutableDocument when only the document key is known.
