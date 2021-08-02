@@ -111,10 +111,11 @@ public class UpdateAppClient {
             file -> {
               Log.v("updateApk", "success");
               install(file.getPath(), currentActivity)
-                  .addOnSuccessListener(integer -> {
-                    //will change with api update
-                    updateAppTaskCompletionSource.setResult(null);
-                  })
+                  .addOnSuccessListener(
+                      integer -> {
+                        // will change with api update
+                        updateAppTaskCompletionSource.setResult(null);
+                      })
                   .addOnFailureListener(
                       e ->
                           setUpdateAppTaskCompletionError(
