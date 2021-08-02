@@ -72,7 +72,6 @@ public class InstallActivity extends AppCompatActivity {
   }
 
   public static void registerOnCompletionListener(TaskCompletionSource<Integer> taskCompletion) {
-    Log.v("Register", "Listener registered");
     taskCompletionSource = taskCompletion;
   }
 }

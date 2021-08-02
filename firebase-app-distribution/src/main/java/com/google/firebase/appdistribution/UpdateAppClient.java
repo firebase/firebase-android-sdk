@@ -17,10 +17,13 @@ package com.google.firebase.appdistribution;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
 import android.net.Uri;
 import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import androidx.annotation.NonNull;
+import androidx.core.os.HandlerCompat;
 import com.google.android.gms.tasks.CancellationTokenSource;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -42,6 +45,7 @@ import okhttp3.ResponseBody;
 /** Client class for updateApp functionality in {@link FirebaseAppDistribution}. */
 public class UpdateAppClient {
 
+  private int UPDATE_INTERVAL_MS = 250;
   private TaskCompletionSource<UpdateState> updateAppTaskCompletionSource = null;
   private CancellationTokenSource updateAppCancellationSource;
   private TaskCompletionSource<File> downloadTaskCompletionSource;
@@ -51,14 +55,14 @@ public class UpdateAppClient {
   private TaskCompletionSource<Integer> installTaskCompletionSource;
   private CancellationTokenSource installCancellationTokenSource;
   private OkHttpClient httpClient;
-  private UpdateTaskImpl updateTask;
+  UpdateTaskImpl updateTask;
   private FirebaseApp firebaseApp;
 
   public UpdateAppClient(@NonNull FirebaseApp firebaseApp) {
     this.firebaseApp = firebaseApp;
     this.httpClient = new OkHttpClient();
     this.downloadExecutor = Executors.newSingleThreadExecutor();
-    this.downloadHandler = new Handler();
+    this.downloadHandler = HandlerCompat.createAsync(Looper.getMainLooper());
   }
 
   @NonNull
@@ -154,7 +158,8 @@ public class UpdateAppClient {
             } else if (response.body() != null) {
               ResponseBody responseBody = response.body();
               long responseLength = responseBody.contentLength();
-              String fileName = "filename.apk";
+              String fileName = getApplicationName() + ".apk";
+              ;
               downloadToDisk(responseBody.byteStream(), responseLength, fileName);
             }
           } catch (IOException e) {
@@ -162,12 +167,11 @@ public class UpdateAppClient {
                 new FirebaseAppDistributionException(
                     Constants.ErrorMessages.NETWORK_ERROR,
                     FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE));
-            Log.v("Download Exception", e.getMessage());
           }
         });
   }
 
-  private void downloadToDisk(InputStream input, long inputLength, String fileName) {
+  private void downloadToDisk(InputStream input, long totalSize, String fileName) {
 
     File apkFile = getApkFileForApp(fileName);
     apkFile.delete();
@@ -175,15 +179,22 @@ public class UpdateAppClient {
         new BufferedOutputStream(
             firebaseApp.getApplicationContext().openFileOutput(fileName, Context.MODE_PRIVATE))) {
 
-      long downloadedSize = 0;
-
       byte[] data = new byte[8 * 1024];
       int readSize = input.read(data);
+      long downloadedSize = 0;
+      long lastMsUpdated = 0;
 
       while (readSize != -1) {
         outputStream.write(data, 0, readSize);
         downloadedSize += readSize;
         readSize = input.read(data);
+
+        //update progress logic for onProgressListener
+        long currentTimeMs = System.currentTimeMillis();
+        if (currentTimeMs - lastMsUpdated > UPDATE_INTERVAL_MS) {
+          lastMsUpdated = currentTimeMs;
+          updateProgressOnMainThread(totalSize, downloadedSize, UpdateStatus.DOWNLOADING);
+        }
       }
 
     } catch (IOException e) {
@@ -210,6 +221,15 @@ public class UpdateAppClient {
     return new File(firebaseApp.getApplicationContext().getFilesDir(), fileName);
   }
 
+  private String getApplicationName() {
+    Context context = firebaseApp.getApplicationContext();
+    ApplicationInfo applicationInfo = context.getApplicationInfo();
+    int stringId = applicationInfo.labelRes;
+    return stringId == 0
+        ? applicationInfo.nonLocalizedLabel.toString()
+        : context.getString(stringId);
+  }
+
   private void setDownloadTaskCompletionError(FirebaseAppDistributionException e) {
     if (downloadTaskCompletionSource != null
         && !downloadTaskCompletionSource.getTask().isComplete()) {
@@ -222,7 +242,7 @@ public class UpdateAppClient {
     intent.putExtra("INSTALL_PATH", path);
     this.installCancellationTokenSource = new CancellationTokenSource();
     this.installTaskCompletionSource =
-        new TaskCompletionSource<Integer>(installCancellationTokenSource.getToken());
+        new TaskCompletionSource<>(installCancellationTokenSource.getToken());
     InstallActivity.registerOnCompletionListener(this.installTaskCompletionSource);
     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
     currentActivity.startActivity(intent);
@@ -234,5 +254,22 @@ public class UpdateAppClient {
         && !updateAppTaskCompletionSource.getTask().isComplete()) {
       updateAppTaskCompletionSource.setException(e);
     }
+  }
+
+  private void updateProgressOnMainThread(long total, long downloaded, UpdateStatus status) {
+    downloadHandler.post(
+        new Runnable() {
+          @Override
+          public void run() {
+            Log.v("left", String.valueOf(total-downloaded));
+            Log.v("downloaded", String.valueOf(downloaded));
+            updateTask.updateProgress(
+                UpdateState.builder()
+                    .setApkTotalBytesToDownload(total - downloaded)
+                    .setApkBytesDownloaded(downloaded)
+                    .setUpdateStatus(status)
+                    .build());
+          }
+        });
   }
 }
