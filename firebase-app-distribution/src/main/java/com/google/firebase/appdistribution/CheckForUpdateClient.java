@@ -97,13 +97,7 @@ class CheckForUpdateClient {
                     return Tasks.forException(ex);
                   }
                 })
-            .addOnFailureListener(
-                e ->
-                    Tasks.forException(
-                        new FirebaseAppDistributionException(
-                            Constants.ErrorMessages.AUTHENTICATION_ERROR,
-                            AUTHENTICATION_FAILURE,
-                            e)));
+            .addOnFailureListener(Tasks::forException);
 
     return cachedCheckForUpdate;
   }
