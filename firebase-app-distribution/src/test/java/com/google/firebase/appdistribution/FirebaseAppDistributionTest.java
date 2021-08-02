@@ -198,9 +198,7 @@ public class FirebaseAppDistributionTest {
   @Test
   public void checkForUpdate_callsSignInTester() throws Exception {
     when(mockCheckForUpdateClient.checkForUpdate())
-        .thenReturn(
-            Tasks.forResult(
-                TEST_RELEASE_NEWER_AAB_INTERNAL.build()));
+        .thenReturn(Tasks.forResult(TEST_RELEASE_NEWER_AAB_INTERNAL.build()));
 
     firebaseAppDistribution.onActivityResumed(activity);
     firebaseAppDistribution.checkForUpdate();
