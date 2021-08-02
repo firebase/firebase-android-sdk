@@ -15,10 +15,9 @@
 package com.google.firebase.appdistribution;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -38,6 +37,8 @@ import com.google.firebase.FirebaseOptions;
 import com.google.firebase.appdistribution.internal.AppDistributionReleaseInternal;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -80,6 +81,8 @@ public class CheckForUpdateClientTest {
   @Mock private FirebaseAppDistributionTesterApiClient mockFirebaseAppDistributionTesterApiClient;
   @Mock private InstallationTokenResult mockInstallationTokenResult;
 
+  Executor testExecutor = Executors.newSingleThreadExecutor();
+
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
@@ -120,7 +123,10 @@ public class CheckForUpdateClientTest {
 
     checkForUpdateClient =
         new CheckForUpdateClient(
-            firebaseApp, mockFirebaseAppDistributionTesterApiClient, mockFirebaseInstallations);
+            firebaseApp,
+            mockFirebaseAppDistributionTesterApiClient,
+            mockFirebaseInstallations,
+            testExecutor);
   }
 
   @Test
@@ -131,14 +137,78 @@ public class CheckForUpdateClientTest {
   }
 
   @Test
-  public void checkForUpdateTask_whenCalledMultipleTimes_cancelsPreviousTask() {
+  public void checkForUpdateTask_whenCalledMultipleTimes_returnsTheSameTask() {
     Task<AppDistributionReleaseInternal> checkForUpdateTask1 =
         checkForUpdateClient.checkForUpdate();
     Task<AppDistributionReleaseInternal> checkForUpdateTask2 =
         checkForUpdateClient.checkForUpdate();
 
-    assertTrue(checkForUpdateTask1.isCanceled());
-    assertFalse(checkForUpdateTask2.isComplete());
+    assertEquals(checkForUpdateTask1, checkForUpdateTask2);
+  }
+
+  @Test
+  public void checkForUpdate_succeeds() throws Exception {
+    when(mockFirebaseAppDistributionTesterApiClient.fetchLatestRelease(any(), any(), any(), any()))
+        .thenReturn(TEST_RELEASE_CURRENT);
+    when(mockFirebaseInstallations.getId()).thenReturn(Tasks.forResult(TEST_FID_1));
+    when(mockFirebaseInstallations.getToken(false))
+        .thenReturn(Tasks.forResult(mockInstallationTokenResult));
+
+    TestOnCompleteListener<AppDistributionReleaseInternal> onCompleteListener =
+        new TestOnCompleteListener<>();
+    Task<AppDistributionReleaseInternal> task = checkForUpdateClient.checkForUpdate();
+    task.addOnCompleteListener(testExecutor, onCompleteListener);
+
+    AppDistributionReleaseInternal appDistributionReleaseInternal = onCompleteListener.await();
+    assertEquals(TEST_RELEASE_CURRENT, appDistributionReleaseInternal);
+    verify(mockFirebaseInstallations, times(1)).getId();
+    verify(mockFirebaseInstallations, times(1)).getToken(false);
+  }
+
+  @Test
+  public void checkForUpdate_nonAppDistroFailure() throws Exception {
+    when(mockFirebaseAppDistributionTesterApiClient.fetchLatestRelease(any(), any(), any(), any()))
+        .thenReturn(TEST_RELEASE_CURRENT);
+    Exception expectedException = new Exception("test ex");
+    when(mockFirebaseInstallations.getId()).thenReturn(Tasks.forException(expectedException));
+    when(mockFirebaseInstallations.getToken(false))
+        .thenReturn(Tasks.forResult(mockInstallationTokenResult));
+
+    TestOnCompleteListener<AppDistributionReleaseInternal> onCompleteListener =
+        new TestOnCompleteListener<>();
+    Task<AppDistributionReleaseInternal> task = checkForUpdateClient.checkForUpdate();
+    task.addOnCompleteListener(testExecutor, onCompleteListener);
+
+    FirebaseAppDistributionException actualException =
+        assertThrows(FirebaseAppDistributionException.class, onCompleteListener::await);
+
+    assertEquals(Constants.ErrorMessages.NETWORK_ERROR, actualException.getMessage());
+    assertEquals(
+        FirebaseAppDistributionException.Status.NETWORK_FAILURE, actualException.getErrorCode());
+    assertEquals(expectedException, actualException.getCause());
+  }
+
+  @Test
+  public void checkForUpdate_appDistroFailure() throws Exception {
+    when(mockFirebaseInstallations.getId()).thenReturn(Tasks.forResult(TEST_FID_1));
+    when(mockFirebaseInstallations.getToken(false))
+        .thenReturn(Tasks.forResult(mockInstallationTokenResult));
+
+    FirebaseAppDistributionException expectedException =
+        new FirebaseAppDistributionException(
+            "test", FirebaseAppDistributionException.Status.UNKNOWN);
+    when(mockFirebaseAppDistributionTesterApiClient.fetchLatestRelease(any(), any(), any(), any()))
+        .thenThrow(expectedException);
+
+    TestOnCompleteListener<AppDistributionReleaseInternal> onCompleteListener =
+        new TestOnCompleteListener<>();
+    Task<AppDistributionReleaseInternal> task = checkForUpdateClient.checkForUpdate();
+    task.addOnCompleteListener(testExecutor, onCompleteListener);
+
+    FirebaseAppDistributionException actualException =
+        assertThrows(FirebaseAppDistributionException.class, onCompleteListener::await);
+
+    assertEquals(expectedException, actualException);
   }
 
   @Test
