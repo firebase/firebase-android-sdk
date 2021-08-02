@@ -26,7 +26,6 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.internal.Preconditions;
-import com.google.android.gms.tasks.CancellationTokenSource;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
@@ -44,9 +43,6 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
   private final UpdateAppClient updateAppClient;
   private Activity currentActivity;
 
-  private TaskCompletionSource<UpdateState> updateAppTaskCompletionSource = null;
-  private CancellationTokenSource updateAppCancellationSource;
-  private UpdateTaskImpl updateTask;
   private Task<AppDistributionRelease> cachedUpdateToLatestReleaseTask;
   private Task<AppDistributionRelease> cachedCheckForUpdateTask;
   private AppDistributionReleaseInternal cachedLatestRelease;
@@ -77,6 +73,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
         new TesterSignInClient(firebaseApp, firebaseInstallationsApi, signInStorage),
         new CheckForUpdateClient(
             firebaseApp, new FirebaseAppDistributionTesterApiClient(), firebaseInstallationsApi),
+        new UpdateAppClient(firebaseApp),
         signInStorage);
   }
 
@@ -87,7 +84,6 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     this(
         firebaseApp,
         firebaseInstallationsApi,
-        new UpdateAppClient(firebaseApp),
         new SignInStorage(firebaseApp.getApplicationContext()));
   }
 
@@ -193,23 +189,6 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
                   Constants.ErrorMessages.NOT_FOUND_ERROR, UPDATE_NOT_AVAILABLE)));
     }
 
-    if (updateAppTaskCompletionSource != null
-        && !updateAppTaskCompletionSource.getTask().isComplete()) {
-      updateAppCancellationSource.cancel();
-    }
-
-    updateAppCancellationSource = new CancellationTokenSource();
-    updateAppTaskCompletionSource =
-        new TaskCompletionSource<>(updateAppCancellationSource.getToken());
-    this.updateTask = new UpdateTaskImpl(updateAppTaskCompletionSource.getTask());
-
-    if (cachedRelease.getBinaryType() == BinaryType.AAB) {
-      redirectToPlayForAabUpdate(cachedRelease.getDownloadUrl());
-    } else {
-      // todo: create update class when implementing APK
-      throw new UnsupportedOperationException("Not yet implemented.");
-    }
-
     return this.updateAppClient.getUpdateTask(cachedLatestRelease, currentActivity);
   }
 
@@ -303,83 +282,9 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     return this.cachedLatestRelease;
   }
 
-  private void setUpdateAppTaskCompletionError(FirebaseAppDistributionException e) {
-    if (updateAppTaskCompletionSource != null
-        && !updateAppTaskCompletionSource.getTask().isComplete()) {
-      updateAppTaskCompletionSource.setException(e);
-    }
-  }
-
-  private void setUpdateToLatestReleaseTaskCompletionError(FirebaseAppDistributionException e) {
-    if (updateToLatestReleaseTaskCompletionSource != null
-        && !updateToLatestReleaseTaskCompletionSource.getTask().isComplete()) {
-      updateToLatestReleaseTaskCompletionSource.setException(e);
-    }
-  }
-
-  private void setUpdateToLatestReleaseErrorWithDefault(
-      Exception e, FirebaseAppDistributionException defaultFirebaseException) {
-    if (e instanceof FirebaseAppDistributionException) {
-      setUpdateToLatestReleaseTaskCompletionError((FirebaseAppDistributionException) e);
-    } else {
-      setUpdateToLatestReleaseTaskCompletionError(defaultFirebaseException);
-    }
-  }
-
-  private Task<AppDistributionRelease> getCheckForUpdateTask() {
-    return this.checkForUpdateClient
-        .checkForUpdate()
-        .continueWith(
-            task -> {
-              // Calling task.getResult() on a failed task will cause the Continuation to fail
-              // with the original exception. See:
-              // https://developers.google.com/android/reference/com/google/android/gms/tasks/Continuation
-              AppDistributionReleaseInternal latestRelease = task.getResult();
-              setCachedLatestRelease(latestRelease);
-              return convertToAppDistributionRelease(latestRelease);
-            });
-  }
-
-  private void checkForNewReleaseAndUpdateIfAvailable() {
-    checkForUpdate()
-        .addOnSuccessListener(
-            latestRelease -> {
-              if (latestRelease != null) {
-                showUpdateAlertDialog(latestRelease);
-              } else {
-                updateToLatestReleaseTaskCompletionSource.setResult(null);
-              }
-            })
-        .addOnFailureListener(
-            e ->
-                setUpdateToLatestReleaseErrorWithDefault(
-                    e,
-                    new FirebaseAppDistributionException(
-                        Constants.ErrorMessages.NETWORK_ERROR, NETWORK_FAILURE)));
-  }
-
-  private void redirectToPlayForAabUpdate(String downloadUrl)
-      throws FirebaseAppDistributionException {
-    if (downloadUrl == null) {
-      throw new FirebaseAppDistributionException(
-          "Download URL not found.", FirebaseAppDistributionException.Status.NETWORK_FAILURE);
-    }
-    Intent updateIntent = new Intent(Intent.ACTION_VIEW);
-    Uri uri = Uri.parse(downloadUrl);
-    updateIntent.setData(uri);
-    updateIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-    currentActivity.startActivity(updateIntent);
-    UpdateState updateState =
-        UpdateState.builder()
-            .setApkBytesDownloaded(-1)
-            .setApkTotalBytesToDownload(-1)
-            .setUpdateStatus(UpdateStatus.REDIRECTED_TO_PLAY)
-            .build();
-    updateAppTaskCompletionSource.setResult(updateState);
-    this.updateTask.updateProgress(updateState);
-  }
-
-  private void showUpdateAlertDialog(AppDistributionRelease latestRelease) {
+  private Task<AppDistributionRelease> showUpdateAlertDialog(AppDistributionRelease latestRelease) {
+    TaskCompletionSource<AppDistributionRelease> updateAlertDialogTask =
+        new TaskCompletionSource<>();
     Context context = firebaseApp.getApplicationContext();
     AlertDialog alertDialog = new AlertDialog.Builder(currentActivity).create();
     alertDialog.setTitle(context.getString(R.string.update_dialog_title));
@@ -401,17 +306,10 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
         (dialogInterface, i) -> {
           try {
             updateApp()
-                .addOnSuccessListener(
-                    updateState ->
-                        updateToLatestReleaseTaskCompletionSource.setResult(latestRelease))
-                .addOnFailureListener(
-                    e ->
-                        setUpdateToLatestReleaseErrorWithDefault(
-                            e,
-                            new FirebaseAppDistributionException(
-                                Constants.ErrorMessages.NETWORK_ERROR, NETWORK_FAILURE)));
+                .addOnSuccessListener(unused -> updateAlertDialogTask.setResult(latestRelease))
+                .addOnFailureListener(updateAlertDialogTask::setException);
           } catch (FirebaseAppDistributionException e) {
-            setUpdateToLatestReleaseTaskCompletionError(e);
+            updateAlertDialogTask.setException(e);
           }
         });
     alertDialog.setButton(
@@ -419,12 +317,13 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
         context.getString(R.string.update_no_button),
         (dialogInterface, i) -> {
           dialogInterface.dismiss();
-          setUpdateToLatestReleaseTaskCompletionError(
+          updateAlertDialogTask.setException(
               new FirebaseAppDistributionException(
                   Constants.ErrorMessages.UPDATE_CANCELED,
                   FirebaseAppDistributionException.Status.INSTALLATION_CANCELED));
         });
 
     alertDialog.show();
+    return updateAlertDialogTask.getTask();
   }
 }

@@ -15,7 +15,8 @@
 package com.google.firebase.appdistribution;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -75,6 +76,7 @@ public class TesterSignInClientTest {
 
   @Mock private FirebaseInstallationsApi mockFirebaseInstallations;
   @Mock private InstallationTokenResult mockInstallationTokenResult;
+  @Mock private SignInStorage mockSignInStorage;
 
   @Before
   public void setUp() {
@@ -117,12 +119,13 @@ public class TesterSignInClientTest {
     activity = Robolectric.buildActivity(TestActivity.class).create().get();
     shadowActivity = shadowOf(activity);
 
-    testerSignInClient = new TesterSignInClient(firebaseApp, mockFirebaseInstallations);
+    testerSignInClient =
+        new TesterSignInClient(firebaseApp, mockFirebaseInstallations, mockSignInStorage);
   }
 
   @Test
   public void signInTester_whenDialogConfirmedAndChromeAvailable_opensCustomTab() {
-
+    when(mockSignInStorage.getSignInStatus()).thenReturn(false);
     ResolveInfo resolveInfo = new ResolveInfo();
     resolveInfo.resolvePackageName = "garbage";
     Intent customTabIntent = new Intent("android.support.customtabs.action.CustomTabsService");
@@ -143,6 +146,7 @@ public class TesterSignInClientTest {
 
   @Test
   public void signInTester_whenDialogConfirmedAndChromeNotAvailable_opensBrowserIntent() {
+    when(mockSignInStorage.getSignInStatus()).thenReturn(false);
     ResolveInfo resolveInfo = new ResolveInfo();
     resolveInfo.resolvePackageName = "garbage";
     Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(TEST_URL));
@@ -161,11 +165,19 @@ public class TesterSignInClientTest {
   }
 
   @Test
-  public void signInTester_whenSignInCalledMultipleTimes_cancelsPreviousTask() {
+  public void signInTester_whenSignInCalledMultipleTimes_returnsSameTask() {
     Task<Void> signInTask1 = testerSignInClient.signInTester(activity);
     Task<Void> signInTask2 = testerSignInClient.signInTester(activity);
 
-    assertTrue(signInTask1.isCanceled());
-    assertFalse(signInTask2.isComplete());
+    assertEquals(signInTask1, signInTask2);
+  }
+
+  @Test
+  public void signInTester_whenTesterIsSignedIn_doesNotOpenDialog() {
+    when(mockSignInStorage.getSignInStatus()).thenReturn(true);
+
+    testerSignInClient.signInTester(activity);
+
+    assertNull(ShadowAlertDialog.getLatestAlertDialog());
   }
 }

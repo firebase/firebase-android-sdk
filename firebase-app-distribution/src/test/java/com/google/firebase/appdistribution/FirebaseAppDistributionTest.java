@@ -98,7 +98,7 @@ public class FirebaseAppDistributionTest {
   static class TestActivity extends Activity {}
 
   @Before
-  public void setup() throws Exception {
+  public void setup() {
 
     MockitoAnnotations.initMocks(this);
 
@@ -196,6 +196,19 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
+  public void checkForUpdate_callsSignInTester() throws Exception {
+    when(mockCheckForUpdateClient.checkForUpdate())
+        .thenReturn(
+            Tasks.forResult(
+                TEST_RELEASE_NEWER_AAB_INTERNAL.build()));
+
+    firebaseAppDistribution.onActivityResumed(activity);
+    firebaseAppDistribution.checkForUpdate();
+
+    verify(mockTesterSignInClient, times(1)).signInTester(any());
+  }
+
+  @Test
   public void checkForUpdate_whenCheckForUpdateSucceeds_returnsRelease() throws Exception {
     when(mockCheckForUpdateClient.checkForUpdate())
         .thenReturn(
@@ -209,16 +222,6 @@ public class FirebaseAppDistributionTest {
     assertEquals(TEST_RELEASE_NEWER_AAB, task.getResult());
     assertEquals(
         TEST_RELEASE_NEWER_AAB_INTERNAL.build(), firebaseAppDistribution.getCachedLatestRelease());
-  }
-
-  @Test
-  public void checkForUpdate_whenSignedIn_doesNotCallSignInTester() {
-    when(mockSignInStorage.getSignInStatus()).thenReturn(true);
-    firebaseAppDistribution.onActivityResumed(activity);
-    when(mockCheckForUpdateClient.checkForUpdate())
-        .thenReturn(Tasks.forResult(TEST_RELEASE_NEWER_AAB_INTERNAL.build()));
-    firebaseAppDistribution.checkForUpdate();
-    verify(mockTesterSignInClient, never()).signInTester(any());
   }
 
   @Test
@@ -376,13 +379,12 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void updateToLatestRelease_whenSignedIn_doesNotCallSignInTester() {
+  public void updateToLatestRelease_callsSignInTester() {
     firebaseAppDistribution.onActivityResumed(activity);
     when(mockCheckForUpdateClient.checkForUpdate())
         .thenReturn(Tasks.forResult(TEST_RELEASE_NEWER_AAB_INTERNAL.build()));
-    when(mockSignInStorage.getSignInStatus()).thenReturn(true);
     firebaseAppDistribution.updateToLatestRelease();
-    verify(mockTesterSignInClient, never()).signInTester(any());
+    verify(mockTesterSignInClient, times(1)).signInTester(any());
   }
 
   @Test
