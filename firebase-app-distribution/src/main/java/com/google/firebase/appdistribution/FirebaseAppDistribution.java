@@ -160,8 +160,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
                   setCachedLatestRelease(appDistributionReleaseInternal);
                   return Tasks.forResult(
                       convertToAppDistributionRelease(appDistributionReleaseInternal));
-                })
-            .addOnFailureListener(Tasks::forException);
+                });
 
     return cachedCheckForUpdateTask;
   }
@@ -323,7 +322,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     this.updateTask.updateProgress(updateState);
   }
 
-  private Task<AppDistributionRelease>  showUpdateAlertDialog(AppDistributionRelease latestRelease) {
+  private Task<AppDistributionRelease> showUpdateAlertDialog(AppDistributionRelease latestRelease) {
     TaskCompletionSource<AppDistributionRelease> updateAlertDialogTask =
         new TaskCompletionSource<>();
     Context context = firebaseApp.getApplicationContext();
