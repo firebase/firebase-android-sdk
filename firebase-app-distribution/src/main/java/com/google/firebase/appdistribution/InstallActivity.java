@@ -18,8 +18,6 @@ import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
-import androidx.activity.result.ActivityResult;
-import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
@@ -27,8 +25,9 @@ import androidx.core.content.FileProvider;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import java.io.File;
 
-
-/** Activity opened during installation in {@link UpdateAppClient} after APK download is finished.*/
+/**
+ * Activity opened during installation in {@link UpdateAppClient} after APK download is finished.
+ */
 public class InstallActivity extends AppCompatActivity {
 
   private static TaskCompletionSource<Void> installTaskCompletionSource;
@@ -41,17 +40,17 @@ public class InstallActivity extends AppCompatActivity {
     this.mStartForResult =
         registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
-                activityResult -> {
-                  if (activityResult.getResultCode() == Activity.RESULT_OK) {
-                    installTaskCompletionSource.setResult(null);
-                  } else {
-                    installTaskCompletionSource.setException(
-                        new FirebaseAppDistributionException(
-                            "Installation failed with result code: " + activityResult.getResultCode(),
-                            FirebaseAppDistributionException.Status.INSTALLATION_FAILURE));
-                  }
-                  finish();
-                });
+            activityResult -> {
+              if (activityResult.getResultCode() == Activity.RESULT_OK) {
+                installTaskCompletionSource.setResult(null);
+              } else {
+                installTaskCompletionSource.setException(
+                    new FirebaseAppDistributionException(
+                        "Installation failed with result code: " + activityResult.getResultCode(),
+                        FirebaseAppDistributionException.Status.INSTALLATION_FAILURE));
+              }
+              finish();
+            });
     Intent originalIntent = getIntent();
     String path = originalIntent.getStringExtra("INSTALL_PATH");
     Intent intent = new Intent(Intent.ACTION_VIEW);

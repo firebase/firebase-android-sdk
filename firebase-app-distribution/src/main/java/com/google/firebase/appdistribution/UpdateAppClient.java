@@ -17,7 +17,6 @@ package com.google.firebase.appdistribution;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.ApplicationInfo;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
@@ -279,7 +278,8 @@ public class UpdateAppClient {
     }
   }
 
-  private void updateProgressOnMainThread(long totalBytes, long downloadedBytes, UpdateStatus status) {
+  private void updateProgressOnMainThread(
+      long totalBytes, long downloadedBytes, UpdateStatus status) {
     downloadHandler.post(
         () -> {
           updateTask.updateProgress(
