@@ -126,7 +126,7 @@ class UpdateApkClient {
                       FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE));
             } else {
               long responseLength = connection.getContentLength();
-              postUpdateProgressOnMainThread(responseLength, 0, UpdateStatus.PENDING);
+              postUpdateProgress(responseLength, 0, UpdateStatus.PENDING);
               String fileName = getApplicationName() + ".apk";
               downloadToDisk(connection.getInputStream(), responseLength, fileName);
             }
@@ -162,11 +162,11 @@ class UpdateApkClient {
         long currentTimeMs = System.currentTimeMillis();
         if (currentTimeMs - lastMsUpdated > UPDATE_INTERVAL_MS) {
           lastMsUpdated = currentTimeMs;
-          postUpdateProgressOnMainThread(totalSize, downloadedSize, UpdateStatus.DOWNLOADING);
+          postUpdateProgress(totalSize, downloadedSize, UpdateStatus.DOWNLOADING);
         }
       }
       // completion
-      postUpdateProgressOnMainThread(totalSize, downloadedSize, UpdateStatus.DOWNLOADED);
+      postUpdateProgress(totalSize, downloadedSize, UpdateStatus.DOWNLOADED);
 
     } catch (IOException e) {
       setDownloadTaskCompletionError(
@@ -275,7 +275,7 @@ class UpdateApkClient {
     }
   }
 
-  private void postUpdateProgressOnMainThread(
+  private void postUpdateProgress(
       long totalBytes, long downloadedBytes, UpdateStatus status) {
     downloadHandler.post(
         () -> {
