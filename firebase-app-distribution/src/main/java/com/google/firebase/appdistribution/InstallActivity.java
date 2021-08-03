@@ -20,6 +20,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -35,7 +36,7 @@ public class InstallActivity extends AppCompatActivity {
   private final String APK_MIME_TYPE = "application/vnd.android.package-archive";
 
   @Override
-  protected void onCreate(Bundle savedInstanceState) {
+  protected void onCreate(@NonNull Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     this.mStartForResult =
         registerForActivityResult(
@@ -65,7 +66,7 @@ public class InstallActivity extends AppCompatActivity {
     this.mStartForResult.launch(intent);
   }
 
-  public static void registerOnCompletionListener(TaskCompletionSource<Void> taskCompletionSource) {
+  public static void registerOnCompletionListener(@NonNull TaskCompletionSource<Void> taskCompletionSource) {
     installTaskCompletionSource = taskCompletionSource;
   }
 }

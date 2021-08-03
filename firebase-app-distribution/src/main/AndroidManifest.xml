@@ -29,7 +29,7 @@
                 android:name="com.google.firebase.components:com.google.firebase.appdistribution.FirebaseAppDistributionRegistrar"
                 android:value="com.google.firebase.components.ComponentRegistrar" />
         </service>
-        <activity android:name=".InstallActivity" />
+        <activity android:name=".InstallActivity" android:exported="true"/>
 
         <activity android:name=".SignInResultActivity" android:exported="true">
             <intent-filter>
