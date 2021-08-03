@@ -275,8 +275,7 @@ class UpdateApkClient {
     }
   }
 
-  private void postUpdateProgress(
-      long totalBytes, long downloadedBytes, UpdateStatus status) {
+  private void postUpdateProgress(long totalBytes, long downloadedBytes, UpdateStatus status) {
     downloadHandler.post(
         () -> {
           updateTask.updateProgress(
