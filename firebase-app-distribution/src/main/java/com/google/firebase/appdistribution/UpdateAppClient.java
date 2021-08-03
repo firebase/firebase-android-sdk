@@ -36,16 +36,17 @@ import java.net.URL;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.jar.JarFile;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
-import okhttp3.ResponseBody;
+
+import javax.net.ssl.HttpsURLConnection;
+
+import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.NETWORK_FAILURE;
 
 /** Client class for updateApp functionality in {@link FirebaseAppDistribution}. */
 public class UpdateAppClient {
 
   private int UPDATE_INTERVAL_MS = 250;
-  private String TAG = "FADUpdateAppClient";
+  private static final String TAG = "FADUpdateAppClient";
+  private static final String REQUEST_METHOD = "GET";
   private TaskCompletionSource<UpdateState> updateAppTaskCompletionSource = null;
   private CancellationTokenSource updateAppCancellationSource;
   private TaskCompletionSource<File> downloadTaskCompletionSource;
@@ -54,13 +55,11 @@ public class UpdateAppClient {
   private Handler downloadHandler;
   private TaskCompletionSource<Void> installTaskCompletionSource;
   private CancellationTokenSource installCancellationTokenSource;
-  private OkHttpClient httpClient;
   UpdateTaskImpl updateTask;
   private FirebaseApp firebaseApp;
 
   public UpdateAppClient(@NonNull FirebaseApp firebaseApp) {
     this.firebaseApp = firebaseApp;
-    this.httpClient = new OkHttpClient();
     this.downloadExecutor = Executors.newSingleThreadExecutor();
     this.downloadHandler = HandlerCompat.createAsync(Looper.getMainLooper());
   }
@@ -110,15 +109,15 @@ public class UpdateAppClient {
   }
 
   public void updateApk(String downloadUrl, Activity currentActivity) {
-    getDownloadTask(downloadUrl)
+    downloadApk(downloadUrl)
         .addOnSuccessListener(
             file -> {
               install(file.getPath(), currentActivity)
-                  .addOnSuccessListener(
+                  .addOnSuccessListener(downloadExecutor,
                       Void -> {
                         UpdateState updateState =
                             UpdateState.builder()
-                                .setApkTotalBytesToDownload(0)
+                                .setApkTotalBytesToDownload(file.length())
                                 .setApkBytesDownloaded(file.length())
                                 .setUpdateStatus(UpdateStatus.INSTALLED)
                                 .build();
@@ -127,7 +126,7 @@ public class UpdateAppClient {
                       })
                   .addOnFailureListener(
                       e ->
-                          setUpdateAppTaskCompletionError(
+                          setUpdateAppErrorWithDefault(e,
                               new FirebaseAppDistributionException(
                                   Constants.ErrorMessages.NETWORK_ERROR,
                                   FirebaseAppDistributionException.Status.INSTALLATION_FAILURE)));
@@ -141,7 +140,7 @@ public class UpdateAppClient {
                         FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE)));
   }
 
-  public Task<File> getDownloadTask(String downloadUrl) {
+  public Task<File> downloadApk(String downloadUrl) {
     if (downloadTaskCompletionSource != null
         && !downloadTaskCompletionSource.getTask().isComplete()) {
       downloadCancellationTokenSource.cancel();
@@ -151,30 +150,29 @@ public class UpdateAppClient {
     downloadTaskCompletionSource =
         new TaskCompletionSource<>(downloadCancellationTokenSource.getToken());
 
-    makeDownloadRequestApk(downloadUrl);
+    makeApkDownloadRequest(downloadUrl);
     return downloadTaskCompletionSource.getTask();
   }
 
-  public void makeDownloadRequestApk(String downloadUrl) {
+  public void makeApkDownloadRequest(String downloadUrl) {
     downloadExecutor.execute(
         () -> {
           try {
-            Request request = new Request.Builder().url(new URL(downloadUrl)).build();
-            Response response = httpClient.newCall(request).execute();
-            if (!response.isSuccessful()) {
+            HttpsURLConnection connection = openHttpsUrlConnection(downloadUrl);
+            connection.setRequestMethod(REQUEST_METHOD);
+            if (connection.getInputStream() == null) {
               setDownloadTaskCompletionError(
                   new FirebaseAppDistributionException(
                       Constants.ErrorMessages.NETWORK_ERROR,
                       FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE));
-            } else if (response.body() != null) {
-              ResponseBody responseBody = response.body();
-              long responseLength = responseBody.contentLength();
+            } else {
+              long responseLength = connection.getContentLength();
               updateProgressOnMainThread(responseLength, 0, UpdateStatus.PENDING);
               String fileName = getApplicationName() + ".apk";
-              downloadToDisk(responseBody.byteStream(), responseLength, fileName);
+              downloadToDisk(connection.getInputStream(), responseLength, fileName);
             }
-          } catch (IOException e) {
-            setDownloadTaskCompletionError(
+          } catch (IOException | FirebaseAppDistributionException e) {
+            setDownloadTaskCompletionErrorWithDefault(e,
                 new FirebaseAppDistributionException(
                     Constants.ErrorMessages.NETWORK_ERROR,
                     FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE));
@@ -244,10 +242,32 @@ public class UpdateAppClient {
     }
   }
 
+  HttpsURLConnection openHttpsUrlConnection(String downloadUrl)
+          throws FirebaseAppDistributionException {
+    HttpsURLConnection httpsURLConnection;
+
+    try {
+      URL url = new URL(downloadUrl);
+      httpsURLConnection = (HttpsURLConnection) url.openConnection();
+    } catch (IOException e) {
+      throw new FirebaseAppDistributionException(
+              Constants.ErrorMessages.NETWORK_ERROR, NETWORK_FAILURE, e);
+    }
+    return httpsURLConnection;
+  }
+
   private void setDownloadTaskCompletionError(FirebaseAppDistributionException e) {
     if (downloadTaskCompletionSource != null
         && !downloadTaskCompletionSource.getTask().isComplete()) {
       downloadTaskCompletionSource.setException(e);
+    }
+  }
+
+  private void setDownloadTaskCompletionErrorWithDefault(Exception e, FirebaseAppDistributionException defaultFirebaseException) {
+    if (e instanceof FirebaseAppDistributionException) {
+      setDownloadTaskCompletionError((FirebaseAppDistributionException) e);
+    } else {
+      setDownloadTaskCompletionError(defaultFirebaseException);
     }
   }
 
@@ -285,7 +305,7 @@ public class UpdateAppClient {
         () -> {
           updateTask.updateProgress(
               UpdateState.builder()
-                  .setApkTotalBytesToDownload(totalBytes - downloadedBytes)
+                  .setApkTotalBytesToDownload(totalBytes)
                   .setApkBytesDownloaded(downloadedBytes)
                   .setUpdateStatus(status)
                   .build());
