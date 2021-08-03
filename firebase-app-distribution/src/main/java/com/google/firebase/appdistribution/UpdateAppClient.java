@@ -108,7 +108,7 @@ public class UpdateAppClient {
     this.updateTask.updateProgress(updateState);
   }
 
-  public void updateApk(String downloadUrl, Activity currentActivity) {
+  public void updateApk(@NonNull String downloadUrl, @NonNull Activity currentActivity) {
     downloadApk(downloadUrl)
         .addOnSuccessListener(
             file -> {
@@ -140,7 +140,7 @@ public class UpdateAppClient {
                         FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE)));
   }
 
-  public Task<File> downloadApk(String downloadUrl) {
+  public @NonNull Task<File> downloadApk(@NonNull String downloadUrl) {
     if (downloadTaskCompletionSource != null
         && !downloadTaskCompletionSource.getTask().isComplete()) {
       downloadCancellationTokenSource.cancel();
