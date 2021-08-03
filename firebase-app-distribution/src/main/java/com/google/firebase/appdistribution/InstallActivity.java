@@ -14,16 +14,15 @@
 
 package com.google.firebase.appdistribution;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
+import androidx.annotation.VisibleForTesting;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
-import com.google.android.gms.tasks.TaskCompletionSource;
 import java.io.File;
 
 /**
@@ -31,31 +30,15 @@ import java.io.File;
  */
 public class InstallActivity extends AppCompatActivity {
 
-  private static TaskCompletionSource<Void> installTaskCompletionSource;
-  private ActivityResultLauncher<Intent> mStartForResult;
-  private final String APK_MIME_TYPE = "application/vnd.android.package-archive";
-
   @Override
   protected void onCreate(@NonNull Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    this.mStartForResult =
+    ActivityResultLauncher<Intent> mStartForResult =
         registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
             activityResult -> {
               int resultCode = activityResult.getResultCode();
-              if (resultCode == Activity.RESULT_OK) {
-                installTaskCompletionSource.setResult(null);
-              } else if (resultCode == Activity.RESULT_CANCELED) {
-                installTaskCompletionSource.setException(
-                    new FirebaseAppDistributionException(
-                        Constants.ErrorMessages.UPDATE_CANCELED,
-                        FirebaseAppDistributionException.Status.INSTALLATION_CANCELED));
-              } else {
-                installTaskCompletionSource.setException(
-                    new FirebaseAppDistributionException(
-                        "Installation failed with result code: " + activityResult.getResultCode(),
-                        FirebaseAppDistributionException.Status.INSTALLATION_FAILURE));
-              }
+              getFirebaseAppDistributionInstance().setInstallationResult(resultCode);
               finish();
             });
     Intent originalIntent = getIntent();
@@ -67,13 +50,14 @@ public class InstallActivity extends AppCompatActivity {
             getApplicationContext(),
             getApplicationContext().getPackageName() + ".provider",
             new File(path));
+    String APK_MIME_TYPE = "application/vnd.android.package-archive";
     intent.setDataAndType(apkUri, APK_MIME_TYPE);
     intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-    this.mStartForResult.launch(intent);
+    mStartForResult.launch(intent);
   }
 
-  public static void registerOnCompletionListener(
-      @NonNull TaskCompletionSource<Void> taskCompletionSource) {
-    installTaskCompletionSource = taskCompletionSource;
+  @VisibleForTesting
+  FirebaseAppDistribution getFirebaseAppDistributionInstance() {
+    return FirebaseAppDistribution.getInstance();
   }
 }
