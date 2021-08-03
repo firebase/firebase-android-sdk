@@ -53,7 +53,7 @@ public class UpdateApkClient {
   private UpdateTaskImpl updateTask;
   private TaskCompletionSource updateAppTaskCompletionSource;
 
-  public UpdateApkClient(FirebaseApp firebaseApp) {
+  public UpdateApkClient(@NonNull FirebaseApp firebaseApp) {
     this.downloadExecutor = Executors.newSingleThreadExecutor();
     this.downloadHandler = HandlerCompat.createAsync(Looper.getMainLooper());
     this.firebaseApp = firebaseApp;
@@ -62,8 +62,8 @@ public class UpdateApkClient {
   public void updateApk(
       @NonNull String downloadUrl,
       @NonNull Activity currentActivity,
-      UpdateTaskImpl updateTask,
-      TaskCompletionSource updateAppTaskCompletionSource) {
+      @NonNull UpdateTaskImpl updateTask,
+      @NonNull TaskCompletionSource updateAppTaskCompletionSource) {
     this.updateTask = updateTask;
     this.updateAppTaskCompletionSource = updateAppTaskCompletionSource;
     downloadApk(downloadUrl)
