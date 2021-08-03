@@ -66,7 +66,8 @@ public class InstallActivity extends AppCompatActivity {
     this.mStartForResult.launch(intent);
   }
 
-  public static void registerOnCompletionListener(@NonNull TaskCompletionSource<Void> taskCompletionSource) {
+  public static void registerOnCompletionListener(
+      @NonNull TaskCompletionSource<Void> taskCompletionSource) {
     installTaskCompletionSource = taskCompletionSource;
   }
 }
