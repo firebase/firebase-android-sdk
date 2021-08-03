@@ -17,31 +17,51 @@ package com.google.firebase.appdistribution;
 import android.app.Activity;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.TaskExecutors;
 import java.util.concurrent.Executor;
 
 /** Implementation of UpdateTask, the return type of updateApp. */
 class UpdateTaskImpl extends UpdateTask {
 
-  @NonNull private final Task<UpdateState> task;
-  @Nullable private OnProgressListener listener = null;
+  @NonNull private final Task<Void> task;
+  @Nullable private ManagedListener listener = null;
+  private final Object lock = new Object();
+  private UpdateProgress snapshot;
 
-  UpdateTaskImpl(@NonNull Task<UpdateState> task) {
+  UpdateTaskImpl(@NonNull Task<Void> task) {
     this.task = task;
   }
 
-  void updateProgress(@NonNull UpdateState updateState) {
-    if (this.listener != null) {
-      this.listener.onProgressUpdate(updateState);
+  void updateProgress(@NonNull UpdateProgress updateProgress) {
+    synchronized (lock) {
+      snapshot = updateProgress;
+      if (this.listener != null) {
+        this.listener.invoke(updateProgress);
+      }
     }
   }
 
   @NonNull
   @Override
   public UpdateTask addOnProgressListener(@NonNull OnProgressListener listener) {
-    this.listener = listener;
+    return addOnProgressListener(null, listener);
+  }
+
+  @NonNull
+  @Override
+  public UpdateTask addOnProgressListener(
+      @Nullable Executor executor, @NonNull OnProgressListener listener) {
+    ManagedListener managedListener = new ManagedListener(executor, listener);
+    synchronized (lock) {
+      this.listener = managedListener;
+      if (snapshot != null) {
+        this.listener.invoke(snapshot);
+      }
+    }
     return this;
   }
 
@@ -62,13 +82,13 @@ class UpdateTaskImpl extends UpdateTask {
 
   @Nullable
   @Override
-  public UpdateState getResult() {
+  public Void getResult() {
     return this.task.getResult();
   }
 
   @Nullable
   @Override
-  public <X extends Throwable> UpdateState getResult(@NonNull Class<X> aClass) throws X {
+  public <X extends Throwable> Void getResult(@NonNull Class<X> aClass) throws X {
     return this.task.getResult(aClass);
   }
 
@@ -80,44 +100,81 @@ class UpdateTaskImpl extends UpdateTask {
 
   @NonNull
   @Override
-  public Task<UpdateState> addOnSuccessListener(
-      @NonNull OnSuccessListener<? super UpdateState> onSuccessListener) {
+  public Task<Void> addOnSuccessListener(
+      @NonNull OnSuccessListener<? super Void> onSuccessListener) {
     return this.task.addOnSuccessListener(onSuccessListener);
   }
 
   @NonNull
   @Override
-  public Task<UpdateState> addOnSuccessListener(
-      @NonNull Executor executor,
-      @NonNull OnSuccessListener<? super UpdateState> onSuccessListener) {
+  public Task<Void> addOnSuccessListener(
+      @NonNull Executor executor, @NonNull OnSuccessListener<? super Void> onSuccessListener) {
     return this.task.addOnSuccessListener(executor, onSuccessListener);
   }
 
   @NonNull
   @Override
-  public Task<UpdateState> addOnSuccessListener(
-      @NonNull Activity activity,
-      @NonNull OnSuccessListener<? super UpdateState> onSuccessListener) {
+  public Task<Void> addOnSuccessListener(
+      @NonNull Activity activity, @NonNull OnSuccessListener<? super Void> onSuccessListener) {
     return this.task.addOnSuccessListener(activity, onSuccessListener);
   }
 
   @NonNull
   @Override
-  public Task<UpdateState> addOnFailureListener(@NonNull OnFailureListener onFailureListener) {
+  public Task<Void> addOnFailureListener(@NonNull OnFailureListener onFailureListener) {
     return this.task.addOnFailureListener(onFailureListener);
   }
 
   @NonNull
   @Override
-  public Task<UpdateState> addOnFailureListener(
+  public Task<Void> addOnFailureListener(
       @NonNull Executor executor, @NonNull OnFailureListener onFailureListener) {
     return this.task.addOnFailureListener(executor, onFailureListener);
   }
 
   @NonNull
   @Override
-  public Task<UpdateState> addOnFailureListener(
+  public Task<Void> addOnFailureListener(
       @NonNull Activity activity, @NonNull OnFailureListener onFailureListener) {
     return this.task.addOnFailureListener(activity, onFailureListener);
+  }
+
+  @NonNull
+  @Override
+  public Task<Void> addOnCompleteListener(@NonNull OnCompleteListener onCompleteListener) {
+    return this.task.addOnCompleteListener(onCompleteListener);
+  }
+
+  @NonNull
+  @Override
+  public Task<Void> addOnCompleteListener(
+      @NonNull Executor executor, @NonNull OnCompleteListener onCompleteListener) {
+    return this.task.addOnCompleteListener(executor, onCompleteListener);
+  }
+
+  @NonNull
+  @Override
+  public Task<Void> addOnCompleteListener(
+      @NonNull Activity activity, @NonNull OnCompleteListener onCompleteListener) {
+    return this.task.addOnCompleteListener(activity, onCompleteListener);
+  }
+
+  /** Wraps a listener and its corresponding executor. */
+  private static class ManagedListener {
+    Executor executor;
+    OnProgressListener listener;
+
+    ManagedListener(@Nullable Executor executor, OnProgressListener listener) {
+      this.executor = executor != null ? executor : TaskExecutors.MAIN_THREAD;
+      this.listener = listener;
+    }
+
+    /**
+     * If the provided snapshot is non-null, executes the listener on the provided executor. If no
+     * executor was specified, uses the main thread.
+     */
+    public void invoke(UpdateProgress snapshot) {
+      executor.execute(() -> listener.onProgressUpdate(snapshot));
+    }
   }
 }

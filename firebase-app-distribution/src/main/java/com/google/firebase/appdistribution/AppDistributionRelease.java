@@ -39,9 +39,9 @@ public abstract class AppDistributionRelease {
   @NonNull
   public abstract String getDisplayVersion();
 
-  /** The bundle version of this build (example: 123) */
+  /** The version code of this build (example: 123) */
   @NonNull
-  public abstract String getBuildVersion();
+  public abstract long getVersionCode();
 
   /** The release notes for this build */
   @Nullable
@@ -59,7 +59,7 @@ public abstract class AppDistributionRelease {
     public abstract Builder setDisplayVersion(@NonNull String value);
 
     @NonNull
-    public abstract Builder setBuildVersion(@NonNull String value);
+    public abstract Builder setVersionCode(@NonNull long value);
 
     @NonNull
     public abstract Builder setReleaseNotes(@Nullable String value);

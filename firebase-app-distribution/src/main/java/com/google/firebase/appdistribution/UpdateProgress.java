@@ -20,39 +20,39 @@ import com.google.auto.value.AutoValue;
 
 /** Data class to get download progress for APKs and the status of the update. Used in updateApp. */
 @AutoValue
-public abstract class UpdateState {
+public abstract class UpdateProgress {
 
   @NonNull
-  public static UpdateState.Builder builder() {
-    return new AutoValue_UpdateState.Builder();
+  public static UpdateProgress.Builder builder() {
+    return new AutoValue_UpdateProgress.Builder();
   }
 
   /** The number of bytes downloaded so far for the APK. Returns -1 if called on an AAB. */
   @NonNull
   public abstract long getApkBytesDownloaded();
 
-  /** The total number of bytes to download for the APK. Returns -1 if called on an AAB. */
+  /** The file size of the APK file to download in bytes. Returns -1 if called on an AAB. */
   @NonNull
-  public abstract long getApkTotalBytesToDownload();
+  public abstract long getApkFileTotalBytes();
 
   @NonNull
   /** returns the current state of the update */
   public abstract UpdateStatus getUpdateStatus();
 
-  /** Builder for {@link UpdateState}. */
+  /** Builder for {@link UpdateProgress}. */
   @AutoValue.Builder
   public abstract static class Builder {
 
     @NonNull
-    public abstract UpdateState.Builder setApkBytesDownloaded(@NonNull long value);
+    public abstract UpdateProgress.Builder setApkBytesDownloaded(@NonNull long value);
 
     @NonNull
-    public abstract UpdateState.Builder setApkTotalBytesToDownload(@NonNull long value);
+    public abstract UpdateProgress.Builder setApkFileTotalBytes(@NonNull long value);
 
     @NonNull
-    public abstract UpdateState.Builder setUpdateStatus(@Nullable UpdateStatus value);
+    public abstract UpdateProgress.Builder setUpdateStatus(@Nullable UpdateStatus value);
 
     @NonNull
-    public abstract UpdateState build();
+    public abstract UpdateProgress build();
   }
 }

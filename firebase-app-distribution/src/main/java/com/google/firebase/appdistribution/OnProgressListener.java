@@ -18,5 +18,5 @@ import androidx.annotation.NonNull;
 
 /** A listener that is called periodically during execution of the {@link UpdateTask}. */
 public interface OnProgressListener {
-  void onProgressUpdate(@NonNull UpdateState updateState);
+  void onProgressUpdate(@NonNull UpdateProgress updateState);
 }

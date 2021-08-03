@@ -43,7 +43,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
   private final UpdateAppClient updateAppClient;
   private Activity currentActivity;
 
-  private Task<AppDistributionRelease> cachedUpdateToLatestReleaseTask;
+  private Task<Void> cachedUpdateToLatestReleaseTask;
   private Task<AppDistributionRelease> cachedCheckForUpdateTask;
   private AppDistributionReleaseInternal cachedLatestRelease;
   private final SignInStorage signInStorage;
@@ -114,7 +114,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
    * to complete the download and installation.
    */
   @NonNull
-  public synchronized Task<AppDistributionRelease> updateToLatestRelease() {
+  public synchronized Task<Void> updateToLatestRelease() {
     if (cachedUpdateToLatestReleaseTask != null && !cachedUpdateToLatestReleaseTask.isComplete()) {
       return cachedUpdateToLatestReleaseTask;
     }
@@ -264,8 +264,14 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     if (internalRelease == null) {
       return null;
     }
+    long versionCode;
+    try {
+      versionCode = Long.parseLong(internalRelease.getBuildVersion());
+    } catch (NumberFormatException e) {
+      versionCode = 0;
+    }
     return AppDistributionRelease.builder()
-        .setBuildVersion(internalRelease.getBuildVersion())
+        .setVersionCode(versionCode)
         .setDisplayVersion(internalRelease.getDisplayVersion())
         .setReleaseNotes(internalRelease.getReleaseNotes())
         .setBinaryType(internalRelease.getBinaryType())
@@ -282,9 +288,8 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     return this.cachedLatestRelease;
   }
 
-  private Task<AppDistributionRelease> showUpdateAlertDialog(AppDistributionRelease latestRelease) {
-    TaskCompletionSource<AppDistributionRelease> updateAlertDialogTask =
-        new TaskCompletionSource<>();
+  private Task<Void> showUpdateAlertDialog(AppDistributionRelease latestRelease) {
+    TaskCompletionSource<Void> updateAlertDialogTask = new TaskCompletionSource<>();
     Context context = firebaseApp.getApplicationContext();
     AlertDialog alertDialog = new AlertDialog.Builder(currentActivity).create();
     alertDialog.setTitle(context.getString(R.string.update_dialog_title));
@@ -293,7 +298,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
         new StringBuilder(
             String.format(
                 "Version %s (%s) is available.",
-                latestRelease.getDisplayVersion(), latestRelease.getBuildVersion()));
+                latestRelease.getDisplayVersion(), latestRelease.getVersionCode()));
 
     if (latestRelease.getReleaseNotes() != null && !latestRelease.getReleaseNotes().isEmpty()) {
       message.append(String.format("\n\nRelease notes: %s", latestRelease.getReleaseNotes()));
@@ -306,7 +311,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
         (dialogInterface, i) -> {
           try {
             updateApp()
-                .addOnSuccessListener(unused -> updateAlertDialogTask.setResult(latestRelease))
+                .addOnSuccessListener(unused -> updateAlertDialogTask.setResult(null))
                 .addOnFailureListener(updateAlertDialogTask::setException);
           } catch (FirebaseAppDistributionException e) {
             updateAlertDialogTask.setException(e);
