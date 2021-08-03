@@ -155,7 +155,7 @@ public class UpdateAppClient {
     return downloadTaskCompletionSource.getTask();
   }
 
-  public void makeApkDownloadRequest(String downloadUrl) {
+  private void makeApkDownloadRequest(@NonNull String downloadUrl) {
     downloadExecutor.execute(
         () -> {
           try {
@@ -274,7 +274,7 @@ public class UpdateAppClient {
     }
   }
 
-  public Task<Void> install(String path, Activity currentActivity) {
+  private Task<Void> install(String path, Activity currentActivity) {
     Intent intent = new Intent(currentActivity, InstallActivity.class);
     intent.putExtra("INSTALL_PATH", path);
     this.installCancellationTokenSource = new CancellationTokenSource();
