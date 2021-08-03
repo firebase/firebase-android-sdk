@@ -28,7 +28,7 @@ public class UpdateAppClient {
 
   private TaskCompletionSource<UpdateState> updateAppTaskCompletionSource = null;
   private CancellationTokenSource updateAppCancellationSource;
-  UpdateTaskImpl updateTask;
+  private UpdateTaskImpl updateTask;
 
   private FirebaseApp firebaseApp;
   private UpdateApkClient updateApkClient;
