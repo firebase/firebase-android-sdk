@@ -29,10 +29,13 @@ public class UpdateAppClient {
   private TaskCompletionSource<UpdateState> updateAppTaskCompletionSource = null;
   private CancellationTokenSource updateAppCancellationSource;
   private UpdateTaskImpl updateTask;
+
   private FirebaseApp firebaseApp;
+  private UpdateApkClient updateApkClient;
 
   public UpdateAppClient(@NonNull FirebaseApp firebaseApp) {
     this.firebaseApp = firebaseApp;
+    this.updateApkClient = new UpdateApkClient(firebaseApp);
   }
 
   @NonNull
@@ -52,7 +55,11 @@ public class UpdateAppClient {
     if (latestRelease.getBinaryType() == BinaryType.AAB) {
       redirectToPlayForAabUpdate(latestRelease.getDownloadUrl(), currentActivity);
     } else {
-      throw new UnsupportedOperationException("Not yet implemented.");
+      this.updateApkClient.updateApk(
+          latestRelease.getDownloadUrl(),
+          currentActivity,
+          updateTask,
+          updateAppTaskCompletionSource);
     }
 
     return this.updateTask;
@@ -79,10 +86,7 @@ public class UpdateAppClient {
     this.updateTask.updateProgress(updateState);
   }
 
-  private void setUpdateAppTaskCompletionError(FirebaseAppDistributionException e) {
-    if (updateAppTaskCompletionSource != null
-        && !updateAppTaskCompletionSource.getTask().isComplete()) {
-      updateAppTaskCompletionSource.setException(e);
-    }
+  void setInstallationResult(int resultCode) {
+    this.updateApkClient.setInstallationResult(resultCode);
   }
 }
