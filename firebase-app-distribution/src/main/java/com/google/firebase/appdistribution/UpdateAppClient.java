@@ -169,12 +169,7 @@ public class UpdateAppClient {
             } else if (response.body() != null) {
               ResponseBody responseBody = response.body();
               long responseLength = responseBody.contentLength();
-              this.updateTask.updateProgress(
-                  UpdateState.builder()
-                      .setApkBytesDownloaded(0)
-                      .setApkTotalBytesToDownload(responseLength)
-                      .setUpdateStatus(UpdateStatus.PENDING)
-                      .build());
+              updateProgressOnMainThread(responseLength, 0, UpdateStatus.PENDING);
               String fileName = getApplicationName() + ".apk";
               downloadToDisk(responseBody.byteStream(), responseLength, fileName);
             }
