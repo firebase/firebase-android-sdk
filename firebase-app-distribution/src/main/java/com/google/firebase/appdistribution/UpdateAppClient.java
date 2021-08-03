@@ -14,6 +14,8 @@
 
 package com.google.firebase.appdistribution;
 
+import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.NETWORK_FAILURE;
+
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -36,10 +38,7 @@ import java.net.URL;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.jar.JarFile;
-
 import javax.net.ssl.HttpsURLConnection;
-
-import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.NETWORK_FAILURE;
 
 /** Client class for updateApp functionality in {@link FirebaseAppDistribution}. */
 public class UpdateAppClient {
@@ -113,7 +112,8 @@ public class UpdateAppClient {
         .addOnSuccessListener(
             file -> {
               install(file.getPath(), currentActivity)
-                  .addOnSuccessListener(downloadExecutor,
+                  .addOnSuccessListener(
+                      downloadExecutor,
                       Void -> {
                         UpdateState updateState =
                             UpdateState.builder()
@@ -126,7 +126,8 @@ public class UpdateAppClient {
                       })
                   .addOnFailureListener(
                       e ->
-                          setUpdateAppErrorWithDefault(e,
+                          setUpdateAppErrorWithDefault(
+                              e,
                               new FirebaseAppDistributionException(
                                   Constants.ErrorMessages.NETWORK_ERROR,
                                   FirebaseAppDistributionException.Status.INSTALLATION_FAILURE)));
@@ -172,7 +173,8 @@ public class UpdateAppClient {
               downloadToDisk(connection.getInputStream(), responseLength, fileName);
             }
           } catch (IOException | FirebaseAppDistributionException e) {
-            setDownloadTaskCompletionErrorWithDefault(e,
+            setDownloadTaskCompletionErrorWithDefault(
+                e,
                 new FirebaseAppDistributionException(
                     Constants.ErrorMessages.NETWORK_ERROR,
                     FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE));
@@ -243,7 +245,7 @@ public class UpdateAppClient {
   }
 
   HttpsURLConnection openHttpsUrlConnection(String downloadUrl)
-          throws FirebaseAppDistributionException {
+      throws FirebaseAppDistributionException {
     HttpsURLConnection httpsURLConnection;
 
     try {
@@ -251,7 +253,7 @@ public class UpdateAppClient {
       httpsURLConnection = (HttpsURLConnection) url.openConnection();
     } catch (IOException e) {
       throw new FirebaseAppDistributionException(
-              Constants.ErrorMessages.NETWORK_ERROR, NETWORK_FAILURE, e);
+          Constants.ErrorMessages.NETWORK_ERROR, NETWORK_FAILURE, e);
     }
     return httpsURLConnection;
   }
@@ -263,7 +265,8 @@ public class UpdateAppClient {
     }
   }
 
-  private void setDownloadTaskCompletionErrorWithDefault(Exception e, FirebaseAppDistributionException defaultFirebaseException) {
+  private void setDownloadTaskCompletionErrorWithDefault(
+      Exception e, FirebaseAppDistributionException defaultFirebaseException) {
     if (e instanceof FirebaseAppDistributionException) {
       setDownloadTaskCompletionError((FirebaseAppDistributionException) e);
     } else {

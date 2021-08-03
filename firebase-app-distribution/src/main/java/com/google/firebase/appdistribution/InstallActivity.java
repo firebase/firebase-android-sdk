@@ -42,8 +42,14 @@ public class InstallActivity extends AppCompatActivity {
         registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
             activityResult -> {
-              if (activityResult.getResultCode() == Activity.RESULT_OK) {
+              int resultCode = activityResult.getResultCode();
+              if (resultCode == Activity.RESULT_OK) {
                 installTaskCompletionSource.setResult(null);
+              } else if (resultCode == Activity.RESULT_CANCELED) {
+                installTaskCompletionSource.setException(
+                    new FirebaseAppDistributionException(
+                        Constants.ErrorMessages.UPDATE_CANCELED,
+                        FirebaseAppDistributionException.Status.INSTALLATION_CANCELED));
               } else {
                 installTaskCompletionSource.setException(
                     new FirebaseAppDistributionException(
