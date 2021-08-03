@@ -39,7 +39,7 @@ import java.util.jar.JarFile;
 import javax.net.ssl.HttpsURLConnection;
 
 /** Client class that handles updateApp functionality for APKs in {@link UpdateAppClient}. */
-public class UpdateApkClient {
+class UpdateApkClient {
 
   private int UPDATE_INTERVAL_MS = 250;
   private static final String TAG = "FADUpdateAppClient";
@@ -126,7 +126,7 @@ public class UpdateApkClient {
                       FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE));
             } else {
               long responseLength = connection.getContentLength();
-              updateProgressOnMainThread(responseLength, 0, UpdateStatus.PENDING);
+              postUpdateProgressOnMainThread(responseLength, 0, UpdateStatus.PENDING);
               String fileName = getApplicationName() + ".apk";
               downloadToDisk(connection.getInputStream(), responseLength, fileName);
             }
@@ -162,11 +162,11 @@ public class UpdateApkClient {
         long currentTimeMs = System.currentTimeMillis();
         if (currentTimeMs - lastMsUpdated > UPDATE_INTERVAL_MS) {
           lastMsUpdated = currentTimeMs;
-          updateProgressOnMainThread(totalSize, downloadedSize, UpdateStatus.DOWNLOADING);
+          postUpdateProgressOnMainThread(totalSize, downloadedSize, UpdateStatus.DOWNLOADING);
         }
       }
       // completion
-      updateProgressOnMainThread(totalSize, downloadedSize, UpdateStatus.DOWNLOADED);
+      postUpdateProgressOnMainThread(totalSize, downloadedSize, UpdateStatus.DOWNLOADED);
 
     } catch (IOException e) {
       setDownloadTaskCompletionError(
@@ -275,7 +275,7 @@ public class UpdateApkClient {
     }
   }
 
-  private void updateProgressOnMainThread(
+  private void postUpdateProgressOnMainThread(
       long totalBytes, long downloadedBytes, UpdateStatus status) {
     downloadHandler.post(
         () -> {
