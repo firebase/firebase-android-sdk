@@ -57,6 +57,18 @@ public class SQLiteLocalDocumentCache implements LocalDocumentCache {
   }
 
   @Override
+  public void setMutationFlags(MutableDocument doc) {
+    int flags = 0;
+    if(doc.hasLocalMutations()) flags = 1;
+    if(doc.hasCommittedMutations()) flags = 2;
+    db.execute("UPDATE local_documents SET mutation_flag = ? WHERE path = ? AND uid = ?",
+      flags,
+      EncodedPath.encode(doc.getKey().getPath()),
+      uid
+      );
+  }
+
+  @Override
   public Map<DocumentKey, MutableDocument> getAll(Iterable<DocumentKey> keys) {
     List<Object> args = new ArrayList<>();
     for (DocumentKey key : keys) {

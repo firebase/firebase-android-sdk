@@ -11,6 +11,8 @@ public interface LocalDocumentCache {
 
   void remove(DocumentKey key);
 
+  void setMutationFlags(MutableDocument doc);
+
   Map<DocumentKey, MutableDocument> getAll(Iterable<DocumentKey> keys);
 
   MutableDocument get(DocumentKey key);

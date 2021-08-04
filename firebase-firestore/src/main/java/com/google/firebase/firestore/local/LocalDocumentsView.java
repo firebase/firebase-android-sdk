@@ -19,7 +19,11 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.google.firebase.database.collection.ImmutableSortedMap;
+import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -153,7 +157,6 @@ class LocalDocumentsView {
   public void repopulateCache(Set<DocumentKey> keys) {
     Map<DocumentKey, MutableDocument> existingDocs = remoteDocumentCache.getAll(keys);
 
-    // TODO(Overlay): Can we avoid this now that we have local_content in remote document cache?
     List<MutationBatch> batches = mutationQueue.getAllMutationBatchesAffectingDocumentKeys(keys);
     // TODO(Overlay): This is running for all changed docs X all batches that might affect..pretty
     // wasteful.
@@ -161,7 +164,11 @@ class LocalDocumentsView {
         applyLocalMutationsToDocuments(existingDocs, batches);
 
     for (Map.Entry<DocumentKey, DocumentBaseAndFinal> entry : localDocs.entrySet()) {
-      localDocumentCache.add((MutableDocument) entry.getValue().finalDoc);
+      if(entry.getValue().finalDoc != null) {
+        localDocumentCache.add((MutableDocument) entry.getValue().finalDoc);
+      } else {
+        localDocumentCache.remove(entry.getKey());
+      }
     }
   }
 
@@ -261,6 +268,7 @@ class LocalDocumentsView {
   void applyWriteToRemoteDocuments(MutationBatchResult batchResult) {
     MutationBatch batch = batchResult.getBatch();
     Set<DocumentKey> docKeys = batch.getKeys();
+    mutationQueue.removeMutationBatch(batch);
     for (DocumentKey docKey : docKeys) {
       MutableDocument doc = remoteDocumentCache.get(docKey);
       SnapshotVersion ackVersion = batchResult.getDocVersions().get(docKey);
@@ -270,14 +278,31 @@ class LocalDocumentsView {
         batch.applyToRemoteDocument(doc, batchResult);
         if (doc.isValidDocument()) {
           remoteDocumentCache.add(doc, batchResult.getCommitVersion());
-          // TODO(Overlay): Can we save this update, doc content does not change, only
+          /*
+          // TODO(Overlay): Doc content does not change, only
           // mutation_flags changed.
-          localDocumentCache.add(doc);
+          List<MutationBatch> batches = mutationQueue.getAllMutationBatchesAffectingDocumentKey(docKey);
+          // TODO(Overlay): This is running for all changed docs X all batches that might affect..pretty
+          // wasteful.
+          Map<DocumentKey, MutableDocument> docs = Maps.newHashMap();
+          docs.put(docKey, doc);
+          Map<DocumentKey, DocumentBaseAndFinal> localDocs = applyLocalMutationsToDocuments(docs, batches);
+          if(localDocs.get(docKey).finalDoc != null) {
+            localDocumentCache.add(localDocs.get(docKey).finalDoc);
+          } else {
+            localDocumentCache.remove(docKey);
+          }
+          */
         }
-      }
+      } /*else {
+        // TODO(Overlay): This is wrong. What should happen here is recaculate the local cache on top of
+        //  new remote doc, just like above.
+        localDocumentCache.remove(docKey);
+      }*/
     }
-
-    mutationQueue.removeMutationBatch(batch);
+    // TODO(Overlay): We repopulate unconditionally here for correctness. This will be slow when mutation
+    // queue is long. This is probably the reason for Gil's original design.
+    repopulateCache(docKeys);
   }
 
   // TODO: The Querying implementation here should move 100% to the query engines.
