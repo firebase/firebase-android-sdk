@@ -20,7 +20,6 @@ import android.net.Uri;
 import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.CancellationTokenSource;
 import com.google.android.gms.tasks.TaskCompletionSource;
-import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appdistribution.internal.AppDistributionReleaseInternal;
 
@@ -40,25 +39,21 @@ public class UpdateAppClient {
   }
 
   @NonNull
-  public UpdateTask getUpdateTask(
-      @NonNull AppDistributionReleaseInternal latestRelease, @NonNull Activity currentActivity)
+  public void performUpdate(
+      @NonNull UpdateTaskImpl updateTask,
+      @NonNull AppDistributionReleaseInternal latestRelease,
+      @NonNull Activity currentActivity)
       throws FirebaseAppDistributionException {
 
-    if (this.updateTask != null && !updateTask.isComplete()) {
-      return this.updateTask;
-    }
-
     if (latestRelease.getBinaryType() == BinaryType.AAB) {
-      this.updateTask = redirectToPlayForAabUpdate(latestRelease.getDownloadUrl(), currentActivity);
+      redirectToPlayForAabUpdate(updateTask, latestRelease.getDownloadUrl(), currentActivity);
     } else {
-      this.updateTask =
-          this.updateApkClient.updateApk(latestRelease.getDownloadUrl(), currentActivity);
+      this.updateApkClient.updateApk(updateTask, latestRelease.getDownloadUrl(), currentActivity);
     }
-
-    return this.updateTask;
   }
 
-  private UpdateTaskImpl redirectToPlayForAabUpdate(String downloadUrl, Activity currentActivity)
+  private void redirectToPlayForAabUpdate(
+      UpdateTaskImpl updateTask, String downloadUrl, Activity currentActivity)
       throws FirebaseAppDistributionException {
     if (downloadUrl == null) {
       throw new FirebaseAppDistributionException(
@@ -69,14 +64,13 @@ public class UpdateAppClient {
     updateIntent.setData(uri);
     updateIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
     currentActivity.startActivity(updateIntent);
-    UpdateTaskImpl updateTask = new UpdateTaskImpl(Tasks.forResult(null));
     updateTask.updateProgress(
         UpdateProgress.builder()
             .setApkBytesDownloaded(-1)
             .setApkFileTotalBytes(-1)
             .setUpdateStatus(UpdateStatus.REDIRECTED_TO_PLAY)
             .build());
-    return updateTask;
+    updateTask.setResult();
   }
 
   void setInstallationResult(int resultCode) {

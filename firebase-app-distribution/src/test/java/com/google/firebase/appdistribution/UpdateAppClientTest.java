@@ -93,9 +93,10 @@ public class UpdateAppClientTest {
     List<UpdateProgress> progressEvents = new ArrayList<>();
 
     TestOnCompleteListener<Void> onCompleteListener = new TestOnCompleteListener<>();
-    UpdateTask updateTask = updateAppClient.getUpdateTask(latestRelease, activity);
-    updateTask.addOnCompleteListener(testExecutor, onCompleteListener);
-    updateTask.addOnProgressListener(progressEvents::add);
+    UpdateTaskImpl updateTaskImpl = new UpdateTaskImpl();
+    updateAppClient.performUpdate(updateTaskImpl, latestRelease, activity);
+    updateTaskImpl.addOnCompleteListener(testExecutor, onCompleteListener);
+    updateTaskImpl.addOnProgressListener(progressEvents::add);
     onCompleteListener.await();
 
     assertThat(shadowActivity.getNextStartedActivity().getData())

@@ -45,6 +45,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
 
   private Task<Void> cachedUpdateToLatestReleaseTask;
   private Task<AppDistributionRelease> cachedCheckForUpdateTask;
+  private UpdateTaskImpl cachedUpdateAppTask;
   private AppDistributionReleaseInternal cachedLatestRelease;
   private final SignInStorage signInStorage;
 
@@ -174,22 +175,30 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
   @NonNull
   public UpdateTask updateApp() throws FirebaseAppDistributionException {
 
+    if (cachedUpdateAppTask != null && !cachedUpdateAppTask.isComplete()) {
+      return cachedUpdateAppTask;
+    }
+
+    cachedUpdateAppTask = new UpdateTaskImpl();
+
     if (!isTesterSignedIn()) {
-      return new UpdateTaskImpl(
-          Tasks.forException(
-              new FirebaseAppDistributionException(
-                  Constants.ErrorMessages.AUTHENTICATION_ERROR, AUTHENTICATION_FAILURE)));
+      cachedUpdateAppTask.setException(
+          new FirebaseAppDistributionException(
+              Constants.ErrorMessages.AUTHENTICATION_ERROR, AUTHENTICATION_FAILURE));
+      return cachedUpdateAppTask;
     }
 
     AppDistributionReleaseInternal cachedRelease = getCachedLatestRelease();
     if (cachedRelease == null) {
-      return new UpdateTaskImpl(
-          Tasks.forException(
-              new FirebaseAppDistributionException(
-                  Constants.ErrorMessages.NOT_FOUND_ERROR, UPDATE_NOT_AVAILABLE)));
+      cachedUpdateAppTask.setException(
+          new FirebaseAppDistributionException(
+              Constants.ErrorMessages.NOT_FOUND_ERROR, UPDATE_NOT_AVAILABLE));
+      return cachedUpdateAppTask;
     }
 
-    return this.updateAppClient.getUpdateTask(cachedLatestRelease, currentActivity);
+    this.updateAppClient.performUpdate(cachedUpdateAppTask, cachedLatestRelease, currentActivity);
+
+    return cachedUpdateAppTask;
   }
 
   /** Returns true if the App Distribution tester is signed in */

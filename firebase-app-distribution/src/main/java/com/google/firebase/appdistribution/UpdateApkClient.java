@@ -52,12 +52,12 @@ class UpdateApkClient {
     this.firebaseApp = firebaseApp;
   }
 
-  public UpdateTask updateApk(@NonNull String downloadUrl, @NonNull Activity currentActivity) {
+  public void updateApk(
+      @NonNull UpdateTaskImpl updateTask,
+      @NonNull String downloadUrl,
+      @NonNull Activity currentActivity) {
 
-    TaskCompletionSource<Void> updateApkTaskCompletionSource = new TaskCompletionSource<>();
-    UpdateTaskImpl updateTask = new UpdateTaskImpl(updateApkTaskCompletionSource.getTask());
-
-    downloadApk(downloadUrl, updateTask, updateApkTaskCompletionSource)
+    downloadApk(downloadUrl, updateTask)
         .addOnSuccessListener(
             downloadExecutor,
             file ->
@@ -66,12 +66,12 @@ class UpdateApkClient {
                         unused -> {
                           postUpdateProgress(
                               updateTask, file.length(), file.length(), UpdateStatus.DOWNLOADED);
-                          updateApkTaskCompletionSource.setResult(null);
+                          updateTask.setResult();
                         })
                     .addOnFailureListener(
                         e ->
                             setTaskCompletionErrorWithDefault(
-                                updateApkTaskCompletionSource,
+                                updateTask,
                                 e,
                                 new FirebaseAppDistributionException(
                                     Constants.ErrorMessages.NETWORK_ERROR,
@@ -80,19 +80,14 @@ class UpdateApkClient {
             downloadExecutor,
             e ->
                 setTaskCompletionErrorWithDefault(
-                    updateApkTaskCompletionSource,
+                    updateTask,
                     e,
                     new FirebaseAppDistributionException(
                         Constants.ErrorMessages.NETWORK_ERROR,
                         FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE)));
-
-    return updateTask;
   }
 
-  private @NonNull Task<File> downloadApk(
-      @NonNull String downloadUrl,
-      UpdateTaskImpl updateTask,
-      TaskCompletionSource updateApkTaskCompletionSource) {
+  private @NonNull Task<File> downloadApk(@NonNull String downloadUrl, UpdateTaskImpl updateTask) {
     if (downloadTaskCompletionSource != null
         && !downloadTaskCompletionSource.getTask().isComplete()) {
       downloadCancellationTokenSource.cancel();
@@ -102,14 +97,11 @@ class UpdateApkClient {
     downloadTaskCompletionSource =
         new TaskCompletionSource<>(downloadCancellationTokenSource.getToken());
 
-    makeApkDownloadRequest(downloadUrl, updateTask, updateApkTaskCompletionSource);
+    makeApkDownloadRequest(downloadUrl, updateTask);
     return downloadTaskCompletionSource.getTask();
   }
 
-  private void makeApkDownloadRequest(
-      @NonNull String downloadUrl,
-      UpdateTaskImpl updateTask,
-      TaskCompletionSource updateApkTaskCompletionSource) {
+  private void makeApkDownloadRequest(@NonNull String downloadUrl, UpdateTaskImpl updateTask) {
     downloadExecutor.execute(
         () -> {
           try {
@@ -124,12 +116,7 @@ class UpdateApkClient {
               long responseLength = connection.getContentLength();
               postUpdateProgress(updateTask, responseLength, 0, UpdateStatus.PENDING);
               String fileName = getApplicationName() + ".apk";
-              downloadToDisk(
-                  connection.getInputStream(),
-                  responseLength,
-                  fileName,
-                  updateTask,
-                  updateApkTaskCompletionSource);
+              downloadToDisk(connection.getInputStream(), responseLength, fileName, updateTask);
             }
           } catch (IOException | FirebaseAppDistributionException e) {
             setDownloadTaskCompletionErrorWithDefault(
@@ -142,11 +129,7 @@ class UpdateApkClient {
   }
 
   private void downloadToDisk(
-      InputStream input,
-      long totalSize,
-      String fileName,
-      UpdateTaskImpl updateTask,
-      TaskCompletionSource updateApkTaskCompletionSource) {
+      InputStream input, long totalSize, String fileName, UpdateTaskImpl updateTask) {
 
     File apkFile = getApkFileForApp(fileName);
     apkFile.delete();
@@ -266,20 +249,20 @@ class UpdateApkClient {
   }
 
   private void setTaskCompletionError(
-      TaskCompletionSource taskCompletionSource, FirebaseAppDistributionException e) {
-    if (taskCompletionSource != null && !taskCompletionSource.getTask().isComplete()) {
-      taskCompletionSource.setException(e);
+      UpdateTaskImpl updateTask, FirebaseAppDistributionException e) {
+    if (updateTask != null && !updateTask.isComplete()) {
+      updateTask.setException(e);
     }
   }
 
   private void setTaskCompletionErrorWithDefault(
-      TaskCompletionSource taskCompletionSource,
+      UpdateTaskImpl updateTask,
       Exception e,
       FirebaseAppDistributionException defaultFirebaseException) {
     if (e instanceof FirebaseAppDistributionException) {
-      setTaskCompletionError(taskCompletionSource, (FirebaseAppDistributionException) e);
+      setTaskCompletionError(updateTask, (FirebaseAppDistributionException) e);
     } else {
-      setTaskCompletionError(taskCompletionSource, defaultFirebaseException);
+      setTaskCompletionError(updateTask, defaultFirebaseException);
     }
   }
 

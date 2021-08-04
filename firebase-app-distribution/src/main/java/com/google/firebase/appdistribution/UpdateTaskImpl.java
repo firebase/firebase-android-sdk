@@ -15,25 +15,37 @@
 package com.google.firebase.appdistribution;
 
 import android.app.Activity;
+import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RestrictTo;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.TaskExecutors;
 import java.util.concurrent.Executor;
 
 /** Implementation of UpdateTask, the return type of updateApp. */
 class UpdateTaskImpl extends UpdateTask {
 
-  @NonNull private final Task<Void> task;
-  @Nullable private ManagedListener listener = null;
+  @NonNull private Task<Void> task;
+
+  @Nullable
+  @GuardedBy("lock")
+  private ManagedListener listener = null;
+
   private final Object lock = new Object();
+
+  @GuardedBy("lock")
   private UpdateProgress snapshot;
 
-  UpdateTaskImpl(@NonNull Task<Void> task) {
-    this.task = task;
+  private TaskCompletionSource<Void> taskCompletionSource;
+
+  UpdateTaskImpl() {
+    this.taskCompletionSource = new TaskCompletionSource<Void>();
+    this.task = taskCompletionSource.getTask();
   }
 
   void updateProgress(@NonNull UpdateProgress updateProgress) {
@@ -157,6 +169,26 @@ class UpdateTaskImpl extends UpdateTask {
   public Task<Void> addOnCompleteListener(
       @NonNull Activity activity, @NonNull OnCompleteListener onCompleteListener) {
     return this.task.addOnCompleteListener(activity, onCompleteListener);
+  }
+
+  @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+  public void setResult() {
+
+    synchronized (lock) {
+      this.listener = null;
+    }
+
+    this.taskCompletionSource.setResult(null);
+  }
+
+  @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+  public void setException(@NonNull Exception exception) {
+
+    synchronized (lock) {
+      this.listener = null;
+    }
+
+    this.taskCompletionSource.setException(exception);
   }
 
   /** Wraps a listener and its corresponding executor. */
