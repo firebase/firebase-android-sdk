@@ -26,6 +26,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.crashlytics.BuildConfig;
+import com.google.firebase.crashlytics.FirebaseCrashlytics;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponentDeferredProxy;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
@@ -39,9 +40,11 @@ import com.google.firebase.crashlytics.internal.settings.model.SettingsData;
 import com.google.firebase.crashlytics.internal.unity.UnityVersionProvider;
 import com.google.firebase.inject.Deferred;
 import com.google.firebase.installations.FirebaseInstallationsApi;
+import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import junit.framework.TestCase;
 import org.mockito.Mockito;
 
 public class CrashlyticsCoreTest extends CrashlyticsTestCase {
@@ -419,4 +422,14 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
 
   private static final Thread.UncaughtExceptionHandler NOOP_HANDLER =
       (Thread thread, Throwable ex) -> {};
+
+  public void testFirebaseCrashlyticsHasCore_reflection() throws Exception {
+    // This test exists because the Crashlytics Unity Plugin uses reflection to access
+    // the CrashlyticsCore property, which is not part of the public
+    // API. If this test throws a NoSuchMethodException, the method signature has changed. Before
+    // updating this test, update crashlytics_android.cc in the Unity repo to match the new method
+    // signature.
+    Field f = FirebaseCrashlytics.getInstance().getClass().getField("core");
+    assertNotNull(f);
+  }
 }
