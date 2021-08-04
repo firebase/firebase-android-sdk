@@ -18,7 +18,6 @@ import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
 import androidx.annotation.NonNull;
-import com.google.android.gms.tasks.CancellationTokenSource;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appdistribution.internal.AppDistributionReleaseInternal;
@@ -27,19 +26,14 @@ import com.google.firebase.appdistribution.internal.AppDistributionReleaseIntern
 public class UpdateAppClient {
 
   private TaskCompletionSource<Void> updateAppTaskCompletionSource = null;
-  private CancellationTokenSource updateAppCancellationSource;
-  private UpdateTask updateTask;
-
-  private FirebaseApp firebaseApp;
   private UpdateApkClient updateApkClient;
 
   public UpdateAppClient(@NonNull FirebaseApp firebaseApp) {
-    this.firebaseApp = firebaseApp;
     this.updateApkClient = new UpdateApkClient(firebaseApp);
   }
 
   @NonNull
-  public void performUpdate(
+   void performUpdate(
       @NonNull UpdateTaskImpl updateTask,
       @NonNull AppDistributionReleaseInternal latestRelease,
       @NonNull Activity currentActivity)
