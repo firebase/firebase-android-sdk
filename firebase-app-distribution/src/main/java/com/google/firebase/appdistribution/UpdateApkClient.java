@@ -41,7 +41,7 @@ import javax.net.ssl.HttpsURLConnection;
 /** Client class that handles updateApp functionality for APKs in {@link UpdateAppClient}. */
 class UpdateApkClient {
 
-  private int UPDATE_INTERVAL_MS = 250;
+  private final int UPDATE_INTERVAL_MS = 250;
   private static final String TAG = "FADUpdateAppClient";
   private static final String REQUEST_METHOD = "GET";
   private TaskCompletionSource<File> downloadTaskCompletionSource;
@@ -68,28 +68,26 @@ class UpdateApkClient {
     this.updateAppTaskCompletionSource = updateAppTaskCompletionSource;
     downloadApk(downloadUrl)
         .addOnSuccessListener(
-            file -> {
-              install(file.getPath(), currentActivity)
-                  .addOnSuccessListener(
-                      downloadExecutor,
-                      Void -> {
-                        UpdateState updateState =
-                            UpdateState.builder()
-                                .setApkTotalBytesToDownload(file.length())
-                                .setApkBytesDownloaded(file.length())
-                                .setUpdateStatus(UpdateStatus.INSTALLED)
-                                .build();
-                        updateTask.updateProgress(updateState);
-                        updateAppTaskCompletionSource.setResult(updateState);
-                      })
-                  .addOnFailureListener(
-                      e ->
-                          setUpdateAppErrorWithDefault(
-                              e,
-                              new FirebaseAppDistributionException(
-                                  Constants.ErrorMessages.NETWORK_ERROR,
-                                  FirebaseAppDistributionException.Status.INSTALLATION_FAILURE)));
-            })
+            file ->
+                install(file.getPath(), currentActivity)
+                    .addOnSuccessListener(
+                        downloadExecutor,
+                        Void -> {
+                          updateTask.updateProgress(
+                              UpdateProgress.builder()
+                                  .setApkFileTotalBytes(file.length())
+                                  .setApkBytesDownloaded(file.length())
+                                  .setUpdateStatus(UpdateStatus.DOWNLOADED)
+                                  .build());
+                          updateAppTaskCompletionSource.setResult(null);
+                        })
+                    .addOnFailureListener(
+                        e ->
+                            setUpdateAppErrorWithDefault(
+                                e,
+                                new FirebaseAppDistributionException(
+                                    Constants.ErrorMessages.NETWORK_ERROR,
+                                    FirebaseAppDistributionException.Status.INSTALLATION_FAILURE))))
         .addOnFailureListener(
             e ->
                 setUpdateAppErrorWithDefault(
@@ -277,13 +275,12 @@ class UpdateApkClient {
 
   private void postUpdateProgress(long totalBytes, long downloadedBytes, UpdateStatus status) {
     downloadHandler.post(
-        () -> {
-          updateTask.updateProgress(
-              UpdateState.builder()
-                  .setApkTotalBytesToDownload(totalBytes)
-                  .setApkBytesDownloaded(downloadedBytes)
-                  .setUpdateStatus(status)
-                  .build());
-        });
+        () ->
+            updateTask.updateProgress(
+                UpdateProgress.builder()
+                    .setApkFileTotalBytes(totalBytes)
+                    .setApkBytesDownloaded(downloadedBytes)
+                    .setUpdateStatus(status)
+                    .build()));
   }
 }
