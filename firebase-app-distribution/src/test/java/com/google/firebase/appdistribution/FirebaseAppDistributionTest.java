@@ -76,7 +76,7 @@ public class FirebaseAppDistributionTest {
 
   private static final AppDistributionRelease TEST_RELEASE_NEWER_AAB =
       AppDistributionRelease.builder()
-          .setBuildVersion("3")
+          .setVersionCode(3)
           .setDisplayVersion("3.0")
           .setReleaseNotes("Newer version.")
           .setBinaryType(BinaryType.AAB)
@@ -93,7 +93,8 @@ public class FirebaseAppDistributionTest {
   @Mock private UpdateAppClient mockUpdateAppClient;
   @Mock private SignInStorage mockSignInStorage;
   @Mock private Bundle mockBundle;
-  @Mock SignInResultActivity mockSignInResultActivity;
+  @Mock private SignInResultActivity mockSignInResultActivity;
+  @Mock private OnProgressListener onProgressListener;
 
   static class TestActivity extends Activity {}
 
@@ -245,14 +246,7 @@ public class FirebaseAppDistributionTest {
     when(mockCheckForUpdateClient.checkForUpdate()).thenReturn(Tasks.forResult(latestRelease));
     firebaseAppDistribution.setCachedLatestRelease(latestRelease);
     when(mockUpdateAppClient.getUpdateTask(latestRelease, activity))
-        .thenReturn(
-            new UpdateTaskImpl(
-                Tasks.forResult(
-                    UpdateState.builder()
-                        .setApkBytesDownloaded(-1)
-                        .setApkTotalBytesToDownload(-1)
-                        .setUpdateStatus(UpdateStatus.REDIRECTED_TO_PLAY)
-                        .build())));
+        .thenReturn(new UpdateTaskImpl(Tasks.forResult(null)));
 
     firebaseAppDistribution.onActivityResumed(activity);
     firebaseAppDistribution.updateToLatestRelease();
@@ -269,7 +263,7 @@ public class FirebaseAppDistributionTest {
         String.format(
             "Version %s (%s) is available.\n\nRelease notes: %s",
             TEST_RELEASE_NEWER_AAB.getDisplayVersion(),
-            TEST_RELEASE_NEWER_AAB.getBuildVersion(),
+            TEST_RELEASE_NEWER_AAB.getVersionCode(),
             TEST_RELEASE_NEWER_AAB.getReleaseNotes()),
         shadowOf(updateDialog).getMessage().toString());
     assertTrue(updateDialog.isShowing());
@@ -293,7 +287,7 @@ public class FirebaseAppDistributionTest {
     assertEquals(
         String.format(
             "Version %s (%s) is available.",
-            TEST_RELEASE_NEWER_AAB.getDisplayVersion(), TEST_RELEASE_NEWER_AAB.getBuildVersion()),
+            TEST_RELEASE_NEWER_AAB.getDisplayVersion(), TEST_RELEASE_NEWER_AAB.getVersionCode()),
         shadowOf(updateDialog).getMessage().toString());
   }
 
@@ -323,7 +317,7 @@ public class FirebaseAppDistributionTest {
                     ErrorMessages.AUTHENTICATION_CANCELED, AUTHENTICATION_CANCELED)));
 
     firebaseAppDistribution.onActivityResumed(activity);
-    Task<AppDistributionRelease> task = firebaseAppDistribution.updateToLatestRelease();
+    Task<Void> task = firebaseAppDistribution.updateToLatestRelease();
 
     // signIn flow
     firebaseAppDistribution.onActivityCreated(mockSignInResultActivity, mockBundle);
@@ -348,7 +342,7 @@ public class FirebaseAppDistributionTest {
 
     firebaseAppDistribution.onActivityResumed(activity);
 
-    Task<AppDistributionRelease> task = firebaseAppDistribution.updateToLatestRelease();
+    Task<Void> task = firebaseAppDistribution.updateToLatestRelease();
 
     verify(mockCheckForUpdateClient, never()).checkForUpdate();
     assertTrue(task.getException() instanceof FirebaseAppDistributionException);
@@ -367,7 +361,7 @@ public class FirebaseAppDistributionTest {
                     FirebaseAppDistributionException.Status.NETWORK_FAILURE)));
 
     firebaseAppDistribution.onActivityResumed(activity);
-    Task<AppDistributionRelease> task = firebaseAppDistribution.updateToLatestRelease();
+    Task<Void> task = firebaseAppDistribution.updateToLatestRelease();
 
     verify(firebaseAppDistribution, never()).updateApp();
     assertTrue(task.getException() instanceof FirebaseAppDistributionException);

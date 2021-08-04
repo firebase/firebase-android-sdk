@@ -15,9 +15,11 @@
 package com.google.firebase.appdistribution;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
+import java.util.concurrent.Executor;
 
-public abstract class UpdateTask extends Task<UpdateState> {
+public abstract class UpdateTask extends Task<Void> {
 
   /**
    * Adds a listener that is called periodically while the UpdateTask executes.
@@ -26,4 +28,8 @@ public abstract class UpdateTask extends Task<UpdateState> {
    */
   @NonNull
   public abstract UpdateTask addOnProgressListener(@NonNull OnProgressListener listener);
+
+  @NonNull
+  public abstract UpdateTask addOnProgressListener(
+      @Nullable Executor executor, @NonNull OnProgressListener listener);
 }

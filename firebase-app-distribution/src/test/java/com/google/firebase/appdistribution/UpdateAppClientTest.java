@@ -24,9 +24,14 @@ import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.appdistribution.internal.AppDistributionReleaseInternal;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
@@ -38,6 +43,7 @@ public class UpdateAppClientTest {
   private static final String TEST_API_KEY = "AIzaSyabcdefghijklmnopqrstuvwxyz1234567";
   private static final String TEST_APP_ID_1 = "1:123456789:android:abcdef";
   private static final String TEST_PROJECT_ID = "777777777777";
+  private static final Executor testExecutor = Executors.newSingleThreadExecutor();
 
   private static final AppDistributionReleaseInternal.Builder TEST_RELEASE_NEWER_AAB_INTERNAL =
       AppDistributionReleaseInternal.builder()
@@ -50,6 +56,8 @@ public class UpdateAppClientTest {
   private UpdateAppClient updateAppClient;
   private com.google.firebase.appdistribution.FirebaseAppDistributionTest.TestActivity activity;
   private ShadowActivity shadowActivity;
+
+  @Mock private OnProgressListener onProgressListener;
 
   static class TestActivity extends Activity {}
 
@@ -82,16 +90,24 @@ public class UpdateAppClientTest {
   @Test
   public void updateAppTask_whenAabReleaseAvailable_redirectsToPlay() throws Exception {
     AppDistributionReleaseInternal latestRelease = TEST_RELEASE_NEWER_AAB_INTERNAL.build();
+    List<UpdateProgress> progressEvents = new ArrayList<>();
 
+    TestOnCompleteListener<Void> onCompleteListener = new TestOnCompleteListener<>();
     UpdateTask updateTask = updateAppClient.getUpdateTask(latestRelease, activity);
+    updateTask.addOnCompleteListener(testExecutor, onCompleteListener);
+    updateTask.addOnProgressListener(progressEvents::add);
+    onCompleteListener.await();
 
     assertThat(shadowActivity.getNextStartedActivity().getData())
         .isEqualTo(Uri.parse(latestRelease.getDownloadUrl()));
 
-    UpdateState taskResult = updateTask.getResult();
-
-    assertEquals(-1, taskResult.getApkBytesDownloaded());
-    assertEquals(-1, taskResult.getApkTotalBytesToDownload());
-    assertEquals(UpdateStatus.REDIRECTED_TO_PLAY, taskResult.getUpdateStatus());
+    assertEquals(1, progressEvents.size());
+    assertEquals(
+        UpdateProgress.builder()
+            .setApkBytesDownloaded(-1)
+            .setApkFileTotalBytes(-1)
+            .setUpdateStatus(UpdateStatus.REDIRECTED_TO_PLAY)
+            .build(),
+        progressEvents.get(0));
   }
 }

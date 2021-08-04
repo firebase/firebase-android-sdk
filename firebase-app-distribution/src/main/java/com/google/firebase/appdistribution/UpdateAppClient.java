@@ -26,7 +26,7 @@ import com.google.firebase.appdistribution.internal.AppDistributionReleaseIntern
 /** Client class for updateApp functionality in {@link FirebaseAppDistribution}. */
 public class UpdateAppClient {
 
-  private TaskCompletionSource<UpdateState> updateAppTaskCompletionSource = null;
+  private TaskCompletionSource<Void> updateAppTaskCompletionSource = null;
   private CancellationTokenSource updateAppCancellationSource;
   private UpdateTaskImpl updateTask;
 
@@ -53,6 +53,12 @@ public class UpdateAppClient {
     this.updateTask = new UpdateTaskImpl(updateAppTaskCompletionSource.getTask());
 
     if (latestRelease.getBinaryType() == BinaryType.AAB) {
+      updateTask.updateProgress(
+          UpdateProgress.builder()
+              .setUpdateStatus(UpdateStatus.REDIRECTED_TO_PLAY)
+              .setApkBytesDownloaded(-1)
+              .setApkFileTotalBytes(-1)
+              .build());
       redirectToPlayForAabUpdate(latestRelease.getDownloadUrl(), currentActivity);
     } else {
       this.updateApkClient.updateApk(
@@ -76,17 +82,11 @@ public class UpdateAppClient {
     updateIntent.setData(uri);
     updateIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
     currentActivity.startActivity(updateIntent);
-    UpdateState updateState =
-        UpdateState.builder()
-            .setApkBytesDownloaded(-1)
-            .setApkTotalBytesToDownload(-1)
-            .setUpdateStatus(UpdateStatus.REDIRECTED_TO_PLAY)
-            .build();
-    updateAppTaskCompletionSource.setResult(updateState);
-    this.updateTask.updateProgress(updateState);
+    updateAppTaskCompletionSource.setResult(null);
   }
 
   void setInstallationResult(int resultCode) {
     this.updateApkClient.setInstallationResult(resultCode);
+    updateAppTaskCompletionSource.setResult(null);
   }
 }
