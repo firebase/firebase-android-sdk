@@ -79,7 +79,7 @@ final class SQLiteIndexManager implements IndexManager {
         "INSERT OR IGNORE INTO index_configuration ("
             + "index_id, "
             + "collection_id, "
-            + "configuration, " // V1 Admin Index proto
+            + "index_proto, "
             + "active) VALUES(?, ?, ?, ?)",
         currentMax + 1,
         index.getCollectionId(),
