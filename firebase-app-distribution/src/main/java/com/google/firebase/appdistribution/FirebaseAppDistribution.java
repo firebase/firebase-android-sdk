@@ -173,32 +173,17 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
    * new release is cached from checkForUpdate
    */
   @NonNull
-  public UpdateTask updateApp() throws FirebaseAppDistributionException {
-
-    if (cachedUpdateAppTask != null && !cachedUpdateAppTask.isComplete()) {
-      return cachedUpdateAppTask;
-    }
-
-    cachedUpdateAppTask = new UpdateTaskImpl();
+  public synchronized UpdateTask updateApp() throws FirebaseAppDistributionException {
 
     if (!isTesterSignedIn()) {
-      cachedUpdateAppTask.setException(
+      UpdateTaskImpl updateTask = new UpdateTaskImpl();
+      updateTask.setException(
           new FirebaseAppDistributionException(
               Constants.ErrorMessages.AUTHENTICATION_ERROR, AUTHENTICATION_FAILURE));
-      return cachedUpdateAppTask;
+      return updateTask;
     }
 
-    AppDistributionReleaseInternal cachedRelease = getCachedLatestRelease();
-    if (cachedRelease == null) {
-      cachedUpdateAppTask.setException(
-          new FirebaseAppDistributionException(
-              Constants.ErrorMessages.NOT_FOUND_ERROR, UPDATE_NOT_AVAILABLE));
-      return cachedUpdateAppTask;
-    }
-
-    this.updateAppClient.performUpdate(cachedUpdateAppTask, cachedLatestRelease, currentActivity);
-
-    return cachedUpdateAppTask;
+    return this.updateAppClient.updateApp(cachedLatestRelease, currentActivity);
   }
 
   /** Returns true if the App Distribution tester is signed in */

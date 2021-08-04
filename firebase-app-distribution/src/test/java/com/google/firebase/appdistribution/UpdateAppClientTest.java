@@ -53,6 +53,14 @@ public class UpdateAppClientTest {
           .setBinaryType(BinaryType.AAB)
           .setDownloadUrl("https://test-url");
 
+  private static final AppDistributionReleaseInternal.Builder TEST_RELEASE_NEWER_APK_INTERNAL =
+          AppDistributionReleaseInternal.builder()
+                  .setBuildVersion("3")
+                  .setDisplayVersion("3.0")
+                  .setReleaseNotes("Newer version.")
+                  .setBinaryType(BinaryType.APK)
+                  .setDownloadUrl("https://test-url");
+
   private UpdateAppClient updateAppClient;
   private com.google.firebase.appdistribution.FirebaseAppDistributionTest.TestActivity activity;
   private ShadowActivity shadowActivity;
@@ -93,10 +101,9 @@ public class UpdateAppClientTest {
     List<UpdateProgress> progressEvents = new ArrayList<>();
 
     TestOnCompleteListener<Void> onCompleteListener = new TestOnCompleteListener<>();
-    UpdateTaskImpl updateTaskImpl = new UpdateTaskImpl();
-    updateAppClient.performUpdate(updateTaskImpl, latestRelease, activity);
-    updateTaskImpl.addOnCompleteListener(testExecutor, onCompleteListener);
-    updateTaskImpl.addOnProgressListener(progressEvents::add);
+    UpdateTask updateTask = updateAppClient.updateApp(latestRelease, activity);
+    updateTask.addOnCompleteListener(testExecutor, onCompleteListener);
+    updateTask.addOnProgressListener(progressEvents::add);
     onCompleteListener.await();
 
     assertThat(shadowActivity.getNextStartedActivity().getData())
@@ -110,5 +117,13 @@ public class UpdateAppClientTest {
             .setUpdateStatus(UpdateStatus.REDIRECTED_TO_PLAY)
             .build(),
         progressEvents.get(0));
+  }
+
+  @Test
+  public void updateApp_whenCalledMultipleTimes_returnsSameUpdateTask() throws Exception {
+    AppDistributionReleaseInternal latestRelease = TEST_RELEASE_NEWER_APK_INTERNAL.build();
+    UpdateTask updateTask1 = updateAppClient.updateApp(latestRelease, activity);
+    UpdateTask updateTask2 = updateAppClient.updateApp(latestRelease, activity);
+    assertEquals(updateTask1, updateTask2);
   }
 }

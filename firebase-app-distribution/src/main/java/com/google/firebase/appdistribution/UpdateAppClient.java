@@ -22,28 +22,45 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appdistribution.internal.AppDistributionReleaseInternal;
 
+import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE;
+
 /** Client class for updateApp functionality in {@link FirebaseAppDistribution}. */
 public class UpdateAppClient {
 
   private TaskCompletionSource<Void> updateAppTaskCompletionSource = null;
   private UpdateApkClient updateApkClient;
+  private UpdateTaskImpl cachedUpdateAppTask;
 
   public UpdateAppClient(@NonNull FirebaseApp firebaseApp) {
     this.updateApkClient = new UpdateApkClient(firebaseApp);
   }
 
-  @NonNull
-   void performUpdate(
-      @NonNull UpdateTaskImpl updateTask,
+   @NonNull
+   synchronized UpdateTask updateApp(
       @NonNull AppDistributionReleaseInternal latestRelease,
       @NonNull Activity currentActivity)
       throws FirebaseAppDistributionException {
 
+     if (cachedUpdateAppTask != null && !cachedUpdateAppTask.isComplete()) {
+       return cachedUpdateAppTask;
+     }
+
+     cachedUpdateAppTask = new UpdateTaskImpl();
+
+     if (latestRelease == null) {
+       cachedUpdateAppTask.setException(
+               new FirebaseAppDistributionException(
+                       Constants.ErrorMessages.NOT_FOUND_ERROR, UPDATE_NOT_AVAILABLE));
+       return cachedUpdateAppTask;
+     }
+
     if (latestRelease.getBinaryType() == BinaryType.AAB) {
-      redirectToPlayForAabUpdate(updateTask, latestRelease.getDownloadUrl(), currentActivity);
+      redirectToPlayForAabUpdate(cachedUpdateAppTask, latestRelease.getDownloadUrl(), currentActivity);
     } else {
-      this.updateApkClient.updateApk(updateTask, latestRelease.getDownloadUrl(), currentActivity);
+      this.updateApkClient.updateApk(cachedUpdateAppTask, latestRelease.getDownloadUrl(), currentActivity);
     }
+
+    return cachedUpdateAppTask;
   }
 
   private void redirectToPlayForAabUpdate(
