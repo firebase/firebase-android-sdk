@@ -20,6 +20,7 @@ import android.net.Uri;
 import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.CancellationTokenSource;
 import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appdistribution.internal.AppDistributionReleaseInternal;
 
@@ -28,7 +29,7 @@ public class UpdateAppClient {
 
   private TaskCompletionSource<Void> updateAppTaskCompletionSource = null;
   private CancellationTokenSource updateAppCancellationSource;
-  private UpdateTaskImpl updateTask;
+  private UpdateTask updateTask;
 
   private FirebaseApp firebaseApp;
   private UpdateApkClient updateApkClient;
@@ -47,31 +48,17 @@ public class UpdateAppClient {
       return this.updateTask;
     }
 
-    updateAppCancellationSource = new CancellationTokenSource();
-    updateAppTaskCompletionSource =
-        new TaskCompletionSource<>(updateAppCancellationSource.getToken());
-    this.updateTask = new UpdateTaskImpl(updateAppTaskCompletionSource.getTask());
-
     if (latestRelease.getBinaryType() == BinaryType.AAB) {
-      updateTask.updateProgress(
-          UpdateProgress.builder()
-              .setUpdateStatus(UpdateStatus.REDIRECTED_TO_PLAY)
-              .setApkBytesDownloaded(-1)
-              .setApkFileTotalBytes(-1)
-              .build());
-      redirectToPlayForAabUpdate(latestRelease.getDownloadUrl(), currentActivity);
+      this.updateTask = redirectToPlayForAabUpdate(latestRelease.getDownloadUrl(), currentActivity);
     } else {
-      this.updateApkClient.updateApk(
-          latestRelease.getDownloadUrl(),
-          currentActivity,
-          updateTask,
-          updateAppTaskCompletionSource);
+      this.updateTask =
+          this.updateApkClient.updateApk(latestRelease.getDownloadUrl(), currentActivity);
     }
 
     return this.updateTask;
   }
 
-  private void redirectToPlayForAabUpdate(String downloadUrl, Activity currentActivity)
+  private UpdateTaskImpl redirectToPlayForAabUpdate(String downloadUrl, Activity currentActivity)
       throws FirebaseAppDistributionException {
     if (downloadUrl == null) {
       throw new FirebaseAppDistributionException(
@@ -82,7 +69,14 @@ public class UpdateAppClient {
     updateIntent.setData(uri);
     updateIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
     currentActivity.startActivity(updateIntent);
-    updateAppTaskCompletionSource.setResult(null);
+    UpdateTaskImpl updateTask = new UpdateTaskImpl(Tasks.forResult(null));
+    updateTask.updateProgress(
+        UpdateProgress.builder()
+            .setApkBytesDownloaded(-1)
+            .setApkFileTotalBytes(-1)
+            .setUpdateStatus(UpdateStatus.REDIRECTED_TO_PLAY)
+            .build());
+    return updateTask;
   }
 
   void setInstallationResult(int resultCode) {
