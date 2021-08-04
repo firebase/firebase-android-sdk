@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.local;
 
+import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.ResourcePath;
 import java.util.List;
 
@@ -39,4 +40,12 @@ public interface IndexManager {
    * being either a document location or the empty path for a root-level collection).
    */
   List<ResourcePath> getCollectionParents(String collectionId);
+
+  /**
+   * Adds a field path index.
+   *
+   * <p>Values for this index are persisted asynchronously. The index will only be used for query
+   * execution once values are persisted.
+   */
+  void addFieldIndex(FieldIndex index);
 }
