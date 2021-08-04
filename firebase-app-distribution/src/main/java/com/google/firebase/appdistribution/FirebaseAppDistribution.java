@@ -331,4 +331,8 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     alertDialog.show();
     return updateAlertDialogTask.getTask();
   }
+
+  void setInstallationResult(int resultCode) {
+    this.updateAppClient.setInstallationResult(resultCode);
+  }
 }
