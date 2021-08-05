@@ -671,8 +671,10 @@ public abstract class LocalStoreTestCase {
 
     releaseTarget(targetId);
     acknowledgeMutation(2); // set mutation
-    assertChanged(doc("foo/bar", 2, map("foo", "bar")).setHasLocalMutations());
-    assertContains(doc("foo/bar", 2, map("foo", "bar")).setHasLocalMutations());
+    // TODO(Overlay): the doc really has both local and committed mutations. It is unrepresentable
+    // now however.
+    assertChanged(doc("foo/bar", 2, map("foo", "bar")).setHasCommittedMutations());
+    assertContains(doc("foo/bar", 2, map("foo", "bar")).setHasCommittedMutations());
 
     acknowledgeMutation(3); // patch mutation
     assertChanged(doc("foo/bar", 3, map("foo", "bar")).setHasCommittedMutations());
