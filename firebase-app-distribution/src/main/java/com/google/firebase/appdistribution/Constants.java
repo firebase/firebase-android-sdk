@@ -33,6 +33,12 @@ class Constants {
 
     public static final String UPDATE_CANCELED = "Update canceled";
 
+    public static final String DOWNLOAD_ERROR = "Failed to download update";
+
+    public static final String INSTALLATION_ERROR = "Failed to install update";
+
+    public static final String INSTALLATION_CANCELED = "Tester canceled installation";
+
     public static final String UNKNOWN_ERROR = "Unknown Error";
   }
 }

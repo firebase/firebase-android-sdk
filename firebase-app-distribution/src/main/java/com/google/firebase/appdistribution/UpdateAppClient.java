@@ -20,14 +20,12 @@ import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
 import androidx.annotation.NonNull;
-import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appdistribution.internal.AppDistributionReleaseInternal;
 
 /** Client class for updateApp functionality in {@link FirebaseAppDistribution}. */
 public class UpdateAppClient {
 
-  private TaskCompletionSource<Void> updateAppTaskCompletionSource = null;
   private UpdateApkClient updateApkClient;
   private UpdateTaskImpl cachedUpdateAppTask;
 
@@ -87,6 +85,6 @@ public class UpdateAppClient {
 
   void setInstallationResult(int resultCode) {
     this.updateApkClient.setInstallationResult(resultCode);
-    updateAppTaskCompletionSource.setResult(null);
+    this.cachedUpdateAppTask.setResult();
   }
 }

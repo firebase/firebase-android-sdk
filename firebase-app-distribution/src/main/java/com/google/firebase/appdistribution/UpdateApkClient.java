@@ -43,6 +43,8 @@ class UpdateApkClient {
   private final int UPDATE_INTERVAL_MS = 250;
   private static final String TAG = "FADUpdateAppClient";
   private static final String REQUEST_METHOD = "GET";
+  private final FirebaseAppDistributionNotificationsManager appDistributionNotificationsManager;
+
   private TaskCompletionSource<File> downloadTaskCompletionSource;
   private final Executor downloadExecutor;
   private TaskCompletionSource<Void> installTaskCompletionSource;
@@ -52,6 +54,8 @@ class UpdateApkClient {
   public UpdateApkClient(@NonNull FirebaseApp firebaseApp) {
     this.downloadExecutor = Executors.newSingleThreadExecutor();
     this.firebaseApp = firebaseApp;
+    this.appDistributionNotificationsManager =
+        new FirebaseAppDistributionNotificationsManager(firebaseApp);
   }
 
   public void updateApk(
@@ -59,7 +63,6 @@ class UpdateApkClient {
       @NonNull String downloadUrl,
       @NonNull Activity currentActivity) {
 
-    this.cachedUpdateTask = updateTask;
     downloadApk(downloadUrl)
         .addOnSuccessListener(
             downloadExecutor,
@@ -137,6 +140,7 @@ class UpdateApkClient {
 
       byte[] data = new byte[8 * 1024];
       int readSize = input.read(data);
+      long downloadedSize = 0;
       long lastMsUpdated = 0;
 
       while (readSize != -1) {
@@ -263,13 +267,15 @@ class UpdateApkClient {
     }
   }
 
-  private void postUpdateProgress(long totalBytes, long downloadedBytes, UpdateStatus status) {
+  @VisibleForTesting
+  void postUpdateProgress(long totalBytes, long downloadedBytes, UpdateStatus status) {
     cachedUpdateTask.updateProgress(
         UpdateProgress.builder()
             .setApkFileTotalBytes(totalBytes)
             .setApkBytesDownloaded(downloadedBytes)
             .setUpdateStatus(status)
             .build());
+    appDistributionNotificationsManager.updateNotification(totalBytes, downloadedBytes, status);
   }
 
   private void postInstallationFailure(Exception e, long fileLength) {
@@ -279,5 +285,10 @@ class UpdateApkClient {
     } else {
       postUpdateProgress(fileLength, fileLength, UpdateStatus.INSTALL_FAILED);
     }
+  }
+
+  @VisibleForTesting
+  void setCachedUpdateTask(UpdateTaskImpl updateTask) {
+    this.cachedUpdateTask = updateTask;
   }
 }

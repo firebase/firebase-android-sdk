@@ -14,6 +14,7 @@
 
 package com.google.firebase.appdistribution;
 
+import static com.google.firebase.appdistribution.FirebaseAppDistributionNotificationsManager.NOTIFICATION_TAG;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -22,6 +23,8 @@ import static org.mockito.Mockito.when;
 import static org.robolectric.Shadows.shadowOf;
 
 import android.app.Activity;
+import android.app.NotificationManager;
+import android.content.Context;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
@@ -40,6 +43,8 @@ import org.mockito.MockitoAnnotations;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.shadows.ShadowActivity;
+import org.robolectric.shadows.ShadowNotification;
+import org.robolectric.shadows.ShadowNotificationManager;
 
 @RunWith(RobolectricTestRunner.class)
 public class UpdateApkClientTest {
@@ -167,5 +172,37 @@ public class UpdateApkClientTest {
     Task<File> task1 = updateApkClient.downloadApk(TEST_URL);
     Task<File> task2 = updateApkClient.downloadApk(TEST_URL);
     assertEquals(task1, task2);
+  }
+
+  @Test
+  public void postProgressUpdate_whenDownloading_updatesNotificationsManagerWithProgress() {
+    Context context = ApplicationProvider.getApplicationContext();
+    NotificationManager notificationManager =
+        (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+    ShadowNotificationManager shadowNotificationManager = shadowOf(notificationManager);
+    updateApkClient.setCachedUpdateTask(new UpdateTaskImpl());
+
+    updateApkClient.postUpdateProgress(1000, 900, UpdateStatus.DOWNLOADING);
+
+    assertEquals(1, shadowNotificationManager.size());
+    ShadowNotification n = shadowOf(shadowNotificationManager.getNotification(NOTIFICATION_TAG, 0));
+    assertEquals(90, n.getProgress());
+    assertEquals("Downloading in-app update...", n.getContentTitle().toString());
+  }
+
+  @Test
+  public void postProgressUpdate_whenErrorStatus_updatesNotificationsManagerWithError() {
+    Context context = ApplicationProvider.getApplicationContext();
+    NotificationManager notificationManager =
+        (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+    ShadowNotificationManager shadowNotificationManager = shadowOf(notificationManager);
+    updateApkClient.setCachedUpdateTask(new UpdateTaskImpl());
+
+    updateApkClient.postUpdateProgress(1000, 1000, UpdateStatus.INSTALL_FAILED);
+
+    assertEquals(1, shadowNotificationManager.size());
+    ShadowNotification n = shadowOf(shadowNotificationManager.getNotification(NOTIFICATION_TAG, 0));
+    assertEquals(100, n.getProgress());
+    assertEquals("Failed to install update", n.getContentTitle().toString());
   }
 }
