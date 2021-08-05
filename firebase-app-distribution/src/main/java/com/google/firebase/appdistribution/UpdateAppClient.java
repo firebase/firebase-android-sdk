@@ -14,11 +14,12 @@
 
 package com.google.firebase.appdistribution;
 
+import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE;
+
 import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
 import androidx.annotation.NonNull;
-import com.google.android.gms.tasks.CancellationTokenSource;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appdistribution.internal.AppDistributionReleaseInternal;
@@ -27,51 +28,44 @@ import com.google.firebase.appdistribution.internal.AppDistributionReleaseIntern
 public class UpdateAppClient {
 
   private TaskCompletionSource<Void> updateAppTaskCompletionSource = null;
-  private CancellationTokenSource updateAppCancellationSource;
-  private UpdateTaskImpl updateTask;
-
-  private FirebaseApp firebaseApp;
   private UpdateApkClient updateApkClient;
+  private UpdateTaskImpl cachedUpdateAppTask;
 
   public UpdateAppClient(@NonNull FirebaseApp firebaseApp) {
-    this.firebaseApp = firebaseApp;
     this.updateApkClient = new UpdateApkClient(firebaseApp);
   }
 
   @NonNull
-  public UpdateTask getUpdateTask(
+  synchronized UpdateTask updateApp(
       @NonNull AppDistributionReleaseInternal latestRelease, @NonNull Activity currentActivity)
       throws FirebaseAppDistributionException {
 
-    if (this.updateTask != null && !updateTask.isComplete()) {
-      return this.updateTask;
+    if (cachedUpdateAppTask != null && !cachedUpdateAppTask.isComplete()) {
+      return cachedUpdateAppTask;
     }
 
-    updateAppCancellationSource = new CancellationTokenSource();
-    updateAppTaskCompletionSource =
-        new TaskCompletionSource<>(updateAppCancellationSource.getToken());
-    this.updateTask = new UpdateTaskImpl(updateAppTaskCompletionSource.getTask());
+    cachedUpdateAppTask = new UpdateTaskImpl();
+
+    if (latestRelease == null) {
+      cachedUpdateAppTask.setException(
+          new FirebaseAppDistributionException(
+              Constants.ErrorMessages.NOT_FOUND_ERROR, UPDATE_NOT_AVAILABLE));
+      return cachedUpdateAppTask;
+    }
 
     if (latestRelease.getBinaryType() == BinaryType.AAB) {
-      updateTask.updateProgress(
-          UpdateProgress.builder()
-              .setUpdateStatus(UpdateStatus.REDIRECTED_TO_PLAY)
-              .setApkBytesDownloaded(-1)
-              .setApkFileTotalBytes(-1)
-              .build());
-      redirectToPlayForAabUpdate(latestRelease.getDownloadUrl(), currentActivity);
+      redirectToPlayForAabUpdate(
+          cachedUpdateAppTask, latestRelease.getDownloadUrl(), currentActivity);
     } else {
       this.updateApkClient.updateApk(
-          latestRelease.getDownloadUrl(),
-          currentActivity,
-          updateTask,
-          updateAppTaskCompletionSource);
+          cachedUpdateAppTask, latestRelease.getDownloadUrl(), currentActivity);
     }
 
-    return this.updateTask;
+    return cachedUpdateAppTask;
   }
 
-  private void redirectToPlayForAabUpdate(String downloadUrl, Activity currentActivity)
+  private void redirectToPlayForAabUpdate(
+      UpdateTaskImpl updateTask, String downloadUrl, Activity currentActivity)
       throws FirebaseAppDistributionException {
     if (downloadUrl == null) {
       throw new FirebaseAppDistributionException(
@@ -82,7 +76,13 @@ public class UpdateAppClient {
     updateIntent.setData(uri);
     updateIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
     currentActivity.startActivity(updateIntent);
-    updateAppTaskCompletionSource.setResult(null);
+    updateTask.updateProgress(
+        UpdateProgress.builder()
+            .setApkBytesDownloaded(-1)
+            .setApkFileTotalBytes(-1)
+            .setUpdateStatus(UpdateStatus.REDIRECTED_TO_PLAY)
+            .build());
+    updateTask.setResult();
   }
 
   void setInstallationResult(int resultCode) {
