@@ -137,7 +137,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
   /** Signs in the App Distribution tester. Presents the tester with a Google sign in UI */
   @NonNull
   public Task<Void> signInTester() {
-    return this.testerSignInClient.signInTester(currentActivity);
+    return this.testerSignInClient.signInTester();
   }
 
   /**
@@ -173,7 +173,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
    * new release is cached from checkForUpdate
    */
   @NonNull
-  public UpdateTask updateApp() throws FirebaseAppDistributionException {
+  public UpdateTask updateApp() {
 
     if (cachedUpdateAppTask != null && !cachedUpdateAppTask.isComplete()) {
       return cachedUpdateAppTask;
@@ -196,7 +196,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
       return cachedUpdateAppTask;
     }
 
-    this.updateAppClient.performUpdate(cachedUpdateAppTask, cachedLatestRelease, currentActivity);
+    this.updateAppClient.performUpdate(cachedUpdateAppTask, cachedLatestRelease);
 
     return cachedUpdateAppTask;
   }
@@ -243,6 +243,8 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     }
 
     this.currentActivity = activity;
+    this.updateAppClient.setCurrentActivity(activity);
+    this.testerSignInClient.setCurrentActivity(activity);
   }
 
   @Override
@@ -265,6 +267,8 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     Log.d(TAG, "Destroyed activity: " + activity.getClass().getName());
     if (this.currentActivity == activity) {
       this.currentActivity = null;
+      this.updateAppClient.setCurrentActivity(null);
+      this.testerSignInClient.setCurrentActivity(null);
     }
   }
 
@@ -317,15 +321,11 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     alertDialog.setButton(
         AlertDialog.BUTTON_POSITIVE,
         context.getString(R.string.update_yes_button),
-        (dialogInterface, i) -> {
-          try {
+        (dialogInterface, i) ->
             updateApp()
                 .addOnSuccessListener(unused -> updateAlertDialogTask.setResult(null))
-                .addOnFailureListener(updateAlertDialogTask::setException);
-          } catch (FirebaseAppDistributionException e) {
-            updateAlertDialogTask.setException(e);
-          }
-        });
+                .addOnFailureListener(updateAlertDialogTask::setException));
+
     alertDialog.setButton(
         AlertDialog.BUTTON_NEGATIVE,
         context.getString(R.string.update_no_button),

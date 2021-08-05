@@ -34,5 +34,9 @@ class Constants {
     public static final String UPDATE_CANCELED = "Update canceled";
 
     public static final String UNKNOWN_ERROR = "Unknown Error";
+
+    public static final String DOWNLOAD_URL_NOT_FOUND = "Download URL not found";
+
+    public static final String APP_BACKGROUNDED = "No foreground activity available";
   }
 }

@@ -85,6 +85,7 @@ public class UpdateAppClientTest {
     shadowActivity = shadowOf(activity);
 
     this.updateAppClient = new UpdateAppClient(firebaseApp);
+    this.updateAppClient.setCurrentActivity(activity);
   }
 
   @Test
@@ -94,7 +95,7 @@ public class UpdateAppClientTest {
 
     TestOnCompleteListener<Void> onCompleteListener = new TestOnCompleteListener<>();
     UpdateTaskImpl updateTaskImpl = new UpdateTaskImpl();
-    updateAppClient.performUpdate(updateTaskImpl, latestRelease, activity);
+    updateAppClient.performUpdate(updateTaskImpl, latestRelease);
     updateTaskImpl.addOnCompleteListener(testExecutor, onCompleteListener);
     updateTaskImpl.addOnProgressListener(progressEvents::add);
     onCompleteListener.await();
