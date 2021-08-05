@@ -21,6 +21,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 import androidx.annotation.NonNull;
+import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.CancellationTokenSource;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -87,7 +88,9 @@ class UpdateApkClient {
                         FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE)));
   }
 
-  private @NonNull Task<File> downloadApk(@NonNull String downloadUrl, UpdateTaskImpl updateTask) {
+  @VisibleForTesting
+  @NonNull
+  Task<File> downloadApk(@NonNull String downloadUrl, UpdateTaskImpl updateTask) {
     if (downloadTaskCompletionSource != null
         && !downloadTaskCompletionSource.getTask().isComplete()) {
       downloadCancellationTokenSource.cancel();

@@ -54,12 +54,12 @@ public class UpdateAppClientTest {
           .setDownloadUrl("https://test-url");
 
   private static final AppDistributionReleaseInternal.Builder TEST_RELEASE_NEWER_APK_INTERNAL =
-          AppDistributionReleaseInternal.builder()
-                  .setBuildVersion("3")
-                  .setDisplayVersion("3.0")
-                  .setReleaseNotes("Newer version.")
-                  .setBinaryType(BinaryType.APK)
-                  .setDownloadUrl("https://test-url");
+      AppDistributionReleaseInternal.builder()
+          .setBuildVersion("3")
+          .setDisplayVersion("3.0")
+          .setReleaseNotes("Newer version.")
+          .setBinaryType(BinaryType.APK)
+          .setDownloadUrl("https://test-url");
 
   private UpdateAppClient updateAppClient;
   private com.google.firebase.appdistribution.FirebaseAppDistributionTest.TestActivity activity;

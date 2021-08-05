@@ -14,6 +14,8 @@
 
 package com.google.firebase.appdistribution;
 
+import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE;
+
 import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
@@ -21,8 +23,6 @@ import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appdistribution.internal.AppDistributionReleaseInternal;
-
-import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE;
 
 /** Client class for updateApp functionality in {@link FirebaseAppDistribution}. */
 public class UpdateAppClient {
@@ -35,29 +35,30 @@ public class UpdateAppClient {
     this.updateApkClient = new UpdateApkClient(firebaseApp);
   }
 
-   @NonNull
-   synchronized UpdateTask updateApp(
-      @NonNull AppDistributionReleaseInternal latestRelease,
-      @NonNull Activity currentActivity)
+  @NonNull
+  synchronized UpdateTask updateApp(
+      @NonNull AppDistributionReleaseInternal latestRelease, @NonNull Activity currentActivity)
       throws FirebaseAppDistributionException {
 
-     if (cachedUpdateAppTask != null && !cachedUpdateAppTask.isComplete()) {
-       return cachedUpdateAppTask;
-     }
+    if (cachedUpdateAppTask != null && !cachedUpdateAppTask.isComplete()) {
+      return cachedUpdateAppTask;
+    }
 
-     cachedUpdateAppTask = new UpdateTaskImpl();
+    cachedUpdateAppTask = new UpdateTaskImpl();
 
-     if (latestRelease == null) {
-       cachedUpdateAppTask.setException(
-               new FirebaseAppDistributionException(
-                       Constants.ErrorMessages.NOT_FOUND_ERROR, UPDATE_NOT_AVAILABLE));
-       return cachedUpdateAppTask;
-     }
+    if (latestRelease == null) {
+      cachedUpdateAppTask.setException(
+          new FirebaseAppDistributionException(
+              Constants.ErrorMessages.NOT_FOUND_ERROR, UPDATE_NOT_AVAILABLE));
+      return cachedUpdateAppTask;
+    }
 
     if (latestRelease.getBinaryType() == BinaryType.AAB) {
-      redirectToPlayForAabUpdate(cachedUpdateAppTask, latestRelease.getDownloadUrl(), currentActivity);
+      redirectToPlayForAabUpdate(
+          cachedUpdateAppTask, latestRelease.getDownloadUrl(), currentActivity);
     } else {
-      this.updateApkClient.updateApk(cachedUpdateAppTask, latestRelease.getDownloadUrl(), currentActivity);
+      this.updateApkClient.updateApk(
+          cachedUpdateAppTask, latestRelease.getDownloadUrl(), currentActivity);
     }
 
     return cachedUpdateAppTask;
