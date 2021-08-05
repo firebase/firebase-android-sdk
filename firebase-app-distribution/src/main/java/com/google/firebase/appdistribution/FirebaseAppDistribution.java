@@ -15,7 +15,6 @@
 package com.google.firebase.appdistribution;
 
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_FAILURE;
-import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -45,6 +44,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
 
   private Task<Void> cachedUpdateToLatestReleaseTask;
   private Task<AppDistributionRelease> cachedCheckForUpdateTask;
+  private UpdateTaskImpl cachedUpdateAppTask;
   private AppDistributionReleaseInternal cachedLatestRelease;
   private final SignInStorage signInStorage;
 
@@ -172,24 +172,17 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
    * new release is cached from checkForUpdate
    */
   @NonNull
-  public UpdateTask updateApp() throws FirebaseAppDistributionException {
+  public synchronized UpdateTask updateApp() throws FirebaseAppDistributionException {
 
     if (!isTesterSignedIn()) {
-      return new UpdateTaskImpl(
-          Tasks.forException(
-              new FirebaseAppDistributionException(
-                  Constants.ErrorMessages.AUTHENTICATION_ERROR, AUTHENTICATION_FAILURE)));
+      UpdateTaskImpl updateTask = new UpdateTaskImpl();
+      updateTask.setException(
+          new FirebaseAppDistributionException(
+              Constants.ErrorMessages.AUTHENTICATION_ERROR, AUTHENTICATION_FAILURE));
+      return updateTask;
     }
 
-    AppDistributionReleaseInternal cachedRelease = getCachedLatestRelease();
-    if (cachedRelease == null) {
-      return new UpdateTaskImpl(
-          Tasks.forException(
-              new FirebaseAppDistributionException(
-                  Constants.ErrorMessages.NOT_FOUND_ERROR, UPDATE_NOT_AVAILABLE)));
-    }
-
-    return this.updateAppClient.getUpdateTask(cachedLatestRelease, currentActivity);
+    return this.updateAppClient.updateApp(cachedLatestRelease, currentActivity);
   }
 
   /** Returns true if the App Distribution tester is signed in */

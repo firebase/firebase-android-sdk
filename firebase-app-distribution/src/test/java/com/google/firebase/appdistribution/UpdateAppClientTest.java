@@ -16,6 +16,8 @@ package com.google.firebase.appdistribution;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.robolectric.Shadows.shadowOf;
 
 import android.app.Activity;
@@ -51,6 +53,14 @@ public class UpdateAppClientTest {
           .setDisplayVersion("3.0")
           .setReleaseNotes("Newer version.")
           .setBinaryType(BinaryType.AAB)
+          .setDownloadUrl("https://test-url");
+
+  private static final AppDistributionReleaseInternal.Builder TEST_RELEASE_NEWER_APK_INTERNAL =
+      AppDistributionReleaseInternal.builder()
+          .setBuildVersion("3")
+          .setDisplayVersion("3.0")
+          .setReleaseNotes("Newer version.")
+          .setBinaryType(BinaryType.APK)
           .setDownloadUrl("https://test-url");
 
   private UpdateAppClient updateAppClient;
@@ -93,7 +103,7 @@ public class UpdateAppClientTest {
     List<UpdateProgress> progressEvents = new ArrayList<>();
 
     TestOnCompleteListener<Void> onCompleteListener = new TestOnCompleteListener<>();
-    UpdateTask updateTask = updateAppClient.getUpdateTask(latestRelease, activity);
+    UpdateTask updateTask = updateAppClient.updateApp(latestRelease, activity);
     updateTask.addOnCompleteListener(testExecutor, onCompleteListener);
     updateTask.addOnProgressListener(progressEvents::add);
     onCompleteListener.await();
@@ -109,5 +119,24 @@ public class UpdateAppClientTest {
             .setUpdateStatus(UpdateStatus.REDIRECTED_TO_PLAY)
             .build(),
         progressEvents.get(0));
+  }
+
+  @Test
+  public void updateApp_whenCalledMultipleTimes_returnsSameUpdateTask() throws Exception {
+    AppDistributionReleaseInternal latestRelease = TEST_RELEASE_NEWER_APK_INTERNAL.build();
+    UpdateTask updateTask1 = updateAppClient.updateApp(latestRelease, activity);
+    UpdateTask updateTask2 = updateAppClient.updateApp(latestRelease, activity);
+    assertEquals(updateTask1, updateTask2);
+  }
+
+  @Test
+  public void updateAppTask_whenNoReleaseAvailable_throwsError() throws Exception {
+    UpdateTask updateTask = updateAppClient.updateApp(null, activity);
+    assertFalse(updateTask.isSuccessful());
+    assertTrue(updateTask.getException() instanceof FirebaseAppDistributionException);
+    FirebaseAppDistributionException ex =
+        (FirebaseAppDistributionException) updateTask.getException();
+    assertEquals(FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE, ex.getErrorCode());
+    assertEquals(Constants.ErrorMessages.NOT_FOUND_ERROR, ex.getMessage());
   }
 }
