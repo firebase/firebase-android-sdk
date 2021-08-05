@@ -20,6 +20,10 @@ plugins {
 firebaseLibrary {
     testLab.enabled = true
     publishSources = true
+    testLab {
+        enabled = true
+        timeout = '30m'
+    }
 }
 
 protobuf {

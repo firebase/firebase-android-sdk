@@ -16,12 +16,14 @@ package com.google.firebase.gradle.plugins.ci.device;
 
 import java.util.Collections;
 import java.util.Set;
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.SetProperty;
 
 public class FirebaseTestLabExtension {
   private final SetProperty<String> devices;
+  private String timeout;
   private boolean enabled;
 
   @Inject
@@ -41,10 +43,19 @@ public class FirebaseTestLabExtension {
     devices.add(device);
   }
 
+  public void timeout(String timeout) {
+    this.timeout = timeout;
+  }
+
   Set<String> getDevices() {
     if (devices.get().isEmpty()) {
       return Collections.singleton("model=Pixel2,version=27,locale=en,orientation=portrait");
     }
     return devices.get();
+  }
+
+  @Nullable
+  public String getTimeout() {
+    return timeout;
   }
 }
