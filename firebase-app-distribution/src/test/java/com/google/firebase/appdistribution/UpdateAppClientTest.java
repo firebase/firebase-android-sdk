@@ -16,6 +16,8 @@ package com.google.firebase.appdistribution;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.robolectric.Shadows.shadowOf;
 
 import android.app.Activity;
@@ -125,5 +127,16 @@ public class UpdateAppClientTest {
     UpdateTask updateTask1 = updateAppClient.updateApp(latestRelease, activity);
     UpdateTask updateTask2 = updateAppClient.updateApp(latestRelease, activity);
     assertEquals(updateTask1, updateTask2);
+  }
+
+  @Test
+  public void updateAppTask_whenNoReleaseAvailable_throwsError() throws Exception {
+    UpdateTask updateTask = updateAppClient.updateApp(null, activity);
+    assertFalse(updateTask.isSuccessful());
+    assertTrue(updateTask.getException() instanceof FirebaseAppDistributionException);
+    FirebaseAppDistributionException ex =
+        (FirebaseAppDistributionException) updateTask.getException();
+    assertEquals(FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE, ex.getErrorCode());
+    assertEquals(Constants.ErrorMessages.NOT_FOUND_ERROR, ex.getMessage());
   }
 }
