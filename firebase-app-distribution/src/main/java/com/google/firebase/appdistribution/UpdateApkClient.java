@@ -43,7 +43,6 @@ class UpdateApkClient {
   private static final String TAG = "FADUpdateAppClient";
   private static final String REQUEST_METHOD = "GET";
   private TaskCompletionSource<File> downloadTaskCompletionSource;
-  private CancellationTokenSource downloadCancellationTokenSource;
   private final Executor downloadExecutor;
   private TaskCompletionSource<Void> installTaskCompletionSource;
   private final FirebaseApp firebaseApp;
@@ -93,12 +92,10 @@ class UpdateApkClient {
   Task<File> downloadApk(@NonNull String downloadUrl, UpdateTaskImpl updateTask) {
     if (downloadTaskCompletionSource != null
         && !downloadTaskCompletionSource.getTask().isComplete()) {
-      downloadCancellationTokenSource.cancel();
+      return downloadTaskCompletionSource.getTask();
     }
 
-    downloadCancellationTokenSource = new CancellationTokenSource();
-    downloadTaskCompletionSource =
-        new TaskCompletionSource<>(downloadCancellationTokenSource.getToken());
+    downloadTaskCompletionSource = new TaskCompletionSource<>();
 
     makeApkDownloadRequest(downloadUrl, updateTask);
     return downloadTaskCompletionSource.getTask();

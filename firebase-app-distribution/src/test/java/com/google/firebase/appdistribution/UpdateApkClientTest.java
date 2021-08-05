@@ -16,7 +16,6 @@ package com.google.firebase.appdistribution;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
@@ -32,7 +31,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import javax.net.ssl.HttpsURLConnection;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -60,6 +59,7 @@ public class UpdateApkClientTest {
   private ShadowActivity shadowActivity;
   private CountDownLatch latch;
   @Mock private File mockFile;
+  @Mock private HttpsURLConnection mockHttpsUrlConnection;
 
   static class TestActivity extends Activity {}
 
@@ -82,7 +82,6 @@ public class UpdateApkClientTest {
     activity = Robolectric.buildActivity(TestActivity.class).create().get();
     shadowActivity = shadowOf(activity);
 
-    this.latch = new CountDownLatch(1);
     when(mockFile.getPath()).thenReturn(TEST_URL);
     when(mockFile.length()).thenReturn(TEST_FILE_LENGTH);
 
@@ -92,8 +91,12 @@ public class UpdateApkClientTest {
   @Test
   public void updateApk_whenDownloadFails_setsNetworkError() throws Exception {
     UpdateTaskImpl updateTask = new UpdateTaskImpl();
+    doReturn(mockHttpsUrlConnection).when(updateApkClient).openHttpsUrlConnection(TEST_URL);
+    // null inputStream causes download failure
+    when(mockHttpsUrlConnection.getInputStream()).thenReturn(null);
     updateApkClient.updateApk(updateTask, TEST_URL, activity);
-    latch.await(1000, TimeUnit.MILLISECONDS);
+    // wait for error to be caught and set
+    Thread.sleep(1000);
     assertFalse(updateTask.isSuccessful());
     assertTrue(updateTask.getException() instanceof FirebaseAppDistributionException);
     FirebaseAppDistributionException e =
@@ -110,7 +113,8 @@ public class UpdateApkClientTest {
     updateTask.addOnProgressListener(progressEvents::add);
 
     updateApkClient.updateApk(updateTask, TEST_URL, activity);
-    latch.await(1000, TimeUnit.MILLISECONDS);
+    // sleep to wait for installTaskCompletionSource to be set
+    Thread.sleep(1000);
     updateApkClient.setInstallationResult(RESULT_OK);
     assertEquals(1, progressEvents.size());
     assertEquals(
@@ -129,7 +133,8 @@ public class UpdateApkClientTest {
     doReturn(Tasks.forResult(mockFile)).when(updateApkClient).downloadApk(TEST_URL, updateTask);
 
     updateApkClient.updateApk(updateTask, TEST_URL, activity);
-    latch.await(1000, TimeUnit.MILLISECONDS);
+    // sleep to wait for installTaskCompletionSource to be set
+    Thread.sleep(1000);
     updateApkClient.setInstallationResult(RESULT_CANCELED);
 
     assertFalse(updateTask.isSuccessful());
@@ -146,7 +151,8 @@ public class UpdateApkClientTest {
     doReturn(Tasks.forResult(mockFile)).when(updateApkClient).downloadApk(TEST_URL, updateTask);
 
     updateApkClient.updateApk(updateTask, TEST_URL, activity);
-    latch.await(1000, TimeUnit.MILLISECONDS);
+    // sleep to wait for installTaskCompletionSource to be set
+    Thread.sleep(1000);
     updateApkClient.setInstallationResult(RESULT_FAILED);
 
     assertFalse(updateTask.isSuccessful());
@@ -158,12 +164,10 @@ public class UpdateApkClientTest {
   }
 
   @Test
-  public void downloadTask_whenCalledMultipleTimes_getsCancelled() {
+  public void downloadApk_whenCalledMultipleTimes_returnsSameTask() {
     UpdateTaskImpl updateTask = new UpdateTaskImpl();
     Task<File> task1 = updateApkClient.downloadApk(TEST_URL, updateTask);
     Task<File> task2 = updateApkClient.downloadApk(TEST_URL, updateTask);
-    assertNotEquals(task1, task2);
-    assertTrue(task1.isCanceled());
-    assertFalse(task2.isComplete());
+    assertEquals(task1, task2);
   }
 }
