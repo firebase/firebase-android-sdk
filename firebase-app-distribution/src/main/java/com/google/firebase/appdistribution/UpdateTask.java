@@ -21,8 +21,6 @@ import java.util.concurrent.Executor;
 
 public abstract class UpdateTask extends Task<Void> {
 
-  public Object updateProgress;
-
   /**
    * Adds a listener that is called periodically while the UpdateTask executes.
    *
