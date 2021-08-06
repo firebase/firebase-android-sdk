@@ -88,9 +88,7 @@ public class UpdateApkClientTest {
 
   @Test
   public void updateApk_whenDownloadFails_setsNetworkError() throws Exception {
-    List<UpdateProgress> progressEvents = new ArrayList<>();
     UpdateTaskImpl updateTask = new UpdateTaskImpl();
-    updateTask.addOnProgressListener(progressEvents::add);
     doReturn(mockHttpsUrlConnection).when(updateApkClient).openHttpsUrlConnection(TEST_URL);
     // null inputStream causes download failure
     when(mockHttpsUrlConnection.getInputStream()).thenReturn(null);

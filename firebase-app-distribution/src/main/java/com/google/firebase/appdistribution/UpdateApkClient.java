@@ -164,6 +164,7 @@ class UpdateApkClient {
       // check that file is actual JAR
       new JarFile(apkFile);
     } catch (Exception e) {
+      postUpdateProgress(totalSize, bytesDownloaded, UpdateStatus.DOWNLOAD_FAILED);
       setDownloadTaskCompletionError(
           new FirebaseAppDistributionException(
               Constants.ErrorMessages.NETWORK_ERROR,
