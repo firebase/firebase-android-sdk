@@ -108,23 +108,13 @@ public class UpdateApkClientTest {
 
   @Test
   public void updateApk_whenInstallSuccessful_setsResult() throws Exception {
-    List<UpdateProgress> progressEvents = new ArrayList<>();
     UpdateTaskImpl updateTask = new UpdateTaskImpl();
     doReturn(Tasks.forResult(mockFile)).when(updateApkClient).downloadApk(TEST_URL);
-    updateTask.addOnProgressListener(progressEvents::add);
 
     updateApkClient.updateApk(updateTask, TEST_URL, activity);
     // sleep to wait for installTaskCompletionSource to be set
     Thread.sleep(1000);
     updateApkClient.setInstallationResult(RESULT_OK);
-    assertEquals(1, progressEvents.size());
-    assertEquals(
-        UpdateProgress.builder()
-            .setApkBytesDownloaded(TEST_FILE_LENGTH)
-            .setApkFileTotalBytes(TEST_FILE_LENGTH)
-            .setUpdateStatus(UpdateStatus.INSTALLED)
-            .build(),
-        progressEvents.get(0));
     assertTrue(updateTask.isSuccessful());
   }
 

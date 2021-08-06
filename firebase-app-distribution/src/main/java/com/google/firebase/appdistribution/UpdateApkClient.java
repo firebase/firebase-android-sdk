@@ -14,6 +14,7 @@
 
 package com.google.firebase.appdistribution;
 
+import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.NETWORK_FAILURE;
 
 import android.app.Activity;
@@ -46,8 +47,6 @@ class UpdateApkClient {
   private final Executor downloadExecutor;
   private TaskCompletionSource<Void> installTaskCompletionSource;
   private final FirebaseApp firebaseApp;
-  private long bytesDownloaded = 0;
-  private long totalFileSizeBytes = 0;
   private UpdateTaskImpl cachedUpdateTask;
 
   public UpdateApkClient(@NonNull FirebaseApp firebaseApp) {
@@ -66,22 +65,18 @@ class UpdateApkClient {
             downloadExecutor,
             file ->
                 install(file.getPath(), currentActivity)
-                    .addOnSuccessListener(
-                        unused -> {
-                          postUpdateProgress(file.length(), file.length(), UpdateStatus.INSTALLED);
-                          updateTask.setResult();
-                        })
                     .addOnFailureListener(
-                        e ->
-                            setTaskCompletionErrorWithDefault(
-                                e,
-                                new FirebaseAppDistributionException(
-                                    Constants.ErrorMessages.NETWORK_ERROR,
-                                    FirebaseAppDistributionException.Status.INSTALLATION_FAILURE))))
+                        e -> {
+                          postInstallationFailure(e, file.length());
+                          setTaskCompletionErrorWithDefault(
+                              e,
+                              new FirebaseAppDistributionException(
+                                  Constants.ErrorMessages.NETWORK_ERROR,
+                                  FirebaseAppDistributionException.Status.INSTALLATION_FAILURE));
+                        }))
         .addOnFailureListener(
             downloadExecutor,
             e -> {
-              postUpdateProgress(totalFileSizeBytes, bytesDownloaded, UpdateStatus.DOWNLOAD_FAILED);
               setTaskCompletionErrorWithDefault(
                   e,
                   new FirebaseAppDistributionException(
@@ -117,7 +112,6 @@ class UpdateApkClient {
                       FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE));
             } else {
               long responseLength = connection.getContentLength();
-              totalFileSizeBytes = responseLength;
               postUpdateProgress(responseLength, 0, UpdateStatus.PENDING);
               String fileName = getApplicationName() + ".apk";
               downloadToDisk(connection.getInputStream(), responseLength, fileName);
@@ -136,13 +130,13 @@ class UpdateApkClient {
 
     File apkFile = getApkFileForApp(fileName);
     apkFile.delete();
+    long bytesDownloaded = 0;
     try (BufferedOutputStream outputStream =
         new BufferedOutputStream(
             firebaseApp.getApplicationContext().openFileOutput(fileName, Context.MODE_PRIVATE))) {
 
       byte[] data = new byte[8 * 1024];
       int readSize = input.read(data);
-      bytesDownloaded = 0;
       long lastMsUpdated = 0;
 
       while (readSize != -1) {
@@ -159,6 +153,7 @@ class UpdateApkClient {
       }
 
     } catch (IOException e) {
+      postUpdateProgress(totalSize, bytesDownloaded, UpdateStatus.DOWNLOAD_FAILED);
       setDownloadTaskCompletionError(
           new FirebaseAppDistributionException(
               Constants.ErrorMessages.NETWORK_ERROR,
@@ -239,14 +234,13 @@ class UpdateApkClient {
   void setInstallationResult(int resultCode) {
     if (resultCode == Activity.RESULT_OK) {
       installTaskCompletionSource.setResult(null);
+      cachedUpdateTask.setResult();
     } else if (resultCode == Activity.RESULT_CANCELED) {
-      postUpdateProgress(totalFileSizeBytes, bytesDownloaded, UpdateStatus.INSTALL_CANCELED);
       installTaskCompletionSource.setException(
           new FirebaseAppDistributionException(
               Constants.ErrorMessages.UPDATE_CANCELED,
               FirebaseAppDistributionException.Status.INSTALLATION_CANCELED));
     } else {
-      postUpdateProgress(totalFileSizeBytes, bytesDownloaded, UpdateStatus.INSTALL_FAILED);
       installTaskCompletionSource.setException(
           new FirebaseAppDistributionException(
               "Installation failed with result code: " + resultCode,
@@ -276,5 +270,14 @@ class UpdateApkClient {
             .setApkBytesDownloaded(downloadedBytes)
             .setUpdateStatus(status)
             .build());
+  }
+
+  private void postInstallationFailure(Exception e, long fileLength) {
+    if (e instanceof FirebaseAppDistributionException
+        && ((FirebaseAppDistributionException) e).getErrorCode() == Status.INSTALLATION_CANCELED) {
+      postUpdateProgress(fileLength, fileLength, UpdateStatus.INSTALL_CANCELED);
+    } else {
+      postUpdateProgress(fileLength, fileLength, UpdateStatus.INSTALL_FAILED);
+    }
   }
 }
