@@ -25,6 +25,18 @@ public enum UpdateStatus {
   /** Download completed */
   DOWNLOADED,
 
+  /** Download failed */
+  DOWNLOAD_FAILED,
+
+  /** Update installed */
+  INSTALLED,
+
+  /** Installation canceled */
+  INSTALL_CANCELED,
+
+  /** Installation failed */
+  INSTALL_FAILED,
+
   /** AAB flow (directed to Play) */
   REDIRECTED_TO_PLAY,
 }

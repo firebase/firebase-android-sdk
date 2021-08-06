@@ -46,6 +46,9 @@ class UpdateApkClient {
   private final Executor downloadExecutor;
   private TaskCompletionSource<Void> installTaskCompletionSource;
   private final FirebaseApp firebaseApp;
+  private long bytesDownloaded = 0;
+  private long totalFileSizeBytes = 0;
+  private UpdateTaskImpl cachedUpdateTask;
 
   public UpdateApkClient(@NonNull FirebaseApp firebaseApp) {
     this.downloadExecutor = Executors.newSingleThreadExecutor();
@@ -57,39 +60,39 @@ class UpdateApkClient {
       @NonNull String downloadUrl,
       @NonNull Activity currentActivity) {
 
-    downloadApk(downloadUrl, updateTask)
+    this.cachedUpdateTask = updateTask;
+    downloadApk(downloadUrl)
         .addOnSuccessListener(
             downloadExecutor,
             file ->
                 install(file.getPath(), currentActivity)
                     .addOnSuccessListener(
                         unused -> {
-                          postUpdateProgress(
-                              updateTask, file.length(), file.length(), UpdateStatus.DOWNLOADED);
+                          postUpdateProgress(file.length(), file.length(), UpdateStatus.INSTALLED);
                           updateTask.setResult();
                         })
                     .addOnFailureListener(
                         e ->
                             setTaskCompletionErrorWithDefault(
-                                updateTask,
                                 e,
                                 new FirebaseAppDistributionException(
                                     Constants.ErrorMessages.NETWORK_ERROR,
                                     FirebaseAppDistributionException.Status.INSTALLATION_FAILURE))))
         .addOnFailureListener(
             downloadExecutor,
-            e ->
-                setTaskCompletionErrorWithDefault(
-                    updateTask,
-                    e,
-                    new FirebaseAppDistributionException(
-                        Constants.ErrorMessages.NETWORK_ERROR,
-                        FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE)));
+            e -> {
+              postUpdateProgress(totalFileSizeBytes, bytesDownloaded, UpdateStatus.DOWNLOAD_FAILED);
+              setTaskCompletionErrorWithDefault(
+                  e,
+                  new FirebaseAppDistributionException(
+                      Constants.ErrorMessages.NETWORK_ERROR,
+                      FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE));
+            });
   }
 
   @VisibleForTesting
   @NonNull
-  Task<File> downloadApk(@NonNull String downloadUrl, UpdateTaskImpl updateTask) {
+  Task<File> downloadApk(@NonNull String downloadUrl) {
     if (downloadTaskCompletionSource != null
         && !downloadTaskCompletionSource.getTask().isComplete()) {
       return downloadTaskCompletionSource.getTask();
@@ -97,11 +100,11 @@ class UpdateApkClient {
 
     downloadTaskCompletionSource = new TaskCompletionSource<>();
 
-    makeApkDownloadRequest(downloadUrl, updateTask);
+    makeApkDownloadRequest(downloadUrl);
     return downloadTaskCompletionSource.getTask();
   }
 
-  private void makeApkDownloadRequest(@NonNull String downloadUrl, UpdateTaskImpl updateTask) {
+  private void makeApkDownloadRequest(@NonNull String downloadUrl) {
     downloadExecutor.execute(
         () -> {
           try {
@@ -114,9 +117,10 @@ class UpdateApkClient {
                       FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE));
             } else {
               long responseLength = connection.getContentLength();
-              postUpdateProgress(updateTask, responseLength, 0, UpdateStatus.PENDING);
+              totalFileSizeBytes = responseLength;
+              postUpdateProgress(responseLength, 0, UpdateStatus.PENDING);
               String fileName = getApplicationName() + ".apk";
-              downloadToDisk(connection.getInputStream(), responseLength, fileName, updateTask);
+              downloadToDisk(connection.getInputStream(), responseLength, fileName);
             }
           } catch (IOException | FirebaseAppDistributionException e) {
             setDownloadTaskCompletionErrorWithDefault(
@@ -128,8 +132,7 @@ class UpdateApkClient {
         });
   }
 
-  private void downloadToDisk(
-      InputStream input, long totalSize, String fileName, UpdateTaskImpl updateTask) {
+  private void downloadToDisk(InputStream input, long totalSize, String fileName) {
 
     File apkFile = getApkFileForApp(fileName);
     apkFile.delete();
@@ -139,23 +142,21 @@ class UpdateApkClient {
 
       byte[] data = new byte[8 * 1024];
       int readSize = input.read(data);
-      long downloadedSize = 0;
+      bytesDownloaded = 0;
       long lastMsUpdated = 0;
 
       while (readSize != -1) {
         outputStream.write(data, 0, readSize);
-        downloadedSize += readSize;
+        bytesDownloaded += readSize;
         readSize = input.read(data);
 
         // update progress logic for onProgressListener
         long currentTimeMs = System.currentTimeMillis();
         if (currentTimeMs - lastMsUpdated > UPDATE_INTERVAL_MS) {
           lastMsUpdated = currentTimeMs;
-          postUpdateProgress(updateTask, totalSize, downloadedSize, UpdateStatus.DOWNLOADING);
+          postUpdateProgress(totalSize, bytesDownloaded, UpdateStatus.DOWNLOADING);
         }
       }
-      // completion
-      postUpdateProgress(updateTask, totalSize, downloadedSize, UpdateStatus.DOWNLOADED);
 
     } catch (IOException e) {
       setDownloadTaskCompletionError(
@@ -173,6 +174,9 @@ class UpdateApkClient {
               Constants.ErrorMessages.NETWORK_ERROR,
               FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE));
     }
+
+    // completion
+    postUpdateProgress(totalSize, totalSize, UpdateStatus.DOWNLOADED);
 
     downloadTaskCompletionSource.setResult(apkFile);
   }
@@ -236,11 +240,13 @@ class UpdateApkClient {
     if (resultCode == Activity.RESULT_OK) {
       installTaskCompletionSource.setResult(null);
     } else if (resultCode == Activity.RESULT_CANCELED) {
+      postUpdateProgress(totalFileSizeBytes, bytesDownloaded, UpdateStatus.INSTALL_CANCELED);
       installTaskCompletionSource.setException(
           new FirebaseAppDistributionException(
               Constants.ErrorMessages.UPDATE_CANCELED,
               FirebaseAppDistributionException.Status.INSTALLATION_CANCELED));
     } else {
+      postUpdateProgress(totalFileSizeBytes, bytesDownloaded, UpdateStatus.INSTALL_FAILED);
       installTaskCompletionSource.setException(
           new FirebaseAppDistributionException(
               "Installation failed with result code: " + resultCode,
@@ -248,27 +254,23 @@ class UpdateApkClient {
     }
   }
 
-  private void setTaskCompletionError(
-      UpdateTaskImpl updateTask, FirebaseAppDistributionException e) {
-    if (updateTask != null && !updateTask.isComplete()) {
-      updateTask.setException(e);
+  private void setTaskCompletionError(FirebaseAppDistributionException e) {
+    if (cachedUpdateTask != null && !cachedUpdateTask.isComplete()) {
+      cachedUpdateTask.setException(e);
     }
   }
 
   private void setTaskCompletionErrorWithDefault(
-      UpdateTaskImpl updateTask,
-      Exception e,
-      FirebaseAppDistributionException defaultFirebaseException) {
+      Exception e, FirebaseAppDistributionException defaultFirebaseException) {
     if (e instanceof FirebaseAppDistributionException) {
-      setTaskCompletionError(updateTask, (FirebaseAppDistributionException) e);
+      setTaskCompletionError((FirebaseAppDistributionException) e);
     } else {
-      setTaskCompletionError(updateTask, defaultFirebaseException);
+      setTaskCompletionError(defaultFirebaseException);
     }
   }
 
-  private void postUpdateProgress(
-      UpdateTaskImpl updateTask, long totalBytes, long downloadedBytes, UpdateStatus status) {
-    updateTask.updateProgress(
+  private void postUpdateProgress(long totalBytes, long downloadedBytes, UpdateStatus status) {
+    cachedUpdateTask.updateProgress(
         UpdateProgress.builder()
             .setApkFileTotalBytes(totalBytes)
             .setApkBytesDownloaded(downloadedBytes)

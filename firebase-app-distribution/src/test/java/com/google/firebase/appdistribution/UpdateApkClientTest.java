@@ -30,7 +30,6 @@ import com.google.firebase.FirebaseOptions;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
 import javax.net.ssl.HttpsURLConnection;
 import org.junit.Before;
 import org.junit.Test;
@@ -57,7 +56,6 @@ public class UpdateApkClientTest {
   private UpdateApkClient updateApkClient;
   private TestActivity activity;
   private ShadowActivity shadowActivity;
-  private CountDownLatch latch;
   @Mock private File mockFile;
   @Mock private HttpsURLConnection mockHttpsUrlConnection;
 
@@ -90,13 +88,16 @@ public class UpdateApkClientTest {
 
   @Test
   public void updateApk_whenDownloadFails_setsNetworkError() throws Exception {
+    List<UpdateProgress> progressEvents = new ArrayList<>();
     UpdateTaskImpl updateTask = new UpdateTaskImpl();
+    updateTask.addOnProgressListener(progressEvents::add);
     doReturn(mockHttpsUrlConnection).when(updateApkClient).openHttpsUrlConnection(TEST_URL);
     // null inputStream causes download failure
     when(mockHttpsUrlConnection.getInputStream()).thenReturn(null);
     updateApkClient.updateApk(updateTask, TEST_URL, activity);
     // wait for error to be caught and set
     Thread.sleep(1000);
+
     assertFalse(updateTask.isSuccessful());
     assertTrue(updateTask.getException() instanceof FirebaseAppDistributionException);
     FirebaseAppDistributionException e =
@@ -109,7 +110,7 @@ public class UpdateApkClientTest {
   public void updateApk_whenInstallSuccessful_setsResult() throws Exception {
     List<UpdateProgress> progressEvents = new ArrayList<>();
     UpdateTaskImpl updateTask = new UpdateTaskImpl();
-    doReturn(Tasks.forResult(mockFile)).when(updateApkClient).downloadApk(TEST_URL, updateTask);
+    doReturn(Tasks.forResult(mockFile)).when(updateApkClient).downloadApk(TEST_URL);
     updateTask.addOnProgressListener(progressEvents::add);
 
     updateApkClient.updateApk(updateTask, TEST_URL, activity);
@@ -121,7 +122,7 @@ public class UpdateApkClientTest {
         UpdateProgress.builder()
             .setApkBytesDownloaded(TEST_FILE_LENGTH)
             .setApkFileTotalBytes(TEST_FILE_LENGTH)
-            .setUpdateStatus(UpdateStatus.DOWNLOADED)
+            .setUpdateStatus(UpdateStatus.INSTALLED)
             .build(),
         progressEvents.get(0));
     assertTrue(updateTask.isSuccessful());
@@ -129,14 +130,18 @@ public class UpdateApkClientTest {
 
   @Test
   public void updateApk_whenInstallCancelled_setsError() throws Exception {
+    List<UpdateProgress> progressEvents = new ArrayList<>();
     UpdateTaskImpl updateTask = new UpdateTaskImpl();
-    doReturn(Tasks.forResult(mockFile)).when(updateApkClient).downloadApk(TEST_URL, updateTask);
+    updateTask.addOnProgressListener(progressEvents::add);
+    doReturn(Tasks.forResult(mockFile)).when(updateApkClient).downloadApk(TEST_URL);
 
     updateApkClient.updateApk(updateTask, TEST_URL, activity);
     // sleep to wait for installTaskCompletionSource to be set
     Thread.sleep(1000);
     updateApkClient.setInstallationResult(RESULT_CANCELED);
 
+    assertEquals(1, progressEvents.size());
+    assertEquals(UpdateStatus.INSTALL_CANCELED, progressEvents.get(0).getUpdateStatus());
     assertFalse(updateTask.isSuccessful());
     assertTrue(updateTask.getException() instanceof FirebaseAppDistributionException);
     FirebaseAppDistributionException e =
@@ -147,14 +152,18 @@ public class UpdateApkClientTest {
 
   @Test
   public void updateApk_whenInstallFailed_setsError() throws Exception {
+    List<UpdateProgress> progressEvents = new ArrayList<>();
     UpdateTaskImpl updateTask = new UpdateTaskImpl();
-    doReturn(Tasks.forResult(mockFile)).when(updateApkClient).downloadApk(TEST_URL, updateTask);
+    updateTask.addOnProgressListener(progressEvents::add);
+    doReturn(Tasks.forResult(mockFile)).when(updateApkClient).downloadApk(TEST_URL);
 
     updateApkClient.updateApk(updateTask, TEST_URL, activity);
     // sleep to wait for installTaskCompletionSource to be set
     Thread.sleep(1000);
     updateApkClient.setInstallationResult(RESULT_FAILED);
 
+    assertEquals(1, progressEvents.size());
+    assertEquals(UpdateStatus.INSTALL_FAILED, progressEvents.get(0).getUpdateStatus());
     assertFalse(updateTask.isSuccessful());
     assertTrue(updateTask.getException() instanceof FirebaseAppDistributionException);
     FirebaseAppDistributionException e =
@@ -165,9 +174,8 @@ public class UpdateApkClientTest {
 
   @Test
   public void downloadApk_whenCalledMultipleTimes_returnsSameTask() {
-    UpdateTaskImpl updateTask = new UpdateTaskImpl();
-    Task<File> task1 = updateApkClient.downloadApk(TEST_URL, updateTask);
-    Task<File> task2 = updateApkClient.downloadApk(TEST_URL, updateTask);
+    Task<File> task1 = updateApkClient.downloadApk(TEST_URL);
+    Task<File> task2 = updateApkClient.downloadApk(TEST_URL);
     assertEquals(task1, task2);
   }
 }
