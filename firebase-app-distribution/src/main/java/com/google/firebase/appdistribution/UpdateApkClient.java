@@ -22,6 +22,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 import androidx.annotation.NonNull;
+import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.CancellationTokenSource;
 import com.google.android.gms.tasks.Task;
@@ -280,5 +281,10 @@ class UpdateApkClient {
     } else {
       postUpdateProgress(fileLength, fileLength, UpdateStatus.INSTALL_FAILED);
     }
+  }
+
+  @RestrictTo(RestrictTo.Scope.TESTS)
+  void setCachedUpdateTask(UpdateTaskImpl updateTask) {
+    this.cachedUpdateTask = updateTask;
   }
 }
