@@ -1,3 +1,17 @@
+// Copyright 2021 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package com.google.firebase.appdistribution;
 
 import android.app.NotificationChannel;
@@ -5,12 +19,16 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Resources;
+import android.graphics.drawable.AdaptiveIconDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Build;
+import android.os.Build.VERSION;
 import android.util.Log;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.app.NotificationCompat;
+import androidx.core.content.ContextCompat;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.appdistribution.Constants.ErrorMessages;
 
 class FirebaseAppDistributionNotificationsManager {
   private static final String TAG = "FADNotificationsManager";
@@ -21,17 +39,21 @@ class FirebaseAppDistributionNotificationsManager {
   static final String NOTIFICATION_TAG = "com.google.firebase.app.distribution.tag";
 
   private final FirebaseApp firebaseApp;
-  private final NotificationManager notificationManager;
 
   FirebaseAppDistributionNotificationsManager(FirebaseApp firebaseApp) {
     this.firebaseApp = firebaseApp;
-    this.notificationManager = createNotificationManager();
   }
 
   void updateNotification(long totalBytes, long downloadedBytes, UpdateStatus status) {
+    Context context = firebaseApp.getApplicationContext();
+    NotificationManager notificationManager = createNotificationManager(context);
     NotificationCompat.Builder builder = createNotificationBuilder();
     if (isErrorState(status)) {
-      builder.setContentTitle(getErrorMessage(status));
+      builder.setContentTitle(context.getString(R.string.download_failed));
+    } else if (status.equals(UpdateStatus.DOWNLOADED)) {
+      builder.setContentTitle(context.getString(R.string.download_failed));
+    } else {
+      builder.setContentTitle(context.getString(R.string.downloading_app_update));
     }
     builder.setProgress(
         100,
@@ -41,28 +63,12 @@ class FirebaseAppDistributionNotificationsManager {
   }
 
   private boolean isErrorState(UpdateStatus status) {
-    if (status.equals(UpdateStatus.DOWNLOAD_FAILED)
+    return status.equals(UpdateStatus.DOWNLOAD_FAILED)
         || status.equals(UpdateStatus.INSTALL_FAILED)
-        || status.equals(UpdateStatus.INSTALL_CANCELED)) {
-      return true;
-    }
-    return false;
+        || status.equals(UpdateStatus.INSTALL_CANCELED);
   }
 
-  private String getErrorMessage(UpdateStatus status) {
-    switch (status) {
-      case INSTALL_CANCELED:
-        return ErrorMessages.INSTALLATION_CANCELED;
-      case INSTALL_FAILED:
-        return ErrorMessages.INSTALLATION_ERROR;
-      case DOWNLOAD_FAILED:
-      default:
-        return ErrorMessages.DOWNLOAD_ERROR;
-    }
-  }
-
-  private NotificationManager createNotificationManager() {
-    Context context = firebaseApp.getApplicationContext();
+  private NotificationManager createNotificationManager(Context context) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
       NotificationChannel channel =
           new NotificationChannel(
@@ -76,8 +82,7 @@ class FirebaseAppDistributionNotificationsManager {
       notificationManager.createNotificationChannel(channel);
       return notificationManager;
     } else {
-      return (NotificationManager)
-          firebaseApp.getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
+      return (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
     }
   }
 
@@ -85,10 +90,8 @@ class FirebaseAppDistributionNotificationsManager {
     Context context = firebaseApp.getApplicationContext();
     return new NotificationCompat.Builder(context, NOTIFICATION_CHANNEL_ID)
         .setOnlyAlertOnce(true)
-        // TODO: what icon should this be?
-        .setSmallIcon(android.R.drawable.sym_def_app_icon)
-        .setContentIntent(createPendingIntent())
-        .setContentTitle(context.getString(R.string.downloading_app_update));
+        .setSmallIcon(getSmallIcon())
+        .setContentIntent(createPendingIntent());
   }
 
   private PendingIntent createPendingIntent() {
@@ -100,5 +103,34 @@ class FirebaseAppDistributionNotificationsManager {
     }
     return PendingIntent.getActivity(
         firebaseApp.getApplicationContext(), 0, intent, PendingIntent.FLAG_ONE_SHOT);
+  }
+
+  @VisibleForTesting
+  int getSmallIcon() {
+    Context context = firebaseApp.getApplicationContext();
+    int iconId = context.getApplicationInfo().icon;
+
+    if (iconId == 0 || !isAdaptiveIcon(iconId)) {
+      // fallback to default icon
+      return android.R.drawable.sym_def_app_icon;
+    }
+
+    return iconId;
+  }
+
+  /** Adaptive icons cause a crash loop in the Notifications Manager. See b/69969749. */
+  private boolean isAdaptiveIcon(int iconId) {
+    try {
+      Drawable icon = ContextCompat.getDrawable(firebaseApp.getApplicationContext(), iconId);
+      if (VERSION.SDK_INT > Build.VERSION_CODES.O && icon instanceof AdaptiveIconDrawable) {
+        Log.e(TAG, "Adaptive icons cannot be used in notifications. Ignoring icon id: " + iconId);
+        return false;
+      } else {
+        // AdaptiveIcons were introduced in API 26
+        return true;
+      }
+    } catch (Resources.NotFoundException ex) {
+      return false;
+    }
   }
 }

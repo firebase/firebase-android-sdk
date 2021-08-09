@@ -23,6 +23,8 @@
   <string name="update_yes_button">Update</string>
   <string name="update_no_button">Cancel</string>
   <string name="downloading_app_update">Downloading in-app update...</string>
+  <string name="download_completed">Download completed</string>
+  <string name="download_failed">Download failed</string>
   <string name="notifications_channel_name">App Distribution App Update Downloads</string>
   <string name="notifications_channel_description">Shows download progress of in-app updates from App Distribution SDK</string>
 

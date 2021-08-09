@@ -89,6 +89,7 @@ public class UpdateApkClientTest {
     when(mockFile.length()).thenReturn(TEST_FILE_LENGTH);
 
     this.updateApkClient = Mockito.spy(new UpdateApkClient(firebaseApp));
+    this.updateApkClient.setCurrentActivity(activity);
   }
 
   @Test
@@ -99,7 +100,7 @@ public class UpdateApkClientTest {
     doReturn(mockHttpsUrlConnection).when(updateApkClient).openHttpsUrlConnection(TEST_URL);
     // null inputStream causes download failure
     when(mockHttpsUrlConnection.getInputStream()).thenReturn(null);
-    updateApkClient.updateApk(updateTask, TEST_URL, activity);
+    updateApkClient.updateApk(updateTask, TEST_URL);
     // wait for error to be caught and set
     Thread.sleep(1000);
 
@@ -116,7 +117,7 @@ public class UpdateApkClientTest {
     UpdateTaskImpl updateTask = new UpdateTaskImpl();
     doReturn(Tasks.forResult(mockFile)).when(updateApkClient).downloadApk(TEST_URL);
 
-    updateApkClient.updateApk(updateTask, TEST_URL, activity);
+    updateApkClient.updateApk(updateTask, TEST_URL);
     // sleep to wait for installTaskCompletionSource to be set
     Thread.sleep(1000);
     updateApkClient.setInstallationResult(RESULT_OK);
@@ -130,7 +131,7 @@ public class UpdateApkClientTest {
     updateTask.addOnProgressListener(progressEvents::add);
     doReturn(Tasks.forResult(mockFile)).when(updateApkClient).downloadApk(TEST_URL);
 
-    updateApkClient.updateApk(updateTask, TEST_URL, activity);
+    updateApkClient.updateApk(updateTask, TEST_URL);
     // sleep to wait for installTaskCompletionSource to be set
     Thread.sleep(1000);
     updateApkClient.setInstallationResult(RESULT_CANCELED);
@@ -152,7 +153,7 @@ public class UpdateApkClientTest {
     updateTask.addOnProgressListener(progressEvents::add);
     doReturn(Tasks.forResult(mockFile)).when(updateApkClient).downloadApk(TEST_URL);
 
-    updateApkClient.updateApk(updateTask, TEST_URL, activity);
+    updateApkClient.updateApk(updateTask, TEST_URL);
     // sleep to wait for installTaskCompletionSource to be set
     Thread.sleep(1000);
     updateApkClient.setInstallationResult(RESULT_FAILED);
@@ -185,9 +186,10 @@ public class UpdateApkClientTest {
     updateApkClient.postUpdateProgress(1000, 900, UpdateStatus.DOWNLOADING);
 
     assertEquals(1, shadowNotificationManager.size());
-    ShadowNotification n = shadowOf(shadowNotificationManager.getNotification(NOTIFICATION_TAG, 0));
-    assertEquals(90, n.getProgress());
-    assertEquals("Downloading in-app update...", n.getContentTitle().toString());
+    ShadowNotification shadowNotification =
+        shadowOf(shadowNotificationManager.getNotification(NOTIFICATION_TAG, 0));
+    assertEquals(90, shadowNotification.getProgress());
+    assertEquals("Downloading in-app update...", shadowNotification.getContentTitle().toString());
   }
 
   @Test
@@ -198,11 +200,12 @@ public class UpdateApkClientTest {
     ShadowNotificationManager shadowNotificationManager = shadowOf(notificationManager);
     updateApkClient.setCachedUpdateTask(new UpdateTaskImpl());
 
-    updateApkClient.postUpdateProgress(1000, 1000, UpdateStatus.INSTALL_FAILED);
+    updateApkClient.postUpdateProgress(1000, 1000, UpdateStatus.DOWNLOAD_FAILED);
 
     assertEquals(1, shadowNotificationManager.size());
-    ShadowNotification n = shadowOf(shadowNotificationManager.getNotification(NOTIFICATION_TAG, 0));
-    assertEquals(100, n.getProgress());
-    assertEquals("Failed to install update", n.getContentTitle().toString());
+    ShadowNotification shadowNotification =
+        shadowOf(shadowNotificationManager.getNotification(NOTIFICATION_TAG, 0));
+    assertEquals(100, shadowNotification.getProgress());
+    assertEquals("Download failed", shadowNotification.getContentTitle().toString());
   }
 }
