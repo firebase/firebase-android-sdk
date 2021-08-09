@@ -89,6 +89,9 @@ public class FirebaseTestServer extends TestServer {
             .flatMap(device -> ImmutableList.of("--device", device).stream())
             .collect(Collectors.toList()));
 
+    Optional.ofNullable(extension.getTimeout())
+        .ifPresent(timeout -> args.add("--timeout", timeout));
+
     Optional.ofNullable(System.getenv("FTL_RESULTS_BUCKET"))
         .map(Environment::expand)
         .ifPresent(bucket -> args.add("--results-bucket", bucket));
