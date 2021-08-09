@@ -95,6 +95,7 @@ public class UpdateAppClientTest {
     shadowActivity = shadowOf(activity);
 
     this.updateAppClient = new UpdateAppClient(firebaseApp);
+    this.updateAppClient.setCurrentActivity(activity);
   }
 
   @Test

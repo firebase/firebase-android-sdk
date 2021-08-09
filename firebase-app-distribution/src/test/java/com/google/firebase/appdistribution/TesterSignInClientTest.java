@@ -121,6 +121,7 @@ public class TesterSignInClientTest {
 
     testerSignInClient =
         new TesterSignInClient(firebaseApp, mockFirebaseInstallations, mockSignInStorage);
+    testerSignInClient.setCurrentActivity(activity);
   }
 
   @Test
@@ -132,7 +133,7 @@ public class TesterSignInClientTest {
     customTabIntent.setPackage("com.android.chrome");
     shadowPackageManager.addResolveInfoForIntent(customTabIntent, resolveInfo);
 
-    testerSignInClient.signInTester(activity);
+    testerSignInClient.signInTester();
 
     if (ShadowAlertDialog.getLatestDialog() instanceof AlertDialog) {
       AlertDialog dialog = (AlertDialog) ShadowAlertDialog.getLatestDialog();
@@ -152,7 +153,7 @@ public class TesterSignInClientTest {
     Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(TEST_URL));
     shadowPackageManager.addResolveInfoForIntent(browserIntent, resolveInfo);
 
-    testerSignInClient.signInTester(activity);
+    testerSignInClient.signInTester();
 
     if (ShadowAlertDialog.getLatestDialog() instanceof AlertDialog) {
       AlertDialog dialog = (AlertDialog) ShadowAlertDialog.getLatestDialog();
@@ -166,8 +167,8 @@ public class TesterSignInClientTest {
 
   @Test
   public void signInTester_whenSignInCalledMultipleTimes_returnsSameTask() {
-    Task<Void> signInTask1 = testerSignInClient.signInTester(activity);
-    Task<Void> signInTask2 = testerSignInClient.signInTester(activity);
+    Task<Void> signInTask1 = testerSignInClient.signInTester();
+    Task<Void> signInTask2 = testerSignInClient.signInTester();
 
     assertEquals(signInTask1, signInTask2);
   }
@@ -176,7 +177,7 @@ public class TesterSignInClientTest {
   public void signInTester_whenTesterIsSignedIn_doesNotOpenDialog() {
     when(mockSignInStorage.getSignInStatus()).thenReturn(true);
 
-    testerSignInClient.signInTester(activity);
+    testerSignInClient.signInTester();
 
     assertNull(ShadowAlertDialog.getLatestAlertDialog());
   }

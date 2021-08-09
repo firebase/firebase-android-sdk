@@ -84,6 +84,7 @@ public class UpdateApkClientTest {
     when(mockFile.length()).thenReturn(TEST_FILE_LENGTH);
 
     this.updateApkClient = Mockito.spy(new UpdateApkClient(firebaseApp));
+    this.updateApkClient.setCurrentActivity(activity);
   }
 
   @Test
@@ -92,7 +93,7 @@ public class UpdateApkClientTest {
     doReturn(mockHttpsUrlConnection).when(updateApkClient).openHttpsUrlConnection(TEST_URL);
     // null inputStream causes download failure
     when(mockHttpsUrlConnection.getInputStream()).thenReturn(null);
-    updateApkClient.updateApk(updateTask, TEST_URL, activity);
+    updateApkClient.updateApk(updateTask, TEST_URL);
     // wait for error to be caught and set
     Thread.sleep(1000);
 
@@ -109,7 +110,7 @@ public class UpdateApkClientTest {
     UpdateTaskImpl updateTask = new UpdateTaskImpl();
     doReturn(Tasks.forResult(mockFile)).when(updateApkClient).downloadApk(TEST_URL);
 
-    updateApkClient.updateApk(updateTask, TEST_URL, activity);
+    updateApkClient.updateApk(updateTask, TEST_URL);
     // sleep to wait for installTaskCompletionSource to be set
     Thread.sleep(1000);
     updateApkClient.setInstallationResult(RESULT_OK);
@@ -123,7 +124,7 @@ public class UpdateApkClientTest {
     updateTask.addOnProgressListener(progressEvents::add);
     doReturn(Tasks.forResult(mockFile)).when(updateApkClient).downloadApk(TEST_URL);
 
-    updateApkClient.updateApk(updateTask, TEST_URL, activity);
+    updateApkClient.updateApk(updateTask, TEST_URL);
     // sleep to wait for installTaskCompletionSource to be set
     Thread.sleep(1000);
     updateApkClient.setInstallationResult(RESULT_CANCELED);
@@ -145,7 +146,7 @@ public class UpdateApkClientTest {
     updateTask.addOnProgressListener(progressEvents::add);
     doReturn(Tasks.forResult(mockFile)).when(updateApkClient).downloadApk(TEST_URL);
 
-    updateApkClient.updateApk(updateTask, TEST_URL, activity);
+    updateApkClient.updateApk(updateTask, TEST_URL);
     // sleep to wait for installTaskCompletionSource to be set
     Thread.sleep(1000);
     updateApkClient.setInstallationResult(RESULT_FAILED);

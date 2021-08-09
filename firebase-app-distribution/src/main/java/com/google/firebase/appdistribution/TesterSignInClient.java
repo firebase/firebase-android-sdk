@@ -25,7 +25,9 @@ import android.content.Intent;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import android.util.Log;
+import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.browser.customtabs.CustomTabsIntent;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -47,6 +49,11 @@ class TesterSignInClient {
   private final FirebaseInstallationsApi firebaseInstallationsApi;
   private final SignInStorage signInStorage;
 
+  @GuardedBy("activityLock")
+  private Activity currentActivity;
+
+  private final Object activityLock = new Object();
+
   TesterSignInClient(
       @NonNull FirebaseApp firebaseApp,
       @NonNull FirebaseInstallationsApi firebaseInstallationsApi,
@@ -57,7 +64,7 @@ class TesterSignInClient {
   }
 
   @NonNull
-  public synchronized Task<Void> signInTester(@NonNull Activity currentActivity) {
+  public synchronized Task<Void> signInTester() {
     if (signInStorage.getSignInStatus()) {
       return Tasks.forResult(null);
     }
@@ -66,6 +73,13 @@ class TesterSignInClient {
       return signInTaskCompletionSource.getTask();
     }
 
+    Activity currentActivity = getCurrentActivity();
+    if (currentActivity == null) {
+      return Tasks.forException(
+          new FirebaseAppDistributionException(
+              ErrorMessages.APP_BACKGROUNDED,
+              FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE));
+    }
     signInTaskCompletionSource = new TaskCompletionSource<>();
 
     AlertDialog alertDialog = getSignInAlertDialog(currentActivity);
@@ -187,5 +201,18 @@ class TesterSignInClient {
     List<ResolveInfo> resolveInfos =
         context.getPackageManager().queryIntentServices(customTabIntent, 0);
     return resolveInfos != null && !resolveInfos.isEmpty();
+  }
+
+  @Nullable
+  Activity getCurrentActivity() {
+    synchronized (activityLock) {
+      return this.currentActivity;
+    }
+  }
+
+  void setCurrentActivity(@Nullable Activity activity) {
+    synchronized (activityLock) {
+      this.currentActivity = activity;
+    }
   }
 }
