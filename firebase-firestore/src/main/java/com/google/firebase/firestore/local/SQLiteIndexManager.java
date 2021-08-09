@@ -16,6 +16,7 @@ package com.google.firebase.firestore.local;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.ResourcePath;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,9 +34,11 @@ final class SQLiteIndexManager implements IndexManager {
       new MemoryIndexManager.MemoryCollectionParentIndex();
 
   private final SQLitePersistence db;
+  private final LocalSerializer serializer;
 
-  SQLiteIndexManager(SQLitePersistence persistence) {
-    db = persistence;
+  SQLiteIndexManager(SQLitePersistence persistence, LocalSerializer serializer) {
+    this.db = persistence;
+    this.serializer = serializer;
   }
 
   @Override
@@ -64,5 +67,27 @@ final class SQLiteIndexManager implements IndexManager {
               parentPaths.add(EncodedPath.decodeResourcePath(row.getString(0)));
             });
     return parentPaths;
+  }
+
+  @Override
+  public void addFieldIndex(FieldIndex index) {
+    int currentMax =
+        db.query("SELECT MAX(index_id) FROM index_configuration")
+            .firstValue(input -> input.isNull(0) ? 0 : input.getInt(0));
+
+    db.execute(
+        "INSERT OR IGNORE INTO index_configuration ("
+            + "index_id, "
+            + "collection_id, "
+            + "index_proto, "
+            + "active) VALUES(?, ?, ?, ?)",
+        currentMax + 1,
+        index.getCollectionId(),
+        encodeFieldIndex(index),
+        true);
+  }
+
+  private byte[] encodeFieldIndex(FieldIndex fieldIndex) {
+    return serializer.encodeFieldIndex(fieldIndex).toByteArray();
   }
 }

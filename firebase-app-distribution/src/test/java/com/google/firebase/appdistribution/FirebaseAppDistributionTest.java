@@ -17,11 +17,9 @@ package com.google.firebase.appdistribution;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_CANCELED;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_FAILURE;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -94,7 +92,6 @@ public class FirebaseAppDistributionTest {
   @Mock private SignInStorage mockSignInStorage;
   @Mock private Bundle mockBundle;
   @Mock private SignInResultActivity mockSignInResultActivity;
-  @Mock private OnProgressListener onProgressListener;
 
   static class TestActivity extends Activity {}
 
@@ -245,8 +242,7 @@ public class FirebaseAppDistributionTest {
     AppDistributionReleaseInternal latestRelease = TEST_RELEASE_NEWER_AAB_INTERNAL.build();
     when(mockCheckForUpdateClient.checkForUpdate()).thenReturn(Tasks.forResult(latestRelease));
     firebaseAppDistribution.setCachedLatestRelease(latestRelease);
-    UpdateTaskImpl updateTaskImpl = new UpdateTaskImpl();
-    doNothing().when(mockUpdateAppClient).performUpdate(updateTaskImpl, latestRelease);
+    when(mockUpdateAppClient.updateApp(latestRelease, activity)).thenReturn(new UpdateTaskImpl());
 
     firebaseAppDistribution.onActivityResumed(activity);
     firebaseAppDistribution.updateToLatestRelease();
@@ -393,17 +389,5 @@ public class FirebaseAppDistributionTest {
     verify(mockSignInStorage).setSignInStatus(true);
     firebaseAppDistribution.signOutTester();
     verify(mockSignInStorage).setSignInStatus(false);
-  }
-
-  @Test
-  public void updateAppTask_whenNoReleaseAvailable_throwsError() throws Exception {
-    when(mockSignInStorage.getSignInStatus()).thenReturn(true);
-    UpdateTask updateTask = firebaseAppDistribution.updateApp();
-    assertFalse(updateTask.isSuccessful());
-    assertTrue(updateTask.getException() instanceof FirebaseAppDistributionException);
-    FirebaseAppDistributionException ex =
-        (FirebaseAppDistributionException) updateTask.getException();
-    assertEquals(FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE, ex.getErrorCode());
-    assertEquals(Constants.ErrorMessages.NOT_FOUND_ERROR, ex.getMessage());
   }
 }

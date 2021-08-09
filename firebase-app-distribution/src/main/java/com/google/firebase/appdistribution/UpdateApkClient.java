@@ -14,6 +14,7 @@
 
 package com.google.firebase.appdistribution;
 
+import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.NETWORK_FAILURE;
 
 import android.app.Activity;
@@ -23,6 +24,8 @@ import android.util.Log;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RestrictTo;
+import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.CancellationTokenSource;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -45,10 +48,10 @@ class UpdateApkClient {
   private static final String TAG = "FADUpdateAppClient";
   private static final String REQUEST_METHOD = "GET";
   private TaskCompletionSource<File> downloadTaskCompletionSource;
-  private CancellationTokenSource downloadCancellationTokenSource;
   private final Executor downloadExecutor;
   private TaskCompletionSource<Void> installTaskCompletionSource;
   private final FirebaseApp firebaseApp;
+  private UpdateTaskImpl cachedUpdateTask;
 
   @GuardedBy("activityLock")
   private Activity currentActivity;
@@ -62,51 +65,47 @@ class UpdateApkClient {
 
   public void updateApk(@NonNull UpdateTaskImpl updateTask, @NonNull String downloadUrl) {
 
-    downloadApk(downloadUrl, updateTask)
+    this.cachedUpdateTask = updateTask;
+    downloadApk(downloadUrl)
         .addOnSuccessListener(
             downloadExecutor,
             file ->
                 install(file.getPath())
-                    .addOnSuccessListener(
-                        unused -> {
-                          postUpdateProgress(
-                              updateTask, file.length(), file.length(), UpdateStatus.DOWNLOADED);
-                          updateTask.setResult();
-                        })
                     .addOnFailureListener(
-                        e ->
-                            setTaskCompletionErrorWithDefault(
-                                updateTask,
-                                e,
-                                new FirebaseAppDistributionException(
-                                    Constants.ErrorMessages.NETWORK_ERROR,
-                                    FirebaseAppDistributionException.Status.INSTALLATION_FAILURE))))
+                        e -> {
+                          postInstallationFailure(e, file.length());
+                          setTaskCompletionErrorWithDefault(
+                              e,
+                              new FirebaseAppDistributionException(
+                                  Constants.ErrorMessages.NETWORK_ERROR,
+                                  FirebaseAppDistributionException.Status.INSTALLATION_FAILURE));
+                        }))
         .addOnFailureListener(
             downloadExecutor,
-            e ->
-                setTaskCompletionErrorWithDefault(
-                    updateTask,
-                    e,
-                    new FirebaseAppDistributionException(
-                        Constants.ErrorMessages.NETWORK_ERROR,
-                        FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE)));
+            e -> {
+              setTaskCompletionErrorWithDefault(
+                  e,
+                  new FirebaseAppDistributionException(
+                      Constants.ErrorMessages.NETWORK_ERROR,
+                      FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE));
+            });
   }
 
-  private @NonNull Task<File> downloadApk(@NonNull String downloadUrl, UpdateTaskImpl updateTask) {
+  @VisibleForTesting
+  @NonNull
+  Task<File> downloadApk(@NonNull String downloadUrl) {
     if (downloadTaskCompletionSource != null
         && !downloadTaskCompletionSource.getTask().isComplete()) {
-      downloadCancellationTokenSource.cancel();
+      return downloadTaskCompletionSource.getTask();
     }
 
-    downloadCancellationTokenSource = new CancellationTokenSource();
-    downloadTaskCompletionSource =
-        new TaskCompletionSource<>(downloadCancellationTokenSource.getToken());
+    downloadTaskCompletionSource = new TaskCompletionSource<>();
 
-    makeApkDownloadRequest(downloadUrl, updateTask);
+    makeApkDownloadRequest(downloadUrl);
     return downloadTaskCompletionSource.getTask();
   }
 
-  private void makeApkDownloadRequest(@NonNull String downloadUrl, UpdateTaskImpl updateTask) {
+  private void makeApkDownloadRequest(@NonNull String downloadUrl) {
     downloadExecutor.execute(
         () -> {
           try {
@@ -119,9 +118,9 @@ class UpdateApkClient {
                       FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE));
             } else {
               long responseLength = connection.getContentLength();
-              postUpdateProgress(updateTask, responseLength, 0, UpdateStatus.PENDING);
+              postUpdateProgress(responseLength, 0, UpdateStatus.PENDING);
               String fileName = getApplicationName() + ".apk";
-              downloadToDisk(connection.getInputStream(), responseLength, fileName, updateTask);
+              downloadToDisk(connection.getInputStream(), responseLength, fileName);
             }
           } catch (IOException | FirebaseAppDistributionException e) {
             setDownloadTaskCompletionErrorWithDefault(
@@ -133,36 +132,34 @@ class UpdateApkClient {
         });
   }
 
-  private void downloadToDisk(
-      InputStream input, long totalSize, String fileName, UpdateTaskImpl updateTask) {
+  private void downloadToDisk(InputStream input, long totalSize, String fileName) {
 
     File apkFile = getApkFileForApp(fileName);
     apkFile.delete();
+    long bytesDownloaded = 0;
     try (BufferedOutputStream outputStream =
         new BufferedOutputStream(
             firebaseApp.getApplicationContext().openFileOutput(fileName, Context.MODE_PRIVATE))) {
 
       byte[] data = new byte[8 * 1024];
       int readSize = input.read(data);
-      long downloadedSize = 0;
       long lastMsUpdated = 0;
 
       while (readSize != -1) {
         outputStream.write(data, 0, readSize);
-        downloadedSize += readSize;
+        bytesDownloaded += readSize;
         readSize = input.read(data);
 
         // update progress logic for onProgressListener
         long currentTimeMs = System.currentTimeMillis();
         if (currentTimeMs - lastMsUpdated > UPDATE_INTERVAL_MS) {
           lastMsUpdated = currentTimeMs;
-          postUpdateProgress(updateTask, totalSize, downloadedSize, UpdateStatus.DOWNLOADING);
+          postUpdateProgress(totalSize, bytesDownloaded, UpdateStatus.DOWNLOADING);
         }
       }
-      // completion
-      postUpdateProgress(updateTask, totalSize, downloadedSize, UpdateStatus.DOWNLOADED);
 
     } catch (IOException e) {
+      postUpdateProgress(totalSize, bytesDownloaded, UpdateStatus.DOWNLOAD_FAILED);
       setDownloadTaskCompletionError(
           new FirebaseAppDistributionException(
               Constants.ErrorMessages.NETWORK_ERROR,
@@ -173,11 +170,15 @@ class UpdateApkClient {
       // check that file is actual JAR
       new JarFile(apkFile);
     } catch (Exception e) {
+      postUpdateProgress(totalSize, bytesDownloaded, UpdateStatus.DOWNLOAD_FAILED);
       setDownloadTaskCompletionError(
           new FirebaseAppDistributionException(
               Constants.ErrorMessages.NETWORK_ERROR,
               FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE));
     }
+
+    // completion
+    postUpdateProgress(totalSize, totalSize, UpdateStatus.DOWNLOADED);
 
     downloadTaskCompletionSource.setResult(apkFile);
   }
@@ -248,6 +249,7 @@ class UpdateApkClient {
   void setInstallationResult(int resultCode) {
     if (resultCode == Activity.RESULT_OK) {
       installTaskCompletionSource.setResult(null);
+      cachedUpdateTask.setResult();
     } else if (resultCode == Activity.RESULT_CANCELED) {
       installTaskCompletionSource.setException(
           new FirebaseAppDistributionException(
@@ -261,32 +263,37 @@ class UpdateApkClient {
     }
   }
 
-  private void setTaskCompletionError(
-      UpdateTaskImpl updateTask, FirebaseAppDistributionException e) {
-    if (updateTask != null && !updateTask.isComplete()) {
-      updateTask.setException(e);
+  private void setTaskCompletionError(FirebaseAppDistributionException e) {
+    if (cachedUpdateTask != null && !cachedUpdateTask.isComplete()) {
+      cachedUpdateTask.setException(e);
     }
   }
 
   private void setTaskCompletionErrorWithDefault(
-      UpdateTaskImpl updateTask,
-      Exception e,
-      FirebaseAppDistributionException defaultFirebaseException) {
+      Exception e, FirebaseAppDistributionException defaultFirebaseException) {
     if (e instanceof FirebaseAppDistributionException) {
-      setTaskCompletionError(updateTask, (FirebaseAppDistributionException) e);
+      setTaskCompletionError((FirebaseAppDistributionException) e);
     } else {
-      setTaskCompletionError(updateTask, defaultFirebaseException);
+      setTaskCompletionError(defaultFirebaseException);
     }
   }
 
-  private void postUpdateProgress(
-      UpdateTaskImpl updateTask, long totalBytes, long downloadedBytes, UpdateStatus status) {
-    updateTask.updateProgress(
+  private void postUpdateProgress(long totalBytes, long downloadedBytes, UpdateStatus status) {
+    cachedUpdateTask.updateProgress(
         UpdateProgress.builder()
             .setApkFileTotalBytes(totalBytes)
             .setApkBytesDownloaded(downloadedBytes)
             .setUpdateStatus(status)
             .build());
+  }
+
+  private void postInstallationFailure(Exception e, long fileLength) {
+    if (e instanceof FirebaseAppDistributionException
+        && ((FirebaseAppDistributionException) e).getErrorCode() == Status.INSTALLATION_CANCELED) {
+      postUpdateProgress(fileLength, fileLength, UpdateStatus.INSTALL_CANCELED);
+    } else {
+      postUpdateProgress(fileLength, fileLength, UpdateStatus.INSTALL_FAILED);
+    }
   }
 
   @Nullable
@@ -300,5 +307,10 @@ class UpdateApkClient {
     synchronized (activityLock) {
       this.currentActivity = activity;
     }
+  }
+
+  @RestrictTo(RestrictTo.Scope.TESTS)
+  void setCachedUpdateTask(UpdateTaskImpl updateTask) {
+    this.cachedUpdateTask = updateTask;
   }
 }

@@ -38,6 +38,8 @@ import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.core.FirestoreClient;
 import com.google.firebase.firestore.local.SQLitePersistence;
 import com.google.firebase.firestore.model.DatabaseId;
+import com.google.firebase.firestore.model.FieldIndex;
+import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.remote.FirestoreChannel;
 import com.google.firebase.firestore.remote.GrpcMetadataProvider;
@@ -51,7 +53,12 @@ import com.google.firebase.inject.Deferred;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Executor;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * Represents a Cloud Firestore database and is the entry point for all Cloud Firestore operations.
@@ -262,6 +269,69 @@ public class FirebaseFirestore {
   @NonNull
   public FirebaseApp getApp() {
     return firebaseApp;
+  }
+
+  /**
+   * Configures Indexing for local query execution. Any previous index configuration is overridden.
+   * The Task resolves once the index configuration has been persisted.
+   *
+   * <p>The index entries themselves are created asynchronously. You can continue to use queries
+   * that require indexing even if the indices are not yet available. Query execution will
+   * automatically start using the index once the index entries have been written.
+   *
+   * <p>The method accepts the JSON format exported by the Firebase CLI (`firebase
+   * firestore:indexes`). If the JSON format is invalid, this method rejects the returned task.
+   *
+   * @param json The JSON format exported by the Firebase CLI.
+   * @return A task that resolves once all indices are successfully configured.
+   */
+  @VisibleForTesting
+  Task<Void> configureIndices(String json) {
+    ensureClientConfigured();
+
+    // Preconditions.checkState(BuildConfig.ENABLE_INDEXING, "Indexing support is not yet
+    // available.");
+
+    List<FieldIndex> parsedIndices = new ArrayList<>();
+
+    // See https://firebase.google.com/docs/reference/firestore/indexes/#json_format for the
+    // format of the index definition. Unlike the backend, the SDK does not distinguish between
+    // collection ID and collection group indices and hence the queryScope field is ignored.
+
+    try {
+      JSONObject jsonObject = new JSONObject(json);
+
+      if (jsonObject.has("indexes")) {
+        JSONArray indices = jsonObject.getJSONArray("indexes");
+        for (int i = 0; i < indices.length(); ++i) {
+          JSONObject definition = indices.getJSONObject(i);
+          FieldIndex fieldIndex = new FieldIndex(definition.getString("collectionGroup"));
+
+          JSONArray fields = definition.optJSONArray("fields");
+          for (int f = 0; fields != null && f < fields.length(); ++f) {
+            JSONObject field = fields.getJSONObject(f);
+            FieldPath fieldPath = FieldPath.fromServerFormat(field.getString("fieldPath"));
+            if ("CONTAINS".equals(field.optString("arrayConfig"))) {
+              fieldIndex = fieldIndex.withAddedField(fieldPath, FieldIndex.Segment.Kind.CONTAINS);
+            } else if ("ASCENDING".equals(field.optString("order"))) {
+              fieldIndex = fieldIndex.withAddedField(fieldPath, FieldIndex.Segment.Kind.ASCENDING);
+            } else if ("DESCENDING".equals(field.optString("order"))) {
+              fieldIndex = fieldIndex.withAddedField(fieldPath, FieldIndex.Segment.Kind.DESCENDING);
+            } else {
+              throw new IllegalArgumentException(
+                  String.format(
+                      "Index definition not valid (for field \"%s\" of collection \"%s\")",
+                      fieldPath, fieldIndex.getCollectionId()));
+            }
+            parsedIndices.add(fieldIndex);
+          }
+        }
+      }
+    } catch (JSONException e) {
+      throw new IllegalArgumentException("Failed to parse index configuration", e);
+    }
+
+    return client.configureIndices(parsedIndices);
   }
 
   /**
