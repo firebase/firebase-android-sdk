@@ -20,7 +20,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -93,7 +92,6 @@ public class FirebaseAppDistributionTest {
   @Mock private SignInStorage mockSignInStorage;
   @Mock private Bundle mockBundle;
   @Mock private SignInResultActivity mockSignInResultActivity;
-  @Mock private OnProgressListener onProgressListener;
 
   static class TestActivity extends Activity {}
 
@@ -122,7 +120,7 @@ public class FirebaseAppDistributionTest {
                 mockUpdateAppClient,
                 mockSignInStorage));
 
-    when(mockTesterSignInClient.signInTester(any())).thenReturn(Tasks.forResult(null));
+    when(mockTesterSignInClient.signInTester()).thenReturn(Tasks.forResult(null));
 
     when(mockInstallationTokenResult.getToken()).thenReturn(TEST_AUTH_TOKEN);
 
@@ -203,7 +201,7 @@ public class FirebaseAppDistributionTest {
     firebaseAppDistribution.onActivityResumed(activity);
     firebaseAppDistribution.checkForUpdate();
 
-    verify(mockTesterSignInClient, times(1)).signInTester(any());
+    verify(mockTesterSignInClient, times(1)).signInTester();
   }
 
   @Test
@@ -254,7 +252,7 @@ public class FirebaseAppDistributionTest {
     firebaseAppDistribution.onActivityResumed(activity);
 
     // Update flow
-    verify(mockTesterSignInClient, times(1)).signInTester(activity);
+    verify(mockTesterSignInClient, times(1)).signInTester();
     assertTrue(ShadowAlertDialog.getLatestDialog() instanceof AlertDialog);
     AlertDialog updateDialog = (AlertDialog) ShadowAlertDialog.getLatestDialog();
     assertEquals(
@@ -308,7 +306,7 @@ public class FirebaseAppDistributionTest {
   @Test
   public void updateToLatestRelease_whenSignInCancelled_checkForUpdateNotCalled() {
     when(mockSignInStorage.getSignInStatus()).thenReturn(false);
-    when(mockTesterSignInClient.signInTester(any()))
+    when(mockTesterSignInClient.signInTester())
         .thenReturn(
             Tasks.forException(
                 new FirebaseAppDistributionException(
@@ -321,7 +319,7 @@ public class FirebaseAppDistributionTest {
     firebaseAppDistribution.onActivityCreated(mockSignInResultActivity, mockBundle);
     firebaseAppDistribution.onActivityResumed(activity);
 
-    verify(mockTesterSignInClient, times(1)).signInTester(activity);
+    verify(mockTesterSignInClient, times(1)).signInTester();
     verify(mockCheckForUpdateClient, never()).checkForUpdate();
     assertTrue(task.getException() instanceof FirebaseAppDistributionException);
     FirebaseAppDistributionException e = (FirebaseAppDistributionException) task.getException();
@@ -332,7 +330,7 @@ public class FirebaseAppDistributionTest {
   @Test
   public void updateToLatestRelease_whenSignInFailed_checkForUpdateNotCalled() {
     when(mockSignInStorage.getSignInStatus()).thenReturn(false);
-    when(mockTesterSignInClient.signInTester(any()))
+    when(mockTesterSignInClient.signInTester())
         .thenReturn(
             Tasks.forException(
                 new FirebaseAppDistributionException(
@@ -374,7 +372,7 @@ public class FirebaseAppDistributionTest {
     when(mockCheckForUpdateClient.checkForUpdate())
         .thenReturn(Tasks.forResult(TEST_RELEASE_NEWER_AAB_INTERNAL.build()));
     firebaseAppDistribution.updateToLatestRelease();
-    verify(mockTesterSignInClient, times(1)).signInTester(any());
+    verify(mockTesterSignInClient, times(1)).signInTester();
   }
 
   @Test
