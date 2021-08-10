@@ -149,7 +149,7 @@ public class CheckForUpdateClientTest {
   @Test
   public void checkForUpdate_succeeds() throws Exception {
     when(mockFirebaseAppDistributionTesterApiClient.fetchLatestRelease(any(), any(), any(), any()))
-        .thenReturn(TEST_RELEASE_CURRENT);
+        .thenReturn(TEST_RELEASE_NEWER_APK);
     when(mockFirebaseInstallations.getId()).thenReturn(Tasks.forResult(TEST_FID_1));
     when(mockFirebaseInstallations.getToken(false))
         .thenReturn(Tasks.forResult(mockInstallationTokenResult));
@@ -160,7 +160,7 @@ public class CheckForUpdateClientTest {
     task.addOnCompleteListener(testExecutor, onCompleteListener);
 
     AppDistributionReleaseInternal appDistributionReleaseInternal = onCompleteListener.await();
-    assertEquals(TEST_RELEASE_CURRENT, appDistributionReleaseInternal);
+    assertEquals(TEST_RELEASE_NEWER_APK, appDistributionReleaseInternal);
     verify(mockFirebaseInstallations, times(1)).getId();
     verify(mockFirebaseInstallations, times(1)).getToken(false);
   }
@@ -227,18 +227,11 @@ public class CheckForUpdateClientTest {
   }
 
   @Test
-  public void getLatestReleaseFromClient_whenLatestReleaseIsOlderBuildThanInstalled_returnsNull()
+  public void getLatestReleaseFromClient_whenLatestReleaseIsSameRelease_returnsNull()
       throws Exception {
-    AppDistributionReleaseInternal olderTestRelease =
-        AppDistributionReleaseInternal.builder()
-            .setBinaryType(BinaryType.APK)
-            .setBuildVersion("1")
-            .setDisplayVersion("1.0")
-            .setReleaseNotes("Older version.")
-            .build();
     when(mockFirebaseAppDistributionTesterApiClient.fetchLatestRelease(
             TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN))
-        .thenReturn(olderTestRelease);
+        .thenReturn(TEST_RELEASE_CURRENT);
 
     AppDistributionReleaseInternal release =
         checkForUpdateClient.getLatestReleaseFromClient(
