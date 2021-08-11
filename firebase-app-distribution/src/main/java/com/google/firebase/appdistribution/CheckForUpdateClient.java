@@ -115,7 +115,7 @@ class CheckForUpdateClient {
           firebaseAppDistributionTesterApiClient.fetchLatestRelease(fid, appId, apiKey, authToken);
 
       if (isNewerBuildVersion(retrievedLatestRelease)
-          && !isInstalledRelease(retrievedLatestRelease)) {
+          || !isInstalledRelease(retrievedLatestRelease)) {
         return retrievedLatestRelease;
       } else {
         // Return null if retrieved latest release is older or currently installed
@@ -132,13 +132,14 @@ class CheckForUpdateClient {
   private boolean isNewerBuildVersion(AppDistributionReleaseInternal latestRelease)
       throws FirebaseAppDistributionException {
     return Long.parseLong(latestRelease.getBuildVersion())
-        >= getInstalledAppVersionCode(firebaseApp.getApplicationContext());
+        > getInstalledAppVersionCode(firebaseApp.getApplicationContext());
   }
 
   private boolean isInstalledRelease(AppDistributionReleaseInternal latestRelease) {
     if (latestRelease.getBinaryType().equals(BinaryType.APK)) {
-      // TODO(rachelprince): APK codehash verification
-      return false;
+      // TODO(rachelprince): APK codehash verification. For now assume
+      // the release is identical unless the build version is different
+      return true;
     }
 
     if (latestRelease.getIasArtifactId() == null) {
