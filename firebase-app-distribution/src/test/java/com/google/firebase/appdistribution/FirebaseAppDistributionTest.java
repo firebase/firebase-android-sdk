@@ -242,7 +242,8 @@ public class FirebaseAppDistributionTest {
     AppDistributionReleaseInternal latestRelease = TEST_RELEASE_NEWER_AAB_INTERNAL.build();
     when(mockCheckForUpdateClient.checkForUpdate()).thenReturn(Tasks.forResult(latestRelease));
     firebaseAppDistribution.setCachedLatestRelease(latestRelease);
-    when(mockUpdateAppClient.updateApp(latestRelease, activity)).thenReturn(new UpdateTaskImpl());
+    when(mockUpdateAppClient.updateApp(latestRelease, activity, true))
+        .thenReturn(new UpdateTaskImpl());
 
     firebaseAppDistribution.onActivityResumed(activity);
     firebaseAppDistribution.updateToLatestRelease();

@@ -110,7 +110,7 @@ class FirebaseAppDistributionNotificationsManager {
     Context context = firebaseApp.getApplicationContext();
     int iconId = context.getApplicationInfo().icon;
 
-    if (iconId == 0 || !isAdaptiveIcon(iconId)) {
+    if (iconId == 0 || isAdaptiveIcon(iconId)) {
       // fallback to default icon
       return android.R.drawable.sym_def_app_icon;
     }
@@ -124,13 +124,13 @@ class FirebaseAppDistributionNotificationsManager {
       Drawable icon = ContextCompat.getDrawable(firebaseApp.getApplicationContext(), iconId);
       if (VERSION.SDK_INT > Build.VERSION_CODES.O && icon instanceof AdaptiveIconDrawable) {
         Log.e(TAG, "Adaptive icons cannot be used in notifications. Ignoring icon id: " + iconId);
-        return false;
+        return true;
       } else {
         // AdaptiveIcons were introduced in API 26
-        return true;
+        return false;
       }
     } catch (Resources.NotFoundException ex) {
-      return false;
+      return true;
     }
   }
 }
