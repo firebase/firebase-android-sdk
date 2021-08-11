@@ -44,7 +44,9 @@ public class UpdateAppClient {
 
   @NonNull
   synchronized UpdateTask updateApp(
-      @NonNull AppDistributionReleaseInternal latestRelease, @NonNull Activity currentActivity) {
+      @NonNull AppDistributionReleaseInternal latestRelease,
+      @NonNull Activity currentActivity,
+      @NonNull boolean basicConfiguration) {
 
     if (cachedUpdateAppTask != null && !cachedUpdateAppTask.isComplete()) {
       return cachedUpdateAppTask;
@@ -70,7 +72,8 @@ public class UpdateAppClient {
     if (latestRelease.getBinaryType() == BinaryType.AAB) {
       redirectToPlayForAabUpdate(cachedUpdateAppTask, latestRelease.getDownloadUrl());
     } else {
-      this.updateApkClient.updateApk(cachedUpdateAppTask, latestRelease.getDownloadUrl());
+      this.updateApkClient.updateApk(
+          cachedUpdateAppTask, latestRelease.getDownloadUrl(), basicConfiguration);
     }
     return cachedUpdateAppTask;
   }

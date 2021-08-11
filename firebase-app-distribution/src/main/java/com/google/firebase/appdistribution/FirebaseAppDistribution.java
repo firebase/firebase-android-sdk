@@ -47,6 +47,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
   private UpdateTaskImpl cachedUpdateAppTask;
   private AppDistributionReleaseInternal cachedLatestRelease;
   private final SignInStorage signInStorage;
+  private boolean basicConfiguration = false;
 
   /** Constructor for FirebaseAppDistribution */
   @VisibleForTesting
@@ -126,7 +127,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
                   if (release == null) {
                     return Tasks.forResult(null);
                   }
-
+                  basicConfiguration = true;
                   return showUpdateAlertDialog(release);
                 });
 
@@ -182,7 +183,10 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
       return updateTask;
     }
 
-    return this.updateAppClient.updateApp(cachedLatestRelease, currentActivity);
+    UpdateTask updateTask =
+        this.updateAppClient.updateApp(cachedLatestRelease, currentActivity, basicConfiguration);
+    basicConfiguration = false;
+    return updateTask;
   }
 
   /** Returns true if the App Distribution tester is signed in */
@@ -314,6 +318,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
         AlertDialog.BUTTON_NEGATIVE,
         context.getString(R.string.update_no_button),
         (dialogInterface, i) -> {
+          basicConfiguration = false;
           dialogInterface.dismiss();
           updateAlertDialogTask.setException(
               new FirebaseAppDistributionException(

@@ -54,6 +54,7 @@ class UpdateApkClient {
   private TaskCompletionSource<Void> installTaskCompletionSource;
   private final FirebaseApp firebaseApp;
   private UpdateTaskImpl cachedUpdateTask;
+  private boolean basicConfiguration = false;
 
   @GuardedBy("activityLock")
   private Activity currentActivity;
@@ -67,8 +68,11 @@ class UpdateApkClient {
         new FirebaseAppDistributionNotificationsManager(firebaseApp);
   }
 
-  public void updateApk(@NonNull UpdateTaskImpl updateTask, @NonNull String downloadUrl) {
-
+  public void updateApk(
+      @NonNull UpdateTaskImpl updateTask,
+      @NonNull String downloadUrl,
+      @NonNull boolean basicConfiguration) {
+    this.basicConfiguration = basicConfiguration;
     this.cachedUpdateTask = updateTask;
     downloadApk(downloadUrl)
         .addOnSuccessListener(
@@ -290,8 +294,9 @@ class UpdateApkClient {
             .setApkBytesDownloaded(downloadedBytes)
             .setUpdateStatus(status)
             .build());
-
-    appDistributionNotificationsManager.updateNotification(totalBytes, downloadedBytes, status);
+    if (basicConfiguration) {
+      appDistributionNotificationsManager.updateNotification(totalBytes, downloadedBytes, status);
+    }
   }
 
   private void postInstallationFailure(Exception e, long fileLength) {

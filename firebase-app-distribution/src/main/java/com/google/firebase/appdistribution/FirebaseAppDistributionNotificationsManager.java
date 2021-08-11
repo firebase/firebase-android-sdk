@@ -51,7 +51,7 @@ class FirebaseAppDistributionNotificationsManager {
     if (isErrorState(status)) {
       builder.setContentTitle(context.getString(R.string.download_failed));
     } else if (status.equals(UpdateStatus.DOWNLOADED)) {
-      builder.setContentTitle(context.getString(R.string.download_failed));
+      builder.setContentTitle(context.getString(R.string.download_completed));
     } else {
       builder.setContentTitle(context.getString(R.string.downloading_app_update));
     }
